@@ -546,6 +546,33 @@ class Settings(private val context: Context) {
         get() = prefs.getBoolean("listen-for-usb-devices", true)
         set(value) { prefs.edit().putBoolean("listen-for-usb-devices", value).apply() }
 
+    var usbBlacklist: Set<String>
+        get() = prefs.getStringSet("usb-blacklist", null) ?: emptySet()
+        set(value) { prefs.edit().putStringSet("usb-blacklist", value).apply() }
+
+    fun formatUsbVidPidKey(vid: Int, pid: Int): String {
+        return String.format(java.util.Locale.US, "%04x:%04x", vid, pid).lowercase()
+    }
+
+    fun isUsbDeviceBlacklisted(vid: Int, pid: Int): Boolean {
+        val key = formatUsbVidPidKey(vid, pid)
+        return usbBlacklist.contains(key)
+    }
+
+    fun addUsbDeviceToBlacklist(vid: Int, pid: Int) {
+        val key = formatUsbVidPidKey(vid, pid)
+        val set = usbBlacklist.toMutableSet()
+        set.add(key)
+        usbBlacklist = set
+    }
+
+    fun removeUsbDeviceFromBlacklist(vid: Int, pid: Int) {
+        val key = formatUsbVidPidKey(vid, pid)
+        val set = usbBlacklist.toMutableSet()
+        set.remove(key)
+        usbBlacklist = set
+    }
+
     var showToastMessages: Boolean
         get() = prefs.getBoolean("show-toast-messages", true)
         set(value) { prefs.edit().putBoolean("show-toast-messages", value).apply() }

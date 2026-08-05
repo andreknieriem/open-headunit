@@ -178,6 +178,12 @@
     <string name="dummy_content">DUMMY\nCONTENT</string>
     <string name="allowed">Allowed</string>
     <string name="ignored">Ignored</string>
+    <string name="blacklisted">Blacklisted</string>
+    <string name="usb_blacklist_title">USB Device Blacklist</string>
+    <string name="usb_blacklist_description">Devices in the blacklist will be completely ignored on connection (no auto-start, no prompts).</string>
+    <string name="add_to_blacklist">Add to Blacklist</string>
+    <string name="remove_from_blacklist">Remove from Blacklist</string>
+    <string name="usb_device_action_title">USB Device Action</string>
     <string name="exit">Exit</string>
     <string name="video">Android Auto</string>
     <string name="self_mode">Self Mode</string>

@@ -184,6 +184,12 @@
 
     <string name="listen_for_usb_devices_label">USB System Anbindung</string>
     <string name="listen_for_usb_devices_description">Zeige die Android-Systemaufforderung an, wenn ein USB-Gerät angeschlossen wird.</string>
+    <string name="blacklisted">Blockiert (Blacklist)</string>
+    <string name="usb_blacklist_title">USB-Geräte Blacklist</string>
+    <string name="usb_blacklist_description">Geräte auf der Blacklist werden beim Anschließen komplett ignoriert (kein Autostart, keine Aktionen).</string>
+    <string name="add_to_blacklist">Auf Blacklist setzen</string>
+    <string name="remove_from_blacklist">Von Blacklist entfernen</string>
+    <string name="usb_device_action_title">USB-Geräte Aktion</string>
     <string name="show_toast_messages">Toast-Meldungen anzeigen</string>
     <string name="show_toast_messages_description">Status-Meldungen bei Verbindung, Trennung und Moduswechsel einblenden.</string>
     <string name="auto_start_usb_label">Autostart bei USB</string>

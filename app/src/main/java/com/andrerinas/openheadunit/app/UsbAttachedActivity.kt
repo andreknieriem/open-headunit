@@ -88,6 +88,12 @@ class UsbAttachedActivity : Activity() {
 
         val settings = if (!isLocked) Settings(this) else null
 
+        if (settings != null && settings.isUsbDeviceBlacklisted(device.vendorId, device.productId)) {
+            AppLog.i("UsbAttachedActivity: Ignored blacklisted USB device (VID: 0x${device.vendorId.toString(16)}, PID: 0x${device.productId.toString(16)})")
+            finish()
+            return
+        }
+
         if (!isLocked) {
             if (App.provide(this).commManager.connectionState.value is CommManager.ConnectionState.TransportStarted) {
                 AppLog.e("Thread already running")
@@ -182,6 +188,13 @@ class UsbAttachedActivity : Activity() {
 
         val isLocked = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && 
                       !(getSystemService(Context.USER_SERVICE) as UserManager).isUserUnlocked
+
+        val settings = if (!isLocked) Settings(this) else null
+        if (settings != null && settings.isUsbDeviceBlacklisted(device.vendorId, device.productId)) {
+            AppLog.i("UsbAttachedActivity: Ignored blacklisted USB device in onNewIntent (VID: 0x${device.vendorId.toString(16)}, PID: 0x${device.productId.toString(16)})")
+            finish()
+            return
+        }
 
         if (!isLocked && App.provide(this).commManager.connectionState.value !is CommManager.ConnectionState.TransportStarted) {
             if (UsbDeviceCompat.isInAccessoryMode(device)) {

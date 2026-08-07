@@ -1,15 +1,10 @@
-package com.andrerinas.openheadunit.connection
+package com.andrerinas.openheadunit.connection.wifi.modes.native
 
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import androidx.core.content.ContextCompat
-import com.andrerinas.openheadunit.aap.ApInterfaceCandidate
-import com.andrerinas.openheadunit.aap.SoftApBssidPolicy
-import com.andrerinas.openheadunit.aap.NativeCredentialsPolicy
-import com.andrerinas.openheadunit.aap.SoftApNetworkPolicy
-import com.andrerinas.openheadunit.aap.SoftApState
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.HotspotConfigReader
 import com.andrerinas.openheadunit.utils.HotspotManager
@@ -29,7 +24,7 @@ import java.net.NetworkInterface
 
 /**
  * Supplies the Native AA handshake with the credentials of *this head unit's own access point*,
- * as an alternative to [WifiDirectManager]'s P2P group.
+ * as an alternative to [com.andrerinas.openheadunit.connection.wifi.WifiDirectManager]'s P2P group.
  *
  * A teardown of the OEM ZLink app showed it doing wireless Android Auto over an ordinary WPA2 soft
  * AP — same Bluetooth handshake, same UUID, no WiFi Direct — so the phone accepts a plain access
@@ -38,7 +33,7 @@ import java.net.NetworkInterface
  *
  * It does not copy ZLink's way of *starting* the AP; that needs TETHER_PRIVILEGED and root
  * daemons. Reading a hotspot the user configured is the load-bearing path, switching one on is
- * best effort. Same contract as [WifiDirectManager] so a launcher can treat both transports alike.
+ * best effort. Same contract as [com.andrerinas.openheadunit.connection.wifi.WifiDirectManager] so a launcher can treat both transports alike.
  */
 class SoftApCredentialsProvider(
     private val context: Context,

@@ -1,35 +1,45 @@
-package com.andrerinas.openheadunit.connection
+package com.andrerinas.openheadunit.connection.wifi.modes.native
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothServerSocket
 import android.bluetooth.BluetoothSocket
 import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
+import android.os.SystemClock
+import androidx.core.content.ContextCompat
+import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.aap.AapService
-import com.andrerinas.openheadunit.aap.NativeCredentialsPolicy
 import com.andrerinas.openheadunit.aap.NativeHandoffPolicy
-import com.andrerinas.openheadunit.aap.NativeTransport
-import com.andrerinas.openheadunit.aap.UnusableBssidAction
 import com.andrerinas.openheadunit.aap.WppAction
 import com.andrerinas.openheadunit.aap.WppEvent
 import com.andrerinas.openheadunit.aap.WppFraming
 import com.andrerinas.openheadunit.aap.WppHandshakeSession
 import com.andrerinas.openheadunit.aap.WppMessageType
 import com.andrerinas.openheadunit.aap.WppStage
-import com.andrerinas.openheadunit.utils.BluetoothHelper
 import com.andrerinas.openheadunit.aap.protocol.proto.Wireless
+import com.andrerinas.openheadunit.connection.CommManager
+import com.andrerinas.openheadunit.connection.wifi.modes.WifiLauncherNative
 import com.andrerinas.openheadunit.utils.AppLog
-import kotlinx.coroutines.*
+import com.andrerinas.openheadunit.utils.BluetoothHelper
+import com.andrerinas.openheadunit.utils.Settings
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
-import android.os.Build
-import android.os.SystemClock
-import android.content.pm.PackageManager
-import androidx.core.content.ContextCompat
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.DataInputStream
-import java.io.IOException
 import java.io.OutputStream
-import java.util.*
+import java.util.Collections
+import java.util.UUID
 
 /**
  * Manages the official Android Auto Wireless Bluetooth handshake.
@@ -37,6 +47,7 @@ import java.util.*
  */
 class NativeAaHandshakeManager(
     private val context: AapService,
+    private val launcher: WifiLauncherNative,
     private val scope: CoroutineScope
 ) {
     companion object {
@@ -69,7 +80,7 @@ class NativeAaHandshakeManager(
 
         fun checkCompatibility(context: Context): Boolean {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.BLUETOOTH_CONNECT) 
+                if (ContextCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT)
                     != PackageManager.PERMISSION_GRANTED) {
                     AppLog.w("NativeAA: Compatibility Check skipped - Missing BLUETOOTH_CONNECT")
                     return false
@@ -89,15 +100,15 @@ class NativeAaHandshakeManager(
         }
     }
 
-    private val settings = com.andrerinas.openheadunit.App.provide(context).settings
-    private val commManager = com.andrerinas.openheadunit.App.provide(context).commManager
+    private val settings = App.provide(context).settings
+    private val commManager = App.provide(context).commManager
     private var aaServerSocket: BluetoothServerSocket? = null
     private var hfpServerSocket: BluetoothServerSocket? = null
     // Extra RFCOMM listeners opened on secondary Bluetooth radios (dual-Bluetooth head units).
     // Split by UUID so a successful handoff can close just the AA listeners (see
     // closeAaListeners()) without taking down the HFP ones too.
-    private val extraAaServerSockets = java.util.Collections.synchronizedList(mutableListOf<BluetoothServerSocket>())
-    private val extraHfpServerSockets = java.util.Collections.synchronizedList(mutableListOf<BluetoothServerSocket>())
+    private val extraAaServerSockets = Collections.synchronizedList(mutableListOf<BluetoothServerSocket>())
+    private val extraHfpServerSockets = Collections.synchronizedList(mutableListOf<BluetoothServerSocket>())
     private var isRunning = false
     // Set by closeAaListeners() so the AA accept loops can tell "we closed this on purpose
     // after a successful handoff" apart from a real socket error, for logging only.
@@ -211,7 +222,7 @@ class NativeAaHandshakeManager(
         if (isRunning) return
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.BLUETOOTH_CONNECT) 
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT)
                 != PackageManager.PERMISSION_GRANTED) {
                 AppLog.e("NativeAA: Missing BLUETOOTH_CONNECT permission. Handshake server cannot start.")
                 return
@@ -400,31 +411,34 @@ class NativeAaHandshakeManager(
             val input = socket.inputStream
             val output = socket.outputStream
             val buf = ByteArray(1024)
-            
+
             AppLog.i("NativeAA: HFP responder active for ${socket.remoteDevice.name}")
-            
+
             while (isRunning && isActive && socket.isConnected) {
                 if (input.available() > 0) {
                     val read = input.read(buf)
                     if (read == -1) break
-                    
+
                     val cmd = String(buf, 0, read, Charsets.US_ASCII).trim()
                     AppLog.d("NativeAA: HFP RX: $cmd")
-                    
+
                     // Respond to standard HFP initialization commands
                     when {
                         cmd.contains("AT+BRSF") -> {
                             output.write("+BRSF: 20\r\n".toByteArray())
                             output.write("OK\r\n".toByteArray())
                         }
+
                         cmd.contains("AT+CIND=?") -> {
                             output.write("+CIND: (\"service\",(0,1)),(\"call\",(0,1))\r\n".toByteArray())
                             output.write("OK\r\n".toByteArray())
                         }
+
                         cmd.contains("AT+CIND?") -> {
                             output.write("+CIND: 1,0\r\n".toByteArray())
                             output.write("OK\r\n".toByteArray())
                         }
+
                         else -> {
                             output.write("OK\r\n".toByteArray())
                         }
@@ -436,7 +450,10 @@ class NativeAaHandshakeManager(
         } catch (e: Exception) {
             AppLog.d("NativeAA: HFP responder error: ${e.message}")
         } finally {
-            try { socket.close() } catch (e: Exception) {}
+            try {
+                socket.close()
+            } catch (e: Exception) {
+            }
             AppLog.i("NativeAA: HFP socket for ${socket.remoteDevice.address} closed.")
         }
     }
@@ -499,7 +516,7 @@ class NativeAaHandshakeManager(
             return
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.BLUETOOTH_CONNECT)
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT)
                 != PackageManager.PERMISSION_GRANTED) {
                 AppLog.w("NativeAA: Missing BLUETOOTH_CONNECT. Cannot triggerPoke.")
                 return
@@ -594,7 +611,7 @@ class NativeAaHandshakeManager(
      */
     fun manualPoke(address: String) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.BLUETOOTH_CONNECT) 
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT)
                 != PackageManager.PERMISSION_GRANTED) {
                 AppLog.w("NativeAA: Missing BLUETOOTH_CONNECT. Cannot manualPoke.")
                 return
@@ -607,7 +624,7 @@ class NativeAaHandshakeManager(
             // The user asking to try again is the way out of a handshake backoff — it is the only
             // gesture the UI offers, and it means they want another attempt whatever we concluded.
             resetHandshakeBackoff()
-            
+
             pokeJob?.cancel()
             pokeJob = scope.launch(Dispatchers.IO + CoroutineName("NativeAa-ManualWakeup")) {
                 AppLog.i("NativeAA: Attempting manual poke to ${device.name}...")
@@ -663,392 +680,426 @@ class NativeAaHandshakeManager(
         if (activeHandshakeSocket === socket) block()
     }
 
-    private suspend fun handleHandshake(socket: BluetoothSocket, localRadio: String? = null) = withContext(Dispatchers.IO) {
-        // The phone reached us. Recorded here rather than at either accept site so both the
-        // primary and the secondary-radio loops are covered by one statement.
-        everAcceptedAaConnection = true
-        pokesSinceLastAccept = 0
+    private suspend fun handleHandshake(socket: BluetoothSocket, localRadio: String? = null) =
+        withContext(Dispatchers.IO) {
+            // The phone reached us. Recorded here rather than at either accept site so both the
+            // primary and the secondary-radio loops are covered by one statement.
+            everAcceptedAaConnection = true
+            pokesSinceLastAccept = 0
 
-        // The wake poke is deliberately left running here. It used to be cancelled on entry, on
-        // the reasoning that a real AA_UUID connection means the poke has done its job and is now
-        // just competing for radio time — but cancelling it closes the HFP/HSP socket, and a
-        // phone-side Gearhead log shows the phone reacting within milliseconds:
-        //   GH.BtConnectionTracker: profile connection removed
-        //   GH.CurrentCarTracker:   current car bluetooth connection is lost / is gone
-        //   ...WIRELESS_SETUP_CAR_BLUETOOTH_DISAPPEAR
-        // and then, when its own first-message timer expires 12 s later, refusing to retry:
-        //   GH.WIRELESS.SETUP: WiFi Projection Protocol cannot start as HU is not present.
-        // Real head units hold the profile link across the exchange, so hold it too, until the
-        // credentials are actually delivered (see the Type 3 branch) or this handshake ends.
+            // The wake poke is deliberately left running here. It used to be cancelled on entry, on
+            // the reasoning that a real AA_UUID connection means the poke has done its job and is now
+            // just competing for radio time — but cancelling it closes the HFP/HSP socket, and a
+            // phone-side Gearhead log shows the phone reacting within milliseconds:
+            //   GH.BtConnectionTracker: profile connection removed
+            //   GH.CurrentCarTracker:   current car bluetooth connection is lost / is gone
+            //   ...WIRELESS_SETUP_CAR_BLUETOOTH_DISAPPEAR
+            // and then, when its own first-message timer expires 12 s later, refusing to retry:
+            //   GH.WIRELESS.SETUP: WiFi Projection Protocol cannot start as HU is not present.
+            // Real head units hold the profile link across the exchange, so hold it too, until the
+            // credentials are actually delivered (see the Type 3 branch) or this handshake ends.
 
-        // The listener stays open across the settling window, so the phone can reconnect over
-        // Bluetooth while an earlier handoff is still settling. That reconnect means the earlier
-        // one failed: retire it rather than serving both from the same manager state.
-        val previousSocket = activeHandshakeSocket
-        val previousJob = activeHandshakeJob
-        // Ownership is claimed *before* the previous session is torn down, not after: cancelling
-        // it makes its finally block run on another thread at a moment we do not control, and the
-        // only thing keeping that block off this handshake's state is the ifOwner fence. Take
-        // ownership first and the fence is already closed when the old one unwinds.
-        activeHandshakeSocket = socket
-        activeHandshakeJob = coroutineContext[Job]
-        // Stamped after claiming ownership above, so a superseded handshake's cleanup — which
-        // only fires when it still owns activeHandshakeSocket — can't wipe this one's stamp.
-        handshakeStartedAt = SystemClock.elapsedRealtime()
-        if (previousSocket != null && previousSocket !== socket) {
-            AppLog.i("NativeAA: A new handshake arrived while one was still settling — closing the previous session.")
-            handoffSettlingSince = 0L
-            // Cancel *and* close, in that order: see activeHandshakeJob. Cancelling first means
-            // the old coroutine cannot mistake the close for a phone-side drop and act on it.
-            previousJob?.cancel()
-            try { previousSocket.close() } catch (_: Exception) {}
-        }
-        // Whether this handshake put anything on the wire at all, and whether the phone answered
-        // any of it. Together with abortedLocally they decide, once in the fenced finally below,
-        // whether this attempt counts against consecutiveHandshakeFailures.
-        var spokeToPhone = false
-        var abortedLocally = false
-        // Captured once, so a settings change mid-exchange cannot split it across two rulesets.
-        val transport = NativeTransport.fromSetting(settings.nativeApTransport)
-        val session = WppHandshakeSession(settings.nativeWifiVersionExchange)
-        // Everything the phone sends, in order. Replaces the single bounded read this used to do:
-        // types 6 and 7 arrive *after* the credentials go out, so a one-shot read could never see
-        // them, and the phone is free to interject a ping at any point in between.
-        val inbound = Channel<ProtobufMessage>(Channel.UNLIMITED)
-        var readerJob: Job? = null
-        try {
-            val device = socket.remoteDevice
-            AppLog.i("NativeAA: Handling handshake for ${device.name} (${device.address}) on local radio [${localRadio ?: "?"}]")
-
-            if (commManager.isConnected ||
-                commManager.connectionState.value is CommManager.ConnectionState.Connecting) {
-                AppLog.i("NativeAA: USB/other session already active. Aborting BT handshake so phone does not start a parallel wireless attempt.")
-                abortedLocally = true
-                try { socket.close() } catch (_: Exception) {}
-                return@withContext
-            }
-
-            val macs = settings.autoStartBluetoothDeviceMacs
-            if (!macs.contains(device.address)) {
-                AppLog.i("NativeAA: Saving ${device.address} (${device.name}) to the list of auto-start devices.")
-                val newMacs = macs + device.address
-                settings.autoStartBluetoothDeviceMacs = newMacs
-                settings.autoStartBluetoothDeviceName = device.name ?: "Unknown Device"
-                com.andrerinas.openheadunit.utils.Settings.syncAutoStartBtMacsToDeviceStorage(context, newMacs)
-            }
-
-            val input = DataInputStream(socket.inputStream)
-            val output = socket.outputStream
-
-            // [BUG_FIX] There is no BluetoothSocket.setSoTimeout(), and the old workaround —
-            // close the socket to unblock readFully() — only works where close() interrupts a
-            // pending read. Where it does not, the handshake never unwinds and takes the wake poke
-            // and the P2P join watchdog down with it for the rest of the session. Time out the
-            // *wait* instead: read on a coroutine of its own and take messages from a channel,
-            // which resumes on schedule whether or not the read ever returns. The reader itself is
-            // still unreclaimable on such a stack; consecutiveHandshakeFailures bounds that.
-            readerJob = scope.launch(Dispatchers.IO + CoroutineName("NativeAa-Reader-${device.address}")) {
+            // The listener stays open across the settling window, so the phone can reconnect over
+            // Bluetooth while an earlier handoff is still settling. That reconnect means the earlier
+            // one failed: retire it rather than serving both from the same manager state.
+            val previousSocket = activeHandshakeSocket
+            val previousJob = activeHandshakeJob
+            // Ownership is claimed *before* the previous session is torn down, not after: cancelling
+            // it makes its finally block run on another thread at a moment we do not control, and the
+            // only thing keeping that block off this handshake's state is the ifOwner fence. Take
+            // ownership first and the fence is already closed when the old one unwinds.
+            activeHandshakeSocket = socket
+            activeHandshakeJob = coroutineContext[Job.Key]
+            // Stamped after claiming ownership above, so a superseded handshake's cleanup — which
+            // only fires when it still owns activeHandshakeSocket — can't wipe this one's stamp.
+            handshakeStartedAt = SystemClock.elapsedRealtime()
+            if (previousSocket != null && previousSocket !== socket) {
+                AppLog.i("NativeAA: A new handshake arrived while one was still settling — closing the previous session.")
+                handoffSettlingSince = 0L
+                // Cancel *and* close, in that order: see activeHandshakeJob. Cancelling first means
+                // the old coroutine cannot mistake the close for a phone-side drop and act on it.
+                previousJob?.cancel()
                 try {
-                    while (isActive) inbound.send(readProtobuf(input))
-                } catch (e: Exception) {
-                    AppLog.d("NativeAA: Bluetooth reader ended: ${e.message}")
-                } finally {
-                    inbound.close()
+                    previousSocket.close()
+                } catch (_: Exception) {
                 }
             }
+            // Whether this handshake put anything on the wire at all, and whether the phone answered
+            // any of it. Together with abortedLocally they decide, once in the fenced finally below,
+            // whether this attempt counts against consecutiveHandshakeFailures.
+            var spokeToPhone = false
+            var abortedLocally = false
+            // Captured once, so a settings change mid-exchange cannot split it across two rulesets.
+            val transport = settings.nativeApStrategy
+            val session = WppHandshakeSession(settings.nativeWifiVersionExchange)
+            // Everything the phone sends, in order. Replaces the single bounded read this used to do:
+            // types 6 and 7 arrive *after* the credentials go out, so a one-shot read could never see
+            // them, and the phone is free to interject a ping at any point in between.
+            val inbound = Channel<ProtobufMessage>(Channel.UNLIMITED)
+            var readerJob: Job? = null
+            try {
+                val device = socket.remoteDevice
+                AppLog.i("NativeAA: Handling handshake for ${device.name} (${device.address}) on local radio [${localRadio ?: "?"}]")
 
-            // --- everything below drives the WppHandshakeSession state machine ---
-
-            var stageEnteredAt = SystemClock.elapsedRealtime()
-            var readerClosed = false
-            // Filled in once the credentials resolve, before any action can need them.
-            var credSsid = ""
-            var credPsk = ""
-            var credIp = ""
-            var credBssid = ""
-            // Whether the credentials went out with no BSSID at all. A join failure means something
-            // different when they did — see the Fail action below.
-            var bssidOmitted = false
-
-            suspend fun runAction(action: WppAction, source: ProtobufMessage?) {
-                when (action) {
-                    WppAction.SendVersionRequest -> {
-                        AppLog.i("NativeAA: [TX] Sending WifiVersionRequest (Type 4) v${WppHandshakeSession.WPP_VERSION_MAJOR}.${WppHandshakeSession.WPP_VERSION_MINOR}")
-                        sendWifiVersionRequest(output)
-                        spokeToPhone = true
+                if (commManager.isConnected ||
+                    commManager.connectionState.value is CommManager.ConnectionState.Connecting
+                ) {
+                    AppLog.i("NativeAA: USB/other session already active. Aborting BT handshake so phone does not start a parallel wireless attempt.")
+                    abortedLocally = true
+                    try {
+                        socket.close()
+                    } catch (_: Exception) {
                     }
-                    WppAction.SendStartRequest -> {
-                        AppLog.i("NativeAA: [TX] Sending WifiStartRequest (Type 1)")
-                        sendWifiStartRequest(output, credIp, 5288)
-                        spokeToPhone = true
-                    }
-                    WppAction.SendInfoResponse -> {
-                        AppLog.i("NativeAA: Phone ready for WiFi association. Delivering credentials...")
-                        AppLog.i("NativeAA: [TX] Sending WifiInfoResponse (Type 3) with full credentials in 1000ms...")
-                        delay(1000) // [FIX] Increased delay to give phone more processing time
-                        sendWifiSecurityResponse(output, credSsid, credPsk, credBssid, transport)
-                        AppLog.i("NativeAA: Handshake completed successfully on Bluetooth side.")
-                        ifOwner(socket) {
-                            // The exchange is done; the phone's work is not — it still has to
-                            // associate, run WPS and get a DHCP lease. See isHandoffSettling().
-                            handshakeStartedAt = 0L
-                            handoffSettlingSince = SystemClock.elapsedRealtime()
-                            // Nothing left for the poke to wake, and it holds an RFCOMM channel on
-                            // the radio the phone is about to associate over — Bluetooth work
-                            // across the join strands it on "Obtaining IP".
-                            pokeJob?.cancel()
+                    return@withContext
+                }
+
+                val macs = settings.autoStartBluetoothDeviceMacs
+                if (!macs.contains(device.address)) {
+                    AppLog.i("NativeAA: Saving ${device.address} (${device.name}) to the list of auto-start devices.")
+                    val newMacs = macs + device.address
+                    settings.autoStartBluetoothDeviceMacs = newMacs
+                    settings.autoStartBluetoothDeviceName = device.name ?: "Unknown Device"
+                    Settings.syncAutoStartBtMacsToDeviceStorage(context, newMacs)
+                }
+
+                val input = DataInputStream(socket.inputStream)
+                val output = socket.outputStream
+
+                // [BUG_FIX] There is no BluetoothSocket.setSoTimeout(), and the old workaround —
+                // close the socket to unblock readFully() — only works where close() interrupts a
+                // pending read. Where it does not, the handshake never unwinds and takes the wake poke
+                // and the P2P join watchdog down with it for the rest of the session. Time out the
+                // *wait* instead: read on a coroutine of its own and take messages from a channel,
+                // which resumes on schedule whether or not the read ever returns. The reader itself is
+                // still unreclaimable on such a stack; consecutiveHandshakeFailures bounds that.
+                readerJob =
+                    scope.launch(Dispatchers.IO + CoroutineName("NativeAa-Reader-${device.address}")) {
+                        try {
+                            while (isActive) inbound.send(readProtobuf(input))
+                        } catch (e: Exception) {
+                            AppLog.d("NativeAA: Bluetooth reader ended: ${e.message}")
+                        } finally {
+                            inbound.close()
                         }
                     }
-                    WppAction.SendPingResponse -> {
-                        // Echo the request's own bytes: whatever the phone put in a keepalive,
-                        // handing it straight back cannot fail on a schema guess.
-                        AppLog.d("NativeAA: [TX] Echoing WifiPingResponse (Type 9)")
-                        sendProtobuf(output, source?.payload ?: ByteArray(0), WppMessageType.PING_RESPONSE)
-                    }
-                    WppAction.ExtendSettle -> {
-                        AppLog.i("NativeAA: Phone reports it is still joining — extending the settling window.")
-                        // Re-stamp rather than only extending our own deadline: isHandoffSettling()
-                        // is what keeps the poke off the radio during the join, and it measures
-                        // from this stamp. The session caps the total.
-                        ifOwner(socket) { handoffSettlingSince = SystemClock.elapsedRealtime() }
-                    }
-                    WppAction.CompleteSuccess -> {
-                        AppLog.i("NativeAA: WiFi session landed. Handshake session ending, releasing Bluetooth connection.")
-                        ifOwner(socket) {
-                            handoffSettlingSince = 0L
-                            // Stop accepting new AA_UUID connections too, not just this socket —
-                            // otherwise the phone's immediate reconnect-retry gets accepted,
-                            // bounced (already connected), and retried again in a tight loop. See
-                            // closeAaListeners() kdoc.
-                            closeAaListeners()
+
+                // --- everything below drives the WppHandshakeSession state machine ---
+
+                var stageEnteredAt = SystemClock.elapsedRealtime()
+                var readerClosed = false
+                // Filled in once the credentials resolve, before any action can need them.
+                var credSsid = ""
+                var credPsk = ""
+                var credIp = ""
+                var credBssid = ""
+                // Whether the credentials went out with no BSSID at all. A join failure means something
+                // different when they did — see the Fail action below.
+                var bssidOmitted = false
+
+                suspend fun runAction(action: WppAction, source: ProtobufMessage?) {
+                    when (action) {
+                        WppAction.SendVersionRequest -> {
+                            AppLog.i("NativeAA: [TX] Sending WifiVersionRequest (Type 4) v${WppHandshakeSession.WPP_VERSION_MAJOR}.${WppHandshakeSession.WPP_VERSION_MINOR}")
+                            sendWifiVersionRequest(output)
+                            spokeToPhone = true
                         }
-                    }
-                    is WppAction.Fail -> {
-                        AppLog.w("NativeAA: Handshake failed — ${action.reason}.")
-                        // Measured against a current Gearhead: it joins with a WifiNetworkSpecifier,
-                        // which matches SSID *and* BSSID under a full ff:ff:ff:ff:ff:ff mask, and
-                        // refuses credentials carrying no BSSID outright. So on this route a join
-                        // failure right after we omitted the field is that omission, not the
-                        // network — and the retry will fail the same way until an address exists.
-                        if (bssidOmitted) {
-                            AppLog.e(
-                                "NativeAA: These credentials carried no BSSID, which this phone may " +
-                                    "have refused for that reason alone. Read the access point's MAC " +
-                                    "and set it as the static BSSID in Advanced settings."
+
+                        WppAction.SendStartRequest -> {
+                            AppLog.i("NativeAA: [TX] Sending WifiStartRequest (Type 1)")
+                            sendWifiStartRequest(output, credIp, 5288)
+                            spokeToPhone = true
+                        }
+
+                        WppAction.SendInfoResponse -> {
+                            AppLog.i("NativeAA: Phone ready for WiFi association. Delivering credentials...")
+                            AppLog.i("NativeAA: [TX] Sending WifiInfoResponse (Type 3) with full credentials in 1000ms...")
+                            delay(1000) // [FIX] Increased delay to give phone more processing time
+                            sendWifiSecurityResponse(
+                                output,
+                                credSsid,
+                                credPsk,
+                                credBssid,
+                                transport
+                            )
+                            AppLog.i("NativeAA: Handshake completed successfully on Bluetooth side.")
+                            ifOwner(socket) {
+                                // The exchange is done; the phone's work is not — it still has to
+                                // associate, run WPS and get a DHCP lease. See isHandoffSettling().
+                                handshakeStartedAt = 0L
+                                handoffSettlingSince = SystemClock.elapsedRealtime()
+                                // Nothing left for the poke to wake, and it holds an RFCOMM channel on
+                                // the radio the phone is about to associate over — Bluetooth work
+                                // across the join strands it on "Obtaining IP".
+                                pokeJob?.cancel()
+                            }
+                        }
+
+                        WppAction.SendPingResponse -> {
+                            // Echo the request's own bytes: whatever the phone put in a keepalive,
+                            // handing it straight back cannot fail on a schema guess.
+                            AppLog.d("NativeAA: [TX] Echoing WifiPingResponse (Type 9)")
+                            sendProtobuf(
+                                output,
+                                source?.payload ?: ByteArray(0),
+                                WppMessageType.PING_RESPONSE
                             )
                         }
-                    }
-                    WppAction.ResumePoke -> ifOwner(socket) {
-                        // Clear the settling stamp first: triggerPoke() refuses to start while a
-                        // handoff is settling, which is the whole point of that guard.
-                        handoffSettlingSince = 0L
-                        triggerPoke()
-                    }
-                }
-            }
 
-            suspend fun feed(event: WppEvent, source: ProtobufMessage? = null) {
-                val before = session.stage
-                val actions = session.on(event)
-                for (action in actions) runAction(action, source)
-                if (session.stage != before) {
-                    // Stamped after the actions, so the 1 s pause before Type 3 is not charged to
-                    // the settling window it opens.
-                    stageEnteredAt = SystemClock.elapsedRealtime()
-                    AppLog.d("NativeAA: Handshake stage $before -> ${session.stage}")
-                }
-            }
-
-            /** Waits up to [budgetMs] for one message, then services timers. */
-            suspend fun tick(budgetMs: Long) {
-                if (readerClosed) {
-                    delay(budgetMs)
-                } else {
-                    // Polled with tryReceive() rather than awaited with a timeout around
-                    // receive(): cancelling a suspended receive can consume the element it was
-                    // about to hand over, and losing the phone's Type 2 that way would stall the
-                    // handshake until its stage deadline for no visible reason. tryReceive()
-                    // cannot lose anything; 25 ms of latency costs nothing here.
-                    val deadline = SystemClock.elapsedRealtime() + budgetMs
-                    var msg: ProtobufMessage? = null
-                    while (true) {
-                        val result = inbound.tryReceive()
-                        val received = result.getOrNull()
-                        if (received != null) { msg = received; break }
-                        if (result.isClosed) {
-                            readerClosed = true
-                            // Not a failure in itself: aa-proxy-rs treats a reset mid-bootstrap as
-                            // retriable, and a phone that has our credentials may legitimately
-                            // drop Bluetooth while it associates. Stage deadlines still bound us.
-                            AppLog.d("NativeAA: Bluetooth read channel closed by the phone or the socket.")
-                            break
+                        WppAction.ExtendSettle -> {
+                            AppLog.i("NativeAA: Phone reports it is still joining — extending the settling window.")
+                            // Re-stamp rather than only extending our own deadline: isHandoffSettling()
+                            // is what keeps the poke off the radio during the join, and it measures
+                            // from this stamp. The session caps the total.
+                            ifOwner(socket) { handoffSettlingSince = SystemClock.elapsedRealtime() }
                         }
-                        if (SystemClock.elapsedRealtime() >= deadline) break
-                        delay(25)
-                    }
-                    if (msg != null) {
-                        AppLog.i("NativeAA: [RX] Received Type ${msg.type} (Payload size: ${msg.payload.size})")
-                        logReceivedDetail(msg)
-                        // The phone answered, so the channel carries data in at least one
-                        // direction. Whatever the type turns out to be, this was not a silent unit.
-                        ifOwner(socket) { resetHandshakeBackoff() }
-                        feed(WppEvent.MessageReceived(msg.type, parseStatus(msg)), msg)
-                        if (session.isTerminal()) return
-                    }
-                }
-                if (session.stage == WppStage.SETTLING &&
-                    (commManager.isConnected ||
-                        commManager.connectionState.value is CommManager.ConnectionState.Connecting)) {
-                    feed(WppEvent.TcpSessionUp)
-                    return
-                }
-                val limit = session.currentStageTimeoutMs() ?: return
-                if (SystemClock.elapsedRealtime() - stageEnteredAt < limit) return
-                if (session.stage == WppStage.SETTLING) {
-                    // The handoff never completed, so there is no session for a reconnect to
-                    // collide with — the reconnect storm closeAaListeners() guards against can't
-                    // happen here. Leave the listener up so the phone's own retry can be accepted
-                    // (start() early-returns while isRunning, so a close here would strand us
-                    // until AapService stopped and restarted the manager), and restart the poke,
-                    // which was cancelled once the credentials went out.
-                    AppLog.w("NativeAA: No WiFi session within ${limit / 1000}s of delivering credentials — keeping the AA listener open and resuming the wake poke.")
-                    feed(WppEvent.SettleTimeout)
-                } else {
-                    feed(WppEvent.StageTimeout)
-                }
-            }
 
-            // Some Bluetooth stacks report the RFCOMM socket "connected" slightly before the
-            // underlying channel is actually ready to carry data - writing immediately can be
-            // silently dropped on such hardware (a known real class of RFCOMM race: see the
-            // kernel's "Move pending packets from RFCOMM socket to TTY" fix for the same
-            // symptom on the HFP profile). A short delay costs nothing against either side's
-            // timeout budget (phone's own first-message timeout is ~12s, ours is 15s) but gives
-            // a flaky chip a moment to settle before the one message that matters most.
-            delay(300)
+                        WppAction.CompleteSuccess -> {
+                            AppLog.i("NativeAA: WiFi session landed. Handshake session ending, releasing Bluetooth connection.")
+                            ifOwner(socket) {
+                                handoffSettlingSince = 0L
+                                // Stop accepting new AA_UUID connections too, not just this socket —
+                                // otherwise the phone's immediate reconnect-retry gets accepted,
+                                // bounced (already connected), and retried again in a tight loop. See
+                                // closeAaListeners() kdoc.
+                                closeAaListeners()
+                            }
+                        }
 
-            // The version exchange opens the conversation, *before* the wait for credentials
-            // rather than after it. The phone starts its own ~12 s first-message timer when it
-            // opens this channel, and on a cold P2P group the credential wait alone can outlast
-            // that — a head unit that has said nothing by then is a head unit that "is not
-            // present" as far as Gearhead is concerned. Saying something first costs nothing and
-            // buys the whole bring-up window.
-            feed(WppEvent.SocketReady)
+                        is WppAction.Fail -> {
+                            AppLog.w("NativeAA: Handshake failed — ${action.reason}.")
+                            // Measured against a current Gearhead: it joins with a WifiNetworkSpecifier,
+                            // which matches SSID *and* BSSID under a full ff:ff:ff:ff:ff:ff mask, and
+                            // refuses credentials carrying no BSSID outright. So on this route a join
+                            // failure right after we omitted the field is that omission, not the
+                            // network — and the retry will fail the same way until an address exists.
+                            if (bssidOmitted) {
+                                AppLog.e(
+                                    "NativeAA: These credentials carried no BSSID, which this phone may " +
+                                            "have refused for that reason alone. Read the access point's MAC " +
+                                            "and set it as the static BSSID in Advanced settings."
+                                )
+                            }
+                        }
 
-            AppLog.i("NativeAA: Phone connected. Current credentials state: SSID=${currentSsid ?: "<null>"}, IP=${currentIp ?: "<null>"}")
-            AppLog.i("NativeAA: Waiting for WiFi credentials to be ready (Max ${CREDENTIALS_WAIT_MS / 1000}s)...")
-
-            // Wait for credentials (P2P group / hotspot bring-up can be slow), servicing the
-            // phone's messages while we do: an early Type 2 or Type 5 lands here, not in the loop
-            // below.
-            val credentialsDeadline = SystemClock.elapsedRealtime() + CREDENTIALS_WAIT_MS
-            var lastRefreshAt = SystemClock.elapsedRealtime()
-            var lastProgressLogAt = SystemClock.elapsedRealtime()
-            while ((currentSsid == null || currentIp == null) && isRunning && isActive &&
-                !session.isTerminal() && SystemClock.elapsedRealtime() < credentialsDeadline) {
-                val now = SystemClock.elapsedRealtime()
-                val waitedS = (CREDENTIALS_WAIT_MS - (credentialsDeadline - now)) / 1000
-                if (now - lastRefreshAt >= 10_000) {
-                    lastRefreshAt = now
-                    AppLog.w("NativeAA: Still waiting for credentials after ${waitedS}s. Requesting WiFi refresh...")
-                    context.triggerWifiDirectRefresh()
-                } else if (now - lastProgressLogAt >= 5_000) {
-                    lastProgressLogAt = now
-                    AppLog.d("NativeAA: Still waiting... SSID=${currentSsid != null}, IP=${currentIp != null} (${waitedS}s)")
-                }
-                tick(500)
-            }
-
-            if (currentSsid == null || currentIp == null) {
-                AppLog.e("NativeAA: Handshake failed - No WiFi credentials available after ${CREDENTIALS_WAIT_MS / 1000}s wait. Missing: ${if (currentSsid == null) "SSID " else ""}${if (currentIp == null) "IP" else ""}")
-                abortedLocally = true
-                feed(WppEvent.CredentialsUnavailable)
-                return@withContext
-            }
-
-            credIp = currentIp!!
-            credSsid = currentSsid!!
-            credPsk = currentPsk ?: ""
-            credBssid = (currentBssid ?: "").uppercase()
-
-            // [FIX] Ensure BSSID is uppercase and not zeroed if possible
-            if (!NativeCredentialsPolicy.isUsableBssid(credBssid)) {
-                when (NativeCredentialsPolicy.onUnusableBssid(transport)) {
-                    UnusableBssidAction.ABORT -> {
-                        AppLog.e("NativeAA: BSSID is still masked/empty ($credBssid) at Type 3 time — phone WILL reject these credentials. Aborting handshake. PLEASE CHECK IF LOCATION (GPS) IS ENABLED ON THIS DEVICE!")
-                        // Location is the usual cause and the one worth naming first, but it is not
-                        // the only one: where this head unit is an ordinary phone rather than
-                        // purpose-built hardware, every source in the chain is blocked by permission
-                        // and no setting will unblock them. Say so, or the log sends the reader back
-                        // to a location toggle that is already on.
-                        AppLog.e("NativeAA: If location is already on, this device cannot read its own WiFi Direct MAC at all. Read it from the system (P2P device address) and set it as the static BSSID in Advanced settings.")
-                        // Triggering a P2P refresh so the next attempt has a valid BSSID
-                        context.triggerWifiDirectRefresh()
-                        // Not fed to the session as CredentialsUnavailable: its failure reason
-                        // would say the credentials never arrived, when in fact they arrived
-                        // unusable, and the line above is the one the reporter needs to act on.
-                        abortedLocally = true
-                        return@withContext
-                    }
-                    UnusableBssidAction.SEND_WITH_EMPTY_BSSID -> {
-                        // Sending is worth a try rather than expected to work — no implementation
-                        // ships without a real BSSID, see NativeCredentialsPolicy. The point is that
-                        // a refusal is a message we can explain; this line is the first to look at
-                        // when one arrives.
-                        AppLog.w("NativeAA: No usable BSSID for this access point — sending the credentials without one, which most phones refuse. Set a BSSID by hand in Advanced settings if the phone does not join.")
-                        credBssid = ""
-                        bssidOmitted = true
+                        WppAction.ResumePoke -> ifOwner(socket) {
+                            // Clear the settling stamp first: triggerPoke() refuses to start while a
+                            // handoff is settling, which is the whole point of that guard.
+                            handoffSettlingSince = 0L
+                            triggerPoke()
+                        }
                     }
                 }
-            }
 
-            AppLog.i("NativeAA: Starting Handshake Exchange:")
-            AppLog.i("  > Target SSID: $credSsid")
-            AppLog.i("  > Target IP:   $credIp:5288")
-            AppLog.i("  > BSSID:       $credBssid")
-
-            feed(WppEvent.CredentialsReady)
-
-            // Runs until the session finishes: the projection session lands, the phone reports
-            // the join failed (Type 6), or a stage deadline expires.
-            //
-            // [BUG_FIX] The settle was once a flat delay(3000) before closing Bluetooth — a race,
-            // not a grace period, since the phone needs however long it needs. Association has
-            // been measured at 21 s on hardware where the 3 s close killed it dead. Wait for the
-            // session, and where the phone reports its own progress, let it.
-            while (isRunning && isActive && !session.isTerminal()) {
-                tick(250)
-            }
-
-        } catch (e: Exception) {
-            AppLog.e("NativeAA: Handshake error: ${e.message}", e)
-        } finally {
-            // Only clear the stamps if this handshake still owns them — a superseding handshake
-            // has already taken over and set its own.
-            if (activeHandshakeSocket === socket) {
-                activeHandshakeSocket = null
-                activeHandshakeJob = null
-                handshakeStartedAt = 0L
-                handoffSettlingSince = 0L
-                // [BUG_FIX] Every silent ending counts, not just the timeout that used to
-                // increment inline: a socket error, a swallowed write and a cancellation are one
-                // failure from the outside, and each strands an unreclaimable IO thread.
-                // Excludes our own pre-exchange aborts (no credentials, masked BSSID, USB already
-                // up) — those repeat for as long as location services are off, and backing off
-                // would bury the log line saying how to fix it.
-                if (spokeToPhone && !abortedLocally && session.messagesReceived == 0) {
-                    consecutiveHandshakeFailures++
+                suspend fun feed(event: WppEvent, source: ProtobufMessage? = null) {
+                    val before = session.stage
+                    val actions = session.on(event)
+                    for (action in actions) runAction(action, source)
+                    if (session.stage != before) {
+                        // Stamped after the actions, so the 1 s pause before Type 3 is not charged to
+                        // the settling window it opens.
+                        stageEnteredAt = SystemClock.elapsedRealtime()
+                        AppLog.d("NativeAA: Handshake stage $before -> ${session.stage}")
+                    }
                 }
+
+                /** Waits up to [budgetMs] for one message, then services timers. */
+                suspend fun tick(budgetMs: Long) {
+                    if (readerClosed) {
+                        delay(budgetMs)
+                    } else {
+                        // Polled with tryReceive() rather than awaited with a timeout around
+                        // receive(): cancelling a suspended receive can consume the element it was
+                        // about to hand over, and losing the phone's Type 2 that way would stall the
+                        // handshake until its stage deadline for no visible reason. tryReceive()
+                        // cannot lose anything; 25 ms of latency costs nothing here.
+                        val deadline = SystemClock.elapsedRealtime() + budgetMs
+                        var msg: ProtobufMessage? = null
+                        while (true) {
+                            val result = inbound.tryReceive()
+                            val received = result.getOrNull()
+                            if (received != null) {
+                                msg = received; break
+                            }
+                            if (result.isClosed) {
+                                readerClosed = true
+                                // Not a failure in itself: aa-proxy-rs treats a reset mid-bootstrap as
+                                // retriable, and a phone that has our credentials may legitimately
+                                // drop Bluetooth while it associates. Stage deadlines still bound us.
+                                AppLog.d("NativeAA: Bluetooth read channel closed by the phone or the socket.")
+                                break
+                            }
+                            if (SystemClock.elapsedRealtime() >= deadline) break
+                            delay(25)
+                        }
+                        if (msg != null) {
+                            AppLog.i("NativeAA: [RX] Received Type ${msg.type} (Payload size: ${msg.payload.size})")
+                            logReceivedDetail(msg)
+                            // The phone answered, so the channel carries data in at least one
+                            // direction. Whatever the type turns out to be, this was not a silent unit.
+                            ifOwner(socket) { resetHandshakeBackoff() }
+                            feed(WppEvent.MessageReceived(msg.type, parseStatus(msg)), msg)
+                            if (session.isTerminal()) return
+                        }
+                    }
+                    if (session.stage == WppStage.SETTLING &&
+                        (commManager.isConnected ||
+                                commManager.connectionState.value is CommManager.ConnectionState.Connecting)
+                    ) {
+                        feed(WppEvent.TcpSessionUp)
+                        return
+                    }
+                    val limit = session.currentStageTimeoutMs() ?: return
+                    if (SystemClock.elapsedRealtime() - stageEnteredAt < limit) return
+                    if (session.stage == WppStage.SETTLING) {
+                        // The handoff never completed, so there is no session for a reconnect to
+                        // collide with — the reconnect storm closeAaListeners() guards against can't
+                        // happen here. Leave the listener up so the phone's own retry can be accepted
+                        // (start() early-returns while isRunning, so a close here would strand us
+                        // until AapService stopped and restarted the manager), and restart the poke,
+                        // which was cancelled once the credentials went out.
+                        AppLog.w("NativeAA: No WiFi session within ${limit / 1000}s of delivering credentials — keeping the AA listener open and resuming the wake poke.")
+                        feed(WppEvent.SettleTimeout)
+                    } else {
+                        feed(WppEvent.StageTimeout)
+                    }
+                }
+
+                // Some Bluetooth stacks report the RFCOMM socket "connected" slightly before the
+                // underlying channel is actually ready to carry data - writing immediately can be
+                // silently dropped on such hardware (a known real class of RFCOMM race: see the
+                // kernel's "Move pending packets from RFCOMM socket to TTY" fix for the same
+                // symptom on the HFP profile). A short delay costs nothing against either side's
+                // timeout budget (phone's own first-message timeout is ~12s, ours is 15s) but gives
+                // a flaky chip a moment to settle before the one message that matters most.
+                delay(300)
+
+                // The version exchange opens the conversation, *before* the wait for credentials
+                // rather than after it. The phone starts its own ~12 s first-message timer when it
+                // opens this channel, and on a cold P2P group the credential wait alone can outlast
+                // that — a head unit that has said nothing by then is a head unit that "is not
+                // present" as far as Gearhead is concerned. Saying something first costs nothing and
+                // buys the whole bring-up window.
+                feed(WppEvent.SocketReady)
+
+                AppLog.i("NativeAA: Phone connected. Current credentials state: SSID=${currentSsid ?: "<null>"}, IP=${currentIp ?: "<null>"}")
+                AppLog.i("NativeAA: Waiting for WiFi credentials to be ready (Max ${CREDENTIALS_WAIT_MS / 1000}s)...")
+
+                // Wait for credentials (P2P group / hotspot bring-up can be slow), servicing the
+                // phone's messages while we do: an early Type 2 or Type 5 lands here, not in the loop
+                // below.
+                val credentialsDeadline = SystemClock.elapsedRealtime() + CREDENTIALS_WAIT_MS
+                var lastRefreshAt = SystemClock.elapsedRealtime()
+                var lastProgressLogAt = SystemClock.elapsedRealtime()
+                while ((currentSsid == null || currentIp == null) && isRunning && isActive &&
+                    !session.isTerminal() && SystemClock.elapsedRealtime() < credentialsDeadline
+                ) {
+                    val now = SystemClock.elapsedRealtime()
+                    val waitedS = (CREDENTIALS_WAIT_MS - (credentialsDeadline - now)) / 1000
+                    if (now - lastRefreshAt >= 10_000) {
+                        lastRefreshAt = now
+                        AppLog.w("NativeAA: Still waiting for credentials after ${waitedS}s. Requesting WiFi refresh...")
+                        launcher.triggerWifiDirectRefresh()
+                    } else if (now - lastProgressLogAt >= 5_000) {
+                        lastProgressLogAt = now
+                        AppLog.d("NativeAA: Still waiting... SSID=${currentSsid != null}, IP=${currentIp != null} (${waitedS}s)")
+                    }
+                    tick(500)
+                }
+
+                if (currentSsid == null || currentIp == null) {
+                    AppLog.e("NativeAA: Handshake failed - No WiFi credentials available after ${CREDENTIALS_WAIT_MS / 1000}s wait. Missing: ${if (currentSsid == null) "SSID " else ""}${if (currentIp == null) "IP" else ""}")
+                    abortedLocally = true
+                    feed(WppEvent.CredentialsUnavailable)
+                    return@withContext
+                }
+
+                credIp = currentIp!!
+                credSsid = currentSsid!!
+                credPsk = currentPsk ?: ""
+                credBssid = (currentBssid ?: "").uppercase()
+
+                // [FIX] Ensure BSSID is uppercase and not zeroed if possible
+                if (!NativeCredentialsPolicy.isUsableBssid(credBssid)) {
+                    when (NativeCredentialsPolicy.onUnusableBssid(transport)) {
+                        UnusableBssidAction.ABORT -> {
+                            AppLog.e("NativeAA: BSSID is still masked/empty ($credBssid) at Type 3 time — phone WILL reject these credentials. Aborting handshake. PLEASE CHECK IF LOCATION (GPS) IS ENABLED ON THIS DEVICE!")
+                            // Location is the usual cause and the one worth naming first, but it is not
+                            // the only one: where this head unit is an ordinary phone rather than
+                            // purpose-built hardware, every source in the chain is blocked by permission
+                            // and no setting will unblock them. Say so, or the log sends the reader back
+                            // to a location toggle that is already on.
+                            AppLog.e("NativeAA: If location is already on, this device cannot read its own WiFi Direct MAC at all. Read it from the system (P2P device address) and set it as the static BSSID in Advanced settings.")
+                            // Triggering a P2P refresh so the next attempt has a valid BSSID
+                            launcher.triggerWifiDirectRefresh()
+                            // Not fed to the session as CredentialsUnavailable: its failure reason
+                            // would say the credentials never arrived, when in fact they arrived
+                            // unusable, and the line above is the one the reporter needs to act on.
+                            abortedLocally = true
+                            return@withContext
+                        }
+
+                        UnusableBssidAction.SEND_WITH_EMPTY_BSSID -> {
+                            // Sending is worth a try rather than expected to work — no implementation
+                            // ships without a real BSSID, see NativeCredentialsPolicy. The point is that
+                            // a refusal is a message we can explain; this line is the first to look at
+                            // when one arrives.
+                            AppLog.w("NativeAA: No usable BSSID for this access point — sending the credentials without one, which most phones refuse. Set a BSSID by hand in Advanced settings if the phone does not join.")
+                            credBssid = ""
+                            bssidOmitted = true
+                        }
+                    }
+                }
+
+                AppLog.i("NativeAA: Starting Handshake Exchange:")
+                AppLog.i("  > Target SSID: $credSsid")
+                AppLog.i("  > Target IP:   $credIp:5288")
+                AppLog.i("  > BSSID:       $credBssid")
+
+                feed(WppEvent.CredentialsReady)
+
+                // Runs until the session finishes: the projection session lands, the phone reports
+                // the join failed (Type 6), or a stage deadline expires.
+                //
+                // [BUG_FIX] The settle was once a flat delay(3000) before closing Bluetooth — a race,
+                // not a grace period, since the phone needs however long it needs. Association has
+                // been measured at 21 s on hardware where the 3 s close killed it dead. Wait for the
+                // session, and where the phone reports its own progress, let it.
+                while (isRunning && isActive && !session.isTerminal()) {
+                    tick(250)
+                }
+
+            } catch (e: Exception) {
+                AppLog.e("NativeAA: Handshake error: ${e.message}", e)
+            } finally {
+                // Only clear the stamps if this handshake still owns them — a superseding handshake
+                // has already taken over and set its own.
+                if (activeHandshakeSocket === socket) {
+                    activeHandshakeSocket = null
+                    activeHandshakeJob = null
+                    handshakeStartedAt = 0L
+                    handoffSettlingSince = 0L
+                    // [BUG_FIX] Every silent ending counts, not just the timeout that used to
+                    // increment inline: a socket error, a swallowed write and a cancellation are one
+                    // failure from the outside, and each strands an unreclaimable IO thread.
+                    // Excludes our own pre-exchange aborts (no credentials, masked BSSID, USB already
+                    // up) — those repeat for as long as location services are off, and backing off
+                    // would bury the log line saying how to fix it.
+                    if (spokeToPhone && !abortedLocally && session.messagesReceived == 0) {
+                        consecutiveHandshakeFailures++
+                    }
+                }
+                // Best effort only, exactly as before: on a stack where close() does not interrupt a
+                // pending read this cannot end the reader — a blocking JNI read has no suspension
+                // point to cancel at — so its thread is stranded from here on.
+                readerJob?.cancel()
+                inbound.close()
+                try {
+                    socket.close()
+                } catch (e: Exception) {
+                }
+                AppLog.i("NativeAA: BT Handshake socket closed.")
             }
-            // Best effort only, exactly as before: on a stack where close() does not interrupt a
-            // pending read this cannot end the reader — a blocking JNI read has no suspension
-            // point to cancel at — so its thread is stranded from here on.
-            readerJob?.cancel()
-            inbound.close()
-            try { socket.close() } catch (e: Exception) {}
-            AppLog.i("NativeAA: BT Handshake socket closed.")
         }
-    }
 
     /**
      * The status field of a message that carries one, or null when it has none, when the message
@@ -1107,7 +1158,7 @@ class NativeAaHandshakeManager(
     /**
      * Declares our protocol version, opening the modern exchange. Real head units send this first
      * — the OEM ZLink app does — while aa-proxy-rs's own dongle does not, which is why it sits
-     * behind [com.andrerinas.openheadunit.utils.Settings.nativeWifiVersionExchange].
+     * behind [Settings.nativeWifiVersionExchange].
      *
      * The version numbers are a guess and known to be one; see [WppHandshakeSession].
      */
@@ -1136,14 +1187,14 @@ class NativeAaHandshakeManager(
         ssid: String,
         key: String,
         bssid: String?,
-        transport: NativeTransport
+        transport: NativeStrategy
     ) {
         val response = Wireless.WifiInfoResponse.newBuilder()
             .setSsid(ssid)
             .setKey(key)
             .setSecurityMode(Wireless.SecurityMode.WPA2_PERSONAL)
             .setAccessPointType(
-                if (transport == NativeTransport.HOTSPOT) Wireless.AccessPointType.DYNAMIC
+                if (transport == NativeStrategy.HOTSPOT) Wireless.AccessPointType.DYNAMIC
                 else Wireless.AccessPointType.STATIC
             )
             .setBssid(bssid.orEmpty())

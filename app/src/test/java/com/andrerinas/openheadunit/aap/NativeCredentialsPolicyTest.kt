@@ -1,5 +1,9 @@
 package com.andrerinas.openheadunit.aap
 
+import com.andrerinas.openheadunit.connection.wifi.modes.native.NativeCredentialsPolicy
+import com.andrerinas.openheadunit.connection.wifi.modes.native.NativeStrategy
+import com.andrerinas.openheadunit.connection.wifi.modes.native.SoftApState
+import com.andrerinas.openheadunit.connection.wifi.modes.native.UnusableBssidAction
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -25,7 +29,7 @@ class NativeCredentialsPolicyTest {
         // once the log tells them to.
         assertEquals(
             UnusableBssidAction.ABORT,
-            NativeCredentialsPolicy.onUnusableBssid(NativeTransport.WIFI_DIRECT)
+            NativeCredentialsPolicy.onUnusableBssid(NativeStrategy.WIFI_DIRECT)
         )
     }
 
@@ -36,7 +40,7 @@ class NativeCredentialsPolicyTest {
         // unusable on every device whose AP MAC is masked, which is most of them.
         assertEquals(
             UnusableBssidAction.SEND_WITH_EMPTY_BSSID,
-            NativeCredentialsPolicy.onUnusableBssid(NativeTransport.HOTSPOT)
+            NativeCredentialsPolicy.onUnusableBssid(NativeStrategy.HOTSPOT)
         )
     }
 
@@ -71,9 +75,9 @@ class NativeCredentialsPolicyTest {
 
     @Test
     fun `the transport setting maps over, and anything unrecognised stays on the default`() {
-        assertEquals(NativeTransport.WIFI_DIRECT, NativeTransport.fromSetting(0))
-        assertEquals(NativeTransport.HOTSPOT, NativeTransport.fromSetting(1))
-        assertEquals(NativeTransport.WIFI_DIRECT, NativeTransport.fromSetting(-1))
-        assertEquals(NativeTransport.WIFI_DIRECT, NativeTransport.fromSetting(99))
+        assertEquals(NativeStrategy.WIFI_DIRECT, NativeStrategy.byIdOrDefault(0))
+        assertEquals(NativeStrategy.HOTSPOT, NativeStrategy.byIdOrDefault(1))
+        assertEquals(NativeStrategy.WIFI_DIRECT, NativeStrategy.byIdOrDefault(-1))
+        assertEquals(NativeStrategy.WIFI_DIRECT, NativeStrategy.byIdOrDefault(99))
     }
 }

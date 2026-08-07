@@ -6,16 +6,14 @@ import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
 import com.android.dx.DexMaker
 import com.android.dx.TypeId
 import java.lang.reflect.Method
 import java.net.Inet4Address
 import java.net.NetworkInterface
-import com.andrerinas.openheadunit.utils.SoftApConfigCompat
-import com.andrerinas.openheadunit.aap.ApInterfaceCandidate
-import com.andrerinas.openheadunit.aap.SoftApNetworkPolicy
-import com.andrerinas.openheadunit.aap.SoftApState
+import com.andrerinas.openheadunit.connection.wifi.modes.native.ApInterfaceCandidate
+import com.andrerinas.openheadunit.connection.wifi.modes.native.SoftApNetworkPolicy
+import com.andrerinas.openheadunit.connection.wifi.modes.native.SoftApState
 
 /**
  * Manages WiFi Hotspot (tethering) using reflection + dexmaker.

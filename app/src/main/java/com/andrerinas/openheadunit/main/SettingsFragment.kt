@@ -40,9 +40,12 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.activity.result.contract.ActivityResultContracts
 import android.content.pm.PackageManager
-import com.andrerinas.openheadunit.connection.NativeAaHandshakeManager
+import com.andrerinas.openheadunit.connection.wifi.modes.native.NativeAaHandshakeManager
 import com.andrerinas.openheadunit.utils.BluetoothHelper
 import androidx.lifecycle.lifecycleScope
+import com.andrerinas.openheadunit.connection.wifi.modes.helper.HelperStrategy
+import com.andrerinas.openheadunit.connection.wifi.modes.native.NativeStrategy
+import com.andrerinas.openheadunit.connection.wifi.WifiLauncherMode
 import java.io.File
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -127,15 +130,15 @@ class SettingsFragment : Fragment() {
     private var pendingAppLanguage: String? = null
     private var pendingFakeSpeed: Boolean? = null
 
-    private var pendingWifiConnectionMode: Int? = null
-    private var pendingHelperConnectionStrategy: Int? = null
+    private var pendingWifiConnectionMode: WifiLauncherMode? = null
+    private var pendingHelperConnectionStrategy: HelperStrategy? = null
     private var pendingAutoEnableHotspot: Boolean? = null
     private var pendingWaitForWifi: Boolean? = null
     private var pendingWaitForWifiTimeout: Int? = null
     private var pendingBluetoothManagerServiceName: String? = null
     private var pendingManualSecondaryBluetoothServiceName: String? = null
     private var pendingNativeWifiVersionExchange: Boolean? = null
-    private var pendingNativeApTransport: Int? = null
+    private var pendingNativeApTransport: NativeStrategy? = null
     private var pendingHotspotSsid: String? = null
     private var pendingHotspotPassword: String? = null
     private var pendingHotspotInterface: String? = null
@@ -265,7 +268,7 @@ class SettingsFragment : Fragment() {
         pendingBluetoothManagerServiceName = settings.bluetoothManagerServiceName
         pendingManualSecondaryBluetoothServiceName = settings.manualSecondaryBluetoothServiceName
         pendingNativeWifiVersionExchange = settings.nativeWifiVersionExchange
-        pendingNativeApTransport = settings.nativeApTransport
+        pendingNativeApTransport = settings.nativeApStrategy
         pendingHotspotSsid = settings.hotspotSsid
         pendingHotspotPassword = settings.hotspotPassword
         pendingHotspotInterface = settings.hotspotInterface
@@ -370,7 +373,7 @@ class SettingsFragment : Fragment() {
         pendingBluetoothManagerServiceName = settings.bluetoothManagerServiceName
         pendingManualSecondaryBluetoothServiceName = settings.manualSecondaryBluetoothServiceName
         pendingNativeWifiVersionExchange = settings.nativeWifiVersionExchange
-        pendingNativeApTransport = settings.nativeApTransport
+        pendingNativeApTransport = settings.nativeApStrategy
         pendingHotspotSsid = settings.hotspotSsid
         pendingHotspotPassword = settings.hotspotPassword
         pendingHotspotInterface = settings.hotspotInterface
@@ -504,7 +507,7 @@ class SettingsFragment : Fragment() {
         pendingBluetoothManagerServiceName?.let { settings.bluetoothManagerServiceName = it }
         pendingManualSecondaryBluetoothServiceName?.let { settings.manualSecondaryBluetoothServiceName = it }
         pendingNativeWifiVersionExchange?.let { settings.nativeWifiVersionExchange = it }
-        pendingNativeApTransport?.let { settings.nativeApTransport = it }
+        pendingNativeApTransport?.let { settings.nativeApStrategy = it }
         pendingHotspotSsid?.let { settings.hotspotSsid = it }
         pendingHotspotPassword?.let { settings.hotspotPassword = it }
         pendingHotspotInterface?.let { settings.hotspotInterface = it }
@@ -534,7 +537,7 @@ class SettingsFragment : Fragment() {
             oldBluetoothManagerServiceName != settings.bluetoothManagerServiceName) {
             val intent = Intent(requireContext(), AapService::class.java).apply {
                 val mode = settings.wifiConnectionMode
-                action = if (mode == 1 || mode == 2 || mode == 3)
+                action = if (mode != WifiLauncherMode.MANUAL)
                     AapService.ACTION_START_WIRELESS else AapService.ACTION_STOP_WIRELESS
             }
             requireContext().startService(intent)
@@ -613,7 +616,7 @@ class SettingsFragment : Fragment() {
                         pendingBluetoothManagerServiceName != settings.bluetoothManagerServiceName ||
                         pendingManualSecondaryBluetoothServiceName != settings.manualSecondaryBluetoothServiceName ||
                         pendingNativeWifiVersionExchange != settings.nativeWifiVersionExchange ||
-                        pendingNativeApTransport != settings.nativeApTransport ||
+                        pendingNativeApTransport != settings.nativeApStrategy ||
                         pendingHotspotSsid != settings.hotspotSsid ||
                         pendingHotspotPassword != settings.hotspotPassword ||
                         pendingHotspotInterface != settings.hotspotInterface ||
@@ -787,9 +790,9 @@ class SettingsFragment : Fragment() {
         )
 
         val wirelessSelectedIndex = when (pendingWifiConnectionMode) {
-            2 -> 0 // Helper
-            3 -> 1 // Native
-            0, 1 -> 2 // Server
+            WifiLauncherMode.HELPER -> 0 // Helper
+            WifiLauncherMode.NATIVE -> 1 // Native
+            WifiLauncherMode.MANUAL, WifiLauncherMode.AUTO -> 2 // Server
             else -> 2
         }
 
@@ -800,13 +803,13 @@ class SettingsFragment : Fragment() {
             selectedIndex = wirelessSelectedIndex,
             onOptionSelected = { index ->
                 val newMode = when (index) {
-                    0 -> 2 // Helper
-                    1 -> 3 // Native
-                    2 -> if (pendingWifiConnectionMode == 0) 0 else 1 // Keep manual/auto choice if already in server mode
-                    else -> 1
+                    0 -> WifiLauncherMode.HELPER // Helper
+                    1 -> WifiLauncherMode.NATIVE // Native
+                    2 -> if (pendingWifiConnectionMode == WifiLauncherMode.MANUAL) WifiLauncherMode.MANUAL else WifiLauncherMode.AUTO // Keep manual/auto choice if already in server mode
+                    else -> WifiLauncherMode.AUTO
                 }
 
-                if (newMode == 3) {
+                if (newMode == WifiLauncherMode.NATIVE) {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
                         ContextCompat.checkSelfPermission(requireContext(), android.Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
                         bluetoothPermissionLauncher.launch(android.Manifest.permission.BLUETOOTH_CONNECT)
@@ -821,7 +824,7 @@ class SettingsFragment : Fragment() {
             }
         ))
 
-        if (pendingWifiConnectionMode == 3) {
+        if (pendingWifiConnectionMode == WifiLauncherMode.NATIVE) {
             items.add(SettingItem.SegmentedButtonSettingEntry(
                 stableId = "nativeApTransport",
                 nameResId = R.string.native_ap_transport,
@@ -831,7 +834,7 @@ class SettingsFragment : Fragment() {
                 ),
                 selectedIndex = if ((pendingNativeApTransport ?: 0) == 1) 1 else 0,
                 onOptionSelected = { index ->
-                    pendingNativeApTransport = index
+                    pendingNativeApTransport = NativeStrategy.byIdOrDefault(index)
                     checkChanges()
                     updateSettingsList()
                 }
@@ -967,37 +970,37 @@ class SettingsFragment : Fragment() {
         }
 
         // Sub-setting for Headunit Server (Manual vs Auto)
-        if (pendingWifiConnectionMode == 0 || pendingWifiConnectionMode == 1) {
+        if (pendingWifiConnectionMode == WifiLauncherMode.MANUAL || pendingWifiConnectionMode == WifiLauncherMode.AUTO) {
             items.add(SettingItem.SegmentedButtonSettingEntry(
                 stableId = "serverModeSelection",
                 nameResId = R.string.server_mode_label,
                 options = listOf(getString(R.string.server_mode_manual), getString(R.string.server_mode_auto)),
-                selectedIndex = if (pendingWifiConnectionMode == 0) 0 else 1,
+                selectedIndex = if (pendingWifiConnectionMode == WifiLauncherMode.MANUAL) 0 else 1,
                 onOptionSelected = { index ->
-                    pendingWifiConnectionMode = if (index == 0) 0 else 1
+                    pendingWifiConnectionMode = if (index == 0) WifiLauncherMode.MANUAL else WifiLauncherMode.AUTO
                     checkChanges()
                     updateSettingsList()
                 }
             ))
 
             // Mode 1 (Auto Server) can also use the auto-hotspot feature
-            if (pendingWifiConnectionMode == 1) {
+            if (pendingWifiConnectionMode == WifiLauncherMode.AUTO) {
                 addHotspotToggle(items)
             }
         }
 
         // Sub-setting for Wireless Helper Strategy
-        if (pendingWifiConnectionMode == 2) {
+        if (pendingWifiConnectionMode == WifiLauncherMode.HELPER) {
             val helperStrategies = resources.getStringArray(R.array.helper_strategies)
             items.add(SettingItem.SettingEntry(
                 stableId = "helperStrategy",
                 nameResId = R.string.helper_strategy_label,
-                value = helperStrategies.getOrElse(pendingHelperConnectionStrategy!!) { "" },
+                value = helperStrategies.getOrElse(pendingHelperConnectionStrategy!!.id) { "" },
                 onClick = {
                     MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
                         .setTitle(R.string.helper_strategy_label)
-                        .setSingleChoiceItems(helperStrategies, pendingHelperConnectionStrategy!!) { dialog, which ->
-                            pendingHelperConnectionStrategy = which
+                        .setSingleChoiceItems(helperStrategies, pendingHelperConnectionStrategy!!.id) { dialog, which ->
+                            pendingHelperConnectionStrategy = HelperStrategy.byIdOrDefault(which)
                             checkChanges()
                             dialog.dismiss()
                             updateSettingsList()
@@ -1007,11 +1010,11 @@ class SettingsFragment : Fragment() {
             ))
 
             // Mode 2 only shows Hotspot toggle for Strategy 4 (Headunit Hotspot)
-            if (pendingHelperConnectionStrategy == 4) {
+            if (pendingHelperConnectionStrategy == HelperStrategy.HEADUNIT_HOTSPOT) {
                 addHotspotToggle(items)
             }
 
-            if (pendingHelperConnectionStrategy == 1) { // WiFi Direct (P2P)
+            if (pendingHelperConnectionStrategy == HelperStrategy.WIFI_DIRECT) { // WiFi Direct (P2P)
                 items.add(SettingItem.ToggleSettingEntry(
                     stableId = "waitForWifi",
                     nameResId = R.string.wait_for_wifi,
@@ -2165,8 +2168,8 @@ class SettingsFragment : Fragment() {
     }
 
     private data class ImportSnapshot(
-        val wifiConnectionMode: Int,
-        val helperConnectionStrategy: Int,
+        val wifiConnectionMode: WifiLauncherMode,
+        val helperConnectionStrategy: HelperStrategy,
         val bluetoothManagerServiceName: String,
         val appLanguage: String,
         val uiScaleSettingsPercent: Int,
@@ -2585,7 +2588,7 @@ class SettingsFragment : Fragment() {
             snapshot.bluetoothManagerServiceName != settings.bluetoothManagerServiceName) {
             val intent = Intent(context, AapService::class.java).apply {
                 val mode = settings.wifiConnectionMode
-                action = if (mode == 1 || mode == 2 || mode == 3)
+                action = if (mode != WifiLauncherMode.MANUAL)
                     AapService.ACTION_START_WIRELESS else AapService.ACTION_STOP_WIRELESS
             }
             context.startService(intent)
@@ -3193,7 +3196,7 @@ class SettingsFragment : Fragment() {
                 .setTitle(R.string.supported_nativeaa)
                 .setMessage(R.string.supported_nativeaa_desc)
                 .setPositiveButton(android.R.string.ok) { dialog, _ ->
-                    pendingWifiConnectionMode = 3
+                    pendingWifiConnectionMode = WifiLauncherMode.NATIVE
                     checkChanges()
                     updateSettingsList()
                     dialog.dismiss()
@@ -3205,7 +3208,7 @@ class SettingsFragment : Fragment() {
                 .setTitle(R.string.not_supported_nativeaa)
                 .setMessage(R.string.not_supported_nativeaa_desc)
                 .setPositiveButton(android.R.string.ok) { dialog, _ ->
-                    pendingWifiConnectionMode = 3
+                    pendingWifiConnectionMode = WifiLauncherMode.NATIVE
                     checkChanges()
                     updateSettingsList()
                     dialog.dismiss()

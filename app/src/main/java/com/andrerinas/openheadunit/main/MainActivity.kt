@@ -35,6 +35,7 @@ import com.andrerinas.openheadunit.utils.AppPermissions
 import android.content.res.Configuration
 import com.andrerinas.openheadunit.utils.Settings
 import android.os.SystemClock
+import com.andrerinas.openheadunit.connection.wifi.WifiLauncherMode
 import com.andrerinas.openheadunit.utils.SystemUI
 import com.bumptech.glide.Glide
 import kotlinx.coroutines.Dispatchers
@@ -131,7 +132,7 @@ class MainActivity : BaseActivity() {
                 addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP)
             }
             startActivity(aapIntent)
-            
+
             // If we are auto-forwarding, hide the splash immediately to avoid flashing it twice
             if (savedInstanceState == null) {
                 findViewById<View>(R.id.splash_overlay)?.visibility = View.GONE
@@ -194,7 +195,7 @@ class MainActivity : BaseActivity() {
             val elapsedSinceStart = SystemClock.elapsedRealtime() - App.appStartTime
             val targetTotalDuration = 1200L
             val actualDelay = (targetTotalDuration - elapsedSinceStart).coerceAtLeast(0L)
-            
+
             showSplashWithDelay(actualDelay)
         } else {
             findViewById<View>(R.id.splash_overlay)?.visibility = View.GONE
@@ -690,7 +691,7 @@ class MainActivity : BaseActivity() {
 
         lifecycleScope.launch {
             AapService.wifiDirectName.collectLatest { name ->
-                val isHelperMode = settings.wifiConnectionMode == 2
+                val isHelperMode = settings.wifiConnectionMode == WifiLauncherMode.HELPER
                 if (isHelperMode && name != null) {
                     tvInfo.text = "WiFi Direct: $name"
                     tvInfo.visibility = View.VISIBLE
@@ -783,7 +784,7 @@ class MainActivity : BaseActivity() {
             return
         }
 
-        if (intentAction == AapService.ACTION_START_SELF_MODE || 
+        if (intentAction == AapService.ACTION_START_SELF_MODE ||
            (intentData?.scheme == "headunit" && intentData.host == "selfmode")) {
             AppLog.i("MainActivity: Forced self-mode start requested")
             HomeFragment.forceSelfModeLaunch = true
@@ -901,13 +902,13 @@ class MainActivity : BaseActivity() {
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         AppLog.i("dispatchKeyEvent: keyCode=%d, action=%d", event.keyCode, event.action)
-        
+
         // Always give the KeymapFragment (if active) a chance to see the key
         val handled = keyListener?.onKeyEvent(event) ?: false
-        
+
         // If the key was handled by our listener (e.g. in KeymapFragment), stop here
         if (handled) return true
-        
+
         // Otherwise continue with standard handling
         return super.dispatchKeyEvent(event)
     }

@@ -10,8 +10,8 @@ package com.andrerinas.openheadunit.aap
  * join, which it shows as "Obtaining IP address" forever.
  *
  * Split out as a pure object so the timing rules are unit-testable without Android, and so
- * [com.andrerinas.openheadunit.connection.NativeAaHandshakeManager] and
- * [com.andrerinas.openheadunit.connection.WifiDirectManager] share one definition instead of
+ * [com.andrerinas.openheadunit.connection.wifi.modes.native.NativeAaHandshakeManager] and
+ * [com.andrerinas.openheadunit.connection.wifi.WifiDirectManager] share one definition instead of
  * re-deriving it.
  */
 object NativeHandoffPolicy {

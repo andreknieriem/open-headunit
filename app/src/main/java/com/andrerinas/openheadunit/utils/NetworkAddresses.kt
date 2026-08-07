@@ -13,7 +13,7 @@ import java.net.Inet4Address
  * Exists because those two are otherwise indistinguishable from the outside: a head unit that runs
  * a soft AP on one radio and a station connection on another shows two `wlan*` interfaces, both up
  * and both holding a site-local IPv4. Knowing the station's address is what lets
- * [com.andrerinas.openheadunit.aap.SoftApNetworkPolicy] rule it out.
+ * [com.andrerinas.openheadunit.connection.wifi.modes.native.SoftApNetworkPolicy] rule it out.
  */
 object NetworkAddresses {
 

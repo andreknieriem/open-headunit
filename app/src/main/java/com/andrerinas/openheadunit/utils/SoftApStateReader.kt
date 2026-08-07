@@ -2,7 +2,7 @@ package com.andrerinas.openheadunit.utils
 
 import android.content.Context
 import android.net.wifi.WifiManager
-import com.andrerinas.openheadunit.aap.SoftApState
+import com.andrerinas.openheadunit.connection.wifi.modes.native.SoftApState
 
 /**
  * Asks the framework whether this device is running an access point.

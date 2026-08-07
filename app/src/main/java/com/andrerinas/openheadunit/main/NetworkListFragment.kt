@@ -27,7 +27,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.aap.AapService
-import com.andrerinas.openheadunit.connection.NetworkDiscovery
+import com.andrerinas.openheadunit.connection.wifi.NetworkDiscovery
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.Settings
 import com.andrerinas.openheadunit.utils.changeLastBit
@@ -43,7 +43,7 @@ class NetworkListFragment : Fragment(), NetworkDiscovery.Listener {
     private lateinit var toolbar: MaterialToolbar
     private lateinit var networkDiscovery: NetworkDiscovery
 
-    private var networkCallback: ConnectivityManager.NetworkCallback? = null 
+    private var networkCallback: ConnectivityManager.NetworkCallback? = null
     private val ADD_ITEM_ID = 1002
     private val SCAN_ITEM_ID = 1003
     private var scanDialog: androidx.appcompat.app.AlertDialog? = null
@@ -57,7 +57,7 @@ class NetworkListFragment : Fragment(), NetworkDiscovery.Listener {
         val view = inflater.inflate(R.layout.fragment_list, container, false)
         val recyclerView = view.findViewById<RecyclerView>(android.R.id.list)
         toolbar = view.findViewById(R.id.toolbar)
-        
+
         connectivityManager = requireContext().getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -75,7 +75,7 @@ class NetworkListFragment : Fragment(), NetworkDiscovery.Listener {
         adapter = AddressAdapter(requireContext(), childFragmentManager, viewLifecycleOwner.lifecycleScope)
         recyclerView.layoutManager = LinearLayoutManager(context)
         recyclerView.adapter = adapter
-        
+
         recyclerView.setPadding(
             resources.getDimensionPixelSize(R.dimen.list_padding),
             resources.getDimensionPixelSize(R.dimen.list_padding),
@@ -83,7 +83,7 @@ class NetworkListFragment : Fragment(), NetworkDiscovery.Listener {
             resources.getDimensionPixelSize(R.dimen.list_padding)
         )
         recyclerView.clipToPadding = false
-        
+
         return view
     }
 
@@ -94,16 +94,16 @@ class NetworkListFragment : Fragment(), NetworkDiscovery.Listener {
             findNavController().popBackStack()
         }
         toolbar.navigationIcon = androidx.core.content.ContextCompat.getDrawable(requireContext(), R.drawable.ic_arrow_back_white)
-        
+
         setupToolbarMenu()
     }
-    
+
     private fun setupToolbarMenu() {
         // Scan Button (Custom Layout)
         val scanItem = toolbar.menu.add(0, SCAN_ITEM_ID, 0, getString(R.string.scan))
         scanItem.setShowAsAction(android.view.MenuItem.SHOW_AS_ACTION_ALWAYS)
         scanItem.setActionView(R.layout.layout_scan_button)
-        
+
         val scanButton = scanItem.actionView?.findViewById<MaterialButton>(R.id.scan_button_widget)
         scanButton?.setOnClickListener {
             startScan()
@@ -113,13 +113,13 @@ class NetworkListFragment : Fragment(), NetworkDiscovery.Listener {
         val addItem = toolbar.menu.add(0, ADD_ITEM_ID, 0, getString(R.string.add_new))
         addItem.setShowAsAction(android.view.MenuItem.SHOW_AS_ACTION_ALWAYS)
         addItem.setActionView(R.layout.layout_add_button)
-        
+
         val addButton = addItem.actionView?.findViewById<MaterialButton>(R.id.add_button_widget)
         addButton?.setOnClickListener {
             showAddAddressDialog()
         }
     }
-    
+
     private fun startScan() {
         showScanDialog()
         networkDiscovery.startScan()
@@ -131,7 +131,7 @@ class NetworkListFragment : Fragment(), NetworkDiscovery.Listener {
         progressBar.setPadding(32, 32, 32, 32)
         builder.setView(progressBar)
         builder.setTitle(R.string.scanning_network)
-        builder.setNegativeButton(R.string.cancel) { _, _ -> 
+        builder.setNegativeButton(R.string.cancel) { _, _ ->
              networkDiscovery.stop()
         }
         builder.setCancelable(false)
@@ -200,7 +200,7 @@ class NetworkListFragment : Fragment(), NetworkDiscovery.Listener {
             }
         }
     }
-    
+
     private fun showAddAddressDialog() {
         var ip: InetAddress? = null
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -292,7 +292,7 @@ class NetworkListFragment : Fragment(), NetworkDiscovery.Listener {
 
         override fun onBindViewHolder(holder: DeviceViewHolder, position: Int) {
             val ipAddress = addressList[position]
-            
+
             val isTop = position == 0
             val isBottom = position == itemCount - 1
 
@@ -307,7 +307,7 @@ class NetworkListFragment : Fragment(), NetworkDiscovery.Listener {
 
             val line1: String = ipAddress
             holder.removeButton.visibility = if (ipAddress == "127.0.0.1" || (currentAddress.isNotEmpty() && ipAddress == currentAddress)) View.GONE else View.VISIBLE
-            
+
             holder.startButton.setTag(R.integer.key_position, position)
             holder.startButton.text = line1
             holder.startButton.setTag(R.integer.key_data, ipAddress)
@@ -355,12 +355,12 @@ class NetworkListFragment : Fragment(), NetworkDiscovery.Listener {
                 }
             }
             addressList.addAll(addrs.filterNotNull())
-            
+
             // Deduplicate
             val uniqueList = addressList.distinct()
             addressList.clear()
             addressList.addAll(uniqueList)
-            
+
             notifyDataSetChanged()
         }
 

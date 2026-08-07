@@ -557,6 +557,19 @@ class NativeAaHandshakeManager(
                         AppLog.i("NativeAA: USB/other session became active mid-poke. Stopping poke loop.")
                         break
                     }
+
+                    // Pre-flight: Ensure WiFi credentials (SSID/IP) are ready before connecting RFCOMM to phone.
+                    // If RFCOMM connects before WiFi credentials exist, the phone times out after 10s waiting for WifiStartRequest.
+                    if (currentSsid.isNullOrEmpty() || currentIp.isNullOrEmpty()) {
+                        AppLog.i("NativeAA: WiFi credentials not ready before poke. Requesting WiFi refresh...")
+                        (context as? AapService)?.triggerWifiDirectRefresh()
+                        var waitedMs = 0
+                        while ((currentSsid.isNullOrEmpty() || currentIp.isNullOrEmpty()) && waitedMs < 4000 && isRunning && isActive) {
+                            delay(200)
+                            waitedMs += 200
+                        }
+                    }
+
                     AppLog.i("NativeAA: Attempting active poke to device: ${device.name} (${device.address})...")
                     pokeDevice(device, holdMs = 15000)
                 }
@@ -610,6 +623,18 @@ class NativeAaHandshakeManager(
             
             pokeJob?.cancel()
             pokeJob = scope.launch(Dispatchers.IO + CoroutineName("NativeAa-ManualWakeup")) {
+                // Pre-flight: Ensure WiFi credentials (SSID/IP) are ready before connecting RFCOMM to phone.
+                if (currentSsid.isNullOrEmpty() || currentIp.isNullOrEmpty()) {
+                    AppLog.i("NativeAA: WiFi credentials not ready before manual poke. Requesting WiFi refresh...")
+                    (context as? AapService)?.triggerWifiDirectRefresh()
+                    var waitedMs = 0
+                    while ((currentSsid.isNullOrEmpty() || currentIp.isNullOrEmpty()) && waitedMs < 4000 && isRunning && isActive) {
+                        delay(200)
+                        waitedMs += 200
+                    }
+                    AppLog.i("NativeAA: Pre-poke credential wait completed. SSID=$currentSsid, IP=$currentIp (waited ${waitedMs}ms)")
+                }
+
                 AppLog.i("NativeAA: Attempting manual poke to ${device.name}...")
                 pokeDevice(device, holdMs = 20000)
                 AppLog.i("NativeAA: Manual poke to ${device.name} finished.")

@@ -136,15 +136,78 @@ object BluetoothHelper {
         }
     }
 
+    /**
+     * Resolves the real Bluetooth MAC address of the headunit's Bluetooth chip.
+     * On Android 6+ (API 23+), adapter.address returns dummy "02:00:00:00:00:00".
+     * We fall back to reflection and Chinese OEM SystemProperties to find the true hardware BDADDR.
+     */
+    fun getBluetoothMacAddress(context: Context, adapter: BluetoothAdapter? = null): String? {
+        val targetAdapter = adapter ?: getBluetoothAdapter(context)
+        
+        // 1. Try standard adapter property if valid
+        try {
+            val addr = targetAdapter?.address
+            if (!addr.isNullOrEmpty() && addr != "02:00:00:00:00:00" && addr != "00:00:00:00:00:00") {
+                return addr.uppercase()
+            }
+        } catch (e: SecurityException) {
+            AppLog.w("BluetoothHelper: SecurityException reading adapter address")
+        } catch (e: Exception) {}
+
+        // 2. Try reflection via hidden getAddress() on BluetoothAdapter / IBluetooth
+        try {
+            if (targetAdapter != null) {
+                val getAddressMethod = targetAdapter.javaClass.getMethod("getAddress")
+                getAddressMethod.isAccessible = true
+                val addr = getAddressMethod.invoke(targetAdapter) as? String
+                if (!addr.isNullOrEmpty() && addr != "02:00:00:00:00:00" && addr != "00:00:00:00:00:00") {
+                    return addr.uppercase()
+                }
+            }
+        } catch (e: Exception) {}
+
+        // 3. Fallback to Chinese Headunit Vendor System Properties
+        val propKeys = arrayOf(
+            "persist.sys.bt.mac",
+            "persist.sys.btmac",
+            "persist.vendor.bt.mac",
+            "sys.bt.mac",
+            "persist.sys.bluetooth.mac",
+            "ro.boot.btmacaddr",
+            "vendor.bt.bdaddr",
+            "persist.zj.BTmac",
+            "persist.zlink.carplay.mac",
+            "sys.bt.bdaddr"
+        )
+
+        for (key in propKeys) {
+            val valStr = SystemProperties.get(key, "").trim()
+            if (valStr.isNotEmpty() && isValidMacAddress(valStr)) {
+                AppLog.i("BluetoothHelper: Resolved hardware BT MAC $valStr from property $key")
+                return valStr.uppercase()
+            }
+        }
+
+        return null
+    }
+
+    private fun isValidMacAddress(mac: String): Boolean {
+        if (mac == "02:00:00:00:00:00" || mac == "00:00:00:00:00:00") return false
+        val regex = Regex("^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$")
+        return regex.matches(mac)
+    }
+
     fun listBluetoothServices(): List<String> {
         val bluetoothServices = mutableListOf<String>()
+        val keywords = listOf("bluetooth", "bt", "syu", "hct", "mtc", "goc", "winca", "qf")
         try {
             val serviceManagerClass = Class.forName("android.os.ServiceManager")
             val listServicesMethod = serviceManagerClass.getMethod("listServices")
             val services = listServicesMethod.invoke(null) as? Array<String>
             if (services != null) {
                 for (service in services) {
-                    if (service.contains("bluetooth", ignoreCase = true)) {
+                    val lower = service.lowercase()
+                    if (keywords.any { lower.contains(it) }) {
                         bluetoothServices.add(service)
                     }
                 }
@@ -156,16 +219,16 @@ object BluetoothHelper {
         if (!bluetoothServices.contains("bluetooth_manager")) {
             bluetoothServices.add(0, "bluetooth_manager")
         }
-        return bluetoothServices
+        return bluetoothServices.distinct()
     }
 
     fun getAdapterDescription(context: Context, serviceName: String): String {
         if (serviceName == "bluetooth_manager") {
             val adapter = getDefaultAdapter(context)
             val name = try { adapter?.name } catch (e: SecurityException) { null }
-            val address = try { adapter?.address } catch (e: SecurityException) { null }
+            val address = getBluetoothMacAddress(context, adapter)
             val suffix = if (!name.isNullOrEmpty()) " ($name)" else ""
-            val addrSuffix = if (!address.isNullOrEmpty() && address != "02:00:00:00:00:00") " [$address]" else ""
+            val addrSuffix = if (!address.isNullOrEmpty()) " [$address]" else ""
             return "Default ($serviceName)$suffix$addrSuffix"
         }
 
@@ -183,9 +246,9 @@ object BluetoothHelper {
             ctor.isAccessible = true
             val adapter = ctor.newInstance(managerService) as? BluetoothAdapter
             val name = try { adapter?.name } catch (e: SecurityException) { null }
-            val address = try { adapter?.address } catch (e: SecurityException) { null }
+            val address = getBluetoothMacAddress(context, adapter)
             val suffix = if (!name.isNullOrEmpty()) " ($name)" else ""
-            val addrSuffix = if (!address.isNullOrEmpty() && address != "02:00:00:00:00:00") " [$address]" else ""
+            val addrSuffix = if (!address.isNullOrEmpty()) " [$address]" else ""
             return "Secondary ($serviceName)$suffix$addrSuffix"
         } catch (e: Exception) {
             return "Secondary ($serviceName)"

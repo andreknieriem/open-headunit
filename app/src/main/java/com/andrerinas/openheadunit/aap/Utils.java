@@ -16,7 +16,7 @@ public class Utils {
         } catch (InterruptedException e) {
             //Thread.currentThread().interrupt();
             e.printStackTrace();
-            AppLog.INSTANCE.e("Exception e: " + e);
+            AppLog.e("Exception e: " + e);
             return (0);
         }
     }

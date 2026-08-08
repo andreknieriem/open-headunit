@@ -42,6 +42,15 @@
     <string name="use_gradient_background_description_on_auto">O app desenha seu próprio fundo com o círculo de gradiente centralizado. Não se aplica ao modo Escuro extremo</string>
     <string name="use_gradient_background_description_off_auto">O fundo clássico do app está sendo usado. Não se aplica ao modo Escuro extremo</string>
     <string name="category_dark_mode">Modo escuro</string>
+    <string name="category_theming">Temas</string>
+    <string name="customization_title">Personalização</string>
+    <string name="customization_description">Personalize a imagem de fundo e a aparência visual da tela inicial</string>
+    <string name="home_background_image">Imagem de Fundo</string>
+    <string name="home_background_image_description">Escolha uma imagem personalizada para a tela principal</string>
+    <string name="home_background_default">Padrão (bg.png)</string>
+    <string name="home_background_custom">Imagem personalizada</string>
+    <string name="btn_choose_image">Selecionar imagem</string>
+    <string name="btn_reset_default">Restaurar padrão</string>
     <string name="category_automation">Automação</string>
     <string name="dark_mode_settings">Configurações do modo escuro</string>
     <string name="app_theme_short">App</string>

@@ -42,6 +42,15 @@
     <string name="use_gradient_background_description_on_auto">يرسم التطبيق خلفيته الخاصة مع دائرة التدرج في المنتصف. لا ينطبق على وضع الداكن المتطرف</string>
     <string name="use_gradient_background_description_off_auto">يتم استخدام الخلفية الكلاسيكية للتطبيق. لا ينطبق على وضع الداكن المتطرف</string>
     <string name="category_dark_mode">الوضع الداكن</string>
+    <string name="category_theming">المظهر</string>
+    <string name="customization_title">التخصيص</string>
+    <string name="customization_description">تخصيص خلفية الشاشة الرئيسية والمظهر البصري</string>
+    <string name="home_background_image">صورة الخلفية</string>
+    <string name="home_background_image_description">اختر صورة مخصصة للشاشة الرئيسية</string>
+    <string name="home_background_default">الافتراضي (bg.png)</string>
+    <string name="home_background_custom">صورة مخصصة</string>
+    <string name="btn_choose_image">اختيار صورة</string>
+    <string name="btn_reset_default">إعادة الضبط للافتراضي</string>
     <string name="category_automation">الأتمتة</string>
     <string name="dark_mode_settings">إعدادات الوضع الداكن</string>
     <string name="app_theme_short">التطبيق</string>

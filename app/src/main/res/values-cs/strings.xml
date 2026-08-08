@@ -42,6 +42,15 @@
     <string name="use_gradient_background_description_on_auto">Aplikace kreslí vlastní pozadí s přechodovým kruhem uprostřed. Neplatí pro režim Extrémně tmavý</string>
     <string name="use_gradient_background_description_off_auto">Používá se klasické pozadí aplikace. Neplatí pro režim Extrémně tmavý</string>
     <string name="category_dark_mode">Tmavý režim</string>
+    <string name="category_theming">Motivem / Vzhled</string>
+    <string name="customization_title">Přizpůsobení</string>
+    <string name="customization_description">Přizpůsobte si obrázek na pozadí a vizuální vzhled</string>
+    <string name="home_background_image">Obrázek na pozadí</string>
+    <string name="home_background_image_description">Vyberte vlastní obrázek pro hlavní obrazovku</string>
+    <string name="home_background_default">Výchozí (bg.png)</string>
+    <string name="home_background_custom">Vlastní obrázek</string>
+    <string name="btn_choose_image">Vybrat obrázek</string>
+    <string name="btn_reset_default">Obnovit výchozí</string>
     <string name="category_automation">Automatizace</string>
     <string name="dark_mode_settings">Nastavení tmavého režimu</string>
     <string name="app_theme_short">App</string>

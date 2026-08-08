@@ -47,6 +47,15 @@
     <string name="use_gradient_background_description_on_auto">Uygulama, gradyan daire merkezli kendi arka planını çizer. Aşırı Koyu mod için geçerli değildir</string>
     <string name="use_gradient_background_description_off_auto">Uygulamanın klasik arka planı kullanılıyor. Aşırı Koyu mod için geçerli değildir</string>
     <string name="category_dark_mode">Koyu Mod</string>
+    <string name="category_theming">Temalar</string>
+    <string name="customization_title">Özelleştirme</string>
+    <string name="customization_description">Ana ekran arka plan resmini ve görsel görünümünü özelleştirin</string>
+    <string name="home_background_image">Arka Plan Resmi</string>
+    <string name="home_background_image_description">Ana ekran için özel bir resim seçin</string>
+    <string name="home_background_default">Varsayılan (bg.png)</string>
+    <string name="home_background_custom">Özel Resim</string>
+    <string name="btn_choose_image">Resim Seç</string>
+    <string name="btn_reset_default">Varsayılana Sıfırla</string>
     <string name="category_automation">Otomasyon</string>
     <string name="dark_mode_settings">Koyu Mod Ayarları</string>
     <string name="app_theme_short">Uygulama</string>

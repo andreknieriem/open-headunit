@@ -42,6 +42,15 @@
     <string name="use_gradient_background_description_on_auto">Додаток малює власний фон із центрованим градієнтним колом. Не застосовується до режиму Екстремально темний</string>
     <string name="use_gradient_background_description_off_auto">Використовується класичний фон додатку. Не застосовується до режиму Екстремально темний</string>
     <string name="category_dark_mode">Темний режим</string>
+    <string name="category_theming">Теми</string>
+    <string name="customization_title">Персоналізація</string>
+    <string name="customization_description">Налаштування фонового зображення та зовнішнього вигляду головного екрана</string>
+    <string name="home_background_image">Фонове зображення</string>
+    <string name="home_background_image_description">Виберіть власне зображення для головного екрана</string>
+    <string name="home_background_default">За замовчуванням (bg.png)</string>
+    <string name="home_background_custom">Власне зображення</string>
+    <string name="btn_choose_image">Вибрати зображення</string>
+    <string name="btn_reset_default">Скинути до замовчуваного</string>
     <string name="category_automation">Автоматизація</string>
     <string name="dark_mode_settings">Налаштування темного режиму</string>
     <string name="app_theme_short">App</string>

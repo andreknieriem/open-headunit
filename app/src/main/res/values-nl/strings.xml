@@ -41,6 +41,15 @@
     <string name="use_gradient_background_description_on_auto">De app tekent een eigen achtergrond met de gecentreerde verloopcirkel. Geldt niet voor de modus Extreem donker</string>
     <string name="use_gradient_background_description_off_auto">De klassieke achtergrond van de app wordt gebruikt. Geldt niet voor de modus Extreem donker</string>
     <string name="category_dark_mode">Donkere modus</string>
+    <string name="category_theming">Thema\'s</string>
+    <string name="customization_title">Aanpassing</string>
+    <string name="customization_description">Pas de achtergrondafbeelding en het uiterlijk van het hoofdscherm aan</string>
+    <string name="home_background_image">Achtergrondafbeelding</string>
+    <string name="home_background_image_description">Kies een aangepaste afbeelding voor het hoofdscherm</string>
+    <string name="home_background_default">Standaard (bg.png)</string>
+    <string name="home_background_custom">Aangepaste afbeelding</string>
+    <string name="btn_choose_image">Afbeelding kiezen</string>
+    <string name="btn_reset_default">Herstellen naar standaard</string>
     <string name="category_automation">Automatisering</string>
     <string name="dark_mode_settings">Instellingen donkere modus</string>
     <string name="app_theme_short">App</string>

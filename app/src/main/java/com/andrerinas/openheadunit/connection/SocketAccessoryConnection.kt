@@ -3,6 +3,7 @@ package com.andrerinas.openheadunit.connection
 import android.content.Context
 import android.net.ConnectivityManager
 import android.os.Build
+import com.andrerinas.openheadunit.connection.wifi.modes.helper.NearbySocket
 import com.andrerinas.openheadunit.utils.AppLog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

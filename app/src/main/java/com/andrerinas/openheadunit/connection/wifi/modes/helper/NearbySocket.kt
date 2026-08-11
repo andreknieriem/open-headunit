@@ -1,5 +1,6 @@
-package com.andrerinas.openheadunit.connection
+package com.andrerinas.openheadunit.connection.wifi.modes.helper
 
+import com.andrerinas.openheadunit.utils.AppLog
 import java.io.InputStream
 import java.io.OutputStream
 import java.net.InetAddress
@@ -9,7 +10,7 @@ import java.util.concurrent.CountDownLatch
 class NearbySocket : Socket() {
     private var internalInputStream: InputStream? = null
     private var internalOutputStream: OutputStream? = null
-    
+
     private val inputLatch = CountDownLatch(1)
     private val outputLatch = CountDownLatch(1)
 
@@ -18,7 +19,7 @@ class NearbySocket : Socket() {
         set(value) {
             internalInputStream = value
             if (value != null) {
-                com.andrerinas.openheadunit.utils.AppLog.i("NearbySocket: InputStream is now AVAILABLE. Releasing latch.")
+                AppLog.i("NearbySocket: InputStream is now AVAILABLE. Releasing latch.")
                 inputLatch.countDown()
             }
         }
@@ -31,15 +32,15 @@ class NearbySocket : Socket() {
         }
 
     override fun isConnected() = true
-    
+
     override fun getInetAddress(): InetAddress = InetAddress.getLoopbackAddress()
 
     override fun getInputStream(): InputStream {
-        com.andrerinas.openheadunit.utils.AppLog.d("NearbySocket: getInputStream() called")
+        AppLog.d("NearbySocket: getInputStream() called")
         return object : InputStream() {
             private fun waitForStream(): InputStream {
                 if (inputLatch.count > 0L) {
-                    com.andrerinas.openheadunit.utils.AppLog.i("NearbySocket: Blocking read until InputStream is AVAILABLE via Nearby Payload...")
+                    AppLog.i("NearbySocket: Blocking read until InputStream is AVAILABLE via Nearby Payload...")
                 }
                 inputLatch.await()
                 return internalInputStream!!
@@ -49,7 +50,7 @@ class NearbySocket : Socket() {
                 val b = waitForStream().read()
                 return b
             }
-            
+
             override fun read(b: ByteArray): Int = read(b, 0, b.size)
             override fun read(b: ByteArray, off: Int, len: Int): Int {
                 val readValue = waitForStream().read(b, off, len)
@@ -61,30 +62,30 @@ class NearbySocket : Socket() {
     }
 
     override fun getOutputStream(): OutputStream {
-        com.andrerinas.openheadunit.utils.AppLog.d("NearbySocket: getOutputStream() called")
+        AppLog.d("NearbySocket: getOutputStream() called")
         return object : OutputStream() {
             private fun waitForStream(): OutputStream {
                 if (outputLatch.count > 0L) {
-                    com.andrerinas.openheadunit.utils.AppLog.d("NearbySocket: Waiting for outputLatch...")
+                    AppLog.d("NearbySocket: Waiting for outputLatch...")
                 }
                 outputLatch.await()
                 return internalOutputStream!!
             }
 
             override fun write(b: Int) {
-                com.andrerinas.openheadunit.utils.AppLog.v("NearbySocket: writing 1 byte to pipe")
+                AppLog.v("NearbySocket: writing 1 byte to pipe")
                 waitForStream().write(b)
             }
-            
+
             override fun write(b: ByteArray) = write(b, 0, b.size)
             override fun write(b: ByteArray, off: Int, len: Int) {
-                com.andrerinas.openheadunit.utils.AppLog.v("NearbySocket: writing $len bytes to pipe")
+                AppLog.v("NearbySocket: writing $len bytes to pipe")
                 waitForStream().write(b, off, len)
                 // Force flush since GMS Nearby Stream payloads might buffer a lot
                 waitForStream().flush()
             }
             override fun flush() {
-                com.andrerinas.openheadunit.utils.AppLog.v("NearbySocket: flush() called")
+                AppLog.v("NearbySocket: flush() called")
                 if (outputLatch.count == 0L) internalOutputStream!!.flush()
             }
             override fun close() = if (outputLatch.count == 0L) internalOutputStream!!.close() else Unit

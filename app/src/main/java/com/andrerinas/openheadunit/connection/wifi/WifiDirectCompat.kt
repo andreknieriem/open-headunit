@@ -1,5 +1,6 @@
-package com.andrerinas.openheadunit.connection
+package com.andrerinas.openheadunit.connection.wifi
 
+import android.net.wifi.p2p.WifiP2pGroup
 import android.net.wifi.p2p.WifiP2pManager
 import android.os.Build
 import androidx.annotation.RequiresApi
@@ -12,7 +13,7 @@ import com.andrerinas.openheadunit.utils.AppLog
 object WifiDirectCompat {
 
     /**
-     * Safely calls [WifiP2pManager.requestDeviceInfo] if running on API 29+.
+     * Safely calls [android.net.wifi.p2p.WifiP2pManager.requestDeviceInfo] if running on API 29+.
      */
     fun requestDeviceInfo(
         manager: WifiP2pManager?,
@@ -24,7 +25,7 @@ object WifiDirectCompat {
         }
     }
 
-    fun getGroupFrequency(group: android.net.wifi.p2p.WifiP2pGroup?): Int {
+    fun getGroupFrequency(group: WifiP2pGroup?): Int {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && group != null) {
             return Api29Impl.getGroupFrequency(group)
         }
@@ -50,7 +51,7 @@ object WifiDirectCompat {
             }
         }
 
-        fun getGroupFrequency(group: android.net.wifi.p2p.WifiP2pGroup): Int {
+        fun getGroupFrequency(group: WifiP2pGroup): Int {
             return group.frequency
         }
     }

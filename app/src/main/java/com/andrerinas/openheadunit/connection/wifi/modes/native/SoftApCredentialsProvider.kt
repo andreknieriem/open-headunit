@@ -1,4 +1,4 @@
-package com.andrerinas.openheadunit.connection
+package com.andrerinas.openheadunit.connection.wifi.modes.native
 
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -9,14 +9,6 @@ import android.os.Looper
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import com.andrerinas.openheadunit.R
-import com.andrerinas.openheadunit.aap.ApInterfaceCandidate
-import com.andrerinas.openheadunit.aap.SoftApBssidPolicy
-import com.andrerinas.openheadunit.aap.NativeCredentialsPolicy
-import com.andrerinas.openheadunit.aap.SoftApCredentials
-import com.andrerinas.openheadunit.aap.SoftApCredentialsAttempt
-import com.andrerinas.openheadunit.aap.SoftApCredentialsPolicy
-import com.andrerinas.openheadunit.aap.SoftApNetworkPolicy
-import com.andrerinas.openheadunit.aap.SoftApState
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.HotspotConfigReader
 import com.andrerinas.openheadunit.utils.HotspotManager
@@ -25,6 +17,7 @@ import com.andrerinas.openheadunit.utils.NetworkAddresses
 import com.andrerinas.openheadunit.utils.Settings
 import com.andrerinas.openheadunit.utils.SoftApStateReader
 import com.andrerinas.openheadunit.utils.ToastUtils
+import com.andrerinas.openheadunit.connection.wifi.WifiDirectManager
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

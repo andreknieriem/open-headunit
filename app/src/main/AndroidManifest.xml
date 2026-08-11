@@ -237,7 +237,7 @@
         <!-- Comprehensive receiver for steering wheel and hardware buttons,
              covering both standard Android events and proprietary Chinese headunit broadcasts. -->
         <receiver
-            android:name=".connection.CarKeyReceiver"
+            android:name=".connection.carkey.CarKeyBroadcastReceiver"
             android:exported="true">
             <intent-filter android:priority="1000">
                 <action android:name="android.intent.action.MEDIA_BUTTON" />

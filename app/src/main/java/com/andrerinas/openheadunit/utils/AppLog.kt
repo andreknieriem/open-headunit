@@ -197,47 +197,57 @@ object AppLog {
     val LOG_VERBOSE get() = LOG_LEVEL <= Log.VERBOSE
     val LOG_DEBUG get() = LOG_LEVEL <= Log.DEBUG
 
+    @JvmStatic
     fun i(msg: String) {
         if (isLoggable(Log.INFO)) log(Log.INFO, format(msg))
     }
 
+    @JvmStatic
     fun i(msg: String, vararg params: Any) {
         if (isLoggable(Log.INFO)) log(Log.INFO, format(msg, *params))
     }
 
+    @JvmStatic
     fun e(msg: String?) {
         if (isLoggable(Log.ERROR)) loge(format(msg ?: "Unknown error"), null)
     }
 
+    @JvmStatic
     fun e(msg: String, tr: Throwable) {
         if (isLoggable(Log.ERROR)) loge(format(msg), tr)
     }
 
+    @JvmStatic
     fun e(tr: Throwable) {
         if (isLoggable(Log.ERROR)) loge(tr.message ?: "Unknown error", tr)
     }
 
-
+    @JvmStatic
     fun e(msg: String?, vararg params: Any) {
         if (isLoggable(Log.ERROR)) loge(format(msg ?: "Unknown error", *params), null)
     }
 
+    @JvmStatic
     fun v(msg: String, vararg params: Any) {
         if (isLoggable(Log.VERBOSE)) log(Log.VERBOSE, format(msg, *params))
     }
 
+    @JvmStatic
     fun d(msg: String, vararg params: Any) {
         if (isLoggable(Log.DEBUG)) log(Log.DEBUG, format(msg, *params))
     }
 
+    @JvmStatic
     fun d(msg: String) {
         if (isLoggable(Log.DEBUG)) log(Log.DEBUG, format(msg))
     }
 
+    @JvmStatic
     fun w(msg: String) {
         if (isLoggable(Log.WARN)) log(Log.WARN, format(msg))
     }
 
+    @JvmStatic
     fun w(msg: String, vararg params: Any) {
         if (isLoggable(Log.WARN)) log(Log.WARN, format(msg, *params))
     }

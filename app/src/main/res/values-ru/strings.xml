@@ -42,6 +42,15 @@
     <string name="use_gradient_background_description_on_auto">Приложение рисует собственный фон с центрированным градиентным кругом. Не применяется к режиму Экстремально тёмный</string>
     <string name="use_gradient_background_description_off_auto">Используется классический фон приложения. Не применяется к режиму Экстремально тёмный</string>
     <string name="category_dark_mode">Тёмный режим</string>
+    <string name="category_theming">Темы</string>
+    <string name="customization_title">Персонализация</string>
+    <string name="customization_description">Настройка фонового изображения и внешнего вида главного экрана</string>
+    <string name="home_background_image">Фоновое изображение</string>
+    <string name="home_background_image_description">Выберите собственное изображение для главного экрана</string>
+    <string name="home_background_default">По умолчанию (bg.png)</string>
+    <string name="home_background_custom">Свое изображение</string>
+    <string name="btn_choose_image">Выбрать изображение</string>
+    <string name="btn_reset_default">Сбросить по умолчанию</string>
     <string name="category_automation">Автоматизация</string>
     <string name="dark_mode_settings">Настройки тёмного режима</string>
     <string name="app_theme_short">App</string>

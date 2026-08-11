@@ -1,4 +1,7 @@
-package com.andrerinas.openheadunit.aap
+package com.andrerinas.openheadunit.connection.wifi
+
+import com.andrerinas.openheadunit.connection.wifi.modes.helper.HelperStrategy
+import com.andrerinas.openheadunit.connection.wifi.modes.native.NativeStrategy
 
 /**
  * Whether a given WiFi mode/strategy combination uses [com.andrerinas.openheadunit.connection.WifiDirectManager]
@@ -16,7 +19,14 @@ object WifiModePolicy {
     fun usesWifiDirect(
         mode: Int,
         strategy: Int,
-        transport: NativeTransport = NativeTransport.WIFI_DIRECT
+        transport: NativeStrategy = NativeStrategy.WIFI_DIRECT
     ): Boolean =
-        (mode == 3 && transport == NativeTransport.WIFI_DIRECT) || (mode == 2 && strategy == 1)
+        (mode == 3 && transport == NativeStrategy.WIFI_DIRECT) || (mode == 2 && strategy == 1)
+
+    fun usesWifiDirect(
+        mode: WifiLauncherMode,
+        strategy: HelperStrategy,
+        transport: NativeStrategy = NativeStrategy.WIFI_DIRECT
+    ): Boolean =
+        usesWifiDirect(mode.id, strategy.id, transport)
 }

@@ -1,9 +1,11 @@
-package com.andrerinas.openheadunit.connection
+package com.andrerinas.openheadunit.connection.wifi.modes.helper
 
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
+import android.os.ParcelFileDescriptor
+import android.widget.Toast
 import androidx.core.content.ContextCompat
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.Settings
@@ -23,6 +25,8 @@ import com.google.android.gms.nearby.connection.PayloadTransferUpdate
 import com.google.android.gms.nearby.connection.Strategy
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -33,7 +37,7 @@ import java.net.Socket
  * The Tablet acts as a DISCOVERER only.
  */
 class NearbyManager(
-    private val context: Context, 
+    private val context: Context,
     private val scope: CoroutineScope,
     private val onSocketReady: (Socket) -> Unit
 ) {
@@ -52,8 +56,8 @@ class NearbyManager(
     private var isConnecting = false
     private var activeNearbySocket: NearbySocket? = null
     private var activeEndpointId: String? = null
-    private var activePipes: Array<android.os.ParcelFileDescriptor>? = null
-    private var upgradeTimeoutJob: kotlinx.coroutines.Job? = null
+    private var activePipes: Array<ParcelFileDescriptor>? = null
+    private var upgradeTimeoutJob: Job? = null
     private val settings = Settings(context)
 
     fun start() {
@@ -82,7 +86,7 @@ class NearbyManager(
             val hasConnect = ContextCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED
             if (!hasAdvertise || !hasScan || !hasConnect) return false
         }
-        
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             val hasNearby = ContextCompat.checkSelfPermission(context, Manifest.permission.NEARBY_WIFI_DEVICES) == PackageManager.PERMISSION_GRANTED
             if (!hasNearby) return false
@@ -120,10 +124,10 @@ class NearbyManager(
         }
         AppLog.i("NearbyManager: Requesting connection to endpoint: $endpointId")
         isConnecting = true
-        
-        connectionsClient.requestConnection(android.os.Build.MODEL, endpointId, connectionLifecycleCallback)
-            .addOnFailureListener { e -> 
-                AppLog.e("NearbyManager: Failed to request connection: ${e.message}") 
+
+        connectionsClient.requestConnection(Build.MODEL, endpointId, connectionLifecycleCallback)
+            .addOnFailureListener { e ->
+                AppLog.e("NearbyManager: Failed to request connection: ${e.message}")
                 isConnecting = false
             }
     }
@@ -136,8 +140,8 @@ class NearbyManager(
         AppLog.i("NearbyManager: Requesting Discovery with SERVICE_ID: $SERVICE_ID (Strategy: P2P_POINT_TO_POINT)")
         connectionsClient.startDiscovery(SERVICE_ID, endpointDiscoveryCallback, discoveryOptions)
             .addOnSuccessListener { AppLog.d("NearbyManager: [OK] Discovery started.") }
-            .addOnFailureListener { e -> 
-                AppLog.e("NearbyManager: [ERROR] Discovery failed: ${e.message}") 
+            .addOnFailureListener { e ->
+                AppLog.e("NearbyManager: [ERROR] Discovery failed: ${e.message}")
                 isRunning = false
             }
     }
@@ -154,7 +158,7 @@ class NearbyManager(
             // Auto-connect logic
             val autoConnectMode = settings.autoConnectLastSession
             AppLog.i("NearbyManager: Auto-connect check: Enabled=$autoConnectMode, isConnecting=$isConnecting, activeEndpointId=$activeEndpointId")
-            
+
             if (autoConnectMode && !isConnecting && activeEndpointId == null) {
                 val lastDevice = settings.lastNearbyDeviceName
                 AppLog.i("NearbyManager: Comparing found '${info.endpointName}' with last known '$lastDevice'")
@@ -177,7 +181,7 @@ class NearbyManager(
         override fun onConnectionInitiated(endpointId: String, info: ConnectionInfo) {
             AppLog.i("NearbyManager: Connection INITIATED with $endpointId (${info.endpointName}). Token: ${info.authenticationToken}")
             AppLog.i("NearbyManager: Automatically ACCEPTING connection...")
-            
+
             // Save last connected device name for auto-reconnect
             AppLog.i("NearbyManager: Saving '${info.endpointName}' as last connected device candidate.")
             settings.lastNearbyDeviceName = info.endpointName
@@ -185,7 +189,7 @@ class NearbyManager(
             // Stop discovery as soon as it finds the target.
             isRunning = false
             connectionsClient.stopDiscovery()
-            
+
             connectionsClient.acceptConnection(endpointId, payloadCallback)
                 .addOnFailureListener { e -> AppLog.e("NearbyManager: Failed to accept connection: ${e.message}") }
         }
@@ -193,7 +197,7 @@ class NearbyManager(
         override fun onConnectionResult(endpointId: String, result: ConnectionResolution) {
             val status = result.status
             AppLog.i("NearbyManager: Connection RESULT for $endpointId: StatusCode=${status.statusCode} (${status.statusMessage})")
-            
+
             if (status.statusCode != ConnectionsStatusCodes.STATUS_OK) {
                 isConnecting = false
             }
@@ -207,14 +211,14 @@ class NearbyManager(
                     // Start a 10-second timeout for the Wi-Fi bandwidth upgrade
                     upgradeTimeoutJob?.cancel()
                     upgradeTimeoutJob = scope.launch {
-                        kotlinx.coroutines.delay(10_000)
+                        delay(10_000)
                         if (activeNearbySocket == null && activeEndpointId == endpointId) {
                             AppLog.e("NearbyManager: Bandwidth upgrade timed out after 10s. Disconnecting to prevent Bluetooth fallback.")
                             scope.launch(Dispatchers.Main) {
                                 ToastUtils.showToast(
-                                    context, 
-                                    "Google Nearby connection failed: Wi-Fi bandwidth upgrade timed out. Please check Wi-Fi & Bluetooth settings.", 
-                                    android.widget.Toast.LENGTH_LONG
+                                    context,
+                                    "Google Nearby connection failed: Wi-Fi bandwidth upgrade timed out. Please check Wi-Fi & Bluetooth settings.",
+                                    Toast.LENGTH_LONG
                                 )
                             }
                             stop()
@@ -232,7 +236,7 @@ class NearbyManager(
             if (bandwidthInfo.quality == BandwidthInfo.Quality.HIGH) {
                 if (activeEndpointId == endpointId && activeNearbySocket == null) {
                     AppLog.i("NearbyManager: Wi-Fi Bandwidth Upgrade successful (Quality: HIGH). Initiating stream tunnel...")
-                    
+
                     upgradeTimeoutJob?.cancel()
                     upgradeTimeoutJob = null
 
@@ -241,34 +245,34 @@ class NearbyManager(
 
                     scope.launch(Dispatchers.IO) {
                         val sock = activeNearbySocket ?: return@launch
-                        
-                        // [CRITICAL] Wait a bit before sending the payload. 
+
+                        // [CRITICAL] Wait a bit before sending the payload.
                         // The phone (WirelessHelper) has a ~500ms delay in its connection logic.
-                        // If we send too early, the phone won't have its 'activeNearbySocket' 
+                        // If we send too early, the phone won't have its 'activeNearbySocket'
                         // set yet, and our incoming stream will be dropped/ignored by the phone.
                         AppLog.i("NearbyManager: Waiting 800ms for phone state synchronization...")
-                        kotlinx.coroutines.delay(800)
+                        delay(800)
 
                         // 1. Create outgoing pipe (Tablet -> Phone)
-                        val pipes = android.os.ParcelFileDescriptor.createPipe()
+                        val pipes = ParcelFileDescriptor.createPipe()
                         activePipes = pipes
-                        val outputStream = android.os.ParcelFileDescriptor.AutoCloseOutputStream(pipes[1])
+                        val outputStream = ParcelFileDescriptor.AutoCloseOutputStream(pipes[1])
                         sock.outputStreamWrapper = outputStream
 
                         // 2. Initiate stream tunnel
                         AppLog.i("NearbyManager: Initiating stream tunnel to $endpointId...")
                         val tabletToPhonePayload = Payload.fromStream(pipes[0])
                         AppLog.i("NearbyManager: Sending STREAM payload (ID: ${tabletToPhonePayload.id})")
-                        
+
                         connectionsClient.sendPayload(endpointId, tabletToPhonePayload)
-                            .addOnSuccessListener { 
-                                AppLog.i("NearbyManager: [OK] Tablet->Phone stream payload registered.") 
+                            .addOnSuccessListener {
+                                AppLog.i("NearbyManager: [OK] Tablet->Phone stream payload registered.")
                             }
-                            .addOnFailureListener { e -> 
-                                AppLog.e("NearbyManager: [ERROR] Failed to send stream: ${e.message}") 
+                            .addOnFailureListener { e ->
+                                AppLog.e("NearbyManager: [ERROR] Failed to send stream: ${e.message}")
                             }
 
-                        // [CRITICAL] Start AA handshake immediately. 
+                        // [CRITICAL] Start AA handshake immediately.
                         // NearbySocket.read() will block internally until Phone stream arrives.
                         AppLog.i("NearbyManager: Starting AA handshake now. Input will block until stream arrives.")
                         onSocketReady(sock)

@@ -42,6 +42,15 @@
     <string name="use_gradient_background_description_on_auto">Aplikacja rysuje własne tło z wyśrodkowanym okręgiem gradientu. Nie dotyczy trybu Ekstremalnie ciemny</string>
     <string name="use_gradient_background_description_off_auto">Używane jest klasyczne tło aplikacji. Nie dotyczy trybu Ekstremalnie ciemny</string>
     <string name="category_dark_mode">Tryb ciemny</string>
+    <string name="category_theming">Motywy</string>
+    <string name="customization_title">Personalizacja</string>
+    <string name="customization_description">Dostosuj obraz tła i wygląd wizualny ekranu głównego</string>
+    <string name="home_background_image">Obraz tła</string>
+    <string name="home_background_image_description">Wybierz własny obraz dla ekranu głównego</string>
+    <string name="home_background_default">Domyślny (bg.png)</string>
+    <string name="home_background_custom">Własny obraz</string>
+    <string name="btn_choose_image">Wybierz obraz</string>
+    <string name="btn_reset_default">Przywróć domyślne</string>
     <string name="category_automation">Automatyzacja</string>
     <string name="dark_mode_settings">Ustawienia trybu ciemnego</string>
     <string name="app_theme_short">App</string>

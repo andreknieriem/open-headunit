@@ -46,6 +46,15 @@
     <string name="use_gradient_background_description_on_auto">L\'app disegna il proprio sfondo con il cerchio sfumato centrato. Non si applica alla modalità Molto Scura</string>
     <string name="use_gradient_background_description_off_auto">Viene utilizzato lo sfondo classico dell\'app. Non si applica alla modalità Molto Scura</string>
     <string name="category_dark_mode">Modalità Scura</string>
+    <string name="category_theming">Temi</string>
+    <string name="customization_title">Personalizzazione</string>
+    <string name="customization_description">Personalizza l\'immagine di sfondo e l\'aspetto visivo della schermata principale</string>
+    <string name="home_background_image">Immagine di sfondo</string>
+    <string name="home_background_image_description">Scegli un\'immagine personalizzata per la schermata principale</string>
+    <string name="home_background_default">Predefinito (bg.png)</string>
+    <string name="home_background_custom">Immagine personalizzata</string>
+    <string name="btn_choose_image">Scegli immagine</string>
+    <string name="btn_reset_default">Ripristina predefinito</string>
     <string name="category_automation">Automazione</string>
     <string name="dark_mode_settings">Impostazioni Modalità Scura</string>
     <string name="app_theme_short">App</string>

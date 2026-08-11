@@ -1,4 +1,4 @@
-package com.andrerinas.openheadunit.aap
+package com.andrerinas.openheadunit.connection.wifi.modes.native
 
 /** A radio band a soft AP can be brought up on. */
 enum class ApBand { BAND_5GHZ, BAND_2GHZ }

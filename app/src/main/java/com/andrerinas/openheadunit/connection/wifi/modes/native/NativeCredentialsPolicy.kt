@@ -1,19 +1,4 @@
-package com.andrerinas.openheadunit.aap
-
-/** Which network the Native AA mode puts the phone on. */
-enum class NativeTransport {
-    /** A WiFi Direct P2P group with this head unit as group owner. The default. */
-    WIFI_DIRECT,
-
-    /** This head unit's own WPA2 access point, as the OEM ZLink app uses. Experimental. */
-    HOTSPOT;
-
-    companion object {
-        /** [Settings.nativeApTransport][com.andrerinas.openheadunit.utils.Settings.nativeApTransport]
-         *  as a transport, defaulting to [WIFI_DIRECT] for any value we do not recognise. */
-        fun fromSetting(value: Int): NativeTransport = if (value == 1) HOTSPOT else WIFI_DIRECT
-    }
-}
+package com.andrerinas.openheadunit.connection.wifi.modes.native
 
 /** What the framework says about this device's own access point. */
 enum class SoftApState {
@@ -71,9 +56,9 @@ object NativeCredentialsPolicy {
     fun isUsableBssid(bssid: String?): Boolean = SoftApBssidPolicy.isUsable(bssid)
 
     /** What to do when [isUsableBssid] said no. */
-    fun onUnusableBssid(transport: NativeTransport): UnusableBssidAction = when (transport) {
-        NativeTransport.WIFI_DIRECT -> UnusableBssidAction.ABORT
-        NativeTransport.HOTSPOT -> UnusableBssidAction.SEND_WITH_EMPTY_BSSID
+    fun onUnusableBssid(strategy: NativeStrategy): UnusableBssidAction = when (strategy) {
+        NativeStrategy.WIFI_DIRECT -> UnusableBssidAction.ABORT
+        NativeStrategy.HOTSPOT -> UnusableBssidAction.SEND_WITH_EMPTY_BSSID
     }
 
     /**

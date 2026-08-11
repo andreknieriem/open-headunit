@@ -42,6 +42,15 @@
     <string name="use_gradient_background_description_on_auto">Aplicația desenează propriul fundal cu cercul de degradat centrat. Nu se aplică modului Întunecat extrem</string>
     <string name="use_gradient_background_description_off_auto">Fundalul clasic al aplicației este utilizat. Nu se aplică modului Întunecat extrem</string>
     <string name="category_dark_mode">Mod întunecat</string>
+    <string name="category_theming">Teme</string>
+    <string name="customization_title">Personalizare</string>
+    <string name="customization_description">Personalizați imaginea de fundal și aspectul vizual al ecranului principal</string>
+    <string name="home_background_image">Imagine de fundal</string>
+    <string name="home_background_image_description">Alegeți o imagine personalizată pentru ecranul principal</string>
+    <string name="home_background_default">Implicit (bg.png)</string>
+    <string name="home_background_custom">Imagine personalizată</string>
+    <string name="btn_choose_image">Alegeți imaginea</string>
+    <string name="btn_reset_default">Revenire la implicit</string>
     <string name="category_automation">Automatizare</string>
     <string name="dark_mode_settings">Setări mod întunecat</string>
     <string name="app_theme_short">App</string>

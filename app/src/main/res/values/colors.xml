@@ -8,6 +8,7 @@
     <color name="primary_light">#fffbff</color>
     <color name="material_orange_700">#f57c00</color>
     <color name="material_green_700">#388e3c</color>
+    <color name="material_red_700">#D32F2F</color>
 
     <color name="text_primary">#f7f7f7</color>
     <color name="text_second">#bdbebd</color>

@@ -1,4 +1,4 @@
-package com.andrerinas.openheadunit.aap
+package com.andrerinas.openheadunit.connection.wifi.modes.native
 
 /**
  * One network interface, reduced to the four things that decide whether it is the head unit's

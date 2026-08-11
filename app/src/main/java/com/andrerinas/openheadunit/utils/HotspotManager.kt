@@ -1,5 +1,6 @@
 package com.andrerinas.openheadunit.utils
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.wifi.WifiManager
@@ -7,17 +8,16 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import com.andrerinas.openheadunit.connection.wifi.modes.native.ApBand
 import com.android.dx.DexMaker
 import com.android.dx.TypeId
 import java.lang.reflect.Method
 import java.net.Inet4Address
 import java.net.NetworkInterface
-import com.andrerinas.openheadunit.utils.SoftApConfigCompat
-import com.andrerinas.openheadunit.aap.ApBand
-import com.andrerinas.openheadunit.aap.ApInterfaceCandidate
-import com.andrerinas.openheadunit.aap.SoftApBandPolicy
-import com.andrerinas.openheadunit.aap.SoftApNetworkPolicy
-import com.andrerinas.openheadunit.aap.SoftApState
+import com.andrerinas.openheadunit.connection.wifi.modes.native.ApInterfaceCandidate
+import com.andrerinas.openheadunit.connection.wifi.modes.native.SoftApBandPolicy
+import com.andrerinas.openheadunit.connection.wifi.modes.native.SoftApNetworkPolicy
+import com.andrerinas.openheadunit.connection.wifi.modes.native.SoftApState
 
 /**
  * Manages WiFi Hotspot (tethering) using reflection + dexmaker.
@@ -393,6 +393,7 @@ object HotspotManager {
         null
     }
 
+    @SuppressLint("NewApi")
     @Suppress("UNCHECKED_CAST")
     private fun createTetheringCallback(context: Context): Any? {
         try {
@@ -429,6 +430,7 @@ object HotspotManager {
         }
     }
 
+    @SuppressLint("NewApi")
     private fun tryTetheringManager(context: Context, enabled: Boolean): Boolean {
         try {
             val tm = context.getSystemService("tethering") ?: return false

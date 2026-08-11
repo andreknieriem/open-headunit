@@ -1,5 +1,6 @@
 package com.andrerinas.openheadunit.utils
 
+import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
@@ -15,7 +16,7 @@ object BluetoothHelper {
     fun getBluetoothAdapter(context: Context): BluetoothAdapter? {
         val settings = App.provide(context).settings
         val serviceName = settings.bluetoothManagerServiceName
-        
+
         if (serviceName.isEmpty() || serviceName == "bluetooth_manager") {
             return getDefaultAdapter(context)
         }
@@ -258,9 +259,10 @@ object BluetoothHelper {
      * On Android 6+ (API 23+), adapter.address returns dummy "02:00:00:00:00:00".
      * We fall back to reflection and Chinese OEM SystemProperties to find the true hardware BDADDR.
      */
+    @SuppressLint("MissingPermission", "HardwareIds")
     fun getBluetoothMacAddress(context: Context, adapter: BluetoothAdapter? = null): String? {
         val targetAdapter = adapter ?: getBluetoothAdapter(context)
-        
+
         // 1. Try standard adapter property if valid
         try {
             val addr = targetAdapter?.address
@@ -348,7 +350,7 @@ object BluetoothHelper {
         } catch (e: Exception) {
             AppLog.e("BluetoothHelper: Failed to list bluetooth services from ServiceManager: ${e.message}", e)
         }
-        
+
         if (!bluetoothServices.contains("bluetooth_manager")) {
             bluetoothServices.add(0, "bluetooth_manager")
         }

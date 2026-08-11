@@ -46,6 +46,15 @@
     <string name="use_gradient_background_description_on_auto">アプリはグラデーションの円を中央に配置した独自の背景を描画します。エクストリームダークモードには適用されません。</string>
     <string name="use_gradient_background_description_off_auto">アプリの従来の背景が使用されています。エクストリームダークモードには適用されません。</string>
     <string name="category_dark_mode">ダークモード</string>
+    <string name="category_theming">テーマ設定</string>
+    <string name="customization_title">カスタマイズ</string>
+    <string name="customization_description">ホーム画面の背景画像や視覚的デザインをカスタマイズします</string>
+    <string name="home_background_image">背景画像</string>
+    <string name="home_background_image_description">メイン画面に表示するカスタム画像を選択します</string>
+    <string name="home_background_default">デフォルト (bg.png)</string>
+    <string name="home_background_custom">カスタム画像</string>
+    <string name="btn_choose_image">画像を選択</string>
+    <string name="btn_reset_default">デフォルトに戻す</string>
     <string name="category_automation">オートメーション</string>
     <string name="dark_mode_settings">ダークモード設定</string>
     <string name="app_theme_short">アプリ</string>

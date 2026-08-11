@@ -48,6 +48,15 @@
     <string name="use_gradient_background_description_off_auto">გამოიყენება აპლიკაციის კლასიკური ფონი. არ ვრცელდება ექსტრემალურად ბნელ რეჟიმზე</string>
     <string name="use_white_background">მთავარ ეკრანზე თეთრი ფონის გამოყენება</string>
     <string name="category_dark_mode">ბნელი რეჟიმი</string>
+    <string name="category_theming">თემები</string>
+    <string name="customization_title">პერსონალიზაცია</string>
+    <string name="customization_description">მთავარი ეკრანის ფონის სურათისა და ვიზუალური იერსახის მორგება</string>
+    <string name="home_background_image">ფონის სურათი</string>
+    <string name="home_background_image_description">აირჩიეთ ინდივიდუალური სურათი მთავარი ეკრანისთვის</string>
+    <string name="home_background_default">ნაგულისხმევი (bg.png)</string>
+    <string name="home_background_custom">ინდივიდუალური სურათი</string>
+    <string name="btn_choose_image">სურათის არჩევა</string>
+    <string name="btn_reset_default">საწყისზე დაბრუნება</string>
     <string name="category_automation">ავტომატიზაცია</string>
     <string name="dark_mode_settings">ბნელი რეჟიმის პარამეტრები</string>
     <string name="app_theme_short">აპლიკაცია</string>

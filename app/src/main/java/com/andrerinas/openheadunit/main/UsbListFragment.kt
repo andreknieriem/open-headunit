@@ -115,14 +115,23 @@ class UsbListFragment : Fragment() {
             }
             holder.itemView.setBackgroundResource(bgRes)
 
-            holder.startButton.text = device.uniqueName
+            val vidPidText = " (${mSettings.formatUsbVidPidDisplay(device.vendorId, device.productId)})"
+            holder.startButton.text = "${device.uniqueName}$vidPidText"
             holder.startButton.tag = position
             holder.startButton.setOnClickListener(this)
+
+            val isBlacklisted = mSettings.isUsbDeviceBlacklisted(device.vendorId, device.productId)
 
             if (device.isInAccessoryMode) {
                 holder.allowButton.setText(R.string.allowed)
                 holder.allowButton.setTextColor(ContextCompat.getColor(mContext, R.color.material_green_700))
                 holder.allowButton.isEnabled = false
+            } else if (isBlacklisted) {
+                holder.allowButton.setText(R.string.blacklisted)
+                holder.allowButton.setTextColor(ContextCompat.getColor(mContext, R.color.material_red_700))
+                holder.allowButton.tag = position
+                holder.allowButton.isEnabled = true
+                holder.allowButton.setOnClickListener(this)
             } else {
                 if (allowedDevices.contains(device.uniqueName)) {
                     holder.allowButton.setText(R.string.allowed)
@@ -154,12 +163,26 @@ class UsbListFragment : Fragment() {
             }
             val device = deviceList[position]
             if (v.id == android.R.id.button1) {
-                if (allowedDevices.contains(device.uniqueName)) {
-                    allowedDevices.remove(device.uniqueName)
-                } else {
-                    allowedDevices.add(device.uniqueName)
+                val isBlacklisted = mSettings.isUsbDeviceBlacklisted(device.vendorId, device.productId)
+                val isAllowed = allowedDevices.contains(device.uniqueName)
+
+                when {
+                    isBlacklisted -> {
+                        // Blacklisted -> Ignored
+                        mSettings.removeUsbDeviceFromBlacklist(device.vendorId, device.productId)
+                    }
+                    isAllowed -> {
+                        // Allowed -> Blacklisted
+                        allowedDevices.remove(device.uniqueName)
+                        mSettings.allowedDevices = allowedDevices
+                        mSettings.addUsbDeviceToBlacklist(device.vendorId, device.productId)
+                    }
+                    else -> {
+                        // Ignored -> Allowed
+                        allowedDevices.add(device.uniqueName)
+                        mSettings.allowedDevices = allowedDevices
+                    }
                 }
-                mSettings.allowedDevices = allowedDevices
                 notifyDataSetChanged()
             } else {
                 if (App.provide(mContext).commManager.isConnected) {

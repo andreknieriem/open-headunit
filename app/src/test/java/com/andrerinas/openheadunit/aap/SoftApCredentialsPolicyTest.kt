@@ -1,5 +1,8 @@
 package com.andrerinas.openheadunit.aap
 
+import com.andrerinas.openheadunit.connection.wifi.modes.native.SoftApCredentials
+import com.andrerinas.openheadunit.connection.wifi.modes.native.SoftApCredentialsAttempt
+import com.andrerinas.openheadunit.connection.wifi.modes.native.SoftApCredentialsPolicy
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -75,11 +78,15 @@ class SoftApCredentialsPolicyTest {
         // documented one rather than whatever falls out.
         assertEquals(
             SoftApCredentials("OHU-TEST", "fromTheDevice"),
-            SoftApCredentialsPolicy.resolve("OHU-TEST", "", SoftApCredentials("AndroidAP", "fromTheDevice"))
+            SoftApCredentialsPolicy.resolve("OHU-TEST", "",
+                SoftApCredentials("AndroidAP", "fromTheDevice")
+            )
         )
         assertEquals(
             SoftApCredentials("AndroidAP", "typedByHand"),
-            SoftApCredentialsPolicy.resolve("", "typedByHand", SoftApCredentials("AndroidAP", "fromTheDevice"))
+            SoftApCredentialsPolicy.resolve("", "typedByHand",
+                SoftApCredentials("AndroidAP", "fromTheDevice")
+            )
         )
     }
 

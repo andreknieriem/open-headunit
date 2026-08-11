@@ -1,5 +1,9 @@
 package com.andrerinas.openheadunit.aap
 
+import com.andrerinas.openheadunit.connection.wifi.WifiLauncherMode
+import com.andrerinas.openheadunit.connection.wifi.modes.helper.HelperStrategy
+import com.andrerinas.openheadunit.connection.wifi.modes.native.NativeStrategy
+
 /** What a user-initiated disconnect should do to this head unit's own access point. */
 enum class HotspotExitAction {
     /** Not a hotspot route — this decision belongs to someone else. */
@@ -33,8 +37,8 @@ object UserExitHotspotPolicy {
 
     /**
      * @param mode [com.andrerinas.openheadunit.utils.Settings.wifiConnectionMode]
-     * @param strategy [com.andrerinas.openheadunit.utils.Settings.helperConnectionStrategy]
-     * @param transport applies to [mode] 3 only
+     * @param helperStrategy [HelperStrategy]
+     * @param nativeStrategy applies to [WifiLauncherMode.NATIVE] only
      * @param autoEnableHotspot [com.andrerinas.openheadunit.utils.Settings.autoEnableHotspot] — the
      *   user's standing permission for the app to drive this device's hotspot
      * @param teardownProvenUnsafe whether this device has already failed to bring its access point
@@ -42,13 +46,13 @@ object UserExitHotspotPolicy {
      *   branch below.
      */
     fun onUserExit(
-        mode: Int,
-        strategy: Int,
-        transport: NativeTransport,
+        mode: WifiLauncherMode,
+        helperStrategy: HelperStrategy,
+        nativeStrategy: NativeStrategy,
         autoEnableHotspot: Boolean,
         teardownProvenUnsafe: Boolean = false
     ): HotspotExitAction = when {
-        !usesHeadUnitHotspot(mode, strategy, transport) -> HotspotExitAction.NONE
+        !usesHeadUnitHotspot(mode, helperStrategy, nativeStrategy) -> HotspotExitAction.NONE
         // Permission is not the only question; capability is the other one, and unlike permission
         // it can only be learned by trying. Some radios will not host an access point again once it
         // has been taken down — measured on a UNISOC unit where hostapd's channel scan raced the
@@ -62,6 +66,7 @@ object UserExitHotspotPolicy {
     }
 
     /** Whether this combination puts the phone on an access point this device is hosting. */
-    fun usesHeadUnitHotspot(mode: Int, strategy: Int, transport: NativeTransport): Boolean =
-        (mode == 3 && transport == NativeTransport.HOTSPOT) || (mode == 2 && strategy == 4)
+    fun usesHeadUnitHotspot(mode: WifiLauncherMode, helperStrategy: HelperStrategy, nativeStrategy: NativeStrategy): Boolean =
+        (mode == WifiLauncherMode.NATIVE && nativeStrategy == NativeStrategy.HOTSPOT) ||
+        (mode == WifiLauncherMode.HELPER && helperStrategy == HelperStrategy.HEADUNIT_HOTSPOT)
 }

@@ -11,6 +11,12 @@ class UsbDeviceCompat(val wrappedDevice: UsbDevice) {
     val deviceName: String
         get() = wrappedDevice.deviceName
 
+    val vendorId: Int
+        get() = wrappedDevice.vendorId
+
+    val productId: Int
+        get() = wrappedDevice.productId
+
     val uniqueName: String
         get() = getUniqueName(wrappedDevice)
 

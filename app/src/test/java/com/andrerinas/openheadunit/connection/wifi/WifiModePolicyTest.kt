@@ -1,5 +1,6 @@
-package com.andrerinas.openheadunit.aap
+package com.andrerinas.openheadunit.connection.wifi
 
+import com.andrerinas.openheadunit.connection.wifi.modes.native.NativeStrategy
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -18,20 +19,20 @@ class WifiModePolicyTest {
         // The caller force-disables the hotspot whenever this says true, so a wrong answer here
         // tears down the access point the hotspot route is about to hand the phone.
         assertFalse(
-            WifiModePolicy.usesWifiDirect(mode = 3, strategy = 0, transport = NativeTransport.HOTSPOT)
+            WifiModePolicy.usesWifiDirect(mode = 3, strategy = 0, transport = NativeStrategy.HOTSPOT)
         )
         assertTrue(
-            WifiModePolicy.usesWifiDirect(mode = 3, strategy = 0, transport = NativeTransport.WIFI_DIRECT)
+            WifiModePolicy.usesWifiDirect(mode = 3, strategy = 0, transport = NativeStrategy.WIFI_DIRECT)
         )
     }
 
     @Test
     fun `the transport only applies to native AA mode`() {
         assertTrue(
-            WifiModePolicy.usesWifiDirect(mode = 2, strategy = 1, transport = NativeTransport.HOTSPOT)
+            WifiModePolicy.usesWifiDirect(mode = 2, strategy = 1, transport = NativeStrategy.HOTSPOT)
         )
         assertFalse(
-            WifiModePolicy.usesWifiDirect(mode = 2, strategy = 0, transport = NativeTransport.WIFI_DIRECT)
+            WifiModePolicy.usesWifiDirect(mode = 2, strategy = 0, transport = NativeStrategy.WIFI_DIRECT)
         )
     }
 

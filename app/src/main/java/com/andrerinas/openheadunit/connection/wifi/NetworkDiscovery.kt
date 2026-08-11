@@ -1,4 +1,4 @@
-package com.andrerinas.openheadunit.connection
+package com.andrerinas.openheadunit.connection.wifi
 
 import android.content.Context
 import android.net.ConnectivityManager
@@ -130,7 +130,7 @@ class NetworkDiscovery(private val context: Context, private val listener: Liste
 
                 val addrs = Collections.list(intf.inetAddresses)
                 for (addr in addrs) {
-                    if (addr is java.net.Inet4Address) {
+                    if (addr is Inet4Address) {
                         return addr.hostAddress
                     }
                 }
@@ -154,9 +154,14 @@ class NetworkDiscovery(private val context: Context, private val listener: Liste
             val holdMs = 500L
             AppLog.i("NetworkDiscovery: Found Wifi Launcher on $ip:5289, holding probe ${holdMs}ms to wake the helper")
             reportedIps.add(ip)
-            try { delay(holdMs) } catch (e: Exception) {}
+            try {
+                delay(holdMs)
+            } catch (e: Exception) {}
             withContext(Dispatchers.Main) {
-                try { launcherSocket.close() } catch (e: Exception) {}
+                try {
+                    launcherSocket.close()
+                } catch (e: Exception) {
+                }
                 AppLog.i("NetworkDiscovery: Wifi Launcher probe released; awaiting inbound helper connection on 5288")
                 listener.onServiceFound(ip, 5289)
             }

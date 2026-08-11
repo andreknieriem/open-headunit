@@ -47,6 +47,15 @@
     <string name="use_gradient_background_description_on_auto">Ứng dụng tự vẽ nền với vòng tròn chuyển sắc ở giữa. Không áp dụng cho chế độ Siêu tối</string>
     <string name="use_gradient_background_description_off_auto">Đang dùng nền mặc định của ứng dụng. Không áp dụng cho chế độ Siêu tối</string>
     <string name="category_dark_mode">Chế độ tối</string>
+    <string name="category_theming">Chủ đề</string>
+    <string name="customization_title">Tùy chỉnh</string>
+    <string name="customization_description">Tùy chỉnh hình nền và giao diện của màn hình chính</string>
+    <string name="home_background_image">Hình nền</string>
+    <string name="home_background_image_description">Chọn hình ảnh tùy chỉnh cho màn hình chính</string>
+    <string name="home_background_default">Mặc định (bg.png)</string>
+    <string name="home_background_custom">Hình ảnh tùy chỉnh</string>
+    <string name="btn_choose_image">Chọn hình ảnh</string>
+    <string name="btn_reset_default">Đặt lại về mặc định</string>
     <string name="category_automation">Tự động hoá</string>
     <string name="dark_mode_settings">Cài đặt chế độ tối</string>
     <string name="app_theme_short">Ứng dụng</string>

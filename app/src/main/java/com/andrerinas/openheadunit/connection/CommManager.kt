@@ -28,8 +28,8 @@ import com.andrerinas.openheadunit.aap.protocol.proto.MediaPlayback
 import java.net.Socket
 import android.view.KeyEvent
 import com.andrerinas.openheadunit.aap.protocol.messages.TouchEvent
-import com.andrerinas.openheadunit.aap.protocol.proto.Input
 import com.andrerinas.openheadunit.aap.protocol.proto.Input.TouchEvent.PointerAction
+import com.andrerinas.openheadunit.connection.wifi.modes.helper.NearbySocket
 
 /**
  * Central connection and transport lifecycle manager.

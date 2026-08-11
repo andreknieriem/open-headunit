@@ -1,4 +1,4 @@
-package com.andrerinas.openheadunit.aap
+package com.andrerinas.openheadunit.connection.wifi.modes.native
 
 /**
  * Picks the BSSID to advertise for our own access point, best source first.

@@ -1,4 +1,4 @@
-package com.andrerinas.openheadunit.aap
+package com.andrerinas.openheadunit.connection.wifi.modes.native
 
 /** What one attempt at resolving this head unit's access-point credentials came to. */
 enum class SoftApCredentialsAttempt {

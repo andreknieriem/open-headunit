@@ -1,5 +1,6 @@
-package com.andrerinas.openheadunit.connection
+package com.andrerinas.openheadunit.connection.wifi.modes.native
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
@@ -8,10 +9,7 @@ import android.bluetooth.BluetoothSocket
 import android.content.Context
 import com.andrerinas.openheadunit.aap.AapService
 import com.andrerinas.openheadunit.aap.BluetoothWakePolicy
-import com.andrerinas.openheadunit.aap.NativeCredentialsPolicy
 import com.andrerinas.openheadunit.aap.NativeHandoffPolicy
-import com.andrerinas.openheadunit.aap.NativeTransport
-import com.andrerinas.openheadunit.aap.UnusableBssidAction
 import com.andrerinas.openheadunit.aap.WppAction
 import com.andrerinas.openheadunit.aap.WppEvent
 import com.andrerinas.openheadunit.aap.WppFraming
@@ -27,8 +25,11 @@ import android.os.Build
 import android.os.SystemClock
 import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
+import com.andrerinas.openheadunit.App
+import com.andrerinas.openheadunit.connection.CommManager
+import com.andrerinas.openheadunit.connection.wifi.modes.WifiLauncherNative
+import com.andrerinas.openheadunit.utils.Settings
 import java.io.DataInputStream
-import java.io.IOException
 import java.io.OutputStream
 import java.util.*
 
@@ -38,6 +39,7 @@ import java.util.*
  */
 class NativeAaHandshakeManager(
     private val context: AapService,
+    private val launcher: WifiLauncherNative,
     private val scope: CoroutineScope
 ) {
     companion object {
@@ -87,7 +89,7 @@ class NativeAaHandshakeManager(
          * still goes in the log either way.
          */
         fun externalBtOverridden(context: Context): Boolean =
-            com.andrerinas.openheadunit.App.provide(context)
+            App.provide(context)
                 .settings.manualSecondaryBluetoothServiceName.isNotEmpty()
 
         fun checkCompatibility(context: Context): Boolean {
@@ -97,7 +99,7 @@ class NativeAaHandshakeManager(
                 AppLog.w("NativeAA: continuing anyway — a secondary Bluetooth service is configured manually.")
             }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.BLUETOOTH_CONNECT) 
+                if (ContextCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT)
                     != PackageManager.PERMISSION_GRANTED) {
                     AppLog.w("NativeAA: Compatibility Check skipped - Missing BLUETOOTH_CONNECT")
                     return false
@@ -117,15 +119,15 @@ class NativeAaHandshakeManager(
         }
     }
 
-    private val settings = com.andrerinas.openheadunit.App.provide(context).settings
-    private val commManager = com.andrerinas.openheadunit.App.provide(context).commManager
+    private val settings = App.provide(context).settings
+    private val commManager = App.provide(context).commManager
     private var aaServerSocket: BluetoothServerSocket? = null
     private var hfpServerSocket: BluetoothServerSocket? = null
     // Extra RFCOMM listeners opened on secondary Bluetooth radios (dual-Bluetooth head units).
     // Split by UUID so a successful handoff can close just the AA listeners (see
     // closeAaListeners()) without taking down the HFP ones too.
-    private val extraAaServerSockets = java.util.Collections.synchronizedList(mutableListOf<BluetoothServerSocket>())
-    private val extraHfpServerSockets = java.util.Collections.synchronizedList(mutableListOf<BluetoothServerSocket>())
+    private val extraAaServerSockets = Collections.synchronizedList(mutableListOf<BluetoothServerSocket>())
+    private val extraHfpServerSockets = Collections.synchronizedList(mutableListOf<BluetoothServerSocket>())
     private var isRunning = false
     // Set by closeAaListeners() so the AA accept loops can tell "we closed this on purpose
     // after a successful handoff" apart from a real socket error, for logging only.
@@ -192,7 +194,7 @@ class NativeAaHandshakeManager(
     private suspend fun awaitWirelessServerListening(timeoutMs: Long): Boolean {
         val deadline = SystemClock.elapsedRealtime() + timeoutMs
         while (true) {
-            if (context.isWirelessServerListening()) return true
+            if (launcher.isWirelessServerListening()) return true
             if (SystemClock.elapsedRealtime() >= deadline) return false
             delay(250)
         }
@@ -264,7 +266,7 @@ class NativeAaHandshakeManager(
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.BLUETOOTH_CONNECT) 
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT)
                 != PackageManager.PERMISSION_GRANTED) {
                 AppLog.e("NativeAA: Missing BLUETOOTH_CONNECT permission. Handshake server cannot start.")
                 return
@@ -456,8 +458,8 @@ class NativeAaHandshakeManager(
     private fun logHfpAccept(socket: BluetoothSocket, radio: String) {
         val device = socket.remoteDevice
         AppLog.i("NativeAA: HFP connection accepted from ${device.name ?: "unnamed"} (${device.address}) " +
-                "on radio [$radio] — the phone's hands-free link now terminates in this app, " +
-                "which cannot carry call audio. If calls are not heard on this unit, look here first.")
+            "on radio [$radio] — the phone's hands-free link now terminates in this app, " +
+            "which cannot carry call audio. If calls are not heard on this unit, look here first.")
     }
 
     /**
@@ -469,17 +471,17 @@ class NativeAaHandshakeManager(
             val input = socket.inputStream
             val output = socket.outputStream
             val buf = ByteArray(1024)
-            
+
             AppLog.i("NativeAA: HFP responder active for ${socket.remoteDevice.name}")
-            
+
             while (isRunning && isActive && socket.isConnected) {
                 if (input.available() > 0) {
                     val read = input.read(buf)
                     if (read == -1) break
-                    
+
                     val cmd = String(buf, 0, read, Charsets.US_ASCII).trim()
                     AppLog.d("NativeAA: HFP RX: $cmd")
-                    
+
                     // Respond to standard HFP initialization commands
                     when {
                         cmd.contains("AT+BRSF") -> {
@@ -556,8 +558,8 @@ class NativeAaHandshakeManager(
      */
     private fun noteHandsFreePokeSkip(device: BluetoothDevice) {
         val message = "NativeAA: Not poking ${device.name ?: "unnamed"} (${device.address}) — this " +
-                "head unit already holds a Bluetooth hands-free link, which a poke would take over " +
-                "and leave disconnected. That link is itself the connection a poke exists to create."
+            "head unit already holds a Bluetooth hands-free link, which a poke would take over " +
+            "and leave disconnected. That link is itself the connection a poke exists to create."
         if (!handsFreeSkipLogged) {
             handsFreeSkipLogged = true
             AppLog.i(message)
@@ -586,8 +588,8 @@ class NativeAaHandshakeManager(
         // the user meant "wake my phone", not "ask to pair with it again".
         if (!BluetoothWakePolicy.mayPoke(bondReadingFor(device))) {
             AppLog.w("NativeAA: Not poking ${device.name ?: "unnamed"} (${device.address}) — it is not " +
-                    "currently paired with this head unit, and connecting to an unpaired device would " +
-                    "ask the user to pair rather than wake anything.")
+                "currently paired with this head unit, and connecting to an unpaired device would " +
+                "ask the user to pair rather than wake anything.")
             return false
         }
 
@@ -646,7 +648,7 @@ class NativeAaHandshakeManager(
             return
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.BLUETOOTH_CONNECT)
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT)
                 != PackageManager.PERMISSION_GRANTED) {
                 AppLog.w("NativeAA: Missing BLUETOOTH_CONNECT. Cannot triggerPoke.")
                 return
@@ -697,7 +699,7 @@ class NativeAaHandshakeManager(
                         AppLog.w("NativeAA: Dropping Auto Start BT MAC(s) no longer paired: $staleMacs")
                         val remaining = lastMacs - staleMacs
                         settings.autoStartBluetoothDeviceMacs = remaining
-                        com.andrerinas.openheadunit.utils.Settings.syncAutoStartBtMacsToDeviceStorage(context, remaining)
+                        Settings.syncAutoStartBtMacsToDeviceStorage(context, remaining)
                     }
                     bonded
                 } else {
@@ -721,7 +723,7 @@ class NativeAaHandshakeManager(
                     // If RFCOMM connects before WiFi credentials exist, the phone times out after 10s waiting for WifiStartRequest.
                     if (currentSsid.isNullOrEmpty() || currentIp.isNullOrEmpty()) {
                         AppLog.i("NativeAA: WiFi credentials not ready before poke. Requesting WiFi refresh...")
-                        (context as? AapService)?.triggerWifiDirectRefresh()
+                        launcher.triggerWifiDirectRefresh()
                         var waitedMs = 0
                         while ((currentSsid.isNullOrEmpty() || currentIp.isNullOrEmpty()) && waitedMs < 4000 && isRunning && isActive) {
                             delay(200)
@@ -766,7 +768,7 @@ class NativeAaHandshakeManager(
      */
     fun manualPoke(address: String) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.BLUETOOTH_CONNECT) 
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT)
                 != PackageManager.PERMISSION_GRANTED) {
                 AppLog.w("NativeAA: Missing BLUETOOTH_CONNECT. Cannot manualPoke.")
                 return
@@ -779,13 +781,13 @@ class NativeAaHandshakeManager(
             // The user asking to try again is the way out of a handshake backoff — it is the only
             // gesture the UI offers, and it means they want another attempt whatever we concluded.
             resetHandshakeBackoff()
-            
+
             pokeJob?.cancel()
             pokeJob = scope.launch(Dispatchers.IO + CoroutineName("NativeAa-ManualWakeup")) {
                 // Pre-flight: Ensure WiFi credentials (SSID/IP) are ready before connecting RFCOMM to phone.
                 if (currentSsid.isNullOrEmpty() || currentIp.isNullOrEmpty()) {
                     AppLog.i("NativeAA: WiFi credentials not ready before manual poke. Requesting WiFi refresh...")
-                    (context as? AapService)?.triggerWifiDirectRefresh()
+                    launcher.triggerWifiDirectRefresh()
                     var waitedMs = 0
                     while ((currentSsid.isNullOrEmpty() || currentIp.isNullOrEmpty()) && waitedMs < 4000 && isRunning && isActive) {
                         delay(200)
@@ -893,7 +895,7 @@ class NativeAaHandshakeManager(
         var spokeToPhone = false
         var abortedLocally = false
         // Captured once, so a settings change mid-exchange cannot split it across two rulesets.
-        val transport = NativeTransport.fromSetting(settings.nativeApTransport)
+        val transport = settings.nativeApStrategy
         val session = WppHandshakeSession(settings.nativeWifiVersionExchange)
         // Everything the phone sends, in order. Replaces the single bounded read this used to do:
         // types 6 and 7 arrive *after* the credentials go out, so a one-shot read could never see
@@ -918,7 +920,7 @@ class NativeAaHandshakeManager(
                 val newMacs = macs + device.address
                 settings.autoStartBluetoothDeviceMacs = newMacs
                 settings.autoStartBluetoothDeviceName = device.name ?: "Unknown Device"
-                com.andrerinas.openheadunit.utils.Settings.syncAutoStartBtMacsToDeviceStorage(context, newMacs)
+                Settings.syncAutoStartBtMacsToDeviceStorage(context, newMacs)
             }
 
             val input = DataInputStream(socket.inputStream)
@@ -1135,7 +1137,7 @@ class NativeAaHandshakeManager(
                 if (now - lastRefreshAt >= 10_000) {
                     lastRefreshAt = now
                     AppLog.w("NativeAA: Still waiting for credentials after ${waitedS}s. Requesting WiFi refresh...")
-                    context.triggerWifiDirectRefresh()
+                    launcher.triggerWifiDirectRefresh()
                 } else if (now - lastProgressLogAt >= 5_000) {
                     lastProgressLogAt = now
                     AppLog.d("NativeAA: Still waiting... SSID=${currentSsid != null}, IP=${currentIp != null} (${waitedS}s)")
@@ -1167,7 +1169,7 @@ class NativeAaHandshakeManager(
                         // to a location toggle that is already on.
                         AppLog.e("NativeAA: If location is already on, this device cannot read its own WiFi Direct MAC at all. Read it from the system (P2P device address) and set it as the static BSSID in Advanced settings.")
                         // Triggering a P2P refresh so the next attempt has a valid BSSID
-                        context.triggerWifiDirectRefresh()
+                        launcher.triggerWifiDirectRefresh()
                         // Not fed to the session as CredentialsUnavailable: its failure reason
                         // would say the credentials never arrived, when in fact they arrived
                         // unusable, and the line above is the one the reporter needs to act on.
@@ -1304,7 +1306,7 @@ class NativeAaHandshakeManager(
     /**
      * Declares our protocol version, opening the modern exchange. Real head units send this first
      * — the OEM ZLink app does — while aa-proxy-rs's own dongle does not, which is why it sits
-     * behind [com.andrerinas.openheadunit.utils.Settings.nativeWifiVersionExchange].
+     * behind [Settings.nativeWifiVersionExchange].
      *
      * The version numbers are a guess and known to be one; see [WppHandshakeSession].
      */
@@ -1325,7 +1327,7 @@ class NativeAaHandshakeManager(
      * than dropping the field. Omitting it risks a strict parser rejecting the whole message, which
      * would surface as silence rather than as the specific refusal an empty one produces.
      *
-     * [transport] picks the access-point type: DYNAMIC for a hotspot, matching both reference
+     * [strategy] picks the access-point type: DYNAMIC for a hotspot, matching both reference
      * implementations, and STATIC for a WiFi Direct group as before.
      */
     private fun sendWifiSecurityResponse(
@@ -1333,14 +1335,14 @@ class NativeAaHandshakeManager(
         ssid: String,
         key: String,
         bssid: String?,
-        transport: NativeTransport
+        strategy: NativeStrategy
     ) {
         val response = Wireless.WifiInfoResponse.newBuilder()
             .setSsid(ssid)
             .setKey(key)
             .setSecurityMode(Wireless.SecurityMode.WPA2_PERSONAL)
             .setAccessPointType(
-                if (transport == NativeTransport.HOTSPOT) Wireless.AccessPointType.DYNAMIC
+                if (strategy == NativeStrategy.HOTSPOT) Wireless.AccessPointType.DYNAMIC
                 else Wireless.AccessPointType.STATIC
             )
             .setBssid(bssid.orEmpty())

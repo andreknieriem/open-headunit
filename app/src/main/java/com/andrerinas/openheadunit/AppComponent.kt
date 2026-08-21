@@ -6,6 +6,7 @@ import android.net.wifi.WifiManager
 import com.andrerinas.openheadunit.connection.CommManager
 import com.andrerinas.openheadunit.connection.carkey.CarKeysManager
 import com.andrerinas.openheadunit.decoder.AudioDecoder
+import com.andrerinas.openheadunit.decoder.DeviceMemoryProfile
 import com.andrerinas.openheadunit.decoder.VideoDecoder
 import com.andrerinas.openheadunit.utils.SUExecutor
 import com.andrerinas.openheadunit.utils.Settings
@@ -13,7 +14,7 @@ import com.andrerinas.openheadunit.utils.Settings
 class AppComponent(private val app: App) {
 
     val settings = Settings(app)
-    val videoDecoder = VideoDecoder(settings)
+    val videoDecoder = VideoDecoder(settings, DeviceMemoryProfile.readWithOverride(app, settings.debugForceMemoryProfile))
     val audioDecoder = AudioDecoder()
 
     val notificationManager: NotificationManager

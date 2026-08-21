@@ -5,7 +5,7 @@ import android.content.Intent
 import android.hardware.usb.UsbManager
 import android.os.Bundle
 import android.os.SystemClock
-import android.text.Html
+import android.text.TextUtils
 import android.view.LayoutInflater
 import android.view.View
 import android.view.View.GONE
@@ -15,6 +15,7 @@ import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
+import androidx.core.text.HtmlCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Observer
@@ -50,7 +51,7 @@ class UsbListFragment : Fragment() {
         adapter = DeviceAdapter(requireContext(), settings)
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
         recyclerView.adapter = adapter
-        
+
         // Add padding
         val padding = resources.getDimensionPixelSize(R.dimen.list_padding)
         recyclerView.setPadding(padding, padding, padding, padding)
@@ -103,7 +104,7 @@ class UsbListFragment : Fragment() {
 
         override fun onBindViewHolder(holder: DeviceViewHolder, position: Int) {
             val device = deviceList[position]
-            
+
             // Background styling logic
             val isTop = position == 0
             val isBottom = position == itemCount - 1
@@ -116,7 +117,12 @@ class UsbListFragment : Fragment() {
             holder.itemView.setBackgroundResource(bgRes)
 
             val vidPidText = " (${mSettings.formatUsbVidPidDisplay(device.vendorId, device.productId)})"
-            holder.startButton.text = "${device.uniqueName}$vidPidText"
+            val title = TextUtils.htmlEncode("${device.uniqueName}$vidPidText")
+            val path = TextUtils.htmlEncode(device.deviceName)
+            holder.startButton.text = HtmlCompat.fromHtml(
+                "<b>$title</b><br/>$path",
+                HtmlCompat.FROM_HTML_MODE_LEGACY
+            )
             holder.startButton.tag = position
             holder.startButton.setOnClickListener(this)
 

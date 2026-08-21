@@ -36,7 +36,9 @@ class UsbDeviceCompat(val wrappedDevice: UsbDevice) {
         fun getUniqueName(device: UsbDevice): String {
             val vendorId = device.vendorId
             val productId = device.productId
-            val vidPid = "${Utils.hex_get(vendorId.toShort())}:${Utils.hex_get(productId.toShort())}"
+            val vidHex = Utils.hex_get(vendorId.toShort())
+            val pidHex = Utils.hex_get(productId.toShort())
+            val vidPid = "VID: $vidHex PID: $pidHex"
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 val manufacturer = device.manufacturerName?.takeIf { it.isNotBlank() }

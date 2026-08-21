@@ -813,6 +813,11 @@
     <string name="rename_notice_title">Unser Name wird zu Open Headunit</string>
     <string name="rename_notice_message">Headunit Revived wächst, dank euch, und wird zu etwas Eigenem: Open Headunit. Wir führen den neuen Namen über die nächsten Updates hinweg ein, daher siehst du an manchen Stellen vielleicht noch eine Weile den alten Namen.\n\nGleiche App, dieselben Leute dahinter, und all deine Einstellungen bleiben genau so, wie sie sind.</string>
     <string name="rename_notice_button">Verstanden</string>
+    <string name="category_ui">Oberfläche</string>
+    <string name="hide_phone_signal_label">Verstecke Signalstärke vom Handy</string>
+    <string name="hide_battery_level_label">Verstecke Akkustand vom Handy</string>
+    <string name="hide_clock_label">Verstecke Uhrzeit</string>
+    <string name="might_broken_on_newer_aa_versions">Diese Funktion funktioniert ggf. mit neueren Versionen von Android Auto nicht</string>
 <string name="media_key_routing">Medientasten an Android Auto senden</string>
     <string name="media_key_routing_always">Immer</string>
     <string name="media_key_routing_auto">Automatisch</string>

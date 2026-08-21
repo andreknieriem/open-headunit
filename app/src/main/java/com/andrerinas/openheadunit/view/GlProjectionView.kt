@@ -105,8 +105,14 @@ class GlProjectionView(context: Context) : GLSurfaceView(context), IProjectionVi
         private var mScaleX = 1.0f
         private var mScaleY = 1.0f
 
+        /**
+         * Resizes the texture's default buffer, on the GL thread.
+         *
+         * Called from the main thread when the video dimensions change, and it used to touch the
+         * SurfaceTexture straight from there while the GL thread was inside updateTexImage.
+         */
         fun updateBufferSize(width: Int, height: Int) {
-            surfaceTexture?.setDefaultBufferSize(width, height)
+            queueEvent { surfaceTexture?.setDefaultBufferSize(width, height) }
         }
 
         fun setScale(x: Float, y: Float) {
@@ -236,6 +242,38 @@ class GlProjectionView(context: Context) : GLSurfaceView(context), IProjectionVi
         private var updateSurface = false
         private var hasYuvFrame = false
         private var pendingYuvFrame = false
+
+        /**
+         * Which of the two frame sources produced something most recently.
+         *
+         * This renderer can be fed two ways: the decoder renders into [surfaceTexture] and the GL
+         * thread samples it as an external texture, or the bundled software decoder hands over YUV
+         * planes and the GL thread uploads them itself. [hasYuvFrame] used to latch true on the first
+         * YUV frame and never clear, so once a single software-decoded frame had been drawn the
+         * external-texture path was dead for the life of the renderer - and any later hardware output
+         * went into the SurfaceTexture and was never sampled. Turning software decoding off without
+         * reconnecting left a frozen or black picture.
+         *
+         * Comparing sequence numbers instead of latching a flag makes the choice self-healing: the
+         * source that is actually producing frames wins, and a switch either way is corrected on the
+         * next draw without anything having to tell the renderer it happened.
+         */
+        private var frameSequence = 0L
+        private var lastOesFrameSeq = 0L
+        private var lastYuvFrameSeq = 0L
+
+        /**
+         * Set once the direct upload has missed its deadline, after which only the staged path is used.
+         *
+         * The direct path hands the codec's own buffers to the GL thread and waits up to
+         * [directUploadTimeoutMs] for the upload to finish, which saves a CPU copy of three planes when
+         * the GL thread is keeping up. When it is not, the caller - the decoder thread - pays the full
+         * timeout *and then does the staged copy anyway*, which is the worst of both and was happening
+         * per frame. A GL thread slow enough to miss the deadline once is not going to start making it,
+         * so stop asking: the cost becomes one missed deadline a session instead of one per frame.
+         */
+        @Volatile
+        private var directUploadTimedOut = false
         private var yuvWidth = 0
         private var yuvHeight = 0
         private val uploadedPlaneWidths = IntArray(3)
@@ -278,6 +316,7 @@ class GlProjectionView(context: Context) : GLSurfaceView(context), IProjectionVi
                 yuvHeight = height
                 hasYuvFrame = true
                 pendingYuvFrame = true
+                lastYuvFrameSeq = ++frameSequence
                 if (!loggedFirstYuvFrame) {
                     loggedFirstYuvFrame = true
                     AppLog.i("GlProjectionView: first YUV420 frame queued ${width}x$height strides=$yStride/$uStride/$vStride")
@@ -298,6 +337,7 @@ class GlProjectionView(context: Context) : GLSurfaceView(context), IProjectionVi
             vStride: Int
         ): Boolean {
             if (width <= 0 || height <= 0) return false
+            if (directUploadTimedOut) return false
             val chromaWidth = width / 2
             val chromaHeight = height / 2
             if (yStride < width || uStride < chromaWidth || vStride < chromaWidth) return false
@@ -343,6 +383,11 @@ class GlProjectionView(context: Context) : GLSurfaceView(context), IProjectionVi
 
                 if (!completed.await(directUploadTimeoutMs, TimeUnit.MILLISECONDS)) {
                     if (state.compareAndSet(directPending, directCancelled)) {
+                        directUploadTimedOut = true
+                        AppLog.w(
+                            "GlProjectionView: direct YUV upload missed its ${directUploadTimeoutMs}ms deadline; " +
+                                "using the staged copy for the rest of this session"
+                        )
                         return false
                     }
                     completed.await()
@@ -419,13 +464,19 @@ class GlProjectionView(context: Context) : GLSurfaceView(context), IProjectionVi
             uploadYuvPlane(1, yuvTextureIds[1], uPlane, uStride, chromaHeight)
             uploadYuvPlane(2, yuvTextureIds[2], vPlane, vStride, chromaHeight)
 
-            yuvWidth = width
-            yuvHeight = height
-            yTextureScaleX = width.toFloat() / yStride.toFloat()
-            uTextureScaleX = chromaWidth.toFloat() / uStride.toFloat()
-            vTextureScaleX = chromaWidth.toFloat() / vStride.toFloat()
-            hasYuvFrame = true
-            pendingYuvFrame = false
+            // Under the monitor: queueYuv420Frame and drawYuvFrame read exactly these fields under
+            // it, and this path wrote them all bare. The GL uploads above stay outside, so the
+            // decoder thread is not held for the length of a texture upload.
+            synchronized(this) {
+                yuvWidth = width
+                yuvHeight = height
+                yTextureScaleX = width.toFloat() / yStride.toFloat()
+                uTextureScaleX = chromaWidth.toFloat() / uStride.toFloat()
+                vTextureScaleX = chromaWidth.toFloat() / vStride.toFloat()
+                hasYuvFrame = true
+                pendingYuvFrame = false
+                lastYuvFrameSeq = ++frameSequence
+            }
 
             if (!loggedFirstDirectYuvFrame) {
                 loggedFirstDirectYuvFrame = true
@@ -434,14 +485,26 @@ class GlProjectionView(context: Context) : GLSurfaceView(context), IProjectionVi
             return true
         }
 
+        /**
+         * Tears the render target down, telling the decoder before the Surface is actually gone.
+         *
+         * The notification has to be posted to the main looper because that is where every other
+         * surface callback is delivered from, and it used to be posted *and then* followed by two
+         * synchronous release() calls - so for one looper turn the decoder still held a Surface that
+         * had already been released. Releasing inside the same post closes that window; the fields are
+         * cleared first so a second call cannot release twice.
+         */
         fun release() {
-            surface?.let { s ->
-                Handler(Looper.getMainLooper()).post {
-                    callbacks.forEach { it.onSurfaceDestroyed(s) }
-                }
+            val doomedSurface = surface
+            val doomedTexture = surfaceTexture
+            surface = null
+            surfaceTexture = null
+            if (doomedSurface == null && doomedTexture == null) return
+            Handler(Looper.getMainLooper()).post {
+                doomedSurface?.let { s -> callbacks.forEach { it.onSurfaceDestroyed(s) } }
+                doomedSurface?.release()
+                doomedTexture?.release()
             }
-            surface?.release()
-            surfaceTexture?.release()
         }
 
         override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
@@ -556,7 +619,8 @@ class GlProjectionView(context: Context) : GLSurfaceView(context), IProjectionVi
             GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f)
             GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
 
-            val shouldDrawYuv = synchronized(this) { hasYuvFrame }
+            // Whichever source produced a frame more recently. See lastOesFrameSeq.
+            val shouldDrawYuv = synchronized(this) { hasYuvFrame && lastYuvFrameSeq >= lastOesFrameSeq }
             if (shouldDrawYuv) {
                 drawYuvFrame()
                 return
@@ -678,6 +742,7 @@ class GlProjectionView(context: Context) : GLSurfaceView(context), IProjectionVi
         override fun onFrameAvailable(surfaceTexture: SurfaceTexture?) {
             synchronized(this) {
                 updateSurface = true
+                lastOesFrameSeq = ++frameSequence
             }
             requestRender()
         }

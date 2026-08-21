@@ -2,7 +2,7 @@ package com.andrerinas.openheadunit.connection.wifi.modes
 
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.connection.CommManager
-import com.andrerinas.openheadunit.connection.wifi.WifiDirectManager
+import com.andrerinas.openheadunit.connection.wifi.direct.WifiDirectManager
 import com.andrerinas.openheadunit.connection.wifi.modes.native.NativeAaHandshakeManager
 import com.andrerinas.openheadunit.connection.wifi.modes.native.SoftApCredentialsProvider
 import com.andrerinas.openheadunit.connection.wifi.modes.native.NativeStrategy
@@ -14,7 +14,7 @@ import com.andrerinas.openheadunit.utils.AppLog
 
 class WifiLauncherNative : WifiLauncher {
 
-    private val strategy: NativeStrategy
+    val strategy: NativeStrategy
 
     var handshakeManager: NativeAaHandshakeManager? = null
         private set

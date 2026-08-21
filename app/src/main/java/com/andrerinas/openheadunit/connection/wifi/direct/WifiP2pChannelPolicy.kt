@@ -1,4 +1,4 @@
-package com.andrerinas.openheadunit.aap
+package com.andrerinas.openheadunit.connection.wifi.direct
 
 /**
  * Whether the channel a P2P group came up on is one a phone can actually join.
@@ -14,7 +14,7 @@ package com.andrerinas.openheadunit.aap
  * the same one - measured on a unit where this failed as six recreates all landing on 2467 MHz.
  * Restarting WiFi, or a country code the driver honours, is what moves it.
  */
-object P2pChannelPolicy {
+object WifiP2pChannelPolicy {
 
     /** Channel 1. Below this is not a 2.4 GHz channel. */
     private const val CHANNEL_1_MHZ = 2412
@@ -25,8 +25,14 @@ object P2pChannelPolicy {
     /** Channel 13, the top of the regular 5 MHz spacing. */
     private const val CHANNEL_13_MHZ = 2472
 
-    /** Channel 14: Japan only, 802.11b only, and off the 5 MHz grid. */
-    private const val CHANNEL_14_MHZ = 2484
+    /**
+     * Channel 14: Japan only, 802.11b only, and off the 5 MHz grid.
+     *
+     * Public because [WifiP2pOperatingChannelPolicy] converts the other way and needs the same exception.
+     * The two were written independently and only this one had it, so the number is shared rather
+     * than repeated.
+     */
+    const val CHANNEL_14_MHZ = 2484
 
     /** True for a 2.4 GHz frequency, by the span the band occupies rather than by exact channel. */
     fun is24GHz(frequencyMhz: Int): Boolean = frequencyMhz in CHANNEL_1_MHZ..CHANNEL_14_MHZ

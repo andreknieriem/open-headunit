@@ -465,5 +465,6 @@ object SettingsBackupManager {
         Settings.syncListenForUsbDevicesToDeviceStorage(context, settings.listenForUsbDevices)
         Settings.syncAutoStartBtMacsToDeviceStorage(context, settings.autoStartBluetoothDeviceMacs)
         Settings.setUsbAttachedActivityEnabled(context, settings.listenForUsbDevices)
+        AppThemeManager.reapply(context, settings)
     }
 }

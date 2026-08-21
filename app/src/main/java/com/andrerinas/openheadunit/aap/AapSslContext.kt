@@ -145,6 +145,10 @@ class AapSslContext(keyManager: SingleKeyKeyManager): AapSsl {
 
                 txBuffer = ByteBuffer.allocateDirect(netBufferMax)
                 rxBuffer = ByteBuffer.allocateDirect(Messages.DEF_BUFFER_LENGTH.coerceAtLeast(appBufferMax + 50))
+                // One plaintext buffer for the whole session, sized to what rxBuffer can hold, which
+                // is the ceiling on what a single unwrap can produce. See decrypt() for why it is
+                // reused rather than allocated per message.
+                plaintextBuffer = ByteArray(rxBuffer.capacity())
             }
         }
         sslEngine.beginHandshake()
@@ -207,6 +211,33 @@ class AapSslContext(keyManager: SingleKeyKeyManager): AapSsl {
         return receivedHandshakeData.size
     }
 
+    /**
+     * Plaintext of the message currently being handled, reused across messages.
+     *
+     * This used to be `ByteArray(result.bytesProduced())` per call, and the call is per AAP *message*
+     * - so per video *fragment*, not per frame. At 50fps with two or three fragments a frame that is
+     * 150-250 short-lived arrays a second, each tens of kilobytes, which is large enough to land in
+     * the large-object space. It is the churn behind #839's collector running every five to ten
+     * seconds, freeing 84-208 large objects a cycle and once pausing for 1.4 seconds on a unit whose
+     * decoder was keeping up the whole time.
+     *
+     * Reusing it is only safe because every consumer of the returned array finishes with it before
+     * the next message is decrypted: the poll thread reads, decrypts, dispatches and returns, all
+     * synchronously, and the three paths that could have outlived that all copy first - the video
+     * feed queue arraycopies into a pooled frame, the audio path arraycopies into its own pooled
+     * chunk, and protobuf parsing copies. Every consumer also bounds its reads by the message's
+     * `size` field rather than by `data.size`, which is what makes a buffer larger than the payload
+     * safe; that was checked call site by call site, and the one place that did not - the short-payload
+     * guard in AapMessageIncoming - is fixed alongside this.
+     *
+     * If anything is ever added that hands `AapMessage.data` to another thread without copying, this
+     * is the field that makes it a corruption bug rather than a slow one.
+     */
+    private lateinit var plaintextBuffer: ByteArray
+
+    /** Reused wrapper, so the per-message allocation is zero rather than one small object. */
+    private val plaintextHolder = ByteArrayWithLimit(ByteArray(0), 0)
+
     override fun decrypt(start: Int, length: Int, buffer: ByteArray): ByteArrayWithLimit? {
         // The status line is built under the lock but emitted outside it. encrypt() takes this same
         // monitor, so logging in here put the whole logging pipeline — formatting, the caller-name
@@ -214,7 +245,7 @@ class AapSslContext(keyManager: SingleKeyKeyManager): AapSsl {
         // decrypted packet, which at verbose is several times per video frame.
         var statusLine: String? = null
         val decrypted = synchronized(this) {
-            if (!::sslEngine.isInitialized || !::rxBuffer.isInitialized) {
+            if (!::sslEngine.isInitialized || !::rxBuffer.isInitialized || !::plaintextBuffer.isInitialized) {
                 AppLog.w("SSL Decrypt: Not initialized yet")
                 return null
             }
@@ -228,10 +259,19 @@ class AapSslContext(keyManager: SingleKeyKeyManager): AapSsl {
                     statusLine = "SSL Decrypt Status: ${result.status}, Produced: ${result.bytesProduced()}, Consumed: ${result.bytesConsumed()}"
                 }
 
-                val resultBuffer = ByteArray(result.bytesProduced())
+                val produced = result.bytesProduced()
+                if (produced > plaintextBuffer.size) {
+                    // Cannot happen: rxBuffer is what unwrap writes into and plaintextBuffer is its
+                    // capacity. Checked anyway, because silently truncating a message here would look
+                    // exactly like stream corruption further down.
+                    AppLog.e("SSL Decrypt: produced $produced bytes, larger than the ${plaintextBuffer.size}-byte plaintext buffer")
+                    plaintextBuffer = ByteArray(produced)
+                }
                 rxBuffer.flip()
-                rxBuffer.get(resultBuffer)
-                ByteArrayWithLimit(resultBuffer, resultBuffer.size)
+                rxBuffer.get(plaintextBuffer, 0, produced)
+                plaintextHolder.data = plaintextBuffer
+                plaintextHolder.limit = produced
+                plaintextHolder
             } catch (e: Exception) {
                 // Check for Magic Garbage disconnect signal from Wireless Helper
                 if (length >= 16) {

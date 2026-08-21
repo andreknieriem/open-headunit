@@ -26,7 +26,9 @@ class ProjectionView @JvmOverloads constructor(
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
-        videoDecoder?.stop(DecoderStopPolicy.REASON_DETACHED_FROM_WINDOW)
+        // The decoder is a singleton and this view may be a discarded instance detaching after a
+        // replacement already claimed it, so only stop the decoder if this surface still owns it.
+        videoDecoder?.stopIfCurrentSurface(holder.surface, DecoderStopPolicy.REASON_DETACHED_FROM_WINDOW)
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
@@ -47,7 +49,7 @@ class ProjectionView @JvmOverloads constructor(
 
     override fun surfaceDestroyed(holder: SurfaceHolder) {
         AppLog.i("holder $holder")
-        videoDecoder?.stop(DecoderStopPolicy.REASON_SURFACE_DESTROYED)
+        videoDecoder?.stopIfCurrentSurface(holder.surface, DecoderStopPolicy.REASON_SURFACE_DESTROYED)
         callbacks.forEach { it.onSurfaceDestroyed(holder.surface) }
     }
 

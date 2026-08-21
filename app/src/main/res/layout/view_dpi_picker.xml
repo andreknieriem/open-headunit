@@ -14,7 +14,7 @@
         android:layout_marginTop="10dp"
         android:valueFrom="110"
         android:valueTo="640"
-        android:stepSize="2"
+        android:stepSize="1"
         android:value="160" />
 
     <com.google.android.material.textfield.TextInputLayout

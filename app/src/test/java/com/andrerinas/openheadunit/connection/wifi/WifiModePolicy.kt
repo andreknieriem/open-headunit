@@ -11,22 +11,25 @@ import com.andrerinas.openheadunit.connection.wifi.modes.native.NativeStrategy
  */
 object WifiModePolicy {
     /**
-     * [transport] applies to mode 3 only, and is the whole reason this takes a third argument:
+     * [nativeStrategy] applies to mode 3 only, and is the whole reason this takes a third argument:
      * on the hotspot route the answer must be false, because the caller reacts to a true by
      * force-disabling the hotspot before starting P2P — which would tear down the very access
      * point the route is about to advertise.
      */
     fun usesWifiDirect(
         mode: Int,
-        strategy: Int,
-        transport: NativeStrategy = NativeStrategy.WIFI_DIRECT
+        helperStrategy: Int,
+        nativeStrategy: NativeStrategy = NativeStrategy.WIFI_DIRECT
     ): Boolean =
-        (mode == 3 && transport == NativeStrategy.WIFI_DIRECT) || (mode == 2 && strategy == 1)
+        usesWifiDirect(
+            WifiLauncherMode.byIdOrDefault(mode),
+            HelperStrategy.byIdOrDefault(helperStrategy),
+            nativeStrategy)
 
     fun usesWifiDirect(
         mode: WifiLauncherMode,
-        strategy: HelperStrategy,
-        transport: NativeStrategy = NativeStrategy.WIFI_DIRECT
+        helperStrategy: HelperStrategy,
+        nativeStrategy: NativeStrategy = NativeStrategy.WIFI_DIRECT
     ): Boolean =
-        usesWifiDirect(mode.id, strategy.id, transport)
+        WifiLauncherMock.create(mode, helperStrategy, nativeStrategy).hasWifiDirect()
 }

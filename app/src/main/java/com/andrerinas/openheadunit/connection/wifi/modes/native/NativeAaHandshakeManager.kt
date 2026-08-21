@@ -55,6 +55,15 @@ class NativeAaHandshakeManager(
         /** How long to wait for the AAP TCP port to be bound before giving up on a handshake. */
         private const val PORT_WAIT_MS = 3_000L
 
+        /**
+         * How long to wait for the port after asking for the server to be (re)started.
+         *
+         * Deliberately short. [awaitWirelessServerListening] delays without pumping the session's
+         * inbound channel, so everything spent here is time the phone's keepalives go unserviced;
+         * the bind's own retry budget is under two seconds, so this only has to cover it.
+         */
+        private const val PORT_ENSURE_MS = 4_000L
+
         /** Which of [allServiceNames] are secondary Bluetooth radios, i.e. not [primaryServiceName]
          *  (dual-Bluetooth-radio head units). Pure and unit-testable: identity is by system
          *  service name, not MAC address, since BluetoothAdapter.getAddress() returns the fixed
@@ -137,10 +146,29 @@ class NativeAaHandshakeManager(
     // again rather than hiding behind a line from minutes earlier.
     @Volatile private var handsFreeSkipLogged = false
 
-    private var currentSsid: String? = null
-    private var currentPsk: String? = null
-    private var currentIp: String? = null
-    private var currentBssid: String? = null
+    /**
+     * The credentials to hand the phone, as one value.
+     *
+     * Four separate fields were written by WifiDirectManager's delivery thread and read by the
+     * handshake coroutine with no synchronisation, which allowed two failures. A read could see the
+     * SSID and passphrase of one group beside the BSSID of another, and Gearhead joins with a
+     * WifiNetworkSpecifier matching SSID *and* BSSID under a full mask, so it rejects the pair with
+     * no clue as to why. And the null check and the `!!` that followed it were separate reads, so an
+     * invalidate landing between them threw a KotlinNullPointerException that surfaced as
+     * "Handshake error: null" and named nothing.
+     *
+     * One immutable snapshot behind one volatile reference: a reader gets all four fields from the
+     * same group or none of them, and reads them once.
+     */
+    private data class WifiCredentials(
+        val ssid: String,
+        val psk: String,
+        val ip: String,
+        val bssid: String,
+    )
+
+    @Volatile
+    private var credentials: WifiCredentials? = null
     private var pokeJob: Job? = null
     // Last (ssid, ip, bssid) triggerPoke() restarted for - dedupes redundant restarts when
     // WifiDirectManager redelivers the same credentials, which was starving the poke before it
@@ -205,19 +233,13 @@ class NativeAaHandshakeManager(
      */
     fun updateWifiCredentials(ssid: String, psk: String, ip: String, bssid: String) {
         AppLog.i("NativeAA: Credentials updated. SSID=$ssid, IP=$ip, BSSID=$bssid")
-        currentSsid = ssid
-        currentPsk = psk
-        currentIp = ip
-        currentBssid = bssid
+        credentials = WifiCredentials(ssid = ssid, psk = psk, ip = ip, bssid = bssid)
     }
 
     /** Clears cached credentials so an in-progress wait doesn't hand out stale ones for a group
      *  that's about to be torn down. */
     fun invalidateCredentials() {
-        currentSsid = null
-        currentPsk = null
-        currentIp = null
-        currentBssid = null
+        credentials = null
     }
 
     // isRunning alone isn't enough once closeAaListeners() can close the AA_UUID listener while
@@ -656,12 +678,15 @@ class NativeAaHandshakeManager(
         }
         val adapter = BluetoothHelper.getBluetoothAdapter(context) ?: return
 
-        val credentials = Triple(currentSsid ?: "", currentIp ?: "", currentBssid ?: "")
-        if (pokeJob?.isActive == true && credentials == lastPokeTriggerCredentials) {
+        // Named pokeKey, not credentials: the coroutine below tests the *property* for readiness, and
+        // a local called credentials would shadow it with a Triple that is never null.
+        val snapshot = credentials
+        val pokeKey = Triple(snapshot?.ssid ?: "", snapshot?.ip ?: "", snapshot?.bssid ?: "")
+        if (pokeJob?.isActive == true && pokeKey == lastPokeTriggerCredentials) {
             AppLog.d("NativeAA: triggerPoke() called again with unchanged credentials while a poke is already running - not restarting it.")
             return
         }
-        lastPokeTriggerCredentials = credentials
+        lastPokeTriggerCredentials = pokeKey
 
         pokeJob?.cancel()
         pokeJob = scope.launch(Dispatchers.IO + CoroutineName("NativeAa-Wakeup")) {
@@ -721,11 +746,11 @@ class NativeAaHandshakeManager(
 
                     // Pre-flight: Ensure WiFi credentials (SSID/IP) are ready before connecting RFCOMM to phone.
                     // If RFCOMM connects before WiFi credentials exist, the phone times out after 10s waiting for WifiStartRequest.
-                    if (currentSsid.isNullOrEmpty() || currentIp.isNullOrEmpty()) {
+                    if (credentials == null) {
                         AppLog.i("NativeAA: WiFi credentials not ready before poke. Requesting WiFi refresh...")
                         launcher.triggerWifiDirectRefresh()
                         var waitedMs = 0
-                        while ((currentSsid.isNullOrEmpty() || currentIp.isNullOrEmpty()) && waitedMs < 4000 && isRunning && isActive) {
+                        while (credentials == null && waitedMs < 4000 && isRunning && isActive) {
                             delay(200)
                             waitedMs += 200
                         }
@@ -785,15 +810,15 @@ class NativeAaHandshakeManager(
             pokeJob?.cancel()
             pokeJob = scope.launch(Dispatchers.IO + CoroutineName("NativeAa-ManualWakeup")) {
                 // Pre-flight: Ensure WiFi credentials (SSID/IP) are ready before connecting RFCOMM to phone.
-                if (currentSsid.isNullOrEmpty() || currentIp.isNullOrEmpty()) {
+                if (credentials == null) {
                     AppLog.i("NativeAA: WiFi credentials not ready before manual poke. Requesting WiFi refresh...")
                     launcher.triggerWifiDirectRefresh()
                     var waitedMs = 0
-                    while ((currentSsid.isNullOrEmpty() || currentIp.isNullOrEmpty()) && waitedMs < 4000 && isRunning && isActive) {
+                    while (credentials == null && waitedMs < 4000 && isRunning && isActive) {
                         delay(200)
                         waitedMs += 200
                     }
-                    AppLog.i("NativeAA: Pre-poke credential wait completed. SSID=$currentSsid, IP=$currentIp (waited ${waitedMs}ms)")
+                    AppLog.i("NativeAA: Pre-poke credential wait completed. SSID=${credentials?.ssid}, IP=${credentials?.ip} (waited ${waitedMs}ms)")
                 }
 
                 AppLog.i("NativeAA: Attempting manual poke to ${device.name}...")
@@ -1121,7 +1146,7 @@ class NativeAaHandshakeManager(
             // buys the whole bring-up window.
             feed(WppEvent.SocketReady)
 
-            AppLog.i("NativeAA: Phone connected. Current credentials state: SSID=${currentSsid ?: "<null>"}, IP=${currentIp ?: "<null>"}")
+            AppLog.i("NativeAA: Phone connected. Current credentials state: SSID=${credentials?.ssid ?: "<null>"}, IP=${credentials?.ip ?: "<null>"}")
             AppLog.i("NativeAA: Waiting for WiFi credentials to be ready (Max ${CREDENTIALS_WAIT_MS / 1000}s)...")
 
             // Wait for credentials (P2P group / hotspot bring-up can be slow), servicing the
@@ -1130,7 +1155,7 @@ class NativeAaHandshakeManager(
             val credentialsDeadline = SystemClock.elapsedRealtime() + CREDENTIALS_WAIT_MS
             var lastRefreshAt = SystemClock.elapsedRealtime()
             var lastProgressLogAt = SystemClock.elapsedRealtime()
-            while ((currentSsid == null || currentIp == null) && isRunning && isActive &&
+            while (credentials == null && isRunning && isActive &&
                 !session.isTerminal() && SystemClock.elapsedRealtime() < credentialsDeadline) {
                 val now = SystemClock.elapsedRealtime()
                 val waitedS = (CREDENTIALS_WAIT_MS - (credentialsDeadline - now)) / 1000
@@ -1140,22 +1165,25 @@ class NativeAaHandshakeManager(
                     launcher.triggerWifiDirectRefresh()
                 } else if (now - lastProgressLogAt >= 5_000) {
                     lastProgressLogAt = now
-                    AppLog.d("NativeAA: Still waiting... SSID=${currentSsid != null}, IP=${currentIp != null} (${waitedS}s)")
+                    AppLog.d("NativeAA: Still waiting... credentials=${credentials != null} (${waitedS}s)")
                 }
                 tick(500)
             }
 
-            if (currentSsid == null || currentIp == null) {
-                AppLog.e("NativeAA: Handshake failed - No WiFi credentials available after ${CREDENTIALS_WAIT_MS / 1000}s wait. Missing: ${if (currentSsid == null) "SSID " else ""}${if (currentIp == null) "IP" else ""}")
+            // Read once. The check and the use used to be separate reads of four separate fields,
+            // so an invalidate between them threw on the `!!` and reported "Handshake error: null".
+            val snapshot = credentials
+            if (snapshot == null) {
+                AppLog.e("NativeAA: Handshake failed - No WiFi credentials available after ${CREDENTIALS_WAIT_MS / 1000}s wait.")
                 abortedLocally = true
                 feed(WppEvent.CredentialsUnavailable)
                 return@withContext
             }
 
-            credIp = currentIp!!
-            credSsid = currentSsid!!
-            credPsk = currentPsk ?: ""
-            credBssid = (currentBssid ?: "").uppercase()
+            credIp = snapshot.ip
+            credSsid = snapshot.ssid
+            credPsk = snapshot.psk
+            credBssid = snapshot.bssid.uppercase()
 
             // [FIX] Ensure BSSID is uppercase and not zeroed if possible
             if (!NativeCredentialsPolicy.isUsableBssid(credBssid)) {
@@ -1195,10 +1223,17 @@ class NativeAaHandshakeManager(
             // with it unbound means a genuine failure, not a race — but a session torn down and
             // rebuilt a moment ago can still be releasing it.
             if (!awaitWirelessServerListening(PORT_WAIT_MS)) {
-                AppLog.e("NativeAA: Handshake aborted — nothing is listening on port 5288 after ${PORT_WAIT_MS / 1000}s, so the phone would join the network and find no head unit. Restart the app if this persists.")
-                abortedLocally = true
-                feed(WppEvent.CredentialsUnavailable)
-                return@withContext
+                // Ask for a repair before giving up. A server that failed to bind once used to stay
+                // dead for the life of the mode, because the only thing that rebuilt it was a full
+                // mode re-initialisation - so this abort repeated every few seconds, forever, with
+                // the phone woken each time and told nothing.
+                if (!ensureWirelessServerListening("the Bluetooth handshake", PORT_ENSURE_MS)) {
+                    AppLog.e("NativeAA: Handshake aborted — nothing is listening on port 5288 after ${PORT_WAIT_MS / 1000}s, and starting it here did not work either, so the phone would join the network and find no head unit. Restart the app if this persists.")
+                    abortedLocally = true
+                    feed(WppEvent.CredentialsUnavailable)
+                    return@withContext
+                }
+                AppLog.i("NativeAA: port 5288 was not bound, and is now. Carrying on with the handshake.")
             }
 
             AppLog.i("NativeAA: Starting Handshake Exchange:")
@@ -1247,6 +1282,44 @@ class NativeAaHandshakeManager(
             try { socket.close() } catch (e: Exception) {}
             AppLog.i("NativeAA: BT Handshake socket closed.")
         }
+    }
+
+    /**
+     * Tries to get the AAP port bound, and reports whether it is.
+     *
+     * Called by the Bluetooth handshake when it finds the port unbound with credentials already in
+     * hand. Until this existed the handshake could only give up, so a server that died once stayed
+     * dead for the life of the mode: the phone was woken, told to join a network, and left dialling
+     * a port nothing was listening on, every few seconds, indefinitely.
+     *
+     * The start is marshalled onto Main because every other caller of [startWirelessServer] runs
+     * there. Without that, this one arrives from `Dispatchers.IO` and can pass the "nothing is
+     * assigned" check at the same moment [initWifiMode] does, and both bind. `SO_REUSEADDR` does not
+     * help there - it covers a port in TIME_WAIT, not one with a live listener on it - so the loser
+     * throws and spends its retry budget losing to its own sibling.
+     *
+     * @param reason what asked, for the log.
+     * @param timeoutMs how long to wait for the bind after asking.
+     */
+    suspend fun ensureWirelessServerListening(reason: String, timeoutMs: Long): Boolean {
+        val sharedServices = launcher.manager.sharedServices
+
+        if (sharedServices.wirelessServer?.isListening == true)
+            return true
+
+        AppLog.i("AapService: $reason found port 5288 unbound. Trying to start the wireless server.")
+        withContext(Dispatchers.Main.immediate) { sharedServices.startWirelessServer(launcher) }
+
+        val deadline = SystemClock.elapsedRealtime() + timeoutMs
+        while (SystemClock.elapsedRealtime() < deadline) {
+            if (sharedServices.wirelessServer?.isListening == true) {
+                AppLog.i("AapService: port 5288 is bound now.")
+                return true
+            }
+            delay(250)
+        }
+        AppLog.w("AapService: port 5288 is still not bound ${timeoutMs}ms after trying to start it.")
+        return false
     }
 
     /**
@@ -1388,10 +1461,7 @@ class NativeAaHandshakeManager(
         }
         aaServerSocket = null
         hfpServerSocket = null
-        currentSsid = null
-        currentIp = null
-        currentPsk = null
-        currentBssid = null
+        credentials = null
         pokeJob?.cancel()
         pokeJob = null
         lastPokeTriggerCredentials = null

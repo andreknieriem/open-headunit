@@ -8,6 +8,8 @@ import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Build
 import com.andrerinas.openheadunit.aap.MediaKeyRoutingPolicy
+import com.andrerinas.openheadunit.aap.VideoFaultInjector
+import com.andrerinas.openheadunit.decoder.DeviceMemoryProfile
 import com.andrerinas.openheadunit.aap.PlaybackFocusPolicy
 import com.andrerinas.openheadunit.aap.protocol.proto.Control
 import com.andrerinas.openheadunit.app.UsbAttachedActivity
@@ -329,6 +331,115 @@ class Settings(private val context: Context) {
         }
         set(value) { prefs.edit().putInt("software-video-decoder", value.value).apply() }
 
+    /**
+     * Deliberately corrupts the projected video stream, for testing the reassembler's failure paths.
+     *
+     * Off, and meant to stay off. The artifact reports this exists for come from units we do not
+     * have, and a healthy rig never produces the conditions that cause them - so without this there
+     * is no way to show a fix works except to wait for a reporter's next drive. Every injected fault
+     * is logged, so a log captured with this left on cannot be mistaken for a log of a real fault.
+     */
+    var debugVideoFaultInjection: VideoFaultInjector.Mode
+        get() {
+            val value = prefs.getInt("debug-video-fault-injection", VideoFaultInjector.Mode.OFF.value)
+            return VideoFaultInjector.Mode.fromInt(value) ?: VideoFaultInjector.Mode.OFF
+        }
+        set(value) { prefs.edit().putInt("debug-video-fault-injection", value.value).apply() }
+
+    /**
+     * Overrides how much memory the video pipeline believes this device has.
+     *
+     * Null means measure it. Set, it lets a well-provisioned rig run the constrained path, which is
+     * otherwise only reachable on hardware we do not have. Stored by name rather than by ordinal so
+     * reordering the enum cannot silently change what a stored value means.
+     */
+    var debugForceMemoryProfile: DeviceMemoryProfile?
+        get() = DeviceMemoryProfile.fromName(prefs.getString("debug-force-memory-profile", null))
+        set(value) { prefs.edit().putString("debug-force-memory-profile", value?.name).apply() }
+
+    /**
+     * Puts the Native AA WiFi Direct group on 2.4 GHz instead of asking for 5 GHz.
+     *
+     * Off by default, and it is a rig lever rather than a preference: 5 GHz is what a working
+     * session runs on and nothing here recommends moving off it. What it exists for is that the
+     * link-outage reports come from 2.4 GHz head units and the rig could never be put on that band
+     * - the group is requested as 5 GHz and any group that lands on 2.4 GHz is torn down and
+     * remade. Both of those are turned off together by this one flag; see
+     * [com.andrerinas.openheadunit.aap.NativeGroupBandPolicy], which is where the coupling lives.
+     *
+     * Applies to the next group, so it needs a reconnect rather than only a settings write.
+     */
+    var debugForceP2pBand24: Boolean
+        get() = prefs.getBoolean("debug-force-p2p-band-24", false)
+        set(value) { prefs.edit().putBoolean("debug-force-p2p-band-24", value).apply() }
+
+    /**
+     * On a device with no band API, asks the P2P stack for a 5 GHz operating channel.
+     *
+     * Below API 29 there is no `WifiP2pConfig.Builder`, so the group's band is the driver's choice
+     * and this app has never had a say in it - which is every pre-Android-10 head unit, including
+     * both units in the periodic-outage reports. The hidden `setWifiP2pChannels` is the one lever
+     * left; see [com.andrerinas.openheadunit.connection.wifi.direct.WifiP2pOperatingChannelPolicy].
+     *
+     * **Off by default, and it should stay off until a unit reports back.** The request is a
+     * disallowed-frequency list, so a unit whose P2P firmware cannot host a 5 GHz group owner is not
+     * left on 2.4 GHz - it is left unable to form a group at all. The bring-up clears the restriction
+     * and retries once when that happens, but an opt-in costs nothing and a wrong default costs
+     * every pre-Q unit its connection.
+     *
+     * Ignored from API 29 up, where the supported band request does this properly.
+     */
+    var p2pLegacyFiveGhz: Boolean
+        get() = prefs.getBoolean("p2p-legacy-5ghz", false)
+        set(value) { prefs.edit().putBoolean("p2p-legacy-5ghz", value).apply() }
+
+    /**
+     * Asks for UNII-3 (channel 149) instead of UNII-1 (channel 36) when [p2pLegacyFiveGhz] is on.
+     *
+     * Both are non-DFS and channel 36 is what the reference implementations use, so this exists only
+     * for a regulatory domain that refuses the lower range.
+     */
+    var p2pLegacyFiveGhzUpperBand: Boolean
+        get() = prefs.getBoolean("p2p-legacy-5ghz-upper", false)
+        set(value) { prefs.edit().putBoolean("p2p-legacy-5ghz-upper", value).apply() }
+
+    /**
+     * Asks the decoder for low-latency mode, through whichever key its vendor understands.
+     *
+     * Off by default, and it stays off until a log from a real device shows a component accepting the
+     * key - which is this project's standing rule about vendor MediaFormat keys, written after
+     * KEY_PRIORITY and KEY_OPERATING_RATE were both measured being rejected outright. The configure
+     * ladder is what makes turning it on cheap to try: a rejected key now costs one retry instead of
+     * the session. See [com.andrerinas.openheadunit.decoder.DecoderConfigLadder].
+     */
+    var debugVideoLowLatency: Boolean
+        get() = prefs.getBoolean("debug-video-low-latency", false)
+        set(value) { prefs.edit().putBoolean("debug-video-low-latency", value).apply() }
+
+    /** One in this many of the targeted messages is faulted. See [debugVideoFaultInjection]. */
+    var debugVideoFaultRate: Int
+        get() = prefs.getInt("debug-video-fault-rate", VideoFaultInjector.DEFAULT_RATE)
+        set(value) {
+            prefs.edit()
+                .putInt("debug-video-fault-rate", value.coerceIn(VideoFaultInjector.MIN_RATE, VideoFaultInjector.MAX_RATE))
+                .apply()
+        }
+
+    /**
+     * Stop injecting after this many faults, or 0 to keep going for the whole session.
+     *
+     * What a bounded run buys is the second half of the measurement: a stream that is still being
+     * corrupted stays broken no matter what the recovery code does, so only a run that stops can
+     * show whether the picture comes back. See [VideoFaultInjector.budget].
+     */
+    var debugVideoFaultBudget: Int
+        get() = prefs.getInt("debug-video-fault-budget", VideoFaultInjector.UNLIMITED_BUDGET)
+        set(value) {
+            prefs.edit()
+                .putInt("debug-video-fault-budget", value.coerceAtLeast(VideoFaultInjector.UNLIMITED_BUDGET))
+                .apply()
+        }
+
     var rightHandDrive: Boolean
         get() = prefs.getBoolean("right-hand-drive", false)
         set(value) { prefs.edit().putBoolean("right-hand-drive", value).apply() }
@@ -364,6 +475,18 @@ class Settings(private val context: Context) {
     var headUnitModel: String
         get() = prefs.getString("head-unit-model", "Desktop Head Unit")!!
         set(value) { prefs.edit().putString("head-unit-model", value).apply() }
+
+    var hideBatteryLevel: Boolean
+        get() = prefs.getBoolean("hide-battery-level", false)
+        set(value) { prefs.edit().putBoolean("hide-battery-level", value).apply() }
+
+    var hidePhoneSignal: Boolean
+        get() = prefs.getBoolean("hide-phone-signal", false)
+        set(value) { prefs.edit().putBoolean("hide-phone-signal", value).apply() }
+
+    var hideClock: Boolean
+        get() = prefs.getBoolean("hide-clock", false)
+        set(value) { prefs.edit().putBoolean("hide-clock", value).apply() }
 
     // 0 = Manual, 1 = Auto (Headunit Server), 2 = Helper (Wifi Launcher), 3 = Native AA
     var wifiConnectionMode: WifiLauncherMode

@@ -122,7 +122,7 @@ class NetworkListFragment : Fragment(), NetworkDiscovery.Listener {
 
     private fun startScan() {
         showScanDialog()
-        networkDiscovery.startScan()
+        networkDiscovery.startScan(oneShot = true)
     }
 
     private fun showScanDialog() {
@@ -190,7 +190,9 @@ class NetworkListFragment : Fragment(), NetworkDiscovery.Listener {
         }
     }
 
-    override fun onScanFinished() {
+    // This scan is always one-shot, so the flag says nothing this fragment does not already know:
+    // the dialog closing is the end of it, and nothing re-arms.
+    override fun onScanFinished(oneShot: Boolean) {
         activity?.runOnUiThread {
             if (scanDialog?.isShowing == true) {
                 scanDialog?.dismiss()

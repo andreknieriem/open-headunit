@@ -654,6 +654,9 @@ class OnboardingActivity : BaseActivity() {
             // If we changed the renderer, confirm the picture on the first projection.
             if (settings.viewMode != previousViewMode) settings.pendingRendererConfirm = true
         }
+        // Next is a button, so it never takes focus off the DPI field; without this a value the
+        // user typed and did not confirm would be dropped in favour of the previous one.
+        dpiPicker?.commitPendingInput()
         settings.dpiPixelDensity = dpiPicker?.dpi ?: result.recommendedDpi
         settings.commit()
         updateDpiOverPanelWarning()

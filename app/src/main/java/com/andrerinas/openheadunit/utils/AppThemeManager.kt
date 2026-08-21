@@ -309,7 +309,11 @@ class AppThemeManager(
 
         private fun signalThemeChange() {
             versionCounter++
-            themeVersion.value = versionCounter
+            if (Looper.myLooper() == Looper.getMainLooper()) {
+                themeVersion.value = versionCounter
+            } else {
+                themeVersion.postValue(versionCounter)
+            }
         }
 
         fun signalVisualChange() {
@@ -317,6 +321,12 @@ class AppThemeManager(
         }
 
         fun applyStaticTheme(settings: Settings) {
+            if (Looper.myLooper() != Looper.getMainLooper()) {
+                Handler(Looper.getMainLooper()).post {
+                    applyStaticTheme(settings)
+                }
+                return
+            }
             val mode = when (settings.appTheme) {
                 Settings.AppTheme.AUTOMATIC -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
                 Settings.AppTheme.CLEAR -> AppCompatDelegate.MODE_NIGHT_NO
@@ -340,6 +350,12 @@ class AppThemeManager(
          * Call after any change to the app theme, the sunrise source, or the places.
          */
         fun reapply(context: Context, settings: Settings) {
+            if (Looper.myLooper() != Looper.getMainLooper()) {
+                Handler(Looper.getMainLooper()).post {
+                    reapply(context, settings)
+                }
+                return
+            }
             com.andrerinas.openheadunit.App.appThemeManager?.stop()
             com.andrerinas.openheadunit.App.appThemeManager = null
             if (!isStaticMode(settings.appTheme)) {

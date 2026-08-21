@@ -24,6 +24,11 @@ internal class AapMessageHandlerType(
     @Throws(AapMessageHandler.HandleException::class)
     override fun handle(message: AapMessage) {
 
+        // Every decrypted inbound message passes through here, on every channel, which makes this
+        // the one place that can say the link is alive rather than just that the picture is moving.
+        // See AapTransport.lastMessageReceivedMs for why that distinction matters.
+        transport.noteMessageReceived()
+
         val msgType = message.type
         val flags = message.flags
 

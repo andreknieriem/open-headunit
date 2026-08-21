@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -296,7 +297,9 @@ class VehicleInfoFragment : Fragment() {
                 setText(messageResId)
                 val textColorAttr = android.util.TypedValue()
                 context.theme.resolveAttribute(android.R.attr.textColorSecondary, textColorAttr, true)
-                setTextColor(context.resources.getColor(textColorAttr.resourceId, context.theme))
+                // Resources.getColor(int, Theme) is API 23; this app runs down to 16, where the
+                // two-argument overload does not exist and the call is a NoSuchMethodError.
+                setTextColor(ContextCompat.getColor(context, textColorAttr.resourceId))
                 textSize = 13f
                 setPadding(0, 0, 0, 24)
             }

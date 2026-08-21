@@ -712,6 +712,21 @@
     <string name="nav_action_ferry_train">Ferry / train</string>
     <string name="nav_action_destination">Arrival</string>
     <string name="show_fps_counter">Show FPS Counter</string>
+    <!-- Debug-only: deliberately corrupts the projected video stream so the reassembler's
+         failure paths can be exercised on a unit that is working correctly. Not translated on
+         purpose - it is a developer tool and the terms are protocol terms. -->
+    <string name="debug_video_fault_injection" translatable="false">Video fault injection</string>
+    <string name="debug_video_fault_rate" translatable="false">Fault rate (one in N)</string>
+    <string name="debug_video_fault_budget" translatable="false">Fault budget</string>
+    <string name="debug_force_memory_profile" translatable="false">Force memory profile</string>
+    <string name="debug_force_p2p_band_24" translatable="false">Force WiFi Direct onto 2.4 GHz</string>
+    <string name="p2p_legacy_5ghz" translatable="false">Ask for 5 GHz on Android 9 and older</string>
+    <string name="p2p_legacy_5ghz_description" translatable="false">Below Android 10 there is no way to request a band, so the WiFi Direct group lands wherever the driver puts it — often 2.4 GHz, shared with Bluetooth. This asks for a 5 GHz channel instead. Leave it off unless the picture or sound stutters: a unit whose WiFi Direct cannot host 5 GHz will fail to create a group, and the app then clears the request and retries once. No effect on Android 10 and newer.</string>
+    <string name="p2p_legacy_5ghz_upper" translatable="false">Use the upper 5 GHz range</string>
+    <string name="p2p_legacy_5ghz_upper_description" translatable="false">Asks for channel 149 instead of channel 36. Try this only if channel 36 fails — some regions allow one range and not the other.</string>
+    <string name="debug_force_p2p_band_24_description" translatable="false">Native AA hosts its group on 2.4 GHz instead of asking for 5 GHz, and stops remaking a group that lands there. For reproducing 2.4 GHz link faults on a 5 GHz rig; leave off otherwise. Applies on the next connection.</string>
+    <string name="debug_video_low_latency" translatable="false">Request decoder low-latency mode</string>
+    <string name="debug_video_low_latency_description" translatable="false">Sets the vendor low-latency MediaFormat key when configuring the video decoder. Falls back automatically if the decoder rejects it.</string>
     <string name="show_fps_counter_description">Display a real-time FPS overlay in the top-left corner during projection.</string>
 
     <!-- Auto-start permission strings -->
@@ -952,4 +967,9 @@
     <string name="rename_notice_title">Our name is changing to Open Headunit</string>
     <string name="rename_notice_message">Headunit Revived is growing, thanks to you, and it is turning into something of its own: Open Headunit. We are rolling the new name out over the next updates, so you may still see the old name in some places for a while.\n\nSame app, same people behind it, and all your settings stay exactly as they are.</string>
     <string name="rename_notice_button">Got it</string>
+    <string name="category_ui">UI</string>
+    <string name="hide_phone_signal_label">Hide the Phone\'s Signal</string>
+    <string name="hide_battery_level_label">Hide the Phone\'s Battery Level</string>
+    <string name="hide_clock_label">Hide the Clock</string>
+    <string name="might_broken_on_newer_aa_versions">This functionality might not work on newer versions of Android Auto</string>
 </resources>

@@ -53,6 +53,24 @@ object LocationHolder {
     }
 
     /**
+     * The freshest fix from this head unit's own GPS chip, within [maxAgeMs] - the only kind of
+     * fix that may be forwarded to the phone as the car's LOCATION sensor. A network- or
+     * passive-derived position must never travel under that label: on a unit whose GPS never
+     * locks it is often derived from the very hotspot or P2P group we created. Returns null when
+     * the GPS has produced nothing recent, which is the correct answer - the phone then keeps
+     * using its own location.
+     */
+    fun currentGpsFix(context: Context, maxAgeMs: Long = MAX_AGE_MS): Location? {
+        val newest = listOfNotNull(
+            lastFix?.takeIf { it.provider == LocationManager.GPS_PROVIDER },
+            bestEffortFix(context, listOf(LocationManager.GPS_PROVIDER))
+        ).maxByOrNull { it.time } ?: return null
+        // <= rather than in 0..: system clocks on these units routinely lag GPS time, which makes
+        // a live fix look future-dated. A negative age means clock skew, not staleness.
+        return newest.takeIf { System.currentTimeMillis() - newest.time <= maxAgeMs }
+    }
+
+    /**
      * The best available fix for geofence containment tests, IGNORING age. A parked
      * head unit may not get a fresh fix for a long time, but its last known position
      * is still exactly where it is, so for "am I inside this area?" the newest known
@@ -70,8 +88,17 @@ object LocationHolder {
      * by the automation gate before any connection exists. Returns null if no
      * permission / provider / cached fix is available.
      */
+    fun bestEffortDeviceFix(context: Context): Location? = bestEffortFix(
+        context,
+        listOf(
+            LocationManager.GPS_PROVIDER,
+            LocationManager.NETWORK_PROVIDER,
+            LocationManager.PASSIVE_PROVIDER
+        )
+    )
+
     @SuppressLint("MissingPermission")
-    fun bestEffortDeviceFix(context: Context): Location? {
+    private fun bestEffortFix(context: Context, providers: List<String>): Location? {
         if (PermissionChecker.checkSelfPermission(
                 context, Manifest.permission.ACCESS_FINE_LOCATION
             ) != PermissionChecker.PERMISSION_GRANTED
@@ -80,11 +107,6 @@ object LocationHolder {
         }
         return try {
             val lm = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
-            val providers = listOf(
-                LocationManager.GPS_PROVIDER,
-                LocationManager.NETWORK_PROVIDER,
-                LocationManager.PASSIVE_PROVIDER
-            )
             providers.mapNotNull { p ->
                 try { lm.getLastKnownLocation(p) } catch (e: Exception) { null }
             }.maxByOrNull { it.time }

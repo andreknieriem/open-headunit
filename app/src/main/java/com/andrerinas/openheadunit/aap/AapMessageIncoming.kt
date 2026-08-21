@@ -40,8 +40,11 @@ internal class AapMessageIncoming(header: EncryptedHeader, ba: ByteArrayWithLimi
 
             val ba = ssl.decrypt(offset, header.enc_len, buf) ?: return null
 
-            if (ba.data.size < 2) {
-                AppLog.e("Decrypted payload too short: " + ba.data.size)
+            // The payload length is ba.limit, not ba.data.size: the SSL layer hands back one reused
+            // buffer whose length is the session ceiling, so data.size is always large enough and
+            // this guard would never fire. Two bytes are needed for the message type read below.
+            if (ba.limit < 2) {
+                AppLog.e("Decrypted payload too short: " + ba.limit)
                 return null
             }
 

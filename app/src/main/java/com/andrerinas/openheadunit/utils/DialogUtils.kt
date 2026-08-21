@@ -72,6 +72,10 @@ object DialogUtils {
                 WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM,
         )
         dialog.show()
+        if (Settings(context).hudMirroring) {
+            val root = dialog.window?.findViewById<android.view.View>(android.R.id.content) ?: dialog.window?.decorView
+            root?.scaleX = -1.0f
+        }
         editText.requestFocus()
     }
 }

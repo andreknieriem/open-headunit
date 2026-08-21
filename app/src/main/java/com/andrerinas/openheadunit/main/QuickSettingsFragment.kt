@@ -66,6 +66,22 @@ class QuickSettingsFragment : DialogFragment() {
         settingsRecyclerView.adapter = settingsAdapter
 
         updateSettingsList()
+        applyHudMirroring(view)
+    }
+
+    override fun onStart() {
+        super.onStart()
+        view?.let { applyHudMirroring(it) }
+    }
+
+    private fun applyHudMirroring(view: View) {
+        val mirror = if (settings.hudMirroring) -1.0f else 1.0f
+        dialog?.window?.let { win ->
+            val root = win.findViewById<View>(android.R.id.content) ?: win.decorView
+            root?.scaleX = mirror
+        } ?: run {
+            view.scaleX = mirror
+        }
     }
 
     private fun updateSettingsList() {
@@ -145,6 +161,8 @@ class QuickSettingsFragment : DialogFragment() {
                 settings.commit()
                 notifyChange(needsViewRecreate = true)
                 updateSettingsList()
+                view?.let { applyHudMirroring(it) }
+                activity?.recreate()
             }
         ))
 

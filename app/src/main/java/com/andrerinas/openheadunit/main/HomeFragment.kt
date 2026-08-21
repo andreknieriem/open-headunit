@@ -43,7 +43,6 @@ import com.andrerinas.openheadunit.connection.UsbReceiver
 import com.andrerinas.openheadunit.connection.UsbAccessoryMode
 import com.andrerinas.openheadunit.connection.wifi.modes.helper.HelperStrategy
 import com.andrerinas.openheadunit.connection.wifi.WifiLauncherMode
-import com.andrerinas.openheadunit.utils.ColorUtils
 import kotlinx.coroutines.withContext
 
 class HomeFragment : Fragment() {

@@ -14,6 +14,9 @@ internal class AapVideo(private val videoDecoder: VideoDecoder, private val sett
 
         /** Ceiling for [ensureCapacity]. ~8MB, which covers H.265 at 4K. */
         private const val MAX_BUFFER_BYTES = Messages.DEF_BUFFER_LENGTH * 64
+
+        /** Spacing of the anomaly summary, matched to the decoder's throughput line so they interleave. */
+        private const val ANOMALY_REPORT_INTERVAL_MS = 5000L
     }
 
     /**
@@ -29,54 +32,142 @@ internal class AapVideo(private val videoDecoder: VideoDecoder, private val sett
      */
     private var messageBuffer = ByteBuffer.allocate(INITIAL_BUFFER_BYTES)
     private var legacyAssembledBuffer: ByteArray? = null
-    private var isFrameCorrupt = false
     private var lastKeyframeRequestMs = 0L
-    private var isAssemblingFrame = false
+    private var lastAnomalyReportMs = 0L
+
+    /** Ordering rules for the fragment run. Pure and unit-tested; see [VideoFragmentAssembler]. */
+    private val assembler = VideoFragmentAssembler()
+
+    /** Every line the injector prints. Declared first: [faultInjector]'s initializer announces on it. */
+    private val reporter = VideoFaultReporter("AapVideo")
 
     /**
-     * Marks the frame being assembled unusable and asks the phone for a fresh keyframe.
-     *
-     * Corruption is scoped to the current frame only: flags 8 and 10 skip the rest of it, and the
-     * next flag 9 or 11 clears the mark. There is deliberately no lockout that holds every
-     * subsequent P-frame back until a keyframe is positively identified - one existed, and because
-     * nothing could reliably tell a keyframe from a P-frame for every codec the app negotiates, it
-     * could latch for the rest of the session and freeze the picture with the connection still
-     * healthy. Dropping one frame and letting the stream heal on the phone's next keyframe is both
-     * cheaper and unable to get stuck.
+     * Null unless the user has deliberately turned fault injection on, so the healthy path costs one
+     * null check. See [VideoFaultInjector] for why this exists at all.
      */
-    private fun markCorruptAndRequestRecovery() {
-        isFrameCorrupt = true
+    private val faultInjector: VideoFaultInjector? =
+        VideoFaultInjector(
+            settings.debugVideoFaultInjection,
+            settings.debugVideoFaultRate,
+            settings.debugVideoFaultBudget
+        )
+            // Stage-scoped, so a reader-stage mode is applied once in the reader and not a second
+            // time here. See VideoFaultInjector.isActiveAt.
+            .takeIf { it.isActiveAt(VideoFaultInjector.Stage.ASSEMBLER) }
+            ?.also { reporter.announce(it) }
+
+    /**
+     * Asks the phone for a fresh keyframe because a frame was lost or arrived unusable.
+     *
+     * Every anomaly [VideoFragmentAssembler] reports means some later frame will predict from a
+     * reference we never decoded, so the picture drifts - washed out and blocky, "melting" - until
+     * a keyframe lands. On an idle stream the phone's own cadence is a fixed ~69s GOP, so waiting
+     * for it costs about half a minute of broken picture; asking brings that down to seconds.
+     *
+     * Throttled by [VideoRecoveryPolicy] because the ask is not free: [AapTransport] implements it
+     * as an unsolicited focus nudge, escalating to a real focus cycle only under much stricter
+     * gates, and the phone rebuilds the stream in response.
+     */
+    /**
+     * The reader's framing audit found a run short of the bytes its first fragment declared.
+     *
+     * This is the one corruption mode nothing downstream of the reader can see. A middle fragment
+     * that never arrives leaves [VideoFragmentAssembler] looking at a first, some middles and a last
+     * in order, so the frame is assembled with a hole and decoded as though it were whole - no
+     * anomaly, no ask, and a picture that drifts until the phone's own keyframe cadence comes round.
+     * [FragmentedMessageAudit] is the only thing that notices, and until now all it did was log.
+     *
+     * Runs on the poll thread, which is the thread [process] and every other keyframe request
+     * already run on, so it shares their throttle and their ordering without any locking of its own.
+     */
+    fun onFragmentRunHoled() = requestKeyframe("fragment run lost bytes")
+
+    private fun requestKeyframe(reason: String) {
         val now = android.os.SystemClock.elapsedRealtime()
         if (VideoRecoveryPolicy.canRequestKeyframe(now, lastKeyframeRequestMs)) {
             lastKeyframeRequestMs = now
-            AppLog.w("AapVideo: Frame corrupted, requesting keyframe to recover stream")
+            AppLog.w("AapVideo: %s, requesting keyframe to recover stream", reason)
             onFrameCorrupted()
         }
     }
 
-    private fun checkFragmentState(message: AapMessage) {
-        when (val flags = message.flags.toInt()) {
-            11, 9 -> {
-                // 11 (Single) and 9 (First) should always start a clean slate.
-                if (isAssemblingFrame) {
-                    AppLog.w("AapVideo: Previous frame was truncated! Resetting assembly state.")
-                }
-                isAssemblingFrame = (flags == 9) // Only 9 means we are assembling
+    /**
+     * Logs, counts and reacts to one broken-stream event.
+     *
+     * The counters live on the assembler and are summarised periodically by [reportAnomalies]; the
+     * per-event line is what tells a reporter's log *when* it happened relative to what they saw.
+     */
+    private fun handleAnomaly(anomaly: VideoFragmentAssembler.Anomaly, message: AapMessage) {
+        when (anomaly) {
+            VideoFragmentAssembler.Anomaly.TRUNCATED_PREVIOUS -> {
+                // The previous frame never got its flag 10 and was dropped unassembled. Nothing bad
+                // reached the codec, but a reference frame is missing all the same, which is why
+                // this asks for a keyframe rather than only logging as it used to.
+                AppLog.w("AapVideo: Previous frame was truncated! Resetting assembly state.")
+                messageBuffer.clear()
+                requestKeyframe("frame truncated")
             }
-            8, 10 -> {
-                // 8 (Middle) and 10 (Last) MUST belong to an active assembly.
-                if (!isAssemblingFrame) {
-                    AppLog.e("AapVideo: Orphaned fragment (Flag $flags) detected! Frame data lost.")
-                    markCorruptAndRequestRecovery()
-                    messageBuffer.clear()
-                    // The mark makes the flag 8/10 arms below skip this fragment. It is cleared
-                    // again by the next flag 9 or 11, so the stream resumes on the frame after.
-                }
-                if (flags == 10) {
-                    isAssemblingFrame = false // Assembly finished
-                }
+            VideoFragmentAssembler.Anomaly.ORPHANED_FRAGMENT -> {
+                AppLog.e("AapVideo: Orphaned fragment (Flag ${message.flags.toInt()}) detected! Frame data lost.")
+                messageBuffer.clear()
+                requestKeyframe("orphaned fragment")
+            }
+            VideoFragmentAssembler.Anomaly.HEADLESS_FIRST_FRAGMENT -> {
+                AppLog.w(
+                    "AapVideo: First fragment has no start code at offset 10 or 2 (len=%d, first bytes %s). " +
+                        "Discarding the frame instead of assembling it headless.",
+                    message.size, firstBytesOf(message)
+                )
+                messageBuffer.clear()
+                requestKeyframe("first fragment has no start code")
+            }
+            VideoFragmentAssembler.Anomaly.OVERFLOW -> {
+                // Message logged at the overflow site, which knows which flag and how far in.
+                messageBuffer.clear()
+                requestKeyframe("frame exceeded the reassembly buffer")
             }
         }
+    }
+
+    /**
+     * A periodic count of everything the stream got wrong, emitted only when something did.
+     *
+     * A line that appears only when the reassembler is unhappy is worth more in a bug report than a
+     * field that reads zero on every healthy line, so this is its own summary rather than extra
+     * columns on the decoder's throughput line.
+     */
+    private fun reportAnomalies() {
+        if (!assembler.hasAnomalies()) return
+        val now = android.os.SystemClock.elapsedRealtime()
+        if (lastAnomalyReportMs == 0L) {
+            // Arm the window on the first event rather than reporting a zero-length one. A single
+            // isolated anomaly is already covered by its own line above; the summary exists to show
+            // a rate.
+            lastAnomalyReportMs = now
+            return
+        }
+        val elapsed = now - lastAnomalyReportMs
+        if (elapsed < ANOMALY_REPORT_INTERVAL_MS) return
+        lastAnomalyReportMs = now
+        AppLog.w(
+            "AapVideo: reassembly anomalies over %dms: truncated=%d, orphan=%d, headless=%d, overflow=%d",
+            elapsed,
+            assembler.countOf(VideoFragmentAssembler.Anomaly.TRUNCATED_PREVIOUS),
+            assembler.countOf(VideoFragmentAssembler.Anomaly.ORPHANED_FRAGMENT),
+            assembler.countOf(VideoFragmentAssembler.Anomaly.HEADLESS_FIRST_FRAGMENT),
+            assembler.countOf(VideoFragmentAssembler.Anomaly.OVERFLOW)
+        )
+        assembler.resetCounts()
+    }
+
+    private fun firstBytesOf(message: AapMessage): String {
+        val end = minOf(message.size, 8)
+        val sb = StringBuilder(end * 3)
+        for (i in 0 until end) {
+            if (i > 0) sb.append(' ')
+            sb.append(String.format("%02x", message.data[i]))
+        }
+        return sb.toString()
     }
 
     /**
@@ -99,88 +190,104 @@ internal class AapVideo(private val videoDecoder: VideoDecoder, private val sett
         return true
     }
 
-    private fun findStartCode(buf: ByteArray, offset: Int): Int {
-        if (offset + 3 > buf.size) return -1
+    /**
+     * Length of the Annex B start code at [offset], or -1 if there is none.
+     *
+     * Bounded by [len] - the message's payload length - and not by `buf.size`. The two are only
+     * equal because the SSL layer currently hands out an exactly-sized array per message; reading
+     * to the end of the array would become a stale-data read the moment that buffer is pooled, and
+     * a start code found in the previous message's leftovers would send a garbage frame to the
+     * codec.
+     */
+    private fun findStartCode(buf: ByteArray, offset: Int, len: Int): Int {
+        if (offset + 3 > len) return -1
         if (buf[offset].toInt() == 0 && buf[offset + 1].toInt() == 0) {
             if (buf[offset + 2].toInt() == 1) return 3 // 3-byte start code
-            if (offset + 4 <= buf.size && buf[offset + 2].toInt() == 0 && buf[offset + 3].toInt() == 1) return 4 // 4-byte start code
+            if (offset + 4 <= len && buf[offset + 2].toInt() == 0 && buf[offset + 3].toInt() == 1) return 4 // 4-byte start code
         }
         return -1
     }
 
-    fun process(message: AapMessage): Boolean {
-        // Fix smearing happening after some while
-        checkFragmentState(message)
+    /** Whether a frame starts at [offset], i.e. there is a start code there with payload behind it. */
+    private fun payloadStartsAt(buf: ByteArray, offset: Int, len: Int): Boolean {
+        val startCodeLen = findStartCode(buf, offset, len)
+        return startCodeLen > 0 && len > offset + startCodeLen
+    }
 
-        val flags = message.flags.toInt()
+    fun process(message: AapMessage): Boolean {
         val buf = message.data
         val len = message.size
+        val flags = message.flags.toInt()
 
-        when (flags) {
-            11 -> {
-                // Single fragment frame - corruption only affects this frame
-                isFrameCorrupt = false
+        val injector = faultInjector
+        val fault = injector?.effectFor(flags) ?: VideoFaultInjector.Effect.NONE
+        if (injector != null) {
+            reporter.onMessage(injector, fault, flags, len)
+            // A dropped message must not reach the assembler at all - that is the point. Reported as
+            // consumed, because from the protocol's side it did arrive.
+            if (fault == VideoFaultInjector.Effect.DROP) return true
+        }
+        val hideStartCode = fault == VideoFaultInjector.Effect.HIDE_START_CODE
+
+        val decision = assembler.onMessage(
+            flags = flags,
+            payloadStartsAt10 = !hideStartCode &&
+                payloadStartsAt(buf, VideoFragmentAssembler.OFFSET_TIMESTAMP_INDICATION, len),
+            payloadStartsAt2 = !hideStartCode &&
+                payloadStartsAt(buf, VideoFragmentAssembler.OFFSET_MEDIA_INDICATION, len)
+        )
+
+        decision.anomaly?.let { handleAnomaly(it, message) }
+        reportAnomalies()
+
+        return when (val action = decision.action) {
+            is VideoFragmentAssembler.Action.DecodeWhole -> {
                 messageBuffer.clear()
-
-                // Timestamp Indication (Offset 10)
-                val sc10 = findStartCode(buf, 10)
-                if (len > 10 + sc10 && sc10 > 0) {
-                    videoDecoder.decode(buf, 10, len - 10, settings.forceSoftwareDecoding, settings.videoCodec)
-                    return true
-                }
-
-                // Media Indication or Config (Offset 2)
-                val sc2 = findStartCode(buf, 2)
-                if (len > 2 + sc2 && sc2 > 0) {
-                    videoDecoder.decode(buf, 2, len - 2, settings.forceSoftwareDecoding, settings.videoCodec)
-                    return true
-                }
-                AppLog.w("AapVideo: Dropped Flag 11 packet. len=$len")
+                videoDecoder.decode(buf, action.payloadOffset, len - action.payloadOffset, settings.forceSoftwareDecoding, settings.videoCodec)
+                true
             }
-            9 -> {
-                // First fragment - reset corruption state for the new frame
-                isFrameCorrupt = false
+
+            is VideoFragmentAssembler.Action.BeginAssembly -> {
                 messageBuffer.clear()
-
-                // Timestamp Indication (Offset 10)
-                val sc10 = findStartCode(buf, 10)
-                if (len > 10 + sc10 && sc10 > 0) {
-                    messageBuffer.put(message.data, 10, message.size - 10)
-                    return true
-                }
-                // Media Indication (Offset 2)
-                val sc2 = findStartCode(buf, 2)
-                if (len > 2 + sc2 && sc2 > 0) {
-                    messageBuffer.put(message.data, 2, message.size - 2)
-                    return true
-                }
-            }
-            8 -> {
-                if (isFrameCorrupt) return true // Skip fragments of an already corrupt frame
-
-                // Middle fragment - append to buffer with overflow detection
-                if (ensureCapacity(message.size)) {
-                    messageBuffer.put(message.data, 0, message.size)
+                val bytes = len - action.payloadOffset
+                if (ensureCapacity(bytes)) {
+                    messageBuffer.put(buf, action.payloadOffset, bytes)
                 } else {
-                    AppLog.e("AapVideo: Fragment overflow (Flag 8)! Size ${message.size} on top of ${messageBuffer.position()} exceeds the ${MAX_BUFFER_BYTES / 1024}KB cap. Invalidating frame.")
-                    markCorruptAndRequestRecovery()
-                    messageBuffer.clear()
+                    // A first fragment on its own larger than the ceiling. Used to throw a
+                    // BufferOverflowException that the read loop swallowed, taking the rest of the
+                    // frame's fragments with it and explaining nothing.
+                    AppLog.e(
+                        "AapVideo: First fragment overflow (Flag 9)! Size $bytes exceeds the " +
+                            "${MAX_BUFFER_BYTES / 1024}KB cap. Invalidating frame."
+                    )
+                    handleAnomaly(assembler.onOverflow(), message)
                 }
-                return true
+                true
             }
-            10 -> {
-                if (isFrameCorrupt) return true // Skip fragments of an already corrupt frame
 
-                // Last fragment - append, assemble, and decode
-                if (ensureCapacity(message.size)) {
-                    messageBuffer.put(message.data, 0, message.size)
+            VideoFragmentAssembler.Action.Append -> {
+                if (ensureCapacity(len)) {
+                    messageBuffer.put(buf, 0, len)
                 } else {
-                    AppLog.e("AapVideo: Final fragment overflow (Flag 10)! Frame exceeds the ${MAX_BUFFER_BYTES / 1024}KB cap. Invalidating frame.")
-                    markCorruptAndRequestRecovery()
-                    messageBuffer.clear()
+                    AppLog.e(
+                        "AapVideo: Fragment overflow (Flag 8)! Size $len on top of ${messageBuffer.position()} " +
+                            "exceeds the ${MAX_BUFFER_BYTES / 1024}KB cap. Invalidating frame."
+                    )
+                    handleAnomaly(assembler.onOverflow(), message)
+                }
+                true
+            }
+
+            VideoFragmentAssembler.Action.AppendAndDecode -> {
+                if (!ensureCapacity(len)) {
+                    AppLog.e(
+                        "AapVideo: Final fragment overflow (Flag 10)! Frame exceeds the " +
+                            "${MAX_BUFFER_BYTES / 1024}KB cap. Invalidating frame."
+                    )
+                    handleAnomaly(assembler.onOverflow(), message)
                     return true
                 }
-
+                messageBuffer.put(buf, 0, len)
                 messageBuffer.flip()
                 val assembledSize = messageBuffer.limit()
 
@@ -195,14 +302,27 @@ internal class AapVideo(private val videoDecoder: VideoDecoder, private val sett
                 }
 
                 messageBuffer.clear()
-                return true
+                true
+            }
+
+            is VideoFragmentAssembler.Action.Discard -> {
+                if (flags == VideoFragmentAssembler.FLAG_SINGLE) {
+                    // A complete frame we cannot find the start of. Deliberately not an anomaly:
+                    // the small ones seen in the wild (len=4, len=6 at session start) are control
+                    // traffic on the video channel, not lost picture, and asking for a keyframe for
+                    // each would fire during setup for no reason.
+                    AppLog.w("AapVideo: Dropped Flag 11 packet. len=$len")
+                }
+                action.consumed
             }
         }
-
-        return false
     }
 
     fun release() {
-        // Kept for AapTransport lifecycle compatibility. Decoding is synchronous here.
+        // Decoding is synchronous here, so there is nothing to drain - but the fragment run has to
+        // be closed, or a session that ends mid-frame leaves the next one's first fragments looking
+        // like a truncation.
+        assembler.reset()
+        lastAnomalyReportMs = 0L
     }
 }

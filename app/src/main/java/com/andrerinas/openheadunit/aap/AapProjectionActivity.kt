@@ -94,6 +94,10 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     private var fpsTextView: TextView? = null
     private var touchOverlayView: OverlayTouchView? = null
     private var currentFps: Int? = null
+
+    // Named rather than inline so onDestroy can tell this instance's listener apart from a
+    // relaunched instance's before clearing it - lambdas have no usable identity across instances.
+    private val fpsListener: (Int) -> Unit = { fps -> currentFps = fps }
     private val performanceHandler = android.os.Handler(android.os.Looper.getMainLooper())
     private val performanceSampler = PerformanceSampler()
     private val performanceExecutor = Executors.newSingleThreadExecutor { runnable ->
@@ -115,27 +119,52 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     private var isKeyEventReceiverRegistered = false
     private var isSettingsReceiverRegistered = false
 
+    /**
+     * Asks for video while the surface the decoder holds has never shown a picture.
+     *
+     * Deliberately **not** gated on the loading overlay any more. It was, and that let a cosmetic
+     * decision end recovery: `onCreate` hides the overlay when the previous instance had rendered,
+     * and this runnable does not re-post when it declines, so one relaunch in two lost the loop on
+     * its first tick and sat black with nothing asking. See
+     * [ProjectionWatchdogPolicy.shouldNudgeForFirstFrame].
+     *
+     * It still hides the overlay when it finds a picture, because that is a fact about the picture
+     * rather than a condition on running.
+     */
     private val videoWatchdogRunnable = object : Runnable {
         override fun run() {
-            val loadingOverlay = findViewById<View>(R.id.loading_overlay)
-            if (loadingOverlay?.visibility == View.VISIBLE && commManager.isConnected) {
-                // If the decoder already rendered something, hide the overlay immediately
-                if (videoDecoder.lastFrameRenderedMs > 0) {
+            val rendered = videoDecoder.lastFrameRenderedMs > 0
+            if (rendered) {
+                val loadingOverlay = findViewById<View>(R.id.loading_overlay)
+                if (loadingOverlay?.visibility == View.VISIBLE) {
                     AppLog.i("Watchdog: Decoder is already rendering frames. Hiding overlay.")
                     hideLoadingOverlay(loadingOverlay)
-                    return
                 }
-
-                AppLog.w("Watchdog: No video received yet. Requesting Keyframe (Unsolicited Focus)...")
-                commManager.send(VideoFocusEvent(gain = true, unsolicited = true))
-                watchdogHandler.postDelayed(this, 1500)
             }
+            if (!ProjectionWatchdogPolicy.shouldNudgeForFirstFrame(
+                    sessionLive = ProjectionWatchdogPolicy.isSessionLive(commManager.connectionState.value),
+                    surfaceSet = isSurfaceSet,
+                    renderedSinceSurfaceSet = rendered,
+                    warmRelaunchCycleSpent = warmRelaunchCycleSpent,
+                )
+            ) return
+
+            AppLog.w("Watchdog: No video received yet. Requesting Keyframe (Unsolicited Focus)...")
+            // Shares one throttle clock with the reconnecting watchdog's mid-session
+            // re-request, so the two never double-fire across the overlay transition.
+            lastVideoFocusRequestMs = SystemClock.elapsedRealtime()
+            commManager.send(VideoFocusEvent(gain = true, unsolicited = true))
+            watchdogHandler.postDelayed(this, 1500)
         }
     }
     private val reconnectingWatchdog = object : Runnable {
         override fun run() {
-            // Only run watchdog if we are actually supposed to be connected
-            if (commManager.connectionState.value !is CommManager.ConnectionState.HandshakeComplete) {
+            // Bail without re-posting only when the session is genuinely over; onResume re-arms
+            // on the next entry. The steady state during projection is TransportStarted, and
+            // checking only HandshakeComplete here killed this watchdog on its first tick of
+            // every session - which is why a video stream that died mid-session stayed black
+            // with nothing ever asking for it back.
+            if (!ProjectionWatchdogPolicy.isSessionLive(commManager.connectionState.value)) {
                 return
             }
             val lastFrame = videoDecoder.lastFrameRenderedMs
@@ -143,20 +172,208 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                 // First frame hasn't arrived yet — handled by the starting overlay. If the phone is
                 // streaming video but nothing draws, offer to switch renderer (issue #767).
                 maybeOfferRendererConfirm()
+                // A relaunch lands here too, and used to get nothing else: the overlay is already
+                // hidden (the previous instance had rendered), so its keyframe watchdog never
+                // re-arms, and maybeRequestVideoFocus below is never reached.
+                maybeRecoverWarmRelaunch()
                 watchdogHandler.postDelayed(this, 2000)
                 return
             }
             val gap = SystemClock.elapsedRealtime() - lastFrame
-            if (overlayState == OverlayState.HIDDEN && gap > 10000) {
+            val linkQuiet = linkQuietMs()
+            val pictureStopped = gap > ProjectionWatchdogPolicy.FRAME_GAP_MS
+            if (overlayState == OverlayState.HIDDEN &&
+                ProjectionWatchdogPolicy.shouldShowReconnecting(gap, linkQuiet)
+            ) {
+                AppLog.w(
+                    "AapProjectionActivity: picture idle for ${gap}ms and the link has been silent " +
+                        "for ${describeQuiet(linkQuiet)} - treating this as a lost connection"
+                )
                 showReconnectingOverlay()
             } else if (overlayState == OverlayState.RECONNECTING && gap < 2000) {
                 hideReconnectingOverlay()
             } else {
+                if (!pictureStopped) {
+                    lastIdleReportMs = 0L
+                } else if (overlayState == OverlayState.HIDDEN) {
+                    reportIdlePicture(gap, linkQuiet)
+                }
                 // Decoder producing but display possibly frozen (issue #650).
                 maybeRecoverFromDisplayStall()
             }
+            maybeRequestVideoFocus(pictureStopped)
             watchdogHandler.postDelayed(this, 2000)
         }
+    }
+
+    private var lastVideoFocusRequestMs = 0L
+
+    // Throttle for the idle-picture line. Cleared the moment frames resume, so each idle stretch
+    // reports immediately instead of inheriting the previous one's window.
+    private var lastIdleReportMs = 0L
+    private val idleReportCooldownMs = 10000L
+
+    // Age and escalation state of the surface the decoder currently renders to. Reset together in
+    // onSurfaceChanged, so each relaunch gets exactly one focus cycle.
+    private var lastSurfaceSetMs = 0L
+    private var warmRelaunchCycleSpent = false
+
+    /**
+     * A relaunch handed the decoder a fresh surface and no picture has followed it.
+     *
+     * The phone is the bottleneck here, not the rebuild: measured across ten TextureView/GLES
+     * returns, the relaunch took 384-507 ms and codec creation 49-308 ms, while waiting for a
+     * decodable picture afterwards took 6.3-115.9 s - 97-99% of the whole return. On the SurfaceView
+     * backend, whose teardown releases video focus and so makes the phone re-run sink setup, the
+     * same wait was 42-96 ms.
+     *
+     * Repeating the unsolicited gain does not close that gap; dozens go out per slow return and none
+     * is ever followed by a picture. [WarmRelaunchKeyframePolicy] decides when to escalate to the
+     * release/regain cycle instead, and why each gate is there.
+     */
+    private fun maybeRecoverWarmRelaunch() {
+        if (lastSurfaceSetMs == 0L) return
+        val now = SystemClock.elapsedRealtime()
+        val action = WarmRelaunchKeyframePolicy.decide(
+            sessionHasRendered = videoDecoder.hasRenderedThisSession,
+            renderedSinceSurfaceSet = videoDecoder.lastFrameRenderedMs != 0L,
+            transportStarted = commManager.connectionState.value is CommManager.ConnectionState.TransportStarted,
+            msSinceSurfaceSet = now - lastSurfaceSetMs,
+            // The link, not the video channel. An idle Android Auto screen sends no video for
+            // minutes at a time and still answers on the link, and reading video bytes here shut
+            // this escalation for the whole of exactly the case it is needed in.
+            msSinceLinkActivity = linkQuietMs(),
+            linkQuietThresholdMs = ProjectionWatchdogPolicy.LINK_QUIET_MS,
+            cycleAlreadySpent = warmRelaunchCycleSpent,
+            msSinceLastRequest = now - lastVideoFocusRequestMs
+        )
+        when (action) {
+            WarmRelaunchKeyframePolicy.Action.NONE -> return
+            WarmRelaunchKeyframePolicy.Action.NUDGE -> {
+                lastVideoFocusRequestMs = now
+                AppLog.w("AapProjectionActivity: relaunched surface still has no picture - requesting video focus (unsolicited)")
+                commManager.send(VideoFocusEvent(gain = true, unsolicited = true))
+            }
+            WarmRelaunchKeyframePolicy.Action.CYCLE_FOCUS -> {
+                // The transport's own escalation spends the same lever. If it holds it, no release
+                // went out for this policy to complete, so nothing here may be marked as spent -
+                // and the keyframe that cycle brings is the one this was asking for anyway.
+                if (!commManager.releaseVideoFocusForKeyframe()) {
+                    AppLog.w("AapProjectionActivity: relaunched surface has no picture, but a focus cycle is already in flight - waiting for it")
+                    return
+                }
+                warmRelaunchCycleSpent = true
+                lastVideoFocusRequestMs = now
+                AppLog.w("AapProjectionActivity: relaunched surface has no picture after ${now - lastSurfaceSetMs}ms - cycling video focus")
+                focusCycleGainPending = true
+                watchdogHandler.removeCallbacks(focusCycleGainRunnable)
+                watchdogHandler.postDelayed(
+                    focusCycleGainRunnable,
+                    WarmRelaunchKeyframePolicy.FOCUS_CYCLE_GAP_MS
+                )
+            }
+        }
+    }
+
+    /**
+     * Runs the escalation check one window after a surface is claimed, instead of waiting for the
+     * reconnecting watchdog to reach it.
+     *
+     * That watchdog is the backstop, not the trigger: it first ticks 5 s after onResume and every
+     * 2 s after that, so leaving the escalation to it would put a floor under the recovery well
+     * above the window the policy actually specifies. Driving it from the surface keeps the cost at
+     * the window itself.
+     */
+    private val warmRelaunchCheckRunnable = Runnable { maybeRecoverWarmRelaunch() }
+
+    private var focusCycleGainPending = false
+
+    /**
+     * Second half of the focus cycle - see [WarmRelaunchKeyframePolicy.FOCUS_CYCLE_GAP_MS] for why
+     * it is not sent with the release.
+     */
+    private val focusCycleGainRunnable = Runnable {
+        focusCycleGainPending = false
+        AppLog.w("AapProjectionActivity: retaking video focus to complete the keyframe cycle")
+        commManager.retakeVideoFocusForKeyframe()
+    }
+
+    /**
+     * Completes a focus cycle early rather than dropping it.
+     *
+     * The release and the gain are one operation split across a delay, so anything that cancels the
+     * pending half has to send it instead of forgetting it. Left released, the phone stops the video
+     * sink and nothing ever asks for it back - a permanent black screen with audio still playing,
+     * which is a worse outcome than the slow return the cycle exists to fix.
+     */
+    private fun settleFocusCycle() {
+        if (!focusCycleGainPending) return
+        watchdogHandler.removeCallbacks(focusCycleGainRunnable)
+        focusCycleGainRunnable.run()
+    }
+
+    /**
+     * How long ago the phone last sent anything at all, on any AAP channel.
+     *
+     * [Long.MAX_VALUE] when it has not sent anything yet this session. That case has to be spelled
+     * out rather than left to arithmetic: `lastAapMessageMs` is 0 until the first message arrives,
+     * and `now - 0` is a very large number that reads as a *silent* link - so the obvious
+     * subtraction would report a session that has merely not started as one that has died.
+     */
+    private fun linkQuietMs(): Long {
+        val last = commManager.lastAapMessageMs
+        if (last == 0L) return Long.MAX_VALUE
+        return SystemClock.elapsedRealtime() - last
+    }
+
+    /** Renders [linkQuietMs] for a log line, so "not yet" never prints as 9223372036854775807ms. */
+    private fun describeQuiet(quietMs: Long): String =
+        if (quietMs == Long.MAX_VALUE) "the whole session" else "${quietMs}ms"
+
+    /**
+     * Records that the picture stopped without the link doing so - the case that used to be shown
+     * to the user as a lost connection.
+     *
+     * Android Auto sends no video at all while nothing on screen animates, so this is the normal
+     * state of a paused full-screen music player, and the overlay it produced was the whole of
+     * issue #852. The line stays because [ProjectionWatchdogPolicy.LINK_QUIET_MS] is a judgement
+     * and not yet a measurement: every one of these carries the phone's real idle cadence, so two
+     * reporter logs are enough to replace the guess with a number.
+     *
+     * Rate-limited to one per idle stretch rather than one per 2s tick.
+     */
+    private fun reportIdlePicture(gapMs: Long, quietMs: Long) {
+        val now = SystemClock.elapsedRealtime()
+        if (lastIdleReportMs != 0L && now - lastIdleReportMs < idleReportCooldownMs) return
+        lastIdleReportMs = now
+        AppLog.w(
+            "AapProjectionActivity: picture idle for ${gapMs}ms but the link spoke " +
+                "${describeQuiet(quietMs)} ago - Android Auto has stopped sending, not disconnected"
+        )
+    }
+
+    /**
+     * Mid-session recovery: the connection is proven live (the state check above) but no frame has
+     * arrived for [ProjectionWatchdogPolicy.FRAME_GAP_MS], so ask the phone for video again.
+     * Without this, the one unsolicited focus gain sent when a surface appears was the only request
+     * in the whole session - if the stream stopped after that, nothing ever asked for it back and
+     * the screen stayed black until the app was killed.
+     *
+     * Gated on [pictureStopped] and deliberately **not** on the reconnecting overlay, which is what
+     * it used to read. The overlay now also requires the link to have gone quiet (issue #852), and
+     * an idle-looking stream is exactly the shape a genuinely stalled one has - so tying recovery
+     * to the overlay would leave the stalled case with nothing asking for video back, which is the
+     * failure this watchdog was revived to fix.
+     */
+    private fun maybeRequestVideoFocus(pictureStopped: Boolean) {
+        val now = SystemClock.elapsedRealtime()
+        if (!ProjectionWatchdogPolicy.shouldRequestVideoFocus(
+                pictureStopped, now, lastVideoFocusRequestMs
+            )
+        ) return
+        lastVideoFocusRequestMs = now
+        AppLog.w("AapProjectionActivity: connected but no frames - requesting video focus (unsolicited)")
+        commManager.send(VideoFocusEvent(gain = true, unsolicited = true))
     }
     private val exitRunnable = Runnable {
         if (commManager.connectionState.value is CommManager.ConnectionState.Disconnected) {
@@ -243,12 +460,20 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             AppLog.i("Recreating projection view due to settings change...")
             val container = findViewById<FrameLayout>(R.id.container)
             if (::projectionView.isInitialized) {
+                // Deregister before discarding the view: the GLES backend posts its
+                // onSurfaceDestroyed to the main looper, so a still-registered callback from the
+                // discarded view would land after the replacement's onSurfaceChanged and release
+                // video focus for the new view's running stream.
+                projectionView.removeCallback(this)
                 videoDecoder.softwareYuvFrameSink = null
                 videoDecoder.stop(DecoderStopPolicy.REASON_PROJECTION_VIEW_RECREATE)
                 container.removeView(projectionView as View)
             }
             isSurfaceSet = false
             setupProjectionView()
+            val mirror = if (settings.hudMirroring) -1.0f else 1.0f
+            findViewById<View>(R.id.loading_overlay)?.scaleX = mirror
+            fpsTextView?.scaleX = mirror
         }
     }
 
@@ -268,6 +493,10 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     //     the GL consumer does not fully stop but drops to 2-5fps with single frames taking ~2s, so
     //     a plain "no frame for N seconds" check misses it (issue #650).
     private val displayFreezeThresholdMs = 5000L
+    // "The phone is still streaming video" - for [maybeRecoverFromDisplayStall] only, where that is
+    // the right question: that path is about the display consumer freezing while video flows. The
+    // warm-relaunch escalation used to share it and asks about the link instead, because there a
+    // stream with no video is the normal idle screen rather than evidence of anything.
     private val phoneAliveThresholdMs = 1500L
     private val displayStallRecoveryCooldownMs = 10000L
     private val displayStallRecoveryResetMs = 60000L
@@ -360,7 +589,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             com.andrerinas.openheadunit.utils.ToastUtils.showToast(this, R.string.renderer_fallback_surface, duration = android.widget.Toast.LENGTH_LONG, force = true)
             // SurfaceView can't be observed for stalls (issue #767); if it too shows black, offer the
             // manual escape so the user isn't stranded on the terminal fallback.
-            showRendererConfirmBanner()
+            showRendererConfirmBanner("the SurfaceView fallback is also showing black")
         } else {
             AppLog.w("Display stall ($reason). Rebuilding projection view (attempt $displayStallRecoveries). See issue #650.")
         }
@@ -381,14 +610,31 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         val now = SystemClock.elapsedRealtime()
         if (now - input > rendererConfirmPhoneAliveMs) return
         if (projectionStartMs == 0L || now - projectionStartMs < rendererConfirmNoFrameMs) return
-        showRendererConfirmBanner()
+        showRendererConfirmBanner("the phone is streaming and nothing has drawn")
     }
 
-    /** A dismissible bottom bar: "Do you see the screen?" with Yes / Switch renderer. */
-    private fun showRendererConfirmBanner() {
+    /**
+     * A dismissible bottom bar: "Do you see the screen?" with Yes / Switch renderer.
+     *
+     * @param reason which of the four situations armed it, for the log. They are four different
+     *   things - a terminal fallback that is also black, a phone streaming into a blank screen, a
+     *   renderer just switched, and the setup wizard asking for confirmation - and they used to
+     *   produce one indistinguishable line. A round saw the banner with `pendingRendererConfirm`
+     *   persisted false and had to reason out which path had armed it.
+     */
+    private fun showRendererConfirmBanner(reason: String) {
         runOnUiThread {
             if (rendererBanner != null || rendererConfirmResolved) return@runOnUiThread
             val container = findViewById<FrameLayout>(R.id.container) ?: return@runOnUiThread
+            // Said out loud because until now nothing was. A session sitting behind this banner
+            // logs exactly like a connected one showing a static screen, and a hardware round lost
+            // a whole capture to the difference - only a screenshot told the two apart.
+            AppLog.w(
+                "AapProjectionActivity: the renderer confirmation banner is up (%s) - projection " +
+                    "is waiting on the user to answer it, and the screen will not change until " +
+                    "they do.",
+                reason
+            )
             fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
             val bar = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL
@@ -461,7 +707,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         // which nothing can detect automatically).
         dismissRendererConfirmBanner()
         recreateProjectionView()
-        showRendererConfirmBanner()
+        showRendererConfirmBanner("the renderer was just switched and may still be blank")
     }
 
     private val nightModeReceiver = object : BroadcastReceiver() {
@@ -637,6 +883,9 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         setFullscreen() // Call setFullscreen here as well
 
         val loadingOverlay = findViewById<View>(R.id.loading_overlay)
+        if (settings.hudMirroring) {
+            loadingOverlay?.scaleX = -1.0f
+        }
 
         // [FIX] If we are already connected and frames are flowing (e.g. activity recreation),
         // hide the overlay immediately to prevent the "Android Auto is starting" flicker.
@@ -663,7 +912,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                 // The wizard changed the renderer: the picture is up, so ask the user to confirm it
                 // (issue #767). If they don't, the auto-offer above still catches a broken renderer.
                 if (settings.pendingRendererConfirm && !rendererConfirmResolved) {
-                    showRendererConfirmBanner()
+                    showRendererConfirmBanner("the setup wizard changed the renderer")
                 }
 
                 // Show one-time gesture hint
@@ -687,6 +936,9 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         // Clear any activity-local fullscreen override when leaving the Activity so
         // the stored settings remain authoritative on next resume.
         activityFullscreenOverride = null
+        // Before the handler is cleared below, and never after it.
+        settleFocusCycle()
+        watchdogHandler.removeCallbacks(warmRelaunchCheckRunnable)
         watchdogHandler.removeCallbacks(watchdogRunnable)
         watchdogHandler.removeCallbacks(videoWatchdogRunnable)
         watchdogHandler.removeCallbacks(reconnectingWatchdog)
@@ -765,6 +1017,9 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         AppLog.i("Showing reconnecting overlay")
         overlayState = OverlayState.RECONNECTING
         val overlay = findViewById<View>(R.id.loading_overlay) ?: return
+        if (settings.hudMirroring) {
+            overlay.scaleX = -1.0f
+        }
 
         // Ensure default content is shown, custom media is hidden
         findViewById<View>(R.id.loading_default_content)?.visibility = View.VISIBLE
@@ -810,6 +1065,11 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             findViewById<TextView>(R.id.loading_custom_text)?.text = handover
         }
 
+        val overlay = findViewById<View>(R.id.loading_overlay)
+        if (settings.hudMirroring) {
+            overlay?.scaleX = -1.0f
+        }
+
         val mediaPath = settings.loadingScreenMediaPath
         val mediaType = settings.loadingScreenMediaType
         if (mediaPath.isEmpty() || mediaType.isEmpty()) return
@@ -825,7 +1085,6 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         val customTextOverlay = findViewById<View>(R.id.loading_custom_text_overlay)
         val customImage = findViewById<ImageView>(R.id.loading_custom_image)
         val customVideo = findViewById<VideoView>(R.id.loading_custom_video)
-        val overlay = findViewById<View>(R.id.loading_overlay)
 
         // Always hide the default content when custom media is active
         defaultContent?.visibility = View.GONE
@@ -1095,7 +1354,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             }
         }
 
-        MaterialAlertDialogBuilder(this, R.style.DarkAlertDialog)
+        val dialog = MaterialAlertDialogBuilder(this, R.style.DarkAlertDialog)
             .setTitle(R.string.exit_dialog_title)
             .setAdapter(adapter) { _, which ->
                 val selected = options[which]
@@ -1117,6 +1376,11 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             }
             .setNegativeButton(R.string.cancel, null)
             .show()
+
+        if (settings.hudMirroring) {
+            val root = dialog.window?.findViewById<View>(android.R.id.content) ?: dialog.window?.decorView
+            root?.scaleX = -1.0f
+        }
     }
 
     private fun showQuickSettings() {
@@ -1248,6 +1512,15 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         isSurfaceSet = true
 
         videoDecoder.setSurface(surface)
+        // A surface arriving inside a cycle's own gap must not strand the pending gain.
+        settleFocusCycle()
+        lastSurfaceSetMs = SystemClock.elapsedRealtime()
+        warmRelaunchCycleSpent = false
+        watchdogHandler.removeCallbacks(warmRelaunchCheckRunnable)
+        watchdogHandler.postDelayed(
+            warmRelaunchCheckRunnable,
+            WarmRelaunchKeyframePolicy.ESCALATE_AFTER_SURFACE_MS
+        )
 
         // --- Surface Mismatch Detection ---
         // Compare actual surface dimensions with what HeadUnitScreenConfig negotiated.
@@ -1315,10 +1588,20 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     }
 
     override fun onSurfaceDestroyed(surface: android.view.Surface) {
+        // A relaunched instance may already own the decoder: on a singleTask relaunch the old
+        // instance's surface teardown is framework-ordered after its onDestroy, and for the GLES
+        // backend one main-looper post later still, so it lands after the new instance's
+        // setSurface. Acting on it then would release video focus for a stream the new instance
+        // is rendering and stop a decoder that was just rebuilt. All surface ownership changes
+        // happen on the main thread, so this read cannot race the send below.
+        if (!videoDecoder.isCurrentSurface(surface)) {
+            AppLog.i("SurfaceCallback: onSurfaceDestroyed for a stale surface - ignoring. Surface: $surface")
+            return
+        }
         AppLog.i("SurfaceCallback: onSurfaceDestroyed. Surface: $surface")
         isSurfaceSet = false
         commManager.send(VideoFocusEvent(gain = false, unsolicited = false))
-        videoDecoder.stop(DecoderStopPolicy.REASON_SURFACE_DESTROYED)
+        videoDecoder.stopIfCurrentSurface(surface, DecoderStopPolicy.REASON_SURFACE_DESTROYED)
     }
 
 
@@ -1506,9 +1789,17 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         performanceExecutor.shutdownNow()
         AppLog.i("AapProjectionActivity.onDestroy called. isFinishing=$isFinishing")
         App.isPiPActive = false
-        videoDecoder.onFpsChanged = null
-        videoDecoder.softwareYuvFrameSink = null
-        videoDecoder.dimensionsListener = null
+        // On a singleTask relaunch the new instance's onCreate runs before this old instance's
+        // onDestroy, so it has already registered its own view callback and decoder listeners.
+        // Deregister only what still belongs to this instance, or the teardown of the old
+        // instance strips the live one: its view callback stays armed to fire a stale
+        // surface-destroy, and its listeners get nulled out from under it.
+        if (::projectionView.isInitialized) projectionView.removeCallback(this)
+        if (videoDecoder.onFpsChanged === fpsListener) videoDecoder.onFpsChanged = null
+        (if (::projectionView.isInitialized) projectionView as? SoftwareYuvFrameSink else null)?.let {
+            if (videoDecoder.softwareYuvFrameSink === it) videoDecoder.softwareYuvFrameSink = null
+        }
+        if (videoDecoder.dimensionsListener === this) videoDecoder.dimensionsListener = null
     }
 
     companion object {
@@ -1615,6 +1906,9 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                 elevation = 100f
                 translationZ = 100f
             }
+            if (settings.hudMirroring) {
+                scaleX = -1.0f
+            }
         }
         val params = FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.WRAP_CONTENT,
@@ -1625,9 +1919,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         }
         container.addView(fpsTextView, params)
 
-        videoDecoder.onFpsChanged = { fps ->
-            currentFps = fps
-        }
+        videoDecoder.onFpsChanged = fpsListener
         startPerformanceOverlayUpdates()
     }
 

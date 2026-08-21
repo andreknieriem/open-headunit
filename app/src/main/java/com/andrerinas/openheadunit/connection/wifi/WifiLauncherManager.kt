@@ -69,13 +69,15 @@ class WifiLauncherManager(val service: AapService) {
         }
     }
 
-    fun forceStartDiscoveryScan() {
+    fun forceStartDiscoveryScan(): Boolean {
         val discovery = sharedServices.localDiscovery
 
         if (discovery != null) {
             discovery.stop()
             discovery.startScan()
-        }
+            return true
+        } else
+            return false
     }
 
     fun startDiscovery(oneShot: Boolean = false) {

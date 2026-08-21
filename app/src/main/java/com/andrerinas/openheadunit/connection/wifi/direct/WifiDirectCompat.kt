@@ -1,4 +1,4 @@
-package com.andrerinas.openheadunit.connection.wifi
+package com.andrerinas.openheadunit.connection.wifi.direct
 
 import android.net.wifi.p2p.WifiP2pGroup
 import android.net.wifi.p2p.WifiP2pManager
@@ -13,7 +13,7 @@ import com.andrerinas.openheadunit.utils.AppLog
 object WifiDirectCompat {
 
     /**
-     * Safely calls [android.net.wifi.p2p.WifiP2pManager.requestDeviceInfo] if running on API 29+.
+     * Safely calls [WifiP2pManager.requestDeviceInfo] if running on API 29+.
      */
     fun requestDeviceInfo(
         manager: WifiP2pManager?,

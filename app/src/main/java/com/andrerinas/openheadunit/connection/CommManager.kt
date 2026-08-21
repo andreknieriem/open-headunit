@@ -8,6 +8,7 @@ import com.andrerinas.openheadunit.aap.AapTransport
 import com.andrerinas.openheadunit.aap.KeyDebouncePolicy
 import com.andrerinas.openheadunit.aap.MediaKeyRoutingPolicy
 import com.andrerinas.openheadunit.aap.PlaybackFocusPolicy
+import com.andrerinas.openheadunit.aap.UnresponsivePeerPolicy
 import com.andrerinas.openheadunit.aap.VideoStarvationPolicy
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.BluetoothHelper
@@ -136,6 +137,31 @@ class CommManager(
 
     /** @Volatile: written on IO thread, read on Main and IO threads. */
     @Volatile private var _transport: AapTransport? = null
+
+    /**
+     * `ip:port` of the most recent connection attempt, or `null` when it was not a socket
+     * (USB). Lets a caller attribute a handshake failure to the peer it happened with, which
+     * matters for the one failure that is a property of that peer rather than of the link —
+     * see [ERROR_HANDSHAKE_PEER_SILENT].
+     */
+    @Volatile var lastAttemptedEndpoint: String? = null
+        private set
+
+    /**
+     * Consecutive handshakes against one endpoint where the peer accepted the connection and then
+     * sent nothing at all. Read by the discovery rescheduler to back off — see
+     * [com.andrerinas.openheadunit.aap.UnresponsivePeerPolicy].
+     *
+     * Counted here rather than from a [ConnectionState.Error] collector because that state is not
+     * observable: [connectionState] is a `MutableStateFlow`, so collection is conflated, and
+     * [startHandshake] calls [disconnect] with no suspension point after emitting the error — the
+     * value has already moved on to `Disconnected` before any collector resumes.
+     */
+    @Volatile var silentPeerFailures: Int = 0
+        private set
+
+    /** The endpoint [silentPeerFailures] is counting; a different one starts its own streak. */
+    @Volatile private var silentPeerEndpoint: String? = null
     var onUpdateUiConfigReplyReceived: (() -> Unit)? = null
     @Volatile private var _connection: AccessoryConnection? = null
 
@@ -170,6 +196,38 @@ class CommManager(
         }
 
     /**
+     * When the phone last sent anything on any AAP channel, or `0` if it has not yet this session.
+     *
+     * Proof the link is alive, as distinct from proof the picture is moving. See
+     * [AapTransport.lastMessageReceivedMs].
+     */
+    val lastAapMessageMs: Long
+        get() = _transport?.lastMessageReceivedMs ?: 0L
+
+    /**
+     * `true` while a connection exists **or** one is being set up.
+     *
+     * [isConnected] deliberately excludes [ConnectionState.Connecting], which is right for the
+     * questions it was written for. It is wrong for discovery: a scan started during that window
+     * finds the head unit server, hands the socket over, and [connect] refuses it at its own
+     * `Connecting` guard and closes it — and that server is wedged by any connection it accepts
+     * and nobody follows through. Closing afterwards does not undo it; the damage is done at
+     * `accept()`. Ask this before opening a probe, not [isConnected].
+     */
+    val isBusy: Boolean
+        get() = isConnected || connectionState.value is ConnectionState.Connecting
+
+    /**
+     * `true` when the running session rides a socket rather than USB.
+     *
+     * The stored wireless mode says nothing about this — a USB session can be live while
+     * `wifiConnectionMode` names a WiFi route — so anything reacting to the WiFi radio going away
+     * has to ask the session, not the settings.
+     */
+    val isWirelessSession: Boolean
+        get() = _connection is SocketAccessoryConnection
+
+    /**
      * Returns `true` if the current USB connection is to [device].
      * Used by AapService to decide whether a USB detach event should trigger a disconnect.
      */
@@ -192,6 +250,8 @@ class CommManager(
         if (_connectionState.value is ConnectionState.Connecting)
             return@withContext
 
+
+        lastAttemptedEndpoint = null
 
         val usbManager = context.getSystemService(Context.USB_SERVICE) as UsbManager
         if (!usbManager.hasPermission(device)) {
@@ -234,9 +294,24 @@ class CommManager(
      */
     suspend fun connect(socket: Socket) = withContext(Dispatchers.IO) {
         // Another caller already started the connection — do nothing.
-        if (_connectionState.value is ConnectionState.Connecting)
+        if (_connectionState.value is ConnectionState.Connecting) {
+            // [BUG_FIX] But close what we are refusing. A socket handed to connect() has no
+            // other owner: NetworkDiscovery gives ownership up at this call, and WirelessServer's
+            // accept loop closes the sockets it refuses itself, so returning without closing
+            // leaves the peer holding a session nobody will ever read from. This guard is the
+            // only one of the three that did not, and it is the reachable one — isConnected
+            // deliberately excludes Connecting, and WirelessServer checks it from a detached
+            // coroutine, so two connections arriving together both get past it.
+            //
+            // The cost is worst on the head unit server path, where the server binds to one
+            // connection for the life of its process and an abandoned one leaves it deaf until
+            // the user restarts it by hand.
+            AppLog.i("CommManager: Connect already in progress; closing the handed-over socket")
+            try { socket.close() } catch (e: Exception) {}
             return@withContext
+        }
 
+        lastAttemptedEndpoint = socket.inetAddress?.hostAddress?.let { "$it:${socket.port}" }
 
         _disconnectJob?.join()
 
@@ -269,6 +344,8 @@ class CommManager(
         // Another caller already started the connection — do nothing.
         if (_connectionState.value is ConnectionState.Connecting)
             return@withContext
+
+        lastAttemptedEndpoint = "$ip:$port"
 
         _disconnectJob?.join()
 
@@ -340,22 +417,65 @@ class CommManager(
                     _transport!!.onAudioFocusStateChanged = { isPlaying -> onAudioFocusStateChanged?.invoke(isPlaying) }
                     _transport!!.onUpdateUiConfigReplyReceived = { onUpdateUiConfigReplyReceived?.invoke() }
                 }
-                if (_transport?.startHandshake(_connection!!) == true) {
+                // Held locally because startHandshake() quits the transport on failure, and
+                // quitting nulls _transport before it returns — the failure reason would be
+                // unreachable by the time we came to report it.
+                val transport = _transport
+                if (transport?.startHandshake(_connection!!) == true) {
                     // A session that got this far had a working link to carry video on. See
                     // VideoStarvationPolicy for what it means when one ends without carrying any.
                     sessionReachedHandshake = true
                     videoDecoder.framesRenderedThisSession = 0L
+                    silentPeerFailures = 0
                     _connectionState.emit(ConnectionState.HandshakeComplete)
                 } else {
-                    _connectionState.emit(ConnectionState.Error("Handshake failed"))
+                    val silent = transport?.lastHandshakeFailure == AapTransport.HandshakeFailure.PEER_SILENT
+                    noteHandshakeOutcome(silent)
+                    _connectionState.emit(
+                        ConnectionState.Error(if (silent) ERROR_HANDSHAKE_PEER_SILENT else "Handshake failed")
+                    )
                     disconnect()
                 }
             } else {
                 _connectionState.emit(ConnectionState.Error("Starting handshake without connection"))
             }
         } catch (e: Exception) {
+            // An exception is never the silent-peer case; clear the streak rather than leaving it
+            // to age into a backoff that no longer describes what is happening.
+            noteHandshakeOutcome(silent = false)
             _connectionState.emit(ConnectionState.Error("Handshake failed: ${e.message}"))
             disconnect()
+        }
+    }
+
+    /**
+     * Updates [silentPeerFailures] after a failed handshake, and explains the situation once when
+     * the streak reaches the point where the retry cadence drops.
+     */
+    private fun noteHandshakeOutcome(silent: Boolean) {
+        if (!silent) {
+            // Any other failure means this is not the deaf-peer case, so the streak — and the
+            // backoff resting on it — starts over.
+            silentPeerFailures = 0
+            return
+        }
+        val endpoint = lastAttemptedEndpoint
+        silentPeerFailures =
+            UnresponsivePeerPolicy.countAfterSilentFailure(silentPeerFailures, silentPeerEndpoint, endpoint)
+        silentPeerEndpoint = endpoint
+        // Only Android Auto's head unit server — the peer on 5277, so the discovery path and Self
+        // Mode — has something the user can restart. The phone dialling our own server on 5288 and
+        // the Nearby helper can both reach this branch, and sending their users into Android Auto's
+        // developer settings after a switch they never turned on would be worse than saying nothing.
+        if (UnresponsivePeerPolicy.shouldExplain(silentPeerFailures) && endpoint?.endsWith(":5277") == true) {
+            AppLog.e(
+                "CommManager: $endpoint has accepted $silentPeerFailures connections in a row " +
+                    "without answering any of them. Slowing discovery to one attempt every " +
+                    "${UnresponsivePeerPolicy.BACKOFF_RESCAN_MS / 1000}s. Android Auto's head unit " +
+                    "server does not recover on its own once this happens — stop and start it again " +
+                    "on the phone, in Android Auto's developer settings, and this will reconnect by " +
+                    "itself."
+            )
         }
     }
 
@@ -621,9 +741,57 @@ class CommManager(
         val request = com.andrerinas.openheadunit.aap.protocol.messages.UpdateUiConfigRequest(left, top, right, bottom)
         AppLog.i("[UI_DEBUG_FIX] TX UpdateUiConfigRequest: L=$left T=$top R=$right B=$bottom")
         send(request)
-        // Always sends VideoFocusNotification(PROJECTED, unsolicited=true) after
-        // updating the UI config. This triggers a keyframe from the phone.
+        // The trailing gain-only notification does *not* bring a keyframe forward, whatever this
+        // comment used to claim. Dropped-frame-keyframe round 4 fired sixteen of these config
+        // requests on a live stream: the phone acknowledged every one and its keyframe cadence never
+        // moved off its fixed ~69s period. Kept because it costs one message and nothing has measured
+        // the surface-mismatch path this serves without it.
         send(com.andrerinas.openheadunit.aap.protocol.messages.VideoFocusEvent(gain = true, unsolicited = true))
+    }
+
+    /**
+     * First half of a video-focus cycle: release focus so the phone tears its video sink down and
+     * has to set it up again, which is what makes it start the next stream with a keyframe. The
+     * caller sends the matching gain after a gap.
+     *
+     * The release makes the phone answer with a video sink stop. [AapTransport.ignoreNextStopRequest]
+     * marks that one as ours, so it stays distinguishable in the log from a sink stop nobody asked
+     * for - which is what a video-black failure looks like, and has been the decisive line in four
+     * rounds of hardware testing.
+     *
+     * Two policies decide when this is warranted, and nothing else should: [WarmRelaunchKeyframePolicy]
+     * for a surface that has never shown a frame, and [KeyframeCycleEscalationPolicy] for a picture
+     * left corrupt by a shed reference frame. The latter sends its own release from [AapTransport]
+     * rather than calling here, because it has to pair the release with a regain on the send handler.
+     * Releasing focus across a stream that is rendering is a known way to lose one permanently, which
+     * is why both sets of gates are as reluctant as they are.
+     *
+     * Both go through the transport's single claim on the lever, so a release can never be issued
+     * while another cycle is still waiting to send its regain. Returns false when the claim is
+     * refused - the caller must not then spend its own budget or schedule a regain, because no
+     * release went out for it to complete.
+     */
+    fun releaseVideoFocusForKeyframe(): Boolean {
+        if (_connectionState.value !is ConnectionState.TransportStarted) return false
+        val transport = _transport ?: return false
+        if (!transport.beginFocusCycle()) {
+            AppLog.i("CommManager: a video-focus cycle is already in flight - not starting a second")
+            return false
+        }
+        AppLog.i("CommManager: releasing video focus to force a keyframe")
+        transport.sendKeyframeCycleRelease()
+        return true
+    }
+
+    /**
+     * Second half of a cycle started by [releaseVideoFocusForKeyframe], and the only correct way to
+     * end one: it sends the regain *and* hands the lever back, which a bare [send] would not.
+     */
+    fun retakeVideoFocusForKeyframe() {
+        _transport?.let {
+            it.send(com.andrerinas.openheadunit.aap.protocol.messages.VideoFocusEvent(gain = true, unsolicited = true))
+            it.endFocusCycle()
+        }
     }
 
     fun updateAudioGains() {
@@ -767,8 +935,44 @@ class CommManager(
      * Call this when the owning component (e.g. the foreground service) is destroyed.
      * After [destroy], the CommManager instance must not be used again.
      */
+    /**
+     * Closes the session because the link carrying it is about to go away, and blocks until the
+     * socket is actually closed or [timeoutMs] elapses. Never call from the main thread.
+     *
+     * Deliberately not [disconnect]. That one means "the user pressed Exit": it marks a user exit,
+     * which suppresses the reconnect, and it honours `killOnDisconnect`, which would finish the
+     * activities and stop the service. Neither is right for a WiFi toggle the user expects to come
+     * back from.
+     *
+     * Blocking is the whole point. [disconnect] only schedules the teardown, which is fine when
+     * something will still be running afterwards to notice; it is not fine when the interface is
+     * on its way down and what matters is that the close goes out before it.
+     */
+    fun disconnectForLinkLoss(timeoutMs: Long) {
+        if (_connectionState.value is ConnectionState.Disconnected) return
+
+        HeadUnitScreenConfig.unlockResolution()
+        // Not clean and not a user exit: an unexpected end the app should try to recover from,
+        // which is what the existing reconnect paths already key on.
+        _connectionState.value = ConnectionState.Disconnected(isClean = false, isUserExit = false)
+        val job = _scope.launch { doDisconnect(sendByeBye = true) }
+        _disconnectJob = job
+        runBlocking { withTimeoutOrNull(timeoutMs) { job.join() } }
+    }
+
     fun destroy() {
         doDisconnect()
         _scope.cancel()
+    }
+
+    companion object {
+        /**
+         * [ConnectionState.Error] message for the one handshake failure that says something
+         * specific about the *peer* rather than about us: the TCP connection was accepted, the
+         * version request went out, and not one byte ever came back.
+         *
+         * Still contains "Handshake failed" so the generic handling keeps working.
+         */
+        const val ERROR_HANDSHAKE_PEER_SILENT = "Handshake failed: the peer never responded"
     }
 }

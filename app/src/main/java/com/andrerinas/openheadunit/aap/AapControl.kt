@@ -6,6 +6,7 @@ import android.media.AudioManager
 import com.andrerinas.openheadunit.aap.protocol.AudioConfigs
 import com.andrerinas.openheadunit.aap.protocol.Channel
 import com.andrerinas.openheadunit.aap.protocol.messages.DrivingStatusEvent
+import com.andrerinas.openheadunit.aap.protocol.messages.LocationUpdateEvent
 import com.andrerinas.openheadunit.aap.protocol.messages.ServiceDiscoveryResponse
 import com.andrerinas.openheadunit.aap.protocol.messages.VideoFocusEvent
 import com.andrerinas.openheadunit.aap.protocol.proto.Common
@@ -15,6 +16,7 @@ import com.andrerinas.openheadunit.aap.protocol.proto.Media
 import com.andrerinas.openheadunit.aap.protocol.proto.Sensors
 import com.andrerinas.openheadunit.decoder.MicRecorder
 import com.andrerinas.openheadunit.decoder.VideoDecoder
+import com.andrerinas.openheadunit.location.LocationHolder
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.Settings
 
@@ -188,7 +190,10 @@ internal class AapControlTouch(private val aapTransport: AapTransport): AapContr
 
 }
 
-internal class AapControlSensor(private val aapTransport: AapTransport, private val context: Context): AapControl {
+internal class AapControlSensor(
+        private val aapTransport: AapTransport,
+        private val context: Context,
+        private val settings: Settings): AapControl {
 
     override fun execute(message: AapMessage): Int {
         when (message.type) {
@@ -217,6 +222,23 @@ internal class AapControlSensor(private val aapTransport: AapTransport, private 
             val intent = Intent(AapService.ACTION_REQUEST_NIGHT_MODE_UPDATE)
             intent.setPackage(context.packageName)
             context.sendBroadcast(intent)
+        }
+
+        if (request.type == Sensors.SensorType.LOCATION && settings.useGpsForNavigation) {
+            // The phone only accepts LOCATION events once this request has been answered, which
+            // can land well after TransportStarted (CommManager's own post-handshake flush can
+            // race this and lose). This is the actual earliest point sending can succeed.
+            //
+            // currentGpsFix, not currentLocation: only this head unit's own GPS may be sent as the
+            // car's position. A unit with no antenna attached passes every gate here and never
+            // locks, and the broader accessor would hand it a network fix to send instead.
+            val fix = LocationHolder.currentGpsFix(context)
+            if (fix != null) {
+                val sentOnWire = aapTransport.send(LocationUpdateEvent(fix))
+                AppLog.i("LOCATION sensor requested. Sending current fix immediately. sentOnWire=$sentOnWire")
+            } else {
+                AppLog.i("LOCATION sensor requested. No recent GPS fix to prime with.")
+            }
         }
         return 0
     }
@@ -404,7 +426,7 @@ internal class AapControlGateway(
             AapControlService(aapTransport, aapAudio, settings, context),
             AapControlMedia(aapTransport, micRecorder, aapAudio),
             AapControlTouch(aapTransport),
-            AapControlSensor(aapTransport, context))
+            AapControlSensor(aapTransport, context, settings))
 
     override fun execute(message: AapMessage): Int {
         if (message.type == 7) {

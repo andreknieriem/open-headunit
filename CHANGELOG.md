@@ -4,6 +4,19 @@
 - Refactor WiFi-Code from AapService into their own classes for better maintenance, thanks to @MrEAlderson
 - USB-Blacklist Filter to prevent the app from asking for non Android phones
 
+### v.3.2.6
+- Fix settings UI crash and dpi input on older Android devices
+- Fix video artifacts
+- Fixing wireless stack where failures stay broken until restart
+- Bringing back old style USB List
+- Fix broken theme after import: Reapply Theme selection after Settings import
+- Make HUD Mode for apply for the whole app
+
+### v.3.2.5
+- Fix black screen after backgrounding, and the washed-out picture a dropped frame leaves
+- Fix headunit server socket leak
+- Car GPS: deliver the head unit's fix when the phone asks, and keep it flowing
+
 ### v.3.2.4
 - Fix: Video and audio never catch up after a wireless link stall, thanks to @o-jcardenass
 - Fix: Native AA wake poke takes down the head unit's own hands-free link, thanks to @o-jcardenass

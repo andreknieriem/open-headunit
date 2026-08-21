@@ -118,6 +118,9 @@ class DpiSettingsFragment : Fragment() {
     }
 
     private fun saveSettings() {
+        // Save lives in the toolbar and takes no focus, so a value typed into the picker is still
+        // sitting in the text field at this point.
+        picker.commitPendingInput()
         val value = currentValue()
         settings.dpiPixelDensity = value
         settings.commit()
@@ -129,6 +132,8 @@ class DpiSettingsFragment : Fragment() {
     }
 
     private fun handleBackPress() {
+        // So the unsaved-changes prompt weighs the value the user typed, not the one it replaced.
+        picker.commitPendingInput()
         if (currentValue() != initialValue) {
             MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
                 .setTitle(R.string.unsaved_changes)

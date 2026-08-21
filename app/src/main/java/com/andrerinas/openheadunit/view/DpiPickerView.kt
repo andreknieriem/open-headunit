@@ -4,10 +4,13 @@ import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.content.Context
 import android.util.AttributeSet
+import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.MotionEvent
+import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
 import android.widget.LinearLayout
 import com.andrerinas.openheadunit.R
 import com.google.android.material.button.MaterialButtonToggleGroup
@@ -38,6 +41,9 @@ class DpiPickerView @JvmOverloads constructor(
 
     private var isBinding = false
     private var onDpiChanged: ((Int) -> Unit)? = null
+    // onVisibilityChanged can be reached from View's own constructor, before the children below
+    // have been found; nothing here is usable until init has finished.
+    private var ready = false
 
     // Self-running demo that sweeps only the preview illustration (not the slider or the number), so
     // the user sees what DPI does before touching anything. It stops for good the moment the user
@@ -50,6 +56,10 @@ class DpiPickerView @JvmOverloads constructor(
 
     init {
         orientation = VERTICAL
+        // Somewhere for focus to land when the value field gives it up: clearFocus() on the only
+        // focusable view in a hierarchy hands focus straight back to it. This also keeps the field
+        // from taking focus — and opening the keyboard — the moment the picker is first shown.
+        isFocusableInTouchMode = true
         LayoutInflater.from(context).inflate(R.layout.view_dpi_picker, this, true)
         preview = findViewById(R.id.dpi_preview)
         slider = findViewById(R.id.dpi_slider)
@@ -77,8 +87,15 @@ class DpiPickerView @JvmOverloads constructor(
                 applyDpi(rep, fromSlider = false)
             }
         }
-        input.setOnEditorActionListener { _, actionId, _ ->
-            if (actionId == EditorInfo.IME_ACTION_DONE) { commitInput(); true } else false
+        // Consuming the action (returning true) skips TextView's own handling of DONE, which is
+        // what would otherwise lower the keyboard — so the dismissal has to be explicit, and the
+        // repo already prefers it that way (see hideKeyboard in SettingsFragment: some head units
+        // will not put the keyboard away on their own). IME_NULL is the hardware Enter key and the
+        // OEM keyboards that report no action id at all.
+        input.setOnEditorActionListener { _, actionId, event ->
+            val done = actionId == EditorInfo.IME_ACTION_DONE ||
+                (actionId == EditorInfo.IME_NULL && (event == null || event.action == KeyEvent.ACTION_DOWN))
+            if (done) { commitInput(); dismissKeyboard(); true } else false
         }
         input.setOnFocusChangeListener { _, hasFocus ->
             if (hasFocus) stopDemo(userDriven = true) else commitInput()
@@ -86,8 +103,17 @@ class DpiPickerView @JvmOverloads constructor(
 
         // Initialise the field/preview/tab from the slider's default value.
         applyDpi(slider.value.toInt(), fromSlider = true, silent = true)
+        ready = true
     }
 
+    /**
+     * The chosen DPI. A value typed into the field but not yet confirmed does not appear here —
+     * call [commitPendingInput] first.
+     *
+     * The commit deliberately does not live in this getter: it would run
+     * commitInput -> applyDpi -> onDpiChanged -> a listener that reads [dpi] -> commitInput, which
+     * does not terminate.
+     */
     var dpi: Int
         // While the demo sweeps, report the intended value, not the animated frame.
         get() = if (demoAnimator != null) committedDpi else slider.value.toInt()
@@ -97,6 +123,13 @@ class DpiPickerView @JvmOverloads constructor(
         get() = userInteracted
 
     fun setOnDpiChanged(cb: (Int) -> Unit) { onDpiChanged = cb }
+
+    /**
+     * Folds a value typed into the field into the picker. Call this before reading [dpi] from a
+     * button handler: buttons do not take focus in touch mode, so tapping Next or Save never moves
+     * focus off the field and the typed number would otherwise be dropped. Safe to call repeatedly.
+     */
+    fun commitPendingInput() = commitInput()
 
     fun setPanelResolution(widthPx: Int, heightPx: Int) = preview.setPanelResolution(widthPx, heightPx)
 
@@ -140,6 +173,28 @@ class DpiPickerView @JvmOverloads constructor(
         stopDemo(userDriven = false)
     }
 
+    /**
+     * The wizard swaps steps through a ViewFlipper and the DPI screen hides the picker when
+     * Automatic is switched on, so both leave through here: keep whatever was typed, and do not
+     * leave the keyboard covering the screen that comes next.
+     */
+    override fun onVisibilityChanged(changedView: View, visibility: Int) {
+        super.onVisibilityChanged(changedView, visibility)
+        if (ready && visibility != VISIBLE) {
+            commitPendingInput()
+            dismissKeyboard()
+        }
+    }
+
+    private fun dismissKeyboard() {
+        // No token once the view is off the window, and this is also reached from teardown.
+        windowToken?.let { token ->
+            val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+            imm?.hideSoftInputFromWindow(token, 0)
+        }
+        input.clearFocus()
+    }
+
     fun setPickerEnabled(enabled: Boolean) {
         slider.isEnabled = enabled
         input.isEnabled = enabled
@@ -173,6 +228,7 @@ class DpiPickerView @JvmOverloads constructor(
         if (!silent) onDpiChanged?.invoke(v)
     }
 
+    /** Rounds to a value the slider can actually hold, then clamps into range. */
     private fun snap(value: Int): Int {
         val stepped = ((value - MIN) / STEP.toFloat()).roundToInt() * STEP + MIN
         return stepped.coerceIn(MIN, MAX)
@@ -193,7 +249,10 @@ class DpiPickerView @JvmOverloads constructor(
     companion object {
         private const val MIN = 110
         private const val MAX = 640
-        private const val STEP = 2
+        // Must stay equal to android:stepSize on dpi_slider in view_dpi_picker.xml: applyDpi
+        // assigns slider.value, and a Slider throws IllegalStateException for a value that is not
+        // valueFrom plus a whole number of steps. 1 so a typed 175 stays 175 rather than snapping.
+        private const val STEP = 1
         private const val SMALL_REP = 132
         private const val MEDIUM_REP = 175
         private const val LARGE_REP = 218

@@ -17,7 +17,7 @@ import com.andrerinas.openheadunit.utils.NetworkAddresses
 import com.andrerinas.openheadunit.utils.Settings
 import com.andrerinas.openheadunit.utils.SoftApStateReader
 import com.andrerinas.openheadunit.utils.ToastUtils
-import com.andrerinas.openheadunit.connection.wifi.WifiDirectManager
+import com.andrerinas.openheadunit.connection.wifi.direct.WifiDirectManager
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

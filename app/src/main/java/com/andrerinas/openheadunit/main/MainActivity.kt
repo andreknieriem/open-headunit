@@ -127,11 +127,7 @@ class MainActivity : BaseActivity() {
         // If an Android Auto session is active, bring the projection activity to front
         if (App.provide(this).commManager.isConnected && !App.isPiPActive) {
             AppLog.i("MainActivity: Active session detected in onCreate, bringing projection to front")
-            val aapIntent = AapProjectionActivity.intent(this).apply {
-                putExtra(AapProjectionActivity.EXTRA_FOCUS, true)
-                addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-            }
-            startActivity(aapIntent)
+            bringProjectionToFront()
 
             // If we are auto-forwarding, hide the splash immediately to avoid flashing it twice
             if (savedInstanceState == null) {
@@ -385,11 +381,7 @@ class MainActivity : BaseActivity() {
             // mediaSinkSetupRequest, which can lag well behind HandshakeComplete -
             // during that gap this overlay had already hidden itself, leaving the
             // user stuck on HomeFragment with only a relabeled button to notice.
-            val aapIntent = AapProjectionActivity.intent(this).apply {
-                putExtra(AapProjectionActivity.EXTRA_FOCUS, true)
-                addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-            }
-            startActivity(aapIntent)
+            bringProjectionToFront()
             // Hiding without an animation avoids the fade competing with the
             // activity transition.
             findViewById<View>(R.id.auto_connect_loading_overlay)?.visibility = View.GONE
@@ -864,12 +856,24 @@ class MainActivity : BaseActivity() {
         // If an Android Auto session is active, bring the projection activity to front
         if (App.provide(this).commManager.isConnected && !App.isPiPActive && !AapProjectionActivity.isForeground) {
             AppLog.i("MainActivity: Active session detected, bringing projection to front")
-            val aapIntent = AapProjectionActivity.intent(this).apply {
-                putExtra(AapProjectionActivity.EXTRA_FOCUS, true)
-                addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-            }
-            startActivity(aapIntent)
+            bringProjectionToFront()
         }
+    }
+
+    /**
+     * The one place the projection relaunch intent is built. The guards stay at the call sites
+     * on purpose - they differ (post-connect must launch unconditionally, onResume checks
+     * foreground) - but the flag recipe must not drift between copies: this launch is what
+     * rebuilds the projection after singleTask semantics tore it down, and the torn-down
+     * instance's late surface callback is exactly the stale-owner case the decoder's ownership
+     * gate exists for.
+     */
+    private fun bringProjectionToFront() {
+        val aapIntent = AapProjectionActivity.intent(this).apply {
+            putExtra(AapProjectionActivity.EXTRA_FOCUS, true)
+            addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        }
+        startActivity(aapIntent)
     }
 
     override fun onPause() {

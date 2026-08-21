@@ -46,7 +46,13 @@ class AapBroadcastReceiver : BroadcastReceiver() {
             }
 
             if (location.latitude != 0.0 && location.longitude != 0.0) {
-                component.settings.lastKnownLocation = location
+                // Only on change: a parked head unit delivers the same coordinates every few
+                // seconds, and each write rewrites the whole preferences file. Same position in,
+                // nothing to store.
+                val stored = component.settings.lastKnownLocation
+                if (stored.latitude != location.latitude || stored.longitude != location.longitude) {
+                    component.settings.lastKnownLocation = location
+                }
             }
         } else if (intent.action == MediaKeyIntent.action) {
             val event: KeyEvent? = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {

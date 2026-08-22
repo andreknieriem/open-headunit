@@ -42,6 +42,45 @@ class NetworkDiscovery(private val context: Context, private val listener: Liste
         private val PROBE_LOCK = Any()
     }
 
+    /**
+     * Failed 5289 probes in the phase currently running, and the last exception kind seen.
+     *
+     * The subnet sweep fans out 254 coroutines across [Dispatchers.IO], so the counter is atomic;
+     * the reason is a plain volatile because a representative sample is all the summary needs and
+     * racing writers would be reporting the same failure anyway.
+     *
+     * Scoped to a *phase*, not to a scan. The gateway scan and the subnet sweep each reset it and
+     * each report their own tally before the next phase begins. Sharing one counter across both
+     * lost the gateway numbers twice over: the sweep zeroed them on entry, and on the path where
+     * the gateway scan succeeded the sweep never ran to report anything at all.
+     */
+    private val probesFailed = java.util.concurrent.atomic.AtomicInteger(0)
+
+    @Volatile
+    private var lastProbeFailure: String? = null
+
+    /** Start a phase's tally. */
+    private fun beginProbeTally() {
+        probesFailed.set(0)
+        lastProbeFailure = null
+    }
+
+    /**
+     * Close a phase's tally and say what it found, or stay quiet when every probe was answered.
+     *
+     * [probed] is how many addresses this phase tried and [responded] how many answered, so the
+     * three numbers can be checked against each other on any path.
+     */
+    private fun reportProbeTally(phase: String, probed: Int, responded: Int) {
+        val failed = probesFailed.getAndSet(0)
+        val reason = lastProbeFailure?.let { " (last: $it)" } ?: ""
+        lastProbeFailure = null
+        AppLog.i(
+            "NetworkDiscovery: $phase — $probed probed, $responded responded, " +
+                    "$failed silent on 5289$reason"
+        )
+    }
+
     interface Listener {
         fun onServiceFound(ip: String, port: Int, socket: Socket? = null)
         /**
@@ -172,6 +211,9 @@ class NetworkDiscovery(private val context: Context, private val listener: Liste
 
     private suspend fun scanGateways(): Boolean {
         var foundAny = false
+        var probed = 0
+        var responded = 0
+        beginProbeTally()
         try {
             val suspects = mutableSetOf<String>()
 
@@ -198,8 +240,10 @@ class NetworkDiscovery(private val context: Context, private val listener: Liste
             if (suspects.isNotEmpty()) {
                 AppLog.i("NetworkDiscovery: Checking suspects: $suspects")
                 for (ip in suspects) {
+                    probed++
                     if (checkAndReport(ip)) {
                         foundAny = true
+                        responded++
                     }
                 }
             }
@@ -211,6 +255,9 @@ class NetworkDiscovery(private val context: Context, private val listener: Liste
         } catch (e: Exception) {
             AppLog.e("NetworkDiscovery: Gateway scan error", e)
         }
+        // Before the caller can return early on success, so this phase's numbers survive the path
+        // that skips the subnet sweep entirely.
+        if (probed > 0) reportProbeTally("Gateway scan", probed, responded)
         return foundAny
     }
 
@@ -223,6 +270,8 @@ class NetworkDiscovery(private val context: Context, private val listener: Liste
 
         val myIp = getLocalIpAddress()
         AppLog.i("NetworkDiscovery: Scanning subnet: $subnet.*")
+
+        beginProbeTally()
 
         val tasks = mutableListOf<Deferred<Boolean>>()
 
@@ -239,7 +288,8 @@ class NetworkDiscovery(private val context: Context, private val listener: Liste
             })
         }
 
-        tasks.awaitAll()
+        val found = tasks.awaitAll().count { it }
+        reportProbeTally("Swept $subnet.*", tasks.size, found)
     }
 
     private fun getLocalIpAddress(): String? {
@@ -344,9 +394,14 @@ class NetworkDiscovery(private val context: Context, private val listener: Liste
             // A failed connect can still leave a half-open socket behind; close it rather than
             // waiting for the finalizer, which on the subnet sweep means 254 of them.
             try { socket.close() } catch (e2: Exception) {}
-            // Surface a failed Wifi Launcher probe so logs can tell "helper not listening"
-            // apart from "the scan never ran".
-            if (port == 5289) AppLog.d("NetworkDiscovery: $ip:5289 probe failed (${e.javaClass.simpleName}); Wifi Launcher not listening")
+            // Counted, not logged. Telling "helper not listening" apart from "the scan never ran"
+            // needs one fact per sweep, not one line per address: at a line per failed 5289 probe
+            // a single /24 sweep wrote 254 of them and four sweeps buried an entire connection
+            // fault under 60% of the capture. scanSubnet reports the tally instead.
+            if (port == 5289) {
+                probesFailed.incrementAndGet()
+                lastProbeFailure = e.javaClass.simpleName
+            }
             null
         }
     }

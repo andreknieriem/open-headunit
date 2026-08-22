@@ -248,9 +248,17 @@ object AppLog {
 
     private fun isLoggable(priority: Int): Boolean = priority >= LOG_LEVEL
 
+    /**
+     * The trace is not conditional on the destination.
+     *
+     * It used to be attached only when the logger was [Logger.Android], so a capture written to a
+     * file — the one that outlives the fault and actually gets read afterwards — recorded the
+     * message and dropped the exception. "Wireless server error" with no cause is not a diagnosis,
+     * and the throwable is the whole reason these call sites pass one.
+     */
     private fun loge(message: String, tr: Throwable?) {
-        val trace = if (LOGGER is Logger.Android) Log.getStackTraceString(tr) else ""
-        LOGGER.println(Log.ERROR, TAG, message + '\n' + trace)
+        val trace = if (tr != null) Log.getStackTraceString(tr) else ""
+        LOGGER.println(Log.ERROR, TAG, if (trace.isEmpty()) message else "$message\n$trace")
     }
 
     private fun closeAppLogFileLogger() {

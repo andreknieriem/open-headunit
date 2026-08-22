@@ -351,50 +351,85 @@ class Settings(private val context: Context) {
         set(value) { prefs.edit().putString("debug-force-memory-profile", value?.name).apply() }
 
     /**
-     * Puts the Native AA WiFi Direct group on 2.4 GHz instead of asking for 5 GHz.
+     * Which band to ask for when this app creates the Native AA WiFi Direct group.
+     * 0 = automatic, 1 = 5 GHz only, 2 = 2.4 GHz only.
      *
-     * Off by default, and it is a rig lever rather than a preference: 5 GHz is what a working
-     * session runs on and nothing here recommends moving off it. What it exists for is that the
-     * link-outage reports come from 2.4 GHz head units and the rig could never be put on that band
-     * - the group is requested as 5 GHz and any group that lands on 2.4 GHz is torn down and
-     * remade. Both of those are turned off together by this one flag; see
-     * [com.andrerinas.openheadunit.aap.NativeGroupBandPolicy], which is where the coupling lives.
+     * The same question the hotspot route answers with [hotspotBand], and it is here because having
+     * it on one transport and not the other was the accident rather than the design. `0` is exactly
+     * what shipped before this setting existed: ask for 5 GHz, remake a group that lands on 2.4 GHz,
+     * and drop to the platform's own choice if 5 GHz will not form at all.
      *
-     * Applies to the next group, so it needs a reconnect rather than only a settings write.
+     * `1` stops that last step. A session on 2.4 GHz can connect, look entirely healthy and show
+     * nothing, which is harder to diagnose than a group that never forms, so this is for a unit
+     * whose fallback lands somewhere that shows no picture. `2` is for a radio that will not host a
+     * 5 GHz group owner, and it disarms the band-mismatch retry with it - see
+     * [com.andrerinas.openheadunit.aap.NativeGroupBandPolicy], which is where that coupling lives.
+     *
+     * **Below API 29 none of this is a band request.** There is no `WifiP2pConfig.Builder` there, so
+     * the app asks for an *operating channel* through hidden reflection instead, walking 5 GHz then
+     * 2.4 GHz then no restriction at all - one rung per bring-up that forms no group. That ladder is
+     * why 5 GHz is now tried by default on those units: the request is a disallowed-frequency list,
+     * so a unit that cannot host a group owner on the band it names used to be left unable to form
+     * a group rather than left on the other band, and a wrong answer cost it the connection. With
+     * somewhere to fall back to it costs a round trip. See
+     * [com.andrerinas.openheadunit.aap.P2pOperatingChannelPolicy]. Pre-Q also cannot read a group's
+     * frequency back, so what the log records there is the request, never the result.
+     *
+     * Replaces the `debug-force-p2p-band-24` and `p2p-legacy-5ghz` flags, whose values migrate in
+     * the getter below. Applies to the next group, so it needs a reconnect rather than only a write.
      */
-    var debugForceP2pBand24: Boolean
-        get() = prefs.getBoolean("debug-force-p2p-band-24", false)
-        set(value) { prefs.edit().putBoolean("debug-force-p2p-band-24", value).apply() }
+    var wifiDirectBand: Int
+        get() {
+            if (prefs.contains("wifi-direct-band")) return prefs.getInt("wifi-direct-band", 0)
+            // One-time migration off the two booleans this replaces. 2.4 GHz wins because it was the
+            // deliberate override; the 5 GHz opt-in only ever meant "ask for it on pre-Q", which is
+            // now what position 1 says.
+            val migrated = when {
+                prefs.getBoolean("debug-force-p2p-band-24", false) -> 2
+                prefs.getBoolean("p2p-legacy-5ghz", false) -> 1
+                else -> 0
+            }
+            prefs.edit().putInt("wifi-direct-band", migrated).apply()
+            return migrated
+        }
+        set(value) = prefs.edit().putInt("wifi-direct-band", value).apply()
 
     /**
-     * On a device with no band API, asks the P2P stack for a 5 GHz operating channel.
-     *
-     * Below API 29 there is no `WifiP2pConfig.Builder`, so the group's band is the driver's choice
-     * and this app has never had a say in it - which is every pre-Android-10 head unit, including
-     * both units in the periodic-outage reports. The hidden `setWifiP2pChannels` is the one lever
-     * left; see [com.andrerinas.openheadunit.aap.P2pOperatingChannelPolicy].
-     *
-     * **Off by default, and it should stay off until a unit reports back.** The request is a
-     * disallowed-frequency list, so a unit whose P2P firmware cannot host a 5 GHz group owner is not
-     * left on 2.4 GHz - it is left unable to form a group at all. The bring-up clears the restriction
-     * and retries once when that happens, but an opt-in costs nothing and a wrong default costs
-     * every pre-Q unit its connection.
-     *
-     * Ignored from API 29 up, where the supported band request does this properly.
-     */
-    var p2pLegacyFiveGhz: Boolean
-        get() = prefs.getBoolean("p2p-legacy-5ghz", false)
-        set(value) { prefs.edit().putBoolean("p2p-legacy-5ghz", value).apply() }
-
-    /**
-     * Asks for UNII-3 (channel 149) instead of UNII-1 (channel 36) when [p2pLegacyFiveGhz] is on.
+     * Asks for UNII-3 (channel 149) instead of UNII-1 (channel 36) on the 5 GHz rung of the pre-Q
+     * operating-channel ladder.
      *
      * Both are non-DFS and channel 36 is what the reference implementations use, so this exists only
-     * for a regulatory domain that refuses the lower range.
+     * for a regulatory domain that refuses the lower range. Ignored when [wifiDirectBand] is 2.4 GHz
+     * only, which never reaches that rung, and from API 29 up, where the band request replaces the
+     * whole ladder.
      */
     var p2pLegacyFiveGhzUpperBand: Boolean
         get() = prefs.getBoolean("p2p-legacy-5ghz-upper", false)
         set(value) { prefs.edit().putBoolean("p2p-legacy-5ghz-upper", value).apply() }
+
+    /**
+     * Keeps this app's dummy VPN up for the life of a Native AA session, not only offline Self Mode.
+     *
+     * Two reporters on different hardware describe the same periodic media outage going quiet while
+     * the dummy VPN happened to be active. **The mechanism is unproven.** The setting's own
+     * description tells the user it is so the chip stops looking for other networks, which is the
+     * working theory and the right thing to tell somebody deciding whether to try it, but nothing
+     * in this app has measured that and this comment must not be read as saying otherwise.
+     *
+     * Off by default. While it is up, every *other* app on the head unit loses IPv4: the tun routes
+     * 0.0.0.0/0 into a descriptor nobody reads. This app is excluded from it, so the projection
+     * link is unaffected.
+     *
+     * Inert on the Play Store flavor, which ships no VPN at all: [VpnControl.isVpnAvailable] is
+     * false there, so the toggle is never rendered and nothing acts on this value.
+     *
+     * Only acted on for a Native AA wireless session; see
+     * [com.andrerinas.openheadunit.aap.DummyVpnPolicy.shouldStartForSession], which explains why
+     * the mode has to be re-tested at the point of use rather than trusted from this flag.
+     */
+    var keepDummyVpnDuringSession: Boolean
+        get() = prefs.getBoolean("keep-dummy-vpn-during-session", false)
+        set(value) { prefs.edit().putBoolean("keep-dummy-vpn-during-session", value).apply() }
 
     /**
      * Asks the decoder for low-latency mode, through whichever key its vendor understands.
@@ -1425,7 +1460,7 @@ class Settings(private val context: Context) {
         set(value) = prefs.edit().putString("bluetooth-manager-service-name", value).apply()
 
     // Which network the Native AA mode (wifiConnectionMode 3) puts the phone on.
-    // 0 = WiFi Direct P2P group, 1 = this head unit's own hotspot (experimental).
+    // 0 = WiFi Direct P2P group, 1 = this head unit's own hotspot.
     //
     // Deliberately not folded into helperConnectionStrategy: that setting belongs to mode 2 and
     // means something different in every one of its five values. A wireless mode that reuses
@@ -1447,6 +1482,46 @@ class Settings(private val context: Context) {
     var nativeWifiVersionExchange: Boolean
         get() = prefs.getBoolean("native-wifi-version-exchange", false)
         set(value) = prefs.edit().putBoolean("native-wifi-version-exchange", value).apply()
+
+    // ---------------------------------------------------------------------------------------------
+    // Standing connection failures.
+    //
+    // A record of observation rather than a preference, so these follow different rules from
+    // everything else in this file: nothing in a manager's stop()/start(), a mode change or a user
+    // exit clears them. Each is cleared only by the condition itself ceasing to be true, at the one
+    // site that can know that. See utils/ConnectionIssues.
+    //
+    // Wall clock, not SystemClock.elapsedRealtime(): the banner renders a time and these outlive a
+    // reboot, which an elapsed-realtime stamp does not survive. Every other stamp on this route is
+    // elapsed realtime, so the AtEpochMs suffix is the reminder that these are not.
+    //
+    // 0 means "not standing" in all four.
+    // ---------------------------------------------------------------------------------------------
+
+    /** The phone connected over Bluetooth, we wrote, and nothing ever came back. */
+    var connectionIssueBluetoothSilentAtEpochMs: Long
+        get() = prefs.getLong("connection-issue-bt-silent", 0L)
+        set(value) = prefs.edit().putLong("connection-issue-bt-silent", value).apply()
+
+    /** No usable BSSID, which the WiFi Direct route aborts on rather than sending. */
+    var connectionIssueBssidAtEpochMs: Long
+        get() = prefs.getLong("connection-issue-bssid", 0L)
+        set(value) = prefs.edit().putLong("connection-issue-bssid", value).apply()
+
+    /** The device will not name its own access point, so the phone had nothing to join. */
+    var connectionIssueHotspotConfigAtEpochMs: Long
+        get() = prefs.getLong("connection-issue-hotspot-config", 0L)
+        set(value) = prefs.edit().putLong("connection-issue-hotspot-config", value).apply()
+
+    /**
+     * When the user last dismissed the failure banner.
+     *
+     * Compared against the raise stamps rather than clearing them, so a dismissal hides the
+     * occurrence the user has seen and the next failure brings the banner back on its own.
+     */
+    var connectionIssueDismissedAtEpochMs: Long
+        get() = prefs.getLong("connection-issue-dismissed-at", 0L)
+        set(value) = prefs.edit().putLong("connection-issue-dismissed-at", value).apply()
 
     // Manual fallback for dual-radio head units whose second radio isn't discoverable via
     // ServiceManager.listServices() at all. Empty = disabled (rely on automatic discovery only).
@@ -1474,6 +1549,25 @@ class Settings(private val context: Context) {
     var hotspotPassword: String
         get() = prefs.getString("hotspot-password", "")!!
         set(value) = prefs.edit().putString("hotspot-password", value).apply()
+
+    // Which band to ask for when this app brings the head unit's access point up.
+    // 0 = automatic (5 GHz, falling back to 2.4 GHz), 1 = 5 GHz only, 2 = 2.4 GHz only.
+    //
+    // 5 GHz is the default because it is the only band measured to carry a full-resolution stream:
+    // on 2.4 GHz a 1080p/60 session connects, opens the video channel and dies having sent nothing,
+    // while the same access point carries 800x480/30 indefinitely. So "5 GHz only" is the setting
+    // for a unit whose fallback lands somewhere that shows no picture, and "2.4 GHz only" is for a
+    // radio that will not host 5 GHz at all, at a lower resolution and frame rate.
+    //
+    // Plenty of head units refuse setSoftApConfiguration() outright, and on those this has no
+    // effect whatever it is set to: the band request never reaches the framework and the access
+    // point comes up on whatever the device already had. The log says which of those happened.
+    //
+    // Applies at the next hotspot bring-up, so it needs a reconnect rather than only a write. See
+    // SoftApBandPolicy, which is where the ordering lives.
+    var hotspotBand: Int
+        get() = prefs.getInt("hotspot-band", 0)
+        set(value) = prefs.edit().putInt("hotspot-band", value).apply()
 
     // Set once this device has failed to bring its own access point back up after the app took it
     // down, which is the only way to find out that it cannot — no API answers the question in

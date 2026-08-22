@@ -15,9 +15,11 @@ internal interface AapRead {
 
     /**
      * @param onVideoRunHoled called when a video fragment run turns out to be short of the bytes it
-     *   declared. A callback rather than an [AapVideo] reference: the reader owes the video path one
-     *   fact and nothing else, and the two are wired together in [Factory] the way every other
-     *   cross-manager coupling in this app is.
+     *   declared; the argument says whether the shortfall is large enough that the assembled unit
+     *   should be discarded rather than decoded ([AuditRecoveryPolicy.shouldDiscardAssembledUnit]).
+     *   A callback rather than an [AapVideo] reference: the reader owes the video path one fact and
+     *   nothing else, and the two are wired together in [Factory] the way every other cross-manager
+     *   coupling in this app is.
      * @param faultInjector reader-stage fault injection, or null. Distinct from the injector
      *   [AapVideo] holds because the two act at different points in the receive path - see
      *   [VideoFaultInjector.Stage]. Only one of the two is ever non-null in a session.
@@ -26,7 +28,7 @@ internal interface AapRead {
             private val connection: AccessoryConnection?,
             internal val ssl: AapSsl,
             internal val handler: AapMessageHandler,
-            private val onVideoRunHoled: () -> Unit = {},
+            private val onVideoRunHoled: (discardAssembledUnit: Boolean) -> Unit = {},
             internal val faultInjector: VideoFaultInjector? = null) : AapRead {
 
         /** Every line [faultInjector] prints. Shared wording with [AapVideo]'s - see the class. */
@@ -123,7 +125,10 @@ internal interface AapRead {
             // *printed*; a suppressed line must not also suppress the repair. The ask has its own
             // throttle in VideoRecoveryPolicy, which every keyframe request in the app is held to.
             if (AuditRecoveryPolicy.shouldRequestKeyframe(result.outcome, result.channel)) {
-                onVideoRunHoled()
+                // The finding is produced on the run's last fragment, which is the very message the
+                // handler is about to complete assembly with - so the discard verdict travels on
+                // the same thread, ahead of it, with nothing to synchronise.
+                onVideoRunHoled(AuditRecoveryPolicy.shouldDiscardAssembledUnit(result))
             }
 
             val channelName = Channel.name(channel)
@@ -186,7 +191,7 @@ internal interface AapRead {
                 settings.debugVideoFaultBudget
             ).takeIf { it.isActiveAt(VideoFaultInjector.Stage.READER) }
 
-            val onVideoRunHoled = { aapVideo.onFragmentRunHoled() }
+            val onVideoRunHoled = { discard: Boolean -> aapVideo.onFragmentRunHoled(discard) }
 
             return if (connection is SocketAccessoryConnection)
                 AapReadSingleMessage(connection, transport.ssl, handler, onVideoRunHoled, readerFaults)

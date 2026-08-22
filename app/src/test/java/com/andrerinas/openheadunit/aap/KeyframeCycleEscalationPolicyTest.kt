@@ -3,6 +3,8 @@ package com.andrerinas.openheadunit.aap
 import com.andrerinas.openheadunit.aap.KeyframeCycleEscalationPolicy.Action
 import com.andrerinas.openheadunit.aap.KeyframeCycleEscalationPolicy.CORRUPTION_QUIET_MS
 import com.andrerinas.openheadunit.aap.KeyframeCycleEscalationPolicy.CYCLE_COOLDOWN_MS
+import com.andrerinas.openheadunit.aap.KeyframeCycleEscalationPolicy.CYCLE_REFUND_AFTER_QUIET_MS
+import com.andrerinas.openheadunit.aap.KeyframeCycleEscalationPolicy.MAX_CYCLES_PER_DRIVE
 import com.andrerinas.openheadunit.aap.KeyframeCycleEscalationPolicy.DEFER_FOR_QUIET_LIMIT_MS
 import com.andrerinas.openheadunit.aap.KeyframeCycleEscalationPolicy.ESCALATE_AFTER_UNREPAIRED_MS
 import com.andrerinas.openheadunit.aap.WarmRelaunchKeyframePolicy.ESCALATE_AFTER_SURFACE_MS
@@ -458,6 +460,307 @@ class KeyframeCycleEscalationPolicyTest {
                 cyclesUsedThisSession = 1,
                 lastCycleMs = now - 1L,
                 lastWireCorruptionMs = now - 1L,
+            )
+        )
+    }
+
+    @Test
+    fun `a wire truncation later in a drive reaches the cycle`() {
+        // The shape a reporter's 2h21m session actually had, and the case this policy could not see
+        // until AapVideo's corruption path became escalatable: an isolated truncated access unit
+        // sixteen minutes after the session's first cycle. Both stamps land together, one cycle is
+        // spent, the cooldown expired long ago. Measured on that unit, the three events that never
+        // reached here stayed broken for 27.5s, 11.2s and 19.2s against the escalated one's 2.78s.
+        val firstCycle = 5_000_000L
+        val broken = firstCycle + 16 * 60_000L
+        assertEquals(
+            Action.CYCLE_FOCUS,
+            decide(
+                nowMs = broken + ESCALATE_AFTER_UNREPAIRED_MS,
+                unrepairedSinceMs = broken,
+                cyclesUsedThisSession = 1,
+                lastCycleMs = firstCycle,
+                lastWireCorruptionMs = broken,
+            )
+        )
+    }
+
+    @Test
+    fun `a truncation on a wire that is still losing frames is still held`() {
+        // The other half of the same wiring: making the video path escalatable must not cost the
+        // deferral, because it is that path's stamp the deferral reads. A second fault landing a
+        // full escalation window after the arm is sustained loss, not an isolated event, and a cycle
+        // spent on it buys a keyframe that arrives broken too.
+        val broken = 200_000L
+        assertEquals(
+            Action.WAIT_FOR_QUIET,
+            decide(
+                nowMs = broken + ESCALATE_AFTER_UNREPAIRED_MS,
+                unrepairedSinceMs = broken,
+                cyclesUsedThisSession = 1,
+                lastWireCorruptionMs = broken + ESCALATE_AFTER_UNREPAIRED_MS,
+            )
+        )
+    }
+
+    @Test
+    fun `an isolated truncation reaches the last cycle at the same instant as the first`() {
+        // The reporter's fourth event. A 141-minute session with three cycles already spent on
+        // earlier faults meets one more isolated truncation: both stamps land together, the
+        // cooldown expired long ago, and one cycle remains. The first version of the reordered
+        // gate checked the last-cycle hold before the isolated-fault exemption, so this exact
+        // shape waited out a full quiet window - repaired at ~15.5s instead of ~2.4s, on the one
+        // event of the drive where the reserve existing was the whole point.
+        val lastCycle = 5_000_000L
+        val broken = lastCycle + 16 * 60_000L
+        assertEquals(
+            Action.CYCLE_FOCUS,
+            decide(
+                nowMs = broken + ESCALATE_AFTER_UNREPAIRED_MS,
+                unrepairedSinceMs = broken,
+                cyclesUsedThisSession = MAX_CYCLES_PER_SESSION - 1,
+                lastCycleMs = lastCycle,
+                lastWireCorruptionMs = broken,
+            )
+        )
+    }
+
+    @Test
+    fun `the isolated-drop exemption holds at every budget position`() {
+        // The budget decides how much speculation a noisy wire is worth, and must decide nothing
+        // about a quiet one. Both stamp orderings, same as the isolated-drop test above, because
+        // which of the two lands first depends on the decoder.
+        val broken = 10_000L
+        for (spent in 0 until MAX_CYCLES_PER_SESSION) {
+            for (corruptionAt in listOf(broken - 250L, broken, broken + 1L)) {
+                assertEquals(
+                    "isolated drop deferred with $spent cycles spent and the corruption " +
+                        "stamped at ${corruptionAt - broken}ms",
+                    Action.CYCLE_FOCUS,
+                    decide(
+                        nowMs = broken + ESCALATE_AFTER_UNREPAIRED_MS,
+                        unrepairedSinceMs = broken,
+                        cyclesUsedThisSession = spent,
+                        lastCycleMs = if (spent == 0) 0L else broken - CYCLE_COOLDOWN_MS,
+                        lastWireCorruptionMs = corruptionAt,
+                    )
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `sustained loss is still held at every budget position`() {
+        // The exemption is for the fault that armed the clock and nothing after it. A second fault
+        // a full escalation window later is sustained loss, and moving the exemption ahead of the
+        // last-cycle hold must not have widened it to cover that.
+        val broken = 10_000L
+        for (spent in 0 until MAX_CYCLES_PER_SESSION) {
+            assertEquals(
+                "sustained loss reached the lever with $spent cycles spent",
+                Action.WAIT_FOR_QUIET,
+                decide(
+                    nowMs = broken + ESCALATE_AFTER_UNREPAIRED_MS,
+                    unrepairedSinceMs = broken,
+                    cyclesUsedThisSession = spent,
+                    lastCycleMs = if (spent == 0) 0L else broken - CYCLE_COOLDOWN_MS,
+                    lastWireCorruptionMs = broken + ESCALATE_AFTER_UNREPAIRED_MS,
+                )
+            )
+        }
+    }
+
+    @Test
+    fun `the ceiling asymmetry survives the gate reorder`() {
+        // At the deferral ceiling, under sustained loss: an earlier cycle is released to a wire
+        // that never settles, the last one is still held for real quiet. The two halves used to be
+        // separate branches; after the reorder they share one, so one test pins them side by side.
+        val broken = 10_000L
+        val now = broken + DEFER_FOR_QUIET_LIMIT_MS
+        assertEquals(
+            Action.CYCLE_FOCUS,
+            decide(
+                nowMs = now,
+                unrepairedSinceMs = broken,
+                cyclesUsedThisSession = 0,
+                lastWireCorruptionMs = now - 1L,
+            )
+        )
+        assertEquals(
+            Action.WAIT_FOR_QUIET,
+            decide(
+                nowMs = now,
+                unrepairedSinceMs = broken,
+                cyclesUsedThisSession = MAX_CYCLES_PER_SESSION - 1,
+                lastWireCorruptionMs = now - 1L,
+            )
+        )
+    }
+
+    // --- The refund -------------------------------------------------------------------------
+
+    private fun refund(
+        nowMs: Long,
+        cyclesUsedThisSession: Int = MAX_CYCLES_PER_SESSION,
+        cyclesSpentThisSession: Int = MAX_CYCLES_PER_SESSION,
+        lastBudgetChangeMs: Long = 1_000L,
+        lastWireCorruptionMs: Long = 0L,
+        pictureUnrepaired: Boolean = false,
+    ) = KeyframeCycleEscalationPolicy.cyclesToRefund(
+        nowMs, cyclesUsedThisSession, cyclesSpentThisSession,
+        lastBudgetChangeMs, lastWireCorruptionMs, pictureUnrepaired
+    )
+
+    @Test
+    fun `the refund window outlasts every other clock this policy runs`() {
+        // A refund on a shorter clock than the cooldown or the deferral ceiling would hand a cycle
+        // back inside the very episode that spent it. And it must outlast the phone's own keyframe
+        // interval - measured at ~69.4s, eight gaps, spread under 2s - so quiet always contains at
+        // least one whole natural repair before anything is earned back.
+        assertTrue(CYCLE_REFUND_AFTER_QUIET_MS > CORRUPTION_QUIET_MS)
+        assertTrue(CYCLE_REFUND_AFTER_QUIET_MS >= CYCLE_COOLDOWN_MS)
+        assertTrue(CYCLE_REFUND_AFTER_QUIET_MS >= DEFER_FOR_QUIET_LIMIT_MS)
+        assertTrue(CYCLE_REFUND_AFTER_QUIET_MS > 69_400L)
+    }
+
+    @Test
+    fun `a refund needs quiet on both clocks`() {
+        // Quiet is measured from whichever moved last: a fault restarts the window even when the
+        // budget has been still for an hour, and a fresh spend restarts it even on a clean wire.
+        val now = 10_000_000L
+        assertEquals(
+            0,
+            refund(now, lastBudgetChangeMs = 1_000L, lastWireCorruptionMs = now - 12_000L)
+        )
+        assertEquals(
+            0,
+            refund(now, lastBudgetChangeMs = now - 12_000L, lastWireCorruptionMs = 1_000L)
+        )
+        assertEquals(
+            1,
+            refund(
+                now,
+                cyclesUsedThisSession = 1,
+                lastBudgetChangeMs = now - CYCLE_REFUND_AFTER_QUIET_MS,
+                lastWireCorruptionMs = now - CYCLE_REFUND_AFTER_QUIET_MS,
+            )
+        )
+    }
+
+    @Test
+    fun `an injection cadence can never earn a refund`() {
+        // The sustained-loss round landed a fault every ~12s for 450s. Five unbroken minutes of
+        // quiet cannot occur inside that, so a build carrying the refund measures identically to
+        // one without it under any injection profile - which is what lets it ship into a rig round
+        // sized for the other commits.
+        var now = 1_000L
+        repeat(40) {
+            now += 12_000L
+            assertEquals(0, refund(now, lastWireCorruptionMs = now))
+        }
+    }
+
+    @Test
+    fun `nothing comes back while the picture is unrepaired`() {
+        // A held last cycle stays the last cycle: the reserve's guarantee is being there when the
+        // loss stops, and a refund arriving mid-hold would dilute exactly that.
+        val now = 10_000_000L
+        assertEquals(
+            0,
+            refund(now, lastBudgetChangeMs = 1_000L, pictureUnrepaired = true)
+        )
+    }
+
+    @Test
+    fun `refunds accrue one per quiet window`() {
+        val start = 1_000L
+        assertEquals(0, refund(start + CYCLE_REFUND_AFTER_QUIET_MS - 1, lastBudgetChangeMs = start))
+        assertEquals(1, refund(start + CYCLE_REFUND_AFTER_QUIET_MS, lastBudgetChangeMs = start))
+        assertEquals(2, refund(start + 2 * CYCLE_REFUND_AFTER_QUIET_MS, lastBudgetChangeMs = start))
+        assertEquals(
+            "a long quiet stretch cannot refund more than was spent",
+            MAX_CYCLES_PER_SESSION,
+            refund(start + 100 * CYCLE_REFUND_AFTER_QUIET_MS, lastBudgetChangeMs = start)
+        )
+    }
+
+    @Test
+    fun `an untouched budget has nothing to refund`() {
+        val now = 10_000_000L
+        assertEquals(0, refund(now, cyclesUsedThisSession = 0, cyclesSpentThisSession = 0))
+        assertEquals(0, refund(now, lastBudgetChangeMs = 0L))
+    }
+
+    @Test
+    fun `the drive ceiling counts what the budget could still spend`() {
+        // Capping refunds on spends alone double counts unspent headroom: at seven spends with one
+        // cycle still unspent, earning even one back allows a ninth spend. The cap is on potential
+        // - spends so far plus everything the refreshed budget could still spend - so that exact
+        // shape earns back nothing.
+        val now = 10_000_000L
+        assertEquals(
+            0,
+            refund(now, cyclesUsedThisSession = 2, cyclesSpentThisSession = 7)
+        )
+        assertEquals(
+            2,
+            refund(now, cyclesUsedThisSession = 3, cyclesSpentThisSession = 6)
+        )
+    }
+
+    @Test
+    fun `no sequence of spends and refunds exceeds the drive ceiling`() {
+        // Greedy adversary: spend everything available, wait an arbitrarily long quiet stretch,
+        // take every refund offered, repeat. The lifetime total must converge on the ceiling
+        // exactly - never past it, and not short of it either, or the ceiling is mis-set.
+        var used = 0
+        var spent = 0
+        var lastChange = 0L
+        var now = 1_000L
+        repeat(50) {
+            while (used < MAX_CYCLES_PER_SESSION && spent < MAX_CYCLES_PER_DRIVE + 5) {
+                used++
+                spent++
+                now += CYCLE_COOLDOWN_MS
+                lastChange = now
+            }
+            now += 100 * CYCLE_REFUND_AFTER_QUIET_MS
+            val r = refund(
+                now,
+                cyclesUsedThisSession = used,
+                cyclesSpentThisSession = spent,
+                lastBudgetChangeMs = lastChange,
+            )
+            used -= r
+            if (r > 0) lastChange = now
+        }
+        assertEquals(MAX_CYCLES_PER_DRIVE, spent)
+    }
+
+    @Test
+    fun `the reporter's drive shape reaches a cycle on its fourth event`() {
+        // Four isolated truncations across 141 minutes, tens of minutes apart. The first three
+        // spend the whole session budget; pre-refund, the fourth met an empty one and waited the
+        // phone's cadence out. Forty quiet minutes earn at least one cycle back, and the reordered
+        // gate then prices the event at the usual ~2.4s.
+        val thirdSpend = 80 * 60_000L
+        val fourthEvent = 120 * 60_000L
+        val earnedBack = refund(
+            fourthEvent,
+            cyclesUsedThisSession = MAX_CYCLES_PER_SESSION,
+            cyclesSpentThisSession = MAX_CYCLES_PER_SESSION,
+            lastBudgetChangeMs = thirdSpend,
+            lastWireCorruptionMs = thirdSpend,
+        )
+        assertTrue("forty quiet minutes earned nothing back", earnedBack >= 1)
+        assertEquals(
+            Action.CYCLE_FOCUS,
+            decide(
+                nowMs = fourthEvent + ESCALATE_AFTER_UNREPAIRED_MS,
+                unrepairedSinceMs = fourthEvent,
+                cyclesUsedThisSession = MAX_CYCLES_PER_SESSION - earnedBack,
+                lastCycleMs = thirdSpend,
+                lastWireCorruptionMs = fourthEvent,
             )
         )
     }

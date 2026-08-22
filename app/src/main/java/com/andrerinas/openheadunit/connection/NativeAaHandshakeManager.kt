@@ -11,6 +11,7 @@ import com.andrerinas.openheadunit.aap.BluetoothWakePolicy
 import com.andrerinas.openheadunit.aap.NativeCredentialsPolicy
 import com.andrerinas.openheadunit.aap.NativeHandoffPolicy
 import com.andrerinas.openheadunit.aap.NativeTransport
+import com.andrerinas.openheadunit.aap.SoftApBssidPolicy
 import com.andrerinas.openheadunit.aap.UnusableBssidAction
 import com.andrerinas.openheadunit.aap.WppAction
 import com.andrerinas.openheadunit.aap.WppEvent
@@ -21,6 +22,8 @@ import com.andrerinas.openheadunit.aap.WppStage
 import com.andrerinas.openheadunit.utils.BluetoothHelper
 import com.andrerinas.openheadunit.aap.protocol.proto.Wireless
 import com.andrerinas.openheadunit.utils.AppLog
+import com.andrerinas.openheadunit.utils.ConnectionIssue
+import com.andrerinas.openheadunit.utils.ConnectionIssues
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import android.os.Build
@@ -916,6 +919,11 @@ class NativeAaHandshakeManager(
         // any of it. Together with abortedLocally they decide, once in the fenced finally below,
         // whether this attempt counts against consecutiveHandshakeFailures.
         var spokeToPhone = false
+        // Whether this handshake has already retired the "nothing came back" record. The phone
+        // sends several messages and the retraction only has to happen once; repeating it would
+        // put a binder call on every inbound message, including through the settling window where
+        // the phone is associating and there is nothing to gain by being busy.
+        var retiredSilentRecord = false
         var abortedLocally = false
         // Captured once, so a settings change mid-exchange cannot split it across two rulesets.
         val transport = NativeTransport.fromSetting(settings.nativeApTransport)
@@ -996,6 +1004,10 @@ class NativeAaHandshakeManager(
                         AppLog.i("NativeAA: [TX] Sending WifiInfoResponse (Type 3) with full credentials in 1000ms...")
                         delay(1000) // [FIX] Increased delay to give phone more processing time
                         sendWifiSecurityResponse(output, credSsid, credPsk, credBssid, transport)
+                        // Set after the write returns, not before the delay above: this marks that
+                        // we put bytes on the channel, and a phone that opened the exchange itself
+                        // can reach this having had nothing from us before it.
+                        spokeToPhone = true
                         AppLog.i("NativeAA: Handshake completed successfully on Bluetooth side.")
                         ifOwner(socket) {
                             // The exchange is done; the phone's work is not — it still has to
@@ -1013,6 +1025,7 @@ class NativeAaHandshakeManager(
                         // handing it straight back cannot fail on a schema guess.
                         AppLog.d("NativeAA: [TX] Echoing WifiPingResponse (Type 9)")
                         sendProtobuf(output, source?.payload ?: ByteArray(0), WppMessageType.PING_RESPONSE)
+                        spokeToPhone = true
                     }
                     WppAction.ExtendSettle -> {
                         AppLog.i("NativeAA: Phone reports it is still joining — extending the settling window.")
@@ -1043,7 +1056,7 @@ class NativeAaHandshakeManager(
                             AppLog.e(
                                 "NativeAA: These credentials carried no BSSID, which this phone may " +
                                     "have refused for that reason alone. Read the access point's MAC " +
-                                    "and set it as the static BSSID in Advanced settings."
+                                    "and set it as the static BSSID under Wireless connection in Settings."
                             )
                         }
                     }
@@ -1100,7 +1113,16 @@ class NativeAaHandshakeManager(
                         logReceivedDetail(msg)
                         // The phone answered, so the channel carries data in at least one
                         // direction. Whatever the type turns out to be, this was not a silent unit.
-                        ifOwner(socket) { resetHandshakeBackoff() }
+                        ifOwner(socket) {
+                            resetHandshakeBackoff()
+                            // The banner's claim is literally that nothing came back, so anything
+                            // coming back retires it. Kept as loose as the claim on purpose: a
+                            // narrower rule could leave a unit accused after it started working.
+                            if (!retiredSilentRecord) {
+                                retiredSilentRecord = true
+                                ConnectionIssues.clear(context, ConnectionIssue.BLUETOOTH_SENT_NO_DATA)
+                            }
+                        }
                         feed(WppEvent.MessageReceived(msg.type, parseStatus(msg)), msg)
                         if (session.isTerminal()) return
                     }
@@ -1193,7 +1215,11 @@ class NativeAaHandshakeManager(
                         // purpose-built hardware, every source in the chain is blocked by permission
                         // and no setting will unblock them. Say so, or the log sends the reader back
                         // to a location toggle that is already on.
-                        AppLog.e("NativeAA: If location is already on, this device cannot read its own WiFi Direct MAC at all. Read it from the system (P2P device address) and set it as the static BSSID in Advanced settings.")
+                        AppLog.e("NativeAA: If location is already on, this device cannot read its own WiFi Direct MAC at all. Read it from the system (P2P device address) and set it as the static BSSID under Wireless connection in Settings.")
+                        // The loudest failure on this route: two error lines in a log, and a phone
+                        // that simply never arrives. Recorded so the main screen can say so later,
+                        // because nobody is reading a log from the driver's seat.
+                        ConnectionIssues.raise(context, ConnectionIssue.BSSID_UNAVAILABLE)
                         // Triggering a P2P refresh so the next attempt has a valid BSSID
                         context.triggerWifiDirectRefresh()
                         // Not fed to the session as CredentialsUnavailable: its failure reason
@@ -1207,10 +1233,31 @@ class NativeAaHandshakeManager(
                         // ships without a real BSSID, see NativeCredentialsPolicy. The point is that
                         // a refusal is a message we can explain; this line is the first to look at
                         // when one arrives.
-                        AppLog.w("NativeAA: No usable BSSID for this access point — sending the credentials without one, which most phones refuse. Set a BSSID by hand in Advanced settings if the phone does not join.")
+                        AppLog.w("NativeAA: No usable BSSID for this access point — sending the credentials without one, which most phones refuse. Set a BSSID by hand under Wireless connection in Settings if the phone does not join.")
                         credBssid = ""
                         bssidOmitted = true
                     }
+                }
+            } else {
+                // The record is the claim that this unit could not read its own address -
+                // and neither a static override nor this route disproves it. SoftApBssidPolicy
+                // .choose takes the override ahead of everything and WifiDirectManager skips its
+                // whole fallback chain when one is set, so behind an override the question was
+                // never asked; and only the WiFi Direct abort raises this condition at all, so an
+                // access-point interface's MAC says nothing about the P2P one. remedyApplied()
+                // already hides the banner while an override is set, so keeping the record costs
+                // the user nothing and keeps it true if they ever clear it.
+                if (transport != NativeTransport.WIFI_DIRECT) {
+                    AppLog.i("NativeAA: this route cannot raise the missing-BSSID condition, so the record stays as it is.")
+                } else if (SoftApBssidPolicy.disprovesBssidUnavailable(credBssid, settings.staticBSSID)) {
+                    AppLog.i("NativeAA: this unit read its own WiFi address, so the missing-BSSID record is retired.")
+                    ConnectionIssues.clear(context, ConnectionIssue.BSSID_UNAVAILABLE)
+                } else {
+                    AppLog.i(
+                        "NativeAA: the BSSID being sent is the static override from Settings, which is a " +
+                            "way round this unit not reading its own WiFi address rather than proof that " +
+                            "it can, so the missing-BSSID record stays as it is."
+                    )
                 }
             }
 
@@ -1270,6 +1317,13 @@ class NativeAaHandshakeManager(
                 // would bury the log line saying how to fix it.
                 if (spokeToPhone && !abortedLocally && session.messagesReceived == 0) {
                     consecutiveHandshakeFailures++
+                    // The same fact, written down where the user can be told about it. Our bytes
+                    // went out and the phone answered none of them, which is what a head unit
+                    // whose Bluetooth accepts writes and airs nothing looks like from in here.
+                    // Deliberately the same predicate as the backoff rather than a second one:
+                    // it already excludes the aborts that are ours rather than the radio's.
+                    AppLog.w("NativeAA: the phone connected over Bluetooth and answered nothing we sent. If this repeats, this unit's Bluetooth cannot carry Android Auto and USB or the Wireless Helper mode are the way round it.")
+                    ConnectionIssues.raise(context, ConnectionIssue.BLUETOOTH_SENT_NO_DATA)
                 }
             }
             // Best effort only, exactly as before: on a stack where close() does not interrupt a
@@ -1406,6 +1460,26 @@ class NativeAaHandshakeManager(
     }
 
     data class ProtobufMessage(val type: Int, val payload: ByteArray)
+
+    /**
+     * A session is up, so the wake-up loop has nothing left to do.
+     *
+     * The loop already refuses to poke once a session exists, but it only asks at the top of each
+     * iteration and an iteration is a 15 s hold plus a 15 s gap. A reporter's capture has it
+     * exiting 4.1 s after the SSL handshake and 30 s is the worst case, all of it spent opening
+     * RFCOMM connections into a link that is already carrying Android Auto. Each one raises an
+     * OS-level ACL_CONNECTED that AutoStartReceiver reads as the user's phone arriving.
+     *
+     * Cheap and idempotent: safe to call on every connect, whatever the transport.
+     */
+    fun onSessionEstablished() {
+        if (pokeJob?.isActive == true) {
+            AppLog.i("NativeAA: session is up — cancelling the poke retry loop")
+        }
+        pokeJob?.cancel()
+        pokeJob = null
+        lastPokeTriggerCredentials = null
+    }
 
     fun stop() {
         isRunning = false

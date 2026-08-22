@@ -67,4 +67,83 @@ class AuditRecoveryPolicyTest {
             )
         }
     }
+
+    // --- The discard ------------------------------------------------------------------------
+
+    private fun result(
+        channel: Int = Channel.ID_VID,
+        outcome: Outcome = Outcome.DELTA_CHANGED,
+        delta: Int = 0,
+        expectedDelta: Int? = null,
+    ) = FragmentedMessageAudit.Result(
+        channel = channel,
+        outcome = outcome,
+        declaredTotal = 36_470,
+        observedTotal = 36_470 - delta,
+        fragments = 3,
+        delta = delta,
+        expectedDelta = expectedDelta,
+        perFragmentDelta = null,
+    )
+
+    @Test
+    fun `a run short by a whole fragment is discarded`() {
+        // The measured shape: a 3-fragment run on the wire's 16KB fragmenting loses a middle, so
+        // the delta lands a fragment's length above the channel's -29-per-fragment expectation.
+        assertTrue(
+            AuditRecoveryPolicy.shouldDiscardAssembledUnit(
+                result(delta = -87 + 16_355, expectedDelta = -87)
+            )
+        )
+    }
+
+    @Test
+    fun `a delta that shifted by less than a fragment is reported and not discarded`() {
+        // The audit's history is false positives - ten wrong DELTA_CHANGED lines in 200ms once -
+        // and a discarded keyframe costs a whole GOP. A shift on the order of the framing
+        // convention itself is a convention change, not a hole.
+        assertFalse(
+            AuditRecoveryPolicy.shouldDiscardAssembledUnit(
+                result(delta = -87 + AuditRecoveryPolicy.MISSING_FRAGMENT_FLOOR_BYTES - 1, expectedDelta = -87)
+            )
+        )
+    }
+
+    @Test
+    fun `a run longer than expected is never discarded`() {
+        // Extra bytes are not a hole. Whatever produced them, the unit in hand is not missing a
+        // fragment, and doubt decodes.
+        assertFalse(
+            AuditRecoveryPolicy.shouldDiscardAssembledUnit(
+                result(delta = -87 - 16_355, expectedDelta = -87)
+            )
+        )
+    }
+
+    @Test
+    fun `a channel that has not settled its convention never discards`() {
+        assertFalse(
+            AuditRecoveryPolicy.shouldDiscardAssembledUnit(
+                result(delta = 16_355, expectedDelta = null)
+            )
+        )
+    }
+
+    @Test
+    fun `only a video DELTA_CHANGED can discard`() {
+        // The discard is the stronger claim on top of shouldRequestKeyframe, so everything that
+        // gate refuses, this refuses too.
+        assertFalse(
+            AuditRecoveryPolicy.shouldDiscardAssembledUnit(
+                result(channel = Channel.ID_MPB, delta = 16_355, expectedDelta = -87)
+            )
+        )
+        for (outcome in listOf(Outcome.FIRST_OBSERVATION, Outcome.TRUNCATED_RUN, Outcome.ORPHANED_FRAGMENT)) {
+            assertFalse(
+                AuditRecoveryPolicy.shouldDiscardAssembledUnit(
+                    result(outcome = outcome, delta = 16_355, expectedDelta = -87)
+                )
+            )
+        }
+    }
 }

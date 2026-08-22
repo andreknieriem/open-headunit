@@ -15,6 +15,7 @@ import java.net.NetworkInterface
 import com.andrerinas.openheadunit.utils.SoftApConfigCompat
 import com.andrerinas.openheadunit.aap.ApBand
 import com.andrerinas.openheadunit.aap.ApInterfaceCandidate
+import com.andrerinas.openheadunit.aap.HotspotBandPreference
 import com.andrerinas.openheadunit.aap.SoftApBandPolicy
 import com.andrerinas.openheadunit.aap.SoftApNetworkPolicy
 import com.andrerinas.openheadunit.aap.SoftApState
@@ -102,7 +103,8 @@ object HotspotManager {
         AppLog.i("HotspotManager: Setting hotspot enabled=$enabled (API ${Build.VERSION.SDK_INT}, canWriteSettings=${AppPermissions.isWriteSettingsGranted(context)})")
 
         // Disabling has no band to choose and nothing to confirm afterwards, and never collides
-        // with a start: only one caller ever asks for it.
+        // with a start: only one caller ever asks for it. The band below is unused, since
+        // SoftApConfigCompat.enableHotspot() returns before reading it when enabled is false.
         if (!enabled) return startOnBand(context, enabled = false, band = ApBand.BAND_5GHZ).attempted
 
         // Claimed before anything slow runs, or the WiFi-disable sleep below is long enough for a
@@ -137,12 +139,16 @@ object HotspotManager {
                 AppLog.w("HotspotManager: Failed to disable WiFi: ${e.message}")
             }
 
-            // 5 GHz first, 2.4 GHz only if the radio will not host an access point on it. See
-            // SoftApBandPolicy for why the order is not a preference.
+            // Which bands to try, and in what order. Resolved once: every line below reports the
+            // list actually being iterated, so a forced band cannot be described as "every band".
+            val preference = bandPreference(context)
+            val order = SoftApBandPolicy.attemptOrder(preference)
+            AppLog.i("HotspotManager: Band preference is ${SoftApBandPolicy.describePreference(preference)}; trying ${order.joinToString { SoftApBandPolicy.describe(it) }}.")
+
             var attemptedAny = false
-            for ((index, band) in SoftApBandPolicy.attemptOrder().withIndex()) {
+            for ((index, band) in order.withIndex()) {
                 if (index > 0) {
-                    AppLog.w("HotspotManager: no access point on ${SoftApBandPolicy.describe(SoftApBandPolicy.attemptOrder()[index - 1])}; retrying on ${SoftApBandPolicy.describe(band)}. Android Auto is known to drop within seconds on 2.4 GHz — if the projection dies shortly after connecting, this line is why.")
+                    AppLog.w("HotspotManager: no access point on ${SoftApBandPolicy.describe(order[index - 1])}; retrying on ${SoftApBandPolicy.describe(band)}. Measured on 2.4 GHz: a 1080p/60 session connects, opens the video channel and then dies having sent no frame at all, while the same access point carries 800x480/30 indefinitely. If the projection dies shortly after connecting, this line is why, and a lower resolution and frame rate is the other way out.")
                 }
                 val outcome = startOnBand(context, enabled = true, band = band)
                 attemptedAny = attemptedAny || outcome.attempted
@@ -156,7 +162,12 @@ object HotspotManager {
                     // point again. Measured on a unit that refuses setSoftApConfiguration(): three
                     // start requests, all `channels {3=0}`, two of them tearing down an access
                     // point the previous one had just brought up.
-                    AppLog.w("HotspotManager: This device would not take a band request, so trying ${SoftApBandPolicy.describe(SoftApBandPolicy.attemptOrder().last())} would start the same access point again. Leaving the band to the device.")
+                    val nextBand = order.getOrNull(index + 1)
+                    if (nextBand != null) {
+                        AppLog.w("HotspotManager: This device would not take a band request, so trying ${SoftApBandPolicy.describe(nextBand)} would start the same access point again. Leaving the band to the device.")
+                    } else {
+                        AppLog.w("HotspotManager: This device would not take a band request, so the access point is on whatever band it already had configured, which this app cannot read.")
+                    }
                     break
                 }
             }
@@ -170,7 +181,7 @@ object HotspotManager {
             }
 
             if (attemptedAny) {
-                AppLog.w("HotspotManager: Every start path was tried on every band and no access point came up within ${AP_STATE_TIMEOUT_MS / 1000}s each. On a non-privileged install this usually cannot be done from an app — switch the hotspot on in system settings instead.")
+                AppLog.w("HotspotManager: Every start path was tried on ${order.joinToString { SoftApBandPolicy.describe(it) }} and no access point came up within ${AP_STATE_TIMEOUT_MS / 1000}s each. On a non-privileged install this usually cannot be done from an app — switch the hotspot on in system settings instead.")
             } else {
                 AppLog.w("HotspotManager: All hotspot attempts failed.")
             }
@@ -179,6 +190,21 @@ object HotspotManager {
         } finally {
             startInFlight = false
         }
+    }
+
+    /**
+     * The user's band choice, or [HotspotBandPreference.AUTO] if it cannot be read.
+     *
+     * The catch is not decoration: `Settings` lives in credential-encrypted storage and throws
+     * outright before the user has unlocked the device, and this runs from the boot and auto-start
+     * paths. Falling back to the automatic sweep there is the same behaviour the app had before
+     * this setting existed.
+     */
+    private fun bandPreference(context: Context): HotspotBandPreference = try {
+        HotspotBandPreference.fromSetting(Settings(context).hotspotBand)
+    } catch (e: Exception) {
+        AppLog.w("HotspotManager: Could not read the band preference (${e.message}); asking for 5 GHz and falling back.")
+        HotspotBandPreference.AUTO
     }
 
     /**
@@ -201,7 +227,7 @@ object HotspotManager {
         if (configured) {
             "HotspotManager: Hotspot is up, and this device accepted the request for ${SoftApBandPolicy.describe(band)}."
         } else {
-            "HotspotManager: Hotspot is up, but this device refused the request for ${SoftApBandPolicy.describe(band)} — the band is whatever it already had configured, which this app cannot read. If the projection dies seconds after connecting, check the hotspot's channel: Android Auto is known to drop on 2.4 GHz."
+            "HotspotManager: Hotspot is up, but this device refused the request for ${SoftApBandPolicy.describe(band)} — the band is whatever it already had configured, which this app cannot read. If the projection dies seconds after connecting with no picture, check the hotspot's channel: on 2.4 GHz a full-resolution stream was measured to do exactly that, while a lower resolution and frame rate held."
         }
 
     private fun startOnBand(context: Context, enabled: Boolean, band: ApBand): BandOutcome {

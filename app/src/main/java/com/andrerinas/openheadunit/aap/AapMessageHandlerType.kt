@@ -26,8 +26,10 @@ internal class AapMessageHandlerType(
 
         // Every decrypted inbound message passes through here, on every channel, which makes this
         // the one place that can say the link is alive rather than just that the picture is moving.
-        // See AapTransport.lastMessageReceivedMs for why that distinction matters.
-        transport.noteMessageReceived()
+        // See AapTransport.lastMessageReceivedMs for why that distinction matters. The channel goes
+        // with it so the media channels can be measured apart from the link: this fault stops video
+        // and audio while leaving control running, and the three are one series here.
+        transport.noteMessageReceived(message.channel)
 
         val msgType = message.type
         val flags = message.flags

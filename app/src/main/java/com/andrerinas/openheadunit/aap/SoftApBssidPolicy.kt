@@ -46,6 +46,29 @@ object SoftApBssidPolicy {
         return normalise(trimmed).lowercase() !in PLACEHOLDERS
     }
 
+    /**
+     * Whether [resolvedBssid] shows this device read its own address, rather than repeating what
+     * the user typed.
+     *
+     * [choose] takes [staticOverride] ahead of every automatic source, and `WifiDirectManager`
+     * skips its whole six-deep fallback chain when the override is usable, so a run behind one
+     * never asks the hardware the question `ConnectionIssue.BSSID_UNAVAILABLE` is about. The record
+     * therefore survives an override, and `ConnectionIssueBannerPolicy.remedyApplied` is what keeps
+     * it off the screen meanwhile.
+     *
+     * Compared after normalisation rather than by identity, because the override is hand-typed:
+     * dashes, lower case and stray spaces all name the same address, while the automatic rungs
+     * reach the call site only upper-cased.
+     *
+     * The deliberate false negative: a user who typed this unit's *real* address gets no disproof.
+     * Nothing is lost by that, and a test pins that the banner hides it either way.
+     */
+    fun disprovesBssidUnavailable(resolvedBssid: String?, staticOverride: String?): Boolean {
+        if (!isUsable(resolvedBssid)) return false
+        if (!isUsable(staticOverride)) return true
+        return normalise(resolvedBssid.orEmpty()) != normalise(staticOverride.orEmpty())
+    }
+
     /** Dashes to colons, upper case. Accepts either separator so a hand-typed address still works. */
     private fun normalise(mac: String): String = mac.trim().replace('-', ':').uppercase()
 }

@@ -2,8 +2,10 @@ package com.andrerinas.openheadunit.utils
 
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.util.Log
 import androidx.core.content.FileProvider
+import com.andrerinas.openheadunit.BuildConfig
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -72,6 +74,43 @@ object LogExporter {
         captureRestarts = 0
 
         launchLogcatPipe(file, verbosity)
+        // After the pipe, not before: logcat is spawned without -T, so it drains the ring buffer and
+        // then follows, and a line emitted here lands in the file either way.
+        AppLog.w(sessionBanner(context))
+    }
+
+    /**
+     * One line saying what produced this log and what it was configured to do.
+     *
+     * Reporter logs arrive as a file and nothing else, and none of them used to say which build or
+     * which settings wrote them: identifying a build meant fingerprinting which log lines existed,
+     * and the settings that decide the video path could at best be pieced together from scattered
+     * lines. A test-APK install can also rewrite settings through onboarding without the reporter
+     * noticing, so the log has to carry them itself. `exporterLogLevel` is included so missing
+     * lines can be told apart from a phone that sent nothing.
+     *
+     * `videoCodec` is the user's stored *choice*, not the codec that gets announced; the two differ
+     * wherever ServiceDiscoveryResponse overrides the choice, and having both in one log is the
+     * point. Nothing identifying goes in: no MAC, SSID or filesystem path.
+     *
+     * Emitted at WARN because both gates on the way out - [AppLog.isLoggable] and the `logcat`
+     * filter this object spawns - follow the same `exporterLogLevel` the banner reports, so an INFO
+     * banner would be dropped exactly on the sparse captures that need it most.
+     *
+     * Deliberately untested: it makes no decision, only a string, and the values come from `Build`,
+     * `BuildConfig` and SharedPreferences, none of which read without Robolectric.
+     */
+    private fun sessionBanner(context: Context): String {
+        val settings = Settings(context)
+        return "LogExporter: session | " +
+            "build=${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE}) " +
+            "${BuildConfig.FLAVOR}/${BuildConfig.BUILD_TYPE} | " +
+            "device=${Build.MANUFACTURER} ${Build.MODEL} board=${Build.BOARD} api=${Build.VERSION.SDK_INT} | " +
+            "video=codec:${settings.videoCodec} fps:${settings.fpsLimit} resId:${settings.resolutionId} " +
+            "view:${settings.viewMode.name} forceSw:${settings.forceSoftwareDecoding} " +
+            "swDecoder:${settings.softwareVideoDecoder.name} | " +
+            "wifi=mode:${settings.wifiConnectionMode} strategy:${settings.helperConnectionStrategy} | " +
+            "logLevel=${settings.exporterLogLevel.name}"
     }
 
     /**
@@ -157,6 +196,13 @@ object LogExporter {
             AppLog.w("LogExporter: export requested while SILENT; skipping export")
             return null
         }
+
+        // Before every path below, so the banner is in the export however it is produced: AppLog's
+        // own file, a running capture that already has one from startCapture, or a ring-buffer dump
+        // that has never seen one. A second copy in a capture file costs a line and is worth it -
+        // the ring-buffer export is the case where a missing banner would leave the whole file
+        // unattributable, and it is the case with no other chance to write one.
+        AppLog.w(sessionBanner(context))
 
         if (AppLog.logSource == Settings.LogSource.APPLOG_FILE) {
             return (AppLog.currentLogFile ?: AppLog.lastLogFile)

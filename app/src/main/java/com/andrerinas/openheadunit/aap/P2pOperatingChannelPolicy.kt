@@ -24,6 +24,9 @@ package com.andrerinas.openheadunit.aap
  *    (1, 6, 11) whatever the group runs on, and restricting it would make the unit undiscoverable.
  *    [LISTEN_CHANNEL_UNCHANGED] is the value that means "do not touch it".
  *
+ * The request is tried as a ladder rather than once - see [attemptChannels] - because a frequency
+ * list a unit cannot satisfy costs it the group rather than the band.
+ *
  * Channel 36 rather than any other: it is the bottom of UNII-1, it is not a DFS channel, and it is
  * what the reference implementations use - `WirelessAndroidAutoDongle` brings its access point up on
  * channel 36, and the AAWireless dongle's own filing lists 5180-5240 and 5745-5825 while avoiding the
@@ -44,6 +47,15 @@ object P2pOperatingChannelPolicy {
     /** 5745 MHz, bottom of UNII-3, for a regulatory domain that refuses UNII-1. */
     const val CHANNEL_UPPER = 149
 
+    /**
+     * 2437 MHz, the middle of the three non-overlapping 2.4 GHz channels (1, 6 and 11).
+     *
+     * The rung the ladder falls to when 5 GHz will not host a group owner. The middle one rather
+     * than an edge because nothing here knows what else is on the air, and 6 is the conventional
+     * default when there is nothing to choose on.
+     */
+    const val CHANNEL_24_GHZ = 6
+
     /** The last 2.4 GHz channel, and the one the linear formula does not describe. */
     const val CHANNEL_24_GHZ_TOP = 14
 
@@ -60,19 +72,37 @@ object P2pOperatingChannelPolicy {
     fun appliesTo(sdkInt: Int): Boolean = sdkInt < FIRST_API_WITH_BAND_REQUEST
 
     /**
-     * The operating channel to request, or [CHANNEL_UNRESTRICTED] to ask for nothing.
+     * The operating channels to ask for, best first, or empty where asking is not the lever.
      *
-     * @param sdkInt this device's API level.
-     * @param requestFiveGhz the user's opt-in. Off by default, because a unit whose P2P firmware
-     *   cannot host a 5 GHz group owner would be left with a frequency list it cannot satisfy, and
-     *   the failure would be a group that never forms rather than a group on the wrong band.
-     * @param useUpperBand ask for UNII-3 instead of UNII-1.
+     * A ladder rather than a single answer, because the request is a *disallowed-frequency list*
+     * and that is the whole hazard: a unit whose P2P firmware cannot host a group owner on the band
+     * it names is not left on the other one, it is left with nowhere legal to put a group and fails
+     * outright. Naming 2.4 GHz explicitly on the way down gives it somewhere to land, and the caller
+     * clears the restriction entirely once this list is spent - so the worst case is the behaviour
+     * that shipped before any of this existed, reached one bring-up later.
+     *
+     * That ladder is also what makes 5 GHz safe to try by default here. It used to be an opt-in
+     * precisely because a wrong answer cost a pre-Q unit its connection rather than its band; with
+     * somewhere to fall back to, a wrong answer costs a round trip.
+     *
+     * @param sdkInt this device's API level. Empty from [FIRST_API_WITH_BAND_REQUEST] up, where the
+     *   supported band request does this properly and reaching for a hidden method would be trading
+     *   a guarantee for a reflection.
+     * @param preference the user's band choice.
+     * @param useUpperBand ask for UNII-3 instead of UNII-1 on the 5 GHz rung.
      */
-    fun operatingChannel(sdkInt: Int, requestFiveGhz: Boolean, useUpperBand: Boolean = false): Int = when {
-        !appliesTo(sdkInt) -> CHANNEL_UNRESTRICTED
-        !requestFiveGhz -> CHANNEL_UNRESTRICTED
-        useUpperBand -> CHANNEL_UPPER
-        else -> CHANNEL_LOWER
+    fun attemptChannels(
+        sdkInt: Int,
+        preference: P2pBandPreference,
+        useUpperBand: Boolean = false
+    ): List<Int> {
+        if (!appliesTo(sdkInt)) return emptyList()
+        val fiveGhz = if (useUpperBand) CHANNEL_UPPER else CHANNEL_LOWER
+        return when (preference) {
+            P2pBandPreference.AUTO -> listOf(fiveGhz, CHANNEL_24_GHZ)
+            P2pBandPreference.FORCE_5GHZ -> listOf(fiveGhz)
+            P2pBandPreference.FORCE_2_4GHZ -> listOf(CHANNEL_24_GHZ)
+        }
     }
 
     /**
@@ -86,7 +116,7 @@ object P2pOperatingChannelPolicy {
         channel !in 1..165 -> 0
         // Channel 14 sits 12 MHz above 13 rather than 5, so the arithmetic does not reach it and
         // AOSP special-cases it in ScanResult.convertChannelToFrequencyMhzIfSupported for the same
-        // reason. It is Japan-only and 802.11b-only, so operatingChannel() will never return it -
+        // reason. It is Japan-only and 802.11b-only, so attemptChannels() will never name it -
         // but a converter that quietly answers 2477 is worse than one that refuses. The constant is
         // P2pChannelPolicy's because that object converts the other way and must agree with this one.
         channel == CHANNEL_24_GHZ_TOP -> P2pChannelPolicy.CHANNEL_14_MHZ

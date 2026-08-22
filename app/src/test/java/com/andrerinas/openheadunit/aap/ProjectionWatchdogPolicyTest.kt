@@ -1,6 +1,7 @@
 package com.andrerinas.openheadunit.aap
 
 import com.andrerinas.openheadunit.connection.CommManager
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -180,6 +181,160 @@ class ProjectionWatchdogPolicyTest {
         assertTrue(
             "the rule must depend only on session, surface, picture and the escalation's claim",
             nudge(sessionLive = true, surfaceSet = true, renderedSinceSurfaceSet = false)
+        )
+    }
+
+    /**
+     * The event that actually fired on a reporter's capture.
+     *
+     * The view's long-frame counter runs for the whole session, and the check that reads it survives
+     * its gates only when the picture has been still for over two seconds while video arrived within
+     * the last one and a half - a coincidence that happened once in two minutes on a link stalling
+     * every ten and a half seconds. Subtracting a baseline of zero charged the session's whole
+     * fourteen to that one tick and tripped a floor of ten on its first evaluation.
+     */
+    @Test
+    fun `the first tick of a session charges nothing`() {
+        assertEquals(
+            0L,
+            ProjectionWatchdogPolicy.longFramesThisTick(
+                longFrameEvents = 14L, previousEvents = 0L, previousTickMs = 0L, nowMs = 133_000L
+            )
+        )
+    }
+
+    @Test
+    fun `frames that piled up outside the window are not charged to this tick`() {
+        assertEquals(
+            "a two-minute gap between surviving ticks is not evidence about the last ten seconds",
+            0L,
+            ProjectionWatchdogPolicy.longFramesThisTick(
+                longFrameEvents = 14L, previousEvents = 1L,
+                previousTickMs = 13_000L, nowMs = 133_000L
+            )
+        )
+        assertEquals(
+            "a tick inside the window charges its own delta",
+            3L,
+            ProjectionWatchdogPolicy.longFramesThisTick(
+                longFrameEvents = 14L, previousEvents = 11L,
+                previousTickMs = 131_000L, nowMs = 133_000L
+            )
+        )
+    }
+
+    @Test
+    fun `a counter reset by a view rebuild cannot go negative`() {
+        assertEquals(
+            0L,
+            ProjectionWatchdogPolicy.longFramesThisTick(
+                longFrameEvents = 0L, previousEvents = 9L,
+                previousTickMs = 2_000L, nowMs = 4_000L
+            )
+        )
+    }
+
+    /**
+     * The whole sequence, run the way the activity runs it: one surviving tick per outage cycle,
+     * one long frame each. Neither the baseline nor the window lets that reach the floor.
+     */
+    @Test
+    fun `long frames spread across a periodic outage never fill the window`() {
+        val counts = LongArray(5)
+        val times = LongArray(5)
+        var index = 0
+        var now = 0L
+        var events = 0L
+        var prevEvents = 0L
+        var prevTickMs = 0L
+        var worst = 0L
+
+        repeat(14) {
+            now += 10_500L
+            events += 1L
+            counts[index] = ProjectionWatchdogPolicy.longFramesThisTick(
+                longFrameEvents = events, previousEvents = prevEvents,
+                previousTickMs = prevTickMs, nowMs = now
+            )
+            times[index] = now
+            index = (index + 1) % counts.size
+            prevEvents = events
+            prevTickMs = now
+            val inWindow = ProjectionWatchdogPolicy.longFramesInWindow(counts, times, now)
+            if (inWindow > worst) worst = inWindow
+        }
+
+        assertEquals("every tick is more than a window apart, so none of them charges", 0L, worst)
+    }
+
+    @Test
+    fun `a collapsed consumer still fills the window`() {
+        // Video flowing throughout, so the watchdog ticks every two seconds and every tick is late.
+        val counts = LongArray(5)
+        val times = LongArray(5)
+        var index = 0
+        var now = 0L
+        var events = 0L
+        var prevEvents = 0L
+        var prevTickMs = 0L
+        var worst = 0L
+
+        repeat(10) {
+            now += 2_000L
+            events += 3L
+            counts[index] = ProjectionWatchdogPolicy.longFramesThisTick(
+                longFrameEvents = events, previousEvents = prevEvents,
+                previousTickMs = prevTickMs, nowMs = now
+            )
+            times[index] = now
+            index = (index + 1) % counts.size
+            prevEvents = events
+            prevTickMs = now
+            val inWindow = ProjectionWatchdogPolicy.longFramesInWindow(counts, times, now)
+            if (inWindow > worst) worst = inWindow
+        }
+
+        assertTrue("a real display stall must still trip the floor, got $worst", worst >= 10L)
+    }
+
+    @Test
+    fun `slots older than the window are ignored, not cleared`() {
+        val counts = longArrayOf(4L, 4L, 4L, 0L, 0L)
+        val times = longArrayOf(1_000L, 2_000L, 3_000L, 0L, 0L)
+
+        assertEquals(
+            "everything inside the window counts",
+            12L,
+            ProjectionWatchdogPolicy.longFramesInWindow(counts, times, nowMs = 4_000L)
+        )
+        assertEquals(
+            "and nothing outside it does",
+            0L,
+            ProjectionWatchdogPolicy.longFramesInWindow(counts, times, nowMs = 60_000L)
+        )
+        assertEquals(
+            "a slot exactly on the boundary is still inside",
+            4L,
+            ProjectionWatchdogPolicy.longFramesInWindow(
+                longArrayOf(4L), longArrayOf(1_000L), nowMs = 11_000L
+            )
+        )
+        assertEquals(
+            "one millisecond past it is not",
+            0L,
+            ProjectionWatchdogPolicy.longFramesInWindow(
+                longArrayOf(4L), longArrayOf(1_000L), nowMs = 11_001L
+            )
+        )
+    }
+
+    @Test
+    fun `a slot never written contributes nothing`() {
+        val counts = longArrayOf(7L, 7L, 7L, 7L, 7L)
+        val times = LongArray(5)   // all zero: the window has not been written yet
+        assertEquals(
+            0L,
+            ProjectionWatchdogPolicy.longFramesInWindow(counts, times, nowMs = 5_000L)
         )
     }
 }

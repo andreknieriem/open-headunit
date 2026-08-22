@@ -73,6 +73,11 @@ package com.andrerinas.openheadunit.aap
  * spending speculatively on a wire that may never settle, because more remain; the last one is
  * worth only what it buys at the moment the loss stops, which is a keyframe 0.5-1.6s later.
  *
+ * The hold is for *sustained* loss only. A fault with nothing after it - the corruption stamp and
+ * the arm landing together - reaches the last cycle exactly as fast as the first, because on that
+ * wire the loss has already stopped and the moment the reserve exists for is now. Checking the
+ * hold before that exemption once deferred exactly this case by a whole quiet window.
+ *
  * ### Who arms the clock
  *
  * A shed reference frame is no longer the only caller. A decoder that has just been rebuilt, and one
@@ -190,6 +195,75 @@ object KeyframeCycleEscalationPolicy {
      */
     const val DEFER_FOR_QUIET_LIMIT_MS = CYCLE_COOLDOWN_MS
 
+    /**
+     * How long the wire and the picture must both have been clean before a spent cycle comes back.
+     *
+     * [MAX_CYCLES_PER_SESSION] was sized for a bad patch, not for a drive: a session that meets an
+     * isolated fault every half hour spends the whole budget on the first three and meets the
+     * fourth with nothing, waiting the phone's own keyframe cadence out. Refunding on quiet keeps
+     * the budget a brake on bursts while letting a drive that has demonstrably settled earn the
+     * lever back.
+     *
+     * Five unbroken minutes cannot elapse inside a sustained-loss episode, so a refund can never
+     * arrive mid-fault and hand the gate a cycle to waste. It is also longer than
+     * [CYCLE_COOLDOWN_MS], [DEFER_FOR_QUIET_LIMIT_MS] and the phone's own keyframe interval, so a
+     * refund only ever lands on a stream that has repaired itself and stayed repaired past every
+     * clock this policy runs. A test pins the relations.
+     */
+    const val CYCLE_REFUND_AFTER_QUIET_MS = 5 * 60_000L
+
+    /**
+     * Cycles one session may ever spend, refunds included.
+     *
+     * [MAX_CYCLES_PER_SESSION] is the burst; this is the drive. Hardware has taken more cycles in
+     * less time than this allows without the codec ever re-initialising, so eight across a
+     * multi-hour drive, each behind five minutes of clean stream, stays inside what is measured
+     * safe while still capping the drive.
+     */
+    const val MAX_CYCLES_PER_DRIVE = 8
+
+    /**
+     * How many spent cycles a quiet stream has earned back, all-at-once at the moment the caller
+     * asks - which is when the next fault arrives, because that is the first moment a refund can
+     * matter and the last moment the quiet stretch behind it is still unbroken.
+     *
+     * Refunds accrue one per [CYCLE_REFUND_AFTER_QUIET_MS] of quiet, measured from whichever is
+     * later of the last budget movement and the last wire corruption, so a fault inside a window
+     * restarts that window. Nothing comes back while the picture is unrepaired: a held last cycle
+     * stays the last cycle, and the reserve's guarantee - being there when the loss stops - cannot
+     * be diluted mid-hold.
+     *
+     * The drive ceiling is enforced as an invariant on *potential*, not a check on spends so far:
+     * a refund is capped so that the cycles already spent plus everything the refreshed budget
+     * could still spend never exceeds [MAX_CYCLES_PER_DRIVE]. Capping on spends alone double
+     * counts the unspent headroom the budget already holds - a session at seven spends with one
+     * cycle still unspent must earn back nothing, or it could reach nine.
+     *
+     * @param cyclesSpentThisSession lifetime spends, never decremented - the counter refunds do
+     *   not touch.
+     * @param lastBudgetChangeMs when the budget last moved in either direction, or zero if it
+     *   never has (then there is nothing to refund and the answer is zero).
+     * @param pictureUnrepaired whether the escalation clock is currently armed.
+     */
+    fun cyclesToRefund(
+        nowMs: Long,
+        cyclesUsedThisSession: Int,
+        cyclesSpentThisSession: Int,
+        lastBudgetChangeMs: Long,
+        lastWireCorruptionMs: Long,
+        pictureUnrepaired: Boolean,
+    ): Int {
+        if (pictureUnrepaired) return 0
+        if (cyclesUsedThisSession <= 0) return 0
+        if (lastBudgetChangeMs == 0L) return 0
+        val quietSince = maxOf(lastBudgetChangeMs, lastWireCorruptionMs)
+        val windows = ((nowMs - quietSince) / CYCLE_REFUND_AFTER_QUIET_MS).toInt()
+        if (windows <= 0) return 0
+        val remainingDriveAllowance = MAX_CYCLES_PER_DRIVE - cyclesSpentThisSession -
+            (MAX_CYCLES_PER_SESSION - cyclesUsedThisSession)
+        return minOf(windows, cyclesUsedThisSession, remainingDriveAllowance).coerceAtLeast(0)
+    }
+
     enum class Action {
         /** Send the unsolicited focus gain, the existing behaviour. */
         NUDGE,
@@ -230,19 +304,29 @@ object KeyframeCycleEscalationPolicy {
         val wireQuiet = lastWireCorruptionMs == 0L ||
             nowMs - lastWireCorruptionMs >= CORRUPTION_QUIET_MS
         if (!wireQuiet) {
-            // The last cycle is the one that has to still be there when the loss stops, so it waits
-            // for real quiet with no ceiling. A session whose wire never settles ends with it
-            // unspent, which costs nothing: that session was not repairable by a keyframe anyway.
-            if (cyclesUsedThisSession == MAX_CYCLES_PER_SESSION - 1) return Action.WAIT_FOR_QUIET
             // An isolated dropped frame stamps the corruption at the instant the clock arms, so
             // without this it would be deferred by a whole quiet window - taxing the common case to
             // pay for the sustained-loss one. Which of the two stamps lands first is not fixed:
             // AapVideo reports the corrupt access unit, the decoder sheds the reference frame, and
             // the order depends on the decoder. Hence a tolerance rather than a strict comparison.
+            //
+            // Checked before the last-cycle hold, and that ordering is the point: the exemption
+            // covers every budget position. On a wire whose only corruption is the fault that armed
+            // the clock, the loss has already stopped, and holding the reserve against it defers
+            // the repair a whole quiet window for nothing.
             val corruptionSinceArm =
                 lastWireCorruptionMs - unrepairedSinceMs >= ESCALATE_AFTER_UNREPAIRED_MS
-            if (corruptionSinceArm && nowMs - unrepairedSinceMs < DEFER_FOR_QUIET_LIMIT_MS) {
-                return Action.WAIT_FOR_QUIET
+            if (corruptionSinceArm) {
+                // The last cycle is the one that has to still be there when the loss stops, so it
+                // waits for real quiet with no ceiling. A session whose wire never settles ends
+                // with it unspent, which costs nothing: that session was not repairable by a
+                // keyframe anyway.
+                if (cyclesUsedThisSession == MAX_CYCLES_PER_SESSION - 1) {
+                    return Action.WAIT_FOR_QUIET
+                }
+                if (nowMs - unrepairedSinceMs < DEFER_FOR_QUIET_LIMIT_MS) {
+                    return Action.WAIT_FOR_QUIET
+                }
             }
         }
         return Action.CYCLE_FOCUS

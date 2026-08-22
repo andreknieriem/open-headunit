@@ -69,38 +69,76 @@ class P2pOperatingChannelPolicyTest {
 
     @Test
     fun `a modern device is never given a channel, because it has the supported band request`() {
+        for (preference in P2pBandPreference.values()) {
+            assertEquals("$preference", emptyList<Int>(), P2pOperatingChannelPolicy.attemptChannels(api29, preference))
+            assertEquals(
+                "$preference",
+                emptyList<Int>(),
+                P2pOperatingChannelPolicy.attemptChannels(api34, preference, useUpperBand = true)
+            )
+        }
+    }
+
+    @Test
+    fun `an old device tries 5 GHz and then 2_4 GHz, so a unit that cannot host one still gets a group`() {
+        // The request is a disallowed-frequency list, so naming a band a unit cannot host used to
+        // leave it with nowhere legal to put a group rather than on the other band. Both rungs are
+        // offered before the caller gives the restriction back entirely.
+        assertEquals(listOf(36, 6), P2pOperatingChannelPolicy.attemptChannels(api27, P2pBandPreference.AUTO))
+    }
+
+    @Test
+    fun `5 GHz only never names a 2_4 GHz channel, on either range`() {
+        assertEquals(listOf(36), P2pOperatingChannelPolicy.attemptChannels(api27, P2pBandPreference.FORCE_5GHZ))
         assertEquals(
-            P2pOperatingChannelPolicy.CHANNEL_UNRESTRICTED,
-            P2pOperatingChannelPolicy.operatingChannel(api29, requestFiveGhz = true),
+            listOf(149),
+            P2pOperatingChannelPolicy.attemptChannels(api27, P2pBandPreference.FORCE_5GHZ, useUpperBand = true)
         )
+        for (useUpper in listOf(false, true)) {
+            for (channel in P2pOperatingChannelPolicy.attemptChannels(api27, P2pBandPreference.FORCE_5GHZ, useUpper)) {
+                assertTrue(
+                    "channel $channel is not 5 GHz",
+                    P2pOperatingChannelPolicy.frequencyMhzFor(channel) > 5000
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `2_4 GHz only asks for one channel and never a 5 GHz one`() {
+        assertEquals(listOf(6), P2pOperatingChannelPolicy.attemptChannels(api27, P2pBandPreference.FORCE_2_4GHZ))
         assertEquals(
-            P2pOperatingChannelPolicy.CHANNEL_UNRESTRICTED,
-            P2pOperatingChannelPolicy.operatingChannel(api34, requestFiveGhz = true, useUpperBand = true),
+            "the upper-band flag belongs to the 5 GHz rung, which this preference never reaches",
+            listOf(6),
+            P2pOperatingChannelPolicy.attemptChannels(api27, P2pBandPreference.FORCE_2_4GHZ, useUpperBand = true)
         )
     }
 
     @Test
-    fun `the default is to ask for nothing, so an untouched install behaves as it always did`() {
-        assertEquals(
-            P2pOperatingChannelPolicy.CHANNEL_UNRESTRICTED,
-            P2pOperatingChannelPolicy.operatingChannel(api27, requestFiveGhz = false),
-        )
-    }
-
-    @Test
-    fun `opting in on an old device asks for channel 36`() {
-        assertEquals(36, P2pOperatingChannelPolicy.operatingChannel(api27, requestFiveGhz = true))
+    fun `every rung is a channel the platform will accept`() {
+        for (preference in P2pBandPreference.values()) {
+            for (useUpper in listOf(false, true)) {
+                for (channel in P2pOperatingChannelPolicy.attemptChannels(api27, preference, useUpper)) {
+                    assertTrue("$preference/$channel", P2pOperatingChannelPolicy.isRequestable(channel))
+                    assertTrue(
+                        "a rung must never be the sentinel that means 'ask for nothing'",
+                        channel != P2pOperatingChannelPolicy.CHANNEL_UNRESTRICTED
+                    )
+                }
+            }
+        }
     }
 
     @Test
     fun `the upper band is only reached when it is asked for`() {
         assertEquals(
-            149,
-            P2pOperatingChannelPolicy.operatingChannel(api27, requestFiveGhz = true, useUpperBand = true),
+            listOf(149, 6),
+            P2pOperatingChannelPolicy.attemptChannels(api27, P2pBandPreference.AUTO, useUpperBand = true),
         )
         assertEquals(
-            P2pOperatingChannelPolicy.CHANNEL_UNRESTRICTED,
-            P2pOperatingChannelPolicy.operatingChannel(api27, requestFiveGhz = false, useUpperBand = true),
+            "the flag must not smuggle UNII-3 onto a preference that never asks for 5 GHz",
+            listOf(6),
+            P2pOperatingChannelPolicy.attemptChannels(api27, P2pBandPreference.FORCE_2_4GHZ, useUpperBand = true),
         )
     }
 

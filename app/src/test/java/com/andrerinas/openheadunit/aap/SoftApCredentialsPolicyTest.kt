@@ -1,6 +1,8 @@
 package com.andrerinas.openheadunit.aap
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class SoftApCredentialsPolicyTest {
@@ -98,5 +100,94 @@ class SoftApCredentialsPolicyTest {
         // Ordering matters for the message the user sees: "this device will not let apps read its
         // hotspot name" is wrong and unactionable when the truth is that no access point is up.
         assertEquals(SoftApCredentialsAttempt.NO_AP_YET, decide(systemConfig = null, ip = null))
+    }
+
+    // What a successful publish is allowed to conclude about the hardware.
+
+    @Test
+    fun `a device that names its own access point with a passphrase disproves the record`() {
+        assertTrue(
+            SoftApCredentialsPolicy.disprovesConfigUnreadable(
+                manualSsid = "",
+                manualPassphrase = "",
+                systemConfig = SoftApCredentials("AndroidAP", "swordfish")
+            )
+        )
+    }
+
+    @Test
+    fun `a manual name is a way round the fault, not proof it is gone`() {
+        // The measured defect. With a name set and the password blank, the run that showed the
+        // banner also deleted the record behind it - and decide() can never raise it again once a
+        // name resolves, so the instruction was gone for good. Neither half of this is a disproof:
+        // the device still refuses to name its access point in both.
+        assertFalse(
+            SoftApCredentialsPolicy.disprovesConfigUnreadable("OHU-TEST", "testtest1234", null)
+        )
+        assertFalse(
+            SoftApCredentialsPolicy.disprovesConfigUnreadable("OHU-TEST", "", null)
+        )
+    }
+
+    @Test
+    fun `an access point the device names but cannot secure is not a disproof`() {
+        // Android Auto refuses an open network, so this publish is about to fail for the very
+        // reason the record describes. Before this rule it had no signal of any kind.
+        assertFalse(
+            SoftApCredentialsPolicy.disprovesConfigUnreadable("", "", SoftApCredentials("AndroidAP", ""))
+        )
+    }
+
+    @Test
+    fun `a passphrase typed by hand still leaves the name as the device's own`() {
+        // Counter-intuitive and deliberate, so it is pinned rather than left to be tidied away: the
+        // record's claim is about the *name*, and the device supplied that. The passphrase is only
+        // required so a publish the phone will refuse cannot count as a success.
+        assertTrue(
+            SoftApCredentialsPolicy.disprovesConfigUnreadable("", "typedByHand", SoftApCredentials("AndroidAP", ""))
+        )
+    }
+
+    @Test
+    fun `nothing readable at all is not a disproof`() {
+        assertFalse(SoftApCredentialsPolicy.disprovesConfigUnreadable("", "", null))
+        // The empty-SSID configuration the pre-Q reader can hand back is the same dead end.
+        assertFalse(
+            SoftApCredentialsPolicy.disprovesConfigUnreadable("", "", SoftApCredentials("", ""))
+        )
+    }
+
+    @Test
+    fun `joinable needs both halves`() {
+        assertTrue(SoftApCredentialsPolicy.isJoinable("OHU-TEST", "testtest1234"))
+        assertFalse(SoftApCredentialsPolicy.isJoinable("OHU-TEST", ""))
+        assertFalse(SoftApCredentialsPolicy.isJoinable("", "testtest1234"))
+        assertFalse(SoftApCredentialsPolicy.isJoinable("", ""))
+    }
+
+    @Test
+    fun `a disproof is only ever reached on an attempt that publishes`() {
+        // The clear site sits behind decide() == PUBLISHED, so a predicate that could be true
+        // anywhere else would be describing a state its caller never sees.
+        for (manualSsid in listOf("", "OHU-TEST")) {
+            for (manualPassphrase in listOf("", "testtest1234")) {
+                for (system in listOf(
+                    null,
+                    SoftApCredentials("", ""),
+                    SoftApCredentials("AndroidAP", ""),
+                    SoftApCredentials("AndroidAP", "swordfish")
+                )) {
+                    // The provider reads the system configuration only when no manual name is set,
+                    // so a state the call site cannot produce proves nothing either way.
+                    val config = if (manualSsid.isEmpty()) system else null
+                    if (!SoftApCredentialsPolicy.disprovesConfigUnreadable(manualSsid, manualPassphrase, config)) continue
+                    assertEquals(
+                        "ssid='$manualSsid' pw='$manualPassphrase' system=$config",
+                        SoftApCredentialsAttempt.PUBLISHED,
+                        decide(manualSsid, manualPassphrase, config)
+                    )
+                }
+            }
+        }
     }
 }

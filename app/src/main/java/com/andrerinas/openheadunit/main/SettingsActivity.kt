@@ -79,6 +79,16 @@ class SettingsActivity : BaseActivity() {
         private const val KEY_CURRENT_DESTINATION = "current_nav_destination"
         // Optional destination id to open directly on launch (e.g. R.id.darkModeFragment).
         const val EXTRA_DESTINATION = "extra_destination"
+
+        /**
+         * Text to put in the settings search box on open, so a caller can land the user on one
+         * row rather than one screen.
+         *
+         * Search is used rather than a scroll because it is the only thing that overrides the
+         * Basic/Advanced filter: some rows worth pointing at are Advanced-only, and a Basic-mode
+         * user would otherwise arrive at a list that does not contain the row they were sent for.
+         */
+        const val EXTRA_SEARCH_QUERY = "extra_search_query"
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {

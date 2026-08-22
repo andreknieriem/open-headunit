@@ -28,10 +28,13 @@ import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.aap.AapProjectionActivity
 import com.andrerinas.openheadunit.aap.AapService
+import com.andrerinas.openheadunit.aap.NativeTransport
 import com.andrerinas.openheadunit.app.BaseActivity
 import com.andrerinas.openheadunit.connection.CommManager
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.AppPermissions
+import com.andrerinas.openheadunit.utils.ConnectionIssue
+import com.andrerinas.openheadunit.utils.ConnectionIssues
 import android.content.res.Configuration
 import com.andrerinas.openheadunit.utils.Settings
 import android.os.SystemClock
@@ -855,6 +858,107 @@ class MainActivity : BaseActivity() {
             AppLog.i("MainActivity: Active session detected, bringing projection to front")
             bringProjectionToFront()
         }
+
+        // Coming back from a failed attempt lands here, so this is where the reason gets said.
+        updateConnectionIssueBanner()
+    }
+
+    /**
+     * Show why the last connection attempt failed, if anything is still wrong.
+     *
+     * Reads four stored stamps and nothing else - no sockets, no binder - so it is safe to run on
+     * every resume. The conditions themselves are detected far from here, on the connection path,
+     * and merely recorded; see [ConnectionIssues].
+     *
+     * Deliberately not driven by CommManager.connectionState. Its Error value is never delivered
+     * to a collector - the flow is conflated and startHandshake() overwrites Error with
+     * Disconnected before any collector resumes - so a banner hung off it would never appear.
+     */
+    /** The condition the banner is currently reporting, so the log line is not repeated. */
+    private var loggedBannerIssue: ConnectionIssue? = null
+
+    private fun updateConnectionIssueBanner() {
+        val banner = findViewById<View>(R.id.connection_issue_banner) ?: return
+        val text = findViewById<android.widget.TextView>(R.id.connection_issue_text)
+        val dismiss = findViewById<View>(R.id.connection_issue_dismiss)
+
+        val settings = Settings(this)
+        val issue = try {
+            ConnectionIssueBannerPolicy.bannerFor(
+                standing = ConnectionIssues.standing(this),
+                dismissedAtEpochMs = settings.connectionIssueDismissedAtEpochMs,
+                sessionConnected = App.provide(this).commManager.isConnected,
+                onboardingComplete =
+                    settings.onboardingVersion >= OnboardingActivity.CURRENT_ONBOARDING_VERSION,
+                relevant = ConnectionIssueBannerPolicy.relevantNow(
+                    mode = settings.wifiConnectionMode,
+                    transport = NativeTransport.fromSetting(settings.nativeApTransport)
+                ),
+                remedyApplied = ConnectionIssueBannerPolicy.remedyApplied(
+                    hotspotSsid = settings.hotspotSsid,
+                    hotspotPassword = settings.hotspotPassword,
+                    staticBssid = settings.staticBSSID
+                )
+            )
+        } catch (e: Exception) {
+            AppLog.w("MainActivity: could not read the connection issue record: ${e.message}")
+            null
+        }
+
+        if (issue == null) {
+            banner.visibility = View.GONE
+            loggedBannerIssue = null
+            return
+        }
+
+        text?.setText(
+            when (issue) {
+                ConnectionIssue.BLUETOOTH_SENT_NO_DATA -> R.string.connection_issue_banner_bt_silent
+                ConnectionIssue.BSSID_UNAVAILABLE -> R.string.connection_issue_banner_bssid
+                ConnectionIssue.HOTSPOT_CONFIG_UNREADABLE -> R.string.connection_issue_banner_hotspot_config
+            }
+        )
+        banner.setOnClickListener { openRemedyFor(issue) }
+        dismiss?.setOnClickListener {
+            // Per occurrence, not permanent: the stamp is compared against the next raise, so the
+            // banner comes back on its own the next time the same thing happens.
+            Settings(this).connectionIssueDismissedAtEpochMs = System.currentTimeMillis()
+            banner.visibility = View.GONE
+        }
+        banner.visibility = View.VISIBLE
+        // Once per condition rather than once per resume: this screen is resumed constantly and a
+        // line repeated fifty times in a reporter's log buries the one that explains the failure.
+        if (loggedBannerIssue != issue) {
+            loggedBannerIssue = issue
+            AppLog.i("MainActivity: showing the connection issue banner for $issue")
+        }
+    }
+
+    /**
+     * Open Settings on the row that fixes [issue].
+     *
+     * Seeds the search box rather than using EXTRA_DESTINATION, which targets a whole screen: all
+     * three remedies are rows inside the settings list, and search is the only thing that reaches
+     * them regardless of the Basic/Advanced tier. Static BSSID is Advanced-only, so a Basic-mode
+     * user sent to Settings without this would not find the row the banner just named.
+     *
+     * The hotspot query is a phrase carried in both override rows' search keywords rather than
+     * either row's title, because that condition needs *both* of them: with a manual name set the
+     * device's own configuration is never read, so a blank password is sent as an open network
+     * instead of falling back. Seeding the name alone landed the user on one row, with nothing on
+     * screen saying the other was also required.
+     */
+    private fun openRemedyFor(issue: ConnectionIssue) {
+        val query = when (issue) {
+            ConnectionIssue.BLUETOOTH_SENT_NO_DATA -> getString(R.string.wireless_mode)
+            ConnectionIssue.BSSID_UNAVAILABLE -> getString(R.string.static_bssid_title)
+            ConnectionIssue.HOTSPOT_CONFIG_UNREADABLE ->
+                getString(R.string.connection_issue_remedy_hotspot_query)
+        }
+        startActivity(
+            Intent(this, SettingsActivity::class.java)
+                .putExtra(SettingsActivity.EXTRA_SEARCH_QUERY, query)
+        )
     }
 
     /**

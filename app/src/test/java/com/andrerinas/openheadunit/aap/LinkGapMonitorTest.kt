@@ -39,6 +39,14 @@ class LinkGapMonitorTest {
         return t - step
     }
 
+
+    /** A media series, configured exactly as the transport configures video and audio. */
+    private fun mediaSeries() = LinkGapMonitor(
+        LinkGapMonitor.SUBJECT_VIDEO,
+        LinkGapMonitor.MIN_GAPS_MEDIA,
+        LinkGapMonitor.MAX_DEAD_PERCENT_MEDIA
+    )
+
     @Test
     fun `a healthy link says nothing at all`() {
         val monitor = LinkGapMonitor()
@@ -195,5 +203,231 @@ class LinkGapMonitorTest {
             "inbound link quiet 1 time in 30000ms: dead=1310ms (4%), longest=1310ms",
             single.toString()
         )
+    }
+
+    @Test
+    fun `the ping masks a total media outage from the link series`() {
+        // The fault five captures showed: video and audio stop for about six seconds out of every
+        // ten and a half, while the phone's once-a-second CONTROL ping runs on untouched. Fed every
+        // message, the monitor sees a second between pings and calls that healthy - which is exactly
+        // what it did in the field, printing twice across five logs and never naming an outage
+        // longer than 1.8s. The media series is what makes the same session legible.
+        val link = LinkGapMonitor()
+        val video = mediaSeries()
+        val linkReports = mutableListOf<LinkGapMonitor.Report>()
+        val videoReports = mutableListOf<LinkGapMonitor.Report>()
+
+        var t = 0L
+        repeat(12) {
+            // 4.5s of picture, then 6s of nothing but pings, over and over.
+            var frame = t
+            while (frame < t + 4_500L) {
+                link.onMessage(frame)?.let { r -> linkReports.add(r) }
+                video.onMessage(frame)?.let { r -> videoReports.add(r) }
+                frame += 20L
+            }
+            var ping = t + 4_500L
+            while (ping < t + 10_500L) {
+                link.onMessage(ping)?.let { r -> linkReports.add(r) }
+                ping += 1_000L
+            }
+            t += 10_500L
+        }
+
+        assertTrue(
+            "a link carrying only pings must still read as healthy - that is the blind spot, " +
+                "got $linkReports",
+            linkReports.isEmpty()
+        )
+        assertTrue("the video series has to see it, got $videoReports", videoReports.isNotEmpty())
+        videoReports.forEach {
+            assertEquals(LinkGapMonitor.SUBJECT_VIDEO, it.subject)
+            assertTrue(
+                "the picture was gone for well over half the window, got ${it.deadPercent}%",
+                it.deadPercent > 45
+            )
+            assertTrue("several outages per window", it.gaps >= LinkGapMonitor.MIN_GAPS_MEDIA)
+        }
+        assertTrue(
+            "the cadence is the field that identifies this waveform",
+            videoReports.any { r -> r.medianPeriodMs?.let { it in 10_000L..11_000L } == true }
+        )
+    }
+
+    @Test
+    fun `one long silence on a media series says nothing`() {
+        // The easy half of the idle screen: video stops dead and stays stopped. One gap, so the
+        // recurrence floor alone is enough here. It is not enough for the case below.
+        val video = mediaSeries()
+        val reports = mutableListOf<LinkGapMonitor.Report>()
+        video.onMessage(0L)
+        stream(video, 0L, 5_000L, 50, reports)
+        video.onMessage(40_000L)?.let { reports.add(it) }   // 35s of a still screen
+        stream(video, 40_000L, 60_000L, 50, reports)
+
+        assertTrue("an idle screen is not a fault, got $reports", reports.isEmpty())
+    }
+
+    /**
+     * The idle screen as hardware actually produces it, which is not what the recurrence floor was
+     * designed against.
+     *
+     * Three untouched minutes on a stationary Google Maps screen with no navigation, measured on a
+     * rig: four windows, `2-5` gaps in every one of them, `dead=95%`, `99%`, `96%`, `99%`, and
+     * intervals scattered from 3.3s to 17.9s. The screen was not silent, it was trickling - an
+     * isolated packet every few seconds - and each arrival closed one gap and opened the next. The
+     * first version of this monitor printed all four lines on a session nobody was even touching.
+     */
+    @Test
+    fun `a trickling idle screen says nothing either`() {
+        val video = mediaSeries()
+        val reports = mutableListOf<LinkGapMonitor.Report>()
+        val measuredGaps = longArrayOf(3_319L, 14_945L, 5_000L, 4_000L, 2_700L)
+
+        var t = 0L
+        video.onMessage(t)
+        repeat(12) {
+            for (gap in measuredGaps) {
+                t += gap
+                video.onMessage(t)?.let { r -> reports.add(r) }
+                t += 40L                                     // the isolated arrival, a packet or two
+                video.onMessage(t)?.let { r -> reports.add(r) }
+            }
+        }
+
+        assertTrue(
+            "a screen nobody is touching must not print, got $reports",
+            reports.isEmpty()
+        )
+    }
+
+    @Test
+    fun `a media series still reports the moment the silence recurs`() {
+        val video = mediaSeries()
+        val reports = mutableListOf<LinkGapMonitor.Report>()
+        var t = 0L
+        video.onMessage(t)
+        repeat(6) {
+            t = stream(video, t, 4_500L, 50, reports)
+            t += 6_000L
+            video.onMessage(t)?.let { r -> reports.add(r) }
+        }
+
+        assertTrue("two gaps in a window is a cadence, not an idle screen", reports.isNotEmpty())
+        reports.forEach { assertTrue(it.gaps >= LinkGapMonitor.MIN_GAPS_MEDIA) }
+    }
+
+    @Test
+    fun `a media report names its own series`() {
+        val video = LinkGapMonitor.Report(
+            gaps = 12, windowMs = 31_500L, deadMs = 17_400L,
+            longestMs = 6_460L, medianPeriodMs = 10_500L,
+            subject = LinkGapMonitor.SUBJECT_VIDEO
+        )
+        assertEquals(
+            "inbound video quiet 12 times in 31500ms: dead=17400ms (55%), longest=6460ms, " +
+                "period~10500ms",
+            video.toString()
+        )
+    }
+
+    @Test
+    fun `the reporter's own waveform still prints against the new ceiling`() {
+        // 4.5s of picture at 50fps, then 6s of nothing, over and over: dead lands near 57%, which is
+        // what a stuttering picture looks like and is the whole reason the instrument exists. The
+        // ceiling has to leave this alone.
+        val video = mediaSeries()
+        val reports = mutableListOf<LinkGapMonitor.Report>()
+        var t = 0L
+        video.onMessage(t)
+        repeat(8) {
+            t = stream(video, t, 4_500L, 50, reports)
+            t += 6_000L
+            video.onMessage(t)?.let { r -> reports.add(r) }
+        }
+
+        assertTrue("the fault this was written for must still print", reports.isNotEmpty())
+        reports.forEach {
+            assertTrue(
+                "and it must sit well inside the ceiling, got ${it.deadPercent}%",
+                it.deadPercent <= LinkGapMonitor.MAX_DEAD_PERCENT_MEDIA
+            )
+        }
+    }
+
+    @Test
+    fun `the audio waveform a rig measured still prints`() {
+        // Six scripted pause/play cycles, as run on hardware: the audio channel went quiet for about
+        // 1.8s in every 10.2s and the series reported dead=11% and 18%. A long way under the
+        // ceiling, and it must stay reported.
+        val audio = LinkGapMonitor(
+            LinkGapMonitor.SUBJECT_AUDIO,
+            LinkGapMonitor.MIN_GAPS_MEDIA,
+            LinkGapMonitor.MAX_DEAD_PERCENT_MEDIA
+        )
+        val reports = mutableListOf<LinkGapMonitor.Report>()
+        var t = 0L
+        audio.onMessage(t)
+        repeat(9) {
+            t = stream(audio, t, 8_400L, 50, reports)
+            t += 1_800L
+            audio.onMessage(t)?.let { r -> reports.add(r) }
+        }
+
+        assertTrue("the measured positive control must still print", reports.isNotEmpty())
+        reports.forEach { assertTrue("got ${it.deadPercent}%", it.deadPercent < 30) }
+    }
+
+    @Test
+    fun `the ceiling is inclusive`() {
+        // Two gaps of 12750ms inside a 30001ms window is 84%: reported. Two of 13000ms is 86%: not.
+        fun replay(gapMs: Long): List<LinkGapMonitor.Report> {
+            val video = mediaSeries()
+            val reports = mutableListOf<LinkGapMonitor.Report>()
+            var t = 0L
+            video.onMessage(t)
+            repeat(2) {
+                t += gapMs
+                video.onMessage(t)?.let { r -> reports.add(r) }
+                t += 1L
+                video.onMessage(t)?.let { r -> reports.add(r) }
+            }
+            // Carry traffic until the window closes, without opening a third gap.
+            while (t < 30_001L) {
+                t += 100L
+                video.onMessage(t)?.let { r -> reports.add(r) }
+            }
+            return reports
+        }
+
+        val under = replay(12_750L)
+        assertEquals("84% is inside the ceiling, so it reports", 1, under.size)
+        assertEquals(2, under[0].gaps)
+        assertTrue(
+            "got ${under[0].deadPercent}%",
+            under[0].deadPercent <= LinkGapMonitor.MAX_DEAD_PERCENT_MEDIA
+        )
+
+        val over = replay(13_000L)
+        assertTrue("86% is a stopped picture, not a stuttering one, got $over", over.isEmpty())
+    }
+
+    @Test
+    fun `the link series keeps no ceiling`() {
+        // A link that is 99% silent is a dead link and must still be reported: the ceiling belongs
+        // to the media series, where near-total silence is the normal idle screen.
+        val link = LinkGapMonitor()
+        val reports = mutableListOf<LinkGapMonitor.Report>()
+        var t = 0L
+        link.onMessage(t)
+        repeat(12) {
+            t += 9_900L
+            link.onMessage(t)?.let { r -> reports.add(r) }
+            t += 40L
+            link.onMessage(t)?.let { r -> reports.add(r) }
+        }
+
+        assertTrue("a link this quiet must still print, got $reports", reports.isNotEmpty())
+        assertTrue(reports.any { it.deadPercent > LinkGapMonitor.MAX_DEAD_PERCENT_MEDIA })
     }
 }

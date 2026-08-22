@@ -33,4 +33,10 @@
     <!-- Segmented Button Colors -->
     <color name="segmented_button_stroke">#808080</color>
 
+    <!-- Failure banner on the main screen. Amber rather than red: these are conditions the user
+         can usually fix, and a red screen on a car dashboard reads as a fault in the car. -->
+    <color name="warning_banner_tint">#26F57C00</color>
+    <color name="warning_banner_stroke">#66F57C00</color>
+    <color name="warning_banner_icon">#F57C00</color>
+
 </resources>

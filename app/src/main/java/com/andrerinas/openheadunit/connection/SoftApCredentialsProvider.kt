@@ -4,12 +4,10 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.os.Handler
-import android.os.Looper
-import android.widget.Toast
 import androidx.core.content.ContextCompat
-import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.aap.ApInterfaceCandidate
+import com.andrerinas.openheadunit.aap.CredentialsHandoff
+import com.andrerinas.openheadunit.aap.NativeNetworkCredentials
 import com.andrerinas.openheadunit.aap.SoftApBssidPolicy
 import com.andrerinas.openheadunit.aap.NativeCredentialsPolicy
 import com.andrerinas.openheadunit.aap.SoftApCredentials
@@ -18,13 +16,14 @@ import com.andrerinas.openheadunit.aap.SoftApCredentialsPolicy
 import com.andrerinas.openheadunit.aap.SoftApNetworkPolicy
 import com.andrerinas.openheadunit.aap.SoftApState
 import com.andrerinas.openheadunit.utils.AppLog
+import com.andrerinas.openheadunit.utils.ConnectionIssue
+import com.andrerinas.openheadunit.utils.ConnectionIssues
 import com.andrerinas.openheadunit.utils.HotspotConfigReader
 import com.andrerinas.openheadunit.utils.HotspotManager
 import com.andrerinas.openheadunit.utils.InterfaceMacReader
 import com.andrerinas.openheadunit.utils.NetworkAddresses
 import com.andrerinas.openheadunit.utils.Settings
 import com.andrerinas.openheadunit.utils.SoftApStateReader
-import com.andrerinas.openheadunit.utils.ToastUtils
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -70,7 +69,14 @@ class SoftApCredentialsProvider(
         private const val WIFI_AP_STATE_DISABLED = 11
     }
 
-    private var onCredentialsReady: ((ssid: String, psk: String, ip: String, bssid: String) -> Unit)? = null
+    /**
+     * The handover itself, rather than a bare callback field.
+     *
+     * [beginResolve] runs on IO and can reach [publish] before the service that owns the listener has
+     * finished starting, and a set of credentials dropped there is never resolved again. See
+     * [CredentialsHandoff].
+     */
+    private val credentialsHandoff = CredentialsHandoff()
     private var onInvalidated: (() -> Unit)? = null
 
     private var resolveJob: Job? = null
@@ -133,7 +139,7 @@ class SoftApCredentialsProvider(
     }
 
     fun setCredentialsListener(callback: (String, String, String, String) -> Unit) {
-        this.onCredentialsReady = callback
+        credentialsHandoff.setListener { callback(it.ssid, it.psk, it.ip, it.bssid) }
     }
 
     fun setInvalidatedListener(callback: () -> Unit) {
@@ -175,6 +181,8 @@ class SoftApCredentialsProvider(
         isRunning = false
         resolveJob?.cancel()
         resolveJob = null
+        // The network these describe is going away with this run; the next one resolves its own.
+        credentialsHandoff.clear()
         autoEnabled = false
         triedAutoEnable = false
         reportedConfigUnreadable = false
@@ -184,27 +192,6 @@ class SoftApCredentialsProvider(
             // long-lived manager ends up unable to re-arm.
             try { context.unregisterReceiver(apStateReceiver) } catch (e: Exception) {}
             isReceiverRegistered = false
-        }
-    }
-
-    /**
-     * The one failure on this route the user can actually fix, so it is worth interrupting them
-     * for: without it the whole symptom is a phone that connects over Bluetooth and then does
-     * nothing, with the reason only in a log they have no reason to read.
-     *
-     * Forced past the toast preference, because a silent dead end is worse than an unwanted toast.
-     * Posted to the main thread rather than switched to it with withContext: the resolve loop is
-     * cancelled by [refresh] and by [stop], and a suspending hop would let that cancellation
-     * swallow the message after the once-per-run latch had already been set.
-     */
-    private fun showConfigUnreadableToast() {
-        Handler(Looper.getMainLooper()).post {
-            ToastUtils.showToast(
-                context,
-                R.string.hotspot_config_unreadable_toast,
-                Toast.LENGTH_LONG,
-                force = true
-            )
         }
     }
 
@@ -235,7 +222,7 @@ class SoftApCredentialsProvider(
                                     "'Hotspot password (manual)' in Settings to this device's own hotspot name " +
                                     "and password, then connect again."
                             )
-                            showConfigUnreadableToast()
+                            ConnectionIssues.raise(context, ConnectionIssue.HOTSPOT_CONFIG_UNREADABLE)
                         }
                         onInvalidated?.invoke()
                         return@launch
@@ -368,13 +355,17 @@ class SoftApCredentialsProvider(
         // device it matters on is not one we can test against, so the rule lives where a test can
         // reach it.
         val manualSsid = settings.hotspotSsid
+        // Read once. decide(), resolve() and the record rule below have to judge the same pair, and
+        // every one of these properties is a fresh SharedPreferences read that the settings screen
+        // can change underneath us between calls.
+        val manualPassphrase = settings.hotspotPassword
         val systemConfig = if (manualSsid.isEmpty()) {
             HotspotConfigReader.getSystemHotspotConfig(context)?.let { SoftApCredentials(it.first, it.second) }
         } else null
 
-        val attempt = SoftApCredentialsPolicy.decide(manualSsid, settings.hotspotPassword, systemConfig, ip)
+        val attempt = SoftApCredentialsPolicy.decide(manualSsid, manualPassphrase, systemConfig, ip)
         if (attempt != SoftApCredentialsAttempt.PUBLISHED) return attempt
-        val (ssid, psk) = SoftApCredentialsPolicy.resolve(manualSsid, settings.hotspotPassword, systemConfig)
+        val (ssid, psk) = SoftApCredentialsPolicy.resolve(manualSsid, manualPassphrase, systemConfig)
 
         if (psk.isEmpty()) {
             AppLog.w("SoftApCredentials: No passphrase for '$ssid'. An open network will be refused by the phone; set one by hand if this fails.")
@@ -405,7 +396,46 @@ class SoftApCredentialsProvider(
         }
 
         AppLog.i("SoftApCredentials: SUCCESS - Providing credentials from ${iface.name}: SSID=$ssid, IP=$ip, BSSID=${bssid.ifEmpty { "<none>" }}")
-        onCredentialsReady?.invoke(ssid, psk, ip, bssid)
+        // The record is what this hardware did, and only the device naming its own access point
+        // disproves it. Retiring it on a manual override wiped the one durable instruction left to
+        // the user who had typed the name and not the password - and decide() can never raise it
+        // again once a name is set, so it was gone for good. Measured with 'hotspot-ssid' set and
+        // 'hotspot-password' blank: the run that showed the banner also deleted it.
+        if (SoftApCredentialsPolicy.disprovesConfigUnreadable(manualSsid, manualPassphrase, systemConfig)) {
+            AppLog.i(
+                "SoftApCredentials: the access point was named by this device rather than by the " +
+                    "manual override, so the hotspot-configuration record is retired."
+            )
+            ConnectionIssues.clear(context, ConnectionIssue.HOTSPOT_CONFIG_UNREADABLE)
+        } else if (!SoftApCredentialsPolicy.isJoinable(ssid, psk)) {
+            // Raised, not merely kept. Dismissal is per occurrence, so a record whose stamp never
+            // moves is hidden for good after one dismissal - and on this branch the raise site in
+            // beginResolve() is unreachable, because a name that is set is a name that resolves.
+            // This is the only place that can say the credentials just sent were not joinable, and
+            // it also covers a device that names an access point with no passphrase at all, which
+            // had no signal of any kind before.
+            AppLog.w(
+                "SoftApCredentials: these credentials carry no passphrase, so the phone will refuse " +
+                    "them and the hotspot-configuration record stays up. Set 'Hotspot password " +
+                    "(manual)' as well as the name."
+            )
+            ConnectionIssues.raise(context, ConnectionIssue.HOTSPOT_CONFIG_UNREADABLE)
+        } else {
+            AppLog.i(
+                "SoftApCredentials: these credentials come from the manual override, which is a way " +
+                    "round this device not naming its own access point rather than proof that it " +
+                    "can, so the hotspot-configuration record stays as it is."
+            )
+        }
+        if (!credentialsHandoff.publish(NativeNetworkCredentials(ssid, psk, ip, bssid))) {
+            // Held rather than lost, so the connection still happens, but say so, because until
+            // this line existed the log of a unit that never woke its phone was identical to the
+            // log of one idling with everything healthy, and there is nothing further to grep for.
+            AppLog.w(
+                "SoftApCredentials: the access point resolved before anything was listening for it; " +
+                    "holding the credentials until it is."
+            )
+        }
         return SoftApCredentialsAttempt.PUBLISHED
     }
 

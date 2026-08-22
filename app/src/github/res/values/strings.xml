@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Strings that exist only in the github flavor.
+
+    Google does not allow the fake-VPN trick this app uses for offline Self Mode, so the playstore
+    flavor ships no VPN component, no VpnControl implementation that does anything, and none of the
+    copy below. Code in `main` reaches these through VpnControl's resource ids rather than R
+    directly, because R.string.keep_dummy_vpn does not exist in the other flavor.
+-->
+<resources>
+    <string name="keep_dummy_vpn" translatable="false">Keep the offline VPN up while connected</string>
+    <string name="keep_dummy_vpn_description" translatable="false">Brings this app’s offline VPN up while a phone is connected. Intended for units on 2.4 GHz or with periodic audio and video stutters, so the head unit’s WiFi chip stops looking for other networks. While it is on, other apps on this head unit have no internet. Applies on the next connection.</string>
+    <string name="keep_dummy_vpn_denied" translatable="false">VPN permission denied. The offline VPN cannot be brought up automatically.</string>
+</resources>

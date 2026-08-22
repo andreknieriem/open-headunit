@@ -85,4 +85,44 @@ object SoftApCredentialsPolicy {
         ssid = manualSsid.ifEmpty { systemConfig?.ssid.orEmpty() },
         passphrase = manualPassphrase.ifEmpty { systemConfig?.passphrase.orEmpty() }
     )
+
+    /**
+     * Whether a phone could join the network these describe.
+     *
+     * Both halves or neither. Android Auto refuses an open network, so a name with no passphrase is
+     * not a working configuration, and it is not something to take a standing instruction down for.
+     */
+    fun isJoinable(ssid: String, passphrase: String): Boolean =
+        ssid.isNotEmpty() && passphrase.isNotEmpty()
+
+    /**
+     * Whether this attempt disproves `ConnectionIssue.HOTSPOT_CONFIG_UNREADABLE` - the claim that
+     * this device will not name its own access point.
+     *
+     * Only the device answering does. A manual name is the user working *round* the fault, and
+     * [resolve]'s caller stops reading the system configuration the moment one is set, so a run
+     * behind an override learns nothing about the hardware and must not retire the record. That was
+     * measured: with a name set and the password left blank, the run that showed the banner also
+     * deleted the record behind it, and [decide] can never return
+     * [SoftApCredentialsAttempt.CONFIG_UNREADABLE] again once a name resolves, so the instruction
+     * was gone for good. The screen is covered separately by
+     * `ConnectionIssueBannerPolicy.remedyApplied`, which hides a record whose remedy is in place.
+     *
+     * The passphrase is required as well, but its *source* deliberately is not: the record is a
+     * claim about the name, and the passphrase is only here to be sure the success was a real one
+     * rather than an open network the phone will refuse. So a passphrase typed by hand against a
+     * name the device supplied is still a disproof.
+     *
+     * Takes the same three arguments as [resolve] rather than the pair it produced, so the two
+     * cannot drift apart.
+     */
+    fun disprovesConfigUnreadable(
+        manualSsid: String,
+        manualPassphrase: String,
+        systemConfig: SoftApCredentials?
+    ): Boolean {
+        if (manualSsid.isNotEmpty()) return false
+        val resolved = resolve(manualSsid, manualPassphrase, systemConfig)
+        return isJoinable(resolved.ssid, resolved.passphrase)
+    }
 }

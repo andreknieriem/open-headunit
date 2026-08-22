@@ -27,6 +27,32 @@ class WppHandshakeSessionTest {
     // --- opening the exchange -------------------------------------------------------------
 
     @Test
+    fun `with the version exchange off the phone can speak before we have sent anything`() {
+        // The precondition behind NativeAaHandshakeManager's spokeToPhone flag, which decides
+        // whether a silent handshake is recorded as this unit's Bluetooth failing to transmit.
+        // With the version exchange off, SocketReady emits no action at all, so an INFO_REQUEST
+        // arriving here is the phone opening the exchange against a unit that has written
+        // nothing. If this ever changes so that we always send first, the flag stops being the
+        // thing that separates "we transmitted and got nothing" from "the phone went first" -
+        // and the failure banner would start accusing units that were never given the chance.
+        val s = session(versionExchange = false)
+
+        assertEquals(emptyList<WppAction>(), s.on(WppEvent.SocketReady))
+        assertEquals(WppStage.AWAIT_CREDENTIALS, s.stage)
+
+        // Accepted, not ignored, and still nothing sent: the credentials have not arrived yet.
+        assertEquals(emptyList<WppAction>(), s.on(msg(WppMessageType.INFO_REQUEST)))
+        assertFalse(s.isTerminal())
+
+        // Once they do, both replies go out together.
+        assertEquals(
+            listOf(WppAction.SendStartRequest, WppAction.SendInfoResponse),
+            s.on(WppEvent.CredentialsReady)
+        )
+        assertEquals(WppStage.SETTLING, s.stage)
+    }
+
+    @Test
     fun `with the version exchange off the wire behaviour is the one that shipped`() {
         val s = session(versionExchange = false)
 

@@ -14,12 +14,53 @@ class NativeGroupBandPolicyTest {
 
     @Test
     fun `the default is unchanged - 5GHz is what Native AA asks for`() {
-        assertEquals(Band.GHZ_5, NativeGroupBandPolicy.bandFor(force24Ghz = false))
+        assertEquals(Band.GHZ_5, NativeGroupBandPolicy.bandFor(P2pBandPreference.AUTO))
+        assertEquals(Band.GHZ_5, NativeGroupBandPolicy.bandFor(P2pBandPreference.FORCE_5GHZ))
     }
 
     @Test
-    fun `the override asks for 2_4GHz`() {
-        assertEquals(Band.GHZ_2_4, NativeGroupBandPolicy.bandFor(force24Ghz = true))
+    fun `only the 2_4GHz position asks for 2_4GHz`() {
+        assertEquals(Band.GHZ_2_4, NativeGroupBandPolicy.bandFor(P2pBandPreference.FORCE_2_4GHZ))
+    }
+
+    @Test
+    fun `the stored values are the ones the settings screen writes`() {
+        // A settings backup carries the number, not the name, so these three are a contract.
+        assertEquals(P2pBandPreference.AUTO, P2pBandPreference.fromSetting(0))
+        assertEquals(P2pBandPreference.FORCE_5GHZ, P2pBandPreference.fromSetting(1))
+        assertEquals(P2pBandPreference.FORCE_2_4GHZ, P2pBandPreference.fromSetting(2))
+    }
+
+    @Test
+    fun `an unknown stored value asks for 5GHz and keeps its fallback`() {
+        for (value in listOf(-1, 3, 99)) {
+            assertEquals("$value", P2pBandPreference.AUTO, P2pBandPreference.fromSetting(value))
+        }
+    }
+
+    @Test
+    fun `only 5GHz only refuses the platform's own choice`() {
+        // The whole difference between Auto and 5 GHz only on a modern device. A group on 2.4 GHz
+        // can connect, look healthy and show nothing, and that position says not to be given one.
+        assertTrue(NativeGroupBandPolicy.fallsBackToPlatformChoice(P2pBandPreference.AUTO))
+        assertFalse(NativeGroupBandPolicy.fallsBackToPlatformChoice(P2pBandPreference.FORCE_5GHZ))
+        assertTrue(NativeGroupBandPolicy.fallsBackToPlatformChoice(P2pBandPreference.FORCE_2_4GHZ))
+    }
+
+    @Test
+    fun `choosing 2_4GHz disarms the mismatch retry, or it would remake every group it made`() {
+        // The coupling this object exists to hold. It falls out of the request rather than being a
+        // second flag: bandFor() answers GHZ_2_4, and shouldRetryFor5Ghz only fires on GHZ_5.
+        val requested = NativeGroupBandPolicy.bandFor(P2pBandPreference.FORCE_2_4GHZ)
+        assertFalse(NativeGroupBandPolicy.shouldRetryFor5Ghz(requested, 2437, retriesSoFar = 0, maxRetries = 2))
+    }
+
+    @Test
+    fun `a preference describes itself, so a pasted log says why one band was tried`() {
+        for (preference in P2pBandPreference.values()) {
+            assertTrue("$preference", NativeGroupBandPolicy.describePreference(preference).isNotEmpty())
+        }
+        assertTrue(NativeGroupBandPolicy.describePreference(P2pBandPreference.FORCE_2_4GHZ).contains("2.4 GHz"))
     }
 
     @Test

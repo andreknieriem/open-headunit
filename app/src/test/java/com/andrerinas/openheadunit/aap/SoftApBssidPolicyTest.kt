@@ -98,4 +98,51 @@ class SoftApBssidPolicyTest {
         assertFalse(SoftApBssidPolicy.isUsable("02:00:00:00:00:00 "))
         assertFalse("case must not smuggle a placeholder through", SoftApBssidPolicy.isUsable("02:00:00:00:00:00".uppercase()))
     }
+
+    // What a resolved address is allowed to conclude about the hardware.
+
+    @Test
+    fun `an address the chain found is a disproof`() {
+        val resolved = SoftApBssidPolicy.choose(null, "11:22:33:44:55:66", null)
+        assertTrue(SoftApBssidPolicy.disprovesBssidUnavailable(resolved, null))
+        assertTrue(SoftApBssidPolicy.disprovesBssidUnavailable(resolved, ""))
+        assertTrue("\"0\" is what the setting holds when unset", SoftApBssidPolicy.disprovesBssidUnavailable(resolved, "0"))
+    }
+
+    @Test
+    fun `the user's own address is not a disproof, whatever case or separator they typed it in`() {
+        // choose() takes the override ahead of every automatic source and WifiDirectManager skips
+        // its whole fallback chain when one is set, so behind an override the hardware was never
+        // asked. Comparing raw strings would let a hand-typed spelling read as a detected address.
+        val resolved = SoftApBssidPolicy.choose(" aa:bb:cc:dd:ee:ff ", "11:22:33:44:55:66", null)
+        assertFalse(SoftApBssidPolicy.disprovesBssidUnavailable(resolved, " aa:bb:cc:dd:ee:ff "))
+        assertFalse(SoftApBssidPolicy.disprovesBssidUnavailable(resolved, "AA-BB-CC-DD-EE-FF"))
+        assertFalse(SoftApBssidPolicy.disprovesBssidUnavailable(resolved, "aa-bb-cc-dd-ee-ff"))
+    }
+
+    @Test
+    fun `an override the chain threw away does not protect the record`() {
+        // These never win choose(), so the address that got through is the hardware's and the
+        // record is genuinely disproved.
+        val resolved = SoftApBssidPolicy.choose("not-a-mac", "11:22:33:44:55:66", null)
+        assertEquals("11:22:33:44:55:66", resolved)
+        assertTrue(SoftApBssidPolicy.disprovesBssidUnavailable(resolved, "not-a-mac"))
+        assertTrue(SoftApBssidPolicy.disprovesBssidUnavailable(resolved, "02:00:00:00:00:00"))
+    }
+
+    @Test
+    fun `no usable address is never a disproof`() {
+        // That state belongs to the abort branch, which raises rather than retires.
+        assertFalse(SoftApBssidPolicy.disprovesBssidUnavailable("", null))
+        assertFalse(SoftApBssidPolicy.disprovesBssidUnavailable(null, null))
+        assertFalse(SoftApBssidPolicy.disprovesBssidUnavailable("02:00:00:00:00:00", null))
+    }
+
+    @Test
+    fun `a detected address that happens to equal the override is read as the override`() {
+        // The deliberate false negative, pinned so it is not mistaken for a bug. Nothing is lost:
+        // ConnectionIssueBannerPolicy.remedyApplied hides the banner on any usable override.
+        val resolved = SoftApBssidPolicy.choose("11:22:33:44:55:66", "11:22:33:44:55:66", null)
+        assertFalse(SoftApBssidPolicy.disprovesBssidUnavailable(resolved, "11:22:33:44:55:66"))
+    }
 }

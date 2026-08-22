@@ -1,5 +1,6 @@
 package com.andrerinas.openheadunit.aap
 
+import android.os.SystemClock
 import com.andrerinas.openheadunit.aap.protocol.messages.Messages
 import com.andrerinas.openheadunit.connection.AccessoryConnection
 import com.andrerinas.openheadunit.ssl.ConscryptInitializer
@@ -238,12 +239,26 @@ class AapSslContext(keyManager: SingleKeyKeyManager): AapSsl {
     /** Reused wrapper, so the per-message allocation is zero rather than one small object. */
     private val plaintextHolder = ByteArrayWithLimit(ByteArray(0), 0)
 
+    /**
+     * Print budget for the zero-produce unwrap line, in the shape [AuditReportPolicy] governs.
+     *
+     * A single empty unwrap is legal TLS (a record can carry only handshake or alert bytes), so a
+     * handful at session start are ordinary and an unthrottled WARN would be a storm. A *run* of
+     * them mid-session is the first symptom of a desynced stream, and it used to print only at
+     * DEBUG, below the level reporter captures keep - so the log told that story from the
+     * disconnect instead of from the cause.
+     */
+    private var zeroUnwrapReports = 0
+    private var zeroUnwrapLastLogMs = 0L
+    private var zeroUnwrapSuppressed = 0
+
     override fun decrypt(start: Int, length: Int, buffer: ByteArray): ByteArrayWithLimit? {
         // The status line is built under the lock but emitted outside it. encrypt() takes this same
         // monitor, so logging in here put the whole logging pipeline — formatting, the caller-name
         // stack walk, the file writer — between the poll thread and the send thread once per
         // decrypted packet, which at verbose is several times per video frame.
         var statusLine: String? = null
+        var zeroProduceLine: String? = null
         val decrypted = synchronized(this) {
             if (!::sslEngine.isInitialized || !::rxBuffer.isInitialized || !::plaintextBuffer.isInitialized) {
                 AppLog.w("SSL Decrypt: Not initialized yet")
@@ -255,8 +270,24 @@ class AapSslContext(keyManager: SingleKeyKeyManager): AapSsl {
                 val result = sslEngine.unwrap(encrypted, rxBuffer)
                 runDelegatedTasks(result, sslEngine)
 
-                if (AppLog.LOG_VERBOSE || result.bytesProduced() == 0) {
+                if (AppLog.LOG_VERBOSE) {
                     statusLine = "SSL Decrypt Status: ${result.status}, Produced: ${result.bytesProduced()}, Consumed: ${result.bytesConsumed()}"
+                }
+                if (result.bytesProduced() == 0) {
+                    val now = SystemClock.elapsedRealtime()
+                    if (AuditReportPolicy.shouldReport(zeroUnwrapReports, zeroUnwrapLastLogMs, now)) {
+                        val suppressed = zeroUnwrapSuppressed
+                        zeroUnwrapSuppressed = 0
+                        zeroUnwrapReports++
+                        zeroUnwrapLastLogMs = now
+                        val suffix =
+                            if (suppressed > 0) " (and $suppressed more since the last report)" else ""
+                        zeroProduceLine = "SSL Decrypt: unwrap produced no application data " +
+                            "(status ${result.status}, consumed ${result.bytesConsumed()} of " +
+                            "$length bytes)$suffix"
+                    } else {
+                        zeroUnwrapSuppressed++
+                    }
                 }
 
                 val produced = result.bytesProduced()
@@ -295,6 +326,7 @@ class AapSslContext(keyManager: SingleKeyKeyManager): AapSsl {
             }
         }
         statusLine?.let { AppLog.d(it) }
+        zeroProduceLine?.let { AppLog.w(it) }
         return decrypted
     }
 

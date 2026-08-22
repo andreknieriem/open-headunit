@@ -80,9 +80,22 @@ internal class AapVideo(private val videoDecoder: VideoDecoder, private val sett
      * Runs on the poll thread, which is the thread [process] and every other keyframe request
      * already run on, so it shares their throttle and their ordering without any locking of its own.
      */
-    fun onFragmentRunHoled() = requestKeyframe("fragment run lost bytes")
+    fun onFragmentRunHoled(discardAssembledUnit: Boolean) {
+        // One-shot, consumed by the very next process() call: the audit raises the finding on the
+        // run's last fragment, and that same message is the next thing this class sees. Any other
+        // action arriving instead means the run did not complete normally and the verdict is moot.
+        if (discardAssembledUnit) discardNextAssembly = true
+        requestKeyframe("fragment run lost bytes")
+    }
+
+    private var discardNextAssembly = false
 
     private fun requestKeyframe(reason: String) {
+        // Above the throttle, on purpose: the throttle paces messages on the wire, and the
+        // concealment window this opens is a local render decision with its own hard bound. A
+        // second fault inside the throttle window must still hold the picture even though it
+        // sends nothing.
+        videoDecoder.noteStreamCorrupted(reason)
         val now = android.os.SystemClock.elapsedRealtime()
         if (VideoRecoveryPolicy.canRequestKeyframe(now, lastKeyframeRequestMs)) {
             lastKeyframeRequestMs = now
@@ -240,6 +253,11 @@ internal class AapVideo(private val videoDecoder: VideoDecoder, private val sett
         decision.anomaly?.let { handleAnomaly(it, message) }
         reportAnomalies()
 
+        // Consumed whatever the action turns out to be, so a verdict against a run that never
+        // completes cannot linger and eat the following healthy frame.
+        val discardCompletedAssembly = discardNextAssembly
+        discardNextAssembly = false
+
         return when (val action = decision.action) {
             is VideoFragmentAssembler.Action.DecodeWhole -> {
                 messageBuffer.clear()
@@ -291,6 +309,19 @@ internal class AapVideo(private val videoDecoder: VideoDecoder, private val sett
                 messageBuffer.flip()
                 val assembledSize = messageBuffer.limit()
 
+                if (discardCompletedAssembly) {
+                    // The framing audit found this run short by at least a whole fragment. Decoding
+                    // the unit anyway is what used to smear the picture with no anomaly and no
+                    // second reporter; the concealment window the audit's ask opened is already
+                    // holding the screen, so the gap this leaves is invisible.
+                    AppLog.w(
+                        "AapVideo: discarding a %d-byte access unit the framing audit found short",
+                        assembledSize
+                    )
+                    messageBuffer.clear()
+                    return true
+                }
+
                 if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.LOLLIPOP) {
                     if (legacyAssembledBuffer == null || legacyAssembledBuffer!!.size < assembledSize) {
                         legacyAssembledBuffer = ByteArray(assembledSize + 1024)
@@ -322,6 +353,7 @@ internal class AapVideo(private val videoDecoder: VideoDecoder, private val sett
         // Decoding is synchronous here, so there is nothing to drain - but the fragment run has to
         // be closed, or a session that ends mid-frame leaves the next one's first fragments looking
         // like a truncation.
+        discardNextAssembly = false
         assembler.reset()
         lastAnomalyReportMs = 0L
     }

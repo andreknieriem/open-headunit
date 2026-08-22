@@ -63,7 +63,11 @@ externalNativeBuild
 
 #
 cert/
+# Store assets and keys at the repo root. The pattern is unanchored, so it also swallowed the
+# playstore *product flavor* source set - which is why app/src/playstore/ could never be committed
+# and the flavor had no VpnControl. Re-included below; do not drop that line.
 playstore/
+!app/src/playstore/
 .DS_Store
 .cxx
 

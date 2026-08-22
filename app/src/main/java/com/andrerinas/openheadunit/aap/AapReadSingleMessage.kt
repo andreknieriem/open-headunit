@@ -7,7 +7,7 @@ internal class AapReadSingleMessage(
         connection: AccessoryConnection,
         ssl: AapSsl,
         handler: AapMessageHandler,
-        onVideoRunHoled: () -> Unit = {},
+        onVideoRunHoled: (discardAssembledUnit: Boolean) -> Unit = {},
         faultInjector: VideoFaultInjector? = null)
     : AapRead.Base(connection, ssl, handler, onVideoRunHoled, faultInjector) {
 

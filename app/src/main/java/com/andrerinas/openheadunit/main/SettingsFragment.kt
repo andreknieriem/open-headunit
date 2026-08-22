@@ -25,7 +25,13 @@ import androidx.recyclerview.widget.RecyclerView
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.aap.AapService
+import com.andrerinas.openheadunit.aap.CredentialField
 import com.andrerinas.openheadunit.aap.MediaKeyRoutingPolicy
+import com.andrerinas.openheadunit.aap.NativeCredentialsPreflightPolicy
+import com.andrerinas.openheadunit.aap.NativeTransport
+import com.andrerinas.openheadunit.aap.P2pBandPreference
+import com.andrerinas.openheadunit.aap.PreflightReport
+import com.andrerinas.openheadunit.aap.SoftApBssidPolicy
 import com.andrerinas.openheadunit.aap.PlaybackFocusPolicy
 import com.andrerinas.openheadunit.aap.VideoFaultInjector
 import com.andrerinas.openheadunit.decoder.DeviceMemoryProfile
@@ -39,6 +45,7 @@ import com.andrerinas.openheadunit.utils.LocaleHelper
 import com.andrerinas.openheadunit.BuildConfig
 import com.andrerinas.openheadunit.utils.LogExporter
 import com.andrerinas.openheadunit.utils.SettingsBackupManager
+import com.andrerinas.openheadunit.utils.VpnControl
 import com.andrerinas.openheadunit.utils.DialogUtils
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
@@ -46,16 +53,21 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.activity.result.contract.ActivityResultContracts
 import android.content.pm.PackageManager
 import com.andrerinas.openheadunit.connection.NativeAaHandshakeManager
+import com.andrerinas.openheadunit.connection.NativeCredentialsPreflight
 import com.andrerinas.openheadunit.utils.BluetoothHelper
 import androidx.lifecycle.lifecycleScope
 import java.io.File
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class SettingsFragment : Fragment() {
     private lateinit var settings: Settings
+
+    /** The in-flight credentials pre-flight, so a second one replaces it rather than racing it. */
+    private var preflightJob: Job? = null
     private lateinit var settingsRecyclerView: RecyclerView
     private lateinit var settingsAdapter: SettingsAdapter
     private lateinit var toolbar: MaterialToolbar
@@ -81,7 +93,12 @@ class SettingsFragment : Fragment() {
         // is picked, and on a device that will not let an app read its hotspot configuration the
         // manual name is the only way to finish setting the route up.
         "wifiConnectionMode",
-        "nativeApTransport", "nativeApTransportHint", "hotspotSsidOverride", "hotspotPasswordOverride",
+        "nativeApTransport", "nativeApTransportHint", "hotspotBand", "hotspotBandHint",
+        // The WiFi Direct band, for the same reason as the hotspot one beside it: it is the first
+        // thing to try when a wireless session connects and shows no picture, and a user sent to
+        // Advanced to find it is a user who never finds it.
+        "wifiDirectBand", "wifiDirectBandHint",
+        "hotspotSsidOverride", "hotspotPasswordOverride",
         "hotspotInterfaceOverride",
         // Dark mode
         "darkModeSettings",
@@ -143,6 +160,8 @@ class SettingsFragment : Fragment() {
     private var pendingManualSecondaryBluetoothServiceName: String? = null
     private var pendingNativeWifiVersionExchange: Boolean? = null
     private var pendingNativeApTransport: Int? = null
+    private var pendingWifiDirectBand: Int? = null
+    private var pendingHotspotBand: Int? = null
     private var pendingHotspotSsid: String? = null
     private var pendingHotspotPassword: String? = null
     private var pendingHotspotInterface: String? = null
@@ -180,6 +199,21 @@ class SettingsFragment : Fragment() {
         } else {
             Toast.makeText(requireContext(), R.string.bt_permission_denied, Toast.LENGTH_LONG).show()
         }
+    }
+
+    // VpnControl.consentIntent() needs an Activity the first time and returns null forever
+    // afterwards, so this dialog is the one moment a Fragment has to be involved. AapService can
+    // start the VPN with no Activity once this has run. On the Play Store flavor the toggle that
+    // launches this is never rendered, because VpnControl.isVpnAvailable() is false there.
+    private var pendingKeepDummyVpn = false
+    private val vpnConsentLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val granted = result.resultCode == android.app.Activity.RESULT_OK
+        settings.keepDummyVpnDuringSession = granted && pendingKeepDummyVpn
+        pendingKeepDummyVpn = false
+        if (!granted && VpnControl.consentDeniedRes != 0) {
+            Toast.makeText(requireContext(), VpnControl.consentDeniedRes, Toast.LENGTH_LONG).show()
+        }
+        updateSettingsList()
     }
 
     private val storagePermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
@@ -275,6 +309,8 @@ class SettingsFragment : Fragment() {
         pendingManualSecondaryBluetoothServiceName = settings.manualSecondaryBluetoothServiceName
         pendingNativeWifiVersionExchange = settings.nativeWifiVersionExchange
         pendingNativeApTransport = settings.nativeApTransport
+        pendingWifiDirectBand = settings.wifiDirectBand
+        pendingHotspotBand = settings.hotspotBand
         pendingHotspotSsid = settings.hotspotSsid
         pendingHotspotPassword = settings.hotspotPassword
         pendingHotspotInterface = settings.hotspotInterface
@@ -382,6 +418,8 @@ class SettingsFragment : Fragment() {
         pendingManualSecondaryBluetoothServiceName = settings.manualSecondaryBluetoothServiceName
         pendingNativeWifiVersionExchange = settings.nativeWifiVersionExchange
         pendingNativeApTransport = settings.nativeApTransport
+        pendingWifiDirectBand = settings.wifiDirectBand
+        pendingHotspotBand = settings.hotspotBand
         pendingHotspotSsid = settings.hotspotSsid
         pendingHotspotPassword = settings.hotspotPassword
         pendingHotspotInterface = settings.hotspotInterface
@@ -520,6 +558,8 @@ class SettingsFragment : Fragment() {
         pendingManualSecondaryBluetoothServiceName?.let { settings.manualSecondaryBluetoothServiceName = it }
         pendingNativeWifiVersionExchange?.let { settings.nativeWifiVersionExchange = it }
         pendingNativeApTransport?.let { settings.nativeApTransport = it }
+        pendingWifiDirectBand?.let { settings.wifiDirectBand = it }
+        pendingHotspotBand?.let { settings.hotspotBand = it }
         pendingHotspotSsid?.let { settings.hotspotSsid = it }
         pendingHotspotPassword?.let { settings.hotspotPassword = it }
         pendingHotspotInterface?.let { settings.hotspotInterface = it }
@@ -631,6 +671,8 @@ class SettingsFragment : Fragment() {
                         pendingManualSecondaryBluetoothServiceName != settings.manualSecondaryBluetoothServiceName ||
                         pendingNativeWifiVersionExchange != settings.nativeWifiVersionExchange ||
                         pendingNativeApTransport != settings.nativeApTransport ||
+                        pendingWifiDirectBand != settings.wifiDirectBand ||
+                        pendingHotspotBand != settings.hotspotBand ||
                         pendingHotspotSsid != settings.hotspotSsid ||
                         pendingHotspotPassword != settings.hotspotPassword ||
                         pendingHotspotInterface != settings.hotspotInterface ||
@@ -853,26 +895,44 @@ class SettingsFragment : Fragment() {
                 ),
                 selectedIndex = if ((pendingNativeApTransport ?: 0) == 1) 1 else 0,
                 onOptionSelected = { index ->
+                    val changed = pendingNativeApTransport != index
                     pendingNativeApTransport = index
                     checkChanges()
                     updateSettingsList()
+                    // The two transports need different things of the device, and the hotspot one
+                    // needs the two fields most units cannot supply — so this is the second moment
+                    // worth checking, not just mode selection.
+                    if (changed) runCredentialsPreflight()
                 }
             ))
 
-            if ((pendingNativeApTransport ?: 0) == 1) {
+            if (pendingNativeTransport() == NativeTransport.HOTSPOT) {
                 items.add(SettingItem.InfoBanner(
                     stableId = "nativeApTransportHint",
                     textResId = R.string.native_ap_transport_hint
                 ))
 
+                // This route reads autoEnableHotspot in two places - SoftApCredentialsProvider
+                // switches the access point on when none is found, and UserExitHotspotPolicy
+                // decides from it whether a user exit takes the network down - so the toggle
+                // belongs here. It used to render only on mode 1 and mode 2 strategy 4, which left
+                // the setting governing this route unreachable from the screen that selects it.
+                addHotspotToggle(items)
+                addHotspotBandSetting(items)
+
                 // The automatic read goes through the same non-public API that a locked-down
                 // device refuses outright, so on those units this override is the only way the
                 // route can learn the network name at all.
+                //
+                // Both rows carry the banner's own search phrase as a keyword, and the banner
+                // seeds the same string: the condition needs the pair, and a search on either
+                // title alone reaches one of them.
                 val manualSsid = pendingHotspotSsid.orEmpty()
                 items.add(SettingItem.SettingEntry(
                     stableId = "hotspotSsidOverride",
                     nameResId = R.string.hotspot_ssid_override,
                     value = manualSsid.ifEmpty { getString(R.string.auto) },
+                    searchKeywords = getString(R.string.connection_issue_remedy_hotspot_query),
                     onClick = { _ ->
                         DialogUtils.showTextInputDialogWithMessage(
                             requireContext(),
@@ -893,6 +953,7 @@ class SettingsFragment : Fragment() {
                     stableId = "hotspotPasswordOverride",
                     nameResId = R.string.hotspot_password_override,
                     value = if (manualPassword.isEmpty()) getString(R.string.auto) else "\u2022".repeat(manualPassword.length),
+                    searchKeywords = getString(R.string.connection_issue_remedy_hotspot_query),
                     onClick = { _ ->
                         DialogUtils.showTextInputDialogWithMessage(
                             requireContext(),
@@ -927,6 +988,39 @@ class SettingsFragment : Fragment() {
                         )
                     }
                 ))
+            }
+
+            // The band choice lives here rather than under Debug because it is read in exactly
+            // one place - WifiDirectManager.createQuietGroup(), reachable only from
+            // startNativeAaQuietHost(), which runs on this mode's WiFi Direct arm and nowhere else.
+            // Hence the transport gate: on the hotspot route these used to render anyway and do
+            // nothing, sitting next to the hotspot's own band control.
+            //
+            // Not WifiModePolicy.usesWifiDirect, which is the obvious reuse and is wrong here: it
+            // also claims mode 2 strategy 1, and the helper's WiFi Direct strategy does not reach
+            // createQuietGroup(), so gating on it would move this bug rather than fix it.
+            //
+            // Switching transport hides these without clearing them, deliberately. The read site is
+            // already unreachable from the hotspot route, and resetting somebody's setting behind
+            // a UI change is worse than leaving it set.
+            if (pendingNativeTransport() == NativeTransport.WIFI_DIRECT) {
+                addWifiDirectBandSetting(items)
+
+                // The 5 GHz rung has two non-DFS ranges and a regulatory domain can refuse the
+                // lower one, so this only means anything where a 5 GHz channel is asked for at all.
+                if (pendingP2pBandPreference() != P2pBandPreference.FORCE_2_4GHZ) {
+                    items.add(SettingItem.ToggleSettingEntry(
+                        stableId = "p2pLegacyFiveGhzUpperBand",
+                        nameResId = R.string.p2p_legacy_5ghz_upper,
+                        descriptionResId = R.string.p2p_legacy_5ghz_upper_description,
+                        isChecked = settings.p2pLegacyFiveGhzUpperBand,
+                        searchKeywords = "channel 149 upper 5 ghz unii region",
+                        onCheckedChanged = { isChecked ->
+                            settings.p2pLegacyFiveGhzUpperBand = isChecked
+                            updateSettingsList()
+                        }
+                    ))
+                }
             }
 
             val currentServiceName = pendingBluetoothManagerServiceName ?: "bluetooth_manager"
@@ -986,6 +1080,39 @@ class SettingsFragment : Fragment() {
                     updateSettingsList()
                 }
             ))
+
+            // Rendering it here is half the gate: AapService re-tests the connection mode before
+            // acting on it, because a preference turned on under Native AA and then hidden by a
+            // mode change would otherwise put a blackholing tun on a USB session. The other half
+            // is DummyVpnPolicy.shouldStartForSession.
+            if (VpnControl.isVpnAvailable()) {
+                items.add(SettingItem.ToggleSettingEntry(
+                    stableId = "keepDummyVpnDuringSession",
+                    // Through VpnControl, not R: this copy lives in the github flavor's
+                    // resources so it is absent from the Play Store build entirely.
+                    nameResId = VpnControl.toggleNameRes,
+                    descriptionResId = VpnControl.toggleDescriptionRes,
+                    isChecked = settings.keepDummyVpnDuringSession,
+                    searchKeywords = "vpn offline tun stutter dropout audio video 2.4 ghz network scan",
+                    onCheckedChanged = { isChecked ->
+                        if (!isChecked) {
+                            settings.keepDummyVpnDuringSession = false
+                            updateSettingsList()
+                        } else {
+                            // Null once this app is already the prepared VPN app, which is the
+                            // state AapService needs to start it with no Activity.
+                            val consent = VpnControl.consentIntent(requireContext())
+                            if (consent == null) {
+                                settings.keepDummyVpnDuringSession = true
+                                updateSettingsList()
+                            } else {
+                                pendingKeepDummyVpn = true
+                                vpnConsentLauncher.launch(consent)
+                            }
+                        }
+                    }
+                ))
+            }
         }
 
         // Sub-setting for Headunit Server (Manual vs Auto)
@@ -1031,6 +1158,9 @@ class SettingsFragment : Fragment() {
             // Mode 2 only shows Hotspot toggle for Strategy 4 (Headunit Hotspot)
             if (pendingHelperConnectionStrategy == 4) {
                 addHotspotToggle(items)
+                // Strategy 4 reaches the same HotspotManager sweep as the Native AA hotspot
+                // transport, so the band choice applies here too and would otherwise be invisible.
+                addHotspotBandSetting(items)
             }
 
             if (pendingHelperConnectionStrategy == 1) { // WiFi Direct (P2P)
@@ -1065,24 +1195,50 @@ class SettingsFragment : Fragment() {
             }
         }
 
-        val bssid = pendingStaticBSSID
-        items.add(SettingItem.SettingEntry(
-            stableId = "staticBSSID",
-            nameResId = R.string.static_bssid_title,
-            value = if (bssid == "0" || bssid == null) getString(R.string.auto) else bssid,
-            onClick = { _ ->
-                DialogUtils.showTextInputDialog(
-                    requireContext(),
-                    R.string.static_bssid_enter_value,
-                    if (bssid == "0" || bssid == null) "" else bssid,
-                    { newVal ->
-                        pendingStaticBSSID = if (newVal.isNullOrBlank()) "0" else newVal.trim()
-                        checkChanges()
-                        updateSettingsList()
-                    }
-                )
-            }
-        ))
+        // Only where something reads it. Three sites do: WifiDirectManager resolves it into the
+        // group's BSSID, SoftApCredentialsProvider hands it to the hotspot transport, and the
+        // preflight probe reports on it - which between them is Native AA on either transport, and
+        // Helper's WiFi Direct strategy. Headunit Server never looks at it, so a row there is a
+        // question with no answer attached.
+        //
+        // Not WifiModePolicy.usesWifiDirect, the obvious reuse: it drops mode 3 on the hotspot
+        // transport, which does read the override. Nor anything stricter, because the banner's own
+        // remedy deep-links here by searching for this row's title, and search bypasses the Basic
+        // and Advanced tiers but not this gate - a stricter one would land that tap on an empty
+        // result. Hidden without clearing pendingStaticBSSID, as the band levers above are.
+        if (pendingWifiConnectionMode == 3 ||
+            (pendingWifiConnectionMode == 2 && pendingHelperConnectionStrategy == 1)
+        ) {
+            val bssid = pendingStaticBSSID
+            items.add(SettingItem.SettingEntry(
+                stableId = "staticBSSID",
+                nameResId = R.string.static_bssid_title,
+                value = if (bssid == "0" || bssid == null) getString(R.string.auto) else bssid,
+                onClick = { _ ->
+                    DialogUtils.showTextInputDialog(
+                        requireContext(),
+                        R.string.static_bssid_enter_value,
+                        if (bssid == "0" || bssid == null) "" else bssid,
+                        { newVal ->
+                            val trimmed = newVal?.trim().orEmpty()
+                            // Validated here rather than accepted and dealt with later. A value that is
+                            // not MAC-shaped still beats every automatic source, so it does not fail at
+                            // entry — it fails 30 s into a connection with a message about location
+                            // services, which is the wrong thing to send somebody looking for.
+                            when {
+                                trimmed.isEmpty() -> pendingStaticBSSID = "0"
+                                SoftApBssidPolicy.isUsable(trimmed) -> pendingStaticBSSID = trimmed
+                                else -> Toast.makeText(
+                                    requireContext(), R.string.preflight_invalid_bssid, Toast.LENGTH_LONG
+                                ).show()
+                            }
+                            checkChanges()
+                            updateSettingsList()
+                        }
+                    )
+                }
+            ))
+        }
 
         // --- Dark Mode ---
         items.add(SettingItem.CategoryHeader("darkMode", R.string.category_dark_mode))
@@ -1856,51 +2012,6 @@ class SettingsFragment : Fragment() {
             }
         ))
 
-        // Puts the Native AA P2P group on 2.4 GHz, which the rig can otherwise never run: the group
-        // is requested as 5 GHz and any group that lands on 2.4 GHz is torn down and remade. Both of
-        // those come off together - see NativeGroupBandPolicy. Applies on the next connection.
-        items.add(SettingItem.ToggleSettingEntry(
-            stableId = "debugForceP2pBand24",
-            nameResId = R.string.debug_force_p2p_band_24,
-            descriptionResId = R.string.debug_force_p2p_band_24_description,
-            isChecked = settings.debugForceP2pBand24,
-            searchKeywords = "2.4 ghz band wifi direct p2p group native link outage",
-            onCheckedChanged = { isChecked ->
-                settings.debugForceP2pBand24 = isChecked
-                updateSettingsList()
-            }
-        ))
-
-        // Below Android 10 there is no band request at all, so this is the only lever those units
-        // have. Off by default: the request is a frequency whitelist, so a unit that cannot host a
-        // 5 GHz group owner fails to create one rather than falling back - see the retry in
-        // WifiDirectManager. Applies on the next connection.
-        items.add(SettingItem.ToggleSettingEntry(
-            stableId = "p2pLegacyFiveGhz",
-            nameResId = R.string.p2p_legacy_5ghz,
-            descriptionResId = R.string.p2p_legacy_5ghz_description,
-            isChecked = settings.p2pLegacyFiveGhz,
-            searchKeywords = "5 ghz band wifi direct legacy android 9 channel 36 stutter",
-            onCheckedChanged = { isChecked ->
-                settings.p2pLegacyFiveGhz = isChecked
-                updateSettingsList()
-            }
-        ))
-
-        if (settings.p2pLegacyFiveGhz) {
-            items.add(SettingItem.ToggleSettingEntry(
-                stableId = "p2pLegacyFiveGhzUpperBand",
-                nameResId = R.string.p2p_legacy_5ghz_upper,
-                descriptionResId = R.string.p2p_legacy_5ghz_upper_description,
-                isChecked = settings.p2pLegacyFiveGhzUpperBand,
-                searchKeywords = "channel 149 upper 5 ghz unii region",
-                onCheckedChanged = { isChecked ->
-                    settings.p2pLegacyFiveGhzUpperBand = isChecked
-                    updateSettingsList()
-                }
-            ))
-        }
-
         // Deliberately corrupts the video stream so the reassembler's failure paths can be
         // exercised on a working unit. Applies on the next connection, and every injected fault is
         // logged loudly - see VideoFaultInjector. Applied immediately rather than through the
@@ -2221,6 +2332,27 @@ class SettingsFragment : Fragment() {
                 searchInput?.clearFocus()
                 hideKeyboard(view)
             }
+
+        applyRequestedSearchQuery()
+    }
+
+    /**
+     * Seed the search box when a caller asked for one particular row.
+     *
+     * Setting the text goes through the watcher above, so the filter and the re-render come for
+     * free. The extra is removed once used: it is an instruction for this opening of the screen,
+     * and leaving it on the intent would re-apply it on every rotation and recreate, overwriting
+     * whatever the user had typed since.
+     */
+    private fun applyRequestedSearchQuery() {
+        val intent = activity?.intent ?: return
+        val query = intent.getStringExtra(SettingsActivity.EXTRA_SEARCH_QUERY)
+        if (query.isNullOrBlank()) return
+        intent.removeExtra(SettingsActivity.EXTRA_SEARCH_QUERY)
+        searchInput?.setText(query)
+        // Focus would open the keyboard over the very rows we just filtered to, which on a short
+        // head unit panel is the whole list.
+        searchInput?.clearFocus()
     }
 
     private fun hideKeyboard(view: View) {
@@ -3321,23 +3453,80 @@ class SettingsFragment : Fragment() {
             .show()
     }
 
-    private fun showHotspotExperimentalWarning() {
-        MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-            .setTitle(R.string.hotspot_warning_title)
-            .setMessage(R.string.hotspot_warning_message)
-            .setPositiveButton(android.R.string.ok) { dialog, _ ->
-                pendingAutoEnableHotspot = true
+    /** The transport the Native AA block is currently showing settings for. */
+    private fun pendingNativeTransport(): NativeTransport =
+        NativeTransport.fromSetting(pendingNativeApTransport ?: 0)
+
+    /** The WiFi Direct band the block is currently showing settings for. */
+    private fun pendingP2pBandPreference(): P2pBandPreference =
+        P2pBandPreference.fromSetting(pendingWifiDirectBand ?: 0)
+
+    /**
+     * The band to ask for when this app creates the WiFi Direct group, plus what that choice costs.
+     *
+     * The mirror of [addHotspotBandSetting] on the other transport, and it replaces two toggles
+     * that asked the same question in pieces - one that forced 2.4 GHz and one that opted a pre-Q
+     * unit into asking for 5 GHz. Rendered only on the Native AA WiFi Direct arm, because
+     * WifiDirectManager.createQuietGroup() is the single place it is read.
+     *
+     * Basic rather than Advanced, like the hotspot band beside it: this is the first thing to try
+     * when a wireless session connects and shows no picture.
+     */
+    private fun addWifiDirectBandSetting(items: MutableList<SettingItem>) {
+        items.add(SettingItem.SegmentedButtonSettingEntry(
+            stableId = "wifiDirectBand",
+            nameResId = R.string.wifi_direct_band,
+            options = listOf(
+                getString(R.string.wifi_direct_band_auto),
+                getString(R.string.wifi_direct_band_5ghz),
+                getString(R.string.wifi_direct_band_24ghz)
+            ),
+            selectedIndex = (pendingWifiDirectBand ?: 0).coerceIn(0, 2),
+            onOptionSelected = { index ->
+                pendingWifiDirectBand = index
                 checkChanges()
-                updateSettingsList()
-                dialog.dismiss()
-            }
-            .setNegativeButton(android.R.string.cancel) { _, _ ->
-                pendingAutoEnableHotspot = false
-                checkChanges()
+                // The upper-band toggle below appears and disappears with this choice, so the list
+                // is rebuilt rather than only the row redrawn.
                 updateSettingsList()
             }
-            .show()
+        ))
+        items.add(SettingItem.InfoBanner(
+            stableId = "wifiDirectBandHint",
+            textResId = R.string.wifi_direct_band_hint
+        ))
     }
+
+    /**
+     * The band to ask for when this app brings the hotspot up, plus what that choice costs.
+     *
+     * Rendered wherever the hotspot is switched on by us: the Native AA hotspot transport and
+     * wireless mode 2 strategy 4. Deliberately not offered where nothing calls
+     * HotspotManager.setHotspotEnabled(), since a control that changes nothing is worse than none.
+     */
+    private fun addHotspotBandSetting(items: MutableList<SettingItem>) {
+        items.add(SettingItem.SegmentedButtonSettingEntry(
+            stableId = "hotspotBand",
+            nameResId = R.string.hotspot_band,
+            options = listOf(
+                getString(R.string.hotspot_band_auto),
+                getString(R.string.hotspot_band_5ghz),
+                getString(R.string.hotspot_band_24ghz)
+            ),
+            selectedIndex = (pendingHotspotBand ?: 0).coerceIn(0, 2),
+            onOptionSelected = { index ->
+                pendingHotspotBand = index
+                checkChanges()
+                updateSettingsList()
+                // No credentials preflight here, unlike the transport button above: the band
+                // changes what we ask the radio for, not what this unit can tell a phone.
+            }
+        ))
+        items.add(SettingItem.InfoBanner(
+            stableId = "hotspotBandHint",
+            textResId = R.string.hotspot_band_hint
+        ))
+    }
+
     private fun addHotspotToggle(items: MutableList<SettingItem>) {
         items.add(SettingItem.ToggleSettingEntry(
             stableId = "autoEnableHotspot",
@@ -3479,9 +3668,7 @@ class SettingsFragment : Fragment() {
                 // the user can name it under the secondary-Bluetooth setting, and Native mode
                 // will then run. Without that it stays switched off, and the log says why.
                 .setPositiveButton(android.R.string.ok) { dialog, _ ->
-                    pendingWifiConnectionMode = 3
-                    checkChanges()
-                    updateSettingsList()
+                    acceptNativeAaMode()
                     dialog.dismiss()
                 }
                 .setNegativeButton(android.R.string.cancel, null)
@@ -3493,9 +3680,7 @@ class SettingsFragment : Fragment() {
                 .setTitle(R.string.supported_nativeaa)
                 .setMessage(R.string.supported_nativeaa_desc)
                 .setPositiveButton(android.R.string.ok) { dialog, _ ->
-                    pendingWifiConnectionMode = 3
-                    checkChanges()
-                    updateSettingsList()
+                    acceptNativeAaMode()
                     dialog.dismiss()
                 }
                 .setNegativeButton(android.R.string.cancel, null)
@@ -3505,13 +3690,207 @@ class SettingsFragment : Fragment() {
                 .setTitle(R.string.not_supported_nativeaa)
                 .setMessage(R.string.not_supported_nativeaa_desc)
                 .setPositiveButton(android.R.string.ok) { dialog, _ ->
-                    pendingWifiConnectionMode = 3
-                    checkChanges()
-                    updateSettingsList()
+                    acceptNativeAaMode()
                     dialog.dismiss()
                 }
                 .setNegativeButton(android.R.string.cancel, null)
                 .show()
+        }
+    }
+
+    /**
+     * Take the mode, then check whether this unit can actually run it.
+     *
+     * All three branches of [handleNativeAaSelection] end here. Selecting the mode is never blocked,
+     * which is the behaviour those branches already had: they warn and let the user through, because
+     * the app's own compatibility read is a prediction and the user's hardware is not.
+     */
+    private fun acceptNativeAaMode() {
+        pendingWifiConnectionMode = 3
+        checkChanges()
+        updateSettingsList()
+        runCredentialsPreflight()
+    }
+
+    /**
+     * Ask what this unit can tell a phone about its own network, and prompt for whatever it cannot.
+     *
+     * The reason this exists at the moment of *selection* rather than at connect time: every one of
+     * these verdicts was already produced, correctly, during the handshake, and reported as a log
+     * line and a toast over the projection screen. Users read neither, so the route gets reported as
+     * broken while the two fields that would fix it sit unset a few rows below. Here the user is
+     * already in Settings with a keyboard.
+     *
+     * Silent unless something is certain. See [NativeCredentialsPreflightPolicy].
+     */
+    private fun runCredentialsPreflight() {
+        // The dialogs that reach here are not lifecycle-aware and are not dismissed with the view,
+        // so this can be called after the view is gone — where viewLifecycleOwner throws rather
+        // than returning null, before any isAdded check inside could help.
+        val owner = view?.let { viewLifecycleOwner } ?: return
+        val transport = pendingNativeTransport()
+        // One probe at a time. The transport control fires this on every change, and each run costs
+        // up to ~1.5 s waiting on requestDeviceInfo plus an `ip link` subprocess — so toggling back
+        // and forth would otherwise stack coroutines and show a dialog on top of a dialog.
+        preflightJob?.cancel()
+        preflightJob = owner.lifecycleScope.launch {
+            val report = try {
+                val probe = NativeCredentialsPreflight.probe(
+                    context = requireContext().applicationContext,
+                    transport = transport,
+                    // The pending values, not the saved ones: the user may have typed an override
+                    // in this session and not saved yet, and asking for it again would be absurd.
+                    manualSsid = pendingHotspotSsid.orEmpty(),
+                    manualPassword = pendingHotspotPassword.orEmpty(),
+                    staticBssid = pendingStaticBSSID,
+                    hotspotInterface = pendingHotspotInterface.orEmpty()
+                )
+                NativeCredentialsPreflightPolicy.evaluate(transport, probe)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // A pre-flight that fails is not a finding. Saying nothing is the same outcome the
+                // user had before this existed.
+                AppLog.w("SettingsFragment: the credentials pre-flight could not run: ${e.message}")
+                return@launch
+            }
+            if (!isAdded || !report.hasFindings) return@launch
+
+            AppLog.i("SettingsFragment: credentials pre-flight for $transport: ${report.verdicts}")
+            showPreflightReport(report)
+        }
+    }
+
+    /**
+     * Names everything the probe is sure of, in one dialog, and offers the remedy for each.
+     *
+     * One dialog rather than a chain of them. Both findings can apply at once, and the entry dialogs
+     * only call back when the user confirms - a cancelled one would leave a chained follow-up
+     * unreachable, which is how the location advice would get lost on exactly the unit that needs
+     * both.
+     */
+    private fun showPreflightReport(report: PreflightReport) {
+        if (!isAdded) return
+        val body = StringBuilder(getString(R.string.preflight_intro))
+        report.mustEnter.forEach { body.append("\n\n\u2022 ").append(getString(labelFor(it))) }
+        if (report.locationServicesOff) {
+            body.append("\n\n\u2022 ").append(getString(R.string.preflight_item_location))
+        }
+
+        val builder = MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
+            .setTitle(R.string.preflight_title)
+            .setMessage(body.toString())
+            // Never blocking. The mode is already selected and stays selected: the user may know
+            // something the probe does not, or may simply want to try it and see.
+            .setNegativeButton(R.string.preflight_later, null)
+
+        if (report.mustEnter.isNotEmpty()) {
+            builder.setPositiveButton(R.string.preflight_enter_now) { dialog, _ ->
+                dialog.dismiss()
+                promptForField(report.mustEnter, 0)
+            }
+            if (report.locationServicesOff) {
+                builder.setNeutralButton(R.string.preflight_open_location) { dialog, _ ->
+                    dialog.dismiss()
+                    openLocationSettings()
+                }
+            }
+        } else {
+            // Location is the only finding, so the toggle is the whole remedy and gets the main
+            // button. Nothing here is worth typing by hand while it is off.
+            builder.setPositiveButton(R.string.open_settings) { dialog, _ ->
+                dialog.dismiss()
+                openLocationSettings()
+            }
+        }
+        builder.show()
+    }
+
+    private fun labelFor(field: CredentialField): Int = when (field) {
+        CredentialField.HOTSPOT_NAME -> R.string.preflight_item_hotspot_name
+        CredentialField.HOTSPOT_PASSWORD -> R.string.preflight_item_hotspot_password
+        CredentialField.BSSID -> R.string.preflight_item_bssid
+    }
+
+    /**
+     * Walks the missing fields one dialog at a time, reusing the same entry dialogs and the same
+     * explanatory copy as the settings rows themselves, so the two routes cannot drift apart.
+     *
+     * Recursive on [index] rather than a loop, because each dialog resolves on a callback.
+     */
+    private fun promptForField(missing: List<CredentialField>, index: Int) {
+        if (!isAdded || index >= missing.size) return
+        val next = { promptForField(missing, index + 1) }
+
+        when (missing[index]) {
+            CredentialField.HOTSPOT_NAME -> DialogUtils.showTextInputDialogWithMessage(
+                requireContext(),
+                R.string.hotspot_ssid_override,
+                R.string.hotspot_ssid_override_message,
+                pendingHotspotSsid.orEmpty()
+            ) { newVal ->
+                pendingHotspotSsid = newVal.trim()
+                checkChanges()
+                updateSettingsList()
+                next()
+            }
+
+            CredentialField.HOTSPOT_PASSWORD -> DialogUtils.showTextInputDialogWithMessage(
+                requireContext(),
+                R.string.hotspot_password_override,
+                R.string.hotspot_password_override_message,
+                pendingHotspotPassword.orEmpty()
+            ) { newVal ->
+                pendingHotspotPassword = newVal.trim()
+                checkChanges()
+                updateSettingsList()
+                next()
+            }
+
+            CredentialField.BSSID -> DialogUtils.showTextInputDialogWithMessage(
+                requireContext(),
+                R.string.static_bssid_title,
+                R.string.static_bssid_desc,
+                pendingStaticBSSID?.takeIf { SoftApBssidPolicy.isUsable(it) }.orEmpty()
+            ) { newVal ->
+                // Checked here as well as at the row, because a value that is not MAC-shaped is
+                // worse than none: it beats every automatic source and fails much later, at Type 3
+                // time, with a message that blames location services.
+                val trimmed = newVal.trim()
+                when {
+                    trimmed.isEmpty() -> {
+                        pendingStaticBSSID = "0"
+                        checkChanges()
+                        updateSettingsList()
+                        next()
+                    }
+                    SoftApBssidPolicy.isUsable(trimmed) -> {
+                        pendingStaticBSSID = trimmed
+                        checkChanges()
+                        updateSettingsList()
+                        next()
+                    }
+                    else -> {
+                        Toast.makeText(requireContext(), R.string.preflight_invalid_bssid, Toast.LENGTH_LONG).show()
+                        // Ask again rather than move on: this is the field where a wrong value does
+                        // more harm than no value.
+                        promptForField(missing, index)
+                    }
+                }
+            }
+        }
+    }
+
+    /** The same deep-link shape as [showPermissionDialog], including its refusal to crash. */
+    private fun openLocationSettings() {
+        try {
+            startActivity(Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS))
+        } catch (e: Exception) {
+            try {
+                startActivity(Intent(android.provider.Settings.ACTION_SETTINGS))
+            } catch (e2: Exception) {
+                AppLog.w("SettingsFragment: could not open the location settings: ${e2.message}")
+            }
         }
     }
 

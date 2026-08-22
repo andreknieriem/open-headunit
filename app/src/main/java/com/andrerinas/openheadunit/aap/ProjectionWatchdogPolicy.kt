@@ -32,6 +32,26 @@ object ProjectionWatchdogPolicy {
     const val FRAME_GAP_MS = 10_000L
 
     /**
+     * How long the display consumer may draw nothing, with video still arriving, before the
+     * projection view is torn down and rebuilt (issue #650's recovery).
+     *
+     * Named here rather than inside the activity so other code can be pinned against it:
+     * rebuilding the view costs a black flash, an EGL disconnect and touch loss, so anything that
+     * deliberately holds frames off the screen must provably finish before this watchdog can see
+     * it as a stall. The relation lives in CorruptionConcealmentPolicy's tests.
+     */
+    const val DISPLAY_FREEZE_MS = 5_000L
+
+    /**
+     * How often the projection watchdog looks. Detection runs at this granularity, so a condition
+     * is seen up to one tick *after* its threshold is crossed - never before. What the tick cannot
+     * do is shorten a deadline: anything racing [DISPLAY_FREEZE_MS] needs its margin under the
+     * threshold itself, plus whatever age the last drawn frame already had when the race started,
+     * since the watchdog measures from the draw.
+     */
+    const val WATCHDOG_TICK_MS = 2_000L
+
+    /**
      * How long the whole AAP link must *also* have been silent before a stopped picture is called a
      * lost connection.
      *
@@ -78,6 +98,82 @@ object ProjectionWatchdogPolicy {
         nowMs: Long,
         lastRequestMs: Long
     ): Boolean = pictureStopped && VideoRecoveryPolicy.canRequestKeyframe(nowMs, lastRequestMs)
+
+    /** How much recent time the display-stall watchdog's long-frame window is meant to cover. */
+    const val LONG_FRAME_WINDOW_MS = 10_000L
+
+    /**
+     * How many long frames this tick may contribute, from a counter that runs for the whole session.
+     *
+     * The view's counter is cumulative and the previous reading is the baseline, so the difference is
+     * only this tick's work if there *was* a previous tick recently enough to subtract. Two cases
+     * break that, and both are the normal state of this watchdog rather than corner cases.
+     *
+     * The first tick of a session has no baseline at all. The check only survives its gates when the
+     * picture has been still for over two seconds *and* video arrived within the last one and a half,
+     * which is a narrow coincidence: on a link that stalls periodically it can be minutes before it
+     * happens once. When it finally does, subtracting a baseline of zero charges every long frame of
+     * the session so far to one tick. Measured on a reporter's capture, that fired exactly once in a
+     * two-minute session and charged fourteen, tripping a floor of ten on its first evaluation and
+     * rebuilding the projection view and the decoder - about 1.7 s more black screen plus a forced
+     * focus cycle, for a fault no rebuild can address.
+     *
+     * The second is any gap longer than the window. Frames that piled up while this check was
+     * returning early are not evidence about the last ten seconds, whoever caused them.
+     *
+     * Both answer zero and re-baseline. A consumer that is genuinely collapsing keeps ticking,
+     * because video keeps arriving, and loses only its first tick.
+     */
+    fun longFramesThisTick(
+        longFrameEvents: Long,
+        previousEvents: Long,
+        previousTickMs: Long,
+        nowMs: Long,
+        windowMs: Long = LONG_FRAME_WINDOW_MS
+    ): Long {
+        if (previousTickMs <= 0L) return 0L
+        if (nowMs - previousTickMs > windowMs) return 0L
+        return (longFrameEvents - previousEvents).coerceAtLeast(0L)
+    }
+
+    /**
+     * How many long frames the display consumer produced inside the last [windowMs].
+     *
+     * The window it replaces counted slots rather than time, and its own comment called that
+     * "~10s at the 2s watchdog cadence" - true only if the watchdog ticks every two seconds. It does
+     * not. The display-stall check returns early whenever the phone is not currently sending video,
+     * so on a link that stops the media periodically the ticks that run are the ones after each
+     * outage, and five of those can span two minutes. The window silently became an accumulator, and
+     * a counter meant to say "the consumer has collapsed in the last ten seconds" ended up saying
+     * "an outage happened fourteen times this drive".
+     *
+     * Measured on a reporter's capture: a link that went dead for four to eight seconds every ten
+     * added one long frame per outage, reached the floor of ten after about two minutes, and
+     * rebuilt the projection view and the decoder for it - roughly 1.7 s more black screen plus a
+     * forced focus cycle, in response to a fault no rebuild can fix.
+     *
+     * Slots whose tick fell outside the window are ignored rather than cleared, so a genuinely
+     * collapsed consumer - which ticks steadily, because video is flowing throughout - still fills
+     * the window and still trips the floor.
+     *
+     * [tickTimesMs] holds the clock reading for each slot of [counts], zero for a slot never
+     * written.
+     */
+    fun longFramesInWindow(
+        counts: LongArray,
+        tickTimesMs: LongArray,
+        nowMs: Long,
+        windowMs: Long = LONG_FRAME_WINDOW_MS
+    ): Long {
+        var total = 0L
+        for (i in counts.indices) {
+            val tickMs = tickTimesMs.getOrElse(i) { 0L }
+            if (tickMs <= 0L) continue
+            if (nowMs - tickMs > windowMs) continue
+            total += counts[i]
+        }
+        return total
+    }
 
     /**
      * Whether the surface the decoder was just handed still has no picture, and is worth nudging for.

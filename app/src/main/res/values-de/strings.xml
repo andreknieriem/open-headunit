@@ -779,7 +779,7 @@
     <string name="onb_dpi_recommended">Empfohlen für Ihren Bildschirm: %1$d dpi</string>
     <string name="onb_ready_loading_intro">Noch eine Sache: Sie können jetzt einen benutzerdefinierten Ladebildschirm festlegen, der angezeigt wird, während das Auto eine Verbindung herstellt.</string>
     <string name="onb_ready_loading_button">Ladebildschirm einrichten</string>
-    <string name="static_bssid_title">Statische BSSID</string>
+    <string name="static_bssid_title">Statische BSSID (MAC Address)</string>
     <string name="static_bssid_enter_value">BSSID-Wert (Format: XX:XX:XX:XX:XX:XX)</string>
     <string name="rename_notice_title">Unser Name wird zu Open Headunit</string>
     <string name="rename_notice_message">Headunit Revived wächst, dank euch, und wird zu etwas Eigenem: Open Headunit. Wir führen den neuen Namen über die nächsten Updates hinweg ein, daher siehst du an manchen Stellen vielleicht noch eine Weile den alten Namen.\n\nGleiche App, dieselben Leute dahinter, und all deine Einstellungen bleiben genau so, wie sie sind.</string>
@@ -841,14 +841,13 @@
     <string name="native_ap_transport">Netzwerk-Transport</string>
     <string name="native_ap_transport_wifi_direct">WiFi Direct</string>
     <string name="native_ap_transport_hotspot">Hotspot</string>
-    <string name="native_ap_transport_hint">Experimentell. Das Smartphone verbindet sich mit dem Hotspot dieses Geräts statt einer WiFi Direct Gruppe. Aktiviere den Hotspot vor dem Verbinden (am besten 5 GHz).</string>
+    <string name="native_ap_transport_hint">Das Smartphone verbindet sich mit dem Hotspot dieses Geräts statt einer WiFi Direct Gruppe. Aktiviere ihn vor dem Verbinden.</string>
     <string name="hotspot_interface_override">Hotspot-Netzwerkschnittstelle</string>
     <string name="hotspot_interface_override_message">Leer lassen für automatische Erkennung. Typische Namen: ap0, wlan0, wlan1, softap0.</string>
     <string name="hotspot_ssid_override">Hotspot-Name (Manuell)</string>
     <string name="hotspot_ssid_override_message">Leer lassen zum automatischen Auslesen. Falls das Auslesen fehlschlägt, gib hier den genauen Hotspot-Namen ein.</string>
     <string name="hotspot_password_override">Hotspot-Passwort (Manuell)</string>
     <string name="hotspot_password_override_message">Leer lassen zum automatischen Auslesen. Das Passwort wird dem Smartphone zur Verbindung übergeben.</string>
-    <string name="hotspot_config_unreadable_toast">Hotspot-Name konnte nicht ausgelesen werden. Bitte manuell in den Einstellungen eintragen.</string>
     <string name="native_wifi_version_exchange">Moderner Handshake (Versionsaustausch)</string>
     <string name="native_wifi_version_exchange_description">Öffnet den Bluetooth-Handshake mit Übermittlung der Protokollversion (wie Werks-Headunits). Standardmäßig AUS. Versuchen, wenn Wireless nach einem Android Auto Update fehlschlägt.</string>
 <string name="onb_ready_extras_title">Bevor du fertig bist, kannst du noch einrichten:</string>

@@ -245,6 +245,24 @@ class AapService : Service(), UsbReceiver.Listener {
     private var activeHelperStrategy = -1
 
     /**
+     * Which feature the dummy VPN is up for, or `null` when we did not start it.
+     *
+     * See [DummyVpnPolicy]: the VPN used to be stopped from [stopWirelessServer], which every
+     * mode change runs, so a user's VPN went down moments after it came up. Ownership is what
+     * decides now, and a VPN with no owner is never touched.
+     */
+    private var dummyVpnOwner: DummyVpnPolicy.Owner? = null
+
+    /**
+     * Takes down a Self Mode VPN whose phone never arrived.
+     *
+     * [stopWirelessServer] used to do this by accident. Without it a user who starts Self Mode and
+     * walks away leaves a tun that routes 0.0.0.0/0 into a descriptor nobody reads, and the unit
+     * has no IPv4 until the service dies.
+     */
+    private var selfModeVpnWatchdog: Job? = null
+
+    /**
      * Partial wake lock acquired when the service starts from boot/screen-on.
      * Keeps the CPU active while the head unit runs without ACC, making the
      * service harder for MediaTek's background power saving to kill.
@@ -751,6 +769,30 @@ class AapService : Service(), UsbReceiver.Listener {
         wifiDirectManager = WifiDirectManager(this)
         softApCredentialsProvider = SoftApCredentialsProvider(this, serviceScope, App.provide(this).settings)
 
+        // Before anything can start a transport, not after. initWifiMode() runs inline on this
+        // thread for every mode except one, and the hotspot provider it starts resolves on IO fast
+        // enough to publish while onCreate is still running, on any unit whose access point is
+        // already up. Wired below the start call, that delivery arrived with nobody listening, and
+        // the provider, having found its network, never looked again: no poke, no credentials for
+        // the handshake, and a head unit that sits there looking healthy. CredentialsHandoff
+        // latches as well, so neither half of this depends on the other being right.
+        wifiDirectManager?.setCredentialsListener { ssid, psk, ip, bssid ->
+            onNativeCredentials(ssid, psk, ip, bssid)
+        }
+        // Settling counts as in-flight here: isHandshakeInFlight() goes false the instant Type 3
+        // is written, but the phone still has to associate, do WPS and get a DHCP lease, and
+        // recreating the group in that window hands it an SSID it can no longer join.
+        wifiDirectManager?.setNativeHandshakeStateProvider {
+            nativeAaHandshakeManager?.isHandshakeInFlight() == true ||
+                nativeAaHandshakeManager?.isHandoffSettling() == true
+        }
+        wifiDirectManager?.setNativeSessionConnectedProvider { commManager.isConnected }
+        wifiDirectManager?.setNativeGroupInvalidatedListener { nativeAaHandshakeManager?.invalidateCredentials() }
+        softApCredentialsProvider?.setCredentialsListener { ssid, psk, ip, bssid ->
+            onNativeCredentials(ssid, psk, ip, bssid)
+        }
+        softApCredentialsProvider?.setInvalidatedListener { nativeAaHandshakeManager?.invalidateCredentials() }
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             try {
                 nearbyManager = NearbyManager(this, serviceScope) { socket ->
@@ -773,24 +815,6 @@ class AapService : Service(), UsbReceiver.Listener {
             initWifiModeWithOptionalWait()
         }
         scheduleBootLoopStrikeClear()
-        wifiDirectManager?.setCredentialsListener { ssid, psk, ip, bssid ->
-            onNativeCredentials(ssid, psk, ip, bssid)
-        }
-        // Settling counts as in-flight here: isHandshakeInFlight() goes false the instant Type 3
-        // is written, but the phone still has to associate, do WPS and get a DHCP lease, and
-        // recreating the group in that window hands it an SSID it can no longer join.
-        wifiDirectManager?.setNativeHandshakeStateProvider {
-            nativeAaHandshakeManager?.isHandshakeInFlight() == true ||
-                nativeAaHandshakeManager?.isHandoffSettling() == true
-        }
-        wifiDirectManager?.setNativeSessionConnectedProvider { commManager.isConnected }
-        wifiDirectManager?.setNativeGroupInvalidatedListener { nativeAaHandshakeManager?.invalidateCredentials() }
-        softApCredentialsProvider?.setCredentialsListener { ssid, psk, ip, bssid ->
-            onNativeCredentials(ssid, psk, ip, bssid)
-        }
-        softApCredentialsProvider?.setInvalidatedListener { nativeAaHandshakeManager?.invalidateCredentials() }
-
-
         checkAlreadyConnectedUsb()
         registerNetworkMonitor()
     }
@@ -988,7 +1012,16 @@ class AapService : Service(), UsbReceiver.Listener {
     private fun onConnected() {
         isSwitchingToAccessory.set(false)
         updateNotification()
-        acquireWifiLock()
+        // Whatever the transport, the wake-up loop has nothing left to do. Event driven rather
+        // than left to the loop's own 15 s poll.
+        nativeAaHandshakeManager?.onSessionEstablished()
+        quiesceWirelessForWiredSession()
+        if (UsbSessionQuiescePolicy.shouldAcquireWifiLock(commManager.isWirelessSession)) {
+            acquireWifiLock()
+        }
+        // After the quiesce, which may have just stopped the P2P group: shouldStartForSession()
+        // asks for a wireless Native AA session, so a wired one gets no VPN either way.
+        maybeStartSessionDummyVpn()
 
         // Silent audio hack removed to prevent mixing/resampling stuttering issues
 
@@ -1149,6 +1182,7 @@ class AapService : Service(), UsbReceiver.Listener {
     private fun onDisconnected(state: CommManager.ConnectionState.Disconnected) {
         isSwitchingToAccessory.set(false)
         releaseWifiLock()
+        stopDummyVpn(DummyVpnPolicy.Reason.SESSION_ENDED)
 
         // Stop GpsLocationService and NightModeManager sensor tracking
         AppLog.i("AapService: Stopping GpsLocationService and NightModeManager since connection is disconnected")
@@ -1181,7 +1215,13 @@ class AapService : Service(), UsbReceiver.Listener {
             val mode = settings.wifiConnectionMode
             val strategy = settings.helperConnectionStrategy
 
-            if (mode == 3) {
+            // This session ran over USB and took the wireless stack down when it came up. Putting
+            // it back is a single initWifiMode(force = true), and it subsumes both the mode-3 reset
+            // and the user-exit teardown below: the group is already gone, so running those as well
+            // would race a stop() against the re-arm's createGroup.
+            val rearmedAfterWiredSession = rearmWirelessAfterWiredSession()
+
+            if (mode == 3 && !rearmedAfterWiredSession) {
                 if (state.isUserExit) {
                     AppLog.i("AapService: Native AA user exit. Stopping handshake manager.")
                     nativeAaHandshakeManager?.stop()
@@ -1204,7 +1244,9 @@ class AapService : Service(), UsbReceiver.Listener {
             // the existing group for fast reconnection there. Must await CommManager's async
             // teardown first so we never remove the P2P interface while the
             // ByeByeRequest/socket-close is still in flight.
-            if (state.isUserExit && WifiModePolicy.usesWifiDirect(mode, strategy, nativeTransport())) {
+            if (rearmedAfterWiredSession) {
+                // Nothing further to tear down; the re-arm owns the wireless stack from here.
+            } else if (state.isUserExit && WifiModePolicy.usesWifiDirect(mode, strategy, nativeTransport())) {
                 commManager.awaitDisconnectComplete()
                 AppLog.i("AapService: CommManager teardown complete. Stopping WiFi Direct group.")
                 wifiDirectManager?.stop()
@@ -1610,6 +1652,15 @@ class AapService : Service(), UsbReceiver.Listener {
             return
         }
 
+        // A wired session is live and we took the wireless stack down for it. Every automatic
+        // entry point lands here, including the Bluetooth auto-start a poke can raise on the unit
+        // itself, so without this the stack walks straight back up underneath a session that has
+        // no use for it. rearmWirelessAfterWiredSession() is what lets it back in.
+        if (wirelessQuiescedForWiredSession && commManager.isConnected && !commManager.isWirelessSession) {
+            AppLog.i("AapService: wireless bring-up requested while a USB session is live — not arming it")
+            return
+        }
+
         val settings = App.provide(this).settings
         val mode = settings.wifiConnectionMode
         val strategy = settings.helperConnectionStrategy
@@ -1707,6 +1758,66 @@ class AapService : Service(), UsbReceiver.Listener {
         activeHelperStrategy = strategy
     }
 
+    /**
+     * Whether this session's wireless teardown is ours to undo. Set by
+     * [quiesceWirelessForWiredSession], read once by [rearmWirelessAfterWiredSession].
+     */
+    @Volatile private var wirelessQuiescedForWiredSession = false
+
+    /**
+     * Shut the wireless stack down for the duration of a USB session. See
+     * [UsbSessionQuiescePolicy] for why any of it is running in the first place.
+     */
+    private fun quiesceWirelessForWiredSession() {
+        if (!UsbSessionQuiescePolicy.shouldQuiesce(commManager.isWirelessSession)) return
+
+        val settings = App.provide(this).settings
+        val mode = settings.wifiConnectionMode
+        val strategy = settings.helperConnectionStrategy
+
+        AppLog.i(
+            "AapService: USB session established while wireless mode $mode/$strategy was armed — " +
+                "stopping the wireless stack for the duration of it"
+        )
+        wirelessQuiescedForWiredSession = true
+
+        // Cancel a sweep already in flight, not just the re-arm. startDiscovery()'s isBusy gate
+        // stops the *next* sweep; the one running keeps probing 254 addresses on two ports each
+        // underneath a session that no longer needs it.
+        networkDiscovery?.stop()
+        nearbyManager?.stop()
+        // Closes the RFCOMM listeners and cancels the poke loop, which is the half with teeth: a
+        // poke can wake AutoStartReceiver into initWifiMode(force = true) and rebuild the group.
+        nativeAaHandshakeManager?.stop()
+        if (UsbSessionQuiescePolicy.shouldStopWifiDirectGroup(
+                commManager.isWirelessSession,
+                WifiModePolicy.usesWifiDirect(mode, strategy, nativeTransport())
+            )
+        ) {
+            // Also cancels the Native AA join watchdog, which was otherwise left firing every 60 s
+            // for a phone that is never going to join.
+            wifiDirectManager?.stop()
+        }
+    }
+
+    /**
+     * Put back whatever [quiesceWirelessForWiredSession] took down. Runs on any end to the wired
+     * session, user exit included: unplugging has to return the unit to its configured mode.
+     */
+    private fun rearmWirelessAfterWiredSession(): Boolean {
+        val quiesced = wirelessQuiescedForWiredSession
+        wirelessQuiescedForWiredSession = false
+        val mode = App.provide(this).settings.wifiConnectionMode
+        if (!UsbSessionQuiescePolicy.shouldRearmWireless(quiesced, mode != 0)) return false
+
+        AppLog.i("AapService: wired session ended — re-arming wireless mode $mode")
+        serviceScope.launch {
+            delay(1500) // Same settle the Native AA reconnect path allows the P2P hardware.
+            initWifiMode(force = true)
+        }
+        return true
+    }
+
     private fun acquireWifiLock() {
         if (wifiLock == null) {
             val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
@@ -1723,6 +1834,94 @@ class AapService : Service(), UsbReceiver.Listener {
             wifiLock?.release()
             AppLog.i("WifiLock released")
         }
+    }
+
+    /**
+     * Brings the dummy VPN up and records who it is for.
+     *
+     * [VpnControl.isPrepared] is a *query*, not a prompt: it is true once this app is the prepared
+     * VPN app, which is the state the settings toggle left behind after its one consent dialog.
+     * False means consent was never given, was revoked, or another VPN app has taken the slot, and
+     * a Service can resolve none of those. On the Play Store flavor it is always false.
+     */
+    private fun startDummyVpn(owner: DummyVpnPolicy.Owner) {
+        if (!VpnControl.isPrepared(this)) {
+            AppLog.w(
+                "AapService: the dummy VPN was wanted (owner=$owner) but this app is not the " +
+                    "prepared VPN app - consent was never given, was withdrawn, or another VPN " +
+                    "app holds the slot. Re-arm it in Settings > Advanced under Android Auto mode."
+            )
+            return
+        }
+        VpnControl.startVpn(this, excludeSelf = owner == DummyVpnPolicy.Owner.SESSION)
+        dummyVpnOwner = owner
+        AppLog.i(
+            "AapService: dummy VPN requested (owner=$owner). While it is up, other apps on this " +
+                "unit have no IPv4."
+        )
+    }
+
+    /**
+     * Takes the dummy VPN down, but only for a teardown that owns it - see [DummyVpnPolicy].
+     */
+    private fun stopDummyVpn(reason: DummyVpnPolicy.Reason) {
+        val owner = dummyVpnOwner
+        if (!DummyVpnPolicy.shouldStop(owner, reason)) return
+        AppLog.i("AapService: releasing the dummy VPN (owner=$owner, reason=$reason)")
+        VpnControl.stopVpn(this)
+        dummyVpnOwner = null
+        selfModeVpnWatchdog?.cancel()
+        selfModeVpnWatchdog = null
+    }
+
+    /**
+     * Records that a Self Mode VPN - started by `HomeFragment`, which owns the consent dialog - is
+     * ours to clean up, and arms the watchdog that does it if no phone ever arrives.
+     */
+    private fun adoptSelfModeDummyVpn() {
+        // Nothing to adopt where the flavor has no VPN - see VpnControl.
+        if (!VpnControl.isVpnAvailable()) return
+        if (dummyVpnOwner == null) dummyVpnOwner = DummyVpnPolicy.Owner.SELF_MODE
+        selfModeVpnWatchdog?.cancel()
+        selfModeVpnWatchdog = serviceScope.launch {
+            delay(SELF_MODE_VPN_TIMEOUT_MS)
+            if (!commManager.isConnected) {
+                AppLog.w(
+                    "AapService: Self Mode brought the dummy VPN up ${SELF_MODE_VPN_TIMEOUT_MS}ms " +
+                        "ago and no phone arrived. Taking it down so this unit gets its network back."
+                )
+                stopDummyVpn(DummyVpnPolicy.Reason.SELF_MODE_NEVER_CONNECTED)
+            }
+        }
+    }
+
+    /**
+     * Brings the dummy VPN up for an ordinary Native AA session when the user asked for it.
+     *
+     * The mode test is not redundant with the setting: the toggle only renders inside the Native
+     * AA block, so a user who turns it on and then switches connection mode keeps a preference
+     * they can no longer see. Without this, that preference would put a blackholing tun on a USB
+     * session.
+     */
+    private fun maybeStartSessionDummyVpn() {
+        selfModeVpnWatchdog?.cancel()
+        selfModeVpnWatchdog = null
+        val available = VpnControl.isVpnAvailable()
+        val wanted = DummyVpnPolicy.shouldStartForSession(
+            keepDuringSession = App.provide(this).settings.keepDummyVpnDuringSession,
+            // The same value the settings list gates the toggle on, so what a user can see and
+            // what runs cannot drift. activeWifiMode is deliberately not used: stopWirelessServer()
+            // resets it to -1, and a session that outlives one of those would go unprotected.
+            nativeWirelessSession = commManager.isWirelessSession &&
+                App.provide(this).settings.wifiConnectionMode == 3,
+            currentOwner = dummyVpnOwner,
+            selfMode = selfMode,
+            vpnAvailable = available,
+            // Short-circuited on purpose: the Play Store flavor must not reach a prepare() call
+            // at all, and the stub would answer false anyway.
+            alreadyPrepared = available && VpnControl.isPrepared(this),
+        )
+        if (wanted) startDummyVpn(DummyVpnPolicy.Owner.SESSION)
     }
 
     /**
@@ -1806,6 +2005,7 @@ class AapService : Service(), UsbReceiver.Listener {
         unregisterNetworkMonitor()
         stopForeground(true)
         stopWirelessServer()
+        stopDummyVpn(DummyVpnPolicy.Reason.SERVICE_DESTROYED)
         wifiDirectManager?.stop()
         nearbyManager?.stop()
         try {
@@ -2666,7 +2866,10 @@ class AapService : Service(), UsbReceiver.Listener {
         wirelessServer?.stopServer()
         wirelessServer = null
         scanningState.value = false
-        VpnControl.stopVpn(this)
+        // No VpnControl.stopVpn() here. The dummy VPN belongs to Self Mode or to the session that
+        // asked for it, never to the wireless server, and initWifiMode() runs this on every mode
+        // change - which is what took a user's VPN down three milliseconds after it came up.
+        // The owning teardowns call stopDummyVpn(); see DummyVpnPolicy.
     }
 
     // -------------------------------------------------------------------------
@@ -2988,6 +3191,7 @@ class AapService : Service(), UsbReceiver.Listener {
 
     private fun startSelfMode() {
         selfMode = true
+        adoptSelfModeDummyVpn()
 
         serviceScope.launch(Dispatchers.Main) {
             if (isAaVersion174OrHigher()) {
@@ -3338,6 +3542,13 @@ class AapService : Service(), UsbReceiver.Listener {
          * Observed by `HomeFragment` via a lifecycle-aware flow collector.
          */
         val scanningState = MutableStateFlow(false)
+
+        /**
+         * How long a Self Mode dummy VPN may stay up with no phone before it is taken down.
+         *
+         * stopWirelessServer() used to do this cleanup by accident, on the next mode change.
+         */
+        private const val SELF_MODE_VPN_TIMEOUT_MS = 120_000L
 
         private const val BOOT_START_NOTIFICATION_ID = 42
         private const val BOOT_LOOP_NOTIFICATION_ID = 43

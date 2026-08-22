@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The info banner's shape with a warning tint. Forked rather than parameterised because the
+    only difference is the overlay colour, and a shared drawable with a themed tint would still
+    need two colour tokens to say which one it is.
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape>
+            <solid android:color="@color/setting_background_color" />
+            <corners android:radius="24dp" />
+        </shape>
+    </item>
+    <item>
+        <shape>
+            <solid android:color="@color/warning_banner_tint" />
+            <corners android:radius="24dp" />
+            <stroke
+                android:width="1dp"
+                android:color="@color/warning_banner_stroke" />
+        </shape>
+    </item>
+</layer-list>

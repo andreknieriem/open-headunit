@@ -169,6 +169,11 @@ object SettingsBackupManager {
         // Wireless hotspot host credentials and manual BSSID override.
         "hotspot-ssid" to ValueType.STRING,
         "hotspot-password" to ValueType.STRING,
+        // Which band to ask for, on either transport: a property of this unit's radio, found by
+        // trial, so it should survive the reinstall that is exactly when somebody exports their
+        // settings.
+        "hotspot-band" to ValueType.INT,
+        "wifi-direct-band" to ValueType.INT,
         "static-bssid" to ValueType.STRING,
         // Touch calibration fix and toast visibility.
         "use_measured_touch_surface" to ValueType.BOOLEAN,

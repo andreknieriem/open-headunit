@@ -12,7 +12,6 @@ import android.view.ViewGroup
 import android.view.LayoutInflater
 import android.view.ViewTreeObserver
 import androidx.constraintlayout.widget.ConstraintLayout
-import android.net.VpnService
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.activity.result.contract.ActivityResultContracts
 import android.content.pm.PackageManager
@@ -189,7 +188,7 @@ class HomeFragment : Fragment() {
 
         if (activeNetwork == null && VpnControl.isVpnAvailable()) {
             AppLog.i("Device is offline. Preparing Dummy VPN for Self Mode.")
-            val vpnIntent = VpnService.prepare(requireContext())
+            val vpnIntent = VpnControl.consentIntent(requireContext())
             if (vpnIntent != null) {
                 vpnPermissionLauncher.launch(vpnIntent)
                 return

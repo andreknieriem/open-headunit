@@ -384,7 +384,7 @@
     <string name="wireless_connection_settings">Wireless Connection</string>
     <string name="category_graphic">Graphic</string>
 
-    <string name="static_bssid_title">Static BSSID</string>
+    <string name="static_bssid_title">Static BSSID (MAC Address)</string>
     <string name="static_bssid_enter_value">Enter BSSID (XX:XX:XX:XX:XX:XX)</string>
     <string name="static_bssid_desc">Manually set the BSSID for the wireless handshake if auto-detection is blocked by system permissions</string>
 
@@ -690,12 +690,8 @@
     <string name="debug_video_fault_rate" translatable="false">Fault rate (one in N)</string>
     <string name="debug_video_fault_budget" translatable="false">Fault budget</string>
     <string name="debug_force_memory_profile" translatable="false">Force memory profile</string>
-    <string name="debug_force_p2p_band_24" translatable="false">Force WiFi Direct onto 2.4 GHz</string>
-    <string name="p2p_legacy_5ghz" translatable="false">Ask for 5 GHz on Android 9 and older</string>
-    <string name="p2p_legacy_5ghz_description" translatable="false">Below Android 10 there is no way to request a band, so the WiFi Direct group lands wherever the driver puts it — often 2.4 GHz, shared with Bluetooth. This asks for a 5 GHz channel instead. Leave it off unless the picture or sound stutters: a unit whose WiFi Direct cannot host 5 GHz will fail to create a group, and the app then clears the request and retries once. No effect on Android 10 and newer.</string>
     <string name="p2p_legacy_5ghz_upper" translatable="false">Use the upper 5 GHz range</string>
-    <string name="p2p_legacy_5ghz_upper_description" translatable="false">Asks for channel 149 instead of channel 36. Try this only if channel 36 fails — some regions allow one range and not the other.</string>
-    <string name="debug_force_p2p_band_24_description" translatable="false">Native AA hosts its group on 2.4 GHz instead of asking for 5 GHz, and stops remaking a group that lands there. For reproducing 2.4 GHz link faults on a 5 GHz rig; leave off otherwise. Applies on the next connection.</string>
+    <string name="p2p_legacy_5ghz_upper_description" translatable="false">Asks for channel 149 instead of 36. Try only if 36 fails, since regions allow one range or the other.</string>
     <string name="debug_video_low_latency" translatable="false">Request decoder low-latency mode</string>
     <string name="debug_video_low_latency_description" translatable="false">Sets the vendor low-latency MediaFormat key when configuring the video decoder. Falls back automatically if the decoder rejects it.</string>
     <string name="show_fps_counter_description">Display a real-time FPS overlay in the top-left corner during projection.</string>
@@ -845,14 +841,45 @@
     <string name="native_ap_transport">Network transport</string>
     <string name="native_ap_transport_wifi_direct">WiFi Direct</string>
     <string name="native_ap_transport_hotspot">Hotspot</string>
-    <string name="native_ap_transport_hint">Experimental. The phone joins this device\'s own hotspot instead of a WiFi Direct group. Switch the hotspot on yourself before connecting, and set it to 5 GHz if you can - over 2.4 GHz the phone connects and then drops the session repeatedly without any picture, unless you lower the resolution and frame rate. If the network name cannot be read automatically, enter it below.</string>
+    <string name="native_ap_transport_hint">The phone joins this device\'s own hotspot instead of a WiFi Direct group. Switch it on before connecting.</string>
+    <string name="hotspot_band">Hotspot band</string>
+    <string name="hotspot_band_auto">Auto</string>
+    <string name="hotspot_band_5ghz">5 GHz only</string>
+    <string name="hotspot_band_24ghz">2.4 GHz only</string>
+    <string name="hotspot_band_hint">Auto asks for 5 GHz and falls back to 2.4 GHz. 2.4 GHz is reliable up to 720p, so pick 5 GHz only above that.</string>
+    <string name="wifi_direct_band">WiFi Direct band</string>
+    <string name="wifi_direct_band_auto">Auto</string>
+    <string name="wifi_direct_band_5ghz">5 GHz only</string>
+    <string name="wifi_direct_band_24ghz">2.4 GHz only</string>
+    <string name="wifi_direct_band_hint">Auto asks for 5 GHz and falls back to 2.4 GHz, and on Android 9 and older asks for a 5 GHz channel first. 2.4 GHz is reliable up to 720p, so pick 5 GHz only above that.</string>
     <string name="hotspot_interface_override">Hotspot network interface</string>
     <string name="hotspot_interface_override_message">Leave blank to work it out automatically. Set this if the log says more than one interface could be the access point, or picks the wrong one. The name is the one the log reports after &quot;Providing credentials from&quot;, or the entry holding your hotspot\'s address in &quot;ip -brief addr&quot; from a shell. Common names: ap0, wlan0, wlan1, wlan2, softap0, ra0.</string>
     <string name="hotspot_ssid_override">Hotspot name (manual)</string>
     <string name="hotspot_ssid_override_message">Leave blank to read the name from this device\'s hotspot settings automatically. Some devices do not let apps read it - if the log says the name could not be read, type it here exactly as it appears in your hotspot settings.</string>
     <string name="hotspot_password_override">Hotspot password (manual)</string>
     <string name="hotspot_password_override_message">Leave blank to read the password automatically. Needed on devices that do not let apps read the hotspot configuration. The phone will be given this password to join.</string>
-    <string name="hotspot_config_unreadable_toast">Can\'t read this device\'s hotspot name. Set it manually under Hotspot name/password in Settings.</string>
+
+    <!-- Native AA credential pre-flight: what this unit can and cannot tell the phone about its own network -->
+
+    <!-- The failure banner on the main screen. One per condition, shown after a failed attempt. -->
+    <string name="connection_issue_banner_bt_silent">Your phone connected over Bluetooth, but nothing this unit sent ever reached it. This is a fault in the head unit\'s Bluetooth that this app cannot work around. Tap to switch to USB, Wireless Helper or Auto, which do not need the Bluetooth handshake.</string>
+    <string name="connection_issue_banner_bssid">This unit could not read its own WiFi MAC address (BSSID), so your phone was never told which network to join. Tap to turn on Location, or to enter the address by hand.</string>
+    <string name="connection_issue_banner_hotspot_config">This unit will not tell the app its hotspot name and password, so your phone had nothing to join. Tap to enter them by hand.</string>
+    <string name="connection_issue_banner_dismiss">Dismiss</string>
+    <!-- What the hotspot banner types into the settings search. Both override rows carry it
+         as a search keyword, so this one string is what makes the tap reach the pair. -->
+    <string name="connection_issue_remedy_hotspot_query">Hotspot name and password</string>
+
+    <string name="preflight_title">Before you connect</string>
+    <string name="preflight_intro">This device cannot supply everything Android Auto needs, so the phone will not be able to join:</string>
+    <string name="preflight_item_hotspot_name">Hotspot name. This device will not let apps read it.</string>
+    <string name="preflight_item_hotspot_password">Hotspot password. Without one the phone is offered an open network and refuses it.</string>
+    <string name="preflight_item_bssid">WiFi address (BSSID). No source on this device reports one.</string>
+    <string name="preflight_item_location">Location is off, so Android hides this device\'s WiFi address from apps and the phone will refuse to join. Turning Location on is the fix; typing an address by hand is only needed if it stays hidden afterwards.</string>
+    <string name="preflight_enter_now">Enter now</string>
+    <string name="preflight_open_location">Location</string>
+    <string name="preflight_later">Later</string>
+    <string name="preflight_invalid_bssid">That is not a WiFi address. Enter six pairs of hex digits, like 02:1A:11:FF:3C:4D.</string>
     <string name="native_wifi_version_exchange">Modern handshake (version exchange)</string>
     <string name="native_wifi_version_exchange_description">Opens the Bluetooth handshake by telling the phone which protocol version this head unit speaks, the way factory head units do, instead of going straight to the connection details. Off by default. Worth trying if wireless worked before an Android Auto update and has failed since; if it makes no difference, turn it back off.</string>
     <!-- QR Code Generator -->

@@ -2,6 +2,7 @@ package com.andrerinas.openheadunit.utils
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.content.Context
@@ -9,6 +10,7 @@ import android.os.Build
 import android.os.IBinder
 import com.andrerinas.openheadunit.App
 import java.lang.reflect.Constructor
+import java.lang.reflect.Method
 
 object BluetoothHelper {
 
@@ -212,6 +214,95 @@ object BluetoothHelper {
         }
         return false
     }
+
+    private val isConnectedMethod: Method? by lazy {
+        try {
+            BluetoothDevice::class.java.getMethod("isConnected")
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    /**
+     * Checks whether a specific Bluetooth device is currently connected to this unit.
+     *
+     * Uses reflection on the hidden `@hide` [BluetoothDevice.isConnected] method (available since
+     * Android 4.0 / API 14), making it compatible from SDK 16 up to Android 15. Catches any security
+     * or reflection exceptions and returns false if unreadable.
+     */
+    fun isDeviceConnected(device: BluetoothDevice): Boolean {
+        return try {
+            isConnectedMethod?.invoke(device) as? Boolean ?: false
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    /**
+     * Determines whether a Bluetooth device is likely to be a smartphone / Android Auto candidate,
+     * as opposed to dedicated audio accessories (Bluetooth speakers, headphones, headsets),
+     * wearables (watches), or peripherals (keyboards, mice).
+     *
+     * Never filters out a device that the user previously connected to or designated as preferred.
+     * Safe on all Android versions (SDK 16+).
+     */
+    fun isLikelyPhone(
+        device: BluetoothDevice,
+        preferredMac: String = "",
+        lastUsedMac: String = ""
+    ): Boolean {
+        val address = try { device.address } catch (_: Exception) { "" }
+        if (address.isNotEmpty()) {
+            if (address.equals(preferredMac, ignoreCase = true) || address.equals(lastUsedMac, ignoreCase = true)) {
+                return true
+            }
+        }
+
+        val btClass = try { device.bluetoothClass } catch (_: Exception) { null } ?: return true
+        val major = btClass.majorDeviceClass
+
+        // Definite non-phone peripherals: mice, keyboards, watches, printers
+        if (major == android.bluetooth.BluetoothClass.Device.Major.PERIPHERAL ||
+            major == android.bluetooth.BluetoothClass.Device.Major.WEARABLE ||
+            major == android.bluetooth.BluetoothClass.Device.Major.IMAGING) {
+            return false
+        }
+
+        // Filter out dedicated audio output accessories (speakers, headphones, headsets)
+        if (major == android.bluetooth.BluetoothClass.Device.Major.AUDIO_VIDEO) {
+            return when (btClass.deviceClass) {
+                android.bluetooth.BluetoothClass.Device.AUDIO_VIDEO_LOUDSPEAKER,
+                android.bluetooth.BluetoothClass.Device.AUDIO_VIDEO_HEADPHONES,
+                android.bluetooth.BluetoothClass.Device.AUDIO_VIDEO_WEARABLE_HEADSET,
+                android.bluetooth.BluetoothClass.Device.AUDIO_VIDEO_PORTABLE_AUDIO,
+                android.bluetooth.BluetoothClass.Device.AUDIO_VIDEO_HIFI_AUDIO -> false
+                else -> true
+            }
+        }
+
+        return true
+    }
+
+    /**
+     * Returns the list of bonded Bluetooth devices that are confirmed to be currently connected.
+     * Safe on all Android versions (SDK 16+).
+     */
+    fun getConnectedBluetoothDevices(context: Context): List<BluetoothDevice> {
+        val adapter = try {
+            getBluetoothAdapter(context)
+        } catch (e: Exception) {
+            null
+        } ?: return emptyList()
+
+        val bonded = try {
+            adapter.bondedDevices?.toList() ?: emptyList()
+        } catch (e: Exception) {
+            emptyList()
+        }
+
+        return bonded.filter { isDeviceConnected(it) }
+    }
+
 
     /**
      * Resolves the real Bluetooth MAC address of this head unit's Bluetooth chip, or null.

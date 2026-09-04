@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="keep_dummy_vpn">Offline VPN aktívan tartása csatlakozás közben</string>
+    <string name="keep_dummy_vpn_description">Aktívan tartja az offline VPN-t csatlakoztatott telefon esetén, megakadályozva, hogy a Wi-Fi chip más hálózatokat keressen 2,4 GHz-en.</string>
+    <string name="keep_dummy_vpn_denied">VPN engedély megtagadva. Az offline VPN nem indítható automatikusan.</string>
+</resources>

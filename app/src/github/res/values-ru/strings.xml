@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="keep_dummy_vpn">Держать оффлайн-VPN активным во время сеанса</string>
+    <string name="keep_dummy_vpn_description">Удерживает оффлайн-VPN активным при подключении телефона, чтобы чип Wi-Fi магнитолы не сканировал другие сети на 2,4 ГГц.</string>
+    <string name="keep_dummy_vpn_denied">В разрешении VPN отказано. Оффлайн-VPN не может быть запущен автоматически.</string>
+</resources>

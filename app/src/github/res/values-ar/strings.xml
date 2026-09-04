@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="keep_dummy_vpn">إبقاء VPN غير المتصل نشطاً أثناء الاتصال</string>
+    <string name="keep_dummy_vpn_description">يبقي VPN غير المتصل نشطاً أثناء اتصال الهاتف لمنع شريحة Wi-Fi من البحث عن شبكات أخرى على 2.4 جيجاهرتز.</string>
+    <string name="keep_dummy_vpn_denied">تم رفض إذن VPN. لا يمكن تشغيل VPN غير المتصل تلقائياً.</string>
+</resources>

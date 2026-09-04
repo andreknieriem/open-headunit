@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="keep_dummy_vpn">Mantener VPN sin conexión durante la sesión</string>
+    <string name="keep_dummy_vpn_description">Mantiene activa la VPN sin conexión mientras el teléfono está conectado. Diseñado para unidades en 2.4 GHz o con tirones de audio/vídeo, evitando que el chip Wi-Fi busque otras redes. Las demás aplicaciones no tendrán acceso a Internet mientras esté activo.</string>
+    <string name="keep_dummy_vpn_denied">Permiso de VPN denegado. No se puede iniciar la VPN sin conexión automáticamente.</string>
+</resources>

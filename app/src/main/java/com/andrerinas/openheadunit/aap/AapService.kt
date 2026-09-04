@@ -2342,10 +2342,56 @@ class AapService : Service() {
                         val launcher = wifiLauncherManager.active
 
                         if (launcher is WifiLauncherNative) {
-                            launcher.handshakeManager?.manualPoke(mac)
+                            launcher.handshakeManager?.selectDriver(mac)
                         } else {
                             ToastUtils.showToast(this, "Native AA mode not active.")
                         }
+                    }
+                }
+            }
+            ACTION_NATIVE_AA_SWITCH_DEVICE -> {
+                val targetMac = intent?.getStringExtra(EXTRA_MAC)
+                AppLog.i("AapService: ACTION_NATIVE_AA_SWITCH_DEVICE received (targetMac=$targetMac)")
+                serviceScope.launch {
+                    if (commManager.isConnected) {
+                        commManager.disconnect(
+                            sendByeBye = true,
+                            isUserExit = true,
+                            byeByeReason = com.andrerinas.openheadunit.aap.protocol.proto.Control.ByeByeReason.DEVICE_SWITCH
+                        )
+                        commManager.awaitDisconnectComplete()
+                    }
+                    if (!targetMac.isNullOrEmpty()) {
+                        val pokeIntent = Intent(this@AapService, AapService::class.java).apply {
+                            action = ACTION_NATIVE_AA_POKE
+                            putExtra(EXTRA_MAC, targetMac)
+                        }
+                        startService(pokeIntent)
+                    } else {
+                        val mainIntent = Intent(this@AapService, MainActivity::class.java).apply {
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                            putExtra(MainActivity.EXTRA_SHOW_DRIVER_SELECTOR, true)
+                        }
+                        startActivity(mainIntent)
+                    }
+                }
+            }
+            ACTION_NATIVE_AA_CANCEL_POKE -> {
+                AppLog.i("AapService: ACTION_NATIVE_AA_CANCEL_POKE received — user explicitly canceled driver selection")
+                userExitedAA = true
+                val launcher = wifiLauncherManager.active
+                if (launcher is WifiLauncherNative) {
+                    launcher.handshakeManager?.cancelPoke()
+                }
+            }
+            ACTION_NATIVE_AA_PROMPT_SHOWN -> {
+                AppLog.i("AapService: ACTION_NATIVE_AA_PROMPT_SHOWN received")
+                val launcher = wifiLauncherManager.active
+                if (launcher is WifiLauncherNative) {
+                    launcher.handshakeManager?.let { hm ->
+                        hm.isSelectionPromptActive = true
+                        hm.isSelectionCanceled = false
+                        hm.cancelActivePokeLoop()
                     }
                 }
             }
@@ -2740,6 +2786,9 @@ class AapService : Service() {
         const val ACTION_START_WIRELESS_SCAN       = "com.andrerinas.openheadunit.ACTION_START_WIRELESS_SCAN"
         const val ACTION_STOP_WIRELESS             = "com.andrerinas.openheadunit.ACTION_STOP_WIRELESS"
         const val ACTION_NATIVE_AA_POKE            = "com.andrerinas.openheadunit.ACTION_NATIVE_AA_POKE"
+        const val ACTION_NATIVE_AA_SWITCH_DEVICE   = "com.andrerinas.openheadunit.ACTION_NATIVE_AA_SWITCH_DEVICE"
+        const val ACTION_NATIVE_AA_CANCEL_POKE      = "com.andrerinas.openheadunit.ACTION_NATIVE_AA_CANCEL_POKE"
+        const val ACTION_NATIVE_AA_PROMPT_SHOWN     = "com.andrerinas.openheadunit.ACTION_NATIVE_AA_PROMPT_SHOWN"
         const val ACTION_NEARBY_CONNECT             = "com.andrerinas.openheadunit.ACTION_NEARBY_CONNECT"
         const val ACTION_CHECK_USB                 = "com.andrerinas.openheadunit.ACTION_CHECK_USB"
         const val ACTION_STOP_SERVICE              = "com.andrerinas.openheadunit.aap.action.STOP_SERVICE"

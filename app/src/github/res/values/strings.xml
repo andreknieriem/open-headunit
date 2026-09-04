@@ -8,7 +8,7 @@
     directly, because R.string.keep_dummy_vpn does not exist in the other flavor.
 -->
 <resources>
-    <string name="keep_dummy_vpn" translatable="false">Keep the offline VPN up while connected</string>
-    <string name="keep_dummy_vpn_description" translatable="false">Brings this app’s offline VPN up while a phone is connected. Intended for units on 2.4 GHz or with periodic audio and video stutters, so the head unit’s WiFi chip stops looking for other networks. While it is on, other apps on this head unit have no internet. Applies on the next connection.</string>
-    <string name="keep_dummy_vpn_denied" translatable="false">VPN permission denied. The offline VPN cannot be brought up automatically.</string>
+    <string name="keep_dummy_vpn">Keep the offline VPN up while connected</string>
+    <string name="keep_dummy_vpn_description">Brings this app’s offline VPN up while a phone is connected. Intended for units on 2.4 GHz or with periodic audio and video stutters, so the head unit’s WiFi chip stops looking for other networks. While it is on, other apps on this head unit have no internet. Applies on the next connection.</string>
+    <string name="keep_dummy_vpn_denied">VPN permission denied. The offline VPN cannot be brought up automatically.</string>
 </resources>

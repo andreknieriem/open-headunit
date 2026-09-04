@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="keep_dummy_vpn">Giữ VPN ngoại tuyến hoạt động khi kết nối</string>
+    <string name="keep_dummy_vpn_description">Giữ VPN ngoại tuyến hoạt động trong khi điện thoại được kết nối để chip Wi-Fi không tìm kiếm các mạng khác trên 2.4 GHz.</string>
+    <string name="keep_dummy_vpn_denied">Quyền VPN bị từ chối. Không thể tự động khởi động VPN ngoại tuyến.</string>
+</resources>

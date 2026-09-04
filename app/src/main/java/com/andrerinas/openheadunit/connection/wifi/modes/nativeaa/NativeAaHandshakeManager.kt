@@ -244,6 +244,65 @@ class NativeAaHandshakeManager(
     // backoff, so a phone retrying every ~12 s does not repeat the long explanation each time.
     @Volatile private var loggedHandshakeBackoff = false
 
+    /** Whether the driver selection UI prompt is currently presented to the user. */
+    @Volatile var isSelectionPromptActive: Boolean = false
+    /** Whether the driver selection UI was explicitly canceled by the user (stops poke & refuses connections). */
+    @Volatile var isSelectionCanceled: Boolean = false
+    /** When a target device is selected, only this MAC is allowed to proceed. */
+    @Volatile var pendingSelectionTargetMac: String? = null
+
+    /**
+     * Targets a specific driver device, ending the prompt window and waking only that device.
+     */
+    fun selectDriver(mac: String) {
+        AppLog.i("NativeAA: Driver selected: $mac")
+        isSelectionCanceled = false
+        isSelectionPromptActive = false
+        pendingSelectionTargetMac = mac
+        manualPoke(mac)
+    }
+
+    /**
+     * Cancels any active poke and refuses incoming connections because the user explicitly cancelled.
+     */
+    fun cancelPoke() {
+        AppLog.i("NativeAA: cancelPoke() called — user explicitly canceled driver selection.")
+        isSelectionCanceled = true
+        isSelectionPromptActive = false
+        pendingSelectionTargetMac = null
+        pokeJob?.cancel()
+        pokeJob = null
+    }
+
+    /**
+     * Cancels any automated background multi-device poke loop when the selection prompt is active.
+     */
+    fun cancelActivePokeLoop() {
+        if (pendingSelectionTargetMac == null && pokeJob?.isActive == true) {
+            AppLog.i("NativeAA: Cancelling background multi-device poke loop because selection prompt is active.")
+            pokeJob?.cancel()
+            pokeJob = null
+        }
+    }
+
+    /**
+     * Determines whether an incoming Bluetooth RFCOMM connection from a phone should be accepted.
+     */
+    fun shouldAcceptHandshake(remoteAddress: String): Boolean {
+        if (isSelectionCanceled) {
+            AppLog.i("NativeAA: User explicitly canceled driver selection — refusing connection from $remoteAddress")
+            return false
+        }
+        if (isSelectionPromptActive) {
+            val target = pendingSelectionTargetMac
+            if (target == null || (remoteAddress.isNotEmpty() && !remoteAddress.equals(target, ignoreCase = true))) {
+                AppLog.i("NativeAA: Selection prompt active (target=$target) — refusing connection from $remoteAddress")
+                return false
+            }
+        }
+        return true
+    }
+
     /** Polls until the AAP TCP port is bound, or [timeoutMs] passes. */
     private suspend fun awaitWirelessServerListening(timeoutMs: Long): Boolean {
         val deadline = SystemClock.elapsedRealtime() + timeoutMs
@@ -464,10 +523,15 @@ class NativeAaHandshakeManager(
                 while (isRunning && isActive) {
                     val socket = server.accept()
                     if (socket != null) {
+                        val remoteAddress = try { socket.remoteDevice.address } catch (_: Exception) { "" }
                         if (serviceName == null) {
-                            AppLog.i("NativeAA: Connection accepted from ${socket.remoteDevice.name} (${socket.remoteDevice.address}) on local radio [$radioName]")
+                            AppLog.i("NativeAA: Connection accepted from ${socket.remoteDevice.name} ($remoteAddress) on local radio [$radioName]")
                         } else {
-                            AppLog.i("NativeAA: Connection accepted (secondary radio '$serviceName' [$radioName]) from ${socket.remoteDevice.name} (${socket.remoteDevice.address})")
+                            AppLog.i("NativeAA: Connection accepted (secondary radio '$serviceName' [$radioName]) from ${socket.remoteDevice.name} ($remoteAddress)")
+                        }
+                        if (!shouldAcceptHandshake(remoteAddress)) {
+                            try { socket.close() } catch (_: Exception) {}
+                            continue
                         }
                         if (refuseWhileBackedOff(socket)) continue
                         // [FIX] Launch handshake in a separate coroutine so the server can accept the next connection!
@@ -941,6 +1005,29 @@ class NativeAaHandshakeManager(
             AppLog.i("NativeAA: Handoff still settling — not starting a poke that would compete with the phone's WiFi association.")
             return
         }
+        if (isSelectionCanceled) {
+            AppLog.i("NativeAA: Driver selection was explicitly canceled by user — skipping automated poke.")
+            return
+        }
+        val bonded = try { BluetoothHelper.getBluetoothAdapter(context)?.bondedDevices?.toList() ?: emptyList() } catch (_: Exception) { emptyList() }
+        val connected = BluetoothHelper.getConnectedBluetoothDevices(context)
+        val likelyPhones = bonded.filter {
+            BluetoothHelper.isLikelyPhone(it, settings.nativePreferredDeviceMac, settings.lastConnectedNativeMac)
+        }
+        val targetList = likelyPhones.ifEmpty { bonded }
+        val hasHistory = settings.lastConnectedNativeMac.isNotEmpty() ||
+            settings.nativePreferredDeviceMac.isNotEmpty() ||
+            settings.autoStartBluetoothDeviceMacs.isNotEmpty()
+        val selectorActive = NativeDriverSelectionPolicy.shouldShowSelector(
+            mode = settings.nativeDriverSelectionMode,
+            pairedCount = targetList.size,
+            connectedCount = connected.size,
+            hasHistory = hasHistory
+        )
+        if ((selectorActive || isSelectionPromptActive) && pendingSelectionTargetMac == null) {
+            AppLog.i("NativeAA: Multi-driver selection is active and awaiting user choice — deferring automated multi-device poke loop.")
+            return
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             if (ContextCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -1346,6 +1433,10 @@ class NativeAaHandshakeManager(
                         // can reach this having had nothing from us before it.
                         spokeToPhone = true
                         AppLog.i("NativeAA: Handshake completed successfully on Bluetooth side.")
+                        val remoteMac = try { socket.remoteDevice.address } catch (_: Exception) { "" }
+                        if (remoteMac.isNotEmpty()) {
+                            settings.lastConnectedNativeMac = remoteMac
+                        }
                         ifOwner(socket) {
                             // The exchange is done; the phone's work is not — it still has to
                             // associate, run WPS and get a DHCP lease. See isHandoffSettling().

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="keep_dummy_vpn">Offline-VPN während der Verbindung aktiv halten</string>
+    <string name="keep_dummy_vpn_description">Hält das Offline-VPN dieser App aktiv, während ein Smartphone verbunden ist. Gedacht für Geräte auf 2,4 GHz oder bei Audio- und Video-Rucklern, damit der WLAN-Chip des Headunits die Suche nach anderen Netzwerken einstellt. Währenddessen haben andere Apps auf diesem Headunit keinen Internetzugriff. Wirkt ab der nächsten Verbindung.</string>
+    <string name="keep_dummy_vpn_denied">VPN-Berechtigung verweigert. Das Offline-VPN kann nicht automatisch gestartet werden.</string>
+</resources>

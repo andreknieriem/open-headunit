@@ -692,12 +692,12 @@
     <!-- Debug-only: deliberately corrupts the projected video stream so the reassembler's
          failure paths can be exercised on a unit that is working correctly. Not translated on
          purpose - it is a developer tool and the terms are protocol terms. -->
-    <string name="debug_video_fault_injection" translatable="false">Video fault injection</string>
-    <string name="debug_video_fault_rate" translatable="false">Fault rate (one in N)</string>
-    <string name="debug_video_fault_budget" translatable="false">Fault budget</string>
-    <string name="debug_force_memory_profile" translatable="false">Force memory profile</string>
-    <string name="debug_video_low_latency" translatable="false">Request decoder low-latency mode</string>
-    <string name="debug_video_low_latency_description" translatable="false">Sets the vendor low-latency MediaFormat key when configuring the video decoder. Falls back automatically if the decoder rejects it.</string>
+        <string name="debug_video_fault_injection">Injection de pannes vidéo</string>
+        <string name="debug_video_fault_rate">Taux de panne (1 sur N)</string>
+        <string name="debug_video_fault_budget">Budget de pannes</string>
+        <string name="debug_force_memory_profile">Forcer le profil mémoire</string>
+        <string name="debug_video_low_latency">Demander le mode faible latence du décodeur</string>
+        <string name="debug_video_low_latency_description">Définit la clé MediaFormat propriétaire de faible latence lors de la configuration du décodeur vidéo. Revient automatiquement en arrière si le décodeur la refuse.</string>
     <string name="show_fps_counter_description">Afficher un compteur FPS en temps réel dans le coin supérieur gauche pendant la projection.</string>
 
     <!-- Auto-start permission strings -->
@@ -1087,4 +1087,49 @@
     <string name="onb_audio_title">Audio</string>
     <string name="onb_audio_help">Choisissez le flux système sur lequel joue chaque canal Android Auto, puis appuyez sur le haut-parleur pour l\'entendre. Si un canal reste muet dans la voiture, le basculer sur un autre flux règle généralement le problème.</string>
     <string name="onb_audio_more_hint">Vous pourrez modifier ces réglages plus tard dans Paramètres → Flux audio.</string>
+    <string name="native_driver_selection_title">Sélection du conducteur</string>
+    <string name="native_driver_selection_summary">Choisir le téléphone à connecter lorsque plusieurs conducteurs appairés sont dans le véhicule</string>
+    <string name="native_driver_selection_mode_off">Désactivé</string>
+    <string name="native_driver_selection_mode_auto">Auto</string>
+    <string name="native_driver_selection_mode_always">Toujours demander</string>
+    <string name="native_driver_selection_timeout">Compte à rebours de connexion auto</string>
+    <string name="native_driver_preferred_device">Téléphone préféré</string>
+    <string name="switch_driver">Changer de téléphone</string>
+    <string name="driver_device_connected">Dans le véhicule / Connecté</string>
+    <string name="driver_device_paired">Appairé</string>
+    <string name="driver_device_preferred">Préféré</string>
+    <string name="driver_device_last_used">Dernier connecté</string>
+    <string name="driver_selection_auto_in">Connexion automatique à %2$s dans %1$ds...</string>
+    <string name="driver_selection_dialog_title">Sélectionner le téléphone du conducteur</string>
+    <string name="connecting_to_device">Connexion à %s...</string>
+    <string name="driver_none">Aucun</string>
+    <string name="show_all_devices">Afficher tous les appareils Bluetooth</string>
+    <string name="show_only_phones">Afficher uniquement les téléphones</string>
+    <string name="no_paired_bt_devices">Aucun appareil Bluetooth appairé trouvé</string>
+    <string name="auto_disconnect_bt_label">Déconnexion automatique Bluetooth</string>
+    <string name="select_bt_disconnect_device">Sélectionner l\'appareil Bluetooth à surveiller</string>
+    <string name="native_poke_bt_label">Appareil à réveiller pour Android Auto sans fil</string>
+    <string name="select_bt_poke_device">Sélectionner l\'appareil Bluetooth à réveiller</string>
+    <string name="native_poke_all_paired_label">Réveiller tous les appareils appairés</string>
+    <string name="native_poke_all_paired_description">Sans appareil sélectionné ci-dessus, se connecte brièvement à chaque appareil appairé pour lancer Android Auto. Désactivez cette option pour ne rien réveiller avant d\'en choisir un.</string>
+    <string name="auto_disconnect_bt_delay_label">Délai avant déconnexion</string>
+    <string name="auto_disconnect_bt_delay_value">%1$d s</string>
+    <string name="auto_disconnect_bt_delay_immediate">Immédiatement</string>
+    <string name="enter_auto_disconnect_bt_delay">Secondes à attendre avant de mettre fin à la session</string>
+    <string name="auto_disconnect_bt_delay_hint">Une connexion Bluetooth peut être brièvement interrompue pendant la reconnexion des profils. La session ne se termine que si l\'appareil est toujours absent après ce délai.</string>
+    <string name="auto_disconnect_bt_kill_hint">Met fin à la session lorsque le Bluetooth d\'un appareil sélectionné se déconnecte, par exemple lorsque le contact du véhicule est coupé. Sélectionnez le Bluetooth de la voiture si l\'appareil y est appairé. Pour fermer aussi l\'application et afficher l\'écran d\'accueil, activez « Fermer l\'application lors de la déconnexion » sous Automatisation.</string>
+    <string name="audio_stream_vendor_format">%1$s (%2$d)</string>
+    <string name="five_ghz_channel">Canal 5 GHz</string>
+    <string name="five_ghz_channel_auto">Automatique</string>
+    <string name="five_ghz_channel_option">Canal %1$d (%2$d MHz)</string>
+    <string name="stand_down_station">Quitter le réseau Wi-Fi de l\'appareil lors de la connexion</string>
+    <string name="stand_down_station_description">Déconnecte cet autoradio de son propre réseau Wi-Fi juste avant la création du groupe Wi-Fi Direct, et le reconnecte à la fin de la session. Sur un appareil à puce unique, un réseau connecté ne laisse aucun canal libre au groupe, qui est forcé sur ce canal ou refusé. Essayez ceci si votre téléphone ne se connecte jamais.</string>
+    <string name="stand_down_station_needs_overlay">Nécessite l\'autorisation « afficher sur d\'autres applications » sur cette version d\'Android.</string>
+    <string name="wifi_direct_stable_identity">Conserver le même réseau Wi-Fi Direct</string>
+    <string name="wifi_direct_stable_identity_description">Demande le groupe avec le même nom et mot de passe à chaque fois, afin que votre téléphone rejoigne un réseau connu au lieu d\'en configurer un nouveau à chaque trajet. Désactivez cette option pour obtenir un nouveau réseau à chaque connexion (comme dans les versions 3.2 et 3.3) si le téléphone refuse le réseau enregistré. Essayer une nouvelle identité ci-dessous est la solution la plus simple.</string>
+    <string name="wifi_direct_new_identity">Nouvelle identité réseau Wi-Fi Direct</string>
+    <string name="wifi_direct_new_identity_none">Choisie lors de la prochaine connexion</string>
+    <string name="wifi_direct_new_identity_confirm">Choisit un nouveau nom et mot de passe pour le groupe, appliqués dès la prochaine connexion. Votre téléphone sera configuré via Bluetooth comme s\'il s\'agissait d\'un nouvel autoradio. Utilisez cette option si le téléphone persiste à essayer un réseau inaccessible.</string>
+    <string name="wifi_direct_new_identity_done">Une nouvelle identité réseau sera utilisée dès la prochaine connexion.</string>
+    <string name="debug_video_feed_hold">Simuler un décodeur lent</string>
 </resources>

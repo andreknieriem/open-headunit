@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="keep_dummy_vpn">Offline-VPN actief houden tijdens verbinding</string>
+    <string name="keep_dummy_vpn_description">Houdt de offline-VPN van de app actief zolang er een telefoon verbonden is om te voorkomen dat de Wi-Fi-chip op 2,4 GHz naar andere netwerken zoekt.</string>
+    <string name="keep_dummy_vpn_denied">VPN-toestemming geweigerd. De offline-VPN kan niet automatisch worden gestart.</string>
+</resources>

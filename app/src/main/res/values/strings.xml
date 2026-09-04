@@ -411,19 +411,19 @@
     <string name="auto_start_screen_on_description">Open the app every time the screen turns on. Ideal for head units that never fully shut down or use fast boot modes where the other auto-start options don\'t work. Not recommended for phones or tablets.</string>
     <string name="select_bt_device">Select Bluetooth Device</string>
     <string name="bt_device_not_set">Not set</string>
-    <string name="no_paired_bt_devices" translatable="false">No paired Bluetooth devices found</string>
-    <string name="auto_disconnect_bt_label" translatable="false">Auto-disconnect on Bluetooth</string>
-    <string name="select_bt_disconnect_device" translatable="false">Select the Bluetooth device to watch</string>
-    <string name="native_poke_bt_label" translatable="false">Device to wake for wireless Android Auto</string>
-    <string name="select_bt_poke_device" translatable="false">Select the Bluetooth device to wake</string>
-    <string name="native_poke_all_paired_label" translatable="false">Wake every paired device</string>
-    <string name="native_poke_all_paired_description" translatable="false">With no device chosen above, connect briefly to every paired device to start Android Auto. Turn this off to wake nothing until you choose one.</string>
-    <string name="auto_disconnect_bt_delay_label" translatable="false">Wait before disconnecting</string>
-    <string name="auto_disconnect_bt_delay_value" translatable="false">%1$d s</string>
-    <string name="auto_disconnect_bt_delay_immediate" translatable="false">Immediately</string>
-    <string name="enter_auto_disconnect_bt_delay" translatable="false">Seconds to wait before ending the session</string>
-    <string name="auto_disconnect_bt_delay_hint" translatable="false">A Bluetooth link can drop for a moment while profiles reconnect. The session only ends if the device is still gone after this long.</string>
-    <string name="auto_disconnect_bt_kill_hint" translatable="false">Ends the session the way the Exit button does when a chosen device\'s Bluetooth goes away, for example the car being switched off. Pick the car\'s Bluetooth if this unit is paired with it. To also close the app and show the home screen, turn on \"Close app on disconnect\" under Automation.</string>
+    <string name="no_paired_bt_devices">No paired Bluetooth devices found</string>
+    <string name="auto_disconnect_bt_label">Auto-disconnect on Bluetooth</string>
+    <string name="select_bt_disconnect_device">Select the Bluetooth device to watch</string>
+    <string name="native_poke_bt_label">Device to wake for wireless Android Auto</string>
+    <string name="select_bt_poke_device">Select the Bluetooth device to wake</string>
+    <string name="native_poke_all_paired_label">Wake every paired device</string>
+    <string name="native_poke_all_paired_description">With no device chosen above, connect briefly to every paired device to start Android Auto. Turn this off to wake nothing until you choose one.</string>
+    <string name="auto_disconnect_bt_delay_label">Wait before disconnecting</string>
+    <string name="auto_disconnect_bt_delay_value">%1$d s</string>
+    <string name="auto_disconnect_bt_delay_immediate">Immediately</string>
+    <string name="enter_auto_disconnect_bt_delay">Seconds to wait before ending the session</string>
+    <string name="auto_disconnect_bt_delay_hint">A Bluetooth link can drop for a moment while profiles reconnect. The session only ends if the device is still gone after this long.</string>
+    <string name="auto_disconnect_bt_kill_hint">Ends the session the way the Exit button does when a chosen device\'s Bluetooth goes away, for example the car being switched off. Pick the car\'s Bluetooth if this unit is paired with it. To also close the app and show the home screen, turn on \"Close app on disconnect\" under Automation.</string>
     <string name="auto_start_wifi_label">Auto-start on WiFi</string>
     <string name="auto_start_wifi_description">Automatically open Open Headunit when connected to a specific WiFi SSID.</string>
     <string name="auto_start_wifi_ssid_label">WiFi SSID</string>
@@ -560,7 +560,7 @@
     <string name="audio_stream_accessibility">Accessibility</string>
     <string name="audio_stream_assistant">Assistant</string>
     <!-- A stream this device has that stock Android does not, e.g. "MUSIC_SECOND (10)". -->
-    <string name="audio_stream_vendor_format" translatable="false">%1$s (%2$d)</string>
+    <string name="audio_stream_vendor_format">%1$s (%2$d)</string>
     <!-- A stream with no name at all: only its number is known. -->
     <string name="audio_stream_unnamed_format">Stream %1$d</string>
     <!-- A saved stream that this device does not have, e.g. after restoring a backup. -->
@@ -796,25 +796,25 @@
     <!-- Debug-only: deliberately corrupts the projected video stream so the reassembler's
          failure paths can be exercised on a unit that is working correctly. Not translated on
          purpose - it is a developer tool and the terms are protocol terms. -->
-    <string name="debug_video_fault_injection" translatable="false">Video fault injection</string>
-    <string name="debug_video_fault_rate" translatable="false">Fault rate (one in N)</string>
-    <string name="debug_video_fault_budget" translatable="false">Fault budget</string>
-    <string name="debug_force_memory_profile" translatable="false">Force memory profile</string>
-    <string name="five_ghz_channel" translatable="false">5 GHz channel</string>
-    <string name="five_ghz_channel_auto" translatable="false">Automatic</string>
-    <string name="five_ghz_channel_option" translatable="false">Channel %1$d (%2$d MHz)</string>
-    <string name="stand_down_station" translatable="false">Leave this unit\'s WiFi network while connecting</string>
-    <string name="stand_down_station_description" translatable="false">Disconnects this head unit from its own WiFi network just before the WiFi Direct group is created, and reconnects it when the session ends. On a single-radio unit a joined network leaves the group no free channel, so the group is forced onto that network\'s channel or is refused outright. Try this if your phone never joins. Note that most units measured so far run better with the network joined, so turn it back off if the picture gets worse.</string>
-    <string name="stand_down_station_needs_overlay" translatable="false">Needs the \"display over other apps\" permission on this Android version.</string>
-    <string name="wifi_direct_stable_identity" translatable="false">Keep the same WiFi Direct network</string>
-    <string name="wifi_direct_stable_identity_description" translatable="false">Asks for the group with the same name and password every time, so your phone rejoins a network it already knows instead of being set up for a new one on every drive. Turn it off to get a new network on every connection, which is how versions 3.2 and 3.3 worked, if a phone keeps refusing the saved one. Trying a new identity below is the lighter fix.</string>
-    <string name="wifi_direct_new_identity" translatable="false">New WiFi Direct network identity</string>
-    <string name="wifi_direct_new_identity_none" translatable="false">Chosen at the next connection</string>
-    <string name="wifi_direct_new_identity_confirm" translatable="false">Picks a new name and password for the group, used from the next connection on. Your phone will be set up for it over Bluetooth as if this were a new head unit. Do this if the phone keeps trying a network it can no longer join.</string>
-    <string name="wifi_direct_new_identity_done" translatable="false">A new network identity will be used from the next connection.</string>
-    <string name="debug_video_low_latency" translatable="false">Request decoder low-latency mode</string>
-    <string name="debug_video_low_latency_description" translatable="false">Sets the vendor low-latency MediaFormat key when configuring the video decoder. Falls back automatically if the decoder rejects it.</string>
-    <string name="debug_video_feed_hold" translatable="false">Simulate a slow decoder</string>
+    <string name="debug_video_fault_injection">Video fault injection</string>
+    <string name="debug_video_fault_rate">Fault rate (one in N)</string>
+    <string name="debug_video_fault_budget">Fault budget</string>
+    <string name="debug_force_memory_profile">Force memory profile</string>
+    <string name="five_ghz_channel">5 GHz channel</string>
+    <string name="five_ghz_channel_auto">Automatic</string>
+    <string name="five_ghz_channel_option">Channel %1$d (%2$d MHz)</string>
+    <string name="stand_down_station">Leave this unit\'s WiFi network while connecting</string>
+    <string name="stand_down_station_description">Disconnects this head unit from its own WiFi network just before the WiFi Direct group is created, and reconnects it when the session ends. On a single-radio unit a joined network leaves the group no free channel, so the group is forced onto that network\'s channel or is refused outright. Try this if your phone never joins. Note that most units measured so far run better with the network joined, so turn it back off if the picture gets worse.</string>
+    <string name="stand_down_station_needs_overlay">Needs the \"display over other apps\" permission on this Android version.</string>
+    <string name="wifi_direct_stable_identity">Keep the same WiFi Direct network</string>
+    <string name="wifi_direct_stable_identity_description">Asks for the group with the same name and password every time, so your phone rejoins a network it already knows instead of being set up for a new one on every drive. Turn it off to get a new network on every connection, which is how versions 3.2 and 3.3 worked, if a phone keeps refusing the saved one. Trying a new identity below is the lighter fix.</string>
+    <string name="wifi_direct_new_identity">New WiFi Direct network identity</string>
+    <string name="wifi_direct_new_identity_none">Chosen at the next connection</string>
+    <string name="wifi_direct_new_identity_confirm">Picks a new name and password for the group, used from the next connection on. Your phone will be set up for it over Bluetooth as if this were a new head unit. Do this if the phone keeps trying a network it can no longer join.</string>
+    <string name="wifi_direct_new_identity_done">A new network identity will be used from the next connection.</string>
+    <string name="debug_video_low_latency">Request decoder low-latency mode</string>
+    <string name="debug_video_low_latency_description">Sets the vendor low-latency MediaFormat key when configuring the video decoder. Falls back automatically if the decoder rejects it.</string>
+    <string name="debug_video_feed_hold">Simulate a slow decoder</string>
     <string name="show_fps_counter_description">Display a real-time FPS overlay in the top-left corner during projection.</string>
 
     <!-- Auto-start permission strings -->
@@ -1132,4 +1132,22 @@
     <string name="auto_connect_delay_summary_format">%1$s (%2$ds delay)</string>
     <string name="failed_aa_not_system">Failed: Android Auto isn\'t installed as a system app!</string>
     <string name="failed_aa_not_installed">Failed: Android Auto is not installed!</string>
+    <string name="native_driver_selection_title">Driver Selection</string>
+    <string name="native_driver_selection_summary">Choose which phone to connect with when multiple paired drivers are in the vehicle</string>
+    <string name="native_driver_selection_mode_off">Disabled</string>
+    <string name="native_driver_selection_mode_auto">Auto</string>
+    <string name="native_driver_selection_mode_always">Always Ask</string>
+    <string name="native_driver_selection_timeout">Auto-Connect Countdown</string>
+    <string name="native_driver_preferred_device">Preferred Phone</string>
+    <string name="switch_driver">Switch Phone</string>
+    <string name="driver_device_connected">In vehicle / Connected</string>
+    <string name="driver_device_paired">Paired</string>
+    <string name="driver_device_preferred">Preferred</string>
+    <string name="driver_device_last_used">Last Connected</string>
+    <string name="driver_selection_auto_in">Auto-connecting to %2$s in %1$ds...</string>
+    <string name="driver_selection_dialog_title">Select Driver Phone</string>
+    <string name="connecting_to_device">Connecting to %s...</string>
+    <string name="driver_none">None</string>
+    <string name="show_all_devices">Show all Bluetooth devices</string>
+    <string name="show_only_phones">Show only phones</string>
 </resources>

@@ -21,6 +21,7 @@ import com.andrerinas.openheadunit.connection.usb.UsbDeviceCompat
 import com.andrerinas.openheadunit.connection.wifi.direct.ObservedP2pGroup
 import com.andrerinas.openheadunit.connection.wifi.direct.StoredP2pIdentity
 import com.andrerinas.openheadunit.connection.wifi.modes.helper.HelperStrategy
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeDriverSelectionPolicy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeStrategy
 import com.andrerinas.openheadunit.connection.wifi.WifiLauncherMode
 
@@ -1916,6 +1917,24 @@ class Settings(private val context: Context) {
     var nativeWifiVersionExchange: Boolean
         get() = prefs.getBoolean("native-wifi-version-exchange", false)
         set(value) = prefs.edit().putBoolean("native-wifi-version-exchange", value).apply()
+
+    var nativeDriverSelectionMode: NativeDriverSelectionPolicy.Mode
+        get() = NativeDriverSelectionPolicy.Mode.fromId(
+            prefs.getInt("native-driver-selection-mode", NativeDriverSelectionPolicy.Mode.AUTO.id)
+        )
+        set(value) = prefs.edit().putInt("native-driver-selection-mode", value.id).apply()
+
+    var nativeDriverSelectionTimeoutSec: Int
+        get() = prefs.getInt("native-driver-selection-timeout", NativeDriverSelectionPolicy.DEFAULT_TIMEOUT_SEC)
+        set(value) = prefs.edit().putInt("native-driver-selection-timeout", NativeDriverSelectionPolicy.sanitizeTimeout(value)).apply()
+
+    var nativePreferredDeviceMac: String
+        get() = prefs.getString("native-preferred-device-mac", "") ?: ""
+        set(value) = prefs.edit().putString("native-preferred-device-mac", value).apply()
+
+    var lastConnectedNativeMac: String
+        get() = prefs.getString("last-connected-native-mac", "") ?: ""
+        set(value) = prefs.edit().putString("last-connected-native-mac", value).apply()
 
     // ---------------------------------------------------------------------------------------------
     // Standing connection failures.

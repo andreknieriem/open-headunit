@@ -16,12 +16,15 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.activity.result.contract.ActivityResultContracts
 import android.content.pm.PackageManager
 import android.net.ConnectivityManager
-import android.os.Build
 import androidx.fragment.app.Fragment
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
+import android.os.Build
+import android.bluetooth.BluetoothDevice
+import android.os.CountDownTimer
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeDriverSelectionPolicy
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.aap.AapProjectionActivity
@@ -81,6 +84,7 @@ class HomeFragment : Fragment() {
     private var hasAttemptedAutoConnect = false
     private var hasAttemptedSingleUsbAutoConnect = false
     private var activeDialog: androidx.appcompat.app.AlertDialog? = null
+    private var driverCountdownTimer: CountDownTimer? = null
     private var portraitLayoutListener: ViewTreeObserver.OnGlobalLayoutListener? = null
 
     private fun updateWifiButtonFeedback(scanning: Boolean) {
@@ -516,7 +520,56 @@ class HomeFragment : Fragment() {
                         ContextCompat.checkSelfPermission(requireContext(), android.Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
                         bluetoothPermissionLauncher.launch(android.Manifest.permission.BLUETOOTH_CONNECT)
                     } else {
-                        showNativeAaDeviceSelector()
+                        val appSettings = App.provide(requireContext()).settings
+                        val adapter = BluetoothHelper.getBluetoothAdapter(requireContext())
+                        val bonded = adapter?.bondedDevices?.toList() ?: emptyList()
+                        val connected = BluetoothHelper.getConnectedBluetoothDevices(requireContext())
+                        val likelyPhones = bonded.filter {
+                            BluetoothHelper.isLikelyPhone(it, appSettings.nativePreferredDeviceMac, appSettings.lastConnectedNativeMac)
+                        }
+                        val candidates = if (likelyPhones.isNotEmpty()) likelyPhones else bonded
+                        val hasHistory = appSettings.lastConnectedNativeMac.isNotEmpty() ||
+                            appSettings.nativePreferredDeviceMac.isNotEmpty() ||
+                            appSettings.autoStartBluetoothDeviceMacs.isNotEmpty()
+
+                        val autoTargetMac = NativeDriverSelectionPolicy.resolveAutoConnectTarget(
+                            preferredMac = appSettings.nativePreferredDeviceMac,
+                            lastUsedMac = appSettings.lastConnectedNativeMac.ifEmpty {
+                                appSettings.autoStartBluetoothDeviceMacs.firstOrNull().orEmpty()
+                            },
+                            connectedMacs = connected.map { it.address },
+                            pairedMacs = candidates.map { it.address }
+                        )
+
+                        val shouldShow = NativeDriverSelectionPolicy.shouldShowSelector(
+                            mode = appSettings.nativeDriverSelectionMode,
+                            pairedCount = candidates.size,
+                            connectedCount = connected.size,
+                            hasHistory = hasHistory
+                        )
+
+                        if (appSettings.nativeDriverSelectionMode == NativeDriverSelectionPolicy.Mode.DISABLED) {
+                            if (autoTargetMac != null) {
+                                val targetDev = bonded.firstOrNull { it.address.equals(autoTargetMac, ignoreCase = true) }
+                                val devName = targetDev?.name ?: autoTargetMac
+                                connectToNativeDevice(autoTargetMac, devName)
+                            } else {
+                                Toast.makeText(requireContext(), getString(R.string.searching_phone), Toast.LENGTH_SHORT).show()
+                                val intent = Intent(requireContext(), AapService::class.java).apply {
+                                    action = AapService.ACTION_NATIVE_AA_POKE
+                                    if (candidates.size == 1) {
+                                        putExtra(AapService.EXTRA_MAC, candidates[0].address)
+                                    }
+                                }
+                                ContextCompat.startForegroundService(requireContext(), intent)
+                            }
+                        } else if (!shouldShow && autoTargetMac != null) {
+                            val targetDev = bonded.firstOrNull { it.address.equals(autoTargetMac, ignoreCase = true) }
+                            val devName = targetDev?.name ?: autoTargetMac
+                            connectToNativeDevice(autoTargetMac, devName)
+                        } else {
+                            showNativeAaDeviceSelector(autoCountdown = false)
+                        }
                     }
                 }
                 WifiLauncherMode.MANUAL -> { // Manual (0) -> Open List
@@ -618,6 +671,18 @@ class HomeFragment : Fragment() {
         if (resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT) {
             view?.let { constrainPortraitGridWidth(it) }
         }
+
+        val appSettings = App.provide(requireContext()).settings
+        if (requestDriverSelection) {
+            requestDriverSelection = false
+            showNativeAaDeviceSelector(autoCountdown = false)
+        } else if (appSettings.wifiConnectionMode == WifiLauncherMode.NATIVE &&
+            !hasCheckedNativeDriverSelection &&
+            !commManager.isConnected
+        ) {
+            checkNativeDriverSelectionOnStartup()
+        }
+
         activity?.let { act ->
             val isDestroyed = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1)
                 act.isDestroyed
@@ -633,6 +698,8 @@ class HomeFragment : Fragment() {
 
     override fun onPause() {
         super.onPause()
+        driverCountdownTimer?.cancel()
+        driverCountdownTimer = null
         activeDialog?.dismiss()
         activeDialog = null
         RenameNotice.dismiss()
@@ -649,7 +716,54 @@ class HomeFragment : Fragment() {
         }
     }
 
-    private fun showNativeAaDeviceSelector() {
+    private fun checkNativeDriverSelectionOnStartup() {
+        if (!isAdded) return
+        hasCheckedNativeDriverSelection = true
+        val appSettings = App.provide(requireContext()).settings
+        if (appSettings.nativeDriverSelectionMode == NativeDriverSelectionPolicy.Mode.DISABLED) return
+        val adapter = BluetoothHelper.getBluetoothAdapter(requireContext())
+        if (adapter == null || !adapter.isEnabled) return
+
+        val bonded = adapter.bondedDevices?.toList() ?: emptyList()
+        val connected = BluetoothHelper.getConnectedBluetoothDevices(requireContext())
+
+        // Filter likely phones so non-phone accessories (speakers, headphones, watches) don't trigger multi-device prompt
+        val likelyPhones = bonded.filter {
+            BluetoothHelper.isLikelyPhone(it, appSettings.nativePreferredDeviceMac, appSettings.lastConnectedNativeMac)
+        }
+        val targetList = if (likelyPhones.isNotEmpty()) likelyPhones else bonded
+
+        val effectiveLastUsedMac = appSettings.lastConnectedNativeMac.ifEmpty {
+            appSettings.autoStartBluetoothDeviceMacs.firstOrNull().orEmpty()
+        }
+        val hasHistory = effectiveLastUsedMac.isNotEmpty() || appSettings.nativePreferredDeviceMac.isNotEmpty()
+
+        val shouldShow = NativeDriverSelectionPolicy.shouldShowSelector(
+            mode = appSettings.nativeDriverSelectionMode,
+            pairedCount = targetList.size,
+            connectedCount = connected.size,
+            hasHistory = hasHistory
+        )
+
+        val autoTargetMac = NativeDriverSelectionPolicy.resolveAutoConnectTarget(
+            preferredMac = appSettings.nativePreferredDeviceMac,
+            lastUsedMac = effectiveLastUsedMac,
+            connectedMacs = connected.map { it.address },
+            pairedMacs = targetList.map { it.address }
+        )
+
+        if (shouldShow) {
+            showNativeAaDeviceSelector(autoCountdown = true)
+        } else if (appSettings.nativeDriverSelectionMode == NativeDriverSelectionPolicy.Mode.AUTO && autoTargetMac != null) {
+            val targetDev = bonded.firstOrNull { it.address.equals(autoTargetMac, ignoreCase = true) }
+            val devName = targetDev?.name ?: autoTargetMac
+            AppLog.i("HomeFragment: Unambiguous driver ($devName) - auto-connecting directly without prompt")
+            connectToNativeDevice(autoTargetMac, devName)
+        }
+    }
+
+    private fun showNativeAaDeviceSelector(autoCountdown: Boolean = false) {
+        if (!isAdded) return
         val adapter = BluetoothHelper.getBluetoothAdapter(requireContext())
 
         if (adapter == null || !adapter.isEnabled) {
@@ -663,28 +777,247 @@ class HomeFragment : Fragment() {
             return
         }
 
-        val deviceNames = bondedDevices.map { it.name ?: "Unknown Device" }.toTypedArray()
+        val appSettings = App.provide(requireContext()).settings
+        val connectedDevices = BluetoothHelper.getConnectedBluetoothDevices(requireContext())
+        val connectedMacs = connectedDevices.map { it.address }
+        val preferredMac = appSettings.nativePreferredDeviceMac
+        val lastUsedMac = appSettings.lastConnectedNativeMac
 
+        // Filter out obvious non-phone accessories (BT speakers, headphones, wearables)
+        val likelyPhones = bondedDevices.filter {
+            BluetoothHelper.isLikelyPhone(it, preferredMac, lastUsedMac)
+        }
+        var showAllDevices = likelyPhones.isEmpty()
+        val initialCandidates = if (showAllDevices) bondedDevices else likelyPhones
 
-        activeDialog = MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-            .setTitle(R.string.select_bt_device)
-            .setItems(deviceNames) { _, which ->
-                val device = bondedDevices[which]
-                AppLog.i("HomeFragment: Manually selected ${device.name} for Native-AA poke")
+        fun sortDeviceList(devices: List<BluetoothDevice>): List<BluetoothDevice> {
+            return devices.sortedWith(
+                compareByDescending<BluetoothDevice> { it.address in connectedMacs }
+                    .thenByDescending { it.address.equals(preferredMac, ignoreCase = true) }
+                    .thenByDescending { it.address.equals(lastUsedMac, ignoreCase = true) }
+                    .thenBy { it.name ?: "" }
+            )
+        }
 
-                (requireActivity() as? MainActivity)?.beginAutoConnect(
-                    "manual Native-AA poke",
-                    MainActivity.ConnectionUiMode.OVERLAY
-                )
-                val intent = Intent(requireContext(), AapService::class.java).apply {
-                    action = AapService.ACTION_NATIVE_AA_POKE
-                    putExtra(AapService.EXTRA_MAC, device.address)
+        val currentDevices = mutableListOf<BluetoothDevice>()
+        currentDevices.addAll(sortDeviceList(initialCandidates))
+
+        val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_driver_selector, null)
+        val countdownContainer = dialogView.findViewById<View>(R.id.countdownContainer)
+        val countdownSubtitle = dialogView.findViewById<TextView>(R.id.countdownSubtitle)
+        val countdownProgress = dialogView.findViewById<ProgressBar>(R.id.countdownProgress)
+        val deviceListView = dialogView.findViewById<ListView>(R.id.driverDeviceList)
+        val btnToggleFilter = dialogView.findViewById<TextView>(R.id.btnToggleFilter)
+
+        val brandTeal = ContextCompat.getColor(requireContext(), R.color.brand_teal)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            countdownProgress.progressTintList = ColorStateList.valueOf(brandTeal)
+        }
+
+        val connectedMacSet = connectedMacs.toSet()
+        val listAdapter = object : ArrayAdapter<BluetoothDevice>(requireContext(), R.layout.list_item_driver_device, currentDevices) {
+            override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+                val view = convertView ?: LayoutInflater.from(context).inflate(R.layout.list_item_driver_device, parent, false)
+                val device = getItem(position) ?: return view
+                val nameView = view.findViewById<TextView>(R.id.deviceName)
+                val statusView = view.findViewById<TextView>(R.id.deviceStatus)
+                val badgeView = view.findViewById<TextView>(R.id.badgeText)
+
+                val iconView = view.findViewById<ImageView>(R.id.deviceIcon)
+                if (BluetoothHelper.isLikelyPhone(device, preferredMac, lastUsedMac)) {
+                    iconView.setImageResource(R.drawable.ic_phone)
+                } else {
+                    iconView.setImageResource(R.drawable.ic_headphones)
                 }
-                ContextCompat.startForegroundService(requireContext(), intent)
-                Toast.makeText(requireContext(), "Searching for ${device.name}...", Toast.LENGTH_SHORT).show()
+
+                nameView.text = device.name ?: "Unknown Device"
+
+                val isConnected = device.address in connectedMacSet
+                if (isConnected) {
+                    statusView.text = "🟢 " + context.getString(R.string.driver_device_connected)
+                    statusView.setTextColor(ContextCompat.getColor(context, R.color.brand_teal))
+                } else {
+                    statusView.text = context.getString(R.string.driver_device_paired)
+                    statusView.setTextColor(Color.LTGRAY)
+                }
+
+                when {
+                    device.address.equals(preferredMac, ignoreCase = true) -> {
+                        badgeView.text = "⭐ " + context.getString(R.string.driver_device_preferred)
+                        badgeView.visibility = View.VISIBLE
+                        badgeView.setBackgroundResource(R.drawable.bg_setting_single)
+                    }
+                    device.address.equals(lastUsedMac, ignoreCase = true) -> {
+                        badgeView.text = context.getString(R.string.driver_device_last_used)
+                        badgeView.visibility = View.VISIBLE
+                        badgeView.setBackgroundResource(R.drawable.bg_setting_single)
+                    }
+                    else -> {
+                        badgeView.visibility = View.GONE
+                    }
+                }
+
+                val isTop = position == 0
+                val isBottom = position == count - 1
+                val bgRes = when {
+                    isTop && isBottom -> R.drawable.bg_setting_single
+                    isTop -> R.drawable.bg_setting_top
+                    isBottom -> R.drawable.bg_setting_bottom
+                    else -> R.drawable.bg_setting_middle
+                }
+                view.setBackgroundResource(bgRes)
+                return view
             }
-            .setNegativeButton(R.string.cancel, null)
-            .show()
+        }
+
+        val dm = resources.displayMetrics
+        val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        val maxListHeight = if (isLandscape) {
+            (dm.heightPixels * 0.38).toInt().coerceIn((120 * dm.density).toInt(), (200 * dm.density).toInt())
+        } else {
+            (dm.heightPixels * 0.45).toInt().coerceIn((180 * dm.density).toInt(), (320 * dm.density).toInt())
+        }
+        deviceListView.layoutParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            maxListHeight
+        )
+        deviceListView.adapter = listAdapter
+
+        val hiddenCount = bondedDevices.size - likelyPhones.size
+        if (hiddenCount > 0 && likelyPhones.isNotEmpty()) {
+            btnToggleFilter.visibility = View.VISIBLE
+            fun updateToggleLabel() {
+                btnToggleFilter.text = if (showAllDevices) {
+                    getString(R.string.show_only_phones)
+                } else {
+                    "${getString(R.string.show_all_devices)} ($hiddenCount)"
+                }
+            }
+            updateToggleLabel()
+            btnToggleFilter.setOnClickListener {
+                // Pause/cancel auto-countdown timer since the user is actively interacting with the device list
+                driverCountdownTimer?.cancel()
+                driverCountdownTimer = null
+                countdownContainer.visibility = View.GONE
+
+                showAllDevices = !showAllDevices
+                currentDevices.clear()
+                val nextCandidates = if (showAllDevices) bondedDevices else likelyPhones
+                currentDevices.addAll(sortDeviceList(nextCandidates))
+                listAdapter.notifyDataSetChanged()
+                updateToggleLabel()
+            }
+        } else {
+            btnToggleFilter.visibility = View.GONE
+        }
+
+        val cancelDriverSelection = {
+            driverCountdownTimer?.cancel()
+            driverCountdownTimer = null
+            activeDialog = null
+            val cancelIntent = Intent(requireContext(), AapService::class.java).apply {
+                action = AapService.ACTION_NATIVE_AA_CANCEL_POKE
+            }
+            ContextCompat.startForegroundService(requireContext(), cancelIntent)
+        }
+
+        val dialog = MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
+            .setTitle(R.string.driver_selection_dialog_title)
+            .setView(dialogView)
+            .setNegativeButton(R.string.cancel) { d, _ ->
+                cancelDriverSelection()
+                d.dismiss()
+            }
+            .create()
+
+        dialog.setOnCancelListener {
+            cancelDriverSelection()
+        }
+
+        dialog.setOnDismissListener {
+            driverCountdownTimer?.cancel()
+            driverCountdownTimer = null
+            activeDialog = null
+        }
+
+        val effectiveLastUsed = lastUsedMac.ifEmpty {
+            appSettings.autoStartBluetoothDeviceMacs.firstOrNull().orEmpty()
+        }
+        val autoTargetMac = NativeDriverSelectionPolicy.resolveAutoConnectTarget(
+            preferredMac = preferredMac,
+            lastUsedMac = effectiveLastUsed,
+            connectedMacs = connectedMacs,
+            pairedMacs = currentDevices.map { it.address }
+        )
+        val autoTargetDevice = bondedDevices.firstOrNull { it.address.equals(autoTargetMac, ignoreCase = true) }
+        val targetName = autoTargetDevice?.name ?: autoTargetMac ?: ""
+
+        deviceListView.setOnItemClickListener { _, _, position, _ ->
+            driverCountdownTimer?.cancel()
+            driverCountdownTimer = null
+            dialog.dismiss()
+            val chosen = currentDevices.getOrNull(position) ?: return@setOnItemClickListener
+            connectToNativeDevice(chosen.address, chosen.name ?: "Device")
+        }
+
+        val timeoutSec = NativeDriverSelectionPolicy.sanitizeTimeout(appSettings.nativeDriverSelectionTimeoutSec)
+
+        if (autoCountdown && autoTargetMac != null) {
+            countdownContainer.visibility = View.VISIBLE
+            countdownProgress.max = timeoutSec * 1000
+            countdownProgress.progress = timeoutSec * 1000
+
+            var lastSecondsRemaining = -1
+            driverCountdownTimer?.cancel()
+            driverCountdownTimer = object : CountDownTimer(timeoutSec * 1000L, 100L) {
+                override fun onTick(millisUntilFinished: Long) {
+                    if (!isAdded || dialog.isShowing != true) return
+                    countdownProgress.progress = millisUntilFinished.toInt()
+                    val secondsRemaining = ((millisUntilFinished + 999) / 1000).toInt()
+                    if (secondsRemaining != lastSecondsRemaining) {
+                        lastSecondsRemaining = secondsRemaining
+                        countdownSubtitle.text = getString(R.string.driver_selection_auto_in, secondsRemaining, targetName)
+                    }
+                }
+
+                override fun onFinish() {
+                    if (!isAdded || dialog.isShowing != true) return
+                    dialog.dismiss()
+                    connectToNativeDevice(autoTargetMac, targetName)
+                }
+            }
+            countdownSubtitle.text = getString(R.string.driver_selection_auto_in, timeoutSec, targetName)
+        } else {
+            countdownContainer.visibility = View.GONE
+        }
+
+        dialog.setOnShowListener {
+            (activity as? MainActivity)?.dismissSplashImmediately()
+            val promptIntent = Intent(requireContext(), AapService::class.java).apply {
+                action = AapService.ACTION_NATIVE_AA_PROMPT_SHOWN
+            }
+            ContextCompat.startForegroundService(requireContext(), promptIntent)
+            if (autoCountdown && autoTargetMac != null) {
+                driverCountdownTimer?.start()
+            }
+        }
+
+        activeDialog = dialog
+        dialog.show()
+    }
+
+    private fun connectToNativeDevice(mac: String, name: String) {
+        AppLog.i("HomeFragment: Connecting to Native-AA device: $name ($mac)")
+        (requireActivity() as? MainActivity)?.beginAutoConnect(
+            "Native-AA driver: $name",
+            MainActivity.ConnectionUiMode.OVERLAY
+        )
+        val intent = Intent(requireContext(), AapService::class.java).apply {
+            action = AapService.ACTION_NATIVE_AA_POKE
+            putExtra(AapService.EXTRA_MAC, mac)
+        }
+        ContextCompat.startForegroundService(requireContext(), intent)
+        Toast.makeText(requireContext(), getString(R.string.connecting_to_device, name), Toast.LENGTH_SHORT).show()
     }
 
     private fun showNearbyDeviceSelector() {
@@ -820,9 +1153,12 @@ class HomeFragment : Fragment() {
 
     companion object {
         private var hasAutoStarted = false
+        private var hasCheckedNativeDriverSelection = false
         var forceSelfModeLaunch = false
+        var requestDriverSelection = false
         fun resetAutoStart() {
             hasAutoStarted = false
+            hasCheckedNativeDriverSelection = false
         }
     }
 }

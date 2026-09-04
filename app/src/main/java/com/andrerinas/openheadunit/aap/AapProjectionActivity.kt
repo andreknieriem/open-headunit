@@ -1407,6 +1407,10 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         options.add(ExitOption(R.string.exit_dialog_background, R.drawable.ic_home, Color.LTGRAY))
         options.add(ExitOption(R.string.exit_dialog_settings, R.drawable.ic_settings_quick, Color.LTGRAY))
 
+        if (settings.wifiConnectionMode == com.andrerinas.openheadunit.connection.wifi.WifiLauncherMode.NATIVE) {
+            options.add(ExitOption(R.string.switch_driver, R.drawable.ic_phone, Color.LTGRAY))
+        }
+
         val adapter = object : android.widget.BaseAdapter() {
             override fun getCount(): Int = options.size
             override fun getItem(position: Int): Any = options[position]
@@ -1443,6 +1447,9 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                     R.string.exit_dialog_settings -> {
                         showQuickSettings()
                     }
+                    R.string.switch_driver -> {
+                        switchDriver()
+                    }
                 }
             }
             .setNegativeButton(R.string.cancel, null)
@@ -1458,6 +1465,15 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         // We will implement QuickSettingsFragment as a DialogFragment for easy overlay
         val quickSettings = com.andrerinas.openheadunit.main.QuickSettingsFragment()
         quickSettings.show(supportFragmentManager, "quick_settings")
+    }
+
+    private fun switchDriver() {
+        AppLog.i("AapProjectionActivity: User requested switch driver")
+        val intent = Intent(this, AapService::class.java).apply {
+            action = AapService.ACTION_NATIVE_AA_SWITCH_DEVICE
+        }
+        ContextCompat.startForegroundService(this, intent)
+        finish()
     }
 
     private fun enterPiP() {

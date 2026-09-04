@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="keep_dummy_vpn">Utrzymuj VPN offline podczas połączenia</string>
+    <string name="keep_dummy_vpn_description">Utrzymuje aktywny VPN offline podczas połączenia z telefonem, aby układ Wi-Fi nie szukał innych sieci na paśmie 2,4 GHz.</string>
+    <string name="keep_dummy_vpn_denied">Odmówiono uprawnień VPN. Nie można automatycznie uruchomić VPN offline.</string>
+</resources>

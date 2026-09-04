@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="keep_dummy_vpn">Garder le VPN hors ligne actif pendant la connexion</string>
+    <string name="keep_dummy_vpn_description">Maintient le VPN hors ligne de l\'application actif pendant qu\'un téléphone est connecté. Conçu pour les appareils en 2,4 GHz ou présentant des saccades audio/vidéo, afin d\'empêcher la puce Wi-Fi de chercher d\'autres réseaux. Pendant ce temps, les autres applications n\'ont pas d\'accès Internet. S\'applique à la prochaine connexion.</string>
+    <string name="keep_dummy_vpn_denied">Autorisation VPN refusée. Le VPN hors ligne ne peut pas être démarré automatiquement.</string>
+</resources>

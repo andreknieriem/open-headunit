@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="keep_dummy_vpn">Тримати офлайн-VPN активним під час з\'єднання</string>
+    <string name="keep_dummy_vpn_description">Утримує офлайн-VPN додатку активним під час підключення телефону, щоб чіп Wi-Fi не шукав інші мережі на 2,4 ГГц.</string>
+    <string name="keep_dummy_vpn_denied">У дозволі на VPN відмовлено. Офлайн-VPN не може бути запущено автоматично.</string>
+</resources>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="keep_dummy_vpn">Păstrează VPN offline activ în timpul conexiunii</string>
+    <string name="keep_dummy_vpn_description">Menține VPN-ul offline activ în timp ce un telefon este conectat, împiedicând căutarea altor rețele pe 2,4 GHz.</string>
+    <string name="keep_dummy_vpn_denied">Permisiune VPN refuzată. VPN-ul offline nu poate fi pornit automat.</string>
+</resources>

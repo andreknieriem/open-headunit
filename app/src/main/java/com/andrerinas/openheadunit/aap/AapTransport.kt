@@ -637,10 +637,10 @@ class AapTransport(
         return 0
     }
 
-    internal fun stop() {
-        AppLog.i("AapTransport stopping and sending byebye")
+    internal fun stop(reason: Control.ByeByeReason = Control.ByeByeReason.USER_SELECTION) {
+        AppLog.i("AapTransport stopping and sending byebye ($reason)")
         val byebye = Control.ByeByeRequest.newBuilder()
-            .setReason(Control.ByeByeReason.USER_SELECTION)
+            .setReason(reason)
             .build()
         val msg =
             AapMessage(Channel.ID_CTR, Control.ControlMsgType.MESSAGE_BYEBYE_REQUEST_VALUE, byebye)

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="keep_dummy_vpn">Bağlıyken çevrimdışı VPN\'i açık tut</string>
+    <string name="keep_dummy_vpn_description">Bir telefon bağlıyken uygulamanın çevrimdışı VPN\'ini etkin tutar, böylece ana ünitenin Wi-Fi çipi 2.4 GHz\'de diğer ağları aramayı durdurur.</string>
+    <string name="keep_dummy_vpn_denied">VPN izni reddedildi. Çevrimdışı VPN otomatik olarak başlatılamıyor.</string>
+</resources>

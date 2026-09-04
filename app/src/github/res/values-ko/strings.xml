@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="keep_dummy_vpn">연결 중 오프라인 VPN 유지</string>
+    <string name="keep_dummy_vpn_description">스마트폰 연결 중 오프라인 VPN을 유지하여 2.4GHz 대역에서 다른 네트워크 검색을 방지합니다.</string>
+    <string name="keep_dummy_vpn_denied">VPN 권한이 거부되었습니다. 오프라인 VPN을 자동으로 시작할 수 없습니다.</string>
+</resources>

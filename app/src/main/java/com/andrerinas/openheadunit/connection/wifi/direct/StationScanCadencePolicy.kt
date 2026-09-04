@@ -41,5 +41,5 @@ object StationScanCadencePolicy {
             "radio off the group's channel."
     }
 
-    private fun format(ms: Long): String = String.format("%.1f", ms / 1000.0)
+    private fun format(ms: Long): String = String.format(java.util.Locale.US, "%.1f", ms / 1000.0)
 }

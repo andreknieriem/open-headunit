@@ -689,6 +689,12 @@ class MainActivity : BaseActivity() {
         }
     }
 
+    fun dismissSplashImmediately() {
+        val overlay = findViewById<View>(R.id.splash_overlay) ?: return
+        overlay.animate().cancel()
+        overlay.visibility = View.GONE
+    }
+
     private fun setupWifiDirectInfo() {
         val tvInfo = findViewById<android.widget.TextView>(R.id.wifi_direct_info)
         val settings = Settings(this)
@@ -782,6 +788,12 @@ class MainActivity : BaseActivity() {
 
     private fun handleLaunchIntent(intent: Intent?) {
         if (intent == null) return
+
+        if (intent.getBooleanExtra(EXTRA_SHOW_DRIVER_SELECTOR, false)) {
+            AppLog.i("MainActivity: EXTRA_SHOW_DRIVER_SELECTOR received")
+            HomeFragment.requestDriverSelection = true
+            intent.removeExtra(EXTRA_SHOW_DRIVER_SELECTOR)
+        }
 
         val intentData = intent.data
         val intentAction = intent.action
@@ -1106,6 +1118,7 @@ class MainActivity : BaseActivity() {
         private const val permissionRequestCode = 97
         const val EXTRA_LAUNCH_SOURCE = "launch_source"
         const val LAUNCH_SOURCE_BLUETOOTH = "Bluetooth auto-start"
+        const val EXTRA_SHOW_DRIVER_SELECTOR = "show_driver_selector"
 
         /** Launch sources that mean the app opened itself, with nobody necessarily watching. */
         private val AUTOMATIC_LAUNCH_SOURCES = setOf(

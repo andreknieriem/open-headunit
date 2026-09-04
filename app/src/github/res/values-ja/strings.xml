@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="keep_dummy_vpn">接続中にオフラインVPNを維持</string>
+    <string name="keep_dummy_vpn_description">スマートフォンの接続中にオフラインVPNを維持し、2.4GHzで他のネットワークを検索するのを防止します。</string>
+    <string name="keep_dummy_vpn_denied">VPN権限が拒否されました。オフラインVPNを自動的に起動できません。</string>
+</resources>

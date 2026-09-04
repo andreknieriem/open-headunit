@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="keep_dummy_vpn">ოფლაინ VPN-ის აქტიურად შენარჩუნება დაკავშირებისას</string>
+    <string name="keep_dummy_vpn_description">ინარჩუნებს ოფლაინ VPN-ს აქტიურს ტელეფონის დაკავშირების დროს, რათა Wi-Fi ჩიპმა არ მოძებნოს სხვა ქსელები 2.4 გჰც-ზე.</string>
+    <string name="keep_dummy_vpn_denied">VPN ნებართვა უარყოფილია. ოფლაინ VPN ავტომატურად ვერ გაეშვება.</string>
+</resources>

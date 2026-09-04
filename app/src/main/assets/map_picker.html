@@ -1,104 +1,132 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
+  <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
     <link rel="stylesheet" href="./leaflet/leaflet.css" />
     <script src="./leaflet/leaflet.js"></script>
     <style>
-        html, body, #map { height: 100%; margin: 0; padding: 0; background: #202124; }
-        .leaflet-container { background: #202124; }
+      html,
+      body,
+      #map {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        background: #202124;
+      }
+      .leaflet-container {
+        background: #202124;
+      }
     </style>
-</head>
-<body>
-<div id="map"></div>
-<script>
-    var map, marker, circle, accuracyCircle;
-    var radiusMeters = 150;
-    var showRadius = true;
+  </head>
+  <body>
+    <div id="map"></div>
+    <script>
+      var map, marker, circle, accuracyCircle;
+      var radiusMeters = 150;
+      var showRadius = true;
 
-    // A static "accuracy" circle showing where the device is (point-picker mode).
-    function drawAccuracy(lat, lon, meters) {
+      // A static "accuracy" circle showing where the device is (point-picker mode).
+      function drawAccuracy(lat, lon, meters) {
         if (!meters || meters <= 0) return;
         var latlng = [lat, lon];
         if (!accuracyCircle) {
-            accuracyCircle = L.circle(latlng, {
-                radius: meters, color: '#34A853', weight: 1,
-                fillColor: '#34A853', fillOpacity: 0.12, interactive: false
-            }).addTo(map);
+          accuracyCircle = L.circle(latlng, {
+            radius: meters,
+            color: "#34A853",
+            weight: 1,
+            fillColor: "#34A853",
+            fillOpacity: 0.12,
+            interactive: false,
+          }).addTo(map);
         } else {
-            accuracyCircle.setLatLng(latlng);
-            accuracyCircle.setRadius(meters);
+          accuracyCircle.setLatLng(latlng);
+          accuracyCircle.setRadius(meters);
         }
-    }
+      }
 
-    function notify() {
+      function notify() {
         if (marker && window.Android && Android.onPointChanged) {
-            var ll = marker.getLatLng();
-            Android.onPointChanged(ll.lat, ll.lng);
+          var ll = marker.getLatLng();
+          Android.onPointChanged(ll.lat, ll.lng);
         }
-    }
+      }
 
-    function placeAt(lat, lon) {
+      function placeAt(lat, lon) {
         var latlng = [lat, lon];
         if (!marker) {
-            marker = L.circleMarker(latlng, {
-                radius: 8, color: '#ffffff', weight: 2,
-                fillColor: '#4285F4', fillOpacity: 1
-            }).addTo(map);
+          marker = L.circleMarker(latlng, {
+            radius: 8,
+            color: "#ffffff",
+            weight: 2,
+            fillColor: "#4285F4",
+            fillOpacity: 1,
+          }).addTo(map);
         } else {
-            marker.setLatLng(latlng);
+          marker.setLatLng(latlng);
         }
         if (showRadius) {
-            if (!circle) {
-                circle = L.circle(latlng, {
-                    radius: radiusMeters, color: '#4285F4',
-                    weight: 1, fillColor: '#4285F4', fillOpacity: 0.15
-                }).addTo(map);
-            } else {
-                circle.setLatLng(latlng);
-                circle.setRadius(radiusMeters);
-            }
+          if (!circle) {
+            circle = L.circle(latlng, {
+              radius: radiusMeters,
+              color: "#4285F4",
+              weight: 1,
+              fillColor: "#4285F4",
+              fillOpacity: 0.15,
+            }).addTo(map);
+          } else {
+            circle.setLatLng(latlng);
+            circle.setRadius(radiusMeters);
+          }
         }
         notify();
-    }
+      }
 
-    // Called from Kotlin. showRadiusFlag=0 hides the geofence radius circle (point mode).
-    // accuracyMeters>0 draws a static accuracy circle at the initial (device) location.
-    function initMap(lat, lon, radius, showRadiusFlag, accuracyMeters) {
+      // Called from Kotlin. showRadiusFlag=0 hides the geofence radius circle (point mode).
+      // accuracyMeters>0 draws a static accuracy circle at the initial (device) location.
+      function initMap(lat, lon, radius, showRadiusFlag, accuracyMeters) {
         radiusMeters = radius || 150;
-        showRadius = (showRadiusFlag !== 0);
+        showRadius = showRadiusFlag !== 0;
         var zoom = 15;
         if (accuracyMeters && accuracyMeters > 300) zoom = 14;
         if (accuracyMeters && accuracyMeters > 1500) zoom = 12;
         if (!map) {
-            map = L.map('map', { zoomControl: true, attributionControl: true })
-                .setView([lat, lon], zoom);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                maxZoom: 19,
-                attribution: '&copy; OpenStreetMap contributors'
-            }).addTo(map);
-            map.on('click', function (e) {
-                placeAt(e.latlng.lat, e.latlng.lng);
-            });
+          map = L.map("map", {
+            zoomControl: true,
+            attributionControl: true,
+          }).setView([lat, lon], zoom);
+          L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            maxZoom: 19,
+            attribution: "&copy; OpenStreetMap contributors",
+          }).addTo(map);
+          map.on("click", function (e) {
+            placeAt(e.latlng.lat, e.latlng.lng);
+          });
         } else {
-            map.setView([lat, lon], zoom);
+          map.setView([lat, lon], zoom);
         }
         drawAccuracy(lat, lon, accuracyMeters);
         placeAt(lat, lon);
-    }
+      }
 
-    // Called from Kotlin when the radius slider changes.
-    function setRadius(meters) {
+      // Called from Kotlin when the radius slider changes.
+      function setRadius(meters) {
         radiusMeters = meters;
-        if (circle && showRadius) { circle.setRadius(radiusMeters); }
-    }
+        if (circle && showRadius) {
+          circle.setRadius(radiusMeters);
+        }
+      }
 
-    // Called from Kotlin to recenter on a fresh GPS fix.
-    function moveTo(lat, lon) {
-        if (map) { map.setView([lat, lon], Math.max(map.getZoom(), 15)); }
+      // Called from Kotlin to recenter on a fresh GPS fix.
+      function moveTo(lat, lon) {
+        if (map) {
+          map.setView([lat, lon], Math.max(map.getZoom(), 15));
+        }
         placeAt(lat, lon);
-    }
-</script>
-</body>
+      }
+    </script>
+  </body>
 </html>

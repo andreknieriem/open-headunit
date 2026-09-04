@@ -3,7 +3,7 @@ name: Android CI
 on:
   pull_request:
   push:
-    branches: [ main ]
+    branches: [main]
 
 # Cancel superseded runs on the same ref (e.g. a new push to an open PR).
 concurrency:
@@ -27,7 +27,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '21'
+          java-version: "21"
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
@@ -74,7 +74,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '21'
+          java-version: "21"
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3

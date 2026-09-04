@@ -218,7 +218,7 @@ dependencies {
     "playstoreImplementation"("org.conscrypt:conscrypt-android:2.6.1")
     "githubImplementation"("org.conscrypt:conscrypt-android:2.5.3")
 
-    implementation("com.google.protobuf:protobuf-java:3.25.1")
+    implementation("com.google.protobuf:protobuf-java:3.25.5")
     implementation("androidx.activity:activity-ktx:1.8.2")
     implementation("androidx.fragment:fragment-ktx:1.6.2")
     implementation("androidx.media:media:1.6.0")

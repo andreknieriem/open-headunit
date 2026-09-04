@@ -708,6 +708,9 @@
     <string name="logs_exported">Logs Exported</string>
     <string name="log_saved_to">Log saved to:\n%s</string>
     <string name="share">Share</string>
+    <string name="copy_to_clipboard">Copy to Clipboard</string>
+    <string name="logs_copied_to_clipboard">Logs copied to clipboard. If the log was larger than ~800 KB, only the first 25% and last 75% were copied to stay under the Android clipboard limit; the full log is saved at:\n%s</string>
+    <string name="logs_copy_to_clipboard_failed">Failed to copy logs to clipboard</string>
     <string name="close">Close</string>
     <string name="failed_export_logs">Failed to export logs</string>
     <string name="failed_export_in_silent_logs">Unable to export logs: Silent logging level selected</string>

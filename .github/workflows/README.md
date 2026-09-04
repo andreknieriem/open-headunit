@@ -4,10 +4,10 @@
 
 Runs on every pull request and on pushes to `main`. Two parallel jobs:
 
-| Check                        | What it does                                   | Intended to block? |
-|------------------------------|------------------------------------------------|:------------------:|
-| **Build (github debug)**     | `./gradlew :app:assembleGithubDebug` — compiles the app (including native code and the `:contract` module) and uploads the debug APK as an artifact. | Yes |
-| **Unit tests (github debug)**| `./gradlew :app:testGithubDebugUnitTest` — runs the JVM unit tests and uploads the HTML/XML report. | Yes |
+| Check                         | What it does                                                                                                                                         | Intended to block? |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------: |
+| **Build (github debug)**      | `./gradlew :app:assembleGithubDebug` — compiles the app (including native code and the `:contract` module) and uploads the debug APK as an artifact. |        Yes         |
+| **Unit tests (github debug)** | `./gradlew :app:testGithubDebugUnitTest` — runs the JVM unit tests and uploads the HTML/XML report.                                                  |        Yes         |
 
 "Intended to block" reflects the design; a failing check only actually
 prevents merge once the [branch-protection rule](#branch-protection) below is

@@ -37,7 +37,7 @@ class QuickSettingsFragment : DialogFragment() {
     private lateinit var settingsRecyclerView: RecyclerView
     private lateinit var settingsAdapter: SettingsAdapter
     private lateinit var toolbar: MaterialToolbar
-    
+
     private var originalViewMode: Settings.ViewMode? = null
     private var originalStretch: Boolean? = null
     private var originalScale: Boolean? = null
@@ -53,7 +53,7 @@ class QuickSettingsFragment : DialogFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        
+
         settings = App.provide(requireContext()).settings
         originalViewMode = settings.viewMode
         originalStretch = settings.stretchToFill
@@ -91,7 +91,7 @@ class QuickSettingsFragment : DialogFragment() {
 
         // --- Audio Section ---
         items.add(SettingItem.CategoryHeader("audio", R.string.category_audio))
-        
+
         items.add(SettingItem.SettingEntry(
             stableId = "audioVolumeOffsets",
             nameResId = R.string.audio_volume_offset,
@@ -115,7 +115,7 @@ class QuickSettingsFragment : DialogFragment() {
 
         // --- Display Section ---
         items.add(SettingItem.CategoryHeader("graphic", R.string.category_graphic))
-        
+
         val nightModeTitles = resources.getStringArray(R.array.night_mode)
         items.add(SettingItem.SettingEntry(
             stableId = "nightMode",
@@ -283,11 +283,11 @@ class QuickSettingsFragment : DialogFragment() {
 
     private fun showAudioOffsetsDialog() {
         val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_audio_offsets, null)
-        
+
         val seekMedia = dialogView.findViewById<android.widget.SeekBar>(R.id.seek_media)
         val seekGuidance = dialogView.findViewById<android.widget.SeekBar>(R.id.seek_guidance)
         val seekSystem = dialogView.findViewById<android.widget.SeekBar>(R.id.seek_system)
-        
+
         val textMedia = dialogView.findViewById<android.widget.TextView>(R.id.text_media_val)
         val textGuidance = dialogView.findViewById<android.widget.TextView>(R.id.text_guidance_val)
         val textSystem = dialogView.findViewById<android.widget.TextView>(R.id.text_system_val)
@@ -412,9 +412,7 @@ class QuickSettingsFragment : DialogFragment() {
         } else if (LogExporter.isCapturing) {
             LogExporter.stopCapture()
         }
-        
-        // The export reads the logcat ring buffer, which on some ROMs waits on a consent dialog.
-        // Off the main thread so that wait cannot take the UI down with it.
+
         viewLifecycleOwner.lifecycleScope.launch {
             val logFile = LogExporter.saveLogToPublicFile(context, exporterLevel)
             updateSettingsList()
@@ -425,6 +423,21 @@ class QuickSettingsFragment : DialogFragment() {
                     .setMessage(getString(R.string.log_saved_to, logFile.absolutePath))
                     .setPositiveButton(R.string.share) { _, _ ->
                         LogExporter.shareLogFile(context, logFile)
+                    }
+                    .setNeutralButton(R.string.copy_to_clipboard) { _, _ ->
+                        viewLifecycleOwner.lifecycleScope.launch {
+                            val copied = LogExporter.copyFileToClipboard(context, logFile)
+                            if (copied) {
+                                val msg = getString(R.string.logs_copied_to_clipboard, logFile.absolutePath)
+                                MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
+                                    .setTitle(R.string.success)
+                                    .setMessage(msg)
+                                    .setPositiveButton(R.string.close, null)
+                                    .show()
+                            } else {
+                                Toast.makeText(requireContext(), getString(R.string.logs_copy_to_clipboard_failed), Toast.LENGTH_LONG).show()
+                            }
+                        }
                     }
                     .setNegativeButton(R.string.close) { dialog, _ ->
                         dialog.dismiss()

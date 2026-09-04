@@ -2219,6 +2219,7 @@ class AapService : Service() {
         } catch (e: Exception) {
             AppLog.w("AapService: Error disabling car mode: ${e.message}")
         }
+        try { selfLauncherManager.stop(wasConnected = commManager.isConnected) } catch (_: Exception) {}
         try { serviceScope.cancel() } catch (_: Exception) {}
         try { LogExporter.stopCapture() } catch (_: Exception) {}
         super.onDestroy()
@@ -2251,6 +2252,7 @@ class AapService : Service() {
             })
             isDestroying = true
             if (commManager.isConnected) commManager.disconnect(sendByeBye = true)
+            selfLauncherManager.stop(wasConnected = false)
             stopForeground(true)
             stopSelf()
             return START_NOT_STICKY
@@ -2280,6 +2282,7 @@ class AapService : Service() {
 
         when (intent?.action) {
             ACTION_START_SELF_MODE       -> selfLauncherManager.start()
+            ACTION_STOP_SELF_MODE        -> selfLauncherManager.stop(wasConnected = commManager.isConnected)
             ACTION_START_WIRELESS        -> {
                 // Asked for from the UI, so the user is present: release the boot-loop pause
                 // rather than silently ignoring them.
@@ -2735,6 +2738,7 @@ class AapService : Service() {
 
         // Service action strings used with startService() and sendBroadcast()
         const val ACTION_START_SELF_MODE           = "com.andrerinas.openheadunit.ACTION_START_SELF_MODE"
+        const val ACTION_STOP_SELF_MODE            = "com.andrerinas.openheadunit.ACTION_STOP_SELF_MODE"
         const val ACTION_START_WIRELESS            = "com.andrerinas.openheadunit.ACTION_START_WIRELESS"
         const val ACTION_BT_AUTO_START              = "com.andrerinas.openheadunit.ACTION_BT_AUTO_START"
         const val ACTION_START_WIRELESS_SCAN       = "com.andrerinas.openheadunit.ACTION_START_WIRELESS_SCAN"

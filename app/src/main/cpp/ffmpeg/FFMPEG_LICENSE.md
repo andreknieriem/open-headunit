@@ -14,51 +14,51 @@ Specifically, the GPL parts of FFmpeg are:
 
 - libpostproc
 - optional x86 optimization in the files
-    - `libavcodec/x86/flac_dsp_gpl.asm`
-    - `libavcodec/x86/idct_mmx.c`
-    - `libavfilter/x86/vf_removegrain.asm`
+  - `libavcodec/x86/flac_dsp_gpl.asm`
+  - `libavcodec/x86/idct_mmx.c`
+  - `libavfilter/x86/vf_removegrain.asm`
 - the following building and testing tools
-    - `compat/solaris/make_sunver.pl`
-    - `doc/t2h.pm`
-    - `doc/texi2pod.pl`
-    - `libswresample/tests/swresample.c`
-    - `tests/checkasm/*`
-    - `tests/tiny_ssim.c`
+  - `compat/solaris/make_sunver.pl`
+  - `doc/t2h.pm`
+  - `doc/texi2pod.pl`
+  - `libswresample/tests/swresample.c`
+  - `tests/checkasm/*`
+  - `tests/tiny_ssim.c`
 - the following filters in libavfilter:
-    - `signature_lookup.c`
-    - `vf_blackframe.c`
-    - `vf_boxblur.c`
-    - `vf_colormatrix.c`
-    - `vf_cover_rect.c`
-    - `vf_cropdetect.c`
-    - `vf_delogo.c`
-    - `vf_eq.c`
-    - `vf_find_rect.c`
-    - `vf_fspp.c`
-    - `vf_histeq.c`
-    - `vf_hqdn3d.c`
-    - `vf_kerndeint.c`
-    - `vf_lensfun.c` (GPL version 3 or later)
-    - `vf_mcdeint.c`
-    - `vf_mpdecimate.c`
-    - `vf_nnedi.c`
-    - `vf_owdenoise.c`
-    - `vf_perspective.c`
-    - `vf_phase.c`
-    - `vf_pp.c`
-    - `vf_pp7.c`
-    - `vf_pullup.c`
-    - `vf_repeatfields.c`
-    - `vf_sab.c`
-    - `vf_signature.c`
-    - `vf_smartblur.c`
-    - `vf_spp.c`
-    - `vf_stereo3d.c`
-    - `vf_super2xsai.c`
-    - `vf_tinterlace.c`
-    - `vf_uspp.c`
-    - `vf_vaguedenoiser.c`
-    - `vsrc_mptestsrc.c`
+  - `signature_lookup.c`
+  - `vf_blackframe.c`
+  - `vf_boxblur.c`
+  - `vf_colormatrix.c`
+  - `vf_cover_rect.c`
+  - `vf_cropdetect.c`
+  - `vf_delogo.c`
+  - `vf_eq.c`
+  - `vf_find_rect.c`
+  - `vf_fspp.c`
+  - `vf_histeq.c`
+  - `vf_hqdn3d.c`
+  - `vf_kerndeint.c`
+  - `vf_lensfun.c` (GPL version 3 or later)
+  - `vf_mcdeint.c`
+  - `vf_mpdecimate.c`
+  - `vf_nnedi.c`
+  - `vf_owdenoise.c`
+  - `vf_perspective.c`
+  - `vf_phase.c`
+  - `vf_pp.c`
+  - `vf_pp7.c`
+  - `vf_pullup.c`
+  - `vf_repeatfields.c`
+  - `vf_sab.c`
+  - `vf_signature.c`
+  - `vf_smartblur.c`
+  - `vf_spp.c`
+  - `vf_stereo3d.c`
+  - `vf_super2xsai.c`
+  - `vf_tinterlace.c`
+  - `vf_uspp.c`
+  - `vf_vaguedenoiser.c`
+  - `vsrc_mptestsrc.c`
 
 Should you, for whatever reason, prefer to use version 3 of the (L)GPL, then
 the configure parameter `--enable-version3` will activate this licensing option
@@ -67,14 +67,13 @@ for you. Read the file `COPYING.LGPLv3` or, if you have enabled GPL parts,
 
 There are a handful of files under other licensing terms, namely:
 
-* The files `libavcodec/jfdctfst.c`, `libavcodec/jfdctint_template.c` and
+- The files `libavcodec/jfdctfst.c`, `libavcodec/jfdctint_template.c` and
   `libavcodec/jrevdct.c` are taken from libjpeg, see the top of the files for
   licensing details. Specifically note that you must credit the IJG in the
   documentation accompanying your program if you only distribute executables.
   You must also indicate any changes including additions and deletions to
   those three files in the documentation.
-* `tests/reference.pnm` is under the expat license.
-
+- `tests/reference.pnm` is under the expat license.
 
 ## External libraries
 
@@ -84,6 +83,7 @@ affect the licensing of binaries resulting from the combination.
 ### Compatible libraries
 
 The following libraries are under GPL version 2:
+
 - avisynth
 - frei0r
 - libcdio
@@ -100,6 +100,7 @@ When combining them with FFmpeg, FFmpeg needs to be licensed as GPL as well by
 passing `--enable-gpl` to configure.
 
 The following libraries are under LGPL version 3:
+
 - gmp
 - libaribb24
 - liblensfun

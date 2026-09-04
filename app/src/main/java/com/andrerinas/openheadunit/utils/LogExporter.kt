@@ -1,5 +1,7 @@
 package com.andrerinas.openheadunit.utils
 
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.os.Build
@@ -14,6 +16,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import java.io.File
+import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.IOException
 
@@ -425,5 +428,65 @@ object LogExporter {
         val chooser = Intent.createChooser(shareIntent, "Share Log File")
         chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         context.startActivity(chooser)
+    }
+
+    private const val CLIPBOARD_SAFE_LIMIT_BYTES = 800 * 1024
+
+    suspend fun copyLogToClipboard(context: Context, verbosity: LogLevel): Boolean = withContext(Dispatchers.IO) {
+        if (verbosity == LogLevel.SILENT) {
+            AppLog.w("LogExporter: clipboard copy requested while SILENT; skipping")
+            return@withContext false
+        }
+        val logFile = saveLogToPublicFile(context, verbosity) ?: return@withContext false
+        copyFileToClipboard(context, logFile)
+    }
+
+    fun copyFileToClipboard(context: Context, logFile: File): Boolean {
+        return try {
+            val content = readLogFileForClipboard(logFile)
+            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            val clip = ClipData.newPlainText("OpenHeadunit Log", content)
+            clipboard.setPrimaryClip(clip)
+            AppLog.i("LogExporter: copied ${content.length} chars (${content.toByteArray(Charsets.UTF_8).size} bytes) to clipboard")
+            true
+        } catch (e: Exception) {
+            AppLog.e("LogExporter: failed to copy log to clipboard", e)
+            false
+        }
+    }
+
+    private fun readLogFileForClipboard(file: File): String {
+        val fileLen = file.length()
+        if (fileLen <= CLIPBOARD_SAFE_LIMIT_BYTES) {
+            return file.readText(Charsets.UTF_8)
+        }
+        val headBytes = CLIPBOARD_SAFE_LIMIT_BYTES / 4
+        val tailBytes = 3 * CLIPBOARD_SAFE_LIMIT_BYTES / 4
+        val head = FileInputStream(file).use { fis ->
+            val buf = ByteArray(headBytes.toInt())
+            var read = 0
+            while (read < buf.size) {
+                val n = fis.read(buf, read, buf.size - read)
+                if (n < 0) break
+                read += n
+            }
+            String(buf, 0, read, Charsets.UTF_8)
+        }
+        val skipAmount = (fileLen - tailBytes).coerceAtLeast(0L)
+        val tail = FileInputStream(file).use { fis ->
+            fis.skip(skipAmount)
+            fis.reader(Charsets.UTF_8).readText()
+        }
+        val kbTotal = fileLen / 1024
+        val kbCopied = CLIPBOARD_SAFE_LIMIT_BYTES / 1024
+        val omittedBytes = (fileLen - headBytes - tailBytes).coerceAtLeast(0L)
+        return buildString {
+            append("[TRUNCATED for clipboard: full log is ${kbTotal} KB; only first ~${kbCopied} KB shown below.]\n")
+            append("=== BEGINNING OF LOG ===\n")
+            append(head)
+            append("\n\n=== [${String.format("%,d", omittedBytes)} bytes omitted in the middle] ===\n\n")
+            append("=== END OF LOG (most recent lines, most likely to contain errors) ===\n")
+            append(tail)
+        }
     }
 }

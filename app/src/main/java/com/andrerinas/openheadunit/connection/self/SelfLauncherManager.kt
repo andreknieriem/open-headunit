@@ -250,6 +250,34 @@ class SelfLauncherManager(
         SelfLaunchResolveHelper(service).run()
     }
 
+    /**
+     * Tears down Self Mode flags and cleans up any leftover resources.
+     *
+     * Call this when the user cancels Self Mode explicitly, or when the service is destroyed
+     * while Self Mode is still marked active, so stale `isActive` and watchdog state cannot
+     * block a later restart.
+     *
+     * @param wasConnected when `true` a projection session did reach the handshake, so the
+     *        dummy VPN is treated as an ordinary session teardown; when `false` no phone ever
+     *        arrived and the VPN is taken down via the Self-Mode-never-connected path.
+     */
+    fun stop(wasConnected: Boolean = false) {
+        if (!isActive && !launchInFlight && selfModeVpnWatchdog == null) return
+
+        AppLog.i("SelfMode: stopping Self Mode (wasConnected=$wasConnected, wasActive=$isActive, launchInFlight=$launchInFlight)")
+        isActive = false
+        launchInFlight = false
+        stopDummyVpnWatchdog()
+
+        // Stop the VPN only when we own it and the session did not already release it.
+        // SESSION_ENDED always releases anything we own, so it is the safe choice when a
+        // connection already happened; SELF_MODE_NEVER_CONNECTED is the precise reason when
+        // we are tearing down a Self Mode that never reached the handshake.
+        if (!wasConnected) {
+            service.stopDummyVpn(DummyVpnPolicy.Reason.SELF_MODE_NEVER_CONNECTED)
+        }
+    }
+
 
     companion object {
         /**

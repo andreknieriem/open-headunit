@@ -214,6 +214,8 @@ class SettingsFragment : Fragment() {
     private var pendingHotspotInterface: String? = null
 
     private var pendingEnableFloatingButton: Boolean? = null
+    private var pendingFloatingButtonConnectionStatusMode: Boolean? = null
+    private var pendingFloatingButtonDisconnectedOpacityPercent: Int? = null
     private var pendingFloatingButtonSizeDp: Int? = null
     private var pendingFloatingButtonOpacityPercent: Int? = null
     private var pendingFloatingButtonXPercent: Int? = null
@@ -351,6 +353,8 @@ class SettingsFragment : Fragment() {
         pendingAppLanguage = settings.appLanguage
 
         pendingEnableFloatingButton = settings.enableFloatingButton
+        pendingFloatingButtonConnectionStatusMode = settings.floatingButtonConnectionStatusMode
+        pendingFloatingButtonDisconnectedOpacityPercent = settings.floatingButtonDisconnectedOpacityPercent
         pendingFloatingButtonSizeDp = settings.floatingButtonSizeDp
         pendingFloatingButtonOpacityPercent = settings.floatingButtonOpacityPercent
         pendingFloatingButtonXPercent = settings.floatingButtonXPercent
@@ -484,6 +488,8 @@ class SettingsFragment : Fragment() {
         pendingScreenOrientation = settings.screenOrientation
         pendingAppLanguage = settings.appLanguage
         pendingEnableFloatingButton = settings.enableFloatingButton
+        pendingFloatingButtonConnectionStatusMode = settings.floatingButtonConnectionStatusMode
+        pendingFloatingButtonDisconnectedOpacityPercent = settings.floatingButtonDisconnectedOpacityPercent
         pendingFloatingButtonSizeDp = settings.floatingButtonSizeDp
         pendingFloatingButtonOpacityPercent = settings.floatingButtonOpacityPercent
         pendingFloatingButtonXPercent = settings.floatingButtonXPercent
@@ -713,6 +719,8 @@ class SettingsFragment : Fragment() {
 
         // Save the stretch to fill preference
         pendingEnableFloatingButton?.let { settings.enableFloatingButton = it }
+        pendingFloatingButtonConnectionStatusMode?.let { settings.floatingButtonConnectionStatusMode = it }
+        pendingFloatingButtonDisconnectedOpacityPercent?.let { settings.floatingButtonDisconnectedOpacityPercent = it }
         pendingFloatingButtonSizeDp?.let { settings.floatingButtonSizeDp = it }
         pendingFloatingButtonOpacityPercent?.let { settings.floatingButtonOpacityPercent = it }
         pendingFloatingButtonXPercent?.let { settings.floatingButtonXPercent = it }
@@ -844,6 +852,8 @@ class SettingsFragment : Fragment() {
                         pendingScreenOrientation != settings.screenOrientation ||
                         pendingAppLanguage != settings.appLanguage ||
                         pendingEnableFloatingButton != settings.enableFloatingButton ||
+                        pendingFloatingButtonConnectionStatusMode != settings.floatingButtonConnectionStatusMode ||
+                        pendingFloatingButtonDisconnectedOpacityPercent != settings.floatingButtonDisconnectedOpacityPercent ||
                         pendingFloatingButtonSizeDp != settings.floatingButtonSizeDp ||
                         pendingFloatingButtonOpacityPercent != settings.floatingButtonOpacityPercent ||
                         pendingFloatingButtonXPercent != settings.floatingButtonXPercent ||
@@ -1708,6 +1718,17 @@ class SettingsFragment : Fragment() {
         ))
 
         if (isFloatingButtonEnabled) {
+            val connectionStatusMode = pendingFloatingButtonConnectionStatusMode ?: settings.floatingButtonConnectionStatusMode
+            items.add(SettingItem.ToggleSettingEntry(
+                stableId = "floatingButtonConnectionStatusMode",
+                nameResId = R.string.pref_floating_button_connection_status_title,
+                descriptionResId = R.string.pref_floating_button_connection_status_summary,
+                isChecked = connectionStatusMode,
+                onCheckedChanged = { isChecked ->
+                    pendingFloatingButtonConnectionStatusMode = isChecked
+                    checkChanges()
+                }
+            ))
             val size = pendingFloatingButtonSizeDp ?: settings.floatingButtonSizeDp
             items.add(SettingItem.SliderSettingEntry(
                 stableId = "floatingButtonSizeDp",
@@ -1729,7 +1750,7 @@ class SettingsFragment : Fragment() {
                 nameResId = R.string.pref_floating_button_opacity_title,
                 value = "${opacity}%",
                 sliderValue = opacity.toFloat(),
-                valueFrom = 10f,
+                valueFrom = 0f,
                 valueTo = 100f,
                 stepSize = 5f,
                 onValueChanged = { newVal ->
@@ -1737,6 +1758,23 @@ class SettingsFragment : Fragment() {
                     checkChanges()
                 }
             ))
+
+            if (connectionStatusMode) {
+                val disconnectedOpacity = pendingFloatingButtonDisconnectedOpacityPercent ?: settings.floatingButtonDisconnectedOpacityPercent
+                items.add(SettingItem.SliderSettingEntry(
+                    stableId = "floatingButtonDisconnectedOpacityPercent",
+                    nameResId = R.string.pref_floating_button_disconnected_opacity_title,
+                    value = "${disconnectedOpacity}%",
+                    sliderValue = disconnectedOpacity.toFloat(),
+                    valueFrom = 0f,
+                    valueTo = 100f,
+                    stepSize = 5f,
+                    onValueChanged = { newVal ->
+                        pendingFloatingButtonDisconnectedOpacityPercent = newVal.toInt()
+                        checkChanges()
+                    }
+                ))
+            }
 
             val xPos = pendingFloatingButtonXPercent ?: settings.floatingButtonXPercent
             items.add(SettingItem.SliderSettingEntry(

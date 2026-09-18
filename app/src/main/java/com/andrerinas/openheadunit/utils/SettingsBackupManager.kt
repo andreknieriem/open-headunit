@@ -62,9 +62,11 @@ object SettingsBackupManager {
         // migrates the restored boolean on first read.
         "stretch_to_fill" to ValueType.BOOLEAN,
         "enable-floating-button" to ValueType.BOOLEAN,
+        "floating-button-connection-status-mode" to ValueType.BOOLEAN,
         "floating-button-x-percent" to ValueType.INT,
         "floating-button-y-percent" to ValueType.INT,
         "floating-button-opacity-percent" to ValueType.INT,
+        "floating-button-disconnected-opacity-percent" to ValueType.INT,
         "floating-button-size-dp" to ValueType.INT,
         "aa-exit-action" to ValueType.INT,
         "forced_scale" to ValueType.BOOLEAN,

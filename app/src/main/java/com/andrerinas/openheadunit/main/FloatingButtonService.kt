@@ -21,6 +21,12 @@ import androidx.core.content.ContextCompat
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.utils.AppLog
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 class FloatingButtonService : Service() {
@@ -29,6 +35,8 @@ class FloatingButtonService : Service() {
         get() = activeOverlayView
         set(value) { activeOverlayView = value }
     private val mainHandler = Handler(Looper.getMainLooper())
+    private val serviceScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+    private var sessionJob: Job? = null
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -39,6 +47,13 @@ class FloatingButtonService : Service() {
                 startForeground(NOTIFICATION_ID, createNotification())
             } catch (e: Exception) {
                 AppLog.e("FloatingButtonService: startForeground failed: ${e.message}", e)
+            }
+        }
+
+        val commManager = App.provide(this).commManager
+        sessionJob = serviceScope.launch {
+            commManager.connectionState.collect { _ ->
+                mainHandler.post { showOrUpdateOverlay() }
             }
         }
     }
@@ -97,7 +112,18 @@ class FloatingButtonService : Service() {
 
         val xPx = ((settings.floatingButtonXPercent / 100f) * maxX).roundToInt()
         val yPx = ((settings.floatingButtonYPercent / 100f) * maxY).roundToInt()
-        val alpha = (settings.floatingButtonOpacityPercent / 100f).coerceIn(0.0f, 1.0f)
+
+        val commManager = App.provide(appContext).commManager
+        val isConnected = commManager.isConnected
+        val isConnectionStatusMode = settings.floatingButtonConnectionStatusMode
+        val configuredAlpha = (settings.floatingButtonOpacityPercent / 100f).coerceIn(0.0f, 1.0f)
+        val disconnectedAlpha = (settings.floatingButtonDisconnectedOpacityPercent / 100f).coerceIn(0.0f, 1.0f)
+
+        val targetAlpha = if (isConnectionStatusMode && !isConnected) {
+            disconnectedAlpha
+        } else {
+            configuredAlpha
+        }
 
         if (overlayView == null) {
             val button = ImageView(appContext).apply {
@@ -105,7 +131,7 @@ class FloatingButtonService : Service() {
                 scaleType = ImageView.ScaleType.FIT_CENTER
                 setBackgroundResource(R.drawable.bg_floating_button)
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                    elevation = if (alpha > 0f) 8f * density else 0f
+                    elevation = if (targetAlpha > 0f) 8f * density else 0f
                     outlineProvider = ViewOutlineProvider.BACKGROUND
                     clipToOutline = true
                 }
@@ -139,7 +165,7 @@ class FloatingButtonService : Service() {
                 }
             }
 
-            button.alpha = alpha
+            button.alpha = targetAlpha
 
             try {
                 windowManager.addView(button, layoutParams)
@@ -156,9 +182,9 @@ class FloatingButtonService : Service() {
             layoutParams.height = sizePx
             layoutParams.x = xPx
             layoutParams.y = yPx
-            button.alpha = alpha
+            button.animate().alpha(targetAlpha).setDuration(300).start()
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                button.elevation = if (alpha > 0f) 8f * density else 0f
+                button.elevation = if (targetAlpha > 0f) 8f * density else 0f
             }
 
             try {
@@ -185,6 +211,8 @@ class FloatingButtonService : Service() {
     }
 
     override fun onDestroy() {
+        sessionJob?.cancel()
+        serviceScope.cancel()
         super.onDestroy()
         mainHandler.removeCallbacksAndMessages(null)
         removeOverlay()
@@ -221,7 +249,6 @@ class FloatingButtonService : Service() {
                 activeOverlayView = null
             }
         }
-
         fun start(context: Context) {
             val intent = Intent(context, FloatingButtonService::class.java)
             try {

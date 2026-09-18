@@ -509,8 +509,12 @@
     <string name="category_more_features">More Features</string>
     <string name="pref_enable_floating_button_title">Floating Launcher Button</string>
     <string name="pref_enable_floating_button_summary">Displays a floating button over the OEM launcher and other apps to quickly return to Open Headunit</string>
+    <string name="pref_floating_button_connection_status_title" translatable="false">Connection Status Indicator</string>
+    <string name="pref_floating_button_connection_status_summary" translatable="false">Uses Disconnected Opacity when no phone is connected, and smoothly transitions to Floating Button Opacity during active projection</string>
     <string name="pref_floating_button_size_title">Floating Button Size</string>
     <string name="pref_floating_button_opacity_title">Floating Button Opacity</string>
+    <string name="pref_floating_button_disconnected_opacity_title" translatable="false">Disconnected Opacity</string>
+    <string name="pref_floating_button_disconnected_opacity_summary" translatable="false">Opacity of the floating button when no phone is connected</string>
     <string name="pref_floating_button_x_title">Horizontal Position (X)</string>
     <string name="pref_floating_button_y_title">Vertical Position (Y)</string>
     <string name="pref_aa_exit_action_title">Android Auto Exit Action</string>

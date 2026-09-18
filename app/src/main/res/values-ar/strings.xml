@@ -543,6 +543,7 @@
     <string name="loading_screen_file_too_large">الملف كبير جدًا (الحد الأقصى 10 ميغابايت)</string>
     <string name="loading_screen_unsupported_format">صيغة غير مدعومة. استخدم ملف صورة أو فيديو</string>
     <string name="loading_screen_file_error">تعذر تحميل الملف المحدد</string>
+    <string name="loading_screen_show_pill">إظهار حالة الاتصال أثناء التشغيل</string>
     <string name="loading_screen_show_text">إظهار نص \"جار تشغيل Android Auto\"</string>
     <string name="loading_screen_tap_preview">انقر للمعاينة</string>
     <string name="loading_screen_tap_to_close">انقر في أي مكان للإغلاق</string>
@@ -1028,6 +1029,8 @@
     <string name="hide_clock_label">إخفاء الساعة</string>
     <string name="might_broken_on_newer_aa_versions">قد لا تعمل هذه الميزة في إصدارات Android Auto الأحدث</string>
     <string name="auto_connect_delay">تأخير الاتصال التلقائي</string>
+    <string name="auto_start_loading_screen_label">الفتح على شاشة التحميل</string>
+    <string name="auto_start_loading_screen_description">عند تشغيل التطبيق لنفسه، انتقل مباشرةً إلى شاشة التحميل بدلاً من عرض الشاشة الرئيسية أولاً</string>
     <string name="auto_connect_delay_description">الانتظار قبل محاولة الاتصال عند بدء التشغيل (مفيد إذا كان الواي فاي يحتاج وقتاً للتشغيل)</string>
     <string name="auto_connect_delay_none">بدون (فوري)</string>
     <string name="auto_connect_delay_seconds_format">%d ث</string>

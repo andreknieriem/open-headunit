@@ -30,6 +30,9 @@ import com.andrerinas.openheadunit.aap.protocol.messages.TouchEvent
 import com.andrerinas.openheadunit.aap.protocol.messages.VideoFocusEvent
 import com.andrerinas.openheadunit.app.SurfaceActivity
 import com.andrerinas.openheadunit.connection.CommManager
+import com.andrerinas.openheadunit.connection.ConnectionStage
+import com.andrerinas.openheadunit.connection.ConnectionStagePill
+import com.andrerinas.openheadunit.connection.ConnectionStageTracker
 import com.andrerinas.openheadunit.contract.KeyIntent
 import com.andrerinas.openheadunit.decoder.video.WarmRelaunchKeyframePolicy
 import com.andrerinas.openheadunit.input.ProjectionKeyPolicy
@@ -70,6 +73,7 @@ import com.andrerinas.openheadunit.main.QuickSettingsFragment
 import com.andrerinas.openheadunit.main.RenameNotice
 import com.andrerinas.openheadunit.main.Aa174Notice
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import com.andrerinas.openheadunit.main.AutoStartLoadingScreenPolicy
 import com.andrerinas.openheadunit.main.AutoStartOfferPolicy
 import com.andrerinas.openheadunit.main.MainActivity
 import java.io.File
@@ -116,6 +120,9 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
      * animator keeps consuming frame callbacks even when the view is gone.
      */
     private var kenBurnsAnimator: ObjectAnimator? = null
+    private var stagePill: ConnectionStagePill? = null
+    private var loggedPillStage: ConnectionStage? = null
+    private var renderedPillShown: Boolean? = null
 
     private var initialX = 0f
     private var initialY = 0f
@@ -1120,6 +1127,30 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         // Set up custom loading screen if configured
         setupCustomLoadingScreen()
 
+        // The pill the home screen raised carries on here, so the step the user was reading
+        // survives the handoff. No X: the session is up, and disconnect_button is this screen's.
+        stagePill = findViewById<View>(R.id.auto_connect_pill)?.let { ConnectionStagePill(it) }
+        stagePill?.setCancelAction(null)
+        // Whatever this screen is already saying, so the pill does not contradict the handover
+        // text setupCustomLoadingScreen() just applied.
+        stagePill?.setHeadline(
+            findViewById<TextView>(R.id.overlay_text)?.text
+                ?: getString(R.string.android_auto_starting)
+        )
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                ConnectionStageTracker.stage.collect { renderProjectionPill() }
+            }
+        }
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                ConnectionStageTracker.network.collect {
+                    stagePill?.applyNetwork(it, animate = true)
+                    renderProjectionPill()
+                }
+            }
+        }
+
         findViewById<Button>(R.id.disconnect_button)?.setOnClickListener {
             commManager.disconnect()
             finish()
@@ -1265,6 +1296,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         detail?.text = getString(R.string.connection_interrupted_detail)
         detail?.visibility = View.VISIBLE
         button?.visibility = View.VISIBLE
+        renderProjectionPill()
     }
 
     /**
@@ -1281,8 +1313,45 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         overlay.visibility = View.GONE
         detail?.visibility = View.GONE
         button?.visibility = View.GONE
+        stagePill?.hide()
+        renderedPillShown = false
         stopCustomLoadingMedia()
         touchOverlayView?.requestFocus()
+    }
+
+    /**
+     * The pill is a child of the loading overlay, so the overlay's own visibility gates it; this
+     * only adds the setting and "is there a step to name at all".
+     */
+    private fun renderProjectionPill() {
+        val pill = stagePill ?: return
+        val stage = ConnectionStageTracker.stage.value
+        val overlayUp = findViewById<View>(R.id.loading_overlay)?.visibility == View.VISIBLE
+        val shown = AutoStartLoadingScreenPolicy.showsProjectionPill(
+            loadingOverlayVisible = overlayUp,
+            stage = stage,
+            pillSettingOn = settings.loadingScreenShowPill
+        )
+        // The same line MainActivity writes, prefixed with this activity instead: frame sampling
+        // could not separate this pill from the loading screen behind it, so the log grades it.
+        // Gated on a change: the stage flow re-emits far more often than the pill changes.
+        if (stage != loggedPillStage || shown != renderedPillShown) {
+            loggedPillStage = stage
+            renderedPillShown = shown
+            val step = when {
+                shown -> stage?.name ?: "hidden"
+                stage == null -> "hidden"
+                !overlayUp -> "${stage.name} (not shown, the loading screen is down)"
+                else -> "${stage.name} (not shown, the pill is switched off)"
+            }
+            AppLog.i("AapProjectionActivity: status pill step: $step")
+        }
+        if (!shown) {
+            pill.hide()
+            return
+        }
+        pill.show()
+        pill.applyStage(stage, animate = true)
     }
 
     private fun setupCustomLoadingScreen() {
@@ -1293,6 +1362,8 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         // once and cleared so the value can't leak into a later connection.
         val handover = pendingStatusText
         pendingStatusText = null
+        val mediaResumeMs = pendingLoadingMediaPositionMs
+        pendingLoadingMediaPositionMs = 0
         if (handover != null) {
             findViewById<TextView>(R.id.overlay_text)?.text = handover
             findViewById<TextView>(R.id.loading_custom_text)?.text = handover
@@ -1382,6 +1453,8 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                     customVideo?.setOnPreparedListener { mp ->
                         mp.isLooping = settings.loadingScreenLoopVideo
                         mp.setVolume(0f, 0f)
+                        // Where the home screen's copy had got to, so the cut is not a restart.
+                        if (mediaResumeMs > 0) customVideo.seekTo(mediaResumeMs)
 
                         try {
                             val vw = mp.videoWidth
@@ -1467,6 +1540,8 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     private fun hideLoadingOverlay(loadingOverlay: View?) {
         overlayState = OverlayState.HIDDEN
         AppLog.i("Hiding loading overlay after first video frame")
+        stagePill?.hide()
+        renderedPillShown = false
 
         // CRITICAL: Stop custom video FIRST — VideoView/SurfaceView has its own
         // rendering layer that ignores parent alpha animations and can stay visible
@@ -2223,6 +2298,12 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
          * value can't leak into a subsequent connection attempt.
          */
         @Volatile var pendingStatusText: String? = null
+
+        /**
+         * Where MainActivity's loading video had got to when it handed over, so this screen
+         * resumes it instead of cutting back to the first frame. Read and cleared once.
+         */
+        @Volatile var pendingLoadingMediaPositionMs: Int = 0
 
         fun intent(context: Context): Intent {
             val aapIntent = Intent(context, AapProjectionActivity::class.java)

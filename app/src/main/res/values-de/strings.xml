@@ -602,6 +602,7 @@
     <string name="loading_screen_file_too_large">Datei ist zu groß (max. 10 MB)</string>
     <string name="loading_screen_unsupported_format">Format nicht unterstützt. Verwenden Sie eine Bild- oder Videodatei</string>
     <string name="loading_screen_file_error">Die ausgewählte Datei konnte nicht geladen werden</string>
+    <string name="loading_screen_show_pill">Verbindungsstatus während des Starts anzeigen</string>
     <string name="loading_screen_show_text">Text \"Android Auto startet\" anzeigen</string>
     <string name="loading_screen_tap_preview">Tippen für Vorschau</string>
     <string name="loading_screen_tap_to_close">Tippen Sie irgendwo, um zu schließen</string>
@@ -1031,6 +1032,8 @@
     <string name="native_aa_setup_qr_no_bluetooth">Die Bluetooth-Adresse dieses Geräts konnte nicht gelesen werden, und das Telefon braucht sie, um dieses Headunit später wiederzuerkennen.</string>
     <string name="native_aa_setup_qr_dongle">Der Bluetooth-Name dieses Geräts sieht für das Telefon wie ein WLAN-Dongle aus, den es als anderes Gerät behandelt. Benenne Bluetooth auf diesem Gerät um und versuche es erneut.</string>
     <string name="auto_connect_delay">Auto-Connect Verzögerung</string>
+    <string name="auto_start_loading_screen_label">Mit dem Ladebildschirm öffnen</string>
+    <string name="auto_start_loading_screen_description">Wenn die App sich selbst startet, direkt den Ladebildschirm zeigen, statt zuerst den Startbildschirm anzuzeigen</string>
     <string name="auto_connect_delay_description">Wartet vor dem Verbinden beim Start (hilfreich, wenn das WLAN Zeit zum Aktivieren benötigt)</string>
     <string name="auto_connect_delay_none">Keine (Sofort)</string>
     <string name="auto_connect_delay_seconds_format">%d s</string>

@@ -542,6 +542,7 @@
     <string name="loading_screen_file_too_large">A fájl túl nagy (max 10 MB)</string>
     <string name="loading_screen_unsupported_format">Nem támogatott formátum. Használjon kép- vagy videófájlt</string>
     <string name="loading_screen_file_error">A kiválasztott fájl nem tölthető be</string>
+    <string name="loading_screen_show_pill">A kapcsolat állapotának megjelenítése indulás közben</string>
     <string name="loading_screen_show_text">\"Az Android Auto indul\" szöveg megjelenítése</string>
     <string name="loading_screen_tap_preview">Érintse meg az előnézethez</string>
     <string name="loading_screen_tap_to_close">Érintse meg bárhol a bezáráshoz</string>
@@ -1026,6 +1027,8 @@
     <string name="hide_clock_label">Óra elrejtése</string>
     <string name="might_broken_on_newer_aa_versions">Ez a funkció előfordulhat, hogy nem működik az Android Auto újabb verzióin</string>
     <string name="auto_connect_delay">Automatikus csatlakozási késleltetés</string>
+    <string name="auto_start_loading_screen_label">Megnyitás a betöltő képernyőn</string>
+    <string name="auto_start_loading_screen_description">Ha az alkalmazás magától indul, egyből a betöltő képernyő jelenjen meg a kezdőképernyő helyett</string>
     <string name="auto_connect_delay_description">Várakozás a csatlakozás előtt indításkor (hasznos, ha a Wi-Fi-nek időre van szüksége az ébredéshez)</string>
     <string name="auto_connect_delay_none">Nincs (Azonnali)</string>
     <string name="auto_connect_delay_seconds_format">%d mp</string>

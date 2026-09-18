@@ -543,6 +543,7 @@
     <string name="loading_screen_file_too_large">Soubor je příliš velký (max 10 MB)</string>
     <string name="loading_screen_unsupported_format">Nepodporovaný formát. Použijte soubor obrázku nebo videa</string>
     <string name="loading_screen_file_error">Nepodařilo se načíst vybraný soubor</string>
+    <string name="loading_screen_show_pill">Zobrazit stav připojení během spouštění</string>
     <string name="loading_screen_show_text">Zobrazit text \"Android Auto se spouští\"</string>
     <string name="loading_screen_tap_preview">Klepněte pro náhled</string>
     <string name="loading_screen_tap_to_close">Klepněte kamkoli pro zavření</string>
@@ -1030,6 +1031,8 @@
     <string name="hide_clock_label">Skrýt hodiny</string>
     <string name="might_broken_on_newer_aa_versions">Tato funkce nemusí fungovat na novějších verzích Android Auto</string>
     <string name="auto_connect_delay">Zpoždění automatického připojení</string>
+    <string name="auto_start_loading_screen_label">Otevřít na načítací obrazovce</string>
+    <string name="auto_start_loading_screen_description">Když se aplikace spustí sama, přejít rovnou na načítací obrazovku místo zobrazení hlavní obrazovky</string>
     <string name="auto_connect_delay_description">Počkat před pokusem o připojení při startu (užitečné, pokud Wi-Fi potřebuje čas na probuzení)</string>
     <string name="auto_connect_delay_none">Žádné (Okamžitě)</string>
     <string name="auto_connect_delay_seconds_format">%d s</string>

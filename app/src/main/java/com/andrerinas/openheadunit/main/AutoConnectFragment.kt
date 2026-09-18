@@ -35,6 +35,8 @@ class AutoConnectFragment : Fragment() {
     private lateinit var initialEnabled: Map<String, Boolean>
     private var initialDelaySeconds = 0
     private var pendingDelaySeconds = 0
+    private var initialLoadingScreen = true
+    private var pendingLoadingScreen = true
 
     // Views for delay setting
     private lateinit var cardDelay: View
@@ -65,6 +67,8 @@ class AutoConnectFragment : Fragment() {
         )
         initialDelaySeconds = settings.autoConnectDelaySeconds
         pendingDelaySeconds = initialDelaySeconds
+        initialLoadingScreen = settings.autoStartLoadingScreen
+        pendingLoadingScreen = initialLoadingScreen
 
         // Delay setting card
         cardDelay = view.findViewById(R.id.card_delay)
@@ -72,6 +76,17 @@ class AutoConnectFragment : Fragment() {
         updateDelayDisplay()
         cardDelay.setOnClickListener {
             showDelaySelectionDialog()
+        }
+
+        // Opens the app straight onto the loading screen rather than showing the home screen first.
+        val loadingScreenToggle = view.findViewById<android.widget.Switch>(R.id.toggle_loading_screen)
+        loadingScreenToggle.isChecked = pendingLoadingScreen
+        loadingScreenToggle.setOnCheckedChangeListener { _, isChecked ->
+            pendingLoadingScreen = isChecked
+            checkChanges()
+        }
+        view.findViewById<View>(R.id.card_loading_screen).setOnClickListener {
+            loadingScreenToggle.isChecked = !loadingScreenToggle.isChecked
         }
 
         // Build method list in priority order
@@ -240,7 +255,8 @@ class AutoConnectFragment : Fragment() {
         // Compare against the initial state minus the hidden (non-applicable) methods.
         hasChanges = currentOrder != initialOrder.filterNot { it in hiddenMethodIds } ||
             currentEnabled != initialEnabled.filterKeys { it !in hiddenMethodIds } ||
-            pendingDelaySeconds != initialDelaySeconds
+            pendingDelaySeconds != initialDelaySeconds ||
+            pendingLoadingScreen != initialLoadingScreen
         updateSaveButtonState()
     }
 
@@ -261,11 +277,13 @@ class AutoConnectFragment : Fragment() {
         enabledStates[Settings.AUTO_CONNECT_SELF_MODE]?.let { settings.autoStartSelfMode = it }
         enabledStates[Settings.AUTO_CONNECT_SINGLE_USB]?.let { settings.autoConnectSingleUsbDevice = it }
         settings.autoConnectDelaySeconds = pendingDelaySeconds
+        settings.autoStartLoadingScreen = pendingLoadingScreen
 
         // Update snapshot
         initialOrder = orderedIds.toList()
         initialEnabled = enabledStates.toMap()
         initialDelaySeconds = pendingDelaySeconds
+        initialLoadingScreen = pendingLoadingScreen
 
         hasChanges = false
         updateSaveButtonState()

@@ -544,6 +544,7 @@
     <string name="loading_screen_file_too_large">Fișierul este prea mare (max 10 MB)</string>
     <string name="loading_screen_unsupported_format">Format neacceptat. Utilizați un fișier imagine sau video</string>
     <string name="loading_screen_file_error">Nu s-a putut încărca fișierul selectat</string>
+    <string name="loading_screen_show_pill">Afișează starea conexiunii în timpul pornirii</string>
     <string name="loading_screen_show_text">Afișează textul \"Android Auto pornește\"</string>
     <string name="loading_screen_tap_preview">Atingeți pentru previzualizare</string>
     <string name="loading_screen_tap_to_close">Atingeți oriunde pentru a închide</string>
@@ -1027,6 +1028,8 @@
     <string name="hide_clock_label">Ascunde ceasul</string>
     <string name="might_broken_on_newer_aa_versions">Această funcție s-ar putea să nu funcționeze pe versiunile mai noi de Android Auto</string>
     <string name="auto_connect_delay">Întârziere conectare automată</string>
+    <string name="auto_start_loading_screen_label">Deschide pe ecranul de încărcare</string>
+    <string name="auto_start_loading_screen_description">Când aplicația pornește singură, mergi direct la ecranul de încărcare în loc să afișezi întâi ecranul principal</string>
     <string name="auto_connect_delay_description">Așteaptă înainte de a încerca conectarea la pornire (util dacă Wi-Fi necesită timp pentru activare)</string>
     <string name="auto_connect_delay_none">Niciuna (Instant)</string>
     <string name="auto_connect_delay_seconds_format">%d s</string>

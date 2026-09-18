@@ -996,6 +996,7 @@
     <string name="loading_screen_file_too_large">File is too large (max 10 MB)</string>
     <string name="loading_screen_unsupported_format">Unsupported format. Use an image or video file</string>
     <string name="loading_screen_file_error">Could not load the selected file</string>
+    <string name="loading_screen_show_pill">Show the connection status while it starts</string>
     <string name="loading_screen_show_text">Show \"Android Auto is starting\" text</string>
     <string name="loading_screen_tap_preview">Tap to preview fullscreen</string>
     <string name="loading_screen_tap_to_close">Tap anywhere to close</string>
@@ -1203,6 +1204,8 @@
     <string name="hide_clock_label">Hide the Clock</string>
     <string name="might_broken_on_newer_aa_versions">This functionality might not work on newer versions of Android Auto</string>
     <string name="auto_connect_delay">Auto-Connect Delay</string>
+    <string name="auto_start_loading_screen_label">Open on the loading screen</string>
+    <string name="auto_start_loading_screen_description">When the app starts itself, go straight to the Android Auto starting screen instead of showing the home screen first</string>
     <string name="auto_connect_delay_description">Wait before attempting to connect on startup (useful if Wi-Fi needs time to wake up)</string>
     <string name="auto_connect_delay_none">None (Instant)</string>
     <string name="auto_connect_delay_seconds_format">%d s</string>

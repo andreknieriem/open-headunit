@@ -552,6 +552,7 @@
     <string name="loading_screen_file_too_large">ファイルが大きすぎます（最大 10 MB）</string>
     <string name="loading_screen_unsupported_format">非対応の形式です。画像または動画ファイルを使用してください</string>
     <string name="loading_screen_file_error">選択したファイルを読み込めませんでした</string>
+    <string name="loading_screen_show_pill">起動中に接続状況を表示</string>
     <string name="loading_screen_show_text">「Android Autoは起動中です」テキストを表示</string>
     <string name="loading_screen_tap_preview">タップでプレビュー</string>
     <string name="loading_screen_tap_to_close">どこでもタップして閉じる</string>
@@ -1035,6 +1036,8 @@
     <string name="hide_clock_label">時計を非表示</string>
     <string name="might_broken_on_newer_aa_versions">この機能は新しいバージョンのAndroid Autoでは動作しない可能性があります</string>
     <string name="auto_connect_delay">自動接続の遅延</string>
+    <string name="auto_start_loading_screen_label">読み込み画面で開く</string>
+    <string name="auto_start_loading_screen_description">アプリが自動的に起動したとき、ホーム画面を表示せずに読み込み画面を直接表示します</string>
     <string name="auto_connect_delay_description">起動時に接続を試行する前に待機します（Wi-Fiの復帰に時間がかかる場合に有効）</string>
     <string name="auto_connect_delay_none">なし (即時)</string>
     <string name="auto_connect_delay_seconds_format">%d 秒</string>

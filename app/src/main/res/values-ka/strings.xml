@@ -579,6 +579,7 @@
     <string name="loading_screen_file_too_large">ფაილი ძალიან დიდია (მაქს 10 MB)</string>
     <string name="loading_screen_unsupported_format">არამხარდაჭერილი ფორმატი. გამოიყენეთ სურათის ან ვიდეო ფაილი</string>
     <string name="loading_screen_file_error">ვერ მოხერხდა არჩეული ფაილის ჩატვირთვა</string>
+    <string name="loading_screen_show_pill">დაკავშირების მდგომარეობის ჩვენება გაშვებისას</string>
     <string name="loading_screen_show_text">ტექსტის ჩვენება \"Android Auto იწყება\"</string>
     <string name="loading_screen_tap_preview">დააჭირეთ სრულ ეკრანზე სანახავად</string>
     <string name="loading_screen_tap_to_close">დააჭირეთ ნებისმიერ ადგილას დასახურად</string>
@@ -1011,6 +1012,8 @@
     <string name="hide_clock_label">საათის დამალვა</string>
     <string name="might_broken_on_newer_aa_versions">ეს ფუნქცია შესაძლოა არ იმუშაოს Android Auto-ს ახალ ვერსიებზე</string>
     <string name="auto_connect_delay">ავტო-დაკავშირების დაყოვნება</string>
+    <string name="auto_start_loading_screen_label">ჩატვირთვის ეკრანზე გახსნა</string>
+    <string name="auto_start_loading_screen_description">როცა აპლიკაცია თავად იშვება, პირდაპირ ჩატვირთვის ეკრანი გამოჩნდეს და არა ჯერ მთავარი ეკრანი</string>
     <string name="auto_connect_delay_description">დალოდება ჩართვისას დაკავშირებამდე (სასარგებლოა, თუ Wi-Fi-ს გააქტიურებისთვის დრო სჭირდება)</string>
     <string name="auto_connect_delay_none">არცერთი (მყისიერად)</string>
     <string name="auto_connect_delay_seconds_format">%d წმ</string>

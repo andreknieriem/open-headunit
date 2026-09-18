@@ -543,6 +543,7 @@
     <string name="loading_screen_file_too_large">檔案太大（最大 10 MB）</string>
     <string name="loading_screen_unsupported_format">不支援的格式。請使用圖片或影片檔案</string>
     <string name="loading_screen_file_error">無法載入所選檔案</string>
+    <string name="loading_screen_show_pill">啟動時顯示連線狀態</string>
     <string name="loading_screen_show_text">顯示「Android Auto 啟動中」文字</string>
     <string name="loading_screen_tap_preview">點擊全螢幕預覽</string>
     <string name="loading_screen_tap_to_close">點擊任意位置關閉</string>
@@ -1029,6 +1030,8 @@
     <string name="hide_clock_label">隱藏時钟</string>
     <string name="might_broken_on_newer_aa_versions">此功能在較新版本的 Android Auto 上可能無法正常運作</string>
     <string name="auto_connect_delay">自動連線延遲</string>
+    <string name="auto_start_loading_screen_label">以載入畫面開啟</string>
+    <string name="auto_start_loading_screen_description">當應用程式自行啟動時，直接顯示載入畫面，而不是先顯示主畫面</string>
     <string name="auto_connect_delay_description">啟動時等待指定時間後再嘗試連線（若 Wi-Fi 啟動需要時間時很有用）</string>
     <string name="auto_connect_delay_none">無（立即）</string>
     <string name="auto_connect_delay_seconds_format">%d 秒</string>

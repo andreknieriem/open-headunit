@@ -44,6 +44,7 @@ class LoadingScreenFragment : Fragment() {
     private var previewStatusText: View? = null
     private var toggleContainer: View? = null
     private var toggleShowText: Switch? = null
+    private var toggleShowPill: Switch? = null
     private var toggleKeepAspectRatio: Switch? = null
     private var toggleLoopContainer: View? = null
     private var toggleLoopVideo: Switch? = null
@@ -105,6 +106,7 @@ class LoadingScreenFragment : Fragment() {
         previewStatusText = view.findViewById(R.id.preview_status_text)
         toggleContainer = view.findViewById(R.id.toggle_container)
         toggleShowText = view.findViewById(R.id.toggle_show_text)
+        toggleShowPill = view.findViewById(R.id.toggle_show_pill)
         btnRemove = view.findViewById(R.id.btn_remove)
         fullscreenOverlay = view.findViewById(R.id.fullscreen_overlay)
         fullscreenImage = view.findViewById(R.id.fullscreen_image)
@@ -170,6 +172,11 @@ class LoadingScreenFragment : Fragment() {
         })
 
         // Toggles
+        toggleShowPill?.isChecked = settings.loadingScreenShowPill
+        toggleShowPill?.setOnCheckedChangeListener { _, isChecked ->
+            settings.loadingScreenShowPill = isChecked
+        }
+
         toggleShowText?.isChecked = settings.loadingScreenShowText
         toggleShowText?.setOnCheckedChangeListener { _, isChecked ->
             settings.loadingScreenShowText = isChecked

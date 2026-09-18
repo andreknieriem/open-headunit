@@ -543,6 +543,7 @@
     <string name="loading_screen_file_too_large">Bestand is te groot (max 10 MB)</string>
     <string name="loading_screen_unsupported_format">Niet-ondersteund formaat. Gebruik een afbeelding of videobestand</string>
     <string name="loading_screen_file_error">Kan het geselecteerde bestand niet laden</string>
+    <string name="loading_screen_show_pill">Verbindingsstatus tonen tijdens het opstarten</string>
     <string name="loading_screen_show_text">Tekst \"Android Auto start op\" tonen</string>
     <string name="loading_screen_tap_preview">Tik voor voorbeeld</string>
     <string name="loading_screen_tap_to_close">Tik ergens om te sluiten</string>
@@ -1030,6 +1031,8 @@
     <string name="hide_clock_label">Klok verbergen</string>
     <string name="might_broken_on_newer_aa_versions">Deze functionaliteit werkt mogelijk niet op nieuwere versies van Android Auto</string>
     <string name="auto_connect_delay">Vertraging automatisch verbinden</string>
+    <string name="auto_start_loading_screen_label">Openen op het laadscherm</string>
+    <string name="auto_start_loading_screen_description">Als de app zichzelf start, direct naar het laadscherm gaan in plaats van eerst het startscherm te tonen</string>
     <string name="auto_connect_delay_description">Wacht voor het verbinden bij opstarten (handig als Wi-Fi tijd nodig heeft om te activeren)</string>
     <string name="auto_connect_delay_none">Geen (Direct)</string>
     <string name="auto_connect_delay_seconds_format">%d s</string>

@@ -509,6 +509,7 @@
     <string name="loading_screen_file_too_large">Файл слишком большой (макс. 10 МБ)</string>
     <string name="loading_screen_unsupported_format">Неподдерживаемый формат. Используйте файл изображения или видео</string>
     <string name="loading_screen_file_error">Не удалось загрузить выбранный файл</string>
+    <string name="loading_screen_show_pill">Показывать состояние подключения во время запуска</string>
     <string name="loading_screen_show_text">Показывать текст \"Запуск Android Auto\"</string>
     <string name="loading_screen_tap_preview">Нажмите для предпросмотра</string>
     <string name="loading_screen_tap_to_close">Нажмите в любом месте, чтобы закрыть</string>
@@ -1029,6 +1030,8 @@
     <string name="hide_clock_label">Скрыть часы</string>
     <string name="might_broken_on_newer_aa_versions">Эта функция может не работать на новых версиях Android Auto</string>
     <string name="auto_connect_delay">Задержка автоподключения</string>
+    <string name="auto_start_loading_screen_label">Открывать на экране загрузки</string>
+    <string name="auto_start_loading_screen_description">Когда приложение запускается само, сразу открывать экран загрузки вместо главного экрана</string>
     <string name="auto_connect_delay_description">Ожидание перед подключением при запуске (полезно, если Wi-Fi требуется время для включения)</string>
     <string name="auto_connect_delay_none">Нет (Мгновенно)</string>
     <string name="auto_connect_delay_seconds_format">%d с</string>

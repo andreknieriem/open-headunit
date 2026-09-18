@@ -38,8 +38,8 @@ import com.andrerinas.openheadunit.app.BaseActivity
 import com.andrerinas.openheadunit.app.BtAutoStartRearmPolicy
 import com.andrerinas.openheadunit.connection.CommManager
 import com.andrerinas.openheadunit.connection.ConnectionNetworkDetail
-import com.andrerinas.openheadunit.connection.ConnectionNetworkDetailPolicy
 import com.andrerinas.openheadunit.connection.ConnectionStage
+import com.andrerinas.openheadunit.connection.ConnectionStagePill
 import com.andrerinas.openheadunit.connection.ConnectionStageTracker
 import com.andrerinas.openheadunit.connection.PhoneExitQuietPolicy
 import com.andrerinas.openheadunit.utils.AppLog
@@ -80,6 +80,7 @@ class MainActivity : BaseActivity() {
     /** Ends the hold after a clean phone-side exit; the flow itself emits nothing at that moment. */
     private var phoneExitQuietJob: Job? = null
     private var renderedNetwork: ConnectionNetworkDetail? = null
+    private var stagePill: ConnectionStagePill? = null
     private var autoConnectKenBurnsAnim: ObjectAnimator? = null
 
     /**
@@ -172,6 +173,7 @@ class MainActivity : BaseActivity() {
         }
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
+        stagePill = findViewById<View>(R.id.auto_connect_pill)?.let { ConnectionStagePill(it) }
         if (isExtremeDark) {
             findViewById<View>(R.id.splash_overlay)?.setBackgroundColor(
                 ContextCompat.getColor(this, R.color.extreme_dark_background)
@@ -221,12 +223,9 @@ class MainActivity : BaseActivity() {
 
         val launchSource = if (savedInstanceState == null) intent?.getStringExtra(EXTRA_LAUNCH_SOURCE) else null
 
-        if (launchSource == "USB auto-start") {
-            findViewById<View>(R.id.splash_overlay)?.visibility = View.GONE
-            beginAutoConnect("USB auto-start", ConnectionUiMode.OVERLAY)
-        } else if (launchSource == LAUNCH_SOURCE_BLUETOOTH) {
-            // The connect pill and the Self Mode launch are raised from handleLaunchIntent, so a
-            // warm activity handed the same intent behaves the same way.
+        if (launchSource != null) {
+            // The attempt's UI is raised from handleLaunchIntent, so a warm activity handed the
+            // same intent behaves the same way. Only the splash is this branch's business.
             findViewById<View>(R.id.splash_overlay)?.visibility = View.GONE
         } else if (savedInstanceState == null) {
             val elapsedSinceStart = SystemClock.elapsedRealtime() - App.appStartTime
@@ -242,6 +241,11 @@ class MainActivity : BaseActivity() {
         // installs; for users who already finished onboarding we request them from checkSetupFlow().
         viewModel.register()
         handleLaunchIntent(intent)
+        if (launchSource == null && savedInstanceState == null) {
+            // No receiver started us, but the auto-connect list may still be armed. Cold launch
+            // only: a later launcher tap is somebody coming back, not a new auto-start.
+            maybeBeginAutoStartUi(null)
+        }
         setupWifiDirectInfo()
 
         ContextCompat.registerReceiver(
@@ -253,9 +257,7 @@ class MainActivity : BaseActivity() {
 
         // Wire cancel affordances. The pill's X stops the whole bring-up; the overlay's button
         // ends only the attempt it belongs to.
-        findViewById<View>(R.id.auto_connect_pill_cancel)?.setOnClickListener {
-            cancelBringUp()
-        }
+        stagePill?.setCancelAction { cancelFromPill() }
         findViewById<View>(R.id.auto_connect_loading_cancel)?.setOnClickListener {
             cancelAutoConnect()
         }
@@ -286,7 +288,8 @@ class MainActivity : BaseActivity() {
         reason: String,
         mode: ConnectionUiMode,
         customStatusText: String? = null,
-        statusTextIsWakeClaim: Boolean = false
+        statusTextIsWakeClaim: Boolean = false,
+        automaticLaunch: Boolean = false
     ) {
         // The flag is on the companion and the watchdog on this instance's scope, so an attempt
         // can reach here with nothing watching it at all: spend it if it is over, re-arm it if not.
@@ -301,6 +304,8 @@ class MainActivity : BaseActivity() {
         AppLog.i("Auto-connect: begin ($reason, mode=$mode)")
         autoConnectInProgress = true
         autoConnectMode = mode
+        autoConnectIsAutomatic = automaticLaunch
+        autoConnectSawStage = ConnectionStageTracker.stage.value != null
         autoConnectDeadlineElapsed =
             AutoConnectAttemptPolicy.deadlineAt(mode, SystemClock.elapsedRealtime())
         // Seed hasAdvancedToActiveState from the current connection state. If
@@ -355,6 +360,15 @@ class MainActivity : BaseActivity() {
         // immediately rather than waiting for the round-trip.
         App.provide(this).commManager.disconnect()
         endAutoConnect(success = false)
+    }
+
+    /**
+     * The X means "stop what is happening", which is not the same thing on every screen. Over a
+     * loading screen the user raised by hand it is only their attempt; everywhere else the pill is
+     * narrating the wireless stack, so it is the stack.
+     */
+    private fun cancelFromPill() {
+        if (overlayOwnsScreen() && !autoConnectIsAutomatic) cancelAutoConnect() else cancelBringUp()
     }
 
     /**
@@ -433,6 +447,7 @@ class MainActivity : BaseActivity() {
                                 AppLog.w("Auto-connect overlay: connection error: ${state.message}")
                                 endAutoConnect(success = false)
                             }
+                            dropLoadingScreenLeftByHandoff()
                         }
                         is CommManager.ConnectionState.Disconnected -> {
                             // Initial Disconnected on app launch is normal; only treat
@@ -441,11 +456,25 @@ class MainActivity : BaseActivity() {
                                 AppLog.w("Auto-connect overlay: disconnected mid-attempt")
                                 endAutoConnect(success = false)
                             }
+                            dropLoadingScreenLeftByHandoff()
                         }
                     }
                 }
             }
         }
+    }
+
+    /**
+     * Takes down a loading screen the handoff left up.
+     *
+     * The success path deliberately leaves it painted for onStop, so a raise that never lands
+     * would otherwise strand it over the home screen with the session already gone.
+     */
+    private fun dropLoadingScreenLeftByHandoff() {
+        if (autoConnectInProgress) return
+        if (findViewById<View>(R.id.auto_connect_loading_overlay)?.visibility != View.VISIBLE) return
+        AppLog.i("Auto-connect: the session ended before the projection covered us, dropping the loading screen")
+        hideAutoConnectOverlay()
     }
 
     private fun endAutoConnect(success: Boolean) {
@@ -456,6 +485,7 @@ class MainActivity : BaseActivity() {
         hasAdvancedToActiveState = false
         autoConnectStatusText = null
         autoConnectStatusIsWakeClaim = false
+        autoConnectIsAutomatic = false
         if (!success) {
             // Failure path: AAP is not going to launch, so clear the handover
             // value so it can't appear on a later, unrelated connection. On
@@ -479,29 +509,21 @@ class MainActivity : BaseActivity() {
             // during that gap this overlay had already hidden itself, leaving the
             // user stuck on HomeFragment with only a relabeled button to notice.
             bringProjectionToFront()
-            // Hiding without an animation avoids the fade competing with the
-            // activity transition.
-            findViewById<View>(R.id.auto_connect_loading_overlay)?.visibility = View.GONE
-            stopAutoConnectVideo()
-            autoConnectKenBurnsAnim?.cancel()
-            autoConnectKenBurnsAnim = null
+            // The overlay stays painted until onStop, which runs once the projection actually
+            // covers us. Hiding it here uncovered the home screen for the ~113 ms the raise takes.
+            stashLoadingMediaPosition()
         } else {
             hideAutoConnectOverlay()
         }
     }
 
     private fun showAutoConnectPill() {
-        val pill = findViewById<View>(R.id.auto_connect_pill) ?: return
-        val pillText = findViewById<TextView>(R.id.auto_connect_pill_text)
-        pillText?.text = autoConnectStatusText ?: getString(R.string.android_auto_starting)
-        if (pill.visibility == View.VISIBLE) return
-
-        // After the guard, so a pill that is merely changing step still gets the crossfade below.
-        // Reading the tracker here is what restores the step line after an activity recreate.
-        applyStageText(ConnectionStageTracker.stage.value, animate = false)
-        applyNetworkText(ConnectionStageTracker.network.value, animate = false)
-        pill.visibility = View.VISIBLE
-        pill.bringToFront()
+        val pill = stagePill ?: return
+        pill.setHeadline(autoConnectStatusText ?: getString(R.string.android_auto_starting))
+        // show() is a no-op once up, so a pill merely changing step still gets its crossfade.
+        pill.show()
+        // The overlay's own cancel would be a second X beside the pill's, which outranks it.
+        findViewById<View>(R.id.auto_connect_loading_cancel)?.visibility = View.GONE
         // If the splash overlay is still showing, keep it on top of the pill until the splash finishes
         findViewById<View>(R.id.splash_overlay)?.let { splash ->
             if (splash.visibility == View.VISIBLE) {
@@ -511,9 +533,8 @@ class MainActivity : BaseActivity() {
     }
 
     private fun hideAutoConnectPill() {
-        val pill = findViewById<View>(R.id.auto_connect_pill) ?: return
-        if (pill.visibility != View.VISIBLE) return
-        pill.visibility = View.GONE
+        stagePill?.hide()
+        findViewById<View>(R.id.auto_connect_loading_cancel)?.visibility = View.VISIBLE
     }
 
     /**
@@ -535,41 +556,12 @@ class MainActivity : BaseActivity() {
 
     /** The pill's third line, logged like the step so a screenshot can be read against the log. */
     private fun renderNetworkLine(detail: ConnectionNetworkDetail?) {
+        val pill = stagePill ?: return
         if (detail != renderedNetwork) {
             renderedNetwork = detail
-            AppLog.i("MainActivity: status pill network: ${detail?.let { networkText(it) } ?: "none"}")
+            AppLog.i("MainActivity: status pill network: ${detail?.let { pill.networkLabel(it) } ?: "none"}")
         }
-        applyNetworkText(detail, animate = true)
-    }
-
-    private fun networkText(detail: ConnectionNetworkDetail): String {
-        val line = ConnectionNetworkDetailPolicy.lineFor(detail)
-        return getString(line.id, *line.args.toTypedArray())
-    }
-
-    /** Sets the pill's third line. Not announced: the channel is not a step. */
-    private fun applyNetworkText(detail: ConnectionNetworkDetail?, animate: Boolean) {
-        val networkText = findViewById<TextView>(R.id.auto_connect_pill_network_text) ?: return
-        if (detail == null) {
-            networkText.animate().cancel()
-            networkText.visibility = View.GONE
-            return
-        }
-        val label = networkText(detail)
-        if (networkText.visibility == View.VISIBLE && networkText.text == label) return
-
-        networkText.animate().cancel()
-        if (!animate || networkText.visibility != View.VISIBLE) {
-            networkText.text = label
-            networkText.alpha = if (animate) 0f else STAGE_TEXT_ALPHA
-            networkText.visibility = View.VISIBLE
-            if (animate) networkText.animate().alpha(STAGE_TEXT_ALPHA).setDuration(STAGE_FADE_IN_MS).start()
-            return
-        }
-        networkText.animate().alpha(0f).setDuration(STAGE_FADE_OUT_MS).withEndAction {
-            networkText.text = label
-            networkText.animate().alpha(STAGE_TEXT_ALPHA).setDuration(STAGE_FADE_IN_MS).start()
-        }.start()
+        pill.applyNetwork(detail, animate = true)
     }
 
     /**
@@ -582,7 +574,11 @@ class MainActivity : BaseActivity() {
             PhoneExitQuietPolicy.suppressesPill(ConnectionStageTracker.phoneLeftAtMs, now)
         // PILL_THEN_OVERLAY hands the screen to the overlay part-way through an attempt.
         // Re-raising the pill under it would undo that promotion.
-        val shown = if (stage == null || overlayOwnsScreen() || phoneLeftQuiet) null else stage
+        val suppressed = !AutoStartLoadingScreenPolicy.showsHomePill(
+            overlayOwnsScreen(), App.provide(this).settings.loadingScreenShowPill
+        )
+        val shown = if (stage == null || suppressed || phoneLeftQuiet) null else stage
+        if (stage != null) autoConnectSawStage = true
         // What the user is actually being told, which no other line records. A reporter's
         // screenshot and their log can then be read against each other. A step the overlay hides
         // is still named: without that, a session where an auto-connect happened to be in flight
@@ -593,7 +589,7 @@ class MainActivity : BaseActivity() {
             val step = when {
                 shown != null -> shown.name
                 stage != null && phoneLeftQuiet -> "${stage.name} (not shown, the phone ended the session)"
-                stage != null -> "${stage.name} (not shown, the overlay owns the screen)"
+                stage != null -> "${stage.name} (not shown, the pill is switched off)"
                 else -> "hidden"
             }
             AppLog.i("MainActivity: status pill step: $step")
@@ -610,47 +606,18 @@ class MainActivity : BaseActivity() {
         }
         if (shown == null) {
             hideAutoConnectPill()
+            // The loading screen must not outlive the stack that fed it. Gated on having seen a
+            // step: the tracker reads null until the stack arms, which is most of a cold start.
+            if (stage == null && autoConnectSawStage && autoConnectInProgress &&
+                autoConnectMode == ConnectionUiMode.OVERLAY
+            ) {
+                AppLog.i("Auto-connect: the bring-up stopped, leaving the loading screen")
+                endAutoConnect(success = false)
+            }
         } else {
             showAutoConnectPill()
-            applyStageText(shown, animate = true)
+            stagePill?.applyStage(shown, animate = true)
         }
-    }
-
-    /**
-     * Sets the pill's second line. The crossfade doubles as cover for the pill resizing, which it
-     * does on every step because it wraps its content and the labels are translated.
-     */
-    private fun applyStageText(stage: ConnectionStage?, animate: Boolean) {
-        val stageText = findViewById<TextView>(R.id.auto_connect_pill_stage_text) ?: return
-        if (stage == null) {
-            stageText.animate().cancel()
-            stageText.visibility = View.GONE
-            return
-        }
-        val label = getString(stage.label)
-        if (stageText.visibility == View.VISIBLE && stageText.text == label) return
-
-        stageText.animate().cancel()
-        if (!animate) {
-            stageText.text = label
-            stageText.alpha = STAGE_TEXT_ALPHA
-            stageText.visibility = View.VISIBLE
-            return
-        }
-        // A discrete announcement per step, not an accessibilityLiveRegion: the pill is now
-        // permanently on screen, and a live region on one of those floods a screen reader.
-        findViewById<View>(R.id.auto_connect_pill)?.announceForAccessibility(label)
-        if (stageText.visibility != View.VISIBLE) {
-            stageText.text = label
-            stageText.alpha = 0f
-            stageText.visibility = View.VISIBLE
-            stageText.animate().alpha(STAGE_TEXT_ALPHA).setDuration(STAGE_FADE_IN_MS).start()
-            return
-        }
-        stageText.animate().alpha(0f).setDuration(STAGE_FADE_OUT_MS).withEndAction {
-            stageText.text = label
-            stageText.animate().alpha(STAGE_TEXT_ALPHA).setDuration(STAGE_FADE_IN_MS).start()
-        }.start()
     }
 
     /**
@@ -693,6 +660,19 @@ class MainActivity : BaseActivity() {
                 autoConnectDeadlineElapsed, SystemClock.elapsedRealtime()
             )
         ) return
+        if (AutoStartLoadingScreenPolicy.holdsOverlay(
+                ConnectionStageTracker.stage.value, autoConnectIsAutomatic
+            )
+        ) {
+            autoConnectDeadlineElapsed =
+                SystemClock.elapsedRealtime() + AutoConnectAttemptPolicy.PILL_WATCHDOG_MS
+            AppLog.i(
+                "Auto-connect: the stack is still working " +
+                    "(${ConnectionStageTracker.stage.value}), holding the loading screen"
+            )
+            startAutoConnectWatchdog(rearmed = true)
+            return
+        }
         AppLog.w("Auto-connect: nothing answered this attempt (mode=$autoConnectMode), ending it")
         endAutoConnect(success = false)
     }
@@ -704,6 +684,8 @@ class MainActivity : BaseActivity() {
         overlay.alpha = 1f
         overlay.visibility = View.VISIBLE
         overlay.bringToFront()
+        // bringToFront() above put the overlay over the pill, whatever the layout order says.
+        stagePill?.bringToFront()
         // Once the auto-connect overlay is up there is no point keeping the
         // launch splash around — they would just stack the same dark background.
         findViewById<View>(R.id.splash_overlay)?.visibility = View.GONE
@@ -906,6 +888,19 @@ class MainActivity : BaseActivity() {
         }
     }
 
+    /**
+     * Hands the loading video's position to the projection so its own loading screen picks the
+     * media up where this one left it, rather than cutting back to the first frame.
+     */
+    private fun stashLoadingMediaPosition() {
+        AapProjectionActivity.pendingLoadingMediaPositionMs = try {
+            findViewById<VideoView>(R.id.auto_connect_loading_custom_video)
+                ?.takeIf { it.isPlaying }?.currentPosition ?: 0
+        } catch (_: Exception) {
+            0
+        }
+    }
+
     private fun stopAutoConnectVideo() {
         findViewById<VideoView>(R.id.auto_connect_loading_custom_video)?.let {
             try {
@@ -1036,6 +1031,29 @@ class MainActivity : BaseActivity() {
         ContextCompat.startForegroundService(this, selfModeIntent)
     }
 
+    /**
+     * Raises the loading screen when this launch is going to try to connect by itself, so the home
+     * screen is never the first thing an auto-start shows. A no-op once an attempt is under way.
+     */
+    private fun maybeBeginAutoStartUi(launchSource: String?) {
+        val settings = App.provide(this).settings
+        val automaticSource = AUTOMATIC_LAUNCH_SOURCES.contains(launchSource)
+        if (!AutoStartLoadingScreenPolicy.opensOnLaunch(
+                automaticSource,
+                settings.autoConnectLastSession,
+                settings.autoStartSelfMode,
+                settings.autoConnectSingleUsbDevice
+            )
+        ) return
+        beginAutoConnect(
+            reason = launchSource ?: "auto-connect",
+            mode = AutoStartLoadingScreenPolicy.modeFor(
+                automatic = true, enabled = settings.autoStartLoadingScreen
+            ),
+            automaticLaunch = automaticSource
+        )
+    }
+
     private fun handleLaunchIntent(intent: Intent?) {
         if (intent == null) return
 
@@ -1073,7 +1091,7 @@ class MainActivity : BaseActivity() {
             // The service refuses this arrival while the pill's X holds, and a pill with nothing
             // behind it would otherwise sit there for the watchdog's full deadline.
             if (!commManager.isConnected && AapService.instance?.wirelessCancelledByUser() != true) {
-                beginAutoConnect(LAUNCH_SOURCE_BLUETOOTH, ConnectionUiMode.PILL)
+                maybeBeginAutoStartUi(LAUNCH_SOURCE_BLUETOOTH)
             }
             val launchesSelfMode = BtAutoStartRearmPolicy.launchesSelfMode(
                 selfSelected = settings.showsSelf(),
@@ -1088,6 +1106,13 @@ class MainActivity : BaseActivity() {
             } else {
                 AppLog.i("MainActivity: Bluetooth auto-start: leaving Self Mode alone")
             }
+        }
+
+        // Every other automatic launch. Bluetooth is handled above with its own cancel guard, and
+        // a deep link is somebody asking for something specific rather than an auto-start.
+        val autoStartSource = intent.getStringExtra(EXTRA_LAUNCH_SOURCE)
+        if (autoStartSource != null && autoStartSource != LAUNCH_SOURCE_BLUETOOTH) {
+            maybeBeginAutoStartUi(autoStartSource)
         }
 
         if (intent.action == Intent.ACTION_VIEW) {
@@ -1424,10 +1449,6 @@ class MainActivity : BaseActivity() {
             "Boot auto-start", "USB auto-start", "WiFi auto-start", LAUNCH_SOURCE_BLUETOOTH
         )
 
-        private const val STAGE_TEXT_ALPHA = 0.8f
-        private const val STAGE_FADE_OUT_MS = 100L
-        private const val STAGE_FADE_IN_MS = 150L
-
         /**
          * `true` while the loading indicator should be (or is) covering the home
          * screen during an automatic connection attempt. Set by entry points
@@ -1441,6 +1462,18 @@ class MainActivity : BaseActivity() {
          * mode the original [beginAutoConnect] caller asked for.
          */
         @Volatile var autoConnectMode: ConnectionUiMode = ConnectionUiMode.OVERLAY
+
+        /**
+         * Whether the app opened itself for this attempt. Only such an attempt holds the loading
+         * screen past its deadline: somebody who opened the app by hand gets their screen back.
+         */
+        @Volatile var autoConnectIsAutomatic: Boolean = false
+
+        /**
+         * Whether this attempt has seen the stack report a step at all. Without it the tracker's
+         * opening null would read as "the bring-up stopped" and drop the screen on every launch.
+         */
+        @Volatile var autoConnectSawStage: Boolean = false
 
         /**
          * When the in-progress attempt runs out, on the clock that keeps running while the unit

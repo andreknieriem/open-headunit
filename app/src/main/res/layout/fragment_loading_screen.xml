@@ -130,6 +130,32 @@
                     android:textColor="#AAAAAA"
                     android:textSize="13sp" />
 
+                <!-- Outside toggle_container on purpose: the pill rides the default loading
+                     screen too, and that container is hidden when no custom media is set. -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginTop="12dp"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="8dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/loading_screen_show_pill"
+                        android:textColor="?android:attr/textColorPrimary"
+                        android:textSize="15sp" />
+
+                    <Switch
+                        android:id="@+id/toggle_show_pill"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+
+                </LinearLayout>
+
                 <!-- Toggles -->
                 <LinearLayout
                     android:id="@+id/toggle_container"

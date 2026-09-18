@@ -112,6 +112,9 @@
 
         </LinearLayout>
 
+        <!-- The same pill the home screen wears, so the step survives the handoff to here. -->
+        <include layout="@layout/view_connection_stage_pill" />
+
     </FrameLayout>
 
 </FrameLayout>

@@ -550,6 +550,7 @@
     <string name="loading_screen_file_too_large">File troppo grande (max 10 MB)</string>
     <string name="loading_screen_unsupported_format">Formato non supportato. Usa un file immagine o video</string>
     <string name="loading_screen_file_error">Impossibile caricare il file selezionato</string>
+    <string name="loading_screen_show_pill">Mostra lo stato della connessione durante l\'avvio</string>
     <string name="loading_screen_show_text">Mostra testo \"Android Auto si sta avviando\"</string>
     <string name="loading_screen_tap_preview">Tocca per anteprima</string>
     <string name="loading_screen_tap_to_close">Tocca ovunque per chiudere</string>
@@ -1033,6 +1034,8 @@
     <string name="hide_clock_label">Nascondi orologio</string>
     <string name="might_broken_on_newer_aa_versions">Questa funzionalità potrebbe non funzionare sulle versioni più recenti di Android Auto</string>
     <string name="auto_connect_delay">Ritardo connessione automatica</string>
+    <string name="auto_start_loading_screen_label">Apri sulla schermata di caricamento</string>
+    <string name="auto_start_loading_screen_description">Quando l\'app si avvia da sola, vai direttamente alla schermata di caricamento invece di mostrare prima la schermata Home</string>
     <string name="auto_connect_delay_description">Attendi prima di tentare la connessione all\'avvio (utile se il Wi-Fi richiede tempo per attivarsi)</string>
     <string name="auto_connect_delay_none">Nessuno (Istantaneo)</string>
     <string name="auto_connect_delay_seconds_format">%d s</string>

@@ -1065,6 +1065,11 @@ class Settings(private val context: Context) {
         get() = prefs.getInt("auto-connect-delay-seconds", 0)
         set(value) { prefs.edit().putInt("auto-connect-delay-seconds", value).apply() }
 
+    /** Whether an automatic launch opens on the loading screen rather than on the home screen. */
+    var autoStartLoadingScreen: Boolean
+        get() = prefs.getBoolean("auto-start-loading-screen", true)
+        set(value) { prefs.edit().putBoolean("auto-start-loading-screen", value).apply() }
+
     var autoStartOnUsb: Boolean
         get() = prefs.getBoolean("auto-start-on-usb", false)
         set(value) { prefs.edit().putBoolean("auto-start-on-usb", value).apply() }
@@ -1279,6 +1284,11 @@ class Settings(private val context: Context) {
     var loadingScreenLoopVideo: Boolean
         get() = prefs.getBoolean("loading-screen-loop-video", true)
         set(value) { prefs.edit().putBoolean("loading-screen-loop-video", value).apply() }
+
+    /** Whether the bring-up status pill rides the loading screen, whichever screen is showing it. */
+    var loadingScreenShowPill: Boolean
+        get() = prefs.getBoolean("loading-screen-show-pill", true)
+        set(value) { prefs.edit().putBoolean("loading-screen-show-pill", value).apply() }
 
     var loadingScreenScalePercent: Int
         get() = prefs.getInt("loading-screen-scale-percent", 100)

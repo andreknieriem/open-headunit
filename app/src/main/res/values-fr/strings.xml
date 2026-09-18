@@ -844,6 +844,7 @@
     <string name="loading_screen_file_too_large">Le fichier est trop grand (max 10 Mo)</string>
     <string name="loading_screen_unsupported_format">Format non supporté. Utilise une image ou une vidéo</string>
     <string name="loading_screen_file_error">Impossible de charger le fichier sélectionné</string>
+    <string name="loading_screen_show_pill">Afficher l\'état de la connexion pendant le démarrage</string>
     <string name="loading_screen_show_text">Afficher le texte \"Android Auto démarre\"</string>
     <string name="loading_screen_tap_preview">Toucher pour un aperçu en plein écran</string>
     <string name="loading_screen_tap_to_close">Toucher n\'importe où pour fermer</string>
@@ -1077,6 +1078,8 @@
     <string name="hide_clock_label">Masquer l\'horloge</string>
     <string name="might_broken_on_newer_aa_versions">Cette fonctionnalité peut ne pas fonctionner sur les versions récentes d\'Android Auto</string>
     <string name="auto_connect_delay">Délai d\'auto-connexion</string>
+    <string name="auto_start_loading_screen_label">Ouvrir sur l\'écran de chargement</string>
+    <string name="auto_start_loading_screen_description">Quand l\'app démarre d\'elle-même, aller directement à l\'écran de chargement au lieu d\'afficher d\'abord l\'écran d\'accueil</string>
     <string name="auto_connect_delay_description">Attendre avant de tenter la connexion au démarrage (utile si le Wi-Fi met du temps à s\'activer)</string>
     <string name="auto_connect_delay_none">Aucun (Instantané)</string>
     <string name="auto_connect_delay_seconds_format">%d s</string>

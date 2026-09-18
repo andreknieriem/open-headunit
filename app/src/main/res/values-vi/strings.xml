@@ -606,6 +606,7 @@
     <string name="loading_screen_tap_preview">Chạm để xem trước toàn màn hình</string>
     <string name="loading_screen_tap_fullscreen_hint">Chạm vào bản xem trước để xem toàn màn hình</string>
     <string name="loading_screen_tap_to_close">Chạm vào bất kỳ đâu để đóng</string>
+    <string name="loading_screen_show_pill">Hiển thị trạng thái kết nối trong khi khởi động</string>
     <string name="loading_screen_show_text">Hiển thị dòng chữ \"Android Auto đang khởi động\"</string>
     <string name="loading_screen_keep_aspect_ratio">Giữ tỷ lệ khung hình</string>
     <string name="loading_screen_scale">Tỷ lệ</string>
@@ -1033,6 +1034,8 @@
     <string name="hide_clock_label">Ẩn đồng hồ</string>
     <string name="might_broken_on_newer_aa_versions">Tính năng này có thể không hoạt động trên các phiên bản Android Auto mới hơn</string>
     <string name="auto_connect_delay">Độ trễ tự động kết nối</string>
+    <string name="auto_start_loading_screen_label">Mở ở màn hình tải</string>
+    <string name="auto_start_loading_screen_description">Khi ứng dụng tự khởi động, chuyển thẳng tới màn hình tải thay vì hiển thị màn hình chính trước</string>
     <string name="auto_connect_delay_description">Chờ trước khi thử kết nối lúc khởi động (hữu ích nếu Wi-Fi cần thời gian để kích hoạt)</string>
     <string name="auto_connect_delay_none">Không (Tức thì)</string>
     <string name="auto_connect_delay_seconds_format">%d giây</string>

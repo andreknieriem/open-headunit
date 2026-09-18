@@ -13,13 +13,15 @@ class PlaybackFocusPolicyTest {
         staticAudioFocus: Boolean = false,
         audioSinkEnabled: Boolean = true,
         isAudioChannel: Boolean = true,
-        selfDefeatingLatched: Boolean = false
+        selfDefeatingLatched: Boolean = false,
+        isLoopbackSession: Boolean = false
     ) = PlaybackFocusPolicy.shouldAcquire(
         mode = mode,
         staticAudioFocus = staticAudioFocus,
         audioSinkEnabled = audioSinkEnabled,
         isAudioChannel = isAudioChannel,
-        selfDefeatingLatched = selfDefeatingLatched
+        selfDefeatingLatched = selfDefeatingLatched,
+        isLoopbackSession = isLoopbackSession
     )
 
     // --- the pre-existing gates, which no mode may override ---
@@ -88,12 +90,14 @@ class PlaybackFocusPolicyTest {
         mode: Mode = Mode.AUTO,
         staticAudioFocus: Boolean = true,
         audioSinkEnabled: Boolean = true,
-        btMediaLinkActive: Boolean = false
+        btMediaLinkActive: Boolean = false,
+        isLoopbackSession: Boolean = false
     ) = PlaybackFocusPolicy.shouldAcquirePermanent(
         mode = mode,
         staticAudioFocus = staticAudioFocus,
         audioSinkEnabled = audioSinkEnabled,
-        btMediaLinkActive = btMediaLinkActive
+        btMediaLinkActive = btMediaLinkActive,
+        isLoopbackSession = isLoopbackSession
     )
 
     @Test
@@ -137,28 +141,59 @@ class PlaybackFocusPolicyTest {
                 for (sink in listOf(false, true)) {
                     for (bt in listOf(false, true)) {
                         for (latched in listOf(false, true)) {
-                            val dynamic = PlaybackFocusPolicy.shouldAcquire(
-                                mode = mode,
-                                staticAudioFocus = static,
-                                audioSinkEnabled = sink,
-                                isAudioChannel = true,
-                                selfDefeatingLatched = latched
-                            )
-                            val permanent = acquirePermanent(
-                                mode = mode,
-                                staticAudioFocus = static,
-                                audioSinkEnabled = sink,
-                                btMediaLinkActive = bt
-                            )
-                            assertFalse(
-                                "mode=$mode static=$static sink=$sink bt=$bt latched=$latched",
-                                dynamic && permanent
-                            )
+                            for (loopback in listOf(false, true)) {
+                                val dynamic = PlaybackFocusPolicy.shouldAcquire(
+                                    mode = mode,
+                                    staticAudioFocus = static,
+                                    audioSinkEnabled = sink,
+                                    isAudioChannel = true,
+                                    selfDefeatingLatched = latched,
+                                    isLoopbackSession = loopback
+                                )
+                                val permanent = acquirePermanent(
+                                    mode = mode,
+                                    staticAudioFocus = static,
+                                    audioSinkEnabled = sink,
+                                    btMediaLinkActive = bt,
+                                    isLoopbackSession = loopback
+                                )
+                                assertFalse(
+                                    "mode=$mode static=$static sink=$sink bt=$bt " +
+                                        "latched=$latched loopback=$loopback",
+                                    dynamic && permanent
+                                )
+                            }
                         }
                     }
                 }
             }
         }
+    }
+
+    // --- Self Mode ---
+
+    @Test
+    fun `self mode never takes focus on either path, whatever the mode says`() {
+        // Self Mode announces no media or speech sink, so the player we would evict is the one on
+        // this device. ALWAYS is included because it speaks for a session to a separate phone.
+        for (mode in Mode.values()) {
+            assertFalse("mode=$mode", acquire(mode = mode, isLoopbackSession = true))
+            assertFalse("mode=$mode", acquirePermanent(mode = mode, isLoopbackSession = true))
+        }
+    }
+
+    @Test
+    fun `self mode outranks the latch, which cannot learn this one`() {
+        // countsAsSelfDefeating counts only the media channel, and Self Mode never opens it, so
+        // AUTO would otherwise grab focus for the whole session with nothing able to correct it.
+        assertFalse(acquire(mode = Mode.AUTO, selfDefeatingLatched = false, isLoopbackSession = true))
+    }
+
+    @Test
+    fun `a session that is not self mode is unaffected`() {
+        // The regression this guard must never cause: the ordinary USB and wireless sessions.
+        assertTrue(acquire(mode = Mode.AUTO, isLoopbackSession = false))
+        assertTrue(acquirePermanent(mode = Mode.AUTO, isLoopbackSession = false))
     }
 
     // --- the self-defeating detector ---

@@ -280,7 +280,7 @@ object Channel{const val ID_CTR=0}
 object LegacyOptimizer{fun setHighPriority(){}}
 object HeadUnitScreenConfig{fun unlockResolution(){}}
 object BluetoothHelper{fun isA2dpMediaLinkActive(c:Context)=false}
-object PlaybackFocusPolicy{fun shouldAcquirePermanent(mode:Int,staticAudioFocus:Boolean,audioSinkEnabled:Boolean,btMediaLinkActive:Boolean)=false}
+object PlaybackFocusPolicy{fun shouldAcquirePermanent(mode:Int,staticAudioFocus:Boolean,audioSinkEnabled:Boolean,btMediaLinkActive:Boolean,isLoopbackSession:Boolean=false)=false}
 object ConnectionIssue{const val HEADUNIT_SERVER_NOT_ANSWERING=0}
 object ConnectionIssues{fun clear(c:Context,issue:Int){}}
 object ConnectionStageTracker{fun endAttempt(){};fun clear(){};val stage=MutableStateFlow(ConnectionStage.NONE)}

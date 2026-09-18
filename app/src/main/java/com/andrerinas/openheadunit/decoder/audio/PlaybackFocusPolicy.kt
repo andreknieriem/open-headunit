@@ -50,14 +50,20 @@ object PlaybackFocusPolicy {
      *                         dynamic path must keep its hands off entirely.
      * @param selfDefeatingLatched we already observed the phone cut its own audio right after we
      *                          took focus, more than once. This is the answer that decides AUTO.
+     * @param isLoopbackSession Self Mode, which announces no media or speech sink, so the player we
+     *                          would evict is the one on this device. The latch cannot learn this
+     *                          one: it counts only the media channel, and that channel never opens
+     *                          here. Outranks every mode, [Mode.ALWAYS] included.
      */
     fun shouldAcquire(
         mode: Mode,
         staticAudioFocus: Boolean,
         audioSinkEnabled: Boolean,
         isAudioChannel: Boolean,
-        selfDefeatingLatched: Boolean
+        selfDefeatingLatched: Boolean,
+        isLoopbackSession: Boolean
     ): Boolean {
+        if (isLoopbackSession) return false
         // Pre-existing gates, unchanged: these decide whether the dynamic path runs at all.
         if (staticAudioFocus || !audioSinkEnabled || !isAudioChannel) return false
 
@@ -87,8 +93,12 @@ object PlaybackFocusPolicy {
         mode: Mode,
         staticAudioFocus: Boolean,
         audioSinkEnabled: Boolean,
-        btMediaLinkActive: Boolean
+        btMediaLinkActive: Boolean,
+        isLoopbackSession: Boolean
     ): Boolean {
+        // Self Mode: a session-long GAIN is a permanent LOSS for the player on this device, which
+        // pauses once and never resumes. See shouldAcquire.
+        if (isLoopbackSession) return false
         // Pre-existing gates, unchanged: the permanent grab belongs to static mode alone.
         if (!staticAudioFocus || !audioSinkEnabled) return false
 

@@ -18,7 +18,7 @@ Google has introduced internal changes preventing projection from launching auto
 1. **USB Wireless Android Auto Dongle (Recommended):** Hardware dongles provide seamless, hardware-level plug-and-play.
 2. **Native Mode:** Direct Wi-Fi Direct or Headunit Hotspot handshake.
 3. **Headunit Server (Developer Mode):** The **only remaining solution for Self-Mode!** On your phone, open Android Auto developer settings and tap "Start Headunit Server".
-4. **Wireless Helper:** Continues to work reliably for Android Auto versions up to **17.3**.
+4. **Wireless Helper:** The legacy trigger targets Android Auto versions up to **17.3**. This branch also supports the opt-in root Dev-server mode: use **Headunit Server / Auto / Automatically create Wi-Fi Direct**, with a matching helper build on the rooted phone. See [setup and device acceptance checks](docs/wifi-direct-dev-root.md).
 
 ## Screenshots
 <img width="1280" height="800" alt="image" src="https://github.com/user-attachments/assets/22abbc13-75d5-436f-b0ae-2e92b7648d50" />
@@ -82,6 +82,16 @@ adb shell am start -a android.intent.action.VIEW -d "headunit://connect?ip=192.1
 - more customization options for the UI and the app itself
 
 ## Changelog
+### v.3.4.1
+- Added an opt-in automatic Wi-Fi Direct checkbox under Headunit Server / Auto for use with Wireless Helper 1.9.5's root Dev-server mode on Android Auto 17.4+. No root is required on the head unit; Manual mode remains unchanged.
+- Added OpenHU P2P group startup after conflicting hotspot teardown, group recovery and discovery triggered when a client joins and the P2P interface has an address.
+- Search for TCP 5277 uses the actual P2P subnet and binds sockets to its local address, without falling back to station Wi-Fi or a fixed gateway. The connected socket is handed directly to the AA transport, and discovery pauses while connecting or connected.
+- Added the checkbox to settings persistence, backup/import and running-configuration rearm, with English and Russian labels.
+- Stop/Exit in the new mode closes AA and releases P2P, blocking automatic reconnection until an explicit user start. Late callbacks and retries are guarded against restarting a stopped group.
+- Added unit tests and [setup/build/device acceptance instructions](docs/wifi-direct-dev-root.md).
+
+Thanks to [@mixalbl4-127](https://github.com/mixalbl4-127)!
+
 ### v.3.4.0
 - USB: connect non-Pixel phones without fighting a fast-reverting dongle
 - Feat/automation command surface

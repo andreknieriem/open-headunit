@@ -255,6 +255,11 @@ class HomeFragment : Fragment() {
         }
 
         val connectionType = appSettings.lastConnectionType
+        if (com.andrerinas.openheadunit.connection.wifi.ServerP2pPolicy.skipsSavedWifiAddress(
+                appSettings.usesServerWifiDirect(), connectionType == Settings.CONNECTION_TYPE_WIFI)) {
+            AppLog.i("Auto/P2P: waiting for the current P2P client instead of connecting to the saved IP")
+            return false
+        }
         if (connectionType.isEmpty()) {
             AppLog.i("Auto-connect: No last session to reconnect to")
             return false
@@ -473,7 +478,8 @@ class HomeFragment : Fragment() {
                         ToastUtils.showToast(requireContext(), getString(R.string.searching_headunit_server), Toast.LENGTH_SHORT)
                         (requireActivity() as? MainActivity)?.beginAutoConnect(
                             "manual WiFi headunit server scan",
-                            MainActivity.ConnectionUiMode.OVERLAY
+                            MainActivity.ConnectionUiMode.OVERLAY,
+                            serverP2p = App.provide(requireContext()).settings.usesServerWifiDirect()
                         )
                         val intent = Intent(requireContext(), AapService::class.java).apply {
                             action = AapService.ACTION_START_WIRELESS_SCAN

@@ -13,6 +13,10 @@ import com.andrerinas.openheadunit.main.MainActivity.ConnectionUiMode
  */
 object AutoConnectAttemptPolicy {
 
+    /** Null means the legacy Cancel action; PILL never promotes itself back to an overlay. */
+    fun modeAfterOverlayDismiss(serverP2p: Boolean): ConnectionUiMode? =
+        if (serverP2p) ConnectionUiMode.PILL else null
+
     /** USB opens and AOA switches fail silently, so the overlay needs a hard bound of its own. */
     const val OVERLAY_WATCHDOG_MS = 30_000L
 

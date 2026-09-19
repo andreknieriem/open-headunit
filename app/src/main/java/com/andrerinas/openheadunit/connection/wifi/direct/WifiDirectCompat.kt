@@ -32,9 +32,23 @@ object WifiDirectCompat {
         return 0
     }
 
+    fun requestDeviceName(manager: WifiP2pManager?, channel: WifiP2pManager.Channel?, onName: (String?) -> Unit) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && manager != null && channel != null) {
+            Api29Impl.requestDeviceName(manager, channel, onName)
+        }
+    }
+
 
     @RequiresApi(Build.VERSION_CODES.Q)
     private object Api29Impl {
+        fun requestDeviceName(manager: WifiP2pManager, channel: WifiP2pManager.Channel, onName: (String?) -> Unit) {
+            try {
+                manager.requestDeviceInfo(channel) { onName(it?.deviceName) }
+            } catch (e: Exception) {
+                AppLog.w("WifiDirectCompat: local name unavailable: ${e.message}")
+            }
+        }
+
         fun requestDeviceInfo(
             manager: WifiP2pManager,
             channel: WifiP2pManager.Channel,

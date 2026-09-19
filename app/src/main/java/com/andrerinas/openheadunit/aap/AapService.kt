@@ -1660,8 +1660,12 @@ class AapService : Service() {
             } else if (state.isUserExit && ranWifiDirect && !wirelessTornDown) {
                 commManager.awaitDisconnectComplete()
                 AppLog.i("AapService: CommManager teardown complete. Stopping WiFi Direct group.")
-                wifiLauncherManager.sharedServices.wifiDirectManager?.stop()
-                wifiLauncherManager.restartDiscovery()
+                if (settings.usesServerWifiDirect()) {
+                    wifiLauncherManager.stopForUser()
+                } else {
+                    wifiLauncherManager.sharedServices.wifiDirectManager?.stop()
+                    wifiLauncherManager.restartDiscovery()
+                }
             } else if (state.isUserExit) {
                 // The same question for the routes that run on a soft AP instead of a P2P group.
                 // Closing the socket does not make the phone leave the network: it stays
@@ -3267,6 +3271,9 @@ class AapService : Service() {
         var killProcessOnDestroy: Boolean = false
 
         val wifiDirectName = MutableStateFlow<String?>(null)
+        val serverWifiDirectStatus = MutableStateFlow(
+            com.andrerinas.openheadunit.connection.wifi.direct.ServerP2pBadge()
+        )
 
         /**
          * Emits `true` while a WiFi NSD scan is in progress.

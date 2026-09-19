@@ -1,0 +1,7 @@
+<resources>
+    <string name="server_p2p_in_background">В фоне</string>
+    <string name="server_p2p_active">Wi-Fi Direct активен</string>
+    <string name="server_p2p_device_name">Wi-Fi Direct: %1$s</string>
+    <string name="headunit_server_wifi_direct">Автоматически поднимать Wi-Fi Direct</string>
+    <string name="headunit_server_wifi_direct_description">При запуске приложения создавать группу OpenHU и искать сервер телефона в этой сети. В Wireless Helper выберите Wi-Fi Direct · Dev сервер (root). Wi-Fi Direct имеет приоритет над автоматической точкой доступа; Wi-Fi должен быть включён.</string>
+</resources>

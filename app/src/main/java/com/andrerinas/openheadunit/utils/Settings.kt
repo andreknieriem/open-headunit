@@ -2004,6 +2004,15 @@ class Settings(private val context: Context) {
         get() = prefs.getBoolean("auto-enable-hotspot", false)
         set(value) { prefs.edit().putBoolean("auto-enable-hotspot", value).apply() }
 
+    var headunitServerWifiDirect: Boolean
+        get() = prefs.getBoolean("headunit-server-wifi-direct", false)
+        set(value) { prefs.edit().putBoolean("headunit-server-wifi-direct", value).apply() }
+
+    fun usesServerWifiDirect(): Boolean = wifiConnectionMode == WifiLauncherMode.AUTO && headunitServerWifiDirect
+
+    fun usesVisibleWifiDirect(): Boolean = usesServerWifiDirect() ||
+        (wifiConnectionMode == WifiLauncherMode.HELPER && helperConnectionStrategy == HelperStrategy.WIFI_DIRECT)
+
     var waitForWifiBeforeWifiDirect: Boolean
         get() = prefs.getBoolean("wait-for-wifi-before-wifi-direct", false)
         set(value) { prefs.edit().putBoolean("wait-for-wifi-before-wifi-direct", value).apply() }

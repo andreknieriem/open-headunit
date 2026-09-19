@@ -58,6 +58,7 @@ import com.bumptech.glide.request.transition.Transition
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
@@ -200,12 +201,9 @@ class MainActivity : BaseActivity() {
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                // While the full-screen overlay is up, treat Back as cancel so the
-                // user isn't trapped if a manual connection attempt hangs. Pill
-                // mode is non-blocking, so Back falls through to its normal
-                // navigation behavior there.
+                // Auto/P2P backgrounds its attempt; other overlays retain the Cancel action.
                 if (overlayOwnsScreen()) {
-                    cancelAutoConnect()
+                    dismissConnectionOverlay()
                     return
                 }
                 if (navController.navigateUp()) {
@@ -251,13 +249,12 @@ class MainActivity : BaseActivity() {
         )
         isFinishReceiverRegistered = true
 
-        // Wire cancel affordances. The pill's X stops the whole bring-up; the overlay's button
-        // ends only the attempt it belongs to.
+        // The pill's X stops the whole bring-up. Auto/P2P can leave its overlay without stopping.
         findViewById<View>(R.id.auto_connect_pill_cancel)?.setOnClickListener {
             cancelBringUp()
         }
         findViewById<View>(R.id.auto_connect_loading_cancel)?.setOnClickListener {
-            cancelAutoConnect()
+            dismissConnectionOverlay()
         }
 
         observeConnectionStateForOverlay()
@@ -286,7 +283,8 @@ class MainActivity : BaseActivity() {
         reason: String,
         mode: ConnectionUiMode,
         customStatusText: String? = null,
-        statusTextIsWakeClaim: Boolean = false
+        statusTextIsWakeClaim: Boolean = false,
+        serverP2p: Boolean = false
     ) {
         // The flag is on the companion and the watchdog on this instance's scope, so an attempt
         // can reach here with nothing watching it at all: spend it if it is over, re-arm it if not.
@@ -301,6 +299,7 @@ class MainActivity : BaseActivity() {
         AppLog.i("Auto-connect: begin ($reason, mode=$mode)")
         autoConnectInProgress = true
         autoConnectMode = mode
+        autoConnectServerP2p = serverP2p
         autoConnectDeadlineElapsed =
             AutoConnectAttemptPolicy.deadlineAt(mode, SystemClock.elapsedRealtime())
         // Seed hasAdvancedToActiveState from the current connection state. If
@@ -340,11 +339,23 @@ class MainActivity : BaseActivity() {
         }
     }
 
+    private fun dismissConnectionOverlay() {
+        if (!autoConnectInProgress) return
+        val backgroundMode = AutoConnectAttemptPolicy.modeAfterOverlayDismiss(autoConnectServerP2p)
+        if (backgroundMode == null) {
+            cancelAutoConnect()
+            return
+        }
+        AppLog.i("Auto/P2P: returning to Home, keeping the connection attempt running")
+        autoConnectMode = backgroundMode
+        hideAutoConnectOverlay()
+        showAutoConnectUi()
+    }
+
     /**
      * Cancels an in-progress auto-connect attempt, regardless of whether it
      * has reached the Connecting state yet. Safe to call even if no attempt is
-     * pending. Invoked by pill tap, overlay cancel button, and back-press when
-     * the overlay is up.
+     * pending. The Auto/P2P overlay's background action deliberately bypasses this.
      */
     private fun cancelAutoConnect() {
         if (!autoConnectInProgress) return
@@ -452,6 +463,7 @@ class MainActivity : BaseActivity() {
         autoConnectWatchdog?.cancel()
         autoConnectWatchdog = null
         autoConnectInProgress = false
+        autoConnectServerP2p = false
         autoConnectDeadlineElapsed = 0L
         hasAdvancedToActiveState = false
         autoConnectStatusText = null
@@ -699,6 +711,9 @@ class MainActivity : BaseActivity() {
 
     private fun showAutoConnectOverlay() {
         val overlay = findViewById<View>(R.id.auto_connect_loading_overlay) ?: return
+        findViewById<android.widget.TextView>(R.id.auto_connect_loading_cancel)?.setText(
+            if (autoConnectServerP2p) R.string.server_p2p_in_background else R.string.cancel
+        )
         if (overlay.visibility == View.VISIBLE) return
 
         overlay.alpha = 1f
@@ -950,13 +965,23 @@ class MainActivity : BaseActivity() {
         val settings = Settings(this)
 
         lifecycleScope.launch {
-            AapService.wifiDirectName.collectLatest { name ->
-                val isHelperMode = settings.wifiConnectionMode == WifiLauncherMode.HELPER
-                if (isHelperMode && name != null) {
-                    tvInfo.text = "WiFi Direct: $name"
-                    tvInfo.visibility = View.VISIBLE
-                } else {
-                    tvInfo.visibility = View.GONE
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                combine(AapService.wifiDirectName, AapService.serverWifiDirectStatus) { name, server ->
+                    when {
+                        settings.usesServerWifiDirect() && server.groupAvailable ->
+                            server.deviceName?.let { getString(R.string.server_p2p_device_name, it) }
+                                ?: getString(R.string.server_p2p_active)
+                        settings.usesServerWifiDirect() -> null
+                        settings.usesVisibleWifiDirect() && name != null -> "WiFi Direct: $name"
+                        else -> null
+                    }
+                }.collectLatest { label ->
+                    if (label != null) {
+                        tvInfo.text = label
+                        tvInfo.visibility = View.VISIBLE
+                    } else {
+                        tvInfo.visibility = View.GONE
+                    }
                 }
             }
         }
@@ -1434,6 +1459,7 @@ class MainActivity : BaseActivity() {
          * that initiate an auto-connect; cleared by [endAutoConnect].
          */
         @Volatile var autoConnectInProgress: Boolean = false
+        @Volatile private var autoConnectServerP2p: Boolean = false
 
         /**
          * Visual mode for the in-progress attempt. Kept on the companion so a

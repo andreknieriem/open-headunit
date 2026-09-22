@@ -10,7 +10,16 @@ import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.Settings
 import java.nio.ByteBuffer
 
-internal class AapVideo(private val videoDecoder: VideoDecoder, private val settings: Settings, private val onFrameCorrupted: () -> Unit) {
+/**
+ * Reassembles one video channel's access units. [videoDecoder] is null for a forwarded stream, and
+ * [onAccessUnit] sees each unit first.
+ */
+internal class AapVideo(
+    private val videoDecoder: VideoDecoder?,
+    private val settings: Settings,
+    private val onAccessUnit: ((ByteArray, Int, Int) -> Unit)? = null,
+    private val onFrameCorrupted: () -> Unit,
+) {
 
     companion object {
         /** Enough for H.264 at the resolutions most head units negotiate. ~2MB. */
@@ -104,7 +113,7 @@ internal class AapVideo(private val videoDecoder: VideoDecoder, private val sett
         // concealment window this opens is a local render decision with its own hard bound. A
         // second fault inside the throttle window must still hold the picture even though it
         // sends nothing.
-        videoDecoder.noteStreamCorrupted(reason)
+        videoDecoder?.noteStreamCorrupted(reason)
         val now = android.os.SystemClock.elapsedRealtime()
         // Reader and assembler can report the same lost fragment. This throttle also protects
         // onFrameCorrupted's recovery clock from counting those two reports as fresh wire faults.
@@ -292,7 +301,7 @@ internal class AapVideo(private val videoDecoder: VideoDecoder, private val sett
         return when (val action = decision.action) {
             is VideoFragmentAssembler.Action.DecodeWhole -> {
                 messageBuffer.clear()
-                videoDecoder.decode(buf, action.payloadOffset, len - action.payloadOffset, settings.forceSoftwareDecoding, announcedCodec)
+                emit(buf, action.payloadOffset, len - action.payloadOffset, announcedCodec)
                 true
             }
 
@@ -358,9 +367,9 @@ internal class AapVideo(private val videoDecoder: VideoDecoder, private val sett
                         legacyAssembledBuffer = ByteArray(assembledSize + 1024)
                     }
                     messageBuffer.get(legacyAssembledBuffer!!, 0, assembledSize)
-                    videoDecoder.decode(legacyAssembledBuffer!!, 0, assembledSize, settings.forceSoftwareDecoding, announcedCodec)
+                    emit(legacyAssembledBuffer!!, 0, assembledSize, announcedCodec)
                 } else {
-                    videoDecoder.decode(messageBuffer.array(), 0, assembledSize, settings.forceSoftwareDecoding, announcedCodec)
+                    emit(messageBuffer.array(), 0, assembledSize, announcedCodec)
                 }
 
                 messageBuffer.clear()
@@ -379,6 +388,11 @@ internal class AapVideo(private val videoDecoder: VideoDecoder, private val sett
                 action.consumed
             }
         }
+    }
+
+    private fun emit(buf: ByteArray, offset: Int, length: Int, codec: VideoDecoder.CodecType) {
+        onAccessUnit?.invoke(buf, offset, length)
+        videoDecoder?.decode(buf, offset, length, settings.forceSoftwareDecoding, codec)
     }
 
     fun release() {

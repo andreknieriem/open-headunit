@@ -78,7 +78,7 @@ class TlsVideoAccountingTest {
                 val video = AapVideo(decoder, settings) {}
                 video.recordAnnouncedCodec(VideoDecoder.CodecType.H264)
                 val repairs = mutableListOf<Boolean>()
-                val repair: (Boolean) -> Unit = { discard -> repairs += discard; video.onFragmentRunHoled(discard) }
+                val repair: (Int, Boolean) -> Unit = { _, discard -> repairs += discard; video.onFragmentRunHoled(discard) }
                 val handler = object : AapMessageHandler {
                     override fun handle(message: AapMessage) { video.process(message) }
                 }

@@ -47,6 +47,8 @@ import com.andrerinas.openheadunit.decoder.video.VideoDimensionsListener
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.BluetoothHelper
 import com.andrerinas.openheadunit.utils.CarLauncherManager
+import com.andrerinas.openheadunit.utils.DisplayTargets
+import com.andrerinas.openheadunit.view.AuxDisplayPresentation
 import com.andrerinas.openheadunit.connection.self.SelfModeCallRaisePolicy
 import com.andrerinas.openheadunit.connection.usb.UsbSwitchClaim
 import com.andrerinas.openheadunit.decoder.audio.CallState
@@ -1090,6 +1092,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         // ensures the window manager has correctly resolved the display's physical orientation
         // before we lock it.
         applyOrientationSettings()
+        logLandedDisplay()
 
         // In onCreate and not onStart: the whole point is to hear a call while the activity is
         // stopped behind the phone's call screen.
@@ -1381,6 +1384,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         userLeftDeliberately = false
         closeCallRaiseEpisode("the projection is back in front")
         AppLog.i("AapProjectionActivity: onResume")
+        showAuxDisplay()
         // Show the one-time rename notice even here, on top of an active projection.
         RenameNotice.maybeShow(this, App.provide(this).settings)
         Aa174Notice.maybeShow(this, App.provide(this).settings)
@@ -1631,6 +1635,52 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
 
     override fun onRetainCustomNonConfigurationInstance(): Any? {
         return true
+    }
+
+    private var auxPresentation: AuxDisplayPresentation? = null
+
+    /**
+     * Shows the auxiliary display's window. Hosted here, not in the service, because a Presentation
+     * from a service needs the overlay permission.
+     */
+    private fun showAuxDisplay() {
+        if (!settings.auxDisplayEnabled) return
+        if (auxPresentation?.isShowing == true) return
+        val display = DisplayTargets.display(this, settings.auxDisplayId) ?: run {
+            AppLog.w("AapProjectionActivity: the auxiliary display ${settings.auxDisplayId} is not attached")
+            return
+        }
+        try {
+            val presentation = AuxDisplayPresentation(this, display, App.provide(this).requireAuxVideoDecoder()) {
+                commManager.requestAuxKeyframe("the auxiliary surface was recreated")
+            }
+            presentation.show()
+            auxPresentation = presentation
+            AppLog.i("AapProjectionActivity: the auxiliary display is up on ${display.displayId}")
+        } catch (e: Exception) {
+            // Never fatal to the session: the main picture is the one the driver is using.
+            AppLog.e("AapProjectionActivity: could not open the auxiliary display: ${e.message}")
+            auxPresentation = null
+        }
+    }
+
+    private fun dismissAuxDisplay() {
+        try { auxPresentation?.dismiss() } catch (_: Exception) {}
+        auxPresentation = null
+    }
+
+    /**
+     * Logs where the projection came up against where it was aimed. A launch refused a display fails
+     * silently, and the session then keeps a geometry measured on the wrong panel.
+     */
+    private fun logLandedDisplay() {
+        val landedOn = DisplayTargets.displayIdOf(this)
+        val asked = DisplayTargets.choose(this, settings).displayId
+        if (landedOn == asked) {
+            AppLog.i("AapProjectionActivity: projecting on display $landedOn")
+        } else {
+            AppLog.w("AapProjectionActivity: asked for display $asked but came up on $landedOn")
+        }
     }
 
     private fun applyVirtualDisplayFix() {
@@ -2578,6 +2628,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         isSurfaceSet = false
         super.onDestroy()
         ActivityState.release(this, findViewById(R.id.loading_custom_image))
+        dismissAuxDisplay()
         autoStartOfferTimer?.cancel()
         autoStartOfferTimer = null
         HeadUnitScreenConfig.onMarginsDiverged = null

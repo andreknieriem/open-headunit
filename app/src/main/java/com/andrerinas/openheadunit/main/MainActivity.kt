@@ -306,8 +306,9 @@ class MainActivity : BaseActivity() {
         autoConnectMode = mode
         autoConnectIsAutomatic = automaticLaunch
         autoConnectSawStage = ConnectionStageTracker.stage.value != null
+        autoConnectStartedElapsed = SystemClock.elapsedRealtime()
         autoConnectDeadlineElapsed =
-            AutoConnectAttemptPolicy.deadlineAt(mode, SystemClock.elapsedRealtime())
+            AutoConnectAttemptPolicy.deadlineAt(mode, autoConnectStartedElapsed)
         // Seed hasAdvancedToActiveState from the current connection state. If
         // something else (e.g. AapService responding to a USB attach) already
         // moved the state into Connecting before we got here, the StateFlow
@@ -660,20 +661,21 @@ class MainActivity : BaseActivity() {
                 autoConnectDeadlineElapsed, SystemClock.elapsedRealtime()
             )
         ) return
-        if (AutoStartLoadingScreenPolicy.holdsOverlay(
-                ConnectionStageTracker.stage.value, autoConnectIsAutomatic
-            )
-        ) {
+        val stage = ConnectionStageTracker.stage.value
+        val heldMs = SystemClock.elapsedRealtime() - autoConnectStartedElapsed
+        if (AutoStartLoadingScreenPolicy.holdsOverlay(stage, autoConnectIsAutomatic, heldMs)) {
             autoConnectDeadlineElapsed =
                 SystemClock.elapsedRealtime() + AutoConnectAttemptPolicy.PILL_WATCHDOG_MS
-            AppLog.i(
-                "Auto-connect: the stack is still working " +
-                    "(${ConnectionStageTracker.stage.value}), holding the loading screen"
-            )
+            AppLog.i("Auto-connect: the stack is still working ($stage), holding the loading screen")
             startAutoConnectWatchdog(rearmed = true)
             return
         }
-        AppLog.w("Auto-connect: nothing answered this attempt (mode=$autoConnectMode), ending it")
+        // Which of the two ended it: a stack that stopped reporting, or one still reporting a step
+        // that the bound gave up on. The second is a phone that never came, not a failure to detect.
+        val why = if (stage != null && autoConnectIsAutomatic)
+            "held ${heldMs}ms and the stack is still only at $stage"
+        else "nothing answered this attempt (mode=$autoConnectMode)"
+        AppLog.w("Auto-connect: $why, ending it")
         endAutoConnect(success = false)
     }
 
@@ -1474,6 +1476,9 @@ class MainActivity : BaseActivity() {
          * opening null would read as "the bring-up stopped" and drop the screen on every launch.
          */
         @Volatile var autoConnectSawStage: Boolean = false
+
+        /** When the attempt began, so the hold is bounded from its start rather than per extension. */
+        @Volatile var autoConnectStartedElapsed: Long = 0L
 
         /**
          * When the in-progress attempt runs out, on the clock that keeps running while the unit

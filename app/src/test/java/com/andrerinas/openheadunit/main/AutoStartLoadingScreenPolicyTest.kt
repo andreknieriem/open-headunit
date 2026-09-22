@@ -110,34 +110,62 @@ class AutoStartLoadingScreenPolicyTest {
 
     // holdsOverlay
 
+    private fun holds(
+        stage: ConnectionStage? = ConnectionStage.WAKING_PHONE,
+        automaticLaunch: Boolean = true,
+        attemptElapsedMs: Long = 0L,
+    ) = AutoStartLoadingScreenPolicy.holdsOverlay(stage, automaticLaunch, attemptElapsedMs)
+
     @Test
     fun `a self-opened attempt holds the loading screen while the stack reports`() {
-        assertTrue(
-            AutoStartLoadingScreenPolicy.holdsOverlay(
-                ConnectionStage.WAKING_PHONE, automaticLaunch = true
-            )
+        assertTrue(holds())
+    }
+
+    @Test
+    fun `the hold clears a 91 second wake with margin`() {
+        // The escalated wake fires at 91.4s after arming, then holds the poke 20s and gives the
+        // link 30s back. All of it has to fit inside the bound or the screen drops mid-bring-up.
+        assertTrue(holds(attemptElapsedMs = 91_400L))
+        assertTrue(holds(attemptElapsedMs = 141_400L))
+    }
+
+    @Test
+    fun `a stack that reports a step forever still loses the screen`() {
+        // A Native stack arms on every start and pokes unbounded, so WAKING_PHONE and
+        // WAITING_FOR_PHONE alternate for as long as the app runs. Without the bound this held.
+        assertTrue(holds(attemptElapsedMs = AutoStartLoadingScreenPolicy.MAX_HOLD_MS - 1))
+        assertFalse(holds(attemptElapsedMs = AutoStartLoadingScreenPolicy.MAX_HOLD_MS))
+        assertFalse(holds(attemptElapsedMs = 10 * AutoStartLoadingScreenPolicy.MAX_HOLD_MS))
+        for (stage in ConnectionStage.values()) {
+            assertFalse(stage.name, holds(stage = stage, attemptElapsedMs = AutoStartLoadingScreenPolicy.MAX_HOLD_MS))
+        }
+    }
+
+    @Test
+    fun `the bound is the attempt's own window plus one pill window`() {
+        assertEquals(
+            AutoConnectAttemptPolicy.OVERLAY_WATCHDOG_MS + AutoConnectAttemptPolicy.PILL_WATCHDOG_MS,
+            AutoStartLoadingScreenPolicy.MAX_HOLD_MS
         )
     }
 
     @Test
     fun `a hand-opened attempt keeps its own bound`() {
         assertFalse(
-            AutoStartLoadingScreenPolicy.holdsOverlay(
-                ConnectionStage.WAKING_PHONE, automaticLaunch = false
-            )
+            holds(automaticLaunch = false)
         )
     }
 
     @Test
     fun `a stack that has stopped reporting holds nothing`() {
-        assertFalse(AutoStartLoadingScreenPolicy.holdsOverlay(null, automaticLaunch = true))
-        assertFalse(AutoStartLoadingScreenPolicy.holdsOverlay(null, automaticLaunch = false))
+        assertFalse(holds(stage = null, automaticLaunch = true))
+        assertFalse(holds(stage = null, automaticLaunch = false))
     }
 
     @Test
     fun `every stage the stack can report holds a self-opened attempt`() {
         for (stage in ConnectionStage.values()) {
-            assertTrue(stage.name, AutoStartLoadingScreenPolicy.holdsOverlay(stage, automaticLaunch = true))
+            assertTrue(stage.name, holds(stage = stage))
         }
     }
 }

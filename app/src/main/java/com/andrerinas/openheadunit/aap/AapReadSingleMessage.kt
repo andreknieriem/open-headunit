@@ -11,7 +11,7 @@ internal class AapReadSingleMessage(
     connection: ProjectionConnection,
     ssl: AapSsl,
     handler: AapMessageHandler,
-    onVideoRunHoled: (discardAssembledUnit: Boolean) -> Unit = {},
+    onVideoRunHoled: (channel: Int, discardAssembledUnit: Boolean) -> Unit = { _, _ -> },
     faultInjector: VideoFaultInjector? = null,
     private val captureTiming: () -> Boolean = { false },
     private val onSlowRead: (TransportReadTiming, Long) -> Unit = { _, _ -> },

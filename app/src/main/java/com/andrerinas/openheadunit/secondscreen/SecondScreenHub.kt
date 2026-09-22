@@ -9,6 +9,8 @@ import com.andrerinas.openheadunit.secondscreen.ms912x.Ms912xOutput
 import com.andrerinas.openheadunit.secondscreen.SecondScreenOutputPolicy.Output
 import com.andrerinas.openheadunit.secondscreen.SecondScreenOutputPolicy.Target
 import com.andrerinas.openheadunit.secondscreen.network.NetworkStreamOutput
+import com.andrerinas.openheadunit.secondscreen.usbdisplay.UsbDisplayOutput
+import com.andrerinas.openheadunit.secondscreen.usbdisplay.UsbDisplayProbe
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.DisplayTargets
 import com.andrerinas.openheadunit.utils.Settings
@@ -57,7 +59,7 @@ object SecondScreenHub {
         Output.ANDROID_DISPLAY -> SecondScreenOutputPolicy.Availability(androidDisplay = androidDisplayTarget(context, settings))
         Output.NETWORK -> SecondScreenOutputPolicy.Availability(network = SecondScreenOutputPolicy.networkTarget(settings.auxNetworkSize))
         Output.MS912X -> SecondScreenOutputPolicy.Availability(ms912x = ms912xTarget(context, settings))
-        Output.USB_DISPLAY -> SecondScreenOutputPolicy.Availability()
+        Output.USB_DISPLAY -> SecondScreenOutputPolicy.Availability(usbDisplay = usbDisplayTarget(context, settings))
     }
 
     private fun androidDisplayTarget(context: Context, settings: Settings): Target? {
@@ -80,6 +82,22 @@ object SecondScreenHub {
         return Target(mode.width, mode.height, Ms912xModes.densityFor(mode))
     }
 
+    /**
+     * The USB display's own size: asked now when the permission is already held, otherwise what it
+     * said last time. Remembered, so a display that answers once can be announced from then on.
+     */
+    fun usbDisplayTarget(context: Context, settings: Settings): Target? {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR2) return null
+        val usb = context.getSystemService(Context.USB_SERVICE) as? UsbManager ?: return null
+        val found = UsbDisplayProbe.find(usb) ?: return null
+        val info = UsbDisplayProbe.probe(usb, found)
+        if (info != null) {
+            val dpi = if (info.densityDpi in 1..640) info.densityDpi else 160
+            settings.usbDisplayLastTarget = Target(info.widthPx, info.heightPx, dpi)
+        }
+        return settings.usbDisplayLastTarget
+    }
+
     /** Opens the announced output for a session that is starting. Idempotent. */
     @Synchronized
     fun open(context: Context, settings: Settings, onKeyframeNeeded: () -> Unit): SecondScreenOutput? {
@@ -92,7 +110,10 @@ object SecondScreenHub {
                 Ms912xOutput(context, App.provide(context).requireAuxVideoDecoder(), mode,
                     Ms912xModes.effectiveFormat(mode, settings.ms912xFormat))
             } else return null
-            Output.ANDROID_DISPLAY, Output.USB_DISPLAY -> return null
+            Output.USB_DISPLAY -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+                UsbDisplayOutput(context)
+            } else return null
+            Output.ANDROID_DISPLAY -> return null
         }
         created.onKeyframeNeeded = onKeyframeNeeded
         try {

@@ -322,6 +322,12 @@
     <string name="aux_network_size">Stream size</string>
     <string name="aux_network_port">Stream port</string>
     <string name="aux_network_hint">On a computer on the same network, run: %1$s\nOver USB debugging instead, run adb forward tcp:%2$d tcp:%2$d and use 127.0.0.1. VLC can also open http://this unit\'s address:%2$d/</string>
+    <string name="aux_ms912x_mode">Adapter output mode</string>
+    <string name="aux_ms912x_format">Adapter pixel format</string>
+    <string name="aux_ms912x_format_yuv">YUV 4:2:2 (faster)</string>
+    <string name="aux_ms912x_format_rgb">RGB (sharper; not at 1920x1080)</string>
+    <string name="aux_ms912x_hint_attached">A MacroSilicon adapter is plugged in. Pick the mode your panel runs at: the adapter does not scale. When Android asks, let Open Headunit open it by default so the permission is kept.</string>
+    <string name="aux_ms912x_hint_missing">No MacroSilicon adapter is plugged in. This works with USB-HDMI adapters built on the MS9120, MS912x or MS9132 (USB IDs 534d:6021, 534d:0821, 345f:9132) and needs Android 5.0 or later.</string>
     <string name="aux_display_role">Second screen role</string>
     <string name="change_aux_display_role">Choose the second screen\'s role</string>
     <string name="aux_display_role_auxiliary">Auxiliary display (you choose what it shows)</string>

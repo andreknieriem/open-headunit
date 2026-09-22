@@ -34,6 +34,16 @@ class TransportDispatchMonitorTest {
     }
 
     @Test
+    fun `auxiliary video dispatch time is billed to other`() {
+        val m = TransportDispatchMonitor()
+        m.onDispatch(Channel.ID_VID2, 0, 0L)
+        val r = m.onDispatch(Channel.ID_VID2, 40, window)
+        assertNotNull(r)
+        assertEquals(0L, r!!.videoMs)
+        assertEquals(40L, r.otherMs)
+    }
+
+    @Test
     fun `the video park reads as a block on VIDEO`() {
         val m = TransportDispatchMonitor()
         m.onDispatch(Channel.ID_VID, 0, 0L)

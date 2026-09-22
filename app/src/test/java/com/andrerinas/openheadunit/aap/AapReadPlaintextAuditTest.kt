@@ -28,6 +28,8 @@ class AapReadPlaintextAuditTest {
         }
     }
 
+    private val repairChannels = mutableListOf<Int>()
+
     private data class Observation(val events: List<String>, val payloads: List<ByteArray>, val unwraps: Int)
 
     private fun read(packets: List<Packet>, bulk: Boolean, injector: VideoFaultInjector? = null,
@@ -79,7 +81,7 @@ class AapReadPlaintextAuditTest {
                 delegate?.onDroppedMediaData(channel)
             }
         }
-        val recovery: (Boolean) -> Unit = { events += "repair:$it" }
+        val recovery: (Int, Boolean) -> Unit = { channel, discard -> events += "repair:$discard"; repairChannels += channel }
         val reader: AapRead = if (bulk)
             AapReadMultipleMessages(connection, ssl, handler, recovery, injector)
         else AapReadSingleMessage(connection, ssl, handler, recovery, injector)
@@ -236,6 +238,17 @@ class AapReadPlaintextAuditTest {
             }
         }
 
+    @Test fun `a holed run reports the channel it arrived on`() =
+        mockStatic(SystemClock::class.java).use {
+            for (bulk in listOf(false, true)) for (channel in listOf(Channel.ID_VID, Channel.ID_VID2)) {
+                repairChannels.clear()
+                val result = read(listOf(Packet(9, byteArrayOf(0, 0), 4, channel = channel),
+                    Packet(10, byteArrayOf(1), channel = channel)), bulk)
+                assertEquals(listOf("repair:false"), result.events.filter { it.startsWith("repair:") })
+                assertEquals(listOf(channel), repairChannels)
+            }
+        }
+
     private fun mediaHandler(process: (AapMessage) -> Boolean = { true }): Pair<AapMessageHandlerType, AapTransport> {
         val transport = mock<AapTransport>(defaultAnswer = org.mockito.Mockito.CALLS_REAL_METHODS)
         val audio = mock<AapAudio>()
@@ -244,7 +257,9 @@ class AapReadPlaintextAuditTest {
         whenever(video.isPayload(any())).thenReturn(true)
         fun field(target: Any, name: String, value: Any) = target.javaClass.getDeclaredField(name)
             .apply { isAccessible = true }.set(target, value)
-        field(transport, "aapVideo", video) // No video worker: the production drop path ACKs directly.
+        // A lane never started has no worker: the production drop path ACKs directly.
+        field(transport, "videoLane", VideoLane(Channel.ID_VID, video, "test", { 23 },
+            { channel, session -> transport.sendMediaAck(channel, session) }, { FakeLaneWorker() }))
         doNothing().whenever(transport).noteMessageReceived(any(), any())
         doReturn(0).whenever(transport).videoQueueDepth()
         doReturn(0L).whenever(transport).videoShedCount()

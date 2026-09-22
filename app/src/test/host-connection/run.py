@@ -143,10 +143,11 @@ class AapTransport(
  private var connection:ProjectionConnection?=null
  private var sendThread:HandlerThread?=null
  private var pollThread:HandlerThread?=null
- private var videoThread:HandlerThread?=null
  private var sendHandler:Handler?=null
  private var pollHandler:Handler?=null
- private var videoHandler:Handler?=null
+ private val videoLane=VideoLane();@Volatile private var auxVideoLane:VideoLane?=null
+ @Volatile private var lastAuxCycleMs=0L;@Volatile private var auxCycleStopExpected=false
+ private val auxCycleGainRunnable=Runnable{}
  private var aapRead:AapRead?=null
  private val quitLock=Any()
  private var peerRequestedClose=false
@@ -156,9 +157,6 @@ class AapTransport(
  private fun resetMicrophone(){}
  private val focusCycleGainRunnable=Runnable{}
  private val unrepairedCheckRunnable=Runnable{}
- private val videoBufferPool=ConcurrentLinkedQueue<ByteArray>()
- private val videoBacklog=java.util.concurrent.atomic.AtomicInteger()
- private val videoShedTotal=java.util.concurrent.atomic.AtomicLong()
  private var lastMessageReceivedMs=0L
  private val linkGapMonitor=Monitor();private val videoGapMonitor=Monitor();private val audioGapMonitor=Monitor()
  private val startedAudioChannels=HashSet<Int>();private var audioTimingActive=false
@@ -188,7 +186,7 @@ class AapTransport(
  fun installReader(reader:AapRead){aapRead=reader}
  fun postPoll(task:()->Unit){check(checkNotNull(pollHandler).post(Runnable{task()}))}
  fun pollSnapshot()=checkNotNull(pollThread)
- fun liveWorkers()=listOfNotNull(sendThread,pollThread,videoThread).count{it.isAlive}
+ fun liveWorkers()=listOfNotNull(sendThread,pollThread,videoLane.thread,auxVideoLane?.thread).count{it.isAlive}
  companion object {const val MSG_POLL=1;@Volatile var handshakeHook:(()->Unit)?=null;var forcedFailure:HandshakeFailure?=null}
 '''
 callback_start=transport.index("    private val decoderErrorCallback:")
@@ -220,8 +218,17 @@ class AapAudio(decoder:AudioDecoder,private val settings:Settings){
  fun postProtocolFocusChange(stream:Int,request:Int,callback:AudioManager.OnAudioFocusChangeListener){}
 }
 class AudioConfig{val enabled=true;val staticFocus=false;val focusMode=0}
-class VideoDecoder{var framesRenderedThisSession=0L;var onDecoderError:((String)->Unit)?=null;var onKeyframeStarved:(()->Unit)?=null;var onFrameDropped:(()->Unit)?=null;var onKeyframeObserved:(()->Unit)?=null;fun stop(s:String){}}
+class VideoDecoder{var framesRenderedThisSession=0L;var onDecoderError:((String)->Unit)?=null;var onKeyframeStarved:(()->Unit)?=null;var onFrameDropped:(()->Unit)?=null;var onKeyframeObserved:(()->Unit)?=null
+ val stops=CopyOnWriteArrayList<String>();@Volatile var stopHook:((String)->Unit)?=null;fun stop(s:String){stopHook?.invoke(s);stops.add(s)}}
+class AppComponentDouble{@Volatile var auxVideoDecoder:VideoDecoder?=null}
+object App{val component=AppComponentDouble();fun provide(c:Context)=component}
 class AapVideo{fun release(){}}
+class VideoLane{
+ @Volatile var thread:HandlerThread?=null
+ fun start(){val t=HandlerThread("video",0);t.start();thread=t}
+ fun quit(){thread?.quit()}
+ fun release(){thread=null}
+}
 open class AapRead{@Volatile protected var isStopped=false;fun stop(){isStopped=true};companion object{var creations=0};object Factory{
  fun create(connection:ProjectionConnection,transport:AapTransport,mic:Any,audio:AapAudio,video:AapVideo,
  settings:Settings,context:Context,metadata:((Any)->Unit)?,playback:((Any)->Unit)?):AapRead{creations++;return AapRead()}
@@ -711,7 +718,42 @@ fun failedAttemptDoesNotInheritPhysicalSuccess()=runBlocking {
  println("PASS new failed attempts do not inherit physical success from the previous connection")
 }
 """
-extra=extra.replace('fun main(){', 'fun main(){\n usbSaveOpenFailures();failedAttemptDoesNotInheritPhysicalSuccess();terminalRouteSnapshots();settingsActionCancellation()')
+extra += r"""
+fun auxDecoderStopsAtSessionEnd()=runBlocking {
+ try {
+  run {
+   val aux=VideoDecoder();App.component.auxVideoDecoder=aux
+   val c=CommManager();c.startHandshake();c.startReading();val old=c.owner()
+   var workersAtStop=-1;aux.stopHook={workersAtStop=old.liveWorkers()}
+   c.disconnect(sendByeBye=false,honorKillOnDisconnect=false);c.cleanups();c.awaitCleanup()
+   check(aux.stops==listOf("CommManager: doDisconnect (second screen)")){"aux stops: ${aux.stops}"}
+   check(c.videoDecoder.stops.contains("CommManager: doDisconnect")){"main stops: ${c.videoDecoder.stops}"}
+   check(workersAtStop==0){"aux decoder stopped with $workersAtStop live workers"}
+   c.close()
+   println("PASS the second screen decoder stops at session end, after the workers are joined")
+  }
+  run {
+   val aux=VideoDecoder();App.component.auxVideoDecoder=aux
+   val c=CommManager();c.startHandshake();c.startReading();val conn=checkNotNull(c.network())
+   c.videoDecoder.stopHook={throw IllegalStateException("injected main decoder stop failure")}
+   c.disconnect(sendByeBye=false,honorKillOnDisconnect=false);c.cleanups();c.awaitCleanup()
+   check(aux.stops.size==1){"aux stops: ${aux.stops}"}
+   check(conn.closed){"a throwing main decoder stop skipped the close"}
+   c.videoDecoder.stopHook=null;c.close()
+   println("PASS a throwing main decoder stop still stops the second screen decoder")
+  }
+  run {
+   App.component.auxVideoDecoder=null
+   val c=CommManager();c.startHandshake();c.startReading();val conn=checkNotNull(c.network())
+   c.disconnect(sendByeBye=false,honorKillOnDisconnect=false);c.cleanups();c.awaitCleanup()
+   check(c.state is ConnectionState.Disconnected && conn.closed)
+   c.close()
+   println("PASS a session with no second screen decoder disconnects as before")
+  }
+ } finally { App.component.auxVideoDecoder=null }
+}
+"""
+extra=extra.replace('fun main(){', 'fun main(){\n usbSaveOpenFailures();failedAttemptDoesNotInheritPhysicalSuccess();terminalRouteSnapshots();settingsActionCancellation();auxDecoderStopsAtSessionEnd()')
 (OUT/'Probe.kt').write_text(manager+transport_fixture+support+extra)
 (OUT/'Os.kt').write_text(r'''package android.os
 import java.util.concurrent.*

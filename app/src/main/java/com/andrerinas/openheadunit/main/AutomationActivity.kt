@@ -11,6 +11,8 @@ import com.andrerinas.openheadunit.automation.AutomationEffectRunner
 import com.andrerinas.openheadunit.automation.IntentExtras
 import com.andrerinas.openheadunit.contract.HeadUnitCommand
 import com.andrerinas.openheadunit.utils.AppLog
+import com.andrerinas.openheadunit.utils.DisplayTargets
+import com.andrerinas.openheadunit.utils.Settings
 import org.json.JSONObject
 
 /**
@@ -78,7 +80,8 @@ class AutomationActivity : AppCompatActivity() {
             startActivity(
                 AapProjectionActivity.intent(this).apply {
                     addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
-                }
+                },
+                DisplayTargets.projectionLaunchOptions(this, Settings(this)),
             )
         } catch (e: Exception) {
             AppLog.w("AutomationActivity: Could not pre-launch AapProjectionActivity: ${e.message}")

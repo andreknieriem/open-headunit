@@ -3,6 +3,7 @@ import android.app.Application
 import android.content.Context
 import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
+import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.aap.AapSslContext
 import com.andrerinas.openheadunit.aap.AapTransport
 import com.andrerinas.openheadunit.aap.NarrowBandProfilePolicy
@@ -1389,6 +1390,12 @@ class CommManager(
         _transport?.pauseForSleep()
     }
 
+    /** A keyframe for the second display only; a no-op before its stream exists. */
+    fun requestAuxKeyframe(reason: String) {
+        if (_connectionState.value !is ConnectionState.TransportStarted) return
+        _transport?.requestAuxKeyframe(reason)
+    }
+
     fun updateAudioGains() {
         _transport?.aapAudio?.updateGains()
     }
@@ -1557,8 +1564,13 @@ class CommManager(
                         transport?.awaitTermination()
                     }
 
-                    // Explicitly stop and release decoders to prevent MediaCodec finalize() timeouts
-                    videoDecoder.stop("CommManager: doDisconnect")
+                    try {
+                        // Explicitly stop and release decoders to prevent MediaCodec finalize() timeouts
+                        videoDecoder.stop("CommManager: doDisconnect")
+                    } finally {
+                        // The second screen's decoder is a process singleton too; its failure state must not reach the next session.
+                        App.provide(context).auxVideoDecoder?.stop("CommManager: doDisconnect (second screen)")
+                    }
                 } finally {
                     closeAudio()
                 }

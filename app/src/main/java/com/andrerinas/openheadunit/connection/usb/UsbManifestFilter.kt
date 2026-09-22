@@ -26,6 +26,9 @@ object UsbManifestFilter {
         Entry(deviceClass = 224, subclass = 1, protocol = 3),
         Entry(deviceClass = 239, subclass = 4, protocol = 1),
         Entry(deviceClass = 8, subclass = 6, protocol = 1),
+        Entry(vendorId = 21325, productId = 24609),
+        Entry(vendorId = 21325, productId = 2081),
+        Entry(vendorId = 13407, productId = 37170),
     )
 
     fun matches(device: Device): Boolean = ENTRIES.any { matches(it, device) }

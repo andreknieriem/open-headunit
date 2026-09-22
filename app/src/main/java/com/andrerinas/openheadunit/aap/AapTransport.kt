@@ -22,6 +22,8 @@ import com.andrerinas.openheadunit.aap.protocol.messages.Messages
 import com.andrerinas.openheadunit.aap.protocol.messages.ScrollWheelEvent
 import com.andrerinas.openheadunit.aap.protocol.messages.SensorEvent
 import com.andrerinas.openheadunit.aap.protocol.messages.VideoFocusEvent
+import com.andrerinas.openheadunit.secondscreen.SecondScreenHub
+import com.andrerinas.openheadunit.secondscreen.SecondScreenOutputPolicy
 import com.andrerinas.openheadunit.decoder.audio.MicrophonePolicy
 import com.andrerinas.openheadunit.decoder.video.FocusCycleLever
 import com.andrerinas.openheadunit.decoder.video.KeyframeCycleEscalationPolicy
@@ -835,6 +837,7 @@ class AapTransport(
             }
             cleanupStep("video") { videoLane.release() }
             cleanupStep("aux video") { auxVideoLane?.release() }
+            cleanupStep("second screen") { SecondScreenHub.close() }
             auxVideoLane = null
             aapRead = null
             cleanupStep("TLS") { ssl.release() }
@@ -933,19 +936,35 @@ class AapTransport(
         auxVideoLane?.let { return it }
         if (!settings.auxDisplayEnabled) return null
         if (closing) return null
-        val decoder = App.provide(context).requireAuxVideoDecoder()
+        val output = SecondScreenHub.announced ?: return null
+        // Opened here because only this session's service discovery says which output to open.
+        SecondScreenHub.open(context, settings) { requestAuxKeyframe("the second screen asked for one") }
         // Recovery cycles focus on this channel alone, so the main picture never pays for it.
         val onCorrupted = { requestAuxKeyframe("a corrupt frame") }
+        // A forwarding output gets the stream as it arrives and no decoder is built for it.
+        val video = if (SecondScreenOutputPolicy.decodesOnHeadUnit(output)) {
+            // The aux sink is announced as H.264 only, so the main picture's codec setting does not apply.
+            AapVideo(App.provide(context).requireAuxVideoDecoder(), settings, VideoDecoder.CodecType.H264,
+                onFrameCorrupted = onCorrupted)
+        } else {
+            AapVideo(null, settings, onAccessUnit = { buf, off, len -> SecondScreenHub.encoded()?.onAccessUnit(buf, off, len) },
+                onFrameCorrupted = onCorrupted)
+        }
         val lane = VideoLane(
-            Channel.ID_VID2, AapVideo(decoder, settings, onCorrupted), "AapTransport:Handler::VideoAux",
-            ::getSessionId, ::sendMediaAck,
+            Channel.ID_VID2, video, "AapTransport:Handler::VideoAux", ::getSessionId, ::sendMediaAck,
         )
-        synchronized(lifecycleLock) {
+        val opened = synchronized(lifecycleLock) {
             // quit snapshots the workers under this lock, so a lane started here is always joined.
-            if (closing) return null
+            if (closing) return@synchronized false
             auxVideoLane?.let { return it }
             lane.start()
             auxVideoLane = lane
+            true
+        }
+        if (!opened) {
+            // quit may have closed the hub before the open above; this close leaves nothing open.
+            SecondScreenHub.close()
+            return null
         }
         AppLog.i("AapTransport: the auxiliary display's video lane is open")
         return lane

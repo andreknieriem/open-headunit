@@ -65,6 +65,7 @@ import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.AppPermissions
 import com.andrerinas.openheadunit.utils.AppThemeManager
 import com.andrerinas.openheadunit.decoder.video.AuxDisplayProfilePolicy
+import com.andrerinas.openheadunit.secondscreen.SecondScreenOutputPolicy
 import com.andrerinas.openheadunit.utils.DisplayTargetPolicy
 import com.andrerinas.openheadunit.utils.DisplayTargets
 import com.andrerinas.openheadunit.utils.Settings
@@ -151,7 +152,7 @@ class SettingsFragment : Fragment() {
         "gpsNavigation",
         // Graphic
         "resolution", "dpiPixelDensity", "viewMode", "screenOrientation", "projectionDisplay",
-        "auxDisplay", "auxDisplayRole", "auxDisplayContent", "startInFullscreenMode",
+        "auxDisplay", "auxAndroidDisplay", "auxDisplayRole", "auxDisplayContent", "startInFullscreenMode",
         // Theming
         "theming", "loadingScreen", "customization",
         // Video
@@ -2232,8 +2233,8 @@ class SettingsFragment : Fragment() {
         ))
 
         // Which Android display the projection uses. Saved immediately rather than pended, because
-        // it only takes effect at the next connect: the geometry goes out once, in service discovery.
-        addProjectionDisplayRow(items)
+        // it only takes effect at the next connect. Hidden where the projection cannot move.
+        if (DisplayTargets.canMoveProjection) addProjectionDisplayRow(items)
         addAuxDisplayRows(items)
 
         // Video fit: how a mismatched-aspect video is fitted into the panel (object-fit style).
@@ -4711,21 +4712,8 @@ class SettingsFragment : Fragment() {
     }
 
     /**
-     * The band to ask for when this app creates the WiFi Direct group, plus what that choice costs.
-     *
-     * The mirror of [addHotspotBandSetting] on the other transport, and it replaces two toggles
-     * that asked the same question in pieces - one that forced 2.4 GHz and one that opted a pre-Q
-     * unit into asking for 5 GHz. Rendered only on the Native AA WiFi Direct arm, because
-     * WifiDirectManager.createQuietGroup() is the single place it is read.
-     *
-     * Basic rather than Advanced, like the hotspot band beside it: this is the first thing to try
-     * when a wireless session connects and shows no picture.
-     */
-    /**
-     * Which Android display the projection uses.
-     *
-     * The row names the attached panels rather than only saying "secondary", because a unit with two
-     * external displays cannot otherwise be told which one it picked.
+     * Which Android display the projection uses. The row names each attached panel, so a unit with
+     * two external displays shows which one it picked.
      */
     private fun addProjectionDisplayRow(items: MutableList<SettingItem>) {
         val attached = DisplayTargets.candidates(requireContext())
@@ -4782,39 +4770,61 @@ class SettingsFragment : Fragment() {
         ))
     }
 
-    /**
-     * A second Android Auto picture for a cluster or passenger screen.
-     *
-     * Offered only where there is somewhere to put it: a head unit with one panel has nothing this
-     * row could do, and a control that changes nothing is worse than none.
-     */
-    private fun addAuxDisplayRows(items: MutableList<SettingItem>) {
+    /** Which Android display carries the second screen, among those attached besides the projection's. */
+    private fun addAuxAndroidDisplayRow(items: MutableList<SettingItem>) {
         val projectionDisplayId = DisplayTargets.choose(requireContext(), settings).displayId
         val attached = DisplayTargets.candidates(requireContext()).filter { it.displayId != projectionDisplayId }
-        if (attached.isEmpty() && !settings.auxDisplayEnabled) return
+        val labels = attached.map { "${it.name} (${it.widthPx}x${it.heightPx})" }
+        val selected = attached.indexOfFirst { it.displayId == settings.auxDisplayId }
+        items.add(SettingItem.SettingEntry(
+            stableId = "auxAndroidDisplay",
+            nameResId = R.string.aux_android_display,
+            value = labels.getOrNull(selected) ?: getString(R.string.aux_android_display_none),
+            searchKeywords = labels.joinToString(" "),
+            onClick = { _ ->
+                if (labels.isNotEmpty()) {
+                    MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
+                        .setTitle(R.string.aux_android_display)
+                        .setSingleChoiceItems(labels.toTypedArray(), selected) { dialog, which ->
+                            attached.getOrNull(which)?.let { settings.auxDisplayId = it.displayId }
+                            settings.commit()
+                            dialog.dismiss()
+                            updateSettingsList()
+                        }
+                        .show()
+                }
+            }
+        ))
+    }
 
-        val labels = mutableListOf(getString(R.string.aux_display_off))
-        labels.addAll(attached.map { "${it.name} (${it.widthPx}x${it.heightPx})" })
-        val selected = if (!settings.auxDisplayEnabled) 0
-        else attached.indexOfFirst { it.displayId == settings.auxDisplayId }.let { if (it >= 0) it + 1 else 0 }
+    /** The second-screen outputs this build offers, in the order the picker lists them. */
+    private val offeredAuxOutputs = listOf(
+        SecondScreenOutputPolicy.Output.ANDROID_DISPLAY,
+    )
 
+    private fun auxOutputLabel(output: SecondScreenOutputPolicy.Output): String = getString(when (output) {
+        SecondScreenOutputPolicy.Output.ANDROID_DISPLAY -> R.string.aux_output_android_display
+        SecondScreenOutputPolicy.Output.NETWORK -> R.string.aux_output_network
+        SecondScreenOutputPolicy.Output.MS912X -> R.string.aux_output_ms912x
+        SecondScreenOutputPolicy.Output.USB_DISPLAY -> R.string.aux_output_usb_display
+    })
+
+    /** A second Android Auto picture for a cluster or passenger screen, and the chosen output's rows. */
+    private fun addAuxDisplayRows(items: MutableList<SettingItem>) {
+        val outputLabels = listOf(getString(R.string.aux_display_off)) + offeredAuxOutputs.map { auxOutputLabel(it) }
+        val outputIndex = if (!settings.auxDisplayEnabled) 0
+        else offeredAuxOutputs.indexOf(settings.auxOutput).let { if (it >= 0) it + 1 else 0 }
         items.add(SettingItem.SettingEntry(
             stableId = "auxDisplay",
             nameResId = R.string.aux_display,
-            value = labels.getOrElse(selected) { labels.first() },
-            searchKeywords = labels.joinToString(" "),
+            value = outputLabels[outputIndex],
+            searchKeywords = outputLabels.joinToString(" "),
             onClick = { _ ->
                 MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
                     .setTitle(R.string.change_aux_display)
-                    .setSingleChoiceItems(labels.toTypedArray(), selected) { dialog, which ->
-                        if (which == 0) {
-                            settings.auxDisplayEnabled = false
-                        } else {
-                            attached.getOrNull(which - 1)?.let {
-                                settings.auxDisplayEnabled = true
-                                settings.auxDisplayId = it.displayId
-                            }
-                        }
+                    .setSingleChoiceItems(outputLabels.toTypedArray(), outputIndex) { dialog, which ->
+                        settings.auxDisplayEnabled = which > 0
+                        offeredAuxOutputs.getOrNull(which - 1)?.let { settings.auxOutput = it }
                         settings.commit()
                         dialog.dismiss()
                         updateSettingsList()
@@ -4825,6 +4835,7 @@ class SettingsFragment : Fragment() {
         items.add(SettingItem.InfoBanner(stableId = "auxDisplayHint", textResId = R.string.aux_display_hint))
 
         if (!settings.auxDisplayEnabled) return
+        if (settings.auxOutput == SecondScreenOutputPolicy.Output.ANDROID_DISPLAY) addAuxAndroidDisplayRow(items)
 
         val roleLabels = arrayOf(
             getString(R.string.aux_display_role_auxiliary),
@@ -4884,6 +4895,17 @@ class SettingsFragment : Fragment() {
         ))
     }
 
+    /**
+     * The band to ask for when this app creates the WiFi Direct group, plus what that choice costs.
+     *
+     * The mirror of [addHotspotBandSetting] on the other transport, and it replaces two toggles
+     * that asked the same question in pieces - one that forced 2.4 GHz and one that opted a pre-Q
+     * unit into asking for 5 GHz. Rendered only on the Native AA WiFi Direct arm, because
+     * WifiDirectManager.createQuietGroup() is the single place it is read.
+     *
+     * Basic rather than Advanced, like the hotspot band beside it: this is the first thing to try
+     * when a wireless session connects and shows no picture.
+     */
     private fun addWifiDirectBandSetting(items: MutableList<SettingItem>) {
         items.add(SettingItem.SegmentedButtonSettingEntry(
             stableId = "wifiDirectBand",

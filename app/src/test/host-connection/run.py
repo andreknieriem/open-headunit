@@ -148,6 +148,7 @@ class AapTransport(
  private val videoLane=VideoLane();@Volatile private var auxVideoLane:VideoLane?=null
  @Volatile private var lastAuxCycleMs=0L;@Volatile private var auxCycleStopExpected=false
  private val auxCycleGainRunnable=Runnable{}
+ private fun requestAuxKeyframe(reason:String){}
  private var aapRead:AapRead?=null
  private val quitLock=Any()
  private var peerRequestedClose=false
@@ -223,6 +224,7 @@ class VideoDecoder{var framesRenderedThisSession=0L;var onDecoderError:((String)
 class AppComponentDouble{@Volatile var auxVideoDecoder:VideoDecoder?=null}
 object App{val component=AppComponentDouble();fun provide(c:Context)=component}
 class AapVideo{fun release(){}}
+object SecondScreenHub{fun open(context:Context,settings:Settings,onKeyframeNeeded:()->Unit):Any?=null;fun close(){}}
 class VideoLane{
  @Volatile var thread:HandlerThread?=null
  fun start(){val t=HandlerThread("video",0);t.start();thread=t}

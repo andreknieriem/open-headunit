@@ -7,6 +7,7 @@ import com.andrerinas.openheadunit.aap.protocol.Channel
 import com.andrerinas.openheadunit.aap.protocol.messages.DrivingStatusEvent
 import com.andrerinas.openheadunit.aap.protocol.messages.LocationUpdateEvent
 import com.andrerinas.openheadunit.aap.protocol.messages.ServiceDiscoveryResponse
+import com.andrerinas.openheadunit.aap.protocol.messages.VideoFocusEvent
 import com.andrerinas.openheadunit.aap.protocol.proto.Common
 import com.andrerinas.openheadunit.aap.protocol.proto.Control
 import com.andrerinas.openheadunit.aap.protocol.proto.Input
@@ -47,9 +48,16 @@ internal class AapControlMedia(
             Media.MsgType.MEDIA_MESSAGE_STOP_VALUE -> return mediaSinkStopRequest(message.channel)
             Media.MsgType.MEDIA_MESSAGE_VIDEO_FOCUS_REQUEST_VALUE -> {
                 val focusRequest = message.parse(Media.VideoFocusRequestNotification.newBuilder()).build()
-                AppLog.i("RX: Video Focus Request - mode: %s, reason: %s", focusRequest.mode, focusRequest.reason)
+                AppLog.i("RX: Video Focus Request - mode: %s, reason: %s, channel: %s",
+                    focusRequest.mode, focusRequest.reason, Channel.name(message.channel))
 
-                if (focusRequest.mode == Media.VideoFocusMode.VIDEO_FOCUS_NATIVE) {
+                val answer = SecondaryVideoFocusPolicy.onFocusRequest(message.channel, focusRequest.mode)
+                if (answer == SecondaryVideoFocusPolicy.Answer.AUX_RELEASED) {
+                    AppLog.i("The phone released the second display's video. The main session continues.")
+                } else if (answer == SecondaryVideoFocusPolicy.Answer.GRANT_ON_CHANNEL) {
+                    AppLog.i("Granting video focus on %s", Channel.name(message.channel))
+                    aapTransport.send(VideoFocusEvent(gain = true, unsolicited = false, channel = message.channel))
+                } else if (answer == SecondaryVideoFocusPolicy.Answer.RUN_EXIT_ACTION) {
                     AppLog.i("Video Focus NATIVE received. User clicked Exit in Android Auto.")
                     val ctx = aapTransport.context
                     val settings = App.provide(ctx).settings
@@ -117,6 +125,10 @@ internal class AapControlMedia(
 
         if (channel == Channel.ID_VID) {
             aapTransport.gainVideoFocus()
+        } else if (SecondaryVideoFocusPolicy.grantsFocusAfterSetup(channel)) {
+            // The phone streams to a second sink only once it holds focus on that sink's channel.
+            AppLog.i("Granting video focus on %s after its setup", Channel.name(channel))
+            aapTransport.send(VideoFocusEvent(gain = true, unsolicited = false, channel = channel))
         }
 
         // Pushing AudioFocusNotification
@@ -134,7 +146,7 @@ internal class AapControlMedia(
     }
 
     private fun maxUnackedFor(channel: Int): Int {
-        if (channel == Channel.ID_VID) {
+        if (Channel.isVideo(channel)) {
             val softwareHevc =
                 aapTransport.settings.videoCodec == VideoDecoder.CodecType.H265.settingsValue &&
                         aapTransport.settings.forceSoftwareDecoding &&
@@ -174,6 +186,9 @@ internal class AapControlMedia(
                 return 0
             }
             AppLog.i("Video Sink Stopped -> Normal background/transition behavior")
+        } else if (channel == Channel.ID_VID2) {
+            AppLog.i(if (aapTransport.consumeAuxCycleStop()) "Auxiliary Video Sink Stopped -> Ignored (Forced Keyframe Request)"
+                else "Auxiliary Video Sink Stopped -> the main session continues")
         }
         return 0
     }
@@ -484,7 +499,8 @@ internal class AapControlGateway(
             Channel.ID_CTR -> return serviceControl.execute(message)
             Channel.ID_INP -> return touchControl.execute(message)
             Channel.ID_SEN -> return sensorControl.execute(message)
-            Channel.ID_VID, Channel.ID_AUD, Channel.ID_AU1, Channel.ID_AU2, Channel.ID_MIC -> return mediaControl.execute(message)
+            Channel.ID_VID, Channel.ID_VID2, Channel.ID_AUD, Channel.ID_AU1, Channel.ID_AU2, Channel.ID_MIC ->
+                return mediaControl.execute(message)
         }
         return 0
     }

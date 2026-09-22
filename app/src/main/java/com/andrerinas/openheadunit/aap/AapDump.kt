@@ -27,7 +27,7 @@ internal object AapDump {
         val msg_type = (buf[0].toInt() shl 8) + buf[1].toInt() and 0xFFFF
 
         var is_media = false
-        if (chan == Channel.ID_VID || chan == Channel.ID_MIC || Channel.isAudio(chan))
+        if (Channel.isVideo(chan) || chan == Channel.ID_MIC || Channel.isAudio(chan))
             is_media = true
 
         if (is_media && (flags == 8 || flags == 0x0a || msg_type == 0))

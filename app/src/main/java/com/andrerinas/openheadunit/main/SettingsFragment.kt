@@ -61,6 +61,9 @@ import com.andrerinas.openheadunit.main.settings.SettingsAdapter
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.AppPermissions
 import com.andrerinas.openheadunit.utils.AppThemeManager
+import com.andrerinas.openheadunit.decoder.video.AuxDisplayProfilePolicy
+import com.andrerinas.openheadunit.utils.DisplayTargetPolicy
+import com.andrerinas.openheadunit.utils.DisplayTargets
 import com.andrerinas.openheadunit.utils.Settings
 import com.andrerinas.openheadunit.utils.LocaleHelper
 import com.andrerinas.openheadunit.BuildConfig
@@ -142,7 +145,8 @@ class SettingsFragment : Fragment() {
         // Navigation
         "gpsNavigation",
         // Graphic
-        "resolution", "dpiPixelDensity", "viewMode", "screenOrientation", "startInFullscreenMode",
+        "resolution", "dpiPixelDensity", "viewMode", "screenOrientation", "projectionDisplay",
+        "auxDisplay", "auxDisplayRole", "auxDisplayContent", "startInFullscreenMode",
         // Theming
         "theming", "loadingScreen", "customization",
         // Video
@@ -2166,6 +2170,11 @@ class SettingsFragment : Fragment() {
                     .show()
             }
         ))
+
+        // Which Android display the projection uses. Saved immediately rather than pended, because
+        // it only takes effect at the next connect: the geometry goes out once, in service discovery.
+        addProjectionDisplayRow(items)
+        addAuxDisplayRows(items)
 
         // Video fit: how a mismatched-aspect video is fitted into the panel (object-fit style).
         items.add(SettingItem.SettingEntry(
@@ -4625,6 +4634,169 @@ class SettingsFragment : Fragment() {
      * Basic rather than Advanced, like the hotspot band beside it: this is the first thing to try
      * when a wireless session connects and shows no picture.
      */
+    /**
+     * Which Android display the projection uses.
+     *
+     * The row names the attached panels rather than only saying "secondary", because a unit with two
+     * external displays cannot otherwise be told which one it picked.
+     */
+    private fun addProjectionDisplayRow(items: MutableList<SettingItem>) {
+        val attached = DisplayTargets.candidates(requireContext())
+        val mode = DisplayTargetPolicy.Mode.of(settings.preferredDisplayMode)
+        val pinnedId = settings.preferredDisplayId
+        val pinnedName = attached.firstOrNull { it.displayId == pinnedId }?.name
+
+        // A display that is not attached right now still shows, so the user can see what is stored
+        // rather than finding the row silently reset to the built-in panel.
+        val entries = mutableListOf<Pair<String, () -> Unit>>()
+        entries.add(getString(R.string.projection_display_builtin) to {
+            settings.preferredDisplayMode = DisplayTargetPolicy.Mode.DEFAULT.ordinal
+        })
+        entries.add(getString(R.string.projection_display_automatic) to {
+            settings.preferredDisplayMode = DisplayTargetPolicy.Mode.AUTO.ordinal
+        })
+        attached.forEach { display ->
+            entries.add("${display.name} (${display.widthPx}x${display.heightPx})" to {
+                settings.preferredDisplayMode = DisplayTargetPolicy.Mode.SECONDARY.ordinal
+                settings.preferredDisplayId = display.displayId
+            })
+        }
+        if (mode == DisplayTargetPolicy.Mode.SECONDARY && pinnedName == null) {
+            entries.add(getString(R.string.projection_display_missing, "display $pinnedId") to {
+                settings.preferredDisplayMode = DisplayTargetPolicy.Mode.SECONDARY.ordinal
+                settings.preferredDisplayId = pinnedId
+            })
+        }
+
+        val selectedIndex = when (mode) {
+            DisplayTargetPolicy.Mode.DEFAULT -> 0
+            DisplayTargetPolicy.Mode.AUTO -> 1
+            DisplayTargetPolicy.Mode.SECONDARY ->
+                attached.indexOfFirst { it.displayId == pinnedId }.let { if (it >= 0) it + 2 else entries.size - 1 }
+        }
+
+        items.add(SettingItem.SettingEntry(
+            stableId = "projectionDisplay",
+            nameResId = R.string.projection_display,
+            value = entries.getOrElse(selectedIndex) { entries.first() }.first,
+            searchKeywords = entries.joinToString(" ") { it.first },
+            onClick = { _ ->
+                val labels = entries.map { it.first }.toTypedArray()
+                MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
+                    .setTitle(R.string.change_projection_display)
+                    .setSingleChoiceItems(labels, selectedIndex) { dialog, which ->
+                        entries.getOrNull(which)?.second?.invoke()
+                        settings.commit()
+                        dialog.dismiss()
+                        updateSettingsList()
+                    }
+                    .show()
+            }
+        ))
+    }
+
+    /**
+     * A second Android Auto picture for a cluster or passenger screen.
+     *
+     * Offered only where there is somewhere to put it: a head unit with one panel has nothing this
+     * row could do, and a control that changes nothing is worse than none.
+     */
+    private fun addAuxDisplayRows(items: MutableList<SettingItem>) {
+        val projectionDisplayId = DisplayTargets.choose(requireContext(), settings).displayId
+        val attached = DisplayTargets.candidates(requireContext()).filter { it.displayId != projectionDisplayId }
+        if (attached.isEmpty() && !settings.auxDisplayEnabled) return
+
+        val labels = mutableListOf(getString(R.string.aux_display_off))
+        labels.addAll(attached.map { "${it.name} (${it.widthPx}x${it.heightPx})" })
+        val selected = if (!settings.auxDisplayEnabled) 0
+        else attached.indexOfFirst { it.displayId == settings.auxDisplayId }.let { if (it >= 0) it + 1 else 0 }
+
+        items.add(SettingItem.SettingEntry(
+            stableId = "auxDisplay",
+            nameResId = R.string.aux_display,
+            value = labels.getOrElse(selected) { labels.first() },
+            searchKeywords = labels.joinToString(" "),
+            onClick = { _ ->
+                MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
+                    .setTitle(R.string.change_aux_display)
+                    .setSingleChoiceItems(labels.toTypedArray(), selected) { dialog, which ->
+                        if (which == 0) {
+                            settings.auxDisplayEnabled = false
+                        } else {
+                            attached.getOrNull(which - 1)?.let {
+                                settings.auxDisplayEnabled = true
+                                settings.auxDisplayId = it.displayId
+                            }
+                        }
+                        settings.commit()
+                        dialog.dismiss()
+                        updateSettingsList()
+                    }
+                    .show()
+            }
+        ))
+        items.add(SettingItem.InfoBanner(stableId = "auxDisplayHint", textResId = R.string.aux_display_hint))
+
+        if (!settings.auxDisplayEnabled) return
+
+        val roleLabels = arrayOf(
+            getString(R.string.aux_display_role_auxiliary),
+            getString(R.string.aux_display_role_cluster),
+        )
+        val roleIndex = if (settings.auxDisplayRole == AuxDisplayProfilePolicy.Role.CLUSTER) 1 else 0
+        items.add(SettingItem.SettingEntry(
+            stableId = "auxDisplayRole",
+            nameResId = R.string.aux_display_role,
+            value = roleLabels[roleIndex],
+            searchKeywords = roleLabels.joinToString(" "),
+            onClick = { _ ->
+                MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
+                    .setTitle(R.string.change_aux_display_role)
+                    .setSingleChoiceItems(roleLabels, roleIndex) { dialog, which ->
+                        settings.auxDisplayRole =
+                            if (which == 1) AuxDisplayProfilePolicy.Role.CLUSTER else AuxDisplayProfilePolicy.Role.AUXILIARY
+                        settings.commit()
+                        dialog.dismiss()
+                        updateSettingsList()
+                    }
+                    .show()
+            }
+        ))
+
+        // A cluster shows what the phone chooses, so there is nothing to pick.
+        if (!AuxDisplayProfilePolicy.announcesContent(settings.auxDisplayRole)) return
+
+        val contentLabels = arrayOf(
+            getString(R.string.aux_display_content_map),
+            getString(R.string.aux_display_content_turn_card),
+        )
+        val contentIndex =
+            if (AuxDisplayProfilePolicy.contentKeycodeOrDefault(settings.auxDisplayContent) ==
+                AuxDisplayProfilePolicy.KEYCODE_TURN_CARD
+            ) 1 else 0
+        items.add(SettingItem.SettingEntry(
+            stableId = "auxDisplayContent",
+            nameResId = R.string.aux_display_content,
+            value = contentLabels[contentIndex],
+            searchKeywords = contentLabels.joinToString(" "),
+            onClick = { _ ->
+                MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
+                    .setTitle(R.string.change_aux_display_content)
+                    .setSingleChoiceItems(contentLabels, contentIndex) { dialog, which ->
+                        settings.auxDisplayContent = if (which == 1) {
+                            AuxDisplayProfilePolicy.KEYCODE_TURN_CARD
+                        } else {
+                            AuxDisplayProfilePolicy.KEYCODE_NAVIGATION
+                        }
+                        settings.commit()
+                        dialog.dismiss()
+                        updateSettingsList()
+                    }
+                    .show()
+            }
+        ))
+    }
+
     private fun addWifiDirectBandSetting(items: MutableList<SettingItem>) {
         items.add(SettingItem.SegmentedButtonSettingEntry(
             stableId = "wifiDirectBand",

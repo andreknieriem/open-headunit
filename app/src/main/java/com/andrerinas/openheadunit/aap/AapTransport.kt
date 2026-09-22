@@ -12,6 +12,7 @@ import android.os.Process
 import android.os.SystemClock
 import android.util.SparseIntArray
 import android.view.KeyEvent
+import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.aap.protocol.Channel
 import com.andrerinas.openheadunit.aap.protocol.messages.KeyCodeEvent
 import com.andrerinas.openheadunit.aap.protocol.messages.MediaAck
@@ -87,20 +88,12 @@ class AapTransport(
     internal val aapVideo: AapVideo
     private var sendThread: HandlerThread? = null
     private var pollThread: HandlerThread? = null
-    private var videoThread: HandlerThread? = null
-    private var videoHandler: Handler? = null
+    /** The main display's video. A second display gets its own lane, never a share of this one. */
+    private val videoLane: VideoLane
 
-    // Reused payload copies for the video thread. The SSL layer hands back one buffer it overwrites
-    // on the next read, so a message that outlives the read has to carry its own bytes; pooling
-    // them keeps a 50 fps stream from allocating per frame.
-    private val videoBufferPool = java.util.concurrent.LinkedBlockingQueue<ByteArray>()
-
-    // Messages handed to the video thread and not yet processed. The park that used to hold the
-    // read thread lives here now, so this is where it can still be seen.
-    private val videoBacklog = java.util.concurrent.atomic.AtomicInteger(0)
-
-    // Messages refused because the backlog was already at its ceiling. See VIDEO_BACKLOG_LIMIT.
-    private val videoShedTotal = java.util.concurrent.atomic.AtomicLong(0)
+    /** The auxiliary display's, built on its first message because a session may not have one. */
+    @Volatile
+    private var auxVideoLane: VideoLane? = null
     private val micRecorder: MicRecorder = MicRecorder(context)
     private val sessionIds = SparseIntArray(4)
     private val startedSensors = HashSet<Int>(4)
@@ -635,6 +628,7 @@ class AapTransport(
                 wireCorruption = true,
             )
         }
+        videoLane = VideoLane(Channel.ID_VID, aapVideo, "AapTransport:Handler::Video") { sendMediaAck(it) }
 
         // A rebuilt codec resumes on a P-frame and can render nothing until an IDR arrives, which
         // the phone sends on its own ~69s cadence and which nothing in AAP can request. So this is
@@ -737,9 +731,11 @@ class AapTransport(
         retireMicrophone()
         sendHandler?.removeCallbacks(focusCycleGainRunnable)
         sendHandler?.removeCallbacks(unrepairedCheckRunnable)
+        sendHandler?.removeCallbacks(auxCycleGainRunnable)
         pollThread?.quit()
         sendThread?.quit()
-        videoThread?.quit()
+        videoLane.quit()
+        auxVideoLane?.quit()
         aapAudio.releaseAllFocus()
 
         // Never let a half-finished cycle outlive the transport that owed the regain: the claim is
@@ -755,113 +751,98 @@ class AapTransport(
             // timeout since the thread can't finish while it's waiting for itself to finish.
             if (Thread.currentThread() != pollThread) pollThread?.join(1000)
             sendThread?.join(1000)
-            if (Thread.currentThread() != videoThread) videoThread?.join(1000)
+            videoLane.join(1000)
+            auxVideoLane?.join(1000)
         } catch (e: InterruptedException) {
             AppLog.e("Failed to join threads", e)
         }
 
         // After the join, not before it: the run state this closes is the video thread's now, and
         // resetting it under a thread still assembling would hand the next session a half-run.
-        aapVideo.release()
-        videoBufferPool.clear()
-        videoBacklog.set(0)
-        videoShedTotal.set(0)
+        videoLane.release()
+        auxVideoLane?.release()
+        auxVideoLane = null
 
         aapRead = null
         ssl.release()
         pollHandler = null
         sendHandler = null
-        videoHandler = null
         pollThread = null
         sendThread = null
-        videoThread = null
+    }
+
+    @Volatile private var lastAuxCycleMs = 0L
+    @Volatile private var auxCycleStopExpected = false
+
+    private val auxCycleGainRunnable = Runnable {
+        send(VideoFocusEvent(gain = true, unsolicited = true, channel = Channel.ID_VID2))
     }
 
     /**
-     * Hands a video-channel message to the video thread, and answers whether it was picture.
+     * A keyframe for the second display, by a focus cycle on its own channel only.
      *
-     * One thread used to read the socket and decode the picture, so [VideoDecoder]'s backpressure
-     * park held the reader for up to a second and every other channel waited behind it. Measured on
-     * the rig with the park forced: the read thread blocked 132 to 145 times a window for up to
-     * 233 ms, and the audio sink underran and shed in the same windows.
-     *
-     * A false answer means control traffic on the video channel, which the caller goes on to handle
-     * exactly where it always did. The assembler still sees it, because its run state is what
-     * decides whether the next fragment is an orphan.
-     *
-     * **The media ack goes out from the video thread, after the decode.** Acking on receipt let the
-     * backlog climb 918, 1803, 2732, 3671, 4666, 5602 over six windows at 64 KiB a message and never
-     * recover. Acking behind the work costs the read thread nothing. It does not hold the queue to
-     * the window we announce, though: with the feed held, a phone told `max_unacked=12` ran the
-     * backlog to 256, so [VIDEO_BACKLOG_LIMIT] is the real ceiling.
+     * Separate from the main picture's lever and budget: it touches nothing the driver is watching.
      */
-    internal fun dispatchVideo(message: AapMessage): Boolean {
-        val isPayload = aapVideo.isPayload(message)
-        val acks = message.type == 0 || message.type == 1
-        val handler = videoHandler
-        if (handler == null) {
-            if (acks) sendMediaAck(message.channel)
-            return isPayload
+    @Synchronized
+    internal fun requestAuxKeyframe(reason: String) {
+        if (auxVideoLane == null) return
+        val handler = sendHandler ?: return
+        val now = SystemClock.elapsedRealtime()
+        if (!SecondaryVideoFocusPolicy.mayCycleAux(now, lastAuxCycleMs)) return
+        lastAuxCycleMs = now
+        AppLog.i("AapTransport: cycling the auxiliary display's video focus for a keyframe ($reason)")
+        auxCycleStopExpected = true
+        send(VideoFocusEvent(gain = false, unsolicited = false, channel = Channel.ID_VID2))
+        handler.removeCallbacks(auxCycleGainRunnable)
+        handler.postDelayed(auxCycleGainRunnable, SecondaryVideoFocusPolicy.AUX_CYCLE_GAP_MS)
+    }
+
+    /** Whether the auxiliary sink stop just received was the one [requestAuxKeyframe] asked for. */
+    internal fun consumeAuxCycleStop(): Boolean {
+        val expected = auxCycleStopExpected
+        auxCycleStopExpected = false
+        return expected
+    }
+
+    /** Hands a video-channel message to its lane, and answers whether it was picture. */
+    internal fun dispatchVideo(message: AapMessage): Boolean =
+        if (message.channel == Channel.ID_VID2) {
+            auxLane()?.dispatch(message) ?: false
+        } else {
+            videoLane.dispatch(message)
         }
-        val channel = message.channel
-        if (videoBacklog.get() >= VIDEO_BACKLOG_LIMIT) {
-            // A phone that ignores its own window, or an ack we never got to send. Shed rather than
-            // allocate, and tell the assembler the run has a hole so a partial access unit is
-            // discarded instead of decoded as though it were whole. The ack still goes out, or the
-            // window closes for good and the picture never comes back.
-            if (videoShedTotal.getAndIncrement() == 0L) {
-                AppLog.w("AapTransport: the video thread is $VIDEO_BACKLOG_LIMIT messages behind, " +
-                    "shedding - see videoShed= on the transport dispatch line for how many")
-            }
-            if (isPayload) dispatchVideoRunHoled(true)
-            if (acks) sendMediaAck(channel)
-            return isPayload
+
+    /**
+     * The auxiliary lane, created on demand and only where one was advertised.
+     *
+     * Null means the phone sent on a channel we never offered, which is handled by ignoring it: an
+     * auxiliary display must never be able to cost the main session.
+     */
+    @Synchronized
+    private fun auxLane(): VideoLane? {
+        auxVideoLane?.let { return it }
+        if (!settings.auxDisplayEnabled) return null
+        val decoder = App.provide(context).requireAuxVideoDecoder()
+        // Recovery cycles focus on this channel alone, so the main picture never pays for it.
+        val onCorrupted = { requestAuxKeyframe("a corrupt frame") }
+        val lane = VideoLane(Channel.ID_VID2, AapVideo(decoder, settings, onCorrupted), "AapTransport:Handler::VideoAux") {
+            sendMediaAck(it)
         }
-        val size = message.size
-        val copy = obtainVideoBuffer(size)
-        System.arraycopy(message.data, 0, copy, 0, size)
-        val queued = AapMessage(channel, message.flags, message.type, message.dataOffset, size, copy)
-        videoBacklog.incrementAndGet()
-        handler.post {
-            try {
-                aapVideo.process(queued)
-            } catch (e: Exception) {
-                AppLog.e("Error processing video message", e)
-            } finally {
-                videoBacklog.decrementAndGet()
-                recycleVideoBuffer(copy)
-                if (acks) sendMediaAck(channel)
-            }
-        }
-        return isPayload
+        lane.start()
+        auxVideoLane = lane
+        AppLog.i("AapTransport: the auxiliary display's video lane is open")
+        return lane
     }
 
     /** Video messages handed over and not yet processed. See [TransportDispatchMonitor]. */
-    internal fun videoQueueDepth(): Int = videoBacklog.get()
+    internal fun videoQueueDepth(): Int = videoLane.queueDepth()
 
     /** Video messages shed for the life of this transport, because the backlog was at its ceiling. */
-    internal fun videoShedCount(): Long = videoShedTotal.get()
+    internal fun videoShedCount(): Long = videoLane.shedCount()
 
-    /**
-     * The reader's framing audit found a run short of the bytes its first fragment declared.
-     *
-     * Posted rather than called so it lands on the video thread in front of the run's last
-     * fragment, which is the message that consumes it. See [AapVideo.onFragmentRunHoled].
-     */
+    /** The reader's framing audit found a run short of the bytes its first fragment declared. */
     internal fun dispatchVideoRunHoled(discardAssembledUnit: Boolean) {
-        val handler = videoHandler ?: return
-        handler.post { aapVideo.onFragmentRunHoled(discardAssembledUnit) }
-    }
-
-    private fun obtainVideoBuffer(size: Int): ByteArray {
-        while (true) {
-            val pooled = videoBufferPool.poll() ?: return ByteArray(maxOf(size, MIN_VIDEO_BUFFER_BYTES))
-            if (pooled.size >= size) return pooled
-        }
-    }
-
-    private fun recycleVideoBuffer(buffer: ByteArray) {
-        if (videoBufferPool.size < VIDEO_BUFFER_POOL_LIMIT) videoBufferPool.offer(buffer)
+        videoLane.runHoled(discardAssembledUnit)
     }
 
     /**
@@ -879,10 +860,10 @@ class AapTransport(
         // previous phone would read as a live link for the first seconds of this one.
         resetSessionObservations()
         resetMicrophone()
+        lastAuxCycleMs = 0L
+        auxCycleStopExpected = false
 
-        videoThread = HandlerThread("AapTransport:Handler::Video", Process.THREAD_PRIORITY_DISPLAY)
-        videoThread!!.start()
-        videoHandler = Handler(videoThread!!.looper)
+        videoLane.start()
 
         sendThread = HandlerThread("AapTransport:Handler::Send", Process.THREAD_PRIORITY_AUDIO)
         sendThread!!.start()
@@ -1191,19 +1172,6 @@ class AapTransport(
         private const val MSG_POLL = 1
         private const val MSG_SEND = 2
 
-        /** Pooled video payload copies: enough for a fragment run and the one behind it. */
-        /**
-         * Messages the video thread may be behind before the transport sheds.
-         *
-         * The real ceiling, not a backstop: we announce 12 messages on wireless and 16 on USB, and a
-         * phone held at 200ms a frame reached 256 in under three minutes, 21x the window. Sized so
-         * the worst case is about 16 MB of copies rather than the 350 MB a run with no ceiling
-         * reached. Only that artificial hold has reached it; the same route off it sits at 2 to 5.
-         */
-        private const val VIDEO_BACKLOG_LIMIT = 256
-
-        private const val VIDEO_BUFFER_POOL_LIMIT = 8
-        private const val MIN_VIDEO_BUFFER_BYTES = 64 * 1024
         // Maximum wall-clock time allowed for the version-exchange phase of the AAP handshake.
         // Prevents the retry loop from blocking for minutes on an unresponsive USB device.
         private const val HANDSHAKE_TIMEOUT_MS = 10_000L

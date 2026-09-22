@@ -20,6 +20,7 @@ import android.net.NetworkInfo
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import android.os.Build
+import android.os.Bundle
 import android.os.IBinder
 import android.os.Looper
 import android.os.PowerManager
@@ -49,6 +50,7 @@ import com.andrerinas.openheadunit.utils.AppPermissions
 import com.andrerinas.openheadunit.utils.BluetoothAddressSeedPolicy
 import com.andrerinas.openheadunit.utils.CarLauncherManager
 import com.andrerinas.openheadunit.utils.BluetoothHelper
+import com.andrerinas.openheadunit.utils.DisplayTargets
 import com.andrerinas.openheadunit.utils.DummyVpnPolicy
 import com.andrerinas.openheadunit.utils.ToastUtils
 import com.andrerinas.openheadunit.aap.protocol.messages.NightModeEvent
@@ -904,7 +906,7 @@ class AapService : Service() {
                 val projectionIntent = AapProjectionActivity.intent(this).apply {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
                 }
-                startActivity(projectionIntent)
+                startActivity(projectionIntent, DisplayTargets.projectionLaunchOptions(this, App.provide(this).settings))
             } catch (e: Exception) {
                 AppLog.e("WakeDetect: failed to launch projection: ${e.message}")
             }
@@ -1346,6 +1348,9 @@ class AapService : Service() {
         }
 
         val canOverlay = AppPermissions.isOverlayGranted(this)
+        // The chosen display has to reach every route, not just the direct one, or the projection
+        // lands on the built-in panel whenever the overlay or the notification answers.
+        val displayOptions = DisplayTargets.projectionLaunchOptions(this, App.provide(this).settings)
         val strategy = ActivityLaunchPolicy.chooseLaunchStrategy(
             Build.VERSION.SDK_INT, canOverlay, App.hasStartedActivity
         )
@@ -1355,13 +1360,13 @@ class AapService : Service() {
             "foreground=${App.hasStartedActivity})")
         when (strategy) {
             ActivityLaunchPolicy.LaunchStrategy.DIRECT -> {
-                try { startActivity(intent) }
+                try { startActivity(intent, displayOptions) }
                 catch (e: Exception) { AppLog.e("Projection launch failed: ${e.message}") }
             }
             ActivityLaunchPolicy.LaunchStrategy.OVERLAY -> {
-                if (!launchViaOverlayTrampoline(intent)) {
+                if (!launchViaOverlayTrampoline(intent, displayOptions)) {
                     AppLog.w("Projection overlay trampoline failed, trying direct")
-                    try { startActivity(intent) }
+                    try { startActivity(intent, displayOptions) }
                     catch (e: Exception) { AppLog.e("Projection direct fallback failed: ${e.message}") }
                 }
             }
@@ -1370,7 +1375,7 @@ class AapService : Service() {
                     AppLog.w("AapService: no permission to draw over other apps, so the projection " +
                         "is a notification the user has to tap. Turn that permission on to have it " +
                         "come up by itself.")
-                    launchProjectionViaNotification(intent)
+                    launchProjectionViaNotification(intent, displayOptions)
                 } else AppLog.w("AapService: No overlay permission, not raising the projection")
         }
         return true
@@ -1408,10 +1413,12 @@ class AapService : Service() {
         projectionRaiseJob = null
     }
 
-    private fun launchProjectionViaNotification(launchIntent: Intent) {
+    private fun launchProjectionViaNotification(launchIntent: Intent, displayOptions: Bundle? = null) {
         val piFlags = PendingIntent.FLAG_UPDATE_CURRENT or
             (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0)
-        val fullScreenPi = PendingIntent.getActivity(this, PROJECTION_LAUNCH_NOTIFICATION_ID, launchIntent, piFlags)
+        val fullScreenPi = PendingIntent.getActivity(
+            this, PROJECTION_LAUNCH_NOTIFICATION_ID, launchIntent, piFlags, displayOptions
+        )
 
         val notification = NotificationCompat.Builder(this, App.bootStartChannel)
             .setSmallIcon(R.drawable.ic_stat_aa)
@@ -3297,7 +3304,7 @@ class AapService : Service() {
         return launchViaOverlayTrampoline(launchIntent)
     }
 
-    private fun launchViaOverlayTrampoline(launchIntent: Intent): Boolean {
+    private fun launchViaOverlayTrampoline(launchIntent: Intent, displayOptions: Bundle? = null): Boolean {
         val wm = getSystemService(WINDOW_SERVICE) as WindowManager
         val overlayType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
@@ -3315,7 +3322,7 @@ class AapService : Service() {
         val view = View(this)
         return try {
             wm.addView(view, params)
-            startActivity(launchIntent)
+            startActivity(launchIntent, displayOptions)
             AppLog.i("Overlay trampoline: startActivity succeeded")
             true
         } catch (e: Exception) {

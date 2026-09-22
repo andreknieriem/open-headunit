@@ -17,6 +17,9 @@ import com.andrerinas.openheadunit.aap.protocol.proto.Sensors
 import com.andrerinas.openheadunit.connection.wifi.direct.WifiBandCapability
 import com.andrerinas.openheadunit.decoder.video.VideoDecoder
 import com.andrerinas.openheadunit.utils.AppLog
+import com.andrerinas.openheadunit.utils.DisplayTargets
+import com.andrerinas.openheadunit.utils.Settings
+import com.andrerinas.openheadunit.decoder.video.AuxDisplayProfilePolicy
 import com.andrerinas.openheadunit.utils.HeadUnitScreenConfig
 import com.andrerinas.openheadunit.aap.AudioSessionConfig
 import com.google.protobuf.Message
@@ -25,10 +28,60 @@ internal class ServiceDiscoveryResponse(context: Context, audioConfig: AudioSess
     : AapMessage(Channel.ID_CTR, Control.ControlMsgType.MESSAGE_SERVICE_DISCOVERY_RESPONSE_VALUE, makeProto(context, audioConfig)) {
 
     companion object {
+        /**
+         * A second video sink for an auxiliary display, or null when there is nothing to announce.
+         *
+         * AUXILIARY by default: a cluster's content is chosen by the phone from its own settings,
+         * and only an auxiliary display honours initial_content_keycode.
+         */
+        private fun auxVideoService(context: Context, settings: Settings): Control.Service? {
+            if (!settings.auxDisplayEnabled) return null
+            val projectionDisplayId = DisplayTargets.choose(context, settings).displayId
+            val panel = DisplayTargets.list(context).firstOrNull {
+                it.displayId == settings.auxDisplayId && it.isUsable && it.displayId != projectionDisplayId
+            }
+            if (panel == null) {
+                AppLog.w("[ServiceDiscovery] the auxiliary display ${settings.auxDisplayId} is not " +
+                    "available, so one display is announced")
+                return null
+            }
+            val profile = AuxDisplayProfilePolicy.profileFor(panel.widthPx, panel.heightPx, panel.densityDpi)
+            val role = settings.auxDisplayRole
+            val keycode = if (AuxDisplayProfilePolicy.announcesContent(role)) {
+                AuxDisplayProfilePolicy.contentKeycodeOrDefault(settings.auxDisplayContent)
+            } else null
+            AppLog.i("[ServiceDiscovery] Announcing an auxiliary display on ${Channel.name(Channel.ID_VID2)}: " +
+                "${panel.name} ${panel.widthPx}x${panel.heightPx} as ${profile.resolution}, margins " +
+                "${profile.widthMargin}x${profile.heightMargin}, density ${profile.density}, " +
+                "role=$role, content ${keycode ?: "the phone's choice"}")
+            return Control.Service.newBuilder().also { service ->
+                service.id = Channel.ID_VID2
+                service.mediaSinkService = Control.Service.MediaSinkService.newBuilder().also { sink ->
+                    // H.264 baseline, which is the only codec the protocol allows a video sink.
+                    sink.availableType = Media.MediaCodecType.MEDIA_CODEC_VIDEO_H264_BP
+                    sink.audioType = Media.AudioStreamType.NONE
+                    sink.displayId = 1
+                    sink.displayType = AuxDisplayProfilePolicy.displayType(role)
+                    keycode?.let { sink.initialContentKeycode = it }
+                    sink.addVideoConfigs(Control.Service.MediaSinkService.VideoConfiguration.newBuilder().apply {
+                        codecResolution = profile.resolution
+                        frameRate = profile.frameRate
+                        setDensity(profile.density)
+                        setMarginWidth(profile.widthMargin)
+                        setMarginHeight(profile.heightMargin)
+                        setVideoCodecType(Media.MediaCodecType.MEDIA_CODEC_VIDEO_H264_BP)
+                    }.build())
+                }.build()
+            }.build()
+        }
+
         private fun makeProto(context: Context, audioConfig: AudioSessionConfig): Message {
             val settings = App.provide(context).settings
-            // Initialize HeadUnitScreenConfig with actual physical screen dimensions
-            HeadUnitScreenConfig.init(context, context.resources.displayMetrics, settings)
+            // Measure the display the projection will actually use. The geometry goes out once, in
+            // this message, and cannot be renegotiated, so a reading taken from the built-in panel
+            // while the picture lives on an external one is wrong for the whole session.
+            val screenContext = DisplayTargets.contextFor(context, DisplayTargets.choose(context, settings).displayId)
+            HeadUnitScreenConfig.init(screenContext, screenContext.resources.displayMetrics, settings)
 
             val services = mutableListOf<Control.Service>()
 
@@ -136,7 +189,20 @@ internal class ServiceDiscoveryResponse(context: Context, audioConfig: AudioSess
                 }.build()
             }.build()
 
-            services.add(video)
+            // The auxiliary display, when the user asked for one and it is attached. It goes on its
+            // own channel: a second config on the video channel is what the phone ends the session
+            // over, with MULTIPLE_DISPLAY_CONFIGS.
+            val auxVideo = auxVideoService(context, settings)
+            if (auxVideo == null) {
+                services.add(video)
+            } else {
+                // Declared only here, so a unit without a second display sends the bytes it always did.
+                services.add(video.toBuilder().also { builder ->
+                    builder.mediaSinkServiceBuilder.displayId = 0
+                    builder.mediaSinkServiceBuilder.displayType = Control.DisplayType.DISPLAY_TYPE_MAIN
+                }.build())
+                services.add(auxVideo)
+            }
 
             val input = Control.Service.newBuilder().also { service ->
                 service.id = Channel.ID_INP

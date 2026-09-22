@@ -11,6 +11,7 @@ import android.media.AudioManager
 import android.os.Build
 import com.andrerinas.openheadunit.input.MediaKeyRoutingPolicy
 import com.andrerinas.openheadunit.decoder.video.VideoFaultInjector
+import com.andrerinas.openheadunit.decoder.video.AuxDisplayProfilePolicy
 import com.andrerinas.openheadunit.decoder.video.DeviceMemoryProfile
 import com.andrerinas.openheadunit.decoder.audio.PlaybackFocusPolicy
 import com.andrerinas.openheadunit.aap.VehicleTypePolicy
@@ -1004,6 +1005,41 @@ class Settings(private val context: Context) {
     var narrowBandProfileCap: Boolean
         get() = prefs.getBoolean("narrow-band-profile-cap", true)
         set(value) { prefs.edit().putBoolean("narrow-band-profile-cap", value).apply() }
+
+    /** Which Android display the projection uses, by [DisplayTargetPolicy.Mode] ordinal. */
+    var preferredDisplayMode: Int
+        get() = prefs.getInt("preferred-display-mode", DisplayTargetPolicy.Mode.DEFAULT.ordinal)
+        set(value) { prefs.edit().putInt("preferred-display-mode", value).apply() }
+
+    /** The display id the user picked, honoured only while [preferredDisplayMode] is SECONDARY. */
+    var preferredDisplayId: Int
+        get() = prefs.getInt("preferred-display-id", DisplayTargetPolicy.DEFAULT_DISPLAY_ID)
+        set(value) { prefs.edit().putInt("preferred-display-id", value).apply() }
+
+    /**
+     * Whether to ask the phone for a second video stream for an auxiliary display.
+     *
+     * Off by default, and while it is off the service discovery bytes are the ones every release
+     * before this sent.
+     */
+    var auxDisplayEnabled: Boolean
+        get() = prefs.getBoolean("aux-display-enabled", false)
+        set(value) { prefs.edit().putBoolean("aux-display-enabled", value).apply() }
+
+    /** The Android display the auxiliary stream is shown on. */
+    var auxDisplayId: Int
+        get() = prefs.getInt("aux-display-id", DisplayTargetPolicy.DEFAULT_DISPLAY_ID)
+        set(value) { prefs.edit().putInt("aux-display-id", value).apply() }
+
+    /** Whether the second sink is announced as an auxiliary display or as the instrument cluster. */
+    var auxDisplayRole: AuxDisplayProfilePolicy.Role
+        get() = AuxDisplayProfilePolicy.roleOrDefault(prefs.getString("aux-display-role", null))
+        set(value) { prefs.edit().putString("aux-display-role", value.name).apply() }
+
+    /** What the auxiliary display opens with: the navigation map, or the turn card. */
+    var auxDisplayContent: Int
+        get() = prefs.getInt("aux-display-content", AuxDisplayProfilePolicy.KEYCODE_NAVIGATION)
+        set(value) { prefs.edit().putInt("aux-display-content", value).apply() }
 
     var hasAcceptedDisclaimer: Boolean
         get() = prefs.getBoolean("has-accepted-disclaimer", false)

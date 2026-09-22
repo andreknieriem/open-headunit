@@ -44,6 +44,9 @@ import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.BluetoothHelper
 import com.andrerinas.openheadunit.utils.DisplayTargets
 import com.andrerinas.openheadunit.view.AuxDisplayPresentation
+import com.andrerinas.openheadunit.secondscreen.SecondScreenOutputPolicy
+import com.andrerinas.openheadunit.secondscreen.SecondScreenHub
+import com.andrerinas.openheadunit.decoder.video.AuxDisplayProfilePolicy
 import com.andrerinas.openheadunit.connection.self.SelfModeCallRaisePolicy
 import com.andrerinas.openheadunit.connection.usb.UsbSwitchClaim
 import com.andrerinas.openheadunit.decoder.audio.CallState
@@ -1527,13 +1530,23 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
      */
     private fun showAuxDisplay() {
         if (!settings.auxDisplayEnabled) return
+        if (settings.auxOutput != SecondScreenOutputPolicy.Output.ANDROID_DISPLAY) return
         if (auxPresentation?.isShowing == true) return
         val display = DisplayTargets.display(this, settings.auxDisplayId) ?: run {
             AppLog.w("AapProjectionActivity: the auxiliary display ${settings.auxDisplayId} is not attached")
             return
         }
+        // Read from the panel, not the announcement: this runs before the session's service discovery.
+        val panel = SecondScreenHub.androidDisplayTarget(this, settings) ?: run {
+            AppLog.w("AapProjectionActivity: display ${settings.auxDisplayId} cannot carry a second screen")
+            return
+        }
         try {
-            val presentation = AuxDisplayPresentation(this, display, App.provide(this).requireAuxVideoDecoder()) {
+            // The size announced for this panel says how much margin each frame carries.
+            val (scaleX, scaleY) = AuxDisplayProfilePolicy.marginCropScale(
+                AuxDisplayProfilePolicy.profileFor(panel.widthPx, panel.heightPx, panel.densityDpi)
+            )
+            val presentation = AuxDisplayPresentation(this, display, App.provide(this).requireAuxVideoDecoder(), scaleX, scaleY) {
                 commManager.requestAuxKeyframe("the auxiliary surface was recreated")
             }
             presentation.show()

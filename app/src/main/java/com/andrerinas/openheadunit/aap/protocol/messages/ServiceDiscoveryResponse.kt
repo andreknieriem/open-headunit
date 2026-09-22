@@ -20,6 +20,7 @@ import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.DisplayTargets
 import com.andrerinas.openheadunit.utils.Settings
 import com.andrerinas.openheadunit.decoder.video.AuxDisplayProfilePolicy
+import com.andrerinas.openheadunit.secondscreen.SecondScreenHub
 import com.andrerinas.openheadunit.utils.HeadUnitScreenConfig
 import com.andrerinas.openheadunit.utils.VideoFallbackPolicy
 import com.andrerinas.openheadunit.aap.AudioSessionConfig
@@ -34,23 +35,14 @@ internal class ServiceDiscoveryResponse(context: Context, audioConfig: AudioSess
          * auxiliary display honours initial_content_keycode; the phone picks a cluster's content.
          */
         private fun auxDisplayServices(context: Context, settings: Settings): List<Control.Service> {
-            if (!settings.auxDisplayEnabled) return emptyList()
-            val projectionDisplayId = DisplayTargets.choose(context, settings).displayId
-            val panel = DisplayTargets.list(context).firstOrNull {
-                it.displayId == settings.auxDisplayId && it.isUsable && it.displayId != projectionDisplayId
-            }
-            if (panel == null) {
-                AppLog.w("[ServiceDiscovery] the auxiliary display ${settings.auxDisplayId} is not " +
-                    "available, so one display is announced")
-                return emptyList()
-            }
+            val panel = SecondScreenHub.announce(context, settings) ?: return emptyList()
             val profile = AuxDisplayProfilePolicy.profileFor(panel.widthPx, panel.heightPx, panel.densityDpi)
             val role = settings.auxDisplayRole
             val keycode = if (AuxDisplayProfilePolicy.announcesContent(role)) {
                 AuxDisplayProfilePolicy.contentKeycodeOrDefault(settings.auxDisplayContent)
             } else null
             AppLog.i("[ServiceDiscovery] Announcing an auxiliary display on ${Channel.name(Channel.ID_VID2)}: " +
-                "${panel.name} ${panel.widthPx}x${panel.heightPx} as ${profile.resolution}, margins " +
+                "${settings.auxOutput} ${panel.widthPx}x${panel.heightPx} as ${profile.resolution}, margins " +
                 "${profile.widthMargin}x${profile.heightMargin}, density ${profile.density}, " +
                 "role=$role, content ${keycode ?: "the phone's choice"}, input on ${Channel.name(Channel.ID_INP2)}")
             return AuxDisplayAnnouncement.services(profile, role, keycode)

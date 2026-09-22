@@ -17,6 +17,17 @@ class UsbDisplayAdapterPolicyTest {
     }
 
     @Test
+    fun `an Open Headunit display is recognised by its interface, whatever its ids`() {
+        val display = UsbDisplayAdapterPolicy.InterfaceId(0xFF, 0x4F, 0x44)
+        assertEquals(UsbDisplayAdapterPolicy.Kind.USB_DISPLAY, UsbDisplayAdapterPolicy.kindOf(0x1D6B, 0x0104, listOf(display)))
+        val gadget = UsbDeviceIdentityPolicy.Device(
+            0x1D6B, 0x0104, 0x00,
+            listOf(UsbDeviceIdentityPolicy.Interface(0xFF, 0x4F, 0x44, hasBulkIn = true, hasBulkOut = true)),
+        )
+        assertFalse(UsbDeviceIdentityPolicy.evaluate(gadget).accepted)
+    }
+
+    @Test
     fun `an adapter is never taken for a phone, even with the accessory triple`() {
         val vendorBulk = UsbDeviceIdentityPolicy.Interface(0xFF, 0xFF, 0x00, hasBulkIn = true, hasBulkOut = true)
         val device = UsbDeviceIdentityPolicy.Device(0x534D, 0x6021, 0x00, listOf(vendorBulk))

@@ -43,5 +43,6 @@
     <usb-device vendor-id="21325" product-id="24609" />  <!-- 0x534D:0x6021 MacroSilicon MS9120 -->
     <usb-device vendor-id="21325" product-id="2081" />   <!-- 0x534D:0x0821 MacroSilicon MS912x -->
     <usb-device vendor-id="13407" product-id="37170" />  <!-- 0x345F:0x9132 MacroSilicon MS9132 -->
+    <usb-device class="255" subclass="79" protocol="68" />  <!-- Open Headunit USB display, any ids -->
 
 </resources>

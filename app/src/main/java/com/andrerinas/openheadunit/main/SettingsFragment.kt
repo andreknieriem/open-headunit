@@ -63,6 +63,9 @@ import com.andrerinas.openheadunit.utils.AppPermissions
 import com.andrerinas.openheadunit.utils.AppThemeManager
 import com.andrerinas.openheadunit.decoder.video.AuxDisplayProfilePolicy
 import com.andrerinas.openheadunit.secondscreen.SecondScreenOutputPolicy
+import com.andrerinas.openheadunit.connection.usb.UsbReceiver
+import com.andrerinas.openheadunit.secondscreen.SecondScreenHub
+import com.andrerinas.openheadunit.secondscreen.usbdisplay.UsbDisplayProbe
 import com.andrerinas.openheadunit.secondscreen.UsbDisplayAdapterPolicy
 import com.andrerinas.openheadunit.secondscreen.ms912x.Ms912xMode
 import com.andrerinas.openheadunit.secondscreen.ms912x.Ms912xModes
@@ -152,7 +155,8 @@ class SettingsFragment : Fragment() {
         "gpsNavigation",
         // Graphic
         "resolution", "dpiPixelDensity", "viewMode", "screenOrientation", "projectionDisplay",
-        "auxDisplay", "auxAndroidDisplay", "auxNetworkSize", "auxNetworkPort", "auxMs912xMode", "auxMs912xFormat", "auxDisplayRole", "auxDisplayContent", "startInFullscreenMode",
+        "auxDisplay", "auxAndroidDisplay", "auxNetworkSize", "auxNetworkPort", "auxNetworkHint", "auxMs912xMode", "auxMs912xFormat",
+        "auxMs912xHint", "auxUsbDisplayStatus", "auxUsbDisplayCheck", "auxDisplayRole", "auxDisplayContent", "startInFullscreenMode",
         // Theming
         "theming", "loadingScreen", "customization",
         // Video
@@ -4743,11 +4747,38 @@ class SettingsFragment : Fragment() {
         ))
     }
 
+    /** Whether an Open Headunit USB display is attached, what it last said, and a way to ask it. */
+    private fun addAuxUsbDisplayRows(items: MutableList<SettingItem>) {
+        val usb = requireContext().getSystemService(Context.USB_SERVICE) as? UsbManager
+        val found = usb?.let { UsbDisplayProbe.find(it) }
+        val last = settings.usbDisplayLastTarget
+        val status = when {
+            found == null -> getString(R.string.aux_usb_display_missing)
+            last == null -> getString(R.string.aux_usb_display_unread)
+            else -> getString(R.string.aux_usb_display_ready, last.widthPx, last.heightPx, last.densityDpi)
+        }
+        items.add(SettingItem.InfoBanner(stableId = "auxUsbDisplayStatus", textResId = R.string.aux_usb_display_unread, text = status))
+        if (found == null || usb == null) return
+        items.add(SettingItem.ActionButton(
+            stableId = "auxUsbDisplayCheck",
+            textResId = R.string.aux_usb_display_check,
+            onClick = {
+                if (!usb.hasPermission(found.device)) {
+                    usb.requestPermission(found.device, UsbReceiver.createPermissionPendingIntent(requireContext()))
+                } else {
+                    SecondScreenHub.usbDisplayTarget(requireContext(), settings)
+                    updateSettingsList()
+                }
+            }
+        ))
+    }
+
     /** The second-screen outputs this build offers, in the order the picker lists them. */
     private val offeredAuxOutputs = listOf(
         SecondScreenOutputPolicy.Output.ANDROID_DISPLAY,
         SecondScreenOutputPolicy.Output.NETWORK,
         SecondScreenOutputPolicy.Output.MS912X,
+        SecondScreenOutputPolicy.Output.USB_DISPLAY,
     )
 
     private fun auxOutputLabel(output: SecondScreenOutputPolicy.Output): String = getString(when (output) {
@@ -4786,6 +4817,7 @@ class SettingsFragment : Fragment() {
             SecondScreenOutputPolicy.Output.ANDROID_DISPLAY -> addAuxAndroidDisplayRow(items)
             SecondScreenOutputPolicy.Output.NETWORK -> addAuxNetworkRows(items)
             SecondScreenOutputPolicy.Output.MS912X -> addAuxMs912xRows(items)
+            SecondScreenOutputPolicy.Output.USB_DISPLAY -> addAuxUsbDisplayRows(items)
             else -> {}
         }
 

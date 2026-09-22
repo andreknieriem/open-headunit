@@ -1036,6 +1036,24 @@ class Settings(private val context: Context) {
         get() = Ms912xModes.formatOf(prefs.getString("ms912x-format", null))
         set(value) { prefs.edit().putString("ms912x-format", value.name).apply() }
 
+    /**
+     * The size the Open Headunit USB display last reported, so it can be announced when the device
+     * cannot be asked in time. Null until one has answered.
+     */
+    var usbDisplayLastTarget: SecondScreenOutputPolicy.Target?
+        get() {
+            val w = prefs.getInt("usb-display-width", 0)
+            val h = prefs.getInt("usb-display-height", 0)
+            return if (w > 0 && h > 0) SecondScreenOutputPolicy.Target(w, h, prefs.getInt("usb-display-dpi", 160)) else null
+        }
+        set(value) {
+            prefs.edit()
+                .putInt("usb-display-width", value?.widthPx ?: 0)
+                .putInt("usb-display-height", value?.heightPx ?: 0)
+                .putInt("usb-display-dpi", value?.densityDpi ?: 160)
+                .apply()
+        }
+
     /** The Android display the auxiliary stream is shown on. */
     var auxDisplayId: Int
         get() = prefs.getInt("aux-display-id", DisplayTargetPolicy.DEFAULT_DISPLAY_ID)

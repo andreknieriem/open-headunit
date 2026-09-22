@@ -328,6 +328,10 @@
     <string name="aux_ms912x_format_rgb">RGB (sharper; not at 1920x1080)</string>
     <string name="aux_ms912x_hint_attached">A MacroSilicon adapter is plugged in. Pick the mode your panel runs at: the adapter does not scale. When Android asks, let Open Headunit open it by default so the permission is kept.</string>
     <string name="aux_ms912x_hint_missing">No MacroSilicon adapter is plugged in. This works with USB-HDMI adapters built on the MS9120, MS912x or MS9132 (USB IDs 534d:6021, 534d:0821, 345f:9132) and needs Android 5.0 or later.</string>
+    <string name="aux_usb_display_missing">No Open Headunit USB display is plugged in. Any device that follows the protocol works; the reference one is a Raspberry Pi Zero 2 W running the receiver in tools/second-screen.</string>
+    <string name="aux_usb_display_unread">A USB display is plugged in but has not been read yet. Tap below to allow access and read its size.</string>
+    <string name="aux_usb_display_ready">USB display ready: %1$dx%2$d at %3$d dpi. That size is announced at the next connection.</string>
+    <string name="aux_usb_display_check">Allow access and read the USB display</string>
     <string name="aux_display_role">Second screen role</string>
     <string name="change_aux_display_role">Choose the second screen\'s role</string>
     <string name="aux_display_role_auxiliary">Auxiliary display (you choose what it shows)</string>

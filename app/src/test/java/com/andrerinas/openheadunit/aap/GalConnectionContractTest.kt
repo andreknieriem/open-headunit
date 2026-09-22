@@ -42,6 +42,26 @@ class GalConnectionContractTest {
         assertThrows(IllegalStateException::class.java) { sessions.advertise(galTestContract().media, offer) }
     }
 
+    @Test fun `a second video sink has its own offer, generation and ack owner`() {
+        val offer = GalMediaOffer.from(galTestDiscovery(auxVideo = true))
+        assertEquals(Media.MediaCodecType.MEDIA_CODEC_VIDEO_H264_BP_VALUE, offer.codec(Channel.ID_VID2))
+        assertEquals(Control.Service.MediaSinkService.VideoConfiguration.VideoCodecResolutionType._800x480,
+            (offer.format(Channel.ID_VID2, 0) as GalMediaFormat.Video).value.codecResolution)
+        assertNull(GalMediaOffer.from(galTestDiscovery()).codec(Channel.ID_VID2))
+        val sessions = galTestSessions(auxVideo = true)
+        val start = Media.Start.newBuilder().setConfigurationIndex(0)
+        val main = sessions.start(Channel.ID_VID, start.setSessionId(5).build())!!
+        val aux = sessions.start(Channel.ID_VID2, start.setSessionId(5)
+            .setFlowControl(Media.Start.FlowControl.ACKLESS).build())!!
+        assertNotEquals(main.generation, aux.generation)
+        assertNull(aux.previousGeneration)
+        assertEquals(5, sessions.ackSession(Channel.ID_VID))
+        assertNull(sessions.ackSession(Channel.ID_VID2))
+        sessions.stop(Channel.ID_VID2)
+        assertTrue(sessions.current(Channel.ID_VID)!!.active)
+        assertEquals(GalMediaPolicy.NO_OPTIONS, galTestContract().media.optionsFor(Channel.ID_VID2))
+    }
+
     @Test fun `session IDs and ack mode are one atomic owner including reused IDs and Stop`() {
         val sessions = galTestSessions()
         val legacy = Media.Start.newBuilder().setSessionId(12).setConfigurationIndex(0).build()

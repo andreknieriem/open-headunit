@@ -21,11 +21,12 @@ class ScreenSettingsHashTest {
         forcedScale: Boolean = false,
         normalisation: ScreenOrientationPolicy.Normalisation = ScreenOrientationPolicy.Normalisation.LANDSCAPE,
         dpiAutoLayout: String = "",
+        displayId: Int = DisplayTargetPolicy.DEFAULT_DISPLAY_ID,
     ) = ScreenSettingsHash.of(
         resolutionId, dpiPixelDensity, pixelAspectRatioE4,
         insetLeft, insetTop, insetRight, insetBottom,
         viewMode, screenOrientation, fullscreenMode, videoFitMode, forcedScale, normalisation,
-        dpiAutoLayout,
+        dpiAutoLayout, displayId,
     )
 
     @Test
@@ -83,5 +84,13 @@ class ScreenSettingsHashTest {
         val base = hash()
         assertNotEquals(base, hash(dpiAutoLayout = "ONE_APP"))
         assertNotEquals(hash(dpiAutoLayout = "ONE_APP"), hash(dpiAutoLayout = "COMPACT"))
+    }
+
+    @Test
+    fun `a reading from another display does not count`() {
+        val base = hash()
+        assertNotEquals(base, hash(displayId = 1))
+        assertNotEquals(hash(displayId = 1), hash(displayId = 2))
+        assertNotEquals(hash(dpiAutoLayout = "ONE_APP"), hash(dpiAutoLayout = "ONE_APP", displayId = 1))
     }
 }

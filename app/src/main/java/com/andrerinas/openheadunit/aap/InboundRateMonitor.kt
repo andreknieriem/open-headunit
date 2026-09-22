@@ -33,6 +33,8 @@ class InboundRateMonitor {
     private var videoMessages = 0
     private var audioMessages = 0
     private var otherMessages = 0
+    private var auxVideoBytes = 0L
+    private var auxVideoMessages = 0
 
     /**
      * Feed one decrypted inbound message and get a report when a window closes.
@@ -49,6 +51,9 @@ class InboundRateMonitor {
         val size = if (bytes > 0) bytes.toLong() else 0L
         when {
             channel == Channel.ID_VID -> { videoBytes += size; videoMessages++ }
+            // Its own bucket rather than folded into video: every bandwidth reading in the tracker
+            // is against the main stream, and a second display would silently inflate all of them.
+            channel == Channel.ID_VID2 -> { auxVideoBytes += size; auxVideoMessages++ }
             Channel.isAudio(channel) -> { audioBytes += size; audioMessages++ }
             else -> { otherBytes += size; otherMessages++ }
         }
@@ -64,6 +69,8 @@ class InboundRateMonitor {
             videoMessages = videoMessages,
             audioMessages = audioMessages,
             otherMessages = otherMessages,
+            auxVideoBytes = auxVideoBytes,
+            auxVideoMessages = auxVideoMessages,
         )
 
         windowStartMs = nowMs
@@ -73,6 +80,8 @@ class InboundRateMonitor {
         videoMessages = 0
         audioMessages = 0
         otherMessages = 0
+        auxVideoBytes = 0L
+        auxVideoMessages = 0
         return report
     }
 
@@ -97,14 +106,21 @@ class InboundRateMonitor {
         val videoMessages: Int,
         val audioMessages: Int,
         val otherMessages: Int,
+        val auxVideoBytes: Long = 0L,
+        val auxVideoMessages: Int = 0,
     ) {
         /** Whole kB per second, which is the resolution anything here is read at. */
         fun kbPerSecond(bytes: Long): Long = if (windowMs <= 0L) 0L else bytes * 1000 / windowMs / 1024
 
+        // The auxiliary display is named only when it carried something, so a unit without one
+        // prints exactly the line it always did and every existing grep still matches.
         override fun toString(): String =
             "inbound rate over ${windowMs}ms: video=${kbPerSecond(videoBytes)}kB/s ($videoMessages msgs), " +
                 "audio=${kbPerSecond(audioBytes)}kB/s ($audioMessages msgs), " +
-                "other=${kbPerSecond(otherBytes)}kB/s ($otherMessages msgs)"
+                "other=${kbPerSecond(otherBytes)}kB/s ($otherMessages msgs)" +
+                if (auxVideoMessages > 0) {
+                    ", auxVideo=${kbPerSecond(auxVideoBytes)}kB/s ($auxVideoMessages msgs)"
+                } else ""
     }
 
     companion object {

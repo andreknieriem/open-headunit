@@ -10,7 +10,7 @@ internal fun galTestContract(profile: GalProfile = GalProfile.GAL_6_1): GalConne
         GalDisplaySettings(false, false, false))
 }
 
-internal fun galTestDiscovery(videoFallback: Boolean = false): Control.ServiceDiscoveryResponse {
+internal fun galTestDiscovery(videoFallback: Boolean = false, auxVideo: Boolean = false): Control.ServiceDiscoveryResponse {
     val response = Control.ServiceDiscoveryResponse.newBuilder().setMake("test").setModel("test")
         .setYear("2026").setVehicleId("test").setDriverPosition(Control.DriverPosition.DRIVER_POSITION_LEFT)
         .setHeadUnitMake("test").setHeadUnitModel("test").setHeadUnitSoftwareBuild("test")
@@ -35,8 +35,14 @@ internal fun galTestDiscovery(videoFallback: Boolean = false): Control.ServiceDi
     if (videoFallback) sink.addVideoConfigs(video.toBuilder()
         .setCodecResolution(Control.Service.MediaSinkService.VideoConfiguration.VideoCodecResolutionType._800x480))
     response.addServices(Control.Service.newBuilder().setId(Channel.ID_VID).setMediaSinkService(sink))
+    if (auxVideo) response.addServices(Control.Service.newBuilder().setId(Channel.ID_VID2).setMediaSinkService(
+        Control.Service.MediaSinkService.newBuilder().setAvailableType(Media.MediaCodecType.MEDIA_CODEC_VIDEO_H264_BP)
+            .addVideoConfigs(video.toBuilder().setCodecResolution(
+                Control.Service.MediaSinkService.VideoConfiguration.VideoCodecResolutionType._800x480))))
     return response.build()
 }
 
-internal fun galTestSessions(profile: GalProfile = GalProfile.GAL_6_1): GalMediaSessions =
-    GalMediaSessions().apply { advertise(galTestContract(profile).media, GalMediaOffer.from(galTestDiscovery())) }
+internal fun galTestSessions(profile: GalProfile = GalProfile.GAL_6_1, auxVideo: Boolean = false): GalMediaSessions =
+    GalMediaSessions().apply {
+        advertise(galTestContract(profile).media, GalMediaOffer.from(galTestDiscovery(auxVideo = auxVideo)))
+    }

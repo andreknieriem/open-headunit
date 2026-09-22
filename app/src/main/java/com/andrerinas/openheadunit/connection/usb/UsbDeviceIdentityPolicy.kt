@@ -1,5 +1,7 @@
 package com.andrerinas.openheadunit.connection.usb
 
+import com.andrerinas.openheadunit.secondscreen.UsbDisplayAdapterPolicy
+
 /**
  * Decides whether a USB device is something we can project Android Auto to, and says why.
  *
@@ -90,6 +92,12 @@ object UsbDeviceIdentityPolicy {
 
         if (isInAccessoryMode(device.vendorId, device.productId)) {
             return Verdict(true, "already in accessory mode")
+        }
+
+        // A second-screen adapter is ours to drive, never a phone to switch into accessory mode.
+        val ids = device.interfaces.map { UsbDisplayAdapterPolicy.InterfaceId(it.ifaceClass, it.subclass, it.protocol, it.name) }
+        UsbDisplayAdapterPolicy.kindOf(device.vendorId, device.productId, ids)?.let {
+            return Verdict(false, "$it second-screen adapter, not a phone")
         }
 
         // Rarely fires, because a composite device reports class 0 and defers to its interfaces.

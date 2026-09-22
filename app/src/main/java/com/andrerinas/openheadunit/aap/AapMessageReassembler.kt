@@ -57,7 +57,7 @@ internal class AapMessageReassembler(
             // beyond it (1). A 14-byte FIRST can end exactly at the start code. Buffer such
             // short prefixes here and emit a COMPLETE message at LAST instead of letting the
             // video parser discard a valid run. CONTROL traffic never takes this shortcut.
-            val video = channel == Channel.ID_VID && flags and AapMessageFraming.FLAG_BIT_CONTROL == 0 &&
+            val video = Channel.isVideo(channel) && flags and AapMessageFraming.FLAG_BIT_CONTROL == 0 &&
                 fragment.type in 0..1 && fragment.size >= 15
             // Album art can span roughly 1 MiB of metadata. Grow copied messages as bytes
             // arrive instead of reserving the peer's entire declared total up front.
@@ -139,8 +139,8 @@ internal class AapMessageReassembler(
             run.first.flags.toInt() and AapMessageFraming.FLAG_BIT_CONTROL != 0) return
         // Losing CSD also needs video recovery, but only DATA consumes a sender credit.
         // A valid abandoned run was already reported as truncated by the reader audit.
-        if (run.discarded && channel == Channel.ID_VID && run.type in 0..1) onDroppedVideoPayload()
-        if ((Channel.isAudio(channel) || channel == Channel.ID_VID) && run.type == 0) onDroppedMediaData(channel)
+        if (run.discarded && Channel.isVideo(channel) && run.type in 0..1) onDroppedVideoPayload()
+        if ((Channel.isAudio(channel) || Channel.isVideo(channel)) && run.type == 0) onDroppedMediaData(channel)
     }
 
     private fun releaseBytes(run: Run) {

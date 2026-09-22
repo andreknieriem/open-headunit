@@ -697,6 +697,116 @@ public final class Control {
   }
 
   /**
+   * <pre>
+   * Which panel a video sink feeds. The first display must be MAIN; CLUSTER shows what the phone
+   * decides, AUXILIARY shows what the sink's initial_content_keycode asks for.
+   * </pre>
+   *
+   * Protobuf enum {@code com.andrerinas.openheadunit.aap.protocol.proto.DisplayType}
+   */
+  public enum DisplayType
+      implements com.google.protobuf.ProtocolMessageEnum {
+    /**
+     * <code>DISPLAY_TYPE_MAIN = 0;</code>
+     */
+    DISPLAY_TYPE_MAIN(0),
+    /**
+     * <code>DISPLAY_TYPE_CLUSTER = 1;</code>
+     */
+    DISPLAY_TYPE_CLUSTER(1),
+    /**
+     * <code>DISPLAY_TYPE_AUXILIARY = 2;</code>
+     */
+    DISPLAY_TYPE_AUXILIARY(2),
+    ;
+
+    /**
+     * <code>DISPLAY_TYPE_MAIN = 0;</code>
+     */
+    public static final int DISPLAY_TYPE_MAIN_VALUE = 0;
+    /**
+     * <code>DISPLAY_TYPE_CLUSTER = 1;</code>
+     */
+    public static final int DISPLAY_TYPE_CLUSTER_VALUE = 1;
+    /**
+     * <code>DISPLAY_TYPE_AUXILIARY = 2;</code>
+     */
+    public static final int DISPLAY_TYPE_AUXILIARY_VALUE = 2;
+
+
+    public final int getNumber() {
+      return value;
+    }
+
+    /**
+     * @param value The numeric wire value of the corresponding enum entry.
+     * @return The enum associated with the given numeric wire value.
+     * @deprecated Use {@link #forNumber(int)} instead.
+     */
+    @java.lang.Deprecated
+    public static DisplayType valueOf(int value) {
+      return forNumber(value);
+    }
+
+    /**
+     * @param value The numeric wire value of the corresponding enum entry.
+     * @return The enum associated with the given numeric wire value.
+     */
+    public static DisplayType forNumber(int value) {
+      switch (value) {
+        case 0: return DISPLAY_TYPE_MAIN;
+        case 1: return DISPLAY_TYPE_CLUSTER;
+        case 2: return DISPLAY_TYPE_AUXILIARY;
+        default: return null;
+      }
+    }
+
+    public static com.google.protobuf.Internal.EnumLiteMap<DisplayType>
+        internalGetValueMap() {
+      return internalValueMap;
+    }
+    private static final com.google.protobuf.Internal.EnumLiteMap<
+        DisplayType> internalValueMap =
+          new com.google.protobuf.Internal.EnumLiteMap<DisplayType>() {
+            public DisplayType findValueByNumber(int number) {
+              return DisplayType.forNumber(number);
+            }
+          };
+
+    public final com.google.protobuf.Descriptors.EnumValueDescriptor
+        getValueDescriptor() {
+      return getDescriptor().getValues().get(ordinal());
+    }
+    public final com.google.protobuf.Descriptors.EnumDescriptor
+        getDescriptorForType() {
+      return getDescriptor();
+    }
+    public static final com.google.protobuf.Descriptors.EnumDescriptor
+        getDescriptor() {
+      return com.andrerinas.openheadunit.aap.protocol.proto.Control.getDescriptor().getEnumTypes().get(4);
+    }
+
+    private static final DisplayType[] VALUES = values();
+
+    public static DisplayType valueOf(
+        com.google.protobuf.Descriptors.EnumValueDescriptor desc) {
+      if (desc.getType() != getDescriptor()) {
+        throw new java.lang.IllegalArgumentException(
+          "EnumValueDescriptor is not for this type.");
+      }
+      return VALUES[desc.getIndex()];
+    }
+
+    private final int value;
+
+    private DisplayType(int value) {
+      this.value = value;
+    }
+
+    // @@protoc_insertion_point(enum_scope:com.andrerinas.openheadunit.aap.protocol.proto.DisplayType)
+  }
+
+  /**
    * Protobuf enum {@code com.andrerinas.openheadunit.aap.protocol.proto.NavFocusType}
    */
   public enum NavFocusType
@@ -769,7 +879,7 @@ public final class Control {
     }
     public static final com.google.protobuf.Descriptors.EnumDescriptor
         getDescriptor() {
-      return com.andrerinas.openheadunit.aap.protocol.proto.Control.getDescriptor().getEnumTypes().get(4);
+      return com.andrerinas.openheadunit.aap.protocol.proto.Control.getDescriptor().getEnumTypes().get(5);
     }
 
     private static final NavFocusType[] VALUES = values();
@@ -2537,6 +2647,59 @@ public final class Control {
        * @return The availableWhileInCall.
        */
       boolean getAvailableWhileInCall();
+
+      /**
+       * <pre>
+       * Video sinks only. One display per channel: the display ids on the focus and input
+       * messages are deprecated in favour of this.
+       * </pre>
+       *
+       * <code>optional uint32 display_id = 6;</code>
+       * @return Whether the displayId field is set.
+       */
+      boolean hasDisplayId();
+      /**
+       * <pre>
+       * Video sinks only. One display per channel: the display ids on the focus and input
+       * messages are deprecated in favour of this.
+       * </pre>
+       *
+       * <code>optional uint32 display_id = 6;</code>
+       * @return The displayId.
+       */
+      int getDisplayId();
+
+      /**
+       * <code>optional .com.andrerinas.openheadunit.aap.protocol.proto.DisplayType display_type = 7;</code>
+       * @return Whether the displayType field is set.
+       */
+      boolean hasDisplayType();
+      /**
+       * <code>optional .com.andrerinas.openheadunit.aap.protocol.proto.DisplayType display_type = 7;</code>
+       * @return The displayType.
+       */
+      com.andrerinas.openheadunit.aap.protocol.proto.Control.DisplayType getDisplayType();
+
+      /**
+       * <pre>
+       * AUXILIARY sinks only, and only KEYCODE_NAVIGATION (65538) or KEYCODE_TURN_CARD (65544).
+       * An int rather than the keycode enum, which is varint either way on the wire.
+       * </pre>
+       *
+       * <code>optional int32 initial_content_keycode = 8;</code>
+       * @return Whether the initialContentKeycode field is set.
+       */
+      boolean hasInitialContentKeycode();
+      /**
+       * <pre>
+       * AUXILIARY sinks only, and only KEYCODE_NAVIGATION (65538) or KEYCODE_TURN_CARD (65544).
+       * An int rather than the keycode enum, which is varint either way on the wire.
+       * </pre>
+       *
+       * <code>optional int32 initial_content_keycode = 8;</code>
+       * @return The initialContentKeycode.
+       */
+      int getInitialContentKeycode();
     }
     /**
      * Protobuf type {@code com.andrerinas.openheadunit.aap.protocol.proto.Service.MediaSinkService}
@@ -2555,6 +2718,7 @@ public final class Control {
         audioType_ = 0;
         audioConfigs_ = java.util.Collections.emptyList();
         videoConfigs_ = java.util.Collections.emptyList();
+        displayType_ = 0;
       }
 
       @java.lang.Override
@@ -4458,6 +4622,82 @@ public final class Control {
         return availableWhileInCall_;
       }
 
+      public static final int DISPLAY_ID_FIELD_NUMBER = 6;
+      private int displayId_ = 0;
+      /**
+       * <pre>
+       * Video sinks only. One display per channel: the display ids on the focus and input
+       * messages are deprecated in favour of this.
+       * </pre>
+       *
+       * <code>optional uint32 display_id = 6;</code>
+       * @return Whether the displayId field is set.
+       */
+      @java.lang.Override
+      public boolean hasDisplayId() {
+        return ((bitField0_ & 0x00000008) != 0);
+      }
+      /**
+       * <pre>
+       * Video sinks only. One display per channel: the display ids on the focus and input
+       * messages are deprecated in favour of this.
+       * </pre>
+       *
+       * <code>optional uint32 display_id = 6;</code>
+       * @return The displayId.
+       */
+      @java.lang.Override
+      public int getDisplayId() {
+        return displayId_;
+      }
+
+      public static final int DISPLAY_TYPE_FIELD_NUMBER = 7;
+      private int displayType_ = 0;
+      /**
+       * <code>optional .com.andrerinas.openheadunit.aap.protocol.proto.DisplayType display_type = 7;</code>
+       * @return Whether the displayType field is set.
+       */
+      @java.lang.Override public boolean hasDisplayType() {
+        return ((bitField0_ & 0x00000010) != 0);
+      }
+      /**
+       * <code>optional .com.andrerinas.openheadunit.aap.protocol.proto.DisplayType display_type = 7;</code>
+       * @return The displayType.
+       */
+      @java.lang.Override public com.andrerinas.openheadunit.aap.protocol.proto.Control.DisplayType getDisplayType() {
+        com.andrerinas.openheadunit.aap.protocol.proto.Control.DisplayType result = com.andrerinas.openheadunit.aap.protocol.proto.Control.DisplayType.forNumber(displayType_);
+        return result == null ? com.andrerinas.openheadunit.aap.protocol.proto.Control.DisplayType.DISPLAY_TYPE_MAIN : result;
+      }
+
+      public static final int INITIAL_CONTENT_KEYCODE_FIELD_NUMBER = 8;
+      private int initialContentKeycode_ = 0;
+      /**
+       * <pre>
+       * AUXILIARY sinks only, and only KEYCODE_NAVIGATION (65538) or KEYCODE_TURN_CARD (65544).
+       * An int rather than the keycode enum, which is varint either way on the wire.
+       * </pre>
+       *
+       * <code>optional int32 initial_content_keycode = 8;</code>
+       * @return Whether the initialContentKeycode field is set.
+       */
+      @java.lang.Override
+      public boolean hasInitialContentKeycode() {
+        return ((bitField0_ & 0x00000020) != 0);
+      }
+      /**
+       * <pre>
+       * AUXILIARY sinks only, and only KEYCODE_NAVIGATION (65538) or KEYCODE_TURN_CARD (65544).
+       * An int rather than the keycode enum, which is varint either way on the wire.
+       * </pre>
+       *
+       * <code>optional int32 initial_content_keycode = 8;</code>
+       * @return The initialContentKeycode.
+       */
+      @java.lang.Override
+      public int getInitialContentKeycode() {
+        return initialContentKeycode_;
+      }
+
       private byte memoizedIsInitialized = -1;
       @java.lang.Override
       public final boolean isInitialized() {
@@ -4503,6 +4743,15 @@ public final class Control {
         if (((bitField0_ & 0x00000004) != 0)) {
           output.writeBool(5, availableWhileInCall_);
         }
+        if (((bitField0_ & 0x00000008) != 0)) {
+          output.writeUInt32(6, displayId_);
+        }
+        if (((bitField0_ & 0x00000010) != 0)) {
+          output.writeEnum(7, displayType_);
+        }
+        if (((bitField0_ & 0x00000020) != 0)) {
+          output.writeInt32(8, initialContentKeycode_);
+        }
         getUnknownFields().writeTo(output);
       }
 
@@ -4531,6 +4780,18 @@ public final class Control {
         if (((bitField0_ & 0x00000004) != 0)) {
           size += com.google.protobuf.CodedOutputStream
             .computeBoolSize(5, availableWhileInCall_);
+        }
+        if (((bitField0_ & 0x00000008) != 0)) {
+          size += com.google.protobuf.CodedOutputStream
+            .computeUInt32Size(6, displayId_);
+        }
+        if (((bitField0_ & 0x00000010) != 0)) {
+          size += com.google.protobuf.CodedOutputStream
+            .computeEnumSize(7, displayType_);
+        }
+        if (((bitField0_ & 0x00000020) != 0)) {
+          size += com.google.protobuf.CodedOutputStream
+            .computeInt32Size(8, initialContentKeycode_);
         }
         size += getUnknownFields().getSerializedSize();
         memoizedSize = size;
@@ -4564,6 +4825,20 @@ public final class Control {
           if (getAvailableWhileInCall()
               != other.getAvailableWhileInCall()) return false;
         }
+        if (hasDisplayId() != other.hasDisplayId()) return false;
+        if (hasDisplayId()) {
+          if (getDisplayId()
+              != other.getDisplayId()) return false;
+        }
+        if (hasDisplayType() != other.hasDisplayType()) return false;
+        if (hasDisplayType()) {
+          if (displayType_ != other.displayType_) return false;
+        }
+        if (hasInitialContentKeycode() != other.hasInitialContentKeycode()) return false;
+        if (hasInitialContentKeycode()) {
+          if (getInitialContentKeycode()
+              != other.getInitialContentKeycode()) return false;
+        }
         if (!getUnknownFields().equals(other.getUnknownFields())) return false;
         return true;
       }
@@ -4595,6 +4870,18 @@ public final class Control {
           hash = (37 * hash) + AVAILABLE_WHILE_IN_CALL_FIELD_NUMBER;
           hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
               getAvailableWhileInCall());
+        }
+        if (hasDisplayId()) {
+          hash = (37 * hash) + DISPLAY_ID_FIELD_NUMBER;
+          hash = (53 * hash) + getDisplayId();
+        }
+        if (hasDisplayType()) {
+          hash = (37 * hash) + DISPLAY_TYPE_FIELD_NUMBER;
+          hash = (53 * hash) + displayType_;
+        }
+        if (hasInitialContentKeycode()) {
+          hash = (37 * hash) + INITIAL_CONTENT_KEYCODE_FIELD_NUMBER;
+          hash = (53 * hash) + getInitialContentKeycode();
         }
         hash = (29 * hash) + getUnknownFields().hashCode();
         memoizedHashCode = hash;
@@ -4744,6 +5031,9 @@ public final class Control {
           }
           bitField0_ = (bitField0_ & ~0x00000008);
           availableWhileInCall_ = false;
+          displayId_ = 0;
+          displayType_ = 0;
+          initialContentKeycode_ = 0;
           return this;
         }
 
@@ -4811,6 +5101,18 @@ public final class Control {
           if (((from_bitField0_ & 0x00000010) != 0)) {
             result.availableWhileInCall_ = availableWhileInCall_;
             to_bitField0_ |= 0x00000004;
+          }
+          if (((from_bitField0_ & 0x00000020) != 0)) {
+            result.displayId_ = displayId_;
+            to_bitField0_ |= 0x00000008;
+          }
+          if (((from_bitField0_ & 0x00000040) != 0)) {
+            result.displayType_ = displayType_;
+            to_bitField0_ |= 0x00000010;
+          }
+          if (((from_bitField0_ & 0x00000080) != 0)) {
+            result.initialContentKeycode_ = initialContentKeycode_;
+            to_bitField0_ |= 0x00000020;
           }
           result.bitField0_ |= to_bitField0_;
         }
@@ -4920,6 +5222,15 @@ public final class Control {
           if (other.hasAvailableWhileInCall()) {
             setAvailableWhileInCall(other.getAvailableWhileInCall());
           }
+          if (other.hasDisplayId()) {
+            setDisplayId(other.getDisplayId());
+          }
+          if (other.hasDisplayType()) {
+            setDisplayType(other.getDisplayType());
+          }
+          if (other.hasInitialContentKeycode()) {
+            setInitialContentKeycode(other.getInitialContentKeycode());
+          }
           this.mergeUnknownFields(other.getUnknownFields());
           onChanged();
           return this;
@@ -5014,6 +5325,28 @@ public final class Control {
                   bitField0_ |= 0x00000010;
                   break;
                 } // case 40
+                case 48: {
+                  displayId_ = input.readUInt32();
+                  bitField0_ |= 0x00000020;
+                  break;
+                } // case 48
+                case 56: {
+                  int tmpRaw = input.readEnum();
+                  com.andrerinas.openheadunit.aap.protocol.proto.Control.DisplayType tmpValue =
+                      com.andrerinas.openheadunit.aap.protocol.proto.Control.DisplayType.forNumber(tmpRaw);
+                  if (tmpValue == null) {
+                    mergeUnknownVarintField(7, tmpRaw);
+                  } else {
+                    displayType_ = tmpRaw;
+                    bitField0_ |= 0x00000040;
+                  }
+                  break;
+                } // case 56
+                case 64: {
+                  initialContentKeycode_ = input.readInt32();
+                  bitField0_ |= 0x00000080;
+                  break;
+                } // case 64
                 default: {
                   if (!super.parseUnknownField(input, extensionRegistry, tag)) {
                     done = true; // was an endgroup tag
@@ -5634,6 +5967,168 @@ public final class Control {
           onChanged();
           return this;
         }
+
+        private int displayId_ ;
+        /**
+         * <pre>
+         * Video sinks only. One display per channel: the display ids on the focus and input
+         * messages are deprecated in favour of this.
+         * </pre>
+         *
+         * <code>optional uint32 display_id = 6;</code>
+         * @return Whether the displayId field is set.
+         */
+        @java.lang.Override
+        public boolean hasDisplayId() {
+          return ((bitField0_ & 0x00000020) != 0);
+        }
+        /**
+         * <pre>
+         * Video sinks only. One display per channel: the display ids on the focus and input
+         * messages are deprecated in favour of this.
+         * </pre>
+         *
+         * <code>optional uint32 display_id = 6;</code>
+         * @return The displayId.
+         */
+        @java.lang.Override
+        public int getDisplayId() {
+          return displayId_;
+        }
+        /**
+         * <pre>
+         * Video sinks only. One display per channel: the display ids on the focus and input
+         * messages are deprecated in favour of this.
+         * </pre>
+         *
+         * <code>optional uint32 display_id = 6;</code>
+         * @param value The displayId to set.
+         * @return This builder for chaining.
+         */
+        public Builder setDisplayId(int value) {
+
+          displayId_ = value;
+          bitField0_ |= 0x00000020;
+          onChanged();
+          return this;
+        }
+        /**
+         * <pre>
+         * Video sinks only. One display per channel: the display ids on the focus and input
+         * messages are deprecated in favour of this.
+         * </pre>
+         *
+         * <code>optional uint32 display_id = 6;</code>
+         * @return This builder for chaining.
+         */
+        public Builder clearDisplayId() {
+          bitField0_ = (bitField0_ & ~0x00000020);
+          displayId_ = 0;
+          onChanged();
+          return this;
+        }
+
+        private int displayType_ = 0;
+        /**
+         * <code>optional .com.andrerinas.openheadunit.aap.protocol.proto.DisplayType display_type = 7;</code>
+         * @return Whether the displayType field is set.
+         */
+        @java.lang.Override public boolean hasDisplayType() {
+          return ((bitField0_ & 0x00000040) != 0);
+        }
+        /**
+         * <code>optional .com.andrerinas.openheadunit.aap.protocol.proto.DisplayType display_type = 7;</code>
+         * @return The displayType.
+         */
+        @java.lang.Override
+        public com.andrerinas.openheadunit.aap.protocol.proto.Control.DisplayType getDisplayType() {
+          com.andrerinas.openheadunit.aap.protocol.proto.Control.DisplayType result = com.andrerinas.openheadunit.aap.protocol.proto.Control.DisplayType.forNumber(displayType_);
+          return result == null ? com.andrerinas.openheadunit.aap.protocol.proto.Control.DisplayType.DISPLAY_TYPE_MAIN : result;
+        }
+        /**
+         * <code>optional .com.andrerinas.openheadunit.aap.protocol.proto.DisplayType display_type = 7;</code>
+         * @param value The displayType to set.
+         * @return This builder for chaining.
+         */
+        public Builder setDisplayType(com.andrerinas.openheadunit.aap.protocol.proto.Control.DisplayType value) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          bitField0_ |= 0x00000040;
+          displayType_ = value.getNumber();
+          onChanged();
+          return this;
+        }
+        /**
+         * <code>optional .com.andrerinas.openheadunit.aap.protocol.proto.DisplayType display_type = 7;</code>
+         * @return This builder for chaining.
+         */
+        public Builder clearDisplayType() {
+          bitField0_ = (bitField0_ & ~0x00000040);
+          displayType_ = 0;
+          onChanged();
+          return this;
+        }
+
+        private int initialContentKeycode_ ;
+        /**
+         * <pre>
+         * AUXILIARY sinks only, and only KEYCODE_NAVIGATION (65538) or KEYCODE_TURN_CARD (65544).
+         * An int rather than the keycode enum, which is varint either way on the wire.
+         * </pre>
+         *
+         * <code>optional int32 initial_content_keycode = 8;</code>
+         * @return Whether the initialContentKeycode field is set.
+         */
+        @java.lang.Override
+        public boolean hasInitialContentKeycode() {
+          return ((bitField0_ & 0x00000080) != 0);
+        }
+        /**
+         * <pre>
+         * AUXILIARY sinks only, and only KEYCODE_NAVIGATION (65538) or KEYCODE_TURN_CARD (65544).
+         * An int rather than the keycode enum, which is varint either way on the wire.
+         * </pre>
+         *
+         * <code>optional int32 initial_content_keycode = 8;</code>
+         * @return The initialContentKeycode.
+         */
+        @java.lang.Override
+        public int getInitialContentKeycode() {
+          return initialContentKeycode_;
+        }
+        /**
+         * <pre>
+         * AUXILIARY sinks only, and only KEYCODE_NAVIGATION (65538) or KEYCODE_TURN_CARD (65544).
+         * An int rather than the keycode enum, which is varint either way on the wire.
+         * </pre>
+         *
+         * <code>optional int32 initial_content_keycode = 8;</code>
+         * @param value The initialContentKeycode to set.
+         * @return This builder for chaining.
+         */
+        public Builder setInitialContentKeycode(int value) {
+
+          initialContentKeycode_ = value;
+          bitField0_ |= 0x00000080;
+          onChanged();
+          return this;
+        }
+        /**
+         * <pre>
+         * AUXILIARY sinks only, and only KEYCODE_NAVIGATION (65538) or KEYCODE_TURN_CARD (65544).
+         * An int rather than the keycode enum, which is varint either way on the wire.
+         * </pre>
+         *
+         * <code>optional int32 initial_content_keycode = 8;</code>
+         * @return This builder for chaining.
+         */
+        public Builder clearInitialContentKeycode() {
+          bitField0_ = (bitField0_ & ~0x00000080);
+          initialContentKeycode_ = 0;
+          onChanged();
+          return this;
+        }
         @java.lang.Override
         public final Builder setUnknownFields(
             final com.google.protobuf.UnknownFieldSet unknownFields) {
@@ -5748,6 +6243,25 @@ public final class Control {
        * <code>optional .com.andrerinas.openheadunit.aap.protocol.proto.Service.InputSourceService.TouchConfig touchpad = 3;</code>
        */
       com.andrerinas.openheadunit.aap.protocol.proto.Control.Service.InputSourceService.TouchConfigOrBuilder getTouchpadOrBuilder();
+
+      /**
+       * <pre>
+       * The display these inputs belong to, defaulting to the main one.
+       * </pre>
+       *
+       * <code>optional uint32 display_id = 5;</code>
+       * @return Whether the displayId field is set.
+       */
+      boolean hasDisplayId();
+      /**
+       * <pre>
+       * The display these inputs belong to, defaulting to the main one.
+       * </pre>
+       *
+       * <code>optional uint32 display_id = 5;</code>
+       * @return The displayId.
+       */
+      int getDisplayId();
     }
     /**
      * Protobuf type {@code com.andrerinas.openheadunit.aap.protocol.proto.Service.InputSourceService}
@@ -6486,6 +7000,33 @@ public final class Control {
         return touchpad_ == null ? com.andrerinas.openheadunit.aap.protocol.proto.Control.Service.InputSourceService.TouchConfig.getDefaultInstance() : touchpad_;
       }
 
+      public static final int DISPLAY_ID_FIELD_NUMBER = 5;
+      private int displayId_ = 0;
+      /**
+       * <pre>
+       * The display these inputs belong to, defaulting to the main one.
+       * </pre>
+       *
+       * <code>optional uint32 display_id = 5;</code>
+       * @return Whether the displayId field is set.
+       */
+      @java.lang.Override
+      public boolean hasDisplayId() {
+        return ((bitField0_ & 0x00000004) != 0);
+      }
+      /**
+       * <pre>
+       * The display these inputs belong to, defaulting to the main one.
+       * </pre>
+       *
+       * <code>optional uint32 display_id = 5;</code>
+       * @return The displayId.
+       */
+      @java.lang.Override
+      public int getDisplayId() {
+        return displayId_;
+      }
+
       private byte memoizedIsInitialized = -1;
       @java.lang.Override
       public final boolean isInitialized() {
@@ -6521,6 +7062,9 @@ public final class Control {
         if (((bitField0_ & 0x00000002) != 0)) {
           output.writeMessage(3, getTouchpad());
         }
+        if (((bitField0_ & 0x00000004) != 0)) {
+          output.writeUInt32(5, displayId_);
+        }
         getUnknownFields().writeTo(output);
       }
 
@@ -6546,6 +7090,10 @@ public final class Control {
         if (((bitField0_ & 0x00000002) != 0)) {
           size += com.google.protobuf.CodedOutputStream
             .computeMessageSize(3, getTouchpad());
+        }
+        if (((bitField0_ & 0x00000004) != 0)) {
+          size += com.google.protobuf.CodedOutputStream
+            .computeUInt32Size(5, displayId_);
         }
         size += getUnknownFields().getSerializedSize();
         memoizedSize = size;
@@ -6574,6 +7122,11 @@ public final class Control {
           if (!getTouchpad()
               .equals(other.getTouchpad())) return false;
         }
+        if (hasDisplayId() != other.hasDisplayId()) return false;
+        if (hasDisplayId()) {
+          if (getDisplayId()
+              != other.getDisplayId()) return false;
+        }
         if (!getUnknownFields().equals(other.getUnknownFields())) return false;
         return true;
       }
@@ -6596,6 +7149,10 @@ public final class Control {
         if (hasTouchpad()) {
           hash = (37 * hash) + TOUCHPAD_FIELD_NUMBER;
           hash = (53 * hash) + getTouchpad().hashCode();
+        }
+        if (hasDisplayId()) {
+          hash = (37 * hash) + DISPLAY_ID_FIELD_NUMBER;
+          hash = (53 * hash) + getDisplayId();
         }
         hash = (29 * hash) + getUnknownFields().hashCode();
         memoizedHashCode = hash;
@@ -6746,6 +7303,7 @@ public final class Control {
             touchpadBuilder_.dispose();
             touchpadBuilder_ = null;
           }
+          displayId_ = 0;
           return this;
         }
 
@@ -6795,6 +7353,10 @@ public final class Control {
                 ? touchpad_
                 : touchpadBuilder_.build();
             to_bitField0_ |= 0x00000002;
+          }
+          if (((from_bitField0_ & 0x00000008) != 0)) {
+            result.displayId_ = displayId_;
+            to_bitField0_ |= 0x00000004;
           }
           result.bitField0_ |= to_bitField0_;
         }
@@ -6859,6 +7421,9 @@ public final class Control {
           }
           if (other.hasTouchpad()) {
             mergeTouchpad(other.getTouchpad());
+          }
+          if (other.hasDisplayId()) {
+            setDisplayId(other.getDisplayId());
           }
           this.mergeUnknownFields(other.getUnknownFields());
           onChanged();
@@ -6926,6 +7491,11 @@ public final class Control {
                   bitField0_ |= 0x00000004;
                   break;
                 } // case 26
+                case 40: {
+                  displayId_ = input.readUInt32();
+                  bitField0_ |= 0x00000008;
+                  break;
+                } // case 40
                 default: {
                   if (!super.parseUnknownField(input, extensionRegistry, tag)) {
                     done = true; // was an endgroup tag
@@ -7267,6 +7837,62 @@ public final class Control {
             touchpad_ = null;
           }
           return touchpadBuilder_;
+        }
+
+        private int displayId_ ;
+        /**
+         * <pre>
+         * The display these inputs belong to, defaulting to the main one.
+         * </pre>
+         *
+         * <code>optional uint32 display_id = 5;</code>
+         * @return Whether the displayId field is set.
+         */
+        @java.lang.Override
+        public boolean hasDisplayId() {
+          return ((bitField0_ & 0x00000008) != 0);
+        }
+        /**
+         * <pre>
+         * The display these inputs belong to, defaulting to the main one.
+         * </pre>
+         *
+         * <code>optional uint32 display_id = 5;</code>
+         * @return The displayId.
+         */
+        @java.lang.Override
+        public int getDisplayId() {
+          return displayId_;
+        }
+        /**
+         * <pre>
+         * The display these inputs belong to, defaulting to the main one.
+         * </pre>
+         *
+         * <code>optional uint32 display_id = 5;</code>
+         * @param value The displayId to set.
+         * @return This builder for chaining.
+         */
+        public Builder setDisplayId(int value) {
+
+          displayId_ = value;
+          bitField0_ |= 0x00000008;
+          onChanged();
+          return this;
+        }
+        /**
+         * <pre>
+         * The display these inputs belong to, defaulting to the main one.
+         * </pre>
+         *
+         * <code>optional uint32 display_id = 5;</code>
+         * @return This builder for chaining.
+         */
+        public Builder clearDisplayId() {
+          bitField0_ = (bitField0_ & ~0x00000008);
+          displayId_ = 0;
+          onChanged();
+          return this;
         }
         @java.lang.Override
         public final Builder setUnknownFields(
@@ -23569,14 +24195,14 @@ public final class Control {
     /**
      * <code>optional uint32 socket_receive_buffer_size_kb = 1 [deprecated = true];</code>
      * @deprecated com.andrerinas.openheadunit.aap.protocol.proto.WirelessTcpConfiguration.socket_receive_buffer_size_kb is deprecated.
-     *     See control.proto;l=273
+     *     See control.proto;l=291
      * @return Whether the socketReceiveBufferSizeKb field is set.
      */
     @java.lang.Deprecated boolean hasSocketReceiveBufferSizeKb();
     /**
      * <code>optional uint32 socket_receive_buffer_size_kb = 1 [deprecated = true];</code>
      * @deprecated com.andrerinas.openheadunit.aap.protocol.proto.WirelessTcpConfiguration.socket_receive_buffer_size_kb is deprecated.
-     *     See control.proto;l=273
+     *     See control.proto;l=291
      * @return The socketReceiveBufferSizeKb.
      */
     @java.lang.Deprecated int getSocketReceiveBufferSizeKb();
@@ -23584,14 +24210,14 @@ public final class Control {
     /**
      * <code>optional uint32 socket_send_buffer_size_kb = 2 [deprecated = true];</code>
      * @deprecated com.andrerinas.openheadunit.aap.protocol.proto.WirelessTcpConfiguration.socket_send_buffer_size_kb is deprecated.
-     *     See control.proto;l=274
+     *     See control.proto;l=292
      * @return Whether the socketSendBufferSizeKb field is set.
      */
     @java.lang.Deprecated boolean hasSocketSendBufferSizeKb();
     /**
      * <code>optional uint32 socket_send_buffer_size_kb = 2 [deprecated = true];</code>
      * @deprecated com.andrerinas.openheadunit.aap.protocol.proto.WirelessTcpConfiguration.socket_send_buffer_size_kb is deprecated.
-     *     See control.proto;l=274
+     *     See control.proto;l=292
      * @return The socketSendBufferSizeKb.
      */
     @java.lang.Deprecated int getSocketSendBufferSizeKb();
@@ -23694,7 +24320,7 @@ public final class Control {
     /**
      * <code>optional uint32 socket_receive_buffer_size_kb = 1 [deprecated = true];</code>
      * @deprecated com.andrerinas.openheadunit.aap.protocol.proto.WirelessTcpConfiguration.socket_receive_buffer_size_kb is deprecated.
-     *     See control.proto;l=273
+     *     See control.proto;l=291
      * @return Whether the socketReceiveBufferSizeKb field is set.
      */
     @java.lang.Override
@@ -23704,7 +24330,7 @@ public final class Control {
     /**
      * <code>optional uint32 socket_receive_buffer_size_kb = 1 [deprecated = true];</code>
      * @deprecated com.andrerinas.openheadunit.aap.protocol.proto.WirelessTcpConfiguration.socket_receive_buffer_size_kb is deprecated.
-     *     See control.proto;l=273
+     *     See control.proto;l=291
      * @return The socketReceiveBufferSizeKb.
      */
     @java.lang.Override
@@ -23717,7 +24343,7 @@ public final class Control {
     /**
      * <code>optional uint32 socket_send_buffer_size_kb = 2 [deprecated = true];</code>
      * @deprecated com.andrerinas.openheadunit.aap.protocol.proto.WirelessTcpConfiguration.socket_send_buffer_size_kb is deprecated.
-     *     See control.proto;l=274
+     *     See control.proto;l=292
      * @return Whether the socketSendBufferSizeKb field is set.
      */
     @java.lang.Override
@@ -23727,7 +24353,7 @@ public final class Control {
     /**
      * <code>optional uint32 socket_send_buffer_size_kb = 2 [deprecated = true];</code>
      * @deprecated com.andrerinas.openheadunit.aap.protocol.proto.WirelessTcpConfiguration.socket_send_buffer_size_kb is deprecated.
-     *     See control.proto;l=274
+     *     See control.proto;l=292
      * @return The socketSendBufferSizeKb.
      */
     @java.lang.Override
@@ -24269,7 +24895,7 @@ public final class Control {
       /**
        * <code>optional uint32 socket_receive_buffer_size_kb = 1 [deprecated = true];</code>
        * @deprecated com.andrerinas.openheadunit.aap.protocol.proto.WirelessTcpConfiguration.socket_receive_buffer_size_kb is deprecated.
-       *     See control.proto;l=273
+       *     See control.proto;l=291
        * @return Whether the socketReceiveBufferSizeKb field is set.
        */
       @java.lang.Override
@@ -24279,7 +24905,7 @@ public final class Control {
       /**
        * <code>optional uint32 socket_receive_buffer_size_kb = 1 [deprecated = true];</code>
        * @deprecated com.andrerinas.openheadunit.aap.protocol.proto.WirelessTcpConfiguration.socket_receive_buffer_size_kb is deprecated.
-       *     See control.proto;l=273
+       *     See control.proto;l=291
        * @return The socketReceiveBufferSizeKb.
        */
       @java.lang.Override
@@ -24289,7 +24915,7 @@ public final class Control {
       /**
        * <code>optional uint32 socket_receive_buffer_size_kb = 1 [deprecated = true];</code>
        * @deprecated com.andrerinas.openheadunit.aap.protocol.proto.WirelessTcpConfiguration.socket_receive_buffer_size_kb is deprecated.
-       *     See control.proto;l=273
+       *     See control.proto;l=291
        * @param value The socketReceiveBufferSizeKb to set.
        * @return This builder for chaining.
        */
@@ -24303,7 +24929,7 @@ public final class Control {
       /**
        * <code>optional uint32 socket_receive_buffer_size_kb = 1 [deprecated = true];</code>
        * @deprecated com.andrerinas.openheadunit.aap.protocol.proto.WirelessTcpConfiguration.socket_receive_buffer_size_kb is deprecated.
-       *     See control.proto;l=273
+       *     See control.proto;l=291
        * @return This builder for chaining.
        */
       @java.lang.Deprecated public Builder clearSocketReceiveBufferSizeKb() {
@@ -24317,7 +24943,7 @@ public final class Control {
       /**
        * <code>optional uint32 socket_send_buffer_size_kb = 2 [deprecated = true];</code>
        * @deprecated com.andrerinas.openheadunit.aap.protocol.proto.WirelessTcpConfiguration.socket_send_buffer_size_kb is deprecated.
-       *     See control.proto;l=274
+       *     See control.proto;l=292
        * @return Whether the socketSendBufferSizeKb field is set.
        */
       @java.lang.Override
@@ -24327,7 +24953,7 @@ public final class Control {
       /**
        * <code>optional uint32 socket_send_buffer_size_kb = 2 [deprecated = true];</code>
        * @deprecated com.andrerinas.openheadunit.aap.protocol.proto.WirelessTcpConfiguration.socket_send_buffer_size_kb is deprecated.
-       *     See control.proto;l=274
+       *     See control.proto;l=292
        * @return The socketSendBufferSizeKb.
        */
       @java.lang.Override
@@ -24337,7 +24963,7 @@ public final class Control {
       /**
        * <code>optional uint32 socket_send_buffer_size_kb = 2 [deprecated = true];</code>
        * @deprecated com.andrerinas.openheadunit.aap.protocol.proto.WirelessTcpConfiguration.socket_send_buffer_size_kb is deprecated.
-       *     See control.proto;l=274
+       *     See control.proto;l=292
        * @param value The socketSendBufferSizeKb to set.
        * @return This builder for chaining.
        */
@@ -24351,7 +24977,7 @@ public final class Control {
       /**
        * <code>optional uint32 socket_send_buffer_size_kb = 2 [deprecated = true];</code>
        * @deprecated com.andrerinas.openheadunit.aap.protocol.proto.WirelessTcpConfiguration.socket_send_buffer_size_kb is deprecated.
-       *     See control.proto;l=274
+       *     See control.proto;l=292
        * @return This builder for chaining.
        */
       @java.lang.Deprecated public Builder clearSocketSendBufferSizeKb() {
@@ -37408,7 +38034,7 @@ public final class Control {
     java.lang.String[] descriptorData = {
       "\n\rcontrol.proto\022.com.andrerinas.openhead" +
       "unit.aap.protocol.proto\032\014common.proto\032\013m" +
-      "edia.proto\032\rsensors.proto\"\370\"\n\007Service\022h\n" +
+      "edia.proto\032\rsensors.proto\"\224$\n\007Service\022h\n" +
       "\024phone_status_service\030\n \001(\0132J.com.andrer" +
       "inas.openheadunit.aap.protocol.proto.Ser" +
       "vice.PhoneStatusService\022\n\n\002id\030\001 \002(\r\022j\n\025s" +
@@ -37444,7 +38070,7 @@ public final class Control {
       "nheadunit.aap.protocol.proto.Service.Sen" +
       "sorSourceService.Sensor\032R\n\006Sensor\022H\n\004typ" +
       "e\030\001 \002(\0162:.com.andrerinas.openheadunit.aa" +
-      "p.protocol.proto.SensorType\032\266\t\n\020MediaSin" +
+      "p.protocol.proto.SensorType\032\276\n\n\020MediaSin" +
       "kService\022V\n\016available_type\030\001 \002(\0162>.com.a" +
       "ndrerinas.openheadunit.aap.protocol.prot" +
       "o.MediaCodecType\022S\n\naudio_type\030\002 \001(\0162?.c" +
@@ -37455,211 +38081,217 @@ public final class Control {
       "o_configs\030\004 \003(\0132[.com.andrerinas.openhea" +
       "dunit.aap.protocol.proto.Service.MediaSi" +
       "nkService.VideoConfiguration\022\037\n\027availabl" +
-      "e_while_in_call\030\005 \001(\010\032\204\006\n\022VideoConfigura" +
-      "tion\022\216\001\n\020codec_resolution\030\001 \002(\0162t.com.an" +
-      "drerinas.openheadunit.aap.protocol.proto" +
-      ".Service.MediaSinkService.VideoConfigura" +
-      "tion.VideoCodecResolutionType\022\202\001\n\nframe_" +
-      "rate\030\002 \002(\0162n.com.andrerinas.openheadunit" +
-      ".aap.protocol.proto.Service.MediaSinkSer" +
-      "vice.VideoConfiguration.VideoFrameRateTy" +
-      "pe\022\024\n\014margin_width\030\003 \002(\r\022\025\n\rmargin_heigh" +
-      "t\030\004 \002(\r\022\017\n\007density\030\005 \002(\r\022 \n\030decoder_addi" +
-      "tional_depth\030\006 \001(\r\022\030\n\020viewing_distance\030\007" +
-      " \001(\r\022\035\n\025pixel_aspect_ratio_e4\030\010 \001(\r\022\024\n\014r" +
-      "eal_density\030\t \001(\r\022X\n\020video_codec_type\030\n " +
-      "\001(\0162>.com.andrerinas.openheadunit.aap.pr" +
-      "otocol.proto.MediaCodecType\"\246\001\n\030VideoCod" +
-      "ecResolutionType\022\014\n\010_800x480\020\001\022\r\n\t_1280x" +
-      "720\020\002\022\016\n\n_1920x1080\020\003\022\016\n\n_2560x1440\020\004\022\016\n" +
-      "\n_3840x2160\020\005\022\r\n\t_720x1280\020\006\022\016\n\n_1080x19" +
-      "20\020\007\022\016\n\n_1440x2560\020\010\022\016\n\n_2160x3840\020\t\"&\n\022" +
-      "VideoFrameRateType\022\007\n\003_60\020\001\022\007\n\003_30\020\002\032\265\002\n" +
-      "\022InputSourceService\022\032\n\022keycodes_supporte" +
-      "d\030\001 \003(\r\022k\n\013touchscreen\030\002 \001(\0132V.com.andre" +
+      "e_while_in_call\030\005 \001(\010\022\022\n\ndisplay_id\030\006 \001(" +
+      "\r\022Q\n\014display_type\030\007 \001(\0162;.com.andrerinas" +
+      ".openheadunit.aap.protocol.proto.Display" +
+      "Type\022\037\n\027initial_content_keycode\030\010 \001(\005\032\204\006" +
+      "\n\022VideoConfiguration\022\216\001\n\020codec_resolutio" +
+      "n\030\001 \002(\0162t.com.andrerinas.openheadunit.aa" +
+      "p.protocol.proto.Service.MediaSinkServic" +
+      "e.VideoConfiguration.VideoCodecResolutio" +
+      "nType\022\202\001\n\nframe_rate\030\002 \002(\0162n.com.andreri" +
+      "nas.openheadunit.aap.protocol.proto.Serv" +
+      "ice.MediaSinkService.VideoConfiguration." +
+      "VideoFrameRateType\022\024\n\014margin_width\030\003 \002(\r" +
+      "\022\025\n\rmargin_height\030\004 \002(\r\022\017\n\007density\030\005 \002(\r" +
+      "\022 \n\030decoder_additional_depth\030\006 \001(\r\022\030\n\020vi" +
+      "ewing_distance\030\007 \001(\r\022\035\n\025pixel_aspect_rat" +
+      "io_e4\030\010 \001(\r\022\024\n\014real_density\030\t \001(\r\022X\n\020vid" +
+      "eo_codec_type\030\n \001(\0162>.com.andrerinas.ope" +
+      "nheadunit.aap.protocol.proto.MediaCodecT" +
+      "ype\"\246\001\n\030VideoCodecResolutionType\022\014\n\010_800" +
+      "x480\020\001\022\r\n\t_1280x720\020\002\022\016\n\n_1920x1080\020\003\022\016\n" +
+      "\n_2560x1440\020\004\022\016\n\n_3840x2160\020\005\022\r\n\t_720x12" +
+      "80\020\006\022\016\n\n_1080x1920\020\007\022\016\n\n_1440x2560\020\010\022\016\n\n" +
+      "_2160x3840\020\t\"&\n\022VideoFrameRateType\022\007\n\003_6" +
+      "0\020\001\022\007\n\003_30\020\002\032\311\002\n\022InputSourceService\022\032\n\022k" +
+      "eycodes_supported\030\001 \003(\r\022k\n\013touchscreen\030\002" +
+      " \001(\0132V.com.andrerinas.openheadunit.aap.p" +
+      "rotocol.proto.Service.InputSourceService" +
+      ".TouchConfig\022h\n\010touchpad\030\003 \001(\0132V.com.and" +
+      "rerinas.openheadunit.aap.protocol.proto." +
+      "Service.InputSourceService.TouchConfig\022\022" +
+      "\n\ndisplay_id\030\005 \001(\r\032,\n\013TouchConfig\022\r\n\005wid" +
+      "th\030\001 \002(\r\022\016\n\006height\030\002 \002(\r\032\335\001\n\022MediaSource" +
+      "Service\022L\n\004type\030\001 \002(\0162>.com.andrerinas.o" +
+      "penheadunit.aap.protocol.proto.MediaCode" +
+      "cType\022X\n\014audio_config\030\002 \002(\0132B.com.andrer" +
+      "inas.openheadunit.aap.protocol.proto.Aud" +
+      "ioConfiguration\022\037\n\027available_while_in_ca" +
+      "ll\030\003 \001(\010\032\222\001\n\020BluetoothService\022\023\n\013car_add" +
+      "ress\030\001 \002(\t\022i\n\031supported_pairing_methods\030" +
+      "\002 \003(\0162F.com.andrerinas.openheadunit.aap." +
+      "protocol.proto.BluetoothPairingMethod\032\234\003" +
+      "\n\027NavigationStatusService\022\033\n\023minimum_int" +
+      "erval_ms\030\001 \002(\r\022i\n\004type\030\002 \002(\0162[.com.andre" +
       "rinas.openheadunit.aap.protocol.proto.Se" +
-      "rvice.InputSourceService.TouchConfig\022h\n\010" +
-      "touchpad\030\003 \001(\0132V.com.andrerinas.openhead" +
-      "unit.aap.protocol.proto.Service.InputSou" +
-      "rceService.TouchConfig\032,\n\013TouchConfig\022\r\n" +
-      "\005width\030\001 \002(\r\022\016\n\006height\030\002 \002(\r\032\335\001\n\022MediaSo" +
-      "urceService\022L\n\004type\030\001 \002(\0162>.com.andrerin" +
-      "as.openheadunit.aap.protocol.proto.Media" +
-      "CodecType\022X\n\014audio_config\030\002 \002(\0132B.com.an" +
-      "drerinas.openheadunit.aap.protocol.proto" +
-      ".AudioConfiguration\022\037\n\027available_while_i" +
-      "n_call\030\003 \001(\010\032\222\001\n\020BluetoothService\022\023\n\013car" +
-      "_address\030\001 \002(\t\022i\n\031supported_pairing_meth" +
-      "ods\030\002 \003(\0162F.com.andrerinas.openheadunit." +
-      "aap.protocol.proto.BluetoothPairingMetho" +
-      "d\032\234\003\n\027NavigationStatusService\022\033\n\023minimum" +
-      "_interval_ms\030\001 \002(\r\022i\n\004type\030\002 \002(\0162[.com.a" +
-      "ndrerinas.openheadunit.aap.protocol.prot" +
-      "o.Service.NavigationStatusService.Cluste" +
-      "rType\022s\n\rimage_options\030\003 \001(\0132\\.com.andre" +
-      "rinas.openheadunit.aap.protocol.proto.Se" +
-      "rvice.NavigationStatusService.ImageOptio" +
-      "ns\032G\n\014ImageOptions\022\r\n\005width\030\001 \002(\005\022\016\n\006hei" +
-      "ght\030\002 \002(\005\022\030\n\020colour_deth_bits\030\003 \002(\005\";\n\013C" +
-      "lusterType\022\030\n\024CustomImageSupported\020\001\022\022\n\016" +
-      "ImageCodesOnly\020\002\032\034\n\032MediaPlaybackStatusS" +
-      "ervice\032\344\001\n\020PhoneStatus_Call\022X\n\005state\030\001 \001" +
-      "(\0162I.com.andrerinas.openheadunit.aap.pro" +
-      "tocol.proto.Service.PhoneStatus_State\022\035\n" +
-      "\025call_duration_seconds\030\002 \001(\r\022\025\n\rcaller_n" +
-      "umber\030\003 \001(\t\022\021\n\tcaller_id\030\004 \001(\t\022\032\n\022caller" +
-      "_number_type\030\005 \001(\t\022\021\n\tthumbnail\030\006 \001(\014\032=\n" +
-      "\021PhoneStatus_Input\022\025\n\rcaller_number\030\001 \001(" +
-      "\t\022\021\n\tcaller_id\030\002 \001(\t\032\206\001\n\022PhoneStatusServ" +
-      "ice\022W\n\005calls\030\001 \003(\0132H.com.andrerinas.open" +
-      "headunit.aap.protocol.proto.Service.Phon" +
-      "eStatus_Call\022\027\n\017signal_strength\030\002 \001(\r\032P\n" +
-      "\026VendorExtensionService\022\014\n\004name\030\001 \001(\t\022\032\n" +
-      "\022package_white_list\030\002 \003(\t\022\014\n\004data\030\003 \001(\014\032" +
-      "\034\n\032GenericNotificationService\032/\n\025WifiPro" +
-      "jectionService\022\026\n\016car_wifi_bssid\030\001 \001(\t\"d" +
-      "\n\021PhoneStatus_State\022\n\n\006InCall\020\001\022\n\n\006OnHol" +
-      "d\020\002\022\r\n\tHangingUp\020\003\022\014\n\010Incoming\020\004\022\t\n\005Mute" +
-      "d\020\005\022\017\n\013Conferenced\020\006\"B\n\027ServiceDiscovery" +
-      "Request\022\022\n\nphone_name\030\004 \002(\t\022\023\n\013phone_bra" +
-      "nd\030\005 \002(\t\"\313\005\n\030ServiceDiscoveryResponse\022I\n" +
-      "\010services\030\001 \003(\01327.com.andrerinas.openhea" +
-      "dunit.aap.protocol.proto.Service\022\014\n\004make" +
-      "\030\002 \002(\t\022\r\n\005model\030\003 \002(\t\022\014\n\004year\030\004 \002(\t\022\022\n\nv" +
-      "ehicle_id\030\005 \002(\t\022W\n\017driver_position\030\006 \002(\016" +
-      "2>.com.andrerinas.openheadunit.aap.proto" +
-      "col.proto.DriverPosition\022\026\n\016head_unit_ma" +
-      "ke\030\007 \002(\t\022\027\n\017head_unit_model\030\010 \002(\t\022 \n\030hea" +
-      "d_unit_software_build\030\t \002(\t\022\"\n\032head_unit" +
-      "_software_version\030\n \002(\t\022\'\n\037can_play_nati" +
-      "ve_media_during_vr\030\013 \002(\010\022\034\n\024hide_project" +
-      "ed_clock\030\014 \001(\010\022\035\n\025session_configuration\030" +
-      "\r \001(\005\022\024\n\014display_name\030\016 \001(\t\022\031\n\021probe_for" +
-      "_support\030\017 \001(\010\022i\n\030connection_configurati" +
-      "on\030\020 \001(\0132G.com.andrerinas.openheadunit.a" +
-      "ap.protocol.proto.ConnectionConfiguratio" +
-      "n\022S\n\rheadunit_info\030\021 \001(\0132<.com.andrerina" +
-      "s.openheadunit.aap.protocol.proto.HeadUn" +
-      "itInfo\"{\n\021PingConfiguration\022\022\n\ntimeout_m" +
-      "s\030\001 \001(\r\022\023\n\013interval_ms\030\002 \001(\r\022!\n\031high_lat" +
-      "ency_threshold_ms\030\003 \001(\r\022\032\n\022tracked_ping_" +
-      "count\030\004 \001(\r\"\322\001\n\030WirelessTcpConfiguration" +
-      "\022)\n\035socket_receive_buffer_size_kb\030\001 \001(\rB" +
-      "\002\030\001\022&\n\032socket_send_buffer_size_kb\030\002 \001(\rB" +
-      "\002\030\001\022\036\n\026socket_read_timeout_ms\030\003 \001(\r\022\"\n\032s" +
-      "ocket_receive_buffer_size\030\004 \001(\r\022\037\n\027socke" +
-      "t_send_buffer_size\030\005 \001(\r\"\346\001\n\027ConnectionC" +
-      "onfiguration\022]\n\022ping_configuration\030\001 \001(\013" +
-      "2A.com.andrerinas.openheadunit.aap.proto" +
-      "col.proto.PingConfiguration\022l\n\032wireless_" +
-      "tcp_configuration\030\002 \001(\0132H.com.andrerinas" +
-      ".openheadunit.aap.protocol.proto.Wireles" +
-      "sTcpConfiguration\"1\n\025VersionRequestOptio" +
-      "ns\022\030\n\020snapshot_version\030\001 \001(\003\"\203\001\n\026Version" +
-      "ResponseOptions\022i\n\030connection_configurat" +
-      "ion\030\001 \001(\0132G.com.andrerinas.openheadunit." +
-      "aap.protocol.proto.ConnectionConfigurati" +
-      "on\"b\n\026ServiceDiscoveryUpdate\022H\n\007service\030" +
-      "\001 \001(\01327.com.andrerinas.openheadunit.aap." +
-      "protocol.proto.Service\":\n\022ChannelOpenReq" +
-      "uest\022\020\n\010priority\030\001 \002(\021\022\022\n\nservice_id\030\002 \002" +
-      "(\005\"d\n\023ChannelOpenResponse\022M\n\006status\030\001 \002(" +
-      "\0162=.com.andrerinas.openheadunit.aap.prot" +
-      "ocol.proto.MessageStatus\"4\n\013PingRequest\022" +
-      "\021\n\ttimestamp\030\001 \002(\003\022\022\n\nbug_report\030\002 \001(\005\"!" +
-      "\n\014PingResponse\022\021\n\ttimestamp\030\001 \002(\003\"]\n\rBye" +
-      "ByeRequest\022L\n\006reason\030\001 \002(\0162<.com.andreri" +
-      "nas.openheadunit.aap.protocol.proto.ByeB" +
-      "yeReason\"\020\n\016ByeByeResponse\"\314\001\n\030VoiceSess" +
-      "ionNotification\022k\n\006status\030\001 \002(\0162[.com.an" +
-      "drerinas.openheadunit.aap.protocol.proto" +
-      ".VoiceSessionNotification.VoiceSessionSt" +
-      "atus\"C\n\022VoiceSessionStatus\022\026\n\022VOICE_STAT" +
-      "US_START\020\001\022\025\n\021VOICE_STATUS_STOP\020\002\"\200\002\n\035Au" +
-      "dioFocusRequestNotification\022t\n\007request\030\001" +
-      " \001(\0162c.com.andrerinas.openheadunit.aap.p" +
-      "rotocol.proto.AudioFocusRequestNotificat" +
-      "ion.AudioFocusRequestType\"i\n\025AudioFocusR" +
-      "equestType\022\010\n\004NONE\020\000\022\010\n\004GAIN\020\001\022\022\n\016GAIN_T" +
-      "RANSIENT\020\002\022\033\n\027GAIN_TRANSIENT_MAY_DUCK\020\003\022" +
-      "\013\n\007RELEASE\020\004\"\360\002\n\026AudioFocusNotification\022" +
-      "o\n\013focus_state\030\001 \002(\0162Z.com.andrerinas.op" +
-      "enheadunit.aap.protocol.proto.AudioFocus" +
-      "Notification.AudioFocusStateType\022\023\n\013unso" +
-      "licited\030\002 \001(\010\"\317\001\n\023AudioFocusStateType\022\016\n" +
-      "\nSTATE_GAIN\020\001\022\030\n\024STATE_GAIN_TRANSIENT\020\002\022" +
-      "\016\n\nSTATE_LOSS\020\003\022!\n\035STATE_LOSS_TRANSIENT_" +
-      "CAN_DUCK\020\004\022\030\n\024STATE_LOSS_TRANSIENT\020\005\022\031\n\025" +
-      "STATE_GAIN_MEDIA_ONLY\020\006\022&\n\"STATE_GAIN_TR" +
-      "ANSIENT_GUIDANCE_ONLY\020\007\"o\n\033NavFocusReque" +
-      "stNotification\022P\n\nfocus_type\030\001 \001(\0162<.com" +
-      ".andrerinas.openheadunit.aap.protocol.pr" +
-      "oto.NavFocusType\"h\n\024NavFocusNotification" +
-      "\022P\n\nfocus_type\030\001 \002(\0162<.com.andrerinas.op" +
-      "enheadunit.aap.protocol.proto.NavFocusTy" +
-      "pe\"f\n\031BatteryStatusNotification\022\025\n\rbatte" +
-      "ry_level\030\001 \002(\r\022\030\n\020time_remaining_s\030\002 \001(\r" +
-      "\022\030\n\020critical_battery\030\003 \001(\010\"9\n\017ConnectedD" +
-      "evice\022\023\n\013device_name\030\001 \001(\t\022\021\n\tdevice_id\030" +
-      "\002 \001(\005\"\240\001\n\023CarConnectedDevices\022Z\n\021connect" +
-      "ed_devices\030\001 \003(\0132?.com.andrerinas.openhe" +
-      "adunit.aap.protocol.proto.ConnectedDevic" +
-      "e\022\023\n\013unsolicited\030\002 \001(\010\022\030\n\nfinal_list\030\003 \001" +
-      "(\010:\004true\"\367\004\n\022UserSwitchResponse\022c\n\006statu" +
-      "s\030\001 \001(\0162S.com.andrerinas.openheadunit.aa" +
-      "p.protocol.proto.UserSwitchResponse.User" +
-      "SwitchStatus\022X\n\017selected_device\030\002 \001(\0132?." +
+      "rvice.NavigationStatusService.ClusterTyp" +
+      "e\022s\n\rimage_options\030\003 \001(\0132\\.com.andrerina" +
+      "s.openheadunit.aap.protocol.proto.Servic" +
+      "e.NavigationStatusService.ImageOptions\032G" +
+      "\n\014ImageOptions\022\r\n\005width\030\001 \002(\005\022\016\n\006height\030" +
+      "\002 \002(\005\022\030\n\020colour_deth_bits\030\003 \002(\005\";\n\013Clust" +
+      "erType\022\030\n\024CustomImageSupported\020\001\022\022\n\016Imag" +
+      "eCodesOnly\020\002\032\034\n\032MediaPlaybackStatusServi" +
+      "ce\032\344\001\n\020PhoneStatus_Call\022X\n\005state\030\001 \001(\0162I" +
+      ".com.andrerinas.openheadunit.aap.protoco" +
+      "l.proto.Service.PhoneStatus_State\022\035\n\025cal" +
+      "l_duration_seconds\030\002 \001(\r\022\025\n\rcaller_numbe" +
+      "r\030\003 \001(\t\022\021\n\tcaller_id\030\004 \001(\t\022\032\n\022caller_num" +
+      "ber_type\030\005 \001(\t\022\021\n\tthumbnail\030\006 \001(\014\032=\n\021Pho" +
+      "neStatus_Input\022\025\n\rcaller_number\030\001 \001(\t\022\021\n" +
+      "\tcaller_id\030\002 \001(\t\032\206\001\n\022PhoneStatusService\022" +
+      "W\n\005calls\030\001 \003(\0132H.com.andrerinas.openhead" +
+      "unit.aap.protocol.proto.Service.PhoneSta" +
+      "tus_Call\022\027\n\017signal_strength\030\002 \001(\r\032P\n\026Ven" +
+      "dorExtensionService\022\014\n\004name\030\001 \001(\t\022\032\n\022pac" +
+      "kage_white_list\030\002 \003(\t\022\014\n\004data\030\003 \001(\014\032\034\n\032G" +
+      "enericNotificationService\032/\n\025WifiProject" +
+      "ionService\022\026\n\016car_wifi_bssid\030\001 \001(\t\"d\n\021Ph" +
+      "oneStatus_State\022\n\n\006InCall\020\001\022\n\n\006OnHold\020\002\022" +
+      "\r\n\tHangingUp\020\003\022\014\n\010Incoming\020\004\022\t\n\005Muted\020\005\022" +
+      "\017\n\013Conferenced\020\006\"B\n\027ServiceDiscoveryRequ" +
+      "est\022\022\n\nphone_name\030\004 \002(\t\022\023\n\013phone_brand\030\005" +
+      " \002(\t\"\313\005\n\030ServiceDiscoveryResponse\022I\n\010ser" +
+      "vices\030\001 \003(\01327.com.andrerinas.openheaduni" +
+      "t.aap.protocol.proto.Service\022\014\n\004make\030\002 \002" +
+      "(\t\022\r\n\005model\030\003 \002(\t\022\014\n\004year\030\004 \002(\t\022\022\n\nvehic" +
+      "le_id\030\005 \002(\t\022W\n\017driver_position\030\006 \002(\0162>.c" +
+      "om.andrerinas.openheadunit.aap.protocol." +
+      "proto.DriverPosition\022\026\n\016head_unit_make\030\007" +
+      " \002(\t\022\027\n\017head_unit_model\030\010 \002(\t\022 \n\030head_un" +
+      "it_software_build\030\t \002(\t\022\"\n\032head_unit_sof" +
+      "tware_version\030\n \002(\t\022\'\n\037can_play_native_m" +
+      "edia_during_vr\030\013 \002(\010\022\034\n\024hide_projected_c" +
+      "lock\030\014 \001(\010\022\035\n\025session_configuration\030\r \001(" +
+      "\005\022\024\n\014display_name\030\016 \001(\t\022\031\n\021probe_for_sup" +
+      "port\030\017 \001(\010\022i\n\030connection_configuration\030\020" +
+      " \001(\0132G.com.andrerinas.openheadunit.aap.p" +
+      "rotocol.proto.ConnectionConfiguration\022S\n" +
+      "\rheadunit_info\030\021 \001(\0132<.com.andrerinas.op" +
+      "enheadunit.aap.protocol.proto.HeadUnitIn" +
+      "fo\"{\n\021PingConfiguration\022\022\n\ntimeout_ms\030\001 " +
+      "\001(\r\022\023\n\013interval_ms\030\002 \001(\r\022!\n\031high_latency" +
+      "_threshold_ms\030\003 \001(\r\022\032\n\022tracked_ping_coun" +
+      "t\030\004 \001(\r\"\322\001\n\030WirelessTcpConfiguration\022)\n\035" +
+      "socket_receive_buffer_size_kb\030\001 \001(\rB\002\030\001\022" +
+      "&\n\032socket_send_buffer_size_kb\030\002 \001(\rB\002\030\001\022" +
+      "\036\n\026socket_read_timeout_ms\030\003 \001(\r\022\"\n\032socke" +
+      "t_receive_buffer_size\030\004 \001(\r\022\037\n\027socket_se" +
+      "nd_buffer_size\030\005 \001(\r\"\346\001\n\027ConnectionConfi" +
+      "guration\022]\n\022ping_configuration\030\001 \001(\0132A.c" +
+      "om.andrerinas.openheadunit.aap.protocol." +
+      "proto.PingConfiguration\022l\n\032wireless_tcp_" +
+      "configuration\030\002 \001(\0132H.com.andrerinas.ope" +
+      "nheadunit.aap.protocol.proto.WirelessTcp" +
+      "Configuration\"1\n\025VersionRequestOptions\022\030" +
+      "\n\020snapshot_version\030\001 \001(\003\"\203\001\n\026VersionResp" +
+      "onseOptions\022i\n\030connection_configuration\030" +
+      "\001 \001(\0132G.com.andrerinas.openheadunit.aap." +
+      "protocol.proto.ConnectionConfiguration\"b" +
+      "\n\026ServiceDiscoveryUpdate\022H\n\007service\030\001 \001(" +
+      "\01327.com.andrerinas.openheadunit.aap.prot" +
+      "ocol.proto.Service\":\n\022ChannelOpenRequest" +
+      "\022\020\n\010priority\030\001 \002(\021\022\022\n\nservice_id\030\002 \002(\005\"d" +
+      "\n\023ChannelOpenResponse\022M\n\006status\030\001 \002(\0162=." +
       "com.andrerinas.openheadunit.aap.protocol" +
-      ".proto.ConnectedDevice\"\241\003\n\020UserSwitchSta" +
-      "tus\022\"\n\025ERROR_REQUEST_TIMEOUT\020\367\377\377\377\377\377\377\377\377\001\022" +
-      "\"\n\025ERROR_INVALID_REQUEST\020\370\377\377\377\377\377\377\377\377\001\022\036\n\021E" +
-      "RROR_HU_INTERNAL\020\371\377\377\377\377\377\377\377\377\001\022/\n\"ERROR_MUL" +
-      "TIPLE_USER_SWITCH_REQUEST\020\372\377\377\377\377\377\377\377\377\001\022/\n\"" +
-      "ERROR_PHONE_UNABLE_TO_CONNECT_WIFI\020\373\377\377\377\377" +
-      "\377\377\377\377\001\0226\n)ERROR_INCOMPATIBLE_PHONE_PROTOC" +
-      "OL_VERSION\020\374\377\377\377\377\377\377\377\377\001\022(\n\033ERROR_BT_CLOSED" +
-      "_AFTER_START\020\375\377\377\377\377\377\377\377\377\001\022)\n\034ERROR_BT_CLOS" +
-      "ED_BEFORE_START\020\376\377\377\377\377\377\377\377\377\001\022\'\n\032ERROR_NO_R" +
-      "FCOMM_CONNECTION\020\377\377\377\377\377\377\377\377\377\001\022\r\n\tSTATUS_OK" +
-      "\020\000\"0\n\026CallAvailabilityStatus\022\026\n\016call_ava" +
-      "ilable\030\001 \001(\010*\255\007\n\016ControlMsgType\022\033\n\027MESSA" +
-      "GE_VERSION_REQUEST\020\001\022\034\n\030MESSAGE_VERSION_" +
-      "RESPONSE\020\002\022\034\n\030MESSAGE_ENCAPSULATED_SSL\020\003" +
-      "\022\031\n\025MESSAGE_AUTH_COMPLETE\020\004\022%\n!MESSAGE_S" +
-      "ERVICE_DISCOVERY_REQUEST\020\005\022&\n\"MESSAGE_SE" +
-      "RVICE_DISCOVERY_RESPONSE\020\006\022 \n\034MESSAGE_CH" +
-      "ANNEL_OPEN_REQUEST\020\007\022!\n\035MESSAGE_CHANNEL_" +
-      "OPEN_RESPONSE\020\010\022&\n\"MESSAGE_CHANNEL_CLOSE" +
-      "_NOTIFICATION\020\t\022\030\n\024MESSAGE_PING_REQUEST\020" +
-      "\013\022\031\n\025MESSAGE_PING_RESPONSE\020\014\022\035\n\031MESSAGE_" +
-      "NAV_FOCUS_REQUEST\020\r\022\"\n\036MESSAGE_NAV_FOCUS" +
-      "_NOTIFICATION\020\016\022\032\n\026MESSAGE_BYEBYE_REQUES" +
-      "T\020\017\022\033\n\027MESSAGE_BYEBYE_RESPONSE\020\020\022&\n\"MESS" +
-      "AGE_VOICE_SESSION_NOTIFICATION\020\021\022\037\n\033MESS" +
-      "AGE_AUDIO_FOCUS_REQUEST\020\022\022$\n MESSAGE_AUD" +
-      "IO_FOCUS_NOTIFICATION\020\023\022)\n%MESSAGE_CAR_C" +
-      "ONNECTED_DEVICES_REQUEST\020\024\022*\n&MESSAGE_CA" +
-      "R_CONNECTED_DEVICES_RESPONSE\020\025\022\037\n\033MESSAG" +
-      "E_USER_SWITCH_REQUEST\020\026\022\'\n#MESSAGE_BATTE" +
-      "RY_STATUS_NOTIFICATION\020\027\022$\n MESSAGE_CALL" +
-      "_AVAILABILITY_STATUS\020\030\022 \n\034MESSAGE_USER_S" +
-      "WITCH_RESPONSE\020\031\022$\n MESSAGE_SERVICE_DISC" +
-      "OVERY_UPDATE\020\032\022\037\n\032MESSAGE_UNEXPECTED_MES" +
-      "SAGE\020\377\001\022\033\n\025MESSAGE_FRAMING_ERROR\020\377\377\003*\311\001\n" +
-      "\026BluetoothPairingMethod\022*\n\035BLUETOOTH_PAI" +
-      "RING_UNAVAILABLE\020\377\377\377\377\377\377\377\377\377\001\022\031\n\025BLUETOOTH" +
-      "_PAIRING_OOB\020\001\022(\n$BLUETOOTH_PAIRING_NUME" +
-      "RIC_COMPARISON\020\002\022#\n\037BLUETOOTH_PAIRING_PA" +
-      "SSKEY_ENTRY\020\003\022\031\n\025BLUETOOTH_PAIRING_PIN\020\004" +
-      "*z\n\014ByeByeReason\022\022\n\016USER_SELECTION\020\001\022\021\n\r" +
-      "DEVICE_SWITCH\020\002\022\021\n\rNOT_SUPPORTED\020\003\022\033\n\027NO" +
-      "T_CURRENTLY_SUPPORTED\020\004\022\023\n\017PROBE_SUPPORT" +
-      "ED\020\005*~\n\016DriverPosition\022\030\n\024DRIVER_POSITIO" +
-      "N_LEFT\020\000\022\031\n\025DRIVER_POSITION_RIGHT\020\001\022\032\n\026D" +
-      "RIVER_POSITION_CENTER\020\002\022\033\n\027DRIVER_POSITI" +
-      "ON_UNKNOWN\020\003*=\n\014NavFocusType\022\024\n\020NAV_FOCU" +
-      "S_NATIVE\020\001\022\027\n\023NAV_FOCUS_PROJECTED\020\002B\tB\007C" +
-      "ontrol"
+      ".proto.MessageStatus\"4\n\013PingRequest\022\021\n\tt" +
+      "imestamp\030\001 \002(\003\022\022\n\nbug_report\030\002 \001(\005\"!\n\014Pi" +
+      "ngResponse\022\021\n\ttimestamp\030\001 \002(\003\"]\n\rByeByeR" +
+      "equest\022L\n\006reason\030\001 \002(\0162<.com.andrerinas." +
+      "openheadunit.aap.protocol.proto.ByeByeRe" +
+      "ason\"\020\n\016ByeByeResponse\"\314\001\n\030VoiceSessionN" +
+      "otification\022k\n\006status\030\001 \002(\0162[.com.andrer" +
+      "inas.openheadunit.aap.protocol.proto.Voi" +
+      "ceSessionNotification.VoiceSessionStatus" +
+      "\"C\n\022VoiceSessionStatus\022\026\n\022VOICE_STATUS_S" +
+      "TART\020\001\022\025\n\021VOICE_STATUS_STOP\020\002\"\200\002\n\035AudioF" +
+      "ocusRequestNotification\022t\n\007request\030\001 \001(\016" +
+      "2c.com.andrerinas.openheadunit.aap.proto" +
+      "col.proto.AudioFocusRequestNotification." +
+      "AudioFocusRequestType\"i\n\025AudioFocusReque" +
+      "stType\022\010\n\004NONE\020\000\022\010\n\004GAIN\020\001\022\022\n\016GAIN_TRANS" +
+      "IENT\020\002\022\033\n\027GAIN_TRANSIENT_MAY_DUCK\020\003\022\013\n\007R" +
+      "ELEASE\020\004\"\360\002\n\026AudioFocusNotification\022o\n\013f" +
+      "ocus_state\030\001 \002(\0162Z.com.andrerinas.openhe" +
+      "adunit.aap.protocol.proto.AudioFocusNoti" +
+      "fication.AudioFocusStateType\022\023\n\013unsolici" +
+      "ted\030\002 \001(\010\"\317\001\n\023AudioFocusStateType\022\016\n\nSTA" +
+      "TE_GAIN\020\001\022\030\n\024STATE_GAIN_TRANSIENT\020\002\022\016\n\nS" +
+      "TATE_LOSS\020\003\022!\n\035STATE_LOSS_TRANSIENT_CAN_" +
+      "DUCK\020\004\022\030\n\024STATE_LOSS_TRANSIENT\020\005\022\031\n\025STAT" +
+      "E_GAIN_MEDIA_ONLY\020\006\022&\n\"STATE_GAIN_TRANSI" +
+      "ENT_GUIDANCE_ONLY\020\007\"o\n\033NavFocusRequestNo" +
+      "tification\022P\n\nfocus_type\030\001 \001(\0162<.com.and" +
+      "rerinas.openheadunit.aap.protocol.proto." +
+      "NavFocusType\"h\n\024NavFocusNotification\022P\n\n" +
+      "focus_type\030\001 \002(\0162<.com.andrerinas.openhe" +
+      "adunit.aap.protocol.proto.NavFocusType\"f" +
+      "\n\031BatteryStatusNotification\022\025\n\rbattery_l" +
+      "evel\030\001 \002(\r\022\030\n\020time_remaining_s\030\002 \001(\r\022\030\n\020" +
+      "critical_battery\030\003 \001(\010\"9\n\017ConnectedDevic" +
+      "e\022\023\n\013device_name\030\001 \001(\t\022\021\n\tdevice_id\030\002 \001(" +
+      "\005\"\240\001\n\023CarConnectedDevices\022Z\n\021connected_d" +
+      "evices\030\001 \003(\0132?.com.andrerinas.openheadun" +
+      "it.aap.protocol.proto.ConnectedDevice\022\023\n" +
+      "\013unsolicited\030\002 \001(\010\022\030\n\nfinal_list\030\003 \001(\010:\004" +
+      "true\"\367\004\n\022UserSwitchResponse\022c\n\006status\030\001 " +
+      "\001(\0162S.com.andrerinas.openheadunit.aap.pr" +
+      "otocol.proto.UserSwitchResponse.UserSwit" +
+      "chStatus\022X\n\017selected_device\030\002 \001(\0132?.com." +
+      "andrerinas.openheadunit.aap.protocol.pro" +
+      "to.ConnectedDevice\"\241\003\n\020UserSwitchStatus\022" +
+      "\"\n\025ERROR_REQUEST_TIMEOUT\020\367\377\377\377\377\377\377\377\377\001\022\"\n\025E" +
+      "RROR_INVALID_REQUEST\020\370\377\377\377\377\377\377\377\377\001\022\036\n\021ERROR" +
+      "_HU_INTERNAL\020\371\377\377\377\377\377\377\377\377\001\022/\n\"ERROR_MULTIPL" +
+      "E_USER_SWITCH_REQUEST\020\372\377\377\377\377\377\377\377\377\001\022/\n\"ERRO" +
+      "R_PHONE_UNABLE_TO_CONNECT_WIFI\020\373\377\377\377\377\377\377\377\377" +
+      "\001\0226\n)ERROR_INCOMPATIBLE_PHONE_PROTOCOL_V" +
+      "ERSION\020\374\377\377\377\377\377\377\377\377\001\022(\n\033ERROR_BT_CLOSED_AFT" +
+      "ER_START\020\375\377\377\377\377\377\377\377\377\001\022)\n\034ERROR_BT_CLOSED_B" +
+      "EFORE_START\020\376\377\377\377\377\377\377\377\377\001\022\'\n\032ERROR_NO_RFCOM" +
+      "M_CONNECTION\020\377\377\377\377\377\377\377\377\377\001\022\r\n\tSTATUS_OK\020\000\"0" +
+      "\n\026CallAvailabilityStatus\022\026\n\016call_availab" +
+      "le\030\001 \001(\010*\255\007\n\016ControlMsgType\022\033\n\027MESSAGE_V" +
+      "ERSION_REQUEST\020\001\022\034\n\030MESSAGE_VERSION_RESP" +
+      "ONSE\020\002\022\034\n\030MESSAGE_ENCAPSULATED_SSL\020\003\022\031\n\025" +
+      "MESSAGE_AUTH_COMPLETE\020\004\022%\n!MESSAGE_SERVI" +
+      "CE_DISCOVERY_REQUEST\020\005\022&\n\"MESSAGE_SERVIC" +
+      "E_DISCOVERY_RESPONSE\020\006\022 \n\034MESSAGE_CHANNE" +
+      "L_OPEN_REQUEST\020\007\022!\n\035MESSAGE_CHANNEL_OPEN" +
+      "_RESPONSE\020\010\022&\n\"MESSAGE_CHANNEL_CLOSE_NOT" +
+      "IFICATION\020\t\022\030\n\024MESSAGE_PING_REQUEST\020\013\022\031\n" +
+      "\025MESSAGE_PING_RESPONSE\020\014\022\035\n\031MESSAGE_NAV_" +
+      "FOCUS_REQUEST\020\r\022\"\n\036MESSAGE_NAV_FOCUS_NOT" +
+      "IFICATION\020\016\022\032\n\026MESSAGE_BYEBYE_REQUEST\020\017\022" +
+      "\033\n\027MESSAGE_BYEBYE_RESPONSE\020\020\022&\n\"MESSAGE_" +
+      "VOICE_SESSION_NOTIFICATION\020\021\022\037\n\033MESSAGE_" +
+      "AUDIO_FOCUS_REQUEST\020\022\022$\n MESSAGE_AUDIO_F" +
+      "OCUS_NOTIFICATION\020\023\022)\n%MESSAGE_CAR_CONNE" +
+      "CTED_DEVICES_REQUEST\020\024\022*\n&MESSAGE_CAR_CO" +
+      "NNECTED_DEVICES_RESPONSE\020\025\022\037\n\033MESSAGE_US" +
+      "ER_SWITCH_REQUEST\020\026\022\'\n#MESSAGE_BATTERY_S" +
+      "TATUS_NOTIFICATION\020\027\022$\n MESSAGE_CALL_AVA" +
+      "ILABILITY_STATUS\020\030\022 \n\034MESSAGE_USER_SWITC" +
+      "H_RESPONSE\020\031\022$\n MESSAGE_SERVICE_DISCOVER" +
+      "Y_UPDATE\020\032\022\037\n\032MESSAGE_UNEXPECTED_MESSAGE" +
+      "\020\377\001\022\033\n\025MESSAGE_FRAMING_ERROR\020\377\377\003*\311\001\n\026Blu" +
+      "etoothPairingMethod\022*\n\035BLUETOOTH_PAIRING" +
+      "_UNAVAILABLE\020\377\377\377\377\377\377\377\377\377\001\022\031\n\025BLUETOOTH_PAI" +
+      "RING_OOB\020\001\022(\n$BLUETOOTH_PAIRING_NUMERIC_" +
+      "COMPARISON\020\002\022#\n\037BLUETOOTH_PAIRING_PASSKE" +
+      "Y_ENTRY\020\003\022\031\n\025BLUETOOTH_PAIRING_PIN\020\004*z\n\014" +
+      "ByeByeReason\022\022\n\016USER_SELECTION\020\001\022\021\n\rDEVI" +
+      "CE_SWITCH\020\002\022\021\n\rNOT_SUPPORTED\020\003\022\033\n\027NOT_CU" +
+      "RRENTLY_SUPPORTED\020\004\022\023\n\017PROBE_SUPPORTED\020\005" +
+      "*~\n\016DriverPosition\022\030\n\024DRIVER_POSITION_LE" +
+      "FT\020\000\022\031\n\025DRIVER_POSITION_RIGHT\020\001\022\032\n\026DRIVE" +
+      "R_POSITION_CENTER\020\002\022\033\n\027DRIVER_POSITION_U" +
+      "NKNOWN\020\003*Z\n\013DisplayType\022\025\n\021DISPLAY_TYPE_" +
+      "MAIN\020\000\022\030\n\024DISPLAY_TYPE_CLUSTER\020\001\022\032\n\026DISP" +
+      "LAY_TYPE_AUXILIARY\020\002*=\n\014NavFocusType\022\024\n\020" +
+      "NAV_FOCUS_NATIVE\020\001\022\027\n\023NAV_FOCUS_PROJECTE" +
+      "D\020\002B\tB\007Control"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
@@ -37691,7 +38323,7 @@ public final class Control {
     internal_static_com_andrerinas_openheadunit_aap_protocol_proto_Service_MediaSinkService_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_andrerinas_openheadunit_aap_protocol_proto_Service_MediaSinkService_descriptor,
-        new java.lang.String[] { "AvailableType", "AudioType", "AudioConfigs", "VideoConfigs", "AvailableWhileInCall", });
+        new java.lang.String[] { "AvailableType", "AudioType", "AudioConfigs", "VideoConfigs", "AvailableWhileInCall", "DisplayId", "DisplayType", "InitialContentKeycode", });
     internal_static_com_andrerinas_openheadunit_aap_protocol_proto_Service_MediaSinkService_VideoConfiguration_descriptor =
       internal_static_com_andrerinas_openheadunit_aap_protocol_proto_Service_MediaSinkService_descriptor.getNestedTypes().get(0);
     internal_static_com_andrerinas_openheadunit_aap_protocol_proto_Service_MediaSinkService_VideoConfiguration_fieldAccessorTable = new
@@ -37703,7 +38335,7 @@ public final class Control {
     internal_static_com_andrerinas_openheadunit_aap_protocol_proto_Service_InputSourceService_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_andrerinas_openheadunit_aap_protocol_proto_Service_InputSourceService_descriptor,
-        new java.lang.String[] { "KeycodesSupported", "Touchscreen", "Touchpad", });
+        new java.lang.String[] { "KeycodesSupported", "Touchscreen", "Touchpad", "DisplayId", });
     internal_static_com_andrerinas_openheadunit_aap_protocol_proto_Service_InputSourceService_TouchConfig_descriptor =
       internal_static_com_andrerinas_openheadunit_aap_protocol_proto_Service_InputSourceService_descriptor.getNestedTypes().get(0);
     internal_static_com_andrerinas_openheadunit_aap_protocol_proto_Service_InputSourceService_TouchConfig_fieldAccessorTable = new

@@ -4,6 +4,7 @@ import android.content.Context
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.aap.AapMessage
 import com.andrerinas.openheadunit.aap.AapTransport
+import com.andrerinas.openheadunit.aap.AuxDisplayAnnouncement
 import com.andrerinas.openheadunit.aap.NarrowBandProfilePolicy
 import com.andrerinas.openheadunit.aap.VehicleIdentityPolicy
 import com.andrerinas.openheadunit.aap.VehicleTypePolicy
@@ -17,6 +18,9 @@ import com.andrerinas.openheadunit.aap.protocol.proto.Sensors
 import com.andrerinas.openheadunit.connection.wifi.direct.WifiBandCapability
 import com.andrerinas.openheadunit.decoder.video.VideoDecoder
 import com.andrerinas.openheadunit.utils.AppLog
+import com.andrerinas.openheadunit.utils.DisplayTargets
+import com.andrerinas.openheadunit.utils.Settings
+import com.andrerinas.openheadunit.decoder.video.AuxDisplayProfilePolicy
 import com.andrerinas.openheadunit.utils.HeadUnitScreenConfig
 import com.andrerinas.openheadunit.utils.VideoFallbackPolicy
 import com.andrerinas.openheadunit.aap.AudioSessionConfig
@@ -26,10 +30,40 @@ internal class ServiceDiscoveryResponse(context: Context, audioConfig: AudioSess
     : AapMessage(Channel.ID_CTR, Control.ControlMsgType.MESSAGE_SERVICE_DISCOVERY_RESPONSE_VALUE, makeProto(context, audioConfig, transport)) {
 
     companion object {
+        /**
+         * The aux display's sink and input, or none. AUXILIARY by default, because only an
+         * auxiliary display honours initial_content_keycode; the phone picks a cluster's content.
+         */
+        private fun auxDisplayServices(context: Context, settings: Settings): List<Control.Service> {
+            if (!settings.auxDisplayEnabled) return emptyList()
+            val projectionDisplayId = DisplayTargets.choose(context, settings).displayId
+            val panel = DisplayTargets.list(context).firstOrNull {
+                it.displayId == settings.auxDisplayId && it.isUsable && it.displayId != projectionDisplayId
+            }
+            if (panel == null) {
+                AppLog.w("[ServiceDiscovery] the auxiliary display ${settings.auxDisplayId} is not " +
+                    "available, so one display is announced")
+                return emptyList()
+            }
+            val profile = AuxDisplayProfilePolicy.profileFor(panel.widthPx, panel.heightPx, panel.densityDpi)
+            val role = settings.auxDisplayRole
+            val keycode = if (AuxDisplayProfilePolicy.announcesContent(role)) {
+                AuxDisplayProfilePolicy.contentKeycodeOrDefault(settings.auxDisplayContent)
+            } else null
+            AppLog.i("[ServiceDiscovery] Announcing an auxiliary display on ${Channel.name(Channel.ID_VID2)}: " +
+                "${panel.name} ${panel.widthPx}x${panel.heightPx} as ${profile.resolution}, margins " +
+                "${profile.widthMargin}x${profile.heightMargin}, density ${profile.density}, " +
+                "role=$role, content ${keycode ?: "the phone's choice"}, input on ${Channel.name(Channel.ID_INP2)}")
+            return AuxDisplayAnnouncement.services(profile, role, keycode)
+        }
+
         private fun makeProto(context: Context, audioConfig: AudioSessionConfig, transport: AapTransport): Message {
             val settings = App.provide(context).settings
-            // Initialize HeadUnitScreenConfig with actual physical screen dimensions
-            HeadUnitScreenConfig.init(context, context.resources.displayMetrics, settings)
+            // Measure the display the projection will actually use. The geometry goes out once, in
+            // this message, and cannot be renegotiated, so a reading taken from the built-in panel
+            // while the picture lives on an external one is wrong for the whole session.
+            val screenContext = DisplayTargets.contextFor(context, DisplayTargets.choose(context, settings).displayId)
+            HeadUnitScreenConfig.init(screenContext, screenContext.resources.displayMetrics, settings)
 
             val services = mutableListOf<Control.Service>()
 
@@ -160,7 +194,21 @@ internal class ServiceDiscoveryResponse(context: Context, audioConfig: AudioSess
                 else -> error("Unexpected announced video codec")
             })
 
-            services.add(video)
+            // The auxiliary display, when the user asked for one and it is attached. It goes on its
+            // own channel: a second config on the video channel is what the phone ends the session
+            // over, with MULTIPLE_DISPLAY_CONFIGS.
+            val auxDisplay = auxDisplayServices(context, settings)
+            if (auxDisplay.isEmpty()) {
+                services.add(video)
+            } else {
+                // Declared only here, so a unit without a second display sends the bytes it always did.
+                services.add(video.toBuilder().also { builder ->
+                    builder.mediaSinkServiceBuilder.displayId = 0
+                    builder.mediaSinkServiceBuilder.displayType = Control.DisplayType.DISPLAY_TYPE_MAIN
+                }.build())
+                services.addAll(auxDisplay)
+                transport.recordAnnouncedAuxVideoCodec(VideoDecoder.CodecType.H264)
+            }
 
             val input = Control.Service.newBuilder().also { service ->
                 service.id = Channel.ID_INP

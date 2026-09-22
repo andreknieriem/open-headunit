@@ -11,7 +11,7 @@ internal class AapReadMultipleMessages(
     connection: ProjectionConnection,
     ssl: AapSsl,
     handler: AapMessageHandler,
-    onVideoRunHoled: (discardAssembledUnit: Boolean) -> Unit = {},
+    onVideoRunHoled: (channel: Int, discardAssembledUnit: Boolean) -> Unit = { _, _ -> },
     faultInjector: VideoFaultInjector? = null)
     : AapRead.Base(connection, ssl, handler, onVideoRunHoled, faultInjector) {
 

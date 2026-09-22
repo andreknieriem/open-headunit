@@ -46,7 +46,7 @@ object MsgType {
             Media.MsgType.MEDIA_MESSAGE_START_VALUE -> {
                 return when (channel) {
                     Channel.ID_SEN -> "Sensor Start Request"
-                    Channel.ID_INP -> "Input Event"
+                    Channel.ID_INP, Channel.ID_INP2 -> "Input Event"
                     Channel.ID_MPB -> "Media Playback Status"
                     else -> "Media Start Request"
                 }
@@ -54,7 +54,7 @@ object MsgType {
             Media.MsgType.MEDIA_MESSAGE_STOP_VALUE -> {
                 return when (channel) {
                     Channel.ID_SEN -> "Sensor Start Response"
-                    Channel.ID_INP -> "Input Binding Request"
+                    Channel.ID_INP, Channel.ID_INP2 -> "Input Binding Request"
                     Channel.ID_MPB -> "Media Playback Status"
                     else -> "Media Stop Request"
                 }
@@ -62,7 +62,7 @@ object MsgType {
             Media.MsgType.MEDIA_MESSAGE_CONFIG_VALUE -> {
                 return when (channel) {
                     Channel.ID_SEN -> "Sensor Event"
-                    Channel.ID_INP -> "Input Binding Response"
+                    Channel.ID_INP, Channel.ID_INP2 -> "Input Binding Response"
                     Channel.ID_MPB -> "Media Playback Status"
                     else -> "Media Config Response"
                 }

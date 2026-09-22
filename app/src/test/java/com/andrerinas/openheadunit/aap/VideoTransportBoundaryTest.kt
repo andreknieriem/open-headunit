@@ -2,15 +2,12 @@ package com.andrerinas.openheadunit.aap
 
 import android.content.Context
 import android.content.SharedPreferences
-import android.os.Handler
 import com.andrerinas.openheadunit.aap.protocol.Channel
 import com.andrerinas.openheadunit.decoder.video.VideoDecoder
 import com.andrerinas.openheadunit.utils.Settings
 import org.junit.Assert.*
 import org.junit.Test
 import org.mockito.kotlin.*
-import java.util.concurrent.LinkedBlockingQueue
-import java.util.concurrent.atomic.AtomicInteger
 
 class VideoTransportBoundaryTest {
     @Test fun `every split including a bare four byte start code reaches the decoder once`() =
@@ -53,25 +50,17 @@ class VideoTransportBoundaryTest {
     }
 
     @Test fun `delayed video completion acknowledges the session captured on the poll thread`() {
-        val transport = mock<AapTransport>(defaultAnswer = org.mockito.Mockito.CALLS_REAL_METHODS)
         val video = mock<AapVideo>()
-        val handler = mock<Handler>()
-        val jobs = mutableListOf<Runnable>()
-        whenever(handler.post(any())).thenAnswer { jobs.add(it.arguments[0] as Runnable); true }
-        fun field(name: String, value: Any) = AapTransport::class.java.getDeclaredField(name)
-            .apply { isAccessible = true }.set(transport, value)
-        field("aapVideo", video)
-        field("videoHandler", handler)
-        field("videoBacklog", AtomicInteger())
-        field("videoBufferPool", LinkedBlockingQueue<ByteArray>())
+        val worker = FakeLaneWorker()
+        var session = 101
+        val acks = mutableListOf<Pair<Int, Int>>()
+        val lane = VideoLane(Channel.ID_VID, video, "test", { session }, { ch, s -> acks.add(ch to s) }, { worker })
+        lane.start()
         whenever(video.isPayload(any())).thenReturn(true)
-        doReturn(101).whenever(transport).getSessionId(Channel.ID_VID)
-        doNothing().whenever(transport).sendMediaAck(any(), any())
         val data = ByteArray(16)
-        transport.dispatchVideo(AapMessage(Channel.ID_VID, 11, 0, 2, data.size, data))
-        doReturn(202).whenever(transport).getSessionId(Channel.ID_VID)
-        jobs.single().run()
-        verify(transport).sendMediaAck(Channel.ID_VID, 101)
-        verify(transport, never()).sendMediaAck(Channel.ID_VID, 202)
+        lane.dispatch(AapMessage(Channel.ID_VID, 11, 0, 2, data.size, data))
+        session = 202
+        worker.jobs.single().run()
+        assertEquals(listOf(Channel.ID_VID to 101), acks)
     }
 }

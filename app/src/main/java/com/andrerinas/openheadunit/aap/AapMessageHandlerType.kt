@@ -56,7 +56,7 @@ internal class AapMessageHandlerType(
         // done. That ack is the phone's flow control and the only bound on the video backlog, so it
         // stays behind the work; what the demux buys is that it is no longer the read thread that
         // waits for it, and audio is read and acked on its own path throughout.
-        if (message.channel == Channel.ID_VID) {
+        if (Channel.isVideo(message.channel)) {
             // False means control traffic on the video channel, which falls through to step 5 as
             // it always has. The video thread still sees it either way.
             if (transport.dispatchVideo(message)) {

@@ -64,6 +64,15 @@ enum DriverPosition
     DRIVER_POSITION_UNKNOWN = 3;
 }
 
+// Which panel a video sink feeds. The first display must be MAIN; CLUSTER shows what the phone
+// decides, AUXILIARY shows what the sink's initial_content_keycode asks for.
+enum DisplayType
+{
+    DISPLAY_TYPE_MAIN = 0;
+    DISPLAY_TYPE_CLUSTER = 1;
+    DISPLAY_TYPE_AUXILIARY = 2;
+}
+
 message Service
 {
     message SensorSourceService
@@ -115,6 +124,13 @@ message Service
         repeated AudioConfiguration audio_configs = 3;
         repeated VideoConfiguration video_configs = 4;
         optional bool available_while_in_call = 5;
+        // Video sinks only. One display per channel: the display ids on the focus and input
+        // messages are deprecated in favour of this.
+        optional uint32 display_id = 6;
+        optional DisplayType display_type = 7;
+        // AUXILIARY sinks only, and only KEYCODE_NAVIGATION (65538) or KEYCODE_TURN_CARD (65544).
+        // An int rather than the keycode enum, which is varint either way on the wire.
+        optional int32 initial_content_keycode = 8;
     }
 
     message InputSourceService
@@ -127,6 +143,8 @@ message Service
         repeated uint32 keycodes_supported = 1;
         optional TouchConfig touchscreen = 2;
         optional TouchConfig touchpad = 3;
+        // The display these inputs belong to, defaulting to the main one.
+        optional uint32 display_id = 5;
     }
 
     message MediaSourceService

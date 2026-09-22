@@ -21,6 +21,23 @@ class AppComponent(private val app: App) {
     }
     val audioDecoder = AudioDecoder()
 
+    /**
+     * The auxiliary display's decoder, built only once a session advertises a second video sink.
+     *
+     * Its own instance rather than a second surface on the one above: MediaCodec renders to one
+     * surface, and the two streams carry different pictures.
+     */
+    @Volatile
+    var auxVideoDecoder: VideoDecoder? = null
+        private set
+
+    /** Builds the auxiliary decoder on first use and hands back the same one after. */
+    @Synchronized
+    fun requireAuxVideoDecoder(): VideoDecoder =
+        auxVideoDecoder ?: VideoDecoder(settings) {
+            DeviceMemoryProfile.readWithOverride(app, settings.debugForceMemoryProfile)
+        }.also { auxVideoDecoder = it }
+
     val notificationManager: NotificationManager
         get() = app.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
     val wifiManager: WifiManager

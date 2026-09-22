@@ -32,7 +32,7 @@ open class AapMessage(
         get() = Channel.isAudio(this.channel)
 
     val isVideo: Boolean
-        get() = this.channel == Channel.ID_VID
+        get() = Channel.isVideo(this.channel)
 
     override fun toString(): String {
         val sb = StringBuilder()

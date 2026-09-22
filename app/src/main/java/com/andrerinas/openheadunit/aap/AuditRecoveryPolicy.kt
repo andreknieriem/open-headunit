@@ -45,7 +45,7 @@ object AuditRecoveryPolicy {
      * @param channel the AAP channel the run was on.
      */
     fun shouldRequestKeyframe(outcome: FragmentedMessageAudit.Outcome, channel: Int): Boolean =
-        outcome == FragmentedMessageAudit.Outcome.DELTA_CHANGED && channel == Channel.ID_VID
+        outcome == FragmentedMessageAudit.Outcome.DELTA_CHANGED && Channel.isVideo(channel)
 
     /**
      * Bytes a run must be short by before the assembled unit is thrown away rather than only

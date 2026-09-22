@@ -48,6 +48,7 @@ import com.andrerinas.openheadunit.utils.AppPermissions
 import com.andrerinas.openheadunit.utils.CarLauncherManager
 import com.andrerinas.openheadunit.utils.ConnectionIssue
 import com.andrerinas.openheadunit.utils.ConnectionIssues
+import com.andrerinas.openheadunit.utils.DisplayTargets
 import android.content.res.Configuration
 import com.andrerinas.openheadunit.utils.Settings
 import android.os.SystemClock
@@ -1357,7 +1358,7 @@ class MainActivity : BaseActivity() {
             putExtra(AapProjectionActivity.EXTRA_FOCUS, true)
             addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP)
         }
-        startActivity(aapIntent)
+        startActivity(aapIntent, DisplayTargets.projectionLaunchOptions(this, Settings(this)))
     }
 
     override fun onPause() {

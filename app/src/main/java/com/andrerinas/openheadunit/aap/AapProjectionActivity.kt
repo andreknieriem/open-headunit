@@ -42,6 +42,8 @@ import com.andrerinas.openheadunit.decoder.video.VideoDecoder
 import com.andrerinas.openheadunit.decoder.video.VideoDimensionsListener
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.BluetoothHelper
+import com.andrerinas.openheadunit.utils.DisplayTargets
+import com.andrerinas.openheadunit.view.AuxDisplayPresentation
 import com.andrerinas.openheadunit.connection.self.SelfModeCallRaisePolicy
 import com.andrerinas.openheadunit.connection.usb.UsbSwitchClaim
 import com.andrerinas.openheadunit.decoder.audio.CallState
@@ -970,6 +972,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         // ensures the window manager has correctly resolved the display's physical orientation
         // before we lock it.
         applyOrientationSettings()
+        logLandedDisplay()
 
         // In onCreate and not onStart: the whole point is to hear a call while the activity is
         // stopped behind the phone's call screen.
@@ -1200,6 +1203,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         userLeftDeliberately = false
         closeCallRaiseEpisode("the projection is back in front")
         AppLog.i("AapProjectionActivity: onResume")
+        showAuxDisplay()
         // Show the one-time rename notice even here, on top of an active projection.
         RenameNotice.maybeShow(this, App.provide(this).settings)
         Aa174Notice.maybeShow(this, App.provide(this).settings)
@@ -1447,6 +1451,56 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
 
     override fun onRetainCustomNonConfigurationInstance(): Any? {
         return true
+    }
+
+    private var auxPresentation: AuxDisplayPresentation? = null
+
+    /**
+     * Brings up the auxiliary display's window, when one was asked for and is attached.
+     *
+     * Hosted by this activity rather than the service because a Presentation shown from a service
+     * needs the overlay permission, which this feature should not make a condition of working.
+     */
+    private fun showAuxDisplay() {
+        if (!settings.auxDisplayEnabled) return
+        if (auxPresentation?.isShowing == true) return
+        val display = DisplayTargets.display(this, settings.auxDisplayId) ?: run {
+            AppLog.w("AapProjectionActivity: the auxiliary display ${settings.auxDisplayId} is not attached")
+            return
+        }
+        try {
+            val presentation = AuxDisplayPresentation(this, display, App.provide(this).requireAuxVideoDecoder()) {
+                commManager.requestAuxKeyframe("the auxiliary surface was recreated")
+            }
+            presentation.show()
+            auxPresentation = presentation
+            AppLog.i("AapProjectionActivity: the auxiliary display is up on ${display.displayId}")
+        } catch (e: Exception) {
+            // Never fatal to the session: the main picture is the one the driver is using.
+            AppLog.e("AapProjectionActivity: could not open the auxiliary display: ${e.message}")
+            auxPresentation = null
+        }
+    }
+
+    private fun dismissAuxDisplay() {
+        try { auxPresentation?.dismiss() } catch (_: Exception) {}
+        auxPresentation = null
+    }
+
+    /**
+     * Where the projection actually came up, against where it was aimed.
+     *
+     * A launch that is refused a display fails silently, and the picture then carries the built-in
+     * panel's geometry, which service discovery has already announced and cannot take back.
+     */
+    private fun logLandedDisplay() {
+        val landedOn = DisplayTargets.displayIdOf(this)
+        val asked = DisplayTargets.choose(this, settings).displayId
+        if (landedOn == asked) {
+            AppLog.i("AapProjectionActivity: projecting on display $landedOn")
+        } else {
+            AppLog.w("AapProjectionActivity: asked for display $asked but came up on $landedOn")
+        }
     }
 
     private fun applyVirtualDisplayFix() {
@@ -2226,6 +2280,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
 
     override fun onDestroy() {
         super.onDestroy()
+        dismissAuxDisplay()
         autoStartOfferTimer?.cancel()
         autoStartOfferTimer = null
         HeadUnitScreenConfig.onMarginsDiverged = null

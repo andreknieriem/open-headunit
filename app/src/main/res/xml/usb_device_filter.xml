@@ -36,4 +36,12 @@
     <usb-device class="239" subclass="4" protocol="1" />    <!-- IAD -->
     <usb-device class="8" subclass="6" protocol="1" />      <!-- MTP over mass storage -->
 
+    <!--
+        Second-screen adapters, which the policy rejects as phones. Listed so the user can let the
+        app open them by default, which is what keeps the USB permission across plug-ins.
+    -->
+    <usb-device vendor-id="21325" product-id="24609" />  <!-- 0x534D:0x6021 MacroSilicon MS9120 -->
+    <usb-device vendor-id="21325" product-id="2081" />   <!-- 0x534D:0x0821 MacroSilicon MS912x -->
+    <usb-device vendor-id="13407" product-id="37170" />  <!-- 0x345F:0x9132 MacroSilicon MS9132 -->
+
 </resources>

@@ -1,6 +1,11 @@
 package com.andrerinas.openheadunit.secondscreen
 
 import android.content.Context
+import android.hardware.usb.UsbManager
+import android.os.Build
+import com.andrerinas.openheadunit.App
+import com.andrerinas.openheadunit.secondscreen.ms912x.Ms912xModes
+import com.andrerinas.openheadunit.secondscreen.ms912x.Ms912xOutput
 import com.andrerinas.openheadunit.secondscreen.SecondScreenOutputPolicy.Output
 import com.andrerinas.openheadunit.secondscreen.SecondScreenOutputPolicy.Target
 import com.andrerinas.openheadunit.secondscreen.network.NetworkStreamOutput
@@ -51,7 +56,8 @@ object SecondScreenHub {
     private fun availability(context: Context, settings: Settings, output: Output) = when (output) {
         Output.ANDROID_DISPLAY -> SecondScreenOutputPolicy.Availability(androidDisplay = androidDisplayTarget(context, settings))
         Output.NETWORK -> SecondScreenOutputPolicy.Availability(network = SecondScreenOutputPolicy.networkTarget(settings.auxNetworkSize))
-        Output.MS912X, Output.USB_DISPLAY -> SecondScreenOutputPolicy.Availability()
+        Output.MS912X -> SecondScreenOutputPolicy.Availability(ms912x = ms912xTarget(context, settings))
+        Output.USB_DISPLAY -> SecondScreenOutputPolicy.Availability()
     }
 
     private fun androidDisplayTarget(context: Context, settings: Settings): Target? {
@@ -62,6 +68,18 @@ object SecondScreenHub {
         return Target(panel.widthPx, panel.heightPx, panel.densityDpi)
     }
 
+    /** The adapter's mode, when one is attached and this release can read decoded pictures back. */
+    private fun ms912xTarget(context: Context, settings: Settings): Target? {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) return null
+        val usb = context.getSystemService(Context.USB_SERVICE) as? UsbManager ?: return null
+        val attached = usb.deviceList.values.any {
+            UsbDisplayAdapterPolicy.kindOf(it.vendorId, it.productId, emptyList()) == UsbDisplayAdapterPolicy.Kind.MS912X
+        }
+        if (!attached) return null
+        val mode = settings.ms912xMode
+        return Target(mode.width, mode.height, Ms912xModes.densityFor(mode))
+    }
+
     /** Opens the announced output for a session that is starting. Idempotent. */
     @Synchronized
     fun open(context: Context, settings: Settings, onKeyframeNeeded: () -> Unit): SecondScreenOutput? {
@@ -69,7 +87,12 @@ object SecondScreenHub {
         val output = announced ?: return null
         val created: SecondScreenOutput = when (output) {
             Output.NETWORK -> NetworkStreamOutput(settings.auxNetworkPort)
-            Output.ANDROID_DISPLAY, Output.MS912X, Output.USB_DISPLAY -> return null
+            Output.MS912X -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                val mode = settings.ms912xMode
+                Ms912xOutput(context, App.provide(context).requireAuxVideoDecoder(), mode,
+                    Ms912xModes.effectiveFormat(mode, settings.ms912xFormat))
+            } else return null
+            Output.ANDROID_DISPLAY, Output.USB_DISPLAY -> return null
         }
         created.onKeyframeNeeded = onKeyframeNeeded
         try {

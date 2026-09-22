@@ -13,6 +13,7 @@ import com.andrerinas.openheadunit.input.MediaKeyRoutingPolicy
 import com.andrerinas.openheadunit.decoder.video.VideoFaultInjector
 import com.andrerinas.openheadunit.decoder.video.AuxDisplayProfilePolicy
 import com.andrerinas.openheadunit.secondscreen.SecondScreenOutputPolicy
+import com.andrerinas.openheadunit.secondscreen.network.NetworkStreamPolicy
 import com.andrerinas.openheadunit.decoder.video.DeviceMemoryProfile
 import com.andrerinas.openheadunit.decoder.audio.PlaybackFocusPolicy
 import com.andrerinas.openheadunit.aap.VehicleTypePolicy
@@ -1031,6 +1032,16 @@ class Settings(private val context: Context) {
     var auxOutput: SecondScreenOutputPolicy.Output
         get() = SecondScreenOutputPolicy.Output.of(prefs.getString("aux-output", null))
         set(value) { prefs.edit().putString("aux-output", value.name).apply() }
+
+    /** Which of [SecondScreenOutputPolicy.NETWORK_SIZES] a network receiver is sent. */
+    var auxNetworkSize: Int
+        get() = prefs.getInt("aux-network-size", 0)
+        set(value) { prefs.edit().putInt("aux-network-size", value).apply() }
+
+    /** The TCP port the network stream listens on. */
+    var auxNetworkPort: Int
+        get() = NetworkStreamPolicy.portOrDefault(prefs.getInt("aux-network-port", NetworkStreamPolicy.DEFAULT_PORT))
+        set(value) { prefs.edit().putInt("aux-network-port", value).apply() }
 
     /** The Android display the auxiliary stream is shown on. */
     var auxDisplayId: Int

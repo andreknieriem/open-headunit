@@ -3,6 +3,7 @@ package com.andrerinas.openheadunit.secondscreen
 import android.content.Context
 import com.andrerinas.openheadunit.secondscreen.SecondScreenOutputPolicy.Output
 import com.andrerinas.openheadunit.secondscreen.SecondScreenOutputPolicy.Target
+import com.andrerinas.openheadunit.secondscreen.network.NetworkStreamOutput
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.DisplayTargets
 import com.andrerinas.openheadunit.utils.Settings
@@ -49,7 +50,8 @@ object SecondScreenHub {
 
     private fun availability(context: Context, settings: Settings, output: Output) = when (output) {
         Output.ANDROID_DISPLAY -> SecondScreenOutputPolicy.Availability(androidDisplay = androidDisplayTarget(context, settings))
-        Output.NETWORK, Output.MS912X, Output.USB_DISPLAY -> SecondScreenOutputPolicy.Availability()
+        Output.NETWORK -> SecondScreenOutputPolicy.Availability(network = SecondScreenOutputPolicy.networkTarget(settings.auxNetworkSize))
+        Output.MS912X, Output.USB_DISPLAY -> SecondScreenOutputPolicy.Availability()
     }
 
     private fun androidDisplayTarget(context: Context, settings: Settings): Target? {
@@ -66,7 +68,8 @@ object SecondScreenHub {
         current?.let { return it }
         val output = announced ?: return null
         val created: SecondScreenOutput = when (output) {
-            Output.ANDROID_DISPLAY, Output.NETWORK, Output.MS912X, Output.USB_DISPLAY -> return null
+            Output.NETWORK -> NetworkStreamOutput(settings.auxNetworkPort)
+            Output.ANDROID_DISPLAY, Output.MS912X, Output.USB_DISPLAY -> return null
         }
         created.onKeyframeNeeded = onKeyframeNeeded
         try {

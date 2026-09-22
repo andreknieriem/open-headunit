@@ -62,6 +62,8 @@ import com.andrerinas.openheadunit.utils.AppPermissions
 import com.andrerinas.openheadunit.utils.AppThemeManager
 import com.andrerinas.openheadunit.decoder.video.AuxDisplayProfilePolicy
 import com.andrerinas.openheadunit.secondscreen.SecondScreenOutputPolicy
+import com.andrerinas.openheadunit.utils.NetworkAddresses
+import com.andrerinas.openheadunit.secondscreen.network.NetworkStreamPolicy
 import com.andrerinas.openheadunit.utils.DisplayTargetPolicy
 import com.andrerinas.openheadunit.utils.DisplayTargets
 import com.andrerinas.openheadunit.utils.Settings
@@ -145,7 +147,7 @@ class SettingsFragment : Fragment() {
         "gpsNavigation",
         // Graphic
         "resolution", "dpiPixelDensity", "viewMode", "screenOrientation", "projectionDisplay",
-        "auxDisplay", "auxAndroidDisplay", "auxDisplayRole", "auxDisplayContent", "startInFullscreenMode",
+        "auxDisplay", "auxAndroidDisplay", "auxNetworkSize", "auxNetworkPort", "auxDisplayRole", "auxDisplayContent", "startInFullscreenMode",
         // Theming
         "theming", "loadingScreen", "customization",
         // Video
@@ -4637,9 +4639,56 @@ class SettingsFragment : Fragment() {
         ))
     }
 
+    /** The network stream's size and port, and the command that shows it on a computer. */
+    private fun addAuxNetworkRows(items: MutableList<SettingItem>) {
+        val sizes = SecondScreenOutputPolicy.NETWORK_SIZES
+        val labels = sizes.map { "${it.widthPx}x${it.heightPx}" }
+        val sizeIndex = settings.auxNetworkSize.coerceIn(0, sizes.size - 1)
+        items.add(SettingItem.SettingEntry(
+            stableId = "auxNetworkSize",
+            nameResId = R.string.aux_network_size,
+            value = labels[sizeIndex],
+            searchKeywords = labels.joinToString(" "),
+            onClick = { _ ->
+                MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
+                    .setTitle(R.string.aux_network_size)
+                    .setSingleChoiceItems(labels.toTypedArray(), sizeIndex) { dialog, which ->
+                        settings.auxNetworkSize = which
+                        settings.commit()
+                        dialog.dismiss()
+                        updateSettingsList()
+                    }
+                    .show()
+            }
+        ))
+        items.add(SettingItem.SettingEntry(
+            stableId = "auxNetworkPort",
+            nameResId = R.string.aux_network_port,
+            value = settings.auxNetworkPort.toString(),
+            onClick = { _ ->
+                showNumericInputDialog(getString(R.string.aux_network_port), null, settings.auxNetworkPort) {
+                    settings.auxNetworkPort = NetworkStreamPolicy.portOrDefault(it)
+                    settings.commit()
+                    updateSettingsList()
+                }
+            }
+        ))
+        val host = NetworkAddresses.stationIpv4(requireContext()) ?: "127.0.0.1"
+        items.add(SettingItem.InfoBanner(
+            stableId = "auxNetworkHint",
+            textResId = R.string.aux_network_hint,
+            text = getString(
+                R.string.aux_network_hint,
+                NetworkStreamPolicy.ffplayCommand(host, settings.auxNetworkPort),
+                settings.auxNetworkPort,
+            ),
+        ))
+    }
+
     /** The second-screen outputs this build offers, in the order the picker lists them. */
     private val offeredAuxOutputs = listOf(
         SecondScreenOutputPolicy.Output.ANDROID_DISPLAY,
+        SecondScreenOutputPolicy.Output.NETWORK,
     )
 
     private fun auxOutputLabel(output: SecondScreenOutputPolicy.Output): String = getString(when (output) {
@@ -4674,7 +4723,11 @@ class SettingsFragment : Fragment() {
         items.add(SettingItem.InfoBanner(stableId = "auxDisplayHint", textResId = R.string.aux_display_hint))
 
         if (!settings.auxDisplayEnabled) return
-        if (settings.auxOutput == SecondScreenOutputPolicy.Output.ANDROID_DISPLAY) addAuxAndroidDisplayRow(items)
+        when (settings.auxOutput) {
+            SecondScreenOutputPolicy.Output.ANDROID_DISPLAY -> addAuxAndroidDisplayRow(items)
+            SecondScreenOutputPolicy.Output.NETWORK -> addAuxNetworkRows(items)
+            else -> {}
+        }
 
         val roleLabels = arrayOf(
             getString(R.string.aux_display_role_auxiliary),

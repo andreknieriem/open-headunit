@@ -12,7 +12,16 @@ import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.Settings
 import java.nio.ByteBuffer
 
-internal class AapVideo(private val videoDecoder: VideoDecoder, private val settings: Settings, private val onFrameCorrupted: () -> Unit) {
+/**
+ * Reassembles one video channel's access units. [videoDecoder] is null for a forwarded stream, and
+ * [onAccessUnit] sees each unit first.
+ */
+internal class AapVideo(
+    private val videoDecoder: VideoDecoder?,
+    private val settings: Settings,
+    private val onAccessUnit: ((ByteArray, Int, Int) -> Unit)? = null,
+    private val onFrameCorrupted: () -> Unit,
+) {
 
     companion object {
         /** Enough for H.264 at the resolutions most head units negotiate. ~2MB. */
@@ -44,7 +53,7 @@ internal class AapVideo(private val videoDecoder: VideoDecoder, private val sett
     private var assemblyArrivalNs = 0L
 
     internal fun bindPresentationController(controller: GalPresentationController?) {
-        videoDecoder.bindPresentationController(controller)
+        videoDecoder?.bindPresentationController(controller)
     }
 
     /** Serialized with payload processing; the transport queues this before new-generation data. */
@@ -52,10 +61,10 @@ internal class AapVideo(private val videoDecoder: VideoDecoder, private val sett
         if (mediaGeneration == session.generation) return
         val adoptsPreparation = preparingSession && preparationGeneration == session.previousGeneration
         if ((mediaGeneration != null || preparingSession) && !adoptsPreparation) {
-            videoDecoder.stop(DecoderStopPolicy.REASON_GAL_START_REPLACED)
+            videoDecoder?.stop(DecoderStopPolicy.REASON_GAL_START_REPLACED)
         }
         mediaGeneration = session.generation
-        videoDecoder.beginPresentationSession(session.generation)
+        videoDecoder?.beginPresentationSession(session.generation)
         preparingSession = false
         preparationGeneration = null
         discardCurrentAssembly = false
@@ -68,17 +77,17 @@ internal class AapVideo(private val videoDecoder: VideoDecoder, private val sett
     }
 
     @Synchronized fun selectFormat(width: Int, height: Int, fps: Int, configurationIndex: Int): Boolean =
-        videoDecoder.selectFormat(width, height, fps, configurationIndex)
+        videoDecoder?.selectFormat(width, height, fps, configurationIndex) ?: true
 
-    internal fun galPlaybackSample(): GalPlaybackSample? = videoDecoder.galPlaybackSample()
+    internal fun galPlaybackSample(): GalPlaybackSample? = videoDecoder?.galPlaybackSample()
 
     /** A queued packet keeps the ownership captured before asynchronous dispatch. */
     @Synchronized fun process(message: AapMessage, session: GalMediaSessions.Session?, arrivalNs: Long = System.nanoTime()): Boolean {
         if (preparingSession && message.type == Media.MsgType.MEDIA_MESSAGE_SETUP_VALUE &&
             session?.generation == preparationGeneration) {
             // Another Setup supersedes even already-decoded pre-Start parameter sets.
-            videoDecoder.stop(DecoderStopPolicy.REASON_GAL_SETUP_REPLACED_PREPARATION)
-            videoDecoder.endPresentationSession()
+            videoDecoder?.stop(DecoderStopPolicy.REASON_GAL_SETUP_REPLACED_PREPARATION)
+            videoDecoder?.endPresentationSession()
             preparingSession = false
             preparationGeneration = null
             mediaGeneration = null
@@ -104,9 +113,9 @@ internal class AapVideo(private val videoDecoder: VideoDecoder, private val sett
                     return isPayload(message)
                 }
                 if (mediaGeneration != null || preparingSession) {
-                    videoDecoder.stop(DecoderStopPolicy.REASON_GAL_PRE_START_CSD)
+                    videoDecoder?.stop(DecoderStopPolicy.REASON_GAL_PRE_START_CSD)
                 }
-                videoDecoder.endPresentationSession()
+                videoDecoder?.endPresentationSession()
                 assembler.reset()
                 messageBuffer.clear()
                 discardCurrentAssembly = false
@@ -139,6 +148,9 @@ internal class AapVideo(private val videoDecoder: VideoDecoder, private val sett
 
     /** Ordering rules for the fragment run. Pure and unit-tested; see [VideoFragmentAssembler]. */
     private val assembler = VideoFragmentAssembler()
+
+    /** Fed before the fault injector, so an injected drop cannot hide a restart. */
+    private val timestampTrace = MediaTimestampTrace()
 
     /** Every line the injector prints. Declared first: [faultInjector]'s initializer announces on it. */
     private val reporter = VideoFaultReporter("AapVideo")
@@ -195,7 +207,7 @@ internal class AapVideo(private val videoDecoder: VideoDecoder, private val sett
         // concealment window this opens is a local render decision with its own hard bound. A
         // second fault inside the throttle window must still hold the picture even though it
         // sends nothing.
-        videoDecoder.noteStreamCorrupted(reason)
+        videoDecoder?.noteStreamCorrupted(reason)
         val now = android.os.SystemClock.elapsedRealtime()
         // Reader and assembler can report the same lost fragment. This throttle also protects
         // onFrameCorrupted's recovery clock from counting those two reports as fresh wire faults.
@@ -359,6 +371,11 @@ internal class AapVideo(private val videoDecoder: VideoDecoder, private val sett
         val len = message.size
         val flags = message.flags.toInt()
 
+        if (onAccessUnit != null) {
+            timestampTrace.onMessage(message.type, flags, buf, len, android.os.SystemClock.elapsedRealtime())
+                ?.let { AppLog.i(it) }
+        }
+
         val injector = faultInjector
         val fault = injector?.effectFor(flags) ?: VideoFaultInjector.Effect.NONE
         if (injector != null) {
@@ -389,8 +406,7 @@ internal class AapVideo(private val videoDecoder: VideoDecoder, private val sett
                 messageBuffer.clear()
                 lastSourceTimestampUs = sourceTimestampUs(message)
                 assemblySourceTimestampUs = null
-                videoDecoder.decode(buf, action.payloadOffset, len - action.payloadOffset, settings.forceSoftwareDecoding, announcedCodec,
-                    lastSourceTimestampUs, arrivalNs)
+                emit(buf, action.payloadOffset, len - action.payloadOffset, announcedCodec, lastSourceTimestampUs, arrivalNs)
                 true
             }
 
@@ -460,11 +476,9 @@ internal class AapVideo(private val videoDecoder: VideoDecoder, private val sett
                         legacyAssembledBuffer = ByteArray(assembledSize + 1024)
                     }
                     messageBuffer.get(legacyAssembledBuffer!!, 0, assembledSize)
-                    videoDecoder.decode(legacyAssembledBuffer!!, 0, assembledSize, settings.forceSoftwareDecoding, announcedCodec,
-                        lastSourceTimestampUs, assemblyArrivalNs)
+                    emit(legacyAssembledBuffer!!, 0, assembledSize, announcedCodec, lastSourceTimestampUs, assemblyArrivalNs)
                 } else {
-                    videoDecoder.decode(messageBuffer.array(), 0, assembledSize, settings.forceSoftwareDecoding, announcedCodec,
-                        lastSourceTimestampUs, assemblyArrivalNs)
+                    emit(messageBuffer.array(), 0, assembledSize, announcedCodec, lastSourceTimestampUs, assemblyArrivalNs)
                 }
 
                 messageBuffer.clear()
@@ -485,6 +499,12 @@ internal class AapVideo(private val videoDecoder: VideoDecoder, private val sett
         }
     }
 
+    private fun emit(buf: ByteArray, offset: Int, length: Int, codec: VideoDecoder.CodecType,
+                     sourceTimestampUs: Long?, arrivalNs: Long) {
+        onAccessUnit?.invoke(buf, offset, length)
+        videoDecoder?.decode(buf, offset, length, settings.forceSoftwareDecoding, codec, sourceTimestampUs, arrivalNs)
+    }
+
     @Synchronized fun release() {
         // Decoding is synchronous here, so there is nothing to drain - but the fragment run has to
         // be closed, or a session that ends mid-frame leaves the next one's first fragments looking
@@ -493,7 +513,7 @@ internal class AapVideo(private val videoDecoder: VideoDecoder, private val sett
         mediaGeneration = null
         preparingSession = false
         preparationGeneration = null
-        videoDecoder.endPresentationSession()
+        videoDecoder?.endPresentationSession()
         assemblyArrivalNs = 0L
         lastSourceTimestampUs = null
         assemblySourceTimestampUs = null

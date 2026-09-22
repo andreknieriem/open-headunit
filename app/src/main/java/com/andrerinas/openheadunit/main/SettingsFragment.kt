@@ -6,6 +6,7 @@ import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.hct.HctService
 import android.app.AlertDialog
 import android.content.ActivityNotFoundException
 import android.content.Context
+import android.hardware.usb.UsbManager
 import android.content.Intent
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import android.net.Uri
@@ -80,6 +81,14 @@ import com.andrerinas.openheadunit.utils.AppPermissions
 import com.andrerinas.openheadunit.utils.AppThemeManager
 import com.andrerinas.openheadunit.decoder.video.AuxDisplayProfilePolicy
 import com.andrerinas.openheadunit.secondscreen.SecondScreenOutputPolicy
+import com.andrerinas.openheadunit.connection.usb.UsbPermissionAsks
+import com.andrerinas.openheadunit.connection.usb.UsbReceiver
+import com.andrerinas.openheadunit.secondscreen.SecondScreenHub
+import com.andrerinas.openheadunit.secondscreen.usbdisplay.UsbDisplayProbe
+import com.andrerinas.openheadunit.secondscreen.UsbDisplayAdapterPolicy
+import com.andrerinas.openheadunit.secondscreen.ms912x.Ms912xMode
+import com.andrerinas.openheadunit.secondscreen.ms912x.Ms912xModes
+import com.andrerinas.openheadunit.secondscreen.ms912x.Ms912xWireFormat
 import com.andrerinas.openheadunit.utils.NetworkAddresses
 import com.andrerinas.openheadunit.secondscreen.network.NetworkStreamPolicy
 import com.andrerinas.openheadunit.utils.DisplayTargetPolicy
@@ -178,7 +187,8 @@ class SettingsFragment : Fragment() {
         "gpsNavigation",
         // Graphic
         "resolution", "dpiPixelDensity", "viewMode", "screenOrientation", "projectionDisplay",
-        "auxDisplay", "auxAndroidDisplay", "auxNetworkSize", "auxNetworkPort", "auxDisplayRole", "auxDisplayContent", "startInFullscreenMode",
+        "auxDisplay", "auxAndroidDisplay", "auxNetworkSize", "auxNetworkPort", "auxNetworkHint", "auxMs912xMode", "auxMs912xFormat",
+        "auxMs912xHint", "auxUsbDisplayStatus", "auxUsbDisplayCheck", "auxDisplayRole", "auxDisplayContent", "startInFullscreenMode",
         // Theming
         "loadingScreen", "customization",
         // Video
@@ -4994,10 +5004,91 @@ class SettingsFragment : Fragment() {
         ))
     }
 
+    /** The MacroSilicon adapter's mode and pixel format, and whether one is plugged in. */
+    private fun addAuxMs912xRows(items: MutableList<SettingItem>) {
+        val modes = Ms912xMode.values()
+        val modeLabels = modes.map { "${it.width}x${it.height}" }
+        val modeIndex = modes.indexOf(settings.ms912xMode)
+        items.add(SettingItem.SettingEntry(
+            stableId = "auxMs912xMode",
+            nameResId = R.string.aux_ms912x_mode,
+            value = modeLabels[modeIndex],
+            searchKeywords = modeLabels.joinToString(" "),
+            onClick = { _ ->
+                MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
+                    .setTitle(R.string.aux_ms912x_mode)
+                    .setSingleChoiceItems(modeLabels.toTypedArray(), modeIndex) { dialog, which ->
+                        settings.ms912xMode = modes[which]
+                        settings.commit()
+                        dialog.dismiss()
+                        updateSettingsList()
+                    }
+                    .show()
+            }
+        ))
+        val formats = Ms912xWireFormat.values()
+        val formatLabels = formats.map {
+            getString(if (it == Ms912xWireFormat.YUV422) R.string.aux_ms912x_format_yuv else R.string.aux_ms912x_format_rgb)
+        }
+        val effective = Ms912xModes.effectiveFormat(settings.ms912xMode, settings.ms912xFormat)
+        items.add(SettingItem.SettingEntry(
+            stableId = "auxMs912xFormat",
+            nameResId = R.string.aux_ms912x_format,
+            value = formatLabels[formats.indexOf(effective)],
+            onClick = { _ ->
+                MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
+                    .setTitle(R.string.aux_ms912x_format)
+                    .setSingleChoiceItems(formatLabels.toTypedArray(), formats.indexOf(effective)) { dialog, which ->
+                        settings.ms912xFormat = formats[which]
+                        settings.commit()
+                        dialog.dismiss()
+                        updateSettingsList()
+                    }
+                    .show()
+            }
+        ))
+        val usb = requireContext().getSystemService(Context.USB_SERVICE) as? UsbManager
+        val attached = usb?.deviceList?.values?.any {
+            UsbDisplayAdapterPolicy.kindOf(it.vendorId, it.productId, emptyList()) != null
+        } == true
+        items.add(SettingItem.InfoBanner(
+            stableId = "auxMs912xHint",
+            textResId = if (attached) R.string.aux_ms912x_hint_attached else R.string.aux_ms912x_hint_missing,
+        ))
+    }
+
+    /** Whether an Open Headunit USB display is attached, what it last said, and a way to ask it. */
+    private fun addAuxUsbDisplayRows(items: MutableList<SettingItem>) {
+        val usb = requireContext().getSystemService(Context.USB_SERVICE) as? UsbManager
+        val found = usb?.let { UsbDisplayProbe.find(it) }
+        val last = settings.usbDisplayLastTarget
+        val status = when {
+            found == null -> getString(R.string.aux_usb_display_missing)
+            last == null -> getString(R.string.aux_usb_display_unread)
+            else -> getString(R.string.aux_usb_display_ready, last.widthPx, last.heightPx, last.densityDpi)
+        }
+        items.add(SettingItem.InfoBanner(stableId = "auxUsbDisplayStatus", textResId = R.string.aux_usb_display_unread, text = status))
+        if (found == null || usb == null) return
+        items.add(SettingItem.ActionButton(
+            stableId = "auxUsbDisplayCheck",
+            textResId = R.string.aux_usb_display_check,
+            onClick = {
+                if (!usb.hasPermission(found.device)) {
+                    usb.requestPermission(found.device, UsbReceiver.createPermissionPendingIntent(requireContext(), UsbPermissionAsks.newToken()))
+                } else {
+                    SecondScreenHub.usbDisplayTarget(requireContext(), settings)
+                    updateSettingsList()
+                }
+            }
+        ))
+    }
+
     /** The second-screen outputs this build offers, in the order the picker lists them. */
     private val offeredAuxOutputs = listOf(
         SecondScreenOutputPolicy.Output.ANDROID_DISPLAY,
         SecondScreenOutputPolicy.Output.NETWORK,
+        SecondScreenOutputPolicy.Output.MS912X,
+        SecondScreenOutputPolicy.Output.USB_DISPLAY,
     )
 
     private fun auxOutputLabel(output: SecondScreenOutputPolicy.Output): String = getString(when (output) {
@@ -5036,6 +5127,8 @@ class SettingsFragment : Fragment() {
         when (settings.auxOutput) {
             SecondScreenOutputPolicy.Output.ANDROID_DISPLAY -> addAuxAndroidDisplayRow(items)
             SecondScreenOutputPolicy.Output.NETWORK -> addAuxNetworkRows(items)
+            SecondScreenOutputPolicy.Output.MS912X -> addAuxMs912xRows(items)
+            SecondScreenOutputPolicy.Output.USB_DISPLAY -> addAuxUsbDisplayRows(items)
             else -> {}
         }
 

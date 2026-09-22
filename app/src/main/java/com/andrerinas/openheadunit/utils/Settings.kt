@@ -31,6 +31,9 @@ import com.andrerinas.openheadunit.decoder.video.VideoFaultInjector
 import com.andrerinas.openheadunit.decoder.video.AuxDisplayProfilePolicy
 import com.andrerinas.openheadunit.secondscreen.SecondScreenOutputPolicy
 import com.andrerinas.openheadunit.secondscreen.network.NetworkStreamPolicy
+import com.andrerinas.openheadunit.secondscreen.ms912x.Ms912xMode
+import com.andrerinas.openheadunit.secondscreen.ms912x.Ms912xModes
+import com.andrerinas.openheadunit.secondscreen.ms912x.Ms912xWireFormat
 import com.andrerinas.openheadunit.decoder.video.DeviceMemoryProfile
 import com.andrerinas.openheadunit.decoder.audio.PlaybackFocusPolicy
 import com.andrerinas.openheadunit.aap.VehicleTypePolicy
@@ -1352,6 +1355,34 @@ class Settings(private val context: Context) {
     var auxNetworkPort: Int
         get() = NetworkStreamPolicy.portOrDefault(prefs.getInt("aux-network-port", NetworkStreamPolicy.DEFAULT_PORT))
         set(value) { prefs.edit().putInt("aux-network-port", value).apply() }
+
+    /** The MacroSilicon adapter's HDMI mode; the chip does not scale, so this is the panel's size. */
+    var ms912xMode: Ms912xMode
+        get() = Ms912xModes.modeOf(prefs.getString("ms912x-mode", null))
+        set(value) { prefs.edit().putString("ms912x-mode", value.name).apply() }
+
+    /** The pixel format sent to the MacroSilicon adapter. */
+    var ms912xFormat: Ms912xWireFormat
+        get() = Ms912xModes.formatOf(prefs.getString("ms912x-format", null))
+        set(value) { prefs.edit().putString("ms912x-format", value.name).apply() }
+
+    /**
+     * The size the Open Headunit USB display last reported, so it can be announced when the device
+     * cannot be asked in time. Null until one has answered.
+     */
+    var usbDisplayLastTarget: SecondScreenOutputPolicy.Target?
+        get() {
+            val w = prefs.getInt("usb-display-width", 0)
+            val h = prefs.getInt("usb-display-height", 0)
+            return if (w > 0 && h > 0) SecondScreenOutputPolicy.Target(w, h, prefs.getInt("usb-display-dpi", 160)) else null
+        }
+        set(value) {
+            prefs.edit()
+                .putInt("usb-display-width", value?.widthPx ?: 0)
+                .putInt("usb-display-height", value?.heightPx ?: 0)
+                .putInt("usb-display-dpi", value?.densityDpi ?: 160)
+                .apply()
+        }
 
     /** The Android display the auxiliary stream is shown on. */
     var auxDisplayId: Int

@@ -86,4 +86,11 @@ class AuxDisplayProfilePolicyTest {
         assertEquals(true, AuxDisplayProfilePolicy.announcesContent(AuxDisplayProfilePolicy.Role.AUXILIARY))
         assertEquals(false, AuxDisplayProfilePolicy.announcesContent(AuxDisplayProfilePolicy.Role.CLUSTER))
     }
+
+    @Test
+    fun `the margin crop enlarges the frame so only the picture fills the panel`() {
+        val onPanel = AuxDisplayProfilePolicy.profileFor(1024, 600, 160)
+        assertEquals(1.25f to 1.2f, AuxDisplayProfilePolicy.marginCropScale(onPanel))
+        assertEquals(1f to 1f, AuxDisplayProfilePolicy.marginCropScale(AuxDisplayProfilePolicy.profileFor(1280, 720, 213)))
+    }
 }

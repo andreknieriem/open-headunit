@@ -20,6 +20,7 @@ import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.DisplayTargets
 import com.andrerinas.openheadunit.utils.Settings
 import com.andrerinas.openheadunit.decoder.video.AuxDisplayProfilePolicy
+import com.andrerinas.openheadunit.secondscreen.SecondScreenHub
 import com.andrerinas.openheadunit.utils.HeadUnitScreenConfig
 import com.google.protobuf.Message
 
@@ -34,23 +35,14 @@ class ServiceDiscoveryResponse(private val context: Context)
          * and only an auxiliary display honours initial_content_keycode.
          */
         private fun auxVideoService(context: Context, settings: Settings): Control.Service? {
-            if (!settings.auxDisplayEnabled) return null
-            val projectionDisplayId = DisplayTargets.choose(context, settings).displayId
-            val panel = DisplayTargets.list(context).firstOrNull {
-                it.displayId == settings.auxDisplayId && it.isUsable && it.displayId != projectionDisplayId
-            }
-            if (panel == null) {
-                AppLog.w("[ServiceDiscovery] the auxiliary display ${settings.auxDisplayId} is not " +
-                    "available, so one display is announced")
-                return null
-            }
+            val panel = SecondScreenHub.announce(context, settings) ?: return null
             val profile = AuxDisplayProfilePolicy.profileFor(panel.widthPx, panel.heightPx, panel.densityDpi)
             val role = settings.auxDisplayRole
             val keycode = if (AuxDisplayProfilePolicy.announcesContent(role)) {
                 AuxDisplayProfilePolicy.contentKeycodeOrDefault(settings.auxDisplayContent)
             } else null
             AppLog.i("[ServiceDiscovery] Announcing an auxiliary display on ${Channel.name(Channel.ID_VID2)}: " +
-                "${panel.name} ${panel.widthPx}x${panel.heightPx} as ${profile.resolution}, margins " +
+                "${settings.auxOutput} ${panel.widthPx}x${panel.heightPx} as ${profile.resolution}, margins " +
                 "${profile.widthMargin}x${profile.heightMargin}, density ${profile.density}, " +
                 "role=$role, content ${keycode ?: "the phone's choice"}")
             return Control.Service.newBuilder().also { service ->

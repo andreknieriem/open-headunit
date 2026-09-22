@@ -12,6 +12,7 @@ import android.os.Build
 import com.andrerinas.openheadunit.input.MediaKeyRoutingPolicy
 import com.andrerinas.openheadunit.decoder.video.VideoFaultInjector
 import com.andrerinas.openheadunit.decoder.video.AuxDisplayProfilePolicy
+import com.andrerinas.openheadunit.secondscreen.SecondScreenOutputPolicy
 import com.andrerinas.openheadunit.decoder.video.DeviceMemoryProfile
 import com.andrerinas.openheadunit.decoder.audio.PlaybackFocusPolicy
 import com.andrerinas.openheadunit.aap.VehicleTypePolicy
@@ -1005,6 +1006,11 @@ class Settings(private val context: Context) {
     var auxDisplayEnabled: Boolean
         get() = prefs.getBoolean("aux-display-enabled", false)
         set(value) { prefs.edit().putBoolean("aux-display-enabled", value).apply() }
+
+    /** Where the second stream goes: an Android display, the network, or a USB adapter. */
+    var auxOutput: SecondScreenOutputPolicy.Output
+        get() = SecondScreenOutputPolicy.Output.of(prefs.getString("aux-output", null))
+        set(value) { prefs.edit().putString("aux-output", value.name).apply() }
 
     /** The Android display the auxiliary stream is shown on. */
     var auxDisplayId: Int

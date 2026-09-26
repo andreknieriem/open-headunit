@@ -148,7 +148,7 @@ class SettingsFragment : Fragment() {
         // Input
         "keymap",
         // Audio
-        "enableAudioSink", "audioStreamSettings", "micSettings", "audioVolumeOffsets",
+        "enableAudioSink", "audioStreamSettings", "useAAudioOutput", "micSettings", "audioVolumeOffsets",
         // Info
         "version", "about", "support"
     )
@@ -175,6 +175,7 @@ class SettingsFragment : Fragment() {
     private var pendingStaticAudioFocus: Boolean? = null
     private var pendingPlaybackFocusMode: PlaybackFocusPolicy.Mode? = null
     private var pendingUseAacAudio: Boolean? = null
+    private var pendingUseAAudioOutput: Boolean? = null
     private var pendingAttachHwDspEqualizer: Boolean? = null
     private var pendingMicInputSource: Int? = null
     private var pendingEnableRotary: Boolean? = null
@@ -355,6 +356,7 @@ class SettingsFragment : Fragment() {
         pendingStaticAudioFocus = settings.staticAudioFocus
         pendingPlaybackFocusMode = settings.playbackFocusMode
         pendingUseAacAudio = settings.useAacAudio
+        pendingUseAAudioOutput = settings.useAAudioOutput
         pendingAttachHwDspEqualizer = settings.attachHwDspEqualizer
         pendingMicInputSource = settings.micInputSource
         pendingEnableRotary = settings.enableRotary
@@ -494,6 +496,7 @@ class SettingsFragment : Fragment() {
         pendingStaticAudioFocus = settings.staticAudioFocus
         pendingPlaybackFocusMode = settings.playbackFocusMode
         pendingUseAacAudio = settings.useAacAudio
+        pendingUseAAudioOutput = settings.useAAudioOutput
         pendingAttachHwDspEqualizer = settings.attachHwDspEqualizer
         pendingEnableRotary = settings.enableRotary
         pendingMediaKeyRouting = settings.mediaKeyRouting
@@ -725,6 +728,7 @@ class SettingsFragment : Fragment() {
         pendingPlaybackFocusMode?.let { settings.playbackFocusMode = it }
         if (focusModeChanged) settings.playbackFocusSelfDefeating = false
         pendingUseAacAudio?.let { settings.useAacAudio = it }
+        pendingUseAAudioOutput?.let { settings.useAAudioOutput = it }
         pendingAttachHwDspEqualizer?.let { settings.attachHwDspEqualizer = it }
         pendingMicInputSource?.let { settings.micInputSource = it }
         pendingEnableRotary?.let { settings.enableRotary = it }
@@ -878,6 +882,7 @@ class SettingsFragment : Fragment() {
                         pendingStaticAudioFocus != settings.staticAudioFocus ||
                         pendingPlaybackFocusMode != settings.playbackFocusMode ||
                         pendingUseAacAudio != settings.useAacAudio ||
+                        pendingUseAAudioOutput != settings.useAAudioOutput ||
                         pendingAttachHwDspEqualizer != settings.attachHwDspEqualizer ||
                         pendingMicInputSource != settings.micInputSource ||
                         pendingEnableRotary != settings.enableRotary ||
@@ -961,6 +966,7 @@ class SettingsFragment : Fragment() {
                           pendingStaticAudioFocus != settings.staticAudioFocus ||
                           pendingPlaybackFocusMode != settings.playbackFocusMode ||
                           pendingUseAacAudio != settings.useAacAudio ||
+                          pendingUseAAudioOutput != settings.useAAudioOutput ||
                           pendingAttachHwDspEqualizer != settings.attachHwDspEqualizer ||
                           pendingAudioLatencyMultiplier != settings.audioLatencyMultiplier ||
                           pendingAudioQueueCapacity != settings.audioQueueCapacity ||
@@ -2497,6 +2503,20 @@ class SettingsFragment : Fragment() {
                 findNavController().navigate(R.id.action_settingsFragment_to_audioStreamSettingsFragment)
             }
         ))
+
+        if (Build.VERSION.SDK_INT >= 26) {
+            items.add(SettingItem.ToggleSettingEntry(
+                stableId = "useAAudioOutput",
+                nameResId = R.string.aaudio_output,
+                descriptionResId = R.string.aaudio_output_description,
+                isChecked = pendingUseAAudioOutput ?: settings.useAAudioOutput,
+                onCheckedChanged = { isChecked ->
+                    pendingUseAAudioOutput = isChecked
+                    checkChanges()
+                    updateSettingsList()
+                }
+            ))
+        }
 
         items.add(SettingItem.ToggleSettingEntry(
             stableId = "useAacAudio",

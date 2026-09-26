@@ -10,11 +10,15 @@ import android.os.Build
 internal interface PcmOutput {
     val name: String
     val capacityFrames: Int
-    val bufferFrames: Int
+    val bufferFrames: Int // effective device + any callback staging; used for drain deadlines
     val burstFrames: Int
     val underruns: Int
+    val stagingBufferFrames: Int get() = 0
+    val producerUnderruns: Int get() = 0
+    val minimumBufferFrames: Int get() = 960 // AudioTrack producer retains its 20ms safety floor
     fun setBufferFrames(frames: Int): Int
     fun start()
+    fun pause()
     fun write(data: ShortArray, offset: Int, count: Int): Int
     fun close()
 }
@@ -68,6 +72,7 @@ internal class AudioTrackPcmOutput(stream: Int, attachHwDsp: Boolean) : PcmOutpu
         if (Build.VERSION.SDK_INT >= 31) track.setStartThresholdInFrames(bufferFrames)
         track.play()
     }
+    override fun pause() { track.pause(); track.flush() }
     override fun write(data: ShortArray, offset: Int, count: Int): Int =
         if (Build.VERSION.SDK_INT >= 23) track.write(data, offset, count, AudioTrack.WRITE_NON_BLOCKING)
         else track.write(data, offset, count)

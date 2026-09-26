@@ -13,6 +13,8 @@ internal class AdaptivePcmBuffer(
     private val lastGood = ShortArray(cycleSamples)
     private val previousOutput = ShortArray(cycleSamples)
     private val policy = AdaptiveJitterPolicy(sampleRate, latencyMultiplier)
+    private val recovery = LatencyRecoveryPolicy(sampleRate)
+    private val prerollDeadlineMs = maxOf(100L, AudioJitterBufferPolicy.targetMsFor(latencyMultiplier) + 50)
     private var head = 0
     private var count = 0
     private var started = false
@@ -28,15 +30,18 @@ internal class AdaptivePcmBuffer(
         private set
     @Volatile var droppedFrames = 0L
         private set
+    @Volatile var compressedFrames = 0L
+        private set
 
     @Synchronized fun noteArrival(nowMs: Long, frames: Int) {
         if (ended) policy.resetArrival()
         ended = false
         policy.onArrival(nowMs, frames)
     }
-    @Synchronized fun finish() { ended = true }
+    @Synchronized fun finish() { ended = true; recovery.reset() }
     @Synchronized fun targetFrames(): Int = policy.targetFrames
     @Synchronized fun depthFrames(): Int = count / channels
+    @Synchronized fun isIdle(): Boolean = count == 0 && (ended || firstDataMs < 0) && !started
 
     @Synchronized fun write(data: ShortArray, length: Int, nowMs: Long) {
         val aligned = length.coerceAtMost(data.size) / channels * channels
@@ -60,20 +65,42 @@ internal class AdaptivePcmBuffer(
         val target = policy.targetFrames
         if (!started) {
             // A short navigation prompt must play even if it can never fill the network target.
-            if (count == 0 || (!ended && count / channels < target && nowMs - firstDataMs < 100)) return false
+            if (count == 0 || (!ended && count / channels < target && nowMs - firstDataMs < prerollDeadlineMs)) return false
             started = true
+            needsFade = true
         }
 
         // Leave room for the normal packet-sized sawtooth; do not mistake it for stale audio.
         val slack = maxOf(sampleRate * 30 / 1000, policy.largestChunkFrames - cycleFrames)
-        if (count / channels > target + slack) discard(count - target * channels)
+        if (count / channels > target + slack) {
+            discard(count - target * channels)
+            recovery.reset()
+        }
 
+        val catchUp = if (ended || gapFrames > 0) 0 else
+            recovery.correction(nowMs, target, policy.largestChunkFrames, count / channels)
+        val skipped = catchUp * channels
         val real = minOf(count, cycleSamples)
-        val first = minOf(real, ring.size - head)
-        System.arraycopy(ring, head, out, 0, first)
+        val readHead = (head + skipped) % ring.size
+        val first = minOf(real, ring.size - readHead)
+        System.arraycopy(ring, readHead, out, 0, first)
         System.arraycopy(ring, 0, out, first, real - first)
-        head = (head + real) % ring.size
-        count -= real
+        if (catchUp > 0) {
+            // Overlap the original and advanced waveforms for 5ms. The rest keeps its original
+            // sample spacing; do not resample every block or change the pitch of normal playback.
+            val fadeFrames = cycleFrames / 2
+            for (frame in 0 until fadeFrames) {
+                val mix = (frame + 1).toFloat() / fadeFrames
+                for (ch in 0 until channels) {
+                    val index = frame * channels + ch
+                    val original = ring[(head + index) % ring.size]
+                    out[index] = (original * (1f - mix) + out[index] * mix).toInt().toShort()
+                }
+            }
+            compressedFrames += catchUp
+        }
+        head = (head + real + skipped) % ring.size
+        count -= real + skipped
 
         val recovering = gapFrames > 0
         if (real == cycleSamples) {
@@ -86,12 +113,18 @@ internal class AdaptivePcmBuffer(
             gapFrames = 0
             lastGood.fill(0)
         } else {
+            recovery.reset()
             if (gapFrames == 0) { policy.onUnderrun(nowMs); rebanks++ }
             silentCycles++
             for (frame in real / channels until cycleFrames) {
                 val missingFrame = gapFrames + frame - real / channels
                 val block = missingFrame / cycleFrames
-                val gain = when (block) { 0 -> 0.7f; 1 -> 0.4f; 2 -> 0.15f; else -> 0f }
+                var gain = when (block) { 0 -> 0.7f; 1 -> 0.4f; 2 -> 0.15f; else -> 0f }
+                if (block == 2) {
+                    // End the final concealed block at zero instead of stepping from 0.15 to silence.
+                    val tail = missingFrame % cycleFrames - cycleFrames / 2 + 1
+                    if (tail > 0) gain *= 1f - tail.toFloat() / (cycleFrames / 2)
+                }
                 for (ch in 0 until channels) {
                     out[frame * channels + ch] = (lastGood[(missingFrame % cycleFrames) * channels + ch] * gain).toInt().toShort()
                 }
@@ -115,7 +148,9 @@ internal class AdaptivePcmBuffer(
                 val mix = (frame + 1).toFloat() / fadeFrames
                 for (ch in 0 until channels) {
                     val index = frame * channels + ch
-                    val old = previousOutput[(cycleFrames - fadeFrames + frame) * channels + ch]
+                    // Anchor to the last sample actually emitted. Replaying an earlier tail
+                    // would introduce a phase jump at the very first sample of the crossfade.
+                    val old = previousOutput[cycleSamples - channels + ch]
                     out[index] = (old * (1f - mix) + out[index] * mix).toInt().toShort()
                 }
             }
@@ -138,5 +173,6 @@ internal class AdaptivePcmBuffer(
         needsFade = true; ended = false
         lastGood.fill(0); previousOutput.fill(0)
         policy.resetArrival()
+        recovery.reset()
     }
 }

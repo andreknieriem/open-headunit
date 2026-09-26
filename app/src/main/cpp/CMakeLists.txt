@@ -2,6 +2,12 @@ cmake_minimum_required(VERSION 3.22.1)
 
 project("headunit")
 
+# Loaded only when AAudio is available. Resolve libaaudio dynamically to retain minSdk 16.
+add_library(hur_aaudio SHARED aaudio_output.cpp)
+target_compile_features(hur_aaudio PRIVATE cxx_std_17)
+target_compile_options(hur_aaudio PRIVATE -Wall -Wextra -Werror)
+target_link_libraries(hur_aaudio PRIVATE log dl)
+
 # Force 16 KB memory page size alignment for Android 15+ compatibility
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-z,max-page-size=16384")
 

@@ -185,7 +185,7 @@ class AudioTrackWrapper(
     // written to settings: it describes this link, not this head unit.
     private var deepenSteps = 0
 
-    private val health = AudioSinkHealthMonitor(channelName(), sampleRateInHz)
+    private val health = AudioSinkHealthMonitor(channelName(), if (mixer != null) AudioMixer.OUTPUT_SAMPLE_RATE else sampleRateInHz)
 
     /**
      * When audio first reached this track, for the pre-roll deadline.

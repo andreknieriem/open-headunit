@@ -66,11 +66,11 @@ class AudioDecoder {
      *   from it rather than from whichever channel happened to build the mixer, which was always
      *   the first Media Sink Setup to arrive and so usually a capped one.
      */
-    fun start(channel: Int, stream: Int, sampleRate: Int, numberOfBits: Int, numberOfChannels: Int, isAac: Boolean = false, gain: Float = 1.0f, audioLatencyMultiplier: Int = 8, audioQueueCapacity: Int = 0, staticAudioFocus: Boolean = false, attachHwDspEqualizer: Boolean = false, mixerLatencyMultiplier: Int = audioLatencyMultiplier) {
+    fun start(channel: Int, stream: Int, sampleRate: Int, numberOfBits: Int, numberOfChannels: Int, isAac: Boolean = false, gain: Float = 1.0f, audioLatencyMultiplier: Int = AudioJitterBufferPolicy.DEFAULT_MULTIPLIER, audioQueueCapacity: Int = 0, staticAudioFocus: Boolean = false, attachHwDspEqualizer: Boolean = false, mixerLatencyMultiplier: Int = audioLatencyMultiplier, preferAAudio: Boolean = false) {
         if (staticAudioFocus) {
             synchronized(this) {
                 if (mixer == null) {
-                    mixer = AudioMixer(stream, attachHwDspEqualizer, mixerLatencyMultiplier)
+                    mixer = AudioMixer(stream, attachHwDspEqualizer, mixerLatencyMultiplier, preferAAudio, keepOutputActive = true)
                     mixer!!.start()
                     AppLog.i(
                         "AudioDecoder: Created and started shared AudioMixer on channel $channel " +
@@ -82,7 +82,7 @@ class AudioDecoder {
         // All PCM16 sinks use the same network bank and 10ms renderer. Independent instances
         // preserve per-stream routing when static focus is off. PCM8 retains its legacy path.
         val sinkMixer = if (staticAudioFocus) mixer else if (numberOfBits == 16) {
-            AudioMixer(stream, attachHwDspEqualizer, audioLatencyMultiplier).also { it.start() }
+            AudioMixer(stream, attachHwDspEqualizer, audioLatencyMultiplier, preferAAudio).also { it.start() }
         } else null
         val thread = AudioTrackWrapper(
             stream = stream,

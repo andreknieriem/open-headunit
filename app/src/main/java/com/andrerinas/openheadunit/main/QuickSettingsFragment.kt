@@ -91,6 +91,20 @@ class QuickSettingsFragment : DialogFragment() {
         // --- Audio Section ---
         items.add(SettingItem.CategoryHeader("audio", R.string.category_audio))
 
+        if (android.os.Build.VERSION.SDK_INT >= 26) {
+            items.add(SettingItem.ToggleSettingEntry(
+                stableId = "useAAudioOutput",
+                nameResId = R.string.aaudio_output,
+                descriptionResId = R.string.aaudio_output_description,
+                isChecked = settings.useAAudioOutput,
+                onCheckedChanged = { enabled ->
+                    settings.useAAudioOutput = enabled
+                    settings.commit()
+                    notifyChange(needsAudioRestart = true)
+                }
+            ))
+        }
+
         items.add(SettingItem.SettingEntry(
             stableId = "audioVolumeOffsets",
             nameResId = R.string.audio_volume_offset,

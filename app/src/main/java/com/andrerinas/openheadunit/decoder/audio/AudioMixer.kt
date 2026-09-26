@@ -5,6 +5,8 @@ import android.os.Process
 import android.os.SystemClock
 import com.andrerinas.openheadunit.utils.AppLog
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.Semaphore
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
 /** A network bank per channel, followed by one independently tuned device output buffer.
@@ -12,7 +14,9 @@ import java.util.concurrent.atomic.AtomicBoolean
 class AudioMixer(
     private val stream: Int = AudioManager.STREAM_MUSIC,
     private val attachHwDspEqualizer: Boolean = false,
-    private val audioLatencyMultiplier: Int = AudioJitterBufferPolicy.DEFAULT_MULTIPLIER
+    private val audioLatencyMultiplier: Int = AudioJitterBufferPolicy.DEFAULT_MULTIPLIER,
+    private val preferAAudio: Boolean = false,
+    private val keepOutputActive: Boolean = false
 ) {
     companion object {
         const val OUTPUT_SAMPLE_RATE = 48000
@@ -30,6 +34,7 @@ class AudioMixer(
     private val channels = ConcurrentHashMap<Int, Channel>()
     private val running = AtomicBoolean(false)
     private val hasReceivedAudio = AtomicBoolean(false)
+    private val feedSignal = Semaphore(0)
     private var mixThread: Thread? = null
     private var output: PcmOutput? = null
     private val mixBuffer = IntArray(SHORTS_PER_CYCLE)
@@ -40,7 +45,7 @@ class AudioMixer(
     fun start() {
         if (!running.compareAndSet(false, true)) return
         try {
-            output = AudioTrackPcmOutput(stream, attachHwDspEqualizer)
+            output = AudioOutputFactory.create(stream, attachHwDspEqualizer, preferAAudio)
             mixThread = Thread({
                 try { mixLoop() }
                 catch (_: InterruptedException) { Thread.currentThread().interrupt() }
@@ -105,7 +110,13 @@ class AudioMixer(
             val index = offset + (frame * state.channels + ch.coerceAtMost(state.channels - 1)) * 2
             return (data[index].toInt() and 0xff) or (data[index + 1].toInt() shl 8)
         }
-        for (frame in 0 until frames) {
+        if (state.rate == OUTPUT_SAMPLE_RATE && state.channels == OUTPUT_CHANNELS) {
+            // The ordinary media path needs no resampling or floating-point work.
+            for (i in 0 until shorts) {
+                val index = offset + i * 2
+                converted[i] = ((data[index].toInt() and 0xff) or (data[index + 1].toInt() shl 8)).toShort()
+            }
+        } else for (frame in 0 until frames) {
             val position = frame.toLong() * state.rate
             val low = (position / OUTPUT_SAMPLE_RATE).toInt().coerceAtMost(inputFrames - 1)
             val high = minOf(low + 1, inputFrames - 1)
@@ -117,6 +128,7 @@ class AudioMixer(
         }
         state.buffer.write(converted, shorts, SystemClock.elapsedRealtime())
         hasReceivedAudio.set(true)
+        if (feedSignal.availablePermits() == 0) feedSignal.release()
     }
 
     private fun softClip(sample: Int): Short {
@@ -131,42 +143,87 @@ class AudioMixer(
     private fun mixLoop() {
         Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_AUDIO)
         val device = output ?: return
-        val policy = OutputBufferPolicy(OUTPUT_SAMPLE_RATE, device.burstFrames)
+        var tuningBurst = device.burstFrames
+        var tuningMinimum = device.minimumBufferFrames
+        var tuningBackend = device.name
+        var policy = OutputBufferPolicy(OUTPUT_SAMPLE_RATE, tuningBurst, tuningMinimum)
+        var previousOutputXruns = device.underruns
+        policy.update(SystemClock.elapsedRealtime(), previousOutputXruns)
         var requestedFrames = policy.targetFrames
         device.setBufferFrames(requestedFrames)
         AppLog.i("AudioMixer: ${device.name}, stream=$stream, capacity=${device.capacityFrames} frames, " +
-            "effective=${device.bufferFrames} frames, burst=${device.burstFrames}, cycle=${MIX_INTERVAL_MS}ms")
-        while (running.get() && !hasReceivedAudio.get()) Thread.sleep(MIX_INTERVAL_MS)
-        if (!running.get()) return
-        device.start()
+            "effective=${device.bufferFrames} frames, staging=${device.stagingBufferFrames}, " +
+            "burst=${device.burstFrames}, cycle=${MIX_INTERVAL_MS}ms")
+        var deviceStarted = false
+        var idleSinceMs = -1L
         var nextReportMs = SystemClock.elapsedRealtime() + 10_000L
         var nextTuneMs = 0L
         while (running.get()) {
             val now = SystemClock.elapsedRealtime()
+            val idle = channels.values.all { it.buffer.isIdle() }
+            if (!hasReceivedAudio.get() || (!deviceStarted && idle)) {
+                feedSignal.tryAcquire(200, TimeUnit.MILLISECONDS)
+                continue
+            }
+            if (!deviceStarted) { device.start(); deviceStarted = true }
+            if (!keepOutputActive && idle) {
+                if (idleSinceMs < 0) idleSinceMs = now
+                // Keep feeding silence until the device has heard the final PCM block, then park
+                // this route. Static-focus mode deliberately keeps its shared output alive.
+                if (now - idleSinceMs >= device.bufferFrames * 1000L / OUTPUT_SAMPLE_RATE + 20) {
+                    device.pause()
+                    deviceStarted = false
+                    continue
+                }
+            } else idleSinceMs = -1L
             mixBuffer.fill(0)
+            var activeChannels = 0
+            var boosted = false
             for (state in channels.values) {
-                state.buffer.render(channelBuffer, now)
+                val active = state.buffer.render(channelBuffer, now)
+                if (active) activeChannels++
                 val gain = state.gain
+                boosted = boosted || (active && gain > 1f)
                 for (i in mixBuffer.indices) mixBuffer[i] += (channelBuffer[i] * gain).toInt()
             }
-            for (i in mixBuffer.indices) outputBuffer[i] = softClip(mixBuffer[i])
+            for (i in mixBuffer.indices) {
+                // Moving a normal media sink through this renderer must not compress its music.
+                outputBuffer[i] = if (activeChannels > 1 || boosted) softClip(mixBuffer[i])
+                    else mixBuffer[i].coerceIn(-32768, 32767).toShort()
+            }
             val result = AudioWriteLoop.writeFully(SHORTS_PER_CYCLE, { running.get() },
                 { offset, remaining -> device.write(outputBuffer, offset, remaining) }, {}, { Thread.sleep(1) })
             check(result >= 0) { "${device.name} write failed: $result" }
             if (now >= nextTuneMs) {
-                val target = policy.update(now, device.underruns)
-                if (target != requestedFrames) {
+                val burst = device.burstFrames
+                val minimum = device.minimumBufferFrames
+                if (burst != tuningBurst || minimum != tuningMinimum || device.name != tuningBackend) {
+                    // AAudio can grant a different callback size; fallback can replace the device.
+                    // Rebase both the burst quantum and the xrun baseline on the current output.
+                    tuningBurst = burst
+                    tuningMinimum = minimum
+                    tuningBackend = device.name
+                    policy = OutputBufferPolicy(OUTPUT_SAMPLE_RATE, burst, minimum)
+                    requestedFrames = -1
+                }
+                val xruns = device.underruns
+                val target = policy.update(now, xruns)
+                if (target != requestedFrames || xruns != previousOutputXruns) {
                     requestedFrames = target
                     device.setBufferFrames(target)
                 }
+                previousOutputXruns = xruns
                 nextTuneMs = now + 100
             }
             if (now >= nextReportMs) {
-                AppLog.i("AudioMixer: ${device.name} effective=${device.bufferFrames} frames, xruns=${device.underruns}")
+                AppLog.i("AudioMixer: ${device.name} effective=${device.bufferFrames} frames, " +
+                    "staging=${device.stagingBufferFrames}, xruns=${device.underruns}, " +
+                    "producerUnderruns=${device.producerUnderruns}")
                 for ((id, state) in channels) {
                     AppLog.i("AudioMixer: channel=$id target=${state.buffer.targetFrames() * 1000L / OUTPUT_SAMPLE_RATE}ms " +
                         "depth=${state.buffer.depthFrames() * 1000L / OUTPUT_SAMPLE_RATE}ms " +
-                        "concealedFrames=${state.buffer.concealedFrames} staleFrames=${state.buffer.droppedFrames}")
+                        "concealedFrames=${state.buffer.concealedFrames} staleFrames=${state.buffer.droppedFrames} " +
+                        "compressedFrames=${state.buffer.compressedFrames}")
                 }
                 nextReportMs = now + 10_000L
             }

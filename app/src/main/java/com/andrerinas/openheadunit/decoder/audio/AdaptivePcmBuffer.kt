@@ -18,6 +18,7 @@ internal class AdaptivePcmBuffer(
     private var head = 0
     private var count = 0
     private var started = false
+    private var rebanking = false
     private var firstDataMs = -1L
     private var gapFrames = 0
     private var needsFade = true
@@ -40,6 +41,7 @@ internal class AdaptivePcmBuffer(
     }
     @Synchronized fun finish() { ended = true; recovery.reset() }
     @Synchronized fun targetFrames(): Int = policy.targetFrames
+    @Synchronized fun maxArrivalGapMs(): Long = policy.largestArrivalGapMs
     @Synchronized fun depthFrames(): Int = count / channels
     @Synchronized fun isIdle(): Boolean = count == 0 && (ended || firstDataMs < 0) && !started
 
@@ -65,8 +67,13 @@ internal class AdaptivePcmBuffer(
         val target = policy.targetFrames
         if (!started) {
             // A short navigation prompt must play even if it can never fill the network target.
-            if (count == 0 || (!ended && count / channels < target && nowMs - firstDataMs < prerollDeadlineMs)) return false
+            // After starvation, however, the opening 100ms escape can resume every late batch
+            // below the newly learned target and keep the same gap repeating indefinitely.
+            val waitMs = if (rebanking) maxOf(prerollDeadlineMs, target * 1000L / sampleRate + 50)
+                else prerollDeadlineMs
+            if (count == 0 || (!ended && count / channels < target && nowMs - firstDataMs < waitMs)) return false
             started = true
+            rebanking = false
             needsFade = true
         }
 
@@ -133,6 +140,7 @@ internal class AdaptivePcmBuffer(
             gapFrames += cycleFrames - real / channels
             if (gapFrames >= cycleFrames * 3) {
                 started = false
+                rebanking = true
                 firstDataMs = if (count > 0) nowMs else -1L
                 gapFrames = 0
                 needsFade = true
@@ -170,6 +178,7 @@ internal class AdaptivePcmBuffer(
 
     @Synchronized fun reset() {
         head = 0; count = 0; started = false; firstDataMs = -1L; gapFrames = 0
+        rebanking = false
         needsFade = true; ended = false
         lastGood.fill(0); previousOutput.fill(0)
         policy.resetArrival()

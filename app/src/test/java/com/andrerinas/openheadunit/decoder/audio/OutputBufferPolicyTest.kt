@@ -29,7 +29,9 @@ class OutputBufferPolicyTest {
     @Test fun `a device floor exceeding sixty milliseconds is not silently undersized`() {
         val policy = OutputBufferPolicy(48000, 1536, 4608)
         assertEquals(4608, policy.update(0, 0))
-        assertEquals(4608, policy.update(1, 1))
+        assertEquals(6144, policy.update(1, 1))
+        assertEquals(7680, policy.update(2, 2))
+        assertEquals(7680, policy.update(3, 3))
     }
 
     @Test fun `a reset xrun counter restarts the stability interval`() {

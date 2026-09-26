@@ -8,6 +8,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 
 /** A network bank per channel, followed by one independently tuned device output buffer.
  * Static-focus mode shares an instance; other modes keep one instance per routed stream. */
@@ -25,13 +26,18 @@ class AudioMixer(
         private const val MIX_INTERVAL_MS = 10L
         private const val SAMPLES_PER_CYCLE = (OUTPUT_SAMPLE_RATE * MIX_INTERVAL_MS / 1000).toInt()
         private const val SHORTS_PER_CYCLE = SAMPLES_PER_CYCLE * OUTPUT_CHANNELS
+        private val nextDiagnosticId = AtomicInteger()
     }
 
     private class Channel(val rate: Int, val channels: Int, multiplier: Int) {
         val buffer = AdaptivePcmBuffer(latencyMultiplier = multiplier)
         @Volatile var gain = 1f
+        var reportedRebanks = 0L
+        var reportedDropped = 0L
+        var reportedConcealed = 0L
     }
     private val channels = ConcurrentHashMap<Int, Channel>()
+    private val diagnosticId = nextDiagnosticId.incrementAndGet()
     private val running = AtomicBoolean(false)
     private val hasReceivedAudio = AtomicBoolean(false)
     private val feedSignal = Semaphore(0)
@@ -151,15 +157,36 @@ class AudioMixer(
         policy.update(SystemClock.elapsedRealtime(), previousOutputXruns)
         var requestedFrames = policy.targetFrames
         device.setBufferFrames(requestedFrames)
-        AppLog.i("AudioMixer: ${device.name}, stream=$stream, capacity=${device.capacityFrames} frames, " +
+        recordDiagnostic(SystemClock.elapsedRealtime(), "opened ${device.name}, stream=$stream, capacity=${device.capacityFrames} frames, " +
             "effective=${device.bufferFrames} frames, staging=${device.stagingBufferFrames}, " +
-            "burst=${device.burstFrames}, cycle=${MIX_INTERVAL_MS}ms")
+            "burst=${device.burstFrames}, minimum=$tuningMinimum, maximum=${policy.maximumFrames}, cycle=${MIX_INTERVAL_MS}ms")
         var deviceStarted = false
         var idleSinceMs = -1L
         var nextReportMs = SystemClock.elapsedRealtime() + 10_000L
         var nextTuneMs = 0L
+        var nextPcmDiagnosticMs = 0L
         while (running.get()) {
             val now = SystemClock.elapsedRealtime()
+            if (now >= nextPcmDiagnosticMs) {
+                for ((id, state) in channels) {
+                    val rebanks = state.buffer.rebanks
+                    val dropped = state.buffer.droppedFrames
+                    val concealed = state.buffer.concealedFrames
+                    if (rebanks != state.reportedRebanks || dropped != state.reportedDropped ||
+                        concealed != state.reportedConcealed) {
+                        recordDiagnostic(now, "PCM channel=$id source=${state.rate}Hz/${state.channels}ch " +
+                            "target=${state.buffer.targetFrames()} depth=${state.buffer.depthFrames()} frames " +
+                            "arrivalGapMax=${state.buffer.maxArrivalGapMs()}ms " +
+                            "rebanksDelta=${rebanks - state.reportedRebanks} " +
+                            "concealedDelta=${concealed - state.reportedConcealed} " +
+                            "droppedDelta=${dropped - state.reportedDropped}", warning = true)
+                        state.reportedRebanks = rebanks
+                        state.reportedDropped = dropped
+                        state.reportedConcealed = concealed
+                    }
+                }
+                nextPcmDiagnosticMs = now + 1000
+            }
             val idle = channels.values.all { it.buffer.isIdle() }
             if (!hasReceivedAudio.get() || (!deviceStarted && idle)) {
                 feedSignal.tryAcquire(200, TimeUnit.MILLISECONDS)
@@ -211,22 +238,35 @@ class AudioMixer(
                 if (target != requestedFrames || xruns != previousOutputXruns) {
                     requestedFrames = target
                     device.setBufferFrames(target)
+                    recordDiagnostic(now, "output ${device.name} requested=$target effective=${device.bufferFrames} " +
+                        "staging=${device.stagingBufferFrames} burst=$burst minimum=$minimum " +
+                        "stableFloor=${policy.stableFloorFrames} maximum=${policy.maximumFrames} " +
+                        "xruns=$xruns producerUnderruns=${device.producerUnderruns}",
+                        warning = xruns > previousOutputXruns)
                 }
                 previousOutputXruns = xruns
                 nextTuneMs = now + 100
             }
             if (now >= nextReportMs) {
-                AppLog.i("AudioMixer: ${device.name} effective=${device.bufferFrames} frames, " +
+                AppLog.i("AudioMixer: id=$diagnosticId ${device.name} effective=${device.bufferFrames} frames, " +
                     "staging=${device.stagingBufferFrames}, xruns=${device.underruns}, " +
-                    "producerUnderruns=${device.producerUnderruns}")
+                    "producerUnderruns=${device.producerUnderruns}, burst=${device.burstFrames}, " +
+                    "requested=$requestedFrames, stableFloor=${policy.stableFloorFrames}, maximum=${policy.maximumFrames}")
                 for ((id, state) in channels) {
-                    AppLog.i("AudioMixer: channel=$id target=${state.buffer.targetFrames() * 1000L / OUTPUT_SAMPLE_RATE}ms " +
+                    AppLog.i("AudioMixer: id=$diagnosticId channel=$id target=${state.buffer.targetFrames() * 1000L / OUTPUT_SAMPLE_RATE}ms " +
                         "depth=${state.buffer.depthFrames() * 1000L / OUTPUT_SAMPLE_RATE}ms " +
+                        "arrivalGapMax=${state.buffer.maxArrivalGapMs()}ms " +
                         "concealedFrames=${state.buffer.concealedFrames} staleFrames=${state.buffer.droppedFrames} " +
                         "compressedFrames=${state.buffer.compressedFrames}")
                 }
                 nextReportMs = now + 10_000L
             }
         }
+    }
+
+    private fun recordDiagnostic(nowMs: Long, message: String, warning: Boolean = false) {
+        val line = "AudioMixer: id=$diagnosticId $message"
+        AudioDiagnostics.record(nowMs, line)
+        if (warning) AppLog.w(line) else AppLog.i(line)
     }
 }

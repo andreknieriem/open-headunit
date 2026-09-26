@@ -11,6 +11,7 @@ import com.andrerinas.openheadunit.aap.protocol.AudioConfigs
 import com.andrerinas.openheadunit.aap.protocol.Channel
 import com.andrerinas.openheadunit.aap.protocol.proto.Control
 import com.andrerinas.openheadunit.decoder.audio.AudioDecoder
+import com.andrerinas.openheadunit.decoder.audio.AudioDiagnostics
 import com.andrerinas.openheadunit.decoder.audio.AudioSinkSetupPolicy
 import com.andrerinas.openheadunit.decoder.audio.AudioStreamCatalog
 import com.andrerinas.openheadunit.decoder.audio.PlaybackFocusPolicy
@@ -38,6 +39,11 @@ internal class AapAudio(
     // The codec each sink actually carries, from the phone's Media Sink Setup. The setting alone
     // used to decide, and the band cap now announces AAC the setting knows nothing about.
     private val sinkIsAac = ConcurrentHashMap<Int, Boolean>()
+    private val pcmTiming = mapOf(
+        Channel.ID_AUD to AudioTimestampMonitor(),
+        Channel.ID_AU1 to AudioTimestampMonitor(),
+        Channel.ID_AU2 to AudioTimestampMonitor()
+    )
     private val audioQueueCapacity get() = settings.audioQueueCapacity
     private val enableAudioSink = settings.enableAudioSink
     private val attachHwDspEqualizer = settings.attachHwDspEqualizer
@@ -294,6 +300,7 @@ internal class AapAudio(
         val offset = AudioMediaPayload.offset(message)
         if (offset >= 0) {
             if (AudioMediaPayload.requiresAck(message.type)) {
+                notePcmTiming(message, message.size - offset)
                 decode(message.channel, offset, message.data, message.size - offset)
             } else {
                 // CSD is not playback: do not take focus, duck music or feed the jitter bank.
@@ -304,6 +311,21 @@ internal class AapAudio(
             }
         }
         return true
+    }
+
+    private fun notePcmTiming(message: AapMessage, size: Int) {
+        val monitor = pcmTiming[message.channel] ?: return
+        // AAC timestamps can be repeated for several access units from the same capture batch.
+        if (audioDecoder.sinkCodecFor(message.channel) ?: sinkIsAac[message.channel] ?: useAacAudio) return
+        val format = AudioConfigs.get(message.channel)
+        val bytesPerFrame = format.numberOfChannels * format.numberOfBits / 8
+        if (bytesPerFrame <= 0 || format.sampleRate <= 0) return
+        val durationUs = (size / bytesPerFrame).toLong() * 1_000_000L / format.sampleRate
+        val arrivalUs = SystemClock.elapsedRealtimeNanos() / 1000L
+        val report = monitor.onPacket(AudioMediaPayload.timestampUs(message), arrivalUs, durationUs) ?: return
+        val line = "AapAudio: ${Channel.name(message.channel)} $report"
+        AppLog.i(line)
+        if (report.hasGap) AudioDiagnostics.record(arrivalUs / 1000L, line)
     }
 
     /**
@@ -435,6 +457,7 @@ internal class AapAudio(
     /** Records the codec the phone named for [channel] in its Media Sink Setup. */
     fun noteSinkCodec(channel: Int, setupType: Int) {
         if (!Channel.isAudio(channel)) return
+        pcmTiming[channel]?.reset()
         val aac = AudioSinkCodecPolicy.isAac(setupType)
         if (aac == null) {
             AppLog.w("AapAudio: sink setup type $setupType on ${Channel.name(channel)} is not an audio codec, keeping isAac=$useAacAudio from the setting")
@@ -468,6 +491,7 @@ internal class AapAudio(
 
     /** The sink is ready at Setup; Start can warm its output before the first PCM arrives. */
     fun preparePlayback(channel: Int) {
+        pcmTiming[channel]?.reset()
         if (!enableAudioSink || !Channel.isAudio(channel)) return
         audioDecoder.preparePlayback(channel)
     }
@@ -508,12 +532,14 @@ internal class AapAudio(
 
     fun restartAudio() {
         AppLog.i("AapAudio: Restarting all audio tracks")
+        pcmTiming.values.forEach { it.reset() }
         // sinkIsAac is kept: the phone sets a sink up once per session, and a restarted track
         // still carries the codec that setup named.
         audioDecoder.stop()
     }
 
     fun stopAudio(channel: Int) {
+        pcmTiming[channel]?.reset()
         AppLog.i("Audio Stop: " + Channel.name(channel))
         if ((channel == Channel.ID_AU1 || channel == Channel.ID_AU2) && staticAudioFocus) {
             // Keep the speech wrappers alive to prevent recreate overhead and keep state consistent.
@@ -536,6 +562,7 @@ internal class AapAudio(
      */
     fun pauseAllAudio() {
         AppLog.i("AapAudio: Pausing all audio tracks for sleep")
+        pcmTiming.values.forEach { it.reset() }
         audioDecoder.pauseAll()
         synchronized(activeAudioChannels) { activeAudioChannels.clear() }
         holdingPlaybackFocus = false

@@ -79,6 +79,11 @@ class AudioDecoder {
                 }
             }
         }
+        // All PCM16 sinks use the same network bank and 10ms renderer. Independent instances
+        // preserve per-stream routing when static focus is off. PCM8 retains its legacy path.
+        val sinkMixer = if (staticAudioFocus) mixer else if (numberOfBits == 16) {
+            AudioMixer(stream, attachHwDspEqualizer, audioLatencyMultiplier).also { it.start() }
+        } else null
         val thread = AudioTrackWrapper(
             stream = stream,
             sampleRateInHz = sampleRate,
@@ -88,11 +93,12 @@ class AudioDecoder {
             gain = gain,
             audioLatencyMultiplier = audioLatencyMultiplier,
             audioQueueCapacity = audioQueueCapacity,
-            mixer = if (staticAudioFocus) mixer else null,
+            mixer = sinkMixer,
             channelId = channel,
             attachHwDspEqualizer = attachHwDspEqualizer,
             // Music waits longer than a prompt before starting short. See AudioPrerollPolicy.
-            isMediaSink = channel == com.andrerinas.openheadunit.aap.protocol.Channel.ID_AUD
+            isMediaSink = channel == com.andrerinas.openheadunit.aap.protocol.Channel.ID_AUD,
+            ownsMixer = !staticAudioFocus && sinkMixer != null
         )
         audioTracks.put(channel, thread)
     }

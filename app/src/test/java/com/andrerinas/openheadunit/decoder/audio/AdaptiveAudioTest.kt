@@ -20,6 +20,7 @@ class AdaptiveAudioTest {
         assertEquals(0L, buffer.rebanks)
         assertEquals(0L, buffer.concealedFrames)
         assertEquals(0L, buffer.droppedFrames)
+        assertEquals(0L, buffer.compressedFrames)
         assertTrue(buffer.targetFrames() in 2880..3840) // 60-80ms network target
         assertTrue(buffer.depthFrames() < 4800)
     }
@@ -55,7 +56,8 @@ class AdaptiveAudioTest {
         buffer.render(out, 70)
         assertEquals(4000, out.last().toInt())
         buffer.render(out, 80)
-        assertEquals(1500, out.last().toInt())
+        assertEquals(1500, out[478].toInt())
+        assertEquals(0, out.last().toInt())
         buffer.render(out, 90)
         assertTrue(out.all { it == 0.toShort() })
         assertEquals(1440L, buffer.concealedFrames)
@@ -73,6 +75,10 @@ class AdaptiveAudioTest {
         assertTrue(out.drop(480).all { it == 0.toShort() })
         assertEquals(0L, buffer.rebanks)
         assertEquals(0L, buffer.concealedFrames)
+        assertTrue(buffer.isIdle())
+        buffer.noteArrival(1000, 480)
+        buffer.write(ShortArray(960) { 1000 }, 960, 1000)
+        assertFalse(buffer.isIdle())
     }
 
     @Test fun `a prompt without a stop message still escapes preroll`() {
@@ -113,6 +119,27 @@ class AdaptiveAudioTest {
         assertTrue(buffer.droppedFrames >= 12000)
     }
 
+    @Test fun `catch-up begins at the previous endpoint rather than replaying an earlier phase`() {
+        val buffer = AdaptivePcmBuffer()
+        buffer.noteArrival(0, 480)
+        buffer.write(ShortArray(5760) { (1000 + it / 2 % 480).toShort() }, 5760, 0)
+        val out = ShortArray(960)
+        buffer.render(out, 0)
+        val previous = out.last().toInt()
+        buffer.write(ShortArray(30000) { -10000 }, 30000, 10)
+        buffer.render(out, 10)
+        assertTrue(kotlin.math.abs(out[0].toInt() - previous) < 100)
+    }
+
+    @Test fun `explicit deep settings are not bypassed by the short prompt deadline`() {
+        val buffer = AdaptivePcmBuffer(latencyMultiplier = 16)
+        buffer.noteArrival(0, 2048)
+        buffer.write(ShortArray(4096) { 1000 }, 4096, 0)
+        assertFalse(buffer.render(ShortArray(960), 100))
+        buffer.finish()
+        assertTrue(buffer.render(ShortArray(960), 101))
+    }
+
     @Test fun `first underrun increases network target immediately and stable arrivals lower it slowly`() {
         val policy = AdaptiveJitterPolicy(48000)
         policy.onArrival(0, 2048)
@@ -139,12 +166,48 @@ class AdaptiveAudioTest {
         assertEquals(raised, policy.targetFrames)
     }
 
+    @Test fun `an unusual packet ages out after ten seconds of ordinary packets`() {
+        val policy = AdaptiveJitterPolicy(48000)
+        policy.onArrival(0, 9600)
+        assertEquals(10080, policy.targetFrames)
+        for (now in 200L..9999L step 43) policy.onArrival(now, 2048)
+        assertEquals(9600, policy.largestChunkFrames)
+        policy.onArrival(10004, 2048)
+        assertEquals(2048, policy.largestChunkFrames)
+        assertTrue(policy.targetFrames <= 7200)
+        policy.resetArrival()
+        policy.onArrival(20000, 480)
+        assertEquals(480, policy.largestChunkFrames)
+    }
+
+    @Test fun `stable playback repays reduced targets without another rebuffer`() {
+        val buffer = AdaptivePcmBuffer()
+        val packet = ShortArray(4096) { 12000 }
+        val out = ShortArray(960)
+        var packetIndex = 0
+        var afterRecoveryRebanks = 0L
+        for (now in 0L..180_000L) {
+            while (now >= packetIndex * 2048L * 1000L / 48000) {
+                if (now in 400L..699L) break
+                buffer.noteArrival(now, 2048)
+                buffer.write(packet, packet.size, now)
+                packetIndex++
+            }
+            if (now % 10 == 0L) buffer.render(out, now)
+            if (now == 2000L) afterRecoveryRebanks = buffer.rebanks
+        }
+        assertTrue(buffer.compressedFrames > 0)
+        assertEquals(afterRecoveryRebanks, buffer.rebanks)
+        assertTrue(buffer.targetFrames() < 3840)
+        assertTrue(buffer.depthFrames() < buffer.targetFrames() + 480)
+    }
+
     @Test fun `device buffer grows separately and returns to twenty milliseconds after stability`() {
         val policy = OutputBufferPolicy(48000, 192)
         assertEquals(960, policy.update(0, 0))
-        assertEquals(1440, policy.update(100, 1))
-        assertEquals(1440, policy.update(10099, 1))
-        assertEquals(1200, policy.update(10100, 1))
+        assertEquals(1152, policy.update(100, 1))
+        assertEquals(1152, policy.update(10099, 1))
+        assertEquals(960, policy.update(10100, 1))
         assertEquals(960, policy.update(20100, 1))
         repeat(20) { policy.update(20200L + it, it + 2) }
         assertEquals(2880, policy.targetFrames)

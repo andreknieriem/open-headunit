@@ -33,12 +33,12 @@ internal class AapAudio(
     private val mediaVolumeOffset = settings.mediaVolumeOffset
     private val guidanceVolumeOffset = settings.guidanceVolumeOffset
     private val systemVolumeOffset = settings.systemVolumeOffset
-    private val audioLatencyMultiplier = settings.audioLatencyMultiplier
+    private val audioLatencyMultiplier get() = settings.audioLatencyMultiplier
     private val useAacAudio = settings.useAacAudio
     // The codec each sink actually carries, from the phone's Media Sink Setup. The setting alone
     // used to decide, and the band cap now announces AAC the setting knows nothing about.
     private val sinkIsAac = ConcurrentHashMap<Int, Boolean>()
-    private val audioQueueCapacity = settings.audioQueueCapacity
+    private val audioQueueCapacity get() = settings.audioQueueCapacity
     private val enableAudioSink = settings.enableAudioSink
     private val attachHwDspEqualizer = settings.attachHwDspEqualizer
     private val playbackFocusMode = settings.playbackFocusMode
@@ -337,7 +337,7 @@ internal class AapAudio(
         val isAac = fromSetup ?: useAacAudio
         val codecSource = if (fromSetup != null) "setup" else "setting"
         AppLog.i("AudioDecoder.start: channel=$channel, stream=$stream, gain=$gain, sampleRate=${config.sampleRate}, numberOfBits=${config.numberOfBits}, numberOfChannels=${config.numberOfChannels}, isAac=$isAac, source=$codecSource, latencyMultiplier=$effectiveMultiplier, queueCapacity=$audioQueueCapacity, attachHwDspEqualizer=$attachHwDspEqualizer")
-        audioDecoder.start(channel, stream, config.sampleRate, config.numberOfBits, config.numberOfChannels, isAac, gain, effectiveMultiplier, audioQueueCapacity, staticAudioFocus, attachHwDspEqualizer, audioLatencyMultiplier)
+        audioDecoder.start(channel, stream, config.sampleRate, config.numberOfBits, config.numberOfChannels, isAac, gain, effectiveMultiplier, audioQueueCapacity, staticAudioFocus, attachHwDspEqualizer, audioLatencyMultiplier, settings.useAAudioOutput)
         if (announcePlayback) onAudioPlaybackStarted(channel)
     }
 

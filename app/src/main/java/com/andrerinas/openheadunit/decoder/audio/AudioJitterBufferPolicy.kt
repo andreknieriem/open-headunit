@@ -9,12 +9,15 @@ package com.andrerinas.openheadunit.decoder.audio
  */
 object AudioJitterBufferPolicy {
 
+    /** Start shallow, then let observed underruns deepen this session's cushion. */
+    const val DEFAULT_MULTIPLIER = 2
+
     /** Depth to bank, in milliseconds of playback, at [ANCHOR_MULTIPLIER]. */
     const val TARGET_MS = 200L
 
     /**
      * The latency setting [TARGET_MS] is written for. The scaling anchor, and **not** the default:
-     * the shipped default is 16, which lands on [MAX_TARGET_MS].
+     * the shipped default is [DEFAULT_MULTIPLIER].
      *
      * Named for a default once, which is the mistake this file is here not to repeat. 8 still means
      * 200 ms so a user who saved it keeps exactly what they had.
@@ -68,6 +71,11 @@ object AudioJitterBufferPolicy {
         return (TARGET_MS * m / ANCHOR_MULTIPLIER).coerceIn(MIN_TARGET_MS, MAX_TARGET_MS)
     }
 
+    /** Keep the existing deep settings while allowing the low-latency picks a smaller margin. */
+    fun jitterMarginMsFor(latencyMultiplier: Int): Long =
+        (JITTER_MARGIN_MS * latencyMultiplier.coerceIn(1, ANCHOR_MULTIPLIER) / ANCHOR_MULTIPLIER)
+            .coerceAtLeast(10L)
+
     fun framesFor(sampleRateInHz: Int, ms: Long): Int =
         if (sampleRateInHz <= 0) 0 else (sampleRateInHz.toLong() * ms / 1000L).toInt()
 
@@ -99,7 +107,7 @@ object AudioJitterBufferPolicy {
         val drain = drainQuantumFrames.coerceAtLeast(0)
         // One chunk is what a steady stream troughs by, the drain is what a cycle still has to
         // serve, and the margin is the only part that is jitter rather than arithmetic.
-        val byArrival = chunk + drain + framesFor(sampleRateInHz, JITTER_MARGIN_MS)
+        val byArrival = chunk + drain + framesFor(sampleRateInHz, jitterMarginMsFor(latencyMultiplier))
         var target = maxOf(byTime, byArrival)
         // A channel sending 256 ms chunks cannot be banked in 200 ms, but it should not be banked
         // in a second either. The invariant is restored underneath the ceiling.
@@ -120,9 +128,18 @@ object AudioJitterBufferPolicy {
      * of 203 to 233 ms underran again inside the same window, two to four times over. The opening
      * bank is a person waiting to hear something; a re-bank is a gap they have already heard.
      */
-    fun rebankTargetFrames(targetFrames: Int, sampleRateInHz: Int, capacityFrames: Int): Int {
+    fun rebankTargetFrames(
+        targetFrames: Int,
+        sampleRateInHz: Int,
+        capacityFrames: Int,
+        latencyMultiplier: Int = ANCHOR_MULTIPLIER
+    ): Int {
         if (sampleRateInHz <= 0) return targetFrames.coerceAtLeast(1)
-        val wanted = targetFrames + framesFor(sampleRateInHz, REBANK_MARGIN_MS)
+        val marginMs = REBANK_MARGIN_MS * latencyMultiplier.coerceIn(1, ANCHOR_MULTIPLIER) / ANCHOR_MULTIPLIER
+        val wanted = minOf(
+            targetFrames + framesFor(sampleRateInHz, marginMs),
+            framesFor(sampleRateInHz, MAX_TARGET_MS)
+        )
         val byBuffer = if (capacityFrames > 0) {
             capacityFrames / MAX_FILL_DENOMINATOR * MAX_FILL_NUMERATOR
         } else {
@@ -137,17 +154,18 @@ object AudioJitterBufferPolicy {
      *
      * Bounded by [MAX_TARGET_MS] and by the fill share, so a sink can climb out of a cushion that
      * was too shallow and can never climb into audio that is behind the picture. At the shipped
-     * default the target already sits on the ceiling, so this only ever rescues a user who picked
-     * lower.
+     * deep end the target already sits on the ceiling.
      */
     fun deepenedTargetFrames(
         targetFrames: Int,
         sampleRateInHz: Int,
         capacityFrames: Int,
-        steps: Int
+        steps: Int,
+        latencyMultiplier: Int = ANCHOR_MULTIPLIER
     ): Int {
         if (sampleRateInHz <= 0 || steps <= 0) return targetFrames.coerceAtLeast(1)
-        val wanted = targetFrames + framesFor(sampleRateInHz, DEEPEN_STEP_MS * steps)
+        val stepMs = DEEPEN_STEP_MS * latencyMultiplier.coerceIn(1, ANCHOR_MULTIPLIER) / ANCHOR_MULTIPLIER
+        val wanted = targetFrames + framesFor(sampleRateInHz, stepMs * steps)
         var capped = minOf(wanted, framesFor(sampleRateInHz, MAX_TARGET_MS))
         if (capacityFrames > 0) {
             capped = minOf(capped, capacityFrames / MAX_FILL_DENOMINATOR * MAX_FILL_NUMERATOR)

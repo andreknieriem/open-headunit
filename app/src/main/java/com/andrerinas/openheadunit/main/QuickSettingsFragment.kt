@@ -342,8 +342,8 @@ class QuickSettingsFragment : DialogFragment() {
 
     private fun showAudioLatencyDialog() {
         val options = arrayOf(
-            "1x (shallowest cushion)", "2x (shallow)", "4x (medium)",
-            "8x (deep)", "16x (deepest, default)"
+            "1x (lowest latency)", "2x (low latency, default)", "4x (medium)",
+            "8x (deep)", "16x (deepest)"
         )
         val values = intArrayOf(1, 2, 4, 8, 16)
         val currentIndex = values.indexOf(settings.audioLatencyMultiplier).coerceAtLeast(0)

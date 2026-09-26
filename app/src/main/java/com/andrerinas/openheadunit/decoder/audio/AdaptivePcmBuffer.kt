@@ -22,6 +22,7 @@ internal class AdaptivePcmBuffer(
     private var startupFramesPlayed = 0L
     private var head = 0
     private var count = 0
+    private var inputFrames = 0L
     private var started = false
     private var rebanking = false
     private var firstDataMs = -1L
@@ -44,7 +45,7 @@ internal class AdaptivePcmBuffer(
         ended = false
         policy.onArrival(nowMs, frames)
     }
-    @Synchronized fun finish() { ended = true; recovery.reset() }
+    @Synchronized fun finish() { ended = true }
     @Synchronized fun targetFrames(): Int = playbackTargetFrames()
     @Synchronized fun maxArrivalGapMs(): Long = policy.largestArrivalGapMs
     @Synchronized fun depthFrames(): Int = count / channels
@@ -57,12 +58,13 @@ internal class AdaptivePcmBuffer(
         val keep = minOf(aligned, ring.size)
         val skip = aligned - keep
         if (count + keep > ring.size) discard(count + keep - ring.size)
-        if (skip > 0) { droppedFrames += skip / channels; needsFade = true }
+        if (skip > 0) { droppedFrames += skip / channels; needsFade = true; recovery.reset() }
         val tail = (head + count) % ring.size
         val first = minOf(keep, ring.size - tail)
         System.arraycopy(data, skip, ring, tail, first)
         System.arraycopy(data, skip + first, ring, 0, keep - first)
         count += keep
+        inputFrames += keep / channels
     }
 
     /** Renders one 10ms block. Returns true when there is real or concealed audio. */
@@ -89,13 +91,16 @@ internal class AdaptivePcmBuffer(
         // Both create normal depth peaks; a 10ms-only allowance trims valid music on larger HALs.
         val outputSlack = (outputBurstFrames - cycleFrames).coerceAtLeast(0)
         val slack = maxOf(sampleRate * 30 / 1000, policy.largestChunkFrames - cycleFrames + outputSlack)
-        if (count / channels > target + slack) {
+        val canRecover = !ended && gapFrames == 0
+        recovery.observe(nowMs, target, policy.largestChunkFrames, slack, count / channels,
+            inputFrames, canRecover)
+        if (count / channels > recovery.trimLimit) {
             discard(count - target * channels)
-            recovery.reset()
+            recovery.observe(nowMs, target, policy.largestChunkFrames, slack, count / channels,
+                inputFrames, canRecover)
         }
 
-        val catchUp = if (ended || gapFrames > 0) 0 else
-            recovery.correction(nowMs, target, policy.largestChunkFrames, count / channels)
+        val catchUp = if (canRecover) recovery.correction(nowMs, count / channels) else 0
         val skipped = catchUp * channels
         val real = minOf(count, cycleSamples)
         val readHead = (head + skipped) % ring.size
@@ -118,6 +123,7 @@ internal class AdaptivePcmBuffer(
         }
         head = (head + real + skipped) % ring.size
         count -= real + skipped
+        recovery.consumed(nowMs, catchUp)
         startupFramesPlayed += real / channels
 
         val recovering = gapFrames > 0
@@ -130,6 +136,7 @@ internal class AdaptivePcmBuffer(
             firstDataMs = -1L
             gapFrames = 0
             lastGood.fill(0)
+            recovery.reset()
         } else {
             recovery.reset()
             if (gapFrames == 0) { policy.onUnderrun(nowMs); rebanks++ }
@@ -194,6 +201,7 @@ internal class AdaptivePcmBuffer(
         count -= drop
         droppedFrames += drop / channels
         needsFade = true
+        recovery.reset()
     }
 
     @Synchronized fun reset() {

@@ -68,7 +68,7 @@ internal class AapMessageHandlerType(
         if (message.isAudio) {
             if (aapAudio.process(message)) {
                 // Send ACK AFTER processing
-                if (msgType == 0 || msgType == 1) {
+                if (AudioMediaPayload.requiresAck(msgType)) {
                     transport.sendMediaAck(message.channel)
                 }
                 return

@@ -40,7 +40,8 @@ class AudioTrackWrapper(
 
     private data class AudioChunk(
         val data: ByteArray,
-        val size: Int
+        val size: Int,
+        val codecConfig: AacCodecConfig? = null
     )
 
     companion object {
@@ -82,6 +83,9 @@ class AudioTrackWrapper(
     private var droppedAacChunks = 0L
     private var aacFramesQueued = 0L
     private val trackChannelCount: Int = channelCount
+    @Volatile private var incomingAacConfig = if (isAac) AacCodecConfig.default(sampleRateInHz, channelCount) else null
+    // Only the decode thread changes this after construction. Each chunk retains its own CSD.
+    private var decoderConfig = incomingAacConfig
 
     // Unbounded underneath and bounded by SinkQueueOverflowPolicy above. The bound is a duration
     // rather than a count, and a chunk's duration is not known until one arrives, which a
@@ -269,7 +273,7 @@ class AudioTrackWrapper(
             format.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, 16384)
 
             // CSD for RAW AAC-LC (AudioSpecificConfig)
-            val csd = makeAacCsd(sampleRate, channels)
+            val csd = checkNotNull(decoderConfig).copyBytes()
             format.setByteBuffer("csd-0", java.nio.ByteBuffer.wrap(csd))
 
             decoder = MediaCodec.createDecoderByType(mime)
@@ -818,6 +822,14 @@ class AudioTrackWrapper(
                 if (chunk != null) {
                     try {
                         if (isAac) {
+                            val config = checkNotNull(chunk.codecConfig)
+                            if (!config.sameAs(checkNotNull(decoderConfig))) {
+                                releaseDecoder()
+                                quitCodecThread()
+                                decoderConfig = config
+                                rebuildRequested = false
+                                decoderFailed = !initDecoder(sampleRate, trackChannelCount)
+                            }
                             if (rebuildRequested) rebuildDecoder()
                             if (decoder == null || decoderFailed) {
                                 dropAacChunk()
@@ -906,40 +918,6 @@ class AudioTrackWrapper(
         } catch (e: Exception) {
             AppLog.e("Error queuing AAC input", e)
             rebuildRequested = true
-        }
-    }
-
-    private fun makeAacCsd(sampleRate: Int, channelCount: Int): ByteArray {
-        val sampleRateIndex = getFrequencyIndex(sampleRate)
-        val audioObjectType = 2 // AAC-LC
-
-        // Correct packing: [AOT:5][FreqIdx:4][ChanCfg:4][...padding:3]
-        val config = ((audioObjectType and 0x1F) shl 11) or
-                     ((sampleRateIndex and 0x0F) shl 7) or
-                     ((channelCount and 0x0F) shl 3)
-
-        return byteArrayOf(
-            ((config shr 8) and 0xFF).toByte(),
-            (config and 0xFF).toByte()
-        )
-    }
-
-    private fun getFrequencyIndex(sampleRate: Int): Int {
-        return when (sampleRate) {
-            96000 -> 0
-            88200 -> 1
-            64000 -> 2
-            48000 -> 3
-            44100 -> 4
-            32000 -> 5
-            24000 -> 6
-            22050 -> 7
-            16000 -> 8
-            12000 -> 9
-            11025 -> 10
-            8000  -> 11
-            7350  -> 12
-            else  -> 4 // Default 44100
         }
     }
 
@@ -1097,6 +1075,16 @@ class AudioTrackWrapper(
         }
     }
 
+    fun configureAac(buffer: ByteArray, offset: Int, size: Int) {
+        if (!isAac || !isRunning) return
+        val config = AacCodecConfig.parse(buffer, offset, size, sampleRate, trackChannelCount)
+        if (config == null) {
+            AppLog.w("AudioTrackWrapper: ignoring invalid or incompatible AAC configuration on ${channelName()}")
+            return
+        }
+        if (!config.sameAs(checkNotNull(incomingAacConfig))) incomingAacConfig = config
+    }
+
     fun write(buffer: ByteArray, offset: Int, size: Int) {
         if (!isRunning) return
 
@@ -1118,7 +1106,7 @@ class AudioTrackWrapper(
             // AAC queues encoded bytes, which divided by a PCM frame's width is not a frame count
             // and scaled every figure derived from it. The AAC sink measures at the decoder instead.
             shedStaleChunks()
-            dataQueue.offer(AudioChunk(data, size))
+            dataQueue.offer(AudioChunk(data, size, incomingAacConfig))
         } catch (e: InterruptedException) {
             data?.let { recycleAudioBuffer(it) }
             Thread.currentThread().interrupt()

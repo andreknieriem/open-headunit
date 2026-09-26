@@ -28,6 +28,10 @@ class AudioDecoder {
         audioTrack?.write(buffer, offset, size)
     }
 
+    fun configure(channel: Int, buffer: ByteArray, offset: Int, size: Int) {
+        audioTracks.get(channel)?.configureAac(buffer, offset, size)
+    }
+
     fun stop() {
         for (i in 0 until audioTracks.size()) {
             stop(audioTracks.keyAt(i))

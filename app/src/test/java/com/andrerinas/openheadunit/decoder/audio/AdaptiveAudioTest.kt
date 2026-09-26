@@ -40,9 +40,9 @@ class AdaptiveAudioTest {
             if (now % 10 == 0L) buffer.render(out, now)
         }
         assertTrue(buffer.concealedFrames > 0)
-        assertTrue(buffer.droppedFrames > 0)
-        assertTrue(buffer.targetFrames() <= 7200)
-        assertTrue(buffer.depthFrames() <= 7200 + 2048)
+        assertEquals(0L, buffer.droppedFrames) // the late burst fits the adapted target
+        assertTrue(buffer.targetFrames() <= 19200) // exceptional lateness may exceed the normal 150ms budget
+        assertTrue(buffer.depthFrames() <= buffer.targetFrames() + 2048)
     }
 
     @Test fun `PLC ends after thirty milliseconds and does not replay indefinitely`() {
@@ -186,7 +186,8 @@ class AdaptiveAudioTest {
         val out = ShortArray(960)
         var packetIndex = 0
         var afterRecoveryRebanks = 0L
-        for (now in 0L..180_000L) {
+        // A larger emergency target still decays by only 5ms per ten stable seconds.
+        for (now in 0L..900_000L) {
             while (now >= packetIndex * 2048L * 1000L / 48000) {
                 if (now in 400L..699L) break
                 buffer.noteArrival(now, 2048)

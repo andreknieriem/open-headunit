@@ -6,7 +6,10 @@ internal class AdaptiveJitterPolicy(
     latencyMultiplier: Int = AudioJitterBufferPolicy.DEFAULT_MULTIPLIER
 ) {
     private val floorMs = maxOf(60L, AudioJitterBufferPolicy.targetMsFor(latencyMultiplier))
-    private val ceilingMs = maxOf(150L, floorMs)
+    // Keep the normal low-latency budget, but do not enforce it after the link demonstrates
+    // that it cannot hold. Otherwise every 160-300ms batch is trimmed and then starves.
+    private var ceilingMs = maxOf(150L, floorMs)
+    private val maximumMs = maxOf(AudioJitterBufferPolicy.MAX_TARGET_MS, floorMs)
     private var marginMs = 15L
     private var previousArrivalMs = -1L
     private var previousFrames = 0
@@ -15,6 +18,8 @@ internal class AdaptiveJitterPolicy(
     private val chunkEpochs = LongArray(10) { -1L }
     private val chunkMaxima = IntArray(10)
     var largestChunkFrames = 0
+        private set
+    var largestArrivalGapMs = 0L
         private set
 
     val targetFrames: Int
@@ -40,10 +45,13 @@ internal class AdaptiveJitterPolicy(
         }
         if (previousArrivalMs >= 0) {
             val gap = nowMs - previousArrivalMs
+            largestArrivalGapMs = maxOf(largestArrivalGapMs, gap)
             // A stopped prompt/session is not network jitter. Bursts (gap=0) also cannot make the
             // estimate shrink: TCP retransmissions deliver several messages at the same instant.
             if (gap in 1..999) {
                 val excess = (gap - previousFrames * 1000L / sampleRate).coerceAtLeast(0)
+                val observedNeedMs = largestChunkFrames * 1000L / sampleRate + 20 + excess
+                ceilingMs = maxOf(ceilingMs, observedNeedMs.coerceAtMost(maximumMs))
                 if (excess + 10 > marginMs) {
                     marginMs = maxOf(marginMs + 20, excess + 10).coerceAtMost(maxMarginMs())
                     lastAdjustmentMs = nowMs
@@ -56,6 +64,7 @@ internal class AdaptiveJitterPolicy(
     }
 
     fun onUnderrun(nowMs: Long) {
+        if (targetFrames >= frames(ceilingMs)) ceilingMs = (ceilingMs + 20).coerceAtMost(maximumMs)
         marginMs = (marginMs + 20).coerceAtMost(maxMarginMs())
         lastAdjustmentMs = nowMs
     }
@@ -70,6 +79,7 @@ internal class AdaptiveJitterPolicy(
 
     fun resetArrival() {
         previousArrivalMs = -1L; previousFrames = 0
+        largestArrivalGapMs = 0L
         chunkEpochs.fill(-1L); chunkMaxima.fill(0); largestChunkFrames = 0
     }
     private fun maxMarginMs() = (ceilingMs - largestChunkFrames * 1000L / sampleRate - 10).coerceAtLeast(15L)

@@ -12,6 +12,7 @@ internal class AudioTimestampMonitor(private val windowUs: Long = 10_000_000L) {
     private var previousDurationUs = 0L
     private var packets = 0
     private var comparablePairs = 0
+    private var durationChanges = 0
     private var discontinuities = 0
     private var missingTimestamps = 0
     private var maxSourceGapUs = 0L
@@ -35,13 +36,21 @@ internal class AudioTimestampMonitor(private val windowUs: Long = 10_000_000L) {
                 discontinuities++
             } else {
                 maxArrivalGapUs = maxOf(maxArrivalGapUs, arrivalGap)
-                maxArrivalExcessUs = maxOf(maxArrivalExcessUs, arrivalGap - previousDurationUs)
+                // Older senders stamp capture completion; newer ones subtract the captured
+                // block's duration. A size change therefore has no single expected PTS delta.
+                // Use a conservative arrival budget and exclude the ambiguous PTS comparison.
+                val sameDuration = durationUs == previousDurationUs
+                if (!sameDuration) durationChanges++
+                maxArrivalExcessUs = maxOf(maxArrivalExcessUs,
+                    arrivalGap - maxOf(previousDurationUs, durationUs))
                 if (sourceUs > 0 && previousSourceUs > 0) {
                     if (sourceGap in 1..MAX_INTERVAL_US) {
-                        comparablePairs++
                         maxSourceGapUs = maxOf(maxSourceGapUs, sourceGap)
-                        maxSourceExcessUs = maxOf(maxSourceExcessUs, sourceGap - previousDurationUs)
-                        maxDeliveryIncreaseUs = maxOf(maxDeliveryIncreaseUs, arrivalGap - sourceGap)
+                        if (sameDuration) {
+                            comparablePairs++
+                            maxSourceExcessUs = maxOf(maxSourceExcessUs, sourceGap - previousDurationUs)
+                            maxDeliveryIncreaseUs = maxOf(maxDeliveryIncreaseUs, arrivalGap - sourceGap)
+                        }
                     } else {
                         discontinuities++
                     }
@@ -52,7 +61,7 @@ internal class AudioTimestampMonitor(private val windowUs: Long = 10_000_000L) {
         previousArrivalUs = arrivalUs
         previousDurationUs = durationUs
         if (arrivalUs - windowStartUs < windowUs) return null
-        val report = Report(packets, comparablePairs, missingTimestamps, discontinuities,
+        val report = Report(packets, comparablePairs, durationChanges, missingTimestamps, discontinuities,
             maxSourceGapUs, maxArrivalGapUs, maxSourceExcessUs, maxArrivalExcessUs, maxDeliveryIncreaseUs)
         clearWindow()
         windowStartUs = arrivalUs
@@ -71,6 +80,7 @@ internal class AudioTimestampMonitor(private val windowUs: Long = 10_000_000L) {
     private fun clearWindow() {
         packets = 0
         comparablePairs = 0
+        durationChanges = 0
         discontinuities = 0
         missingTimestamps = 0
         maxSourceGapUs = 0
@@ -83,6 +93,7 @@ internal class AudioTimestampMonitor(private val windowUs: Long = 10_000_000L) {
     data class Report(
         val packets: Int,
         val comparablePairs: Int,
+        val durationChanges: Int,
         val missingTimestamps: Int,
         val discontinuities: Int,
         val maxSourceGapUs: Long,
@@ -94,7 +105,7 @@ internal class AudioTimestampMonitor(private val windowUs: Long = 10_000_000L) {
         val hasGap: Boolean get() = maxArrivalExcessUs >= 20_000L || maxSourceExcessUs >= 20_000L
 
         override fun toString(): String = "PCM timing: packets=$packets, pairs=$comparablePairs, " +
-            "missingPts=$missingTimestamps, discontinuities=$discontinuities, " +
+            "durationChanges=$durationChanges, missingPts=$missingTimestamps, discontinuities=$discontinuities, " +
             "sourceGapMaxMs=${maxSourceGapUs / 1000}, arrivalGapMaxMs=${maxArrivalGapUs / 1000}, " +
             "sourceExcessMaxMs=${maxSourceExcessUs / 1000}, " +
             "arrivalExcessMaxMs=${maxArrivalExcessUs / 1000}, " +

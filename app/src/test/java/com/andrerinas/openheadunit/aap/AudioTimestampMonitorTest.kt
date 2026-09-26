@@ -78,12 +78,45 @@ class AudioTimestampMonitorTest {
         assertFalse(pause.hasGap)
     }
 
-    @Test fun `expected duration follows the previous variable size PCM packet`() {
-        val monitor = AudioTimestampMonitor(64_000)
-        monitor.onPacket(1_000_000, 5_000_000, 64_000)
-        val report = monitor.onPacket(1_064_000, 5_064_000, 20_000)!!
-        assertEquals(0L, report.maxSourceExcessUs)
-        assertEquals(0L, report.maxArrivalExcessUs)
+    @Test fun `capture start and completion timestamps tolerate changing PCM packet durations`() {
+        for ((previous, current) in listOf(20_000L to 64_000L, 64_000L to 20_000L)) {
+            // 13.5 stamps capture completion, 17.6 subtracts the block duration. Neither
+            // convention implies a source or delivery gap when the packet size changes.
+            for (sourceDelta in listOf(previous, current)) {
+                val monitor = AudioTimestampMonitor(1)
+                monitor.onPacket(1_000_000, 5_000_000, previous)
+                val report = monitor.onPacket(1_000_000 + sourceDelta, 5_000_000 + current, current)!!
+                assertEquals(1, report.durationChanges)
+                assertEquals(0, report.comparablePairs)
+                assertEquals(sourceDelta, report.maxSourceGapUs)
+                assertEquals(0L, report.maxSourceExcessUs)
+                assertEquals(0L, report.maxDeliveryIncreaseUs)
+                assertEquals(0L, report.maxArrivalExcessUs)
+                assertFalse(report.hasGap)
+            }
+        }
+    }
+
+    @Test fun `size changes still report arrival stalls and rebase the next equal size pair`() {
+        val monitor = AudioTimestampMonitor(1)
+        monitor.onPacket(1_000_000, 5_000_000, 20_000)
+        val changed = monitor.onPacket(1_064_000, 5_164_000, 64_000)!!
+        assertEquals(100_000L, changed.maxArrivalExcessUs)
+        assertTrue(changed.hasGap)
+        val steady = monitor.onPacket(1_128_000, 5_228_000, 64_000)!!
+        assertEquals(1, steady.comparablePairs)
+        assertEquals(0, steady.durationChanges)
+        assertFalse(steady.hasGap)
+    }
+
+    @Test fun `millisecond capture completion timestamps tolerate ordinary rounding`() {
+        val monitor = AudioTimestampMonitor(85_000)
+        monitor.onPacket(1_000_000, 5_000_000, frameUs)
+        monitor.onPacket(1_043_000, 5_042_667, frameUs)
+        val report = monitor.onPacket(1_085_000, 5_085_334, frameUs)!!
+        assertEquals(2, report.comparablePairs)
+        assertFalse(report.hasGap)
+        assertTrue(report.maxDeliveryIncreaseUs < 1000)
     }
 
     @Test fun `reporting clears old spikes but preserves continuity across windows`() {

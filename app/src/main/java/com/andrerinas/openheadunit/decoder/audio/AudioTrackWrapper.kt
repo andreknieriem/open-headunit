@@ -31,7 +31,8 @@ class AudioTrackWrapper(
     private val mixer: AudioMixer? = null,
     private val channelId: Int = -1,
     private val attachHwDspEqualizer: Boolean = false,
-    private val isMediaSink: Boolean = false
+    private val isMediaSink: Boolean = false,
+    private val ownsMixer: Boolean = false
 ) : Thread() {
 
     /** The codec this sink was built for. See [AudioSinkSetupPolicy]. */
@@ -1094,6 +1095,9 @@ class AudioTrackWrapper(
     fun write(buffer: ByteArray, offset: Int, size: Int) {
         if (!isRunning) return
 
+        mixer?.noteArrival(channelId, if (isAac) 1024 else size / bytesPerFrame,
+            SystemClock.elapsedRealtime())
+
         var data: ByteArray? = null
         try {
             data = obtainAudioBuffer(size)
@@ -1139,6 +1143,10 @@ class AudioTrackWrapper(
      * cushion is rebuilt before anything is heard.
      */
     fun pauseForIdle() {
+        if (mixer != null) {
+            mixer.finishChannel(channelId)
+            return
+        }
         synchronized(playbackLock) { parkForIdle() }
     }
 
@@ -1191,6 +1199,7 @@ class AudioTrackWrapper(
 
         if (mixer != null) {
             mixer.unregisterChannel(channelId)
+            if (ownsMixer) mixer.stop()
         }
 
         // 3. stop() plays out what is still buffered on a MODE_STREAM track; this only waits for

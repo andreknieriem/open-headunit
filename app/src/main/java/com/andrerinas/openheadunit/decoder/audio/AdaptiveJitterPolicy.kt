@@ -1,0 +1,58 @@
+package com.andrerinas.openheadunit.decoder.audio
+
+/** Network timing only. All times come from the transport's monotonic clock, before decoding. */
+internal class AdaptiveJitterPolicy(
+    private val sampleRate: Int,
+    latencyMultiplier: Int = AudioJitterBufferPolicy.DEFAULT_MULTIPLIER
+) {
+    private val floorMs = maxOf(60L, AudioJitterBufferPolicy.targetMsFor(latencyMultiplier))
+    private val ceilingMs = maxOf(150L, floorMs)
+    private var marginMs = 15L
+    private var previousArrivalMs = -1L
+    private var previousFrames = 0
+    private var lastAdjustmentMs = -1L
+    var largestChunkFrames = 0
+        private set
+
+    val targetFrames: Int
+        get() {
+            val invariant = largestChunkFrames + frames(10)
+            return maxOf(invariant, minOf(frames(ceilingMs), maxOf(frames(floorMs), invariant + frames(marginMs))))
+        }
+
+    fun onArrival(nowMs: Long, chunkFrames: Int) {
+        if (chunkFrames <= 0) return
+        largestChunkFrames = maxOf(largestChunkFrames, chunkFrames)
+        if (previousArrivalMs >= 0) {
+            val gap = nowMs - previousArrivalMs
+            // A stopped prompt/session is not network jitter. Bursts (gap=0) also cannot make the
+            // estimate shrink: TCP retransmissions deliver several messages at the same instant.
+            if (gap in 1..999) {
+                val excess = (gap - previousFrames * 1000L / sampleRate).coerceAtLeast(0)
+                if (excess + 10 > marginMs) {
+                    marginMs = maxOf(marginMs + 20, excess + 10).coerceAtMost(ceilingMs)
+                    lastAdjustmentMs = nowMs
+                }
+            }
+        }
+        previousArrivalMs = nowMs
+        previousFrames = chunkFrames
+        recover(nowMs)
+    }
+
+    fun onUnderrun(nowMs: Long) {
+        marginMs = (marginMs + 20).coerceAtMost(ceilingMs)
+        lastAdjustmentMs = nowMs
+    }
+
+    private fun recover(nowMs: Long) {
+        if (lastAdjustmentMs < 0) lastAdjustmentMs = nowMs
+        if (nowMs - lastAdjustmentMs >= 10_000) {
+            marginMs = (marginMs - 5).coerceAtLeast(15)
+            lastAdjustmentMs = nowMs
+        }
+    }
+
+    fun resetArrival() { previousArrivalMs = -1L; previousFrames = 0 }
+    private fun frames(ms: Long) = (sampleRate * ms / 1000).toInt()
+}

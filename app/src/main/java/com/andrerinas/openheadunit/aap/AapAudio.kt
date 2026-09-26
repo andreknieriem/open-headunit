@@ -507,6 +507,7 @@ internal class AapAudio(
         if ((channel == Channel.ID_AU1 || channel == Channel.ID_AU2) && staticAudioFocus) {
             // Keep the speech wrappers alive to prevent recreate overhead and keep state consistent.
             // Just restore media volume.
+            audioDecoder.pause(channel)
             handler.removeCallbacks(unduckRunnable)
             unduckMedia()
         } else {

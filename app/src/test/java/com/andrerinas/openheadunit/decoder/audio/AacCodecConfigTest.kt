@@ -45,4 +45,31 @@ class AacCodecConfigTest {
             assertNull(AacCodecConfig.parse(stereo48k, offset, 2, 48000, 2))
         }
     }
+
+    @Test fun `explicit absent SBR preserves the entire supported codec configuration`() {
+        val config = stereo48k + byteArrayOf(0x56, 0xe5.toByte(), 0)
+        assertArrayEquals(config, AacCodecConfig.parse(config, 0, config.size, 48000, 2)!!.copyBytes())
+        // Optional PS signaling begins at bit 33, not at a byte boundary.
+        val noPs = stereo48k + byteArrayOf(0x56, 0xe5.toByte(), 0x54, 0x80.toByte(), 0)
+        assertNotNull(AacCodecConfig.parse(noPs, 0, noPs.size, 48000, 2))
+    }
+
+    @Test fun `LC prefix does not hide SBR PS or unknown trailing data`() {
+        for (tail in listOf(
+            byteArrayOf(0xff.toByte(), 0xff.toByte()),
+            byteArrayOf(0x56, 0xe5.toByte(), 0x98.toByte()), // SBR enabled
+            byteArrayOf(0x56, 0xe5.toByte(), 0x54, 0x88.toByte(), 0), // PS enabled
+            byteArrayOf(0x56, 0xe6.toByte(), 0), // unknown extension AOT
+            byteArrayOf(0x56, 0xe5.toByte(), 0, 1))) {
+            val config = stereo48k + tail
+            assertNull(AacCodecConfig.parse(config, 0, config.size, 48000, 2))
+        }
+    }
+
+    @Test fun `truncated extension cannot borrow its missing flag from the transport tail`() {
+        val borrowed = stereo48k + byteArrayOf(0x56, 0xe5.toByte(), 0, 0)
+        assertNull(AacCodecConfig.parse(borrowed, 0, 3, 48000, 2))
+        assertNull(AacCodecConfig.parse(borrowed, 0, 4, 48000, 2))
+        assertNotNull(AacCodecConfig.parse(borrowed, 0, 5, 48000, 2))
+    }
 }

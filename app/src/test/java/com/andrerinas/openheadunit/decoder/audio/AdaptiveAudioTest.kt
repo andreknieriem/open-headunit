@@ -4,6 +4,74 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class AdaptiveAudioTest {
+    private fun bankWithExpiredLargePacket(): AdaptivePcmBuffer {
+        val buffer = AdaptivePcmBuffer(isMediaSink = true)
+        buffer.noteArrival(0, 8192)
+        buffer.write(ShortArray(16384) { 12000 }, 16384, 0)
+        buffer.noteArrival(171, 2048)
+        buffer.write(ShortArray(4096) { 12000 }, 4096, 171)
+        buffer.render(ShortArray(960), 171)
+        buffer.noteArrival(10040, 2048) // expire the old estimate while PCM remains banked
+        return buffer
+    }
+
+    @Test fun `finish drains protected PCM instead of revoking its trim allowance`() {
+        val buffer = bankWithExpiredLargePacket()
+        val depth = buffer.depthFrames()
+        assertTrue(depth > buffer.targetFrames() + 1568)
+        buffer.finish()
+        val out = ShortArray(960)
+        var now = 10040L
+        while (!buffer.isIdle()) { buffer.render(out, now); now += 10 }
+        assertEquals(0L, buffer.droppedFrames)
+        assertEquals(0L, buffer.compressedFrames)
+        assertEquals(0L, buffer.concealedFrames)
+    }
+
+    @Test fun `new backlog beyond grace and physical capacity still discard stale PCM`() {
+        for (packets in listOf(8, 30)) {
+            val buffer = bankWithExpiredLargePacket()
+            val out = ShortArray(960)
+            buffer.render(out, 10040)
+            assertEquals(0L, buffer.droppedFrames)
+            repeat(packets) {
+                buffer.noteArrival(10050, 2048)
+                buffer.write(ShortArray(4096) { 12000 }, 4096, 10050)
+            }
+            if (packets == 30) assertTrue(buffer.droppedFrames > 0) // write-side overflow
+            buffer.render(out, 10050)
+            assertTrue(buffer.droppedFrames > 0)
+            assertTrue(buffer.depthFrames() <= buffer.targetFrames())
+            assertEquals(0L, buffer.rebanks)
+        }
+    }
+
+    @Test fun `aging a large packet estimate repays latency without discarding buffered music`() {
+        for (media in listOf(false, true)) for (multiplier in listOf(2, 8)) for (burst in 1..4) {
+            val buffer = AdaptivePcmBuffer(latencyMultiplier = multiplier, isMediaSink = media)
+            val firstPacketFrames = 8192
+            val firstPacket = ShortArray(firstPacketFrames * 2) { 12000 }
+            val packet = ShortArray(4096) { 12000 }
+            val out = ShortArray(960)
+            buffer.noteArrival(0, firstPacketFrames)
+            buffer.write(firstPacket, firstPacket.size, 0)
+            var sentFrames = firstPacketFrames.toLong()
+            for (now in 0L..60_000L) {
+                if (now >= sentFrames * 1000 / 48000) {
+                    buffer.noteArrival(now, 2048)
+                    buffer.write(packet, packet.size, now)
+                    sentFrames += 2048
+                }
+                if (now % (burst * 10) == 0L) repeat(burst) { buffer.render(out, now, burst * 480) }
+            }
+            val trace = "media=$media multiplier=$multiplier burst=$burst"
+            assertEquals("$trace must not skip music on target aging", 0L, buffer.droppedFrames)
+            assertEquals(trace, 0L, buffer.rebanks)
+            assertEquals(trace, 0L, buffer.concealedFrames)
+            if (multiplier == 2) assertTrue(trace, buffer.compressedFrames > 0)
+            assertTrue(trace, buffer.depthFrames() <= buffer.targetFrames() + 2048 + burst * 480)
+        }
+    }
     @Test fun `steady 8192 byte wireless packets play for a minute without concealment or trimming`() {
         val buffer = AdaptivePcmBuffer()
         val packet = ShortArray(4096) { 12000 }

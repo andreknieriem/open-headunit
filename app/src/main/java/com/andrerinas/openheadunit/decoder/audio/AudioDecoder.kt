@@ -28,6 +28,10 @@ class AudioDecoder {
         audioTrack?.write(buffer, offset, size)
     }
 
+    fun configure(channel: Int, buffer: ByteArray, offset: Int, size: Int) {
+        audioTracks.get(channel)?.configureAac(buffer, offset, size)
+    }
+
     fun stop() {
         for (i in 0 until audioTracks.size()) {
             stop(audioTracks.keyAt(i))
@@ -39,6 +43,8 @@ class AudioDecoder {
     fun pause(chan: Int) {
         audioTracks.get(chan)?.pauseForIdle()
     }
+
+    fun preparePlayback(channel: Int) { audioTracks.get(channel)?.preparePlayback() }
 
     /** Park all channels (e.g. on device sleep/screen-off) so AudioTrack does not block in ALSA. */
     fun pauseAll() {
@@ -66,11 +72,11 @@ class AudioDecoder {
      *   from it rather than from whichever channel happened to build the mixer, which was always
      *   the first Media Sink Setup to arrive and so usually a capped one.
      */
-    fun start(channel: Int, stream: Int, sampleRate: Int, numberOfBits: Int, numberOfChannels: Int, isAac: Boolean = false, gain: Float = 1.0f, audioLatencyMultiplier: Int = 8, audioQueueCapacity: Int = 0, staticAudioFocus: Boolean = false, attachHwDspEqualizer: Boolean = false, mixerLatencyMultiplier: Int = audioLatencyMultiplier) {
+    fun start(channel: Int, stream: Int, sampleRate: Int, numberOfBits: Int, numberOfChannels: Int, isAac: Boolean = false, gain: Float = 1.0f, audioLatencyMultiplier: Int = AudioJitterBufferPolicy.DEFAULT_MULTIPLIER, audioQueueCapacity: Int = 0, staticAudioFocus: Boolean = false, attachHwDspEqualizer: Boolean = false, mixerLatencyMultiplier: Int = audioLatencyMultiplier, preferAAudio: Boolean = false) {
         if (staticAudioFocus) {
             synchronized(this) {
                 if (mixer == null) {
-                    mixer = AudioMixer(stream, attachHwDspEqualizer, mixerLatencyMultiplier)
+                    mixer = AudioMixer(stream, attachHwDspEqualizer, mixerLatencyMultiplier, preferAAudio, keepOutputActive = true)
                     mixer!!.start()
                     AppLog.i(
                         "AudioDecoder: Created and started shared AudioMixer on channel $channel " +
@@ -79,6 +85,11 @@ class AudioDecoder {
                 }
             }
         }
+        // All PCM16 sinks use the same network bank and 10ms renderer. Independent instances
+        // preserve per-stream routing when static focus is off. PCM8 retains its legacy path.
+        val sinkMixer = if (staticAudioFocus) mixer else if (numberOfBits == 16) {
+            AudioMixer(stream, attachHwDspEqualizer, audioLatencyMultiplier, preferAAudio).also { it.start() }
+        } else null
         val thread = AudioTrackWrapper(
             stream = stream,
             sampleRateInHz = sampleRate,
@@ -88,11 +99,12 @@ class AudioDecoder {
             gain = gain,
             audioLatencyMultiplier = audioLatencyMultiplier,
             audioQueueCapacity = audioQueueCapacity,
-            mixer = if (staticAudioFocus) mixer else null,
+            mixer = sinkMixer,
             channelId = channel,
             attachHwDspEqualizer = attachHwDspEqualizer,
             // Music waits longer than a prompt before starting short. See AudioPrerollPolicy.
-            isMediaSink = channel == com.andrerinas.openheadunit.aap.protocol.Channel.ID_AUD
+            isMediaSink = channel == com.andrerinas.openheadunit.aap.protocol.Channel.ID_AUD,
+            ownsMixer = !staticAudioFocus && sinkMixer != null
         )
         audioTracks.put(channel, thread)
     }

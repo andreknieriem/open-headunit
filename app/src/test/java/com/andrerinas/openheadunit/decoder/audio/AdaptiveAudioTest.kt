@@ -1,0 +1,284 @@
+package com.andrerinas.openheadunit.decoder.audio
+
+import org.junit.Assert.*
+import org.junit.Test
+
+class AdaptiveAudioTest {
+    private fun bankWithExpiredLargePacket(): AdaptivePcmBuffer {
+        val buffer = AdaptivePcmBuffer(isMediaSink = true)
+        buffer.noteArrival(0, 8192)
+        buffer.write(ShortArray(16384) { 12000 }, 16384, 0)
+        buffer.noteArrival(171, 2048)
+        buffer.write(ShortArray(4096) { 12000 }, 4096, 171)
+        buffer.render(ShortArray(960), 171)
+        buffer.noteArrival(10040, 2048) // expire the old estimate while PCM remains banked
+        return buffer
+    }
+
+    @Test fun `finish drains protected PCM instead of revoking its trim allowance`() {
+        val buffer = bankWithExpiredLargePacket()
+        val depth = buffer.depthFrames()
+        assertTrue(depth > buffer.targetFrames() + 1568)
+        buffer.finish()
+        val out = ShortArray(960)
+        var now = 10040L
+        while (!buffer.isIdle()) { buffer.render(out, now); now += 10 }
+        assertEquals(0L, buffer.droppedFrames)
+        assertEquals(0L, buffer.compressedFrames)
+        assertEquals(0L, buffer.concealedFrames)
+    }
+
+    @Test fun `new backlog beyond grace and physical capacity still discard stale PCM`() {
+        for (packets in listOf(8, 30)) {
+            val buffer = bankWithExpiredLargePacket()
+            val out = ShortArray(960)
+            buffer.render(out, 10040)
+            assertEquals(0L, buffer.droppedFrames)
+            repeat(packets) {
+                buffer.noteArrival(10050, 2048)
+                buffer.write(ShortArray(4096) { 12000 }, 4096, 10050)
+            }
+            if (packets == 30) assertTrue(buffer.droppedFrames > 0) // write-side overflow
+            buffer.render(out, 10050)
+            assertTrue(buffer.droppedFrames > 0)
+            assertTrue(buffer.depthFrames() <= buffer.targetFrames())
+            assertEquals(0L, buffer.rebanks)
+        }
+    }
+
+    @Test fun `aging a large packet estimate repays latency without discarding buffered music`() {
+        for (media in listOf(false, true)) for (multiplier in listOf(2, 8)) for (burst in 1..4) {
+            val buffer = AdaptivePcmBuffer(latencyMultiplier = multiplier, isMediaSink = media)
+            val firstPacketFrames = 8192
+            val firstPacket = ShortArray(firstPacketFrames * 2) { 12000 }
+            val packet = ShortArray(4096) { 12000 }
+            val out = ShortArray(960)
+            buffer.noteArrival(0, firstPacketFrames)
+            buffer.write(firstPacket, firstPacket.size, 0)
+            var sentFrames = firstPacketFrames.toLong()
+            for (now in 0L..60_000L) {
+                if (now >= sentFrames * 1000 / 48000) {
+                    buffer.noteArrival(now, 2048)
+                    buffer.write(packet, packet.size, now)
+                    sentFrames += 2048
+                }
+                if (now % (burst * 10) == 0L) repeat(burst) { buffer.render(out, now, burst * 480) }
+            }
+            val trace = "media=$media multiplier=$multiplier burst=$burst"
+            assertEquals("$trace must not skip music on target aging", 0L, buffer.droppedFrames)
+            assertEquals(trace, 0L, buffer.rebanks)
+            assertEquals(trace, 0L, buffer.concealedFrames)
+            if (multiplier == 2) assertTrue(trace, buffer.compressedFrames > 0)
+            assertTrue(trace, buffer.depthFrames() <= buffer.targetFrames() + 2048 + burst * 480)
+        }
+    }
+    @Test fun `steady 8192 byte wireless packets play for a minute without concealment or trimming`() {
+        val buffer = AdaptivePcmBuffer()
+        val packet = ShortArray(4096) { 12000 }
+        val out = ShortArray(960)
+        var packetIndex = 0
+        for (now in 0L..60_000L) {
+            if (now >= packetIndex * 2048L * 1000L / 48000) {
+                buffer.noteArrival(now, 2048)
+                buffer.write(packet, packet.size, now)
+                packetIndex++
+            }
+            if (now % 10 == 0L) buffer.render(out, now)
+        }
+        assertEquals(0L, buffer.rebanks)
+        assertEquals(0L, buffer.concealedFrames)
+        assertEquals(0L, buffer.droppedFrames)
+        assertEquals(0L, buffer.compressedFrames)
+        assertTrue(buffer.targetFrames() in 2880..3840) // 60-80ms network target
+        assertTrue(buffer.depthFrames() < 4800)
+    }
+
+    @Test fun `late TCP burst is bounded and recovers instead of retaining permanent delay`() {
+        val buffer = AdaptivePcmBuffer()
+        val packet = ShortArray(4096) { 12000 }
+        val out = ShortArray(960)
+        var packetIndex = 0
+        for (now in 0L..2500L) {
+            while (now >= packetIndex * 2048L * 1000L / 48000) {
+                if (now in 400L..699L) break // hold TCP delivery, then release the entire backlog
+                buffer.noteArrival(now, 2048)
+                buffer.write(packet, packet.size, now)
+                packetIndex++
+            }
+            if (now % 10 == 0L) buffer.render(out, now)
+        }
+        assertTrue(buffer.concealedFrames > 0)
+        assertEquals(0L, buffer.droppedFrames) // the late burst fits the adapted target
+        assertTrue(buffer.targetFrames() <= 19200) // exceptional lateness may exceed the normal 150ms budget
+        assertTrue(buffer.depthFrames() <= buffer.targetFrames() + 2048)
+    }
+
+    @Test fun `PLC ends after thirty milliseconds and does not replay indefinitely`() {
+        val buffer = AdaptivePcmBuffer()
+        buffer.noteArrival(0, 480)
+        buffer.write(ShortArray(5760) { 10000 }, 5760, 0) // six 10ms blocks
+        val out = ShortArray(960)
+        repeat(6) { buffer.render(out, it * 10L) }
+        buffer.render(out, 60)
+        assertEquals(7000, out.last().toInt())
+        buffer.render(out, 70)
+        assertEquals(4000, out.last().toInt())
+        buffer.render(out, 80)
+        assertEquals(1500, out[478].toInt())
+        assertEquals(0, out.last().toInt())
+        buffer.render(out, 90)
+        assertTrue(out.all { it == 0.toShort() })
+        assertEquals(1440L, buffer.concealedFrames)
+        assertEquals(1L, buffer.rebanks)
+    }
+
+    @Test fun `a stopped short prompt drains its final partial block without PLC`() {
+        val buffer = AdaptivePcmBuffer()
+        buffer.noteArrival(0, 240)
+        buffer.write(ShortArray(480) { 10000 }, 480, 0)
+        buffer.finish()
+        val out = ShortArray(960)
+        assertTrue(buffer.render(out, 1))
+        assertEquals(10000, out[478].toInt())
+        assertTrue(out.drop(480).all { it == 0.toShort() })
+        assertEquals(0L, buffer.rebanks)
+        assertEquals(0L, buffer.concealedFrames)
+        assertTrue(buffer.isIdle())
+        buffer.noteArrival(1000, 480)
+        buffer.write(ShortArray(960) { 1000 }, 960, 1000)
+        assertFalse(buffer.isIdle())
+    }
+
+    @Test fun `a prompt without a stop message still escapes preroll`() {
+        val buffer = AdaptivePcmBuffer()
+        buffer.noteArrival(0, 480)
+        buffer.write(ShortArray(960) { 10000 }, 960, 0)
+        val out = ShortArray(960)
+        assertFalse(buffer.render(out, 99))
+        assertTrue(buffer.render(out, 100))
+    }
+
+    @Test fun `dropping old PCM crossfades into the newest position with stereo alignment`() {
+        val buffer = AdaptivePcmBuffer()
+        buffer.noteArrival(0, 480)
+        buffer.write(ShortArray(5760) { 10000 }, 5760, 0)
+        val out = ShortArray(960)
+        buffer.render(out, 0)
+        buffer.noteArrival(10, 480)
+        buffer.write(ShortArray(30000) { if (it % 2 == 0) -10000 else -5000 }, 30000, 10)
+        buffer.render(out, 10)
+        assertTrue(buffer.droppedFrames > 0)
+        assertTrue(out[0] > 9000) // starts near the previous tail
+        assertEquals(-10000, out[478].toInt())
+        assertEquals(-5000, out[479].toInt())
+        assertTrue(buffer.depthFrames() <= buffer.targetFrames())
+    }
+
+    @Test fun `oversized ingress remains bounded and retains newest complete frames`() {
+        val buffer = AdaptivePcmBuffer()
+        buffer.noteArrival(0, 2048)
+        val data = ShortArray(120000) { if (it % 2 == 0) 1234 else -2345 }
+        buffer.write(data, data.size, 0)
+        assertEquals(48000, buffer.depthFrames())
+        val out = ShortArray(960)
+        buffer.render(out, 0)
+        assertEquals(1234, out[958].toInt())
+        assertEquals(-2345, out[959].toInt())
+        assertTrue(buffer.droppedFrames >= 12000)
+    }
+
+    @Test fun `catch-up begins at the previous endpoint rather than replaying an earlier phase`() {
+        val buffer = AdaptivePcmBuffer()
+        buffer.noteArrival(0, 480)
+        buffer.write(ShortArray(5760) { (1000 + it / 2 % 480).toShort() }, 5760, 0)
+        val out = ShortArray(960)
+        buffer.render(out, 0)
+        val previous = out.last().toInt()
+        buffer.write(ShortArray(30000) { -10000 }, 30000, 10)
+        buffer.render(out, 10)
+        assertTrue(kotlin.math.abs(out[0].toInt() - previous) < 100)
+    }
+
+    @Test fun `explicit deep settings are not bypassed by the short prompt deadline`() {
+        val buffer = AdaptivePcmBuffer(latencyMultiplier = 16)
+        buffer.noteArrival(0, 2048)
+        buffer.write(ShortArray(4096) { 1000 }, 4096, 0)
+        assertFalse(buffer.render(ShortArray(960), 100))
+        buffer.finish()
+        assertTrue(buffer.render(ShortArray(960), 101))
+    }
+
+    @Test fun `first underrun increases network target immediately and stable arrivals lower it slowly`() {
+        val policy = AdaptiveJitterPolicy(48000)
+        policy.onArrival(0, 2048)
+        val original = policy.targetFrames
+        policy.onUnderrun(1)
+        assertEquals(original + 960, policy.targetFrames)
+        var now = 43L
+        while (now < 10_000) { policy.onArrival(now, 2048); now += 43 }
+        assertEquals(original + 960, policy.targetFrames)
+        policy.onArrival(now, 2048)
+        assertEquals(original + 720, policy.targetFrames)
+    }
+
+    @Test fun `idle time and burst delivery do not inflate or instantly shrink the target`() {
+        val policy = AdaptiveJitterPolicy(48000)
+        policy.onArrival(0, 2048)
+        val original = policy.targetFrames
+        policy.onArrival(5000, 2048)
+        assertEquals(original, policy.targetFrames)
+        policy.onArrival(5100, 2048)
+        val raised = policy.targetFrames
+        assertTrue(raised > original)
+        repeat(30) { policy.onArrival(5100, 2048) }
+        assertEquals(raised, policy.targetFrames)
+    }
+
+    @Test fun `an unusual packet ages out after ten seconds of ordinary packets`() {
+        val policy = AdaptiveJitterPolicy(48000)
+        policy.onArrival(0, 9600)
+        assertEquals(10080, policy.targetFrames)
+        for (now in 200L..9999L step 43) policy.onArrival(now, 2048)
+        assertEquals(9600, policy.largestChunkFrames)
+        policy.onArrival(10004, 2048)
+        assertEquals(2048, policy.largestChunkFrames)
+        assertTrue(policy.targetFrames <= 7200)
+        policy.resetArrival()
+        policy.onArrival(20000, 480)
+        assertEquals(480, policy.largestChunkFrames)
+    }
+
+    @Test fun `stable playback repays reduced targets without another rebuffer`() {
+        val buffer = AdaptivePcmBuffer()
+        val packet = ShortArray(4096) { 12000 }
+        val out = ShortArray(960)
+        var packetIndex = 0
+        var afterRecoveryRebanks = 0L
+        // A larger emergency target still decays by only 5ms per ten stable seconds.
+        for (now in 0L..900_000L) {
+            while (now >= packetIndex * 2048L * 1000L / 48000) {
+                if (now in 400L..699L) break
+                buffer.noteArrival(now, 2048)
+                buffer.write(packet, packet.size, now)
+                packetIndex++
+            }
+            if (now % 10 == 0L) buffer.render(out, now)
+            if (now == 2000L) afterRecoveryRebanks = buffer.rebanks
+        }
+        assertTrue(buffer.compressedFrames > 0)
+        assertEquals(afterRecoveryRebanks, buffer.rebanks)
+        assertTrue(buffer.targetFrames() < 3840)
+        assertTrue(buffer.depthFrames() < buffer.targetFrames() + 480)
+    }
+
+    @Test fun `device buffer grows separately and returns to twenty milliseconds after stability`() {
+        val policy = OutputBufferPolicy(48000, 192)
+        assertEquals(960, policy.update(0, 0))
+        assertEquals(1152, policy.update(100, 1))
+        assertEquals(1152, policy.update(10099, 1))
+        assertEquals(960, policy.update(10100, 1))
+        assertEquals(960, policy.update(20100, 1))
+        repeat(20) { policy.update(20200L + it, it + 2) }
+        assertEquals(2880, policy.targetFrames)
+    }
+}

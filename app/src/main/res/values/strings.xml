@@ -1012,6 +1012,8 @@
     <string name="exit_dialog_settings">Quick Settings</string>
     <string name="gesture_hint">Tip: Swipe from the left edge with 2 fingers to open the exit menu.</string>
     <string name="audio_latency_multiplier">Audio Latency Multiplier</string>
+    <string name="aaudio_output">AAudio output (experimental)</string>
+    <string name="aaudio_output_description">Try low-latency media output. Automatically uses AudioTrack if unavailable.</string>
     <string name="audio_latency_multiplier_description">Adjust audio buffer size (Lower = Less Lag, Higher = Less Stutter)</string>
     <string name="audio_queue_capacity">Audio Queue Capacity (Backpressure)</string>
 

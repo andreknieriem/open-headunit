@@ -1,5 +1,6 @@
 package com.andrerinas.openheadunit.aap
 
+import android.os.SystemClock
 import com.andrerinas.openheadunit.connection.projection.ProjectionConnection
 import com.andrerinas.openheadunit.connection.projection.SocketProjectionConnection
 import com.andrerinas.openheadunit.decoder.video.VideoFaultInjector
@@ -11,15 +12,20 @@ internal class AapReadSingleMessage(
     ssl: AapSsl,
     handler: AapMessageHandler,
     onVideoRunHoled: (discardAssembledUnit: Boolean) -> Unit = {},
-    faultInjector: VideoFaultInjector? = null)
+    faultInjector: VideoFaultInjector? = null,
+    private val captureTiming: () -> Boolean = { false },
+    private val onSlowRead: (TransportReadTiming, Long) -> Unit = { _, _ -> })
     : AapRead.Base(connection, ssl, handler, onVideoRunHoled, faultInjector) {
 
     private val recvHeader = AapMessageIncoming.EncryptedHeader()
     // Increase to 4MB to handle large 1080p/4K/HEVC I-frames
     private val msgBuffer = ByteArray(4 * 1024 * 1024)
     private val fragmentSizeBuffer = ByteArray(4)
+    private var previousReadFinishedMs = 0L
 
     override fun doRead(connection: ProjectionConnection): Int {
+        val timed = captureTiming()
+        val readStart = if (timed) SystemClock.elapsedRealtime() else 0L
         try {
             // Step 1: Read the encrypted header.
             // No timeout limit (0 = infinite) because this waits for the
@@ -51,6 +57,7 @@ internal class AapReadSingleMessage(
                 }
             }
 
+            val headerFinished = if (timed) SystemClock.elapsedRealtime() else 0L
             recvHeader.decode()
 
             // Immediate check for Magic Garbage in the header bytes.
@@ -114,6 +121,7 @@ internal class AapReadSingleMessage(
                 }
             }
 
+            val bodyFinished = if (timed) SystemClock.elapsedRealtime() else 0L
             // Reader-stage fault injection, resolved before the audit and acted on after the
             // decrypt. Both halves of that are load-bearing - see shouldDropForFaultInjection.
             val injectedDrop =
@@ -130,6 +138,7 @@ internal class AapReadSingleMessage(
             // the SSL engine's record sequence advances per record and the phone's does too, so a
             // record we never unwrap desynchronises the session for good.
             val msg = AapMessageIncoming.decrypt(recvHeader, 0, msgBuffer, ssl)
+            val decryptFinished = if (timed) SystemClock.elapsedRealtime() else 0L
 
             if (msg == null) {
                 // If decryption failed because of a Magic Garbage signal, return -2 to signal clean quit
@@ -147,6 +156,16 @@ internal class AapReadSingleMessage(
 
             // Step 4: Handle the decrypted message
             handler.handle(msg)
+            if (timed) {
+                val finished = SystemClock.elapsedRealtime()
+                val gap = if (previousReadFinishedMs > 0) (readStart - previousReadFinishedMs).coerceAtLeast(0) else 0L
+                // Do not allocate a report on the ordinary packet path.
+                if (gap >= 50 || finished - readStart >= 50) {
+                    onSlowRead(TransportReadTiming(msg.channel, gap, headerFinished - readStart,
+                        bodyFinished - headerFinished, decryptFinished - bodyFinished,
+                        finished - decryptFinished), finished)
+                }
+            }
             return 0
         } catch (e: Exception) {
             // Stays at 0 on purpose, unlike the read sites above. recvBlocking catches its own
@@ -155,6 +174,8 @@ internal class AapReadSingleMessage(
             // framed. Carrying on costs one message; the read failures above cost the session.
             AppLog.e("AapRead: Error in read loop (ignored): ${e.message}")
             return 0
+        } finally {
+            previousReadFinishedMs = SystemClock.elapsedRealtime()
         }
     }
 

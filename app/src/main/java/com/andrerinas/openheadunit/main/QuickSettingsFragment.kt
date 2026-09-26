@@ -91,6 +91,20 @@ class QuickSettingsFragment : DialogFragment() {
         // --- Audio Section ---
         items.add(SettingItem.CategoryHeader("audio", R.string.category_audio))
 
+        if (android.os.Build.VERSION.SDK_INT >= 26) {
+            items.add(SettingItem.ToggleSettingEntry(
+                stableId = "useAAudioOutput",
+                nameResId = R.string.aaudio_output,
+                descriptionResId = R.string.aaudio_output_description,
+                isChecked = settings.useAAudioOutput,
+                onCheckedChanged = { enabled ->
+                    settings.useAAudioOutput = enabled
+                    settings.commit()
+                    notifyChange(needsAudioRestart = true)
+                }
+            ))
+        }
+
         items.add(SettingItem.SettingEntry(
             stableId = "audioVolumeOffsets",
             nameResId = R.string.audio_volume_offset,
@@ -342,8 +356,8 @@ class QuickSettingsFragment : DialogFragment() {
 
     private fun showAudioLatencyDialog() {
         val options = arrayOf(
-            "1x (shallowest cushion)", "2x (shallow)", "4x (medium)",
-            "8x (deep)", "16x (deepest, default)"
+            "1x (lowest latency)", "2x (low latency, default)", "4x (medium)",
+            "8x (deep)", "16x (deepest)"
         )
         val values = intArrayOf(1, 2, 4, 8, 16)
         val currentIndex = values.indexOf(settings.audioLatencyMultiplier).coerceAtLeast(0)

@@ -31,6 +31,7 @@ import com.andrerinas.openheadunit.connection.projection.ProjectionConnection
 import com.andrerinas.openheadunit.connection.projection.SocketProjectionConnection
 import com.andrerinas.openheadunit.contract.ProjectionActivityRequest
 import com.andrerinas.openheadunit.decoder.audio.AudioDecoder
+import com.andrerinas.openheadunit.decoder.audio.AudioDiagnostics
 import com.andrerinas.openheadunit.decoder.audio.MicRecorder
 import com.andrerinas.openheadunit.decoder.video.DecoderStopPolicy
 import com.andrerinas.openheadunit.decoder.video.VideoDecoder
@@ -174,11 +175,20 @@ class AapTransport(
         // phone going quiet unless one end or the other is actually measured. This thread serves one
         // socket, so the write's own duration is the time the uplink refused to drain.
         val startedMs = SystemClock.elapsedRealtime()
+        val queueMs = (SystemClock.uptimeMillis() - it.`when`).coerceAtLeast(0)
         this.sendEncryptedMessage(
             data = it.obj as ByteArray,
             length = it.arg2
         )
         val finishedMs = SystemClock.elapsedRealtime()
+        if (audioTimingActive && finishedMs >= nextSendTimingMs &&
+            (queueMs >= 50 || finishedMs - startedMs >= 50)) {
+            val channel = (it.obj as ByteArray)[0].toInt() and 0xff
+            val line = "Audio transport send channel=$channel queue=${queueMs}ms encryptWrite=${finishedMs - startedMs}ms"
+            AudioDiagnostics.record(finishedMs, line)
+            AppLog.w(line)
+            nextSendTimingMs = finishedMs + 1000
+        }
         uplinkStallMonitor.onWrite(finishedMs - startedMs, finishedMs)
             ?.let { report -> AppLog.i("AapTransport: %s", report) }
         return@Callback true
@@ -242,6 +252,10 @@ class AapTransport(
      * on every cycle. The set keeps one channel closing from discarding another's window.
      */
     private val startedAudioChannels = HashSet<Int>()
+    @Volatile internal var audioTimingActive = false
+        private set
+    private var nextReadTimingMs = 0L // poll thread only
+    private var nextSendTimingMs = 0L // send thread only
 
     /** Whether our own writes are draining. See [UplinkStallMonitor]. */
     private val uplinkStallMonitor = UplinkStallMonitor()
@@ -297,6 +311,7 @@ class AapTransport(
         val firstSink = synchronized(startedAudioChannels) {
             val wasEmpty = startedAudioChannels.isEmpty()
             startedAudioChannels.add(channel)
+            audioTimingActive = true
             wasEmpty
         }
         if (firstSink) audioGapMonitor.skipExpectedGap(SystemClock.elapsedRealtime())
@@ -305,7 +320,19 @@ class AapTransport(
     /** The phone stopped an audio sink. Called from [AapControlMedia.mediaSinkStopRequest]. */
     internal fun noteAudioSinkStopped(channel: Int) {
         if (!Channel.isAudio(channel)) return
-        synchronized(startedAudioChannels) { startedAudioChannels.remove(channel) }
+        synchronized(startedAudioChannels) {
+            startedAudioChannels.remove(channel)
+            audioTimingActive = startedAudioChannels.isNotEmpty()
+        }
+    }
+
+    internal fun recordSlowAudioRead(timing: TransportReadTiming, nowMs: Long) {
+        if (nowMs < nextReadTimingMs) return
+        val line = "Audio transport read channel=${timing.channel} readerGap=${timing.readerGapMs}ms " +
+            "header=${timing.headerMs}ms body=${timing.bodyMs}ms decrypt=${timing.decryptMs}ms dispatch=${timing.dispatchMs}ms"
+        AudioDiagnostics.record(nowMs, line)
+        AppLog.w(line)
+        nextReadTimingMs = nowMs + 1000
     }
 
     // Escalation state for KeyframeCycleEscalationPolicy - see triggerFocusCycleRecovery().
@@ -839,7 +866,9 @@ class AapTransport(
         linkGapMonitor.reset()
         videoGapMonitor.reset()
         audioGapMonitor.reset()
-        synchronized(startedAudioChannels) { startedAudioChannels.clear() }
+        synchronized(startedAudioChannels) { startedAudioChannels.clear(); audioTimingActive = false }
+        nextReadTimingMs = 0L
+        nextSendTimingMs = 0L
         uplinkStallMonitor.reset()
         inboundRateMonitor.reset()
         micUplinkMonitor.reset()

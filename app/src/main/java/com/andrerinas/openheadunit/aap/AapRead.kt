@@ -199,7 +199,8 @@ internal interface AapRead {
             val onVideoRunHoled = { discard: Boolean -> transport.dispatchVideoRunHoled(discard) }
 
             return if (connection is SocketProjectionConnection)
-                AapReadSingleMessage(connection, transport.ssl, handler, onVideoRunHoled, readerFaults)
+                AapReadSingleMessage(connection, transport.ssl, handler, onVideoRunHoled, readerFaults,
+                    captureTiming = { transport.audioTimingActive }, onSlowRead = transport::recordSlowAudioRead)
             else
                 AapReadMultipleMessages(connection, transport.ssl, handler, onVideoRunHoled, readerFaults)
         }

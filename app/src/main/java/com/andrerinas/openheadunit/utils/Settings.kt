@@ -1168,11 +1168,10 @@ class Settings(private val context: Context) {
         get() = prefs.getInt("mic-input-source", 0) // Default: DEFAULT
         set(value) { prefs.edit().putInt("mic-input-source", value).apply() }
 
-    // 16 banks 400ms, which is AudioJitterBufferPolicy's ceiling and the only setting measured to
-    // produce no audible stutter on the rig's phone-to-phone pairing. Nothing else writes this key,
-    // so a user who saved 8 keeps 8 and one who never opened the picker moves.
+    // Start with a small wireless cushion; the sink grows it after repeated underruns.
+    // Explicitly saved choices remain in force.
     var audioLatencyMultiplier: Int
-        get() = prefs.getInt("audio-latency-multiplier", 16)
+        get() = prefs.getInt("audio-latency-multiplier", com.andrerinas.openheadunit.decoder.audio.AudioJitterBufferPolicy.DEFAULT_MULTIPLIER)
         set(value) { prefs.edit().putInt("audio-latency-multiplier", value).apply() }
 
     // Chunks the audio thread may hold before it starts dropping, or 0 for no limit. Bounded by
@@ -1193,6 +1192,11 @@ class Settings(private val context: Context) {
     var useAacAudio: Boolean
         get() = prefs.getBoolean("use-aac-audio", false)
         set(value) { prefs.edit().putBoolean("use-aac-audio", value).apply() }
+
+    // Experimental backend: keep AudioTrack unless the user explicitly opts in.
+    var useAAudioOutput: Boolean
+        get() = prefs.getBoolean("use-aaudio-output", false)
+        set(value) { prefs.edit().putBoolean("use-aaudio-output", value).apply() }
 
     var micEchoCanceler: Boolean
         get() = prefs.getBoolean("mic-echo-canceler", false)

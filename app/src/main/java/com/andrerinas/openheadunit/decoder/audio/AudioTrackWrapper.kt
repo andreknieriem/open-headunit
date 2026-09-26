@@ -26,12 +26,13 @@ class AudioTrackWrapper(
     channelCount: Int,
     private val isAac: Boolean = false,
     gain: Float,
-    private val audioLatencyMultiplier: Int = 8,
+    private val audioLatencyMultiplier: Int = AudioJitterBufferPolicy.DEFAULT_MULTIPLIER,
     private val audioQueueCapacity: Int = 0,
     private val mixer: AudioMixer? = null,
     private val channelId: Int = -1,
     private val attachHwDspEqualizer: Boolean = false,
-    private val isMediaSink: Boolean = false
+    private val isMediaSink: Boolean = false,
+    private val ownsMixer: Boolean = false
 ) : Thread() {
 
     /** The codec this sink was built for. See [AudioSinkSetupPolicy]. */
@@ -39,7 +40,8 @@ class AudioTrackWrapper(
 
     private data class AudioChunk(
         val data: ByteArray,
-        val size: Int
+        val size: Int,
+        val codecConfig: AacCodecConfig? = null
     )
 
     companion object {
@@ -56,9 +58,11 @@ class AudioTrackWrapper(
     }
 
     private val audioTrack: AudioTrack?
-    private var decoder: MediaCodec? = null
+    @Volatile private var decoder: MediaCodec? = null
     private var codecHandlerThread: HandlerThread? = null
-    private val freeInputBuffers = LinkedBlockingQueue<Int>()
+    private data class CodecInput(val codec: MediaCodec, val index: Int)
+    private val freeInputBuffers = LinkedBlockingQueue<CodecInput>()
+    private var outputFormatState = AacOutputFormat(sampleRateInHz, channelCount)
     // Named and raised: this is the thread that feeds the speaker on the AAC path, and it used to
     // run at default priority while the PCM path wrote from URGENT_AUDIO.
     private val writeExecutor = Executors.newSingleThreadExecutor { r ->
@@ -67,16 +71,8 @@ class AudioTrackWrapper(
             r.run()
         }, "AacAudioWrite")
     }
-    private val writeSemaphore = java.util.concurrent.Semaphore(3)
-
-    /**
-     * How long the codec callback waits for a write slot before shedding a frame.
-     *
-     * One AAC access unit. Long enough to ride out the slow first writes onto a track that has not
-     * started yet, short enough that the callback thread cannot hold up its own input buffers.
-     */
-    private val aacWriteWaitMs: Long =
-        if (sampleRateInHz > 0) (1024L * 1000L / sampleRateInHz).coerceAtLeast(5L) else 20L
+    // Accept a wireless burst without holding up the callback that also supplies codec inputs.
+    private val writeSemaphore = java.util.concurrent.Semaphore(SinkQueueOverflowPolicy.UNACKED_WINDOW_CHUNKS)
     private var droppedAacOutputs = 0L
     private var equalizer: Equalizer? = null
 
@@ -89,6 +85,9 @@ class AudioTrackWrapper(
     private var droppedAacChunks = 0L
     private var aacFramesQueued = 0L
     private val trackChannelCount: Int = channelCount
+    @Volatile private var incomingAacConfig = if (isAac) AacCodecConfig.default(sampleRateInHz, channelCount) else null
+    // Only the decode thread changes this after construction. Each chunk retains its own CSD.
+    private var decoderConfig = incomingAacConfig
 
     // Unbounded underneath and bounded by SinkQueueOverflowPolicy above. The bound is a duration
     // rather than a count, and a chunk's duration is not known until one arrives, which a
@@ -97,7 +96,7 @@ class AudioTrackWrapper(
     private val dataQueue = LinkedBlockingQueue<AudioChunk>()
 
     /** Chunks the queue may hold. Zero is the user asking for no limit. */
-    private var queueCapacityChunks = SinkQueueOverflowPolicy.capacityChunks(audioQueueCapacity, 0)
+    @Volatile private var queueCapacityChunks = SinkQueueOverflowPolicy.capacityChunks(audioQueueCapacity, 0)
     private val audioBufferPool = LinkedBlockingQueue<ByteArray>()
 
     @Volatile
@@ -146,9 +145,19 @@ class AudioTrackWrapper(
     private var framesWritten: Long = 0
     private val bytesPerFrame: Int = channelCount * (if (bitDepth == 16) 2 else 1)
     private val sampleRate: Int = sampleRateInHz
+    // The normal music format needs only a bounded PCM copy, never a device write or codec wait.
+    // Feed its existing mixer bank on ingress instead of queueing it for another runnable thread.
+    private val directPcm = mixer != null && !isAac && bitDepth == 16 &&
+        sampleRateInHz == AudioMixer.OUTPUT_SAMPLE_RATE && channelCount == AudioMixer.OUTPUT_CHANNELS
 
     /** Byte size handed to the AudioTrack, recorded by [createAudioTrack] for the pre-roll target. */
     private var trackBufferBytes: Int = 0
+    private var minTrackFrames: Int = 1
+    private var requestedEffectiveFrames: Int = 0
+
+    // Lifecycle changes and each nonblocking write share this lock. Never hold it while waiting
+    // for writable space: an AAC writer must not race a pause/re-bank on the input thread.
+    private val playbackLock = Any()
 
     /** Frames to bank before [android.media.AudioTrack.play]. See [AudioJitterBufferPolicy]. */
     private var prerollTargetFrames: Int = 1
@@ -186,7 +195,7 @@ class AudioTrackWrapper(
     // written to settings: it describes this link, not this head unit.
     private var deepenSteps = 0
 
-    private val health = AudioSinkHealthMonitor(channelName(), sampleRateInHz)
+    private val health = AudioSinkHealthMonitor(channelName(), if (mixer != null) AudioMixer.OUTPUT_SAMPLE_RATE else sampleRateInHz)
 
     /**
      * When audio first reached this track, for the pre-roll deadline.
@@ -209,8 +218,9 @@ class AudioTrackWrapper(
         }
 
         if (mixer != null) {
-            mixer.registerChannel(channelId, sampleRateInHz, channelCount, audioLatencyMultiplier)
+            mixer.registerChannel(channelId, sampleRateInHz, channelCount, audioLatencyMultiplier, isMediaSink)
             mixer.setChannelGain(channelId, gain)
+            if (directPcm) AppLog.i("AudioTrackWrapper: ${channelName()} PCM goes directly to the mixer bank")
         } else {
             setVolume(gain)
             audioTrack?.let { track ->
@@ -265,9 +275,11 @@ class AudioTrackWrapper(
             format.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, 16384)
 
             // CSD for RAW AAC-LC (AudioSpecificConfig)
-            val csd = makeAacCsd(sampleRate, channels)
+            val csd = checkNotNull(decoderConfig).copyBytes()
             format.setByteBuffer("csd-0", java.nio.ByteBuffer.wrap(csd))
 
+            val formatState = AacOutputFormat(sampleRate, channels)
+            outputFormatState = formatState
             decoder = MediaCodec.createDecoderByType(mime)
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -282,7 +294,7 @@ class AudioTrackWrapper(
 
                 val callback = object : MediaCodec.Callback() {
                     override fun onInputBufferAvailable(codec: MediaCodec, index: Int) {
-                        freeInputBuffers.offer(index)
+                        if (isRunning && decoder === codec) freeInputBuffers.offer(CodecInput(codec, index))
                     }
 
                     override fun onOutputBufferAvailable(
@@ -291,16 +303,13 @@ class AudioTrackWrapper(
                         info: MediaCodec.BufferInfo
                     ) {
                         try {
-                            if (!isRunning) return
+                            if (!isRunning || decoder !== codec || !formatState.acceptsOutput) return
                             val outputBuffer = codec.getOutputBuffer(index)
                             if (outputBuffer != null && info.size > 0) {
                                 val size = info.size
-                                // Blocking here stalls onInputBufferAvailable too, which is the same
-                                // thread: that starves freeInputBuffers and makes queueInput drop on
-                                // its timeout. Wait one frame's worth, then shed rather than jam:
-                                // shedding outright discarded the first writes of every AAC session,
-                                // which are slow because the track is still stopped and banking.
-                                if (writeSemaphore.tryAcquire(aacWriteWaitMs, TimeUnit.MILLISECONDS)) {
+                                // Both input and output callbacks run here. Never wait for the
+                                // speaker: doing so starves decoder inputs during a network burst.
+                                if (writeSemaphore.tryAcquire()) {
                                     val chunk = obtainAudioBuffer(size)
                                     outputBuffer.position(info.offset)
                                     outputBuffer.get(chunk, 0, size)
@@ -308,7 +317,9 @@ class AudioTrackWrapper(
                                     try {
                                         writeExecutor.submit {
                                             try {
-                                                writeToTrack(chunk, size)
+                                                if (isRunning && decoder === codec && formatState.acceptsOutput) {
+                                                    writeToTrack(chunk, size)
+                                                }
                                             } catch (e: Exception) {
                                                 AppLog.e("Error writing decoded AAC to AudioTrack", e)
                                             } finally {
@@ -329,29 +340,29 @@ class AudioTrackWrapper(
                                     }
                                 }
                             }
-                            codec.releaseOutputBuffer(index, false)
                         } catch (e: Exception) {
                             AppLog.e("Error processing AAC output", e)
                             if (e is InterruptedException) {
                                 Thread.currentThread().interrupt()
                             }
+                        } finally {
+                            try {
+                                codec.releaseOutputBuffer(index, false)
+                            } catch (e: Exception) {
+                                if (isRunning) AppLog.e("Error releasing AAC output", e)
+                            }
                         }
                     }
 
                     override fun onError(codec: MediaCodec, e: MediaCodec.CodecException) {
+                        if (decoder !== codec) return
                         AppLog.e("AAC Codec Error", e)
+                        formatState.update(-1, -1, -1)
                         rebuildRequested = true
                     }
 
                     override fun onOutputFormatChanged(codec: MediaCodec, format: MediaFormat) {
-                        val outRate = try { format.getInteger(MediaFormat.KEY_SAMPLE_RATE) } catch (e: Exception) { -1 }
-                        val outChannels = try { format.getInteger(MediaFormat.KEY_CHANNEL_COUNT) } catch (e: Exception) { -1 }
-                        if (outRate != sampleRate || outChannels != trackChannelCount) {
-                            AppLog.w("AAC decoder output is $outRate Hz x $outChannels but the track plays " +
-                                "$sampleRate Hz x $trackChannelCount; audio will run at the wrong speed")
-                        } else {
-                            AppLog.i("AAC Output Format Changed: $format")
-                        }
+                        if (decoder === codec) verifyOutputFormat(format, formatState)
                     }
                 }
 
@@ -372,6 +383,21 @@ class AudioTrackWrapper(
             try { decoder?.release() } catch (ignored: Exception) { }
             decoder = null
             return false
+        }
+    }
+
+    private fun verifyOutputFormat(format: MediaFormat, state: AacOutputFormat) {
+        val outRate = try { format.getInteger(MediaFormat.KEY_SAMPLE_RATE) } catch (_: Exception) { -1 }
+        val outChannels = try { format.getInteger(MediaFormat.KEY_CHANNEL_COUNT) } catch (_: Exception) { -1 }
+        // Older codecs omit this key and produce PCM16. A present but unreadable key is invalid.
+        val encoding = if (!format.containsKey("pcm-encoding")) null else
+            try { format.getInteger("pcm-encoding") } catch (_: Exception) { -1 }
+        if (!state.update(outRate, outChannels, encoding)) {
+            AppLog.w("AAC output rejected: $outRate Hz x $outChannels encoding=$encoding; " +
+                "expected $sampleRate Hz x $trackChannelCount PCM16")
+            rebuildRequested = true
+        } else {
+            AppLog.i("AAC Output Format Changed: $format")
         }
     }
 
@@ -396,17 +422,19 @@ class AudioTrackWrapper(
     }
 
     private fun releaseDecoder() {
+        val oldDecoder = decoder
+        decoder = null
         try {
-            decoder?.stop()
+            oldDecoder?.stop()
         } catch (ignored: Exception) {
         }
         try {
-            decoder?.release()
+            oldDecoder?.release()
         } catch (e: Exception) {
             AppLog.e("Error releasing audio decoder", e)
         }
-        decoder = null
-        // After release() no callback of the old codec is running, so these indices are all stale.
+        // Callback messages may still be queued on an old handler. Input slots also carry their
+        // owner so one that races this clear can never address a newly created codec.
         freeInputBuffers.clear()
     }
 
@@ -465,15 +493,16 @@ class AudioTrackWrapper(
         // Applied here rather than at the re-bank, so a later chunk-size change cannot quietly undo
         // a depth this sink has already proved it needs.
         prerollTargetFrames = AudioJitterBufferPolicy.deepenedTargetFrames(
-            prerollTargetFrames, sampleRate, capacityFrames, deepenSteps
+            prerollTargetFrames, sampleRate, capacityFrames, deepenSteps, audioLatencyMultiplier
         )
         rebankTargetFrames = AudioJitterBufferPolicy.rebankTargetFrames(
-            prerollTargetFrames, sampleRate, capacityFrames
+            prerollTargetFrames, sampleRate, capacityFrames, audioLatencyMultiplier
         )
         queueCapacityChunks = SinkQueueOverflowPolicy.capacityChunks(
             audioQueueCapacity,
             SinkQueueOverflowPolicy.chunkDurationMs(observedChunkFrames, sampleRate)
         )
+        configureTrackBuffer(if (rebanking) rebankTargetFrames else prerollTargetFrames)
         // Asked once the real chunk size is known, which is the only point it can be answered. A
         // track this small breaks up whatever the user sets, so it is a condition to report.
         if (!saidFragile && observedChunkFrames > 0 && capacityFrames > 0 &&
@@ -485,6 +514,25 @@ class AudioTrackWrapper(
                     "which cannot cover a ${msOf(observedChunkFrames.toLong())}ms arrival and a " +
                     "cushion together - this sink will break up whatever the latency is set to"
             )
+        }
+    }
+
+    /** Reserve capacity stays large, but only the active cushion should delay playback. */
+    private fun configureTrackBuffer(targetFrames: Int) {
+        val track = audioTrack ?: return
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return
+        val requested = AudioBufferSizingPolicy.effectiveFrames(
+            sampleRate, targetFrames, minTrackFrames, capacityFrames
+        )
+        if (requested == requestedEffectiveFrames) return
+        try {
+            val actual = track.setBufferSizeInFrames(requested)
+            if (actual > 0) {
+                effectiveFrames = actual
+                requestedEffectiveFrames = requested
+            }
+        } catch (e: Exception) {
+            AppLog.w("AudioTrackWrapper: cannot tune the effective buffer: ${e.message}")
         }
     }
 
@@ -561,7 +609,6 @@ class AudioTrackWrapper(
 
         val since = if (lastRebankMs == 0L) Long.MAX_VALUE else nowMs - lastRebankMs
         val inLastMinute = rebanksInLastMinute(nowMs)
-        if (AudioUnderrunRecoveryPolicy.shouldDeepen(inLastMinute)) maybeDeepenTarget()
         if (!AudioUnderrunRecoveryPolicy.shouldRebank(newUnderruns, since, inLastMinute)) {
             if (AudioUnderrunRecoveryPolicy.hasGivenUp(inLastMinute) && !saidGivenUp) {
                 saidGivenUp = true
@@ -573,6 +620,11 @@ class AudioTrackWrapper(
             }
             return
         }
+
+        // A delayed counter can describe a gap the current burst has already filled. Pausing a
+        // healthy cushion would add a fresh audible gap to an underrun that is over.
+        if (depthFrames() >= prerollTargetFrames) return
+        if (AudioUnderrunRecoveryPolicy.shouldDeepen(inLastMinute)) maybeDeepenTarget()
 
         try {
             // pause() keeps what is already buffered; stop() would discard it.
@@ -631,6 +683,7 @@ class AudioTrackWrapper(
         rebanking = true
         rebankingSinceMs = 0L
         framesAtRebank = framesWritten
+        configureTrackBuffer(rebankTargetFrames)
     }
 
     private fun sampleHealth(nowMs: Long) {
@@ -692,19 +745,38 @@ class AudioTrackWrapper(
     }
 
     private fun writeToTrack(buffer: ByteArray, size: Int) {
-        if (isAac) noteChunkFrames(size)
         if (mixer != null) {
+            noteChunkFrames(size)
             mixer.feed(channelId, buffer, 0, size)
             framesWritten += size / bytesPerFrame
         } else {
+            val track = audioTrack ?: return
+            synchronized(playbackLock) { noteChunkFrames(size) }
             applyGain(buffer, size)
-            // Before the write, on whichever thread makes it: write() on a track that is not
-            // playing blocks until only play() can make room, so a check after it is too late.
-            maybeStartPlayback(size / bytesPerFrame)
-            maybeResumeAfterRebank(size / bytesPerFrame)
-            val result = audioTrack?.write(buffer, 0, size) ?: 0
-            if (result > 0) {
-                framesWritten += result / bytesPerFrame
+            val result = AudioWriteLoop.writeFully(
+                size = size,
+                isRunning = { isRunning },
+                write = { offset, remaining ->
+                    synchronized(playbackLock) {
+                        // A pause or route change may interrupt a write. Recheck playback before
+                        // retrying its tail, and account only for bytes the track accepted.
+                        maybeStartPlayback(remaining / bytesPerFrame)
+                        maybeResumeAfterRebank(remaining / bytesPerFrame)
+                        val written = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                            track.write(buffer, offset, remaining, AudioTrack.WRITE_NON_BLOCKING)
+                        } else {
+                            track.write(buffer, offset, remaining)
+                        }
+                        if (written > 0) framesWritten += written / bytesPerFrame
+                        written
+                    }
+                },
+                onProgress = {},
+                awaitWritable = { Thread.sleep(2) }
+            )
+            if (result < 0 && isRunning) {
+                AppLog.e("AudioTrackWrapper: ${channelName()} write failed: $result")
+                isRunning = false
             }
         }
     }
@@ -741,6 +813,7 @@ class AudioTrackWrapper(
                     "(target $prerollTargetFrames) after ${elapsed}ms"
             )
         } catch (e: Exception) {
+            playbackStarted.set(false)
             AppLog.e("Failed to start AudioTrack playback", e)
         }
     }
@@ -752,17 +825,29 @@ class AudioTrackWrapper(
         while (isRunning || dataQueue.isNotEmpty()) {
             try {
                 // Use poll to avoid blocking indefinitely if isRunning becomes false
-                val chunk = dataQueue.poll(200, TimeUnit.MILLISECONDS)
+                val waitingForStart = (firstAudioMs > 0L && !playbackStarted.get()) ||
+                    (rebanking && rebankingSinceMs > 0L)
+                val chunk = dataQueue.poll(if (waitingForStart) 10 else 200, TimeUnit.MILLISECONDS)
                 // The fill trigger lives in writeToTrack; this call carries only the deadline, so
                 // a stream too short to reach its target still gets played.
-                maybeStartPlayback(0)
-                val nowMs = SystemClock.elapsedRealtime()
-                maybeRebank(nowMs)
-                maybeResumeAfterRebank()
-                sampleHealth(nowMs)
+                synchronized(playbackLock) {
+                    maybeStartPlayback(0)
+                    val nowMs = SystemClock.elapsedRealtime()
+                    maybeRebank(nowMs)
+                    maybeResumeAfterRebank()
+                    sampleHealth(nowMs)
+                }
                 if (chunk != null) {
                     try {
                         if (isAac) {
+                            val config = checkNotNull(chunk.codecConfig)
+                            if (!config.sameAs(checkNotNull(decoderConfig))) {
+                                releaseDecoder()
+                                quitCodecThread()
+                                decoderConfig = config
+                                rebuildRequested = false
+                                decoderFailed = !initDecoder(sampleRate, trackChannelCount)
+                            }
                             if (rebuildRequested) rebuildDecoder()
                             if (decoder == null || decoderFailed) {
                                 dropAacChunk()
@@ -810,7 +895,17 @@ class AudioTrackWrapper(
 
             val info = MediaCodec.BufferInfo()
             var outputIndex = dec.dequeueOutputBuffer(info, 0)
-            while (outputIndex >= 0) {
+            while (outputIndex >= 0 || outputIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
+                if (outputIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
+                    verifyOutputFormat(dec.outputFormat, outputFormatState)
+                    outputIndex = dec.dequeueOutputBuffer(info, 0)
+                    continue
+                }
+                if (!outputFormatState.acceptsOutput) {
+                    dec.releaseOutputBuffer(outputIndex, false)
+                    outputIndex = dec.dequeueOutputBuffer(info, 0)
+                    continue
+                }
                 val outputBuffer = dec.outputBuffers[outputIndex]
                 val chunk = ByteArray(info.size)
                 outputBuffer.position(info.offset)
@@ -830,19 +925,26 @@ class AudioTrackWrapper(
         try {
             // Wait for input buffer (with timeout to avoid deadlock if codec dies)
             // Restore to 200ms to prevent dropping frames under load
-            val inputIndex = freeInputBuffers.poll(200, TimeUnit.MILLISECONDS)
+            val dec = decoder ?: return
+            val deadline = SystemClock.elapsedRealtime() + 200
+            var input = freeInputBuffers.poll(200, TimeUnit.MILLISECONDS)
+            while (input != null && input.codec !== dec) {
+                val remaining = (deadline - SystemClock.elapsedRealtime()).coerceAtLeast(0)
+                input = freeInputBuffers.poll(remaining, TimeUnit.MILLISECONDS)
+            }
+            val inputIndex = input?.index
 
             if (inputIndex != null && inputIndex >= 0) {
                 val inputBuffer = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                    decoder?.getInputBuffer(inputIndex)
+                    dec.getInputBuffer(inputIndex)
                 } else {
                     @Suppress("DEPRECATION")
-                    decoder?.inputBuffers?.get(inputIndex)
+                    dec.inputBuffers[inputIndex]
                 }
 
                 inputBuffer?.clear()
                 inputBuffer?.put(inputData, 0, size)
-                decoder?.queueInputBuffer(inputIndex, 0, size, nextAacPtsUs(), 0)
+                dec.queueInputBuffer(inputIndex, 0, size, nextAacPtsUs(), 0)
             } else {
                 AppLog.w("AAC Input Buffer timeout (200ms) - dropping frame")
             }
@@ -851,40 +953,6 @@ class AudioTrackWrapper(
         } catch (e: Exception) {
             AppLog.e("Error queuing AAC input", e)
             rebuildRequested = true
-        }
-    }
-
-    private fun makeAacCsd(sampleRate: Int, channelCount: Int): ByteArray {
-        val sampleRateIndex = getFrequencyIndex(sampleRate)
-        val audioObjectType = 2 // AAC-LC
-
-        // Correct packing: [AOT:5][FreqIdx:4][ChanCfg:4][...padding:3]
-        val config = ((audioObjectType and 0x1F) shl 11) or
-                     ((sampleRateIndex and 0x0F) shl 7) or
-                     ((channelCount and 0x0F) shl 3)
-
-        return byteArrayOf(
-            ((config shr 8) and 0xFF).toByte(),
-            (config and 0xFF).toByte()
-        )
-    }
-
-    private fun getFrequencyIndex(sampleRate: Int): Int {
-        return when (sampleRate) {
-            96000 -> 0
-            88200 -> 1
-            64000 -> 2
-            48000 -> 3
-            44100 -> 4
-            32000 -> 5
-            24000 -> 6
-            22050 -> 7
-            16000 -> 8
-            12000 -> 9
-            11025 -> 10
-            8000  -> 11
-            7350  -> 12
-            else  -> 4 // Default 44100
         }
     }
 
@@ -901,6 +969,7 @@ class AudioTrackWrapper(
             if (bitDepth == 16) AudioFormat.ENCODING_PCM_16BIT else AudioFormat.ENCODING_PCM_8BIT
 
         val minBufferSize = AudioTrack.getMinBufferSize(sampleRateInHz, channelConfig, dataFormat)
+        minTrackFrames = (minBufferSize / bytesPerFrame).coerceAtLeast(1)
         // Floored rather than taken straight from the multiplier: a capacity under the jitter
         // target cannot hold whatever the user set it to.
         val bufferSize = AudioBufferSizingPolicy.requestedBytes(
@@ -972,12 +1041,15 @@ class AudioTrackWrapper(
             .setEncoding(dataFormat)
             .build()
 
-        return AudioTrack.Builder()
+        val builder = AudioTrack.Builder()
             .setAudioAttributes(audioAttributes)
             .setAudioFormat(audioFormat)
             .setBufferSizeInBytes(bufferSize)
             .setTransferMode(AudioTrack.MODE_STREAM)
-            .build()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !attachHwDspEqualizer) {
+            builder.setPerformanceMode(AudioTrack.PERFORMANCE_MODE_LOW_LATENCY)
+        }
+        return builder.build()
     }
 
     /**
@@ -1038,8 +1110,29 @@ class AudioTrackWrapper(
         }
     }
 
+    fun configureAac(buffer: ByteArray, offset: Int, size: Int) {
+        if (!isAac || !isRunning) return
+        val config = AacCodecConfig.parse(buffer, offset, size, sampleRate, trackChannelCount)
+        if (config == null) {
+            AppLog.w("AudioTrackWrapper: ignoring invalid or incompatible AAC configuration on ${channelName()}")
+            return
+        }
+        if (!config.sameAs(checkNotNull(incomingAacConfig))) incomingAacConfig = config
+    }
+
     fun write(buffer: ByteArray, offset: Int, size: Int) {
         if (!isRunning) return
+
+        mixer?.noteArrival(channelId, if (isAac) 1024 else size / bytesPerFrame,
+            SystemClock.elapsedRealtime())
+
+        if (directPcm) {
+            // feed() finishes copying before returning: the transport reuses its decrypted array.
+            // Hardware backpressure belongs solely to AudioMixer's output thread.
+            mixer!!.feed(channelId, buffer, offset, size)
+            framesWritten += size / bytesPerFrame
+            return
+        }
 
         var data: ByteArray? = null
         try {
@@ -1047,9 +1140,8 @@ class AudioTrackWrapper(
             System.arraycopy(buffer, offset, data, 0, size)
             // AAC queues encoded bytes, which divided by a PCM frame's width is not a frame count
             // and scaled every figure derived from it. The AAC sink measures at the decoder instead.
-            if (!isAac) noteChunkFrames(size)
             shedStaleChunks()
-            dataQueue.offer(AudioChunk(data, size))
+            dataQueue.offer(AudioChunk(data, size, incomingAacConfig))
         } catch (e: InterruptedException) {
             data?.let { recycleAudioBuffer(it) }
             Thread.currentThread().interrupt()
@@ -1079,6 +1171,8 @@ class AudioTrackWrapper(
         }
     }
 
+    fun preparePlayback() { mixer?.prepareChannel(channelId) }
+
     /**
      * Park a sink the phone has stopped, keeping the track and any AAC decoder built.
      *
@@ -1087,6 +1181,14 @@ class AudioTrackWrapper(
      * cushion is rebuilt before anything is heard.
      */
     fun pauseForIdle() {
+        if (mixer != null) {
+            mixer.finishChannel(channelId)
+            return
+        }
+        synchronized(playbackLock) { parkForIdle() }
+    }
+
+    private fun parkForIdle() {
         val track = audioTrack ?: return
         if (!playbackStarted.get() || rebanking) return
         try {
@@ -1135,6 +1237,7 @@ class AudioTrackWrapper(
 
         if (mixer != null) {
             mixer.unregisterChannel(channelId)
+            if (ownsMixer) mixer.stop()
         }
 
         // 3. stop() plays out what is still buffered on a MODE_STREAM track; this only waits for

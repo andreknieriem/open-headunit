@@ -7,10 +7,9 @@ package com.andrerinas.openheadunit.decoder.audio
  * capacity below the jitter target cannot hold at all, which is why the multiplier has a floor
  * under it.
  *
- * There used to be a second half here that started the effective size small and grew it on
- * underrun. It was never called by anything, and it was the wrong idea anyway: shrinking the
- * effective size trades robustness for output latency, which is what a network fed sink has least
- * use for. The depth lives in [AudioJitterBufferPolicy] instead.
+ * Capacity is reserve space, not a playback target. On API 24+ the effective size is limited to
+ * the active jitter target and grows when the sink re-banks. Otherwise the framework's start
+ * threshold and the mixer's continuous silence writes turn this reserve into audible latency.
  */
 object AudioBufferSizingPolicy {
 
@@ -34,5 +33,16 @@ object AudioBufferSizingPolicy {
         val byMultiplier = minBufferBytes * multiplier.coerceAtLeast(1)
         val floorBytes = framesFor(sampleRateInHz, MIN_CAPACITY_MS) * bytesPerFrame.coerceAtLeast(1)
         return maxOf(byMultiplier, floorBytes, minBufferBytes)
+    }
+
+    /** A small write margin above the active bank; never force a device below its minimum. */
+    fun effectiveFrames(
+        sampleRateInHz: Int,
+        targetFrames: Int,
+        minFrames: Int,
+        capacityFrames: Int
+    ): Int {
+        val wanted = maxOf(targetFrames + framesFor(sampleRateInHz, 5), minFrames, 1)
+        return if (capacityFrames > 0) wanted.coerceAtMost(capacityFrames) else wanted
     }
 }

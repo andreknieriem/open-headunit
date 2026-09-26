@@ -290,15 +290,20 @@ internal class AapAudio(
      * Returns true if the packet was identified and processed as audio data, false otherwise.
      */
     fun process(message: AapMessage): Boolean {
-        // Media stream packets have msgType 0 or 1.
-        // Control packets on audio channels (Setup, Start, Stop) have types > 32767.
-        if (message.type == 0 || message.type == 1) {
-            if (message.size >= 10) {
-                decode(message.channel, 10, message.data, message.size - 10)
+        if (!AudioMediaPayload.isMedia(message.type)) return false
+        val offset = AudioMediaPayload.offset(message)
+        if (offset >= 0) {
+            if (AudioMediaPayload.requiresAck(message.type)) {
+                decode(message.channel, offset, message.data, message.size - offset)
+            } else {
+                // CSD is not playback: do not take focus, duck music or feed the jitter bank.
+                if (audioDecoder.getTrack(message.channel) == null) {
+                    startAudioTrack(message.channel, announcePlayback = false)
+                }
+                audioDecoder.configure(message.channel, message.data, offset, message.size - offset)
             }
-            return true
         }
-        return false
+        return true
     }
 
     /**

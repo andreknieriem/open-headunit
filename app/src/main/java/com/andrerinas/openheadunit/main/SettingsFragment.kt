@@ -2572,11 +2572,11 @@ class SettingsFragment : Fragment() {
             value = "${pendingAudioLatencyMultiplier}x",
             onClick = { _ ->
                 val options = arrayOf(
-                    "1x (shallowest cushion)", "2x (shallow)", "4x (medium)",
-                    "8x (deep)", "16x (deepest, default)"
+                    "1x (lowest latency)", "2x (low latency, default)", "4x (medium)",
+                    "8x (deep)", "16x (deepest)"
                 )
                 val values = intArrayOf(1, 2, 4, 8, 16)
-                val currentIndex = values.indexOf(pendingAudioLatencyMultiplier ?: 8).coerceAtLeast(0)
+                val currentIndex = values.indexOf(pendingAudioLatencyMultiplier ?: com.andrerinas.openheadunit.decoder.audio.AudioJitterBufferPolicy.DEFAULT_MULTIPLIER).coerceAtLeast(0)
                 AlertDialog.Builder(requireContext())
                     .setTitle(R.string.audio_latency_multiplier)
                     .setSingleChoiceItems(options, currentIndex) { dialog, which ->

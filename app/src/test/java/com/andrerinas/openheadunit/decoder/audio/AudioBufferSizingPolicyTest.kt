@@ -4,11 +4,18 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/**
- * Capacity only. The effective-size half of this object was deleted: it had no production caller,
- * and running a network fed sink below the granted size trades robustness for latency the wrong way.
- */
+/** Capacity is reserve space; effective size is the active playback budget. */
 class AudioBufferSizingPolicyTest {
+
+    @Test fun `effective size follows the cushion instead of the reserved capacity`() {
+        assertEquals(3600, AudioBufferSizingPolicy.effectiveFrames(48000, 3360, 960, 19200))
+        assertEquals(5040, AudioBufferSizingPolicy.effectiveFrames(48000, 4800, 960, 19200))
+    }
+
+    @Test fun `effective size respects hardware bounds`() {
+        assertEquals(3840, AudioBufferSizingPolicy.effectiveFrames(48000, 960, 3840, 19200))
+        assertEquals(2000, AudioBufferSizingPolicy.effectiveFrames(48000, 4800, 960, 2000))
+    }
 
     // The device minimum both #984's and #979's units report at 48 kHz stereo: 80 ms.
     private val minBytes = 15376

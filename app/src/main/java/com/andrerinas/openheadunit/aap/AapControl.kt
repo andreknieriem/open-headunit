@@ -98,6 +98,7 @@ internal class AapControlMedia(
 
         aapTransport.setSessionId(channel, request.sessionId)
         aapTransport.noteAudioSinkStarted(channel)
+        aapAudio.preparePlayback(channel)
         return 0
     }
 

@@ -40,6 +40,8 @@ class AudioDecoder {
         audioTracks.get(chan)?.pauseForIdle()
     }
 
+    fun preparePlayback(channel: Int) { audioTracks.get(channel)?.preparePlayback() }
+
     /** Park all channels (e.g. on device sleep/screen-off) so AudioTrack does not block in ALSA. */
     fun pauseAll() {
         for (i in 0 until audioTracks.size()) {

@@ -461,6 +461,12 @@ internal class AapAudio(
         startAudioTrack(channel, announcePlayback = false)
     }
 
+    /** The sink is ready at Setup; Start can warm its output before the first PCM arrives. */
+    fun preparePlayback(channel: Int) {
+        if (!enableAudioSink || !Channel.isAudio(channel)) return
+        audioDecoder.preparePlayback(channel)
+    }
+
     private fun decode(channel: Int, start: Int, buf: ByteArray, len: Int) {
         var length = len
         if (length > AUDIO_BUFS_SIZE) {

@@ -5,7 +5,8 @@ package com.andrerinas.openheadunit.decoder.audio
 internal class AdaptivePcmBuffer(
     private val sampleRate: Int = 48000,
     private val channels: Int = 2,
-    latencyMultiplier: Int = AudioJitterBufferPolicy.DEFAULT_MULTIPLIER
+    latencyMultiplier: Int = AudioJitterBufferPolicy.DEFAULT_MULTIPLIER,
+    private val isMediaSink: Boolean = false
 ) {
     private val cycleFrames = sampleRate / 100
     private val cycleSamples = cycleFrames * channels
@@ -15,6 +16,10 @@ internal class AdaptivePcmBuffer(
     private val policy = AdaptiveJitterPolicy(sampleRate, latencyMultiplier)
     private val recovery = LatencyRecoveryPolicy(sampleRate)
     private val prerollDeadlineMs = maxOf(100L, AudioJitterBufferPolicy.targetMsFor(latencyMultiplier) + 50)
+    // Music gets a small reserve while the connection settles, before arrival history exists.
+    // Count actual PCM, not time since setup: a precreated sink or a pause must not use it up.
+    // Retain this counter across stop/reset so later song changes do not restart the warmup.
+    private var startupFramesPlayed = 0L
     private var head = 0
     private var count = 0
     private var started = false
@@ -40,7 +45,7 @@ internal class AdaptivePcmBuffer(
         policy.onArrival(nowMs, frames)
     }
     @Synchronized fun finish() { ended = true; recovery.reset() }
-    @Synchronized fun targetFrames(): Int = policy.targetFrames
+    @Synchronized fun targetFrames(): Int = playbackTargetFrames()
     @Synchronized fun maxArrivalGapMs(): Long = policy.largestArrivalGapMs
     @Synchronized fun depthFrames(): Int = count / channels
     @Synchronized fun isIdle(): Boolean = count == 0 && (ended || firstDataMs < 0) && !started
@@ -61,24 +66,29 @@ internal class AdaptivePcmBuffer(
     }
 
     /** Renders one 10ms block. Returns true when there is real or concealed audio. */
-    @Synchronized fun render(out: ShortArray, nowMs: Long): Boolean {
+    @Synchronized fun render(out: ShortArray, nowMs: Long, outputBurstFrames: Int = cycleFrames): Boolean {
         require(out.size >= cycleSamples)
         java.util.Arrays.fill(out, 0, cycleSamples, 0.toShort())
-        val target = policy.targetFrames
+        val target = playbackTargetFrames()
         if (!started) {
             // A short navigation prompt must play even if it can never fill the network target.
             // After starvation, however, the opening 100ms escape can resume every late batch
             // below the newly learned target and keep the same gap repeating indefinitely.
-            val waitMs = if (rebanking) maxOf(prerollDeadlineMs, target * 1000L / sampleRate + 50)
-                else prerollDeadlineMs
+            val waitMs = when {
+                isMediaSink && startupFramesPlayed == 0L -> maxOf(prerollDeadlineMs, AudioPrerollPolicy.MEDIA_MAX_WAIT_MS)
+                rebanking -> maxOf(prerollDeadlineMs, target * 1000L / sampleRate + 50)
+                else -> prerollDeadlineMs
+            }
             if (count == 0 || (!ended && count / channels < target && nowMs - firstDataMs < waitMs)) return false
             started = true
             rebanking = false
             needsFade = true
         }
 
-        // Leave room for the normal packet-sized sawtooth; do not mistake it for stale audio.
-        val slack = maxOf(sampleRate * 30 / 1000, policy.largestChunkFrames - cycleFrames)
+        // Packets arrive in bursts and the device can drain several mixer cycles at once.
+        // Both create normal depth peaks; a 10ms-only allowance trims valid music on larger HALs.
+        val outputSlack = (outputBurstFrames - cycleFrames).coerceAtLeast(0)
+        val slack = maxOf(sampleRate * 30 / 1000, policy.largestChunkFrames - cycleFrames + outputSlack)
         if (count / channels > target + slack) {
             discard(count - target * channels)
             recovery.reset()
@@ -108,6 +118,7 @@ internal class AdaptivePcmBuffer(
         }
         head = (head + real + skipped) % ring.size
         count -= real + skipped
+        startupFramesPlayed += real / channels
 
         val recovering = gapFrames > 0
         if (real == cycleSamples) {
@@ -166,6 +177,15 @@ internal class AdaptivePcmBuffer(
         }
         System.arraycopy(out, 0, previousOutput, 0, cycleSamples)
         return real > 0 || (!ended && real < cycleSamples)
+    }
+
+    private fun playbackTargetFrames(): Int {
+        // Hold 120ms for the first ten seconds of music, then release 5ms per played second.
+        // LatencyRecoveryPolicy repays each small reduction with its existing 1ms overlaps;
+        // removing the whole reserve at once would trigger a stale-PCM trim and an audible skip.
+        val releaseSteps = (startupFramesPlayed / sampleRate - 10).coerceAtLeast(0)
+        val startupMs = if (isMediaSink) (120L - releaseSteps * 5).coerceAtLeast(0) else 0L
+        return maxOf(policy.targetFrames, (startupMs * sampleRate / 1000).toInt())
     }
 
     private fun discard(samples: Int) {

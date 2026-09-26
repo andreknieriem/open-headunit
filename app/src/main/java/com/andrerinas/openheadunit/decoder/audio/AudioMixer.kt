@@ -118,10 +118,7 @@ class AudioMixer(
         }
         if (state.rate == OUTPUT_SAMPLE_RATE && state.channels == OUTPUT_CHANNELS) {
             // The ordinary media path needs no resampling or floating-point work.
-            for (i in 0 until shorts) {
-                val index = offset + i * 2
-                converted[i] = ((data[index].toInt() and 0xff) or (data[index + 1].toInt() shl 8)).toShort()
-            }
+            Pcm16Stereo.decode(data, offset, frames, converted)
         } else for (frame in 0 until frames) {
             val position = frame.toLong() * state.rate
             val low = (position / OUTPUT_SAMPLE_RATE).toInt().coerceAtMost(inputFrames - 1)

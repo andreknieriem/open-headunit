@@ -139,6 +139,10 @@ class AudioTrackWrapper(
     private var framesWritten: Long = 0
     private val bytesPerFrame: Int = channelCount * (if (bitDepth == 16) 2 else 1)
     private val sampleRate: Int = sampleRateInHz
+    // The normal music format needs only a bounded PCM copy, never a device write or codec wait.
+    // Feed its existing mixer bank on ingress instead of queueing it for another runnable thread.
+    private val directPcm = mixer != null && !isAac && bitDepth == 16 &&
+        sampleRateInHz == AudioMixer.OUTPUT_SAMPLE_RATE && channelCount == AudioMixer.OUTPUT_CHANNELS
 
     /** Byte size handed to the AudioTrack, recorded by [createAudioTrack] for the pre-roll target. */
     private var trackBufferBytes: Int = 0
@@ -210,6 +214,7 @@ class AudioTrackWrapper(
         if (mixer != null) {
             mixer.registerChannel(channelId, sampleRateInHz, channelCount, audioLatencyMultiplier)
             mixer.setChannelGain(channelId, gain)
+            if (directPcm) AppLog.i("AudioTrackWrapper: ${channelName()} PCM goes directly to the mixer bank")
         } else {
             setVolume(gain)
             audioTrack?.let { track ->
@@ -1097,6 +1102,14 @@ class AudioTrackWrapper(
 
         mixer?.noteArrival(channelId, if (isAac) 1024 else size / bytesPerFrame,
             SystemClock.elapsedRealtime())
+
+        if (directPcm) {
+            // feed() finishes copying before returning: the transport reuses its decrypted array.
+            // Hardware backpressure belongs solely to AudioMixer's output thread.
+            mixer!!.feed(channelId, buffer, offset, size)
+            framesWritten += size / bytesPerFrame
+            return
+        }
 
         var data: ByteArray? = null
         try {

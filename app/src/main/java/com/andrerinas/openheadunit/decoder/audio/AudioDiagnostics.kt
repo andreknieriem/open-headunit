@@ -3,7 +3,7 @@ package com.andrerinas.openheadunit.decoder.audio
 import java.util.ArrayDeque
 
 /** Keep rare audio events available even after noisy vendor logs overwrite the logcat ring.
- * Called by the mixer owner, never by the native output callback. No disk I/O on record. */
+ * Called by mixer/transport threads, never by the native output callback. No disk I/O on record. */
 internal object AudioDiagnostics {
     private data class Event(val elapsedMs: Long, val message: String)
     private val events = ArrayDeque<Event>()

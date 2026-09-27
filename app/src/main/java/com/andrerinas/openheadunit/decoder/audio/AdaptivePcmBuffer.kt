@@ -49,7 +49,9 @@ internal class AdaptivePcmBuffer(
     @Synchronized fun targetFrames(): Int = playbackTargetFrames()
     @Synchronized fun maxArrivalGapMs(): Long = policy.largestArrivalGapMs
     @Synchronized fun depthFrames(): Int = count / channels
-    @Synchronized fun isIdle(): Boolean = count == 0 && (ended || firstDataMs < 0) && !started
+    // An empty network rebank is still a live stream. Parking the device here adds a
+    // pause/flush/play cycle to every late packet burst.
+    @Synchronized fun isIdle(): Boolean = count == 0 && (ended || (firstDataMs < 0 && !rebanking)) && !started
 
     @Synchronized fun write(data: ShortArray, length: Int, nowMs: Long) {
         val aligned = length.coerceAtMost(data.size) / channels * channels

@@ -172,7 +172,7 @@ class AudioMixer(
 
     private fun mixLoop() {
         Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_AUDIO)
-        val device = output ?: return
+        var device = output ?: return
         var tuningBurst = device.burstFrames
         var tuningMinimum = device.minimumBufferFrames
         var tuningBackend = device.name
@@ -186,6 +186,7 @@ class AudioMixer(
             "effective=${device.bufferFrames} frames, staging=${device.stagingBufferFrames}, " +
             "burst=${device.burstFrames}, minimum=$tuningMinimum, maximum=${policy.maximumFrames}, cycle=${MIX_INTERVAL_MS}ms")
         val lifecycle = MixerOutputLifecycle(keepOutputActive)
+        val writeWatchdog = OutputWriteWatchdog()
         var nextReportMs = SystemClock.elapsedRealtime() + 10_000L
         var nextTuneMs = 0L
         var nextPcmDiagnosticMs = 0L
@@ -250,7 +251,35 @@ class AudioMixer(
                     else mixBuffer[i].coerceIn(-32768, 32767).toShort()
             }
             val result = AudioWriteLoop.writeFully(SHORTS_PER_CYCLE, { running.get() },
-                { offset, remaining -> device.write(outputBuffer, offset, remaining) }, {}, { Thread.sleep(1) })
+                { offset, remaining -> device.write(outputBuffer, offset, remaining) },
+                { writeWatchdog.onProgress() }, {
+                    val blockedNow = SystemClock.elapsedRealtime()
+                    when (writeWatchdog.onBlocked(blockedNow)) {
+                        OutputWriteWatchdog.Action.WAIT -> Thread.sleep(1)
+                        OutputWriteWatchdog.Action.STOP -> error("${device.name} output still blocked after two reopens")
+                        OutputWriteWatchdog.Action.REOPEN -> {
+                            recordDiagnostic(blockedNow, "${device.name} write made no progress for 500ms; reopening output", warning = true)
+                            // The mixer thread owns teardown, just as on normal stop. Preserve the
+                            // network banks and the unwritten tail; replace only the stuck device.
+                            output = null
+                            device.close()
+                            device = AudioOutputFactory.create(stream, attachHwDspEqualizer, preferAAudio)
+                            output = device
+                            tuningBurst = device.burstFrames
+                            tuningMinimum = device.minimumBufferFrames
+                            tuningBackend = device.name
+                            policy = OutputBufferPolicy(OUTPUT_SAMPLE_RATE, tuningBurst, tuningMinimum)
+                            previousOutputXruns = device.underruns
+                            policy.update(blockedNow, previousOutputXruns)
+                            requestedFrames = policy.targetFrames
+                            device.setBufferFrames(requestedFrames)
+                            renderBurst = renderBurstFrames(device)
+                            device.start()
+                            nextTuneMs = blockedNow + 100
+                            recordDiagnostic(blockedNow, "reopened ${device.name}, effective=${device.bufferFrames} frames")
+                        }
+                    }
+                })
             check(result >= 0) { "${device.name} write failed: $result" }
             if (now >= nextTuneMs) {
                 val burst = device.burstFrames

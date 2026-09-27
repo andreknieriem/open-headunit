@@ -71,4 +71,38 @@ class MixerOutputLifecycleTest {
         assertEquals(0L, buffer.concealedFrames)
         assertTrue(buffer.targetFrames() in 2880..3840)
     }
+
+    @Test fun `network rebanking keeps the output running until the sink actually stops`() {
+        val lifecycle = MixerOutputLifecycle(false)
+        val buffer = AdaptivePcmBuffer(isMediaSink = true)
+        val out = ShortArray(960)
+        assertTrue(buffer.isIdle())
+        repeat(3) {
+            buffer.noteArrival(0, 2048)
+            buffer.write(ShortArray(4096) { 1000 }, 4096, 0)
+        }
+        for (now in 0L until 1000L step 10) {
+            val action = lifecycle.update(now, buffer.isIdle(), false, true, 40)
+            assertEquals("network gap at $now ms must not park the device", if (now == 0L) START else WRITE, action)
+            buffer.render(out, now)
+        }
+        assertTrue("the trace must exercise an empty rebanking buffer", buffer.rebanks > 0)
+        assertEquals(0, buffer.depthFrames())
+        buffer.finish()
+        assertTrue("an explicit stop still lets the device park", buffer.isIdle())
+        assertEquals(WRITE, lifecycle.update(1000, buffer.isIdle(), false, true, 40))
+        assertEquals(PAUSE, lifecycle.update(1040, buffer.isIdle(), false, true, 40))
+    }
+
+    @Test fun `reset cancels a pending rebank and makes the sink idle`() {
+        val buffer = AdaptivePcmBuffer()
+        val out = ShortArray(960)
+        buffer.noteArrival(0, 4800)
+        buffer.write(ShortArray(9600) { 1000 }, 9600, 0)
+        for (now in 0L..300L step 10) buffer.render(out, now)
+        assertTrue(buffer.rebanks > 0)
+        assertFalse(buffer.isIdle())
+        buffer.reset()
+        assertTrue(buffer.isIdle())
+    }
 }

@@ -92,4 +92,24 @@ object ExternalBtTransportPolicy {
         cachedDaemonReachable: Boolean?
     ): Boolean = externalBtEvidence != null && !zbtTransportEnabled &&
         !ignoreExternalBt && cachedDaemonReachable == null
+
+    enum class WifiButton { MODULE, REFUSED, ANDROID_RADIO }
+
+    /**
+     * What the main screen's WiFi button arms. A daemon not measured yet goes to the module route,
+     * because the bring-up it triggers is what measures it.
+     */
+    fun wifiButton(
+        externalBtEvidence: String?,
+        zbtTransportEnabled: Boolean,
+        ignoreExternalBt: Boolean,
+        cachedDaemonReachable: Boolean?
+    ): WifiButton = when {
+        refusesBringUp(externalBtEvidence, zbtTransportEnabled, ignoreExternalBt, cachedDaemonReachable) ->
+            WifiButton.REFUSED
+        route(externalBtEvidence, zbtTransportEnabled, ignoreExternalBt, cachedDaemonReachable) == Route.ZBT ||
+            needsDaemonMeasurement(externalBtEvidence, zbtTransportEnabled, ignoreExternalBt, cachedDaemonReachable) ->
+            WifiButton.MODULE
+        else -> WifiButton.ANDROID_RADIO
+    }
 }

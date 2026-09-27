@@ -22,7 +22,11 @@ object AppLog {
 
         class Android : Logger {
             override fun println(priority: Int, tag: String, msg: String) {
-                Log.println(priority, TAG, msg)
+                try {
+                    Log.println(priority, TAG, msg)
+                } catch (_: RuntimeException) {
+                    // Running in a pure JVM unit test environment where android.util.Log is not mocked
+                }
             }
         }
 

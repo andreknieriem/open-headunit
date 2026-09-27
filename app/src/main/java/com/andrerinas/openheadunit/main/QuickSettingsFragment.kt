@@ -197,17 +197,19 @@ class QuickSettingsFragment : DialogFragment() {
             }
         ))
 
-        items.add(SettingItem.ToggleSettingEntry(
-            stableId = "killOnDisconnect",
-            nameResId = R.string.kill_on_disconnect,
-            descriptionResId = R.string.kill_on_disconnect_description,
-            isChecked = settings.killOnDisconnect,
-            onCheckedChanged = { isChecked ->
-                settings.killOnDisconnect = isChecked
-                settings.commit()
-                updateSettingsList()
-            }
-        ))
+        if (!settings.isCarLauncherActive) {
+            items.add(SettingItem.ToggleSettingEntry(
+                stableId = "killOnDisconnect",
+                nameResId = R.string.kill_on_disconnect,
+                descriptionResId = R.string.kill_on_disconnect_description,
+                isChecked = settings.rawKillOnDisconnect,
+                onCheckedChanged = { isChecked ->
+                    settings.rawKillOnDisconnect = isChecked
+                    settings.commit()
+                    updateSettingsList()
+                }
+            ))
+        }
 
         items.add(SettingItem.SettingEntry(
             stableId = "exportLogs",

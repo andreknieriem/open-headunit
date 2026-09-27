@@ -19,9 +19,9 @@ object SettingsScreenPausePolicy {
 
     /**
      * Whether lifting the pause re-arms the stack. Only the setup QR, which reads the running
-     * launcher, or a wireless setting saved behind the screen; a visit that changed nothing
-     * wireless leaves the stack down, and the WiFi button is the way back up.
+     * launcher, or a request held behind the screen (a wireless Save, or the phone arriving over
+     * Bluetooth); a visit with neither leaves the stack down, and the WiFi button is the way back up.
      */
-    fun rearmsOnRelease(qrHold: Boolean, wirelessSettingSaved: Boolean): Boolean =
-        qrHold || wirelessSettingSaved
+    fun rearmsOnRelease(qrHold: Boolean, wirelessRequestHeld: Boolean): Boolean =
+        qrHold || wirelessRequestHeld
 }

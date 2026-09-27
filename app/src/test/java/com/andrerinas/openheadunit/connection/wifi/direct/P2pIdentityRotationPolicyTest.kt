@@ -157,4 +157,53 @@ class P2pIdentityRotationPolicyTest {
             P2pIdentityRotationPolicy.purgeBeforeCreate(36, keepIdentity = false, rotationPending = false)
         )
     }
+
+    @Test
+    fun `below Q any group this unit owns is read rather than recreated`() {
+        // Nothing was requested there, so neither half is compared and a recreate would only mint
+        // another name the phone has to be told about.
+        assertTrue(
+            reads(sdkInt = 17, liveName = "DIRECT-l9-Tablet", livePassphrase = "somethingElse")
+        )
+    }
+
+    @Test
+    fun `a group this unit does not own is never read`() {
+        for (sdk in listOf(17, P2pIdentityRotationPolicy.NAMED_CREATE_SDK)) {
+            assertFalse("sdk $sdk", reads(sdkInt = sdk, isGroupOwner = false))
+        }
+    }
+
+    @Test
+    fun `from Q a group matching both halves is read`() {
+        assertTrue(reads())
+    }
+
+    @Test
+    fun `from Q a different name is not read`() {
+        assertFalse(reads(liveName = "DIRECT-XX-Other"))
+    }
+
+    @Test
+    fun `from Q the same name with a different passphrase is not read`() {
+        // The measured defect: reading this survivor serves the phone the passphrase the stored pair
+        // no longer has, and the create that would have applied the new one never runs.
+        assertFalse(reads(livePassphrase = "RigPass99999"))
+    }
+
+    @Test
+    fun `from Q a group whose passphrase cannot be read is not read`() {
+        assertFalse(reads(livePassphrase = null))
+    }
+
+    private fun reads(
+        sdkInt: Int = P2pIdentityRotationPolicy.NAMED_CREATE_SDK,
+        isGroupOwner: Boolean = true,
+        liveName: String? = "DIRECT-PB-HeadUnit",
+        requestedName: String = "DIRECT-PB-HeadUnit",
+        livePassphrase: String? = "RigPass12345",
+        requestedPassphrase: String = "RigPass12345",
+    ) = P2pIdentityRotationPolicy.readsExistingGroup(
+        sdkInt, isGroupOwner, liveName, requestedName, livePassphrase, requestedPassphrase
+    )
 }

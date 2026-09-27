@@ -9,6 +9,7 @@ import kotlinx.coroutines.delay
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
+import com.andrerinas.openheadunit.utils.BluetoothHelper
 
 /**
  * Runs the Android Auto handshake over the head unit's external Bluetooth module.
@@ -233,7 +234,9 @@ class ZbtAaCarrier(
         val link = ZbtLink(
             channel = open,
             peerName = seen?.phoneName,
-            peerAddress = seen?.phoneMac,
+            // The module reports it without separators, and everything downstream compares it
+            // with android.bluetooth's colon form, so a raw one could never match.
+            peerAddress = BluetoothHelper.normalizeMacAddress(seen?.phoneMac),
             moduleMac = moduleMac,
             peerReportedPresent = seen?.usable == true
         )

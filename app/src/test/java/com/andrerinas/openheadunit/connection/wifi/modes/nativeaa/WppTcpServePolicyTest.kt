@@ -49,11 +49,75 @@ class WppTcpServePolicyTest {
     }
 
     @Test
-    fun `our own access point is served, whatever the group verdict says`() {
-        for (identity in GroupIdentityStability.values()) {
-            val decision = WppEndpointPolicy.decide(NativeStrategy.HOTSPOT, 5299, identity)
-            assertTrue(identity.name, WppTcpServePolicy.servesDial(decision))
+    fun `our own access point is served while its address is its own`() {
+        // It used to be served whatever the verdict said. Android has randomised soft AP addresses
+        // since 10, and one that moves strands the phone exactly as a moving group address does.
+        val own = WppEndpointPolicy.decide(NativeStrategy.HOTSPOT, 5299, GroupIdentityStability.STABLE)
+        assertTrue(WppTcpServePolicy.servesDial(own))
+        for (identity in GroupIdentityStability.values().filter { it != GroupIdentityStability.STABLE }) {
+            val moving = WppEndpointPolicy.decide(NativeStrategy.HOTSPOT, 5299, identity)
+            assertFalse(identity.name, WppTcpServePolicy.servesDial(moving))
         }
+    }
+
+    @Test
+    fun `every refusal about the phone is told to it while Bluetooth can take it instead`() {
+        for (identity in GroupIdentityStability.values()) {
+            val decision = WppEndpointPolicy.decide(NativeStrategy.WIFI_DIRECT, 5299, identity)
+            if (WppTcpServePolicy.servesDial(decision)) continue
+            assertTrue("$identity", WppTcpServePolicy.rejectsDial(decision, canRunRfcomm = true))
+        }
+    }
+
+    @Test
+    fun `a server that is not listening says nothing about the phone`() {
+        // stop() drops the listening port, so a dial already past TLS decided the endpoint was
+        // withheld and answered a healthy phone with a rejection and the main-screen record. Only
+        // on a STABLE unit is the port the reason; on any other the identity answers first, and
+        // that refusal is about the phone's record and still worth telling it.
+        for (strategy in NativeStrategy.values()) {
+            val decision = WppEndpointPolicy.decide(strategy, null, GroupIdentityStability.STABLE)
+            assertFalse(strategy.name, WppTcpServePolicy.blamesStaleEndpoint(decision))
+            assertFalse(strategy.name, WppTcpServePolicy.rejectsDial(decision, canRunRfcomm = true))
+        }
+    }
+
+    @Test
+    fun `a stale endpoint is still blamed when we are listening and it is the phone's record`() {
+        val decision = WppEndpointPolicy.decide(
+            NativeStrategy.WIFI_DIRECT, 5299, GroupIdentityStability.CHANGED
+        )
+        assertTrue(WppTcpServePolicy.blamesStaleEndpoint(decision))
+    }
+
+    @Test
+    fun `nothing is put on the wire while projection is up`() {
+        // A version request would drop the live session, and so would anything else on this socket.
+        val decision = WppEndpointPolicy.decide(
+            NativeStrategy.WIFI_DIRECT, 5299, GroupIdentityStability.CHANGED
+        )
+        assertTrue(WppTcpServePolicy.rejectsDial(decision, canRunRfcomm = true, projectionUp = false))
+        assertFalse(WppTcpServePolicy.rejectsDial(decision, canRunRfcomm = true, projectionUp = true))
+    }
+
+    @Test
+    fun `a refusal is swallowed when there is no Bluetooth route to fall back to`() {
+        // Withdrawing the endpoint from a phone whose only way back is closed strands it: the
+        // stall it has is at least a stall it can retry out of.
+        val decision = WppEndpointPolicy.decide(
+            NativeStrategy.WIFI_DIRECT, 5299, GroupIdentityStability.CHANGED
+        )
+        assertFalse(WppTcpServePolicy.rejectsDial(decision, canRunRfcomm = false))
+    }
+
+    @Test
+    fun `a dial we serve is never rejected, whatever the Bluetooth listeners are doing`() {
+        val decision = WppEndpointPolicy.decide(
+            NativeStrategy.HOTSPOT, 5299, GroupIdentityStability.STABLE
+        )
+        assertTrue(WppTcpServePolicy.servesDial(decision))
+        assertFalse(WppTcpServePolicy.rejectsDial(decision, canRunRfcomm = true))
+        assertFalse(WppTcpServePolicy.rejectsDial(decision, canRunRfcomm = false))
     }
 
     @Test

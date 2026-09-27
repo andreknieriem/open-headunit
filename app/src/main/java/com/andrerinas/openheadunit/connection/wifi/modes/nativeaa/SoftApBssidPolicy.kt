@@ -1,5 +1,7 @@
 package com.andrerinas.openheadunit.connection.wifi.modes.nativeaa
 
+import com.andrerinas.openheadunit.connection.wifi.MacAddressPolicy
+
 /**
  * Picks the BSSID to advertise for our own access point, best source first.
  *
@@ -11,16 +13,6 @@ package com.andrerinas.openheadunit.connection.wifi.modes.nativeaa
  * reading a log.
  */
 object SoftApBssidPolicy {
-
-    /**
-     * Android's masking placeholders. Note what is *not* here: anything merely beginning with
-     * `02:`. That bit marks a locally-administered MAC and Android's own soft AP routinely uses a
-     * randomised one, so rejecting the range would discard the BSSID this exists to find.
-     */
-    private val PLACEHOLDERS = setOf("00:00:00:00:00:00", "02:00:00:00:00:00")
-
-    /** Six hex pairs separated by colons or dashes. */
-    private val MAC_SHAPE = Regex("^[0-9a-fA-F]{2}([:-][0-9a-fA-F]{2}){5}$")
 
     /**
      * The first usable address of [staticOverride], [shellMac] and [hardwareAddress], normalised to
@@ -35,10 +27,7 @@ object SoftApBssidPolicy {
      * them. [staticOverride] still outranks every one: a hand-typed address is a specific claim.
      */
     fun choose(staticOverride: String?, detected: List<String?>): String =
-        (listOf(staticOverride) + detected)
-            .firstOrNull { isUsable(it) }
-            ?.let { normalise(it) }
-            ?: ""
+        MacAddressPolicy.firstUsable(listOf(staticOverride) + detected).orEmpty()
 
     /**
      * Whether [mac] is a real address.
@@ -49,21 +38,29 @@ object SoftApBssidPolicy {
      * the phone then rejected the credentials on every retry. A free-text field can produce any
      * number of such values, so validate what an address looks like instead.
      */
-    fun isUsable(mac: String?): Boolean {
-        val trimmed = mac?.trim().orEmpty()
-        if (!MAC_SHAPE.matches(trimmed)) return false
-        return normalise(trimmed).lowercase() !in PLACEHOLDERS
-    }
+    fun isUsable(mac: String?): Boolean = MacAddressPolicy.isUsable(mac)
+
+    /**
+     * The same chain with the hand-typed address **last**, which is where it belongs.
+     *
+     * Where a rung answers, that address is this interface's; one typed by hand can only match it
+     * or be wrong, and a wrong one is handed to the phone as a network it will never find.
+     */
+    fun chooseDetectedFirst(detected: List<String?>, staticOverride: String?): String =
+        choose(null, detected + listOf(staticOverride))
+
+    /** True when [staticOverride] is what [chooseDetectedFirst] fell back on, nothing having read one. */
+    fun overrideAnswered(detected: List<String?>, staticOverride: String?): Boolean =
+        isUsable(staticOverride) && choose(null, detected).isEmpty()
 
     /**
      * Whether [resolvedBssid] shows this device read its own address, rather than repeating what
      * the user typed.
      *
-     * [choose] takes [staticOverride] ahead of every automatic source, and `WifiDirectManager`
-     * skips every one of its rungs when the override is usable, so a run behind one
-     * never asks the hardware the question `ConnectionIssue.BSSID_UNAVAILABLE` is about. The record
-     * therefore survives an override, and `ConnectionIssueBannerPolicy.remedyApplied` is what keeps
-     * it off the screen meanwhile.
+     * Both routes now ask the hardware first and fall back to the override, so a resolved address
+     * that equals the override means the rungs came back empty and the typed value answered. The
+     * record `ConnectionIssue.BSSID_UNAVAILABLE` describes therefore still stands behind one, and
+     * `ConnectionIssueBannerPolicy.remedyApplied` is what keeps it off the screen meanwhile.
      *
      * Compared after normalisation rather than by identity, because the override is hand-typed:
      * dashes, lower case and stray spaces all name the same address, while the automatic rungs
@@ -75,9 +72,7 @@ object SoftApBssidPolicy {
     fun disprovesBssidUnavailable(resolvedBssid: String?, staticOverride: String?): Boolean {
         if (!isUsable(resolvedBssid)) return false
         if (!isUsable(staticOverride)) return true
-        return normalise(resolvedBssid.orEmpty()) != normalise(staticOverride.orEmpty())
+        return MacAddressPolicy.parse(resolvedBssid) != MacAddressPolicy.parse(staticOverride)
     }
 
-    /** Dashes to colons, upper case. Accepts either separator so a hand-typed address still works. */
-    private fun normalise(mac: String): String = mac.trim().replace('-', ':').uppercase()
 }

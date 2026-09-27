@@ -171,6 +171,32 @@ class SoftApBssidPolicyTest {
     }
 
     @Test
+    fun `the detected-first form lets the hardware outrank the hand-typed address`() {
+        val detected = listOf("D2:65:D0:00:51:73")
+        assertEquals(
+            "D2:65:D0:00:51:73",
+            SoftApBssidPolicy.chooseDetectedFirst(detected, "00:27:15:43:06:6A")
+        )
+        assertFalse(SoftApBssidPolicy.overrideAnswered(detected, "00:27:15:43:06:6A"))
+    }
+
+    @Test
+    fun `the detected-first form falls back to the override when no rung answers`() {
+        val detected = listOf(null, "02:00:00:00:00:00", "")
+        assertEquals(
+            "00:27:15:43:06:6A",
+            SoftApBssidPolicy.chooseDetectedFirst(detected, "00-27-15-43-06-6a")
+        )
+        assertTrue(SoftApBssidPolicy.overrideAnswered(detected, "00:27:15:43:06:6A"))
+    }
+
+    @Test
+    fun `an unset override is not an answer, detected-first or not`() {
+        assertEquals("", SoftApBssidPolicy.chooseDetectedFirst(listOf(null), "0"))
+        assertFalse(SoftApBssidPolicy.overrideAnswered(listOf(null), "0"))
+    }
+
+    @Test
     fun `the two forms agree`() {
         assertEquals(
             SoftApBssidPolicy.choose("0", "aa:bb:cc:dd:ee:ff", "11:22:33:44:55:66"),

@@ -176,4 +176,35 @@ class UserExitHotspotPolicyTest {
             )
         }
     }
+
+    @Test
+    fun `the launcher and the settings answer the hotspot question the same way`() {
+        // The settings form is asked after the launcher has been stopped, so the two cannot be one
+        // function. Nothing held them to each other until now, and the launcher-side copy was a
+        // private duplicate inside LinkLossTeardownPolicy.
+        for (mode in WifiLauncherMode.values()) {
+            for (helper in HelperStrategy.values()) {
+                for (native in NativeStrategy.values()) {
+                    assertEquals(
+                        "$mode/$helper/$native",
+                        UserExitHotspotPolicy.usesHeadUnitHotspot(mode, helper, native),
+                        WifiModePolicy.hostsOwnAccessPoint(mode, helper, native)
+                    )
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `hosting an access point and running a group remain exact complements`() {
+        for (mode in WifiLauncherMode.values()) {
+            for (helper in HelperStrategy.values()) {
+                for (native in NativeStrategy.values()) {
+                    val hostsAp = WifiModePolicy.hostsOwnAccessPoint(mode, helper, native)
+                    val p2p = WifiModePolicy.usesWifiDirect(mode, helper, native)
+                    assertFalse("$mode/$helper/$native claims both", hostsAp && p2p)
+                }
+            }
+        }
+    }
 }

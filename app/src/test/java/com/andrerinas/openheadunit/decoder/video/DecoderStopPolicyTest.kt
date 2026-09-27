@@ -18,6 +18,8 @@ class DecoderStopPolicyTest {
             DecoderStopPolicy.endsSession(DecoderStopPolicy.REASON_PROJECTION_VIEW_RECREATE)
         )
         assertFalse(DecoderStopPolicy.endsSession(DecoderStopPolicy.REASON_NEW_SURFACE))
+        assertFalse(DecoderStopPolicy.endsSession(DecoderStopPolicy.REASON_SCREEN_OFF_SLEEP))
+        assertFalse(DecoderStopPolicy.endsSession(DecoderStopPolicy.REASON_ACTIVITY_STOPPED))
     }
 
     @Test

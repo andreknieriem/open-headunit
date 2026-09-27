@@ -80,7 +80,7 @@ object AutomationCommandPolicy {
         HeadUnitCommand.ACTION_STOP_WIRELESS to AapService.ACTION_STOP_WIRELESS,
         HeadUnitCommand.ACTION_CANCEL_WIRELESS to AapService.ACTION_CANCEL_WIRELESS,
         HeadUnitCommand.ACTION_START_WIRELESS_SCAN to AapService.ACTION_START_WIRELESS_SCAN,
-        HeadUnitCommand.ACTION_CHECK_USB to AapService.ACTION_CHECK_USB,
+        HeadUnitCommand.ACTION_END_SESSION_STAY_ARMED to AapService.ACTION_END_SESSION_STAY_ARMED,
         HeadUnitCommand.ACTION_REFRESH_SENSORS to AapService.ACTION_REFRESH_SENSORS,
         HeadUnitCommand.ACTION_RESTART_AUDIO to AapService.ACTION_RESTART_AUDIO,
         HeadUnitCommand.ACTION_RAISE_PROJECTION to AapService.ACTION_RAISE_PROJECTION,
@@ -107,6 +107,7 @@ object AutomationCommandPolicy {
 
         return when (action) {
             HeadUnitCommand.ACTION_CONNECT -> connect(extras)
+            HeadUnitCommand.ACTION_CHECK_USB -> listOf(checkUsb())
             // Not a plain relay: the service honours no_ui on this action, and relaying it without
             // the extra silently dropped the one thing the caller asked for.
             HeadUnitCommand.ACTION_START_WIRELESS -> listOf(
@@ -159,7 +160,7 @@ object AutomationCommandPolicy {
      */
     private fun connect(extras: Extras): List<Effect> {
         val ip = extras.string(HeadUnitCommand.EXTRA_IP)?.trim()
-        if (ip.isNullOrEmpty()) return listOf(Effect.StartService(AapService.ACTION_CHECK_USB))
+        if (ip.isNullOrEmpty()) return listOf(checkUsb())
         return listOf(
             Effect.StartService(
                 AapService.ACTION_CONNECT_SOCKET,
@@ -168,6 +169,12 @@ object AutomationCommandPolicy {
             Effect.ConnectSocket(ip, HEADUNIT_SERVER_PORT)
         )
     }
+
+    /** An explicit command, so it lifts the status pill's X like the USB button does. */
+    private fun checkUsb() = Effect.StartService(
+        AapService.ACTION_CHECK_USB,
+        flagExtras = mapOf(AapService.EXTRA_USER_REQUESTED to true)
+    )
 
     private fun nightMode(extras: Extras): List<Effect> {
         val mode = extras.string(HeadUnitCommand.EXTRA_STATE)?.lowercase()

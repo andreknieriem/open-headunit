@@ -8,18 +8,28 @@ package com.andrerinas.openheadunit.automation
 object AutomationOutputPolicy {
 
     /**
-     * Settings withheld from an exported copy: the AP passphrase in clear text, and the keys naming
-     * the car's network and the phones paired to it. Reading these needs a shell and settings.xml.
+     * Settings withheld from an exported copy: the AP and WiFi Direct passphrases in clear text, and
+     * the keys naming the car's network and the phones paired to it. An export is `prefs.all`, so a
+     * credential added anywhere reaches it unless it is named here.
      */
     val WITHHELD_KEYS = setOf(
         "hotspot-password",
         "hotspot-ssid",
+        "wifi-direct-group-name",
+        "wifi-direct-group-passphrase",
+        // Withheld with the pair rather than on its own merit: restored alone it would mark an
+        // app-drawn pair as one the user typed, and the row would say so.
+        "wifi-direct-identity-user-set",
+        "wifi-direct-readback-name",
+        "wifi-direct-readback-passphrase",
+        "wifi-direct-readback-bssid",
         "auto-start-wifi-ssid",
         "auto-start-bt-macs",
         "auto-start-bt-name",
         "auto-disconnect-bt-macs",
         "native-poke-bt-macs",
-        "static-bssid"
+        "static-bssid",
+        "static-p2p-bssid"
     )
 
     /** Directory names an automation command may write into, relative to external storage. */

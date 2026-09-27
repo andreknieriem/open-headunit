@@ -22,6 +22,10 @@ object QrCodeGenerator {
         } catch (e: Exception) {
             AppLog.e("QrCodeGenerator: Failed to generate QR code: ${e.message}", e)
             null
+        } catch (e: LinkageError) {
+            // ZXing 3.5 needs StandardCharsets, which Android added in API 19; below that it throws an Error.
+            AppLog.w("QrCodeGenerator: QR codes cannot be drawn on this Android version (${e.javaClass.simpleName})")
+            null
         }
     }
 }

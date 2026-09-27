@@ -125,4 +125,30 @@ class HfpServiceRecordPolicyTest {
             assertTrue(why!!, why.contains("stopped answering"))
         }
     }
+
+    @Test
+    fun `a refused record is asked for again until the ceiling`() {
+        for (attempt in 1 until HfpServiceRecordPolicy.REGISTRATION_ATTEMPTS) {
+            assertTrue("attempt $attempt", HfpServiceRecordPolicy.retriesRegistration(attempt))
+        }
+        assertFalse(HfpServiceRecordPolicy.retriesRegistration(HfpServiceRecordPolicy.REGISTRATION_ATTEMPTS))
+    }
+
+    @Test
+    fun `retrying and reporting are exact complements`() {
+        // The user is told exactly when the app has stopped asking, never before and never never.
+        for (attempt in 0..HfpServiceRecordPolicy.REGISTRATION_ATTEMPTS + 2) {
+            assertEquals(
+                "attempt $attempt",
+                !HfpServiceRecordPolicy.retriesRegistration(attempt),
+                HfpServiceRecordPolicy.registrationRefused(attempt),
+            )
+        }
+    }
+
+    @Test
+    fun `the retry gap leaves the Android Auto record time to settle`() {
+        // The refusal this exists for lands 20 ms after that record registered on the same stack.
+        assertTrue(HfpServiceRecordPolicy.REGISTRATION_RETRY_GAP_MS > 20L)
+    }
 }

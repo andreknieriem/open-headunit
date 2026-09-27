@@ -1,0 +1,1279 @@
+<resources>
+    <string name="app_name">Open Headunit</string>
+    <string name="menu">Menu</string>
+    <string name="settings">Pengaturan</string>
+
+    <!-- Settings tabs and search (redesign) -->
+    <string name="settings_tab_basic">Dasar</string>
+    <string name="settings_tab_advanced">Lanjutan</string>
+    <string name="settings_search_hint">Cari pengaturan</string>
+
+    <!-- Connection mode selector -->
+    <string name="connection_mode">Mode koneksi</string>
+    <string name="connection_kind_usb_cable">Kabel USB (langsung)</string>
+    <string name="connection_kind_usb_wireless_adapter">Adaptor nirkabel USB</string>
+    <string name="connection_kind_wifi">Wi-Fi</string>
+    <string name="connection_kind_unset">Belum diatur</string>
+
+    <!-- Onboarding wizard -->
+    <string name="onb_next">Berikutnya</string>
+    <string name="onb_skip">Lewati</string>
+    <string name="onb_ready_finish">Selesai</string>
+    <string name="onb_welcome_title">Selamat datang di Open Headunit</string>
+    <string name="onb_welcome_body">Penyiapan cepat ini memindai perangkat Anda dan memilih pengaturan video, tampilan, dan mode malam terbaik. Anda dapat mengubah semuanya nanti di Pengaturan.</string>
+    <string name="onb_safety_title">Utamakan keselamatan</string>
+    <string name="onb_safety_accept">Saya telah membaca dan menyetujui persyaratan</string>
+    <string name="onb_connection_title">Bagaimana Anda terhubung?</string>
+    <string name="onb_connection_help">Pilih cara ponsel Anda terhubung. Ini membuat layar pengaturan tetap fokus pada hal yang relevan untuk Anda.</string>
+    <string name="onb_connection_cable_detail">Ponsel terhubung langsung ke head unit dengan kabel USB. Opsi nirkabel disembunyikan.</string>
+    <string name="onb_connection_adapter_detail">Dongle USB menjembatani kabel ke sambungan nirkabel. Opsi nirkabel ditampilkan.</string>
+    <string name="onb_connection_wifi_detail">Ponsel terhubung melalui Wi-Fi.</string>
+    <string name="onb_display_title">Layar</string>
+    <!-- %1$d width, %2$d height, %3$d dpi, %4$s codec -->
+    <string name="onb_display_detected">Panel terdeteksi: %1$d x %2$d px, %3$d dpi, perangkat keras %4$s.</string>
+    <string name="onb_display_size_label">Ukuran layar</string>
+    <string name="onb_display_orientation_label">Orientasi</string>
+    <string name="onb_display_apply">Terapkan pengaturan yang disarankan</string>
+    <!-- %1$s resolution, %2$d dpi, %3$s codec, %4$s view mode -->
+    <string name="onb_display_result">Diterapkan: %1$s, %2$d dpi, %3$s, tampilan %4$s.</string>
+    <string name="onb_appearance_title">Tampilan</string>
+    <string name="onb_appearance_theme_label">Tema aplikasi</string>
+    <string name="onb_theme_auto">Otomatis</string>
+    <string name="onb_theme_light">Terang</string>
+    <string name="onb_theme_dark">Gelap</string>
+    <string name="onb_appearance_night_label">Mode malam Android Auto</string>
+    <string name="onb_night_auto">Otomatis</string>
+    <string name="onb_night_day">Siang</string>
+    <string name="onb_night_night">Malam</string>
+    <string name="onb_night_light_sensor_available">Sensor cahaya terdeteksi, sehingga Otomatis dapat mengikuti cahaya sekitar.</string>
+    <string name="onb_night_no_light_sensor">Tidak ada sensor cahaya terdeteksi, sehingga Otomatis mengikuti matahari terbit dan terbenam.</string>
+    <string name="onb_ready_title">Anda sudah siap</string>
+    <!-- %1$s connection, %2$s resolution, %3$s codec -->
+    <string name="onb_ready_summary">Koneksi: %1$s\nResolusi: %2$s\nKodek: %3$s\n\nAnda dapat menyesuaikan semuanya di Pengaturan.</string>
+    <string name="onb_summary_vehicle_format">Kendaraan: %1$s</string>
+    <!-- %1$d granted, %2$d total -->
+    <string name="onb_summary_permissions_format">Izin: %1$d dari %2$d diberikan</string>
+    <string name="onb_ready_loading_intro">Satu hal lagi: Anda sekarang dapat mengatur layar pemuatan kustom yang ditampilkan saat mobil terhubung.</string>
+    <string name="onb_ready_loading_button">Atur layar pemuatan</string>
+    <!-- Ready step optional-extras card -->
+    <string name="onb_ready_extras_title">Sebelum selesai, Anda juga dapat mengatur:</string>
+    <string name="onb_extra_loading_desc">Gambar kustom yang ditampilkan saat mobil terhubung</string>
+
+    <!-- Onboarding wizard: permissions step + Settings > Permissions -->
+    <string name="onb_permissions_title">Aktifkan izin</string>
+    <string name="onb_permissions_help">Aktifkan izin yang dibutuhkan aplikasi agar semuanya berfungsi tanpa konfirmasi mendadak nanti. Anda dapat mengubahnya kapan saja.</string>
+    <string name="onb_perms_enable_all">Aktifkan semua</string>
+    <string name="perm_allow">Izinkan</string>
+    <string name="perm_granted">Diberikan</string>
+    <!-- %1$s permission name -->
+    <string name="perm_optional_format">%1$s (opsional)</string>
+    <string name="permissions">Izin</string>
+    <string name="permissions_desc">Tinjau dan berikan izin yang dibutuhkan aplikasi</string>
+    <string name="perm_mic_title">Mikrofon</string>
+    <string name="perm_mic_help">Mengizinkan Android Auto menggunakan perintah suara, Google Assistant, dan panggilan telepon.</string>
+    <string name="perm_location_title">Lokasi</string>
+    <string name="perm_location_help">Mengirim GPS ke ponsel untuk navigasi, memindai koneksi nirkabel, dan mengatur mode malam berbasis lokasi.</string>
+    <string name="perm_nearby_title">Perangkat di sekitar</string>
+    <string name="perm_nearby_help">Diperlukan untuk terhubung melalui Bluetooth dan Wi-Fi, merutekan audio Bluetooth, dan memulai otomatis pada perangkat yang disandingkan.</string>
+    <string name="perm_notifications_title">Notifikasi</string>
+    <string name="perm_notifications_help">Menampilkan notifikasi yang sedang berlangsung saat Android Auto berjalan.</string>
+    <string name="perm_overlay_title">Tampilkan di atas aplikasi lain</string>
+    <string name="perm_overlay_help">Mengizinkan aplikasi membuka layar mobil di atas aplikasi lain, termasuk mulai otomatis.</string>
+    <string name="perm_write_settings_title">Ubah pengaturan sistem</string>
+    <string name="perm_write_settings_help">Mengizinkan aplikasi mengaktifkan hotspot secara otomatis untuk koneksi nirkabel.</string>
+    <string name="perm_storage_title">Penyimpanan</string>
+    <string name="perm_storage_help">Diperlukan untuk mencadangkan dan memulihkan pengaturan serta memilih gambar pemuatan kustom.</string>
+
+    <!-- Onboarding wizard: car brand / vehicle identity -->
+    <string name="onb_vehicle_title">Mobil Anda</string>
+    <string name="onb_vehicle_input_hint">Merek atau nama</string>
+    <string name="onb_vehicle_help_aa">Nama ini dikirim ke Android Auto. Ini akan muncul di riwayat koneksi ponsel Anda dan pada layar sambutan Android Auto.</string>
+    <string name="onb_vehicle_help_sideload">Memilih merek mobil asli juga menampilkan logo merek tersebut pada tombol keluar Android Auto, tetapi Android Auto kemudian berhenti mencantumkan aplikasi yang dipasang di luar Play Store. Pertahankan \"Google\" atau \"Open Headunit\" jika Anda menggunakan aplikasi tersebut.</string>
+    <string name="onb_vehicle_help_advanced">Anda dapat menyesuaikan detail kendaraan di tab Lanjutan. Kami tidak menggunakan data ini; hanya dikirim ke Android Auto karena memang diwajibkan.</string>
+    <string-array name="vehicle_brands">
+        <item>Google</item>
+        <item>Android</item>
+        <item>Audi</item>
+        <item>BMW</item>
+        <item>Chevrolet</item>
+        <item>Chrysler</item>
+        <item>Fiat</item>
+        <item>Ford</item>
+        <item>Honda</item>
+        <item>Hyundai</item>
+        <item>Jeep</item>
+        <item>Kia</item>
+        <item>Mazda</item>
+        <item>Mercedes-Benz</item>
+        <item>Nissan</item>
+        <item>Peugeot</item>
+        <item>Renault</item>
+        <item>Subaru</item>
+        <item>Suzuki</item>
+        <item>Tesla</item>
+        <item>Toyota</item>
+        <item>Volkswagen</item>
+        <item>Volvo</item>
+    </string-array>
+
+    <!-- Onboarding wizard (round 2) -->
+    <string name="onb_language_help">Pilih bahasa aplikasi.</string>
+    <string name="connection_kind_usb">USB</string>
+    <string name="onb_connection_usb_detail">Ponsel terhubung melalui USB, baik kabel langsung atau adaptor nirkabel USB.</string>
+    <string name="onb_conn_usb_label">USB (atau adaptor)</string>
+    <string name="onb_connection_self_detail">Mode Mandiri menjalankan Android Auto di perangkat ini tanpa menghubungkan ponsel.</string>
+    <string name="connection_kind_all">Semua</string>
+
+    <!-- Resolution recommendation / bandwidth warnings -->
+    <string name="resolution_recommended_format">%1$s (Disarankan)</string>
+    <string name="resolution_high_bandwidth_format">%1$s · bandwidth tinggi</string>
+    <string name="resolution_too_high_title">Resolusi lebih tinggi dari layar</string>
+    <string name="resolution_too_high_message">Ini lebih tinggi daripada yang didukung panel Anda. Gambar dibatasi sesuai kemampuan tampilan panel (%1$s), sehingga resolusi yang lebih tinggi hanya menggunakan lebih banyak bandwidth tanpa meningkatkan kualitas.</string>
+    <string name="resolution_high_bandwidth_title">Memerlukan bandwidth lebih tinggi</string>
+    <string name="resolution_high_bandwidth_message">Resolusi ini menggunakan jauh lebih banyak bandwidth dan memerlukan koneksi yang kuat: Wi-Fi 5GHz yang baik atau koneksi USB yang stabil. Jika Anda mengalami lag, pilih resolusi yang lebih rendah.</string>
+    <string name="resolution_use_anyway">Tetap gunakan</string>
+    <string name="resolution_use_recommended">Gunakan yang disarankan</string>
+    <!-- DPI: warning when the chosen resolution is higher than the panel supports -->
+    <string name="dpi_resolution_over_panel_warning">Resolusi pilihan Anda (%1$s) lebih tinggi dari panel Anda. Dibatasi hingga %2$s, dan DPI dihitung berdasarkan itu. Jika terlihat tidak pas, gunakan resolusi yang disarankan (%2$s).</string>
+    <!-- First-projection renderer confirmation (issue #767) -->
+    <string name="renderer_confirm_question">Apakah Anda melihat layar Android Auto?</string>
+    <string name="renderer_confirm_yes">Ya</string>
+    <string name="renderer_confirm_switch">Ganti perender</string>
+    <string name="renderer_switched_to">Perender: %1$s</string>
+    <string name="onb_connection_all_detail">Menampilkan pengaturan USB dan Wi-Fi.</string>
+    <string name="onb_connection_warning">Memilih jenis koneksi akan menyembunyikan pengaturan yang tidak berlaku untuknya, baik di Dasar maupun Lanjutan. Untuk melihatnya lagi, pilih mode lain di pengaturan koneksi nanti.</string>
+    <string name="onb_more_appearance">Pengaturan tampilan lainnya</string>
+    <string name="onb_automation_title">Otomatisasi</string>
+    <string name="onb_automation_help">Pilih cara aplikasi memulai dan terhubung secara otomatis. Buka pengaturan Hubungkan otomatis untuk menyeret urutan prioritas.</string>
+    <string name="onb_gps_title">Lokasi</string>
+    <string name="onb_gps_help">GPS mana yang harus digunakan Android Auto untuk navigasi?</string>
+    <string name="onb_gps_this_device">Perangkat ini</string>
+    <string name="onb_gps_phone">Ponsel yang terhubung</string>
+    <string name="onb_do_it_later">Lakukan nanti</string>
+    <string name="onb_display_dpi_label">Ukuran Android Auto</string>
+    <!-- Full-word DPI size names, used as accessibility labels for the S/M/L/XL buttons -->
+    <string name="onb_dpi_small">Kecil</string>
+    <string name="onb_dpi_medium">Sedang</string>
+    <string name="onb_dpi_large">Besar</string>
+    <string name="onb_dpi_huge">Sangat Besar</string>
+    <string name="onb_appearance_more_hint">Anda dapat menemukan lebih banyak opsi mode gelap di Pengaturan.</string>
+    <string name="onb_automation_more_hint">Anda dapat menemukan lebih banyak opsi di pengaturan Hubungkan otomatis dan Mulai otomatis.</string>
+    <string name="onb_dpi_help">DPI yang lebih tinggi membuat ikon dan teks Android Auto lebih besar, sehingga muat lebih sedikit di layar. DPI yang lebih rendah membuatnya lebih kecil, sehingga muat lebih banyak. Berlaku saat Anda menghubungkan Android Auto.</string>
+    <!-- %1$d recommended DPI value -->
+    <string name="onb_dpi_recommended">Disarankan untuk layar Anda: %1$d dpi</string>
+    <string name="onb_change_later">Anda dapat mengubah ini nanti di Pengaturan.</string>
+    <string name="dpi_automatic">Otomatis</string>
+    <string name="dpi_automatic_desc">Gunakan kerapatan perangkat</string>
+    <string name="dpi_automatic_desc_format">Menggunakan kerapatan perangkat (%1$d DPI)</string>
+    <string name="dpi_value_format">%1$d DPI</string>
+    <string name="dpi_input_hint">DPI</string>
+
+    <string name="title_activity_settings">Pengaturan</string>
+    <string name="dummy_button">Tombol Tiruan</string>
+    <string name="dummy_content">KONTEN\nTIRUAN</string>
+    <string name="allowed">Diizinkan</string>
+    <string name="ignored">Diabaikan</string>
+    <string name="blacklisted">Daftar Hitam</string>
+    <string name="usb_blacklist_title">Daftar Hitam Perangkat USB</string>
+    <string name="usb_blacklist_description">Perangkat dalam daftar hitam akan diabaikan saat tersambung: tidak ada mulai otomatis, tidak ada konfirmasi. Perangkat dicocokkan berdasarkan namanya, jadi ponsel yang diblokir tetap diblokir di setiap mode USB. Beberapa produsen memberi nama yang sama untuk setiap model, dan perangkat tersebut tidak dapat dibedakan.</string>
+    <string name="add_to_blacklist">Tambahkan ke Daftar Hitam</string>
+    <string name="remove_from_blacklist">Hapus dari Daftar Hitam</string>
+    <string name="usb_device_action_title">Tindakan Perangkat USB</string>
+    <string name="exit">Keluar</string>
+    <string name="video">Android Auto</string>
+    <string name="self_mode">Mode Mandiri</string>
+    <string name="to_android_auto">Ke Android Auto</string>
+    <string name="title">Open Headunit</string>
+    <string name="remove">Hapus</string>
+    <string name="usb">USB</string>
+    <string name="wifi">Wi-Fi</string>
+    <string name="dpi">Kerapatan piksel (DPI)</string>
+    <string name="pixel_aspect_ratio">Rasio aspek piksel</string>
+    <string name="mic_sample_rate">Laju sampel mikrofon</string>
+    <string name="keymap">Pemetaan tombol</string>
+    <string name="night_mode">Mode Gelap (Android Auto)</string>
+    <string name="night_mode_threshold">Ambang Batas Mode Malam</string>
+    <string name="enter_threshold_value">Masukkan Nilai Ambang Batas</string>
+    <string name="threshold_lux_desc">Nilai lux (0–10000). Di bawah ini = Malam.</string>
+    <string name="threshold_brightness_desc">Nilai kecerahan (0–255). Di bawah ini = Malam.</string>
+    <string name="threshold_light_title">Sensitivitas Cahaya</string>
+    <string name="threshold_brightness_title">Tingkat Kecerahan</string>
+    <string name="threshold_light_hint">Mode gelap aktif saat cahaya sekitar turun di bawah tingkat ini</string>
+    <string name="threshold_brightness_hint">Mode gelap aktif saat kecerahan layar berada di bawah nilai ini. Android melaporkan kecerahan sebagai 0–255, tetapi rentang sebenarnya dapat bervariasi menurut perangkat. Anda mungkin perlu bereksperimen untuk menemukan ambang batas yang tepat untuk perangkat Anda.</string>
+    <string name="current_light_reading">Cahaya saat ini: %d Lux</string>
+    <string name="current_brightness_reading">Kecerahan saat ini: %d / 255</string>
+    <string name="enable_fine_lux_control">Kontrol presisi (0–100 Lux)</string>
+    <string name="night_mode_start">Waktu Mulai Mode Malam</string>
+    <string name="night_mode_end">Waktu Selesai Mode Malam</string>
+
+    <string name="app_theme">Mode Gelap (Aplikasi)</string>
+    <string name="app_theme_description">Kontrol tampilan visual aplikasi</string>
+    <string name="change_app_theme">Ubah Tema Aplikasi</string>
+    <string name="monochrome_icons">Ikon monokrom</string>
+    <string name="monochrome_icons_description">Gunakan ikon skala abu-abu di layar beranda dalam mode Gelap atau Gelap Ekstrem</string>
+    <string name="use_extreme_dark">Gunakan Gelap Ekstrem</string>
+    <string name="use_extreme_dark_description">Gunakan latar belakang hitam murni saat mode gelap aktif</string>
+    <string name="use_gradient_background">Gunakan latar belakang gradien</string>
+    <string name="use_gradient_background_description_on">Aplikasi menggambar latar belakangnya sendiri dengan lingkaran gradien di tengah</string>
+    <string name="use_gradient_background_description_off">Latar belakang klasik aplikasi sedang digunakan</string>
+    <string name="use_gradient_background_description_on_auto">Aplikasi menggambar latar belakangnya sendiri dengan lingkaran gradien di tengah. Tidak berlaku untuk mode Gelap Ekstrem</string>
+    <string name="use_gradient_background_description_off_auto">Latar belakang klasik aplikasi sedang digunakan. Tidak berlaku untuk mode Gelap Ekstrem</string>
+    <string name="category_dark_mode">Mode Gelap</string>
+    <string name="category_theming">Tema</string>
+    <string name="customization_title">Kustomisasi</string>
+    <string name="customization_description">Kustomisasi latar belakang layar beranda dan tampilan visual</string>
+    <string name="home_background_image">Gambar Latar Belakang</string>
+    <string name="home_background_image_description">Pilih gambar kustom untuk layar beranda utama</string>
+    <string name="home_background_default">Default (bg.png)</string>
+    <string name="home_background_custom">Gambar Kustom</string>
+    <string name="btn_choose_image">Pilih Gambar</string>
+    <string name="btn_reset_default">Atur Ulang ke Default</string>
+    <string name="home_button_colors">Warna Tombol &amp; Gradien</string>
+    <string name="home_button_colors_description">Kustomisasi warna dan gradien dari 4 tombol layar beranda</string>
+    <string name="btn_color_self_mode">Tombol Mode Mandiri</string>
+    <string name="btn_color_usb">Tombol USB</string>
+    <string name="btn_color_wifi">Tombol Wi-Fi</string>
+    <string name="btn_color_settings">Tombol Pengaturan</string>
+    <string name="btn_reset_colors">Atur Ulang Semua Warna Tombol</string>
+    <string name="btn_make_all_monochrome">Jadikan semua tombol monokrom</string>
+    <string name="auto_monochrome_at_night">Beralih ke monokrom di malam hari</string>
+    <string name="auto_monochrome_at_night_description">Mengalihkan tombol berwarna ke abu-abu lembut dalam mode gelap untuk meminimalkan silau saat berkendara</string>
+    <string name="bg_night_behavior_title">Latar Belakang di Malam Hari</string>
+    <string name="bg_night_behavior_description">Mengontrol bagaimana latar belakang ditampilkan saat mode gelap aktif</string>
+    <string name="bg_night_behavior_dim">Redup (50%)</string>
+    <string name="bg_night_behavior_pure_black">Hitam Murni (OLED)</string>
+    <string name="bg_night_behavior_none">Tidak Berubah</string>
+    <string name="bg_style_title">Gaya Latar Belakang</string>
+    <string name="bg_style_description">Pilih tampilan latar belakang jika tidak ada gambar kustom yang digunakan</string>
+    <string name="bg_type_standard">Default (Biru Klasik)</string>
+    <string name="bg_type_gradient">Gradien</string>
+    <string name="bg_type_pure_black">Hitam Murni (OLED)</string>
+    <string name="bg_type_custom">Gambar Kustom</string>
+    <string name="pick_color_title">Pilih Warna Tombol</string>
+    <string name="color_preset_default">Default</string>
+    <string name="color_custom_hex">Warna Heksadesimal</string>
+    <string name="home_button_scale">Ukuran Tombol</string>
+    <string name="home_button_scale_description">Sesuaikan ukuran 4 tombol di layar beranda</string>
+    <string name="home_button_scale_preview">Pratinjau Layar Beranda Langsung</string>
+    <string name="btn_reset_scale">Atur Ulang Ukuran Tombol</string>
+    <string name="category_automation">Otomatisasi</string>
+    <string name="dark_mode_settings">Pengaturan Mode Gelap</string>
+    <string name="app_theme_short">Aplikasi</string>
+    <string name="night_mode_short">Android Auto</string>
+    <string name="aa_monochrome">Jadikan Android Auto Monokrom</string>
+    <string name="aa_monochrome_description">Mengurangi warna Android Auto untuk berkendara di malam hari. Memerlukan mode tampilan GLES. Hanya berlaku saat mode gelap diaktifkan</string>
+    <string name="aa_desaturation">Desaturasi</string>
+    <string name="aa_desaturation_description">Mengontrol seberapa banyak warna yang dihilangkan. Hanya berlaku saat mode gelap diaktifkan</string>
+    <string name="gles_required_title">Memerlukan GLES</string>
+    <string name="gles_required_message">Mode monokrom memerlukan perenderan GLES untuk menerapkan filter skala abu-abu pada keluaran video. Aktifkan GLES?</string>
+    <string name="enable_gles">Aktifkan GLES</string>
+    <string name="category_navigation">Navigasi</string>
+    <string name="category_wireless">Koneksi Nirkabel</string>
+
+    <string name="reconnection_required_title">Perlu Menghubungkan Ulang</string>
+    <string name="reconnection_required_message">Perangkat sedang dalam status menunggu. Silakan cabut dan colokkan kembali kabel USB untuk memulai Android Auto lagi.</string>
+
+    <string name="bluetooth_address_s">Alamat Bluetooth</string>
+    <string name="enter_bluetooth_mac">Masukkan MAC Bluetooth</string>
+    <string name="bluetooth_address_message">Alamat perangkat head unit ini yang digunakan ponsel untuk mengenalinya. Temukan di Pengaturan, Tentang, Status, atau pada ponsel yang dipasangkan di bawah ikon roda gigi di samping perangkat ini. Biarkan kosong untuk mendeteksi secara otomatis.</string>
+    <string name="invalid_bluetooth_address">Itu bukan alamat Bluetooth yang valid. Masukkan enam pasang digit heksadesimal, seperti 0C:32:3A:2D:5D:4A.</string>
+    <string name="reset">Atur Ulang</string>
+    <string name="reset_settings">Atur Ulang ke Default</string>
+    <string name="reset_settings_confirm">Apakah Anda yakin ingin mengatur ulang semua pengaturan ke nilai default? Ini akan memulai ulang aplikasi.</string>
+    <string name="reset_settings_description">Menghapus semua konfigurasi, data cache, dan preferensi hubungkan otomatis. Aplikasi akan dimulai ulang untuk menerapkan default pabrik.</string>
+    <string name="gps_for_navigation">GPS untuk navigasi</string>
+    <string name="gps_for_navigation_description">Gunakan GPS untuk navigasi</string>
+    <string name="enabled">Diaktifkan</string>
+    <string name="disabled">Dinonaktifkan</string>
+    <string name="resolution">Resolusi</string>
+    <string name="change_resolution">Ubah resolusi</string>
+    <string name="change_dpi">Ubah DPI</string>
+    <string name="change_view_mode">Ubah mode tampilan</string>
+    <string name="view_mode">Mode tampilan</string>
+    <string name="surface_view">SurfaceView</string>
+    <string name="texture_view">TextureView</string>
+    <string name="gles_view">GLES20</string>
+    <string name="auto">Otomatis</string>
+    <string name="screen_orientation">Orientasi layar</string>
+    <string name="change_screen_orientation">Ubah orientasi layar</string>
+    <string name="orientation_system_default">Default Sistem</string>
+    <string name="orientation_auto_sensor">Otomatis (Sensor)</string>
+    <string name="orientation_landscape">Lanskap (0°)</string>
+    <string name="orientation_landscape_reverse">Lanskap Terbalik (180°)</string>
+    <string name="orientation_portrait">Potret (90°)</string>
+    <string name="orientation_portrait_reverse">Potret Terbalik (270°)</string>
+    <string name="enter_dpi_value">Masukkan nilai DPI (0 untuk otomatis)</string>
+    <string name="enter_pixel_aspect_ratio_value">Rasio aspek piksel x10000 (10000 = piksel persegi)</string>
+    <string name="custom_margin">Margin Kustom</string>
+    <string name="custom_margin_description">Atur margin tampilan kustom (0 untuk otomatis)</string>
+    <string name="enter_custom_margins">Masukkan margin kustom (0 untuk otomatis)</string>
+    <string name="margin_left">Kiri</string>
+    <string name="margin_top">Atas</string>
+    <string name="margin_right">Kanan</string>
+    <string name="margin_bottom">Bawah</string>
+
+    <string name="start_in_fullscreen_mode">Mode layar</string>
+    <string name="start_in_fullscreen_mode_description">Pilih bagaimana bilah sistem (status dan navigasi) harus ditangani.</string>
+    <string name="fullscreen_none">Normal (Semua bilah terlihat)</string>
+    <string name="fullscreen_immersive">Imersif (Melapisi Notch)</string>
+    <string name="fullscreen_status_only">Sembunyikan bilah status saja</string>
+    <string name="fullscreen_immersive_avoid_notch">Imersif (Hindari Notch)</string>
+    <string name="fullscreen_immersive_avoid_notch_desc">Menyembunyikan semua bilah dan menambahkan bantalan untuk mencegah proyeksi tertutup oleh Notch/Cutout.</string>
+
+    <string name="usb_status">Status USB: %s</string>
+    <string name="projection_status">Status Proyeksi: %s</string>
+    <string name="connected">Terhubung</string>
+    <string name="disconnected">Terputus</string>
+    <string name="running">Berjalan</string>
+    <string name="not_running">Tidak Berjalan</string>
+    <string name="no_android_auto_device_connected">Tidak ada perangkat Android Auto yang terhubung. Silakan periksa koneksi USB.</string>
+    <string name="no_usb_device_connected">Tidak ada perangkat USB yang terhubung ke perangkat.</string>
+    <string name="no_usb_host_support">Head unit ini tidak mendukung mode host USB, jadi Android Auto berkabel tidak tersedia. Gunakan koneksi nirkabel sebagai gantinya.</string>
+    <string name="press_back_again_to_exit">Tekan kembali lagi untuk keluar</string>
+    <string name="back">Kembali</string>
+    <string name="debug_mode">Mode Debug</string>
+    <string name="debug_mode_description">Alihkan pencatatan log yang lebih mendalam</string>
+    <string name="allow_external_configuration">Izinkan konfigurasi eksternal</string>
+    <string name="allow_external_configuration_description">Biarkan aplikasi otomatisasi seperti Tasker atau MacroDroid mengubah pengaturan, mengatur tingkat log, dan mengekspor log. Menghubungkan dan memutuskan selalu berfungsi; ini hanya untuk perintah yang mengubah cara head unit dikonfigurasi.</string>
+    <string name="log_level">Tingkat Log</string>
+    <string name="log_level_description">Filter tingkat log saat mengekspor</string>
+    <string name="log_source">Sumber Log</string>
+    <string name="log_source_logcat">Logcat</string>
+    <string name="log_source_applog_file">Langsung ke file</string>
+    <string name="log_location">Lokasi Penyimpanan Log</string>
+    <string name="log_location_default">Default (Penyimpanan Aplikasi)</string>
+    <string name="log_location_downloads">Folder Unduhan</string>
+    <string name="start_log_capture">Mulai Merekam Log</string>
+    <string name="start_log_capture_description">Mulai merekam log lengkap untuk debugging</string>
+    <string name="start_log_capture_in_applog_file">Pesan log ditulis ke file hanya selama perekaman aktif</string>
+    <string name="start_log_capture_in_silent">Tidak dapat memulai perekaman: Tingkat log senyap (Silent) dipilih</string>
+    <string name="stop_log_capture">Hentikan Perekaman Log</string>
+    <string name="stop_log_capture_description">Perekaman sedang berlangsung… ketuk untuk menghentikan</string>
+    <string name="export_logs">Ekspor Log</string>
+    <string name="export_logs_description">Simpan log untuk debugging</string>
+
+    <string name="not_set">Belum Diatur</string>
+    <string name="keymap_description">Ubah pemetaan tombol untuk Headunit Anda</string>
+
+    <string name="key_soft_left">Tombol Fungsi Kiri</string>
+    <string name="key_soft_right">Tombol Fungsi Kanan</string>
+    <string name="key_dpad_up">D-Pad Atas</string>
+    <string name="key_dpad_down">D-Pad Bawah</string>
+    <string name="key_dpad_left">D-Pad Kiri</string>
+    <string name="key_dpad_right">D-Pad Kanan</string>
+    <string name="key_dpad_center">D-Pad Tengah (OK)</string>
+    <string name="key_media_play">Putar Media</string>
+    <string name="key_media_pause">Jeda Media</string>
+    <string name="key_media_play_pause">Putar/Jeda Media</string>
+    <string name="key_media_next">Trek Berikutnya</string>
+    <string name="key_media_prev">Trek Sebelumnya</string>
+    <string name="key_search">Perintah Suara</string>
+    <string name="key_call">Telepon (Terima)</string>
+    <string name="key_endcall">Akhiri Panggilan (Tolak)</string>
+    <string name="key_music">Musik</string>
+    <string name="key_nav">Navigasi</string>
+    <string name="key_night">Alihkan Mode Malam</string>
+    <string name="key_enter">Enter</string>
+    <string name="key_home">Home</string>
+    <string name="key_app_switch">Alih Aplikasi / Terkini</string>
+    <string name="key_button_a">Tombol A (Pilih)</string>
+    <string name="key_button_b">Tombol B (Kembali)</string>
+
+    <!-- Language Settings -->
+    <string name="app_language">Bahasa Aplikasi</string>
+    <string name="system_default">Default Sistem</string>
+    <string name="change_language">Ubah Bahasa</string>
+
+    <!-- Categories for SettingsFragment -->
+    <string name="category_general">Umum</string>
+    <string name="auto_start_self_mode">Mulai otomatis Mode Mandiri</string>
+    <string name="auto_start_self_mode_description">Mulai Mode Mandiri secara otomatis saat aplikasi dibuka.</string>
+    <string name="usb_auto_connect">Hubungkan otomatis USB</string>
+    <string name="usb_auto_connect_description">Hubungkan secara otomatis ke perangkat USB yang dikenal saat aplikasi dibuka.</string>
+    <string name="auto_start_bt_label">Mulai otomatis saat Bluetooth tersambung</string>
+    <string name="auto_start_overlay_missing_hint">Izin tampilkan di atas aplikasi lain belum diberikan, sehingga mulai otomatis akan menampilkan notifikasi alih-alih membuka layar. Ketuk untuk memberikan izin.</string>
+    <string name="auto_start_bt_description">Buka Open Headunit secara otomatis saat perangkat Bluetooth tertentu tersambung.</string>
+    <!-- Asked once, after the first connection, when this unit is paired to exactly one phone. -->
+    <string name="auto_start_offer_title">Mulai secara otomatis?</string>
+    <string name="auto_start_offer_message">Apakah Anda ingin memulai aplikasi secara otomatis dengan perangkat ini, %1$s?</string>
+    <!-- Own strings rather than android.R.string.yes/no, which render as OK and Cancel from Android 9. -->
+    <string name="auto_start_offer_yes">Ya</string>
+    <string name="auto_start_offer_no">Tidak</string>
+    <string name="auto_start_offer_countdown">Tidak dalam %1$ds</string>
+    <string name="listen_for_usb_devices_label">Dengarkan Perangkat USB</string>
+    <string name="listen_for_usb_devices_description">Tampilkan konfirmasi sistem Android saat perangkat USB dicolokkan.</string>
+    <string name="show_toast_messages">Tampilkan Pesan Toast</string>
+    <string name="show_toast_messages_description">Tampilkan pesan toast status saat menghubungkan, memutuskan, dan berpindah mode.</string>
+    <string name="auto_start_usb_label">Mulai otomatis saat USB tersambung</string>
+    <string name="auto_start_usb_description">Buka aplikasi secara otomatis dan coba hubungkan saat perangkat USB dicolokkan</string>
+    <string name="auto_start_settings">Pengaturan mulai otomatis</string>
+    <string name="auto_start_settings_description">Konfigurasikan kapan aplikasi dimulai secara otomatis</string>
+    <string name="auto_start_oem_warning">Perangkat ini mungkin memerlukan pengaktifan mulai otomatis serta penonaktifan pengoptimalan baterai atau pembatasan latar belakang untuk aplikasi ini.\n\nPada head unit dengan Quick Boot (boot cepat), mulai otomatis mungkin tidak berfungsi. Cari \"DuraSpeed\" di pengaturan sistem Anda dan aktifkan aplikasi ini di sana. Pada beberapa head unit, DuraSpeed tersembunyi dan Anda mungkin memerlukan aplikasi seperti \"Hidden Settings\" untuk menemukannya. Jika Anda tidak memiliki DuraSpeed, coba nonaktifkan Quick Boot.</string>
+    <string name="auto_start_on_boot_label">Mulai saat boot</string>
+    <string name="auto_start_on_boot_description">Buka aplikasi secara otomatis saat perangkat menyala. Memerlukan izin \'Tampilkan di atas aplikasi lain\' di Android 10+</string>
+    <string name="auto_start_screen_on_label">Mulai saat layar menyala</string>
+    <string name="auto_start_screen_on_description">Buka aplikasi setiap kali layar menyala. Ideal untuk head unit yang tidak pernah mati sepenuhnya atau menggunakan mode boot cepat di mana opsi mulai otomatis lainnya tidak berfungsi. Tidak disarankan untuk ponsel atau tablet.</string>
+    <string name="select_bt_device">Pilih Perangkat Bluetooth</string>
+    <string name="bt_device_not_set">Belum diatur</string>
+    <string name="no_paired_bt_devices">Tidak ada perangkat Bluetooth tersanding yang ditemukan</string>
+    <string name="auto_disconnect_bt_label">Putuskan otomatis saat Bluetooth terputus</string>
+    <string name="select_bt_disconnect_device">Pilih perangkat Bluetooth untuk dipantau</string>
+    <string name="native_poke_bt_label">Perangkat untuk dibangunkan untuk Android Auto nirkabel</string>
+    <string name="select_bt_poke_device">Pilih perangkat Bluetooth untuk dibangunkan</string>
+    <string name="native_poke_all_paired_label">Bangunkan setiap perangkat tersanding</string>
+    <string name="native_poke_all_paired_description">Jika tidak ada perangkat yang dipilih di atas, hubungkan sebentar ke setiap perangkat tersanding untuk memulai Android Auto. Matikan ini agar tidak membangunkan perangkat apa pun sampai Anda memilihnya.</string>
+    <string name="auto_disconnect_bt_delay_label">Tunggu sebelum memutuskan</string>
+    <string name="auto_disconnect_bt_delay_value">%1$d dtk</string>
+    <string name="auto_disconnect_bt_delay_immediate">Langsung</string>
+    <string name="enter_auto_disconnect_bt_delay">Detik untuk menunggu sebelum mengakhiri sesi</string>
+    <string name="auto_disconnect_bt_delay_hint">Sambungan Bluetooth dapat terputus sejenak saat profil tersambung kembali. Sesi hanya berakhir jika perangkat masih hilang setelah durasi ini.</string>
+    <string name="auto_disconnect_bt_kill_hint">Mengakhiri sesi seperti tombol Keluar saat Bluetooth perangkat yang dipilih terputus, misalnya saat mobil dimatikan. Pilih Bluetooth mobil jika unit ini tersanding dengannya. Untuk juga menutup aplikasi dan menampilkan layar beranda, aktifkan \"Tutup aplikasi saat terputus\" di bawah Otomatisasi.</string>
+    <string name="auto_start_wifi_label">Mulai otomatis saat Wi-Fi tersambung</string>
+    <string name="auto_start_wifi_description">Buka Open Headunit secara otomatis saat terhubung ke SSID Wi-Fi tertentu.</string>
+    <string name="auto_start_wifi_ssid_label">SSID Wi-Fi</string>
+    <string name="auto_start_wifi_ssid_description">Hubungkan hanya jika tersambung ke SSID Wi-Fi ini</string>
+    <string name="auto_start_wifi_warning">Fitur Lama: Ini mungkin tidak berfungsi andal di Android 8+ karena pembatasan latar belakang. Pastikan aplikasi dikecualikan dari pengoptimalan baterai.</string>
+    <string name="enter_wifi_ssid">Masukkan SSID Wi-Fi</string>
+    <string name="wifi_ssid_not_set">Belum diatur</string>
+    <string name="bt_permission_denied_title">Izin Bluetooth Diperlukan</string>
+    <string name="bt_permission_denied_message">Izin Bluetooth diperlukan untuk memilih perangkat tersanding. Berikan izin di pengaturan aplikasi.</string>
+    <string name="overlay_permission_title">Izin Mulai di Latar Belakang</string>
+    <string name="overlay_permission_description">Untuk mengizinkan Open Headunit terbuka secara otomatis saat Bluetooth tersambung, aktifkan izin \"Tampilkan di atas aplikasi lain\" pada layar berikutnya.</string>
+    <string name="open_settings">Pengaturan</string>
+    <string name="cannot_open_settings">Tidak dapat membuka pengaturan sistem</string>
+    <string name="right_hand_drive">Kemudi kanan</string>
+    <string name="right_hand_drive_description">Posisikan UI untuk mengemudi di sisi kanan</string>
+    <string name="wireless_connection_settings">Koneksi Nirkabel</string>
+    <string name="category_graphic">Grafik</string>
+
+    <string name="static_bssid_title">BSSID Statis (Alamat MAC)</string>
+    <string name="static_bssid_enter_value">Masukkan BSSID (XX:XX:XX:XX:XX:XX)</string>
+    <string name="static_bssid_desc">Atur BSSID access point secara manual. Hanya diperlukan jika tidak ada komponen di perangkat ini yang melaporkannya; log mencatat setiap sumber yang diperiksa.</string>
+    <string name="static_p2p_bssid_title">BSSID Statis (Wi-Fi Direct)</string>
+    <string name="static_p2p_bssid_desc">Atur BSSID grup Wi-Fi Direct secara manual. Terpisah dari BSSID access point karena keduanya adalah antarmuka yang berbeda.</string>
+
+    <string name="custom_insets">Inset Kustom (Margin)</string>
+    <string name="inset_top">Atas</string>
+    <string name="inset_bottom">Bawah</string>
+    <string name="inset_left">Kiri</string>
+    <string name="inset_right">Kanan</string>
+    <string name="category_debug">Debug</string>
+
+    <!-- Video Settings -->
+    <string name="category_video">Video</string>
+    <string name="force_software_decoding">Paksa Dekode Perangkat Lunak</string>
+    <string name="force_software_decoding_description">Dapat mengatasi masalah pada beberapa perangkat, namun kinerjanya lebih rendah</string>
+    <string name="software_video_decoder">Sumber Dekoder Perangkat Lunak</string>
+    <string name="software_video_decoder_bundled">FFmpeg Bawaan</string>
+    <string name="software_video_decoder_device">MediaCodec Perangkat</string>
+    <string name="wireless_mode">Mode Nirkabel</string>
+    <string name="wireless_mode_description">Pilih cara aplikasi terhubung secara nirkabel (Daftar manual, Pencarian otomatis ponsel, atau mode Peluncur Nirkabel)</string>
+    <string-array name="wireless_connection_modes">
+        <item>Manual (Daftar)</item>
+        <item>Pencarian otomatis (Headunit Server)</item>
+        <item>Wireless Helper (Menunggu Ponsel)</item>
+        <item>Android Auto Asli (Handshake Resmi)</item>
+    </string-array>
+    <string name="auto_connect_last_session">Hubungkan Otomatis Sesi Terakhir</string>
+    <string name="auto_connect_last_session_description">Hubungkan kembali secara otomatis ke perangkat yang terakhir digunakan saat aplikasi dimulai</string>
+    <string name="auto_connect_single_usb">Hubungkan otomatis perangkat USB</string>
+    <string name="auto_connect_single_usb_description">Hubungkan secara otomatis ketika hanya satu perangkat yang kompatibel tersedia</string>
+    <string name="auto_connect_settings">Pengaturan Hubungkan Otomatis</string>
+    <string name="auto_connect_settings_description">Konfigurasikan metode koneksi otomatis dan urutan prioritasnya</string>
+    <string name="auto_connect_help">Metode ini berjalan otomatis saat aplikasi dibuka. Aktifkan metode yang diinginkan, lalu seret untuk mengatur urutan. Metode aktif pertama yang berhasil akan digunakan.</string>
+    <string name="auto_connect_priority">Prioritas %d</string>
+    <string name="auto_connect_all_disabled">Semua dinonaktifkan</string>
+    <string name="drag_to_reorder">Seret untuk menyusun ulang</string>
+    <string name="move_up">Pindah ke atas</string>
+    <string name="move_down">Pindah ke bawah</string>
+    <string name="auto_connecting_single_usb">Menghubungkan otomatis ke perangkat USB…</string>
+    <string name="video_codec">Kodek Video</string>
+    <string name="fps_limit">Batas FPS</string>
+    <string name="save">Simpan</string>
+    <string name="save_and_restart">Simpan (Perlu koneksi ulang)</string>
+    <string name="add_new">Tambah baru</string>
+    <string name="cancel">Batal</string>
+    <string name="enable">Aktifkan</string>
+    <string name="video_fit_mode">Kesesuaian video</string>
+    <string name="change_video_fit_mode">Ubah kesesuaian video</string>
+    <string name="video_fit_mode_fill">Rentangkan hingga penuh (tanpa bilah, mungkin terdistorsi)</string>
+    <string name="video_fit_mode_contain">Sesuaikan dengan bilah (tanpa potong, tanpa distorsi)</string>
+    <string name="video_fit_mode_cover">Penuhi dengan memotong (tanpa bilah, tanpa distorsi)</string>
+
+    <!-- More Features Settings -->
+    <string name="category_more_features">Fitur Lainnya</string>
+    <string name="pref_enable_car_launcher_title">Gunakan sebagai Peluncur Mobil</string>
+    <string name="pref_enable_car_launcher_summary">Mendaftarkan Open Headunit sebagai aplikasi layar beranda saat tombol Home mobil atau headunit ditekan</string>
+    <string name="pref_set_default_launcher_title">Aplikasi Beranda Default</string>
+    <string name="pref_default_launcher_status_active">Aktif (Ketuk untuk mengelola)</string>
+    <string name="pref_default_launcher_status_inactive">Belum diatur (Ketuk untuk mengatur sebagai default)</string>
+    <string name="pref_enable_floating_button_title">Tombol Peluncur Melayang</string>
+    <string name="pref_enable_floating_button_summary">Menampilkan tombol melayang di atas peluncur OEM dan aplikasi lain untuk kembali ke Open Headunit dengan cepat</string>
+    <string name="pref_floating_button_size_title">Ukuran Tombol Melayang</string>
+    <string name="pref_floating_button_opacity_title">Opasitas Tombol Melayang</string>
+    <string name="pref_floating_button_x_title">Posisi Horizontal (X)</string>
+    <string name="pref_floating_button_y_title">Posisi Vertikal (Y)</string>
+    <string name="pref_aa_exit_action_title">Tindakan Keluar Android Auto</string>
+    <string name="pref_aa_exit_action_summary">Tindakan saat mengetuk Keluar di dalam laci aplikasi Android Auto</string>
+    <string name="aa_exit_action_oem_launcher">Kembali ke Peluncur OEM (Minimalkan)</string>
+    <string name="aa_exit_action_app_home">Kembali ke Beranda Aplikasi</string>
+    <string name="aa_exit_action_disconnect">Putuskan Sesi</string>
+    <string name="forced_scale">Skala Paksa (Perbaikan Lama)</string>
+    <string name="forced_scale_description">Memperbaiki masalah penskalaan pada beberapa perangkat lama yang menggunakan SurfaceView. Gunakan hanya jika gambar terlihat terdistorsi atau bergeser.</string>
+    <string name="hud_mirroring">Mode HUD (Pembalikan Horizontal)</string>
+    <string name="hud_mirroring_description">Membalik tampilan secara horizontal untuk pantulan kaca depan (Head-Up Display). Memerlukan mode tampilan TextureView atau GLES20 (tidak berfungsi dengan SurfaceView).</string>
+
+    <!-- Audio Settings -->
+    <string name="category_audio">Audio</string>
+    <string name="enable_audio_sink">Audio Sink</string>
+    <string name="enable_audio_sink_description">Jika dinonaktifkan, headunit tidak akan menerima audio. Suara akan diputar dari ponsel.</string>
+    <string name="static_audio_focus">Fokus Audio Statis</string>
+    <string name="static_audio_focus_description">Memaksa ponsel percaya bahwa fokus audio selalu dipertahankan, mencegah hilangnya perutean audio pada head unit generik. Juga mengecilkan audio aplikasi secara otomatis selama petunjuk suara navigasi.</string>
+    <string name="media_key_routing">Kirim Tombol Media Ke Android Auto</string>
+    <string name="media_key_routing_always">Selalu</string>
+    <string name="media_key_routing_auto">Otomatis</string>
+    <string name="media_key_routing_never">Jangan Pernah</string>
+    <string name="media_key_routing_always_hint">Berikutnya, sebelumnya, dan putar/jeda selalu dikirim ke Android Auto. Gunakan ini kecuali satu tekanan melewati dua trek.</string>
+    <string name="media_key_routing_auto_hint">Berhenti mengirimkannya saat headunit ini memiliki koneksi media Bluetooth ke ponsel, karena koneksi tersebut sudah melakukan tindakan tersebut. Pilih ini jika satu tekanan melewati dua trek dan ponsel Anda tersanding ke headunit ini.</string>
+    <string name="media_key_routing_never_hint">Jangan pernah mengirimkannya, membiarkan tombol dikendalikan oleh Bluetooth. Pilih ini jika satu tekanan melewati dua trek dan ponsel Anda tersanding ke sistem mobil bawaan alih-alih headunit ini — Otomatis tidak dapat mendeteksi koneksi tersebut.</string>
+    <string name="media_key_routing_hint_common">Hanya tombol media yang terpengaruh. Pengontrol putar, D-pad, Kembali, dan Enter selalu diteruskan ke Android Auto.</string>
+    <string name="playback_focus_mode">Jeda Audio Lain Selama Pemutaran</string>
+    <string name="playback_focus_mode_auto">Otomatis</string>
+    <string name="playback_focus_mode_always">Selalu</string>
+    <string name="playback_focus_mode_never">Jangan Pernah</string>
+    <string name="playback_focus_mode_auto_hint">Menjeda pemutar lain di headunit (misalnya radio) saat audio Android Auto diputar. Jika hal itu justru menghentikan pemutaran di ponsel Anda (terjadi saat headunit berfungsi sebagai speaker Bluetooth ponsel), sistem akan berhenti melakukannya dan mengingatnya. Pilih mode ini lagi untuk mencobanya sekali lagi.</string>
+    <string name="playback_focus_mode_always_hint">Selalu menjeda audio lain saat Android Auto diputar. Jika musik Anda berhenti setelah satu atau dua detik setiap kali Bluetooth aktif, beralihlah kembali ke Otomatis.</string>
+    <string name="playback_focus_mode_never_hint">Jangan pernah menyentuh fokus audio sistem. Audio lain di headunit mungkin tetap diputar bersamaan dengan Android Auto.</string>
+    <string name="playback_focus_mode_static_hint">Dengan Fokus Audio Statis aktif, pengaturan ini berlaku sejak ponsel terhubung dan berlangsung sepanjang sesi, bukan hanya saat audio sedang diputar.</string>
+    <string name="separate_audio_streams">Pisahkan Aliran Audio</string>
+    <string name="separate_audio_streams_description">Berikan saluran Media, Panduan, dan Suara Sistem aliran keluarannya masing-masing alih-alih satu aliran multimedia bersama (mungkin tidak berfungsi optimal pada beberapa perangkat).</string>
+
+    <!-- Audio stream settings screen -->
+    <string name="audio_stream_settings">Aliran Audio</string>
+    <string name="audio_stream_settings_description">Pilih aliran sistem tempat setiap saluran Android Auto diputar.</string>
+    <string name="audio_stream_settings_info">Android Auto mengirim audio pada tiga saluran — Media, Panduan, dan Suara Sistem. Masing-masing diserahkan ke head unit pada aliran sistem, dan aliran yang Anda pilih menentukan tombol volume yang diikutinya serta, pada banyak head unit, apakah amplifier akan membunyikannya sama sekali. Gunakan tombol speaker untuk mendengarkan nada uji pada aliran sebelum menyimpan.</string>
+    <string name="audio_channel_media">Media</string>
+    <string name="audio_channel_media_description">Pemutaran aplikasi: musik, podcast, radio, dan buku audio. Satu-satunya saluran yang dikirim dalam stereo (48 kHz).</string>
+    <string name="audio_channel_guidance">Panduan / Navigasi</string>
+    <string name="audio_channel_guidance_description">Petunjuk arah lisan belokan demi belokan dan respons asisten suara (16 kHz mono).</string>
+    <string name="audio_channel_system">Suara Sistem / Notifikasi</string>
+    <string name="audio_channel_all">Media, Panduan, Navigasi, Notifikasi, dan Sistem</string>
+    <string name="audio_channel_all_short">semua saluran</string>
+    <string name="audio_channel_all_description">Setiap saluran audio Android Auto — pemutaran aplikasi, panduan lisan, peringatan, dan suara notifikasi — berbagi satu aliran keluaran ini.</string>
+    <string name="audio_channel_system_description">Peringatan, lonceng, dan suara notifikasi bawaan Android Auto (16 kHz mono).</string>
+    <string name="audio_stream_test">Putar nada uji pada aliran ini</string>
+    <string name="audio_stream_muted_warning">%1$s dibisukan pada perangkat ini — naikkan volumenya untuk mendengar nada uji.</string>
+    <string name="audio_stream_test_failed">Tidak dapat memutar nada uji pada aliran ini.</string>
+    <string name="audio_stream_pick_title">Aliran untuk %1$s</string>
+    <string name="audio_stream_voice_call">Panggilan suara</string>
+    <string name="audio_stream_system">Sistem</string>
+    <string name="audio_stream_ring">Nada dering</string>
+    <string name="audio_stream_music">Media (musik)</string>
+    <string name="audio_stream_alarm">Alarm</string>
+    <string name="audio_stream_notification">Notifikasi</string>
+    <string name="audio_stream_bluetooth_sco">Bluetooth SCO</string>
+    <string name="audio_stream_system_enforced">Sistem (dipaksakan)</string>
+    <string name="audio_stream_dtmf">DTMF</string>
+    <string name="audio_stream_tts">Teks-ke-ucapan</string>
+    <string name="audio_stream_accessibility">Aksesibilitas</string>
+    <string name="audio_stream_assistant">Asisten</string>
+    <string name="audio_stream_vendor_format">%1$s (%2$d)</string>
+    <string name="audio_stream_unnamed_format">Aliran %1$d</string>
+    <string name="audio_stream_unavailable_format">Aliran %1$d (tidak ada di perangkat ini)</string>
+    <string name="audio_stream_vendor_info">Head unit ini memiliki aliran keluaran yang tidak ada di Android standar, tercantum di bawah ini sesuai nama yang diberikan oleh sistemnya sendiri. Sering kali aliran inilah yang sebenarnya tersambung ke amplifier mobil, jadi ujilah dengan tombol speaker jika saluran tidak bersuara.</string>
+
+    <!-- Onboarding: audio step -->
+    <string name="onb_audio_title">Audio</string>
+    <string name="onb_audio_help">Pilih aliran sistem tempat setiap saluran Android Auto diputar, dan ketuk speaker untuk mendengarkannya. Jika sebuah saluran tidak bersuara di mobil, memindahkannya ke aliran lain biasanya menjadi solusinya.</string>
+    <string name="onb_audio_more_hint">Anda dapat mengubahnya lagi nanti di Pengaturan → Aliran Audio.</string>
+    <string name="use_aac_audio">Gunakan Audio AAC</string>
+    <string name="use_aac_audio_description">Gunakan kodek AAC untuk audio guna menghemat bandwidth (Eksperimental). Pada sesi nirkabel pada 2,4 GHz, ini aktif otomatis saat \"Turunkan video pada tautan 2,4 GHz\" aktif.</string>
+    <string name="attach_hw_dsp_equalizer">Pemicu Equalizer DSP Perangkat Keras</string>
+    <string name="attach_hw_dsp_equalizer_description">Melampirkan efek Equalizer tiruan ke sesi audio untuk memaksakan perutean DSP perangkat keras pada head unit tertentu. Biarkan dinonaktifkan jika menggunakan ViPER4Android / ViperFX atau jika suara teredam pada versi Android yang lebih lama.</string>
+    <string name="audio_volume_offset">Offset Volume Audio</string>
+    <string name="microphone_settings">Pengaturan Mikrofon</string>
+    <string name="use_head_unit_microphone">Mikrofon head unit</string>
+    <string name="use_head_unit_microphone_description">Aktif: Android Auto mendengar mikrofon perangkat ini. Nonaktif: perangkat ini tidak pernah merekam dan ponsel menggunakan mikrofonnya sendiri, atau headset/interkom yang tersanding ke ponsel, sehingga asisten suara tetap berfungsi. Memerlukan Android 11 atau lebih baru di ponsel.</string>
+    <string name="head_unit_microphone_off_info">Mikrofon head unit nonaktif, sehingga opsi di bawah tidak berlaku. Android Auto diberi tahu bahwa perangkat ini tidak dapat merekam dan merupakan sepeda motor, yang membuat ponsel merekam secara mandiri. Pada Android 10 dan yang lebih lama, ponsel melupakan hal itu di antara sesi dan mungkin berhenti menghubungkan.</string>
+    <string name="microphone_settings_description">Konfigurasikan input mikrofon dan pemrosesan audio.</string>
+    <string name="mic_wire_format_info">Android Auto selalu menerima mikrofon pada 16000 Hz, 16-bit, mono. Sistem menolak format lain, jadi pengaturan ini mengubah perilaku perangkat keras, bukan apa yang dikirim ke ponsel.</string>
+    <string name="mic_input_source">Sumber Input Mikrofon</string>
+    <string name="mic_input_source_description">Pilih sumber audio untuk mikrofon.</string>
+    <string-array name="mic_input_sources">
+        <item>Default (Ditentukan sistem)</item>
+        <item>Mikrofon Bawaan (Input mentah)</item>
+        <item>Pengenalan Suara (Peredam bising)</item>
+        <item>Komunikasi Suara (Peredam gema + bising)</item>
+        <item>Headset Bluetooth (SCO)</item>
+    </string-array>
+    <string name="mic_echo_canceler">Pembatalan gema (AEC)</string>
+    <string name="mic_echo_canceler_description">Mencoba menghilangkan gema dari mikrofon. Nonaktifkan jika Anda mengalami keheningan atau distorsi.</string>
+    <string name="mic_noise_suppressor">Peredam bising (NS)</string>
+    <string name="mic_noise_suppressor_description">Mencoba mengurangi kebisingan latar belakang. Android Auto mengharapkan ini nonaktif pada mikrofon tunggal dan melakukan pemrosesannya sendiri. Nonaktifkan jika suara Anda terdengar teredam.</string>
+    <string name="mic_auto_gain_control">Kontrol penguatan otomatis (AGC)</string>
+    <string name="mic_auto_gain_control_description">Menyesuaikan volume mikrofon secara otomatis. Android Auto mengharapkan ini nonaktif dan menerapkan kontrol penguatannya sendiri; keduanya bersamaan biasanya menghasilkan suara yang lebih buruk. Nonaktifkan jika volume tidak stabil.</string>
+    <string name="mic_feature_unsupported">Fitur ini tidak didukung pada perangkat Anda.</string>
+
+    <!-- Info Settings -->
+    <string name="category_info">Info</string>
+    <string name="about">Tentang &amp; Dukungan</string>
+    <string name="about_description">Dapatkan informasi lebih lanjut tentang Open Headunit</string>
+
+    <!-- Support / report a problem screen -->
+    <string name="support">Laporkan masalah</string>
+    <string name="support_description">Cari atau laporkan bug di GitHub</string>
+    <string name="support_title">Laporkan masalah</string>
+    <string name="support_help">Jika Anda mengalami bug atau masalah, silakan cari terlebih dahulu di daftar issue GitHub. Jika belum ada yang melaporkannya, buat issue baru dan jelaskan apa yang terjadi, jenis head unit Anda, dan langkah-langkah untuk mereproduksinya.</string>
+    <string name="support_open_issues">Buka halaman issue GitHub</string>
+    <string name="support_scan_qr">Atau pindai kode QR ini untuk membuka daftar issue di perangkat lain.</string>
+    <string name="support_github_account_warning">Catatan: Anda memerlukan akun GitHub gratis untuk membuat issue.</string>
+
+    <!-- Reporting rules modal (shown from a button under the QR on the Support screen) -->
+    <string name="support_rules_button">Aturan pelaporan</string>
+    <string name="support_rules_intro">Hanya dua hal yang wajib diisi. Hal lainnya bersifat opsional, namun membantu menyelesaikan masalah Anda jauh lebih cepat.</string>
+    <string name="support_rules_section_required">Wajib</string>
+    <string name="support_rules_section_recommend">Rekomendasi (opsional)</string>
+    <string name="support_rules_device_title">Sebutkan perangkat yang menjalankan aplikasi</string>
+    <string name="support_rules_device_desc">Versi Android dari perangkat yang memproyeksikan Android Auto (head unit atau layar Anda), serta merek dan modelnya jika Anda mengetahuinya.</string>
+    <string name="support_rules_connection_title">Sebutkan cara Anda terhubung</string>
+    <string name="support_rules_connection_desc">Kabel USB, adaptor nirkabel USB, Wi-Fi Direct, Wi-Fi (headunit server), atau Mode Mandiri. Jika nirkabel, tambahkan model adaptor atau dongle.</string>
+    <string name="support_rules_appversion_title">Sertakan versi aplikasi</string>
+    <string name="support_rules_appversion_desc">Versi Open Headunit, ditampilkan di layar Tentang.</string>
+    <string name="support_rules_logs_title">Lampirkan log, segera setelah masalah terjadi</string>
+    <string name="support_rules_logs_desc">Alihkan Pengaturan ke tab Lanjutan, aktifkan Mode Debug di bagian Debug, reproduksi masalahnya, lalu ketuk Ekspor Log tepat setelahnya agar log mencakup momen saat kerusakan terjadi. Lampirkan file tersebut ke issue Anda.</string>
+    <string name="support_rules_search_title">Hindari duplikasi</string>
+    <string name="support_rules_search_desc">Cari issue yang sudah ada terlebih dahulu. Jika issue yang terbuka sudah menjelaskan masalah Anda, tambahkan detail Anda sebagai komentar di sana daripada membuka yang baru.</string>
+    <string name="support_rules_phone_title">Ponsel Anda juga penting</string>
+    <string name="support_rules_phone_desc">Model ponsel Anda, versi Android-nya, dan versi aplikasi Android Auto di ponsel. Beberapa masalah berasal dari rilis Android Auto tertentu.</string>
+    <string name="support_rules_describe_title">Jelaskan dengan jelas</string>
+    <string name="support_rules_describe_desc">Apa yang Anda lakukan, apa yang Anda harapkan, dan apa yang sebenarnya terjadi. Cuplikan layar atau video singkat sangat membantu untuk masalah visual.</string>
+    <string name="support_rules_oneissue_title">Satu masalah per issue</string>
+    <string name="support_rules_oneissue_desc">Batasi setiap issue untuk satu masalah saja agar dapat dilacak dan diperbaiki. Buka issue terpisah untuk masalah yang tidak berhubungan.</string>
+    <string name="version">Versi</string>
+    <string name="about_title">Tentang Open Headunit</string>
+    <string name="copyright">© 2025-%d André Rinas</string>
+
+    <!-- Safety Disclaimer -->
+    <string name="disclaimer_title">Keselamatan &amp; Tanggung Jawab</string>
+    <string name="disclaimer_header">Peringatan Penting</string>
+    <string name="disclaimer_accept">Saya Mengerti dan Setuju</string>
+    <string name="disclaimer_text"><![CDATA[
+        <b>1. Fokus pada Jalan</b><br/>
+        Mengoperasikan perangkat lunak ini saat mengemudi dapat mengalihkan perhatian dan berbahaya. Selalu utamakan mengemudi yang aman dan patuhi semua peraturan lalu lintas setempat. Gunakan aplikasi ini hanya jika aman untuk melakukannya.<br/><br/>
+        <b>2. Batasan Tanggung Jawab</b><br/>
+        Open Headunit disediakan "sebagaimana adanya" tanpa jaminan apa pun. Pengembang tidak bertanggung jawab atas kecelakaan, kerusakan pada kendaraan/perangkat Anda, atau konsekuensi hukum yang timbul dari penggunaan perangkat lunak ini.<br/><br/>
+        <b>3. Tanpa Afiliasi</b><br/>
+        Proyek ini adalah inisiatif sumber terbuka independen dan tidak berafiliasi dengan, didukung oleh, atau terhubung dengan Google LLC atau merek Android Auto.
+    ]]></string>
+
+    <!-- Toast Messages -->
+    <string name="searching">Mencari…</string>
+    <string name="auto_connecting_to">Menghubungkan otomatis ke %s…</string>
+    <string name="auto_connecting_usb">Menghubungkan otomatis ke perangkat USB…</string>
+    <string name="already_connected">Sudah terhubung</string>
+    <string name="already_scanning">Sedang memindai…</string>
+    <string name="searching_headunit_server">Mencari Server Headunit…</string>
+    <string name="already_searching_phone">Sedang mencari ponsel…</string>
+    <string name="searching_phone">Mencari ponsel…</string>
+    <string name="key_mappings_reset">Pemetaan tombol diatur ulang</string>
+    <string name="press_key_to_assign">Tekan tombol untuk menetapkan ke \'%s\'…</string>
+    <string name="key_assigned">\'%1$s\' ditetapkan ke \'%2$s\'</string>
+    <string name="last_key_press">Tekanan Tombol Terakhir: %1$s (%2$d)</string>
+    <string name="scan">Pindai</string>
+    <string name="scanning_network">Memindai Jaringan…</string>
+    <string name="found_connecting">Ditemukan %s, menghubungkan…</string>
+    <string name="no_devices_found">Tidak ada perangkat yang ditemukan</string>
+    <string name="unsaved_changes">Perubahan Belum Disimpan</string>
+    <string name="unsaved_changes_message">Anda memiliki perubahan yang belum disimpan. Apakah Anda ingin membuangnya?</string>
+    <string name="discard">Buang</string>
+    <string name="stopping_service">Menghentikan layanan untuk menerapkan perubahan…</string>
+    <string name="settings_saved">Pengaturan disimpan</string>
+    <string name="category_backup">Cadangan</string>
+    <string name="export_settings">Ekspor pengaturan</string>
+    <string name="export_settings_description">Simpan cadangan pengaturan sebagai file JSON</string>
+    <string name="export_settings_choose_location">Pilih lokasi penyimpanan</string>
+    <string name="export_settings_downloads">Simpan ke Unduhan</string>
+    <string name="export_settings_app_folder">Simpan ke folder cadangan aplikasi</string>
+    <string name="import_settings">Impor pengaturan</string>
+    <string name="import_settings_description">Pulihkan pengaturan dari cadangan Open Headunit</string>
+    <string name="import_settings_choose_file">Pilih file cadangan</string>
+    <string name="import_settings_downloads">Impor dari Unduhan</string>
+    <string name="import_settings_app_folder">Impor dari folder cadangan aplikasi</string>
+    <string name="settings_exported">Pengaturan diekspor</string>
+    <string name="settings_backup_saved_to">Cadangan pengaturan disimpan di:\n%1$s</string>
+    <string name="settings_export_failed">Ekspor pengaturan gagal: %1$s</string>
+    <string name="settings_import_failed">Impor pengaturan gagal: %1$s</string>
+    <string name="settings_imported">Pengaturan diimpor: %1$d diterapkan, %2$d dilewati</string>
+    <string name="import_settings_discard_pending">Mengimpor cadangan akan membuang perubahan pengaturan Anda yang belum disimpan. Lanjutkan?</string>
+    <string name="reset_settings_confirm_message">Ini akan mengatur ulang semua pengaturan ke nilai defaultnya. Cadangan dan file aplikasi tidak akan dihapus. Lanjutkan?</string>
+    <string name="reset_settings_discard_pending">Mengatur ulang pengaturan akan membuang perubahan pengaturan Anda yang belum disimpan. Lanjutkan?</string>
+    <string name="settings_reset">Pengaturan diatur ulang ke default</string>
+    <string name="settings_reset_failed">Atur ulang pengaturan gagal: %1$s</string>
+    <string name="storage_permission_denied_backup">Izin penyimpanan ditolak. Unduhan tidak dapat digunakan.</string>
+    <string name="no_file_picker_title">Tidak ada pemilih file yang tersedia</string>
+    <string name="no_file_picker_message">Perangkat ini tidak memiliki pemilih file yang kompatibel. Anda dapat menggunakan Unduhan atau folder cadangan aplikasi sebagai gantinya.</string>
+    <string name="no_settings_backups_title">Tidak ada cadangan yang ditemukan</string>
+    <string name="no_settings_backups_message">Tidak ada cadangan Open Headunit yang ditemukan di folder cadangan aplikasi. Ekspor cadangan ke folder aplikasi terlebih dahulu, lalu impor dari sini.</string>
+    <string name="no_settings_backups_downloads_message">Tidak ada cadangan Open Headunit yang ditemukan di Unduhan. Ekspor cadangan ke Unduhan terlebih dahulu, lalu impor dari sini.</string>
+    <string name="share_settings_backup">Bagikan cadangan pengaturan</string>
+    <string name="logs_exported">Log Diekspor</string>
+    <string name="log_saved_to">Log disimpan di:\n%s</string>
+    <string name="share">Bagikan</string>
+    <string name="logs_copied_to_clipboard">Log disalin ke papan klip. Jika log lebih besar dari ~250 KB, hanya bagian awal dan akhir yang disalin agar tetap di bawah batas papan klip Android; log lengkap disimpan di:\n%s</string>
+    <string name="logs_copy_to_clipboard_failed">Gagal menyalin log ke papan klip</string>
+    <string name="close">Tutup</string>
+    <string name="failed_export_logs">Gagal mengekspor log</string>
+    <string name="failed_export_in_silent_logs">Tidak dapat mengekspor log: Tingkat pencatatan log senyap (Silent) dipilih</string>
+    <string name="switching_to_android_auto">Beralih ke Android Auto…</string>
+    <string name="switch_failed">Pengalihan gagal</string>
+    <string name="requesting_usb_permission">Meminta Izin USB…</string>
+    <string name="enter_ip_address">Masukkan Alamat IP</string>
+    <string name="switching_usb_accessory_mode">Mengalihkan perangkat USB ke mode aksesori %s</string>
+    <string name="success">Berhasil</string>
+    <string name="failed">Gagal</string>
+    <string name="failed_start_android_auto">Gagal memulai Android Auto</string>
+    <string name="failed_self_mode_android10">Mode Mandiri kemungkinan diblokir oleh Google pada Android 10 (AA 16.4+).</string>
+    <string name="android_auto_starting">Android Auto sedang dimulai…</string>
+
+    <!-- Second line of the home-screen status pill: the bring-up step the app is on. -->
+    <string name="stage_armed">Menunggu ponsel Anda</string>
+    <string name="stage_usb_attached">Perangkat USB tersambung</string>
+    <string name="stage_preparing_network">Menyiapkan jaringan</string>
+    <string name="stage_searching">Mencari ponsel Anda</string>
+    <string name="stage_usb_switching">Mengalihkan ponsel Anda ke Android Auto</string>
+    <string name="stage_creating_network">Membuat jaringan Wi-Fi</string>
+    <string name="stage_waiting_for_phone">Menunggu ponsel Anda terhubung</string>
+    <string name="stage_waking_phone">Membangunkan ponsel Anda</string>
+    <string name="stage_phone_answered">Ponsel Anda merespons</string>
+    <string name="stage_sending_credentials">Mengirim detail jaringan ke ponsel Anda</string>
+    <string name="stage_phone_joining">Ponsel Anda sedang bergabung ke jaringan</string>
+    <string name="stage_connecting">Menghubungkan</string>
+    <string name="stage_securing">Mengamankan koneksi</string>
+    <string name="stage_starting_projection">Memulai Android Auto</string>
+
+    <!-- Third line of the home-screen status pill: the WiFi Direct group, in place of the toasts that covered the pill. -->
+    <string name="network_detail_5ghz">Wi-Fi Direct pada 5 GHz (%1$d MHz)</string>
+    <string name="network_detail_24ghz">Wi-Fi Direct pada 2,4 GHz, saluran %1$d</string>
+    <string name="network_detail_unknown">Jaringan Wi-Fi Direct aktif</string>
+    <string name="network_detail_retrying_5ghz">Wi-Fi Direct aktif pada 2,4 GHz, mencoba lagi 5 GHz</string>
+    <string name="network_detail_unfriendly_channel">Wi-Fi Direct berada di saluran %1$d, yang tidak dapat diikuti sebagian besar ponsel. Mulai ulang Wi-Fi.</string>
+    <string name="connection_interrupted">Koneksi terputus</string>
+    <string name="connection_interrupted_detail">Mencoba lagi…</string>
+    <string name="renderer_fallback_surface">Video sering berhenti membeku, jadi tampilan dialihkan ke SurfaceView untuk sesi ini. Jika stabil, atur Mode tampilan ke SurfaceView di Pengaturan.</string>
+    <string name="wifi_disconnect_toast">Android Auto terputus: Jika menggunakan AA nirkabel, nonaktifkan \"Beralih antar jaringan\" atau \"Akselerasi jaringan\" di pengaturan Wi-Fi ponsel</string>
+    <string name="reset_usb_option">Atur Ulang Koneksi USB</string>
+    <string name="reset_usb_timeout">Perangkat USB tidak ditemukan. Silakan periksa koneksi.</string>
+    <string name="notification_service_running">Open Headunit sedang berjalan</string>
+    <string name="boot_loop_paused_title">Memulai nirkabel dijeda</string>
+    <string name="boot_loop_paused_generic">Perangkat ini dimulai ulang tiga kali berturut-turut sesaat setelah Open Headunit memulai nirkabel, jadi nirkabel dinonaktifkan kali ini. USB tetap berfungsi. Buka aplikasi untuk mengaktifkannya kembali.</string>
+    <string name="boot_loop_paused_native_wifi_direct">Perangkat ini dimulai ulang tiga kali berturut-turut sesaat setelah Open Headunit memulai nirkabel, jadi nirkabel dinonaktifkan kali ini. Pada beberapa head unit, chipset Wi-Fi membuat seluruh sistem crash saat ponsel bergabung ke jaringan Wi-Fi Direct. Coba alihkan mode Android Auto ke hotspot head unit. USB tetap berfungsi.</string>
+    <string name="notification_projection_active">Android Auto diproyeksikan</string>
+    <string name="shortcut_connect_title">Hubungkan</string>
+    <string name="shortcut_connect_desc">Hubungkan otomatis ke ponsel terakhir</string>
+    <string name="shortcut_selfmode_title">Mode Mandiri</string>
+    <string name="shortcut_selfmode_desc">Mulai Android Auto di perangkat ini</string>
+    <string name="shortcut_disconnect_title">Putuskan</string>
+    <string name="shortcut_disconnect_desc">Akhiri sesi saat ini</string>
+    <string name="shortcut_exit_title">Keluar Aplikasi</string>
+    <string name="shortcut_exit_desc">Hentikan semua layanan dan tutup aplikasi</string>
+    <string name="shortcut_night_mode_auto_title">Mode: Otomatis</string>
+    <string name="shortcut_night_mode_auto_desc">Pulihkan mode malam otomatis</string>
+    <string name="shortcut_night_mode_day_title">Mode: Siang</string>
+    <string name="shortcut_night_mode_day_desc">Paksa mode siang</string>
+    <string name="shortcut_night_mode_night_title">Mode: Malam</string>
+    <string name="shortcut_night_mode_night_desc">Paksa mode malam</string>
+    <string name="setup_welcome_title">Penyiapan Cepat</string>
+    <string name="setup_welcome_msg">Panduan ini membantu Anda memilih pengaturan terbaik untuk pengalaman Android Auto yang lancar.\n\nAnda selalu dapat mengubah pengaturan ini nanti atau memulai ulang panduan ini dari pengaturan aplikasi.</string>
+    <string name="setup_start">Mulai</string>
+    <string name="setup_size_title">Ukuran Layar</string>
+    <string name="setup_size_phone">Ponsel / Kecil (4-6\")</string>
+    <string name="setup_size_small">Tablet Kecil (7-8\")</string>
+    <string name="setup_size_standard">Standar (9-10\")</string>
+    <string name="setup_size_large">Besar (11\"+)</string>
+    <string name="setup_orientation_title">Orientasi Perangkat</string>
+    <string name="setup_orientation_landscape">Lanskap (Horizontal)</string>
+    <string name="setup_orientation_portrait">Potret (Vertikal)</string>
+    <string name="setup_result_title">Optimalisasi Selesai</string>
+    <string name="setup_apply">Terapkan</string>
+    <string name="setup_widescreen_detected">Layar lebar (widescreen) terdeteksi.</string>
+    <string name="auto_optimize">Optimalkan Pengaturan Otomatis</string>
+    <string name="auto_optimize_desc">Jalankan pemeriksaan sistem untuk menemukan pengaturan terbaik untuk perangkat Anda.</string>
+
+    <!-- Navigation notifications (from any AA nav app) -->
+    <string name="show_navigation_notifications">Notifikasi navigasi</string>
+    <string name="show_navigation_notifications_description">Tampilkan \"Dalam X meter lakukan Y\" dan nama jalan saat ini di notifikasi (untuk debugging)</string>
+    <string name="media_session_aa_status_placeholder">Terhubung</string>
+    <string name="sync_media_session_aa_metadata">Info lagu AA di sesi media sistem</string>
+    <string name="sync_media_session_aa_metadata_description">Tampilkan judul lagu, artis, durasi, dan sampul album dari ponsel di sesi media sistem dan notifikasi media</string>
+    <string name="auto_resume_playback_on_reconnect">Lanjutkan pemutaran otomatis saat tersambung kembali</string>
+    <string name="auto_resume_playback_on_reconnect_description">Lanjutkan pemutaran musik secara otomatis jika sebelumnya sedang aktif diputar sebelum koneksi terputus singkat (dalam 60 detik)</string>
+    <string name="nav_notification_channel_name">Navigasi</string>
+    <string name="nav_notification_channel_description">Pembaruan navigasi belokan demi belokan dari Android Auto</string>
+    <string name="nav_notification_title_format">Dalam %1$d m — %2$s</string>
+    <string name="nav_notification_street_format">Jalan: %1$s</string>
+    <string name="nav_action_unknown">Tindakan</string>
+    <string name="nav_action_depart">Berangkat</string>
+    <string name="nav_action_name_change">Perubahan nama jalan</string>
+    <string name="nav_action_slight_turn">Belok sedikit</string>
+    <string name="nav_action_turn">Belok</string>
+    <string name="nav_action_sharp_turn">Belok tajam</string>
+    <string name="nav_action_uturn">Putar balik</string>
+    <string name="nav_action_on_ramp">Masuk jalan</string>
+    <string name="nav_action_off_ramp">Keluar jalan</string>
+    <string name="nav_action_merge">Bergabung</string>
+    <string name="nav_action_roundabout_enter">Masuk bundaran</string>
+    <string name="nav_action_roundabout_exit">Keluar bundaran</string>
+    <string name="nav_action_roundabout">Bundaran</string>
+    <string name="nav_action_straight">Lurus</string>
+    <string name="nav_action_ferry">Kapal feri</string>
+    <string name="nav_action_ferry_train">Feri / kereta</string>
+    <string name="nav_action_destination">Tiba di tujuan</string>
+    <string name="show_performance_overlay">Tampilkan Hamparan Performa</string>
+    <string name="overlay_position">Posisi hamparan performa</string>
+    <string name="five_ghz_channel">Saluran 5 GHz</string>
+    <string name="five_ghz_channel_auto">Otomatis</string>
+    <string name="five_ghz_channel_option">Saluran %1$d (%2$d MHz)</string>
+    <string name="five_ghz_channel_hint">Saluran hanyalah permintaan, bukan jaminan. Banyak head unit hanya akan menghosting jaringan di mana driver Wi-Fi mereka sendiri memilihnya. Jika tidak ada saluran 5 GHz yang berfungsi dan ponsel Anda masih tidak dapat melihat jaringan, ubah pita ke 2,4 GHz.</string>
+    <string name="wifi_direct_stable_identity">Pertahankan jaringan Wi-Fi Direct yang sama</string>
+    <string name="wifi_direct_stable_identity_description">Menggunakan nama jaringan dan kata sandi yang sama setiap saat, sehingga ponsel Anda bergabung kembali ke jaringan yang sudah dikenalnya. Gunakan baris di bawah untuk memperbaruinya.</string>
+    <string name="wifi_direct_new_identity">Identitas jaringan Wi-Fi Direct baru</string>
+    <string name="wifi_direct_new_identity_none">Dipilih pada koneksi berikutnya</string>
+    <string name="wifi_direct_new_identity_confirm">Memilih nama dan kata sandi baru untuk grup, yang digunakan mulai dari koneksi berikutnya. Ponsel Anda akan disiapkan untuk itu melalui Bluetooth seperti perangkat baru. Lakukan ini jika ponsel terus mencoba jaringan yang sudah tidak dapat diikutinya.</string>
+    <string name="wifi_direct_new_identity_done">Identitas jaringan baru akan digunakan mulai dari koneksi berikutnya.</string>
+    <string name="wifi_direct_new_identity_applied">Identitas jaringan baru sedang disiapkan sekarang. Ponsel Anda akan diminta untuk bergabung pada koneksi berikutnya.</string>
+    <string name="wifi_direct_stable_identity_description_legacy">Pada versi Android ini sistem memilih nama dan aplikasi tidak dapat memintanya. Biarkan ini aktif agar ponsel Anda bergabung kembali ke jaringan yang sudah dikenalnya.</string>
+    <string name="wifi_direct_last_network">Detail jaringan yang ditawarkan kepada ponsel Anda</string>
+    <string name="wifi_direct_last_network_none">Belum ada yang terlihat. Hubungkan sekali, lalu kembali ke sini.</string>
+    <string name="wifi_direct_last_network_title">Jaringan yang ditawarkan ke ponsel Anda</string>
+    <string name="wifi_direct_last_network_details">Nama\n%1$s\n\nKata Sandi\n%2$s\n\nAlamat\n%3$s</string>
+    <string name="wifi_direct_last_network_address_unknown">Tidak dapat dibaca</string>
+    <string name="wifi_direct_last_network_no_bssid">Aplikasi tidak dapat membaca alamat jaringan ini. Hal itu mencegah ponsel bergabung, dan mengaktifkan Lokasi untuk perangkat ini biasanya menjadi solusinya.</string>
+    <string name="wifi_direct_last_network_differs">Ini bukan nama dan kata sandi yang diminta aplikasi, sehingga sistem menggantinya. Gunakan \"Identitas jaringan Wi-Fi Direct baru\" di atas untuk membuat pasangan baru.</string>
+    <string name="wifi_direct_last_network_hint">Bergabung ke jaringan ini secara manual di ponsel Anda tidak akan memulai Android Auto, karena ponsel akan bergabung sendiri setelah disiapkan melalui Bluetooth. Ini adalah cara untuk memeriksa apakah jaringan berfungsi sama sekali.</string>
+    <string name="wifi_direct_group_identity">Nama dan kata sandi Wi-Fi Direct</string>
+    <string name="wifi_direct_group_identity_auto">Dipilih oleh aplikasi. Ketuk untuk mengatur sendiri.</string>
+    <string name="wifi_direct_group_identity_pick_new">Pilihkan yang baru untuk saya</string>
+    <string name="wifi_direct_group_identity_message">Nama dan kata sandi yang diberikan kepada ponsel Anda untuk bergabung dengan head unit ini. Mengubah kata sandi juga mengubah nama, karena ponsel tidak dapat bergabung kembali ke jaringan yang namanya tetap sama namun kata sandinya berbeda.</string>
+    <string name="wifi_direct_group_identity_name_hint">Nama jaringan</string>
+    <string name="wifi_direct_group_identity_passphrase_hint">Kata sandi, 8 hingga 63 karakter</string>
+    <string name="wifi_direct_group_identity_invalid_name">Nama itu tidak dapat digunakan. Ketik nama pendek seperti MyCar, atau nama lengkap yang diawali dengan DIRECT- dan dua huruf atau angka, hingga 32 karakter.</string>
+    <string name="wifi_direct_group_identity_invalid_passphrase_length">Kata sandi Wi-Fi harus antara 8 dan 63 karakter.</string>
+    <string name="wifi_direct_group_identity_invalid_passphrase_charset">Kata sandi Wi-Fi hanya dapat menggunakan karakter papan ketik biasa, tanpa tab atau aksen.</string>
+    <string name="wifi_direct_group_identity_recoded">Disimpan. Nama jaringan juga diubah menjadi %1$s, sehingga ponsel Anda menerima kata sandi baru.</string>
+    <string name="wifi_direct_group_identity_legacy">Pada versi Android ini sistem memilih nama dan kata sandi, dan tidak ada aplikasi yang dapat mengubahnya. Baris di atas menunjukkan apa yang dipilihnya.</string>
+    <string name="copy">Salin</string>
+    <string name="wifi_direct_credentials_copied">Nama jaringan dan kata sandi disalin.</string>
+    <string name="debug_video_low_latency">Minta mode latensi rendah dekoder</string>
+    <string name="debug_video_low_latency_description">Mengatur kunci MediaFormat latensi rendah vendor saat mengonfigurasi dekoder video. Kembali otomatis jika dekoder menolaknya.</string>
+    <string name="debug_video_feed_hold">Simulasikan dekoder lambat</string>
+    <string name="show_performance_overlay_description">Tampilkan FPS, beban CPU, suhu, dan usia bingkai di atas proyeksi.</string>
+
+    <!-- Auto-start permission strings -->
+    <string name="reopen_on_reconnection_label">Buka kembali saat terhubung ulang</string>
+    <string name="reopen_on_reconnection_description">Saat Anda menekan tombol Keluar, aplikasi tetap berjalan di latar belakang dan terus memantau koneksi USB. Jika perangkat tersambung kembali, aplikasi akan terbuka kembali secara otomatis.</string>
+    <string name="overlay_permission_required">Mulai otomatis memerlukan izin \'Tampilkan di atas aplikasi lain\'</string>
+    <string name="usb_permission_denied">Izin USB ditolak. Izinkan akses USB untuk menghubungkan secara otomatis.</string>
+
+    <!-- Theme -->
+    <string name="use_white_background">Gunakan wallpaper layar beranda putih</string>
+    <string name="category_input">Pengaturan Input</string>
+    <string name="enable_rotary">Aktifkan Pengontrol Putar (Rotary)</string>
+    <string name="enable_rotary_description">Umumkan dukungan untuk kenop dan roda putar fisik. Nonaktifkan jika layar sentuh Anda tidak berfungsi dengan benar.</string>
+
+    <string name="kill_on_disconnect">Tutup aplikasi saat terputus</string>
+    <string name="kill_on_disconnect_description">Tutup aplikasi secara otomatis saat Android Auto terputus</string>
+    <string name="raise_projection_during_call">Tetap di Android Auto selama panggilan</string>
+    <string name="raise_projection_during_call_description">Khusus Mode Mandiri. Membawa proyeksi kembali ke atas layar panggilan ponsel sehingga panggilan dijawab dan diakhiri dalam antarmuka Android Auto</string>
+    <string name="kill_on_disconnect_warning_title">Peringatan</string>
+    <string name="kill_on_disconnect_warning">Pengaturan sambungan ulang berikut akan bertentangan dengan penutupan aplikasi saat terputus:\n\n%1$s\n\nPengaturan koneksi awal Anda (hubungkan otomatis, mulai otomatis) akan tetap berfungsi saat head unit menyala. Namun, setelah pemutusan pertama, aplikasi akan langsung ditutup alih-alih mencoba menghubungkan kembali.\n\nCatatan: Beberapa head unit aftermarket tidak pernah mati sepenuhnya — perangkat melakukan hibernasi. Dengan opsi ini diaktifkan, aplikasi akan ditutup setelah pemutusan pertama dan mungkin tidak terbuka kembali secara otomatis pada siklus kontak berikutnya.\n\nApakah Anda ingin menonaktifkan pengaturan sambungan ulang di atas?</string>
+    <string name="kill_on_disconnect_disable_and_enable">Nonaktifkan dan aktifkan</string>
+    <string name="kill_on_disconnect_enable_anyway">Tetap aktifkan</string>
+    <string name="kill_on_disconnect_conflicts_disabled">Pengaturan yang bertentangan telah dinonaktifkan</string>
+    <string name="kill_on_disconnect_boot_warning">Anda mengaktifkan \"Mulai saat boot\". Jika aplikasi ditutup saat terputus dan perangkat ini berhibernasi alih-alih mati, aplikasi mungkin tidak terbuka kembali secara otomatis pada siklus kontak berikutnya karena tidak ada peristiwa boot yang dipicu.</string>
+    <string name="kill_on_disconnect_screen_on_warning">Anda mengaktifkan \"Mulai saat layar menyala\". Pengaturan ini membuka aplikasi setiap kali layar menyala. Dikombinasikan dengan penutupan saat terputus, aplikasi akan ditutup setelah terputus tetapi segera terbuka kembali saat layar menyala lagi, menciptakan pengulangan mulai ulang (restart loop).</string>
+
+    <string name="wifi_disabled_info">Info: Wi-Fi dinonaktifkan.</string>
+    <string name="bt_not_enabled">Bluetooth dinonaktifkan</string>
+    <string name="bt_permission_denied">Izin Bluetooth ditolak. Tidak dapat memindai perangkat.</string>
+    <string name="bt_external_module_no_picker">Bluetooth unit ini disediakan oleh modul eksternal, bukan oleh radio bawaan Android, jadi tidak ada daftar perangkat Bluetooth Android yang dapat dipilih di sini.</string>
+
+    <!-- Vehicle Info Settings -->
+    <string name="vehicle_info_settings">Informasi kendaraan</string>
+    <string name="vehicle_info_settings_description">Sesuaikan bagaimana kendaraan Anda muncul di ponsel Anda</string>
+    <string name="ui_scale">Ukuran tampilan &amp; teks</string>
+    <string name="ui_scale_description">Penskalaan teks, menu, dan elemen tata letak di seluruh aplikasi. Disarankan untuk layar resolusi tinggi dengan teks kecil.</string>
+    <string name="ui_scale_home">Layar beranda</string>
+    <string name="ui_scale_settings">Layar pengaturan</string>
+    <string name="category_vehicle">Kendaraan</string>
+    <string name="category_head_unit">Head Unit</string>
+    <string name="vehicle_display_name_label">Nama tampilan</string>
+    <string name="vehicle_display_name_description">Nama yang ditampilkan pada ponsel Anda untuk kendaraan ini</string>
+    <string name="vehicle_make_label">Merek</string>
+    <string name="vehicle_make_description">Pabrikan kendaraan (mis. Honda, Toyota)</string>
+    <string name="vehicle_model_label">Model</string>
+    <string name="vehicle_model_description">Model kendaraan (mis. Civic, Corolla)</string>
+    <string name="vehicle_year_label">Tahun</string>
+    <string name="vehicle_year_description">Tahun kendaraan</string>
+    <string name="vehicle_id_label">ID Kendaraan</string>
+    <string name="vehicle_type_label">Jenis Kendaraan</string>
+    <string name="vehicle_type_car">Mobil</string>
+    <string name="vehicle_type_truck">Truk</string>
+    <string name="vehicle_type_motorcycle">Sepeda Motor</string>
+    <string name="vehicle_type_forced_by_microphone">Mikrofon head unit nonaktif, jadi Android Auto diberi tahu bahwa ini adalah sepeda motor apa pun yang dipilih di sini. Hal itulah yang membuat ponsel merekam secara mandiri.</string>
+    <string name="vehicle_id_description">Hanya pengenal internal. Mengubah ini akan menyebabkan ponsel memperlakukan unit ini sebagai kendaraan yang berbeda, mengatur ulang preferensi Android Auto untuk mobil ini.</string>
+    <string name="head_unit_make_label">Merek</string>
+    <string name="head_unit_make_description">Pabrikan head unit</string>
+    <string name="head_unit_make_hint">Ponsel Anda menampilkan nama ini di pengaturan Android Auto.\n\nMerek mobil asli menampilkan logo merek pada tombol keluar Android Auto, tetapi Android Auto kemudian berhenti mencantumkan aplikasi yang dipasang di luar Play Store. Kembalikan ke \"Google\" agar aplikasi tersebut dicantumkan kembali.</string>
+    <string name="vehicle_make_hint">Merek mobil asli menampilkan logo merek pada tombol keluar Android Auto, tetapi Android Auto kemudian berhenti mencantumkan aplikasi yang dipasang di luar Play Store. Kembalikan ke \"Google\" agar aplikasi tersebut dicantumkan kembali.</string>
+    <string name="head_unit_model_label">Model</string>
+    <string name="head_unit_model_description">Model head unit</string>
+    <string name="vehicle_year_error_invalid">Masukkan tahun yang valid</string>
+    <string name="vehicle_year_error_max">Tahun tidak boleh lebih dari %1$d</string>
+    <string name="vehicle_info_restart_note">Data ini dikirim ke Android Auto setiap kali Anda terhubung.</string>
+
+    <string name="auto_enable_hotspot">Aktifkan Hotspot Otomatis</string>
+    <string name="auto_enable_hotspot_description">Memulai hotspot Wi-Fi secara otomatis pada perangkat ini. (Tidak berfungsi di semua perangkat)</string>
+    <string name="hotspot_warning_title">Fitur Eksperimental</string>
+    <string name="hotspot_warning_message">Fitur ini menggunakan refleksi dan mungkin tidak berfungsi di semua perangkat. Ini mungkin juga memerlukan izin \"Ubah pengaturan sistem\" untuk diberikan secara manual.</string>
+    <string name="hotspot_permission_title">Izin Diperlukan</string>
+    <string name="hotspot_permission_message">Fitur hotspot memerlukan izin \"Ubah pengaturan sistem\". Silakan aktifkan pada layar berikutnya.</string>
+
+    <string name="supported_nativeaa">Dukungan Nirkabel yang Ditingkatkan</string>
+    <string name="supported_nativeaa_desc">Kabar baik! Perangkat Anda mendukung mode \"Nirkabel Asli\" (Native Wireless), yang memberikan pengalaman Android Auto yang lebih mulus.\n\nUntuk mengaktifkannya, kami perlu menyegarkan cache Bluetooth Anda. Harap:\n1. Hapus penyandingan yang ada di ponsel Anda\n2. Klik OK untuk memulai ulang Bluetooth\n3. Sandingkan kembali ponsel Anda\n\nApakah Anda ingin beralih ke mode Native AA sekarang?</string>
+    <string name="native_aa_poke_not_running">Bluetooth nirkabel tidak berjalan pada head unit ini. Periksa Pengaturan.</string>
+    <string name="not_supported_nativeaa">Nirkabel Asli tampaknya tidak didukung</string>
+    <string name="not_supported_nativeaa_desc">Perangkat Anda mungkin tidak mendukung fitur Bluetooth atau Wi-Fi yang diperlukan untuk Nirkabel Asli. Anda dapat mencobanya, namun jika gagal, gunakan mode \"Wireless Helper\" atau \"Otomatis (Headunit Server)\".</string>
+    <string name="external_bt_nativeaa">Nirkabel Asli tidak dapat berfungsi pada head unit ini</string>
+    <string name="external_bt_nativeaa_desc">Ponsel Anda disandingkan dengan modul Bluetooth perangkat ini sendiri (%1$s), bukan dengan Bluetooth yang diberikan Android ke aplikasi, sehingga handshake nirkabel tidak akan pernah mencapainya.\n\nAplikasi ini hanya dapat menjangkau modul tersebut melalui layanan ZJ/ZLink, yang tidak dijalankan pada unit ini. Gunakan USB atau mode Wi-Fi sebagai gantinya.</string>
+    <string name="external_bt_module_nativeaa">Nirkabel Asli melalui modul ZJ/ZLink</string>
+    <string name="external_bt_module_nativeaa_desc">Ponsel Anda disandingkan dengan modul Bluetooth perangkat ini sendiri (%1$s), bukan dengan Bluetooth yang diberikan Android ke aplikasi, sehingga handshake akan dikirim melalui layanan ZJ/ZLink modul tersebut.\n\nEksperimental, dan layanan itulah satu-satunya jalur masuk. Jika ponsel Anda tidak pernah memulai Android Auto, gunakan USB atau mode Wi-Fi.</string>
+
+    <string name="wait_for_wifi">Tunggu Wi-Fi sebelum Wi-Fi Direct</string>
+    <string name="wait_for_wifi_description">Saat boot, tunggu Wi-Fi terhubung sebelum memulai Wi-Fi Direct. Aktifkan ini jika head unit Anda memerlukan beberapa detik untuk terhubung ke Wi-Fi setelah menyala.</string>
+    <string name="wait_for_wifi_timeout">Batas waktu tunggu Wi-Fi</string>
+    <string name="wireless_24ghz_warning">Catatan: Android Auto Nirkabel pada perangkat 2,4 GHz dapat menyebabkan lag, jeda audio, dan pemutusan. Jika Anda mengalami masalah, lakukan uji coba melalui USB untuk memastikan apakah itu keterbatasan jaringan.</string>
+    <string name="fake_speed_title">Nonaktifkan Kunci Video (Kecepatan Palsu)</string>
+    <string name="fake_speed_description">Melaporkan kecepatan rendah konstan (0,5 m/s) ke ponsel untuk mencegah konten video diblokir saat mengemudi. Gunakan dengan bijak.</string>
+    <string name="wireless_mode_helper">Wireless Helper</string>
+    <string name="wireless_mode_native">Nirkabel Asli (Native)</string>
+    <string name="wireless_mode_server">Server Headunit</string>
+    <string name="server_mode_label">Mode Server</string>
+    <string name="server_mode_manual">Manual</string>
+    <string name="server_mode_auto">Otomatis</string>
+
+    <string name="helper_strategy_label">Strategi Koneksi Helper</string>
+    <string-array name="helper_strategies">
+        <item>Wi-Fi Umum (NSD)</item>
+        <item>Wi-Fi Direct (P2P)</item>
+        <item>Google Nearby (Beta)</item>
+        <item>Hotspot Ponsel (Host)</item>
+        <item>Hotspot Headunit (Pasif)</item>
+    </string-array>
+
+    <string name="select_nearby_device">Pilih Perangkat di Sekitar</string>
+    <string name="nearby_device_found">Perangkat di Sekitar Ditemukan</string>
+    <string name="connecting_to_nearby">Menghubungkan ke %s…</string>
+
+    <string name="exit_dialog_title">Keluar Android Auto</string>
+    <string name="exit_dialog_stop">Hentikan Koneksi</string>
+    <string name="exit_dialog_end_stay_armed">Akhiri sesi, tetap siap</string>
+    <string name="exit_dialog_end_stay_armed_note">Sesi berakhir. Jaringan Wi-Fi tetap aktif, jadi ponsel Anda mungkin terhubung kembali secara mandiri.</string>
+    <string name="exit_dialog_pip">Gambar-dalam-Gambar (PiP)</string>
+    <string name="exit_dialog_background">Pindahkan ke Latar Belakang</string>
+    <string name="exit_dialog_settings">Pengaturan Cepat</string>
+    <string name="gesture_hint">Tip: Geser dari tepi kiri dengan 2 jari untuk membuka menu keluar.</string>
+    <string name="audio_latency_multiplier">Pengali Latensi Audio</string>
+    <string name="audio_latency_multiplier_description">Sesuaikan ukuran buffer audio (Lebih rendah = Lebih sedikit lag, Lebih tinggi = Lebih sedikit jeda/stutter)</string>
+    <string name="audio_queue_capacity">Kapasitas Antrean Audio (Backpressure)</string>
+
+    <!-- Custom loading screen -->
+    <string name="loading_screen">Layar pemuatan</string>
+    <string name="loading_screen_default">Default</string>
+    <string name="loading_screen_custom">Kustom</string>
+    <string name="loading_screen_dialog_title">Layar pemuatan kustom</string>
+    <string name="loading_screen_select_file">Pilih file</string>
+    <string name="loading_screen_remove">Hapus</string>
+    <string name="loading_screen_recommendation">Resolusi yang disarankan: %1$dx%2$d</string>
+    <string name="loading_screen_supported_formats">Didukung: Gambar (PNG, JPG, BMP, WEBP, GIF) • Video (MP4, MKV, WEBM, 3GP) • Maks: 10 MB</string>
+    <string name="loading_screen_no_media">Tidak ada media kustom yang dipilih</string>
+    <string name="loading_screen_file_too_large">File terlalu besar (maks 10 MB)</string>
+    <string name="loading_screen_unsupported_format">Format tidak didukung. Gunakan file gambar atau video</string>
+    <string name="loading_screen_file_error">Tidak dapat memuat file yang dipilih</string>
+    <string name="loading_screen_show_text">Tampilkan teks \"Android Auto is starting\"</string>
+    <string name="loading_screen_tap_preview">Ketuk untuk melihat pratinjau layar penuh</string>
+    <string name="loading_screen_tap_to_close">Ketuk di mana saja untuk menutup</string>
+    <string name="loading_screen_keep_aspect_ratio">Pertahankan rasio aspek</string>
+    <string name="loading_screen_scale">Skala</string>
+    <string name="loading_screen_recommended_aspect_ratio">Rasio aspek yang disarankan: %1$d:%2$d</string>
+    <string name="loading_screen_tap_fullscreen_hint">Ketuk pratinjau untuk melihatnya dalam layar penuh</string>
+    <string name="loading_screen_loop_video">Ulangi animasi pendek (loop)</string>
+    <string name="media_action_previous">Sebelumnya</string>
+    <string name="media_action_play">Putar</string>
+    <string name="media_action_pause">Jeda</string>
+    <string name="media_action_next">Berikutnya</string>
+    <string name="error_usb_permission_failed">Kesalahan sistem: Gagal meminta dialog izin USB.</string>
+    <string name="wifi_autostart_title">Mulai Otomatis Wi-Fi</string>
+    <string name="wifi_autostart_content">Terhubung ke %s. Ketuk untuk memulai Android Auto.</string>
+
+    <!-- New strings merged from 2.3.1 -->
+    <string name="key_back">Kembali</string>
+    <string name="bt_devices_selected">perangkat dipilih</string>
+    <string name="bluetooth_adapter_label">Adaptor Bluetooth</string>
+    <string name="bluetooth_adapter_description">Pilih adaptor/pengontrol Bluetooth yang akan digunakan untuk handshake. Berguna untuk sistem Bluetooth ganda.</string>
+    <string name="select_bt_adapter">Pilih Adaptor Bluetooth</string>
+    <string name="native_ap_transport">Transportasi jaringan</string>
+    <string name="native_ap_transport_wifi_direct">Wi-Fi Direct</string>
+    <string name="native_ap_transport_hotspot">Hotspot</string>
+    <string name="native_ap_transport_hint">Ponsel bergabung ke hotspot perangkat ini sendiri alih-alih grup Wi-Fi Direct. Aktifkan hotspot sebelum menghubungkan.</string>
+    <string name="hotspot_band">Pita frekuensi hotspot</string>
+    <string name="hotspot_band_auto">Otomatis</string>
+    <string name="hotspot_band_5ghz">Khusus 5 GHz</string>
+    <string name="hotspot_band_24ghz">Khusus 2,4 GHz</string>
+    <string name="hotspot_band_hint">Otomatis meminta 5 GHz dan kembali ke 2,4 GHz jika perlu. 2,4 GHz andal hingga 720p, jadi pilih khusus 5 GHz untuk resolusi di atas itu.</string>
+    <string name="wifi_direct_band">Pita frekuensi Wi-Fi Direct</string>
+    <string name="wifi_direct_band_auto">Otomatis</string>
+    <string name="wifi_direct_band_5ghz">Khusus 5 GHz</string>
+    <string name="wifi_direct_band_24ghz">Khusus 2,4 GHz</string>
+    <string name="wifi_direct_band_hint">Otomatis meminta 5 GHz dan kembali ke 2,4 GHz. 2,4 GHz andal hingga 720p, jadi pilih khusus 5 GHz di atas itu.</string>
+    <string name="stand_down_station">Tinggalkan jaringan Wi-Fi unit ini saat menghubungkan</string>
+    <string name="stand_down_station_auto">Otomatis</string>
+    <string name="stand_down_station_always">Selalu</string>
+    <string name="stand_down_station_never">Jangan Pernah</string>
+    <string name="stand_down_station_hint">Otomatis meninggalkan jaringan unit ini sendiri hanya jika radionya memiliki pita 5 GHz dan jaringan tersebut berada pada 2,4 GHz, sehingga grup Wi-Fi Direct dapat memiliki saluran 5 GHz khusus. Jaringan akan dihubungkan kembali saat sesi berakhir.</string>
+    <string name="stand_down_station_needs_overlay">Memerlukan izin \"Tampilkan di atas aplikasi lain\" pada versi Android ini.</string>
+    <string name="hotspot_interface_override">Antarmuka jaringan hotspot</string>
+    <string name="hotspot_interface_override_message">Biarkan kosong untuk mendeteksi secara otomatis. Atur ini jika log menunjukkan lebih dari satu antarmuka yang mungkin merupakan titik akses, atau memilih antarmuka yang salah. Nama umum: ap0, wlan0, wlan1, wlan2, softap0, ra0.</string>
+    <string name="hotspot_ssid_override">Nama hotspot (manual)</string>
+    <string name="hotspot_ssid_override_message">Biarkan kosong untuk membaca nama dari pengaturan hotspot perangkat ini secara otomatis. Beberapa perangkat tidak mengizinkan aplikasi membacanya — jika log menyatakan nama tidak dapat dibaca, ketik di sini persis seperti yang muncul di pengaturan hotspot Anda.</string>
+    <string name="hotspot_password_override">Kata sandi hotspot (manual)</string>
+    <string name="hotspot_password_override_message">Biarkan kosong untuk membaca kata sandi secara otomatis. Diperlukan pada perangkat yang tidak mengizinkan aplikasi membaca konfigurasi hotspot. Ponsel akan diberikan kata sandi ini untuk bergabung.</string>
+
+    <!-- Native AA credential pre-flight: what this unit can and cannot tell the phone about its own network -->
+    <!-- The failure banner on the main screen. One per condition, shown after a failed attempt. -->
+    <string name="connection_issue_banner_bt_silent">Ponsel Anda terhubung melalui Bluetooth, tetapi tidak ada yang dikirim oleh unit ini yang mencapainya. Ini adalah gangguan pada Bluetooth head unit yang tidak dapat diatasi oleh aplikasi. Ketuk untuk beralih ke USB, Wireless Helper, atau Otomatis.</string>
+    <string name="connection_issue_banner_bssid">Tidak ada sumber pada unit ini yang memberikan alamat MAC Wi-Fi (BSSID)-nya sendiri, jadi ponsel tidak pernah diberi tahu jaringan mana yang harus diikuti. Ketuk untuk mengaktifkan Lokasi, atau untuk memasukkan alamat secara manual.</string>
+    <string name="connection_issue_banner_hotspot_off">Hotspot unit ini mati, jadi tidak ada jaringan yang dapat dituju oleh ponsel Anda. Aktifkan hotspot sebelum menghubungkan, atau ketuk untuk membiarkan aplikasi mengaktifkannya untuk Anda.</string>
+    <string name="connection_issue_banner_hotspot_config">Unit ini tidak dapat memberikan nama dan kata sandi hotspotnya ke aplikasi, sehingga ponsel Anda tidak memiliki informasi untuk bergabung. Ketuk untuk memasukkannya secara manual.</string>
+    <string name="connection_issue_banner_wifi_direct_refused">Wi-Fi unit ini tidak dapat membuat jaringan Wi-Fi Direct yang akan diikuti ponsel Anda. Jika unit ini terhubung ke jaringan Wi-Fi lain, cobalah untuk memutuskannya. Ketuk untuk menggunakan hotspot unit ini sebagai gantinya.</string>
+    <string name="connection_issue_banner_wifi_direct_cycled">Aplikasi lain pada unit ini terus mematikan dan menghidupkan Wi-Fi Direct, sehingga tidak ada jaringan yang dapat dibuat untuk ponsel Anda. Aplikasi proyeksi bawaan (CarLife, ZLink, CarPlay) biasanya menjadi penyebabnya. Coba nonaktifkan aplikasi tersebut.</string>
+    <string name="connection_issue_banner_wifi_radio_off">Wi-Fi unit ini dimatikan, dan versi Android ini tidak mengizinkan aplikasi untuk menyalakannya. Nyalakan Wi-Fi untuk unit ini. Jika tidak mau tetap menyala karena unit ini menghosting hotspotnya sendiri, ketuk untuk mengubah metode jaringan ke hotspot tersebut.</string>
+    <string name="native_aa_requires_wifi">Android Auto Asli memerlukan Wi-Fi unit ini. Silakan aktifkan.</string>
+    <string name="narrow_band_profile_cap">Turunkan kualitas video pada tautan 2,4 GHz</string>
+    <string name="narrow_band_profile_cap_description">Saat sesi ini berjalan pada 2,4 GHz, baik karena Wi-Fi unit ini tidak memiliki pita 5 GHz atau karena jaringan terbentuk di sana, minta ponsel paling banyak 720p dan 30 fps alih-alih pengaturan di atas, serta audio AAC. Matikan ini untuk tetap menggunakan apa yang Anda minta.</string>
+    <string name="connection_issue_banner_video_link_too_slow">Ponsel Anda membatalkan video sebelum satu bingkai pun tiba, beberapa kali berturut-turut. Tautan Wi-Fi terlalu lambat untuk menampilkan gambar, jadi sekarang diminta resolusi 720p pada 30 FPS dengan audio AAC. Jaringan 5 GHz adalah solusi lainnya.</string>
+    <string name="connection_issue_banner_five_ghz_channel_refused">Unit ini menolak menempatkan jaringan Wi-Fi Direct-nya pada saluran 5 GHz yang Anda pilih, sehingga beralih ke saluran yang dipilih oleh driver Wi-Fi-nya sendiri. Saluran itu sering kali tidak dapat dilihat oleh ponsel di beberapa negara. Ketuk untuk mengatur pita Wi-Fi Direct ke 2,4 GHz.</string>
+    <string name="connection_issue_banner_headunit_server_deaf">Server head unit Android Auto di ponsel Anda menerima koneksi namun tidak menjawabnya sama sekali. Masalah ini tidak pulih sendiri: di ponsel, hentikan server head unit di pengaturan pengembang Android Auto lalu mulai lagi. Unit ini akan menghubungkan kembali secara otomatis.</string>
+    <string name="connection_issue_banner_stale_endpoint">Ponsel Anda terus mencoba menjangkau unit ini di alamat jaringan lama yang sudah tidak digunakan lagi. Buka Android Auto di ponsel Anda, lupakan head unit ini, lalu hubungkan kembali.</string>
+    <string name="connection_issue_banner_hands_free_held">Perangkat lain sudah menggunakan koneksi hands-free unit ini, sehingga ponsel yang dibangunkan tidak dapat menggunakannya. Putuskan sambungan perangkat lain atau matikan Bluetooth-nya, dan unit ini akan mencoba lagi secara otomatis.</string>
+    <string name="connection_issue_banner_hands_free_record_refused">Bluetooth unit ini tidak memublikasikan rekaman hands-free yang dibutuhkan aplikasi agar ponsel melihat profil hands-free. Android Auto tidak akan memulai koneksi nirkabel kecuali Bluetooth head unit terhubung dengan profil. Sambungan kabel atau mode nirkabel lainnya tidak memerlukannya.</string>
+    <string name="connection_issue_banner_dismiss">Tutup</string>
+    <string name="auto_connect_pill_cancel">Hentikan menghubungkan</string>
+    <string name="connection_issue_remedy_hotspot_query">Nama dan kata sandi hotspot</string>
+
+    <string name="preflight_title">Sebelum Anda menghubungkan</string>
+    <string name="preflight_intro">Perangkat ini tidak dapat menyediakan semua yang dibutuhkan Android Auto, sehingga ponsel tidak akan dapat bergabung:</string>
+    <string name="preflight_item_hotspot_name">Nama hotspot. Perangkat ini tidak mengizinkan aplikasi membacanya.</string>
+    <string name="preflight_item_hotspot_password">Kata sandi hotspot. Tanpa kata sandi, ponsel akan ditawari jaringan terbuka dan menolaknya.</string>
+    <string name="preflight_item_bssid">Alamat Wi-Fi (BSSID). Tidak ada yang melaporkannya, bahkan alamat yang berasal dari antarmuka jaringan perangkat ini sendiri.</string>
+    <string name="preflight_item_location">Lokasi mati, sehingga Android menyembunyikan alamat Wi-Fi perangkat ini dari aplikasi dan ponsel akan menolak untuk bergabung. Menyalakan Lokasi adalah solusinya.</string>
+    <string name="preflight_enter_now">Masukkan sekarang</string>
+    <string name="preflight_open_location">Lokasi</string>
+    <string name="preflight_later">Nanti</string>
+    <string name="preflight_invalid_bssid">Itu bukan alamat Wi-Fi yang valid. Masukkan enam pasang digit heksadesimal, seperti 02:1A:11:FF:3C:4D.</string>
+    <string name="native_aa_complete_hfp_slc">Selesaikan koneksi Bluetooth</string>
+    <string name="native_aa_complete_hfp_slc_description">Beberapa ponsel tidak akan memulai Android Auto nirkabel sampai Bluetooth unit ini dihitung sebagai terhubung, bukan hanya dipasangkan. Aktif secara default; matikan jika panggilan pada perangkat ini berhenti berfungsi.</string>
+    <string name="native_aa_wake_remeasure">Ukur ulang bangun Bluetooth</string>
+    <string name="native_aa_wake_verdict_unmeasured">Belum diukur</string>
+    <string name="native_aa_wake_verdict_safe">Aman di unit ini</string>
+    <string name="native_aa_wake_verdict_destructive">Ditahan di unit ini</string>
+    <string name="native_aa_wake_remeasure_confirm">Android Auto hanya memulai nirkabel saat melihat koneksi Bluetooth berubah. Jika unit ini sudah memegang tautan hands-free, aplikasi harus memutuskannya untuk memicu perubahan tersebut. Gunakan ini jika nirkabel berhenti menyala sendiri dan Anda bersedia kehilangan hands-free sejenak saat mencoba lagi.</string>
+    <string name="native_aa_wake_remeasure_done">Bangun Bluetooth akan diukur lagi pada koneksi berikutnya.</string>
+    <string name="announce_connection_configuration">Minta batas waktu tautan lebih lama</string>
+    <string name="announce_connection_configuration_description">Memberitahu Android Auto untuk menunggu 15 detik sebelum menganggap sambungan mati alih-alih 3 detik, dan menggunakan buffer soket yang lebih besar.</string>
+    <string name="native_aa_ignore_external_bt">Abaikan pemeriksaan kompatibilitas Bluetooth</string>
+    <string name="native_aa_ignore_external_bt_description">Unit ini tampak menggunakan Bluetooth pada modul terpisah yang tidak dapat dijangkau oleh Android, sehingga Android Auto nirkabel dimatikan secara otomatis. Nonaktif secara default. Aktifkan hanya jika Anda yakin hal itu keliru.</string>
+
+    <!-- The external Bluetooth module probe (Advanced; only on units the detection flags). -->
+    <string name="zbt_probe_title">Uji modul Bluetooth head unit</string>
+    <string name="zbt_probe_idle">Ketuk untuk menjalankan</string>
+    <string name="zbt_probe_running">Berjalan…</string>
+    <string name="zbt_probe_message">Menanyakan chip Bluetooth terpisah unit ini apakah chip tersebut akan membawa koneksi Android Auto. Pemeriksaan memakan waktu sekitar delapan detik untuk memastikan apakah chip merespons. Baris di bawah pengaturan ini menunjukkan apa yang sedang terjadi.\n\nBangunkan dan amati juga meminta chip untuk menghubungkan kembali ke ponsel Anda untuk Android Auto. Mulai ulang unit untuk mengembalikannya ke awal. Silakan ekspor log setelahnya dan lampirkan.</string>
+    <string name="zbt_probe_watch_only">Amati saja</string>
+    <string name="zbt_probe_wake_and_watch">Bangunkan dan amati</string>
+    <string name="external_bt_transport">Hubungkan melalui modul Bluetooth head unit</string>
+    <string name="external_bt_transport_description">Eksperimental, dan hanya untuk unit yang memiliki layanan Bluetooth ZJ/ZLink. Mengirim handshake Android Auto nirkabel melalui chip Bluetooth unit ini sendiri alih-alih Bluetooth yang diekspos Android ke aplikasi.\n\nJalankan \"Uji modul Bluetooth head unit\" terlebih dahulu. Jika merespons, aktifkan ini dan pilih Nirkabel Asli.</string>
+    <string name="native_aa_setup_qr_title">Siapkan dengan kode QR</string>
+    <string name="native_aa_setup_qr_description">Tampilkan kode yang dapat dipindai oleh ponsel</string>
+    <string name="native_aa_setup_qr_content_description">Kode QR untuk menyiapkan Android Auto nirkabel</string>
+    <string name="native_aa_setup_qr_instruction">Pindai ini dengan kamera ponsel dan konfirmasikan di ponsel. Ini hanya perlu dilakukan sekali: setelah itu ponsel terhubung secara otomatis.</string>
+    <string name="native_aa_setup_qr_not_drawn">Kode tidak dapat digambar.</string>
+    <string name="native_aa_setup_qr_not_running">Mulai koneksi terlebih dahulu. Kode membawa jaringan aktif unit ini, yang belum ada hingga saat itu.</string>
+    <string name="native_aa_setup_qr_not_hotspot">Hanya tersedia pada transportasi hotspot. Jaringan Wi-Fi Direct diganti namanya setiap kali dibuat, sehingga ponsel akan mengingat jaringan yang sudah tidak ada.</string>
+    <string name="native_aa_setup_qr_transport_not_applied">Hotspot dipilih, tetapi koneksi masih berjalan pada Wi-Fi Direct. Mulai ulang koneksi, lalu coba lagi.</string>
+    <string name="native_aa_setup_qr_not_listening">Unit ini belum mendengarkan ponsel. Coba lagi sebentar lagi.</string>
+    <string name="native_aa_setup_qr_no_credentials">Nama jaringan atau kata sandi unit ini belum diketahui. Aktifkan hotspot, atau masukkan secara manual di atas.</string>
+    <string name="native_aa_setup_qr_no_bssid">Alamat Wi-Fi (BSSID) unit ini tidak dapat dibaca. Android Auto menolak jaringan yang tidak dapat disematkan ke BSSID.</string>
+    <string name="native_aa_setup_qr_no_address">Alamat unit ini pada jaringan tersebut belum diketahui.</string>
+    <string name="native_aa_setup_qr_no_bluetooth">Alamat Bluetooth unit ini tidak dapat dibaca, dan ponsel membutuhkannya untuk mengenali head unit ini nanti. Masukkan di bawah Koneksi nirkabel.</string>
+    <string name="native_aa_setup_qr_dongle">Nama Bluetooth unit ini terbaca sebagai dongle nirkabel, yang diperlakukan ponsel sebagai jenis perangkat berbeda. Ganti nama Bluetooth pada unit ini dan coba lagi.</string>
+
+    <!-- QR Code Generator -->
+    <string name="share_hotspot_qr_title">Konfigurasikan Wireless Helper</string>
+    <string name="share_hotspot_qr_desc">Tampilkan Kode QR untuk koneksi otomatis ponsel</string>
+    <string name="hotspot_ssid_hint">SSID Hotspot</string>
+    <string name="hotspot_pass_hint">Kata Sandi Hotspot</string>
+    <string name="hotspot_qr_description">Kode QR Konfigurasi Wireless Helper</string>
+    <string name="scan_with_wireless_helper">Pindai Kode QR ini menggunakan Pemindai QR di Wireless Helper pada ponsel Anda.</string>
+    <string name="share_hotspot_qr_error">Tidak dapat mengambil kredensial hotspot Wi-Fi yang aktif. Pastikan hotspot Anda aktif dan Lokasi diaktifkan.</string>
+    <string name="use_libusb">Gunakan Driver USB Asli</string>
+    <string name="use_libusb_description">Gunakan libusb untuk komunikasi. Nonaktifkan untuk menggunakan API USB standar Android.</string>
+
+    <string name="btn_show_qr">Tampilkan Kode QR</string>
+    <string name="su_needed_keymaps_warning">Peringatan: Head unit Anda harus di-root atau memiliki Shizuku yang terpasang. Jika demikian, Anda harus mengizinkan hak akses SU saat diminta. Tombol setir kemungkinan tidak berfungsi sampai hal ini diperbaiki.</string>
+
+    <string name="self_mode_overlay_permission_description">Untuk mengizinkan Mode Mandiri dimulai secara andal dari latar belakang, aktifkan izin \"Tampilkan di atas aplikasi lain\" pada layar berikutnya.</string>
+
+    <!-- Manual coordinates (night mode) and geofenced locations -->
+    <string name="delete">Hapus</string>
+    <string name="night_mode_coordinates">Koordinat</string>
+    <string name="geofence_locations_title">Lokasi</string>
+    <string name="geofence_none">Tidak ada</string>
+    <string name="geofence_count_summary">%1$d area</string>
+    <string name="geofence_empty_hint">Belum ada lokasi. Tambahkan lokasi untuk memaksakan mode siang atau malam berdasarkan area, atau untuk membatasi mulai otomatis ke zona tertentu.</string>
+    <string name="geofence_unnamed">Lokasi tanpa nama</string>
+    <string name="geofence_add">Tambah lokasi</string>
+    <string name="geofence_pick_location">Pilih lokasi</string>
+    <string name="geofence_name_hint">Nama (mis. Rumah)</string>
+    <string name="geofence_force_dark">Paksa mode gelap di dalam area ini</string>
+    <string name="geofence_allow_automation">Hanya mulai / hubungkan otomatis di dalam area ini</string>
+    <string name="geofence_use_gps">Gunakan lokasi saya saat ini</string>
+    <string name="geofence_no_location">Belum ada lokasi yang tersedia</string>
+    <string name="geofence_saved">Lokasi disimpan</string>
+    <string name="geofence_delete_title">Hapus lokasi?</string>
+    <string name="geofence_delete_message">Lokasi ini akan dihapus.</string>
+    <string name="geofence_internet_title">Memerlukan internet</string>
+    <string name="geofence_internet_message">Peta memerlukan koneksi internet untuk memuat. Ubin peta hanya diunduh saat Anda mengatur lokasi.</string>
+    <string name="geofence_radius_summary">Radius: %1$d m</string>
+    <string name="geofence_mode_dark">Gelap</string>
+    <string name="geofence_mode_light">Terang</string>
+    <string name="geofence_gate_on">Mulai otomatis dibatasi area</string>
+
+    <!-- Round 2 UX: shared location section, scoped places, don't-show-again -->
+    <string name="location_section">Lokasi</string>
+    <string name="sunrise_location_title">Lokasi matahari terbit/terbenam</string>
+    <string name="sunrise_location_gps">GPS (otomatis)</string>
+    <string name="sunrise_location_fixed">Titik tetap</string>
+    <string name="geofence_pick_on_map">Pilih di peta</string>
+    <string name="geofence_overridden_note">Tempat yang disimpan akan menggantikan ini selama Anda berada di dalamnya.</string>
+    <string name="geofence_current_status_label">Saat ini</string>
+    <string name="geofence_current_status">%1$s (di dalam %2$s)</string>
+    <string name="geofence_override_theme">Paksa tema di sini</string>
+    <string name="geofence_dark_inside">Gelap di dalam area ini</string>
+    <string name="geofence_scope_label">Berlaku untuk</string>
+    <string name="geofence_scope_app">Aplikasi</string>
+    <string name="geofence_scope_aa">Android Auto</string>
+    <string name="geofence_scope_both">Keduanya</string>
+    <string name="geofence_gate_here">Hanya mulai / hubungkan otomatis di sini</string>
+    <string name="dont_show_again">Jangan tampilkan lagi</string>
+
+    <!-- Round 3: single Location screen + tri-state appearance -->
+    <string name="location_open_entry">Tempat dan titik matahari terbit</string>
+    <string name="sunrise_section">Matahari terbit / terbenam</string>
+    <string name="location_places_hint">Paksa tampilan terang atau gelap di suatu area, dan opsional hanya mulai otomatis di sana. Menggunakan GPS.</string>
+    <string name="appearance_label">Saat di dalam, atur tampilan</string>
+    <string name="appearance_off">Mati</string>
+
+    <!-- Round 4: Location as a mode -->
+    <string name="location_manage_places">Tempat tersimpan</string>
+    <string name="location_outside_label">Di luar tempat tersimpan</string>
+    <string name="location_places_desc">Atur tampilan terang atau gelap di suatu area saat Anda berada di dalamnya. Menggunakan GPS.</string>
+    <string name="coordinates_enter">Masukkan koordinat</string>
+    <string name="coordinate_latitude">Lintang</string>
+    <string name="coordinate_longitude">Bujur</string>
+    <string name="coordinates_invalid">Koordinat tidak valid</string>
+    <string name="coordinates_format_help">Derajat desimal, titik atau koma. Contoh: -6.2088, 106.8456</string>
+    <string name="sunrise_reference_help">Titik referensi yang digunakan untuk menghitung matahari terbit dan terbenam. Pilih lokasi Anda sekali; ini berfungsi tanpa GPS.</string>
+
+    <!-- One-time rename notice shown on the home screen. Both the old name ("Headunit Revived")
+         and the new name ("Open Headunit") are hardcoded on purpose, so the message reads clearly
+         even before the app name resource changes. -->
+    <string name="rename_notice_title">Nama kami berubah menjadi Open Headunit</string>
+    <string name="rename_notice_message">Headunit Revived berkembang berkat Anda, dan kini memiliki identitasnya sendiri: Open Headunit. Kami meluncurkan nama baru ini pada pembaruan berikutnya, jadi Anda mungkin masih melihat nama lama di beberapa tempat untuk sementara waktu.\n\nAplikasi yang sama, tim yang sama di belakangnya, dan semua pengaturan Anda tetap persis seperti semula.</string>
+    <string name="rename_notice_button">Mengerti</string>
+    <string name="aa174_notice_title">Penting: Android Auto 17.4+</string>
+    <string name="aa174_notice_message"><![CDATA[Mulai dari Android Auto 17.4, Google memperkenalkan perubahan internal yang merusak dan menonaktifkan peluncuran otomatis melalui Wireless Helper serta Mode Mandiri klasik.<br/><br/><b>Solusi yang tersedia:</b><br/><br/><b>1. Server Headunit (Mode Pengembang):</b><br/>Satu-satunya solusi yang tersisa untuk Mode Mandiri! Di ponsel Anda, buka pengaturan pengembang Android Auto dan ketuk "Mulai server head unit".<br/><br/><b>2. Mode Asli (Native):</b><br/>Terhubung langsung melalui Wi-Fi Direct atau Hotspot Headunit.<br/><br/><b>3. Dongle Nirkabel USB:</b><br/>Adaptor nirkabel USB perangkat keras memberikan pengalaman plug-and-play yang paling andal.<br/><br/><b>4. Wireless Helper:</b><br/>Terus berfungsi dengan andal untuk Android Auto hingga versi 17.3.]]></string>
+    <string name="aa174_notice_button_confirm">Mengerti</string>
+    <string name="aa174_notice_button_guide">Buka Panduan</string>
+    <string name="category_ui">UI</string>
+    <string name="hide_phone_signal_label">Sembunyikan Sinyal Ponsel</string>
+    <string name="hide_battery_level_label">Sembunyikan Tingkat Baterai Ponsel</string>
+    <string name="hide_clock_label">Sembunyikan Jam</string>
+    <string name="might_broken_on_newer_aa_versions">Fungsi ini mungkin tidak bekerja pada versi Android Auto yang lebih baru</string>
+    <string name="auto_connect_delay">Penundaan Hubungkan Otomatis</string>
+    <string name="auto_connect_delay_description">Tunggu sebelum mencoba menghubungkan saat memulai (berguna jika Wi-Fi memerlukan waktu untuk bangun)</string>
+    <string name="auto_connect_delay_none">Tidak ada (Instan)</string>
+    <string name="auto_connect_delay_seconds_format">%d dtk</string>
+    <string name="auto_connect_delay_custom">Kustom…</string>
+    <string name="auto_connect_delay_summary_format">%1$s (tunda %2$d dtk)</string>
+    <string name="failed_aa_not_system">Gagal: Android Auto tidak terpasang sebagai aplikasi sistem!</string>
+    <string name="failed_aa_not_installed">Gagal: Android Auto tidak terpasang!</string>
+    <string name="native_driver_selection_title">Pemilihan Pengemudi</string>
+    <string name="native_driver_selection_summary">Pilih ponsel mana yang akan dihubungkan saat beberapa pengemudi tersanding berada di dalam kendaraan</string>
+    <string name="native_driver_selection_mode_off">Dinonaktifkan</string>
+    <string name="native_driver_selection_mode_auto">Otomatis</string>
+    <string name="native_driver_selection_mode_always">Selalu Tanya</string>
+    <string name="native_driver_selection_timeout">Hitung Mundur Hubungkan Otomatis</string>
+    <string name="native_driver_preferred_device">Ponsel Pilihan</string>
+    <string name="switch_driver">Ganti Ponsel</string>
+    <string name="driver_device_connected">Di dalam kendaraan / Terhubung</string>
+    <string name="driver_device_paired">Tersanding</string>
+    <string name="driver_device_disconnected">Terputus, akan dibangunkan</string>
+    <string name="driver_device_preferred">Pilihan</string>
+    <string name="driver_device_last_used">Terakhir Terhubung</string>
+    <string name="driver_selection_auto_in">Menghubungkan otomatis ke %2$s dalam %1$d dtk...</string>
+    <string name="driver_selection_dialog_title">Pilih Ponsel Pengemudi</string>
+    <string name="connecting_driver">Memulai Android Auto dengan %s</string>
+    <string name="connecting_driver_disconnected">%s terputus, membangunkannya...</string>
+    <string name="driver_none">Tidak ada</string>
+    <string name="show_all_devices">Tampilkan semua perangkat Bluetooth</string>
+    <string name="show_only_phones">Tampilkan hanya ponsel</string>
+    <string name="oem_app_management">Manajemen Konflik Aplikasi OEM (ADB)</string>
+    <string name="oem_app_management_desc">Deteksi dan nonaktifkan aplikasi yang bertentangan (Zlink, AutoKit, dll.)</string>
+    <string name="oem_app_explanation">Aplikasi bawaan pabrik head unit (mis. Zlink, AutoKit, SpeedPlay) sering kali mencegat koneksi USB dan Bluetooth, mencegah Open Headunit terhubung. Anda dapat menonaktifkannya melalui Root atau Self-ADB (port 5555).</string>
+    <string name="oem_app_backend_root">Metode eksekusi: Root (su) tersedia</string>
+    <string name="oem_app_backend_adb">Metode eksekusi: Self-ADB (127.0.0.1:5555) terhubung</string>
+    <string name="oem_app_backend_none">Metode eksekusi: Tidak ada. Aktifkan Debugging Nirkabel atau jalankan \"adb tcpip 5555\"</string>
+    <string name="oem_app_autokill_switch">Nonaktifkan otomatis aplikasi OEM yang berkonflik saat mulai</string>
+    <string name="oem_app_autokill_switch_desc">Membungkam aplikasi dan daemon latar belakang yang diketahui bertentangan setiap kali Open Headunit dimulai.</string>
+    <string name="oem_app_autokill_enabled">Penonaktifan otomatis aktif</string>
+    <string name="oem_app_none_detected">Tidak ada aplikasi OEM berkonflik yang terdeteksi.</string>
+    <string name="oem_app_btn_commands">Perintah</string>
+    <string name="oem_app_btn_restore">Pulihkan</string>
+    <string name="oem_app_btn_disable">Nonaktifkan &amp; Hentikan</string>
+    <string name="oem_app_status_format">Terpasang: %1$s | Status: %2$s | Daemon: %3$s</string>
+    <string name="oem_app_state_installed">Ya</string>
+    <string name="oem_app_state_not_installed">Tidak</string>
+    <string name="oem_app_state_enabled">Diaktifkan</string>
+    <string name="oem_app_state_disabled">Dinonaktifkan</string>
+    <string name="oem_app_state_running">Berjalan</string>
+    <string name="oem_app_state_stopped">Dihentikan</string>
+    <string name="oem_app_commands_title">Perintah ADB / Shell yang Disiapkan</string>
+    <string name="oem_app_action_success">Perintah berhasil dieksekusi.</string>
+    <string name="oem_app_action_failed">Eksekusi gagal: %s</string>
+    <string name="copy_to_clipboard">Salin</string>
+    <string name="copied_to_clipboard">Disalin ke papan klip</string>
+
+
+    <string name="dpi_size_s">S</string>
+    <string name="dpi_size_m">M</string>
+    <string name="dpi_size_l">L</string>
+    <string name="dpi_size_xl">XL</string>
+    <string name="github_issues_url">https://github.com/andreknieriem/open-headunit/issues</string>
+    <string name="support_rules_english_title">All posts in English</string>
+    <string name="support_rules_english_desc">Harap selalu tulis issue Anda dalam bahasa Inggris agar pengembang dan komunitas dapat membantu. Tidak perlu khawatir tentang kesalahan tata bahasa; Anda dapat menggunakan Google Translate atau DeepL untuk membantu merapikan pesan Anda.</string>
+    <string name="debug_video_fault_injection">Injeksi kesalahan video</string>
+    <string name="debug_video_fault_rate">Tingkat kesalahan (1 dari N)</string>
+    <string name="debug_video_fault_budget">Batas anggaran kesalahan</string>
+    <string name="debug_force_memory_profile">Paksa profil memori</string>
+
+</resources>

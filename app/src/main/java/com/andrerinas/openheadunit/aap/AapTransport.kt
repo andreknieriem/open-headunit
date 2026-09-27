@@ -32,10 +32,12 @@ import com.andrerinas.openheadunit.connection.projection.SocketProjectionConnect
 import com.andrerinas.openheadunit.contract.ProjectionActivityRequest
 import com.andrerinas.openheadunit.decoder.audio.AudioDecoder
 import com.andrerinas.openheadunit.decoder.audio.MicRecorder
+import com.andrerinas.openheadunit.decoder.video.DecoderStopPolicy
 import com.andrerinas.openheadunit.decoder.video.VideoDecoder
 import com.andrerinas.openheadunit.main.BackgroundNotification
 import com.andrerinas.openheadunit.ssl.SingleKeyKeyManager
 import com.andrerinas.openheadunit.utils.AppLog
+import com.andrerinas.openheadunit.utils.BluetoothLinkMonitor
 import com.andrerinas.openheadunit.utils.Settings
 import com.andrerinas.openheadunit.aap.protocol.proto.Control
 import com.andrerinas.openheadunit.aap.protocol.proto.Media
@@ -253,6 +255,9 @@ class AapTransport(
      */
     private val inboundRateMonitor = InboundRateMonitor()
 
+    /** Which Bluetooth profiles share the radio, printed beside each quiet window. */
+    private val bluetoothLinkMonitor = BluetoothLinkMonitor(context)
+
     /** What the microphone session sent, so a silent assistant has something to read. */
     private val micUplinkMonitor = MicUplinkMonitor()
 
@@ -269,13 +274,16 @@ class AapTransport(
         val now = SystemClock.elapsedRealtime()
         lastMessageReceivedMs = now
         linkGapMonitor.onMessage(now)?.let { AppLog.i("AapTransport: %s", it) }
-        inboundRateMonitor.onMessage(channel, bytes, now)?.let { AppLog.i("AapTransport: %s", it) }
-        when {
-            channel == Channel.ID_VID ->
-                videoGapMonitor.onMessage(now)?.let { AppLog.i("AapTransport: %s", it) }
-            Channel.isAudio(channel) ->
-                audioGapMonitor.onMessage(now)?.let { AppLog.i("AapTransport: %s", it) }
+        inboundRateMonitor.onMessage(channel, bytes, now)?.let {
+            AppLog.i("AapTransport: %s", it)
+            bluetoothLinkMonitor.onWindow()
         }
+        val quiet = when {
+            channel == Channel.ID_VID -> videoGapMonitor.onMessage(now)
+            Channel.isAudio(channel) -> audioGapMonitor.onMessage(now)
+            else -> null
+        }
+        quiet?.let { AppLog.i("AapTransport: %s | bluetooth %s", it, bluetoothLinkMonitor.describeNow()) }
     }
 
     /**
@@ -657,6 +665,13 @@ class AapTransport(
         return 0
     }
 
+    internal fun pauseForSleep() {
+        AppLog.i("AapTransport: Pausing media/audio/mic and hardware video decoder for sleep")
+        aapAudio.pauseAllAudio()
+        micRecorder.stop()
+        videoDecoder.stop(DecoderStopPolicy.REASON_SCREEN_OFF_SLEEP)
+    }
+
     internal fun stop(reason: Control.ByeByeReason = Control.ByeByeReason.USER_SELECTION) {
         AppLog.i("AapTransport stopping and sending byebye ($reason)")
         val byebye = Control.ByeByeRequest.newBuilder()
@@ -829,6 +844,7 @@ class AapTransport(
         inboundRateMonitor.reset()
         micUplinkMonitor.reset()
         micChunks.reset()
+        bluetoothLinkMonitor.onSessionStart()
 
         videoThread = HandlerThread("AapTransport:Handler::Video", Process.THREAD_PRIORITY_DISPLAY)
         videoThread!!.start()
@@ -940,7 +956,10 @@ class AapTransport(
                 // "version response received" would hand a random payload to the SSL layer and
                 // cause a 15 s timeout. Instead, discard unexpected messages and keep reading
                 // until the deadline expires.
-                val recvDeadline = SystemClock.elapsedRealtime() + 2000
+                // The last request waits out the whole budget: a USB dongle relaying over WiFi can
+                // answer after 6 s, and giving up there leaves its answers for the next attempt.
+                val recvDeadline = if (attempt < 3) SystemClock.elapsedRealtime() + 2000
+                    else maxOf(versionDeadline, SystemClock.elapsedRealtime() + 2000)
                 while (SystemClock.elapsedRealtime() < recvDeadline) {
                     val remaining = (recvDeadline - SystemClock.elapsedRealtime())
                         .toInt().coerceAtLeast(100)
@@ -979,7 +998,7 @@ class AapTransport(
                              "Waiting for VERSION_RESPONSE.")
                 }
                 if (received) break
-                AppLog.w("Handshake: No VERSION_RESPONSE within 2s (attempt $attempt), ret=$ret")
+                AppLog.w("Handshake: No VERSION_RESPONSE within ${if (attempt < 3) "2s" else "the handshake budget"} (attempt $attempt), ret=$ret")
                 SystemClock.sleep(200)
             }
 

@@ -65,6 +65,17 @@ class ZbtByteChannel(
     private val bufferRfcommData: Boolean = true
 ) : Closeable {
 
+    /**
+     * The daemon's port could not be opened. [verdict] keeps a refusal, which means there is no
+     * daemon here, apart from a port that is held and not accepting, which on some units is only
+     * a phone being linked to the module right now.
+     */
+    class NotConnected(
+        message: String,
+        cause: Throwable,
+        val verdict: ZbtReachabilityPolicy.Verdict
+    ) : IOException(message, cause)
+
     companion object {
         /** Where the daemon listens. The address is a constant in the vendor library. */
         const val HOST = "127.0.0.1"
@@ -138,9 +149,8 @@ class ZbtByteChannel(
         /**
          * Open a session: connect, then send `RequestInit` for [enableType].
          *
-         * @throws IOException if the port refuses a connection — the ordinary outcome on a unit
-         *   without this daemon, and the caller's cue that there is nothing here rather than
-         *   something here that ignores us.
+         * @throws NotConnected if the port could not be opened, carrying the verdict that says
+         *   whether that was a refusal or a daemon that is there and not accepting.
          */
         fun open(
             host: String = HOST,
@@ -156,7 +166,13 @@ class ZbtByteChannel(
                 socket.soTimeout = READ_TIMEOUT_MS
             } catch (e: Exception) {
                 try { socket.close() } catch (ignored: Exception) { /* best effort */ }
-                throw IOException("no ZBT daemon on $host:$port: ${e.javaClass.simpleName}: ${e.message}", e)
+                val verdict = ZbtReachabilityPolicy.classify(e.javaClass.simpleName, answered = false)
+                val what = if (verdict == ZbtReachabilityPolicy.Verdict.NOTHING_LISTENING) {
+                    "no ZBT daemon on $host:$port"
+                } else {
+                    "the ZBT daemon on $host:$port is there but did not accept a connection"
+                }
+                throw NotConnected("$what: ${e.javaClass.simpleName}: ${e.message}", e, verdict)
             }
             return try {
                 ZbtByteChannel(

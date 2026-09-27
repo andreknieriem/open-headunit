@@ -76,4 +76,25 @@ class NativeCredentialsPolicyTest {
         assertEquals(NativeStrategy.WIFI_DIRECT, NativeStrategy.byIdOrDefault(-1))
         assertEquals(NativeStrategy.WIFI_DIRECT, NativeStrategy.byIdOrDefault(99))
     }
+
+    @Test
+    fun `an open network is refused on both transports`() {
+        // Unlike a missing BSSID, where the hotspot sends anyway so the refusal is a message we can
+        // explain. Nothing explains an open network: every client refuses it and the try costs a
+        // wake poke, which takes the phone's hands-free link for good.
+        for (strategy in NativeStrategy.values()) {
+            assertEquals(
+                strategy.name,
+                UnusablePassphraseAction.ABORT,
+                NativeCredentialsPolicy.onEmptyPassphrase(strategy)
+            )
+        }
+    }
+
+    @Test
+    fun `a passphrase is usable when there is one at all`() {
+        assertTrue(NativeCredentialsPolicy.isUsablePassphrase("hunter2hunter2"))
+        assertFalse(NativeCredentialsPolicy.isUsablePassphrase(""))
+        assertFalse(NativeCredentialsPolicy.isUsablePassphrase(null))
+    }
 }

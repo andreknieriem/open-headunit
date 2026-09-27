@@ -61,15 +61,24 @@ object Eui64BssidPolicy {
             lower.startsWith("swlan") || lower == "wlan1"
     }
 
-    /** [preferred] first, then any candidate whose name passes [looksLikeApOrP2p]. */
-    fun choose(candidates: List<Candidate>, preferred: String?): Match? {
+    /**
+     * [preferred] first, then any candidate whose name passes [nameFilter].
+     *
+     * The filter is the caller's because the routes differ: a WiFi Direct group's address can only
+     * come off a P2P interface, while the hotspot route legitimately reads `ap0` and `swlan0`.
+     */
+    fun choose(
+        candidates: List<Candidate>,
+        preferred: String?,
+        nameFilter: (String?) -> Boolean = ::looksLikeApOrP2p,
+    ): Match? {
         if (!preferred.isNullOrEmpty()) {
             val named = candidates.firstOrNull { it.name == preferred }
             val mac = named?.let { fromLinkLocals(it.linkLocalIpv6) }
             if (named != null && mac != null) return Match(named.name, mac)
         }
         for (candidate in candidates) {
-            if (!looksLikeApOrP2p(candidate.name)) continue
+            if (!nameFilter(candidate.name)) continue
             val mac = fromLinkLocals(candidate.linkLocalIpv6) ?: continue
             return Match(candidate.name, mac)
         }

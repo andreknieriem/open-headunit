@@ -309,6 +309,23 @@ class ConnectionIssueBannerPolicyTest {
     }
 
     @Test
+    fun `a refused hands-free record is claimed by both Native transports and by no remedy`() {
+        // It is raised where the listeners open, which both transports do, and nothing the user
+        // can type changes this unit's own Bluetooth stack's answer.
+        for (transport in NativeTransport.values()) {
+            assertTrue(
+                transport.name,
+                ConnectionIssue.HANDS_FREE_RECORD_REFUSED in
+                    ConnectionIssueBannerPolicy.relevantNow(3, transport, true)
+            )
+        }
+        assertFalse(
+            ConnectionIssue.HANDS_FREE_RECORD_REFUSED in
+                ConnectionIssueBannerPolicy.remedyApplied("a name", "a password", "02:00:00:00:00:01", "02:00:00:00:00:02")
+        )
+    }
+
+    @Test
     fun `every issue is relevant on some route`() {
         // The same guard as `every issue can be shown`: a condition no route claims would be
         // recorded on the connection path and then never shown to anybody.

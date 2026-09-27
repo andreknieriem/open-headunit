@@ -13,7 +13,12 @@ import androidx.core.content.ContextCompat
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.aap.AapService
+import com.andrerinas.openheadunit.connection.AutoConnectHoldPolicy
 import com.andrerinas.openheadunit.connection.CommManager
+import com.andrerinas.openheadunit.connection.ConnectionArbiter
+import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy
+import com.andrerinas.openheadunit.connection.ConnectionStage
+import com.andrerinas.openheadunit.connection.ConnectionStageTracker
 import com.andrerinas.openheadunit.connection.usb.UsbAccessoryMode
 import com.andrerinas.openheadunit.connection.usb.UsbAttachPolicy
 import com.andrerinas.openheadunit.connection.usb.UsbDeviceCompat
@@ -24,6 +29,7 @@ import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.DeviceIntent
 import com.andrerinas.openheadunit.utils.LocaleHelper
 import com.andrerinas.openheadunit.main.MainActivity
+import com.andrerinas.openheadunit.main.SettingsActivity
 import com.andrerinas.openheadunit.utils.Settings
 import com.andrerinas.openheadunit.utils.ToastUtils
 
@@ -104,6 +110,15 @@ class UsbAttachedActivity : Activity() {
                 finish()
                 return
             }
+        }
+
+        // No switch, prompt or home screen here: the service holds or refuses it and says why.
+        if (!isLocked && !AutoConnectHoldPolicy.raisesUi(
+                SettingsActivity.isVisible, AapService.instance?.usbCancelledByUser() == true)) {
+            AppLog.i("UsbAttachedActivity: settings on show or the status pill's X holding; handing ${device.deviceName} to the service")
+            handOffToService()
+            finish()
+            return
         }
 
         if (UsbDeviceCompat.isInAccessoryMode(device)) {
@@ -187,6 +202,19 @@ class UsbAttachedActivity : Activity() {
             return
         }
 
+        // The switch starts the USB attempt, so it takes the connection arbiter here, before the
+        // stage is reported: standing the wireless stack down clears the status pill.
+        val arbiterClaim = ConnectionArbiter.claim(
+            ConnectionPriorityPolicy.Tier.USB, ConnectionPriorityPolicy.Owner.USB,
+            "USB switch of ${deviceCompat.uniqueName}"
+        )
+        if (arbiterClaim == null) {
+            finish()
+            return
+        }
+        ConnectionStageTracker.beginAttempt(ConnectionStage.USB_ATTACHED)
+        ConnectionStageTracker.report(ConnectionStage.USB_SWITCHING)
+
         val usbManager = getSystemService(Context.USB_SERVICE) as UsbManager
         val usbMode = UsbAccessoryMode(usbManager)
         AppLog.i("Switching USB device to accessory mode " + deviceCompat.uniqueName)
@@ -204,12 +232,14 @@ class UsbAttachedActivity : Activity() {
                 false
             } finally {
                 UsbSwitchClaim.release()
+                ConnectionArbiter.release(arbiterClaim, sessionFormed = false)
             }
             runOnUiThread {
                 if (result) {
                     ToastUtils.showToast(this, getString(R.string.success), Toast.LENGTH_SHORT)
                 } else {
                     ToastUtils.showToast(this, getString(R.string.failed), Toast.LENGTH_SHORT)
+                    if (!App.provide(this).commManager.isConnected) ConnectionStageTracker.clear()
                 }
                 finish()
             }

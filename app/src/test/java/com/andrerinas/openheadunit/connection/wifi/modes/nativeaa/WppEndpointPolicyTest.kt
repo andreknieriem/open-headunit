@@ -2,6 +2,7 @@ package com.andrerinas.openheadunit.connection.wifi.modes.nativeaa
 
 import com.andrerinas.openheadunit.connection.wifi.direct.GroupIdentityStability
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -17,7 +18,7 @@ class WppEndpointPolicyTest {
     fun `wifi direct withholds on a unit that re-addresses the group every create`() {
         val decision = WppEndpointPolicy.decide(NativeStrategy.WIFI_DIRECT, 5299, GroupIdentityStability.CHANGED)
         assertTrue(decision is WppEndpointDecision.Withhold)
-        assertTrue((decision as WppEndpointDecision.Withhold).reason.contains("new address on every create"))
+        assertTrue((decision as WppEndpointDecision.Withhold).reason.contains("new address every time it comes up"))
     }
 
     @Test
@@ -33,16 +34,22 @@ class WppEndpointPolicyTest {
     }
 
     @Test
-    fun `hotspot advertises the port the server is on, whatever the verdict says`() {
-        for (identity in GroupIdentityStability.values()) {
-            val decision = WppEndpointPolicy.decide(NativeStrategy.HOTSPOT, 5299, identity)
-            assertEquals(identity.name, WppEndpointDecision.Advertise(5299), decision)
-        }
+    fun `an access point on its own address advertises`() {
+        val decision = WppEndpointPolicy.decide(NativeStrategy.HOTSPOT, 5299, GroupIdentityStability.STABLE)
+        assertEquals(WppEndpointDecision.Advertise(5299), decision)
+    }
+
+    @Test
+    fun `an access point that randomises its address is refused like a group that does`() {
+        // Android has randomised soft AP addresses since 10, so the hotspot is no longer exempt.
+        val decision = WppEndpointPolicy.decide(NativeStrategy.HOTSPOT, 5299, GroupIdentityStability.CHANGED)
+        assertTrue(decision is WppEndpointDecision.Withhold)
+        assertTrue((decision as WppEndpointDecision.Withhold).reason.contains("access point"))
     }
 
     @Test
     fun `hotspot withholds when nothing is listening`() {
-        val decision = WppEndpointPolicy.decide(NativeStrategy.HOTSPOT, null, GroupIdentityStability.NOT_MEASURED)
+        val decision = WppEndpointPolicy.decide(NativeStrategy.HOTSPOT, null, GroupIdentityStability.STABLE)
         assertTrue(decision is WppEndpointDecision.Withhold)
     }
 
@@ -56,7 +63,7 @@ class WppEndpointPolicyTest {
     fun `the refusals say different things and each says something`() {
         val unproven = WppEndpointPolicy.decide(NativeStrategy.WIFI_DIRECT, 5299, GroupIdentityStability.UNPROVEN)
         val changed = WppEndpointPolicy.decide(NativeStrategy.WIFI_DIRECT, 5299, GroupIdentityStability.CHANGED)
-        val notListening = WppEndpointPolicy.decide(NativeStrategy.HOTSPOT, null, GroupIdentityStability.NOT_MEASURED)
+        val notListening = WppEndpointPolicy.decide(NativeStrategy.HOTSPOT, null, GroupIdentityStability.STABLE)
         val reasons = listOf(unproven, changed, notListening).map { (it as WppEndpointDecision.Withhold).reason }
         assertTrue(reasons.all { it.isNotBlank() })
         assertEquals(3, reasons.toSet().size)
@@ -74,8 +81,37 @@ class WppEndpointPolicyTest {
     }
 
     @Test
+    fun `the credentials are kept only where our address will still be ours next time`() {
+        assertTrue(WppEndpointPolicy.keepsNetwork(GroupIdentityStability.STABLE))
+        for (identity in GroupIdentityStability.values().filter { it != GroupIdentityStability.STABLE }) {
+            assertFalse(identity.name, WppEndpointPolicy.keepsNetwork(identity))
+        }
+    }
+
+    @Test
+    fun `keeping the network and advertising the endpoint answer the same question`() {
+        // Field 5 and field 6 must never disagree: a phone told to keep a network it cannot find
+        // again is the poisoning this whole policy exists to avoid.
+        for (strategy in NativeStrategy.values()) {
+            for (identity in GroupIdentityStability.values()) {
+                val advertises = WppEndpointPolicy.decide(strategy, 5299, identity) is WppEndpointDecision.Advertise
+                assertEquals("$strategy/$identity", WppEndpointPolicy.keepsNetwork(identity), advertises)
+            }
+        }
+    }
+
+    @Test
+    fun `a silent server withholds the endpoint without making the network unkeepable`() {
+        // The two are deliberately not the same test: whether anything is listening says nothing
+        // about whether our address is the same one next time.
+        val identity = GroupIdentityStability.STABLE
+        assertTrue(WppEndpointPolicy.decide(NativeStrategy.WIFI_DIRECT, null, identity) is WppEndpointDecision.Withhold)
+        assertTrue(WppEndpointPolicy.keepsNetwork(identity))
+    }
+
+    @Test
     fun `a port the server reports is advertised verbatim, not the default`() {
-        val decision = WppEndpointPolicy.decide(NativeStrategy.HOTSPOT, 41234, GroupIdentityStability.NOT_MEASURED)
+        val decision = WppEndpointPolicy.decide(NativeStrategy.HOTSPOT, 41234, GroupIdentityStability.STABLE)
         assertEquals(41234, (decision as WppEndpointDecision.Advertise).port)
     }
 }

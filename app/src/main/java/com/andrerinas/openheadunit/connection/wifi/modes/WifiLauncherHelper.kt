@@ -46,6 +46,8 @@ class WifiLauncherHelper : WifiLauncher {
 
     override fun hasWifiDirect() = strategy == HelperStrategy.WIFI_DIRECT
 
+    override fun hostsOwnAccessPoint() = strategy == HelperStrategy.HEADUNIT_HOTSPOT
+
     override fun hasWirelessServer() = true
 
     override fun hasLocalDiscovery(): Boolean {

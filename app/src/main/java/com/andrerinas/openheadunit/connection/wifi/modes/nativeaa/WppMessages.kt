@@ -1,6 +1,7 @@
 package com.andrerinas.openheadunit.connection.wifi.modes.nativeaa
 
 import com.andrerinas.openheadunit.aap.protocol.proto.Wireless
+import com.andrerinas.openheadunit.connection.wifi.direct.GroupIdentityStability
 
 /**
  * Builds the WPP messages this head unit sends.
@@ -94,6 +95,19 @@ object WppMessages {
             .setHeadUnitSoftwareVersion(SOFTWARE_VERSION)
             .build()
 
+    /**
+     * Type 10, refusing a dial and withdrawing the endpoint behind it.
+     *
+     * The reason is fixed and there is no parameter, because only two values are sendable at all:
+     * the phone throws on UNKNOWN whatever the transport, and on either reason over RFCOMM. This
+     * one says the setup the phone is dialling with is no longer valid, which is what a stale
+     * endpoint is.
+     */
+    fun connectionRejection(): Wireless.WifiConnectionRejection =
+        Wireless.WifiConnectionRejection.newBuilder()
+            .setReason(Wireless.ConnectionRejectionReason.CONNECTION_REJECTION_REASON_INVALID_SETUP_TOKEN)
+            .build()
+
     /** Type 1. Where to open the projection session once the phone is on our network. */
     fun startRequest(ip: String, port: Int): Wireless.WifiStartRequest =
         Wireless.WifiStartRequest.newBuilder()
@@ -111,22 +125,23 @@ object WppMessages {
      * than dropping the field. Omitting it risks a strict parser rejecting the whole message, which
      * would surface as silence rather than as the specific refusal an empty one produces.
      *
-     * [strategy] picks the access-point type: DYNAMIC for a hotspot, matching both reference
-     * implementations, and STATIC for a WiFi Direct group.
+     * [identity] picks the access-point type through [WppEndpointPolicy.keepsNetwork]: STATIC only
+     * where the phone can safely keep this network, DYNAMIC otherwise, because a stored BSSID that
+     * moves is one Android pins below Gearhead and only the user can clear.
      */
     fun infoResponse(
         ssid: String,
         key: String,
         bssid: String?,
-        strategy: NativeStrategy
+        identity: GroupIdentityStability
     ): Wireless.WifiInfoResponse =
         Wireless.WifiInfoResponse.newBuilder()
             .setSsid(ssid)
             .setKey(key)
             .setSecurityMode(Wireless.SecurityMode.WPA2_PERSONAL)
             .setAccessPointType(
-                if (strategy == NativeStrategy.HOTSPOT) Wireless.AccessPointType.DYNAMIC
-                else Wireless.AccessPointType.STATIC
+                if (WppEndpointPolicy.keepsNetwork(identity)) Wireless.AccessPointType.STATIC
+                else Wireless.AccessPointType.DYNAMIC
             )
             .setBssid(bssid.orEmpty())
             .build()

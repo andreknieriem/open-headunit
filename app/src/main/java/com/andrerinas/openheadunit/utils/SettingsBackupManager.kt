@@ -61,6 +61,7 @@ object SettingsBackupManager {
         // not know, so without this an old backup loses the setting; Settings.videoFitMode
         // migrates the restored boolean on first read.
         "stretch_to_fill" to ValueType.BOOLEAN,
+        "enable-car-launcher" to ValueType.BOOLEAN,
         "enable-floating-button" to ValueType.BOOLEAN,
         "floating-button-x-percent" to ValueType.INT,
         "floating-button-y-percent" to ValueType.INT,
@@ -193,9 +194,6 @@ object SettingsBackupManager {
         "wait-for-wifi-timeout" to ValueType.INT,
         "helper-connection-strategy" to ValueType.INT,
         "bluetooth-manager-service-name" to ValueType.STRING,
-        // The Native AA handshake opt-in: a reporter who found they need it wants it to survive a
-        // reinstall, which is exactly when they are asked to export their settings.
-        "native-wifi-version-exchange" to ValueType.BOOLEAN,
         // On by default, so what is worth carrying is the opt-out: a user who turned it off should
         // not have to find it again after a reinstall.
         "native-aa-complete-hfp-slc" to ValueType.BOOLEAN,
@@ -217,6 +215,12 @@ object SettingsBackupManager {
         // Wireless hotspot host credentials and manual BSSID override.
         "hotspot-ssid" to ValueType.STRING,
         "hotspot-password" to ValueType.STRING,
+        // The WiFi Direct pair, for the same reason: the user typed it and a reinstall is exactly
+        // when they want it back. No half-pair guard is needed because Settings.wifiDirectGroupIdentity
+        // reads null unless both keys are present, and a fresh pair is then minted.
+        "wifi-direct-group-name" to ValueType.STRING,
+        "wifi-direct-group-passphrase" to ValueType.STRING,
+        "wifi-direct-identity-user-set" to ValueType.BOOLEAN,
         // Which band to ask for, on either transport: a property of this unit's radio, found by
         // trial, so it should survive the reinstall that is exactly when somebody exports their
         // settings.
@@ -226,6 +230,7 @@ object SettingsBackupManager {
         // regulatory domain rather than of this unit, so it is worth even more across a reinstall.
         "wifi-5ghz-channel" to ValueType.INT,
         "static-bssid" to ValueType.STRING,
+        "static-p2p-bssid" to ValueType.STRING,
         // Touch calibration fix and toast visibility.
         "show-toast-messages" to ValueType.BOOLEAN,
         "usb-blacklist" to ValueType.STRING_SET

@@ -21,6 +21,15 @@ enum class UnusableBssidAction {
     SEND_WITH_EMPTY_BSSID
 }
 
+/** What to do when the credentials we are about to send carry no passphrase. */
+enum class UnusablePassphraseAction {
+    /** Do not send them at all. */
+    ABORT,
+
+    /** Send them anyway, as an open network. */
+    SEND_ANYWAY
+}
+
 /**
  * Whether a set of credentials is fit to hand the phone. The interesting case is a missing BSSID,
  * where the answer differs by transport:
@@ -59,6 +68,20 @@ object NativeCredentialsPolicy {
     fun onUnusableBssid(strategy: NativeStrategy): UnusableBssidAction = when (strategy) {
         NativeStrategy.WIFI_DIRECT -> UnusableBssidAction.ABORT
         NativeStrategy.HOTSPOT -> UnusableBssidAction.SEND_WITH_EMPTY_BSSID
+    }
+
+    /** Whether [passphrase] can carry a WPA2 join at all. An open network is refused by every client. */
+    fun isUsablePassphrase(passphrase: String?): Boolean = !passphrase.isNullOrEmpty()
+
+    /**
+     * What to do when [isUsablePassphrase] said no.
+     *
+     * Both transports abort, and unlike a missing BSSID there is no argument for trying: no
+     * reference implementation has a no-passphrase mode, and sending costs a wake poke that takes
+     * the phone's hands-free link for a network it is certain to refuse.
+     */
+    fun onEmptyPassphrase(strategy: NativeStrategy): UnusablePassphraseAction = when (strategy) {
+        NativeStrategy.WIFI_DIRECT, NativeStrategy.HOTSPOT -> UnusablePassphraseAction.ABORT
     }
 
     /**

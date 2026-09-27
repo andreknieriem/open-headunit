@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Environment
 import androidx.core.content.ContextCompat
+import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.AppComponent
 import com.andrerinas.openheadunit.BuildConfig
@@ -39,7 +40,7 @@ object AutomationEffectRunner {
                 is AutomationCommandPolicy.Effect.StartService -> startService(context, effect)
                 is AutomationCommandPolicy.Effect.ConnectSocket ->
                     CoroutineScope(Dispatchers.IO).launch {
-                        component.commManager.connect(effect.ip, effect.port)
+                        component.commManager.connect(effect.ip, effect.port, ConnectionPriorityPolicy.Tier.USER)
                     }
                 is AutomationCommandPolicy.Effect.SetNightMode ->
                     setNightMode(context, component.settings, effect.mode)

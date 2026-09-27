@@ -18,11 +18,15 @@ import com.andrerinas.openheadunit.aap.protocol.proto.Control
 import com.andrerinas.openheadunit.app.UsbAttachedActivity
 import com.andrerinas.openheadunit.connection.usb.UsbBlacklistPolicy
 import com.andrerinas.openheadunit.connection.usb.UsbDeviceCompat
+import com.andrerinas.openheadunit.connection.wifi.direct.GroupIdentityStability
+import com.andrerinas.openheadunit.connection.wifi.direct.ObservedP2pCredentials
 import com.andrerinas.openheadunit.connection.wifi.direct.ObservedP2pGroup
 import com.andrerinas.openheadunit.connection.wifi.direct.StoredP2pIdentity
 import com.andrerinas.openheadunit.connection.wifi.modes.helper.HelperStrategy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeDriverSelectionPolicy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeStrategy
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.SoftApAddressRecord
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.SoftApAdvertisedEndpoint
 import com.andrerinas.openheadunit.connection.wifi.WifiLauncherMode
 
 class Settings(private val context: Context) {
@@ -108,6 +112,14 @@ class Settings(private val context: Context) {
         }
     }
 
+    // Car Launcher / Home App mode
+    var enableCarLauncher: Boolean
+        get() = prefs.getBoolean(KEY_ENABLE_CAR_LAUNCHER, false)
+        set(value) { prefs.edit().putBoolean(KEY_ENABLE_CAR_LAUNCHER, value).apply() }
+
+    val isCarLauncherActive: Boolean
+        get() = enableCarLauncher || CarLauncherManager.isDefaultLauncher(context)
+
     // Floating Launcher Overlay Button Settings
     // Off by default: on it, MainActivity.checkOverlayPermission() sends a fresh install to the
     // system overlay screen on first resume, for a feature the user has not asked for yet.
@@ -133,6 +145,16 @@ class Settings(private val context: Context) {
 
     // Action when tapping "Exit" inside Android Auto
     var aaExitAction: ExitAction
+        get() {
+            if (isCarLauncherActive) {
+                val action = rawAaExitAction
+                return if (action == ExitAction.OEM_LAUNCHER) ExitAction.APP_HOME else action
+            }
+            return rawAaExitAction
+        }
+        set(action) { rawAaExitAction = action }
+
+    var rawAaExitAction: ExitAction
         get() {
             val value = prefs.getInt("aa-exit-action", ExitAction.OEM_LAUNCHER.value)
             return ExitAction.fromInt(value)
@@ -345,6 +367,18 @@ class Settings(private val context: Context) {
         get() = try { prefs.getString("static-bssid", "0") } catch (e: Exception) { "0" } // Default 0 for Auto
         set(value) {
             prefs.edit().putString("static-bssid", value).apply()
+        }
+
+    /**
+     * The WiFi Direct group's address, typed by hand, and deliberately not [staticBSSID].
+     *
+     * An access point and a P2P group are different interfaces, so one address cannot be right for
+     * both: the AP's own, announced for a group, is a network no phone can find.
+     */
+    var staticP2pBSSID: String?
+        get() = try { prefs.getString("static-p2p-bssid", "0") } catch (e: Exception) { "0" } // Default 0 for Auto
+        set(value) {
+            prefs.edit().putString("static-p2p-bssid", value).apply()
         }
 
     var fakeSpeed: Boolean
@@ -643,10 +677,134 @@ class Settings(private val context: Context) {
         }
 
     /**
+     * The WiFi Direct pair a WPP endpoint was last advertised under, which the phone stored and will
+     * join and nothing else. Kept until a rejection or a Bluetooth landing on it retires it
+     * ([com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.EndpointRetirementPolicy]).
+     */
+    var wifiDirectAdvertisedIdentity: StoredP2pIdentity?
+        get() {
+            val name = prefs.getString("wifi-direct-advertised-name", null) ?: return null
+            val passphrase = prefs.getString("wifi-direct-advertised-passphrase", null) ?: return null
+            return StoredP2pIdentity(name, passphrase)
+        }
+        set(value) {
+            prefs.edit()
+                .putString("wifi-direct-advertised-name", value?.networkName)
+                .putString("wifi-direct-advertised-passphrase", value?.passphrase)
+                .apply()
+        }
+
+    /**
+     * Whether the kept pair was typed by the user rather than drawn by the app. Provenance only:
+     * it decides what the identity rows say, and warns before "New identity" throws the typing away.
+     */
+    var wifiDirectIdentityUserSet: Boolean
+        get() = prefs.getBoolean("wifi-direct-identity-user-set", false)
+        set(value) { prefs.edit().putBoolean("wifi-direct-identity-user-set", value).apply() }
+
+    /**
+     * The last group actually read off the air, so the settings screen can show the name, password
+     * and address a phone was offered. Persisted because that screen stops the wireless stack before
+     * it draws, and because below API 29 the platform's own pair is legible nowhere else.
+     */
+    var wifiDirectLastReadBack: ObservedP2pCredentials?
+        get() {
+            val name = prefs.getString("wifi-direct-readback-name", null) ?: return null
+            val passphrase = prefs.getString("wifi-direct-readback-passphrase", null) ?: return null
+            val bssid = prefs.getString("wifi-direct-readback-bssid", null) ?: return null
+            return ObservedP2pCredentials(name, passphrase, bssid)
+        }
+        set(value) {
+            prefs.edit()
+                .putString("wifi-direct-readback-name", value?.networkName)
+                .putString("wifi-direct-readback-passphrase", value?.passphrase)
+                .putString("wifi-direct-readback-bssid", value?.bssid)
+                .apply()
+        }
+
+    /**
      * The last Native AA group this unit hosted, as the phone saw it, so the next one can be
      * compared to it. Whether the BSSID repeats is a per-unit fact the platform does not expose,
      * so it is measured across bring-ups (GroupIdentityStabilityPolicy). Not a user setting.
      */
+    /**
+     * The access point as it was last seen, and what that reading graded it. Its own pair, because
+     * an AP and a P2P group are different interfaces and neither answers the other's question.
+     */
+    var softApLastGroup: ObservedP2pGroup?
+        get() {
+            val ssid = prefs.getString("soft-ap-last-group-ssid", null) ?: return null
+            val bssid = prefs.getString("soft-ap-last-group-bssid", null) ?: return null
+            return ObservedP2pGroup(ssid, bssid)
+        }
+        set(value) {
+            prefs.edit()
+                .putString("soft-ap-last-group-ssid", value?.ssid)
+                .putString("soft-ap-last-group-bssid", value?.bssid)
+                .apply()
+        }
+
+    var softApLastIdentityVerdict: GroupIdentityStability
+        get() = try {
+            GroupIdentityStability.valueOf(
+                prefs.getString("soft-ap-last-identity-verdict", null)
+                    ?: GroupIdentityStability.UNPROVEN.name
+            )
+        } catch (e: Exception) {
+            GroupIdentityStability.UNPROVEN
+        }
+        set(value) = prefs.edit().putString("soft-ap-last-identity-verdict", value.name).apply()
+
+    /** The access point's address as last read, graded by SoftApEndpointStabilityPolicy. */
+    var softApAddressRecord: SoftApAddressRecord?
+        get() {
+            val ip = prefs.getString("soft-ap-last-ip", null) ?: return null
+            val digest = prefs.getString("soft-ap-last-psk-digest", null) ?: return null
+            val boot = prefs.getInt("soft-ap-ip-boot", -1).takeIf { it >= 0 }
+            return SoftApAddressRecord(ip, digest, boot, prefs.getBoolean("soft-ap-ip-spanned-boot", false))
+        }
+        set(value) {
+            prefs.edit()
+                .putString("soft-ap-last-ip", value?.ip)
+                .putString("soft-ap-last-psk-digest", value?.passphraseDigest)
+                .putInt("soft-ap-ip-boot", value?.bootCount ?: -1)
+                .putBoolean("soft-ap-ip-spanned-boot", value?.spannedBoot ?: false)
+                .apply()
+        }
+
+    /** The access point a WPP endpoint last went out on, so a bring-up that moved it can say so. */
+    var softApAdvertisedEndpoint: SoftApAdvertisedEndpoint?
+        get() {
+            val ssid = prefs.getString("soft-ap-advertised-ssid", null) ?: return null
+            val digest = prefs.getString("soft-ap-advertised-psk-digest", null) ?: return null
+            val bssid = prefs.getString("soft-ap-advertised-bssid", null) ?: return null
+            val ip = prefs.getString("soft-ap-advertised-ip", null) ?: return null
+            return SoftApAdvertisedEndpoint(ssid, digest, bssid, ip)
+        }
+        set(value) {
+            prefs.edit()
+                .putString("soft-ap-advertised-ssid", value?.ssid)
+                .putString("soft-ap-advertised-psk-digest", value?.passphraseDigest)
+                .putString("soft-ap-advertised-bssid", value?.bssid)
+                .putString("soft-ap-advertised-ip", value?.ip)
+                .apply()
+        }
+
+    /**
+     * The verdict the last *create* earned, so a group found already up and read as-is hands it
+     * back instead of grading itself against its own stored record and always answering STABLE.
+     */
+    var wifiDirectLastIdentityVerdict: GroupIdentityStability
+        get() = try {
+            GroupIdentityStability.valueOf(
+                prefs.getString("wifi-direct-last-identity-verdict", null)
+                    ?: GroupIdentityStability.UNPROVEN.name
+            )
+        } catch (e: Exception) {
+            GroupIdentityStability.UNPROVEN
+        }
+        set(value) = prefs.edit().putString("wifi-direct-last-identity-verdict", value.name).apply()
+
     var wifiDirectLastGroup: ObservedP2pGroup?
         get() {
             val ssid = prefs.getString("wifi-direct-last-group-ssid", null) ?: return null
@@ -1127,6 +1285,13 @@ class Settings(private val context: Context) {
         set(value) { prefs.edit().putBoolean("show-toast-messages", value).apply() }
 
     var reopenOnReconnection: Boolean
+        get() {
+            if (isCarLauncherActive) return false
+            return rawReopenOnReconnection
+        }
+        set(value) { rawReopenOnReconnection = value }
+
+    var rawReopenOnReconnection: Boolean
         get() = prefs.getBoolean("reopen-on-reconnection", true)
         set(value) { prefs.edit().putBoolean("reopen-on-reconnection", value).apply() }
 
@@ -1530,6 +1695,7 @@ class Settings(private val context: Context) {
         const val KEY_MEDIA_VOLUME_OFFSET = "media-volume-offset"
         const val KEY_ASSISTANT_VOLUME_OFFSET = "assistant-volume-offset"
         const val KEY_NAVIGATION_VOLUME_OFFSET = "navigation-volume-offset"
+        const val KEY_ENABLE_CAR_LAUNCHER = "enable-car-launcher"
 
         const val AUTO_CONNECT_LAST_SESSION = "last-session"
         const val AUTO_CONNECT_SELF_MODE = "self-mode"
@@ -1997,6 +2163,13 @@ class Settings(private val context: Context) {
         set(value) { prefs.edit().putBoolean("enable-rotary", value).apply() }
 
     var killOnDisconnect: Boolean
+        get() {
+            if (isCarLauncherActive) return false
+            return rawKillOnDisconnect
+        }
+        set(value) { rawKillOnDisconnect = value }
+
+    var rawKillOnDisconnect: Boolean
         get() = prefs.getBoolean("kill-on-disconnect", false)
         set(value) { prefs.edit().putBoolean("kill-on-disconnect", value).apply() }
 
@@ -2042,19 +2215,6 @@ class Settings(private val context: Context) {
     var nativeApStrategy: NativeStrategy
         get() = NativeStrategy.byIdOrDefault(prefs.getInt("native-ap-transport", -1))
         set(value) = prefs.edit().putInt("native-ap-transport", value.id).apply()
-
-    // Whether the Native AA handshake opens with a WifiVersionRequest (Type 4), as real head units
-    // and the OEM ZLink app do, instead of going straight to WifiStartRequest.
-    //
-    // Off by default: it is the one change on this route that alters what a unit with a working
-    // setup puts on the wire, so it stays opt-in. What it buys is the WPP-over-TCP endpoint, which
-    // from Android Auto 17.4 is how a reconnect happens with nothing running on the phone. That
-    // endpoint goes out on the hotspot transport, and on WiFi Direct once this unit's group has been
-    // seen to keep its name and address across bring-ups (see WppEndpointPolicy). Field 3 carries
-    // the bands we can offer (WppChannelTypePolicy); field 4, the frequency list, we cannot read.
-    var nativeWifiVersionExchange: Boolean
-        get() = prefs.getBoolean("native-wifi-version-exchange", false)
-        set(value) = prefs.edit().putBoolean("native-wifi-version-exchange", value).apply()
 
     // Whether ServiceDiscoveryResponse carries a ConnectionConfiguration: the ping and TCP
     // parameters Android Auto lets a head unit ask for.
@@ -2152,6 +2312,16 @@ class Settings(private val context: Context) {
     var connectionIssueHandsFreeHeldAtEpochMs: Long
         get() = prefs.getLong("connection-issue-hands-free-held", 0L)
         set(value) = prefs.edit().putLong("connection-issue-hands-free-held", value).apply()
+
+    /** This unit's Bluetooth would not publish a hands-free record to stand in with. */
+    var connectionIssueHandsFreeRecordRefusedAtEpochMs: Long
+        get() = prefs.getLong("connection-issue-hands-free-record-refused", 0L)
+        set(value) = prefs.edit().putLong("connection-issue-hands-free-record-refused", value).apply()
+
+    /** The phone kept dialling a TCP endpoint this unit no longer honours. */
+    var connectionIssueStaleEndpointAtEpochMs: Long
+        get() = prefs.getLong("connection-issue-stale-endpoint", 0L)
+        set(value) = prefs.edit().putLong("connection-issue-stale-endpoint", value).apply()
 
     /**
      * When the user last dismissed the failure banner.
@@ -2251,6 +2421,20 @@ class Settings(private val context: Context) {
     var nativeAaWakeDamageVerdict: Int
         get() = prefs.getInt("native-aa-wake-damage-verdict", 0)
         set(value) = prefs.edit().putInt("native-aa-wake-damage-verdict", value).apply()
+
+    // Armings that reached the wake and produced no session, so a DESTRUCTIVE verdict can be
+    // measured again instead of holding for the life of the install. One reading used to refuse
+    // every poke on a unit the poke was the only thing that ever connected.
+    var nativeAaWakeArmingsWithoutSession: Int
+        get() = prefs.getInt("native-aa-wake-armings-without-session", 0)
+        set(value) = prefs.edit().putInt("native-aa-wake-armings-without-session", value).apply()
+
+    // What cycling this unit's own Bluetooth did, as BluetoothRadioCyclePolicy. The cycle is the
+    // wake that gives the hands-free link back rather than taking it, but only where the radio
+    // comes back and reconnects on its own, which is a property of the unit.
+    var nativeAaRadioCycleVerdict: Int
+        get() = prefs.getInt("native-aa-radio-cycle-verdict", 0)
+        set(value) = prefs.edit().putInt("native-aa-radio-cycle-verdict", value).apply()
 
     // Run the Native AA Bluetooth route on a unit ExternalBtPolicy has flagged, instead of refusing
     // to start it. The detection marks a class of hardware rather than measuring the unit in front

@@ -49,21 +49,21 @@ class SettingsScreenPausePolicyTest {
     @Test
     fun `closing the screen with nothing wireless saved leaves the stack down`() {
         assertFalse(
-            SettingsScreenPausePolicy.rearmsOnRelease(qrHold = false, wirelessSettingSaved = false)
+            SettingsScreenPausePolicy.rearmsOnRelease(qrHold = false, wirelessRequestHeld = false)
         )
     }
 
     @Test
-    fun `a wireless setting saved behind the screen re-arms on close`() {
+    fun `a Save or a Bluetooth arrival held behind the screen re-arms on close`() {
         assertTrue(
-            SettingsScreenPausePolicy.rearmsOnRelease(qrHold = false, wirelessSettingSaved = true)
+            SettingsScreenPausePolicy.rearmsOnRelease(qrHold = false, wirelessRequestHeld = true)
         )
     }
 
     @Test
     fun `the setup QR re-arms while the screen is still open`() {
         assertTrue(
-            SettingsScreenPausePolicy.rearmsOnRelease(qrHold = true, wirelessSettingSaved = false)
+            SettingsScreenPausePolicy.rearmsOnRelease(qrHold = true, wirelessRequestHeld = false)
         )
     }
 }

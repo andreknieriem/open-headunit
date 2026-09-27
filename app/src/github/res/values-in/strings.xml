@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="keep_dummy_vpn">Biarkan VPN offline tetap aktif saat terhubung</string>
+    <string name="keep_dummy_vpn_description">Mengaktifkan VPN offline aplikasi ini saat ponsel terhubung. Ditujukan untuk perangkat pada frekuensi 2,4 GHz atau yang mengalami gangguan audio/video berkala, agar chip Wi-Fi head unit berhenti mencari jaringan lain. Saat aktif, aplikasi lain di head unit ini tidak memiliki akses internet. Berlaku pada koneksi berikutnya.</string>
+    <string name="keep_dummy_vpn_denied">Izin VPN ditolak. VPN offline tidak dapat diaktifkan secara otomatis.</string>
+</resources>

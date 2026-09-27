@@ -154,7 +154,7 @@ object LogExporter {
             "wifi=mode:${settings.wifiConnectionMode} strategy:${wifiTransport(settings)} " +
             // The band and the stand-down arm decide how a stuttering capture reads, and both are
             // otherwise only in lines that rotate out of a head unit's buffer within a minute.
-            "band:${band(context)} standDown:${standDown(settings)} | " +
+            "band:${band(context)} standDown:${standDown(settings)} autoHotspot:${if (settings.autoEnableHotspot) "on" else "off"} | " +
             // Which Bluetooth this unit will use. A capture that shows the handshake doing nothing
             // reads completely differently once the header says the route was blocked.
             "bt=${bluetoothRoute(context)} | " +

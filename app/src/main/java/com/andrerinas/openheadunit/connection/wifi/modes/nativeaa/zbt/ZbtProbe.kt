@@ -150,8 +150,11 @@ object ZbtProbe {
             )
         } catch (e: IOException) {
             AppLog.i("ZbtProbe: ${e.message}")
-            return "Nothing is listening on port ${ZbtByteChannel.PORT}. " +
-                "This unit has no vendor Bluetooth daemon to talk to."
+            // A failure that is not a connect failure got past the connect, so something is there.
+            return notConnectedVerdict(
+                (e as? ZbtByteChannel.NotConnected)?.verdict
+                    ?: ZbtReachabilityPolicy.classify(e.javaClass.simpleName, answered = false)
+            )
         }
 
         try {
@@ -307,6 +310,22 @@ object ZbtProbe {
         return if (known && fits) "(reads as WPP type $type, $declared byte payload)"
         else "(not WPP framing: type $type, declares $declared of ${bytes.size - WppFraming.HEADER_SIZE})"
     }
+
+    /**
+     * What to say when the port would not open.
+     *
+     * A refusal and a port that is held but not accepting are different findings, and reporting
+     * the second as the first told a reporter their working module was absent hardware.
+     */
+    internal fun notConnectedVerdict(verdict: ZbtReachabilityPolicy.Verdict?): String =
+        if (verdict == ZbtReachabilityPolicy.Verdict.LISTENING_SILENT) {
+            "Something is listening on port ${ZbtByteChannel.PORT} but it would not take the " +
+                "connection. On some units the module only answers while no phone is linked to " +
+                "it, so turn the phone's Bluetooth off and test again."
+        } else {
+            "Nothing is listening on port ${ZbtByteChannel.PORT}. " +
+                "This unit has no vendor Bluetooth daemon to talk to."
+        }
 
     /**
      * What to say when this app's own connection already holds the module's one client slot.

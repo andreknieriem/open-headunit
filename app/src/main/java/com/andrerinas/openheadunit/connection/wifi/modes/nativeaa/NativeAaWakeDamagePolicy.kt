@@ -6,8 +6,7 @@ package com.andrerinas.openheadunit.connection.wifi.modes.nativeaa
  * A poke displaces the phone's single hands-free slot by design - the Audio Gateway closes the
  * connection it already holds to that address when it accepts ours - and no API can put the link
  * back. Whether the unit's own client re-establishes is a property of its stack, so it is measured
- * once rather than asked: the first escalated wake is the probe, and a unit that stays down is left
- * alone from then on.
+ * once rather than asked, and re-measured rather than latched where the verdict costs every session.
  */
 object NativeAaWakeDamagePolicy {
 
@@ -18,15 +17,22 @@ object NativeAaWakeDamagePolicy {
      */
     const val PROBE_WINDOW_MS = 30_000L
 
+    /**
+     * Armings that reach the wake and produce no session before a DESTRUCTIVE unit is measured
+     * again. One reading used to hold for the life of the install, which left units refusing every
+     * poke where the poke was the only thing that ever connected them.
+     */
+    const val REPROBE_AFTER_ARMINGS = 5
+
     /** What this unit is known to do with its hands-free link when a wake takes the slot. */
     enum class Verdict {
         /** Never measured. The next escalated wake is the probe. */
         UNKNOWN,
 
-        /** The link came back on its own, so a wake costs a blip. */
+        /** The link came back, or the wake bought a session. Waking costs a blip. */
         SAFE,
 
-        /** The link did not come back. Nothing escalates on this unit again. */
+        /** The link did not come back and the wake bought nothing. */
         DESTRUCTIVE;
 
         companion object {
@@ -35,20 +41,28 @@ object NativeAaWakeDamagePolicy {
         }
     }
 
-    /** Whether a stand-down may yield at all. Only a measured failure withholds the wake. */
-    fun allowsEscalation(verdict: Verdict): Boolean = verdict != Verdict.DESTRUCTIVE
+    /** Whether a measured failure has stood enough armings to be worth testing again. */
+    fun shouldReprobe(verdict: Verdict, armingsWithoutSession: Int): Boolean =
+        verdict == Verdict.DESTRUCTIVE && armingsWithoutSession >= REPROBE_AFTER_ARMINGS
+
+    /** Whether a stand-down may yield at all. Only an unexpired measured failure withholds the wake. */
+    fun allowsEscalation(verdict: Verdict, armingsWithoutSession: Int): Boolean =
+        verdict != Verdict.DESTRUCTIVE || shouldReprobe(verdict, armingsWithoutSession)
 
     /** Whether this wake is the one being measured, so the probe window is armed behind it. */
-    fun isProbe(verdict: Verdict): Boolean = verdict == Verdict.UNKNOWN
+    fun isProbe(verdict: Verdict, armingsWithoutSession: Int): Boolean =
+        verdict == Verdict.UNKNOWN || shouldReprobe(verdict, armingsWithoutSession)
 
     /**
-     * What the probe made of the link. A null reading is the adapter refusing to answer, which is
-     * not evidence either way: stay unmeasured and probe again rather than condemn the unit.
+     * What the probe made of the wake. A session is the thing the wake was for, so one pays for
+     * itself whatever the link reads. Otherwise a null reading is the adapter refusing to answer,
+     * which is not evidence either way: stay unmeasured and probe again rather than condemn the unit.
      */
-    fun verdictFrom(linkReturned: Boolean?): Verdict = when (linkReturned) {
-        true -> Verdict.SAFE
-        false -> Verdict.DESTRUCTIVE
-        null -> Verdict.UNKNOWN
+    fun verdictFrom(linkReturned: Boolean?, wakeStartedAaSession: Boolean): Verdict = when {
+        wakeStartedAaSession -> Verdict.SAFE
+        linkReturned == true -> Verdict.SAFE
+        linkReturned == false -> Verdict.DESTRUCTIVE
+        else -> Verdict.UNKNOWN
     }
 
     /** Whether a probe result is worth storing. An unreadable one would only overwrite a measurement. */

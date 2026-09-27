@@ -15,6 +15,7 @@ import androidx.core.app.NotificationCompat
 import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.aap.AapService
 import com.andrerinas.openheadunit.main.MainActivity
+import com.andrerinas.openheadunit.main.SettingsActivity
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.Settings
 import android.os.Build
@@ -81,6 +82,12 @@ class WifiAutoStartReceiver : BroadcastReceiver() {
                     ContextCompat.startForegroundService(context, serviceIntent)
                 } catch (e: Exception) {
                     AppLog.e("Failed to start AapService from background: ${e.message}")
+                }
+
+                // The app is already open there, and raising the home screen would close settings.
+                if (SettingsActivity.isVisible) {
+                    AppLog.i("WifiAutoStartReceiver: the settings screen is on show, so the home screen is not raised.")
+                    return
                 }
 
                 val launchIntent = Intent(context, MainActivity::class.java).apply {

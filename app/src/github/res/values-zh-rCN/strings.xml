@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="keep_dummy_vpn">连接时保持离线 VPN 启动</string>
+    <string name="keep_dummy_vpn_description">手机连接期间保持离线 VPN 启用，以防止车机 Wi-Fi 芯片在 2.4 GHz 上搜索其他网络。</string>
+    <string name="keep_dummy_vpn_denied">VPN 权限已被拒绝。无法自动启动离线 VPN。</string>
+</resources>

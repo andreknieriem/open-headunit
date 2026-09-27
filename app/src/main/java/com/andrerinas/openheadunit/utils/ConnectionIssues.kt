@@ -100,7 +100,28 @@ enum class ConnectionIssue {
      * connected with a profile, and a unit serving one hands-free link at a time has none left to
      * give. No setting reaches it: the lever is the other device.
      */
-    HANDS_FREE_HELD_ELSEWHERE
+    HANDS_FREE_HELD_ELSEWHERE,
+
+    /**
+     * This unit's Bluetooth would not publish a hands-free record for the app to stand in with.
+     *
+     * Android Auto will not start wireless setup against a head unit whose Bluetooth is not
+     * connected with a profile, and a unit with no such record can never offer one. Asked for
+     * again a few times before this is raised, in case it was the Android Auto record registering
+     * milliseconds earlier. No setting reaches it.
+     */
+    HANDS_FREE_RECORD_REFUSED,
+
+    /**
+     * The phone is dialling a TCP endpoint this unit no longer honours, and cannot be told to stop.
+     *
+     * Android Auto stores that endpoint beside the network it was given and prefers it over the
+     * Bluetooth handshake, with no fallback when the network is gone. This unit turns the dial away
+     * and, where its Bluetooth listeners are open, withdraws the endpoint on the wire. A served
+     * dial retires it, and so does a Bluetooth handshake landing with none beside it, because a
+     * rejection that works is what stops the phone ever dialling again.
+     */
+    PHONE_HOLDS_STALE_ENDPOINT
 }
 
 /** An issue that is currently true, and when it was last raised. */
@@ -217,6 +238,8 @@ object ConnectionIssues {
                 ConnectionIssue.FIVE_GHZ_CHANNEL_REFUSED -> settings.connectionIssueFiveGhzChannelRefusedAtEpochMs
                 ConnectionIssue.HEADUNIT_SERVER_NOT_ANSWERING -> settings.connectionIssueHeadUnitServerDeafAtEpochMs
                 ConnectionIssue.HANDS_FREE_HELD_ELSEWHERE -> settings.connectionIssueHandsFreeHeldAtEpochMs
+                ConnectionIssue.HANDS_FREE_RECORD_REFUSED -> settings.connectionIssueHandsFreeRecordRefusedAtEpochMs
+                ConnectionIssue.PHONE_HOLDS_STALE_ENDPOINT -> settings.connectionIssueStaleEndpointAtEpochMs
             }
         } catch (e: Exception) {
             0L
@@ -236,6 +259,8 @@ object ConnectionIssues {
                     ConnectionIssue.FIVE_GHZ_CHANNEL_REFUSED -> settings.connectionIssueFiveGhzChannelRefusedAtEpochMs = atEpochMs
                     ConnectionIssue.HEADUNIT_SERVER_NOT_ANSWERING -> settings.connectionIssueHeadUnitServerDeafAtEpochMs = atEpochMs
                     ConnectionIssue.HANDS_FREE_HELD_ELSEWHERE -> settings.connectionIssueHandsFreeHeldAtEpochMs = atEpochMs
+                    ConnectionIssue.HANDS_FREE_RECORD_REFUSED -> settings.connectionIssueHandsFreeRecordRefusedAtEpochMs = atEpochMs
+                    ConnectionIssue.PHONE_HOLDS_STALE_ENDPOINT -> settings.connectionIssueStaleEndpointAtEpochMs = atEpochMs
                 }
             } catch (e: Exception) {
                 AppLog.d("ConnectionIssues: could not record $issue: ${e.message}")

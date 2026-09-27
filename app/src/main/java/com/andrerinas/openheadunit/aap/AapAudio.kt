@@ -518,6 +518,18 @@ internal class AapAudio(
         }
     }
 
+    /**
+     * Park all audio channels and release transient playback focus (e.g. device sleep).
+     * Channels will resume cleanly when new audio packets arrive.
+     */
+    fun pauseAllAudio() {
+        AppLog.i("AapAudio: Pausing all audio tracks for sleep")
+        audioDecoder.pauseAll()
+        synchronized(activeAudioChannels) { activeAudioChannels.clear() }
+        holdingPlaybackFocus = false
+        releasePlaybackFocus()
+    }
+
     companion object {
         private const val AUDIO_BUFS_SIZE = 65536 * 4  // Up to 256 Kbytes
         private const val DUCK_VOLUME_FACTOR = 0.4f

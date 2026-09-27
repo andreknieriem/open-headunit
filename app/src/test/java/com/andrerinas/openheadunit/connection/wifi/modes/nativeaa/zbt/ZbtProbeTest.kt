@@ -171,4 +171,26 @@ class ZbtProbeTest {
         assertFalse(said, said.contains("never answered"))
         assertFalse(said, said.contains("Nothing is listening"))
     }
+
+    @Test
+    fun `a port that refuses is the only one reported as no daemon`() {
+        val said = ZbtProbe.notConnectedVerdict(ZbtReachabilityPolicy.Verdict.NOTHING_LISTENING)
+        assertTrue(said, said.contains("Nothing is listening"))
+    }
+
+    @Test
+    fun `a port that will not take the connection is not reported as an absent module`() {
+        // #1005's module refuses connections while a phone is linked to it, and the old message
+        // told that reporter their unit had no daemon at all.
+        val said = ZbtProbe.notConnectedVerdict(ZbtReachabilityPolicy.Verdict.LISTENING_SILENT)
+        assertTrue(said, said.contains("Something is listening"))
+        assertTrue(said, said.contains("Bluetooth off"))
+        assertFalse(said, said.contains("Nothing is listening"))
+    }
+
+    @Test
+    fun `a failure that named no verdict falls back to the plain answer`() {
+        val said = ZbtProbe.notConnectedVerdict(null)
+        assertTrue(said, said.contains("Nothing is listening"))
+    }
 }

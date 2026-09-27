@@ -29,6 +29,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.aap.AapProjectionActivity
@@ -44,6 +45,7 @@ import com.andrerinas.openheadunit.connection.ConnectionStageTracker
 import com.andrerinas.openheadunit.connection.PhoneExitQuietPolicy
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.AppPermissions
+import com.andrerinas.openheadunit.utils.CarLauncherManager
 import com.andrerinas.openheadunit.utils.ConnectionIssue
 import com.andrerinas.openheadunit.utils.ConnectionIssues
 import android.content.res.Configuration
@@ -183,11 +185,10 @@ class MainActivity : BaseActivity() {
         val appSettings = Settings(this)
         requestedOrientation = appSettings.screenOrientation.androidOrientation
 
-        // Sync UsbAttachedActivity component state with the listen for USB devices setting.
-        // This covers first install, app updates (manifest may reset component state),
-        // and ensures the USB system modal only appears when the user has opted in to listen for ALL USB devices.
+        // Sync UsbAttachedActivity and CarLauncher component states with settings.
         lifecycleScope.launch(Dispatchers.IO) {
             Settings.setUsbAttachedActivityEnabled(applicationContext, appSettings.listenForUsbDevices)
+            CarLauncherManager.syncWithSettings(applicationContext, appSettings.enableCarLauncher)
         }
 
         // Start main service immediately to handle connections and wireless server
@@ -207,6 +208,10 @@ class MainActivity : BaseActivity() {
                     return
                 }
                 if (navController.navigateUp()) {
+                    return
+                } else if (appSettings.enableCarLauncher || CarLauncherManager.isDefaultLauncher(this@MainActivity)) {
+                    // When in Car Launcher mode or active system Home launcher,
+                    // back press at the root of the app should not finish the launcher.
                     return
                 } else if (System.currentTimeMillis() - lastBackPressTime < 2000) {
                     finish()
@@ -374,10 +379,15 @@ class MainActivity : BaseActivity() {
      * which are the ones the pill spends most of its life showing.
      */
     private fun cancelBringUp() {
-        AppLog.i("MainActivity: status pill X pressed, stopping the wireless bring-up")
+        AppLog.i("MainActivity: status pill X pressed, stopping the bring-up")
+        // Read before the disconnect below, which drops the connection the service would ask.
+        val stage = ConnectionStageTracker.stage.value
+        val usbAttempt = App.provide(this).commManager.isUsbSession ||
+            stage == ConnectionStage.USB_ATTACHED || stage == ConnectionStage.USB_SWITCHING
         cancelAutoConnect()
         ContextCompat.startForegroundService(this, Intent(this, AapService::class.java).apply {
             action = AapService.ACTION_CANCEL_WIRELESS
+            putExtra(AapService.EXTRA_USB_ATTEMPT, usbAttempt)
         })
     }
 
@@ -1123,11 +1133,12 @@ class MainActivity : BaseActivity() {
                     ContextCompat.startForegroundService(this, Intent(this, AapService::class.java).apply {
                         action = AapService.ACTION_CONNECT_SOCKET
                     })
-                    lifecycleScope.launch(Dispatchers.IO) { App.provide(this@MainActivity).commManager.connect(ip, 5277) }
+                    lifecycleScope.launch(Dispatchers.IO) { App.provide(this@MainActivity).commManager.connect(ip, 5277, ConnectionPriorityPolicy.Tier.USER) }
                 } else {
                     AppLog.i("Received connect intent without IP -> triggering last session auto-connect")
                     val autoIntent = Intent(this, AapService::class.java).apply {
                         action = AapService.ACTION_CHECK_USB
+                        putExtra(AapService.EXTRA_USER_REQUESTED, true)
                     }
                     ContextCompat.startForegroundService(this, autoIntent)
                 }
@@ -1260,7 +1271,8 @@ class MainActivity : BaseActivity() {
                 remedyApplied = ConnectionIssueBannerPolicy.remedyApplied(
                     hotspotSsid = settings.hotspotSsid,
                     hotspotPassword = settings.hotspotPassword,
-                    staticBssid = settings.staticBSSID
+                    staticBssid = settings.staticBSSID,
+                    staticP2pBssid = settings.staticP2pBSSID
                 )
             )
         } catch (e: Exception) {
@@ -1294,6 +1306,10 @@ class MainActivity : BaseActivity() {
                     R.string.connection_issue_banner_headunit_server_deaf
                 ConnectionIssue.HANDS_FREE_HELD_ELSEWHERE ->
                     R.string.connection_issue_banner_hands_free_held
+                ConnectionIssue.HANDS_FREE_RECORD_REFUSED ->
+                    R.string.connection_issue_banner_hands_free_record_refused
+                ConnectionIssue.PHONE_HOLDS_STALE_ENDPOINT ->
+                    R.string.connection_issue_banner_stale_endpoint
             }
         )
         banner.setOnClickListener { openRemedyFor(issue) }
@@ -1332,6 +1348,10 @@ class MainActivity : BaseActivity() {
             ConnectionIssue.HEADUNIT_SERVER_NOT_ANSWERING -> return
             // The remedy is the other device's Bluetooth connection, which no setting here reaches.
             ConnectionIssue.HANDS_FREE_HELD_ELSEWHERE -> return
+            // This unit's own Bluetooth stack refused the record. No row here changes its answer.
+            ConnectionIssue.HANDS_FREE_RECORD_REFUSED -> return
+            // The remedy is on the phone, and this unit is already applying the one it has.
+            ConnectionIssue.PHONE_HOLDS_STALE_ENDPOINT -> return
             ConnectionIssue.BLUETOOTH_SENT_NO_DATA -> getString(R.string.wireless_mode)
             ConnectionIssue.BSSID_UNAVAILABLE -> getString(R.string.static_bssid_title)
             ConnectionIssue.HOTSPOT_CONFIG_UNREADABLE ->

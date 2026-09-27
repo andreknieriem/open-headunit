@@ -19,6 +19,8 @@ object WppMessageType {
     /** Keepalive, either direction. A request is answered by echoing its payload back as a response. */
     const val PING_REQUEST = 8
     const val PING_RESPONSE = 9
+    /** Head unit -> phone, TCP only: withdraws the endpoint the phone dialled. */
+    const val CONNECTION_REJECTION = 10
     /** Not sent; defined so a capture can be read. */
     const val SETUP_INFO = 11
 }
@@ -61,6 +63,8 @@ sealed class WppEvent {
     object TcpSessionUp : WppEvent()
     /** The settling window elapsed with no session. */
     object SettleTimeout : WppEvent()
+    /** The network the phone was sent has been taken down, so its join can no longer succeed. */
+    object NetworkWithdrawn : WppEvent()
 }
 
 /**
@@ -124,10 +128,11 @@ sealed class WppAction {
  * Pure so the ordering rules can be tested; they cannot be, on a real Bluetooth socket. Not
  * thread-safe: one session per handshake coroutine.
  *
- * @param versionExchangeEnabled whether to open with [WppMessageType.VERSION_REQUEST]. False sends
- *   exactly what shipped before it existed.
+ * Opens with [WppMessageType.VERSION_REQUEST], as a real head unit does, so the phone learns our
+ * version and where to reach us over TCP. What goes in it is [WppEndpointPolicy]'s decision, not
+ * this session's.
  */
-class WppHandshakeSession(private val versionExchangeEnabled: Boolean) {
+class WppHandshakeSession {
 
     companion object {
         /** How long to wait for the phone's version response before carrying on without it.
@@ -218,13 +223,10 @@ class WppHandshakeSession(private val versionExchangeEnabled: Boolean) {
     }
 
     private fun onNew(event: WppEvent): List<WppAction> = when (event) {
-        is WppEvent.SocketReady ->
-            if (versionExchangeEnabled) {
-                stage = WppStage.AWAIT_VERSION
-                listOf(WppAction.SendVersionRequest)
-            } else {
-                enterAwaitCredentials()
-            }
+        is WppEvent.SocketReady -> {
+            stage = WppStage.AWAIT_VERSION
+            listOf(WppAction.SendVersionRequest)
+        }
         is WppEvent.CredentialsReady -> { credentialsLatched = true; emptyList() }
         is WppEvent.CredentialsUnavailable -> fail("no WiFi credentials to hand the phone")
         else -> emptyList()
@@ -311,6 +313,10 @@ class WppHandshakeSession(private val versionExchangeEnabled: Boolean) {
         // has not given up, and refusing it would strand a handoff that could still complete.
         event is WppEvent.MessageReceived && event.type == WppMessageType.INFO_REQUEST ->
             listOf(WppAction.SendInfoResponse)
+        // Some platforms drop an emptied group the moment the phone's first try leaves it, and
+        // the phone then hunts the old name until it gives up. Ending now hands it the new one.
+        event is WppEvent.NetworkWithdrawn ->
+            fail("the network the phone was sent was taken down while it was joining") + WppAction.ResumePoke
         // Today's behaviour: leave the listeners open and let the wake poke retry.
         event is WppEvent.SettleTimeout -> {
             stage = WppStage.FAILED

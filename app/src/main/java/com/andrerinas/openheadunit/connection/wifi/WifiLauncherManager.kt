@@ -3,6 +3,7 @@ package com.andrerinas.openheadunit.connection.wifi
 import android.os.SystemClock
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.aap.AapService
+import com.andrerinas.openheadunit.connection.ConnectionArbiter
 import com.andrerinas.openheadunit.connection.ConnectionStage
 import com.andrerinas.openheadunit.connection.ConnectionStageTracker
 import com.andrerinas.openheadunit.connection.wifi.direct.NativeBringUpReentryPolicy
@@ -141,6 +142,10 @@ open class WifiLauncherManager(val service: AapService) {
                 "status pill. Not arming it; the WiFi button still works.")
             return
         }
+        // A USB or user connection attempt in flight outranks the background stack; it is re-armed
+        // when that attempt ends. A bring-up the user asked for ends that attempt instead.
+        if (ConnectionArbiter.refusesBackground(userRequested)) return
+        if (userRequested) ConnectionArbiter.yieldToUser("a wireless bring-up the user asked for")
         liftUserCancel("the user asked for a wireless connection")
 
         // A forced re-arm gets past the restart policy by design, and the teardown below then wipes

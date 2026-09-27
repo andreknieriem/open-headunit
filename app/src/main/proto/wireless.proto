@@ -6,9 +6,13 @@ package com.andrerinas.openheadunit.aap.protocol.proto;
 // network. The "type N" in each comment is the message type from the wire header (see
 // WppFraming/WppMessageType), not a field number.
 //
-// Shapes cross-checked against aa-proxy-rs's src/bluetooth.rs and the OEM ZLink app. Fields we
-// never receive are left undefined on purpose: an absent field costs nothing, a wrong one
-// silently mis-parses.
+// Shapes cross-checked against aa-proxy-rs's src/bluetooth.rs and the OEM ZLink app. Types 4, 5,
+// 10 and 11 and their nested messages are decoded from Gearhead 17.5.663204 and 17.8.163744, whose
+// layouts are byte-identical. Fields we never receive are left undefined on purpose: an absent
+// field costs nothing, a wrong one silently mis-parses.
+//
+// Several fields the phone declares as enums are plain int32 here on purpose: a real phone answered
+// -8 on one, which a narrower declaration rendered unreadable.
 
 enum AccessPointType {
     STATIC = 0;
@@ -37,6 +41,17 @@ enum SecurityMode {
     WPA_WPA2_ENTERPRISE = 28;
     WPA3_PERSONAL = 32;
     WPA2_WPA3_PERSONAL = 40;
+}
+
+// Why this head unit refused the phone's WPP-over-TCP dial, on WifiConnectionRejection.
+//
+// The numbers are the phone's own: it verifies the field against {0,1,2} and throws on anything
+// else. UNKNOWN throws on arrival whatever the transport, so it is declared to read a capture and
+// must never be sent.
+enum ConnectionRejectionReason {
+    CONNECTION_REJECTION_REASON_UNKNOWN = 0;
+    CONNECTION_REJECTION_REASON_MOBILE_DEVICE_ID_NOT_FOUND = 1;
+    CONNECTION_REJECTION_REASON_INVALID_SETUP_TOKEN = 2;
 }
 
 // Type 1, head unit -> phone. Where to open the projection session once associated.
@@ -97,9 +112,9 @@ message WppCarInfo {
     optional string head_unit_model = 6;
     optional string head_unit_software_build = 7;
     optional string head_unit_software_version = 8;
-    // Declared so a capture can be read; never sent. It is absent from the schema the phone
-    // parses, where field 9 is either unknown or something else entirely, and fields 5-8 above are
-    // already the least certain part of this message.
+    // Declared and never sent. Field 9 is a real int32 in the schema the phone parses - both
+    // decompiled builds declare it - but nothing recovers what it carries, and fields 5-8 above
+    // are already the least certain part of this message.
     optional int32 body_type = 9;
 }
 
@@ -138,6 +153,10 @@ message WifiVersionResponse {
 message WppWifiDeviceInfo {
     optional string device_id = 1;
     optional string connectivity_lifetime_id = 2;
+    // Two more strings the phone declares and this had never modelled. Logged so a capture can
+    // name them; what they carry is unrecovered.
+    optional string unknown_string_3 = 3;
+    optional string unknown_string_4 = 4;
 }
 
 // Type 6, phone -> head unit: did it get onto our network. The only join feedback that works on
@@ -171,10 +190,37 @@ message WifiPingResponse {
     optional int64 timestamp = 1;
 }
 
-// Type 11. Defined so a capture can be read; not sent.
+// Type 10, head unit -> phone, and only over TCP: the phone throws on one that arrives over
+// RFCOMM, and on an unknown reason whatever the transport. Both sendable reasons reach the phone's
+// own clear path, which is the only candidate for sending a phone that already holds an endpoint
+// back to the RFCOMM handshake. That the path deletes the record was read on 17.5 and not
+// reproduced on 17.8, so it is measured on hardware rather than assumed.
+message WifiConnectionRejection {
+    optional ConnectionRejectionReason reason = 1;
+}
+
+// Field 5 of WifiSetupInfo: the access point the phone is being pointed at. There is no field 5 in
+// the phone's own layout and the channel list sits at 6, in MHz. The three strings are real but
+// unnamed; field 4 is verified by the same object as WifiInfoResponse.security_mode, which is what
+// names it.
+message AccessPointInfo {
+    optional string unknown_string_1 = 1;
+    optional string unknown_string_2 = 2;
+    optional string unknown_string_3 = 3;
+    optional SecurityMode security_mode = 4;
+    repeated int32 supported_wifi_channels = 6 [packed = true];
+}
+
+// Type 11. Defined so a capture can be read; never sent. It writes the same record on the phone
+// that wpp_info does and is refused over anything but RFCOMM, so sending one carries the endpoint's
+// risk with none of its control. Fields 1 and 2 are two int32s the phone declares; the names are
+// ours and unconfirmed.
 message WifiSetupInfo {
     optional int32 major = 1;
     optional int32 minor = 2;
+    optional bytes unknown_blob_3 = 3;
+    optional WifiProjectionProtocolInfo wpp_info = 4;
+    optional AccessPointInfo access_point_info = 5;
 }
 
 // The payload of Android Auto's own wireless-setup QR code, url-safe base64 encoded into the

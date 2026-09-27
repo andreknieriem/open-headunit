@@ -46,9 +46,14 @@ object SessionEndGroupPolicy {
      * Whether the re-arm wakes the phone.
      *
      * A phone that sent a ByeByeRequest chose to end the session, whatever its reason, so a poke
-     * pulls it straight back against that choice. A link that simply died chose nothing.
+     * pulls it straight back against that choice. A link that simply died chose nothing. Ending the
+     * session at this unit is the same kind of choice, made at this end: the network stays up so
+     * the phone can come back when it likes, and waking it would be arguing with the button.
      */
-    fun wakesPhoneAfterSessionEnd(phoneSaidGoodbye: Boolean): Boolean = !phoneSaidGoodbye
+    fun wakesPhoneAfterSessionEnd(
+        phoneSaidGoodbye: Boolean,
+        headUnitEndedByHand: Boolean = false,
+    ): Boolean = !phoneSaidGoodbye && !headUnitEndedByHand
 
     /** How long a poke waits after a session ends, so the phone can see the group again. */
     const val WAKE_SETTLE_MS = 5_000L

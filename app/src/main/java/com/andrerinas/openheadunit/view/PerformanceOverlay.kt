@@ -220,7 +220,12 @@ class PerformanceOverlay(
             }
         }
 
+        // A denied read writes an SELinux audit line every sample, which on a ROM that denies it
+        // filled a third of a reporter's log; one failure means the next reads fail too.
+        private var loadAverageReadable = true
+
         private fun readLoadAverage(): Double? {
+            if (!loadAverageReadable) return null
             return try {
                 File("/proc/loadavg")
                     .readText()
@@ -229,6 +234,7 @@ class PerformanceOverlay(
                     .firstOrNull()
                     ?.toDoubleOrNull()
             } catch (e: Exception) {
+                loadAverageReadable = false
                 null
             }
         }

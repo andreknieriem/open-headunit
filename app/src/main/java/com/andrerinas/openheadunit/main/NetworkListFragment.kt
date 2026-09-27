@@ -22,6 +22,7 @@ import androidx.recyclerview.widget.RecyclerView
 import android.content.Intent
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy
 import com.andrerinas.openheadunit.App
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -177,9 +178,9 @@ class NetworkListFragment : Fragment(), NetworkDiscovery.Listener {
                 )
                 lifecycleScope.launch(Dispatchers.IO) {
                     if (socket != null && socket.isConnected)
-                        App.provide(ctx).commManager.connect(socket)
+                        App.provide(ctx).commManager.connect(socket, ConnectionPriorityPolicy.Tier.USER)
                     else
-                        App.provide(ctx).commManager.connect(ip, 5277)
+                        App.provide(ctx).commManager.connect(ip, 5277, ConnectionPriorityPolicy.Tier.USER)
                     ContextCompat.startForegroundService(ctx, Intent(ctx, AapService::class.java).apply {
                         action = AapService.ACTION_CONNECT_SOCKET
                     })
@@ -331,7 +332,7 @@ class NetworkListFragment : Fragment(), NetworkDiscovery.Listener {
                 ContextCompat.startForegroundService(context, Intent(context, AapService::class.java).apply {
                     action = AapService.ACTION_CONNECT_SOCKET
                 })
-                scope.launch(Dispatchers.IO) { App.provide(context).commManager.connect(ip, 5277) }
+                scope.launch(Dispatchers.IO) { App.provide(context).commManager.connect(ip, 5277, ConnectionPriorityPolicy.Tier.USER) }
             } else {
                 this.removeAddress(v.getTag(R.integer.key_data) as String)
             }

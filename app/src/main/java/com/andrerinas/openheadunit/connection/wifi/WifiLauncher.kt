@@ -11,6 +11,15 @@ abstract class WifiLauncher(val manager: WifiLauncherManager) {
 
     abstract fun hasWifiDirect(): Boolean
 
+    /**
+     * Whether the phone sits on an access point this device is hosting.
+     *
+     * The exact complement of [hasWifiDirect] over the routes that host a network at all, and the
+     * launcher-side twin of `UserExitHotspotPolicy.usesHeadUnitHotspot`, which answers the same
+     * question from the settings because it is asked after the launcher has been stopped.
+     */
+    abstract fun hostsOwnAccessPoint(): Boolean
+
     abstract fun hasWirelessServer(): Boolean
 
     abstract fun hasLocalDiscovery(): Boolean

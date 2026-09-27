@@ -8,15 +8,21 @@ import org.junit.Test
 
 class WppHandshakeSessionTest {
 
-    private fun session(versionExchange: Boolean = true) = WppHandshakeSession(versionExchange)
+    private fun session() = WppHandshakeSession()
 
     private fun msg(type: Int, status: Int? = null) = WppEvent.MessageReceived(type, status)
 
+    /**
+     * A session opened and past the version stage, which is where every test that is not about
+     * the opener starts. The timeout is the no-answer path, which is what a phone that ignores
+     * type 4 produces and is the commoner of the two.
+     */
+    private fun openedSession(): WppHandshakeSession =
+        session().also { it.on(WppEvent.SocketReady); it.on(WppEvent.StageTimeout) }
+
     /** Drives a session to [WppStage.SETTLING] the ordinary way and returns it. */
-    private fun settledSession(versionExchange: Boolean = false): WppHandshakeSession {
-        val s = session(versionExchange)
-        s.on(WppEvent.SocketReady)
-        if (versionExchange) s.on(msg(WppMessageType.VERSION_RESPONSE))
+    private fun settledSession(): WppHandshakeSession {
+        val s = openedSession()
         s.on(WppEvent.CredentialsReady)
         assertEquals(WppStage.AWAIT_INFO_REQUEST, s.stage)
         assertEquals(listOf(WppAction.SendInfoResponse), s.on(msg(WppMessageType.INFO_REQUEST)))
@@ -27,17 +33,20 @@ class WppHandshakeSessionTest {
     // --- opening the exchange -------------------------------------------------------------
 
     @Test
-    fun `with the version exchange off the phone can speak before we have sent anything`() {
-        // The precondition behind NativeAaHandshakeManager's spokeToPhone flag, which decides
-        // whether a silent handshake is recorded as this unit's Bluetooth failing to transmit.
-        // With the version exchange off, SocketReady emits no action at all, so an INFO_REQUEST
-        // arriving here is the phone opening the exchange against a unit that has written
-        // nothing. If this ever changes so that we always send first, the flag stops being the
-        // thing that separates "we transmitted and got nothing" from "the phone went first" -
-        // and the failure banner would start accusing units that were never given the chance.
-        val s = session(versionExchange = false)
+    fun `we always open the exchange, so a silent handshake is always ours to explain`() {
+        // NativeAaHandshakeManager's spokeToPhone flag turns true on this first action, so a
+        // handshake that receives nothing now always means our bytes went out and the phone
+        // answered none of them. What separates that from the phone going first is
+        // messagesReceived, not whether we sent anything, and the banner reads both.
+        val s = session()
 
-        assertEquals(emptyList<WppAction>(), s.on(WppEvent.SocketReady))
+        assertEquals(listOf(WppAction.SendVersionRequest), s.on(WppEvent.SocketReady))
+        assertEquals(WppStage.AWAIT_VERSION, s.stage)
+    }
+
+    @Test
+    fun `a phone that asks for credentials before they exist is answered when they arrive`() {
+        val s = openedSession()
         assertEquals(WppStage.AWAIT_CREDENTIALS, s.stage)
 
         // Accepted, not ignored, and still nothing sent: the credentials have not arrived yet.
@@ -53,10 +62,9 @@ class WppHandshakeSessionTest {
     }
 
     @Test
-    fun `with the version exchange off the wire behaviour is the one that shipped`() {
-        val s = session(versionExchange = false)
+    fun `a phone that never answers type 4 still completes the rest of the exchange`() {
+        val s = openedSession()
 
-        assertEquals(emptyList<WppAction>(), s.on(WppEvent.SocketReady))
         assertEquals(WppStage.AWAIT_CREDENTIALS, s.stage)
         assertEquals(listOf(WppAction.SendStartRequest), s.on(WppEvent.CredentialsReady))
         assertEquals(listOf(WppAction.SendInfoResponse), s.on(msg(WppMessageType.INFO_REQUEST)))
@@ -128,8 +136,7 @@ class WppHandshakeSessionTest {
 
     @Test
     fun `an early type 2 during the credentials wait is latched too`() {
-        val s = session(versionExchange = false)
-        s.on(WppEvent.SocketReady)
+        val s = openedSession()
 
         assertEquals(emptyList<WppAction>(), s.on(msg(WppMessageType.INFO_REQUEST)))
         assertEquals(
@@ -204,8 +211,7 @@ class WppHandshakeSessionTest {
 
     @Test
     fun `a successful start response is informational in both stages it can arrive in`() {
-        val awaiting = session(versionExchange = false)
-        awaiting.on(WppEvent.SocketReady)
+        val awaiting = openedSession()
         awaiting.on(WppEvent.CredentialsReady)
         assertEquals(emptyList<WppAction>(), awaiting.on(msg(WppMessageType.START_RESPONSE, 0)))
         assertEquals(WppStage.AWAIT_INFO_REQUEST, awaiting.stage)
@@ -215,13 +221,38 @@ class WppHandshakeSessionTest {
         assertEquals(WppStage.SETTLING, settling.stage)
     }
 
+    @Test
+    fun `a network taken down under a joining phone ends the handshake and wakes it again`() {
+        val s = settledSession()
+        s.on(msg(WppMessageType.START_RESPONSE, 0))
+
+        val actions = s.on(WppEvent.NetworkWithdrawn)
+
+        assertEquals(WppStage.FAILED, s.stage)
+        val fail = actions[0] as WppAction.Fail
+        assertEquals(WppAction.ResumePoke, actions[1])
+        // Ours, not the phone's: it must not spend the join-refusal backoff or read as silence.
+        assertFalse(fail.joinRefused)
+        assertFalse(fail.phoneWasSilent)
+    }
+
+    @Test
+    fun `a withdrawal before the credentials went out changes nothing`() {
+        val s = openedSession()
+        s.on(WppEvent.CredentialsReady)
+        assertEquals(WppStage.AWAIT_INFO_REQUEST, s.stage)
+
+        assertEquals(emptyList<WppAction>(), s.on(WppEvent.NetworkWithdrawn))
+        assertEquals(WppStage.AWAIT_INFO_REQUEST, s.stage)
+    }
+
     // --- a phone that needs no credentials ------------------------------------------------
 
     @Test
     fun `a phone already on the network reports the join instead of asking for credentials`() {
         // The shape the hotspot transport produces: the phone dials us from inside the network,
         // so there is nothing to hand it and type 2 never comes.
-        val s = session(versionExchange = true)
+        val s = session()
         s.on(WppEvent.SocketReady)
         s.on(msg(WppMessageType.VERSION_RESPONSE))
         s.on(WppEvent.CredentialsReady)
@@ -237,8 +268,7 @@ class WppHandshakeSessionTest {
 
     @Test
     fun `a join failure before any credential request fails the same way as after one`() {
-        val s = session(versionExchange = false)
-        s.on(WppEvent.SocketReady)
+        val s = openedSession()
         s.on(WppEvent.CredentialsReady)
 
         val actions = s.on(msg(WppMessageType.CONNECT_STATUS, -1))
@@ -259,7 +289,7 @@ class WppHandshakeSessionTest {
             { it.on(WppEvent.SocketReady); it.on(WppEvent.StageTimeout) },
             { it.on(WppEvent.SocketReady); it.on(WppEvent.StageTimeout); it.on(WppEvent.CredentialsReady) }
         )) {
-            val s = session(versionExchange = true)
+            val s = session()
             drive(s)
             assertEquals(listOf(WppAction.CompleteSuccess), s.on(WppEvent.TcpSessionUp))
             assertEquals(WppStage.DONE, s.stage)
@@ -295,10 +325,8 @@ class WppHandshakeSessionTest {
     @Test
     fun `a ping is echoed in every live stage and never changes the stage`() {
         val awaitVersion = session().also { it.on(WppEvent.SocketReady) }
-        val awaitCredentials = session(versionExchange = false).also { it.on(WppEvent.SocketReady) }
-        val awaitInfo = session(versionExchange = false).also {
-            it.on(WppEvent.SocketReady); it.on(WppEvent.CredentialsReady)
-        }
+        val awaitCredentials = openedSession()
+        val awaitInfo = openedSession().also { it.on(WppEvent.CredentialsReady) }
         val settling = settledSession()
 
         for (s in listOf(awaitVersion, awaitCredentials, awaitInfo, settling)) {
@@ -333,8 +361,7 @@ class WppHandshakeSessionTest {
 
     @Test
     fun `a phone that never asks for credentials fails, and is recorded as silent`() {
-        val s = session(versionExchange = false)
-        s.on(WppEvent.SocketReady)
+        val s = openedSession()
         s.on(WppEvent.CredentialsReady)
 
         val actions = s.on(WppEvent.StageTimeout)
@@ -361,8 +388,7 @@ class WppHandshakeSessionTest {
 
     @Test
     fun `credentials that never arrive fail the handshake`() {
-        val s = session(versionExchange = false)
-        s.on(WppEvent.SocketReady)
+        val s = openedSession()
 
         val fail = s.on(WppEvent.CredentialsUnavailable).single() as WppAction.Fail
 
@@ -396,6 +422,7 @@ class WppHandshakeSessionTest {
             WppEvent.StageTimeout,
             WppEvent.CredentialsReady,
             WppEvent.CredentialsUnavailable,
+            WppEvent.NetworkWithdrawn,
             msg(WppMessageType.PING_REQUEST),
             msg(WppMessageType.CONNECT_STATUS, -1)
         )) {

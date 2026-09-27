@@ -46,4 +46,12 @@ class ProjectionKeyPolicyTest {
             )
         )
     }
+
+    @Test
+    fun `isHomeKey returns true for KEYCODE_HOME and false for other keys`() {
+        assertTrue(ProjectionKeyPolicy.isHomeKey(KeyEvent.KEYCODE_HOME))
+        assertFalse(ProjectionKeyPolicy.isHomeKey(KeyEvent.KEYCODE_BACK))
+        assertFalse(ProjectionKeyPolicy.isHomeKey(KeyEvent.KEYCODE_VOLUME_UP))
+        assertFalse(ProjectionKeyPolicy.isHomeKey(KeyEvent.KEYCODE_DPAD_CENTER))
+    }
 }

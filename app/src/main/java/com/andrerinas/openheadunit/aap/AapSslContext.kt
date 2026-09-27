@@ -43,7 +43,7 @@ class AapSslContext(keyManager: SingleKeyKeyManager): AapSsl {
                 SSLEngineResult.HandshakeStatus.NEED_UNWRAP -> {
                     // If we don't have enough data for a meaningful unwrap, read a full AAP message
                     if (pendingTlsData.isEmpty()) {
-                        val messageData = readAapMessage(connection) ?: return false
+                        val messageData = readAapMessage(connection, deadline) ?: return false
                         pendingTlsData = messageData
                     }
 
@@ -62,7 +62,7 @@ class AapSslContext(keyManager: SingleKeyKeyManager): AapSsl {
                         SSLEngineResult.Status.BUFFER_UNDERFLOW -> {
                             // The current pendingTlsData doesn't contain a full TLS record.
                             // Read another AAP message and append it.
-                            val nextMessage = readAapMessage(connection) ?: return false
+                            val nextMessage = readAapMessage(connection, deadline) ?: return false
                             pendingTlsData += nextMessage
                             AppLog.d("SSL Handshake: buffered ${pendingTlsData.size} B after underflow")
                         }
@@ -106,7 +106,21 @@ class AapSslContext(keyManager: SingleKeyKeyManager): AapSsl {
      * Reads a single complete AAP message from the connection.
      * This ensures that we always respect AAP framing boundaries.
      */
-    private fun readAapMessage(connection: ProjectionConnection): ByteArray? {
+    private fun readAapMessage(connection: ProjectionConnection, deadline: Long): ByteArray? {
+        while (true) {
+            val payload = readOneAapMessage(connection) ?: return null
+            if (payload !== LATE_VERSION_RESPONSE) return payload
+            // Late answers can belong to an abandoned earlier handshake on the same pipe, so
+            // their number is unknowable; the phase deadline bounds them instead of a count.
+            if (android.os.SystemClock.elapsedRealtime() >= deadline) {
+                AppLog.e("SSL Handshake: still receiving late VERSION_RESPONSEs at the deadline")
+                return null
+            }
+            AppLog.i("SSL Handshake: discarded a late VERSION_RESPONSE (answer to a retried version request)")
+        }
+    }
+
+    private fun readOneAapMessage(connection: ProjectionConnection): ByteArray? {
         val header = ByteArray(6)
         // Read exactly 6 bytes for the AAP header
         if (connection.recvBlocking(header, 6, 2000, true) != 6) {
@@ -132,7 +146,8 @@ class AapSslContext(keyManager: SingleKeyKeyManager): AapSsl {
             return null
         }
 
-        return payload
+        // Read in full first, so skipping it leaves the stream on a message boundary.
+        return if (HandshakeMessagePolicy.isLateVersionResponse(header)) LATE_VERSION_RESPONSE else payload
     }
 
     private fun prepare(): Int {
@@ -368,6 +383,9 @@ class AapSslContext(keyManager: SingleKeyKeyManager): AapSsl {
     }
 
     companion object {
+        /** Marks a skipped message by identity; never handed to the engine. */
+        private val LATE_VERSION_RESPONSE = ByteArray(0)
+
         // Maximum wall-clock time for the entire SSL handshake loop. Caps worst-case stall at
         // 15 s regardless of how many round-trips remain when the phone stops responding.
         private const val SSL_HANDSHAKE_TIMEOUT_MS = 15_000L

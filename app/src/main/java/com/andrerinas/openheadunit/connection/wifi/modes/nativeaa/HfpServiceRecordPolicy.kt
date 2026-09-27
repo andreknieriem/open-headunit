@@ -26,6 +26,28 @@ object HfpServiceRecordPolicy {
         return localUuids.none { it.equals(HANDS_FREE_UUID, ignoreCase = true) }
     }
 
+    /** How many times the stand-in record is asked for before the refusal becomes the answer. */
+    const val REGISTRATION_ATTEMPTS = 3
+
+    /** The gap between those attempts. */
+    const val REGISTRATION_RETRY_GAP_MS = 1_500L
+
+    /**
+     * Whether another attempt at the record is owed after [attempt] was refused.
+     *
+     * One stack refuses it 20 ms after the Android Auto record registered, in every capture, so the
+     * refusal may be the two registrations colliding rather than the record being unavailable.
+     */
+    fun retriesRegistration(attempt: Int): Boolean = attempt < REGISTRATION_ATTEMPTS
+
+    /**
+     * Whether the refusal is now this unit's answer rather than a moment's contention.
+     *
+     * The exact complement of [retriesRegistration], because a refusal the user is never told about
+     * leaves a head unit Android Auto silently will not start wireless setup against.
+     */
+    fun registrationRefused(attempt: Int): Boolean = !retriesRegistration(attempt)
+
     /**
      * Whether to open the service level connection on a stand-in record, rather than only answering
      * on it.

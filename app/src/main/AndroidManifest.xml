@@ -219,6 +219,18 @@
             </intent-filter>
         </activity>
 
+        <activity-alias
+            android:name=".CarLauncherAlias"
+            android:targetActivity=".main.MainActivity"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.HOME" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity-alias>
+
         <activity
             android:name=".main.SettingsActivity"
             android:label="@string/settings"
@@ -276,6 +288,7 @@
                 <action android:name="com.andrerinas.openheadunit.ACTION_START_WIRELESS" />
                 <action android:name="com.andrerinas.openheadunit.ACTION_STOP_WIRELESS" />
                 <action android:name="com.andrerinas.openheadunit.ACTION_CANCEL_WIRELESS" />
+                <action android:name="com.andrerinas.openheadunit.ACTION_END_SESSION_STAY_ARMED" />
                 <action android:name="com.andrerinas.openheadunit.ACTION_START_WIRELESS_SCAN" />
                 <action android:name="com.andrerinas.openheadunit.ACTION_NATIVE_AA_POKE" />
                 <action android:name="com.andrerinas.openheadunit.ACTION_NATIVE_AA_CANCEL_POKE" />
@@ -360,6 +373,10 @@
                 <!-- Microntek / MTCD / PX3 head units (ACC wake) -->
                 <action android:name="com.cayboy.action.ACC_ON" />
                 <action android:name="com.carboy.action.ACC_ON" />
+                <!-- XYAuto head units (ACC wake) -->
+                <action android:name="xy.android.acc.on" />
+                <!-- Autochips / MediaTek QuickBoot units (ACC wake) -->
+                <action android:name="autochips.intent.action.QB_POWERON" />
             </intent-filter>
         </receiver>
 

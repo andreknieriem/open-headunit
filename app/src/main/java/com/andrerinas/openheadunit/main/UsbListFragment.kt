@@ -213,6 +213,7 @@ class UsbListFragment : Fragment() {
                     ToastUtils.showToast(mContext, R.string.blacklisted, Toast.LENGTH_SHORT, force = true)
                     return
                 }
+                AapService.instance?.liftUsbCancel("a USB device was chosen from the list")
                 if (App.provide(mContext).commManager.isConnected) {
 
                     // Already connected -> bring existing projection to front
@@ -231,6 +232,7 @@ class UsbListFragment : Fragment() {
                     )
                     ContextCompat.startForegroundService(mContext, Intent(mContext, AapService::class.java).apply {
                         action = AapService.ACTION_CHECK_USB
+                        putExtra(AapService.EXTRA_USER_REQUESTED, true)
                     })
                 } else {
                     // Standard connection flow

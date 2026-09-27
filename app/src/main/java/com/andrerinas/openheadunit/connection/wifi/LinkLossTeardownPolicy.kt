@@ -1,9 +1,5 @@
 package com.andrerinas.openheadunit.connection.wifi
 
-import com.andrerinas.openheadunit.connection.wifi.modes.WifiLauncherHelper
-import com.andrerinas.openheadunit.connection.wifi.modes.WifiLauncherNative
-import com.andrerinas.openheadunit.connection.wifi.modes.helper.HelperStrategy
-import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeStrategy
 
 /** A warning that the link carrying an active session is about to go away. */
 enum class LinkLossTrigger {
@@ -57,7 +53,7 @@ object LinkLossTeardownPolicy {
         LinkLossTrigger.WIFI_STATION_DISABLING ->
             sessionIsWireless &&
                 launcher?.hasWifiDirect() != true &&
-                !ridesOwnAccessPoint(launcher)
+                launcher?.hostsOwnAccessPoint() != true
 
         // A named ACC-off is the whole board going, so it counts for every route. An inferred one
         // is only worth acting on where a missed close lasts beyond this drive, and where coming
@@ -65,12 +61,4 @@ object LinkLossTeardownPolicy {
         LinkLossTrigger.ACC_POWER_LOST -> accSignalIsExplicit || peerIsHeadUnitServer
     }
 
-    /** The two routes where the phone sits on an access point this device is hosting. */
-    private fun ridesOwnAccessPoint(launcher: WifiLauncher?): Boolean {
-        return when (launcher) {
-            is WifiLauncherNative -> launcher.strategy == NativeStrategy.HOTSPOT
-            is WifiLauncherHelper -> launcher.strategy == HelperStrategy.HEADUNIT_HOTSPOT
-            else -> false
-        }
-    }
 }

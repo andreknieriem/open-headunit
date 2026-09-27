@@ -81,4 +81,24 @@ class ExternalBtPolicyTest {
         assertTrue(ExternalBtPolicy.isExternal(nodes("/dev/zj_bt_serial"), noProps))
         assertTrue(ExternalBtPolicy.isExternal(noNodes, props("rw.zlink.bt.type" to "extra")))
     }
+
+    @Test
+    fun `a negative read is re-read until the vendor app sets its property`() {
+        var reads = 0
+        var value: String? = null
+        val latch = ExternalBtPolicy.Latch { reads++; value }
+        assertNull(latch.evidence())
+        value = "rw.zj.bt.type=extra"
+        assertEquals("rw.zj.bt.type=extra", latch.evidence())
+        assertEquals(2, reads)
+    }
+
+    @Test
+    fun `a positive read is held for the process`() {
+        var reads = 0
+        val latch = ExternalBtPolicy.Latch { reads++; if (reads == 1) "/dev/rf_serial exists" else null }
+        assertEquals("/dev/rf_serial exists", latch.evidence())
+        assertEquals("/dev/rf_serial exists", latch.evidence())
+        assertEquals(1, reads)
+    }
 }

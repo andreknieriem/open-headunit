@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="keep_dummy_vpn">Manter a VPN offline ativa durante a ligação</string>
+    <string name="keep_dummy_vpn_description">Mantém a VPN offline ativa enquanto o telemóvel estiver ligado, evitando que o chip Wi-Fi procure outras redes em 2.4 GHz. Durante este período, outras aplicações na unidade não terão internet. Aplica-se na próxima ligação.</string>
+    <string name="keep_dummy_vpn_denied">Permissão de VPN recusada. A VPN offline não pôde ser iniciada automaticamente.</string>
+</resources>

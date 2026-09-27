@@ -73,6 +73,18 @@ class SettingsActivity : BaseActivity() {
         SystemUI.apply(window, root, appSettings.fullscreenMode, notesCanvas = false)
     }
 
+    override fun onStart() {
+        super.onStart()
+        isVisible = true
+        AapService.instance?.onSettingsScreenVisibility(visible = true)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        isVisible = false
+        AapService.instance?.onSettingsScreenVisibility(visible = false)
+    }
+
     override fun onResume() {
         super.onResume()
         isForeground = true
@@ -111,6 +123,12 @@ class SettingsActivity : BaseActivity() {
          * A static flag rather than a message to the service: nothing else needs to know.
          */
         @Volatile var isForeground = false
+
+        /**
+         * Whether this screen is on show, which a translucent activity such as the USB attach
+         * trampoline does not end. Holds every automatic USB and Self Mode start.
+         */
+        @Volatile var isVisible = false
 
         private const val KEY_CURRENT_DESTINATION = "current_nav_destination"
         // Optional destination id to open directly on launch (e.g. R.id.darkModeFragment).

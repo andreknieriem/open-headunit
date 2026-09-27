@@ -38,6 +38,22 @@ class StationScanCadencePolicyTest {
     }
 
     @Test
+    fun `each earlier scan is placed before the line, so a stutter can be matched to one`() {
+        val line = StationScanCadencePolicy.summarise(listOf(1_000L, 11_000L, 31_000L), 30_000L)!!
+        assertTrue(line, line.contains("the earlier ones 30.0s, 20.0s before this line"))
+        assertTrue(line, line.endsWith("off the group's channel."))
+    }
+
+    @Test
+    fun `a flood places only the most recent scans, so the line stays bounded`() {
+        val scans = (0..30).map { it * 1_000L }
+        val line = StationScanCadencePolicy.summarise(scans, 30_000L)!!
+        assertTrue(line, line.contains("the earlier ones 10.0s, 9.0s"))
+        assertTrue(line, line.contains(" 1.0s before this line"))
+        assertTrue(line, !line.contains("11.0s"))
+    }
+
+    @Test
     fun `the reported window is the real one, not the nominal one`() {
         val line = StationScanCadencePolicy.summarise(listOf(0L, 10_000L), 31_411L)!!
         assertTrue(line, line.contains("in 31411ms"))

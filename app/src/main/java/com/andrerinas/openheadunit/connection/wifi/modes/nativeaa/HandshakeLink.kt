@@ -29,8 +29,12 @@ interface HandshakeLink : Closeable {
     /** The phone's name, when the transport knows it. Logging only. */
     val peerName: String?
 
-    /** The phone's Bluetooth address, when the transport knows it. Logging, and see
-     *  [persistPeerForAutoStart]. */
+    /**
+     * The phone's Bluetooth address as canonical `AA:BB:CC:DD:EE:FF`, or null.
+     *
+     * Canonical because every consumer compares it with addresses from `android.bluetooth`, and the
+     * module publishes its own without separators. See [persistPeerForAutoStart].
+     */
     val peerAddress: String?
 
     /** Which radio or channel carried this, for logs that have to tell several apart. */

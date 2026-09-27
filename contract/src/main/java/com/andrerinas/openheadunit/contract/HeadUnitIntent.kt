@@ -193,6 +193,13 @@ object HeadUnitCommand {
      */
     const val ACTION_CANCEL_WIRELESS = "$PREFIX.ACTION_CANCEL_WIRELESS"
     const val ACTION_START_WIRELESS_SCAN = "$PREFIX.ACTION_START_WIRELESS_SCAN"
+
+    /**
+     * Ends the session but leaves the wireless network up, so the phone's saved profile still names
+     * one that exists. Unlike [ACTION_DISCONNECT] the stack stays armed and the phone may come back
+     * on its own. Native AA on WiFi Direct only; inert elsewhere.
+     */
+    const val ACTION_END_SESSION_STAY_ARMED = "$PREFIX.ACTION_END_SESSION_STAY_ARMED"
     const val ACTION_NATIVE_AA_POKE = "$PREFIX.ACTION_NATIVE_AA_POKE"
 
     /**

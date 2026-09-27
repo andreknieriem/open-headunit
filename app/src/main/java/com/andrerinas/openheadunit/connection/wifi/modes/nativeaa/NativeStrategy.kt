@@ -6,7 +6,7 @@ enum class NativeStrategy(val id: Int) {
     /** A WiFi Direct P2P group with this head unit as group owner. The default. */
     WIFI_DIRECT(0),
 
-    /** This head unit's own WPA2 access point, as the OEM ZLink app uses. Experimental. */
+    /** This head unit's own WPA2 access point, as the ZLink projection app uses. Experimental. */
     HOTSPOT(1);
 
     companion object {

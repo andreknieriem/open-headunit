@@ -98,7 +98,11 @@ class BootCompleteReceiver : BroadcastReceiver() {
             "android.intent.action.ACTION_MT_COMMAND_SLEEP_OUT",
             // Microntek / MTCD / PX3 head units (ACC wake)
             "com.cayboy.action.ACC_ON",
-            "com.carboy.action.ACC_ON"
+            "com.carboy.action.ACC_ON",
+            // XYAuto head units (ACC wake)
+            "xy.android.acc.on",
+            // Autochips / MediaTek QuickBoot units (ACC wake)
+            "autochips.intent.action.QB_POWERON"
         )
     }
 }

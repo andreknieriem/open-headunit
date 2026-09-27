@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import com.andrerinas.openheadunit.aap.AapService
 import com.andrerinas.openheadunit.main.MainActivity
+import com.andrerinas.openheadunit.main.SettingsActivity
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.Settings
 import android.os.UserManager
@@ -55,12 +56,17 @@ class AutoStartReceiver : BroadcastReceiver() {
                 // arms the wireless mode even if the service process was already running from
                 // an earlier session (onCreate's init only runs once); BtAutoStartRearmPolicy
                 // decides what that means per mode. The Self Mode half is MainActivity's.
+                // singleTask: raising the home screen would close settings, so the service holds it.
+                val uiHeld = SettingsActivity.isVisible
                 val serviceIntent = Intent(context, AapService::class.java).setAction(AapService.ACTION_BT_AUTO_START)
+                    .putExtra(AapService.EXTRA_UI_HELD, uiHeld)
                 try {
                     androidx.core.content.ContextCompat.startForegroundService(context, serviceIntent)
                 } catch (e: Exception) {
                     AppLog.e("Failed to start AapService from background: ${e.message}")
                 }
+
+                if (uiHeld) return
 
                 // Also attempt to start the UI (might be blocked on Android 10+ without special permission)
                 val launchIntent = Intent(context, MainActivity::class.java).apply {

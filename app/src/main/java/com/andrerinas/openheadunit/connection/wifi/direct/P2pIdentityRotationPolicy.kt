@@ -49,6 +49,24 @@ object P2pIdentityRotationPolicy {
     }
 
     /**
+     * Whether a group already up is read rather than torn down and asked for again.
+     *
+     * Above [NAMED_CREATE_SDK] the whole pair is the test, not just the name: a survivor matched on
+     * name alone served the phone the old passphrase after the stored one changed. Below it the
+     * platform names the group and nothing was requested, so any group of ours is read, which is the
+     * one kind of unit that cannot afford a recreate.
+     */
+    fun readsExistingGroup(
+        sdkInt: Int,
+        isGroupOwner: Boolean,
+        liveName: String?,
+        requestedName: String,
+        livePassphrase: String?,
+        requestedPassphrase: String,
+    ): Boolean = isGroupOwner && (sdkInt < NAMED_CREATE_SDK ||
+        (liveName == requestedName && livePassphrase == requestedPassphrase))
+
+    /**
      * Whether the platform's stored profile must be deleted before the create.
      *
      * Below 29 it is the only rename lever there is, and it is also how "a new network on every

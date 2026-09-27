@@ -73,6 +73,10 @@ class AutomationOutputPolicyTest {
     @Test
     fun `the credential bearing settings are withheld from an export`() {
         assertTrue("hotspot-password" in AutomationOutputPolicy.WITHHELD_KEYS)
+        assertTrue("wifi-direct-group-passphrase" in AutomationOutputPolicy.WITHHELD_KEYS)
+        assertTrue("wifi-direct-readback-passphrase" in AutomationOutputPolicy.WITHHELD_KEYS)
+        // The pair and its provenance travel together or not at all.
+        assertTrue("wifi-direct-identity-user-set" in AutomationOutputPolicy.WITHHELD_KEYS)
         assertTrue("auto-start-bt-macs" in AutomationOutputPolicy.WITHHELD_KEYS)
         assertTrue("auto-disconnect-bt-macs" in AutomationOutputPolicy.WITHHELD_KEYS)
         assertTrue("native-poke-bt-macs" in AutomationOutputPolicy.WITHHELD_KEYS)

@@ -1,27 +1,34 @@
 package com.andrerinas.openheadunit.connection.wifi.modes
 
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.connection.CommManager
 import com.andrerinas.openheadunit.connection.ConnectionStage
 import com.andrerinas.openheadunit.connection.ConnectionStageTracker
+import com.andrerinas.openheadunit.connection.wifi.MacAddressPolicy
+import com.andrerinas.openheadunit.connection.wifi.WifiLauncher
+import com.andrerinas.openheadunit.connection.wifi.WifiLauncherManager
+import com.andrerinas.openheadunit.connection.wifi.WifiLauncherMode
+import com.andrerinas.openheadunit.connection.wifi.WifiLauncherStopSequence
 import com.andrerinas.openheadunit.connection.wifi.direct.GroupIdentityStability
+import com.andrerinas.openheadunit.connection.wifi.direct.GroupIdentityStabilityPolicy
 import com.andrerinas.openheadunit.connection.wifi.direct.StationStandDown
 import com.andrerinas.openheadunit.connection.wifi.direct.StationStandDownSettlePolicy
 import com.andrerinas.openheadunit.connection.wifi.direct.WifiDirectManager
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.ExternalBtTransportPolicy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeAaHandshakeManager
-import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.SoftApCredentialsProvider
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeCredentialsPolicy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeStrategy
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.SoftApCredentialsProvider
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.SoftApEndpointStabilityPolicy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zbt.ZbtDaemonReachability
-import com.andrerinas.openheadunit.connection.wifi.WifiLauncher
-import com.andrerinas.openheadunit.connection.wifi.WifiLauncherManager
-import com.andrerinas.openheadunit.connection.wifi.WifiLauncherMode
-import com.andrerinas.openheadunit.connection.wifi.WifiLauncherStopSequence
 import com.andrerinas.openheadunit.main.SettingsActivity
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.BluetoothHelper
+import com.andrerinas.openheadunit.utils.ConnectionIssue
+import com.andrerinas.openheadunit.utils.ConnectionIssues
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 
@@ -52,6 +59,8 @@ class WifiLauncherNative : WifiLauncher {
     override fun hasSameStartConfiguration(launcher: WifiLauncher) = launcher is WifiLauncherNative && launcher.strategy == strategy
 
     override fun hasWifiDirect() = strategy == NativeStrategy.WIFI_DIRECT
+
+    override fun hostsOwnAccessPoint() = strategy == NativeStrategy.HOTSPOT
 
     // Both transports, not just the P2P one. The credentials this mode hands the phone name
     // port 5288 whichever network carries them, and the phone dials it the moment it has
@@ -209,10 +218,73 @@ class WifiLauncherNative : WifiLauncher {
      * handshake then waited on credentials that had already been found, the refresh it asks for
      * every ten seconds published into the same latch, and the unit sat there looking healthy.
      */
+    /** Latched per bring-up: the provider re-resolves, and a reading compared with itself is stable. */
+    private var softApIdentityAssessedKey: String? = null
+    private var softApIdentityStability = GroupIdentityStability.UNPROVEN
+
+    /**
+     * The access point graded the way a group is, across bring-ups, plus the address and password
+     * the phone also stores, which a group never needed because its owner is always 192.168.49.1.
+     */
+    private fun softApIdentity(ssid: String, psk: String, ip: String, bssid: String): GroupIdentityStability {
+        val key = "$ssid|$ip|${SoftApEndpointStabilityPolicy.passphraseDigest(psk)}"
+        if (key == softApIdentityAssessedKey) return softApIdentityStability
+        val typed = MacAddressPolicy.parse(settings.staticBSSID)
+        val verdict = GroupIdentityStabilityPolicy.assess(
+            keepIdentity = true,
+            requestedName = null,
+            ssid = ssid,
+            bssid = bssid,
+            bssidUsable = MacAddressPolicy.isUsable(bssid),
+            staticOverride = typed != null && typed == MacAddressPolicy.parse(bssid),
+            previous = settings.softApLastGroup,
+            previousStability = settings.softApLastIdentityVerdict,
+        )
+        verdict.remember?.let { settings.softApLastGroup = it }
+        val address = SoftApEndpointStabilityPolicy.grade(
+            verdict.stability, ip, psk, bootCount(), settings.softApAddressRecord,
+        )
+        address.remember?.let { settings.softApAddressRecord = it }
+        if (verdict.remember != null) settings.softApLastIdentityVerdict = address.stability
+        softApIdentityAssessedKey = key
+        softApIdentityStability = address.stability
+        AppLog.i(
+            "WifiLauncherNative: access point identity ssid=$ssid bssid=$bssid ip=$ip " +
+                "address=${MacAddressPolicy.label(bssid)} " +
+                "stable=${GroupIdentityStabilityPolicy.label(address.stability)} " +
+                "(${address.reason ?: verdict.reason})"
+        )
+        noteAdvertisedEndpointMoved(ssid, psk, bssid, ip)
+        return address.stability
+    }
+
+    /** A phone given an endpoint on an access point that has since moved dials the old one forever. */
+    private fun noteAdvertisedEndpointMoved(ssid: String, psk: String, bssid: String, ip: String) {
+        val advertised = settings.softApAdvertisedEndpoint
+        val moved = SoftApEndpointStabilityPolicy.movedSinceAdvertised(advertised, ssid, psk, bssid, ip) ?: return
+        settings.softApAdvertisedEndpoint = null
+        AppLog.w(
+            "NativeAA: the WPP endpoint advertised on the access point at ${advertised?.ip} no longer " +
+                "matches ($moved); a phone holding it needs this head unit forgotten in Android Auto."
+        )
+        ConnectionIssues.raiseOnce(service, ConnectionIssue.PHONE_HOLDS_STALE_ENDPOINT)
+    }
+
+    /** Null below API 24, where the platform does not count boots and tethering used a fixed address. */
+    private fun bootCount(): Int? {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return null
+        return try {
+            android.provider.Settings.Global.getInt(service.contentResolver, android.provider.Settings.Global.BOOT_COUNT, -1)
+                .takeIf { it >= 0 }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     private fun setupSoftAp() {
+        softApIdentityAssessedKey = null
         softApCredentialsProvider?.setCredentialsListener { ssid, psk, ip, bssid ->
-            // An access point's identity is its own; the question is only asked of a P2P group.
-            onNativeCredentials(ssid, psk, ip, bssid, GroupIdentityStability.NOT_MEASURED)
+            onNativeCredentials(ssid, psk, ip, bssid, softApIdentity(ssid, psk, ip, bssid))
         }
         softApCredentialsProvider?.setInvalidatedListener { handshakeManager?.invalidateCredentials() }
     }
@@ -301,6 +373,15 @@ class WifiLauncherNative : WifiLauncher {
     }
 
     /**
+     * After a sleep: checks the TCP port and re-reads the network, and nothing else. Unlike
+     * [reopenListeners] it keeps the driver-selection and handshake state a user may have set.
+     */
+    fun refreshAfterWake() {
+        manager.sharedServices.startWirelessServer(this)
+        triggerWifiDirectRefresh()
+    }
+
+    /**
      * Triggers a refresh of the WiFi Direct "quiet host" state.
      * Called by NativeAaHandshakeManager if it's waiting for credentials that haven't arrived yet.
      */
@@ -340,6 +421,10 @@ class WifiLauncherNative : WifiLauncher {
         if (commManager.isConnected ||
             commManager.connectionState.value is CommManager.ConnectionState.Connecting) {
             AppLog.i("AapService: USB/other session already active. Skipping auto-poke to avoid pulling phone into wireless flow.")
+        } else if (!NativeCredentialsPolicy.isUsablePassphrase(psk)) {
+            // A poke takes the phone's hands-free link and nothing gives it back, so it is not
+            // spent on a network the phone will refuse. The handshake says what to set.
+            AppLog.w("AapService: not waking the phone for '$ssid', which has no passphrase to join with.")
         } else if (handshakeManager?.wakesPhone() == false) {
             // The pill is reported here as well as poked, so both stand down together or it claims
             // a wake that will not run.

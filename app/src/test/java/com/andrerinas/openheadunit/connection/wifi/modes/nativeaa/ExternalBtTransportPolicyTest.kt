@@ -1,6 +1,7 @@
 package com.andrerinas.openheadunit.connection.wifi.modes.nativeaa
 
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.ExternalBtTransportPolicy.Route
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.ExternalBtTransportPolicy.WifiButton
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -176,5 +177,25 @@ class ExternalBtTransportPolicyTest {
                         assertEquals(blocked, refused || asking)
                         assertFalse(refused && asking)
                     }
+    }
+
+    @Test
+    fun `the WiFi button takes the module route exactly where the stack would`() {
+        val cases = listOf<Boolean?>(null, true, false)
+        for (evidenceValue in listOf(null, evidence))
+            for (zbt in listOf(false, true))
+                for (ignore in listOf(false, true))
+                    for (cached in cases) {
+                        val button = ExternalBtTransportPolicy.wifiButton(evidenceValue, zbt, ignore, cached)
+                        val route = ExternalBtTransportPolicy.route(evidenceValue, zbt, ignore, cached)
+                        assertEquals(refuses(evidenceValue, zbt, ignore, cached), button == WifiButton.REFUSED)
+                        assertEquals(route == Route.NORMAL, button == WifiButton.ANDROID_RADIO)
+                    }
+    }
+
+    @Test
+    fun `an unmeasured daemon sends the button to the module rather than refusing it`() {
+        assertEquals(WifiButton.MODULE, ExternalBtTransportPolicy.wifiButton(evidence, false, false, null))
+        assertEquals(WifiButton.REFUSED, ExternalBtTransportPolicy.wifiButton(evidence, false, false, false))
     }
 }

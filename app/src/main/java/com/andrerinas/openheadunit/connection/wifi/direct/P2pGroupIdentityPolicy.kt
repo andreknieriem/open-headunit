@@ -23,6 +23,18 @@ sealed class P2pGroupIdentity {
 data class StoredP2pIdentity(val networkName: String, val passphrase: String)
 
 /**
+ * A group as it was actually read back off the air, whatever named it.
+ *
+ * Kept because the settings screen stops the wireless stack before it draws, so nothing live is
+ * there to ask; and below API 29 this is the only place the platform's own pair is ever legible.
+ */
+data class ObservedP2pCredentials(
+    val networkName: String,
+    val passphrase: String,
+    val bssid: String,
+)
+
+/**
  * Names the Native AA WiFi Direct group, and decides whether the name outlives the group.
  *
  * Every create used to mint a new name and passphrase and build a temporary group, so the phone
@@ -57,6 +69,7 @@ object P2pGroupIdentityPolicy {
         stored: StoredP2pIdentity?,
         deviceName: String?,
         random: Random = Random.Default,
+        userSet: Boolean = false,
     ): Choice {
         if (!keepIdentity) {
             val fresh = mint(deviceName, random)
@@ -71,8 +84,12 @@ object P2pGroupIdentityPolicy {
             return Choice(
                 identity = P2pGroupIdentity.Named(stored.networkName, stored.passphrase, persistent = true),
                 toStore = null,
-                reason = "group identity: asking for the kept network ${stored.networkName} again, " +
-                    "so a phone that saved it can rejoin without being set up for a new one.",
+                reason = if (userSet)
+                    "group identity: asking for ${stored.networkName}, the network name and password " +
+                        "the user typed, so the phone is handed exactly those."
+                else
+                    "group identity: asking for the kept network ${stored.networkName} again, " +
+                        "so a phone that saved it can rejoin without being set up for a new one.",
             )
         }
         val fresh = mint(deviceName, random)
@@ -108,6 +125,14 @@ object P2pGroupIdentityPolicy {
 
     fun newPassphrase(random: Random = Random.Default): String =
         (1..PASSPHRASE_LENGTH).map { PASSPHRASE_POOL.random(random) }.joinToString("")
+
+    /** The two characters after `DIRECT-`, or null when [name] is not the shape this object builds. */
+    fun codeOf(name: String): String? =
+        if (isValidName(name)) name.substring(NAME_PREFIX.length, NAME_PREFIX.length + 2) else null
+
+    /** [name] carrying a different two-character code, everything after it kept. */
+    fun withCode(name: String, code: String): String =
+        NAME_PREFIX + code + name.substring(NAME_PREFIX.length + 2)
 
     fun isValidName(name: String): Boolean =
         NAME_SHAPE.matches(name) && name.toByteArray(Charsets.UTF_8).size <= MAX_NAME_BYTES

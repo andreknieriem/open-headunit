@@ -12,6 +12,7 @@ import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.DriverCandidatePolicy
 import java.lang.reflect.Constructor
 import java.lang.reflect.Method
+import com.andrerinas.openheadunit.connection.wifi.MacAddressPolicy
 
 object BluetoothHelper {
 
@@ -485,38 +486,26 @@ object BluetoothHelper {
      * [ExternalBtPolicy] for what the evidence means and why it decides whether Bluetooth-based
      * wireless can work here at all.
      *
-     * Cached: the answer is a property of the hardware and cannot change within a process, and
-     * this is consulted on every handshake start.
+     * A positive answer is held for the process; a negative one is re-read, because the vendor app
+     * sets its properties only once it has run after a boot.
      */
-    val externalBtEvidence: String? by lazy {
+    private val externalBtLatch = ExternalBtPolicy.Latch {
         ExternalBtPolicy.detect(
             nodeExists = { path -> try { java.io.File(path).exists() } catch (e: Exception) { false } },
             property = { key -> SystemProperties.get(key, "") }
         )
     }
 
-    private val SEPARATED_MAC = Regex("^([0-9A-F]{2}[:-]){5}[0-9A-F]{2}$")
-    private val BARE_MAC = Regex("^[0-9A-F]{12}$")
+    val externalBtEvidence: String?
+        get() = externalBtLatch.evidence()
 
     /**
      * The address as canonical `AA:BB:CC:DD:EE:FF`, or null when it is not an address at all.
      *
-     * Vendor properties publish it unseparated - `persist.zj.BTmac` reads `008761BF6706` on the ZJ
-     * units - and a separator-only check threw that away, so those units announced no Bluetooth
-     * service and Android Auto kept calls on the phone.
+     * Bluetooth is the one caller that accepts the separator-less form, because vendor properties
+     * publish it that way. [MacAddressPolicy.parse] carries the rule and what it cost to learn.
      */
-    fun normalizeMacAddress(raw: String?): String? {
-        val trimmed = raw?.trim()?.uppercase() ?: return null
-        val hex = when {
-            SEPARATED_MAC.matches(trimmed) -> trimmed.replace("-", "").replace(":", "")
-            BARE_MAC.matches(trimmed) -> trimmed
-            else -> return null
-        }
-        val canonical = hex.chunked(2).joinToString(":")
-        // The placeholder every non-privileged app gets since API 23, and the all-zero one.
-        if (canonical == "02:00:00:00:00:00" || canonical == "00:00:00:00:00:00") return null
-        return canonical
-    }
+    fun normalizeMacAddress(raw: String?): String? = MacAddressPolicy.parse(raw, allowBare = true)
 
     private fun isValidMacAddress(mac: String): Boolean = normalizeMacAddress(mac) != null
 

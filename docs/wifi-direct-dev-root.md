@@ -1,14 +1,15 @@
 # Wi-Fi Direct + Android Auto Dev Server (Root)
 
-## Status and Baselines
+## Compatibility
 
-Implementation branch: `codex/wifi-direct-dev-root`.
+This is the v1 direct-to-server mode. It requires this head-unit change and the matching
+[Wireless Helper root Dev-server mode](https://github.com/andreknieriem/wireless-helper/pull/70).
+The feature is listed under **Unreleased** until the maintainer assigns a release; app version
+numbers follow upstream rather than a separate feature-specific version.
 
-- Wireless Helper baseline: `8ac36c9bcc80731b78949c04fdc63178b5904f2f`.
-- Open Headunit baseline: `80a81099e678119a57d642cbe596c8a5b03bf29d`.
-- The original checkouts and their custom commits are not replaced.
-- No commits, merges or pushes are part of this change.
-- Android builds, Gradle tests/lint and hardware acceptance have NOT been run on the implementation machine. There is no Android build environment; build and device verification are required before relying on this mode.
+The original implementation was built and tested successfully on the contributor's phone/head-unit
+pair. The integration with newer upstream changes still needs a fresh build and device check;
+that earlier result does not establish compatibility with every Android Auto version or OEM.
 
 ## Setup
 
@@ -119,6 +120,6 @@ First verify the complete server start/stop cycle, including passive absence of 
 | Kill helper process (not Force Stop) | Requested service can recover without overlapping sessions |
 | Force Stop helper, then open it again | Stale managed server is cleaned up before another session |
 
-Acceptance target: **10 full connect/disconnect cycles without manual Stop/Start recovery**, successful recovery from random P2P/TCP loss, no remaining Dev server after helper Stop, and no timer-driven resets of a healthy projection. This target is not yet hardware-verified.
+Acceptance target for each candidate build: **10 full connect/disconnect cycles without manual Stop/Start recovery**, successful recovery from random P2P/TCP loss, no remaining Dev server after helper Stop, and no timer-driven resets of a healthy projection.
 
 Manual non-root Android Auto menu automation is intentionally out of scope for v1.

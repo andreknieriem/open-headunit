@@ -40,6 +40,13 @@ class AudioDecoder {
         audioTracks.get(chan)?.pauseForIdle()
     }
 
+    /** Park all channels (e.g. on device sleep/screen-off) so AudioTrack does not block in ALSA. */
+    fun pauseAll() {
+        for (i in 0 until audioTracks.size()) {
+            audioTracks.valueAt(i)?.pauseForIdle()
+        }
+    }
+
     fun stop(chan: Int) {
         val audioTrack = audioTracks.get(chan)
         audioTrack?.stopPlayback()

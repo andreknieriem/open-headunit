@@ -6,6 +6,7 @@ import android.hardware.usb.UsbManager
 import android.widget.Toast
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.R
+import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy.Tier
 import com.andrerinas.openheadunit.connection.usb.UsbLauncherManager.Companion.ATTACH_FALLBACK_DELAY_MS
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.Settings
@@ -95,9 +96,9 @@ class UsbLauncherListener(private val manager: UsbLauncherManager) : UsbReceiver
         val deviceName = UsbDeviceCompat(device).uniqueName
         if (granted) {
             AppLog.i("USB permission granted for $deviceName")
+            if (!manager.beginAttempt(Tier.USB, "USB $deviceName")) return
             if (UsbDeviceCompat.isInAccessoryMode(device)) {
-                manager.setSwitchingToProjection(true)
-                service.serviceScope.launch {
+                manager.attemptJob = service.serviceScope.launch {
                     try {
                         manager.connectWithRetry(device)
                     } finally {
@@ -105,11 +106,10 @@ class UsbLauncherListener(private val manager: UsbLauncherManager) : UsbReceiver
                     }
                 }
             } else {
-                manager.setSwitchingToProjection(true)
                 val usbManager = service.getSystemService(Context.USB_SERVICE) as UsbManager
                 val settings = App.provide(service).settings
                 val usbMode = UsbAccessoryMode(usbManager)
-                service.serviceScope.launch(Dispatchers.IO) {
+                manager.attemptJob = service.serviceScope.launch(Dispatchers.IO) {
                     try {
                         if (usbMode.connectAndSwitch(device, settings.useLibusb)) {
                             AppLog.i("Successfully requested switch to accessory mode for $deviceName")

@@ -1,0 +1,1277 @@
+<resources>
+    <string name="app_name">Open Headunit</string>
+    <string name="menu">मेनू</string>
+    <string name="settings">सेटिंग्स</string>
+
+    <!-- Settings tabs and search (redesign) -->
+    <string name="settings_tab_basic">बेसिक</string>
+    <string name="settings_tab_advanced">एडवांस्ड</string>
+    <string name="settings_search_hint">सेटिंग्स खोजें</string>
+
+    <!-- Connection mode selector -->
+    <string name="connection_mode">कनेक्शन मोड</string>
+    <string name="connection_kind_usb_cable">USB केबल (प्रत्यक्ष)</string>
+    <string name="connection_kind_usb_wireless_adapter">USB वायरलेस अडैप्टर</string>
+    <string name="connection_kind_wifi">वाई-फ़ाई</string>
+    <string name="connection_kind_unset">सेट नहीं है</string>
+
+    <!-- Onboarding wizard -->
+    <string name="onb_next">अगला</string>
+    <string name="onb_skip">छोड़ें</string>
+    <string name="onb_ready_finish">समाप्त</string>
+    <string name="onb_welcome_title">Open Headunit में आपका स्वागत है</string>
+    <string name="onb_welcome_body">यह त्वरित सेटअप आपके डिवाइस को स्कैन करता है और आपके लिए सर्वश्रेष्ठ वीडियो, डिस्प्ले और नाइट मोड सेटिंग्स चुनता है। आप बाद में सेटिंग्स में सब कुछ बदल सकते हैं।</string>
+    <string name="onb_safety_title">सुरक्षा सर्वोपरि</string>
+    <string name="onb_safety_accept">मैंने शर्तें पढ़ ली हैं और स्वीकार करता हूँ</string>
+    <string name="onb_connection_title">आप कैसे कनेक्ट करते हैं?</string>
+    <string name="onb_connection_help">चुनें कि आपका फ़ोन कैसे कनेक्ट होता है। यह सेटिंग्स स्क्रीन को केवल उन विकल्पों पर केंद्रित रखता है जो आप पर लागू होते हैं।</string>
+    <string name="onb_connection_cable_detail">फ़ोन USB केबल से सीधे हेड यूनिट से जुड़ा हुआ है। वायरलेस विकल्प छिपे रहेंगे।</string>
+    <string name="onb_connection_adapter_detail">एक USB डोंगल केबल को वायरलेस लिंक से जोड़ता है। वायरलेस विकल्प दिखाए जाते हैं।</string>
+    <string name="onb_connection_wifi_detail">फ़ोन वाई-फ़ाई पर कनेक्ट होता है।</string>
+    <string name="onb_display_title">डिस्प्ले</string>
+    <!-- %1$d width, %2$d height, %3$d dpi, %4$s codec -->
+    <string name="onb_display_detected">पहचाना गया पैनल: %1$d x %2$d px, %3$d dpi, हार्डवेयर %4$s।</string>
+    <string name="onb_display_size_label">स्क्रीन का आकार</string>
+    <string name="onb_display_orientation_label">ओरिएंटेशन</string>
+    <string name="onb_display_apply">अनुशंसित सेटिंग्स लागू करें</string>
+    <!-- %1$s resolution, %2$d dpi, %3$s codec, %4$s view mode -->
+    <string name="onb_display_result">लागू: %1$s, %2$d dpi, %3$s, %4$s दृश्य।</string>
+    <string name="onb_appearance_title">रूप-रंग</string>
+    <string name="onb_appearance_theme_label">ऐप थीम</string>
+    <string name="onb_theme_auto">ऑटो</string>
+    <string name="onb_theme_light">लाइट</string>
+    <string name="onb_theme_dark">डार्क</string>
+    <string name="onb_appearance_night_label">Android Auto नाइट मोड</string>
+    <string name="onb_night_auto">स्वचालित</string>
+    <string name="onb_night_day">दिन</string>
+    <string name="onb_night_night">रात</string>
+    <string name="onb_night_light_sensor_available">एक प्रकाश सेंसर का पता चला है, इसलिए स्वचालित मोड परिवेशीय प्रकाश का अनुसरण कर सकता है।</string>
+    <string name="onb_night_no_light_sensor">कोई प्रकाश सेंसर नहीं मिला, इसलिए स्वचालित मोड सूर्योदय और सूर्यास्त का अनुसरण करता है।</string>
+    <string name="onb_ready_title">सब कुछ तैयार है</string>
+    <!-- %1$s connection, %2$s resolution, %3$s codec -->
+    <string name="onb_ready_summary">कनेक्शन: %1$s\nरिज़ॉल्यूशन: %2$s\nकोडेक: %3$s\n\nआप सेटिंग्स में सब कुछ ठीक कर सकते हैं।</string>
+    <string name="onb_summary_vehicle_format">वाहन: %1$s</string>
+    <!-- %1$d granted, %2$d total -->
+    <string name="onb_summary_permissions_format">अनुमतियाँ: %2$d में से %1$d दी गईं</string>
+    <string name="onb_ready_loading_intro">एक और बात: अब आप एक कस्टम लोडिंग स्क्रीन सेट कर सकते हैं, जो कार कनेक्ट होने के दौरान दिखाई देती है।</string>
+    <string name="onb_ready_loading_button">लोडिंग स्क्रीन सेट करें</string>
+    <!-- Ready step optional-extras card -->
+    <string name="onb_ready_extras_title">समाप्त करने से पहले, आप यह भी सेट कर सकते हैं:</string>
+    <string name="onb_extra_loading_desc">कार कनेक्ट होने के दौरान दिखाई देने वाली एक कस्टम छवि</string>
+
+    <!-- Onboarding wizard: permissions step + Settings > Permissions -->
+    <string name="onb_permissions_title">अनुमतियाँ सक्षम करें</string>
+    <string name="onb_permissions_help">ऐप को आवश्यक अनुमतियाँ दें ताकि बाद में बिना किसी बाधा के सब कुछ काम करे। आप इन्हें कभी भी बदल सकते हैं।</string>
+    <string name="onb_perms_enable_all">सभी सक्षम करें</string>
+    <string name="perm_allow">अनुमति दें</string>
+    <string name="perm_granted">अनुमति दी गई</string>
+    <!-- %1$s permission name -->
+    <string name="perm_optional_format">%1$s (वैकल्पिक)</string>
+    <string name="permissions">अनुमतियाँ</string>
+    <string name="permissions_desc">ऐप के लिए आवश्यक अनुमतियों की समीक्षा करें और प्रदान करें</string>
+    <string name="perm_mic_title">माइक्रोफ़ोन</string>
+    <string name="perm_mic_help">Android Auto को वॉइस कमांड, Google Assistant और फ़ोन कॉल का उपयोग करने देता है।</string>
+    <string name="perm_location_title">स्थान (लोकेशन)</string>
+    <string name="perm_location_help">नेविगेशन के लिए फ़ोन को GPS भेजता है, वायरलेस कनेक्शन स्कैन करता है और स्थान-आधारित नाइट मोड चलाता है।</string>
+    <string name="perm_nearby_title">आस-पास के डिवाइस</string>
+    <string name="perm_nearby_help">ब्लूटूथ और वाई-फ़ाई पर कनेक्ट करने, ब्लूटूथ ऑडियो रूट करने और युग्मित डिवाइस पर ऑटो-स्टार्ट के लिए आवश्यक।</string>
+    <string name="perm_notifications_title">सूचनाएं (नोटिफ़िकेशन)</string>
+    <string name="perm_notifications_help">Android Auto चलने के दौरान निरंतर नोटिफ़िकेशन दिखाता है।</string>
+    <string name="perm_overlay_title">अन्य ऐप्स के ऊपर प्रदर्शित करें</string>
+    <string name="perm_overlay_help">ऐप को अन्य ऐप्स के ऊपर कार स्क्रीन खोलने की अनुमति देता है, जिसमें ऑटो-स्टार्ट भी शामिल है।</string>
+    <string name="perm_write_settings_title">सिस्टम सेटिंग्स बदलें</string>
+    <string name="perm_write_settings_help">ऐप को वायरलेस कनेक्शन के लिए हॉटस्पॉट स्वचालित रूप से चालू करने देता है।</string>
+    <string name="perm_storage_title">स्टोरेज</string>
+    <string name="perm_storage_help">आपकी सेटिंग्स का बैकअप लेने और पुनर्स्थापित करने तथा कस्टम लोडिंग छवि चुनने के लिए आवश्यक।</string>
+
+    <!-- Onboarding wizard: car brand / vehicle identity -->
+    <string name="onb_vehicle_title">आपकी कार</string>
+    <string name="onb_vehicle_input_hint">ब्रांड या नाम</string>
+    <string name="onb_vehicle_help_aa">यह नाम Android Auto को भेजा जाता है। यह आपके फ़ोन के कनेक्शन इतिहास और Android Auto स्वागत स्क्रीन पर दिखाई देता है।</string>
+    <string name="onb_vehicle_help_sideload">वास्तविक कार ब्रांड चुनने से Android Auto निकास बटन पर उस ब्रांड का लोगो भी दिखाई देता है, लेकिन फिर Android Auto उन ऐप्स को सूचीबद्ध करना बंद कर देता है जिन्हें आपने Play Store के बाहर से इंस्टॉल किया था। यदि आप उन ऐप्स का उपयोग करते हैं तो \"Google\" या \"Open Headunit\" रखें।</string>
+    <string name="onb_vehicle_help_advanced">आप उन्नत टैब में अपने वाहन के विवरण को अनुकूलित कर सकते हैं। हम इस डेटा का उपयोग नहीं करते हैं; यह केवल Android Auto को भेजा जाता है क्योंकि इसकी आवश्यकता होती है।</string>
+    <string-array name="vehicle_brands">
+        <item>Google</item>
+        <item>Android</item>
+        <item>Audi</item>
+        <item>BMW</item>
+        <item>Chevrolet</item>
+        <item>Chrysler</item>
+        <item>Fiat</item>
+        <item>Ford</item>
+        <item>Honda</item>
+        <item>Hyundai</item>
+        <item>Jeep</item>
+        <item>Kia</item>
+        <item>Mazda</item>
+        <item>Mercedes-Benz</item>
+        <item>Nissan</item>
+        <item>Peugeot</item>
+        <item>Renault</item>
+        <item>Subaru</item>
+        <item>Suzuki</item>
+        <item>Tesla</item>
+        <item>Toyota</item>
+        <item>Volkswagen</item>
+        <item>Volvo</item>
+    </string-array>
+
+    <!-- Onboarding wizard (round 2) -->
+    <string name="onb_language_help">ऐप की भाषा चुनें।</string>
+    <string name="connection_kind_usb">USB</string>
+    <string name="onb_connection_usb_detail">फ़ोन USB द्वारा कनेक्ट किया गया है, या तो सीधी केबल या USB वायरलेस अडैप्टर।</string>
+    <string name="onb_conn_usb_label">USB (या अडैप्टर)</string>
+    <string name="onb_connection_self_detail">सेल्फ़ मोड फ़ोन कनेक्ट किए बिना इस डिवाइस पर Android Auto चलाता है।</string>
+    <string name="connection_kind_all">सभी</string>
+
+    <!-- Resolution recommendation / bandwidth warnings -->
+    <string name="resolution_recommended_format">%1$s (अनुशंसित)</string>
+    <string name="resolution_high_bandwidth_format">%1$s · उच्च बैंडविड्थ</string>
+    <string name="resolution_too_high_title">स्क्रीन से अधिक रिज़ॉल्यूशन</string>
+    <string name="resolution_too_high_message">यह आपके पैनल द्वारा समर्थित रिज़ॉल्यूशन से अधिक है। छवि आपके पैनल द्वारा प्रदर्शित की जा सकने वाली क्षमता (%1$s) तक सीमित है, इसलिए उच्च रिज़ॉल्यूशन केवल गुणवत्ता में सुधार किए बिना अधिक बैंडविड्थ का उपयोग करता है।</string>
+    <string name="resolution_high_bandwidth_title">उच्च बैंडविड्थ की आवश्यकता</string>
+    <string name="resolution_high_bandwidth_message">यह रिज़ॉल्यूशन बहुत अधिक बैंडविड्थ का उपयोग करता है और इसके लिए एक मजबूत कनेक्शन की आवश्यकता होती है: एक अच्छा 5GHz वाई-फ़ाई, या एक स्थिर USB कनेक्शन। यदि आपको लैग दिखाई देता है, तो कम रिज़ॉल्यूशन चुनें।</string>
+    <string name="resolution_use_anyway">फिर भी उपयोग करें</string>
+    <string name="resolution_use_recommended">अनुशंसित का उपयोग करें</string>
+    <!-- DPI: warning when the chosen resolution is higher than the panel supports -->
+    <string name="dpi_resolution_over_panel_warning">आपका चुना हुआ रिज़ॉल्यूशन (%1$s) आपके पैनल से अधिक है। यह %2$s तक सीमित है, और DPI की गणना उसी के लिए की जाती है। यदि यह ठीक नहीं दिखता है, तो अनुशंसित रिज़ॉल्यूशन (%2$s) का उपयोग करें।</string>
+    <!-- First-projection renderer confirmation (issue #767) -->
+    <string name="renderer_confirm_question">क्या आपको Android Auto स्क्रीन दिखाई दे रही है?</string>
+    <string name="renderer_confirm_yes">हाँ</string>
+    <string name="renderer_confirm_switch">रेंडरर बदलें</string>
+    <string name="renderer_switched_to">रेंडरर: %1$s</string>
+    <string name="onb_connection_all_detail">USB और वाई-फ़ाई दोनों सेटिंग्स दिखाता है।</string>
+    <string name="onb_connection_warning">कनेक्शन प्रकार चुनने से वे सेटिंग्स छिप जाती हैं जो उस पर लागू नहीं होती हैं, बुनियादी और उन्नत दोनों में। उन्हें दोबारा देखने के लिए, बाद में कनेक्शन सेटिंग्स में एक अलग मोड चुनें।</string>
+    <string name="onb_more_appearance">अधिक रूप-रंग सेटिंग्स</string>
+    <string name="onb_automation_title">ऑटोमेशन</string>
+    <string name="onb_automation_help">चुनें कि ऐप अपने आप कैसे शुरू और कनेक्ट होता है। प्राथमिकता क्रम सेट करने के लिए ऑटो-कनेक्ट सेटिंग्स खोलें।</string>
+    <string name="onb_gps_title">स्थान</string>
+    <string name="onb_gps_help">Android Auto को नेविगेशन के लिए किस GPS का उपयोग करना चाहिए?</string>
+    <string name="onb_gps_this_device">यह डिवाइस</string>
+    <string name="onb_gps_phone">कनेक्ट किया गया फ़ोन</string>
+    <string name="onb_do_it_later">बाद में करें</string>
+    <string name="onb_display_dpi_label">Android Auto आकार</string>
+    <!-- Full-word DPI size names, used as accessibility labels for the S/M/L/XL buttons -->
+    <string name="onb_dpi_small">छोटा</string>
+    <string name="onb_dpi_medium">मध्यम</string>
+    <string name="onb_dpi_large">बड़ा</string>
+    <string name="onb_dpi_huge">बहुत बड़ा</string>
+    <string name="onb_appearance_more_hint">आप सेटिंग्स में डार्क मोड के अधिक विकल्प पा सकते हैं।</string>
+    <string name="onb_automation_more_hint">आप ऑटो-कनेक्ट और ऑटो-स्टार्ट सेटिंग्स में अधिक विकल्प पा सकते हैं।</string>
+    <string name="onb_dpi_help">उच्च DPI Android Auto आइकन और टेक्स्ट को बड़ा बनाता है, इसलिए स्क्रीन पर कम सामग्री आती है। कम DPI उन्हें छोटा बनाता है, इसलिए अधिक सामग्री आती है। यह तब लागू होता है जब आप Android Auto कनेक्ट करते हैं।</string>
+    <!-- %1$d recommended DPI value -->
+    <string name="onb_dpi_recommended">आपकी स्क्रीन के लिए अनुशंसित: %1$d dpi</string>
+    <string name="onb_change_later">आप इसे बाद में सेटिंग्स में बदल सकते हैं।</string>
+    <string name="dpi_automatic">स्वचालित</string>
+    <string name="dpi_automatic_desc">डिवाइस घनत्व का उपयोग करें</string>
+    <string name="dpi_automatic_desc_format">डिवाइस घनत्व (%1$d DPI) का उपयोग करता है</string>
+    <string name="dpi_value_format">%1$d DPI</string>
+    <string name="dpi_input_hint">DPI</string>
+
+    <string name="title_activity_settings">सेटिंग्स</string>
+    <string name="dummy_button">डमी बटन</string>
+    <string name="dummy_content">डमी\nसामग्री</string>
+    <string name="allowed">अनुमति दी गई</string>
+    <string name="ignored">अनदेखा किया गया</string>
+    <string name="blacklisted">ब्लैकलिस्ट किया गया</string>
+    <string name="usb_blacklist_title">USB डिवाइस ब्लैकलिस्ट</string>
+    <string name="usb_blacklist_description">ब्लैकलिस्ट में शामिल डिवाइस कनेक्शन पर अनदेखा कर दिए जाते हैं: कोई ऑटो-स्टार्ट नहीं, कोई संकेत नहीं। किसी डिवाइस का मिलान उसके नाम से किया जाता है, इसलिए ब्लैकलिस्ट किया गया फ़ोन प्रत्येक USB मोड में ब्लैकलिस्ट ही रहता है। कुछ निर्माता प्रत्येक मॉडल को एक ही नाम देते हैं, और उन्हें अलग नहीं किया जा सकता।</string>
+    <string name="add_to_blacklist">ब्लैकलिस्ट में जोड़ें</string>
+    <string name="remove_from_blacklist">ब्लैकलिस्ट से हटाएं</string>
+    <string name="usb_device_action_title">USB डिवाइस क्रिया</string>
+    <string name="exit">निकास</string>
+    <string name="video">Android Auto</string>
+    <string name="self_mode">सेल्फ़ मोड</string>
+    <string name="to_android_auto">Android Auto पर जाएँ</string>
+    <string name="title">Open Headunit</string>
+    <string name="remove">हटाएं</string>
+    <string name="usb">USB</string>
+    <string name="wifi">वाई-फ़ाई</string>
+    <string name="dpi">पिक्सेल घनत्व (DPI)</string>
+    <string name="pixel_aspect_ratio">पिक्सेल पहलू अनुपात</string>
+    <string name="mic_sample_rate">माइक नमूना दर</string>
+    <string name="keymap">कुंजी मैपिंग</string>
+    <string name="night_mode">डार्क मोड (Android Auto)</string>
+    <string name="night_mode_threshold">नाइट मोड थ्रेशोल्ड</string>
+    <string name="enter_threshold_value">थ्रेशोल्ड मान दर्ज करें</string>
+    <string name="threshold_lux_desc">लक्स मान (0–10000)। इससे कम = रात।</string>
+    <string name="threshold_brightness_desc">चमक मान (0–255)। इससे कम = रात।</string>
+    <string name="threshold_light_title">प्रकाश संवेदनशीलता</string>
+    <string name="threshold_brightness_title">चमक स्तर</string>
+    <string name="threshold_light_hint">परिवेश प्रकाश इस स्तर से नीचे गिरने पर डार्क मोड सक्रिय होता है</string>
+    <string name="threshold_brightness_hint">स्क्रीन की चमक इस मान से कम होने पर डार्क मोड सक्रिय होता है। Android चमक को 0–255 के रूप में रिपोर्ट करता है, लेकिन वास्तविक सीमा डिवाइस के अनुसार भिन्न हो सकती है। आपको अपने डिवाइस के लिए सही थ्रेशोल्ड खोजने के लिए प्रयोग करने की आवश्यकता हो सकती है।</string>
+    <string name="current_light_reading">वर्तमान प्रकाश: %d Lux</string>
+    <string name="current_brightness_reading">वर्तमान चमक: %d / 255</string>
+    <string name="enable_fine_lux_control">सटीक नियंत्रण (0–100 Lux)</string>
+    <string name="night_mode_start">नाइट मोड प्रारंभ समय</string>
+    <string name="night_mode_end">नाइट मोड समाप्ति समय</string>
+
+    <string name="app_theme">डार्क मोड (एप्लिकेशन)</string>
+    <string name="app_theme_description">ऐप के दृश्य स्वरूप को नियंत्रित करें</string>
+    <string name="change_app_theme">ऐप थीम बदलें</string>
+    <string name="monochrome_icons">मोनोक्रोम आइकन</string>
+    <string name="monochrome_icons_description">डार्क या एक्सट्रीम डार्क मोड में होम स्क्रीन पर ग्रेस्केल आइकन का उपयोग करें</string>
+    <string name="use_extreme_dark">एक्सट्रीम डार्क का उपयोग करें</string>
+    <string name="use_extreme_dark_description">डार्क मोड सक्रिय होने पर शुद्ध काले बैकग्राउंड का उपयोग करें</string>
+    <string name="use_gradient_background">ग्रेडिएंट बैकग्राउंड का उपयोग करें</string>
+    <string name="use_gradient_background_description_on">ऐप केंद्र में ग्रेडिएंट सर्कल के साथ अपना बैकग्राउंड बनाता है</string>
+    <string name="use_gradient_background_description_off">ऐप का क्लासिक बैकग्राउंड उपयोग किया जा रहा है</string>
+    <string name="use_gradient_background_description_on_auto">ऐप केंद्र में ग्रेडिएंट सर्कल के साथ अपना बैकग्राउंड बनाता है। एक्सट्रीम डार्क मोड पर लागू नहीं होता</string>
+    <string name="use_gradient_background_description_off_auto">ऐप का क्लासिक बैकग्राउंड उपयोग किया जा रहा है। एक्सट्रीम डार्क मोड पर लागू नहीं होता</string>
+    <string name="category_dark_mode">डार्क मोड</string>
+    <string name="category_theming">थीमिंग</string>
+    <string name="customization_title">कस्टमाइज़ेशन</string>
+    <string name="customization_description">होम स्क्रीन बैकग्राउंड और दृश्य रूप-रंग को कस्टमाइज़ करें</string>
+    <string name="home_background_image">बैकग्राउंड छवि</string>
+    <string name="home_background_image_description">मुख्य होम स्क्रीन के लिए एक कस्टम छवि चुनें</string>
+    <string name="home_background_default">डिफ़ॉल्ट (bg.png)</string>
+    <string name="home_background_custom">कस्टम छवि</string>
+    <string name="btn_choose_image">छवि चुनें</string>
+    <string name="btn_reset_default">डिफ़ॉल्ट पर रीसेट करें</string>
+    <string name="home_button_colors">बटन रंग और ग्रेडिएंट</string>
+    <string name="home_button_colors_description">4 होम स्क्रीन बटनों के रंग और ग्रेडिएंट कस्टमाइज़ करें</string>
+    <string name="btn_color_self_mode">सेल्फ़ मोड बटन</string>
+    <string name="btn_color_usb">USB बटन</string>
+    <string name="btn_color_wifi">वाई-फ़ाई बटन</string>
+    <string name="btn_color_settings">सेटिंग्स बटन</string>
+    <string name="btn_reset_colors">सभी बटन रंग रीसेट करें</string>
+    <string name="btn_make_all_monochrome">सभी बटन मोनोक्रोम करें</string>
+    <string name="auto_monochrome_at_night">रात में मोनोक्रोम पर स्विच करें</string>
+    <string name="auto_monochrome_at_night_description">ड्राइविंग की चमक को कम करने के लिए डार्क मोड में रंगीन बटनों को सूक्ष्म भूरे रंग में बदल देता है</string>
+    <string name="bg_night_behavior_title">रात में बैकग्राउंड</string>
+    <string name="bg_night_behavior_description">डार्क मोड सक्रिय होने पर बैकग्राउंड कैसे प्रदर्शित होता है इसे नियंत्रित करता है</string>
+    <string name="bg_night_behavior_dim">मंद (50%)</string>
+    <string name="bg_night_behavior_pure_black">शुद्ध काला (OLED)</string>
+    <string name="bg_night_behavior_none">अपरिवर्तित</string>
+    <string name="bg_style_title">बैकग्राउंड शैली</string>
+    <string name="bg_style_description">कोई कस्टम छवि उपयोग न होने पर बैकग्राउंड स्वरूप चुनें</string>
+    <string name="bg_type_standard">डिफ़ॉल्ट (क्लासिक नीला)</string>
+    <string name="bg_type_gradient">ग्रेडिएंट</string>
+    <string name="bg_type_pure_black">शुद्ध काला (OLED)</string>
+    <string name="bg_type_custom">कस्टम छवि</string>
+    <string name="pick_color_title">बटन का रंग चुनें</string>
+    <string name="color_preset_default">डिफ़ॉल्ट</string>
+    <string name="color_custom_hex">हेक्स रंग</string>
+    <string name="home_button_scale">बटन का आकार</string>
+    <string name="home_button_scale_description">4 होम स्क्रीन बटनों का आकार समायोजित करें</string>
+    <string name="home_button_scale_preview">लाइव होम स्क्रीन पूर्वावलोकन</string>
+    <string name="btn_reset_scale">बटन आकार रीसेट करें</string>
+    <string name="category_automation">ऑटोमेशन</string>
+    <string name="dark_mode_settings">डार्क मोड सेटिंग्स</string>
+    <string name="app_theme_short">ऐप</string>
+    <string name="night_mode_short">Android Auto</string>
+    <string name="aa_monochrome">Android Auto को मोनोक्रोम बनाएं</string>
+    <string name="aa_monochrome_description">रात में ड्राइविंग के लिए Android Auto के रंगों को कम करता है। GLES व्यू मोड की आवश्यकता है। केवल तभी प्रभावी होता है जब डार्क मोड सक्षम हो</string>
+    <string name="aa_desaturation">डिसेचुरेशन</string>
+    <string name="aa_desaturation_description">नियंत्रित करता है कि कितना रंग हटाया जाए। केवल तभी प्रभावी होता है जब डार्क मोड सक्षम हो</string>
+    <string name="gles_required_title">GLES आवश्यक है</string>
+    <string name="gles_required_message">मोनोक्रोम मोड को वीडियो आउटपुट पर ग्रेस्केल फ़िल्टर लागू करने के लिए GLES रेंडरिंग की आवश्यकता होती है। GLES सक्षम करें?</string>
+    <string name="enable_gles">GLES सक्षम करें</string>
+    <string name="category_navigation">नेविगेशन</string>
+    <string name="category_wireless">वायरलेस कनेक्शन</string>
+
+    <string name="reconnection_required_title">पुनः कनेक्शन आवश्यक है</string>
+    <string name="reconnection_required_message">डिवाइस प्रतीक्षा स्थिति में है। Android Auto को फिर से शुरू करने के लिए कृपया USB केबल को अनप्लग करें और फिर से प्लग करें।</string>
+
+    <string name="bluetooth_address_s">ब्लूटूथ पता</string>
+    <string name="enter_bluetooth_mac">ब्लूटूथ MAC दर्ज करें</string>
+    <string name="bluetooth_address_message">इस हेड यूनिट का अपना पता, जिसका उपयोग फ़ोन इसे पहचानने के लिए करता है। इसे सेटिंग्स, अबाउट, स्टेटस में या इस डिवाइस के बगल में गियर के तहत युग्मित फ़ोन पर खोजें। स्वचालित रूप से पता लगाने के लिए खाली छोड़ दें।</string>
+    <string name="invalid_bluetooth_address">यह एक ब्लूटूथ पता नहीं है। हेक्स अंकों के छह जोड़े दर्ज करें, जैसे 0C:32:3A:2D:5D:4A।</string>
+    <string name="reset">रीसेट</string>
+    <string name="reset_settings">डिफ़ॉल्ट पर रीसेट करें</string>
+    <string name="reset_settings_confirm">क्या आप वाकई सभी सेटिंग्स को उनके डिफ़ॉल्ट मानों पर रीसेट करना चाहते हैं? यह ऐप को पुनरारंभ करेगा।</string>
+    <string name="reset_settings_description">सभी कॉन्फ़िगरेशन, कैश्ड डेटा और ऑटो-कनेक्ट प्राथमिकताओं को साफ़ करता है। फ़ैक्टरी डिफ़ॉल्ट लागू करने के लिए ऐप पुनरारंभ होगा।</string>
+    <string name="gps_for_navigation">नेविगेशन के लिए GPS</string>
+    <string name="gps_for_navigation_description">नेविगेशन के लिए GPS का उपयोग करें</string>
+    <string name="enabled">सक्षम</string>
+    <string name="disabled">अक्षम</string>
+    <string name="resolution">रिज़ॉल्यूशन</string>
+    <string name="change_resolution">रिज़ॉल्यूशन बदलें</string>
+    <string name="change_dpi">DPI बदलें</string>
+    <string name="change_view_mode">व्यू मोड बदलें</string>
+    <string name="view_mode">व्यू मोड</string>
+    <string name="surface_view">SurfaceView</string>
+    <string name="texture_view">TextureView</string>
+    <string name="gles_view">GLES20</string>
+    <string name="auto">ऑटो</string>
+    <string name="screen_orientation">स्क्रीन ओरिएंटेशन</string>
+    <string name="change_screen_orientation">स्क्रीन ओरिएंटेशन बदलें</string>
+    <string name="orientation_system_default">सिस्टम डिफ़ॉल्ट</string>
+    <string name="orientation_auto_sensor">ऑटो (सेंसर)</string>
+    <string name="orientation_landscape">लैंडस्केप (0°)</string>
+    <string name="orientation_landscape_reverse">रिवर्स लैंडस्केप (180°)</string>
+    <string name="orientation_portrait">पोर्ट्रेट (90°)</string>
+    <string name="orientation_portrait_reverse">रिवर्स पोर्ट्रेट (270°)</string>
+    <string name="enter_dpi_value">DPI मान दर्ज करें (ऑटो के लिए 0)</string>
+    <string name="enter_pixel_aspect_ratio_value">पिक्सेल पहलू अनुपात x10000 (10000 = वर्ग पिक्सेल)</string>
+    <string name="custom_margin">कस्टम मार्जिन</string>
+    <string name="custom_margin_description">कस्टम डिस्प्ले मार्जिन सेट करें (ऑटो के लिए 0)</string>
+    <string name="enter_custom_margins">कस्टम मार्जिन दर्ज करें (ऑटो के लिए 0)</string>
+    <string name="margin_left">बायाँ</string>
+    <string name="margin_top">ऊपर</string>
+    <string name="margin_right">दायाँ</string>
+    <string name="margin_bottom">नीचे</string>
+
+    <string name="start_in_fullscreen_mode">स्क्रीन मोड</string>
+    <string name="start_in_fullscreen_mode_description">चुनें कि सिस्टम बार (स्थिति और नेविगेशन) को कैसे प्रबंधित किया जाना चाहिए।</string>
+    <string name="fullscreen_none">सामान्य (सभी बार दिखाई दे रहे हैं)</string>
+    <string name="fullscreen_immersive">इमर्सिव (नॉच ओवरले)</string>
+    <string name="fullscreen_status_only">केवल स्टेटस बार छुपाएं</string>
+    <string name="fullscreen_immersive_avoid_notch">इमर्सिव (नॉच से बचें)</string>
+    <string name="fullscreen_immersive_avoid_notch_desc">सभी बार छुपाता है और प्रोजेक्शन को नॉच/कटआउट द्वारा कवर होने से रोकने के लिए पैडिंग जोड़ता है।</string>
+
+    <string name="usb_status">USB स्थिति: %s</string>
+    <string name="projection_status">प्रोजेक्शन स्थिति: %s</string>
+    <string name="connected">कनेक्टेड</string>
+    <string name="disconnected">डिस्कनेक्टेड</string>
+    <string name="running">चल रहा है</string>
+    <string name="not_running">नहीं चल रहा है</string>
+    <string name="no_android_auto_device_connected">कोई Android Auto डिवाइस कनेक्ट नहीं है। कृपया USB कनेक्शन जांचें।</string>
+    <string name="no_usb_device_connected">डिवाइस से कोई USB उपकरण कनेक्ट नहीं है।</string>
+    <string name="no_usb_host_support">यह हेड यूनिट USB होस्ट मोड का समर्थन नहीं करती है, इसलिए इस पर वायर्ड Android Auto उपलब्ध नहीं है। इसके बजाय वायरलेस कनेक्शन का उपयोग करें।</string>
+    <string name="press_back_again_to_exit">बाहर निकलने के लिए फिर से वापस दबाएं</string>
+    <string name="back">वापस</string>
+    <string name="debug_mode">डिबग मोड</string>
+    <string name="debug_mode_description">अधिक लॉगिंग टॉगल करें</string>
+    <string name="allow_external_configuration">बाहरी कॉन्फ़िगरेशन की अनुमति दें</string>
+    <string name="allow_external_configuration_description">Tasker या MacroDroid जैसे ऑटोमेशन ऐप्स को सेटिंग्स बदलने, लॉग स्तर सेट करने और लॉग निर्यात करने दें। कनेक्ट और डिस्कनेक्ट हमेशा काम करता है; यह केवल उन कमांड के लिए है जो हेड यूनिट की व्यवस्था बदलते हैं।</string>
+    <string name="log_level">लॉग स्तर</string>
+    <string name="log_level_description">निर्यात करते समय लॉग स्तर फ़िल्टर करें</string>
+    <string name="log_source">लॉग स्रोत</string>
+    <string name="log_source_logcat">लॉगकैट (Logcat)</string>
+    <string name="log_source_applog_file">सीधे फ़ाइल में</string>
+    <string name="log_location">लॉग संग्रहण स्थान</string>
+    <string name="log_location_default">डिफ़ॉल्ट (ऐप स्टोरेज)</string>
+    <string name="log_location_downloads">डाउनलोड फ़ोल्डर</string>
+    <string name="start_log_capture">लॉग रिकॉर्ड करना प्रारंभ करें</string>
+    <string name="start_log_capture_description">डिबगिंग के लिए पूर्ण लॉग रिकॉर्ड करना शुरू करें</string>
+    <string name="start_log_capture_in_applog_file">लॉग संदेश केवल तब फ़ाइल में लिखे जाते हैं जब कैप्चर सक्रिय होता है</string>
+    <string name="start_log_capture_in_silent">रिकॉर्डिंग प्रारंभ करने में असमर्थ: साइलेंट लॉगिंग स्तर चुना गया</string>
+    <string name="stop_log_capture">लॉग कैप्चर रोकें</string>
+    <string name="stop_log_capture_description">रिकॉर्डिंग जारी है… रोकने के लिए टैप करें</string>
+    <string name="export_logs">लॉग निर्यात करें</string>
+    <string name="export_logs_description">डिबगिंग के लिए लॉग सहेजें</string>
+
+    <string name="not_set">सेट नहीं</string>
+    <string name="keymap_description">अपनी हेडयूनिट के लिए कुंजी-बाइंडिंग बदलें</string>
+
+    <string name="key_soft_left">सॉफ्ट लेफ्ट</string>
+    <string name="key_soft_right">सॉफ्ट राइट</string>
+    <string name="key_dpad_up">D-Pad ऊपर</string>
+    <string name="key_dpad_down">D-Pad नीचे</string>
+    <string name="key_dpad_left">D-Pad बायाँ</string>
+    <string name="key_dpad_right">D-Pad दायाँ</string>
+    <string name="key_dpad_center">D-Pad केंद्र (ठीक है)</string>
+    <string name="key_media_play">मीडिया चलाएं</string>
+    <string name="key_media_pause">मीडिया रोकें</string>
+    <string name="key_media_play_pause">मीडिया चलाएं/रोकें</string>
+    <string name="key_media_next">अगला ट्रैक</string>
+    <string name="key_media_prev">पिछला ट्रैक</string>
+    <string name="key_search">वॉइस कमांड</string>
+    <string name="key_call">फ़ोन (स्वीकार करें)</string>
+    <string name="key_endcall">कॉल समाप्त करें (अस्वीकार करें)</string>
+    <string name="key_music">संगीत</string>
+    <string name="key_nav">नेविगेशन</string>
+    <string name="key_night">नाइट मोड टॉगल करें</string>
+    <string name="key_enter">Enter</string>
+    <string name="key_home">Home</string>
+    <string name="key_app_switch">ऐप स्विच / हाल के ऐप्स</string>
+    <string name="key_button_a">बटन A (चुनें)</string>
+    <string name="key_button_b">बटन B (वापस)</string>
+
+    <!-- Language Settings -->
+    <string name="app_language">ऐप की भाषा</string>
+    <string name="system_default">सिस्टम डिफ़ॉल्ट</string>
+    <string name="change_language">भाषा बदलें</string>
+
+    <!-- Categories for SettingsFragment -->
+    <string name="category_general">सामान्य</string>
+    <string name="auto_start_self_mode">ऑटो स्टार्ट सेल्फ़-मोड</string>
+    <string name="auto_start_self_mode_description">एप्लिकेशन खोले जाने पर सेल्फ़-मोड स्वचालित रूप से प्रारंभ करें।</string>
+    <string name="usb_auto_connect">ऑटो-कनेक्ट USB</string>
+    <string name="usb_auto_connect_description">एप्लिकेशन खोले जाने पर किसी ज्ञात USB डिवाइस से स्वचालित रूप से कनेक्ट करें।</string>
+    <string name="auto_start_bt_label">ब्लूटूथ पर ऑटो-स्टार्ट</string>
+    <string name="auto_start_overlay_missing_hint">अन्य ऐप्स के ऊपर प्रदर्शित करने की अनुमति नहीं दी गई है, इसलिए ऑटो-स्टार्ट स्क्रीन खोलने के बजाय एक नोटिफ़िकेशन दिखाएगा। अनुमति देने के लिए टैप करें।</string>
+    <string name="auto_start_bt_description">किसी विशिष्ट ब्लूटूथ डिवाइस के कनेक्ट होने पर Open Headunit स्वचालित रूप से खोलें।</string>
+    <!-- Asked once, after the first connection, when this unit is paired to exactly one phone. -->
+    <string name="auto_start_offer_title">स्वचालित रूप से प्रारंभ करें?</string>
+    <string name="auto_start_offer_message">क्या आप इस डिवाइस, %1$s के साथ ऐप को स्वचालित रूप से प्रारंभ करना चाहते हैं?</string>
+    <!-- Own strings rather than android.R.string.yes/no, which render as OK and Cancel from Android 9. -->
+    <string name="auto_start_offer_yes">हाँ</string>
+    <string name="auto_start_offer_no">नहीं</string>
+    <string name="auto_start_offer_countdown">%1$d सेकंड में नहीं</string>
+    <string name="listen_for_usb_devices_label">USB उपकरणों के लिए सुनें</string>
+    <string name="listen_for_usb_devices_description">USB उपकरण प्लग इन होने पर Android सिस्टम प्रॉम्प्ट दिखाएं।</string>
+    <string name="show_toast_messages">टोस्ट संदेश दिखाएं</string>
+    <string name="show_toast_messages_description">कनेक्शन, डिस्कनेक्ट और मोड स्विचिंग पर स्थिति टोस्ट पॉपअप प्रदर्शित करें।</string>
+    <string name="auto_start_usb_label">USB पर ऑटो-स्टार्ट</string>
+    <string name="auto_start_usb_description">USB उपकरण प्लग इन होने पर स्वचालित रूप से ऐप खोलें और कनेक्शन का प्रयास करें</string>
+    <string name="auto_start_settings">ऑटो-स्टार्ट सेटिंग्स</string>
+    <string name="auto_start_settings_description">कॉन्फ़िगर करें कि ऐप स्वचालित रूप से कब शुरू होता है</string>
+    <string name="auto_start_oem_warning">इस डिवाइस के लिए इस ऐप हेतु ऑटो-स्टार्ट सक्षम करने और बैटरी ऑप्टिमाइज़ेशन या बैकग्राउंड प्रतिबंध हटाने की आवश्यकता हो सकती है।\n\nक्विक बूट (फास्ट बूट) वाले हेड यूनिट्स पर, ऑटो-स्टार्ट काम नहीं कर सकता है। अपनी सिस्टम सेटिंग्स में \"DuraSpeed\" देखें और वहां इस ऐप को सक्षम करें। यदि आपके पास DuraSpeed नहीं है, तो क्विक बूट अक्षम करने का प्रयास करें।</string>
+    <string name="auto_start_on_boot_label">बूट पर प्रारंभ करें</string>
+    <string name="auto_start_on_boot_description">डिवाइस चालू होने पर स्वचालित रूप से ऐप खोलें। Android 10+ पर \'अन्य ऐप्स के ऊपर प्रदर्शित करें\' अनुमति की आवश्यकता है</string>
+    <string name="auto_start_screen_on_label">स्क्रीन चालू होने पर प्रारंभ करें</string>
+    <string name="auto_start_screen_on_description">हर बार स्क्रीन चालू होने पर ऐप खोलें। उन हेड यूनिट्स के लिए आदर्श जो कभी पूरी तरह से बंद नहीं होते हैं। फ़ोन या टैबलेट के लिए अनुशंसित नहीं है।</string>
+    <string name="select_bt_device">ब्लूटूथ डिवाइस चुनें</string>
+    <string name="bt_device_not_set">सेट नहीं है</string>
+    <string name="no_paired_bt_devices">कोई युग्मित ब्लूटूथ डिवाइस नहीं मिला</string>
+    <string name="auto_disconnect_bt_label">ब्लूटूथ पर ऑटो-डिस्कनेक्ट</string>
+    <string name="select_bt_disconnect_device">निगरानी के लिए ब्लूटूथ डिवाइस चुनें</string>
+    <string name="native_poke_bt_label">वायरलेस Android Auto के लिए जगाने वाला डिवाइस</string>
+    <string name="select_bt_poke_device">जगाने के लिए ब्लूटूथ डिवाइस चुनें</string>
+    <string name="native_poke_all_paired_label">प्रत्येक युग्मित डिवाइस को जगाएं</string>
+    <string name="native_poke_all_paired_description">यदि ऊपर कोई डिवाइस नहीं चुना गया है, तो Android Auto शुरू करने के लिए प्रत्येक युग्मित डिवाइस से संक्षेप में कनेक्ट करें। जब तक आप कोई डिवाइस नहीं चुनते, तब तक कुछ भी न जगाने के लिए इसे बंद करें।</string>
+    <string name="auto_disconnect_bt_delay_label">डिस्कनेक्ट करने से पहले प्रतीक्षा करें</string>
+    <string name="auto_disconnect_bt_delay_value">%1$d सेकंड</string>
+    <string name="auto_disconnect_bt_delay_immediate">तुरंत</string>
+    <string name="enter_auto_disconnect_bt_delay">सत्र समाप्त करने से पहले प्रतीक्षा करने के सेकंड</string>
+    <string name="auto_disconnect_bt_delay_hint">प्रोफ़ाइल पुनः कनेक्ट होने के दौरान एक पल के लिए ब्लूटूथ लिंक टूट सकता है। सत्र केवल तभी समाप्त होता है जब डिवाइस अभी भी इतने समय के बाद अनुपस्थित हो।</string>
+    <string name="auto_disconnect_bt_kill_hint">चुने गए डिवाइस का ब्लूटूथ बंद होने पर सत्र समाप्त करता है जैसे निकास बटन करता है, उदाहरण के लिए कार बंद होने पर। यदि यह यूनिट कार के ब्लूटूथ के साथ युग्मित है, तो उसे चुनें। ऐप को बंद करने और होम स्क्रीन दिखाने के लिए, ऑटोमेशन के तहत \"डिस्कनेक्ट होने पर ऐप बंद करें\" चालू करें।</string>
+    <string name="auto_start_wifi_label">वाई-फ़ाई पर ऑटो-स्टार्ट</string>
+    <string name="auto_start_wifi_description">किसी विशिष्ट वाई-फ़ाई SSID से कनेक्ट होने पर Open Headunit स्वचालित रूप से खोलें।</string>
+    <string name="auto_start_wifi_ssid_label">वाई-फ़ाई SSID</string>
+    <string name="auto_start_wifi_ssid_description">केवल तभी कनेक्ट करें जब इस वाई-फ़ाई SSID से जुड़े हों</string>
+    <string name="auto_start_wifi_warning">विरासत सुविधा: पृष्ठभूमि प्रतिबंधों के कारण यह Android 8+ पर विश्वसनीय रूप से काम नहीं कर सकता है। सुनिश्चित करें कि ऐप बैटरी अनुकूलन से बाहर रखा गया है।</string>
+    <string name="enter_wifi_ssid">वाई-फ़ाई SSID दर्ज करें</string>
+    <string name="wifi_ssid_not_set">सेट नहीं है</string>
+    <string name="bt_permission_denied_title">ब्लूटूथ अनुमति आवश्यक है</string>
+    <string name="bt_permission_denied_message">युग्मित डिवाइस चुनने के लिए ब्लूटूथ अनुमति आवश्यक है। कृपया इसे ऐप सेटिंग्स में प्रदान करें।</string>
+    <string name="overlay_permission_title">पृष्ठभूमि प्रारंभ अनुमति</string>
+    <string name="overlay_permission_description">ब्लूटूथ कनेक्ट होने पर Open Headunit को स्वचालित रूप से खोलने की अनुमति देने के लिए, कृपया अगली स्क्रीन में \"अन्य ऐप्स के ऊपर प्रदर्शित करें\" अनुमति सक्षम करें।</string>
+    <string name="open_settings">सेटिंग्स</string>
+    <string name="cannot_open_settings">सिस्टम सेटिंग्स नहीं खोली जा सकीं</string>
+    <string name="right_hand_drive">दाएँ हाथ की ड्राइविंग (RHD)</string>
+    <string name="right_hand_drive_description">दाईं ओर ड्राइविंग के लिए UI को व्यवस्थित करें</string>
+    <string name="wireless_connection_settings">वायरलेस कनेक्शन</string>
+    <string name="category_graphic">ग्राफ़िक्स</string>
+
+    <string name="static_bssid_title">स्थैतिक BSSID (MAC पता)</string>
+    <string name="static_bssid_enter_value">BSSID दर्ज करें (XX:XX:XX:XX:XX:XX)</string>
+    <string name="static_bssid_desc">एक्सेस प्वाइंट का BSSID मैन्युअल रूप से सेट करें। केवल तभी आवश्यक जब इस डिवाइस पर कुछ भी इसकी रिपोर्ट न करे।</string>
+    <string name="static_p2p_bssid_title">स्थैतिक BSSID (वाई-फ़ाई डायरेक्ट)</string>
+    <string name="static_p2p_bssid_desc">वाई-फ़ाई डायरेक्ट समूह का BSSID मैन्युअल रूप से सेट करें।</string>
+
+    <string name="custom_insets">कस्टम इनसेट (मार्जिन)</string>
+    <string name="inset_top">ऊपर</string>
+    <string name="inset_bottom">नीचे</string>
+    <string name="inset_left">बायाँ</string>
+    <string name="inset_right">दायाँ</string>
+    <string name="category_debug">डिबग</string>
+
+    <!-- Video Settings -->
+    <string name="category_video">वीडियो</string>
+    <string name="force_software_decoding">सॉफ़्टवेयर डिकोडिंग बाध्य करें</string>
+    <string name="force_software_decoding_description">कुछ उपकरणों पर समस्याओं को ठीक कर सकता है, लेकिन कम कुशल है</string>
+    <string name="software_video_decoder">सॉफ़्टवेयर डिकोडर स्रोत</string>
+    <string name="software_video_decoder_bundled">बंडल किया गया FFmpeg</string>
+    <string name="software_video_decoder_device">डिवाइस MediaCodec</string>
+    <string name="wireless_mode">वायरलेस मोड</string>
+    <string name="wireless_mode_description">चुनें कि ऐप वायरलेस तरीके से कैसे कनेक्ट होता है (मैन्युअल सूची, फ़ोन की ऑटो-खोज, या वायरलेस हेल्पर मोड)</string>
+    <string-array name="wireless_connection_modes">
+        <item>मैन्युअल (सूची)</item>
+        <item>ऑटो-सर्च (हेडयूनिट सर्वर)</item>
+        <item>वायरलेस हेल्पर (फ़ोन की प्रतीक्षा)</item>
+        <item>मूल Android Auto (आधिकारिक हैंडशेक)</item>
+    </string-array>
+    <string name="auto_connect_last_session">अंतिम सत्र स्वतः कनेक्ट करें</string>
+    <string name="auto_connect_last_session_description">ऐप स्टार्टअप पर अंतिम उपयोग किए गए डिवाइस से स्वचालित रूप से पुनः कनेक्ट करें</string>
+    <string name="auto_connect_single_usb">USB डिवाइस स्वतः कनेक्ट करें</string>
+    <string name="auto_connect_single_usb_description">केवल एक संगत डिवाइस उपलब्ध होने पर स्वचालित रूप से कनेक्ट करें</string>
+    <string name="auto_connect_settings">ऑटो-कनेक्ट सेटिंग्स</string>
+    <string name="auto_connect_settings_description">ऑटो-कनेक्ट विधियों और उनके प्राथमिकता क्रम को कॉन्फ़िगर करें</string>
+    <string name="auto_connect_help">ऐप खुलने पर ये विधियां स्वचालित रूप से चलती हैं। जिन्हें आप चाहते हैं उन्हें सक्षम करें, फिर क्रम सेट करने के लिए खींचें। सफल होने वाली पहली सक्षम विधि का उपयोग किया जाएगा।</string>
+    <string name="auto_connect_priority">प्राथमिकता %d</string>
+    <string name="auto_connect_all_disabled">सभी अक्षम</string>
+    <string name="drag_to_reorder">पुनः व्यवस्थित करने के लिए खींचें</string>
+    <string name="move_up">ऊपर ले जाएँ</string>
+    <string name="move_down">नीचे ले जाएँ</string>
+    <string name="auto_connecting_single_usb">USB उपकरण से स्वतः कनेक्ट हो रहा है…</string>
+    <string name="video_codec">वीडियो कोडेक</string>
+    <string name="fps_limit">FPS सीमा</string>
+    <string name="save">सहेजें</string>
+    <string name="save_and_restart">सहेजें (पुनः कनेक्शन आवश्यक)</string>
+    <string name="add_new">नया जोड़ें</string>
+    <string name="cancel">रद्द करें</string>
+    <string name="enable">सक्षम करें</string>
+    <string name="video_fit_mode">वीडियो फ़िट</string>
+    <string name="change_video_fit_mode">वीडियो फ़िट बदलें</string>
+    <string name="video_fit_mode_fill">भरने के लिए खींचें (कोई बार नहीं, विकृत हो सकता है)</string>
+    <string name="video_fit_mode_contain">बार के साथ फ़िट करें (कोई क्रॉप नहीं, कोई विकृति नहीं)</string>
+    <string name="video_fit_mode_cover">क्रॉप करके भरें (कोई बार नहीं, कोई विकृति नहीं)</string>
+
+    <!-- More Features Settings -->
+    <string name="category_more_features">अधिक सुविधाएँ</string>
+    <string name="pref_enable_car_launcher_title">कार लॉन्चर के रूप में उपयोग करें</string>
+    <string name="pref_enable_car_launcher_summary">कार या हेडयूनिट होम बटन दबाए जाने पर Open Headunit को होम स्क्रीन ऐप के रूप में पंजीकृत करता है</string>
+    <string name="pref_set_default_launcher_title">डिफ़ॉल्ट होम ऐप</string>
+    <string name="pref_default_launcher_status_active">सक्रिय (प्रबंधित करने के लिए टैप करें)</string>
+    <string name="pref_default_launcher_status_inactive">सेट नहीं है (डिफ़ॉल्ट के रूप में सेट करने के लिए टैप करें)</string>
+    <string name="pref_enable_floating_button_title">फ़्लोटिंग लॉन्चर बटन</string>
+    <string name="pref_enable_floating_button_summary">Open Headunit पर त्वरित वापसी के लिए OEM लॉन्चर और अन्य ऐप्स के ऊपर एक फ़्लोटिंग बटन प्रदर्शित करता है</string>
+    <string name="pref_floating_button_size_title">फ़्लोटिंग बटन का आकार</string>
+    <string name="pref_floating_button_opacity_title">फ़्लोटिंग बटन की अपारदर्शिता</string>
+    <string name="pref_floating_button_x_title">क्षैतिज स्थिति (X)</string>
+    <string name="pref_floating_button_y_title">लंबवत स्थिति (Y)</string>
+    <string name="pref_aa_exit_action_title">Android Auto निकास क्रिया</string>
+    <string name="pref_aa_exit_action_summary">Android Auto ऐप ड्रॉअर के अंदर निकास पर टैप करने पर कार्रवाई</string>
+    <string name="aa_exit_action_oem_launcher">OEM लॉन्चर पर लौटें (न्यूनतम करें)</string>
+    <string name="aa_exit_action_app_home">ऐप होम पर लौटें</string>
+    <string name="aa_exit_action_disconnect">सत्र डिस्कनेक्ट करें</string>
+    <string name="forced_scale">बाध्यकारी पैमाना (विरासत सुधार)</string>
+    <string name="forced_scale_description">SurfaceView का उपयोग करने वाले कुछ पुराने उपकरणों पर स्केलिंग समस्याओं को ठीक करता है। केवल तभी उपयोग करें जब छवि विकृत या स्थानांतरित दिखाई दे।</string>
+    <string name="hud_mirroring">HUD मोड (क्षैतिज फ्लिप)</string>
+    <string name="hud_mirroring_description">विंडशील्ड प्रतिबिंब (हेड-अप डिस्प्ले) के लिए डिस्प्ले को क्षैतिज रूप से फ़्लिप करता है। TextureView या GLES20 व्यू मोड की आवश्यकता है।</string>
+
+    <!-- Audio Settings -->
+    <string name="category_audio">ऑडियो</string>
+    <string name="enable_audio_sink">ऑडियो सिंक</string>
+    <string name="enable_audio_sink_description">यदि अक्षम है, तो हेडयूनिट को ऑडियो प्राप्त नहीं होगा। ध्वनि फ़ोन से बजेगी।</string>
+    <string name="static_audio_focus">स्थिर ऑडियो फोकस</string>
+    <string name="static_audio_focus_description">फ़ोन को यह विश्वास करने के लिए बाध्य करें कि ऑडियो फोकस हमेशा बना रहता है, जिससे सामान्य हेडयूनिट पर ऑडियो रूटिंग का नुकसान रोका जा सके। नेविगेशन वॉइस संकेतों के दौरान संगीत की आवाज़ भी धीमी करता है।</string>
+    <string name="media_key_routing">मीडिया बटन Android Auto को भेजें</string>
+    <string name="media_key_routing_always">हमेशा</string>
+    <string name="media_key_routing_auto">स्वचालित</string>
+    <string name="media_key_routing_never">कभी नहीं</string>
+    <string name="media_key_routing_always_hint">अगला, पिछला और चलाएं/रोकें हमेशा Android Auto को भेजे जाते हैं। इसका उपयोग तब तक करें जब तक कि एक बार दबाने से दो ट्रैक न छूट जाएं।</string>
+    <string name="media_key_routing_auto_hint">जब इस हेडयूनिट का फ़ोन से ब्लूटूथ मीडिया कनेक्शन होता है, तो उन्हें भेजना बंद कर देता है, क्योंकि वह कनेक्शन पहले ही क्रिया निष्पादित करता है।</string>
+    <string name="media_key_routing_never_hint">उन्हें कभी नहीं भेजता, बटनों को ब्लूटूथ पर छोड़ देता है।</string>
+    <string name="media_key_routing_hint_common">केवल मीडिया बटन प्रभावित होते हैं। रोटरी नियंत्रक, D-पैड, बैक और एंटर हमेशा Android Auto तक पहुँचते हैं।</string>
+    <string name="playback_focus_mode">प्लेबैक के दौरान अन्य ऑडियो रोकें</string>
+    <string name="playback_focus_mode_auto">स्वचालित</string>
+    <string name="playback_focus_mode_always">हमेशा</string>
+    <string name="playback_focus_mode_never">कभी नहीं</string>
+    <string name="playback_focus_mode_auto_hint">Android Auto ऑडियो चलने के दौरान हेडयूनिट पर किसी अन्य प्लेयर (उदाहरण के लिए रेडियो) को रोकता है।</string>
+    <string name="playback_focus_mode_always_hint">Android Auto चलने के दौरान हमेशा अन्य ऑडियो रोकता है।</string>
+    <string name="playback_focus_mode_never_hint">सिस्टम ऑडियो फ़ोकस को कभी न छुएं। हेडयूनिट पर अन्य ऑडियो Android Auto के साथ बजता रह सकता है।</string>
+    <string name="playback_focus_mode_static_hint">स्टैटिक ऑडियो फ़ोकस चालू होने पर, यह फ़ोन कनेक्ट होने के क्षण से लागू होता है और पूरे सत्र तक रहता है।</string>
+    <string name="separate_audio_streams">अलग ऑडियो स्ट्रीम</string>
+    <string name="separate_audio_streams_description">एक साझा मल्टीमीडिया स्ट्रीम के बजाय मीडिया, मार्गदर्शन और सिस्टम साउंड चैनलों को उनकी अपनी आउटपुट स्ट्रीम दें।</string>
+
+    <!-- Audio stream settings screen -->
+    <string name="audio_stream_settings">ऑडियो स्ट्रीम</string>
+    <string name="audio_stream_settings_description">सिस्टम स्ट्रीम चुनें जिस पर प्रत्येक Android Auto चैनल चलता है।</string>
+    <string name="audio_stream_settings_info">Android Auto तीन चैनलों पर ऑडियो भेजता है — मीडिया, मार्गदर्शन और सिस्टम साउंड। प्रत्येक को एक सिस्टम स्ट्रीम पर हेड यूनिट को सौंप दिया जाता है। सहेजने से पहले स्ट्रीम पर टेस्ट टोन सुनने के लिए स्पीकर बटन का उपयोग करें।</string>
+    <string name="audio_channel_media">मीडिया</string>
+    <string name="audio_channel_media_description">ऐप प्लेबैक: संगीत, पॉडकास्ट, रेडियो और ऑडियोबुक। स्टीरियो (48 kHz) में भेजा जाने वाला एकमात्र चैनल।</string>
+    <string name="audio_channel_guidance">मार्गदर्शन / नेविगेशन</string>
+    <string name="audio_channel_guidance_description">बोले जाने वाले दिशा-निर्देश और वॉइस असिस्टेंट के उत्तर (16 kHz मोनो)।</string>
+    <string name="audio_channel_system">सिस्टम ध्वनियाँ / सूचना</string>
+    <string name="audio_channel_all">मीडिया, मार्गदर्शन, नेविगेशन, सूचना और सिस्टम</string>
+    <string name="audio_channel_all_short">सभी चैनल</string>
+    <string name="audio_channel_all_description">प्रत्येक Android Auto ऑडियो चैनल इस एक आउटपुट स्ट्रीम को साझा करता है।</string>
+    <string name="audio_channel_system_description">Android Auto के अपने अलर्ट, चाइम्स और नोटिफ़िकेशन ध्वनियाँ (16 kHz मोनो)।</string>
+    <string name="audio_stream_test">इस स्ट्रीम पर एक टेस्ट टोन चलाएं</string>
+    <string name="audio_stream_muted_warning">इस डिवाइस पर %1$s म्यूट है — टेस्ट टोन सुनने के लिए इसका वॉल्यूम बढ़ाएं।</string>
+    <string name="audio_stream_test_failed">इस स्ट्रीम पर टेस्ट टोन नहीं चलाया जा सका।</string>
+    <string name="audio_stream_pick_title">%1$s के लिए स्ट्रीम</string>
+    <string name="audio_stream_voice_call">वॉइस कॉल</string>
+    <string name="audio_stream_system">सिस्टम</string>
+    <string name="audio_stream_ring">रिंगटोन</string>
+    <string name="audio_stream_music">मीडिया (संगीत)</string>
+    <string name="audio_stream_alarm">अलार्म</string>
+    <string name="audio_stream_notification">सूचना (नोटिफ़िकेशन)</string>
+    <string name="audio_stream_bluetooth_sco">ब्लूटूथ SCO</string>
+    <string name="audio_stream_system_enforced">सिस्टम (लागू)</string>
+    <string name="audio_stream_dtmf">DTMF</string>
+    <string name="audio_stream_tts">टेक्स्ट-टू-स्पीच</string>
+    <string name="audio_stream_accessibility">एक्सेसिबिलिटी</string>
+    <string name="audio_stream_assistant">असिस्टेंट</string>
+    <string name="audio_stream_vendor_format">%1$s (%2$d)</string>
+    <string name="audio_stream_unnamed_format">स्ट्रीम %1$d</string>
+    <string name="audio_stream_unavailable_format">स्ट्रीम %1$d (इस डिवाइस पर नहीं है)</string>
+    <string name="audio_stream_vendor_info">इस हेड यूनिट में ऐसे आउटपुट स्ट्रीम हैं जो स्टॉक Android में नहीं हैं। यदि कोई चैनल शांत रहता है, तो स्पीकर बटन से उनका परीक्षण करें।</string>
+
+    <!-- Onboarding: audio step -->
+    <string name="onb_audio_title">ऑडियो</string>
+    <string name="onb_audio_help">प्रत्येक Android Auto चैनल जिस सिस्टम स्ट्रीम पर चलता है उसे चुनें, और इसे सुनने के लिए स्पीकर पर टैप करें।</string>
+    <string name="onb_audio_more_hint">आप इन्हें बाद में सेटिंग्स → ऑडियो स्ट्रीम के अंतर्गत फिर से बदल सकते हैं।</string>
+    <string name="use_aac_audio">AAC ऑडियो का उपयोग करें</string>
+    <string name="use_aac_audio_description">बैंडविड्थ बचाने के लिए ऑडियो के लिए AAC कोडेक का उपयोग करें (प्रायोगिक)। 2.4 GHz पर चलने वाले वायरलेस सत्र पर यह स्वचालित रूप से चालू होता है।</string>
+    <string name="attach_hw_dsp_equalizer">हार्डवेयर DSP इक्वलाइज़र ट्रिगर</string>
+    <string name="attach_hw_dsp_equalizer_description">विशिष्ट हेडयूनिट्स पर हार्डवेयर DSP रूटिंग को बाध्य करने के लिए ऑडियो सत्र में एक डमी इक्वलाइज़र प्रभाव संलग्न करता है।</string>
+    <string name="audio_volume_offset">ऑडियो वॉल्यूम ऑफ़सेट</string>
+    <string name="microphone_settings">माइक्रोफ़ोन सेटिंग्स</string>
+    <string name="use_head_unit_microphone">हेड यूनिट माइक्रोफ़ोन</string>
+    <string name="use_head_unit_microphone_description">चालू: Android Auto इस डिवाइस का माइक्रोफ़ोन सुनता है। बंद: यह डिवाइस कभी रिकॉर्ड नहीं करता है और फ़ोन अपने स्वयं के माइक्रोफ़ोन का उपयोग करता है। फ़ोन पर Android 11 या नए की आवश्यकता है।</string>
+    <string name="head_unit_microphone_off_info">हेड यूनिट माइक्रोफ़ोन बंद है, इसलिए नीचे कुछ भी लागू नहीं होता है।</string>
+    <string name="microphone_settings_description">माइक्रोफ़ोन इनपुट और ऑडियो प्रोसेसिंग कॉन्फ़िगर करें।</string>
+    <string name="mic_wire_format_info">Android Auto हमेशा 16000 Hz, 16-बिट, मोनो पर माइक्रोफ़ोन प्राप्त करता है। यह किसी भी अन्य चीज़ को अस्वीकार करता है।</string>
+    <string name="mic_input_source">माइक्रोफ़ोन इनपुट स्रोत</string>
+    <string name="mic_input_source_description">माइक्रोफ़ोन के लिए ऑडियो स्रोत चुनें।</string>
+    <string-array name="mic_input_sources">
+        <item>डिफ़ॉल्ट (सिस्टम तय करता है)</item>
+        <item>अंतर्निहित माइक्रोफ़ोन (कच्चा इनपुट)</item>
+        <item>आवाज़ पहचान (शोर कम किया गया)</item>
+        <item>आवाज़ संचार (इको + शोर रद्द)</item>
+        <item>ब्लूटूथ हेडसेट (SCO)</item>
+    </string-array>
+    <string name="mic_echo_canceler">इको रद्दीकरण (AEC)</string>
+    <string name="mic_echo_canceler_description">माइक्रोफ़ोन से इको हटाने का प्रयास करता है। यदि आपको सन्नाटा या विकृति का अनुभव हो तो अक्षम करें।</string>
+    <string name="mic_noise_suppressor">शोर दमन (NS)</string>
+    <string name="mic_noise_suppressor_description">पृष्ठभूमि के शोर को कम करने का प्रयास करता है। यदि आपकी आवाज़ दबी हुई लगती है तो अक्षम करें।</string>
+    <string name="mic_auto_gain_control">स्वचालित लाभ नियंत्रण (AGC)</string>
+    <string name="mic_auto_gain_control_description">माइक्रोफ़ोन वॉल्यूम को स्वचालित रूप से समायोजित करता है। यदि वॉल्यूम अस्थिर है तो अक्षम करें।</string>
+    <string name="mic_feature_unsupported">यह सुविधा आपके डिवाइस पर समर्थित नहीं है।</string>
+
+    <!-- Info Settings -->
+    <string name="category_info">जानकारी</string>
+    <string name="about">परिचय और सहायता</string>
+    <string name="about_description">Open Headunit के बारे में अधिक जानकारी प्राप्त करें</string>
+
+    <!-- Support / report a problem screen -->
+    <string name="support">समस्या की रिपोर्ट करें</string>
+    <string name="support_description">GitHub पर बग खोजें या रिपोर्ट करें</string>
+    <string name="support_title">समस्या की रिपोर्ट करें</string>
+    <string name="support_help">यदि आपको कोई बग या समस्या आती है, तो कृपया पहले GitHub इश्यू सूची में खोजें। यदि किसी ने अभी तक इसकी रिपोर्ट नहीं की है, तो एक नया इश्यू खोलें और बताएं कि क्या होता है, आपकी हेड यूनिट क्या है, और इसे पुनः उत्पन्न करने के चरण क्या हैं।</string>
+    <string name="support_open_issues">GitHub इश्यू पृष्ठ खोलें</string>
+    <string name="support_scan_qr">या किसी अन्य डिवाइस पर समस्याओं की सूची खोलने के लिए इस QR कोड को स्कैन करें।</string>
+    <string name="support_github_account_warning">नोट: समस्या दर्ज करने के लिए आपको एक निःशुल्क GitHub खाते की आवश्यकता है।</string>
+
+    <!-- Reporting rules modal (shown from a button under the QR on the Support screen) -->
+    <string name="support_rules_button">रिपोर्टिंग नियम</string>
+    <string name="support_rules_intro">केवल दो चीजें आवश्यक हैं। बाकी सब कुछ वैकल्पिक है, लेकिन यह आपकी समस्या को बहुत तेजी से हल करने में मदद करता है।</string>
+    <string name="support_rules_section_required">आवश्यक</string>
+    <string name="support_rules_section_recommend">अनुशंसाएँ (वैकल्पिक)</string>
+    <string name="support_rules_device_title">बताएं कि ऐप किस पर चल रहा है</string>
+    <string name="support_rules_device_desc">Android Auto को प्रोजेक्ट करने वाले डिवाइस का Android संस्करण (आपकी हेड यूनिट या स्क्रीन), और यदि आप जानते हैं तो उसका ब्रांड और मॉडल।</string>
+    <string name="support_rules_connection_title">बताएं कि आप कैसे कनेक्ट करते हैं</string>
+    <string name="support_rules_connection_desc">USB केबल, USB वायरलेस अडैप्टर, वाई-फ़ाई डायरेक्ट, वाई-फ़ाई (हेडयूनिट सर्वर) या सेल्फ़ मोड। यदि वायरलेस है, तो अडैप्टर या डोंगल मॉडल जोड़ें।</string>
+    <string name="support_rules_appversion_title">ऐप संस्करण शामिल करें</string>
+    <string name="support_rules_appversion_desc">Open Headunit संस्करण, जो अबाउट स्क्रीन पर दिखाया गया है।</string>
+    <string name="support_rules_logs_title">समस्या होने के तुरंत बाद लॉग संलग्न करें</string>
+    <string name="support_rules_logs_desc">सेटिंग्स को एडवांस्ड टैब पर स्विच करें, डिबग सेक्शन में डिबग मोड चालू करें, समस्या को दोबारा उत्पन्न करें, फिर ठीक बाद एक्सपोर्ट लॉग पर टैप करें ताकि लॉग उस समय को कवर करे जब यह टूटा था। उस फ़ाइल को अपने इश्यू में संलग्न करें।</string>
+    <string name="support_rules_search_title">कोई डुप्लिकेट नहीं</string>
+    <string name="support_rules_search_desc">पहले मौजूदा समस्याओं में खोजें। यदि कोई खुला हुआ इश्यू पहले से ही आपकी समस्या का वर्णन करता है, तो नया खोलने के बजाय वहां एक टिप्पणी के रूप में अपना विवरण जोड़ें।</string>
+    <string name="support_rules_phone_title">आपका फ़ोन भी मायने रखता है</string>
+    <string name="support_rules_phone_desc">आपका फ़ोन मॉडल, उसका Android संस्करण और फ़ोन पर Android Auto ऐप संस्करण।</string>
+    <string name="support_rules_describe_title">इसे स्पष्ट रूप से समझाएं</string>
+    <string name="support_rules_describe_desc">आपने क्या किया, आपने क्या उम्मीद की थी और वास्तव में क्या हुआ। विज़ुअल समस्याओं के लिए एक स्क्रीनशॉट या छोटा वीडियो बहुत मदद करता है।</string>
+    <string name="support_rules_oneissue_title">प्रति इश्यू एक समस्या</string>
+    <string name="support_rules_oneissue_desc">प्रत्येक इश्यू को एक ही समस्या तक सीमित रखें ताकि इसे ट्रैक और ठीक किया जा सके।</string>
+    <string name="version">संस्करण</string>
+    <string name="about_title">Open Headunit के बारे में</string>
+    <string name="copyright">© 2025-%d André Rinas</string>
+
+    <!-- Safety Disclaimer -->
+    <string name="disclaimer_title">सुरक्षा और दायित्व</string>
+    <string name="disclaimer_header">महत्वपूर्ण चेतावनी</string>
+    <string name="disclaimer_accept">मैं समझता हूँ और सहमत हूँ</string>
+    <string name="disclaimer_text"><![CDATA[
+        <b>1. सड़क पर ध्यान दें</b><br/>
+        गाड़ी चलाते समय इस सॉफ़्टवेयर को संचालित करना ध्यान भटकाने वाला और खतरनाक हो सकता है। हमेशा सुरक्षित ड्राइविंग को प्राथमिकता दें और सभी स्थानीय यातायात नियमों का पालन करें। इस एप्लिकेशन का उपयोग केवल तभी करें जब ऐसा करना सुरक्षित हो।<br/><br/>
+        <b>2. दायित्व की सीमा</b><br/>
+        Open Headunit किसी भी प्रकार की वारंटी के बिना "जैसा है" प्रदान किया जाता है। डेवलपर्स किसी भी दुर्घटना, आपके वाहन/डिवाइस की क्षति, या इस सॉफ़्टवेयर के उपयोग से उत्पन्न होने वाले कानूनी परिणामों के लिए कोई दायित्व नहीं लेते हैं।<br/><br/>
+        <b>3. कोई संबद्धता नहीं</b><br/>
+        यह परियोजना एक स्वतंत्र ओपन-सोर्स पहल है और यह Google LLC या Android Auto ब्रांड से संबद्ध, समर्थित या जुड़ी नहीं है।
+    ]]></string>
+
+    <!-- Toast Messages -->
+    <string name="searching">खोज रहा है…</string>
+    <string name="auto_connecting_to">%s से स्वतः कनेक्ट हो रहा है…</string>
+    <string name="auto_connecting_usb">USB डिवाइस से स्वतः कनेक्ट हो रहा है…</string>
+    <string name="already_connected">पहले से कनेक्टेड</string>
+    <string name="already_scanning">पहले से स्कैन हो रहा है…</string>
+    <string name="searching_headunit_server">हेडयूनिट सर्वर खोज रहा है…</string>
+    <string name="already_searching_phone">पहले से फ़ोन खोज रहा है…</string>
+    <string name="searching_phone">फ़ोन खोज रहा है…</string>
+    <string name="key_mappings_reset">कुंजी मैपिंग रीसेट</string>
+    <string name="press_key_to_assign">\'%s\' को असाइन करने के लिए कोई कुंजी दबाएं…</string>
+    <string name="key_assigned">\'%1$s\' को \'%2$s\' पर असाइन किया गया</string>
+    <string name="last_key_press">अंतिम कुंजी प्रेस: %1$s (%2$d)</string>
+    <string name="scan">स्कैन करें</string>
+    <string name="scanning_network">नेटवर्क स्कैन हो रहा है…</string>
+    <string name="found_connecting">%s मिला, कनेक्ट हो रहा है…</string>
+    <string name="no_devices_found">कोई उपकरण नहीं मिला</string>
+    <string name="unsaved_changes">अनसहेजे गए परिवर्तन</string>
+    <string name="unsaved_changes_message">आपके पास अनसहेजे गए परिवर्तन हैं। क्या आप उन्हें छोड़ना चाहते हैं?</string>
+    <string name="discard">छोड़ें</string>
+    <string name="stopping_service">परिवर्तन लागू करने के लिए सेवा बंद की जा रही है…</string>
+    <string name="settings_saved">सेटिंग्स सहेजी गईं</string>
+    <string name="category_backup">बैकअप</string>
+    <string name="export_settings">सेटिंग्स निर्यात करें</string>
+    <string name="export_settings_description">JSON फ़ाइल के रूप में सेटिंग्स बैकअप सहेजें</string>
+    <string name="export_settings_choose_location">सहेजने का स्थान चुनें</string>
+    <string name="export_settings_downloads">डाउनलोड में सहेजें</string>
+    <string name="export_settings_app_folder">ऐप बैकअप फ़ोल्डर में सहेजें</string>
+    <string name="import_settings">सेटिंग्स आयात करें</string>
+    <string name="import_settings_description">Open Headunit बैकअप से सेटिंग्स पुनर्स्थापित करें</string>
+    <string name="import_settings_choose_file">बैकअप फ़ाइल चुनें</string>
+    <string name="import_settings_downloads">डाउनलोड से आयात करें</string>
+    <string name="import_settings_app_folder">ऐप बैकअप फ़ोल्डर से आयात करें</string>
+    <string name="settings_exported">सेटिंग्स निर्यात की गईं</string>
+    <string name="settings_backup_saved_to">सेटिंग्स बैकअप यहाँ सहेजा गया:\n%1$s</string>
+    <string name="settings_export_failed">सेटिंग्स निर्यात विफल: %1$s</string>
+    <string name="settings_import_failed">सेटिंग्स आयात विफल: %1$s</string>
+    <string name="settings_imported">सेटिंग्स आयात की गईं: %1$d लागू, %2$d छोड़ी गईं</string>
+    <string name="import_settings_discard_pending">बैकअप आयात करने से आपके अनसहेजे गए परिवर्तन हट जाएंगे। जारी रखें?</string>
+    <string name="reset_settings_confirm_message">यह सभी सेटिंग्स को उनके डिफ़ॉल्ट मानों पर रीसेट कर देगा। बैकअप और ऐप फ़ाइलें नहीं हटेंगी। जारी रखें?</string>
+    <string name="reset_settings_discard_pending">सेटिंग्स रीसेट करने से आपके अनसहेजे गए परिवर्तन हट जाएंगे। जारी रखें?</string>
+    <string name="settings_reset">सेटिंग्स डिफ़ॉल्ट पर रीसेट</string>
+    <string name="settings_reset_failed">सेटिंग्स रीसेट विफल: %1$s</string>
+    <string name="storage_permission_denied_backup">स्टोरेज अनुमति अस्वीकृत। डाउनलोड का उपयोग नहीं किया जा सका।</string>
+    <string name="no_file_picker_title">कोई फ़ाइल पिकर उपलब्ध नहीं</string>
+    <string name="no_file_picker_message">इस डिवाइस में संगत फ़ाइल पिकर नहीं है। आप इसके बजाय डाउनलोड या ऐप बैकअप फ़ोल्डर का उपयोग कर सकते हैं।</string>
+    <string name="no_settings_backups_title">कोई बैकअप नहीं मिला</string>
+    <string name="no_settings_backups_message">ऐप बैकअप फ़ोल्डर में कोई Open Headunit बैकअप नहीं मिला।</string>
+    <string name="no_settings_backups_downloads_message">डाउनलोड में कोई Open Headunit बैकअप नहीं मिला।</string>
+    <string name="share_settings_backup">सेटिंग्स बैकअप साझा करें</string>
+    <string name="logs_exported">लॉग निर्यात किए गए</string>
+    <string name="log_saved_to">लॉग यहाँ सहेजा गया:\n%s</string>
+    <string name="share">साझा करें</string>
+    <string name="logs_copied_to_clipboard">लॉग क्लिपबोर्ड पर कॉपी किए गए। पूर्ण लॉग यहाँ सहेजा गया है:\n%s</string>
+    <string name="logs_copy_to_clipboard_failed">क्लिपबोर्ड पर लॉग कॉपी करने में विफल</string>
+    <string name="close">बंद करें</string>
+    <string name="failed_export_logs">लॉग निर्यात करने में विफल</string>
+    <string name="failed_export_in_silent_logs">लॉग निर्यात करने में असमर्थ: साइलेंट स्तर चयनित</string>
+    <string name="switching_to_android_auto">Android Auto पर स्विच किया जा रहा है…</string>
+    <string name="switch_failed">स्विच विफल रहा</string>
+    <string name="requesting_usb_permission">USB अनुमति का अनुरोध किया जा रहा है…</string>
+    <string name="enter_ip_address">IP पता दर्ज करें</string>
+    <string name="switching_usb_accessory_mode">USB डिवाइस को एक्सेसरी मोड %s पर स्विच किया जा रहा है</string>
+    <string name="success">सफल</string>
+    <string name="failed">विफल</string>
+    <string name="failed_start_android_auto">Android Auto प्रारंभ करने में विफल</string>
+    <string name="failed_self_mode_android10">Android 10 (AA 16.4+) पर Google द्वारा सेल्फ़-मोड को ब्लॉक किए जाने की संभावना है।</string>
+    <string name="android_auto_starting">Android Auto प्रारंभ हो रहा है…</string>
+
+    <!-- Second line of the home-screen status pill: the bring-up step the app is on. -->
+    <string name="stage_armed">आपके फ़ोन की प्रतीक्षा की जा रही है</string>
+    <string name="stage_usb_attached">USB डिवाइस कनेक्ट किया गया</string>
+    <string name="stage_preparing_network">नेटवर्क तैयार किया जा रहा है</string>
+    <string name="stage_searching">आपका फ़ोन खोजा जा रहा है</string>
+    <string name="stage_usb_switching">आपके फ़ोन को Android Auto पर स्विच किया जा रहा है</string>
+    <string name="stage_creating_network">वाई-फ़ाई नेटवर्क बनाया जा रहा है</string>
+    <string name="stage_waiting_for_phone">आपके फ़ोन के कनेक्ट होने की प्रतीक्षा की जा रही है</string>
+    <string name="stage_waking_phone">आपके फ़ोन को जगाया जा रहा है</string>
+    <string name="stage_phone_answered">आपके फ़ोन ने उत्तर दिया</string>
+    <string name="stage_sending_credentials">आपके फ़ोन को नेटवर्क विवरण भेजा जा रहा है</string>
+    <string name="stage_phone_joining">आपका फ़ोन नेटवर्क में शामिल हो रहा है</string>
+    <string name="stage_connecting">कनेक्ट हो रहा है</string>
+    <string name="stage_securing">कनेक्शन सुरक्षित किया जा रहा है</string>
+    <string name="stage_starting_projection">Android Auto प्रारंभ किया जा रहा है</string>
+
+    <!-- Third line of the home-screen status pill: the WiFi Direct group, in place of the toasts that covered the pill. -->
+    <string name="network_detail_5ghz">5 GHz पर वाई-फ़ाई डायरेक्ट (%1$d MHz)</string>
+    <string name="network_detail_24ghz">2.4 GHz पर वाई-फ़ाई डायरेक्ट, चैनल %1$d</string>
+    <string name="network_detail_unknown">वाई-फ़ाई डायरेक्ट नेटवर्क चालू है</string>
+    <string name="network_detail_retrying_5ghz">वाई-फ़ाई डायरेक्ट 2.4 GHz पर आया, 5 GHz पुनः प्रयास कर रहा है</string>
+    <string name="network_detail_unfriendly_channel">वाई-फ़ाई डायरेक्ट चैनल %1$d पर है, जिसमें अधिकांश फ़ोन शामिल नहीं हो सकते। वाई-फ़ाई पुनः प्रारंभ करें।</string>
+    <string name="connection_interrupted">कनेक्शन टूट गया</string>
+    <string name="connection_interrupted_detail">पुनः प्रयास कर रहा है…</string>
+    <string name="renderer_fallback_surface">वीडियो बार-बार फ़्रीज़ हो रहा था, इसलिए इस सत्र के लिए डिस्प्ले को SurfaceView पर स्विच कर दिया गया।</string>
+    <string name="wifi_disconnect_toast">Android Auto डिस्कनेक्ट हो गया: यदि वायरलेस AA का उपयोग कर रहे हैं, तो फ़ोन वाई-फ़ाई सेटिंग्स में \"नेटवर्क के बीच स्विच करें\" को अक्षम करें</string>
+    <string name="reset_usb_option">USB कनेक्शन रीसेट करें</string>
+    <string name="reset_usb_timeout">USB डिवाइस नहीं मिला। कृपया कनेक्शन जांचें।</string>
+    <string name="notification_service_running">Open Headunit चल रहा है</string>
+    <string name="boot_loop_paused_title">वायरलेस स्टार्टअप रुका</string>
+    <string name="boot_loop_paused_generic">Open Headunit द्वारा वायरलेस शुरू करने के तुरंत बाद यह डिवाइस लगातार तीन बार पुनरारंभ हुआ, इसलिए इस बार वायरलेस बंद रखा गया। USB अभी भी काम करता है। इसे वापस चालू करने के लिए ऐप खोलें।</string>
+    <string name="boot_loop_paused_native_wifi_direct">Open Headunit द्वारा वायरलेस शुरू करने के तुरंत बाद यह डिवाइस लगातार तीन बार पुनरारंभ हुआ। कुछ हेडयूनिट्स पर वाई-फ़ाई चिपसेट पूरे सिस्टम को क्रैश कर देता है जब कोई फ़ोन वाई-फ़ाई डायरेक्ट नेटवर्क से जुड़ता है। हेडयूनिट हॉटस्पॉट का प्रयास करें।</string>
+    <string name="notification_projection_active">Android Auto प्रोजेक्ट किया गया है</string>
+    <string name="shortcut_connect_title">कनेक्ट करें</string>
+    <string name="shortcut_connect_desc">अंतिम फ़ोन से स्वतः कनेक्ट करें</string>
+    <string name="shortcut_selfmode_title">सेल्फ़ मोड</string>
+    <string name="shortcut_selfmode_desc">इस डिवाइस पर Android Auto प्रारंभ करें</string>
+    <string name="shortcut_disconnect_title">डिस्कनेक्ट करें</string>
+    <string name="shortcut_disconnect_desc">वर्तमान सत्र समाप्त करें</string>
+    <string name="shortcut_exit_title">ऐप से बाहर निकलें</string>
+    <string name="shortcut_exit_desc">सभी सेवाएं रोकें और ऐप बंद करें</string>
+    <string name="shortcut_night_mode_auto_title">मोड: ऑटो</string>
+    <string name="shortcut_night_mode_auto_desc">स्वचालित नाइट मोड पुनर्स्थापित करें</string>
+    <string name="shortcut_night_mode_day_title">मोड: दिन</string>
+    <string name="shortcut_night_mode_day_desc">दिन मोड बाध्य करें</string>
+    <string name="shortcut_night_mode_night_title">मोड: रात</string>
+    <string name="shortcut_night_mode_night_desc">नाइट मोड बाध्य करें</string>
+    <string name="setup_welcome_title">त्वरित सेटअप</string>
+    <string name="setup_welcome_msg">यह विज़ार्ड आपको सुगम Android Auto अनुभव के लिए सर्वोत्तम सेटिंग्स चुनने में मदद करता है।\n\nआप इन सेटिंग्स को हमेशा बाद में बदल सकते हैं।</string>
+    <string name="setup_start">शुरू करें</string>
+    <string name="setup_size_title">डिस्प्ले आकार</string>
+    <string name="setup_size_phone">फ़ोन / छोटा (4-6\")</string>
+    <string name="setup_size_small">छोटा टैबलेट (7-8\")</string>
+    <string name="setup_size_standard">मानक (9-10\")</string>
+    <string name="setup_size_large">बड़ा (11\"+)</string>
+    <string name="setup_orientation_title">डिवाइस ओरिएंटेशन</string>
+    <string name="setup_orientation_landscape">लैंडस्केप (क्षैतिज)</string>
+    <string name="setup_orientation_portrait">पोर्ट्रेट (लंबवत)</string>
+    <string name="setup_result_title">अनुकूलन समाप्त</string>
+    <string name="setup_apply">लागू करें</string>
+    <string name="setup_widescreen_detected">वाइडस्क्रीन डिस्प्ले का पता चला।</string>
+    <string name="auto_optimize">सेटिंग्स स्वतः अनुकूलित करें</string>
+    <string name="auto_optimize_desc">अपने डिवाइस के लिए सर्वश्रेष्ठ सेटिंग्स खोजने हेतु सिस्टम जाँच चलाएँ।</string>
+
+    <!-- Navigation notifications (from any AA nav app) -->
+    <string name="show_navigation_notifications">नेविगेशन नोटिफ़िकेशन</string>
+    <string name="show_navigation_notifications_description">नोटिफ़िकेशन में \"X मीटर में Y करें\" और वर्तमान सड़क दिखाएं (डिबगिंग के लिए)</string>
+    <string name="media_session_aa_status_placeholder">कनेक्टेड</string>
+    <string name="sync_media_session_aa_metadata">मीडिया सत्र पर AA अब चल रहा है</string>
+    <string name="sync_media_session_aa_metadata_description">सिस्टम मीडिया सत्र और मीडिया सूचना में फ़ोन से ट्रैक शीर्षक, कलाकार, अवधि और एल्बम कला दिखाएं</string>
+    <string name="auto_resume_playback_on_reconnect">पुनः कनेक्ट होने पर स्वतः प्लेबैक फिर से शुरू करें</string>
+    <string name="auto_resume_playback_on_reconnect_description">यदि कनेक्शन टूटने से पहले संगीत सक्रिय रूप से बज रहा था, तो इसे स्वतः फिर से शुरू करें (60 सेकंड के भीतर)</string>
+    <string name="nav_notification_channel_name">नेविगेशन</string>
+    <string name="nav_notification_channel_description">Android Auto से मोड़-दर-मोड़ नेविगेशन अपडेट</string>
+    <string name="nav_notification_title_format">%1$d मीटर में — %2$s</string>
+    <string name="nav_notification_street_format">सड़क: %1$s</string>
+    <string name="nav_action_unknown">कार्रवाई</string>
+    <string name="nav_action_depart">प्रस्थान</string>
+    <string name="nav_action_name_change">नाम परिवर्तन</string>
+    <string name="nav_action_slight_turn">हल्का मोड़</string>
+    <string name="nav_action_turn">मोड़</string>
+    <string name="nav_action_sharp_turn">तीखा मोड़</string>
+    <string name="nav_action_uturn">यू-टर्न</string>
+    <string name="nav_action_on_ramp">सड़क में प्रवेश करें</string>
+    <string name="nav_action_off_ramp">निकास रैंप</string>
+    <string name="nav_action_merge">मर्ज करें</string>
+    <string name="nav_action_roundabout_enter">गोल चक्कर में प्रवेश करें</string>
+    <string name="nav_action_roundabout_exit">गोल चक्कर से बाहर निकलें</string>
+    <string name="nav_action_roundabout">गोल चक्कर</string>
+    <string name="nav_action_straight">सीधा</string>
+    <string name="nav_action_ferry">नौका (फेरी)</string>
+    <string name="nav_action_ferry_train">फेरी / ट्रेन</string>
+    <string name="nav_action_destination">आगमन</string>
+    <string name="show_performance_overlay">प्रदर्शन ओवरले दिखाएं</string>
+    <string name="overlay_position">प्रदर्शन ओवरले स्थिति</string>
+    <string name="five_ghz_channel">5 GHz चैनल</string>
+    <string name="five_ghz_channel_auto">स्वचालित</string>
+    <string name="five_ghz_channel_option">चैनल %1$d (%2$d MHz)</string>
+    <string name="five_ghz_channel_hint">एक चैनल एक अनुरोध है, गारंटी नहीं। यदि कोई 5 GHz चैनल काम नहीं करता है, तो 2.4 GHz बैंड चुनें।</string>
+    <string name="wifi_direct_stable_identity">वही वाई-फ़ाई डायरेक्ट नेटवर्क बनाए रखें</string>
+    <string name="wifi_direct_stable_identity_description">हर बार एक ही नेटवर्क नाम और पासवर्ड का उपयोग करता है, ताकि आपका फ़ोन उस नेटवर्क से दोबारा जुड़ सके जिसे वह पहले से जानता है।</string>
+    <string name="wifi_direct_new_identity">नई वाई-फ़ाई डायरेक्ट नेटवर्क पहचान</string>
+    <string name="wifi_direct_new_identity_none">अगले कनेक्शन पर चुना जाएगा</string>
+    <string name="wifi_direct_new_identity_confirm">समूह के लिए एक नया नाम और पासवर्ड चुनता है, जो अगले कनेक्शन से उपयोग किया जाता है। यदि फ़ोन किसी ऐसे नेटवर्क का प्रयास करता रहता है जिसमें वह शामिल नहीं हो सकता तो यह करें।</string>
+    <string name="wifi_direct_new_identity_done">अगले कनेक्शन से एक नई नेटवर्क पहचान का उपयोग किया जाएगा।</string>
+    <string name="wifi_direct_new_identity_applied">एक नई नेटवर्क पहचान अब सेट की जा रही है।</string>
+    <string name="wifi_direct_stable_identity_description_legacy">इस Android संस्करण पर सिस्टम नाम चुनता है और ऐप इसके लिए अनुरोध नहीं कर सकता है।</string>
+    <string name="wifi_direct_last_network">आपके फ़ोन को दिए गए नेटवर्क का विवरण</string>
+    <string name="wifi_direct_last_network_none">अभी तक कुछ नहीं देखा गया। एक बार कनेक्ट करें, फिर यहाँ वापस आएँ।</string>
+    <string name="wifi_direct_last_network_title">आपके फ़ोन को दिया गया नेटवर्क</string>
+    <string name="wifi_direct_last_network_details">नाम\n%1$s\n\nपासवर्ड\n%2$s\n\nपता\n%3$s</string>
+    <string name="wifi_direct_last_network_address_unknown">पढ़ा नहीं जा सका</string>
+    <string name="wifi_direct_last_network_no_bssid">ऐप इस नेटवर्क का पता नहीं पढ़ सका। स्थान चालू करना समाधान हो सकता है।</string>
+    <string name="wifi_direct_last_network_differs">यह वह नाम और पासवर्ड नहीं है जो ऐप ने मांगा था। नया युग्म लेने के लिए ऊपर \"नई वाई-फ़ाई डायरेक्ट पहचान\" का उपयोग करें।</string>
+    <string name="wifi_direct_last_network_hint">अपने फ़ोन पर इस नेटवर्क में मैन्युअल रूप से शामिल होने से Android Auto शुरू नहीं होता है।</string>
+    <string name="wifi_direct_group_identity">वाई-फ़ाई डायरेक्ट नाम और पासवर्ड</string>
+    <string name="wifi_direct_group_identity_auto">ऐप द्वारा चुना गया। स्वयं सेट करने के लिए टैप करें।</string>
+    <string name="wifi_direct_group_identity_pick_new">मेरे लिए नए चुनें</string>
+    <string name="wifi_direct_group_identity_message">इस हेड यूनिट में शामिल होने के लिए आपके फ़ोन को दिया गया नाम और पासवर्ड।</string>
+    <string name="wifi_direct_group_identity_name_hint">नेटवर्क नाम</string>
+    <string name="wifi_direct_group_identity_passphrase_hint">पासवर्ड, 8 से 63 वर्ण</string>
+    <string name="wifi_direct_group_identity_invalid_name">उस नाम का उपयोग नहीं किया जा सकता। MyCar जैसा छोटा नाम दर्ज करें।</string>
+    <string name="wifi_direct_group_identity_invalid_passphrase_length">वाई-फ़ाई पासवर्ड 8 से 63 वर्णों के बीच होना चाहिए।</string>
+    <string name="wifi_direct_group_identity_invalid_passphrase_charset">वाई-फ़ाई पासवर्ड केवल सामान्य कीबोर्ड वर्णों का उपयोग कर सकता है।</string>
+    <string name="wifi_direct_group_identity_recoded">सहेजा गया। नेटवर्क का नाम भी बदलकर %1$s कर दिया गया है।</string>
+    <string name="wifi_direct_group_identity_legacy">इस Android संस्करण पर सिस्टम नाम और पासवर्ड चुनता है।</string>
+    <string name="copy">कॉपी करें</string>
+    <string name="wifi_direct_credentials_copied">नेटवर्क नाम और पासवर्ड कॉपी किया गया।</string>
+    <string name="debug_video_low_latency">डिकोडर कम-विलंबता मोड का अनुरोध करें</string>
+    <string name="debug_video_low_latency_description">वीडियो डिकोडर कॉन्फ़िगर करते समय विक्रेता कम-विलंबता MediaFormat कुंजी सेट करता है।</string>
+    <string name="debug_video_feed_hold">धीमे डिकोडर का अनुकरण करें</string>
+    <string name="show_performance_overlay_description">प्रोजेक्शन पर FPS, CPU लोड, तापमान और फ्रेम आयु प्रदर्शित करें।</string>
+
+    <!-- Auto-start permission strings -->
+    <string name="reopen_on_reconnection_label">पुनः कनेक्ट होने पर दोबारा खोलें</string>
+    <string name="reopen_on_reconnection_description">जब आप निकास बटन दबाते हैं, तो ऐप पृष्ठभूमि में चलता रहता है और USB कनेक्शन की निगरानी करता रहता है। यदि कोई उपकरण पुनः कनेक्ट होता है, तो ऐप स्वचालित रूप से फिर से खुल जाता है।</string>
+    <string name="overlay_permission_required">ऑटो-स्टार्ट के लिए \'अन्य ऐप्स के ऊपर प्रदर्शित करें\' अनुमति की आवश्यकता है</string>
+    <string name="usb_permission_denied">USB अनुमति अस्वीकृत। स्वचालित रूप से कनेक्ट करने के लिए कृपया USB एक्सेस की अनुमति दें।</string>
+
+    <!-- Theme -->
+    <string name="use_white_background">सफेद होम स्क्रीन वॉलपेपर का उपयोग करें</string>
+    <string name="category_input">इनपुट सेटिंग्स</string>
+    <string name="enable_rotary">रोटरी नियंत्रक सक्षम करें</string>
+    <string name="enable_rotary_description">भौतिक रोटरी नॉब और पहियों के लिए समर्थन की घोषणा करें। यदि आपकी टच स्क्रीन ठीक से काम नहीं कर रही है तो इसे अक्षम करें।</string>
+
+    <string name="kill_on_disconnect">डिस्कनेक्ट होने पर ऐप बंद करें</string>
+    <string name="kill_on_disconnect_description">Android Auto डिस्कनेक्ट होने पर ऐप को स्वचालित रूप से बंद करें</string>
+    <string name="raise_projection_during_call">कॉल के दौरान Android Auto में रहें</string>
+    <string name="raise_projection_during_call_description">केवल सेल्फ़ मोड। प्रोजेक्शन को फ़ोन की कॉल स्क्रीन के ऊपर वापस लाता है</string>
+    <string name="kill_on_disconnect_warning_title">चेतावनी</string>
+    <string name="kill_on_disconnect_warning">निम्नलिखित पुनः कनेक्शन सेटिंग्स डिस्कनेक्ट होने पर ऐप को बंद करने के साथ संघर्ष करेंगी:\n\n%1$s\n\nक्या आप ऊपर सूचीबद्ध पुनः कनेक्शन सेटिंग्स को अक्षम करना चाहते हैं?</string>
+    <string name="kill_on_disconnect_disable_and_enable">अक्षम करें और सक्षम करें</string>
+    <string name="kill_on_disconnect_enable_anyway">फिर भी सक्षम करें</string>
+    <string name="kill_on_disconnect_conflicts_disabled">परस्पर विरोधी सेटिंग्स अक्षम कर दी गई हैं</string>
+    <string name="kill_on_disconnect_boot_warning">आपने \"बूट पर प्रारंभ करें\" सक्षम किया है।</string>
+    <string name="kill_on_disconnect_screen_on_warning">आपने \"स्क्रीन चालू होने पर प्रारंभ करें\" सक्षम किया है।</string>
+
+    <string name="wifi_disabled_info">जानकारी: वाई-फ़ाई अक्षम है।</string>
+    <string name="bt_not_enabled">ब्लूटूथ अक्षम है</string>
+    <string name="bt_permission_denied">ब्लूटूथ अनुमति अस्वीकृत। उपकरणों के लिए स्कैन नहीं किया जा सकता।</string>
+    <string name="bt_external_module_no_picker">इस यूनिट का ब्लूटूथ एक बाहरी मॉड्यूल द्वारा प्रदान किया जाता है, Android के अपने रेडियो द्वारा नहीं।</string>
+
+    <!-- Vehicle Info Settings -->
+    <string name="vehicle_info_settings">वाहन की जानकारी</string>
+    <string name="vehicle_info_settings_description">अनुकूलित करें कि आपका वाहन आपके फ़ोन पर कैसे दिखाई देता है</string>
+    <string name="ui_scale">डिस्प्ले और टेक्स्ट का आकार</string>
+    <string name="ui_scale_description">पूरे ऐप में टेक्स्ट, मेनू और लेआउट तत्वों को स्केल करता है।</string>
+    <string name="ui_scale_home">होम स्क्रीन</string>
+    <string name="ui_scale_settings">सेटिंग्स स्क्रीन</string>
+    <string name="category_vehicle">वाहन</string>
+    <string name="category_head_unit">हेड यूनिट</string>
+    <string name="vehicle_display_name_label">प्रदर्शन नाम</string>
+    <string name="vehicle_display_name_description">इस वाहन के लिए आपके फ़ोन पर दिखाया जाने वाला नाम</string>
+    <string name="vehicle_make_label">निर्माता (Make)</string>
+    <string name="vehicle_make_description">वाहन निर्माता (जैसे Honda, Toyota)</string>
+    <string name="vehicle_model_label">मॉडल</string>
+    <string name="vehicle_model_description">वाहन मॉडल (जैसे Civic, Corolla)</string>
+    <string name="vehicle_year_label">वर्ष</string>
+    <string name="vehicle_year_description">वाहन का वर्ष</string>
+    <string name="vehicle_id_label">वाहन ID</string>
+    <string name="vehicle_type_label">वाहन का प्रकार</string>
+    <string name="vehicle_type_car">कार</string>
+    <string name="vehicle_type_truck">ट्रक</string>
+    <string name="vehicle_type_motorcycle">मोटरसाइकिल</string>
+    <string name="vehicle_type_forced_by_microphone">हेड यूनिट माइक्रोफ़ोन बंद है, इसलिए Android Auto को बताया गया है कि यह एक मोटरसाइकिल है।</string>
+    <string name="vehicle_id_description">केवल आंतरिक पहचानकर्ता। इसे बदलने से आपका फ़ोन इसे एक अलग वाहन के रूप में मानेगा।</string>
+    <string name="head_unit_make_label">निर्माता</string>
+    <string name="head_unit_make_description">हेड यूनिट निर्माता</string>
+    <string name="head_unit_make_hint">आपका फ़ोन Android Auto सेटिंग्स में यह नाम दिखाता है।</string>
+    <string name="vehicle_make_hint">वास्तविक कार ब्रांड निकास बटन पर उस ब्रांड का लोगो दिखाता है।</string>
+    <string name="head_unit_model_label">मॉडल</string>
+    <string name="head_unit_model_description">हेड यूनिट मॉडल</string>
+    <string name="vehicle_year_error_invalid">एक वैध वर्ष दर्ज करें</string>
+    <string name="vehicle_year_error_max">वर्ष %1$d से बाद का नहीं हो सकता</string>
+    <string name="vehicle_info_restart_note">यह डेटा हर बार कनेक्ट होने पर Android Auto को भेजा जाता है।</string>
+
+    <string name="auto_enable_hotspot">हॉटस्पॉट स्वतः सक्षम करें</string>
+    <string name="auto_enable_hotspot_description">इस डिवाइस पर स्वचालित रूप से एक वाई-फ़ाई हॉटस्पॉट शुरू करता है। (हर डिवाइस पर काम नहीं करेगा)</string>
+    <string name="hotspot_warning_title">प्रायोगिक सुविधा</string>
+    <string name="hotspot_warning_message">यह सुविधा प्रतिबिंब का उपयोग करती है और हो सकता है कि सभी उपकरणों पर काम न करे।</string>
+    <string name="hotspot_permission_title">अनुमति आवश्यक है</string>
+    <string name="hotspot_permission_message">हॉटस्पॉट सुविधा के लिए \"सिस्टम सेटिंग्स बदलें\" अनुमति की आवश्यकता है।</string>
+
+    <string name="supported_nativeaa">उन्नत वायरलेस समर्थन</string>
+    <string name="supported_nativeaa_desc">शानदार खबर! आपका डिवाइस \"मूल वायरलेस\" (Native Wireless) मोड का समर्थन करता है। क्या आप अभी Native AA मोड पर स्विच करना चाहते हैं?</string>
+    <string name="native_aa_poke_not_running">इस हेड यूनिट पर वायरलेस ब्लूटूथ नहीं चल रहा है। सेटिंग्स जांचें।</string>
+    <string name="not_supported_nativeaa">मूल वायरलेस समर्थित नहीं लगता है</string>
+    <string name="not_supported_nativeaa_desc">हो सकता है कि आपका डिवाइस मूल वायरलेस के लिए आवश्यक ब्लूटूथ या वाई-फ़ाई सुविधाओं का समर्थन न करे।</string>
+    <string name="external_bt_nativeaa">इस हेड यूनिट पर मूल वायरलेस काम नहीं कर सकता</string>
+    <string name="external_bt_nativeaa_desc">आपका फ़ोन इस यूनिट के अपने ब्लूटूथ मॉड्यूल (%1$s) के साथ युग्मित होता है, Android द्वारा ऐप्स को दिए जाने वाले ब्लूटूथ से नहीं।</string>
+    <string name="external_bt_module_nativeaa">ZJ/ZLink मॉड्यूल के माध्यम से मूल वायरलेस</string>
+    <string name="external_bt_module_nativeaa_desc">आपका फ़ोन इस यूनिट के अपने ब्लूटूथ मॉड्यूल (%1$s) के साथ युग्मित होता है, न कि उस ब्लूटूथ से जो Android ऐप्स को देता है, इसलिए हैंडशेक मॉड्यूल की ZJ/ZLink सेवा के माध्यम से भेजा जाएगा।\n\nयह प्रायोगिक है, और यही सेवा प्रवेश का एकमात्र तरीका है। यदि आपका फ़ोन कभी भी Android Auto प्रारंभ नहीं करता है, तो USB या WiFi मोड का उपयोग करें।</string>
+
+    <string name="wait_for_wifi">वाई-फ़ाई डायरेक्ट से पहले वाई-फ़ाई की प्रतीक्षा करें</string>
+    <string name="wait_for_wifi_description">बूट पर, वाई-फ़ाई डायरेक्ट शुरू करने से पहले वाई-फ़ाई के कनेक्ट होने की प्रतीक्षा करें।</string>
+    <string name="wait_for_wifi_timeout">वाई-फ़ाई प्रतीक्षा समय सीमा</string>
+    <string name="wireless_24ghz_warning">नोट: 2.4GHz उपकरणों पर वायरलेस Android Auto से लैग और ऑडियो रुकावटें हो सकती हैं।</string>
+    <string name="fake_speed_title">वीडियो-लॉक अक्षम करें (नकली गति)</string>
+    <string name="fake_speed_description">ड्राइविंग के दौरान वीडियो सामग्री को ब्लॉक होने से रोकने के लिए फ़ोन को एक स्थिर कम गति (0.5 m/s) की रिपोर्ट करता है। सावधानी से उपयोग करें।</string>
+    <string name="wireless_mode_helper">वायरलेस हेल्पर</string>
+    <string name="wireless_mode_native">मूल (Native)</string>
+    <string name="wireless_mode_server">हेडयूनिट सर्वर</string>
+    <string name="server_mode_label">सर्वर मोड</string>
+    <string name="server_mode_manual">मैन्युअल</string>
+    <string name="server_mode_auto">ऑटो</string>
+
+    <string name="helper_strategy_label">हेल्पर कनेक्शन रणनीति</string>
+    <string-array name="helper_strategies">
+        <item>सामान्य वाई-फ़ाई (NSD)</item>
+        <item>वाई-फ़ाई डायरेक्ट (P2P)</item>
+        <item>Google Nearby (बीटा)</item>
+        <item>फ़ोन हॉटस्पॉट (होस्ट)</item>
+        <item>हेडयूनिट हॉटस्पॉट (निष्क्रिय)</item>
+    </string-array>
+
+    <string name="select_nearby_device">आस-पास का डिवाइस चुनें</string>
+    <string name="nearby_device_found">आस-पास का डिवाइस मिला</string>
+    <string name="connecting_to_nearby">%s से कनेक्ट हो रहा है…</string>
+
+    <string name="exit_dialog_title">Android Auto से बाहर निकलें</string>
+    <string name="exit_dialog_stop">कनेक्शन रोकें</string>
+    <string name="exit_dialog_end_stay_armed">सत्र समाप्त करें, तैयार रहें</string>
+    <string name="exit_dialog_end_stay_armed_note">सत्र समाप्त हो गया। वाई-फ़ाई नेटवर्क चालू रहता है, इसलिए आपका फ़ोन अपने आप पुनः कनेक्ट हो सकता है।</string>
+    <string name="exit_dialog_pip">पिक्चर-इन-पिक्चर (PiP)</string>
+    <string name="exit_dialog_background">पृष्ठभूमि में ले जाएँ</string>
+    <string name="exit_dialog_settings">त्वरित सेटिंग्स</string>
+    <string name="gesture_hint">सुझाव: निकास मेनू खोलने के लिए 2 उंगलियों से बाएं किनारे से स्वाइप करें।</string>
+    <string name="audio_latency_multiplier">ऑडियो विलंबता गुणक</string>
+    <string name="audio_latency_multiplier_description">ऑडियो बफ़र आकार समायोजित करें (कम = कम विलंब, अधिक = कम रुकावट)</string>
+    <string name="audio_queue_capacity">ऑडियो कतार क्षमता (Backpressure)</string>
+
+    <!-- Custom loading screen -->
+    <string name="loading_screen">लोडिंग स्क्रीन</string>
+    <string name="loading_screen_default">डिफ़ॉल्ट</string>
+    <string name="loading_screen_custom">कस्टम</string>
+    <string name="loading_screen_dialog_title">कस्टम लोडिंग स्क्रीन</string>
+    <string name="loading_screen_select_file">फ़ाइल चुनें</string>
+    <string name="loading_screen_remove">हटाएं</string>
+    <string name="loading_screen_recommendation">अनुशंसित रिज़ॉल्यूशन: %1$dx%2$d</string>
+    <string name="loading_screen_supported_formats">समर्थित: छवियाँ (PNG, JPG, BMP, WEBP, GIF) • वीडियो (MP4, MKV, WEBM, 3GP) • अधिकतम: 10 MB</string>
+    <string name="loading_screen_no_media">कोई कस्टम मीडिया चयनित नहीं</string>
+    <string name="loading_screen_file_too_large">फ़ाइल बहुत बड़ी है (अधिकतम 10 MB)</string>
+    <string name="loading_screen_unsupported_format">असमर्थित प्रारूप। एक छवि या वीडियो फ़ाइल का उपयोग करें</string>
+    <string name="loading_screen_file_error">चयनित फ़ाइल लोड नहीं की जा सकी</string>
+    <string name="loading_screen_show_text">\"Android Auto प्रारंभ हो रहा है\" टेक्स्ट दिखाएं</string>
+    <string name="loading_screen_tap_preview">फ़ुलस्क्रीन पूर्वावलोकन के लिए टैप करें</string>
+    <string name="loading_screen_tap_to_close">बंद करने के लिए कहीं भी टैप करें</string>
+    <string name="loading_screen_keep_aspect_ratio">पहलू अनुपात बनाए रखें</string>
+    <string name="loading_screen_scale">पैमाना</string>
+    <string name="loading_screen_recommended_aspect_ratio">अनुशंसित पहलू अनुपात: %1$d:%2$d</string>
+    <string name="loading_screen_tap_fullscreen_hint">इसे फ़ुलस्क्रीन देखने के लिए पूर्वावलोकन पर टैप करें</string>
+    <string name="loading_screen_loop_video">लघु एनिमेशन लूप करें</string>
+    <string name="media_action_previous">पिछला</string>
+    <string name="media_action_play">चलाएं</string>
+    <string name="media_action_pause">रोकें</string>
+    <string name="media_action_next">अगला</string>
+    <string name="error_usb_permission_failed">सिस्टम त्रुटि: USB अनुमति संवाद का अनुरोध करने में विफल।</string>
+    <string name="wifi_autostart_title">वाई-फ़ाई ऑटो-स्टार्ट</string>
+    <string name="wifi_autostart_content">%s से कनेक्टेड। Android Auto शुरू करने के लिए टैप करें।</string>
+
+    <!-- New strings merged from 2.3.1 -->
+    <string name="key_back">वापस</string>
+    <string name="bt_devices_selected">डिवाइस चयनित</string>
+    <string name="bluetooth_adapter_label">ब्लूटूथ अडैप्टर</string>
+    <string name="bluetooth_adapter_description">हैंडशेक के लिए उपयोग करने के लिए ब्लूटूथ अडैप्टर/नियंत्रक चुनें। दोहरे ब्लूटूथ सिस्टम के लिए उपयोगी।</string>
+    <string name="select_bt_adapter">ब्लूटूथ अडैप्टर चुनें</string>
+    <string name="native_ap_transport">नेटवर्क ट्रांसपोर्ट</string>
+    <string name="native_ap_transport_wifi_direct">वाई-फ़ाई डायरेक्ट</string>
+    <string name="native_ap_transport_hotspot">हॉटस्पॉट</string>
+    <string name="native_ap_transport_hint">फ़ोन वाई-फ़ाई डायरेक्ट समूह के बजाय इस डिवाइस के अपने हॉटस्पॉट से जुड़ता है।</string>
+    <string name="hotspot_band">हॉटस्पॉट बैंड</string>
+    <string name="hotspot_band_auto">ऑटो</string>
+    <string name="hotspot_band_5ghz">केवल 5 GHz</string>
+    <string name="hotspot_band_24ghz">केवल 2.4 GHz</string>
+    <string name="hotspot_band_hint">ऑटो 5 GHz मांगता है और 2.4 GHz पर वापस आ जाता है। 2.4 GHz 720p तक विश्वसनीय है।</string>
+    <string name="wifi_direct_band">वाई-फ़ाई डायरेक्ट बैंड</string>
+    <string name="wifi_direct_band_auto">ऑटो</string>
+    <string name="wifi_direct_band_5ghz">केवल 5 GHz</string>
+    <string name="wifi_direct_band_24ghz">केवल 2.4 GHz</string>
+    <string name="wifi_direct_band_hint">ऑटो 5 GHz मांगता है और 2.4 GHz पर वापस आ जाता है।</string>
+    <string name="stand_down_station">कनेक्ट करते समय इस यूनिट के वाई-फ़ाई नेटवर्क को छोड़ दें</string>
+    <string name="stand_down_station_auto">ऑटो</string>
+    <string name="stand_down_station_always">हमेशा</string>
+    <string name="stand_down_station_never">कभी नहीं</string>
+    <string name="stand_down_station_hint">सत्र समाप्त होने पर नेटवर्क से पुनः जुड़ा जाता है।</string>
+    <string name="stand_down_station_needs_overlay">इस Android संस्करण पर \"अन्य ऐप्स के ऊपर प्रदर्शित करें\" अनुमति की आवश्यकता है।</string>
+    <string name="hotspot_interface_override">हॉटस्पॉट नेटवर्क इंटरफ़ेस</string>
+    <string name="hotspot_interface_override_message">स्वचालित रूप से काम करने के लिए खाली छोड़ दें। सामान्य नाम: ap0, wlan0, wlan1, wlan2, softap0, ra0।</string>
+    <string name="hotspot_ssid_override">हॉटस्पॉट नाम (मैन्युअल)</string>
+    <string name="hotspot_ssid_override_message">इस डिवाइस की हॉटस्पॉट सेटिंग्स से स्वचालित रूप से नाम पढ़ने के लिए खाली छोड़ दें।</string>
+    <string name="hotspot_password_override">हॉटस्पॉट पासवर्ड (मैन्युअल)</string>
+    <string name="hotspot_password_override_message">स्वचालित रूप से पासवर्ड पढ़ने के लिए खाली छोड़ दें।</string>
+
+    <!-- Native AA credential pre-flight: what this unit can and cannot tell the phone about its own network -->
+    <!-- The failure banner on the main screen. One per condition, shown after a failed attempt. -->
+    <string name="connection_issue_banner_bt_silent">आपका फ़ोन ब्लूटूथ पर कनेक्ट हुआ, लेकिन इस यूनिट द्वारा भेजी गई कोई भी चीज़ उस तक नहीं पहुँची। USB, वायरलेस हेल्पर या ऑटो पर स्विच करने के लिए टैप करें।</string>
+    <string name="connection_issue_banner_bssid">इस यूनिट पर किसी भी स्रोत ने अपना वाई-फ़ाई MAC पता (BSSID) नहीं दिया। स्थान चालू करने या पते को मैन्युअल रूप से दर्ज करने के लिए टैप करें।</string>
+    <string name="connection_issue_banner_hotspot_off">इस यूनिट का हॉटस्पॉट बंद है, इसलिए आपके फ़ोन को भेजने के लिए कोई नेटवर्क नहीं था। कनेक्ट करने से पहले हॉटस्पॉट चालू करें।</string>
+    <string name="connection_issue_banner_hotspot_config">यह यूनिट ऐप को अपना हॉटस्पॉट नाम और पासवर्ड नहीं बताएगी। उन्हें मैन्युअल रूप से दर्ज करने के लिए टैप करें।</string>
+    <string name="connection_issue_banner_wifi_direct_refused">इस यूनिट का वाई-फ़ाई वह वाई-फ़ाई डायरेक्ट नेटवर्क नहीं बनाएगा जिसमें आपका फ़ोन शामिल होने जा रहा था। इसके बजाय इस यूनिट के हॉटस्पॉट का उपयोग करने के लिए टैप करें।</string>
+    <string name="connection_issue_banner_wifi_direct_cycled">इस यूनिट का कोई अन्य ऐप वाई-फ़ाई डायरेक्ट को बंद और चालू करता रहता है। पूर्व-स्थापित प्रोजेक्शन ऐप (CarLife, ZLink आदि) सामान्य कारण हैं।</string>
+    <string name="connection_issue_banner_wifi_radio_off">इस यूनिट का वाई-फ़ाई बंद है, और Android का यह संस्करण ऐप को इसे चालू करने की अनुमति नहीं देता है। इस यूनिट के लिए वाई-फ़ाई चालू करें।</string>
+    <string name="native_aa_requires_wifi">मूल Android Auto को इस यूनिट के वाई-फ़ाई की आवश्यकता है। कृपया इसे चालू करें।</string>
+    <string name="narrow_band_profile_cap">2.4 GHz लिंक पर वीडियो कम करें</string>
+    <string name="narrow_band_profile_cap_description">जब यह सत्र 2.4 GHz पर चलता है, तो उपरोक्त सेटिंग्स के बजाय फ़ोन से अधिकतम 720p और 30 fps तथा AAC ऑडियो मांगें।</string>
+    <string name="connection_issue_banner_video_link_too_slow">एक भी फ़्रेम आने से पहले आपके फ़ोन ने कई बार वीडियो छोड़ दिया। वाई-फ़ाई लिंक बहुत धीमा है, इसलिए अब AAC ऑडियो के साथ 30 FPS पर 720p का अनुरोध किया जा रहा है।</string>
+    <string name="connection_issue_banner_five_ghz_channel_refused">इस यूनिट ने आपके द्वारा चुने गए किसी भी 5 GHz चैनल पर अपना वाई-फ़ाई डायरेक्ट नेटवर्क डालने से इनकार कर दिया। वाई-फ़ाई डायरेक्ट बैंड को 2.4 GHz पर सेट करने के लिए टैप करें।</string>
+    <string name="connection_issue_banner_headunit_server_deaf">आपके फ़ोन पर Android Auto का हेड यूनिट सर्वर कनेक्शन स्वीकार कर रहा है और उनमें से किसी का भी उत्तर नहीं दे रहा है। फ़ोन पर सर्वर रोकें और पुनः प्रारंभ करें।</string>
+    <string name="connection_issue_banner_stale_endpoint">आपका फ़ोन इस यूनिट तक उस नेटवर्क पते पर पहुँचने की कोशिश करता रहता है जो पहले दिया गया था। अपने फ़ोन पर Android Auto खोलें, इस हेड यूनिट को भूल जाएं, और फिर से कनेक्ट करें।</string>
+    <string name="connection_issue_banner_hands_free_held">कोई अन्य डिवाइस पहले से ही इस यूनिट के हैंड्स-फ़्री कनेक्शन का उपयोग कर रहा है। दूसरे डिवाइस को डिस्कनेक्ट करें या उसका ब्लूटूथ बंद करें।</string>
+    <string name="connection_issue_banner_hands_free_record_refused">इस यूनिट का ब्लूटूथ हैंड्स-फ़्री रिकॉर्ड प्रकाशित नहीं करेगा जिसकी ऐप को आवश्यकता है। केबल या अन्य वायरलेस मोड से कनेक्ट करने पर इसकी आवश्यकता नहीं होती है।</string>
+    <string name="connection_issue_banner_dismiss">खारिज करें</string>
+    <string name="auto_connect_pill_cancel">कनेक्ट करना रोकें</string>
+    <string name="connection_issue_remedy_hotspot_query">हॉटस्पॉट नाम और पासवर्ड</string>
+
+    <string name="preflight_title">कनेक्ट करने से पहले</string>
+    <string name="preflight_intro">यह डिवाइस Android Auto के लिए आवश्यक सभी चीज़ें प्रदान नहीं कर सकता है:</string>
+    <string name="preflight_item_hotspot_name">हॉटस्पॉट नाम। यह डिवाइस ऐप्स को इसे पढ़ने की अनुमति नहीं देगा।</string>
+    <string name="preflight_item_hotspot_password">हॉटस्पॉट पासवर्ड। इसके बिना फ़ोन खुला नेटवर्क पाकर अस्वीकार कर देता है।</string>
+    <string name="preflight_item_bssid">वाई-फ़ाई पता (BSSID)। किसी ने इसकी रिपोर्ट नहीं की।</string>
+    <string name="preflight_item_location">स्थान बंद है, इसलिए Android ऐप्स से इस डिवाइस का वाई-फ़ाई पता छुपाता है। स्थान चालू करना समाधान है।</string>
+    <string name="preflight_enter_now">अभी दर्ज करें</string>
+    <string name="preflight_open_location">स्थान</string>
+    <string name="preflight_later">बाद में</string>
+    <string name="preflight_invalid_bssid">यह एक वाई-फ़ाई पता नहीं है। हेक्स अंकों के छह जोड़े दर्ज करें, जैसे 02:1A:11:FF:3C:4D।</string>
+    <string name="native_aa_complete_hfp_slc">ब्लूटूथ कनेक्शन पूरा करें</string>
+    <string name="native_aa_complete_hfp_slc_description">कुछ फ़ोन तब तक वायरलेस Android Auto शुरू नहीं करेंगे जब तक कि इस यूनिट का ब्लूटूथ कनेक्टेड न माना जाए। डिफ़ॉल्ट रूप से चालू।</string>
+    <string name="native_aa_wake_remeasure">ब्लूटूथ वेक को पुनः मापें</string>
+    <string name="native_aa_wake_verdict_unmeasured">अभी तक नहीं मापा गया</string>
+    <string name="native_aa_wake_verdict_safe">इस यूनिट पर सुरक्षित</string>
+    <string name="native_aa_wake_verdict_destructive">इस यूनिट पर रोका गया</string>
+    <string name="native_aa_wake_remeasure_confirm">Android Auto केवल तभी वायरलेस शुरू करता है जब वह ब्लूटूथ कनेक्शन को बदलते हुए देखता है। यदि वायरलेस अपने आप शुरू होना बंद हो गया है तो इसका उपयोग करें।</string>
+    <string name="native_aa_wake_remeasure_done">अगले कनेक्शन पर ब्लूटूथ वेक को फिर से मापा जाएगा।</string>
+    <string name="announce_connection_configuration">अधिक लिंक टाइमआउट का अनुरोध करें</string>
+    <string name="announce_connection_configuration_description">Android Auto को 3 के बजाय 15 सेकंड प्रतीक्षा करने और बड़े सॉकेट बफ़र्स का उपयोग करने के लिए कहता है।</string>
+    <string name="native_aa_ignore_external_bt">ब्लूटूथ संगतता जाँच को अनदेखा करें</string>
+    <string name="native_aa_ignore_external_bt_description">यह यूनिट ब्लूटूथ को एक अलग मॉड्यूल पर रखती दिखती है जिस तक Android नहीं पहुँच सकता। डिफ़ॉल्ट रूप से बंद।</string>
+
+    <!-- The external Bluetooth module probe (Advanced; only on units the detection flags). -->
+    <string name="zbt_probe_title">हेड यूनिट के ब्लूटूथ मॉड्यूल का परीक्षण करें</string>
+    <string name="zbt_probe_idle">चलाने के लिए टैप करें</string>
+    <string name="zbt_probe_running">चल रहा है…</string>
+    <string name="zbt_probe_message">इस यूनिट की अलग ब्लूटूथ चिप से पूछता है कि क्या वह Android Auto कनेक्शन ले जाएगी। परीक्षण करने के लिए पहले ऊपर दी गई सेटिंग बंद करें। बाद में कृपया लॉग निर्यात करें और संलग्न करें।</string>
+    <string name="zbt_probe_watch_only">केवल देखें</string>
+    <string name="zbt_probe_wake_and_watch">जगाएं और देखें</string>
+    <string name="external_bt_transport">हेड यूनिट के ब्लूटूथ मॉड्यूल के माध्यम से कनेक्ट करें</string>
+    <string name="external_bt_transport_description">प्रायोगिक, और केवल उन इकाइयों के लिए जिनमें ZJ/ZLink ब्लूटूथ सेवा है। वायरलेस Android Auto हैंडशेक को इस यूनिट की अपनी ब्लूटूथ चिप के माध्यम से भेजता है।</string>
+    <string name="native_aa_setup_qr_title">QR कोड द्वारा सेट अप करें</string>
+    <string name="native_aa_setup_qr_description">एक कोड दिखाएं जिसे फ़ोन स्कैन कर सके</string>
+    <string name="native_aa_setup_qr_content_description">वायरलेस Android Auto सेट करने के लिए QR कोड</string>
+    <string name="native_aa_setup_qr_instruction">इसे फ़ोन के कैमरे से स्कैन करें और फ़ोन पर पुष्टि करें। यह केवल एक बार करना होगा: उसके बाद फ़ोन अपने आप कनेक्ट हो जाता है।</string>
+    <string name="native_aa_setup_qr_not_drawn">कोड नहीं बनाया जा सका।</string>
+    <string name="native_aa_setup_qr_not_running">पहले कनेक्शन शुरू करें। कोड इस यूनिट के लाइव नेटवर्क को वहन करता है।</string>
+    <string name="native_aa_setup_qr_not_hotspot">केवल हॉटस्पॉट ट्रांसपोर्ट पर उपलब्ध है।</string>
+    <string name="native_aa_setup_qr_transport_not_applied">हॉटस्पॉट चुना गया है, लेकिन कनेक्शन अभी भी वाई-फ़ाई डायरेक्ट पर चल रहा है। कनेक्शन पुनः प्रारंभ करें।</string>
+    <string name="native_aa_setup_qr_not_listening">यह यूनिट अभी फ़ोन को नहीं सुन रही है। कुछ क्षण में पुन: प्रयास करें।</string>
+    <string name="native_aa_setup_qr_no_credentials">इस यूनिट का नेटवर्क नाम या पासवर्ड अभी तक ज्ञात नहीं है। हॉटस्पॉट चालू करें।</string>
+    <string name="native_aa_setup_qr_no_bssid">इस यूनिट का वाई-फ़ाई पता (BSSID) पढ़ा नहीं जा सका।</string>
+    <string name="native_aa_setup_qr_no_address">उस नेटवर्क पर इस यूनिट का अपना पता अभी तक ज्ञात नहीं है।</string>
+    <string name="native_aa_setup_qr_no_bluetooth">इस यूनिट का ब्लूटूथ पता पढ़ा नहीं जा सका।</string>
+    <string name="native_aa_setup_qr_dongle">इस यूनिट का ब्लूटूथ नाम एक वायरलेस डोंगल के रूप में पढ़ता है। ब्लूटूथ का नाम बदलें और पुनः प्रयास करें।</string>
+
+    <!-- QR Code Generator -->
+    <string name="share_hotspot_qr_title">Wireless Helper कॉन्फ़िगर करें</string>
+    <string name="share_hotspot_qr_desc">फ़ोन ऑटो-कनेक्शन के लिए QR कोड दिखाएं</string>
+    <string name="hotspot_ssid_hint">हॉटस्पॉट SSID</string>
+    <string name="hotspot_pass_hint">हॉटस्पॉट पासवर्ड</string>
+    <string name="hotspot_qr_description">Wireless Helper कॉन्फ़िगरेशन QR कोड</string>
+    <string name="scan_with_wireless_helper">अपने फ़ोन पर Wireless Helper में QR स्कैनर का उपयोग करके इस QR कोड को स्कैन करें।</string>
+    <string name="share_hotspot_qr_error">सक्रिय वाई-फ़ाई हॉटस्पॉट क्रेडेंशियल पुनर्प्राप्त नहीं किए जा सके। सुनिश्चित करें कि हॉटस्पॉट और स्थान चालू हैं।</string>
+    <string name="use_libusb">मूल USB ड्राइवर का उपयोग करें</string>
+    <string name="use_libusb_description">संचार के लिए libusb का उपयोग करें। Android के मानक USB API का उपयोग करने के लिए अक्षम करें।</string>
+
+    <string name="btn_show_qr">QR कोड दिखाएं</string>
+    <string name="su_needed_keymaps_warning">चेतावनी: आपकी हेडयूनिट या तो रूटेड होनी चाहिए, या Shizuku इंस्टॉल होना चाहिए। यदि ऐसा है, तो संकेत मिलने पर आपको SU अधिकारों की अनुमति देनी होगी।</string>
+
+    <string name="self_mode_overlay_permission_description">सेल्फ़ मोड को पृष्ठभूमि से विश्वसनीय रूप से शुरू करने की अनुमति देने के लिए, कृपया अगली स्क्रीन में \"अन्य ऐप्स के ऊपर प्रदर्शित करें\" अनुमति सक्षम करें।</string>
+
+    <!-- Manual coordinates (night mode) and geofenced locations -->
+    <string name="delete">हटाएं</string>
+    <string name="night_mode_coordinates">निर्देशांक</string>
+    <string name="geofence_locations_title">स्थान</string>
+    <string name="geofence_none">कोई नहीं</string>
+    <string name="geofence_count_summary">%1$d क्षेत्र</string>
+    <string name="geofence_empty_hint">अभी तक कोई स्थान नहीं है। क्षेत्र के अनुसार दिन या रात को बाध्य करने के लिए एक जोड़ें।</string>
+    <string name="geofence_unnamed">अनाम स्थान</string>
+    <string name="geofence_add">स्थान जोड़ें</string>
+    <string name="geofence_pick_location">स्थान चुनें</string>
+    <string name="geofence_name_hint">नाम (जैसे घर)</string>
+    <string name="geofence_force_dark">इस क्षेत्र के अंदर डार्क मोड बाध्य करें</string>
+    <string name="geofence_allow_automation">केवल इस क्षेत्र के अंदर ऑटो-स्टार्ट / कनेक्ट करें</string>
+    <string name="geofence_use_gps">मेरे वर्तमान स्थान का उपयोग करें</string>
+    <string name="geofence_no_location">अभी तक कोई स्थान उपलब्ध नहीं है</string>
+    <string name="geofence_saved">स्थान सहेजा गया</string>
+    <string name="geofence_delete_title">स्थान हटाएं?</string>
+    <string name="geofence_delete_message">यह स्थान हटा दिया जाएगा।</string>
+    <string name="geofence_internet_title">इंटरनेट आवश्यक है</string>
+    <string name="geofence_internet_message">नक्शा लोड करने के लिए इंटरनेट कनेक्शन की आवश्यकता है।</string>
+    <string name="geofence_radius_summary">त्रिज्या: %1$d मीटर</string>
+    <string name="geofence_mode_dark">डार्क</string>
+    <string name="geofence_mode_light">लाइट</string>
+    <string name="geofence_gate_on">ऑटो-स्टार्ट प्रतिबंधित</string>
+
+    <!-- Round 2 UX: shared location section, scoped places, don't-show-again -->
+    <string name="location_section">स्थान</string>
+    <string name="sunrise_location_title">सूर्योदय/सूर्यास्त स्थान</string>
+    <string name="sunrise_location_gps">GPS (स्वचालित)</string>
+    <string name="sunrise_location_fixed">निश्चित बिंदु</string>
+    <string name="geofence_pick_on_map">नक्शे पर चुनें</string>
+    <string name="geofence_overridden_note">जब आप इसके अंदर होते हैं तो एक सहेजा गया स्थान इसे ओवरराइड कर देता है।</string>
+    <string name="geofence_current_status_label">वर्तमान में</string>
+    <string name="geofence_current_status">%1$s (%2$s के अंदर)</string>
+    <string name="geofence_override_theme">यहाँ एक थीम बाध्य करें</string>
+    <string name="geofence_dark_inside">इस क्षेत्र के अंदर डार्क</string>
+    <string name="geofence_scope_label">पर लागू होता है</string>
+    <string name="geofence_scope_app">ऐप</string>
+    <string name="geofence_scope_aa">Android Auto</string>
+    <string name="geofence_scope_both">दोनों</string>
+    <string name="geofence_gate_here">केवल यहाँ ऑटो-स्टार्ट / कनेक्ट करें</string>
+    <string name="dont_show_again">दोबारा मत दिखाना</string>
+
+    <!-- Round 3: single Location screen + tri-state appearance -->
+    <string name="location_open_entry">स्थान और सूर्योदय बिंदु</string>
+    <string name="sunrise_section">सूर्योदय / सूर्यास्त</string>
+    <string name="location_places_hint">किसी क्षेत्र में लाइट या डार्क लुक लागू करें। GPS का उपयोग करता है।</string>
+    <string name="appearance_label">अंदर होने पर, रूप-रंग सेट करें</string>
+    <string name="appearance_off">बंद</string>
+
+    <!-- Round 4: Location as a mode -->
+    <string name="location_manage_places">सहेजे गए स्थान</string>
+    <string name="location_outside_label">सहेजे गए स्थानों के बाहर</string>
+    <string name="location_places_desc">जब आप किसी क्षेत्र के अंदर हों तो लाइट या डार्क लुक सेट करें।</string>
+    <string name="coordinates_enter">निर्देशांक दर्ज करें</string>
+    <string name="coordinate_latitude">अक्षांश (Latitude)</string>
+    <string name="coordinate_longitude">देशांतर (Longitude)</string>
+    <string name="coordinates_invalid">अमान्य निर्देशांक</string>
+    <string name="coordinates_format_help">दशमलव डिग्री, बिंदु या अल्पविराम। उदाहरण: 28.6139, 77.2090</string>
+    <string name="sunrise_reference_help">सूर्योदय और सूर्यास्त की गणना के लिए उपयोग किया जाने वाला संदर्भ बिंदु। यह बिना GPS के काम करता है।</string>
+
+    <!-- One-time rename notice shown on the home screen. -->
+    <string name="rename_notice_title">हमारा नाम बदलकर Open Headunit हो रहा है</string>
+    <string name="rename_notice_message">आपकी बदौलत Headunit Revived बढ़ रहा है, और यह अपनी खुद की पहचान में बदल रहा है: Open Headunit। हम अगले अपडेट में नया नाम पेश कर रहे हैं, इसलिए आप कुछ समय के लिए कुछ स्थानों पर पुराना नाम देख सकते हैं।\n\nवही ऐप, वही टीम, और आपकी सभी सेटिंग्स बिल्कुल वैसी ही रहेंगी।</string>
+    <string name="rename_notice_button">समझ गया</string>
+    <string name="aa174_notice_title">महत्वपूर्ण: Android Auto 17.4+</string>
+    <string name="aa174_notice_message"><![CDATA[Android Auto 17.4 से शुरू करते हुए, Google ने ऐसे आंतरिक परिवर्तन पेश किए जो Wireless Helper और क्लासिक सेल्फ़-मोड के माध्यम से स्वचालित लॉन्च को अक्षम करते हैं।<br/><br/><b>उपलब्ध समाधान:</b><br/><br/><b>1. हेडयूनिट सर्वर (डेवलपर मोड):</b><br/>सेल्फ़-मोड के लिए एकमात्र शेष कार्यशील समाधान! अपने फ़ोन पर, Android Auto डेवलपर सेटिंग्स खोलें और "Start headunit server" पर टैप करें।<br/><br/><b>2. नेटिव मोड:</b><br/>सीधे वाई-फ़ाई डायरेक्ट या हेडयूनिट हॉटस्पॉट के माध्यम से कनेक्ट होता है।<br/><br/><b>3. USB वायरलेस डोंगल:</b><br/>एक हार्डवेयर USB वायरलेस एडेप्टर सबसे विश्वसनीय प्लग-एंड-प्ले अनुभव प्रदान करता है।<br/><br/><b>4. Wireless Helper:</b><br/>संस्करण 17.3 तक Android Auto के लिए काम करना जारी रखता है।]]></string>
+    <string name="aa174_notice_button_confirm">समझ गया</string>
+    <string name="aa174_notice_button_guide">गाइड खोलें</string>
+    <string name="category_ui">UI</string>
+    <string name="hide_phone_signal_label">फ़ोन का सिग्नल छुपाएं</string>
+    <string name="hide_battery_level_label">फ़ोन का बैटरी स्तर छुपाएं</string>
+    <string name="hide_clock_label">घड़ी छुपाएं</string>
+    <string name="might_broken_on_newer_aa_versions">यह कार्यक्षमता Android Auto के नए संस्करणों पर काम नहीं कर सकती है</string>
+    <string name="auto_connect_delay">ऑटो-कनेक्ट विलंब</string>
+    <string name="auto_connect_delay_description">स्टार्टअप पर कनेक्ट करने का प्रयास करने से पहले प्रतीक्षा करें</string>
+    <string name="auto_connect_delay_none">कोई नहीं (तुरंत)</string>
+    <string name="auto_connect_delay_seconds_format">%d सेकंड</string>
+    <string name="auto_connect_delay_custom">कस्टम…</string>
+    <string name="auto_connect_delay_summary_format">%1$s (%2$d सेकंड विलंब)</string>
+    <string name="failed_aa_not_system">विफल: Android Auto सिस्टम ऐप के रूप में इंस्टॉल नहीं है!</string>
+    <string name="failed_aa_not_installed">विफल: Android Auto इंस्टॉल नहीं है!</string>
+    <string name="native_driver_selection_title">ड्राइवर चयन</string>
+    <string name="native_driver_selection_summary">चुनें कि जब वाहन में कई युग्मित ड्राइवर हों तो किस फ़ोन से कनेक्ट करना है</string>
+    <string name="native_driver_selection_mode_off">अक्षम</string>
+    <string name="native_driver_selection_mode_auto">ऑटो</string>
+    <string name="native_driver_selection_mode_always">हमेशा पूछें</string>
+    <string name="native_driver_selection_timeout">ऑटो-कनेक्ट उलटी गिनती</string>
+    <string name="native_driver_preferred_device">पसंदीदा फ़ोन</string>
+    <string name="switch_driver">फ़ोन बदलें</string>
+    <string name="driver_device_connected">वाहन में / कनेक्टेड</string>
+    <string name="driver_device_paired">युग्मित</string>
+    <string name="driver_device_disconnected">डिस्कनेक्टेड, जगाया जाएगा</string>
+    <string name="driver_device_preferred">पसंदीदा</string>
+    <string name="driver_device_last_used">अंतिम कनेक्टेड</string>
+    <string name="driver_selection_auto_in">%1$d सेकंड में %2$s से स्वतः कनेक्ट हो रहा है...</string>
+    <string name="driver_selection_dialog_title">ड्राइवर फ़ोन चुनें</string>
+    <string name="connecting_driver">%s के साथ Android Auto शुरू हो रहा है</string>
+    <string name="connecting_driver_disconnected">%s डिस्कनेक्ट है, इसे जगाया जा रहा है...</string>
+    <string name="driver_none">कोई नहीं</string>
+    <string name="show_all_devices">सभी ब्लूटूथ डिवाइस दिखाएं</string>
+    <string name="show_only_phones">केवल फ़ोन दिखाएं</string>
+    <string name="oem_app_management">OEM ऐप संघर्ष प्रबंधन (ADB)</string>
+    <string name="oem_app_management_desc">परस्पर विरोधी ऐप्स (Zlink, AutoKit, आदि) का पता लगाएं और अक्षम करें</string>
+    <string name="oem_app_explanation">फ़ैक्टरी हेडयूनिट साथी ऐप्स अक्सर USB और ब्लूटूथ कनेक्शन को रोकते हैं, जिससे Open Headunit कनेक्ट नहीं हो पाता है। आप उन्हें रूट या सेल्फ़-ADB (पोर्ट 5555) के माध्यम से अक्षम कर सकते हैं।</string>
+    <string name="oem_app_backend_root">निष्पादन विधि: रूट (su) उपलब्ध</string>
+    <string name="oem_app_backend_adb">निष्पादन विधि: सेल्फ़-ADB (127.0.0.1:5555) कनेक्टेड</string>
+    <string name="oem_app_backend_none">निष्पादन विधि: कोई नहीं। वायरलेस डिबगिंग सक्षम करें या \"adb tcpip 5555\" चलाएं</string>
+    <string name="oem_app_autokill_switch">स्टार्टअप पर परस्पर विरोधी OEM ऐप्स को स्वतः अक्षम करें</string>
+    <string name="oem_app_autokill_switch_desc">Open Headunit शुरू होने पर ज्ञात परस्पर विरोधी ऐप्स और बैकग्राउंड डेमॉन को शांत करता है।</string>
+    <string name="oem_app_autokill_enabled">ऑटो-डिसेबल सक्रिय</string>
+    <string name="oem_app_none_detected">कोई ज्ञात परस्पर विरोधी OEM ऐप नहीं मिला।</string>
+    <string name="oem_app_btn_commands">कमांड</string>
+    <string name="oem_app_btn_restore">पुनर्स्थापित करें</string>
+    <string name="oem_app_btn_disable">अक्षम करें और रोकें</string>
+    <string name="oem_app_status_format">स्थापित: %1$s | स्थिति: %2$s | डेमॉन: %3$s</string>
+    <string name="oem_app_state_installed">हाँ</string>
+    <string name="oem_app_state_not_installed">नहीं</string>
+    <string name="oem_app_state_enabled">सक्षम</string>
+    <string name="oem_app_state_disabled">अक्षम</string>
+    <string name="oem_app_state_running">चल रहा है</string>
+    <string name="oem_app_state_stopped">बंद है</string>
+    <string name="oem_app_commands_title">तैयार ADB / शेल कमांड</string>
+    <string name="oem_app_action_success">कमांड सफलतापूर्वक निष्पादित हुई।</string>
+    <string name="oem_app_action_failed">निष्पादन विफल: %s</string>
+    <string name="copy_to_clipboard">कॉपी करें</string>
+    <string name="copied_to_clipboard">क्लिपबोर्ड पर कॉपी किया गया</string>
+
+    <!-- Extra keys -->
+    <string name="dpi_size_s">S</string>
+    <string name="dpi_size_m">M</string>
+    <string name="dpi_size_l">L</string>
+    <string name="dpi_size_xl">XL</string>
+    <string name="github_issues_url">https://github.com/andreknieriem/open-headunit/issues</string>
+    <string name="support_rules_english_title">All posts in English</string>
+    <string name="support_rules_english_desc">कृपया हमेशा अपनी समस्या अंग्रेजी में लिखें ताकि अनुरक्षक और समुदाय आपकी मदद कर सकें। व्याकरण की गलतियों की चिंता न करें; आप Google Translate या DeepL का उपयोग कर सकते हैं।</string>
+    <string name="debug_video_fault_injection">वीडियो दोष इंजेक्शन</string>
+    <string name="debug_video_fault_rate">दोष दर (N में से 1)</string>
+    <string name="debug_video_fault_budget">दोष बजट</string>
+    <string name="debug_force_memory_profile">मेमोरी प्रोफ़ाइल बाध्य करें</string>
+
+</resources>

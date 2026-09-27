@@ -80,10 +80,12 @@ adb shell am start -a android.intent.action.VIEW -d "headunit://connect?ip=192.1
 
 ## Planned
 - more customization options for the UI and the app itself
+- Open Headunit as a Launcher-Toggle
+- Info/Help descriptions to the settings for better understanding
 
 ## Changelog
-### v.3.4.1
-- Added an opt-in automatic Wi-Fi Direct checkbox under Headunit Server / Auto for use with Wireless Helper 1.9.5's root Dev-server mode on Android Auto 17.4+. No root is required on the head unit; Manual mode remains unchanged.
+### Unreleased
+- Added an opt-in automatic Wi-Fi Direct checkbox under Headunit Server / Auto for use with a matching Wireless Helper build's root Dev-server mode on Android Auto 17.4+. No root is required on the head unit; Manual mode remains unchanged.
 - Added OpenHU P2P group startup after conflicting hotspot teardown, group recovery and discovery triggered when a client joins and the P2P interface has an address.
 - Search for TCP 5277 uses the actual P2P subnet and binds sockets to its local address, without falling back to station Wi-Fi or a fixed gateway. The connected socket is handed directly to the AA transport, and discovery pauses while connecting or connected.
 - Added the checkbox to settings persistence, backup/import and running-configuration rearm, with English and Russian labels.
@@ -91,6 +93,15 @@ adb shell am start -a android.intent.action.VIEW -d "headunit://connect?ip=192.1
 - Added unit tests and [setup/build/device acceptance instructions](docs/wifi-direct-dev-root.md).
 
 Thanks to [@mixalbl4-127](https://github.com/mixalbl4-127)!
+
+### v.3.5.0-beta1
+- Native AA: reconnect to a network that is still there, instead of rebuilding it every time
+- Added: Option to use Open Headunit as a launcher
+- External Bluetooth module: make the WiFi button work, find the module after a boot, and keep a Bluetooth auto-start from being lost behind the settings screen
+- Added: Simplified Chinese 🇨🇳, Indonesian 🇮🇩, Hindi 🇮🇳, Thai 🇹🇭, European Portuguese 🇵🇹
+- Native AA over hotspot: stop advertising an endpoint that moves, bring the hotspot back after a boot or ACC wake- #1014
+- Connection: one attempt at a time, hold auto-connect behind settings and the pill's X, and fix the dongle's TLS handshake- #1015
+- Native AA: recover when the platform deletes the group mid-join, bring the hotspot back after sleep, log the Bluetooth link, and stop a QR crash below Android 4.4
 
 ### v.3.4.0
 - USB: connect non-Pixel phones without fighting a fast-reverting dongle

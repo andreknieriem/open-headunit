@@ -27,6 +27,12 @@ object DecoderStopPolicy {
     /** A new surface replaced the old one; the AAP session is untouched. */
     const val REASON_NEW_SURFACE = "New surface"
 
+    /** The head unit went into sleep/standby (e.g. screen off, car turned off temporarily); the AAP session is untouched. */
+    const val REASON_SCREEN_OFF_SLEEP = "screen_off_sleep"
+
+    /** The projection activity was stopped (backgrounded); the AAP session is untouched. */
+    const val REASON_ACTIVITY_STOPPED = "activity_stopped"
+
     /** Prefix used by the decoder's own recovery restarts, which have never ended the session. */
     private const val RESTART_PREFIX = "restart"
 
@@ -35,6 +41,8 @@ object DecoderStopPolicy {
         REASON_DETACHED_FROM_WINDOW,
         REASON_PROJECTION_VIEW_RECREATE,
         REASON_NEW_SURFACE,
+        REASON_SCREEN_OFF_SLEEP,
+        REASON_ACTIVITY_STOPPED,
     )
 
     /** True when the decoder is tearing itself down to come straight back up. */

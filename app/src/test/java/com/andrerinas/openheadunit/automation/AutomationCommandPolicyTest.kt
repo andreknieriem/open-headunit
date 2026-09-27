@@ -102,7 +102,7 @@ class AutomationCommandPolicyTest {
             HeadUnitCommand.ACTION_STOP_WIRELESS to AapService.ACTION_STOP_WIRELESS,
             HeadUnitCommand.ACTION_CANCEL_WIRELESS to AapService.ACTION_CANCEL_WIRELESS,
             HeadUnitCommand.ACTION_START_WIRELESS_SCAN to AapService.ACTION_START_WIRELESS_SCAN,
-            HeadUnitCommand.ACTION_CHECK_USB to AapService.ACTION_CHECK_USB,
+            HeadUnitCommand.ACTION_END_SESSION_STAY_ARMED to AapService.ACTION_END_SESSION_STAY_ARMED,
             HeadUnitCommand.ACTION_REFRESH_SENSORS to AapService.ACTION_REFRESH_SENSORS,
             HeadUnitCommand.ACTION_RESTART_AUDIO to AapService.ACTION_RESTART_AUDIO,
             HeadUnitCommand.ACTION_RAISE_PROJECTION to AapService.ACTION_RAISE_PROJECTION
@@ -116,18 +116,25 @@ class AutomationCommandPolicyTest {
         }
     }
 
+    private val userUsbCheck = AutomationCommandPolicy.Effect.StartService(
+        AapService.ACTION_CHECK_USB,
+        flagExtras = mapOf(AapService.EXTRA_USER_REQUESTED to true)
+    )
+
+    @Test
+    fun `a USB check is asked for by hand, so it lifts the status pill's X`() {
+        assertEquals(userUsbCheck, single(HeadUnitCommand.ACTION_CHECK_USB))
+    }
+
     // --- connect --------------------------------------------------------------------------------
 
     @Test
     fun `connect without an address checks USB instead`() {
-        assertEquals(
-            AutomationCommandPolicy.Effect.StartService(AapService.ACTION_CHECK_USB),
-            single(HeadUnitCommand.ACTION_CONNECT)
-        )
+        assertEquals(userUsbCheck, single(HeadUnitCommand.ACTION_CONNECT))
         // A blank address is the same as none; a shortcut with an empty field must not try to
         // open a socket to "".
         assertEquals(
-            AutomationCommandPolicy.Effect.StartService(AapService.ACTION_CHECK_USB),
+            userUsbCheck,
             single(HeadUnitCommand.ACTION_CONNECT, mapOf(HeadUnitCommand.EXTRA_IP to "  "))
         )
     }
@@ -341,6 +348,7 @@ class AutomationCommandPolicyTest {
         HeadUnitCommand.ACTION_START_WIRELESS, HeadUnitCommand.ACTION_STOP_WIRELESS,
         HeadUnitCommand.ACTION_CANCEL_WIRELESS,
         HeadUnitCommand.ACTION_START_WIRELESS_SCAN, HeadUnitCommand.ACTION_NATIVE_AA_POKE,
+        HeadUnitCommand.ACTION_END_SESSION_STAY_ARMED,
         HeadUnitCommand.ACTION_NATIVE_AA_CANCEL_POKE,
         HeadUnitCommand.ACTION_NEARBY_CONNECT, HeadUnitCommand.ACTION_CHECK_USB,
         HeadUnitCommand.ACTION_REFRESH_SENSORS, HeadUnitCommand.ACTION_RESTART_AUDIO,

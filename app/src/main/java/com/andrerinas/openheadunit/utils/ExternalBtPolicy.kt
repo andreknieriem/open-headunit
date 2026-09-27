@@ -49,6 +49,16 @@ object ExternalBtPolicy {
         return null
     }
 
+    /**
+     * Holds a positive answer for good and re-reads a negative one: the vendor app sets the `rw.*`
+     * properties at runtime, so a read made before it has run after a boot is not final.
+     */
+    class Latch(private val read: () -> String?) {
+        @Volatile private var held: String? = null
+
+        fun evidence(): String? = held ?: read()?.also { held = it }
+    }
+
     /** Convenience over [detect] for callers that only need the yes/no. */
     fun isExternal(nodeExists: (String) -> Boolean, property: (String) -> String?): Boolean =
         detect(nodeExists, property) != null

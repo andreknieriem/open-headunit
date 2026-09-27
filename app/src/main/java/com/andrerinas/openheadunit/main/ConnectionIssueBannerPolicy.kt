@@ -14,6 +14,18 @@ import com.andrerinas.openheadunit.utils.StandingIssue
  */
 object ConnectionIssueBannerPolicy {
 
+    /**
+     * What either Native transport can raise. Kept apart from the per-transport extras because
+     * both lists had to be edited by hand for every record belonging to both, and one was missed.
+     */
+    private val EITHER_NATIVE_TRANSPORT = setOf(
+        ConnectionIssue.BLUETOOTH_SENT_NO_DATA,
+        ConnectionIssue.VIDEO_LINK_TOO_SLOW,
+        ConnectionIssue.HANDS_FREE_HELD_ELSEWHERE,
+        ConnectionIssue.HANDS_FREE_RECORD_REFUSED,
+        ConnectionIssue.PHONE_HOLDS_STALE_ENDPOINT
+    )
+
     /** [com.andrerinas.openheadunit.utils.Settings.wifiConnectionMode] for Native AA wireless. */
     private const val NATIVE_AA_MODE = 3
 
@@ -41,6 +53,8 @@ object ConnectionIssueBannerPolicy {
      *   platform refuses to switch it on, so no group is ever asked for. Same transport, same key.
      * - `HANDS_FREE_HELD_ELSEWHERE` is raised by the wake poke in `NativeAaHandshakeManager`, which
      *   only runs in Native AA but runs on both of its transports, so it is keyed to both.
+     * - `HANDS_FREE_RECORD_REFUSED` is raised where that manager opens its listeners, which is the
+     *   same mode on the same two transports, so it is keyed the same way.
      *
      * A record is not deleted when it stops applying. It describes what the hardware did, and the
      * user may well be back on that route tomorrow; it is only hidden while it cannot be the
@@ -60,22 +74,16 @@ object ConnectionIssueBannerPolicy {
         if (!wirelessSelected) return anyMode
         if (mode != NATIVE_AA_MODE) return anyMode
         return anyMode + when (transport) {
-            NativeTransport.WIFI_DIRECT -> setOf(
-                ConnectionIssue.BLUETOOTH_SENT_NO_DATA,
+            NativeTransport.WIFI_DIRECT -> EITHER_NATIVE_TRANSPORT + setOf(
                 ConnectionIssue.BSSID_UNAVAILABLE,
                 ConnectionIssue.WIFI_DIRECT_GROUP_REFUSED,
                 ConnectionIssue.WIFI_DIRECT_STACK_CYCLED,
                 ConnectionIssue.WIFI_RADIO_OFF,
-                ConnectionIssue.FIVE_GHZ_CHANNEL_REFUSED,
-                ConnectionIssue.VIDEO_LINK_TOO_SLOW,
-                ConnectionIssue.HANDS_FREE_HELD_ELSEWHERE
+                ConnectionIssue.FIVE_GHZ_CHANNEL_REFUSED
             )
-            NativeTransport.HOTSPOT -> setOf(
-                ConnectionIssue.BLUETOOTH_SENT_NO_DATA,
+            NativeTransport.HOTSPOT -> EITHER_NATIVE_TRANSPORT + setOf(
                 ConnectionIssue.HOTSPOT_CONFIG_UNREADABLE,
-                ConnectionIssue.HOTSPOT_NOT_RUNNING,
-                ConnectionIssue.VIDEO_LINK_TOO_SLOW,
-                ConnectionIssue.HANDS_FREE_HELD_ELSEWHERE
+                ConnectionIssue.HOTSPOT_NOT_RUNNING
             )
         }
     }
@@ -108,6 +116,10 @@ object ConnectionIssueBannerPolicy {
      * either: its remedy is on the phone, and a handshake that completes disproves it.
      * `HANDS_FREE_HELD_ELSEWHERE` has none for the same shape of reason: the lever is the other
      * device, and the next wake pass that reads the link free retires it.
+     * `PHONE_HOLDS_STALE_ENDPOINT` has none either: the record lives on the phone, no setting here
+     * reaches it, and a dial this unit serves disproves it. `HANDS_FREE_RECORD_REFUSED` has none
+     * because it is this unit's own Bluetooth stack refusing, and a registration that succeeds on a
+     * later arming retires it.
      *
      * @param hotspotSsid [com.andrerinas.openheadunit.utils.Settings.hotspotSsid]
      * @param hotspotPassword [com.andrerinas.openheadunit.utils.Settings.hotspotPassword] — needed
@@ -117,17 +129,21 @@ object ConnectionIssueBannerPolicy {
      *   [com.andrerinas.openheadunit.aap.SoftApCredentialsPolicy.resolve].
      * @param staticBssid [com.andrerinas.openheadunit.utils.Settings.staticBSSID], judged by the
      *   same predicate the handshake uses, so a value the chain would discard is not a remedy.
+     * @param staticP2pBssid [com.andrerinas.openheadunit.utils.Settings.staticP2pBSSID]. Either
+     *   address answers the record, which is about this unit not reading its own: the user only
+     *   types the one for the transport they run.
      */
     fun remedyApplied(
         hotspotSsid: String,
         hotspotPassword: String,
-        staticBssid: String?
+        staticBssid: String?,
+        staticP2pBssid: String? = null
     ): Set<ConnectionIssue> {
         val applied = mutableSetOf<ConnectionIssue>()
         if (hotspotSsid.isNotEmpty() && hotspotPassword.isNotEmpty()) {
             applied.add(ConnectionIssue.HOTSPOT_CONFIG_UNREADABLE)
         }
-        if (SoftApBssidPolicy.isUsable(staticBssid)) {
+        if (SoftApBssidPolicy.isUsable(staticBssid) || SoftApBssidPolicy.isUsable(staticP2pBssid)) {
             applied.add(ConnectionIssue.BSSID_UNAVAILABLE)
         }
         return applied

@@ -120,4 +120,36 @@ class SessionEndGroupPolicyTest {
             SessionEndGroupPolicy.wakeSettleRemainingMs(sessionEndedAt = 10_000L, now = 0L)
         )
     }
+
+    @Test
+    fun `ending the session at the head unit keeps the network up without waking the phone`() {
+        // The network is kept precisely so the phone can return when the user wants it to. Poking
+        // it five seconds later would undo the button they just pressed.
+        assertFalse(
+            SessionEndGroupPolicy.wakesPhoneAfterSessionEnd(
+                phoneSaidGoodbye = false, headUnitEndedByHand = true
+            )
+        )
+    }
+
+    @Test
+    fun `a link that simply died is still worth a wake`() {
+        assertTrue(
+            SessionEndGroupPolicy.wakesPhoneAfterSessionEnd(
+                phoneSaidGoodbye = false, headUnitEndedByHand = false
+            )
+        )
+    }
+
+    @Test
+    fun `ending it by hand is not a user exit, so the network survives`() {
+        // The whole point: STOP would take the group with it, which is what "Stop connection" is
+        // for. This lands in the same branch the driver switch already uses.
+        assertEquals(
+            SessionEndGroupPolicy.Action.KEEP_AND_REARM,
+            SessionEndGroupPolicy.decide(
+                activeModeIsNative = true, isUserExit = false, rearmedAfterWiredSession = false
+            )
+        )
+    }
 }

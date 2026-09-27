@@ -17,7 +17,8 @@ object ZbtDaemonReachability {
 
     /**
      * How long to wait for the daemon's first frame once it has taken our `RequestInit`. One read
-     * timeout: a daemon that is really there starts its state burst immediately.
+     * timeout: a daemon with nothing else on is immediate. Silence past it is not an answer, only
+     * a busy daemon, so it never decides the route on its own.
      */
     const val HELLO_BUDGET_MS = 3_000L
 
@@ -106,31 +107,46 @@ object ZbtDaemonReachability {
     private fun dialOnce(): Boolean {
         val channel = try {
             ZbtByteChannel.open(bufferRfcommData = false)
+        } catch (e: ZbtByteChannel.NotConnected) {
+            return report(e.verdict, e.message)
         } catch (e: Exception) {
-            AppLog.i(
-                "NativeAA: [ZBT] nothing is listening on 127.0.0.1:3152, so the module cannot " +
-                    "carry Android Auto on this unit (${e.message})."
-            )
-            return false
+            // Anything else got past the connect, so the port is held whatever went wrong after.
+            return report(ZbtReachabilityPolicy.classify(e.javaClass.simpleName, false), e.message)
         }
         try {
             val deadline = SystemClock.elapsedRealtime() + HELLO_BUDGET_MS
             while (SystemClock.elapsedRealtime() < deadline) {
                 if (channel.pumpOnce(deadline) == ZbtByteChannel.Pump.FRAME) {
-                    AppLog.i(
-                        "NativeAA: [ZBT] the vendor daemon answered on 127.0.0.1:3152, so this " +
-                            "unit can carry Android Auto over its Bluetooth module."
-                    )
-                    return true
+                    return report(ZbtReachabilityPolicy.Verdict.ANSWERED, null)
                 }
             }
-            AppLog.w(
-                "NativeAA: [ZBT] the daemon took our RequestInit and said nothing in " +
-                    "${HELLO_BUDGET_MS / 1000}s, so the module route is treated as unavailable."
-            )
-            return false
+            return report(ZbtReachabilityPolicy.Verdict.LISTENING_SILENT, null)
         } finally {
             channel.close()
         }
+    }
+
+    /** Say what the dial proved, and hand back whether the module route is worth taking. */
+    private fun report(verdict: ZbtReachabilityPolicy.Verdict, detail: String?): Boolean {
+        when (verdict) {
+            ZbtReachabilityPolicy.Verdict.ANSWERED -> AppLog.i(
+                "NativeAA: [ZBT] the vendor daemon answered on 127.0.0.1:3152, so this unit can " +
+                    "carry Android Auto over its Bluetooth module."
+            )
+            // Present and busy is not absent, and this daemon goes quiet while a phone is linked
+            // to the module. Taking the route lets the carrier keep asking; refusing it here told
+            // a reporter whose module works that their hardware cannot do Bluetooth wireless.
+            ZbtReachabilityPolicy.Verdict.LISTENING_SILENT -> AppLog.w(
+                "NativeAA: [ZBT] the daemon is on 127.0.0.1:3152 but did not answer within " +
+                    "${HELLO_BUDGET_MS / 1000}s, which is what it does while a phone is linked to " +
+                    "the module. Taking the module route anyway and letting the connection retry" +
+                    (detail?.let { " ($it)" } ?: "") + "."
+            )
+            ZbtReachabilityPolicy.Verdict.NOTHING_LISTENING -> AppLog.i(
+                "NativeAA: [ZBT] nothing is listening on 127.0.0.1:3152, so the module cannot " +
+                    "carry Android Auto on this unit" + (detail?.let { " ($it)" } ?: "") + "."
+            )
+        }
+        return ZbtReachabilityPolicy.reachable(verdict)
     }
 }

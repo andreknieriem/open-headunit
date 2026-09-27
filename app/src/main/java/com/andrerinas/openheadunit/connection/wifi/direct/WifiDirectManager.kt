@@ -27,22 +27,24 @@ import androidx.core.content.ContextCompat
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.aap.AapService
-import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeHandoffPolicy
 import com.andrerinas.openheadunit.connection.CommManager
 import com.andrerinas.openheadunit.connection.ConnectionNetworkDetail
 import com.andrerinas.openheadunit.connection.ConnectionStage
 import com.andrerinas.openheadunit.connection.ConnectionStageTracker
 import com.andrerinas.openheadunit.connection.wifi.FiveGhzChannelPolicy
+import com.andrerinas.openheadunit.connection.wifi.MacAddressPolicy
 import com.andrerinas.openheadunit.connection.wifi.WifiLauncherMode
 import com.andrerinas.openheadunit.connection.wifi.modes.helper.HelperStrategy
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.EndpointRetirementPolicy
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeHandoffPolicy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.SoftApBssidPolicy
 import com.andrerinas.openheadunit.main.MainActivity
-import com.andrerinas.openheadunit.utils.ToastUtils
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.ConnectionIssue
 import com.andrerinas.openheadunit.utils.ConnectionIssues
 import com.andrerinas.openheadunit.utils.InterfaceMacReader
 import com.andrerinas.openheadunit.utils.SystemProperties
+import com.andrerinas.openheadunit.utils.ToastUtils
 import java.io.File
 import java.net.Inet4Address
 import java.net.InetSocketAddress
@@ -603,6 +605,18 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
     @Volatile
     private var nativeIdentityStability = GroupIdentityStability.UNPROVEN
 
+    /** Whether the group now up was adopted as found rather than created by this bring-up. */
+    @Volatile private var nativeGroupWasRead = false
+
+    /**
+     * Whether the adopt-or-recreate decision below is still outstanding.
+     *
+     * A callback that lands inside that window carries [nativeGroupWasRead] false for a group that
+     * is about to be adopted, and the assessment is made once per group, so it would compare a
+     * surviving group to itself and grade a unit that re-addresses every create stable for good.
+     */
+    @Volatile private var nativeAdoptDecisionPending = false
+
     /**
      * Bumped by [stop]. Every P2P callback that continues into another framework call captures this
      * first and gives up if it has moved, because [stop] can cancel posted runnables but nothing can
@@ -667,6 +681,10 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
      * session latch is per group too: a replacement has not carried anything yet.
      */
     private fun forgetPerGroupKeys() {
+        nativeGroupWasRead = false
+        // Its window is a bring-up's, so a teardown or the next bring-up ends it whatever the
+        // framework did with the request it was taken for.
+        nativeAdoptDecisionPending = false
         nativeGroupHostedSession = false
         lastBssidDumpSsid = null
         lastIdentityReportSsid = null
@@ -921,6 +939,10 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
                         else manager?.requestConnectionInfo(channel, this@WifiDirectManager)
                         AapService.scanningState.value = false
                     } else {
+                        val isNative = App.provide(context).settings.wifiConnectionMode == WifiLauncherMode.NATIVE
+                        if (NativeGroupLossPolicy.invalidatesOnDisconnect(isNative, isGroupOwner)) {
+                            invalidateNativeGroupCredentials("the platform took it down")
+                        }
                         isConnected = false
                         isClientConnected = false
                         publishDiscoveryNetwork(null)
@@ -1165,32 +1187,30 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
                 }
             }
             discoveredInterface = iface
-            // [BUG_FIX] The override is checked for shape, not merely for being set. It used to be
-            // taken verbatim whenever it was anything other than the unset sentinel "0", which meant
-            // a mistyped address won the chain, did not match the masked-string test below, and so
-            // suppressed all six fallbacks — and the failure then surfaced 30 s later at Type 3 time
-            // as a message blaming location services. SoftApBssidPolicy has validated this on the
-            // hotspot route since the same bug was found there; this is the other half.
-            val rawOverride = appSettings.staticBSSID
+            // [BUG_FIX] The hand-typed address is applied after every rung, not before them. It
+            // used to win the chain outright, so a value for the wrong interface was announced over
+            // an address the hardware had reported and the phone could never find the network - and
+            // a mistyped one surfaced 30 s later blaming location services. See P2pBssidSourcePolicy.
+            val rawOverride = appSettings.staticP2pBSSID
             // choose() rather than isUsable(), for the normalisation: it accepts a hand-typed
             // address written with dashes or in lower case and hands back the colon-separated upper
             // case the phone is given. The hotspot route has read the override through this call
             // since it was written.
             val overrideBssid = SoftApBssidPolicy.choose(rawOverride, null, null)
-            val isBssidSet = overrideBssid.isNotEmpty()
 
-            logBssidSourceDump(group, iface, ssid, rawOverride)
+            logBssidSourceDump(group, iface, ssid, rawOverride, appSettings.staticBSSID)
 
             // Two sources ahead of the framework's own MAC, because both survive on a device where
             // getHardwareAddress() is masked: the group owner's BSSID where the vendor exposes it,
             // and the MAC the kernel encoded in the interface's IPv6 link-local address. Which one
             // answered is carried in bssidSource so the log can say so.
-            var bssidSource = "static override"
-            var bssid: String = overrideBssid
-            if (!isBssidSet) {
+            var bssidSource = "getGroupOwnerBssid()"
+            var bssid = ""
+            var usedP2pOverride = false
+            run {
                 val ownerBssid = SoftApBssidPolicy.choose(null, getGroupOwnerBssid(group), null)
                 val linkLocalBssid =
-                    SoftApBssidPolicy.choose(null, InterfaceMacReader.fromIpv6LinkLocal(iface), null)
+                    SoftApBssidPolicy.choose(null, InterfaceMacReader.fromIpv6LinkLocal(iface, P2pInterfaceNamePolicy::canCarryGroupAddress), null)
                 when {
                     ownerBssid.isNotEmpty() -> {
                         bssid = ownerBssid
@@ -1215,21 +1235,17 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
                     }
                 }
             }
-            if (isBssidSet) {
-                AppLog.i("WifiDirectManager: Initial BSSID from App settings: $bssid")
-            } else {
-                if (!rawOverride.isNullOrEmpty() && rawOverride != "0") {
-                    // Said out loud rather than silently ignored: the user typed something, and
-                    // "your static BSSID is being ignored" is the only line that explains why the
-                    // value they set is not the one in the credentials.
-                    AppLog.w(
-                        "WifiDirectManager: the static BSSID setting ('$rawOverride') is not a MAC " +
-                            "address, so it is being ignored. Set it to six hex pairs " +
-                            "(XX:XX:XX:XX:XX:XX) or clear it to detect one automatically."
-                    )
-                }
-                AppLog.i("WifiDirectManager: Initial BSSID from $bssidSource: $bssid")
+            if (overrideBssid.isEmpty() && !rawOverride.isNullOrEmpty() && rawOverride != "0") {
+                // Said out loud rather than silently ignored: the user typed something, and
+                // "your static BSSID is being ignored" is the only line that explains why the
+                // value they set is not the one in the credentials.
+                AppLog.w(
+                    "WifiDirectManager: the WiFi Direct static BSSID setting ('$rawOverride') " +
+                        "is not a MAC address, so it is being ignored. Set it to six hex pairs " +
+                        "(XX:XX:XX:XX:XX:XX) or clear it to detect one automatically."
+                )
             }
+            AppLog.i("WifiDirectManager: Initial BSSID from $bssidSource: $bssid")
 
 
 
@@ -1303,12 +1319,35 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
                 }
             }
 
+            // The hand-typed addresses answer here and nowhere earlier, after every rung above.
+            val choice = P2pBssidSourcePolicy.resolve(bssid, overrideBssid, appSettings.staticBSSID)
+            if (choice.source != P2pBssidSourcePolicy.Source.DETECTED && choice.bssid.isNotEmpty()) {
+                bssid = choice.bssid
+                bssidSource = P2pBssidSourcePolicy.label(choice.source)
+                usedP2pOverride = choice.fixedByUser
+                AppLog.w(
+                    "WifiDirectManager: nothing on this device reported the group's own address, " +
+                        "so the ${P2pBssidSourcePolicy.label(choice.source)} ($bssid) is being " +
+                        "announced instead."
+                )
+            }
+
+            // Only an address that can be the group's own is evidence about whether the group's
+            // address repeats. A stand-in belongs to another interface, so comparing it says
+            // nothing and remembering it would judge every later group against the wrong address.
+            val bssidAnswersIdentity = choice.canBeGroupsOwn
+
             if (SoftApBssidPolicy.isUsable(bssid)) {
                 // Normalised once, here, so every consumer and the cache see the same upper-case
                 // colon form the hotspot route already hands over.
                 bssid = SoftApBssidPolicy.choose(null, bssid, null)
-                lastKnownBssid = bssid
-                lastKnownBssidIface = iface
+                // Only an address that could be this group's is cached: a stand-in kept here comes
+                // back on the next callback as a reading, which is how a typed value outranks the
+                // detection it is meant to sit below.
+                if (bssidAnswersIdentity) {
+                    lastKnownBssid = bssid
+                    lastKnownBssidIface = iface
+                }
             }
 
             // Below API 29 there is nothing to read. WifiP2pGroup gained getFrequency() in Q, and
@@ -1344,11 +1383,33 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
             if (isNativeAaMode() && isOwner) {
                 // The group answered, so a refresh landing now may hand it out rather than wait.
                 nativeCreateRequestedAtMs = 0L
+                // What the settings screen shows the user. Written as read, masked address included,
+                // because an address that cannot be read is exactly what they are looking for. Ahead
+                // of the assessment below, which does not run on every callback or every group.
+                val onAir = ObservedP2pCredentials(ssid, psk, bssid)
+                if (appSettings.wifiDirectLastReadBack != onAir) appSettings.wifiDirectLastReadBack = onAir
                 // Said once per group, and once more if the address only became readable later.
                 // The comparison is made once per group, on the first callback with an address:
-                // made again on the next callback it would compare the group to itself.
+                // made again on the next callback it would compare the group to itself. Held off
+                // entirely while this bring-up is still deciding whether to adopt the group it
+                // found, because that answer is what says whether anything was created to compare.
                 val bssidUsable = SoftApBssidPolicy.isUsable(bssid)
-                if (ssid != nativeIdentityAssessedSsid && (bssidUsable || ssid != lastIdentityReportSsid)) {
+                if (isRetiringGroup(ssid, psk)) {
+                    // Withheld whatever it would grade, so the stored phone's dial is rejected, and
+                    // not remembered, so the identity replacing it is judged against the last real one.
+                    nativeIdentityStability = GroupIdentityStability.UNPROVEN
+                    // For the group's whole life: the retirement completing mid-group must not let
+                    // the next callback grade this same network and advertise it all over again.
+                    nativeIdentityAssessedSsid = ssid
+                    if (ssid != lastIdentityReportSsid) {
+                        lastIdentityReportSsid = ssid
+                        AppLog.i(
+                            "WifiDirectManager: group identity ssid=$ssid bssid=$bssid is being retired: " +
+                                "the WPP endpoint is withheld, and a phone that dials the one it stored is rejected."
+                        )
+                    }
+                } else if (!nativeAdoptDecisionPending &&
+                    ssid != nativeIdentityAssessedSsid && (bssidUsable || ssid != lastIdentityReportSsid)) {
                     val appNamesGroup = Build.VERSION.SDK_INT >= P2pIdentityRotationPolicy.NAMED_CREATE_SDK
                     val verdict = GroupIdentityStabilityPolicy.assess(
                         keepIdentity = appSettings.wifiDirectStableIdentity,
@@ -1356,14 +1417,20 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
                         ssid = ssid,
                         bssid = bssid,
                         bssidUsable = bssidUsable,
-                        staticOverride = isBssidSet,
+                        staticOverride = usedP2pOverride,
                         previous = appSettings.wifiDirectLastGroup,
                         appNamesGroup = appNamesGroup,
                         nameChangesSoFar = appSettings.wifiDirectGroupNameChanges,
+                        bssidIsGroupsOwn = bssidAnswersIdentity,
+                        readNotCreated = nativeGroupWasRead,
+                        previousStability = appSettings.wifiDirectLastIdentityVerdict,
                     )
-                    if (bssidUsable) {
+                    if (bssidUsable && bssidAnswersIdentity) {
                         nativeIdentityAssessedSsid = ssid
-                        verdict.remember?.let { appSettings.wifiDirectLastGroup = it }
+                        verdict.remember?.let {
+                            appSettings.wifiDirectLastGroup = it
+                            appSettings.wifiDirectLastIdentityVerdict = verdict.stability
+                        }
                         appSettings.wifiDirectGroupNameChanges = verdict.nameChanges
                     }
                     nativeIdentityStability = verdict.stability
@@ -1371,7 +1438,8 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
                     AppLog.i(
                         "WifiDirectManager: " + P2pGroupIdentityPolicy.describeReadBack(
                             nativeRequestedIdentity, ssid, psk, group.networkId) +
-                            " bssid=$bssid stable=${GroupIdentityStabilityPolicy.label(verdict.stability)}" +
+                            " bssid=$bssid address=${MacAddressPolicy.label(bssid)}" +
+                            " stable=${GroupIdentityStabilityPolicy.label(verdict.stability)}" +
                             // Only below Q, where the count is the whole mechanism. Named here because
                             // settings.xml is the only other place it shows and may not be writable.
                             (if (appNamesGroup) "" else
@@ -1664,15 +1732,14 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
                 // If we have a name, it must match.
                 if (ifaceName != null && iface.name != ifaceName) continue
 
-                // If we don't have a name, look for common P2P interface patterns
-                if (ifaceName == null) {
-                    val name = iface.name.lowercase()
-                    if (!name.contains("p2p") && !name.contains("wlan") && !name.contains("ap")) continue
-                }
+                // Bounded like the sysfs sweep below it. Taking any name carrying "wlan" or "ap"
+                // answered with the station's address while the group was up on p2p-wlan0-12, and
+                // that went out as the group's BSSID and graded its identity.
+                if (ifaceName == null && !P2pInterfaceNamePolicy.canCarryGroupAddress(iface.name)) continue
 
-                if (macStr != "null" && macStr != "00:00:00:00:00:00" && macStr != "02:00:00:00:00:00") {
-                    AppLog.d("WifiDirectManager: Selected MAC for ${iface.name}: $macStr")
-                    return macStr
+                MacAddressPolicy.parse(macStr)?.let {
+                    AppLog.d("WifiDirectManager: Selected MAC for ${iface.name}: $it")
+                    return it
                 }
             }
         } catch (e: Exception) {
@@ -2099,7 +2166,49 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
         nativeRecreateCount = 0
         stuckCreateCancels = 0
         cancelNativeJoinWatchdog()
-        recreateNativeGroup(forceStandard = false)
+
+        // A force-stop runs no teardown, so a group from before this process started can still be
+        // up when this runs. Tearing it down and asking the platform for the identical name back
+        // never gives the phone a chance to notice the group survived - every create re-addresses
+        // it (see GroupIdentityStabilityPolicy) - so a live group already named what we are about
+        // to request is read as-is instead of being replaced. Gated on the same setting that
+        // decides whether an identity is worth keeping at all.
+        val appSettings = App.provide(context).settings
+        if (appSettings.wifiDirectStableIdentity) {
+            val kept = chooseNativeGroupIdentity()
+            val gen = generation
+            markP2pRequest()
+            // Taken before the request, not inside its callback: a group-info callback from the
+            // receiver can reach the assessment first and grade the surviving group against itself.
+            nativeAdoptDecisionPending = true
+            mgr.requestGroupInfo(ch) { group ->
+                // An exit delivered to a stopped app starts the service, whose onCreate arms this,
+                // so the stop lands mid-flight and this callback adopted a group on a manager that
+                // had already stopped. The pending flag is left alone: stop() cleared it, and a
+                // bring-up that has since re-armed owns it now.
+                if (supersededByStop(gen, "the adopt-or-create decision")) return@requestGroupInfo
+                if (group != null && P2pIdentityRotationPolicy.readsExistingGroup(
+                        Build.VERSION.SDK_INT, group.isGroupOwner, group.networkName, kept.networkName,
+                        group.passphrase, kept.passphrase
+                    )
+                ) {
+                    AppLog.i(
+                        "WifiDirectManager: a group named ${group.networkName} is already up from " +
+                            "before this bring-up; reading it instead of tearing it down."
+                    )
+                    nativeGroupWasRead = true
+                    nativeAdoptDecisionPending = false
+                    isGroupOwner = true
+                    mgr.requestConnectionInfo(ch, this)
+                    mgr.requestGroupInfo(ch, this)
+                } else {
+                    nativeAdoptDecisionPending = false
+                    recreateNativeGroup(forceStandard = false)
+                }
+            }
+        } else {
+            recreateNativeGroup(forceStandard = false)
+        }
     }
 
     /**
@@ -2491,14 +2600,43 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
      */
     private fun chooseNativeGroupIdentity(): P2pGroupIdentity.Named {
         val appSettings = App.provide(context).settings
+        val advertised = appSettings.wifiDirectAdvertisedIdentity
+        if (advertised != null && endpointRetirementOwed()) {
+            // A phone that stored the endpoint joins this pair or nothing, so it goes up once more
+            // for that phone's dial to be rejected before the new identity replaces it.
+            AppLog.i(
+                "WifiDirectManager: group identity: bringing up ${advertised.networkName} once more, " +
+                    "the network a WPP endpoint was advertised under, so a phone that stored it can " +
+                    "be told to drop it before the new identity goes on the air."
+            )
+            return P2pGroupIdentity.Named(advertised.networkName, advertised.passphrase, persistent = true)
+        }
         val choice = P2pGroupIdentityPolicy.decide(
             keepIdentity = appSettings.wifiDirectStableIdentity,
             stored = appSettings.wifiDirectGroupIdentity,
             deviceName = nativeGroupNameSuffixSource(),
+            userSet = appSettings.wifiDirectIdentityUserSet,
         )
         choice.toStore?.let { appSettings.wifiDirectGroupIdentity = it }
         AppLog.i("WifiDirectManager: ${choice.reason}")
         return choice.identity
+    }
+
+    private fun endpointRetirementOwed(): Boolean {
+        val s = App.provide(context).settings
+        return EndpointRetirementPolicy.owed(
+            s.wifiDirectAdvertisedIdentity, s.wifiDirectStableIdentity, s.wifiDirectGroupIdentity,
+            Build.VERSION.SDK_INT >= P2pIdentityRotationPolicy.NAMED_CREATE_SDK, s.wifiDirectRotationPending,
+        )
+    }
+
+    private fun isRetiringGroup(ssid: String, psk: String): Boolean {
+        val s = App.provide(context).settings
+        return EndpointRetirementPolicy.isRetiring(
+            s.wifiDirectAdvertisedIdentity, s.wifiDirectStableIdentity, s.wifiDirectGroupIdentity,
+            Build.VERSION.SDK_INT >= P2pIdentityRotationPolicy.NAMED_CREATE_SDK, s.wifiDirectRotationPending,
+            ssid, psk,
+        )
     }
 
     private fun getP2pErrorString(reason: Int): String {
@@ -2744,6 +2882,7 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
      */
     @SuppressLint("MissingPermission")
     private fun recreateNativeGroup(forceStandard: Boolean) {
+        nativeGroupWasRead = false
         val mgr = manager ?: return
         val ch = channel ?: return
         // Before the async removeGroup below, not after it: the manual poke re-inits the mode and
@@ -2763,6 +2902,14 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
             // phone will keep trying to join - the opposite of what the exit asked for.
             if (supersededByStop(gen, "Native AA group recreate")) {
                 Unit
+            } else if (Build.VERSION.SDK_INT < P2pIdentityRotationPolicy.NAMED_CREATE_SDK &&
+                endpointRetirementOwed()
+            ) {
+                // Below Q the purge is the rename, so it waits: this create reinvokes the advertised
+                // profile for the retirement, and the pending request survives for the create after.
+                AppLog.i("WifiDirectManager: holding the persistent profile purge until the advertised WPP endpoint is retired.")
+                lastPersistentPurgeVerdict = null
+                create()
             } else if (P2pIdentityRotationPolicy.purgeBeforeCreate(
                     Build.VERSION.SDK_INT,
                     appSettings.wifiDirectStableIdentity,
@@ -2875,8 +3022,6 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
         }
     }
 
-    private val macRegex = Regex("^([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}$")
-    private val maskedMacs = setOf("00:00:00:00:00:00", "02:00:00:00:00:00")
 
     /**
      * The group owner's BSSID as the framework knows it. `getGroupOwnerBssid()` is not in the
@@ -2951,17 +3096,19 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
         group: WifiP2pGroup,
         iface: String?,
         ssid: String?,
-        staticOverride: String?
+        staticOverride: String?,
+        apOverride: String?
     ) {
         if (ssid != null && ssid == lastBssidDumpSsid) return
         lastBssidDumpSsid = ssid
         fun report(label: String, value: String?) =
             AppLog.i("WifiDirectManager:   ${label.padEnd(32)} = ${value ?: "null"}")
         AppLog.i("WifiDirectManager: == BSSID source dump (iface=${iface ?: "unknown"}) ==")
-        report("static override (Settings)", staticOverride)
+        report("WiFi Direct override (Settings)", staticOverride)
+        report("access point override (Settings)", apOverride)
         report("getGroupOwnerBssid()", getGroupOwnerBssid(group))
-        report("IPv6 link-local ($iface)", InterfaceMacReader.fromIpv6LinkLocal(iface))
-        report("IPv6 link-local (any p2p/ap)", InterfaceMacReader.fromIpv6LinkLocal(null))
+        report("IPv6 link-local ($iface)", InterfaceMacReader.fromIpv6LinkLocal(iface, P2pInterfaceNamePolicy::canCarryGroupAddress))
+        report("IPv6 link-local (any p2p/ap)", InterfaceMacReader.fromIpv6LinkLocal(null, P2pInterfaceNamePolicy::canCarryGroupAddress))
         report("NetworkInterface.hardwareAddress", getWifiDirectMac(iface))
         report("lastKnownBssid ($lastKnownBssidIface)", lastKnownBssid)
         report("requestDeviceInfo", localDeviceAddress)
@@ -2992,7 +3139,7 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
                     try {
                         field.isAccessible = true
                         val value = field.get(obj) as? String ?: continue
-                        if (macRegex.matches(value) && value !in maskedMacs) {
+                        if (MacAddressPolicy.isUsable(value)) {
                             AppLog.d("WifiDirectManager: getMacFromReflection found candidate in ${klass.simpleName}.${field.name}: $value")
                             return value
                         }
@@ -3038,15 +3185,16 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
             } catch (e: Exception) {}
         }
 
-        // LAST RESORT: Scan ALL interfaces in sysfs for anything that looks like P2P
-        AppLog.i("WifiDirectManager: getMacFromShell: Target failed, scanning ALL interfaces in sysfs...")
+        // LAST RESORT: scan sysfs for a P2P interface, and only a P2P interface. This used to take
+        // any name carrying "wlan" or "ap" too, in whatever order the directory listed them, and
+        // answered with the station's address on a unit whose group was up on p2p-wlan0-12.
+        AppLog.i("WifiDirectManager: getMacFromShell: Target failed, scanning P2P interfaces in sysfs...")
         try {
             val netDir = File("/sys/class/net")
             val interfaces = netDir.listFiles()
             if (interfaces != null) {
                 for (dir in interfaces) {
-                    val name = dir.name.lowercase()
-                    if (name.contains("p2p") || name.contains("wlan") || name.contains("ap")) {
+                    if (P2pInterfaceNamePolicy.canCarryGroupAddress(dir.name)) {
                         val addrFile = File(dir, "address")
                         if (addrFile.exists()) {
                             val mac = addrFile.readText().trim().lowercase()

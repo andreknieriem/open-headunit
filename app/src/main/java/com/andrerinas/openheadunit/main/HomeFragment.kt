@@ -25,6 +25,8 @@ import android.os.Build
 import android.bluetooth.BluetoothDevice
 import android.os.CountDownTimer
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.DriverCandidatePolicy
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.ExternalBtTransportPolicy
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeAaHandshakeManager
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeDriverSelectionPolicy
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.R
@@ -36,6 +38,7 @@ import com.andrerinas.openheadunit.connection.usb.UsbDeviceDiagnostics
 import android.content.res.Configuration
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.AppPermissions
+import com.andrerinas.openheadunit.utils.CarLauncherManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -125,6 +128,7 @@ class HomeFragment : Fragment() {
         updateProjectionButtonText()
         updateButtonStyle()
         updateButtonScale()
+        updateExitButtonVisibility()
 
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -349,6 +353,16 @@ class HomeFragment : Fragment() {
         HomeUiHelper.applyButtonScale(v, appSettings.homeButtonScalePercent, isPortrait, density)
     }
 
+    private fun updateExitButtonVisibility() {
+        val ctx = context ?: return
+        val appSettings = App.provide(ctx).settings
+        val shouldShow = CarLauncherManager.shouldShowExitButton(
+            isCarLauncherEnabled = appSettings.enableCarLauncher,
+            isDefaultLauncher = CarLauncherManager.isDefaultLauncher(ctx)
+        )
+        exitButton.visibility = if (shouldShow) View.VISIBLE else View.GONE
+    }
+
     private fun setupListeners() {
         exitButton.setOnClickListener {
             val appSettings = App.provide(requireContext()).settings
@@ -406,6 +420,8 @@ class HomeFragment : Fragment() {
                 startActivity(aapIntent)
                 return@setOnClickListener
             }
+
+            AapService.instance?.liftUsbCancel("the USB button was pressed")
 
             // Get list of Android USB devices
             val usbManager = requireContext().getSystemService(Context.USB_SERVICE) as UsbManager
@@ -525,7 +541,18 @@ class HomeFragment : Fragment() {
                     }
                 }
                 WifiLauncherMode.NATIVE -> { // Native AA
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+                    // A unit whose Bluetooth is an external module has no Android radio to check
+                    // and no Android device to pick; AapService arms the module route instead.
+                    val route = NativeAaHandshakeManager.wifiButtonRoute(requireContext())
+                    if (route == ExternalBtTransportPolicy.WifiButton.MODULE) {
+                        ToastUtils.showToast(requireContext(), getString(R.string.searching_phone), Toast.LENGTH_SHORT)
+                        val intent = Intent(requireContext(), AapService::class.java).apply {
+                            action = AapService.ACTION_NATIVE_AA_POKE
+                        }
+                        ContextCompat.startForegroundService(requireContext(), intent)
+                    } else if (route == ExternalBtTransportPolicy.WifiButton.REFUSED) {
+                        ToastUtils.showToast(requireContext(), getString(R.string.native_aa_poke_not_running), Toast.LENGTH_LONG, force = true)
+                    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
                         ContextCompat.checkSelfPermission(requireContext(), android.Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
                         bluetoothPermissionLauncher.launch(android.Manifest.permission.BLUETOOTH_CONNECT)
                     } else {
@@ -678,6 +705,7 @@ class HomeFragment : Fragment() {
         updateButtonStyle()
         updateButtonScale()
         updateTextColors()
+        updateExitButtonVisibility()
         if (resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT) {
             view?.let { constrainPortraitGridWidth(it) }
         }

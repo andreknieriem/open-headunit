@@ -32,4 +32,12 @@ object WifiModePolicy {
         nativeStrategy: NativeStrategy = NativeStrategy.WIFI_DIRECT
     ): Boolean =
         WifiLauncherMock.create(mode, helperStrategy, nativeStrategy).hasWifiDirect()
+
+    /** The same bridge for the hotspot half, so its two forms can be held to each other too. */
+    fun hostsOwnAccessPoint(
+        mode: WifiLauncherMode,
+        helperStrategy: HelperStrategy,
+        nativeStrategy: NativeStrategy
+    ): Boolean =
+        WifiLauncherMock.create(mode, helperStrategy, nativeStrategy).hostsOwnAccessPoint()
 }

@@ -1,4 +1,13 @@
 # Changelog
+### Unreleased
+- Added an opt-in automatic Wi-Fi Direct checkbox under Headunit Server / Auto for use with a matching Wireless Helper build's root Dev-server mode on Android Auto 17.4+. No root is required on the head unit; Manual mode remains unchanged.
+- Added OpenHU P2P group startup after conflicting hotspot teardown, group recovery and discovery triggered when a client joins and the P2P interface has an address.
+- Scan the real P2P subnet on TCP 5277 with source-address binding and hand the discovered socket directly to Android Auto, without a second connection.
+- Keep Auto/P2P recovery armed after unexpected connection failures, while explicit Stop/Exit releases the group and blocks automatic reconnection until the next user start.
+- Added English/Russian UI strings, settings backup support, unit tests and [setup instructions](docs/wifi-direct-dev-root.md).
+
+Thanks to [@mixalbl4-127](https://github.com/mixalbl4-127)!
+
 ### v.3.5.0-beta1
 - Native AA: reconnect to a network that is still there, instead of rebuilding it every time
 - Added: Option to use Open Headunit as a launcher

@@ -22,13 +22,16 @@ import kotlinx.coroutines.withContext
 import kotlin.coroutines.coroutineContext
 import java.net.Inet4Address
 import java.net.InetAddress
-import java.net.InetSocketAddress
 import java.net.NetworkInterface
 import java.net.Socket
 import java.nio.ByteOrder
 import java.util.Collections
 
-class NetworkDiscovery(private val context: Context, private val listener: Listener) {
+class NetworkDiscovery(
+    private val context: Context,
+    private val listener: Listener,
+    private val p2pNetwork: (() -> P2pDiscoveryNetwork?)? = null,
+) {
 
     companion object {
         /**
@@ -195,6 +198,12 @@ class NetworkDiscovery(private val context: Context, private val listener: Liste
             reportedIps.clear()
             probeHelperPort = readProbeHelperPort()
             try {
+                if (p2pNetwork != null) {
+                    probeHelperPort = false
+                    val network = p2pNetwork.invoke()
+                    if (network?.hasClient == true) scanP2p(network)
+                    return@launch // No station/gateway fallback when the P2P interface is absent.
+                }
                 // 1. Quick Scan: Check likely Gateways first
                 AppLog.i("NetworkDiscovery: Step 1 - Quick Gateway Scan")
                 val gatewayFound = scanGateways()
@@ -215,6 +224,21 @@ class NetworkDiscovery(private val context: Context, private val listener: Liste
                 }
             }
         }
+
+    private suspend fun scanP2p(network: P2pDiscoveryNetwork) = coroutineScope {
+        AppLog.i("NetworkDiscovery: scanning P2P ${network.interfaceName} ${network.localIpv4}/${network.prefixLength}")
+        for (batch in network.hosts().chunked(16)) {
+            coroutineContext.ensureActive()
+            if (p2pNetwork?.invoke() != network || App.provide(context).commManager.isBusy || reportedIps.isNotEmpty()) break
+            val found = batch.map { ip ->
+                async(Dispatchers.IO) {
+                    if (p2pNetwork?.invoke() != network || App.provide(context).commManager.isBusy || reportedIps.isNotEmpty()) false
+                    else checkAndReport(ip, network.localIpv4)
+                }
+            }.awaitAll()
+            if (found.any { it }) break
+        }
+    }
 
     /**
      * Whether this sweep probes port 5289 as well, read once per scan.
@@ -352,7 +376,7 @@ class NetworkDiscovery(private val context: Context, private val listener: Liste
         return null
     }
 
-    private suspend fun checkAndReport(ip: String): Boolean {
+    private suspend fun checkAndReport(ip: String, localIpv4: String? = null): Boolean {
         if (reportedIps.contains(ip)) return true
 
         // [BUG_FIX] Check before connecting, not only after. Socket.connect() is not interruptible,
@@ -396,7 +420,7 @@ class NetworkDiscovery(private val context: Context, private val listener: Liste
         coroutineContext.ensureActive()
 
         // Check Port 5277 (Standard Headunit)
-        val serverSocket = checkPort(ip, 5277, timeout = 300)
+        val serverSocket = checkPort(ip, 5277, timeout = 300, localIpv4 = localIpv4)
         if (serverSocket != null) {
             AppLog.i("NetworkDiscovery: Found Headunit Server on $ip:5277")
             reportedIps.add(ip)
@@ -428,15 +452,11 @@ class NetworkDiscovery(private val context: Context, private val listener: Liste
         return false
     }
 
-    private fun checkPort(ip: String, port: Int, timeout: Int = 500): Socket? {
-        val socket = Socket()
+    private fun checkPort(ip: String, port: Int, timeout: Int = 500, localIpv4: String? = null): Socket? {
         return try {
-            socket.connect(InetSocketAddress(ip, port), timeout)
-            socket
+            DiscoverySocketConnector.open(ip, port, timeout, localIpv4)
         } catch (e: Exception) {
-            // A failed connect can still leave a half-open socket behind; close it rather than
-            // waiting for the finalizer, which on the subnet sweep means 254 of them.
-            try { socket.close() } catch (e2: Exception) {}
+            // The connector closes failed sockets, including failures after the source bind.
             // Counted, not logged. Telling "helper not listening" apart from "the scan never ran"
             // needs one fact per sweep, not one line per address: at a line per failed 5289 probe
             // a single /24 sweep wrote 254 of them and four sweeps buried an entire connection

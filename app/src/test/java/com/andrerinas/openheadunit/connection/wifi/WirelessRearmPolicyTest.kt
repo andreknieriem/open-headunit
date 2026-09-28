@@ -8,6 +8,15 @@ import org.junit.Test
 
 class WirelessRearmPolicyTest {
 
+    @Test
+    fun `headunit server P2P checkbox re-arms the running configuration`() {
+        val before = config(mode = WifiLauncherMode.AUTO)
+        val after = before.copy(headunitServerWifiDirect = true)
+        assertTrue(WirelessRearmPolicy.requiresRearm(before, after))
+        assertTrue(WirelessRearmPolicy.requiresRearm(after, before))
+        assertFalse(WirelessRearmPolicy.requiresRearm(after, after.copy()))
+    }
+
     private fun config(
         mode: WifiLauncherMode = WifiLauncherMode.NATIVE,
         helper: HelperStrategy = HelperStrategy.NEARBY_DEVICES,

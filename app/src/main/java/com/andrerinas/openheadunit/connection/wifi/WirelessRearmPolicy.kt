@@ -33,6 +33,7 @@ object WirelessRearmPolicy {
         /** Read once by the Helper launcher, and once per listener start. */
         val autoEnableHotspot: Boolean,
         val insecureAaRfcommListener: Boolean,
+        val headunitServerWifiDirect: Boolean = false,
     )
 
     fun requiresRearm(before: Config, after: Config): Boolean = before != after

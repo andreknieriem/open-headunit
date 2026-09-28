@@ -2,11 +2,13 @@ package com.andrerinas.openheadunit.connection
 
 import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy.Owner
 import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy.Tier
+import com.andrerinas.openheadunit.connection.wifi.ServerP2pAttempt
 import com.andrerinas.openheadunit.utils.AppLog
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -134,5 +136,32 @@ class ConnectionArbiterTest {
         val user = must(ConnectionArbiter.claim(Tier.USER, Owner.MANUAL, "192.0.2.1:5277"))
         ConnectionArbiter.release(user, sessionFormed = false)
         assertEquals(listOf(true to true), givenBack)
+    }
+
+    @Test
+    fun `server P2P handshake respects a USB claim`() {
+        val usb = must(ConnectionArbiter.claim(Tier.USB, Owner.USB, "USB"))
+        assertNull(ConnectionArbiter.claim(Tier.WIRELESS_HANDSHAKE, Owner.WIRELESS_STACK, "Auto/P2P"))
+        assertTrue(ConnectionArbiter.holds(usb))
+    }
+
+    @Test
+    fun `failed server P2P handshake releases its claim and keeps recovery armed`() {
+        val attempt = ServerP2pAttempt().apply { begin(true) }
+        val p2p = must(ConnectionArbiter.claim(Tier.WIRELESS_HANDSHAKE, Owner.WIRELESS_STACK, "Auto/P2P"))
+        ConnectionArbiter.release(p2p, sessionFormed = false)
+
+        assertFalse(ConnectionArbiter.holds(p2p))
+        assertFalse(attempt.honorKillOnFailure)
+        assertFalse(attempt.failureIsUserExit)
+        assertNotNull(ConnectionArbiter.claim(Tier.WIRELESS_HANDSHAKE, Owner.WIRELESS_STACK, "Auto/P2P retry"))
+    }
+
+    @Test
+    fun `late server P2P release does not release a manual connection that preempted it`() {
+        val p2p = must(ConnectionArbiter.claim(Tier.WIRELESS_HANDSHAKE, Owner.WIRELESS_STACK, "Auto/P2P"))
+        val user = must(ConnectionArbiter.claim(Tier.USER, Owner.MANUAL, "manual connection"))
+        ConnectionArbiter.release(p2p, sessionFormed = false)
+        assertTrue(ConnectionArbiter.holds(user))
     }
 }

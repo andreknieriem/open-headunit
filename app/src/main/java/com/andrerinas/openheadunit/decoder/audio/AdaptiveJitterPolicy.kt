@@ -1,6 +1,7 @@
 package com.andrerinas.openheadunit.decoder.audio
 
-/** Network timing only. All times come from the transport's monotonic clock, before decoding. */
+/** Independent ingress and decoded-PCM clocks share a bounded reserve. A timely encoded
+ * packet cannot hide a codec that supplies PCM in late batches. */
 internal class AdaptiveJitterPolicy(
     private val sampleRate: Int,
     latencyMultiplier: Int = AudioJitterBufferPolicy.DEFAULT_MULTIPLIER
@@ -13,6 +14,10 @@ internal class AdaptiveJitterPolicy(
     private var marginMs = 15L
     private var previousArrivalMs = -1L
     private var previousFrames = 0
+    private var previousPcmMs = -1L
+    private var previousPcmFrames = 0
+    var largestPcmGapMs = 0L
+        private set
     private var lastAdjustmentMs = -1L
     // Ten one-second buckets age out unusual packet sizes without allocating per arrival.
     private val chunkEpochs = LongArray(10) { -1L }
@@ -46,21 +51,35 @@ internal class AdaptiveJitterPolicy(
         if (previousArrivalMs >= 0) {
             val gap = nowMs - previousArrivalMs
             largestArrivalGapMs = maxOf(largestArrivalGapMs, gap)
-            // A stopped prompt/session is not network jitter. Bursts (gap=0) also cannot make the
-            // estimate shrink: TCP retransmissions deliver several messages at the same instant.
-            if (gap in 1..999) {
-                val excess = (gap - previousFrames * 1000L / sampleRate).coerceAtLeast(0)
-                val observedNeedMs = largestChunkFrames * 1000L / sampleRate + 20 + excess
-                ceilingMs = maxOf(ceilingMs, observedNeedMs.coerceAtMost(maximumMs))
-                if (excess + 10 > marginMs) {
-                    marginMs = maxOf(marginMs + 20, excess + 10).coerceAtMost(maxMarginMs())
-                    lastAdjustmentMs = nowMs
-                }
-            }
+            observeSupplyGap(nowMs, gap, previousFrames)
         }
         previousArrivalMs = nowMs
         previousFrames = chunkFrames
         recover(nowMs)
+    }
+
+    fun onPcmDelivery(nowMs: Long, chunkFrames: Int) {
+        if (chunkFrames <= 0) return
+        if (previousPcmMs >= 0) {
+            val gap = (nowMs - previousPcmMs).coerceAtLeast(0)
+            largestPcmGapMs = maxOf(largestPcmGapMs, gap)
+            observeSupplyGap(nowMs, gap, previousPcmFrames)
+        }
+        previousPcmMs = nowMs
+        previousPcmFrames = chunkFrames
+    }
+
+    private fun observeSupplyGap(nowMs: Long, gapMs: Long, precedingFrames: Int) {
+        // Sink Stop explicitly resets both clocks. An active outage of 1s or longer is
+        // still starvation evidence; never silently classify it as a paused stream.
+        if (gapMs <= 0) return
+        val excess = (gapMs - precedingFrames * 1000L / sampleRate).coerceIn(0, maximumMs)
+        val observedNeedMs = largestChunkFrames * 1000L / sampleRate + 20 + excess
+        ceilingMs = maxOf(ceilingMs, observedNeedMs.coerceAtMost(maximumMs))
+        if (excess + 10 > marginMs) {
+            marginMs = maxOf(marginMs + 20, excess + 10).coerceAtMost(maxMarginMs())
+            lastAdjustmentMs = nowMs
+        }
     }
 
     fun onUnderrun(nowMs: Long) {
@@ -80,6 +99,7 @@ internal class AdaptiveJitterPolicy(
     fun resetArrival() {
         previousArrivalMs = -1L; previousFrames = 0
         largestArrivalGapMs = 0L
+        previousPcmMs = -1L; previousPcmFrames = 0; largestPcmGapMs = 0L
         chunkEpochs.fill(-1L); chunkMaxima.fill(0); largestChunkFrames = 0
     }
     private fun maxMarginMs() = (ceilingMs - largestChunkFrames * 1000L / sampleRate - 10).coerceAtLeast(15L)

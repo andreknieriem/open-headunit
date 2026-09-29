@@ -41,7 +41,8 @@ class AudioTrackWrapper(
     private data class AudioChunk(
         val data: ByteArray,
         val size: Int,
-        val codecConfig: AacCodecConfig? = null
+        val codecConfig: AacCodecConfig? = null,
+        val enqueuedMs: Long = SystemClock.elapsedRealtime()
     )
 
     companion object {
@@ -84,6 +85,12 @@ class AudioTrackWrapper(
     private var lastRebuildMs = 0L
     private var droppedAacChunks = 0L
     private var aacFramesQueued = 0L
+    private val syncBufferInfo = MediaCodec.BufferInfo()
+    private var syncInputBuffers: Array<java.nio.ByteBuffer>? = null
+    private var syncOutputBuffers: Array<java.nio.ByteBuffer>? = null
+    private var maximumQueueWaitMs = 0L
+    private var maximumDecodeCallMs = 0L
+    private var nextPipelineReportMs = 0L
     private val trackChannelCount: Int = channelCount
     @Volatile private var incomingAacConfig = if (isAac) AacCodecConfig.default(sampleRateInHz, channelCount) else null
     // Only the decode thread changes this after construction. Each chunk retains its own CSD.
@@ -376,7 +383,14 @@ class AudioTrackWrapper(
 
             decoder?.configure(format, null, null, 0)
             decoder?.start()
-            AppLog.i("AAC Decoder started for $sampleRate Hz, $channels channels (Async)")
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+                @Suppress("DEPRECATION")
+                syncInputBuffers = decoder!!.inputBuffers
+                @Suppress("DEPRECATION")
+                syncOutputBuffers = decoder!!.outputBuffers
+            }
+            AppLog.i("AAC Decoder started for $sampleRate Hz, $channels channels " +
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) "(Async)" else "(Sync)")
             return true
         } catch (e: Exception) {
             AppLog.e("Failed to init AAC decoder; this sink's frames will be dropped, not played as PCM", e)
@@ -424,6 +438,8 @@ class AudioTrackWrapper(
     private fun releaseDecoder() {
         val oldDecoder = decoder
         decoder = null
+        syncInputBuffers = null
+        syncOutputBuffers = null
         try {
             oldDecoder?.stop()
         } catch (ignored: Exception) {
@@ -827,7 +843,11 @@ class AudioTrackWrapper(
                 // Use poll to avoid blocking indefinitely if isRunning becomes false
                 val waitingForStart = (firstAudioMs > 0L && !playbackStarted.get()) ||
                     (rebanking && rebankingSinceMs > 0L)
-                val chunk = dataQueue.poll(if (waitingForStart) 10 else 200, TimeUnit.MILLISECONDS)
+                val synchronousAac = isAac && Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP
+                // A codec may finish the last input after the transport goes quiet. Keep draining
+                // it during input gaps instead of stranding PCM until the next 200ms queue poll.
+                if (synchronousAac && !decoderFailed) decoder?.let { drainSyncOutput(it) }
+                val chunk = dataQueue.poll(if (waitingForStart || synchronousAac) 10 else 200, TimeUnit.MILLISECONDS)
                 // The fill trigger lives in writeToTrack; this call carries only the deadline, so
                 // a stream too short to reach its target still gets played.
                 synchronized(playbackLock) {
@@ -838,6 +858,8 @@ class AudioTrackWrapper(
                     sampleHealth(nowMs)
                 }
                 if (chunk != null) {
+                    val decodeStartMs = SystemClock.elapsedRealtime()
+                    maximumQueueWaitMs = maxOf(maximumQueueWaitMs, decodeStartMs - chunk.enqueuedMs)
                     try {
                         if (isAac) {
                             val config = checkNotNull(chunk.codecConfig)
@@ -861,6 +883,16 @@ class AudioTrackWrapper(
                             writeToTrack(chunk.data, chunk.size)
                         }
                     } finally {
+                        val finishedMs = SystemClock.elapsedRealtime()
+                        maximumDecodeCallMs = maxOf(maximumDecodeCallMs, finishedMs - decodeStartMs)
+                        if (isAac && finishedMs >= nextPipelineReportMs) {
+                            AudioDiagnostics.report(finishedMs, "AAC pipeline channel=$channelId " +
+                                "queueWaitMax=${maximumQueueWaitMs}ms decodeCallMax=${maximumDecodeCallMs}ms " +
+                                "queued=${dataQueue.size} droppedInput=$droppedAacChunks shedOutput=$droppedAacOutputs")
+                            maximumQueueWaitMs = 0
+                            maximumDecodeCallMs = 0
+                            nextPipelineReportMs = finishedMs + 10_000
+                        }
                         recycleAudioBuffer(chunk.data)
                     }
                 }
@@ -884,38 +916,62 @@ class AudioTrackWrapper(
     @Suppress("DEPRECATION")
     private fun decodeSync(inputData: ByteArray, size: Int) {
         try {
-            val dec = this.decoder ?: return
-            val inputIndex = dec.dequeueInputBuffer(200000)
-            if (inputIndex >= 0) {
-                val inputBuffer = dec.inputBuffers[inputIndex]
-                inputBuffer.clear()
-                inputBuffer.put(inputData, 0, size)
-                dec.queueInputBuffer(inputIndex, 0, size, nextAacPtsUs(), 0)
+            val dec = decoder ?: return
+            val inputIndex = AacSyncPump.awaitInput(SystemClock::elapsedRealtime,
+                { isRunning && decoder === dec && !rebuildRequested },
+                { drainSyncOutput(dec) }, { timeoutUs -> dec.dequeueInputBuffer(timeoutUs) })
+            if (inputIndex < 0) {
+                if (isRunning) droppedAacChunks++
+                return
             }
-
-            val info = MediaCodec.BufferInfo()
-            var outputIndex = dec.dequeueOutputBuffer(info, 0)
-            while (outputIndex >= 0 || outputIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
-                if (outputIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
-                    verifyOutputFormat(dec.outputFormat, outputFormatState)
-                    outputIndex = dec.dequeueOutputBuffer(info, 0)
-                    continue
-                }
-                if (!outputFormatState.acceptsOutput) {
-                    dec.releaseOutputBuffer(outputIndex, false)
-                    outputIndex = dec.dequeueOutputBuffer(info, 0)
-                    continue
-                }
-                val outputBuffer = dec.outputBuffers[outputIndex]
-                val chunk = ByteArray(info.size)
-                outputBuffer.position(info.offset)
-                outputBuffer.get(chunk)
-                writeToTrack(chunk)
-                dec.releaseOutputBuffer(outputIndex, false)
-                outputIndex = dec.dequeueOutputBuffer(info, 0)
-            }
+            val inputBuffer = (syncInputBuffers ?: dec.inputBuffers.also { syncInputBuffers = it })[inputIndex]
+            inputBuffer.clear()
+            inputBuffer.put(inputData, 0, size)
+            dec.queueInputBuffer(inputIndex, 0, size, nextAacPtsUs(), 0)
+            drainSyncOutput(dec)
         } catch (e: Exception) {
             AppLog.e("Error in decodeSync", e)
+            rebuildRequested = true
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun drainSyncOutput(dec: MediaCodec) {
+        try {
+            // Bound one pass so a broken codec cannot monopolize the input thread.
+            repeat(64) {
+                if (!isRunning || decoder !== dec || rebuildRequested) return
+                val index = dec.dequeueOutputBuffer(syncBufferInfo, 0)
+                when {
+                    index == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED -> verifyOutputFormat(dec.outputFormat, outputFormatState)
+                    index == MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED -> syncOutputBuffers = dec.outputBuffers
+                    index >= 0 -> {
+                        val size = syncBufferInfo.size
+                        var pcm: ByteArray? = null
+                        try {
+                            try {
+                                if (outputFormatState.acceptsOutput && size > 0 &&
+                                    syncBufferInfo.flags and MediaCodec.BUFFER_FLAG_CODEC_CONFIG == 0) {
+                                    val buffers = syncOutputBuffers ?: dec.outputBuffers.also { syncOutputBuffers = it }
+                                    val buffer = buffers[index]
+                                    pcm = obtainAudioBuffer(size)
+                                    buffer.position(syncBufferInfo.offset)
+                                    buffer.get(pcm, 0, size)
+                                }
+                            } finally {
+                                // Free codec capacity before PCM output can block on a slow HAL.
+                                dec.releaseOutputBuffer(index, false)
+                            }
+                            pcm?.let { writeToTrack(it, size) }
+                        } finally {
+                            pcm?.let { recycleAudioBuffer(it) }
+                        }
+                    }
+                    else -> return
+                }
+            }
+        } catch (e: Exception) {
+            AppLog.e("Error draining synchronous AAC output", e)
             rebuildRequested = true
         }
     }
@@ -946,7 +1002,9 @@ class AudioTrackWrapper(
                 inputBuffer?.put(inputData, 0, size)
                 dec.queueInputBuffer(inputIndex, 0, size, nextAacPtsUs(), 0)
             } else {
-                AppLog.w("AAC Input Buffer timeout (200ms) - dropping frame")
+                droppedAacChunks++
+                AudioDiagnostics.report(SystemClock.elapsedRealtime(),
+                    "AAC input timeout channel=$channelId wait=200ms droppedInput=$droppedAacChunks", warning = true)
             }
         } catch (e: InterruptedException) {
             throw e

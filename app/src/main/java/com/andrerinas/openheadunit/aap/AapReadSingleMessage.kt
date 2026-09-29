@@ -160,7 +160,7 @@ internal class AapReadSingleMessage(
                 val finished = SystemClock.elapsedRealtime()
                 val gap = if (previousReadFinishedMs > 0) (readStart - previousReadFinishedMs).coerceAtLeast(0) else 0L
                 // Do not allocate a report on the ordinary packet path.
-                if (gap >= 50 || finished - readStart >= 50) {
+                if (TransportReadTiming.isProcessingSlow(gap, finished - headerFinished)) {
                     onSlowRead(TransportReadTiming(msg.channel, gap, headerFinished - readStart,
                         bodyFinished - headerFinished, decryptFinished - bodyFinished,
                         finished - decryptFinished), finished)

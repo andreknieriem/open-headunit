@@ -191,8 +191,14 @@ class AudioMixer(
         var nextReportMs = SystemClock.elapsedRealtime() + 10_000L
         var nextTuneMs = 0L
         var nextPcmDiagnosticMs = 0L
+        var lastCycleMs = -1L
+        var loopGapMaxMs = 0L
+        var mixWorkMaxMs = 0L
+        var writeMaxMs = 0L
         while (running.get()) {
             val now = SystemClock.elapsedRealtime()
+            if (lastCycleMs >= 0) loopGapMaxMs = maxOf(loopGapMaxMs, now - lastCycleMs)
+            lastCycleMs = now
             if (now >= nextPcmDiagnosticMs) {
                 for ((id, state) in channels) {
                     val rebanks = state.buffer.rebanks
@@ -202,7 +208,7 @@ class AudioMixer(
                         concealed != state.reportedConcealed) {
                         recordDiagnostic(now, "PCM channel=$id source=${state.rate}Hz/${state.channels}ch " +
                             "target=${state.buffer.targetFrames()} depth=${state.buffer.depthFrames()} frames " +
-                            "arrivalGapMax=${state.buffer.maxArrivalGapMs()}ms " +
+                            "arrivalGapMax=${state.buffer.maxArrivalGapMs()}ms pcmGapMax=${state.buffer.maxPcmGapMs()}ms " +
                             "rebanksDelta=${rebanks - state.reportedRebanks} " +
                             "concealedDelta=${concealed - state.reportedConcealed} " +
                             "droppedDelta=${dropped - state.reportedDropped}", warning = true)
@@ -218,6 +224,7 @@ class AudioMixer(
             when (lifecycle.update(now, idle, warming, hasReceivedAudio.get(),
                 device.bufferFrames * 1000L / OUTPUT_SAMPLE_RATE + 20)) {
                 MixerOutputLifecycle.Action.WAIT -> {
+                    lastCycleMs = -1L
                     feedSignal.tryAcquire(200, TimeUnit.MILLISECONDS)
                     continue
                 }
@@ -251,6 +258,8 @@ class AudioMixer(
                 outputBuffer[i] = if (activeChannels > 1 || boosted) softClip(mixBuffer[i])
                     else mixBuffer[i].coerceIn(-32768, 32767).toShort()
             }
+            val writeStartMs = SystemClock.elapsedRealtime()
+            mixWorkMaxMs = maxOf(mixWorkMaxMs, writeStartMs - now)
             val result = AudioWriteLoop.writeFully(SHORTS_PER_CYCLE, { running.get() },
                 { offset, remaining -> device.write(outputBuffer, offset, remaining) },
                 { writeWatchdog.onProgress() }, {
@@ -281,6 +290,7 @@ class AudioMixer(
                         }
                     }
                 })
+            writeMaxMs = maxOf(writeMaxMs, SystemClock.elapsedRealtime() - writeStartMs)
             check(result >= 0) { "${device.name} write failed: $result" }
             if (now >= nextTuneMs) {
                 val burst = device.burstFrames
@@ -302,7 +312,8 @@ class AudioMixer(
                     recordDiagnostic(now, "output ${device.name} requested=$target effective=${device.bufferFrames} " +
                         "staging=${device.stagingBufferFrames} burst=$burst minimum=$minimum " +
                         "stableFloor=${policy.stableFloorFrames} maximum=${policy.maximumFrames} " +
-                        "xruns=$xruns producerUnderruns=${device.producerUnderruns}",
+                        "xruns=${if (device.underrunsSupported) xruns.toString() else "N/A"} " +
+                        "producerUnderruns=${device.producerUnderruns}",
                         warning = xruns > previousOutputXruns)
                 }
                 renderBurst = renderBurstFrames(device)
@@ -310,17 +321,19 @@ class AudioMixer(
                 nextTuneMs = now + 100
             }
             if (now >= nextReportMs) {
-                AppLog.i("AudioMixer: id=$diagnosticId ${device.name} effective=${device.bufferFrames} frames, " +
-                    "staging=${device.stagingBufferFrames}, xruns=${device.underruns}, " +
+                AudioDiagnostics.report(now, "AudioMixer: id=$diagnosticId ${device.name} effective=${device.bufferFrames} frames, " +
+                    "staging=${device.stagingBufferFrames}, xruns=${if (device.underrunsSupported) device.underruns.toString() else "N/A"}, " +
                     "producerUnderruns=${device.producerUnderruns}, burst=${device.burstFrames}, " +
-                    "requested=$requestedFrames, stableFloor=${policy.stableFloorFrames}, maximum=${policy.maximumFrames}")
+                    "requested=$requestedFrames, stableFloor=${policy.stableFloorFrames}, maximum=${policy.maximumFrames}, " +
+                    "loopGapMax=${loopGapMaxMs}ms mixWorkMax=${mixWorkMaxMs}ms writeMax=${writeMaxMs}ms", remember = false)
                 for ((id, state) in channels) {
-                    AppLog.i("AudioMixer: id=$diagnosticId channel=$id target=${state.buffer.targetFrames() * 1000L / OUTPUT_SAMPLE_RATE}ms " +
+                    AudioDiagnostics.report(now, "AudioMixer: id=$diagnosticId channel=$id target=${state.buffer.targetFrames() * 1000L / OUTPUT_SAMPLE_RATE}ms " +
                         "depth=${state.buffer.depthFrames() * 1000L / OUTPUT_SAMPLE_RATE}ms " +
-                        "arrivalGapMax=${state.buffer.maxArrivalGapMs()}ms " +
+                        "arrivalGapMax=${state.buffer.maxArrivalGapMs()}ms pcmGapMax=${state.buffer.maxPcmGapMs()}ms " +
                         "concealedFrames=${state.buffer.concealedFrames} staleFrames=${state.buffer.droppedFrames} " +
-                        "compressedFrames=${state.buffer.compressedFrames}")
+                        "compressedFrames=${state.buffer.compressedFrames}", remember = false)
                 }
+                loopGapMaxMs = 0; mixWorkMaxMs = 0; writeMaxMs = 0
                 nextReportMs = now + 10_000L
             }
         }
@@ -328,7 +341,6 @@ class AudioMixer(
 
     private fun recordDiagnostic(nowMs: Long, message: String, warning: Boolean = false) {
         val line = "AudioMixer: id=$diagnosticId $message"
-        AudioDiagnostics.record(nowMs, line)
-        if (warning) AppLog.w(line) else AppLog.i(line)
+        AudioDiagnostics.report(nowMs, line, warning)
     }
 }

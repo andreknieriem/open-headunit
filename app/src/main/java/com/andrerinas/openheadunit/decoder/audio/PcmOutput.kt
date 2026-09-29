@@ -13,6 +13,7 @@ internal interface PcmOutput {
     val bufferFrames: Int // effective device + any callback staging; used for drain deadlines
     val burstFrames: Int
     val underruns: Int
+    val underrunsSupported: Boolean get() = true
     val stagingBufferFrames: Int get() = 0
     val producerUnderruns: Int get() = 0
     val minimumBufferFrames: Int get() = 960 // AudioTrack producer retains its 20ms safety floor
@@ -65,7 +66,8 @@ internal class AudioTrackPcmOutput(stream: Int, attachHwDsp: Boolean) : PcmOutpu
 
     override val capacityFrames: Int get() = if (Build.VERSION.SDK_INT >= 24) track.bufferCapacityInFrames else requestedBytes / 4
     override val bufferFrames: Int get() = if (Build.VERSION.SDK_INT >= 23) track.bufferSizeInFrames else requestedBytes / 4
-    override val underruns: Int get() = if (Build.VERSION.SDK_INT >= 24) track.underrunCount else 0
+    override val underrunsSupported: Boolean get() = Build.VERSION.SDK_INT >= 24
+    override val underruns: Int get() = if (underrunsSupported) track.underrunCount else 0
     override fun setBufferFrames(frames: Int): Int =
         if (Build.VERSION.SDK_INT >= 24) track.setBufferSizeInFrames(frames) else bufferFrames
     override fun start() {

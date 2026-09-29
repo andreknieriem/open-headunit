@@ -92,7 +92,23 @@ static void concurrentOrder() {
     CHECK(buffer.starvationEvents() == 0);
 }
 
+static void producerSchedulingGap() {
+    // 192-frame callbacks consume 4ms at 48kHz. The old one-burst queue cannot
+    // cover a 10ms producer scheduling gap; the new 768-frame minimum can.
+    for (const auto limit : {192u, 768u}) {
+        CallbackPcmBuffer buffer;
+        std::array<int16_t, 1536> input{};
+        std::array<int16_t, 384> output{};
+        input.fill(10000);
+        CHECK(buffer.write(input.data(), limit, limit) == limit);
+        for (int callback = 0; callback < 3; ++callback) CHECK(buffer.render(output.data(), 192));
+        CHECK(buffer.starvationEvents() == (limit == 192 ? 1u : 0u));
+        if (limit == 768) CHECK(output.back() == 10000);
+    }
+}
+
 int main() {
+    producerSchedulingGap();
     writeLimitAndWrap();
     gapsAndResume();
     concurrentOrder();

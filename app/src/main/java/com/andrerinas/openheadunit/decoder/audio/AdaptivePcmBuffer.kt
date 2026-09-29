@@ -10,7 +10,10 @@ internal class AdaptivePcmBuffer(
 ) {
     private val cycleFrames = sampleRate / 100
     private val cycleSamples = cycleFrames * channels
-    private val ring = ShortArray(sampleRate * channels) // one second of capacity, never a target
+    // Music needs room for a 1s catch-up burst plus its <=400ms reserve. This is
+    // capacity, not added latency: 96KB extra at 48k stereo, only for the media sink.
+    private val capacityFrames = if (isMediaSink) sampleRate * 3 / 2 else sampleRate
+    private val ring = ShortArray(capacityFrames * channels)
     private val lastGood = ShortArray(cycleSamples)
     private val previousOutput = ShortArray(cycleSamples)
     private val policy = AdaptiveJitterPolicy(sampleRate, latencyMultiplier)
@@ -48,6 +51,7 @@ internal class AdaptivePcmBuffer(
     @Synchronized fun finish() { ended = true }
     @Synchronized fun targetFrames(): Int = playbackTargetFrames()
     @Synchronized fun maxArrivalGapMs(): Long = policy.largestArrivalGapMs
+    @Synchronized fun maxPcmGapMs(): Long = policy.largestPcmGapMs
     @Synchronized fun depthFrames(): Int = count / channels
     // An empty network rebank is still a live stream. Parking the device here adds a
     // pause/flush/play cycle to every late packet burst.
@@ -56,6 +60,7 @@ internal class AdaptivePcmBuffer(
     @Synchronized fun write(data: ShortArray, length: Int, nowMs: Long) {
         val aligned = length.coerceAtMost(data.size) / channels * channels
         if (aligned == 0) return
+        if (!ended) policy.onPcmDelivery(nowMs, aligned / channels)
         if (firstDataMs < 0) firstDataMs = nowMs
         val keep = minOf(aligned, ring.size)
         val skip = aligned - keep

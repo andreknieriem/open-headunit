@@ -11,6 +11,7 @@ class AdaptiveAudioTest {
         buffer.noteArrival(171, 2048)
         buffer.write(ShortArray(4096) { 12000 }, 4096, 171)
         buffer.render(ShortArray(960), 171)
+        buffer.finish() // an intentional pause, not ten seconds of active transport starvation
         buffer.noteArrival(10040, 2048) // expire the old estimate while PCM remains banked
         return buffer
     }
@@ -29,7 +30,7 @@ class AdaptiveAudioTest {
     }
 
     @Test fun `backlog is preserved until physical capacity requires overflow`() {
-        for (packets in listOf(8, 30)) {
+        for (packets in listOf(8, 40)) {
             val buffer = bankWithExpiredLargePacket()
             val out = ShortArray(960)
             buffer.render(out, 10040)
@@ -39,7 +40,7 @@ class AdaptiveAudioTest {
                 buffer.write(ShortArray(4096) { 12000 }, 4096, 10050)
             }
             val beforeRender = buffer.droppedFrames
-            if (packets == 30) assertTrue(beforeRender > 0) else assertEquals(0L, beforeRender)
+            if (packets == 40) assertTrue(beforeRender > 0) else assertEquals(0L, beforeRender)
             val depth = buffer.depthFrames()
             buffer.render(out, 10050)
             assertEquals(beforeRender, buffer.droppedFrames)
@@ -227,6 +228,7 @@ class AdaptiveAudioTest {
         val policy = AdaptiveJitterPolicy(48000, 2)
         policy.onArrival(0, 2048)
         val original = policy.targetFrames
+        policy.resetArrival() // Sink Stop, not an inferred pause based on gap length
         policy.onArrival(5000, 2048)
         assertEquals(original, policy.targetFrames)
         policy.onArrival(5100, 2048)

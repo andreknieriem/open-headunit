@@ -6,18 +6,18 @@ import org.junit.Test
 class CallbackBufferSizingTest {
     @Test fun `the combined budget includes callback staging instead of duplicating latency`() {
         for (burst in intArrayOf(96, 192, 240, 480)) {
-            for (total in burst * 3..2880 step burst) {
+            for (total in CallbackBufferSizing.minimumFrames(burst, burst)..maxOf(2880, burst * 6) step burst) {
                 val device = CallbackBufferSizing.deviceFrames(total, burst)
                 val queue = CallbackBufferSizing.queueFrames(total, device, burst)
                 assertTrue(device >= burst * 2)
-                assertTrue(queue >= burst)
+                assertTrue(queue >= 480 + burst)
                 assertEquals(total, device + queue)
             }
         }
     }
 
     @Test fun `a device grant larger than requested keeps only the minimum staging queue`() {
-        assertEquals(192, CallbackBufferSizing.queueFrames(576, 1920, 192))
+        assertEquals(768, CallbackBufferSizing.queueFrames(1152, 1920, 192))
         assertEquals(384, CallbackBufferSizing.deviceFrames(576, 192))
     }
 
@@ -42,12 +42,12 @@ class CallbackBufferSizingTest {
 
     @Test fun `producer gaps grow staging while hardware xruns grow the device share`() {
         val policy = CallbackDeviceBufferPolicy(192)
-        assertEquals(384, policy.request(576, 192, 0))
-        assertEquals(384, policy.request(768, 192, 0)) // producer xrun adds a staging burst
-        assertEquals(576, policy.request(960, 192, 1)) // HAL xrun adds a device burst
-        assertEquals(576, policy.request(960, 192, 1))
-        assertEquals(576, policy.request(768, 192, 1))
-        assertEquals(384, policy.request(576, 192, 1)) // stable budget eventually probes the floor
+        assertEquals(384, policy.request(1152, 192, 0))
+        assertEquals(384, policy.request(1344, 192, 0)) // producer xrun adds a staging burst
+        assertEquals(576, policy.request(1536, 192, 1)) // HAL xrun adds a device burst
+        assertEquals(576, policy.request(1536, 192, 1))
+        assertEquals(576, policy.request(1344, 192, 1))
+        assertEquals(384, policy.request(1152, 192, 1)) // stable budget eventually probes the floor
     }
 
     @Test fun `hardware can take spare staging budget at the ceiling without exceeding it`() {
@@ -57,7 +57,7 @@ class CallbackBufferSizingTest {
             val device = policy.request(2880, 192, it + 1)
             val queue = CallbackBufferSizing.queueFrames(2880, device, 192)
             assertEquals(2880, device + queue)
-            assertTrue(queue >= 192)
+            assertTrue(queue >= 768)
         }
     }
 }

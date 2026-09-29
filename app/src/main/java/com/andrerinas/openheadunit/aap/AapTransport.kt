@@ -330,8 +330,7 @@ class AapTransport(
         if (nowMs < nextReadTimingMs) return
         val line = "Audio transport read channel=${timing.channel} readerGap=${timing.readerGapMs}ms " +
             "header=${timing.headerMs}ms body=${timing.bodyMs}ms decrypt=${timing.decryptMs}ms dispatch=${timing.dispatchMs}ms"
-        AudioDiagnostics.record(nowMs, line)
-        AppLog.w(line)
+        AudioDiagnostics.report(nowMs, line, warning = true)
         nextReadTimingMs = nowMs + 1000
     }
 

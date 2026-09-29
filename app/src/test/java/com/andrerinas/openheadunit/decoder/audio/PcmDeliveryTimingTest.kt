@@ -6,7 +6,7 @@ import org.junit.Test
 class PcmDeliveryTimingTest {
     @Test fun `variable delivery and twenty millisecond output bursts settle after warmup`() {
         for (renderBurst in intArrayOf(1, 2, 4)) {
-            val buffer = AdaptivePcmBuffer()
+            val buffer = AdaptivePcmBuffer(latencyMultiplier = 2)
             val packet = ShortArray(4096) { 12000 }
             val out = ShortArray(960)
             var packetIndex = 0

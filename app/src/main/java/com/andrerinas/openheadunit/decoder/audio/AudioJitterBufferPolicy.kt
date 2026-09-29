@@ -9,8 +9,8 @@ package com.andrerinas.openheadunit.decoder.audio
  */
 object AudioJitterBufferPolicy {
 
-    /** Start shallow, then let observed underruns deepen this session's cushion. */
-    const val DEFAULT_MULTIPLIER = 2
+    /** Preserve the 400ms default for installs that have never saved a latency setting. */
+    const val DEFAULT_MULTIPLIER = 16
 
     /** Depth to bank, in milliseconds of playback, at [ANCHOR_MULTIPLIER]. */
     const val TARGET_MS = 200L

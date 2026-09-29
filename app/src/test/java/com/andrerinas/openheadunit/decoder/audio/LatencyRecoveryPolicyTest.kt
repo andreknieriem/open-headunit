@@ -12,114 +12,57 @@ class LatencyRecoveryPolicyTest {
         return frames
     }
 
-    @Test fun `target and slack reductions retain the previously permitted PCM`() {
-        val policy = LatencyRecoveryPolicy(48000)
-        policy.observe(0, 4272, 3072, 2592, 6240, 0)
-        assertEquals(6864, policy.trimLimit)
-        policy.observe(10, 3248, 2048, 1568, 6240, 2048)
-        assertEquals(6864, policy.trimLimit)
-        var removed = 0
-        for (now in 20L..5000L step 10) {
-            removed += tick(policy, now, 3248, 2048, 6240 - removed)
-        }
-        assertTrue(removed >= 6240 - 4816)
-        assertTrue(removed < 2048) // unused slack is not an additional consumption debt
-        assertEquals(4816, policy.trimLimit)
-    }
-
-    @Test fun `slack alone recovers only observed excess and then expires`() {
-        val policy = LatencyRecoveryPolicy(48000)
-        policy.observe(0, 9600, 8192, 7712, 14000, 0)
-        var removed = 0
-        for (now in 10L..10000L step 10) {
-            removed += tick(policy, now, 9600, 2048, 14000 - removed)
-        }
-        assertTrue(removed >= 14000 - 11168)
-        assertTrue(removed < 3000)
-        assertEquals(11168, policy.trimLimit)
-        assertEquals(0, tick(policy, 10010, 9600, 2048, 11168))
-    }
-
-    @Test fun `unused slack expires without consuming audio`() {
-        val policy = LatencyRecoveryPolicy(48000)
-        policy.observe(0, 9600, 8192, 7712, 10500, 0)
-        for (now in 10L..1000L step 10) {
-            assertEquals(0, tick(policy, now, 9600, 2048, 10500))
-        }
-        assertEquals(11168, policy.trimLimit)
-    }
-
-    @Test fun `rising target cancels correction without removing trim protection`() {
-        val policy = LatencyRecoveryPolicy(48000)
-        policy.observe(0, 7088, 2048, 1568, 7000, 0)
-        policy.observe(10, 3248, 2048, 1568, 7000, 480)
-        policy.observe(20, 3728, 2048, 1568, 7000, 960)
-        assertEquals(8656, policy.trimLimit)
-        assertEquals(0, policy.correction(20, 7000))
-    }
-
-    @Test fun `oscillating slack never accumulates extra headroom or follows backlog`() {
-        val policy = LatencyRecoveryPolicy(48000)
-        for (i in 0..100) {
-            policy.observe(i * 10L, 4000, 2048, if (i % 2 == 0) 8000 else 1568, 30000, i * 480L)
-            assertEquals(12000, policy.trimLimit)
-        }
-        policy.reset()
-        policy.observe(2000, 4000, 2048, 1568, 30000, 100000)
-        assertEquals(5568, policy.trimLimit) // new backlog still requires hard trim
-        policy.observe(2010, 47000, 2048, 8000, 48000, 100480)
-        assertEquals(48000, policy.trimLimit) // physical capacity is always the upper bound
-    }
-
-    @Test fun `proposed catch-up cannot lower trim protection before actual consumption`() {
-        val policy = LatencyRecoveryPolicy(48000)
-        policy.observe(0, 10000, 2048, 1568, 11000, 0)
-        for (now in 10L..510L step 10) policy.observe(now, 6000, 2048, 1568, 11000, now * 48)
-        assertEquals(48, policy.correction(510, 11000))
-        assertEquals(11568, policy.trimLimit)
-        policy.consumed(510, 48)
-        assertEquals(11520, policy.trimLimit)
-        assertEquals(0, policy.correction(520, 10952))
-    }
-
-    @Test fun `pause or finished tail does not establish a stable input window`() {
-        val policy = LatencyRecoveryPolicy(48000)
-        policy.observe(0, 9600, 8192, 7712, 10500, 0)
-        for (now in 10L..1000L step 10) policy.observe(now, 9600, 2048, 1568, 10500, 0)
-        assertEquals(17312, policy.trimLimit)
-        policy.observe(5000, 9600, 2048, 1568, 10500, 2048)
-        assertEquals(17312, policy.trimLimit)
-        for (now in 5010L..6000L step 10) {
-            policy.observe(now, 9600, 2048, 1568, 10500, now * 48, canRecover = false)
-            assertEquals(0, policy.correction(now, 10500))
-        }
-        assertEquals(17312, policy.trimLimit)
-        policy.reset()
-        policy.observe(7000, 9600, 2048, 1568, 10500, 400000)
-        assertEquals(11168, policy.trimLimit)
-    }
-
-    @Test fun `sparse rendering cannot retire grace just because wall time passed`() {
-        val policy = LatencyRecoveryPolicy(48000)
-        policy.observe(0, 9600, 8192, 7712, 10500, 0)
-        for (now in 10L..1010L step 100) {
-            policy.observe(now, 9600, 2048, 1568, 10500, now * 48)
-            assertEquals(0, policy.correction(now, 10500))
-        }
-        assertEquals(17312, policy.trimLimit)
-    }
-    @Test fun `target reductions remove at most one millisecond per hundred milliseconds`() {
+    @Test fun `lower target repays only its debt in one millisecond overlaps`() {
         val policy = LatencyRecoveryPolicy(48000)
         tick(policy, 0, 4800, 2048, 4800)
         var removed = 0
+        var lastCorrection = -100L
         for (now in 10L..5000L step 10) {
             val frames = tick(policy, now, 3840, 2048, 4800 - removed)
             assertTrue(frames in 0..48)
+            if (frames > 0) {
+                assertTrue(now - lastCorrection >= 100)
+                lastCorrection = now
+            }
             removed += frames
             assertTrue(removed <= 960)
         }
         assertEquals(960, removed)
         assertEquals(0, tick(policy, 10000, 3840, 2048, 4800))
+    }
+
+    @Test fun `a fixed target recovers persistent excess after a full rendering window`() {
+        val policy = LatencyRecoveryPolicy(48000)
+        val target = 19200
+        val slack = 3407
+        var removed = 0
+        for (now in 0L..5000L step 10) {
+            val frames = tick(policy, now, target, 1024, 22752 - removed, slack)
+            if (now < 500) assertEquals(0, frames)
+            assertTrue(frames in 0..48)
+            removed += frames
+        }
+        assertEquals(22752 - target - slack, removed)
+        assertEquals(0, tick(policy, 5010, target, 1024, 22752 - removed, slack))
+    }
+
+    @Test fun `isolated decoder peaks do not authorize catch-up`() {
+        val policy = LatencyRecoveryPolicy(48000)
+        for (now in 0L..5000L step 10) {
+            val depth = if (now % 500 == 0L) 26000 else 20000
+            assertEquals(0, tick(policy, now, 19200, 1024, depth, 3407))
+        }
+    }
+
+    @Test fun `smaller output or packet slack repays sustained excess without a target change`() {
+        val policy = LatencyRecoveryPolicy(48000)
+        tick(policy, 0, 9600, 8192, 14000, 7712)
+        var removed = 0
+        for (now in 10L..10000L step 10) {
+            removed += tick(policy, now, 9600, 2048, 14000 - removed)
+        }
+        assertEquals(14000 - 11168, removed)
+        assertEquals(0, tick(policy, 10010, 9600, 2048, 14000 - removed))
     }
 
     @Test fun `a shallow trough blocks catch-up even if packet peaks are large`() {
@@ -131,14 +74,48 @@ class LatencyRecoveryPolicyTest {
         }
     }
 
-    @Test fun `new jitter and deliberate reset cancel outstanding catch-up`() {
+    @Test fun `no input sparse rendering and stopped tails cannot authorize catch-up`() {
+        for (mode in 0..2) {
+            val policy = LatencyRecoveryPolicy(48000)
+            val interval = if (mode == 1) 100L else 10L
+            for (now in 0L..2000L step interval) {
+                policy.observe(now, 4800, 2048, 1568, 12000,
+                    if (mode == 0) 0 else now * 48, canRecover = mode != 2)
+                assertEquals(0, policy.correction(now, 12000))
+            }
+        }
+    }
+
+    @Test fun `growing target reset or starvation cancels outstanding correction`() {
+        for (mode in 0..2) {
+            val policy = LatencyRecoveryPolicy(48000)
+            tick(policy, 0, 4800, 2048, 4800)
+            for (now in 10L..510L step 10) policy.observe(now, 3840, 2048, 1568, 4800, now * 48)
+            assertEquals(48, policy.correction(510, 4800))
+            when (mode) {
+                0 -> policy.observe(520, 5760, 2048, 1568, 6000, 24960)
+                1 -> policy.reset()
+                2 -> policy.observe(520, 3840, 2048, 1568, 4800, 24960, canRecover = false)
+            }
+            assertEquals(0, policy.correction(520, 4800))
+        }
+    }
+
+    @Test fun `proposals do not repay debt until the renderer consumes them`() {
         val policy = LatencyRecoveryPolicy(48000)
         tick(policy, 0, 4800, 2048, 4800)
-        tick(policy, 10, 3840, 2048, 4800)
-        tick(policy, 20, 5760, 2048, 6000)
-        assertEquals(0, tick(policy, 1000, 5760, 2048, 6000))
-        tick(policy, 1100, 3840, 2048, 6000)
-        policy.reset()
-        assertEquals(0, tick(policy, 2000, 3840, 2048, 6000))
+        for (now in 10L..510L step 10) policy.observe(now, 3840, 2048, 1568, 4800, now * 48)
+        assertEquals(48, policy.correction(510, 4800))
+        assertEquals(48, policy.correction(510, 4800))
+        policy.consumed(510, 48)
+        assertEquals(0, policy.correction(520, 4752))
+    }
+
+    @Test fun `a renderer stall invalidates a previously safe catch-up window`() {
+        val policy = LatencyRecoveryPolicy(48000)
+        for (now in 0L..510L step 10) policy.observe(now, 4800, 2048, 1568, 9000, now * 48)
+        assertEquals(48, policy.correction(510, 9000))
+        policy.observe(2000, 4800, 2048, 1568, 9000, 96000)
+        assertEquals(0, policy.correction(2000, 9000))
     }
 }

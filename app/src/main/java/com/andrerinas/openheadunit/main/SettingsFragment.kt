@@ -2622,8 +2622,8 @@ class SettingsFragment : Fragment() {
             value = "${pendingAudioLatencyMultiplier}x",
             onClick = { _ ->
                 val options = arrayOf(
-                    "1x (lowest latency)", "2x (low latency, default)", "4x (medium)",
-                    "8x (deep)", "16x (deepest)"
+                    "1x (lowest latency)", "2x (low latency)", "4x (medium)",
+                    "8x (deep)", "16x (deepest, default)"
                 )
                 val values = intArrayOf(1, 2, 4, 8, 16)
                 val currentIndex = values.indexOf(pendingAudioLatencyMultiplier ?: com.andrerinas.openheadunit.decoder.audio.AudioJitterBufferPolicy.DEFAULT_MULTIPLIER).coerceAtLeast(0)

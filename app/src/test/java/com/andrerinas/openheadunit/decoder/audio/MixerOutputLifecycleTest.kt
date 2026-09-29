@@ -57,7 +57,7 @@ class MixerOutputLifecycleTest {
     }
 
     @Test fun `warming on silence preserves the first packet banking and does not train underruns`() {
-        val buffer = AdaptivePcmBuffer()
+        val buffer = AdaptivePcmBuffer(latencyMultiplier = 2)
         val out = ShortArray(960)
         for (now in 0L until 1000L step 10) assertFalse(buffer.render(out, now))
         buffer.noteArrival(1000, 2048)
@@ -74,7 +74,7 @@ class MixerOutputLifecycleTest {
 
     @Test fun `network rebanking keeps the output running until the sink actually stops`() {
         val lifecycle = MixerOutputLifecycle(false)
-        val buffer = AdaptivePcmBuffer(isMediaSink = true)
+        val buffer = AdaptivePcmBuffer(latencyMultiplier = 2, isMediaSink = true)
         val out = ShortArray(960)
         assertTrue(buffer.isIdle())
         repeat(3) {
@@ -95,7 +95,7 @@ class MixerOutputLifecycleTest {
     }
 
     @Test fun `reset cancels a pending rebank and makes the sink idle`() {
-        val buffer = AdaptivePcmBuffer()
+        val buffer = AdaptivePcmBuffer(latencyMultiplier = 2)
         val out = ShortArray(960)
         buffer.noteArrival(0, 4800)
         buffer.write(ShortArray(9600) { 1000 }, 9600, 0)

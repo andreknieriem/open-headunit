@@ -90,17 +90,15 @@ internal class AdaptivePcmBuffer(
         }
 
         // Packets arrive in bursts and the device can drain several mixer cycles at once.
-        // Both create normal depth peaks; a 10ms-only allowance trims valid music on larger HALs.
+        // Both create normal depth peaks; allow for them before repaying sustained backlog.
         val outputSlack = (outputBurstFrames - cycleFrames).coerceAtLeast(0)
         val slack = maxOf(sampleRate * 30 / 1000, policy.largestChunkFrames - cycleFrames + outputSlack)
         val canRecover = !ended && gapFrames == 0
         recovery.observe(nowMs, target, policy.largestChunkFrames, slack, count / channels,
             inputFrames, canRecover)
-        if (count / channels > recovery.trimLimit) {
-            discard(count - target * channels)
-            recovery.observe(nowMs, target, policy.largestChunkFrames, slack, count / channels,
-                inputFrames, canRecover)
-        }
+        // A late decoder batch is still playable PCM, even at a fixed latency setting.
+        // Only write-side physical overflow may discard whole frames. Sustained excess
+        // latency is repaid below in small overlaps after a stable rendering window.
 
         val catchUp = if (canRecover) recovery.correction(nowMs, count / channels) else 0
         val skipped = catchUp * channels

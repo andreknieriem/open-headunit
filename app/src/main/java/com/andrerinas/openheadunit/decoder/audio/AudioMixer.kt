@@ -180,7 +180,8 @@ class AudioMixer(
         var previousOutputXruns = device.underruns
         policy.update(SystemClock.elapsedRealtime(), previousOutputXruns)
         var requestedFrames = policy.targetFrames
-        device.setBufferFrames(requestedFrames)
+        val bufferTuner = OutputBufferTuner()
+        bufferTuner.update(device, requestedFrames)
         var renderBurst = renderBurstFrames(device)
         recordDiagnostic(SystemClock.elapsedRealtime(), "opened ${device.name}, stream=$stream, capacity=${device.capacityFrames} frames, " +
             "effective=${device.bufferFrames} frames, staging=${device.stagingBufferFrames}, " +
@@ -272,7 +273,7 @@ class AudioMixer(
                             previousOutputXruns = device.underruns
                             policy.update(blockedNow, previousOutputXruns)
                             requestedFrames = policy.targetFrames
-                            device.setBufferFrames(requestedFrames)
+                            bufferTuner.update(device, requestedFrames, force = true)
                             renderBurst = renderBurstFrames(device)
                             device.start()
                             nextTuneMs = blockedNow + 100
@@ -295,9 +296,9 @@ class AudioMixer(
                 }
                 val xruns = device.underruns
                 val target = policy.update(now, xruns)
-                if (target != requestedFrames || xruns != previousOutputXruns) {
+                if (bufferTuner.update(device, target,
+                        force = target != requestedFrames || xruns != previousOutputXruns)) {
                     requestedFrames = target
-                    device.setBufferFrames(target)
                     recordDiagnostic(now, "output ${device.name} requested=$target effective=${device.bufferFrames} " +
                         "staging=${device.stagingBufferFrames} burst=$burst minimum=$minimum " +
                         "stableFloor=${policy.stableFloorFrames} maximum=${policy.maximumFrames} " +

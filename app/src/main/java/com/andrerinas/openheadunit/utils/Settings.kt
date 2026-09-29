@@ -1168,8 +1168,8 @@ class Settings(private val context: Context) {
         get() = prefs.getInt("mic-input-source", 0) // Default: DEFAULT
         set(value) { prefs.edit().putInt("mic-input-source", value).apply() }
 
-    // Start with a small wireless cushion; the sink grows it after repeated underruns.
-    // Explicitly saved choices remain in force.
+    // Keep the existing default when this key is absent. Explicit low-latency choices
+    // still use the adaptive sink, and saved values are never migrated implicitly.
     var audioLatencyMultiplier: Int
         get() = prefs.getInt("audio-latency-multiplier", com.andrerinas.openheadunit.decoder.audio.AudioJitterBufferPolicy.DEFAULT_MULTIPLIER)
         set(value) { prefs.edit().putInt("audio-latency-multiplier", value).apply() }

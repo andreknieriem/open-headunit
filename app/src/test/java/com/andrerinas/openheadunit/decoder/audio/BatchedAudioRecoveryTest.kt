@@ -47,7 +47,7 @@ class BatchedAudioRecoveryTest {
     }
 
     @Test fun `a rebank waits for its raised target but a stopped short prompt still drains`() {
-        val buffer = AdaptivePcmBuffer()
+        val buffer = AdaptivePcmBuffer(latencyMultiplier = 2)
         buffer.noteArrival(0, 480)
         buffer.write(ShortArray(5760) { 1000 }, 5760, 0)
         val out = ShortArray(960)
@@ -60,7 +60,7 @@ class BatchedAudioRecoveryTest {
     }
 
     @Test fun `a recovered link returns to its shallow target and repays excess buffered audio`() {
-        val buffer = AdaptivePcmBuffer()
+        val buffer = AdaptivePcmBuffer(latencyMultiplier = 2)
         val packet = ShortArray(4096) { 12000 }
         val out = ShortArray(960)
         var packetIndex = 0
@@ -78,7 +78,8 @@ class BatchedAudioRecoveryTest {
         }
         assertEquals(recoveredGaps, buffer.rebanks)
         assertTrue(buffer.targetFrames() < 3840)
-        assertTrue(buffer.depthFrames() < buffer.targetFrames() + 480)
+        assertTrue("depth=${buffer.depthFrames()} target=${buffer.targetFrames()} compressed=${buffer.compressedFrames}",
+            buffer.depthFrames() < buffer.targetFrames() + 480)
         assertTrue(buffer.compressedFrames > 0)
     }
 }

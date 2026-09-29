@@ -5,7 +5,7 @@ import org.junit.Test
 
 class AdaptiveAudioTest {
     private fun bankWithExpiredLargePacket(): AdaptivePcmBuffer {
-        val buffer = AdaptivePcmBuffer(isMediaSink = true)
+        val buffer = AdaptivePcmBuffer(latencyMultiplier = 2, isMediaSink = true)
         buffer.noteArrival(0, 8192)
         buffer.write(ShortArray(16384) { 12000 }, 16384, 0)
         buffer.noteArrival(171, 2048)
@@ -15,7 +15,7 @@ class AdaptiveAudioTest {
         return buffer
     }
 
-    @Test fun `finish drains protected PCM instead of revoking its trim allowance`() {
+    @Test fun `finish drains buffered PCM without attempting latency recovery`() {
         val buffer = bankWithExpiredLargePacket()
         val depth = buffer.depthFrames()
         assertTrue(depth > buffer.targetFrames() + 1568)
@@ -28,7 +28,7 @@ class AdaptiveAudioTest {
         assertEquals(0L, buffer.concealedFrames)
     }
 
-    @Test fun `new backlog beyond grace and physical capacity still discard stale PCM`() {
+    @Test fun `backlog is preserved until physical capacity requires overflow`() {
         for (packets in listOf(8, 30)) {
             val buffer = bankWithExpiredLargePacket()
             val out = ShortArray(960)
@@ -38,10 +38,12 @@ class AdaptiveAudioTest {
                 buffer.noteArrival(10050, 2048)
                 buffer.write(ShortArray(4096) { 12000 }, 4096, 10050)
             }
-            if (packets == 30) assertTrue(buffer.droppedFrames > 0) // write-side overflow
+            val beforeRender = buffer.droppedFrames
+            if (packets == 30) assertTrue(beforeRender > 0) else assertEquals(0L, beforeRender)
+            val depth = buffer.depthFrames()
             buffer.render(out, 10050)
-            assertTrue(buffer.droppedFrames > 0)
-            assertTrue(buffer.depthFrames() <= buffer.targetFrames())
+            assertEquals(beforeRender, buffer.droppedFrames)
+            assertEquals(depth - 480, buffer.depthFrames())
             assertEquals(0L, buffer.rebanks)
         }
     }
@@ -73,7 +75,7 @@ class AdaptiveAudioTest {
         }
     }
     @Test fun `steady 8192 byte wireless packets play for a minute without concealment or trimming`() {
-        val buffer = AdaptivePcmBuffer()
+        val buffer = AdaptivePcmBuffer(latencyMultiplier = 2)
         val packet = ShortArray(4096) { 12000 }
         val out = ShortArray(960)
         var packetIndex = 0
@@ -94,7 +96,7 @@ class AdaptiveAudioTest {
     }
 
     @Test fun `late TCP burst is bounded and recovers instead of retaining permanent delay`() {
-        val buffer = AdaptivePcmBuffer()
+        val buffer = AdaptivePcmBuffer(latencyMultiplier = 2)
         val packet = ShortArray(4096) { 12000 }
         val out = ShortArray(960)
         var packetIndex = 0
@@ -114,7 +116,7 @@ class AdaptiveAudioTest {
     }
 
     @Test fun `PLC ends after thirty milliseconds and does not replay indefinitely`() {
-        val buffer = AdaptivePcmBuffer()
+        val buffer = AdaptivePcmBuffer(latencyMultiplier = 2)
         buffer.noteArrival(0, 480)
         buffer.write(ShortArray(5760) { 10000 }, 5760, 0) // six 10ms blocks
         val out = ShortArray(960)
@@ -133,7 +135,7 @@ class AdaptiveAudioTest {
     }
 
     @Test fun `a stopped short prompt drains its final partial block without PLC`() {
-        val buffer = AdaptivePcmBuffer()
+        val buffer = AdaptivePcmBuffer(latencyMultiplier = 2)
         buffer.noteArrival(0, 240)
         buffer.write(ShortArray(480) { 10000 }, 480, 0)
         buffer.finish()
@@ -150,7 +152,7 @@ class AdaptiveAudioTest {
     }
 
     @Test fun `a prompt without a stop message still escapes preroll`() {
-        val buffer = AdaptivePcmBuffer()
+        val buffer = AdaptivePcmBuffer(latencyMultiplier = 2)
         buffer.noteArrival(0, 480)
         buffer.write(ShortArray(960) { 10000 }, 960, 0)
         val out = ShortArray(960)
@@ -159,23 +161,23 @@ class AdaptiveAudioTest {
     }
 
     @Test fun `dropping old PCM crossfades into the newest position with stereo alignment`() {
-        val buffer = AdaptivePcmBuffer()
+        val buffer = AdaptivePcmBuffer(latencyMultiplier = 2)
         buffer.noteArrival(0, 480)
         buffer.write(ShortArray(5760) { 10000 }, 5760, 0)
         val out = ShortArray(960)
         buffer.render(out, 0)
         buffer.noteArrival(10, 480)
-        buffer.write(ShortArray(30000) { if (it % 2 == 0) -10000 else -5000 }, 30000, 10)
+        buffer.write(ShortArray(96000) { if (it % 2 == 0) -10000 else -5000 }, 96000, 10)
         buffer.render(out, 10)
         assertTrue(buffer.droppedFrames > 0)
         assertTrue(out[0] > 9000) // starts near the previous tail
         assertEquals(-10000, out[478].toInt())
         assertEquals(-5000, out[479].toInt())
-        assertTrue(buffer.depthFrames() <= buffer.targetFrames())
+        assertEquals(48000 - 480, buffer.depthFrames())
     }
 
     @Test fun `oversized ingress remains bounded and retains newest complete frames`() {
-        val buffer = AdaptivePcmBuffer()
+        val buffer = AdaptivePcmBuffer(latencyMultiplier = 2)
         buffer.noteArrival(0, 2048)
         val data = ShortArray(120000) { if (it % 2 == 0) 1234 else -2345 }
         buffer.write(data, data.size, 0)
@@ -188,13 +190,13 @@ class AdaptiveAudioTest {
     }
 
     @Test fun `catch-up begins at the previous endpoint rather than replaying an earlier phase`() {
-        val buffer = AdaptivePcmBuffer()
+        val buffer = AdaptivePcmBuffer(latencyMultiplier = 2)
         buffer.noteArrival(0, 480)
         buffer.write(ShortArray(5760) { (1000 + it / 2 % 480).toShort() }, 5760, 0)
         val out = ShortArray(960)
         buffer.render(out, 0)
         val previous = out.last().toInt()
-        buffer.write(ShortArray(30000) { -10000 }, 30000, 10)
+        buffer.write(ShortArray(96000) { -10000 }, 96000, 10)
         buffer.render(out, 10)
         assertTrue(kotlin.math.abs(out[0].toInt() - previous) < 100)
     }
@@ -209,7 +211,7 @@ class AdaptiveAudioTest {
     }
 
     @Test fun `first underrun increases network target immediately and stable arrivals lower it slowly`() {
-        val policy = AdaptiveJitterPolicy(48000)
+        val policy = AdaptiveJitterPolicy(48000, 2)
         policy.onArrival(0, 2048)
         val original = policy.targetFrames
         policy.onUnderrun(1)
@@ -222,7 +224,7 @@ class AdaptiveAudioTest {
     }
 
     @Test fun `idle time and burst delivery do not inflate or instantly shrink the target`() {
-        val policy = AdaptiveJitterPolicy(48000)
+        val policy = AdaptiveJitterPolicy(48000, 2)
         policy.onArrival(0, 2048)
         val original = policy.targetFrames
         policy.onArrival(5000, 2048)
@@ -235,7 +237,7 @@ class AdaptiveAudioTest {
     }
 
     @Test fun `an unusual packet ages out after ten seconds of ordinary packets`() {
-        val policy = AdaptiveJitterPolicy(48000)
+        val policy = AdaptiveJitterPolicy(48000, 2)
         policy.onArrival(0, 9600)
         assertEquals(10080, policy.targetFrames)
         for (now in 200L..9999L step 43) policy.onArrival(now, 2048)
@@ -249,7 +251,7 @@ class AdaptiveAudioTest {
     }
 
     @Test fun `stable playback repays reduced targets without another rebuffer`() {
-        val buffer = AdaptivePcmBuffer()
+        val buffer = AdaptivePcmBuffer(latencyMultiplier = 2)
         val packet = ShortArray(4096) { 12000 }
         val out = ShortArray(960)
         var packetIndex = 0

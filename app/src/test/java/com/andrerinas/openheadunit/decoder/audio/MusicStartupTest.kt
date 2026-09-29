@@ -98,14 +98,15 @@ class MusicStartupTest {
         assertEquals(0L, buffer.rebanks)
     }
 
-    @Test fun `large output bursts still discard a genuinely excessive backlog`() {
+    @Test fun `large output bursts preserve a delayed batch within physical capacity`() {
         val buffer = musicBuffer()
         play(buffer, 60_000, 4)
         val packet = ShortArray(4096) { 12000 }
         repeat(12) { buffer.noteArrival(60_010, 2048); buffer.write(packet, packet.size, 60_010) }
+        val depth = buffer.depthFrames()
         assertTrue(buffer.render(ShortArray(960), 60_010, 1920))
-        assertTrue(buffer.droppedFrames > 0)
-        assertTrue(buffer.depthFrames() <= buffer.targetFrames())
+        assertEquals(0L, buffer.droppedFrames)
+        assertTrue(depth - buffer.depthFrames() in 480..528)
     }
 
     private fun play(buffer: AdaptivePcmBuffer, durationMs: Long, burst: Int,

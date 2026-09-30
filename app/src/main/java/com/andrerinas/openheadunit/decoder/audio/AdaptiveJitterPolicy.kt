@@ -13,15 +13,13 @@ internal class AdaptiveJitterPolicy(
     private var ceilingMs = initialCeilingMs
     private val maximumMs = maxOf(AudioJitterBufferPolicy.MAX_TARGET_MS, floorMs)
     private var marginMs = 15L
-    private var previousArrivalMs = -1L
-    private var previousFrames = 0
-    private var previousPcmMs = -1L
-    private var previousPcmFrames = 0
+    private val arrivals = SupplyClock()
+    private val pcm = SupplyClock()
     var largestPcmGapMs = 0L
         private set
     private var lastAdjustmentMs = -1L
     private var lastDisturbanceMs = -1L
-    // Ten one-second buckets age out unusual packet sizes without allocating per arrival.
+    // Ten one-second buckets age out unusual packet/batch sizes without per-arrival allocation.
     private val chunkEpochs = LongArray(10) { -1L }
     private val chunkMaxima = IntArray(10)
     var largestChunkFrames = 0
@@ -35,55 +33,96 @@ internal class AdaptiveJitterPolicy(
             return maxOf(invariant, minOf(frames(ceilingMs), maxOf(frames(floorMs), invariant + frames(marginMs))))
         }
 
+    /** One observation clock per stage: encoded ingress never advances PCM supply. */
+    private inner class SupplyClock {
+        var lastMs = -1L
+        var startedMs = -1L
+        var batchFrames = 0L
+        var lastFrames = 0
+        var peakFrames = 0L
+        var gapMs = 0L
+        var excessMs = 0L
+        var completedFrames = 0L
+
+        fun observe(nowMs: Long, suppliedFrames: Int) {
+            gapMs = if (lastMs < 0) 0 else (nowMs - lastMs).coerceAtLeast(0)
+            excessMs = 0
+            completedFrames = 0
+            // Join deliveries substantially faster than the preceding chunk's playback time.
+            // The existing 5ms disturbance tolerance also avoids merging ordinary paced input.
+            val coalesced = lastMs >= 0 &&
+                (gapMs == 0L || (gapMs + 5) * sampleRate < lastFrames * 1000L)
+            if (coalesced) {
+                batchFrames += suppliedFrames
+                // Time spent delivering a batch is not itself extra instantaneous reserve.
+                peakFrames = maxOf(peakFrames, batchFrames -
+                    (nowMs - startedMs).coerceAtLeast(0) * sampleRate / 1000)
+            } else {
+                if (lastMs >= 0) {
+                    completedFrames = peakFrames
+                    excessMs = (((nowMs - startedMs).coerceAtLeast(0) * sampleRate -
+                        batchFrames * 1000L).coerceAtLeast(0) / sampleRate)
+                }
+                startedMs = nowMs
+                batchFrames = suppliedFrames.toLong()
+                peakFrames = batchFrames
+            }
+            lastMs = nowMs
+            lastFrames = suppliedFrames
+        }
+
+        fun reset() {
+            lastMs = -1L; startedMs = -1L; batchFrames = 0; lastFrames = 0
+            gapMs = 0; excessMs = 0; completedFrames = 0; peakFrames = 0
+        }
+    }
+
     fun onArrival(nowMs: Long, chunkFrames: Int) {
         if (chunkFrames <= 0) return
+        arrivals.observe(nowMs, chunkFrames)
+        largestArrivalGapMs = maxOf(largestArrivalGapMs, arrivals.gapMs)
+        observeSupply(nowMs, arrivals, chunkFrames)
+    }
+
+    fun onPcmDelivery(nowMs: Long, chunkFrames: Int) {
+        if (chunkFrames <= 0) return
+        pcm.observe(nowMs, chunkFrames)
+        largestPcmGapMs = maxOf(largestPcmGapMs, pcm.gapMs)
+        // The actual decoded-frame count supplies the independent decoder batching bound.
+        observeSupply(nowMs, pcm, 0)
+    }
+
+    private fun observeSupply(nowMs: Long, clock: SupplyClock, ingressFrames: Int) {
+        // Learn complete batches, not a transient running sum on every callback. A large
+        // physical catch-up stays bounded by the existing target ceiling and ages out.
+        val batch = clock.completedFrames.coerceAtMost(frames(maximumMs - 10).toLong()).toInt()
+        recordSupplySize(nowMs, maxOf(ingressFrames, batch))
+        if (clock.completedFrames > 0 && clock.gapMs > 0) {
+            val excess = clock.excessMs.coerceAtMost(maximumMs)
+            if (excess > 5) lastDisturbanceMs = nowMs
+            val observedNeedMs = largestChunkFrames * 1000L / sampleRate + 20 + excess
+            ceilingMs = maxOf(ceilingMs, observedNeedMs.coerceAtMost(maximumMs))
+            if (excess + 10 > marginMs) {
+                marginMs = maxOf(marginMs + 20, excess + 10).coerceAtMost(maxMarginMs())
+                lastAdjustmentMs = nowMs
+            }
+        }
+        recover(nowMs)
+    }
+
+    private fun recordSupplySize(nowMs: Long, size: Int) {
         val epoch = nowMs / 1000
         val slot = (epoch % chunkEpochs.size).toInt()
         if (chunkEpochs[slot] != epoch) {
             chunkEpochs[slot] = epoch
             chunkMaxima[slot] = 0
         }
-        chunkMaxima[slot] = maxOf(chunkMaxima[slot], chunkFrames)
-        largestChunkFrames = chunkFrames
+        chunkMaxima[slot] = maxOf(chunkMaxima[slot], size)
+        largestChunkFrames = size
         for (i in chunkEpochs.indices) {
             if (epoch - chunkEpochs[i] in 0 until chunkEpochs.size.toLong()) {
                 largestChunkFrames = maxOf(largestChunkFrames, chunkMaxima[i])
             }
-        }
-        if (previousArrivalMs >= 0) {
-            val gap = nowMs - previousArrivalMs
-            largestArrivalGapMs = maxOf(largestArrivalGapMs, gap)
-            observeSupplyGap(nowMs, gap, previousFrames)
-        }
-        previousArrivalMs = nowMs
-        previousFrames = chunkFrames
-        recover(nowMs)
-    }
-
-    fun onPcmDelivery(nowMs: Long, chunkFrames: Int) {
-        if (chunkFrames <= 0) return
-        if (previousPcmMs >= 0) {
-            val gap = (nowMs - previousPcmMs).coerceAtLeast(0)
-            largestPcmGapMs = maxOf(largestPcmGapMs, gap)
-            observeSupplyGap(nowMs, gap, previousPcmFrames)
-        }
-        previousPcmMs = nowMs
-        previousPcmFrames = chunkFrames
-    }
-
-    private fun observeSupplyGap(nowMs: Long, gapMs: Long, precedingFrames: Int) {
-        // Sink Stop explicitly resets both clocks. An active outage of 1s or longer is
-        // still starvation evidence; never silently classify it as a paused stream.
-        if (gapMs <= 0) return
-        val excess = (gapMs - precedingFrames * 1000L / sampleRate).coerceIn(0, maximumMs)
-        // Repeated batches are continuing evidence even when the reserve already covers them.
-        // A stable encoded stream alone must not shrink a late decoder's PCM reserve.
-        if (excess > 5) lastDisturbanceMs = nowMs
-        val observedNeedMs = largestChunkFrames * 1000L / sampleRate + 20 + excess
-        ceilingMs = maxOf(ceilingMs, observedNeedMs.coerceAtMost(maximumMs))
-        if (excess + 10 > marginMs) {
-            marginMs = maxOf(marginMs + 20, excess + 10).coerceAtMost(maxMarginMs())
-            lastAdjustmentMs = nowMs
         }
     }
 
@@ -107,9 +146,8 @@ internal class AdaptiveJitterPolicy(
     }
 
     fun resetArrival() {
-        previousArrivalMs = -1L; previousFrames = 0
-        largestArrivalGapMs = 0L
-        previousPcmMs = -1L; previousPcmFrames = 0; largestPcmGapMs = 0L
+        arrivals.reset(); pcm.reset()
+        largestArrivalGapMs = 0L; largestPcmGapMs = 0L
         chunkEpochs.fill(-1L); chunkMaxima.fill(0); largestChunkFrames = 0
     }
     private fun maxMarginMs() = (ceilingMs - largestChunkFrames * 1000L / sampleRate - 10).coerceAtLeast(15L)

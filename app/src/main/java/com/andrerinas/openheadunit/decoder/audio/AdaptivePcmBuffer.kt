@@ -8,6 +8,7 @@ internal class AdaptivePcmBuffer(
     latencyMultiplier: Int = AudioJitterBufferPolicy.DEFAULT_MULTIPLIER,
     private val isMediaSink: Boolean = false
 ) {
+    private val mediaPrerollDeadlineMs = 1500L
     private val cycleFrames = sampleRate / 100
     private val cycleSamples = cycleFrames * channels
     // Music needs room for a 1s catch-up burst plus its <=400ms reserve. This is
@@ -84,7 +85,7 @@ internal class AdaptivePcmBuffer(
             // After starvation, however, the opening 100ms escape can resume every late batch
             // below the newly learned target and keep the same gap repeating indefinitely.
             val waitMs = when {
-                isMediaSink && startupFramesPlayed == 0L -> maxOf(prerollDeadlineMs, AudioPrerollPolicy.MEDIA_MAX_WAIT_MS)
+                isMediaSink && startupFramesPlayed == 0L -> maxOf(prerollDeadlineMs, mediaPrerollDeadlineMs)
                 rebanking -> maxOf(prerollDeadlineMs, target * 1000L / sampleRate + 50)
                 else -> prerollDeadlineMs
             }

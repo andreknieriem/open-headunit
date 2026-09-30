@@ -33,47 +33,58 @@ internal class AdaptiveJitterPolicy(
             return maxOf(invariant, minOf(frames(ceilingMs), maxOf(frames(floorMs), invariant + frames(marginMs))))
         }
 
-    /** One observation clock per stage: encoded ingress never advances PCM supply. */
+    /** Independent recent supply envelopes; neither represents the actual playback bank. */
     private inner class SupplyClock {
         var lastMs = -1L
-        var startedMs = -1L
-        var batchFrames = 0L
-        var lastFrames = 0
-        var peakFrames = 0L
         var gapMs = 0L
         var excessMs = 0L
+        private var position = 0L
+        private var creditFrameMillis = 0L
+        private var epoch = -1L
+        private var currentMinimum = Long.MAX_VALUE
+        private var previousMinimum = Long.MAX_VALUE
         var completedFrames = 0L
+        private var peakFrameMillis = 0L
+        private var peakStartedMs = -1L
 
         fun observe(nowMs: Long, suppliedFrames: Int) {
             gapMs = if (lastMs < 0) 0 else (nowMs - lastMs).coerceAtLeast(0)
-            excessMs = 0
-            completedFrames = 0
-            // Join deliveries substantially faster than the preceding chunk's playback time.
-            // The existing 5ms disturbance tolerance also avoids merging ordinary paced input.
-            val coalesced = lastMs >= 0 &&
-                (gapMs == 0L || (gapMs + 5) * sampleRate < lastFrames * 1000L)
-            if (coalesced) {
-                batchFrames += suppliedFrames
-                // Time spent delivering a batch is not itself extra instantaneous reserve.
-                peakFrames = maxOf(peakFrames, batchFrames -
-                    (nowMs - startedMs).coerceAtLeast(0) * sampleRate / 1000)
-            } else {
-                if (lastMs >= 0) {
-                    completedFrames = peakFrames
-                    excessMs = (((nowMs - startedMs).coerceAtLeast(0) * sampleRate -
-                        batchFrames * 1000L).coerceAtLeast(0) / sampleRate)
-                }
-                startedMs = nowMs
-                batchFrames = suppliedFrames.toLong()
-                peakFrames = batchFrames
+            // Frames * 1000 retains fractional frames while elapsed time is in milliseconds.
+            val elapsedFrameMillis = gapMs * sampleRate
+            // Publish after the supplied audio covers the interval, not during a short
+            // prefix whose fragments would otherwise move their own startup target.
+            // A prolonged busy period publishes at least once a second. This does not
+            // erase credit: the 5ms tolerance is only a learning boundary.
+            val complete = gapMs > 0 && (elapsedFrameMillis + 5L * sampleRate >= creditFrameMillis ||
+                nowMs - peakStartedMs >= 1000)
+            completedFrames = if (complete) (peakFrameMillis + 999) / 1000 else 0
+            if (complete || peakStartedMs < 0) {
+                peakFrameMillis = 0
+                peakStartedMs = nowMs
             }
+            excessMs = (elapsedFrameMillis - creditFrameMillis).coerceAtLeast(0) / sampleRate
+            position -= elapsedFrameMillis
+            val nextEpoch = nowMs / 1000
+            if (nextEpoch != epoch) {
+                previousMinimum = if (nextEpoch == epoch + 1) currentMinimum else Long.MAX_VALUE
+                currentMinimum = Long.MAX_VALUE
+                epoch = nextEpoch
+            }
+            // A sliding baseline keeps all fragments' remaining supply together, but a
+            // one-off catch-up cannot become permanent credit on a subsequently paced link.
+            // Two one-second buckets exceed the maximum reserve without retaining history
+            // or allocating on each arrival. Supply peaks still use the ten-second aging below.
+            currentMinimum = minOf(currentMinimum, position)
+            position += suppliedFrames * 1000L
+            creditFrameMillis = position - minOf(currentMinimum, previousMinimum)
+            peakFrameMillis = maxOf(peakFrameMillis, creditFrameMillis)
             lastMs = nowMs
-            lastFrames = suppliedFrames
         }
 
         fun reset() {
-            lastMs = -1L; startedMs = -1L; batchFrames = 0; lastFrames = 0
-            gapMs = 0; excessMs = 0; completedFrames = 0; peakFrames = 0
+            lastMs = -1L; gapMs = 0; excessMs = 0; position = 0; creditFrameMillis = 0
+            completedFrames = 0; peakFrameMillis = 0; peakStartedMs = -1L
+            epoch = -1L; currentMinimum = Long.MAX_VALUE; previousMinimum = Long.MAX_VALUE
         }
     }
 
@@ -93,11 +104,11 @@ internal class AdaptiveJitterPolicy(
     }
 
     private fun observeSupply(nowMs: Long, clock: SupplyClock, ingressFrames: Int) {
-        // Learn complete batches, not a transient running sum on every callback. A large
-        // physical catch-up stays bounded by the existing target ceiling and ages out.
-        val batch = clock.completedFrames.coerceAtMost(frames(maximumMs - 10).toLong()).toInt()
-        recordSupplySize(nowMs, maxOf(ingressFrames, batch))
-        if (clock.completedFrames > 0 && clock.gapMs > 0) {
+        // Completed supply peaks include elapsed playback across every fragment. The
+        // existing buckets age observations out without refreshing a historical peak.
+        val completed = clock.completedFrames.coerceAtMost(frames(maximumMs - 10).toLong()).toInt()
+        recordSupplySize(nowMs, maxOf(ingressFrames, completed))
+        if (clock.gapMs > 0) {
             val excess = clock.excessMs.coerceAtMost(maximumMs)
             if (excess > 5) lastDisturbanceMs = nowMs
             val observedNeedMs = largestChunkFrames * 1000L / sampleRate + 20 + excess

@@ -82,11 +82,12 @@ internal class AdaptivePcmBuffer(
         val target = playbackTargetFrames()
         if (!started) {
             // A short navigation prompt must play even if it can never fill the network target.
-            // After starvation, however, the opening 100ms escape can resume every late batch
-            // below the newly learned target and keep the same gap repeating indefinitely.
+            // Media resuming after Stop still needs its learned reserve. The short-prompt
+            // escape can otherwise start a sparse first batch and immediately starve again.
+            // The same rule applies after starvation, while an explicit end drains below it.
             val waitMs = when {
                 isMediaSink && startupFramesPlayed == 0L -> maxOf(prerollDeadlineMs, mediaPrerollDeadlineMs)
-                rebanking -> maxOf(prerollDeadlineMs, target * 1000L / sampleRate + 50)
+                isMediaSink || rebanking -> maxOf(prerollDeadlineMs, target * 1000L / sampleRate + 50)
                 else -> prerollDeadlineMs
             }
             if (count == 0 || (!ended && count / channels < target && nowMs - firstDataMs < waitMs)) return false

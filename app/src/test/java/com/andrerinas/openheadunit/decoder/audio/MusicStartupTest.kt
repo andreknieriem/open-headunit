@@ -109,6 +109,41 @@ class MusicStartupTest {
         assertTrue(depth - buffer.depthFrames() in 480..528)
     }
 
+    @Test fun `warm music resume respects learned reserve before opening a sparse first batch`() {
+        val buffer = musicBuffer(2)
+        play(buffer, 12_000, 1)
+        val packet = ShortArray(2048) { 12000 }
+        val out = ShortArray(960)
+        // Learn a real supply gap, then let the old stream finish completely.
+        buffer.noteArrival(12_450, 1024)
+        buffer.write(packet, packet.size, 12_450)
+        buffer.finish()
+        for (now in 12_450L..14_000L step 10) buffer.render(out, now)
+        assertTrue(buffer.isIdle())
+        assertTrue(buffer.targetFrames() >= 300 * 48)
+        val before = buffer.rebanks
+
+        var firstRender = -1L
+        for (elapsed in 0L..1200L step 10) {
+            val now = 15_000L + elapsed
+            // A short initial AAC batch, then sustained 400ms batches. The device probe
+            // motivates this supply shape; it is not a recording of the phone's packets.
+            val packets = when {
+                elapsed == 0L -> 6
+                elapsed % 400 == 0L -> 19
+                else -> 0
+            }
+            repeat(packets) {
+                buffer.noteArrival(now, 1024)
+                buffer.write(packet, packet.size, now)
+            }
+            if (buffer.render(out, now) && firstRender < 0) firstRender = elapsed
+        }
+        assertTrue("warm resume must bank the learned reserve, first=$firstRender", firstRender >= 350)
+        assertEquals("resume must not immediately starve", before, buffer.rebanks)
+        assertEquals(0L, buffer.droppedFrames)
+    }
+
     private fun play(buffer: AdaptivePcmBuffer, durationMs: Long, burst: Int,
                      stalled: (Long) -> Boolean = { false }): Long {
         val packet = ShortArray(4096) { 12000 }

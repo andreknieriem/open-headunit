@@ -11,9 +11,10 @@ internal class AdaptivePcmBuffer(
     private val mediaPrerollDeadlineMs = 1500L
     private val cycleFrames = sampleRate / 100
     private val cycleSamples = cycleFrames * channels
-    // Music needs room for a 1s catch-up burst plus its <=400ms reserve. This is
-    // capacity, not added latency: 96KB extra at 48k stereo, only for the media sink.
-    private val capacityFrames = if (isMediaSink) sampleRate * 3 / 2 else sampleRate
+    // Guidance can receive catch-up bursts too, even while its consumer is running.
+    // Every sink needs room for a 1s burst plus its <=400ms reserve. Capacity is not
+    // preroll: the playback target/deadline stay independent of this storage bound.
+    private val capacityFrames = sampleRate * 3 / 2
     private val ring = ShortArray(capacityFrames * channels)
     private val lastGood = ShortArray(cycleSamples)
     private val previousOutput = ShortArray(cycleSamples)

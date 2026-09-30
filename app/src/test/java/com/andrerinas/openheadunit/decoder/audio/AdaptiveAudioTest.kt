@@ -168,21 +168,21 @@ class AdaptiveAudioTest {
         val out = ShortArray(960)
         buffer.render(out, 0)
         buffer.noteArrival(10, 480)
-        buffer.write(ShortArray(96000) { if (it % 2 == 0) -10000 else -5000 }, 96000, 10)
+        buffer.write(ShortArray(144000) { if (it % 2 == 0) -10000 else -5000 }, 144000, 10)
         buffer.render(out, 10)
         assertTrue(buffer.droppedFrames > 0)
         assertTrue(out[0] > 9000) // starts near the previous tail
         assertEquals(-10000, out[478].toInt())
         assertEquals(-5000, out[479].toInt())
-        assertEquals(48000 - 480, buffer.depthFrames())
+        assertEquals(72000 - 480, buffer.depthFrames())
     }
 
     @Test fun `oversized ingress remains bounded and retains newest complete frames`() {
         val buffer = AdaptivePcmBuffer(latencyMultiplier = 2)
         buffer.noteArrival(0, 2048)
-        val data = ShortArray(120000) { if (it % 2 == 0) 1234 else -2345 }
+        val data = ShortArray(168000) { if (it % 2 == 0) 1234 else -2345 }
         buffer.write(data, data.size, 0)
-        assertEquals(48000, buffer.depthFrames())
+        assertEquals(72000, buffer.depthFrames())
         val out = ShortArray(960)
         buffer.render(out, 0)
         assertEquals(1234, out[958].toInt())
@@ -197,7 +197,7 @@ class AdaptiveAudioTest {
         val out = ShortArray(960)
         buffer.render(out, 0)
         val previous = out.last().toInt()
-        buffer.write(ShortArray(96000) { -10000 }, 96000, 10)
+        buffer.write(ShortArray(144000) { -10000 }, 144000, 10)
         buffer.render(out, 10)
         assertTrue(kotlin.math.abs(out[0].toInt() - previous) < 100)
     }

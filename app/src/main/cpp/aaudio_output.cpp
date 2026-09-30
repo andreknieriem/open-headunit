@@ -3,8 +3,10 @@
 #include <jni.h>
 #include <dlfcn.h>
 #include <array>
+#include <chrono>
 #include <cstdint>
 #include <new>
+#include <thread>
 #include "callback_pcm_buffer.h"
 
 // Resolve at runtime: this APK also supports Android 4.1, where linking libaaudio would prevent
@@ -75,10 +77,15 @@ static Output* output(jlong handle) { return reinterpret_cast<Output*>(static_ca
 
 static aaudio_data_callback_result_t render(AAudioStream*, void* context, void* data, int32_t frames) {
     auto* sink = static_cast<Output*>(context);
+    if (sink->error.load(std::memory_order_relaxed) != AAUDIO_OK) {
+        if (frames > 0) std::memset(data, 0, static_cast<size_t>(frames) * 2 * sizeof(int16_t));
+        return AAUDIO_CALLBACK_RESULT_CONTINUE;
+    }
     if (frames < 0 || !sink->buffer.render(static_cast<int16_t*>(data), static_cast<uint32_t>(frames))) {
         if (frames > 0) std::memset(data, 0, static_cast<size_t>(frames) * 2 * sizeof(int16_t));
         sink->error.store(AAUDIO_ERROR_OUT_OF_RANGE, std::memory_order_relaxed);
-        return AAUDIO_CALLBACK_RESULT_STOP;
+        // STOP from the callback has platform bugs through API 30 (Oboe #1230). The owner
+        // sees error on its next write and stops/closes this stream during fallback instead.
     }
     return AAUDIO_CALLBACK_RESULT_CONTINUE;
 }
@@ -149,6 +156,8 @@ extern "C" JNIEXPORT jint JNICALL
 Java_com_andrerinas_openheadunit_decoder_audio_NativeAAudio_pause(JNIEnv*, jobject, jlong handle) {
     auto* sink = output(handle);
     if (!sink) return AAUDIO_ERROR_INVALID_HANDLE;
+    const auto error = sink->error.load(std::memory_order_relaxed);
+    if (error < 0) return error; // recover unread PCM before a pause can reset staging
     sink->startWanted = false;
     if (!sink->started) { sink->buffer.resetStopped(); return AAUDIO_OK; }
     auto& a = api();
@@ -188,7 +197,12 @@ Java_com_andrerinas_openheadunit_decoder_audio_NativeAAudio_write(JNIEnv* env, j
     const auto frames = sink->buffer.write(sink->scratch.data(), accepted, limit);
     if (sink->startWanted && !sink->started && sink->buffer.available() >= limit) {
         const auto result = api().AAudioStream_requestStart(sink->stream);
-        if (result < 0) return result;
+        if (result < 0) {
+            sink->error.store(result, std::memory_order_relaxed);
+            // Account for the PCM already copied. Recovery takes the unread ring and the
+            // caller retries only the tail this call did not accept, without duplicating it.
+            return frames > 0 ? static_cast<jint>(frames * 2) : result;
+        }
         sink->started = true;
     }
     return static_cast<jint>(frames * 2);
@@ -226,16 +240,47 @@ Java_com_andrerinas_openheadunit_decoder_audio_NativeAAudio_stat(JNIEnv*, jobjec
         case 5: return static_cast<jint>(sink->buffer.starvationEvents());
         case 6: return static_cast<jint>(sink->buffer.available());
         case 7: return static_cast<jint>(sink->buffer.callbackFrames());
+        case 8: return sink->error.load(std::memory_order_relaxed);
         default: return AAUDIO_ERROR_ILLEGAL_ARGUMENT;
     }
+}
+
+static bool stopAndClose(Output* sink) {
+    sink->error.store(AAUDIO_ERROR_DISCONNECTED, std::memory_order_relaxed);
+    // Only the owner closes. requestStop is asynchronous; allow in-flight callbacks to settle
+    // before freeing their user data, including on old vendor AAudio implementations.
+    // Oboe uses the same bounded burst-duration delay (AudioStream::sleepBeforeClose).
+    const auto stop = api().AAudioStream_requestStop(sink->stream);
+    aaudio_stream_state_t state = AAUDIO_STREAM_STATE_UNINITIALIZED;
+    aaudio_result_t wait = AAUDIO_OK;
+    if (stop >= 0) {
+        wait = api().AAudioStream_waitForStateChange(sink->stream, AAUDIO_STREAM_STATE_STOPPING,
+                                                    &state, 100'000'000);
+    }
+    const auto settleMs = std::clamp(1u + sink->burstFrames * 1000u / 48000u, 10u, 100u);
+    std::this_thread::sleep_for(std::chrono::milliseconds(settleMs));
+    const auto result = api().AAudioStream_close(sink->stream);
+    __android_log_print(result < 0 ? ANDROID_LOG_ERROR : ANDROID_LOG_INFO, "NativeAAudio",
+        "close: stop=%d wait=%d state=%d close=%d unread=%u", stop, wait, state, result, sink->buffer.available());
+    // A failed close does not prove the callback relinquished its user data. Keep it alive.
+    return result >= 0;
+}
+
+extern "C" JNIEXPORT jshortArray JNICALL
+Java_com_andrerinas_openheadunit_decoder_audio_NativeAAudio_closeForRecovery(JNIEnv* env, jobject, jlong handle) {
+    auto* sink = output(handle);
+    if (!sink || !stopAndClose(sink)) return env->NewShortArray(0);
+    std::array<int16_t, CallbackPcmBuffer::capacity * 2> unread{};
+    const auto frames = sink->buffer.takePendingStopped(unread.data(), CallbackPcmBuffer::capacity);
+    auto result = env->NewShortArray(static_cast<jsize>(frames * 2));
+    if (result) env->SetShortArrayRegion(result, 0, static_cast<jsize>(frames * 2), unread.data());
+    delete sink;
+    return result;
 }
 
 extern "C" JNIEXPORT void JNICALL
 Java_com_andrerinas_openheadunit_decoder_audio_NativeAAudio_close(JNIEnv*, jobject, jlong handle) {
     auto* sink = output(handle);
-    if (!sink) return;
-    // Only the owner closes. AAudio close joins its callback before the user data is freed.
-    api().AAudioStream_requestStop(sink->stream);
-    api().AAudioStream_close(sink->stream);
+    if (!sink || !stopAndClose(sink)) return;
     delete sink;
 }

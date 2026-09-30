@@ -74,6 +74,17 @@ public:
 
     uint32_t starvationEvents() const { return starvationEvents_.load(std::memory_order_relaxed); }
     uint32_t callbackFrames() const { return callbackFrames_.load(std::memory_order_relaxed); }
+    // Only after stream close has joined the callback. Transfer unread samples without PLC,
+    // fades or replaying frames the callback already consumed.
+    uint32_t takePendingStopped(int16_t* destination, uint32_t frames) {
+        const auto head = read_.load(std::memory_order_relaxed);
+        const auto count = std::min(frames, available());
+        const auto first = std::min(count, capacity - head % capacity);
+        std::memcpy(destination, pcm_.data() + head % capacity * channels, first * channels * sizeof(int16_t));
+        std::memcpy(destination + first * channels, pcm_.data(), (count - first) * channels * sizeof(int16_t));
+        read_.store(head + count, std::memory_order_release);
+        return count;
+    }
     void resetStopped(uint32_t position = 0) {
         written_.store(position, std::memory_order_relaxed);
         read_.store(position, std::memory_order_relaxed);

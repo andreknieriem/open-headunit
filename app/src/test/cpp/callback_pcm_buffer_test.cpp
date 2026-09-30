@@ -107,7 +107,23 @@ static void producerSchedulingGap() {
     }
 }
 
+static void transferOnlyUnreadAfterClose() {
+    for (const auto consumed : {0u, 17u, 64u}) {
+        CallbackPcmBuffer buffer;
+        buffer.resetStopped(std::numeric_limits<uint32_t>::max() - 15);
+        std::array<int16_t, 128> input{}, output{};
+        for (uint32_t i = 0; i < input.size(); ++i) input[i] = sample(i / 2, i % 2);
+        CHECK(buffer.write(input.data(), 64, 64) == 64);
+        if (consumed > 0) CHECK(buffer.render(output.data(), consumed));
+        CHECK(buffer.takePendingStopped(output.data(), 64) == 64 - consumed);
+        for (uint32_t i = 0; i < (64 - consumed) * 2; ++i) CHECK(output[i] == input[consumed * 2 + i]);
+        CHECK(buffer.available() == 0);
+        CHECK(buffer.takePendingStopped(output.data(), 64) == 0);
+    }
+}
+
 int main() {
+    transferOnlyUnreadAfterClose();
     producerSchedulingGap();
     writeLimitAndWrap();
     gapsAndResume();

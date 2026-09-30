@@ -17,11 +17,17 @@ internal interface PcmOutput {
     val stagingBufferFrames: Int get() = 0
     val producerUnderruns: Int get() = 0
     val minimumBufferFrames: Int get() = 960 // AudioTrack producer retains its 20ms safety floor
+    /** Progress flushing PCM accepted by a previous software staging queue, not the current write. */
+    val recoveryProgressSamples: Long get() = 0
+    val outputEpoch: Long get() = 0
+    val hasPendingRecovery: Boolean get() = false
     fun setBufferFrames(frames: Int): Int
     fun start()
     fun pause()
     fun write(data: ShortArray, offset: Int, count: Int): Int
     fun close()
+    /** Close on the owner thread, then transfer only software PCM never consumed by hardware. */
+    fun closeForRecovery(): ShortArray { close(); return ShortArray(0) }
 }
 
 internal class AudioTrackPcmOutput(stream: Int, attachHwDsp: Boolean) : PcmOutput {

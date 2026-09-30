@@ -11,6 +11,7 @@ internal class AAudioPcmOutput : PcmOutput {
     private val devicePolicy = CallbackDeviceBufferPolicy(burstFrames)
     override val stagingBufferFrames: Int get() = NativeAAudio.stat(handle, 4)
     override val producerUnderruns: Int get() = NativeAAudio.stat(handle, 5).coerceAtLeast(0)
+    override val hasPendingRecovery: Boolean get() = NativeAAudio.stat(handle, 8) < 0
     override val minimumBufferFrames: Int get() =
         CallbackBufferSizing.minimumFrames(burstFrames, NativeAAudio.stat(handle, 7))
     override val underruns: Int get() = (NativeAAudio.stat(handle, 3).coerceAtLeast(0).toLong() +
@@ -31,6 +32,11 @@ internal class AAudioPcmOutput : PcmOutput {
         handle = 0L
         if (old != 0L) NativeAAudio.close(old)
     }
+    override fun closeForRecovery(): ShortArray {
+        val old = handle
+        handle = 0L
+        return if (old != 0L) NativeAAudio.closeForRecovery(old) else ShortArray(0)
+    }
 }
 
 internal object NativeAAudio {
@@ -43,4 +49,5 @@ internal object NativeAAudio {
     external fun setQueueFrames(handle: Long, frames: Int): Int
     external fun stat(handle: Long, kind: Int): Int
     external fun close(handle: Long)
+    external fun closeForRecovery(handle: Long): ShortArray
 }

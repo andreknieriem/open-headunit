@@ -16,6 +16,10 @@ internal class LatencyRecoveryPolicy(private val sampleRate: Int) {
     private var maximumDepth = 0
     private var allowance = 0
     private var nextCorrection = 0L
+    // Back-to-back render calls can follow a multi-cycle device drain. Keep that
+    // observed batching slack across two existing render windows, not for the session.
+    private var renderSlack = 0
+    private var previousRenderSlack = 0
 
     fun observe(nowMs: Long, target: Int, packetFrames: Int, slack: Int, depth: Int,
                 inputFrames: Long, canRecover: Boolean = true) {
@@ -24,6 +28,8 @@ internal class LatencyRecoveryPolicy(private val sampleRate: Int) {
         else debt = (debt + previousTarget - target).coerceAtMost(sampleRate)
         if (target != previousTarget || packetFrames != previousPacket || newBudget != budget ||
             lastObservation < 0 || nowMs - lastObservation !in 0..499) resetWindow()
+        if (lastObservation >= 0 && nowMs - lastObservation in 0..499) renderSlack = maxOf(renderSlack,
+            ((nowMs - lastObservation) * sampleRate / 1000).toInt() - sampleRate / 100)
         previousTarget = target
         previousPacket = packetFrames
         budget = newBudget
@@ -46,6 +52,8 @@ internal class LatencyRecoveryPolicy(private val sampleRate: Int) {
                 allowance = 0
                 excess = 0
             }
+            previousRenderSlack = renderSlack
+            renderSlack = 0
             minimumDepth = depth
             maximumDepth = depth
             windowStart = nowMs
@@ -57,7 +65,11 @@ internal class LatencyRecoveryPolicy(private val sampleRate: Int) {
     /** A proposal only; settle it after the ring actually consumes these extra frames. */
     fun correction(nowMs: Long, depth: Int): Int {
         if (nowMs < nextCorrection) return 0
-        return minOf(sampleRate / 1000, maxOf(debt, excess), allowance,
+        // A lower target is not proof that this depth contains dispensable PCM.
+        // Repay target debt only above the current target plus recent renderer slack;
+        // the separately proven sustained-excess path and trough guard remain intact.
+        val liveDebt = minOf(debt, (depth - previousTarget - maxOf(renderSlack, previousRenderSlack)).coerceAtLeast(0))
+        return minOf(sampleRate / 1000, maxOf(liveDebt, excess), allowance,
             (depth - reserve()).coerceAtLeast(0))
     }
 
@@ -82,6 +94,7 @@ internal class LatencyRecoveryPolicy(private val sampleRate: Int) {
     }
 
     private fun resetWindow() {
+        renderSlack = 0; previousRenderSlack = 0
         allowance = 0; excess = 0; windowStart = -1L
         windowCycles = 0
         minimumDepth = Int.MAX_VALUE; maximumDepth = 0

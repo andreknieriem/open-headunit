@@ -33,16 +33,23 @@ internal class AdaptiveJitterPolicy(
             return maxOf(invariant, minOf(frames(ceilingMs), maxOf(frames(floorMs), invariant + frames(marginMs))))
         }
 
-    /** Independent recent supply envelopes; neither represents the actual playback bank. */
+    /** Conserved supply decides gaps; a separately aged envelope learns reserve.
+     * Neither counter is the actual PCM bank or a playback-head measurement. */
     private inner class SupplyClock {
         var lastMs = -1L
         var gapMs = 0L
         var excessMs = 0L
         private var position = 0L
-        private var creditFrameMillis = 0L
+        private var envelopeFrameMillis = 0L
+        // Elapsed time consumes this credit. An epoch rollover must never consume it.
+        private var conservedFrameMillis = 0L
+        var coveredGapFrames = 0L
         private var epoch = -1L
         private var currentMinimum = Long.MAX_VALUE
         private var previousMinimum = Long.MAX_VALUE
+        private var learningMinimum = Long.MAX_VALUE
+        private var currentMaximum = Long.MIN_VALUE
+        private var previousMaximum = Long.MIN_VALUE
         var completedFrames = 0L
         private var peakFrameMillis = 0L
         private var peakStartedMs = -1L
@@ -55,36 +62,53 @@ internal class AdaptiveJitterPolicy(
             // prefix whose fragments would otherwise move their own startup target.
             // A prolonged busy period publishes at least once a second. This does not
             // erase credit: the 5ms tolerance is only a learning boundary.
-            val complete = gapMs > 0 && (elapsedFrameMillis + 5L * sampleRate >= creditFrameMillis ||
+            val complete = gapMs > 0 && (elapsedFrameMillis + 5L * sampleRate >= envelopeFrameMillis ||
                 nowMs - peakStartedMs >= 1000)
             completedFrames = if (complete) (peakFrameMillis + 999) / 1000 else 0
             if (complete || peakStartedMs < 0) {
                 peakFrameMillis = 0
                 peakStartedMs = nowMs
             }
-            excessMs = (elapsedFrameMillis - creditFrameMillis).coerceAtLeast(0) / sampleRate
+            // Fresh evidence of an interval bridged by prior supply, even if that supply
+            // accumulated over many seconds. Do not publish the lifetime credit as a peak.
+            coveredGapFrames = minOf(elapsedFrameMillis, conservedFrameMillis) / 1000
+            excessMs = (elapsedFrameMillis - conservedFrameMillis).coerceAtLeast(0) / sampleRate
+            conservedFrameMillis = ((conservedFrameMillis - elapsedFrameMillis).coerceAtLeast(0) + suppliedFrames * 1000L)
+                .coerceAtMost(maximumMs * sampleRate)
             position -= elapsedFrameMillis
+            // An observed return to a recent trough closes the previous excursion.
+            // This rebases learning, not conserved supply (including any old surplus).
+            if (position <= minOf(currentMinimum, previousMinimum)) learningMinimum = position
             val nextEpoch = nowMs / 1000
             if (nextEpoch != epoch) {
+                if (nextEpoch != epoch + 1) learningMinimum = position
+                // A contained/stationary range can retire an old constant offset. A
+                // growing range keeps its origin, however long its delivery train lasts.
+                else if (currentMaximum <= previousMaximum && currentMinimum >= previousMinimum)
+                    learningMinimum = minOf(currentMinimum, previousMinimum)
+                previousMaximum = if (nextEpoch == epoch + 1) currentMaximum else Long.MIN_VALUE
+                currentMaximum = Long.MIN_VALUE
                 previousMinimum = if (nextEpoch == epoch + 1) currentMinimum else Long.MAX_VALUE
                 currentMinimum = Long.MAX_VALUE
                 epoch = nextEpoch
             }
-            // A sliding baseline keeps all fragments' remaining supply together, but a
-            // one-off catch-up cannot become permanent credit on a subsequently paced link.
-            // Two one-second buckets exceed the maximum reserve without retaining history
-            // or allocating on each arrival. Supply peaks still use the ten-second aging below.
+            // Fixed-size buckets are stationarity evidence only, not the lifetime of
+            // a supply obligation. Both observations and learning use scalar storage.
             currentMinimum = minOf(currentMinimum, position)
+            learningMinimum = minOf(learningMinimum, position)
             position += suppliedFrames * 1000L
-            creditFrameMillis = position - minOf(currentMinimum, previousMinimum)
-            peakFrameMillis = maxOf(peakFrameMillis, creditFrameMillis)
+            currentMaximum = maxOf(currentMaximum, position)
+            envelopeFrameMillis = position - learningMinimum
+            peakFrameMillis = maxOf(peakFrameMillis, envelopeFrameMillis)
             lastMs = nowMs
         }
 
         fun reset() {
-            lastMs = -1L; gapMs = 0; excessMs = 0; position = 0; creditFrameMillis = 0
+            lastMs = -1L; gapMs = 0; excessMs = 0; position = 0; envelopeFrameMillis = 0
+            conservedFrameMillis = 0; coveredGapFrames = 0
             completedFrames = 0; peakFrameMillis = 0; peakStartedMs = -1L
             epoch = -1L; currentMinimum = Long.MAX_VALUE; previousMinimum = Long.MAX_VALUE
+            learningMinimum = Long.MAX_VALUE; currentMaximum = Long.MIN_VALUE; previousMaximum = Long.MIN_VALUE
         }
     }
 
@@ -104,9 +128,9 @@ internal class AdaptiveJitterPolicy(
     }
 
     private fun observeSupply(nowMs: Long, clock: SupplyClock, ingressFrames: Int) {
-        // Completed supply peaks include elapsed playback across every fragment. The
-        // existing buckets age observations out without refreshing a historical peak.
-        val completed = clock.completedFrames.coerceAtMost(frames(maximumMs - 10).toLong()).toInt()
+        // Learn completed envelope peaks and newly bridged gaps, never the raw lifetime
+        // credit. Existing ten-second buckets age both kinds of reserve evidence.
+        val completed = maxOf(clock.completedFrames, clock.coveredGapFrames).coerceAtMost(frames(maximumMs - 10).toLong()).toInt()
         recordSupplySize(nowMs, maxOf(ingressFrames, completed))
         if (clock.gapMs > 0) {
             val excess = clock.excessMs.coerceAtMost(maximumMs)

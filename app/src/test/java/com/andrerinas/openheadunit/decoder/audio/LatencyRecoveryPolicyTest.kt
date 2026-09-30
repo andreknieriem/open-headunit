@@ -74,6 +74,17 @@ class LatencyRecoveryPolicyTest {
         }
     }
 
+    @Test fun `an old large batch cannot authorize debt repayment below the current window reserve`() {
+        val policy = LatencyRecoveryPolicy(48000)
+        // A previous 160ms supply burst is still in the ten-second learning history.
+        // The current window swings by only 20ms and is already below the new target.
+        tick(policy, 0, 9600, 7680, 4800, 7200)
+        for (now in 10L..5000L step 10) {
+            val depth = if (now % 40 == 0L) 3840 else 4800
+            assertEquals(0, tick(policy, now, 9120, 7680, depth, 7200))
+        }
+    }
+
     @Test fun `no input sparse rendering and stopped tails cannot authorize catch-up`() {
         for (mode in 0..2) {
             val policy = LatencyRecoveryPolicy(48000)

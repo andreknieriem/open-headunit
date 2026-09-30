@@ -241,6 +241,18 @@ class AudioMixer(
             lastCycleMs = now
             if (now >= nextPcmDiagnosticMs) {
                 for ((id, state) in channels) {
+                    state.buffer.takeOverflow()?.let { loss ->
+                        recordDiagnostic(now, "PCM overflow channel=$id negotiatedSource=${state.rate}Hz/${state.channels}ch " +
+                            "at=${loss.atMs}ms reportDelay=${now - loss.atMs}ms " +
+                            "incoming=${loss.incomingFrames} depthBefore=${loss.depthBeforeFrames} " +
+                            "capacity=${loss.capacityFrames} oldDropped=${loss.oldFramesDropped} " +
+                            "incomingDropped=${loss.incomingFramesDropped} target=${loss.targetFrames} frames " +
+                            "offeredBefore=${loss.offeredBeforeFrames} consumed=${loss.consumedFrames} " +
+                            "compressed=${loss.compressedFrames} overflowBefore=${loss.overflowBeforeFrames} " +
+                            "resetDiscarded=${loss.resetDiscardedFrames} " +
+                            "lastRead=${loss.lastReadMs}ms started=${loss.started} " +
+                            "rebanking=${loss.rebanking} ended=${loss.ended}", warning = true)
+                    }
                     val rebanks = state.buffer.rebanks
                     val dropped = state.buffer.droppedFrames
                     val concealed = state.buffer.concealedFrames

@@ -27,12 +27,36 @@ internal class AdaptivePcmBuffer(
     private var head = 0
     private var count = 0
     private var inputFrames = 0L
+    private var offeredFrames = 0L
+    private var resetDiscardedFrames = 0L
     private var started = false
     private var rebanking = false
     private var firstDataMs = -1L
     private var gapFrames = 0
     private var needsFade = true
     private var ended = false
+    private var lastReadMs = -1L
+    private var pendingOverflow: Overflow? = null
+    // Capture the first loss under the bank lock; format/report it on the mixer thread.
+    // Normal writes allocate nothing, and repeated overflow cannot grow a diagnostic queue.
+    internal data class Overflow(
+        val atMs: Long,
+        val incomingFrames: Int,
+        val depthBeforeFrames: Int,
+        val capacityFrames: Int,
+        val oldFramesDropped: Int,
+        val incomingFramesDropped: Int,
+        val offeredBeforeFrames: Long,
+        val consumedFrames: Long,
+        val compressedFrames: Long,
+        val overflowBeforeFrames: Long,
+        val resetDiscardedFrames: Long,
+        val targetFrames: Int,
+        val lastReadMs: Long,
+        val started: Boolean,
+        val rebanking: Boolean,
+        val ended: Boolean
+    )
     @Volatile var silentCycles = 0L
         private set
     @Volatile var rebanks = 0L
@@ -54,6 +78,7 @@ internal class AdaptivePcmBuffer(
     @Synchronized fun maxArrivalGapMs(): Long = policy.largestArrivalGapMs
     @Synchronized fun maxPcmGapMs(): Long = policy.largestPcmGapMs
     @Synchronized fun depthFrames(): Int = count / channels
+    @Synchronized fun takeOverflow(): Overflow? = pendingOverflow.also { pendingOverflow = null }
     // An empty network rebank is still a live stream. Parking the device here adds a
     // pause/flush/play cycle to every late packet burst.
     @Synchronized fun isIdle(): Boolean = count == 0 && (ended || (firstDataMs < 0 && !rebanking)) && !started
@@ -65,13 +90,21 @@ internal class AdaptivePcmBuffer(
         if (firstDataMs < 0) firstDataMs = nowMs
         val keep = minOf(aligned, ring.size)
         val skip = aligned - keep
-        if (count + keep > ring.size) discard(count + keep - ring.size)
+        val oldDrop = (count + keep - ring.size).coerceAtLeast(0)
+        if ((oldDrop > 0 || skip > 0) && pendingOverflow == null) {
+            pendingOverflow = Overflow(nowMs, aligned / channels, count / channels, capacityFrames,
+                oldDrop / channels, skip / channels, offeredFrames, startupFramesPlayed,
+                compressedFrames, droppedFrames, resetDiscardedFrames, playbackTargetFrames(), lastReadMs,
+                started, rebanking, ended)
+        }
+        if (oldDrop > 0) discard(oldDrop)
         if (skip > 0) { droppedFrames += skip / channels; needsFade = true; recovery.reset() }
         val tail = (head + count) % ring.size
         val first = minOf(keep, ring.size - tail)
         System.arraycopy(data, skip, ring, tail, first)
         System.arraycopy(data, skip + first, ring, 0, keep - first)
         count += keep
+        offeredFrames += aligned / channels
         inputFrames += keep / channels
     }
 
@@ -132,6 +165,7 @@ internal class AdaptivePcmBuffer(
         count -= real + skipped
         recovery.consumed(nowMs, catchUp)
         startupFramesPlayed += real / channels
+        if (real > 0) lastReadMs = nowMs
 
         val recovering = gapFrames > 0
         if (real == cycleSamples) {
@@ -212,8 +246,10 @@ internal class AdaptivePcmBuffer(
     }
 
     @Synchronized fun reset() {
+        resetDiscardedFrames += count / channels
         head = 0; count = 0; started = false; firstDataMs = -1L; gapFrames = 0
         rebanking = false
+        lastReadMs = -1L
         needsFade = true; ended = false
         lastGood.fill(0); previousOutput.fill(0)
         policy.resetArrival()

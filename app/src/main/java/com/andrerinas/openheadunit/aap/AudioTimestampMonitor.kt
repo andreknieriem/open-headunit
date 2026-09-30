@@ -20,6 +20,11 @@ internal class AudioTimestampMonitor(private val windowUs: Long = 10_000_000L) {
     private var maxSourceExcessUs = 0L
     private var maxArrivalExcessUs = 0L
     private var maxDeliveryIncreaseUs = 0L
+    private var spikeArrivalUs = -1L
+    private var spikeArrivalGapUs = 0L
+    private var spikeSourceGapUs = -1L
+    private var spikePreviousDurationUs = 0L
+    private var spikeDurationUs = 0L
 
     @Synchronized
     fun onPacket(sourceUs: Long, arrivalUs: Long, durationUs: Long): Report? {
@@ -41,8 +46,18 @@ internal class AudioTimestampMonitor(private val windowUs: Long = 10_000_000L) {
                 // Use a conservative arrival budget and exclude the ambiguous PTS comparison.
                 val sameDuration = durationUs == previousDurationUs
                 if (!sameDuration) durationChanges++
-                maxArrivalExcessUs = maxOf(maxArrivalExcessUs,
-                    arrivalGap - maxOf(previousDurationUs, durationUs))
+                val arrivalExcess = arrivalGap - maxOf(previousDurationUs, durationUs)
+                if (arrivalExcess > maxArrivalExcessUs) {
+                    maxArrivalExcessUs = arrivalExcess
+                    // Keep the source interval from this exact pair, not the independent
+                    // window maximum. Primitive fields avoid per-packet diagnostic allocation.
+                    spikeArrivalUs = arrivalUs
+                    spikeArrivalGapUs = arrivalGap
+                    spikeSourceGapUs = if (sourceUs > 0 && previousSourceUs > 0 &&
+                        sourceGap in 1..MAX_INTERVAL_US) sourceGap else -1L
+                    spikePreviousDurationUs = previousDurationUs
+                    spikeDurationUs = durationUs
+                }
                 if (sourceUs > 0 && previousSourceUs > 0) {
                     if (sourceGap in 1..MAX_INTERVAL_US) {
                         maxSourceGapUs = maxOf(maxSourceGapUs, sourceGap)
@@ -62,7 +77,9 @@ internal class AudioTimestampMonitor(private val windowUs: Long = 10_000_000L) {
         previousDurationUs = durationUs
         if (arrivalUs - windowStartUs < windowUs) return null
         val report = Report(packets, comparablePairs, durationChanges, missingTimestamps, discontinuities,
-            maxSourceGapUs, maxArrivalGapUs, maxSourceExcessUs, maxArrivalExcessUs, maxDeliveryIncreaseUs)
+            maxSourceGapUs, maxArrivalGapUs, maxSourceExcessUs, maxArrivalExcessUs, maxDeliveryIncreaseUs,
+            if (maxArrivalExcessUs >= 20_000L) ArrivalSpike(spikeArrivalUs, spikeArrivalGapUs,
+                spikeSourceGapUs.takeIf { it >= 0 }, spikePreviousDurationUs, spikeDurationUs) else null)
         clearWindow()
         windowStartUs = arrivalUs
         return report
@@ -88,6 +105,29 @@ internal class AudioTimestampMonitor(private val windowUs: Long = 10_000_000L) {
         maxSourceExcessUs = 0
         maxArrivalExcessUs = 0
         maxDeliveryIncreaseUs = 0
+        spikeArrivalUs = -1L
+        spikeArrivalGapUs = 0
+        spikeSourceGapUs = -1L
+        spikePreviousDurationUs = 0
+        spikeDurationUs = 0
+    }
+
+    /** One receiver-clock event, suitable for correlation with deferred transport logs.
+     * A valid source interval is still not proof of lost samples or one-way latency. */
+    data class ArrivalSpike(
+        val arrivalUs: Long,
+        val arrivalGapUs: Long,
+        val sourceGapUs: Long?,
+        val previousDurationUs: Long,
+        val durationUs: Long
+    ) {
+        val comparable: Boolean get() = sourceGapUs != null && previousDurationUs == durationUs
+
+        override fun toString(): String = "arrivalSpikeElapsedMs=${arrivalUs / 1000}, " +
+            "pairedArrivalGapMs=${arrivalGapUs / 1000}, " +
+            "pairedSourceGapMs=${sourceGapUs?.div(1000) ?: "unknown"}, " +
+            "pairedPreviousDurationUs=$previousDurationUs, pairedDurationUs=$durationUs, " +
+            "pairedComparable=$comparable"
     }
 
     data class Report(
@@ -100,7 +140,8 @@ internal class AudioTimestampMonitor(private val windowUs: Long = 10_000_000L) {
         val maxArrivalGapUs: Long,
         val maxSourceExcessUs: Long,
         val maxArrivalExcessUs: Long,
-        val maxDeliveryIncreaseUs: Long
+        val maxDeliveryIncreaseUs: Long,
+        val arrivalSpike: ArrivalSpike?
     ) {
         val hasGap: Boolean get() = maxArrivalExcessUs >= 20_000L || maxSourceExcessUs >= 20_000L
 
@@ -109,7 +150,8 @@ internal class AudioTimestampMonitor(private val windowUs: Long = 10_000_000L) {
             "sourceGapMaxMs=${maxSourceGapUs / 1000}, arrivalGapMaxMs=${maxArrivalGapUs / 1000}, " +
             "sourceExcessMaxMs=${maxSourceExcessUs / 1000}, " +
             "arrivalExcessMaxMs=${maxArrivalExcessUs / 1000}, " +
-            "deliveryIncreaseMaxMs=${maxDeliveryIncreaseUs / 1000}"
+            "deliveryIncreaseMaxMs=${maxDeliveryIncreaseUs / 1000}" +
+            (arrivalSpike?.let { ", $it" } ?: "")
     }
 
     companion object { private const val MAX_INTERVAL_US = 5_000_000L }

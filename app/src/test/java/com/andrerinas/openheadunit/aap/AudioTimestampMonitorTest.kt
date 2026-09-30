@@ -62,6 +62,8 @@ class AudioTimestampMonitorTest {
             assertEquals(0L, report.maxDeliveryIncreaseUs)
             assertEquals(0L, report.maxSourceExcessUs)
             assertTrue(report.hasGap) // Arrival gap remains real, even with unusable PTS.
+            assertNull(report.arrivalSpike!!.sourceGapUs)
+            assertFalse(report.arrivalSpike.comparable)
         }
     }
 
@@ -103,10 +105,15 @@ class AudioTimestampMonitorTest {
         val changed = monitor.onPacket(1_064_000, 5_164_000, 64_000)!!
         assertEquals(100_000L, changed.maxArrivalExcessUs)
         assertTrue(changed.hasGap)
+        assertEquals(64_000L, changed.arrivalSpike!!.sourceGapUs)
+        assertEquals(20_000L, changed.arrivalSpike.previousDurationUs)
+        assertEquals(64_000L, changed.arrivalSpike.durationUs)
+        assertFalse(changed.arrivalSpike.comparable)
         val steady = monitor.onPacket(1_128_000, 5_228_000, 64_000)!!
         assertEquals(1, steady.comparablePairs)
         assertEquals(0, steady.durationChanges)
         assertFalse(steady.hasGap)
+        assertNull(steady.arrivalSpike)
     }
 
     @Test fun `millisecond capture completion timestamps tolerate ordinary rounding`() {
@@ -138,5 +145,39 @@ class AudioTimestampMonitorTest {
         assertEquals(2, report.packets)
         assertEquals(1, report.comparablePairs)
         assertFalse(report.hasGap)
+    }
+
+    @Test fun `largest delivery spike keeps its own source pair and event time`() {
+        val monitor = AudioTimestampMonitor(1_000_000)
+        monitor.onPacket(1_000_000, 5_000_000, frameUs)
+        // The largest source gap belongs to the first pair, while the largest
+        // arrival gap belongs to the second. Mixing maxima would misdiagnose it.
+        monitor.onPacket(1_700_000, 5_200_000, frameUs)
+        monitor.onPacket(1_742_667, 5_900_000, frameUs)
+        val report = monitor.onPacket(1_785_334, 6_000_000, frameUs)!!
+        assertEquals(700_000L, report.maxSourceGapUs)
+        assertEquals(700_000L, report.maxArrivalGapUs)
+        val spike = report.arrivalSpike!!
+        assertEquals(5_900_000L, spike.arrivalUs)
+        assertEquals(700_000L, spike.arrivalGapUs)
+        assertEquals(frameUs, spike.sourceGapUs)
+        assertTrue(spike.comparable)
+        assertTrue(report.toString().contains("arrivalSpikeElapsedMs=5900"))
+    }
+
+    @Test fun `spike snapshots survive later windows without keeping old events`() {
+        val monitor = AudioTimestampMonitor(100_000)
+        monitor.onPacket(1_000_000, 5_000_000, frameUs)
+        val first = monitor.onPacket(1_042_667, 5_120_000, frameUs)!!
+        val second = monitor.onPacket(1_162_667, 5_240_000, frameUs)!!
+        assertEquals(5_120_000L, first.arrivalSpike!!.arrivalUs)
+        assertEquals(frameUs, first.arrivalSpike.sourceGapUs)
+        assertEquals(5_240_000L, second.arrivalSpike!!.arrivalUs)
+        assertEquals(120_000L, second.arrivalSpike.sourceGapUs)
+        monitor.reset()
+        monitor.onPacket(2_000_000, 6_000_000, frameUs)
+        monitor.onPacket(2_042_667, 6_042_667, frameUs)
+        monitor.onPacket(2_085_334, 6_085_334, frameUs)
+        assertNull(monitor.onPacket(2_128_001, 6_128_001, frameUs)!!.arrivalSpike)
     }
 }

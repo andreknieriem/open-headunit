@@ -181,6 +181,11 @@ class AapService : Service() {
         }
     }
     private var permanentFocusRequest: AudioFocusRequest? = null
+    private val permanentFocusListener = object : AudioManager.OnAudioFocusChangeListener {
+        override fun onAudioFocusChange(focusChange: Int) {
+            AppLog.d("AapService: Permanent audio focus changed: $focusChange")
+        }
+    }
 
     private var lastAaMediaMetadata: MediaPlayback.MediaMetaData? = null
     private var lastAaPlaybackPositionMs: Long = 0L
@@ -1269,7 +1274,7 @@ class AapService : Service() {
      * The permanent AUDIOFOCUS_GAIN is only appropriate for Static Audio Focus mode,
      * where the phone must believe focus is always held. In the default (dynamic) mode
      * focus is instead acquired on demand via the AA protocol
-     * (AapControl.audioFocusRequest -> AapAudio.requestFocusChange), so grabbing a
+     * (AapControl.audioFocusRequest -> AapAudio.postProtocolFocusChange), so grabbing a
      * permanent gain here would needlessly evict other media (e.g. the car radio) the
      * moment the phone connects, before AA plays anything.
      *
@@ -1314,9 +1319,7 @@ class AapService : Service() {
                     permanentFocusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
                         .setAudioAttributes(attrs)
                         .setWillPauseWhenDucked(false)
-                        .setOnAudioFocusChangeListener { focusChange ->
-                            AppLog.d("AapService: Permanent audio focus changed: $focusChange")
-                        }
+                        .setOnAudioFocusChangeListener(permanentFocusListener)
                         .build()
                 }
                 val res = audioManager.requestAudioFocus(permanentFocusRequest!!)
@@ -1324,7 +1327,7 @@ class AapService : Service() {
             } else {
                 @Suppress("DEPRECATION")
                 val res = audioManager.requestAudioFocus(
-                    { focusChange -> AppLog.d("AapService: Permanent audio focus changed: $focusChange") },
+                    permanentFocusListener,
                     AudioManager.STREAM_MUSIC,
                     AudioManager.AUDIOFOCUS_GAIN
                 )
@@ -1353,13 +1356,8 @@ class AapService : Service() {
                 }
             } else {
                 @Suppress("DEPRECATION")
-                try {
-                    audioManager.abandonAudioFocus(null)
-                    AppLog.d("AapService: abandoned legacy audio focus (null listener)")
-                } catch (e: Exception) {
-                    // Some devices may not accept a null listener; ignore failures
-                    AppLog.e("AapService: releasePermanentAudioFocus failed", e)
-                }
+                audioManager.abandonAudioFocus(permanentFocusListener)
+                AppLog.d("AapService: abandoned legacy audio focus")
             }
         } catch (e: Exception) {
             AppLog.e("AapService: Failed to abandon audio focus", e)
@@ -1806,12 +1804,11 @@ class AapService : Service() {
                 userExitedAA = true
             }
 
-            // The decoders are shared, and a fast reconnect can have the next session up before this
-            // disconnect gets here: stopping them then blanks the new session's picture.
+            // Audio closes with its transport session. The video decoder is shared; late service
+            // cleanup must not blank a projection that has already reconnected.
             if (commManager.isConnected) {
-                AppLog.i("AapService: a session is already connected, so its decoders are left running")
+                AppLog.i("AapService: a session is already connected, so its video decoder is left running")
             } else {
-                App.provide(this@AapService).audioDecoder.stop()
                 App.provide(this@AapService).videoDecoder.stop("AapService::onDisconnect")
             }
             // The network is back with whoever owns it now, so an exit waiting on this can stop

@@ -475,9 +475,9 @@ class MicRecorder(private val context: Context) {
 
             threadMicAudioActive = true
             threadMicAudio = Thread({
-                // The only audio thread still at default priority, where a blocking read() on a
-                // loaded head unit becomes a gap in what the phone hears.
-                Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_AUDIO)
+                // Keep capture promptly scheduled so a loaded head unit does not delay
+                // microphone reads and create gaps in what the phone hears.
+                requestAudioThreadPriority(Process.THREAD_PRIORITY_URGENT_AUDIO)
                 while (threadMicAudioActive) {
                     micAudioRead(micAudioBuf, micBufferSize)
                 }

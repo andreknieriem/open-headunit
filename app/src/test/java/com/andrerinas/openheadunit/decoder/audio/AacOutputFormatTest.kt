@@ -4,6 +4,17 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class AacOutputFormatTest {
+    @Test fun `mixer accepts convertible PCM while retaining the exact decoder format`() {
+        val state = AacOutputFormat(48000, 2, allowConversion = true)
+        assertTrue(state.update(44100, 1, 4))
+        assertEquals(PcmInputFormat(44100, 1, 4), state.format)
+        assertTrue(state.update(96000, 2, 2))
+        assertEquals(PcmInputFormat(96000, 2), state.format)
+        assertFalse(state.update(48000, 6, 2))
+        assertNull(state.format)
+        assertFalse(state.update(48000, 2, 2))
+    }
+
     @Test fun `decoder must announce the negotiated PCM format before output is accepted`() {
         val state = AacOutputFormat(48000, 2)
         assertFalse(state.acceptsOutput)

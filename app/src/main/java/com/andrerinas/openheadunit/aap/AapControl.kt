@@ -443,12 +443,12 @@ internal class AapControlService(
             if (settings.staticAudioFocus) {
                 AppLog.i("Static Audio Focus active - skipping dynamic system focus request to prevent routing loss")
             } else {
-                // Gated at the call site, not inside requestFocusChange: that function is also the
+                // Gated at the call site, not inside postProtocolFocusChange: that function is also the
                 // static path's permanent grab from CommManager, where the answer is the opposite.
                 val isRelease = notification.request.number ==
                         Control.AudioFocusRequestNotification.AudioFocusRequestType.RELEASE_VALUE
                 if (aapAudio.shouldHonourProtocolFocusRequest(isRelease)) {
-                    aapAudio.requestFocusChange(AudioConfigs.stream(channel, settings), notification.request.number, AudioManager.OnAudioFocusChangeListener {
+                    aapAudio.postProtocolFocusChange(AudioConfigs.stream(channel, settings), notification.request.number, AudioManager.OnAudioFocusChangeListener {
                         AppLog.i("System audio focus changed: $it ${systemFocusName[it]}")
                     })
                 }

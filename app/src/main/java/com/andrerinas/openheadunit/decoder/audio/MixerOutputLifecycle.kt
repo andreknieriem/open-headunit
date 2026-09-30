@@ -6,6 +6,9 @@ internal class MixerOutputLifecycle(private val keepOutputActive: Boolean) {
     private var started = false
     private var idleSinceMs = -1L
 
+    /** Replayed audio on a new device starts a fresh drain deadline, even in a silent cycle. */
+    fun outputProgress(nowMs: Long) { idleSinceMs = nowMs }
+
     fun update(nowMs: Long, idle: Boolean, warming: Boolean, receivedAudio: Boolean,
                drainMs: Long): Action {
         if (!started) {

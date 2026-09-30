@@ -642,7 +642,7 @@ class CommManager(
                         staticAudioFocus = true,
                         audioSinkEnabled = true,
                         btMediaLinkActive = btMediaLinkActive)) {
-                    transport.aapAudio?.requestFocusChange(
+                    transport.aapAudio?.postProtocolFocusChange(
                         AudioManager.STREAM_MUSIC,
                         AudioManager.AUDIOFOCUS_GAIN,
                         AudioManager.OnAudioFocusChangeListener { }
@@ -1031,6 +1031,7 @@ class CommManager(
         // (from transportedQuited firing onQuit during stop()) from double-stopping.
         val transport = _transport
         val connection = _connection
+        val audioSession = audioDecoder.captureSession()
         _transport = null
         _connection = null
         settleSessionClaim(formed = false)
@@ -1049,14 +1050,17 @@ class CommManager(
         // holding a peer that never came back. See TeardownGuard.
         TeardownGuard.runThenClose(
             teardown = {
-                // Only send ByeByeRequest when we are initiating the disconnect (e.g. user pressed
-                // disconnect). When the transport self-quit (read error, soTimeout), the connection
-                // is already dead — skip the send and the 150 ms sleep inside stop().
-                if (sendByeBye) transport?.stop(byeByeReason) else transport?.quit()
+                try {
+                    // Only send ByeByeRequest when we are initiating the disconnect (e.g. user pressed
+                    // disconnect). When the transport self-quit (read error, soTimeout), the connection
+                    // is already dead — skip the send and the 150 ms sleep inside stop().
+                    if (sendByeBye) transport?.stop(byeByeReason) else transport?.quit()
 
-                // Explicitly stop and release decoders to prevent MediaCodec finalize() timeouts
-                videoDecoder.stop("CommManager: doDisconnect")
-                audioDecoder.stop()
+                    // Explicitly stop and release decoders to prevent MediaCodec finalize() timeouts
+                    videoDecoder.stop("CommManager: doDisconnect")
+                } finally {
+                    audioDecoder.closeSession(audioSession)
+                }
             },
             close = { connection?.disconnect() },
             onError = { phase, e -> AppLog.e("CommManager: doDisconnect $phase failed: ${e.message}") }

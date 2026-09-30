@@ -17,7 +17,7 @@ internal object AudioDiagnostics {
     private val skippedLogs = AtomicLong()
     private val logger by lazy {
         Thread({
-            Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND)
+            requestAudioThreadPriority(Process.THREAD_PRIORITY_BACKGROUND)
             while (!Thread.currentThread().isInterrupted) {
                 try {
                     val entry = pending.take()

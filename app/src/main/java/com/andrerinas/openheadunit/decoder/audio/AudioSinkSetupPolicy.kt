@@ -13,13 +13,13 @@ package com.andrerinas.openheadunit.decoder.audio
 object AudioSinkSetupPolicy {
 
     /**
-     * [builtAsAac] is the codec the live track was actually built with, and [setupAac] the one this
-     * setup names. A null [setupAac] is a setup that named no audio codec, which leaves the sink
+     * [builtCodec] is the codec the live track was actually built with, and [setupCodec] the one this
+     * setup names. A null [setupCodec] is a setup that named no audio codec, which leaves the sink
      * alone rather than rebuilding it on no information.
      */
-    fun rebuilds(hasLiveTrack: Boolean, builtAsAac: Boolean?, setupAac: Boolean?): Boolean {
-        if (!hasLiveTrack || builtAsAac == null) return true
-        if (setupAac == null) return false
-        return builtAsAac != setupAac
+    fun rebuilds(hasLiveTrack: Boolean, builtCodec: AudioSinkCodec?, setupCodec: AudioSinkCodec?): Boolean {
+        if (!hasLiveTrack || builtCodec == null) return true
+        if (setupCodec == null) return false
+        return builtCodec != setupCodec
     }
 }

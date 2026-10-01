@@ -192,6 +192,14 @@ class MicRecorder(
         try { release() } catch (e: Exception) { AppLog.e("MicRecorder: Error releasing $name", e) }
     }
 
+    /**
+     * A successful AudioRecord.read can return silence, so read success alone cannot explain
+     * an assistant that hears nothing. Peak zero across a real run points toward input routing;
+     * bytes far below the expected capture rate point toward starved reads instead. Compare
+     * this with the transport's uplink summary to separate capture from sending failures.
+     * Peak is measured after conversion, on the PCM offered to the phone, while bytes/rate
+     * describe hardware capture. Keep those quantities distinct when changing capture rates.
+     */
     private fun logCaptureSummary(run: CaptureRun) {
         val elapsedMs = SystemClock.elapsedRealtime() - run.startedMs
         val expectedBytes = captureRateHz.toLong() * 2L * elapsedMs / 1000L

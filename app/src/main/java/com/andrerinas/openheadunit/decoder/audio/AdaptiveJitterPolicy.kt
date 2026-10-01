@@ -27,6 +27,9 @@ internal class AdaptiveJitterPolicy(
     var largestArrivalGapMs = 0L
         private set
 
+    // A steady arrival interval drains one chunk before its replacement arrives. Reserve must
+    // also cover a render quantum or the bank reaches zero every interval, even without jitter.
+    // This invariant takes precedence over the nominal ceiling for unusually large batches.
     val targetFrames: Int
         get() {
             val invariant = largestChunkFrames + frames(10)

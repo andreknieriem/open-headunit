@@ -568,6 +568,13 @@ class AudioTrackWrapper(
         mixer.prepareChannel(mixerChannel)
     }
 
+    /**
+     * Park the sink on protocol Stop without destroying its decoder or pending PCM.
+     * The phone sends Stop on media pauses and assistant sessions; rebuilding on every Stop
+     * adds another decoder warmup and preroll on resume. Stop is not AAC EOS or proof that the
+     * final decoded samples have reached the speaker, so let the worker and mixer drain the tail.
+     * Session teardown still retires the owner and releases resources through [stopPlayback].
+     */
     fun pauseForIdle() {
         stopReceivedMs = SystemClock.elapsedRealtime()
         inputClosed = true

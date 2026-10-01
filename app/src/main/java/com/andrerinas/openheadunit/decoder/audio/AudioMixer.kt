@@ -10,8 +10,19 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
-/** A network bank per channel, followed by one independently tuned device output buffer.
- * Static-focus mode shares an instance; other modes keep one instance per routed stream. */
+/**
+ * A network bank per channel, followed by one independently tuned device output buffer.
+ *
+ * Static-focus mode mixes music, assistant and navigation into one 48 kHz PCM16 stereo output.
+ * Keeping that output alive avoids vendor head units changing volume/routing when separate
+ * AudioTracks are created or destroyed for each prompt. Other modes keep separate instances
+ * for their routed streams, so the user's routing and hardware DSP choices remain meaningful.
+ *
+ * Each channel banks against its own latency preference; the device buffer is tuned against
+ * output scheduling and underruns. A capped guidance preference must not size the music output
+ * just because guidance happened to be the first sink set up. Network reserve and hardware
+ * capacity are different budgets, and increasing the latter cannot repair missing input PCM.
+ */
 class AudioMixer(
     private val stream: Int = AudioManager.STREAM_MUSIC,
     private val attachHwDspEqualizer: Boolean = false,

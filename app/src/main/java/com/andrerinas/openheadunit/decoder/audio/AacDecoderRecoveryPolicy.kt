@@ -1,8 +1,11 @@
 package com.andrerinas.openheadunit.decoder.audio
 
 /**
- * Whether a failed AAC decoder is rebuilt or parked. Unsubmitted input remains owned by the
- * wrapper. Bound both retries and spacing without retaining tens of seconds of stale audio.
+ * Whether a failed AAC decoder is rebuilt or parked. A failed codec may never return another
+ * input buffer; merely timing out each submission would discard audio for the rest of the session.
+ * Rebuilds recover that path, while the count and spacing prevent a persistently failing codec
+ * from churning. Unsubmitted input remains owned by the wrapper during bounded recovery, rather
+ * than being treated as accepted or retained for tens of seconds as stale audio.
  */
 object AacDecoderRecoveryPolicy {
 

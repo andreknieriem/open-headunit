@@ -62,7 +62,10 @@ internal class AudioTrackPcmOutput(stream: Int, attachHwDsp: Boolean) : PcmOutpu
                 if (Build.VERSION.SDK_INT >= 26 && !attachHwDsp) builder.setPerformanceMode(AudioTrack.PERFORMANCE_MODE_LOW_LATENCY)
                 return builder.build()
             } catch (_: IllegalArgumentException) {
-                // Vendor stream ids without an AudioAttributes mapping still use the old constructor.
+                // AudioAttributes has no public usage mapping for some legacy stream ids,
+                // including STREAM_ACCESSIBILITY and vendor-added DSP routes. The deprecated
+                // constructor uses the framework's internal mapping and can still reach them.
+                // Falling back to STREAM_MUSIC instead would silently change the selected route.
             }
         }
         @Suppress("DEPRECATION")
@@ -70,6 +73,9 @@ internal class AudioTrackPcmOutput(stream: Int, attachHwDsp: Boolean) : PcmOutpu
             requestedBytes, AudioTrack.MODE_STREAM)
     }
 
+    // The framework may clamp the requested allocation. Capacity is storage; bufferFrames is
+    // the effective playback budget and may be smaller. Read them separately where supported
+    // so tuning and drain deadlines use what was granted, not a misleading requested size.
     override val capacityFrames: Int get() = if (Build.VERSION.SDK_INT >= 24) track.bufferCapacityInFrames else requestedBytes / 4
     override val bufferFrames: Int get() = if (Build.VERSION.SDK_INT >= 23) track.bufferSizeInFrames else requestedBytes / 4
     override val underrunsSupported: Boolean get() = Build.VERSION.SDK_INT >= 24

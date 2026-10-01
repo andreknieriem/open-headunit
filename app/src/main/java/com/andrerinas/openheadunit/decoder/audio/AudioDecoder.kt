@@ -112,7 +112,13 @@ class AudioDecoder {
         mixer = null
     }
 
-    /** Each bank uses its negotiated latency setting; device scheduling is tuned independently. */
+    /**
+     * Each channel's bank uses [audioLatencyMultiplier], capped by the caller for short prompts.
+     * A shared static-focus output is tuned independently rather than inheriting the preference
+     * of whichever sink was set up first. Otherwise the guidance cap can silently size music's
+     * output too. [session] also fences replacement connections: an old setup must not rebuild
+     * or register a sink in a newer connection's mixer.
+     */
     @Synchronized fun start(
         channel: Int,
         stream: Int,

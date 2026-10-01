@@ -278,6 +278,11 @@ internal class AapAudio(
         }
     }
 
+    /**
+     * Use transient gain for dynamic playback: permanent GAIN sends other players (for example
+     * the car radio) a permanent loss, so they may not resume when we abandon it. Transient loss
+     * lets them pause and resume once all AA output drains. Static focus uses its separate path.
+     */
     private fun requestPlaybackFocus(): Boolean {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val audioAttributes = AudioAttributes.Builder()
@@ -452,6 +457,10 @@ internal class AapAudio(
 
     private fun onAudioPlaybackStarted(channel: Int, owner: Any) {
         if (staticAudioFocus || !enableAudioSink || !Channel.isAudio(channel)) return
+        // Keep ownership bookkeeping separate from AudioService Binder work. This entry point
+        // can run on the receive path; requesting focus inline would stall incoming audio while
+        // Android or a vendor service is slow. The posted request rechecks its lease so an old
+        // channel cannot acquire focus after teardown or release a replacement's playback.
         val request = playbackLease.activity(channel, owner, SystemClock.elapsedRealtime())
         scheduleDrainPoll()
         if (request == null) return
@@ -482,7 +491,12 @@ internal class AapAudio(
         }
     }
 
-    /** Stop diagnostics use the protocol clock; focus release uses actual output progress. */
+    /**
+     * Stop diagnostics use the protocol clock; focus release waits for actual output progress.
+     * Releasing on the last wire Stop can let the radio resume over buffered prompt tails.
+     * The drain poll releases dynamic focus only after the current owners become quiescent;
+     * stale owners cannot release a replacement channel's claim.
+     */
     private fun onAudioPlaybackStopped(channel: Int) {
         if (staticAudioFocus || !enableAudioSink || !Channel.isAudio(channel)) return
         if (holdingPlaybackFocus) noteStopWhileHoldingFocus(channel)

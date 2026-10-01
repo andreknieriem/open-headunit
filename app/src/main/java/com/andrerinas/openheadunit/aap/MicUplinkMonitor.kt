@@ -42,19 +42,27 @@ class MicUplinkMonitor {
      * microphone and nothing followed.
      */
     fun onFrame(payloadBytes: Int, framePeak: Int, nowMs: Long): Boolean {
-        val first = !open
-        if (first) {
+        val first = frames == 0
+        if (!open) {
             open = true
             startedMs = nowMs
             smallest = payloadBytes
         }
 
+        if (first) smallest = payloadBytes
         frames++
         bytes += payloadBytes
         if (framePeak > peak) peak = framePeak
         if (payloadBytes > largest) largest = payloadBytes
         if (payloadBytes < smallest) smallest = payloadBytes
         return first
+    }
+
+    /** Start before the first send, so a fully cancelled capture still has a report. */
+    fun onSessionStart(nowMs: Long) {
+        reset()
+        open = true
+        startedMs = nowMs
     }
 
     /** One acknowledgement from the phone on the microphone channel. */

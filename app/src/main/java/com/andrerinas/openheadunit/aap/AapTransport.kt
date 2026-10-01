@@ -15,11 +15,12 @@ import android.view.KeyEvent
 import com.andrerinas.openheadunit.aap.protocol.Channel
 import com.andrerinas.openheadunit.aap.protocol.messages.KeyCodeEvent
 import com.andrerinas.openheadunit.aap.protocol.messages.MediaAck
+import com.andrerinas.openheadunit.aap.protocol.messages.MicrophoneResponse
+import com.andrerinas.openheadunit.aap.protocol.proto.Common
 import com.andrerinas.openheadunit.aap.protocol.messages.Messages
 import com.andrerinas.openheadunit.aap.protocol.messages.ScrollWheelEvent
 import com.andrerinas.openheadunit.aap.protocol.messages.SensorEvent
 import com.andrerinas.openheadunit.aap.protocol.messages.VideoFocusEvent
-import com.andrerinas.openheadunit.decoder.audio.MicChunkAccumulator
 import com.andrerinas.openheadunit.decoder.audio.MicrophonePolicy
 import com.andrerinas.openheadunit.decoder.video.FocusCycleLever
 import com.andrerinas.openheadunit.decoder.video.KeyframeCycleEscalationPolicy
@@ -79,8 +80,7 @@ class AapTransport(
         val context: Context,
         private val onAaMediaMetadata: ((MediaPlayback.MediaMetaData) -> Unit)? = null,
         private val onAaPlaybackStatus: ((MediaPlayback.MediaPlaybackStatus) -> Unit)? = null,
-        private val externalSsl: AapSslContext? = null)
-    : MicRecorder.Listener {
+        private val externalSsl: AapSslContext? = null) {
 
     val ssl: AapSsl = externalSsl ?: AapSslContext(SingleKeyKeyManager(context))
 
@@ -272,44 +272,34 @@ class AapTransport(
     /** Which Bluetooth profiles share the radio, printed beside each quiet window. */
     private val bluetoothLinkMonitor = BluetoothLinkMonitor(context)
 
-    /** What the microphone session sent, so a silent assistant has something to read. */
-    private val micUplinkMonitor = MicUplinkMonitor()
-
-    /** Whole 2048-frame messages, whatever size the device's reads happen to be. */
-    private val micChunks = MicChunkAccumulator()
-    private var nextMicSessionId = 0
-    private var micToken = 0L
-    private data class MicPacket(val message: AapMessage, val pcmBytes: Int, val peak: Int)
-    private val micFlow = MicFlowControl<MicPacket> { token, packet ->
-        sendHandler?.post {
-            // Stop/reopen invalidates DATA that was queued behind other traffic.
-            if (micFlowIsCurrent(token)) {
-                sendEncryptedMessage(packet.message.data, packet.message.size)
-                synchronized(micUplinkMonitor) {
-                    if (micFlowIsCurrent(token) && micUplinkMonitor.onFrame(
-                            packet.pcmBytes, packet.peak, SystemClock.elapsedRealtime())) {
-                        AppLog.i("AapTransport: microphone uplink started with ACK flow control")
-                    }
-                }
+    private val micSessions = MicSessionController(
+        lifecycle = MicRecorder::postLifecycle,
+        sending = { job -> sendHandler?.post(job) },
+        startCapture = { captured ->
+            micRecorder.listener = object : MicRecorder.Listener {
+                override fun onMicDataAvailable(mic_buf: ByteArray, mic_audio_len: Int, peak: Int) =
+                    captured(mic_buf, mic_audio_len, peak)
             }
-        }
-    }
+            micRecorder.start()
+        },
+        stopCapture = { micRecorder.stop() },
+        response = { id, success ->
+            send(MicrophoneResponse(
+                if (success) Common.MessageStatus.STATUS_SUCCESS_VALUE
+                else Common.MessageStatus.STATUS_INTERNAL_ERROR_VALUE, id))
+        },
+        data = { bytes, timestamp ->
+            val frame = ByteArray(MicUplinkFrame.size(bytes.size))
+            val length = MicUplinkFrame.build(timestamp, bytes, 0, bytes.size, frame)
+            sendEncryptedMessage(frame, length)
+        },
+        clockMs = { SystemClock.elapsedRealtime() }, timestampUs = ::micTimestampUs,
+        report = { AppLog.i("AapTransport: %s", it) }
+    )
 
-    private fun micFlowIsCurrent(token: Long): Boolean = micFlow.isCurrent(token)
-
-    /** Returns the session echoed by the phone's ACKs; DATA waits for the response to be queued. */
-    internal fun beginMicSession(maxUnacked: Int): Int {
-        if (micFlow.isOpen()) return getSessionId(Channel.ID_MIC)
-        val id = ++nextMicSessionId
-        setSessionId(Channel.ID_MIC, id)
-        synchronized(micChunks) {
-            micChunks.reset()
-            micToken = micFlow.begin(id, maxUnacked)
-        }
-        return id
-    }
-
-    internal fun activateMicSession() = micFlow.activate(micToken)
+    internal fun openMicSession(maxUnacked: Int) = micSessions.open(maxUnacked)
+    internal fun rejectMicSession() = micSessions.reject()
+    internal fun closeMicSession(reply: Boolean = false) = micSessions.close(reply)
 
     /**
      * Called for every decrypted inbound message, from [AapMessageHandlerType.handle].
@@ -654,9 +644,7 @@ class AapTransport(
     init {
         // Nothing is wired when the microphone is the phone's, so AudioRecord is never constructed
         // and a Bluetooth intercom keeps the physical microphone.
-        if (MicrophonePolicy.shouldCapture(settings.useHeadUnitMicrophone, micRecorder.isAvailable)) {
-            micRecorder.listener = this
-        } else {
+        if (!MicrophonePolicy.shouldCapture(settings.useHeadUnitMicrophone, micRecorder.isAvailable)) {
             AppLog.i("AapTransport: not taking the microphone (setting " +
                 "useHeadUnitMicrophone=${settings.useHeadUnitMicrophone}, " +
                 "available=${micRecorder.isAvailable})")
@@ -727,8 +715,7 @@ class AapTransport(
     internal fun pauseForSleep() {
         AppLog.i("AapTransport: Pausing media/audio/mic and hardware video decoder for sleep")
         aapAudio.pauseAllAudio()
-        onMicSessionEnded()
-        micRecorder.stop()
+        closeMicSession()
         videoDecoder.stop(DecoderStopPolicy.REASON_SCREEN_OFF_SLEEP)
     }
 
@@ -749,10 +736,8 @@ class AapTransport(
         onQuit = null
 
         AppLog.i("AapTransport quitting (clean=$clean)")
+        micSessions.close(shutdown = true)
         cb.invoke(clean)
-        onMicSessionEnded()
-        micRecorder.stop()
-        micRecorder.listener = null
         sendHandler?.removeCallbacks(focusCycleGainRunnable)
         sendHandler?.removeCallbacks(unrepairedCheckRunnable)
         pollThread?.quit()
@@ -905,9 +890,6 @@ class AapTransport(
         nextSendTimingMs = 0L
         uplinkStallMonitor.reset()
         inboundRateMonitor.reset()
-        micFlow.close()
-        synchronized(micUplinkMonitor) { micUplinkMonitor.reset() }
-        synchronized(micChunks) { micChunks.reset() }
         bluetoothLinkMonitor.onSessionStart()
 
         videoThread = HandlerThread("AapTransport:Handler::Video", Process.THREAD_PRIORITY_DISPLAY)
@@ -1195,33 +1177,9 @@ class AapTransport(
     /**
      * The session id a MediaStart left for [channel], or 0 if the phone never sent one.
      *
-     * MicrophoneRequest opens a separate source session, whose id is sent in MicrophoneResponse.
+     * MicrophoneRequest uses its own lifecycle controller and does not share this sink table.
      */
     internal fun getSessionId(channel: Int): Int = sessionIds.get(channel)
-
-    override fun onMicDataAvailable(mic_buf: ByteArray, mic_audio_len: Int, peak: Int) {
-        if (mic_audio_len <= 0) return
-        synchronized(micChunks) {
-            if (!micFlow.isOpen() || !micRecorder.isCurrentCaptureThread()) return
-            micChunks.offer(mic_buf, mic_audio_len, micTimestampUs(), peak, ::sendMicChunk)
-        }
-    }
-
-    /** One whole microphone message. The buffer is the chunker's and is reused, so copy as we build. */
-    private fun sendMicChunk(chunk: ByteArray, chunkLen: Int, timestampUs: Long, peak: Int) {
-        val data = ByteArray(MicUplinkFrame.size(chunkLen))
-        val length = MicUplinkFrame.build(timestampUs, chunk, 0, chunkLen, data)
-        val packet = MicPacket(AapMessage(Channel.ID_MIC, MicUplinkFrame.FLAGS,
-            Media.MsgType.MEDIA_MESSAGE_DATA_VALUE, MicUplinkFrame.TIMESTAMP_OFFSET, length, data), chunkLen, peak)
-        if (micFlow.offer(packet) == MicFlowControl.Offer.OVERFLOW) {
-            AppLog.w("AapTransport: microphone ACK window stalled; ending capture instead of accumulating stale speech")
-            onMicSessionEnded()
-            micRecorder.stop()
-            send(com.andrerinas.openheadunit.aap.protocol.messages.MicrophoneResponse(
-                com.andrerinas.openheadunit.aap.protocol.proto.Common.MessageStatus.STATUS_INTERNAL_ERROR_VALUE,
-                getSessionId(Channel.ID_MIC)))
-        }
-    }
 
     /**
      * A monotonic microsecond clock, which is the unit every other AAP media producer stamps with.
@@ -1236,21 +1194,8 @@ class AapTransport(
 
     internal fun onMicAck(ack: Media.Ack) {
         val count = if (ack.receiveTimestampNsCount > 0) ack.receiveTimestampNsCount else ack.ack
-        if (!micFlow.acknowledge(ack.sessionId, count)) {
+        if (!micSessions.acknowledge(ack.sessionId, count)) {
             AppLog.w("AapTransport: ignored microphone ACK session=${ack.sessionId} count=$count")
-            return
-        }
-        synchronized(micUplinkMonitor) { repeat(count) { micUplinkMonitor.onAck() } }
-    }
-
-    /** Close the gate before resetting capture buffers; queued work is invalidated by its token. */
-    internal fun onMicSessionEnded() {
-        val pending = micFlow.close().sumOf { it.pcmBytes }
-        val residue = synchronized(micChunks) { micChunks.reset() }
-        synchronized(micUplinkMonitor) {
-            micUplinkMonitor.onDiscarded(pending + residue)
-            micUplinkMonitor.onSessionEnd(SystemClock.elapsedRealtime())
-                ?.let { AppLog.i("AapTransport: %s", it) }
         }
     }
 

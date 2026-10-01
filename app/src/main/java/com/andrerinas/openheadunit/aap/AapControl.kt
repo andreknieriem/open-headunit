@@ -7,7 +7,6 @@ import com.andrerinas.openheadunit.aap.protocol.AudioConfigs
 import com.andrerinas.openheadunit.aap.protocol.Channel
 import com.andrerinas.openheadunit.aap.protocol.messages.DrivingStatusEvent
 import com.andrerinas.openheadunit.aap.protocol.messages.LocationUpdateEvent
-import com.andrerinas.openheadunit.aap.protocol.messages.MicrophoneResponse
 import com.andrerinas.openheadunit.aap.protocol.messages.ServiceDiscoveryResponse
 import com.andrerinas.openheadunit.aap.protocol.proto.Common
 import com.andrerinas.openheadunit.aap.protocol.proto.Control
@@ -166,8 +165,7 @@ internal class AapControlMedia(
             // predicate would make this head unit claim audio focus and precreate an AudioTrack for
             // a microphone. A stop here is still the phone saying it wants no more PCM, and until
             // now the recorder kept running and kept sending.
-            aapTransport.onMicSessionEnded()
-            micRecorder.stop()
+            aapTransport.closeMicSession()
         } else if (channel == Channel.ID_VID) {
             if (aapTransport.ignoreNextStopRequest) {
                 AppLog.i("Video Sink Stopped -> Ignored (Forced Keyframe Request)")
@@ -183,51 +181,14 @@ internal class AapControlMedia(
     private fun micRequest(micRequest: Media.MicrophoneRequest): Int {
         AppLog.i("Mic request: %s", micRequest)
 
-        val maxUnacked = if (micRequest.hasMaxUnacked()) micRequest.maxUnacked else 2
-        if (micRequest.open && maxUnacked !in 1..4096) {
-            aapTransport.send(MicrophoneResponse(Common.MessageStatus.STATUS_INTERNAL_ERROR_VALUE,
-                aapTransport.getSessionId(Channel.ID_MIC)))
-            return 0
-        }
-        val status = if (micRequest.open) {
-            when (MicrophonePolicy.declineReason(
-                    aapTransport.settings.useHeadUnitMicrophone, micRecorder.isAvailable)) {
-                MicrophonePolicy.Decline.USER_SETTING -> {
-                    // Named in the user's terms, the same way the audio-sink skip is, so a silent
-                    // assistant reads as a setting rather than as a fault.
-                    AppLog.i("Mic request: the head unit microphone is off in Settings. Declining " +
-                        "and sending nothing, so a Bluetooth headset keeps this microphone. The " +
-                        "service is not announced either, so a request arriving here means the " +
-                        "phone kept an older record of this head unit")
-                    Common.MessageStatus.STATUS_INTERNAL_ERROR_VALUE
-                }
-                MicrophonePolicy.Decline.NO_MICROPHONE -> {
-                    AppLog.w("Mic request: this device has no usable microphone capture; declining")
-                    Common.MessageStatus.STATUS_INTERNAL_ERROR_VALUE
-                }
-                MicrophonePolicy.Decline.NONE -> {
-                    aapTransport.beginMicSession(maxUnacked)
-                    val result = micRecorder.start()
-                    if (result != 0) {
-                        AppLog.w("Mic request: capture did not start (code $result); telling the " +
-                            "phone so rather than leaving it waiting on a stream that will never arrive")
-                        Common.MessageStatus.STATUS_INTERNAL_ERROR_VALUE
-                    } else {
-                        Common.MessageStatus.STATUS_SUCCESS_VALUE
-                    }
-                }
-            }
+        if (!micRequest.open) {
+            aapTransport.closeMicSession(reply = true)
+        } else if (MicrophonePolicy.declineReason(aapTransport.settings.useHeadUnitMicrophone,
+                micRecorder.isAvailable) != MicrophonePolicy.Decline.NONE) {
+            AppLog.w("Mic request declined: capture is disabled or unavailable")
+            aapTransport.rejectMicSession()
         } else {
-            aapTransport.onMicSessionEnded()
-            micRecorder.stop()
-            Common.MessageStatus.STATUS_SUCCESS_VALUE
-        }
-
-        aapTransport.send(MicrophoneResponse(status, aapTransport.getSessionId(Channel.ID_MIC)))
-        if (micRequest.open && status == Common.MessageStatus.STATUS_SUCCESS_VALUE) {
-            aapTransport.activateMicSession()
-        } else if (micRequest.open) {
-            aapTransport.onMicSessionEnded()
+            aapTransport.openMicSession(if (micRequest.hasMaxUnacked()) micRequest.maxUnacked else 2)
         }
         return 0
     }

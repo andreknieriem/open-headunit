@@ -6,7 +6,8 @@ import org.junit.Test
 class MicFlowControlTest {
     @Test fun `response precedes data and acks release only the matching session window`() {
         val sent = mutableListOf<Int>()
-        val flow = MicFlowControl<Int> { _, frame -> sent.add(frame) }
+        lateinit var flow: MicFlowControl<Int>
+        flow = MicFlowControl { token, frame -> if (flow.claim(token, frame)) sent.add(frame) }
         val token = flow.begin(7, 2)
         repeat(4) { flow.offer(it) }
         assertTrue(sent.isEmpty())
@@ -23,7 +24,8 @@ class MicFlowControlTest {
 
     @Test fun `bounded pending queue never displaces or reorders speech`() {
         val sent = mutableListOf<Int>()
-        val flow = MicFlowControl<Int> { _, frame -> sent.add(frame) }
+        lateinit var flow: MicFlowControl<Int>
+        flow = MicFlowControl { token, frame -> if (flow.claim(token, frame)) sent.add(frame) }
         flow.activate(flow.begin(1, 1))
         flow.offer(0)
         repeat(MicFlowControl.MAX_PENDING_FRAMES) { assertEquals(MicFlowControl.Offer.ACCEPTED, flow.offer(it + 1)) }

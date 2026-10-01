@@ -48,6 +48,17 @@ class MicChunkAccumulator(private val chunkBytes: Int = MicCaptureFormat.CHUNK_B
         peak: Int,
         emit: (chunk: ByteArray, length: Int, timestampUs: Long, peak: Int) -> Unit
     ) {
+        offerWhile(src, srcLen, capturedAtUs, peak) { bytes, length, timestamp, level ->
+            emit(bytes, length, timestamp, level)
+            true
+        }
+    }
+
+    /** Returns the rejected whole chunk plus unread bytes when the session closes during emit. */
+    fun offerWhile(
+        src: ByteArray, srcLen: Int, capturedAtUs: Long, peak: Int,
+        emit: (ByteArray, Int, Long, Int) -> Boolean
+    ): Int {
         var i = 0
         while (i < srcLen) {
             if (pending == 0) {
@@ -62,10 +73,14 @@ class MicChunkAccumulator(private val chunkBytes: Int = MicCaptureFormat.CHUNK_B
             if (peak > chunkPeak) chunkPeak = peak
 
             if (pending == chunkBytes) {
-                emit(chunk, chunkBytes, chunkStartedUs, chunkPeak)
-                pending = 0
+                pending = 0 // A callback may retire this accumulator; never republish residue after it.
+                if (!emit(chunk, chunkBytes, chunkStartedUs, chunkPeak)) {
+                    reset()
+                    return chunkBytes + srcLen - i
+                }
             }
         }
+        return 0
     }
 
     /**

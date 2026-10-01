@@ -13,8 +13,8 @@ import com.google.protobuf.Message
  * phone waiting on it before opening its speech pipeline would look exactly like a microphone that
  * is heard but never understood.
  *
- * The session id is whatever a MediaStart left behind, which on every captured session is zero
- * because the phone opens the microphone channel without one.
+ * The microphone lifecycle allocates the session id for each Open and preserves it in every
+ * response, including asynchronous close and error replies.
  */
 class MicrophoneResponse(status: Int, sessionId: Int)
     : AapMessage(Channel.ID_MIC, Media.MsgType.MEDIA_MESSAGE_MICROPHONE_RESPONSE_VALUE,

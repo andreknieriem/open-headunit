@@ -10,7 +10,7 @@ class MicSessionControllerTest {
     private class Fixture {
         val lifecycle = ArrayDeque<() -> Unit>()
         val sending = ArrayDeque<() -> Unit>()
-        val captures = mutableListOf<(ByteArray, Int, Int) -> Unit>()
+        val captures = mutableListOf<MicSessionController.CaptureCallbacks>()
         val events = mutableListOf<String>()
         val reports = mutableListOf<MicUplinkMonitor.Report>()
         var stop: () -> Unit = { events.add("stop") }
@@ -21,7 +21,7 @@ class MicSessionControllerTest {
             response = { id, ok -> sending.add { events.add("response:$id:$ok") } },
             data = { bytes, _ -> events.add("data:${bytes.size}") },
             clockMs = { 1000L }, timestampUs = { 1000000L }, report = { reports.add(it) })
-        fun capture(index: Int, bytes: Int) = captures[index](ByteArray(bytes), bytes, 1)
+        fun capture(index: Int, bytes: Int) = captures[index].data(ByteArray(bytes), bytes, 1)
         fun sendAll() { while (sending.isNotEmpty()) sending.removeFirst()() }
         fun workAll() { while (lifecycle.isNotEmpty()) lifecycle.removeFirst()() }
     }
@@ -103,4 +103,18 @@ class MicSessionControllerTest {
         assertEquals(8192, f.reports.single().discarded)
         assertEquals(1, f.reports.single().acks)
     }
+    @Test fun `rejecting an active microphone retires data and allows a fresh later open`() {
+        val f = Fixture()
+        f.controller.open(1); f.workAll(); f.sendAll()
+        f.capture(0, 4096)
+        f.controller.reject()
+        assertFalse(f.captures[0].isCurrent())
+        f.controller.open(1); f.workAll()
+        f.captures[0].failed() // terminal event from retired A must not retire B
+        assertTrue(f.captures[1].isCurrent())
+        f.capture(1, 4096); f.sendAll()
+        assertEquals(1, f.events.count { it == "response:1:false" })
+        assertEquals(1, f.events.count { it == "data:4096" })
+    }
+
 }

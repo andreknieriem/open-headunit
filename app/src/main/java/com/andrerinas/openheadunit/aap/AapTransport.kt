@@ -278,7 +278,9 @@ class AapTransport(
         startCapture = { captured ->
             micRecorder.listener = object : MicRecorder.Listener {
                 override fun onMicDataAvailable(mic_buf: ByteArray, mic_audio_len: Int, peak: Int) =
-                    captured(mic_buf, mic_audio_len, peak)
+                    captured.data(mic_buf, mic_audio_len, peak)
+                override fun onMicCaptureFailed(error: Int) = captured.failed()
+                override fun isCurrent(): Boolean = captured.isCurrent()
             }
             micRecorder.start()
         },

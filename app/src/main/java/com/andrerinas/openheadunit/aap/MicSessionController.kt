@@ -10,7 +10,7 @@ import com.andrerinas.openheadunit.decoder.audio.MicChunkAccumulator
 internal class MicSessionController(
     private val lifecycle: (() -> Unit) -> Unit,
     private val sending: (() -> Unit) -> Unit,
-    private val startCapture: ((ByteArray, Int, Int) -> Unit) -> Int,
+    private val startCapture: (CaptureCallbacks) -> Int,
     private val stopCapture: () -> Unit,
     private val response: (Int, Boolean) -> Unit,
     private val data: (ByteArray, Long) -> Unit,
@@ -18,6 +18,12 @@ internal class MicSessionController(
     private val timestampUs: () -> Long,
     private val report: (MicUplinkMonitor.Report) -> Unit
 ) {
+    class CaptureCallbacks(
+        val data: (ByteArray, Int, Int) -> Unit,
+        val failed: () -> Unit,
+        val isCurrent: () -> Boolean
+    )
+
     private val lock = Any()
     private var sequence = 0
     private var current: Run? = null
@@ -56,7 +62,11 @@ internal class MicSessionController(
         lifecycle {
             val requested = synchronized(lock) { run.open }
             val result = if (requested) try {
-                startCapture { bytes, length, peak -> captured(run, bytes, length, peak) }
+                startCapture(CaptureCallbacks(
+                    data = { bytes, length, peak -> captured(run, bytes, length, peak) },
+                    failed = { captureFailed(run) },
+                    isCurrent = { synchronized(lock) { run.open && current === run } }
+                ))
             } catch (_: Exception) { -1 } else -1
             if (result != 0) {
                 val summary = synchronized(lock) { if (run.open) retireLocked(run, 0) else null }
@@ -73,8 +83,14 @@ internal class MicSessionController(
 
     fun reject() = synchronized(lock) { if (!stopped) rejectLocked() }
     private fun rejectLocked() {
-        val id = current?.id ?: sequence
-        lifecycle { response(id, false) }
+        val run = current
+        val id = run?.id ?: sequence
+        val summary = if (run != null) retireLocked(run, 0) else null
+        lifecycle {
+            summary?.let(report)
+            if (run != null) stopCapture()
+            response(id, false)
+        }
     }
 
     fun close(reply: Boolean = false, shutdown: Boolean = false) = synchronized(lock) {
@@ -110,6 +126,16 @@ internal class MicSessionController(
                 stopCapture()
                 response(run.id, false)
             }
+        }
+    }
+
+    private fun captureFailed(run: Run) = synchronized(lock) {
+        if (!run.open || current !== run) return@synchronized
+        val summary = retireLocked(run, 0)
+        lifecycle {
+            summary?.let(report)
+            stopCapture()
+            response(run.id, false)
         }
     }
 

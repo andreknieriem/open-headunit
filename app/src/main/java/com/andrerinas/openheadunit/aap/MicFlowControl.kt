@@ -60,7 +60,6 @@ internal class MicFlowControl<T>(private val dispatch: (Long, T) -> Unit) {
     }
 
     @Synchronized fun isCurrent(token: Long): Boolean = open && token == generation
-    @Synchronized fun isOpen(): Boolean = open
 
     @Synchronized fun close(): List<T> {
         open = false

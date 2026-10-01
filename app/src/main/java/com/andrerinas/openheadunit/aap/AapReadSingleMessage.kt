@@ -69,7 +69,7 @@ internal class AapReadSingleMessage(
 
             // Only a first fragment carries the total size, and only then is this meaningful.
             var declaredTotal = 0
-            if (recvHeader.flags == 0x09) {
+            if (AapMessageFraming.carriesTotalLength(recvHeader.flags)) {
                 // Once header arrived, data should be flowing — 10s timeout is valid here
                 val readSize = connection.recvBlocking(fragmentSizeBuffer, 4, 10000, true)
                 when (AapReadRecoveryPolicy.afterFragmentTotalRead(readSize, 4)) {
@@ -127,13 +127,6 @@ internal class AapReadSingleMessage(
             val injectedDrop =
                 shouldDropForFaultInjection(recvHeader.chan, recvHeader.flags, recvHeader.enc_len)
 
-            // The whole body arrived, so this fragment can be counted against the run's declared
-            // total. Done before decryption because the total is a framing quantity - and skipped
-            // for an injected drop, which is what leaves the run short of what it declared.
-            if (!injectedDrop) {
-                auditFragment(recvHeader.chan, recvHeader.flags, recvHeader.enc_len, declaredTotal)
-            }
-
             // Step 3: Decrypt the message. Unconditionally, including a message about to be dropped:
             // the SSL engine's record sequence advances per record and the phone's does too, so a
             // record we never unwrap desynchronises the session for good.
@@ -155,7 +148,7 @@ internal class AapReadSingleMessage(
             if (injectedDrop) return 0
 
             // Step 4: Handle the decrypted message
-            handler.handle(msg)
+            deliverFragment(msg, declaredTotal)
             if (timed) {
                 val finished = SystemClock.elapsedRealtime()
                 val gap = if (previousReadFinishedMs > 0) (readStart - previousReadFinishedMs).coerceAtLeast(0) else 0L
@@ -167,6 +160,9 @@ internal class AapReadSingleMessage(
                 }
             }
             return 0
+        } catch (e: java.io.IOException) {
+            AppLog.e("AapRead: invalid framing or TLS session", e)
+            return -1
         } catch (e: Exception) {
             // Stays at 0 on purpose, unlike the read sites above. recvBlocking catches its own
             // IOException and SocketTimeoutException, so anything reaching here was thrown after the

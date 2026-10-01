@@ -781,7 +781,7 @@ class AapTransport(
      */
     internal fun dispatchVideo(message: AapMessage): Boolean {
         val isPayload = aapVideo.isPayload(message)
-        val acks = message.type == 0 || message.type == 1
+        val acks = AapMessageFraming.completesMediaData(message.type, message.flags.toInt())
         val handler = videoHandler
         if (handler == null) {
             if (acks) sendMediaAck(message.channel)

@@ -283,13 +283,14 @@ class AapSslContext(keyManager: SingleKeyKeyManager): AapSsl {
             try {
                 rxBuffer.clear()
                 val encrypted = ByteBuffer.wrap(buffer, start, length)
-                val result = sslEngine.unwrap(encrypted, rxBuffer)
-                runDelegatedTasks(result, sslEngine)
-
-                if (AppLog.LOG_VERBOSE) {
-                    statusLine = "SSL Decrypt Status: ${result.status}, Produced: ${result.bytesProduced()}, Consumed: ${result.bytesConsumed()}"
+                rxBuffer = TlsUnwrapLoop.decode(sslEngine, encrypted, rxBuffer) {
+                    runDelegatedTasks(it, sslEngine)
                 }
-                if (result.bytesProduced() == 0) {
+                val produced = rxBuffer.position()
+                if (AppLog.LOG_VERBOSE) {
+                    statusLine = "SSL Decrypt: produced=$produced consumed=$length"
+                }
+                if (produced == 0) {
                     val now = SystemClock.elapsedRealtime()
                     if (AuditReportPolicy.shouldReport(zeroUnwrapReports, zeroUnwrapLastLogMs, now)) {
                         val suppressed = zeroUnwrapSuppressed
@@ -298,15 +299,12 @@ class AapSslContext(keyManager: SingleKeyKeyManager): AapSsl {
                         zeroUnwrapLastLogMs = now
                         val suffix =
                             if (suppressed > 0) " (and $suppressed more since the last report)" else ""
-                        zeroProduceLine = "SSL Decrypt: unwrap produced no application data " +
-                            "(status ${result.status}, consumed ${result.bytesConsumed()} of " +
-                            "$length bytes)$suffix"
+                        zeroProduceLine = "SSL Decrypt: no application data after consuming $length bytes$suffix"
                     } else {
                         zeroUnwrapSuppressed++
                     }
                 }
 
-                val produced = result.bytesProduced()
                 if (produced > plaintextBuffer.size) {
                     // Cannot happen: rxBuffer is what unwrap writes into and plaintextBuffer is its
                     // capacity. Checked anyway, because silently truncating a message here would look
@@ -336,7 +334,7 @@ class AapSslContext(keyManager: SingleKeyKeyManager): AapSsl {
                 }
 
                 if (!isUserDisconnect) {
-                    AppLog.e("SSL Decrypt failed", e)
+                    throw javax.net.ssl.SSLException("AAP payload could not be fully decrypted", e)
                 }
                 null
             }

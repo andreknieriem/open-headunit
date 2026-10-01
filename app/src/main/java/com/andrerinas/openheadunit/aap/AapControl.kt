@@ -146,10 +146,8 @@ internal class AapControlMedia(
                 // backlog turn into visible input lag when 2K HEVC is decoded in software.
                 return if (aapTransport.isWireless) 6 else 8
             }
-            // Left wide for hardware decode, deliberately: a keyframe fragments into a dozen or
-            // more messages, so narrowing this stalls the phone mid-keyframe and caps throughput at
-            // window/RTT. The phone does not hold to it either - one told 12 ran our backlog to 120
-            // - so the bound that works is the decoder discarding frames it is behind on.
+            // This window counts complete DATA messages, not the fragments of a keyframe.
+            // The video queue has a separate bound for peers that exceed the advertised window.
             return if (aapTransport.isWireless) 12 else 16
         }
 
@@ -507,6 +505,9 @@ internal class AapControlGateway(
             return channelOpenRequest(request, message.channel)
         }
 
+        if (message.flags.toInt() and AapMessageFraming.FLAG_BIT_CONTROL != 0) {
+            return serviceControl.execute(message)
+        }
         when (message.channel) {
             Channel.ID_CTR -> return serviceControl.execute(message)
             Channel.ID_INP -> return touchControl.execute(message)

@@ -2,7 +2,20 @@ package com.andrerinas.openheadunit.aap
 
 import java.util.ArrayDeque
 
-/** Bounded microphone window. The dispatch callback only queues work; it must not do socket I/O. */
+/**
+ * Head-unit-to-phone DATA window negotiated by MicrophoneRequest.maxUnacked. This is separate
+ * from the receiver's advertised sink window for phone-to-head-unit audio/video.
+ *
+ * begin reserves a logical session but activate waits until its successful MicrophoneResponse
+ * is queued. pump reserves a credit before enqueueing each DATA message; claim at the send-worker
+ * boundary distinguishes queued work from a send already started. An ACK releases a count of
+ * claimed messages only, with the matching wire session id, never a sequence/timestamp value.
+ *
+ * The local generation token additionally cancels work left in the send queue after close/reopen.
+ * Closing cannot retract socket I/O already claimed, but it prevents queued old data and late
+ * ACKs from spending the replacement's credits. The dispatch callback only queues work; native
+ * I/O under this lock would block capture and session retirement.
+ */
 internal class MicFlowControl<T>(private val dispatch: (Long, T) -> Unit) {
     enum class Offer { ACCEPTED, CLOSED, OVERFLOW }
     private val pending = ArrayDeque<T>()

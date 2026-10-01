@@ -2,7 +2,20 @@ package com.andrerinas.openheadunit.aap
 
 import com.andrerinas.openheadunit.aap.protocol.proto.Media
 
-/** DATA carries a big-endian timestamp in microseconds; CODEC_CONFIG starts with CSD. */
+/**
+ * Audio service payload after AAP/TLS reassembly (offsets below exclude the outer AAP header):
+ *
+ * - DATA, type 0: [2-byte type][8-byte big-endian timestamp in microseconds][PCM or AAC bytes].
+ * - CODEC_CONFIG, type 1: [2-byte type][codec-specific configuration bytes], with no timestamp.
+ *
+ * Use dataOffset rather than a hard-coded 2/10: outbound and inbound AapMessage views have
+ * different outer-header layouts. A short AAC configuration can be only two bytes; skipping
+ * a DATA-style timestamp would silently discard it or feed configuration as encoded audio.
+ *
+ * Only DATA consumes a sender credit. CODEC_CONFIG must neither return an ACK nor announce
+ * playback. Timestamps describe source timing, not a packet sequence: AAC units from one capture
+ * batch may share one. Never discard data or return extra credits because a timestamp repeats.
+ */
 internal object AudioMediaPayload {
     fun isMedia(type: Int): Boolean = type == Media.MsgType.MEDIA_MESSAGE_DATA_VALUE ||
         type == Media.MsgType.MEDIA_MESSAGE_CODEC_CONFIG_VALUE

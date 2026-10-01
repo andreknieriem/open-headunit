@@ -366,11 +366,13 @@ class AapSslContext(keyManager: SingleKeyKeyManager): AapSsl {
         }
     }
 
-    private fun runDelegatedTasks(result: SSLEngineResult, engine: SSLEngine) {
+    private fun runDelegatedTasks(result: SSLEngineResult, engine: SSLEngine): Boolean {
+        var completed = false
         if (result.handshakeStatus === SSLEngineResult.HandshakeStatus.NEED_TASK) {
             var runnable: Runnable? = engine.delegatedTask
             while (runnable != null) {
                 runnable.run()
+                completed = true
                 runnable = engine.delegatedTask
             }
             val hsStatus = engine.handshakeStatus
@@ -378,6 +380,7 @@ class AapSslContext(keyManager: SingleKeyKeyManager): AapSsl {
                 throw Exception("handshake shouldn't need additional tasks")
             }
         }
+        return completed
     }
 
     companion object {

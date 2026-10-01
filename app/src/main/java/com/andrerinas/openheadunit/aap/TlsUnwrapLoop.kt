@@ -8,12 +8,12 @@ import javax.net.ssl.SSLException
 /** Consumes every TLS record of one AAP payload, preserving all produced plaintext. */
 internal object TlsUnwrapLoop {
     fun decode(engine: SSLEngine, input: ByteBuffer, destination: ByteBuffer,
-               tasks: (SSLEngineResult) -> Unit): ByteBuffer {
+               tasks: (SSLEngineResult) -> Boolean): ByteBuffer {
         var output = destination
         output.clear()
         while (input.hasRemaining()) {
             val result = engine.unwrap(input, output)
-            tasks(result)
+            val taskCompleted = tasks(result)
             when (result.status) {
                 SSLEngineResult.Status.BUFFER_OVERFLOW -> {
                     if (output.capacity() >= MAX_PLAINTEXT_BYTES) throw SSLException("AAP TLS plaintext exceeds limit")
@@ -26,8 +26,13 @@ internal object TlsUnwrapLoop {
                     throw SSLException("Incomplete TLS record in AAP payload")
                 SSLEngineResult.Status.CLOSED -> throw SSLException("TLS peer closed the session")
                 SSLEngineResult.Status.OK -> {
-                    if (result.bytesConsumed() == 0 && result.bytesProduced() == 0)
-                        throw SSLException("TLS unwrap made no progress: ${result.handshakeStatus}")
+                    if (result.bytesConsumed() == 0 && result.bytesProduced() == 0) {
+                        val next = engine.handshakeStatus
+                        val canUnwrap = next == SSLEngineResult.HandshakeStatus.NEED_UNWRAP ||
+                            next == SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING
+                        if (!taskCompleted || result.handshakeStatus != SSLEngineResult.HandshakeStatus.NEED_TASK || !canUnwrap)
+                            throw SSLException("TLS unwrap made no progress: ${result.handshakeStatus} -> $next")
+                    }
                 }
                 else -> throw SSLException("Unknown TLS unwrap status")
             }

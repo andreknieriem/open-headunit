@@ -816,9 +816,10 @@ class AapTransport(
     internal fun dispatchVideo(message: AapMessage): Boolean {
         val isPayload = aapVideo.isPayload(message)
         val acks = AapMessageFraming.completesMediaData(message.type, message.flags.toInt())
+        val ackSession = getSessionId(message.channel)
         val handler = videoHandler
         if (handler == null) {
-            if (acks) sendMediaAck(message.channel)
+            if (acks) sendMediaAck(message.channel, ackSession)
             return isPayload
         }
         val channel = message.channel
@@ -832,7 +833,7 @@ class AapTransport(
                     "shedding - see videoShed= on the transport dispatch line for how many")
             }
             if (isPayload) dispatchVideoRunHoled(true)
-            if (acks) sendMediaAck(channel)
+            if (acks) sendMediaAck(channel, ackSession)
             return isPayload
         }
         val size = message.size
@@ -848,7 +849,7 @@ class AapTransport(
             } finally {
                 videoBacklog.decrementAndGet()
                 recycleVideoBuffer(copy)
-                if (acks) sendMediaAck(channel)
+                if (acks) sendMediaAck(channel, ackSession)
             }
         }
         return isPayload
@@ -1183,8 +1184,8 @@ class AapTransport(
         context.sendBroadcast(ProjectionActivityRequest())
     }
 
-    internal fun sendMediaAck(channel: Int) {
-        send(MediaAck(channel, sessionIds.get(channel)))
+    internal fun sendMediaAck(channel: Int, sessionId: Int = getSessionId(channel)) {
+        send(MediaAck(channel, sessionId))
     }
 
     internal fun setSessionId(channel: Int, sessionId: Int) {

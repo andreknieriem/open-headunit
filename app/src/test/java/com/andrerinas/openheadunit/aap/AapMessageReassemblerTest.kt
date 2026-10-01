@@ -42,7 +42,7 @@ class AapMessageReassemblerTest {
 
     @Test fun `video retains streamed bytes and inherits type only from its first fragment`() {
         val r = AapMessageReassembler()
-        r.accept(frame(Channel.ID_VID, 9, ByteArray(14)), 15)
+        r.accept(frame(Channel.ID_VID, 9, ByteArray(15)), 16)
         val bytes = byteArrayOf(0x7f)
         val last = r.accept(frame(Channel.ID_VID, 10, bytes), 0)!!
         assertSame(bytes, last.data)

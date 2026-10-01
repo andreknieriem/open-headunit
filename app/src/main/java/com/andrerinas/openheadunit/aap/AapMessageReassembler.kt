@@ -34,7 +34,7 @@ internal class AapMessageReassembler {
             // The legacy video assembler inspects the timestamp/start-code prefix in FIRST.
             // If it spans fragments, reassemble here before handing a complete unit to that thread.
             val video = channel == Channel.ID_VID && flags and AapMessageFraming.FLAG_BIT_CONTROL == 0 &&
-                fragment.type in 0..1 && fragment.size >= 14
+                fragment.type in 0..1 && fragment.size >= 15
             val bytes = if (video) null else {
                 if (declaredTotal > MAX_RESERVED_BYTES - reserved) throw IOException("AAP reassembly budget exhausted")
                 ByteArray(declaredTotal).also { reserved += it.size }

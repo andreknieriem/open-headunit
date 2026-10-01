@@ -37,7 +37,6 @@ class MicRecorder(private val context: Context) {
      */
     private val captureRateHz: Int
     private val micBufferSize: Int
-    private var micAudioBuf: ByteArray
 
     /** Null when the capture is already at the announced rate. */
     private val decimator: MicPcmDecimator?
@@ -60,7 +59,6 @@ class MicRecorder(private val context: Context) {
                 "of it either. The microphone is unavailable")
             captureRateHz = MicCaptureFormat.SAMPLE_RATE_HZ
             micBufferSize = 0
-            micAudioBuf = ByteArray(0)
             wireBuf = ByteArray(0)
             decimator = null
             isAvailable = false
@@ -70,7 +68,6 @@ class MicRecorder(private val context: Context) {
             // overruns. The minimum the device asks for is often less than half of that.
             val twoChunks = 2 * MicCaptureFormat.CHUNK_BYTES * decision.decimationFactor
             micBufferSize = maxOf(decision.minBufferSize, twoChunks)
-            micAudioBuf = ByteArray(micBufferSize)
             if (decision.isDirect) {
                 decimator = null
                 wireBuf = ByteArray(0)
@@ -90,8 +87,11 @@ class MicRecorder(private val context: Context) {
     // Volatile: written from stop() on another thread and spun on by the capture loop, which now
     // runs at urgent audio priority.
     @Volatile private var threadMicAudioActive = false
-    private var threadMicAudio: Thread? = null
+    @Volatile private var threadMicAudio: Thread? = null
     var listener: Listener? = null
+
+    internal fun isCurrentCaptureThread(): Boolean =
+        threadMicAudioActive && Thread.currentThread() === threadMicAudio
 
     // What the capture produced, summarised on stop(). A microphone delivering pure silence used
     // to log exactly like a working one: read() returns a full buffer either way and no error path
@@ -256,6 +256,9 @@ class MicRecorder(private val context: Context) {
         val currentListener = listener ?: return 0
         
         val len = currentAudioRecord.read(aud_buf, 0, max_len)
+        // A read from a retired recorder may complete after the next session has opened.
+        if (!threadMicAudioActive || currentAudioRecord !== audioRecord ||
+            Thread.currentThread() !== threadMicAudio) return 0
         if (len <= 0) {
             captureEmptyReads++
             if (len == AudioRecord.ERROR_INVALID_OPERATION && threadMicAudioActive) {
@@ -474,14 +477,17 @@ class MicRecorder(private val context: Context) {
             capturePeak = 0
 
             threadMicAudioActive = true
-            threadMicAudio = Thread({
+            val captureBuffer = ByteArray(micBufferSize)
+            val captureThread = Thread({
                 // Keep capture promptly scheduled so a loaded head unit does not delay
                 // microphone reads and create gaps in what the phone hears.
                 requestAudioThreadPriority(Process.THREAD_PRIORITY_URGENT_AUDIO)
-                while (threadMicAudioActive) {
-                    micAudioRead(micAudioBuf, micBufferSize)
+                while (threadMicAudioActive && Thread.currentThread() === threadMicAudio) {
+                    micAudioRead(captureBuffer, micBufferSize)
                 }
-            }, "mic_audio").apply { start() }
+            }, "mic_audio")
+            threadMicAudio = captureThread
+            captureThread.start()
 
             return 0
         } catch (e: Exception) {

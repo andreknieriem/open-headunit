@@ -203,8 +203,13 @@ class VideoDecoder(
     private var softwareHevcDecoder: FfmpegHevcDecoder? = null
     private var codecBufferInfo: MediaCodec.BufferInfo? = null
     private var mSurface: Surface? = null
-    // Output publication never takes this decoder's monitor: stop holds it while joining.
-    // Retire ownership here before joining; native calls and callbacks stay outside this lock.
+    // A native dequeue/release can outlive stop's bounded join. Without ownership fencing,
+    // the old worker can update dimensions, first-frame notifications or restart counters
+    // belonging to the replacement codec after a Surface change or reconnect.
+    // Output publication never takes this decoder's monitor: stop holds it while joining,
+    // so doing so would make that join wait on itself. Retire ownership under this separate
+    // lock before joining; native calls and callbacks stay outside it. Codec selection and
+    // format-specific recovery policies remain independent of this lifecycle boundary.
     private val outputPublicationLock = Any()
     @Volatile private var outputThread: Thread? = null
     @Volatile private var running = false
@@ -2223,7 +2228,9 @@ class VideoDecoder(
         val self = Thread.currentThread()
         val currentCodec = codec ?: return
         val bufferInfo = codecBufferInfo ?: return
-        // A retired worker may still be returning from a native call during a new run.
+        // Scratch belongs to this worker, not the decoder instance. A retired worker may
+        // still return from a native call while its replacement is collecting output; sharing
+        // indices would let one worker release the other's buffers against the wrong codec.
         val readyIndices = IntArray(MAX_CATCHUP_SKIPS + 2)
         val events = OutputEvents()
         val info = events::info

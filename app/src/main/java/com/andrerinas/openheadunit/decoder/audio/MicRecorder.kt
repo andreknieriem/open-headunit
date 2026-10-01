@@ -126,6 +126,9 @@ class MicRecorder(
         /** The foreground service could not claim the microphone type, so capture must not open. */
         const val ERROR_NO_FOREGROUND_TYPE = -6
 
+        /** The user disabled capture after the phone's request was accepted. */
+        const val ERROR_DISABLED = -7
+
         /**
          * How capture asks for the microphone foreground-service type, which Android 14 will not
          * grant at service start.
@@ -270,6 +273,8 @@ class MicRecorder(
     }
 
     fun start(): Int {
+        // The poll-side policy may have accepted Open before this lifecycle job ran.
+        if (!settings.useHeadUnitMicrophone) return ERROR_DISABLED
         if (!isAvailable) {
             AppLog.w("MicRecorder: Cannot start, mic not available on this device")
             return ERROR_UNAVAILABLE
@@ -389,6 +394,8 @@ class MicRecorder(
     /** Returns 0 once capture is running, or [ERROR_RECORDER_FAILED] if it never started. */
     private fun startRecording(source: Int): Int {
         try {
+            // Legacy SCO can connect much later than Open and the foreground claim.
+            if (!settings.useHeadUnitMicrophone) return ERROR_DISABLED
             if (audioRecord != null) return 0 // Already recording
             
             AppLog.i("MicRecorder: Initializing AudioRecord with source: ${getAudioSourceName(source)} ($source), SampleRate: $captureRateHz, BufferSize: $micBufferSize")

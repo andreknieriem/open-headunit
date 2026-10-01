@@ -37,6 +37,7 @@ class MicRecorderSessionTest {
         val errors = AtomicInteger()
         val failure = CountDownLatch(1)
         var initialized = true
+        var micEnabled = true
         var readError: Int? = null
         var throwRead = false
         var delayFirstRead = false
@@ -68,6 +69,9 @@ class MicRecorderSessionTest {
             whenever(context.getSystemService(Context.AUDIO_SERVICE)).thenReturn(audio)
             whenever(prefs.getInt(any(), any())).thenAnswer {
                 if (it.arguments[0] == "mic-input-source") source else it.arguments[1]
+            }
+            whenever(prefs.getBoolean(any(), any())).thenAnswer {
+                if (it.arguments[0] == "use-head-unit-microphone") micEnabled else it.arguments[1]
             }
             whenever(claim.claim()).thenReturn(true)
             MicRecorder.foregroundClaim = claim
@@ -236,6 +240,41 @@ class MicRecorderSessionTest {
         f.controller.close()
         f.workAll(); f.sendAll()
         assertTrue(f.records.constructed().isEmpty())
+    }
+
+    @Test fun `setting disabled while Open waits declines before claiming or creating capture`() = Fixture(source = 1).use { f ->
+        f.controller.open(2)
+        f.micEnabled = false
+        f.workAll(); f.sendAll()
+        assertEquals(listOf(1 to false), f.responses)
+        verify(f.claim, never()).claim()
+        assertTrue(f.records.constructed().isEmpty())
+        f.micEnabled = true
+        f.open()
+        assertEquals(1, f.records.constructed().size)
+        assertTrue(f.responses.contains(2 to true))
+    }
+
+    @Test fun `setting disabled while SCO connects retires the pending attempt`() = Fixture().use { f ->
+        f.open()
+        f.micEnabled = false
+        f.state(AudioManager.SCO_AUDIO_STATE_CONNECTED)
+        assertTrue(f.records.constructed().isEmpty())
+        assertEquals(1, f.responses.count { it == (1 to false) })
+        verify(f.claim).release()
+        verify(f.context).unregisterReceiver(f.receivers.single())
+        f.micEnabled = true
+        f.open(); f.state(AudioManager.SCO_AUDIO_STATE_CONNECTED)
+        assertEquals(1, f.records.constructed().size)
+        assertTrue(f.responses.contains(2 to true))
+    }
+
+    @Test fun `refused foreground claim cannot start native capture`() = Fixture(source = 1).use { f ->
+        whenever(f.claim.claim()).thenReturn(false)
+        f.open()
+        assertEquals(listOf(1 to false), f.responses)
+        assertTrue(f.records.constructed().isEmpty())
+        verify(f.claim, never()).release()
     }
 
     @Test fun `late old callback and repeated cleanup preserve a new transport recorder`() = Fixture().use { f ->

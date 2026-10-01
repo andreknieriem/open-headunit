@@ -992,15 +992,14 @@ class AapService : Service() {
         // says no. Capture has already checked both by this point, so say which happened rather
         // than claiming something that did not.
         val claimed = mask and ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE != 0
+        if (!claimed) {
+            AppLog.i("AapService: microphone permission or setting changed before capture; declining")
+            return false
+        }
 
         return try {
             startForeground(1, createNotification(), mask)
-            if (claimed) {
-                AppLog.i("AapService: claimed the microphone foreground-service type for this capture")
-            } else {
-                AppLog.i("AapService: the microphone foreground-service type was not asked for; " +
-                    "the permission or the setting says no")
-            }
+            AppLog.i("AapService: claimed the microphone foreground-service type for this capture")
             true
         } catch (e: Exception) {
             AppLog.e("AapService: could not claim the microphone foreground-service type " +

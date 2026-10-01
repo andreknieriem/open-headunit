@@ -7,7 +7,13 @@ import java.io.IOException
  * Reassembles protobuf/audio messages before any handler reads their type or timestamp.
  * Video DATA/CSD remains streamed to the video thread's assembler to avoid an extra frame copy;
  * the reader's plaintext audit validates its length before the last fragment is dispatched.
- * Returned buffers are borrowed until the next accept call on this channel.
+ * A direct/streamed result still borrows TLS storage until the next decrypt on ANY channel.
+ * A copied result owns a newly assembled array. Callers use the conservative borrowed-buffer
+ * contract for both and copy before an asynchronous handoff.
+ *
+ * FIRST's declared total includes the two-byte type and any DATA timestamp exactly once.
+ * Continuations contribute all their plaintext bytes, starting at zero. Require an exact total
+ * at LAST before parsing a copied message; bytes from different channels must never share a run.
  */
 internal class AapMessageReassembler {
     private class Run(val first: AapMessage, val total: Int, val video: Boolean, val bytes: ByteArray?) {
@@ -31,8 +37,11 @@ internal class AapMessageReassembler {
             if (declaredTotal < 2 || declaredTotal > MAX_MESSAGE_BYTES || fragment.size > declaredTotal) {
                 throw IOException("Invalid AAP message length $declaredTotal on channel $channel")
             }
-            // The legacy video assembler inspects the timestamp/start-code prefix in FIRST.
-            // If it spans fragments, reassemble here before handing a complete unit to that thread.
+            // Preserve the streamed video path only when FIRST has enough prefix for its
+            // downstream parser: type (2), possible timestamp (8), start code (4), and a byte
+            // beyond it (1). A 14-byte FIRST can end exactly at the start code. Buffer such
+            // short prefixes here and emit a COMPLETE message at LAST instead of letting the
+            // video parser discard a valid run. CONTROL traffic never takes this shortcut.
             val video = channel == Channel.ID_VID && flags and AapMessageFraming.FLAG_BIT_CONTROL == 0 &&
                 fragment.type in 0..1 && fragment.size >= 15
             val bytes = if (video) null else {
@@ -42,6 +51,8 @@ internal class AapMessageReassembler {
             runs[channel] = Run(fragment, declaredTotal, video, bytes)
         }
         val run = runs[channel] ?: return null // An orphan has no type; never interpret its bytes.
+        // FIRST/LAST change across the run; CONTROL/ENCRYPTED must not. Do not let a
+        // continuation reinterpret an existing service payload using a different routing class.
         if ((flags and 0x0c) != (run.first.flags.toInt() and 0x0c)) {
             release(channel)
             throw IOException("AAP fragment routing changed on channel $channel")

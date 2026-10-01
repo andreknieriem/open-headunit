@@ -27,10 +27,11 @@ internal class AapReadSingleMessage(
         val timed = captureTiming()
         val readStart = if (timed) SystemClock.elapsedRealtime() else 0L
         try {
-            // Step 1: Read the encrypted header.
-            // No timeout limit (0 = infinite) because this waits for the
-            // NEXT message — the phone can be idle for minutes and that's normal.
-            // TCP keepAlive will detect a truly dead connection.
+            // Step 1: Read the cleartext AAP envelope, not a TLS header. recvBlocking(...,
+            // readFully=true) must finish these four bytes even if TCP splits them across reads.
+            // Socket connections use a 15s idle timeout; the non-socket fallback passes zero.
+            // Once any frame prefix is consumed, an incomplete remainder cannot be skipped:
+            // there is no delimiter from which to rediscover the next header safely.
             val isSocket = connection is SocketProjectionConnection
             val timeout = if (isSocket) 15000 else 0
             val headerSize = connection.recvBlocking(recvHeader.buf, recvHeader.buf.size, timeout, true)

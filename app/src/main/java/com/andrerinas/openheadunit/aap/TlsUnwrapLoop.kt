@@ -5,7 +5,16 @@ import javax.net.ssl.SSLEngine
 import javax.net.ssl.SSLEngineResult
 import javax.net.ssl.SSLException
 
-/** Consumes every TLS record of one AAP payload, preserving all produced plaintext. */
+/**
+ * Consumes every TLS record carried by one AAP frame body, preserving all produced plaintext.
+ * The caller has already read the envelope's full byte count. TLS underflow here is therefore
+ * a truncated record within that frame, not a cue to treat the next AAP header as TLS bytes.
+ *
+ * A frame body can require multiple unwrap calls; neither a TLS record nor one unwrap result
+ * defines a complete service message. Accumulate output, preserving it when the buffer grows,
+ * then leave FIRST/LAST assembly to [AapMessageReassembler]. Delegated tasks can make progress
+ * without consuming bytes, but an unwrap that makes no byte or task progress must not spin.
+ */
 internal object TlsUnwrapLoop {
     fun decode(engine: SSLEngine, input: ByteBuffer, destination: ByteBuffer,
                tasks: (SSLEngineResult) -> Boolean): ByteBuffer {

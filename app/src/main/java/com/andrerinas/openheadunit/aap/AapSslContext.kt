@@ -240,9 +240,11 @@ class AapSslContext(keyManager: SingleKeyKeyManager): AapSsl {
      *
      * Reusing it is only safe because every consumer of the returned array finishes with it before
      * the next message is decrypted: the poll thread reads, decrypts, dispatches and returns, all
-     * synchronously, and the three paths that could have outlived that all copy first - the video
-     * feed queue arraycopies into a pooled frame, the audio path arraycopies into its own pooled
-     * chunk, and protobuf parsing copies. Every consumer also bounds its reads by the message's
+     * synchronously. Paths that retain bytes copy before returning: common message reassembly
+     * copies fragments into its run, video dispatch copies into a pooled worker buffer, PCM
+     * ingress copies into its bank, queued audio owns a chunk, and protobuf parsing copies.
+     * A read on another channel can reuse this same array; per-channel assembly is not a lease
+     * on the TLS buffer. Every consumer also bounds its reads by the message's
      * `size` field rather than by `data.size`, which is what makes a buffer larger than the payload
      * safe; that was checked call site by call site, and the one place that did not - the short-payload
      * guard in AapMessageIncoming - is fixed alongside this.

@@ -10,6 +10,17 @@ internal class AapMessageIncoming(header: EncryptedHeader, ba: ByteArrayWithLimi
         if (AapMessageFraming.carriesMessageType(header.flags) && ba.limit >= 2) Utils.bytesToInt(ba.data, 0, true) else -1,
         calcOffset(header), ba.limit, ba.data) {
 
+    /**
+     * Cleartext AAP envelope for an encrypted body; the header itself is not encrypted.
+     *
+     * Offset 0: channel (u8); 1: flags (u8); 2..3: body byte count (u16, big-endian).
+     * FIRST without LAST adds a big-endian four-byte total plaintext length after this header.
+     * That extra field is outside enc_len and counts the reassembled type plus service payload,
+     * not TLS overhead. COMPLETE and continuation frames have no such extra field.
+     *
+     * Readers consume the envelope, optional total and exactly enc_len body bytes before unwrap.
+     * A socket/USB read boundary is unrelated to an AAP frame or a complete service message.
+     */
     internal class EncryptedHeader {
 
         var chan: Int = 0
@@ -22,7 +33,7 @@ internal class AapMessageIncoming(header: EncryptedHeader, ba: ByteArrayWithLimi
             this.chan = buf[0].toInt() and 0xff
             this.flags = buf[1].toInt() and 0xff
 
-            // Encoded length of bytes to be decrypted (minus 4/8 byte headers)
+            // TLS body length only; excludes this header and the optional four-byte total.
             this.enc_len = Utils.bytesToInt(buf, 2, true)
         }
 

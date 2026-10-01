@@ -52,10 +52,10 @@ internal class AapMessageHandlerType(
         val msgType = message.type
         val flags = message.flags
 
-        // 1. Video goes to its own thread (ID_VID), which sends the ack itself once the decode is
-        // done. That ack is the phone's flow control and the only bound on the video backlog, so it
-        // stays behind the work; what the demux buys is that it is no longer the read thread that
-        // waits for it, and audio is read and acked on its own path throughout.
+        // 1. Video goes to its own worker (ID_VID). DATA credit is returned after that worker
+        // processes the complete message, not after MediaCodec renders it. The queue also has
+        // an explicit bound for peers exceeding their window. This handoff keeps video work
+        // off the shared receive thread so audio can continue to be read and acknowledged.
         if (message.channel == Channel.ID_VID) {
             // False means control traffic on the video channel, which falls through to step 5 as
             // it always has. The video thread still sees it either way.
@@ -67,7 +67,9 @@ internal class AapMessageHandlerType(
         // 2. Try processing as Audio stream (Speech, System, Media)
         if (message.isAudio) {
             if (aapAudio.process(message)) {
-                // Send ACK AFTER processing
+                // Return one DATA credit after consumption/copy, including a safely rejected
+                // payload. Do not wait for speaker drain: that would stall the sender's window.
+                // CSD has no DATA credit to return; fragments were completed before dispatch.
                 if (AudioMediaPayload.requiresAck(msgType)) {
                     transport.sendMediaAck(message.channel)
                 }

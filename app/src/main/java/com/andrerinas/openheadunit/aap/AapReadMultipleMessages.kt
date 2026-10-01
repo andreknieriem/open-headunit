@@ -59,6 +59,12 @@ internal class AapReadMultipleMessages(
         return 0
     }
 
+    /**
+     * One bulk read may end inside a header/body or contain several AAP frames. Mark the start
+     * before consuming a header, and reset there if either the optional total or the body is
+     * incomplete. compact() retains that entire prefix for the next read; it must not be fed
+     * to TLS early or discarded as a malformed short message.
+     */
     private fun processBulk() {
         fifo.flip()
 

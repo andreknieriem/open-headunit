@@ -480,6 +480,9 @@ internal class AapControlGateway(
             return channelOpenRequest(request, message.channel)
         }
 
+        // Type numbers are scoped by service. CONTROL explicitly selects generic control
+        // handling even on an audio/video channel; channel number alone cannot choose the
+        // protobuf schema. ChannelOpen above is handled before the service is established.
         if (message.flags.toInt() and AapMessageFraming.FLAG_BIT_CONTROL != 0) {
             return serviceControl.execute(message)
         }

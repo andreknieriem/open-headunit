@@ -27,6 +27,7 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.IOException
+import java.security.MessageDigest
 
 object LogExporter {
 
@@ -402,8 +403,27 @@ object LogExporter {
      */
     private fun appendBanner(file: File, context: Context) {
         try {
+            // Export runs on Dispatchers.IO. Read the installed artifact here, never on the
+            // mixer/transport path; a release tag or version name alone cannot identify its bytes.
+            val apkHash = try {
+                val digest = MessageDigest.getInstance("SHA-256")
+                FileInputStream(context.applicationInfo.sourceDir).use { apk ->
+                    val buffer = ByteArray(8192)
+                    while (true) {
+                        val read = apk.read(buffer)
+                        if (read < 0) break
+                        digest.update(buffer, 0, read)
+                    }
+                }
+                digest.digest().joinToString("") { "%02x".format(it.toInt() and 0xff) }
+            } catch (e: Exception) {
+                "unavailable:${e.javaClass.simpleName}"
+            }
             FileOutputStream(file, true).use {
                 it.write(("\n${sessionBanner(context)}\n" +
+                    "LogExporter: exportArtifact commit=${BuildConfig.GIT_SHA} baseApkSha256=$apkHash " +
+                    "exportElapsedMs=${SystemClock.elapsedRealtime()} " +
+                    "(identifies the exporting app; earlier captured sessions may differ)\n" +
                     AudioDiagnostics.snapshot(SystemClock.elapsedRealtime()) + "\n").toByteArray())
             }
         } catch (e: Exception) {

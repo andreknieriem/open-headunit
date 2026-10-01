@@ -2151,6 +2151,9 @@ class AapService : Service() {
             discoveryDormantAfterWifiLoss = false
             AppLog.i("NetworkMonitor: network is back after a link-loss teardown; discovery resumes")
         }
+        // A new default/internet network does not replace the active projection socket.
+        // Leave discovery dormant while a connection is owned, including its handshake.
+        if (isDestroying || isSessionUp()) return
         val now = SystemClock.elapsedRealtime()
         if (!WifiJoinKickPolicy.shouldKick(isConnected, now, lastNetworkAvailableKickMs, NETWORK_AVAILABLE_DEBOUNCE_MS)) {
             AppLog.d("NetworkMonitor: $source event ignored (connected=$isConnected, inside debounce)")
@@ -2163,6 +2166,8 @@ class AapService : Service() {
         // to a connection nobody owns. startScan() is a no-op while a healthy scan is in flight.
         serviceScope.launch {
             delay(500)
+            // The projection may have connected during the debounce delay.
+            if (isDestroying || isSessionUp()) return@launch
 
             when (wifiLauncherManager.forceStartDiscoveryScan()) {
                 false -> {

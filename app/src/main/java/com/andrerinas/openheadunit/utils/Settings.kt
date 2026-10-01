@@ -21,6 +21,7 @@ import com.andrerinas.openheadunit.connection.usb.UsbDeviceCompat
 import com.andrerinas.openheadunit.connection.wifi.direct.GroupIdentityStability
 import com.andrerinas.openheadunit.connection.wifi.direct.ObservedP2pCredentials
 import com.andrerinas.openheadunit.connection.wifi.direct.ObservedP2pGroup
+import com.andrerinas.openheadunit.connection.wifi.direct.StationStandDownReassertPolicy
 import com.andrerinas.openheadunit.connection.wifi.direct.StoredP2pIdentity
 import com.andrerinas.openheadunit.connection.wifi.modes.helper.HelperStrategy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeDriverSelectionPolicy
@@ -623,7 +624,26 @@ class Settings(private val context: Context) {
             prefs.getBoolean("stand-down-station-for-wifi-direct", false) -> 1
             else -> 0
         }
-        set(value) { prefs.edit().putInt("stand-down-station-mode", value).apply() }
+        set(value) {
+            val clears = StationStandDownReassertPolicy.modeChangeClearsVerdict(stationStandDownMode, value)
+            prefs.edit().apply {
+                putInt("stand-down-station-mode", value)
+                if (clears) remove("station-stand-down-contested-fingerprint")
+            }.apply()
+        }
+
+    /**
+     * Build.FINGERPRINT of a ROM that undid every re-assertion of the stand-down, or null.
+     * In force only on that ROM; changing the stand-down mode clears it.
+     */
+    var stationStandDownContestedFingerprint: String?
+        get() = prefs.getString("station-stand-down-contested-fingerprint", null)
+        set(value) {
+            prefs.edit().apply {
+                if (value == null) remove("station-stand-down-contested-fingerprint")
+                else putString("station-stand-down-contested-fingerprint", value)
+            }.apply()
+        }
 
     /**
      * The network id disabled by the WiFi Direct station stand-down, or -1 for none standing.

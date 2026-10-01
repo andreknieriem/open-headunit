@@ -1,6 +1,20 @@
 package com.andrerinas.openheadunit.aap
 
-/** Checks the declared plaintext message length, including its type, after TLS unwrap. */
+/**
+ * Cross-checks a fragment run against the total plaintext length declared by its first fragment.
+ * A missing middle fragment otherwise leaves a plausible FIRST, middle, LAST sequence: the video
+ * assembler can hand a damaged access unit to the decoder without noticing the missing bytes.
+ *
+ * Count bytes after TLS unwrap, including the message type, but excluding AAP headers and TLS
+ * overhead. Comparing an encrypted whole-run delta across different fragment counts once caused
+ * false alarms; the previous audit compensated by learning overhead per fragment (29 bytes in
+ * captured sessions). Plaintext accounting removes that uncertainty, so no learned baseline or tolerance
+ * should be reintroduced here. Even a one-byte difference means the completed run is not intact.
+ *
+ * State is per channel because audio, video and control messages interleave on one connection.
+ * This class reports findings only; [AapRead] owns logging and [AuditRecoveryPolicy] owns repair.
+ * A log budget must never decide whether corrupted data is accepted or recovery is requested.
+ */
 class FragmentedMessageAudit(channelCount: Int = DEFAULT_CHANNEL_COUNT) {
     enum class Outcome { DELTA_CHANGED, ORPHANED_FRAGMENT, TRUNCATED_RUN }
 
@@ -19,6 +33,11 @@ class FragmentedMessageAudit(channelCount: Int = DEFAULT_CHANNEL_COUNT) {
     private val observed = LongArray(channelCount)
     private val fragments = IntArray(channelCount)
 
+    /**
+     * [declaredTotal] is meaningful only on FIRST without LAST. [plaintextLength] is the actual
+     * delivered TLS output length, never backing-array capacity. A new FIRST retires an unfinished
+     * run and reports it; the replacement run still starts, so one fault cannot poison the channel.
+     */
     fun onMessage(channel: Int, flags: Int, plaintextLength: Int, declaredTotal: Int): Result? {
         if (channel !in open.indices) return null
         val first = flags and FLAG_BIT_FIRST != 0

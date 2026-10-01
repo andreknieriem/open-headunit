@@ -145,8 +145,12 @@ internal class AapControlMedia(
                 // backlog turn into visible input lag when 2K HEVC is decoded in software.
                 return if (aapTransport.isWireless) 6 else 8
             }
-            // This window counts complete DATA messages, not the fragments of a keyframe.
-            // The video queue has a separate bound for peers that exceed the advertised window.
+            // Keep the hardware path's wider window: shrinking it limits throughput by the
+            // number of outstanding DATA messages and their ACK round-trip time. Credits count
+            // complete DATA messages, not individual fragments of a keyframe.
+            // The advertised window alone is not a memory bound: a captured peer told to use 12
+            // still drove the backlog to 120. The video queue therefore has its own bound for
+            // peers that exceed the window. The software-HEVC window above remains separate.
             return if (aapTransport.isWireless) 12 else 16
         }
 
@@ -177,7 +181,13 @@ internal class AapControlMedia(
         return 0
     }
 
-    /** Opens an ACK-controlled microphone session; logs capture processing options separately. */
+    /**
+     * Open or close an ACK-controlled microphone session and reply through its lifecycle owner.
+     * Keep the request at INFO: it records the phone's ANC/EC preferences and maxUnacked window,
+     * so a silent assistant can be traced from the request through capture and uplink summaries.
+     * The window controls sending; ANC/EC settings describe the request, not proof that a device
+     * enabled those effects. Native startup is asynchronous and must not block media reception.
+     */
     private fun micRequest(micRequest: Media.MicrophoneRequest): Int {
         AppLog.i("Mic request: %s", micRequest)
 

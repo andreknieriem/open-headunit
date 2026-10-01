@@ -76,6 +76,8 @@ internal interface AapRead {
 
         private val fragmentAudit = FragmentedMessageAudit()
         private val reassembler = AapMessageReassembler()
+        // Per-outcome print budgets refill so a noisy startup cannot silence later failures.
+        // These counters govern reports only; repair is dispatched before consulting them.
         private val auditReports = IntArray(FragmentedMessageAudit.Outcome.entries.size)
         private val auditLastReportMs = LongArray(FragmentedMessageAudit.Outcome.entries.size)
         private val auditSuppressed = IntArray(FragmentedMessageAudit.Outcome.entries.size)
@@ -89,7 +91,12 @@ internal interface AapRead {
             return doRead(connection)
         }
 
-        /** TLS is fully consumed even for an injected drop; only delivered plaintext is counted. */
+        /**
+         * TLS is fully consumed even for an injected drop; only delivered plaintext is counted.
+         * Skipping an encrypted record would desynchronise TLS and turn a fragment-loss exercise
+         * into a disconnect. Audit before dispatch so a bad final video fragment is marked for
+         * discard before the video worker can finish its assembly.
+         */
         protected fun deliverFragment(message: AapMessage, declaredTotal: Int) {
             auditFragment(message.channel, message.flags.toInt(), message.size, declaredTotal)
             reassembler.accept(message, declaredTotal)?.let { handler.handle(it) }
@@ -97,6 +104,8 @@ internal interface AapRead {
 
         private fun auditFragment(channel: Int, flags: Int, plaintextLength: Int, declaredTotal: Int) {
             val result = fragmentAudit.onMessage(channel, flags, plaintextLength, declaredTotal) ?: return
+            // Before the print budget deliberately: suppressing a repeated log must not suppress
+            // repair. The callback queues recovery ahead of this fragment on the video worker.
             if (AuditRecoveryPolicy.shouldRequestKeyframe(result.outcome, result.channel)) {
                 onVideoRunHoled(AuditRecoveryPolicy.shouldDiscardAssembledUnit(result))
             }

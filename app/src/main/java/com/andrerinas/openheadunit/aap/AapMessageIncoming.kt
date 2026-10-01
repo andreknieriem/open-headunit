@@ -44,7 +44,11 @@ internal class AapMessageIncoming(header: EncryptedHeader, ba: ByteArrayWithLimi
             val ba = ssl.decrypt(offset, header.enc_len, buf) ?: return null
 
             // A fragmented message may split even its type or timestamp across fragments.
-            // The reassembler validates the completed header before a service can consume it.
+            // Use ba.limit, not ba.data.size: TLS reuses a larger backing array, whose unused
+            // tail is not received data. The constructor leaves an incomplete type unknown.
+            // A blanket two-byte guard here would discard legal short continuations and lose
+            // the whole message. The reassembler checks the completed header before dispatch;
+            // deferring that check does not permit a handler to read stale buffer contents.
             val msg = AapMessageIncoming(header, ba)
 
             if (AppLog.LOG_VERBOSE) {

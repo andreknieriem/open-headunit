@@ -32,6 +32,7 @@ interface VideoDimensionsListener {
  */
 class VideoDecoder(
     private val settings: Settings,
+    private val elapsedRealtime: () -> Long = { SystemClock.elapsedRealtime() },
     private val readMemory: () -> DeviceMemoryReading = {
         DeviceMemoryReading(
             DeviceMemoryProfile.NORMAL, totalRamMb = 0, heapLimitMb = 0, memoryClassMb = 0, systemLowRamFlag = false
@@ -202,7 +203,10 @@ class VideoDecoder(
     private var softwareHevcDecoder: FfmpegHevcDecoder? = null
     private var codecBufferInfo: MediaCodec.BufferInfo? = null
     private var mSurface: Surface? = null
-    private var outputThread: Thread? = null
+    // Output publication never takes this decoder's monitor: stop holds it while joining.
+    // Retire ownership here before joining; native calls and callbacks stay outside this lock.
+    private val outputPublicationLock = Any()
+    @Volatile private var outputThread: Thread? = null
     @Volatile private var running = false
     private var startTime = 0L
 
@@ -361,9 +365,6 @@ class VideoDecoder(
     // order. Testing identity as well means an outlived thread can only ever exit.
     @Volatile private var feedThread: Thread? = null
 
-    // Scratch for the output thread's catch-up pass. Owned by that thread alone.
-    private val readyIndices = IntArray(MAX_CATCHUP_SKIPS + 2)
-
     // Reuse buffers for older API levels to minimize GC pressure
     private var inputBuffers: Array<ByteBuffer>? = null
     private var legacyFrameBuffer: ByteArray? = null
@@ -375,7 +376,9 @@ class VideoDecoder(
     private var lastFpsLogTime = 0L
     private var loggedFirstSoftwareFrame = false
     private var loggedFirstHardwareFrame = false
-    @Volatile var onFirstFrameListener: (() -> Unit)? = null
+    var onFirstFrameListener: (() -> Unit)? = null
+        get() = synchronized(outputPublicationLock) { field }
+        set(value) = synchronized(outputPublicationLock) { field = value }
     @Volatile var lastFrameRenderedMs: Long = 0L
 
     // Frames rendered since whoever owns the session last zeroed this. Deliberately *not* cleared
@@ -463,7 +466,7 @@ class VideoDecoder(
      */
     fun noteStreamCorrupted(reason: String) {
         lastCorruptionReason = reason
-        corruptionReportedMs = SystemClock.elapsedRealtime()
+        corruptionReportedMs = elapsedRealtime()
     }
 
     /**
@@ -486,6 +489,7 @@ class VideoDecoder(
     private fun applyConcealmentTransition(
         outcome: CorruptionConcealmentPolicy.Outcome,
         nowMs: Long,
+        report: (String) -> Unit = { AppLog.w(it) },
     ) {
         when (outcome) {
             CorruptionConcealmentPolicy.Outcome.OPEN -> {
@@ -494,7 +498,7 @@ class VideoDecoder(
                 logConcealment(
                     nowMs,
                     "VideoDecoder: holding the picture after $lastCorruptionReason - the last " +
-                        "good frame stays up until a keyframe"
+                        "good frame stays up until a keyframe", report
                 )
             }
             CorruptionConcealmentPolicy.Outcome.CLOSE_REPAIRED -> {
@@ -502,7 +506,7 @@ class VideoDecoder(
                 logConcealment(
                     nowMs,
                     "VideoDecoder: picture restored ${nowMs - concealWindowOpenedMs}ms after " +
-                        "$lastCorruptionReason (keyframe decoded)"
+                        "$lastCorruptionReason (keyframe decoded)", report
                 )
                 concealWindowOpenedMs = 0L
             }
@@ -512,7 +516,7 @@ class VideoDecoder(
                     nowMs,
                     "VideoDecoder: no keyframe within " +
                         "${CorruptionConcealmentPolicy.CONCEAL_MAX_MS}ms of " +
-                        "$lastCorruptionReason - resuming on the damaged stream"
+                        "$lastCorruptionReason - resuming on the damaged stream", report
                 )
                 concealWindowOpenedMs = 0L
             }
@@ -529,7 +533,7 @@ class VideoDecoder(
      * cannot reopen until a keyframe has re-armed the policy - so the budget exists for the
      * pathological stream, not the expected one.
      */
-    private fun logConcealment(nowMs: Long, message: String) {
+    private fun logConcealment(nowMs: Long, message: String, report: (String) -> Unit) {
         if (AuditReportPolicy.shouldReport(concealReports, concealLastLogMs, nowMs)) {
             val suppressed = concealSuppressed
             concealSuppressed = 0
@@ -537,7 +541,7 @@ class VideoDecoder(
             concealLastLogMs = nowMs
             val suffix =
                 if (suppressed > 0) " (and $suppressed window events since the last report)" else ""
-            AppLog.w(message + suffix)
+            report(message + suffix)
         } else {
             concealSuppressed++
         }
@@ -597,7 +601,7 @@ class VideoDecoder(
     private fun pendingKeyframeAgeMs(): Long {
         val fedAtMs = lastKeyframeFedMs
         if (!keyframeRepair.awaitingOutput || fedAtMs == 0L) return Long.MAX_VALUE
-        return SystemClock.elapsedRealtime() - fedAtMs
+        return elapsedRealtime() - fedAtMs
     }
 
     enum class CodecType(val mimeType: String, val displayName: String, val settingsValue: String) {
@@ -650,17 +654,46 @@ class VideoDecoder(
     /**
      * Handles dynamic video dimension changes during the session.
      */
-    private fun handleOutputFormatChange(format: MediaFormat) {
-        AppLog.i("Output Format Changed: $format")
-        val (newWidth, newHeight) = displaySizeOf(format)
-        if (mWidth != newWidth || mHeight != newHeight) {
-            AppLog.i("Video dimensions changed via format: ${newWidth}x$newHeight")
-            mWidth = newWidth
-            mHeight = newHeight
-            dimensionsListener?.onVideoDimensionsChanged(mWidth, mHeight)
+    private inline fun <T> publishOutput(owner: Thread, update: () -> T): T? =
+        synchronized(outputPublicationLock) {
+            if (!running || outputThread !== owner) null else update()
         }
+
+    private class OutputEvents {
+        private val pending = ArrayList<() -> Unit>()
+        fun info(message: String) { pending.add { AppLog.i(message) } }
+        fun warn(message: String) { pending.add { AppLog.w(message) } }
+        fun error(message: String) { pending.add { AppLog.e(message) } }
+        fun callback(action: (() -> Unit)?) { if (action != null) pending.add(action) }
+        fun dispatch(isCurrent: () -> Boolean) {
+            try {
+                for (action in pending) {
+                    if (!isCurrent()) break
+                    action()
+                }
+            } finally { pending.clear() }
+        }
+    }
+
+    private fun handleOutputFormatChange(owner: MediaCodec, format: MediaFormat) {
+        val self = Thread.currentThread()
+        val (newWidth, newHeight) = displaySizeOf(format)
+        val events = OutputEvents()
+        publishOutput(self) {
+            events.info("Output Format Changed: $format")
+            if (mWidth != newWidth || mHeight != newHeight) {
+                mWidth = newWidth
+                mHeight = newHeight
+                events.info("Video dimensions changed via format: ${newWidth}x$newHeight")
+                dimensionsListener?.let { listener ->
+                    events.callback { listener.onVideoDimensionsChanged(newWidth, newHeight) }
+                }
+            }
+        } ?: return
+        events.dispatch { running && outputThread === self }
+        if (!running || outputThread !== self) return
         try {
-            codec?.setVideoScalingMode(MediaCodec.VIDEO_SCALING_MODE_SCALE_TO_FIT)
+            owner.setVideoScalingMode(MediaCodec.VIDEO_SCALING_MODE_SCALE_TO_FIT)
         } catch (e: Exception) {}
     }
 
@@ -726,15 +759,17 @@ class VideoDecoder(
      */
     fun stop(reason: String = "unknown") {
         synchronized(this) {
-            running = false
+            val retiredOutput = synchronized(outputPublicationLock) {
+                running = false
+                outputThread.also { outputThread = null }
+            }
             try {
-                // If calling from output thread, don't join itself to avoid deadlock
-                if (outputThread != null && outputThread != Thread.currentThread()) {
-                    outputThread?.interrupt()
-                    outputThread?.join(500)
+                // A slow native call may outlive this join, but can no longer publish results.
+                if (retiredOutput != null && retiredOutput != Thread.currentThread()) {
+                    retiredOutput.interrupt()
+                    retiredOutput.join(500)
                 }
             } catch (e: Exception) {}
-            outputThread = null
 
             // The join budget must exceed the longest MediaCodec call the feed thread can be
             // inside, or this falls through to codec.release() while the thread is still in the
@@ -868,7 +903,7 @@ class VideoDecoder(
     fun decode(buffer: ByteArray, offset: Int, size: Int, forceSoftware: Boolean, codecName: String) {
         val frame = synchronized(this) {
             // Input-side liveness: bytes are arriving from the phone right now.
-            lastInputBytesReceivedMs = SystemClock.elapsedRealtime()
+            lastInputBytesReceivedMs = elapsedRealtime()
 
             // Check if a restart was requested by output thread
             if (decoderNeedsRestart) {
@@ -1063,7 +1098,7 @@ class VideoDecoder(
         val queue = frameQueue
         if (queue.offer(frame)) return
 
-        val waitStart = SystemClock.elapsedRealtime()
+        val waitStart = elapsedRealtime()
         var accepted = false
         var elapsed = 0L
         while (!accepted && VideoFeedThrottlePolicy.shouldKeepWaiting(elapsed, running)) {
@@ -1073,14 +1108,14 @@ class VideoDecoder(
                 Thread.currentThread().interrupt()
                 break
             }
-            elapsed = SystemClock.elapsedRealtime() - waitStart
+            elapsed = elapsedRealtime() - waitStart
         }
 
         // Counted on both outcomes. The question this field answers is how long the transport was
         // paced, and a wait that ran out the budget paced it for the whole budget - counting only
         // the admitted ones would zero the largest waits there are and make a wedge read as a
         // session that never waited at all.
-        enqueueWaitMs += SystemClock.elapsedRealtime() - waitStart
+        enqueueWaitMs += elapsedRealtime() - waitStart
 
         if (accepted) {
             logFeedPacing()
@@ -1100,7 +1135,7 @@ class VideoDecoder(
      * the magnitude; this line only says it began.
      */
     private fun logFeedPacing() {
-        val now = SystemClock.elapsedRealtime()
+        val now = elapsedRealtime()
         if (lastFeedPacingLogMs != 0L && now - lastFeedPacingLogMs < FEED_DROP_LOG_INTERVAL_MS) {
             suppressedFeedPacingLogs++
             return
@@ -1157,7 +1192,7 @@ class VideoDecoder(
      */
     private fun notifyFrameDropped() {
         framesDropped++
-        val now = SystemClock.elapsedRealtime()
+        val now = elapsedRealtime()
         if (VideoRecoveryPolicy.shouldRequestOnDroppedFrame(lastFrameRenderedMs != 0L, now, lastDropKeyframeRequestMs)) {
             lastDropKeyframeRequestMs = now
             AppLog.w("VideoDecoder: dropped a reference frame, requesting keyframe")
@@ -1252,7 +1287,7 @@ class VideoDecoder(
      * Called from the feed thread only, so the counters need no synchronisation.
      */
     private fun logFeedDrop(detail: String) {
-        val now = SystemClock.elapsedRealtime()
+        val now = elapsedRealtime()
         if (lastFeedDropLogMs != 0L && now - lastFeedDropLogMs < FEED_DROP_LOG_INTERVAL_MS) {
             suppressedFeedDropLogs++
             return
@@ -1351,7 +1386,7 @@ class VideoDecoder(
     }
 
     private fun onSoftwareFramesRendered(renderedFrames: Int) {
-        lastFrameRenderedMs = SystemClock.elapsedRealtime()
+        lastFrameRenderedMs = elapsedRealtime()
         renderedThisSession = true
         framesRenderedThisSession += renderedFrames
         if (!loggedFirstSoftwareFrame) {
@@ -1766,11 +1801,13 @@ class VideoDecoder(
 
             running = true
             clearFrameQueue()
-            outputThread = Thread {
+            val newOutputThread = Thread {
                 android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_DISPLAY)
                 LegacyOptimizer.setHighPriority()
                 outputThreadLoop()
-            }.apply { name = "VideoDecoder-Output"; start() }
+            }.apply { name = "VideoDecoder-Output" }
+            synchronized(outputPublicationLock) { outputThread = newOutputThread }
+            newOutputThread.start()
             // Published before start(): the loop's guard reads this field to prove its own
             // identity, and a thread that starts before the assignment lands can read the null a
             // prior stop() left and exit at birth - after which every frame queues into a feed
@@ -1942,12 +1979,12 @@ class VideoDecoder(
             // call: stop() clears running before it joins this thread, so checking it here bounds
             // the time a stopping decoder waits on us to one dequeue rather than the full budget -
             // which is what lets stop()'s join reliably win before it releases the codec.
-            val waitStart = SystemClock.elapsedRealtime()
-            while (running && SystemClock.elapsedRealtime() - waitStart < VideoFeedQueuePolicy.INPUT_DEQUEUE_PATIENCE_MS) {
+            val waitStart = elapsedRealtime()
+            while (running && elapsedRealtime() - waitStart < VideoFeedQueuePolicy.INPUT_DEQUEUE_PATIENCE_MS) {
                 inputIndex = currentCodec.dequeueInputBuffer(TIMEOUT_US)
                 if (inputIndex >= 0) break
             }
-            inputWaitMs += SystemClock.elapsedRealtime() - waitStart
+            inputWaitMs += elapsedRealtime() - waitStart
 
             if (inputIndex < 0) {
                 // Silent here on purpose. A wait cut short by a teardown is ordinary and the frame
@@ -2032,7 +2069,7 @@ class VideoDecoder(
                 // Fed, not yet repaired. The picture counts as repaired at the output side, where
                 // a keyframe that arrived holed is told apart from one that decodes.
                 keyframeRepair.onKeyframeFed(pts)
-                lastKeyframeFedMs = SystemClock.elapsedRealtime()
+                lastKeyframeFedMs = elapsedRealtime()
                 AppLog.i("VideoDecoder: keyframe reached the codec (${inputBuffer.limit()} bytes)")
             }
             return FeedResult.FED
@@ -2082,8 +2119,11 @@ class VideoDecoder(
      * 10ms (dequeueOutputBuffer's timeout) whether or not a frame came out, so the tick still
      * fires while nothing is rendering - which is the case most worth reporting.
      */
-    private fun logThroughput() {
-        val now = SystemClock.elapsedRealtime()
+    private fun logThroughput(
+        info: (String) -> Unit = { AppLog.i(it) },
+        warn: (String) -> Unit = { AppLog.w(it) },
+    ) {
+        val now = elapsedRealtime()
         if (lastThroughputLogMs == 0L) {
             lastThroughputLogMs = now
             return
@@ -2115,14 +2155,14 @@ class VideoDecoder(
         val latency = decodeLatency.report()
         // New fields are appended after the pre-existing ones, never between them: this line is
         // read by diagnostics and compared across releases, so existing fields keep name and order.
-        AppLog.i(
+        info(
             "Throughput over ${elapsed}ms: rendered=$rendered (${renderedFps}fps), " +
                 "fed=$fed (${fedFps}fps), dropped=$dropped, skipped=$skipped, " +
                 "concealed=$concealed, inputWait=${inputWait}ms, enqueueWait=${enqueueWait}ms, " +
                 "codec=$currentCodecName, presented=$presented (${presentedFps}fps)" +
                 (if (latency == null) "" else ", $latency")
         )
-        reportBackpressure(elapsed, inputWait, dropped)
+        reportBackpressure(elapsed, inputWait, dropped, warn)
     }
 
     /**
@@ -2137,7 +2177,7 @@ class VideoDecoder(
      * The capability line from configure time is quoted alongside, because "the codec cannot keep
      * up" and "the codec said it could" only mean something together.
      */
-    private fun reportBackpressure(elapsedMs: Long, inputWaitMs: Long, dropped: Long) {
+    private fun reportBackpressure(elapsedMs: Long, inputWaitMs: Long, dropped: Long, warn: (String) -> Unit) {
         // Early out for cost only; the once-per-session rule itself lives in shouldReport below.
         if (reportedBackpressure) return
         if (!VideoBackpressurePolicy.isBackpressureWindow(elapsedMs, inputWaitMs, dropped)) return
@@ -2147,7 +2187,7 @@ class VideoDecoder(
         val claim = decoderCapability?.let {
             if (it.adequate) " It claimed it could: $it" else " It said it might not: $it"
         } ?: ""
-        AppLog.w(
+        warn(
             "VideoDecoder: the codec is the bottleneck - $backpressureWindows windows shed frames " +
                 "while waiting >=${VideoBackpressurePolicy.WAIT_PERCENT}% of the window for an input " +
                 "buffer (${mWidth}x$mHeight@${settings.fpsLimit} on $currentCodecName). The negotiated " +
@@ -2180,19 +2220,24 @@ class VideoDecoder(
      */
     private fun outputThreadLoop() {
         AppLog.i("Output thread started")
+        val self = Thread.currentThread()
+        val currentCodec = codec ?: return
+        val bufferInfo = codecBufferInfo ?: return
+        // A retired worker may still be returning from a native call during a new run.
+        val readyIndices = IntArray(MAX_CATCHUP_SKIPS + 2)
+        val events = OutputEvents()
+        val info = events::info
+        val warn = events::warn
+        val isCurrent = { running && outputThread === self }
         var consecutiveErrors = 0
-        var lastOutputMs = SystemClock.elapsedRealtime()
+        var lastOutputMs = elapsedRealtime()
 
-        while (running) {
-            val currentCodec = codec
-            val bufferInfo = codecBufferInfo
-            if (currentCodec == null || bufferInfo == null) {
-                try { Thread.sleep(10) } catch (e: InterruptedException) { break }
-                continue
-            }
-
+        // A vendor dequeue may outlive stop's join budget. It must never consume a newer
+        // codec after that replacement sets running=true again.
+        outputLoop@ while (running && outputThread === self) {
             try {
                 val outputIndex = currentCodec.dequeueOutputBuffer(bufferInfo, 10000L)
+                if (!running || outputThread !== self) break
                 if (outputIndex >= 0) {
                     // The codec produced output, whatever the screen ends up showing. This is the
                     // stall watchdog's clock and it is deliberately not the render stamp: the two
@@ -2200,13 +2245,15 @@ class VideoDecoder(
                     // anything that legitimately holds a decoded frame off the screen must not
                     // read as a codec that stopped decoding. lastFrameRenderedMs stays the display
                     // watchdogs' instrument and is stamped only when a frame reaches the surface.
-                    lastOutputMs = SystemClock.elapsedRealtime()
+                    lastOutputMs = elapsedRealtime()
                     // The frame's input stamp is its arrival time on the same session clock, so the
                     // difference is what the component held it for. Sampled on the first dequeue of
                     // the pass because the catch-up drain below reuses bufferInfo.
-                    decodeLatency.onFrameDecoded(
-                        (System.nanoTime() - startTime) / 1000 - bufferInfo.presentationTimeUs
-                    )
+                    publishOutput(self) {
+                        decodeLatency.onFrameDecoded(
+                            (System.nanoTime() - startTime) / 1000 - bufferInfo.presentationTimeUs
+                        )
+                    } ?: break
                     // Catch up to the newest ready frame instead of replaying the backlog. A link
                     // that goes quiet for a few hundred milliseconds delivers what it owed in one
                     // burst; showing every frame of it walks the picture forward in slow motion and
@@ -2229,16 +2276,18 @@ class VideoDecoder(
                     while (readyCount <= MAX_CATCHUP_SKIPS && passes < MAX_CATCHUP_SKIPS * 2) {
                         passes++
                         val readyIndex = currentCodec.dequeueOutputBuffer(bufferInfo, 0L)
+                        if (!running || outputThread !== self) break
                         if (readyIndex >= 0) {
                             readyIndices[readyCount++] = readyIndex
                         } else if (readyIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
-                            handleOutputFormatChange(currentCodec.outputFormat)
+                            handleOutputFormatChange(currentCodec, currentCodec.outputFormat)
                         } else {
                             break
                         }
                     }
 
                     val renderIndex = readyIndices[readyCount - 1]
+                    if (!running || outputThread !== self) break
 
                     // The repair question is answered before anything is released, because whether
                     // this pass's frame repaired the picture decides whether it is shown at all.
@@ -2246,23 +2295,29 @@ class VideoDecoder(
                     // frames released ahead of it in this pass decoded earlier and so have smaller
                     // timestamps, and the ones the catch-up branch discarded decoded too - so this
                     // one stamp answers for the whole pass either way.
-                    val repaired = keyframeRepair.onFrameRendered(bufferInfo.presentationTimeUs)
-                    // The report is consumed whatever the outcome is. One answered with SHOW while
-                    // the policy is disarmed must not linger, or it would reopen a window against a
-                    // stale fault the moment the next keyframe re-arms.
-                    val reportedStamp = corruptionReportedMs
-                    val reported = reportedStamp > consumedCorruptionMs
-                    if (reported) consumedCorruptionMs = reportedStamp
-                    val passNow = SystemClock.elapsedRealtime()
-                    val outcome = CorruptionConcealmentPolicy.next(
-                        passNow,
-                        concealState,
-                        concealWindowOpenedMs,
-                        corruptionReported = reported,
-                        keyframeRepaired = repaired,
-                        sessionHasRendered = renderedThisSession,
-                    )
-                    applyConcealmentTransition(outcome, passNow)
+                    var repaired = false
+                    var outcome = CorruptionConcealmentPolicy.Outcome.SHOW
+                    publishOutput(self) {
+                        repaired = keyframeRepair.onFrameRendered(bufferInfo.presentationTimeUs)
+                        // The report is consumed whatever the outcome is. One answered with SHOW while
+                        // the policy is disarmed must not linger, or it would reopen a window against a
+                        // stale fault the moment the next keyframe re-arms.
+                        val reportedStamp = corruptionReportedMs
+                        val reported = reportedStamp > consumedCorruptionMs
+                        if (reported) consumedCorruptionMs = reportedStamp
+                        val passNow = elapsedRealtime()
+                        outcome = CorruptionConcealmentPolicy.next(
+                            passNow,
+                            concealState,
+                            concealWindowOpenedMs,
+                            corruptionReported = reported,
+                            keyframeRepaired = repaired,
+                            sessionHasRendered = renderedThisSession,
+                        )
+                        applyConcealmentTransition(outcome, passNow, warn)
+
+                    } ?: break
+                    events.dispatch(isCurrent)
 
                     var alsoRendered = 0
                     if (!outcome.renders) {
@@ -2271,189 +2326,208 @@ class VideoDecoder(
                         // the feed is never gated, only what the screen shows.
                         for (i in 0 until readyCount - 1) {
                             currentCodec.releaseOutputBuffer(readyIndices[i], false)
+                            if (!running || outputThread !== self) break@outputLoop
                         }
-                        framesConcealed += (readyCount - 1).toLong()
                     } else if (readyCount > 2) {
                         for (i in 0 until readyCount - 1) {
                             currentCodec.releaseOutputBuffer(readyIndices[i], false)
+                            if (!running || outputThread !== self) break@outputLoop
                         }
-                        framesSkippedAtRender += readyCount - 1
                     } else {
                         for (i in 0 until readyCount - 1) {
                             currentCodec.releaseOutputBuffer(readyIndices[i], true)
+                            if (!running || outputThread !== self) break@outputLoop
                             alsoRendered++
                         }
                     }
-                    // These went to the surface too, so they belong in the rendered rate; counting
-                    // only the last one would understate it by half whenever the pipeline sits one
-                    // frame deep, which is the healthy case this is careful not to disturb.
-                    framesRendered += alsoRendered
-                    frameCount += alsoRendered
-                    framesRenderedThisSession += alsoRendered
-
                     currentCodec.releaseOutputBuffer(renderIndex, outcome.renders)
-                    consecutiveErrors = 0
-                    if (outcome.renders) {
-                        lastFrameRenderedMs = SystemClock.elapsedRealtime()
-                        renderedThisSession = true
-                        // repaired implies a rendering outcome (CLOSE_REPAIRED or REARM), so the
-                        // repair announcement cannot be lost to a concealed pass.
-                        if (repaired) {
-                            if (keyframeRepair.timestampsUnusable && !loggedUnusableOutputTimestamps) {
-                                loggedUnusableOutputTimestamps = true
-                                AppLog.w(
-                                    "$currentCodecName never carries a keyframe's timestamp through to its " +
-                                        "output, so a repaired picture is read from frames arriving rather " +
-                                        "than from the frame that repaired it."
+                    // releaseOutputBuffer and listeners may block beyond stop's join budget.
+                    // Their eventual return is not output progress for a replacement decoder.
+                    if (!running || outputThread !== self) break
+                    publishOutput(self) {
+                        framesRendered += alsoRendered
+                        frameCount += alsoRendered
+                        framesRenderedThisSession += alsoRendered
+                        if (!outcome.renders) framesConcealed += (readyCount - 1).toLong()
+                        else if (readyCount > 2) framesSkippedAtRender += readyCount - 1
+                        consecutiveErrors = 0
+                        if (outcome.renders) {
+                            lastFrameRenderedMs = elapsedRealtime()
+                            renderedThisSession = true
+                            // repaired implies a rendering outcome (CLOSE_REPAIRED or REARM), so the
+                            // repair announcement cannot be lost to a concealed pass.
+                            if (repaired) {
+                                if (keyframeRepair.timestampsUnusable && !loggedUnusableOutputTimestamps) {
+                                    loggedUnusableOutputTimestamps = true
+                                    events.warn(
+                                        "$currentCodecName never carries a keyframe's timestamp through to its " +
+                                            "output, so a repaired picture is read from frames arriving rather " +
+                                            "than from the frame that repaired it."
+                                    )
+                                }
+                                events.info("VideoDecoder: keyframe decoded - the picture is repaired")
+                                events.callback(onKeyframeObserved)
+
+                            }
+                            framesRenderedThisSession++
+                            // The one landmark that says video actually reached the screen on the path
+                            // almost every unit runs. Driven by its own flag rather than the listener
+                            // below, which only exists while the projection activity is up — the sessions
+                            // worth timing are exactly the ones where it might not be.
+                            if (!loggedFirstHardwareFrame) {
+                                loggedFirstHardwareFrame = true
+                                // The flag resets per codec instance, so on a warm rebuild this first
+                                // frame can be gray output decoded from a P-frame rather than a picture.
+                                // Say which, keeping the prefix that marks the landmark.
+                                events.info(
+                                    if (keyframeRepair.keyframeDecoded) "First frame rendered (hardware decode)"
+                                    else "First frame rendered (hardware decode) - no keyframe has decoded " +
+                                        "yet, so this is output, not a picture"
                                 )
                             }
-                            AppLog.i("VideoDecoder: keyframe decoded - the picture is repaired")
-                            onKeyframeObserved?.invoke()
-                        }
-                        framesRenderedThisSession++
-                        // The one landmark that says video actually reached the screen on the path
-                        // almost every unit runs. Driven by its own flag rather than the listener
-                        // below, which only exists while the projection activity is up — the sessions
-                        // worth timing are exactly the ones where it might not be.
-                        if (!loggedFirstHardwareFrame) {
-                            loggedFirstHardwareFrame = true
-                            // The flag resets per codec instance, so on a warm rebuild this first
-                            // frame can be gray output decoded from a P-frame rather than a picture.
-                            // Say which, keeping the prefix that marks the landmark.
-                            AppLog.i(
-                                if (keyframeRepair.keyframeDecoded) "First frame rendered (hardware decode)"
-                                else "First frame rendered (hardware decode) - no keyframe has decoded " +
-                                    "yet, so this is output, not a picture"
-                            )
-                        }
-                        onFirstFrameListener?.let { it(); onFirstFrameListener = null }
+                            val firstFrameListener = onFirstFrameListener
 
-                        frameCount++
-                        framesRendered++
-                        // Once per pass, on the last buffer only - the one the surface keeps.
-                        framesPresented++
+                            // Claim before invocation: the callback can itself install a new owner
+                            // and listener, which this old completion must not clear afterwards.
+                            onFirstFrameListener = null
+                            events.callback(firstFrameListener)
 
-                        val now = System.currentTimeMillis()
-                        val elapsed = now - lastFpsLogTime
-                        if (elapsed >= 1000) {
-                            if (lastFpsLogTime != 0L) {
-                                val fps = (frameCount * 1000 / elapsed).toInt()
-                                onFpsChanged?.invoke(fps)
+                            frameCount++
+                            framesRendered++
+                            // Once per pass, on the last buffer only - the one the surface keeps.
+                            framesPresented++
+
+                            val now = System.currentTimeMillis()
+                            val elapsed = now - lastFpsLogTime
+                            if (elapsed >= 1000) {
+                                if (lastFpsLogTime != 0L) {
+                                    val fps = (frameCount * 1000 / elapsed).toInt()
+                                    onFpsChanged?.let { listener -> events.callback { listener(fps) } }
+                                }
+                                frameCount = 0
+                                lastFpsLogTime = now
                             }
-                            frameCount = 0
-                            lastFpsLogTime = now
+                        } else {
+                            framesConcealed++
                         }
-                    } else {
-                        framesConcealed++
-                    }
+                        Unit
+                    } ?: break
+                    events.dispatch(isCurrent)
                 } else if (outputIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
-                    handleOutputFormatChange(currentCodec.outputFormat)
+                    handleOutputFormatChange(currentCodec, currentCodec.outputFormat)
                 }
 
-                logThroughput()
+                if (!running || outputThread !== self) break
 
-                // A window can only close on an output buffer, and a phone that goes idle
-                // mid-window sends none - so the cap is also held on wall clock, once per loop
-                // turn (the dequeue above times out in 10ms). On expiry there is no buffer to
-                // show; the transition and its line happen now, the next buffer renders.
-                if (concealState == CorruptionConcealmentPolicy.State.CONCEALING) {
-                    val tickNow = SystemClock.elapsedRealtime()
-                    applyConcealmentTransition(
-                        CorruptionConcealmentPolicy.next(
-                            tickNow,
-                            concealState,
-                            concealWindowOpenedMs,
-                            corruptionReported = false,
-                            keyframeRepaired = false,
-                            sessionHasRendered = renderedThisSession,
-                        ),
-                        tickNow
-                    )
-                }
+                val restart = publishOutput(self) {
+                    logThroughput(info, warn)
 
-                // Stall detection: if we rendered at least one frame but haven't
-                // produced output in SYNC_STALL_THRESHOLD_MS, check if input bytes
-                // are still arriving from the phone. If no input bytes arrived recently,
-                // Android Auto has simply paused the stream (idle/static screen), so
-                // we update lastOutputMs to prevent false-positive restarts and screen flickering.
-                val now = SystemClock.elapsedRealtime()
-                val stallGap = now - lastOutputMs
-                // A rebuilt codec that has not yet produced its first frame gets the longer
-                // warm-up window when this session has already rendered - see the constant.
-                val stallThreshold = if (lastFrameRenderedMs == 0L && renderedThisSession) {
-                    WARM_RECONFIGURE_FIRST_FRAME_GRACE_MS
-                } else {
-                    SYNC_STALL_THRESHOLD_MS
-                }
-                if (stallGap > stallThreshold) {
-                    val inputIdleGap = now - lastInputBytesReceivedMs
-                    val cause = DecoderStallCausePolicy.classify(
-                        stallGapMs = stallGap,
-                        inputIdleGapMs = inputIdleGap,
-                        inputIdleThresholdMs = SYNC_STALL_THRESHOLD_MS,
-                        keyframeDecodedSinceStart = keyframeRepair.keyframeDecoded,
-                        sessionHasRendered = renderedThisSession,
-                    )
-                    if (cause == DecoderStallCausePolicy.Cause.PHONE_IDLE) {
-                        // Stream is idle on the phone side (no new video frames arriving).
-                        // Deliberately silent: this branch used to fall through to the
-                        // "restart suppressed" line below, which read as a decoder fault for a
-                        // phone that had simply stopped sending, and misled a whole hardware
-                        // round with "0/4 used" printed every 10s for an idle stream.
-                        lastOutputMs = now
-                    } else if (cause == DecoderStallCausePolicy.Cause.STARVED_OF_KEYFRAME) {
-                        // Nothing is wrong with the codec: it has been given no keyframe since it
-                        // started, so it has nothing it could render. Rebuilding it here is what
-                        // turned one corrupt access unit into a permanent black screen - each
-                        // rebuild restarts the wait and spends a restart the real stall path needs.
-                        // Ask instead, on the same throttle the suppressed report uses.
-                        if (now - lastSyncStallSuppressedLogMs >= SYNC_STALL_SUPPRESSED_LOG_INTERVAL_MS) {
-                            lastSyncStallSuppressedLogMs = now
-                            AppLog.w("Decoder has had no keyframe since it started ${stallGap}ms ago - waiting for one instead of rebuilding.")
-                        }
-                        // The ask runs on the shorter of the two clocks. This loop turns over every
-                        // 10ms, so it needs its own throttle rather than the report's - the same
-                        // one every other keyframe request in the app is held to.
-                        if (VideoRecoveryPolicy.canRequestKeyframe(now, lastKeyframeStarvedAskMs)) {
-                            lastKeyframeStarvedAskMs = now
-                            onKeyframeStarved?.invoke()
-                        }
+                    // A window can only close on an output buffer, and a phone that goes idle
+                    // mid-window sends none - so the cap is also held on wall clock, once per loop
+                    // turn (the dequeue above times out in 10ms). On expiry there is no buffer to
+                    // show; the transition and its line happen now, the next buffer renders.
+                    if (concealState == CorruptionConcealmentPolicy.State.CONCEALING) {
+                        val tickNow = elapsedRealtime()
+                        applyConcealmentTransition(
+                            CorruptionConcealmentPolicy.next(
+                                tickNow,
+                                concealState,
+                                concealWindowOpenedMs,
+                                corruptionReported = false,
+                                keyframeRepaired = false,
+                                sessionHasRendered = renderedThisSession,
+                            ),
+                            tickNow, warn
+                        )
+                    }
+
+                    // Stall detection: if we rendered at least one frame but haven't
+                    // produced output in SYNC_STALL_THRESHOLD_MS, check if input bytes
+                    // are still arriving from the phone. If no input bytes arrived recently,
+                    // Android Auto has simply paused the stream (idle/static screen), so
+                    // we update lastOutputMs to prevent false-positive restarts and screen flickering.
+                    val now = elapsedRealtime()
+                    val stallGap = now - lastOutputMs
+                    // A rebuilt codec that has not yet produced its first frame gets the longer
+                    // warm-up window when this session has already rendered - see the constant.
+                    val stallThreshold = if (lastFrameRenderedMs == 0L && renderedThisSession) {
+                        WARM_RECONFIGURE_FIRST_FRAME_GRACE_MS
                     } else {
-                        // Input bytes ARE arriving, but decoder produces no output -> REAL DECODER STALL!
-                        // A device that is merely marginal — renders fine for stretches, then
-                        // stalls under load — never trips restartsSinceLastFrame's cap, since that
-                        // counts only restarts where no frame at all was rendered. Cap and cooldown
-                        // this watchdog the same way rather than rebuilding the MediaCodec every
-                        // time it fires.
-                        if (syncStallRestartCount > 0 && now - lastSyncStallRestartMs > SYNC_STALL_RESET_MS) {
-                            syncStallRestartCount = 0
-                        }
-                        if (now - lastSyncStallRestartMs >= SYNC_STALL_COOLDOWN_MS &&
-                            syncStallRestartCount < MAX_SYNC_STALL_RESTARTS) {
-                            syncStallRestartCount++
-                            lastSyncStallRestartMs = now
-                            AppLog.w("Decoder stall detected (no output for ${stallGap}ms while receiving input). Forcing restart ($syncStallRestartCount/$MAX_SYNC_STALL_RESTARTS).")
-                            scheduleRestart("sync_stall")
-                            break
-                        }
-                        // Suppressed by the cooldown or the cap. Report it, throttled: the branch
-                        // above is the only thing that ever mentions a stall, so once it stops
-                        // firing a decoder that has exhausted its restart budget keeps stalling
-                        // with an entirely clean log and reads as healthy.
-                        if (now - lastSyncStallSuppressedLogMs >= SYNC_STALL_SUPPRESSED_LOG_INTERVAL_MS) {
-                            lastSyncStallSuppressedLogMs = now
-                            AppLog.w("Decoder stall detected (no output for ${stallGap}ms) but restart suppressed ($syncStallRestartCount/$MAX_SYNC_STALL_RESTARTS used, ${SYNC_STALL_COOLDOWN_MS}ms cooldown). Still spinning on output.")
+                        SYNC_STALL_THRESHOLD_MS
+                    }
+                    if (stallGap > stallThreshold) {
+                        val inputIdleGap = now - lastInputBytesReceivedMs
+                        val cause = DecoderStallCausePolicy.classify(
+                            stallGapMs = stallGap,
+                            inputIdleGapMs = inputIdleGap,
+                            inputIdleThresholdMs = SYNC_STALL_THRESHOLD_MS,
+                            keyframeDecodedSinceStart = keyframeRepair.keyframeDecoded,
+                            sessionHasRendered = renderedThisSession,
+                        )
+                        if (cause == DecoderStallCausePolicy.Cause.PHONE_IDLE) {
+                            // Stream is idle on the phone side (no new video frames arriving).
+                            // Deliberately silent: this branch used to fall through to the
+                            // "restart suppressed" line below, which read as a decoder fault for a
+                            // phone that had simply stopped sending, and misled a whole hardware
+                            // round with "0/4 used" printed every 10s for an idle stream.
+                            lastOutputMs = now
+                        } else if (cause == DecoderStallCausePolicy.Cause.STARVED_OF_KEYFRAME) {
+                            // Nothing is wrong with the codec: it has been given no keyframe since it
+                            // started, so it has nothing it could render. Rebuilding it here is what
+                            // turned one corrupt access unit into a permanent black screen - each
+                            // rebuild restarts the wait and spends a restart the real stall path needs.
+                            // Ask instead, on the same throttle the suppressed report uses.
+                            if (now - lastSyncStallSuppressedLogMs >= SYNC_STALL_SUPPRESSED_LOG_INTERVAL_MS) {
+                                lastSyncStallSuppressedLogMs = now
+                                events.warn("Decoder has had no keyframe since it started ${stallGap}ms ago - waiting for one instead of rebuilding.")
+                            }
+                            // The ask runs on the shorter of the two clocks. This loop turns over every
+                            // 10ms, so it needs its own throttle rather than the report's - the same
+                            // one every other keyframe request in the app is held to.
+                            if (VideoRecoveryPolicy.canRequestKeyframe(now, lastKeyframeStarvedAskMs)) {
+                                lastKeyframeStarvedAskMs = now
+                                events.callback(onKeyframeStarved)
+                            }
+                        } else {
+                            // Input bytes ARE arriving, but decoder produces no output -> REAL DECODER STALL!
+                            // A device that is merely marginal — renders fine for stretches, then
+                            // stalls under load — never trips restartsSinceLastFrame's cap, since that
+                            // counts only restarts where no frame at all was rendered. Cap and cooldown
+                            // this watchdog the same way rather than rebuilding the MediaCodec every
+                            // time it fires.
+                            if (syncStallRestartCount > 0 && now - lastSyncStallRestartMs > SYNC_STALL_RESET_MS) {
+                                syncStallRestartCount = 0
+                            }
+                            if (now - lastSyncStallRestartMs >= SYNC_STALL_COOLDOWN_MS &&
+                                syncStallRestartCount < MAX_SYNC_STALL_RESTARTS) {
+                                syncStallRestartCount++
+                                lastSyncStallRestartMs = now
+                                events.warn("Decoder stall detected (no output for ${stallGap}ms while receiving input). Forcing restart ($syncStallRestartCount/$MAX_SYNC_STALL_RESTARTS).")
+                                scheduleRestart("sync_stall")
+                                return@publishOutput true
+                            }
+                            // Suppressed by the cooldown or the cap. Report it, throttled: the branch
+                            // above is the only thing that ever mentions a stall, so once it stops
+                            // firing a decoder that has exhausted its restart budget keeps stalling
+                            // with an entirely clean log and reads as healthy.
+                            if (now - lastSyncStallSuppressedLogMs >= SYNC_STALL_SUPPRESSED_LOG_INTERVAL_MS) {
+                                lastSyncStallSuppressedLogMs = now
+                                events.warn("Decoder stall detected (no output for ${stallGap}ms) but restart suppressed ($syncStallRestartCount/$MAX_SYNC_STALL_RESTARTS used, ${SYNC_STALL_COOLDOWN_MS}ms cooldown). Still spinning on output.")
+                            }
                         }
                     }
-                }
+                    false
+                } ?: break
+                events.dispatch(isCurrent)
+                if (restart) break
             } catch (e: Exception) {
-                if (running) {
+                val restart = publishOutput(self) {
                     // MediaCodec has classified its own failures since API 21 and this read them all
                     // as the same thing: a component saying it was busy spent a strike, and one
                     // saying it was gone waited out two more strikes and 100ms before the restart it
                     // was always going to need.
                     val response = classifyOutputException(e)
-                    AppLog.w(
+                    events.warn(
                         "Codec exception in output thread - ${DecoderExceptionPolicy.describe(response)}: " +
                             "${e.message}"
                     )
@@ -2461,19 +2535,22 @@ class VideoDecoder(
                         DecoderExceptionPolicy.Response.CONTINUE -> {}
                         DecoderExceptionPolicy.Response.RESTART_NOW -> {
                             scheduleRestart("codec_unrecoverable")
-                            break
+                            return@publishOutput true
                         }
                         DecoderExceptionPolicy.Response.COUNT_STRIKE -> {
                             consecutiveErrors++
                             if (consecutiveErrors >= 3) {
-                                AppLog.e("Too many consecutive exceptions in output thread. Forcing restart.")
+                                events.error("Too many consecutive exceptions in output thread. Forcing restart.")
                                 scheduleRestart("sync_consecutive_errors")
-                                break
+                                return@publishOutput true
                             }
                         }
                     }
-                    try { Thread.sleep(50) } catch (ignore: Exception) {}
-                }
+                    false
+                } ?: break
+                events.dispatch(isCurrent)
+                if (restart) break
+                try { Thread.sleep(50) } catch (ignore: Exception) {}
             }
         }
         AppLog.i("Output thread stopped")

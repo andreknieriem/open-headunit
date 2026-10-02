@@ -60,7 +60,7 @@ message Start
 message Ack
 {
     required int32 session_id = 1;
-    required uint32 ack = 2;
+    optional uint32 ack = 2;
     repeated uint64 receive_timestamp_ns = 3;
 }
 

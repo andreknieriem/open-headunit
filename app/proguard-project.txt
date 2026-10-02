@@ -30,6 +30,7 @@
 # -keep class com.andrerinas.openheadunit.decoder.** { *; }
 
 # --- JNI ---
+-keep class com.andrerinas.openheadunit.decoder.audio.NativeAAudio { *; }
 -keep class com.andrerinas.openheadunit.aap.AapSslNative { *; }
 -keep class com.andrerinas.openheadunit.decoder.video.FfmpegHevcDecoder { *; }
 -keep class com.andrerinas.openheadunit.decoder.video.FfmpegHevcDecoder$Companion { *; }

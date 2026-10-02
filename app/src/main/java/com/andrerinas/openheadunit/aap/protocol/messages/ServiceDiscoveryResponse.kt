@@ -18,13 +18,14 @@ import com.andrerinas.openheadunit.connection.wifi.direct.WifiBandCapability
 import com.andrerinas.openheadunit.decoder.video.VideoDecoder
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.HeadUnitScreenConfig
+import com.andrerinas.openheadunit.aap.AudioSessionConfig
 import com.google.protobuf.Message
 
-class ServiceDiscoveryResponse(private val context: Context)
-    : AapMessage(Channel.ID_CTR, Control.ControlMsgType.MESSAGE_SERVICE_DISCOVERY_RESPONSE_VALUE, makeProto(context)) {
+internal class ServiceDiscoveryResponse(context: Context, audioConfig: AudioSessionConfig)
+    : AapMessage(Channel.ID_CTR, Control.ControlMsgType.MESSAGE_SERVICE_DISCOVERY_RESPONSE_VALUE, makeProto(context, audioConfig)) {
 
     companion object {
-        private fun makeProto(context: Context): Message {
+        private fun makeProto(context: Context, audioConfig: AudioSessionConfig): Message {
             val settings = App.provide(context).settings
             // Initialize HeadUnitScreenConfig with actual physical screen dimensions
             HeadUnitScreenConfig.init(context, context.resources.displayMetrics, settings)
@@ -159,7 +160,7 @@ class ServiceDiscoveryResponse(private val context: Context)
 
             services.add(input)
 
-            val audioType = if (announcesAac(context, settings)) Media.MediaCodecType.MEDIA_CODEC_AUDIO_AAC_LC else Media.MediaCodecType.MEDIA_CODEC_AUDIO_PCM
+            val audioType = if (announcesAac(context, settings, audioConfig.aac)) Media.MediaCodecType.MEDIA_CODEC_AUDIO_AAC_LC else Media.MediaCodecType.MEDIA_CODEC_AUDIO_PCM
 
             // Always add Audio2 (System Sounds) to keep connection alive
             val audio2 = Control.Service.newBuilder().also { service ->
@@ -176,7 +177,7 @@ class ServiceDiscoveryResponse(private val context: Context)
             // the launchers run and a failed launch left it set, so a Native AA session announced
             // system sounds only and had no audio at all. See AudioSinkAnnouncementPolicy.
             val isSelfModeSession = App.provide(context).commManager.isLoopbackSession
-            if (AudioSinkAnnouncementPolicy.announcesMediaAndSpeech(settings.enableAudioSink, isSelfModeSession)) {
+            if (AudioSinkAnnouncementPolicy.announcesMediaAndSpeech(audioConfig.enabled, isSelfModeSession)) {
                 val audio1 = Control.Service.newBuilder().also { service ->
                     service.id = Channel.ID_AU1
                     service.mediaSinkService = Control.Service.MediaSinkService.newBuilder().also {
@@ -196,7 +197,7 @@ class ServiceDiscoveryResponse(private val context: Context)
                     }.build()
                 }.build()
                 services.add(audio0)
-            } else if (!settings.enableAudioSink) {
+            } else if (!audioConfig.enabled) {
                 // Without this line a muted head unit is indistinguishable from a broken one. The
                 // channels are never declared, so the phone never opens them, so nothing about the
                 // silence appears anywhere in the log and every audio instrument reads zero. It
@@ -405,10 +406,11 @@ class ServiceDiscoveryResponse(private val context: Context)
          */
         private fun announcesAac(
             context: Context,
-            settings: com.andrerinas.openheadunit.utils.Settings
+            settings: com.andrerinas.openheadunit.utils.Settings,
+            userChoice: Boolean
         ): Boolean = try {
             val aac = NarrowBandProfilePolicy.useAac(
-                userChoice = settings.useAacAudio,
+                userChoice = userChoice,
                 supports5Ghz = WifiBandCapability.supports5Ghz(context),
                 wirelessSession = App.provide(context).commManager.isWirelessSession,
                 capEnabled = settings.narrowBandProfileCap,
@@ -416,13 +418,13 @@ class ServiceDiscoveryResponse(private val context: Context)
                 bandUnreadable = WifiBandCapability.bandUnreadable(),
                 linkProvedTooSlow = settings.videoProfileStarvationCap,
             )
-            if (aac && !settings.useAacAudio) {
+            if (aac && !userChoice) {
                 AppLog.i("[ServiceDiscovery] AAC audio announced by the 2.4 GHz cap (Use AAC Audio is off)")
             }
             aac
         } catch (e: Exception) {
             AppLog.d("[ServiceDiscovery] could not evaluate the band audio codec: ${e.message}")
-            settings.useAacAudio
+            userChoice
         }
 
         /**

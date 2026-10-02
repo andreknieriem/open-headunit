@@ -261,6 +261,8 @@ dependencies {
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.mockito.kotlin:mockito-kotlin:4.1.0")
+    // Inline mocks exercise the final Android transport classes on JDK 21.
+    testImplementation("org.mockito:mockito-core:5.14.2")
 
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.0")
     implementation(project(":contract"))

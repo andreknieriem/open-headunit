@@ -150,7 +150,7 @@ class SettingsFragment : Fragment() {
         // Input
         "keymap",
         // Audio
-        "enableAudioSink", "audioStreamSettings", "micSettings", "audioVolumeOffsets",
+        "enableAudioSink", "audioStreamSettings", "useAAudioOutput", "micSettings", "audioVolumeOffsets",
         // Info
         "version", "about", "support"
     )
@@ -177,6 +177,7 @@ class SettingsFragment : Fragment() {
     private var pendingStaticAudioFocus: Boolean? = null
     private var pendingPlaybackFocusMode: PlaybackFocusPolicy.Mode? = null
     private var pendingUseAacAudio: Boolean? = null
+    private var pendingUseAAudioOutput: Boolean? = null
     private var pendingAttachHwDspEqualizer: Boolean? = null
     private var pendingMicInputSource: Int? = null
     private var pendingEnableRotary: Boolean? = null
@@ -261,6 +262,7 @@ class SettingsFragment : Fragment() {
     private var pendingHideClock: Boolean? = null
 
     private var requiresRestart = false
+    private var requiresServiceRestart = false
     private var hasChanges = false
     private val SAVE_ITEM_ID = 1001
     private val RESET_ITEM_ID = 1002
@@ -357,6 +359,7 @@ class SettingsFragment : Fragment() {
         pendingStaticAudioFocus = settings.staticAudioFocus
         pendingPlaybackFocusMode = settings.playbackFocusMode
         pendingUseAacAudio = settings.useAacAudio
+        pendingUseAAudioOutput = settings.useAAudioOutput
         pendingAttachHwDspEqualizer = settings.attachHwDspEqualizer
         pendingMicInputSource = settings.micInputSource
         pendingEnableRotary = settings.enableRotary
@@ -496,6 +499,7 @@ class SettingsFragment : Fragment() {
         pendingStaticAudioFocus = settings.staticAudioFocus
         pendingPlaybackFocusMode = settings.playbackFocusMode
         pendingUseAacAudio = settings.useAacAudio
+        pendingUseAAudioOutput = settings.useAAudioOutput
         pendingAttachHwDspEqualizer = settings.attachHwDspEqualizer
         pendingEnableRotary = settings.enableRotary
         pendingMediaKeyRouting = settings.mediaKeyRouting
@@ -691,6 +695,8 @@ class SettingsFragment : Fragment() {
     }
 
     private fun saveSettings() {
+        checkChanges()
+        var audioSessionEnded = false
         val languageChanged = pendingAppLanguage != settings.appLanguage
 
         pendingAdvancedSettings?.let { settings.isAdvancedSettingsActive = it }
@@ -727,6 +733,7 @@ class SettingsFragment : Fragment() {
         pendingPlaybackFocusMode?.let { settings.playbackFocusMode = it }
         if (focusModeChanged) settings.playbackFocusSelfDefeating = false
         pendingUseAacAudio?.let { settings.useAacAudio = it }
+        pendingUseAAudioOutput?.let { settings.useAAudioOutput = it }
         pendingAttachHwDspEqualizer?.let { settings.attachHwDspEqualizer = it }
         pendingMicInputSource?.let { settings.micInputSource = it }
         pendingEnableRotary?.let { settings.enableRotary = it }
@@ -818,7 +825,7 @@ class SettingsFragment : Fragment() {
         // recovery use via recreateProjectionView(). If another setting is already forcing a
         // restart below, that path covers it; with no active session the new value is simply
         // used on the next launch.
-        if (oldViewMode != settings.viewMode && !requiresRestart) {
+        if (oldViewMode != settings.viewMode && !requiresServiceRestart) {
             LocalBroadcastManager.getInstance(requireContext()).sendBroadcast(
                 Intent(QuickSettingsFragment.ACTION_SETTINGS_CHANGED)
                     .putExtra(QuickSettingsFragment.EXTRA_NEEDS_VIEW_RECREATE, true)
@@ -834,7 +841,7 @@ class SettingsFragment : Fragment() {
             requireContext().startService(intent)
         }
 
-        if (requiresRestart) {
+        if (requiresServiceRestart) {
             if (App.provide(requireContext()).commManager.isConnected) {
                 ToastUtils.showToast(context, getString(R.string.stopping_service), Toast.LENGTH_SHORT, force = true)
                 val stopServiceIntent = Intent(requireContext(), AapService::class.java).apply {
@@ -844,13 +851,23 @@ class SettingsFragment : Fragment() {
             }
         }
 
+        if (requiresRestart && !requiresServiceRestart) {
+            val manager = App.provide(requireContext()).commManager
+            val connected = manager.isConnected
+            manager.applyAudioSettings()
+            audioSessionEnded = connected && !manager.isConnected
+        }
+
         // Reset change tracking
         hasChanges = false
         requiresRestart = false
+        requiresServiceRestart = false
         updateSaveButtonState()
         updateSettingsList()
 
-        ToastUtils.showToast(context, getString(R.string.settings_saved), Toast.LENGTH_SHORT, force = true)
+        ToastUtils.showToast(context,
+            getString(if (audioSessionEnded) R.string.audio_settings_reconnect else R.string.settings_saved),
+            if (audioSessionEnded) Toast.LENGTH_LONG else Toast.LENGTH_SHORT, force = true)
 
         if (languageChanged || hudMirroringChanged) {
             requireActivity().recreate()
@@ -880,6 +897,7 @@ class SettingsFragment : Fragment() {
                         pendingStaticAudioFocus != settings.staticAudioFocus ||
                         pendingPlaybackFocusMode != settings.playbackFocusMode ||
                         pendingUseAacAudio != settings.useAacAudio ||
+                        pendingUseAAudioOutput != settings.useAAudioOutput ||
                         pendingAttachHwDspEqualizer != settings.attachHwDspEqualizer ||
                         pendingMicInputSource != settings.micInputSource ||
                         pendingEnableRotary != settings.enableRotary ||
@@ -948,7 +966,7 @@ class SettingsFragment : Fragment() {
         hasChanges = anyChange
 
         // Check for restart requirement
-        requiresRestart = pendingResolution != settings.resolutionId ||
+        requiresServiceRestart = pendingResolution != settings.resolutionId ||
                           pendingVideoFitMode != settings.videoFitMode ||
                           pendingVideoCodec != settings.videoCodec ||
                           pendingFpsLimit != settings.fpsLimit ||
@@ -959,19 +977,21 @@ class SettingsFragment : Fragment() {
                           pendingForceSoftware != settings.forceSoftwareDecoding ||
                           pendingSoftwareVideoDecoder != settings.softwareVideoDecoder ||
                           pendingEnableRotary != settings.enableRotary ||
-                          pendingEnableAudioSink != settings.enableAudioSink ||
-                          pendingStaticAudioFocus != settings.staticAudioFocus ||
-                          pendingPlaybackFocusMode != settings.playbackFocusMode ||
-                          pendingUseAacAudio != settings.useAacAudio ||
-                          pendingAttachHwDspEqualizer != settings.attachHwDspEqualizer ||
-                          pendingAudioLatencyMultiplier != settings.audioLatencyMultiplier ||
-                          pendingAudioQueueCapacity != settings.audioQueueCapacity ||
                           pendingInsetLeft != settings.insetLeft ||
                           pendingInsetTop != settings.insetTop ||
                           pendingInsetRight != settings.insetRight ||
                           pendingInsetBottom != settings.insetBottom ||
                           pendingWifiConnectionMode != settings.wifiConnectionMode ||
                           pendingUseLibusb != settings.useLibusb
+        requiresRestart = requiresServiceRestart ||
+                          pendingEnableAudioSink != settings.enableAudioSink ||
+                          pendingStaticAudioFocus != settings.staticAudioFocus ||
+                          pendingPlaybackFocusMode != settings.playbackFocusMode ||
+                          pendingUseAacAudio != settings.useAacAudio ||
+                          pendingUseAAudioOutput != settings.useAAudioOutput ||
+                          pendingAttachHwDspEqualizer != settings.attachHwDspEqualizer ||
+                          pendingAudioLatencyMultiplier != settings.audioLatencyMultiplier ||
+                          pendingAudioQueueCapacity != settings.audioQueueCapacity
 
         updateSaveButtonState()
     }
@@ -2528,6 +2548,20 @@ class SettingsFragment : Fragment() {
             }
         ))
 
+        if (Build.VERSION.SDK_INT >= 26) {
+            items.add(SettingItem.ToggleSettingEntry(
+                stableId = "useAAudioOutput",
+                nameResId = R.string.aaudio_output,
+                descriptionResId = R.string.aaudio_output_description,
+                isChecked = pendingUseAAudioOutput ?: settings.useAAudioOutput,
+                onCheckedChanged = { isChecked ->
+                    pendingUseAAudioOutput = isChecked
+                    checkChanges()
+                    updateSettingsList()
+                }
+            ))
+        }
+
         items.add(SettingItem.ToggleSettingEntry(
             stableId = "useAacAudio",
             nameResId = R.string.use_aac_audio,
@@ -2602,11 +2636,11 @@ class SettingsFragment : Fragment() {
             value = "${pendingAudioLatencyMultiplier}x",
             onClick = { _ ->
                 val options = arrayOf(
-                    "1x (shallowest cushion)", "2x (shallow)", "4x (medium)",
+                    "1x (lowest latency)", "2x (low latency)", "4x (medium)",
                     "8x (deep)", "16x (deepest, default)"
                 )
                 val values = intArrayOf(1, 2, 4, 8, 16)
-                val currentIndex = values.indexOf(pendingAudioLatencyMultiplier ?: 8).coerceAtLeast(0)
+                val currentIndex = values.indexOf(pendingAudioLatencyMultiplier ?: com.andrerinas.openheadunit.decoder.audio.AudioJitterBufferPolicy.DEFAULT_MULTIPLIER).coerceAtLeast(0)
                 AlertDialog.Builder(requireContext())
                     .setTitle(R.string.audio_latency_multiplier)
                     .setSingleChoiceItems(options, currentIndex) { dialog, which ->
@@ -3549,6 +3583,7 @@ class SettingsFragment : Fragment() {
                 .setPositiveButton(R.string.discard) { _, _ ->
                     hasChanges = false
                     requiresRestart = false
+                    requiresServiceRestart = false
                     reloadPendingStateFromSettings()
                     updateSaveButtonState()
                     updateSettingsList()
@@ -3610,6 +3645,7 @@ class SettingsFragment : Fragment() {
 
         hasChanges = false
         requiresRestart = false
+        requiresServiceRestart = false
         reloadPendingStateFromSettings()
         updateSaveButtonState()
         updateSettingsList()
@@ -3629,6 +3665,7 @@ class SettingsFragment : Fragment() {
                 .setPositiveButton(R.string.discard) { _, _ ->
                     hasChanges = false
                     requiresRestart = false
+                    requiresServiceRestart = false
                     reloadPendingStateFromSettings()
                     updateSaveButtonState()
                     updateSettingsList()
@@ -3826,6 +3863,7 @@ class SettingsFragment : Fragment() {
 
         hasChanges = false
         requiresRestart = false
+        requiresServiceRestart = false
         reloadPendingStateFromSettings()
         updateSaveButtonState()
         updateSettingsList()

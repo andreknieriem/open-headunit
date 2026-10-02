@@ -15,11 +15,12 @@ import android.view.KeyEvent
 import com.andrerinas.openheadunit.aap.protocol.Channel
 import com.andrerinas.openheadunit.aap.protocol.messages.KeyCodeEvent
 import com.andrerinas.openheadunit.aap.protocol.messages.MediaAck
+import com.andrerinas.openheadunit.aap.protocol.messages.MicrophoneResponse
+import com.andrerinas.openheadunit.aap.protocol.proto.Common
 import com.andrerinas.openheadunit.aap.protocol.messages.Messages
 import com.andrerinas.openheadunit.aap.protocol.messages.ScrollWheelEvent
 import com.andrerinas.openheadunit.aap.protocol.messages.SensorEvent
 import com.andrerinas.openheadunit.aap.protocol.messages.VideoFocusEvent
-import com.andrerinas.openheadunit.decoder.audio.MicChunkAccumulator
 import com.andrerinas.openheadunit.decoder.audio.MicrophonePolicy
 import com.andrerinas.openheadunit.decoder.video.FocusCycleLever
 import com.andrerinas.openheadunit.decoder.video.KeyframeCycleEscalationPolicy
@@ -31,6 +32,7 @@ import com.andrerinas.openheadunit.connection.projection.ProjectionConnection
 import com.andrerinas.openheadunit.connection.projection.SocketProjectionConnection
 import com.andrerinas.openheadunit.contract.ProjectionActivityRequest
 import com.andrerinas.openheadunit.decoder.audio.AudioDecoder
+import com.andrerinas.openheadunit.decoder.audio.AudioDiagnostics
 import com.andrerinas.openheadunit.decoder.audio.MicRecorder
 import com.andrerinas.openheadunit.decoder.video.DecoderStopPolicy
 import com.andrerinas.openheadunit.decoder.video.VideoDecoder
@@ -78,8 +80,7 @@ class AapTransport(
         val context: Context,
         private val onAaMediaMetadata: ((MediaPlayback.MediaMetaData) -> Unit)? = null,
         private val onAaPlaybackStatus: ((MediaPlayback.MediaPlaybackStatus) -> Unit)? = null,
-        private val externalSsl: AapSslContext? = null)
-    : MicRecorder.Listener {
+        private val externalSsl: AapSslContext? = null) {
 
     val ssl: AapSsl = externalSsl ?: AapSslContext(SingleKeyKeyManager(context))
 
@@ -89,6 +90,14 @@ class AapTransport(
     private var pollThread: HandlerThread? = null
     private var videoThread: HandlerThread? = null
     private var videoHandler: Handler? = null
+
+    // Only short resource publication runs under this lock; socket/TLS I/O and joins do not.
+    private val lifecycleLock = Any()
+    @Volatile private var closing = false
+    private var handshakeStarted = false
+    private val handshakeFinished = java.util.concurrent.CountDownLatch(1)
+    private val terminated = java.util.concurrent.CountDownLatch(1)
+    private var retiringWorkers: List<Thread> = emptyList()
 
     // Reused payload copies for the video thread. The SSL layer hands back one buffer it overwrites
     // on the next read, so a message that outlives the read has to carry its own bytes; pooling
@@ -174,11 +183,20 @@ class AapTransport(
         // phone going quiet unless one end or the other is actually measured. This thread serves one
         // socket, so the write's own duration is the time the uplink refused to drain.
         val startedMs = SystemClock.elapsedRealtime()
+        val queueMs = (SystemClock.uptimeMillis() - it.`when`).coerceAtLeast(0)
         this.sendEncryptedMessage(
             data = it.obj as ByteArray,
             length = it.arg2
         )
         val finishedMs = SystemClock.elapsedRealtime()
+        if (audioTimingActive && finishedMs >= nextSendTimingMs &&
+            (queueMs >= 50 || finishedMs - startedMs >= 50)) {
+            val channel = (it.obj as ByteArray)[0].toInt() and 0xff
+            val line = "Audio transport send channel=$channel queue=${queueMs}ms encryptWrite=${finishedMs - startedMs}ms"
+            AudioDiagnostics.record(finishedMs, line)
+            AppLog.w(line)
+            nextSendTimingMs = finishedMs + 1000
+        }
         uplinkStallMonitor.onWrite(finishedMs - startedMs, finishedMs)
             ?.let { report -> AppLog.i("AapTransport: %s", report) }
         return@Callback true
@@ -242,6 +260,10 @@ class AapTransport(
      * on every cycle. The set keeps one channel closing from discarding another's window.
      */
     private val startedAudioChannels = HashSet<Int>()
+    @Volatile internal var audioTimingActive = false
+        private set
+    private var nextReadTimingMs = 0L // poll thread only
+    private var nextSendTimingMs = 0L // send thread only
 
     /** Whether our own writes are draining. See [UplinkStallMonitor]. */
     private val uplinkStallMonitor = UplinkStallMonitor()
@@ -258,11 +280,36 @@ class AapTransport(
     /** Which Bluetooth profiles share the radio, printed beside each quiet window. */
     private val bluetoothLinkMonitor = BluetoothLinkMonitor(context)
 
-    /** What the microphone session sent, so a silent assistant has something to read. */
-    private val micUplinkMonitor = MicUplinkMonitor()
+    private val micSessions = MicSessionController(
+        lifecycle = MicRecorder::postLifecycle,
+        sending = { job -> sendHandler?.post(job) },
+        startCapture = { captured ->
+            micRecorder.listener = object : MicRecorder.Listener {
+                override fun onMicDataAvailable(mic_buf: ByteArray, mic_audio_len: Int, peak: Int) =
+                    captured.data(mic_buf, mic_audio_len, peak)
+                override fun onMicCaptureFailed(error: Int) = captured.failed()
+                override fun isCurrent(): Boolean = captured.isCurrent()
+            }
+            micRecorder.start()
+        },
+        stopCapture = { micRecorder.stop() },
+        response = { id, success ->
+            send(MicrophoneResponse(
+                if (success) Common.MessageStatus.STATUS_SUCCESS_VALUE
+                else Common.MessageStatus.STATUS_INTERNAL_ERROR_VALUE, id))
+        },
+        data = { bytes, timestamp ->
+            val frame = ByteArray(MicUplinkFrame.size(bytes.size))
+            val length = MicUplinkFrame.build(timestamp, bytes, 0, bytes.size, frame)
+            sendEncryptedMessage(frame, length)
+        },
+        clockMs = { SystemClock.elapsedRealtime() }, timestampUs = ::micTimestampUs,
+        report = { AppLog.i("AapTransport: %s", it) }
+    )
 
-    /** Whole 2048-frame messages, whatever size the device's reads happen to be. */
-    private val micChunks = MicChunkAccumulator()
+    internal fun openMicSession(maxUnacked: Int) = micSessions.open(maxUnacked)
+    internal fun rejectMicSession() = micSessions.reject()
+    internal fun closeMicSession(reply: Boolean = false) = micSessions.close(reply)
 
     /**
      * Called for every decrypted inbound message, from [AapMessageHandlerType.handle].
@@ -297,6 +344,7 @@ class AapTransport(
         val firstSink = synchronized(startedAudioChannels) {
             val wasEmpty = startedAudioChannels.isEmpty()
             startedAudioChannels.add(channel)
+            audioTimingActive = true
             wasEmpty
         }
         if (firstSink) audioGapMonitor.skipExpectedGap(SystemClock.elapsedRealtime())
@@ -305,7 +353,18 @@ class AapTransport(
     /** The phone stopped an audio sink. Called from [AapControlMedia.mediaSinkStopRequest]. */
     internal fun noteAudioSinkStopped(channel: Int) {
         if (!Channel.isAudio(channel)) return
-        synchronized(startedAudioChannels) { startedAudioChannels.remove(channel) }
+        synchronized(startedAudioChannels) {
+            startedAudioChannels.remove(channel)
+            audioTimingActive = startedAudioChannels.isNotEmpty()
+        }
+    }
+
+    internal fun recordSlowAudioRead(timing: TransportReadTiming, nowMs: Long) {
+        if (nowMs < nextReadTimingMs) return
+        val line = "Audio transport read channel=${timing.channel} readerGap=${timing.readerGapMs}ms " +
+            "header=${timing.headerMs}ms body=${timing.bodyMs}ms decrypt=${timing.decryptMs}ms dispatch=${timing.dispatchMs}ms"
+        AudioDiagnostics.report(nowMs, line, warning = true)
+        nextReadTimingMs = nowMs + 1000
     }
 
     // Escalation state for KeyframeCycleEscalationPolicy - see triggerFocusCycleRecovery().
@@ -592,12 +651,20 @@ class AapTransport(
         sendHandler?.removeCallbacks(unrepairedCheckRunnable)
     }
 
+    private val decoderErrorCallback: (String) -> Unit = {
+        if (!closing) triggerFocusCycleRecovery(escalatable = true, wireCorruption = false)
+    }
+    private val keyframeRecoveryCallback: () -> Unit = {
+        if (!closing) triggerFocusCycleRecovery(escalatable = true, wireCorruption = false)
+    }
+    private val keyframeObservedCallback: () -> Unit = {
+        if (!closing) onKeyframeRepairedPicture()
+    }
+
     init {
         // Nothing is wired when the microphone is the phone's, so AudioRecord is never constructed
         // and a Bluetooth intercom keeps the physical microphone.
-        if (MicrophonePolicy.shouldCapture(settings.useHeadUnitMicrophone, micRecorder.isAvailable)) {
-            micRecorder.listener = this
-        } else {
+        if (!MicrophonePolicy.shouldCapture(settings.useHeadUnitMicrophone, micRecorder.isAvailable)) {
             AppLog.i("AapTransport: not taking the microphone (setting " +
                 "useHeadUnitMicrophone=${settings.useHeadUnitMicrophone}, " +
                 "available=${micRecorder.isAvailable})")
@@ -618,21 +685,11 @@ class AapTransport(
         // the moment the picture is most certainly broken, and it used to be the moment the only
         // lever that can repair it was switched off: the old wiring abandoned the escalation clock
         // and armed nothing, so a decoder restarting every ten seconds could never reach a cycle.
-        videoDecoder.onDecoderError = { _ ->
-            triggerFocusCycleRecovery(escalatable = true, wireCorruption = false)
-        }
-
-        // Same ask, from a decoder that is deliberately *not* rebuilding while it waits.
-        videoDecoder.onKeyframeStarved = {
-            triggerFocusCycleRecovery(escalatable = true, wireCorruption = false)
-        }
-
-        videoDecoder.onFrameDropped = {
-            triggerFocusCycleRecovery(escalatable = true, wireCorruption = false)
-        }
-
-        videoDecoder.onKeyframeObserved = {
-            onKeyframeRepairedPicture()
+        synchronized(videoDecoder) {
+            videoDecoder.onDecoderError = decoderErrorCallback
+            videoDecoder.onKeyframeStarved = keyframeRecoveryCallback
+            videoDecoder.onFrameDropped = keyframeRecoveryCallback
+            videoDecoder.onKeyframeObserved = keyframeObservedCallback
         }
     }
 
@@ -643,6 +700,12 @@ class AapTransport(
         startedSensors.add(type)
     }
 
+    /**
+     * Send one already-built, unfragmented message: preserve channel/flags in the cleartext
+     * four-byte envelope and encrypt [type][service payload]. The pre-encryption length is not
+     * the wire length; rewrite it with TLS output bytes, excluding the envelope. This routine
+     * does not split messages or add FIRST's optional total-length field.
+     */
     private fun sendEncryptedMessage(data: ByteArray, length: Int): Int {
         val ba =
             ssl.encrypt(AapMessage.HEADER_SIZE, length - AapMessage.HEADER_SIZE, data) ?: return -1
@@ -668,11 +731,12 @@ class AapTransport(
     internal fun pauseForSleep() {
         AppLog.i("AapTransport: Pausing media/audio/mic and hardware video decoder for sleep")
         aapAudio.pauseAllAudio()
-        micRecorder.stop()
+        closeMicSession()
         videoDecoder.stop(DecoderStopPolicy.REASON_SCREEN_OFF_SLEEP)
     }
 
     internal fun stop(reason: Control.ByeByeReason = Control.ByeByeReason.USER_SELECTION) {
+        if (closing) return
         AppLog.i("AapTransport stopping and sending byebye ($reason)")
         val byebye = Control.ByeByeRequest.newBuilder()
             .setReason(reason)
@@ -685,54 +749,81 @@ class AapTransport(
     }
 
     internal fun quit(clean: Boolean = false) {
-        val cb = onQuit ?: return
-        onQuit = null
-
-        AppLog.i("AapTransport quitting (clean=$clean)")
-        cb.invoke(clean)
-        micRecorder.stop()
-        micRecorder.listener = null
-        onMicSessionEnded()
-        sendHandler?.removeCallbacks(focusCycleGainRunnable)
-        sendHandler?.removeCallbacks(unrepairedCheckRunnable)
-        pollThread?.quit()
-        sendThread?.quit()
-        videoThread?.quit()
-        aapAudio.releaseAllFocus()
-
-        // Never let a half-finished cycle outlive the transport that owed the regain: the claim is
-        // session state, and a stuck one would refuse every cycle of the next session.
-        endFocusCycle()
-
-        videoDecoder.onDecoderError = null
-        videoDecoder.onKeyframeStarved = null
-        videoDecoder.onFrameDropped = null
-        videoDecoder.onKeyframeObserved = null
-
-        try {            // Don't join the poll thread from within itself — it would block for the full
-            // timeout since the thread can't finish while it's waiting for itself to finish.
-            if (Thread.currentThread() != pollThread) pollThread?.join(1000)
-            sendThread?.join(1000)
-            if (Thread.currentThread() != videoThread) videoThread?.join(1000)
-        } catch (e: InterruptedException) {
-            AppLog.e("Failed to join threads", e)
+        val (cb, awaitHandshake) = synchronized(lifecycleLock) {
+            if (closing) return
+            closing = true
+            retiringWorkers = listOfNotNull(pollThread, sendThread, videoThread)
+            aapRead?.stop()
+            val callback = onQuit
+            onQuit = null
+            callback to handshakeStarted
         }
+        try {
+            AppLog.i("AapTransport quitting (clean=$clean)")
+            // Notify promptly; CommManager keeps this owner until awaitTermination completes.
+            cleanupStep("notify") { cb?.invoke(clean) }
+            cleanupStep("microphone") { micSessions.close(shutdown = true) }
+            sendHandler?.removeCallbacks(focusCycleGainRunnable)
+            sendHandler?.removeCallbacks(unrepairedCheckRunnable)
+            pollThread?.quit()
+            sendThread?.quit()
+            videoThread?.quit()
+            // Unblock in-flight handshake/read/write before waiting. stop() already allowed
+            // the ByeBye send its grace period; natural EOF has nothing left to send.
+            cleanupStep("connection") { connection?.disconnect() }
+            if (awaitHandshake) awaitUninterruptibly { handshakeFinished.await() }
+            for (worker in listOfNotNull(pollThread, sendThread, videoThread)) {
+                if (Thread.currentThread() !== worker) awaitUninterruptibly { worker.join() }
+            }
+            cleanupStep("audio") { aapAudio.releaseAllFocus() }
+            cleanupStep("focus cycle") { endFocusCycle() }
+            synchronized(videoDecoder) {
+                if (videoDecoder.onDecoderError === decoderErrorCallback) videoDecoder.onDecoderError = null
+                if (videoDecoder.onKeyframeStarved === keyframeRecoveryCallback) videoDecoder.onKeyframeStarved = null
+                if (videoDecoder.onFrameDropped === keyframeRecoveryCallback) videoDecoder.onFrameDropped = null
+                if (videoDecoder.onKeyframeObserved === keyframeObservedCallback) videoDecoder.onKeyframeObserved = null
+            }
+            cleanupStep("video") { aapVideo.release() }
+            videoBufferPool.clear()
+            videoBacklog.set(0)
+            videoShedTotal.set(0)
+            aapRead = null
+            cleanupStep("TLS") { ssl.release() }
+            pollHandler = null
+            sendHandler = null
+            videoHandler = null
+            pollThread = null
+            sendThread = null
+            videoThread = null
+        } finally {
+            terminated.countDown()
+        }
+    }
 
-        // After the join, not before it: the run state this closes is the video thread's now, and
-        // resetting it under a thread still assembling would hand the next session a half-run.
-        aapVideo.release()
-        videoBufferPool.clear()
-        videoBacklog.set(0)
-        videoShedTotal.set(0)
+    private inline fun cleanupStep(name: String, action: () -> Unit) {
+        try { action() } catch (e: Exception) { AppLog.e("AapTransport cleanup $name failed", e) }
+    }
 
-        aapRead = null
-        ssl.release()
-        pollHandler = null
-        sendHandler = null
-        videoHandler = null
-        pollThread = null
-        sendThread = null
-        videoThread = null
+    /** Never called by a transport worker: CommManager waits on its separate cleanup job. */
+    internal fun awaitTermination() {
+        awaitUninterruptibly { terminated.await() }
+        // quit may have run inside Poll's read/dispatch stack. Its body finishing does not
+        // mean that stack has unwound; retain and join that worker here, from manager cleanup.
+        for (worker in retiringWorkers) {
+            check(Thread.currentThread() !== worker) { "A transport worker cannot await itself" }
+            awaitUninterruptibly { worker.join() }
+        }
+    }
+
+    private inline fun awaitUninterruptibly(wait: () -> Unit) {
+        var interrupted = false
+        try {
+            while (true) {
+                try { wait(); return } catch (_: InterruptedException) { interrupted = true }
+            }
+        } finally {
+            if (interrupted) Thread.currentThread().interrupt()
+        }
     }
 
     /**
@@ -755,10 +846,13 @@ class AapTransport(
      */
     internal fun dispatchVideo(message: AapMessage): Boolean {
         val isPayload = aapVideo.isPayload(message)
-        val acks = message.type == 0 || message.type == 1
+        val acks = AapMessageFraming.completesMediaData(message.type, message.flags.toInt())
+        // Capture ownership at receipt. A later MediaStart can replace the channel's session
+        // while video is queued; its eventual ACK still belongs to this message's original one.
+        val ackSession = getSessionId(message.channel)
         val handler = videoHandler
         if (handler == null) {
-            if (acks) sendMediaAck(message.channel)
+            if (acks) sendMediaAck(message.channel, ackSession)
             return isPayload
         }
         val channel = message.channel
@@ -772,7 +866,7 @@ class AapTransport(
                     "shedding - see videoShed= on the transport dispatch line for how many")
             }
             if (isPayload) dispatchVideoRunHoled(true)
-            if (acks) sendMediaAck(channel)
+            if (acks) sendMediaAck(channel, ackSession)
             return isPayload
         }
         val size = message.size
@@ -788,7 +882,7 @@ class AapTransport(
             } finally {
                 videoBacklog.decrementAndGet()
                 recycleVideoBuffer(copy)
-                if (acks) sendMediaAck(channel)
+                if (acks) sendMediaAck(channel, ackSession)
             }
         }
         return isPayload
@@ -825,51 +919,60 @@ class AapTransport(
     /**
      * Phase 1 of startup: creates the send/poll threads and runs the SSL handshake.
      *
-     * Returns `true` on success. On failure, threads are stopped via [quit] before returning.
+     * Returns `true` on success. On failure the owning CommManager reports the reason and
+     * retires this transport with [quit]; cancellation may already be doing so concurrently.
      * Must be followed by [startReading] (called after the projection surface is ready)
      * to actually start the message loop.
      */
     internal fun startHandshake(connection: ProjectionConnection): Boolean {
         AppLog.i("Start Aap transport handshake for $connection")
-        this.connection = connection
-        wasUserExit = false
-        // This object outlives a session and is re-armed for the next one, so a stamp left by the
-        // previous phone would read as a live link for the first seconds of this one.
-        lastMessageReceivedMs = 0L
-        linkGapMonitor.reset()
-        videoGapMonitor.reset()
-        audioGapMonitor.reset()
-        synchronized(startedAudioChannels) { startedAudioChannels.clear() }
-        uplinkStallMonitor.reset()
-        inboundRateMonitor.reset()
-        micUplinkMonitor.reset()
-        micChunks.reset()
-        bluetoothLinkMonitor.onSessionStart()
+        synchronized(lifecycleLock) {
+            if (closing || handshakeStarted) return false
+            handshakeStarted = true
+            try {
+                this.connection = connection
+                wasUserExit = false
+                // Each transport owns one session; initialize timing before any worker can run.
+                lastMessageReceivedMs = 0L
+                linkGapMonitor.reset()
+                videoGapMonitor.reset()
+                audioGapMonitor.reset()
+                synchronized(startedAudioChannels) { startedAudioChannels.clear(); audioTimingActive = false }
+                nextReadTimingMs = 0L
+                nextSendTimingMs = 0L
+                uplinkStallMonitor.reset()
+                inboundRateMonitor.reset()
+                bluetoothLinkMonitor.onSessionStart()
 
-        videoThread = HandlerThread("AapTransport:Handler::Video", Process.THREAD_PRIORITY_DISPLAY)
-        videoThread!!.start()
-        videoHandler = Handler(videoThread!!.looper)
+                videoThread = HandlerThread("AapTransport:Handler::Video", Process.THREAD_PRIORITY_DISPLAY)
+                videoThread!!.start()
+                videoHandler = Handler(videoThread!!.looper)
 
-        sendThread = HandlerThread("AapTransport:Handler::Send", Process.THREAD_PRIORITY_AUDIO)
-        sendThread!!.start()
-        sendHandler = Handler(sendThread!!.looper, sendHandlerCallback)
-        sendHandler?.post { LegacyOptimizer.setHighPriority() }
+                sendThread = HandlerThread("AapTransport:Handler::Send", Process.THREAD_PRIORITY_AUDIO)
+                sendThread!!.start()
+                sendHandler = Handler(sendThread!!.looper, sendHandlerCallback)
+                sendHandler?.post { LegacyOptimizer.setHighPriority() }
 
-        pollThread = HandlerThread("AapTransport:Handler::Poll", Process.THREAD_PRIORITY_AUDIO)
-        pollThread!!.start()
-        pollHandler = Handler(pollThread!!.looper, pollHandlerCallback)
-        pollHandler?.post { LegacyOptimizer.setHighPriority() }
+                pollThread = HandlerThread("AapTransport:Handler::Poll", Process.THREAD_PRIORITY_AUDIO)
+                pollThread!!.start()
+                pollHandler = Handler(pollThread!!.looper, pollHandlerCallback)
+                pollHandler?.post { LegacyOptimizer.setHighPriority() }
 
-        // No sleep needed here: Handler(thread.looper, ...) already blocks internally until the
-        // HandlerThread's Looper is ready (via HandlerThread.getLooper() → wait/notifyAll).
-
-        if (!handshake(connection)) {
-            quit()
-            AppLog.e("Handshake failed")
-            return false
+                // No sleep needed here: Handler(thread.looper, ...) already blocks internally until the
+                // HandlerThread's Looper is ready (via HandlerThread.getLooper() → wait/notifyAll).
+            } catch (e: Exception) {
+                handshakeFinished.countDown()
+                throw e
+            }
         }
-
-        return true
+        val shook = try {
+            !closing && handshake(connection)
+        } finally {
+            // quit can run on another thread and must not release shared SSL while this call
+            // still uses it. Signal before returning to the manager's failure cleanup.
+            handshakeFinished.countDown()
+        }
+        return shook && !closing
     }
 
     /**
@@ -880,7 +983,8 @@ class AapTransport(
      * projection surface has been set on the [VideoDecoder]. This guarantees that no video
      * frame is ever decoded before a render target exists.
      */
-    internal fun startReading() {
+    internal fun startReading() = synchronized(lifecycleLock) {
+        if (closing || !handshakeStarted || handshakeFinished.count != 0L || aapRead != null) return@synchronized
         AppLog.i("Start Aap transport read loop")
         aapRead = AapRead.Factory.create(
             connection!!,
@@ -1120,8 +1224,8 @@ class AapTransport(
         context.sendBroadcast(ProjectionActivityRequest())
     }
 
-    internal fun sendMediaAck(channel: Int) {
-        send(MediaAck(channel, sessionIds.get(channel)))
+    internal fun sendMediaAck(channel: Int, sessionId: Int = getSessionId(channel)) {
+        send(MediaAck(channel, sessionId))
     }
 
     internal fun setSessionId(channel: Int, sessionId: Int) {
@@ -1131,28 +1235,9 @@ class AapTransport(
     /**
      * The session id a MediaStart left for [channel], or 0 if the phone never sent one.
      *
-     * Zero is the honest answer on the microphone channel: every captured session opens it with a
-     * ChannelOpenRequest and a MicrophoneRequest and no Start in between.
+     * MicrophoneRequest uses its own lifecycle controller and does not share this sink table.
      */
     internal fun getSessionId(channel: Int): Int = sessionIds.get(channel)
-
-    override fun onMicDataAvailable(mic_buf: ByteArray, mic_audio_len: Int, peak: Int) {
-        if (mic_audio_len <= 0) return
-        micChunks.offer(mic_buf, mic_audio_len, micTimestampUs(), peak, ::sendMicChunk)
-    }
-
-    /** One whole microphone message. The buffer is the chunker's and is reused, so copy as we build. */
-    private fun sendMicChunk(chunk: ByteArray, chunkLen: Int, timestampUs: Long, peak: Int) {
-        val data = ByteArray(MicUplinkFrame.size(chunkLen))
-        val length = MicUplinkFrame.build(timestampUs, chunk, 0, chunkLen, data)
-        send(AapMessage(Channel.ID_MIC, MicUplinkFrame.FLAGS,
-            Media.MsgType.MEDIA_MESSAGE_DATA_VALUE, MicUplinkFrame.TIMESTAMP_OFFSET, length, data))
-
-        if (micUplinkMonitor.onFrame(chunkLen, peak, SystemClock.elapsedRealtime())) {
-            AppLog.i("AapTransport: mic uplink started (channel MIC, type 0, timestamps in " +
-                "microseconds, ${chunkLen}B messages)")
-        }
-    }
 
     /**
      * A monotonic microsecond clock, which is the unit every other AAP media producer stamps with.
@@ -1165,14 +1250,11 @@ class AapTransport(
             SystemClock.elapsedRealtimeNanos() / 1000L
         else SystemClock.elapsedRealtime() * 1000L
 
-    /** One acknowledgement from the phone on the microphone channel. Diagnostic only. */
-    internal fun onMicAck() = micUplinkMonitor.onAck()
-
-    /** The phone closed the microphone. Says what the session put on the wire, then re-arms. */
-    internal fun onMicSessionEnded() {
-        micUplinkMonitor.onDiscarded(micChunks.reset())
-        micUplinkMonitor.onSessionEnd(SystemClock.elapsedRealtime())
-            ?.let { AppLog.i("AapTransport: %s", it) }
+    internal fun onMicAck(ack: Media.Ack) {
+        val count = if (ack.receiveTimestampNsCount > 0) ack.receiveTimestampNsCount else ack.ack
+        if (!micSessions.acknowledge(ack.sessionId, count)) {
+            AppLog.w("AapTransport: ignored microphone ACK session=${ack.sessionId} count=$count")
+        }
     }
 
     companion object {

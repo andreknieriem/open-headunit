@@ -147,6 +147,13 @@ class CommManager(
     /** Playback status from the phone (AAP media channel), includes current position. */
     var onAaPlaybackStatus: ((MediaPlayback.MediaPlaybackStatus) -> Unit)? = null
 
+    // Creation/publication, saved audio settings and the first disconnect decision share one
+    // boundary. Network handshake and final connection teardown run outside this lock.
+    private val transportLifecycleLock = Any()
+    // The first disconnect chooses app-exit policy until the next physical attempt. Error/UI
+    // state changes must not reopen that decision while the same session is being retired.
+    private var disconnectRequested = false
+    private var connectionAttempt: Any? = null
     /** @Volatile: written on IO thread, read on Main and IO threads. */
     @Volatile private var _transport: AapTransport? = null
 
@@ -308,29 +315,54 @@ class CommManager(
         _disconnectJob?.join()
 
         var conn: ProjectionConnection? = null
+        val (attempt, previous) = synchronized(transportLifecycleLock) {
+            val token = Any()
+            connectionAttempt = token
+            disconnectRequested = false
+            _connectionState.value = ConnectionState.Connecting
+            val previous = _connection
+            _connection = null
+            token to previous
+        }
         try {
-            _connectionState.emit(ConnectionState.Connecting)
-            _connection?.disconnect()
+            previous?.disconnect()
             conn = if (settings.useLibusb) {
                 LibusbProjectionConnection(usbManager, device)
             } else {
                 StandardUsbProjectionConnection(usbManager, device)
             }
-            _connection = conn
+            val candidate = conn
+            val registered = synchronized(transportLifecycleLock) {
+                if (connectionAttempt !== attempt || disconnectRequested) false
+                else { _connection = candidate; true }
+            }
+            if (!registered) return
 
-            val opened = conn.connect()
-            if (_connection !== conn) return  // Preempted: a newer connect owns the state now.
-            if (opened) {
-                settings.saveLastConnection(type = Settings.CONNECTION_TYPE_USB, usbDevice = UsbDeviceCompat.getUniqueName(device))
-                _connectionState.emit(ConnectionState.Connected)
-            } else {
-                _connectionState.emit(ConnectionState.Disconnected())
+            val opened = candidate.connect()
+            synchronized(transportLifecycleLock) {
+                if (connectionAttempt !== attempt || disconnectRequested || _connection !== candidate) {
+                    // The cancelled candidate is closed below, outside the lifecycle monitor.
+                    return@synchronized
+                }
+                if (opened) {
+                    settings.saveLastConnection(type = Settings.CONNECTION_TYPE_USB, usbDevice = UsbDeviceCompat.getUniqueName(device))
+                    _connectionState.value = ConnectionState.Connected
+                } else {
+                    disconnect(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
+                }
             }
         } catch (e: Exception) {
-            if (conn != null && _connection !== conn) return
-            onSessionFailure?.invoke("connect_failed")
-            _connectionState.emit(ConnectionState.Error("Connection failed: ${e.message}"))
-            disconnect()
+            synchronized(transportLifecycleLock) {
+                if (connectionAttempt !== attempt || disconnectRequested) return
+                onSessionFailure?.invoke("connect_failed")
+                _connectionState.value = ConnectionState.Error("Connection failed: ${e.message}")
+                disconnect()
+            }
+        } finally {
+            val retired = synchronized(transportLifecycleLock) {
+                connectionAttempt !== attempt || disconnectRequested || _connection !== conn
+            }
+            if (retired) conn?.disconnect()
         }
     }
 
@@ -378,28 +410,53 @@ class CommManager(
         _disconnectJob?.join()
 
         var conn: ProjectionConnection? = null
+        val (attempt, previous) = synchronized(transportLifecycleLock) {
+            val token = Any()
+            connectionAttempt = token
+            disconnectRequested = false
+            _connectionState.value = ConnectionState.Connecting
+            val previous = _connection
+            _connection = null
+            token to previous
+        }
         try {
-            _connectionState.emit(ConnectionState.Connecting)
-            _connection?.disconnect()
+            previous?.disconnect()
             conn = SocketProjectionConnection(socket, context)
-            _connection = conn
+            val candidate = conn
+            val registered = synchronized(transportLifecycleLock) {
+                if (connectionAttempt !== attempt || disconnectRequested) false
+                else { _connection = candidate; true }
+            }
+            if (!registered) return
 
-            val opened = conn.connect()
-            if (_connection !== conn) return  // Preempted: a newer connect owns the state now.
-            if (opened) {
-                // [FIX] Don't overwrite NEARBY connection type with WIFI + localhost IP (::1)
-                if (socket !is NearbySocket) {
-                    settings.saveLastConnection(type = Settings.CONNECTION_TYPE_WIFI, ip = socket.inetAddress?.hostAddress ?: "")
+            val opened = candidate.connect()
+            synchronized(transportLifecycleLock) {
+                if (connectionAttempt !== attempt || disconnectRequested || _connection !== candidate) {
+                    // The cancelled candidate is closed below, outside the lifecycle monitor.
+                    return@synchronized
                 }
-                _connectionState.emit(ConnectionState.Connected)
-            } else {
-                _connectionState.emit(ConnectionState.Disconnected())
+                if (opened) {
+                    // [FIX] Don't overwrite NEARBY connection type with WIFI + localhost IP (::1)
+                    if (socket !is NearbySocket) {
+                        settings.saveLastConnection(type = Settings.CONNECTION_TYPE_WIFI, ip = socket.inetAddress?.hostAddress ?: "")
+                    }
+                    _connectionState.value = ConnectionState.Connected
+                } else {
+                    disconnect(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
+                }
             }
         } catch (e: Exception) {
-            if (conn != null && _connection !== conn) return
-            onSessionFailure?.invoke("connect_failed")
-            _connectionState.emit(ConnectionState.Error("Connection failed: ${e.message}"))
-            disconnect()
+            synchronized(transportLifecycleLock) {
+                if (connectionAttempt !== attempt || disconnectRequested) return
+                onSessionFailure?.invoke("connect_failed")
+                _connectionState.value = ConnectionState.Error("Connection failed: ${e.message}")
+                disconnect()
+            }
+        } finally {
+            val retired = synchronized(transportLifecycleLock) {
+                connectionAttempt !== attempt || disconnectRequested || _connection !== conn
+            }
+            if (retired) conn?.disconnect()
         }
     }
 
@@ -427,25 +484,50 @@ class CommManager(
         _disconnectJob?.join()
 
         var conn: ProjectionConnection? = null
+        val (attempt, previous) = synchronized(transportLifecycleLock) {
+            val token = Any()
+            connectionAttempt = token
+            disconnectRequested = false
+            _connectionState.value = ConnectionState.Connecting
+            val previous = _connection
+            _connection = null
+            token to previous
+        }
         try {
-            _connectionState.emit(ConnectionState.Connecting)
-            _connection?.disconnect()
+            previous?.disconnect()
             conn = SocketProjectionConnection(ip, port, context)
-            _connection = conn
+            val candidate = conn
+            val registered = synchronized(transportLifecycleLock) {
+                if (connectionAttempt !== attempt || disconnectRequested) false
+                else { _connection = candidate; true }
+            }
+            if (!registered) return
 
-            val opened = conn.connect()
-            if (_connection !== conn) return  // Preempted: a newer connect owns the state now.
-            if (opened) {
-                settings.saveLastConnection(type = Settings.CONNECTION_TYPE_WIFI, ip = ip)
-                _connectionState.emit(ConnectionState.Connected)
-            } else {
-                _connectionState.emit(ConnectionState.Disconnected())
+            val opened = candidate.connect()
+            synchronized(transportLifecycleLock) {
+                if (connectionAttempt !== attempt || disconnectRequested || _connection !== candidate) {
+                    // The cancelled candidate is closed below, outside the lifecycle monitor.
+                    return@synchronized
+                }
+                if (opened) {
+                    settings.saveLastConnection(type = Settings.CONNECTION_TYPE_WIFI, ip = ip)
+                    _connectionState.value = ConnectionState.Connected
+                } else {
+                    disconnect(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
+                }
             }
         } catch (e: Exception) {
-            if (conn != null && _connection !== conn) return
-            onSessionFailure?.invoke("connect_failed")
-            _connectionState.emit(ConnectionState.Error("Connection failed: ${e.message}"))
-            disconnect()
+            synchronized(transportLifecycleLock) {
+                if (connectionAttempt !== attempt || disconnectRequested) return
+                onSessionFailure?.invoke("connect_failed")
+                _connectionState.value = ConnectionState.Error("Connection failed: ${e.message}")
+                disconnect()
+            }
+        } finally {
+            val retired = synchronized(transportLifecycleLock) {
+                connectionAttempt !== attempt || disconnectRequested || _connection !== conn
+            }
+            if (retired) conn?.disconnect()
         }
     }
 
@@ -490,83 +572,82 @@ class CommManager(
      * inflation time rather than added on top of it.
      */
     suspend fun startHandshake() = withContext(Dispatchers.IO) {
-        // Another caller already started the handshake — do nothing.
-        if (_connectionState.value is ConnectionState.StartingTransport) return@withContext
+        // Service and Activity may both enqueue this call. A delayed request after startup or
+        // retirement is a no-op, not a failure belonging to the current/new session.
+        if (_connectionState.value !is ConnectionState.Connected) return@withContext
 
+        val attemptedConnection = _connection
         try {
             if (_connectionState.value is ConnectionState.Connected) {
-                _connectionState.emit(ConnectionState.StartingTransport)
-
-                if (_transport == null) {
-                    val audioManager = context.getSystemService(Application.AUDIO_SERVICE) as AudioManager
-                    _transport = AapTransport(
-                        audioDecoder,
-                        videoDecoder,
-                        audioManager,
-                        settings,
-                        _backgroundNotification,
-                        context,
-                        externalSsl = aapSslContext,
-                        onAaMediaMetadata = { meta -> onAaMediaMetadata?.invoke(meta) },
-                        onAaPlaybackStatus = { status -> onAaPlaybackStatus?.invoke(status) }
-                    )
-                    _transport!!.onQuit = { isClean ->
-                        val oldTransport = _transport
-                        _transport = null
-
-                        if (oldTransport != null) {
-                            transportedQuited(isClean)
-                        }
+                val conn = attemptedConnection ?: return@withContext
+                val transport = synchronized(transportLifecycleLock) {
+                    if (disconnectRequested || _connection !== conn || _connectionState.value !is ConnectionState.Connected) return@withContext
+                    _connectionState.value = ConnectionState.StartingTransport
+                    if (_transport == null) {
+                        val audioManager = context.getSystemService(Application.AUDIO_SERVICE) as AudioManager
+                        val candidate = AapTransport(
+                            audioDecoder, videoDecoder, audioManager, settings, _backgroundNotification,
+                            context, externalSsl = aapSslContext,
+                            onAaMediaMetadata = { meta -> onAaMediaMetadata?.invoke(meta) },
+                            onAaPlaybackStatus = { status -> onAaPlaybackStatus?.invoke(status) }
+                        )
+                        // A late quit belongs only to the transport that installed this callback.
+                        candidate.onQuit = { isClean -> transportedQuited(candidate, isClean) }
+                        candidate.onAudioFocusStateChanged = { isPlaying -> onAudioFocusStateChanged?.invoke(isPlaying) }
+                        candidate.onUpdateUiConfigReplyReceived = { onUpdateUiConfigReplyReceived?.invoke() }
+                        _transport = candidate
                     }
-                    _transport!!.onAudioFocusStateChanged = { isPlaying -> onAudioFocusStateChanged?.invoke(isPlaying) }
-                    _transport!!.onUpdateUiConfigReplyReceived = { onUpdateUiConfigReplyReceived?.invoke() }
+                    checkNotNull(_transport)
                 }
-                // Held locally because startHandshake() quits the transport on failure, and
-                // quitting nulls _transport before it returns — the failure reason would be
-                // unreachable by the time we came to report it.
-                val transport = _transport
-                val conn = _connection!!
-                val shook = transport?.startHandshake(conn) == true
-                if (_connection !== conn) return@withContext  // Preempted: a newer connect owns the state now.
+                // Held locally: startHandshake can retire itself and clear the published owner.
+                val shook = transport.startHandshake(conn)
+                if (_connection !== conn || (shook && _transport !== transport)) return@withContext
                 if (shook) {
-                    // A session that got this far had a working link to carry video on. See
-                    // VideoStarvationPolicy for what it means when one ends without carrying any.
-                    sessionReachedHandshake = true
-                    videoDecoder.framesRenderedThisSession = 0L
-                    silentPeerFailures = 0
-                    // The peer answered, which is what the deaf-server record claims it cannot.
-                    ConnectionIssues.clear(context, ConnectionIssue.HEADUNIT_SERVER_NOT_ANSWERING)
-                    settleSessionClaim(formed = true)
-                    _connectionState.emit(ConnectionState.HandshakeComplete)
+                    withLiveTransport(transport, ConnectionState.StartingTransport) {
+                        // A session that got this far had a working link to carry video on. See
+                        // VideoStarvationPolicy for what it means when one ends without carrying any.
+                        sessionReachedHandshake = true
+                        videoDecoder.framesRenderedThisSession = 0L
+                        silentPeerFailures = 0
+                        // The peer answered, which is what the deaf-server record claims it cannot.
+                        ConnectionIssues.clear(context, ConnectionIssue.HEADUNIT_SERVER_NOT_ANSWERING)
+                        settleSessionClaim(formed = true)
+                        _connectionState.value = ConnectionState.HandshakeComplete
+                    }
                 } else {
-                    val silent = transport?.lastHandshakeFailure == AapTransport.HandshakeFailure.PEER_SILENT
-                    noteHandshakeOutcome(silent)
-                    // Here, not from a ConnectionState.Error collector: disconnect() follows with no
-                    // suspension point, so the conflated flow never delivers Error and the pill kept
-                    // the step it had. Measured stuck on "Securing the connection" for 3m39s.
-                    ConnectionStageTracker.endAttempt()
-                    onSessionFailure?.invoke(if (silent) "peer_silent" else "handshake_failed")
-                    _connectionState.emit(
-                        ConnectionState.Error(if (silent) ERROR_HANDSHAKE_PEER_SILENT else "Handshake failed")
-                    )
-                    settleSessionClaim(formed = false)
-                    // Not a user exit: nobody chose to end a session that never formed.
-                    disconnect(sendByeBye = false, isUserExit = false)
+                    withLiveTransport(transport, ConnectionState.StartingTransport) {
+                        val silent = transport.lastHandshakeFailure == AapTransport.HandshakeFailure.PEER_SILENT
+                        noteHandshakeOutcome(silent)
+                        // Here, not from a ConnectionState.Error collector: disconnect() follows with no
+                        // suspension point, so the conflated flow never delivers Error and the pill kept
+                        // the step it had. Measured stuck on "Securing the connection" for 3m39s.
+                        ConnectionStageTracker.endAttempt()
+                        onSessionFailure?.invoke(if (silent) "peer_silent" else "handshake_failed")
+                        _connectionState.value = ConnectionState.Error(if (silent) ERROR_HANDSHAKE_PEER_SILENT else "Handshake failed")
+                        settleSessionClaim(formed = false)
+                        // Not a user exit: nobody chose to end a session that never formed.
+                        disconnect(sendByeBye = false, isUserExit = false)
+                    }
                 }
-            } else {
-                onSessionFailure?.invoke("handshake_failed")
-                _connectionState.emit(ConnectionState.Error("Starting handshake without connection"))
             }
         } catch (e: Exception) {
-            // An exception is never the silent-peer case; clear the streak rather than leaving it
-            // to age into a backoff that no longer describes what is happening.
-            noteHandshakeOutcome(silent = false)
-            onSessionFailure?.invoke("handshake_failed")
-            _connectionState.emit(ConnectionState.Error("Handshake failed: ${e.message}"))
-            settleSessionClaim(formed = false)
-            disconnect(sendByeBye = false, isUserExit = false)
+            synchronized(transportLifecycleLock) {
+                if (disconnectRequested || _connection !== attemptedConnection || _connectionState.value !is ConnectionState.StartingTransport) return@withContext
+                noteHandshakeOutcome(silent = false)
+                onSessionFailure?.invoke("handshake_failed")
+                _connectionState.value = ConnectionState.Error("Handshake failed: ${e.message}")
+                settleSessionClaim(formed = false)
+                disconnect(sendByeBye = false, isUserExit = false)
+            }
         }
     }
+
+    /** A late handshake/read completion must not undo a disconnect that already chose its policy. */
+    private inline fun withLiveTransport(source: AapTransport, expected: ConnectionState, action: () -> Unit): Boolean =
+        synchronized(transportLifecycleLock) {
+            if (disconnectRequested || _transport !== source || _connectionState.value != expected) false
+            else { action(); true }
+        }
 
     /**
      * Updates [silentPeerFailures] after a failed handshake, and explains the situation once when
@@ -621,28 +702,29 @@ class CommManager(
     suspend fun startReading() = withContext(Dispatchers.IO) {
         if (_connectionState.value !is ConnectionState.HandshakeComplete) return@withContext
 
+        // Keep the attempted owner: completion and failure must not undo a later disconnect.
+        val transport = _transport ?: return@withContext
         try {
-            // Capture the @Volatile _transport once: it can be cleared concurrently by a
-            // disconnect, so a stable local reference avoids racing reads and lets us bail out
-            // early instead of emitting TransportStarted when no reading actually started.
-            val transport = _transport ?: return@withContext
-            // Only grab permanent AUDIOFOCUS_GAIN in Static Audio Focus mode, matching the
-            // gating in AapService.requestPermanentAudioFocus and AapControl.audioFocusRequest.
+            // This transport owns the only permanent focus client. The service deliberately
+            // does not acquire one during handshake: its StateFlow observer can miss an early
+            // disconnect, whereas AapAudio closes with its owning transport even before Start.
+            // Only grab AUDIOFOCUS_GAIN in Static Audio Focus mode, matching AapControl.
             // In the default (dynamic) mode focus is acquired on demand via the AA protocol, so
             // an unconditional grab here would evict other media (e.g. the car radio) the moment
             // the phone connects, before AA plays anything.
             //
             // And even in static mode, not when the player we would evict is the head unit's own
             // A2DP sink: it answers by AVRCP-pausing the phone that is about to project to us.
-            if (settings.enableAudioSink && settings.staticAudioFocus) {
-                val mode = settings.playbackFocusMode
+            val audioConfig = transport.aapAudio.sessionConfig
+            if (audioConfig.enabled && audioConfig.staticFocus) {
+                val mode = audioConfig.focusMode
                 val btMediaLinkActive = BluetoothHelper.isA2dpMediaLinkActive(context)
                 if (PlaybackFocusPolicy.shouldAcquirePermanent(
                         mode = mode,
                         staticAudioFocus = true,
                         audioSinkEnabled = true,
                         btMediaLinkActive = btMediaLinkActive)) {
-                    transport.aapAudio?.requestFocusChange(
+                    transport.aapAudio?.postProtocolFocusChange(
                         AudioManager.STREAM_MUSIC,
                         AudioManager.AUDIOFOCUS_GAIN,
                         AudioManager.OnAudioFocusChangeListener { }
@@ -653,10 +735,14 @@ class CommManager(
                 }
             }
             transport.startReading()
-            _connectionState.emit(ConnectionState.TransportStarted)
+            withLiveTransport(transport, ConnectionState.HandshakeComplete) {
+                _connectionState.value = ConnectionState.TransportStarted
+            }
         } catch (e: Exception) {
-            _connectionState.emit(ConnectionState.Error("Start reading failed: ${e.message}"))
-            disconnect()
+            withLiveTransport(transport, ConnectionState.HandshakeComplete) {
+                _connectionState.value = ConnectionState.Error("Start reading failed: ${e.message}")
+                disconnect()
+            }
         }
     }
 
@@ -686,11 +772,17 @@ class CommManager(
      * `false` immediately) then schedules cleanup. `sendByeBye` is `false` because the
      * connection is already dead — there is no point sending a `ByeByeRequest`.
      */
-    private fun transportedQuited(isClean: Boolean) {
-        val wasUserExit = _transport?.wasUserExit ?: false
-        _connectionState.value = ConnectionState.Disconnected(isClean, isUserExit = wasUserExit)
-        // Transport already quit on its own — no ByeByeRequest needed (connection is dead).
+    private fun transportedQuited(source: AapTransport, isClean: Boolean): Unit = synchronized(transportLifecycleLock) {
+        // An explicit disconnect has already chosen whether the app should stay open. The
+        // matching EOF must not choose again, and an old transport cannot retire a replacement.
+        if (_transport !== source || disconnectRequested) return@synchronized
+        disconnectRequested = true
+        val wasUserExit = source.wasUserExit
+        // Keep the retiring owner published until doDisconnect captures it. Its callback
+        // precedes final cleanup, so reconnect must await its actual termination as well.
+        // Publish cleanup before state: a reconnect observer must be able to await this job.
         _disconnectJob = _scope.launch { doDisconnect(sendByeBye = false) }
+        _connectionState.value = ConnectionState.Disconnected(isClean, isUserExit = wasUserExit)
         if (settings.killOnDisconnect) {
             context.sendBroadcast(android.content.Intent("com.andrerinas.openheadunit.ACTION_FINISH_ACTIVITIES").apply {
                 setPackage(context.packageName)
@@ -946,8 +1038,24 @@ class CommManager(
         _transport?.aapAudio?.updateGains()
     }
 
+    /**
+     * Apply saved audio preferences without destroying the service/process. Rebuilding tracks
+     * cannot renegotiate PCM/AAC or replace a session's focus policy. End that session instead;
+     * the existing reconnect paths can then negotiate the new settings. Manual connections may
+     * need the user to reconnect, but must never carry audio under a half-updated configuration.
+     */
+    fun applyAudioSettings(): Unit = synchronized(transportLifecycleLock) {
+        val audio = _transport?.aapAudio ?: return@synchronized
+        if (audio.needsSessionRestart()) {
+            AppLog.i("CommManager: audio settings changed; reconnecting the projection session")
+            disconnect(isUserExit = false, honorKillOnDisconnect = false)
+        } else {
+            audio.restartAudio()
+        }
+    }
+
     fun restartAudio() {
-        _transport?.aapAudio?.restartAudio()
+        applyAudioSettings()
     }
 
     // -----------------------------------------------------------------------------------------
@@ -968,16 +1076,17 @@ class CommManager(
         // A disconnect the app itself takes in order to show something next cannot honour "close
         // app on disconnect": there would be nothing left to show it on.
         honorKillOnDisconnect: Boolean = true
-    ) {
-        if (_connectionState.value is ConnectionState.Disconnected) return
+    ): Unit = synchronized(transportLifecycleLock) {
+        if (disconnectRequested || _connectionState.value is ConnectionState.Disconnected) return@synchronized
+        disconnectRequested = true
 
         HeadUnitScreenConfig.unlockResolution()
 
-        _connectionState.value = ConnectionState.Disconnected(isUserExit = isUserExit)
         if (isUserExit) {
             _transport?.wasUserExit = true
         }
         _disconnectJob = _scope.launch { doDisconnect(sendByeBye, byeByeReason) }
+        _connectionState.value = ConnectionState.Disconnected(isUserExit = isUserExit)
         if (settings.killOnDisconnect && honorKillOnDisconnect) {
             context.sendBroadcast(android.content.Intent("com.andrerinas.openheadunit.ACTION_FINISH_ACTIVITIES").apply {
                 setPackage(context.packageName)
@@ -1027,12 +1136,22 @@ class CommManager(
         sendByeBye: Boolean = true,
         byeByeReason: com.andrerinas.openheadunit.aap.protocol.proto.Control.ByeByeReason = com.andrerinas.openheadunit.aap.protocol.proto.Control.ByeByeReason.USER_SELECTION
     ) {
-        // Capture and null out immediately to prevent a second doDisconnect() call
-        // (from transportedQuited firing onQuit during stop()) from double-stopping.
-        val transport = _transport
-        val connection = _connection
-        _transport = null
-        _connection = null
+        val (transport, connection, audioSession) = synchronized(transportLifecycleLock) {
+            // destroy() also reaches this path without a preceding disconnect(). Retire an
+            // unpublished candidate before the owner-null fast path, just like an active owner.
+            disconnectRequested = true
+            connectionAttempt = null
+            if (_connectionState.value !is ConnectionState.Disconnected) {
+                _connectionState.value = ConnectionState.Disconnected()
+            }
+            val transport = _transport
+            val connection = _connection
+            if (transport == null && connection == null) return
+            val session = audioDecoder.captureSession()
+            _transport = null
+            _connection = null
+            Triple(transport, connection, session)
+        }
         settleSessionClaim(formed = false)
         keyStates.clear()
         btMediaLinkCached = null
@@ -1049,21 +1168,28 @@ class CommManager(
         // holding a peer that never came back. See TeardownGuard.
         TeardownGuard.runThenClose(
             teardown = {
-                // Only send ByeByeRequest when we are initiating the disconnect (e.g. user pressed
-                // disconnect). When the transport self-quit (read error, soTimeout), the connection
-                // is already dead — skip the send and the 150 ms sleep inside stop().
-                if (sendByeBye) transport?.stop(byeByeReason) else transport?.quit()
+                try {
+                    // Only send ByeByeRequest when we are initiating the disconnect (e.g. user pressed
+                    // disconnect). When the transport self-quit (read error, soTimeout), the connection
+                    // is already dead — skip the send and the 150 ms sleep inside stop().
+                    try {
+                        if (sendByeBye) transport?.stop(byeByeReason)
+                    } finally {
+                        transport?.quit()
+                        // quit may already be running on the poll thread. Notification is not
+                        // completion: wait outside our monitor before shared decoders/TLS are reused.
+                        transport?.awaitTermination()
+                    }
 
-                // Explicitly stop and release decoders to prevent MediaCodec finalize() timeouts
-                videoDecoder.stop("CommManager: doDisconnect")
-                audioDecoder.stop()
+                    // Explicitly stop and release decoders to prevent MediaCodec finalize() timeouts
+                    videoDecoder.stop("CommManager: doDisconnect")
+                } finally {
+                    audioDecoder.closeSession(audioSession)
+                }
             },
             close = { connection?.disconnect() },
             onError = { phase, e -> AppLog.e("CommManager: doDisconnect $phase failed: ${e.message}") }
         )
-        if (_connectionState.value !is ConnectionState.Disconnected) {
-            _connectionState.value = ConnectionState.Disconnected()
-        }
     }
 
     /**
@@ -1119,14 +1245,15 @@ class CommManager(
      * on its way down and what matters is that the close goes out before it.
      */
     fun disconnectForLinkLoss(timeoutMs: Long) {
-        if (_connectionState.value is ConnectionState.Disconnected) return
-
-        HeadUnitScreenConfig.unlockResolution()
-        // Not clean and not a user exit: an unexpected end the app should try to recover from,
-        // which is what the existing reconnect paths already key on.
-        _connectionState.value = ConnectionState.Disconnected(isClean = false, isUserExit = false)
-        val job = _scope.launch { doDisconnect(sendByeBye = true) }
-        _disconnectJob = job
+        val job = synchronized(transportLifecycleLock) {
+            if (disconnectRequested || _connectionState.value is ConnectionState.Disconnected) return
+            disconnectRequested = true
+            HeadUnitScreenConfig.unlockResolution()
+            val cleanup = _scope.launch { doDisconnect(sendByeBye = true) }
+            _disconnectJob = cleanup
+            _connectionState.value = ConnectionState.Disconnected(isClean = false, isUserExit = false)
+            cleanup
+        }
         runBlocking { withTimeoutOrNull(timeoutMs) { job.join() } }
     }
 

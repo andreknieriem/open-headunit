@@ -3,7 +3,7 @@ package com.andrerinas.openheadunit.aap
 import com.andrerinas.openheadunit.aap.protocol.MicCaptureFormat
 
 /**
- * What the microphone session actually put on the wire.
+ * What the microphone session claimed for sending and cancelled before sending.
  *
  * The capture side already says whether the hardware heard anything
  * ([com.andrerinas.openheadunit.decoder.audio.MicRecorder] logs a peak and a byte count). Nothing said
@@ -34,7 +34,7 @@ class MicUplinkMonitor {
     val isOpen: Boolean get() = open
 
     /**
-     * Feed one message handed to the send queue.
+     * Feed one message claimed by the send worker. This is not proof of wire delivery.
      *
      * [payloadBytes] is the PCM only, so the percentage compares like with like against the capture
      * rate. Returns true for the first frame of a session, which is the caller's cue to say once
@@ -42,13 +42,13 @@ class MicUplinkMonitor {
      * microphone and nothing followed.
      */
     fun onFrame(payloadBytes: Int, framePeak: Int, nowMs: Long): Boolean {
-        val first = !open
-        if (first) {
+        val first = frames == 0
+        if (!open) {
             open = true
             startedMs = nowMs
-            smallest = payloadBytes
         }
 
+        if (first) smallest = payloadBytes
         frames++
         bytes += payloadBytes
         if (framePeak > peak) peak = framePeak
@@ -57,18 +57,25 @@ class MicUplinkMonitor {
         return first
     }
 
+    /** Start before the first send, so a fully cancelled capture still has a report. */
+    fun onSessionStart(nowMs: Long) {
+        reset()
+        open = true
+        startedMs = nowMs
+    }
+
     /** One acknowledgement from the phone on the microphone channel. */
     fun onAck() {
         if (open) acks++
     }
 
-    /** Bytes the chunker could not fill a message with. At most one chunk, at the end of a session. */
+    /** PCM cancelled from pending/queued frames, a rejected read and incomplete chunk residue. */
     fun onDiscarded(bytes: Int) {
         if (open) discarded += bytes
     }
 
     /**
-     * Close the session and say what it produced, or null if no frame was ever sent.
+     * Close the session and say what it produced, or null if no session was opened.
      *
      * A null here after the phone asked for the microphone is itself the answer.
      */

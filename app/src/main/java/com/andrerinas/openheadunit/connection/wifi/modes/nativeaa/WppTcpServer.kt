@@ -20,6 +20,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.DataInputStream
 import java.io.OutputStream
+import java.net.InetAddress
 import java.net.ServerSocket
 import java.net.Socket
 import javax.net.ssl.SSLSocket
@@ -44,7 +45,9 @@ import javax.net.ssl.SSLSocketFactory
 class WppTcpServer(
     private val context: Context,
     private val scope: CoroutineScope,
-    private val callbacks: Callbacks
+    private val callbacks: Callbacks,
+    private val createServerSocket: () -> ServerSocket = { ServerSocket() },
+    private val createTlsFactory: () -> SSLSocketFactory = { SslContextFactory.create(context).socketFactory },
 ) {
 
     /** What the server needs from its owner, so it does not have to reach into the manager. */
@@ -115,11 +118,17 @@ class WppTcpServer(
          * up would hold the loop open for the life of the server.
          */
         private const val CREDENTIALS_WAIT_MS = 30_000L
+
+        private const val MAX_CONTROL_PEERS = 4
+        private const val INBOUND_QUEUE_CAPACITY = 16
     }
 
     @Volatile private var serverSocket: ServerSocket? = null
     @Volatile private var acceptJob: Job? = null
     @Volatile private var running = false
+    @Volatile private var runGeneration = 0L
+    // Reserve before TLS: repeated dials must not create parallel handshakes for one phone.
+    private val connections = mutableMapOf<InetAddress, Socket>()
 
     /**
      * The port we are actually listening on, or null when we are not.
@@ -131,26 +140,31 @@ class WppTcpServer(
     val listeningPort: Int?
         get() = if (running) serverSocket?.localPort?.takeIf { it > 0 } else null
 
-    fun start() {
-        if (running) return
+    @Synchronized fun start() {
+        if (running || !scope.isActive) return
+        val generation = ++runGeneration
         running = true
         acceptJob = scope.launch(Dispatchers.IO + CoroutineName("WppTcp-Accept")) {
+            var ownedServer: ServerSocket? = null
             try {
-                val factory = SslContextFactory.create(context).socketFactory
+                val factory = createTlsFactory()
                 // Unbound first, then the option, then bind: ServerSocket(int) binds inside the
                 // constructor. holdOpen() keeps the control channel up all session, so this port is
                 // in TIME_WAIT at the next bring-up and a plain constructor threw EADDRINUSE - after
                 // which listeningPort stayed null and the endpoint was withheld for good.
                 var bound: ServerSocket? = null
                 var attempt = 0
-                while (running && isActive && bound == null) {
+                while (isCurrentRun(generation) && isActive && bound == null) {
                     attempt++
+                    var candidate: ServerSocket? = null
                     try {
-                        bound = ServerSocket().apply {
-                            reuseAddress = true
-                            bind(java.net.InetSocketAddress(PORT))
-                        }
+                        candidate = createServerSocket()
+                        candidate.reuseAddress = true
+                        candidate.bind(java.net.InetSocketAddress(PORT))
+                        ownedServer = candidate
+                        bound = candidate
                     } catch (e: Exception) {
+                        try { candidate?.close() } catch (_: Exception) {}
                         if (attempt >= BIND_ATTEMPTS) throw e
                         AppLog.w("WppTcpServer: port $PORT did not bind on attempt $attempt of $BIND_ATTEMPTS (${e.javaClass.simpleName}: ${e.message}). Retrying in ${BIND_RETRY_DELAY_MS}ms.")
                         delay(BIND_RETRY_DELAY_MS)
@@ -160,36 +174,74 @@ class WppTcpServer(
                     AppLog.i("WppTcpServer: stopped before port $PORT could be bound.")
                     return@launch
                 }
-                serverSocket = server
+                val published = synchronized(this@WppTcpServer) {
+                    if (!isCurrentRun(generation) || !isActive) false else {
+                        serverSocket = server
+                        true
+                    }
+                }
+                if (!published) return@launch
                 AppLog.i("WppTcpServer: listening for Android Auto on TCP $PORT")
-                while (running && isActive) {
+                while (isCurrentRun(generation) && isActive) {
                     val socket = try {
                         server.accept()
                     } catch (e: Exception) {
-                        if (running) AppLog.e("WppTcpServer: accept failed", e)
+                        if (isCurrentRun(generation)) AppLog.e("WppTcpServer: accept failed", e)
                         break
                     }
-                    AppLog.i("WppTcpServer: connection from ${socket.inetAddress?.hostAddress}")
+                    val peer = socket.inetAddress
+                    val admitted = synchronized(connections) {
+                        if (!isCurrentRun(generation) || connections.containsKey(peer) || connections.size >= MAX_CONTROL_PEERS) {
+                            false
+                        } else {
+                            connections[peer] = socket
+                            true
+                        }
+                    }
+                    if (!admitted) {
+                        try { socket.close() } catch (_: Exception) {}
+                        continue
+                    }
+                    AppLog.i("WppTcpServer: connection from ${peer.hostAddress}")
                     // Whether this dial is served is decided inside the session rather than here:
                     // turning one away means telling the phone so, and that needs TLS up first.
                     scope.launch(Dispatchers.IO + CoroutineName("WppTcp-Session")) {
-                        handleConnection(socket, factory)
+                        handleConnection(socket, factory, generation)
+                    }.invokeOnCompletion {
+                        // Also runs if the scope was cancelled before the coroutine started.
+                        try { socket.close() } catch (_: Exception) {}
+                        synchronized(connections) {
+                            if (connections[peer] === socket) connections.remove(peer)
+                        }
                     }
                 }
             } catch (e: Exception) {
                 AppLog.e("WppTcpServer: could not listen on $PORT: ${e.message}", e)
             } finally {
-                running = false
+                // Close our listener even when stop ran between bind and publication.
+                try { ownedServer?.close() } catch (_: Exception) {}
+                synchronized(this@WppTcpServer) {
+                    if (serverSocket === ownedServer) serverSocket = null
+                    if (runGeneration == generation) running = false
+                }
             }
         }
     }
 
-    fun stop() {
+    private fun isCurrentRun(generation: Long): Boolean = running && runGeneration == generation
+
+    @Synchronized fun stop() {
         running = false
+        runGeneration++
         try { serverSocket?.close() } catch (_: Exception) {}
         serverSocket = null
         acceptJob?.cancel()
         acceptJob = null
+        val closing = synchronized(connections) {
+            connections.values.toList().also { connections.clear() }
+        }
+        // Cancelling a coroutine alone does not interrupt a blocking TLS read/handshake.
+        closing.forEach { try { it.close() } catch (_: Exception) {} }
     }
 
     /**
@@ -200,16 +252,19 @@ class WppTcpServer(
      */
     private suspend fun handleConnection(
         raw: Socket,
-        factory: SSLSocketFactory
+        factory: SSLSocketFactory,
+        generation: Long
     ) = withContext(Dispatchers.IO) {
-        val inbound = Channel<NativeAaHandshakeManager.ProtobufMessage>(Channel.UNLIMITED)
+        val inbound = Channel<NativeAaHandshakeManager.ProtobufMessage>(INBOUND_QUEUE_CAPACITY)
         var readerJob: Job? = null
         var socket: SSLSocket? = null
         try {
+            if (!isCurrentRun(generation)) return@withContext
             val tls = WppTcpTls.clientSocket(factory, raw)
             socket = tls
             tls.soTimeout = TLS_HANDSHAKE_TIMEOUT_MS
             tls.startHandshake()
+            if (!isCurrentRun(generation)) return@withContext
             tls.soTimeout = 0
             AppLog.i(
                 "WppTcpServer: TLS handshake complete with ${tls.inetAddress?.hostAddress} " +
@@ -221,13 +276,14 @@ class WppTcpServer(
             // which it then retries instead of falling back to Bluetooth - fifteen minutes of it,
             // measured. See [WppTcpServePolicy].
             val decision = WppEndpointPolicy.decide(callbacks.strategy(), listeningPort, callbacks.identity())
-            if (!WppTcpServePolicy.servesDial(decision)) {
+            val servesDial = WppTcpServePolicy.servesDial(decision)
+            if (!servesDial && !callbacks.projectionSessionUp()) {
                 refuse(tls, decision, callbacks.projectionSessionUp())
                 return@withContext
             }
             // A dial we serve is a phone whose stored endpoint is this one, so whatever it held
             // before is no longer the reason anything is failing.
-            ConnectionIssues.clear(context, ConnectionIssue.PHONE_HOLDS_STALE_ENDPOINT)
+            if (servesDial) ConnectionIssues.clear(context, ConnectionIssue.PHONE_HOLDS_STALE_ENDPOINT)
 
             val input = DataInputStream(tls.inputStream)
             val output = tls.outputStream
@@ -242,7 +298,15 @@ class WppTcpServer(
                 }
             }
 
-            runExchange(output, inbound)
+            if (servesDial) {
+                runExchange(output, inbound, generation)
+            } else {
+                // An active projection is not stranded on the withheld endpoint. Keep its
+                // control socket alive without sending setup or rejection messages. If the
+                // projection ended during TLS setup, holdOpen returns without starting a new
+                // handshake against an endpoint we must not advertise.
+                holdOpen(output, inbound, generation)
+            }
         } catch (e: Exception) {
             // The class and the cause, not just the message: a TLS refusal arrives here as an
             // outer "connection closed" with the real reason - the alert, the missing certificate,
@@ -269,10 +333,8 @@ class WppTcpServer(
             return
         }
         if (projectionUp) {
-            // Held silent for the same reason a served dial is while projection is up: anything we
-            // put on this socket costs the live session, and a phone that is projecting is not one
-            // stranded on a stale endpoint.
-            AppLog.i("WppTcpServer: a dial arrived while projection is up; holding it silent: $reason")
+            // Projection won the race with the refusal decision. Do not reject a live phone.
+            AppLog.i("WppTcpServer: projection started before refusal; closing without rejection: $reason")
             return
         }
         val retiring = callbacks.retiringNetworkName()
@@ -309,7 +371,8 @@ class WppTcpServer(
      */
     private suspend fun runExchange(
         output: OutputStream,
-        inbound: Channel<NativeAaHandshakeManager.ProtobufMessage>
+        inbound: Channel<NativeAaHandshakeManager.ProtobufMessage>,
+        generation: Long
     ) {
         val session = WppHandshakeSession()
         var stageEnteredAt = SystemClock.elapsedRealtime()
@@ -391,7 +454,7 @@ class WppTcpServer(
             if (callbacks.credentials() != null) feed(WppEvent.CredentialsReady)
         }
 
-        while (running && !session.isTerminal()) {
+        while (isCurrentRun(generation) && !session.isTerminal()) {
             if (callbacks.projectionSessionUp()) {
                 feed(WppEvent.TcpSessionUp)
                 continue
@@ -445,7 +508,7 @@ class WppTcpServer(
             }
         }
 
-        if (session.stage == WppStage.DONE && !readerClosed) holdOpen(output, inbound)
+        if (session.stage == WppStage.DONE && !readerClosed) holdOpen(output, inbound, generation)
     }
 
     /**
@@ -459,11 +522,12 @@ class WppTcpServer(
      */
     private suspend fun holdOpen(
         output: OutputStream,
-        inbound: Channel<NativeAaHandshakeManager.ProtobufMessage>
+        inbound: Channel<NativeAaHandshakeManager.ProtobufMessage>,
+        generation: Long
     ) {
         AppLog.i("WppTcpServer: holding the control channel open for the session")
         var pings = 0
-        while (running && callbacks.projectionSessionUp()) {
+        while (isCurrentRun(generation) && callbacks.projectionSessionUp()) {
             val result = inbound.tryReceive()
             val msg = result.getOrNull()
             if (msg == null) {

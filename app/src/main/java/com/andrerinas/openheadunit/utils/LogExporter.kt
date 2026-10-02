@@ -5,6 +5,7 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.os.SystemClock
 import android.widget.Toast
 import android.util.Log
 import androidx.core.content.FileProvider
@@ -16,6 +17,7 @@ import com.andrerinas.openheadunit.connection.wifi.direct.StationStandDownMode
 import com.andrerinas.openheadunit.connection.wifi.direct.WifiBandCapability
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeAaHandshakeManager
 import com.andrerinas.openheadunit.decoder.video.VideoFaultInjector
+import com.andrerinas.openheadunit.decoder.audio.AudioDiagnostics
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -25,6 +27,7 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.IOException
+import java.security.MessageDigest
 
 object LogExporter {
 
@@ -151,6 +154,9 @@ object LogExporter {
             "video=codec:${settings.videoCodec} fps:${settings.fpsLimit} resId:${settings.resolutionId} " +
             "view:${settings.viewMode.name} forceSw:${settings.forceSoftwareDecoding} " +
             "swDecoder:${settings.softwareVideoDecoder.name} | " +
+            // These are saved preferences; AudioMixer separately reports the actual backend.
+            "audioPrefs=aaudio:${settings.useAAudioOutput} aac:${settings.useAacAudio} " +
+            "latency:${settings.audioLatencyMultiplier} queue:${settings.audioQueueCapacity} | " +
             "wifi=mode:${settings.wifiConnectionMode} strategy:${wifiTransport(settings)} " +
             // The band and the stand-down arm decide how a stuttering capture reads, and both are
             // otherwise only in lines that rotate out of a head unit's buffer within a minute.
@@ -342,9 +348,8 @@ object LogExporter {
             return@withContext null
         }
 
-        // Before every path below, because this is the only one that reaches AppLog's own file.
-        // The two logcat paths do not trust it to arrive and append it themselves - see
-        // appendBanner. A second copy in a capture file costs a line and is worth it.
+        // Emit the banner to live logging too. Every export path also appends it directly
+        // with retained audio events, without waiting for the asynchronous log writer.
         AppLog.w(sessionBanner(context))
 
         val settings = Settings(context)
@@ -352,6 +357,7 @@ object LogExporter {
         if (AppLog.logSource == Settings.LogSource.APPLOG_FILE) {
             return@withContext (AppLog.currentLogFile ?: AppLog.lastLogFile)
                 ?.takeIf { it.exists() && it.length() > 0 }
+                ?.also { appendBanner(it, context) }
         }
 
         val logDir = LogFilesHelper.resolveLogDirectory(context, settings, allowInternalFallback = false)
@@ -397,8 +403,28 @@ object LogExporter {
      */
     private fun appendBanner(file: File, context: Context) {
         try {
+            // Export runs on Dispatchers.IO. Read the installed artifact here, never on the
+            // mixer/transport path; a release tag or version name alone cannot identify its bytes.
+            val apkHash = try {
+                val digest = MessageDigest.getInstance("SHA-256")
+                FileInputStream(context.applicationInfo.sourceDir).use { apk ->
+                    val buffer = ByteArray(8192)
+                    while (true) {
+                        val read = apk.read(buffer)
+                        if (read < 0) break
+                        digest.update(buffer, 0, read)
+                    }
+                }
+                digest.digest().joinToString("") { "%02x".format(it.toInt() and 0xff) }
+            } catch (e: Exception) {
+                "unavailable:${e.javaClass.simpleName}"
+            }
             FileOutputStream(file, true).use {
-                it.write("\n${sessionBanner(context)}\n".toByteArray())
+                it.write(("\n${sessionBanner(context)}\n" +
+                    "LogExporter: exportArtifact commit=${BuildConfig.GIT_SHA} baseApkSha256=$apkHash " +
+                    "exportElapsedMs=${SystemClock.elapsedRealtime()} " +
+                    "(identifies the exporting app; earlier captured sessions may differ)\n" +
+                    AudioDiagnostics.snapshot(SystemClock.elapsedRealtime()) + "\n").toByteArray())
             }
         } catch (e: Exception) {
             AppLog.w("LogExporter: could not write the session banner into ${file.name}: ${e.message}")

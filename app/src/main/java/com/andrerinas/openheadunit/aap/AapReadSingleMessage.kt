@@ -1,5 +1,6 @@
 package com.andrerinas.openheadunit.aap
 
+import android.os.SystemClock
 import com.andrerinas.openheadunit.connection.projection.ProjectionConnection
 import com.andrerinas.openheadunit.connection.projection.SocketProjectionConnection
 import com.andrerinas.openheadunit.decoder.video.VideoFaultInjector
@@ -11,20 +12,26 @@ internal class AapReadSingleMessage(
     ssl: AapSsl,
     handler: AapMessageHandler,
     onVideoRunHoled: (discardAssembledUnit: Boolean) -> Unit = {},
-    faultInjector: VideoFaultInjector? = null)
+    faultInjector: VideoFaultInjector? = null,
+    private val captureTiming: () -> Boolean = { false },
+    private val onSlowRead: (TransportReadTiming, Long) -> Unit = { _, _ -> })
     : AapRead.Base(connection, ssl, handler, onVideoRunHoled, faultInjector) {
 
     private val recvHeader = AapMessageIncoming.EncryptedHeader()
     // Increase to 4MB to handle large 1080p/4K/HEVC I-frames
     private val msgBuffer = ByteArray(4 * 1024 * 1024)
     private val fragmentSizeBuffer = ByteArray(4)
+    private var previousReadFinishedMs = 0L
 
     override fun doRead(connection: ProjectionConnection): Int {
+        val timed = captureTiming()
+        val readStart = if (timed) SystemClock.elapsedRealtime() else 0L
         try {
-            // Step 1: Read the encrypted header.
-            // No timeout limit (0 = infinite) because this waits for the
-            // NEXT message — the phone can be idle for minutes and that's normal.
-            // TCP keepAlive will detect a truly dead connection.
+            // Step 1: Read the cleartext AAP envelope, not a TLS header. recvBlocking(...,
+            // readFully=true) must finish these four bytes even if TCP splits them across reads.
+            // Socket connections use a 15s idle timeout; the non-socket fallback passes zero.
+            // Once any frame prefix is consumed, an incomplete remainder cannot be skipped:
+            // there is no delimiter from which to rediscover the next header safely.
             val isSocket = connection is SocketProjectionConnection
             val timeout = if (isSocket) 15000 else 0
             val headerSize = connection.recvBlocking(recvHeader.buf, recvHeader.buf.size, timeout, true)
@@ -51,6 +58,7 @@ internal class AapReadSingleMessage(
                 }
             }
 
+            val headerFinished = if (timed) SystemClock.elapsedRealtime() else 0L
             recvHeader.decode()
 
             // Immediate check for Magic Garbage in the header bytes.
@@ -62,7 +70,7 @@ internal class AapReadSingleMessage(
 
             // Only a first fragment carries the total size, and only then is this meaningful.
             var declaredTotal = 0
-            if (recvHeader.flags == 0x09) {
+            if (AapMessageFraming.carriesTotalLength(recvHeader.flags)) {
                 // Once header arrived, data should be flowing — 10s timeout is valid here
                 val readSize = connection.recvBlocking(fragmentSizeBuffer, 4, 10000, true)
                 when (AapReadRecoveryPolicy.afterFragmentTotalRead(readSize, 4)) {
@@ -114,22 +122,19 @@ internal class AapReadSingleMessage(
                 }
             }
 
+            val bodyFinished = if (timed) SystemClock.elapsedRealtime() else 0L
             // Reader-stage fault injection, resolved before the audit and acted on after the
             // decrypt. Both halves of that are load-bearing - see shouldDropForFaultInjection.
             val injectedDrop =
                 shouldDropForFaultInjection(recvHeader.chan, recvHeader.flags, recvHeader.enc_len)
 
-            // The whole body arrived, so this fragment can be counted against the run's declared
-            // total. Done before decryption because the total is a framing quantity - and skipped
-            // for an injected drop, which is what leaves the run short of what it declared.
-            if (!injectedDrop) {
-                auditFragment(recvHeader.chan, recvHeader.flags, recvHeader.enc_len, declaredTotal)
-            }
-
             // Step 3: Decrypt the message. Unconditionally, including a message about to be dropped:
             // the SSL engine's record sequence advances per record and the phone's does too, so a
-            // record we never unwrap desynchronises the session for good.
+            // record we never unwrap desynchronises the session for good. A retired session
+            // is the exception: no later record belongs to an engine we will reuse.
+            if (isStopped) return -1
             val msg = AapMessageIncoming.decrypt(recvHeader, 0, msgBuffer, ssl)
+            val decryptFinished = if (timed) SystemClock.elapsedRealtime() else 0L
 
             if (msg == null) {
                 // If decryption failed because of a Magic Garbage signal, return -2 to signal clean quit
@@ -146,8 +151,21 @@ internal class AapReadSingleMessage(
             if (injectedDrop) return 0
 
             // Step 4: Handle the decrypted message
-            handler.handle(msg)
+            deliverFragment(msg, declaredTotal)
+            if (timed) {
+                val finished = SystemClock.elapsedRealtime()
+                val gap = if (previousReadFinishedMs > 0) (readStart - previousReadFinishedMs).coerceAtLeast(0) else 0L
+                // Do not allocate a report on the ordinary packet path.
+                if (TransportReadTiming.isProcessingSlow(gap, finished - headerFinished)) {
+                    onSlowRead(TransportReadTiming(msg.channel, gap, headerFinished - readStart,
+                        bodyFinished - headerFinished, decryptFinished - bodyFinished,
+                        finished - decryptFinished), finished)
+                }
+            }
             return 0
+        } catch (e: java.io.IOException) {
+            AppLog.e("AapRead: invalid framing or TLS session", e)
+            return -1
         } catch (e: Exception) {
             // Stays at 0 on purpose, unlike the read sites above. recvBlocking catches its own
             // IOException and SocketTimeoutException, so anything reaching here was thrown after the
@@ -155,6 +173,8 @@ internal class AapReadSingleMessage(
             // framed. Carrying on costs one message; the read failures above cost the session.
             AppLog.e("AapRead: Error in read loop (ignored): ${e.message}")
             return 0
+        } finally {
+            previousReadFinishedMs = SystemClock.elapsedRealtime()
         }
     }
 

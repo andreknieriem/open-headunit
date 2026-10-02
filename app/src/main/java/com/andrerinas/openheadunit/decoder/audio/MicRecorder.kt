@@ -22,7 +22,10 @@ import com.andrerinas.openheadunit.aap.protocol.MicCaptureFormat
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.Settings
 
-class MicRecorder(private val context: Context) {
+class MicRecorder(
+    private val context: Context,
+    private val enqueueLifecycle: (() -> Unit) -> Unit = ::postLifecycle
+) {
 
     private var audioRecord: AudioRecord? = null
     private var aec: AcousticEchoCanceler? = null
@@ -33,17 +36,12 @@ class MicRecorder(private val context: Context) {
     /**
      * What the hardware is opened at. Normally [MicCaptureFormat.SAMPLE_RATE_HZ], which is also the
      * only rate the phone is ever told about; a device that refuses it captures higher and is
-     * decimated by [decimator] before anything leaves here.
+     * decimated by its capture worker before anything leaves here.
      */
     private val captureRateHz: Int
     private val micBufferSize: Int
-    private var micAudioBuf: ByteArray
 
-    /** Null when the capture is already at the announced rate. */
-    private val decimator: MicPcmDecimator?
-
-    /** Holds the converted samples, so the listener always sees 16 kHz mono. */
-    private val wireBuf: ByteArray
+    private val decimationFactor: Int
 
     // Indicates whether mic recording is available on this device
     val isAvailable: Boolean
@@ -60,9 +58,7 @@ class MicRecorder(private val context: Context) {
                 "of it either. The microphone is unavailable")
             captureRateHz = MicCaptureFormat.SAMPLE_RATE_HZ
             micBufferSize = 0
-            micAudioBuf = ByteArray(0)
-            wireBuf = ByteArray(0)
-            decimator = null
+            decimationFactor = 1
             isAvailable = false
         } else {
             captureRateHz = decision.captureRateHz
@@ -70,43 +66,41 @@ class MicRecorder(private val context: Context) {
             // overruns. The minimum the device asks for is often less than half of that.
             val twoChunks = 2 * MicCaptureFormat.CHUNK_BYTES * decision.decimationFactor
             micBufferSize = maxOf(decision.minBufferSize, twoChunks)
-            micAudioBuf = ByteArray(micBufferSize)
-            if (decision.isDirect) {
-                decimator = null
-                wireBuf = ByteArray(0)
-            } else {
-                AppLog.w("MicRecorder: ${MicCaptureFormat.SAMPLE_RATE_HZ} Hz capture is unavailable; " +
-                    "capturing at ${decision.captureRateHz} Hz and converting " +
-                    "${decision.decimationFactor}:1 so the phone still receives the rate it was " +
-                    "told about")
-                val converter = MicPcmDecimator(decision.decimationFactor)
-                decimator = converter
-                wireBuf = ByteArray(converter.outputCapacity(micBufferSize))
+            decimationFactor = decision.decimationFactor
+            if (!decision.isDirect) {
+                AppLog.w("MicRecorder: capturing at $captureRateHz Hz and converting ${decimationFactor}:1")
             }
             isAvailable = true
         }
     }
 
-    // Volatile: written from stop() on another thread and spun on by the capture loop, which now
-    // runs at urgent audio priority.
-    @Volatile private var threadMicAudioActive = false
-    private var threadMicAudio: Thread? = null
+    /** Everything a late read or conversion can mutate belongs to its capture run. */
+    private class CaptureRun(val record: AudioRecord, val source: Int, size: Int,
+                             factor: Int, val listener: Listener?) {
+        val buffer = ByteArray(size)
+        val converter = if (factor == 1) null else MicPcmDecimator(factor)
+        val wireBuffer = converter?.let { ByteArray(it.outputCapacity(size)) } ?: ByteArray(0)
+        lateinit var thread: Thread
+        val startedMs = SystemClock.elapsedRealtime()
+        var bytes = 0L
+        var emptyReads = 0
+        var peak = 0
+    }
+    @Volatile private var activeCapture: CaptureRun? = null
     var listener: Listener? = null
-
-    // What the capture produced, summarised on stop(). A microphone delivering pure silence used
-    // to log exactly like a working one: read() returns a full buffer either way and no error path
-    // fires, so an assistant that could not hear the user left nothing to read.
-    @Volatile private var captureSource = -1
-    @Volatile private var captureStartedMs = 0L
-    @Volatile private var captureBytes = 0L
-    @Volatile private var captureEmptyReads = 0
-    @Volatile private var capturePeak = 0
+    private var claimedForeground: ForegroundMicrophoneClaim? = null
 
     // Tracks whether this instance started Bluetooth SCO so we can clean it up
     private var bluetoothScoStarted = false
     private var scoReceiver: BroadcastReceiver? = null
 
     companion object {
+        // One hardware lifecycle FIFO also spans transport replacement: old cleanup precedes reopen.
+        private val lifecycle = java.util.concurrent.Executors.newSingleThreadExecutor { job ->
+            Thread(job, "mic_lifecycle").apply { isDaemon = true }
+        }
+        internal fun postLifecycle(job: () -> Unit) { lifecycle.execute(job) }
+
         // Sentinel value stored in settings to indicate Bluetooth SCO mode
         const val SOURCE_BLUETOOTH_SCO = 100
 
@@ -131,6 +125,9 @@ class MicRecorder(private val context: Context) {
 
         /** The foreground service could not claim the microphone type, so capture must not open. */
         const val ERROR_NO_FOREGROUND_TYPE = -6
+
+        /** The user disabled capture after the phone's request was accepted. */
+        const val ERROR_DISABLED = -7
 
         /**
          * How capture asks for the microphone foreground-service type, which Android 14 will not
@@ -161,125 +158,95 @@ class MicRecorder(private val context: Context) {
          * here so the transport does not scan the same bytes a second time.
          */
         fun onMicDataAvailable(mic_buf: ByteArray, mic_audio_len: Int, peak: Int)
+        /** Bound to the original logical session; a late failure must never close its replacement. */
+        fun onMicCaptureFailed(error: Int) {}
+        fun isCurrent(): Boolean = true
     }
 
+    /** Called only by the microphone lifecycle worker; poll-side DATA retirement happens first. */
     fun stop() {
-        AppLog.i("MicRecorder: Stopping. Active: $threadMicAudioActive")
-
-        threadMicAudioActive = false
-        threadMicAudio?.interrupt()
-        threadMicAudio = null
-        decimator?.reset()
-
-        // After the thread is told to stop, so the counters are the whole capture.
-        if (captureStartedMs != 0L) logCaptureSummary()
-
-        audioRecord?.apply {
-            try {
-                stop()
-                release()
-            } catch (e: Exception) {
-                AppLog.e("MicRecorder: Error releasing AudioRecord", e)
-            }
-        }
+        val run = activeCapture
+        activeCapture = null
+        run?.thread?.interrupt()
+        if (run != null) logCaptureSummary(run)
+        val record = audioRecord
         audioRecord = null
-        
-        try {
-            aec?.release()
-            ns?.release()
-            agc?.release()
-        } catch (e: Exception) {
-            AppLog.e("MicRecorder: Error releasing AudioFX", e)
-        }
-        aec = null
-        ns = null
-        agc = null
+        cleanup("AudioRecord stop") { record?.stop() }
+        cleanup("AudioRecord release") { record?.release() }
+        val oldAec = aec; aec = null
+        val oldNs = ns; ns = null
+        val oldAgc = agc; agc = null
+        cleanup("AEC") { oldAec?.release() }
+        cleanup("NS") { oldNs?.release() }
+        cleanup("AGC") { oldAgc?.release() }
+        // Receiver ownership can precede a failed startBluetoothSco/setCommunicationDevice call.
+        val ownedSco = bluetoothScoStarted
+        cleanupSco()
+        if (ownedSco) holdsCommunicationMode = false
+        val claim = claimedForeground
+        claimedForeground = null
+        cleanup("foreground claim") { claim?.release() }
+    }
 
-        if (bluetoothScoStarted) {
-            cleanupSco()
-        }
-        holdsCommunicationMode = false
-
-        foregroundClaim?.release()
+    private inline fun cleanup(name: String, release: () -> Unit) {
+        try { release() } catch (e: Exception) { AppLog.e("MicRecorder: Error releasing $name", e) }
     }
 
     /**
-     * One line saying what the capture produced, so a failing assistant session reads differently
-     * from a working one.
-     *
-     * `peak=0` over a real run means the input is routed nowhere and [Settings.micInputSource] is
-     * the next thing to change. Bytes far below the expected rate mean starved reads instead.
+     * A successful AudioRecord.read can return silence, so read success alone cannot explain
+     * an assistant that hears nothing. Peak zero across a real run points toward input routing;
+     * bytes far below the expected capture rate point toward starved reads instead. Compare
+     * this with the transport's uplink summary to separate capture from sending failures.
+     * Peak is measured after conversion, on the PCM offered to the phone, while bytes/rate
+     * describe hardware capture. Keep those quantities distinct when changing capture rates.
      */
-    private fun logCaptureSummary() {
-        val elapsedMs = SystemClock.elapsedRealtime() - captureStartedMs
+    private fun logCaptureSummary(run: CaptureRun) {
+        val elapsedMs = SystemClock.elapsedRealtime() - run.startedMs
         val expectedBytes = captureRateHz.toLong() * 2L * elapsedMs / 1000L
-        val percentOfExpected = if (expectedBytes > 0) captureBytes * 100L / expectedBytes else -1L
-        AppLog.i(
-            "MicRecorder: capture summary | source=${getAudioSourceName(captureSource)} ($captureSource) " +
-                "rate=$captureRateHz elapsed=${elapsedMs}ms bytes=$captureBytes " +
-                "($percentOfExpected% of expected) emptyReads=$captureEmptyReads peak=$capturePeak/32767"
-        )
-        captureStartedMs = 0L
+        val percent = if (expectedBytes > 0) run.bytes * 100L / expectedBytes else -1L
+        AppLog.i("MicRecorder: capture summary | source=${getAudioSourceName(run.source)} (${run.source}) " +
+            "rate=$captureRateHz elapsed=${elapsedMs}ms bytes=${run.bytes} " +
+            "($percent% of expected) emptyReads=${run.emptyReads} peak=${run.peak}/32767")
     }
 
     private fun cleanupSco() {
-        val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
-        try {
-            scoReceiver?.let { context.unregisterReceiver(it) }
-        } catch (e: Exception) {}
-        scoReceiver = null
-        
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val device = audioManager.communicationDevice
-            if (device != null) {
-                AppLog.i("MicRecorder: Clearing communication device: ${device.productName}")
-            }
-            audioManager.clearCommunicationDevice()
-        } else {
-            audioManager.stopBluetoothSco()
-            @Suppress("DEPRECATION")
-            audioManager.isBluetoothScoOn = false
-        }
-
-        try {
-            audioManager.mode = AudioManager.MODE_NORMAL
-        } catch (e: Exception) {
-            AppLog.e("MicRecorder: Failed to restore audio mode to MODE_NORMAL", e)
-        }
-
+        val receiver = scoReceiver
+        scoReceiver = null // Invalidate callbacks even when unregister or route cleanup throws.
+        val ownedRouting = bluetoothScoStarted
         bluetoothScoStarted = false
-        AppLog.i("MicRecorder: Bluetooth SCO stopped and audio settings restored")
+        cleanup("SCO receiver") { receiver?.let { context.unregisterReceiver(it) } }
+        if (!ownedRouting) return
+        cleanup("SCO routing") {
+            val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                cleanup("communication device") { audioManager.clearCommunicationDevice() }
+            } else {
+                cleanup("Bluetooth SCO") { audioManager.stopBluetoothSco() }
+                cleanup("SCO routing flag") {
+                    @Suppress("DEPRECATION")
+                    audioManager.isBluetoothScoOn = false
+                }
+            }
+            cleanup("audio mode") { audioManager.mode = AudioManager.MODE_NORMAL }
+        }
     }
 
-    private fun micAudioRead(aud_buf: ByteArray, max_len: Int): Int {
-        val currentAudioRecord = audioRecord ?: return 0
-        val currentListener = listener ?: return 0
-        
-        val len = currentAudioRecord.read(aud_buf, 0, max_len)
+    private fun micAudioRead(run: CaptureRun): Int {
+        val len = run.record.read(run.buffer, 0, run.buffer.size)
+        if (activeCapture !== run) return 0
         if (len <= 0) {
-            captureEmptyReads++
-            if (len == AudioRecord.ERROR_INVALID_OPERATION && threadMicAudioActive) {
-                AppLog.e("MicRecorder: Unexpected interruption error: $len")
-            }
+            if (len == 0) run.emptyReads++
             return len
         }
-
-        captureBytes += len
-
-        val converter = decimator
-        if (converter == null) {
-            val peak = peakAmplitude(aud_buf, len)
-            capturePeak = maxOf(capturePeak, peak)
-            currentListener.onMicDataAvailable(aud_buf, len, peak)
-            return len
+        run.bytes += len
+        val converter = run.converter
+        val bytes = if (converter == null) run.buffer else run.wireBuffer
+        val wireLen = converter?.decimate(run.buffer, len, bytes) ?: len
+        if (wireLen > 0) {
+            val peak = peakAmplitude(bytes, wireLen)
+            run.peak = maxOf(run.peak, peak)
+            run.listener?.onMicDataAvailable(bytes, wireLen, peak)
         }
-
-        val wireLen = converter.decimate(aud_buf, len, wireBuf)
-        if (wireLen <= 0) return len
-        // Measured on what the phone will hear, not on what the hardware produced.
-        val peak = peakAmplitude(wireBuf, wireLen)
-        capturePeak = maxOf(capturePeak, peak)
-        currentListener.onMicDataAvailable(wireBuf, wireLen, peak)
         return len
     }
 
@@ -314,6 +281,8 @@ class MicRecorder(private val context: Context) {
     }
 
     fun start(): Int {
+        // The poll-side policy may have accepted Open before this lifecycle job ran.
+        if (!settings.useHeadUnitMicrophone) return ERROR_DISABLED
         if (!isAvailable) {
             AppLog.w("MicRecorder: Cannot start, mic not available on this device")
             return ERROR_UNAVAILABLE
@@ -338,6 +307,7 @@ class MicRecorder(private val context: Context) {
         // the phone's request is the right answer to a refusal; capturing without the type is not.
         val claim = foregroundClaim
         if (claim != null && !claim.claim()) return ERROR_NO_FOREGROUND_TYPE
+        claimedForeground = claim
 
         val configuredSource = getAudioSource(settings.micInputSource)
 
@@ -358,6 +328,9 @@ class MicRecorder(private val context: Context) {
             true
         }
 
+        // Own cleanup before the first external mutation, including partially failed setup.
+        bluetoothScoStarted = true
+        val attemptListener = listener
         // Set audio mode to MODE_IN_COMMUNICATION to force SCO routing
         try {
             audioManager.mode = AudioManager.MODE_IN_COMMUNICATION
@@ -381,7 +354,6 @@ class MicRecorder(private val context: Context) {
             }
             // On API 31+, we can start recording directly on the communication channel
             val result = startRecording(MediaRecorder.AudioSource.VOICE_COMMUNICATION)
-            bluetoothScoStarted = true
             return result
         } else {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !hasBluetoothPermission) {
@@ -390,18 +362,26 @@ class MicRecorder(private val context: Context) {
             // Legacy path (API < 31 or missing BLUETOOTH_CONNECT permission on API 31+)
             // 1. Listen for SCO connection state
             scoReceiver = object : BroadcastReceiver() {
+                private var connectingOrConnected = false
                 override fun onReceive(context: Context, intent: Intent) {
+                    val receiver = this
                     val state = intent.getIntExtra(AudioManager.EXTRA_SCO_AUDIO_STATE, -1)
-                    AppLog.d("MicRecorder: SCO State change: $state")
-                    
-                    if (state == AudioManager.SCO_AUDIO_STATE_CONNECTED) {
-                        AppLog.i("MicRecorder: SCO Connected. Starting AudioRecord.")
-                        // On many devices, even with SCO, we should use MIC or DEFAULT 
-                        // as VOICE_COMMUNICATION might try to use the device's own noise cancellation.
-                        startRecording(MediaRecorder.AudioSource.MIC)
-                    } else if (state == AudioManager.SCO_AUDIO_STATE_DISCONNECTED && bluetoothScoStarted) {
-                        AppLog.w("MicRecorder: SCO Disconnected unexpectedly.")
-                        stop()
+                    enqueueLifecycle {
+                        if (scoReceiver !== receiver || attemptListener?.isCurrent() == false) return@enqueueLifecycle
+                        when (state) {
+                            AudioManager.SCO_AUDIO_STATE_CONNECTING -> connectingOrConnected = true
+                            AudioManager.SCO_AUDIO_STATE_CONNECTED -> {
+                                connectingOrConnected = true
+                                val result = startRecording(MediaRecorder.AudioSource.MIC)
+                                if (result != 0) attemptListener?.onMicCaptureFailed(result)
+                            }
+                            AudioManager.SCO_AUDIO_STATE_DISCONNECTED -> {
+                                // Registration may deliver the initial sticky DISCONNECTED state.
+                                if (connectingOrConnected) {
+                                    attemptListener?.onMicCaptureFailed(ERROR_RECORDER_FAILED)
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -413,7 +393,6 @@ class MicRecorder(private val context: Context) {
             audioManager.startBluetoothSco()
             @Suppress("DEPRECATION")
             audioManager.isBluetoothScoOn = true
-            bluetoothScoStarted = true
             // Capture starts inside the receiver once SCO connects, so all this path can report is
             // that the link was asked for.
             return 0
@@ -423,6 +402,8 @@ class MicRecorder(private val context: Context) {
     /** Returns 0 once capture is running, or [ERROR_RECORDER_FAILED] if it never started. */
     private fun startRecording(source: Int): Int {
         try {
+            // Legacy SCO can connect much later than Open and the foreground claim.
+            if (!settings.useHeadUnitMicrophone) return ERROR_DISABLED
             if (audioRecord != null) return 0 // Already recording
             
             AppLog.i("MicRecorder: Initializing AudioRecord with source: ${getAudioSourceName(source)} ($source), SampleRate: $captureRateHz, BufferSize: $micBufferSize")
@@ -430,7 +411,6 @@ class MicRecorder(private val context: Context) {
             
             if (audioRecord?.state != AudioRecord.STATE_INITIALIZED) {
                 AppLog.e("MicRecorder: Failed to initialize AudioRecord")
-                audioRecord = null
                 return ERROR_RECORDER_FAILED
             }
             
@@ -467,26 +447,33 @@ class MicRecorder(private val context: Context) {
             
             audioRecord?.startRecording()
 
-            captureSource = source
-            captureStartedMs = SystemClock.elapsedRealtime()
-            captureBytes = 0L
-            captureEmptyReads = 0
-            capturePeak = 0
-
-            threadMicAudioActive = true
-            threadMicAudio = Thread({
-                // The only audio thread still at default priority, where a blocking read() on a
-                // loaded head unit becomes a gap in what the phone hears.
-                Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_AUDIO)
-                while (threadMicAudioActive) {
-                    micAudioRead(micAudioBuf, micBufferSize)
+            val run = CaptureRun(audioRecord!!, source, micBufferSize, decimationFactor, listener)
+            run.thread = Thread({
+                requestAudioThreadPriority(Process.THREAD_PRIORITY_URGENT_AUDIO)
+                try {
+                    while (activeCapture === run && run.listener?.isCurrent() != false) {
+                        val result = micAudioRead(run)
+                        if (result < 0) {
+                            if (activeCapture === run) {
+                                AppLog.e("MicRecorder: terminal capture read error $result")
+                                run.listener?.onMicCaptureFailed(result)
+                            }
+                            break
+                        }
+                    }
+                } catch (e: Exception) {
+                    if (activeCapture === run) {
+                        AppLog.e("MicRecorder: capture read failed", e)
+                        run.listener?.onMicCaptureFailed(ERROR_RECORDER_FAILED)
+                    }
                 }
-            }, "mic_audio").apply { start() }
+            }, "mic_audio")
+            activeCapture = run
+            run.thread.start()
 
             return 0
         } catch (e: Exception) {
             AppLog.e("MicRecorder: Error during startRecording", e)
-            audioRecord = null
             return ERROR_RECORDER_FAILED
         }
     }

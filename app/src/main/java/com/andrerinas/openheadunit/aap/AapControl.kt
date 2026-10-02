@@ -347,7 +347,8 @@ internal class AapControlService(
 
     private fun pingRequest(request: Control.PingRequest, channel: Int): Int {
         val response = Control.PingResponse.newBuilder()
-                .setTimestamp(System.nanoTime())
+                // Echo the phone's correlation token; the two monotonic clocks have different origins.
+                .setTimestamp(request.timestamp)
                 .build()
 
         val msg = AapMessage(channel, Control.ControlMsgType.MESSAGE_PING_RESPONSE_VALUE, response)

@@ -68,7 +68,9 @@ internal class AapReadMultipleMessages(
     private fun processBulk() {
         fifo.flip()
 
-        while (fifo.remaining() >= AapMessageIncoming.EncryptedHeader.SIZE) {
+        // A control frame can synchronously stop this reader from inside delivery. Do not
+        // unwrap later records in the same bulk after that session has been retired.
+        while (!isStopped && fifo.remaining() >= AapMessageIncoming.EncryptedHeader.SIZE) {
             fifo.mark()
             fifo.get(recvHeader.buf, 0, recvHeader.buf.size)
             recvHeader.decode()

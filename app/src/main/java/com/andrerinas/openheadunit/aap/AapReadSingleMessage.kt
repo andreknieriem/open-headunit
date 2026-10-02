@@ -130,7 +130,9 @@ internal class AapReadSingleMessage(
 
             // Step 3: Decrypt the message. Unconditionally, including a message about to be dropped:
             // the SSL engine's record sequence advances per record and the phone's does too, so a
-            // record we never unwrap desynchronises the session for good.
+            // record we never unwrap desynchronises the session for good. A retired session
+            // is the exception: no later record belongs to an engine we will reuse.
+            if (isStopped) return -1
             val msg = AapMessageIncoming.decrypt(recvHeader, 0, msgBuffer, ssl)
             val decryptFinished = if (timed) SystemClock.elapsedRealtime() else 0L
 

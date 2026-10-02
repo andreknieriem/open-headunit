@@ -15,6 +15,7 @@ import com.andrerinas.openheadunit.utils.Settings
 
 internal interface AapRead {
     fun read(): Int
+    fun stop()
 
     /**
      * @param onVideoRunHoled called when a video fragment run turns out to be short of the bytes it
@@ -82,7 +83,13 @@ internal interface AapRead {
         private val auditLastReportMs = LongArray(FragmentedMessageAudit.Outcome.entries.size)
         private val auditSuppressed = IntArray(FragmentedMessageAudit.Outcome.entries.size)
 
+        @Volatile protected var isStopped = false
+            private set
+
+        final override fun stop() { isStopped = true }
+
         override fun read(): Int {
+            if (isStopped) return -1
             if (connection == null) {
                 AppLog.e("No connection.")
                 return -1
@@ -98,6 +105,7 @@ internal interface AapRead {
          * discard before the video worker can finish its assembly.
          */
         protected fun deliverFragment(message: AapMessage, declaredTotal: Int) {
+            if (isStopped) return
             auditFragment(message.channel, message.flags.toInt(), message.size, declaredTotal)
             reassembler.accept(message, declaredTotal)?.let { handler.handle(it) }
         }

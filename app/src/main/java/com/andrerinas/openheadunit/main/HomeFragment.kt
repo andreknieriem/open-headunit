@@ -130,6 +130,7 @@ class HomeFragment : Fragment() {
         updateProjectionButtonText()
         updateButtonStyle()
         updateButtonScale()
+        updateButtonVisibility()
         updateExitButtonVisibility()
 
         viewLifecycleOwner.lifecycleScope.launch {
@@ -348,6 +349,13 @@ class HomeFragment : Fragment() {
         val density = resources.displayMetrics.density
         val isPortrait = resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT
         HomeUiHelper.applyButtonScale(v, appSettings.homeButtonScalePercent, isPortrait, density)
+    }
+
+    private fun updateButtonVisibility() {
+        val v = view ?: return
+        val ctx = context ?: return
+        val appSettings = App.provide(ctx).settings
+        HomeUiHelper.applyButtonVisibility(v, appSettings)
     }
 
     private fun updateExitButtonVisibility() {
@@ -712,6 +720,7 @@ class HomeFragment : Fragment() {
         updateProjectionButtonText()
         updateButtonStyle()
         updateButtonScale()
+        updateButtonVisibility()
         updateTextColors()
         updateExitButtonVisibility()
         if (resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT) {

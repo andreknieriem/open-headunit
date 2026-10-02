@@ -10,6 +10,44 @@ import com.google.android.material.button.MaterialButton
 
 object HomeUiHelper {
 
+    private data class ButtonConfig(
+        val button: MaterialButton?,
+        val defaultDrawableRes: Int,
+        val customColor: Int,
+        val isEnabled: Boolean
+    )
+
+    fun applyButtonVisibility(
+        rootView: View,
+        settings: Settings
+    ) {
+        val showsSelf = settings.showsSelf()
+        val showsUsb = settings.showsUsb()
+        val showsWifi = settings.showsWifi()
+
+        val selfBtn = rootView.findViewById<View>(R.id.self_mode_button)
+        val selfTxt = rootView.findViewById<View>(R.id.self_mode_text)
+        val usbBtn = rootView.findViewById<View>(R.id.usb_button)
+        val usbTxt = rootView.findViewById<View>(R.id.usb_text)
+        val wifiBtn = rootView.findViewById<View>(R.id.wifi_button)
+        val wifiTxt = rootView.findViewById<View>(R.id.wifi_text)
+
+        selfBtn?.visibility = View.VISIBLE
+        selfBtn?.isEnabled = showsSelf
+        selfBtn?.isClickable = showsSelf
+        selfTxt?.visibility = if (showsSelf) View.VISIBLE else View.INVISIBLE
+
+        usbBtn?.visibility = View.VISIBLE
+        usbBtn?.isEnabled = showsUsb
+        usbBtn?.isClickable = showsUsb
+        usbTxt?.visibility = if (showsUsb) View.VISIBLE else View.INVISIBLE
+
+        wifiBtn?.visibility = View.VISIBLE
+        wifiBtn?.isEnabled = showsWifi
+        wifiBtn?.isClickable = showsWifi
+        wifiTxt?.visibility = if (showsWifi) View.VISIBLE else View.INVISIBLE
+    }
+
     fun applyButtonScale(
         rootView: View,
         scalePercent: Int,
@@ -60,29 +98,39 @@ object HomeUiHelper {
         val usbBtn = rootView.findViewById<MaterialButton>(R.id.usb_button)
         val wifiBtn = rootView.findViewById<MaterialButton>(R.id.wifi_button)
         val settingsBtn = rootView.findViewById<MaterialButton>(R.id.settings_button)
-        val buttons = listOfNotNull(selfBtn, usbBtn, wifiBtn, settingsBtn)
 
         val isDarkTheme = settings.appTheme == Settings.AppTheme.DARK ||
                 settings.appTheme == Settings.AppTheme.EXTREME_DARK ||
                 isNightActive
 
-        if (isDarkTheme && settings.autoMonochromeButtonsAtNight) {
-            val monochromeBackground = ContextCompat.getDrawable(context, R.drawable.gradient_monochrome)
-            val grayTint = ColorStateList.valueOf(0xFF808080.toInt())
-            buttons.forEach { button ->
-                button.background = monochromeBackground?.constantState?.newDrawable()?.mutate()
-                button.iconTint = grayTint
-            }
-        } else {
-            val whiteTint = ColorStateList.valueOf(0xFFFFFFFF.toInt())
-            val configs = listOf(
-                Triple(selfBtn, R.drawable.gradient_blue, settings.customSelfModeButtonColor),
-                Triple(usbBtn, R.drawable.gradient_orange, settings.customUsbButtonColor),
-                Triple(wifiBtn, R.drawable.gradient_purple, settings.customWifiButtonColor),
-                Triple(settingsBtn, R.drawable.gradient_darkblue, settings.customSettingsButtonColor)
-            )
-            configs.forEach { (button, defaultDrawableRes, customColor) ->
-                if (button != null) {
+        val showsSelf = settings.showsSelf()
+        val showsUsb = settings.showsUsb()
+        val showsWifi = settings.showsWifi()
+
+        val disabledBackground = ContextCompat.getDrawable(context, R.drawable.gradient_monochrome)
+        val disabledIconTint = ColorStateList.valueOf(0x40FFFFFF)
+
+        val isMonochrome = isDarkTheme && settings.autoMonochromeButtonsAtNight
+        val monochromeBackground = ContextCompat.getDrawable(context, R.drawable.gradient_monochrome)
+        val monochromeIconTint = ColorStateList.valueOf(0xFF808080.toInt())
+        val whiteTint = ColorStateList.valueOf(0xFFFFFFFF.toInt())
+
+        val buttonConfigs = listOf(
+            ButtonConfig(selfBtn, R.drawable.gradient_blue, settings.customSelfModeButtonColor, showsSelf),
+            ButtonConfig(usbBtn, R.drawable.gradient_orange, settings.customUsbButtonColor, showsUsb),
+            ButtonConfig(wifiBtn, R.drawable.gradient_purple, settings.customWifiButtonColor, showsWifi),
+            ButtonConfig(settingsBtn, R.drawable.gradient_darkblue, settings.customSettingsButtonColor, true)
+        )
+
+        buttonConfigs.forEach { (button, defaultDrawableRes, customColor, isEnabled) ->
+            if (button != null) {
+                if (!isEnabled) {
+                    button.background = disabledBackground?.constantState?.newDrawable()?.mutate()
+                    button.iconTint = disabledIconTint
+                } else if (isMonochrome) {
+                    button.background = monochromeBackground?.constantState?.newDrawable()?.mutate()
+                    button.iconTint = monochromeIconTint
+                } else {
                     if (customColor != 0) {
                         button.background = ColorUtils.createGradientDrawable(customColor, 32f, context)
                     } else {

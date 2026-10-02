@@ -436,7 +436,10 @@ class CustomizationFragment : Fragment() {
         // 2. Sync Button Colors & Monochrome Theme
         HomeUiHelper.applyButtonStyles(ctx, homeView, settings, isNightActive)
 
-        // 3. Scale Home Buttons
+        // 3. Sync Button Visibility
+        HomeUiHelper.applyButtonVisibility(homeView, settings)
+
+        // 4. Scale Home Buttons
         val density = resources.displayMetrics.density
         val isPortrait = resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT
         HomeUiHelper.applyButtonScale(homeView, validScale, isPortrait, density)
@@ -582,12 +585,17 @@ class CustomizationFragment : Fragment() {
 
         switchAutoMonochromeNight?.isChecked = settings.autoMonochromeButtonsAtNight
 
-        // Update button color previews & indicators
+        val showsSelf = settings.showsSelf()
+        val showsUsb = settings.showsUsb()
+        val showsWifi = settings.showsWifi()
+
+        // Update button color previews & indicators (previews stay visible but styled as disabled when unchecked)
         updateButtonPreview(
             previewBtnSelfMode,
             indicatorSelfMode,
             settings.customSelfModeButtonColor,
             R.drawable.gradient_blue,
+            showsSelf,
             ctx
         )
         updateButtonPreview(
@@ -595,6 +603,7 @@ class CustomizationFragment : Fragment() {
             indicatorUsb,
             settings.customUsbButtonColor,
             R.drawable.gradient_orange,
+            showsUsb,
             ctx
         )
         updateButtonPreview(
@@ -602,6 +611,7 @@ class CustomizationFragment : Fragment() {
             indicatorWifi,
             settings.customWifiButtonColor,
             R.drawable.gradient_purple,
+            showsWifi,
             ctx
         )
         updateButtonPreview(
@@ -609,8 +619,14 @@ class CustomizationFragment : Fragment() {
             indicatorSettings,
             settings.customSettingsButtonColor,
             R.drawable.gradient_darkblue,
+            true,
             ctx
         )
+
+        // Hide color customization rows for unchecked connection modes
+        rowColorSelfMode?.visibility = if (showsSelf) View.VISIBLE else View.GONE
+        rowColorUsb?.visibility = if (showsUsb) View.VISIBLE else View.GONE
+        rowColorWifi?.visibility = if (showsWifi) View.VISIBLE else View.GONE
 
         val hasCustomColors = settings.customSelfModeButtonColor != 0 ||
                 settings.customUsbButtonColor != 0 ||
@@ -624,17 +640,37 @@ class CustomizationFragment : Fragment() {
         indicatorView: View?,
         customColor: Int,
         defaultDrawableRes: Int,
+        isEnabled: Boolean,
         ctx: Context
     ) {
-        if (customColor != 0) {
-            val customDrawable = ColorUtils.createGradientDrawable(customColor, 32f, ctx)
-            val indicatorDrawable = ColorUtils.createGradientDrawable(customColor, 12f, ctx)
-            previewButton?.background = customDrawable
-            indicatorView?.background = indicatorDrawable
-        } else {
-            val defaultDrawable = ContextCompat.getDrawable(ctx, defaultDrawableRes)
-            previewButton?.background = defaultDrawable
-            indicatorView?.background = ContextCompat.getDrawable(ctx, defaultDrawableRes)
+        if (previewButton != null) {
+            previewButton.visibility = View.VISIBLE
+            previewButton.isEnabled = isEnabled
+            if (!isEnabled) {
+                val disabledBackground = ContextCompat.getDrawable(ctx, R.drawable.gradient_monochrome)
+                val disabledIconTint = ColorStateList.valueOf(0x40FFFFFF)
+                previewButton.background = disabledBackground?.constantState?.newDrawable()?.mutate()
+                previewButton.iconTint = disabledIconTint
+            } else {
+                val whiteTint = ColorStateList.valueOf(0xFFFFFFFF.toInt())
+                if (customColor != 0) {
+                    val customDrawable = ColorUtils.createGradientDrawable(customColor, 32f, ctx)
+                    previewButton.background = customDrawable
+                } else {
+                    val defaultDrawable = ContextCompat.getDrawable(ctx, defaultDrawableRes)
+                    previewButton.background = defaultDrawable
+                }
+                previewButton.iconTint = whiteTint
+            }
+        }
+
+        if (indicatorView != null) {
+            if (customColor != 0) {
+                val indicatorDrawable = ColorUtils.createGradientDrawable(customColor, 12f, ctx)
+                indicatorView.background = indicatorDrawable
+            } else {
+                indicatorView.background = ContextCompat.getDrawable(ctx, defaultDrawableRes)
+            }
         }
     }
 

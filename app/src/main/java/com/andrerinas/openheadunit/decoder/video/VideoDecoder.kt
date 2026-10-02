@@ -718,27 +718,18 @@ class VideoDecoder(
         true
     }
 
-    /**
-     * Stops and forgets [surface] if it still owns the decoder, so [decode] cannot rebuild a codec
-     * on a surface its view is about to release. The next [setSurface] re-arms it.
-     */
-    fun detachSurface(surface: Surface, reason: String): Boolean = synchronized(this) {
+    /** Retire the target before stopping, so incoming video cannot reopen it during teardown. */
+    // View retirement precedes the Activity callback, which must still recognize its target.
+    fun detachSurfaceIfCurrent(surface: Surface, reason: String): Boolean = synchronized(this) {
         if (mSurface == null && detachedSurface === surface) return true
         if (mSurface !== surface) {
             AppLog.i("Decoder detach ($reason) skipped: surface is no longer current")
             return false
         }
-        stop(reason)
-        detachedSurface = mSurface
+        detachedSurface = surface
         mSurface = null
+        stop(reason)
         true
-    }
-
-    /** Detach whatever surface is held, for a view that is discarded with its surface. */
-    fun detachCurrentSurface(reason: String) = synchronized(this) {
-        stop(reason)
-        if (mSurface != null) detachedSurface = mSurface
-        mSurface = null
     }
 
     /**

@@ -15,6 +15,7 @@ import com.andrerinas.openheadunit.utils.Settings
 
 internal interface AapRead {
     fun read(): Int
+    fun stop()
 
     /**
      * @param onVideoRunHoled called when a video fragment run turns out to be short of the bytes it
@@ -94,7 +95,14 @@ internal interface AapRead {
          */
         private var maxEncLenSeen = 0
 
+        // Retirement is terminal for this reader, including records already buffered in a bulk.
+        @Volatile protected var isStopped = false
+            private set
+
+        final override fun stop() { isStopped = true }
+
         override fun read(): Int {
+            if (isStopped) return -1
             if (connection == null) {
                 AppLog.e("No connection.")
                 return -1

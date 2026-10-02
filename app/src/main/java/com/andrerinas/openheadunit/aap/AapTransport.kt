@@ -684,15 +684,37 @@ class AapTransport(
         quit()
     }
 
+    /** Keep capture teardown separate from transport worker retirement. */
+    private fun retireMicrophone() {
+        micRecorder.stop()
+        micRecorder.listener = null
+        onMicSessionEnded()
+    }
+
+    private fun resetMicrophone() {
+        micUplinkMonitor.reset()
+        micChunks.reset()
+    }
+
+    /** Observations belong to the new link and are reset before workers can report traffic. */
+    private fun resetSessionObservations() {
+        lastMessageReceivedMs = 0L
+        linkGapMonitor.reset()
+        videoGapMonitor.reset()
+        audioGapMonitor.reset()
+        synchronized(startedAudioChannels) { startedAudioChannels.clear() }
+        uplinkStallMonitor.reset()
+        inboundRateMonitor.reset()
+        bluetoothLinkMonitor.onSessionStart()
+    }
+
     internal fun quit(clean: Boolean = false) {
         val cb = onQuit ?: return
         onQuit = null
 
         AppLog.i("AapTransport quitting (clean=$clean)")
         cb.invoke(clean)
-        micRecorder.stop()
-        micRecorder.listener = null
-        onMicSessionEnded()
+        retireMicrophone()
         sendHandler?.removeCallbacks(focusCycleGainRunnable)
         sendHandler?.removeCallbacks(unrepairedCheckRunnable)
         pollThread?.quit()
@@ -835,16 +857,8 @@ class AapTransport(
         wasUserExit = false
         // This object outlives a session and is re-armed for the next one, so a stamp left by the
         // previous phone would read as a live link for the first seconds of this one.
-        lastMessageReceivedMs = 0L
-        linkGapMonitor.reset()
-        videoGapMonitor.reset()
-        audioGapMonitor.reset()
-        synchronized(startedAudioChannels) { startedAudioChannels.clear() }
-        uplinkStallMonitor.reset()
-        inboundRateMonitor.reset()
-        micUplinkMonitor.reset()
-        micChunks.reset()
-        bluetoothLinkMonitor.onSessionStart()
+        resetSessionObservations()
+        resetMicrophone()
 
         videoThread = HandlerThread("AapTransport:Handler::Video", Process.THREAD_PRIORITY_DISPLAY)
         videoThread!!.start()

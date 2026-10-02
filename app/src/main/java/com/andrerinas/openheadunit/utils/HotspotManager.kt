@@ -33,6 +33,10 @@ object HotspotManager {
     /** How long to leave the access point down so a joined client notices it has gone. */
     private const val RESTART_SETTLE_MS = 2_000L
 
+    /** How long a restarted access point must stay up before the restart counts as done. */
+    private const val RESTART_HOLD_CONFIRM_MS = 3_000L
+    private const val RESTART_REASK_GAP_MS = 5_000L
+
     /**
      * How long to wait for the radio to finish whatever it is doing before asking it for an access
      * point.
@@ -101,6 +105,7 @@ object HotspotManager {
      * than fixed: the next connection's `SoftApCredentialsProvider` auto-enable switches it back on,
      * which is the same cost the restart exists to avoid paying, not a permanent break. Shrinking
      * [RESTART_SETTLE_MS] narrows the window; nothing removes it.
+     * An access point read down within [RESTART_HOLD_CONFIRM_MS] of coming up is asked for once more.
      */
     fun restart(context: Context): Boolean {
         AppLog.i("HotspotManager: Restarting the hotspot so any joined client is put off it.")
@@ -124,10 +129,34 @@ object HotspotManager {
             return restored
         }
 
-        if (setHotspotEnabled(context, true)) return true
+        if (setHotspotEnabled(context, true)) return confirmRestartHeld(context)
 
         AppLog.e("HotspotManager: The hotspot was taken down to put the phone off the network and would not come back up. It is off now, and this app cannot force it: switch it on in system settings, or just connect again — the app switches it back on itself at the start of a connection.")
         return false
+    }
+
+    /** Reads the restarted access point back after a hold; true when it is up at the end. */
+    private fun confirmRestartHeld(context: Context): Boolean {
+        val generation = stopGeneration
+        try {
+            Thread.sleep(RESTART_HOLD_CONFIRM_MS)
+            if (stopGeneration != generation) return true
+            val outcome = HotspotRestartPolicy.afterHold(true, isApUp(context), false)
+            if (outcome == HotspotRestartPolicy.Outcome.CONFIRMED) {
+                AppLog.i("HotspotManager: the restarted access point held for ${RESTART_HOLD_CONFIRM_MS / 1000}s.")
+                return true
+            }
+            AppLog.w("HotspotManager: the restarted access point fell within ${RESTART_HOLD_CONFIRM_MS / 1000}s; asking once more in ${RESTART_REASK_GAP_MS / 1000}s.")
+            Thread.sleep(RESTART_REASK_GAP_MS)
+            if (stopGeneration != generation) return true
+            val secondUp = setHotspotEnabled(context, true) && isApUp(context)
+            val second = HotspotRestartPolicy.afterHold(true, secondUp, true) == HotspotRestartPolicy.Outcome.CONFIRMED
+            AppLog.i("HotspotManager: second ask after a fall: the access point is ${if (second) "up" else "still down"}.")
+            return second
+        } catch (e: InterruptedException) {
+            Thread.currentThread().interrupt()
+            return isApUp(context)
+        }
     }
 
     fun setHotspotEnabled(context: Context, enabled: Boolean): Boolean {

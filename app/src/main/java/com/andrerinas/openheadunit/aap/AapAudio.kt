@@ -26,18 +26,19 @@ internal class AapAudio(
         private val audioManager: AudioManager,
         private val settings: Settings) {
 
-    private val staticAudioFocus = settings.staticAudioFocus
-    private val separateAudioStreams = settings.separateAudioStreams
+    internal val sessionConfig = AudioSessionConfig.from(settings)
+    private val staticAudioFocus = sessionConfig.staticFocus
+    private val separateAudioStreams = sessionConfig.separateStreams
     // Checked against what this device actually reports, not taken on trust: settings travel
     // between head units, and an id this one does not have would be silence with no message.
-    private val mediaAudioStream = AudioStreamCatalog.sanitize(audioManager, settings.mediaAudioStream)
-    private val guidanceAudioStream = AudioStreamCatalog.sanitize(audioManager, settings.guidanceAudioStream)
-    private val systemAudioStream = AudioStreamCatalog.sanitize(audioManager, settings.systemAudioStream)
-    private val mediaVolumeOffset = settings.mediaVolumeOffset
-    private val guidanceVolumeOffset = settings.guidanceVolumeOffset
-    private val systemVolumeOffset = settings.systemVolumeOffset
+    private val mediaAudioStream = AudioStreamCatalog.sanitize(audioManager, sessionConfig.mediaStream)
+    private val guidanceAudioStream = AudioStreamCatalog.sanitize(audioManager, sessionConfig.guidanceStream)
+    private val systemAudioStream = AudioStreamCatalog.sanitize(audioManager, sessionConfig.systemStream)
+    private val mediaVolumeOffset get() = settings.mediaVolumeOffset
+    private val guidanceVolumeOffset get() = settings.guidanceVolumeOffset
+    private val systemVolumeOffset get() = settings.systemVolumeOffset
     private val audioLatencyMultiplier get() = settings.audioLatencyMultiplier
-    private val useAacAudio = settings.useAacAudio
+    private val useAacAudio = sessionConfig.aac
     // The codec each sink actually carries, from the phone's Media Sink Setup. The setting alone
     // used to decide, and the band cap now announces AAC the setting knows nothing about.
     private val sinkCodecs = ConcurrentHashMap<Int, AudioSinkCodec>()
@@ -48,9 +49,9 @@ internal class AapAudio(
         Channel.ID_AU2 to AudioTimestampMonitor()
     )
     private val audioQueueCapacity get() = settings.audioQueueCapacity
-    private val enableAudioSink = settings.enableAudioSink
-    private val attachHwDspEqualizer = settings.attachHwDspEqualizer
-    private val playbackFocusMode = settings.playbackFocusMode
+    private val enableAudioSink = sessionConfig.enabled
+    private val attachHwDspEqualizer = sessionConfig.attachHwDspEqualizer
+    private val playbackFocusMode = sessionConfig.focusMode
 
     private var audioFocusRequest: AudioFocusRequest? = null
     private var legacyFocusListener: AudioManager.OnAudioFocusChangeListener? = null
@@ -420,13 +421,7 @@ internal class AapAudio(
         if (audioDecoder.getTrack(channel, decoderSession) != null) return
 
         val config = AudioConfigs.get(channel)
-        val stream = AudioConfigs.stream(
-            channel,
-            separateAudioStreams,
-            mediaAudioStream,
-            guidanceAudioStream,
-            systemAudioStream
-        )
+        val stream = streamFor(channel)
 
         val offset = when (channel) {
             Channel.ID_AUD -> mediaVolumeOffset
@@ -602,6 +597,12 @@ internal class AapAudio(
         audioDecoder.setGain(Channel.ID_AU1, guidanceGain, decoderSession)
         audioDecoder.setGain(Channel.ID_AU2, systemGain, decoderSession)
     }
+
+    internal fun streamFor(channel: Int): Int = AudioConfigs.stream(
+        channel, separateAudioStreams, mediaAudioStream, guidanceAudioStream, systemAudioStream
+    )
+
+    internal fun needsSessionRestart(): Boolean = sessionConfig != AudioSessionConfig.from(settings)
 
     fun restartAudio() {
         AppLog.i("AapAudio: Restarting all audio tracks")

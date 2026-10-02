@@ -1313,4 +1313,5 @@
     <string name="oem_app_action_failed">Execution failed: %s</string>
     <string name="copy_to_clipboard">Copy</string>
     <string name="copied_to_clipboard">Copied to clipboard</string>
+    <string name="audio_settings_reconnect">Audio settings saved. Reconnect Android Auto to apply them.</string>
 </resources>

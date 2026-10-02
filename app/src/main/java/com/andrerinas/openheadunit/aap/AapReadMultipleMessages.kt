@@ -61,7 +61,8 @@ internal class AapReadMultipleMessages(
     private fun processBulk() {
         fifo.flip()
 
-        while (fifo.remaining() >= AapMessageIncoming.EncryptedHeader.SIZE) {
+        // Dispatch may retire this reader synchronously; later records belong to that old link.
+        while (!isStopped && fifo.remaining() >= AapMessageIncoming.EncryptedHeader.SIZE) {
             fifo.mark()
             fifo.get(recvHeader.buf, 0, recvHeader.buf.size)
             recvHeader.decode()
@@ -109,7 +110,7 @@ internal class AapReadMultipleMessages(
                 val msg = AapMessageIncoming.decrypt(recvHeader, 0, msgBuffer, ssl)
 
                 if (msg != null && !injectedDrop) {
-                    handler.handle(msg)
+                    if (!isStopped) handler.handle(msg)
                 }
             } catch (e: Exception) {
                 AppLog.e("AapRead: Decryption/Handling error: ${e.message}")

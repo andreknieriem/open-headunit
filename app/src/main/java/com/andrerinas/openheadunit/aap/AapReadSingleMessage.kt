@@ -146,7 +146,7 @@ internal class AapReadSingleMessage(
             if (injectedDrop) return 0
 
             // Step 4: Handle the decrypted message
-            handler.handle(msg)
+            if (!isStopped) handler.handle(msg)
             return 0
         } catch (e: Exception) {
             // Stays at 0 on purpose, unlike the read sites above. recvBlocking catches its own

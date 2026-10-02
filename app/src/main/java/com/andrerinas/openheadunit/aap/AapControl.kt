@@ -3,7 +3,6 @@ package com.andrerinas.openheadunit.aap
 import android.content.Context
 import android.content.Intent
 import android.media.AudioManager
-import com.andrerinas.openheadunit.aap.protocol.AudioConfigs
 import com.andrerinas.openheadunit.aap.protocol.Channel
 import com.andrerinas.openheadunit.aap.protocol.messages.DrivingStatusEvent
 import com.andrerinas.openheadunit.aap.protocol.messages.LocationUpdateEvent
@@ -364,7 +363,7 @@ internal class AapControlService(
     private fun serviceDiscoveryRequest(request: Control.ServiceDiscoveryRequest): Int {
         AppLog.i("Service Discovery Request: %s", request.phoneName)
 
-        val msg = ServiceDiscoveryResponse(context)
+        val msg = ServiceDiscoveryResponse(context, aapAudio.sessionConfig)
         aapTransport.send(msg)
         return 0
     }
@@ -438,16 +437,16 @@ internal class AapControlService(
         // Best-effort: request system audio focus to duck other apps on the headunit.
         // The result is intentionally ignored for the protocol response above, which has already
         // been sent — only the system-level grab is in question here, never the always-grant reply.
-        if (settings.enableAudioSink) {
-            if (settings.staticAudioFocus) {
+        if (aapAudio.sessionConfig.enabled) {
+            if (aapAudio.sessionConfig.staticFocus) {
                 AppLog.i("Static Audio Focus active - skipping dynamic system focus request to prevent routing loss")
             } else {
-                // Gated at the call site, not inside requestFocusChange: that function is also the
+                // Gated at the call site, not inside postProtocolFocusChange: that function is also the
                 // static path's permanent grab from CommManager, where the answer is the opposite.
                 val isRelease = notification.request.number ==
                         Control.AudioFocusRequestNotification.AudioFocusRequestType.RELEASE_VALUE
                 if (aapAudio.shouldHonourProtocolFocusRequest(isRelease)) {
-                    aapAudio.requestFocusChange(AudioConfigs.stream(channel, settings), notification.request.number, AudioManager.OnAudioFocusChangeListener {
+                    aapAudio.postProtocolFocusChange(aapAudio.streamFor(channel), notification.request.number, AudioManager.OnAudioFocusChangeListener {
                         AppLog.i("System audio focus changed: $it ${systemFocusName[it]}")
                     })
                 }

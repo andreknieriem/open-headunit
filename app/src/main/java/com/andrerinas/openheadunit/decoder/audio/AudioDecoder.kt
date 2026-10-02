@@ -101,6 +101,9 @@ class AudioDecoder {
         audioTracks.get(channel)?.setGain(gain)
     }
 
+    /** Capture the cleanup action before asynchronous connection retirement begins. */
+    internal fun captureCleanup(): () -> Unit = { stop() }
+
     companion object {
         const val SAMPLE_RATE_HZ_48 = 48000
         const val SAMPLE_RATE_HZ_16 = 16000

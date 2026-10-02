@@ -129,12 +129,27 @@ class VideoOutputRetirementTest {
         } finally { pause.resume.countDown(); f.decoder.stop("test cleanup") }
     }
 
+    @Test fun `three native dequeue failures request a restart while the owner is current`() {
+        val f = Fixture()
+        `when`(f.codec.dequeueOutputBuffer(any(), anyLong())).thenThrow(IllegalStateException("component failure"))
+        f.start()
+        try {
+            f.join()
+            assertEquals(true, f.get("decoderNeedsRestart"))
+            assertEquals("sync_consecutive_errors", f.get("decoderRestartReason"))
+            verify(f.codec, times(3)).dequeueOutputBuffer(any(), anyLong())
+        } finally { f.decoder.stop("test cleanup") }
+    }
+
     @Test fun `a native dequeue failure after retirement cannot restart the replacement`() {
         val f = Fixture()
         val pause = NativePause()
+        val attempts = AtomicInteger()
         `when`(f.codec.dequeueOutputBuffer(any(), anyLong())).thenAnswer {
-            pause.block()
-            throw IllegalStateException("retired component")
+            // The third strike would restart a live decoder. Retire exactly at that boundary,
+            // rather than checking a first strike which cannot request a restart anyway.
+            if (attempts.incrementAndGet() == 3) pause.block()
+            throw IllegalStateException("component failure")
         }
         f.start()
         try {
@@ -143,7 +158,7 @@ class VideoOutputRetirementTest {
             pause.resume.countDown()
             f.join()
             assertEquals(false, f.get("decoderNeedsRestart"))
-            verify(f.codec, times(1)).dequeueOutputBuffer(any(), anyLong())
+            verify(f.codec, times(3)).dequeueOutputBuffer(any(), anyLong())
             verifyNoInteractions(replacement)
         } finally { pause.resume.countDown(); f.decoder.stop("test cleanup") }
     }

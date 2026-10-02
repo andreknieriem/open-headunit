@@ -1,6 +1,7 @@
 package com.andrerinas.openheadunit.utils
 import com.andrerinas.openheadunit.decoder.audio.PlaybackFocusPolicy
 class Settings {
+    var killOnDisconnect=false
     var staticAudioFocus=false
     var separateAudioStreams=false
     var mediaAudioStream=3

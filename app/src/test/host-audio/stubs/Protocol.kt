@@ -1,5 +1,5 @@
 package com.andrerinas.openheadunit.aap.protocol.proto
-object Control { object AudioFocusRequestNotification { object AudioFocusRequestType {
+object Control { enum class ByeByeReason { USER_SELECTION }; object AudioFocusRequestNotification { object AudioFocusRequestType {
     const val GAIN_VALUE=1; const val GAIN_TRANSIENT_VALUE=2
     const val GAIN_TRANSIENT_MAY_DUCK_VALUE=3; const val RELEASE_VALUE=4
 } } }

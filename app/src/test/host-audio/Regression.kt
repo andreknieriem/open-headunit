@@ -23,13 +23,15 @@ private fun focusLease() = PlaybackFocusLease().apply {
 private fun PlaybackFocusLease.activity(channel: Int, nowMs: Long) = activity(channel, fixtureOwner, nowMs)
 
 fun main() {
+    audioLifecycleBoundaryRegression()
+    audioSettingsRegression()
     aacProgressOwnershipRegression(csdReplacement = true)
     aacProgressOwnershipRegression(csdReplacement = false)
     handoffRetirementBeforePublicationRegression()
     drainedProtocolReleaseRegression()
     protocolFocusHandoffClosureRegression()
     protocolPlaybackFocusRegression()
-    serviceFocusRegression()
+    staticSessionFocusRegression()
     protocolFocusIdentityRegression()
     throwingSessionClosureRegression()
     protocolSessionClosureRegression()
@@ -1114,22 +1116,29 @@ private fun protocolPlaybackFocusRegression() {
     android.os.Build.VERSION.SDK_INT = 33
 }
 
-private fun serviceFocusRegression() {
+private fun staticSessionFocusRegression() {
     val handler = android.os.Handler
     for (api in listOf(16, 19, 25, 33)) {
         android.os.Build.VERSION.SDK_INT = api; handler.reset()
-        val manager = AudioManager(); val service = ServiceFocusFixture(manager)
+        val manager = AudioManager()
         val decoder = AudioDecoder()
-        service.acquire(); check(manager.focus.size == 1)
-        // Handshake fails before CommManager.startReading's second permanent GAIN.
-        val audio = com.andrerinas.openheadunit.aap.AapAudio(decoder, manager,
-            com.andrerinas.openheadunit.utils.Settings().apply { staticAudioFocus = true })
-        audio.releaseAllFocus(); handler.runAll(); check(manager.focus.size == 1)
-        service.release(); check(manager.focus.isEmpty()) { "service focus survived handshake failure on API $api" }
-        service.acquire(); service.acquire(); check(manager.focus.size == 1)
-        service.release(); service.release(); check(manager.focus.isEmpty())
-        handler.reset()
-        println("PASS exact service focus methods release their listener after handshake failure on API $api")
+        val settings = com.andrerinas.openheadunit.utils.Settings().apply { staticAudioFocus = true }
+        val connecting = com.andrerinas.openheadunit.aap.AapAudio(decoder, manager, settings)
+        check(manager.focus.isEmpty()) // No service-owned focus before the handshake is ready.
+        connecting.releaseAllFocus(); handler.runAll(); check(manager.focus.isEmpty())
+        val old = com.andrerinas.openheadunit.aap.AapAudio(decoder, manager, settings)
+        old.postProtocolFocusChange(3, 1, AudioManager.OnAudioFocusChangeListener {})
+        handler.runAll(); check(manager.focus.size == 1)
+        old.releaseAllFocus(); handler.runAll(); check(manager.focus.isEmpty())
+        settings.staticAudioFocus = false
+        settings.playbackFocusMode = PlaybackFocusPolicy.Mode.NEVER
+        val fresh = com.andrerinas.openheadunit.aap.AapAudio(decoder, manager, settings)
+        fresh.noteSinkCodec(5, 1); fresh.precreateAudioTrack(5)
+        fresh.preparePlayback(5); handler.runAll()
+        check(manager.focus.isEmpty() && decoder.playbackCallbacks.canRender())
+        old.releaseAllFocus(); handler.runAll(); check(manager.focus.isEmpty())
+        fresh.releaseAllFocus(); decoder.stop(); handler.runAll(); handler.reset()
+        println("PASS static focus is session-owned before/after handshake and cannot survive a NEVER reconnect on API $api")
     }
     android.os.Build.VERSION.SDK_INT = 33
 }
@@ -1223,4 +1232,102 @@ private fun protocolSessionClosureRegression() {
         }
         println("PASS ${if(inFlight) "in-flight" else "queued"} old protocol focus retires with its decoder session and preserves the fresh focus")
     }
+}
+
+/** Saving preferences must not combine new focus/codec choices with old output ownership. */
+private fun audioSettingsRegression() {
+    val handler = android.os.Handler
+    val changes = listOf<Pair<String, (com.andrerinas.openheadunit.utils.Settings) -> Unit>>(
+        "static focus" to { it.staticAudioFocus = true },
+        "focus policy" to { it.playbackFocusMode = PlaybackFocusPolicy.Mode.NEVER },
+        "separate streams" to { it.separateAudioStreams = true },
+        "media route" to { it.mediaAudioStream = 4 },
+        "guidance route" to { it.guidanceAudioStream = 3 },
+        "system route" to { it.systemAudioStream = 3 },
+        "media codec" to { it.useAacAudio = true },
+        "sink disabled" to { it.enableAudioSink = false },
+        "DSP route" to { it.attachHwDspEqualizer = true }
+    )
+    val cases = changes.map { (label, change) ->
+        Triple(label, com.andrerinas.openheadunit.utils.Settings(), change)
+    } + listOf(
+        Triple("static to dynamic", com.andrerinas.openheadunit.utils.Settings().apply { staticAudioFocus = true },
+            { settings: com.andrerinas.openheadunit.utils.Settings -> settings.staticAudioFocus = false }),
+        Triple("AAC to PCM", com.andrerinas.openheadunit.utils.Settings().apply { useAacAudio = true },
+            { settings: com.andrerinas.openheadunit.utils.Settings -> settings.useAacAudio = false })
+    )
+    for ((label, settings, change) in cases) {
+        handler.reset()
+        val decoder = AudioDecoder()
+        val manager = AudioManager()
+        val old = com.andrerinas.openheadunit.aap.AapAudio(decoder, manager, settings)
+        val original = old.sessionConfig
+        val originalStream = old.streamFor(5)
+        var fresh: com.andrerinas.openheadunit.aap.AapAudio? = null
+        try {
+            old.noteSinkCodec(5, if (settings.useAacAudio) 2 else 1); old.precreateAudioTrack(5)
+            val originalTrack = decoder.getTrack(5)!!
+            change(settings)
+            check(old.sessionConfig == original && old.streamFor(5) == originalStream)
+            val save = AudioSettingsFixture(old)
+            save.applyAudioSettings()
+            check(save.disconnected) { "$label was applied without renegotiation" }
+            check(decoder.getTrack(5) === originalTrack) { "old tracks rebuilt before disconnect" }
+            old.releaseAllFocus(); handler.runAll()
+            check(manager.focus.isEmpty())
+            // Same decoder, settings and process; only the projection session is replaced.
+            val outputsBeforeReconnect = AudioTrack.created.size
+            val current = com.andrerinas.openheadunit.aap.AapAudio(decoder, manager, settings).also { fresh = it }
+            check(!current.needsSessionRestart())
+            check(current.sessionConfig != original)
+            current.noteSinkCodec(5, if (settings.useAacAudio) 2 else 1)
+            current.precreateAudioTrack(5)
+            check(decoder.getTrack(5) !== originalTrack && decoder.getTrack(5) != null)
+            check(decoder.sinkCodecFor(5)?.isAac == settings.useAacAudio)
+            current.preparePlayback(5); handler.runAll()
+            old.releaseAllFocus(); handler.runAll()
+            val track = decoder.getTrack(5)!!
+            if (settings.useAacAudio) {
+                val codec = field(track, "decoder") as MediaCodec
+                track.write(ByteArray(64), 0, 64)
+                waitFor("AAC input after settings reconnect") { codec.queued == 1 }
+                codec.emit(pcm(240))
+            } else {
+                track.write(pcm(240), 0, 960)
+            }
+            current.stopAudio(5); handler.runAll()
+            waitFor("non-silent output after changing $label") {
+                AudioTrack.created.drop(outputsBeforeReconnect).any { output ->
+                    output.samples.any { it.toInt() != 0 }
+                }
+            }
+        } finally {
+            old.releaseAllFocus(); fresh?.releaseAllFocus(); decoder.stop(); handler.runAll(); handler.reset()
+        }
+    }
+    handler.reset()
+    val settings = com.andrerinas.openheadunit.utils.Settings()
+    val decoder = AudioDecoder()
+    val audio = com.andrerinas.openheadunit.aap.AapAudio(decoder, AudioManager(), settings)
+    try {
+        audio.noteSinkCodec(5, 1); audio.precreateAudioTrack(5)
+        val first = decoder.getTrack(5)!!
+        settings.audioLatencyMultiplier = 8
+        settings.audioQueueCapacity = 50
+        settings.useAAudioOutput = true
+        settings.systemVolumeOffset = -50
+        check(!audio.needsSessionRestart())
+        val save = AudioSettingsFixture(audio)
+        save.applyAudioSettings()
+        check(!save.disconnected && decoder.getTrack(5) == null)
+        audio.precreateAudioTrack(5)
+        val resumed = decoder.getTrack(5)!!
+        check(resumed !== first && resumed.builtCodec() == AudioSinkCodec.PCM)
+        check((field(resumed, "mixerChannel") as AudioMixer.Channel).gain == 0.5f)
+        audio.preparePlayback(5); handler.runAll()
+        check(decoder.playbackCallbacks.canRender())
+        val idle = AudioSettingsFixture(null)
+        idle.applyAudioSettings(); check(!idle.disconnected)
+    } finally { audio.releaseAllFocus(); decoder.stop(); handler.runAll(); handler.reset() }
+    println("PASS saved focus/routing/format settings renegotiate without killing the app; local output changes retain the session")
 }

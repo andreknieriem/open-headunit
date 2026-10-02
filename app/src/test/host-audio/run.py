@@ -30,46 +30,66 @@ sources += sorted((base / "stubs").glob("*.kt")) + [base / "Regression.kt"]
 output = repo / "build/host-audio"
 output.mkdir(parents=True, exist_ok=True)
 target = output / "regression.jar"
-# Run the service's exact focus methods without its unrelated Android service dependencies.
-# Only the system-service lookup and Bluetooth probe are doubled; focus behavior is not copied.
+# Extract lifecycle entrypoints without the unrelated Android service dependencies.
 service = (repo / "app/src/main/java/com/andrerinas/openheadunit/aap/AapService.kt").read_text()
 
 
-def member_block(declaration):
-    start = service.index(declaration)
-    brace = service.index("{", start)
+def member_block(declaration, source=service):
+    start = source.index(declaration)
+    brace = source.index("{", start)
     depth = 0
-    for end in range(brace, len(service)):
-        if service[end] == "{":
+    for end in range(brace, len(source)):
+        if source[end] == "{":
             depth += 1
-        elif service[end] == "}":
+        elif source[end] == "}":
             depth -= 1
             if depth == 0:
-                return service[start:end + 1]
+                return source[start:end + 1]
     raise RuntimeError("Unclosed service member: " + declaration)
 
 
-fixture = output / "ServiceFocusFixture.kt"
-fixture.write_text('''package com.andrerinas.openheadunit.decoder.audio
-import android.media.*
-import android.os.Build
+# Exercise the production decision to renegotiate instead of rebuilding stale tracks. The
+# connection itself is doubled: this runner cannot establish USB/Wi-Fi projection sessions.
+comm = (repo / "app/src/main/java/com/andrerinas/openheadunit/connection/CommManager.kt").read_text()
+settings_fixture = output / "AudioSettingsFixture.kt"
+settings_fixture.write_text('''package com.andrerinas.openheadunit.decoder.audio
+import com.andrerinas.openheadunit.aap.AapAudio
 import com.andrerinas.openheadunit.utils.AppLog
-import com.andrerinas.openheadunit.utils.Settings
-private object Context { const val AUDIO_SERVICE = "audio" }
-private object BluetoothHelper { fun isA2dpMediaLinkActive(context: Any) = false }
-internal class ServiceFocusFixture(private val manager: AudioManager) {
-    private val settings = Settings().apply { staticAudioFocus = true }
-    private fun getSystemService(name: String): Any = manager
-    fun acquire() { requestPermanentAudioFocus() }
-    fun release() { releasePermanentAudioFocus() }
-''' + next(line for line in service.splitlines() if "private var permanentFocusRequest:" in line)
-    + '\n' + member_block("private val permanentFocusListener =")
-    + '\n' + member_block("private fun requestPermanentAudioFocus()")
-    + '\n' + member_block("private fun releasePermanentAudioFocus()") + '\n}\n')
-sources.append(fixture)
+internal class AudioSettingsFixture(audio: AapAudio?) {
+    private class Transport(val aapAudio: AapAudio)
+    private val _transport = audio?.let { Transport(it) }
+    private val transportLifecycleLock = Any()
+    var disconnected = false
+    private fun disconnect(isUserExit: Boolean, honorKillOnDisconnect: Boolean) {
+        check(!isUserExit && !honorKillOnDisconnect) { "Audio settings must keep the app available for reconnection" }
+        disconnected = true
+    }
+''' + member_block("fun applyAudioSettings()", comm) + '\n}\n')
+sources.append(settings_fixture)
+
+lifecycle_fixture = output / "LifecycleFixture.kt"
+lifecycle = (base / "LifecycleFixture.kt").read_text()
+for marker, declaration, source in [
+    ("PUBLICATION", "val transport = synchronized(transportLifecycleLock)", comm),
+    ("APPLY", "fun applyAudioSettings()", comm),
+    ("ADVANCE", "private inline fun withLiveTransport(", comm),
+    ("DISCONNECT", "fun disconnect(", comm),
+    ("QUIT", "private fun transportedQuited(", comm),
+    ("OBSERVER", "private fun observeConnectionState()", service),
+]:
+    lifecycle = lifecycle.replace("// PRODUCTION " + marker,
+        member_block(declaration, source).replace("CommManager.ConnectionState", "ConnectionState"))
+lifecycle_fixture.write_text(lifecycle)
+sources.append(lifecycle_fixture)
+coroutines = jar("org.jetbrains.kotlinx", "kotlinx-coroutines-core-jvm", "1.7.3")
+classpath = os.pathsep.join(map(str, [stdlib, annotations, coroutines]))
+
 subprocess.run(["java", "-cp", os.pathsep.join(map(str, compiler)),
                 "org.jetbrains.kotlin.cli.jvm.K2JVMCompiler", "-no-stdlib", "-no-reflect", "-nowarn",
-                "-classpath", str(stdlib) + os.pathsep + str(annotations), "-d", str(target),
+                "-classpath", classpath, "-d", str(target),
                 *map(str, sources)], check=True)
-subprocess.run(["java", "-cp", str(target) + os.pathsep + str(stdlib),
+subprocess.run(["java", "-cp", str(target) + os.pathsep + classpath,
                 "com.andrerinas.openheadunit.decoder.audio.RegressionKt"], check=True, timeout=30)
+
+# Complete startup and teardown paths need their own thread/I/O doubles.
+subprocess.run(["python3", str(base / "transport-lifecycle.py"), str(repo)], check=True)

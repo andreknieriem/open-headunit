@@ -42,7 +42,6 @@ import com.andrerinas.openheadunit.connection.wifi.UsbSessionQuiescePolicy
 import com.andrerinas.openheadunit.connection.wifi.SettingsScreenPausePolicy
 import com.andrerinas.openheadunit.connection.wifi.WirelessBringUpDeferralPolicy
 import com.andrerinas.openheadunit.connection.wifi.UserExitHotspotPolicy
-import com.andrerinas.openheadunit.decoder.audio.PlaybackFocusPolicy
 import com.andrerinas.openheadunit.main.MainActivity
 import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.utils.AppLog
@@ -82,11 +81,8 @@ import android.os.SystemClock
 import com.andrerinas.openheadunit.contract.SessionStateIntent
 import android.app.NotificationManager
 import android.graphics.PixelFormat
-import android.media.AudioAttributes
-import android.media.AudioFocusRequest
 import android.view.View
 import android.view.WindowManager
-import android.media.AudioManager
 import com.andrerinas.openheadunit.connection.self.SelfLauncherManager
 import com.andrerinas.openheadunit.connection.self.SelfModeDisconnectPolicy
 import com.andrerinas.openheadunit.connection.usb.UsbLauncherManager
@@ -180,13 +176,6 @@ class AapService : Service() {
             null
         }
     }
-    private var permanentFocusRequest: AudioFocusRequest? = null
-    private val permanentFocusListener = object : AudioManager.OnAudioFocusChangeListener {
-        override fun onAudioFocusChange(focusChange: Int) {
-            AppLog.d("AapService: Permanent audio focus changed: $focusChange")
-        }
-    }
-
     private var lastAaMediaMetadata: MediaPlayback.MediaMetaData? = null
     private var lastAaPlaybackPositionMs: Long = 0L
     private var lastAaPlaybackIsPlaying: Boolean? = null
@@ -1168,6 +1157,10 @@ class AapService : Service() {
                     is CommManager.ConnectionState.Connecting ->
                         emitSessionState(SessionStateIntent.STATE_CONNECTING)
                     is CommManager.ConnectionState.Connected -> {
+                        // onConnected starts GPS, key receivers and connection resources before
+                        // projection is ready. A first handshake cancelled by settings must clean
+                        // them up too; only the initial idle replay should skip onDisconnected.
+                        hasEverConnected = true
                         emitSessionState(SessionStateIntent.STATE_CONNECTED)
                         onConnected()
                     }
@@ -1264,106 +1257,6 @@ class AapService : Service() {
     }
 
     /**
-     * Performs the permanent audio focus request used for AA audio sink.
-     *
-     * This logic was previously executed in onCreate(); it has been moved here so
-     * the caller can decide when to acquire focus (for example, immediately before
-     * starting the AA handshake) to avoid stealing audio during autostart.
-     *
-     * The permanent AUDIOFOCUS_GAIN is only appropriate for Static Audio Focus mode,
-     * where the phone must believe focus is always held. In the default (dynamic) mode
-     * focus is instead acquired on demand via the AA protocol
-     * (AapControl.audioFocusRequest -> AapAudio.postProtocolFocusChange), so grabbing a
-     * permanent gain here would needlessly evict other media (e.g. the car radio) the
-     * moment the phone connects, before AA plays anything.
-     *
-     * Whether to take it at all is PlaybackFocusPolicy's call, the same as for the dynamic path:
-     * on a head unit that is also the phone's Bluetooth A2DP sink, evicting the sink makes it
-     * AVRCP-pause that same phone, so the session starts with the projected audio stopped.
-     */
-    private fun requestPermanentAudioFocus() {
-        if (!settings.enableAudioSink) {
-            AppLog.d("Audio Sink disabled - skipping permanent audio focus request.")
-            return
-        }
-        if (!settings.staticAudioFocus) {
-            AppLog.d("Static Audio Focus disabled - skipping permanent audio focus request; focus will be acquired on demand.")
-            return
-        }
-
-        // One probe at connect is enough: the sink only pauses on a focus-loss *event*, so a
-        // Bluetooth link that comes up later in the session never sees one.
-        val mode = settings.playbackFocusMode
-        val btMediaLinkActive = BluetoothHelper.isA2dpMediaLinkActive(this)
-        if (!PlaybackFocusPolicy.shouldAcquirePermanent(
-                mode = mode,
-                staticAudioFocus = true,
-                audioSinkEnabled = true,
-                btMediaLinkActive = btMediaLinkActive)) {
-            AppLog.i("AapService: Static Audio Focus - leaving system audio focus alone " +
-                "(mode=$mode, bluetoothMedia=$btMediaLinkActive)")
-            return
-        }
-        AppLog.i("AapService: Static Audio Focus - acquiring permanent system audio focus " +
-            "(mode=$mode, bluetoothMedia=$btMediaLinkActive)")
-
-        try {
-            val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                if (permanentFocusRequest == null) {
-                    val attrs = AudioAttributes.Builder()
-                        .setUsage(AudioAttributes.USAGE_MEDIA)
-                        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                        .build()
-                    permanentFocusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
-                        .setAudioAttributes(attrs)
-                        .setWillPauseWhenDucked(false)
-                        .setOnAudioFocusChangeListener(permanentFocusListener)
-                        .build()
-                }
-                val res = audioManager.requestAudioFocus(permanentFocusRequest!!)
-                AppLog.d("AapService: requestPermanentAudioFocus: result=$res")
-            } else {
-                @Suppress("DEPRECATION")
-                val res = audioManager.requestAudioFocus(
-                    permanentFocusListener,
-                    AudioManager.STREAM_MUSIC,
-                    AudioManager.AUDIOFOCUS_GAIN
-                )
-                AppLog.d("AapService: requestPermanentAudioFocus (legacy): result=$res")
-            }
-        } catch (e: Exception) {
-            AppLog.e("AapService: requestPermanentAudioFocus failed", e)
-        }
-    }
-
-    /**
-     * Releases any permanent audio focus previously requested by [requestPermanentAudioFocus].
-     *
-     * This is invoked on disconnect to return audio focus to the phone or other media
-     * apps so that playback can resume normally. Supports both the modern
-     * AudioFocusRequest API (API >= O) and the legacy abandonAudioFocus path.
-     */
-    private fun releasePermanentAudioFocus() {
-        try {
-            val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                permanentFocusRequest?.let {
-                    audioManager.abandonAudioFocusRequest(it)
-                    AppLog.d("AapService: abandoned permanent audio focus request")
-                    permanentFocusRequest = null
-                }
-            } else {
-                @Suppress("DEPRECATION")
-                audioManager.abandonAudioFocus(permanentFocusListener)
-                AppLog.d("AapService: abandoned legacy audio focus")
-            }
-        } catch (e: Exception) {
-            AppLog.e("AapService: Failed to abandon audio focus", e)
-        }
-    }
-
-    /**
      * Called by [CommManager.ConnectionState.Connected] observer:
      * 1. Refreshes the foreground notification.
      * 2. Activates a [MediaSessionCompat] so media keys are routed to Android Auto.
@@ -1413,10 +1306,8 @@ class AapService : Service() {
             updateMediaSessionState(isPlaying)
         }
 
-        // Acquire permanent audio focus just before starting the AA handshake so we
-        // don't steal audio during service autostart but still obtain focus when a
-        // real connection is beginning.
-        requestPermanentAudioFocus()
+        // Audio focus belongs to AapAudio's transport session. CommManager takes static
+        // focus before reading starts; a failed handshake never needs a service-owned client.
 
         // Start GpsLocationService and NightModeManager sensor tracking
         AppLog.i("AapService: Starting GpsLocationService and NightModeManager since connection is established")
@@ -1641,8 +1532,6 @@ class AapService : Service() {
         stopService(GpsLocationService.intent(this))
         nightModeManager?.stop()
 
-        // Release any permanent audio focus we may have requested when connected
-        releasePermanentAudioFocus()
         carKeysManager.onSessionEnded()
 
         if (!isDestroying) updateNotification()

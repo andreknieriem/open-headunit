@@ -1159,6 +1159,9 @@ class AapService : Service() {
                     is CommManager.ConnectionState.Connecting ->
                         emitSessionState(SessionStateIntent.STATE_CONNECTING)
                     is CommManager.ConnectionState.Connected -> {
+                        // Connection resources are already active before projection has a surface.
+                        // Record this boundary so an early handshake cancellation cleans them up.
+                        hasEverConnected = true
                         emitSessionState(SessionStateIntent.STATE_CONNECTED)
                         onConnected()
                     }

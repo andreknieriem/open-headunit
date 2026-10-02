@@ -1247,4 +1247,5 @@
     <string name="pref_set_default_launcher_title">기본 홈 앱</string>
     <string name="pref_default_launcher_status_active">활성 (관리하려면 탭)</string>
     <string name="pref_default_launcher_status_inactive">설정 안 됨 (기본값으로 설정하려면 탭)</string>
+    <string name="audio_settings_reconnect">오디오 설정을 저장했습니다. 적용하려면 Android Auto를 다시 연결해 주세요.</string>
 </resources>

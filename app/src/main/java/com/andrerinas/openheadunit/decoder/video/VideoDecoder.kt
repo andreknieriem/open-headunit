@@ -2393,12 +2393,20 @@ class VideoDecoder(
                                         "yet, so this is output, not a picture"
                                 )
                             }
-                            val firstFrameListener = onFirstFrameListener
-
-                            // Claim before invocation: the callback can itself install a new owner
-                            // and listener, which this old completion must not clear afterwards.
-                            onFirstFrameListener = null
-                            events.callback(firstFrameListener)
+                            onFirstFrameListener?.let { expected ->
+                                events.callback {
+                                    // Keep the notification pending if this worker retires before
+                                    // dispatch. Once claimed, deliver the captured callback even if
+                                    // retirement follows: it must not be lost or clear a new one.
+                                    val claimed = publishOutput(self) {
+                                        if (onFirstFrameListener === expected) {
+                                            onFirstFrameListener = null
+                                            expected
+                                        } else null
+                                    }
+                                    claimed?.invoke()
+                                }
+                            }
 
                             frameCount++
                             framesRendered++

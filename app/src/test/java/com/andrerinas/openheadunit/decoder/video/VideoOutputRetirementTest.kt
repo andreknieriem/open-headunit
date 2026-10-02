@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import android.media.MediaCodec
 import android.media.MediaFormat
 import com.andrerinas.openheadunit.utils.Settings
+import com.andrerinas.openheadunit.utils.AppLog
 import org.junit.Assert.*
 import org.junit.Test
 import org.mockito.ArgumentMatchers.*
@@ -33,12 +34,12 @@ class VideoOutputRetirementTest {
         }
         fun get(name: String): Any? =
             VideoDecoder::class.java.getDeclaredField(name).apply { isAccessible = true }.get(decoder)
-        fun start() {
+        fun start(targetCodec: MediaCodec = codec) {
             val loop = VideoDecoder::class.java.getDeclaredMethod("outputThreadLoop").apply { isAccessible = true }
             worker = Thread {
                 try { loop.invoke(decoder) } catch (t: Throwable) { failure.set(t.cause ?: t) }
             }
-            set("codec", codec)
+            set("codec", targetCodec)
             set("codecBufferInfo", MediaCodec.BufferInfo())
             set("running", true)
             set("outputThread", worker)
@@ -145,6 +146,46 @@ class VideoOutputRetirementTest {
             verify(f.codec, times(1)).dequeueOutputBuffer(any(), anyLong())
             verifyNoInteractions(replacement)
         } finally { pause.resume.countDown(); f.decoder.stop("test cleanup") }
+    }
+
+    @Test fun `retiring before callback dispatch preserves the first frame notification for the next worker`() {
+        val f = Fixture()
+        val pause = NativePause()
+        val originalLogger = AppLog.LOGGER
+        val calls = AtomicInteger()
+        val listener: () -> Unit = { calls.incrementAndGet(); f.decoder.stop("first frame received") }
+        f.decoder.onFirstFrameListener = listener
+        `when`(f.codec.dequeueOutputBuffer(any(), anyLong())).thenReturn(7, MediaCodec.INFO_TRY_AGAIN_LATER)
+        AppLog.LOGGER = object : AppLog.Logger {
+            override fun println(priority: Int, tag: String, msg: String) {
+                if (msg.contains("First frame rendered (hardware decode)")) pause.block()
+            }
+        }
+        f.start()
+        val oldWorker = f.worker
+        try {
+            pause.await() // state was published, but the queued first-frame callback has not run
+            f.decoder.stop("retired before dispatch")
+            assertSame("the next decoder still owes the first-frame notification", listener, f.decoder.onFirstFrameListener)
+            AppLog.LOGGER = originalLogger
+            val replacement = mock(MediaCodec::class.java)
+            `when`(replacement.dequeueOutputBuffer(any(), anyLong())).thenReturn(10, MediaCodec.INFO_TRY_AGAIN_LATER)
+            doAnswer {
+                assertEquals("the replacement must release only its own index", 10, it.arguments[0]); null
+            }.`when`(replacement).releaseOutputBuffer(anyInt(), anyBoolean())
+            f.start(replacement)
+            f.join()
+            pause.resume.countDown()
+            oldWorker.join(3000)
+            assertFalse(oldWorker.isAlive)
+            assertEquals(1, calls.get())
+            assertNull(f.decoder.onFirstFrameListener)
+        } finally {
+            AppLog.LOGGER = originalLogger
+            pause.resume.countDown()
+            oldWorker.join(3000)
+            f.decoder.stop("test cleanup")
+        }
     }
 
     @Test fun `retirement cannot interleave with a render publication already in progress`() {

@@ -713,6 +713,15 @@ class VideoDecoder(
         true
     }
 
+    /** Retire the target before stopping, so incoming video cannot reopen it during teardown. */
+    // Surface identity is the lease: a late Activity callback can retire only its own target.
+    fun detachSurfaceIfCurrent(surface: Surface, reason: String): Boolean = synchronized(this) {
+        if (mSurface !== surface) return false
+        mSurface = null
+        stop(reason)
+        true
+    }
+
     /**
      * Stops the decoder, terminates the output thread, and releases hardware resources.
      */

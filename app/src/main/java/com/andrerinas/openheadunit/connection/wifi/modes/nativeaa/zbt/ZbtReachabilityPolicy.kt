@@ -41,4 +41,20 @@ object ZbtReachabilityPolicy {
      * that is there and busy is retried by [ZbtAaCarrier], which a one-shot dial cannot do.
      */
     fun reachable(verdict: Verdict): Boolean = verdict != Verdict.NOTHING_LISTENING
+
+    /** How long a bring-up keeps re-dialling a refusing daemon before ruling the route out. */
+    const val REFUSAL_WINDOW_MS = 30_000L
+
+    private val REDIAL_GAPS_MS = longArrayOf(1_000L, 2_000L, 4_000L, 8_000L)
+
+    /**
+     * The wait before the next dial after [refusalsSoFar] refusals, [sinceFirstRefusalMs] after
+     * the first, clamped to what is left of the window. Null once the window is spent.
+     */
+    fun redialAfterMs(refusalsSoFar: Int, sinceFirstRefusalMs: Long): Long? {
+        val left = REFUSAL_WINDOW_MS - sinceFirstRefusalMs
+        if (left <= 0L) return null
+        val gap = REDIAL_GAPS_MS[(refusalsSoFar - 1).coerceIn(0, REDIAL_GAPS_MS.size - 1)]
+        return minOf(gap, left)
+    }
 }

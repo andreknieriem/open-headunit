@@ -45,6 +45,7 @@ import com.andrerinas.openheadunit.connection.wifi.UserExitHotspotPolicy
 import com.andrerinas.openheadunit.decoder.audio.PlaybackFocusPolicy
 import com.andrerinas.openheadunit.main.MainActivity
 import com.andrerinas.openheadunit.R
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zbt.ZbtDaemonReachability
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.AppPermissions
 import com.andrerinas.openheadunit.utils.BluetoothAddressSeedPolicy
@@ -3019,9 +3020,16 @@ class AapService : Service() {
                     userExitedAA = false
                     userExitCooldownUntil = 0L
                     val native = wifiLauncherManager.active as? WifiLauncherNative
+                    if (NativeAaHandshakeManager.wifiButtonRemeasures(this)) {
+                        val age = ZbtDaemonReachability.answerAgeMs()?.let { it / 1000 }
+                        AppLog.i("AapService: WiFi button: the vendor daemon refused ${age}s ago; asking it again.")
+                        ZbtDaemonReachability.forget()
+                    }
                     val action = ModuleRearmPolicy.action(
                         nativeLauncherStarted = native != null && wifiLauncherManager.activeIsStarted,
+                        launcherRefusedModule = native?.refusedModuleAtStart == true,
                         handshakeStarted = native?.handshakeManager?.isStarted() == true,
+                        measuringDaemon = native?.handshakeManager?.isMeasuringDaemon() == true,
                     )
                     AppLog.i("AapService: WiFi button on the Bluetooth module route: $action")
                     when (action) {
@@ -3029,8 +3037,11 @@ class AapService : Service() {
                             wifiLauncherManager.setActiveFromSettings(force = true, userRequested = true)
                         ModuleRearmPolicy.Action.START_HANDSHAKE -> {
                             native?.handshakeManager?.start()
-                            native?.handshakeManager?.notStartedReason()?.let {
-                                ToastUtils.showToast(this, getString(R.string.native_aa_poke_not_running))
+                            // A press that started the measurement is working, not failing.
+                            if (native?.handshakeManager?.isMeasuringDaemon() != true) {
+                                native?.handshakeManager?.notStartedReason()?.let {
+                                    ToastUtils.showToast(this, getString(R.string.native_aa_poke_not_running))
+                                }
                             }
                         }
                         ModuleRearmPolicy.Action.WAKE_PHONE ->
@@ -3038,6 +3049,8 @@ class AapService : Service() {
                                 AppLog.i("AapService: no module channel is open yet, so the bring-up in flight wakes the phone.")
                             }
                     }
+                } else {
+                    AppLog.i("AapService: Native-AA poke without a device ignored: this unit's WiFi button does not use the Bluetooth module route.")
                 }
             }
             ACTION_END_SESSION_STAY_ARMED -> {

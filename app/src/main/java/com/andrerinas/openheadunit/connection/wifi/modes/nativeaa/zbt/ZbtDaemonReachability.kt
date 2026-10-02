@@ -7,7 +7,7 @@ import com.andrerinas.openheadunit.utils.AppLog
  * Whether this unit's vendor Bluetooth daemon will carry Android Auto.
  *
  * Detection marks a class of hardware, and part of that class reaches its module over Binder with
- * nothing on the daemon's port. Asking is the only way to tell those apart, so this dials once,
+ * nothing on the daemon's port. Asking is the only way to tell those apart, so this dials,
  * remembers the answer, and hands it to [com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.ExternalBtTransportPolicy].
  *
  * The dial blocks for up to about seven seconds, so it must never run on the main thread. Callers on
@@ -24,6 +24,8 @@ object ZbtDaemonReachability {
 
     /** How long an answer is trusted. A daemon down at app start can be up by the next attempt. */
     const val RECHECK_AFTER_MS = 10 * 60_000L
+
+    private const val SLEEP_SLICE_MS = 250L
 
     @Volatile
     private var answer: Boolean? = null
@@ -75,6 +77,10 @@ object ZbtDaemonReachability {
         answeredAt = nowMs
     }
 
+    /** How old the answer is, or null if there is none. */
+    fun answerAgeMs(nowMs: Long = SystemClock.elapsedRealtime()): Long? =
+        answer?.let { nowMs - answeredAt }
+
     /** Forget the answer, so the next caller measures again. */
     fun forget() {
         answer = null
@@ -82,22 +88,56 @@ object ZbtDaemonReachability {
     }
 
     /**
-     * The cached answer, dialling once if there is none. Blocking; never call from the main thread.
-     *
-     * Synchronized so two callers arriving together dial once between them rather than each.
+     * The cached answer, dialling if there is none. Blocking; never call from the main thread.
+     * A daemon restarting after ACC on refuses briefly, so with [retryRefusals] a refusal is
+     * re-dialled across [ZbtReachabilityPolicy.REFUSAL_WINDOW_MS] and only the last one is cached.
      */
     @Synchronized
     fun resolve(
         nowMs: () -> Long = { SystemClock.elapsedRealtime() },
         dial: () -> Boolean = ::dialOnce,
-        carrierLive: () -> Boolean = ::carrierLive
+        carrierLive: () -> Boolean = ::carrierLive,
+        retryRefusals: Boolean = false,
+        sleep: (Long) -> Unit = { Thread.sleep(it) },
+        keepTrying: () -> Boolean = { true }
     ): Boolean {
         // A live carrier is the answer, and dialling past it would cache its own silence as a no.
         if (carrierLive()) return true
         cached(nowMs())?.let { return it }
-        val reachable = dial()
-        record(reachable, nowMs())
-        return reachable
+        // A caller stopped while queued on the lock must not dial for an arming that is gone.
+        if (!keepTrying()) return false
+        val firstRefusalAt = nowMs()
+        var refusals = 0
+        while (true) {
+            val reachable = dial()
+            if (reachable) {
+                record(true, nowMs())
+                return true
+            }
+            refusals++
+            val wait = if (retryRefusals) {
+                ZbtReachabilityPolicy.redialAfterMs(refusals, nowMs() - firstRefusalAt)
+            } else null
+            if (wait == null) {
+                record(false, nowMs())
+                if (retryRefusals) AppLog.i(
+                    "NativeAA: [ZBT] nothing has listened on 127.0.0.1:3152 for " +
+                        "${ZbtReachabilityPolicy.REFUSAL_WINDOW_MS / 1000}s, so the module cannot " +
+                        "carry Android Auto on this unit."
+                )
+                return false
+            }
+            AppLog.i("NativeAA: [ZBT] dialling again in ${wait / 1000}s.")
+            var left = wait
+            while (left > 0L) {
+                if (!keepTrying()) return false
+                val slice = minOf(left, SLEEP_SLICE_MS)
+                sleep(slice)
+                left -= slice
+            }
+            if (!keepTrying()) return false
+            if (carrierLive()) return true
+        }
     }
 
     /**
@@ -143,8 +183,8 @@ object ZbtDaemonReachability {
                     (detail?.let { " ($it)" } ?: "") + "."
             )
             ZbtReachabilityPolicy.Verdict.NOTHING_LISTENING -> AppLog.i(
-                "NativeAA: [ZBT] nothing is listening on 127.0.0.1:3152, so the module cannot " +
-                    "carry Android Auto on this unit" + (detail?.let { " ($it)" } ?: "") + "."
+                "NativeAA: [ZBT] nothing is listening on 127.0.0.1:3152" +
+                    (detail?.let { " ($it)" } ?: "") + "."
             )
         }
         return ZbtReachabilityPolicy.reachable(verdict)

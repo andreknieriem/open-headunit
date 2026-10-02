@@ -10,8 +10,18 @@ object ModuleRearmPolicy {
 
     enum class Action { REBUILD_LAUNCHER, START_HANDSHAKE, WAKE_PHONE }
 
-    fun action(nativeLauncherStarted: Boolean, handshakeStarted: Boolean): Action = when {
-        !nativeLauncherStarted -> Action.REBUILD_LAUNCHER
+    /**
+     * [launcherRefusedModule]: its start skipped the network on a refusal that has since been re-asked.
+     * [measuringDaemon]: the handshake is still asking the daemon, so starting it again would ask twice.
+     */
+    fun action(
+        nativeLauncherStarted: Boolean,
+        launcherRefusedModule: Boolean,
+        handshakeStarted: Boolean,
+        measuringDaemon: Boolean = false
+    ): Action = when {
+        !nativeLauncherStarted || launcherRefusedModule -> Action.REBUILD_LAUNCHER
+        measuringDaemon -> Action.WAKE_PHONE
         !handshakeStarted -> Action.START_HANDSHAKE
         else -> Action.WAKE_PHONE
     }

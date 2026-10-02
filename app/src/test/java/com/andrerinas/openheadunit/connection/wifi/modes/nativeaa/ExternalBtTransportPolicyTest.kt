@@ -188,7 +188,9 @@ class ExternalBtTransportPolicyTest {
                     for (cached in cases) {
                         val button = ExternalBtTransportPolicy.wifiButton(evidenceValue, zbt, ignore, cached)
                         val route = ExternalBtTransportPolicy.route(evidenceValue, zbt, ignore, cached)
-                        assertEquals(refuses(evidenceValue, zbt, ignore, cached), button == WifiButton.REFUSED)
+                        val remeasures = ExternalBtTransportPolicy.remeasuresOnPress(evidenceValue, zbt, ignore, cached)
+                        assertEquals(refuses(evidenceValue, zbt, ignore, cached), button == WifiButton.REFUSED || remeasures)
+                        assertFalse(button == WifiButton.REFUSED && remeasures)
                         assertEquals(route == Route.NORMAL, button == WifiButton.ANDROID_RADIO)
                     }
     }
@@ -196,7 +198,28 @@ class ExternalBtTransportPolicyTest {
     @Test
     fun `an unmeasured daemon sends the button to the module rather than refusing it`() {
         assertEquals(WifiButton.MODULE, ExternalBtTransportPolicy.wifiButton(evidence, false, false, null))
-        assertEquals(WifiButton.REFUSED, ExternalBtTransportPolicy.wifiButton(evidence, false, false, false))
+        // A refusal already measured is asked again by the press, so it is no longer refused here.
+        assertEquals(WifiButton.MODULE, ExternalBtTransportPolicy.wifiButton(evidence, false, false, false))
+    }
+
+    @Test
+    fun `a press re-asks a measured ZLink refusal and nothing else`() {
+        assertTrue(ExternalBtTransportPolicy.remeasuresOnPress(evidence, false, false, false))
+        assertFalse(ExternalBtTransportPolicy.remeasuresOnPress(evidence, false, false, true))
+        assertFalse(ExternalBtTransportPolicy.remeasuresOnPress(evidence, false, false, null))
+        assertFalse(ExternalBtTransportPolicy.remeasuresOnPress(evidence, true, false, false))
+        assertFalse(ExternalBtTransportPolicy.remeasuresOnPress(evidence, false, true, false))
+        assertFalse(ExternalBtTransportPolicy.remeasuresOnPress(evidence, false, false, false, true))
+        assertFalse(ExternalBtTransportPolicy.remeasuresOnPress(null, false, false, false))
+    }
+
+    @Test
+    fun `a press never invents a ZLink measurement on FYT hardware`() {
+        assertFalse(ExternalBtTransportPolicy.remeasuresOnPress(evidence, false, false, false, false, "sys.fyt.bluetooth_type=2"))
+        assertEquals(
+            WifiButton.REFUSED,
+            ExternalBtTransportPolicy.wifiButton(evidence, false, false, false, false, "sys.fyt.bluetooth_type=2")
+        )
     }
 
     @Test

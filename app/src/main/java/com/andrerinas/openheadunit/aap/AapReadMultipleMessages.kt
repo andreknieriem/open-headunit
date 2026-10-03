@@ -99,6 +99,7 @@ internal class AapReadMultipleMessages(
 
             // Reader-stage fault injection - see the same branch in AapReadSingleMessage, and
             // shouldDropForFaultInjection for why the decrypt below is not skipped with it.
+            observeEncryptedBody(recvHeader.chan, recvHeader.enc_len)
             val injectedDrop =
                 shouldDropForFaultInjection(recvHeader.chan, recvHeader.flags, recvHeader.enc_len)
 

@@ -18,8 +18,8 @@ internal interface AapRead {
     fun stop()
 
     /**
-     * @param onVideoRunHoled called when a video fragment run turns out to be short of the bytes it
-     *   declared; the argument says whether the length mismatch requires that the assembled unit
+     * @param onVideoRunHoled called when a video fragment run is incomplete or disagrees with its
+     *   declared length; the argument says whether the length mismatch requires that the assembled unit
      *   should be discarded rather than decoded ([AuditRecoveryPolicy.shouldDiscardAssembledUnit]).
      *   A callback rather than an [AapVideo] reference: the reader owes the video path one fact and
      *   nothing else, and the two are wired together in [Factory] the way every other cross-manager
@@ -86,6 +86,25 @@ internal interface AapRead {
         private val auditReports = IntArray(FragmentedMessageAudit.Outcome.entries.size)
         private val auditLastReportMs = LongArray(FragmentedMessageAudit.Outcome.entries.size)
         private val auditSuppressed = IntArray(FragmentedMessageAudit.Outcome.entries.size)
+
+        /**
+         * Largest encrypted AAP body observed, reported only when it crosses a power of two.
+         * Keep this independent of plaintext validation: it measures reader-buffer demand, not
+         * message integrity. The original 4 MiB buffers were deliberately retained pending these
+         * measurements; shrinking them on a guess can reject large keyframes on another device.
+         * This is a per-frame body high-water mark, not the size of a reassembled access unit or
+         * a USB bulk read. Count received bodies even when fault injection suppresses delivery.
+         */
+        private var maxEncLenSeen = 0
+
+        protected fun observeEncryptedBody(channel: Int, encLen: Int) {
+            if (encLen <= maxEncLenSeen) return
+            val crossedBoundary = Integer.highestOneBit(encLen) > Integer.highestOneBit(maxEncLenSeen)
+            maxEncLenSeen = encLen
+            if (crossedBoundary) {
+                AppLog.i("AapRead: largest message body so far: %d bytes (on %s)", encLen, Channel.name(channel))
+            }
+        }
 
         @Volatile protected var isStopped = false
             private set

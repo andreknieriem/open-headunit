@@ -125,6 +125,7 @@ internal class AapReadSingleMessage(
             val bodyFinished = if (timed) SystemClock.elapsedRealtime() else 0L
             // Reader-stage fault injection, resolved before the audit and acted on after the
             // decrypt. Both halves of that are load-bearing - see shouldDropForFaultInjection.
+            observeEncryptedBody(recvHeader.chan, recvHeader.enc_len)
             val injectedDrop =
                 shouldDropForFaultInjection(recvHeader.chan, recvHeader.flags, recvHeader.enc_len)
 

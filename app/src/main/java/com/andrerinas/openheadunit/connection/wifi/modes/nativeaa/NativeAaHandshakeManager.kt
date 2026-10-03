@@ -156,6 +156,19 @@ class NativeAaHandshakeManager(
             )
         }
 
+        /** Whether a press of the WiFi button should forget a measured ZLink refusal first. */
+        fun wifiButtonRemeasures(context: Context): Boolean {
+            val settings = App.provide(context).settings
+            return ExternalBtTransportPolicy.remeasuresOnPress(
+                BluetoothHelper.externalBtEvidence,
+                settings.externalBtZbtTransport,
+                settings.nativeAaIgnoreExternalBt,
+                ZbtDaemonReachability.cached(),
+                settings.externalBtBlinkTransport,
+                BluetoothHelper.fytModuleEvidence
+            )
+        }
+
         fun checkCompatibility(context: Context): Boolean {
             when (transportRoute(context)) {
                 // The module has its own listener and its own compatibility, established by the
@@ -224,6 +237,8 @@ class NativeAaHandshakeManager(
 
     /** The route waits on the daemon's answer, and a wake asked for meanwhile is held for it. */
     @Volatile private var measuringDaemon = false
+    // Bumped by stop() so a measurement that outlives its arming cannot start the next one.
+    @Volatile private var measureGeneration = 0
     @Volatile private var wakeAwaitingModule = false
     // Set by closeAaListeners() so the AA accept loops can tell "we closed this on purpose
     // after a successful handoff" apart from a real socket error, for logging only.
@@ -770,9 +785,12 @@ class NativeAaHandshakeManager(
     // deciding whether it's safe to force-reinit should check this instead of isActive() alone.
     fun isAttemptInFlight(): Boolean = isHandshakeInFlight() || pokeAttemptInFlight || isHandoffSettling()
 
+    fun isMeasuringDaemon(): Boolean = measuringDaemon
+
     @SuppressLint("MissingPermission")
     fun start() {
-        if (isRunning) return
+        // A measurement in flight calls start() itself when it ends; a second one would ask twice.
+        if (isRunning || measuringDaemon) return
         // None of these survived a mode rebuild by design, and nothing else clears them: a cancel
         // from the last arming would otherwise refuse every phone this one accepts.
         resetSelectionState()
@@ -802,9 +820,14 @@ class NativeAaHandshakeManager(
             notStartedReason = "the vendor Bluetooth daemon is still being asked whether it will carry Android Auto."
             AppLog.i("NativeAA: this unit's Bluetooth is an external module; asking the vendor daemon whether it will carry Android Auto before choosing a route.")
             measuringDaemon = true
+            val generation = measureGeneration
             scope.launch(Dispatchers.IO + CoroutineName("NativeAa-ZbtReachability")) {
-                ZbtDaemonReachability.resolve()
+                ZbtDaemonReachability.resolve(
+                    retryRefusals = true,
+                    keepTrying = { measuringDaemon && measureGeneration == generation }
+                )
                 withContext(Dispatchers.Main.immediate) {
+                    if (measureGeneration != generation) return@withContext
                     measuringDaemon = false
                     start()
                     // The module route took it if it opened; any other answer has nothing to wake.
@@ -2438,7 +2461,14 @@ class NativeAaHandshakeManager(
 
     /** The WiFi button on the module route: there is no Android device to name, only the module. */
     fun wakeOverModule(): Boolean {
-        val carrier = moduleCarrier ?: return false
+        val carrier = moduleCarrier
+        if (carrier == null) {
+            // The route is still being measured; hold the wake for the channel, as triggerPoke does.
+            if (!measuringDaemon) return false
+            wakeAwaitingModule = true
+            AppLog.i("NativeAA: the vendor daemon is still being asked for a route, so the wake waits for it.")
+            return true
+        }
         wakeStoodDown = false
         sessionEndedAt = 0L
         if (carrier.sendsWake) ConnectionStageTracker.report(ConnectionStage.WAKING_PHONE)
@@ -3749,6 +3779,7 @@ class NativeAaHandshakeManager(
         isRunning = false
         notStartedReason = "the wireless mode was stopped"
         measuringDaemon = false
+        measureGeneration++
         wakeAwaitingModule = false
         standingInForHfp = false
         aaReopenJob?.cancel()

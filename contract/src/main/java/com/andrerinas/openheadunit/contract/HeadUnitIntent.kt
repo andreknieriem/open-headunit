@@ -200,6 +200,11 @@ object HeadUnitCommand {
      * on its own. Native AA on WiFi Direct only; inert elsewhere.
      */
     const val ACTION_END_SESSION_STAY_ARMED = "$PREFIX.ACTION_END_SESSION_STAY_ARMED"
+
+    /**
+     * Wakes the phone named by [EXTRA_MAC] for Native AA. Without a MAC it is the main screen's WiFi
+     * button on a unit whose Bluetooth is an external module, and inert on any other unit.
+     */
     const val ACTION_NATIVE_AA_POKE = "$PREFIX.ACTION_NATIVE_AA_POKE"
 
     /**
@@ -242,7 +247,7 @@ object HeadUnitCommand {
     /** `day`, `night` or `auto` for [ACTION_SET_NIGHT_MODE]. */
     const val EXTRA_STATE = "state"
 
-    /** Bluetooth MAC for [ACTION_NATIVE_AA_POKE]. */
+    /** Bluetooth MAC for [ACTION_NATIVE_AA_POKE]; optional, see there. */
     const val EXTRA_MAC = "extra_mac"
 
     /** Google Nearby endpoint for [ACTION_NEARBY_CONNECT]. */

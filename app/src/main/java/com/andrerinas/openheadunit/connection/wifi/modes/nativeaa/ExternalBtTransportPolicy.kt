@@ -117,6 +117,22 @@ object ExternalBtTransportPolicy {
 
     enum class WifiButton { MODULE, REFUSED, ANDROID_RADIO }
 
+    /**
+     * A press on a measured ZLink refusal asks the daemon again, since it may be up by now. True
+     * only where the dial would have run had nothing been cached, so FYT and toggles stay out.
+     */
+    fun remeasuresOnPress(
+        externalBtEvidence: String?,
+        zbtTransportEnabled: Boolean,
+        ignoreExternalBt: Boolean,
+        cachedDaemonReachable: Boolean?,
+        blinkTransportEnabled: Boolean = false,
+        fytModuleEvidence: String? = null
+    ): Boolean = cachedDaemonReachable == false && needsDaemonMeasurement(
+        externalBtEvidence, zbtTransportEnabled, ignoreExternalBt, null,
+        blinkTransportEnabled, fytModuleEvidence
+    )
+
     /** External-module routes cannot use Android's bonded-device and driver-selection controls. */
     fun usesExternalModule(route: Route): Boolean = route == Route.ZBT || route == Route.BLINK
 
@@ -131,8 +147,8 @@ object ExternalBtTransportPolicy {
         fytModuleEvidence != null || enabled
 
     /**
-     * What the main screen's WiFi button arms. A daemon not measured yet goes to the module route,
-     * because the bring-up it triggers is what measures it.
+     * What the main screen's WiFi button arms. A daemon not measured yet, or one whose refusal
+     * the press re-asks, goes to the module route, because the bring-up is what measures it.
      */
     fun wifiButton(
         externalBtEvidence: String?,
@@ -142,6 +158,10 @@ object ExternalBtTransportPolicy {
         blinkTransportEnabled: Boolean = false,
         fytModuleEvidence: String? = null
     ): WifiButton = when {
+        remeasuresOnPress(
+            externalBtEvidence, zbtTransportEnabled, ignoreExternalBt, cachedDaemonReachable,
+            blinkTransportEnabled, fytModuleEvidence
+        ) -> WifiButton.MODULE
         refusesBringUp(
             externalBtEvidence, zbtTransportEnabled, ignoreExternalBt, cachedDaemonReachable,
             blinkTransportEnabled, fytModuleEvidence

@@ -45,6 +45,10 @@ class WifiLauncherNative : WifiLauncher {
         private set
     private var softApCredentialsProvider: SoftApCredentialsProvider? = null
 
+    /** Set when start() skipped the network on a measured refusal; the WiFi button rebuilds then. */
+    var refusedModuleAtStart = false
+        private set
+
     constructor(manager: WifiLauncherManager) : super(manager) {
         // copy settings early in construction to align with #hasSameStartConfiguration
         this.strategy = settings.nativeApStrategy
@@ -95,6 +99,7 @@ class WifiLauncherNative : WifiLauncher {
             settings.externalBtBlinkTransport,
             BluetoothHelper.fytModuleEvidence,
         )
+        refusedModuleAtStart = blockedByExternalBt
         if (blockedByExternalBt) NativeAaHandshakeManager.externalBtDiagnostic()?.let { AppLog.e(it) }
 
         if (!blockedByExternalBt) {
@@ -205,6 +210,7 @@ class WifiLauncherNative : WifiLauncher {
 
         if (seq.handledAt(WifiLauncherStopSequence.LAST)) {
             handshakeManager?.stop()
+            refusedModuleAtStart = false
             // Whatever the mode is switching to, this unit gets its own network back. AapService
             // restores as well, because a force-stop never reaches here at all.
             StationStandDown.restore(service)

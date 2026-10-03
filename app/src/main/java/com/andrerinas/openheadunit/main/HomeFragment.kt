@@ -36,6 +36,7 @@ import com.andrerinas.openheadunit.connection.wifi.modes.helper.NearbyManager
 import com.andrerinas.openheadunit.connection.usb.UsbDeviceCompat
 import com.andrerinas.openheadunit.connection.usb.UsbDeviceDiagnostics
 import android.content.res.Configuration
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zbt.ZbtDaemonReachability
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.AppPermissions
 import com.andrerinas.openheadunit.utils.CarLauncherManager
@@ -559,6 +560,10 @@ class HomeFragment : Fragment() {
                         }
                         ContextCompat.startForegroundService(requireContext(), intent)
                     } else if (route == ExternalBtTransportPolicy.WifiButton.REFUSED) {
+                        AppLog.i(
+                            "HomeFragment: WiFi button refused: route=$route, daemon answer=" +
+                                "${ZbtDaemonReachability.cached()} ${ZbtDaemonReachability.answerAgeMs()?.let { it / 1000 }}s old"
+                        )
                         ToastUtils.showToast(requireContext(), getString(R.string.native_aa_poke_not_running), Toast.LENGTH_LONG, force = true)
                     } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
                         ContextCompat.checkSelfPermission(requireContext(), android.Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {

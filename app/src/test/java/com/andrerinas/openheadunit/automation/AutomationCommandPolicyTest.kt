@@ -190,8 +190,15 @@ class AutomationCommandPolicyTest {
     // --- required extras ------------------------------------------------------------------------
 
     @Test
-    fun `a poke without a MAC is refused rather than sent`() {
-        assertTrue(single(HeadUnitCommand.ACTION_NATIVE_AA_POKE) is AutomationCommandPolicy.Effect.Refuse)
+    fun `a poke without a MAC is sent as the module WiFi button sends it`() {
+        assertEquals(
+            AutomationCommandPolicy.Effect.StartService(AapService.ACTION_NATIVE_AA_POKE),
+            single(HeadUnitCommand.ACTION_NATIVE_AA_POKE)
+        )
+        assertEquals(
+            AutomationCommandPolicy.Effect.StartService(AapService.ACTION_NATIVE_AA_POKE),
+            single(HeadUnitCommand.ACTION_NATIVE_AA_POKE, mapOf(HeadUnitCommand.EXTRA_MAC to "  "))
+        )
         assertEquals(
             AutomationCommandPolicy.Effect.StartService(
                 AapService.ACTION_NATIVE_AA_POKE,

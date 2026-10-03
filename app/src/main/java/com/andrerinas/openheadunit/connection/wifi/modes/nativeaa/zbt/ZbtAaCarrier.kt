@@ -61,9 +61,6 @@ class ZbtAaCarrier(
 ) : ExternalModuleCarrier {
 
     companion object {
-        /** How long to wait before dialling the daemon again after it refused a connection. */
-        const val REOPEN_DELAY_MS = 30_000L
-
         /** How often to repeat "there is still nothing listening" at a level a default log keeps. */
         const val QUIET_REMINDER_MS = 5 * 60_000L
 
@@ -117,7 +114,9 @@ class ZbtAaCarrier(
      */
     suspend fun run() {
         carrierJob = currentCoroutineContext()[Job]
-        var loudAboutNoDaemon = true
+        var refusals = 0
+        var firstRefusalAt = 0L
+        var warnedNoDaemon = false
         var lastQuietReminder = 0L
         // Claimed across the reopen loop, not just an open channel: a probe that took the daemon's
         // one client slot first must give way to a real connection rather than outlast it.
@@ -130,8 +129,11 @@ class ZbtAaCarrier(
                     // The one live test of whether this unit is really on this route. Detection says the
                     // Bluetooth is an external module; it cannot say the module is reachable this way,
                     // and one whole vendor family in that class is not.
-                    if (loudAboutNoDaemon) {
-                        loudAboutNoDaemon = false
+                    if (refusals == 0) firstRefusalAt = now()
+                    refusals++
+                    val wait = ZbtReopenPolicy.delayAfterRefusalMs(refusals)
+                    if (!warnedNoDaemon && ZbtReopenPolicy.warnsNoDaemon(now() - firstRefusalAt)) {
+                        warnedNoDaemon = true
                         lastQuietReminder = now()
                         AppLog.w(
                             "NativeAA: [ZBT] nothing is listening on ${ZbtByteChannel.HOST}:${ZbtByteChannel.PORT}. " +
@@ -140,17 +142,17 @@ class ZbtAaCarrier(
                                 "Wireless will not connect over Bluetooth on this unit; use USB, or a WiFi mode " +
                                 "that needs no Bluetooth handshake. (${e.message})"
                         )
-                    } else if (now() - lastQuietReminder >= QUIET_REMINDER_MS) {
+                    } else if (warnedNoDaemon && now() - lastQuietReminder >= QUIET_REMINDER_MS) {
                         lastQuietReminder = now()
                         AppLog.i("NativeAA: [ZBT] still nothing listening on port ${ZbtByteChannel.PORT}.")
-                    } else {
-                        AppLog.d("NativeAA: [ZBT] daemon still refusing: ${e.message}")
                     }
-                    delay(REOPEN_DELAY_MS)
+                    AppLog.i("NativeAA: [ZBT] daemon refused, retrying in ${wait / 1000}s (${e.message})")
+                    delay(wait)
                     continue
                 }
 
-                loudAboutNoDaemon = true
+                refusals = 0
+                warnedNoDaemon = false
                 // The daemon serves one client, and from here that client is us. Held from the socket,
                 // because holding the socket is what holds the slot.
                 ZbtDaemonReachability.setCarrierLive(true)

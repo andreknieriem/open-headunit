@@ -123,12 +123,7 @@ object AutomationCommandPolicy {
                 )
             )
             HeadUnitCommand.ACTION_SET_NIGHT_MODE -> nightMode(extras)
-            HeadUnitCommand.ACTION_NATIVE_AA_POKE -> requiring(extras, HeadUnitCommand.EXTRA_MAC) { mac ->
-                Effect.StartService(
-                    AapService.ACTION_NATIVE_AA_POKE,
-                    stringExtras = mapOf(AapService.EXTRA_MAC to mac)
-                )
-            }
+            HeadUnitCommand.ACTION_NATIVE_AA_POKE -> nativePoke(extras)
             HeadUnitCommand.ACTION_NEARBY_CONNECT -> requiring(extras, HeadUnitCommand.EXTRA_ENDPOINT_ID) { id ->
                 Effect.StartService(
                     AapService.ACTION_NEARBY_CONNECT,
@@ -199,6 +194,15 @@ object AutomationCommandPolicy {
             return listOf(Effect.Refuse("one of json or path is required"))
         }
         return listOf(Effect.ImportSettings(json, path))
+    }
+
+    /** Without a MAC this is the main screen's WiFi button on an external-module unit, sent as it sends it. */
+    private fun nativePoke(extras: Extras): List<Effect> {
+        val mac = extras.string(HeadUnitCommand.EXTRA_MAC)?.trim()
+        if (mac.isNullOrEmpty()) return listOf(Effect.StartService(AapService.ACTION_NATIVE_AA_POKE))
+        return listOf(
+            Effect.StartService(AapService.ACTION_NATIVE_AA_POKE, stringExtras = mapOf(AapService.EXTRA_MAC to mac))
+        )
     }
 
     private fun requiring(extras: Extras, key: String, build: (String) -> Effect): List<Effect> {

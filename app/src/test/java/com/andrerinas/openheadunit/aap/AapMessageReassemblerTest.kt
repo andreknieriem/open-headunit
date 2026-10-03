@@ -86,4 +86,39 @@ class AapMessageReassemblerTest {
     @Test(expected = IOException::class) fun `rejects oversized declarations before allocation`() {
         AapMessageReassembler().accept(frame(Channel.ID_AUD, 9, byteArrayOf(0, 0)), Int.MAX_VALUE)
     }
+
+    @Test fun `a routing change abandons the old run and permits a fresh message`() {
+        val r = AapMessageReassembler()
+        r.accept(frame(Channel.ID_AUD, 9, byteArrayOf(0, 0)), 4)
+        assertThrows(IOException::class.java) {
+            r.accept(frame(Channel.ID_AUD, 14, byteArrayOf(1, 2)), 0)
+        }
+        assertNull(r.accept(frame(Channel.ID_AUD, 10, byteArrayOf(1, 2)), 0))
+        assertNull(r.accept(frame(Channel.ID_AUD, 9, byteArrayOf(0, 0)), 4))
+        assertArrayEquals(byteArrayOf(0, 0, 3, 4),
+            r.accept(frame(Channel.ID_AUD, 10, byteArrayOf(3, 4)), 0)!!.data)
+    }
+
+    @Test fun `an overlong copied message cannot consume the following message`() {
+        val r = AapMessageReassembler()
+        r.accept(frame(Channel.ID_AUD, 9, byteArrayOf(0, 0)), 3)
+        assertThrows(IOException::class.java) {
+            r.accept(frame(Channel.ID_AUD, 10, byteArrayOf(1, 2)), 0)
+        }
+        val next = frame(Channel.ID_AUD, 11, byteArrayOf(0, 0, 7))
+        assertSame(next, r.accept(next, 0))
+    }
+
+    @Test fun `short video prefix owns bytes while interleaved channels reuse TLS storage`() {
+        val r = AapMessageReassembler()
+        val backing = byteArrayOf(0, 0)
+        assertNull(r.accept(frame(Channel.ID_VID, 9, backing), 4))
+        backing.fill(0x7f)
+        assertNull(r.accept(frame(Channel.ID_AUD, 9, byteArrayOf(0, 1)), 3))
+        assertArrayEquals(byteArrayOf(0, 0, 3, 4),
+            r.accept(frame(Channel.ID_VID, 10, byteArrayOf(3, 4)), 0)!!.data)
+        assertArrayEquals(byteArrayOf(0, 1, 5),
+            r.accept(frame(Channel.ID_AUD, 10, byteArrayOf(5)), 0)!!.data)
+    }
+
 }

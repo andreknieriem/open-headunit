@@ -23,8 +23,8 @@ package com.andrerinas.openheadunit.decoder.video
  * ### Where a mode is injected decides what can see it
  *
  * [Stage.ASSEMBLER] modes run in [AapVideo.process], which is **downstream of
- * [com.andrerinas.openheadunit.aap.FragmentedMessageAudit]** - that check runs in the readers, on the header, before decryption
- * ([AapReadSingleMessage] and [AapReadMultipleMessages] both call `auditFragment` there). Every
+ * [com.andrerinas.openheadunit.aap.FragmentedMessageAudit]** - that check runs in the readers, after decryption and before delivery
+ * ([AapReadSingleMessage] and [AapReadMultipleMessages] both deliver plaintext to the audit). Every
  * message such a mode pretends never arrived has already been counted by the audit as arriving, so
  * no assembler-stage mode can produce a framing-audit outcome. Hardware measured it: **449 faults
  * injected across the three drop modes, and not one `AapRead:` line attributable to any of them.**

@@ -240,9 +240,11 @@ class AapSslContext(keyManager: SingleKeyKeyManager): AapSsl {
      *
      * Reusing it is only safe because every consumer of the returned array finishes with it before
      * the next message is decrypted: the poll thread reads, decrypts, dispatches and returns, all
-     * synchronously, and the three paths that could have outlived that all copy first - the video
-     * feed queue arraycopies into a pooled frame, the audio path arraycopies into its own pooled
-     * chunk, and protobuf parsing copies. Every consumer also bounds its reads by the message's
+     * synchronously. Paths that retain bytes copy before returning: common message reassembly
+     * copies fragments into its run, video dispatch copies into a pooled worker buffer, PCM
+     * ingress copies into its bank, queued audio owns a chunk, and protobuf parsing copies.
+     * A read on another channel can reuse this same array; per-channel assembly is not a lease
+     * on the TLS buffer. Every consumer also bounds its reads by the message's
      * `size` field rather than by `data.size`, which is what makes a buffer larger than the payload
      * safe; that was checked call site by call site, and the one place that did not - the short-payload
      * guard in AapMessageIncoming - is fixed alongside this.
@@ -283,13 +285,14 @@ class AapSslContext(keyManager: SingleKeyKeyManager): AapSsl {
             try {
                 rxBuffer.clear()
                 val encrypted = ByteBuffer.wrap(buffer, start, length)
-                val result = sslEngine.unwrap(encrypted, rxBuffer)
-                runDelegatedTasks(result, sslEngine)
-
-                if (AppLog.LOG_VERBOSE) {
-                    statusLine = "SSL Decrypt Status: ${result.status}, Produced: ${result.bytesProduced()}, Consumed: ${result.bytesConsumed()}"
+                rxBuffer = TlsUnwrapLoop.decode(sslEngine, encrypted, rxBuffer) {
+                    runDelegatedTasks(it, sslEngine)
                 }
-                if (result.bytesProduced() == 0) {
+                val produced = rxBuffer.position()
+                if (AppLog.LOG_VERBOSE) {
+                    statusLine = "SSL Decrypt: produced=$produced consumed=$length"
+                }
+                if (produced == 0) {
                     val now = SystemClock.elapsedRealtime()
                     if (AuditReportPolicy.shouldReport(zeroUnwrapReports, zeroUnwrapLastLogMs, now)) {
                         val suppressed = zeroUnwrapSuppressed
@@ -298,15 +301,12 @@ class AapSslContext(keyManager: SingleKeyKeyManager): AapSsl {
                         zeroUnwrapLastLogMs = now
                         val suffix =
                             if (suppressed > 0) " (and $suppressed more since the last report)" else ""
-                        zeroProduceLine = "SSL Decrypt: unwrap produced no application data " +
-                            "(status ${result.status}, consumed ${result.bytesConsumed()} of " +
-                            "$length bytes)$suffix"
+                        zeroProduceLine = "SSL Decrypt: no application data after consuming $length bytes$suffix"
                     } else {
                         zeroUnwrapSuppressed++
                     }
                 }
 
-                val produced = result.bytesProduced()
                 if (produced > plaintextBuffer.size) {
                     // Cannot happen: rxBuffer is what unwrap writes into and plaintextBuffer is its
                     // capacity. Checked anyway, because silently truncating a message here would look
@@ -336,7 +336,7 @@ class AapSslContext(keyManager: SingleKeyKeyManager): AapSsl {
                 }
 
                 if (!isUserDisconnect) {
-                    AppLog.e("SSL Decrypt failed", e)
+                    throw javax.net.ssl.SSLException("AAP payload could not be fully decrypted", e)
                 }
                 null
             }
@@ -368,11 +368,13 @@ class AapSslContext(keyManager: SingleKeyKeyManager): AapSsl {
         }
     }
 
-    private fun runDelegatedTasks(result: SSLEngineResult, engine: SSLEngine) {
+    private fun runDelegatedTasks(result: SSLEngineResult, engine: SSLEngine): Boolean {
+        var completed = false
         if (result.handshakeStatus === SSLEngineResult.HandshakeStatus.NEED_TASK) {
             var runnable: Runnable? = engine.delegatedTask
             while (runnable != null) {
                 runnable.run()
+                completed = true
                 runnable = engine.delegatedTask
             }
             val hsStatus = engine.handshakeStatus
@@ -380,6 +382,7 @@ class AapSslContext(keyManager: SingleKeyKeyManager): AapSsl {
                 throw Exception("handshake shouldn't need additional tasks")
             }
         }
+        return completed
     }
 
     companion object {

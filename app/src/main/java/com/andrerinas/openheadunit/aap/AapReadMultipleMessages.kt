@@ -46,22 +46,30 @@ internal class AapReadMultipleMessages(
 
         try {
             if (fifo.remaining() < size) {
-                AppLog.w("AapRead: FIFO overflow! Size: $size, Remaining: ${fifo.remaining()}. Clearing buffer.")
-                fifo.clear()
+                AppLog.w("AapRead: FIFO overflow! Size: $size, Remaining: ${fifo.remaining()}. Disconnecting.")
+                return -1
             }
             fifo.put(recvBuffer, 0, size)
             processBulk()
         } catch (e: Exception) {
             AppLog.e("AapRead: Error in processBulk: ${e.message}")
-            fifo.clear() // Hard reset on error
+            fifo.clear()
+            return -1 // A discarded stream prefix cannot be resynchronised by guessing a header.
         }
         return 0
     }
 
+    /**
+     * One bulk read may end inside a header/body or contain several AAP frames. Mark the start
+     * before consuming a header, and reset there if either the optional total or the body is
+     * incomplete. compact() retains that entire prefix for the next read; it must not be fed
+     * to TLS early or discarded as a malformed short message.
+     */
     private fun processBulk() {
         fifo.flip()
 
-        // Dispatch may retire this reader synchronously; later records belong to that old link.
+        // A control frame can synchronously stop this reader from inside delivery. Do not
+        // unwrap later records in the same bulk after that session has been retired.
         while (!isStopped && fifo.remaining() >= AapMessageIncoming.EncryptedHeader.SIZE) {
             fifo.mark()
             fifo.get(recvHeader.buf, 0, recvHeader.buf.size)
@@ -69,7 +77,7 @@ internal class AapReadMultipleMessages(
 
             // Only a first fragment carries the total size, and only then is this meaningful.
             var declaredTotal = 0
-            if (recvHeader.flags == 0x09) {
+            if (AapMessageFraming.carriesTotalLength(recvHeader.flags)) {
                 if (fifo.remaining() < 4) {
                     fifo.reset()
                     break
@@ -79,9 +87,7 @@ internal class AapReadMultipleMessages(
             }
 
             if (recvHeader.enc_len > msgBuffer.size || recvHeader.enc_len < 0) {
-                AppLog.e("AapRead: Invalid message length (${recvHeader.enc_len}). Resetting FIFO.")
-                fifo.clear()
-                return
+                throw java.io.IOException("Invalid AAP frame length ${recvHeader.enc_len}")
             }
 
             if (fifo.remaining() < recvHeader.enc_len) {
@@ -96,13 +102,6 @@ internal class AapReadMultipleMessages(
             val injectedDrop =
                 shouldDropForFaultInjection(recvHeader.chan, recvHeader.flags, recvHeader.enc_len)
 
-            // The whole body arrived, so this fragment can be counted against the run's declared
-            // total. Done before decryption because the total is a framing quantity - and skipped
-            // for an injected drop, which is what leaves the run short of what it declared.
-            if (!injectedDrop) {
-                auditFragment(recvHeader.chan, recvHeader.flags, recvHeader.enc_len, declaredTotal)
-            }
-
             try {
                 // Unconditional, including for a message about to be dropped: the SSL engine's
                 // record sequence advances per record and a record we never unwrap desynchronises
@@ -110,10 +109,12 @@ internal class AapReadMultipleMessages(
                 val msg = AapMessageIncoming.decrypt(recvHeader, 0, msgBuffer, ssl)
 
                 if (msg != null && !injectedDrop) {
-                    if (!isStopped) handler.handle(msg)
+                    deliverFragment(msg, declaredTotal)
                 }
+            } catch (e: java.io.IOException) {
+                throw e
             } catch (e: Exception) {
-                AppLog.e("AapRead: Decryption/Handling error: ${e.message}")
+                AppLog.e("AapRead: Handling error: ${e.message}")
             }
         }
 

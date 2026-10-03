@@ -1209,6 +1209,7 @@
     <string name="exit_dialog_end_stay_armed_note">სესია დასრულდა. WiFi ქსელი აქტიური რჩება, ამიტომ თქვენი ტელეფონი შეიძლება თავად ხელახლა დაუკავშირდეს.</string>
     <string name="connection_issue_banner_stale_endpoint">თქვენი ტელეფონი ცდილობს ამ მოწყობილობის ძველ ქსელის მისამართს. თუ არ დაუკავშირდება, დაივიწყეთ ეს მოწყობილობა Android Auto-ში თქვენს ტელეფონზე და დაუკავშირდით ხელახლა.</string>
     <string name="connection_issue_banner_hands_free_record_refused">ამ მოწყობილობის Bluetooth-მა უარყო ჰენდსფრის მორგება, რომელიც Android Auto-ს სჭირდება, ამიტომ უსადენო კავშირი შესაძლოა არ დაიწყოს. კაბელს ან სხვა უსადენო რეჟიმს ეს არ სჭირდება.</string>
+    <string name="connection_issue_banner_home_wifi_rejoined">ეს მოწყობილობა Android Auto-ს დროს განუწყვეტლივ უერთდება თქვენს სახლის WiFi-ს, რამაც შეიძლება გამოსახულება დააჭიროს, განსაკუთრებით 2.4 გჰც მოწყობილობებზე. შეეხეთ ამ ქსელზე ავტომატური ხელახალი დაკავშირების გამოსართავად ან დაელოდეთ, სანამ მის დიაპაზონს გასცდებით.</string>
     <string name="native_aa_wake_remeasure">Bluetooth გაღვიძების ხელახლა გაზომვა</string>
     <string name="native_aa_wake_verdict_unmeasured">ჯერ არ გაზომილა</string>
     <string name="native_aa_wake_verdict_safe">უსაფრთხოა ამ მოწყობილობაზე</string>

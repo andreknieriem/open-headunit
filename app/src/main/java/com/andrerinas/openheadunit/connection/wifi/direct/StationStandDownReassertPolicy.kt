@@ -54,6 +54,10 @@ object StationStandDownReassertPolicy {
     /** A changed stand-down mode retires the verdict; re-saving the same one keeps it. */
     fun modeChangeClearsVerdict(oldMode: Int, newMode: Int): Boolean = oldMode != newMode
 
+    /** A stand-down that held through a live session disproves the home-WiFi banner. */
+    fun retiresRejoinIssue(sessionWentLive: Boolean, platformWon: Boolean): Boolean =
+        sessionWentLive && !platformWon
+
     /** Whether a re-assertion at [nowMs] starts a fresh budget window. */
     fun opensWindow(windowStartMs: Long, nowMs: Long): Boolean =
         windowStartMs <= 0L || nowMs - windowStartMs >= BUDGET_WINDOW_MS

@@ -1079,6 +1079,7 @@
     <string name="connection_issue_banner_stale_endpoint">आपका फ़ोन इस यूनिट तक उस नेटवर्क पते पर पहुँचने की कोशिश करता रहता है जो पहले दिया गया था। अपने फ़ोन पर Android Auto खोलें, इस हेड यूनिट को भूल जाएं, और फिर से कनेक्ट करें।</string>
     <string name="connection_issue_banner_hands_free_held">कोई अन्य डिवाइस पहले से ही इस यूनिट के हैंड्स-फ़्री कनेक्शन का उपयोग कर रहा है। दूसरे डिवाइस को डिस्कनेक्ट करें या उसका ब्लूटूथ बंद करें।</string>
     <string name="connection_issue_banner_hands_free_record_refused">इस यूनिट का ब्लूटूथ हैंड्स-फ़्री रिकॉर्ड प्रकाशित नहीं करेगा जिसकी ऐप को आवश्यकता है। केबल या अन्य वायरलेस मोड से कनेक्ट करने पर इसकी आवश्यकता नहीं होती है।</string>
+    <string name="connection_issue_banner_home_wifi_rejoined">यह यूनिट Android Auto के दौरान आपके घर के वाई-फ़ाई से बार-बार दोबारा जुड़ती है, जिससे तस्वीर अटक सकती है, खासकर 2.4 GHz वाली यूनिट पर। उस नेटवर्क के लिए ऑटो-रीकनेक्ट बंद करने के लिए टैप करें, या उसकी रेंज से बाहर होने तक प्रतीक्षा करें।</string>
     <string name="connection_issue_banner_dismiss">खारिज करें</string>
     <string name="auto_connect_pill_cancel">कनेक्ट करना रोकें</string>
     <string name="connection_issue_remedy_hotspot_query">हॉटस्पॉट नाम और पासवर्ड</string>

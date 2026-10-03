@@ -211,6 +211,14 @@ class StationStandDownReassertPolicyTest {
     }
 
     @Test
+    fun `only a stand-down that held through a session retires the home WiFi banner`() {
+        assertEquals(true, StationStandDownReassertPolicy.retiresRejoinIssue(true, false))
+        assertEquals(false, StationStandDownReassertPolicy.retiresRejoinIssue(true, true))
+        assertEquals(false, StationStandDownReassertPolicy.retiresRejoinIssue(false, false))
+        assertEquals(false, StationStandDownReassertPolicy.retiresRejoinIssue(false, true))
+    }
+
+    @Test
     fun `the budget and spacing are pinned`() {
         assertEquals(3, StationStandDownReassertPolicy.MAX_REASSERTS)
         assertEquals(10_000L, StationStandDownReassertPolicy.MIN_SPACING_MS)

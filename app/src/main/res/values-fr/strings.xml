@@ -1268,6 +1268,7 @@
     <string name="exit_dialog_end_stay_armed_note">Session terminée. Le réseau WiFi reste actif, donc votre téléphone peut se reconnecter de lui-même.</string>
     <string name="connection_issue_banner_stale_endpoint">Votre téléphone essaie une ancienne adresse réseau de cet appareil. S\'il ne se connecte pas, oubliez cet appareil dans Android Auto sur votre téléphone, puis reconnectez-vous.</string>
     <string name="connection_issue_banner_hands_free_record_refused">Le Bluetooth de cet appareil a refusé la configuration mains libres dont Android Auto a besoin, la connexion sans fil pourrait donc ne pas démarrer. Un câble ou un autre mode sans fil n\'en a pas besoin.</string>
+    <string name="connection_issue_banner_home_wifi_rejoined">Cet appareil se reconnecte sans cesse à votre WiFi domestique pendant Android Auto, ce qui peut faire saccader l\'image, surtout sur les appareils en 2,4 GHz. Touchez pour désactiver la reconnexion automatique à ce réseau, ou attendez d\'être hors de sa portée.</string>
     <string name="native_aa_wake_remeasure">Remesurer le réveil Bluetooth</string>
     <string name="native_aa_wake_verdict_unmeasured">Pas encore mesuré</string>
     <string name="native_aa_wake_verdict_safe">Sûr sur cet appareil</string>

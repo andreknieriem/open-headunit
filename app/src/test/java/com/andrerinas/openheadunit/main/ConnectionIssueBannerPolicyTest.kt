@@ -326,6 +326,31 @@ class ConnectionIssueBannerPolicyTest {
     }
 
     @Test
+    fun `a home WiFi rejoining beside the group is WiFi Direct only and has no remedy here`() {
+        // Only the WiFi Direct bring-up stands the station down, and the lever is Android's own.
+        assertTrue(
+            ConnectionIssue.HOME_WIFI_REJOINED_BESIDE_GROUP in
+                ConnectionIssueBannerPolicy.relevantNow(3, NativeTransport.WIFI_DIRECT, true)
+        )
+        assertFalse(
+            ConnectionIssue.HOME_WIFI_REJOINED_BESIDE_GROUP in
+                ConnectionIssueBannerPolicy.relevantNow(3, NativeTransport.HOTSPOT, true)
+        )
+        assertFalse(
+            ConnectionIssue.HOME_WIFI_REJOINED_BESIDE_GROUP in
+                ConnectionIssueBannerPolicy.relevantNow(2, NativeTransport.WIFI_DIRECT, true)
+        )
+        assertFalse(
+            ConnectionIssue.HOME_WIFI_REJOINED_BESIDE_GROUP in
+                ConnectionIssueBannerPolicy.relevantNow(3, NativeTransport.WIFI_DIRECT, false)
+        )
+        assertFalse(
+            ConnectionIssue.HOME_WIFI_REJOINED_BESIDE_GROUP in
+                ConnectionIssueBannerPolicy.remedyApplied("a name", "a password", "02:00:00:00:00:01", "02:00:00:00:00:02")
+        )
+    }
+
+    @Test
     fun `every issue is relevant on some route`() {
         // The same guard as `every issue can be shown`: a condition no route claims would be
         // recorded on the connection path and then never shown to anybody.

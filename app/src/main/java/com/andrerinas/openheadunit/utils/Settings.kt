@@ -2343,6 +2343,11 @@ class Settings(private val context: Context) {
         get() = prefs.getLong("connection-issue-stale-endpoint", 0L)
         set(value) = prefs.edit().putLong("connection-issue-stale-endpoint", value).apply()
 
+    /** The platform kept rejoining this unit's WiFi beside the group and the stand-down gave up. */
+    var connectionIssueHomeWifiRejoinedAtEpochMs: Long
+        get() = prefs.getLong("connection-issue-home-wifi-rejoined", 0L)
+        set(value) = prefs.edit().putLong("connection-issue-home-wifi-rejoined", value).apply()
+
     /**
      * When the user last dismissed the failure banner.
      *

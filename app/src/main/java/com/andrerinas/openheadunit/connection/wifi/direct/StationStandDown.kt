@@ -12,6 +12,8 @@ import com.andrerinas.openheadunit.connection.ConnectionStage
 import com.andrerinas.openheadunit.connection.ConnectionStageTracker
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.AppPermissions
+import com.andrerinas.openheadunit.utils.ConnectionIssue
+import com.andrerinas.openheadunit.utils.ConnectionIssues
 
 /**
  * Drops and restores this unit's own WiFi association around a Native AA WiFi Direct bring-up.
@@ -53,6 +55,8 @@ object StationStandDown {
     private var contestedLogged = false
     private var standDownAtMs = 0L
     private var leftSeen = false
+    private var sessionLiveSeen = false
+    private var platformWon = false
     private var deferredCheck: Runnable? = null
     private val mainHandler by lazy { Handler(Looper.getMainLooper()) }
 
@@ -65,6 +69,14 @@ object StationStandDown {
         contestedLogged = false
         standDownAtMs = 0L
         leftSeen = false
+        sessionLiveSeen = false
+        platformWon = false
+    }
+
+    // The station is left joined beside the group, so the banner tells the user how to stop it.
+    private fun notePlatformWon(context: Context) {
+        platformWon = true
+        ConnectionIssues.raiseOnce(context, ConnectionIssue.HOME_WIFI_REJOINED_BESIDE_GROUP)
     }
 
     /** The network's WifiConfiguration.status, or null when the platform will not say. */
@@ -81,6 +93,7 @@ object StationStandDown {
             val associated = isStillAssociated(context)
             if (associated == true) {
                 record(StationStandDownOutcome.STILL_JOINED)
+                if (again) synchronized(this) { notePlatformWon(context) }
                 AppLog.w(
                     "StationStandDown: this unit is still joined to its WiFi network " +
                         "${VERIFY_DELAY_MS}ms later" + (if (again) " after a re-assertion" else "") +
@@ -154,6 +167,7 @@ object StationStandDown {
                             settings.stationStandDownContestedFingerprint = Build.FINGERPRINT
                         }
                         contestedLogged = true
+                        notePlatformWon(context)
                         AppLog.i(
                             "StationStandDown: the platform undid all " +
                                 "${StationStandDownReassertPolicy.MAX_REASSERTS} re-assertions in one window, " +
@@ -163,6 +177,7 @@ object StationStandDown {
                         )
                     }
                     StationStandDownReassertPolicy.Decision.Suppressed -> {
+                        notePlatformWon(context)
                         if (!contestedLogged) {
                             contestedLogged = true
                             AppLog.i(
@@ -200,6 +215,7 @@ object StationStandDown {
     fun onSessionLive(context: Context, wifiLockHeldForMs: Long?) {
         synchronized(this) {
             if (standDownAtMs == 0L) return
+            sessionLiveSeen = true
             deferredCheck?.let { mainHandler.removeCallbacks(it) }
             deferredCheck = null
             reassertCount = 0
@@ -364,6 +380,9 @@ object StationStandDown {
         }
         if (!StationStandDownPolicy.shouldRestore(networkId)) return
 
+        if (StationStandDownReassertPolicy.retiresRejoinIssue(sessionLiveSeen, platformWon)) {
+            ConnectionIssues.clear(context, ConnectionIssue.HOME_WIFI_REJOINED_BESIDE_GROUP)
+        }
         clearReassertState()
         try {
             val wm = context.applicationContext

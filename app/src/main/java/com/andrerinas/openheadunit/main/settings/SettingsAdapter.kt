@@ -284,6 +284,14 @@ class SettingsAdapter : ListAdapter<SettingItem, RecyclerView.ViewHolder>(Settin
                 override fun onProgressChanged(seekBar: android.widget.SeekBar?, progress: Int, fromUser: Boolean) {
                     if (fromUser) {
                         val newValue = setting.valueFrom + (progress.toFloat() / steps) * range
+                        val intVal = newValue.toInt()
+                        val suffix = when {
+                            setting.value.endsWith("%") -> "%"
+                            setting.value.endsWith("dp") -> "dp"
+                            setting.value.endsWith("s") -> "s"
+                            else -> ""
+                        }
+                        settingValue.text = "$intVal$suffix"
                         setting.onValueChanged(newValue)
                     }
                 }

@@ -1232,6 +1232,7 @@
     <string name="exit_dialog_end_stay_armed_note">Sitzung beendet. Das WLAN-Netzwerk bleibt bestehen, dein Handy kann sich also von selbst wieder verbinden.</string>
     <string name="connection_issue_banner_stale_endpoint">Dein Telefon versucht eine alte Netzwerkadresse dieses Geräts. Verbindet es sich nicht, vergiss dieses Gerät in Android Auto auf deinem Telefon und verbinde dich erneut.</string>
     <string name="connection_issue_banner_hands_free_record_refused">Das Bluetooth dieses Geräts hat das von Android Auto benötigte Freisprech-Setup abgelehnt, daher startet die drahtlose Verbindung womöglich nicht. Ein Kabel oder ein anderer drahtloser Modus braucht es nicht.</string>
+    <string name="connection_issue_banner_home_wifi_rejoined">Dieses Gerät verbindet sich während Android Auto immer wieder mit deinem WLAN zu Hause, wodurch das Bild ruckeln kann, vor allem bei Geräten mit 2,4 GHz. Tippe hier, um die automatische Verbindung zu diesem Netzwerk auszuschalten, oder warte, bis du außer Reichweite bist.</string>
     <string name="native_aa_wake_remeasure">Bluetooth-Wecken neu messen</string>
     <string name="native_aa_wake_verdict_unmeasured">Noch nicht gemessen</string>
     <string name="native_aa_wake_verdict_safe">Sicher auf diesem Gerät</string>

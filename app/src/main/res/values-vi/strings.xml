@@ -1231,6 +1231,7 @@
     <string name="exit_dialog_end_stay_armed_note">Đã kết thúc phiên. Mạng WiFi vẫn bật, nên điện thoại của bạn có thể tự kết nối lại.</string>
     <string name="connection_issue_banner_stale_endpoint">Điện thoại đang thử một địa chỉ mạng cũ của thiết bị này. Nếu không kết nối được, hãy quên thiết bị này trong Android Auto trên điện thoại rồi kết nối lại.</string>
     <string name="connection_issue_banner_hands_free_record_refused">Bluetooth của thiết bị này đã từ chối thiết lập rảnh tay mà Android Auto cần, nên kết nối không dây có thể không khởi động. Kết nối bằng cáp hoặc chế độ không dây khác không cần đến nó.</string>
+    <string name="connection_issue_banner_home_wifi_rejoined">Thiết bị này liên tục kết nối lại WiFi nhà bạn khi dùng Android Auto, có thể làm hình bị giật, nhất là trên thiết bị 2,4 GHz. Nhấn để tắt tự động kết nối lại với mạng đó, hoặc chờ đến khi bạn ra khỏi vùng phủ sóng của mạng.</string>
     <string name="native_aa_wake_remeasure">Đo lại việc đánh thức Bluetooth</string>
     <string name="native_aa_wake_verdict_unmeasured">Chưa đo</string>
     <string name="native_aa_wake_verdict_safe">An toàn trên thiết bị này</string>

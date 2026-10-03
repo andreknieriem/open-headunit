@@ -121,7 +121,14 @@ enum class ConnectionIssue {
      * dial retires it, and so does a Bluetooth handshake landing with none beside it, because a
      * rejection that works is what stops the phone ever dialling again.
      */
-    PHONE_HOLDS_STALE_ENDPOINT
+    PHONE_HOLDS_STALE_ENDPOINT,
+
+    /**
+     * The platform kept rejoining this unit's own WiFi network beside the WiFi Direct group and
+     * the stand-down gave up, so both share one radio and the picture can stutter. The lever is
+     * that network's auto-reconnect, which only Android's WiFi settings reach.
+     */
+    HOME_WIFI_REJOINED_BESIDE_GROUP
 }
 
 /** An issue that is currently true, and when it was last raised. */
@@ -240,6 +247,7 @@ object ConnectionIssues {
                 ConnectionIssue.HANDS_FREE_HELD_ELSEWHERE -> settings.connectionIssueHandsFreeHeldAtEpochMs
                 ConnectionIssue.HANDS_FREE_RECORD_REFUSED -> settings.connectionIssueHandsFreeRecordRefusedAtEpochMs
                 ConnectionIssue.PHONE_HOLDS_STALE_ENDPOINT -> settings.connectionIssueStaleEndpointAtEpochMs
+                ConnectionIssue.HOME_WIFI_REJOINED_BESIDE_GROUP -> settings.connectionIssueHomeWifiRejoinedAtEpochMs
             }
         } catch (e: Exception) {
             0L
@@ -261,6 +269,7 @@ object ConnectionIssues {
                     ConnectionIssue.HANDS_FREE_HELD_ELSEWHERE -> settings.connectionIssueHandsFreeHeldAtEpochMs = atEpochMs
                     ConnectionIssue.HANDS_FREE_RECORD_REFUSED -> settings.connectionIssueHandsFreeRecordRefusedAtEpochMs = atEpochMs
                     ConnectionIssue.PHONE_HOLDS_STALE_ENDPOINT -> settings.connectionIssueStaleEndpointAtEpochMs = atEpochMs
+                    ConnectionIssue.HOME_WIFI_REJOINED_BESIDE_GROUP -> settings.connectionIssueHomeWifiRejoinedAtEpochMs = atEpochMs
                 }
             } catch (e: Exception) {
                 AppLog.d("ConnectionIssues: could not record $issue: ${e.message}")

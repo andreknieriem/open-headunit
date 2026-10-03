@@ -1231,6 +1231,7 @@
     <string name="exit_dialog_end_stay_armed_note">Sessione terminata. La rete WiFi resta attiva, quindi il tuo telefono potrebbe riconnettersi da solo.</string>
     <string name="connection_issue_banner_stale_endpoint">Il telefono sta provando un vecchio indirizzo di rete di questa unità. Se non si connette, dimentica questa unità in Android Auto sul telefono e riconnettiti.</string>
     <string name="connection_issue_banner_hands_free_record_refused">Il Bluetooth di questa unità ha rifiutato la configurazione vivavoce richiesta da Android Auto, quindi la connessione wireless potrebbe non avviarsi. Un cavo o un\'altra modalità wireless non ne ha bisogno.</string>
+    <string name="connection_issue_banner_home_wifi_rejoined">Questa unità continua a riconnettersi al WiFi di casa durante Android Auto, il che può far scattare l\'immagine, soprattutto sulle unità a 2,4 GHz. Tocca per disattivare la riconnessione automatica a quella rete, oppure aspetta di essere fuori portata.</string>
     <string name="native_aa_wake_remeasure">Rimisura il risveglio Bluetooth</string>
     <string name="native_aa_wake_verdict_unmeasured">Non ancora misurato</string>
     <string name="native_aa_wake_verdict_safe">Sicuro su questa unità</string>

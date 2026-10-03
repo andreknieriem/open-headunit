@@ -1228,6 +1228,7 @@
     <string name="exit_dialog_end_stay_armed_note">Sessie beëindigd. Het WiFi-netwerk blijft actief, dus je telefoon kan vanzelf opnieuw verbinden.</string>
     <string name="connection_issue_banner_stale_endpoint">Je telefoon probeert een oud netwerkadres van dit apparaat. Verbindt hij niet, vergeet dit apparaat dan in Android Auto op je telefoon en maak opnieuw verbinding.</string>
     <string name="connection_issue_banner_hands_free_record_refused">De Bluetooth van dit apparaat weigerde de handsfree-instelling die Android Auto nodig heeft, dus start de draadloze verbinding mogelijk niet. Een kabel of een andere draadloze modus heeft dit niet nodig.</string>
+    <string name="connection_issue_banner_home_wifi_rejoined">Dit apparaat blijft tijdens Android Auto opnieuw verbinding maken met je WiFi thuis, waardoor het beeld kan haperen, vooral op apparaten met 2,4GHz. Tik om automatisch opnieuw verbinden met dat netwerk uit te zetten, of wacht tot je buiten bereik bent.</string>
     <string name="native_aa_wake_remeasure">Bluetooth-wekking opnieuw meten</string>
     <string name="native_aa_wake_verdict_unmeasured">Nog niet gemeten</string>
     <string name="native_aa_wake_verdict_safe">Veilig op dit apparaat</string>

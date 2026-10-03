@@ -1079,6 +1079,7 @@
     <string name="connection_issue_banner_stale_endpoint">โทรศัพท์ของคุณพยายามเชื่อมต่อที่อยู่เดิมที่ไม่ใช้งานแล้ว เปิด Android Auto บนโทรศัพท์ ลบเฮดยูนิตนี้ แล้วเชื่อมต่อใหม่</string>
     <string name="connection_issue_banner_hands_free_held">มีอุปกรณ์อื่นกำลังใช้การเชื่อมต่อแฮนด์ฟรีของยูนิตนี้อยู่ ตัดการเชื่อมต่ออุปกรณ์อื่นหรือปิดบลูทูธ</string>
     <string name="connection_issue_banner_hands_free_record_refused">บลูทูธของยูนิตนี้ไม่เผยแพร่บันทึกแฮนด์ฟรีที่แอปต้องการ การเชื่อมต่อด้วยสายเคเบิลหรือโหมดไร้สายอื่นไม่จำเป็นต้องใช้</string>
+    <string name="connection_issue_banner_home_wifi_rejoined">ยูนิตนี้เชื่อมต่อ Wi-Fi ที่บ้านซ้ำไปมาขณะใช้ Android Auto ซึ่งอาจทำให้ภาพกระตุก โดยเฉพาะยูนิตที่ใช้ 2.4 GHz แตะเพื่อปิดการเชื่อมต่อใหม่อัตโนมัติสำหรับเครือข่ายนั้น หรือรอจนกว่าคุณจะอยู่นอกระยะ</string>
     <string name="connection_issue_banner_dismiss">ปิด</string>
     <string name="auto_connect_pill_cancel">หยุดเชื่อมต่อ</string>
     <string name="connection_issue_remedy_hotspot_query">ชื่อและรหัสผ่านฮอตสปอต</string>

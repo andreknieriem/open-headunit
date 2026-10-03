@@ -1079,6 +1079,7 @@
     <string name="connection_issue_banner_stale_endpoint">O seu telemóvel continua a tentar contactar esta unidade num endereço antigo. Abra o Android Auto no telemóvel, esqueça esta unidade e volte a ligar.</string>
     <string name="connection_issue_banner_hands_free_held">Outro dispositivo já está a utilizar a ligação mãos-livres desta unidade. Desligue o outro dispositivo ou desligue o Bluetooth.</string>
     <string name="connection_issue_banner_hands_free_record_refused">O Bluetooth desta unidade não publicou o registo de mãos-livres necessário. A ligação por cabo ou outros modos sem fios não requerem este registo.</string>
+    <string name="connection_issue_banner_home_wifi_rejoined">Esta unidade volta a ligar-se constantemente ao Wi-Fi da sua casa durante o Android Auto, o que pode fazer a imagem encravar, sobretudo em unidades de 2.4 GHz. Toque para desativar a religação automática a essa rede, ou aguarde até estar fora do alcance.</string>
     <string name="connection_issue_banner_dismiss">Fechar</string>
     <string name="auto_connect_pill_cancel">Parar ligação</string>
     <string name="connection_issue_remedy_hotspot_query">Nome e palavra-passe do hotspot</string>

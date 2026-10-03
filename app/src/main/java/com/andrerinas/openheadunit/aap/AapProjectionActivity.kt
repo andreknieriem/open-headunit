@@ -87,6 +87,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     private val settings: Settings by lazy { Settings(this) }
     private val cachedKeyCodes: Map<Int, Int> by lazy { settings.keyCodes }
     private var isSurfaceSet = false
+    private var ownedSurface: android.view.Surface? = null
     private var overlayState = OverlayState.STARTING
     private val watchdogHandler = android.os.Handler(android.os.Looper.getMainLooper())
 
@@ -532,7 +533,10 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                 // video focus for the new view's running stream.
                 projectionView.removeCallback(this)
                 videoDecoder.softwareYuvFrameSink = null
-                videoDecoder.stop(DecoderStopPolicy.REASON_PROJECTION_VIEW_RECREATE)
+                ownedSurface?.let {
+                    videoDecoder.detachSurfaceIfCurrent(it, DecoderStopPolicy.REASON_PROJECTION_VIEW_RECREATE)
+                }
+                ownedSurface = null
                 container.removeView(projectionView as View)
             }
             isSurfaceSet = false
@@ -1194,7 +1198,9 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         super.onStop()
         AppLog.i("AapProjectionActivity: onStop")
         if (!App.isPiPActive && !isChangingConfigurations) {
-            videoDecoder.stop(DecoderStopPolicy.REASON_ACTIVITY_STOPPED)
+            ownedSurface?.let {
+                videoDecoder.stopIfCurrentSurface(it, DecoderStopPolicy.REASON_ACTIVITY_STOPPED)
+            }
         }
     }
 
@@ -1950,19 +1956,26 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
 
     override fun onSurfaceChanged(surface: android.view.Surface, width: Int, height: Int) {
         AppLog.i("[UI_DEBUG] [AapProjectionActivity] onSurfaceChanged. Actual surface dimensions: width=$width, height=$height")
+        val surfaceChanged = ownedSurface !== surface || !videoDecoder.isCurrentSurface(surface)
         isSurfaceSet = true
 
         videoDecoder.setSurface(surface)
-        // A surface arriving inside a cycle's own gap must not strand the pending gain.
-        settleFocusCycle()
-        lastSurfaceSetMs = SystemClock.elapsedRealtime()
-        warmRelaunchCycleSpent = false
-        loggedKeyframelessPicture = false
-        watchdogHandler.removeCallbacks(warmRelaunchCheckRunnable)
-        watchdogHandler.postDelayed(
-            warmRelaunchCheckRunnable,
-            WarmRelaunchKeyframePolicy.ESCALATE_AFTER_SURFACE_MS
-        )
+        ownedSurface = surface
+        if (surfaceChanged) {
+            // A replacement target must not strand a pending gain. A resize of the same
+            // target must leave the deliberate release/regain gap intact.
+            settleFocusCycle()
+            // Size/layout callbacks for the same target must not postpone recovery or grant
+            // another focus cycle after this surface has already spent its one attempt.
+            lastSurfaceSetMs = SystemClock.elapsedRealtime()
+            warmRelaunchCycleSpent = false
+            loggedKeyframelessPicture = false
+            watchdogHandler.removeCallbacks(warmRelaunchCheckRunnable)
+            watchdogHandler.postDelayed(
+                warmRelaunchCheckRunnable,
+                WarmRelaunchKeyframePolicy.ESCALATE_AFTER_SURFACE_MS
+            )
+        }
 
         // --- Surface Mismatch Detection ---
         // Compare actual surface dimensions with what HeadUnitScreenConfig negotiated.
@@ -2015,7 +2028,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             }
             is CommManager.ConnectionState.TransportStarted -> {
                 // Surface recreated while transport was already running; request a keyframe.
-                commManager.send(VideoFocusEvent(gain = true, unsolicited = true))
+                if (surfaceChanged) commManager.send(VideoFocusEvent(gain = true, unsolicited = true))
             }
             else -> {
                 commManager.send(VideoFocusEvent(gain = true, unsolicited = false))
@@ -2037,6 +2050,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     }
 
     override fun onSurfaceDestroyed(surface: android.view.Surface) {
+        if (ownedSurface === surface) ownedSurface = null
         // A relaunched instance may already own the decoder: on a singleTask relaunch the old
         // instance's surface teardown is framework-ordered after its onDestroy, and for the GLES
         // backend one main-looper post later still, so it lands after the new instance's
@@ -2065,7 +2079,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                     "a touch - holding video focus so Android Auto keeps its keyboard up"
             )
         }
-        videoDecoder.stopIfCurrentSurface(surface, DecoderStopPolicy.REASON_SURFACE_DESTROYED)
+        videoDecoder.detachSurfaceIfCurrent(surface, DecoderStopPolicy.REASON_SURFACE_DESTROYED)
     }
 
 
@@ -2243,6 +2257,13 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     }
 
     override fun onDestroy() {
+        // TextureView/GLES destruction can arrive after this activity removes its callback.
+        // Stop our target now, while it is still valid, without touching a replacement owner.
+        ownedSurface?.let {
+            videoDecoder.detachSurfaceIfCurrent(it, DecoderStopPolicy.REASON_SURFACE_DESTROYED)
+        }
+        ownedSurface = null
+        isSurfaceSet = false
         super.onDestroy()
         autoStartOfferTimer?.cancel()
         autoStartOfferTimer = null

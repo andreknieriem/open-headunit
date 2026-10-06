@@ -679,7 +679,10 @@ class AapTransport(
         // Silent until it matters. A failed write here is how "the ByeBye went out" and "the link
         // was already gone" tell themselves apart, which is the whole question for a teardown
         // racing an interface going down.
-        if (size < 0) AppLog.w("AapTransport: send failed (ret=$size); the link is already gone")
+        if (size != ba.limit) {
+            AppLog.w("AapTransport: send incomplete (ret=$size of ${ba.limit})")
+            return -1
+        }
 
         if (AppLog.LOG_VERBOSE) {
             AppLog.v("Sent size: %d", size)

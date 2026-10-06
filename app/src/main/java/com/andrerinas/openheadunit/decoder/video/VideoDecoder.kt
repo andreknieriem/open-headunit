@@ -666,17 +666,21 @@ class VideoDecoder(
             if (!running || outputThread !== owner) null else update()
         }
 
-    private class OutputEvents {
-        private val pending = ArrayList<() -> Unit>()
-        fun info(message: String) { pending.add { AppLog.i(message) } }
-        fun warn(message: String) { pending.add { AppLog.w(message) } }
-        fun error(message: String) { pending.add { AppLog.e(message) } }
-        fun callback(action: (() -> Unit)?) { if (action != null) pending.add(action) }
+    internal class OutputEvents(private val origin: String = "VideoDecoder.outputThreadLoop") {
+        private data class Event(val callback: Boolean, val action: () -> Unit)
+        private val pending = ArrayList<Event>()
+        fun info(message: String, source: String = origin) { log(android.util.Log.INFO, source, message) }
+        fun warn(message: String, source: String = origin) { log(android.util.Log.WARN, source, message) }
+        fun error(message: String) { log(android.util.Log.ERROR, origin, message) }
+        private fun log(priority: Int, source: String, message: String) {
+            pending.add(Event(false) { AppLog.tagged(priority, source, message) })
+        }
+        fun callback(action: (() -> Unit)?) { if (action != null) pending.add(Event(true, action)) }
         fun dispatch(isCurrent: () -> Boolean) {
             try {
-                for (action in pending) {
-                    if (!isCurrent()) break
-                    action()
+                for (event in pending) {
+                    // Logs describe work already completed. Only callbacks can mutate a new owner.
+                    if (!event.callback || isCurrent()) event.action()
                 }
             } finally { pending.clear() }
         }
@@ -685,7 +689,7 @@ class VideoDecoder(
     private fun handleOutputFormatChange(owner: MediaCodec, format: MediaFormat) {
         val self = Thread.currentThread()
         val (newWidth, newHeight) = displaySizeOf(format)
-        val events = OutputEvents()
+        val events = OutputEvents("VideoDecoder.handleOutputFormatChange")
         publishOutput(self) {
             events.info("Output Format Changed: $format")
             if (mWidth != newWidth || mHeight != newHeight) {
@@ -2255,8 +2259,9 @@ class VideoDecoder(
         // indices would let one worker release the other's buffers against the wrong codec.
         val readyIndices = IntArray(MAX_CATCHUP_SKIPS + 2)
         val events = OutputEvents()
-        val info = events::info
-        val warn = events::warn
+        val info: (String) -> Unit = { events.info(it, "VideoDecoder.logThroughput") }
+        val warn: (String) -> Unit = { events.warn(it, "VideoDecoder.logThroughput") }
+        val concealmentWarning: (String) -> Unit = { events.warn(it, "VideoDecoder.applyConcealmentTransition") }
         val isCurrent = { running && outputThread === self }
         var consecutiveErrors = 0
         var lastOutputMs = elapsedRealtime()
@@ -2343,7 +2348,7 @@ class VideoDecoder(
                             keyframeRepaired = repaired,
                             sessionHasRendered = renderedThisSession,
                         )
-                        applyConcealmentTransition(outcome, passNow, warn)
+                        applyConcealmentTransition(outcome, passNow, concealmentWarning)
 
                     } ?: break
                     events.dispatch(isCurrent)
@@ -2474,7 +2479,7 @@ class VideoDecoder(
                                 keyframeRepaired = false,
                                 sessionHasRendered = renderedThisSession,
                             ),
-                            tickNow, warn
+                            tickNow, concealmentWarning
                         )
                     }
 
@@ -2590,6 +2595,8 @@ class VideoDecoder(
                 try { Thread.sleep(50) } catch (ignore: Exception) {}
             }
         }
+        // A stop between publication and dispatch must not erase the last diagnostic window.
+        events.dispatch(isCurrent)
         AppLog.i("Output thread stopped")
     }
 

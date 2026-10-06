@@ -2799,6 +2799,9 @@ class AapService : Service() {
         }
 
         when (intent?.action) {
+            // Automation starts the service with this action; Quick Settings uses the receiver.
+            // Both entry points restart the current audio tracks without reconnecting projection.
+            ACTION_RESTART_AUDIO         -> commManager.restartAudio()
             ACTION_START_SELF_MODE       -> selfLauncherManager.start()
             ACTION_STOP_SELF_MODE        -> selfLauncherManager.stop(wasConnected = commManager.isConnected)
             ACTION_START_WIRELESS        -> {

@@ -770,11 +770,17 @@ class VideoDecoder(
         true
     }
 
-    /**
-     * Stops the decoder, terminates the output thread, and releases hardware resources.
-     */
+    /** Changes only when lifecycle teardown loses references while a Surface can survive. */
+    @Volatile internal var surfaceStopGeneration = 0L
+        private set
+
+    /** Stops the decoder, terminates the output thread, and releases hardware resources. */
     fun stop(reason: String = "unknown") {
         synchronized(this) {
+            if (reason == DecoderStopPolicy.REASON_ACTIVITY_STOPPED ||
+                reason == DecoderStopPolicy.REASON_SCREEN_OFF_SLEEP) {
+                surfaceStopGeneration++
+            }
             val retiredOutput = synchronized(outputPublicationLock) {
                 running = false
                 outputThread.also { outputThread = null }

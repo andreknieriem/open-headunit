@@ -165,7 +165,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                     sessionLive = ProjectionWatchdogPolicy.isSessionLive(commManager.connectionState.value),
                     surfaceSet = isSurfaceSet,
                     crediblePictureOnSurface = videoDecoder.hasCrediblePicture,
-                    warmRelaunchCycleSpent = warmRelaunchCycleSpent,
+                    warmRelaunchCycleSpent = relaunchRecovery.cycleSpent,
                 )
             ) return
 
@@ -239,10 +239,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     private var lastProjectionTouchMs = 0L
 
     private var lastSurfaceSetMs = 0L
-    private var warmRelaunchCycleSpent = false
-
-    /** One line per surface, not per tick: the gray-P-frame case is worth naming exactly once. */
-    private var loggedKeyframelessPicture = false
+    private val relaunchRecovery = com.andrerinas.openheadunit.decoder.video.SurfaceRecoveryState()
 
     /**
      * A relaunch handed the decoder a fresh surface and no picture has followed it.
@@ -260,10 +257,10 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     private fun maybeRecoverWarmRelaunch() {
         if (lastSurfaceSetMs == 0L) return
         val now = SystemClock.elapsedRealtime()
-        if (!loggedKeyframelessPicture &&
+        if (!relaunchRecovery.loggedKeyframelessPicture &&
             videoDecoder.lastFrameRenderedMs != 0L && !videoDecoder.hasCrediblePicture
         ) {
-            loggedKeyframelessPicture = true
+            relaunchRecovery.loggedKeyframelessPicture = true
             AppLog.w(
                 "AapProjectionActivity: frames are rendering but no keyframe has decoded since the " +
                     "codec started - counting this surface as having no picture"
@@ -279,7 +276,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             // this escalation for the whole of exactly the case it is needed in.
             msSinceLinkActivity = linkQuietMs(),
             linkQuietThresholdMs = ProjectionWatchdogPolicy.LINK_QUIET_MS,
-            cycleAlreadySpent = warmRelaunchCycleSpent,
+            cycleAlreadySpent = relaunchRecovery.cycleSpent,
             msSinceLastRequest = now - lastVideoFocusRequestMs
         )
         when (action) {
@@ -297,7 +294,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                     AppLog.w("AapProjectionActivity: relaunched surface has no picture, but a focus cycle is already in flight - waiting for it")
                     return
                 }
-                warmRelaunchCycleSpent = true
+                relaunchRecovery.cycleSpent = true
                 lastVideoFocusRequestMs = now
                 AppLog.w("AapProjectionActivity: relaunched surface has no picture after ${now - lastSurfaceSetMs}ms - cycling video focus")
                 focusCycleGainPending = true
@@ -324,8 +321,6 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     /** Starts the no-picture window afresh, for a new surface or a return to a kept one. */
     private fun armWarmRelaunch() {
         lastSurfaceSetMs = SystemClock.elapsedRealtime()
-        warmRelaunchCycleSpent = false
-        loggedKeyframelessPicture = false
         watchdogHandler.removeCallbacks(warmRelaunchCheckRunnable)
         watchdogHandler.postDelayed(
             warmRelaunchCheckRunnable,
@@ -333,12 +328,12 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         )
     }
 
-    /** Set when onStop stopped the decoder, so onResume knows a kept surface needs re-arming. */
-    private var decoderStoppedOnStop = false
     private var resumedAtMs = 0L
     private val returnRearmRunnable = Runnable {
-        val stopped = decoderStoppedOnStop
-        decoderStoppedOnStop = false
+        // A kept TextureView can return without a surface callback. Consume the same stop
+        // generation here so a later callback cannot grant another recovery cycle.
+        val stopped = isSurfaceSet && lastSurfaceSetMs < resumedAtMs &&
+            relaunchRecovery.onSurfaceChanged(false, videoDecoder.surfaceStopGeneration)
         if (ReturnRearmPolicy.shouldRearm(stopped, isSurfaceSet, lastSurfaceSetMs, resumedAtMs)) {
             AppLog.i("AapProjectionActivity: returned to a kept surface with a stopped decoder; re-arming keyframe recovery")
             armWarmRelaunch()
@@ -562,7 +557,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                 videoDecoder.softwareYuvFrameSink = null
                 ownedSurface?.let {
                     videoDecoder.detachSurfaceIfCurrent(it, DecoderStopPolicy.REASON_PROJECTION_VIEW_RECREATE)
-                }
+                } ?: AppLog.i("Decoder detach (projection_view_recreate) skipped: activity has no owned surface")
                 ownedSurface = null
                 container.removeView(projectionView as View)
             }
@@ -1024,6 +1019,18 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             }
         })
 
+        // Observe session boundaries even while the Activity is stopped. A reconnect may
+        // complete in the background without creating a new Surface.
+        lifecycleScope.launch {
+            commManager.connectionState.collect { state ->
+                if (state is CommManager.ConnectionState.Disconnected ||
+                    state is CommManager.ConnectionState.Connecting ||
+                    state is CommManager.ConnectionState.HandshakeComplete) {
+                    relaunchRecovery.resetSession()
+                }
+            }
+        }
+
         var isFirstEmission = true
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -1226,9 +1233,12 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         super.onStop()
         AppLog.i("AapProjectionActivity: onStop")
         if (!App.isPiPActive && !isChangingConfigurations) {
-            decoderStoppedOnStop = ownedSurface?.let {
-                videoDecoder.stopIfCurrentSurface(it, DecoderStopPolicy.REASON_ACTIVITY_STOPPED)
-            } == true
+            val surface = ownedSurface
+            if (surface == null) {
+                AppLog.i("Decoder stop (activity_stopped) skipped: activity has no owned surface")
+            } else {
+                videoDecoder.stopIfCurrentSurface(surface, DecoderStopPolicy.REASON_ACTIVITY_STOPPED)
+            }
         }
     }
 
@@ -1987,7 +1997,10 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
 
     override fun onSurfaceChanged(surface: android.view.Surface, width: Int, height: Int) {
         AppLog.i("[UI_DEBUG] [AapProjectionActivity] onSurfaceChanged. Actual surface dimensions: width=$width, height=$height")
-        val surfaceChanged = ownedSurface !== surface || !videoDecoder.isCurrentSurface(surface)
+        val surfaceChanged = relaunchRecovery.onSurfaceChanged(
+            ownedSurface !== surface || !videoDecoder.isCurrentSurface(surface),
+            videoDecoder.surfaceStopGeneration,
+        )
         isSurfaceSet = true
 
         videoDecoder.setSurface(surface)
@@ -1998,14 +2011,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             settleFocusCycle()
             // Size/layout callbacks for the same target must not postpone recovery or grant
             // another focus cycle after this surface has already spent its one attempt.
-            lastSurfaceSetMs = SystemClock.elapsedRealtime()
-            warmRelaunchCycleSpent = false
-            loggedKeyframelessPicture = false
-            watchdogHandler.removeCallbacks(warmRelaunchCheckRunnable)
-            watchdogHandler.postDelayed(
-                warmRelaunchCheckRunnable,
-                WarmRelaunchKeyframePolicy.ESCALATE_AFTER_SURFACE_MS
-            )
+            armWarmRelaunch()
         }
 
         // --- Surface Mismatch Detection ---
@@ -2292,7 +2298,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         // Stop our target now, while it is still valid, without touching a replacement owner.
         ownedSurface?.let {
             videoDecoder.detachSurfaceIfCurrent(it, DecoderStopPolicy.REASON_SURFACE_DESTROYED)
-        }
+        } ?: AppLog.i("Decoder detach (surfaceDestroyed) skipped: activity has no owned surface")
         ownedSurface = null
         isSurfaceSet = false
         super.onDestroy()

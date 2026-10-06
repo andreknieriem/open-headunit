@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.view.Surface
 import com.andrerinas.openheadunit.utils.Settings
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -33,11 +34,13 @@ class VideoSurfaceRetirementTest {
         decoder.stopIfCurrentSurface(target, DecoderStopPolicy.REASON_ACTIVITY_STOPPED)
         assertTrue(decoder.isCurrentSurface(target))
         assertTrue(decoder.detachSurfaceIfCurrent(target, DecoderStopPolicy.REASON_SURFACE_DESTROYED))
+        val stoppedGeneration = decoder.surfaceStopGeneration
         assertTrue(target.isValid)
         assertTrue(decoder.isCurrentSurface(target))
         assertFalse(decoder.stopIfCurrentSurface(target, DecoderStopPolicy.REASON_ACTIVITY_STOPPED))
         assertTrue(decoder.detachSurfaceIfCurrent(target, DecoderStopPolicy.REASON_SURFACE_DESTROYED))
         assertTrue(decoder.isCurrentSurface(target))
+        assertEquals(stoppedGeneration, decoder.surfaceStopGeneration)
     }
 
     @Test fun `late old activity callbacks cannot retire the replacement target`() {
@@ -64,4 +67,25 @@ class VideoSurfaceRetirementTest {
         decoder.setSurface(target)
         assertTrue(decoder.isCurrentSurface(target))
     }
+    @Test fun `service sleep re-arms retained surface once without activity stop`() {
+        val decoder = decoder()
+        val surface = surface()
+        val recovery = SurfaceRecoveryState()
+        decoder.setSurface(surface)
+        recovery.onSurfaceChanged(true, decoder.surfaceStopGeneration)
+        recovery.cycleSpent = true
+        decoder.stop(DecoderStopPolicy.REASON_SCREEN_OFF_SLEEP)
+        assertTrue(decoder.isCurrentSurface(surface))
+        // TEXTURE can resume without onSurfaceChanged; the delayed return path consumes the
+        // stop generation and the later same-surface callback must not grant a second cycle.
+        val stopped = recovery.onSurfaceChanged(false, decoder.surfaceStopGeneration)
+        assertTrue(com.andrerinas.openheadunit.aap.ReturnRearmPolicy.shouldRearm(stopped, true, 100L, 200L))
+        assertFalse(recovery.cycleSpent)
+        recovery.cycleSpent = true
+        assertFalse(recovery.onSurfaceChanged(false, decoder.surfaceStopGeneration))
+        decoder.stop("restart: sync_stall")
+        assertFalse(recovery.onSurfaceChanged(false, decoder.surfaceStopGeneration))
+        assertTrue(recovery.cycleSpent)
+    }
+
 }

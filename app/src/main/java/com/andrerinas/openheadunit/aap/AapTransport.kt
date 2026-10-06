@@ -705,9 +705,19 @@ class AapTransport(
             .build()
         val msg =
             AapMessage(Channel.ID_CTR, Control.ControlMsgType.MESSAGE_BYEBYE_REQUEST_VALUE, byebye)
-        send(msg)
-        SystemClock.sleep(150)
-        quit()
+        try {
+            val handler = sendHandler
+            // The current write keeps its TLS order; ByeBye goes ahead of queued media ACKs.
+            // The deadline still bounds shutdown when that in-flight write cannot finish.
+            val delivery = FinalMessageDelivery.send(
+                onWriterThread = Thread.currentThread() === sendThread,
+                enqueueFirst = { handler?.postAtFrontOfQueue(it) == true },
+                write = { sendEncryptedMessage(msg.data, msg.size) == 0 },
+            )
+            AppLog.i("AapTransport: ByeBye write $delivery")
+        } finally {
+            quit()
+        }
     }
 
     /** Keep capture teardown separate from transport worker retirement. */

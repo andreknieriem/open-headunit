@@ -82,7 +82,10 @@ class AapTransport(
         private val onAaPlaybackStatus: ((MediaPlayback.MediaPlaybackStatus) -> Unit)? = null,
         private val externalSsl: AapSslContext? = null) {
 
-    val ssl: AapSsl = externalSsl ?: AapSslContext(SingleKeyKeyManager(context))
+    val ssl: AapSsl = externalSsl?.newSession() ?: AapSslContext(SingleKeyKeyManager(context))
+    private val tlsWriter = AapTlsWriter(ssl) { bytes, size ->
+        connection?.sendBlocking(bytes, size, 250) ?: -1
+    }
 
     internal val aapAudio: AapAudio
     internal val aapVideo: AapVideo
@@ -184,10 +187,14 @@ class AapTransport(
         // socket, so the write's own duration is the time the uplink refused to drain.
         val startedMs = SystemClock.elapsedRealtime()
         val queueMs = (SystemClock.uptimeMillis() - it.`when`).coerceAtLeast(0)
-        this.sendEncryptedMessage(
+        val result = this.sendEncryptedMessage(
             data = it.obj as ByteArray,
             length = it.arg2
         )
+        if (result < 0) {
+            quit()
+            return@Callback true
+        }
         val finishedMs = SystemClock.elapsedRealtime()
         val channel = (it.obj as ByteArray)[0].toInt() and 0xff
         if (audioTimingActive && Channel.isAudio(channel) && finishedMs >= nextSendTimingMs &&
@@ -708,28 +715,9 @@ class AapTransport(
      * does not split messages or add FIRST's optional total-length field.
      */
     private fun sendEncryptedMessage(data: ByteArray, length: Int): Int {
-        val ba =
-            ssl.encrypt(AapMessage.HEADER_SIZE, length - AapMessage.HEADER_SIZE, data) ?: return -1
-
-        ba.data[0] = data[0]
-        ba.data[1] = data[1]
-        Utils.intToBytes(ba.limit - AapMessage.HEADER_SIZE, 2, ba.data)
-
-        val size = connection?.sendBlocking(ba.data, ba.limit, 250) ?: -1
-
-        // Silent until it matters. A failed write here is how "the ByeBye went out" and "the link
-        // was already gone" tell themselves apart, which is the whole question for a teardown
-        // racing an interface going down.
-        if (size != ba.limit) {
-            AppLog.w("AapTransport: send incomplete (ret=$size of ${ba.limit})")
-            return -1
-        }
-
-        if (AppLog.LOG_VERBOSE) {
-            AppLog.v("Sent size: %d", size)
-            // AapDump.logvHex("US", 0, ba.data, ba.limit) // AapDump might be removed or changed
-        }
-        return 0
+        if (tlsWriter.send(data, length)) return 0
+        AppLog.w("AapTransport: encrypted write failed or incomplete")
+        return -1
     }
 
     internal fun pauseForSleep() {
@@ -1157,6 +1145,12 @@ class AapTransport(
             }
 
             ssl.postHandshakeReset()
+            ssl.setControlRecordListener {
+                sendHandler?.post {
+                    val sent = tlsWriter.flushControl()
+                    if (!sent) quit()
+                }
+            }
             AppLog.d("Handshake: SSL buffers reset after handshake.")
 
             AppLog.d("Handshake: SSL handshake complete. TS: ${SystemClock.elapsedRealtime()}")

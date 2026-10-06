@@ -53,6 +53,9 @@ internal class AapMessageIncoming(header: EncryptedHeader, ba: ByteArrayWithLimi
             }
 
             val ba = ssl.decrypt(offset, header.enc_len, buf) ?: return null
+            // Complete TLS control frames may have no AAP message bytes. Continuations still
+            // carry their fragment boundary: an empty LAST must finish the preceding assembly.
+            if (ba.limit == 0 && AapMessageFraming.carriesMessageType(header.flags)) return null
 
             // A fragmented message may split even its type or timestamp across fragments.
             // Use ba.limit, not ba.data.size: TLS reuses a larger backing array, whose unused

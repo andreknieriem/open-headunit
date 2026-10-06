@@ -51,6 +51,10 @@ internal class AapReadMultipleMessages(
             }
             fifo.put(recvBuffer, 0, size)
             processBulk()
+        } catch (e: javax.net.ssl.SSLException) {
+            AppLog.e("AapRead: TLS state cannot continue", e)
+            fifo.clear()
+            return -1
         } catch (e: Exception) {
             AppLog.e("AapRead: Error in processBulk: ${e.message}")
             fifo.clear()

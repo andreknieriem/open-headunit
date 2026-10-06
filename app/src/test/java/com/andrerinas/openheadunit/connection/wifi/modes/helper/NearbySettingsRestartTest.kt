@@ -15,6 +15,7 @@ class NearbySettingsRestartTest {
     @Test fun `fallback preserves a pending endpoint and its bandwidth upgrade`() {
         for (connecting in listOf(false, true)) {
             val manager = mock(NearbyManager::class.java, CALLS_REAL_METHODS)
+            NearbyManager::class.java.getDeclaredField("attempts").apply { isAccessible = true }.set(manager, NearbyAttemptGuard())
             NearbyManager::class.java.getDeclaredField("isConnecting").apply { isAccessible = true }.set(manager, connecting)
             NearbyManager::class.java.getDeclaredField("activeEndpointId").apply { isAccessible = true }
                 .set(manager, if (connecting) null else "joining-phone")
@@ -22,6 +23,7 @@ class NearbySettingsRestartTest {
             verify(manager, never()).start()
         }
         val idle = mock(NearbyManager::class.java, CALLS_REAL_METHODS)
+        NearbyManager::class.java.getDeclaredField("attempts").apply { isAccessible = true }.set(idle, NearbyAttemptGuard())
         doNothing().`when`(idle).start()
         idle.resumeDiscoveryIfIdle()
         verify(idle).start()
@@ -41,7 +43,7 @@ class NearbySettingsRestartTest {
         mockStatic(android.os.SystemClock::class.java).use {
         mockStatic(Nearby::class.java).use { nearby ->
             nearby.`when`<ConnectionsClient> { Nearby.getConnectionsClient(context) }.thenReturn(client)
-            val manager = NearbyManager(context, scope) {}
+            val manager = NearbyManager(context, scope) { _, _ -> }
             fun set(name: String, value: Any?) = NearbyManager::class.java.getDeclaredField(name).apply { isAccessible = true }.set(manager, value)
             val old = NearbySocket()
             set("activeEndpointId", "old-id")
@@ -83,7 +85,7 @@ class NearbySettingsRestartTest {
             clock.`when`<Long> { android.os.SystemClock.elapsedRealtime() }.thenAnswer { now }
         mockStatic(Nearby::class.java).use { nearby ->
             nearby.`when`<ConnectionsClient> { Nearby.getConnectionsClient(context) }.thenReturn(client)
-            val manager = NearbyManager(context, scope) {}
+            val manager = NearbyManager(context, scope) { _, _ -> }
             fun set(name: String, value: Any?) = NearbyManager::class.java.getDeclaredField(name).apply { isAccessible = true }.set(manager, value)
 
             manager.restartForSettings(untilMs = 200L)

@@ -319,6 +319,7 @@ class SessionStateIntent(
         const val STATE_FAILED = "failed"
 
         const val REASON_USER_EXIT = "user_exit"
+        const val REASON_SETTINGS_RESTART = "settings_restart"
         const val REASON_LINK_LOST = "link_lost"
         const val REASON_PHONE_LEFT = "phone_left"
         const val REASON_HANDSHAKE_FAILED = "handshake_failed"

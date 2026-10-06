@@ -1220,6 +1220,7 @@ class AapService : Service() {
                             emitSessionState(
                                 SessionStateIntent.STATE_DISCONNECTED,
                                 when {
+                                    state.isSettingsRestart -> SessionStateIntent.REASON_SETTINGS_RESTART
                                     state.isUserExit -> SessionStateIntent.REASON_USER_EXIT
                                     !state.isClean -> SessionStateIntent.REASON_LINK_LOST
                                     else -> SessionStateIntent.REASON_PHONE_LEFT
@@ -1534,6 +1535,10 @@ class AapService : Service() {
      */
     private fun onDisconnected(state: CommManager.ConnectionState.Disconnected) {
         cancelProjectionRaiseDeadline()
+        if (state.isSettingsRestart) {
+            // Stand down queued automatic wakes before waiting for the old transport.
+            (wifiLauncherManager.active as? WifiLauncherNative)?.handshakeManager?.noteSessionEnded(false)
+        }
         // A bye-bye is a deliberate disconnection, not a wireless failure: the listeners reopen
         // behind it and the stage they report would otherwise read as a reconnect nobody asked for.
         if (!state.isUserExit && state.isClean) {
@@ -1578,6 +1583,13 @@ class AapService : Service() {
         safeMediaSessionCall { it.isActive = false }
         updateMediaSessionState(false)
         serviceScope.launch(Dispatchers.IO) {
+            if (state.isSettingsRestart) {
+                // Reuse the current route only after its workers have released shared resources.
+                commManager.awaitDisconnectComplete()
+                if (commManager.connectionState.value !== state || isDestroying) return@launch
+                restartForAudioSettings(state)
+                return@launch
+            }
             val rearmedAfterWiredSession = rearmWirelessAfterWiredSession()
             ConnectionArbiter.sessionEnded(wirelessAlreadyRearmed = rearmedAfterWiredSession, userExit = state.isUserExit)
 
@@ -1735,7 +1747,31 @@ class AapService : Service() {
             AppLog.i("AapService: User exit cooldown active for ${USER_EXIT_COOLDOWN_MS}ms")
         }
 
-        scheduleReconnectIfNeeded(state)
+        if (!state.isSettingsRestart) scheduleReconnectIfNeeded(state)
+    }
+
+    /** Resume the route deliberately ended by Save, without link-loss recovery side effects. */
+    private suspend fun restartForAudioSettings(state: CommManager.ConnectionState.Disconnected) {
+        val settings = App.provide(this).settings
+        when {
+            state.restartEndpoint != null -> {
+                val (ip, port) = state.restartEndpoint
+                commManager.connect(ip, port)
+            }
+            settings.lastConnectionType == Settings.CONNECTION_TYPE_USB ->
+                usbLauncherManager.checkAlreadyConnected(force = true, userRequested = true)
+            settings.lastConnectionType == Settings.CONNECTION_TYPE_NEARBY -> {
+                withContext(Dispatchers.Main) {
+                    if (commManager.connectionState.value === state && !isDestroying) {
+                        (wifiLauncherManager.active as? WifiLauncherHelper)?.nearbyManager?.restartForSettings()
+                    }
+                }
+            }
+            wifiLauncherManager.activeMode == WifiLauncherMode.NATIVE -> {
+                (wifiLauncherManager.active as? WifiLauncherNative)?.rearmAfterSessionEnd(wakePhone = false)
+            }
+            else -> wifiLauncherManager.restartDiscovery()
+        }
     }
 
     /**

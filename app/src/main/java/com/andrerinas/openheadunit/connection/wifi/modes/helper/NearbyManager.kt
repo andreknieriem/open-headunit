@@ -56,6 +56,7 @@ class NearbyManager(
     private val STRATEGY = Strategy.P2P_POINT_TO_POINT
     private var isRunning = false
     private var isConnecting = false
+    private var settingsRestartPeer: String? = null
 
     // Written on the Nearby callback thread, read from the upgrade-timeout and tunnel coroutines.
     @Volatile
@@ -133,7 +134,16 @@ class NearbyManager(
         return true
     }
 
+    /** Save grants one retry of the same peer even when automatic connection is disabled. */
+    fun restartForSettings() {
+        val peer = settings.lastNearbyDeviceName.takeIf { it.isNotEmpty() } ?: return
+        stop()
+        settingsRestartPeer = peer
+        start()
+    }
+
     fun stop() {
+        settingsRestartPeer = null
         AppLog.i("NearbyManager: Stopping discovery and disconnecting from any active endpoint...")
         isRunning = false
         isConnecting = false
@@ -172,6 +182,7 @@ class NearbyManager(
             AppLog.i("NearbyManager: Already connected to $endpointId, ignoring duplicate request")
             return
         }
+        settingsRestartPeer = null
         AppLog.i("NearbyManager: Requesting connection to endpoint: $endpointId")
         // Nothing has been reported about this attempt yet, so nothing may be carried into it.
         lastQuality.remove(endpointId)
@@ -206,6 +217,16 @@ class NearbyManager(
             if (current.none { it.id == endpointId }) {
                 current.add(DiscoveredEndpoint(endpointId, info.endpointName))
                 _discoveredEndpoints.value = current
+            }
+
+            // A settings retry follows only the peer whose tunnel was just retired. Discovery
+            // supplies its current endpoint ID; the previous ID need not survive disconnect.
+            val restartPeer = settingsRestartPeer
+            if (restartPeer != null) {
+                if (restartPeer == info.endpointName && !isConnecting && activeEndpointId == null) {
+                    connectToEndpoint(endpointId)
+                }
+                return
             }
 
             // Auto-connect logic

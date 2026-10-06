@@ -178,7 +178,7 @@ class NetworkListFragment : Fragment(), NetworkDiscovery.Listener {
                 )
                 lifecycleScope.launch(Dispatchers.IO) {
                     if (socket != null && socket.isConnected)
-                        App.provide(ctx).commManager.connect(socket, ConnectionPriorityPolicy.Tier.USER)
+                        App.provide(ctx).commManager.connect(socket, ConnectionPriorityPolicy.Tier.USER, restartEndpoint = ip to port)
                     else
                         App.provide(ctx).commManager.connect(ip, 5277, ConnectionPriorityPolicy.Tier.USER)
                     ContextCompat.startForegroundService(ctx, Intent(ctx, AapService::class.java).apply {

@@ -38,8 +38,9 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import java.util.concurrent.*
 
+enum class DisconnectReason { CONNECTION_ENDED, SETTINGS_RESTART }
 sealed class ConnectionState {
- data class Disconnected(val isClean:Boolean=false,val isUserExit:Boolean=false):ConnectionState()
+ data class Disconnected(val isClean:Boolean=false,val isUserExit:Boolean=false, val reason:DisconnectReason=DisconnectReason.CONNECTION_ENDED, val restartEndpoint:Pair<String,Int>?=null):ConnectionState()
  object Connecting:ConnectionState();object Connected:ConnectionState();object StartingTransport:ConnectionState()
  object HandshakeComplete:ConnectionState();object TransportStarted:ConnectionState()
  data class Error(val message:String):ConnectionState()
@@ -54,6 +55,7 @@ class CommManager {
  private val transportLifecycleLock=Any()
  private var disconnectRequested=false
  private var connectionAttempt:Any?=null
+ private var outgoingEndpoint:Pair<String,Int>?=null
  @Volatile private var _transport:AapTransport?=null
  @Volatile private var _connection:ProjectionConnection?=ProjectionConnection()
  private val _backgroundNotification=Unit
@@ -77,7 +79,7 @@ class CommManager {
  private var btMediaLinkCheckedAt:Long?=null
  private fun noteHandshakeOutcome(silent:Boolean){}
  private fun settleSessionClaim(formed:Boolean){}
- private fun noteSessionEnded(renderedAnyFrame:Boolean){}
+ private fun noteSessionEnded(renderedAnyFrame:Boolean, settingsRestart:Boolean=false){}
  val state get()=_connectionState.value
  fun owner()=checkNotNull(_transport)
  fun nullableOwner()=_transport

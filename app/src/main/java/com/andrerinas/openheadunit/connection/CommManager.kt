@@ -84,6 +84,8 @@ class CommManager(
     // abbreviated TLS handshakes on reconnect (session resumption).
     private val aapSslContext: AapSslContext = AapSslContext(SingleKeyKeyManager(context))
 
+    enum class DisconnectReason { CONNECTION_ENDED, SETTINGS_RESTART }
+
     /**
      * Represents the lifecycle state of the Android Auto connection.
      *
@@ -98,8 +100,13 @@ class CommManager(
          */
         data class Disconnected(
             val isClean: Boolean = false,
-            val isUserExit: Boolean = false
-        ) : ConnectionState()
+            val isUserExit: Boolean = false,
+            val reason: DisconnectReason = DisconnectReason.CONNECTION_ENDED,
+            // Only outgoing IP connections are dialled again; an accepted socket's port is ephemeral.
+            val restartEndpoint: Pair<String, Int>? = null,
+        ) : ConnectionState() {
+            val isSettingsRestart get() = reason == DisconnectReason.SETTINGS_RESTART
+        }
 
         /** Physical connection handshake in progress (USB open or TCP connect). */
         object Connecting : ConnectionState()
@@ -189,6 +196,8 @@ class CommManager(
      * `disconnect()` follows the emit, so the value has moved on before any collector resumes.
      */
     var onSessionFailure: ((reason: String) -> Unit)? = null
+    // Written with the connection token under transportLifecycleLock.
+    private var outgoingEndpoint: Pair<String, Int>? = null
     @Volatile private var _connection: ProjectionConnection? = null
 
     /**
@@ -320,6 +329,7 @@ class CommManager(
 
         var conn: ProjectionConnection? = null
         val (attempt, previous) = synchronized(transportLifecycleLock) {
+            outgoingEndpoint = null
             val token = Any()
             connectionAttempt = token
             disconnectRequested = false
@@ -380,6 +390,7 @@ class CommManager(
     suspend fun connect(
         socket: Socket,
         tier: ConnectionPriorityPolicy.Tier = ConnectionPriorityPolicy.Tier.WIRELESS_HANDSHAKE,
+        restartEndpoint: Pair<String, Int>? = null,
     ) = withContext(Dispatchers.IO) {
         val claim = ConnectionArbiter.claim(tier, socketOwner(tier),
             "the socket from ${socket.inetAddress?.hostAddress}")
@@ -390,13 +401,13 @@ class CommManager(
         }
         noteClaimedEndpoint(claim, socketEndpoint(socket))
         HeldServerSocket.settle(socket)
-        try { connectSocket(socket) } finally { releaseClaim(claim) }
+        try { connectSocket(socket, restartEndpoint) } finally { releaseClaim(claim) }
     }
 
     private fun socketEndpoint(socket: Socket): String? =
         socket.inetAddress?.hostAddress?.let { SameEndpointConnectPolicy.endpoint(it, socket.port) }
 
-    private suspend fun connectSocket(socket: Socket) {
+    private suspend fun connectSocket(socket: Socket, restartEndpoint: Pair<String, Int>?) {
         // Another caller already started the connection — do nothing.
         if (_connectionState.value is ConnectionState.Connecting) {
             // [BUG_FIX] But close what we are refusing. A socket handed to connect() has no
@@ -421,6 +432,7 @@ class CommManager(
 
         var conn: ProjectionConnection? = null
         val (attempt, previous) = synchronized(transportLifecycleLock) {
+            outgoingEndpoint = restartEndpoint
             val token = Any()
             connectionAttempt = token
             disconnectRequested = false
@@ -511,6 +523,7 @@ class CommManager(
 
         var conn: ProjectionConnection? = null
         val (attempt, previous) = synchronized(transportLifecycleLock) {
+            outgoingEndpoint = ip to port
             val token = Any()
             connectionAttempt = token
             disconnectRequested = false
@@ -1084,14 +1097,14 @@ class CommManager(
     /**
      * Apply saved audio preferences without destroying the service/process. Rebuilding tracks
      * cannot renegotiate PCM/AAC or replace a session's focus policy. End that session instead;
-     * the existing reconnect paths can then negotiate the new settings. Manual connections may
-     * need the user to reconnect, but must never carry audio under a half-updated configuration.
+     * a settings restart reuses the saved route without reporting a link failure.
      */
     fun applyAudioSettings(): Unit = synchronized(transportLifecycleLock) {
         val audio = _transport?.aapAudio ?: return@synchronized
         if (audio.needsSessionRestart()) {
             AppLog.i("CommManager: audio settings changed; reconnecting the projection session")
-            disconnect(isUserExit = false, honorKillOnDisconnect = false)
+            disconnect(isUserExit = false, honorKillOnDisconnect = false,
+                reason = DisconnectReason.SETTINGS_RESTART)
         } else {
             audio.restartAudio()
         }
@@ -1120,7 +1133,8 @@ class CommManager(
         byeByeReason: com.andrerinas.openheadunit.aap.protocol.proto.Control.ByeByeReason = com.andrerinas.openheadunit.aap.protocol.proto.Control.ByeByeReason.USER_SELECTION,
         // A disconnect the app itself takes in order to show something next cannot honour "close
         // app on disconnect": there would be nothing left to show it on.
-        honorKillOnDisconnect: Boolean = true
+        honorKillOnDisconnect: Boolean = true,
+        reason: DisconnectReason = DisconnectReason.CONNECTION_ENDED,
     ): Unit = synchronized(transportLifecycleLock) {
         if (disconnectRequested || _connectionState.value is ConnectionState.Disconnected) return@synchronized
         disconnectRequested = true
@@ -1130,8 +1144,11 @@ class CommManager(
         if (isUserExit) {
             _transport?.wasUserExit = true
         }
-        _disconnectJob = _scope.launch { doDisconnect(sendByeBye, byeByeReason) }
-        _connectionState.value = ConnectionState.Disconnected(isUserExit = isUserExit)
+        _disconnectJob = _scope.launch { doDisconnect(sendByeBye, byeByeReason, reason) }
+        _connectionState.value = ConnectionState.Disconnected(
+            isUserExit = isUserExit, reason = reason,
+            restartEndpoint = if (reason == DisconnectReason.SETTINGS_RESTART) outgoingEndpoint else null,
+        )
         if (settings.killOnDisconnect && honorKillOnDisconnect) {
             context.sendBroadcast(android.content.Intent("com.andrerinas.openheadunit.ACTION_FINISH_ACTIVITIES").apply {
                 setPackage(context.packageName)
@@ -1179,7 +1196,8 @@ class CommManager(
      */
     private fun doDisconnect(
         sendByeBye: Boolean = true,
-        byeByeReason: com.andrerinas.openheadunit.aap.protocol.proto.Control.ByeByeReason = com.andrerinas.openheadunit.aap.protocol.proto.Control.ByeByeReason.USER_SELECTION
+        byeByeReason: com.andrerinas.openheadunit.aap.protocol.proto.Control.ByeByeReason = com.andrerinas.openheadunit.aap.protocol.proto.Control.ByeByeReason.USER_SELECTION,
+        reason: DisconnectReason = DisconnectReason.CONNECTION_ENDED,
     ) {
         val (transport, connection, closeAudio) = synchronized(transportLifecycleLock) {
             // destroy() also reaches this path without a preceding disconnect(). Retire an
@@ -1207,7 +1225,7 @@ class CommManager(
         // Self-guarding against the re-entrant second call described above: the flag is consumed
         // here, so the second pass sees a session that never reached the handshake and counts
         // nothing.
-        noteSessionEnded(renderedAnyFrame = videoDecoder.framesRenderedThisSession > 0L)
+        noteSessionEnded(renderedAnyFrame = videoDecoder.framesRenderedThisSession > 0L, settingsRestart = reason == DisconnectReason.SETTINGS_RESTART)
         // The close is in its own phase because it is the one that must happen: a throw from the
         // ByeBye send or either decoder stop used to skip it, leaving the phone's head unit server
         // holding a peer that never came back. See TeardownGuard.
@@ -1250,9 +1268,11 @@ class CommManager(
      * would uncap, starve three more times and earn it again forever. Only the user changing the
      * resolution or the frame rate takes it off (`SettingsFragment`).
      */
-    private fun noteSessionEnded(renderedAnyFrame: Boolean) {
+    private fun noteSessionEnded(renderedAnyFrame: Boolean, settingsRestart: Boolean = false) {
         val reachedHandshake = sessionReachedHandshake
         sessionReachedHandshake = false
+        // An intentional renegotiation says nothing about the link's ability to carry video.
+        if (settingsRestart) return
         starvedSessionStreak = VideoStarvationPolicy.nextStreak(
             starvedSessionStreak, reachedHandshake, renderedAnyFrame
         )

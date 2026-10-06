@@ -26,4 +26,19 @@ class AudioSettingsRestartTest {
         verify(manager, never()).applyAudioSettings()
     }
 
+    @Test fun `intentional restart consumes session accounting without advancing starvation streak`() {
+        val manager = mock(CommManager::class.java, CALLS_REAL_METHODS)
+        val settings = mock(Settings::class.java)
+        field(manager, "settings", settings)
+        field(manager, "sessionReachedHandshake", true)
+        field(manager, "starvedSessionStreak", 2)
+        val end = CommManager::class.java.getDeclaredMethod("noteSessionEnded", Boolean::class.javaPrimitiveType, Boolean::class.javaPrimitiveType)
+        end.isAccessible = true
+        end.invoke(manager, false, true)
+        val streak = CommManager::class.java.getDeclaredField("starvedSessionStreak").apply { isAccessible = true }
+        val reached = CommManager::class.java.getDeclaredField("sessionReachedHandshake").apply { isAccessible = true }
+        assertEquals(2, streak.get(manager))
+        assertEquals(false, reached.get(manager))
+        verifyNoInteractions(settings)
+    }
 }

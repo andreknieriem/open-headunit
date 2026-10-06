@@ -1129,12 +1129,15 @@ class NativeAaHandshakeManager(
         wakeStoodDown = !wakePhone
         sessionEndedAt = SystemClock.elapsedRealtime()
         if (!wakePhone) {
-            AppLog.i("NativeAA: the phone ended the session itself, so the listeners reopen without waking it.")
+            // Automatic workers recheck wakesPhone after waits and before each poke.
+            // Do not mutate the shared job slot: a concurrent manual request may now own it.
+            AppLog.i("NativeAA: deliberate session end; reopening listeners without an automatic wake.")
         }
     }
 
     /** Whether an automatic poke may run, or the phone is only listened for. */
-    fun wakesPhone(): Boolean = !wakeStoodDown
+    fun wakesPhone(): Boolean = !wakeStoodDown &&
+        (commManager.connectionState.value as? CommManager.ConnectionState.Disconnected)?.isSettingsRestart != true
 
     /**
      * Whether a wake here sends anything. False on a module that opens Android Auto by itself,
@@ -2123,7 +2126,7 @@ class NativeAaHandshakeManager(
             AppLog.i("NativeAA: Handoff still settling — not starting a poke that would compete with the phone's WiFi association.")
             return
         }
-        if (wakeStoodDown) {
+        if (!wakesPhone()) {
             // Info for the same reason as the line above: it is the evidence the stand-down holds.
             AppLog.i("NativeAA: the phone ended the last session itself — listening for it rather than waking it.")
             return
@@ -2222,6 +2225,7 @@ class NativeAaHandshakeManager(
             // handshake backoff, so asking it every pass would wipe a selection the user is inside.
             var rearmAsked = false
             while (isActive) {
+                if (!wakesPhone()) break
                 when (PokeReadinessPolicy.step(isRunning, aaListenersClosedForSession, commManager.isConnected)) {
                     PokeReadinessPolicy.Step.STOP -> break
                     PokeReadinessPolicy.Step.REARM_FIRST -> {
@@ -2414,6 +2418,8 @@ class NativeAaHandshakeManager(
                         continue
                     }
 
+                    // Recheck after credential/listener waits, including jobs queued before Save.
+                    if (!wakesPhone()) break
                     AppLog.i("NativeAA: Attempting active poke to device: ${device.name} (${device.address})...")
                     ConnectionStageTracker.report(ConnectionStage.WAKING_PHONE)
                     pokeDevice(device, holdMs = 15000)

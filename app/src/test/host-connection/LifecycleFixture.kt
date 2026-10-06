@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.*
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
+private enum class DisconnectReason { CONNECTION_ENDED, SETTINGS_RESTART }
 private sealed class ConnectionState {
     object Connecting : ConnectionState()
     object Connected : ConnectionState()
@@ -20,7 +21,10 @@ private sealed class ConnectionState {
     object HandshakeComplete : ConnectionState()
     object TransportStarted : ConnectionState()
     data class Error(val message: String) : ConnectionState()
-    data class Disconnected(val isClean: Boolean = false, val isUserExit: Boolean = false) : ConnectionState()
+    data class Disconnected(val isClean: Boolean = false, val isUserExit: Boolean = false,
+        val reason: DisconnectReason = DisconnectReason.CONNECTION_ENDED, val restartEndpoint: Pair<String, Int>? = null) : ConnectionState() {
+        val isSettingsRestart get() = reason == DisconnectReason.SETTINGS_RESTART
+    }
 }
 private object HeadUnitScreenConfig { fun unlockResolution() {} }
 private class QueuedCleanup : CoroutineDispatcher() {
@@ -44,6 +48,7 @@ private class AapTransport(
 private class ConnectionFixture(val settings: Settings = Settings()) {
     private val transportLifecycleLock = Any()
     private var disconnectRequested = false
+    private var outgoingEndpoint: Pair<String, Int>? = null
     private val audioDecoder = AudioDecoder()
     private val videoDecoder = Unit
     private val _backgroundNotification = Unit
@@ -79,7 +84,8 @@ private class ConnectionFixture(val settings: Settings = Settings()) {
     // PRODUCTION QUIT
     private fun doDisconnect(sendByeBye: Boolean,
         byeByeReason: com.andrerinas.openheadunit.aap.protocol.proto.Control.ByeByeReason =
-            com.andrerinas.openheadunit.aap.protocol.proto.Control.ByeByeReason.USER_SELECTION) {}
+            com.andrerinas.openheadunit.aap.protocol.proto.Control.ByeByeReason.USER_SELECTION,
+        reason: DisconnectReason = DisconnectReason.CONNECTION_ENDED) {}
     fun nextConnection() {
         _transport?.aapAudio?.releaseAllFocus(); Handler.runAll()
         _transport = null; disconnectRequested = false; _connection = Any(); _connectionState.value = ConnectionState.Connected
@@ -89,7 +95,7 @@ private class ConnectionFixture(val settings: Settings = Settings()) {
 
 private object SessionStateIntent {
     const val STATE_CONNECTING=1; const val STATE_CONNECTED=2; const val STATE_PROJECTING=3; const val STATE_DISCONNECTED=4
-    const val REASON_USER_EXIT=1; const val REASON_LINK_LOST=2; const val REASON_PHONE_LEFT=3
+    const val REASON_SETTINGS_RESTART=4; const val REASON_USER_EXIT=1; const val REASON_LINK_LOST=2; const val REASON_PHONE_LEFT=3
 }
 private class ObserverFixture {
     private class Connection { val connectionState = MutableStateFlow<ConnectionState>(ConnectionState.Disconnected()) }

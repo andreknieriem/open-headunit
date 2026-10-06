@@ -108,6 +108,8 @@ private class ObserverFixture {
     private val commManager = Connection()
     private class Self { fun onConnectionEstablished() {}; fun onConnectionEnded(state: ConnectionState.Disconnected) {} }
     private val selfLauncherManager = Self()
+    private class ReconnectTimer { fun cancel() {} }
+    private val automaticReconnect = ReconnectTimer()
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
     private val usbLauncherManager = Usb()
     private var hasEverConnected = false

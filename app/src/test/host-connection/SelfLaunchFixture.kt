@@ -159,6 +159,8 @@ object SessionStateIntent {
 object StationStandDown { fun onSessionLive(service: Any, held: Long?) {} }
 object SystemClock { fun elapsedRealtime() = 0L }
 class Service(private var hasEverConnected: Boolean = true, val commManager: CommManager = CommManager()) : AutoCloseable {
+    private class ReconnectTimer { fun cancel() {} }
+    private val automaticReconnect = ReconnectTimer()
     val main = QueuedMain()
     val serviceScope = CoroutineScope(SupervisorJob() + main)
     val wifiLauncherManager = WifiLauncherManager()

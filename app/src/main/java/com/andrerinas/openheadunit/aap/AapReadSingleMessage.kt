@@ -168,10 +168,8 @@ internal class AapReadSingleMessage(
             AppLog.e("AapRead: invalid framing or TLS session", e)
             return -1
         } catch (e: Exception) {
-            // Stays at 0 on purpose, unlike the read sites above. recvBlocking catches its own
-            // IOException and SocketTimeoutException, so anything reaching here was thrown after the
-            // body had been read in full - decode, decrypt or a handler - and the stream is still
-            // framed. Carrying on costs one message; the read failures above cost the session.
+            // Handler failures are isolated inside deliverFragment. Transport/TLS IOExceptions
+            // above remain fatal; unexpected non-I/O processing errors retain the existing policy.
             AppLog.e("AapRead: Error in read loop (ignored): ${e.message}")
             return 0
         } finally {

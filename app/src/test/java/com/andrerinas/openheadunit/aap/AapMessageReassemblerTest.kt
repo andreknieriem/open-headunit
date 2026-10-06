@@ -77,14 +77,14 @@ class AapMessageReassemblerTest {
         assertFalse(AapMessageFraming.completesMediaData(1, 11))
     }
 
-    @Test(expected = IOException::class) fun `rejects incomplete audio`() {
+    @Test fun `drops incomplete audio`() {
         val r = AapMessageReassembler()
         r.accept(frame(Channel.ID_AUD, 9, byteArrayOf(0, 0)), 8)
-        r.accept(frame(Channel.ID_AUD, 10, byteArrayOf(1)), 0)
+        assertNull(r.accept(frame(Channel.ID_AUD, 10, byteArrayOf(1)), 0))
     }
 
-    @Test(expected = IOException::class) fun `rejects oversized declarations before allocation`() {
-        AapMessageReassembler().accept(frame(Channel.ID_AUD, 9, byteArrayOf(0, 0)), Int.MAX_VALUE)
+    @Test fun `drops oversized declarations before allocation`() {
+        assertNull(AapMessageReassembler().accept(frame(Channel.ID_AUD, 9, byteArrayOf(0, 0)), Int.MAX_VALUE))
     }
 
     @Test fun `a routing change abandons the old run and permits a fresh message`() {
@@ -102,9 +102,7 @@ class AapMessageReassemblerTest {
     @Test fun `an overlong copied message cannot consume the following message`() {
         val r = AapMessageReassembler()
         r.accept(frame(Channel.ID_AUD, 9, byteArrayOf(0, 0)), 3)
-        assertThrows(IOException::class.java) {
-            r.accept(frame(Channel.ID_AUD, 10, byteArrayOf(1, 2)), 0)
-        }
+        assertNull(r.accept(frame(Channel.ID_AUD, 10, byteArrayOf(1, 2)), 0))
         val next = frame(Channel.ID_AUD, 11, byteArrayOf(0, 0, 7))
         assertSame(next, r.accept(next, 0))
     }
@@ -121,11 +119,14 @@ class AapMessageReassemblerTest {
             r.accept(frame(Channel.ID_AUD, 10, byteArrayOf(5)), 0)!!.data)
     }
 
+
     @Test fun `large declarations reserve only received bytes across all channels`() {
-        val r = AapMessageReassembler()
+        val drops = mutableListOf<String>()
+        val r = AapMessageReassembler { drops += it }
         for (channel in 0..255) {
             assertNull(r.accept(frame(channel, 9, byteArrayOf(0, 7)), AapMessageReassembler.MAX_MESSAGE_BYTES))
         }
+        assertTrue(drops.isEmpty())
         // Replacing one run must release its actual allocation, not its declared total.
         assertNull(r.accept(frame(Channel.ID_MPB, 9, byteArrayOf(0, 7)), 3))
         assertArrayEquals(byteArrayOf(0, 7, 42),
@@ -150,4 +151,84 @@ class AapMessageReassemblerTest {
         }
     }
 
+    @Test fun `exhausted copied budget drops only that run and is reusable after replacement`() {
+        val drops = mutableListOf<String>()
+        val r = AapMessageReassembler { drops += it }
+        val maximum = AapMessageReassembler.MAX_MESSAGE_BYTES
+        val chunk = ByteArray(65536)
+        for (channel in listOf(Channel.ID_MPB, Channel.ID_NAV)) {
+            r.accept(frame(channel, 9, chunk), maximum)
+            repeat(maximum / chunk.size - 1) { r.accept(frame(channel, 8, chunk), 0) }
+        }
+        assertTrue(drops.isEmpty())
+        assertNull(r.accept(frame(Channel.ID_AUD, 9, byteArrayOf(0, 0)), 4))
+        assertTrue(drops.single().contains("budget exhausted"))
+        assertNull(r.accept(frame(Channel.ID_AUD, 10, byteArrayOf(1, 2)), 0))
+        val replacement = frame(Channel.ID_MPB, 11, byteArrayOf(0, 7))
+        assertSame(replacement, r.accept(replacement, 0))
+        assertNull(r.accept(frame(Channel.ID_AUD, 9, byteArrayOf(0, 0)), 4))
+        assertArrayEquals(byteArrayOf(0, 0, 1, 2),
+            r.accept(frame(Channel.ID_AUD, 10, byteArrayOf(1, 2)), 0)!!.data)
+    }
+
+    @Test fun `early DATA discard retains only credit identity through LAST without duplicate ack`() {
+        for (channel in listOf(Channel.ID_AUD, Channel.ID_VID)) {
+            val credits = mutableListOf<Int>()
+            val r = AapMessageReassembler(onDroppedMediaData = { credits += it })
+            // Split type is known only after the next fragment, which exceeds the total.
+            assertNull(r.accept(frame(channel, 9, byteArrayOf(0)), 2))
+            assertNull(r.accept(frame(channel, 8, byteArrayOf(0, 42)), 0))
+            assertTrue(credits.isEmpty())
+            assertNull(r.accept(frame(channel, 8, byteArrayOf(12)), 0))
+            assertNull(r.accept(frame(channel, 10, byteArrayOf()), 0))
+            assertEquals(listOf(channel), credits)
+            assertNull(r.accept(frame(channel, 10, byteArrayOf(0, 0)), 0))
+            assertEquals(listOf(channel), credits)
+        }
+    }
+
+    @Test fun `invalid declarations return known DATA credit only at LAST`() {
+        for (total in listOf(-1, 0, 1, Int.MAX_VALUE)) {
+            val credits = mutableListOf<Int>()
+            val r = AapMessageReassembler(onDroppedMediaData = { credits += it })
+            r.accept(frame(Channel.ID_AUD, 9, byteArrayOf(0, 0)), total)
+            assertTrue(credits.isEmpty())
+            r.accept(frame(Channel.ID_AUD, 10, byteArrayOf(1)), 0)
+            assertEquals(listOf(Channel.ID_AUD), credits)
+        }
+    }
+
+    @Test fun `CSD control orphan incomplete type and empty TLS frames never create DATA credits`() {
+        val credits = mutableListOf<Int>()
+        val r = AapMessageReassembler(onDroppedMediaData = { credits += it })
+        for ((channel, flags, prefix) in listOf(
+            Triple(Channel.ID_AUD, 9, byteArrayOf(0, 1)),
+            Triple(Channel.ID_VID, 9, byteArrayOf(0, 1)),
+            Triple(Channel.ID_AUD, 13, byteArrayOf(0, 0)),
+            Triple(Channel.ID_MPB, 9, byteArrayOf(0, 0)),
+            Triple(Channel.ID_AUD, 9, byteArrayOf(0)))) {
+            r.accept(frame(channel, flags, prefix), 5)
+            r.accept(frame(channel, (flags and 0x0c) or 2, byteArrayOf()), 0)
+        }
+        r.accept(frame(Channel.ID_AUD, 10, byteArrayOf(0, 0)), 0)
+        r.accept(frame(Channel.ID_AUD, 11, byteArrayOf()), 0)
+        r.accept(frame(Channel.ID_AUD, 9, byteArrayOf()), 5)
+        assertTrue(credits.isEmpty())
+    }
+
+    @Test fun `budget discard returns DATA credit and replacement never inherits its identity`() {
+        val credits = mutableListOf<Int>()
+        val r = AapMessageReassembler(onDroppedMediaData = { credits += it })
+        val maximum = AapMessageReassembler.MAX_MESSAGE_BYTES
+        for (channel in listOf(Channel.ID_MPB, Channel.ID_NAV)) {
+            r.accept(frame(channel, 9, ByteArray(maximum)), maximum)
+        }
+        r.accept(frame(Channel.ID_AUD, 9, byteArrayOf(0, 0)), 4)
+        r.accept(frame(Channel.ID_AUD, 10, byteArrayOf(1, 2)), 0)
+        assertEquals(listOf(Channel.ID_AUD), credits)
+        r.accept(frame(Channel.ID_AUD, 9, byteArrayOf(0, 0)), 4)
+        r.accept(frame(Channel.ID_AUD, 9, byteArrayOf(0, 1)), 4)
+        r.accept(frame(Channel.ID_AUD, 10, byteArrayOf(1, 2)), 0)
+        assertEquals(listOf(Channel.ID_AUD), credits)
+    }
 }

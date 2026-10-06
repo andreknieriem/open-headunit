@@ -23,6 +23,12 @@ internal class AapMessageHandlerType(
 
     private val dispatchMonitor = TransportDispatchMonitor()
 
+    override fun onDroppedMediaData(channel: Int) {
+        // Called synchronously on the reader at LAST, before another session can be dispatched.
+        // Return the credit without decoding or queuing the rejected payload.
+        transport.sendMediaAck(channel)
+    }
+
     @Throws(AapMessageHandler.HandleException::class)
     override fun handle(message: AapMessage) {
         // Anything slow here is time the socket is not read, audio included. Video has its own

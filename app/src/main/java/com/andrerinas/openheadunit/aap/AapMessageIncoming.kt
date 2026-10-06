@@ -57,6 +57,7 @@ internal class AapMessageIncoming(header: EncryptedHeader, ba: ByteArrayWithLimi
             // A fragmented message may split even its type or timestamp across fragments.
             // Use ba.limit, not ba.data.size: TLS reuses a larger backing array, whose unused
             // tail is not received data. The constructor leaves an incomplete type unknown.
+            // A video access unit can end in a legal one-byte tail with no repeated type.
             // A blanket two-byte guard here would discard legal short continuations and lose
             // the whole message. The reassembler checks the completed header before dispatch;
             // deferring that check does not permit a handler to read stale buffer contents.

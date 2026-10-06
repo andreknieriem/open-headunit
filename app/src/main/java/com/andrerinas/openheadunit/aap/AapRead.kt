@@ -45,7 +45,8 @@ internal interface AapRead {
         /**
          * Whether this message should be treated as one that never arrived.
          *
-         * Called by both readers once the whole body is in hand and **before** [auditFragment], which
+         * Both readers decide before decrypt, then apply the drop after decrypt and before
+         * [auditFragment]. The audit sees only delivered plaintext, which
          * is the entire point: a fragment dropped here is short in the audit's own accounting, and an
          * assembler-stage drop can never reproduce that because the audit has already counted it.
          *
@@ -80,7 +81,21 @@ internal interface AapRead {
         // the final fragment reaches the video assembler. Reader capacity remains bounded at
         // 4 MiB so large keyframes can be accepted without guessing a smaller device-specific cap.
         private val fragmentAudit = FragmentedMessageAudit()
-        private val reassembler = AapMessageReassembler()
+        private var droppedVideoPayload = false
+        private val reassembler = AapMessageReassembler(
+            onDroppedVideoPayload = { droppedVideoPayload = true },
+            onDroppedMediaData = { channel ->
+                try {
+                    handler.onDroppedMediaData(channel)
+                } catch (e: Exception) {
+                    reportMessageDrop("discard handler ${e.javaClass.simpleName} on channel $channel: ${e.message}")
+                }
+            },
+            onDrop = { reportMessageDrop(it) }
+        )
+        private var messageDropReports = 0
+        private var messageDropLastMs = 0L
+        private var messageDropSuppressed = 0
         // Per-outcome print budgets refill so a noisy startup cannot silence later failures.
         // These counters govern reports only; repair is dispatched before consulting them.
         private val auditReports = IntArray(FragmentedMessageAudit.Outcome.entries.size)
@@ -129,17 +144,53 @@ internal interface AapRead {
          */
         protected fun deliverFragment(message: AapMessage, declaredTotal: Int) {
             if (isStopped) return
-            auditFragment(message.channel, message.flags.toInt(), message.size, declaredTotal)
-            reassembler.accept(message, declaredTotal)?.let { handler.handle(it) }
+            if (message.size == 0 && AapMessageFraming.carriesMessageType(message.flags.toInt())) {
+                // A TLS-only frame does not replace an in-progress service message. Empty
+                // continuation/LAST fragments must still reach the audit and reassembler.
+                reportMessageDrop("no application data on channel ${message.channel}")
+                return
+            }
+            droppedVideoPayload = false
+            val complete = reassembler.accept(message, declaredTotal)
+            auditFragment(message.channel, message.flags.toInt(), message.size, declaredTotal,
+                complete != null, droppedVideoPayload)
+            if (complete == null) return
+            try {
+                handler.handle(complete)
+            } catch (e: Exception) {
+                // Includes protobuf parse failures (an IOException subtype). At this boundary
+                // framing and TLS are complete, so a handler failure costs only this message.
+                reportMessageDrop("handler ${e.javaClass.simpleName} on channel ${message.channel}: ${e.message}")
+            }
         }
 
-        private fun auditFragment(channel: Int, flags: Int, plaintextLength: Int, declaredTotal: Int) {
-            val result = fragmentAudit.onMessage(channel, flags, plaintextLength, declaredTotal) ?: return
-            // Before the print budget deliberately: suppressing a repeated log must not suppress
-            // repair. The callback queues recovery ahead of this fragment on the video worker.
-            if (AuditRecoveryPolicy.shouldRequestKeyframe(result.outcome, result.channel)) {
-                onVideoRunHoled(AuditRecoveryPolicy.shouldDiscardAssembledUnit(result))
+        private fun reportMessageDrop(reason: String) {
+            val now = SystemClock.elapsedRealtime()
+            if (!AuditReportPolicy.shouldReport(messageDropReports, messageDropLastMs, now)) {
+                messageDropSuppressed++
+                return
             }
+            val suppressed = messageDropSuppressed
+            messageDropSuppressed = 0
+            messageDropReports++
+            messageDropLastMs = now
+            AppLog.w("AapRead: skipped message: %s (suppressed=%d)", reason, suppressed)
+        }
+
+        private fun auditFragment(channel: Int, flags: Int, plaintextLength: Int, declaredTotal: Int,
+                                  willDeliver: Boolean, locallyDroppedVideo: Boolean) {
+            val result = fragmentAudit.onMessage(channel, flags, plaintextLength, declaredTotal)
+            // Local budget drops can have a correct wire length. Merge their loss notification
+            // with the audit so one discarded payload asks for repair once, even with suppressed logs.
+            val auditNeedsRepair = result != null &&
+                AuditRecoveryPolicy.shouldRequestKeyframe(result.outcome, result.channel)
+            if (locallyDroppedVideo || auditNeedsRepair) {
+                // A copied run never reached the video worker. Do not leave a one-shot discard
+                // armed for its next healthy frame; streamed LAST still discards its own assembly.
+                onVideoRunHoled(!locallyDroppedVideo && willDeliver && result != null &&
+                    AuditRecoveryPolicy.shouldDiscardAssembledUnit(result))
+            }
+            if (result == null) return
 
             val channelName = Channel.name(channel)
             val index = result.outcome.ordinal

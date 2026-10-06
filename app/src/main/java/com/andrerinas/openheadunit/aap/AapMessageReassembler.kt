@@ -15,9 +15,24 @@ import java.io.IOException
  * Continuations contribute all their plaintext bytes, starting at zero. Require an exact total
  * at LAST before parsing a copied message; bytes from different channels must never share a run.
  */
-internal class AapMessageReassembler {
+internal class AapMessageReassembler(
+    private val onDroppedVideoPayload: () -> Unit = {},
+    private val onDroppedMediaData: (Int) -> Unit = {},
+    private val onDrop: (String) -> Unit = {}
+) {
     private class Run(val first: AapMessage, val total: Int, val video: Boolean, var bytes: ByteArray?) {
         var used = 0
+        var discarded = false
+        var typeBytes = 0
+        var type = 0
+
+        fun observeType(fragment: AapMessage) {
+            var offset = 0
+            while (typeBytes < 2 && offset < fragment.size) {
+                type = (type shl 8) or (fragment.data[offset++].toInt() and 0xff)
+                typeBytes++
+            }
+        }
     }
     private val runs = arrayOfNulls<Run>(256)
     private var reserved = 0
@@ -28,14 +43,14 @@ internal class AapMessageReassembler {
         val flags = fragment.flags.toInt() and 0xff
         val first = AapMessageFraming.carriesMessageType(flags)
         val last = AapMessageFraming.isLast(flags)
+        // TLS can consume a control record without producing a new service message.
+        // Empty continuations still belong to their run, including a legal empty LAST.
+        if (first && fragment.size == 0) return null
         if (first) {
             release(channel)
             if (last) {
-                if (fragment.size < 2) throw IOException("AAP message has no complete type")
+                if (fragment.size < 2) return drop(channel, "message has no complete type")
                 return fragment
-            }
-            if (declaredTotal < 2 || declaredTotal > MAX_MESSAGE_BYTES || fragment.size > declaredTotal) {
-                throw IOException("Invalid AAP message length $declaredTotal on channel $channel")
             }
             // Preserve the streamed video path only when FIRST has enough prefix for its
             // downstream parser: type (2), possible timestamp (8), start code (4), and a byte
@@ -53,8 +68,18 @@ internal class AapMessageReassembler {
         // FIRST/LAST change across the run; CONTROL/ENCRYPTED must not. Do not let a
         // continuation reinterpret an existing service payload using a different routing class.
         if ((flags and 0x0c) != (run.first.flags.toInt() and 0x0c)) {
+            // Routing changes are not payload-length errors. Keep the existing fatal policy
+            // rather than guessing which service owns the remainder or its DATA credit.
             release(channel)
             throw IOException("AAP fragment routing changed on channel $channel")
+        }
+        run.observeType(fragment)
+        if (run.discarded) {
+            if (last) finishDropped(channel, run)
+            return null
+        }
+        if (first && (declaredTotal < 2 || declaredTotal > MAX_MESSAGE_BYTES || fragment.size > declaredTotal)) {
+            return discard(channel, run, last, "invalid message length $declaredTotal")
         }
         if (run.video) {
             if (last) release(channel)
@@ -62,18 +87,14 @@ internal class AapMessageReassembler {
                 fragment.size, fragment.data)
         }
         if (fragment.size > run.total - run.used) {
-            release(channel)
-            throw IOException("AAP fragments exceed declared size on channel $channel")
+            return discard(channel, run, last, "fragments exceed declared size")
         }
         val required = run.used + fragment.size
         val previous = run.bytes!!
         if (required > previous.size) {
             val capacity = minOf(run.total, maxOf(required, maxOf(1024, previous.size * 2)),
                 previous.size + MAX_RESERVED_BYTES - reserved)
-            if (capacity < required) {
-                release(channel)
-                throw IOException("AAP reassembly budget exhausted")
-            }
+            if (capacity < required) return discard(channel, run, last, "reassembly budget exhausted")
             run.bytes = previous.copyOf(capacity)
             reserved += capacity - previous.size
         }
@@ -81,15 +102,47 @@ internal class AapMessageReassembler {
         fragment.data.copyInto(bytes, run.used, 0, fragment.size)
         run.used += fragment.size
         if (!last) return null
+        if (run.used != run.total) return discard(channel, run, last, "incomplete message")
         release(channel)
-        if (run.used != run.total) throw IOException("Incomplete AAP message on channel $channel")
         val type = ((bytes[0].toInt() and 0xff) shl 8) or (bytes[1].toInt() and 0xff)
         return AapMessage(channel, (flags or 3).toByte(), type, 2, run.used, bytes)
     }
 
+    private fun discard(channel: Int, run: Run, last: Boolean, reason: String): AapMessage? {
+        // Free payload storage immediately, but retain the two-byte type and routing until LAST.
+        // DATA consumes one sender credit even when its payload cannot be delivered.
+        releaseBytes(run)
+        run.discarded = true
+        onDrop("$reason on channel $channel")
+        if (last) finishDropped(channel, run)
+        return null
+    }
+
+    private fun finishDropped(channel: Int, run: Run) {
+        release(channel)
+        if (run.typeBytes != 2 || run.first.flags.toInt() and AapMessageFraming.FLAG_BIT_CONTROL != 0) return
+        // CSD carries decoder parameter sets and its loss needs video recovery too, but only
+        // DATA consumes a sender credit. Keep loss notification independent of ACK eligibility.
+        if (channel == Channel.ID_VID && run.type in 0..1) onDroppedVideoPayload()
+        if ((Channel.isAudio(channel) || channel == Channel.ID_VID) && run.type == 0) onDroppedMediaData(channel)
+    }
+
+    private fun drop(channel: Int, reason: String): AapMessage? {
+        // A standalone message without a complete type has no DATA identity to acknowledge.
+        // Its frame and TLS record are already consumed, so the next message remains readable.
+        release(channel)
+        onDrop("$reason on channel $channel")
+        return null
+    }
+
     private fun release(channel: Int) {
-        runs[channel]?.bytes?.let { reserved -= it.size }
+        runs[channel]?.let { releaseBytes(it) }
         runs[channel] = null
+    }
+
+    private fun releaseBytes(run: Run) {
+        run.bytes?.let { reserved -= it.size }
+        run.bytes = null
     }
 
     companion object {

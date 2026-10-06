@@ -1097,8 +1097,10 @@ class CommManager(
         }
     }
 
-    fun restartAudio() {
-        applyAudioSettings()
+    /** Quick Settings rebuilds tracks only; explicit Save owns session renegotiation. */
+    fun restartAudio(): Unit = synchronized(transportLifecycleLock) {
+        _transport?.aapAudio?.restartAudio()
+        Unit
     }
 
     // -----------------------------------------------------------------------------------------

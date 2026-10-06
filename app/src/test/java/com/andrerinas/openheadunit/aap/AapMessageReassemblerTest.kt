@@ -187,7 +187,7 @@ class AapMessageReassemblerTest {
         }
     }
 
-    @Test fun `invalid declarations return known DATA credit only at LAST`() {
+    @Test fun `invalid declarations retain known DATA credit until LAST`() {
         for (total in listOf(-1, 0, 1, Int.MAX_VALUE)) {
             val credits = mutableListOf<Int>()
             val r = AapMessageReassembler(onDroppedMediaData = { credits += it })
@@ -229,6 +229,46 @@ class AapMessageReassemblerTest {
         r.accept(frame(Channel.ID_AUD, 9, byteArrayOf(0, 0)), 4)
         r.accept(frame(Channel.ID_AUD, 9, byteArrayOf(0, 1)), 4)
         r.accept(frame(Channel.ID_AUD, 10, byteArrayOf(1, 2)), 0)
-        assertEquals(listOf(Channel.ID_AUD), credits)
+        assertEquals(listOf(Channel.ID_AUD, Channel.ID_AUD), credits)
     }
+
+    @Test fun `replacement FIRST retires dropped media DATA exactly once before delivery`() {
+        for (channel in listOf(Channel.ID_AUD, Channel.ID_VID)) {
+            val events = mutableListOf<String>()
+            val r = AapMessageReassembler(
+                onDroppedMediaData = { events += "ack:$it" },
+                onDroppedVideoPayload = { events += "video recovery" },
+            )
+            r.accept(frame(channel, 9, byteArrayOf(0, 0)), Int.MAX_VALUE)
+            assertTrue(events.isEmpty())
+            // A complete replacement CSD is delivered only after the old DATA credit is returned.
+            val next = frame(channel, 11, byteArrayOf(0, 1))
+            assertSame(next, r.accept(next, 0))
+            val expected = if (channel == Channel.ID_VID) listOf("video recovery", "ack:$channel")
+                else listOf("ack:$channel")
+            assertEquals(expected, events)
+            r.accept(frame(channel, 10, byteArrayOf()), 0)
+            r.accept(next, 0)
+            assertEquals(expected, events)
+        }
+    }
+
+    @Test fun `replacement FIRST never invents credit for discarded CSD control or unknown type`() {
+        val credits = mutableListOf<Int>()
+        var recoveries = 0
+        val r = AapMessageReassembler(onDroppedMediaData = { credits += it },
+            onDroppedVideoPayload = { recoveries++ })
+        for ((channel, flags, prefix) in listOf(
+            Triple(Channel.ID_AUD, 9, byteArrayOf(0, 1)),
+            Triple(Channel.ID_VID, 9, byteArrayOf(0, 1)),
+            Triple(Channel.ID_AUD, 13, byteArrayOf(0, 0)),
+            Triple(Channel.ID_MPB, 9, byteArrayOf(0, 0)),
+            Triple(Channel.ID_AUD, 9, byteArrayOf(0)))) {
+            r.accept(frame(channel, flags, prefix), Int.MAX_VALUE)
+            r.accept(frame(channel, 11, byteArrayOf(0, 1)), 0)
+        }
+        assertTrue(credits.isEmpty())
+        assertEquals(1, recoveries)
+    }
+
 }

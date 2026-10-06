@@ -75,7 +75,7 @@ internal class AapMessageReassembler(
         }
         run.observeType(fragment)
         if (run.discarded) {
-            if (last) finishDropped(channel, run)
+            if (last) release(channel)
             return null
         }
         if (first && (declaredTotal < 2 || declaredTotal > MAX_MESSAGE_BYTES || fragment.size > declaredTotal)) {
@@ -109,22 +109,13 @@ internal class AapMessageReassembler(
     }
 
     private fun discard(channel: Int, run: Run, last: Boolean, reason: String): AapMessage? {
-        // Free payload storage immediately, but retain the two-byte type and routing until LAST.
+        // Free payload storage immediately, but retain the two-byte type and routing until LAST or a replacement FIRST.
         // DATA consumes one sender credit even when its payload cannot be delivered.
         releaseBytes(run)
         run.discarded = true
         onDrop("$reason on channel $channel")
-        if (last) finishDropped(channel, run)
+        if (last) release(channel)
         return null
-    }
-
-    private fun finishDropped(channel: Int, run: Run) {
-        release(channel)
-        if (run.typeBytes != 2 || run.first.flags.toInt() and AapMessageFraming.FLAG_BIT_CONTROL != 0) return
-        // CSD carries decoder parameter sets and its loss needs video recovery too, but only
-        // DATA consumes a sender credit. Keep loss notification independent of ACK eligibility.
-        if (channel == Channel.ID_VID && run.type in 0..1) onDroppedVideoPayload()
-        if ((Channel.isAudio(channel) || channel == Channel.ID_VID) && run.type == 0) onDroppedMediaData(channel)
     }
 
     private fun drop(channel: Int, reason: String): AapMessage? {
@@ -136,8 +127,16 @@ internal class AapMessageReassembler(
     }
 
     private fun release(channel: Int) {
-        runs[channel]?.let { releaseBytes(it) }
+        val run = runs[channel] ?: return
+        // Clear ownership before callbacks: LAST and a replacement FIRST both retire this run,
+        // and each rejected DATA message returns at most one credit to its current session.
         runs[channel] = null
+        releaseBytes(run)
+        if (!run.discarded || run.typeBytes != 2 ||
+            run.first.flags.toInt() and AapMessageFraming.FLAG_BIT_CONTROL != 0) return
+        // Losing CSD also needs video recovery, but only DATA consumes a sender credit.
+        if (channel == Channel.ID_VID && run.type in 0..1) onDroppedVideoPayload()
+        if ((Channel.isAudio(channel) || channel == Channel.ID_VID) && run.type == 0) onDroppedMediaData(channel)
     }
 
     private fun releaseBytes(run: Run) {

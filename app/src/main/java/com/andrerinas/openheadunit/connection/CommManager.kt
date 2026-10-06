@@ -485,20 +485,78 @@ class CommManager(
         tier: ConnectionPriorityPolicy.Tier = ConnectionPriorityPolicy.Tier.WIRELESS_HANDSHAKE,
         restartEndpoint: Pair<String, Int>? = null,
         expectedState: ConnectionState.Disconnected? = null,
+        admission: ConnectionAdmission = ConnectionAdmission.UNRESTRICTED,
     ) = withContext(Dispatchers.IO) {
-        if (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value)) {
+        var claim: ConnectionArbiter.Claim? = null
+        // Match publication's lock order: lifecycle, producer, then arbiter. Save admission
+        // also takes the lifecycle lock before the arbiter; reversing it can deadlock.
+        synchronized(transportLifecycleLock) {
+            admission.run {
+                if (!socket.isClosed &&
+                    (expectedState == null || expectedState.acceptsSettingsRestart(_connectionState.value))) {
+                    claim = claimSocket(tier, "the socket from ${socket.inetAddress?.hostAddress}", expectedState)
+                }
+            }
+        }
+        val ownedClaim = claim
+        if (ownedClaim == null) {
             HeldServerSocket.abandon(socket)
+            try { socket.close() } catch (_: Exception) {}
             return@withContext
         }
-        val claim = claimSocket(tier, "the socket from ${socket.inetAddress?.hostAddress}", expectedState)
-        if (claim == null) {
-            HeldServerSocket.settle(socket)
-            try { socket.close() } catch (e: Exception) {}
-            return@withContext
-        }
-        noteClaimedEndpoint(claim, socketEndpoint(socket))
+        noteClaimedEndpoint(ownedClaim, socketEndpoint(socket))
         HeldServerSocket.settle(socket)
-        try { connectSocket(socket, restartEndpoint, expectedState) } finally { releaseClaim(claim) }
+        try {
+            if (admission === ConnectionAdmission.UNRESTRICTED) connectSocket(socket, restartEndpoint, expectedState)
+            else connectAdmittedSocket(socket, admission.withClaim(ownedClaim), restartEndpoint, expectedState)
+        } finally { releaseClaim(ownedClaim) }
+    }
+
+    private suspend fun connectAdmittedSocket(
+        socket: Socket,
+        admission: ConnectionAdmission,
+        restartEndpoint: Pair<String, Int>?,
+        expectedState: ConnectionState.Disconnected?,
+    ) {
+        var transferred = false
+        var terminal: ConnectionState? = null
+        val publication = ConnectionAdmission { action ->
+            synchronized(transportLifecycleLock) { admission.run(action) }
+        }
+        try {
+            // Keep preparation local. Only the final transfer joins CommManager's lifecycle;
+            // cancellation closes this candidate without disconnecting a replacement session.
+            transferred = publication.prepareAndPublish(
+                awaitRetirement = {
+                    _disconnectJob?.join()
+                    synchronized(transportLifecycleLock) { terminal = _connectionState.value }
+                },
+                create = { SocketProjectionConnection(socket, context) },
+                open = { candidate ->
+                    if (!candidate.connect()) throw java.io.IOException("Cannot open Nearby tunnel streams")
+                },
+                publish = { candidate ->
+                    if (socket.isClosed || _connectionState.value !== terminal ||
+                        terminal !is ConnectionState.Disconnected || _connection != null || _transport != null ||
+                        (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value))) {
+                        false
+                    } else {
+                        lastAttemptedEndpoint = socketEndpoint(socket)
+                        outgoingEndpoint = restartEndpoint
+                        connectionAttempt = Any()
+                        physicalConnectionReached = true
+                        disconnectRequested = false
+                        _connection = candidate
+                        _connectionState.value = ConnectionState.Connected
+                        true
+                    }
+                },
+                dispose = { it.disconnect() },
+            )
+        } finally {
+            // Also covers cancellation while waiting, before a wrapper has been allocated.
+            if (!transferred) try { socket.close() } catch (_: Exception) {}
+        }
     }
 
     private fun socketEndpoint(socket: Socket): String? =

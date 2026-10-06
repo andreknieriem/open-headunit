@@ -8,4 +8,6 @@ interface AapSsl {
     fun postHandshakeReset()
     fun performHandshake(connection: ProjectionConnection): Boolean
     fun release()
+    fun setControlRecordListener(listener: (() -> Unit)?) {}
+    fun drainControlRecords(): List<ByteArray> = emptyList()
 }

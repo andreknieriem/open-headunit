@@ -16,7 +16,7 @@ import java.io.IOException
  * at LAST before parsing a copied message; bytes from different channels must never share a run.
  */
 internal class AapMessageReassembler {
-    private class Run(val first: AapMessage, val total: Int, val video: Boolean, val bytes: ByteArray?) {
+    private class Run(val first: AapMessage, val total: Int, val video: Boolean, var bytes: ByteArray?) {
         var used = 0
     }
     private val runs = arrayOfNulls<Run>(256)
@@ -44,10 +44,9 @@ internal class AapMessageReassembler {
             // video parser discard a valid run. CONTROL traffic never takes this shortcut.
             val video = channel == Channel.ID_VID && flags and AapMessageFraming.FLAG_BIT_CONTROL == 0 &&
                 fragment.type in 0..1 && fragment.size >= 15
-            val bytes = if (video) null else {
-                if (declaredTotal > MAX_RESERVED_BYTES - reserved) throw IOException("AAP reassembly budget exhausted")
-                ByteArray(declaredTotal).also { reserved += it.size }
-            }
+            // Album art can span roughly 1 MiB of metadata. Grow copied messages as bytes
+            // arrive instead of reserving the peer's entire declared total up front.
+            val bytes = if (video) null else ByteArray(0)
             runs[channel] = Run(fragment, declaredTotal, video, bytes)
         }
         val run = runs[channel] ?: return null // An orphan has no type; never interpret its bytes.
@@ -66,13 +65,26 @@ internal class AapMessageReassembler {
             release(channel)
             throw IOException("AAP fragments exceed declared size on channel $channel")
         }
-        fragment.data.copyInto(run.bytes!!, run.used, 0, fragment.size)
+        val required = run.used + fragment.size
+        val previous = run.bytes!!
+        if (required > previous.size) {
+            val capacity = minOf(run.total, maxOf(required, maxOf(1024, previous.size * 2)),
+                previous.size + MAX_RESERVED_BYTES - reserved)
+            if (capacity < required) {
+                release(channel)
+                throw IOException("AAP reassembly budget exhausted")
+            }
+            run.bytes = previous.copyOf(capacity)
+            reserved += capacity - previous.size
+        }
+        val bytes = run.bytes!!
+        fragment.data.copyInto(bytes, run.used, 0, fragment.size)
         run.used += fragment.size
         if (!last) return null
         release(channel)
         if (run.used != run.total) throw IOException("Incomplete AAP message on channel $channel")
-        val type = ((run.bytes[0].toInt() and 0xff) shl 8) or (run.bytes[1].toInt() and 0xff)
-        return AapMessage(channel, (flags or 3).toByte(), type, 2, run.used, run.bytes)
+        val type = ((bytes[0].toInt() and 0xff) shl 8) or (bytes[1].toInt() and 0xff)
+        return AapMessage(channel, (flags or 3).toByte(), type, 2, run.used, bytes)
     }
 
     private fun release(channel: Int) {

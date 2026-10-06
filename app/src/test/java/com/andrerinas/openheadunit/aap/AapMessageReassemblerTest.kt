@@ -121,4 +121,33 @@ class AapMessageReassemblerTest {
             r.accept(frame(Channel.ID_AUD, 10, byteArrayOf(5)), 0)!!.data)
     }
 
+    @Test fun `large declarations reserve only received bytes across all channels`() {
+        val r = AapMessageReassembler()
+        for (channel in 0..255) {
+            assertNull(r.accept(frame(channel, 9, byteArrayOf(0, 7)), AapMessageReassembler.MAX_MESSAGE_BYTES))
+        }
+        // Replacing one run must release its actual allocation, not its declared total.
+        assertNull(r.accept(frame(Channel.ID_MPB, 9, byteArrayOf(0, 7)), 3))
+        assertArrayEquals(byteArrayOf(0, 7, 42),
+            r.accept(frame(Channel.ID_MPB, 10, byteArrayOf(42)), 0)!!.data)
+    }
+
+    @Test fun `copied buffer growth preserves album art and ignores TLS backing capacity`() {
+        val bytes = ByteArray(1024 * 1024 + 17) { (it % 251).toByte() }
+        bytes[0] = 0; bytes[1] = 7
+        val r = AapMessageReassembler()
+        var offset = 0
+        while (offset < bytes.size) {
+            val length = minOf(16124, bytes.size - offset)
+            val flags = if (offset == 0) 9 else if (offset + length == bytes.size) 10 else 8
+            val backing = bytes.copyOfRange(offset, offset + length) + ByteArray(100) { 0x7f }
+            val fragment = frame(Channel.ID_MPB, flags, backing)
+            val done = r.accept(AapMessage(fragment.channel, fragment.flags, fragment.type,
+                fragment.dataOffset, length, backing), if (offset == 0) bytes.size else 0)
+            if (flags == 10) assertArrayEquals(bytes, done!!.data) else assertNull(done)
+            backing.fill(0)
+            offset += length
+        }
+    }
+
 }

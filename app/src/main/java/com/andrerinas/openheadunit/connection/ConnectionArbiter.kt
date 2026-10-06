@@ -152,6 +152,14 @@ object ConnectionArbiter {
     /** Whether [claim] is still the attempt in flight. */
     fun holds(claim: Claim): Boolean = synchronized(this) { holder === claim }
 
+    /** Transfer a prepared resource only while its claim still owns the arbiter. */
+    internal fun runIfHeld(claim: Claim, action: () -> Unit): Boolean = synchronized(this) {
+        if (holder !== claim) return@synchronized false
+        // Claim replacement uses this same monitor, so it cannot split the check and transfer.
+        action()
+        true
+    }
+
     /** Whether this plug-in's USB attempts have stopped holding wireless down. */
     fun usbEpisodeSpent(): Boolean = synchronized(this) { usbEpisodeSpent }
 

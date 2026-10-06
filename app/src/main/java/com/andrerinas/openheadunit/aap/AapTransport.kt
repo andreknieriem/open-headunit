@@ -189,9 +189,9 @@ class AapTransport(
             length = it.arg2
         )
         val finishedMs = SystemClock.elapsedRealtime()
-        if (audioTimingActive && finishedMs >= nextSendTimingMs &&
+        val channel = (it.obj as ByteArray)[0].toInt() and 0xff
+        if (audioTimingActive && Channel.isAudio(channel) && finishedMs >= nextSendTimingMs &&
             (queueMs >= 50 || finishedMs - startedMs >= 50)) {
-            val channel = (it.obj as ByteArray)[0].toInt() and 0xff
             val line = "Audio transport send channel=$channel queue=${queueMs}ms encryptWrite=${finishedMs - startedMs}ms"
             AudioDiagnostics.record(finishedMs, line)
             AppLog.w(line)
@@ -360,7 +360,8 @@ class AapTransport(
     }
 
     internal fun recordSlowAudioRead(timing: TransportReadTiming, nowMs: Long) {
-        if (nowMs < nextReadTimingMs) return
+        // Video shares this socket, but must not evict audio events or consume their report budget.
+        if (!audioTimingActive || !Channel.isAudio(timing.channel) || nowMs < nextReadTimingMs) return
         val line = "Audio transport read channel=${timing.channel} readerGap=${timing.readerGapMs}ms " +
             "header=${timing.headerMs}ms body=${timing.bodyMs}ms decrypt=${timing.decryptMs}ms dispatch=${timing.dispatchMs}ms"
         AudioDiagnostics.report(nowMs, line, warning = true)

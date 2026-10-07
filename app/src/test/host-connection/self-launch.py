@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """Run actual Self launch and service-cancel paths with a queued Main dispatcher.
 
-Android listener, VPN and Activity effects are counters. Coroutine cancellation and
-legacy network waits are real; production method bodies are extracted on every run.
+Android listener, VPN and Activity effects are counters. Coroutine cancellation is real and the queued dispatcher controls delay deadlines; production method bodies are extracted on every run.
 """
 from pathlib import Path
 import hashlib
@@ -44,6 +43,7 @@ for marker, file, declaration in [
     ('CANCEL', comm, 'fun cancelPendingSettingsRestart()'),
     ('START', manager, 'fun start(settingsRestart:'),
     ('STOP', manager, 'fun stop(wasConnected:'),
+    ('ESTABLISHED', manager, 'internal fun onConnectionEstablished()'),
     ('STOP_CURRENT', manager, 'internal fun stopIfCurrent('),
     ('ALLOW_LAUNCH', 'connection/self/SelfLauncherServices.kt', 'internal suspend fun ensureLaunchAllowed()'),
     ('LEGACY_RUN', legacy, 'override suspend fun run()'),
@@ -51,7 +51,7 @@ for marker, file, declaration in [
     ('CANCEL_ACTION', 'aap/AapService.kt', 'ACTION_CANCEL_WIRELESS       ->'),
 ]:
     code = member(file, declaration)
-    # Only Main's scheduler is replaced. Real launch, delay, Job and cancellation remain intact.
+    # Main and its delay scheduler are controlled; production launch/delay calls and Jobs remain intact.
     code = code.replace('Dispatchers.Main', 'service.main')
     fixture = fixture.replace('// ' + marker + '\n', code + '\n')
 (OUT / 'SelfLaunchFixture.kt').write_text(fixture)

@@ -1302,6 +1302,7 @@ class AapService : Service() {
         (wifiLauncherManager.active as? WifiLauncherNative)?.handshakeManager?.projectionQrSnapshot()
 
     private fun onConnected() {
+        selfLauncherManager.onConnectionEstablished()
         usbLauncherManager.setSwitchingToProjection(false)
         updateNotification()
         // Whatever the transport, the wake-up loop has nothing left to do. Event driven rather

@@ -49,6 +49,7 @@ class SelfLauncherManager(
     private var selfModeVpnWatchdog: Job? = null
     private var launchJob: Job? = null
     private var launchTimeoutJob: Job? = null
+    private var settingsLaunchOwner: CommManager.ConnectionState.Disconnected? = null
 
     /**
      * "Self Mode" connects the device to itself over the loopback interface.
@@ -106,6 +107,7 @@ class SelfLauncherManager(
 
         // A new launch owns its own deadline; the previous session cannot time it out.
         launchTimeoutJob?.cancel()
+        settingsLaunchOwner = settingsRestart
         isActive = true
         launchInFlight = true
         // Publish and bind the job before it can run. Revoking Save then cancels both a queued
@@ -189,9 +191,19 @@ class SelfLauncherManager(
             val deadlineMs = SelfLaunchTimeoutPolicy.deadlineMs(path)
             // A child keeps this attempt alive through its response deadline. Save cancellation
             // must also suppress timeout UI after a successful legacy launch intent was sent.
-            launchTimeoutJob = launch {
+            val owner = coroutineContext[Job]
+            launchTimeoutJob = launch timeout@{
                 delay(deadlineMs)
 
+                if (launchJob !== owner) return@timeout
+                if (settingsRestart != null &&
+                    !settingsRestart.acceptsSettingsRestart(commManager.connectionState.value)) {
+                    // Save may already have connected, or another route may own the session.
+                    // A child cancellation alone does not retire the parent launch's flags.
+                    // Keep an established loopback session; otherwise retire only our bookkeeping.
+                    if (!commManager.isLoopbackSession) stopIfCurrent(owner, preserveVpn = true)
+                    return@timeout
+                }
                 if (!commManager.isConnected && isActive) {
                     AppLog.e("SelfMode: nothing connected within ${deadlineMs}ms of the launch")
                     if (SelfLaunchTimeoutPolicy.mayDisconnect(path)) {
@@ -253,6 +265,22 @@ class SelfLauncherManager(
         launchInFlight = false
     }
 
+    /** A published connection ends Save's waiting phase before its deadline can affect that session. */
+    internal fun onConnectionEstablished() {
+        val saved = settingsLaunchOwner ?: return
+        val commManager = App.provide(service).commManager
+        if (saved.acceptsSettingsRestart(commManager.connectionState.value)) return
+        if (commManager.isLoopbackSession) {
+            // The requested Self session arrived. Retain Self mode for its later disconnect,
+            // but neither a Save timeout nor its old token owns this established session.
+            settingsLaunchOwner = null
+            launchTimeoutJob?.cancel()
+            launchTimeoutJob = null
+        } else {
+            stopIfCurrent(launchJob, preserveVpn = true)
+        }
+    }
+
     /** Token used by a settings fallback so it cannot retire a newer manual launch. */
     internal fun currentLaunch(): Job? = launchJob
 
@@ -292,6 +320,7 @@ class SelfLauncherManager(
         launchJob = null
         launchTimeoutJob?.cancel()
         launchTimeoutJob = null
+        settingsLaunchOwner = null
         if (!isActive && !launchInFlight && selfModeVpnWatchdog == null) return
 
         AppLog.i("SelfMode: stopping Self Mode (wasConnected=$wasConnected, wasActive=$isActive, launchInFlight=$launchInFlight)")

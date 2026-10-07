@@ -1,5 +1,9 @@
 package selflaunch
 
+import kotlinx.coroutines.CancellableContinuation
+import kotlinx.coroutines.Delay
+import kotlinx.coroutines.DisposableHandle
+import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
@@ -14,18 +18,36 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import java.util.concurrent.ConcurrentLinkedQueue
 import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.resume
 
 // This queue holds Main entry and resumed network waits independently of cancellation.
-class QueuedMain : MainCoroutineDispatcher() {
+@OptIn(InternalCoroutinesApi::class)
+class QueuedMain : MainCoroutineDispatcher(), Delay {
     override val immediate get() = this
     val tasks = ConcurrentLinkedQueue<Runnable>()
+    private data class Timer(val at: Long, val run: Runnable)
+    private val timers = mutableListOf<Timer>()
+    private var now = 0L
     override fun dispatch(context: CoroutineContext, block: Runnable) { tasks.add(block) }
+    override fun scheduleResumeAfterDelay(timeMillis: Long, continuation: CancellableContinuation<Unit>) {
+        val timer = Timer(now + timeMillis, Runnable { continuation.resume(Unit) })
+        timers.add(timer)
+        continuation.invokeOnCancellation { timers.remove(timer) }
+    }
+    override fun invokeOnTimeout(timeMillis: Long, block: Runnable, context: CoroutineContext): DisposableHandle {
+        val timer = Timer(now + timeMillis, block)
+        timers.add(timer)
+        return object : DisposableHandle { override fun dispose() { timers.remove(timer) } }
+    }
+    fun advanceBy(ms: Long) {
+        now += ms
+        val due = timers.filter { it.at <= now }.sortedBy { it.at }
+        timers.removeAll(due.toSet())
+        due.forEach { it.run.run() }
+    }
     fun runOne(): Boolean { val next = tasks.poll() ?: return false; next.run(); return true }
     fun drain() { while (runOne()) {} }
-    fun awaitTask() {
-        val until = System.nanoTime() + 2_000_000_000L
-        while (tasks.isEmpty()) { check(System.nanoTime() < until); Thread.sleep(5) }
-    }
+    fun awaitTask() { if (tasks.isEmpty()) advanceBy(checkNotNull(timers.minOfOrNull { it.at }) - now) }
 }
 class CommManager {
     enum class DisconnectReason { CONNECTION_ENDED, SETTINGS_RESTART }
@@ -39,6 +61,7 @@ class CommManager {
     val connectionState get() = _connectionState
     val isConnected get() = _connectionState.value === ConnectionState.Connected
     val isUsbSession = false
+    var isLoopbackSession = false
     var reports = 0
     var metadata = "old"
     // CANCEL
@@ -52,6 +75,7 @@ class SelfLauncherManager(private val service: Service, private val wifiLauncher
     private var launchInFlight = false
     private var launchJob: Job? = null
     private var launchTimeoutJob: Job? = null
+    private var settingsLaunchOwner: CommManager.ConnectionState.Disconnected? = null
     private var selfModeVpnWatchdog: Job? = null
     private fun isAaVersion174OrHigher() = service.modern
     private fun adoptDummyVpn() { service.vpnAdoptions++ }
@@ -61,6 +85,7 @@ class SelfLauncherManager(private val service: Service, private val wifiLauncher
     fun inFlight() = launchInFlight
     // START
     // STOP
+    // ESTABLISHED
     // STOP_CURRENT
 }
 class SelfLauncherServices(val aap: Service, val wifiLauncherManager: WifiLauncherManager,
@@ -237,6 +262,65 @@ fun main() {
         check(job.isCancelled && job.children.none())
         check(s.commManager.reports == 0 && s.resolvePrompts == 0 && !s.manager.isActive)
     }
+    // Once the intent has been sent, a different connection can cross the old deadline.
+    for (replacement in listOf(CommManager.ConnectionState.Connecting, CommManager.ConnectionState.Connected)) {
+        Service().use { s ->
+            s.network.activeNetwork = Any()
+            s.manager.start(s.save())
+            s.main.drain()
+            check(s.activities == 1)
+            val old = checkNotNull(s.manager.currentLaunch())
+            s.commManager.connectionState.value = replacement
+            s.commManager.metadata = "replacement IP"
+            s.main.advanceBy(SelfLaunchTimeoutPolicy.LEGACY_DEADLINE_MS)
+            s.main.drain()
+            check(old.isCancelled && !s.manager.isActive && !s.manager.inFlight())
+            check(s.commManager.connectionState.value === replacement && s.commManager.metadata == "replacement IP")
+            check(s.vpnStops == 0 && s.commManager.reports == 0 && s.resolvePrompts == 0)
+            s.commManager.connectionState.value = CommManager.ConnectionState.Disconnected()
+            check(!s.manager.isActive) // The service will take its ordinary reconnect branch.
+        }
+    }
+    // A successful loopback connection keeps Self session state when Save's deadline ends.
+    Service().use { s ->
+        s.network.activeNetwork = Any()
+        s.manager.start(s.save())
+        s.main.drain()
+        s.commManager.isLoopbackSession = true
+        s.commManager.connectionState.value = CommManager.ConnectionState.Connected
+        s.main.advanceBy(SelfLaunchTimeoutPolicy.LEGACY_DEADLINE_MS)
+        s.main.drain()
+        check(s.manager.isActive && s.commManager.isConnected && s.vpnStops == 0)
+        check(s.commManager.reports == 0 && s.resolvePrompts == 0)
+    }
+    // The service's Connected callback retires the old Save before an early new disconnect.
+    for (loopback in listOf(false, true)) Service().use { s ->
+        s.network.activeNetwork = Any()
+        s.manager.start(s.save())
+        s.main.drain()
+        s.commManager.isLoopbackSession = loopback
+        s.commManager.connectionState.value = CommManager.ConnectionState.Connected
+        s.manager.onConnectionEstablished()
+        s.main.drain()
+        check(s.manager.isActive == loopback && s.vpnStops == 0)
+        check(s.commManager.reports == 0 && s.resolvePrompts == 0)
+        if (!loopback) {
+            s.commManager.connectionState.value = CommManager.ConnectionState.Disconnected()
+            check(!s.manager.isActive) // No stale Self branch before the old deadline either.
+        }
+        s.main.advanceBy(SelfLaunchTimeoutPolicy.LEGACY_DEADLINE_MS)
+        s.main.drain()
+        check(s.manager.isActive == loopback && s.resolvePrompts == 0)
+    }
+    // A genuinely unanswered current Save still runs the existing failure UI at its deadline.
+    Service().use { s ->
+        s.network.activeNetwork = Any()
+        s.manager.start(s.save())
+        s.main.drain()
+        s.main.advanceBy(SelfLaunchTimeoutPolicy.LEGACY_DEADLINE_MS)
+        s.main.drain()
+        check(!s.manager.isActive && s.commManager.reports == 1 && s.resolvePrompts == 1)
+    }
     // Completion of an old cancelled launch must not retire a new manual launch.
     Service().use { s ->
         s.manager.start(s.save())
@@ -263,5 +347,5 @@ fun main() {
         s.manager.start(saved)
         check(s.manager.currentLaunch() == null && !s.manager.isActive)
     }
-    println("PASS: real Self queued entry, legacy network wait, ownership takeover, stale permission, owned deadline, replacement launch and bind-after-cancel")
+    println("PASS: real Self queued entry, legacy network wait, ownership takeover, stale permission, owned deadline and timeout takeover, replacement launch and bind-after-cancel")
 }

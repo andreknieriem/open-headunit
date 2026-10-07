@@ -1135,7 +1135,9 @@ class AapTransport(
 
             if (!received) {
                 AppLog.e("Handshake: Version request/response failed after $attempt attempt(s). last ret: $ret")
-                if (!peerSentBytes && !transportError) {
+                // A tunnel can retire before the first send, or between timed-out reads.
+                // Silence describes a live link on which a request was actually attempted.
+                if (attempt > 0 && connection.isConnected && !peerSentBytes && !transportError) {
                     lastHandshakeFailure = HandshakeFailure.PEER_SILENT
                     AppLog.e(
                         "Handshake: the peer accepted the connection and then sent nothing at all. " +

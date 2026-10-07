@@ -47,7 +47,7 @@ internal class AapMessageReassembler(
         // Empty continuations still belong to their run, including a legal empty LAST.
         if (first && fragment.size == 0) return null
         if (first) {
-            release(channel)
+            release(channel, abandoned = true)
             if (last) {
                 if (fragment.size < 2) return drop(channel, "message has no complete type")
                 return fragment
@@ -126,16 +126,20 @@ internal class AapMessageReassembler(
         return null
     }
 
-    private fun release(channel: Int) {
+    private fun release(channel: Int, abandoned: Boolean = false) {
         val run = runs[channel] ?: return
         // Clear ownership before callbacks: LAST and a replacement FIRST both retire this run,
         // and each rejected DATA message returns at most one credit to its current session.
         runs[channel] = null
         releaseBytes(run)
-        if (!run.discarded || run.typeBytes != 2 ||
+        // Replacement FIRST abandons even a previously valid run. Its LAST will never
+        // reach a handler, so this is the only place that can return that DATA credit.
+        // Successful completion leaves credit delivery to the handler.
+        if ((!run.discarded && !abandoned) || run.typeBytes != 2 ||
             run.first.flags.toInt() and AapMessageFraming.FLAG_BIT_CONTROL != 0) return
         // Losing CSD also needs video recovery, but only DATA consumes a sender credit.
-        if (channel == Channel.ID_VID && run.type in 0..1) onDroppedVideoPayload()
+        // A valid abandoned run was already reported as truncated by the reader audit.
+        if (run.discarded && channel == Channel.ID_VID && run.type in 0..1) onDroppedVideoPayload()
         if ((Channel.isAudio(channel) || channel == Channel.ID_VID) && run.type == 0) onDroppedMediaData(channel)
     }
 

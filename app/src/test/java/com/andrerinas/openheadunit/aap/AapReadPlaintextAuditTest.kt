@@ -314,4 +314,33 @@ class AapReadPlaintextAuditTest {
                 }
             }
         }
+    @Test fun `valid unfinished DATA returns credit before replacement through both readers`() =
+        mockStatic(SystemClock::class.java).use {
+            for (bulk in listOf(false, true)) for (channel in listOf(Channel.ID_AUD, Channel.ID_VID)) {
+                for (prefixSize in listOf(2, 10, 14, 16)) for (fragmentedReplacement in listOf(false, true)) {
+                    val (handler, transport) = mediaHandler()
+                    val replacement = if (fragmentedReplacement)
+                        listOf(Packet(9, ByteArray(10), 16, channel = channel),
+                            Packet(10, ByteArray(6), channel = channel))
+                    else listOf(Packet(11, ByteArray(16), channel = channel))
+                    read(listOf(Packet(9, ByteArray(prefixSize), 32, channel = channel)) + replacement,
+                        bulk, chunkSize = 7, delegate = handler)
+                    verify(transport, times(2)).sendMediaAck(channel, 23)
+                }
+            }
+        }
+
+    @Test fun `replacement never acknowledges unfinished CSD control or an unknown type`() =
+        mockStatic(SystemClock::class.java).use {
+            for (bulk in listOf(false, true)) for (channel in listOf(Channel.ID_AUD, Channel.ID_VID)) {
+                for ((flags, prefix) in listOf(9 to byteArrayOf(0, 1),
+                    13 to byteArrayOf(0, 0), 9 to byteArrayOf(0))) {
+                    val (handler, transport) = mediaHandler()
+                    read(listOf(Packet(flags, prefix, 32, channel = channel),
+                        Packet(11, ByteArray(16), channel = channel)), bulk, delegate = handler)
+                    verify(transport, times(1)).sendMediaAck(channel, 23)
+                }
+            }
+        }
+
 }

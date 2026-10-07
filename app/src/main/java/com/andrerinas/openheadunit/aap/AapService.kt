@@ -1780,7 +1780,7 @@ class AapService : Service() {
                             usbLauncherManager.restartForSettings()
                         settings.lastConnectionType == Settings.CONNECTION_TYPE_NEARBY ->
                             (wifiLauncherManager.active as? WifiLauncherHelper)?.nearbyManager
-                                ?.restartForSettings()
+                                ?.restartForSettings(state.settingsRestartUntilMs)
                         wifiLauncherManager.activeMode == WifiLauncherMode.NATIVE ->
                             (wifiLauncherManager.active as? WifiLauncherNative)
                                 ?.rearmAfterSessionEnd(wakePhone = true)

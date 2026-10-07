@@ -1,8 +1,10 @@
 package com.andrerinas.openheadunit.connection.wifi.modes.helper
 
+import com.andrerinas.openheadunit.connection.SettingsRestartRecovery
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
+import android.os.SystemClock
 import android.os.Build
 import android.os.ParcelFileDescriptor
 import android.widget.Toast
@@ -57,6 +59,8 @@ class NearbyManager(
     private var isRunning = false
     private var isConnecting = false
     private var settingsRestartPeer: String? = null
+    private var settingsRestartUntilMs = 0L
+    private var settingsRestartTimeoutJob: Job? = null
 
     // Written on the Nearby callback thread, read from the upgrade-timeout and tunnel coroutines.
     @Volatile
@@ -135,14 +139,28 @@ class NearbyManager(
     }
 
     /** Save grants one retry of the same peer even when automatic connection is disabled. */
-    fun restartForSettings() {
+    fun restartForSettings(untilMs: Long = SystemClock.elapsedRealtime() +
+        SettingsRestartRecovery.WINDOW_MS) {
         val peer = settings.lastNearbyDeviceName.takeIf { it.isNotEmpty() } ?: return
         stop()
         settingsRestartPeer = peer
+        settingsRestartUntilMs = untilMs
         start()
+        settingsRestartTimeoutJob = scope.launch {
+            delay((untilMs - SystemClock.elapsedRealtime()).coerceAtLeast(0L))
+            settingsRestartPeer = null
+            // An already discovered phone need not produce a second FOUND callback.
+            // Reconsider the list under ordinary preferences, without granting another retry.
+            if (isRunning && settings.autoConnectLastSession && !isConnecting && activeEndpointId == null) {
+                _discoveredEndpoints.value.firstOrNull { it.name == settings.lastNearbyDeviceName }
+                    ?.let { connectToEndpoint(it.id) }
+            }
+        }
     }
 
     fun stop() {
+        settingsRestartTimeoutJob?.cancel()
+        settingsRestartTimeoutJob = null
         settingsRestartPeer = null
         AppLog.i("NearbyManager: Stopping discovery and disconnecting from any active endpoint...")
         isRunning = false
@@ -221,6 +239,8 @@ class NearbyManager(
 
             // A settings retry follows only the peer whose tunnel was just retired. Discovery
             // supplies its current endpoint ID; the previous ID need not survive disconnect.
+            // Check the clock too: a queued timeout must not extend Save's permission.
+            if (SystemClock.elapsedRealtime() >= settingsRestartUntilMs) settingsRestartPeer = null
             val restartPeer = settingsRestartPeer
             if (restartPeer != null) {
                 if (restartPeer == info.endpointName && !isConnecting && activeEndpointId == null) {

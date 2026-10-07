@@ -1026,6 +1026,13 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                 if (state is CommManager.ConnectionState.Disconnected ||
                     state is CommManager.ConnectionState.Connecting ||
                     state is CommManager.ConnectionState.HandshakeComplete) {
+                    // This collector also runs while the Activity is stopped. StateFlow may skip
+                    // Disconnected during a fast reconnect, so the new attempt's states retire
+                    // any pending regain too. The old surface clock cannot qualify the new
+                    // session for warm-relaunch recovery.
+                    watchdogHandler.removeCallbacks(focusCycleGainRunnable)
+                    focusCycleGainPending = false
+                    lastSurfaceSetMs = 0L
                     relaunchRecovery.resetSession()
                 }
             }

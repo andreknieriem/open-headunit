@@ -258,4 +258,53 @@ class VideoOutputRetirementTest {
         assertEquals(0, replacementCalls.get())
         verify(f.codec).releaseOutputBuffer(7, true)
     }
+    @Test fun `replacement reannounces dimensions stored before the old notification was retired`() {
+        val f = Fixture()
+        val pause = NativePause()
+        val previousLogger = AppLog.LOGGER
+        val format = mock(MediaFormat::class.java)
+        `when`(format.containsKey(anyString())).thenReturn(true)
+        `when`(format.getInteger(anyString())).thenReturn(0)
+        `when`(format.getInteger(MediaFormat.KEY_WIDTH)).thenReturn(1280)
+        `when`(format.getInteger(MediaFormat.KEY_HEIGHT)).thenReturn(720)
+        `when`(f.codec.dequeueOutputBuffer(any(), anyLong())).thenReturn(MediaCodec.INFO_OUTPUT_FORMAT_CHANGED)
+        `when`(f.codec.outputFormat).thenReturn(format)
+        val calls = AtomicInteger()
+        f.decoder.dimensionsListener = object : VideoDimensionsListener {
+            override fun onVideoDimensionsChanged(width: Int, height: Int) {
+                assertEquals(1280, width)
+                assertEquals(720, height)
+                calls.incrementAndGet()
+                f.decoder.stop("dimensions received")
+            }
+        }
+        AppLog.LOGGER = object : AppLog.Logger {
+            override fun println(priority: Int, tag: String, msg: String) {
+                if (msg.contains("Video dimensions changed via format")) pause.block()
+            }
+        }
+        f.start()
+        val oldWorker = f.worker
+        try {
+            pause.await()
+            f.decoder.stop(DecoderStopPolicy.REASON_ACTIVITY_STOPPED)
+            assertEquals(1280, f.get("mWidth"))
+            assertEquals(0, calls.get())
+            AppLog.LOGGER = previousLogger
+            val replacement = mock(MediaCodec::class.java)
+            `when`(replacement.dequeueOutputBuffer(any(), anyLong())).thenReturn(MediaCodec.INFO_OUTPUT_FORMAT_CHANGED)
+            `when`(replacement.outputFormat).thenReturn(format)
+            f.start(replacement)
+            f.join()
+            pause.resume.countDown()
+            oldWorker.join(3000)
+            assertFalse(oldWorker.isAlive)
+            assertEquals(1, calls.get())
+        } finally {
+            AppLog.LOGGER = previousLogger
+            pause.resume.countDown()
+            oldWorker.join(3000)
+            f.decoder.stop("test cleanup")
+        }
+    }
 }

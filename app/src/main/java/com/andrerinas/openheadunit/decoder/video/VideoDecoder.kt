@@ -696,6 +696,12 @@ class VideoDecoder(
                 mWidth = newWidth
                 mHeight = newHeight
                 events.info("Video dimensions changed via format: ${newWidth}x$newHeight")
+            }
+            // Every codec publishes its own output format, even when its size matches the
+            // previous one. That previous worker may have retired after storing the size but
+            // before dispatching its UI notification. Reannounce from the current owner so a
+            // retained surface learns the size without allowing retired callbacks through.
+            if (newWidth > 0 && newHeight > 0) {
                 dimensionsListener?.let { listener ->
                     events.callback { listener.onVideoDimensionsChanged(newWidth, newHeight) }
                 }

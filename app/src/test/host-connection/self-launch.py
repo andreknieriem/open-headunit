@@ -48,11 +48,12 @@ for marker, file, declaration in [
     ('ALLOW_LAUNCH', 'connection/self/SelfLauncherServices.kt', 'internal suspend fun ensureLaunchAllowed()'),
     ('LEGACY_RUN', legacy, 'override suspend fun run()'),
     ('LEGACY_WAIT', legacy, 'suspend fun runWifiLauncher()'),
+    ('OBSERVER', 'aap/AapService.kt', 'private fun observeConnectionState()'),
     ('CANCEL_ACTION', 'aap/AapService.kt', 'ACTION_CANCEL_WIRELESS       ->'),
 ]:
     code = member(file, declaration)
     # Main and its delay scheduler are controlled; production launch/delay calls and Jobs remain intact.
-    code = code.replace('Dispatchers.Main', 'service.main')
+    code = code.replace('Dispatchers.Main', 'service.main').replace('this@AapService', 'this@Service')
     fixture = fixture.replace('// ' + marker + '\n', code + '\n')
 (OUT / 'SelfLaunchFixture.kt').write_text(fixture)
 for name in ['SelfLaunchCoalescePolicy.kt', 'SelfLaunchTimeoutPolicy.kt']:

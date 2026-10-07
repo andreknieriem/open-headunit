@@ -269,6 +269,8 @@ class SelfLauncherManager(
     internal fun onConnectionEstablished() {
         val saved = settingsLaunchOwner ?: return
         val commManager = App.provide(service).commManager
+        // The collector's live-state event may already have been superseded by teardown.
+        if (!commManager.isConnected) return
         if (saved.acceptsSettingsRestart(commManager.connectionState.value)) return
         if (commManager.isLoopbackSession) {
             // The requested Self session arrived. Retain Self mode for its later disconnect,

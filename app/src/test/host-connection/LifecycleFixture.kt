@@ -102,6 +102,8 @@ private class ObserverFixture {
     private class Connection { val connectionState = MutableStateFlow<ConnectionState>(ConnectionState.Disconnected()) }
     private class Usb { var projectionHandshakeFailures=0; fun onHandshakeFailed() {} }
     private val commManager = Connection()
+    private class Self { fun onConnectionEstablished() {} }
+    private val selfLauncherManager = Self()
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
     private val usbLauncherManager = Usb()
     private var hasEverConnected = false

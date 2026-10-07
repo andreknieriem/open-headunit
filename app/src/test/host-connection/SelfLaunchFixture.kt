@@ -15,6 +15,7 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.MutableStateFlow
 import java.util.concurrent.ConcurrentLinkedQueue
 import kotlin.coroutines.CoroutineContext
@@ -55,11 +56,18 @@ class CommManager {
         // STATE
         object Connecting : ConnectionState()
         object Connected : ConnectionState()
+        object StartingTransport : ConnectionState()
+        object HandshakeComplete : ConnectionState()
+        object TransportStarted : ConnectionState()
+        data class Error(val message: String) : ConnectionState()
     }
     private val transportLifecycleLock = Any()
     private val _connectionState = MutableStateFlow<ConnectionState>(ConnectionState.Disconnected())
     val connectionState get() = _connectionState
-    val isConnected get() = _connectionState.value === ConnectionState.Connected
+    val isConnected get() = _connectionState.value.let {
+        it === ConnectionState.Connected || it === ConnectionState.StartingTransport ||
+            it === ConnectionState.HandshakeComplete || it === ConnectionState.TransportStarted
+    }
     val isUsbSession = false
     var isLoopbackSession = false
     var reports = 0
@@ -117,7 +125,8 @@ class ConnectivityManager { var activeNetwork: Any? = null }
 object Context { const val CONNECTIVITY_SERVICE = "connectivity" }
 object Build { object VERSION { const val SDK_INT = 23 }; object VERSION_CODES { const val M = 23 } }
 const val AA_PACKAGE = "fixture.gearhead"
-class Intent {
+class Intent(val action: String? = null) {
+    fun setPackage(name: String) {}
     fun setClassName(pkg: String, name: String) {}
     fun addFlags(flags: Int) {}
     fun putExtra(key: String, value: Any) {}
@@ -133,12 +142,18 @@ class WifiLauncherManager {
     fun startWirelessServer(launcher: WifiLauncherManual) { listenerStarts++ }
     fun stopForUser() { stops++ }
 }
-class UsbLauncherManager { fun isSwitchingToProjection() = false; fun stopForUser() {} }
+class UsbLauncherManager { var projectionHandshakeFailures = 0; fun onHandshakeFailed() {}; fun isSwitchingToProjection() = false; fun stopForUser() {} }
 enum class ConnectionStage { IDLE, USB_ATTACHED, USB_SWITCHING }
 object ConnectionStageTracker {
     val stage = MutableStateFlow(ConnectionStage.IDLE)
     fun clear() {}
 }
+object SessionStateIntent {
+    const val STATE_CONNECTING = 1; const val STATE_CONNECTED = 2; const val STATE_PROJECTING = 3; const val STATE_DISCONNECTED = 4
+    const val REASON_SETTINGS_RESTART = 4; const val REASON_USER_EXIT = 1; const val REASON_LINK_LOST = 2; const val REASON_PHONE_LEFT = 3
+}
+object StationStandDown { fun onSessionLive(service: Any, held: Long?) {} }
+object SystemClock { fun elapsedRealtime() = 0L }
 class Service : AutoCloseable {
     val main = QueuedMain()
     val serviceScope = CoroutineScope(SupervisorJob() + main)
@@ -146,6 +161,28 @@ class Service : AutoCloseable {
     val wifiLauncherManager = WifiLauncherManager()
     val usbLauncherManager = UsbLauncherManager()
     val manager = SelfLauncherManager(this, wifiLauncherManager)
+    val selfLauncherManager get() = manager
+    private var hasEverConnected = true // Save began with a prior established session.
+    private var projectingSinceMs = 0L
+    private var projectionRaisesThisSession = 0
+    private val packageName = "fixture"
+    private val ACTION_REQUEST_NIGHT_MODE_UPDATE = "night"
+    var connectedCallbacks = 0
+    var ordinaryDisconnects = 0
+    fun startObserver() { observeConnectionState() }
+    private fun onConnected() { connectedCallbacks++ }
+    private fun onDisconnected(state: CommManager.ConnectionState.Disconnected) {
+        if (!manager.isActive) ordinaryDisconnects++
+    }
+    private fun emitSessionState(state: Int, reason: Int = 0) {}
+    private fun quiesceWirelessForWiredSession() {}
+    private fun wifiLockHeldForMs(): Long? = null
+    private fun cancelProjectionRaiseDeadline() {}
+    private fun armProjectionRaiseDeadline(value: Any) {}
+    private fun launchAapProjectionActivity() = Unit
+    private fun sendBroadcast(intent: Intent) {}
+    private fun maybeAutoResumePlaybackOnReconnect() {}
+    // OBSERVER
     val network = ConnectivityManager()
     var modern = false
     var activities = 0
@@ -312,6 +349,44 @@ fun main() {
         s.main.drain()
         check(s.manager.isActive == loopback && s.resolvePrompts == 0)
     }
+    // Real service collection is held while the producer advances past Connected. This models
+    // the Activity/IO handshake publication at the StateFlow boundary, without Android UI doubles
+    // pretending to execute the whole Activity. The host lifecycle runner covers the real handshake.
+    for (observed in listOf(CommManager.ConnectionState.Connected, CommManager.ConnectionState.StartingTransport,
+        CommManager.ConnectionState.HandshakeComplete, CommManager.ConnectionState.TransportStarted)) {
+        for (loopback in listOf(false, true)) Service().use { s ->
+            s.network.activeNetwork = Any()
+            s.manager.start(s.save())
+            s.main.drain()
+            s.startObserver()
+            s.main.drain()
+            val baseline = s.ordinaryDisconnects
+            s.commManager.isLoopbackSession = loopback
+            s.commManager.connectionState.value = CommManager.ConnectionState.Connected
+            s.commManager.connectionState.value = observed
+            s.main.drain() // Only the latest phase reaches the actual extracted observer.
+            check(s.connectedCallbacks == if (observed === CommManager.ConnectionState.Connected) 1 else 0)
+            check(s.manager.isActive == loopback && s.vpnStops == 0)
+            if (!loopback) {
+                s.commManager.connectionState.value = CommManager.ConnectionState.Disconnected()
+                s.main.drain()
+                check(s.ordinaryDisconnects == baseline + 1)
+            }
+            s.main.advanceBy(SelfLaunchTimeoutPolicy.LEGACY_DEADLINE_MS)
+            s.main.drain()
+            check(s.resolvePrompts == 0 && s.commManager.reports == 0)
+        }
+    }
+    // A late live-state notification must not cancel a currently Connecting Save job.
+    Service().use { s ->
+        s.network.activeNetwork = Any()
+        s.manager.start(s.save())
+        s.main.drain()
+        val job = checkNotNull(s.manager.currentLaunch())
+        s.commManager.connectionState.value = CommManager.ConnectionState.Connecting
+        s.manager.onConnectionEstablished()
+        check(job.isActive && s.manager.isActive)
+    }
     // A genuinely unanswered current Save still runs the existing failure UI at its deadline.
     Service().use { s ->
         s.network.activeNetwork = Any()
@@ -347,5 +422,5 @@ fun main() {
         s.manager.start(saved)
         check(s.manager.currentLaunch() == null && !s.manager.isActive)
     }
-    println("PASS: real Self queued entry, legacy network wait, ownership takeover, stale permission, owned deadline and timeout takeover, replacement launch and bind-after-cancel")
+    println("PASS: real Self queued entry, legacy network wait, ownership takeover, stale permission, owned deadline and timeout takeover, conflated live-state delivery, replacement launch and bind-after-cancel")
 }

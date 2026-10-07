@@ -1171,6 +1171,14 @@ class AapService : Service() {
     private fun observeConnectionState() {
         serviceScope.launch {
             commManager.connectionState.collect { state ->
+                // Activity can advance the handshake before this conflated collector sees
+                // Connected. Every observed live phase must retire obsolete Save launch work.
+                if (state is CommManager.ConnectionState.Connected ||
+                    state is CommManager.ConnectionState.StartingTransport ||
+                    state is CommManager.ConnectionState.HandshakeComplete ||
+                    state is CommManager.ConnectionState.TransportStarted) {
+                    selfLauncherManager.onConnectionEstablished()
+                }
                 when (state) {
                     is CommManager.ConnectionState.Connecting ->
                         emitSessionState(SessionStateIntent.STATE_CONNECTING)
@@ -1302,7 +1310,6 @@ class AapService : Service() {
         (wifiLauncherManager.active as? WifiLauncherNative)?.handshakeManager?.projectionQrSnapshot()
 
     private fun onConnected() {
-        selfLauncherManager.onConnectionEstablished()
         usbLauncherManager.setSwitchingToProjection(false)
         updateNotification()
         // Whatever the transport, the wake-up loop has nothing left to do. Event driven rather

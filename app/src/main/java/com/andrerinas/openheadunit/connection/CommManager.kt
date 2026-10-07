@@ -345,13 +345,27 @@ class CommManager(
     suspend fun connect(
         device: UsbDevice,
         tier: ConnectionPriorityPolicy.Tier = ConnectionPriorityPolicy.Tier.USB,
+        expectedState: ConnectionState.Disconnected? = null,
     ) = withContext(Dispatchers.IO) {
-        val claim = ConnectionArbiter.claim(tier, ConnectionPriorityPolicy.Owner.USB,
-            "USB ${UsbDeviceCompat.getUniqueName(device)}") ?: return@withContext
-        try { connectUsb(device) } finally { releaseClaim(claim) }
+        if (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value)) return@withContext
+        val claim = claimUsb(tier, "USB ${UsbDeviceCompat.getUniqueName(device)}", expectedState)
+            ?: return@withContext
+        try { connectUsb(device, expectedState) } finally { releaseClaim(claim) }
     }
 
-    private suspend fun connectUsb(device: UsbDevice) {
+    internal fun claimUsb(
+        tier: ConnectionPriorityPolicy.Tier,
+        description: String,
+        expectedState: ConnectionState.Disconnected?,
+    ): ConnectionArbiter.Claim? = synchronized(transportLifecycleLock) {
+        // A later manual launch can revoke Save without changing the Disconnected object.
+        // Claim admission and cancellation must agree before USB can preempt that launch.
+        if (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value)) null
+        else ConnectionArbiter.claim(tier, ConnectionPriorityPolicy.Owner.USB, description)
+    }
+
+    private suspend fun connectUsb(device: UsbDevice, expectedState: ConnectionState.Disconnected? = null) {
+        if (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value)) return
         // Another caller already started the connection — do nothing.
         if (_connectionState.value is ConnectionState.Connecting)
             return
@@ -373,6 +387,9 @@ class CommManager(
 
         var conn: ProjectionConnection? = null
         val (attempt, previous) = synchronized(transportLifecycleLock) {
+            // Retirement can suspend after admission. Recheck the same Save permission at
+            // publication, before opening hardware or replacing another connection's state.
+            if (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value)) return
             outgoingEndpoint = null
             val token = Any()
             connectionAttempt = token

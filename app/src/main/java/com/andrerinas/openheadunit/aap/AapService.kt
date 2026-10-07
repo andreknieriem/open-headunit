@@ -1804,7 +1804,7 @@ class AapService : Service() {
                             selfLaunch = selfLauncherManager.currentLaunch()
                         }
                         settings.lastConnectionType == Settings.CONNECTION_TYPE_USB ->
-                            usbLauncherManager.restartForSettings()
+                            usbLauncherManager.restartForSettings(state)
                         settings.lastConnectionType == Settings.CONNECTION_TYPE_NEARBY ->
                             (wifiLauncherManager.active as? WifiLauncherHelper)?.nearbyManager
                                 ?.restartForSettings(state.settingsRestartUntilMs)

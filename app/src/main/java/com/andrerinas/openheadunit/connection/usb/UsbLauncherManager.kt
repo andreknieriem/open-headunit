@@ -19,6 +19,10 @@ import com.andrerinas.openheadunit.main.SettingsActivity
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.ToastUtils
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.CoroutineScope
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -41,7 +45,7 @@ class UsbLauncherManager(val service: AapService) {
      * Set to `true` synchronously on the main thread before launching any background
      * USB connect/switch coroutine. Checked in [checkAlreadyConnected] to prevent
      * multiple concurrent connection attempts on the same device.
-     * Cleared in the coroutine's finally block, or on disconnect.
+     * Cleared when the owning attempt completes, or on disconnect.
      */
     private val isSwitchingToProjection = AtomicBoolean(false)
 
@@ -68,8 +72,10 @@ class UsbLauncherManager(val service: AapService) {
     @Volatile private var attemptClaim: ConnectionArbiter.Claim? = null
 
     /** Claims the arbiter and marks an attempt in flight; false means a higher attempt holds it. */
-    fun beginAttempt(tier: Tier, what: String): Boolean {
-        val claim = ConnectionArbiter.claim(tier, Owner.USB, what) ?: return false
+    fun beginAttempt(tier: Tier, what: String, settingsRestart: CommManager.ConnectionState.Disconnected? = null): Boolean {
+        val claim = if (settingsRestart == null) ConnectionArbiter.claim(tier, Owner.USB, what)
+            else App.provide(service).commManager.claimUsb(tier, what, settingsRestart)
+        if (claim == null) return false
         attemptClaim = claim
         isSwitchingToProjection.set(true)
         return true
@@ -77,8 +83,9 @@ class UsbLauncherManager(val service: AapService) {
 
     /** A higher attempt took over: end this one without the status pill's X semantics. */
     fun preemptAttempt() {
+        // Keep the owner until completion releases its busy flag and claim. A suspended
+        // job finishes cancellation later; replacing its identity here would skip cleanup.
         attemptJob?.cancel()
-        attemptJob = null
     }
 
     /** The status pill's X during a USB attempt: no automatic USB connection until one is asked for. */
@@ -90,8 +97,9 @@ class UsbLauncherManager(val service: AapService) {
 
     fun stopForUser() {
         cancelledByUser = true
+        // Keep the owner until completion releases its busy flag and claim. A suspended
+        // job finishes cancellation later; replacing its identity here would skip cleanup.
         attemptJob?.cancel()
-        attemptJob = null
     }
 
     /** An explicit ask for USB. No-op unless the X is holding. */
@@ -189,8 +197,8 @@ class UsbLauncherManager(val service: AapService) {
     }
 
     /** Save may wait for transport retirement; an X pressed meanwhile remains authoritative. */
-    fun restartForSettings() {
-        if (!cancelledByUser) checkAlreadyConnected(force = true, userRequested = true)
+    fun restartForSettings(state: CommManager.ConnectionState.Disconnected) {
+        if (!cancelledByUser) checkAlreadyConnected(force = true, settingsRestart = state)
     }
 
     /**
@@ -203,9 +211,14 @@ class UsbLauncherManager(val service: AapService) {
      *              for the startup scan in [onCreate].
      * @param userRequested The user asked for this by hand, which lifts the status pill's X.
      */
-    fun checkAlreadyConnected(force: Boolean = false, userRequested: Boolean = false) {
+    fun checkAlreadyConnected(
+        force: Boolean = false,
+        userRequested: Boolean = false,
+        settingsRestart: CommManager.ConnectionState.Disconnected? = null,
+    ) {
         val settings = App.provide(service).settings
         val commManager = App.provide(service).commManager
+        if (settingsRestart != null && !settingsRestart.acceptsSettingsRestart(commManager.connectionState.value)) return
         val lastSession = settings.autoConnectLastSession
         val singleUsb = settings.autoConnectSingleUsbDevice
         val usbAutoStart = settings.autoStartOnUsb
@@ -224,6 +237,9 @@ class UsbLauncherManager(val service: AapService) {
             sessionLive = false, // Returned above.
             cancelledByUser = cancelledByUser,
             userRequested = userRequested,
+            // Save already requested this reconnection. Keep the ordinary cancel check and
+            // foreground policy; only the settings-screen hold is lifted for this scan.
+            settingsRestart = settingsRestart != null,
         )) {
             AutoConnectHoldPolicy.Verdict.HOLD_FOR_SETTINGS -> {
                 AppLog.i("UsbLauncher: USB auto-connect held while the settings screen is open; " +
@@ -254,16 +270,11 @@ class UsbLauncherManager(val service: AapService) {
             if (UsbDeviceCompat.isInAccessoryMode(device)) {
                 val deviceName = UsbDeviceCompat(device).uniqueName
                 AppLog.i("Found device already in accessory mode: $deviceName")
-                if (!beginAttempt(tier, "USB $deviceName")) return
+                if (!beginAttempt(tier, "USB $deviceName", settingsRestart)) return
                 ConnectionStageTracker.beginAttempt(ConnectionStage.USB_ATTACHED)
-                attemptJob = service.serviceScope.launch {
-                    try {
-                        if (awaitAccessoryPermission(usbManager, device, deviceName)) {
-                            connectWithRetry(device, tier = tier)
-                        }
-                    } finally {
-                        setSwitchingToProjection(false)
-                        endUsbAttemptStage()
+                launchAttempt(settingsRestart) {
+                    if (awaitAccessoryPermission(usbManager, device, deviceName)) {
+                        connectWithRetry(device, tier = tier, settingsRestart = settingsRestart)
                     }
                 }
                 return
@@ -277,20 +288,15 @@ class UsbLauncherManager(val service: AapService) {
                 if (settings.isConnectingDevice(deviceCompat)) {
                     if (usbManager.hasPermission(device)) {
                         AppLog.i("Found known USB device with permission: ${deviceCompat.uniqueName}. Switching to accessory mode.")
-                        if (!beginAttempt(tier, "USB switch of ${deviceCompat.uniqueName}")) return
+                        if (!beginAttempt(tier, "USB switch of ${deviceCompat.uniqueName}", settingsRestart)) return
                         ConnectionStageTracker.beginAttempt(ConnectionStage.USB_ATTACHED)
                         ConnectionStageTracker.report(ConnectionStage.USB_SWITCHING)
                         val usbMode = UsbAccessoryMode(usbManager)
-                        attemptJob = service.serviceScope.launch(Dispatchers.IO) {
-                            try {
-                                if (usbMode.connectAndSwitch(device, settings.useLibusb)) {
-                                    AppLog.i("Successfully requested switch to accessory mode for ${deviceCompat.uniqueName}")
-                                } else {
-                                    AppLog.w("connectAndSwitch failed for ${deviceCompat.uniqueName}")
-                                }
-                            } finally {
-                                setSwitchingToProjection(false)
-                                endUsbAttemptStage()
+                        launchAttempt(settingsRestart, Dispatchers.IO) {
+                            if (usbMode.connectAndSwitch(device, settings.useLibusb)) {
+                                AppLog.i("Successfully requested switch to accessory mode for ${deviceCompat.uniqueName}")
+                            } else {
+                                AppLog.w("connectAndSwitch failed for ${deviceCompat.uniqueName}")
                             }
                         }
                         return
@@ -307,7 +313,7 @@ class UsbLauncherManager(val service: AapService) {
         if (usbAutoStart) {
             val nonAccessoryDevices = deviceList.filter { !UsbDeviceCompat.isInAccessoryMode(it) }
             if (nonAccessoryDevices.size == 1) {
-                performSingleConnect(nonAccessoryDevices[0], tier)
+                performSingleConnect(nonAccessoryDevices[0], tier, settingsRestart)
                 return
             }
         }
@@ -329,7 +335,7 @@ class UsbLauncherManager(val service: AapService) {
                 AppLog.i("Single USB auto-connect: ${nonAccessoryDevices.size} USB device(s) present, ${candidates.size} allowed")
             }
             if (candidates.size == 1) {
-                performSingleConnect(candidates[0], tier)
+                performSingleConnect(candidates[0], tier, settingsRestart)
                 return
             }
         }
@@ -353,32 +359,52 @@ class UsbLauncherManager(val service: AapService) {
             }
             if (candidates.size == 1) {
                 AppLog.i("Fallback: force=true and found single normal-mode Android device ${UsbDeviceCompat(candidates[0]).uniqueName}. Switching to accessory mode.")
-                performSingleConnect(candidates[0], tier)
+                performSingleConnect(candidates[0], tier, settingsRestart)
             } else if (candidates.isNotEmpty()) {
                 AppLog.i("Fallback: force=true but ${candidates.size} candidate USB devices are attached; not guessing which is the phone")
             }
         }
     }
 
-    private fun performSingleConnect(device: UsbDevice, tier: Tier) {
+    /** Bind before dispatch so revoking Save also cancels a queued permission wait or retry. */
+    private fun launchAttempt(
+        settingsRestart: CommManager.ConnectionState.Disconnected?,
+        context: CoroutineContext = EmptyCoroutineContext,
+        block: suspend CoroutineScope.() -> Unit,
+    ) {
+        val claim = attemptClaim
+        val job = service.serviceScope.launch(context, start = CoroutineStart.LAZY) {
+            val manager = App.provide(service).commManager
+            if (settingsRestart == null || settingsRestart.acceptsSettingsRestart(manager.connectionState.value)) block()
+        }
+        attemptJob = job
+        job.invokeOnCompletion {
+            // Cancellation may run before the body starts. Release only this attempt's claim;
+            // an old completion must not clear a replacement USB attempt's busy flag.
+            if (attemptJob === job && attemptClaim === claim) {
+                attemptJob = null
+                setSwitchingToProjection(false)
+                endUsbAttemptStage()
+            }
+        }
+        settingsRestart?.trackSettingsLaunch(job)
+        job.start()
+    }
+
+    private fun performSingleConnect(device: UsbDevice, tier: Tier, settingsRestart: CommManager.ConnectionState.Disconnected? = null) {
         val settings = App.provide(service).settings
         val usbManager = UsbDeviceCompat.usbManager(service) ?: return
 
         if (usbManager.hasPermission(device)) {
             val deviceName = UsbDeviceCompat(device).uniqueName
             AppLog.i("Single USB auto-connect: connecting to $deviceName")
-            if (!beginAttempt(tier, "USB switch of $deviceName")) return
+            if (!beginAttempt(tier, "USB switch of $deviceName", settingsRestart)) return
             val usbMode = UsbAccessoryMode(usbManager)
-            attemptJob = service.serviceScope.launch(Dispatchers.IO) {
-                try {
-                    if (usbMode.connectAndSwitch(device, settings.useLibusb)) {
-                        AppLog.i("Successfully requested switch to accessory mode for single USB device. Waiting for re-enumeration...")
-                    } else {
-                        AppLog.w("Single USB auto-connect: connectAndSwitch failed for $deviceName")
-                    }
-                } finally {
-                    setSwitchingToProjection(false)
-                    endUsbAttemptStage()
+            launchAttempt(settingsRestart, Dispatchers.IO) {
+                if (usbMode.connectAndSwitch(device, settings.useLibusb)) {
+                    AppLog.i("Successfully requested switch to accessory mode for single USB device. Waiting for re-enumeration...")
+                } else {
+                    AppLog.w("Single USB auto-connect: connectAndSwitch failed for $deviceName")
                 }
             }
         } else {
@@ -421,7 +447,12 @@ class UsbLauncherManager(val service: AapService) {
      * USB accessories occasionally fail on the first attach (the device hasn't fully
      * enumerated yet), so retrying is necessary for reliability.
      */
-    suspend fun connectWithRetry(device: UsbDevice, maxRetries: Int = 3, tier: Tier = Tier.USB) {
+    suspend fun connectWithRetry(
+        device: UsbDevice,
+        maxRetries: Int = 3,
+        tier: Tier = Tier.USB,
+        settingsRestart: CommManager.ConnectionState.Disconnected? = null,
+    ) {
         val commManager = App.provide(service).commManager
         var retryCount = 0
         var success = false
@@ -435,7 +466,8 @@ class UsbLauncherManager(val service: AapService) {
                 if (commManager.isConnected ||
                     commManager.connectionState.value is CommManager.ConnectionState.Connecting) return
             }
-            commManager.connect(device, tier)
+            if (settingsRestart != null && !settingsRestart.acceptsSettingsRestart(commManager.connectionState.value)) return
+            commManager.connect(device, tier, expectedState = settingsRestart)
             success = commManager.connectionState.value is CommManager.ConnectionState.Connected
             retryCount++
         }

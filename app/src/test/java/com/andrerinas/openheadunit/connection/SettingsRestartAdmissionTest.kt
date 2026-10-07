@@ -147,4 +147,50 @@ class SettingsRestartAdmissionTest {
         }
     }
 
+
+    @Test fun `revoked USB Save cannot claim or touch hardware even when terminal identity is unchanged`() = runBlocking {
+        val manager = mock(CommManager::class.java, CALLS_REAL_METHODS)
+        val saved = CommManager.ConnectionState.Disconnected(reason = CommManager.DisconnectReason.SETTINGS_RESTART)
+        val flow = MutableStateFlow<CommManager.ConnectionState>(saved)
+        set(manager, "_connectionState", flow)
+        set(manager, "transportLifecycleLock", Any())
+        val device = mock(android.hardware.usb.UsbDevice::class.java)
+        val context = mock(android.content.Context::class.java)
+        set(manager, "context", context)
+        manager.cancelPendingSettingsRestart() // same action as the accepted manual Self launch
+        manager.connect(device, expectedState = saved)
+        assertNull(manager.claimUsb(ConnectionPriorityPolicy.Tier.USB, "obsolete Save", saved))
+        assertSame(saved, flow.value)
+        verifyNoInteractions(device, context)
+    }
+
+    @Test fun `USB Save checks permission again after retirement before publishing Connecting`() = runBlocking {
+        val manager = mock(CommManager::class.java, CALLS_REAL_METHODS)
+        val saved = CommManager.ConnectionState.Disconnected(reason = CommManager.DisconnectReason.SETTINGS_RESTART)
+        val flow = MutableStateFlow<CommManager.ConnectionState>(saved)
+        val retirement = Job()
+        set(manager, "_connectionState", flow)
+        set(manager, "transportLifecycleLock", Any())
+        set(manager, "_disconnectJob", retirement)
+        val context = mock(android.content.Context::class.java)
+        val usb = mock(android.hardware.usb.UsbManager::class.java)
+        val device = mock(android.hardware.usb.UsbDevice::class.java)
+        `when`(context.getSystemService(android.content.Context.USB_SERVICE)).thenReturn(usb)
+        `when`(usb.hasPermission(device)).thenReturn(true)
+        set(manager, "context", context)
+        val method = CommManager::class.java.getDeclaredMethod("connectUsb", android.hardware.usb.UsbDevice::class.java,
+            CommManager.ConnectionState.Disconnected::class.java, kotlin.coroutines.Continuation::class.java)
+            .apply { isAccessible = true }
+        val retry = launch(start = CoroutineStart.UNDISPATCHED) {
+            suspendCoroutineUninterceptedOrReturn<Unit> { method.invoke(manager, device, saved, it) }
+        }
+        assertFalse(retry.isCompleted)
+        manager.cancelPendingSettingsRestart()
+        retirement.complete()
+        retry.join()
+        assertSame(saved, flow.value)
+        verify(usb).hasPermission(device)
+        verify(usb, never()).openDevice(device)
+        verifyNoInteractions(device)
+    }
 }

@@ -66,4 +66,15 @@ class AutoConnectHoldPolicyTest {
         assertTrue(AutoConnectHoldPolicy.replaysOnRelease(usbHeld = true, bluetoothLaunchHeld = false))
         assertTrue(AutoConnectHoldPolicy.replaysOnRelease(usbHeld = false, bluetoothLaunchHeld = true))
     }
+    @Test fun `Save reconnect proceeds behind settings without overriding cancel or raising UI`() {
+        assertEquals(Verdict.PROCEED, AutoConnectHoldPolicy.decide(
+            settingsVisible = true, sessionLive = false, cancelledByUser = false,
+            userRequested = false, settingsRestart = true,
+        ))
+        assertEquals(Verdict.CANCELLED_BY_USER, AutoConnectHoldPolicy.decide(
+            settingsVisible = true, sessionLive = false, cancelledByUser = true,
+            userRequested = false, settingsRestart = true,
+        ))
+        assertFalse(AutoConnectHoldPolicy.raisesUi(settingsVisible = true, cancelledByUser = false))
+    }
 }

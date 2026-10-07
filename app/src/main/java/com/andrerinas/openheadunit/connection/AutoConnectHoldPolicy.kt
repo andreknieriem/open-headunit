@@ -3,8 +3,9 @@ package com.andrerinas.openheadunit.connection
 /**
  * Whether an automatic USB or Self Mode connection may start now, outside the wireless stack.
  *
- * The settings screen holds every one until it closes, and the status pill's X refuses them until
- * the user asks for a connection by hand. The wireless stack has its own pair of these.
+ * The settings screen holds automatic starts until it closes. Save may explicitly resume its
+ * own connection behind that screen; the status pill's X still refuses that retry. An explicit
+ * connection button may lift X. The wireless stack has its own pair of these.
  */
 object AutoConnectHoldPolicy {
 
@@ -15,9 +16,10 @@ object AutoConnectHoldPolicy {
         sessionLive: Boolean,
         cancelledByUser: Boolean,
         userRequested: Boolean,
+        settingsRestart: Boolean = false,
     ): Verdict = when {
         cancelledByUser && !userRequested -> Verdict.CANCELLED_BY_USER
-        settingsVisible && !sessionLive -> Verdict.HOLD_FOR_SETTINGS
+        settingsVisible && !sessionLive && !settingsRestart -> Verdict.HOLD_FOR_SETTINGS
         else -> Verdict.PROCEED
     }
 

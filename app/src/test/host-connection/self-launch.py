@@ -43,6 +43,7 @@ for marker, file, declaration in [
     ('CANCEL', comm, 'fun cancelPendingSettingsRestart()'),
     ('START', manager, 'fun start(settingsRestart:'),
     ('STOP', manager, 'fun stop(wasConnected:'),
+    ('ENDED', manager, 'internal fun onConnectionEnded('),
     ('ESTABLISHED', manager, 'internal fun onConnectionEstablished()'),
     ('STOP_CURRENT', manager, 'internal fun stopIfCurrent('),
     ('ALLOW_LAUNCH', 'connection/self/SelfLauncherServices.kt', 'internal suspend fun ensureLaunchAllowed()'),

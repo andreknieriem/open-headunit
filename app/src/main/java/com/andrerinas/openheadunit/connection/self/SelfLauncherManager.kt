@@ -283,6 +283,17 @@ class SelfLauncherManager(
         }
     }
 
+    /** Handle a terminal-only observation before the service chooses its reconnect policy. */
+    internal fun onConnectionEnded(state: CommManager.ConnectionState.Disconnected) {
+        val saved = settingsLaunchOwner ?: return
+        val commManager = App.provide(service).commManager
+        if (state === saved || commManager.connectionState.value !== state) return
+        // No live notification is guaranteed: fast handshake failure can replace them all.
+        // Use the retired connection's snapshot, not a now-cleared socket or the launch flag.
+        stopIfCurrent(launchJob, preserveVpn = true)
+        isActive = state.wasLoopbackSession
+    }
+
     /** Token used by a settings fallback so it cannot retire a newer manual launch. */
     internal fun currentLaunch(): Job? = launchJob
 

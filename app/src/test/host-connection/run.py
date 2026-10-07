@@ -89,6 +89,7 @@ class CommManager {
  fun cleanups(){queue.drain()}
  fun close(){disconnect(honorKillOnDisconnect=false);cleanups();_scope.cancel()}
  suspend fun connectNext(){connectIp("fixture",5277, null)}
+ suspend fun connectSelf(){connectIp("127.0.0.1",5277,null)}
  suspend fun connectSaved(state:ConnectionState.Disconnected){connectIp("fixture",5277,state)}
  suspend fun awaitDisconnectComplete(){_disconnectJob?.join()}
  val isUsbSession=false
@@ -102,10 +103,14 @@ manager_head=manager_head.replace(old_state, extract(comm, 'data class Disconnec
 for name in ['SettingsRestartRecovery.kt', 'SameEndpointConnectPolicy.kt']:
     source=(base/'connection'/name).read_text().replace('package com.andrerinas.openheadunit.connection', 'package lifecycle')
     (OUT/name).write_text(source)
+# These endpoint predicates must be the real ones when testing the terminal route snapshot.
+for declaration in ['val isWirelessSession:', 'val isLoopbackSession:']:
+    start = comm.index(declaration)
+    manager_head += comm[start:comm.index('\n\n', start)] + '\n'
 manager=manager_head+'\n'.join(extract(comm,n) for n in [
  'suspend fun startHandshake()', 'private inline fun withLiveTransport(', 'suspend fun startReading()',
  'private fun transportedQuited(', 'fun applyAudioSettings()', 'fun disconnect(', 'fun cancelPendingSettingsRestart()', 'private fun doDisconnect(',
- 'private suspend fun connectIp(', 'private suspend fun connectUsb(', 'fun destroy()'
+ 'private suspend fun connectIp(', 'private suspend fun connectUsb(', 'fun disconnectForLinkLoss(', 'fun destroy()'
 ])+'\n}\n'
 transport_head=r'''
 class AapTransport(
@@ -210,7 +215,8 @@ open class AapRead{@Volatile protected var isStopped=false;fun stop(){isStopped=
  settings:Settings,context:Context,metadata:((Any)->Unit)?,playback:((Any)->Unit)?):AapRead{creations++;return AapRead()}
 }}
 open class ProjectionConnection{@Volatile var closed=false;open fun connect()=true;open fun disconnect(){closed=true}}
-class SocketProjectionConnection(ip:String,port:Int,context:Context):ProjectionConnection(){
+class SocketProjectionConnection(private val ip:String,port:Int,context:Context):ProjectionConnection(){
+ val isLoopbackPeer get()=ip=="127.0.0.1"
  init { created.add(this);constructionHook?.invoke() }
  override fun connect():Boolean = connectionHook?.invoke(this) ?: super.connect()
  companion object { @Volatile var constructionHook:(()->Unit)?=null;@Volatile var connectionHook:((ProjectionConnection)->Boolean)?=null;val created=ConcurrentLinkedQueue<ProjectionConnection>() }
@@ -612,7 +618,29 @@ fun settingsActionCancellation()=runBlocking {
  println("PASS service stop/cancel/disconnect revoke pending Save before and after teardown")
 }
 '''
-extra=extra.replace('fun main(){', 'fun main(){\n settingsActionCancellation()')
+extra += r"""
+fun terminalRouteSnapshots()=runBlocking {
+ for(loopback in listOf(false,true)) for(route in listOf("disconnect","transport","link-loss","destroy")) {
+  val c=CommManager()
+  if(loopback)c.connectSelf() else c.connectNext()
+  check(c.state is ConnectionState.Connected && c.isLoopbackSession==loopback)
+  when(route) {
+   "disconnect" -> c.disconnect(isUserExit=false,honorKillOnDisconnect=false)
+   "transport" -> { c.startHandshake();checkNotNull(c.owner().onQuit).invoke(false) }
+   "link-loss" -> c.disconnectForLinkLoss(1)
+   "destroy" -> c.destroy()
+  }
+  val ended=c.state as ConnectionState.Disconnected
+  check(ended.wasLoopbackSession==loopback){"lost retiring route: $route"}
+  c.cleanups()
+  check(c.network()==null && !c.isLoopbackSession)
+  check(ended.wasLoopbackSession==loopback){"cleanup changed route snapshot: $route"}
+  c.close()
+ }
+ println("PASS real disconnect, transport quit, link loss and destroy preserve terminal loopback snapshot after cleanup")
+}
+"""
+extra=extra.replace('fun main(){', 'fun main(){\n terminalRouteSnapshots();settingsActionCancellation()')
 (OUT/'Probe.kt').write_text(manager+transport_fixture+support+extra)
 (OUT/'Os.kt').write_text(r'''package android.os
 import java.util.concurrent.*

@@ -47,6 +47,7 @@ private class ConnectionFixture(val settings: Settings = Settings()) {
     private val transportLifecycleLock = Any()
     private var disconnectRequested = false
     private var outgoingEndpoint: Pair<String, Int>? = null
+    private val isLoopbackSession = false
     private val audioDecoder = AudioDecoder()
     private val videoDecoder = Unit
     private val _backgroundNotification = Unit
@@ -102,7 +103,7 @@ private class ObserverFixture {
     private class Connection { val connectionState = MutableStateFlow<ConnectionState>(ConnectionState.Disconnected()) }
     private class Usb { var projectionHandshakeFailures=0; fun onHandshakeFailed() {} }
     private val commManager = Connection()
-    private class Self { fun onConnectionEstablished() {} }
+    private class Self { fun onConnectionEstablished() {}; fun onConnectionEnded(state: ConnectionState.Disconnected) {} }
     private val selfLauncherManager = Self()
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
     private val usbLauncherManager = Usb()

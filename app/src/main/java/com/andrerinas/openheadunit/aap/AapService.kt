@@ -1225,6 +1225,7 @@ class AapService : Service() {
                         }
                     }
                     is CommManager.ConnectionState.Disconnected -> {
+                        selfLauncherManager.onConnectionEnded(state)
                         if (hasEverConnected) {
                             emitSessionState(
                                 SessionStateIntent.STATE_DISCONNECTED,

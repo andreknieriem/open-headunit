@@ -106,9 +106,11 @@ class SettingsRestartAdmissionTest {
                 else method.invoke(manager, "127.0.0.1", 5277, saved, completion)
             }
             assertEquals("192.168.1.8:5277", manager.lastAttemptedEndpoint)
+            verifyNoInteractions(current)
             assertTrue(manager.isWirelessSession)
             assertFalse(manager.isLoopbackSession)
-            verifyNoInteractions(current)
+            verify(current).isLoopbackPeer
+            verifyNoMoreInteractions(current)
             if (socketPath) verify(socket).close()
         }
     }

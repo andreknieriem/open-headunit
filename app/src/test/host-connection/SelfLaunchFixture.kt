@@ -93,6 +93,7 @@ class SelfLauncherManager(private val service: Service, private val wifiLauncher
     fun inFlight() = launchInFlight
     // START
     // STOP
+    // ENDED
     // ESTABLISHED
     // STOP_CURRENT
 }
@@ -387,6 +388,55 @@ fun main() {
         s.manager.onConnectionEstablished()
         check(job.isActive && s.manager.isActive)
     }
+    // Every live phase can be conflated away by a fast failure. Only the terminal snapshot
+    // survives cleanup, so real service observation must settle old Self state from that snapshot.
+    for (loopback in listOf(false, true)) Service().use { s ->
+        s.network.activeNetwork = Any()
+        s.manager.start(s.save())
+        s.main.drain()
+        s.startObserver()
+        s.main.drain()
+        val before = s.ordinaryDisconnects
+        s.commManager.isLoopbackSession = loopback
+        s.commManager.connectionState.value = CommManager.ConnectionState.Connected
+        s.commManager.connectionState.value = CommManager.ConnectionState.StartingTransport
+        s.commManager.connectionState.value = CommManager.ConnectionState.Error("handshake failed")
+        s.commManager.connectionState.value = CommManager.ConnectionState.Disconnected(wasLoopbackSession = loopback)
+        s.commManager.isLoopbackSession = false // Physical cleanup finished before the collector.
+        s.main.drain()
+        check(s.connectedCallbacks == 0 && s.manager.isActive == loopback)
+        check(s.ordinaryDisconnects == before + if (loopback) 0 else 1)
+        check(s.vpnStops == 0 && s.manager.currentLaunch() == null)
+        s.main.advanceBy(SelfLaunchTimeoutPolicy.LEGACY_DEADLINE_MS)
+        s.main.drain()
+        check(s.resolvePrompts == 0 && s.commManager.reports == 0)
+    }
+    // A superseded terminal notification cannot retire a newer manual or Save launch.
+    for (manual in listOf(false, true)) Service().use { s ->
+        val old = s.save()
+        s.manager.start(old)
+        s.manager.stop(wasConnected = true)
+        s.commManager.connectionState.value = CommManager.ConnectionState.Disconnected()
+        val current = s.save()
+        if (manual) s.manager.start() else s.manager.start(current)
+        val job = checkNotNull(s.manager.currentLaunch())
+        s.manager.onConnectionEnded(old)
+        check(s.manager.currentLaunch() === job && job.isActive && s.manager.isActive)
+    }
+    // A second Save after an unobserved loopback session keeps the legacy relaunch route.
+    Service().use { s ->
+        s.network.activeNetwork = Any()
+        s.manager.start(s.save())
+        s.main.drain()
+        val next = CommManager.ConnectionState.Disconnected(
+            reason = CommManager.DisconnectReason.SETTINGS_RESTART, wasLoopbackSession = true)
+        s.commManager.connectionState.value = next
+        s.manager.onConnectionEnded(next)
+        check(s.manager.isActive && s.manager.currentLaunch() == null)
+        s.manager.start(next)
+        s.main.drain()
+        check(s.manager.isActive && s.activities == 2)
+    }
     // A genuinely unanswered current Save still runs the existing failure UI at its deadline.
     Service().use { s ->
         s.network.activeNetwork = Any()
@@ -422,5 +472,5 @@ fun main() {
         s.manager.start(saved)
         check(s.manager.currentLaunch() == null && !s.manager.isActive)
     }
-    println("PASS: real Self queued entry, legacy network wait, ownership takeover, stale permission, owned deadline and timeout takeover, conflated live-state delivery, replacement launch and bind-after-cancel")
+    println("PASS: real Self queued entry, legacy network wait, ownership takeover, stale permission, owned deadline and timeout takeover, conflated live/terminal delivery, replacement launch and bind-after-cancel")
 }

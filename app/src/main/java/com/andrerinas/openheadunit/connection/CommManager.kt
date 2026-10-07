@@ -105,6 +105,9 @@ class CommManager(
             // Only outgoing IP connections are dialled again; an accepted socket's port is ephemeral.
             val restartEndpoint: Pair<String, Int>? = null,
             val settingsRestartUntilMs: Long = 0L,
+            // Preserve the retiring route even when StateFlow skips every live phase and
+            // cleanup has already cleared the physical connection before the observer runs.
+            val wasLoopbackSession: Boolean = false,
         ) : ConnectionState() {
             val isSettingsRestart get() = reason == DisconnectReason.SETTINGS_RESTART
 
@@ -310,7 +313,7 @@ class CommManager(
      * is one too, and only the endpoint separates them.
      */
     val isLoopbackSession: Boolean
-        get() = isWirelessSession && lastAttemptedEndpoint?.startsWith("127.0.0.1:") == true
+        get() = (_connection as? SocketProjectionConnection)?.isLoopbackPeer == true
 
     /**
      * Returns `true` if the current USB connection is to [device].
@@ -905,7 +908,7 @@ class CommManager(
         // precedes final cleanup, so reconnect must await its actual termination as well.
         // Publish cleanup before state: a reconnect observer must be able to await this job.
         _disconnectJob = _scope.launch { doDisconnect(sendByeBye = false) }
-        _connectionState.value = ConnectionState.Disconnected(isClean, isUserExit = wasUserExit)
+        _connectionState.value = ConnectionState.Disconnected(isClean, isUserExit = wasUserExit, wasLoopbackSession = isLoopbackSession)
         if (settings.killOnDisconnect) {
             context.sendBroadcast(android.content.Intent("com.andrerinas.openheadunit.ACTION_FINISH_ACTIVITIES").apply {
                 setPackage(context.packageName)
@@ -1222,6 +1225,7 @@ class CommManager(
         _disconnectJob = _scope.launch { doDisconnect(sendByeBye, byeByeReason, reason) }
         _connectionState.value = ConnectionState.Disconnected(
             isUserExit = isUserExit, reason = reason,
+            wasLoopbackSession = isLoopbackSession,
             restartEndpoint = if (reason == DisconnectReason.SETTINGS_RESTART) outgoingEndpoint else null,
             settingsRestartUntilMs = if (reason == DisconnectReason.SETTINGS_RESTART)
                 SystemClock.elapsedRealtime() + SettingsRestartRecovery.WINDOW_MS else 0L,
@@ -1282,7 +1286,7 @@ class CommManager(
             disconnectRequested = true
             connectionAttempt = null
             if (_connectionState.value !is ConnectionState.Disconnected) {
-                _connectionState.value = ConnectionState.Disconnected()
+                _connectionState.value = ConnectionState.Disconnected(wasLoopbackSession = isLoopbackSession)
             }
             val transport = _transport
             val connection = _connection
@@ -1393,7 +1397,7 @@ class CommManager(
             HeadUnitScreenConfig.unlockResolution()
             val cleanup = _scope.launch { doDisconnect(sendByeBye = true) }
             _disconnectJob = cleanup
-            _connectionState.value = ConnectionState.Disconnected(isClean = false, isUserExit = false)
+            _connectionState.value = ConnectionState.Disconnected(isClean = false, isUserExit = false, wasLoopbackSession = isLoopbackSession)
             cleanup
         }
         runBlocking { withTimeoutOrNull(timeoutMs) { job.join() } }

@@ -63,6 +63,11 @@ class SocketProjectionConnection(
     override val isConnected: Boolean
         get() = transport.isConnected && !transportBroken
 
+    // Nearby exposes a synthetic loopback address for a remote phone. Retain the route on
+    // this connection object so a later attempted endpoint cannot change session ownership.
+    internal val isLoopbackPeer: Boolean
+        get() = !singleMessage && !LoopbackBindPolicy.needsNetworkBinding(ip)
+
     override val isSingleMessage: Boolean
         get() = singleMessage
 

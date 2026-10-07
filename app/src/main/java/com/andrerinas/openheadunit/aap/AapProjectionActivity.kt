@@ -290,13 +290,15 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                 // The transport's own escalation spends the same lever. If it holds it, no release
                 // went out for this policy to complete, so nothing here may be marked as spent -
                 // and the keyframe that cycle brings is the one this was asking for anyway.
-                if (!commManager.releaseVideoFocusForKeyframe()) {
+                val cycle = commManager.releaseVideoFocusForKeyframe()
+                if (cycle == null) {
                     AppLog.w("AapProjectionActivity: relaunched surface has no picture, but a focus cycle is already in flight - waiting for it")
                     return
                 }
                 relaunchRecovery.cycleSpent = true
                 lastVideoFocusRequestMs = now
                 AppLog.w("AapProjectionActivity: relaunched surface has no picture after ${now - lastSurfaceSetMs}ms - cycling video focus")
+                focusCycle = cycle
                 focusCycleGainPending = true
                 watchdogHandler.removeCallbacks(focusCycleGainRunnable)
                 watchdogHandler.postDelayed(
@@ -344,6 +346,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     }
 
     private var focusCycleGainPending = false
+    private var focusCycle: CommManager.VideoFocusCycle? = null
 
     /**
      * Second half of the focus cycle - see [WarmRelaunchKeyframePolicy.FOCUS_CYCLE_GAP_MS] for why
@@ -351,8 +354,11 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
      */
     private val focusCycleGainRunnable = Runnable {
         focusCycleGainPending = false
-        AppLog.w("AapProjectionActivity: retaking video focus to complete the keyframe cycle")
-        commManager.retakeVideoFocusForKeyframe()
+        val cycle = focusCycle ?: return@Runnable
+        focusCycle = null
+        if (commManager.retakeVideoFocusForKeyframe(cycle)) {
+            AppLog.w("AapProjectionActivity: retaking video focus to complete the keyframe cycle")
+        }
     }
 
     /**
@@ -1032,6 +1038,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                     // session for warm-relaunch recovery.
                     watchdogHandler.removeCallbacks(focusCycleGainRunnable)
                     focusCycleGainPending = false
+                    focusCycle = null
                     lastSurfaceSetMs = 0L
                     relaunchRecovery.resetSession()
                 }

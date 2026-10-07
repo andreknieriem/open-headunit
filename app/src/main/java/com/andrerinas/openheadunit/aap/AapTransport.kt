@@ -149,6 +149,14 @@ class AapTransport(
     /** Set by [AapControl] when VIDEO_FOCUS_NATIVE triggers a stop (user tapped Exit). */
     @Volatile var wasUserExit: Boolean = false
     @Volatile var onQuit: ((Boolean) -> Unit)? = null
+    private val quitLock = Any()
+    private var peerRequestedClose = false
+
+    internal fun notePeerClose() = synchronized(quitLock) {
+        // ByeByeRequest and the Helper close marker end the session by choice. A queued write
+        // after the peer closes must retain that reason when it wins the teardown race.
+        peerRequestedClose = true
+    }
     var isAssistantActive = false
     var onAudioFocusStateChanged: ((Boolean) -> Unit)? = null
     var onUpdateUiConfigReplyReceived: (() -> Unit)? = null
@@ -774,19 +782,19 @@ class AapTransport(
     }
 
     internal fun quit(clean: Boolean = false) {
-        val (cb, awaitHandshake) = synchronized(lifecycleLock) {
+        val (cb, awaitHandshake, cleanEnd) = synchronized(lifecycleLock) {
             if (closing) return
             closing = true
             retiringWorkers = listOfNotNull(pollThread, sendThread, videoThread)
             aapRead?.stop()
             val callback = onQuit
             onQuit = null
-            callback to handshakeStarted
+            Triple(callback, handshakeStarted, synchronized(quitLock) { clean || peerRequestedClose })
         }
         try {
-            AppLog.i("AapTransport quitting (clean=$clean)")
+            AppLog.i("AapTransport quitting (clean=$cleanEnd)")
             // Notify promptly; CommManager keeps this owner until awaitTermination completes.
-            cleanupStep("notify") { cb?.invoke(clean) }
+            cleanupStep("notify") { cb?.invoke(cleanEnd) }
             cleanupStep("microphone") { retireMicrophone() }
             sendHandler?.removeCallbacks(focusCycleGainRunnable)
             sendHandler?.removeCallbacks(unrepairedCheckRunnable)
@@ -956,6 +964,7 @@ class AapTransport(
             try {
                 this.connection = connection
                 wasUserExit = false
+                synchronized(quitLock) { peerRequestedClose = false }
                 resetSessionObservations()
                 resetMicrophone()
 
@@ -1145,6 +1154,7 @@ class AapTransport(
             }
 
             ssl.postHandshakeReset()
+            (ssl as? AapSslContext)?.onPeerClose = ::notePeerClose
             ssl.setControlRecordListener {
                 sendHandler?.post {
                     val sent = tlsWriter.flushControl()

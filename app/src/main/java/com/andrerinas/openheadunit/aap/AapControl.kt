@@ -373,6 +373,7 @@ internal class AapControlService(
     }
 
     private fun byebyeRequest(request: Control.ByeByeRequest, channel: Int): Int {
+        aapTransport.notePeerClose()
         AppLog.i("!!! RECEIVED BYEBYE REQUEST FROM PHONE !!! Reason: ${request.reason}")
 
         val msg = AapMessage(channel, Control.ControlMsgType.MESSAGE_BYEBYE_RESPONSE_VALUE, Control.ByeByeResponse.newBuilder().build())

@@ -25,6 +25,7 @@ class AapSslContext internal constructor(private val sslContext: SSLContext): Aa
     @Volatile private var controlRecordListener: (() -> Unit)? = null
 
     @Volatile var isUserDisconnect = false
+    @Volatile internal var onPeerClose: (() -> Unit)? = null
 
     override fun performHandshake(connection: ProjectionConnection): Boolean {
         if (prepare() < 0) return false
@@ -190,6 +191,7 @@ class AapSslContext internal constructor(private val sslContext: SSLContext): Aa
     override fun release() {
         synchronized(this) {
             controlRecordListener = null
+            onPeerClose = null
             controlRecords.clear()
             controlRecordBytes = 0
         }
@@ -315,8 +317,10 @@ class AapSslContext internal constructor(private val sslContext: SSLContext): Aa
                         }
                     }
                     if (allFF) {
-                        AppLog.i("SSL Decrypt: Magic Garbage detected. Marking as clean user disconnect.")
                         isUserDisconnect = true
+                        // Report at recognition, before diagnostics can yield to a failing writer.
+                        onPeerClose?.invoke()
+                        AppLog.i("SSL Decrypt: Magic Garbage detected. Marking as clean user disconnect.")
                     }
                 }
 

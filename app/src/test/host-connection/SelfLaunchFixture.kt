@@ -1,0 +1,223 @@
+package selflaunch
+
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.MainCoroutineDispatcher
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.MutableStateFlow
+import java.util.concurrent.ConcurrentLinkedQueue
+import kotlin.coroutines.CoroutineContext
+
+// This queue holds Main entry and resumed network waits independently of cancellation.
+class QueuedMain : MainCoroutineDispatcher() {
+    override val immediate get() = this
+    val tasks = ConcurrentLinkedQueue<Runnable>()
+    override fun dispatch(context: CoroutineContext, block: Runnable) { tasks.add(block) }
+    fun drain() { while (true) (tasks.poll() ?: return).run() }
+}
+class CommManager {
+    enum class DisconnectReason { CONNECTION_ENDED, SETTINGS_RESTART }
+    sealed class ConnectionState {
+        // STATE
+        object Connecting : ConnectionState()
+        object Connected : ConnectionState()
+    }
+    private val transportLifecycleLock = Any()
+    private val _connectionState = MutableStateFlow<ConnectionState>(ConnectionState.Disconnected())
+    val connectionState get() = _connectionState
+    val isConnected get() = _connectionState.value === ConnectionState.Connected
+    val isUsbSession = false
+    var reports = 0
+    // CANCEL
+    fun reportError(message: String, state: ConnectionState.Disconnected? = null) { reports++ }
+    fun emitError(message: String) { reports++ }
+    fun disconnect() { cancelPendingSettingsRestart() }
+    suspend fun awaitDisconnectComplete() {}
+}
+class SelfLauncherManager(private val service: Service, private val wifiLauncherManager: WifiLauncherManager) {
+    var isActive = false
+    private var launchInFlight = false
+    private var launchJob: Job? = null
+    private var launchTimeoutJob: Job? = null
+    private var selfModeVpnWatchdog: Job? = null
+    private fun isAaVersion174OrHigher() = service.modern
+    private fun adoptDummyVpn() { service.vpnAdoptions++ }
+    fun stopDummyVpnWatchdog() { selfModeVpnWatchdog?.cancel(); selfModeVpnWatchdog = null }
+    fun handleNeverConnect() { service.resolvePrompts++ }
+    fun currentLaunch() = launchJob
+    fun inFlight() = launchInFlight
+    // START
+    // STOP
+    // STOP_CURRENT
+}
+class SelfLauncherServices(val aap: Service, val wifiLauncherManager: WifiLauncherManager,
+                           val settingsRestart: CommManager.ConnectionState.Disconnected?) {
+    val connectivityManager get() = aap.network
+    val fakeNetwork = Any()
+    val fakeWifiInfo = Any()
+}
+open class SelfLauncher(val manager: SelfLauncherManager, val services: SelfLauncherServices) {
+    open val name = "fixture"
+    open suspend fun run() = false
+}
+class SelfLauncherLegacy(manager: SelfLauncherManager, services: SelfLauncherServices) : SelfLauncher(manager, services) {
+    // LEGACY_RUN
+    // LEGACY_WAIT
+}
+class SelfLauncherV17_4(manager: SelfLauncherManager, services: SelfLauncherServices) : SelfLauncher(manager, services) {
+    override suspend fun run(): Boolean { services.aap.directConnects++; return true }
+}
+class SelfLauncherBroadcast(manager: SelfLauncherManager, services: SelfLauncherServices) : SelfLauncher(manager, services)
+class SelfLauncherBTDiscovery(manager: SelfLauncherManager, services: SelfLauncherServices) : SelfLauncher(manager, services)
+
+// Android effects are observable at the same calls made by production methods.
+object App { fun provide(service: Service) = service }
+object AppLog { fun i(s: String) {}; fun w(s: String) {}; fun w(s: String, e: Throwable) {}; fun e(s: String) {} }
+object DummyVpnPolicy { enum class Reason { SELF_MODE_NEVER_CONNECTED } }
+class ConnectivityManager { var activeNetwork: Any? = null }
+object Context { const val CONNECTIVITY_SERVICE = "connectivity" }
+object Build { object VERSION { const val SDK_INT = 23 }; object VERSION_CODES { const val M = 23 } }
+const val AA_PACKAGE = "fixture.gearhead"
+class Intent {
+    fun setClassName(pkg: String, name: String) {}
+    fun addFlags(flags: Int) {}
+    fun putExtra(key: String, value: Any) {}
+    fun getBooleanExtra(key: String, default: Boolean) = default
+    companion object { const val FLAG_ACTIVITY_NEW_TASK = 1 }
+}
+class WifiLauncherManual(manager: WifiLauncherManager)
+class WifiLauncherManager {
+    var active: WifiLauncherManual? = null
+    var listenerStarts = 0
+    var stops = 0
+    val sharedServices get() = this
+    fun startWirelessServer(launcher: WifiLauncherManual) { listenerStarts++ }
+    fun stopForUser() { stops++ }
+}
+class UsbLauncherManager { fun isSwitchingToProjection() = false; fun stopForUser() {} }
+enum class ConnectionStage { IDLE, USB_ATTACHED, USB_SWITCHING }
+object ConnectionStageTracker {
+    val stage = MutableStateFlow(ConnectionStage.IDLE)
+    fun clear() {}
+}
+class Service : AutoCloseable {
+    val main = QueuedMain()
+    val serviceScope = CoroutineScope(SupervisorJob() + main)
+    val commManager = CommManager()
+    val wifiLauncherManager = WifiLauncherManager()
+    val usbLauncherManager = UsbLauncherManager()
+    val manager = SelfLauncherManager(this, wifiLauncherManager)
+    val network = ConnectivityManager()
+    var modern = false
+    var activities = 0
+    var directConnects = 0
+    var vpnAdoptions = 0
+    var vpnStops = 0
+    var resolvePrompts = 0
+    var usbCheckPendingForSettings = false
+    var bluetoothLaunchPendingForSettings = false
+    var wirelessRearmPendingForSettings = false
+    fun getSystemService(name: String): Any = network
+    fun startActivity(intent: Intent) { activities++ }
+    fun stopDummyVpn(reason: DummyVpnPolicy.Reason) { vpnStops++ }
+    fun cancelAction(intent: Intent? = null): Int {
+        when (ACTION_CANCEL_WIRELESS) {
+            // CANCEL_ACTION
+        }
+        return START_STICKY
+    }
+    fun save(): CommManager.ConnectionState.Disconnected {
+        val saved = CommManager.ConnectionState.Disconnected(
+            reason = CommManager.DisconnectReason.SETTINGS_RESTART,
+            settingsRestartUntilMs = Long.MAX_VALUE)
+        commManager.connectionState.value = saved
+        return saved
+    }
+    override fun close() { serviceScope.cancel(); main.drain() }
+    companion object {
+        const val ACTION_CANCEL_WIRELESS = "cancel"
+        const val EXTRA_USB_ATTEMPT = "usb"
+        const val START_STICKY = 1
+    }
+}
+
+fun main() {
+    // Cancel before Main has started either the legacy or direct launcher.
+    for (modern in listOf(false, true)) Service().use { s ->
+        s.modern = modern
+        val saved = s.save()
+        s.manager.start(saved)
+        val job = checkNotNull(s.manager.currentLaunch())
+        s.cancelAction()
+        s.main.drain()
+        check(job.isCancelled)
+        check(s.wifiLauncherManager.listenerStarts == 0 && s.activities == 0 && s.directConnects == 0)
+        check(s.vpnAdoptions == 0 && !s.manager.isActive && !s.manager.inFlight())
+        check(!saved.holdsSettingsWake(0))
+    }
+    // Cancel while the actual legacy launcher is suspended in its network wait.
+    Service().use { s ->
+        s.manager.start(s.save())
+        s.main.drain()
+        check(s.wifiLauncherManager.listenerStarts == 1 && s.activities == 0)
+        val job = checkNotNull(s.manager.currentLaunch())
+        s.cancelAction()
+        s.network.activeNetwork = Any()
+        s.main.drain()
+        check(job.isCancelled && s.activities == 0 && !s.manager.isActive)
+    }
+    // Permission can already be revoked when a queued start finally runs.
+    Service().use { s ->
+        val saved = s.save()
+        s.manager.start(saved)
+        s.commManager.connectionState.value = CommManager.ConnectionState.Connected
+        s.main.drain()
+        check(s.activities == 0 && s.wifiLauncherManager.listenerStarts == 0)
+        check(!s.manager.isActive && s.vpnStops == 0)
+    }
+    // A successfully sent legacy intent keeps its timeout bound to Save cancellation.
+    Service().use { s ->
+        s.network.activeNetwork = Any()
+        s.manager.start(s.save())
+        s.main.drain()
+        check(s.activities == 1 && !s.manager.inFlight())
+        val job = checkNotNull(s.manager.currentLaunch())
+        check(job.isActive && job.children.count() == 1)
+        s.cancelAction()
+        s.main.drain()
+        check(job.isCancelled && job.children.none())
+        check(s.commManager.reports == 0 && s.resolvePrompts == 0 && !s.manager.isActive)
+    }
+    // Completion of an old cancelled launch must not retire a new manual launch.
+    Service().use { s ->
+        s.manager.start(s.save())
+        val old = checkNotNull(s.manager.currentLaunch())
+        s.manager.stop()
+        s.network.activeNetwork = Any()
+        s.manager.start()
+        val replacement = checkNotNull(s.manager.currentLaunch())
+        s.main.drain()
+        check(old.isCancelled && replacement.isActive)
+        check(s.manager.currentLaunch() === replacement && s.manager.isActive)
+        check(s.activities == 1 && s.wifiLauncherManager.listenerStarts == 1)
+    }
+    // Revocation before binding cancels a lazy job without letting it enter.
+    Service().use { s ->
+        val saved = s.save()
+        saved.cancelSettingsRestart()
+        var entered = false
+        val job = s.serviceScope.launch(start = CoroutineStart.LAZY) { entered = true }
+        saved.trackSettingsLaunch(job)
+        job.start()
+        s.main.drain()
+        check(job.isCancelled && !entered)
+        s.manager.start(saved)
+        check(s.manager.currentLaunch() == null && !s.manager.isActive)
+    }
+    println("PASS: real Self queued entry, legacy network wait, stale permission, owned deadline, replacement launch and bind-after-cancel")
+}

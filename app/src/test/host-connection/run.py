@@ -735,3 +735,6 @@ subprocess.run(["java","-cp",str(OUT/"probe.jar")+os.pathsep+cp,"lifecycle.Probe
 
 # Exercise real playback ownership as well when both independently mergeable changes are present.
 subprocess.run(["python3", str(Path(__file__).with_name("audio-integration.py"))], check=True)
+
+# Exercise actual Self launch jobs and the service cancel action on a queued Main dispatcher.
+subprocess.run(["python3", str(Path(__file__).with_name("self-launch.py"))], check=True)

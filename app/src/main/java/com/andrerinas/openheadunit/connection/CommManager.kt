@@ -111,11 +111,29 @@ class CommManager(
             // Created with Save, before asynchronous teardown. A later manual Self launch
             // revokes this permission even while it is still waiting to dial our listener.
             @Volatile private var settingsRestartCancelled = false
+            private var settingsLaunch: Job? = null
 
             internal fun acceptsSettingsRestart(current: ConnectionState): Boolean =
                 current === this && isSettingsRestart && !settingsRestartCancelled
 
-            internal fun cancelSettingsRestart() { settingsRestartCancelled = true }
+            internal fun cancelSettingsRestart() {
+                val launch = synchronized(this) {
+                    settingsRestartCancelled = true
+                    settingsLaunch.also { settingsLaunch = null }
+                }
+                launch?.cancel()
+            }
+
+            /** Save owns the queued Self launch and its deadline until another connection takes over. */
+            internal fun trackSettingsLaunch(job: Job) {
+                val cancelled = synchronized(this) {
+                    if (settingsRestartCancelled) true else { settingsLaunch = job; false }
+                }
+                job.invokeOnCompletion {
+                    synchronized(this) { if (settingsLaunch === job) settingsLaunch = null }
+                }
+                if (cancelled) job.cancel()
+            }
 
             fun holdsSettingsWake(nowMs: Long): Boolean =
                 isSettingsRestart && !settingsRestartCancelled && nowMs < settingsRestartUntilMs

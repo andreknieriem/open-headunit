@@ -6,13 +6,15 @@ import android.os.Build
 import android.os.Parcel
 import android.os.Parcelable
 import com.andrerinas.openheadunit.aap.AapService
+import com.andrerinas.openheadunit.connection.CommManager
 import com.andrerinas.openheadunit.connection.wifi.WifiLauncherManager
 import com.andrerinas.openheadunit.connection.wifi.WifiLauncherMode
 import kotlinx.coroutines.delay
 
 class SelfLauncherServices(
     val aap: AapService,
-    val wifiLauncherManager: WifiLauncherManager
+    val wifiLauncherManager: WifiLauncherManager,
+    val settingsRestart: CommManager.ConnectionState.Disconnected? = null,
 ) {
     val connectivityManager by lazy { aap.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager }
 

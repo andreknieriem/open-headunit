@@ -17,6 +17,7 @@ import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.VpnControl
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -107,11 +108,16 @@ class SelfLauncherManager(
         launchTimeoutJob?.cancel()
         isActive = true
         launchInFlight = true
-        adoptDummyVpn()
-
-        launchJob = service.serviceScope.launch(Dispatchers.Main) {
+        // Publish and bind the job before it can run. Revoking Save then cancels both a queued
+        // launch and a launcher suspended while waiting for the network, without touching a new job.
+        val job = service.serviceScope.launch(Dispatchers.Main, start = CoroutineStart.LAZY) {
+            if (settingsRestart != null && !settingsRestart.acceptsSettingsRestart(commManager.connectionState.value)) {
+                stopIfCurrent(coroutineContext[Job])
+                return@launch
+            }
+            adoptDummyVpn()
             // prepare launchers
-            val services = SelfLauncherServices(service, wifiLauncherManager)
+            val services = SelfLauncherServices(service, wifiLauncherManager, settingsRestart)
             val launchers: Array<SelfLauncher>
 
             val path = installedPath(service)
@@ -153,7 +159,7 @@ class SelfLauncherManager(
             } finally {
                 // The launchers have had their turn; what follows is waiting for the phone, which
                 // another request is entitled to retry.
-                launchInFlight = false
+                if (launchJob === coroutineContext[Job]) launchInFlight = false
             }
 
             // all failed :(
@@ -180,7 +186,9 @@ class SelfLauncherManager(
             // wireless server and the dummy VPN are what the phone still has to arrive on. See
             // SelfLaunchTimeoutPolicy.
             val deadlineMs = SelfLaunchTimeoutPolicy.deadlineMs(path)
-            launchTimeoutJob = service.serviceScope.launch {
+            // A child keeps this attempt alive through its response deadline. Save cancellation
+            // must also suppress timeout UI after a successful legacy launch intent was sent.
+            launchTimeoutJob = launch {
                 delay(deadlineMs)
 
                 if (!commManager.isConnected && isActive) {
@@ -199,6 +207,16 @@ class SelfLauncherManager(
                 }
             }
         }
+        launchJob = job
+        job.invokeOnCompletion { cause ->
+            if (cause is CancellationException) service.serviceScope.launch(Dispatchers.Main.immediate) {
+                // Completion may arrive from IO. Main owns the launch flags and VPN bookkeeping;
+                // recheck identity there so delayed cleanup cannot stop a newer manual launch.
+                stopIfCurrent(job)
+            }
+        }
+        settingsRestart?.trackSettingsLaunch(job)
+        job.start()
     }
 
     /**
@@ -237,7 +255,7 @@ class SelfLauncherManager(
     internal fun currentLaunch(): Job? = launchJob
 
     internal fun stopIfCurrent(expected: Job?) {
-        if (launchJob === expected) stop()
+        if (launchJob === expected) stop(wasConnected = App.provide(service).commManager.isConnected)
     }
 
     /** Whether the launchers are still running, for a disconnect deciding what it is looking at. */

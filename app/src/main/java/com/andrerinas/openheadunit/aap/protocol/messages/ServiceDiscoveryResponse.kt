@@ -243,11 +243,14 @@ internal class ServiceDiscoveryResponse(context: Context, audioConfig: AudioSess
             }
 
             // Bluetooth Service
-            if (settings.bluetoothAddress.isNotEmpty()) {
+            val btAnnounce = BluetoothAnnouncePolicy.decide(
+                settings.bluetoothAnnounceMode, settings.bluetoothAddress,
+                App.provide(context).commManager.isUsbSession)
+            if (btAnnounce.carAddress != null) {
                 val bluetooth = Control.Service.newBuilder().also { service ->
                     service.id = Channel.ID_BTH
                     service.bluetoothService = Control.Service.BluetoothService.newBuilder().also {
-                        it.carAddress = settings.bluetoothAddress
+                        it.carAddress = btAnnounce.carAddress
                         // Pairing methods, not profiles: the old A2DP/HFP names on these two
                         // values said otherwise. The values are unchanged, and numeric
                         // comparison plus PIN is what Android's own stack offers a phone.
@@ -258,6 +261,12 @@ internal class ServiceDiscoveryResponse(context: Context, audioConfig: AudioSess
                     }.build()
                 }.build()
                 services.add(bluetooth)
+                AppLog.i("Bluetooth service announced with carAddress=${btAnnounce.carAddress} " +
+                    "(bt-announce=${btAnnounce.mode.name.lowercase()})")
+                if (btAnnounce.skipNotApplied) {
+                    AppLog.i("bt-announce=skip applies to USB sessions only, so this session " +
+                        "announces the real address")
+                }
             } else {
                 // What the omission costs, in the user's terms. Android Auto keeps telephony
                 // disabled until a hands-free link is up, and this is the message that tells the

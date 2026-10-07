@@ -55,6 +55,7 @@ object SettingsBackupManager {
         "allow-devices" to ValueType.STRING_SET,
         "network-addresses" to ValueType.STRING_SET,
         "bt-address" to ValueType.STRING,
+        "bt-announce" to ValueType.STRING,
         "resolutionId" to ValueType.INT,
         "video-fit-mode" to ValueType.INT,
         // Older backups carry the boolean this replaced. parseImportJson drops keys it does

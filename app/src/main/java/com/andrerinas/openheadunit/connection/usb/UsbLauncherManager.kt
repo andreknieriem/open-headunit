@@ -188,6 +188,11 @@ class UsbLauncherManager(val service: AapService) {
         }
     }
 
+    /** Save may wait for transport retirement; an X pressed meanwhile remains authoritative. */
+    fun restartForSettings() {
+        if (!cancelledByUser) checkAlreadyConnected(force = true, userRequested = true)
+    }
+
     /**
      * Scans currently connected USB devices and connects to any that are already in
      * Android Open Accessory (AOA) mode, or attempts to switch a known device into AOA mode.

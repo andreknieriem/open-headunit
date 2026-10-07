@@ -1137,7 +1137,8 @@ class NativeAaHandshakeManager(
 
     /** Whether an automatic poke may run, or the phone is only listened for. */
     fun wakesPhone(): Boolean = !wakeStoodDown &&
-        (commManager.connectionState.value as? CommManager.ConnectionState.Disconnected)?.isSettingsRestart != true
+        (commManager.connectionState.value as? CommManager.ConnectionState.Disconnected)
+            ?.holdsSettingsWake(SystemClock.elapsedRealtime()) != true
 
     /**
      * Whether a wake here sends anything. False on a module that opens Android Auto by itself,

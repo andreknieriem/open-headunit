@@ -104,6 +104,7 @@ class CommManager(
             val reason: DisconnectReason = DisconnectReason.CONNECTION_ENDED,
             // Only outgoing IP connections are dialled again; an accepted socket's port is ephemeral.
             val restartEndpoint: Pair<String, Int>? = null,
+            val settingsRestartUntilMs: Long = 0L,
         ) : ConnectionState() {
             val isSettingsRestart get() = reason == DisconnectReason.SETTINGS_RESTART
 
@@ -115,6 +116,9 @@ class CommManager(
                 current === this && isSettingsRestart && !settingsRestartCancelled
 
             internal fun cancelSettingsRestart() { settingsRestartCancelled = true }
+
+            fun holdsSettingsWake(nowMs: Long): Boolean =
+                isSettingsRestart && nowMs < settingsRestartUntilMs
         }
 
         /** Physical connection handshake in progress (USB open or TCP connect). */
@@ -1191,6 +1195,8 @@ class CommManager(
         _connectionState.value = ConnectionState.Disconnected(
             isUserExit = isUserExit, reason = reason,
             restartEndpoint = if (reason == DisconnectReason.SETTINGS_RESTART) outgoingEndpoint else null,
+            settingsRestartUntilMs = if (reason == DisconnectReason.SETTINGS_RESTART)
+                SystemClock.elapsedRealtime() + SettingsRestartRecovery.WINDOW_MS else 0L,
         )
         if (settings.killOnDisconnect && honorKillOnDisconnect) {
             context.sendBroadcast(android.content.Intent("com.andrerinas.openheadunit.ACTION_FINISH_ACTIVITIES").apply {

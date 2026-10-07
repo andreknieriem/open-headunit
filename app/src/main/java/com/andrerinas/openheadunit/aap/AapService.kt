@@ -1,5 +1,6 @@
 package com.andrerinas.openheadunit.aap
 
+import com.andrerinas.openheadunit.connection.SettingsRestartRecovery
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Notification
@@ -1536,8 +1537,9 @@ class AapService : Service() {
     private fun onDisconnected(state: CommManager.ConnectionState.Disconnected) {
         cancelProjectionRaiseDeadline()
         if (state.isSettingsRestart) {
-            // Stand down queued automatic wakes before waiting for the old transport.
-            (wifiLauncherManager.active as? WifiLauncherNative)?.handshakeManager?.noteSessionEnded(false)
+            // The timed state gate holds queued wakes during Save. Do not also latch the
+            // deliberate phone-exit gate, which would outlive the retry window.
+            (wifiLauncherManager.active as? WifiLauncherNative)?.handshakeManager?.noteSessionEnded(true)
         }
         // A bye-bye is a deliberate disconnection, not a wireless failure: the listeners reopen
         // behind it and the stage they report would otherwise read as a reconnect nobody asked for.
@@ -1750,34 +1752,60 @@ class AapService : Service() {
         if (!state.isSettingsRestart) scheduleReconnectIfNeeded(state)
     }
 
-    /** Resume the route deliberately ended by Save, without link-loss recovery side effects. */
-    private suspend fun restartForAudioSettings(state: CommManager.ConnectionState.Disconnected) {
-        val settings = App.provide(this).settings
-        when {
-            state.restartEndpoint != null -> {
-                val (ip, port) = state.restartEndpoint
-                commManager.connect(ip, port)
-            }
-            // Before AA 17.4 the phone dials our 5288 listener; repeat the launch intent.
-            selfLauncherManager.isActive -> withContext(Dispatchers.Main) {
-                if (state.acceptsSettingsRestart(commManager.connectionState.value) && !isDestroying)
-                    selfLauncherManager.start(settingsRestart = state)
-            }
-            settings.lastConnectionType == Settings.CONNECTION_TYPE_USB ->
-                usbLauncherManager.checkAlreadyConnected(force = true, userRequested = true)
-            settings.lastConnectionType == Settings.CONNECTION_TYPE_NEARBY -> {
-                withContext(Dispatchers.Main) {
-                    if (commManager.connectionState.value === state && !isDestroying) {
-                        (wifiLauncherManager.active as? WifiLauncherHelper)?.nearbyManager?.restartForSettings()
+    /** Resume the saved route once, then leave further attempts to the ordinary policies. */
+    private suspend fun restartForAudioSettings(state: CommManager.ConnectionState.Disconnected) =
+        withContext(Dispatchers.Main) {
+            val settings = App.provide(this@AapService).settings
+            val wasSelfMode = selfLauncherManager.isActive
+            var selfLaunch = selfLauncherManager.currentLaunch()
+            SettingsRestartRecovery.run(
+                remainingMs = state.settingsRestartUntilMs - SystemClock.elapsedRealtime(),
+                isCurrent = {
+                    state.acceptsSettingsRestart(commManager.connectionState.value) && !isDestroying &&
+                        selfLauncherManager.currentLaunch() === selfLaunch
+                },
+                retry = {
+                    when {
+                        state.restartEndpoint != null -> withContext(Dispatchers.IO) {
+                            val (ip, port) = state.restartEndpoint
+                            if (!isDestroying) commManager.connect(ip, port, expectedState = state)
+                        }
+                        // Before AA 17.4 the phone dials our 5288 listener. There is no
+                        // outgoing endpoint to reuse: send the Self Mode launch intent again.
+                        wasSelfMode -> {
+                            selfLauncherManager.start(settingsRestart = state)
+                            selfLaunch = selfLauncherManager.currentLaunch()
+                        }
+                        settings.lastConnectionType == Settings.CONNECTION_TYPE_USB ->
+                            usbLauncherManager.restartForSettings()
+                        settings.lastConnectionType == Settings.CONNECTION_TYPE_NEARBY ->
+                            (wifiLauncherManager.active as? WifiLauncherHelper)?.nearbyManager
+                                ?.restartForSettings()
+                        wifiLauncherManager.activeMode == WifiLauncherMode.NATIVE ->
+                            (wifiLauncherManager.active as? WifiLauncherNative)
+                                ?.rearmAfterSessionEnd(wakePhone = true)
+                        else -> wifiLauncherManager.restartDiscovery()
                     }
-                }
-            }
-            wifiLauncherManager.activeMode == WifiLauncherMode.NATIVE -> {
-                (wifiLauncherManager.active as? WifiLauncherNative)?.rearmAfterSessionEnd(wakePhone = false)
-            }
-            else -> wifiLauncherManager.restartDiscovery()
+                },
+                resumeAutomatic = {
+                    // The retry has not published a connection. Retire only its Self Mode
+                    // bookkeeping; a later disconnect must not stop an unrelated launcher.
+                    if (wasSelfMode) selfLauncherManager.stopIfCurrent(selfLaunch)
+                    if (!userExitedAA && !wirelessPausedForSettings &&
+                        !wifiLauncherManager.cancelledByUser && settings.showsWifi() &&
+                        !ConnectionArbiter.refusesBackground(userRequested = false)) {
+                        wirelessQuiescedForWiredSession = false
+                        if (!wifiLauncherManager.isActive) initWifiModeWithOptionalWait()
+                        else when (val launcher = wifiLauncherManager.active) {
+                            // WPP can already be negotiating while the AAP state is still Disconnected.
+                            // Refresh credentials without cancelling that newer handshake.
+                            is WifiLauncherNative -> launcher.refreshAfterWake()
+                            else -> wifiLauncherManager.restartDiscovery()
+                        }
+                    }
+                },
+            )
         }
-    }
 
     /**
      * Schedules a reconnect attempt 2 seconds after an unexpected disconnect:

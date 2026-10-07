@@ -436,7 +436,7 @@ class WifiLauncherNative : WifiLauncher {
         } else if (handshakeManager?.wakesPhone() == false) {
             // The pill is reported here as well as poked, so both stand down together or it claims
             // a wake that will not run.
-            AppLog.i("AapService: the phone ended the last session itself. Skipping auto-poke until it comes back.")
+            AppLog.i("AapService: automatic wake is paused by the session policy. Keeping listeners available.")
         } else if (!service.userExitedAA) {
             if (handshakeManager?.reportsWake() != false) ConnectionStageTracker.report(ConnectionStage.WAKING_PHONE)
             handshakeManager?.triggerPoke()

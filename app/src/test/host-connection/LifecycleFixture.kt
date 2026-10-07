@@ -46,6 +46,7 @@ private class AapTransport(
 private class ConnectionFixture(val settings: Settings = Settings()) {
     private val transportLifecycleLock = Any()
     private var disconnectRequested = false
+    private var physicalConnectionReached = true
     private var outgoingEndpoint: Pair<String, Int>? = null
     private val isLoopbackSession = false
     private val audioDecoder = AudioDecoder()

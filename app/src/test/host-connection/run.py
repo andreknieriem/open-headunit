@@ -40,7 +40,7 @@ import java.util.concurrent.*
 
 enum class DisconnectReason { CONNECTION_ENDED, SETTINGS_RESTART }
 sealed class ConnectionState {
- data class Disconnected(val isClean:Boolean=false,val isUserExit:Boolean=false, val reason:DisconnectReason=DisconnectReason.CONNECTION_ENDED, val restartEndpoint:Pair<String,Int>?=null):ConnectionState()
+ class Disconnected(val isClean:Boolean=false,val isUserExit:Boolean=false, val reason:DisconnectReason=DisconnectReason.CONNECTION_ENDED, val restartEndpoint:Pair<String,Int>?=null):ConnectionState()
  object Connecting:ConnectionState();object Connected:ConnectionState();object StartingTransport:ConnectionState()
  object HandshakeComplete:ConnectionState();object TransportStarted:ConnectionState()
  data class Error(val message:String):ConnectionState()
@@ -55,6 +55,7 @@ class CommManager {
  private val transportLifecycleLock=Any()
  private var disconnectRequested=false
  private var connectionAttempt:Any?=null
+ private var physicalConnectionReached=true
  private var outgoingEndpoint:Pair<String,Int>?=null
  @Volatile private var _transport:AapTransport?=null
  @Volatile private var _connection:ProjectionConnection?=ProjectionConnection()
@@ -98,8 +99,8 @@ class CommManager {
  companion object { const val ERROR_HANDSHAKE_PEER_SILENT="Handshake failed: the peer never responded" }
 '''
 # Keep Save permission and deadline semantics from the same production state as the methods.
-old_state=manager_head[manager_head.index(' data class Disconnected('):manager_head.index(' object Connecting:')]
-manager_head=manager_head.replace(old_state, extract(comm, 'data class Disconnected(')+'\n')
+old_state=manager_head[manager_head.index(' class Disconnected('):manager_head.index(' object Connecting:')]
+manager_head=manager_head.replace(old_state, extract(comm, 'class Disconnected(')+'\n')
 for name in ['SettingsRestartRecovery.kt', 'SameEndpointConnectPolicy.kt']:
     source=(base/'connection'/name).read_text().replace('package com.andrerinas.openheadunit.connection', 'package lifecycle')
     (OUT/name).write_text(source)
@@ -493,6 +494,7 @@ fun lateRegisteredResults()=runBlocking {
   opener.start();await(connecting);val old=checkNotNull(c.network())
   c.disconnect(sendByeBye=false,honorKillOnDisconnect=false);c.cleanups();c.awaitCleanup()
   check(old.closed && c.state is ConnectionState.Disconnected)
+  check(!(c.state as ConnectionState.Disconnected).hadPhysicalConnection)
   SocketProjectionConnection.connectionHook=null
   if(replace){c.connectNext();c.startHandshake();c.startReading()}
   val fresh=c.network();val freshOwner=c.nullableOwner();val expected=c.state
@@ -631,16 +633,31 @@ fun terminalRouteSnapshots()=runBlocking {
    "destroy" -> c.destroy()
   }
   val ended=c.state as ConnectionState.Disconnected
-  check(ended.wasLoopbackSession==loopback){"lost retiring route: $route"}
+  check(ended.hadPhysicalConnection && ended.wasLoopbackSession==loopback){"lost retiring route: $route"}
   c.cleanups()
   check(c.network()==null && !c.isLoopbackSession)
-  check(ended.wasLoopbackSession==loopback){"cleanup changed route snapshot: $route"}
+  check(ended.hadPhysicalConnection && ended.wasLoopbackSession==loopback){"cleanup changed route snapshot: $route"}
   c.close()
  }
  println("PASS real disconnect, transport quit, link loss and destroy preserve terminal loopback snapshot after cleanup")
 }
 """
-extra=extra.replace('fun main(){', 'fun main(){\n terminalRouteSnapshots();settingsActionCancellation()')
+extra += r"""
+fun failedAttemptDoesNotInheritPhysicalSuccess()=runBlocking {
+ for(outcome in listOf("false","throw")) {
+  val c=CommManager();c.connectNext()
+  c.disconnect(honorKillOnDisconnect=false);c.cleanups();c.awaitCleanup()
+  check((c.state as ConnectionState.Disconnected).hadPhysicalConnection)
+  SocketProjectionConnection.connectionHook={if(outcome=="throw")throw IllegalStateException("open failed") else false}
+  try { c.connectNext() } finally { SocketProjectionConnection.connectionHook=null }
+  val ended=c.state as ConnectionState.Disconnected
+  check(!ended.hadPhysicalConnection){"failed open inherited the previous success"}
+  c.cleanups();check(c.state===ended);c.close()
+ }
+ println("PASS new failed attempts do not inherit physical success from the previous connection")
+}
+"""
+extra=extra.replace('fun main(){', 'fun main(){\n failedAttemptDoesNotInheritPhysicalSuccess();terminalRouteSnapshots();settingsActionCancellation()')
 (OUT/'Probe.kt').write_text(manager+transport_fixture+support+extra)
 (OUT/'Os.kt').write_text(r'''package android.os
 import java.util.concurrent.*

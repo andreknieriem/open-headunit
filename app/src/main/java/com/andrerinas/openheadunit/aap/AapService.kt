@@ -1165,12 +1165,17 @@ class AapService : Service() {
     /**
      * Single observer for all [CommManager.ConnectionState] transitions.
      *
-     * Uses [hasEverConnected] to skip the initial [ConnectionState.Disconnected] emission
-     * from StateFlow replay, avoiding a spurious disconnect on startup.
+     * Skips the initial disconnected replay. The terminal snapshot also records physical
+     * success so teardown runs even if this collector missed every live state.
      */
     private fun observeConnectionState() {
+        // CommManager survives service recreation. Ignore only the terminal already present
+        // at subscription setup, not a new end published before this coroutine starts.
+        val initialTerminal = if (!hasEverConnected)
+            commManager.connectionState.value as? CommManager.ConnectionState.Disconnected else null
         serviceScope.launch {
             commManager.connectionState.collect { state ->
+                if (state === initialTerminal) return@collect
                 // Activity can advance the handshake before this conflated collector sees
                 // Connected. Every observed live phase must retire obsolete Save launch work.
                 if (state is CommManager.ConnectionState.Connected ||
@@ -1226,7 +1231,8 @@ class AapService : Service() {
                     }
                     is CommManager.ConnectionState.Disconnected -> {
                         selfLauncherManager.onConnectionEnded(state)
-                        if (hasEverConnected) {
+                        if (hasEverConnected || state.hadPhysicalConnection) {
+                            hasEverConnected = true
                             emitSessionState(
                                 SessionStateIntent.STATE_DISCONNECTED,
                                 when {

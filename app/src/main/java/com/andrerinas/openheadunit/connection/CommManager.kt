@@ -98,7 +98,9 @@ class CommManager(
          *                `false` for all other disconnect causes (USB detach, read error,
          *                socket timeout, explicit user disconnect).
          */
-        data class Disconnected(
+        // Each instance ends a distinct attempt. StateFlow must deliver it even when
+        // the flags match the previous end and every intervening live state was skipped.
+        class Disconnected(
             val isClean: Boolean = false,
             val isUserExit: Boolean = false,
             val reason: DisconnectReason = DisconnectReason.CONNECTION_ENDED,
@@ -108,7 +110,13 @@ class CommManager(
             // Preserve the retiring route even when StateFlow skips every live phase and
             // cleanup has already cleared the physical connection before the observer runs.
             val wasLoopbackSession: Boolean = false,
+            // Captured by the connection owner; collectors may miss Connected entirely.
+            val hadPhysicalConnection: Boolean = false,
         ) : ConnectionState() {
+            override fun toString() = "Disconnected(isClean=$isClean, isUserExit=$isUserExit, " +
+                "reason=$reason, restartEndpoint=$restartEndpoint, settingsRestartUntilMs=$settingsRestartUntilMs, " +
+                "wasLoopbackSession=$wasLoopbackSession, hadPhysicalConnection=$hadPhysicalConnection)"
+
             val isSettingsRestart get() = reason == DisconnectReason.SETTINGS_RESTART
 
             // Created with Save, before asynchronous teardown. A later manual Self launch
@@ -195,6 +203,8 @@ class CommManager(
     // state changes must not reopen that decision while the same session is being retired.
     private var disconnectRequested = false
     private var connectionAttempt: Any? = null
+    // Guarded by transportLifecycleLock and reset for each physical connection attempt.
+    private var physicalConnectionReached = false
     /** @Volatile: written on IO thread, read on Main and IO threads. */
     @Volatile private var _transport: AapTransport? = null
 
@@ -366,6 +376,7 @@ class CommManager(
             outgoingEndpoint = null
             val token = Any()
             connectionAttempt = token
+            physicalConnectionReached = false
             disconnectRequested = false
             _connectionState.value = ConnectionState.Connecting
             val previous = _connection
@@ -393,6 +404,7 @@ class CommManager(
                     return@synchronized
                 }
                 if (opened) {
+                    physicalConnectionReached = true
                     settings.saveLastConnection(type = Settings.CONNECTION_TYPE_USB, usbDevice = UsbDeviceCompat.getUniqueName(device))
                     _connectionState.value = ConnectionState.Connected
                 } else {
@@ -480,6 +492,7 @@ class CommManager(
             outgoingEndpoint = restartEndpoint
             val token = Any()
             connectionAttempt = token
+            physicalConnectionReached = false
             disconnectRequested = false
             _connectionState.value = ConnectionState.Connecting
             val previous = _connection
@@ -503,6 +516,7 @@ class CommManager(
                     return@synchronized
                 }
                 if (opened) {
+                    physicalConnectionReached = true
                     // [FIX] Don't overwrite NEARBY connection type with WIFI + localhost IP (::1)
                     if (socket !is NearbySocket) {
                         settings.saveLastConnection(type = Settings.CONNECTION_TYPE_WIFI, ip = socket.inetAddress?.hostAddress ?: "")
@@ -575,6 +589,7 @@ class CommManager(
             outgoingEndpoint = ip to port
             val token = Any()
             connectionAttempt = token
+            physicalConnectionReached = false
             disconnectRequested = false
             _connectionState.value = ConnectionState.Connecting
             val previous = _connection
@@ -598,6 +613,7 @@ class CommManager(
                     return@synchronized
                 }
                 if (opened) {
+                    physicalConnectionReached = true
                     settings.saveLastConnection(type = Settings.CONNECTION_TYPE_WIFI, ip = ip)
                     _connectionState.value = ConnectionState.Connected
                 } else {
@@ -908,7 +924,7 @@ class CommManager(
         // precedes final cleanup, so reconnect must await its actual termination as well.
         // Publish cleanup before state: a reconnect observer must be able to await this job.
         _disconnectJob = _scope.launch { doDisconnect(sendByeBye = false) }
-        _connectionState.value = ConnectionState.Disconnected(isClean, isUserExit = wasUserExit, wasLoopbackSession = isLoopbackSession)
+        _connectionState.value = ConnectionState.Disconnected(isClean, isUserExit = wasUserExit, wasLoopbackSession = isLoopbackSession, hadPhysicalConnection = physicalConnectionReached)
         if (settings.killOnDisconnect) {
             context.sendBroadcast(android.content.Intent("com.andrerinas.openheadunit.ACTION_FINISH_ACTIVITIES").apply {
                 setPackage(context.packageName)
@@ -1226,6 +1242,7 @@ class CommManager(
         _connectionState.value = ConnectionState.Disconnected(
             isUserExit = isUserExit, reason = reason,
             wasLoopbackSession = isLoopbackSession,
+            hadPhysicalConnection = physicalConnectionReached,
             restartEndpoint = if (reason == DisconnectReason.SETTINGS_RESTART) outgoingEndpoint else null,
             settingsRestartUntilMs = if (reason == DisconnectReason.SETTINGS_RESTART)
                 SystemClock.elapsedRealtime() + SettingsRestartRecovery.WINDOW_MS else 0L,
@@ -1286,7 +1303,7 @@ class CommManager(
             disconnectRequested = true
             connectionAttempt = null
             if (_connectionState.value !is ConnectionState.Disconnected) {
-                _connectionState.value = ConnectionState.Disconnected(wasLoopbackSession = isLoopbackSession)
+                _connectionState.value = ConnectionState.Disconnected(wasLoopbackSession = isLoopbackSession, hadPhysicalConnection = physicalConnectionReached)
             }
             val transport = _transport
             val connection = _connection
@@ -1397,7 +1414,7 @@ class CommManager(
             HeadUnitScreenConfig.unlockResolution()
             val cleanup = _scope.launch { doDisconnect(sendByeBye = true) }
             _disconnectJob = cleanup
-            _connectionState.value = ConnectionState.Disconnected(isClean = false, isUserExit = false, wasLoopbackSession = isLoopbackSession)
+            _connectionState.value = ConnectionState.Disconnected(isClean = false, isUserExit = false, wasLoopbackSession = isLoopbackSession, hadPhysicalConnection = physicalConnectionReached)
             cleanup
         }
         runBlocking { withTimeoutOrNull(timeoutMs) { job.join() } }

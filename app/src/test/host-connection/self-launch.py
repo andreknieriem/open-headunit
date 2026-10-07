@@ -39,7 +39,7 @@ comm = 'connection/CommManager.kt'
 manager = 'connection/self/SelfLauncherManager.kt'
 legacy = 'connection/self/launchers/SelfLauncherLegacy.kt'
 for marker, file, declaration in [
-    ('STATE', comm, 'data class Disconnected('),
+    ('STATE', comm, 'class Disconnected('),
     ('CANCEL', comm, 'fun cancelPendingSettingsRestart()'),
     ('START', manager, 'fun start(settingsRestart:'),
     ('STOP', manager, 'fun stop(wasConnected:'),

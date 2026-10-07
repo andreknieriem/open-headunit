@@ -64,7 +64,7 @@ for marker, declaration, source in [
     ("ADVANCE", "private inline fun withLiveTransport(", comm),
     ("DISCONNECT", "fun disconnect(", comm),
     ("CANCEL_SETTINGS", "fun cancelPendingSettingsRestart()", comm),
-    ("DISCONNECTED_STATE", "data class Disconnected(", comm),
+    ("DISCONNECTED_STATE", "class Disconnected(", comm),
     ("QUIT", "private fun transportedQuited(", comm),
     ("OBSERVER", "private fun observeConnectionState()", service),
 ]:

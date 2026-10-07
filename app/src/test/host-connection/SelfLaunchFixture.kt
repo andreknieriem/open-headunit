@@ -156,15 +156,13 @@ object SessionStateIntent {
 }
 object StationStandDown { fun onSessionLive(service: Any, held: Long?) {} }
 object SystemClock { fun elapsedRealtime() = 0L }
-class Service : AutoCloseable {
+class Service(private var hasEverConnected: Boolean = true, val commManager: CommManager = CommManager()) : AutoCloseable {
     val main = QueuedMain()
     val serviceScope = CoroutineScope(SupervisorJob() + main)
-    val commManager = CommManager()
     val wifiLauncherManager = WifiLauncherManager()
     val usbLauncherManager = UsbLauncherManager()
     val manager = SelfLauncherManager(this, wifiLauncherManager)
     val selfLauncherManager get() = manager
-    private var hasEverConnected = true // Save began with a prior established session.
     private var projectingSinceMs = 0L
     private var projectionRaisesThisSession = 0
     private val packageName = "fixture"
@@ -221,6 +219,52 @@ class Service : AutoCloseable {
 }
 
 fun main() {
+    // Process-scoped manager survives an Exit and a fresh service subscription.
+    val sharedManager = CommManager()
+    Service(false, sharedManager).use { old ->
+        old.startObserver(); old.main.drain()
+        sharedManager.connectionState.value = CommManager.ConnectionState.Disconnected(
+            isUserExit = true, hadPhysicalConnection = true)
+        old.main.drain()
+        check(old.ordinaryDisconnects == 1)
+    }
+    for (newEndBeforeCollector in listOf(false, true)) {
+        Service(false, sharedManager).use { fresh ->
+            fresh.startObserver()
+            if (!newEndBeforeCollector) {
+                fresh.main.drain()
+                check(fresh.ordinaryDisconnects == 0) { "old Exit replayed into new service" }
+            }
+            sharedManager.connectionState.value = CommManager.ConnectionState.Connecting
+            sharedManager.connectionState.value = CommManager.ConnectionState.Disconnected(hadPhysicalConnection = true)
+            fresh.main.drain()
+            check(fresh.ordinaryDisconnects == 1) { "new end before collector startup was skipped" }
+        }
+    }
+
+    // The first terminal snapshot must be sufficient even when StateFlow skips all live states.
+    for (phase in listOf(null, CommManager.ConnectionState.Connected,
+            CommManager.ConnectionState.StartingTransport, CommManager.ConnectionState.HandshakeComplete,
+            CommManager.ConnectionState.TransportStarted)) {
+        Service(false).use { s ->
+            s.startObserver(); s.main.drain()
+            check(s.ordinaryDisconnects == 0) // Initial replay is not an ended session.
+            s.commManager.connectionState.value = CommManager.ConnectionState.Disconnected()
+            s.main.drain()
+            check(s.ordinaryDisconnects == 0) // A failed physical open is not a first session.
+            if (phase != null) { s.commManager.connectionState.value = phase; s.main.drain() }
+            val ended = CommManager.ConnectionState.Disconnected(hadPhysicalConnection = true)
+            s.commManager.connectionState.value = ended; s.main.drain()
+            check(s.ordinaryDisconnects == 1) { "lost first disconnect after $phase" }
+            s.commManager.connectionState.value = ended; s.main.drain()
+            check(s.ordinaryDisconnects == 1) // Replaying the same instance adds no callback.
+            s.commManager.connectionState.value = CommManager.ConnectionState.Connecting
+            s.commManager.connectionState.value = CommManager.ConnectionState.Disconnected(hadPhysicalConnection = true)
+            s.main.drain()
+            check(s.ordinaryDisconnects == 2) // Another fast session has its own terminal identity.
+        }
+    }
+
     // Cancel before Main has started either the legacy or direct launcher.
     for (modern in listOf(false, true)) Service().use { s ->
         s.modern = modern

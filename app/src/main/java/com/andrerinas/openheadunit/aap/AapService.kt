@@ -2976,10 +2976,12 @@ class AapService : Service() {
                     wifiLauncherManager.startDiscovery(oneShot = true)
             }
             ACTION_STOP_WIRELESS         -> {
+                commManager.cancelPendingSettingsRestart()
                 wirelessRearmPendingForSettings = false
                 wifiLauncherManager.stop()
             }
             ACTION_CANCEL_WIRELESS       -> {
+                commManager.cancelPendingSettingsRestart()
                 usbCheckPendingForSettings = false
                 bluetoothLaunchPendingForSettings = false
                 val stage = ConnectionStageTracker.stage.value

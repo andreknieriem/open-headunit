@@ -80,6 +80,7 @@ class CommManager {
  private fun noteHandshakeOutcome(silent:Boolean){}
  private fun settleSessionClaim(formed:Boolean){}
  private fun noteSessionEnded(renderedAnyFrame:Boolean, settingsRestart:Boolean=false){}
+ val connectionState get()=_connectionState
  val state get()=_connectionState.value
  fun owner()=checkNotNull(_transport)
  fun nullableOwner()=_transport
@@ -87,14 +88,23 @@ class CommManager {
  fun requested()=synchronized(transportLifecycleLock){disconnectRequested}
  fun cleanups(){queue.drain()}
  fun close(){disconnect(honorKillOnDisconnect=false);cleanups();_scope.cancel()}
- suspend fun connectNext(){connectIp("fixture",5277)}
+ suspend fun connectNext(){connectIp("fixture",5277, null)}
+ suspend fun connectSaved(state:ConnectionState.Disconnected){connectIp("fixture",5277,state)}
+ suspend fun awaitDisconnectComplete(){_disconnectJob?.join()}
+ val isUsbSession=false
  suspend fun connectDevice(d:UsbDevice){connectUsb(d)}
  suspend fun awaitCleanup(){_disconnectJob?.join()}
  companion object { const val ERROR_HANDSHAKE_PEER_SILENT="Handshake failed: the peer never responded" }
 '''
+# Keep Save permission and deadline semantics from the same production state as the methods.
+old_state=manager_head[manager_head.index(' data class Disconnected('):manager_head.index(' object Connecting:')]
+manager_head=manager_head.replace(old_state, extract(comm, 'data class Disconnected(')+'\n')
+for name in ['SettingsRestartRecovery.kt', 'SameEndpointConnectPolicy.kt']:
+    source=(base/'connection'/name).read_text().replace('package com.andrerinas.openheadunit.connection', 'package lifecycle')
+    (OUT/name).write_text(source)
 manager=manager_head+'\n'.join(extract(comm,n) for n in [
  'suspend fun startHandshake()', 'private inline fun withLiveTransport(', 'suspend fun startReading()',
- 'private fun transportedQuited(', 'fun applyAudioSettings()', 'fun disconnect(', 'private fun doDisconnect(',
+ 'private fun transportedQuited(', 'fun applyAudioSettings()', 'fun disconnect(', 'fun cancelPendingSettingsRestart()', 'private fun doDisconnect(',
  'private suspend fun connectIp(', 'private suspend fun connectUsb(', 'fun destroy()'
 ])+'\n}\n'
 transport_head=r'''
@@ -223,7 +233,8 @@ object BluetoothHelper{fun isA2dpMediaLinkActive(c:Context)=false}
 object PlaybackFocusPolicy{fun shouldAcquirePermanent(mode:Int,staticAudioFocus:Boolean,audioSinkEnabled:Boolean,btMediaLinkActive:Boolean)=false}
 object ConnectionIssue{const val HEADUNIT_SERVER_NOT_ANSWERING=0}
 object ConnectionIssues{fun clear(c:Context,issue:Int){}}
-object ConnectionStageTracker{fun endAttempt(){}}
+object ConnectionStageTracker{fun endAttempt(){};fun clear(){};val stage=MutableStateFlow(ConnectionStage.NONE)}
+object ConnectionStage{const val NONE=0;const val USB_ATTACHED=1;const val USB_SWITCHING=2}
 object TeardownGuard{fun runThenClose(teardown:()->Unit,close:()->Unit,onError:(String,Exception)->Unit){try{teardown()}catch(e:Exception){onError("teardown",e)}finally{close()}}}
 fun await(latch:CountDownLatch){check(latch.await(5,TimeUnit.SECONDS)){"probe barrier timed out"}}
 
@@ -521,7 +532,7 @@ fun destroyDuringCandidateConstruction()=runBlocking {
 }
 '''
 extra += r'''
-object UsbDeviceCompat{fun getUniqueName(d:UsbDevice)="usb-fixture"}
+object UsbDeviceCompat{fun getUniqueName(d:UsbDevice)="usb-fixture";fun usbManager(c:Context)=c.getSystemService(Context.USB_SERVICE) as UsbManager}
 object UsbBridge{ @Volatile var afterConnect:(()->Unit)?=null }
 open class StandardUsbProjectionConnection(m:UsbManager,d:UsbDevice):ProjectionConnection(){
  private val actual=com.andrerinas.openheadunit.connection.projection.StandardUsbProjectionConnection(m,d)
@@ -564,6 +575,44 @@ fun usbOpenCancellation()=runBlocking {
  }
 }
 '''
+# Execute the service's actual action branches with the real extracted manager methods.
+service=(base/'aap/AapService.kt').read_text()
+actions=['ACTION_STOP_WIRELESS', 'ACTION_CANCEL_WIRELESS', 'ACTION_DISCONNECT']
+action_bodies=[extract(service, '            '+name) for name in actions]
+extra += r'''
+class SettingsActionFixture(val commManager:CommManager) {
+ private val serviceScope=CoroutineScope(SupervisorJob()+Dispatchers.Unconfined)
+ private val intent:android.content.Intent?=null
+ private val EXTRA_USB_ATTEMPT="usb";private val START_STICKY=1
+ private var wirelessRearmPendingForSettings=false
+ private var usbCheckPendingForSettings=false;private var bluetoothLaunchPendingForSettings=false
+ private class Wifi {fun stop(){};fun stopForUser(){}}
+ private class Usb {fun isSwitchingToProjection()=false;fun stopForUser(){}}
+ private val wifiLauncherManager=Wifi();private val usbLauncherManager=Usb()
+ fun action(action:String):Int {when(action) {
+''' + '\n'.join(body.replace(name, '"'+name+'"',1).replace('CommManager.ConnectionState', 'ConnectionState') for name,body in zip(actions,action_bodies)) + r'''
+ };return START_STICKY}
+}
+fun settingsActionCancellation()=runBlocking {
+ for(action in listOf("ACTION_STOP_WIRELESS","ACTION_CANCEL_WIRELESS","ACTION_DISCONNECT")) {
+  for(cancelAfterCleanup in listOf(false,true)) {
+   val c=CommManager()
+   c.disconnect(isUserExit=false,honorKillOnDisconnect=false,reason=DisconnectReason.SETTINGS_RESTART)
+   val saved=c.state as ConnectionState.Disconnected
+   if(cancelAfterCleanup){c.cleanups();c.awaitCleanup()}
+   SettingsActionFixture(c).action(action)
+   check(!saved.acceptsSettingsRestart(c.state))
+   c.cleanups();c.awaitCleanup()
+   SocketProjectionConnection.created.clear()
+   c.connectSaved(saved)
+   check(SocketProjectionConnection.created.isEmpty()){"cancelled Save opened a socket: $action"}
+   check(c.state===saved);c.close()
+  }
+ }
+ println("PASS service stop/cancel/disconnect revoke pending Save before and after teardown")
+}
+'''
+extra=extra.replace('fun main(){', 'fun main(){\n settingsActionCancellation()')
 (OUT/'Probe.kt').write_text(manager+transport_fixture+support+extra)
 (OUT/'Os.kt').write_text(r'''package android.os
 import java.util.concurrent.*
@@ -597,6 +646,7 @@ class HandlerThread(name:String,priority:Int):Thread(name){
 (OUT/'Content.kt').write_text(r'''package android.content
 import android.media.AudioManager
 class Intent{
+ fun getBooleanExtra(name:String,default:Boolean)=default
  var action:String?=null
  constructor(a:String){action=a};constructor(c:Context,k:Class<*>){}
  fun setPackage(s:String)=this
@@ -639,7 +689,7 @@ class UsbDeviceConnection{
 ''')
 (OUT/'UsbCompat.kt').write_text('''package com.andrerinas.openheadunit.connection.usb
 import android.hardware.usb.*
-class UsbDeviceCompat(d:UsbDevice){companion object{fun getUniqueName(d:UsbDevice)="usb-fixture";fun selectEndpoints(i:UsbInterface)=UsbEndpoint() to UsbEndpoint()}}
+class UsbDeviceCompat(d:UsbDevice){companion object{fun usbManager(c:android.content.Context)=c.getSystemService(android.content.Context.USB_SERVICE) as UsbManager;fun getUniqueName(d:UsbDevice)="usb-fixture";fun selectEndpoints(i:UsbInterface)=UsbEndpoint() to UsbEndpoint()}}
 ''')
 (OUT/'UsbLog.kt').write_text('''package com.andrerinas.openheadunit.utils
 object AppLog{fun i(s:String){};fun w(s:String){};fun e(s:String){};fun e(t:Throwable){}}

@@ -21,10 +21,8 @@ private sealed class ConnectionState {
     object HandshakeComplete : ConnectionState()
     object TransportStarted : ConnectionState()
     data class Error(val message: String) : ConnectionState()
-    data class Disconnected(val isClean: Boolean = false, val isUserExit: Boolean = false,
-        val reason: DisconnectReason = DisconnectReason.CONNECTION_ENDED, val restartEndpoint: Pair<String, Int>? = null) : ConnectionState() {
-        val isSettingsRestart get() = reason == DisconnectReason.SETTINGS_RESTART
-    }
+    // PRODUCTION DISCONNECTED_STATE
+
 }
 private object HeadUnitScreenConfig { fun unlockResolution() {} }
 private class QueuedCleanup : CoroutineDispatcher() {
@@ -81,6 +79,7 @@ private class ConnectionFixture(val settings: Settings = Settings()) {
     // PRODUCTION ADVANCE
     // PRODUCTION APPLY
     // PRODUCTION DISCONNECT
+    // PRODUCTION CANCEL_SETTINGS
     // PRODUCTION QUIT
     private fun doDisconnect(sendByeBye: Boolean,
         byeByeReason: com.andrerinas.openheadunit.aap.protocol.proto.Control.ByeByeReason =
@@ -97,7 +96,9 @@ private object SessionStateIntent {
     const val STATE_CONNECTING=1; const val STATE_CONNECTED=2; const val STATE_PROJECTING=3; const val STATE_DISCONNECTED=4
     const val REASON_SETTINGS_RESTART=4; const val REASON_USER_EXIT=1; const val REASON_LINK_LOST=2; const val REASON_PHONE_LEFT=3
 }
+private object StationStandDown { fun onSessionLive(context: Any, held: Long?) {} }
 private class ObserverFixture {
+    private fun wifiLockHeldForMs(): Long? = null
     private class Connection { val connectionState = MutableStateFlow<ConnectionState>(ConnectionState.Disconnected()) }
     private class Usb { var projectionHandshakeFailures=0; fun onHandshakeFailed() {} }
     private val commManager = Connection()

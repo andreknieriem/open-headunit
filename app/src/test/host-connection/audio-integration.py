@@ -63,13 +63,19 @@ for marker, declaration, source in [
     ("APPLY", "fun applyAudioSettings()", comm),
     ("ADVANCE", "private inline fun withLiveTransport(", comm),
     ("DISCONNECT", "fun disconnect(", comm),
+    ("CANCEL_SETTINGS", "fun cancelPendingSettingsRestart()", comm),
+    ("DISCONNECTED_STATE", "data class Disconnected(", comm),
     ("QUIT", "private fun transportedQuited(", comm),
     ("OBSERVER", "private fun observeConnectionState()", service),
 ]:
-    lifecycle = lifecycle.replace("// PRODUCTION " + marker,
-        member_block(declaration, source).replace("CommManager.ConnectionState", "ConnectionState"))
+    lifecycle = lifecycle.replace("// PRODUCTION " + marker + "\n",
+        member_block(declaration, source).replace("CommManager.ConnectionState", "ConnectionState").replace("this@AapService", "this@ObserverFixture") + "\n")
 lifecycle_fixture.write_text(lifecycle)
 sources.append(lifecycle_fixture)
+recovery = output / "SettingsRestartRecovery.kt"
+recovery.write_text((repo / "app/src/main/java/com/andrerinas/openheadunit/connection/SettingsRestartRecovery.kt").read_text()
+                   .replace("package com.andrerinas.openheadunit.connection", "package com.andrerinas.openheadunit.decoder.audio"))
+sources.append(recovery)
 entrypoint = output / "IntegrationMain.kt"
 entrypoint.write_text("package com.andrerinas.openheadunit.decoder.audio\nfun main() { audioLifecycleBoundaryRegression() }\n")
 sources.append(entrypoint)

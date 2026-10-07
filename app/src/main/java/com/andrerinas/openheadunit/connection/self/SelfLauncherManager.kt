@@ -163,7 +163,7 @@ class SelfLauncherManager(
                     // reportError, not emitError: disconnect() defaults to isUserExit, so a launch
                     // that never had a session latched userExitedAA and suppressed the Native poke
                     // for the rest of the group. Reporting still hides the "connecting" overlay.
-                    commManager.reportError("No launch method succeeded")
+                    commManager.reportError("No launch method succeeded", settingsRestart)
                     // The report is not a disconnect, so nothing else clears this - and the
                     // watchdog below is only armed once a launcher has succeeded.
                     isActive = false
@@ -188,7 +188,7 @@ class SelfLauncherManager(
                     if (SelfLaunchTimeoutPolicy.mayDisconnect(path)) {
                         commManager.emitError("No launch method succeeded (timeout)")
                     } else {
-                        commManager.reportError("No launch method succeeded (timeout)")
+                        commManager.reportError("No launch method succeeded (timeout)", settingsRestart)
                     }
 
                     // The report is deliberately not a disconnect, so no Disconnected transition

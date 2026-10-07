@@ -118,7 +118,7 @@ class CommManager(
             internal fun cancelSettingsRestart() { settingsRestartCancelled = true }
 
             fun holdsSettingsWake(nowMs: Long): Boolean =
-                isSettingsRestart && nowMs < settingsRestartUntilMs
+                isSettingsRestart && !settingsRestartCancelled && nowMs < settingsRestartUntilMs
         }
 
         /** Physical connection handshake in progress (USB open or TCP connect). */
@@ -598,7 +598,7 @@ class CommManager(
         }
     }
 
-    /** A new manual Self launch supersedes Save before it publishes an AAP connection. */
+    /** A manual start or stop supersedes Save before it publishes an AAP connection. */
     fun cancelPendingSettingsRestart(): Unit = synchronized(transportLifecycleLock) {
         (_connectionState.value as? ConnectionState.Disconnected)?.cancelSettingsRestart()
     }
@@ -856,8 +856,17 @@ class CommManager(
      * VPN it was handed, both have to stay up for that to happen. See
      * [com.andrerinas.openheadunit.connection.self.SelfLaunchTimeoutPolicy.mayDisconnect].
      */
-    suspend fun reportError(msg: String) {
-        _connectionState.emit(ConnectionState.Error(msg))
+    suspend fun reportError(msg: String, settingsRestart: ConnectionState.Disconnected? = null) {
+        synchronized(transportLifecycleLock) {
+            if (settingsRestart != null) {
+                // A failed launcher has not handed ownership to another connection. Preserve
+                // Save's Disconnected token so its bounded automatic fallback can still run.
+                // A late failure from a superseded/cancelled Save cannot change the new state.
+                if (settingsRestart.acceptsSettingsRestart(_connectionState.value)) AppLog.e(msg)
+                return
+            }
+            _connectionState.value = ConnectionState.Error(msg)
+        }
     }
 
     /**
@@ -1183,6 +1192,7 @@ class CommManager(
         honorKillOnDisconnect: Boolean = true,
         reason: DisconnectReason = DisconnectReason.CONNECTION_ENDED,
     ): Unit = synchronized(transportLifecycleLock) {
+        if (isUserExit && reason != DisconnectReason.SETTINGS_RESTART) cancelPendingSettingsRestart()
         if (disconnectRequested || _connectionState.value is ConnectionState.Disconnected) return@synchronized
         disconnectRequested = true
 

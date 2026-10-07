@@ -45,3 +45,6 @@ internal suspend fun <T> ConnectionAdmission.prepareAndPublish(
         if (!transferred) dispose(candidate)
     }
 }
+
+/** A live producer must retire its own attempt when CommManager declines ownership transfer. */
+internal class ConnectionAdmissionRejectedException : java.io.IOException("Connection admission superseded")

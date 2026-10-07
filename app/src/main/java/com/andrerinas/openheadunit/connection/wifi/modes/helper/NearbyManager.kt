@@ -9,6 +9,7 @@ import android.os.Build
 import android.os.ParcelFileDescriptor
 import android.widget.Toast
 import androidx.core.content.ContextCompat
+import com.andrerinas.openheadunit.connection.ConnectionAdmissionRejectedException
 import com.andrerinas.openheadunit.connection.ConnectionAdmission
 import com.andrerinas.openheadunit.connection.ConnectionStage
 import com.andrerinas.openheadunit.connection.ConnectionStageTracker
@@ -476,15 +477,26 @@ class NearbyManager(
                 val admission = ConnectionAdmission { action -> attempts.run(attempt, action = action) }
                 // Keep the connect coroutine a child of this attempt, including its suspension
                 // in CommManager while the previous connection is being retired.
-                try {
-                    onSocketReady(sock, admission)
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    AppLog.e("NearbyManager: Failed to hand over stream tunnel", e)
-                    failAttempt(attempt)
-                }
+                handOverTunnel(attempt, sock, admission)
             }
+        }
+    }
+
+    // Await the consumer's final ownership decision, not just socket creation. Rejection and
+    // other failures retire only this attempt; a later attempt's endpoint and pipes stay intact.
+    internal suspend fun handOverTunnel(
+        attempt: NearbyAttemptGuard.Attempt, sock: Socket, admission: ConnectionAdmission,
+    ) {
+        try {
+            onSocketReady(sock, admission)
+        } catch (e: ConnectionAdmissionRejectedException) {
+            failAttempt(attempt)
+            AppLog.i("NearbyManager: tunnel handoff superseded; retired its attempt")
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            AppLog.e("NearbyManager: Failed to hand over stream tunnel", e)
+            failAttempt(attempt)
         }
     }
 

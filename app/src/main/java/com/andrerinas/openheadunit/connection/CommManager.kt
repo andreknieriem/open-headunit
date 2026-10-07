@@ -502,6 +502,7 @@ class CommManager(
         if (ownedClaim == null) {
             HeldServerSocket.abandon(socket)
             try { socket.close() } catch (_: Exception) {}
+            if (admission !== ConnectionAdmission.UNRESTRICTED) throw ConnectionAdmissionRejectedException()
             return@withContext
         }
         noteClaimedEndpoint(ownedClaim, socketEndpoint(socket))
@@ -553,6 +554,9 @@ class CommManager(
                 },
                 dispose = { it.disconnect() },
             )
+            // Closing the candidate alone leaves Nearby's endpoint/pipe bookkeeping alive.
+            // Signal rejection back through the awaited handoff so that producer can retire it.
+            if (!transferred) throw ConnectionAdmissionRejectedException()
         } finally {
             // Also covers cancellation while waiting, before a wrapper has been allocated.
             if (!transferred) try { socket.close() } catch (_: Exception) {}

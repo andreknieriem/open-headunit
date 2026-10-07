@@ -1,5 +1,7 @@
 package com.andrerinas.openheadunit.aap
 
+import java.util.concurrent.atomic.AtomicReference
+
 /**
  * The writer monitor orders complete batches on the wire. The engine monitor is held only while
  * draining control records and encrypting the following application message, never during I/O.
@@ -9,24 +11,38 @@ internal class AapTlsWriter(
     private val ssl: AapSsl,
     private val write: (ByteArray, Int) -> Int,
 ) {
+    enum class Result { SENT, NOT_READY, FAILED }
+    private enum class State { WAITING, READY, RETIRED }
+    private val state = AtomicReference(State.WAITING)
     private var failed = false
 
-    @Synchronized fun send(data: ByteArray, length: Int): Boolean {
-        if (failed) return false
+    val isReady: Boolean get() = state.get() == State.READY
+
+    // AuthComplete is a plaintext AAP frame sent after the TLS handshake. Application records
+    // may enter the writer only after that entire frame has reached the transport.
+    fun activate(): Boolean = state.compareAndSet(State.WAITING, State.READY)
+
+    // Retirement must not wait for a blocked socket write, and a late handshake cannot undo it.
+    fun retire() { state.set(State.RETIRED) }
+
+    @Synchronized fun send(data: ByteArray, length: Int): Result {
+        if (!isReady) return Result.NOT_READY
+        if (failed) return Result.FAILED
         val (control, encrypted) = synchronized(ssl) {
             ssl.drainControlRecords() to ssl.encrypt(4, length - 4, data)
         }
-        if (encrypted == null) { failed = true; return false }
+        if (encrypted == null) { failed = true; return Result.FAILED }
         encrypted.data[0] = data[0]
         encrypted.data[1] = data[1]
         val bodySize = encrypted.limit - 4
         encrypted.data[2] = (bodySize ushr 8).toByte()
         encrypted.data[3] = bodySize.toByte()
-        for (record in control) if (!sendControl(record)) return false
-        return sendFrame(encrypted.data, encrypted.limit)
+        for (record in control) if (!sendControl(record)) return Result.FAILED
+        return if (sendFrame(encrypted.data, encrypted.limit)) Result.SENT else Result.FAILED
     }
 
     @Synchronized fun flushControl(): Boolean {
+        if (!isReady) return true
         if (failed) return false
         val records = synchronized(ssl) { ssl.drainControlRecords() }
         for (record in records) if (!sendControl(record)) return false

@@ -723,7 +723,7 @@ class AapTransport(
      * does not split messages or add FIRST's optional total-length field.
      */
     private fun sendEncryptedMessage(data: ByteArray, length: Int): Int {
-        if (tlsWriter.send(data, length)) return 0
+        if (tlsWriter.send(data, length) != AapTlsWriter.Result.FAILED) return 0
         AppLog.w("AapTransport: encrypted write failed or incomplete")
         return -1
     }
@@ -782,6 +782,7 @@ class AapTransport(
     }
 
     internal fun quit(clean: Boolean = false) {
+        tlsWriter.retire()
         val (cb, awaitHandshake, cleanEnd) = synchronized(lifecycleLock) {
             if (closing) return
             closing = true
@@ -1168,8 +1169,8 @@ class AapTransport(
             val status = Messages.statusOk
             ret = connection.sendBlocking(status, status.size, 2000)
             AppLog.d("Handshake: Status OK sent. ret: $ret. TS: ${SystemClock.elapsedRealtime()}")
-            if (ret < 0) {
-                AppLog.e("Handshake: Status request sendEncrypted ret: $ret")
+            if (ret != status.size || !tlsWriter.activate()) {
+                AppLog.e("Handshake: AuthComplete write incomplete or transport retired: $ret")
                 return false
             }
 
@@ -1239,6 +1240,9 @@ class AapTransport(
     }
 
     fun send(message: AapMessage) {
+        // Screen/focus events can arrive while the handshake thread owns the connection. Do not
+        // enqueue them for later replay or ask the TLS engine to wrap before AuthComplete.
+        if (!tlsWriter.isReady) return
         val handler = sendHandler
         if (handler == null) {
             AppLog.i("Cannot send message, handler is null (quitting?)")

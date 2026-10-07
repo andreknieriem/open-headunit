@@ -16,6 +16,8 @@ class PeerCloseReasonTest {
 
     private class StopAtCallback : RuntimeException()
     private fun transport(): AapTransport = mock(AapTransport::class.java, CALLS_REAL_METHODS).also {
+        AapTransport::class.java.getDeclaredField("tlsWriter").apply { isAccessible = true }
+            .set(it, AapTlsWriter(mock(AapSsl::class.java)) { _, length -> length })
         AapTransport::class.java.getDeclaredField("quitLock").apply { isAccessible = true }.set(it, Any())
         fun set(name: String, value: Any) = AapTransport::class.java.getDeclaredField(name)
             .apply { isAccessible = true }.set(it, value)

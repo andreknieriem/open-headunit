@@ -185,8 +185,7 @@ class AapService : Service() {
     private var lastAaMediaMetadata: MediaPlayback.MediaMetaData? = null
     private var lastAaPlaybackPositionMs: Long = 0L
     private var lastAaPlaybackIsPlaying: Boolean? = null
-    private var wasPlayingBeforeDisconnect = false
-    private var lastDisconnectTimestampMs = 0L
+    private val reconnectPlayback = ReconnectPlaybackSnapshot()
     private var mediaSessionIsPlaying = false
     private var mediaMetadataDecodeJob: Job? = null
     private var autoResumePlaybackJob: Job? = null
@@ -1256,9 +1255,9 @@ class AapService : Service() {
     private fun maybeAutoResumePlaybackOnReconnect() {
         val settings = App.provide(this).settings
         val now = SystemClock.elapsedRealtime()
-        val elapsedSinceDisconnect = now - lastDisconnectTimestampMs
-        val wasPlaying = wasPlayingBeforeDisconnect
-        wasPlayingBeforeDisconnect = false // Consume once so it doesn't fire again on subsequent events
+        val playback = reconnectPlayback.consume(now)
+        val elapsedSinceDisconnect = playback.elapsedMs
+        val wasPlaying = playback.wasPlaying
 
         val shouldResume = AutoResumePlaybackPolicy.shouldResume(
             enabled = settings.autoResumePlaybackOnReconnect,
@@ -1597,9 +1596,11 @@ class AapService : Service() {
         mediaMetadataDecodeJob = null
         lastAaMediaMetadata = null
         lastAaPlaybackPositionMs = 0L
-        wasPlayingBeforeDisconnect = (lastAaPlaybackIsPlaying == true)
-        lastDisconnectTimestampMs = SystemClock.elapsedRealtime()
-        AppLog.i("AapService: Disconnected. wasPlayingBeforeDisconnect=$wasPlayingBeforeDisconnect")
+        reconnectPlayback.onDisconnected(
+            lastAaPlaybackIsPlaying,
+            SystemClock.elapsedRealtime(),
+            deliberate = state.isClean || state.isUserExit,
+        )
         lastAaPlaybackIsPlaying = null
         cachedAaAlbumArtBitmap = null
         mediaNotification.cancel()

@@ -837,12 +837,8 @@ class SettingsFragment : Fragment() {
         }
 
         if (WirelessRearmPolicy.requiresRearm(wirelessConfigBefore, wirelessRearmConfig())) {
-            val intent = Intent(requireContext(), AapService::class.java).apply {
-                val mode = settings.wifiConnectionMode
-                action = if (mode != WifiLauncherMode.MANUAL && settings.showsWifi())
-                    AapService.ACTION_START_WIRELESS else AapService.ACTION_STOP_WIRELESS
-            }
-            requireContext().startService(intent)
+            AapService.applyWirelessSettings(requireContext(),
+                startWireless = settings.wifiConnectionMode != WifiLauncherMode.MANUAL && settings.showsWifi())
         }
 
         if (requiresServiceRestart) {
@@ -3956,12 +3952,8 @@ class SettingsFragment : Fragment() {
             insecureAaRfcommListener = snapshot.insecureAaRfcommListener,
         )
         if (WirelessRearmPolicy.requiresRearm(before, wirelessRearmConfig())) {
-            val intent = Intent(context, AapService::class.java).apply {
-                val mode = settings.wifiConnectionMode
-                action = if (mode != WifiLauncherMode.MANUAL && settings.showsWifi())
-                    AapService.ACTION_START_WIRELESS else AapService.ACTION_STOP_WIRELESS
-            }
-            context.startService(intent)
+            AapService.applyWirelessSettings(context,
+                startWireless = settings.wifiConnectionMode != WifiLauncherMode.MANUAL && settings.showsWifi())
         }
     }
 

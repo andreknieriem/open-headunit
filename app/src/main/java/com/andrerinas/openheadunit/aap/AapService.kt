@@ -2883,6 +2883,31 @@ class AapService : Service() {
         }
     }
 
+    private fun startWirelessForSettings() {
+        // Asked for from the UI, so the user is present: release the boot-loop pause
+        // rather than silently ignoring them.
+        Settings.clearBootLoopState(this)
+        wifiLauncherManager.liftUserCancel("a wireless setting was saved")
+        // Save does not close the screen, so arming now would put the stack up under it.
+        if (wirelessPausedForSettings) {
+            wirelessRearmPendingForSettings = true
+            AppLog.i("AapService: a wireless setting was saved while the settings screen " +
+                "is open; re-arming when it closes.")
+        } else {
+            wifiLauncherManager.setActiveFromSettings()
+        }
+    }
+
+    internal fun stopWirelessForCommand(fromSettings: Boolean) {
+        // Configuration refresh and explicit cancellation have different owners: only the
+        // latter revokes an audio settings retry that may still be waiting for retirement.
+        if (!fromSettings) {
+            commManager.cancelPendingSettingsRestart()
+        }
+        wirelessRearmPendingForSettings = false
+        wifiLauncherManager.stop()
+    }
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -2972,18 +2997,7 @@ class AapService : Service() {
             ACTION_START_SELF_MODE       -> selfLauncherManager.start()
             ACTION_STOP_SELF_MODE        -> selfLauncherManager.stop(wasConnected = commManager.isConnected)
             ACTION_START_WIRELESS        -> {
-                // Asked for from the UI, so the user is present: release the boot-loop pause
-                // rather than silently ignoring them.
-                Settings.clearBootLoopState(this)
-                wifiLauncherManager.liftUserCancel("a wireless setting was saved")
-                // Save does not close the screen, so arming now would put the stack up under it.
-                if (wirelessPausedForSettings) {
-                    wirelessRearmPendingForSettings = true
-                    AppLog.i("AapService: a wireless setting was saved while the settings screen " +
-                        "is open; re-arming when it closes.")
-                } else {
-                    wifiLauncherManager.setActiveFromSettings()
-                }
+                startWirelessForSettings()
             }
             ACTION_START_WIRELESS_SCAN   -> {
                 val settings = App.provide(this).settings
@@ -3003,9 +3017,7 @@ class AapService : Service() {
                     wifiLauncherManager.startDiscovery(oneShot = true)
             }
             ACTION_STOP_WIRELESS         -> {
-                commManager.cancelPendingSettingsRestart()
-                wirelessRearmPendingForSettings = false
-                wifiLauncherManager.stop()
+                stopWirelessForCommand(intent?.getBooleanExtra(EXTRA_SETTINGS_REARM, false) == true)
             }
             ACTION_CANCEL_WIRELESS       -> {
                 commManager.cancelPendingSettingsRestart()
@@ -3652,6 +3664,24 @@ class AapService : Service() {
         var instance: AapService? = null
             private set
 
+        /** Apply the wireless part of Save before its caller starts audio retirement/reconnect. */
+        @androidx.annotation.MainThread
+        internal fun applyWirelessSettings(context: Context, startWireless: Boolean) {
+            val service = instance
+            if (service != null) {
+                // A queued service Intent can arrive after legacy Self has reopened its listener.
+                // Both settings UI and service lifecycle run on Main, so finish this stop/rearm
+                // inline before applyAudioSettings is allowed to launch the replacement session.
+                if (startWireless) service.startWirelessForSettings()
+                else service.stopWirelessForCommand(fromSettings = true)
+            } else {
+                context.startService(Intent(context, AapService::class.java).apply {
+                    action = if (startWireless) ACTION_START_WIRELESS else ACTION_STOP_WIRELESS
+                    putExtra(EXTRA_SETTINGS_REARM, true)
+                })
+            }
+        }
+
         /**
          * If set to `true`, the service will call [System.exit] at the very end of [onDestroy].
          * This is used by `killOnDisconnect` to ensure all cleanup (like Car Mode) completes
@@ -3761,6 +3791,8 @@ class AapService : Service() {
 
         /** Ask for the session without raising the projection. See [suppressNextProjectionRaise]. */
         const val EXTRA_NO_UI = "no_ui"
+        /** Wireless configuration refresh from Save, rather than an explicit stop request. */
+        const val EXTRA_SETTINGS_REARM = "settings_rearm"
         /** On [ACTION_CHECK_USB]: the user asked by hand, which lifts the status pill's X. */
         const val EXTRA_USER_REQUESTED = "user_requested"
         /** On [ACTION_CANCEL_WIRELESS]: the X was pressed on a USB attempt, read before it disconnected. */

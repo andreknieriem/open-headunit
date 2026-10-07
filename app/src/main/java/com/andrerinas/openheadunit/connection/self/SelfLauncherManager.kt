@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import com.andrerinas.openheadunit.connection.CommManager
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.aap.AapService
 import com.andrerinas.openheadunit.utils.DummyVpnPolicy
@@ -14,6 +15,7 @@ import com.andrerinas.openheadunit.connection.self.launchers.SelfLauncherV17_4
 import com.andrerinas.openheadunit.connection.wifi.WifiLauncherManager
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.VpnControl
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -44,6 +46,8 @@ class SelfLauncherManager(
      * has no IPv4 until the service dies.
      */
     private var selfModeVpnWatchdog: Job? = null
+    private var launchJob: Job? = null
+    private var launchTimeoutJob: Job? = null
 
     /**
      * "Self Mode" connects the device to itself over the loopback interface.
@@ -80,7 +84,7 @@ class SelfLauncherManager(
     }
 
     @SuppressLint("MissingPermission", "HardwareIds")
-    fun start() {
+    fun start(settingsRestart: CommManager.ConnectionState.Disconnected? = null) {
         val commManager = App.provide(service).commManager
 
         // auto-start-self-mode and an explicit ACTION_START_SELF_MODE both land here, and running
@@ -94,11 +98,18 @@ class SelfLauncherManager(
             return
         }
 
+        // Manual Self Mode owns the next connection even before Gearhead dials port 5288.
+        // Save's own relaunch retains its permission; a later user launch revokes it.
+        if (settingsRestart == null) commManager.cancelPendingSettingsRestart()
+        else if (!settingsRestart.acceptsSettingsRestart(commManager.connectionState.value)) return
+
+        // A new launch owns its own deadline; the previous session cannot time it out.
+        launchTimeoutJob?.cancel()
         isActive = true
         launchInFlight = true
         adoptDummyVpn()
 
-        service.serviceScope.launch(Dispatchers.Main) {
+        launchJob = service.serviceScope.launch(Dispatchers.Main) {
             // prepare launchers
             val services = SelfLauncherServices(service, wifiLauncherManager)
             val launchers: Array<SelfLauncher>
@@ -133,6 +144,8 @@ class SelfLauncherManager(
                             anySucceeded = true
                             break
                         }
+                    } catch (e: CancellationException) {
+                        throw e
                     } catch (e: Exception) {
                         AppLog.w("SelfMode: Launch of '${launcher.name}' had caused an error", e)
                     }
@@ -167,7 +180,7 @@ class SelfLauncherManager(
             // wireless server and the dummy VPN are what the phone still has to arrive on. See
             // SelfLaunchTimeoutPolicy.
             val deadlineMs = SelfLaunchTimeoutPolicy.deadlineMs(path)
-            service.serviceScope.launch {
+            launchTimeoutJob = service.serviceScope.launch {
                 delay(deadlineMs)
 
                 if (!commManager.isConnected && isActive) {
@@ -220,6 +233,13 @@ class SelfLauncherManager(
         launchInFlight = false
     }
 
+    /** Token used by a settings fallback so it cannot retire a newer manual launch. */
+    internal fun currentLaunch(): Job? = launchJob
+
+    internal fun stopIfCurrent(expected: Job?) {
+        if (launchJob === expected) stop()
+    }
+
     /** Whether the launchers are still running, for a disconnect deciding what it is looking at. */
     fun isLaunchInFlight(): Boolean = launchInFlight
 
@@ -246,6 +266,10 @@ class SelfLauncherManager(
      *        arrived and the VPN is taken down via the Self-Mode-never-connected path.
      */
     fun stop(wasConnected: Boolean = false) {
+        launchJob?.cancel()
+        launchJob = null
+        launchTimeoutJob?.cancel()
+        launchTimeoutJob = null
         if (!isActive && !launchInFlight && selfModeVpnWatchdog == null) return
 
         AppLog.i("SelfMode: stopping Self Mode (wasConnected=$wasConnected, wasActive=$isActive, launchInFlight=$launchInFlight)")

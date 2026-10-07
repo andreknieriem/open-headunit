@@ -1758,6 +1758,11 @@ class AapService : Service() {
                 val (ip, port) = state.restartEndpoint
                 commManager.connect(ip, port)
             }
+            // Before AA 17.4 the phone dials our 5288 listener; repeat the launch intent.
+            selfLauncherManager.isActive -> withContext(Dispatchers.Main) {
+                if (state.acceptsSettingsRestart(commManager.connectionState.value) && !isDestroying)
+                    selfLauncherManager.start(settingsRestart = state)
+            }
             settings.lastConnectionType == Settings.CONNECTION_TYPE_USB ->
                 usbLauncherManager.checkAlreadyConnected(force = true, userRequested = true)
             settings.lastConnectionType == Settings.CONNECTION_TYPE_NEARBY -> {

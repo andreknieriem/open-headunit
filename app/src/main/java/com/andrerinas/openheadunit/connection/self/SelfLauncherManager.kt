@@ -112,7 +112,7 @@ class SelfLauncherManager(
         // launch and a launcher suspended while waiting for the network, without touching a new job.
         val job = service.serviceScope.launch(Dispatchers.Main, start = CoroutineStart.LAZY) {
             if (settingsRestart != null && !settingsRestart.acceptsSettingsRestart(commManager.connectionState.value)) {
-                stopIfCurrent(coroutineContext[Job])
+                stopIfCurrent(coroutineContext[Job], preserveVpn = commManager.connectionState.value !== settingsRestart)
                 return@launch
             }
             adoptDummyVpn()
@@ -142,6 +142,7 @@ class SelfLauncherManager(
 
             try {
                 for (launcher in launchers) {
+                    services.ensureLaunchAllowed()
                     try {
                         if (!launcher.run())
                             AppLog.w("SelfMode: Launch of '${launcher.name}' failed")
@@ -212,7 +213,8 @@ class SelfLauncherManager(
             if (cause is CancellationException) service.serviceScope.launch(Dispatchers.Main.immediate) {
                 // Completion may arrive from IO. Main owns the launch flags and VPN bookkeeping;
                 // recheck identity there so delayed cleanup cannot stop a newer manual launch.
-                stopIfCurrent(job)
+                stopIfCurrent(job, preserveVpn = settingsRestart != null &&
+                    commManager.connectionState.value !== settingsRestart)
             }
         }
         settingsRestart?.trackSettingsLaunch(job)
@@ -254,8 +256,10 @@ class SelfLauncherManager(
     /** Token used by a settings fallback so it cannot retire a newer manual launch. */
     internal fun currentLaunch(): Job? = launchJob
 
-    internal fun stopIfCurrent(expected: Job?) {
-        if (launchJob === expected) stop(wasConnected = App.provide(service).commManager.isConnected)
+    internal fun stopIfCurrent(expected: Job?, preserveVpn: Boolean = false) {
+        // A superseding connection may still be Connecting. Retire only our launch flags and
+        // watchdog; its network resources are now that connection's responsibility.
+        if (launchJob === expected) stop(wasConnected = preserveVpn || App.provide(service).commManager.isConnected)
     }
 
     /** Whether the launchers are still running, for a disconnect deciding what it is looking at. */

@@ -40,6 +40,7 @@ class SelfLauncherLegacy(
         }
 
         AppLog.i("SelfMode: Launching AA Wireless Startup via Activity...")
+        services.ensureLaunchAllowed()
         services.aap.startActivity(magicalIntent)
         return true
     }

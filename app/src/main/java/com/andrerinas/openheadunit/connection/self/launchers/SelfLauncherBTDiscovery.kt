@@ -45,6 +45,7 @@ class SelfLauncherBTDiscovery(
             putExtra("DEVICE_ADDRESS", bondedAddress)
             addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
         }
+        services.ensureLaunchAllowed()
         services.aap.sendBroadcast(btReceiverIntent)
         AppLog.i("SelfMode: Broadcast fallback 2 (WifiBluetoothReceiver START_WIRELESS_PROJECTION with MAC $bondedAddress) sent.")
         return true

@@ -45,6 +45,7 @@ for marker, file, declaration in [
     ('START', manager, 'fun start(settingsRestart:'),
     ('STOP', manager, 'fun stop(wasConnected:'),
     ('STOP_CURRENT', manager, 'internal fun stopIfCurrent('),
+    ('ALLOW_LAUNCH', 'connection/self/SelfLauncherServices.kt', 'internal suspend fun ensureLaunchAllowed()'),
     ('LEGACY_RUN', legacy, 'override suspend fun run()'),
     ('LEGACY_WAIT', legacy, 'suspend fun runWifiLauncher()'),
     ('CANCEL_ACTION', 'aap/AapService.kt', 'ACTION_CANCEL_WIRELESS       ->'),

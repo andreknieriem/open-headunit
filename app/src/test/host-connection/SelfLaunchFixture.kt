@@ -7,6 +7,8 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainCoroutineDispatcher
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,7 +20,12 @@ class QueuedMain : MainCoroutineDispatcher() {
     override val immediate get() = this
     val tasks = ConcurrentLinkedQueue<Runnable>()
     override fun dispatch(context: CoroutineContext, block: Runnable) { tasks.add(block) }
-    fun drain() { while (true) (tasks.poll() ?: return).run() }
+    fun runOne(): Boolean { val next = tasks.poll() ?: return false; next.run(); return true }
+    fun drain() { while (runOne()) {} }
+    fun awaitTask() {
+        val until = System.nanoTime() + 2_000_000_000L
+        while (tasks.isEmpty()) { check(System.nanoTime() < until); Thread.sleep(5) }
+    }
 }
 class CommManager {
     enum class DisconnectReason { CONNECTION_ENDED, SETTINGS_RESTART }
@@ -33,6 +40,7 @@ class CommManager {
     val isConnected get() = _connectionState.value === ConnectionState.Connected
     val isUsbSession = false
     var reports = 0
+    var metadata = "old"
     // CANCEL
     fun reportError(message: String, state: ConnectionState.Disconnected? = null) { reports++ }
     fun emitError(message: String) { reports++ }
@@ -60,10 +68,11 @@ class SelfLauncherServices(val aap: Service, val wifiLauncherManager: WifiLaunch
     val connectivityManager get() = aap.network
     val fakeNetwork = Any()
     val fakeWifiInfo = Any()
+    // ALLOW_LAUNCH
 }
 open class SelfLauncher(val manager: SelfLauncherManager, val services: SelfLauncherServices) {
     open val name = "fixture"
-    open suspend fun run() = false
+    open suspend fun run(): Boolean { services.aap.fallbacks++; return false }
 }
 class SelfLauncherLegacy(manager: SelfLauncherManager, services: SelfLauncherServices) : SelfLauncher(manager, services) {
     // LEGACY_RUN
@@ -116,6 +125,7 @@ class Service : AutoCloseable {
     var modern = false
     var activities = 0
     var directConnects = 0
+    var fallbacks = 0
     var vpnAdoptions = 0
     var vpnStops = 0
     var resolvePrompts = 0
@@ -171,6 +181,40 @@ fun main() {
         s.main.drain()
         check(job.isCancelled && s.activities == 0 && !s.manager.isActive)
     }
+    // The actual legacy delay resumes after a different connection publishes its state.
+    for (replacement in listOf(CommManager.ConnectionState.Connecting, CommManager.ConnectionState.Connected)) {
+        Service().use { s ->
+            s.manager.start(s.save())
+            s.main.drain()
+            check(s.wifiLauncherManager.listenerStarts == 1 && s.activities == 0)
+            val old = checkNotNull(s.manager.currentLaunch())
+            s.commManager.connectionState.value = replacement
+            s.commManager.metadata = "new USB"
+            s.network.activeNetwork = Any()
+            s.main.awaitTask() // Resume the real delay, not an explicit cancellation.
+            s.main.drain()
+            check(old.isCancelled && s.activities == 0 && s.fallbacks == 0)
+            check(s.commManager.connectionState.value === replacement && s.commManager.metadata == "new USB")
+            check(!s.manager.isActive && !s.manager.inFlight())
+            check(s.vpnStops == 0 && s.commManager.reports == 0 && s.resolvePrompts == 0)
+        }
+    }
+    // An old ownership-loss cleanup queued on Main must not clear a replacement Self launch.
+    Service().use { s ->
+        s.manager.start(s.save())
+        s.main.drain()
+        s.commManager.connectionState.value = CommManager.ConnectionState.Connecting
+        s.network.activeNetwork = Any()
+        s.main.awaitTask()
+        check(s.main.runOne()) // Legacy guard cancels old Job; its completion cleanup is still queued.
+        s.manager.stop(wasConnected = true)
+        s.commManager.connectionState.value = CommManager.ConnectionState.Disconnected()
+        s.manager.start()
+        val replacement = checkNotNull(s.manager.currentLaunch())
+        s.main.drain()
+        check(s.manager.currentLaunch() === replacement && replacement.isActive && s.manager.isActive)
+        check(s.activities == 1 && s.fallbacks == 0 && s.vpnStops == 0)
+    }
     // Permission can already be revoked when a queued start finally runs.
     Service().use { s ->
         val saved = s.save()
@@ -219,5 +263,5 @@ fun main() {
         s.manager.start(saved)
         check(s.manager.currentLaunch() == null && !s.manager.isActive)
     }
-    println("PASS: real Self queued entry, legacy network wait, stale permission, owned deadline, replacement launch and bind-after-cancel")
+    println("PASS: real Self queued entry, legacy network wait, ownership takeover, stale permission, owned deadline, replacement launch and bind-after-cancel")
 }

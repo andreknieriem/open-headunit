@@ -106,6 +106,15 @@ class CommManager(
             val restartEndpoint: Pair<String, Int>? = null,
         ) : ConnectionState() {
             val isSettingsRestart get() = reason == DisconnectReason.SETTINGS_RESTART
+
+            // Created with Save, before asynchronous teardown. A later manual Self launch
+            // revokes this permission even while it is still waiting to dial our listener.
+            @Volatile private var settingsRestartCancelled = false
+
+            internal fun acceptsSettingsRestart(current: ConnectionState): Boolean =
+                current === this && isSettingsRestart && !settingsRestartCancelled
+
+            internal fun cancelSettingsRestart() { settingsRestartCancelled = true }
         }
 
         /** Physical connection handshake in progress (USB open or TCP connect). */
@@ -391,9 +400,13 @@ class CommManager(
         socket: Socket,
         tier: ConnectionPriorityPolicy.Tier = ConnectionPriorityPolicy.Tier.WIRELESS_HANDSHAKE,
         restartEndpoint: Pair<String, Int>? = null,
+        expectedState: ConnectionState.Disconnected? = null,
     ) = withContext(Dispatchers.IO) {
-        val claim = ConnectionArbiter.claim(tier, socketOwner(tier),
-            "the socket from ${socket.inetAddress?.hostAddress}")
+        if (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value)) {
+            HeldServerSocket.abandon(socket)
+            return@withContext
+        }
+        val claim = claimSocket(tier, "the socket from ${socket.inetAddress?.hostAddress}", expectedState)
         if (claim == null) {
             HeldServerSocket.settle(socket)
             try { socket.close() } catch (e: Exception) {}
@@ -401,13 +414,17 @@ class CommManager(
         }
         noteClaimedEndpoint(claim, socketEndpoint(socket))
         HeldServerSocket.settle(socket)
-        try { connectSocket(socket, restartEndpoint) } finally { releaseClaim(claim) }
+        try { connectSocket(socket, restartEndpoint, expectedState) } finally { releaseClaim(claim) }
     }
 
     private fun socketEndpoint(socket: Socket): String? =
         socket.inetAddress?.hostAddress?.let { SameEndpointConnectPolicy.endpoint(it, socket.port) }
 
-    private suspend fun connectSocket(socket: Socket, restartEndpoint: Pair<String, Int>?) {
+    private suspend fun connectSocket(
+        socket: Socket,
+        restartEndpoint: Pair<String, Int>?,
+        expectedState: ConnectionState.Disconnected?,
+    ) {
         // Another caller already started the connection — do nothing.
         if (_connectionState.value is ConnectionState.Connecting) {
             // [BUG_FIX] But close what we are refusing. A socket handed to connect() has no
@@ -426,12 +443,15 @@ class CommManager(
             return
         }
 
-        lastAttemptedEndpoint = socketEndpoint(socket)
-
         _disconnectJob?.join()
 
         var conn: ProjectionConnection? = null
         val (attempt, previous) = synchronized(transportLifecycleLock) {
+            if (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value)) {
+                try { socket.close() } catch (_: Exception) {}
+                return
+            }
+            lastAttemptedEndpoint = socketEndpoint(socket)
             outgoingEndpoint = restartEndpoint
             val token = Any()
             connectionAttempt = token
@@ -491,13 +511,17 @@ class CommManager(
         ip: String,
         port: Int,
         tier: ConnectionPriorityPolicy.Tier = ConnectionPriorityPolicy.Tier.WIRELESS_HANDSHAKE,
+        expectedState: ConnectionState.Disconnected? = null,
     ) = withContext(Dispatchers.IO) {
+        // Save may have waited in the IO queue while another session took over. Check before
+        // claiming the arbiter, then again under the publication lock after teardown waits.
+        if (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value)) return@withContext
         val endpoint = SameEndpointConnectPolicy.endpoint(ip, port)
         val held = if (HeldServerSocket.isHeld(endpoint)) endpoint else null
         if (SameEndpointConnectPolicy.route(held, null, endpoint) == SameEndpointConnectPolicy.Route.ADOPT_HELD) {
             HeldServerSocket.take(endpoint)?.let {
                 AppLog.i("CommManager: $endpoint adopting the socket discovery already opened")
-                try { connect(it, tier) } catch (e: CancellationException) { HeldServerSocket.abandon(it); throw e }
+                try { connect(it, tier, restartEndpoint = ip to port, expectedState = expectedState) } catch (e: CancellationException) { HeldServerSocket.abandon(it); throw e }
                 return@withContext
             }
         }
@@ -507,22 +531,22 @@ class CommManager(
             AppLog.i("CommManager: $endpoint is already connecting; not preempting it")
             return@withContext
         }
-        val claim = ConnectionArbiter.claim(tier, socketOwner(tier), endpoint) ?: return@withContext
+        val claim = claimSocket(tier, endpoint, expectedState) ?: return@withContext
         noteClaimedEndpoint(claim, endpoint)
-        try { connectIp(ip, port) } finally { releaseClaim(claim) }
+        try { connectIp(ip, port, expectedState) } finally { releaseClaim(claim) }
     }
 
-    private suspend fun connectIp(ip: String, port: Int) {
+    private suspend fun connectIp(ip: String, port: Int, expectedState: ConnectionState.Disconnected?) {
         // Another caller already started the connection — do nothing.
         if (_connectionState.value is ConnectionState.Connecting)
             return
-
-        lastAttemptedEndpoint = SameEndpointConnectPolicy.endpoint(ip, port)
 
         _disconnectJob?.join()
 
         var conn: ProjectionConnection? = null
         val (attempt, previous) = synchronized(transportLifecycleLock) {
+            if (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value)) return
+            lastAttemptedEndpoint = SameEndpointConnectPolicy.endpoint(ip, port)
             outgoingEndpoint = ip to port
             val token = Any()
             connectionAttempt = token
@@ -567,6 +591,25 @@ class CommManager(
                 connectionAttempt !== attempt || disconnectRequested || _connection !== conn
             }
             if (retired) conn?.disconnect()
+        }
+    }
+
+    /** A new manual Self launch supersedes Save before it publishes an AAP connection. */
+    fun cancelPendingSettingsRestart(): Unit = synchronized(transportLifecycleLock) {
+        (_connectionState.value as? ConnectionState.Disconnected)?.cancelSettingsRestart()
+    }
+
+    private fun claimSocket(
+        tier: ConnectionPriorityPolicy.Tier,
+        description: String,
+        expectedState: ConnectionState.Disconnected?,
+    ): ConnectionArbiter.Claim? {
+        if (expectedState == null) return ConnectionArbiter.claim(tier, socketOwner(tier), description)
+        // Publication of a newer connection and Save's admission cannot cross here. The
+        // ordinary connection routes keep their existing arbitration behavior.
+        return synchronized(transportLifecycleLock) {
+            if (!expectedState.acceptsSettingsRestart(_connectionState.value)) null
+            else ConnectionArbiter.claim(tier, socketOwner(tier), description)
         }
     }
 

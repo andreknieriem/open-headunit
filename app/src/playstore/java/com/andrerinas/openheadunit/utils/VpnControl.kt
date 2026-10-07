@@ -27,6 +27,8 @@ object VpnControl {
 
     fun isPrepared(context: Context): Boolean = false
 
+    fun isSelfModeRunning(): Boolean = false
+
     fun isVpnAvailable(): Boolean = false
 
     /**

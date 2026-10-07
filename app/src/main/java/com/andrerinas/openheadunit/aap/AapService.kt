@@ -1564,6 +1564,10 @@ class AapService : Service() {
         cancelAllBtAutoDisconnects()
         usbLauncherManager.setSwitchingToProjection(false)
         releaseWifiLock()
+        // Save resumes the same Self session after retirement. Capture the actual tun before
+        // closing it: an adopted owner alone does not prove that an online launch used a VPN.
+        val restoreSelfVpn = state.isSettingsRestart && state.wasLoopbackSession &&
+            dummyVpnOwner == DummyVpnPolicy.Owner.SELF_MODE && VpnControl.isSelfModeRunning()
         stopDummyVpn(DummyVpnPolicy.Reason.SESSION_ENDED)
 
         // Here rather than in the teardown coroutine below, which runs ~300ms later: the pill is
@@ -1604,7 +1608,7 @@ class AapService : Service() {
                 // Reuse the current route only after its workers have released shared resources.
                 commManager.awaitDisconnectComplete()
                 if (commManager.connectionState.value !== state || isDestroying) return@launch
-                restartForAudioSettings(state)
+                restartForAudioSettings(state, restoreSelfVpn)
                 return@launch
             }
             val rearmedAfterWiredSession = rearmWirelessAfterWiredSession()
@@ -1768,10 +1772,15 @@ class AapService : Service() {
     }
 
     /** Resume the saved route once, then leave further attempts to the ordinary policies. */
-    private suspend fun restartForAudioSettings(state: CommManager.ConnectionState.Disconnected) =
+    private suspend fun restartForAudioSettings(
+        state: CommManager.ConnectionState.Disconnected,
+        restoreSelfVpn: Boolean,
+    ) =
         withContext(Dispatchers.Main) {
             val settings = App.provide(this@AapService).settings
-            val wasSelfMode = selfLauncherManager.isActive
+            // A launcher can still be active after another peer wins the connection.
+            // The ended session's peer, rather than that launch flag, selects the retry route.
+            val wasSelfMode = state.wasLoopbackSession
             var selfLaunch = selfLauncherManager.currentLaunch()
             SettingsRestartRecovery.run(
                 remainingMs = state.settingsRestartUntilMs - SystemClock.elapsedRealtime(),
@@ -1780,6 +1789,9 @@ class AapService : Service() {
                         selfLauncherManager.currentLaunch() === selfLaunch
                 },
                 retry = {
+                    // Reuse only our former Self tun, and recheck consent before requesting it.
+                    // This runs after retirement and only while Save still owns the retry.
+                    if (wasSelfMode && restoreSelfVpn) startDummyVpn(DummyVpnPolicy.Owner.SELF_MODE)
                     when {
                         state.restartEndpoint != null -> withContext(Dispatchers.IO) {
                             val (ip, port) = state.restartEndpoint

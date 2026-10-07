@@ -199,10 +199,7 @@ class AapTransport(
             data = it.obj as ByteArray,
             length = it.arg2
         )
-        if (result < 0) {
-            quit()
-            return@Callback true
-        }
+        if (result < 0) return@Callback true
         val finishedMs = SystemClock.elapsedRealtime()
         val channel = (it.obj as ByteArray)[0].toInt() and 0xff
         if (audioTimingActive && Channel.isAudio(channel) && finishedMs >= nextSendTimingMs &&
@@ -313,14 +310,16 @@ class AapTransport(
                 if (success) Common.MessageStatus.STATUS_SUCCESS_VALUE
                 else Common.MessageStatus.STATUS_INTERNAL_ERROR_VALUE, id))
         },
-        data = { bytes, timestamp ->
-            val frame = ByteArray(MicUplinkFrame.size(bytes.size))
-            val length = MicUplinkFrame.build(timestamp, bytes, 0, bytes.size, frame)
-            sendEncryptedMessage(frame, length)
-        },
+        data = ::sendMicrophoneData,
         clockMs = { SystemClock.elapsedRealtime() }, timestampUs = ::micTimestampUs,
         report = { AppLog.i("AapTransport: %s", it) }
     )
+
+    internal fun sendMicrophoneData(bytes: ByteArray, timestamp: Long) {
+        val frame = ByteArray(MicUplinkFrame.size(bytes.size))
+        val length = MicUplinkFrame.build(timestamp, bytes, 0, bytes.size, frame)
+        sendEncryptedMessage(frame, length)
+    }
 
     internal fun openMicSession(maxUnacked: Int) = micSessions.open(maxUnacked)
     internal fun rejectMicSession() = micSessions.reject()
@@ -725,6 +724,9 @@ class AapTransport(
     private fun sendEncryptedMessage(data: ByteArray, length: Int): Int {
         if (tlsWriter.send(data, length) != AapTlsWriter.Result.FAILED) return 0
         AppLog.w("AapTransport: encrypted write failed or incomplete")
+        // Microphone DATA and queued control messages share this writer. Once a TLS record is
+        // incomplete, neither path can continue the byte stream; retire the whole transport.
+        quit()
         return -1
     }
 

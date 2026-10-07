@@ -50,6 +50,9 @@ class SelfLauncherManager(
     private var launchJob: Job? = null
     private var launchTimeoutJob: Job? = null
     private var settingsLaunchOwner: CommManager.ConnectionState.Disconnected? = null
+    // Obsolete Save cleanup may precede service observation. This policy belongs only to
+    // that exact terminal event; it must never become a flag on the next physical session.
+    private var retiredSettingsTerminal: CommManager.ConnectionState.Disconnected? = null
 
     /**
      * "Self Mode" connects the device to itself over the loopback interface.
@@ -108,6 +111,7 @@ class SelfLauncherManager(
         // A new launch owns its own deadline; the previous session cannot time it out.
         launchTimeoutJob?.cancel()
         settingsLaunchOwner = settingsRestart
+        retiredSettingsTerminal = null
         isActive = true
         launchInFlight = true
         // Publish and bind the job before it can run. Revoking Save then cancels both a queued
@@ -267,10 +271,11 @@ class SelfLauncherManager(
 
     /** A published connection ends Save's waiting phase before its deadline can affect that session. */
     internal fun onConnectionEstablished() {
-        val saved = settingsLaunchOwner ?: return
         val commManager = App.provide(service).commManager
         // The collector's live-state event may already have been superseded by teardown.
         if (!commManager.isConnected) return
+        retiredSettingsTerminal = null
+        val saved = settingsLaunchOwner ?: return
         if (saved.acceptsSettingsRestart(commManager.connectionState.value)) return
         if (commManager.isLoopbackSession) {
             // The requested Self session arrived. Retain Self mode for its later disconnect,
@@ -285,12 +290,18 @@ class SelfLauncherManager(
 
     /** Handle a terminal-only observation before the service chooses its reconnect policy. */
     internal fun onConnectionEnded(state: CommManager.ConnectionState.Disconnected) {
-        val saved = settingsLaunchOwner ?: return
         val commManager = App.provide(service).commManager
-        if (state === saved || commManager.connectionState.value !== state) return
-        // No live notification is guaranteed: fast handshake failure can replace them all.
-        // Use the retired connection's snapshot, not a now-cleared socket or the launch flag.
-        stopIfCurrent(launchJob, preserveVpn = true)
+        if (commManager.connectionState.value !== state) return
+        val saved = settingsLaunchOwner
+        val retiredHere = retiredSettingsTerminal === state
+        retiredSettingsTerminal = null
+        if (saved != null) {
+            if (state === saved) return
+            stopIfCurrent(launchJob, preserveVpn = true)
+            retiredSettingsTerminal = null // The collector is consuming this event now.
+        } else if (!retiredHere) return
+        // Apply the route only when its own terminal is observed. If a newer state replaces
+        // it first, no Self flag can leak into that later session's discovery or teardown.
         isActive = state.wasLoopbackSession
     }
 
@@ -298,9 +309,18 @@ class SelfLauncherManager(
     internal fun currentLaunch(): Job? = launchJob
 
     internal fun stopIfCurrent(expected: Job?, preserveVpn: Boolean = false) {
-        // A superseding connection may still be Connecting. Retire only our launch flags and
-        // watchdog; its network resources are now that connection's responsibility.
-        if (launchJob === expected) stop(wasConnected = preserveVpn || App.provide(service).commManager.isConnected)
+        if (launchJob !== expected) return
+        val commManager = App.provide(service).commManager
+        val saved = settingsLaunchOwner
+        val current = commManager.connectionState.value
+        // Save cleanup can precede the terminal collector, or that terminal may be skipped
+        // entirely for a newer connection. Keep its identity instead of restoring a global
+        // Self flag here; only onConnectionEnded may consume this snapshot's route policy.
+        val retired = if (preserveVpn && saved != null &&
+            current is CommManager.ConnectionState.Disconnected && current !== saved) current else null
+        // A superseding connection may still be Connecting; preserve its network resources.
+        stop(wasConnected = preserveVpn || commManager.isConnected)
+        retiredSettingsTerminal = retired
     }
 
     /** Whether the launchers are still running, for a disconnect deciding what it is looking at. */
@@ -334,6 +354,7 @@ class SelfLauncherManager(
         launchTimeoutJob?.cancel()
         launchTimeoutJob = null
         settingsLaunchOwner = null
+        retiredSettingsTerminal = null
         if (!isActive && !launchInFlight && selfModeVpnWatchdog == null) return
 
         AppLog.i("SelfMode: stopping Self Mode (wasConnected=$wasConnected, wasActive=$isActive, launchInFlight=$launchInFlight)")

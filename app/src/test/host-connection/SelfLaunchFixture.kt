@@ -84,6 +84,7 @@ class SelfLauncherManager(private val service: Service, private val wifiLauncher
     private var launchJob: Job? = null
     private var launchTimeoutJob: Job? = null
     private var settingsLaunchOwner: CommManager.ConnectionState.Disconnected? = null
+    private var retiredSettingsTerminal: CommManager.ConnectionState.Disconnected? = null
     private var selfModeVpnWatchdog: Job? = null
     private fun isAaVersion174OrHigher() = service.modern
     private fun adoptDummyVpn() { service.vpnAdoptions++ }
@@ -388,28 +389,84 @@ fun main() {
         s.manager.onConnectionEstablished()
         check(job.isActive && s.manager.isActive)
     }
-    // Every live phase can be conflated away by a fast failure. Only the terminal snapshot
-    // survives cleanup, so real service observation must settle old Self state from that snapshot.
-    for (loopback in listOf(false, true)) Service().use { s ->
+    // Terminal state and the old deadline can both be queued before Main runs. Their order
+    // must not change which session's disconnect policy is selected after socket cleanup.
+    for (deadlineFirst in listOf(false, true)) for (loopback in listOf(false, true)) Service().use { s ->
         s.network.activeNetwork = Any()
         s.manager.start(s.save())
         s.main.drain()
         s.startObserver()
         s.main.drain()
         val before = s.ordinaryDisconnects
+        if (deadlineFirst) s.main.advanceBy(SelfLaunchTimeoutPolicy.LEGACY_DEADLINE_MS)
         s.commManager.isLoopbackSession = loopback
         s.commManager.connectionState.value = CommManager.ConnectionState.Connected
         s.commManager.connectionState.value = CommManager.ConnectionState.StartingTransport
         s.commManager.connectionState.value = CommManager.ConnectionState.Error("handshake failed")
         s.commManager.connectionState.value = CommManager.ConnectionState.Disconnected(wasLoopbackSession = loopback)
         s.commManager.isLoopbackSession = false // Physical cleanup finished before the collector.
+        if (!deadlineFirst) s.main.advanceBy(SelfLaunchTimeoutPolicy.LEGACY_DEADLINE_MS)
         s.main.drain()
-        check(s.connectedCallbacks == 0 && s.manager.isActive == loopback)
+        check(s.connectedCallbacks == 0 && s.manager.isActive == loopback) {
+            "terminal policy changed: deadlineFirst=$deadlineFirst, loopback=$loopback"
+        }
         check(s.ordinaryDisconnects == before + if (loopback) 0 else 1)
         check(s.vpnStops == 0 && s.manager.currentLaunch() == null)
-        s.main.advanceBy(SelfLaunchTimeoutPolicy.LEGACY_DEADLINE_MS)
-        s.main.drain()
         check(s.resolvePrompts == 0 && s.commManager.reports == 0)
+    }
+    // IO can publish the replacement after obsolete deadline cleanup but before Main collects
+    // the retired terminal. A manual IP connection does not create a new Self launch Job.
+    for (liveObserved in listOf(false, true)) Service().use { s ->
+        s.network.activeNetwork = Any()
+        s.manager.start(s.save())
+        s.main.drain()
+        s.startObserver()
+        s.main.drain()
+        val before = s.ordinaryDisconnects
+        s.main.advanceBy(SelfLaunchTimeoutPolicy.LEGACY_DEADLINE_MS)
+        val retired = CommManager.ConnectionState.Disconnected(wasLoopbackSession = true)
+        s.commManager.connectionState.value = retired
+        s.commManager.isLoopbackSession = false
+        check(s.main.runOne()) // Deadline, leaving the terminal collector queued.
+        s.commManager.connectionState.value = CommManager.ConnectionState.Connecting
+        s.commManager.connectionState.value = CommManager.ConnectionState.Connected
+        if (liveObserved) s.main.drain()
+        s.commManager.connectionState.value = CommManager.ConnectionState.Disconnected()
+        s.main.drain()
+        check(!s.manager.isActive && s.ordinaryDisconnects == before + 1) {
+            "retired Self policy leaked into next IP session: liveObserved=$liveObserved"
+        }
+        s.manager.onConnectionEnded(retired) // Superseded terminal callback stays inert.
+        check(!s.manager.isActive && s.manager.currentLaunch() == null)
+        check(s.resolvePrompts == 0 && s.vpnStops == 0)
+    }
+    // Explicit stop consumes pending policy; a new manual launch owns its own active flag.
+    for (manual in listOf(false, true)) Service().use { s ->
+        s.network.activeNetwork = Any()
+        s.manager.start(s.save())
+        s.main.drain()
+        s.main.advanceBy(SelfLaunchTimeoutPolicy.LEGACY_DEADLINE_MS)
+        val retired = CommManager.ConnectionState.Disconnected(wasLoopbackSession = !manual)
+        s.commManager.connectionState.value = retired
+        check(s.main.runOne())
+        if (manual) s.manager.start() else s.manager.stop(wasConnected = true)
+        val replacement = s.manager.currentLaunch()
+        s.manager.onConnectionEnded(retired)
+        s.main.drain()
+        check(s.manager.isActive == manual && s.manager.currentLaunch() === replacement)
+        if (manual) check(checkNotNull(replacement).isActive)
+    }
+    // Entry or cancellation cleanup can also precede terminal observation. Both must retain
+    // the retired route without dispatching an obsolete Activity or stopping its VPN.
+    for (cancelled in listOf(false, true)) for (loopback in listOf(false, true)) Service().use { s ->
+        val saved = s.save()
+        s.manager.start(saved)
+        s.commManager.connectionState.value = CommManager.ConnectionState.Disconnected(wasLoopbackSession = loopback)
+        if (cancelled) saved.cancelSettingsRestart()
+        s.startObserver()
+        s.main.drain()
+        check(s.manager.isActive == loopback && s.manager.currentLaunch() == null)
+        check(s.activities == 0 && s.vpnStops == 0 && s.resolvePrompts == 0)
     }
     // A superseded terminal notification cannot retire a newer manual or Save launch.
     for (manual in listOf(false, true)) Service().use { s ->

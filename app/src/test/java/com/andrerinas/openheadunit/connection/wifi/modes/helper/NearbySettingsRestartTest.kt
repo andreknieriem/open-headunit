@@ -12,6 +12,20 @@ import org.mockito.ArgumentMatchers.*
 import org.mockito.Mockito.*
 
 class NearbySettingsRestartTest {
+    @Test fun `fallback preserves a pending endpoint and its bandwidth upgrade`() {
+        for (connecting in listOf(false, true)) {
+            val manager = mock(NearbyManager::class.java, CALLS_REAL_METHODS)
+            NearbyManager::class.java.getDeclaredField("isConnecting").apply { isAccessible = true }.set(manager, connecting)
+            NearbyManager::class.java.getDeclaredField("activeEndpointId").apply { isAccessible = true }
+                .set(manager, if (connecting) null else "joining-phone")
+            manager.resumeDiscoveryIfIdle()
+            verify(manager, never()).start()
+        }
+        val idle = mock(NearbyManager::class.java, CALLS_REAL_METHODS)
+        doNothing().`when`(idle).start()
+        idle.resumeDiscoveryIfIdle()
+        verify(idle).start()
+    }
     @Test fun `explicit save cleans the old tunnel and retries only the rediscovered peer with auto connect off`() {
         val context = mock(Context::class.java)
         val prefs = mock(SharedPreferences::class.java)

@@ -102,6 +102,13 @@ class NearbyManager(
     private var networkAtConnect: Long? = null
     private val settings = Settings(context)
 
+    fun resumeDiscoveryIfIdle() {
+        // Discovery can be stopped while Nearby waits for a Wi-Fi bandwidth upgrade.
+        // Restarting it then would clear endpoints and overwrite the connecting stage.
+        if (isConnecting || activeEndpointId != null || activeNearbySocket != null) return
+        start()
+    }
+
     fun start() {
         if (!hasRequiredPermissions()) {
             AppLog.w("NearbyManager: Missing required location/bluetooth permissions. Skipping start.")

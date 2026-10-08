@@ -1675,6 +1675,20 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
     }
 
     @SuppressLint("MissingPermission")
+    fun refreshHelperGroup() {
+        val mgr = manager ?: return
+        val ch = channel ?: return
+        val gen = generation
+        mgr.requestGroupInfo(ch) { group ->
+            if (supersededByStop(gen, "settings Helper refresh")) return@requestGroupInfo
+            // makeVisible deliberately recreates a stale WPS registrar. A timed Save fallback
+            // cannot distinguish that from an associating phone, so it must preserve this group.
+            // A missing group may still have createGroup in flight; let that owner finish.
+            if (group == null && !isGroupCreatingOrCreated && !checkGroupAndCreateInFlight) makeVisible()
+            else if (group == null) AppLog.i("WifiDirectManager: settings refresh keeps the pending group creation")
+        }
+    }
+
     fun makeVisible() {
         registerReceiverIfNeeded()
         val mgr = manager ?: return

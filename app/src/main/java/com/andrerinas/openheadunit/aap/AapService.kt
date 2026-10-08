@@ -1820,6 +1820,8 @@ class AapService : Service() {
                             (wifiLauncherManager.active as? WifiLauncherNative)
                                 ?.rearmAfterSessionEnd(wakePhone = true)
                         }
+                        wifiLauncherManager.active is WifiLauncherHelper ->
+                            (wifiLauncherManager.active as WifiLauncherHelper).refreshAfterSettingsRestart()
                         else -> wifiLauncherManager.restartDiscovery()
                     }
                 },
@@ -1829,13 +1831,16 @@ class AapService : Service() {
                     if (wasSelfMode) selfLauncherManager.stopIfCurrent(selfLaunch)
                     if (!userExitedAA && !wirelessPausedForSettings &&
                         !wifiLauncherManager.cancelledByUser && settings.showsWifi() &&
-                        !ConnectionArbiter.refusesBackground(userRequested = false)) {
+                        ConnectionArbiter.tryRearmWireless()) {
+                        // Admission already consumed this rearm's wireless debt. A later
+                        // disconnect must not give back the same wireless stack again.
                         wirelessQuiescedForWiredSession = false
                         if (!wifiLauncherManager.isActive) initWifiModeWithOptionalWait()
                         else when (val launcher = wifiLauncherManager.active) {
                             // WPP can already be negotiating while the AAP state is still Disconnected.
                             // Refresh credentials without cancelling that newer handshake.
                             is WifiLauncherNative -> launcher.refreshAfterWake()
+                            is WifiLauncherHelper -> launcher.refreshAfterSettingsRestart()
                             else -> wifiLauncherManager.restartDiscovery()
                         }
                     }

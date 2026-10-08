@@ -201,6 +201,7 @@ class SettingsFragment : Fragment() {
     private var pendingWifiConnectionMode: WifiLauncherMode? = null
     private var pendingHelperConnectionStrategy: HelperStrategy? = null
     private var pendingAutoEnableHotspot: Boolean? = null
+    private var pendingHeadunitServerWifiDirect: Boolean? = null
     private var pendingWaitForWifi: Boolean? = null
     private var pendingWaitForWifiTimeout: Int? = null
     private var pendingBluetoothManagerServiceName: String? = null
@@ -386,6 +387,7 @@ class SettingsFragment : Fragment() {
         pendingAutoKillOemApps = settings.autoKillOemApps
         pendingRaiseProjectionDuringCall = settings.raiseProjectionDuringCall
         pendingAutoEnableHotspot = settings.autoEnableHotspot
+        pendingHeadunitServerWifiDirect = settings.headunitServerWifiDirect
         pendingFakeSpeed = settings.fakeSpeed
         pendingUseLibusb = settings.useLibusb
         pendingNarrowBandProfileCap = settings.narrowBandProfileCap
@@ -522,6 +524,7 @@ class SettingsFragment : Fragment() {
         pendingAutoKillOemApps = settings.autoKillOemApps
         pendingRaiseProjectionDuringCall = settings.raiseProjectionDuringCall
         pendingAutoEnableHotspot = settings.autoEnableHotspot
+        pendingHeadunitServerWifiDirect = settings.headunitServerWifiDirect
         pendingFakeSpeed = settings.fakeSpeed
         pendingUseLibusb = settings.useLibusb
         pendingNarrowBandProfileCap = settings.narrowBandProfileCap
@@ -774,6 +777,7 @@ class SettingsFragment : Fragment() {
         pendingKeepDummyVpnDuringSession?.let { settings.keepDummyVpnDuringSession = it }
 
         val wirelessConfigBefore = wirelessRearmConfig()
+        pendingHeadunitServerWifiDirect?.let { settings.headunitServerWifiDirect = it }
         pendingWifiConnectionMode?.let { settings.wifiConnectionMode = it }
         pendingHelperConnectionStrategy?.let { settings.helperConnectionStrategy = it }
         pendingWaitForWifi?.let { settings.waitForWifiBeforeWifiDirect = it }
@@ -911,6 +915,7 @@ class SettingsFragment : Fragment() {
                         pendingAutoKillOemApps != settings.autoKillOemApps ||
                         pendingRaiseProjectionDuringCall != settings.raiseProjectionDuringCall ||
                         pendingAutoEnableHotspot != settings.autoEnableHotspot ||
+                        pendingHeadunitServerWifiDirect != settings.headunitServerWifiDirect ||
                         pendingFakeSpeed != settings.fakeSpeed ||
                         pendingWifiConnectionMode != settings.wifiConnectionMode ||
                         pendingHelperConnectionStrategy != settings.helperConnectionStrategy ||
@@ -1561,9 +1566,19 @@ class SettingsFragment : Fragment() {
                 }
             ))
 
-            // Mode 1 (Auto Server) can also use the auto-hotspot feature
             if (pendingWifiConnectionMode == WifiLauncherMode.AUTO) {
-                addHotspotToggle(items)
+                items.add(SettingItem.ToggleSettingEntry(
+                    stableId = "headunitServerWifiDirect",
+                    nameResId = R.string.headunit_server_wifi_direct,
+                    descriptionResId = R.string.headunit_server_wifi_direct_description,
+                    isChecked = pendingHeadunitServerWifiDirect ?: false,
+                    onCheckedChanged = {
+                        pendingHeadunitServerWifiDirect = it
+                        checkChanges()
+                        updateSettingsList()
+                    }
+                ))
+                if (pendingHeadunitServerWifiDirect != true) addHotspotToggle(items)
             }
         }
 
@@ -3401,6 +3416,7 @@ class SettingsFragment : Fragment() {
         val externalBtBlinkTransport: Boolean,
         val nativeAaIgnoreExternalBt: Boolean,
         val autoEnableHotspot: Boolean,
+        val headunitServerWifiDirect: Boolean,
         val insecureAaRfcommListener: Boolean,
         val appLanguage: String,
         val uiScaleSettingsPercent: Int,
@@ -3798,6 +3814,7 @@ class SettingsFragment : Fragment() {
             externalBtBlinkTransport = settings.externalBtBlinkTransport,
             nativeAaIgnoreExternalBt = settings.nativeAaIgnoreExternalBt,
             autoEnableHotspot = settings.autoEnableHotspot,
+            headunitServerWifiDirect = settings.headunitServerWifiDirect,
             insecureAaRfcommListener = settings.insecureAaRfcommListener,
             appLanguage = settings.appLanguage,
             uiScaleSettingsPercent = settings.uiScaleSettingsPercent,
@@ -3862,6 +3879,7 @@ class SettingsFragment : Fragment() {
         externalBtBlinkTransport = settings.externalBtBlinkTransport,
         nativeAaIgnoreExternalBt = settings.nativeAaIgnoreExternalBt,
         autoEnableHotspot = settings.autoEnableHotspot,
+        headunitServerWifiDirect = settings.headunitServerWifiDirect,
         insecureAaRfcommListener = settings.insecureAaRfcommListener,
     )
 
@@ -3878,6 +3896,7 @@ class SettingsFragment : Fragment() {
             externalBtBlinkTransport = snapshot.externalBtBlinkTransport,
             nativeAaIgnoreExternalBt = snapshot.nativeAaIgnoreExternalBt,
             autoEnableHotspot = snapshot.autoEnableHotspot,
+            headunitServerWifiDirect = snapshot.headunitServerWifiDirect,
             insecureAaRfcommListener = snapshot.insecureAaRfcommListener,
         )
         if (WirelessRearmPolicy.requiresRearm(before, wirelessRearmConfig())) {

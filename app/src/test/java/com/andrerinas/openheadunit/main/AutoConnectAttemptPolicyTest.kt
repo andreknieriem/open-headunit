@@ -3,10 +3,21 @@ package com.andrerinas.openheadunit.main
 import com.andrerinas.openheadunit.main.MainActivity.ConnectionUiMode
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class AutoConnectAttemptPolicyTest {
+
+    @Test
+    fun serverP2pOverlayBackgroundsWithoutAutomaticPromotion() {
+        assertEquals(ConnectionUiMode.PILL, AutoConnectAttemptPolicy.modeAfterOverlayDismiss(true))
+    }
+
+    @Test
+    fun otherOverlaysStillCancelTheirAttempt() {
+        assertNull(AutoConnectAttemptPolicy.modeAfterOverlayDismiss(false))
+    }
 
     @Test
     fun `the overlay keeps its own bound`() {

@@ -1,0 +1,8 @@
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
+    <!-- v1 is localized in English and Russian; other locales use this fallback. -->
+    <string name="server_p2p_in_background">In background</string>
+    <string name="server_p2p_active">Wi-Fi Direct active</string>
+    <string name="server_p2p_device_name">Wi-Fi Direct: %1$s</string>
+    <string name="headunit_server_wifi_direct">Automatically start Wi-Fi Direct</string>
+    <string name="headunit_server_wifi_direct_description">Create the OpenHU group on app start and find the phone headunit server on this network. Use Wi-Fi Direct · Dev server (root) in Wireless Helper. Wi-Fi Direct takes priority over automatic hotspot creation; Wi-Fi must be enabled.</string>
+</resources>

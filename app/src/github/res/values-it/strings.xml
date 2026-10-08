@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="keep_dummy_vpn">Mantieni attiva la VPN offline durante la sessione</string>
-    <string name="keep_dummy_vpn_description">Mantiene attiva la VPN offline mentre il telefono è connesso, per evitare che il chip Wi-Fi cerchi altre reti a 2,4 GHz.</string>
+    <string name="keep_dummy_vpn_description">Mantiene attiva la VPN offline di questa app mentre un telefono è connesso. Pensata per le unità a 2,4 GHz o con scatti periodici di audio e video: il chip Wi-Fi dell\'unità smette di cercare altre reti. Finché è attiva, le altre app dell\'unità non hanno accesso a Internet. Si applica alla prossima connessione.</string>
     <string name="keep_dummy_vpn_denied">Autorizzazione VPN negata. La VPN offline non può essere avviata automaticamente.</string>
 </resources>

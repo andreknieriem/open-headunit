@@ -679,7 +679,10 @@ class AapTransport(
         // Silent until it matters. A failed write here is how "the ByeBye went out" and "the link
         // was already gone" tell themselves apart, which is the whole question for a teardown
         // racing an interface going down.
-        if (size < 0) AppLog.w("AapTransport: send failed (ret=$size); the link is already gone")
+        if (size != ba.limit) {
+            AppLog.w("AapTransport: send incomplete (ret=$size of ${ba.limit})")
+            return -1
+        }
 
         if (AppLog.LOG_VERBOSE) {
             AppLog.v("Sent size: %d", size)
@@ -702,9 +705,19 @@ class AapTransport(
             .build()
         val msg =
             AapMessage(Channel.ID_CTR, Control.ControlMsgType.MESSAGE_BYEBYE_REQUEST_VALUE, byebye)
-        send(msg)
-        SystemClock.sleep(150)
-        quit()
+        try {
+            val handler = sendHandler
+            // The current write keeps its TLS order; ByeBye goes ahead of queued media ACKs.
+            // The deadline still bounds shutdown when that in-flight write cannot finish.
+            val delivery = FinalMessageDelivery.send(
+                onWriterThread = Thread.currentThread() === sendThread,
+                enqueueFirst = { handler?.postAtFrontOfQueue(it) == true },
+                write = { sendEncryptedMessage(msg.data, msg.size) == 0 },
+            )
+            AppLog.i("AapTransport: ByeBye write $delivery")
+        } finally {
+            quit()
+        }
     }
 
     /** Keep capture teardown separate from transport worker retirement. */

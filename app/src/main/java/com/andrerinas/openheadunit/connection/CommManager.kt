@@ -146,8 +146,12 @@ class CommManager(
                 if (cancelled) job.cancel()
             }
 
+            @Volatile private var settingsWakeReleased = false
+
+            internal fun releaseSettingsWake() { settingsWakeReleased = true }
+
             fun holdsSettingsWake(nowMs: Long): Boolean =
-                isSettingsRestart && !settingsRestartCancelled && nowMs < settingsRestartUntilMs
+                isSettingsRestart && !settingsRestartCancelled && !settingsWakeReleased && nowMs < settingsRestartUntilMs
         }
 
         /** Physical connection handshake in progress (USB open or TCP connect). */

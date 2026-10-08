@@ -86,7 +86,7 @@ class SelfLauncherManager(private val service: Service, private val wifiLauncher
     private var settingsLaunchOwner: CommManager.ConnectionState.Disconnected? = null
     private var retiredSettingsTerminal: CommManager.ConnectionState.Disconnected? = null
     private var selfModeVpnWatchdog: Job? = null
-    private fun isAaVersion174OrHigher() = service.modern
+    private fun installedPath(service: Service) = if (service.modern) SelfLaunchPath.HEADUNIT_SERVER else SelfLaunchPath.LEGACY
     private fun adoptDummyVpn() { service.vpnAdoptions++ }
     fun stopDummyVpnWatchdog() { selfModeVpnWatchdog?.cancel(); selfModeVpnWatchdog = null }
     fun handleNeverConnect() { service.resolvePrompts++ }
@@ -122,7 +122,7 @@ class SelfLauncherBTDiscovery(manager: SelfLauncherManager, services: SelfLaunch
 // Android effects are observable at the same calls made by production methods.
 object App { fun provide(service: Service) = service }
 object AppLog { fun i(s: String) {}; fun w(s: String) {}; fun w(s: String, e: Throwable) {}; fun e(s: String) {} }
-object DummyVpnPolicy { enum class Reason { SELF_MODE_NEVER_CONNECTED } }
+object DummyVpnPolicy { enum class Reason { SELF_MODE_NEVER_CONNECTED, SELF_MODE_SESSION_LIVE } }
 class ConnectivityManager { var activeNetwork: Any? = null }
 object Context { const val CONNECTIVITY_SERVICE = "connectivity" }
 object Build { object VERSION { const val SDK_INT = 23 }; object VERSION_CODES { const val M = 23 } }
@@ -190,13 +190,16 @@ class Service(private var hasEverConnected: Boolean = true, val commManager: Com
     var fallbacks = 0
     var vpnAdoptions = 0
     var vpnStops = 0
+    var liveVpnReleases = 0
     var resolvePrompts = 0
     var usbCheckPendingForSettings = false
     var bluetoothLaunchPendingForSettings = false
     var wirelessRearmPendingForSettings = false
     fun getSystemService(name: String): Any = network
     fun startActivity(intent: Intent) { activities++ }
-    fun stopDummyVpn(reason: DummyVpnPolicy.Reason) { vpnStops++ }
+    fun stopDummyVpn(reason: DummyVpnPolicy.Reason) {
+        if (reason == DummyVpnPolicy.Reason.SELF_MODE_SESSION_LIVE) liveVpnReleases++ else vpnStops++
+    }
     fun cancelAction(intent: Intent? = null): Int {
         when (ACTION_CANCEL_WIRELESS) {
             // CANCEL_ACTION

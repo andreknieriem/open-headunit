@@ -6,8 +6,9 @@ import kotlinx.coroutines.launch
 
 /** Save owns one route retry; the ordinary connection rules resume if it never starts. */
 internal object SettingsRestartRecovery {
-    // Legacy Self Mode can take 15–20 seconds to dial port 5288. Keep its existing 30-second
-    // allowance, while bounding both the Native wake hold and Nearby's peer preference.
+    // Legacy Self Mode can take 15–20 seconds to dial port 5288. Its 30-second allowance
+    // also bounds Nearby's peer preference and Save's fallback timer. Native releases its
+    // wake hold earlier, after the old transport retires, so the first retry need not wait.
     const val WINDOW_MS = 30_000L
 
     suspend fun run(

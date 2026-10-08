@@ -24,6 +24,7 @@ private sealed class ConnectionState {
     // PRODUCTION DISCONNECTED_STATE
 
 }
+private object DummyVpnPolicy { enum class Reason { SELF_MODE_SESSION_LIVE } }
 private object HeadUnitScreenConfig { fun unlockResolution() {} }
 private class QueuedCleanup : CoroutineDispatcher() {
     val tasks = java.util.concurrent.ConcurrentLinkedQueue<Runnable>()
@@ -123,6 +124,7 @@ private class ObserverFixture {
     private fun launchAapProjectionActivity() = Unit
     private fun sendBroadcast(intent: Intent) {}
     private fun maybeAutoResumePlaybackOnReconnect() {}
+    private fun stopDummyVpn(reason: DummyVpnPolicy.Reason) {}
     fun start() { observeConnectionState() }
     fun connected() { commManager.connectionState.value = ConnectionState.Connected }
     fun disconnected() { commManager.connectionState.value = ConnectionState.Disconnected() }

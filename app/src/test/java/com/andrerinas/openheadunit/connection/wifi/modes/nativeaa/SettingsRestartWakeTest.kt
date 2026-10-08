@@ -34,6 +34,25 @@ class SettingsRestartWakeTest {
             assertFalse(native.wakesPhone())
         }
     }
+    @Test fun `Save rearm can wake immediately but user stand-down still wins`() {
+        mockStatic(android.os.SystemClock::class.java).use {
+            val comm = mock(CommManager::class.java)
+            val saved = CommManager.ConnectionState.Disconnected(
+                reason = CommManager.DisconnectReason.SETTINGS_RESTART,
+                settingsRestartUntilMs = 30_000L,
+            )
+            `when`(comm.connectionState).thenReturn(MutableStateFlow(saved))
+            val native = mock(NativeAaHandshakeManager::class.java, CALLS_REAL_METHODS)
+            NativeAaHandshakeManager::class.java.getDeclaredField("commManager")
+                .apply { isAccessible = true }.set(native, comm)
+            saved.releaseSettingsWake()
+            native.noteSessionEnded(true)
+            assertTrue(native.wakesPhone())
+            native.noteSessionEnded(false)
+            saved.cancelSettingsRestart()
+            assertFalse(native.wakesPhone())
+        }
+    }
     @Test fun `settings stand-down leaves job ownership intact while automatic workers use the wake gate`() {
         mockStatic(android.os.SystemClock::class.java).use {
             for (manual in listOf(false, true)) {

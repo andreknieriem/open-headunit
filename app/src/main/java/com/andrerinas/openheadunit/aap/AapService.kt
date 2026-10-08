@@ -1808,9 +1808,18 @@ class AapService : Service() {
                         settings.lastConnectionType == Settings.CONNECTION_TYPE_NEARBY ->
                             (wifiLauncherManager.active as? WifiLauncherHelper)?.nearbyManager
                                 ?.restartForSettings(state.settingsRestartUntilMs)
-                        wifiLauncherManager.activeMode == WifiLauncherMode.NATIVE ->
+                        wifiLauncherManager.activeMode == WifiLauncherMode.NATIVE -> {
+                            // Decompiled AA 17.6.663454: the type 15 (ByeBye) handler records
+                            // every reason except DEVICE_SWITCH as PROTOCOL_BYEBYE_REQUESTED_BY_CAR;
+                            // a missing reason defaults to USER_SELECTION.
+                            // The AA 17.9 log in PR #1047, comment 6069066821, shows automatic
+                            // restart being suppressed after this ByeBye. Save explicitly asks
+                            // us to reconnect, so release its wake hold after transport retirement.
+                            // The deadline bounds recovery; it does not delay the first wake.
+                            state.releaseSettingsWake()
                             (wifiLauncherManager.active as? WifiLauncherNative)
                                 ?.rearmAfterSessionEnd(wakePhone = true)
+                        }
                         else -> wifiLauncherManager.restartDiscovery()
                     }
                 },
@@ -3329,6 +3338,8 @@ class AapService : Service() {
             }
             ACTION_DISCONNECT            -> {
                 AppLog.i("Disconnect action received.")
+                userExitedAA = true
+                (wifiLauncherManager.active as? WifiLauncherNative)?.handshakeManager?.noteSessionEnded(false)
                 // disconnect() has its own early-return when already Disconnected,
                 // and unlike the previous isConnected guard it also covers the
                 // Connecting state, so the UI cancel paths work before handshake

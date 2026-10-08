@@ -104,6 +104,7 @@ manager_head=manager_head.replace(old_state, extract(comm, 'class Disconnected('
 for name in ['SettingsRestartRecovery.kt', 'SameEndpointConnectPolicy.kt']:
     source=(base/'connection'/name).read_text().replace('package com.andrerinas.openheadunit.connection', 'package lifecycle')
     (OUT/name).write_text(source)
+(OUT/'FinalMessageDelivery.kt').write_text((base/'aap/FinalMessageDelivery.kt').read_text().replace('package com.andrerinas.openheadunit.aap', 'package lifecycle'))
 # These endpoint predicates must be the real ones when testing the terminal route snapshot.
 for declaration in ['val isWirelessSession:', 'val isLoopbackSession:']:
     start = comm.index(declaration)
@@ -163,6 +164,7 @@ class AapTransport(
  private fun triggerFocusCycleRecovery(escalatable:Boolean,wireCorruption:Boolean){}
  private fun onKeyframeRepairedPicture(){}
  private fun send(message:AapMessage){}
+ private fun sendEncryptedMessage(data:Any,length:Int)=0
  private fun endFocusCycle(){}
  private fun handshake(conn:ProjectionConnection):Boolean {
   handshakeHook?.invoke()
@@ -232,7 +234,7 @@ class Ssl{
 class Monitor{fun reset(){}}
 class BluetoothMonitor{fun onSessionStart(){}}
 class MicSessions{fun close(shutdown:Boolean){}}
-class AapMessage(val channel:Int,val type:Int,val data:Any)
+class AapMessage(val channel:Int,val type:Int,val data:Any){val size=0}
 object Channel{const val ID_CTR=0}
 object LegacyOptimizer{fun setHighPriority(){}}
 object HeadUnitScreenConfig{fun unlockResolution(){}}
@@ -591,10 +593,14 @@ extra += r'''
 class SettingsActionFixture(val commManager:CommManager) {
  private val serviceScope=CoroutineScope(SupervisorJob()+Dispatchers.Unconfined)
  private val intent:android.content.Intent?=null
- private val EXTRA_USB_ATTEMPT="usb";private val START_STICKY=1
+ private val EXTRA_USB_ATTEMPT="usb";private val EXTRA_SETTINGS_REARM="settings";private val START_STICKY=1
+ var userExitedAA=false
+ private fun stopWirelessForCommand(settingsRearm:Boolean){commManager.cancelPendingSettingsRestart()}
  private var wirelessRearmPendingForSettings=false
  private var usbCheckPendingForSettings=false;private var bluetoothLaunchPendingForSettings=false
- private class Wifi {fun stop(){};fun stopForUser(){}}
+ private class Wifi {val active:Any?=null;fun stop(){};fun stopForUser(){}}
+ private class WifiLauncherNative {val handshakeManager=Handshake()}
+ private class Handshake {fun noteSessionEnded(wake:Boolean){}}
  private class Usb {fun isSwitchingToProjection()=false;fun stopForUser(){}}
  private val wifiLauncherManager=Wifi();private val usbLauncherManager=Usb()
  fun action(action:String):Int {when(action) {
@@ -665,9 +671,10 @@ object Build{object VERSION{var SDK_INT=33};object VERSION_CODES{const val LOLLI
 object Process{const val THREAD_PRIORITY_DISPLAY=-4;const val THREAD_PRIORITY_AUDIO=-16}
 object SystemClock{fun sleep(ms:Long){Thread.sleep(ms)};fun elapsedRealtime()=System.nanoTime()/1000000}
 class Looper{
- private val queue=LinkedBlockingQueue<Runnable>();@Volatile private var closing=false
+ private val queue=LinkedBlockingDeque<Runnable>();@Volatile private var closing=false
  private val wake=Runnable{}
  @Synchronized fun offer(task:Runnable):Boolean{if(closing)return false;queue.add(task);return true}
+ @Synchronized fun offerFirst(task:Runnable):Boolean{if(closing)return false;queue.addFirst(task);return true}
  @Synchronized fun stop(){closing=true;queue.clear();queue.add(wake)}
  fun remove(task:Runnable){queue.remove(task)}
  fun loop(){while(true){val task=queue.take();if(closing)return;task.run()}}
@@ -676,6 +683,7 @@ class Looper{
 class Handler(val looper:Looper,val callback:Any?=null){
  companion object{val delayed=ConcurrentLinkedQueue<Runnable>();@Volatile var removeHook:(()->Unit)?=null}
  fun post(task:Runnable)=looper.offer(task)
+ fun postAtFrontOfQueue(task:Runnable)=looper.offerFirst(task)
  fun postDelayed(task:Runnable,ms:Long):Boolean{delayed.add(task);return true}
  fun removeCallbacks(task:Runnable){removeHook?.invoke();looper.remove(task)}
  // The provided fixture has no actual poll Handler.Callback; bulk dispatch is posted explicitly.

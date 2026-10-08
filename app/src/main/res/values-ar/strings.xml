@@ -7,7 +7,7 @@
     <string name="dummy_button">زر تجريبي</string>
     <string name="dummy_content">محتوى\nتجريبي</string>
     <string name="allowed">مسموح</string>
-    <string name="ignored">تجاهل</string>
+    <string name="ignored">متجاهَل</string>
     <string name="exit">خروج</string>
     <string name="apps">التطبيقات</string>
     <string name="no_apps_found">لم يتم العثور على تطبيقات</string>
@@ -17,7 +17,7 @@
     <string name="title">Open Headunit</string>
     <string name="remove">إزالة</string>
     <string name="usb">USB</string>
-    <string name="wifi">واي فاي</string>
+    <string name="wifi">WiFi</string>
     <string name="dpi">كثافة البكسل (DPI)</string>
     <string name="mic_sample_rate">معدل أخذ عينات الميكروفون</string>
     <string name="keymap">مفاتيح التحكم</string>
@@ -41,8 +41,8 @@
     <string name="use_gradient_background">استخدام خلفية متدرجة</string>
     <string name="use_gradient_background_description_on">يرسم التطبيق خلفيته الخاصة مع دائرة التدرج في المنتصف</string>
     <string name="use_gradient_background_description_off">يتم استخدام الخلفية الكلاسيكية للتطبيق</string>
-    <string name="use_gradient_background_description_on_auto">يرسم التطبيق خلفيته الخاصة مع دائرة التدرج في المنتصف. لا ينطبق على وضع الداكن المتطرف</string>
-    <string name="use_gradient_background_description_off_auto">يتم استخدام الخلفية الكلاسيكية للتطبيق. لا ينطبق على وضع الداكن المتطرف</string>
+    <string name="use_gradient_background_description_on_auto">يرسم التطبيق خلفيته الخاصة مع دائرة التدرج في المنتصف. لا ينطبق على الوضع الداكن المطلق</string>
+    <string name="use_gradient_background_description_off_auto">يتم استخدام الخلفية الكلاسيكية للتطبيق. لا ينطبق على الوضع الداكن المطلق</string>
     <string name="category_dark_mode">الوضع الداكن</string>
     <string name="category_theming">المظهر</string>
     <string name="customization_title">التخصيص</string>
@@ -72,13 +72,13 @@
 
     <string name="bluetooth_address_s">عنوان البلوتوث</string>
     <string name="enter_bluetooth_mac">أدخل عنوان MAC للبلوتوث</string>
-    <string name="bluetooth_address_message">عنوان هذه الوحدة نفسها، وهو ما يتعرّف به الهاتف عليها. تجده ضمن الإعدادات، حول الجهاز، الحالة، أو على الهاتف المقترن أسفل رمز الترس بجوار هذا الجهاز. اتركه فارغًا لاكتشافه تلقائيًا.</string>
-    <string name="invalid_bluetooth_address">هذا ليس عنوان بلوتوث. أدخل ستة أزواج من الأرقام الست عشرية، مثل 0C:32:3A:2D:5D:4A.</string>
+    <string name="bluetooth_address_message">عنوان هذه الوحدة نفسها، وهو ما يتعرّف به الهاتف عليها. تجده ضمن الإعدادات، حول الهاتف، الحالة، أو على الهاتف المقترن عبر رمز الترس بجوار هذه الوحدة. اتركه فارغًا لاكتشافه تلقائيًا.</string>
+    <string name="invalid_bluetooth_address">هذا ليس عنوان بلوتوث. أدخل ستة أزواج من الأرقام السداسية العشرية، مثل 0C:32:3A:2D:5D:4A.</string>
     <string name="reset">إعادة تعيين</string>
     <string name="gps_for_navigation">GPS للملاحة</string>
     <string name="gps_for_navigation_description">استخدام GPS للملاحة</string>
-    <string name="enabled">مفعل</string>
-    <string name="disabled">معطل</string>
+    <string name="enabled">مفعَّل</string>
+    <string name="disabled">غير مفعَّل</string>
     <string name="resolution">الدقة</string>
     <string name="change_resolution">تغيير الدقة</string>
     <string name="change_dpi">تغيير DPI</string>
@@ -90,7 +90,7 @@
     <string name="auto">تلقائي</string>
     <string name="screen_orientation">اتجاه الشاشة</string>
     <string name="change_screen_orientation">تغيير اتجاه الشاشة</string>
-    <string name="orientation_system_default">افتراضي النظام</string>
+    <string name="orientation_system_default">الإعداد الافتراضي للنظام</string>
     <string name="orientation_auto_sensor">تلقائي (مستشعر)</string>
     <string name="orientation_landscape">أفقي (0°)</string>
     <string name="orientation_landscape_reverse">أفقي معكوس (180°)</string>
@@ -119,13 +119,13 @@
     <string name="press_back_again_to_exit">اضغط رجوع مرة أخرى للخروج</string>
     <string name="back">رجوع</string>
     <string name="debug_mode">وضع التصحيح</string>
-    <string name="debug_mode_description">تفعيل المزيد من السجلات</string>
+    <string name="debug_mode_description">تسجيل مزيد من التفاصيل في السجل</string>
     <string name="export_logs">تصدير السجلات</string>
     <string name="export_logs_description">حفظ السجلات لأغراض التصحيح</string>
 
 
     <string name="not_set">غير محدد</string>
-    <string name="keymap_description">تغيير اختصارات المفاتيح لوحدة الرأس</string>
+    <string name="keymap_description">تغيير تعيينات المفاتيح لوحدة السيارة</string>
 
     <string name="key_soft_left">يسار</string>
     <string name="key_soft_right">يمين</string>
@@ -134,9 +134,9 @@
     <string name="key_dpad_left">D-Pad يسار</string>
     <string name="key_dpad_right">D-Pad يمين</string>
     <string name="key_dpad_center">D-Pad وسط (موافق)</string>
-    <string name="key_media_play">تشغيل</string>
-    <string name="key_media_pause">إيقاف</string>
-    <string name="key_media_play_pause">تشغيل / إيقاف</string>
+    <string name="key_media_play">تشغيل الوسائط</string>
+    <string name="key_media_pause">إيقاف الوسائط مؤقتًا</string>
+    <string name="key_media_play_pause">تشغيل الوسائط / إيقافها مؤقتًا</string>
     <string name="key_media_next">المقطع التالي</string>
     <string name="key_media_prev">المقطع السابق</string>
     <string name="key_search">الأوامر الصوتية</string>
@@ -147,14 +147,14 @@
     <string name="key_night">تبديل الوضع الليلي</string>
     <string name="key_enter">إدخال (Enter)</string>
     <string name="key_home">القائمة الرئيسية (Home)</string>
-    <string name="key_app_switch">التطبيقات الأخيرة</string>
+    <string name="key_app_switch">تبديل التطبيقات / الأخيرة</string>
     <string name="key_button_a">الزر A (اختيار)</string>
     <string name="key_button_b">الزر B (رجوع)</string>
 
 
     <!-- Language Settings -->
     <string name="app_language">لغة التطبيق</string>
-    <string name="system_default">افتراضي النظام</string>
+    <string name="system_default">الإعداد الافتراضي للنظام</string>
     <string name="change_language">تغيير اللغة</string>
 
     <!-- Categories for SettingsFragment -->
@@ -164,7 +164,7 @@
     <string name="usb_auto_connect">الاتصال التلقائي بـ USB</string>
     <string name="usb_auto_connect_description">الاتصال تلقائيا بجهاز USB معروف عند فتح التطبيق.</string>
     <string name="auto_start_bt_label">التشغيل التلقائي عبر البلوتوث</string>
-    <string name="auto_start_overlay_missing_hint">لم يتم منح إذن العرض فوق التطبيقات الأخرى، لذا سيعرض التشغيل التلقائي إشعارًا بدلًا من فتح الشاشة. اضغط للمنح.</string>
+    <string name="auto_start_overlay_missing_hint">لم يتم منح إذن الإظهار فوق التطبيقات الأخرى، لذا سيعرض التشغيل التلقائي إشعارًا بدلًا من فتح الشاشة. اضغط لمنحه.</string>
     <string name="auto_start_bt_description">فتح Open Headunit تلقائيا عند اتصال جهاز بلوتوث محدد.</string>
     <string name="auto_start_offer_title">بدء تلقائي؟</string>
     <string name="auto_start_offer_message">هل تريد تشغيل التطبيق تلقائيًا مع هذا الجهاز، %1$s؟</string>
@@ -176,11 +176,11 @@
     <string name="auto_start_wifi_ssid_label">اسم شبكة الواي فاي (SSID)</string>
     <string name="auto_start_wifi_ssid_description">الاتصال فقط عند الارتباط بشبكة الواي فاي هذه</string>
     <string name="auto_start_wifi_warning">ميزة قديمة: قد لا تعمل بشكل موثوق على Android 8+ بسبب قيود الخلفية. تأكد من استثناء التطبيق من تحسين البطارية.</string>
-    <string name="enter_wifi_ssid">أدخل اسم شبكة الواي فاي (SSID)</string>
+    <string name="enter_wifi_ssid">أدخل SSID شبكة الواي فاي</string>
     <string name="wifi_ssid_not_set">غير محدد</string>
 
-    <string name="listen_for_usb_devices_label">الاستماع لأجهزة USB</string>
-    <string name="listen_for_usb_devices_description">إظهار موجه نظام Android عند توصيل جهاز USB.</string>
+    <string name="listen_for_usb_devices_label">رصد أجهزة USB</string>
+    <string name="listen_for_usb_devices_description">إظهار مطالبة نظام Android عند توصيل جهاز USB.</string>
     <string name="show_toast_messages">إظهار الرسائل المنبثقة (Toast)</string>
     <string name="show_toast_messages_description">عرض الرسائل المنبثقة للحالة عند الاتصال والانفصال وتغيير الوضع.</string>
     <string name="auto_start_usb_label">تشغيل تلقائي عند توصيل USB</string>
@@ -190,15 +190,15 @@
     <string name="auto_start_oem_warning">قد يتطلب هذا الجهاز تفعيل التشغيل التلقائي وإزالة تحسين البطارية أو قيود الخلفية لهذا التطبيق.\n\nفي أجهزة الوسائط المتعددة التي تحتوي على التشغيل السريع (Quick Boot)، قد لا يعمل التشغيل التلقائي. ابحث عن \"DuraSpeed\" في إعدادات النظام وقم بتفعيل هذا التطبيق هناك. في بعض الأجهزة، يكون DuraSpeed مخفياً وقد تحتاج إلى تطبيق مثل \"Hidden Settings\" للعثور عليه. إذا لم يكن لديك DuraSpeed، حاول تعطيل التشغيل السريع.</string>
     <string name="car_launcher_autostart_info">تم تكوين Open Headunit كمشغل للسيارة. يبدأ تلقائيًا عند تشغيل النظام.</string>
     <string name="auto_start_on_boot_label">التشغيل عند الإقلاع</string>
-    <string name="auto_start_on_boot_description">فتح التطبيق تلقائيًا عند بدء تشغيل الجهاز. يتطلب إذن \'العرض فوق التطبيقات الأخرى\' على Android 10+</string>
+    <string name="auto_start_on_boot_description">فتح التطبيق تلقائيًا عند بدء تشغيل الجهاز. يتطلب إذن \"الإظهار فوق التطبيقات الأخرى\" على Android 10+</string>
     <string name="auto_start_screen_on_label">التشغيل عند تشغيل الشاشة</string>
-    <string name="auto_start_screen_on_description">فتح التطبيق في كل مرة يتم فيها تشغيل الشاشة. مثالي لأجهزة الراديو التي لا تنطفئ تمامًا أو تستخدم أوضاع التشغيل السريع حيث لا تعمل خيارات التشغيل التلقائي الأخرى. غير موصى به للهواتف أو الأجهزة اللوحية.</string>
+    <string name="auto_start_screen_on_description">فتح التطبيق في كل مرة تُشغَّل فيها الشاشة. مثالي لوحدات السيارة التي لا تنطفئ تمامًا أو تستخدم أوضاع التشغيل السريع حيث لا تعمل خيارات التشغيل التلقائي الأخرى. غير موصى به للهواتف أو الأجهزة اللوحية.</string>
     <string name="select_bt_device">اختر جهاز البلوتوث</string>
     <string name="bt_device_not_set">غير محدد</string>
     <string name="bt_permission_denied_title">مطلوب إذن البلوتوث</string>
     <string name="bt_permission_denied_message">إذن البلوتوث مطلوب لاختيار الأجهزة المقترنة. يرجى منحه في إعدادات التطبيق.</string>
     <string name="overlay_permission_title">إذن البدء في الخلفية</string>
-    <string name="overlay_permission_description">للسماح لـ Open Headunit بالفتح التلقائي عند اتصال البلوتوث، يرجى تفعيل إذن \"العرض فوق التطبيقات الأخرى\" في الشاشة التالية.</string>
+    <string name="overlay_permission_description">للسماح لـ Open Headunit بالفتح التلقائي عند اتصال البلوتوث، يرجى تفعيل إذن \"الإظهار فوق التطبيقات الأخرى\" في الشاشة التالية.</string>
     <string name="open_settings">الإعدادات</string>
     <string name="wireless_connection_settings">اتصال لاسلكي</string>
     <string name="right_hand_drive">القيادة على اليمين</string>
@@ -231,11 +231,11 @@
     <string name="auto_connect_settings_description">تكوين طرق الاتصال التلقائي وترتيب أولوياتها</string>
     <string name="auto_connect_help">تعمل هذه الطرق تلقائيا عند فتح التطبيق. قم بتمكين الطرق التي تريدها، ثم اسحب لضبط الترتيب. سيتم استخدام أول طريقة ممكّنة تنجح.</string>
     <string name="auto_connect_priority">الأولوية %d</string>
-    <string name="auto_connect_all_disabled">الكل معطل</string>
+    <string name="auto_connect_all_disabled">الكل غير مفعّل</string>
     <string name="drag_to_reorder">اسحب لإعادة الترتيب</string>
     <string name="move_up">تحريك للأعلى</string>
     <string name="move_down">تحريك للأسفل</string>
-    <string name="auto_connecting_single_usb">جار الاتصال تلقائيا بجهاز USB…</string>
+    <string name="auto_connecting_single_usb">جارٍ الاتصال تلقائيًا بجهاز USB…</string>
     <string name="video_codec">ترميز الفيديو</string>
     <string name="fps_limit">حد معدل الإطارات</string>
     <string name="save">حفظ</string>
@@ -261,7 +261,7 @@
     <string name="separate_audio_streams">فصل تيارات الصوت</string>
     <string name="separate_audio_streams_description">يمنح قنوات الوسائط والإرشادات وأصوات النظام تدفقات إخراج خاصة بها بدلًا من تدفق وسائط واحد مشترك (قد لا يعمل بشكل صحيح على بعض الأجهزة).</string>
     <string name="use_aac_audio">استخدام ترميز AAC للصوت</string>
-    <string name="use_aac_audio_description">استخدام ترميز AAC للصوت لتوفير عرض النطاق الترددي (تجريبي). في جلسة لاسلكية تعمل على 2.4 غيغاهرتز، يُفعَّل هذا تلقائيًا طالما أن \"خفض الفيديو على وصلة 2.4 غيغاهرتز\" مفعّل.</string>
+    <string name="use_aac_audio_description">استخدام ترميز AAC للصوت لتوفير عرض النطاق (تجريبي). في جلسة لاسلكية على 2.4 غيغاهرتز، يُفعَّل هذا تلقائيًا ما دام خيار \"خفض جودة الفيديو على وصلة 2.4 غيغاهرتز\" مفعّلًا.</string>
     <string name="attach_hw_dsp_equalizer">مشغل معادل الصوت DSP للأجهزة</string>
     <string name="attach_hw_dsp_equalizer_description">يربط تأثير معادل صوت وهمي بجلسة الصوت لفرض التوجيه عبر DSP للأجهزة في وحدات معينة. اتركه معطلاً إذا كنت تستخدم ViPER4Android / ViperFX أو إذا كان الصوت مكتوماً على إصدارات Android القديمة.</string>
     <string name="audio_volume_offset">تعويض مستوى الصوت</string>
@@ -277,7 +277,7 @@
 
     <!-- Info Settings -->
     <string name="category_info">المعلومات</string>
-    <string name="about">حول &amp; الدعم</string>
+    <string name="about">حول التطبيق والدعم</string>
     <string name="about_description">الحصول على مزيد من المعلومات حول Open Headunit</string>
     <string name="version">الإصدار</string>
     <string name="check_for_updates">التحقق من وجود تحديثات</string>
@@ -286,7 +286,7 @@
     <string name="update_available_title">تحديث متاح</string>
     <string name="update_available_playstore_message">يتوفر إصدار أحدث (%1$s). يرجى زيارة متجر Google Play لتحديث تطبيقك.</string>
     <string name="update_available_github_message">يتوفر إصدار أحدث (%1$s). تفضل بزيارة GitHub لتنزيل أحدث إصدار.</string>
-    <string name="update_not_available_title">محدث لأحدث إصدار</string>
+    <string name="update_not_available_title">التطبيق محدّث</string>
     <string name="update_not_available_message">أنت تستخدم بالفعل أحدث إصدار (%1$s).</string>
     <string name="update_check_failed">فشل التحقق من وجود تحديثات. يرجى التحقق من اتصال الإنترنت.</string>
     <string name="open_play_store">فتح متجر Play</string>
@@ -295,39 +295,39 @@
     <string name="copyright">© 2025-%d André Rinas</string>
 
     <!-- Safety Disclaimer -->
-    <string name="disclaimer_title">السلامة &amp; المسؤولية</string>
+    <string name="disclaimer_title">السلامة والمسؤولية</string>
     <string name="disclaimer_header">تحذير مهم</string>
     <string name="disclaimer_accept">أفهم وأوافق</string>
     <string name="disclaimer_text"><![CDATA[
         <b>١. التركيز على الطريق</b><br/>
-        استخدام هذا البرنامج أثناء القيادة قد يشتت الانتباه ويكون خطيرا. أول الأولوية دائما للقيادة الآمنة والالتزام بأنظمة المرور المحلية. استخدم هذا التطبيق فقط عند الأمان التام.<br/><br/>
+        استخدام هذا البرنامج أثناء القيادة قد يشتت الانتباه ويكون خطيرًا. اجعل القيادة الآمنة أولويتك دائمًا والتزم بأنظمة المرور المحلية. استخدم هذا التطبيق فقط عندما يكون ذلك آمنًا.<br/><br/>
         <b>٢. تحديد المسؤولية</b><br/>
-        يقدم Open Headunit "كما هو" دون أي ضمان من أي نوع. لا يتحمل المطورون أي مسؤولية عن الحوادث أو الأضرار التي تلحق بسيارتك/جهازك أو أي تبعات قانونية ناجمة عن استخدام هذا البرنامج.<br/><br/>
+        يُقدَّم Open Headunit "كما هو" دون أي ضمان من أي نوع. لا يتحمل المطورون أي مسؤولية عن الحوادث أو الأضرار التي تلحق بسيارتك/جهازك أو أي تبعات قانونية ناجمة عن استخدام هذا البرنامج.<br/><br/>
         <b>٣. عدم الانتساب</b><br/>
         هذا المشروع مبادرة مفتوحة المصدر مستقلة، وليس له أي صلة أو اعتماد أو ارتباط بشركة Google LLC أو علامة Android Auto التجارية.
-    ]]></string>
+     ]]></string>
 
     <!-- Toast Messages -->
-    <string name="searching">جار البحث…</string>
+    <string name="searching">جارٍ البحث…</string>
     <string name="auto_connecting_to">الاتصال التلقائي بـ %s…</string>
     <string name="auto_connecting_usb">الاتصال التلقائي بجهاز USB…</string>
     <string name="already_connected">متصل بالفعل</string>
-    <string name="already_scanning">جار الفحص بالفعل…</string>
-    <string name="searching_headunit_server">جار البحث عن خادم Headunit…</string>
-    <string name="already_searching_phone">جار البحث عن الهاتف بالفعل…</string>
-    <string name="searching_phone">جار البحث عن الهاتف…</string>
+    <string name="already_scanning">جارٍ الفحص بالفعل…</string>
+    <string name="searching_headunit_server">جارٍ البحث عن خادم Headunit…</string>
+    <string name="already_searching_phone">جارٍ البحث عن الهاتف بالفعل…</string>
+    <string name="searching_phone">جارٍ البحث عن الهاتف…</string>
     <string name="key_mappings_reset">تمت إعادة تعيين اختصارات المفاتيح</string>
-    <string name="press_key_to_assign">اضغط مفتاحا لتعيينه لـ \'%s\'…</string>
-    <string name="key_assigned">\'%1$s\' معين لـ \'%2$s\'</string>
+    <string name="press_key_to_assign">اضغط على مفتاح لتعيينه إلى \'%s\'…</string>
+    <string name="key_assigned">تم تعيين \'%1$s\' إلى \'%2$s\'</string>
     <string name="last_key_press">آخر ضغطة مفتاح: %1$s (%2$d)</string>
     <string name="scan">فحص</string>
-    <string name="scanning_network">جار فحص الشبكة…</string>
-    <string name="found_connecting">تم العثور على %s، جار الاتصال…</string>
+    <string name="scanning_network">جارٍ فحص الشبكة…</string>
+    <string name="found_connecting">تم العثور على %s، جارٍ الاتصال…</string>
     <string name="no_devices_found">لم يتم العثور على أجهزة</string>
     <string name="unsaved_changes">تغييرات غير محفوظة</string>
     <string name="unsaved_changes_message">لديك تغييرات غير محفوظة. هل تريد تجاهلها؟</string>
     <string name="discard">تجاهل</string>
-    <string name="stopping_service">إيقاف الخدمة لتطبيق التغييرات…</string>
+    <string name="stopping_service">جارٍ إيقاف الخدمة لتطبيق التغييرات…</string>
     <string name="settings_saved">تم حفظ الإعدادات</string>
     <string name="logs_exported">تم تصدير السجلات</string>
     <string name="log_saved_to">تم حفظ السجل في:\n%s</string>
@@ -335,25 +335,25 @@
     <string name="close">إغلاق</string>
     <string name="failed_export_logs">فشل تصدير السجلات</string>
     <string name="failed_export_in_silent_logs">تعذر تصدير السجلات: تم تحديد مستوى التسجيل الصامت</string>
-    <string name="switching_to_android_auto">جار التبديل إلى Android Auto…</string>
+    <string name="switching_to_android_auto">جارٍ التبديل إلى Android Auto…</string>
     <string name="switch_failed">فشل التبديل</string>
-    <string name="requesting_usb_permission">طلب إذن USB…</string>
+    <string name="requesting_usb_permission">جارٍ طلب إذن USB…</string>
     <string name="enter_ip_address">أدخل عنوان IP</string>
-    <string name="switching_usb_accessory_mode">تبديل جهاز USB إلى وضع الملحق %s</string>
+    <string name="switching_usb_accessory_mode">جارٍ تبديل جهاز USB إلى وضع الملحق %s</string>
     <string name="success">نجاح</string>
     <string name="failed">فشل</string>
     <string name="failed_start_android_auto">فشل تشغيل Android Auto</string>
-    <string name="failed_self_mode_android10">من المحتمل أن يكون \"Self-mode\" محظورًا من قبل Google على Android 10 (AA 16.4+). راجع README.</string>
-    <string name="android_auto_starting">جار تشغيل Android Auto…</string>
+    <string name="failed_self_mode_android10">من المحتمل أن تحظر Google الوضع الذاتي على Android 10 (AA 16.4 والإصدارات الأحدث).</string>
+    <string name="android_auto_starting">جارٍ تشغيل Android Auto…</string>
     <string name="connection_interrupted">فُقد الاتصال</string>
     <string name="connection_interrupted_detail">جارٍ إعادة المحاولة…</string>
-    <string name="wifi_disconnect_toast">تم قطع اتصال Android Auto: إذا كنت تستخدم AA لاسلكي، عطّل \"التبديل بين الشبكات\" أو \"تسريع الشبكة\" في إعدادات WiFi الهاتف</string>
-    <string name="notification_service_running">Open Headunit يعمل</string>
-    <string name="notification_projection_active">Android Auto قيد الإسقاط</string>
+    <string name="wifi_disconnect_toast">تم قطع اتصال Android Auto: إذا كنت تستخدم AA لاسلكيًا، فعطّل \"التبديل بين الشبكات\" أو \"تسريع الشبكة\" في إعدادات Wi-Fi في الهاتف</string>
+    <string name="notification_service_running">Open Headunit قيد التشغيل</string>
+    <string name="notification_projection_active">يجري عرض Android Auto</string>
     <string name="shortcut_connect_title">اتصال</string>
-    <string name="shortcut_connect_desc">الاتصال بآخر جهاز معروف</string>
+    <string name="shortcut_connect_desc">الاتصال تلقائيًا بآخر هاتف</string>
     <string name="shortcut_selfmode_title">الوضع الذاتي</string>
-    <string name="shortcut_selfmode_desc">ابدأ Android Auto على هذا الجهاز</string>
+    <string name="shortcut_selfmode_desc">بدء Android Auto على هذا الجهاز</string>
     <string name="shortcut_disconnect_title">قطع الاتصال</string>
     <string name="shortcut_disconnect_desc">إنهاء الجلسة الحالية</string>
     <string name="shortcut_exit_title">إغلاق التطبيق</string>
@@ -365,9 +365,9 @@
     <string name="shortcut_night_mode_night_title">الوضع: ليلي</string>
     <string name="shortcut_night_mode_night_desc">فرض الوضع الليلي</string>
     <string name="reset_usb_option">إعادة تعيين اتصال USB</string>
-    <string name="reset_usb_timeout">لم يتم العثور على جهاز USB. يرجى التحقق من الاتصال.</string>
+    <string name="reset_usb_timeout">تعذّر العثور على جهاز USB. تحقّق من الاتصال.</string>
     <string name="setup_welcome_title">إعداد سريع</string>
-    <string name="setup_welcome_msg">يساعدك هذا المعالج في اختيار أفضل الإعدادات لتجربة Android Auto سلسة.\n\nيمكنك دائمًا تغيير هذه الإعدادات لاحقًا من إعدادات التطبيق.</string>
+    <string name="setup_welcome_msg">يساعدك هذا المعالج في اختيار أفضل الإعدادات لتجربة Android Auto سلسة.\n\nيمكنك دائمًا تغيير هذه الإعدادات لاحقًا أو إعادة تشغيل هذا المعالج من إعدادات التطبيق.</string>
     <string name="setup_start">بدء</string>
     <string name="setup_size_title">حجم الشاشة</string>
     <string name="setup_size_phone">هاتف / صغير (4-6 بوصة)</string>
@@ -377,20 +377,20 @@
     <string name="setup_orientation_title">اتجاه الجهاز</string>
     <string name="setup_orientation_landscape">عرضي (أفقي)</string>
     <string name="setup_orientation_portrait">طولي (رأسي)</string>
-    <string name="setup_result_title">اكتملت الأمثلة</string>
+    <string name="setup_result_title">اكتمل التحسين</string>
     <string name="setup_apply">تطبيق</string>
     <string name="setup_widescreen_detected">تم اكتشاف شاشة عريضة.</string>
-    <string name="auto_optimize">تحسين الإعدادات تلقائياً</string>
-    <string name="auto_optimize_desc">قم بتشغيل فحص النظام للعثور على أفضل الإعدادات لجهازك.</string>
+    <string name="auto_optimize">تحسين الإعدادات تلقائيًا</string>
+    <string name="auto_optimize_desc">شغّل فحص النظام للعثور على أفضل الإعدادات لجهازك.</string>
     <string name="fullscreen_none">عادي (جميع الأشرطة مرئية)</string>
-    <string name="fullscreen_immersive">غامر (جميع الأشرطة مخفية)</string>
+    <string name="fullscreen_immersive">غامر (تراكب فوق النوتش)</string>
     <string name="fullscreen_immersive_avoid_notch">غامر (تجنب النوتش)</string>
-    <string name="fullscreen_immersive_avoid_notch_desc">يخفي جميع الأعمدة ويضيف حشوة لمنع تغطية العرض بواسطة النوتش أو الانقطاع.</string>
+    <string name="fullscreen_immersive_avoid_notch_desc">يخفي جميع الأشرطة ويضيف هامشًا لمنع تغطية العرض المُسقَط بواسطة النوتش أو القَصّة.</string>
     <string name="fullscreen_status_only">إخفاء شريط الحالة فقط</string>
     <string name="allow_external_configuration">السماح بالتهيئة الخارجية</string>
     <string name="allow_external_configuration_description">اسمح لتطبيقات الأتمتة مثل Tasker أو MacroDroid بتغيير الإعدادات وضبط مستوى السجل وتصدير السجلات. الاتصال وقطع الاتصال يعملان دائمًا؛ هذا يخص فقط الأوامر التي تغيّر طريقة إعداد الوحدة.</string>
     <string name="log_level">مستوى السجل</string>
-    <string name="log_level_description">اختر مستوى تفصيل مخرجات السجل للتصحيح.</string>
+    <string name="log_level_description">تصفية مستوى السجل عند التصدير</string>
     <string name="log_source">مصدر السجلات</string>
     <string name="log_source_logcat">Logcat</string>
     <string name="log_source_applog_file">مباشرة إلى الملف</string>
@@ -398,11 +398,11 @@
     <string name="log_location_default">الافتراضي (تخزين التطبيق)</string>
     <string name="log_location_downloads">مجلد التنزيلات</string>
     <string name="start_log_capture">بدء التقاط السجل</string>
-    <string name="start_log_capture_description">يبدأ تسجيل سجلات النظام في ملف.</string>
-    <string name="start_log_capture_in_applog_file">تُكتب رسائل Log في ملف فقط أثناء تنشيط الالتقاط</string>
+    <string name="start_log_capture_description">بدء تسجيل السجلات الكاملة لتصحيح الأخطاء</string>
+    <string name="start_log_capture_in_applog_file">تُكتب رسائل السجل في ملف فقط أثناء تفعيل الالتقاط</string>
     <string name="start_log_capture_in_silent">تعذر بدء التسجيل: تم تحديد مستوى التسجيل الصامت</string>
     <string name="stop_log_capture">إيقاف التقاط السجل</string>
-    <string name="stop_log_capture_description">يوقف التسجيل ويحفظ ملف السجل.</string>
+    <string name="stop_log_capture_description">جارٍ التسجيل… اضغط للإيقاف</string>
 
     <!-- Navigation notifications -->
     <string name="show_navigation_notifications">إشعارات الملاحة</string>
@@ -417,50 +417,50 @@
     <string name="nav_action_slight_turn">انعطاف خفيف</string>
     <string name="nav_action_turn">انعطاف</string>
     <string name="nav_action_sharp_turn">انعطاف حاد</string>
-    <string name="nav_action_uturn">دوران</string>
-    <string name="nav_action_on_ramp">مدخل الطريق</string>
-    <string name="nav_action_off_ramp">مخرج الطريق</string>
+    <string name="nav_action_uturn">استدارة كاملة</string>
+    <string name="nav_action_on_ramp">الدخول إلى الطريق</string>
+    <string name="nav_action_off_ramp">مخرج</string>
     <string name="nav_action_merge">اندماج</string>
     <string name="nav_action_roundabout_enter">دخول الدوار</string>
-    <string name="nav_action_roundabout_exit">خروج من الدوار</string>
+    <string name="nav_action_roundabout_exit">الخروج من الدوار</string>
     <string name="nav_action_roundabout">دوار</string>
-    <string name="nav_action_straight">مباشرة</string>
+    <string name="nav_action_straight">للأمام</string>
     <string name="nav_action_ferry">عبّارة</string>
     <string name="nav_action_ferry_train">عبّارة / قطار</string>
-    <string name="nav_action_destination">وصول</string>
+    <string name="nav_action_destination">الوصول</string>
     <string name="monochrome_icons">أيقونات أحادية اللون</string>
     <string name="monochrome_icons_description">استخدام أيقونات رمادية على الشاشة الرئيسية في الوضع الداكن أو الداكن المطلق</string>
     <string name="use_extreme_dark">استخدام الوضع الداكن المطلق</string>
     <string name="use_extreme_dark_description">استخدام خلفية سوداء بالكامل عند تفعيل الوضع الداكن</string>
     <string name="performance_overlay_settings">لوحة الأداء</string>
     <string name="overlay_field_fps">FPS</string>
-    <string name="overlay_field_cpu">CPU</string>
+    <string name="overlay_field_cpu">المعالج</string>
     <string name="overlay_field_temperature">درجة الحرارة</string>
     <string name="overlay_field_frame_age">عمر الإطار</string>
     <string name="performance_overlay_no_lines">بدون أسطر</string>
     <string name="show_performance_overlay">إظهار لوحة الأداء</string>
     <string name="overlay_position">موضع لوحة الأداء</string>
-    <string name="show_performance_overlay_description">عرض معدل الإطارات وحمل المعالج ودرجة الحرارة وعمر الإطار فوق العرض.</string>
-    <string name="overlay_permission_required">يتطلب التشغيل التلقائي إذن \'العرض فوق التطبيقات الأخرى\'</string>
-    <string name="usb_permission_denied">تم رفض إذن USB. يرجى السماح بالوصول إلى USB للاتصال تلقائيًا.</string>
+    <string name="show_performance_overlay_description">عرض معدل الإطارات واستخدام المعالج ودرجة الحرارة وعمر الإطار فوق العرض.</string>
+    <string name="overlay_permission_required">يتطلب التشغيل التلقائي إذن \'إظهار فوق التطبيقات الأخرى\'</string>
+    <string name="usb_permission_denied">تم رفض إذن USB. اسمح بالوصول إلى USB للاتصال تلقائيًا.</string>
     <string name="use_white_background">استخدام خلفية بيضاء للشاشة الرئيسية</string>
     <string name="reopen_on_reconnection_label">إعادة الفتح عند إعادة الاتصال</string>
     <string name="reopen_on_reconnection_description">عند الضغط على زر الخروج، يبقى التطبيق يعمل في الخلفية ويستمر في مراقبة اتصالات USB. إذا أُعيد اتصال جهاز، يُفتح التطبيق تلقائيًا.</string>
 
     <string name="category_input">إعدادات الإدخال</string>
     <string name="enable_rotary">تفعيل وحدة التحكم الدوارة (Rotary)</string>
-    <string name="enable_rotary_description">الإعلان عن دعم مقابض وعجلات الدوران المادية. قم بتعطيل هذا إذا كانت شاشة اللمس لا تعمل بشكل صحيح.</string>
+    <string name="enable_rotary_description">الإعلان عن دعم مقابض وعجلات الدوران المادية. عطّل هذا الخيار إذا كانت شاشة اللمس لا تعمل بشكل صحيح.</string>
     <string name="kill_on_disconnect">إغلاق التطبيق عند قطع الاتصال</string>
     <string name="kill_on_disconnect_description">إغلاق التطبيق تلقائيا عند انقطاع اتصال Android Auto</string>
     <string name="kill_on_disconnect_warning_title">تحذير</string>
     <string name="kill_on_disconnect_warning">إعدادات إعادة الاتصال التالية ستتعارض مع إغلاق التطبيق عند قطع الاتصال:\n\n%1$s\n\nستستمر إعدادات الاتصال الأولية (الاتصال التلقائي، التشغيل التلقائي) في العمل عند تشغيل شاشة السيارة. ومع ذلك، بعد أول انقطاع سيُغلق التطبيق فوراً بدلاً من محاولة إعادة الاتصال.\n\nملاحظة: بعض شاشات السيارات لا تنطفئ بالكامل، بل تدخل في وضع السبات، مثل هاتف يقفل شاشته لكنه لا ينطفئ فعلياً. مع تفعيل هذا الخيار، سيُغلق التطبيق بعد أول انقطاع وقد لا يُعاد فتحه تلقائياً في دورة التشغيل التالية.\n\nهل تريد تعطيل إعدادات إعادة الاتصال المذكورة أعلاه؟</string>
     <string name="kill_on_disconnect_disable_and_enable">تعطيل وتفعيل</string>
     <string name="kill_on_disconnect_enable_anyway">تفعيل على أي حال</string>
-    <string name="kill_on_disconnect_boot_warning">لديك \"البدء عند التشغيل\" مفعّل. إذا أُغلق التطبيق عند قطع الاتصال وكان هذا الجهاز يدخل وضع السبات بدلاً من الإيقاف الكامل، فقد لا يُعاد فتح التطبيق تلقائياً في دورة التشغيل التالية لأنه لا يتم إنشاء حدث إقلاع — الجهاز يستيقظ ببساطة من وضع السكون.</string>
+    <string name="kill_on_disconnect_boot_warning">خيار \"البدء عند التشغيل\" مفعّل لديك. إذا أُغلق التطبيق عند قطع الاتصال وكان هذا الجهاز يدخل وضع السبات بدلًا من الإيقاف الكامل، فقد لا يُعاد فتح التطبيق تلقائيًا في دورة التشغيل التالية، لأنه لا يتم إطلاق حدث إقلاع. يستيقظ الجهاز ببساطة من السكون.</string>
     <string name="kill_on_disconnect_screen_on_warning">لديك خيار \"البدء عند تشغيل الشاشة\" مفعّل. هذا الإعداد يفتح التطبيق في كل مرة تُشغّل فيها الشاشة. مع خيار الإغلاق عند قطع الاتصال، سيُغلق التطبيق بعد قطع الاتصال لكنه سيُعاد فتحه فوراً عند تشغيل الشاشة مجدداً، مما يُنشئ حلقة إعادة تشغيل.</string>
     <string name="kill_on_disconnect_conflicts_disabled">تم تعطيل الإعدادات المتعارضة</string>
-    <string name="wifi_disabled_info">معلومات: واي فاي معطل.</string>
-    <string name="bt_not_enabled">معلومات: البلوتوث معطل.</string>
+    <string name="wifi_disabled_info">معلومات: Wi-Fi غير مفعَّل.</string>
+    <string name="bt_not_enabled">بلوتوث غير مفعَّل</string>
 
     <!-- Vehicle Info Settings -->
     <string name="vehicle_info_settings">معلومات المركبة</string>
@@ -471,7 +471,7 @@
     <string name="ui_scale_settings">شاشة الإعدادات</string>
     <string name="category_vehicle">المركبة</string>
     <string name="category_head_unit">وحدة الوسائط</string>
-    <string name="vehicle_display_name_label">اسم العرض</string>
+    <string name="vehicle_display_name_label">الاسم المعروض</string>
     <string name="vehicle_display_name_description">الاسم المعروض على هاتفك لهذه المركبة</string>
     <string name="vehicle_make_label">الشركة المصنعة</string>
     <string name="vehicle_make_description">الشركة المصنعة للمركبة (مثل Honda، Toyota)</string>
@@ -488,7 +488,7 @@
     <string name="vehicle_id_description">معرف داخلي فقط. تغييره سيجعل هاتفك يكتشف هذا كمركبة مختلفة، مما يعيد تعيين تفضيلات Android Auto لهذه السيارة.</string>
     <string name="head_unit_make_label">الشركة المصنعة</string>
     <string name="head_unit_make_description">الشركة المصنعة لوحدة الوسائط</string>
-    <string name="head_unit_make_hint">يعرض هاتفك هذا الاسم في إعدادات Android Auto.</string>
+    <string name="head_unit_make_hint">يعرض هاتفك هذا الاسم في إعدادات Android Auto.\n\nعند اختيار علامة سيارة حقيقية يظهر شعارها على زر الخروج في Android Auto، لكن Android Auto يتوقف حينئذٍ عن إدراج التطبيقات المثبّتة من خارج متجر Play. أعِد الاسم إلى \"Google\" لتظهر هذه التطبيقات من جديد.</string>
     <string name="head_unit_model_label">الطراز</string>
     <string name="head_unit_model_description">طراز وحدة الوسائط</string>
     <string name="vehicle_year_error_invalid">أدخل سنة صالحة</string>
@@ -497,23 +497,23 @@
     <string name="auto_enable_hotspot">تفعيل نقطة الاتصال تلقائياً</string>
     <string name="auto_enable_hotspot_description">يُفعِّل تلقائياً نقطة اتصال Wi-Fi على هذا الجهاز. (لن تعمل على جميع الأجهزة)</string>
     <string name="hotspot_warning_title">ميزة تجريبية</string>
-    <string name="hotspot_warning_message">تستخدم هذه الميزة الانعكاس وقد لا تعمل على جميع الأجهزة. قد تحتاج إلى منح إذن \"تعديل إعدادات النظام\" يدوياً.</string>
+    <string name="hotspot_warning_message">تعتمد هذه الميزة على أسلوب غير رسمي في النظام وقد لا تعمل على جميع الأجهزة. قد تحتاج أيضًا إلى منح إذن \"تعديل إعدادات النظام\" يدويًا.</string>
     <string name="hotspot_permission_title">إذن مطلوب</string>
     <string name="hotspot_permission_message">تتطلب ميزة نقطة الاتصال إذن \"تعديل إعدادات النظام\". يرجى تفعيله في الشاشة التالية.</string>
     <string name="native_aa_poke_not_running">البلوتوث اللاسلكي لا يعمل على هذا الجهاز. راجع الإعدادات.</string>
     <string name="not_supported_nativeaa">يبدو أن الاتصال اللاسلكي الأصلي غير مدعوم</string>
-    <string name="not_supported_nativeaa_desc">قد لا يدعم جهازك ميزات Bluetooth أو Wi-Fi المطلوبة للاتصال اللاسلكي الأصلي. يمكنك تجربته على أي حال، ولكن إذا فشل، يرجى استخدام وضع \"Wireless Helper\" أو \"تلقائي (خادم وحدة الرأس)\" بدلاً من ذلك.</string>
+    <string name="not_supported_nativeaa_desc">قد لا يدعم جهازك ميزات بلوتوث أو Wi-Fi المطلوبة للاتصال اللاسلكي الأصلي. يمكنك تجربته على أي حال، لكن إذا فشل، فاستخدم وضع \"Wireless Helper\" أو \"تلقائي (خادم الوحدة الرئيسية)\" بدلاً من ذلك.</string>
     <string name="wait_for_wifi">انتظار WiFi قبل WiFi Direct</string>
     <string name="wait_for_wifi_description">عند بدء التشغيل، انتظر اتصال WiFi قبل بدء WiFi Direct. مفيد إذا كان جهازك يحتاج بضع ثوانٍ للاتصال بشبكة WiFi بعد التشغيل.</string>
     <string name="wait_for_wifi_timeout">مهلة انتظار WiFi</string>
-    <string name="wireless_24ghz_warning">ملاحظة: يمكن أن يؤدي استخدام Android Auto اللاسلكي على أجهزة 2.4 جيجا هرتز إلى حدوث تأخير وتقطع وانقطاع في الاتصال. إذا واجهت مشكلات، يرجى الاختبار عبر USB للتأكد مما ifا كان ذلك بسبب قيود الشبكة.</string>
+    <string name="wireless_24ghz_warning">ملاحظة: قد يؤدي استخدام Android Auto اللاسلكي على أجهزة 2.4 غيغاهرتز إلى تأخر وتقطع وانقطاع في الاتصال. إذا واجهت مشكلات، جرّب الاتصال عبر USB للتأكد مما إذا كان السبب قيودًا في الشبكة.</string>
     <string name="supported_nativeaa">دعم لاسلكي محسّن</string>
-    <string name="supported_nativeaa_desc">أخبار رائعة! يدعم جهازك وضع \"لاسلكي أصلي\"، مما يوفر تجربة Android Auto أكثر سلاسة. \n\nلتفعيل هذا السمة، نحتاج إلى تحديث ذاكرة التخزين المؤقت للبلوتوث. يرجى: \n1. إزالة الاقتران الحالي على هاتفك \n2. النقر على موافق لإعادة تشغيل البلوتوث \n3. إعادة اقتران هاتفك \n\nهل ترغب في الانتقال إلى وضع AA الأصلي الآن؟</string>
+    <string name="supported_nativeaa_desc">أخبار رائعة! يدعم جهازك وضع \"لاسلكي أصلي\"، ما يوفر تجربة Android Auto أكثر سلاسة.\n\nلتفعيله، نحتاج إلى تحديث ذاكرة التخزين المؤقت للبلوتوث. يرجى اتباع الخطوات التالية:\n1. أزِل الاقتران الحالي على هاتفك\n2. انقر على موافق لإعادة تشغيل البلوتوث\n3. أعِد إقران هاتفك\n\nهل تريد التبديل إلى وضع Native AA الآن؟</string>
     <string name="fake_speed_title">تعطيل قفل الفيديو (Fake Speed)</string>
     <string name="fake_speed_description">يبلغ الهاتف سرعة منخفضة ثابتة (0.5 م/ث) لمنع قفل محتوى الفيديو أثناء القيادة. استخدم بحذر.</string>
     <string name="wireless_mode_helper">Wireless Helper</string>
     <string name="wireless_mode_native">أصلي (Native)</string>
-    <string name="wireless_mode_server">خادم شاشة السيارة (Server)</string>
+    <string name="wireless_mode_server">خادم الوحدة الرئيسية</string>
     <string name="server_mode_label">وضع الخادم</string>
     <string name="server_mode_manual">يدوي</string>
     <string name="server_mode_auto">تلقائي</string>
@@ -529,7 +529,7 @@
 
     <string name="select_nearby_device">اختر جهازاً قريباً</string>
     <string name="nearby_device_found">تم العثور على جهاز قريب</string>
-    <string name="connecting_to_nearby">جاري الاتصال بـ %s…</string>
+    <string name="connecting_to_nearby">جارٍ الاتصال بـ %s…</string>
 
     <string name="exit_dialog_title">خروج من Android Auto</string>
     <string name="exit_dialog_stop">إيقاف الاتصال</string>
@@ -537,6 +537,8 @@
     <string name="exit_dialog_background">نقل إلى الخلفية</string>
     <string name="gesture_hint">نصيحة: اسحب بإصبعين من الحافة اليسرى لفتح قائمة الخروج.</string>
     <string name="audio_latency_multiplier">مضاعف زمن انتقال الصوت</string>
+    <string name="aaudio_output">إخراج AAudio (تجريبي)</string>
+    <string name="aaudio_output_description">جرّب إخراج الوسائط بزمن انتقال منخفض. يُستخدم AudioTrack تلقائيًا إذا لم يتوفر.</string>
     <string name="audio_latency_multiplier_description">ضبط حجم مخزن الصوت (أقل = تأخير أقل، أعلى = تقطع أقل)</string>
     <string name="audio_queue_capacity">سعة قائمة انتظار الصوت (Backpressure)</string>
     <string name="media_action_previous">السابق</string>
@@ -544,7 +546,7 @@
     <string name="media_action_pause">إيقاف مؤقت</string>
     <string name="media_action_next">التالي</string>
     <string name="media_session_aa_status_placeholder">متصل</string>
-    <string name="sync_media_session_aa_metadata">المسار الجاري من AA في جلسة الوسائط</string>
+    <string name="sync_media_session_aa_metadata">عرض ما يُشغَّل في AA ضمن جلسة الوسائط</string>
     <string name="sync_media_session_aa_metadata_description">عرض عنوان المسار والفنان والمدة وغلاف الألبوم من الهاتف في جلسة الوسائط بالنظام وإشعار الوسائط</string>
     <string name="auto_resume_playback_on_reconnect">استئناف التشغيل عند إعادة الاتصال</string>
     <string name="auto_resume_playback_on_reconnect_description">استئناف تشغيل الموسيقى تلقائيًا إذا كانت قيد التشغيل قبل انقطاع قصير في الاتصال (خلال 60 ثانية)</string>
@@ -563,31 +565,31 @@
     <string name="loading_screen_file_too_large">الملف كبير جدًا (الحد الأقصى 10 ميغابايت)</string>
     <string name="loading_screen_unsupported_format">صيغة غير مدعومة. استخدم ملف صورة أو فيديو</string>
     <string name="loading_screen_file_error">تعذر تحميل الملف المحدد</string>
-    <string name="loading_screen_show_text">إظهار نص \"جار تشغيل Android Auto\"</string>
-    <string name="loading_screen_tap_preview">انقر للمعاينة</string>
+    <string name="loading_screen_show_text">إظهار نص \"جارٍ تشغيل Android Auto\"</string>
+    <string name="loading_screen_tap_preview">انقر للمعاينة بملء الشاشة</string>
     <string name="loading_screen_tap_to_close">انقر في أي مكان للإغلاق</string>
-    <string name="loading_screen_keep_aspect_ratio">الحفاظ على نسبة العرض إلى الارتفاع</string>
-    <string name="loading_screen_scale">مقياس</string>
+    <string name="loading_screen_keep_aspect_ratio">الحفاظ على نسبة الأبعاد</string>
+    <string name="loading_screen_scale">تحجيم</string>
     <string name="loading_screen_recommended_aspect_ratio">نسبة العرض إلى الارتفاع الموصى بها: %1$d:%2$d</string>
     <string name="loading_screen_tap_fullscreen_hint">انقر على المعاينة لعرضها بملء الشاشة</string>
     <string name="loading_screen_loop_video">تكرار الرسوم المتحركة القصيرة</string>
     <string name="microphone_settings">إعدادات الميكروفون</string>
-    <string name="use_head_unit_microphone">ميكروفون الوحدة الرئيسية</string>
+    <string name="use_head_unit_microphone">ميكروفون وحدة الرأس</string>
     <string name="use_head_unit_microphone_description">مفعّل: يسمع Android Auto ميكروفون هذا الجهاز. معطّل: لا يسجّل هذا الجهاز أبدًا ويستخدم الهاتف ميكروفونه الخاص، أو سماعة أو جهاز اتصال داخلي مقترنًا بالهاتف، فيظل المساعد الصوتي يعمل. يتطلب Android 11 أو أحدث على الهاتف.</string>
-    <string name="head_unit_microphone_off_info">ميكروفون الوحدة الرئيسية معطّل، لذا لا ينطبق أي مما يلي. يتم إبلاغ Android Auto بأن هذا الجهاز لا يمكنه التسجيل وأنه دراجة نارية، وهذا ما يجعل الهاتف يسجّل بنفسه. في Android 10 والأقدم ينسى الهاتف ذلك بين الجلسات وقد يتوقف عن الاتصال.</string>
+    <string name="head_unit_microphone_off_info">ميكروفون وحدة الرأس معطّل، لذا لا ينطبق أي مما يلي. يُبلَّغ Android Auto بأن هذا الجهاز لا يمكنه التسجيل وأنه دراجة نارية، وهذا ما يجعل الهاتف يسجّل بنفسه. في Android 10 والإصدارات الأقدم ينسى الهاتف ذلك بين الجلسات وقد يتوقف عن الاتصال.</string>
     <string name="microphone_settings_description">تكوين مدخل الميكروفون ومعالجة الصوت.</string>
     <string name="mic_wire_format_info">يستقبل Android Auto الميكروفون دائمًا بمعدل 16000 هرتز، 16 بت، أحادي. ويرفض أي شيء آخر، لذا تغيّر هذه الإعدادات ما يفعله العتاد، لا ما يُرسل إلى الهاتف.</string>
     <string name="mic_echo_canceler">إلغاء الصدى (AEC)</string>
-    <string name="mic_echo_canceler_description">يحاول إزالة الصدى من الميكروفون. قم بتعطيله إذا واجهت صمتاً أو تشويشاً.</string>
+    <string name="mic_echo_canceler_description">يحاول إزالة الصدى من الميكروفون. عطّله إذا لاحظت انقطاع الصوت أو تشوّهه.</string>
     <string name="mic_noise_suppressor">إخماد الضوضاء (NS)</string>
-    <string name="mic_noise_suppressor_description">يحاول تقليل ضوضاء الخلفية. قم بتعطيله إذا كان صوتك يبدو مكتوماً.</string>
+    <string name="mic_noise_suppressor_description">يحاول تقليل ضوضاء الخلفية. يتوقع Android Auto أن يكون هذا معطّلًا عند وجود ميكروفون واحد، ويجري معالجته الخاصة. عطّله إذا بدا صوتك مكتومًا.</string>
     <string name="mic_auto_gain_control">التحكم التلقائي في الكسب (AGC)</string>
-    <string name="mic_auto_gain_control_description">يضبط مستوى صوت الميكروفون تلقائياً. قم بتعطيله إذا كان مستوى الصوت غير مستقر.</string>
+    <string name="mic_auto_gain_control_description">يضبط مستوى صوت الميكروفون تلقائيًا. يتوقع Android Auto أن يكون هذا معطّلًا ويطبّق التحكم في الكسب بنفسه، والجمع بينهما يكون صوته أسوأ عادةً. عطّله إذا كان مستوى الصوت غير مستقر.</string>
     <string name="mic_feature_unsupported">هذه الميزة غير مدعومة على جهازك.</string>
     <string name="bt_permission_denied">تم رفض إذن البلوتوث. لا يمكن مسح الأجهزة.</string>
     <string name="bt_external_module_no_picker">بلوتوث هذه الوحدة توفره وحدة خارجية، وليس راديو أندرويد نفسه، لذلك لا توجد هنا قائمة أجهزة بلوتوث من أندرويد للاختيار منها.</string>
     <string name="wifi_autostart_title">بدء تشغيل WiFi تلقائياً</string>
-    <string name="wifi_autostart_content">متصل بـ %s. اضغط لبدء أندرويد أوتو.</string>
+    <string name="wifi_autostart_content">متصل بـ %s. انقر لبدء Android Auto.</string>
 
     <!-- New strings merged from 2.3.1 -->
     <string name="bt_devices_selected">أجهزة محددة</string>
@@ -605,7 +607,7 @@
 
     <!-- Brightness, quick settings, key back, backup, wireless helper QR -->
     <string name="current_brightness_reading">السطوع الحالي: %d / 255</string>
-    <string name="exit_dialog_settings">إعدادات سريعة</string>
+    <string name="exit_dialog_settings">الإعدادات السريعة</string>
     <string name="key_back">رجوع</string>
     <string name="category_backup">النسخ الاحتياطي</string>
     <string name="export_settings">تصدير الإعدادات</string>
@@ -616,7 +618,7 @@
     <string name="settings_exported">تم تصدير الإعدادات</string>
     <string name="settings_export_failed">فشل تصدير الإعدادات: %1$s</string>
     <string name="settings_backup_saved_to">تم حفظ النسخة الاحتياطية في:\n%1$s</string>
-    <string name="share_settings_backup">مشاركة النسخة الاحتياطية</string>
+    <string name="share_settings_backup">مشاركة نسخة احتياطية للإعدادات</string>
     <string name="import_settings">استيراد الإعدادات</string>
     <string name="import_settings_description">استعادة الإعدادات من نسخة احتياطية لـ Open Headunit</string>
     <string name="import_settings_app_folder">استيراد من مجلد نسخ التطبيق</string>
@@ -626,13 +628,13 @@
     <string name="settings_imported">تم استيراد الإعدادات: %1$d مطبَّقة، %2$d تم تجاوزها</string>
     <string name="settings_import_failed">فشل استيراد الإعدادات: %1$s</string>
     <string name="no_settings_backups_title">لا توجد نسخ احتياطية</string>
-    <string name="no_settings_backups_message">لم يتم العثور على أي نسخ احتياطية لـ Open Headunit في مجلد نسخ التطبيق. قم بتصدير نسخة احتياطية أولاً ثم استوردها من هنا.</string>
-    <string name="no_settings_backups_downloads_message">لم يتم العثور على أي نسخ احتياطية لـ Open Headunit في التنزيلات. قم بتصدير نسخة احتياطية إلى التنزيلات أولاً ثم استوردها من هنا.</string>
+    <string name="no_settings_backups_message">لم يتم العثور على أي نسخ احتياطية لـ Open Headunit في مجلد نسخ التطبيق. صدِّر نسخة احتياطية إلى مجلد نسخ التطبيق أولًا ثم استوردها من هنا.</string>
+    <string name="no_settings_backups_downloads_message">لم يتم العثور على أي نسخ احتياطية لـ Open Headunit في التنزيلات. صدِّر نسخة احتياطية إلى التنزيلات أولًا ثم استوردها من هنا.</string>
     <string name="no_file_picker_title">لا يوجد منتقي ملفات</string>
     <string name="no_file_picker_message">هذا الجهاز لا يحتوي على منتقي ملفات متوافق. يمكنك استخدام التنزيلات أو مجلد نسخ التطبيق بدلاً من ذلك.</string>
     <string name="storage_permission_denied_backup">تم رفض إذن التخزين. تعذر استخدام التنزيلات.</string>
     <string name="reset_settings">استعادة الإعدادات الافتراضية</string>
-    <string name="reset_settings_description">يمسح كل الإعدادات والبيانات المؤقتة وتفضيلات الاتصال التلقائي. سيتم إعادة تشغيل التطبيق لتطبيق الإعدادات الافتراضية.</string>
+    <string name="reset_settings_description">يمسح كل الإعدادات والبيانات المخزنة مؤقتًا وتفضيلات الاتصال التلقائي. سيُعاد تشغيل التطبيق لتطبيق الإعدادات الافتراضية.</string>
     <string name="reset_settings_confirm">هل أنت متأكد من إعادة تعيين كل الإعدادات إلى قيمها الافتراضية؟ سيؤدي ذلك إلى إعادة تشغيل التطبيق.</string>
     <string name="reset_settings_confirm_message">سيؤدي هذا إلى إعادة تعيين كل الإعدادات إلى قيمها الافتراضية. لن يتم حذف النسخ الاحتياطية أو ملفات التطبيق. هل تريد المتابعة؟</string>
     <string name="reset_settings_discard_pending">إعادة تعيين الإعدادات ستُلغي التغييرات غير المحفوظة. هل تريد المتابعة؟</string>
@@ -642,7 +644,7 @@
     <string name="hotspot_pass_hint">كلمة مرور نقطة الاتصال</string>
     <!-- Native USB Driver -->
     <string name="use_libusb">استخدام برنامج تشغيل USB الأصلي</string>
-    <string name="use_libusb_description">استخدم libusb للاتصال. قم بتعطيله لاستخدام واجهة برمجة تطبيقات USB القياسية لنظام Android.</string>
+    <string name="use_libusb_description">استخدم libusb للاتصال. عطّله لاستخدام واجهة USB القياسية في Android.</string>
 
     <string name="software_video_decoder">مصدر برنامج فك الترميز</string>
     <string name="software_video_decoder_bundled">FFmpeg مدمج</string>
@@ -650,19 +652,19 @@
 
     <string name="btn_show_qr">عرض رمز QR</string>
     <string name="renderer_fallback_surface">ظل الفيديو يتجمد، لذا تم تبديل العرض إلى SurfaceView لهذه الجلسة. إذا كان مستقرًا، فاضبط وضع العرض على SurfaceView في الإعدادات.</string>
-    <string name="dpi_resolution_over_panel_warning">الدقة التي اخترتها (%1$s) أعلى من شاشتك. لذا تم تحديدها إلى %2$s، ويُحسب DPI على هذا الأساس. إذا بدا العرض غير سليم، فاستخدم الدقة الموصى بها (%2$s).</string>
+    <string name="dpi_resolution_over_panel_warning">الدقة التي اخترتها (%1$s) أعلى من شاشتك. لذا تم تقييدها بـ %2$s، ويُحسب DPI على هذا الأساس. إذا بدا العرض غير سليم، فاستخدم الدقة الموصى بها (%2$s).</string>
     <string name="renderer_confirm_question">هل ترى شاشة Android Auto؟</string>
     <string name="renderer_confirm_yes">نعم</string>
     <string name="renderer_confirm_switch">تبديل العارض</string>
     <string name="renderer_switched_to">العارض: %1$s</string>
 
-    <string name="self_mode_overlay_permission_description">للسماح للوضع الذاتي بالبدء بشكل موثوق في الخلفية، يرجى تفعيل إذن \"الظهور فوق التطبيقات الأخرى\" في الشاشة التالية.</string>
+    <string name="self_mode_overlay_permission_description">ليبدأ الوضع الذاتي بشكل موثوق من الخلفية، فعّل إذن «إظهار فوق التطبيقات الأخرى» في الشاشة التالية.</string>
 
     <string name="delete">حذف</string>
     <string name="night_mode_coordinates">الإحداثيات</string>
     <string name="geofence_locations_title">المواقع</string>
-    <string name="geofence_none">بلا</string>
-    <string name="geofence_count_summary">%1$d مناطق</string>
+    <string name="geofence_none">بدون</string>
+    <string name="geofence_count_summary">المناطق: %1$d</string>
     <string name="geofence_empty_hint">لا توجد مواقع بعد. أضف موقعًا لفرض وضع النهار أو الليل حسب المنطقة، أو لتقييد التشغيل التلقائي بمنطقة.</string>
     <string name="geofence_unnamed">موقع بلا اسم</string>
     <string name="geofence_add">إضافة موقع</string>
@@ -674,16 +676,16 @@
     <string name="geofence_no_location">لا يوجد موقع متاح بعد</string>
     <string name="geofence_saved">تم حفظ الموقع</string>
     <string name="geofence_delete_title">حذف الموقع؟</string>
-    <string name="geofence_delete_message">سيتم إزالة هذا الموقع.</string>
+    <string name="geofence_delete_message">سيُحذف هذا الموقع.</string>
     <string name="geofence_internet_title">مطلوب اتصال بالإنترنت</string>
-    <string name="geofence_internet_message">تحتاج الخريطة إلى اتصال بالإنترنت للتحميل. يتم تنزيل بلاطات الخريطة فقط أثناء تعيين الموقع.</string>
+    <string name="geofence_internet_message">تحتاج الخريطة إلى اتصال بالإنترنت لتحميلها. تُنزَّل أجزاء الخريطة فقط أثناء تحديد الموقع.</string>
     <string name="geofence_radius_summary">نصف القطر: %1$d م</string>
     <string name="geofence_mode_dark">داكن</string>
     <string name="geofence_mode_light">فاتح</string>
     <string name="geofence_gate_on">التشغيل التلقائي مقيد</string>
     <string name="location_section">الموقع</string>
     <string name="sunrise_location_title">موقع الشروق/الغروب</string>
-    <string name="sunrise_location_gps">نظام تحديد المواقع (تلقائي)</string>
+    <string name="sunrise_location_gps">GPS (تلقائي)</string>
     <string name="sunrise_location_fixed">نقطة ثابتة</string>
     <string name="geofence_pick_on_map">اختيار على الخريطة</string>
     <string name="geofence_overridden_note">يتجاوز المكان المحفوظ هذا الإعداد أثناء وجودك داخله.</string>
@@ -700,7 +702,7 @@
     <string name="location_open_entry">الأماكن ونقطة الشروق</string>
     <string name="sunrise_section">الشروق / الغروب</string>
     <string name="location_places_hint">فرض مظهر فاتح أو داكن في منطقة معينة، مع خيار التشغيل التلقائي هناك فقط. يستخدم نظام تحديد المواقع GPS.</string>
-    <string name="appearance_label">عند التواجد بالداخل، اضبط المظهر</string>
+    <string name="appearance_label">المظهر داخل المنطقة</string>
     <string name="appearance_off">إيقاف</string>
     <string name="location_manage_places">الأماكن المحفوظة</string>
     <string name="location_outside_label">خارج الأماكن المحفوظة</string>
@@ -723,17 +725,17 @@
     <string name="onb_next">التالي</string>
     <string name="onb_skip">تخطي</string>
     <string name="onb_ready_finish">إنهاء</string>
-    <string name="onb_welcome_title">مرحبا بك في Open Headunit</string>
+    <string name="onb_welcome_title">مرحبًا بك في Open Headunit</string>
     <string name="onb_welcome_body">يفحص هذا الإعداد السريع جهازك ويختار لك أفضل إعدادات الفيديو والعرض والوضع الداكن. يمكنك تغيير كل شيء لاحقا في الإعدادات.</string>
     <string name="onb_safety_title">السلامة أولا</string>
     <string name="onb_safety_accept">لقد قرأت الشروط وأوافق عليها</string>
     <string name="onb_connection_title">كيف تتصل؟</string>
     <string name="onb_connection_help">اختر كيفية اتصال هاتفك. يبقي هذا شاشة الإعدادات مركزة على ما ينطبق عليك.</string>
-    <string name="onb_connection_cable_detail">الهاتف موصول مباشرة بوحدة الرأس بكابل USB. تبقى الخيارات اللاسلكية بعيدة عن الطريق.</string>
+    <string name="onb_connection_cable_detail">الهاتف موصول مباشرة بشاشة السيارة بكابل USB. لن تظهر الخيارات اللاسلكية.</string>
     <string name="onb_connection_adapter_detail">يربط محول USB الكابل بوصلة لاسلكية. يتم عرض الخيارات اللاسلكية.</string>
     <string name="onb_connection_wifi_detail">يتصل الهاتف عبر WiFi.</string>
     <string name="onb_display_title">العرض</string>
-    <string name="onb_display_detected">اللوحة المكتشفة: %1$d x %2$d px، %3$d dpi، الأجهزة %4$s.</string>
+    <string name="onb_display_detected">اللوحة المكتشفة: %1$d × %2$d بكسل، %3$d dpi، العتاد: %4$s.</string>
     <string name="onb_display_size_label">حجم الشاشة</string>
     <string name="onb_display_orientation_label">الاتجاه</string>
     <string name="onb_display_apply">تطبيق الإعدادات الموصى بها</string>
@@ -800,7 +802,7 @@
     <string name="support">الإبلاغ عن مشكلة</string>
     <string name="support_description">ابحث عن الأخطاء أو أبلغ عنها على GitHub</string>
     <string name="support_title">الإبلاغ عن مشكلة</string>
-    <string name="support_help">إذا صادفت خطأً أو مشكلة، ابحث عنها أولاً في قائمة المشكلات على GitHub. إن لم يُبلِّغ عنها أحد بعد، افتح مشكلة جديدة واذكر فيها ما الذي يحدث، وطراز شاشة سيارتك، والخطوات اللازمة لإعادة تكرار المشكلة.</string>
+    <string name="support_help">إذا صادفت خطأً أو مشكلة، ابحث عنها أولًا في قائمة المشكلات على GitHub. إن لم يُبلِّغ عنها أحد بعد، افتح مشكلة جديدة واذكر فيها ما يحدث، ونوع وحدة الرأس لديك، وخطوات إعادة إنتاج المشكلة.</string>
     <string name="support_open_issues">فتح صفحة المشكلات على GitHub</string>
     <string name="support_scan_qr">أو امسح رمز QR هذا لفتح قائمة المشكلات على جهاز آخر.</string>
     <string name="support_github_account_warning">ملاحظة: تحتاج إلى حساب GitHub مجاني لفتح مشكلة جديدة.</string>
@@ -813,7 +815,7 @@
     <string name="support_rules_button">قواعد الإبلاغ</string>
     <string name="support_rules_english_desc">يرجى دائمًا كتابة مشكلتك باللغة الإنجليزية. إنها اللغة التي يشترك فيها القائم على المشروع ومعظم المساهمين، والموضوع الذي يخلط لغات كثيرة يتحول سريعًا إلى برج بابل لا يستطيع فيه أحد مساعدة الآخر. لا أحد يحكم عليك أو على مستواك في الإنجليزية أو على أسلوبك في الكتابة، فلا تقلق من الأخطاء. إن أعانك على ذلك، يمكن لمترجم مثل Google Translate أو DeepL، أو لذكاء اصطناعي مثل ChatGPT أو Claude، أن يكتب رسالتك ويصوّغها بالإنجليزية نيابةً عنك.</string>
     <string name="support_rules_device_title">اذكر الجهاز الذي يشغّل التطبيق</string>
-    <string name="support_rules_device_desc">إصدار Android للجهاز الذي يعرض Android Auto (وحدة الوسائط أو الشاشة)، وماركته وطرازه إن عرفتهما.</string>
+    <string name="support_rules_device_desc">إصدار Android للجهاز الذي يعرض Android Auto (وحدة الرأس أو الشاشة)، وماركته وطرازه إن عرفتهما.</string>
     <string name="support_rules_connection_title">اذكر طريقة الاتصال</string>
     <string name="support_rules_connection_desc">كابل USB، أو محول USB لاسلكي، أو WiFi Direct، أو WiFi (خادم وحدة الرأس)، أو Self Mode. إن كان الاتصال لاسلكيًا، أضف طراز المحول أو الدونغل.</string>
     <string name="support_rules_appversion_title">أرفق إصدار التطبيق</string>
@@ -829,39 +831,39 @@
     <string name="support_rules_oneissue_title">مشكلة واحدة لكل تقرير</string>
     <string name="support_rules_oneissue_desc">خصص كل تقرير لمشكلة واحدة حتى يمكن تتبعها وإصلاحها. افتح تقارير منفصلة للمشكلات غير المرتبطة ببعضها.</string>
     <string name="rename_notice_title">اسمنا يتغيّر إلى Open Headunit</string>
-    <string name="rename_notice_message">ينمو Headunit Revived بفضلكم، وهو يتحوّل إلى شيء خاص به: Open Headunit. سنطرح الاسم الجديد تدريجيًا على مدى التحديثات القادمة، لذا قد ترون الاسم القديم في بعض الأماكن لفترة.\n\nنفس التطبيق، ونفس الأشخاص خلفه، وكل إعداداتك تبقى كما هي تمامًا.</string>
-    <string name="rename_notice_button">حسنًا</string>
+    <string name="rename_notice_message">يزداد Headunit Revived نموًا بفضلك، ويتحوّل إلى مشروع مستقل: Open Headunit. سنطرح الاسم الجديد تدريجيًا خلال التحديثات القادمة، لذا قد ترى الاسم القديم في بعض الأماكن لفترة.\n\nهو التطبيق نفسه، ومن يقف خلفه هم أنفسهم، وتبقى كل إعداداتك كما هي تمامًا.</string>
+    <string name="rename_notice_button">فهمت</string>
     <string name="aa174_notice_title">تنبيه هام: Android Auto 17.4+</string>
     <string name="aa174_notice_message"><![CDATA[بدءًا من Android Auto 17.4، أجرت Google تغييرات داخلية أدت إلى تعطيل التشغيل التلقائي عبر Wireless Helper بالإضافة إلى وضع Self-Mode الكلاسيكي.<br/><br/><b>الحلول المتاحة:</b><br/><br/><b>1. خادم Headunit Server (وضع المطور):</b><br/>الحل الوحيد المتبقي لوضع Self-Mode! افتح إعدادات مطور Android Auto على هاتفك واضغط على "بدء خادم Headunit Server".<br/><br/><b>2. الوضع الأصلي (Native Mode):</b><br/>يتصل مباشرة عبر Wi-Fi Direct أو نقطة اتصال Headunit.<br/><br/><b>3. محول USB لاسلكي:</b><br/>يوفر محول USB اللاسلكي التجربة الأكثر استقرارًا وسهولة.<br/><br/><b>4. تطبيق Wireless Helper:</b><br/>يستمر في العمل بشكل موثوق لإصدارات Android Auto حتى 17.3.]]></string>
-    <string name="aa174_notice_button_confirm">فهمت ذلك</string>
+    <string name="aa174_notice_button_confirm">فهمت</string>
     <string name="aa174_notice_button_guide">فتح الدليل</string>
 
-    <string name="onb_summary_permissions_format">Permissions: %1$d of %2$d granted</string>
-    <string name="onb_ready_loading_intro">One more thing: you can now set a custom loading screen, shown while the car connects.</string>
-    <string name="onb_ready_loading_button">Set up a loading screen</string>
-    <string name="onb_permissions_title">Enable permissions</string>
-    <string name="onb_permissions_help">Turn on the permissions the app needs so everything works without surprise prompts later. You can change these any time.</string>
-    <string name="onb_perms_enable_all">Enable all</string>
-    <string name="perm_allow">Allow</string>
-    <string name="perm_granted">Granted</string>
-    <string name="perm_optional_format">%1$s (optional)</string>
-    <string name="permissions">Permissions</string>
-    <string name="permissions_desc">Review and grant the permissions the app needs</string>
-    <string name="perm_mic_title">Microphone</string>
-    <string name="perm_mic_help">Lets Android Auto use voice commands, the Google Assistant and phone calls.</string>
-    <string name="perm_location_title">Location</string>
-    <string name="perm_location_help">Sends GPS to the phone for navigation, scans for wireless connections and drives location based night mode.</string>
-    <string name="perm_nearby_title">Nearby devices</string>
-    <string name="perm_nearby_help">Needed to connect over Bluetooth and Wi-Fi, route Bluetooth audio and auto start on a paired device.</string>
-    <string name="perm_notifications_title">Notifications</string>
-    <string name="perm_notifications_help">Shows the ongoing notification while Android Auto is running.</string>
-    <string name="perm_overlay_title">Display over other apps</string>
-    <string name="perm_overlay_help">Lets the app open the car screen on top of other apps, including auto start.</string>
-    <string name="perm_write_settings_title">Modify system settings</string>
-    <string name="perm_write_settings_help">Lets the app turn the hotspot on automatically for wireless connections.</string>
-    <string name="perm_storage_title">Storage</string>
-    <string name="perm_storage_help">Needed to back up and restore your settings and to pick a custom loading image.</string>
-    <string name="onb_vehicle_help_sideload">Picking a real car brand also shows that brand\'s logo on the Android Auto exit button, but Android Auto then stops listing apps you installed from outside the Play Store. Keep \"Google\" or \"Open Headunit\" if you use those apps.</string>
+    <string name="onb_summary_permissions_format">الأذونات: تم منح %1$d من %2$d</string>
+    <string name="onb_ready_loading_intro">أمر أخير: يمكنك الآن تعيين شاشة تحميل مخصصة تظهر أثناء اتصال السيارة.</string>
+    <string name="onb_ready_loading_button">إعداد شاشة التحميل</string>
+    <string name="onb_permissions_title">تفعيل الأذونات</string>
+    <string name="onb_permissions_help">فعّل الأذونات التي يحتاج إليها التطبيق حتى يعمل كل شيء دون طلبات مفاجئة لاحقًا. يمكنك تغييرها في أي وقت.</string>
+    <string name="onb_perms_enable_all">تفعيل الكل</string>
+    <string name="perm_allow">سماح</string>
+    <string name="perm_granted">تم المنح</string>
+    <string name="perm_optional_format">%1$s (اختياري)</string>
+    <string name="permissions">الأذونات</string>
+    <string name="permissions_desc">مراجعة الأذونات التي يحتاج إليها التطبيق ومنحها</string>
+    <string name="perm_mic_title">الميكروفون</string>
+    <string name="perm_mic_help">يتيح لـ Android Auto استخدام الأوامر الصوتية ومساعد Google والمكالمات الهاتفية.</string>
+    <string name="perm_location_title">الموقع الجغرافي</string>
+    <string name="perm_location_help">يرسل بيانات GPS إلى الهاتف للملاحة، ويبحث عن الاتصالات اللاسلكية، ويشغّل الوضع الداكن حسب الموقع.</string>
+    <string name="perm_nearby_title">الأجهزة المجاورة</string>
+    <string name="perm_nearby_help">مطلوب للاتصال عبر Bluetooth وWi-Fi، وتوجيه صوت Bluetooth، والتشغيل التلقائي عند وجود جهاز مقترن.</string>
+    <string name="perm_notifications_title">الإشعارات</string>
+    <string name="perm_notifications_help">يعرض الإشعار المستمر أثناء تشغيل Android Auto.</string>
+    <string name="perm_overlay_title">الإظهار فوق التطبيقات الأخرى</string>
+    <string name="perm_overlay_help">يتيح للتطبيق فتح شاشة السيارة فوق التطبيقات الأخرى، بما في ذلك التشغيل التلقائي.</string>
+    <string name="perm_write_settings_title">تعديل إعدادات النظام</string>
+    <string name="perm_write_settings_help">يتيح للتطبيق تشغيل نقطة الاتصال تلقائيًا للاتصالات اللاسلكية.</string>
+    <string name="perm_storage_title">التخزين</string>
+    <string name="perm_storage_help">مطلوب لنسخ إعداداتك احتياطيًا واستعادتها ولاختيار صورة تحميل مخصصة.</string>
+    <string name="onb_vehicle_help_sideload">عند اختيار علامة سيارة حقيقية، يظهر شعارها أيضًا على زر الخروج في Android Auto، لكن Android Auto يتوقف حينها عن عرض التطبيقات التي ثبّتّها من خارج Play Store. أبقِ \"Google\" أو \"Open Headunit\" إذا كنت تستخدم هذه التطبيقات.</string>
     <string-array name="vehicle_brands">
         <item>Google</item>
         <item>Android</item>
@@ -887,61 +889,64 @@
         <item>Volkswagen</item>
         <item>Volvo</item>
     </string-array>
-    <string name="dpi_size_s">S</string>
-    <string name="dpi_size_m">M</string>
-    <string name="dpi_size_l">L</string>
-    <string name="dpi_size_xl">XL</string>
-    <string name="onb_dpi_recommended">Recommended for your screen: %1$d dpi</string>
+    <string name="onb_dpi_recommended">الموصى به لشاشتك: %1$d dpi</string>
     <string name="dpi_value_format">%1$d DPI</string>
-    <string name="pixel_aspect_ratio">Pixel aspect ratio</string>
-    <string name="enter_pixel_aspect_ratio_value">Pixel aspect ratio x10000 (10000 = square pixels)</string>
-    <string name="cannot_open_settings">Could not open system settings</string>
-    <string name="static_bssid_enter_value">Enter BSSID (XX:XX:XX:XX:XX:XX)</string>
-    <string name="static_bssid_desc">اضبط BSSID للاتصال اللاسلكي يدويًا. لا يلزم إلا عندما لا يذكره أي مصدر في هذا الجهاز؛ يسرد السجل كل مصدر تم سؤاله.</string>
-    <string name="media_key_routing">Send Media Buttons To Android Auto</string>
-    <string name="media_key_routing_always">Always</string>
-    <string name="media_key_routing_auto">Automatic</string>
-    <string name="media_key_routing_never">Never</string>
-    <string name="media_key_routing_always_hint">Next, previous and play/pause are always sent to Android Auto. Use this unless one press skips two tracks.</string>
-    <string name="media_key_routing_auto_hint">Stops sending them while this headunit has a Bluetooth media connection to the phone, because that connection already performs the action. Choose this if one press skips two tracks and your phone is paired to this headunit.</string>
-    <string name="media_key_routing_never_hint">Never sends them, leaving the buttons to Bluetooth. Choose this if one press skips two tracks and your phone is paired to the car\'s own system rather than to this headunit — Automatic cannot detect that connection.</string>
-    <string name="media_key_routing_hint_common">Only the media buttons are affected. Rotary controllers, D-pad, Back and Enter always reach Android Auto.</string>
-    <string name="playback_focus_mode">Pause Other Audio During Playback</string>
-    <string name="playback_focus_mode_auto">Automatic</string>
-    <string name="playback_focus_mode_always">Always</string>
-    <string name="playback_focus_mode_never">Never</string>
-    <string name="playback_focus_mode_auto_hint">Pauses another player on the headunit (for example the radio) while Android Auto audio plays, but not while a Bluetooth audio link is connected — that link is usually the same phone, and pausing it would stop Android Auto\'s own sound.</string>
-    <string name="playback_focus_mode_always_hint">Always pauses other audio while Android Auto plays. If your music stops after a second or two whenever Bluetooth is on, switch back to Automatic.</string>
-    <string name="playback_focus_mode_never_hint">Never touches system audio focus. Other audio on the headunit may keep playing over Android Auto.</string>
-    <string name="playback_focus_mode_static_hint">With Static Audio Focus on, this applies from the moment the phone connects and lasts the whole session, rather than only while audio is playing.</string>
-    <string name="github_issues_url">https://github.com/andreknieriem/open-headunit/issues</string>
-    <string name="support_rules_english_title">All posts in English</string>
-    <string name="boot_loop_paused_title">Wireless start-up paused</string>
-    <string name="boot_loop_paused_generic">This device restarted three times in a row shortly after Open Headunit started wireless, so wireless was left off this time. USB still works. Open the app to turn it back on.</string>
-    <string name="boot_loop_paused_native_wifi_direct">This device restarted three times in a row shortly after Open Headunit started wireless, so wireless was left off this time. On some head units the WiFi chipset takes the whole system down when a phone joins a WiFi Direct network. Try switching Android Auto mode to the head unit hotspot. USB still works.</string>
-    <string name="vehicle_make_hint">A real car brand shows that brand\'s logo on the Android Auto exit button, but Android Auto then stops listing apps installed from outside the Play Store. Set it back to \"Google\" to get those apps listed again.</string>
-    <string name="external_bt_nativeaa">Native Wireless cannot work on this head unit</string>
+    <string name="pixel_aspect_ratio">نسبة أبعاد البكسل</string>
+    <string name="enter_pixel_aspect_ratio_value">نسبة أبعاد البكسل ×10000 (10000 = بكسلات مربعة)</string>
+    <string name="cannot_open_settings">تعذر فتح إعدادات النظام</string>
+    <string name="static_bssid_enter_value">أدخل BSSID (XX:XX:XX:XX:XX:XX)</string>
+    <string name="static_bssid_desc">اضبط BSSID لنقطة الوصول يدويًا. لا يلزم إلا عندما لا يبلّغ عنه أي مصدر في هذا الجهاز؛ يذكر السجل كل مصدر تم الاستعلام عنه.</string>
+    <string name="media_key_routing">إرسال أزرار الوسائط إلى Android Auto</string>
+    <string name="media_key_routing_always">دائمًا</string>
+    <string name="media_key_routing_auto">تلقائي</string>
+    <string name="media_key_routing_never">أبدًا</string>
+    <string name="media_key_routing_always_hint">يُرسل زر التالي والسابق والتشغيل/الإيقاف المؤقت دائمًا إلى Android Auto. استخدم هذا الخيار ما لم تؤدِّ ضغطة واحدة إلى تخطي مقطعين.</string>
+    <string name="media_key_routing_auto_hint">يتوقف الإرسال أثناء وجود اتصال وسائط عبر Bluetooth بين وحدة الرأس والهاتف، لأن هذا الاتصال ينفّذ الإجراء بنفسه. اختر هذا الخيار إذا كانت ضغطة واحدة تتخطى مقطعين وكان هاتفك مقترنًا بوحدة الرأس هذه.</string>
+    <string name="media_key_routing_never_hint">لا يُرسل الأزرار أبدًا، وتتولاها وصلة Bluetooth. اختر هذا الخيار إذا كانت ضغطة واحدة تتخطى مقطعين وكان هاتفك مقترنًا بنظام السيارة نفسه لا بوحدة الرأس هذه، فالخيار التلقائي لا يستطيع اكتشاف هذا الاتصال.</string>
+    <string name="media_key_routing_hint_common">يقتصر التأثير على أزرار الوسائط فقط. أما مفاتيح التحكم الدوّارة وأزرار الاتجاهات وزرا الرجوع والإدخال فتصل دائمًا إلى Android Auto.</string>
+    <string name="playback_focus_mode">إيقاف الصوت الآخر مؤقتًا أثناء التشغيل</string>
+    <string name="playback_focus_mode_auto">تلقائي</string>
+    <string name="playback_focus_mode_always">دائمًا</string>
+    <string name="playback_focus_mode_never">أبدًا</string>
+    <string name="playback_focus_mode_auto_hint">يوقف مشغّلًا آخر على وحدة الرأس (مثل الراديو) مؤقتًا أثناء تشغيل صوت Android Auto. إذا تبيّن أن ذلك يوقف تشغيل الهاتف نفسه، وهذا يحدث عندما تكون وحدة الرأس سماعة Bluetooth للهاتف، يتوقف عن ذلك ويتذكّر الأمر. اختر هذا الوضع مرة أخرى ليجرّب مرة ثانية.</string>
+    <string name="playback_focus_mode_always_hint">يوقف الصوت الآخر مؤقتًا دائمًا أثناء تشغيل Android Auto. إذا توقفت موسيقاك بعد ثانية أو ثانيتين كلما كان Bluetooth قيد التشغيل، فعُد إلى الوضع التلقائي.</string>
+    <string name="playback_focus_mode_never_hint">لا يتدخل أبدًا في تركيز الصوت في النظام. قد يستمر تشغيل صوت آخر على وحدة الرأس فوق صوت Android Auto.</string>
+    <string name="playback_focus_mode_static_hint">عند تفعيل تركيز الصوت الثابت، يسري هذا من لحظة اتصال الهاتف ويستمر طوال الجلسة، لا أثناء تشغيل الصوت فقط.</string>
+    <string name="boot_loop_paused_title">تم إيقاف التشغيل اللاسلكي مؤقتًا</string>
+    <string name="boot_loop_paused_generic">أعاد هذا الجهاز التشغيل ثلاث مرات متتالية بعد وقت قصير من بدء Open Headunit للاتصال اللاسلكي، لذا تُرك الاتصال اللاسلكي متوقفًا هذه المرة. اتصال USB لا يزال يعمل. افتح التطبيق لإعادة تفعيله.</string>
+    <string name="boot_loop_paused_native_wifi_direct">أعاد هذا الجهاز التشغيل ثلاث مرات متتالية بعد وقت قصير من بدء Open Headunit للاتصال اللاسلكي، لذا تُرك الاتصال اللاسلكي متوقفًا هذه المرة. في بعض الوحدات الرئيسية، تتسبب شريحة Wi-Fi في تعطل النظام بالكامل عندما ينضم هاتف إلى شبكة Wi-Fi Direct. جرّب تغيير وضع Android Auto إلى نقطة اتصال الوحدة الرئيسية. اتصال USB لا يزال يعمل.</string>
+    <string name="vehicle_make_hint">عند اختيار علامة سيارة حقيقية يظهر شعارها على زر الخروج في Android Auto، لكن Android Auto يتوقف حينئذٍ عن إدراج التطبيقات المثبّتة من خارج متجر Play. أعِد الاسم إلى \"Google\" لتظهر هذه التطبيقات من جديد.</string>
+    <string name="external_bt_nativeaa">لا يعمل الاتصال اللاسلكي الأصلي على هذه الوحدة</string>
     <string name="external_bt_nativeaa_desc">يقترن هاتفك بوحدة البلوتوث الخاصة بهذه الوحدة (%1$s)، لا بالبلوتوث الذي يوفّره أندرويد للتطبيقات، لذا فإن مصافحة الاتصال اللاسلكي لن تصل إليه أبداً.\n\nلا يمكن لهذا التطبيق الوصول إلى تلك الوحدة إلا عبر خدمة ZJ/ZLink، وهذه الوحدة لا تُشغّل هذه الخدمة. استخدم USB أو أحد أوضاع WiFi بدلاً من ذلك.</string>
     <string name="external_bt_module_nativeaa">لاسلكي أصلي عبر وحدة ZJ/ZLink</string>
     <string name="external_bt_module_nativeaa_desc">يقترن هاتفك بوحدة البلوتوث الخاصة بهذه الوحدة (%1$s)، لا بالبلوتوث الذي يوفّره أندرويد للتطبيقات، لذا سترسَل المصافحة عبر خدمة ZJ/ZLink التابعة للوحدة.\n\nهذه ميزة تجريبية، وتلك الخدمة هي الطريق الوحيد إليها. إذا لم يبدأ هاتفك Android Auto إطلاقاً، فاستخدم USB أو أحد أوضاع WiFi.</string>
     <string name="external_bt_transport">الاتصال عبر وحدة البلوتوث في الجهاز</string>
     <string name="external_bt_transport_description">تجريبي، وللأجهزة التي تتوفر فيها خدمة بلوتوث ZJ/ZLink فقط. يرسل مصافحة Android Auto اللاسلكي عبر شريحة البلوتوث الخاصة بهذا الجهاز، وهي التي يقترن بها هاتفك فعليًا، بدلًا من البلوتوث الذي يتيحه Android للتطبيقات.\n\nشغّل أولًا \"اختبار وحدة البلوتوث في الجهاز\" مع إطفاء هذا الإعداد. إذا لم يجد الاختبار شيئًا ينصت على المنفذ، فلن يفعل هذا الإعداد شيئًا على جهازك ولن يعمل الاتصال اللاسلكي الأصلي هنا مهما ضبطت. وإذا استجاب، فشغّل هذا واختر \"أصلي\". أما الاختبار الذي يُشغَّل والإعداد مفعّل ومتصل بالفعل فيبلّغ بذلك تحديدًا، وهذا ليس فشلًا. يرجى تصدير السجل في الحالتين.</string>
     <string name="zbt_probe_title">اختبار وحدة البلوتوث في الجهاز</string>
-    <string name="zbt_probe_idle">اضغط للتشغيل</string>
+    <string name="zbt_probe_idle">انقر للتشغيل</string>
     <string name="zbt_probe_running">جارٍ التشغيل…</string>
     <string name="zbt_probe_message">يسأل شريحة البلوتوث المنفصلة في هذا الجهاز عمّا إذا كانت تستطيع حمل اتصال Android Auto. يتحقق خلال ثماني ثوانٍ تقريبًا من أن الشريحة تستجيب أصلًا، وعندها فقط يراقب نحو دقيقة ونصف. يعرض السطر أسفل هذا الإعداد ما يجري، ولا يُمس أي شيء آخر في الجهاز.\n\nتتحدث الشريحة مع برنامج واحد في كل مرة. فإذا كان هناك اتصال يمر عبرها بالفعل، يذكر الاختبار ذلك بدل أن يختبر. أطفئ الإعداد أعلاه أولًا لاختبارها وحدها.\n\nكما يطلب \"الإيقاظ والمراقبة\" من الشريحة إعادة الاتصال بهاتفك من أجل Android Auto. هذا هو الجزء الوحيد الذي يغيّر شيئًا، وإعادة تشغيل الجهاز تلغيه. يرجى تصدير السجل بعد ذلك وإرفاقه.</string>
     <string name="zbt_probe_watch_only">المراقبة فقط</string>
-    <string name="zbt_probe_wake_and_watch">التنبيه والمراقبة</string>
-    <string name="native_ap_transport">Network transport</string>
-    <string name="native_ap_transport_wifi_direct">WiFi Direct</string>
-    <string name="native_ap_transport_hotspot">Hotspot</string>
-    <string name="hotspot_interface_override">Hotspot network interface</string>
-    <string name="hotspot_interface_override_message">Leave blank to work it out automatically. Set this if the log says more than one interface could be the access point, or picks the wrong one. The name is the one the log reports after &quot;Providing credentials from&quot;, or the entry holding your hotspot\'s address in &quot;ip -brief addr&quot; from a shell. Common names: ap0, wlan0, wlan1, wlan2, softap0, ra0.</string>
-    <string name="hotspot_ssid_override">Hotspot name (manual)</string>
-    <string name="hotspot_ssid_override_message">Leave blank to read the name from this device\'s hotspot settings automatically. Some devices do not let apps read it - if the log says the name could not be read, type it here exactly as it appears in your hotspot settings.</string>
-    <string name="hotspot_password_override">Hotspot password (manual)</string>
-    <string name="hotspot_password_override_message">Leave blank to read the password automatically. Needed on devices that do not let apps read the hotspot configuration. The phone will be given this password to join.</string>
-    <string name="su_needed_keymaps_warning">Warning: Your headunit must be either rooted, or have Shizuku installed. If that\'s the case, you must allow SU rights, once prompted. Steering keys likely are not functional until this is fixed.</string>
+    <string name="zbt_probe_wake_and_watch">الإيقاظ والمراقبة</string>
+    <string name="external_bt_blink_transport">الاتصال عبر وحدة البلوتوث الخارجية في FYT</string>
+    <string name="external_bt_module_controls_hint">تتولى وحدة البلوتوث الخارجية إدارة اقتران الهاتف وأولوية الاتصال واختيار برنامج التشغيل.</string>
+    <string name="external_bt_module_last_phone">آخر هاتف اتصل عبر الوحدة</string>
+    <string name="external_bt_blink_transport_description">تجريبي. لوحدات FYT التي يقترن هاتفها للمكالمات بوحدة بلوتوث منفصلة، مثل \"DUDUAUTO\" على DUDUOS، وهو النظام الوحيد الذي اختُبر حتى الآن. تتولى هذه الوحدة، لا بلوتوث الجهاز، مصافحة Android Auto اللاسلكي، ويرد عليها عادةً تطبيق Car Link الأصلي. عند تشغيل هذا الخيار يرد هذا التطبيق بدلاً منه، فتبقى المكالمات على الوحدة وعلى مكبرات صوت السيارة.\n\nعطّل تطبيق Car Link الأصلي أولاً (pm disable-user com.syu.carlink)، وإلا سيقرأ التطبيقان القناة نفسها. تُفتح القناة دون صلاحيات الجذر إن سمحت الوحدة بذلك، وإلا فعبر الجذر. اختر \"أصلي\"، واقرن الهاتف بالوحدة فقط، وصدّر السجل إذا لم يتصل.</string>
+    <string name="external_bt_blink_refused_stock_enabled">وحدة البلوتوث الخارجية: تطبيق Car Link الأصلي ما زال مفعّلاً. عطّله (pm disable-user com.syu.carlink) أو أوقف هذا النقل.</string>
+    <string name="external_bt_blink_refused_stock_running">وحدة البلوتوث الخارجية: تطبيق Car Link الأصلي معطّل لكنه ما زال يعمل. أعِد تشغيل الوحدة.</string>
+    <string name="external_bt_blink_refused_root">وحدة البلوتوث الخارجية: يتطلب فتح قناة الوحدة صلاحيات الجذر على هذه الوحدة، وقد رُفض الوصول إليها أو هو غير متاح.</string>
+    <string name="external_bt_blink_refused_unverified">وحدة البلوتوث الخارجية: تعذر التحقق مما إذا كان تطبيق Car Link الأصلي متوقفًا، لذا تبقى قناة الوحدة مغلقة. يرجى تصدير السجل.</string>
+    <string name="external_bt_blink_refused_bridge">وحدة البلوتوث الخارجية: تعذر فتح قناة الوحدة. يرجى تصدير السجل.</string>
+    <string name="native_ap_transport">نقل الشبكة</string>
+    <string name="native_ap_transport_wifi_direct">Wi-Fi Direct</string>
+    <string name="native_ap_transport_hotspot">نقطة الاتصال</string>
+    <string name="hotspot_interface_override">واجهة شبكة نقطة الاتصال</string>
+    <string name="hotspot_interface_override_message">اتركه فارغًا ليحدده التطبيق تلقائيًا. اضبطه إذا ذكر السجل أن أكثر من واجهة قد تكون نقطة الوصول، أو إذا اختار واجهة خاطئة. الاسم هو ما يذكره السجل بعد \"Providing credentials from\"، أو الإدخال الذي يحمل عنوان نقطة الاتصال في ناتج الأمر \"ip -brief addr\" من الطرفية. أسماء شائعة: ap0 وwlan0 وwlan1 وwlan2 وsoftap0 وra0.</string>
+    <string name="hotspot_ssid_override">اسم نقطة الاتصال (يدوي)</string>
+    <string name="hotspot_ssid_override_message">اتركه فارغًا ليقرأ التطبيق الاسم تلقائيًا من إعدادات نقطة الاتصال في هذا الجهاز. لا تسمح بعض الأجهزة للتطبيقات بقراءته. إذا ذكر السجل تعذّر قراءة الاسم، فاكتبه هنا تمامًا كما يظهر في إعدادات نقطة الاتصال.</string>
+    <string name="hotspot_password_override">كلمة مرور نقطة الاتصال (يدوي)</string>
+    <string name="hotspot_password_override_message">اتركه فارغًا ليقرأ التطبيق كلمة المرور تلقائيًا. يلزم ذلك في الأجهزة التي لا تسمح للتطبيقات بقراءة إعدادات نقطة الاتصال. ستُعطى كلمة المرور هذه للهاتف للانضمام.</string>
+    <string name="su_needed_keymaps_warning">تحذير: يجب أن يكون جهاز الوحدة مفعّل عليه الروت أو مثبّتًا عليه Shizuku. في هذه الحالة، اسمح بصلاحيات SU عند ظهور الطلب. من المرجح ألا تعمل مفاتيح عجلة القيادة حتى تُحل هذه المشكلة.</string>
 
     <!-- Auto-added missing translations -->
     <string name="blacklisted">في القائمة السوداء</string>
@@ -979,22 +984,22 @@
     <string name="home_button_scale_preview">معاينة مباشرة للشاشة الرئيسية</string>
     <string name="btn_reset_scale">إعادة ضبط حجم الأزرار</string>
     <string name="static_bssid_title">BSSID ثابت (عنوان MAC)</string>
-    <string name="native_ap_transport_hint">يتصل الهاتف بنقطة اتصال هذا الجهاز بدلاً من مجموعة WiFi Direct. قم بتشغيلها قبل الاتصال.</string>
+    <string name="native_ap_transport_hint">يتصل الهاتف بنقطة اتصال هذا الجهاز نفسه بدلاً من مجموعة Wi-Fi Direct. شغّلها قبل الاتصال.</string>
     <string name="hotspot_band">نطاق نقطة الاتصال</string>
     <string name="hotspot_band_auto">تلقائي</string>
     <string name="hotspot_band_5ghz">5 غيغاهرتز فقط</string>
     <string name="hotspot_band_24ghz">2.4 غيغاهرتز فقط</string>
-    <string name="hotspot_band_hint">يطلب التلقائي 5 غيغاهرتز ويرجع إلى 2.4 غيغاهرتز إذا لزم الأمر.</string>
+    <string name="hotspot_band_hint">في الوضع التلقائي يطلب التطبيق نطاق 5 غيغاهرتز ثم يعود إلى 2.4 غيغاهرتز إذا لزم الأمر. يعمل نطاق 2.4 غيغاهرتز بثبات حتى دقة 720p، لذا اختر 5 غيغاهرتز فقط لدقة أعلى.</string>
     <string name="wifi_direct_band">نطاق WiFi Direct</string>
     <string name="wifi_direct_band_auto">تلقائي</string>
     <string name="wifi_direct_band_5ghz">5 غيغاهرتز فقط</string>
     <string name="wifi_direct_band_24ghz">2.4 غيغاهرتز فقط</string>
-    <string name="wifi_direct_band_hint">يطلب التلقائي 5 غيغاهرتز ويرجع إلى 2.4 غيغاهرتز.</string>
+    <string name="wifi_direct_band_hint">في الوضع التلقائي يطلب التطبيق نطاق 5 غيغاهرتز ثم يعود إلى 2.4 غيغاهرتز، وفي Android 9 والإصدارات الأقدم يطلب قناة 5 غيغاهرتز أولاً. يعمل نطاق 2.4 غيغاهرتز بثبات حتى دقة 720p، لذا اختر 5 غيغاهرتز فقط لدقة أعلى.</string>
     <string name="stand_down_station">قطع اتصال Wi-Fi للوحدة أثناء الاتصال</string>
     <string name="stand_down_station_auto">تلقائي</string>
     <string name="stand_down_station_always">دائمًا</string>
     <string name="stand_down_station_never">أبدًا</string>
-    <string name="stand_down_station_hint">تلقائي يقطع اتصال شبكة الوحدة الخاصة فقط عندما يدعم جهاز اللاسلكي نطاق 5 غيغاهرتز وتكون تلك الشبكة على 2.4 غيغاهرتز، لكي تحصل مجموعة WiFi Direct على قناة 5 غيغاهرتز لنفسها. يبقى متصلاً على وحدة تدعم 2.4 غيغاهرتز فقط، حيث يؤدي القطع فقط إلى جعل الوحدة تبحث عن شبكات، وكذلك عندما تكون الشبكة على 5 غيغاهرتز بالفعل. تتم إعادة الانضمام إلى الشبكة عند انتهاء الجلسة. جرّب دائمًا أو أبدًا إذا كانت الصورة تتقطّع.</string>
+    <string name="stand_down_station_hint">في الوضع التلقائي تغادر الوحدة شبكتها الخاصة فقط عندما يدعم جهاز اللاسلكي فيها نطاق 5 غيغاهرتز وتكون الشبكة على 2.4 غيغاهرتز، لتحصل مجموعة Wi-Fi Direct على قناة 5 غيغاهرتز لنفسها. وتبقى الوحدة متصلة إذا كانت تدعم 2.4 غيغاهرتز فقط، لأن المغادرة هناك تجعلها تبحث عن شبكات فحسب، وكذلك إذا كانت الشبكة على 5 غيغاهرتز أصلاً. تعود الوحدة إلى الشبكة عند انتهاء الجلسة. جرّب \"دائمًا\" أو \"أبدًا\" إذا كانت الصورة تتقطع.</string>
     <string name="stand_down_station_needs_overlay">يتطلب إذن «الظهور فوق التطبيقات الأخرى» في هذا الإصدار من أندرويد.</string>
     <string name="connection_issue_banner_bt_silent">اتصل هاتفك عبر البلوتوث، لكن بلوتوث هذه الوحدة لم يستطع إرسال أي شيء إليه. انقر لاختيار وضع لا يحتاج إليه، مثل Wireless Helper.</string>
     <string name="connection_issue_banner_bssid">لم يُخبَر هاتفك بأي شبكة عليه الانضمام إليها، لأن هذه الوحدة رفضت مشاركة عنوان WiFi الخاص بها. شغّل خدمة الموقع، أو انقر لإدخال العنوان يدويًا.</string>
@@ -1006,19 +1011,19 @@
     <string name="narrow_band_profile_cap_description">عندما تعمل هذه الجلسة على 2.4 غيغاهرتز، سواء لأن WiFi هذه الوحدة لا يدعم نطاق 5 غيغاهرتز أو لأن الشبكة نشأت عليه، اطلب من الهاتف 720p و30 إطارًا في الثانية كحد أقصى بدلاً من الإعدادات أعلاه، وصوت AAC. على وصلة كهذه أظهرت القياسات أن البث بالمعدل الكامل لا ينقل أي صورة على الإطلاق، بينما يصمد البث الأقل. أوقف هذا الخيار للحصول على ما طلبته بالضبط.</string>
     <string name="connection_issue_banner_video_link_too_slow">كانت وصلة WiFi أبطأ من أن تنقل الفيديو، لذا خفّضها التطبيق إلى 720p بمعدل 30 FPS. انقر لضبط الدقة بنفسك. تساعد شبكة 5 غيغاهرتز أيضًا.</string>
     <string name="connection_issue_banner_five_ghz_channel_refused">رفضت هذه الوحدة استخدام قناة 5 غيغاهرتز التي اخترتها واختارت قناة لا تراها بعض الهواتف. انقر لتحويل WiFi Direct إلى 2.4 غيغاهرتز، التي تعمل في كل مكان.</string>
-    <string name="connection_issue_banner_headunit_server_deaf">توقف خادم وحدة الرأس الخاص بـ Android Auto على هاتفك عن الرد. على الهاتف، أوقفه ثم شغّله مرة أخرى في إعدادات مطوّري Android Auto.</string>
-    <string name="connection_issue_banner_hands_free_held">جهاز آخر يستخدم اتصال اليدين الحرة الخاص بهذه الوحدة، الذي يحتاجه Android Auto. افصل ذلك الجهاز وستحاول هذه الوحدة مرة أخرى.</string>
+    <string name="connection_issue_banner_headunit_server_deaf">توقف خادم الوحدة الرئيسية في Android Auto على هاتفك عن الاستجابة. على الهاتف، أوقفه ثم شغّله مرة أخرى في إعدادات المطوّرين الخاصة بـ Android Auto.</string>
+    <string name="connection_issue_banner_hands_free_held">جهاز آخر يستخدم الاتصال الهاتفي الحر الخاص بهذه الوحدة، وهو اتصال يحتاجه Android Auto. افصل ذلك الجهاز وستعيد هذه الوحدة المحاولة.</string>
     <string name="connection_issue_banner_dismiss">تجاهل</string>
     <string name="auto_connect_pill_cancel">إيقاف الاتصال</string>
     <string name="connection_issue_remedy_hotspot_query">اسم نقطة الاتصال وكلمة المرور</string>
     <string name="preflight_title">قبل الاتصال</string>
-    <string name="preflight_intro">لا يمكن لهذا الجهاز توفير جميع متطلبات Android Auto:</string>
-    <string name="preflight_item_hotspot_name">اسم نقطة الاتصال: لا يسمح هذا الجهاز للتطبيقات بقراءته.</string>
-    <string name="preflight_item_hotspot_password">كلمة مرور نقطة الاتصال مطلوبة.</string>
+    <string name="preflight_intro">لا يستطيع هذا الجهاز توفير كل ما يحتاجه Android Auto، لذا لن يتمكن الهاتف من الانضمام:</string>
+    <string name="preflight_item_hotspot_name">اسم نقطة الاتصال. لا يسمح هذا الجهاز للتطبيقات بقراءته.</string>
+    <string name="preflight_item_hotspot_password">كلمة مرور نقطة الاتصال. بدونها يُعرض على الهاتف شبكة مفتوحة فيرفضها.</string>
     <string name="preflight_item_bssid">عنوان WiFi‏ (BSSID). لم يذكره أي مصدر، ولا حتى العنوان المشتق من واجهة الشبكة الخاصة بهذا الجهاز.</string>
-    <string name="preflight_item_location">خدمة الموقع معطلة مما يخفي عنوان WiFi.</string>
+    <string name="preflight_item_location">الموقع الجغرافي متوقف، لذا يخفي Android عنوان Wi-Fi لهذا الجهاز عن التطبيقات وسيرفض الهاتف الانضمام. الحل هو تشغيل الموقع الجغرافي. لا حاجة إلى كتابة العنوان يدويًا إلا إذا بقي مخفيًا بعد ذلك.</string>
     <string name="preflight_enter_now">إدخال الآن</string>
-    <string name="preflight_open_location">الموقع</string>
+    <string name="preflight_open_location">الموقع الجغرافي</string>
     <string name="preflight_later">لاحقاً</string>
     <string name="preflight_invalid_bssid">عنوان WiFi غير صالح. أدخل 6 أزواج سداسية عشرية مثل 02:1A:11:FF:3C:4D.</string>
     <string name="announce_connection_configuration">طلب مهلة اتصال أطول</string>
@@ -1037,7 +1042,7 @@
     <string name="native_aa_setup_qr_no_credentials">اسم الشبكة أو كلمة المرور غير معروفين بعد. شغّل نقطة الاتصال أو أدخلهما يدويًا في الأعلى.</string>
     <string name="native_aa_setup_qr_no_bssid">تعذّرت قراءة عنوان WiFi‏ (BSSID) لهذا الجهاز. يرفض أندرويد أوتو شبكة لا يستطيع ربطها بعنوان.</string>
     <string name="native_aa_setup_qr_no_address">عنوان هذا الجهاز على تلك الشبكة غير معروف بعد.</string>
-    <string name="native_aa_setup_qr_no_bluetooth">تعذّرت قراءة عنوان البلوتوث لهذا الجهاز، والهاتف يحتاج إليه للتعرف على هذه الوحدة لاحقًا.</string>
+    <string name="native_aa_setup_qr_no_bluetooth">تعذّرت قراءة عنوان البلوتوث لهذا الجهاز، والهاتف يحتاج إليه للتعرف على هذه الوحدة لاحقًا. أدخله ضمن «الاتصال اللاسلكي». يعرضه الهاتف المقترن تحت رمز الترس بجوار هذا الجهاز.</string>
     <string name="native_aa_setup_qr_dongle">يبدو اسم بلوتوث هذا الجهاز مثل محوّل لاسلكي، ويتعامل معه الهاتف كنوع آخر من الأجهزة. غيّر اسم البلوتوث على هذا الجهاز وحاول مرة أخرى.</string>
     <string name="category_ui">واجهة المستخدم</string>
     <string name="hide_phone_signal_label">إخفاء إشارة الهاتف</string>
@@ -1045,7 +1050,7 @@
     <string name="hide_clock_label">إخفاء الساعة</string>
     <string name="might_broken_on_newer_aa_versions">قد لا تعمل هذه الميزة في إصدارات Android Auto الأحدث</string>
     <string name="auto_connect_delay">تأخير الاتصال التلقائي</string>
-    <string name="auto_connect_delay_description">الانتظار قبل محاولة الاتصال عند بدء التشغيل (مفيد إذا كان الواي فاي يحتاج وقتاً للتشغيل)</string>
+    <string name="auto_connect_delay_description">الانتظار قبل محاولة الاتصال عند بدء التشغيل (مفيد إذا احتاج Wi-Fi إلى وقت للتشغيل)</string>
     <string name="auto_connect_delay_none">بدون (فوري)</string>
     <string name="auto_connect_delay_seconds_format">%d ث</string>
     <string name="auto_connect_delay_custom">مخصص…</string>
@@ -1065,7 +1070,7 @@
     <string name="audio_channel_system_description">تنبيهات Android Auto ونغماته وأصوات إشعاراته (16 كيلوهرتز أحادي).</string>
     <string name="audio_channel_all">الوسائط والإرشادات والتنقل والإشعارات والنظام</string>
     <string name="audio_channel_all_short">كل القنوات</string>
-    <string name="audio_channel_all_description">جميع قنوات صوت Android Auto — تشغيل التطبيقات والإرشادات المنطوقة والتنبيهات وأصوات الإشعارات — تشترك في تدفق الإخراج هذا وحده.</string>
+    <string name="audio_channel_all_description">تشترك جميع قنوات صوت Android Auto، وهي تشغيل التطبيقات والإرشادات المنطوقة والتنبيهات وأصوات الإشعارات، في تدفق الإخراج هذا.</string>
     <string name="audio_stream_test">تشغيل نغمة اختبار على هذا التدفق</string>
     <string name="audio_stream_muted_warning">‏%1$s مكتوم على هذا الجهاز — ارفع مستوى صوته لسماع نغمة الاختبار.</string>
     <string name="audio_stream_test_failed">تعذّر تشغيل نغمة اختبار على هذا التدفق.</string>
@@ -1078,7 +1083,7 @@
     <string name="audio_stream_notification">الإشعارات</string>
     <string name="audio_stream_bluetooth_sco">‏Bluetooth SCO</string>
     <string name="audio_stream_system_enforced">النظام (إجباري)</string>
-    <string name="audio_stream_dtmf">DTMF</string>
+    <string name="audio_stream_dtmf">نغمات DTMF</string>
     <string name="audio_stream_tts">تحويل النص إلى كلام</string>
     <string name="audio_stream_accessibility">إمكانية الوصول</string>
     <string name="audio_stream_assistant">المساعد</string>
@@ -1088,11 +1093,11 @@
     <string name="onb_audio_title">الصوت</string>
     <string name="onb_audio_help">اختر تدفق النظام الذي تُشغَّل عليه كل قناة من قنوات Android Auto، والمس السماعة لسماعه. إذا ظلت قناة صامتة في السيارة، فنقلها إلى تدفق آخر هو الحل عادةً.</string>
     <string name="onb_audio_more_hint">يمكنك تغيير ذلك لاحقًا من الإعدادات ← تدفقات الصوت.</string>
-    <string name="native_driver_selection_title">اختيار السائق</string>
+    <string name="native_driver_selection_title">اختيار هاتف السائق</string>
     <string name="native_driver_selection_summary">اختر الهاتف المراد الاتصال به عند وجود عدة هواتف مقترنة داخل السيارة</string>
-    <string name="native_driver_selection_mode_off">معطّل</string>
+    <string name="native_driver_selection_mode_off">غير مفعَّل</string>
     <string name="native_driver_selection_mode_auto">تلقائي</string>
-    <string name="native_driver_selection_mode_always">السؤال دائماً</string>
+    <string name="native_driver_selection_mode_always">السؤال دائمًا</string>
     <string name="native_driver_selection_timeout">العد التنازلي للاتصال التلقائي</string>
     <string name="native_driver_preferred_device">الهاتف المفضل</string>
     <string name="switch_driver">تبديل الهاتف</string>
@@ -1100,7 +1105,7 @@
     <string name="driver_device_paired">مقترن</string>
     <string name="driver_device_preferred">مفضل</string>
     <string name="driver_device_last_used">آخر اتصال</string>
-    <string name="driver_selection_auto_in">الاتصال التلقائي بـ %2$s خلال %1$d ثوانٍ...</string>
+    <string name="driver_selection_auto_in">الاتصال التلقائي بـ %2$s خلال %1$d ث...</string>
     <string name="driver_selection_dialog_title">اختر هاتف السائق</string>
     <string name="driver_none">لا يوجد</string>
     <string name="show_all_devices">عرض جميع أجهزة البلوتوث</string>
@@ -1111,32 +1116,32 @@
     <string name="native_poke_bt_label">الجهاز المراد إيقاظه لـ Android Auto اللاسلكي</string>
     <string name="select_bt_poke_device">حدد جهاز البلوتوث المراد إيقاظه</string>
     <string name="native_poke_all_paired_label">إيقاظ جميع الأجهزة المقترنة</string>
-    <string name="native_poke_all_paired_description">في حال عدم تحديد جهاز أعلاه، يتصل لفترة وجيزة بكل جهاز مقترن لبدء Android Auto.</string>
+    <string name="native_poke_all_paired_description">في حال عدم تحديد جهاز أعلاه، يتصل لفترة وجيزة بكل جهاز مقترن لبدء Android Auto. أوقف هذا الخيار كي لا يُوقَظ أي جهاز حتى تختار جهازًا.</string>
     <string name="auto_disconnect_bt_delay_label">الانتظار قبل قطع الاتصال</string>
     <string name="auto_disconnect_bt_delay_value">%1$d ث</string>
     <string name="auto_disconnect_bt_delay_immediate">فوراً</string>
-    <string name="enter_auto_disconnect_bt_delay">ثواني الانتظار قبل إنهاء الجلسة</string>
+    <string name="enter_auto_disconnect_bt_delay">عدد الثواني قبل إنهاء الجلسة</string>
     <string name="auto_disconnect_bt_delay_hint">قد ينقطع اتصال البلوتوث للحظات أثناء إعادة اتصال ملفات التعريف. تنتهي الجلسة فقط إذا ظل الجهاز مفقوداً بعد هذا الوقت.</string>
-    <string name="auto_disconnect_bt_kill_hint">ينهي الجلسة عند انقطاع اتصال بلوتوث الجهاز المحدد (مثل إيقاف تشغيل السيارة).</string>
+    <string name="auto_disconnect_bt_kill_hint">ينهي الجلسة كما يفعل زر الخروج عند انقطاع بلوتوث الجهاز المحدد، مثل إيقاف تشغيل السيارة. اختر بلوتوث السيارة إذا كانت هذه الوحدة مقترنة بها. لإغلاق التطبيق أيضًا وعرض الشاشة الرئيسية، فعّل \"إغلاق التطبيق عند قطع الاتصال\" ضمن الأتمتة.</string>
     <string name="audio_stream_vendor_format">%1$s (%2$d)</string>
     <string name="debug_video_fault_injection">حقن أخطاء الفيديو</string>
     <string name="debug_video_fault_rate">معدل الأخطاء (1 من N)</string>
-    <string name="debug_video_fault_budget">ميزانية الأخطاء</string>
+    <string name="debug_video_fault_budget">حد الأخطاء</string>
     <string name="debug_force_memory_profile">فرض ملف تعريف الذاكرة</string>
-    <string name="five_ghz_channel">قناة 5 جيجاهرتز</string>
+    <string name="five_ghz_channel">قناة 5 غيغاهرتز</string>
     <string name="five_ghz_channel_auto">تلقائي</string>
-    <string name="five_ghz_channel_option">القناة %1$d (%2$d ميجاهرتز)</string>
-    <string name="five_ghz_channel_hint">القناة طلب وليست ضماناً. كثير من الأجهزة لا تنشئ الشبكة إلا على القناة التي يختارها برنامج تشغيل الواي فاي الخاص بها، ولا يمكن للتطبيق إخبارك بذلك إلا بعد المحاولة. إذا لم تنجح أي قناة 5 غيغاهرتز وظل هاتفك لا يرى الشبكة، فإن النطاق أعلاه هو الإعداد الذي سينجح.</string>
+    <string name="five_ghz_channel_option">القناة %1$d (%2$d ميغاهرتز)</string>
+    <string name="five_ghz_channel_hint">القناة المحددة مجرد طلب وليست ضمانًا. لا تنشئ كثير من الوحدات الشبكة إلا على القناة التي يختارها برنامج تشغيل Wi-Fi الخاص بها، ولا يستطيع التطبيق معرفة ذلك إلا بعد المحاولة. إذا لم تنجح أي قناة 5 غيغاهرتز وظل هاتفك لا يرى الشبكة، فاضبط النطاق الترددي أعلاه.</string>
     <string name="wifi_direct_stable_identity">الاحتفاظ بنفس شبكة Wi-Fi Direct</string>
-    <string name="wifi_direct_stable_identity_description">يستخدم نفس اسم الشبكة وكلمة المرور في كل مرة، حتى يعاود هاتفك الاتصال بشبكة يعرفها بالفعل. استخدم الصف أدناه لتجديدهما.</string>
+    <string name="wifi_direct_stable_identity_description">يستخدم نفس اسم الشبكة وكلمة المرور في كل مرة، ليعاود هاتفك الانضمام إلى شبكة يعرفها بالفعل. استخدم الخيار أدناه لتجديدهما.</string>
     <string name="wifi_direct_new_identity">هوية جديدة لشبكة Wi-Fi Direct</string>
-    <string name="wifi_direct_new_identity_none">سيتم الاختيار عند الاتصال التالي</string>
-    <string name="wifi_direct_new_identity_confirm">يختار اسماً وكلمة مرور جديدة للمجموعة بدءاً من الاتصال التالي. سيتم إعداد هاتفك عبر البلوتوث وكأنها وحدة جديدة.</string>
+    <string name="wifi_direct_new_identity_none">يُختار عند الاتصال التالي</string>
+    <string name="wifi_direct_new_identity_confirm">يختار اسمًا وكلمة مرور جديدين للمجموعة، ويُستخدمان بدءًا من الاتصال التالي. سيتم إعداد هاتفك عبر Bluetooth كما لو كانت هذه وحدة رئيسية جديدة. استخدم هذا الخيار إذا ظل الهاتف يحاول الاتصال بشبكة لم يعد قادرًا على الانضمام إليها.</string>
     <string name="wifi_direct_new_identity_done">سيتم استخدام هوية شبكة جديدة بدءاً من الاتصال التالي.</string>
     <string name="wifi_direct_new_identity_applied">يتم الآن إعداد هوية شبكة جديدة. سيُطلب من هاتفك الانضمام إليها عند الاتصال التالي.</string>
-    <string name="wifi_direct_stable_identity_description_legacy">في هذا الإصدار من أندرويد، يختار النظام الاسم ولا يمكن للتطبيق طلب اسم معيّن. اترك هذا الخيار مفعّلاً ليعاود هاتفك الاتصال بشبكة يعرفها بالفعل حيثما احتفظ النظام بواحدة، واستخدم الصف أدناه لتجديدها.</string>
+    <string name="wifi_direct_stable_identity_description_legacy">في هذا الإصدار من Android، يختار النظام الاسم ولا يمكن للتطبيق طلب اسم معيّن. اترك هذا الخيار مفعّلًا ليعاود هاتفك الانضمام إلى شبكة يعرفها بالفعل حيثما احتفظ النظام بواحدة، واستخدم الخيار أدناه لتجديدها.</string>
     <string name="debug_video_low_latency">طلب وضع زمن الوصول المنخفض لمفكك التشفير</string>
-    <string name="debug_video_low_latency_description">يضبط مفتاح MediaFormat المخصص للكمون المنخفض عند تكوين مفكك تشفير الفيديو.</string>
+    <string name="debug_video_low_latency_description">يضبط مفتاح MediaFormat الخاص بالمورّد للكمون المنخفض عند تكوين مفكك تشفير الفيديو. يعود إلى الوضع العادي تلقائيًا إذا رفضه المفكك.</string>
     <string name="debug_video_feed_hold">محاكاة مفكك تشفير بطيء</string>
 
     <string name="category_more_features">ميزات إضافية</string>
@@ -1158,16 +1163,16 @@
 %s</string>
     <string name="logs_copy_to_clipboard_failed">فشل نسخ السجلات إلى الحافظة</string>
     <string name="connecting_driver">بدء تشغيل Android Auto باستخدام %s</string>
-    <string name="connecting_driver_disconnected">%s غير متصل، جاري التنبيه...</string>
-    <string name="driver_device_disconnected">تم قطع الاتصال، سيتم تنبيهه</string>
+    <string name="connecting_driver_disconnected">%s غير متصل، جارٍ إيقاظه...</string>
+    <string name="driver_device_disconnected">غير متصل، سيتم إيقاظه</string>
     <string name="no_usb_host_support">هذه الوحدة لا تدعم وضع USB Host، لذا فإن Android Auto السلكي غير متاح. يرجى استخدام اتصال لاسلكي.</string>
 
     <string name="oem_app_management">إدارة تعارض تطبيقات المصنع (ADB)</string>
     <string name="oem_app_management_desc">اكتشاف وتعطيل التطبيقات المتعارضة (Zlink وAutoKit وغيرها)</string>
-    <string name="oem_app_explanation">غالبًا ما تعترض تطبيقات شاشة السيارة الأصلية اتصالات USB وبلوتوث. يمكنك تعطيلها عبر Root أو Self-ADB (منفذ 5555).</string>
+    <string name="oem_app_explanation">غالبًا ما تعترض تطبيقات شاشة السيارة الأصلية (مثل Zlink وAutoKit وSpeedPlay) اتصالات USB وبلوتوث، فيتعذّر على Open Headunit الاتصال. يمكنك تعطيلها عبر Root أو Self-ADB (المنفذ 5555).</string>
     <string name="oem_app_backend_root">طريقة التنفيذ: روت (su) متاح</string>
     <string name="oem_app_backend_adb">طريقة التنفيذ: Self-ADB متصل (127.0.0.1:5555)</string>
-    <string name="oem_app_backend_none">طريقة التنفيذ: لا يوجد. فعّل تصحيح الأخطاء اللاسلكي أو نفّذ "adb tcpip 5555"</string>
+    <string name="oem_app_backend_none">طريقة التنفيذ: لا يوجد. فعّل تصحيح الأخطاء اللاسلكي أو نفّذ \"adb tcpip 5555\"</string>
     <string name="oem_app_autokill_switch">تعطيل تطبيقات المصنع المتعارضة تلقائيًا عند بدء التشغيل</string>
     <string name="oem_app_autokill_switch_desc">إيقاف التطبيقات والخدمات المتعارضة المعروفة عند بدء تشغيل Open Headunit.</string>
     <string name="oem_app_autokill_enabled">التعطيل التلقائي نشط</string>
@@ -1192,7 +1197,7 @@
     <string name="stage_preparing_network">جارٍ تجهيز الشبكة</string>
     <string name="stage_searching">جارٍ البحث عن هاتفك</string>
     <string name="stage_usb_switching">جارٍ تحويل هاتفك إلى Android Auto</string>
-    <string name="stage_creating_network">جارٍ إنشاء شبكة WiFi</string>
+    <string name="stage_creating_network">جارٍ إنشاء شبكة Wi-Fi</string>
     <string name="stage_waiting_for_phone">في انتظار اتصال هاتفك</string>
     <string name="stage_waking_phone">جارٍ إيقاظ هاتفك</string>
     <string name="stage_phone_answered">استجاب هاتفك</string>
@@ -1201,32 +1206,32 @@
     <string name="stage_connecting">جارٍ الاتصال</string>
     <string name="stage_securing">جارٍ تأمين الاتصال</string>
     <string name="stage_starting_projection">جارٍ بدء Android Auto</string>
-    <string name="network_detail_5ghz">‏WiFi Direct على 5 غيغاهرتز (%1$d ميغاهرتز)</string>
-    <string name="network_detail_24ghz">‏WiFi Direct على 2.4 غيغاهرتز، القناة %1$d</string>
-    <string name="network_detail_unknown">شبكة WiFi Direct تعمل</string>
-    <string name="network_detail_retrying_5ghz">بدأ WiFi Direct على 2.4 غيغاهرتز، وتجري إعادة المحاولة على 5 غيغاهرتز</string>
-    <string name="network_detail_unfriendly_channel">‏WiFi Direct على القناة %1$d، ومعظم الهواتف لا تستطيع الانضمام إليها. أعد تشغيل WiFi.</string>
+    <string name="network_detail_5ghz">‏Wi-Fi Direct على 5 غيغاهرتز (%1$d ميغاهرتز)</string>
+    <string name="network_detail_24ghz">‏Wi-Fi Direct على 2.4 غيغاهرتز، القناة %1$d</string>
+    <string name="network_detail_unknown">شبكة Wi-Fi Direct قيد التشغيل</string>
+    <string name="network_detail_retrying_5ghz">بدأ Wi-Fi Direct على 2.4 غيغاهرتز، وتجري إعادة المحاولة على 5 غيغاهرتز</string>
+    <string name="network_detail_unfriendly_channel">‏Wi-Fi Direct على القناة %1$d، ومعظم الهواتف لا تستطيع الانضمام إليها. أعد تشغيل Wi-Fi.</string>
     <string name="native_aa_requires_wifi">يحتاج Android Auto الأصلي إلى WiFi هذا الجهاز. يرجى تشغيله.</string>
     <string name="connection_issue_banner_wifi_radio_off">‏WiFi هذه الوحدة متوقف، ولا يسمح Android للتطبيق بتشغيله. شغّل WiFi، أو انقر لاستخدام نقطة اتصال هذه الوحدة بدلاً من ذلك.</string>
     <string name="static_p2p_bssid_title">BSSID ثابت (WiFi Direct)</string>
-    <string name="static_p2p_bssid_desc">اضبط BSSID مجموعة WiFi Direct يدويًا. منفصل عن BSSID نقطة الاتصال، لأنهما واجهتان مختلفتان، ولا يصلح أحدهما إجابة عن الآخر.</string>
+    <string name="static_p2p_bssid_desc">اضبط BSSID مجموعة WiFi Direct يدويًا. وهو منفصل عن BSSID نقطة الوصول لأنهما واجهتان مختلفتان، ولا يغني أحدهما عن الآخر.</string>
     <string name="wifi_direct_last_network">تفاصيل الشبكة المعروضة على هاتفك</string>
-    <string name="wifi_direct_last_network_none">لم يُرَ شيء بعد. اتصل مرة واحدة ثم عد إلى هنا.</string>
+    <string name="wifi_direct_last_network_none">لم يتم رصد أي شبكة بعد. اتصل مرة واحدة ثم عد إلى هنا.</string>
     <string name="wifi_direct_last_network_title">الشبكة المعروضة على هاتفك</string>
     <string name="wifi_direct_last_network_details">الاسم\n%1$s\n\nكلمة المرور\n%2$s\n\nالعنوان\n%3$s</string>
     <string name="wifi_direct_last_network_address_unknown">تعذّرت قراءته</string>
     <string name="wifi_direct_last_network_no_bssid">لم يتمكن التطبيق من قراءة عنوان هذه الشبكة. هذا وحده يمنع الهاتف من الانضمام، وتفعيل خدمة الموقع لهذا الجهاز يحل المشكلة في أغلب الأحيان.</string>
-    <string name="wifi_direct_last_network_differs">هذا ليس الاسم وكلمة المرور اللذين طلبهما التطبيق، لذا استبدلهما النظام. استخدم \"هوية جديدة لشبكة Wi-Fi Direct\" أعلاه لجعله يأخذ زوجًا جديدًا.</string>
-    <string name="wifi_direct_last_network_hint">الانضمام إلى هذه الشبكة يدويًا من هاتفك لا يبدأ Android Auto، لأن الهاتف ينضم إليها بنفسه بعد إعداده عبر البلوتوث. إنها مجرد طريقة للتحقق من أن الشبكة تعمل أصلاً.</string>
-    <string name="wifi_direct_group_identity">اسم WiFi Direct وكلمة مروره</string>
+    <string name="wifi_direct_last_network_differs">هذا ليس الاسم ولا كلمة المرور اللذين طلبهما التطبيق، فقد استبدلهما النظام. استخدم \"هوية جديدة لشبكة Wi-Fi Direct\" أعلاه لاستخدام اسم وكلمة مرور جديدين.</string>
+    <string name="wifi_direct_last_network_hint">الانضمام إلى هذه الشبكة يدويًا من هاتفك لا يبدأ Android Auto، لأن الهاتف ينضم إليها بنفسه بعد إعداده عبر Bluetooth. إنها مجرد طريقة للتحقق من أن الشبكة تعمل أصلًا.</string>
+    <string name="wifi_direct_group_identity">اسم Wi-Fi Direct وكلمة مروره</string>
     <string name="wifi_direct_group_identity_auto">يختارهما التطبيق. اضغط لتعيينهما بنفسك.</string>
     <string name="wifi_direct_group_identity_pick_new">اختر لي قيمًا جديدة</string>
-    <string name="wifi_direct_group_identity_message">الاسم وكلمة المرور اللذان يُمنحان لهاتفك للانضمام إلى هذه الوحدة. تغيير كلمة المرور يغيّر الاسم أيضًا، لأن الهاتف لا يستطيع إعادة الانضمام إلى شبكة بقي اسمها كما هو ولم تبقَ كلمة مرورها كذلك.</string>
+    <string name="wifi_direct_group_identity_message">الاسم وكلمة المرور اللذان يحصل عليهما هاتفك للانضمام إلى هذه الوحدة. يؤدي تغيير كلمة المرور إلى تغيير الاسم أيضًا، لأن الهاتف لا يستطيع إعادة الانضمام إلى شبكة بقي اسمها كما هو وتغيّرت كلمة مرورها.</string>
     <string name="wifi_direct_group_identity_name_hint">اسم الشبكة</string>
     <string name="wifi_direct_group_identity_passphrase_hint">كلمة المرور، من 8 إلى 63 حرفًا</string>
     <string name="wifi_direct_group_identity_invalid_name">لا يمكن استخدام هذا الاسم. اكتب اسمًا قصيرًا مثل MyCar، أو اسمًا كاملاً يبدأ بـ DIRECT- وحرفين أو رقمين، حتى 32 حرفًا.</string>
-    <string name="wifi_direct_group_identity_invalid_passphrase_length">يجب أن تتكون كلمة مرور WiFi من 8 إلى 63 حرفًا.</string>
-    <string name="wifi_direct_group_identity_invalid_passphrase_charset">يمكن أن تستخدم كلمة مرور WiFi أحرف لوحة المفاتيح العادية فقط، بلا علامات تبويب أو رموز تشكيل.</string>
+    <string name="wifi_direct_group_identity_invalid_passphrase_length">يجب أن تتكون كلمة مرور Wi-Fi من 8 إلى 63 حرفًا.</string>
+    <string name="wifi_direct_group_identity_invalid_passphrase_charset">يمكن أن تتضمن كلمة مرور Wi-Fi أحرف لوحة المفاتيح العادية فقط، دون Tab أو أحرف مزودة بعلامات تشكيل.</string>
     <string name="wifi_direct_group_identity_recoded">تم الحفظ. تغيّر اسم الشبكة أيضًا إلى %1$s، ليقبل هاتفك كلمة المرور الجديدة.</string>
     <string name="wifi_direct_group_identity_legacy">في إصدار Android هذا، يختار النظام الاسم وكلمة المرور، ولا يمكن لأي تطبيق تغييرهما. يعرض الصف أعلاه ما تم اختياره.</string>
     <string name="copy">نسخ</string>
@@ -1239,7 +1244,7 @@
     <string name="native_aa_wake_remeasure">إعادة قياس إيقاظ البلوتوث</string>
     <string name="native_aa_wake_verdict_unmeasured">لم يُقَس بعد</string>
     <string name="native_aa_wake_verdict_safe">آمن على هذه الوحدة</string>
-    <string name="native_aa_wake_verdict_destructive">مُحتجز على هذه الوحدة</string>
+    <string name="native_aa_wake_verdict_destructive">محظور على هذه الوحدة</string>
     <string name="native_aa_wake_remeasure_confirm">لا يبدأ Android Auto الاتصال اللاسلكي إلا عندما يرى تغيّر اتصال البلوتوث. وحيث تحتفظ هذه الوحدة بالفعل بوصلة اليدين الحرة، يتعين على التطبيق قطعها لإحداث ذلك، لذا يقيس مرة واحدة ما إذا كانت الوصلة تعود ويتوقف إن لم تعد. استخدم هذا إذا توقف الاتصال اللاسلكي عن البدء من تلقاء نفسه وكنت مستعدًا لفقدان ميزة اليدين الحرة للحظة بينما يحاول مجددًا.</string>
     <string name="native_aa_wake_remeasure_done">سيُعاد قياس إيقاظ البلوتوث عند الاتصال التالي.</string>
     <string name="pref_enable_car_launcher_title">الاستخدام كمشغل سيارة</string>

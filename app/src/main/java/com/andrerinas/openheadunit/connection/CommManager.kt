@@ -948,26 +948,33 @@ class CommManager(
      * is why both sets of gates are as reluctant as they are.
      *
      * Both go through the transport's single claim on the lever, so a release can never be issued
-     * while another cycle is still waiting to send its regain. Returns false when the claim is
-     * refused - the caller must not then spend its own budget or schedule a regain, because no
-     * release went out for it to complete.
+     * while another cycle is still waiting to send its regain. The returned cycle owns the
+     * transport that sent the release; a delayed regain must never target a replacement session.
      */
-    fun releaseVideoFocusForKeyframe(): Boolean {
-        if (_connectionState.value !is ConnectionState.TransportStarted) return false
-        val transport = _transport ?: return false
+    class VideoFocusCycle internal constructor(internal val transport: AapTransport)
+
+    fun releaseVideoFocusForKeyframe(): VideoFocusCycle? {
+        if (_connectionState.value !is ConnectionState.TransportStarted) return null
+        val transport = _transport ?: return null
         if (!transport.beginFocusCycle()) {
             AppLog.i("CommManager: a video-focus cycle is already in flight - not starting a second")
-            return false
+            return null
         }
         AppLog.i("CommManager: releasing video focus to force a keyframe")
         transport.sendKeyframeCycleRelease()
+        return VideoFocusCycle(transport)
+    }
+
+    /** Complete only the cycle whose transport sent the release, and only while it is live. */
+    fun retakeVideoFocusForKeyframe(cycle: VideoFocusCycle): Boolean {
+        val transport = cycle.transport
+        if (_transport !== transport || _connectionState.value !is ConnectionState.TransportStarted) return false
+        transport.send(com.andrerinas.openheadunit.aap.protocol.messages.VideoFocusEvent(gain = true, unsolicited = true))
+        transport.endFocusCycle()
         return true
     }
 
-    /**
-     * Second half of a cycle started by [releaseVideoFocusForKeyframe], and the only correct way to
-     * end one: it sends the regain *and* hands the lever back, which a bare [send] would not.
-     */
+    /** Regain focus for the current transport during wake/resume; warm relaunch uses its cycle token. */
     fun retakeVideoFocusForKeyframe() {
         _transport?.let {
             it.send(com.andrerinas.openheadunit.aap.protocol.messages.VideoFocusEvent(gain = true, unsolicited = true))

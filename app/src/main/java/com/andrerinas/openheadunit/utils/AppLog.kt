@@ -259,6 +259,13 @@ object AppLog {
         if (isLoggable(Log.WARN)) log(Log.WARN, format(msg, *params))
     }
 
+    /** Preserve the producer's origin when a worker emits a previously collected event. */
+    internal fun tagged(priority: Int, origin: String, message: String) {
+        if (isLoggable(priority)) {
+            log(priority, "[${Thread.currentThread().id}] $origin | $message")
+        }
+    }
+
     private fun log(priority: Int, msg: String) {
         LOGGER.println(priority, TAG, msg)
     }

@@ -326,6 +326,10 @@ class AapService : Service() {
         override fun onReceive(context: Context, intent: Intent) {
             if (Intent.ACTION_MEDIA_BUTTON == intent.action) {
                 AppLog.i("Runtime MEDIA_BUTTON receiver fired")
+                if (!shouldActivateMediaSession()) {
+                    AppLog.d("Runtime MEDIA_BUTTON ignored in Self-Mode to allow local media apps to handle buttons")
+                    return
+                }
                 safeMediaSessionCall {
                     MediaButtonReceiver.handleIntent(it, intent)
                 }
@@ -367,6 +371,21 @@ class AapService : Service() {
 
     fun isSelfModeActive() = selfLauncherManager.isActive
 
+    private fun shouldActivateMediaSession(): Boolean {
+        return MediaSessionActivationPolicy.shouldActivate(
+            isLoopbackSession = commManager.isLoopbackSession,
+            isSelfModeLauncherActive = selfLauncherManager.isActive
+        )
+    }
+
+    private fun shouldSyncAaMediaMetadata(): Boolean {
+        return MediaSessionActivationPolicy.shouldSyncAaMetadata(
+            isLoopbackSession = commManager.isLoopbackSession,
+            isSelfModeLauncherActive = selfLauncherManager.isActive,
+            userPreference = App.provide(this).settings.syncMediaSessionWithAaMetadata
+        )
+    }
+
     /**
      * Whether a Native AA poke or handshake is in flight, for callers outside the service that
      * cannot reach the launcher. Null when Native is not the armed mode.
@@ -375,6 +394,20 @@ class AapService : Service() {
         (wifiLauncherManager.active as? WifiLauncherNative)?.handshakeManager?.isAttemptInFlight()
 
     fun updateMediaSessionState(isPlaying: Boolean) {
+        if (!shouldActivateMediaSession()) {
+            mediaSessionIsPlaying = false
+            safeMediaSessionCall {
+                it.isActive = false
+                it.setPlaybackState(
+                    PlaybackStateCompat.Builder()
+                        .setState(PlaybackStateCompat.STATE_NONE, 0L, 0.0f)
+                        .setActions(0)
+                        .build()
+                )
+            }
+            return
+        }
+
         mediaSessionIsPlaying = isPlaying
         var actions = PlaybackStateCompat.ACTION_STOP or
                 PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
@@ -405,6 +438,10 @@ class AapService : Service() {
     }
 
     private fun applyPlaceholderMediaMetadata() {
+        if (!shouldActivateMediaSession()) {
+            safeMediaSessionCall { it.setMetadata(null) }
+            return
+        }
         safeMediaSessionCall {
             it.setMetadata(
                 MediaMetadataCompat.Builder()
@@ -417,7 +454,7 @@ class AapService : Service() {
 
     private fun refreshMediaSessionMetadataForPrefsChange() {
         if (isDestroying) return
-        val sync = App.provide(this).settings.syncMediaSessionWithAaMetadata
+        val sync = shouldSyncAaMediaMetadata()
         if (!sync) {
             applyPlaceholderMediaMetadata()
             cachedAaAlbumArtBitmap = null
@@ -437,7 +474,7 @@ class AapService : Service() {
     private fun onAaMediaMetadataFromPhone(meta: MediaPlayback.MediaMetaData) {
         if (isDestroying) return
         lastAaMediaMetadata = meta
-        if (!App.provide(this).settings.syncMediaSessionWithAaMetadata) return
+        if (!shouldSyncAaMediaMetadata()) return
         // Avoid showing a previous track's art with new title/artist until decode finishes.
         cachedAaAlbumArtBitmap = null
         scheduleApplyAaMediaMetadata(meta)
@@ -452,7 +489,7 @@ class AapService : Service() {
         lastAaPlaybackIsPlaying = isPlayingFromStatus
         mediaSessionIsPlaying = isPlayingFromStatus
 
-        if (!App.provide(this).settings.syncMediaSessionWithAaMetadata) return
+        if (!shouldSyncAaMediaMetadata()) return
         updateMediaSessionState(isPlayingFromStatus)
         lastAaMediaMetadata?.let { updateMediaNotification(it) }
     }
@@ -467,7 +504,7 @@ class AapService : Service() {
     }
 
     private fun updateMediaNotification(meta: MediaPlayback.MediaMetaData) {
-        if (!App.provide(this).settings.syncMediaSessionWithAaMetadata) return
+        if (!shouldSyncAaMediaMetadata()) return
         mediaNotification.notify(
             metadata = meta,
             playbackSeconds = lastAaPlaybackPositionMs / 1000L,
@@ -484,7 +521,7 @@ class AapService : Service() {
             if (!isActive) return@launch
             withContext(Dispatchers.Main) {
                 if (isDestroying) return@withContext
-                if (!App.provide(this@AapService).settings.syncMediaSessionWithAaMetadata) return@withContext
+                if (!shouldSyncAaMediaMetadata()) return@withContext
                 // Drop stale decode results if newer metadata arrived while we were decoding.
                 if (lastAaMediaMetadata !== meta) return@withContext
                 cachedAaAlbumArtBitmap = bitmap
@@ -519,7 +556,8 @@ class AapService : Service() {
     }
 
     private fun applyAaMediaMetadataToSession(meta: MediaPlayback.MediaMetaData, albumArt: Bitmap?) {
-        val session = mediaSession ?: return
+        if (!shouldSyncAaMediaMetadata()) return
+        if (mediaSession == null) return
         val title = when {
             meta.hasSong() && meta.song.isNotBlank() -> meta.song
             else -> getString(R.string.video)
@@ -1069,14 +1107,17 @@ class AapService : Service() {
         // Handle immediate WiFi auto-start check (e.g. if already connected on boot/wake)
         WifiAutoStartReceiver.checkAndStart(this)
 
-        // Initialize MediaSession early and set it active immediately.
-        // This ensures media button routing works even BEFORE an AA connection,
+        // Initialize MediaSession early and set it active immediately if allowed by policy.
+        // This ensures media button routing works even BEFORE an AA connection in remote mode,
         // which is critical for keymap configuration and early button presses.
         if (mediaSession == null) {
             setupMediaSession()
         }
-        safeMediaSessionCall { it.isActive = true }
-        updateMediaSessionState(false) // Set initial PlaybackState so system knows our actions
+        val shouldActivate = shouldActivateMediaSession()
+        safeMediaSessionCall { it.isActive = shouldActivate }
+        if (shouldActivate) {
+            updateMediaSessionState(false) // Set initial PlaybackState so system knows our actions
+        }
 
         commManager.onAaMediaMetadata = { meta -> onAaMediaMetadataFromPhone(meta) }
         commManager.onAaPlaybackStatus = { status -> onAaPlaybackStatusFromPhone(status) }
@@ -1317,13 +1358,20 @@ class AapService : Service() {
         carKeysManager.onSessionStarted(this)
 
         // Reactivate the existing MediaSession (created in onCreate, kept alive across disconnects)
-        safeMediaSessionCall { it.isActive = true }
-        updateMediaSessionState(true)
-        applyPlaceholderMediaMetadata()
+        val shouldActivate = shouldActivateMediaSession()
+        safeMediaSessionCall { it.isActive = shouldActivate }
+        if (shouldActivate) {
+            updateMediaSessionState(true)
+            applyPlaceholderMediaMetadata()
+        } else {
+            updateMediaSessionState(false)
+        }
 
         // Link audio focus state changes to our MediaSession state
         commManager.onAudioFocusStateChanged = { isPlaying ->
-            updateMediaSessionState(isPlaying)
+            if (shouldActivateMediaSession()) {
+                updateMediaSessionState(isPlaying)
+            }
         }
 
         // AapAudio owns focus for the projection session. CommManager requests static focus
@@ -2848,7 +2896,9 @@ class AapService : Service() {
         }
 
         // Route MEDIA_BUTTON intents to the active MediaSession.
-        safeMediaSessionCall { MediaButtonReceiver.handleIntent(it, intent) }
+        if (shouldActivateMediaSession()) {
+            safeMediaSessionCall { MediaButtonReceiver.handleIntent(it, intent) }
+        }
         // Launch the UI after boot.
         // Direct startActivity() is silently blocked on MIUI/HyperOS even from
         // a foreground service. We use an overlay window trampoline: creating a
@@ -2870,8 +2920,22 @@ class AapService : Service() {
         }
 
         when (intent?.action) {
-            ACTION_START_SELF_MODE       -> selfLauncherManager.start()
-            ACTION_STOP_SELF_MODE        -> selfLauncherManager.stop(wasConnected = commManager.isConnected)
+            ACTION_START_SELF_MODE       -> {
+                selfLauncherManager.start()
+                safeMediaSessionCall {
+                    it.isActive = false
+                    it.setMetadata(null)
+                }
+                updateMediaSessionState(false)
+            }
+            ACTION_STOP_SELF_MODE        -> {
+                selfLauncherManager.stop(wasConnected = commManager.isConnected)
+                val shouldActivate = shouldActivateMediaSession()
+                safeMediaSessionCall { it.isActive = shouldActivate }
+                if (shouldActivate) {
+                    updateMediaSessionState(false)
+                }
+            }
             ACTION_START_WIRELESS        -> {
                 // Asked for from the UI, so the user is present: release the boot-loop pause
                 // rather than silently ignoring them.

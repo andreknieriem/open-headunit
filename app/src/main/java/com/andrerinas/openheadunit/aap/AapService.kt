@@ -1567,10 +1567,9 @@ class AapService : Service() {
         cancelAllBtAutoDisconnects()
         usbLauncherManager.setSwitchingToProjection(false)
         releaseWifiLock()
-        // Save resumes the same Self session after retirement. Capture the actual tun before
-        // closing it: an adopted owner alone does not prove that an online launch used a VPN.
-        val restoreSelfVpn = state.isSettingsRestart && state.wasLoopbackSession &&
-            dummyVpnOwner == DummyVpnPolicy.Owner.SELF_MODE && VpnControl.isSelfModeRunning()
+        // The Self tun is released when projection becomes live (#1073). Its state at
+        // teardown cannot tell whether a relaunch needs one. Save now relaunches without
+        // restoring a tun; offline legacy Self remains subject to its launch deadline.
         stopDummyVpn(DummyVpnPolicy.Reason.SESSION_ENDED)
 
         // Here rather than in the teardown coroutine below, which runs ~300ms later: the pill is
@@ -1611,7 +1610,7 @@ class AapService : Service() {
                 // Reuse the current route only after its workers have released shared resources.
                 commManager.awaitDisconnectComplete()
                 if (commManager.connectionState.value !== state || isDestroying) return@launch
-                restartForAudioSettings(state, restoreSelfVpn)
+                restartForAudioSettings(state)
                 return@launch
             }
             val rearmedAfterWiredSession = rearmWirelessAfterWiredSession()
@@ -1777,7 +1776,6 @@ class AapService : Service() {
     /** Resume the saved route once, then leave further attempts to the ordinary policies. */
     private suspend fun restartForAudioSettings(
         state: CommManager.ConnectionState.Disconnected,
-        restoreSelfVpn: Boolean,
     ) =
         withContext(Dispatchers.Main) {
             val settings = App.provide(this@AapService).settings
@@ -1799,9 +1797,6 @@ class AapService : Service() {
                         selfLauncherManager.currentLaunch() === selfLaunch
                 },
                 retry = {
-                    // Reuse only our former Self tun, and recheck consent before requesting it.
-                    // This runs after retirement and only while Save still owns the retry.
-                    if (wasSelfMode && restoreSelfVpn) startDummyVpn(DummyVpnPolicy.Owner.SELF_MODE)
                     when {
                         state.restartEndpoint != null -> withContext(Dispatchers.IO) {
                             val (ip, port) = state.restartEndpoint

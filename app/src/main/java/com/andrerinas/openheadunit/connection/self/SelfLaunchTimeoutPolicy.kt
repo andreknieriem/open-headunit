@@ -34,9 +34,9 @@ object SelfLaunchTimeoutPolicy {
     const val LEGACY_DEADLINE_MS = 30_000L
 
     /**
-     * Nothing to wait for: `CommManager.connect` is synchronous on this route and has already
-     * reported its own failure by the time the deadline is armed. This only covers a connection
-     * that came up and then lost the AAP handshake.
+     * `CommManager.connect` finishes its physical dial before the launcher returns. Keep a
+     * short deadline only when no connection arrived. A fulfilled launch retires its deadline;
+     * later handshake failure or settings teardown belongs to that session's recovery policy.
      */
     const val HEADUNIT_SERVER_DEADLINE_MS = 10_000L
 

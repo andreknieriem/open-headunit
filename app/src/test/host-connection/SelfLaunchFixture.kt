@@ -84,6 +84,7 @@ class SelfLauncherManager(private val service: Service, private val wifiLauncher
     private var launchInFlight = false
     private var launchJob: Job? = null
     private var launchTimeoutJob: Job? = null
+    private var launchConnected = false
     private var settingsLaunchOwner: CommManager.ConnectionState.Disconnected? = null
     private var retiredSettingsTerminal: CommManager.ConnectionState.Disconnected? = null
     private var selfModeVpnWatchdog: Job? = null
@@ -115,7 +116,7 @@ class SelfLauncherLegacy(manager: SelfLauncherManager, services: SelfLauncherSer
     // LEGACY_WAIT
 }
 class SelfLauncherV17_4(manager: SelfLauncherManager, services: SelfLauncherServices) : SelfLauncher(manager, services) {
-    override suspend fun run(): Boolean { services.aap.directConnects++; return true }
+    override suspend fun run(): Boolean { services.aap.directConnects++; services.aap.directLaunchHook?.invoke(); return true }
 }
 class SelfLauncherBroadcast(manager: SelfLauncherManager, services: SelfLauncherServices) : SelfLauncher(manager, services)
 class SelfLauncherBTDiscovery(manager: SelfLauncherManager, services: SelfLauncherServices) : SelfLauncher(manager, services)
@@ -188,6 +189,7 @@ class Service(private var hasEverConnected: Boolean = true, val commManager: Com
     var modern = false
     var activities = 0
     var directConnects = 0
+    var directLaunchHook: (suspend () -> Unit)? = null
     var fallbacks = 0
     var vpnAdoptions = 0
     var vpnStops = 0
@@ -223,6 +225,47 @@ class Service(private var hasEverConnected: Boolean = true, val commManager: Com
 }
 
 fun main() {
+    // A manual launch can connect before its launcher returns or after its deadline is
+    // armed. Save at t=8 must not be timed out by that launch's t=10 deadline in either order.
+    for (beforeReturn in listOf(false, true)) for (conflated in listOf(false, true)) Service().use { s ->
+        s.modern = true
+        fun arriveAndSave() {
+            s.commManager.isLoopbackSession = true
+            s.commManager.connectionState.value = CommManager.ConnectionState.Connected
+            if (!conflated) s.manager.onConnectionEstablished()
+            val saved = CommManager.ConnectionState.Disconnected(
+                reason = CommManager.DisconnectReason.SETTINGS_RESTART, wasLoopbackSession = true,
+                settingsRestartUntilMs = Long.MAX_VALUE)
+            s.commManager.connectionState.value = saved
+            s.commManager.isLoopbackSession = false
+            s.manager.onConnectionEnded(saved)
+        }
+        if (beforeReturn) s.directLaunchHook = { arriveAndSave() }
+        s.manager.start()
+        s.main.drain()
+        if (!beforeReturn) {
+            s.main.advanceBy(8_000); s.main.drain()
+            arriveAndSave(); s.main.drain()
+        }
+        s.main.advanceBy(SelfLaunchTimeoutPolicy.HEADUNIT_SERVER_DEADLINE_MS)
+        s.main.drain()
+        check(s.commManager.reports == 0 && s.resolvePrompts == 0 && s.manager.isActive)
+        check(checkNotNull(s.manager.currentLaunch()).children.none())
+    }
+    println("PASS manual Self deadline stays retired across Save, including completion before timer publication")
+
+    // A different route winning a manual Self launch must retire Self's audio policy too.
+    Service().use { s ->
+        s.modern = true
+        s.manager.start(); s.main.drain()
+        s.commManager.isLoopbackSession = false
+        s.commManager.connectionState.value = CommManager.ConnectionState.Connected
+        s.manager.onConnectionEstablished(); s.main.drain()
+        check(!s.manager.isActive && s.manager.currentLaunch() == null && s.vpnStops == 0)
+        s.commManager.connectionState.value = CommManager.ConnectionState.Disconnected()
+        s.main.advanceBy(SelfLaunchTimeoutPolicy.HEADUNIT_SERVER_DEADLINE_MS); s.main.drain()
+        check(s.commManager.reports == 0 && s.resolvePrompts == 0)
+    }
     // Process-scoped manager survives an Exit and a fresh service subscription.
     val sharedManager = CommManager()
     Service(false, sharedManager).use { old ->

@@ -49,6 +49,7 @@ class SelfLauncherManager(
     private var selfModeVpnWatchdog: Job? = null
     private var launchJob: Job? = null
     private var launchTimeoutJob: Job? = null
+    private var launchConnected = false
     private var settingsLaunchOwner: CommManager.ConnectionState.Disconnected? = null
     // Obsolete Save cleanup may precede service observation. This policy belongs only to
     // that exact terminal event; it must never become a flag on the next physical session.
@@ -110,6 +111,7 @@ class SelfLauncherManager(
 
         // A new launch owns its own deadline; the previous session cannot time it out.
         launchTimeoutJob?.cancel()
+        launchConnected = false
         settingsLaunchOwner = settingsRestart
         retiredSettingsTerminal = null
         isActive = true
@@ -192,6 +194,10 @@ class SelfLauncherManager(
             // Report a launch that has not connected yet, without taking anything down: the
             // wireless server and the dummy VPN are what the phone still has to arrive on. See
             // SelfLaunchTimeoutPolicy.
+            // A live-state callback can run while a launcher is suspended, before the
+            // timeout job exists. Remember fulfillment so returning from that launcher cannot
+            // arm a stale deadline, including after Save has already ended the live session.
+            if (launchJob !== coroutineContext[Job] || launchConnected || commManager.isConnected) return@launch
             val deadlineMs = SelfLaunchTimeoutPolicy.deadlineMs(path)
             // A child keeps this attempt alive through its response deadline. Save cancellation
             // must also suppress timeout UI after a successful legacy launch intent was sent.
@@ -275,15 +281,18 @@ class SelfLauncherManager(
         // The collector's live-state event may already have been superseded by teardown.
         if (!commManager.isConnected) return
         retiredSettingsTerminal = null
-        val saved = settingsLaunchOwner ?: return
-        if (saved.acceptsSettingsRestart(commManager.connectionState.value)) return
+        launchConnected = true
+        // A connection fulfills manual launches too. Their old 10-second deadline must not
+        // survive into a later Save and report failure against its disconnected interval.
+        launchTimeoutJob?.cancel()
+        launchTimeoutJob = null
         if (commManager.isLoopbackSession) {
             // The requested Self session arrived. Retain Self mode for its later disconnect,
             // but neither a Save timeout nor its old token owns this established session.
             settingsLaunchOwner = null
-            launchTimeoutJob?.cancel()
-            launchTimeoutJob = null
         } else {
+            // An external route won. Retire manual Self launches as well as Save launches;
+            // retaining isActive would make the winning session advertise Self-mode audio.
             stopIfCurrent(launchJob, preserveVpn = true)
         }
     }
@@ -292,6 +301,13 @@ class SelfLauncherManager(
     internal fun onConnectionEnded(state: CommManager.ConnectionState.Disconnected) {
         val commManager = App.provide(service).commManager
         if (commManager.connectionState.value !== state) return
+        if (state.wasLoopbackSession && state.acceptsSettingsRestart(state)) {
+            launchConnected = true
+            // StateFlow may skip every live state. The retiring session proves that the old
+            // launch succeeded; cancel its deadline even when onConnectionEstablished was skipped.
+            launchTimeoutJob?.cancel()
+            launchTimeoutJob = null
+        }
         val saved = settingsLaunchOwner
         val retiredHere = retiredSettingsTerminal === state
         retiredSettingsTerminal = null

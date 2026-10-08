@@ -130,6 +130,14 @@ class Settings(private val context: Context) {
         get() = prefs.getBoolean("enable-floating-button", false)
         set(value) { prefs.edit().putBoolean("enable-floating-button", value).apply() }
 
+    var floatingButtonConnectionStatusMode: Boolean
+        get() = prefs.getBoolean("floating-button-connection-status-mode", false)
+        set(value) { prefs.edit().putBoolean("floating-button-connection-status-mode", value).apply() }
+
+    var floatingButtonDisconnectedOpacityPercent: Int
+        get() = prefs.getInt("floating-button-disconnected-opacity-percent", 10)
+        set(value) { prefs.edit().putInt("floating-button-disconnected-opacity-percent", value.coerceIn(0, 100)).apply() }
+
     var floatingButtonXPercent: Int
         get() = prefs.getInt("floating-button-x-percent", 0)
         set(value) { prefs.edit().putInt("floating-button-x-percent", value.coerceIn(0, 100)).apply() }
@@ -140,7 +148,7 @@ class Settings(private val context: Context) {
 
     var floatingButtonOpacityPercent: Int
         get() = prefs.getInt("floating-button-opacity-percent", 80)
-        set(value) { prefs.edit().putInt("floating-button-opacity-percent", value.coerceIn(0, 100)).apply() }
+        set(value) { prefs.edit().putInt("floating-button-opacity-percent", value.coerceIn(10, 100)).apply() }
 
     var floatingButtonSizeDp: Int
         get() = prefs.getInt("floating-button-size-dp", 60)

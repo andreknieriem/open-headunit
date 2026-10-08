@@ -82,7 +82,7 @@ class FloatingButtonPolicyTest {
         val settings = Settings(mockContext)
 
         settings.floatingButtonOpacityPercent = -50
-        verify(mockEditor).putInt(eq("floating-button-opacity-percent"), eq(0))
+        verify(mockEditor).putInt(eq("floating-button-opacity-percent"), eq(10))
 
         settings.floatingButtonOpacityPercent = 120
         verify(mockEditor).putInt(eq("floating-button-opacity-percent"), eq(100))

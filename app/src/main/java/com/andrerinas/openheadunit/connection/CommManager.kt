@@ -190,6 +190,7 @@ class CommManager(
      * device is fully closed before `openDevice()` is called on it again.
      */
     @Volatile private var _disconnectJob: kotlinx.coroutines.Job? = null
+    private val serverP2pAttempt = com.andrerinas.openheadunit.connection.wifi.ServerP2pAttempt()
 
     // Whether the session now ending ever completed its handshake, and how many sessions in a row
     // have completed one and then carried no video at all. See VideoStarvationPolicy.
@@ -310,6 +311,7 @@ class CommManager(
         // Without this, openDevice() on the same hardware can return null because the previous
         // UsbDeviceConnection hasn't been close()d yet.
         _disconnectJob?.join()
+        serverP2pAttempt.begin()
 
         var conn: ProjectionConnection? = null
         try {
@@ -334,7 +336,7 @@ class CommManager(
             if (conn != null && _connection !== conn) return
             onSessionFailure?.invoke("connect_failed")
             _connectionState.emit(ConnectionState.Error("Connection failed: ${e.message}"))
-            disconnect()
+            disconnectAfterFailure()
         }
     }
 
@@ -348,6 +350,7 @@ class CommManager(
     suspend fun connect(
         socket: Socket,
         tier: ConnectionPriorityPolicy.Tier = ConnectionPriorityPolicy.Tier.WIRELESS_HANDSHAKE,
+        serverP2p: Boolean = false,
     ) = withContext(Dispatchers.IO) {
         val claim = ConnectionArbiter.claim(tier, socketOwner(tier),
             "the socket from ${socket.inetAddress?.hostAddress}")
@@ -358,15 +361,15 @@ class CommManager(
         }
         noteClaimedEndpoint(claim, socketEndpoint(socket))
         HeldServerSocket.settle(socket)
-        try { connectSocket(socket) } finally { releaseClaim(claim) }
+        try { connectSocket(socket, serverP2p) } finally { releaseClaim(claim) }
     }
 
     private fun socketEndpoint(socket: Socket): String? =
         socket.inetAddress?.hostAddress?.let { SameEndpointConnectPolicy.endpoint(it, socket.port) }
 
-    private suspend fun connectSocket(socket: Socket) {
+    private suspend fun connectSocket(socket: Socket, serverP2p: Boolean) {
         // Another caller already started the connection — do nothing.
-        if (_connectionState.value is ConnectionState.Connecting) {
+        if (_connectionState.value is ConnectionState.Connecting || (serverP2p && isConnected)) {
             // [BUG_FIX] But close what we are refusing. A socket handed to connect() has no
             // other owner: NetworkDiscovery gives ownership up at this call, and WirelessServer's
             // accept loop closes the sockets it refuses itself, so returning without closing
@@ -386,6 +389,7 @@ class CommManager(
         lastAttemptedEndpoint = socketEndpoint(socket)
 
         _disconnectJob?.join()
+        serverP2pAttempt.begin(serverP2p)
 
         var conn: ProjectionConnection? = null
         try {
@@ -403,13 +407,14 @@ class CommManager(
                 }
                 _connectionState.emit(ConnectionState.Connected)
             } else {
-                _connectionState.emit(ConnectionState.Disconnected())
+                if (serverP2p) disconnectAfterFailure()
+                else _connectionState.emit(ConnectionState.Disconnected())
             }
         } catch (e: Exception) {
             if (conn != null && _connection !== conn) return
             onSessionFailure?.invoke("connect_failed")
             _connectionState.emit(ConnectionState.Error("Connection failed: ${e.message}"))
-            disconnect()
+            disconnectAfterFailure()
         }
     }
 
@@ -451,6 +456,7 @@ class CommManager(
         lastAttemptedEndpoint = SameEndpointConnectPolicy.endpoint(ip, port)
 
         _disconnectJob?.join()
+        serverP2pAttempt.begin()
 
         var conn: ProjectionConnection? = null
         try {
@@ -471,7 +477,7 @@ class CommManager(
             if (conn != null && _connection !== conn) return
             onSessionFailure?.invoke("connect_failed")
             _connectionState.emit(ConnectionState.Error("Connection failed: ${e.message}"))
-            disconnect()
+            disconnectAfterFailure()
         }
     }
 
@@ -551,7 +557,10 @@ class CommManager(
                         _transport = null
 
                         if (oldTransport != null) {
-                            transportedQuited(isClean)
+                            // Auto/P2P must distinguish an explicit AA Exit from a broken link.
+                            // The transport field is already null here; read the captured instance.
+                            transportedQuited(isClean, serverP2pUserExit =
+                                if (serverP2pAttempt.active) oldTransport.wasUserExit else null)
                         }
                     }
                     _transport!!.onAudioFocusStateChanged = { isPlaying -> onAudioFocusStateChanged?.invoke(isPlaying) }
@@ -587,7 +596,11 @@ class CommManager(
                     )
                     settleSessionClaim(formed = false)
                     // Not a user exit: nobody chose to end a session that never formed.
-                    disconnect(sendByeBye = false, isUserExit = false)
+                    disconnect(
+                        sendByeBye = false,
+                        isUserExit = false,
+                        honorKillOnDisconnect = serverP2pAttempt.honorKillOnFailure,
+                    )
                 }
             } else {
                 onSessionFailure?.invoke("handshake_failed")
@@ -600,7 +613,11 @@ class CommManager(
             onSessionFailure?.invoke("handshake_failed")
             _connectionState.emit(ConnectionState.Error("Handshake failed: ${e.message}"))
             settleSessionClaim(formed = false)
-            disconnect(sendByeBye = false, isUserExit = false)
+            disconnect(
+                sendByeBye = false,
+                isUserExit = false,
+                honorKillOnDisconnect = serverP2pAttempt.honorKillOnFailure,
+            )
         }
     }
 
@@ -693,14 +710,22 @@ class CommManager(
             _connectionState.emit(ConnectionState.TransportStarted)
         } catch (e: Exception) {
             _connectionState.emit(ConnectionState.Error("Start reading failed: ${e.message}"))
-            disconnect()
+            disconnectAfterFailure()
         }
     }
 
     /** Reports a failure and tears the connection down with it. */
     suspend fun emitError(msg: String) {
         _connectionState.emit(ConnectionState.Error(msg))
-        disconnect()
+        disconnectAfterFailure()
+    }
+
+    private fun disconnectAfterFailure() {
+        if (serverP2pAttempt.active) AppLog.i("Auto/P2P: transport failure, keeping wireless recovery armed")
+        disconnect(
+            isUserExit = serverP2pAttempt.failureIsUserExit,
+            honorKillOnDisconnect = serverP2pAttempt.honorKillOnFailure,
+        )
     }
 
     /**
@@ -723,12 +748,12 @@ class CommManager(
      * `false` immediately) then schedules cleanup. `sendByeBye` is `false` because the
      * connection is already dead — there is no point sending a `ByeByeRequest`.
      */
-    private fun transportedQuited(isClean: Boolean) {
-        val wasUserExit = _transport?.wasUserExit ?: false
+    private fun transportedQuited(isClean: Boolean, serverP2pUserExit: Boolean? = null) {
+        val wasUserExit = serverP2pUserExit ?: (_transport?.wasUserExit ?: false)
         _connectionState.value = ConnectionState.Disconnected(isClean, isUserExit = wasUserExit)
         // Transport already quit on its own — no ByeByeRequest needed (connection is dead).
         _disconnectJob = _scope.launch { doDisconnect(sendByeBye = false) }
-        if (settings.killOnDisconnect) {
+        if (settings.killOnDisconnect && serverP2pAttempt.honorKillOnTransportQuit(wasUserExit)) {
             context.sendBroadcast(android.content.Intent("com.andrerinas.openheadunit.ACTION_FINISH_ACTIVITIES").apply {
                 setPackage(context.packageName)
             })

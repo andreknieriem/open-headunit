@@ -1,12 +1,40 @@
 package com.andrerinas.openheadunit.connection.wifi
 
 import com.andrerinas.openheadunit.connection.wifi.modes.helper.HelperStrategy
+import com.andrerinas.openheadunit.connection.wifi.modes.WifiLauncherAuto
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeStrategy
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.mockito.kotlin.mock
 
 class LinkLossTeardownPolicyTest {
+
+    @Test
+    fun `the phone server closes on wifi off even when the launcher hosts P2P`() {
+        val launcher = WifiLauncherAuto(mock(), true)
+        assertTrue(LinkLossTeardownPolicy.shouldTearDown(
+            LinkLossTrigger.WIFI_STATION_DISABLING, launcher,
+            sessionIsWireless = true, peerIsHeadUnitServer = true
+        ))
+        assertFalse(LinkLossTeardownPolicy.shouldTearDown(
+            LinkLossTrigger.WIFI_STATION_DISABLING, launcher,
+            sessionIsWireless = false, peerIsHeadUnitServer = true
+        ))
+    }
+
+    @Test
+    fun `the exception follows the session peer not just the selected P2P mode`() {
+        val launcher = WifiLauncherAuto(mock(), true)
+        assertFalse(LinkLossTeardownPolicy.shouldTearDown(
+            LinkLossTrigger.WIFI_STATION_DISABLING, launcher,
+            sessionIsWireless = true, peerIsHeadUnitServer = false
+        ))
+        assertTrue(LinkLossTeardownPolicy.shouldTearDown(
+            LinkLossTrigger.WIFI_STATION_DISABLING, launcher = null,
+            sessionIsWireless = true, peerIsHeadUnitServer = true
+        ))
+    }
 
     @Test
     fun `a device shutdown takes every route down, so every route closes first`() {

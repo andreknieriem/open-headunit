@@ -11,6 +11,9 @@ abstract class WifiLauncher(val manager: WifiLauncherManager) {
 
     abstract fun hasWifiDirect(): Boolean
 
+    /** Captured launcher configuration, not a live preference read during async callbacks. */
+    open fun usesServerWifiDirect(): Boolean = false
+
     /**
      * Whether the phone sits on an access point this device is hosting.
      *

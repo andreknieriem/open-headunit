@@ -27,6 +27,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class WifiLauncherSharedServices(val service: AapService) {
+    private var activeLauncher: WifiLauncher? = null
+    private var discoveryUsesP2p: Boolean? = null
+    private var discoveryEpoch = 0
 
     var wifiDirectManager: WifiDirectManager? = null
         private set
@@ -50,22 +53,37 @@ class WifiLauncherSharedServices(val service: AapService) {
         private set
 
     fun update(active: WifiLauncher) {
-        if (active.hasWifiDirect()) startWifiDirect() else stopWifiDirect()
+        activeLauncher = active
+        val serverP2p = active.usesServerWifiDirect()
+        if (discoveryUsesP2p != null && discoveryUsesP2p != serverP2p) stopLocalDiscovery()
+        if (active.hasWifiDirect()) startWifiDirect(serverP2p) else stopWifiDirect()
         if (active.hasWirelessServer()) startWirelessServer(active) else stopWirelessServer()
         if (active.hasLocalDiscovery()) startLocalDiscovery(oneShot = false) else stopLocalDiscovery()
     }
 
     fun stopAll() {
+        activeLauncher = null
         stopWifiDirect()
         stopWirelessServer()
         stopLocalDiscovery()
     }
 
-    private fun startWifiDirect() {
+    private fun startWifiDirect(serverP2p: Boolean) {
         if (wifiDirectManager != null)
             stopWifiDirect() // reset from previous session
 
-        wifiDirectManager = WifiDirectManager(service)
+        val directManager = WifiDirectManager(service, serverP2p)
+        wifiDirectManager = directManager
+        directManager.visibleBringUpAllowed = {
+            !serverP2p || (wifiDirectManager === directManager && hotspotTeardown?.isCompleted != false)
+        }
+        directManager.discoveryNetworkListener = { network ->
+            if (serverP2p && wifiDirectManager === directManager && network?.hasClient == true) {
+                service.discoveryDormantAfterWifiLoss = false
+                service.rescanWithoutWaiting = true
+                startLocalDiscovery()
+            }
+        }
 
         // This chipset potentially can't run SoftAP and WiFi Direct concurrently — make sure hotspot
         // is off before P2P starts. On IO because the wait for it to actually go is a blocking one.
@@ -184,6 +202,10 @@ class WifiLauncherSharedServices(val service: AapService) {
      */
     fun startLocalDiscovery(oneShot: Boolean = false) {
         val commManager = App.provide(service).commManager
+        if (service.wirelessCancelledByUser()) return
+        val serverP2p = activeLauncher?.usesServerWifiDirect() == true
+        if (serverP2p && activeLauncher?.hasLocalDiscovery() != true) return
+        if (serverP2p && wifiDirectManager?.discoveryNetwork?.hasClient != true) return
 
         // Logged rather than returned silently: this gate and the re-arm below are the only two
         // ways the discovery loop can end without saying so, and a loop that stops for no visible
@@ -205,11 +227,13 @@ class WifiLauncherSharedServices(val service: AapService) {
         // hand. Keeping the instance lets startScan() serialise, which is what it was written for.
         // A real mode change still gets a fresh instance: stopWirelessServer() nulls this.
         if (localDiscovery == null) {
+            discoveryUsesP2p = serverP2p
+            val epoch = ++discoveryEpoch
             localDiscovery = NetworkDiscovery(
                 service,
                 object : NetworkDiscovery.Listener {
                     override fun onServiceFound(ip: String, port: Int, socket: Socket?) {
-                        if (commManager.isBusy) {
+                        if (commManager.isBusy || epoch != discoveryEpoch || service.wirelessCancelledByUser()) {
                             // Connected, or connecting, by the time this callback fired; discard the
                             // socket. isBusy rather than isConnected because handing it to connect()
                             // during a connect in flight only gets it closed one frame later.
@@ -221,17 +245,27 @@ class WifiLauncherSharedServices(val service: AapService) {
                         }
                         when (port) {
                             5277 -> {
+                                if (serverP2p && (socket == null || !socket.isConnected)) {
+                                    runCatching { socket?.close() }
+                                    return
+                                }
                                 // Headunit Server detected — reuse the pre-opened socket when possible
                                 AppLog.i("Auto-connecting to Headunit Server at $ip:$port (reusing socket)")
                                 ConnectionStageTracker.report(ConnectionStage.PHONE_ANSWERED)
                                 service.serviceScope.launch {
+                                    if (epoch != discoveryEpoch || service.wirelessCancelledByUser() || commManager.isBusy) {
+                                        if (socket != null && HeldServerSocket.discard(socket)) {
+                                            runCatching { socket.close() }
+                                        }
+                                        return@launch
+                                    }
                                     val endpoint = SameEndpointConnectPolicy.endpoint(ip, 5277)
                                     if (socket == null) {
                                         commManager.connect(ip, 5277)
                                     } else if (HeldServerSocket.take(endpoint) !== socket) {
                                         AppLog.i("WifiLauncherSharedServices: $endpoint is no longer held for discovery; not dialling it")
                                     } else {
-                                        try { commManager.connect(socket) } catch (e: CancellationException) {
+                                        try { commManager.connect(socket, serverP2p = serverP2p) } catch (e: CancellationException) {
                                             HeldServerSocket.abandon(socket); throw e
                                         }
                                     }
@@ -252,6 +286,7 @@ class WifiLauncherSharedServices(val service: AapService) {
                     // listener: the instance outlives any single request now, so capturing it here would
                     // pin every later scan to the first caller's choice.
                     override fun onScanFinished(wasOneShot: Boolean) {
+                        if (epoch != discoveryEpoch) return
                         scanningState.value = false
                         if (wasOneShot) {
                             AppLog.i("One-shot scan finished.")
@@ -278,6 +313,7 @@ class WifiLauncherSharedServices(val service: AapService) {
 
                         service.serviceScope.launch {
                             delay(delayMs)
+                            if (epoch != discoveryEpoch) return@launch
                             if (wirelessServer == null) {
                                 AppLog.i("AapService: Discovery loop ends — the wireless server is gone")
                             } else if (commManager.isBusy) {
@@ -288,6 +324,7 @@ class WifiLauncherSharedServices(val service: AapService) {
                         }
                     }
                 },
+                p2pNetwork = if (serverP2p) ({ wifiDirectManager?.discoveryNetwork }) else null,
             )
         }
 
@@ -298,6 +335,8 @@ class WifiLauncherSharedServices(val service: AapService) {
     }
 
     private fun stopLocalDiscovery() {
+        discoveryEpoch++
+        discoveryUsesP2p = null
         if (localDiscovery == null)
             return
 

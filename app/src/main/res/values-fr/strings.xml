@@ -929,7 +929,11 @@
     <string name="night_mode_coordinates">Coordonnées</string>
     <string name="geofence_locations_title">Emplacements</string>
     <string name="geofence_none">Aucun</string>
-    <string name="geofence_count_summary">%1$d zones</string>
+    <plurals name="geofence_count_summary">
+        <item quantity="one">%1$d zone</item>
+        <item quantity="many">%1$d de zones</item>
+        <item quantity="other">%1$d zones</item>
+    </plurals>
     <string name="geofence_empty_hint">Aucun emplacement pour l\'instant. Ajoutez-en un pour forcer le mode jour ou nuit par zone, ou pour limiter le démarrage auto à une zone.</string>
     <string name="geofence_unnamed">Emplacement sans nom</string>
     <string name="geofence_add">Ajouter un emplacement</string>

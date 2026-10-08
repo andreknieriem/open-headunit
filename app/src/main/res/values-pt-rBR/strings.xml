@@ -666,7 +666,11 @@
     <string name="night_mode_coordinates">Coordenadas</string>
     <string name="geofence_locations_title">Locais</string>
     <string name="geofence_none">Nenhum</string>
-    <string name="geofence_count_summary">%1$d áreas</string>
+    <plurals name="geofence_count_summary">
+        <item quantity="one">%1$d área</item>
+        <item quantity="many">%1$d de áreas</item>
+        <item quantity="other">%1$d áreas</item>
+    </plurals>
     <string name="geofence_empty_hint">Nenhum local ainda. Adicione um para forçar dia ou noite por área, ou para restringir o início automático a uma zona.</string>
     <string name="geofence_unnamed">Local sem nome</string>
     <string name="geofence_add">Adicionar local</string>

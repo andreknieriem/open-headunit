@@ -671,7 +671,11 @@
     <string name="night_mode_coordinates">Coordinate</string>
     <string name="geofence_locations_title">Posizioni</string>
     <string name="geofence_none">Nessuna</string>
-    <string name="geofence_count_summary">%1$d aree</string>
+    <plurals name="geofence_count_summary">
+        <item quantity="one">%1$d area</item>
+        <item quantity="many">%1$d di aree</item>
+        <item quantity="other">%1$d aree</item>
+    </plurals>
     <string name="geofence_empty_hint">Non ci sono ancora posizioni. Aggiungine una per forzare il giorno o la notte in una zona, o per limitare l\'avvio automatico a quella zona.</string>
     <string name="geofence_unnamed">Posizione senza nome</string>
     <string name="geofence_add">Aggiungi posizione</string>

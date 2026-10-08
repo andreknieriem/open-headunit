@@ -1201,7 +1201,10 @@
     <string name="night_mode_coordinates">Coordinates</string>
     <string name="geofence_locations_title">Locations</string>
     <string name="geofence_none">None</string>
-    <string name="geofence_count_summary">%1$d areas</string>
+    <plurals name="geofence_count_summary">
+        <item quantity="one">%1$d area</item>
+        <item quantity="other">%1$d areas</item>
+    </plurals>
     <string name="geofence_empty_hint">No locations yet. Add one to force day or night by area, or to restrict auto-start to a zone.</string>
     <string name="geofence_unnamed">Unnamed location</string>
     <string name="geofence_add">Add location</string>

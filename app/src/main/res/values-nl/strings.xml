@@ -664,7 +664,10 @@
     <string name="night_mode_coordinates">Coördinaten</string>
     <string name="geofence_locations_title">Locaties</string>
     <string name="geofence_none">Geen</string>
-    <string name="geofence_count_summary">%1$d gebieden</string>
+    <plurals name="geofence_count_summary">
+        <item quantity="one">%1$d gebied</item>
+        <item quantity="other">%1$d gebieden</item>
+    </plurals>
     <string name="geofence_empty_hint">Nog geen locaties. Voeg er een toe om dag of nacht per gebied af te dwingen, of om automatisch starten tot een zone te beperken.</string>
     <string name="geofence_unnamed">Naamloze locatie</string>
     <string name="geofence_add">Locatie toevoegen</string>

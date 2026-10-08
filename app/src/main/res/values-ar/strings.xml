@@ -664,7 +664,14 @@
     <string name="night_mode_coordinates">الإحداثيات</string>
     <string name="geofence_locations_title">المواقع</string>
     <string name="geofence_none">بدون</string>
-    <string name="geofence_count_summary">المناطق: %1$d</string>
+    <plurals name="geofence_count_summary">
+        <item quantity="zero">لا توجد مناطق</item>
+        <item quantity="one">منطقة واحدة</item>
+        <item quantity="two">منطقتان</item>
+        <item quantity="few">%1$d مناطق</item>
+        <item quantity="many">%1$d منطقة</item>
+        <item quantity="other">%1$d منطقة</item>
+    </plurals>
     <string name="geofence_empty_hint">لا توجد مواقع بعد. أضف موقعًا لفرض وضع النهار أو الليل حسب المنطقة، أو لتقييد التشغيل التلقائي بمنطقة.</string>
     <string name="geofence_unnamed">موقع بلا اسم</string>
     <string name="geofence_add">إضافة موقع</string>

@@ -1171,7 +1171,9 @@
     <string name="night_mode_coordinates">Koordinat</string>
     <string name="geofence_locations_title">Lokasi</string>
     <string name="geofence_none">Tidak ada</string>
-    <string name="geofence_count_summary">%1$d area</string>
+    <plurals name="geofence_count_summary">
+        <item quantity="other">%1$d area</item>
+    </plurals>
     <string name="geofence_empty_hint">Belum ada lokasi. Tambahkan lokasi untuk memaksakan mode siang atau malam berdasarkan area, atau untuk membatasi mulai otomatis ke zona tertentu.</string>
     <string name="geofence_unnamed">Lokasi tanpa nama</string>
     <string name="geofence_add">Tambah lokasi</string>

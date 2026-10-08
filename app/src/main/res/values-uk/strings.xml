@@ -666,7 +666,12 @@
     <string name="night_mode_coordinates">Координати</string>
     <string name="geofence_locations_title">Місця</string>
     <string name="geofence_none">Немає</string>
-    <string name="geofence_count_summary">Зон: %1$d</string>
+    <plurals name="geofence_count_summary">
+        <item quantity="one">%1$d зона</item>
+        <item quantity="few">%1$d зони</item>
+        <item quantity="many">%1$d зон</item>
+        <item quantity="other">%1$d зони</item>
+    </plurals>
     <string name="geofence_empty_hint">Місць поки немає. Додайте місце, щоб примусово вмикати день або ніч у зоні чи обмежити автозапуск цією зоною.</string>
     <string name="geofence_unnamed">Місце без назви</string>
     <string name="geofence_add">Додати місце</string>

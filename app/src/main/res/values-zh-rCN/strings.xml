@@ -663,7 +663,9 @@
     <string name="night_mode_coordinates">坐标</string>
     <string name="geofence_locations_title">地点</string>
     <string name="geofence_none">无</string>
-    <string name="geofence_count_summary">%1$d 个区域</string>
+    <plurals name="geofence_count_summary">
+        <item quantity="other">%1$d 个区域</item>
+    </plurals>
     <string name="geofence_empty_hint">尚无地点。添加一个地点，即可按区域强制使用日间或夜间模式，或将自动启动限制在某个区域内。</string>
     <string name="geofence_unnamed">未命名地点</string>
     <string name="geofence_add">添加地点</string>

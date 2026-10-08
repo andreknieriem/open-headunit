@@ -708,7 +708,10 @@
     <string name="night_mode_coordinates">Koordinaten</string>
     <string name="geofence_locations_title">Orte</string>
     <string name="geofence_none">Keine</string>
-    <string name="geofence_count_summary">%1$d Bereiche</string>
+    <plurals name="geofence_count_summary">
+        <item quantity="one">%1$d Bereich</item>
+        <item quantity="other">%1$d Bereiche</item>
+    </plurals>
     <string name="geofence_empty_hint">Noch keine Orte. Füge einen hinzu, um Tag oder Nacht je nach Bereich zu erzwingen oder den Auto-Start auf eine Zone zu beschränken.</string>
     <string name="geofence_unnamed">Unbenannter Ort</string>
     <string name="geofence_add">Ort hinzufügen</string>

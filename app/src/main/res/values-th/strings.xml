@@ -1171,7 +1171,9 @@
     <string name="night_mode_coordinates">พิกัด</string>
     <string name="geofence_locations_title">ตำแหน่งที่ตั้ง</string>
     <string name="geofence_none">ไม่มี</string>
-    <string name="geofence_count_summary">%1$d พื้นที่</string>
+    <plurals name="geofence_count_summary">
+        <item quantity="other">%1$d พื้นที่</item>
+    </plurals>
     <string name="geofence_empty_hint">ยังไม่มีตำแหน่ง เพิ่มตำแหน่งเพื่อบังคับใช้โหมดกลางวันหรือกลางคืนตามพื้นที่ หรือจำกัดให้เริ่มอัตโนมัติเฉพาะในโซนนั้น</string>
     <string name="geofence_unnamed">ตำแหน่งที่ไม่มีชื่อ</string>
     <string name="geofence_add">เพิ่มตำแหน่ง</string>

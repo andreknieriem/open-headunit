@@ -668,7 +668,9 @@
     <string name="night_mode_coordinates">좌표</string>
     <string name="geofence_locations_title">위치</string>
     <string name="geofence_none">없음</string>
-    <string name="geofence_count_summary">%1$d개 영역</string>
+    <plurals name="geofence_count_summary">
+        <item quantity="other">%1$d개 영역</item>
+    </plurals>
     <string name="geofence_empty_hint">아직 위치가 없습니다. 위치를 추가하면 영역별로 낮 또는 밤을 강제하거나 자동 시작을 특정 구역으로 제한할 수 있습니다.</string>
     <string name="geofence_unnamed">이름 없는 위치</string>
     <string name="geofence_add">위치 추가</string>

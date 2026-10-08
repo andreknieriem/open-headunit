@@ -665,7 +665,11 @@
     <string name="night_mode_coordinates">Coordonate</string>
     <string name="geofence_locations_title">Locații</string>
     <string name="geofence_none">Niciuna</string>
-    <string name="geofence_count_summary">Zone: %1$d</string>
+    <plurals name="geofence_count_summary">
+        <item quantity="one">%1$d zonă</item>
+        <item quantity="few">%1$d zone</item>
+        <item quantity="other">%1$d de zone</item>
+    </plurals>
     <string name="geofence_empty_hint">Nicio locație încă. Adaugă una pentru a forța modul zi sau noapte în funcție de zonă sau pentru a limita pornirea automată la o zonă.</string>
     <string name="geofence_unnamed">Locație fără nume</string>
     <string name="geofence_add">Adaugă locație</string>

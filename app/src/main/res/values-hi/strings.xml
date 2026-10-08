@@ -1171,7 +1171,10 @@
     <string name="night_mode_coordinates">निर्देशांक</string>
     <string name="geofence_locations_title">स्थान</string>
     <string name="geofence_none">कोई नहीं</string>
-    <string name="geofence_count_summary">%1$d क्षेत्र</string>
+    <plurals name="geofence_count_summary">
+        <item quantity="one">%1$d क्षेत्र</item>
+        <item quantity="other">%1$d क्षेत्र</item>
+    </plurals>
     <string name="geofence_empty_hint">अभी कोई जगह नहीं जोड़ी गई है। क्षेत्र के हिसाब से दिन या रात का मोड तय करने के लिए, या ऑटो-स्टार्ट को किसी क्षेत्र तक सीमित करने के लिए एक जोड़ें।</string>
     <string name="geofence_unnamed">बिना नाम की जगह</string>
     <string name="geofence_add">जगह जोड़ें</string>

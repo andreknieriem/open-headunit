@@ -662,7 +662,12 @@ Open Headunit предоставляется «как есть» без каки
     <string name="night_mode_coordinates">Координаты</string>
     <string name="geofence_locations_title">Места</string>
     <string name="geofence_none">Нет</string>
-    <string name="geofence_count_summary">%1$d зон</string>
+    <plurals name="geofence_count_summary">
+        <item quantity="one">%1$d зона</item>
+        <item quantity="few">%1$d зоны</item>
+        <item quantity="many">%1$d зон</item>
+        <item quantity="other">%1$d зоны</item>
+    </plurals>
     <string name="geofence_empty_hint">Пока нет мест. Добавьте место, чтобы принудительно включать день или ночь в определённой зоне либо ограничить автозапуск этой зоной.</string>
     <string name="geofence_unnamed">Безымянное место</string>
     <string name="geofence_add">Добавить место</string>

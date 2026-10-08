@@ -672,7 +672,9 @@
     <string name="night_mode_coordinates">座標</string>
     <string name="geofence_locations_title">場所</string>
     <string name="geofence_none">なし</string>
-    <string name="geofence_count_summary">%1$d 件のエリア</string>
+    <plurals name="geofence_count_summary">
+        <item quantity="other">%1$d 件のエリア</item>
+    </plurals>
     <string name="geofence_empty_hint">まだ場所がありません。追加すると、エリアごとに昼／夜を強制したり、自動起動を特定のゾーンに制限したりできます。</string>
     <string name="geofence_unnamed">名称未設定の場所</string>
     <string name="geofence_add">場所を追加</string>

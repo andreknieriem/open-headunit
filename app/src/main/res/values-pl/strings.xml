@@ -665,7 +665,12 @@
     <string name="night_mode_coordinates">Współrzędne</string>
     <string name="geofence_locations_title">Lokalizacje</string>
     <string name="geofence_none">Brak</string>
-    <string name="geofence_count_summary">Obszary: %1$d</string>
+    <plurals name="geofence_count_summary">
+        <item quantity="one">%1$d obszar</item>
+        <item quantity="few">%1$d obszary</item>
+        <item quantity="many">%1$d obszarów</item>
+        <item quantity="other">%1$d obszaru</item>
+    </plurals>
     <string name="geofence_empty_hint">Brak lokalizacji. Dodaj jedną, aby wymusić dzień lub noc według obszaru, albo ograniczyć automatyczne uruchamianie do strefy.</string>
     <string name="geofence_unnamed">Nienazwana lokalizacja</string>
     <string name="geofence_add">Dodaj lokalizację</string>

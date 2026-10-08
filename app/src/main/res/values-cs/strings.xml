@@ -664,7 +664,12 @@
     <string name="night_mode_coordinates">Souřadnice</string>
     <string name="geofence_locations_title">Místa</string>
     <string name="geofence_none">Žádné</string>
-    <string name="geofence_count_summary">Oblasti: %1$d</string>
+    <plurals name="geofence_count_summary">
+        <item quantity="one">%1$d oblast</item>
+        <item quantity="few">%1$d oblasti</item>
+        <item quantity="many">%1$d oblasti</item>
+        <item quantity="other">%1$d oblastí</item>
+    </plurals>
     <string name="geofence_empty_hint">Zatím žádná místa. Přidejte místo, kterým vynutíte denní nebo noční vzhled podle oblasti, nebo omezíte automatické spuštění na určitou zónu.</string>
     <string name="geofence_unnamed">Nepojmenované místo</string>
     <string name="geofence_add">Přidat místo</string>

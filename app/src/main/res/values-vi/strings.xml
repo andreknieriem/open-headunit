@@ -670,7 +670,9 @@
     <string name="night_mode_coordinates">Tọa độ</string>
     <string name="geofence_locations_title">Vị trí</string>
     <string name="geofence_none">Không có</string>
-    <string name="geofence_count_summary">%1$d khu vực</string>
+    <plurals name="geofence_count_summary">
+        <item quantity="other">%1$d khu vực</item>
+    </plurals>
     <string name="geofence_empty_hint">Chưa có vị trí nào. Thêm một vị trí để buộc chế độ ngày hoặc đêm theo khu vực, hoặc để giới hạn tự khởi động trong một vùng.</string>
     <string name="geofence_unnamed">Vị trí chưa đặt tên</string>
     <string name="geofence_add">Thêm vị trí</string>

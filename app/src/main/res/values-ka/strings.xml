@@ -887,7 +887,10 @@
     <string name="night_mode_coordinates">კოორდინატები</string>
     <string name="geofence_locations_title">ადგილები</string>
     <string name="geofence_none">არცერთი</string>
-    <string name="geofence_count_summary">%1$d ზონა</string>
+    <plurals name="geofence_count_summary">
+        <item quantity="one">%1$d ზონა</item>
+        <item quantity="other">%1$d ზონა</item>
+    </plurals>
     <string name="geofence_empty_hint">ადგილები ჯერ არ არის. დაამატეთ ადგილი, რომ ზონის მიხედვით დღის ან ღამის რეჟიმი ჩაირთოს ძალით, ან ავტომატური გაშვება მხოლოდ ზონაში მოხდეს.</string>
     <string name="geofence_unnamed">უსახელო ადგილი</string>
     <string name="geofence_add">ადგილის დამატება</string>

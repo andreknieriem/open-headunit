@@ -663,7 +663,10 @@
     <string name="night_mode_coordinates">Koordináták</string>
     <string name="geofence_locations_title">Helyek</string>
     <string name="geofence_none">Nincs</string>
-    <string name="geofence_count_summary">%1$d terület</string>
+    <plurals name="geofence_count_summary">
+        <item quantity="one">%1$d terület</item>
+        <item quantity="other">%1$d terület</item>
+    </plurals>
     <string name="geofence_empty_hint">Még nincsenek helyek. Adjon hozzá egyet a nappali vagy éjszakai mód terület szerinti kényszerítéséhez, vagy az automatikus indítás egy zónára korlátozásához.</string>
     <string name="geofence_unnamed">Névtelen hely</string>
     <string name="geofence_add">Hely hozzáadása</string>

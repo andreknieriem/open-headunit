@@ -661,7 +661,10 @@
     <string name="night_mode_coordinates">Koordinatlar</string>
     <string name="geofence_locations_title">Konumlar</string>
     <string name="geofence_none">Yok</string>
-    <string name="geofence_count_summary">%1$d bölge</string>
+    <plurals name="geofence_count_summary">
+        <item quantity="one">%1$d bölge</item>
+        <item quantity="other">%1$d bölge</item>
+    </plurals>
     <string name="geofence_empty_hint">Henüz konum yok. Bölgeye göre gündüz veya geceyi zorlamak ya da otomatik başlatmayı bir bölgeyle sınırlamak için bir tane ekleyin.</string>
     <string name="geofence_unnamed">Adsız konum</string>
     <string name="geofence_add">Konum ekle</string>

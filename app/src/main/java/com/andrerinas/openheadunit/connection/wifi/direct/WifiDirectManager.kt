@@ -55,7 +55,16 @@ import java.net.Socket
 
 
 
-class WifiDirectManager(private val context: Context) : WifiP2pManager.ConnectionInfoListener, WifiP2pManager.GroupInfoListener {
+class WifiDirectManager(
+    private val context: Context,
+    private val serverP2p: Boolean = false,
+) : WifiP2pManager.ConnectionInfoListener, WifiP2pManager.GroupInfoListener {
+
+    private fun usesVisibleWifiDirect(): Boolean {
+        val settings = App.provide(context).settings
+        return serverP2p || (settings.wifiConnectionMode == WifiLauncherMode.HELPER &&
+            settings.helperConnectionStrategy == HelperStrategy.WIFI_DIRECT)
+    }
 
     private companion object {
         /** How many two-second rounds to spend waiting for the WiFi radio before saying it will not come on. */
@@ -185,7 +194,7 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
 
     private val serverGroupPoll = object : Runnable {
         override fun run() {
-            if (!serverPolling || !App.provide(context).settings.usesServerWifiDirect()) return
+            if (!serverPolling || !serverP2p) return
             requestServerGroupSnapshot()
             handler.removeCallbacks(this)
             handler.postDelayed(this, 2000)
@@ -887,7 +896,7 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
 
                         val busy = isConnected || isConnectingOrConnected || isGroupCreatingOrCreated
                         if (P2pStateChangePolicy.shouldStartBringUp(busy, isCreatingGroup, System.currentTimeMillis(), lastP2pRequestAtMs)) {
-                            if (appSettings.usesVisibleWifiDirect()) {
+                            if (usesVisibleWifiDirect()) {
                                 AppLog.i("WifiDirectManager: P2P enabled, auto-starting WiFi Direct visibility")
                                 makeVisible()
                             } else if (appSettings.wifiConnectionMode == WifiLauncherMode.NATIVE) {
@@ -900,7 +909,7 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
                         isConnected = false
                         isClientConnected = false
                         publishDiscoveryNetwork(null)
-                        if (App.provide(context).settings.usesServerWifiDirect()) {
+                        if (serverP2p) {
                             serverStatus.invalidateRequests()
                             requestServerGroupSnapshot()
                         }
@@ -920,7 +929,7 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
                         if (App.provide(context).settings.wifiConnectionMode != WifiLauncherMode.NATIVE) {
                             AppLog.i("WifiDirectManager: Local name: ${it.deviceName}, Address: ${it.deviceAddress}")
                         }
-                        if (!App.provide(context).settings.usesServerWifiDirect()) {
+                        if (!serverP2p) {
                             AapService.wifiDirectName.value = it.deviceName
                         } else if (serverPolling) {
                             recordServerLocalName(it.deviceName, "device broadcast")
@@ -941,7 +950,7 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
                                 localDeviceAddress = address
                             }
                         }
-                        if (App.provide(context).settings.usesServerWifiDirect()) requestServerGroupSnapshot()
+                        if (serverP2p) requestServerGroupSnapshot()
                         else manager?.requestConnectionInfo(channel, this@WifiDirectManager)
                         AapService.scanningState.value = false
                     } else {
@@ -952,7 +961,7 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
                         isConnected = false
                         isClientConnected = false
                         publishDiscoveryNetwork(null)
-                        if (App.provide(context).settings.usesServerWifiDirect()) {
+                        if (serverP2p) {
                             // Invalidate older callbacks immediately; confirm group loss separately.
                             serverStatus.invalidateRequests()
                             requestServerGroupSnapshot()
@@ -999,8 +1008,8 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
     @SuppressLint("MissingPermission")
     private fun checkStuckRetryBurst() {
         val appSettings = App.provide(context).settings
-        if (appSettings.usesServerWifiDirect() && App.provide(context).commManager.isBusy) return
-        val isHelperP2p = appSettings.usesVisibleWifiDirect()
+        if (serverP2p && App.provide(context).commManager.isBusy) return
+        val isHelperP2p = usesVisibleWifiDirect()
         val isNative = appSettings.wifiConnectionMode == WifiLauncherMode.NATIVE
         if ((!isHelperP2p && !isNative) || !isGroupOwner) {
             tightBurstCount = 0
@@ -1061,7 +1070,6 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
 
     @SuppressLint("MissingPermission")
     override fun onConnectionInfoAvailable(info: WifiP2pInfo) {
-        val serverP2p = App.provide(context).settings.usesServerWifiDirect()
         if (serverP2p) {
             requestServerGroupSnapshot()
             return
@@ -1114,7 +1122,7 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
     @SuppressLint("MissingPermission")
     override fun onGroupInfoAvailable(group: WifiP2pGroup?) {
         val appSettings = App.provide(context).settings
-        if (appSettings.usesServerWifiDirect()) {
+        if (serverP2p) {
             requestServerGroupSnapshot()
             return
         }
@@ -1833,7 +1841,7 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
     fun makeVisible() {
         // Radio broadcasts can arrive before the launcher's awaited hotspot teardown finishes.
         if (!visibleBringUpAllowed()) return
-        if (App.provide(context).settings.usesServerWifiDirect()) {
+        if (serverP2p) {
             serverStatus.invalidateRequests()
             publishDiscoveryNetwork(null)
             serverPolling = true
@@ -1855,7 +1863,7 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
 
         isGroupCreatingOrCreated = true
 
-        if (App.provide(context).settings.usesServerWifiDirect()) {
+        if (serverP2p) {
             renameBeforeServerGroup(mgr, ch)
             return
         }
@@ -1983,7 +1991,6 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
         val mgr = manager ?: return
         val ch = channel ?: return
         val gen = generation
-        val serverP2p = App.provide(context).settings.usesServerWifiDirect()
 
         if (isConnected || isGroupOwner) {
             AppLog.d("WifiDirectManager: Group already active/created (isConnected=$isConnected, isGroupOwner=$isGroupOwner). Skipping createGroup retry.")
@@ -2026,8 +2033,7 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
     private fun startDiscovery() {
         val ch = channel
         if (ch != null) {
-            val appSettings = App.provide(context).settings
-            if (appSettings.usesVisibleWifiDirect()) {
+            if (usesVisibleWifiDirect()) {
                 AapService.scanningState.value = true
             }
             manager?.discoverPeers(ch, object : WifiP2pManager.ActionListener {
@@ -2044,7 +2050,7 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
                         "WifiDirectManager: Discovery active - peer search running%s",
                         if (sessionLive) " while an Android Auto session is connected" else ""
                     )
-                    if (appSettings.usesVisibleWifiDirect()) {
+                    if (usesVisibleWifiDirect()) {
                         handler.postDelayed({
                             if (!isClientConnected) {
                                 AapService.scanningState.value = false

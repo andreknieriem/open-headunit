@@ -21,6 +21,8 @@ class DevServerWifiDirectModeTest {
         val enabled = WifiLauncherAuto(manager, true)
         assertFalse(disabled.hasWifiDirect())
         assertTrue(enabled.hasWifiDirect())
+        assertFalse(disabled.usesServerWifiDirect())
+        assertTrue(enabled.usesServerWifiDirect())
         assertTrue(enabled.hasLocalDiscovery())
         assertTrue(enabled.hasWirelessServer())
         assertFalse(disabled.hasSameStartConfiguration(enabled))
@@ -28,11 +30,37 @@ class DevServerWifiDirectModeTest {
         assertFalse(WifiLauncherMock.create(WifiLauncherMode.MANUAL).hasWifiDirect())
     }
 
-    @Test fun healthyP2pSessionDoesNotRideStationWifi() {
-        assertFalse(LinkLossTeardownPolicy.shouldTearDown(
-            LinkLossTrigger.WIFI_STATION_DISABLING, WifiLauncherAuto(manager, true)))
+    @Test fun wifiOffClosesPhoneServerEvenOverP2p() {
+        assertTrue(LinkLossTeardownPolicy.shouldTearDown(
+            LinkLossTrigger.WIFI_STATION_DISABLING, WifiLauncherAuto(manager, true),
+            peerIsHeadUnitServer = true))
         assertTrue(LinkLossTeardownPolicy.shouldTearDown(
             LinkLossTrigger.DEVICE_SHUTDOWN, WifiLauncherAuto(manager, true)))
+    }
+
+    @Test fun serverRouteIsCapturedInLauncherWithoutReadingLiveSettings() {
+        val enabled: WifiLauncher = WifiLauncherAuto(manager, true)
+        val disabled: WifiLauncher = WifiLauncherAuto(manager, false)
+        repeat(3) {
+            assertTrue(enabled.usesServerWifiDirect())
+            assertFalse(disabled.usesServerWifiDirect())
+        }
+        verifyNoMoreInteractions(manager)
+    }
+
+    @Test fun automaticStopDoesNotLatchUserCancel() {
+        val realManager = WifiLauncherManager(mock())
+        realManager.stop()
+        assertFalse(realManager.cancelledByUser)
+        assertFalse(WirelessCancelPolicy.refusesBringUp(realManager.cancelledByUser, userRequested = false))
+    }
+
+    @Test fun ordinaryStopDoesNotClearAnExplicitUserCancel() {
+        val realManager = WifiLauncherManager(mock())
+        realManager.stopForUser()
+        realManager.stop()
+        assertTrue(realManager.cancelledByUser)
+        assertTrue(WirelessCancelPolicy.refusesBringUp(realManager.cancelledByUser, userRequested = false))
     }
 
     @Test fun exitRefusesAllAutomaticRearmsUntilUserStartsAgain() {

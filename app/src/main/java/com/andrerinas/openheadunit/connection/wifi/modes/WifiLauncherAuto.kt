@@ -29,6 +29,8 @@ class WifiLauncherAuto(
 
     override fun hasWifiDirect() = useWifiDirect
 
+    override fun usesServerWifiDirect() = useWifiDirect
+
     override fun hostsOwnAccessPoint() = false
 
     override fun hasWirelessServer() = true

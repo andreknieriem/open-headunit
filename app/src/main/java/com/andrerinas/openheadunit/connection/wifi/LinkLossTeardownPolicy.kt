@@ -50,10 +50,12 @@ object LinkLossTeardownPolicy {
         // interfaces, and on several chipsets they outlive the station toggle entirely — tearing
         // a healthy Native AA session down here would cost a 45-90s reconnect to prevent nothing.
         // A USB session rides none of it and must be left alone whatever the settings say.
+        // The phone's head unit server is the exception even over P2P: close it while we can,
+        // since a lost peer can leave that server wedged until it is restarted on the phone.
         LinkLossTrigger.WIFI_STATION_DISABLING ->
             sessionIsWireless &&
-                launcher?.hasWifiDirect() != true &&
-                launcher?.hostsOwnAccessPoint() != true
+                (peerIsHeadUnitServer ||
+                    (launcher?.hasWifiDirect() != true && launcher?.hostsOwnAccessPoint() != true))
 
         // A named ACC-off is the whole board going, so it counts for every route. An inferred one
         // is only worth acting on where a missed close lasts beyond this drive, and where coming

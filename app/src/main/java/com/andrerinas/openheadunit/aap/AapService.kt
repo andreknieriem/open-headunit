@@ -1634,8 +1634,10 @@ class AapService : Service() {
             } else if (state.isUserExit && ranWifiDirect && !wirelessTornDown) {
                 commManager.awaitDisconnectComplete()
                 AppLog.i("AapService: CommManager teardown complete. Stopping WiFi Direct group.")
-                if (settings.usesServerWifiDirect()) {
-                    wifiLauncherManager.stopForUser()
+                if (wifiLauncherManager.active?.usesServerWifiDirect() == true) {
+                    // Bluetooth/timeout shutdowns also arrive here; only an explicit Stop/Exit
+                    // may latch the user-cancel hold and block the next automatic bring-up.
+                    wifiLauncherManager.stop()
                 } else {
                     wifiLauncherManager.sharedServices.wifiDirectManager?.stop()
                     wifiLauncherManager.restartDiscovery()

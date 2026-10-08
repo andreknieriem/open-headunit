@@ -54,9 +54,9 @@ class WifiLauncherSharedServices(val service: AapService) {
 
     fun update(active: WifiLauncher) {
         activeLauncher = active
-        val serverP2p = App.provide(service).settings.usesServerWifiDirect()
+        val serverP2p = active.usesServerWifiDirect()
         if (discoveryUsesP2p != null && discoveryUsesP2p != serverP2p) stopLocalDiscovery()
-        if (active.hasWifiDirect()) startWifiDirect() else stopWifiDirect()
+        if (active.hasWifiDirect()) startWifiDirect(serverP2p) else stopWifiDirect()
         if (active.hasWirelessServer()) startWirelessServer(active) else stopWirelessServer()
         if (active.hasLocalDiscovery()) startLocalDiscovery(oneShot = false) else stopLocalDiscovery()
     }
@@ -68,16 +68,17 @@ class WifiLauncherSharedServices(val service: AapService) {
         stopLocalDiscovery()
     }
 
-    private fun startWifiDirect() {
+    private fun startWifiDirect(serverP2p: Boolean) {
         if (wifiDirectManager != null)
             stopWifiDirect() // reset from previous session
 
-        wifiDirectManager = WifiDirectManager(service)
-        wifiDirectManager?.visibleBringUpAllowed = {
-            !App.provide(service).settings.usesServerWifiDirect() || hotspotTeardown?.isCompleted != false
+        val directManager = WifiDirectManager(service, serverP2p)
+        wifiDirectManager = directManager
+        directManager.visibleBringUpAllowed = {
+            !serverP2p || (wifiDirectManager === directManager && hotspotTeardown?.isCompleted != false)
         }
-        wifiDirectManager?.discoveryNetworkListener = { network ->
-            if (network?.hasClient == true && App.provide(service).settings.usesServerWifiDirect()) {
+        directManager.discoveryNetworkListener = { network ->
+            if (serverP2p && wifiDirectManager === directManager && network?.hasClient == true) {
                 service.discoveryDormantAfterWifiLoss = false
                 service.rescanWithoutWaiting = true
                 startLocalDiscovery()
@@ -92,7 +93,7 @@ class WifiLauncherSharedServices(val service: AapService) {
             service.applicationContext.getSystemService(Context.WIFI_SERVICE) as? WifiManager
         val radioBlockedOff = wifiManager != null &&
             WifiRadioSwitchPolicy.isBlockedOff(wifiManager.isWifiEnabled, Build.VERSION.SDK_INT)
-        if (radioBlockedOff && !App.provide(service).settings.usesServerWifiDirect()) {
+        if (radioBlockedOff) {
             AppLog.i(
                 "AapService: WiFi is off and this Android does not let an app switch it on, so no " +
                     "WiFi Direct group can be created — leaving this unit's hotspot alone."
@@ -202,7 +203,7 @@ class WifiLauncherSharedServices(val service: AapService) {
     fun startLocalDiscovery(oneShot: Boolean = false) {
         val commManager = App.provide(service).commManager
         if (service.wirelessCancelledByUser()) return
-        val serverP2p = App.provide(service).settings.usesServerWifiDirect()
+        val serverP2p = activeLauncher?.usesServerWifiDirect() == true
         if (serverP2p && activeLauncher?.hasLocalDiscovery() != true) return
         if (serverP2p && wifiDirectManager?.discoveryNetwork?.hasClient != true) return
 

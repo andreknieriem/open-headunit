@@ -260,7 +260,7 @@ class AutoConnectFragment : Fragment() {
         enabledStates[Settings.AUTO_CONNECT_LAST_SESSION]?.let { settings.autoConnectLastSession = it }
         enabledStates[Settings.AUTO_CONNECT_SELF_MODE]?.let { settings.autoStartSelfMode = it }
         enabledStates[Settings.AUTO_CONNECT_SINGLE_USB]?.let { settings.autoConnectSingleUsbDevice = it }
-        settings.autoConnectDelaySeconds = pendingDelaySeconds
+        if (pendingDelaySeconds != settings.autoConnectDelaySeconds) settings.autoConnectDelaySeconds = pendingDelaySeconds
 
         // Update snapshot
         initialOrder = orderedIds.toList()

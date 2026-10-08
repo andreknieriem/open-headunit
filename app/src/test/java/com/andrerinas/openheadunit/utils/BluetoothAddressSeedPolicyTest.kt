@@ -1,6 +1,8 @@
 package com.andrerinas.openheadunit.utils
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class BluetoothAddressSeedPolicyTest {
@@ -23,5 +25,14 @@ class BluetoothAddressSeedPolicyTest {
     fun `nothing detected leaves the field blank`() {
         assertEquals("", BluetoothAddressSeedPolicy.seed("", null))
         assertEquals("", BluetoothAddressSeedPolicy.seed(null, null))
+    }
+
+    @Test
+    fun `the old hardcoded default is not a user's address`() {
+        assertTrue(BluetoothAddressSeedPolicy.isLegacyDefault("40:EF:4C:A3:CB:A5"))
+        assertTrue(BluetoothAddressSeedPolicy.isLegacyDefault(" 40:ef:4c:a3:cb:a5 "))
+        assertFalse(BluetoothAddressSeedPolicy.isLegacyDefault("11:22:33:44:55:66"))
+        assertFalse(BluetoothAddressSeedPolicy.isLegacyDefault(""))
+        assertFalse(BluetoothAddressSeedPolicy.isLegacyDefault(null))
     }
 }

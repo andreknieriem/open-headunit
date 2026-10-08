@@ -44,7 +44,7 @@ class CarLauncherSettingsPolicyTest {
         `when`(mockPrefs.getBoolean(eq(Settings.KEY_ENABLE_CAR_LAUNCHER), eq(false))).thenReturn(false)
         `when`(mockPrefs.getBoolean(eq("kill-on-disconnect"), eq(false))).thenReturn(true)
         `when`(mockPrefs.getBoolean(eq("reopen-on-reconnection"), eq(true))).thenReturn(true)
-        `when`(mockPrefs.getInt(eq("aa-exit-action"), eq(Settings.ExitAction.OEM_LAUNCHER.value)))
+        `when`(mockPrefs.getInt(eq("aa-exit-action"), eq(Settings.ExitAction.DISCONNECT.value)))
             .thenReturn(Settings.ExitAction.OEM_LAUNCHER.value)
 
         val settings = Settings(mockContext)
@@ -68,7 +68,7 @@ class CarLauncherSettingsPolicyTest {
         // Stored settings that would conflict or cause unwanted behavior
         `when`(mockPrefs.getBoolean(eq("kill-on-disconnect"), eq(false))).thenReturn(true)
         `when`(mockPrefs.getBoolean(eq("reopen-on-reconnection"), eq(true))).thenReturn(true)
-        `when`(mockPrefs.getInt(eq("aa-exit-action"), eq(Settings.ExitAction.OEM_LAUNCHER.value)))
+        `when`(mockPrefs.getInt(eq("aa-exit-action"), eq(Settings.ExitAction.DISCONNECT.value)))
             .thenReturn(Settings.ExitAction.OEM_LAUNCHER.value)
 
         val settings = Settings(mockContext)

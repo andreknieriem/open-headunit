@@ -68,6 +68,7 @@ class Settings(private val context: Context) {
 
     var bluetoothAddress: String
         get() = prefs.getString("bt-address", "")!!
+            .let { if (BluetoothAddressSeedPolicy.isLegacyDefault(it)) "" else it }
         set(value) = prefs.edit().putString("bt-address", value).apply()
 
     var lastKnownLocation: Location
@@ -167,7 +168,7 @@ class Settings(private val context: Context) {
 
     var rawAaExitAction: ExitAction
         get() {
-            val value = prefs.getInt("aa-exit-action", ExitAction.OEM_LAUNCHER.value)
+            val value = prefs.getInt("aa-exit-action", ExitAction.DISCONNECT.value)
             return ExitAction.fromInt(value)
         }
         set(action) {
@@ -181,7 +182,7 @@ class Settings(private val context: Context) {
 
         companion object {
             private val map = values().associateBy(ExitAction::value)
-            fun fromInt(value: Int) = map[value] ?: OEM_LAUNCHER
+            fun fromInt(value: Int) = map[value] ?: DISCONNECT
         }
     }
 

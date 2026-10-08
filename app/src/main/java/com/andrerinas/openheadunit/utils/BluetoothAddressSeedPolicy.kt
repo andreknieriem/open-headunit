@@ -15,6 +15,11 @@ package com.andrerinas.openheadunit.utils
  */
 object BluetoothAddressSeedPolicy {
 
+    /** The field's default up to 1.14.2: one developer's address, which a Save wrote to disk. */
+    const val LEGACY_DEFAULT = "40:EF:4C:A3:CB:A5"
+
+    fun isLegacyDefault(stored: String?): Boolean = stored?.trim().equals(LEGACY_DEFAULT, ignoreCase = true)
+
     fun seed(stored: String?, detected: String?): String {
         val kept = stored?.trim().orEmpty()
         if (kept.isNotEmpty()) return kept

@@ -62,6 +62,7 @@ class CommManager {
         data class Error(val message: String) : ConnectionState()
     }
     private val transportLifecycleLock = Any()
+    private var settingsUsbRestartInFlight: ConnectionState.Disconnected? = null
     private val _connectionState = MutableStateFlow<ConnectionState>(ConnectionState.Disconnected())
     val connectionState get() = _connectionState
     val isConnected get() = _connectionState.value.let {

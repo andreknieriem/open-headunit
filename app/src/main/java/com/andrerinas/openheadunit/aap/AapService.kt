@@ -1550,6 +1550,9 @@ class AapService : Service() {
      * 4. Scheduling a reconnect attempt if applicable (see [scheduleReconnectIfNeeded])
      */
     private fun onDisconnected(state: CommManager.ConnectionState.Disconnected) {
+        // A failed USB open has no live AAP resources to retire. Its Save loop and fallback
+        // still own recovery; ordinary session-end cleanup would release their USB claim.
+        if (state.settingsRetryOwner?.acceptsSettingsRestart(state) == true) return
         cancelProjectionRaiseDeadline()
         if (state.isSettingsRestart) {
             // The timed state gate holds queued wakes during Save. Do not also latch the
@@ -1783,6 +1786,13 @@ class AapService : Service() {
             val wasSelfMode = state.wasLoopbackSession
             var selfLaunch = selfLauncherManager.currentLaunch()
             SettingsRestartRecovery.run(
+                route = when {
+                    wasSelfMode -> "Self"
+                    state.restartEndpoint != null -> "Server"
+                    settings.lastConnectionType == Settings.CONNECTION_TYPE_USB -> "USB"
+                    settings.lastConnectionType == Settings.CONNECTION_TYPE_NEARBY -> "Nearby"
+                    else -> wifiLauncherManager.activeMode.toString()
+                },
                 remainingMs = state.settingsRestartUntilMs - SystemClock.elapsedRealtime(),
                 isCurrent = {
                     state.acceptsSettingsRestart(commManager.connectionState.value) && !isDestroying &&
@@ -1825,10 +1835,19 @@ class AapService : Service() {
                         else -> wifiLauncherManager.restartDiscovery()
                     }
                 },
+                awaitRetryCompletion = { usbLauncherManager.awaitSettingsAttempt(state) },
+                isRetryInFlight = { usbLauncherManager.hasSettingsAttempt(state) },
                 resumeAutomatic = {
                     // The retry has not published a connection. Retire only its Self Mode
                     // bookkeeping; a later disconnect must not stop an unrelated launcher.
                     if (wasSelfMode) selfLauncherManager.stopIfCurrent(selfLaunch)
+                    // End Save's special permission, not the device's chance to connect.
+                    // A late re-enumeration may now be ready without another attach event.
+                    // Ordinary admission holds behind Settings/the X and uses the USB episode
+                    // budget; an attached but wedged device cannot block wireless indefinitely.
+                    if (!userExitedAA && settings.lastConnectionType == Settings.CONNECTION_TYPE_USB) {
+                        usbLauncherManager.checkAlreadyConnected(force = true)
+                    }
                     if (!userExitedAA && !wirelessPausedForSettings &&
                         !wifiLauncherManager.cancelledByUser && settings.showsWifi() &&
                         ConnectionArbiter.tryRearmWireless()) {

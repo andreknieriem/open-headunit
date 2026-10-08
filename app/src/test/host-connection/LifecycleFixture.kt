@@ -46,6 +46,7 @@ private class AapTransport(
 /** Only the network, UI side effects and scheduling are doubled; injected decisions are production. */
 private class ConnectionFixture(val settings: Settings = Settings()) {
     private val transportLifecycleLock = Any()
+    private var settingsUsbRestartInFlight: ConnectionState.Disconnected? = null
     private var disconnectRequested = false
     private var physicalConnectionReached = true
     private var outgoingEndpoint: Pair<String, Int>? = null

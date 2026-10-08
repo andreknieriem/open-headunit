@@ -1,5 +1,6 @@
 package com.andrerinas.openheadunit.connection
 
+import com.andrerinas.openheadunit.utils.AppLog
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -16,17 +17,31 @@ internal object SettingsRestartRecovery {
         isCurrent: () -> Boolean,
         retry: suspend () -> Unit,
         resumeAutomatic: () -> Unit,
+        route: String = "unspecified",
+        awaitRetryCompletion: suspend () -> Unit = {},
+        isRetryInFlight: () -> Boolean = { false },
     ) = coroutineScope {
         // Arm before retry: USB may return without a device, or the arbiter may refuse a dial.
-        // Identity belongs to this Disconnected instance, not just its reason or last route.
+        // The Save owner may include its own failed USB opens; unrelated terminals cannot
+        // inherit permission merely because they have the same reason or last route.
         val fallback = launch {
             delay(remainingMs.coerceAtLeast(0L))
-            if (isCurrent()) resumeAutomatic()
+            // A USB open admitted before the deadline may still be running. Evaluate its
+            // terminal result after it finishes; Connecting alone does not supersede Save.
+            awaitRetryCompletion()
+            val current = isCurrent()
+            AppLog.i("SettingsRestart: route=$route fallback=${if (current) "run" else "skip_superseded"}")
+            if (current) resumeAutomatic()
         }
         try {
-            if (isCurrent()) retry()
+            val current = isCurrent()
+            AppLog.i("SettingsRestart: route=$route retry=${if (current) "run" else "skip_superseded"}")
+            if (current) retry()
         } finally {
-            if (!isCurrent()) fallback.cancel()
+            if (!isCurrent() && !isRetryInFlight()) {
+                AppLog.i("SettingsRestart: route=$route fallback=cancel_superseded")
+                fallback.cancel()
+            }
         }
     }
 }

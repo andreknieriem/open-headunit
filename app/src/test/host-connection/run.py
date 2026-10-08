@@ -55,6 +55,7 @@ class CommManager {
  private val transportLifecycleLock=Any()
  private var disconnectRequested=false
  private var connectionAttempt:Any?=null
+ private var settingsUsbRestartInFlight:ConnectionState.Disconnected?=null
  private var physicalConnectionReached=true
  private var outgoingEndpoint:Pair<String,Int>?=null
  @Volatile private var _transport:AapTransport?=null
@@ -94,7 +95,7 @@ class CommManager {
  suspend fun connectSaved(state:ConnectionState.Disconnected){connectIp("fixture",5277,state)}
  suspend fun awaitDisconnectComplete(){_disconnectJob?.join()}
  val isUsbSession=false
- suspend fun connectDevice(d:UsbDevice){connectUsb(d)}
+ suspend fun connectDevice(d:UsbDevice,saved:ConnectionState.Disconnected?=null){connectUsb(d,saved)}
  suspend fun awaitCleanup(){_disconnectJob?.join()}
  companion object { const val ERROR_HANDSHAKE_PEER_SILENT="Handshake failed: the peer never responded" }
 '''
@@ -543,10 +544,10 @@ fun destroyDuringCandidateConstruction()=runBlocking {
 '''
 extra += r'''
 object UsbDeviceCompat{fun getUniqueName(d:UsbDevice)="usb-fixture";fun usbManager(c:Context)=c.getSystemService(Context.USB_SERVICE) as UsbManager}
-object UsbBridge{ @Volatile var afterConnect:(()->Unit)?=null }
+object UsbBridge{ @Volatile var afterConnect:(()->Unit)?=null;var forcedOpen:(()->Boolean)?=null }
 open class StandardUsbProjectionConnection(m:UsbManager,d:UsbDevice):ProjectionConnection(){
  private val actual=com.andrerinas.openheadunit.connection.projection.StandardUsbProjectionConnection(m,d)
- override fun connect():Boolean {val r=runBlocking{actual.connect()};UsbBridge.afterConnect?.invoke();return r}
+ override fun connect():Boolean {UsbBridge.forcedOpen?.let{return it()};val r=runBlocking{actual.connect()};UsbBridge.afterConnect?.invoke();return r}
  override fun disconnect(){super.disconnect();actual.disconnect()}
 }
 class LibusbProjectionConnection(m:UsbManager,d:UsbDevice):StandardUsbProjectionConnection(m,d)
@@ -649,6 +650,40 @@ fun terminalRouteSnapshots()=runBlocking {
 }
 """
 extra += r"""
+fun usbSaveOpenFailures()=runBlocking {
+ val permissionCase=CommManager()
+ permissionCase.disconnect(sendByeBye=false,isUserExit=false,honorKillOnDisconnect=false,reason=DisconnectReason.SETTINGS_RESTART)
+ val permissionOwner=permissionCase.state as ConnectionState.Disconnected
+ permissionCase.cleanups();permissionCase.awaitCleanup()
+ permissionCase.context.usb.permitted=false
+ permissionCase.connectDevice(UsbDevice(),permissionOwner)
+ check(permissionCase.state===permissionOwner){"re-enumeration permission loss stranded Save in Error"}
+ permissionCase.close()
+ for(outcome in listOf("false","throw","late-success")) for(cancelWhileOpening in listOf(false,true)) {
+  if(outcome=="late-success" && !cancelWhileOpening)continue
+  val c=CommManager()
+  c.disconnect(sendByeBye=false,isUserExit=false,honorKillOnDisconnect=false,reason=DisconnectReason.SETTINGS_RESTART)
+  val saved=c.state as ConnectionState.Disconnected
+  c.cleanups();c.awaitCleanup()
+  var opens=0
+  UsbBridge.forcedOpen={
+   opens++
+   if(cancelWhileOpening)c.cancelPendingSettingsRestart()
+   if(outcome=="throw")throw IllegalStateException("USB open failed") else outcome=="late-success"
+  }
+  try {
+   repeat(4){
+    c.connectDevice(UsbDevice(),saved)
+    val failed=c.state as ConnectionState.Disconnected
+    check(failed.settingsRetryOwner===saved && !failed.isUserExit && !failed.hadPhysicalConnection)
+    check(saved.acceptsSettingsRestart(failed)==!cancelWhileOpening)
+    c.cleanups();c.awaitCleanup()
+   }
+   check(opens==if(cancelWhileOpening)1 else 4)
+  } finally { UsbBridge.forcedOpen=null;c.close() }
+ }
+ println("PASS real USB admission and failed-open teardown retain Save for four retries; cancel during Connecting revokes it")
+}
 fun failedAttemptDoesNotInheritPhysicalSuccess()=runBlocking {
  for(outcome in listOf("false","throw")) {
   val c=CommManager();c.connectNext()
@@ -663,7 +698,7 @@ fun failedAttemptDoesNotInheritPhysicalSuccess()=runBlocking {
  println("PASS new failed attempts do not inherit physical success from the previous connection")
 }
 """
-extra=extra.replace('fun main(){', 'fun main(){\n failedAttemptDoesNotInheritPhysicalSuccess();terminalRouteSnapshots();settingsActionCancellation()')
+extra=extra.replace('fun main(){', 'fun main(){\n usbSaveOpenFailures();failedAttemptDoesNotInheritPhysicalSuccess();terminalRouteSnapshots();settingsActionCancellation()')
 (OUT/'Probe.kt').write_text(manager+transport_fixture+support+extra)
 (OUT/'Os.kt').write_text(r'''package android.os
 import java.util.concurrent.*
@@ -731,7 +766,7 @@ import java.util.concurrent.atomic.AtomicInteger
 class UsbDevice{val interfaceCount=1;fun getInterface(i:Int)=UsbInterface()}
 class UsbInterface
 class UsbEndpoint
-class UsbManager{var openHook:((UsbDevice)->UsbDeviceConnection?)?=null;fun hasPermission(d:UsbDevice)=true;fun openDevice(d:UsbDevice)=openHook?.invoke(d)?:UsbDeviceConnection()}
+class UsbManager{var openHook:((UsbDevice)->UsbDeviceConnection?)?=null;var permitted=true;fun hasPermission(d:UsbDevice)=permitted;fun openDevice(d:UsbDevice)=openHook?.invoke(d)?:UsbDeviceConnection()}
 class UsbDeviceConnection{
  val closes=AtomicInteger();val releases=AtomicInteger()
  fun close(){closes.incrementAndGet()}

@@ -5,6 +5,34 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class SettingsRestartRecoveryTest {
+    @Test fun `USB failure after deadline is evaluated after its owning attempt completes`() = runBlocking {
+        for (success in listOf(false, true)) {
+            val saved = CommManager.ConnectionState.Disconnected(reason = CommManager.DisconnectReason.SETTINGS_RESTART)
+            var state: CommManager.ConnectionState = saved
+            var pending: Job? = null
+            val finish = CompletableDeferred<Unit>()
+            val awaiting = CompletableDeferred<Unit>()
+            var rearms = 0
+            val recovery = launch {
+                SettingsRestartRecovery.run(0, { saved.acceptsSettingsRestart(state) }, {
+                    state = CommManager.ConnectionState.Connecting
+                    pending = this@runBlocking.launch {
+                        finish.await()
+                        state = if (success) CommManager.ConnectionState.Connected
+                            else CommManager.ConnectionState.Disconnected(settingsRetryOwner = saved)
+                    }
+                }, { rearms++ },
+                    awaitRetryCompletion = { awaiting.complete(Unit); pending?.join() },
+                    isRetryInFlight = { pending?.isActive == true })
+            }
+            awaiting.await()
+            assertEquals(0, rearms)
+            finish.complete(Unit)
+            recovery.join()
+            assertEquals(if (success) 0 else 1, rearms)
+        }
+    }
+
     @Test fun `refused dial or missing USB device falls back once without another explicit retry`() = runBlocking {
         var retries = 0
         var rearms = 0

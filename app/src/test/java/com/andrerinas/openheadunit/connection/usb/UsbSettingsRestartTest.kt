@@ -13,23 +13,25 @@ class UsbSettingsRestartTest {
     @Test fun `Save waiting for retirement cannot lift a later USB cancellation`() {
         val manager = mock(UsbLauncherManager::class.java, CALLS_REAL_METHODS)
         UsbLauncherManager::class.java.getDeclaredField("cancelledByUser").apply { isAccessible = true }.set(manager, true)
-        val saved = CommManager.ConnectionState.Disconnected(reason = CommManager.DisconnectReason.SETTINGS_RESTART)
+        val saved = CommManager.ConnectionState.Disconnected(reason = CommManager.DisconnectReason.SETTINGS_RESTART, settingsRestartUntilMs = Long.MAX_VALUE)
         manager.restartForSettings(saved)
         verify(manager, never()).checkAlreadyConnected(anyBoolean(), anyBoolean(), anyOrNull())
     }
 
     @Test fun `uncancelled Save still grants one explicit device check`() {
         val manager = mock(UsbLauncherManager::class.java, CALLS_REAL_METHODS)
-        val saved = CommManager.ConnectionState.Disconnected(reason = CommManager.DisconnectReason.SETTINGS_RESTART)
+        val saved = CommManager.ConnectionState.Disconnected(reason = CommManager.DisconnectReason.SETTINGS_RESTART, settingsRestartUntilMs = Long.MAX_VALUE)
         doNothing().`when`(manager).checkAlreadyConnected(true, false, saved)
         manager.restartForSettings(saved)
         verify(manager).checkAlreadyConnected(force = true, userRequested = false, settingsRestart = saved)
     }
 
     @Test fun `revoking Save cancels queued and permission-waiting USB work without changing AAP state`() {
-        mockStatic(android.os.SystemClock::class.java).use {
+        mockStatic(android.os.SystemClock::class.java).use { clock ->
         mockStatic(androidx.appcompat.app.AppCompatDelegate::class.java).use {
-            for (enterPermissionWait in listOf(false, true)) for (cancelPath in listOf("save", "user", "preempt", "replacement")) {
+            for (enterPermissionWait in listOf(false, true)) for (cancelPath in listOf("save", "user", "preempt", "replacement", "expiry")) {
+                if (enterPermissionWait && cancelPath == "expiry") continue
+                clock.`when`<Long> { android.os.SystemClock.elapsedRealtime() }.thenReturn(0L)
                 com.andrerinas.openheadunit.connection.ConnectionArbiter.reset()
                 val tasks = java.util.ArrayDeque<Runnable>()
                 val queued = object : kotlinx.coroutines.CoroutineDispatcher() {
@@ -40,7 +42,7 @@ class UsbSettingsRestartTest {
                 val app = mock(com.andrerinas.openheadunit.App::class.java)
                 val component = mock(com.andrerinas.openheadunit.AppComponent::class.java)
                 val comm = mock(CommManager::class.java, CALLS_REAL_METHODS)
-                val saved = CommManager.ConnectionState.Disconnected(reason = CommManager.DisconnectReason.SETTINGS_RESTART)
+                val saved = CommManager.ConnectionState.Disconnected(reason = CommManager.DisconnectReason.SETTINGS_RESTART, settingsRestartUntilMs = Long.MAX_VALUE)
                 val states = kotlinx.coroutines.flow.MutableStateFlow<CommManager.ConnectionState>(saved)
                 fun field(name: String, value: Any) {
                     CommManager::class.java.getDeclaredField(name).apply { isAccessible = true }.set(comm, value)
@@ -68,14 +70,12 @@ class UsbSettingsRestartTest {
                     permission.await()
                     opened = true
                 }
-                val launch = UsbLauncherManager::class.java.getDeclaredMethod("launchAttempt",
-                    CommManager.ConnectionState.Disconnected::class.java,
-                    kotlin.coroutines.CoroutineContext::class.java,
-                    kotlin.jvm.functions.Function2::class.java).apply { isAccessible = true }
-                launch.invoke(launcher, saved, kotlin.coroutines.EmptyCoroutineContext, block)
+                launcher.launchAttempt(saved, block = block)
                 if (enterPermissionWait) while (tasks.isNotEmpty()) tasks.removeFirst().run()
                 org.junit.Assert.assertEquals(enterPermissionWait, entered)
-                comm.cancelPendingSettingsRestart()
+                if (cancelPath == "expiry") {
+                    clock.`when`<Long> { android.os.SystemClock.elapsedRealtime() }.thenReturn(Long.MAX_VALUE)
+                } else comm.cancelPendingSettingsRestart()
                 when (cancelPath) {
                     "user" -> launcher.stopForUser()
                     "preempt", "replacement" -> launcher.preemptAttempt()
@@ -86,7 +86,7 @@ class UsbSettingsRestartTest {
                         com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy.Tier.USB, "new USB request"))
                     replacementClaim = claimField.get(launcher) as com.andrerinas.openheadunit.connection.ConnectionArbiter.Claim
                     val replacement: suspend kotlinx.coroutines.CoroutineScope.() -> Unit = { kotlinx.coroutines.awaitCancellation() }
-                    launch.invoke(launcher, null, kotlin.coroutines.EmptyCoroutineContext, replacement)
+                    launcher.launchAttempt(null, block = replacement)
                 }
                 permission.complete(Unit)
                 while (tasks.isNotEmpty()) tasks.removeFirst().run()

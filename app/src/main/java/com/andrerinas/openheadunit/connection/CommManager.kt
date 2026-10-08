@@ -112,6 +112,9 @@ class CommManager(
             val wasLoopbackSession: Boolean = false,
             // Captured by the connection owner; collectors may miss Connected entirely.
             val hadPhysicalConnection: Boolean = false,
+            // Only a failed physical USB open may inherit Save. Ordinary link failures and
+            // newer sessions must not grant its retry loop permission to replace their state.
+            val settingsRetryOwner: Disconnected? = null,
         ) : ConnectionState() {
             override fun toString() = "Disconnected(isClean=$isClean, isUserExit=$isUserExit, " +
                 "reason=$reason, restartEndpoint=$restartEndpoint, settingsRestartUntilMs=$settingsRestartUntilMs, " +
@@ -125,7 +128,10 @@ class CommManager(
             private var settingsLaunch: Job? = null
 
             internal fun acceptsSettingsRestart(current: ConnectionState): Boolean =
-                current === this && isSettingsRestart && !settingsRestartCancelled
+                (current === this || (current is Disconnected && current.settingsRetryOwner === this)) &&
+                    isSettingsRestart && !settingsRestartCancelled
+
+            internal val isSettingsRestartCancelled get() = settingsRestartCancelled
 
             internal fun cancelSettingsRestart() {
                 val launch = synchronized(this) {
@@ -135,7 +141,7 @@ class CommManager(
                 launch?.cancel()
             }
 
-            /** Save owns the queued Self launch and its deadline until another connection takes over. */
+            /** Save owns queued launch/USB work until cancellation or another connection takes over. */
             internal fun trackSettingsLaunch(job: Job) {
                 val cancelled = synchronized(this) {
                     if (settingsRestartCancelled) true else { settingsLaunch = job; false }
@@ -368,6 +374,18 @@ class CommManager(
         else ConnectionArbiter.claim(tier, ConnectionPriorityPolicy.Owner.USB, description)
     }
 
+    @Volatile private var settingsUsbRestartInFlight: ConnectionState.Disconnected? = null
+
+    /** A re-enumerated accessory still belongs to Save, but only inside its original window. */
+    internal fun pendingUsbSettingsRestart(): ConnectionState.Disconnected? {
+        val current = _connectionState.value as? ConnectionState.Disconnected ?: return null
+        val owner = current.settingsRetryOwner ?: current
+        return owner.takeIf {
+            settings.lastConnectionType == Settings.CONNECTION_TYPE_USB &&
+                it.acceptsSettingsRestart(current) && SystemClock.elapsedRealtime() < it.settingsRestartUntilMs
+        }
+    }
+
     private suspend fun connectUsb(device: UsbDevice, expectedState: ConnectionState.Disconnected? = null) {
         if (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value)) return
         // Another caller already started the connection — do nothing.
@@ -379,6 +397,9 @@ class CommManager(
 
         val usbManager = UsbDeviceCompat.usbManager(context)
         if (usbManager == null || !usbManager.hasPermission(device)) {
+            // USB re-enumeration revokes the old UsbDevice's permission. Keep Save's
+            // terminal token so a fresh attach/permission reply can continue this recovery.
+            if (expectedState != null) return
             onSessionFailure?.invoke("connect_failed")
             _connectionState.emit(ConnectionState.Error("USB permission not granted for device"))
             return
@@ -394,6 +415,7 @@ class CommManager(
             // Retirement can suspend after admission. Recheck the same Save permission at
             // publication, before opening hardware or replacing another connection's state.
             if (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value)) return
+            settingsUsbRestartInFlight = expectedState
             outgoingEndpoint = null
             val token = Any()
             connectionAttempt = token
@@ -424,12 +446,14 @@ class CommManager(
                     // The cancelled candidate is closed below, outside the lifecycle monitor.
                     return@synchronized
                 }
-                if (opened) {
+                // openDevice may finish after its coroutine was cancelled. The Save token
+                // is revoked under this same lock; a late success must close, not publish.
+                if (opened && expectedState?.isSettingsRestartCancelled != true) {
                     physicalConnectionReached = true
                     settings.saveLastConnection(type = Settings.CONNECTION_TYPE_USB, usbDevice = UsbDeviceCompat.getUniqueName(device))
                     _connectionState.value = ConnectionState.Connected
                 } else {
-                    disconnect(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
+                    disconnect(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false, settingsRetryOwner = expectedState)
                 }
             }
         } catch (e: Exception) {
@@ -437,10 +461,12 @@ class CommManager(
                 if (connectionAttempt !== attempt || disconnectRequested) return
                 onSessionFailure?.invoke("connect_failed")
                 _connectionState.value = ConnectionState.Error("Connection failed: ${e.message}")
-                disconnect()
+                if (expectedState == null) disconnect()
+                else disconnect(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false, settingsRetryOwner = expectedState)
             }
         } finally {
             val retired = synchronized(transportLifecycleLock) {
+                if (connectionAttempt === attempt && settingsUsbRestartInFlight === expectedState) settingsUsbRestartInFlight = null
                 connectionAttempt !== attempt || disconnectRequested || _connection !== conn
             }
             if (retired) conn?.disconnect()
@@ -658,7 +684,9 @@ class CommManager(
 
     /** A manual start or stop supersedes Save before it publishes an AAP connection. */
     fun cancelPendingSettingsRestart(): Unit = synchronized(transportLifecycleLock) {
-        (_connectionState.value as? ConnectionState.Disconnected)?.cancelSettingsRestart()
+        val terminal = _connectionState.value as? ConnectionState.Disconnected
+        (terminal?.settingsRetryOwner ?: terminal)?.cancelSettingsRestart()
+        settingsUsbRestartInFlight?.cancelSettingsRestart()
     }
 
     private fun claimSocket(
@@ -1249,6 +1277,7 @@ class CommManager(
         // app on disconnect": there would be nothing left to show it on.
         honorKillOnDisconnect: Boolean = true,
         reason: DisconnectReason = DisconnectReason.CONNECTION_ENDED,
+        settingsRetryOwner: ConnectionState.Disconnected? = null,
     ): Unit = synchronized(transportLifecycleLock) {
         if (isUserExit && reason != DisconnectReason.SETTINGS_RESTART) cancelPendingSettingsRestart()
         if (disconnectRequested || _connectionState.value is ConnectionState.Disconnected) return@synchronized
@@ -1262,6 +1291,7 @@ class CommManager(
         _disconnectJob = _scope.launch { doDisconnect(sendByeBye, byeByeReason, reason) }
         _connectionState.value = ConnectionState.Disconnected(
             isUserExit = isUserExit, reason = reason,
+            settingsRetryOwner = if (!isUserExit && !physicalConnectionReached) settingsRetryOwner else null,
             wasLoopbackSession = isLoopbackSession,
             hadPhysicalConnection = physicalConnectionReached,
             restartEndpoint = if (reason == DisconnectReason.SETTINGS_RESTART) outgoingEndpoint else null,

@@ -125,11 +125,11 @@
     <string name="running">Çalışıyor</string>
     <string name="not_running">Çalışmıyor</string>
     <string name="no_android_auto_device_connected">Android Auto cihazı bağlı değil. Lütfen USB bağlantısını kontrol edin.</string>
-    <string name="no_usb_device_connected">Cihaza bağlı USB aygıtı yok.</string>
+    <string name="no_usb_device_connected">Bağlı USB cihazı yok.</string>
     <string name="press_back_again_to_exit">Çıkmak için tekrar Geri\'ye basın</string>
     <string name="back">Geri</string>
     <string name="debug_mode">Hata Ayıklama Modu</string>
-    <string name="debug_mode_description">Daha ayrıntılı günlük kaydı tut</string>
+    <string name="debug_mode_description">Daha ayrıntılı günlük kaydını aç veya kapat</string>
     <string name="allow_external_configuration">Harici yapılandırmaya izin ver</string>
     <string name="allow_external_configuration_description">Tasker veya MacroDroid gibi otomasyon uygulamalarının ayarları değiştirmesine, günlük seviyesini belirlemesine ve günlükleri dışa aktarmasına izin verir. Bağlanma ve bağlantıyı kesme her zaman çalışır; bu yalnızca ünitenin yapılandırmasını değiştiren komutlar için geçerlidir.</string>
     <string name="log_level">Günlük Seviyesi</string>
@@ -196,7 +196,7 @@
     <string name="auto_start_wifi_label">Wi-Fi ile otomatik başlat</string>
     <string name="auto_start_wifi_description">Belirli bir Wi-Fi SSID\'sine bağlandığında Open Headunit\'ı otomatik olarak aç.</string>
     <string name="auto_start_wifi_ssid_label">Wi-Fi SSID</string>
-    <string name="auto_start_wifi_ssid_description">Yalnızca bu Wi-Fi SSID\'sine bağlıyken bağlan</string>
+    <string name="auto_start_wifi_ssid_description">Yalnızca bu Wi-Fi SSID\'sine bağlıyken başlat</string>
     <string name="auto_start_wifi_warning">Eski özellik: Arka plan kısıtlamaları nedeniyle Android 8+ sürümlerinde güvenilir şekilde çalışmayabilir. Uygulamanın pil optimizasyonundan muaf tutulduğundan emin olun.</string>
     <string name="enter_wifi_ssid">Wi-Fi SSID girin</string>
     <string name="wifi_ssid_not_set">Ayarlanmadı</string>
@@ -482,7 +482,7 @@
     <string name="vehicle_type_car">Otomobil</string>
     <string name="vehicle_type_truck">Kamyon</string>
     <string name="vehicle_type_motorcycle">Motosiklet</string>
-    <string name="vehicle_type_forced_by_microphone">Ana ünite mikrofonu kapalı olduğundan, buradaki seçimden bağımsız olarak Android Auto\'ya aracın motosiklet olduğu bildirilir. Telefonun kendi kaydını yapmasını sağlayan budur.</string>
+    <string name="vehicle_type_forced_by_microphone">Ana ünite mikrofonu kapalı olduğundan, buradaki seçimden bağımsız olarak Android Auto\'ya aracın motosiklet olduğu bildirilir. Telefonun kendi mikrofonunu kullanmasını sağlayan budur.</string>
     <string name="vehicle_id_description">Sadece dahili tanımlayıcıdır. Bunu değiştirmek, telefonunuzun bu aracı farklı bir araç olarak görmesine neden olur ve bu araba için Android Auto tercihlerinizi sıfırlar.</string>
     <string name="head_unit_make_label">Marka</string>
     <string name="head_unit_make_description">Multimedya sistemi üreticisi</string>
@@ -503,7 +503,7 @@
     <string name="supported_nativeaa">Gelişmiş Kablosuz Desteği</string>
     <string name="supported_nativeaa_desc">Harika haber! Cihazınız, Android Auto\'yu daha sorunsuz çalıştıran \"Native Wireless\" (Yerel Kablosuz) modunu destekliyor.\n\nBunu etkinleştirmek için Bluetooth önbelleğinin yenilenmesi gerekiyor. Lütfen şunları yapın:\n1. Telefonunuzda mevcut eşleşmeyi kaldırın\n2. Bluetooth\'u yeniden başlatmak için Tamam\'a dokunun\n3. Telefonunuzu yeniden eşleştirin\n\nŞimdi Native AA moduna geçmek istiyor musunuz?</string>
     <string name="native_aa_poke_not_running">Bu ana ünitede kablosuz Bluetooth çalışmıyor. Ayarları kontrol edin.</string>
-    <string name="not_supported_nativeaa">Yerel Kablosuz desteklenmiyor gibi görünüyor</string>
+    <string name="not_supported_nativeaa">Yerel Kablosuz desteklenmiyor olabilir</string>
     <string name="not_supported_nativeaa_desc">Cihazınız Yerel Kablosuz için gereken Bluetooth veya Wi-Fi özelliklerini desteklemiyor olabilir. Yine de deneyebilirsiniz ancak başarısız olursa lütfen bunun yerine \"Kablosuz Yardımcı\" veya \"Otomatik (Headunit Sunucusu)\" modunu kullanın.</string>
 
     <string name="wait_for_wifi">Wi-Fi Direct öncesinde Wi-Fi bağlantısını bekle</string>
@@ -946,7 +946,7 @@
     <string name="hotspot_ssid_override_message">Adın bu cihazın erişim noktası ayarlarından otomatik okunması için boş bırakın. Bazı cihazlar uygulamaların adı okumasına izin vermez. Günlükte adın okunamadığı yazıyorsa, erişim noktası ayarlarınızda göründüğü şekliyle buraya yazın.</string>
     <string name="hotspot_password_override">Erişim noktası şifresi (elle)</string>
     <string name="hotspot_password_override_message">Şifrenin otomatik okunması için boş bırakın. Uygulamaların erişim noktası yapılandırmasını okumasına izin vermeyen cihazlarda gereklidir. Telefona katılması için bu şifre verilir.</string>
-    <string name="su_needed_keymaps_warning">Uyarı: Başlık biriminiz root\'lu olmalı veya Shizuku yüklü olmalıdır. Öyleyse istendiğinde SU yetkisine bir kez izin vermelisiniz. Bu sorun çözülene kadar direksiyon tuşları büyük olasılıkla çalışmaz.</string>
+    <string name="su_needed_keymaps_warning">Uyarı: Multimedya sisteminiz root\'lu olmalı veya Shizuku yüklü olmalıdır. Öyleyse istendiğinde SU yetkisine izin vermelisiniz. Bu sorun çözülene kadar direksiyon tuşları büyük olasılıkla çalışmaz.</string>
 
     <!-- Auto-added missing translations -->
     <string name="blacklisted">Kara listede</string>

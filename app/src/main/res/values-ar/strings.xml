@@ -115,7 +115,7 @@
     <string name="running">يعمل</string>
     <string name="not_running">لا يعمل</string>
     <string name="no_android_auto_device_connected">لا يوجد جهاز Android Auto متصل. يرجى التحقق من توصيل USB.</string>
-    <string name="no_usb_device_connected">لا يوجد جهاز USB متصل بالجهاز.</string>
+    <string name="no_usb_device_connected">لا يوجد جهاز USB متصل.</string>
     <string name="press_back_again_to_exit">اضغط رجوع مرة أخرى للخروج</string>
     <string name="back">رجوع</string>
     <string name="debug_mode">وضع التصحيح</string>
@@ -174,7 +174,7 @@
     <string name="auto_start_wifi_label">تشغيل تلقائي عبر الواي فاي</string>
     <string name="auto_start_wifi_description">فتح Open Headunit تلقائياً عند الاتصال بشبكة واي فاي محددة (SSID).</string>
     <string name="auto_start_wifi_ssid_label">اسم شبكة الواي فاي (SSID)</string>
-    <string name="auto_start_wifi_ssid_description">الاتصال فقط عند الارتباط بشبكة الواي فاي هذه</string>
+    <string name="auto_start_wifi_ssid_description">البدء فقط عند الاتصال بشبكة Wi-Fi التي تحمل هذا الاسم (SSID)</string>
     <string name="auto_start_wifi_warning">ميزة قديمة: قد لا تعمل بشكل موثوق على Android 8+ بسبب قيود الخلفية. تأكد من استثناء التطبيق من تحسين البطارية.</string>
     <string name="enter_wifi_ssid">أدخل SSID شبكة الواي فاي</string>
     <string name="wifi_ssid_not_set">غير محدد</string>
@@ -202,7 +202,7 @@
     <string name="open_settings">الإعدادات</string>
     <string name="wireless_connection_settings">اتصال لاسلكي</string>
     <string name="right_hand_drive">القيادة على اليمين</string>
-    <string name="right_hand_drive_description">ضبط واجهة المستخدم للقيادة على الجانب الأيمن</string>
+    <string name="right_hand_drive_description">ضبط موضع الواجهة لسيارة بمقود على الجهة اليمنى</string>
     <string name="category_graphic">الرسوميات</string>
     <string name="custom_insets">حواف مخصصة (هوامش)</string>
     <string name="inset_top">أعلى</string>
@@ -550,7 +550,7 @@
     <string name="sync_media_session_aa_metadata_description">عرض عنوان المسار والفنان والمدة وغلاف الألبوم من الهاتف في جلسة الوسائط بالنظام وإشعار الوسائط</string>
     <string name="auto_resume_playback_on_reconnect">استئناف التشغيل عند إعادة الاتصال</string>
     <string name="auto_resume_playback_on_reconnect_description">استئناف تشغيل الموسيقى تلقائيًا إذا كانت قيد التشغيل قبل انقطاع قصير في الاتصال (خلال 60 ثانية)</string>
-    <string name="error_usb_permission_failed">خطأ في النظام: فشل طلب مربع حوار إذن USB.</string>
+    <string name="error_usb_permission_failed">خطأ في النظام: تعذّر فتح مربع حوار إذن USB.</string>
 
     <!-- Custom loading screen -->
     <string name="loading_screen">شاشة التحميل</string>
@@ -1255,7 +1255,7 @@
     <string name="native_aa_wake_remeasure_confirm">لا يبدأ Android Auto الاتصال اللاسلكي إلا عندما يرى تغيّر اتصال البلوتوث. وحيث تحتفظ هذه الوحدة بالفعل بوصلة اليدين الحرة، يتعين على التطبيق قطعها لإحداث ذلك، لذا يقيس مرة واحدة ما إذا كانت الوصلة تعود ويتوقف إن لم تعد. استخدم هذا إذا توقف الاتصال اللاسلكي عن البدء من تلقاء نفسه وكنت مستعدًا لفقدان ميزة اليدين الحرة للحظة بينما يحاول مجددًا.</string>
     <string name="native_aa_wake_remeasure_done">سيُعاد قياس إيقاظ البلوتوث عند الاتصال التالي.</string>
     <string name="pref_enable_car_launcher_title">الاستخدام كمشغل سيارة</string>
-    <string name="pref_enable_car_launcher_summary">تسجيل Open Headunit كتطبيق الشاشة الرئيسية عند الضغط على زر الصفحة الرئيسية</string>
+    <string name="pref_enable_car_launcher_summary">يسجّل Open Headunit كتطبيق للشاشة الرئيسية، فيُفتح عند الضغط على زر الصفحة الرئيسية في السيارة أو الوحدة الرئيسية</string>
     <string name="pref_set_default_launcher_title">تطبيق الصفحة الرئيسية الافتراضي</string>
     <string name="pref_default_launcher_status_active">نشط (اضغط للإدارة)</string>
     <string name="pref_default_launcher_status_inactive">غير محدد (اضغط لتعيين كافتراضي)</string>

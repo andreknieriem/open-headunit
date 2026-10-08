@@ -207,7 +207,7 @@
     <string name="auto_start_wifi_label">Tự khởi động khi có WiFi</string>
     <string name="auto_start_wifi_description">Tự động mở Open Headunit khi kết nối tới SSID WiFi nhất định.</string>
     <string name="auto_start_wifi_ssid_label">SSID WiFi</string>
-    <string name="auto_start_wifi_ssid_description">Chỉ kết nối khi đang ở SSID WiFi này</string>
+    <string name="auto_start_wifi_ssid_description">Chỉ khởi động khi đã kết nối với SSID WiFi này</string>
     <string name="auto_start_wifi_warning">Tính năng cũ: có thể hoạt động không ổn định trên Android 8 trở lên do giới hạn chạy nền. Hãy đảm bảo ứng dụng không bị tối ưu hóa pin.</string>
     <string name="enter_wifi_ssid">Nhập SSID WiFi</string>
     <string name="wifi_ssid_not_set">Chưa đặt</string>
@@ -217,7 +217,7 @@
     <string name="overlay_permission_description">Để Open Headunit tự động mở khi Bluetooth kết nối, hãy bật quyền \"Hiện trên các ứng dụng khác\" ở màn hình tiếp theo.</string>
     <string name="open_settings">Cài đặt</string>
     <string name="right_hand_drive">Tay lái nghịch (bên phải)</string>
-    <string name="right_hand_drive_description">Sắp xếp giao diện cho lái xe bên phải</string>
+    <string name="right_hand_drive_description">Sắp xếp giao diện cho xe có vô lăng bên phải</string>
     <string name="wireless_connection_settings">Kết nối không dây</string>
     <string name="category_graphic">Đồ hoạ</string>
     <string name="custom_insets">Chèn lề tuỳ chỉnh</string>
@@ -502,7 +502,7 @@
     <string name="vehicle_type_car">Ô tô</string>
     <string name="vehicle_type_truck">Xe tải</string>
     <string name="vehicle_type_motorcycle">Xe máy</string>
-    <string name="vehicle_type_forced_by_microphone">Micro của đầu máy đang tắt nên dù chọn gì ở đây, Android Auto vẫn được thông báo rằng đây là một xe máy. Đó chính là điều khiến điện thoại tự ghi âm.</string>
+    <string name="vehicle_type_forced_by_microphone">Micro của đầu máy đang tắt nên dù chọn gì ở đây, Android Auto vẫn được thông báo rằng đây là một xe máy. Chính điều đó khiến điện thoại dùng micrô riêng của nó.</string>
     <string name="vehicle_id_description">Định danh nội bộ. Đổi giá trị này sẽ khiến điện thoại coi đây là xe khác và đặt lại tuỳ chỉnh Android Auto cho xe này.</string>
     <string name="head_unit_make_label">Hãng</string>
     <string name="head_unit_make_description">Hãng sản xuất headunit</string>
@@ -792,7 +792,7 @@
     <string name="resolution_too_high_title">Độ phân giải cao hơn màn hình</string>
     <string name="resolution_too_high_message">Đây là mức cao hơn màn hình của bạn hỗ trợ. Hình ảnh bị giới hạn theo những gì màn hình có thể hiển thị (%1$s), nên độ phân giải cao hơn chỉ dùng nhiều băng thông hơn mà không cải thiện chất lượng.</string>
     <string name="resolution_high_bandwidth_title">Cần băng thông cao hơn</string>
-    <string name="resolution_high_bandwidth_message">Độ phân giải này dùng nhiều băng thông hơn và cần kết nối mạnh: WiFi 5GHz tốt hoặc kết nối USB ổn định. Nếu thấy giật, hãy chọn độ phân giải thấp hơn.</string>
+    <string name="resolution_high_bandwidth_message">Độ phân giải này dùng nhiều băng thông hơn hẳn và cần kết nối mạnh: WiFi 5GHz tốt hoặc kết nối USB ổn định. Nếu thấy giật, hãy chọn độ phân giải thấp hơn.</string>
     <string name="resolution_use_anyway">Vẫn dùng</string>
     <string name="resolution_use_recommended">Dùng khuyến nghị</string>
     <string name="dpi_automatic_desc_format">Dùng mật độ của thiết bị (%1$d DPI)</string>
@@ -1254,7 +1254,7 @@
     <string name="native_aa_wake_remeasure_confirm">Android Auto chỉ khởi động kết nối không dây khi thấy kết nối Bluetooth thay đổi. Nếu thiết bị này đang giữ liên kết rảnh tay, ứng dụng phải ngắt liên kết đó để tạo thay đổi, nên sẽ đo một lần xem liên kết có quay lại không và dừng nếu không. Hãy dùng tùy chọn này nếu kết nối không dây đã ngừng tự khởi động và bạn chấp nhận mất rảnh tay trong chốc lát khi ứng dụng thử lại.</string>
     <string name="native_aa_wake_remeasure_done">Việc đánh thức Bluetooth sẽ được đo lại vào lần kết nối tiếp theo.</string>
     <string name="pref_enable_car_launcher_title">Dùng làm launcher xe</string>
-    <string name="pref_enable_car_launcher_summary">Đăng ký Open Headunit làm ứng dụng màn hình chính khi nhấn nút Home của xe</string>
+    <string name="pref_enable_car_launcher_summary">Đăng ký Open Headunit làm ứng dụng Màn hình chính, để ứng dụng mở khi nhấn nút Home của xe hoặc của đầu phát</string>
     <string name="pref_set_default_launcher_title">Màn hình chính mặc định</string>
     <string name="pref_default_launcher_status_active">Đang hoạt động (Chạm để quản lý)</string>
     <string name="pref_default_launcher_status_inactive">Chưa đặt (Chạm để đặt làm mặc định)</string>

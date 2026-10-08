@@ -144,7 +144,7 @@
     <string name="onb_connection_warning">Choisir un type de connexion masque les paramètres qui ne s\'y appliquent pas, dans Basique comme dans Avancé. Pour les afficher de nouveau, choisissez un autre mode dans les paramètres de connexion.</string>
     <string name="onb_more_appearance">Plus de paramètres d\'apparence</string>
     <string name="onb_automation_title">Automatisation</string>
-    <string name="onb_automation_help">Choisissez comment l\'application démarre et se connecte d\'elle-même. Ouvrez les paramètres d\'Auto-connexion pour modifier l\'ordre de priorité.</string>
+    <string name="onb_automation_help">Choisissez comment l\'application démarre et se connecte d\'elle-même. Ouvrez les paramètres d\'Auto-connexion pour définir l\'ordre de priorité par glisser-déposer.</string>
     <string name="onb_gps_title">Localisation</string>
     <string name="onb_gps_help">Quel GPS Android Auto doit-il utiliser pour la navigation ?</string>
     <string name="onb_gps_this_device">Cet appareil</string>
@@ -292,7 +292,7 @@
     <string name="running">En cours d\'exécution</string>
     <string name="not_running">À l\'arrêt</string>
     <string name="no_android_auto_device_connected">Aucun appareil Android Auto connecté. Vérifiez la connexion USB.</string>
-    <string name="no_usb_device_connected">Aucun appareil USB connecté à cet autoradio.</string>
+    <string name="no_usb_device_connected">Aucun appareil USB connecté.</string>
     <string name="press_back_again_to_exit">Appuyez de nouveau sur Retour pour quitter</string>
     <string name="back">Retour</string>
     <string name="debug_mode">Mode débogage</string>
@@ -318,7 +318,7 @@
 
 
     <string name="not_set">Non défini</string>
-    <string name="keymap_description">Modifier les raccourcis clavier de votre autoradio</string>
+    <string name="keymap_description">Modifier les affectations des touches de votre autoradio</string>
 
     <string name="key_soft_left">Touche gauche</string>
     <string name="key_soft_right">Touche droite</string>
@@ -382,7 +382,7 @@
     <string name="auto_start_wifi_label">Démarrage auto via Wi-Fi</string>
     <string name="auto_start_wifi_description">Ouvrir automatiquement Open Headunit lorsque l\'appareil se connecte à un SSID Wi-Fi précis.</string>
     <string name="auto_start_wifi_ssid_label">SSID Wi-Fi</string>
-    <string name="auto_start_wifi_ssid_description">Ne se connecter que si l\'appareil est connecté à ce SSID Wi-Fi</string>
+    <string name="auto_start_wifi_ssid_description">Démarrer uniquement si l\'appareil est connecté à ce SSID Wi-Fi</string>
     <string name="auto_start_wifi_warning">Fonctionnalité héritée : elle peut ne pas fonctionner de manière fiable sous Android 8 et versions ultérieures, en raison des restrictions en arrière-plan. Vérifiez que l\'application est exclue de l\'optimisation de la batterie.</string>
     <string name="enter_wifi_ssid">Saisir le SSID Wi-Fi</string>
     <string name="wifi_ssid_not_set">Non défini</string>
@@ -393,7 +393,7 @@
     <string name="open_settings">Paramètres</string>
     <string name="cannot_open_settings">Impossible d\'ouvrir les paramètres système</string>
     <string name="right_hand_drive">Conduite à droite</string>
-    <string name="right_hand_drive_description">Adapter l\'interface à la conduite à droite</string>
+    <string name="right_hand_drive_description">Adapter l\'interface à une voiture avec volant à droite</string>
     <string name="wireless_connection_settings">Connexion sans fil</string>
     <string name="category_graphic">Graphique</string>
 
@@ -796,7 +796,7 @@
     <string name="hotspot_warning_title">Fonctionnalité expérimentale</string>
     <string name="hotspot_warning_message">Cette fonctionnalité utilise la réflexion et pourrait ne pas fonctionner sur tous les appareils. Elle peut aussi nécessiter l\'octroi manuel de l\'autorisation « Modifier les paramètres système ».</string>
     <string name="hotspot_permission_title">Autorisation requise</string>
-    <string name="hotspot_permission_message">La fonctionnalité de point d\'accès nécessite l\'autorisation « Modifier les paramètres système ». Activez-la sur l\'écran suivant.</string>
+    <string name="hotspot_permission_message">La fonctionnalité de point d\'accès nécessite l\'autorisation « Modifier les paramètres système ». Activez-la sur l\'écran suivant.</string>
 
     <string name="supported_nativeaa">Prise en charge sans fil améliorée</string>
     <string name="supported_nativeaa_desc">Bonne nouvelle ! Votre appareil prend en charge le mode « Sans fil natif », qui offre une expérience Android Auto plus fluide.\n\nPour l\'activer, il faut actualiser le cache Bluetooth. Procédez comme suit :\n1. Supprimez l\'association existante sur votre téléphone\n2. Appuyez sur OK pour redémarrer le Bluetooth\n3. Associez de nouveau votre téléphone\n\nVoulez-vous passer au mode Android Auto natif maintenant ?</string>
@@ -812,7 +812,7 @@
     <string name="zbt_probe_title">Tester le module Bluetooth de l\'autoradio</string>
     <string name="zbt_probe_idle">Appuyer pour lancer</string>
     <string name="zbt_probe_running">En cours…</string>
-    <string name="zbt_probe_message">Demande à la puce Bluetooth séparée de cet appareil si elle peut prendre en charge une connexion Android Auto. Le test vérifie en huit secondes environ que la puce répond et, seulement si c\'est le cas, l\'observe pendant une minute et demie environ. La ligne sous ce réglage indique ce qui se passe ; rien d\'autre n\'est modifié sur l\'appareil.\n\nLa puce ne communique qu\'avec un programme à la fois. Si une connexion passe déjà par elle, le test l\'indique au lieu de s\'exécuter. Désactivez d\'abord le réglage ci-dessus pour tester la puce seule.\n\n« Réveiller et observer » demande aussi à la puce de se reconnecter à votre téléphone pour Android Auto. C\'est la seule partie qui modifie quelque chose, et un redémarrage de l\'appareil l\'annule. Exportez ensuite le journal et joignez-le.</string>
+    <string name="zbt_probe_message">Demande à la puce Bluetooth séparée de cet appareil si elle peut prendre en charge une connexion Android Auto. Le test vérifie en huit secondes environ que la puce répond et, seulement si c\'est le cas, l\'observe pendant une minute et demie environ. La ligne sous ce réglage indique ce qui se passe ; rien d\'autre n\'est modifié sur l\'appareil.\n\nLa puce ne communique qu\'avec un programme à la fois. Si une connexion passe déjà par elle, le test l\'indique au lieu de s\'exécuter. Désactivez d\'abord le réglage ci-dessus pour tester la puce seule.\n\n« Réveiller et observer » demande aussi à la puce de se reconnecter à votre téléphone pour Android Auto. C\'est la seule partie qui modifie quelque chose, et un redémarrage de l\'appareil l\'annule. Exportez ensuite le journal et joignez-le.</string>
     <string name="zbt_probe_watch_only">Observer seulement</string>
     <string name="zbt_probe_wake_and_watch">Réveiller et observer</string>
     <string name="external_bt_blink_transport">Se connecter via le module Bluetooth externe FYT</string>
@@ -1299,7 +1299,7 @@
     <string name="native_aa_wake_remeasure_confirm">Android Auto ne démarre le sans-fil que s\'il détecte un changement de connexion Bluetooth. Si cet appareil détient déjà la liaison mains libres, l\'application doit la couper pour provoquer ce changement. Elle vérifie donc une seule fois si la liaison revient, et s\'arrête sinon. Utilisez cette option si le sans-fil ne démarre plus tout seul et si vous acceptez de perdre les mains libres un instant pendant le nouvel essai.</string>
     <string name="native_aa_wake_remeasure_done">Le réveil Bluetooth sera remesuré à la prochaine connexion.</string>
     <string name="pref_enable_car_launcher_title">Utiliser comme lanceur de voiture</string>
-    <string name="pref_enable_car_launcher_summary">Enregistre Open Headunit comme application d\'accueil lorsque vous appuyez sur le bouton Accueil de la voiture ou de l\'autoradio</string>
+    <string name="pref_enable_car_launcher_summary">Enregistre Open Headunit comme application d\'accueil, afin qu\'elle s\'ouvre lorsque vous appuyez sur le bouton Accueil de la voiture ou de l\'autoradio</string>
     <string name="pref_set_default_launcher_title">Application d\'accueil par défaut</string>
     <string name="pref_default_launcher_status_active">Actif (appuyer pour gérer)</string>
     <string name="pref_default_launcher_status_inactive">Non défini (appuyer pour définir par défaut)</string>

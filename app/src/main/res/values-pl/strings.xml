@@ -76,7 +76,7 @@
     <string name="invalid_bluetooth_address">To nie jest adres Bluetooth. Wprowadź sześć par cyfr szesnastkowych, na przykład 0C:32:3A:2D:5D:4A.</string>
     <string name="reset">Resetuj</string>
     <string name="gps_for_navigation">GPS do nawigacji</string>
-    <string name="gps_for_navigation_description">Używaj GPS tego urządzenia do nawigacji</string>
+    <string name="gps_for_navigation_description">Używaj GPS do nawigacji</string>
     <string name="enabled">Włączone</string>
     <string name="disabled">Wyłączone</string>
     <string name="resolution">Rozdzielczość</string>
@@ -119,7 +119,7 @@
     <string name="press_back_again_to_exit">Naciśnij Wstecz ponownie, aby wyjść</string>
     <string name="back">Wstecz</string>
     <string name="debug_mode">Tryb debugowania</string>
-    <string name="debug_mode_description">Włącz szczegółowe logowanie</string>
+    <string name="debug_mode_description">Włącz lub wyłącz bardziej szczegółowe logowanie</string>
     <string name="export_logs">Eksportuj logi</string>
     <string name="export_logs_description">Zapisz logi do debugowania</string>
 
@@ -174,7 +174,7 @@
     <string name="auto_start_wifi_label">Autostart po połączeniu z Wi-Fi</string>
     <string name="auto_start_wifi_description">Automatycznie otwiera Open Headunit po połączeniu z siecią Wi-Fi o określonym SSID.</string>
     <string name="auto_start_wifi_ssid_label">SSID Wi-Fi</string>
-    <string name="auto_start_wifi_ssid_description">Działa tylko po połączeniu z siecią Wi-Fi o tym SSID</string>
+    <string name="auto_start_wifi_ssid_description">Uruchamiaj tylko po połączeniu z siecią Wi-Fi o tym SSID</string>
     <string name="auto_start_wifi_warning">Funkcja przestarzała: może nie działać niezawodnie na Androidzie 8+ z powodu ograniczeń pracy w tle. Upewnij się, że aplikacja jest wyłączona z optymalizacji baterii.</string>
     <string name="enter_wifi_ssid">Wprowadź SSID Wi-Fi</string>
     <string name="wifi_ssid_not_set">Nie ustawiono</string>
@@ -214,7 +214,7 @@
     <!-- Video Settings -->
     <string name="category_video">Wideo</string>
     <string name="force_software_decoding">Wymuś dekodowanie programowe</string>
-    <string name="force_software_decoding_description">Może naprawić błędy na niektórych urządzeniach, ale jest mniej wydajne</string>
+    <string name="force_software_decoding_description">Może naprawić błędy na niektórych urządzeniach, ale działa wolniej</string>
     <string name="wireless_mode">Tryb bezprzewodowy</string>
     <string name="wireless_mode_description">Wybierz sposób łączenia bezprzewodowego (lista ręczna, automatyczne wyszukiwanie telefonu lub tryb Wireless Launcher)</string>
     <string-array name="wireless_connection_modes">
@@ -482,7 +482,7 @@
     <string name="vehicle_type_car">Samochód</string>
     <string name="vehicle_type_truck">Ciężarówka</string>
     <string name="vehicle_type_motorcycle">Motocykl</string>
-    <string name="vehicle_type_forced_by_microphone">Mikrofon jednostki głównej jest wyłączony, więc Android Auto jest informowany, że to motocykl, niezależnie od wyboru dokonanego tutaj. To właśnie sprawia, że telefon nagrywa samodzielnie.</string>
+    <string name="vehicle_type_forced_by_microphone">Mikrofon jednostki głównej jest wyłączony, więc Android Auto jest informowany, że to motocykl, niezależnie od wyboru dokonanego tutaj. Dzięki temu telefon używa własnego mikrofonu.</string>
     <string name="vehicle_id_description">Tylko wewnętrzny identyfikator. Jego zmiana spowoduje, że telefon potraktuje to jako inny pojazd, resetując preferencje Android Auto dla tego samochodu.</string>
     <string name="head_unit_make_label">Producent</string>
     <string name="head_unit_make_description">Producent radia</string>

@@ -118,7 +118,7 @@
     <string name="press_back_again_to_exit">Druk nogmaals op Terug om af te sluiten</string>
     <string name="back">Terug</string>
     <string name="debug_mode">Debugmodus</string>
-    <string name="debug_mode_description">Meer logging</string>
+    <string name="debug_mode_description">Meer gedetailleerde logging in- of uitschakelen</string>
     <string name="export_logs">Logs exporteren</string>
     <string name="export_logs_description">Logs opslaan voor foutopsporing</string>
 
@@ -173,7 +173,7 @@
     <string name="auto_start_wifi_label">Automatisch starten bij Wi-Fi</string>
     <string name="auto_start_wifi_description">Open Open Headunit automatisch bij verbinding met een specifieke Wi-Fi-SSID.</string>
     <string name="auto_start_wifi_ssid_label">Wi-Fi-SSID</string>
-    <string name="auto_start_wifi_ssid_description">Alleen verbinden bij verbinding met deze Wi-Fi-SSID</string>
+    <string name="auto_start_wifi_ssid_description">Alleen starten als je verbonden bent met deze Wi-Fi-SSID</string>
     <string name="auto_start_wifi_warning">Verouderde functie: dit werkt mogelijk niet betrouwbaar op Android 8+ vanwege achtergrondbeperkingen. Zorg ervoor dat de app is uitgesloten van batterijoptimalisatie.</string>
     <string name="enter_wifi_ssid">Wi-Fi-SSID invoeren</string>
     <string name="wifi_ssid_not_set">Niet ingesteld</string>
@@ -201,7 +201,7 @@
     <string name="open_settings">Instellingen</string>
     <string name="wireless_connection_settings">Draadloze verbinding</string>
     <string name="right_hand_drive">Rechtsgestuurd</string>
-    <string name="right_hand_drive_description">Plaats de interface voor rechtsgestuurde auto\'s</string>
+    <string name="right_hand_drive_description">Plaats de interface voor een auto met het stuur aan de rechterkant</string>
     <string name="category_graphic">Grafisch</string>
     <string name="custom_insets">Aangepaste marges</string>
     <string name="inset_top">Boven</string>

@@ -76,7 +76,7 @@
     <string name="invalid_bluetooth_address">No es una dirección Bluetooth válida. Escribe seis pares de dígitos hexadecimales, como 0C:32:3A:2D:5D:4A.</string>
     <string name="reset">Restablecer</string>
     <string name="gps_for_navigation">GPS para navegación</string>
-    <string name="gps_for_navigation_description">Usar el GPS de este dispositivo en lugar del GPS del teléfono conectado</string>
+    <string name="gps_for_navigation_description">Usar el GPS para la navegación</string>
     <string name="enabled">Habilitado</string>
     <string name="disabled">Deshabilitado</string>
     <string name="resolution">Resolución</string>
@@ -120,7 +120,7 @@
     <string name="press_back_again_to_exit">Presiona atrás de nuevo para salir</string>
     <string name="back">Atrás</string>
     <string name="debug_mode">Modo de depuración</string>
-    <string name="debug_mode_description">Registrar más eventos</string>
+    <string name="debug_mode_description">Activar o desactivar el registro más detallado</string>
     <string name="export_logs">Exportar registros</string>
     <string name="export_logs_description">Guardar registros para depuración</string>
 
@@ -203,7 +203,7 @@
     <string name="open_settings">Ajustes</string>
     <string name="wireless_connection_settings">Conexión inalámbrica</string>
     <string name="right_hand_drive">Volante a la derecha</string>
-    <string name="right_hand_drive_description">Coloca la interfaz para conducir con el volante a la derecha</string>
+    <string name="right_hand_drive_description">Adapta la interfaz a un auto con el volante a la derecha</string>
     <string name="category_graphic">Gráficos</string>
     <string name="custom_insets">Márgenes personalizados</string>
     <string name="inset_top">Superior</string>
@@ -551,7 +551,7 @@
     <string name="sync_media_session_aa_metadata_description">Mostrar título, artista, duración y portada del teléfono en la sesión multimedia del sistema y en la notificación multimedia</string>
     <string name="auto_resume_playback_on_reconnect">Reanudar reproducción al reconectar</string>
     <string name="auto_resume_playback_on_reconnect_description">Reanuda automáticamente la música si se estaba reproduciendo antes de una breve pérdida de conexión (en los últimos 60 segundos)</string>
-    <string name="error_usb_permission_failed">Error del sistema: no se pudo solicitar el cuadro de diálogo de permiso USB.</string>
+    <string name="error_usb_permission_failed">Error del sistema: no se pudo abrir el cuadro de diálogo de permiso USB.</string>
 
         <!-- Custom loading screen -->
     <string name="loading_screen">Pantalla de carga</string>
@@ -1227,7 +1227,7 @@
     <string name="native_aa_requires_wifi">Android Auto nativo necesita el Wi-Fi de esta unidad. Actívalo, por favor.</string>
     <string name="connection_issue_banner_wifi_radio_off">El Wi-Fi de esta unidad está apagado y Android no deja que la app lo encienda. Enciende el Wi-Fi, o toca para usar el punto de acceso de esta unidad.</string>
     <string name="static_p2p_bssid_title">BSSID estático (Wi-Fi Direct)</string>
-    <string name="static_p2p_bssid_desc">Define a mano el BSSID del grupo Wi-Fi Direct. Es independiente del BSSID del punto de acceso, porque son interfaces distintas y uno nunca sustituye al otro.</string>
+    <string name="static_p2p_bssid_desc">Define a mano el BSSID del grupo Wi-Fi Direct. Es independiente del BSSID del punto de acceso, porque son interfaces distintas y ninguna puede sustituir a la otra.</string>
     <string name="wifi_direct_last_network">Detalles de la red que se le ofrece a tu teléfono</string>
     <string name="wifi_direct_last_network_none">Aún no se ha visto ninguna. Conéctate una vez y vuelve aquí.</string>
     <string name="wifi_direct_last_network_title">Red que se le ofrece a tu teléfono</string>

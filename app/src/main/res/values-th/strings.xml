@@ -130,7 +130,7 @@
     <string name="resolution_too_high_title">ความละเอียดสูงกว่าหน้าจอ</string>
     <string name="resolution_too_high_message">ความละเอียดนี้สูงกว่าที่หน้าจอของคุณรองรับ ภาพจะถูกจำกัดไว้ที่ระดับที่แผงของคุณสามารถแสดงได้ (%1$s) ดังนั้นความละเอียดที่สูงขึ้นจึงใช้แบนด์วิธมากขึ้นโดยไม่เพิ่มคุณภาพ</string>
     <string name="resolution_high_bandwidth_title">ต้องการแบนด์วิธสูงขึ้น</string>
-    <string name="resolution_high_bandwidth_message">ความละเอียดนี้ใช้แบนด์วิธมากขึ้นและต้องการการเชื่อมต่อที่เสถียร: Wi-Fi 5GHz ที่ดี หรือการเชื่อมต่อ USB ที่เสถียร หากคุณสังเกตเห็นอาการแล็ก ให้เลือกความละเอียดที่ต่ำลง</string>
+    <string name="resolution_high_bandwidth_message">ความละเอียดนี้ใช้แบนด์วิดท์มากกว่ามากและต้องใช้การเชื่อมต่อที่แรง เช่น Wi-Fi 5GHz ที่ดี หรือการเชื่อมต่อ USB ที่เสถียร หากรู้สึกว่าภาพกระตุก ให้เลือกความละเอียดที่ต่ำลง</string>
     <string name="resolution_use_anyway">ใช้ต่อไป</string>
     <string name="resolution_use_recommended">ใช้ที่แนะนำ</string>
     <!-- DPI: warning when the chosen resolution is higher than the panel supports -->
@@ -334,7 +334,7 @@
     <string name="press_back_again_to_exit">กดย้อนกลับอีกครั้งเพื่อออก</string>
     <string name="back">ย้อนกลับ</string>
     <string name="debug_mode">โหมดดีบัก</string>
-    <string name="debug_mode_description">เปิด/ปิดการบันทึกล็อกเพิ่มเติม</string>
+    <string name="debug_mode_description">เปิดหรือปิดการบันทึกล็อกแบบละเอียดขึ้น</string>
     <string name="allow_external_configuration">อนุญาตการกำหนดค่าภายนอก</string>
     <string name="allow_external_configuration_description">ให้แอปอัตโนมัติ เช่น Tasker หรือ MacroDroid เปลี่ยนการตั้งค่า ตั้งระดับล็อก และส่งออกล็อกได้ การเชื่อมต่อและตัดการเชื่อมต่อใช้ได้เสมอ ตัวเลือกนี้ใช้กับคำสั่งที่เปลี่ยนการตั้งค่าของเฮดยูนิตเท่านั้น</string>
     <string name="log_level">ระดับล็อก</string>
@@ -434,7 +434,7 @@
     <string name="auto_start_wifi_label">เริ่มอัตโนมัติเมื่อเชื่อมต่อ Wi-Fi</string>
     <string name="auto_start_wifi_description">เปิด Open Headunit อัตโนมัติเมื่อเชื่อมต่อกับ Wi-Fi SSID ที่ระบุ</string>
     <string name="auto_start_wifi_ssid_label">Wi-Fi SSID</string>
-    <string name="auto_start_wifi_ssid_description">เชื่อมต่อเฉพาะเมื่อเชื่อมต่อกับ Wi-Fi SSID นี้</string>
+    <string name="auto_start_wifi_ssid_description">เริ่มทำงานเฉพาะเมื่อเชื่อมต่อกับ Wi-Fi SSID นี้</string>
     <string name="auto_start_wifi_warning">ฟีเจอร์รุ่นเก่า: อาจทำงานไม่เสถียรบน Android 8 ขึ้นไป เพราะข้อจำกัดการทำงานเบื้องหลัง ตรวจสอบว่าแอปไม่ถูกจำกัดด้วยการเพิ่มประสิทธิภาพแบตเตอรี่</string>
     <string name="enter_wifi_ssid">ป้อน Wi-Fi SSID</string>
     <string name="wifi_ssid_not_set">ไม่ได้ตั้งค่า</string>
@@ -506,7 +506,7 @@
     <!-- More Features Settings -->
     <string name="category_more_features">คุณสมบัติเพิ่มเติม</string>
     <string name="pref_enable_car_launcher_title">ใช้เป็น Car Launcher</string>
-    <string name="pref_enable_car_launcher_summary">ลงทะเบียน Open Headunit เป็นแอปหน้าจอหลักเมื่อกดปุ่ม Home ของรถหรือเฮดยูนิต</string>
+    <string name="pref_enable_car_launcher_summary">ลงทะเบียน Open Headunit เป็นแอปหน้าจอหลัก เพื่อให้เปิดขึ้นเมื่อกดปุ่ม Home ของรถหรือเฮดยูนิต</string>
     <string name="pref_set_default_launcher_title">แอปหน้าจอหลักเริ่มต้น</string>
     <string name="pref_default_launcher_status_active">ใช้งานอยู่ (แตะเพื่อจัดการ)</string>
     <string name="pref_default_launcher_status_inactive">ไม่ได้ตั้งค่า (แตะเพื่อตั้งเป็นค่าเริ่มต้น)</string>
@@ -964,7 +964,7 @@
     <string name="supported_nativeaa">การสนับสนุนระบบไร้สายขั้นสูง</string>
     <string name="supported_nativeaa_desc">ข่าวดี! อุปกรณ์ของคุณรองรับโหมด \"Native Wireless\" ซึ่งช่วยให้ใช้ Android Auto ได้ราบรื่นยิ่งขึ้น\n\nหากต้องการเปิดใช้ ต้องรีเฟรชแคชบลูทูธ โปรดทำดังนี้\n1. ลบการจับคู่เดิมบนโทรศัพท์\n2. แตะ ตกลง เพื่อรีสตาร์ทบลูทูธ\n3. จับคู่โทรศัพท์ใหม่\n\nต้องการเปลี่ยนเป็นโหมด Native AA ตอนนี้ไหม</string>
     <string name="native_aa_poke_not_running">บลูทูธไร้สายไม่ได้ทำงานบนเฮดยูนิตนี้ ตรวจสอบการตั้งค่า</string>
-    <string name="not_supported_nativeaa">ดูเหมือนว่าไม่รองรับ Native Wireless</string>
+    <string name="not_supported_nativeaa">Native Wireless อาจไม่รองรับ</string>
     <string name="not_supported_nativeaa_desc">อุปกรณ์ของคุณอาจไม่รองรับคุณสมบัติบลูทูธหรือ Wi-Fi ที่ Native Wireless ต้องใช้ คุณยังลองใช้ได้ แต่หากไม่สำเร็จ ให้ใช้โหมด \"Wireless Helper\" หรือ \"Auto (Headunit Server)\" แทน</string>
     <string name="external_bt_nativeaa">Native Wireless ไม่สามารถทำงานบนเฮดยูนิตนี้ได้</string>
     <string name="external_bt_nativeaa_desc">โทรศัพท์ของคุณจับคู่กับโมดูลบลูทูธของยูนิตนี้เอง (%1$s) ไม่ใช่กับบลูทูธที่ Android เปิดให้แอปใช้ จึงไม่มีทางส่งแฮนด์เชคไร้สายไปถึงโมดูลได้\n\nแอปนี้เข้าถึงโมดูลนั้นได้ผ่านบริการ ZJ/ZLink เท่านั้น แต่ยูนิตนี้ไม่ได้เปิดบริการนี้ไว้ ให้ใช้ USB หรือโหมด Wi-Fi แทน</string>
@@ -1036,7 +1036,7 @@
     <string name="media_action_play">เล่น</string>
     <string name="media_action_pause">หยุดชั่วคราว</string>
     <string name="media_action_next">ถัดไป</string>
-    <string name="error_usb_permission_failed">ข้อผิดพลาดของระบบ: ขอแสดงกล่องโต้ตอบสิทธิ์ USB ไม่สำเร็จ</string>
+    <string name="error_usb_permission_failed">ข้อผิดพลาดของระบบ: เปิดกล่องโต้ตอบสิทธิ์ USB ไม่สำเร็จ</string>
     <string name="wifi_autostart_title">เริ่ม Wi-Fi อัตโนมัติ</string>
     <string name="wifi_autostart_content">เชื่อมต่อกับ %s แล้ว แตะเพื่อเริ่ม Android Auto</string>
 
@@ -1113,7 +1113,7 @@
     <string name="native_aa_wake_remeasure_confirm">Android Auto จะเริ่มระบบไร้สายก็ต่อเมื่อเห็นการเชื่อมต่อบลูทูธเปลี่ยนแปลงเท่านั้น หากยูนิตนี้ถือการเชื่อมต่อแฮนด์ฟรีอยู่แล้ว แอปต้องตัดการเชื่อมต่อนั้นเพื่อให้เกิดการเปลี่ยนแปลง จึงวัดครั้งเดียวว่าการเชื่อมต่อกลับมาหรือไม่ และจะหยุดหากไม่กลับมา ใช้ตัวเลือกนี้เมื่อระบบไร้สายไม่เริ่มเองอีก และคุณยอมให้แฮนด์ฟรีใช้ไม่ได้ชั่วครู่ระหว่างที่แอปลองอีกครั้ง</string>
     <string name="native_aa_wake_remeasure_done">การปลุกบลูทูธจะถูกวัดใหม่อีกครั้งในการเชื่อมต่อครั้งถัดไป</string>
     <string name="announce_connection_configuration">ขอเวลาหมดอายุของลิงก์ให้นานขึ้น</string>
-    <string name="announce_connection_configuration_description">บอกให้ Android Auto รอ 15 วินาทีแทนที่จะเป็น 3 วินาทีก่อนถือว่าลิงก์ตาย และใช้บัฟเฟอร์ซ็อกเก็ตที่ใหญ่ขึ้น</string>
+    <string name="announce_connection_configuration_description">บอกให้ Android Auto รอ 15 วินาที แทนที่จะเป็น 3 วินาที ก่อนถือว่าลิงก์ขาด และให้ใช้บัฟเฟอร์ซ็อกเก็ตที่ใหญ่ขึ้น ใช้กับวิทยุที่ออกจากช่องสัญญาณไปสองสามวินาทีระหว่างใช้งานแล้วทำให้การเชื่อมต่อหลุดไปด้วย ยังไม่มีการวัดว่าโทรศัพท์ของคุณทำตามค่าเหล่านี้หรือไม่</string>
     <string name="native_aa_ignore_external_bt">ละเว้นการตรวจสอบความเข้ากันได้ของบลูทูธ</string>
     <string name="native_aa_ignore_external_bt_description">ยูนิตนี้ดูเหมือนเก็บบลูทูธไว้ในโมดูลแยกที่ Android เข้าถึงไม่ได้ ระบบจึงปิด Android Auto แบบไร้สายโดยอัตโนมัติ ปิดไว้เป็นค่าเริ่มต้น เปิดเฉพาะเมื่อคุณคิดว่าผลตรวจนี้ผิด เพราะหากผลตรวจถูก การเชื่อมต่อจะล้มเหลวโดยไม่แจ้ง และบันทึกจะดูปกติ</string>
 
@@ -1121,7 +1121,7 @@
     <string name="zbt_probe_title">ทดสอบโมดูลบลูทูธของเฮดยูนิต</string>
     <string name="zbt_probe_idle">แตะเพื่อเริ่มทดสอบ</string>
     <string name="zbt_probe_running">กำลังทดสอบ…</string>
-    <string name="zbt_probe_message">สอบถามชิปบลูทูธแยกของยูนิตนี้ว่าจะรองรับการเชื่อมต่อ Android Auto หรือไม่ ระบบจะตรวจภายในราว 8 วินาทีว่าชิปตอบสนองหรือไม่ และหากตอบสนองเท่านั้น จึงจะเฝ้าดูต่ออีกราวหนึ่งนาทีครึ่ง บรรทัดใต้การตั้งค่านี้แสดงสิ่งที่กำลังเกิดขึ้น และไม่มีการเปลี่ยนแปลงสิ่งอื่นบนยูนิต\n\nชิปคุยกับโปรแกรมได้ครั้งละหนึ่งโปรแกรม หากมีการเชื่อมต่อทำงานผ่านชิปอยู่แล้ว การทดสอบจะแจ้งเรื่องนี้แทนการทดสอบ ให้ปิดการตั้งค่าด้านบนก่อนเพื่อทดสอบแยกต่างหาก\n\nตัวเลือก ปลุกและเฝ้าดู จะสั่งให้ชิปเชื่อมต่อกับโทรศัพท์ของคุณใหม่สำหรับ Android Auto ด้วย ส่วนนี้เป็นส่วนเดียวที่เปลี่ยนแปลงสิ่งใด และการรีสตาร์ทยูนิตจะย้อนกลับได้ โปรดส่งออกบันทึกหลังจากนั้นและแนบมาด้วย</string>
+    <string name="zbt_probe_message">สอบถามชิปบลูทูธแยกของยูนิตนี้ว่าจะรองรับการเชื่อมต่อ Android Auto หรือไม่ ระบบใช้เวลาราว 8 วินาทีเพื่อตรวจว่าชิปตอบสนองหรือไม่ และเฉพาะเมื่อชิปตอบสนอง จึงจะเฝ้าดูต่ออีกราวหนึ่งนาทีครึ่ง บรรทัดใต้การตั้งค่านี้แสดงสิ่งที่กำลังเกิดขึ้น และไม่มีการเปลี่ยนแปลงสิ่งอื่นบนยูนิต\n\nชิปคุยกับโปรแกรมได้ครั้งละหนึ่งโปรแกรม หากมีการเชื่อมต่อที่ทำงานผ่านชิปอยู่แล้ว การทดสอบจะแจ้งเรื่องนี้แทนการทดสอบ ให้ปิดการตั้งค่าด้านบนก่อน เพื่อทดสอบแยกต่างหาก\n\nตัวเลือก ปลุกและเฝ้าดู จะสั่งให้ชิปเชื่อมต่อกับโทรศัพท์ของคุณใหม่สำหรับ Android Auto ด้วย ขั้นตอนนี้เป็นขั้นตอนเดียวที่เปลี่ยนแปลงค่าใดๆ และการรีสตาร์ทยูนิตจะย้อนค่ากลับ โปรดส่งออกล็อกหลังจากนั้นและแนบมาด้วย</string>
     <string name="zbt_probe_watch_only">ดูอย่างเดียว</string>
     <string name="zbt_probe_wake_and_watch">ปลุกและเฝ้าดู</string>
     <string name="external_bt_blink_transport">เชื่อมต่อผ่านโมดูลบลูทูธภายนอกของ FYT</string>

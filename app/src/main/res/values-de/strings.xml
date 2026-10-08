@@ -109,7 +109,7 @@
     <string name="invalid_bluetooth_address">Das ist keine Bluetooth-Adresse. Gib sechs hexadezimale Zahlenpaare ein, z. B. 0C:32:3A:2D:5D:4A.</string>
     <string name="reset">Zurücksetzen</string>
     <string name="gps_for_navigation">GPS für Navigation</string>
-    <string name="gps_for_navigation_description">GPS des Geräts für die Navigation verwenden</string>
+    <string name="gps_for_navigation_description">GPS für die Navigation verwenden</string>
     <string name="enabled">Aktiviert</string>
     <string name="disabled">Deaktiviert</string>
     <string name="resolution">Auflösung</string>
@@ -154,11 +154,11 @@
     <string name="running">Läuft</string>
     <string name="not_running">Läuft nicht</string>
     <string name="no_android_auto_device_connected">Kein Android-Auto-Gerät verbunden. Bitte USB-Verbindung prüfen.</string>
-    <string name="no_usb_device_connected">Kein USB-Gerät gefunden.</string>
+    <string name="no_usb_device_connected">Kein USB-Gerät verbunden.</string>
     <string name="press_back_again_to_exit">Zum Beenden erneut „Zurück“ drücken</string>
     <string name="back">Zurück</string>
     <string name="debug_mode">Debug-Modus</string>
-    <string name="debug_mode_description">Erweitertes Logging aktivieren</string>
+    <string name="debug_mode_description">Detaillierteres Logging ein- oder ausschalten</string>
     <string name="allow_external_configuration">Externe Konfiguration zulassen</string>
     <string name="allow_external_configuration_description">Erlaubt Automatisierungs-Apps wie Tasker oder MacroDroid, Einstellungen zu ändern, das Log-Level zu setzen und Logs zu exportieren. Verbinden und Trennen funktioniert immer; dies betrifft nur Befehle, die die Einrichtung der Headunit ändern.</string>
     <string name="log_level">Log-Level</string>
@@ -229,7 +229,7 @@
     <string name="auto_start_wifi_label">Autostart bei WLAN</string>
     <string name="auto_start_wifi_description">Öffnet Open Headunit automatisch, wenn eine Verbindung zu einer bestimmten WLAN-SSID besteht.</string>
     <string name="auto_start_wifi_ssid_label">WLAN-SSID</string>
-    <string name="auto_start_wifi_ssid_description">Nur verbinden, wenn eine Verbindung mit dieser WLAN-SSID besteht</string>
+    <string name="auto_start_wifi_ssid_description">Nur starten, wenn eine Verbindung mit dieser WLAN-SSID besteht</string>
     <string name="auto_start_wifi_warning">Veraltete Funktion: Sie funktioniert unter Android 8+ wegen Hintergrundbeschränkungen eventuell nicht zuverlässig. Stelle sicher, dass die App von der Akkuoptimierung ausgenommen ist.</string>
     <string name="enter_wifi_ssid">WLAN-SSID eingeben</string>
     <string name="wifi_ssid_not_set">Nicht festgelegt</string>
@@ -425,11 +425,11 @@
     <string name="android_auto_starting">Android Auto startet…</string>
     <string name="connection_interrupted">Verbindung verloren</string>
     <string name="connection_interrupted_detail">Neuer Versuch…</string>
-    <string name="wifi_disconnect_toast">Android Auto getrennt: Bei kabellosem AA „Zwischen Netzwerken wechseln“ oder „Netzwerkbeschleunigung“ in den WLAN-Einstellungen deaktivieren</string>
+    <string name="wifi_disconnect_toast">Android Auto getrennt. Bei kabellosem AA „Zwischen Netzwerken wechseln“ oder „Netzwerkbeschleunigung“ in den WLAN-Einstellungen des Smartphones deaktivieren</string>
     <string name="reset_usb_option">USB-Verbindung zurücksetzen</string>
     <string name="reset_usb_timeout">USB-Gerät nicht gefunden. Bitte Verbindung prüfen.</string>
     <string name="notification_service_running">Open Headunit läuft</string>
-    <string name="notification_projection_active">Android Auto wird angezeigt</string>
+    <string name="notification_projection_active">Android-Auto-Projektion ist aktiv</string>
     <string name="shortcut_connect_title">Verbinden</string>
     <string name="shortcut_connect_desc">Mit zuletzt verbundenem Smartphone verbinden</string>
     <string name="shortcut_selfmode_title">Self Mode</string>
@@ -556,7 +556,7 @@
     <string name="hotspot_warning_title">Experimentelle Funktion</string>
     <string name="hotspot_warning_message">Diese Funktion nutzt Reflection und funktioniert möglicherweise nicht auf allen Geräten. Eventuell muss die Berechtigung \"Systemeinstellungen ändern\" manuell erteilt werden.</string>
     <string name="hotspot_permission_title">Berechtigung erforderlich</string>
-    <string name="hotspot_permission_message">Die Hotspot-Funktion benötigt die Berechtigung \"Systemeinstellungen ändern\". Aktiviere sie bitte auf der nächsten Seite.</string>
+    <string name="hotspot_permission_message">Die Hotspot-Funktion benötigt die Berechtigung „Systemeinstellungen ändern“. Aktiviere sie bitte auf der nächsten Seite.</string>
 
     <string name="supported_nativeaa">Verbesserte Unterstützung für kabellose Verbindungen</string>
     <string name="supported_nativeaa_desc">Gute Nachrichten! Dein Gerät unterstützt den Modus \"Natives Wireless\", der Android Auto reibungsloser macht.\n\nDafür müssen wir den Bluetooth-Cache aktualisieren. Bitte:\n1. Entferne die bestehende Kopplung auf deinem Smartphone\n2. Tippe auf OK, um Bluetooth neu zu starten\n3. Koppele dein Smartphone erneut\n\nMöchtest du jetzt in den Modus \"Native AA\" wechseln?</string>
@@ -609,7 +609,7 @@
     <string name="sync_media_session_aa_metadata_description">Titel, Interpret, Dauer und Albumcover vom Smartphone in der System-Mediensitzung und in der Medienbenachrichtigung anzeigen</string>
     <string name="auto_resume_playback_on_reconnect">Wiedergabe nach Neuverbindung fortsetzen</string>
     <string name="auto_resume_playback_on_reconnect_description">Setzt die Musikwiedergabe nach einem kurzen Verbindungsabbruch (innerhalb von 60 Sekunden) automatisch fort, falls zuvor Musik lief</string>
-    <string name="error_usb_permission_failed">Systemfehler: Anforderung des USB-Berechtigungsdialogs fehlgeschlagen.</string>
+    <string name="error_usb_permission_failed">Systemfehler: USB-Berechtigungsdialog konnte nicht geöffnet werden.</string>
 
     <!-- Custom loading screen -->
     <string name="loading_screen">Ladebildschirm</string>
@@ -702,7 +702,7 @@
     <string name="renderer_switched_to">Renderer: %1$s</string>
     <string name="su_needed_keymaps_warning">Warnung: Dein Gerät muss entweder Root-Zugriff haben oder Shizuku installiert haben. Ist das der Fall, erlaube die SU-Rechte, sobald du dazu aufgefordert wirst. Die Lenkradtasten funktionieren vermutlich erst, wenn das behoben ist.</string>
 
-    <string name="self_mode_overlay_permission_description">Damit der Self Mode zuverlässig im Hintergrund starten kann, aktiviere im nächsten Bildschirm die Berechtigung „Über anderen Apps einblenden“.</string>
+    <string name="self_mode_overlay_permission_description">Damit der Self Mode zuverlässig im Hintergrund starten kann, aktiviere auf dem nächsten Bildschirm die Berechtigung „Über anderen Apps einblenden“.</string>
 
     <string name="delete">Löschen</string>
     <string name="night_mode_coordinates">Koordinaten</string>
@@ -863,7 +863,7 @@
     <string name="perm_notifications_title">Benachrichtigungen</string>
     <string name="perm_notifications_help">Zeigt die laufende Benachrichtigung an, solange Android Auto aktiv ist.</string>
     <string name="perm_overlay_title">Über anderen Apps einblenden</string>
-    <string name="perm_overlay_help">Ermöglicht der App, den Autobildschirm über anderen Apps zu öffnen, einschließlich Autostart.</string>
+    <string name="perm_overlay_help">Ermöglicht der App, den Autobildschirm über anderen Apps zu öffnen, auch wenn sie automatisch startet.</string>
     <string name="perm_write_settings_title">Systemeinstellungen ändern</string>
     <string name="perm_write_settings_help">Ermöglicht der App, den Hotspot für kabellose Verbindungen automatisch einzuschalten.</string>
     <string name="perm_storage_title">Speicher</string>
@@ -1257,7 +1257,7 @@
     <string name="native_aa_wake_remeasure_confirm">Android Auto startet drahtlose Verbindungen nur, wenn es die Bluetooth-Verbindungsänderung sieht. Wo dieses Gerät die Freisprechverbindung bereits hält, muss die App sie trennen, um das auszulösen, deshalb misst sie einmal, ob die Verbindung zurückkommt, und stoppt, wenn nicht. Nutze dies, wenn die drahtlose Verbindung nicht mehr von selbst startet und du bereit bist, die Freisprechfunktion kurz zu verlieren, während sie es erneut versucht.</string>
     <string name="native_aa_wake_remeasure_done">Das Bluetooth-Wecken wird bei der nächsten Verbindung erneut gemessen.</string>
     <string name="pref_enable_car_launcher_title">Als Car-Launcher verwenden</string>
-    <string name="pref_enable_car_launcher_summary">Registriert Open Headunit als Startbildschirm-App, wenn die Home-Taste des Autos oder der Headunit gedrückt wird</string>
+    <string name="pref_enable_car_launcher_summary">Registriert Open Headunit als Startbildschirm-App, damit sie sich öffnet, wenn die Home-Taste des Autos oder der Headunit gedrückt wird</string>
     <string name="pref_set_default_launcher_title">Standard-Home-App</string>
     <string name="pref_default_launcher_status_active">Aktiv (Tippen zum Verwalten)</string>
     <string name="pref_default_launcher_status_inactive">Nicht gesetzt (Tippen zum Festlegen)</string>

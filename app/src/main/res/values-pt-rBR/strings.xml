@@ -119,7 +119,7 @@
     <string name="press_back_again_to_exit">Pressione voltar novamente para sair</string>
     <string name="back">Voltar</string>
     <string name="debug_mode">Modo de depuração</string>
-    <string name="debug_mode_description">Ativa mais registros de log</string>
+    <string name="debug_mode_description">Ativa ou desativa registros de log mais detalhados</string>
     <string name="export_logs">Exportar logs</string>
     <string name="export_logs_description">Salvar logs para depuração</string>
 
@@ -174,7 +174,7 @@
     <string name="auto_start_wifi_label">Início automático por Wi-Fi</string>
     <string name="auto_start_wifi_description">Abre o Open Headunit automaticamente ao conectar a um SSID Wi-Fi específico.</string>
     <string name="auto_start_wifi_ssid_label">SSID Wi-Fi</string>
-    <string name="auto_start_wifi_ssid_description">Conectar apenas se estiver associado a este SSID Wi-Fi</string>
+    <string name="auto_start_wifi_ssid_description">Iniciar apenas quando conectado a este SSID Wi-Fi</string>
     <string name="auto_start_wifi_warning">Recurso legado: pode não funcionar de forma confiável no Android 8 ou superior, devido a restrições em segundo plano. Verifique se o app está excluído da otimização de bateria.</string>
     <string name="enter_wifi_ssid">Insira o SSID do Wi-Fi</string>
     <string name="wifi_ssid_not_set">Não definido</string>
@@ -202,7 +202,7 @@
     <string name="open_settings">Configurações</string>
     <string name="wireless_connection_settings">Conexão sem fio</string>
     <string name="right_hand_drive">Direção à direita</string>
-    <string name="right_hand_drive_description">Posiciona a interface para direção pelo lado direito</string>
+    <string name="right_hand_drive_description">Posiciona a interface para um carro com volante do lado direito</string>
     <string name="category_graphic">Gráficos</string>
     <string name="custom_insets">Margens personalizadas</string>
     <string name="inset_top">Superior</string>
@@ -482,7 +482,7 @@
     <string name="vehicle_type_car">Carro</string>
     <string name="vehicle_type_truck">Caminhão</string>
     <string name="vehicle_type_motorcycle">Motocicleta</string>
-    <string name="vehicle_type_forced_by_microphone">O microfone da central está desligado, então o Android Auto é informado de que isto é uma motocicleta, qualquer que seja a opção escolhida aqui. É isso que faz o telefone gravar por conta própria.</string>
+    <string name="vehicle_type_forced_by_microphone">O microfone da central está desligado, então o Android Auto é informado de que isto é uma motocicleta, qualquer que seja a opção escolhida aqui. É isso que faz o smartphone usar o próprio microfone.</string>
     <string name="vehicle_id_description">Somente um identificador interno. Se você alterá-lo, o celular tratará este carro como outro veículo e redefinirá as preferências do Android Auto para ele.</string>
     <string name="head_unit_make_label">Fabricante</string>
     <string name="head_unit_make_description">Fabricante da central multimídia</string>
@@ -822,7 +822,7 @@
     <string name="perm_notifications_title">Notificações</string>
     <string name="perm_notifications_help">Exibe a notificação persistente enquanto o Android Auto está em execução.</string>
     <string name="perm_overlay_title">Sobrepor a outros apps</string>
-    <string name="perm_overlay_help">Permite que o app abra a tela do carro sobre outros aplicativos, incluindo o início automático.</string>
+    <string name="perm_overlay_help">Permite que o app abra a tela do carro sobre outros apps, inclusive quando ele inicia automaticamente.</string>
     <string name="perm_write_settings_title">Modificar configurações do sistema</string>
     <string name="perm_write_settings_help">Permite que o app ative o ponto de acesso automaticamente para conexões sem fio.</string>
     <string name="perm_storage_title">Armazenamento</string>
@@ -1254,7 +1254,7 @@
     <string name="native_aa_wake_remeasure_confirm">O Android Auto só inicia uma conexão sem fio quando percebe a mudança na conexão Bluetooth. Onde esta unidade já mantém o vínculo mãos livres, o app precisa quebrá-lo para provocar isso, então ele mede uma vez se o vínculo volta e para se não voltar. Use isso se a conexão sem fio parou de iniciar sozinha e você aceita perder o mãos livres por um instante enquanto ele tenta de novo.</string>
     <string name="native_aa_wake_remeasure_done">O despertar por Bluetooth será medido de novo na próxima conexão.</string>
     <string name="pref_enable_car_launcher_title">Usar como tela inicial do carro</string>
-    <string name="pref_enable_car_launcher_summary">Registra o Open Headunit como app de tela inicial quando o botão Home do carro ou da central é pressionado</string>
+    <string name="pref_enable_car_launcher_summary">Registra o Open Headunit como app de tela inicial, para que ele abra quando o botão Home do carro ou da central for pressionado</string>
     <string name="pref_set_default_launcher_title">App de tela inicial padrão</string>
     <string name="pref_default_launcher_status_active">Ativo (toque para gerenciar)</string>
     <string name="pref_default_launcher_status_inactive">Não definido (toque para definir como padrão)</string>

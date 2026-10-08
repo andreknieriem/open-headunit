@@ -75,7 +75,7 @@
     <string name="bluetooth_address_message">Собственный адрес этого устройства, по которому телефон его узнаёт. Найдите его в разделе «Настройки» &gt; «О телефоне» &gt; «Состояние» или на сопряжённом телефоне под значком шестерёнки рядом с этим устройством. Оставьте поле пустым для автоматического определения.</string>
     <string name="invalid_bluetooth_address">Это не адрес Bluetooth. Введите шесть пар шестнадцатеричных цифр, например 0C:32:3A:2D:5D:4A.</string>
     <string name="reset">Сброс</string>
-    <string name="gps_for_navigation">Использовать GPS</string>
+    <string name="gps_for_navigation">GPS для навигации</string>
     <string name="gps_for_navigation_description">Использовать GPS для навигации</string>
     <string name="enabled">Включено</string>
     <string name="disabled">Выключено</string>
@@ -119,13 +119,13 @@
     <string name="press_back_again_to_exit">Нажмите «Назад» ещё раз, чтобы выйти</string>
     <string name="back">Назад</string>
     <string name="debug_mode">Режим отладки</string>
-    <string name="debug_mode_description">Включить расширенное логирование</string>
+    <string name="debug_mode_description">Включает или отключает более подробное ведение журнала</string>
     <string name="export_logs">Экспорт логов</string>
     <string name="export_logs_description">Сохранить логи для отладки</string>
 
 
     <string name="not_set">Не назначено</string>
-    <string name="keymap_description">Изменить привязку клавиш для вашего ГУ</string>
+    <string name="keymap_description">Изменить назначение клавиш для вашего головного устройства</string>
 
     <string name="key_soft_left">Левая программная клавиша</string>
     <string name="key_soft_right">Правая программная клавиша</string>
@@ -174,7 +174,7 @@
     <string name="auto_start_wifi_label">Автозапуск по Wi‑Fi</string>
     <string name="auto_start_wifi_description">Автоматически открывать Open Headunit при подключении к определенной Wi‑Fi сети (SSID).</string>
     <string name="auto_start_wifi_ssid_label">SSID Wi‑Fi</string>
-    <string name="auto_start_wifi_ssid_description">Подключаться только при подключении к этой Wi‑Fi сети (SSID)</string>
+    <string name="auto_start_wifi_ssid_description">Запускать только при подключении к этой сети Wi‑Fi (SSID)</string>
     <string name="auto_start_wifi_warning">Устаревшая функция: из-за фоновых ограничений на Android 8+ она может работать нестабильно. Убедитесь, что для приложения отключена экономия заряда батареи.</string>
     <string name="enter_wifi_ssid">Введите SSID Wi‑Fi</string>
     <string name="wifi_ssid_not_set">Не задано</string>

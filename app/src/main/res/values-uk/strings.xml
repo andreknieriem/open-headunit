@@ -174,7 +174,7 @@
     <string name="auto_start_wifi_label">Автозапуск за Wi-Fi</string>
     <string name="auto_start_wifi_description">Автоматично відкривати Open Headunit під час підключення до певної мережі Wi-Fi (SSID).</string>
     <string name="auto_start_wifi_ssid_label">SSID Wi-Fi</string>
-    <string name="auto_start_wifi_ssid_description">Підключатися лише до мережі Wi-Fi з цим SSID</string>
+    <string name="auto_start_wifi_ssid_description">Запускати лише за підключення до мережі Wi-Fi з цим SSID</string>
     <string name="auto_start_wifi_warning">Застаріла функція: через фонові обмеження може працювати нестабільно на Android 8+. Переконайтеся, що для застосунку вимкнено оптимізацію акумулятора.</string>
     <string name="enter_wifi_ssid">Введіть SSID Wi-Fi</string>
     <string name="wifi_ssid_not_set">Не задано</string>
@@ -198,11 +198,11 @@
     <string name="bt_permission_denied_title">Потрібен дозвіл Bluetooth</string>
     <string name="bt_permission_denied_message">Щоб вибрати сполучені пристрої, потрібен дозвіл Bluetooth. Надайте його в налаштуваннях застосунку.</string>
     <string name="overlay_permission_title">Дозвіл на запуск у фоні</string>
-    <string name="overlay_permission_description">Щоб Open Headunit міг автоматично відкриватися після підключення Bluetooth, увімкніть дозвіл «Показувати поверх інших застосунків» на наступному екрані.</string>
+    <string name="overlay_permission_description">Щоб Open Headunit міг автоматично відкриватися після підключення Bluetooth, увімкніть дозвіл «Показувати поверх додатків» на наступному екрані.</string>
     <string name="open_settings">Налаштування</string>
     <string name="wireless_connection_settings">Бездротове підключення</string>
     <string name="right_hand_drive">Правостороннє керування</string>
-    <string name="right_hand_drive_description">Розмістити інтерфейс для правостороннього руху</string>
+    <string name="right_hand_drive_description">Налаштувати інтерфейс для авто з правим кермом</string>
     <string name="category_graphic">Графіка</string>
     <string name="custom_insets">Власні відступи (поля)</string>
     <string name="inset_top">Зверху</string>
@@ -500,7 +500,7 @@
     <string name="hotspot_permission_message">Для функції точки доступу потрібен дозвіл «Змінення налаштувань системи». Увімкніть його на наступному екрані.</string>
 
     <string name="native_aa_poke_not_running">Бездротовий Bluetooth на цьому пристрої не працює. Перевірте налаштування.</string>
-    <string name="not_supported_nativeaa">Режим Native Wireless, схоже, не підтримується</string>
+    <string name="not_supported_nativeaa">Режим Native Wireless може не підтримуватися</string>
     <string name="not_supported_nativeaa_desc">Ваш пристрій, можливо, не підтримує потрібні функції Bluetooth або Wi-Fi для режиму Native Wireless. Можна спробувати все одно, але якщо не вийде, скористайтеся режимом «Wireless Helper» або «Auto (Headunit Server)».</string>
     <string name="shortcut_selfmode_title">Самостійний режим</string>
     <string name="shortcut_selfmode_desc">Запустити Android Auto на цьому пристрої</string>
@@ -759,7 +759,7 @@
     <string name="onb_night_light_sensor_available">Виявлено датчик світла, тому режим «Автоматично» може реагувати на навколишнє освітлення.</string>
     <string name="onb_night_no_light_sensor">Датчик світла не виявлено, тому режим «Автоматично» орієнтується на схід і захід сонця.</string>
     <string name="onb_ready_title">Усе готово</string>
-    <string name="onb_ready_summary">Підключення: %1$s\nРоздільна здатність: %2$s\nКодек: %3$s\n\nВи можете точно налаштувати все в Налаштуваннях.</string>
+    <string name="onb_ready_summary">Підключення: %1$s\nРоздільна здатність: %2$s\nКодек: %3$s\n\nУсе можна детально налаштувати в налаштуваннях.</string>
     <string name="onb_language_help">Виберіть мову додатка.</string>
     <string name="connection_kind_usb">USB</string>
     <string name="onb_connection_usb_detail">Телефон підключено через USB: кабелем або бездротовим USB-адаптером.</string>
@@ -1255,7 +1255,7 @@
     <string name="native_aa_wake_remeasure_confirm">Android Auto запускає бездротове з\'єднання, лише коли бачить зміну стану підключення Bluetooth. Якщо цей пристрій уже утримує з\'єднання hands-free, додатку доводиться його розірвати, щоб це спрацювало. Тому він один раз перевіряє, чи з\'єднання відновлюється, і зупиняється, якщо ні. Скористайтеся цим, якщо бездротове з\'єднання перестало запускатися саме і ви готові ненадовго втратити hands-free, поки додаток пробує знову.</string>
     <string name="native_aa_wake_remeasure_done">Пробудження Bluetooth буде виміряно знову під час наступного підключення.</string>
     <string name="pref_enable_car_launcher_title">Використовувати як лаунчер авто</string>
-    <string name="pref_enable_car_launcher_summary">Реєструє Open Headunit як застосунок головного екрана, коли в авто або на магнітолі натискається кнопка «Головна»</string>
+    <string name="pref_enable_car_launcher_summary">Реєструє Open Headunit як додаток головного екрана, щоб він відкривався, коли натискають кнопку «Головна» на авто або магнітолі</string>
     <string name="pref_set_default_launcher_title">Типовий застосунок головного екрана</string>
     <string name="pref_default_launcher_status_active">Активно (торкніться, щоб керувати)</string>
     <string name="pref_default_launcher_status_inactive">Не вибрано (торкніться, щоб призначити)</string>

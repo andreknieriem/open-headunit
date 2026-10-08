@@ -71,7 +71,7 @@
     <string name="reconnection_required_message">El dispositivo está en espera. Desconecta y vuelve a conectar el cable USB para reiniciar Android Auto.</string>
 
     <string name="bluetooth_address_s">Dirección Bluetooth</string>
-    <string name="enter_bluetooth_mac">Introduce la dirección MAC de Bluetooth</string>
+    <string name="enter_bluetooth_mac">Introduce la MAC de Bluetooth</string>
     <string name="bluetooth_address_message">La dirección propia de esta unidad, con la que el teléfono la reconoce. La encontrarás en Ajustes, Información, Estado, o en el teléfono emparejado bajo el engranaje junto a este dispositivo. Déjalo vacío para detectarla automáticamente.</string>
     <string name="invalid_bluetooth_address">Eso no es una dirección Bluetooth. Introduce seis pares de dígitos hexadecimales, como 0C:32:3A:2D:5D:4A.</string>
     <string name="reset">Restablecer</string>
@@ -120,7 +120,7 @@
     <string name="press_back_again_to_exit">Pulsa Atrás otra vez para salir</string>
     <string name="back">Atrás</string>
     <string name="debug_mode">Modo de depuración</string>
-    <string name="debug_mode_description">Activar más registros</string>
+    <string name="debug_mode_description">Activar o desactivar un registro más detallado</string>
     <string name="export_logs">Exportar registros</string>
     <string name="export_logs_description">Guardar registros para depuración</string>
 
@@ -175,7 +175,7 @@
     <string name="auto_start_wifi_label">Inicio automático con Wi-Fi</string>
     <string name="auto_start_wifi_description">Abre Open Headunit automáticamente al conectarse a un SSID de Wi-Fi concreto.</string>
     <string name="auto_start_wifi_ssid_label">SSID de Wi-Fi</string>
-    <string name="auto_start_wifi_ssid_description">Conectar solo cuando se detecte este SSID de Wi-Fi</string>
+    <string name="auto_start_wifi_ssid_description">Iniciar solo cuando haya conexión con este SSID de Wi-Fi</string>
     <string name="auto_start_wifi_warning">Función heredada: puede que no funcione de forma fiable en Android 8+ por las restricciones en segundo plano. Asegúrate de excluir la app de la optimización de batería.</string>
     <string name="enter_wifi_ssid">Introduce el SSID de Wi-Fi</string>
     <string name="wifi_ssid_not_set">Sin establecer</string>
@@ -203,7 +203,7 @@
     <string name="open_settings">Ajustes</string>
     <string name="wireless_connection_settings">Conexión inalámbrica</string>
     <string name="right_hand_drive">Volante a la derecha</string>
-    <string name="right_hand_drive_description">Adapta la interfaz a la conducción con el volante a la derecha</string>
+    <string name="right_hand_drive_description">Coloca la interfaz para un coche con el volante a la derecha</string>
     <string name="category_graphic">Gráficos</string>
     <string name="custom_insets">Márgenes personalizados</string>
     <string name="inset_top">Arriba</string>
@@ -350,7 +350,7 @@
     <string name="connection_interrupted_detail">Reintentando…</string>
     <string name="wifi_disconnect_toast">Android Auto desconectado: si usas AA inalámbrico, desactiva \"Cambiar entre redes\" o \"Aceleración de red\" en los ajustes de Wi-Fi del móvil</string>
     <string name="notification_service_running">Open Headunit en ejecución</string>
-    <string name="notification_projection_active">Android Auto proyectado</string>
+    <string name="notification_projection_active">La proyección de Android Auto está activa</string>
     <string name="shortcut_connect_title">Conectar</string>
     <string name="shortcut_connect_desc">Conectar automáticamente con el último teléfono</string>
     <string name="shortcut_selfmode_title">Modo autónomo</string>
@@ -830,7 +830,7 @@
     <string name="perm_notifications_title">Notificaciones</string>
     <string name="perm_notifications_help">Muestra la notificación persistente mientras Android Auto está en ejecución.</string>
     <string name="perm_overlay_title">Mostrar sobre otras aplicaciones</string>
-    <string name="perm_overlay_help">Permite a la aplicación abrir la pantalla del coche sobre otras aplicaciones, incluido el inicio automático.</string>
+    <string name="perm_overlay_help">Permite que la app abra la pantalla del coche sobre otras apps, también cuando se inicia automáticamente.</string>
     <string name="perm_write_settings_title">Modificar ajustes del sistema</string>
     <string name="perm_write_settings_help">Permite a la aplicación activar automáticamente el punto de acceso Wi-Fi para las conexiones inalámbricas.</string>
     <string name="perm_storage_title">Almacenamiento</string>
@@ -968,7 +968,7 @@
     <string name="hotspot_ssid_override_message">Déjalo en blanco para leer el nombre automáticamente de los ajustes del punto de acceso de este dispositivo. Algunos dispositivos no permiten que las apps lo lean: si el registro dice que no se pudo leer el nombre, escríbelo aquí exactamente como aparece en los ajustes de tu punto de acceso.</string>
     <string name="hotspot_password_override">Contraseña del punto de acceso (manual)</string>
     <string name="hotspot_password_override_message">Déjalo en blanco para leer la contraseña automáticamente. Es necesario en dispositivos que no permiten que las apps lean la configuración del punto de acceso. Se le dará esta contraseña al teléfono para que se una.</string>
-    <string name="su_needed_keymaps_warning">Aviso: la unidad principal debe tener acceso root o Shizuku instalado. En ese caso, concede los permisos SU cuando se te pidan. Es probable que los botones del volante no funcionen hasta que lo soluciones.</string>
+    <string name="su_needed_keymaps_warning">Aviso: tu unidad debe tener acceso root o Shizuku instalado. En ese caso, concede los permisos SU cuando se te pidan. Es probable que los botones del volante no funcionen hasta que lo soluciones.</string>
 
     <!-- Auto-added missing translations -->
     <string name="blacklisted">En lista negra</string>
@@ -1268,7 +1268,7 @@
     <string name="native_aa_wake_remeasure_confirm">Android Auto solo inicia la conexión inalámbrica cuando detecta el cambio en la conexión Bluetooth. Cuando esta unidad ya mantiene la conexión de manos libres, la app tiene que romperla para provocar ese cambio, así que mide una vez si la conexión se recupera y se detiene si no lo hace. Usa esto si la conexión inalámbrica ha dejado de iniciarse sola y no te importa perder el manos libres un momento mientras lo vuelve a intentar.</string>
     <string name="native_aa_wake_remeasure_done">El despertar Bluetooth se volverá a medir en la próxima conexión.</string>
     <string name="pref_enable_car_launcher_title">Usar como pantalla de inicio del coche</string>
-    <string name="pref_enable_car_launcher_summary">Registra Open Headunit como app de inicio cuando se pulsa el botón de inicio del coche o de la unidad</string>
+    <string name="pref_enable_car_launcher_summary">Registra Open Headunit como app de la pantalla de inicio, para que se abra al pulsar el botón de inicio del coche o de la unidad</string>
     <string name="pref_set_default_launcher_title">App de inicio predeterminada</string>
     <string name="pref_default_launcher_status_active">Activa (toca para gestionar)</string>
     <string name="pref_default_launcher_status_inactive">No establecida (toca para establecerla)</string>

@@ -199,7 +199,7 @@
     <string name="auto_start_wifi_label">Avvio automatico con Wi-Fi</string>
     <string name="auto_start_wifi_description">Apri Open Headunit automaticamente quando ti connetti a uno specifico SSID Wi-Fi.</string>
     <string name="auto_start_wifi_ssid_label">SSID Wi-Fi</string>
-    <string name="auto_start_wifi_ssid_description">Connetti solo quando sei collegato a questo SSID Wi-Fi</string>
+    <string name="auto_start_wifi_ssid_description">Avvia solo quando sei collegato a questo SSID Wi-Fi</string>
     <string name="auto_start_wifi_warning">Funzione legacy: potrebbe non funzionare in modo affidabile su Android 8+ a causa delle restrizioni in background. Assicurati che l\'app sia esclusa dall\'ottimizzazione della batteria.</string>
     <string name="enter_wifi_ssid">Inserisci SSID Wi-Fi</string>
     <string name="wifi_ssid_not_set">Non impostato</string>
@@ -226,7 +226,7 @@
     <string name="overlay_permission_description">Per consentire a Open Headunit di aprirsi automaticamente quando si connette il Bluetooth, abilita il permesso «Mostra sopra altre app» nella schermata successiva.</string>
     <string name="open_settings">Impostazioni</string>
     <string name="right_hand_drive">Guida a destra</string>
-    <string name="right_hand_drive_description">Posiziona l\'interfaccia per la guida a destra</string>
+    <string name="right_hand_drive_description">Posiziona l\'interfaccia per un\'auto con guida a destra</string>
     <string name="wireless_connection_settings">Connessione wireless</string>
     <string name="category_graphic">Grafica</string>
     <string name="custom_insets">Margini personalizzati</string>
@@ -376,7 +376,7 @@
     <string name="reset_usb_option">Reimposta connessione USB</string>
     <string name="reset_usb_timeout">Dispositivo USB non trovato. Controlla la connessione.</string>
     <string name="notification_service_running">Open Headunit è in esecuzione</string>
-    <string name="notification_projection_active">Android Auto è in proiezione</string>
+    <string name="notification_projection_active">La proiezione di Android Auto è attiva</string>
     <string name="shortcut_connect_title">Connetti</string>
     <string name="shortcut_connect_desc">Connetti automaticamente all\'ultimo telefono</string>
     <string name="shortcut_selfmode_title">Modalità Self</string>
@@ -489,7 +489,7 @@
     <string name="vehicle_type_car">Auto</string>
     <string name="vehicle_type_truck">Camion</string>
     <string name="vehicle_type_motorcycle">Motocicletta</string>
-    <string name="vehicle_type_forced_by_microphone">Il microfono dell\'unità è disattivato, quindi ad Android Auto viene detto che questa è una motocicletta qualunque cosa venga scelta qui. È questo a far registrare il telefono da solo.</string>
+    <string name="vehicle_type_forced_by_microphone">Il microfono dell\'unità è disattivato, quindi ad Android Auto viene detto che questa è una motocicletta, qualunque cosa venga scelta qui. È questo che porta il telefono a usare il proprio microfono.</string>
     <string name="vehicle_id_description">Solo un identificatore interno. Se lo modifichi, il telefono tratterà questo veicolo come un altro e le preferenze di Android Auto per questa auto verranno azzerate.</string>
     <string name="head_unit_make_label">Marca</string>
     <string name="head_unit_make_description">Produttore della head unit</string>
@@ -510,7 +510,7 @@
     <string name="supported_nativeaa">Supporto wireless avanzato</string>
     <string name="supported_nativeaa_desc">Ottime notizie! Il tuo dispositivo supporta la modalità \"Native Wireless\", che offre un\'esperienza Android Auto più fluida. \n\nPer attivarla bisogna aggiornare la cache Bluetooth. Procedi così: \n1. Rimuovi l\'associazione esistente sul telefono \n2. Tocca OK per riavviare il Bluetooth \n3. Associa di nuovo il telefono \n\nVuoi passare ora alla modalità Native AA?</string>
     <string name="native_aa_poke_not_running">Il Bluetooth wireless non è attivo su questa unità. Controlla le impostazioni.</string>
-    <string name="not_supported_nativeaa">Native Wireless non sembra supportato</string>
+    <string name="not_supported_nativeaa">Native Wireless potrebbe non essere supportato</string>
     <string name="not_supported_nativeaa_desc">Il tuo dispositivo potrebbe non supportare le funzioni Bluetooth o Wi-Fi necessarie per Native Wireless. Puoi provare comunque, ma se fallisce, utilizza la modalità \"Wireless Helper\" o \"Auto (Headunit Server)\".</string>
 
     <string name="wait_for_wifi">Attendi WiFi prima di WiFi Direct</string>
@@ -557,7 +557,7 @@
     <string name="sync_media_session_aa_metadata_description">Mostra titolo, artista, durata e copertina dal telefono nella sessione multimediale di sistema e nella notifica multimediale</string>
     <string name="auto_resume_playback_on_reconnect">Riprendi la riproduzione alla riconnessione</string>
     <string name="auto_resume_playback_on_reconnect_description">Riprende automaticamente la musica se era in riproduzione attiva prima di una breve disconnessione (entro 60 secondi)</string>
-    <string name="error_usb_permission_failed">Errore di sistema: Impossibile richiedere la finestra di dialogo del permesso USB.</string>
+    <string name="error_usb_permission_failed">Errore di sistema: impossibile aprire la finestra di dialogo del permesso USB.</string>
 
     <!-- Custom loading screen -->
     <string name="loading_screen">Schermata di caricamento</string>
@@ -955,7 +955,7 @@
     <string name="hotspot_ssid_override_message">Lascia vuoto per leggere automaticamente il nome dalle impostazioni hotspot di questo dispositivo. Alcuni dispositivi non permettono alle app di leggerlo: se il log dice che non è stato possibile leggere il nome, scrivilo qui esattamente come appare nelle impostazioni hotspot.</string>
     <string name="hotspot_password_override">Password hotspot (manuale)</string>
     <string name="hotspot_password_override_message">Lascia vuoto per leggere automaticamente la password. Serve sui dispositivi che non permettono alle app di leggere la configurazione dell\'hotspot. Al telefono verrà data questa password per connettersi.</string>
-    <string name="su_needed_keymaps_warning">Attenzione: l\'unità deve avere i permessi di root oppure Shizuku installato. In questo caso, consenti i diritti SU quando richiesto. Finché non lo fai, i tasti del volante probabilmente non funzionano.</string>
+    <string name="su_needed_keymaps_warning">Attenzione: l\'unità deve avere i permessi di root oppure Shizuku installato. In questo caso, consenti i diritti SU quando richiesto. Finché il problema non è risolto, i tasti del volante probabilmente non funzioneranno.</string>
 
     <!-- Auto-added missing translations -->
     <string name="blacklisted">In lista nera</string>

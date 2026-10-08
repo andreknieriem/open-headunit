@@ -173,7 +173,7 @@
     <string name="auto_start_wifi_label">Automatikus indítás Wi-Fi-csatlakozáskor</string>
     <string name="auto_start_wifi_description">Az Open Headunit automatikus megnyitása, amikor az eszköz egy adott Wi-Fi SSID-hez csatlakozik.</string>
     <string name="auto_start_wifi_ssid_label">Wi-Fi SSID</string>
-    <string name="auto_start_wifi_ssid_description">Csak akkor, ha az eszköz ehhez a Wi-Fi SSID-hez csatlakozik</string>
+    <string name="auto_start_wifi_ssid_description">Csak akkor induljon el, ha az eszköz ehhez a Wi-Fi SSID-hez csatlakozik</string>
     <string name="auto_start_wifi_warning">Régi funkció: a háttérkorlátozások miatt Android 8 vagy újabb rendszeren nem biztos, hogy megbízhatóan működik. Győződjön meg arról, hogy az alkalmazás ki van véve az akkumulátoroptimalizálás alól.</string>
     <string name="enter_wifi_ssid">Adja meg a Wi-Fi SSID-t</string>
     <string name="wifi_ssid_not_set">Nincs beállítva</string>
@@ -201,7 +201,7 @@
     <string name="open_settings">Beállítások</string>
     <string name="wireless_connection_settings">Vezeték nélküli kapcsolat</string>
     <string name="right_hand_drive">Jobbkormányos vezetés</string>
-    <string name="right_hand_drive_description">A felület elrendezése jobbkormányos vezetéshez</string>
+    <string name="right_hand_drive_description">A felület elrendezése jobbkormányos autóhoz</string>
     <string name="category_graphic">Grafika</string>
     <string name="custom_insets">Egyéni belső margók</string>
     <string name="inset_top">Felső</string>
@@ -483,7 +483,7 @@
     <string name="vehicle_type_car">Autó</string>
     <string name="vehicle_type_truck">Teherautó</string>
     <string name="vehicle_type_motorcycle">Motorkerékpár</string>
-    <string name="vehicle_type_forced_by_microphone">A fejegység mikrofonja ki van kapcsolva, ezért az Android Auto motorkerékpárként értesül a járműről, bármit választ is itt. Emiatt a telefon saját maga rögzít.</string>
+    <string name="vehicle_type_forced_by_microphone">A fejegység mikrofonja ki van kapcsolva, ezért az Android Auto motorkerékpárként értesül a járműről, bármit választ is itt. Emiatt a telefon a saját mikrofonját használja.</string>
     <string name="vehicle_id_description">Csak belső azonosító. Módosításakor a telefon másik járműként kezeli majd ezt, és visszaállítja az Android Auto ehhez az autóhoz tartozó beállításait.</string>
     <string name="head_unit_make_label">Gyártó</string>
     <string name="head_unit_make_description">Fejegység gyártója</string>
@@ -760,7 +760,7 @@
     <string name="onb_connection_usb_detail">Telefon USB-n keresztül csatlakoztatva, kábellel vagy USB-s vezeték nélküli adapterrel.</string>
     <string name="onb_more_appearance">További megjelenítési beállítások</string>
     <string name="onb_automation_title">Automatizálás</string>
-    <string name="onb_automation_help">Válaszd ki, hogyan induljon el és csatlakozzon az alkalmazás magától. Nyisd meg az Automatikus csatlakozás beállításait a prioritási sorrend átrendezéséhez.</string>
+    <string name="onb_automation_help">Válaszd ki, hogyan induljon el és csatlakozzon az alkalmazás magától. Nyisd meg az Automatikus csatlakozás beállításait, ahol húzással állíthatod be a prioritási sorrendet.</string>
     <string name="onb_gps_title">Tartózkodási hely</string>
     <string name="onb_gps_help">Melyik GPS-t használja az Android Auto a navigációhoz?</string>
     <string name="onb_gps_this_device">Ez az eszköz</string>

@@ -76,7 +76,7 @@
     <string name="invalid_bluetooth_address">To není adresa Bluetooth. Zadejte šest dvojic šestnáctkových číslic, například 0C:32:3A:2D:5D:4A.</string>
     <string name="reset">Resetovat</string>
     <string name="gps_for_navigation">GPS pro navigaci</string>
-    <string name="gps_for_navigation_description">Použít GPS tohoto zařízení pro navigaci</string>
+    <string name="gps_for_navigation_description">Použít GPS pro navigaci</string>
     <string name="enabled">Zapnuto</string>
     <string name="disabled">Vypnuto</string>
     <string name="resolution">Rozlišení</string>
@@ -115,7 +115,7 @@
     <string name="running">Spuštěno</string>
     <string name="not_running">Nespuštěno</string>
     <string name="no_android_auto_device_connected">Není připojeno žádné zařízení Android Auto. Zkontrolujte připojení USB.</string>
-    <string name="no_usb_device_connected">K zařízení není připojeno žádné USB zařízení.</string>
+    <string name="no_usb_device_connected">Není připojeno žádné zařízení USB.</string>
     <string name="press_back_again_to_exit">Stiskněte znovu tlačítko zpět pro ukončení</string>
     <string name="back">Zpět</string>
     <string name="debug_mode">Režim ladění</string>
@@ -174,7 +174,7 @@
     <string name="auto_start_wifi_label">Spuštění při připojení k Wi-Fi</string>
     <string name="auto_start_wifi_description">Automaticky otevřít Open Headunit při připojení k určité Wi-Fi síti (SSID).</string>
     <string name="auto_start_wifi_ssid_label">SSID Wi-Fi</string>
-    <string name="auto_start_wifi_ssid_description">Připojit pouze při připojení k této síti Wi-Fi (SSID)</string>
+    <string name="auto_start_wifi_ssid_description">Spustit pouze při připojení k této síti Wi-Fi (SSID)</string>
     <string name="auto_start_wifi_warning">Zastaralá funkce: na Androidu 8+ může kvůli omezením na pozadí fungovat nespolehlivě. Ujistěte se, že aplikace je vyloučena z optimalizace baterie.</string>
     <string name="enter_wifi_ssid">Zadejte SSID Wi-Fi</string>
     <string name="wifi_ssid_not_set">Nenastaveno</string>
@@ -202,7 +202,7 @@
     <string name="open_settings">Nastavení</string>
     <string name="wireless_connection_settings">Bezdrátové připojení</string>
     <string name="right_hand_drive">Pravostranné řízení</string>
-    <string name="right_hand_drive_description">Upravit rozhraní pro řízení na pravé straně</string>
+    <string name="right_hand_drive_description">Přizpůsobit rozhraní vozidlu s řízením vpravo</string>
     <string name="category_graphic">Grafika</string>
     <string name="custom_insets">Vlastní okraje</string>
     <string name="inset_top">Nahoře</string>
@@ -214,7 +214,7 @@
     <!-- Video Settings -->
     <string name="category_video">Video</string>
     <string name="force_software_decoding">Vynutit softwarové dekódování</string>
-    <string name="force_software_decoding_description">Může vyřešit problémy na některých zařízeních, ale je méně výkonné</string>
+    <string name="force_software_decoding_description">Může vyřešit problémy na některých zařízeních, ale je pomalejší</string>
     <string name="wireless_mode">Bezdrátový režim</string>
     <string name="wireless_mode_description">Vyberte, jak se aplikace připojuje bezdrátově (ruční seznam, automatické vyhledání telefonu nebo režim Wireless Launcher)</string>
     <string-array name="wireless_connection_modes">
@@ -349,7 +349,7 @@
     <string name="connection_interrupted_detail">Opětovné připojování…</string>
     <string name="wifi_disconnect_toast">Android Auto odpojeno: Pokud používáte bezdrátové AA, vypněte v nastavení Wi-Fi telefonu „Přepínání mezi sítěmi“ nebo „Zrychlení sítě“</string>
     <string name="notification_service_running">Open Headunit běží</string>
-    <string name="notification_projection_active">Android Auto se promítá</string>
+    <string name="notification_projection_active">Projekce Android Auto je aktivní</string>
     <string name="shortcut_connect_title">Připojit</string>
     <string name="shortcut_connect_desc">Automaticky se připojit k poslednímu telefonu</string>
     <string name="shortcut_selfmode_title">Self Mode</string>
@@ -484,7 +484,7 @@
     <string name="vehicle_type_car">Automobil</string>
     <string name="vehicle_type_truck">Nákladní vůz</string>
     <string name="vehicle_type_motorcycle">Motocykl</string>
-    <string name="vehicle_type_forced_by_microphone">Mikrofon hlavní jednotky je vypnutý, takže Android Auto dostane informaci, že jde o motocykl, ať se zde zvolí cokoli. Právě to donutí telefon nahrávat samostatně.</string>
+    <string name="vehicle_type_forced_by_microphone">Mikrofon hlavní jednotky je vypnutý, takže Android Auto dostane informaci, že jde o motocykl, ať zde zvolíte cokoli. Díky tomu telefon používá vlastní mikrofon.</string>
     <string name="vehicle_id_description">Pouze interní identifikátor. Jeho změna způsobí, že váš telefon bude toto vozidlo považovat za jiné, čímž se resetují vaše předvolby Android Auto pro toto auto.</string>
     <string name="head_unit_make_label">Výrobce</string>
     <string name="head_unit_make_description">Výrobce autorádia</string>
@@ -501,7 +501,7 @@
     <string name="hotspot_permission_title">Vyžadováno oprávnění</string>
     <string name="hotspot_permission_message">Funkce hotspotu vyžaduje oprávnění „Změna systémových nastavení“. Povolte ho prosím na další obrazovce.</string>
     <string name="native_aa_poke_not_running">Bezdrátový Bluetooth na této jednotce neběží. Zkontrolujte nastavení.</string>
-    <string name="not_supported_nativeaa">Nativní bezdrátové připojení se zdá být nepodporováno</string>
+    <string name="not_supported_nativeaa">Nativní bezdrátové připojení nemusí být podporováno</string>
     <string name="not_supported_nativeaa_desc">Vaše zařízení nemusí podporovat požadované funkce Bluetooth nebo Wi-Fi pro nativní bezdrátové připojení. Můžete to přesto zkusit, ale pokud to selže, použijte prosím místo toho režim „Wireless Helper“ nebo „Auto (Headunit Server)“.</string>
     <string name="wait_for_wifi">Počkat na Wi-Fi před Wi-Fi Direct</string>
     <string name="wait_for_wifi_description">Při startu počká na připojení k Wi-Fi, než spustí Wi-Fi Direct. Zapněte, pokud vaše autorádio potřebuje po zapnutí několik sekund na připojení k Wi-Fi.</string>
@@ -1254,7 +1254,7 @@
     <string name="native_aa_wake_remeasure_confirm">Android Auto spustí bezdrátové připojení, jen když zaznamená změnu připojení Bluetooth. Tam, kde tato jednotka už drží spojení handsfree, ho aplikace musí přerušit, aby ke změně došlo. Jednou proto změří, zda se spojení vrátí, a pokud ne, zastaví se. Použijte, pokud se bezdrátové připojení přestalo spouštět samo a jste ochotni na chvíli přijít o handsfree, zatímco aplikace zkouší znovu.</string>
     <string name="native_aa_wake_remeasure_done">Probuzení Bluetooth se znovu změří při dalším připojení.</string>
     <string name="pref_enable_car_launcher_title">Použít jako spouštěč v autě</string>
-    <string name="pref_enable_car_launcher_summary">Zaregistruje Open Headunit jako aplikaci domovské obrazovky, když se stiskne tlačítko Domů na voze nebo autorádiu</string>
+    <string name="pref_enable_car_launcher_summary">Zaregistruje Open Headunit jako aplikaci domovské obrazovky, aby se spustil po stisknutí tlačítka Domů na voze nebo autorádiu</string>
     <string name="pref_set_default_launcher_title">Výchozí domovská aplikace</string>
     <string name="pref_default_launcher_status_active">Aktivní (Klepnutím spravovat)</string>
     <string name="pref_default_launcher_status_inactive">Nenastaveno (Klepnutím nastavit)</string>

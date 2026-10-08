@@ -78,7 +78,7 @@
     <string name="perm_notifications_title">Notifikasi</string>
     <string name="perm_notifications_help">Menampilkan notifikasi yang sedang berlangsung saat Android Auto berjalan.</string>
     <string name="perm_overlay_title">Tampilkan di atas apl lain</string>
-    <string name="perm_overlay_help">Mengizinkan aplikasi membuka layar mobil di atas aplikasi lain, termasuk mulai otomatis.</string>
+    <string name="perm_overlay_help">Mengizinkan aplikasi membuka layar mobil di atas aplikasi lain, termasuk saat aplikasi mulai otomatis.</string>
     <string name="perm_write_settings_title">Ubah setelan sistem</string>
     <string name="perm_write_settings_help">Mengizinkan aplikasi mengaktifkan hotspot secara otomatis untuk koneksi nirkabel.</string>
     <string name="perm_storage_title">Penyimpanan</string>
@@ -144,7 +144,7 @@
     <string name="onb_connection_warning">Memilih jenis koneksi akan menyembunyikan setelan yang tidak berlaku untuknya, baik di Dasar maupun Lanjutan. Untuk menampilkannya lagi, pilih mode lain di setelan koneksi nanti.</string>
     <string name="onb_more_appearance">Setelan tampilan lainnya</string>
     <string name="onb_automation_title">Otomatisasi</string>
-    <string name="onb_automation_help">Pilih cara aplikasi memulai dan terhubung secara otomatis. Buka setelan Hubungkan otomatis untuk menyeret urutan prioritas.</string>
+    <string name="onb_automation_help">Pilih cara aplikasi memulai dan terhubung secara otomatis. Buka setelan Hubungkan otomatis untuk mengatur urutan prioritas dengan menyeret.</string>
     <string name="onb_gps_title">Lokasi</string>
     <string name="onb_gps_help">GPS mana yang harus digunakan Android Auto untuk navigasi?</string>
     <string name="onb_gps_this_device">Perangkat ini</string>
@@ -329,12 +329,12 @@
     <string name="running">Berjalan</string>
     <string name="not_running">Tidak Berjalan</string>
     <string name="no_android_auto_device_connected">Tidak ada perangkat Android Auto yang terhubung. Silakan periksa koneksi USB.</string>
-    <string name="no_usb_device_connected">Tidak ada perangkat USB yang terhubung ke perangkat.</string>
+    <string name="no_usb_device_connected">Tidak ada perangkat USB yang terhubung.</string>
     <string name="no_usb_host_support">Head unit ini tidak mendukung mode host USB, jadi Android Auto berkabel tidak tersedia. Gunakan koneksi nirkabel sebagai gantinya.</string>
     <string name="press_back_again_to_exit">Tekan kembali lagi untuk keluar</string>
     <string name="back">Kembali</string>
     <string name="debug_mode">Mode Debug</string>
-    <string name="debug_mode_description">Catat log lebih rinci</string>
+    <string name="debug_mode_description">Aktifkan atau nonaktifkan pencatatan log yang lebih rinci</string>
     <string name="allow_external_configuration">Izinkan konfigurasi eksternal</string>
     <string name="allow_external_configuration_description">Biarkan aplikasi otomatisasi seperti Tasker atau MacroDroid mengubah pengaturan, mengatur tingkat log, dan mengekspor log. Menghubungkan dan memutuskan selalu berfungsi; ini hanya untuk perintah yang mengubah cara head unit dikonfigurasi.</string>
     <string name="log_level">Tingkat Log</string>
@@ -355,7 +355,7 @@
     <string name="export_logs_description">Simpan log untuk debugging</string>
 
     <string name="not_set">Belum Diatur</string>
-    <string name="keymap_description">Ubah pemetaan tombol untuk Headunit Anda</string>
+    <string name="keymap_description">Ubah pemetaan tombol untuk head unit Anda</string>
 
     <string name="key_soft_left">Tombol Fungsi Kiri</string>
     <string name="key_soft_right">Tombol Fungsi Kanan</string>
@@ -434,18 +434,18 @@
     <string name="auto_start_wifi_label">Mulai otomatis saat Wi-Fi tersambung</string>
     <string name="auto_start_wifi_description">Buka Open Headunit secara otomatis saat terhubung ke SSID Wi-Fi tertentu.</string>
     <string name="auto_start_wifi_ssid_label">SSID Wi-Fi</string>
-    <string name="auto_start_wifi_ssid_description">Hubungkan hanya jika tersambung ke SSID Wi-Fi ini</string>
+    <string name="auto_start_wifi_ssid_description">Mulai hanya jika tersambung ke SSID Wi-Fi ini</string>
     <string name="auto_start_wifi_warning">Fitur Lama: Ini mungkin tidak berfungsi andal di Android 8+ karena pembatasan latar belakang. Pastikan aplikasi dikecualikan dari pengoptimalan baterai.</string>
     <string name="enter_wifi_ssid">Masukkan SSID Wi-Fi</string>
     <string name="wifi_ssid_not_set">Belum diatur</string>
     <string name="bt_permission_denied_title">Izin Bluetooth Diperlukan</string>
     <string name="bt_permission_denied_message">Izin Bluetooth diperlukan untuk memilih perangkat tersanding. Berikan izin di pengaturan aplikasi.</string>
     <string name="overlay_permission_title">Izin Mulai di Latar Belakang</string>
-    <string name="overlay_permission_description">Untuk mengizinkan Open Headunit terbuka secara otomatis saat Bluetooth tersambung, aktifkan izin \"Tampilkan di atas aplikasi lain\" pada layar berikutnya.</string>
+    <string name="overlay_permission_description">Agar Open Headunit dapat terbuka secara otomatis saat Bluetooth tersambung, aktifkan izin \"Tampilkan di atas apl lain\" pada layar berikutnya.</string>
     <string name="open_settings">Pengaturan</string>
     <string name="cannot_open_settings">Tidak dapat membuka pengaturan sistem</string>
     <string name="right_hand_drive">Kemudi kanan</string>
-    <string name="right_hand_drive_description">Posisikan UI untuk mengemudi di sisi kanan</string>
+    <string name="right_hand_drive_description">Posisikan UI untuk mobil dengan setir di sisi kanan</string>
     <string name="wireless_connection_settings">Koneksi Nirkabel</string>
     <string name="category_graphic">Grafik</string>
 
@@ -453,7 +453,7 @@
     <string name="static_bssid_enter_value">Masukkan BSSID (XX:XX:XX:XX:XX:XX)</string>
     <string name="static_bssid_desc">Atur BSSID access point secara manual. Hanya diperlukan jika tidak ada komponen di perangkat ini yang melaporkannya; log mencatat setiap sumber yang diperiksa.</string>
     <string name="static_p2p_bssid_title">BSSID Statis (Wi-Fi Direct)</string>
-    <string name="static_p2p_bssid_desc">Atur BSSID grup Wi-Fi Direct secara manual. Terpisah dari BSSID access point karena keduanya adalah antarmuka yang berbeda.</string>
+    <string name="static_p2p_bssid_desc">Atur BSSID grup Wi-Fi Direct secara manual. Terpisah dari BSSID access point karena keduanya adalah antarmuka yang berbeda dan yang satu tidak dapat menggantikan yang lain.</string>
 
     <string name="custom_insets">Inset Kustom (Margin)</string>
     <string name="inset_top">Atas</string>
@@ -465,7 +465,7 @@
     <!-- Video Settings -->
     <string name="category_video">Video</string>
     <string name="force_software_decoding">Paksa Dekode Perangkat Lunak</string>
-    <string name="force_software_decoding_description">Dapat mengatasi masalah pada beberapa perangkat, namun kinerjanya lebih rendah</string>
+    <string name="force_software_decoding_description">Dapat mengatasi masalah pada beberapa perangkat, tetapi lebih lambat</string>
     <string name="software_video_decoder">Sumber Dekoder Perangkat Lunak</string>
     <string name="software_video_decoder_bundled">FFmpeg Bawaan</string>
     <string name="software_video_decoder_device">MediaCodec Perangkat</string>
@@ -506,7 +506,7 @@
     <!-- More Features Settings -->
     <string name="category_more_features">Fitur Lainnya</string>
     <string name="pref_enable_car_launcher_title">Gunakan sebagai Peluncur Mobil</string>
-    <string name="pref_enable_car_launcher_summary">Mendaftarkan Open Headunit sebagai aplikasi layar beranda saat tombol Home mobil atau headunit ditekan</string>
+    <string name="pref_enable_car_launcher_summary">Mendaftarkan Open Headunit sebagai aplikasi layar Beranda, sehingga terbuka saat tombol Home mobil atau head unit ditekan</string>
     <string name="pref_set_default_launcher_title">Aplikasi Beranda Default</string>
     <string name="pref_default_launcher_status_active">Aktif (Ketuk untuk mengelola)</string>
     <string name="pref_default_launcher_status_inactive">Belum diatur (Ketuk untuk mengatur sebagai default)</string>
@@ -777,14 +777,14 @@
     <string name="connection_interrupted">Koneksi terputus</string>
     <string name="connection_interrupted_detail">Mencoba lagi…</string>
     <string name="renderer_fallback_surface">Video terus membeku, jadi tampilan dialihkan ke SurfaceView untuk sesi ini. Jika sudah stabil, setel Mode tampilan ke SurfaceView di Setelan.</string>
-    <string name="wifi_disconnect_toast">Android Auto terputus: Jika menggunakan AA nirkabel, nonaktifkan \"Beralih antar jaringan\" atau \"Akselerasi jaringan\" di setelan Wi-Fi ponsel</string>
+    <string name="wifi_disconnect_toast">Android Auto terputus. Jika menggunakan AA nirkabel, nonaktifkan \"Beralih antar jaringan\" atau \"Akselerasi jaringan\" di setelan Wi-Fi ponsel Anda</string>
     <string name="reset_usb_option">Atur Ulang Koneksi USB</string>
     <string name="reset_usb_timeout">Perangkat USB tidak ditemukan. Periksa koneksi.</string>
     <string name="notification_service_running">Open Headunit sedang berjalan</string>
     <string name="boot_loop_paused_title">Pengaktifan nirkabel dijeda</string>
     <string name="boot_loop_paused_generic">Perangkat ini dimulai ulang tiga kali berturut-turut sesaat setelah Open Headunit mengaktifkan nirkabel, jadi nirkabel dinonaktifkan kali ini. USB tetap berfungsi. Buka aplikasi untuk mengaktifkannya kembali.</string>
     <string name="boot_loop_paused_native_wifi_direct">Perangkat ini dimulai ulang tiga kali berturut-turut sesaat setelah Open Headunit mengaktifkan nirkabel, jadi nirkabel dinonaktifkan kali ini. Pada beberapa head unit, chipset Wi-Fi membuat seluruh sistem mati saat ponsel bergabung ke jaringan Wi-Fi Direct. Coba alihkan mode Android Auto ke hotspot head unit. USB tetap berfungsi.</string>
-    <string name="notification_projection_active">Android Auto diproyeksikan</string>
+    <string name="notification_projection_active">Proyeksi Android Auto aktif</string>
     <string name="shortcut_connect_title">Hubungkan</string>
     <string name="shortcut_connect_desc">Hubungkan otomatis ke ponsel terakhir</string>
     <string name="shortcut_selfmode_title">Mode Mandiri</string>
@@ -942,7 +942,7 @@
     <string name="vehicle_type_car">Mobil</string>
     <string name="vehicle_type_truck">Truk</string>
     <string name="vehicle_type_motorcycle">Sepeda Motor</string>
-    <string name="vehicle_type_forced_by_microphone">Mikrofon head unit nonaktif, jadi Android Auto diberi tahu bahwa ini adalah sepeda motor apa pun yang dipilih di sini. Hal itulah yang membuat ponsel merekam secara mandiri.</string>
+    <string name="vehicle_type_forced_by_microphone">Mikrofon head unit nonaktif, jadi Android Auto diberi tahu bahwa ini adalah sepeda motor, apa pun yang Anda pilih di sini. Hal itulah yang membuat ponsel memakai mikrofonnya sendiri.</string>
     <string name="vehicle_id_description">Hanya pengenal internal. Mengubah ini akan menyebabkan ponsel memperlakukan unit ini sebagai kendaraan yang berbeda, mengatur ulang preferensi Android Auto untuk mobil ini.</string>
     <string name="head_unit_make_label">Merek</string>
     <string name="head_unit_make_description">Pabrikan head unit</string>
@@ -1036,7 +1036,7 @@
     <string name="media_action_play">Putar</string>
     <string name="media_action_pause">Jeda</string>
     <string name="media_action_next">Berikutnya</string>
-    <string name="error_usb_permission_failed">Kesalahan sistem: Gagal meminta dialog izin USB.</string>
+    <string name="error_usb_permission_failed">Kesalahan sistem: Tidak dapat membuka dialog izin USB.</string>
     <string name="wifi_autostart_title">Mulai Otomatis Wi-Fi</string>
     <string name="wifi_autostart_content">Terhubung ke %s. Ketuk untuk memulai Android Auto.</string>
 
@@ -1084,7 +1084,7 @@
     <string name="connection_issue_banner_wifi_radio_off">Wi-Fi unit ini mati, dan Android tidak mengizinkan aplikasi menyalakannya. Nyalakan Wi-Fi, atau ketuk untuk memakai hotspot unit ini.</string>
     <string name="native_aa_requires_wifi">Android Auto Asli memerlukan Wi-Fi unit ini. Nyalakan Wi-Fi.</string>
     <string name="narrow_band_profile_cap">Turunkan kualitas video pada tautan 2,4 GHz</string>
-    <string name="narrow_band_profile_cap_description">Jika sesi ini berjalan di 2,4 GHz, baik karena Wi-Fi unit ini tidak memiliki pita 5 GHz maupun karena jaringan terbentuk di sana, ponsel diminta memakai paling tinggi 720p dan 30 fps, bukan pengaturan di atas, serta audio AAC. Pada tautan seperti itu, aliran dengan laju penuh terbukti tidak menampilkan gambar sama sekali, sedangkan aliran yang lebih rendah bertahan. Matikan ini untuk mendapatkan sesuai yang Anda minta.</string>
+    <string name="narrow_band_profile_cap_description">Jika sesi ini berjalan di 2,4 GHz, baik karena Wi-Fi unit ini tidak memiliki pita 5 GHz maupun karena jaringan terbentuk di sana, ponsel diminta memakai paling tinggi 720p dan 30 fps, bukan pengaturan di atas, serta audio AAC. Pada tautan seperti itu, aliran dengan laju penuh terbukti tidak menampilkan gambar sama sekali, sedangkan aliran yang lebih rendah bertahan. Nonaktifkan opsi ini untuk mendapatkan sesuai yang Anda minta.</string>
     <string name="connection_issue_banner_video_link_too_slow">Tautan Wi-Fi terlalu lambat untuk video, jadi aplikasi menurunkannya ke 720p pada 30 FPS. Ketuk untuk mengatur resolusi sendiri. Jaringan 5 GHz juga membantu.</string>
     <string name="connection_issue_banner_five_ghz_channel_refused">Unit ini tidak mau memakai saluran 5 GHz yang Anda pilih dan memilih saluran yang tidak terlihat oleh sebagian ponsel. Ketuk untuk beralih Wi-Fi Direct ke 2,4 GHz, yang berfungsi di mana saja.</string>
     <string name="connection_issue_banner_headunit_server_deaf">Server head unit Android Auto di ponsel Anda berhenti merespons. Di ponsel, hentikan lalu mulai lagi di setelan pengembang Android Auto.</string>

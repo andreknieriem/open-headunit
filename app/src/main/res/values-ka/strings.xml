@@ -129,11 +129,11 @@
     <string name="running">აქტიურია</string>
     <string name="not_running">არ არის აქტიური</string>
     <string name="no_android_auto_device_connected">Android Auto მოწყობილობა არ არის დაკავშირებული. შეამოწმეთ USB კავშირი.</string>
-    <string name="no_usb_device_connected">USB მოწყობილობა არ არის შეერთებული.</string>
+    <string name="no_usb_device_connected">USB მოწყობილობა დაკავშირებული არ არის.</string>
     <string name="press_back_again_to_exit">გასასვლელად ისევ დააჭირეთ „უკან“</string>
     <string name="back">უკან</string>
     <string name="debug_mode">გამართვის რეჟიმი</string>
-    <string name="debug_mode_description">დეტალური ჟურნალის ჩართვა</string>
+    <string name="debug_mode_description">უფრო დეტალური ჟურნალის ჩართვა ან გამორთვა</string>
     <string name="allow_external_configuration">გარე კონფიგურაციისთვის ნების დართვა</string>
     <string name="allow_external_configuration_description">ავტომატიზაციის აპებს, როგორიცაა Tasker ან MacroDroid, აძლევს პარამეტრების შეცვლის, ჟურნალის დონის დაყენებისა და ჟურნალების ექსპორტის საშუალებას. დაკავშირება და გათიშვა ყოველთვის მუშაობს; ეს ეხება მხოლოდ იმ ბრძანებებს, რომლებიც მოწყობილობის კონფიგურაციას ცვლის.</string>
     <string name="log_level">ჟურნალის დონე</string>
@@ -217,7 +217,7 @@
     <string name="auto_start_wifi_label">ავტო-გაშვება WiFi-ით</string>
     <string name="auto_start_wifi_description">Open Headunit-ის ავტომატური გახსნა კონკრეტულ WiFi SSID-თან დაკავშირებისას.</string>
     <string name="auto_start_wifi_ssid_label">WiFi SSID</string>
-    <string name="auto_start_wifi_ssid_description">დაკავშირება მხოლოდ ამ WiFi SSID-თან ყოფნისას</string>
+    <string name="auto_start_wifi_ssid_description">გაშვება მხოლოდ მაშინ, როცა ამ WiFi SSID-თან ხართ დაკავშირებული</string>
     <string name="auto_start_wifi_warning">მოძველებული ფუნქცია: ფონური შეზღუდვების გამო შესაძლოა არ იმუშაოს საიმედოდ Android 8+ ვერსიებზე. დარწმუნდით, რომ აპი ბატარეის ოპტიმიზაციიდან გამორიცხულია.</string>
     <string name="enter_wifi_ssid">შეიყვანეთ WiFi SSID</string>
     <string name="wifi_ssid_not_set">არ არის მითითებული</string>
@@ -242,7 +242,7 @@
 
     <string name="category_video">ვიდეო</string>
     <string name="force_software_decoding">პროგრამული დეკოდირების იძულება</string>
-    <string name="force_software_decoding_description">შეიძლება გამოასწოროს პრობლემები ზოგ მოწყობილობაზე, მაგრამ ნაკლებად ეფექტურია</string>
+    <string name="force_software_decoding_description">შეიძლება ზოგ მოწყობილობაზე პრობლემები გამოასწოროს, მაგრამ უფრო ნელია</string>
     <string name="wireless_mode">უსადენო რეჟიმი</string>
     <string name="wireless_mode_description">აირჩიეთ, როგორ დაუკავშირდეს აპი უსადენოდ (სია ხელით, ტელეფონის ავტომატური ძებნა ან Wireless Launcher რეჟიმი)</string>
     <string-array name="wireless_connection_modes">
@@ -417,7 +417,7 @@
     <string name="reset_usb_option">USB კავშირის გადატვირთვა</string>
     <string name="reset_usb_timeout">USB მოწყობილობა ვერ მოიძებნა. შეამოწმეთ კავშირი.</string>
     <string name="notification_service_running">Open Headunit გაშვებულია</string>
-    <string name="notification_projection_active">Android Auto პროეცირებულია</string>
+    <string name="notification_projection_active">Android Auto-ს პროეცირება აქტიურია</string>
     <string name="shortcut_connect_title">დაკავშირება</string>
     <string name="shortcut_connect_desc">ბოლო ტელეფონთან ავტომატური დაკავშირება</string>
     <string name="shortcut_selfmode_title">ავტონომიური რეჟიმი</string>
@@ -528,7 +528,7 @@
     <string name="vehicle_type_car">მანქანა</string>
     <string name="vehicle_type_truck">სატვირთო</string>
     <string name="vehicle_type_motorcycle">მოტოციკლი</string>
-    <string name="vehicle_type_forced_by_microphone">მაგნიტოლის მიკროფონი გამორთულია, ამიტომ Android Auto-ს ეცნობება, რომ ეს მოტოციკლია, აქ არჩეული ტიპის მიუხედავად. ამიტომ ტელეფონი ხმას თავად იწერს.</string>
+    <string name="vehicle_type_forced_by_microphone">მაგნიტოლის მიკროფონი გამორთულია, ამიტომ Android Auto-ს ეცნობება, რომ ეს მოტოციკლია, აქ არჩეული ტიპის მიუხედავად. სწორედ ამის გამო იყენებს ტელეფონი საკუთარ მიკროფონს.</string>
     <string name="vehicle_id_description">მხოლოდ შიდა იდენტიფიკატორია. თუ შეცვლით, ტელეფონი ამას სხვა ავტომობილად ჩათვლის და ამ მანქანისთვის Android Auto-ს პარამეტრები განულდება.</string>
     <string name="head_unit_make_label">მაგნიტოლის მარკა</string>
     <string name="head_unit_make_description">მაგნიტოლის მწარმოებელი</string>
@@ -614,7 +614,7 @@
     <string name="media_action_play">დაკვრა</string>
     <string name="media_action_pause">პაუზა</string>
     <string name="media_action_next">შემდეგი</string>
-    <string name="error_usb_permission_failed">სისტემური შეცდომა: ვერ მოხერხდა USB ნებართვის ფანჯრის მოთხოვნა.</string>
+    <string name="error_usb_permission_failed">სისტემური შეცდომა: USB ნებართვის დიალოგის გახსნა ვერ მოხერხდა.</string>
     <string name="wifi_autostart_title">WiFi ავტო-გაშვება</string>
     <string name="wifi_autostart_content">დაკავშირებულია %s-თან. დააჭირეთ Android Auto-ს დასაწყებად.</string>
 
@@ -956,7 +956,7 @@
     <string name="btn_reset_colors">ყველა ღილაკის ფერის გადატვირთვა</string>
     <string name="btn_make_all_monochrome">ყველა ღილაკის მონოქრომულად დაყენება</string>
     <string name="auto_monochrome_at_night">ღამით მონოქრომულზე ავტომატური გადართვა</string>
-    <string name="auto_monochrome_at_night_description">მუქ რეჟიმში ფერად ღილაკებს ნაცრისფერზე რთავს, რათა მართვისას თვალს არ მოეჭრას</string>
+    <string name="auto_monochrome_at_night_description">მუქ რეჟიმში ფერადი ღილაკები რბილ ნაცრისფრად იცვლება, რათა მართვისას თვალს არ მოეჭრას</string>
     <string name="bg_night_behavior_title">ფონი ღამით</string>
     <string name="bg_night_behavior_description">განსაზღვრავს, როგორ გამოჩნდეს ფონი მუქი რეჟიმის გააქტიურებისას</string>
     <string name="bg_night_behavior_dim">დაბნელება (50%)</string>
@@ -1239,7 +1239,7 @@
     <string name="native_aa_wake_remeasure_confirm">Android Auto უსადენო კავშირს მხოლოდ მაშინ იწყებს, როცა Bluetooth კავშირის ცვლილებას დაინახავს. თუ ამ მოწყობილობას ჰენდსფრის კავშირი უკვე უჭირავს, აპმა ის უნდა გაწყვიტოს, ამიტომ ერთხელ ზომავს, აღდგება თუ არა კავშირი, და წყდება, თუ არ აღდგა. გამოიყენეთ, თუ უსადენო კავშირი თავისით აღარ იწყება და მზად ხართ, ცოტა ხნით ჰენდსფრის გარეშე დარჩეთ, სანამ ის კვლავ ცდის.</string>
     <string name="native_aa_wake_remeasure_done">Bluetooth გაღვიძება ხელახლა გაიზომება შემდეგ დაკავშირებაზე.</string>
     <string name="pref_enable_car_launcher_title">მანქანის გამშვებად გამოყენება</string>
-    <string name="pref_enable_car_launcher_summary">Open Headunit-ის მთავარ ეკრანად რეგისტრაცია მანქანის Home ღილაკზე დაჭერისას</string>
+    <string name="pref_enable_car_launcher_summary">Open Headunit-ს მთავარი ეკრანის აპად არეგისტრირებს, რათა მანქანის ან მაგნიტოლის Home ღილაკზე დაჭერისას გაიხსნას</string>
     <string name="pref_set_default_launcher_title">ნაგულისხმევი მთავარი აპი</string>
     <string name="pref_default_launcher_status_active">აქტიური (შეეხეთ მართვისთვის)</string>
     <string name="pref_default_launcher_status_inactive">არ არის დაყენებული (შეეხეთ ასარჩევად)</string>

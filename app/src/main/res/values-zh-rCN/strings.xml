@@ -118,7 +118,7 @@
     <string name="press_back_again_to_exit">再按一次返回键即可退出</string>
     <string name="back">返回</string>
     <string name="debug_mode">调试模式</string>
-    <string name="debug_mode_description">记录更多日志</string>
+    <string name="debug_mode_description">启用更详细的日志记录</string>
     <string name="export_logs">导出日志</string>
     <string name="export_logs_description">保存日志以便调试</string>
 
@@ -173,7 +173,7 @@
     <string name="auto_start_wifi_label">Wi-Fi 连接时自动启动</string>
     <string name="auto_start_wifi_description">连接到特定 Wi-Fi SSID 时，自动打开 Open Headunit。</string>
     <string name="auto_start_wifi_ssid_label">Wi-Fi SSID</string>
-    <string name="auto_start_wifi_ssid_description">仅在连接到此 Wi-Fi SSID 时才连接</string>
+    <string name="auto_start_wifi_ssid_description">仅在连接到此 Wi-Fi SSID 时才启动</string>
     <string name="auto_start_wifi_warning">旧版功能：受后台限制影响，在 Android 8 及以上版本中可能不稳定。请确保已将应用从电池优化中排除。</string>
     <string name="enter_wifi_ssid">输入 Wi-Fi SSID</string>
     <string name="wifi_ssid_not_set">未设置</string>
@@ -201,7 +201,7 @@
     <string name="open_settings">设置</string>
     <string name="wireless_connection_settings">无线连接</string>
     <string name="right_hand_drive">右舵驾驶</string>
-    <string name="right_hand_drive_description">按右侧驾驶调整界面布局</string>
+    <string name="right_hand_drive_description">按右舵车调整界面布局</string>
     <string name="category_graphic">图形</string>
     <string name="custom_insets">自定义边距</string>
     <string name="inset_top">上</string>
@@ -213,7 +213,7 @@
     <!-- Video Settings -->
     <string name="category_video">视频</string>
     <string name="force_software_decoding">强制软件解码</string>
-    <string name="force_software_decoding_description">可能解决某些设备上的问题，但性能较低</string>
+    <string name="force_software_decoding_description">可能解决某些设备上的问题，但速度较慢</string>
     <string name="wireless_mode">无线模式</string>
     <string name="wireless_mode_description">选择应用的无线连接方式（手动列表、自动搜索手机或无线启动器模式）</string>
     <string-array name="wireless_connection_modes">
@@ -550,7 +550,7 @@
     <string name="sync_media_session_aa_metadata_description">在系统媒体会话和媒体通知中显示来自手机的曲目标题、艺术家、时长和专辑封面</string>
     <string name="auto_resume_playback_on_reconnect">重新连接后继续播放</string>
     <string name="auto_resume_playback_on_reconnect_description">如果连接短暂中断（60 秒内）前正在播放音乐，重新连接后自动继续播放</string>
-    <string name="error_usb_permission_failed">系统错误：无法请求 USB 权限对话框。</string>
+    <string name="error_usb_permission_failed">系统错误：无法打开 USB 权限对话框。</string>
 
     <!-- Custom loading screen -->
     <string name="loading_screen">加载界面</string>
@@ -785,7 +785,7 @@
     <string name="resolution_too_high_title">分辨率高于屏幕</string>
     <string name="resolution_too_high_message">这高于您的屏幕所支持的分辨率。画面将限制为屏幕可显示的范围（%1$s），因此更高的分辨率只会占用更多带宽，而不会提升画质。</string>
     <string name="resolution_high_bandwidth_title">需要更高带宽</string>
-    <string name="resolution_high_bandwidth_message">此分辨率会占用多得多的带宽，需要稳定的连接：良好的 5GHz WiFi 或稳定的 USB 连接。如果出现卡顿，请选择较低的分辨率。</string>
+    <string name="resolution_high_bandwidth_message">此分辨率会占用大得多的带宽，需要稳定的连接，例如良好的 5GHz WiFi 网络或稳定的 USB 连接。如果出现卡顿，请选择较低的分辨率。</string>
     <string name="resolution_use_anyway">仍要使用</string>
     <string name="resolution_use_recommended">使用推荐值</string>
     <string name="dpi_automatic_desc_format">使用设备密度（%1$d DPI）</string>
@@ -1250,7 +1250,7 @@
     <string name="native_aa_wake_remeasure_confirm">Android Auto 只有在发现蓝牙连接发生变化时才会启动无线连接。如果本机已占用免提链路，应用必须先断开它才能触发这一变化，因此会测量一次该链路能否恢复，若不能恢复则停止。如果无线连接不再自行启动，并且您愿意在应用重试期间暂时失去免提功能，请使用此项。</string>
     <string name="native_aa_wake_remeasure_done">下次连接时将重新测量蓝牙唤醒。</string>
     <string name="pref_enable_car_launcher_title">用作车载启动器</string>
-    <string name="pref_enable_car_launcher_summary">按下车机 Home 键时，将 Open Headunit 注册为主屏幕应用</string>
+    <string name="pref_enable_car_launcher_summary">将 Open Headunit 注册为主屏幕应用，这样按下汽车或车机的 Home 键时就会打开它</string>
     <string name="pref_set_default_launcher_title">默认主屏幕应用</string>
     <string name="pref_default_launcher_status_active">已启用（点按以管理）</string>
     <string name="pref_default_launcher_status_inactive">未设置（点按以设为默认）</string>

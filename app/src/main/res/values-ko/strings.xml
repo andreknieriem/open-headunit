@@ -85,8 +85,8 @@
     <string name="reset_settings">기본값으로 초기화</string>
     <string name="reset_settings_confirm">모든 설정을 기본값으로 초기화하시겠습니까? 앱이 재시작됩니다.</string>
     <string name="reset_settings_description">모든 설정, 캐시 데이터, 자동 연결 설정을 기본값으로 초기화합니다. 초기화 후 앱이 재시작됩니다.</string>
-    <string name="gps_for_navigation">헤드유닛 GPS 사용</string>
-    <string name="gps_for_navigation_description">내비게이션에 헤드유닛의 GPS를 사용합니다</string>
+    <string name="gps_for_navigation">내비게이션용 GPS</string>
+    <string name="gps_for_navigation_description">내비게이션에 GPS를 사용합니다</string>
     <string name="enabled">사용 설정됨</string>
     <string name="disabled">사용 중지됨</string>
     <string name="resolution">해상도</string>
@@ -134,7 +134,7 @@
     <string name="press_back_again_to_exit">뒤로 버튼을 한 번 더 누르면 종료됩니다.</string>
     <string name="back">뒤로</string>
     <string name="debug_mode">디버그 모드</string>
-    <string name="debug_mode_description">자세한 로그 기록을 활성화합니다.</string>
+    <string name="debug_mode_description">더 자세한 로그 기록을 켜거나 끕니다</string>
     <string name="allow_external_configuration">외부 설정 변경 허용</string>
     <string name="allow_external_configuration_description">Tasker나 MacroDroid 같은 자동화 앱이 설정을 변경하고 로그 수준을 지정하며 로그를 내보낼 수 있도록 합니다. 연결과 연결 해제는 항상 동작하며, 이 설정은 헤드유닛 구성을 바꾸는 명령에만 적용됩니다.</string>
     <string name="log_level">로그 레벨</string>
@@ -204,7 +204,7 @@
     <string name="auto_start_wifi_label">Wi-Fi 연결 시 자동 시작</string>
     <string name="auto_start_wifi_description">특정 Wi-Fi SSID에 연결되면 Open Headunit을 자동으로 실행합니다.</string>
     <string name="auto_start_wifi_ssid_label">Wi-Fi SSID</string>
-    <string name="auto_start_wifi_ssid_description">이 Wi-Fi SSID에 연결된 경우에만 자동 시작을 시도합니다</string>
+    <string name="auto_start_wifi_ssid_description">이 Wi-Fi SSID에 연결되어 있을 때만 시작합니다</string>
     <string name="auto_start_wifi_warning">레거시 기능: 백그라운드 제한으로 인해 Android 8 이상에서는 동작이 불안정할 수 있습니다. 앱을 배터리 최적화 대상에서 제외했는지 확인하세요.</string>
     <string name="enter_wifi_ssid">Wi-Fi SSID를 입력하세요</string>
     <string name="wifi_ssid_not_set">설정 안 됨</string>
@@ -248,7 +248,7 @@
     <!-- Video Settings -->
     <string name="category_video">비디오</string>
     <string name="force_software_decoding">소프트웨어 디코딩 강제 적용</string>
-    <string name="force_software_decoding_description">일부 기기에서 문제를 해결할 수 있지만 성능이 저하될 수 있습니다</string>
+    <string name="force_software_decoding_description">일부 기기에서 문제를 해결할 수 있지만 속도가 느려집니다</string>
     <string name="software_video_decoder">소프트웨어 디코더 선택</string>
     <string name="software_video_decoder_bundled">내장 FFmpeg</string>
     <string name="software_video_decoder_device">기기 MediaCodec</string>
@@ -388,7 +388,7 @@
     <string name="export_settings_downloads">다운로드 폴더에 저장</string>
     <string name="export_settings_app_folder">앱 백업 폴더에 저장</string>
     <string name="import_settings">설정 가져오기</string>
-    <string name="import_settings_description">백업 파일에서 설정을 복원합니다</string>
+    <string name="import_settings_description">Open Headunit 백업에서 설정을 복원합니다</string>
     <string name="import_settings_choose_file">백업 파일 선택</string>
     <string name="import_settings_downloads">다운로드 폴더에서 가져오기</string>
     <string name="import_settings_app_folder">앱 백업 폴더에서 가져오기</string>
@@ -551,7 +551,7 @@
     <string name="vehicle_type_car">승용차</string>
     <string name="vehicle_type_truck">트럭</string>
     <string name="vehicle_type_motorcycle">오토바이</string>
-    <string name="vehicle_type_forced_by_microphone">헤드유닛 마이크가 꺼져 있어, 여기서 무엇을 선택하든 Android Auto에는 오토바이로 전달됩니다. 이 때문에 휴대전화가 직접 녹음합니다.</string>
+    <string name="vehicle_type_forced_by_microphone">헤드유닛 마이크가 꺼져 있어, 여기서 무엇을 선택하든 Android Auto에는 오토바이로 전달됩니다. 이 때문에 휴대전화가 자체 마이크를 사용합니다.</string>
     <string name="vehicle_id_description">내부 식별자로만 사용됩니다. 이 값을 변경하면 휴대전화가 다른 차량으로 인식하여 이 차량의 Android Auto 설정이 초기화됩니다.</string>
     <string name="head_unit_make_label">제조사</string>
     <string name="head_unit_make_description">헤드유닛 제조사</string>

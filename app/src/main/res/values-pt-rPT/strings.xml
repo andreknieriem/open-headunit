@@ -79,7 +79,7 @@
     <string name="perm_notifications_title">Notificações</string>
     <string name="perm_notifications_help">Apresenta a notificação contínua enquanto o Android Auto estiver em execução.</string>
     <string name="perm_overlay_title">Sobrepor a outras aplicações</string>
-    <string name="perm_overlay_help">Permite que a aplicação abra o ecrã do carro sobre outras aplicações, incluindo o arranque automático.</string>
+    <string name="perm_overlay_help">Permite que a aplicação abra o ecrã do carro sobre outras aplicações, incluindo quando arranca automaticamente.</string>
     <string name="perm_write_settings_title">Modificar definições do sistema</string>
     <string name="perm_write_settings_help">Permite que a aplicação ative a zona Wi-Fi automaticamente para ligações sem fios.</string>
     <string name="perm_storage_title">Armazenamento</string>
@@ -145,7 +145,7 @@
     <string name="onb_connection_warning">Ao escolher um tipo de ligação, as definições que não lhe dizem respeito ficam ocultas, tanto em Básico como em Avançado. Para as voltar a ver, escolha outro modo nas definições de ligação.</string>
     <string name="onb_more_appearance">Mais definições de aspeto</string>
     <string name="onb_automation_title">Automatização</string>
-    <string name="onb_automation_help">Escolha como a aplicação inicia e se liga autonomamente. Abra as definições de ligação automática para arrastar a ordem de prioridade.</string>
+    <string name="onb_automation_help">Escolha como a aplicação arranca e se liga por si própria. Abra as definições de ligação automática para definir a ordem de prioridade por arrastamento.</string>
     <string name="onb_gps_title">Localização</string>
     <string name="onb_gps_help">Que GPS deve o Android Auto utilizar para navegação?</string>
     <string name="onb_gps_this_device">Este dispositivo</string>
@@ -330,12 +330,12 @@
     <string name="running">Em execução</string>
     <string name="not_running">Inativo</string>
     <string name="no_android_auto_device_connected">Nenhum dispositivo Android Auto ligado. Verifique a ligação USB.</string>
-    <string name="no_usb_device_connected">Nenhum dispositivo USB ligado ao aparelho.</string>
+    <string name="no_usb_device_connected">Nenhum dispositivo USB ligado.</string>
     <string name="no_usb_host_support">Esta unidade não suporta o modo USB host, pelo que o Android Auto com fios não está disponível. Utilize uma ligação sem fios.</string>
     <string name="press_back_again_to_exit">Prima voltar novamente para sair</string>
     <string name="back">Voltar</string>
     <string name="debug_mode">Modo de depuração</string>
-    <string name="debug_mode_description">Mais registos detalhados</string>
+    <string name="debug_mode_description">Ativar ou desativar o registo mais detalhado</string>
     <string name="allow_external_configuration">Permitir configuração externa</string>
     <string name="allow_external_configuration_description">Permite que aplicações de automatização, como o Tasker ou o MacroDroid, alterem definições, definam o nível de registo e exportem registos. Ligar e desligar funciona sempre; esta opção só se aplica a comandos que alteram a configuração da unidade.</string>
     <string name="log_level">Nível de registo</string>
@@ -435,7 +435,7 @@
     <string name="auto_start_wifi_label">Arranque automático com Wi-Fi</string>
     <string name="auto_start_wifi_description">Abre o Open Headunit automaticamente quando ligado a um SSID Wi-Fi específico.</string>
     <string name="auto_start_wifi_ssid_label">SSID Wi-Fi</string>
-    <string name="auto_start_wifi_ssid_description">Ligar apenas quando ligado a este SSID Wi-Fi</string>
+    <string name="auto_start_wifi_ssid_description">Iniciar apenas quando ligado a este SSID Wi-Fi</string>
     <string name="auto_start_wifi_warning">Funcionalidade antiga: pode não funcionar de forma fiável no Android 8+ devido a restrições em segundo plano. Certifique-se de que a aplicação está excluída da otimização da bateria.</string>
     <string name="enter_wifi_ssid">Introduzir SSID Wi-Fi</string>
     <string name="wifi_ssid_not_set">Não definido</string>
@@ -446,7 +446,7 @@
     <string name="open_settings">Definições</string>
     <string name="cannot_open_settings">Não foi possível abrir as definições do sistema</string>
     <string name="right_hand_drive">Volante à direita (RHD)</string>
-    <string name="right_hand_drive_description">Posicionar a interface para condução à direita</string>
+    <string name="right_hand_drive_description">Posicionar a interface para um automóvel com volante à direita</string>
     <string name="wireless_connection_settings">Ligação sem fios</string>
     <string name="category_graphic">Gráficos</string>
 
@@ -507,7 +507,7 @@
     <!-- More Features Settings -->
     <string name="category_more_features">Mais funcionalidades</string>
     <string name="pref_enable_car_launcher_title">Utilizar como Car Launcher</string>
-    <string name="pref_enable_car_launcher_summary">Regista o Open Headunit como aplicação de ecrã inicial quando o botão Home do carro ou da unidade é premido</string>
+    <string name="pref_enable_car_launcher_summary">Regista o Open Headunit como aplicação do ecrã inicial, para que abra quando o botão Home do carro ou da unidade é premido</string>
     <string name="pref_set_default_launcher_title">Aplicação de ecrã inicial predefinida</string>
     <string name="pref_default_launcher_status_active">Ativo (Toque para gerir)</string>
     <string name="pref_default_launcher_status_inactive">Não definido (Toque para definir como predefinição)</string>
@@ -942,7 +942,7 @@
     <string name="vehicle_type_car">Carro</string>
     <string name="vehicle_type_truck">Camião</string>
     <string name="vehicle_type_motorcycle">Motociclo</string>
-    <string name="vehicle_type_forced_by_microphone">O microfone da unidade está desligado, pelo que o Android Auto é informado de que se trata de um motociclo, independentemente da opção escolhida aqui. É isso que faz o telemóvel gravar por si próprio.</string>
+    <string name="vehicle_type_forced_by_microphone">O microfone da unidade está desativado, pelo que o Android Auto é informado de que se trata de um motociclo, independentemente da opção escolhida aqui. É isto que faz o telemóvel usar o seu próprio microfone.</string>
     <string name="vehicle_id_description">Apenas um identificador interno. Alterá-lo faz com que o telemóvel trate este veículo como um veículo diferente e repõe as preferências do Android Auto para este carro.</string>
     <string name="head_unit_make_label">Fabricante</string>
     <string name="head_unit_make_description">Fabricante da unidade</string>
@@ -1036,7 +1036,7 @@
     <string name="media_action_play">Reproduzir</string>
     <string name="media_action_pause">Pausar</string>
     <string name="media_action_next">Seguinte</string>
-    <string name="error_usb_permission_failed">Erro do sistema: Falha ao solicitar a janela de permissão USB.</string>
+    <string name="error_usb_permission_failed">Erro do sistema: não foi possível abrir a caixa de diálogo de permissão USB.</string>
     <string name="wifi_autostart_title">Início automático Wi-Fi</string>
     <string name="wifi_autostart_content">Ligado a %s. Toque para iniciar o Android Auto.</string>
 

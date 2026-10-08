@@ -118,7 +118,7 @@
     <string name="press_back_again_to_exit">再按一次「返回」即可離開</string>
     <string name="back">返回</string>
     <string name="debug_mode">偵錯模式</string>
-    <string name="debug_mode_description">記錄更詳細的資訊</string>
+    <string name="debug_mode_description">切換是否記錄更詳細的資訊</string>
     <string name="export_logs">匯出記錄</string>
     <string name="export_logs_description">儲存記錄以供偵錯</string>
 
@@ -173,7 +173,7 @@
     <string name="auto_start_wifi_label">Wi-Fi 連線時自動啟動</string>
     <string name="auto_start_wifi_description">連線至特定 Wi-Fi SSID 時，自動開啟 Open Headunit。</string>
     <string name="auto_start_wifi_ssid_label">Wi-Fi SSID</string>
-    <string name="auto_start_wifi_ssid_description">僅在連線到此 Wi-Fi SSID 時才連線</string>
+    <string name="auto_start_wifi_ssid_description">僅在連線到此 Wi-Fi SSID 時才啟動</string>
     <string name="auto_start_wifi_warning">舊版功能：受背景限制影響，在 Android 8 以上版本可能無法穩定運作。請確認已將應用程式排除在電池效能最佳化之外。</string>
     <string name="enter_wifi_ssid">輸入 Wi-Fi SSID</string>
     <string name="wifi_ssid_not_set">未設定</string>
@@ -213,7 +213,7 @@
     <!-- Video Settings -->
     <string name="category_video">影像</string>
     <string name="force_software_decoding">強制軟體解碼</string>
-    <string name="force_software_decoding_description">可能修正部分裝置上的問題，但效能較差</string>
+    <string name="force_software_decoding_description">可能修正部分裝置上的問題，但速度較慢</string>
     <string name="wireless_mode">無線模式</string>
     <string name="wireless_mode_description">選擇應用程式的無線連線方式（手動清單、自動搜尋手機或 Wireless Launcher 模式）</string>
     <string-array name="wireless_connection_modes">
@@ -481,7 +481,7 @@
     <string name="vehicle_type_car">汽車</string>
     <string name="vehicle_type_truck">卡車</string>
     <string name="vehicle_type_motorcycle">機車</string>
-    <string name="vehicle_type_forced_by_microphone">主機麥克風已關閉，因此無論在此選擇哪一項，Android Auto 都會被告知這是機車，手機因而自行錄音。</string>
+    <string name="vehicle_type_forced_by_microphone">車機麥克風已關閉，因此無論在此選擇哪一項，Android Auto 都會被告知這是機車。這會讓手機改用自己的麥克風。</string>
     <string name="vehicle_id_description">僅供內部識別使用。變更此項會讓手機將這輛車視為不同的車輛，並重設 Android Auto 對這輛車的偏好設定。</string>
     <string name="head_unit_make_label">製造商</string>
     <string name="head_unit_make_description">車機製造商</string>
@@ -785,7 +785,7 @@
     <string name="resolution_too_high_title">解析度高於螢幕</string>
     <string name="resolution_too_high_message">這高於你的螢幕所支援的解析度。畫面會限制在螢幕能顯示的範圍（%1$s），因此更高的解析度只會佔用更多頻寬，卻不會提升畫質。</string>
     <string name="resolution_high_bandwidth_title">需要更高頻寬</string>
-    <string name="resolution_high_bandwidth_message">此解析度會佔用更多頻寬，需要穩定的連線：良好的 5 GHz Wi-Fi 或穩定的 USB 連線。若出現延遲，請選擇較低的解析度。</string>
+    <string name="resolution_high_bandwidth_message">此解析度會佔用大量頻寬，需要穩定的連線：良好的 5 GHz Wi-Fi 網路，或穩定的 USB 連線。若出現延遲，請選擇較低的解析度。</string>
     <string name="resolution_use_anyway">仍要使用</string>
     <string name="resolution_use_recommended">使用建議值</string>
     <string name="dpi_automatic_desc_format">使用裝置密度（%1$d DPI）</string>
@@ -1250,7 +1250,7 @@
     <string name="native_aa_wake_remeasure_confirm">Android Auto 只有在偵測到藍牙連線變化時，才會啟動無線連線。若本機已佔用免持連線，應用程式必須中斷該連線才能觸發變化，因此會測量一次連線是否恢復，若未恢復就停止。如果無線連線已不再自動啟動，而您願意在重試期間暫時失去免持功能，請使用此選項。</string>
     <string name="native_aa_wake_remeasure_done">下次連線時將重新測量藍牙喚醒。</string>
     <string name="pref_enable_car_launcher_title">用作車載啟動器</string>
-    <string name="pref_enable_car_launcher_summary">按下車機首頁鍵時，將 Open Headunit 註冊為主畫面應用程式</string>
+    <string name="pref_enable_car_launcher_summary">將 Open Headunit 註冊為主畫面應用程式，這樣按下車輛或車機的主畫面按鈕時就會開啟</string>
     <string name="pref_set_default_launcher_title">預設主畫面應用程式</string>
     <string name="pref_default_launcher_status_active">已啟用（輕觸以管理）</string>
     <string name="pref_default_launcher_status_inactive">未設定（輕觸以設定為預設）</string>

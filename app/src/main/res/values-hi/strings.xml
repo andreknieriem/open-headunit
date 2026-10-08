@@ -144,7 +144,7 @@
     <string name="onb_connection_warning">कनेक्शन का प्रकार चुनने पर, उस पर लागू न होने वाली सेटिंग्स बेसिक और ऐडवांस, दोनों में छिप जाती हैं। उन्हें दोबारा देखने के लिए, बाद में कनेक्शन सेटिंग्स में कोई दूसरा मोड चुनें।</string>
     <string name="onb_more_appearance">अधिक रूप-रंग सेटिंग्स</string>
     <string name="onb_automation_title">ऑटोमेशन</string>
-    <string name="onb_automation_help">चुनें कि ऐप अपने आप कैसे शुरू और कनेक्ट होता है। प्राथमिकता क्रम सेट करने के लिए ऑटो-कनेक्ट सेटिंग्स खोलें।</string>
+    <string name="onb_automation_help">चुनें कि ऐप अपने आप कैसे शुरू और कनेक्ट होता है। खींचकर प्राथमिकता क्रम सेट करने के लिए ऑटो-कनेक्ट सेटिंग खोलें।</string>
     <string name="onb_gps_title">जगह की जानकारी</string>
     <string name="onb_gps_help">Android Auto को नेविगेशन के लिए किस GPS का उपयोग करना चाहिए?</string>
     <string name="onb_gps_this_device">यह डिवाइस</string>
@@ -329,12 +329,12 @@
     <string name="running">चल रहा है</string>
     <string name="not_running">नहीं चल रहा है</string>
     <string name="no_android_auto_device_connected">कोई Android Auto डिवाइस कनेक्ट नहीं है। USB कनेक्शन देखें।</string>
-    <string name="no_usb_device_connected">डिवाइस में कोई USB डिवाइस कनेक्ट नहीं है।</string>
+    <string name="no_usb_device_connected">कोई USB डिवाइस कनेक्ट नहीं है।</string>
     <string name="no_usb_host_support">इस हेड यूनिट में USB होस्ट मोड काम नहीं करता, इसलिए इस पर वायर्ड Android Auto उपलब्ध नहीं है। वायरलेस कनेक्शन इस्तेमाल करें।</string>
     <string name="press_back_again_to_exit">बाहर निकलने के लिए फिर से वापस जाएं दबाएं</string>
     <string name="back">वापस जाएं</string>
     <string name="debug_mode">डिबग मोड</string>
-    <string name="debug_mode_description">ज़्यादा लॉग रिकॉर्ड करें</string>
+    <string name="debug_mode_description">ज़्यादा ब्योरे वाली लॉगिंग चालू या बंद करें</string>
     <string name="allow_external_configuration">बाहरी कॉन्फ़िगरेशन की अनुमति दें</string>
     <string name="allow_external_configuration_description">Tasker या MacroDroid जैसे ऑटोमेशन ऐप को सेटिंग्स बदलने, लॉग लेवल सेट करने और लॉग एक्सपोर्ट करने दें। कनेक्ट और डिस्कनेक्ट हमेशा काम करते हैं। यह सिर्फ़ उन कमांड के लिए है जो हेड यूनिट की सेटिंग बदलते हैं।</string>
     <string name="log_level">लॉग लेवल</string>
@@ -434,7 +434,7 @@
     <string name="auto_start_wifi_label">वाई-फ़ाई पर ऑटो-स्टार्ट</string>
     <string name="auto_start_wifi_description">किसी खास वाई-फ़ाई SSID से कनेक्ट होने पर Open Headunit अपने आप खोलें।</string>
     <string name="auto_start_wifi_ssid_label">वाई-फ़ाई SSID</string>
-    <string name="auto_start_wifi_ssid_description">सिर्फ़ इस वाई-फ़ाई SSID से कनेक्ट होने पर ही कनेक्ट करें</string>
+    <string name="auto_start_wifi_ssid_description">सिर्फ़ इस वाई-फ़ाई SSID से कनेक्ट होने पर ही शुरू करें</string>
     <string name="auto_start_wifi_warning">पुरानी सुविधा: बैकग्राउंड पाबंदियों की वजह से यह Android 8+ पर भरोसेमंद तरीके से काम नहीं कर सकती। पक्का करें कि ऐप को बैटरी ऑप्टिमाइज़ेशन से बाहर रखा गया है।</string>
     <string name="enter_wifi_ssid">वाई-फ़ाई SSID डालें</string>
     <string name="wifi_ssid_not_set">सेट नहीं है</string>
@@ -445,7 +445,7 @@
     <string name="open_settings">सेटिंग्स</string>
     <string name="cannot_open_settings">सिस्टम सेटिंग्स नहीं खोली जा सकीं</string>
     <string name="right_hand_drive">राइट-हैंड ड्राइव</string>
-    <string name="right_hand_drive_description">दाईं ओर से ड्राइव करने के लिए UI की जगह तय करें</string>
+    <string name="right_hand_drive_description">राइट-हैंड ड्राइव वाली कार के लिए UI की जगह तय करें</string>
     <string name="wireless_connection_settings">वायरलेस कनेक्शन</string>
     <string name="category_graphic">ग्राफ़िक्स</string>
 
@@ -453,7 +453,7 @@
     <string name="static_bssid_enter_value">BSSID डालें (XX:XX:XX:XX:XX:XX)</string>
     <string name="static_bssid_desc">एक्सेस पॉइंट का BSSID खुद सेट करें। इसकी ज़रूरत तभी है, जब इस डिवाइस पर कोई भी स्रोत इसे न बताए। लॉग में हर वह स्रोत दिखता है जिससे पूछा गया।</string>
     <string name="static_p2p_bssid_title">स्टैटिक BSSID (वाई-फ़ाई डायरेक्ट)</string>
-    <string name="static_p2p_bssid_desc">वाई-फ़ाई डायरेक्ट ग्रुप का BSSID खुद सेट करें। यह एक्सेस पॉइंट के BSSID से अलग है, क्योंकि ये अलग इंटरफ़ेस हैं और एक का जवाब दूसरे के काम नहीं आता।</string>
+    <string name="static_p2p_bssid_desc">वाई-फ़ाई डायरेक्ट ग्रुप का BSSID हाथ से सेट करें। यह एक्सेस पॉइंट के BSSID से अलग है, क्योंकि ये अलग इंटरफ़ेस हैं और एक की जगह दूसरा इस्तेमाल नहीं हो सकता।</string>
 
     <string name="custom_insets">कस्टम इनसेट (मार्जिन)</string>
     <string name="inset_top">ऊपर</string>
@@ -465,7 +465,7 @@
     <!-- Video Settings -->
     <string name="category_video">वीडियो</string>
     <string name="force_software_decoding">सॉफ़्टवेयर डिकोडिंग ज़बरदस्ती चालू करें</string>
-    <string name="force_software_decoding_description">कुछ डिवाइस पर समस्याएँ ठीक हो सकती हैं, लेकिन परफ़ॉर्मेंस कम रहती है</string>
+    <string name="force_software_decoding_description">कुछ डिवाइस पर समस्याएँ ठीक हो सकती हैं, लेकिन यह धीमा है</string>
     <string name="software_video_decoder">सॉफ़्टवेयर डिकोडर स्रोत</string>
     <string name="software_video_decoder_bundled">ऐप में शामिल FFmpeg</string>
     <string name="software_video_decoder_device">डिवाइस MediaCodec</string>
@@ -506,7 +506,7 @@
     <!-- More Features Settings -->
     <string name="category_more_features">अधिक सुविधाएँ</string>
     <string name="pref_enable_car_launcher_title">कार लॉन्चर के रूप में उपयोग करें</string>
-    <string name="pref_enable_car_launcher_summary">कार या हेडयूनिट का होम बटन दबाने पर Open Headunit खुलता है, जैसे कोई होम स्क्रीन ऐप</string>
+    <string name="pref_enable_car_launcher_summary">Open Headunit को होम स्क्रीन ऐप के रूप में रजिस्टर करता है, ताकि कार या हेडयूनिट का होम बटन दबाने पर यह खुले</string>
     <string name="pref_set_default_launcher_title">डिफ़ॉल्ट होम ऐप</string>
     <string name="pref_default_launcher_status_active">सक्रिय (प्रबंधित करने के लिए टैप करें)</string>
     <string name="pref_default_launcher_status_inactive">सेट नहीं है (डिफ़ॉल्ट बनाने के लिए टैप करें)</string>
@@ -784,7 +784,7 @@
     <string name="boot_loop_paused_title">वायरलेस स्टार्टअप रुका</string>
     <string name="boot_loop_paused_generic">Open Headunit के वायरलेस शुरू करने के कुछ ही देर बाद यह डिवाइस लगातार तीन बार रीस्टार्ट हुआ, इसलिए इस बार वायरलेस बंद रखा गया। USB अब भी काम करता है। इसे फिर से चालू करने के लिए ऐप खोलें।</string>
     <string name="boot_loop_paused_native_wifi_direct">Open Headunit के वायरलेस शुरू करने के कुछ ही देर बाद यह डिवाइस लगातार तीन बार रीस्टार्ट हुआ, इसलिए इस बार वायरलेस बंद रखा गया। कुछ हेड यूनिट में, फ़ोन के वाई-फ़ाई डायरेक्ट नेटवर्क से जुड़ने पर वाई-फ़ाई चिपसेट पूरे सिस्टम को बंद कर देता है। Android Auto मोड को हेड यूनिट हॉटस्पॉट पर स्विच करके देखें। USB अब भी काम करता है।</string>
-    <string name="notification_projection_active">Android Auto प्रोजेक्ट किया गया है</string>
+    <string name="notification_projection_active">Android Auto प्रोजेक्शन चालू है</string>
     <string name="shortcut_connect_title">कनेक्ट करें</string>
     <string name="shortcut_connect_desc">अंतिम फ़ोन से स्वतः कनेक्ट करें</string>
     <string name="shortcut_selfmode_title">सेल्फ़ मोड</string>
@@ -1036,7 +1036,7 @@
     <string name="media_action_play">चलाएं</string>
     <string name="media_action_pause">रोकें</string>
     <string name="media_action_next">आगे बढ़ें</string>
-    <string name="error_usb_permission_failed">सिस्टम त्रुटि: USB अनुमति संवाद का अनुरोध करने में विफल।</string>
+    <string name="error_usb_permission_failed">सिस्टम गड़बड़ी: USB अनुमति डायलॉग नहीं खुल सका।</string>
     <string name="wifi_autostart_title">वाई-फ़ाई ऑटो-स्टार्ट</string>
     <string name="wifi_autostart_content">%s से कनेक्टेड। Android Auto शुरू करने के लिए टैप करें।</string>
 

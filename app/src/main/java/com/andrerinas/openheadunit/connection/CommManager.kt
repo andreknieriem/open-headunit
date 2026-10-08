@@ -6,6 +6,7 @@ import android.hardware.usb.UsbManager
 import com.andrerinas.openheadunit.aap.AapSslContext
 import com.andrerinas.openheadunit.aap.AapTransport
 import com.andrerinas.openheadunit.aap.NarrowBandProfilePolicy
+import com.andrerinas.openheadunit.input.KeyCode
 import com.andrerinas.openheadunit.input.MediaKeyRoutingPolicy
 import com.andrerinas.openheadunit.decoder.audio.PlaybackFocusPolicy
 import com.andrerinas.openheadunit.utils.AppLog
@@ -789,6 +790,13 @@ class CommManager(
         // but physical rotary knobs often send ENTER (66). Remap 66 -> 23 to ensure selection works.
         if (logicalCode == KeyEvent.KEYCODE_ENTER) {
             logicalCode = KeyEvent.KEYCODE_DPAD_CENTER
+        }
+
+        // Legacy Keymap migration: previously night mode was mapped as KeyEvent.KEYCODE_N.
+        // Remap KEYCODE_N to KEY_NIGHT_MODE only if KEYCODE_N was an explicit mapped action in settings,
+        // so unmapped physical 'N' keys from keyboards are forwarded to AA as normal text input.
+        if (logicalCode == KeyEvent.KEYCODE_N && settings.keyCodes.containsKey(KeyEvent.KEYCODE_N)) {
+            logicalCode = KeyCode.KEY_NIGHT_MODE
         }
 
         val isMedia = isMediaKey(logicalCode)

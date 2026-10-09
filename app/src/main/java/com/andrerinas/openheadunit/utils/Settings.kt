@@ -1224,6 +1224,11 @@ class Settings(private val context: Context) {
         get() = prefs.getBoolean("use-aac-audio", false)
         set(value) { prefs.edit().putBoolean("use-aac-audio", value).apply() }
 
+    // Separate from useAacAudio so existing uniform PCM/AAC preferences keep their meaning.
+    var usePcmGuidance: Boolean
+        get() = prefs.getBoolean("use-pcm-guidance", false)
+        set(value) { prefs.edit().putBoolean("use-pcm-guidance", value).apply() }
+
     // Experimental backend: keep AudioTrack unless the user explicitly opts in.
     var useAAudioOutput: Boolean
         get() = prefs.getBoolean("use-aaudio-output", false)

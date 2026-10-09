@@ -176,6 +176,17 @@ internal fun audioLifecycleBoundaryRegression() {
     } finally { before.close(); Handler.reset() }
     println("PASS settings saved before construction are captured by the next transport")
 
+    val mixed = ConnectionFixture()
+    try {
+        mixed.publish()
+        mixed.settings.usePcmGuidance = true
+        mixed.applyAudioSettings()
+        check(mixed.disconnected) { "PCM guidance save only restarted local output" }
+        mixed.nextConnection(); mixed.publish()
+        check(mixed.audio.sessionConfig.pcmGuidance && !mixed.audio.needsSessionRestart())
+    } finally { mixed.close(); Handler.reset() }
+    println("PASS PCM guidance save renegotiates the projection and the next session captures the choice")
+
     for (honor in listOf(false, true)) {
         com.andrerinas.openheadunit.aap.AapService.killProcessOnDestroy = false
         val closing = ConnectionFixture(Settings().apply { killOnDisconnect = true })

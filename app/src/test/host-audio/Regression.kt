@@ -23,6 +23,8 @@ private fun focusLease() = PlaybackFocusLease().apply {
 private fun PlaybackFocusLease.activity(channel: Int, nowMs: Long) = activity(channel, fixtureOwner, nowMs)
 
 fun main() {
+    mixedCodecRegression(staticFocus = true)
+    mixedCodecRegression(staticFocus = false)
     audioSettingsRegression()
     aacProgressOwnershipRegression(csdReplacement = true)
     aacProgressOwnershipRegression(csdReplacement = false)
@@ -1244,6 +1246,7 @@ private fun audioSettingsRegression() {
         "guidance route" to { it.guidanceAudioStream = 3 },
         "system route" to { it.systemAudioStream = 3 },
         "media codec" to { it.useAacAudio = true },
+        "guidance codec" to { it.usePcmGuidance = true },
         "sink disabled" to { it.enableAudioSink = false },
         "DSP route" to { it.attachHwDspEqualizer = true }
     )
@@ -1324,4 +1327,80 @@ private fun audioSettingsRegression() {
         check(decoder.playbackCallbacks.canRender())
     } finally { audio.releaseAllFocus(); decoder.stop(); handler.runAll(); handler.reset() }
     println("PASS session snapshots preserve focus/routing/format until replacement; local output changes retain the negotiated codec")
+}
+
+/** Mixed sinks share playback ownership, but never a codec or its lifecycle. */
+private fun mixedCodecRegression(staticFocus: Boolean) {
+    val handler = android.os.Handler
+    handler.reset()
+    val configs = com.andrerinas.openheadunit.aap.protocol.AudioConfigs
+    configs.formats = mapOf(4 to com.andrerinas.openheadunit.aap.protocol.AudioConfigs.Config(16000, 16, 1), 5 to com.andrerinas.openheadunit.aap.protocol.AudioConfigs.Config(16000, 16, 1))
+    val decoder = AudioDecoder()
+    val settings = com.andrerinas.openheadunit.utils.Settings().apply {
+        useAacAudio = false; usePcmGuidance = true; staticAudioFocus = staticFocus
+    }
+    val audio = com.andrerinas.openheadunit.aap.AapAudio(decoder, AudioManager(), settings)
+    try {
+        // Model AAC selected by the wireless cap while the saved AAC preference is off.
+        audio.noteAnnouncedAudioCodecs(true)
+        // Exercise unknown Setup fallback as well as repeated, valid Setup on each sink.
+        for ((id, type) in listOf(6 to 2, 4 to 1, 5 to 1)) {
+            audio.noteSinkCodec(id, 3)
+            audio.precreateAudioTrack(id)
+            val track = decoder.getTrack(id)!!
+            check(track.builtCodec().isAac == (id == 6))
+            check((field(track, "decoder") != null) == (id == 6))
+            audio.noteSinkCodec(id, type); audio.precreateAudioTrack(id)
+            check(decoder.getTrack(id) === track)
+        }
+        fun outputPositions() = AudioTrack.created.associateWith { it.samples.size }
+        fun hasNewSound(positions: Map<AudioTrack, Int>, requireNegative: Boolean = false): Boolean {
+            handler.runAll()
+            return AudioTrack.created.any { output ->
+                output.samples.drop(positions[output] ?: 0).any { sample ->
+                    if (requireNegative) sample.toInt() < 0 else sample.toInt() != 0
+                }
+            }
+        }
+        val music = decoder.getTrack(6)!!
+        audio.preparePlayback(6); handler.runAll()
+        val codec = field(music, "decoder") as MediaCodec
+        music.write(ByteArray(64), 0, 64)
+        waitFor("mixed music AAC input") { codec.queued == 1 }
+        // Guidance can finish while music has not supplied decoded output yet. A short 16 kHz
+        // PCM tail must reach playback without creating or waiting for a guidance MediaCodec.
+        for (id in listOf(4, 5, 4)) {
+            val before = outputPositions()
+            val voice = decoder.getTrack(id)!!
+            val bytes = ByteArray(320) { if (it % 2 == 0) 64 else 0 }
+            audio.preparePlayback(id); handler.runAll()
+            voice.write(bytes, 0, bytes.size); audio.stopAudio(id); handler.runAll()
+            waitFor("PCM tail on mixed sink $id") {
+                hasNewSound(before)
+            }
+            check(decoder.getTrack(6) === music && field(music, "decoder") === codec)
+        }
+        val beforeMusic = outputPositions()
+        // Music has a negative waveform, unlike the positive PCM prompts. A prompt still
+        // draining on the shared output cannot satisfy this music-tail assertion.
+        val musicPcm = ByteArray(960) { if (it % 2 == 0) 0 else 0xc0.toByte() }
+        codec.emit(musicPcm); audio.stopAudio(6); handler.runAll()
+        waitFor("music tail after PCM guidance") {
+            hasNewSound(beforeMusic, requireNegative = true)
+        }
+        audio.restartAudio()
+        for ((id, expected) in listOf(6 to true, 4 to false, 5 to false)) {
+            audio.precreateAudioTrack(id)
+            check(decoder.getTrack(id)!!.builtCodec().isAac == expected)
+        }
+        // Even with the option enabled, a phone's actual Setup is authoritative. Changing one
+        // sink's codec must not recreate the others or interpret compressed input as PCM.
+        val rebuiltMusic = decoder.getTrack(6)
+        audio.noteSinkCodec(4, 2); audio.precreateAudioTrack(4)
+        check(decoder.getTrack(4)!!.builtCodec() == AudioSinkCodec.AAC_LC)
+        check(decoder.getTrack(6) === rebuiltMusic)
+    } finally {
+        audio.releaseAllFocus(); decoder.stop(); handler.runAll(); handler.reset(); configs.formats = emptyMap()
+    }
+    println("PASS mixed AAC music and PCM voice/system (staticFocus=$staticFocus) preserve tails, repeated Setup and local restart; actual Setup wins")
 }

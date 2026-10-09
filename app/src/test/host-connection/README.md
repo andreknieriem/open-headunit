@@ -9,10 +9,17 @@ When the playback host suite is present, the runner also exercises the settings/
 boundary with the real AapAudio and AudioDecoder owners. This optional integration check
 retains standalone execution of the connection PR without a playback dependency.
 
-## Manual execution
+## CI and local execution
 
-This is a **manual host tool**: neither Gradle test tasks nor Android CI invoke it.
-Run it explicitly for lifecycle changes. It includes the Self launch suite, which can also be
-run separately with `python3 app/src/test/host-connection/self-launch.py` after the first full run. Production member lookup uses exact declarations; a missing or renamed
-member raises an error and must be updated together with its fixture. These tools complement JVM
-unit tests; a Gradle pass alone does not mean these scenarios ran.
+Android CI runs this tool after Gradle's unit tests in the **Unit tests (github debug)** job.
+A harness failure fails that job. The `host-connection-diagnostics` artifact retains its log,
+extracted Kotlin sources and method/toolchain metadata, including on failure.
+
+For local lifecycle changes, run `./gradlew :app:testGithubDebugUnitTest` first to populate
+the Kotlin dependency cache, then `python3 app/src/test/host-connection/run.py`.
+The Gradle task alone does not run the harness. The full runner includes the Self launch
+suite, which can also be run separately with `python3 app/src/test/host-connection/self-launch.py`
+after the first full run.
+
+Production member lookup uses exact declarations; a missing or renamed member raises an
+error and must be updated together with its fixture. These tools complement JVM unit tests.

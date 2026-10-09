@@ -7,7 +7,7 @@ Runs on every pull request and on pushes to `main`. Two parallel jobs:
 | Check                         | What it does                                                                                                                                         | Intended to block? |
 | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------: |
 | **Build (github debug)**      | `./gradlew :app:assembleGithubDebug` — compiles the app (including native code and the `:contract` module) and uploads the debug APK as an artifact. |        Yes         |
-| **Unit tests (github debug)** | `./gradlew :app:testGithubDebugUnitTest` — runs the JVM unit tests and uploads the HTML/XML report.                                                  |        Yes         |
+| **Unit tests (github debug)** | Runs `./gradlew :app:testGithubDebugUnitTest`, then the connection lifecycle harness. Uploads JVM reports and harness diagnostics.                   |        Yes         |
 
 "Intended to block" reflects the design; a failing check only actually
 prevents merge once the [branch-protection rule](#branch-protection) below is
@@ -26,6 +26,11 @@ these status checks:
 
 ### Notes
 
+- **Connection lifecycle harness.** After Gradle populates the Kotlin dependency cache,
+  `python3 app/src/test/host-connection/run.py` checks connection retirement, USB races
+  and Self launch ownership without a device. Failure fails the unit-test job; the
+  `host-connection-diagnostics` artifact includes the log, extracted sources and metadata.
+  Gradle alone does not invoke this harness.
 - **`github` flavor only.** The `playstore` flavor is not built because it
   cannot currently compile: `VpnControl.kt` lives only in the `github` source
   set (`app/src/github/...`) but is imported by shared `main` code. Once that

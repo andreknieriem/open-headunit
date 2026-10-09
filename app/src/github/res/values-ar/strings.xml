@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="keep_dummy_vpn">إبقاء VPN غير المتصل نشطاً أثناء الاتصال</string>
-    <string name="keep_dummy_vpn_description">يبقي VPN غير المتصل نشطاً أثناء اتصال الهاتف لمنع شريحة Wi-Fi من البحث عن شبكات أخرى على 2.4 جيجاهرتز.</string>
-    <string name="keep_dummy_vpn_denied">تم رفض إذن VPN. لا يمكن تشغيل VPN غير المتصل تلقائياً.</string>
+    <string name="keep_dummy_vpn">إبقاء VPN غير المتصل نشطًا أثناء الاتصال</string>
+    <string name="keep_dummy_vpn_description">يبقي VPN غير المتصل الخاص بالتطبيق نشطًا أثناء اتصال الهاتف. مخصص للوحدات التي تعمل على 2.4 جيجاهرتز أو التي يتقطع فيها الصوت والفيديو بشكل متكرر، فتتوقف شريحة Wi-Fi في الوحدة عن البحث عن شبكات أخرى. أثناء تفعيله، لا يتوفر الإنترنت لباقي التطبيقات على هذه الوحدة. يسري عند الاتصال التالي.</string>
+    <string name="keep_dummy_vpn_denied">تم رفض إذن VPN. لا يمكن تشغيل VPN غير المتصل تلقائيًا.</string>
 </resources>

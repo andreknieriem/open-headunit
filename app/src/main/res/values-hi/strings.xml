@@ -941,7 +941,7 @@
     <string name="vehicle_type_car">कार</string>
     <string name="vehicle_type_truck">ट्रक</string>
     <string name="vehicle_type_motorcycle">मोटरसाइकिल</string>
-    <string name="vehicle_type_forced_by_microphone">हेड यूनिट माइक्रोफ़ोन बंद है, इसलिए Android Auto को बताया गया है कि यह एक मोटरसाइकिल है।</string>
+    <string name="vehicle_type_forced_by_microphone">हेड यूनिट का माइक्रोफ़ोन बंद है, इसलिए फ़ोन अपना माइक्रोफ़ोन इस्तेमाल करता है। Android Auto को मोटरसाइकिल दिखेगी।</string>
     <string name="vehicle_id_description">केवल आंतरिक पहचानकर्ता। इसे बदलने से आपका फ़ोन इसे एक अलग वाहन के रूप में मानेगा।</string>
     <string name="head_unit_make_label">निर्माता</string>
     <string name="head_unit_make_description">हेड यूनिट निर्माता</string>

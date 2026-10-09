@@ -482,7 +482,7 @@
     <string name="vehicle_type_car">Samochód</string>
     <string name="vehicle_type_truck">Ciężarówka</string>
     <string name="vehicle_type_motorcycle">Motocykl</string>
-    <string name="vehicle_type_forced_by_microphone">Mikrofon jednostki głównej jest wyłączony, więc Android Auto jest informowany, że to motocykl, niezależnie od wyboru dokonanego tutaj. To właśnie sprawia, że telefon nagrywa samodzielnie.</string>
+    <string name="vehicle_type_forced_by_microphone">Mikrofon jednostki głównej jest wyłączony, więc telefon używa własnego. Android Auto zobaczy motocykl.</string>
     <string name="vehicle_id_description">Tylko wewnętrzny identyfikator. Jego zmiana spowoduje, że telefon potraktuje to jako inny pojazd, resetując preferencje Android Auto dla tego samochodu.</string>
     <string name="head_unit_make_label">Producent</string>
     <string name="head_unit_make_description">Producent radia</string>

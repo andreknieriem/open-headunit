@@ -941,7 +941,7 @@
     <string name="vehicle_type_car">รถยนต์</string>
     <string name="vehicle_type_truck">รถบรรทุก</string>
     <string name="vehicle_type_motorcycle">รถจักรยานยนต์</string>
-    <string name="vehicle_type_forced_by_microphone">ไมโครโฟนของเฮดยูนิตปิดอยู่ ดังนั้น Android Auto จึงได้รับแจ้งว่าเป็นรถจักรยานยนต์</string>
+    <string name="vehicle_type_forced_by_microphone">ไมโครโฟนของเฮดยูนิตปิดอยู่ โทรศัพท์จึงใช้ไมโครโฟนของตัวเอง Android Auto จะเห็นเป็นมอเตอร์ไซค์</string>
     <string name="vehicle_id_description">ตัวระบุภายในเท่านั้น การเปลี่ยนแปลงสิ่งนี้จะทำให้โทรศัพท์ปฏิบัติต่อรถคันนี้เสมือนเป็นรถคันใหม่</string>
     <string name="head_unit_make_label">ผู้ผลิตเฮดยูนิต</string>
     <string name="head_unit_make_description">ผู้ผลิตเฮดยูนิต</string>

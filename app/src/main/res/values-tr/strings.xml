@@ -482,7 +482,7 @@
     <string name="vehicle_type_car">Otomobil</string>
     <string name="vehicle_type_truck">Kamyon</string>
     <string name="vehicle_type_motorcycle">Motosiklet</string>
-    <string name="vehicle_type_forced_by_microphone">Ana ünite mikrofonu kapalı, bu yüzden burada ne seçilirse seçilsin Android Auto\'ya bunun bir motosiklet olduğu bildirilir. Telefonun kendi başına kayıt yapmasını sağlayan da budur.</string>
+    <string name="vehicle_type_forced_by_microphone">Ana ünite mikrofonu kapalı, bu yüzden telefon kendi mikrofonunu kullanır. Android Auto bir motosiklet görecek.</string>
     <string name="vehicle_id_description">Sadece dahili tanımlayıcıdır. Bunu değiştirmek, telefonunuzun bu aracı farklı bir araç olarak görmesine neden olur ve bu araba için Android Auto tercihlerinizi sıfırlar.</string>
     <string name="head_unit_make_label">Marka</string>
     <string name="head_unit_make_description">Multimedya sistemi üreticisi</string>

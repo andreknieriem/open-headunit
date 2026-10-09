@@ -484,7 +484,7 @@
     <string name="vehicle_type_car">سيارة</string>
     <string name="vehicle_type_truck">شاحنة</string>
     <string name="vehicle_type_motorcycle">دراجة نارية</string>
-    <string name="vehicle_type_forced_by_microphone">ميكروفون الوحدة الرئيسية معطّل، لذا يتم إبلاغ Android Auto بأن هذه دراجة نارية مهما كان الاختيار هنا. وهذا ما يجعل الهاتف يسجّل بنفسه.</string>
+    <string name="vehicle_type_forced_by_microphone">ميكروفون الوحدة الرئيسية متوقف، لذا يستخدم الهاتف ميكروفونه الخاص. سيرى Android Auto دراجة نارية.</string>
     <string name="vehicle_id_description">معرف داخلي فقط. تغييره سيجعل هاتفك يكتشف هذا كمركبة مختلفة، مما يعيد تعيين تفضيلات Android Auto لهذه السيارة.</string>
     <string name="head_unit_make_label">الشركة المصنعة</string>
     <string name="head_unit_make_description">الشركة المصنعة لوحدة الوسائط</string>

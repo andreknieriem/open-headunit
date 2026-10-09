@@ -254,12 +254,14 @@ class VehicleInfoFragment : Fragment() {
             onOptionSelected = { index ->
                 pendingVehicleType = VehicleTypePolicy.atIndex(index)
                 checkChanges()
+                updateSettingsList()
             }
         ))
 
-        // The microphone setting overrides this, so say so rather than showing a choice that is
+        // The microphone setting can override the pick, so say so rather than show a choice that is
         // not what goes on the wire.
-        if (!settings.useHeadUnitMicrophone) {
+        if (VehicleTypePolicy.isOverriddenByMicrophone(
+                pendingVehicleType ?: VehicleTypePolicy.CAR, settings.useHeadUnitMicrophone)) {
             items.add(SettingItem.InfoBanner(
                 stableId = "vehicleTypeForcedByMicrophone",
                 textResId = R.string.vehicle_type_forced_by_microphone

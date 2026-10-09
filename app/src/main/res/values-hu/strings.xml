@@ -483,7 +483,7 @@
     <string name="vehicle_type_car">Autó</string>
     <string name="vehicle_type_truck">Teherautó</string>
     <string name="vehicle_type_motorcycle">Motorkerékpár</string>
-    <string name="vehicle_type_forced_by_microphone">A fejegység mikrofonja ki van kapcsolva, így az Android Auto azt az információt kapja, hogy ez motorkerékpár, bármi is legyen itt kiválasztva. Éppen ez készteti a telefont saját rögzítésre.</string>
+    <string name="vehicle_type_forced_by_microphone">A fejegység mikrofonja ki van kapcsolva, ezért a telefon a sajátját használja. Az Android Auto motorkerékpárt fog látni.</string>
     <string name="vehicle_id_description">Csak belső azonosító. Megváltoztatása azt eredményezi, hogy telefonja ezt más járműként érzékeli, visszaállítva az Android Auto beállításait ehhez az autóhoz.</string>
     <string name="head_unit_make_label">Gyártó</string>
     <string name="head_unit_make_description">Fejegység gyártója</string>

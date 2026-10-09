@@ -1,6 +1,8 @@
 package com.andrerinas.openheadunit.aap
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /** Which vehicle this head unit claims to be, and why the microphone setting can override the user. */
@@ -43,5 +45,15 @@ class VehicleTypePolicyTest {
         assertEquals(1, VehicleTypePolicy.CAR)
         assertEquals(2, VehicleTypePolicy.TRUCK)
         assertEquals(3, VehicleTypePolicy.MOTORCYCLE)
+    }
+
+    @Test
+    fun `the microphone note shows only when the pick is overridden`() {
+        assertTrue(VehicleTypePolicy.isOverriddenByMicrophone(VehicleTypePolicy.CAR, headUnitMicEnabled = false))
+        assertTrue(VehicleTypePolicy.isOverriddenByMicrophone(VehicleTypePolicy.TRUCK, headUnitMicEnabled = false))
+        assertFalse(VehicleTypePolicy.isOverriddenByMicrophone(VehicleTypePolicy.MOTORCYCLE, headUnitMicEnabled = false))
+        VehicleTypePolicy.SELECTABLE.forEach {
+            assertFalse(VehicleTypePolicy.isOverriddenByMicrophone(it, headUnitMicEnabled = true))
+        }
     }
 }

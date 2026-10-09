@@ -6,7 +6,6 @@ import android.media.MediaCodecList
 import android.os.Build
 import android.util.DisplayMetrics
 import android.view.WindowManager
-import kotlin.math.sqrt
 
 class SystemOptimizer(private val context: Context) {
 
@@ -57,16 +56,10 @@ class SystemOptimizer(private val context: Context) {
         // recommended resolution, the runtime cap and the DPI below all agree.
         val panelCeil = panelCeiling(metrics.widthPixels, metrics.heightPixels, hasH265)
 
-        // 2. DPI Strategy. Derive the density from the resolution Android Auto will actually draw
-        // (the panel-capped resolution), not the raw panel pixels: when we downscale a small
-        // high-DPI panel, the surface AA renders is smaller, so using the panel pixels over-reports
-        // the density (issue #767). Diagonal of the effective surface / physical inches, nudged up
-        // a little for the car viewing distance.
-        val effectiveDiagonalPx = sqrt(
-            (panelCeil.width * panelCeil.width + panelCeil.height * panelCeil.height).toFloat()
+        // 2. DPI from the resolution Android Auto actually draws, not the raw panel pixels (issue #767).
+        val recDpi = OnboardingDisplayPolicy.recommendedDpi(
+            sizePreset, panelCeil.width, panelCeil.height, isPortraitTarget
         )
-        val calculatedDpi = (effectiveDiagonalPx / sizePreset.diagonalInch) * LEGIBILITY_FACTOR
-        var recDpi = calculatedDpi.toInt()
 
         // 3. View Mode Recommendation
         val recViewMode = when {
@@ -90,15 +83,6 @@ class SystemOptimizer(private val context: Context) {
         }
         AppLog.i("SystemOptimizer: SoC=${Build.HARDWARE}/${Build.BOARD} API=${Build.VERSION.SDK_INT} hasHwHevc=$hasH265 -> recommended viewMode=$recViewMode")
 
-        // 4. Apply orientation-based caps
-        if (isPortraitTarget) {
-            recDpi = recDpi.coerceAtMost(190)
-        } else {
-            recDpi = recDpi.coerceAtMost(240)
-        }
-
-        recDpi = recDpi.coerceAtLeast(110)
-
         // Default to H.264. Many head units report HEVC support they cannot actually play back, so
         // only recommend H.265 when the panel is above Full HD (1440p/4K), where H.264 bandwidth
         // stops being practical and the saving is worth the risk. panelCeil.width > 1920 means the
@@ -117,14 +101,6 @@ class SystemOptimizer(private val context: Context) {
     }
 
     companion object {
-        /**
-         * Small upward nudge on the computed density so the Android Auto UI reads well at the car
-         * viewing distance (the panel is farther from the eyes than a phone). Kept modest so the
-         * result stays near the ~150-170 dpi range that works well on head units instead of the
-         * larger, more cramped UI a raw physical-DPI value would give.
-         */
-        private const val LEGIBILITY_FACTOR = 1.1f
-
         /**
          * The largest resolution a physical panel warrants: the recommended label, the wizard, AUTO
          * and the DPI all read this, so they agree (issue #767). Bucketed by the panel's real pixels

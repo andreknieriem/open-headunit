@@ -29,6 +29,10 @@ object VehicleTypePolicy {
     fun vehicleType(selected: Int, headUnitMicEnabled: Boolean): Int =
         if (headUnitMicEnabled) sanitised(selected) else MOTORCYCLE
 
+    /** True when the microphone setting sends a type other than the one picked, so the picker must say so. */
+    fun isOverriddenByMicrophone(selected: Int, headUnitMicEnabled: Boolean): Boolean =
+        vehicleType(selected, headUnitMicEnabled) != sanitised(selected)
+
     /** A stored value that is not one of ours reads as a car, the same as sending nothing. */
     fun sanitised(vehicleType: Int): Int = if (vehicleType in SELECTABLE) vehicleType else CAR
 

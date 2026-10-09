@@ -779,7 +779,7 @@
     <string name="vehicle_type_car">Voiture</string>
     <string name="vehicle_type_truck">Camion</string>
     <string name="vehicle_type_motorcycle">Moto</string>
-    <string name="vehicle_type_forced_by_microphone">Le microphone de l\'autoradio est désactivé, donc Android Auto est informé qu\'il s\'agit d\'une moto quel que soit le choix fait ici. C\'est ce qui pousse le téléphone à enregistrer lui-même.</string>
+    <string name="vehicle_type_forced_by_microphone">Le microphone de l\'autoradio est coupé, donc le téléphone utilise le sien. Android Auto verra une moto.</string>
     <string name="vehicle_id_description">Identifiant interne uniquement. Changer ceci amènera ton téléphone à considérer qu\'il s\'agit d\'un véhicule différent, réinitialisant tes préférences Android Auto pour cette voiture.</string>
     <string name="head_unit_make_label">Marque</string>
     <string name="head_unit_make_description">Fabricant de l\'autoradio</string>

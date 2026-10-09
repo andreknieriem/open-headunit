@@ -49,4 +49,33 @@ class AudioSinkServicesTest {
             }
         }
     }
+    @Test fun `48k requires both options and the negotiated version while system remains compatible`() {
+        for (pcm in listOf(false, true)) for (prefer48 in listOf(false, true)) {
+            for (supported in listOf(false, true)) for (aac in listOf(false, true)) {
+                val session = config(aac, pcm).copy(prefer48kGuidance = prefer48)
+                val services = AudioSinkServices.create(session, aac, false, supported)
+                    .map { Control.Service.parseFrom(it.toByteArray()) }
+                for (service in services) {
+                    val expectedRates = when (service.id) {
+                        6 -> listOf(48000)
+                        4 -> if (pcm && prefer48 && supported) listOf(16000, 48000) else listOf(16000)
+                        else -> listOf(16000)
+                    }
+                    assertEquals(expectedRates, service.mediaSinkService.audioConfigsList.map { it.sampleRate })
+                    assertEquals(expectedRates.indices.toList(), session.configurationIndicesFor(service.id,
+                        supported, session.codecFor(service.id, aac)))
+                }
+                // An unexpected but valid AAC Setup must not authorize the PCM-only index.
+                assertEquals(listOf(0), session.configurationIndicesFor(4, supported,
+                    com.andrerinas.openheadunit.decoder.audio.AudioSinkCodec.AAC_LC))
+            }
+        }
+        for (enabled in listOf(false, true)) for (self in listOf(false, true)) {
+            val session = config(true, true, enabled).copy(prefer48kGuidance = true)
+            val services = AudioSinkServices.create(session, true, self, true)
+            assertEquals(if (enabled && !self) listOf(5, 4, 6) else listOf(5), services.map { it.id })
+            assertEquals(listOf(16000), services.first().mediaSinkService.audioConfigsList.map { it.sampleRate })
+        }
+    }
+
 }

@@ -14,6 +14,7 @@ class Settings {
     var audioQueueCapacity=0
     var useAacAudio=false
     var usePcmGuidance=false
+    var prefer48kGuidance=false
     var useAAudioOutput=false
     var enableAudioSink=true
     var attachHwDspEqualizer=false

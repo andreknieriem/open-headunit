@@ -8,6 +8,7 @@ import com.andrerinas.openheadunit.utils.Settings
 
 object AudioConfigs {
     private val audioTracks: Map<Int, Media.AudioConfiguration>
+    private val guidance48k: Media.AudioConfiguration
 
     /**
      * Which system stream an Android Auto audio channel plays on.
@@ -41,8 +42,10 @@ object AudioConfigs {
         settings.systemAudioStream
     )
 
-    fun get(channel: Int): Media.AudioConfiguration {
-        return audioTracks.getValue(channel)
+    fun get(channel: Int, index: Int = 0): Media.AudioConfiguration {
+        require(index == 0 || (channel == Channel.ID_AU1 && index == 1))
+        val base = audioTracks.getValue(channel)
+        return if (index == 0) base else guidance48k
     }
 
     init {
@@ -57,6 +60,7 @@ object AudioConfigs {
             numberOfBits = 16
             numberOfChannels = 1
         }.build()
+        guidance48k = audioConfig1.toBuilder().setSampleRate(48000).build()
 
         // 16 kHz mono is required here, not preferred. The phone accepts the SYSTEM sink only if
         // it offers that config, and with the audio sink off this is the only sink left - so
@@ -66,7 +70,7 @@ object AudioConfigs {
             numberOfBits = 16
             numberOfChannels = 1
         }.build()
-        // Each advertised sink has a fixed configuration at index 0 for the whole session.
+        // Index 0 remains the compatibility format; SPEECH may also advertise 48 kHz at index 1.
         audioTracks = mapOf(Channel.ID_AUD to audioConfig0, Channel.ID_AU1 to audioConfig1,
             Channel.ID_AU2 to audioConfig2)
     }

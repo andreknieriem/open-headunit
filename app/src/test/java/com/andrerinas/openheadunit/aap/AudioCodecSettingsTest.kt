@@ -29,6 +29,7 @@ class AudioCodecSettingsTest {
             }
             val settings = Settings(context)
             assertFalse(settings.usePcmGuidance)
+            assertFalse(settings.prefer48kGuidance)
             val initial = AudioSessionConfig.from(settings)
             val channels = listOf(Channel.ID_AUD, Channel.ID_AU1, Channel.ID_AU2)
             channels.forEach { assertEquals(savedAac, initial.codecFor(it).isAac) }
@@ -42,7 +43,16 @@ class AudioCodecSettingsTest {
             assertEquals(AudioSinkCodec.PCM, mixed.codecFor(Channel.ID_AU2))
             // The previous session is immutable until negotiation replaces it.
             channels.forEach { assertEquals(savedAac, initial.codecFor(it).isAac) }
+            settings.prefer48kGuidance = true
+            val highRate = AudioSessionConfig.from(settings)
+            assertNotEquals(mixed, highRate)
+            assertEquals(listOf(0, 1), highRate.configurationIndicesFor(4, true, AudioSinkCodec.PCM))
+            assertEquals(listOf(0), mixed.configurationIndicesFor(4, true, AudioSinkCodec.PCM))
             settings.usePcmGuidance = false
+            assertEquals(listOf(0), AudioSessionConfig.from(settings).configurationIndicesFor(4, true, AudioSinkCodec.PCM))
+            assertTrue(settings.prefer48kGuidance)
+            assertEquals(initial, AudioSessionConfig.from(settings))
+            settings.prefer48kGuidance = false
             assertEquals(initial, AudioSessionConfig.from(settings))
         }
     }
@@ -50,12 +60,15 @@ class AudioCodecSettingsTest {
     @Test fun `reset removes the mixed choice and requires fresh projection negotiation`() {
         val prefs = mock(SharedPreferences::class.java)
         val editor = mock(SharedPreferences.Editor::class.java)
-        `when`(prefs.all).thenReturn(mapOf("use-pcm-guidance" to true))
+        `when`(prefs.all).thenReturn(mapOf("use-pcm-guidance" to true, "prefer-48k-guidance" to true))
         `when`(prefs.edit()).thenReturn(editor)
         `when`(editor.commit()).thenReturn(true)
         assertEquals(SettingsBackupManager.ValueType.BOOLEAN, SettingsBackupManager.backupKeys["use-pcm-guidance"])
         val result = SettingsBackupManager.resetPreferencesToDefaults(prefs)
-        assertEquals(setOf("use-pcm-guidance"), result.changedKeys)
+        assertEquals(setOf("use-pcm-guidance", "prefer-48k-guidance"), result.changedKeys)
+        assertEquals(SettingsBackupManager.ValueType.BOOLEAN, SettingsBackupManager.backupKeys["prefer-48k-guidance"])
+        assertTrue(SettingsBackupManager.requiresProjectionRestart(setOf("prefer-48k-guidance")))
+        verify(editor).remove("prefer-48k-guidance")
         assertTrue(SettingsBackupManager.requiresProjectionRestart(result.changedKeys))
         verify(editor).remove("use-pcm-guidance")
     }

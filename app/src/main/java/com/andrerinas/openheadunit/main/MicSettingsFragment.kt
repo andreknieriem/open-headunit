@@ -117,12 +117,12 @@ class MicSettingsFragment : Fragment() {
     }
 
     private fun saveSettings() {
-        pendingUseHeadUnitMicrophone?.let { settings.useHeadUnitMicrophone = it }
-        pendingMicSampleRate?.let { settings.micSampleRate = it }
-        pendingMicInputSource?.let { settings.micInputSource = it }
-        pendingMicEchoCanceler?.let { settings.micEchoCanceler = it }
-        pendingMicNoiseSuppressor?.let { settings.micNoiseSuppressor = it }
-        pendingMicAutoGainControl?.let { settings.micAutoGainControl = it }
+        pendingUseHeadUnitMicrophone?.let { if (it != settings.useHeadUnitMicrophone) settings.useHeadUnitMicrophone = it }
+        pendingMicSampleRate?.let { if (it != settings.micSampleRate) settings.micSampleRate = it }
+        pendingMicInputSource?.let { if (it != settings.micInputSource) settings.micInputSource = it }
+        pendingMicEchoCanceler?.let { if (it != settings.micEchoCanceler) settings.micEchoCanceler = it }
+        pendingMicNoiseSuppressor?.let { if (it != settings.micNoiseSuppressor) settings.micNoiseSuppressor = it }
+        pendingMicAutoGainControl?.let { if (it != settings.micAutoGainControl) settings.micAutoGainControl = it }
 
         if (requiresRestart) {
             if (App.provide(requireContext()).commManager.isConnected) {

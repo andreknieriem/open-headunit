@@ -99,9 +99,9 @@ class PerformanceOverlaySettingsFragment : Fragment() {
     }
 
     private fun saveSettings() {
-        settings.showPerformanceOverlay = pendingShow
-        settings.overlayFields = pendingFields
-        settings.overlayPosition = pendingPosition
+        if (pendingShow != settings.showPerformanceOverlay) settings.showPerformanceOverlay = pendingShow
+        if (pendingFields != settings.overlayFields) settings.overlayFields = pendingFields
+        if (pendingPosition != settings.overlayPosition) settings.overlayPosition = pendingPosition
         navigateBack()
     }
 

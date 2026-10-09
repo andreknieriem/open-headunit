@@ -512,8 +512,11 @@
     <string name="pref_default_launcher_status_inactive">Não definido (Toque para definir como predefinição)</string>
     <string name="pref_enable_floating_button_title">Botão flutuante de abertura</string>
     <string name="pref_enable_floating_button_summary">Apresenta um botão flutuante sobre o lançador de fábrica e outras aplicações para regressar rapidamente ao Open Headunit</string>
+    <string name="pref_floating_button_connection_status_title">Indicador de estado da ligação</string>
+    <string name="pref_floating_button_connection_status_summary">Usa a Opacidade desligado quando nenhum telemóvel está ligado e desvanece para a Opacidade do botão flutuante enquanto um telemóvel está ligado. A 0%, o botão fica oculto e deixa passar os toques.</string>
     <string name="pref_floating_button_size_title">Tamanho do botão flutuante</string>
     <string name="pref_floating_button_opacity_title">Opacidade do botão flutuante</string>
+    <string name="pref_floating_button_disconnected_opacity_title">Opacidade desligado</string>
     <string name="pref_floating_button_x_title">Posição horizontal (X)</string>
     <string name="pref_floating_button_y_title">Posição vertical (Y)</string>
     <string name="pref_aa_exit_action_title">Ação ao sair do Android Auto</string>

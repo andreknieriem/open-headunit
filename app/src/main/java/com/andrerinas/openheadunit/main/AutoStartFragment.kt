@@ -173,26 +173,26 @@ class AutoStartFragment : Fragment() {
 
     private fun saveSettings() {
         pendingAutoStartOnBoot?.let {
-            settings.autoStartOnBoot = it
+            if (it != settings.autoStartOnBoot) settings.autoStartOnBoot = it
             Settings.syncAutoStartOnBootToDeviceStorage(requireContext(), it)
         }
         pendingAutoStartOnScreenOn?.let {
-            settings.autoStartOnScreenOn = it
+            if (it != settings.autoStartOnScreenOn) settings.autoStartOnScreenOn = it
             Settings.syncAutoStartOnScreenOnToDeviceStorage(requireContext(), it)
         }
         pendingListenForUsbDevices?.let {
-            settings.listenForUsbDevices = it
+            if (it != settings.listenForUsbDevices) settings.listenForUsbDevices = it
             Settings.syncListenForUsbDevicesToDeviceStorage(requireContext(), it)
             Settings.setUsbAttachedActivityEnabled(requireContext(), it)
         }
         pendingAutoStartOnUsb?.let {
-            settings.autoStartOnUsb = it
+            if (it != settings.autoStartOnUsb) settings.autoStartOnUsb = it
             Settings.syncAutoStartOnUsbToDeviceStorage(requireContext(), it)
         }
         settings.autoStartBluetoothDeviceMacs = pendingAutoStartBtMacs.toSet()
         Settings.syncAutoStartBtMacsToDeviceStorage(requireContext(), pendingAutoStartBtMacs.toSet())
         settings.nativePokeBtMacs = pendingNativePokeBtMacs.toSet()
-        pendingNativePokeAllPaired?.let { settings.nativePokeAllPairedDevices = it }
+        pendingNativePokeAllPaired?.let { if (it != settings.nativePokeAllPairedDevices) settings.nativePokeAllPairedDevices = it }
         if (pendingAutoStartBtMacs.isNotEmpty()) {
             val firstMac = pendingAutoStartBtMacs.first()
             val adapter = BluetoothHelper.getBluetoothAdapter(requireContext())
@@ -218,16 +218,16 @@ class AutoStartFragment : Fragment() {
             settings.autoStartBluetoothDeviceName = ""
         }
         pendingAutoStartOnWifi?.let {
-            settings.autoStartOnWifi = it
+            if (it != settings.autoStartOnWifi) settings.autoStartOnWifi = it
             Settings.syncAutoStartOnWifiToDeviceStorage(requireContext(), it)
         }
         pendingAutoStartWifiSsid?.let {
-            settings.autoStartWifiSsid = it
+            if (it != settings.autoStartWifiSsid) settings.autoStartWifiSsid = it
             Settings.syncAutoStartWifiSsidToDeviceStorage(requireContext(), it)
         }
-        pendingReopenOnReconnection?.let { settings.rawReopenOnReconnection = it }
+        pendingReopenOnReconnection?.let { if (it != settings.rawReopenOnReconnection) settings.rawReopenOnReconnection = it }
         settings.autoDisconnectBluetoothDeviceMacs = pendingAutoDisconnectBtMacs.toSet()
-        pendingAutoDisconnectBtDelaySeconds?.let { settings.autoDisconnectBtDelaySeconds = it }
+        pendingAutoDisconnectBtDelaySeconds?.let { if (it != settings.autoDisconnectBtDelaySeconds) settings.autoDisconnectBtDelaySeconds = it }
 
         // Check for Overlay permission if any auto-start is configured. Auto-disconnect launches
         // nothing, so it is not part of this.

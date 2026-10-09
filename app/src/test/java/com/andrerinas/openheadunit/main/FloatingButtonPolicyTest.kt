@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import com.andrerinas.openheadunit.utils.Settings
 import com.andrerinas.openheadunit.utils.SettingsBackupManager
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Test
 import org.mockito.ArgumentMatchers.anyBoolean
@@ -16,6 +17,22 @@ import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 
 class FloatingButtonPolicyTest {
+
+    @Test
+    fun floatingButtonAndConnectionStatusModeAreOffByDefault() {
+        val mockContext = mock(Context::class.java)
+        val mockPrefs = mock(SharedPreferences::class.java)
+
+        `when`(mockContext.getSharedPreferences(anyString(), anyInt())).thenReturn(mockPrefs)
+        `when`(mockPrefs.getBoolean(anyString(), anyBoolean())).thenAnswer { it.getArgument<Boolean>(1) }
+
+        val settings = Settings(mockContext)
+
+        assertFalse(settings.enableFloatingButton)
+        assertFalse(settings.floatingButtonConnectionStatusMode)
+        verify(mockPrefs).getBoolean(eq("enable-floating-button"), eq(false))
+        verify(mockPrefs).getBoolean(eq("floating-button-connection-status-mode"), eq(false))
+    }
 
     @Test
     fun floatingButtonSettingsClampsSizeBetween32And120Dp() {

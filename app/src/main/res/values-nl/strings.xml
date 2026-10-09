@@ -1144,8 +1144,11 @@
     <string name="category_more_features">Meer functies</string>
     <string name="pref_enable_floating_button_title">Zwevende startknop</string>
     <string name="pref_enable_floating_button_summary">Toont een zwevende knop over het OEM-startscherm en andere apps om snel terug te keren naar Open Headunit</string>
+    <string name="pref_floating_button_connection_status_title">Verbindingsstatus-indicator</string>
+    <string name="pref_floating_button_connection_status_summary">Gebruikt de transparantie bij verbroken verbinding als er geen telefoon is verbonden en vervaagt naar de Transparantie van zwevende knop zodra er een telefoon is verbonden. Bij 0% is de knop verborgen en laat hij tikken door.</string>
     <string name="pref_floating_button_size_title">Grootte van zwevende knop</string>
     <string name="pref_floating_button_opacity_title">Transparantie van zwevende knop</string>
+    <string name="pref_floating_button_disconnected_opacity_title">Transparantie bij verbroken verbinding</string>
     <string name="pref_floating_button_x_title">Horizontale positie (X)</string>
     <string name="pref_floating_button_y_title">Verticale positie (Y)</string>
     <string name="pref_aa_exit_action_title">Actie bij afsluiten Android Auto</string>

@@ -1140,8 +1140,11 @@
     <string name="category_more_features">További funkciók</string>
     <string name="pref_enable_floating_button_title">Lebegő indítógomb</string>
     <string name="pref_enable_floating_button_summary">Lebegő gomb megjelenítése az OEM indító és egyéb alkalmazások felett az Open Headunit gyors eléréséhez</string>
+    <string name="pref_floating_button_connection_status_title">Kapcsolat állapotjelző</string>
+    <string name="pref_floating_button_connection_status_summary">Ha nincs telefon csatlakoztatva, a Lebegő gomb átlátszatlansága helyett a Szétkapcsolt állapot átlátszatlanságát használja, csatlakoztatott telefonnál pedig a Lebegő gomb átlátszatlanságára halványul. 0%-nál a gomb rejtett, és átengedi az érintéseket.</string>
     <string name="pref_floating_button_size_title">Lebegő gomb mérete</string>
     <string name="pref_floating_button_opacity_title">Lebegő gomb átlátszatlansága</string>
+    <string name="pref_floating_button_disconnected_opacity_title">Szétkapcsolt állapot átlátszatlansága</string>
     <string name="pref_floating_button_x_title">Vízszintes pozíció (X)</string>
     <string name="pref_floating_button_y_title">Függőleges pozíció (Y)</string>
     <string name="pref_aa_exit_action_title">Android Auto kilépési művelet</string>

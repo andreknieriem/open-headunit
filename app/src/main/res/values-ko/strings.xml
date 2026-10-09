@@ -1152,8 +1152,11 @@
     <string name="category_more_features">추가 기능</string>
     <string name="pref_enable_floating_button_title">플로팅 런처 버튼</string>
     <string name="pref_enable_floating_button_summary">순정 런처 및 다른 앱 위에 플로팅 버튼을 표시하여 Open Headunit으로 빠르게 복귀합니다</string>
+    <string name="pref_floating_button_connection_status_title">연결 상태 표시</string>
+    <string name="pref_floating_button_connection_status_summary">휴대전화가 연결되지 않으면 연결 끊김 불투명도를 사용하고, 연결되면 플로팅 버튼 불투명도까지 흐려집니다. 0%에서는 버튼이 숨겨지고 탭을 통과시킵니다.</string>
     <string name="pref_floating_button_size_title">플로팅 버튼 크기</string>
     <string name="pref_floating_button_opacity_title">플로팅 버튼 불투명도</string>
+    <string name="pref_floating_button_disconnected_opacity_title">연결 끊김 불투명도</string>
     <string name="pref_floating_button_x_title">수평 위치 (X)</string>
     <string name="pref_floating_button_y_title">수직 위치 (Y)</string>
     <string name="pref_aa_exit_action_title">Android Auto 종료 시 동작</string>

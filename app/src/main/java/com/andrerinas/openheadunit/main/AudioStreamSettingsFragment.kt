@@ -119,10 +119,10 @@ class AudioStreamSettingsFragment : Fragment() {
     }
 
     private fun saveSettings() {
-        pendingSeparateAudioStreams?.let { settings.separateAudioStreams = it }
-        pendingMediaAudioStream?.let { settings.mediaAudioStream = it }
-        pendingGuidanceAudioStream?.let { settings.guidanceAudioStream = it }
-        pendingSystemAudioStream?.let { settings.systemAudioStream = it }
+        pendingSeparateAudioStreams?.let { if (it != settings.separateAudioStreams) settings.separateAudioStreams = it }
+        pendingMediaAudioStream?.let { if (it != settings.mediaAudioStream) settings.mediaAudioStream = it }
+        pendingGuidanceAudioStream?.let { if (it != settings.guidanceAudioStream) settings.guidanceAudioStream = it }
+        pendingSystemAudioStream?.let { if (it != settings.systemAudioStream) settings.systemAudioStream = it }
 
         if (App.provide(requireContext()).commManager.isConnected) {
             ToastUtils.showToast(context, getString(R.string.stopping_service), Toast.LENGTH_SHORT, force = true)

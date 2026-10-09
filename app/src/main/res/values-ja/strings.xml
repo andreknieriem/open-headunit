@@ -1149,8 +1149,11 @@
     <string name="category_more_features">その他の機能</string>
     <string name="pref_enable_floating_button_title">フローティングランチャーボタン</string>
     <string name="pref_enable_floating_button_summary">純正ランチャーや他のアプリの上にフローティングボタンを表示し、Open Headunitに素早く戻れるようにします</string>
+    <string name="pref_floating_button_connection_status_title">接続状態インジケーター</string>
+    <string name="pref_floating_button_connection_status_summary">スマートフォンが接続されていないときは「未接続時の不透明度」を使い、接続中は「ボタンの不透明度」まで薄くなります。0%ではボタンは非表示になり、タップを通過させます。</string>
     <string name="pref_floating_button_size_title">ボタンのサイズ</string>
     <string name="pref_floating_button_opacity_title">ボタンの不透明度</string>
+    <string name="pref_floating_button_disconnected_opacity_title">未接続時の不透明度</string>
     <string name="pref_floating_button_x_title">水平位置 (X)</string>
     <string name="pref_floating_button_y_title">垂直位置 (Y)</string>
     <string name="pref_aa_exit_action_title">Android Auto 終了時の動作</string>

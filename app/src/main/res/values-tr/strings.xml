@@ -1139,8 +1139,11 @@
     <string name="category_more_features">Daha Fazla Özellik</string>
     <string name="pref_enable_floating_button_title">Kayan Başlatıcı Düğmesi</string>
     <string name="pref_enable_floating_button_summary">Open Headunit\'e hızlıca dönmek için OEM başlatıcı ve diğer uygulamaların üzerinde kayan bir düğme gösterir</string>
+    <string name="pref_floating_button_connection_status_title">Bağlantı Durumu Göstergesi</string>
+    <string name="pref_floating_button_connection_status_summary">Telefon bağlı değilken Bağlantı Kesikken Opaklık değerini kullanır, telefon bağlıyken Kayan Düğme Opaklığına doğru soluklaşır. %0\'da düğme gizlenir ve dokunuşları geçirir.</string>
     <string name="pref_floating_button_size_title">Kayan Düğme Boyutu</string>
     <string name="pref_floating_button_opacity_title">Kayan Düğme Opaklığı</string>
+    <string name="pref_floating_button_disconnected_opacity_title">Bağlantı Kesikken Opaklık</string>
     <string name="pref_floating_button_x_title">Yatay Konum (X)</string>
     <string name="pref_floating_button_y_title">Dikey Konum (Y)</string>
     <string name="pref_aa_exit_action_title">Android Auto Çıkış Eylemi</string>

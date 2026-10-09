@@ -1142,8 +1142,11 @@
     <string name="category_more_features">ميزات إضافية</string>
     <string name="pref_enable_floating_button_title">زر التشغيل العائم</string>
     <string name="pref_enable_floating_button_summary">عرض زر عائم فوق المشغل الأصلي والتطبيقات الأخرى للعودة سريعًا إلى Open Headunit</string>
+    <string name="pref_floating_button_connection_status_title">مؤشر حالة الاتصال</string>
+    <string name="pref_floating_button_connection_status_summary">يستخدم الشفافية عند عدم الاتصال حين لا يكون هاتف متصلاً، ويتلاشى إلى شفافية الزر العائم أثناء اتصال هاتف. عند 0% يكون الزر مخفيًا ويمرر اللمسات.</string>
     <string name="pref_floating_button_size_title">حجم الزر العائم</string>
     <string name="pref_floating_button_opacity_title">شفافية الزر العائم</string>
+    <string name="pref_floating_button_disconnected_opacity_title">الشفافية عند عدم الاتصال</string>
     <string name="pref_floating_button_x_title">الموضع الأفقي (X)</string>
     <string name="pref_floating_button_y_title">الموضع الرأسي (Y)</string>
     <string name="pref_aa_exit_action_title">إجراء الخروج من Android Auto</string>

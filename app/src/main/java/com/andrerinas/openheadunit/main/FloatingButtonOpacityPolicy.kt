@@ -33,4 +33,7 @@ object FloatingButtonOpacityPolicy {
      * so it does not intercept touch events meant for the app underneath.
      */
     fun isTouchable(targetAlpha: Float): Boolean = targetAlpha > 0.0f
+
+    /** Android 12 blocks taps through an overlay window above 0.8 and only 13+ caps it, so a hidden button's window is 0. */
+    fun windowAlpha(targetAlpha: Float): Float = if (isTouchable(targetAlpha)) 1.0f else 0.0f
 }

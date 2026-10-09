@@ -511,8 +511,11 @@
     <string name="pref_default_launcher_status_inactive">सेट नहीं है (डिफ़ॉल्ट के रूप में सेट करने के लिए टैप करें)</string>
     <string name="pref_enable_floating_button_title">फ़्लोटिंग लॉन्चर बटन</string>
     <string name="pref_enable_floating_button_summary">Open Headunit पर त्वरित वापसी के लिए OEM लॉन्चर और अन्य ऐप्स के ऊपर एक फ़्लोटिंग बटन प्रदर्शित करता है</string>
+    <string name="pref_floating_button_connection_status_title">कनेक्शन स्थिति संकेतक</string>
+    <string name="pref_floating_button_connection_status_summary">कोई फ़ोन कनेक्ट न होने पर डिस्कनेक्ट होने पर अपारदर्शिता का उपयोग करता है, और फ़ोन कनेक्ट होने पर फ़्लोटिंग बटन की अपारदर्शिता तक फीका हो जाता है। 0% पर बटन छिपा रहता है और टैप को आर-पार जाने देता है।</string>
     <string name="pref_floating_button_size_title">फ़्लोटिंग बटन का आकार</string>
     <string name="pref_floating_button_opacity_title">फ़्लोटिंग बटन की अपारदर्शिता</string>
+    <string name="pref_floating_button_disconnected_opacity_title">डिस्कनेक्ट होने पर अपारदर्शिता</string>
     <string name="pref_floating_button_x_title">क्षैतिज स्थिति (X)</string>
     <string name="pref_floating_button_y_title">लंबवत स्थिति (Y)</string>
     <string name="pref_aa_exit_action_title">Android Auto निकास क्रिया</string>

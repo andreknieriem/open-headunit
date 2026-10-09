@@ -1154,8 +1154,11 @@
     <string name="category_more_features">Más funciones</string>
     <string name="pref_enable_floating_button_title">Botón flotante del iniciador</string>
     <string name="pref_enable_floating_button_summary">Muestra un botón flotante sobre el iniciador OEM y otras apps para volver rápidamente a Open Headunit</string>
+    <string name="pref_floating_button_connection_status_title">Indicador de estado de conexión</string>
+    <string name="pref_floating_button_connection_status_summary">Usa la Opacidad sin conexión cuando no hay ningún teléfono conectado y se atenúa hasta la Opacidad del botón flotante mientras hay uno conectado. Al 0 %, el botón se oculta y deja pasar los toques.</string>
     <string name="pref_floating_button_size_title">Tamaño del botón flotante</string>
     <string name="pref_floating_button_opacity_title">Opacidad del botón flotante</string>
+    <string name="pref_floating_button_disconnected_opacity_title">Opacidad sin conexión</string>
     <string name="pref_floating_button_x_title">Posición horizontal (X)</string>
     <string name="pref_floating_button_y_title">Posición vertical (Y)</string>
     <string name="pref_aa_exit_action_title">Acción al salir de Android Auto</string>

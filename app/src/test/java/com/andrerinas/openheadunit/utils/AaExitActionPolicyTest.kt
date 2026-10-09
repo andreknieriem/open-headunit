@@ -21,23 +21,23 @@ class AaExitActionPolicyTest {
     }
 
     @Test
-    fun exitActionMappingFallsBackToOemLauncherOnInvalidValues() {
-        assertEquals(Settings.ExitAction.OEM_LAUNCHER, Settings.ExitAction.fromInt(-1))
-        assertEquals(Settings.ExitAction.OEM_LAUNCHER, Settings.ExitAction.fromInt(3))
-        assertEquals(Settings.ExitAction.OEM_LAUNCHER, Settings.ExitAction.fromInt(999))
+    fun exitActionMappingFallsBackToDisconnectOnInvalidValues() {
+        assertEquals(Settings.ExitAction.DISCONNECT, Settings.ExitAction.fromInt(-1))
+        assertEquals(Settings.ExitAction.DISCONNECT, Settings.ExitAction.fromInt(3))
+        assertEquals(Settings.ExitAction.DISCONNECT, Settings.ExitAction.fromInt(999))
     }
 
     @Test
-    fun exitActionDefaultIsOemLauncherWhenPrefMissing() {
+    fun exitActionDefaultIsDisconnectWhenPrefMissing() {
         val mockContext = mock(Context::class.java)
         val mockPrefs = mock(SharedPreferences::class.java)
 
         `when`(mockContext.getSharedPreferences(anyString(), anyInt())).thenReturn(mockPrefs)
-        `when`(mockPrefs.getInt(eq("aa-exit-action"), eq(Settings.ExitAction.OEM_LAUNCHER.value)))
-            .thenReturn(Settings.ExitAction.OEM_LAUNCHER.value)
+        `when`(mockPrefs.getInt(eq("aa-exit-action"), eq(Settings.ExitAction.DISCONNECT.value)))
+            .thenReturn(Settings.ExitAction.DISCONNECT.value)
 
         val settings = Settings(mockContext)
-        assertEquals(Settings.ExitAction.OEM_LAUNCHER, settings.aaExitAction)
+        assertEquals(Settings.ExitAction.DISCONNECT, settings.aaExitAction)
     }
 
     @Test

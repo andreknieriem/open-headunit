@@ -226,32 +226,32 @@ class DarkModeFragment : Fragment(), SensorEventListener {
         val viewModeChanged = pendingViewMode != settings.viewMode
 
         // Save night mode settings
-        pendingNightMode?.let { settings.nightMode = it }
-        pendingUseFixedSunriseLocation?.let { settings.useFixedSunriseLocation = it }
-        pendingLocationOutsideNight?.let { settings.locationOutsideNight = it }
-        pendingThresholdLux?.let { settings.nightModeThresholdLux = it }
-        pendingThresholdBrightness?.let { settings.nightModeThresholdBrightness = it }
-        pendingManualStart?.let { settings.nightModeManualStart = it }
-        pendingManualEnd?.let { settings.nightModeManualEnd = it }
+        pendingNightMode?.let { if (it != settings.nightMode) settings.nightMode = it }
+        pendingUseFixedSunriseLocation?.let { if (it != settings.useFixedSunriseLocation) settings.useFixedSunriseLocation = it }
+        pendingLocationOutsideNight?.let { if (it != settings.locationOutsideNight) settings.locationOutsideNight = it }
+        pendingThresholdLux?.let { if (it != settings.nightModeThresholdLux) settings.nightModeThresholdLux = it }
+        pendingThresholdBrightness?.let { if (it != settings.nightModeThresholdBrightness) settings.nightModeThresholdBrightness = it }
+        pendingManualStart?.let { if (it != settings.nightModeManualStart) settings.nightModeManualStart = it }
+        pendingManualEnd?.let { if (it != settings.nightModeManualEnd) settings.nightModeManualEnd = it }
 
         // Save app theme settings
-        pendingAppThemeThresholdLux?.let { settings.appThemeThresholdLux = it }
-        pendingAppThemeThresholdBrightness?.let { settings.appThemeThresholdBrightness = it }
-        pendingAppThemeManualStart?.let { settings.appThemeManualStart = it }
-        pendingAppThemeManualEnd?.let { settings.appThemeManualEnd = it }
-        pendingUseExtremeDarkMode?.let { settings.useExtremeDarkMode = it }
+        pendingAppThemeThresholdLux?.let { if (it != settings.appThemeThresholdLux) settings.appThemeThresholdLux = it }
+        pendingAppThemeThresholdBrightness?.let { if (it != settings.appThemeThresholdBrightness) settings.appThemeThresholdBrightness = it }
+        pendingAppThemeManualStart?.let { if (it != settings.appThemeManualStart) settings.appThemeManualStart = it }
+        pendingAppThemeManualEnd?.let { if (it != settings.appThemeManualEnd) settings.appThemeManualEnd = it }
+        pendingUseExtremeDarkMode?.let { if (it != settings.useExtremeDarkMode) settings.useExtremeDarkMode = it }
 
         // Save AA monochrome settings
-        pendingAaMonochromeEnabled?.let { settings.aaMonochromeEnabled = it }
-        pendingAaDesaturationLevel?.let { settings.aaDesaturationLevel = it }
+        pendingAaMonochromeEnabled?.let { if (it != settings.aaMonochromeEnabled) settings.aaMonochromeEnabled = it }
+        pendingAaDesaturationLevel?.let { if (it != settings.aaDesaturationLevel) settings.aaDesaturationLevel = it }
 
         // Save view mode if changed (from GLES dialog)
         if (viewModeChanged) {
-            pendingViewMode?.let { settings.viewMode = it }
+            pendingViewMode?.let { if (it != settings.viewMode) settings.viewMode = it }
         }
 
         pendingAppTheme?.let { newTheme ->
-            settings.appTheme = newTheme
+            if (newTheme != settings.appTheme) settings.appTheme = newTheme
             if (themeChanged || appThemeThresholdChanged) {
                 // Centralized: runs the live manager for dynamic themes or when a saved
                 // place can force the app theme, else applies the static theme.
@@ -369,8 +369,8 @@ class DarkModeFragment : Fragment(), SensorEventListener {
     private fun commitSunriseMode(applyAppTheme: Boolean) {
         pendingUseFixedSunriseLocation = true
         settings.useFixedSunriseLocation = true
-        pendingAppTheme?.let { settings.appTheme = it }
-        pendingNightMode?.let { settings.nightMode = it }
+        pendingAppTheme?.let { if (it != settings.appTheme) settings.appTheme = it }
+        pendingNightMode?.let { if (it != settings.nightMode) settings.nightMode = it }
         // Ask the service to re-send the Android Auto night mode (safe, no activity recreate).
         requireContext().sendBroadcast(
             Intent(AapService.ACTION_REQUEST_NIGHT_MODE_UPDATE).setPackage(requireContext().packageName)
@@ -386,9 +386,9 @@ class DarkModeFragment : Fragment(), SensorEventListener {
      * to avoid an activity recreate in the middle of the navigation.
      */
     private fun commitLocationMode(applyTheme: Boolean) {
-        pendingAppTheme?.let { settings.appTheme = it }
-        pendingNightMode?.let { settings.nightMode = it }
-        pendingLocationOutsideNight?.let { settings.locationOutsideNight = it }
+        pendingAppTheme?.let { if (it != settings.appTheme) settings.appTheme = it }
+        pendingNightMode?.let { if (it != settings.nightMode) settings.nightMode = it }
+        pendingLocationOutsideNight?.let { if (it != settings.locationOutsideNight) settings.locationOutsideNight = it }
         // Re-send the Android Auto night mode (safe, no activity recreate).
         requireContext().sendBroadcast(
             Intent(AapService.ACTION_REQUEST_NIGHT_MODE_UPDATE).setPackage(requireContext().packageName)

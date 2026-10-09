@@ -144,6 +144,7 @@ class FloatingButtonService : Service() {
                 gravity = Gravity.TOP or Gravity.START
                 x = xPx
                 y = yPx
+                alpha = FloatingButtonOpacityPolicy.windowAlpha(targetAlpha)
             }
 
             button.setOnClickListener {
@@ -177,6 +178,7 @@ class FloatingButtonService : Service() {
                 baseFlags or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
             }
 
+            layoutParams.alpha = FloatingButtonOpacityPolicy.windowAlpha(targetAlpha)
             layoutParams.width = sizePx
             layoutParams.height = sizePx
             layoutParams.x = xPx

@@ -1,8 +1,10 @@
 package com.andrerinas.openheadunit.connection.wifi.modes.helper
 
+import com.andrerinas.openheadunit.connection.SettingsRestartRecovery
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
+import android.os.SystemClock
 import android.os.Build
 import android.os.ParcelFileDescriptor
 import android.widget.Toast
@@ -56,6 +58,9 @@ class NearbyManager(
     private val STRATEGY = Strategy.P2P_POINT_TO_POINT
     private var isRunning = false
     private var isConnecting = false
+    private var settingsRestartPeer: String? = null
+    private var settingsRestartUntilMs = 0L
+    private var settingsRestartTimeoutJob: Job? = null
 
     // Written on the Nearby callback thread, read from the upgrade-timeout and tunnel coroutines.
     @Volatile
@@ -97,6 +102,13 @@ class NearbyManager(
     private var networkAtConnect: Long? = null
     private val settings = Settings(context)
 
+    fun resumeDiscoveryIfIdle() {
+        // Discovery can be stopped while Nearby waits for a Wi-Fi bandwidth upgrade.
+        // Restarting it then would clear endpoints and overwrite the connecting stage.
+        if (isConnecting || activeEndpointId != null || activeNearbySocket != null) return
+        start()
+    }
+
     fun start() {
         if (!hasRequiredPermissions()) {
             AppLog.w("NearbyManager: Missing required location/bluetooth permissions. Skipping start.")
@@ -133,7 +145,30 @@ class NearbyManager(
         return true
     }
 
+    /** Save grants one retry of the same peer even when automatic connection is disabled. */
+    fun restartForSettings(untilMs: Long = SystemClock.elapsedRealtime() +
+        SettingsRestartRecovery.WINDOW_MS) {
+        val peer = settings.lastNearbyDeviceName.takeIf { it.isNotEmpty() } ?: return
+        stop()
+        settingsRestartPeer = peer
+        settingsRestartUntilMs = untilMs
+        start()
+        settingsRestartTimeoutJob = scope.launch {
+            delay((untilMs - SystemClock.elapsedRealtime()).coerceAtLeast(0L))
+            settingsRestartPeer = null
+            // An already discovered phone need not produce a second FOUND callback.
+            // Reconsider the list under ordinary preferences, without granting another retry.
+            if (isRunning && settings.autoConnectLastSession && !isConnecting && activeEndpointId == null) {
+                _discoveredEndpoints.value.firstOrNull { it.name == settings.lastNearbyDeviceName }
+                    ?.let { connectToEndpoint(it.id) }
+            }
+        }
+    }
+
     fun stop() {
+        settingsRestartTimeoutJob?.cancel()
+        settingsRestartTimeoutJob = null
+        settingsRestartPeer = null
         AppLog.i("NearbyManager: Stopping discovery and disconnecting from any active endpoint...")
         isRunning = false
         isConnecting = false
@@ -172,6 +207,7 @@ class NearbyManager(
             AppLog.i("NearbyManager: Already connected to $endpointId, ignoring duplicate request")
             return
         }
+        settingsRestartPeer = null
         AppLog.i("NearbyManager: Requesting connection to endpoint: $endpointId")
         // Nothing has been reported about this attempt yet, so nothing may be carried into it.
         lastQuality.remove(endpointId)
@@ -206,6 +242,18 @@ class NearbyManager(
             if (current.none { it.id == endpointId }) {
                 current.add(DiscoveredEndpoint(endpointId, info.endpointName))
                 _discoveredEndpoints.value = current
+            }
+
+            // A settings retry follows only the peer whose tunnel was just retired. Discovery
+            // supplies its current endpoint ID; the previous ID need not survive disconnect.
+            // Check the clock too: a queued timeout must not extend Save's permission.
+            if (SystemClock.elapsedRealtime() >= settingsRestartUntilMs) settingsRestartPeer = null
+            val restartPeer = settingsRestartPeer
+            if (restartPeer != null) {
+                if (restartPeer == info.endpointName && !isConnecting && activeEndpointId == null) {
+                    connectToEndpoint(endpointId)
+                }
+                return
             }
 
             // Auto-connect logic

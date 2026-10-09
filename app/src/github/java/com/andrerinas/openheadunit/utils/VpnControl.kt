@@ -71,6 +71,8 @@ object VpnControl {
      */
     fun isPrepared(context: Context): Boolean = VpnService.prepare(context) == null
 
+    fun isSelfModeRunning(): Boolean = DummyVpnService.isSelfModeRunning()
+
     fun isVpnAvailable(): Boolean = true
 
     /**

@@ -18,8 +18,8 @@ internal interface AapRead {
     fun stop()
 
     /**
-     * @param onVideoRunHoled called when a video fragment run turns out to be short of the bytes it
-     *   declared; the argument says whether the shortfall is large enough that the assembled unit
+     * @param onVideoRunHoled called when a video fragment run is incomplete or disagrees with its
+     *   declared length; the argument says whether the length mismatch requires that the assembled unit
      *   should be discarded rather than decoded ([AuditRecoveryPolicy.shouldDiscardAssembledUnit]).
      *   A callback rather than an [AapVideo] reference: the reader owes the video path one fact and
      *   nothing else, and the two are wired together in [Factory] the way every other cross-manager
@@ -45,7 +45,8 @@ internal interface AapRead {
         /**
          * Whether this message should be treated as one that never arrived.
          *
-         * Called by both readers once the whole body is in hand and **before** [auditFragment], which
+         * Both readers decide before decrypt, then apply the drop after decrypt and before
+         * [auditFragment]. The audit sees only delivered plaintext, which
          * is the entire point: a fragment dropped here is short in the audit's own accounting, and an
          * assembler-stage drop can never reproduce that because the audit has already counted it.
          *
@@ -75,27 +76,51 @@ internal interface AapRead {
             return effect == VideoFaultInjector.Effect.DROP
         }
 
+        // FIRST declares the complete plaintext message length (type included), independent
+        // of TLS record overhead. Per-channel audits report a missing middle fragment before
+        // the final fragment reaches the video assembler. Reader capacity remains bounded at
+        // 4 MiB so large keyframes can be accepted without guessing a smaller device-specific cap.
         private val fragmentAudit = FragmentedMessageAudit()
-
-        /**
-         * Per-outcome print budget: how many have been printed, when the last one was, and how many
-         * went unprinted since. See [AuditReportPolicy] for why this refills instead of running out.
-         */
+        private var droppedVideoPayload = false
+        private val reassembler = AapMessageReassembler(
+            onDroppedVideoPayload = { droppedVideoPayload = true },
+            onDroppedMediaData = { channel ->
+                try {
+                    handler.onDroppedMediaData(channel)
+                } catch (e: Exception) {
+                    reportMessageDrop("discard handler ${e.javaClass.simpleName} on channel $channel: ${e.message}")
+                }
+            },
+            onDrop = { reportMessageDrop(it) }
+        )
+        private var messageDropReports = 0
+        private var messageDropLastMs = 0L
+        private var messageDropSuppressed = 0
+        // Per-outcome print budgets refill so a noisy startup cannot silence later failures.
+        // These counters govern reports only; repair is dispatched before consulting them.
         private val auditReports = IntArray(FragmentedMessageAudit.Outcome.entries.size)
         private val auditLastReportMs = LongArray(FragmentedMessageAudit.Outcome.entries.size)
         private val auditSuppressed = IntArray(FragmentedMessageAudit.Outcome.entries.size)
 
         /**
-         * Largest single message body seen, reported each time it crosses a power of two.
-         *
-         * `msgBuffer` is a flat 4MB in both readers, which on a 1GB unit is a fifth of the whole Java
-         * heap standing reserved for a message size nobody has measured. Shrinking it on a guess would
-         * turn a large frame into "Invalid message size ... Skipping", so measure it first: at most a
-         * dozen lines ever, and they say exactly how small it could safely be.
+         * Largest encrypted AAP body observed, reported only when it crosses a power of two.
+         * Keep this independent of plaintext validation: it measures reader-buffer demand, not
+         * message integrity. The original 4 MiB buffers were deliberately retained pending these
+         * measurements; shrinking them on a guess can reject large keyframes on another device.
+         * This is a per-frame body high-water mark, not the size of a reassembled access unit or
+         * a USB bulk read. Count received bodies even when fault injection suppresses delivery.
          */
         private var maxEncLenSeen = 0
 
-        // Retirement is terminal for this reader, including records already buffered in a bulk.
+        protected fun observeEncryptedBody(channel: Int, encLen: Int) {
+            if (encLen <= maxEncLenSeen) return
+            val crossedBoundary = Integer.highestOneBit(encLen) > Integer.highestOneBit(maxEncLenSeen)
+            maxEncLenSeen = encLen
+            if (crossedBoundary) {
+                AppLog.i("AapRead: largest message body so far: %d bytes (on %s)", encLen, Channel.name(channel))
+            }
+        }
+
         @Volatile protected var isStopped = false
             private set
 
@@ -112,41 +137,62 @@ internal interface AapRead {
         }
 
         /**
-         * Cross-checks a fragment run against the total size its first fragment declared.
-         *
-         * Both readers already read that 4-byte total and discarded it, which left the one corruption
-         * mode nothing downstream can see: a missing *middle* fragment leaves the run looking intact
-         * to the reassembler, so the frame is assembled with a hole and decoded as though it were
-         * whole. See [FragmentedMessageAudit] for why the check learns the convention rather than
-         * assuming one.
-         *
-         * [declaredTotal] is only meaningful on a first fragment and is ignored otherwise.
+         * TLS is fully consumed even for an injected drop; only delivered plaintext is counted.
+         * Skipping an encrypted record would desynchronise TLS and turn a fragment-loss exercise
+         * into a disconnect. Audit before dispatch so a bad final video fragment is marked for
+         * discard before the video worker can finish its assembly.
          */
-        protected fun auditFragment(channel: Int, flags: Int, encLen: Int, declaredTotal: Int) {
-            if (encLen > maxEncLenSeen) {
-                val crossedBoundary = Integer.highestOneBit(encLen) > Integer.highestOneBit(maxEncLenSeen)
-                maxEncLenSeen = encLen
-                if (crossedBoundary) {
-                    AppLog.i("AapRead: largest message body so far: %d bytes (on %s)", encLen, Channel.name(channel))
-                }
-            }
-            val result = fragmentAudit.onMessage(channel, flags, encLen, declaredTotal) ?: return
-
-            // Before the report budget, deliberately. That budget decides how often this finding is
-            // *printed*; a suppressed line must not also suppress the repair. The ask has its own
-            // throttle in VideoRecoveryPolicy, which every keyframe request in the app is held to.
-            if (AuditRecoveryPolicy.shouldRequestKeyframe(result.outcome, result.channel)) {
-                // The finding is produced on the run's last fragment, which is the very message the
-                // handler is about to complete assembly with - so the discard verdict travels on
-                // the same thread, ahead of it, with nothing to synchronise.
-                onVideoRunHoled(AuditRecoveryPolicy.shouldDiscardAssembledUnit(result))
-            }
-
-            val channelName = Channel.name(channel)
-            if (result.outcome == FragmentedMessageAudit.Outcome.FIRST_OBSERVATION) {
-                AppLog.i("AapRead: fragment accounting established for %s: %s", channelName, result)
+        protected fun deliverFragment(message: AapMessage, declaredTotal: Int) {
+            if (isStopped) return
+            if (message.size == 0 && AapMessageFraming.carriesMessageType(message.flags.toInt())) {
+                // A TLS-only frame does not replace an in-progress service message. Empty
+                // continuation/LAST fragments must still reach the audit and reassembler.
+                reportMessageDrop("no application data on channel ${message.channel}")
                 return
             }
+            droppedVideoPayload = false
+            val complete = reassembler.accept(message, declaredTotal)
+            auditFragment(message.channel, message.flags.toInt(), message.size, declaredTotal,
+                complete != null, droppedVideoPayload)
+            if (complete == null) return
+            try {
+                handler.handle(complete)
+            } catch (e: Exception) {
+                // Includes protobuf parse failures (an IOException subtype). At this boundary
+                // framing and TLS are complete, so a handler failure costs only this message.
+                reportMessageDrop("handler ${e.javaClass.simpleName} on channel ${message.channel}: ${e.message}")
+            }
+        }
+
+        private fun reportMessageDrop(reason: String) {
+            val now = SystemClock.elapsedRealtime()
+            if (!AuditReportPolicy.shouldReport(messageDropReports, messageDropLastMs, now)) {
+                messageDropSuppressed++
+                return
+            }
+            val suppressed = messageDropSuppressed
+            messageDropSuppressed = 0
+            messageDropReports++
+            messageDropLastMs = now
+            AppLog.w("AapRead: skipped message: %s (suppressed=%d)", reason, suppressed)
+        }
+
+        private fun auditFragment(channel: Int, flags: Int, plaintextLength: Int, declaredTotal: Int,
+                                  willDeliver: Boolean, locallyDroppedVideo: Boolean) {
+            val result = fragmentAudit.onMessage(channel, flags, plaintextLength, declaredTotal)
+            // Local budget drops can have a correct wire length. Merge their loss notification
+            // with the audit so one discarded payload asks for repair once, even with suppressed logs.
+            val auditNeedsRepair = result != null &&
+                AuditRecoveryPolicy.shouldRequestKeyframe(result.outcome, result.channel)
+            if (locallyDroppedVideo || auditNeedsRepair) {
+                // A copied run never reached the video worker. Do not leave a one-shot discard
+                // armed for its next healthy frame; streamed LAST still discards its own assembly.
+                onVideoRunHoled(!locallyDroppedVideo && willDeliver && result != null &&
+                    AuditRecoveryPolicy.shouldDiscardAssembledUnit(result))
+            }
+            if (result == null) return
+
+            val channelName = Channel.name(channel)
             val index = result.outcome.ordinal
             val now = SystemClock.elapsedRealtime()
             if (!AuditReportPolicy.shouldReport(auditReports[index], auditLastReportMs[index], now)) {
@@ -207,7 +253,8 @@ internal interface AapRead {
             val onVideoRunHoled = { discard: Boolean -> transport.dispatchVideoRunHoled(discard) }
 
             return if (connection is SocketProjectionConnection)
-                AapReadSingleMessage(connection, transport.ssl, handler, onVideoRunHoled, readerFaults)
+                AapReadSingleMessage(connection, transport.ssl, handler, onVideoRunHoled, readerFaults,
+                    captureTiming = { transport.audioTimingActive }, onSlowRead = transport::recordSlowAudioRead)
             else
                 AapReadMultipleMessages(connection, transport.ssl, handler, onVideoRunHoled, readerFaults)
         }

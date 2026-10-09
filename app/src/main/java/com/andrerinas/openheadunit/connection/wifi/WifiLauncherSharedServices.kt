@@ -231,7 +231,7 @@ class WifiLauncherSharedServices(val service: AapService) {
                                     } else if (HeldServerSocket.take(endpoint) !== socket) {
                                         AppLog.i("WifiLauncherSharedServices: $endpoint is no longer held for discovery; not dialling it")
                                     } else {
-                                        try { commManager.connect(socket) } catch (e: CancellationException) {
+                                        try { commManager.connect(socket, restartEndpoint = ip to 5277) } catch (e: CancellationException) {
                                             HeldServerSocket.abandon(socket); throw e
                                         }
                                     }

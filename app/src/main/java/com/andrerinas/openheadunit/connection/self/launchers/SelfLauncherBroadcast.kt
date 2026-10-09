@@ -33,6 +33,7 @@ class SelfLauncherBroadcast(
             services.fakeNetwork?.let { putExtra("wifi_info", it) }
             addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
         }
+        services.ensureLaunchAllowed()
         services.aap.sendBroadcast(receiverIntent)
         AppLog.i("SelfMode: Broadcast fallback 1 (WirelessStartupReceiver) sent.")
         return true

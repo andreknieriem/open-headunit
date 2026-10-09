@@ -155,6 +155,18 @@ object ConnectionArbiter {
     /** Whether this plug-in's USB attempts have stopped holding wireless down. */
     fun usbEpisodeSpent(): Boolean = synchronized(this) { usbEpisodeSpent }
 
+    /** Admit a wireless rearm and acknowledge its debt as one arbiter decision. */
+    fun tryRearmWireless(): Boolean = synchronized(this) {
+        // The check and debt update share the claim lock: a USB claim on IO must not have
+        // its newly recorded debt erased by a fallback that checked permission earlier.
+        if (refusesBackground(userRequested = false)) return@synchronized false
+        // Keep the current WPP claim and any USB debt. sessionEnded cannot acknowledge
+        // wireless while a claim is held, and would give it back a second time later.
+        wirelessOwed = false
+        if (!usbOwed) owedAfterSession = false
+        true
+    }
+
     /** A session formed by a claim that took something has ended, so give it back now. */
     fun sessionEnded(wirelessAlreadyRearmed: Boolean, userExit: Boolean) {
         val wireless: Boolean

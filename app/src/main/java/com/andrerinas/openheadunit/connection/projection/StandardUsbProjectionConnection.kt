@@ -153,9 +153,14 @@ class StandardUsbProjectionConnection(usbMgr: UsbManager, device: UsbDevice) :
     override fun disconnect() {
         // close() is thread-safe and immediately aborts any in-flight bulkTransfer(),
         // so both sendBlocking and recvBlocking unblock within milliseconds.
-        usbDeviceConnection?.close()
+        val earlyClosed = usbDeviceConnection
+        earlyClosed?.close()
 
         synchronized(stateLock) {
+            // openDevice can publish a handle while we wait for this lock. The early close
+            // only interrupted the old handle; close a late one before dropping its reference.
+            val retiring = usbDeviceConnection
+            if (retiring !== earlyClosed) retiring?.close()
             if (usbDeviceConnected != null) {
                 AppLog.i(usbDeviceConnected!!.toString())
             }

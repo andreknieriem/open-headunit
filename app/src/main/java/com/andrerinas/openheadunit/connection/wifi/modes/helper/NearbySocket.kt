@@ -20,8 +20,10 @@ import java.util.concurrent.TimeUnit
  * it becomes true.
  */
 class NearbySocket : Socket() {
-    private var internalInputStream: InputStream? = null
-    private var internalOutputStream: OutputStream? = null
+    @Volatile private var closed = false
+    private val streamLock = Any()
+    @Volatile private var internalInputStream: InputStream? = null
+    @Volatile private var internalOutputStream: OutputStream? = null
 
     private val inputLatch = CountDownLatch(1)
     private val outputLatch = CountDownLatch(1)
@@ -44,21 +46,41 @@ class NearbySocket : Socket() {
     var inputStreamWrapper: InputStream?
         get() = internalInputStream
         set(value) {
-            internalInputStream = value
-            if (value != null) {
-                AppLog.i("NearbySocket: InputStream is now AVAILABLE. Releasing latch.")
-                inputLatch.countDown()
+            val rejected = synchronized(streamLock) {
+                if (closed) true else {
+                    internalInputStream = value
+                    if (value != null) inputLatch.countDown()
+                    false
+                }
             }
+            if (rejected) closeStream(value)
         }
 
     var outputStreamWrapper: OutputStream?
         get() = internalOutputStream
         set(value) {
-            internalOutputStream = value
-            if (value != null) outputLatch.countDown()
+            val rejected = synchronized(streamLock) {
+                if (closed) true else {
+                    internalOutputStream = value
+                    if (value != null) outputLatch.countDown()
+                    false
+                }
+            }
+            if (rejected) closeStream(value)
         }
 
-    override fun isConnected() = true
+    override fun isConnected() = !closed
+    override fun isClosed() = closed
+
+    private fun ensureOpen() {
+        if (closed) throw IOException("Nearby socket is closed")
+    }
+
+    private fun closeStream(stream: java.io.Closeable?) {
+        try { stream?.close() } catch (e: Exception) {
+            AppLog.d("NearbySocket: stream close: ${e.message}")
+        }
+    }
 
     override fun getInetAddress(): InetAddress = InetAddress.getLoopbackAddress()
 
@@ -74,12 +96,19 @@ class NearbySocket : Socket() {
      * is already gone is not a failure worth propagating out of a teardown path.
      */
     override fun close() {
-        try { internalInputStream?.close() } catch (e: Exception) {
-            AppLog.d("NearbySocket: inbound stream close: ${e.message}")
+        val streams = synchronized(streamLock) {
+            if (closed) return
+            closed = true
+            // Wake reads/writes waiting for payload registration before closing either stream.
+            inputLatch.countDown()
+            outputLatch.countDown()
+            val snapshot = internalInputStream to internalOutputStream
+            internalInputStream = null
+            internalOutputStream = null
+            snapshot
         }
-        try { internalOutputStream?.close() } catch (e: Exception) {
-            AppLog.d("NearbySocket: outbound stream close: ${e.message}")
-        }
+        closeStream(streams.first)
+        closeStream(streams.second)
         super.close()
     }
 
@@ -87,6 +116,7 @@ class NearbySocket : Socket() {
         AppLog.d("NearbySocket: getInputStream() called")
         return object : InputStream() {
             private fun waitForStream(): InputStream {
+                ensureOpen()
                 if (inputLatch.count > 0L) {
                     AppLog.i(
                         "NearbySocket: Blocking read until InputStream is AVAILABLE via Nearby Payload (up to ${STREAM_WAIT_MS}ms)..."
@@ -100,7 +130,8 @@ class NearbySocket : Socket() {
                     )
                     throw IOException("Nearby stream tunnel incomplete: no inbound payload from phone")
                 }
-                return internalInputStream!!
+                ensureOpen()
+                return internalInputStream ?: throw IOException("Nearby inbound stream unavailable")
             }
 
             override fun read(): Int {
@@ -113,8 +144,8 @@ class NearbySocket : Socket() {
                 val readValue = waitForStream().read(b, off, len)
                 return readValue
             }
-            override fun available(): Int = if (inputLatch.count == 0L) internalInputStream!!.available() else 0
-            override fun close() = if (inputLatch.count == 0L) internalInputStream!!.close() else Unit
+            override fun available(): Int { ensureOpen(); return internalInputStream?.available() ?: 0 }
+            override fun close() = this@NearbySocket.close()
         }
     }
 
@@ -122,6 +153,7 @@ class NearbySocket : Socket() {
         AppLog.d("NearbySocket: getOutputStream() called")
         return object : OutputStream() {
             private fun waitForStream(): OutputStream {
+                ensureOpen()
                 if (outputLatch.count > 0L) {
                     AppLog.d("NearbySocket: Waiting for outputLatch...")
                 }
@@ -131,7 +163,8 @@ class NearbySocket : Socket() {
                 if (!outputLatch.await(STREAM_WAIT_MS, TimeUnit.MILLISECONDS)) {
                     throw IOException("Nearby stream tunnel incomplete: outbound payload never registered")
                 }
-                return internalOutputStream!!
+                ensureOpen()
+                return internalOutputStream ?: throw IOException("Nearby outbound stream unavailable")
             }
 
             override fun write(b: Int) {
@@ -148,9 +181,10 @@ class NearbySocket : Socket() {
             }
             override fun flush() {
                 AppLog.v("NearbySocket: flush() called")
-                if (outputLatch.count == 0L) internalOutputStream!!.flush()
+                ensureOpen()
+                internalOutputStream?.flush()
             }
-            override fun close() = if (outputLatch.count == 0L) internalOutputStream!!.close() else Unit
+            override fun close() = this@NearbySocket.close()
         }
     }
 }

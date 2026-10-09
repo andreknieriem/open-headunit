@@ -20,6 +20,7 @@ import com.andrerinas.openheadunit.main.SettingsActivity
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.ToastUtils
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.CoroutineScope
 import kotlin.coroutines.CoroutineContext
@@ -170,6 +171,7 @@ class UsbLauncherManager(val service: AapService) {
     /** The attempt this manager launched last, so the X can end its retry loop too. */
     internal var attemptJob: Job? = null
     private var attemptSettingsOwner: CommManager.ConnectionState.Disconnected? = null
+    private var attemptFinished: CompletableDeferred<Unit>? = null
 
     fun stopForUser() {
         val job = synchronized(attemptLock) {
@@ -246,17 +248,18 @@ class UsbLauncherManager(val service: AapService) {
     }
 
     internal fun hasSettingsAttempt(saved: CommManager.ConnectionState.Disconnected): Boolean =
-        synchronized(attemptLock) { attemptSettingsOwner === saved && attemptJob?.isActive == true }
+        synchronized(attemptLock) { attemptSettingsOwner === saved && attemptJob != null }
 
     /** At the recovery deadline, await only this Save's already-admitted physical work. */
     internal suspend fun awaitSettingsAttempt(saved: CommManager.ConnectionState.Disconnected) {
         while (true) {
-            val job = synchronized(attemptLock) {
+            val finished = synchronized(attemptLock) {
                 if (attemptSettingsOwner !== saved) return
-                attemptJob ?: return
+                attemptFinished ?: return
             }
-            job.join()
-            if (synchronized(attemptLock) { attemptJob === job }) return
+            // Job.join() may return as soon as completion begins, before an IO completion
+            // handler frees the slot. Save's fallback must wait for that handoff as well.
+            finished.await()
         }
     }
 
@@ -493,27 +496,32 @@ class UsbLauncherManager(val service: AapService) {
             if (settingsRestart == null || (settingsRestart.acceptsSettingsRestart(manager.connectionState.value) &&
                 SystemClock.elapsedRealtime() < settingsRestart.settingsRestartUntilMs)) block()
         }
+        val finished = CompletableDeferred<Unit>()
         synchronized(attemptLock) {
             attemptSettingsOwner = settingsRestart
             attemptJob = job
+            attemptFinished = finished
         }
         job.invokeOnCompletion {
-            // Cancellation may run before the body starts. Release only this attempt's claim;
-            // an old completion must not clear a replacement USB attempt's busy flag.
-            val pending = synchronized(attemptLock) {
-                if (attemptJob !== job || attemptClaim !== claim) return@invokeOnCompletion
-                attemptJob = null
-                attemptSettingsOwner = null
-                attemptClaim = null
-                isSwitchingToProjection.set(false)
-                if (accessorySwitchRequested) {
-                    pendingCheck = pendingCheck?.copy(accessoryOnly = true)
+            try {
+                // Cancellation may run before the body starts. Release only this attempt's claim;
+                // an old completion must not clear a replacement USB attempt's busy flag.
+                val pending = synchronized(attemptLock) {
+                    if (attemptJob !== job || attemptClaim !== claim) return@invokeOnCompletion
+                    attemptJob = null
+                    attemptSettingsOwner = null
+                    attemptFinished = null
+                    attemptClaim = null
+                    isSwitchingToProjection.set(false)
+                    if (accessorySwitchRequested) {
+                        pendingCheck = pendingCheck?.copy(accessoryOnly = true)
+                    }
+                    accessorySwitchRequested = false
+                    pendingCheck
                 }
-                accessorySwitchRequested = false
-                pendingCheck
-            }
-            endUsbAttemptStage()
-            releaseAttempt(claim, pending)
+                endUsbAttemptStage()
+                releaseAttempt(claim, pending)
+            } finally { finished.complete(Unit) }
         }
         settingsRestart?.trackSettingsLaunch(job)
         job.start()

@@ -283,6 +283,43 @@ class UsbDeferredRecheckTest {
         } }
     }
 
+    @Test fun saveWaitsForSlotReleaseEvenWhenTheJobAlreadyReportsCompleted() = fixture { f ->
+        val saved = ConnectionState.Disconnected(reason = CommManager.DisconnectReason.SETTINGS_RESTART,
+            settingsRestartUntilMs = Long.MAX_VALUE)
+        f.states.value = saved
+        assertTrue(f.launcher.beginAttempt(Tier.USB, "Save switch", saved))
+        val ready = CompletableDeferred<Unit>()
+        val done = CompletableDeferred<Unit>()
+        // Save's admission clock is an Android static mock on the test thread. Bind the
+        // owner after launching so this case isolates completion ordering on a real IO thread.
+        f.launcher.launchAttempt(null, Dispatchers.IO) { ready.complete(Unit); done.await() }
+        UsbLauncherManager::class.java.getDeclaredField("attemptSettingsOwner")
+            .apply { isAccessible = true }.set(f.launcher, saved)
+        val job = checkNotNull(f.launcher.attemptJob)
+        val completed = java.util.concurrent.CountDownLatch(1)
+        job.invokeOnCompletion { completed.countDown() }
+        runBlocking { withTimeout(5000) { ready.await() } }
+        val lock = checkNotNull(UsbLauncherManager::class.java.getDeclaredField("attemptLock")
+            .apply { isAccessible = true }.get(f.launcher))
+        var returned = false
+        synchronized(lock) {
+            done.complete(Unit)
+            val deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(5)
+            while (!job.isCompleted && System.nanoTime() < deadline) Thread.yield()
+            assertTrue(job.isCompleted)
+            assertTrue(f.launcher.hasSettingsAttempt(saved))
+            f.scope.launch(start = CoroutineStart.UNDISPATCHED) {
+                f.launcher.awaitSettingsAttempt(saved)
+                returned = true
+            }
+            assertFalse("Save must not resume automatic scanning before slot release", returned)
+        }
+        assertTrue(completed.await(5, java.util.concurrent.TimeUnit.SECONDS))
+        f.queue.drain()
+        assertTrue(returned)
+        assertFalse(f.launcher.hasSettingsAttempt(saved))
+    }
+
     @Test fun queuedScanKeepsSavesOriginalOwnerAndCannotEscapeCancellation() {
         for (outcome in listOf("active", "cancelled", "expired")) fixture { f ->
             val saved = ConnectionState.Disconnected(reason = CommManager.DisconnectReason.SETTINGS_RESTART,

@@ -41,7 +41,7 @@ jobs:
       - name: Install pinned NDK and CMake
         run: |
           for attempt in 1 2 3; do
-            sdkmanager "ndk;27.0.12077973" "cmake;3.22.1" && exit 0
+            sdkmanager "ndk;29.0.14206865" "cmake;3.22.1" && exit 0
             echo "sdkmanager attempt $attempt failed; retrying in 15s..." >&2
             sleep 15
           done
@@ -82,17 +82,6 @@ jobs:
         uses: android-actions/setup-android@v4
         with:
           packages: ''
-
-      # See the build job for why NDK/CMake are pinned and the install is retried.
-      - name: Install pinned NDK and CMake
-        run: |
-          for attempt in 1 2 3; do
-            sdkmanager "ndk;27.0.12077973" "cmake;3.22.1" && exit 0
-            echo "sdkmanager attempt $attempt failed; retrying in 15s..." >&2
-            sleep 15
-          done
-          echo "sdkmanager failed after 3 attempts" >&2
-          exit 1
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4

@@ -145,6 +145,9 @@ class AapTransport(
  private var pollHandler:Handler?=null
  private var videoHandler:Handler?=null
  private var aapRead:AapRead?=null
+ private val quitLock=Any()
+ private var peerRequestedClose=false
+ private val tlsWriter=object { fun retire(){} }
  private val micSessions=MicSessions()
  private fun retireMicrophone(){micSessions.close(shutdown=true)}
  private fun resetMicrophone(){}

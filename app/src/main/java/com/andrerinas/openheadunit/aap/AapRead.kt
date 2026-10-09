@@ -254,7 +254,7 @@ internal interface AapRead {
 
             return if (connection is SocketProjectionConnection)
                 AapReadSingleMessage(connection, transport.ssl, handler, onVideoRunHoled, readerFaults,
-                    captureTiming = { transport.audioTimingActive }, onSlowRead = transport::recordSlowAudioRead)
+                    captureTiming = { transport.audioTimingActive }, onSlowRead = transport::recordSlowAudioRead, onPeerClose = transport::notePeerClose)
             else
                 AapReadMultipleMessages(connection, transport.ssl, handler, onVideoRunHoled, readerFaults)
         }

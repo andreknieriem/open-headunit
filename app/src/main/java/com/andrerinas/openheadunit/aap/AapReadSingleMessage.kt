@@ -14,7 +14,8 @@ internal class AapReadSingleMessage(
     onVideoRunHoled: (discardAssembledUnit: Boolean) -> Unit = {},
     faultInjector: VideoFaultInjector? = null,
     private val captureTiming: () -> Boolean = { false },
-    private val onSlowRead: (TransportReadTiming, Long) -> Unit = { _, _ -> })
+    private val onSlowRead: (TransportReadTiming, Long) -> Unit = { _, _ -> },
+    private val onPeerClose: () -> Unit = {})
     : AapRead.Base(connection, ssl, handler, onVideoRunHoled, faultInjector) {
 
     private val recvHeader = AapMessageIncoming.EncryptedHeader()
@@ -64,6 +65,9 @@ internal class AapReadSingleMessage(
             // Immediate check for Magic Garbage in the header bytes.
             // This is the most reliable path for intentional disconnects from the Helper.
             if (isMagicGarbage(recvHeader.buf, 0, recvHeader.buf.size)) {
+                // Publish the Helper's close intent before logging or returning to the poll
+                // loop, while a pending TLS write may concurrently report a link failure.
+                onPeerClose()
                 AppLog.i("AapRead: Magic Garbage detected in header. Clean disconnect.")
                 return -2
             }
@@ -140,6 +144,7 @@ internal class AapReadSingleMessage(
             if (msg == null) {
                 // If decryption failed because of a Magic Garbage signal, return -2 to signal clean quit
                 if (ssl is AapSslContext && ssl.isUserDisconnect) {
+                    onPeerClose()
                     AppLog.i("AapRead: Magic Garbage detected in decryption. Triggering clean disconnect.")
                     return -2
                 }

@@ -45,4 +45,38 @@ class AapSslSessionTest {
         assertEquals(2, current.drainControlRecords().size)
         verify(context).createSSLEngine("android-auto", 5277)
     }
+    @Test fun emptyApplicationDiagnosticsAreBoundedAndOutsideTheEngineLock() {
+        val context = mock<SSLContext>()
+        val engine = mock<SSLEngine>()
+        val session = mock<SSLSession>()
+        whenever(context.createSSLEngine(any(), any())).thenReturn(engine)
+        whenever(engine.session).thenReturn(session)
+        whenever(session.packetBufferSize).thenReturn(64)
+        whenever(session.applicationBufferSize).thenReturn(64)
+        whenever(engine.handshakeStatus).thenReturn(NOT_HANDSHAKING)
+        whenever(engine.unwrap(any<ByteBuffer>(), any<ByteBuffer>())).thenAnswer {
+            it.getArgument<ByteBuffer>(0).get()
+            SSLEngineResult(OK, NOT_HANDSHAKING, 1, 0)
+        }
+        val ssl = AapSslContext(context)
+        assertTrue(ssl.performHandshake(mock()))
+        ssl.postHandshakeReset()
+        val lines = mutableListOf<String>()
+        val original = com.andrerinas.openheadunit.utils.AppLog.LOGGER
+        com.andrerinas.openheadunit.utils.AppLog.LOGGER = object : com.andrerinas.openheadunit.utils.AppLog.Logger {
+            override fun println(priority: Int, tag: String, msg: String) {
+                assertFalse("diagnostic held TLS engine lock", Thread.holdsLock(ssl))
+                lines.add(msg)
+            }
+        }
+        try {
+            repeat(12) { assertEquals(0, ssl.decrypt(0, 1, byteArrayOf(1))!!.limit) }
+            assertEquals(10, lines.count { it.contains("SSL Decrypt: no application data after consuming 1 bytes") })
+            clock.`when`<Long> { android.os.SystemClock.elapsedRealtime() }.thenReturn(60_000L)
+            ssl.decrypt(0, 1, byteArrayOf(1))
+            assertEquals(11, lines.size)
+            assertTrue(lines.last().contains("and 2 more since the last report"))
+        } finally { com.andrerinas.openheadunit.utils.AppLog.LOGGER = original }
+    }
+
 }

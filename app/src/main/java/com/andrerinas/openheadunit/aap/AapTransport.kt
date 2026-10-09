@@ -83,8 +83,19 @@ class AapTransport(
         private val externalSsl: AapSslContext? = null) {
 
     val ssl: AapSsl = externalSsl?.newSession() ?: AapSslContext(SingleKeyKeyManager(context))
-    private val tlsWriter = AapTlsWriter(ssl) { bytes, size ->
-        connection?.sendBlocking(bytes, size, 250) ?: -1
+    private val tlsWriter = AapTlsWriter(ssl, ::writeTlsFrame)
+
+    private fun writeTlsFrame(bytes: ByteArray, size: Int): Int {
+        val sent = try {
+            connection?.sendBlocking(bytes, size, 250) ?: -1
+        } catch (e: Exception) {
+            AppLog.w("AapTransport: send incomplete (ret=-1 of $size): ${e.javaClass.simpleName}: ${e.message}")
+            return -1
+        }
+        // Both application and TLS-only control frames use this wire boundary. Report actual
+        // ciphertext bytes here; the plaintext message length cannot describe a short write.
+        if (sent != size) AppLog.w("AapTransport: send incomplete (ret=$sent of $size)")
+        return sent
     }
 
     internal val aapAudio: AapAudio

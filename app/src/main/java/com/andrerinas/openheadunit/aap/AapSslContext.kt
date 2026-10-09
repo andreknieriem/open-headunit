@@ -1,11 +1,13 @@
 package com.andrerinas.openheadunit.aap
 
+import android.os.SystemClock
 import com.andrerinas.openheadunit.aap.protocol.messages.Messages
 import com.andrerinas.openheadunit.connection.projection.ProjectionConnection
 import com.andrerinas.openheadunit.ssl.ConscryptInitializer
 import com.andrerinas.openheadunit.ssl.NoCheckTrustManager
 import com.andrerinas.openheadunit.ssl.SingleKeyKeyManager
 import com.andrerinas.openheadunit.utils.AppLog
+import com.andrerinas.openheadunit.utils.AuditReportPolicy
 import java.nio.ByteBuffer
 import javax.net.ssl.SSLContext
 import javax.net.ssl.SSLEngine
@@ -269,12 +271,19 @@ class AapSslContext internal constructor(private val sslContext: SSLContext): Aa
     /** Reused wrapper, so the per-message allocation is zero rather than one small object. */
     private val plaintextHolder = ByteArrayWithLimit(ByteArray(0), 0)
 
+    // TLS control records may legitimately produce no application bytes. Keep a bounded
+    // warning stream so reporter logs show these intervals without flooding normal traffic.
+    private var zeroUnwrapReports = 0
+    private var zeroUnwrapLastLogMs = 0L
+    private var zeroUnwrapSuppressed = 0
+
     override fun decrypt(start: Int, length: Int, buffer: ByteArray): ByteArrayWithLimit? {
         // The status line is built under the lock but emitted outside it. encrypt() takes this same
         // monitor, so logging in here put the whole logging pipeline — formatting, the caller-name
         // stack walk, the file writer — between the poll thread and the send thread once per
         // decrypted packet, which at verbose is several times per video frame.
         var statusLine: String? = null
+        var zeroProduceLine: String? = null
         val decrypted = synchronized(this) {
             if (!::sslEngine.isInitialized || !::rxBuffer.isInitialized || !::plaintextBuffer.isInitialized) {
                 AppLog.w("SSL Decrypt: Not initialized yet")
@@ -293,6 +302,17 @@ class AapSslContext internal constructor(private val sslContext: SSLContext): Aa
                 val produced = rxBuffer.position()
                 if (AppLog.LOG_VERBOSE) {
                     statusLine = "SSL Decrypt: produced $produced, consumed ${length - encrypted.remaining()} bytes"
+                }
+                if (produced == 0 && length > 0) {
+                    val now = SystemClock.elapsedRealtime()
+                    if (AuditReportPolicy.shouldReport(zeroUnwrapReports, zeroUnwrapLastLogMs, now)) {
+                        val suffix = if (zeroUnwrapSuppressed > 0)
+                            " (and $zeroUnwrapSuppressed more since the last report)" else ""
+                        zeroProduceLine = "SSL Decrypt: no application data after consuming $length bytes$suffix"
+                        zeroUnwrapSuppressed = 0
+                        zeroUnwrapReports++
+                        zeroUnwrapLastLogMs = now
+                    } else zeroUnwrapSuppressed++
                 }
                 if (produced > plaintextBuffer.size) {
                     // Cannot happen: rxBuffer is what unwrap writes into and plaintextBuffer is its
@@ -332,6 +352,7 @@ class AapSslContext internal constructor(private val sslContext: SSLContext): Aa
             }
         }
         statusLine?.let { AppLog.d(it) }
+        zeroProduceLine?.let { AppLog.w(it) }
         if (decrypted != null && synchronized(this) { controlRecords.isNotEmpty() }) {
             controlRecordListener?.invoke()
         }

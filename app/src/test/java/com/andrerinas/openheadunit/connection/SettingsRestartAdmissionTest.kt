@@ -72,7 +72,7 @@ class SettingsRestartAdmissionTest {
             HeldServerSocket.settle(socket)
             Unit
         }.`when`(manager).connect(org.mockito.kotlin.eq(socket), org.mockito.kotlin.any(),
-            org.mockito.kotlin.anyOrNull(), org.mockito.kotlin.anyOrNull())
+            org.mockito.kotlin.anyOrNull(), org.mockito.kotlin.anyOrNull(), org.mockito.kotlin.any())
         HeldServerSocket.hold("192.168.1.5:5277", socket)
         try {
             manager.connect(endpoint.first, endpoint.second)

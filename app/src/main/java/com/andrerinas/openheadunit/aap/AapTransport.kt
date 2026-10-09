@@ -1183,7 +1183,7 @@ class AapTransport(
     fun send(keyCode: Int, isPress: Boolean) {
         val aapKeyCode = KeyCode.convert(keyCode)
 
-        if (keyCode == KeyEvent.KEYCODE_N) {
+        if (keyCode == KeyCode.KEY_NIGHT_MODE) {
             val intent = Intent(AapService.ACTION_REQUEST_NIGHT_MODE_UPDATE)
             intent.setPackage(context.packageName)
             context.sendBroadcast(intent)

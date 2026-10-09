@@ -20,6 +20,7 @@ import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.contract.KeyIntent
 import com.andrerinas.openheadunit.input.BydPanelKey
+import com.andrerinas.openheadunit.input.KeyCode
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.IntentFilters
 import com.andrerinas.openheadunit.utils.Settings
@@ -61,7 +62,7 @@ class KeymapFragment : Fragment(), MainActivity.KeyListener {
         KeymapItem(R.string.key_endcall, KeyEvent.KEYCODE_ENDCALL),
         KeymapItem(R.string.key_music, KeyEvent.KEYCODE_MUSIC),
         KeymapItem(R.string.key_nav, 65538),
-        KeymapItem(R.string.key_night, KeyEvent.KEYCODE_N),
+        KeymapItem(R.string.key_night, KeyCode.KEY_NIGHT_MODE),
         KeymapItem(R.string.key_enter, KeyEvent.KEYCODE_ENTER),
         KeymapItem(R.string.key_home, KeyEvent.KEYCODE_HOME),
         KeymapItem(R.string.key_app_switch, KeyEvent.KEYCODE_APP_SWITCH),

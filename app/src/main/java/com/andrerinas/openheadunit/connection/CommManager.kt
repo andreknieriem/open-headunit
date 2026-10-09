@@ -537,8 +537,12 @@ class CommManager(
                     if (!candidate.connect()) throw java.io.IOException("Cannot open Nearby tunnel streams")
                 },
                 publish = { candidate ->
+                    // Permission failures can leave Error without owning a connection. It is
+                    // reusable like Disconnected, but only while that exact state and both
+                    // resource owners remain unchanged throughout candidate preparation.
                     if (socket.isClosed || _connectionState.value !== terminal ||
-                        terminal !is ConnectionState.Disconnected || _connection != null || _transport != null ||
+                        (terminal !is ConnectionState.Disconnected && terminal !is ConnectionState.Error) ||
+                        _connection != null || _transport != null ||
                         (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value))) {
                         false
                     } else {

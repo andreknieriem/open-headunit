@@ -17,9 +17,12 @@ import kotlin.coroutines.intrinsics.suspendCoroutineUninterceptedOrReturn
 /** Exercise the actual Nearby transfer into the serialized session owner. */
 class NearbySessionPublicationTest {
     @Test fun preparedTunnelPublishesOnlyWhileBothOwnersRemainCurrent() = runBlocking {
-        for (outcome in listOf("connected", "replacement", "retired")) {
+        for (fromError in listOf(false, true)) for (outcome in listOf("connected", "replacement", "retired", "new-error", "owned", "transport-owned", "saved-request")) {
             val manager = mock(CommManager::class.java, CALLS_REAL_METHODS)
-            val flow = MutableStateFlow<CommManager.ConnectionState>(CommManager.ConnectionState.Disconnected())
+            val initial: CommManager.ConnectionState = if (fromError)
+                CommManager.ConnectionState.Error("USB permission not granted for device")
+            else CommManager.ConnectionState.Disconnected()
+            val flow = MutableStateFlow(initial)
             val queued = java.util.concurrent.ConcurrentLinkedQueue<Runnable>()
             val dispatcher = object : CoroutineDispatcher() {
                 override fun dispatch(context: CoroutineContext, block: Runnable) { queued.add(block) }
@@ -41,6 +44,7 @@ class NearbySessionPublicationTest {
             val admission = ConnectionAdmission { action -> guard.run(attempt, action = action) }
             val socket = mock(Socket::class.java)
             val replacement = mock(SocketProjectionConnection::class.java)
+            val replacementTransport = mock(com.andrerinas.openheadunit.aap.AapTransport::class.java)
             val method = CommManager::class.java.getDeclaredMethod("connectAdmittedSocket",
                 Socket::class.java, ConnectionAdmission::class.java, Pair::class.java,
                 CommManager.ConnectionState.Disconnected::class.java, Continuation::class.java)
@@ -52,6 +56,11 @@ class NearbySessionPublicationTest {
                             set("_connection", replacement)
                             flow.value = CommManager.ConnectionState.TransportStarted
                         } else if (outcome == "retired") guard.retire {}
+                        else if (outcome == "new-error") {
+                            // A later failure must not inherit the earlier error's admission.
+                            flow.value = CommManager.ConnectionState.Error("Another connection failed")
+                        } else if (outcome == "owned") set("_connection", replacement)
+                        else if (outcome == "transport-owned") set("_transport", replacementTransport)
                         true
                     }
                 }
@@ -60,7 +69,9 @@ class NearbySessionPublicationTest {
                     var rejected = false
                     try {
                         suspendCoroutineUninterceptedOrReturn<Unit> { continuation ->
-                            method.invoke(manager, socket, admission, null, null, continuation)
+                            method.invoke(manager, socket, admission, null,
+                                if (outcome == "saved-request") CommManager.ConnectionState.Disconnected(
+                                    reason = CommManager.DisconnectReason.SETTINGS_RESTART) else null, continuation)
                         }
                     } catch (e: java.lang.reflect.InvocationTargetException) {
                         if (e.cause !is ConnectionAdmissionRejectedException) throw e
@@ -79,8 +90,9 @@ class NearbySessionPublicationTest {
                     } else {
                         verify(candidate).disconnect()
                         verify(socket).close()
-                        assertSame(if (outcome == "replacement") replacement else null, get("_connection"))
-                        verifyNoInteractions(replacement)
+                        assertSame(if (outcome == "replacement" || outcome == "owned") replacement else null, get("_connection"))
+                        assertSame(if (outcome == "transport-owned") replacementTransport else null, get("_transport"))
+                        verifyNoInteractions(replacement, replacementTransport)
                         assertTrue(queued.isEmpty())
                     }
                 } finally { scope.cancel() }

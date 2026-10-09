@@ -612,6 +612,8 @@
     <string name="onb_audio_more_hint">You can change these again later under Settings → Audio Streams.</string>
     <string name="use_aac_audio">Use AAC Audio</string>
     <string name="use_aac_audio_description">Use AAC codec for audio to save bandwidth (Experimental). On a wireless session running on 2.4 GHz this is on automatically while \"Lower video on a 2.4 GHz link\" is on.</string>
+    <string name="use_pcm_guidance">PCM guidance and system sounds</string>
+    <string name="use_pcm_guidance_description">Keep navigation, voice assistant and system sounds in PCM when AAC audio is used (Experimental). Music keeps the existing codec choice. Saving reconnects Android Auto.</string>
     <string name="attach_hw_dsp_equalizer">Hardware DSP Equalizer Trigger</string>
     <string name="attach_hw_dsp_equalizer_description">Attaches a dummy Equalizer effect to the audio session to force hardware DSP routing on specific headunits. Keep disabled if using ViPER4Android / ViperFX or if sound is muffled on older Android versions.</string>
     <string name="audio_volume_offset">Audio Volume Offset</string>

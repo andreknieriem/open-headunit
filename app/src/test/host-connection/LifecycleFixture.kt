@@ -46,6 +46,7 @@ private class AapTransport(
 /** Only the network, UI side effects and scheduling are doubled; injected decisions are production. */
 private class ConnectionFixture(val settings: Settings = Settings()) {
     private val transportLifecycleLock = Any()
+    private var usbRecoveryOwner: Any = Any()
     private var settingsUsbRestartInFlight: ConnectionState.Disconnected? = null
     private var disconnectRequested = false
     private var physicalConnectionReached = true
@@ -108,6 +109,9 @@ private class ObserverFixture {
     private val commManager = Connection()
     private class Self { fun onConnectionEstablished() {}; fun onConnectionEnded(state: ConnectionState.Disconnected) {} }
     private val selfLauncherManager = Self()
+    private class ReconnectTimer { fun onStateChanged() {} }
+    private val automaticReconnect = ReconnectTimer()
+    private val usbReconnect = ReconnectTimer()
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
     private val usbLauncherManager = Usb()
     private var hasEverConnected = false

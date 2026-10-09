@@ -55,6 +55,8 @@ class CommManager {
  private val transportLifecycleLock=Any()
  private var disconnectRequested=false
  private var connectionAttempt:Any?=null
+ private var usbRecoveryOwner:Any=Any()
+ fun recoveryOwner()=usbRecoveryOwner
  private var settingsUsbRestartInFlight:ConnectionState.Disconnected?=null
  private var physicalConnectionReached=true
  private var outgoingEndpoint:Pair<String,Int>?=null
@@ -143,6 +145,9 @@ class AapTransport(
  private var pollHandler:Handler?=null
  private var videoHandler:Handler?=null
  private var aapRead:AapRead?=null
+ private val quitLock=Any()
+ private var peerRequestedClose=false
+ private val tlsWriter=object { fun retire(){} }
  private val micSessions=MicSessions()
  private fun retireMicrophone(){micSessions.close(shutdown=true)}
  private fun resetMicrophone(){}
@@ -322,7 +327,9 @@ fun handshakeFailure()=runBlocking{
  println("PASS handshake failure still reports and tears down its own session")
 }
 fun controls()=runBlocking{
- val c=CommManager();c.startHandshake();c.startReading();val old=c.owner()
+ val c=CommManager();val recovery=c.recoveryOwner();c.startHandshake()
+ check(c.recoveryOwner()!==recovery){"completed handshake retained an old USB recovery owner"}
+ c.startReading();val old=c.owner()
  c.settings.killOnDisconnect=true;c.settings.useAacAudio=true;c.applyAudioSettings();old.quit(false)
  check(c.state is ConnectionState.Disconnected && c.context.broadcasts.isEmpty() && Handler.delayed.isEmpty())
  c.cleanups();c.connectNext();c.startHandshake();c.startReading()

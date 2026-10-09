@@ -175,9 +175,9 @@ class SelfLauncherManager(
             if (!anySucceeded) {
                 AppLog.e("SelfMode: All launchers failed")
                 if (SelfLaunchCoalescePolicy.mayReportAllLaunchersFailed(commManager.isConnected)) {
-                    // reportError, not emitError: disconnect() defaults to isUserExit, so a launch
-                    // that never had a session latched userExitedAA and suppressed the Native poke
-                    // for the rest of the group. Reporting still hides the "connecting" overlay.
+                    // Report without disconnecting: another launch method may still connect to
+                    // the server we opened. Reporting hides the "connecting" overlay while leaving
+                    // that server and its network available for the late arrival.
                     commManager.reportError("No launch method succeeded", settingsRestart)
                     // The report is not a disconnect, so nothing else clears this - and the
                     // watchdog below is only armed once a launcher has succeeded.

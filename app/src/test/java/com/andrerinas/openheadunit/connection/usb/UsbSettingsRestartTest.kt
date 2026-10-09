@@ -15,7 +15,7 @@ class UsbSettingsRestartTest {
         UsbLauncherManager::class.java.getDeclaredField("cancelledByUser").apply { isAccessible = true }.set(manager, true)
         val saved = CommManager.ConnectionState.Disconnected(reason = CommManager.DisconnectReason.SETTINGS_RESTART, settingsRestartUntilMs = Long.MAX_VALUE)
         manager.restartForSettings(saved)
-        verify(manager, never()).checkAlreadyConnected(anyBoolean(), anyBoolean(), anyOrNull())
+        verify(manager, never()).checkAlreadyConnected(anyBoolean(), anyBoolean(), anyOrNull(), anyBoolean())
     }
 
     @Test fun `uncancelled Save still grants one explicit device check`() {

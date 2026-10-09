@@ -9,6 +9,8 @@ import android.os.Build
 import android.os.ParcelFileDescriptor
 import android.widget.Toast
 import androidx.core.content.ContextCompat
+import com.andrerinas.openheadunit.connection.ConnectionAdmissionRejectedException
+import com.andrerinas.openheadunit.connection.ConnectionAdmission
 import com.andrerinas.openheadunit.connection.ConnectionStage
 import com.andrerinas.openheadunit.connection.ConnectionStageTracker
 import com.andrerinas.openheadunit.utils.AppLog
@@ -27,6 +29,9 @@ import com.google.android.gms.nearby.connection.Payload
 import com.google.android.gms.nearby.connection.PayloadCallback
 import com.google.android.gms.nearby.connection.PayloadTransferUpdate
 import com.google.android.gms.nearby.connection.Strategy
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -43,7 +48,7 @@ import java.net.Socket
 class NearbyManager(
     private val context: Context,
     private val scope: CoroutineScope,
-    private val onSocketReady: (Socket) -> Unit
+    private val onSocketReady: suspend (Socket, ConnectionAdmission) -> Unit
 ) {
 
     data class DiscoveredEndpoint(val id: String, val name: String)
@@ -53,10 +58,16 @@ class NearbyManager(
         val discoveredEndpoints: StateFlow<List<DiscoveredEndpoint>> = _discoveredEndpoints
     }
 
+    // A callback belongs to the request that created it, even if Nearby reuses its endpoint ID.
+    // The same monitor covers delayed tunnel publication and retirement.
+    private val attempts = NearbyAttemptGuard()
+
     private val connectionsClient = Nearby.getConnectionsClient(context)
     private val SERVICE_ID = "com.andrerinas.openhu"
     private val STRATEGY = Strategy.P2P_POINT_TO_POINT
     private var isRunning = false
+    private var tunnelJob: Job? = null
+    private var discoveryGeneration: Any? = null
     private var isConnecting = false
     private var settingsRestartPeer: String? = null
     private var settingsRestartUntilMs = 0L
@@ -102,21 +113,21 @@ class NearbyManager(
     private var networkAtConnect: Long? = null
     private val settings = Settings(context)
 
-    fun resumeDiscoveryIfIdle() {
+    fun resumeDiscoveryIfIdle(): Unit = attempts.locked {
         // Discovery can be stopped while Nearby waits for a Wi-Fi bandwidth upgrade.
         // Restarting it then would clear endpoints and overwrite the connecting stage.
-        if (isConnecting || activeEndpointId != null || activeNearbySocket != null) return
+        if (isConnecting || activeEndpointId != null || activeNearbySocket != null) return@locked
         start()
     }
 
-    fun start() {
+    fun start(): Unit = attempts.locked {
         if (!hasRequiredPermissions()) {
             AppLog.w("NearbyManager: Missing required location/bluetooth permissions. Skipping start.")
-            return
+            return@locked
         }
         if (isRunning) {
             AppLog.i("NearbyManager: Already running discovery.")
-            return
+            return@locked
         }
         AppLog.i("NearbyManager: Starting Nearby (Discoverer only)...")
         ConnectionStageTracker.report(ConnectionStage.SEARCHING)
@@ -147,57 +158,73 @@ class NearbyManager(
 
     /** Save grants one retry of the same peer even when automatic connection is disabled. */
     fun restartForSettings(untilMs: Long = SystemClock.elapsedRealtime() +
-        SettingsRestartRecovery.WINDOW_MS) {
-        val peer = settings.lastNearbyDeviceName.takeIf { it.isNotEmpty() } ?: return
+        SettingsRestartRecovery.WINDOW_MS): Unit = attempts.locked {
+        val peer = settings.lastNearbyDeviceName.takeIf { it.isNotEmpty() } ?: return@locked
         stop()
         settingsRestartPeer = peer
         settingsRestartUntilMs = untilMs
         start()
+        val generation = discoveryGeneration
         settingsRestartTimeoutJob = scope.launch {
             delay((untilMs - SystemClock.elapsedRealtime()).coerceAtLeast(0L))
-            settingsRestartPeer = null
-            // An already discovered phone need not produce a second FOUND callback.
-            // Reconsider the list under ordinary preferences, without granting another retry.
-            if (isRunning && settings.autoConnectLastSession && !isConnecting && activeEndpointId == null) {
-                _discoveredEndpoints.value.firstOrNull { it.name == settings.lastNearbyDeviceName }
-                    ?.let { connectToEndpoint(it.id) }
+            attempts.locked {
+                if (discoveryGeneration !== generation || settingsRestartUntilMs != untilMs) return@locked
+                settingsRestartPeer = null
+                // An already discovered phone need not produce a second FOUND callback.
+                // Reconsider the list under ordinary preferences, without granting another retry.
+                if (isRunning && settings.autoConnectLastSession && !isConnecting && activeEndpointId == null) {
+                    _discoveredEndpoints.value.firstOrNull { it.name == settings.lastNearbyDeviceName }
+                        ?.let { connectToEndpoint(it.id) }
+                }
             }
         }
     }
 
-    fun stop() {
+    fun stop(): Unit = attempts.locked {
         settingsRestartTimeoutJob?.cancel()
         settingsRestartTimeoutJob = null
         settingsRestartPeer = null
         AppLog.i("NearbyManager: Stopping discovery and disconnecting from any active endpoint...")
         isRunning = false
+        discoveryGeneration = null
+        connectionsClient.stopDiscovery()
+        retireAttempt()
+        _discoveredEndpoints.value = emptyList()
+    }
+
+    /** Retire this attempt without stopping an ongoing discovery or starting a new discovery run. */
+    private fun failAttempt(attempt: NearbyAttemptGuard.Attempt) {
+        attempts.run(attempt) {
+            retireAttempt()
+        }
+    }
+
+    private fun retireAttempt(): Unit = attempts.retire { attempt ->
         isConnecting = false
+        tunnelJob?.cancel()
+        tunnelJob = null
         upgradeTimeoutJob?.cancel()
         upgradeTimeoutJob = null
-        connectionsClient.stopDiscovery()
-        activeEndpointId?.let {
-            connectionsClient.disconnectFromEndpoint(it)
-            activeEndpointId = null
-        }
+        (activeEndpointId ?: attempt?.endpoint)?.let { connectionsClient.disconnectFromEndpoint(it) }
+        activeEndpointId = null
         activeNearbySocket?.close()
         activeNearbySocket = null
-        pendingInboundStream?.let { try { it.close() } catch (e: Exception) {} }
+        pendingInboundStream?.let { try { it.close() } catch (_: Exception) {} }
         pendingInboundStream = null
-        activePipes?.forEach { try { it.close() } catch (e: Exception) {} }
+        activePipes?.forEach { try { it.close() } catch (_: Exception) {} }
         activePipes = null
         lastQuality.clear()
         networkAtConnect = null
-        _discoveredEndpoints.value = emptyList()
     }
 
     /**
      * Manually initiate a connection to a specific discovered endpoint.
      * Called from HomeFragment when user taps a device in the list.
      */
-    fun connectToEndpoint(endpointId: String) {
+    fun connectToEndpoint(endpointId: String): Unit = attempts.locked {
         if (isConnecting) {
             AppLog.w("NearbyManager: Already connecting, ignoring request for $endpointId")
-            return
+            return@locked
         }
         // Auto-connect fires from onEndpointFound and the user can tap the same device in the list a
         // moment later. Once the first attempt has *succeeded*, isConnecting is already back to
@@ -205,37 +232,48 @@ class NearbyManager(
         // STATUS_ALREADY_CONNECTED_TO_ENDPOINT -- an error line for what is simply a duplicate.
         if (activeEndpointId == endpointId) {
             AppLog.i("NearbyManager: Already connected to $endpointId, ignoring duplicate request")
-            return
+            return@locked
         }
         settingsRestartPeer = null
+        if (activeEndpointId != null) retireAttempt()
         AppLog.i("NearbyManager: Requesting connection to endpoint: $endpointId")
         // Nothing has been reported about this attempt yet, so nothing may be carried into it.
         lastQuality.remove(endpointId)
         isConnecting = true
 
-        connectionsClient.requestConnection(Build.MODEL, endpointId, connectionLifecycleCallback)
+        val attempt = attempts.begin(endpointId)
+        connectionsClient.requestConnection(Build.MODEL, endpointId, connectionLifecycleCallback(attempt))
             .addOnFailureListener { e ->
+                failAttempt(attempt)
                 AppLog.e("NearbyManager: Failed to request connection: ${e.message}")
-                isConnecting = false
             }
     }
 
     private fun startDiscovery() {
+        isRunning = true
         val discoveryOptions = DiscoveryOptions.Builder()
             .setStrategy(STRATEGY)
             .build()
 
         AppLog.i("NearbyManager: Requesting Discovery with SERVICE_ID: $SERVICE_ID (Strategy: P2P_POINT_TO_POINT)")
-        connectionsClient.startDiscovery(SERVICE_ID, endpointDiscoveryCallback, discoveryOptions)
+        val generation = Any()
+        discoveryGeneration = generation
+        connectionsClient.startDiscovery(SERVICE_ID, endpointDiscoveryCallback(generation), discoveryOptions)
             .addOnSuccessListener { AppLog.d("NearbyManager: [OK] Discovery started.") }
             .addOnFailureListener { e ->
                 AppLog.e("NearbyManager: [ERROR] Discovery failed: ${e.message}")
-                isRunning = false
+                attempts.locked {
+                    if (discoveryGeneration === generation) {
+                        isRunning = false
+                        discoveryGeneration = null
+                    }
+                }
             }
     }
 
-    private val endpointDiscoveryCallback = object : EndpointDiscoveryCallback() {
-        override fun onEndpointFound(endpointId: String, info: DiscoveredEndpointInfo) {
+    private fun endpointDiscoveryCallback(generation: Any) = object : EndpointDiscoveryCallback() {
+        override fun onEndpointFound(endpointId: String, info: DiscoveredEndpointInfo) = attempts.locked {
+            if (discoveryGeneration !== generation || !isRunning) return@locked
             AppLog.i("NearbyManager: Endpoint FOUND: ${info.endpointName} ($endpointId)")
             ConnectionStageTracker.report(ConnectionStage.PHONE_ANSWERED)
             val current = _discoveredEndpoints.value.toMutableList()
@@ -253,7 +291,7 @@ class NearbyManager(
                 if (restartPeer == info.endpointName && !isConnecting && activeEndpointId == null) {
                     connectToEndpoint(endpointId)
                 }
-                return
+                return@locked
             }
 
             // Auto-connect logic
@@ -270,7 +308,8 @@ class NearbyManager(
             }
         }
 
-        override fun onEndpointLost(endpointId: String) {
+        override fun onEndpointLost(endpointId: String) = attempts.locked {
+            if (discoveryGeneration !== generation || !isRunning) return@locked
             AppLog.i("NearbyManager: Endpoint LOST: $endpointId")
             val current = _discoveredEndpoints.value.toMutableList()
             current.removeAll { it.id == endpointId }
@@ -278,114 +317,96 @@ class NearbyManager(
         }
     }
 
-    private val connectionLifecycleCallback = object : ConnectionLifecycleCallback() {
+    private fun connectionLifecycleCallback(attempt: NearbyAttemptGuard.Attempt) = object : ConnectionLifecycleCallback() {
         override fun onConnectionInitiated(endpointId: String, info: ConnectionInfo) {
-            AppLog.i("NearbyManager: Connection INITIATED with $endpointId (${info.endpointName}). Token: ${info.authenticationToken}")
-            AppLog.i("NearbyManager: Automatically ACCEPTING connection...")
+            attempts.run(attempt, endpointId) {
+                AppLog.i("NearbyManager: Connection INITIATED with $endpointId (${info.endpointName}). Token: ${info.authenticationToken}")
+                AppLog.i("NearbyManager: Automatically ACCEPTING connection...")
 
-            // Save last connected device name for auto-reconnect
-            AppLog.i("NearbyManager: Saving '${info.endpointName}' as last connected device candidate.")
-            settings.lastNearbyDeviceName = info.endpointName
+                // Save last connected device name for auto-reconnect
+                AppLog.i("NearbyManager: Saving '${info.endpointName}' as last connected device candidate.")
+                settings.lastNearbyDeviceName = info.endpointName
 
-            // Stop discovery as soon as it finds the target.
-            isRunning = false
-            connectionsClient.stopDiscovery()
+                // Stop discovery as soon as it finds the target.
+                isRunning = false
+                discoveryGeneration = null
+                connectionsClient.stopDiscovery()
 
-            connectionsClient.acceptConnection(endpointId, payloadCallback)
-                .addOnFailureListener { e -> AppLog.e("NearbyManager: Failed to accept connection: ${e.message}") }
+                connectionsClient.acceptConnection(endpointId, payloadCallback(attempt))
+                    .addOnFailureListener { e ->
+                        failAttempt(attempt)
+                        AppLog.e("NearbyManager: Failed to accept connection: ${e.message}")
+                    }
+            }
         }
 
         override fun onConnectionResult(endpointId: String, result: ConnectionResolution) {
-            val status = result.status
-            AppLog.i("NearbyManager: Connection RESULT for $endpointId: StatusCode=${status.statusCode} (${status.statusMessage})")
-
-            if (status.statusCode != ConnectionsStatusCodes.STATUS_OK) {
+            attempts.run(attempt, endpointId) {
+                val status = result.status
+                AppLog.i("NearbyManager: Connection RESULT for $endpointId: StatusCode=${status.statusCode} (${status.statusMessage})")
+                if (status.statusCode != ConnectionsStatusCodes.STATUS_OK) {
+                    failAttempt(attempt)
+                    return@run
+                }
                 isConnecting = false
-            }
-
-            when (status.statusCode) {
-                ConnectionsStatusCodes.STATUS_OK -> {
-                    isConnecting = false
-                    activeEndpointId = endpointId
-                    networkAtConnect = currentNetworkHandle()
-                    AppLog.i("NearbyManager: Connected successfully!")
-                    ConnectionStageTracker.report(ConnectionStage.PHONE_JOINING)
-
-                    // The upgrade may already have been reported while this callback was in flight.
-                    maybeBuildTunnel(endpointId)
-
-                    // Only wait if that did not already build the tunnel. Announcing a wait first
-                    // and arming the timeout unconditionally described the slow path in the logs of
-                    // a session that took the fast one, and left a job running with nothing to do.
-                    if (activeNearbySocket == null) {
-                        AppLog.i("NearbyManager: Waiting up to 10s for bandwidth upgrade to HIGH quality (Wi-Fi)...")
+                activeEndpointId = endpointId
+                networkAtConnect = currentNetworkHandle()
+                AppLog.i("NearbyManager: Connected successfully!")
+                ConnectionStageTracker.report(ConnectionStage.PHONE_JOINING)
+                // HIGH can arrive before the result; either callback may complete the pair.
+                maybeBuildTunnel(attempt, endpointId)
+                if (activeNearbySocket == null) {
+                    AppLog.i("NearbyManager: Waiting up to 10s for bandwidth upgrade to HIGH quality (Wi-Fi)...")
                     upgradeTimeoutJob?.cancel()
                     upgradeTimeoutJob = scope.launch {
                         delay(10_000)
-                        if (activeNearbySocket == null && activeEndpointId == endpointId) {
-                            AppLog.e("NearbyManager: Bandwidth upgrade timed out after 10s (best quality seen: ${qualityName(lastQuality[endpointId])}). Disconnecting to prevent Bluetooth fallback.")
-                            describeTunnelFailure()?.let { AppLog.e("NearbyManager: $it") }
-                            scope.launch(Dispatchers.Main) {
-                                ToastUtils.showToast(
-                                    context,
-                                    "Google Nearby connection failed: Wi-Fi bandwidth upgrade timed out. Please check Wi-Fi & Bluetooth settings.",
-                                    Toast.LENGTH_LONG
-                                )
+                        attempts.run(attempt) {
+                            if (activeNearbySocket == null) {
+                                AppLog.e("NearbyManager: Bandwidth upgrade timed out after 10s (best quality seen: ${qualityName(lastQuality[endpointId])}). Disconnecting to prevent Bluetooth fallback.")
+                                describeTunnelFailure()?.let { AppLog.e("NearbyManager: $it") }
+                                scope.launch(Dispatchers.Main) {
+                                    ToastUtils.showToast(
+                                        context,
+                                        "Google Nearby connection failed: Wi-Fi bandwidth upgrade timed out. Please check Wi-Fi & Bluetooth settings.",
+                                        Toast.LENGTH_LONG
+                                    )
+                                }
+                                failAttempt(attempt)
                             }
-                            stop()
                         }
                     }
-                    }
-                }
-                // Each of these forgets the endpoint's quality. Nearby reports bandwidth per
-                // endpoint id and reuses the id across attempts, so a HIGH left over from a
-                // connection that then failed would satisfy maybeBuildTunnel on the retry and
-                // tunnel over whatever medium Nearby actually held -- skipping the upgrade wait
-                // that exists to stop exactly that.
-                ConnectionsStatusCodes.STATUS_CONNECTION_REJECTED -> {
-                    AppLog.w("NearbyManager: Connection REJECTED by $endpointId")
-                    lastQuality.remove(endpointId)
-                }
-                ConnectionsStatusCodes.STATUS_ERROR -> {
-                    AppLog.e("NearbyManager: Connection ERROR with $endpointId")
-                    lastQuality.remove(endpointId)
-                }
-                else -> {
-                    AppLog.w("NearbyManager: Unknown connection result code: ${status.statusCode}")
-                    lastQuality.remove(endpointId)
                 }
             }
         }
 
         override fun onBandwidthChanged(endpointId: String, bandwidthInfo: BandwidthInfo) {
-            AppLog.i("NearbyManager: Bandwidth changed for $endpointId: Quality=${bandwidthInfo.quality} (${qualityName(bandwidthInfo.quality)})")
-            lastQuality[endpointId] = maxOf(lastQuality[endpointId] ?: Int.MIN_VALUE, bandwidthInfo.quality)
-            maybeBuildTunnel(endpointId)
+            attempts.run(attempt, endpointId) {
+                AppLog.i("NearbyManager: Bandwidth changed for $endpointId: Quality=${bandwidthInfo.quality} (${qualityName(bandwidthInfo.quality)})")
+                lastQuality[endpointId] = maxOf(lastQuality[endpointId] ?: Int.MIN_VALUE, bandwidthInfo.quality)
+                maybeBuildTunnel(attempt, endpointId)
+            }
         }
 
         override fun onDisconnected(endpointId: String) {
-            AppLog.i("NearbyManager: DISCONNECTED from $endpointId")
-            if (activeEndpointId == endpointId) {
-                activeEndpointId = null
-                isConnecting = false
-                upgradeTimeoutJob?.cancel()
-                upgradeTimeoutJob = null
+            attempts.run(attempt, endpointId) {
+                AppLog.i("NearbyManager: DISCONNECTED from $endpointId")
+                // Retire the tunnel as well as the endpoint. A new connection needs fresh streams.
+                failAttempt(attempt)
             }
-            lastQuality.remove(endpointId)
         }
     }
 
     /**
      * Builds the stream tunnel once both preconditions hold, whichever callback satisfies the last
      * one. Called from [ConnectionLifecycleCallback.onConnectionResult] and
-     * [ConnectionLifecycleCallback.onBandwidthChanged]; both run on the Nearby callback thread, so
-     * the check-then-set on [activeNearbySocket] is not racing itself.
+     * [ConnectionLifecycleCallback.onBandwidthChanged] under the attempt monitor. Delayed work
+     * holds the same monitor while publishing its pipes and handing the socket to AAP.
      *
      * Splitting this out of the bandwidth callback removes an ordering assumption: HIGH reported
      * before the connection result had recorded the endpoint used to be dropped on the floor, and
      * Nearby does not report it again.
      */
-    private fun maybeBuildTunnel(endpointId: String) {
+    private fun maybeBuildTunnel(attempt: NearbyAttemptGuard.Attempt, endpointId: String) {
         if (activeEndpointId != endpointId) return
         if (activeNearbySocket != null) return
         if (lastQuality[endpointId] != BandwidthInfo.Quality.HIGH) return
@@ -406,7 +427,7 @@ class NearbyManager(
             pendingInboundStream = null
         }
 
-        scope.launch(Dispatchers.IO) {
+        tunnelJob = scope.launch(Dispatchers.IO) {
             // The socket built just above, not whatever happens to be current when this coroutine
             // gets to run. A stop() and a fresh upgrade in between would otherwise have this body
             // attach its pipe to a socket belonging to the next session; if that has happened, this
@@ -420,29 +441,62 @@ class NearbyManager(
             AppLog.i("NearbyManager: Waiting 800ms for phone state synchronization...")
             kotlinx.coroutines.delay(800)
 
-            // 1. Create outgoing pipe (Tablet -> Phone)
-            val pipes = android.os.ParcelFileDescriptor.createPipe()
-            activePipes = pipes
-            val outputStream = android.os.ParcelFileDescriptor.AutoCloseOutputStream(pipes[1])
-            sock.outputStreamWrapper = outputStream
+            val ready = attempts.run(attempt, endpointId) {
+                if (activeNearbySocket !== sock || sock.isClosed) return@run
+                try {
+                    // 1. Create outgoing pipe (Tablet -> Phone)
+                    val pipes = android.os.ParcelFileDescriptor.createPipe()
+                    activePipes = pipes
+                    val outputStream = android.os.ParcelFileDescriptor.AutoCloseOutputStream(pipes[1])
+                    sock.outputStreamWrapper = outputStream
 
-            // 2. Initiate stream tunnel
-            AppLog.i("NearbyManager: Initiating stream tunnel to $endpointId...")
-            val tabletToPhonePayload = Payload.fromStream(pipes[0])
-            AppLog.i("NearbyManager: Sending STREAM payload (ID: ${tabletToPhonePayload.id})")
+                    // 2. Initiate stream tunnel
+                    AppLog.i("NearbyManager: Initiating stream tunnel to $endpointId...")
+                    val tabletToPhonePayload = Payload.fromStream(pipes[0])
+                    AppLog.i("NearbyManager: Sending STREAM payload (ID: ${tabletToPhonePayload.id})")
 
-            connectionsClient.sendPayload(endpointId, tabletToPhonePayload)
-                .addOnSuccessListener {
-                    AppLog.i("NearbyManager: [OK] Tablet->Phone stream payload registered.")
+                    connectionsClient.sendPayload(endpointId, tabletToPhonePayload)
+                        .addOnSuccessListener {
+                            AppLog.i("NearbyManager: [OK] Tablet->Phone stream payload registered.")
+                        }
+                        .addOnFailureListener { e ->
+                            failAttempt(attempt)
+                            AppLog.e("NearbyManager: [ERROR] Failed to send stream: ${e.message}")
+                        }
+
+                    // [CRITICAL] Start AA handshake immediately.
+                    // NearbySocket.read() will block internally until Phone stream arrives.
+                    AppLog.i("NearbyManager: Starting AA handshake now. Input will block until stream arrives.")
+                } catch (e: Exception) {
+                    AppLog.e("NearbyManager: Failed to build stream tunnel", e)
+                    failAttempt(attempt)
                 }
-                .addOnFailureListener { e ->
-                    AppLog.e("NearbyManager: [ERROR] Failed to send stream: ${e.message}")
-                }
+            }
+            if (ready && !sock.isClosed) {
+                currentCoroutineContext().ensureActive()
+                val admission = ConnectionAdmission { action -> attempts.run(attempt, action = action) }
+                // Keep the connect coroutine a child of this attempt, including its suspension
+                // in CommManager while the previous connection is being retired.
+                handOverTunnel(attempt, sock, admission)
+            }
+        }
+    }
 
-            // [CRITICAL] Start AA handshake immediately.
-            // NearbySocket.read() will block internally until Phone stream arrives.
-            AppLog.i("NearbyManager: Starting AA handshake now. Input will block until stream arrives.")
-            onSocketReady(sock)
+    // Await the consumer's final ownership decision, not just socket creation. Rejection and
+    // other failures retire only this attempt; a later attempt's endpoint and pipes stay intact.
+    internal suspend fun handOverTunnel(
+        attempt: NearbyAttemptGuard.Attempt, sock: Socket, admission: ConnectionAdmission,
+    ) {
+        try {
+            onSocketReady(sock, admission)
+        } catch (e: ConnectionAdmissionRejectedException) {
+            failAttempt(attempt)
+            AppLog.i("NearbyManager: tunnel handoff superseded; retired its attempt")
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            AppLog.e("NearbyManager: Failed to hand over stream tunnel", e)
+            failAttempt(attempt)
         }
     }
 
@@ -491,34 +545,43 @@ class NearbyManager(
         else -> "unknown($quality)"
     }
 
-    private val payloadCallback = object : PayloadCallback() {
+    private fun payloadCallback(attempt: NearbyAttemptGuard.Attempt) = object : PayloadCallback() {
         override fun onPayloadReceived(endpointId: String, payload: Payload) {
             AppLog.i("NearbyManager: Payload RECEIVED from $endpointId. Type: ${payload.type}")
             if (payload.type == Payload.Type.STREAM) {
                 AppLog.i("NearbyManager: Received incoming STREAM payload. Completing bidirectional tunnel.")
                 val inbound = payload.asStream()?.asInputStream()
-                val socket = activeNearbySocket
-                if (inbound == null) {
-                    // A STREAM payload with nothing readable behind it. Nothing can be done with it,
-                    // and storing it was worse than dropping it: the log said the stream was held
-                    // while a null went into the slot, so the wait that follows timed out against a
-                    // message claiming the opposite. Say what happened and leave the slot alone.
-                    AppLog.e(
-                        "NearbyManager: Inbound STREAM payload carried no readable stream. The tunnel " +
-                                "cannot be completed from this payload; waiting for another."
-                    )
-                } else if (socket != null) {
-                    socket.inputStreamWrapper = inbound
-                    AppLog.i("NearbyManager: InputStream assigned to socket. Handshake should continue.")
-                } else {
-                    // Arriving before our own socket exists is legal -- the two sides register their
-                    // payloads independently and nothing orders them. Dropping it here (which a
-                    // null-safe assignment did, silently) cost us the only inbound stream the phone
-                    // will ever send: it does not retry, so the tunnel stayed half-open until Nearby
-                    // gave up minutes later with no record of the cause.
-                    AppLog.w("NearbyManager: Inbound STREAM arrived before the socket existed; holding it until the tunnel is built.")
-                    pendingInboundStream = inbound
+                val accepted = attempts.run(attempt, endpointId) {
+                    val socket = activeNearbySocket
+                    if (inbound == null) {
+                        // A STREAM payload with nothing readable behind it. Nothing can be done with it,
+                        // and storing it was worse than dropping it: the log said the stream was held
+                        // while a null went into the slot, so the wait that follows timed out against a
+                        // message claiming the opposite. Say what happened and leave the slot alone.
+                        AppLog.e(
+                            "NearbyManager: Inbound STREAM payload carried no readable stream. The tunnel " +
+                                    "cannot be completed from this payload; waiting for another."
+                        )
+                    } else if (pendingInboundStream != null || socket?.inputStreamWrapper != null || socket?.isClosed == true) {
+                        // A tunnel has one inbound stream. Replacing it would splice two byte streams
+                        // into the same TLS session; retain the first and close the duplicate.
+                        if (inbound !== pendingInboundStream && inbound !== socket?.inputStreamWrapper) {
+                            try { inbound.close() } catch (_: Exception) {}
+                        }
+                    } else if (socket != null) {
+                        socket.inputStreamWrapper = inbound
+                        AppLog.i("NearbyManager: InputStream assigned to socket. Handshake should continue.")
+                    } else {
+                        // Arriving before our own socket exists is legal -- the two sides register their
+                        // payloads independently and nothing orders them. Dropping it here (which a
+                        // null-safe assignment did, silently) cost us the only inbound stream the phone
+                        // will ever send: it does not retry, so the tunnel stayed half-open until Nearby
+                        // gave up minutes later with no record of the cause.
+                        AppLog.w("NearbyManager: Inbound STREAM arrived before the socket existed; holding it until the tunnel is built.")
+                        pendingInboundStream = inbound
+                    }
                 }
+                if (!accepted) try { inbound?.close() } catch (_: Exception) {}
             } else if (payload.type == Payload.Type.BYTES) {
                 val msg = String(payload.asBytes() ?: byteArrayOf())
                 AppLog.i("NearbyManager: Received BYTES payload: $msg")
@@ -530,22 +593,24 @@ class NearbyManager(
 
 
         override fun onPayloadTransferUpdate(endpointId: String, update: PayloadTransferUpdate) {
-            if (update.status == PayloadTransferUpdate.Status.SUCCESS) {
-                AppLog.d("NearbyManager: Payload transfer SUCCESS for endpoint $endpointId")
-            } else if (update.status == PayloadTransferUpdate.Status.FAILURE) {
-                AppLog.e("NearbyManager: Payload transfer FAILURE for endpoint $endpointId")
-                // Only worth explaining while the tunnel was still being built. A failure after the
-                // session has run is just the stream ending with it.
-                //
-                // The test is whether the inbound half ever attached, which is what "built" means
-                // here. Asking instead whether the socket exists and nothing is pending inverted it:
-                // in the canonical failure -- socket built, phone never registered its stream -- both
-                // of those are false, so the one case this explanation was written for was the one
-                // case it stayed silent for. Asking whether anything is *pending* cannot work either,
-                // because a completed session has nothing pending too.
-                val tunnelIncomplete = activeNearbySocket?.inputStreamWrapper == null
-                if (tunnelIncomplete) {
-                    describeTunnelFailure()?.let { AppLog.e("NearbyManager: $it") }
+            attempts.run(attempt, endpointId) {
+                if (update.status == PayloadTransferUpdate.Status.SUCCESS) {
+                    AppLog.d("NearbyManager: Payload transfer SUCCESS for endpoint $endpointId")
+                } else if (update.status == PayloadTransferUpdate.Status.FAILURE) {
+                    AppLog.e("NearbyManager: Payload transfer FAILURE for endpoint $endpointId")
+                    // Only worth explaining while the tunnel was still being built. A failure after the
+                    // session has run is just the stream ending with it.
+                    //
+                    // The test is whether the inbound half ever attached, which is what "built" means
+                    // here. Asking instead whether the socket exists and nothing is pending inverted it:
+                    // in the canonical failure -- socket built, phone never registered its stream -- both
+                    // of those are false, so the one case this explanation was written for was the one
+                    // case it stayed silent for. Asking whether anything is *pending* cannot work either,
+                    // because a completed session has nothing pending too.
+                    val tunnelIncomplete = activeNearbySocket?.inputStreamWrapper == null
+                    if (tunnelIncomplete) {
+                        describeTunnelFailure()?.let { AppLog.e("NearbyManager: $it") }
+                    }
                 }
             }
         }

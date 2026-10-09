@@ -374,6 +374,40 @@ class CommManager(
         else ConnectionArbiter.claim(tier, ConnectionPriorityPolicy.Owner.USB, description)
     }
 
+    // Failed physical attempts and permission errors belong to the same recovery interval.
+    // End it at the producer, not the conflated observer: a complete session can start and end
+    // before the service receives either event. Explicit stop and Save also revoke old checks.
+    private var usbRecoveryOwner: Any = Any()
+
+    internal fun usbRecheckOwner(ended: ConnectionState.Disconnected): Any? =
+        synchronized(transportLifecycleLock) {
+            usbRecoveryOwner.takeIf {
+                _connectionState.value === ended && !ended.isUserExit && !ended.isSettingsRestart
+            }
+        }
+
+    /** Attach/re-enumeration scans can be owed while the current attempt is still running. */
+    internal fun usbRecheckOwner(): Any = synchronized(transportLifecycleLock) { usbRecoveryOwner }
+
+    internal fun ownsUsbRecheck(owner: Any): Boolean =
+        synchronized(transportLifecycleLock) { usbRecoveryOwner === owner }
+
+    /** Returns true while a connection attempt owns the scan slot; another owner owes USB a retry. */
+    internal fun deferUsbCheckForConnectionAttempt(): Boolean = synchronized(transportLifecycleLock) {
+        when (_connectionState.value) {
+            ConnectionState.Connecting, ConnectionState.Connected, ConnectionState.StartingTransport -> {
+                // An open socket is not a completed handshake. Register the debt under the same
+                // lock that settles the session claim, so handshake completion cannot pass between
+                // the state check and holdUsbCheck(). The arbiter returns it after a failed attempt;
+                // a successful session keeps it parked until that session ends. A USB-owned
+                // attempt already serves this scan and needs no second debt to itself.
+                ConnectionArbiter.holdUsbCheck()
+                true
+            }
+            else -> false
+        }
+    }
+
     @Volatile private var settingsUsbRestartInFlight: ConnectionState.Disconnected? = null
 
     /** A re-enumerated accessory still belongs to Save, but only inside its original window. */
@@ -461,8 +495,9 @@ class CommManager(
                 if (connectionAttempt !== attempt || disconnectRequested) return
                 onSessionFailure?.invoke("connect_failed")
                 _connectionState.value = ConnectionState.Error("Connection failed: ${e.message}")
-                if (expectedState == null) disconnect()
-                else disconnect(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false, settingsRetryOwner = expectedState)
+                // A thrown open failure has the same retry policy as connect() returning false.
+                // No user chose Exit, and an unopened session must not close the service either.
+                disconnect(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false, settingsRetryOwner = expectedState)
             }
         } finally {
             val retired = synchronized(transportLifecycleLock) {
@@ -485,20 +520,86 @@ class CommManager(
         tier: ConnectionPriorityPolicy.Tier = ConnectionPriorityPolicy.Tier.WIRELESS_HANDSHAKE,
         restartEndpoint: Pair<String, Int>? = null,
         expectedState: ConnectionState.Disconnected? = null,
+        admission: ConnectionAdmission = ConnectionAdmission.UNRESTRICTED,
     ) = withContext(Dispatchers.IO) {
-        if (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value)) {
+        var claim: ConnectionArbiter.Claim? = null
+        // Match publication's lock order: lifecycle, producer, then arbiter. Save admission
+        // also takes the lifecycle lock before the arbiter; reversing it can deadlock.
+        synchronized(transportLifecycleLock) {
+            admission.run {
+                if (!socket.isClosed &&
+                    (expectedState == null || expectedState.acceptsSettingsRestart(_connectionState.value))) {
+                    claim = claimSocket(tier, "the socket from ${socket.inetAddress?.hostAddress}", expectedState)
+                }
+            }
+        }
+        val ownedClaim = claim
+        if (ownedClaim == null) {
             HeldServerSocket.abandon(socket)
+            try { socket.close() } catch (_: Exception) {}
+            if (admission !== ConnectionAdmission.UNRESTRICTED) throw ConnectionAdmissionRejectedException()
             return@withContext
         }
-        val claim = claimSocket(tier, "the socket from ${socket.inetAddress?.hostAddress}", expectedState)
-        if (claim == null) {
-            HeldServerSocket.settle(socket)
-            try { socket.close() } catch (e: Exception) {}
-            return@withContext
-        }
-        noteClaimedEndpoint(claim, socketEndpoint(socket))
+        noteClaimedEndpoint(ownedClaim, socketEndpoint(socket))
         HeldServerSocket.settle(socket)
-        try { connectSocket(socket, restartEndpoint, expectedState) } finally { releaseClaim(claim) }
+        try {
+            if (admission === ConnectionAdmission.UNRESTRICTED) connectSocket(socket, restartEndpoint, expectedState)
+            else connectAdmittedSocket(socket, admission.withClaim(ownedClaim), restartEndpoint, expectedState)
+        } finally { releaseClaim(ownedClaim) }
+    }
+
+    private suspend fun connectAdmittedSocket(
+        socket: Socket,
+        admission: ConnectionAdmission,
+        restartEndpoint: Pair<String, Int>?,
+        expectedState: ConnectionState.Disconnected?,
+    ) {
+        var transferred = false
+        var terminal: ConnectionState? = null
+        val publication = ConnectionAdmission { action ->
+            synchronized(transportLifecycleLock) { admission.run(action) }
+        }
+        try {
+            // Keep preparation local. Only the final transfer joins CommManager's lifecycle;
+            // cancellation closes this candidate without disconnecting a replacement session.
+            transferred = publication.prepareAndPublish(
+                awaitRetirement = {
+                    _disconnectJob?.join()
+                    synchronized(transportLifecycleLock) { terminal = _connectionState.value }
+                },
+                create = { SocketProjectionConnection(socket, context) },
+                open = { candidate ->
+                    if (!candidate.connect()) throw java.io.IOException("Cannot open Nearby tunnel streams")
+                },
+                publish = { candidate ->
+                    // Permission failures can leave Error without owning a connection. It is
+                    // reusable like Disconnected, but only while that exact state and both
+                    // resource owners remain unchanged throughout candidate preparation.
+                    if (socket.isClosed || _connectionState.value !== terminal ||
+                        (terminal !is ConnectionState.Disconnected && terminal !is ConnectionState.Error) ||
+                        _connection != null || _transport != null ||
+                        (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value))) {
+                        false
+                    } else {
+                        lastAttemptedEndpoint = socketEndpoint(socket)
+                        outgoingEndpoint = restartEndpoint
+                        connectionAttempt = Any()
+                        physicalConnectionReached = true
+                        disconnectRequested = false
+                        _connection = candidate
+                        _connectionState.value = ConnectionState.Connected
+                        true
+                    }
+                },
+                dispose = { it.disconnect() },
+            )
+            // Closing the candidate alone leaves Nearby's endpoint/pipe bookkeeping alive.
+            // Signal rejection back through the awaited handoff so that producer can retire it.
+            if (!transferred) throw ConnectionAdmissionRejectedException()
+        } finally {
+            // Also covers cancellation while waiting, before a wrapper has been allocated.
+            if (!transferred) try { socket.close() } catch (_: Exception) {}
+        }
     }
 
     private fun socketEndpoint(socket: Socket): String? =
@@ -578,7 +679,7 @@ class CommManager(
                 if (connectionAttempt !== attempt || disconnectRequested) return
                 onSessionFailure?.invoke("connect_failed")
                 _connectionState.value = ConnectionState.Error("Connection failed: ${e.message}")
-                disconnect()
+                disconnect(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
             }
         } finally {
             val retired = synchronized(transportLifecycleLock) {
@@ -672,7 +773,7 @@ class CommManager(
                 if (connectionAttempt !== attempt || disconnectRequested) return
                 onSessionFailure?.invoke("connect_failed")
                 _connectionState.value = ConnectionState.Error("Connection failed: ${e.message}")
-                disconnect()
+                disconnect(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
             }
         } finally {
             val retired = synchronized(transportLifecycleLock) {
@@ -709,12 +810,18 @@ class CommManager(
         else ConnectionPriorityPolicy.Owner.WIRELESS_STACK
 
     /** An opened transport keeps its claim through the handshake; anything else lets it go. */
-    private fun releaseClaim(claim: ConnectionArbiter.Claim) {
-        if (_connectionState.value is ConnectionState.Connected && ConnectionArbiter.holds(claim)) {
+    private fun releaseClaim(claim: ConnectionArbiter.Claim): Unit = synchronized(transportLifecycleLock) {
+        // The observer can start or finish SSL before connect() reaches its finally block.
+        // Keep the claim through StartingTransport; releasing it there would lose USB checks
+        // arriving during SSL. If SSL has already finished, settle it as a formed session.
+        val state = _connectionState.value
+        if ((state is ConnectionState.Connected || state is ConnectionState.StartingTransport) &&
+            ConnectionArbiter.holds(claim)) {
             sessionClaim = claim
         } else {
             clearClaimedEndpoint(claim)
-            ConnectionArbiter.release(claim, sessionFormed = false)
+            ConnectionArbiter.release(claim, sessionFormed =
+                state is ConnectionState.HandshakeComplete || state is ConnectionState.TransportStarted)
         }
     }
 
@@ -788,6 +895,7 @@ class CommManager(
                     withLiveTransport(transport, ConnectionState.StartingTransport) {
                         // A session that got this far had a working link to carry video on. See
                         // VideoStarvationPolicy for what it means when one ends without carrying any.
+                        usbRecoveryOwner = Any()
                         sessionReachedHandshake = true
                         videoDecoder.framesRenderedThisSession = 0L
                         silentPeerFailures = 0
@@ -923,15 +1031,19 @@ class CommManager(
         } catch (e: Exception) {
             withLiveTransport(transport, ConnectionState.HandshakeComplete) {
                 _connectionState.value = ConnectionState.Error("Start reading failed: ${e.message}")
-                disconnect()
+                // Startup failed locally. Preserve automatic recovery and do not send the peer
+                // a USER_SELECTION ByeBye for an exit the user never requested.
+                disconnect(sendByeBye = false, isUserExit = false)
             }
         }
     }
 
-    /** Reports a failure and tears the connection down with it. */
+    /** Reports an internal failure without applying the user's explicit Exit policy. */
     suspend fun emitError(msg: String) {
-        _connectionState.emit(ConnectionState.Error(msg))
-        disconnect()
+        synchronized(transportLifecycleLock) {
+            _connectionState.value = ConnectionState.Error(msg)
+            disconnect(sendByeBye = false, isUserExit = false)
+        }
     }
 
     /**
@@ -969,6 +1081,7 @@ class CommManager(
         if (_transport !== source || disconnectRequested) return@synchronized
         disconnectRequested = true
         val wasUserExit = source.wasUserExit
+        if (wasUserExit) usbRecoveryOwner = Any()
         // Keep the retiring owner published until doDisconnect captures it. Its callback
         // precedes final cleanup, so reconnect must await its actual termination as well.
         // Publish cleanup before state: a reconnect observer must be able to await this job.
@@ -1279,6 +1392,7 @@ class CommManager(
         reason: DisconnectReason = DisconnectReason.CONNECTION_ENDED,
         settingsRetryOwner: ConnectionState.Disconnected? = null,
     ): Unit = synchronized(transportLifecycleLock) {
+        if (isUserExit || reason == DisconnectReason.SETTINGS_RESTART) usbRecoveryOwner = Any()
         if (isUserExit && reason != DisconnectReason.SETTINGS_RESTART) cancelPendingSettingsRestart()
         if (disconnectRequested || _connectionState.value is ConnectionState.Disconnected) return@synchronized
         disconnectRequested = true

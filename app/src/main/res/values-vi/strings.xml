@@ -1147,8 +1147,11 @@
     <string name="category_more_features">Tính năng khác</string>
     <string name="pref_enable_floating_button_title">Nút khởi chạy nổi</string>
     <string name="pref_enable_floating_button_summary">Hiển thị nút nổi trên trình khởi chạy gốc và các ứng dụng khác để nhanh chóng quay lại Open Headunit</string>
+    <string name="pref_floating_button_connection_status_title">Chỉ báo trạng thái kết nối</string>
+    <string name="pref_floating_button_connection_status_summary">Dùng Độ mờ khi ngắt kết nối khi chưa có điện thoại nào kết nối, rồi mờ dần về Độ mờ nút nổi khi có điện thoại kết nối. Ở 0%, nút bị ẩn và cho phép chạm xuyên qua.</string>
     <string name="pref_floating_button_size_title">Kích thước nút nổi</string>
     <string name="pref_floating_button_opacity_title">Độ mờ nút nổi</string>
+    <string name="pref_floating_button_disconnected_opacity_title">Độ mờ khi ngắt kết nối</string>
     <string name="pref_floating_button_x_title">Vị trí ngang (X)</string>
     <string name="pref_floating_button_y_title">Vị trí dọc (Y)</string>
     <string name="pref_aa_exit_action_title">Hành động khi thoát Android Auto</string>

@@ -1144,8 +1144,11 @@
     <string name="category_more_features">Další funkce</string>
     <string name="pref_enable_floating_button_title">Plovoucí tlačítko spouštěče</string>
     <string name="pref_enable_floating_button_summary">Zobrazí plovoucí tlačítko nad OEM spouštěčem a jinými aplikacemi pro rychlý návrat do Open Headunit</string>
+    <string name="pref_floating_button_connection_status_title">Indikátor stavu připojení</string>
+    <string name="pref_floating_button_connection_status_summary">Když není připojen telefon, použije Průhlednost při odpojení, a při připojeném telefonu zeslábne na Průhlednost plovoucího tlačítka. Při 0 % je tlačítko skryté a propouští klepnutí.</string>
     <string name="pref_floating_button_size_title">Velikost plovoucího tlačítka</string>
     <string name="pref_floating_button_opacity_title">Průhlednost plovoucího tlačítka</string>
+    <string name="pref_floating_button_disconnected_opacity_title">Průhlednost při odpojení</string>
     <string name="pref_floating_button_x_title">Vodorovná pozice (X)</string>
     <string name="pref_floating_button_y_title">Svislá pozice (Y)</string>
     <string name="pref_aa_exit_action_title">Akce při ukončení Android Auto</string>

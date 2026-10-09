@@ -78,4 +78,11 @@ class FloatingButtonOpacityPolicyTest {
         assertTrue(FloatingButtonOpacityPolicy.isTouchable(0.1f))
         assertTrue(FloatingButtonOpacityPolicy.isTouchable(0.8f))
     }
+
+    @Test
+    fun `a hidden button has a fully transparent window and a visible one an opaque window`() {
+        assertEquals(0.0f, FloatingButtonOpacityPolicy.windowAlpha(0.0f), 0.001f)
+        assertEquals(1.0f, FloatingButtonOpacityPolicy.windowAlpha(0.05f), 0.001f)
+        assertEquals(1.0f, FloatingButtonOpacityPolicy.windowAlpha(0.8f), 0.001f)
+    }
 }

@@ -1142,8 +1142,11 @@
     <string name="category_more_features">更多功能</string>
     <string name="pref_enable_floating_button_title">悬浮快捷按钮</string>
     <string name="pref_enable_floating_button_summary">在原厂启动器及其他应用上方显示悬浮按钮，以便快速返回 Open Headunit</string>
+    <string name="pref_floating_button_connection_status_title">连接状态指示</string>
+    <string name="pref_floating_button_connection_status_summary">未连接手机时使用“未连接时不透明度”，手机连接后渐变为“悬浮按钮不透明度”。为0%时，按钮会隐藏并让触摸穿透。</string>
     <string name="pref_floating_button_size_title">悬浮按钮大小</string>
     <string name="pref_floating_button_opacity_title">悬浮按钮不透明度</string>
+    <string name="pref_floating_button_disconnected_opacity_title">未连接时不透明度</string>
     <string name="pref_floating_button_x_title">水平位置 (X)</string>
     <string name="pref_floating_button_y_title">垂直位置 (Y)</string>
     <string name="pref_aa_exit_action_title">退出 Android Auto 的动作</string>

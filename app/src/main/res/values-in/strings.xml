@@ -511,8 +511,11 @@
     <string name="pref_default_launcher_status_inactive">Belum diatur (Ketuk untuk mengatur sebagai default)</string>
     <string name="pref_enable_floating_button_title">Tombol Peluncur Melayang</string>
     <string name="pref_enable_floating_button_summary">Menampilkan tombol melayang di atas peluncur OEM dan aplikasi lain untuk kembali ke Open Headunit dengan cepat</string>
+    <string name="pref_floating_button_connection_status_title">Indikator Status Koneksi</string>
+    <string name="pref_floating_button_connection_status_summary">Memakai Opasitas Terputus saat tidak ada ponsel yang terhubung, lalu memudar ke Opasitas Tombol Melayang saat ponsel terhubung. Pada 0%, tombol disembunyikan dan meneruskan ketukan.</string>
     <string name="pref_floating_button_size_title">Ukuran Tombol Melayang</string>
     <string name="pref_floating_button_opacity_title">Opasitas Tombol Melayang</string>
+    <string name="pref_floating_button_disconnected_opacity_title">Opasitas Terputus</string>
     <string name="pref_floating_button_x_title">Posisi Horizontal (X)</string>
     <string name="pref_floating_button_y_title">Posisi Vertikal (Y)</string>
     <string name="pref_aa_exit_action_title">Tindakan Keluar Android Auto</string>

@@ -1145,8 +1145,11 @@
     <string name="category_more_features">Додаткові функції</string>
     <string name="pref_enable_floating_button_title">Плаваюча кнопка запуску</string>
     <string name="pref_enable_floating_button_summary">Відображає плаваючу кнопку поверх штатного лаунчера та інших програм для швидкого повернення до Open Headunit</string>
+    <string name="pref_floating_button_connection_status_title">Індикатор стану підключення</string>
+    <string name="pref_floating_button_connection_status_summary">Коли телефон не підключено, використовує прозорість при відключенні, а коли підключено, плавно переходить до прозорості плаваючої кнопки. При 0% кнопка прихована й пропускає дотики.</string>
     <string name="pref_floating_button_size_title">Розмір плаваючої кнопки</string>
     <string name="pref_floating_button_opacity_title">Прозорість плаваючої кнопки</string>
+    <string name="pref_floating_button_disconnected_opacity_title">Прозорість при відключенні</string>
     <string name="pref_floating_button_x_title">Горизонтальне положення (X)</string>
     <string name="pref_floating_button_y_title">Вертикальне положення (Y)</string>
     <string name="pref_aa_exit_action_title">Дія при виході з Android Auto</string>

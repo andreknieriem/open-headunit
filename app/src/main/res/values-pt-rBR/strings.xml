@@ -1145,8 +1145,11 @@
     <string name="category_more_features">Mais recursos</string>
     <string name="pref_enable_floating_button_title">Botão flutuante do inicializador</string>
     <string name="pref_enable_floating_button_summary">Exibe um botão flutuante sobre o iniciador original e outros apps para retornar rapidamente ao Open Headunit</string>
+    <string name="pref_floating_button_connection_status_title">Indicador de status da conexão</string>
+    <string name="pref_floating_button_connection_status_summary">Usa a Opacidade desconectado quando nenhum telefone está conectado e esmaece até a Opacidade do botão flutuante enquanto um telefone está conectado. Em 0%, o botão fica oculto e deixa os toques passarem.</string>
     <string name="pref_floating_button_size_title">Tamanho do botão flutuante</string>
     <string name="pref_floating_button_opacity_title">Opacidade do botão flutuante</string>
+    <string name="pref_floating_button_disconnected_opacity_title">Opacidade desconectado</string>
     <string name="pref_floating_button_x_title">Posição horizontal (X)</string>
     <string name="pref_floating_button_y_title">Posição vertical (Y)</string>
     <string name="pref_aa_exit_action_title">Ação ao sair do Android Auto</string>

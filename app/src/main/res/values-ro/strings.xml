@@ -1141,8 +1141,11 @@
     <string name="category_more_features">Mai multe funcții</string>
     <string name="pref_enable_floating_button_title">Buton plutitor lansator</string>
     <string name="pref_enable_floating_button_summary">Afișează un buton plutitor peste lansatorul OEM și alte aplicații pentru a reveni rapid la Open Headunit</string>
+    <string name="pref_floating_button_connection_status_title">Indicator stare conexiune</string>
+    <string name="pref_floating_button_connection_status_summary">Folosește Opacitate deconectat când niciun telefon nu este conectat și se estompează la Opacitate buton plutitor cât timp un telefon este conectat. La 0%, butonul este ascuns și lasă atingerile să treacă.</string>
     <string name="pref_floating_button_size_title">Dimensiune buton plutitor</string>
     <string name="pref_floating_button_opacity_title">Opacitate buton plutitor</string>
+    <string name="pref_floating_button_disconnected_opacity_title">Opacitate deconectat</string>
     <string name="pref_floating_button_x_title">Poziție orizontală (X)</string>
     <string name="pref_floating_button_y_title">Poziție verticală (Y)</string>
     <string name="pref_aa_exit_action_title">Acțiune la ieșirea din Android Auto</string>

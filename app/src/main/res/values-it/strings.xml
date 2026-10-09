@@ -1147,8 +1147,11 @@
     <string name="category_more_features">Altre funzionalità</string>
     <string name="pref_enable_floating_button_title">Pulsante mobile di avvio</string>
     <string name="pref_enable_floating_button_summary">Mostra un pulsante mobile sopra il launcher OEM e altre app per tornare rapidamente a Open Headunit</string>
+    <string name="pref_floating_button_connection_status_title">Indicatore di stato della connessione</string>
+    <string name="pref_floating_button_connection_status_summary">Usa l\'Opacità da disconnesso quando nessun telefono è connesso e sfuma fino all\'Opacità del pulsante mobile mentre un telefono è connesso. Allo 0%, il pulsante è nascosto e lascia passare i tocchi.</string>
     <string name="pref_floating_button_size_title">Dimensione del pulsante mobile</string>
     <string name="pref_floating_button_opacity_title">Opacità del pulsante mobile</string>
+    <string name="pref_floating_button_disconnected_opacity_title">Opacità da disconnesso</string>
     <string name="pref_floating_button_x_title">Posizione orizzontale (X)</string>
     <string name="pref_floating_button_y_title">Posizione verticale (Y)</string>
     <string name="pref_aa_exit_action_title">Azione di uscita da Android Auto</string>

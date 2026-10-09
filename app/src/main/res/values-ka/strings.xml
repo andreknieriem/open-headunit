@@ -1125,8 +1125,11 @@
     <string name="category_more_features">მეტი ფუნქცია</string>
     <string name="pref_enable_floating_button_title">მცურავი ღილაკი</string>
     <string name="pref_enable_floating_button_summary">აჩვენებს მცურავ ღილაკს სისტემურ ლაუნჩერსა და აპებზე Open Headunit-ში სწრაფად დასაბრუნებლად</string>
+    <string name="pref_floating_button_connection_status_title">კავშირის სტატუსის ინდიკატორი</string>
+    <string name="pref_floating_button_connection_status_summary">ტელეფონის არარსებობისას იყენებს გათიშულის გამჭვირვალობას, ხოლო ტელეფონის დაკავშირებისას ქრება მცურავი ღილაკის გამჭვირვალობამდე. 0%-ზე ღილაკი დამალულია და შეხებებს გაატარებს.</string>
     <string name="pref_floating_button_size_title">მცურავი ღილაკის ზომა</string>
     <string name="pref_floating_button_opacity_title">მცურავი ღილაკის გამჭვირვალობა</string>
+    <string name="pref_floating_button_disconnected_opacity_title">გათიშულის გამჭვირვალობა</string>
     <string name="pref_floating_button_x_title">ჰორიზონტალური პოზიცია (X)</string>
     <string name="pref_floating_button_y_title">ვერტიკალური პოზიცია (Y)</string>
     <string name="pref_aa_exit_action_title">Android Auto-დან გასვლის მოქმედება</string>

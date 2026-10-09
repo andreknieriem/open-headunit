@@ -1210,8 +1210,11 @@
     <string name="category_more_features">Autres fonctionnalités</string>
     <string name="pref_enable_floating_button_title">Bouton flottant du lanceur</string>
     <string name="pref_enable_floating_button_summary">Affiche un bouton flottant au-dessus du lanceur OEM et d\'autres applications pour revenir rapidement à Open Headunit</string>
+    <string name="pref_floating_button_connection_status_title">Indicateur d\'état de connexion</string>
+    <string name="pref_floating_button_connection_status_summary">Utilise l\'Opacité hors connexion quand aucun téléphone n\'est connecté, puis passe à l\'Opacité du bouton flottant pendant qu\'un téléphone est connecté. À 0 %, le bouton est masqué et laisse passer les appuis.</string>
     <string name="pref_floating_button_size_title">Taille du bouton flottant</string>
     <string name="pref_floating_button_opacity_title">Opacité du bouton flottant</string>
+    <string name="pref_floating_button_disconnected_opacity_title">Opacité hors connexion</string>
     <string name="pref_floating_button_x_title">Position horizontale (X)</string>
     <string name="pref_floating_button_y_title">Position verticale (Y)</string>
     <string name="pref_aa_exit_action_title">Action pour quitter Android Auto</string>

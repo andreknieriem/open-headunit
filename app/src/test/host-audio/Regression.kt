@@ -23,6 +23,7 @@ private fun focusLease() = PlaybackFocusLease().apply {
 private fun PlaybackFocusLease.activity(channel: Int, nowMs: Long) = activity(channel, fixtureOwner, nowMs)
 
 fun main() {
+    pcmRateChangeTailRegression()
     mixedCodecRegression(staticFocus = true)
     mixedCodecRegression(staticFocus = false)
     audioSettingsRegression()
@@ -1403,4 +1404,29 @@ private fun mixedCodecRegression(staticFocus: Boolean) {
         audio.releaseAllFocus(); decoder.stop(); handler.runAll(); handler.reset(); configs.formats = emptyMap()
     }
     println("PASS mixed AAC music and PCM voice/system (staticFocus=$staticFocus) preserve tails, repeated Setup and local restart; actual Setup wins")
+}
+
+private fun pcmRateChangeTailRegression() {
+    // Do not start the render worker: both sides of Start remain buffered deterministically.
+    val mixer = AudioMixer(3, false)
+    var retired = 0
+    val track = AudioTrackWrapper(16000, 16, 1, false, 1f, mixer = mixer, channelId = 4,
+        onOwnerRetired = { retired++ })
+    val state = field(track, "mixerChannel") as AudioMixer.Channel
+    try {
+        val old = ByteArray(320) { if (it % 2 == 0) 64 else 0 }
+        track.write(old, 0, old.size)
+        track.pauseForIdle()
+        check(state.buffer.depthFrames() == 480)
+        check(track.updatePcmFormat(48000, 1))
+        check(state.buffer.depthFrames() == 480 && retired == 0)
+        track.preparePlayback()
+        val fresh = ByteArray(960) { if (it % 2 == 0) 64 else 0 }
+        track.write(fresh, 0, fresh.size)
+        check(state.buffer.depthFrames() == 960) { "48k input was resampled with the old rate, or the old tail was lost" }
+        check(track.updatePcmFormat(16000, 1))
+        track.write(old, 0, old.size)
+        check(state.buffer.depthFrames() == 1440 && state.rate == 16000 && retired == 0)
+    } finally { finish(track); mixer.stop() }
+    println("PASS PCM 16/48/16k changes preserve every queued frame and the playback owner")
 }

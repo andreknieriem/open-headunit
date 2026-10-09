@@ -644,6 +644,8 @@
     <!-- Native USB Driver -->
     <string name="use_libusb">Використовувати нативний USB-драйвер</string>
     <string name="use_libusb_description">Використовувати libusb для зв\'язку. Вимкніть, щоб використовувати стандартний USB API Android.</string>
+    <string name="usb_keep_phone_media_audio">Залишати мультимедійний звук телефона через USB</string>
+    <string name="usb_keep_phone_media_audio_description">Під час сеансу USB Android Auto може вимкнути мультимедійний звук Bluetooth телефона для цієї магнітоли. Цей параметр запобігає цьому. Тоді виклики можуть залишитися на телефоні, а не на магнітолі.</string>
 
     <string name="software_video_decoder">Джерело програмного декодера</string>
     <string name="software_video_decoder_bundled">Вбудований FFmpeg</string>

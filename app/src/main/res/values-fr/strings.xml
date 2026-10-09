@@ -907,6 +907,8 @@
     <string name="share_hotspot_qr_error">Impossible de récupérer les identifiants actifs du point d\'accès Wi-Fi. Assure-toi que ton point d\'accès est allumé et que la position est activée.</string>
     <string name="use_libusb">Utiliser le pilote USB natif</string>
     <string name="use_libusb_description">Utiliser libusb pour la communication. Désactive pour utiliser l\'API USB standard d\'Android.</string>
+    <string name="usb_keep_phone_media_audio">Garder le son multimédia du téléphone actif via USB</string>
+    <string name="usb_keep_phone_media_audio_description">Android Auto peut désactiver le son multimédia Bluetooth du téléphone pour cet autoradio pendant une session USB. Cette option l\'empêche. Les appels peuvent alors rester sur le téléphone au lieu de l\'autoradio.</string>
 
     <string name="btn_show_qr">Afficher le code QR</string>
     <string name="su_needed_keymaps_warning">Avertissement : Ton autoradio doit être rooté, ou avoir Shizuku installé. Si c\'est le cas, tu dois autoriser les droits SU quand on te le demande. Les boutons au volant ne seront probablement pas fonctionnels tant que ce n\'est pas réglé.</string>

@@ -1148,6 +1148,8 @@
     <string name="share_hotspot_qr_error">ไม่สามารถดึงข้อมูลประจำตัวฮอตสปอต Wi-Fi ที่ใช้งานอยู่ได้ ตรวจสอบว่าเปิดฮอตสปอตและตำแหน่งแล้ว</string>
     <string name="use_libusb">ใช้ไดรเวอร์ USB ดั้งเดิม (Native)</string>
     <string name="use_libusb_description">ใช้ libusb สำหรับการสื่อสาร ปิดใช้งานเพื่อใช้ Android USB API มาตรฐาน</string>
+    <string name="usb_keep_phone_media_audio">คงเสียงสื่อของโทรศัพท์ไว้ผ่าน USB</string>
+    <string name="usb_keep_phone_media_audio_description">Android Auto อาจปิดเสียงสื่อ Bluetooth ของโทรศัพท์สำหรับเครื่องเล่นในรถนี้ระหว่างเซสชัน USB ตัวเลือกนี้ป้องกันไม่ให้เกิดขึ้น สายโทรเข้าอาจอยู่ที่โทรศัพท์แทนที่จะอยู่ที่เครื่องเล่นในรถ</string>
 
     <string name="btn_show_qr">แสดงรหัส QR</string>
     <string name="su_needed_keymaps_warning">คำเตือน: เฮดยูนิตของคุณต้องได้รับการรูท หรือติดตั้ง Shizuku ไว้ คุณต้องอนุญาตสิทธิ์ SU เมื่อมีข้อความแจ้ง</string>

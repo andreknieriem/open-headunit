@@ -642,6 +642,8 @@
     <!-- Native USB Driver -->
     <string name="use_libusb">使用原生 USB 驱动程式</string>
     <string name="use_libusb_description">使用 libusb 进行通讯。停用以使用 Android 的标准 USB API。</string>
+    <string name="usb_keep_phone_media_audio">通过 USB 保持手机媒体音频开启</string>
+    <string name="usb_keep_phone_media_audio_description">在 USB 会话期间，Android Auto 可能会关闭手机面向此车机的蓝牙媒体音频。启用此选项可阻止这种情况。这样一来，通话可能会留在手机上，而不是车机上。</string>
 
     <string name="software_video_decoder">软件解码器来源</string>
     <string name="software_video_decoder_bundled">内置 FFmpeg</string>

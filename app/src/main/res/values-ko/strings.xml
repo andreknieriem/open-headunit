@@ -656,6 +656,8 @@
     <string name="share_hotspot_qr_error">현재 Wi-Fi 핫스팟 정보를 가져올 수 없습니다. 핫스팟이 켜져 있고 위치 서비스가 활성화되어 있는지 확인하세요.</string>
     <string name="use_libusb">네이티브 USB 드라이버 사용</string>
     <string name="use_libusb_description">USB 통신에 libusb를 사용합니다. 비활성화 시 Android 표준 USB API를 사용합니다.</string>
+    <string name="usb_keep_phone_media_audio">USB 연결 중 휴대전화 미디어 오디오 유지</string>
+    <string name="usb_keep_phone_media_audio_description">USB 세션 중에 Android Auto가 이 헤드유닛에 대한 휴대전화의 블루투스 미디어 오디오를 끌 수 있습니다. 이 옵션을 사용 설정하면 이를 막습니다. 이 경우 전화 통화가 헤드유닛이 아닌 휴대전화에 남을 수 있습니다.</string>
     <string name="btn_show_qr">QR 코드 표시</string>
     <string name="renderer_fallback_surface">영상이 계속 멈춰서 이번 세션 동안 화면을 SurfaceView로 전환했습니다. 안정적이면 설정에서 뷰 모드를 SurfaceView로 지정하세요.</string>
     <string name="dpi_resolution_over_panel_warning">선택한 해상도(%1$s)가 패널보다 높습니다. %2$s로 제한되며 DPI도 이에 맞춰 계산됩니다. 화면이 이상하면 권장 해상도(%2$s)를 사용하세요.</string>

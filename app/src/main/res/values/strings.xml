@@ -1190,6 +1190,8 @@
     <string name="share_hotspot_qr_error">Could not retrieve active Wi-Fi hotspot credentials. Please ensure your hotspot is turned on and Location is enabled.</string>
     <string name="use_libusb">Use Native USB Driver</string>
     <string name="use_libusb_description">Use libusb for communication. Disable to use Android\'s standard USB API.</string>
+    <string name="usb_keep_phone_media_audio">Keep the phone\'s Media audio on over USB</string>
+    <string name="usb_keep_phone_media_audio_description">Android Auto can turn off the phone\'s Bluetooth Media audio for this head unit during a USB session. This stops that. Phone calls may then stay on the phone instead of the head unit.</string>
 
     <string name="btn_show_qr">Show QR Code</string>
     <string name="su_needed_keymaps_warning">Warning: Your headunit must be either rooted, or have Shizuku installed. If that\'s the case, you must allow SU rights, once prompted. Steering keys likely are not functional until this is fixed.</string>

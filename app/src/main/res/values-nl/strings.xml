@@ -643,6 +643,8 @@
     <!-- Native USB Driver -->
     <string name="use_libusb">Gebruik native USB-stuurprogramma</string>
     <string name="use_libusb_description">Gebruik libusb voor communicatie. Uitschakelen om de standaard USB-API van Android te gebruiken.</string>
+    <string name="usb_keep_phone_media_audio">Media-audio van de telefoon aanhouden via USB</string>
+    <string name="usb_keep_phone_media_audio_description">Android Auto kan tijdens een USB-sessie de Bluetooth-media-audio van de telefoon voor deze autoradio uitschakelen. Met deze optie gebeurt dat niet. Gesprekken kunnen dan op de telefoon blijven in plaats van op de autoradio.</string>
 
     <string name="software_video_decoder">Software decoder bron</string>
     <string name="software_video_decoder_bundled">Gebundeld FFmpeg</string>

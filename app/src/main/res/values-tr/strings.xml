@@ -639,6 +639,8 @@
     <!-- Native USB Driver -->
     <string name="use_libusb">Yerel USB Sürücüsünü Kullan</string>
     <string name="use_libusb_description">İletişim için libusb kullanın. Android\'in standart USB API\'sini kullanmak için devre dışı bırakın.</string>
+    <string name="usb_keep_phone_media_audio">USB\'de telefonun medya sesini açık tut</string>
+    <string name="usb_keep_phone_media_audio_description">Android Auto, USB oturumu sırasında telefonun Bluetooth medya sesini bu ana ünite için kapatabilir. Bu seçenek bunu engeller. Aramalar bu durumda ana ünite yerine telefonda kalabilir.</string>
 
     <string name="software_video_decoder">Yazılım Kod Çözücü Kaynağı</string>
     <string name="software_video_decoder_bundled">Yerleşik FFmpeg</string>

@@ -652,6 +652,8 @@
     <!-- Native USB Driver -->
     <string name="use_libusb">ネイティブUSBドライバーを使用する</string>
     <string name="use_libusb_description">通信にlibusbを使用します。Androidの標準USB APIを使用するには無効にしてください。</string>
+    <string name="usb_keep_phone_media_audio">USB接続中もスマートフォンのメディア音声を維持する</string>
+    <string name="usb_keep_phone_media_audio_description">USBセッション中、Android Autoがこのヘッドユニット向けのスマートフォンのBluetoothメディア音声をオフにすることがあります。この設定をオンにすると、それを防げます。その場合、通話はヘッドユニットではなくスマートフォンに残ることがあります。</string>
 
     <string name="software_video_decoder">ソフトウェアデコーダのソース</string>
     <string name="software_video_decoder_bundled">内蔵FFmpeg</string>

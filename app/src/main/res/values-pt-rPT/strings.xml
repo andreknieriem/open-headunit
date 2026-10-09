@@ -1148,6 +1148,8 @@
     <string name="share_hotspot_qr_error">Não foi possível obter os dados do hotspot Wi-Fi ativo. Certifique-se de que o hotspot e a Localização estão ligados.</string>
     <string name="use_libusb">Utilizar controlador USB nativo</string>
     <string name="use_libusb_description">Utilizar libusb para comunicação. Desative para utilizar a API USB padrão do Android.</string>
+    <string name="usb_keep_phone_media_audio">Manter o áudio multimédia do telemóvel por USB</string>
+    <string name="usb_keep_phone_media_audio_description">O Android Auto pode desativar o áudio multimédia Bluetooth do telemóvel para esta unidade principal durante uma sessão USB. Esta opção impede isso. As chamadas podem ficar no telemóvel em vez de na unidade principal.</string>
 
     <string name="btn_show_qr">Apresentar código QR</string>
     <string name="su_needed_keymaps_warning">Aviso: A sua unidade tem de estar desbloqueada (root) ou ter o Shizuku instalado. Deve permitir os direitos SU quando solicitado.</string>

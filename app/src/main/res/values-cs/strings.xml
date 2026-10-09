@@ -643,6 +643,8 @@
     <!-- Native USB Driver -->
     <string name="use_libusb">Použít nativní USB ovladač</string>
     <string name="use_libusb_description">Použít libusb pro komunikaci. Vypnutím použijete standardní USB API pro Android.</string>
+    <string name="usb_keep_phone_media_audio">Ponechat zvuk médií telefonu zapnutý přes USB</string>
+    <string name="usb_keep_phone_media_audio_description">Android Auto může během relace USB vypnout zvuk médií Bluetooth telefonu pro toto autorádio. Tato volba tomu brání. Hovory pak mohou zůstat v telefonu místo v autorádiu.</string>
 
     <string name="software_video_decoder">Zdroj softwarového dekodéru</string>
     <string name="software_video_decoder_bundled">Integrovaný FFmpeg</string>

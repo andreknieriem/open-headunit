@@ -644,6 +644,8 @@
     <!-- Native USB Driver -->
     <string name="use_libusb">Utilizați driverul USB nativ</string>
     <string name="use_libusb_description">Utilizează libusb pentru comunicare. Dezactivați pentru a utiliza API-ul USB standard Android.</string>
+    <string name="usb_keep_phone_media_audio">Păstrează activ audio media al telefonului prin USB</string>
+    <string name="usb_keep_phone_media_audio_description">Android Auto poate dezactiva audio media Bluetooth al telefonului pentru această unitate principală în timpul unei sesiuni USB. Această opțiune împiedică acest lucru. Apelurile pot rămâne astfel pe telefon, nu pe unitatea principală.</string>
 
     <string name="software_video_decoder">Sursă decodor software</string>
     <string name="software_video_decoder_bundled">FFmpeg integrat</string>

@@ -650,6 +650,8 @@
     <!-- Native USB Driver -->
     <string name="use_libusb">Usa driver USB nativo</string>
     <string name="use_libusb_description">Usa libusb per la comunicazione. Disattiva per utilizzare l\'API USB standard di Android.</string>
+    <string name="usb_keep_phone_media_audio">Mantieni attivo l\'audio multimediale del telefono via USB</string>
+    <string name="usb_keep_phone_media_audio_description">Android Auto può disattivare l\'audio multimediale Bluetooth del telefono per questa autoradio durante una sessione USB. Questa opzione lo impedisce. Le chiamate potrebbero quindi restare sul telefono invece che sull\'autoradio.</string>
 
     <string name="software_video_decoder">Sorgente decodificatore software</string>
     <string name="software_video_decoder_bundled">FFmpeg integrato</string>

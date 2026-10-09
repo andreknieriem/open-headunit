@@ -613,7 +613,13 @@
     <string name="use_aac_audio">Use AAC Audio</string>
     <string name="use_aac_audio_description">Use AAC codec for audio to save bandwidth (Experimental). On a wireless session running on 2.4 GHz this is on automatically while \"Lower video on a 2.4 GHz link\" is on.</string>
     <string name="use_pcm_guidance">PCM guidance and system sounds</string>
-    <string name="use_pcm_guidance_description">Keep navigation, voice assistant and system sounds in PCM when AAC audio is used (Experimental). Music keeps the existing codec choice. Saving reconnects Android Auto.</string>
+    <string name="audio_channel_guidance_description_multirate">Spoken directions and voice assistant replies. The phone selects 16 or 48 kHz mono when connecting.</string>
+    <string name="pcm_guidance_rate">Navigation and voice sample rate</string>
+    <string name="pcm_guidance_rate_16k">16 kHz</string>
+    <string name="pcm_guidance_rate_48k">Prefer 48 kHz</string>
+    <string name="pcm_guidance_rate_16k_hint">Use 16 kHz mono for compatibility. Music is unchanged. Save, then reconnect Android Auto to apply.</string>
+    <string name="pcm_guidance_rate_48k_hint">Request 48 kHz mono for navigation and voice when supported, with 16 kHz fallback (Experimental). Uses three times the PCM data for these sounds. Music is unchanged and system sounds stay at 16 kHz. Save, then reconnect Android Auto to apply.</string>
+    <string name="use_pcm_guidance_description">Keep navigation, voice assistant and system sounds in PCM when AAC audio is used (Experimental). Music keeps the existing codec choice. Save, then reconnect Android Auto to apply.</string>
     <string name="attach_hw_dsp_equalizer">Hardware DSP Equalizer Trigger</string>
     <string name="attach_hw_dsp_equalizer_description">Attaches a dummy Equalizer effect to the audio session to force hardware DSP routing on specific headunits. Keep disabled if using ViPER4Android / ViperFX or if sound is muffled on older Android versions.</string>
     <string name="audio_volume_offset">Audio Volume Offset</string>

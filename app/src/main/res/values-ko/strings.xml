@@ -1258,4 +1258,12 @@
     <string name="pref_default_launcher_status_active">활성 (관리하려면 탭)</string>
     <string name="pref_default_launcher_status_inactive">설정 안 됨 (기본값으로 설정하려면 탭)</string>
     <string name="audio_settings_reconnect">오디오 설정을 저장했습니다. 적용하려면 Android Auto를 다시 연결해 주세요.</string>
+    <string name="use_pcm_guidance">안내·시스템 소리를 PCM으로 재생</string>
+    <string name="use_pcm_guidance_description">AAC 오디오를 사용해도 내비게이션, 음성 비서, 시스템 소리는 PCM으로 받습니다(실험적). 음악의 코덱 선택은 유지됩니다. 저장 후 Android Auto에 다시 연결하면 적용됩니다.</string>
+    <string name="audio_channel_guidance_description_multirate">길 안내와 음성 비서의 응답입니다. 연결 시 휴대폰이 16 또는 48 kHz 모노를 선택합니다.</string>
+    <string name="pcm_guidance_rate">길 안내·음성 비서 샘플레이트</string>
+    <string name="pcm_guidance_rate_16k">16 kHz</string>
+    <string name="pcm_guidance_rate_48k">48 kHz 우선</string>
+    <string name="pcm_guidance_rate_16k_hint">호환성을 위해 16 kHz 모노를 사용합니다. 음악은 변경하지 않습니다. 저장 후 Android Auto에 다시 연결하면 적용됩니다.</string>
+    <string name="pcm_guidance_rate_48k_hint">휴대폰이 지원하면 길 안내와 음성 비서를 48 kHz 모노로 받고, 지원하지 않으면 16 kHz를 사용합니다(실험적). 이 소리의 PCM 전송량은 3배가 됩니다. 음악은 변경하지 않으며 시스템 소리는 16 kHz를 유지합니다. 저장 후 Android Auto에 다시 연결하면 적용됩니다.</string>
 </resources>

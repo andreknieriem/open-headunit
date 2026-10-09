@@ -492,8 +492,9 @@ class CommManager(
                 if (connectionAttempt !== attempt || disconnectRequested) return
                 onSessionFailure?.invoke("connect_failed")
                 _connectionState.value = ConnectionState.Error("Connection failed: ${e.message}")
-                if (expectedState == null) disconnect()
-                else disconnect(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false, settingsRetryOwner = expectedState)
+                // A thrown open failure has the same retry policy as connect() returning false.
+                // No user chose Exit, and an unopened session must not close the service either.
+                disconnect(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false, settingsRetryOwner = expectedState)
             }
         } finally {
             val retired = synchronized(transportLifecycleLock) {
@@ -609,7 +610,7 @@ class CommManager(
                 if (connectionAttempt !== attempt || disconnectRequested) return
                 onSessionFailure?.invoke("connect_failed")
                 _connectionState.value = ConnectionState.Error("Connection failed: ${e.message}")
-                disconnect()
+                disconnect(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
             }
         } finally {
             val retired = synchronized(transportLifecycleLock) {
@@ -703,7 +704,7 @@ class CommManager(
                 if (connectionAttempt !== attempt || disconnectRequested) return
                 onSessionFailure?.invoke("connect_failed")
                 _connectionState.value = ConnectionState.Error("Connection failed: ${e.message}")
-                disconnect()
+                disconnect(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
             }
         } finally {
             val retired = synchronized(transportLifecycleLock) {
@@ -961,15 +962,19 @@ class CommManager(
         } catch (e: Exception) {
             withLiveTransport(transport, ConnectionState.HandshakeComplete) {
                 _connectionState.value = ConnectionState.Error("Start reading failed: ${e.message}")
-                disconnect()
+                // Startup failed locally. Preserve automatic recovery and do not send the peer
+                // a USER_SELECTION ByeBye for an exit the user never requested.
+                disconnect(sendByeBye = false, isUserExit = false)
             }
         }
     }
 
-    /** Reports a failure and tears the connection down with it. */
+    /** Reports an internal failure without applying the user's explicit Exit policy. */
     suspend fun emitError(msg: String) {
-        _connectionState.emit(ConnectionState.Error(msg))
-        disconnect()
+        synchronized(transportLifecycleLock) {
+            _connectionState.value = ConnectionState.Error(msg)
+            disconnect(sendByeBye = false, isUserExit = false)
+        }
     }
 
     /**

@@ -1439,7 +1439,9 @@ class AapService : Service() {
                 ProjectionRaiseDeadlinePolicy.Action.END_SESSION -> {
                     AppLog.e("AapService: the projection screen never came up, so this session can " +
                         "carry nothing. Ending it so the phone can start a new one.")
-                    commManager.disconnect()
+                    // Close the formed session gracefully, but keep the service and automatic
+                    // recovery available for the replacement this deadline is asking for.
+                    commManager.disconnect(sendByeBye = true, isUserExit = false, honorKillOnDisconnect = false)
                 }
             }
         }

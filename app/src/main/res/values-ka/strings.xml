@@ -630,6 +630,8 @@
     <!-- Native USB Driver -->
     <string name="use_libusb">USB-ის ნატივი დრაივერის გამოყენება</string>
     <string name="use_libusb_description">libusb-ის გამოყენება კავშირისთვის. გამორთეთ Android-ის სტანდარტული USB API-ის გამოსაყენებლად.</string>
+    <string name="usb_keep_phone_media_audio">USB-ით ტელეფონის მედიის აუდიოს შენარჩუნება</string>
+    <string name="usb_keep_phone_media_audio_description">USB სესიის დროს Android Auto-მ შეიძლება გამორთოს ტელეფონის Bluetooth მედიის აუდიო ამ მთავარი ბლოკისთვის. ეს პარამეტრი ამას აჩერებს. ამის შემდეგ ზარები შეიძლება ბლოკის ნაცვლად ტელეფონზე დარჩეს.</string>
 
     <string name="software_video_decoder">პროგრამული დეკოდერის წყარო</string>
     <string name="software_video_decoder_bundled">ჩაშენებული FFmpeg</string>

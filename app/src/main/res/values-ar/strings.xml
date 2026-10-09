@@ -643,6 +643,8 @@
     <!-- Native USB Driver -->
     <string name="use_libusb">استخدام برنامج تشغيل USB الأصلي</string>
     <string name="use_libusb_description">استخدم libusb للاتصال. قم بتعطيله لاستخدام واجهة برمجة تطبيقات USB القياسية لنظام Android.</string>
+    <string name="usb_keep_phone_media_audio">إبقاء صوت الوسائط في الهاتف قيد التشغيل عبر USB</string>
+    <string name="usb_keep_phone_media_audio_description">قد يوقف Android Auto تشغيل صوت وسائط Bluetooth في الهاتف لوحدة الرأس هذه أثناء جلسة USB. يمنع هذا الخيار ذلك. وقد تبقى المكالمات على الهاتف بدلًا من وحدة الرأس.</string>
 
     <string name="software_video_decoder">مصدر برنامج فك الترميز</string>
     <string name="software_video_decoder_bundled">FFmpeg مدمج</string>

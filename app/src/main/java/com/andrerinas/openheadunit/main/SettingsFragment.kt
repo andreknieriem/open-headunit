@@ -20,6 +20,7 @@ import android.widget.TextView
 import android.widget.Toast
 import android.content.ClipData
 import android.content.ClipboardManager
+import com.andrerinas.openheadunit.aap.protocol.messages.BluetoothAnnouncePolicy
 import com.andrerinas.openheadunit.utils.OemAppManager
 import com.andrerinas.openheadunit.utils.CarLauncherManager
 import com.andrerinas.openheadunit.ssl.ConscryptInitializer
@@ -177,6 +178,7 @@ class SettingsFragment : Fragment() {
     private var pendingVideoCodec: String? = null
     private var pendingFpsLimit: Int? = null
     private var pendingBluetoothAddress: String? = null
+    private var pendingBluetoothAnnounceSkip: Boolean? = null
     private var pendingEnableAudioSink: Boolean? = null
     private var pendingStaticAudioFocus: Boolean? = null
     private var pendingPlaybackFocusMode: PlaybackFocusPolicy.Mode? = null
@@ -359,6 +361,7 @@ class SettingsFragment : Fragment() {
         pendingVideoCodec = settings.videoCodec
         pendingFpsLimit = settings.fpsLimit
         pendingBluetoothAddress = settings.bluetoothAddress
+        pendingBluetoothAnnounceSkip = BluetoothAnnouncePolicy.isSkip(settings.bluetoothAnnounceMode)
         pendingEnableAudioSink = settings.enableAudioSink
         pendingStaticAudioFocus = settings.staticAudioFocus
         pendingPlaybackFocusMode = settings.playbackFocusMode
@@ -499,6 +502,7 @@ class SettingsFragment : Fragment() {
         pendingVideoCodec = settings.videoCodec
         pendingFpsLimit = settings.fpsLimit
         pendingBluetoothAddress = settings.bluetoothAddress
+        pendingBluetoothAnnounceSkip = BluetoothAnnouncePolicy.isSkip(settings.bluetoothAnnounceMode)
         pendingEnableAudioSink = settings.enableAudioSink
         pendingStaticAudioFocus = settings.staticAudioFocus
         pendingPlaybackFocusMode = settings.playbackFocusMode
@@ -728,6 +732,11 @@ class SettingsFragment : Fragment() {
         pendingVideoCodec?.let { if (it != settings.videoCodec) settings.videoCodec = it }
         pendingFpsLimit?.let { if (it != settings.fpsLimit) settings.fpsLimit = it }
         pendingBluetoothAddress?.let { if (it != settings.bluetoothAddress) settings.bluetoothAddress = it }
+        pendingBluetoothAnnounceSkip?.let {
+            if (it != BluetoothAnnouncePolicy.isSkip(settings.bluetoothAnnounceMode)) {
+                settings.bluetoothAnnounceMode = BluetoothAnnouncePolicy.storedValue(it)
+            }
+        }
         pendingEnableAudioSink?.let { if (it != settings.enableAudioSink) settings.enableAudioSink = it }
         pendingStaticAudioFocus?.let { if (it != settings.staticAudioFocus) settings.staticAudioFocus = it }
         // Re-picking the focus mode is the way back from a wrong verdict: AUTO learns that taking
@@ -893,6 +902,7 @@ class SettingsFragment : Fragment() {
                         pendingVideoCodec != settings.videoCodec ||
                         pendingFpsLimit != settings.fpsLimit ||
                         pendingBluetoothAddress != settings.bluetoothAddress ||
+                        pendingBluetoothAnnounceSkip != BluetoothAnnouncePolicy.isSkip(settings.bluetoothAnnounceMode) ||
                         pendingEnableAudioSink != settings.enableAudioSink ||
                         pendingStaticAudioFocus != settings.staticAudioFocus ||
                         pendingPlaybackFocusMode != settings.playbackFocusMode ||
@@ -1733,19 +1743,28 @@ class SettingsFragment : Fragment() {
         // Ungated, unlike the static BSSID above: this address is announced as carAddress in
         // every connection mode, and the setup QR's own refusal deep-links here by searching for
         // this row's title, which bypasses the Basic and Advanced tiers but not a construction gate.
+        // The checkbox trades hands-free calls for the phone's Media audio, on USB sessions only.
         val btAddress = pendingBluetoothAddress.orEmpty()
+        val keepMediaAudio = pendingBluetoothAnnounceSkip ?: false
+        val btAddressValue = btAddress.ifEmpty { getString(R.string.not_set) }
         items.add(SettingItem.SettingEntry(
             stableId = "bluetoothAddress",
             nameResId = R.string.bluetooth_address_s,
-            value = btAddress.ifEmpty { getString(R.string.not_set) },
-            searchKeywords = "bluetooth mac address car identity hands-free calls qr",
+            value = if (keepMediaAudio) "$btAddressValue · ${getString(R.string.usb_keep_phone_media_audio)}" else btAddressValue,
+            searchKeywords = "bluetooth mac address car identity hands-free calls qr usb media audio a2dp",
             onClick = { _ ->
                 DialogUtils.showTextInputDialogWithMessage(
                     requireContext(),
                     R.string.enter_bluetooth_mac,
                     R.string.bluetooth_address_message,
                     btAddress,
-                    { newVal ->
+                    DialogUtils.Checkbox(
+                        R.string.usb_keep_phone_media_audio,
+                        R.string.usb_keep_phone_media_audio_description,
+                        keepMediaAudio
+                    ),
+                    { newVal, keep ->
+                        pendingBluetoothAnnounceSkip = keep
                         // Validated at entry, for the reason the static BSSID row records: an
                         // address that is not MAC-shaped is announced verbatim and fails much later.
                         val trimmed = newVal.trim()

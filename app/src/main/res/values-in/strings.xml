@@ -1148,6 +1148,8 @@
     <string name="share_hotspot_qr_error">Tidak dapat mengambil kredensial hotspot Wi-Fi yang aktif. Pastikan hotspot Anda aktif dan Lokasi diaktifkan.</string>
     <string name="use_libusb">Gunakan Driver USB Asli</string>
     <string name="use_libusb_description">Gunakan libusb untuk komunikasi. Nonaktifkan untuk menggunakan API USB standar Android.</string>
+    <string name="usb_keep_phone_media_audio">Pertahankan audio media ponsel lewat USB</string>
+    <string name="usb_keep_phone_media_audio_description">Android Auto dapat mematikan audio media Bluetooth ponsel untuk unit utama ini selama sesi USB. Opsi ini mencegahnya. Panggilan telepon mungkin tetap berada di ponsel, bukan di unit utama.</string>
 
     <string name="btn_show_qr">Tampilkan Kode QR</string>
     <string name="su_needed_keymaps_warning">Peringatan: Head unit Anda harus di-root atau memiliki Shizuku yang terpasang. Jika demikian, Anda harus mengizinkan hak akses SU saat diminta. Tombol setir kemungkinan tidak berfungsi sampai hal ini diperbaiki.</string>

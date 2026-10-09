@@ -686,6 +686,8 @@
     <string name="settings_reset_failed">Zurücksetzen der Einstellungen fehlgeschlagen: %1$s</string>
     <string name="use_libusb">Nativen USB-Treiber nutzen</string>
     <string name="use_libusb_description">Nutzt libusb für die USB-Verbindung. Deaktivieren, um die Android-Standard-USB-API zu nutzen.</string>
+    <string name="usb_keep_phone_media_audio">Medien-Audio des Smartphones bei USB anlassen</string>
+    <string name="usb_keep_phone_media_audio_description">Android Auto kann bei einer USB-Verbindung das Bluetooth-Medien-Audio des Smartphones für dieses Autoradio abschalten. Diese Option verhindert das. Anrufe bleiben dann eventuell auf dem Smartphone statt im Autoradio.</string>
 
     <string name="software_video_decoder">Software-Decoder-Quelle</string>
     <string name="software_video_decoder_bundled">Integriertes FFmpeg</string>

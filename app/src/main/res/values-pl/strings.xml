@@ -644,6 +644,8 @@
     <!-- Native USB Driver -->
     <string name="use_libusb">Użyj natywnego sterownika USB</string>
     <string name="use_libusb_description">Używa libusb do komunikacji. Wyłącz, aby korzystać ze standardowego interfejsu API USB systemu Android.</string>
+    <string name="usb_keep_phone_media_audio">Pozostaw dźwięk multimediów telefonu przez USB</string>
+    <string name="usb_keep_phone_media_audio_description">Android Auto może wyłączyć dźwięk multimediów Bluetooth telefonu dla tej stacji podczas sesji USB. Ta opcja temu zapobiega. Połączenia mogą wtedy zostać na telefonie zamiast na stacji.</string>
 
     <string name="software_video_decoder">Źródło dekodera programowego</string>
     <string name="software_video_decoder_bundled">Wbudowany FFmpeg</string>

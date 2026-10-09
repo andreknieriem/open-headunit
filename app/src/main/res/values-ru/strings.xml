@@ -646,6 +646,8 @@
     <!-- Native USB Driver -->
     <string name="use_libusb">Использовать нативный USB-драйвер</string>
     <string name="use_libusb_description">Использовать libusb для связи. Отключите для использования стандартного USB API Android.</string>
+    <string name="usb_keep_phone_media_audio">Оставить мультимедийный звук телефона по USB</string>
+    <string name="usb_keep_phone_media_audio_description">Во время USB-сеанса Android Auto может отключить мультимедийный звук Bluetooth телефона для этой магнитолы. Эта настройка не даёт этого сделать. Тогда звонки могут остаться на телефоне, а не на магнитоле.</string>
 
     <string name="btn_show_qr">Показать QR-код</string>
     <string name="renderer_fallback_surface">Видео постоянно зависало, поэтому отображение переключено на SurfaceView на эту сессию. Если работает стабильно, установите Режим отображения на SurfaceView в настройках.</string>

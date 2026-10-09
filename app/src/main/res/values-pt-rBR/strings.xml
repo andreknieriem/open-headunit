@@ -644,6 +644,8 @@
     <!-- Native USB Driver -->
     <string name="use_libusb">Usar driver USB nativo</string>
     <string name="use_libusb_description">Usa libusb para comunicação. Desative para usar a API USB padrão do Android.</string>
+    <string name="usb_keep_phone_media_audio">Manter o áudio de mídia do smartphone por USB</string>
+    <string name="usb_keep_phone_media_audio_description">O Android Auto pode desativar o áudio de mídia Bluetooth do smartphone para este aparelho durante uma sessão USB. Esta opção impede isso. As chamadas podem ficar no smartphone em vez de no aparelho.</string>
 
     <string name="software_video_decoder">Origem do decodificador de software</string>
     <string name="software_video_decoder_bundled">FFmpeg integrado</string>

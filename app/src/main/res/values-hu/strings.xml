@@ -642,6 +642,8 @@
     <!-- Native USB Driver -->
     <string name="use_libusb">Natív USB-illesztőprogram használata</string>
     <string name="use_libusb_description">Libusb használata a kommunikációhoz. Kapcsolja ki az Android szabványos USB API-jának használatához.</string>
+    <string name="usb_keep_phone_media_audio">A telefon média hangjának megtartása USB-n</string>
+    <string name="usb_keep_phone_media_audio_description">Az Android Auto USB-munkamenet alatt kikapcsolhatja a telefon Bluetooth média hangját ehhez a fejegységhez. Ez a beállítás megakadályozza ezt. A hívások ilyenkor a fejegység helyett a telefonon maradhatnak.</string>
 
     <string name="software_video_decoder">Szoftveres dekódoló forrása</string>
     <string name="software_video_decoder_bundled">Beépített FFmpeg</string>

@@ -649,6 +649,8 @@
     <!-- Native USB Driver -->
     <string name="use_libusb">Sử dụng trình điều khiển USB gốc</string>
     <string name="use_libusb_description">Sử dụng libusb để giao tiếp. Tắt để sử dụng API USB tiêu chuẩn của Android.</string>
+    <string name="usb_keep_phone_media_audio">Giữ âm thanh nội dung nghe nhìn của điện thoại qua USB</string>
+    <string name="usb_keep_phone_media_audio_description">Android Auto có thể tắt âm thanh nội dung nghe nhìn Bluetooth của điện thoại cho thiết bị này trong phiên USB. Tùy chọn này ngăn việc đó. Khi đó, cuộc gọi có thể ở lại điện thoại thay vì thiết bị.</string>
 
     <string name="software_video_decoder">Nguồn bộ giải mã phần mềm</string>
     <string name="software_video_decoder_bundled">FFmpeg tích hợp</string>

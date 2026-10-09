@@ -1148,6 +1148,8 @@
     <string name="share_hotspot_qr_error">सक्रिय वाई-फ़ाई हॉटस्पॉट क्रेडेंशियल पुनर्प्राप्त नहीं किए जा सके। सुनिश्चित करें कि हॉटस्पॉट और स्थान चालू हैं।</string>
     <string name="use_libusb">मूल USB ड्राइवर का उपयोग करें</string>
     <string name="use_libusb_description">संचार के लिए libusb का उपयोग करें। Android के मानक USB API का उपयोग करने के लिए अक्षम करें।</string>
+    <string name="usb_keep_phone_media_audio">USB पर फ़ोन का मीडिया ऑडियो चालू रखें</string>
+    <string name="usb_keep_phone_media_audio_description">USB सेशन के दौरान Android Auto इस हेड यूनिट के लिए फ़ोन का Bluetooth मीडिया ऑडियो बंद कर सकता है। यह विकल्प ऐसा होने से रोकता है। इसके बाद फ़ोन कॉल, हेड यूनिट की जगह फ़ोन पर ही रह सकते हैं।</string>
 
     <string name="btn_show_qr">QR कोड दिखाएं</string>
     <string name="su_needed_keymaps_warning">चेतावनी: आपकी हेडयूनिट या तो रूटेड होनी चाहिए, या Shizuku इंस्टॉल होना चाहिए। यदि ऐसा है, तो संकेत मिलने पर आपको SU अधिकारों की अनुमति देनी होगी।</string>

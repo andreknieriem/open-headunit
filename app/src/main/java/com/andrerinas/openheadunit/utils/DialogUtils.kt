@@ -4,6 +4,7 @@ import android.R
 import android.content.Context
 import android.util.TypedValue
 import android.view.WindowManager
+import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -26,6 +27,22 @@ object DialogUtils {
         messageResId: Int?,
         currentValue: String?,
         onResult: (String) -> Unit,
+    ) {
+        showTextInputDialogWithMessage(context, titleResId, messageResId, currentValue, null) { value, _ ->
+            onResult(value)
+        }
+    }
+
+    /** A checkbox under the field. Its value goes back with OK or Reset; Cancel drops both. */
+    data class Checkbox(val labelResId: Int, val descriptionResId: Int?, val checked: Boolean)
+
+    fun showTextInputDialogWithMessage(
+        context: Context,
+        titleResId: Int,
+        messageResId: Int?,
+        currentValue: String?,
+        checkbox: Checkbox?,
+        onResult: (String, Boolean) -> Unit,
     ) {
         val container = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
@@ -54,15 +71,34 @@ object DialogUtils {
         }
         container.addView(editText)
 
+        val checkView = checkbox?.let {
+            CheckBox(context).apply {
+                setText(it.labelResId)
+                isChecked = it.checked
+                setPadding(paddingLeft, paddingTop, paddingRight, 0)
+            }.also { view -> container.addView(view) }
+        }
+        checkbox?.descriptionResId?.let { resId ->
+            container.addView(TextView(context).apply {
+                setText(resId)
+                val textColorAttr = TypedValue()
+                context.theme.resolveAttribute(R.attr.textColorSecondary, textColorAttr, true)
+                setTextColor(ContextCompat.getColor(context, textColorAttr.resourceId))
+                textSize = 13f
+                setPadding(0, 0, 0, 16)
+            })
+        }
+        val checked = { checkView?.isChecked ?: false }
+
         val dialog = MaterialAlertDialogBuilder(context, com.andrerinas.openheadunit.R.style.DarkAlertDialog)
             .setTitle(titleResId)
             .setView(container)
             .setPositiveButton(R.string.ok) { _, _ ->
                 val value = editText.text.toString().trim()
-                onResult(value)
+                onResult(value, checked())
             }
             .setNeutralButton(com.andrerinas.openheadunit.R.string.reset) { _, _ ->
-                onResult("")
+                onResult("", checked())
             }
             .setNegativeButton(R.string.cancel, null)
             .setOnDismissListener {

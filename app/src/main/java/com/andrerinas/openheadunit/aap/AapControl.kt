@@ -351,7 +351,7 @@ internal class AapControlService(
     private fun serviceDiscoveryRequest(request: Control.ServiceDiscoveryRequest): Int {
         AppLog.i("Service Discovery Request: %s", request.phoneName)
 
-        val msg = ServiceDiscoveryResponse(context, aapAudio.sessionConfig)
+        val msg = ServiceDiscoveryResponse(context, aapAudio.sessionConfig, aapAudio::noteAnnouncedAudioCodecs)
         aapTransport.send(msg)
         return 0
     }

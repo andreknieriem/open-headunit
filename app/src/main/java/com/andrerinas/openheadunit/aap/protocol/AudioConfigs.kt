@@ -1,14 +1,13 @@
 package com.andrerinas.openheadunit.aap.protocol
 
 import android.media.AudioManager
-import android.util.SparseArray
 import com.andrerinas.openheadunit.aap.protocol.proto.Media
 
 import com.andrerinas.openheadunit.decoder.audio.AudioDecoder
 import com.andrerinas.openheadunit.utils.Settings
 
 object AudioConfigs {
-    private val audioTracks = SparseArray<Media.AudioConfiguration>(3)
+    private val audioTracks: Map<Int, Media.AudioConfiguration>
 
     /**
      * Which system stream an Android Auto audio channel plays on.
@@ -43,7 +42,7 @@ object AudioConfigs {
     )
 
     fun get(channel: Int): Media.AudioConfiguration {
-        return audioTracks.get(channel)
+        return audioTracks.getValue(channel)
     }
 
     init {
@@ -52,14 +51,12 @@ object AudioConfigs {
             numberOfBits = 16
             numberOfChannels = 2
         }.build()
-        audioTracks.put(Channel.ID_AUD, audioConfig0)
 
         val audioConfig1 = Media.AudioConfiguration.newBuilder().apply {
             sampleRate = AudioDecoder.SAMPLE_RATE_HZ_16
             numberOfBits = 16
             numberOfChannels = 1
         }.build()
-        audioTracks.put(Channel.ID_AU1, audioConfig1)
 
         // 16 kHz mono is required here, not preferred. The phone accepts the SYSTEM sink only if
         // it offers that config, and with the audio sink off this is the only sink left - so
@@ -69,6 +66,8 @@ object AudioConfigs {
             numberOfBits = 16
             numberOfChannels = 1
         }.build()
-        audioTracks.put(Channel.ID_AU2, audioConfig2)
+        // Each advertised sink has a fixed configuration at index 0 for the whole session.
+        audioTracks = mapOf(Channel.ID_AUD to audioConfig0, Channel.ID_AU1 to audioConfig1,
+            Channel.ID_AU2 to audioConfig2)
     }
 }

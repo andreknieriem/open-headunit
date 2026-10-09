@@ -38,11 +38,20 @@ internal class AapAudio(
     private val guidanceVolumeOffset get() = settings.guidanceVolumeOffset
     private val systemVolumeOffset get() = settings.systemVolumeOffset
     private val audioLatencyMultiplier get() = settings.audioLatencyMultiplier
-    private val useAacAudio = sessionConfig.aac
     // The codec each sink actually carries, from the phone's Media Sink Setup. The setting alone
     // used to decide, and the band cap now announces AAC the setting knows nothing about.
     private val sinkCodecs = ConcurrentHashMap<Int, AudioSinkCodec>()
-    private val defaultCodec = if (useAacAudio) AudioSinkCodec.AAC_LC else AudioSinkCodec.PCM
+    @Volatile private var announcedMediaAac: Boolean? = null
+    private fun defaultCodec(channel: Int) = sessionConfig.codecFor(channel, announcedMediaAac ?: sessionConfig.aac)
+
+    /**
+     * Captured before ServiceDiscovery is sent. The band cap can choose AAC even when its
+     * preference is off, so data or an unrecognized Setup must fall back to what we advertised.
+     * Valid Setup still wins per sink; local output restarts retain both negotiation records.
+     */
+    fun noteAnnouncedAudioCodecs(mediaAac: Boolean) {
+        announcedMediaAac = mediaAac
+    }
     private val pcmTiming = mapOf(
         Channel.ID_AUD to AudioTimestampMonitor(),
         Channel.ID_AU1 to AudioTimestampMonitor(),
@@ -396,7 +405,7 @@ internal class AapAudio(
     private fun notePcmTiming(message: AapMessage, size: Int) {
         val monitor = pcmTiming[message.channel] ?: return
         // AAC timestamps can be repeated for several access units from the same capture batch.
-        if ((audioDecoder.sinkCodecFor(message.channel, decoderSession) ?: sinkCodecs[message.channel] ?: defaultCodec).isAac) return
+        if ((audioDecoder.sinkCodecFor(message.channel, decoderSession) ?: sinkCodecs[message.channel] ?: defaultCodec(message.channel)).isAac) return
         val format = AudioConfigs.get(message.channel)
         val bytesPerFrame = format.numberOfChannels * format.numberOfBits / 8
         if (bytesPerFrame <= 0 || format.sampleRate <= 0) return
@@ -439,8 +448,8 @@ internal class AapAudio(
         }
 
         val fromSetup = sinkCodecs[channel]
-        val codec = fromSetup ?: defaultCodec
-        val codecSource = if (fromSetup != null) "setup" else "setting"
+        val codec = fromSetup ?: defaultCodec(channel)
+        val codecSource = if (fromSetup != null) "setup" else if (announcedMediaAac != null) "discovery" else "setting"
         AppLog.i("AudioDecoder.start: channel=$channel, stream=$stream, gain=$gain, sampleRate=${config.sampleRate}, numberOfBits=${config.numberOfBits}, numberOfChannels=${config.numberOfChannels}, codec=$codec, source=$codecSource, latencyMultiplier=$effectiveMultiplier, queueCapacity=$audioQueueCapacity, attachHwDspEqualizer=$attachHwDspEqualizer")
         audioDecoder.start(channel, stream, config.sampleRate, config.numberOfBits, config.numberOfChannels,
             codec.isAac, gain, effectiveMultiplier, audioQueueCapacity, staticAudioFocus, attachHwDspEqualizer,
@@ -533,7 +542,7 @@ internal class AapAudio(
         pcmTiming[channel]?.reset()
         val codec = AudioSinkCodecPolicy.codecFor(setupType)
         if (codec == null) {
-            AppLog.w("AapAudio: sink setup type $setupType on ${Channel.name(channel)} is not an audio codec, keeping codec=$defaultCodec from the setting")
+            AppLog.w("AapAudio: sink setup type $setupType on ${Channel.name(channel)} is not an audio codec, keeping codec=${defaultCodec(channel)} from ${if (announcedMediaAac != null) "service discovery" else "the session settings"}")
             sinkCodecs.remove(channel)
         } else {
             sinkCodecs[channel] = codec

@@ -28,6 +28,8 @@ must still run without more DATA or Stop, and the old PCM must not reach the rep
 Static focus is checked through its AapAudio session owner on API 16/19/25/33.
 Settings cases retain the negotiated routing and codec snapshot until the session is replaced,
 then require nonzero PCM from the new owner. Local output changes preserve the negotiated codec.
+Mixed-codec cases in static and dynamic focus keep AAC music alive while 16 kHz PCM guidance/system tails drain,
+then check repeated Setup, local restart and a per-sink codec override from the phone.
 Connection publication and worker-retirement checks live in the independent host-connection suite.
 Framing cases check ADTS codec configuration, repeated Setup and raw/ADTS transitions.
 The codec doubles do not decode ADTS bitstreams. They complement JVM policy/PCM tests and native CTest. They do not emulate HAL playback clocks,

@@ -22,6 +22,7 @@ import com.andrerinas.openheadunit.connection.wifi.direct.StoredP2pIdentity
 import com.andrerinas.openheadunit.aap.AapService
 
 import com.andrerinas.openheadunit.connection.wifi.direct.WifiBandCapability
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.unix.RawUnixSocketCarrier
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zbt.ZbtDiscovery
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zbt.ZbtDiscoveryPolicy
 import com.andrerinas.openheadunit.utils.BluetoothAddressSeedPolicy
@@ -149,7 +150,8 @@ class NativeAaHandshakeManager(
                 settings.nativeAaIgnoreExternalBt,
                 blinkTransportEnabled = settings.externalBtBlinkTransport,
                 fytModuleEvidence = BluetoothHelper.fytModuleEvidence,
-                hctServiceAvailable = HctServiceObserver.available(context)
+                hctServiceAvailable = HctServiceObserver.available(context),
+                unixSocketAvailable = RawUnixSocketCarrier.isSocketAvailable()
             )
         }
 
@@ -182,6 +184,11 @@ class NativeAaHandshakeManager(
         fun checkCompatibility(context: Context): Boolean {
             val discovery = ZbtDiscovery.snapshot()
             when (transportRoute(context, discovery)) {
+                // The raw Unix domain socket (/dev/socket/zj_bt_socket) directly carries RFCOMM frames.
+                ExternalBtTransportPolicy.Route.RAW_UNIX_SOCKET -> {
+                    AppLog.i("NativeAA: Bluetooth runs over raw Unix domain socket (/dev/socket/zj_bt_socket), compatibility check SUCCESS.")
+                    return true
+                }
                 // The module has its own listener and its own compatibility, established by the
                 // daemon answering at connection time. Nothing below measures that.
                 ExternalBtTransportPolicy.Route.ZBT, ExternalBtTransportPolicy.Route.BLINK,
@@ -404,6 +411,7 @@ class NativeAaHandshakeManager(
     @Volatile private var moduleCarrier: ExternalModuleCarrier? = null
     // A WPP lease may finish after its carrier ends; only its own arming may clear the stage.
     @Volatile private var hctStageOwner: Any? = null
+    @Volatile private var rawUnixCarrier: RawUnixSocketCarrier? = null
     // The coroutine serving [activeHandshakeLink]. Closing a superseded handshake's link only
     // ends it on stacks where close() interrupts a pending read; some do not, and it runs on for
     // minutes. Cancelling cannot break a blocking JNI read either, but it does end every real
@@ -909,7 +917,8 @@ class NativeAaHandshakeManager(
                 settings.nativeAaIgnoreExternalBt,
                 blinkTransportEnabled = settings.externalBtBlinkTransport,
                 fytModuleEvidence = BluetoothHelper.fytModuleEvidence,
-                hctServiceAvailable = HctServiceObserver.available(context)
+                hctServiceAvailable = HctServiceObserver.available(context),
+                unixSocketAvailable = RawUnixSocketCarrier.isSocketAvailable()
             )
         ) {
             notStartedReason = "the vendor Bluetooth daemon is still being asked whether it will carry Android Auto."
@@ -932,6 +941,11 @@ class NativeAaHandshakeManager(
         // see this as genuinely stopped. Nothing here is retryable, but a listener that was never
         // opened must not be reported as up.
         when (transportRoute(context, discovery)) {
+            // The raw Unix domain socket (/dev/socket/zj_bt_socket) carries the RFCOMM stream directly.
+            ExternalBtTransportPolicy.Route.RAW_UNIX_SOCKET -> {
+                startOverRawUnixSocket()
+                return
+            }
             // The module carries the handshake instead, over its own channel. None of the RFCOMM
             // setup below applies to it.
             ExternalBtTransportPolicy.Route.ZBT -> {
@@ -2980,6 +2994,45 @@ class NativeAaHandshakeManager(
         }
     }
 
+    private fun startOverRawUnixSocket() {
+        isRunning = true
+        notStartedReason = null
+        aaListenersClosedForSession = false
+        localRadioName = "raw Unix domain socket (/dev/socket/zj_bt_socket)"
+        AppLog.i(
+            "NativeAA: raw Unix domain socket transport is on (${BluetoothHelper.externalBtEvidence}) " +
+                "— the handshake will connect to /dev/socket/zj_bt_socket directly."
+        )
+        val carrier = RawUnixSocketCarrier(
+            serve = { link ->
+                ConnectionStageTracker.report(ConnectionStage.PHONE_ANSWERED)
+                handleHandshake(link)
+            },
+            isRunning = { isRunning },
+            isFinishedForSession = { aaListenersClosedForSession },
+            isSessionConnected = { commManager.isConnected },
+            isHandshakeInFlight = { isHandshakeInFlight() },
+            mayServeHandshake = { NativeHandoffPolicy.shouldServeHandshake(consecutiveHandshakeFailures) },
+            onPhoneEvidence = { resetHandshakeBackoff() },
+            retryDelayMs = {
+                JoinRefusalPolicy.retryDelayMs(
+                    consecutiveJoinRefusals,
+                    RawUnixSocketCarrier.DEFAULT_RETRY_INTERVAL_MS
+                )
+            }
+        )
+        rawUnixCarrier = carrier
+        scope.launch(Dispatchers.IO + CoroutineName("NativeAa-RawUnixCarrier")) {
+            try {
+                carrier.run()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                AppLog.e("NativeAA: [RawUnix] carrier stopped unexpectedly: ${e.message}", e)
+            }
+        }
+    }
+
     private fun refuseWhileBackedOff(link: HandshakeLink): Boolean {
         if (NativeHandoffPolicy.shouldServeHandshake(consecutiveHandshakeFailures)) return false
         if (!loggedHandshakeBackoff) {
@@ -4080,6 +4133,8 @@ class NativeAaHandshakeManager(
         // wake requests to a dead channel.
         moduleCarrier?.close()
         moduleCarrier = null
+        rawUnixCarrier?.close()
+        rawUnixCarrier = null
         wppTcpServer?.stop()
         wppTcpServer = null
         try { aaServerSocket?.close() } catch (e: Exception) {}

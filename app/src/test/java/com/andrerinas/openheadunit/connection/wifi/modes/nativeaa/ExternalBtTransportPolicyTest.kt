@@ -171,6 +171,14 @@ class ExternalBtTransportPolicyTest {
     }
 
     @Test
+    fun `unix socket presence takes RAW_UNIX_SOCKET route even on external BT evidence`() {
+        val snapshot = legacy(evidence, null)
+        assertEquals(Route.RAW_UNIX_SOCKET, ExternalBtTransportPolicy.route(snapshot, false, false, unixSocketAvailable = true))
+        assertFalse(ExternalBtTransportPolicy.refusesBringUp(snapshot, false, false, unixSocketAvailable = true))
+        assertFalse(ExternalBtTransportPolicy.needsDaemonMeasurement(snapshot, false, false, unixSocketAvailable = true))
+    }
+
+    @Test
     fun `refusal and measurement are exclusive and cover every blocked route in all discovery modes`() {
         for (mode in ZbtDiscoveryPolicy.Mode.entries)
             for (cached in listOf<Boolean?>(null, true, false))

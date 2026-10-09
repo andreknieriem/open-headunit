@@ -36,6 +36,9 @@ object ExternalBtTransportPolicy {
         /** HCT's verified Bluetooth service and its bounded local AA carrier. */
         HCT,
 
+        /** Raw Unix Domain Socket (e.g. /dev/socket/zj_bt_socket on Unisoc/Zlink platforms). */
+        RAW_UNIX_SOCKET,
+
         /** External Bluetooth, and no route through it: refuse mode 3 and say why. */
         BLOCKED,
 
@@ -57,6 +60,7 @@ object ExternalBtTransportPolicy {
      * @param ignoreExternalBt the compatibility override, `Settings.nativeAaIgnoreExternalBt`
      * @param blinkTransportEnabled the user's opt-in, `Settings.externalBtBlinkTransport`
      * @param fytModuleEvidence what `ExternalBtPolicy.detectFytModule` found, or null
+     * @param unixSocketAvailable whether /dev/socket/zj_bt_socket is present
      * @param hctServiceAvailable a verified HCT service contract, not a firmware/model hint
      */
     fun route(
@@ -65,7 +69,8 @@ object ExternalBtTransportPolicy {
         ignoreExternalBt: Boolean,
         blinkTransportEnabled: Boolean = false,
         fytModuleEvidence: String? = null,
-        hctServiceAvailable: Boolean = false
+        hctServiceAvailable: Boolean = false,
+        unixSocketAvailable: Boolean = false
     ): Route = when {
         // Before the evidence checks: an enabled toggle is a recovery control too, and must win
         // even where detection cannot see the node.
@@ -75,6 +80,7 @@ object ExternalBtTransportPolicy {
         // Never the ZLink daemon measurement or route: FYT units have no such daemon, so a ZBT
         // toggle left on (or offered because a ZLink marker also matched) is refused too.
         fytModuleEvidence != null -> if (ignoreExternalBt) Route.NORMAL else Route.BLOCKED
+        discovery.decision.available && unixSocketAvailable -> Route.RAW_UNIX_SOCKET
         discovery.decision.available && zbtTransportEnabled -> Route.ZBT
         ignoreExternalBt -> Route.NORMAL
         discovery.decision.available && discovery.reachable == true -> Route.ZBT
@@ -100,15 +106,16 @@ object ExternalBtTransportPolicy {
         ignoreExternalBt: Boolean,
         blinkTransportEnabled: Boolean = false,
         fytModuleEvidence: String? = null,
-        hctServiceAvailable: Boolean = false
+        hctServiceAvailable: Boolean = false,
+        unixSocketAvailable: Boolean = false
     ): Boolean =
         route(
             discovery, zbtTransportEnabled, ignoreExternalBt,
-            blinkTransportEnabled, fytModuleEvidence, hctServiceAvailable
+            blinkTransportEnabled, fytModuleEvidence, hctServiceAvailable, unixSocketAvailable
         ) == Route.BLOCKED &&
             !needsDaemonMeasurement(
                 discovery, zbtTransportEnabled, ignoreExternalBt,
-                blinkTransportEnabled, fytModuleEvidence, hctServiceAvailable
+                blinkTransportEnabled, fytModuleEvidence, hctServiceAvailable, unixSocketAvailable
             )
 
     /**
@@ -124,8 +131,10 @@ object ExternalBtTransportPolicy {
         ignoreExternalBt: Boolean,
         blinkTransportEnabled: Boolean = false,
         fytModuleEvidence: String? = null,
-        hctServiceAvailable: Boolean = false
+        hctServiceAvailable: Boolean = false,
+        unixSocketAvailable: Boolean = false
     ): Boolean = !blinkTransportEnabled && fytModuleEvidence == null && !hctServiceAvailable &&
+        !unixSocketAvailable &&
         discovery.decision.available &&
         !zbtTransportEnabled && !ignoreExternalBt && discovery.reachable == null
 

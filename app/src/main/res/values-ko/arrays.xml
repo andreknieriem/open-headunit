@@ -1,26 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string-array name="night_mode">        <item>자동(일출/일몰 시간 참조)</item>
+    <string-array name="night_mode">
+        <item>자동(일출/일몰)</item>
         <item>라이트 모드</item>
         <item>다크 모드</item>
-        <item>수동 설정 시간</item>
+        <item>시간 지정</item>
         <item>조도 센서</item>
         <item>화면 밝기</item>
-        <item>차량 헤드라이트 신호 (ILL+)</item>
+        <item>차량 전조등 신호(ILL+)</item>
         <item>위치(지역별)</item>
-</string-array>
+    </string-array>
 
-    <string-array name="app_theme">        <item>자동(시스템 설정 참조)</item>
+    <string-array name="app_theme">
+        <item>자동(시스템 설정)</item>
         <item>라이트 모드</item>
         <item>다크 모드</item>
-        <item>완전 블랙 모드</item>
-        <item>자동(일출/일몰 시간 참조)</item>
-        <item>수동 설정 시간</item>
+        <item>완전 다크 모드</item>
+        <item>자동(일출/일몰)</item>
+        <item>시간 지정</item>
         <item>조도 센서</item>
         <item>화면 밝기</item>
-        <item>차량 헤드라이트 신호 (ILL+)</item>
+        <item>차량 전조등 신호(ILL+)</item>
         <item>위치(지역별)</item>
-</string-array>
+    </string-array>
 
     <string-array name="screen_orientation">
         <item>@string/orientation_system_default</item>
@@ -31,4 +33,10 @@
         <item>@string/orientation_portrait_reverse</item>
     </string-array>
 
+    <!-- Order must match Settings.VideoFitMode: FILL(0), CONTAIN(1), COVER(2) -->
+    <string-array name="video_fit_mode">
+        <item>@string/video_fit_mode_fill</item>
+        <item>@string/video_fit_mode_contain</item>
+        <item>@string/video_fit_mode_cover</item>
+    </string-array>
 </resources>

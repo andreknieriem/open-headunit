@@ -187,6 +187,18 @@ internal fun audioLifecycleBoundaryRegression() {
     } finally { mixed.close(); Handler.reset() }
     println("PASS PCM guidance save renegotiates the projection and the next session captures the choice")
 
+    val highRate = ConnectionFixture()
+    try {
+        highRate.settings.usePcmGuidance = true
+        highRate.publish()
+        highRate.settings.prefer48kGuidance = true
+        highRate.applyAudioSettings()
+        check(highRate.disconnected) { "guidance rate change only restarted local output" }
+        highRate.nextConnection(); highRate.publish()
+        check(highRate.audio.sessionConfig.prefer48kGuidance && !highRate.audio.needsSessionRestart())
+    } finally { highRate.close(); Handler.reset() }
+    println("PASS guidance sample rate save renegotiates projection and is captured by the next session")
+
     for (honor in listOf(false, true)) {
         com.andrerinas.openheadunit.aap.AapService.killProcessOnDestroy = false
         val closing = ConnectionFixture(Settings().apply { killOnDisconnect = true })

@@ -24,12 +24,14 @@ import com.google.protobuf.Message
 internal class ServiceDiscoveryResponse(
     context: Context,
     audioConfig: AudioSessionConfig,
-    noteAudioCodecs: (Boolean) -> Unit
+    noteAudioCodecs: (Boolean) -> Unit,
+    supports48kGuidance: Boolean = false
 ) : AapMessage(Channel.ID_CTR, Control.ControlMsgType.MESSAGE_SERVICE_DISCOVERY_RESPONSE_VALUE,
-    makeProto(context, audioConfig, noteAudioCodecs)) {
+    makeProto(context, audioConfig, noteAudioCodecs, supports48kGuidance)) {
 
     companion object {
-        private fun makeProto(context: Context, audioConfig: AudioSessionConfig, noteAudioCodecs: (Boolean) -> Unit): Message {
+        private fun makeProto(context: Context, audioConfig: AudioSessionConfig, noteAudioCodecs: (Boolean) -> Unit,
+                              supports48kGuidance: Boolean): Message {
             val settings = App.provide(context).settings
             // Initialize HeadUnitScreenConfig with actual physical screen dimensions
             HeadUnitScreenConfig.init(context, context.resources.displayMetrics, settings)
@@ -166,7 +168,7 @@ internal class ServiceDiscoveryResponse(
 
             val mediaAac = announcesAac(context, settings, audioConfig.aac)
             val isSelfModeSession = App.provide(context).commManager.isLoopbackSession
-            val audioServices = AudioSinkServices.create(audioConfig, mediaAac, isSelfModeSession)
+            val audioServices = AudioSinkServices.create(audioConfig, mediaAac, isSelfModeSession, supports48kGuidance)
             services.addAll(audioServices)
             noteAudioCodecs(mediaAac)
             audioServices.forEach { service ->

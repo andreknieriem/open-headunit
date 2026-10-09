@@ -1229,6 +1229,11 @@ class Settings(private val context: Context) {
         get() = prefs.getBoolean("use-pcm-guidance", false)
         set(value) { prefs.edit().putBoolean("use-pcm-guidance", value).apply() }
 
+    /** Prefer 48 kHz SPEECH only after PCM and protocol negotiation; SYSTEM remains 16 kHz. */
+    var prefer48kGuidance: Boolean
+        get() = prefs.getBoolean("prefer-48k-guidance", false)
+        set(value) { prefs.edit().putBoolean("prefer-48k-guidance", value).apply() }
+
     // Experimental backend: keep AudioTrack unless the user explicitly opts in.
     var useAAudioOutput: Boolean
         get() = prefs.getBoolean("use-aaudio-output", false)

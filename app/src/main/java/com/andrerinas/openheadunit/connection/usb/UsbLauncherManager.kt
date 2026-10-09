@@ -247,11 +247,8 @@ class UsbLauncherManager(val service: AapService) {
         val usbAutoStart = settings.autoStartOnUsb
 
         if (!force && !lastSession && !singleUsb && !usbAutoStart) return
+        if (commManager.deferUsbCheckForConnectionAttempt()) return
         if (commManager.isConnected || isSwitchingToProjection.get()) return
-        if (commManager.connectionState.value is CommManager.ConnectionState.Connecting) {
-            ConnectionArbiter.holdUsbCheck()
-            return
-        }
 
         if (userRequested) liftUserCancel("a USB connection was asked for")
         val tier = if (userRequested) Tier.USER else Tier.USB

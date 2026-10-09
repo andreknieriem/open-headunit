@@ -389,6 +389,22 @@ class CommManager(
     internal fun ownsUsbRecheck(owner: Any): Boolean =
         synchronized(transportLifecycleLock) { usbRecoveryOwner === owner }
 
+    /** Returns true while a connection attempt owns the scan slot; another owner owes USB a retry. */
+    internal fun deferUsbCheckForConnectionAttempt(): Boolean = synchronized(transportLifecycleLock) {
+        when (_connectionState.value) {
+            ConnectionState.Connecting, ConnectionState.Connected, ConnectionState.StartingTransport -> {
+                // An open socket is not a completed handshake. Register the debt under the same
+                // lock that settles the session claim, so handshake completion cannot pass between
+                // the state check and holdUsbCheck(). The arbiter returns it after a failed attempt;
+                // a successful session keeps it parked until that session ends. A USB-owned
+                // attempt already serves this scan and needs no second debt to itself.
+                ConnectionArbiter.holdUsbCheck()
+                true
+            }
+            else -> false
+        }
+    }
+
     @Volatile private var settingsUsbRestartInFlight: ConnectionState.Disconnected? = null
 
     /** A re-enumerated accessory still belongs to Save, but only inside its original window. */
@@ -724,12 +740,18 @@ class CommManager(
         else ConnectionPriorityPolicy.Owner.WIRELESS_STACK
 
     /** An opened transport keeps its claim through the handshake; anything else lets it go. */
-    private fun releaseClaim(claim: ConnectionArbiter.Claim) {
-        if (_connectionState.value is ConnectionState.Connected && ConnectionArbiter.holds(claim)) {
+    private fun releaseClaim(claim: ConnectionArbiter.Claim): Unit = synchronized(transportLifecycleLock) {
+        // The observer can start or finish SSL before connect() reaches its finally block.
+        // Keep the claim through StartingTransport; releasing it there would lose USB checks
+        // arriving during SSL. If SSL has already finished, settle it as a formed session.
+        val state = _connectionState.value
+        if ((state is ConnectionState.Connected || state is ConnectionState.StartingTransport) &&
+            ConnectionArbiter.holds(claim)) {
             sessionClaim = claim
         } else {
             clearClaimedEndpoint(claim)
-            ConnectionArbiter.release(claim, sessionFormed = false)
+            ConnectionArbiter.release(claim, sessionFormed =
+                state is ConnectionState.HandshakeComplete || state is ConnectionState.TransportStarted)
         }
     }
 

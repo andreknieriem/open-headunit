@@ -1,149 +1,57 @@
 package com.andrerinas.openheadunit.aap
 
-import com.andrerinas.openheadunit.aap.FragmentedMessageAudit.Outcome
 import com.andrerinas.openheadunit.aap.protocol.Channel
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
+import org.junit.Assert.*
 import org.junit.Test
 
-/**
- * The framing audit was built as an instrument and wired like one: it computed its finding, the
- * reader printed it, and nothing acted on it. This is the rule that decides which of its findings
- * are worth more than a log line.
- *
- * The cost of getting it wrong runs both ways. Too narrow and the one corruption mode nothing else
- * can see goes on being seen and ignored - a hardware round measured 37 and 59 injected
- * middle-fragment faults producing zero keyframe requests. Too broad and a fault that already has a
- * reporter gets asked about twice, which also stamps the corruption clock twice and makes one lost
- * fragment look like a wire that is still breaking.
- */
 class AuditRecoveryPolicyTest {
-
-    @Test
-    fun `a hole in a video run is asked about, because nothing else will`() {
-        // DELTA_CHANGED means the run's byte total cannot be explained by its fragment count, i.e.
-        // a fragment is missing. When it is a middle fragment, VideoFragmentAssembler still sees a
-        // first, some middles and a last in order and assembles the frame around the hole. This is
-        // the only outcome with no second reporter.
-        assertTrue(AuditRecoveryPolicy.shouldRequestKeyframe(Outcome.DELTA_CHANGED, Channel.ID_VID))
-    }
-
-    @Test
-    fun `the outcomes the reassembler already reports are left to it`() {
-        // TRUNCATED_RUN surfaces downstream as Anomaly.TRUNCATED_PREVIOUS and ORPHANED_FRAGMENT as
-        // Anomaly.ORPHANED_FRAGMENT, both of which already call requestKeyframe. Asking here too
-        // would spend two requests on one fault and, worse, stamp lastWireCorruptionMs twice - so a
-        // single lost fragment would read as a wire still losing them and hold off the focus cycle.
-        assertFalse(AuditRecoveryPolicy.shouldRequestKeyframe(Outcome.TRUNCATED_RUN, Channel.ID_VID))
-        assertFalse(AuditRecoveryPolicy.shouldRequestKeyframe(Outcome.ORPHANED_FRAGMENT, Channel.ID_VID))
-    }
-
-    @Test
-    fun `the first run on a channel is a baseline, not a fault`() {
-        // FIRST_OBSERVATION is how the audit learns the channel's convention. It fires once per
-        // channel per session and on a perfectly healthy stream.
-        assertFalse(AuditRecoveryPolicy.shouldRequestKeyframe(Outcome.FIRST_OBSERVATION, Channel.ID_VID))
-    }
-
-    @Test
-    fun `a hole in another channel's run is real but not repairable this way`() {
-        // The audit runs per channel because runs interleave, and MUSIC_PLAYBACK fragments enough to
-        // have its own accounting - two hardware rounds established a convention on it alongside
-        // VIDEO. A keyframe repairs video and nothing else, and the protocol has no equivalent ask.
-        for (channel in listOf(Channel.ID_CTR, Channel.ID_SEN, Channel.ID_INP, Channel.ID_AUD, Channel.ID_MPB, Channel.ID_MIC)) {
-            assertFalse(
-                "${Channel.name(channel)} has no keyframe to ask for",
-                AuditRecoveryPolicy.shouldRequestKeyframe(Outcome.DELTA_CHANGED, channel)
-            )
+    @Test fun `a one byte plaintext mismatch discards the completed video unit`() {
+        for (observed in listOf(99L, 101L)) {
+            val result = FragmentedMessageAudit.Result(Channel.ID_VID,
+                FragmentedMessageAudit.Outcome.DELTA_CHANGED, 100, observed, 2)
+            assertTrue(AuditRecoveryPolicy.shouldDiscardAssembledUnit(result))
+            assertTrue(AuditRecoveryPolicy.shouldRequestKeyframe(result.outcome, result.channel))
         }
     }
 
-    @Test
-    fun `no outcome on a non-video channel ever asks`() {
-        for (outcome in Outcome.entries) {
-            assertFalse(
-                "$outcome on MUSIC_PLAYBACK must not ask for a video keyframe",
-                AuditRecoveryPolicy.shouldRequestKeyframe(outcome, Channel.ID_MPB)
-            )
+    @Test fun `a truncated previous run does not discard the new valid frame`() {
+        val result = FragmentedMessageAudit.Result(Channel.ID_VID,
+            FragmentedMessageAudit.Outcome.TRUNCATED_RUN, 100, 50, 1)
+        assertTrue(AuditRecoveryPolicy.shouldRequestKeyframe(result.outcome, result.channel))
+        assertFalse(AuditRecoveryPolicy.shouldDiscardAssembledUnit(result))
+        assertFalse(AuditRecoveryPolicy.shouldRequestKeyframe(result.outcome, Channel.ID_AUD))
+    }
+
+    @Test fun `all audit faults ask for video recovery but no other channel does`() {
+        for (outcome in FragmentedMessageAudit.Outcome.entries) {
+            for (channel in 0..255) {
+                assertEquals("$outcome on channel $channel", channel == Channel.ID_VID,
+                    AuditRecoveryPolicy.shouldRequestKeyframe(outcome, channel))
+            }
         }
     }
 
-    // --- The discard ------------------------------------------------------------------------
-
-    private fun result(
-        channel: Int = Channel.ID_VID,
-        outcome: Outcome = Outcome.DELTA_CHANGED,
-        delta: Int = 0,
-        expectedDelta: Int? = null,
-    ) = FragmentedMessageAudit.Result(
-        channel = channel,
-        outcome = outcome,
-        declaredTotal = 36_470,
-        observedTotal = 36_470 - delta,
-        fragments = 3,
-        delta = delta,
-        expectedDelta = expectedDelta,
-        perFragmentDelta = null,
-    )
-
-    @Test
-    fun `a run short by a whole fragment is discarded`() {
-        // The measured shape: a 3-fragment run on the wire's 16KB fragmenting loses a middle, so
-        // the delta lands a fragment's length above the channel's -29-per-fragment expectation.
-        assertTrue(
-            AuditRecoveryPolicy.shouldDiscardAssembledUnit(
-                result(delta = -87 + 16_355, expectedDelta = -87)
-            )
-        )
-    }
-
-    @Test
-    fun `a delta that shifted by less than a fragment is reported and not discarded`() {
-        // The audit's history is false positives - ten wrong DELTA_CHANGED lines in 200ms once -
-        // and a discarded keyframe costs a whole GOP. A shift on the order of the framing
-        // convention itself is a convention change, not a hole.
-        assertFalse(
-            AuditRecoveryPolicy.shouldDiscardAssembledUnit(
-                result(delta = -87 + AuditRecoveryPolicy.MISSING_FRAGMENT_FLOOR_BYTES - 1, expectedDelta = -87)
-            )
-        )
-    }
-
-    @Test
-    fun `a run longer than expected is never discarded`() {
-        // Extra bytes are not a hole. Whatever produced them, the unit in hand is not missing a
-        // fragment, and doubt decodes.
-        assertFalse(
-            AuditRecoveryPolicy.shouldDiscardAssembledUnit(
-                result(delta = -87 - 16_355, expectedDelta = -87)
-            )
-        )
-    }
-
-    @Test
-    fun `a channel that has not settled its convention never discards`() {
-        assertFalse(
-            AuditRecoveryPolicy.shouldDiscardAssembledUnit(
-                result(delta = 16_355, expectedDelta = null)
-            )
-        )
-    }
-
-    @Test
-    fun `only a video DELTA_CHANGED can discard`() {
-        // The discard is the stronger claim on top of shouldRequestKeyframe, so everything that
-        // gate refuses, this refuses too.
-        assertFalse(
-            AuditRecoveryPolicy.shouldDiscardAssembledUnit(
-                result(channel = Channel.ID_MPB, delta = 16_355, expectedDelta = -87)
-            )
-        )
-        for (outcome in listOf(Outcome.FIRST_OBSERVATION, Outcome.TRUNCATED_RUN, Outcome.ORPHANED_FRAGMENT)) {
-            assertFalse(
-                AuditRecoveryPolicy.shouldDiscardAssembledUnit(
-                    result(outcome = outcome, delta = 16_355, expectedDelta = -87)
-                )
-            )
+    @Test fun `only a completed video mismatch discards the current unit`() {
+        for (outcome in FragmentedMessageAudit.Outcome.entries) {
+            for (channel in 0..255) {
+                val finding = FragmentedMessageAudit.Result(channel, outcome, 1000, 1, 2)
+                assertEquals("$outcome on channel $channel",
+                    channel == Channel.ID_VID && outcome == FragmentedMessageAudit.Outcome.DELTA_CHANGED,
+                    AuditRecoveryPolicy.shouldDiscardAssembledUnit(finding))
+            }
         }
     }
+
+    @Test fun `plaintext mismatches on either side of the old threshold request discard`() {
+        // The 256-byte threshold compensated encrypted-length uncertainty. It must not silently
+        // accept a damaged plaintext run or require a healthy establishing run before detection.
+        for (difference in listOf(-1000L, -256L, -255L, -1L, 1L, 255L, 256L, 1000L)) {
+            val audit = FragmentedMessageAudit()
+            audit.onMessage(Channel.ID_VID, 9, 2000, 4000)
+            val finding = audit.onMessage(Channel.ID_VID, 10, (2000 - difference).toInt(), 0)!!
+            assertTrue(AuditRecoveryPolicy.shouldRequestKeyframe(finding.outcome, finding.channel))
+            assertTrue(AuditRecoveryPolicy.shouldDiscardAssembledUnit(finding))
+        }
+    }
+
 }

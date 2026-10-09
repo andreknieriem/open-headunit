@@ -344,6 +344,7 @@ class BulkReaderFixture(private val ssl:Ssl,private val deliver:(AapMessage,Int)
  private val msgBuffer=ByteArray(256)
  private val skipBuffer=ByteArray(4)
  fun readBatch(bytes:ByteArray){fifo.put(bytes);processBulk()}
+ private fun observeEncryptedBody(channel:Int,encLen:Int){}
  private fun shouldDropForFaultInjection(channel:Int,flags:Int,encLen:Int)=false
  private fun deliverFragment(message:AapMessage,total:Int)=deliver(message,total)
  private fun auditFragment(channel:Int,flags:Int,length:Int,total:Int){}

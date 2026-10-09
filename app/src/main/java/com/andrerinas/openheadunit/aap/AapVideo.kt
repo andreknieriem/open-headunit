@@ -101,6 +101,8 @@ internal class AapVideo(private val videoDecoder: VideoDecoder, private val sett
         // sends nothing.
         videoDecoder.noteStreamCorrupted(reason)
         val now = android.os.SystemClock.elapsedRealtime()
+        // Reader and assembler can report the same lost fragment. This throttle also protects
+        // onFrameCorrupted's recovery clock from counting those two reports as fresh wire faults.
         if (VideoRecoveryPolicy.canRequestKeyframe(now, lastKeyframeRequestMs)) {
             lastKeyframeRequestMs = now
             AppLog.w("AapVideo: %s, requesting keyframe to recover stream", reason)

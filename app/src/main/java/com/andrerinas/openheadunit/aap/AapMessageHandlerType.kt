@@ -23,6 +23,13 @@ internal class AapMessageHandlerType(
 
     private val dispatchMonitor = TransportDispatchMonitor()
 
+    override fun onDroppedMediaData(channel: Int) {
+        // Reassembly rejection is retired at LAST or a replacement FIRST, synchronously
+        // on the reader before another session can be dispatched.
+        // Return the credit without decoding or queuing the rejected payload.
+        transport.sendMediaAck(channel)
+    }
+
     @Throws(AapMessageHandler.HandleException::class)
     override fun handle(message: AapMessage) {
         // Anything slow here is time the socket is not read, audio included. Video has its own
@@ -67,7 +74,7 @@ internal class AapMessageHandlerType(
         // 2. Try processing as Audio stream (Speech, System, Media)
         if (message.isAudio) {
             if (aapAudio.process(message)) {
-                // Return one DATA credit after consumption/copy, including a safely rejected
+                // After process returns normally, return one DATA credit, including a safely rejected
                 // payload. Do not wait for speaker drain: that would stall the sender's window.
                 // CSD has no DATA credit to return; fragments were completed before dispatch.
                 if (AudioMediaPayload.requiresAck(msgType)) {

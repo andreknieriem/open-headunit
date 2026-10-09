@@ -7,6 +7,19 @@ import com.andrerinas.openheadunit.utils.Utils
 import com.google.protobuf.CodedOutputStream
 import com.google.protobuf.Message
 
+/**
+ * A bounded view of message bytes; [size] is the exclusive valid end, not [data]'s capacity.
+ * [dataOffset] points past the type to the service payload, which is not always protobuf.
+ *
+ * Outbound protobuf construction stores [4-byte AAP header][2-byte type][protobuf], so its
+ * payload offset is 6. The send worker encrypts everything after the AAP header and rewrites
+ * the header's body length to the resulting TLS byte count.
+ *
+ * Inbound messages exclude the outer header. A complete plaintext message is [type][payload]
+ * with offset 2; a continuation starts at offset 0 and has no independent type. Reassembly must
+ * finish before parsing protobuf or interpreting a split media header. Inbound arrays may be
+ * borrowed from TLS; copy the valid bytes before retaining them or handing them to a worker.
+ */
 open class AapMessage(
         internal val channel: Int,
         internal val flags: Byte,
@@ -91,6 +104,8 @@ open class AapMessage(
     }
 
 
+    // The type has already selected the protobuf schema. Parsing the whole backing array would
+    // include the type/header or stale bytes beyond size, and media DATA/CSD is not protobuf.
     internal fun <T : Message.Builder> parse(builder: T): T {
         builder.mergeFrom(this.data, this.dataOffset, this.size - this.dataOffset)
         return builder

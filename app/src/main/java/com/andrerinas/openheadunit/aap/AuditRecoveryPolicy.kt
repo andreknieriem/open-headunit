@@ -3,80 +3,43 @@ package com.andrerinas.openheadunit.aap
 import com.andrerinas.openheadunit.aap.protocol.Channel
 
 /**
- * Which [FragmentedMessageAudit] findings are worth a keyframe request rather than only a log line.
+ * Turns framing findings into video recovery, rather than only describing corruption in a log.
+ * A keyframe can repair video reference state; it cannot repair an audio or metadata message,
+ * so findings on those channels must not trigger a video request.
  *
- * The audit was written as an instrument and wired like one: it computes its outcome, `AapRead`
- * prints it, and nothing else happens. That left the app able to *see* the one corruption mode
- * nothing else can see, and unable to *do* anything about it. A hardware round measured the cost -
- * 37 and 59 injected middle-fragment faults, zero keyframe requests, zero escalation activity, and a
- * recovery time indistinguishable from the round before the recovery work landed.
+ * A historical hardware round injected 37 and 59 middle-fragment faults without a keyframe
+ * request or escalation: the decoder's assembler cannot detect a hole between FIRST and LAST.
+ * That is why the reader must report damage before dispatching the final fragment. In a separate
+ * downstream-injection round, feeding holed units exhausted four decoder restarts in 33 seconds.
+ * These observations explain the recovery path; they are not measurements of this implementation.
  *
- * ### Why only DELTA_CHANGED
+ * The encrypted-length audit requested recovery only for DELTA_CHANGED because the video assembler
+ * reported orphaned and truncated runs. The common reassembler can now consume those fragments,
+ * so the reader reports all three. Transport/video recovery still owns request throttling and
+ * escalation; log suppression must never suppress repair. Overlapping reports must not be treated
+ * as independent physical faults when assessing recovery from a capture.
  *
- * A run whose fragment count cannot explain its own byte delta is missing a fragment, and a *middle*
- * fragment going missing is invisible everywhere else: [com.andrerinas.openheadunit.decoder.video.VideoFragmentAssembler] still sees a first,
- * some middles and a last in order, so it assembles the frame and hands the decoder a hole. This is
- * the only outcome with no second reporter.
+ * The former 256-byte floor deliberately tolerated uncertainty in encrypted-overhead accounting,
+ * and decoded excess-length or not-yet-established runs rather than risk discarding a keyframe.
+ * With the declared-plaintext contract, either a short or overlong completed unit fails the length
+ * check, including the first observed run. No learned baseline is needed. If a sender uses another
+ * convention, investigate the captured declared/unwrap lengths before diagnosing payload loss.
  *
- * The other three are deliberately excluded:
- *
- * - [FragmentedMessageAudit.Outcome.TRUNCATED_RUN] and
- *   [FragmentedMessageAudit.Outcome.ORPHANED_FRAGMENT] are already seen downstream as
- *   [com.andrerinas.openheadunit.decoder.video.VideoFragmentAssembler.Anomaly.TRUNCATED_PREVIOUS] and
- *   [com.andrerinas.openheadunit.decoder.video.VideoFragmentAssembler.Anomaly.ORPHANED_FRAGMENT], which already ask. Asking here too would
- *   double-ask for one fault - and, since the ask is also what stamps the corruption clock
- *   [com.andrerinas.openheadunit.decoder.video.KeyframeCycleEscalationPolicy] reads, would make one lost fragment look like a wire that is
- *   still breaking.
- * - [FragmentedMessageAudit.Outcome.FIRST_OBSERVATION] is the baseline the channel's convention is
- *   learned from. It is not a fault and fires once per channel per session.
- *
- * ### Why only video
- *
- * The audit runs per channel, and a holed run on `MUSIC_PLAYBACK` is real but a video keyframe
- * cannot repair it. There is no equivalent ask for audio in the protocol.
- *
- * Pure: no clock, no logging. Throttling the ask stays with [com.andrerinas.openheadunit.decoder.video.VideoRecoveryPolicy], which every other
- * keyframe request in the app is already held to.
+ * For recovery measurements, use bounded reader-stage middle-fragment injection, still unwrap
+ * every TLS record, and observe the interval after the injection budget is spent. Assembler-stage
+ * injection occurs after this audit and cannot measure its detection. Compare findings, keyframe
+ * requests, escalation and actual rendering, not only the number of printed audit lines.
  */
 object AuditRecoveryPolicy {
-
-    /**
-     * @param outcome what [FragmentedMessageAudit.onMessage] returned.
-     * @param channel the AAP channel the run was on.
-     */
     fun shouldRequestKeyframe(outcome: FragmentedMessageAudit.Outcome, channel: Int): Boolean =
-        outcome == FragmentedMessageAudit.Outcome.DELTA_CHANGED && channel == Channel.ID_VID
+        channel == Channel.ID_VID && when (outcome) {
+            FragmentedMessageAudit.Outcome.DELTA_CHANGED,
+            FragmentedMessageAudit.Outcome.ORPHANED_FRAGMENT,
+            FragmentedMessageAudit.Outcome.TRUNCATED_RUN -> true
+        }
 
-    /**
-     * Bytes a run must be short by before the assembled unit is thrown away rather than only
-     * reported.
-     *
-     * The audit's history is false positives, not false negatives, and a discarded keyframe costs
-     * a whole GOP. A genuinely missing fragment shifts the delta by that fragment's own length -
-     * hundreds of bytes at the very smallest - where the framing convention itself moves by tens
-     * of bytes per fragment. A floor an order of magnitude above the convention separates "a
-     * fragment is gone" from "the convention shifted", and errs toward decoding.
-     */
-    const val MISSING_FRAGMENT_FLOOR_BYTES = 256
-
-    /**
-     * Whether the access unit this run assembled should be discarded instead of decoded.
-     *
-     * [shouldRequestKeyframe] already decided the finding is worth a repair; this decides the
-     * stronger claim that the unit in hand is damaged enough that decoding it smears the picture.
-     * Until now the holed unit was the one damaged access unit still fed - every anomaly the
-     * reassembler can see already discards - and feeding it has been measured wedging a decoder
-     * through its whole restart budget. With render-side concealment covering the gap a discard
-     * leaves, discarding is now strictly the better trade.
-     *
-     * The delta is `declaredTotal - observed`, so a missing fragment *raises* it above the
-     * channel's expectation. A run that came in longer than expected is never a hole and is never
-     * discarded, and a channel that has not settled its convention ([expectedDelta] null) never
-     * discards either - both directions of doubt decode.
-     */
-    fun shouldDiscardAssembledUnit(result: FragmentedMessageAudit.Result): Boolean {
-        if (!shouldRequestKeyframe(result.outcome, result.channel)) return false
-        val expected = result.expectedDelta ?: return false
-        return result.delta - expected >= MISSING_FRAGMENT_FLOOR_BYTES
-    }
+    // DELTA_CHANGED describes the unit about to complete. An orphan has no live unit, and a
+    // truncated-run finding refers to the previous unit, not the replacement FIRST being read.
+    fun shouldDiscardAssembledUnit(result: FragmentedMessageAudit.Result): Boolean =
+        result.channel == Channel.ID_VID && result.outcome == FragmentedMessageAudit.Outcome.DELTA_CHANGED
 }

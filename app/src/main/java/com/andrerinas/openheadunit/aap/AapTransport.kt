@@ -32,6 +32,7 @@ import com.andrerinas.openheadunit.connection.projection.ProjectionConnection
 import com.andrerinas.openheadunit.connection.projection.SocketProjectionConnection
 import com.andrerinas.openheadunit.contract.ProjectionActivityRequest
 import com.andrerinas.openheadunit.decoder.audio.AudioDecoder
+import com.andrerinas.openheadunit.decoder.audio.AudioDiagnostics
 import com.andrerinas.openheadunit.decoder.audio.MicRecorder
 import com.andrerinas.openheadunit.decoder.video.DecoderStopPolicy
 import com.andrerinas.openheadunit.decoder.video.VideoDecoder
@@ -182,11 +183,20 @@ class AapTransport(
         // phone going quiet unless one end or the other is actually measured. This thread serves one
         // socket, so the write's own duration is the time the uplink refused to drain.
         val startedMs = SystemClock.elapsedRealtime()
+        val queueMs = (SystemClock.uptimeMillis() - it.`when`).coerceAtLeast(0)
         this.sendEncryptedMessage(
             data = it.obj as ByteArray,
             length = it.arg2
         )
         val finishedMs = SystemClock.elapsedRealtime()
+        val channel = (it.obj as ByteArray)[0].toInt() and 0xff
+        if (audioTimingActive && Channel.isAudio(channel) && finishedMs >= nextSendTimingMs &&
+            (queueMs >= 50 || finishedMs - startedMs >= 50)) {
+            val line = "Audio transport send channel=$channel queue=${queueMs}ms encryptWrite=${finishedMs - startedMs}ms"
+            AudioDiagnostics.record(finishedMs, line)
+            AppLog.w(line)
+            nextSendTimingMs = finishedMs + 1000
+        }
         uplinkStallMonitor.onWrite(finishedMs - startedMs, finishedMs)
             ?.let { report -> AppLog.i("AapTransport: %s", report) }
         return@Callback true
@@ -250,6 +260,10 @@ class AapTransport(
      * on every cycle. The set keeps one channel closing from discarding another's window.
      */
     private val startedAudioChannels = HashSet<Int>()
+    @Volatile internal var audioTimingActive = false
+        private set
+    private var nextReadTimingMs = 0L // poll thread only
+    private var nextSendTimingMs = 0L // send thread only
 
     /** Whether our own writes are draining. See [UplinkStallMonitor]. */
     private val uplinkStallMonitor = UplinkStallMonitor()
@@ -330,6 +344,7 @@ class AapTransport(
         val firstSink = synchronized(startedAudioChannels) {
             val wasEmpty = startedAudioChannels.isEmpty()
             startedAudioChannels.add(channel)
+            audioTimingActive = true
             wasEmpty
         }
         if (firstSink) audioGapMonitor.skipExpectedGap(SystemClock.elapsedRealtime())
@@ -338,7 +353,19 @@ class AapTransport(
     /** The phone stopped an audio sink. Called from [AapControlMedia.mediaSinkStopRequest]. */
     internal fun noteAudioSinkStopped(channel: Int) {
         if (!Channel.isAudio(channel)) return
-        synchronized(startedAudioChannels) { startedAudioChannels.remove(channel) }
+        synchronized(startedAudioChannels) {
+            startedAudioChannels.remove(channel)
+            audioTimingActive = startedAudioChannels.isNotEmpty()
+        }
+    }
+
+    internal fun recordSlowAudioRead(timing: TransportReadTiming, nowMs: Long) {
+        // Video shares this socket, but must not evict audio events or consume their report budget.
+        if (!audioTimingActive || !Channel.isAudio(timing.channel) || nowMs < nextReadTimingMs) return
+        val line = "Audio transport read channel=${timing.channel} readerGap=${timing.readerGapMs}ms " +
+            "header=${timing.headerMs}ms body=${timing.bodyMs}ms decrypt=${timing.decryptMs}ms dispatch=${timing.dispatchMs}ms"
+        AudioDiagnostics.report(nowMs, line, warning = true)
+        nextReadTimingMs = nowMs + 1000
     }
 
     // Escalation state for KeyframeCycleEscalationPolicy - see triggerFocusCycleRecovery().
@@ -674,6 +701,12 @@ class AapTransport(
         startedSensors.add(type)
     }
 
+    /**
+     * Send one already-built, unfragmented message: preserve channel/flags in the cleartext
+     * four-byte envelope and encrypt [type][service payload]. The pre-encryption length is not
+     * the wire length; rewrite it with TLS output bytes, excluding the envelope. This routine
+     * does not split messages or add FIRST's optional total-length field.
+     */
     private fun sendEncryptedMessage(data: ByteArray, length: Int): Int {
         val ba =
             ssl.encrypt(AapMessage.HEADER_SIZE, length - AapMessage.HEADER_SIZE, data) ?: return -1
@@ -744,7 +777,9 @@ class AapTransport(
         linkGapMonitor.reset()
         videoGapMonitor.reset()
         audioGapMonitor.reset()
-        synchronized(startedAudioChannels) { startedAudioChannels.clear() }
+        synchronized(startedAudioChannels) { startedAudioChannels.clear(); audioTimingActive = false }
+        nextReadTimingMs = 0L
+        nextSendTimingMs = 0L
         uplinkStallMonitor.reset()
         inboundRateMonitor.reset()
         bluetoothLinkMonitor.onSessionStart()
@@ -848,10 +883,13 @@ class AapTransport(
      */
     internal fun dispatchVideo(message: AapMessage): Boolean {
         val isPayload = aapVideo.isPayload(message)
-        val acks = message.type == 0 || message.type == 1
+        val acks = AapMessageFraming.completesMediaData(message.type, message.flags.toInt())
+        // Capture ownership at receipt. A later MediaStart can replace the channel's session
+        // while video is queued; its eventual ACK still belongs to this message's original one.
+        val ackSession = getSessionId(message.channel)
         val handler = videoHandler
         if (handler == null) {
-            if (acks) sendMediaAck(message.channel)
+            if (acks) sendMediaAck(message.channel, ackSession)
             return isPayload
         }
         val channel = message.channel
@@ -865,7 +903,7 @@ class AapTransport(
                     "shedding - see videoShed= on the transport dispatch line for how many")
             }
             if (isPayload) dispatchVideoRunHoled(true)
-            if (acks) sendMediaAck(channel)
+            if (acks) sendMediaAck(channel, ackSession)
             return isPayload
         }
         val size = message.size
@@ -881,7 +919,7 @@ class AapTransport(
             } finally {
                 videoBacklog.decrementAndGet()
                 recycleVideoBuffer(copy)
-                if (acks) sendMediaAck(channel)
+                if (acks) sendMediaAck(channel, ackSession)
             }
         }
         return isPayload
@@ -1213,8 +1251,8 @@ class AapTransport(
         context.sendBroadcast(ProjectionActivityRequest())
     }
 
-    internal fun sendMediaAck(channel: Int) {
-        send(MediaAck(channel, sessionIds.get(channel)))
+    internal fun sendMediaAck(channel: Int, sessionId: Int = getSessionId(channel)) {
+        send(MediaAck(channel, sessionId))
     }
 
     internal fun setSessionId(channel: Int, sessionId: Int) {

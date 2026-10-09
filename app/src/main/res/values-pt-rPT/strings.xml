@@ -1310,4 +1310,5 @@
     <string name="debug_video_fault_rate">Taxa de falhas (1 em N)</string>
     <string name="debug_video_fault_budget">Limite de falhas</string>
     <string name="debug_force_memory_profile">Forçar perfil de memória</string>
+    <string name="audio_settings_reconnect">Definições de áudio guardadas. Volte a ligar o Android Auto para as aplicar.</string>
 </resources>

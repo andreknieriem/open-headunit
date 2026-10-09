@@ -1303,4 +1303,5 @@
     <string name="pref_set_default_launcher_title">Application d\'accueil par défaut</string>
     <string name="pref_default_launcher_status_active">Actif (appuyer pour gérer)</string>
     <string name="pref_default_launcher_status_inactive">Non défini (appuyer pour définir par défaut)</string>
+    <string name="audio_settings_reconnect">Paramètres audio enregistrés. Reconnectez Android Auto pour les appliquer.</string>
 </resources>

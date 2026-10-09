@@ -1261,4 +1261,5 @@
     <string name="pref_set_default_launcher_title">Standard-Home-App</string>
     <string name="pref_default_launcher_status_active">Aktiv (Tippen zum Verwalten)</string>
     <string name="pref_default_launcher_status_inactive">Nicht gesetzt (Tippen zum Festlegen)</string>
+    <string name="audio_settings_reconnect">Audioeinstellungen gespeichert. Verbinde Android Auto neu, um sie zu übernehmen.</string>
 </resources>

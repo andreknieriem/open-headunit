@@ -1272,4 +1272,5 @@
     <string name="pref_set_default_launcher_title">App de inicio predeterminada</string>
     <string name="pref_default_launcher_status_active">Activa (toca para gestionar)</string>
     <string name="pref_default_launcher_status_inactive">No establecida (toca para establecerla)</string>
+    <string name="audio_settings_reconnect">Ajustes de audio guardados. Vuelve a conectar Android Auto para aplicarlos.</string>
 </resources>

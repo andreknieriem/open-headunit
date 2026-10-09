@@ -1251,4 +1251,5 @@
     <string name="pref_set_default_launcher_title">Varsayılan ana ekran</string>
     <string name="pref_default_launcher_status_active">Etkin (Yönetmek için dokunun)</string>
     <string name="pref_default_launcher_status_inactive">Ayarlanmadı (Varsayılan yapmak için dokunun)</string>
+    <string name="audio_settings_reconnect">Ses ayarları kaydedildi. Uygulamak için Android Auto\'yu yeniden bağlayın.</string>
 </resources>

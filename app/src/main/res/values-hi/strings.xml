@@ -1304,4 +1304,5 @@
     <string name="debug_video_fault_budget">फ़ॉल्ट बजट</string>
     <string name="debug_force_memory_profile">मेमोरी प्रोफ़ाइल बाध्य करें</string>
 
+    <string name="audio_settings_reconnect">ऑडियो सेटिंग्स सेव हो गईं। इन्हें लागू करने के लिए Android Auto को दोबारा कनेक्ट करें।</string>
 </resources>

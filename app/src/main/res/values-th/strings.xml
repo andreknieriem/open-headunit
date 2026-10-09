@@ -1309,4 +1309,5 @@
     <string name="debug_video_fault_budget">จำนวนข้อผิดพลาดสูงสุด</string>
     <string name="debug_force_memory_profile">บังคับโปรไฟล์หน่วยความจำ</string>
 
+    <string name="audio_settings_reconnect">บันทึกการตั้งค่าเสียงแล้ว เชื่อมต่อ Android Auto ใหม่เพื่อใช้การตั้งค่า</string>
 </resources>

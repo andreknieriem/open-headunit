@@ -1254,4 +1254,5 @@
     <string name="pref_set_default_launcher_title">默认主屏幕应用</string>
     <string name="pref_default_launcher_status_active">已启用（点按以管理）</string>
     <string name="pref_default_launcher_status_inactive">未设置（点按以设为默认）</string>
+    <string name="audio_settings_reconnect">音频设置已保存。重新连接 Android Auto 后生效。</string>
 </resources>

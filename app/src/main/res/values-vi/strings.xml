@@ -1258,4 +1258,5 @@
     <string name="pref_set_default_launcher_title">Màn hình chính mặc định</string>
     <string name="pref_default_launcher_status_active">Đang hoạt động (Chạm để quản lý)</string>
     <string name="pref_default_launcher_status_inactive">Chưa đặt (Chạm để đặt làm mặc định)</string>
+    <string name="audio_settings_reconnect">Đã lưu cài đặt âm thanh. Hãy kết nối lại Android Auto để áp dụng.</string>
 </resources>

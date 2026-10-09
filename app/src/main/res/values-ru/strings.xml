@@ -1255,4 +1255,5 @@ Open Headunit предоставляется «как есть» без каки
     <string name="pref_set_default_launcher_title">Главное приложение по умолчанию</string>
     <string name="pref_default_launcher_status_active">Активно (нажмите для управления)</string>
     <string name="pref_default_launcher_status_inactive">Не задано (нажмите, чтобы задать)</string>
+    <string name="audio_settings_reconnect">Настройки звука сохранены. Чтобы применить их, переподключите Android Auto.</string>
 </resources>

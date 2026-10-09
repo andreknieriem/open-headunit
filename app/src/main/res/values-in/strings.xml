@@ -1305,4 +1305,5 @@
     <string name="debug_video_fault_budget">Anggaran kesalahan</string>
     <string name="debug_force_memory_profile">Paksa profil memori</string>
 
+    <string name="audio_settings_reconnect">Pengaturan audio disimpan. Hubungkan ulang Android Auto untuk menerapkannya.</string>
 </resources>

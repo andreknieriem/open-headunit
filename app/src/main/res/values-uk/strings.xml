@@ -1259,4 +1259,5 @@
     <string name="pref_set_default_launcher_title">Типовий застосунок головного екрана</string>
     <string name="pref_default_launcher_status_active">Активно (торкніться, щоб керувати)</string>
     <string name="pref_default_launcher_status_inactive">Не вибрано (торкніться, щоб призначити)</string>
+    <string name="audio_settings_reconnect">Налаштування звуку збережено. Щоб застосувати їх, повторно підключіть Android Auto.</string>
 </resources>

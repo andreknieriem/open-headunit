@@ -1254,4 +1254,5 @@
     <string name="pref_set_default_launcher_title">預設主畫面應用程式</string>
     <string name="pref_default_launcher_status_active">已啟用（輕觸以管理）</string>
     <string name="pref_default_launcher_status_inactive">未設定（輕觸以設定為預設）</string>
+    <string name="audio_settings_reconnect">音訊設定已儲存。重新連線 Android Auto 後生效。</string>
 </resources>

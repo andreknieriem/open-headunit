@@ -1262,4 +1262,5 @@
     <string name="pref_set_default_launcher_title">Standaard startapp</string>
     <string name="pref_default_launcher_status_active">Actief (tik om te beheren)</string>
     <string name="pref_default_launcher_status_inactive">Niet ingesteld (tik om als standaard in te stellen)</string>
+    <string name="audio_settings_reconnect">Audio-instellingen opgeslagen. Verbind Android Auto opnieuw om ze toe te passen.</string>
 </resources>

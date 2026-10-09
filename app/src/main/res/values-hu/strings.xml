@@ -1258,4 +1258,5 @@
     <string name="pref_set_default_launcher_title">Alapértelmezett kezdőképernyő</string>
     <string name="pref_default_launcher_status_active">Aktív (koppintson a kezeléshez)</string>
     <string name="pref_default_launcher_status_inactive">Nincs beállítva (koppintson az alapértelmezettként való beállításhoz)</string>
+    <string name="audio_settings_reconnect">Hangbeállítások elmentve. Az alkalmazásukhoz csatlakoztassa újra az Android Auto-t.</string>
 </resources>

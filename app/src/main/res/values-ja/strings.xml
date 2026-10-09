@@ -1260,4 +1260,5 @@
     <string name="pref_set_default_launcher_title">デフォルトのホームアプリ</string>
     <string name="pref_default_launcher_status_active">有効（タップして管理）</string>
     <string name="pref_default_launcher_status_inactive">未設定（タップして設定）</string>
+    <string name="audio_settings_reconnect">オーディオ設定を保存しました。適用するにはAndroid Autoを再接続してください。</string>
 </resources>

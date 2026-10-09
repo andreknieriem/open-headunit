@@ -185,8 +185,7 @@ class AapService : Service() {
     private var lastAaMediaMetadata: MediaPlayback.MediaMetaData? = null
     private var lastAaPlaybackPositionMs: Long = 0L
     private var lastAaPlaybackIsPlaying: Boolean? = null
-    private var wasPlayingBeforeDisconnect = false
-    private var lastDisconnectTimestampMs = 0L
+    private val reconnectPlayback = ReconnectPlaybackSnapshot()
     private var mediaSessionIsPlaying = false
     private var mediaMetadataDecodeJob: Job? = null
     private var autoResumePlaybackJob: Job? = null
@@ -270,6 +269,7 @@ class AapService : Service() {
      * flow observers that would otherwise update the already-dismissed notification.
      */
     private var isDestroying = false
+    internal val isStopping: Boolean get() = isDestroying
     private var hasEverConnected = false
 
     // Completed when the disconnect teardown has finished giving the network back. The exit path
@@ -1175,6 +1175,8 @@ class AapService : Service() {
             commManager.connectionState.value as? CommManager.ConnectionState.Disconnected else null
         serviceScope.launch {
             commManager.connectionState.collect { state ->
+                automaticReconnect.onStateChanged()
+                usbReconnect.onStateChanged()
                 if (state === initialTerminal) return@collect
                 // Activity can advance the handshake before this conflated collector sees
                 // Connected. Every observed live phase must retire obsolete Save launch work.
@@ -1255,9 +1257,9 @@ class AapService : Service() {
     private fun maybeAutoResumePlaybackOnReconnect() {
         val settings = App.provide(this).settings
         val now = SystemClock.elapsedRealtime()
-        val elapsedSinceDisconnect = now - lastDisconnectTimestampMs
-        val wasPlaying = wasPlayingBeforeDisconnect
-        wasPlayingBeforeDisconnect = false // Consume once so it doesn't fire again on subsequent events
+        val playback = reconnectPlayback.consume(now)
+        val elapsedSinceDisconnect = playback.elapsedMs
+        val wasPlaying = playback.wasPlaying
 
         val shouldResume = AutoResumePlaybackPolicy.shouldResume(
             enabled = settings.autoResumePlaybackOnReconnect,
@@ -1438,7 +1440,9 @@ class AapService : Service() {
                 ProjectionRaiseDeadlinePolicy.Action.END_SESSION -> {
                     AppLog.e("AapService: the projection screen never came up, so this session can " +
                         "carry nothing. Ending it so the phone can start a new one.")
-                    commManager.disconnect()
+                    // Close the formed session gracefully, but keep the service and automatic
+                    // recovery available for the replacement this deadline is asking for.
+                    commManager.disconnect(sendByeBye = true, isUserExit = false, honorKillOnDisconnect = false)
                 }
             }
         }
@@ -1542,6 +1546,13 @@ class AapService : Service() {
         applyPlaceholderMediaMetadata()
     }
 
+    // Discovery and USB re-enumeration have different owners. A failed wireless attempt
+    // must not replace the USB device check still owed by the preceding recovery interval.
+    private fun reconnectTimer() =
+        AutomaticReconnect(serviceScope, { commManager.connectionState.value }, { isDestroying })
+    private val automaticReconnect by lazy { reconnectTimer() }
+    private val usbReconnect by lazy { reconnectTimer() }
+
     /**
      * Called by [CommManager.ConnectionState.Disconnected] observer:
      * 1. Refreshing the notification (unless we are already tearing down)
@@ -1592,9 +1603,11 @@ class AapService : Service() {
         mediaMetadataDecodeJob = null
         lastAaMediaMetadata = null
         lastAaPlaybackPositionMs = 0L
-        wasPlayingBeforeDisconnect = (lastAaPlaybackIsPlaying == true)
-        lastDisconnectTimestampMs = SystemClock.elapsedRealtime()
-        AppLog.i("AapService: Disconnected. wasPlayingBeforeDisconnect=$wasPlayingBeforeDisconnect")
+        reconnectPlayback.onDisconnected(
+            lastAaPlaybackIsPlaying,
+            SystemClock.elapsedRealtime(),
+            deliberate = state.isClean || state.isUserExit,
+        )
         lastAaPlaybackIsPlaying = null
         cachedAaAlbumArtBitmap = null
         mediaNotification.cancel()
@@ -1903,10 +1916,8 @@ class AapService : Service() {
             // the line would otherwise announce a restart that is a no-op there.
             if (wifiLauncherManager.active?.hasLocalDiscovery() == true) {
                 AppLog.i("AapService: Disconnected. Restarting discovery loop in 2s...")
-                serviceScope.launch {
-                    delay(2000)
-                    if (!commManager.isConnected)
-                        wifiLauncherManager.restartDiscovery()
+                automaticReconnect.schedule(state, 2000) {
+                    wifiLauncherManager.restartDiscovery()
                 }
             }
             return
@@ -1930,9 +1941,13 @@ class AapService : Service() {
                 return
             }
             AppLog.i("AapService: USB disconnect. Scheduling reconnect check in ${USB_RECONNECT_DELAY_MS}ms...")
-            serviceScope.launch {
-                delay(USB_RECONNECT_DELAY_MS)
-                if (!commManager.isConnected) usbLauncherManager.checkAlreadyConnected(force = true)
+            // Connecting is not success: the USB launcher can defer this check through the
+            // arbiter. Keep it across failed attempts/errors until a session forms or the user
+            // supersedes recovery, even if wireless discovery schedules its own retry meanwhile.
+            val owner = commManager.usbRecheckOwner(state) ?: return
+            usbReconnect.schedule(state, USB_RECONNECT_DELAY_MS,
+                ownsCheck = { commManager.ownsUsbRecheck(owner) }) {
+                usbLauncherManager.checkAlreadyConnected(force = true)
             }
         }
 
@@ -1940,9 +1955,8 @@ class AapService : Service() {
             val mode = settings.wifiConnectionMode
             if (mode == WifiLauncherMode.AUTO && lastType != Settings.CONNECTION_TYPE_USB) {
                 AppLog.i("AapService: Unclean WiFi disconnect in Auto Mode. Retrying discovery in 2s...")
-                serviceScope.launch {
-                    delay(2000)
-                    if (!commManager.isConnected) wifiLauncherManager.startDiscovery(oneShot = true)
+                automaticReconnect.schedule(state, 2000) {
+                    wifiLauncherManager.startDiscovery(oneShot = true)
                 }
             }
         }

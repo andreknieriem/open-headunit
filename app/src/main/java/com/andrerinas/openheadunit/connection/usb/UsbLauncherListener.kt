@@ -50,8 +50,9 @@ class UsbLauncherListener(private val manager: UsbLauncherManager) : UsbReceiver
             service.launchMainActivityIfNeeded("USB normal attach ($deviceName)")
             service.serviceScope.launch {
                 delay(ATTACH_FALLBACK_DELAY_MS)
-                if (!commManager.isConnected && !manager.isSwitchingToProjection() &&
-                    !manager.isActivitySwitchInFlight()) {
+                // The manager retains this scan if its own AOA switch is still running.
+                // An Activity-owned switch keeps its separate handoff guard.
+                if (!commManager.isConnected && !manager.isActivitySwitchInFlight()) {
                     AppLog.i("UsbAttachedActivity didn't handle $deviceName. Trying from service...")
                     manager.checkAlreadyConnected(force = true, settingsRestart = manager.pendingSettingsRestart())
                 }
@@ -121,6 +122,7 @@ class UsbLauncherListener(private val manager: UsbLauncherManager) : UsbReceiver
                 val usbMode = UsbAccessoryMode(usbManager)
                 manager.launchAttempt(restart, Dispatchers.IO) {
                     if (usbMode.connectAndSwitch(device, settings.useLibusb)) {
+                        manager.noteAccessorySwitchRequested()
                         AppLog.i("Successfully requested switch to accessory mode for $deviceName")
                     } else {
                         AppLog.w("USB permission granted but connectAndSwitch failed for $deviceName")

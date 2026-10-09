@@ -374,6 +374,21 @@ class CommManager(
         else ConnectionArbiter.claim(tier, ConnectionPriorityPolicy.Owner.USB, description)
     }
 
+    // Failed physical attempts and permission errors belong to the same recovery interval.
+    // End it at the producer, not the conflated observer: a complete session can start and end
+    // before the service receives either event. Explicit stop and Save also revoke old checks.
+    private var usbRecoveryOwner: Any = Any()
+
+    internal fun usbRecheckOwner(ended: ConnectionState.Disconnected): Any? =
+        synchronized(transportLifecycleLock) {
+            usbRecoveryOwner.takeIf {
+                _connectionState.value === ended && !ended.isUserExit && !ended.isSettingsRestart
+            }
+        }
+
+    internal fun ownsUsbRecheck(owner: Any): Boolean =
+        synchronized(transportLifecycleLock) { usbRecoveryOwner === owner }
+
     @Volatile private var settingsUsbRestartInFlight: ConnectionState.Disconnected? = null
 
     /** A re-enumerated accessory still belongs to Save, but only inside its original window. */
@@ -788,6 +803,7 @@ class CommManager(
                     withLiveTransport(transport, ConnectionState.StartingTransport) {
                         // A session that got this far had a working link to carry video on. See
                         // VideoStarvationPolicy for what it means when one ends without carrying any.
+                        usbRecoveryOwner = Any()
                         sessionReachedHandshake = true
                         videoDecoder.framesRenderedThisSession = 0L
                         silentPeerFailures = 0
@@ -969,6 +985,7 @@ class CommManager(
         if (_transport !== source || disconnectRequested) return@synchronized
         disconnectRequested = true
         val wasUserExit = source.wasUserExit
+        if (wasUserExit) usbRecoveryOwner = Any()
         // Keep the retiring owner published until doDisconnect captures it. Its callback
         // precedes final cleanup, so reconnect must await its actual termination as well.
         // Publish cleanup before state: a reconnect observer must be able to await this job.
@@ -1279,6 +1296,7 @@ class CommManager(
         reason: DisconnectReason = DisconnectReason.CONNECTION_ENDED,
         settingsRetryOwner: ConnectionState.Disconnected? = null,
     ): Unit = synchronized(transportLifecycleLock) {
+        if (isUserExit || reason == DisconnectReason.SETTINGS_RESTART) usbRecoveryOwner = Any()
         if (isUserExit && reason != DisconnectReason.SETTINGS_RESTART) cancelPendingSettingsRestart()
         if (disconnectRequested || _connectionState.value is ConnectionState.Disconnected) return@synchronized
         disconnectRequested = true

@@ -1174,7 +1174,8 @@ class AapService : Service() {
             commManager.connectionState.value as? CommManager.ConnectionState.Disconnected else null
         serviceScope.launch {
             commManager.connectionState.collect { state ->
-                automaticReconnect.cancel()
+                automaticReconnect.onStateChanged()
+                usbReconnect.onStateChanged()
                 if (state === initialTerminal) return@collect
                 // Activity can advance the handshake before this conflated collector sees
                 // Connected. Every observed live phase must retire obsolete Save launch work.
@@ -1542,9 +1543,12 @@ class AapService : Service() {
         applyPlaceholderMediaMetadata()
     }
 
-    private val automaticReconnect by lazy {
+    // Discovery and USB re-enumeration have different owners. A failed wireless attempt
+    // must not replace the USB device check still owed by the preceding recovery interval.
+    private fun reconnectTimer() =
         AutomaticReconnect(serviceScope, { commManager.connectionState.value }, { isDestroying })
-    }
+    private val automaticReconnect by lazy { reconnectTimer() }
+    private val usbReconnect by lazy { reconnectTimer() }
 
     /**
      * Called by [CommManager.ConnectionState.Disconnected] observer:
@@ -1934,7 +1938,12 @@ class AapService : Service() {
                 return
             }
             AppLog.i("AapService: USB disconnect. Scheduling reconnect check in ${USB_RECONNECT_DELAY_MS}ms...")
-            automaticReconnect.schedule(state, USB_RECONNECT_DELAY_MS) {
+            // Connecting is not success: the USB launcher can defer this check through the
+            // arbiter. Keep it across failed attempts/errors until a session forms or the user
+            // supersedes recovery, even if wireless discovery schedules its own retry meanwhile.
+            val owner = commManager.usbRecheckOwner(state) ?: return
+            usbReconnect.schedule(state, USB_RECONNECT_DELAY_MS,
+                ownsCheck = { commManager.ownsUsbRecheck(owner) }) {
                 usbLauncherManager.checkAlreadyConnected(force = true)
             }
         }

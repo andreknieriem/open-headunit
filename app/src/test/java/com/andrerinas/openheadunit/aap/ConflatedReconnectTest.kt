@@ -26,7 +26,7 @@ class ConflatedReconnectTest {
         try {
             scope.launch {
                 states.collect { state ->
-                    retry.cancel()
+                    retry.onStateChanged()
                     if (state is ConnectionState.Disconnected) {
                         callbacks++
                         retry.schedule(state, 2000) { retries++ }

@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import com.andrerinas.openheadunit.connection.CommManager
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.aap.AapService
 import com.andrerinas.openheadunit.utils.DummyVpnPolicy
@@ -14,7 +15,9 @@ import com.andrerinas.openheadunit.connection.self.launchers.SelfLauncherV17_4
 import com.andrerinas.openheadunit.connection.wifi.WifiLauncherManager
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.VpnControl
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -44,6 +47,13 @@ class SelfLauncherManager(
      * has no IPv4 until the service dies.
      */
     private var selfModeVpnWatchdog: Job? = null
+    private var launchJob: Job? = null
+    private var launchTimeoutJob: Job? = null
+    private var launchConnected = false
+    private var settingsLaunchOwner: CommManager.ConnectionState.Disconnected? = null
+    // Obsolete Save cleanup may precede service observation. This policy belongs only to
+    // that exact terminal event; it must never become a flag on the next physical session.
+    private var retiredSettingsTerminal: CommManager.ConnectionState.Disconnected? = null
 
     /**
      * "Self Mode" connects the device to itself over the loopback interface.
@@ -80,7 +90,7 @@ class SelfLauncherManager(
     }
 
     @SuppressLint("MissingPermission", "HardwareIds")
-    fun start() {
+    fun start(settingsRestart: CommManager.ConnectionState.Disconnected? = null) {
         val commManager = App.provide(service).commManager
 
         // auto-start-self-mode and an explicit ACTION_START_SELF_MODE both land here, and running
@@ -94,13 +104,28 @@ class SelfLauncherManager(
             return
         }
 
+        // Manual Self Mode owns the next connection even before Gearhead dials port 5288.
+        // Save's own relaunch retains its permission; a later user launch revokes it.
+        if (settingsRestart == null) commManager.cancelPendingSettingsRestart()
+        else if (!settingsRestart.acceptsSettingsRestart(commManager.connectionState.value)) return
+
+        // A new launch owns its own deadline; the previous session cannot time it out.
+        launchTimeoutJob?.cancel()
+        launchConnected = false
+        settingsLaunchOwner = settingsRestart
+        retiredSettingsTerminal = null
         isActive = true
         launchInFlight = true
-        adoptDummyVpn()
-
-        service.serviceScope.launch(Dispatchers.Main) {
+        // Publish and bind the job before it can run. Revoking Save then cancels both a queued
+        // launch and a launcher suspended while waiting for the network, without touching a new job.
+        val job = service.serviceScope.launch(Dispatchers.Main, start = CoroutineStart.LAZY) {
+            if (settingsRestart != null && !settingsRestart.acceptsSettingsRestart(commManager.connectionState.value)) {
+                stopIfCurrent(coroutineContext[Job], preserveVpn = commManager.connectionState.value !== settingsRestart)
+                return@launch
+            }
+            adoptDummyVpn()
             // prepare launchers
-            val services = SelfLauncherServices(service, wifiLauncherManager)
+            val services = SelfLauncherServices(service, wifiLauncherManager, settingsRestart)
             val launchers: Array<SelfLauncher>
 
             val path = installedPath(service)
@@ -125,6 +150,7 @@ class SelfLauncherManager(
 
             try {
                 for (launcher in launchers) {
+                    services.ensureLaunchAllowed()
                     try {
                         if (!launcher.run())
                             AppLog.w("SelfMode: Launch of '${launcher.name}' failed")
@@ -133,6 +159,8 @@ class SelfLauncherManager(
                             anySucceeded = true
                             break
                         }
+                    } catch (e: CancellationException) {
+                        throw e
                     } catch (e: Exception) {
                         AppLog.w("SelfMode: Launch of '${launcher.name}' had caused an error", e)
                     }
@@ -140,7 +168,7 @@ class SelfLauncherManager(
             } finally {
                 // The launchers have had their turn; what follows is waiting for the phone, which
                 // another request is entitled to retry.
-                launchInFlight = false
+                if (launchJob === coroutineContext[Job]) launchInFlight = false
             }
 
             // all failed :(
@@ -150,7 +178,7 @@ class SelfLauncherManager(
                     // reportError, not emitError: disconnect() defaults to isUserExit, so a launch
                     // that never had a session latched userExitedAA and suppressed the Native poke
                     // for the rest of the group. Reporting still hides the "connecting" overlay.
-                    commManager.reportError("No launch method succeeded")
+                    commManager.reportError("No launch method succeeded", settingsRestart)
                     // The report is not a disconnect, so nothing else clears this - and the
                     // watchdog below is only armed once a launcher has succeeded.
                     isActive = false
@@ -166,16 +194,32 @@ class SelfLauncherManager(
             // Report a launch that has not connected yet, without taking anything down: the
             // wireless server and the dummy VPN are what the phone still has to arrive on. See
             // SelfLaunchTimeoutPolicy.
+            // A live-state callback can run while a launcher is suspended, before the
+            // timeout job exists. Remember fulfillment so returning from that launcher cannot
+            // arm a stale deadline, including after Save has already ended the live session.
+            if (launchJob !== coroutineContext[Job] || launchConnected || commManager.isConnected) return@launch
             val deadlineMs = SelfLaunchTimeoutPolicy.deadlineMs(path)
-            service.serviceScope.launch {
+            // A child keeps this attempt alive through its response deadline. Save cancellation
+            // must also suppress timeout UI after a successful legacy launch intent was sent.
+            val owner = coroutineContext[Job]
+            launchTimeoutJob = launch timeout@{
                 delay(deadlineMs)
 
+                if (launchJob !== owner) return@timeout
+                if (settingsRestart != null &&
+                    !settingsRestart.acceptsSettingsRestart(commManager.connectionState.value)) {
+                    // Save may already have connected, or another route may own the session.
+                    // A child cancellation alone does not retire the parent launch's flags.
+                    // Keep an established loopback session; otherwise retire only our bookkeeping.
+                    if (!commManager.isLoopbackSession) stopIfCurrent(owner, preserveVpn = true)
+                    return@timeout
+                }
                 if (!commManager.isConnected && isActive) {
                     AppLog.e("SelfMode: nothing connected within ${deadlineMs}ms of the launch")
                     if (SelfLaunchTimeoutPolicy.mayDisconnect(path)) {
                         commManager.emitError("No launch method succeeded (timeout)")
                     } else {
-                        commManager.reportError("No launch method succeeded (timeout)")
+                        commManager.reportError("No launch method succeeded (timeout)", settingsRestart)
                     }
 
                     // The report is deliberately not a disconnect, so no Disconnected transition
@@ -186,6 +230,17 @@ class SelfLauncherManager(
                 }
             }
         }
+        launchJob = job
+        job.invokeOnCompletion { cause ->
+            if (cause is CancellationException) service.serviceScope.launch(Dispatchers.Main.immediate) {
+                // Completion may arrive from IO. Main owns the launch flags and VPN bookkeeping;
+                // recheck identity there so delayed cleanup cannot stop a newer manual launch.
+                stopIfCurrent(job, preserveVpn = settingsRestart != null &&
+                    commManager.connectionState.value !== settingsRestart)
+            }
+        }
+        settingsRestart?.trackSettingsLaunch(job)
+        job.start()
     }
 
     /**
@@ -220,6 +275,70 @@ class SelfLauncherManager(
         launchInFlight = false
     }
 
+    /** A published connection ends Save's waiting phase before its deadline can affect that session. */
+    internal fun onConnectionEstablished() {
+        val commManager = App.provide(service).commManager
+        // The collector's live-state event may already have been superseded by teardown.
+        if (!commManager.isConnected) return
+        retiredSettingsTerminal = null
+        launchConnected = true
+        // A connection fulfills manual launches too. Their old 10-second deadline must not
+        // survive into a later Save and report failure against its disconnected interval.
+        launchTimeoutJob?.cancel()
+        launchTimeoutJob = null
+        if (commManager.isLoopbackSession) {
+            // The requested Self session arrived. Retain Self mode for its later disconnect,
+            // but neither a Save timeout nor its old token owns this established session.
+            settingsLaunchOwner = null
+        } else {
+            // An external route won. Retire manual Self launches as well as Save launches;
+            // retaining isActive would make the winning session advertise Self-mode audio.
+            stopIfCurrent(launchJob, preserveVpn = true)
+        }
+    }
+
+    /** Handle a terminal-only observation before the service chooses its reconnect policy. */
+    internal fun onConnectionEnded(state: CommManager.ConnectionState.Disconnected) {
+        val commManager = App.provide(service).commManager
+        if (commManager.connectionState.value !== state) return
+        if (state.wasLoopbackSession && state.acceptsSettingsRestart(state)) {
+            launchConnected = true
+            // StateFlow may skip every live state. The retiring session proves that the old
+            // launch succeeded; cancel its deadline even when onConnectionEstablished was skipped.
+            launchTimeoutJob?.cancel()
+            launchTimeoutJob = null
+        }
+        val saved = settingsLaunchOwner
+        val retiredHere = retiredSettingsTerminal === state
+        retiredSettingsTerminal = null
+        if (saved != null) {
+            if (state === saved) return
+            stopIfCurrent(launchJob, preserveVpn = true)
+            retiredSettingsTerminal = null // The collector is consuming this event now.
+        } else if (!retiredHere) return
+        // Apply the route only when its own terminal is observed. If a newer state replaces
+        // it first, no Self flag can leak into that later session's discovery or teardown.
+        isActive = state.wasLoopbackSession
+    }
+
+    /** Token used by a settings fallback so it cannot retire a newer manual launch. */
+    internal fun currentLaunch(): Job? = launchJob
+
+    internal fun stopIfCurrent(expected: Job?, preserveVpn: Boolean = false) {
+        if (launchJob !== expected) return
+        val commManager = App.provide(service).commManager
+        val saved = settingsLaunchOwner
+        val current = commManager.connectionState.value
+        // Save cleanup can precede the terminal collector, or that terminal may be skipped
+        // entirely for a newer connection. Keep its identity instead of restoring a global
+        // Self flag here; only onConnectionEnded may consume this snapshot's route policy.
+        val retired = if (preserveVpn && saved != null &&
+            current is CommManager.ConnectionState.Disconnected && current !== saved) current else null
+        // A superseding connection may still be Connecting; preserve its network resources.
+        stop(wasConnected = preserveVpn || commManager.isConnected)
+        retiredSettingsTerminal = retired
+    }
+
     /** Whether the launchers are still running, for a disconnect deciding what it is looking at. */
     fun isLaunchInFlight(): Boolean = launchInFlight
 
@@ -246,6 +365,12 @@ class SelfLauncherManager(
      *        arrived and the VPN is taken down via the Self-Mode-never-connected path.
      */
     fun stop(wasConnected: Boolean = false) {
+        launchJob?.cancel()
+        launchJob = null
+        launchTimeoutJob?.cancel()
+        launchTimeoutJob = null
+        settingsLaunchOwner = null
+        retiredSettingsTerminal = null
         if (!isActive && !launchInFlight && selfModeVpnWatchdog == null) return
 
         AppLog.i("SelfMode: stopping Self Mode (wasConnected=$wasConnected, wasActive=$isActive, launchInFlight=$launchInFlight)")

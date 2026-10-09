@@ -5,20 +5,35 @@ import android.net.ConnectivityManager
 import android.os.Build
 import android.os.Parcel
 import android.os.Parcelable
+import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.aap.AapService
+import com.andrerinas.openheadunit.connection.CommManager
 import com.andrerinas.openheadunit.connection.wifi.WifiLauncherManager
 import com.andrerinas.openheadunit.connection.wifi.WifiLauncherMode
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 
 class SelfLauncherServices(
     val aap: AapService,
-    val wifiLauncherManager: WifiLauncherManager
+    val wifiLauncherManager: WifiLauncherManager,
+    val settingsRestart: CommManager.ConnectionState.Disconnected? = null,
 ) {
     val connectivityManager by lazy { aap.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager }
 
     val fakeNetwork by lazy { createFakeNetwork(0) }
     val fakeWifiInfo by lazy { createFakeWifiInfo() }
 
+
+    /** A suspension may let USB or another socket replace the Save that requested this launch. */
+    internal suspend fun ensureLaunchAllowed() {
+        currentCoroutineContext().ensureActive()
+        if (settingsRestart != null &&
+            !settingsRestart.acceptsSettingsRestart(App.provide(aap).commManager.connectionState.value)) {
+            // Cancellation ends the whole launch chain; false would run the next fallback.
+            throw CancellationException("Settings Self launch superseded")
+        }
+    }
 
     /** Reflectively constructs an `android.net.Network` from a raw network ID integer. */
     private fun createFakeNetwork(netId: Int): Parcelable? {

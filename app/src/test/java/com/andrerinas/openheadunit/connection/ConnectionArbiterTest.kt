@@ -72,6 +72,28 @@ class ConnectionArbiterTest {
     private fun <T> must(value: T?): T { assertNotNull(value); return value!! }
 
     @Test
+    fun `acknowledging restored wireless consumes its debt even during a newer claim`() {
+        val usb = must(ConnectionArbiter.claim(Tier.USB, Owner.USB, "USB session"))
+        ConnectionArbiter.release(usb, sessionFormed = true)
+        val wpp = must(ConnectionArbiter.claim(Tier.WIRELESS_HANDSHAKE, Owner.WIRELESS_STACK, "WPP reconnect"))
+        assertTrue(ConnectionArbiter.tryRearmWireless())
+        assertTrue(ConnectionArbiter.holds(wpp))
+        ConnectionArbiter.release(wpp, sessionFormed = true)
+        ConnectionArbiter.sessionEnded(wirelessAlreadyRearmed = false, userExit = false)
+        assertTrue(givenBack.isEmpty())
+    }
+
+    @Test
+    fun `a USB claim refuses rearm without erasing its wireless debt`() {
+        val usb = must(ConnectionArbiter.claim(Tier.USB, Owner.USB, "new USB"))
+        assertFalse(ConnectionArbiter.tryRearmWireless())
+        assertTrue(ConnectionArbiter.holds(usb))
+        ConnectionArbiter.release(usb, sessionFormed = true)
+        ConnectionArbiter.sessionEnded(wirelessAlreadyRearmed = false, userExit = false)
+        assertEquals(listOf(true to false), givenBack)
+    }
+
+    @Test
     fun `a USB retry inside the quiet window keeps wireless down`() {
         usbTry(failAfterMs = 10_000)
         advance(5_500)

@@ -18,7 +18,7 @@ class SelfLauncherV17_4(
     override suspend fun run(): Boolean {
         // Call withContext directly, not on 'service'
         val success = withContext(Dispatchers.IO) {
-            commManager.connect("127.0.0.1", 5277)
+            commManager.connect("127.0.0.1", 5277, expectedState = services.settingsRestart)
             commManager.isConnected
         }
 

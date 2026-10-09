@@ -266,6 +266,7 @@ class SettingsFragment : Fragment() {
     private var pendingHideClock: Boolean? = null
 
     private var requiresRestart = false
+    private var requiresServiceRestart = false
     private var hasChanges = false
     private val SAVE_ITEM_ID = 1001
     private val RESET_ITEM_ID = 1002
@@ -698,6 +699,8 @@ class SettingsFragment : Fragment() {
     }
 
     private fun saveSettings() {
+        checkChanges()
+        var audioSessionEnded = false
         val languageChanged = pendingAppLanguage != settings.appLanguage
 
         pendingAdvancedSettings?.let { if (it != settings.isAdvancedSettingsActive) settings.isAdvancedSettingsActive = it }
@@ -826,7 +829,7 @@ class SettingsFragment : Fragment() {
         // recovery use via recreateProjectionView(). If another setting is already forcing a
         // restart below, that path covers it; with no active session the new value is simply
         // used on the next launch.
-        if (oldViewMode != settings.viewMode && !requiresRestart) {
+        if (oldViewMode != settings.viewMode && !requiresServiceRestart) {
             LocalBroadcastManager.getInstance(requireContext()).sendBroadcast(
                 Intent(QuickSettingsFragment.ACTION_SETTINGS_CHANGED)
                     .putExtra(QuickSettingsFragment.EXTRA_NEEDS_VIEW_RECREATE, true)
@@ -834,15 +837,11 @@ class SettingsFragment : Fragment() {
         }
 
         if (WirelessRearmPolicy.requiresRearm(wirelessConfigBefore, wirelessRearmConfig())) {
-            val intent = Intent(requireContext(), AapService::class.java).apply {
-                val mode = settings.wifiConnectionMode
-                action = if (mode != WifiLauncherMode.MANUAL && settings.showsWifi())
-                    AapService.ACTION_START_WIRELESS else AapService.ACTION_STOP_WIRELESS
-            }
-            requireContext().startService(intent)
+            AapService.applyWirelessSettings(requireContext(),
+                startWireless = settings.wifiConnectionMode != WifiLauncherMode.MANUAL && settings.showsWifi())
         }
 
-        if (requiresRestart) {
+        if (requiresServiceRestart) {
             if (App.provide(requireContext()).commManager.isConnected) {
                 ToastUtils.showToast(context, getString(R.string.stopping_service), Toast.LENGTH_SHORT, force = true)
                 val stopServiceIntent = Intent(requireContext(), AapService::class.java).apply {
@@ -852,13 +851,23 @@ class SettingsFragment : Fragment() {
             }
         }
 
+        if (requiresRestart && !requiresServiceRestart) {
+            val manager = App.provide(requireContext()).commManager
+            val connected = manager.isConnected
+            manager.applyAudioSettings()
+            audioSessionEnded = connected && !manager.isConnected
+        }
+
         // Reset change tracking
         hasChanges = false
         requiresRestart = false
+        requiresServiceRestart = false
         updateSaveButtonState()
         updateSettingsList()
 
-        ToastUtils.showToast(context, getString(R.string.settings_saved), Toast.LENGTH_SHORT, force = true)
+        ToastUtils.showToast(context,
+            getString(if (audioSessionEnded) R.string.audio_settings_reconnect else R.string.settings_saved),
+            if (audioSessionEnded) Toast.LENGTH_LONG else Toast.LENGTH_SHORT, force = true)
 
         if (languageChanged || hudMirroringChanged) {
             requireActivity().recreate()
@@ -976,6 +985,26 @@ class SettingsFragment : Fragment() {
                           pendingAttachHwDspEqualizer != settings.attachHwDspEqualizer ||
                           pendingAudioLatencyMultiplier != settings.audioLatencyMultiplier ||
                           pendingAudioQueueCapacity != settings.audioQueueCapacity ||
+                          pendingInsetLeft != settings.insetLeft ||
+                          pendingInsetTop != settings.insetTop ||
+                          pendingInsetRight != settings.insetRight ||
+                          pendingInsetBottom != settings.insetBottom ||
+                          pendingWifiConnectionMode != settings.wifiConnectionMode ||
+                          pendingUseLibusb != settings.useLibusb
+
+        // Audio settings may end just the projection session. Service-level changes retain
+        // their broader restart policy and take precedence when both kinds are saved.
+        requiresServiceRestart = pendingResolution != settings.resolutionId ||
+                          pendingVideoFitMode != settings.videoFitMode ||
+                          pendingVideoCodec != settings.videoCodec ||
+                          pendingFpsLimit != settings.fpsLimit ||
+                          pendingDpi != settings.dpiPixelDensity ||
+                          pendingPixelAspectRatioE4 != settings.pixelAspectRatioE4 ||
+                          pendingStaticBSSID != settings.staticBSSID ||
+                          pendingStaticP2pBSSID != settings.staticP2pBSSID ||
+                          pendingForceSoftware != settings.forceSoftwareDecoding ||
+                          pendingSoftwareVideoDecoder != settings.softwareVideoDecoder ||
+                          pendingEnableRotary != settings.enableRotary ||
                           pendingInsetLeft != settings.insetLeft ||
                           pendingInsetTop != settings.insetTop ||
                           pendingInsetRight != settings.insetRight ||
@@ -3594,6 +3623,7 @@ class SettingsFragment : Fragment() {
                 .setPositiveButton(R.string.discard) { _, _ ->
                     hasChanges = false
                     requiresRestart = false
+                    requiresServiceRestart = false
                     reloadPendingStateFromSettings()
                     updateSaveButtonState()
                     updateSettingsList()
@@ -3655,6 +3685,7 @@ class SettingsFragment : Fragment() {
 
         hasChanges = false
         requiresRestart = false
+        requiresServiceRestart = false
         reloadPendingStateFromSettings()
         updateSaveButtonState()
         updateSettingsList()
@@ -3674,6 +3705,7 @@ class SettingsFragment : Fragment() {
                 .setPositiveButton(R.string.discard) { _, _ ->
                     hasChanges = false
                     requiresRestart = false
+                    requiresServiceRestart = false
                     reloadPendingStateFromSettings()
                     updateSaveButtonState()
                     updateSettingsList()
@@ -3871,6 +3903,7 @@ class SettingsFragment : Fragment() {
 
         hasChanges = false
         requiresRestart = false
+        requiresServiceRestart = false
         reloadPendingStateFromSettings()
         updateSaveButtonState()
         updateSettingsList()
@@ -3919,12 +3952,8 @@ class SettingsFragment : Fragment() {
             insecureAaRfcommListener = snapshot.insecureAaRfcommListener,
         )
         if (WirelessRearmPolicy.requiresRearm(before, wirelessRearmConfig())) {
-            val intent = Intent(context, AapService::class.java).apply {
-                val mode = settings.wifiConnectionMode
-                action = if (mode != WifiLauncherMode.MANUAL && settings.showsWifi())
-                    AapService.ACTION_START_WIRELESS else AapService.ACTION_STOP_WIRELESS
-            }
-            context.startService(intent)
+            AapService.applyWirelessSettings(context,
+                startWireless = settings.wifiConnectionMode != WifiLauncherMode.MANUAL && settings.showsWifi())
         }
     }
 

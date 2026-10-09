@@ -123,6 +123,14 @@ class DummyVpnService : VpnService() {
         @Volatile
         private var instance: DummyVpnService? = null
 
+        /** Whether the live tun supplies this app's offline Self Mode network. */
+        fun isSelfModeRunning(): Boolean {
+            val live = instance ?: return false
+            return synchronized(live) {
+                live.vpnInterface != null && live.establishedExcludingSelf == false
+            }
+        }
+
         /** Closes the tun on the running instance. False means there was nothing running. */
         fun closeRunningTun(): Boolean {
             val live = instance ?: return false

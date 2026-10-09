@@ -89,6 +89,16 @@ class WifiLauncherHelper : WifiLauncher {
         }
     }
 
+    /** A settings retry may overlap association; refreshing must not rebuild its network. */
+    fun refreshAfterSettingsRestart() {
+        manager.sharedServices.startWirelessServer(this)
+        when (strategy) {
+            HelperStrategy.WIFI_DIRECT -> manager.sharedServices.wifiDirectManager?.refreshHelperGroup()
+            HelperStrategy.NEARBY_DEVICES -> nearbyManager?.resumeDiscoveryIfIdle()
+            else -> restartDiscovery()
+        }
+    }
+
     override fun restartDiscovery() {
         when (strategy) {
             HelperStrategy.NEARBY_DEVICES -> nearbyManager?.start()

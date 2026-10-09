@@ -269,6 +269,7 @@ class AapService : Service() {
      * flow observers that would otherwise update the already-dismissed notification.
      */
     private var isDestroying = false
+    internal val isStopping: Boolean get() = isDestroying
     private var hasEverConnected = false
 
     // Completed when the disconnect teardown has finished giving the network back. The exit path

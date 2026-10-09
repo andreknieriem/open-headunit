@@ -386,6 +386,9 @@ class CommManager(
             }
         }
 
+    /** Attach/re-enumeration scans can be owed while the current attempt is still running. */
+    internal fun usbRecheckOwner(): Any = synchronized(transportLifecycleLock) { usbRecoveryOwner }
+
     internal fun ownsUsbRecheck(owner: Any): Boolean =
         synchronized(transportLifecycleLock) { usbRecoveryOwner === owner }
 

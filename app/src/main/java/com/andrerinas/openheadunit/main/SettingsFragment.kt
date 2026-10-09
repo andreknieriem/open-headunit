@@ -183,6 +183,7 @@ class SettingsFragment : Fragment() {
     private var pendingStaticAudioFocus: Boolean? = null
     private var pendingPlaybackFocusMode: PlaybackFocusPolicy.Mode? = null
     private var pendingUseAacAudio: Boolean? = null
+    private var pendingUsePcmGuidance: Boolean? = null
     private var pendingUseAAudioOutput: Boolean? = null
     private var pendingAttachHwDspEqualizer: Boolean? = null
     private var pendingMicInputSource: Int? = null
@@ -365,6 +366,7 @@ class SettingsFragment : Fragment() {
         pendingStaticAudioFocus = settings.staticAudioFocus
         pendingPlaybackFocusMode = settings.playbackFocusMode
         pendingUseAacAudio = settings.useAacAudio
+        pendingUsePcmGuidance = settings.usePcmGuidance
         pendingUseAAudioOutput = settings.useAAudioOutput
         pendingAttachHwDspEqualizer = settings.attachHwDspEqualizer
         pendingMicInputSource = settings.micInputSource
@@ -505,6 +507,7 @@ class SettingsFragment : Fragment() {
         pendingStaticAudioFocus = settings.staticAudioFocus
         pendingPlaybackFocusMode = settings.playbackFocusMode
         pendingUseAacAudio = settings.useAacAudio
+        pendingUsePcmGuidance = settings.usePcmGuidance
         pendingUseAAudioOutput = settings.useAAudioOutput
         pendingAttachHwDspEqualizer = settings.attachHwDspEqualizer
         pendingEnableRotary = settings.enableRotary
@@ -743,6 +746,7 @@ class SettingsFragment : Fragment() {
         pendingPlaybackFocusMode?.let { if (it != settings.playbackFocusMode) settings.playbackFocusMode = it }
         if (focusModeChanged) settings.playbackFocusSelfDefeating = false
         pendingUseAacAudio?.let { if (it != settings.useAacAudio) settings.useAacAudio = it }
+        pendingUsePcmGuidance?.let { if (it != settings.usePcmGuidance) settings.usePcmGuidance = it }
         pendingUseAAudioOutput?.let { if (it != settings.useAAudioOutput) settings.useAAudioOutput = it }
         pendingAttachHwDspEqualizer?.let { if (it != settings.attachHwDspEqualizer) settings.attachHwDspEqualizer = it }
         pendingMicInputSource?.let { if (it != settings.micInputSource) settings.micInputSource = it }
@@ -903,6 +907,7 @@ class SettingsFragment : Fragment() {
                         pendingStaticAudioFocus != settings.staticAudioFocus ||
                         pendingPlaybackFocusMode != settings.playbackFocusMode ||
                         pendingUseAacAudio != settings.useAacAudio ||
+                        pendingUsePcmGuidance != settings.usePcmGuidance ||
                         pendingUseAAudioOutput != settings.useAAudioOutput ||
                         pendingAttachHwDspEqualizer != settings.attachHwDspEqualizer ||
                         pendingMicInputSource != settings.micInputSource ||
@@ -986,6 +991,7 @@ class SettingsFragment : Fragment() {
                           pendingStaticAudioFocus != settings.staticAudioFocus ||
                           pendingPlaybackFocusMode != settings.playbackFocusMode ||
                           pendingUseAacAudio != settings.useAacAudio ||
+                          pendingUsePcmGuidance != settings.usePcmGuidance ||
                           pendingUseAAudioOutput != settings.useAAudioOutput ||
                           pendingAttachHwDspEqualizer != settings.attachHwDspEqualizer ||
                           pendingAudioLatencyMultiplier != settings.audioLatencyMultiplier ||
@@ -2615,6 +2621,19 @@ class SettingsFragment : Fragment() {
             isChecked = pendingUseAacAudio ?: settings.useAacAudio,
             onCheckedChanged = { isChecked ->
                 pendingUseAacAudio = isChecked
+                checkChanges()
+                updateSettingsList()
+            }
+        ))
+
+        // Also available when the AAC toggle is off: the wireless band cap can select AAC.
+        items.add(SettingItem.ToggleSettingEntry(
+            stableId = "usePcmGuidance",
+            nameResId = R.string.use_pcm_guidance,
+            descriptionResId = R.string.use_pcm_guidance_description,
+            isChecked = pendingUsePcmGuidance ?: settings.usePcmGuidance,
+            onCheckedChanged = { isChecked ->
+                pendingUsePcmGuidance = isChecked
                 checkChanges()
                 updateSettingsList()
             }

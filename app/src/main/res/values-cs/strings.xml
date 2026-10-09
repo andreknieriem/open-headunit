@@ -48,7 +48,7 @@
     <string name="customization_title">Přizpůsobení</string>
     <string name="customization_description">Přizpůsobte pozadí a vzhled domovské obrazovky</string>
     <string name="home_background_image">Obrázek na pozadí</string>
-    <string name="home_background_image_description">Vyberte vlastní obrázek pro hlavní obrazovku</string>
+    <string name="home_background_image_description">Vyberte vlastní obrázek pro domovskou obrazovku</string>
     <string name="home_background_default">Výchozí (bg.png)</string>
     <string name="home_background_custom">Vlastní obrázek</string>
     <string name="btn_choose_image">Vybrat obrázek</string>
@@ -159,8 +159,8 @@
 
     <!-- Categories for SettingsFragment -->
     <string name="category_general">Obecné</string>
-    <string name="auto_start_self_mode">Automaticky spustit Self-Mode</string>
-    <string name="auto_start_self_mode_description">Automaticky spustit Self-Mode při otevření aplikace.</string>
+    <string name="auto_start_self_mode">Automaticky spustit samostatný režim</string>
+    <string name="auto_start_self_mode_description">Automaticky spustit samostatný režim při otevření aplikace.</string>
     <string name="usb_auto_connect">Automatické připojení USB</string>
     <string name="usb_auto_connect_description">Při otevření aplikace se automaticky připojí ke známému zařízení USB.</string>
     <string name="auto_start_bt_label">Spuštění při připojení Bluetooth</string>
@@ -202,7 +202,7 @@
     <string name="open_settings">Nastavení</string>
     <string name="wireless_connection_settings">Bezdrátové připojení</string>
     <string name="right_hand_drive">Pravostranné řízení</string>
-    <string name="right_hand_drive_description">Přizpůsobit rozhraní vozidlu s řízením vpravo</string>
+    <string name="right_hand_drive_description">Přizpůsobit rozhraní vozidlu s pravostranným řízením</string>
     <string name="category_graphic">Grafika</string>
     <string name="custom_insets">Vlastní okraje</string>
     <string name="inset_top">Nahoře</string>
@@ -343,7 +343,7 @@
     <string name="success">Úspěch</string>
     <string name="failed">Selhalo</string>
     <string name="failed_start_android_auto">Spuštění Android Auto selhalo</string>
-    <string name="failed_self_mode_android10">Režim Self Mode je pravděpodobně blokován společností Google v systému Android 10 (AA 16.4+).</string>
+    <string name="failed_self_mode_android10">Samostatný režim je pravděpodobně blokován společností Google v systému Android 10 (AA 16.4+).</string>
     <string name="android_auto_starting">Android Auto se spouští…</string>
     <string name="connection_interrupted">Spojení ztraceno</string>
     <string name="connection_interrupted_detail">Opětovné připojování…</string>
@@ -352,7 +352,7 @@
     <string name="notification_projection_active">Projekce Android Auto je aktivní</string>
     <string name="shortcut_connect_title">Připojit</string>
     <string name="shortcut_connect_desc">Automaticky se připojit k poslednímu telefonu</string>
-    <string name="shortcut_selfmode_title">Self Mode</string>
+    <string name="shortcut_selfmode_title">Samostatný režim</string>
     <string name="shortcut_selfmode_desc">Spustit Android Auto na tomto zařízení</string>
     <string name="shortcut_disconnect_title">Odpojit</string>
     <string name="shortcut_disconnect_desc">Ukončit aktuální relaci</string>
@@ -443,7 +443,7 @@
     <string name="show_performance_overlay_description">Zobrazí snímkovou frekvenci, zatížení procesoru, teplotu a stáří snímku přes projekci.</string>
     <string name="overlay_permission_required">Automatické spuštění vyžaduje oprávnění „Zobrazení přes ostatní aplikace“</string>
     <string name="usb_permission_denied">Oprávnění USB bylo zamítnuto. Povolte prosím přístup k USB pro automatické připojení.</string>
-    <string name="use_white_background">Použít bílou tapetu hlavní obrazovky</string>
+    <string name="use_white_background">Použít bílou tapetu domovské obrazovky</string>
     <string name="reopen_on_reconnection_label">Znovu otevřít při opětovném připojení</string>
     <string name="reopen_on_reconnection_description">Po stisknutí tlačítka Ukončit aplikace zůstane běžet na pozadí a nadále sleduje USB připojení. Pokud se zařízení znovu připojí, aplikace se automaticky otevře.</string>
 
@@ -453,7 +453,7 @@
     <string name="kill_on_disconnect">Zavřít aplikaci při odpojení</string>
     <string name="kill_on_disconnect_description">Automaticky zavřít aplikaci, když se Android Auto odpojí</string>
     <string name="kill_on_disconnect_warning_title">Varování</string>
-    <string name="kill_on_disconnect_warning">Následující nastavení opětovného připojení budou v konfliktu se zavřením aplikace při odpojení:\n\n%1$s\n\nVaše nastavení počátečního připojení (automatické připojení, automatické spuštění) budou fungovat i po zapnutí jednotky. Po prvním odpojení se však aplikace okamžitě zavře místo opětovného připojení.\n\nPoznámka: Některé dodatečně instalované hlavní jednotky se nikdy zcela nevypnou. Místo toho přejdou do hibernace, podobně jako telefon, který zamkne obrazovku, ale nikdy se skutečně nevypne. Je-li tato možnost zapnutá, aplikace se po prvním odpojení zavře a při dalším nastartování se nemusí automaticky znovu otevřít.\n\nChcete výše uvedená nastavení opětovného připojení vypnout?</string>
+    <string name="kill_on_disconnect_warning">Následující nastavení opětovného připojení budou v konfliktu se zavřením aplikace při odpojení:\n\n%1$s\n\nVaše nastavení počátečního připojení (automatické připojení, automatické spuštění) budou fungovat i po zapnutí jednotky. Po prvním odpojení se však aplikace okamžitě zavře místo opětovného připojení.\n\nPoznámka: Některá dodatečně instalovaná autorádia se nikdy zcela nevypnou. Místo toho přejdou do hibernace, podobně jako telefon, který zamkne obrazovku, ale nikdy se skutečně nevypne. Je-li tato možnost zapnutá, aplikace se po prvním odpojení zavře a při dalším nastartování se nemusí automaticky znovu otevřít.\n\nChcete výše uvedená nastavení opětovného připojení vypnout?</string>
     <string name="kill_on_disconnect_disable_and_enable">Vypnout a zapnout</string>
     <string name="kill_on_disconnect_enable_anyway">Přesto zapnout</string>
     <string name="kill_on_disconnect_boot_warning">Máte zapnutou volbu „Spustit při startu“. Pokud se aplikace při odpojení zavře a zařízení přejde do hibernace místo vypnutí, nemusí se při dalším nastartování automaticky znovu otevřít, protože nedojde k události spuštění. Zařízení se jednoduše probudí z režimu spánku.</string>
@@ -484,7 +484,7 @@
     <string name="vehicle_type_car">Automobil</string>
     <string name="vehicle_type_truck">Nákladní vůz</string>
     <string name="vehicle_type_motorcycle">Motocykl</string>
-    <string name="vehicle_type_forced_by_microphone">Mikrofon hlavní jednotky je vypnutý, takže Android Auto dostane informaci, že jde o motocykl, ať zde zvolíte cokoli. Díky tomu telefon používá vlastní mikrofon.</string>
+    <string name="vehicle_type_forced_by_microphone">Mikrofon autorádia je vypnutý, takže Android Auto dostane informaci, že jde o motocykl, ať zde zvolíte cokoli. Díky tomu telefon používá vlastní mikrofon.</string>
     <string name="vehicle_id_description">Pouze interní identifikátor. Jeho změna způsobí, že váš telefon bude toto vozidlo považovat za jiné, čímž se resetují vaše předvolby Android Auto pro toto auto.</string>
     <string name="head_unit_make_label">Výrobce</string>
     <string name="head_unit_make_description">Výrobce autorádia</string>
@@ -520,8 +520,8 @@
 
     <string name="helper_strategy_label">Metoda připojení pomocníka</string>
     <string-array name="helper_strategies">
-        <item>Společná WiFi (NSD)</item>
-        <item>WiFi Direct (P2P)</item>
+        <item>Společná Wi-Fi (NSD)</item>
+        <item>Wi-Fi Direct (P2P)</item>
         <item>Zařízení v okolí (Beta)</item>
         <item>Hotspot telefonu (Host)</item>
         <item>Hotspot autorádia (Pasivní)</item>
@@ -658,7 +658,7 @@
     <string name="renderer_confirm_switch">Přepnout vykreslování</string>
     <string name="renderer_switched_to">Vykreslování: %1$s</string>
 
-    <string name="self_mode_overlay_permission_description">Aby se Self Mode spouštěl na pozadí spolehlivě, povolte na další obrazovce oprávnění „Zobrazení přes ostatní aplikace“.</string>
+    <string name="self_mode_overlay_permission_description">Aby se samostatný režim spouštěl na pozadí spolehlivě, povolte na další obrazovce oprávnění „Zobrazení přes ostatní aplikace“.</string>
 
     <string name="delete">Smazat</string>
     <string name="night_mode_coordinates">Souřadnice</string>
@@ -846,7 +846,7 @@
     <string name="support_rules_device_title">Uveďte, na čem aplikace běží</string>
     <string name="support_rules_device_desc">Verze Androidu zařízení, které promítá Android Auto (vaše autorádio nebo obrazovka), a jeho značka a model, pokud je znáte.</string>
     <string name="support_rules_connection_title">Uveďte, jak se připojujete</string>
-    <string name="support_rules_connection_desc">USB kabel, bezdrátový USB adaptér, WiFi Direct, WiFi (headunit server) nebo Self Mode. Pokud jde o bezdrátové připojení, uveďte model adaptéru nebo donglu.</string>
+    <string name="support_rules_connection_desc">USB kabel, bezdrátový USB adaptér, Wi-Fi Direct, Wi-Fi (headunit server) nebo samostatný režim. Pokud jde o bezdrátové připojení, uveďte model adaptéru nebo donglu.</string>
     <string name="support_rules_appversion_title">Uveďte verzi aplikace</string>
     <string name="support_rules_appversion_desc">Verzi Open Headunit najdete na obrazovce O aplikaci a podpora.</string>
     <string name="support_rules_logs_title">Přiložte protokoly hned po výskytu problému</string>
@@ -867,7 +867,7 @@
     <string name="rename_notice_message">Headunit Revived díky vám roste a stává se z něj něco vlastního: Open Headunit. Nový název zavádíme postupně během dalších aktualizací, takže na některých místech můžete ještě chvíli vidět starý název.\n\nStejná aplikace, stejní lidé za ní a všechna vaše nastavení zůstávají přesně tak, jak jsou.</string>
     <string name="rename_notice_button">Rozumím</string>
     <string name="aa174_notice_title">Důležité upozornění: Android Auto 17.4+</string>
-    <string name="aa174_notice_message"><![CDATA[Počínaje verzí Android Auto 17.4 zavedl Google interní změny, které znemožňují automatické spouštění přes Wireless Helper a klasický režim Self-Mode.<br/><br/><b>Dostupná řešení:</b><br/><br/><b>1. Headunit Server (režim pro vývojáře):</b><br/>Jediné funkční řešení pro Self-Mode! Na telefonu otevřete vývojářská nastavení Android Auto a spusťte "Headunit Server".<br/><br/><b>2. Nativní režim:</b><br/>Připojuje se přímo přes Wi-Fi Direct nebo hotspot jednotky.<br/><br/><b>3. Bezdrátový USB adaptér:</b><br/>Hardwarový USB dongle nabízí nejstabilnější řešení.<br/><br/><b>4. Wireless Helper:</b><br/>Funguje spolehlivě pro Android Auto do verze 17.3.]]></string>
+    <string name="aa174_notice_message"><![CDATA[Počínaje verzí Android Auto 17.4 zavedl Google interní změny, které znemožňují automatické spouštění přes Wireless Helper a klasický samostatný režim.<br/><br/><b>Dostupná řešení:</b><br/><br/><b>1. Headunit Server (režim pro vývojáře):</b><br/>Jediné funkční řešení pro samostatný režim! Na telefonu otevřete vývojářská nastavení Android Auto a spusťte "Headunit Server".<br/><br/><b>2. Nativní režim:</b><br/>Připojuje se přímo přes Wi-Fi Direct nebo hotspot jednotky.<br/><br/><b>3. Bezdrátový USB adaptér:</b><br/>Hardwarový USB dongle nabízí nejstabilnější řešení.<br/><br/><b>4. Wireless Helper:</b><br/>Funguje spolehlivě pro Android Auto do verze 17.3.]]></string>
     <string name="aa174_notice_button_confirm">Rozumím</string>
     <string name="aa174_notice_button_guide">Otevřít návod</string>
 
@@ -908,7 +908,7 @@
     <string name="media_key_routing_auto">Automaticky</string>
     <string name="media_key_routing_never">Nikdy</string>
     <string name="media_key_routing_always_hint">Tlačítka Další, Předchozí a Přehrát/Pozastavit se do Android Auto posílají vždy. Použijte, pokud jedno stisknutí nepřeskočí dvě skladby.</string>
-    <string name="media_key_routing_auto_hint">Odesílání se zastaví, dokud má toto autorádio s telefonem mediální připojení přes Bluetooth, protože tuto akci provádí již toto připojení. Zvolte, pokud jedno stisknutí přeskočí dvě skladby a telefon je spárován s tímto autorádiem.</string>
+    <string name="media_key_routing_auto_hint">Odesílání se zastaví, když má toto autorádio s telefonem mediální připojení přes Bluetooth, protože tuto akci provádí již toto připojení. Zvolte, pokud jedno stisknutí přeskočí dvě skladby a telefon je spárován s tímto autorádiem.</string>
     <string name="media_key_routing_never_hint">Tlačítka se neodesílají a ponechají se Bluetooth. Zvolte, pokud jedno stisknutí přeskočí dvě skladby a telefon je spárován s vlastním systémem vozu, ne s tímto autorádiem. Režim Automaticky takové připojení nezjistí.</string>
     <string name="media_key_routing_hint_common">Ovlivněna jsou jen mediální tlačítka. Otočné ovladače, D-pad, Zpět a Enter se do Android Auto dostanou vždy.</string>
     <string name="playback_focus_mode">Pozastavit ostatní zvuk při přehrávání</string>
@@ -921,7 +921,7 @@
     <string name="playback_focus_mode_static_hint">Když je zapnuté Statické zvukové zaměření, platí to od připojení telefonu po celou relaci, ne jen během přehrávání zvuku.</string>
     <string name="boot_loop_paused_title">Bezdrátové spuštění pozastaveno</string>
     <string name="boot_loop_paused_generic">Toto zařízení se třikrát po sobě restartovalo krátce po tom, co Open Headunit spustila bezdrátové připojení, proto zůstalo tentokrát vypnuté. USB funguje dál. Znovu ho zapnete v aplikaci.</string>
-    <string name="boot_loop_paused_native_wifi_direct">Toto zařízení se třikrát po sobě restartovalo krátce po tom, co Open Headunit spustila bezdrátové připojení, proto zůstalo tentokrát vypnuté. U některých hlavních jednotek čip Wi-Fi shodí celý systém, když se telefon připojí k síti Wi-Fi Direct. Zkuste přepnout režim Android Auto na hotspot hlavní jednotky. USB funguje dál.</string>
+    <string name="boot_loop_paused_native_wifi_direct">Toto zařízení se třikrát po sobě restartovalo krátce po tom, co Open Headunit spustila bezdrátové připojení, proto zůstalo tentokrát vypnuté. U některých autorádií čip Wi-Fi shodí celý systém, když se telefon připojí k síti Wi-Fi Direct. Zkuste přepnout režim Android Auto na hotspot autorádia. USB funguje dál.</string>
     <string name="vehicle_make_hint">Skutečná značka auta zobrazí své logo na tlačítku pro ukončení Android Auto, ale Android Auto pak přestane nabízet aplikace nainstalované mimo Obchod Play. Chcete-li je znovu zobrazit, nastavte zpět „Google“.</string>
     <string name="external_bt_nativeaa">Native Wireless na této jednotce nefunguje</string>
     <string name="external_bt_nativeaa_desc">Telefon se páruje s vlastním modulem Bluetooth této jednotky (%1$s), ne s Bluetooth, který Android poskytuje aplikacím, takže by bezdrátový handshake k němu nikdy nedorazil.\n\nTato aplikace se k modulu dostane jen přes službu ZJ/ZLink, která na této jednotce neběží. Použijte místo toho USB nebo některý režim Wi-Fi.</string>
@@ -964,7 +964,7 @@
     <string name="usb_device_action_title">Akce USB zařízení</string>
     <string name="home_button_colors">Barvy tlačítek a přechody</string>
     <string name="home_button_colors_description">Přizpůsobte si barvy a přechody 4 tlačítek na domovské obrazovce</string>
-    <string name="btn_color_self_mode">Tlačítko Samostatný režim</string>
+    <string name="btn_color_self_mode">Tlačítko samostatného režimu</string>
     <string name="btn_color_usb">Tlačítko USB</string>
     <string name="btn_color_wifi">Tlačítko Wi-Fi</string>
     <string name="btn_color_settings">Tlačítko Nastavení</string>
@@ -1043,7 +1043,7 @@
     <string name="native_aa_setup_qr_instruction">Naskenujte jej fotoaparátem telefonu a potvrďte v telefonu. Stačí to jednou: potom se telefon připojuje sám.</string>
     <string name="native_aa_setup_qr_not_drawn">Kód se nepodařilo vytvořit.</string>
     <string name="native_aa_setup_qr_not_running">Nejprve spusťte připojení. Kód obsahuje aktuální síť této jednotky, která do té doby neexistuje.</string>
-    <string name="native_aa_setup_qr_not_hotspot">Dostupné jen přes hotspot. Síť WiFi Direct se při každém vytvoření přejmenuje, telefon by si tak zapamatoval síť, která už neexistuje.</string>
+    <string name="native_aa_setup_qr_not_hotspot">Dostupné jen přes hotspot. Síť Wi-Fi Direct se při každém vytvoření přejmenuje, telefon by si tak zapamatoval síť, která už neexistuje.</string>
     <string name="native_aa_setup_qr_transport_not_applied">Hotspot je zvolený, ale spojení stále běží přes Wi-Fi Direct. Restartujte spojení a zkuste to znovu.</string>
     <string name="native_aa_setup_qr_not_listening">Tato jednotka zatím na telefon nečeká. Zkuste to za okamžik znovu.</string>
     <string name="native_aa_setup_qr_no_credentials">Název nebo heslo sítě této jednotky zatím nejsou známé. Zapněte hotspot, nebo je výše zadejte ručně.</string>
@@ -1065,7 +1065,7 @@
     <string name="failed_aa_not_system">Selhalo: Android Auto není nainstalováno jako systémová aplikace!</string>
     <string name="failed_aa_not_installed">Selhalo: Android Auto není nainstalováno!</string>
     <string name="raise_projection_during_call">Zůstat v Android Auto během hovorů</string>
-    <string name="raise_projection_during_call_description">Pouze Self Mode. Vrátí projekci nad obrazovku hovoru telefonu, takže se hovory přijímají a ukončují v rozhraní Android Auto</string>
+    <string name="raise_projection_during_call_description">Pouze samostatný režim. Vrátí projekci nad obrazovku hovoru telefonu, takže se hovory přijímají a ukončují v rozhraní Android Auto</string>
     <string name="audio_stream_settings">Zvukové streamy</string>
     <string name="audio_stream_settings_description">Vyberte systémový stream, na kterém hraje každý kanál Android Auto.</string>
     <string name="audio_stream_settings_info">Android Auto posílá zvuk třemi kanály: Média, Navigace a Systémové zvuky. Každý se do autorádia dostane určitým systémovým streamem a zvolený stream určuje, kterým tlačítkem hlasitosti se řídí a u řady autorádií i to, zda se pro něj vůbec zapne zesilovač. Tlačítkem reproduktoru si před uložením přehrajte na streamu zkušební tón.</string>
@@ -1112,7 +1112,7 @@
     <string name="driver_device_paired">Spárováno</string>
     <string name="driver_device_preferred">Preferovaný</string>
     <string name="driver_device_last_used">Naposledy připojeno</string>
-    <string name="driver_selection_auto_in">Automatické připojení k %2$s za %1$d s...</string>
+    <string name="driver_selection_auto_in">Automatické připojení k %2$s za %1$d s…</string>
     <string name="driver_selection_dialog_title">Vyberte telefon řidiče</string>
     <string name="driver_none">Žádný</string>
     <string name="show_all_devices">Zobrazit všechna zařízení Bluetooth</string>
@@ -1143,7 +1143,7 @@
     <string name="wifi_direct_stable_identity_description">Používá stejný název sítě a heslo pokaždé, takže se telefon znovu připojí ke známé síti. Použijte řádek níže k jejich obnovení.</string>
     <string name="wifi_direct_new_identity">Nová identita sítě Wi-Fi Direct</string>
     <string name="wifi_direct_new_identity_none">Bude vybráno při příštím připojení</string>
-    <string name="wifi_direct_new_identity_confirm">Zvolí nový název a heslo pro skupinu, které se použijí od příštího připojení. Telefon se nastaví přes Bluetooth, jako by šlo o novou hlavní jednotku. Použijte to, když se telefon stále pokouší o síť, ke které se už nemůže připojit.</string>
+    <string name="wifi_direct_new_identity_confirm">Zvolí nový název a heslo pro skupinu, které se použijí od příštího připojení. Telefon se nastaví přes Bluetooth, jako by šlo o nové autorádio. Použijte to, když se telefon stále pokouší o síť, ke které se už nemůže připojit.</string>
     <string name="wifi_direct_new_identity_done">Od příštího připojení bude použita nová identita sítě.</string>
     <string name="wifi_direct_new_identity_applied">Nová identita sítě se právě nastavuje. Telefon bude vyzván, aby se k ní připojil při příštím připojení.</string>
     <string name="wifi_direct_stable_identity_description_legacy">V této verzi Androidu název vybírá systém a aplikace o něj nemůže požádat. Nechte to zapnuté, aby se telefon znovu připojil ke známé síti všude tam, kde ji systém uchovává, a použijte řádek níže k jejímu obnovení.</string>
@@ -1155,7 +1155,7 @@
     <string name="pref_enable_floating_button_title">Plovoucí tlačítko spouštěče</string>
     <string name="pref_enable_floating_button_summary">Zobrazí plovoucí tlačítko nad OEM spouštěčem a jinými aplikacemi pro rychlý návrat do Open Headunit</string>
     <string name="pref_floating_button_connection_status_title">Indikátor stavu připojení</string>
-    <string name="pref_floating_button_connection_status_summary">Když není připojen telefon, použije Neprůhlednost při odpojení, a při připojeném telefonu zeslábne na Neprůhlednost plovoucího tlačítka. Při 0 % je tlačítko skryté a propouští klepnutí.</string>
+    <string name="pref_floating_button_connection_status_summary">Když není připojen telefon, použije Neprůhlednost při odpojení, a při připojeném telefonu přejde na Neprůhlednost plovoucího tlačítka. Při 0 % je tlačítko skryté a propouští klepnutí.</string>
     <string name="pref_floating_button_size_title">Velikost plovoucího tlačítka</string>
     <string name="pref_floating_button_opacity_title">Neprůhlednost plovoucího tlačítka</string>
     <string name="pref_floating_button_disconnected_opacity_title">Neprůhlednost při odpojení</string>
@@ -1169,7 +1169,7 @@
     <string name="logs_copied_to_clipboard">Protokoly byly zkopírovány do schránky. Pokud byl protokol větší než ~250 KB, zkopíroval se jen začátek a konec kvůli limitu schránky Androidu. Celý protokol je uložen v:\n%s</string>
     <string name="logs_copy_to_clipboard_failed">Kopírování protokolů do schránky se nezdařilo</string>
     <string name="connecting_driver">Spouštění Android Auto s %s</string>
-    <string name="connecting_driver_disconnected">Zařízení %s je odpojeno, probouzí se...</string>
+    <string name="connecting_driver_disconnected">Zařízení %s je odpojeno, probouzí se…</string>
     <string name="driver_device_disconnected">Odpojeno, bude probuzeno</string>
     <string name="no_usb_host_support">Tato jednotka nepodporuje režim hostitele USB, proto kabelové Android Auto není k dispozici. Použijte bezdrátové připojení.</string>
 
@@ -1214,7 +1214,7 @@
     <string name="stage_starting_projection">Spouštím Android Auto</string>
     <string name="network_detail_5ghz">Wi-Fi Direct na 5 GHz (%1$d MHz)</string>
     <string name="network_detail_24ghz">Wi-Fi Direct na 2,4 GHz, kanál %1$d</string>
-    <string name="network_detail_unknown">Síť WiFi Direct běží</string>
+    <string name="network_detail_unknown">Síť Wi-Fi Direct běží</string>
     <string name="network_detail_retrying_5ghz">Wi-Fi Direct se spustilo na 2,4 GHz, zkouším znovu 5 GHz</string>
     <string name="network_detail_unfriendly_channel">Wi-Fi Direct je na kanálu %1$d, ke kterému se většina telefonů nepřipojí. Restartujte Wi-Fi.</string>
     <string name="native_aa_requires_wifi">Nativní Android Auto potřebuje Wi-Fi této jednotky. Zapněte ji prosím.</string>
@@ -1232,7 +1232,7 @@
     <string name="wifi_direct_group_identity">Název a heslo Wi-Fi Direct</string>
     <string name="wifi_direct_group_identity_auto">Vybráno aplikací. Klepnutím nastavíte vlastní.</string>
     <string name="wifi_direct_group_identity_pick_new">Vybrat nové automaticky</string>
-    <string name="wifi_direct_group_identity_message">Název a heslo, které váš telefon dostane pro připojení k této hlavní jednotce. Změna hesla změní i název, protože telefon se nemůže znovu připojit k síti, jejíž název zůstal stejný, ale heslo ne.</string>
+    <string name="wifi_direct_group_identity_message">Název a heslo, které váš telefon dostane pro připojení k tomuto autorádiu. Změna hesla změní i název, protože telefon se nemůže znovu připojit k síti, jejíž název zůstal stejný, ale heslo ne.</string>
     <string name="wifi_direct_group_identity_name_hint">Název sítě</string>
     <string name="wifi_direct_group_identity_passphrase_hint">Heslo, 8 až 63 znaků</string>
     <string name="wifi_direct_group_identity_invalid_name">Tento název nelze použít. Zadejte krátký název jako MyCar, nebo úplný začínající na DIRECT- a dvěma písmeny nebo číslicemi, až 32 znaků.</string>
@@ -1242,11 +1242,11 @@
     <string name="wifi_direct_group_identity_legacy">V této verzi Androidu vybírá název a heslo systém a žádná aplikace je nemůže změnit. Řádek výše ukazuje, co bylo vybráno.</string>
     <string name="copy">Kopírovat</string>
     <string name="wifi_direct_credentials_copied">Název sítě a heslo zkopírovány.</string>
-    <string name="exit_dialog_end_stay_armed">Ukončit relaci, zůstat připraveno</string>
+    <string name="exit_dialog_end_stay_armed">Ukončit relaci a zůstat v pohotovosti</string>
     <string name="exit_dialog_end_stay_armed_note">Relace ukončena. Síť Wi-Fi zůstává aktivní, takže se telefon může znovu připojit sám.</string>
     <string name="connection_issue_banner_stale_endpoint">Váš telefon zkouší starou síťovou adresu této jednotky. Pokud se nepřipojí, zapomeňte tuto jednotku v Android Auto na telefonu a připojte se znovu.</string>
     <string name="connection_issue_banner_hands_free_record_refused">Bluetooth této jednotky odmítl nastavení handsfree, které Android Auto potřebuje, takže se bezdrátové připojení nemusí spustit. Kabel ani jiný bezdrátový režim ho nevyžadují.</string>
-    <string name="connection_issue_banner_home_wifi_rejoined">Tato jednotka se během Android Auto stále znovu připojuje k vaší domácí síti WiFi, což může způsobit sekání obrazu, hlavně u jednotek na 2,4 GHz. Klepnutím vypněte automatické připojení k této síti, nebo počkejte, až budete mimo její dosah.</string>
+    <string name="connection_issue_banner_home_wifi_rejoined">Tato jednotka se během Android Auto stále znovu připojuje k vaší domácí síti Wi-Fi, což může způsobit sekání obrazu, hlavně u jednotek na 2,4 GHz. Klepnutím vypněte automatické připojení k této síti, nebo počkejte, až budete mimo její dosah.</string>
     <string name="native_aa_wake_remeasure">Znovu změřit probuzení Bluetooth</string>
     <string name="native_aa_wake_verdict_unmeasured">Zatím nezměřeno</string>
     <string name="native_aa_wake_verdict_safe">Bezpečné na této jednotce</string>
@@ -1254,7 +1254,7 @@
     <string name="native_aa_wake_remeasure_confirm">Android Auto spustí bezdrátové připojení, jen když zaznamená změnu připojení Bluetooth. Tam, kde tato jednotka už drží spojení handsfree, ho aplikace musí přerušit, aby ke změně došlo. Jednou proto změří, zda se spojení vrátí, a pokud ne, zastaví se. Použijte, pokud se bezdrátové připojení přestalo spouštět samo a jste ochotni na chvíli přijít o handsfree, zatímco aplikace zkouší znovu.</string>
     <string name="native_aa_wake_remeasure_done">Probuzení Bluetooth se znovu změří při dalším připojení.</string>
     <string name="pref_enable_car_launcher_title">Použít jako spouštěč v autě</string>
-    <string name="pref_enable_car_launcher_summary">Zaregistruje Open Headunit jako aplikaci domovské obrazovky, aby se spustil po stisknutí tlačítka Domů na voze nebo autorádiu</string>
+    <string name="pref_enable_car_launcher_summary">Zaregistruje Open Headunit jako aplikaci domovské obrazovky, aby se spustil po stisknutí tlačítka Domů v autě nebo na autorádiu</string>
     <string name="pref_set_default_launcher_title">Výchozí domovská aplikace</string>
     <string name="pref_default_launcher_status_active">Aktivní (Klepnutím spravovat)</string>
     <string name="pref_default_launcher_status_inactive">Nenastaveno (Klepnutím nastavit)</string>

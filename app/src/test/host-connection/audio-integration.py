@@ -68,6 +68,7 @@ for marker, declaration, source in [
     ("DISCONNECT", "fun disconnect(", comm),
     ("CANCEL_SETTINGS", "fun cancelPendingSettingsRestart()", comm),
     ("DISCONNECTED_STATE", "class Disconnected(", comm),
+    ("REACHED_SSL", "private fun reachedSsl()", comm),
     ("QUIT", "private fun transportedQuited(", comm),
     ("OBSERVER", "private fun observeConnectionState()", service),
 ]:
@@ -79,6 +80,10 @@ recovery = output / "SettingsRestartRecovery.kt"
 recovery.write_text((repo / "app/src/main/java/com/andrerinas/openheadunit/connection/SettingsRestartRecovery.kt").read_text()
                    .replace("package com.andrerinas.openheadunit.connection", "package com.andrerinas.openheadunit.decoder.audio"))
 sources.append(recovery)
+raise_policy = output / "ProjectionRaiseDeadlinePolicy.kt"
+raise_policy.write_text((repo / "app/src/main/java/com/andrerinas/openheadunit/aap/ProjectionRaiseDeadlinePolicy.kt").read_text()
+                        .replace("package com.andrerinas.openheadunit.aap", "package com.andrerinas.openheadunit.decoder.audio"))
+sources.append(raise_policy)
 entrypoint = output / "IntegrationMain.kt"
 entrypoint.write_text("package com.andrerinas.openheadunit.decoder.audio\nfun main() { audioLifecycleBoundaryRegression() }\n")
 sources.append(entrypoint)

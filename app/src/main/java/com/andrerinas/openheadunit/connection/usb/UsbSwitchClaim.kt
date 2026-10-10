@@ -20,6 +20,14 @@ object UsbSwitchClaim {
         claimUntilMs = 0L
     }
 
+    @Volatile
+    private var switches = 0L
+
+    /** A launcher attempt compares this count to learn the activity switched the device meanwhile. */
+    fun noteSwitched() { switches++ }
+
+    fun switches(): Long = switches
+
     fun isLive(): Boolean =
         UsbAccessoryHandoffPolicy.switchClaimIsLive(System.currentTimeMillis(), claimUntilMs)
 }

@@ -96,4 +96,14 @@ class SettingsRestartRecoveryTest {
         }
     }
 
+
+    @Test fun `ownerAtEnd keeps the explicit owner before SSL and falls back to the attempt's`() {
+        assertEquals("explicit", SettingsRestartRecovery.ownerAtEnd(false, false, "explicit", "attempt"))
+        assertEquals("attempt", SettingsRestartRecovery.ownerAtEnd(false, false, null, "attempt"))
+    }
+
+    @Test fun `ownerAtEnd answers null after SSL and on a user exit`() {
+        assertNull(SettingsRestartRecovery.ownerAtEnd(false, true, "explicit", "attempt"))
+        assertNull(SettingsRestartRecovery.ownerAtEnd(true, false, "explicit", "attempt"))
+    }
 }

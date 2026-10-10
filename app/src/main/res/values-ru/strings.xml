@@ -1239,6 +1239,7 @@
     <string name="connection_issue_banner_stale_endpoint">Телефон пытается подключиться по старому сетевому адресу этого устройства. Если подключение не устанавливается, забудьте это устройство в Android Auto на телефоне и подключитесь снова.</string>
     <string name="connection_issue_banner_hands_free_record_refused">Bluetooth этого устройства отклонил настройку громкой связи, необходимую Android Auto, поэтому беспроводное соединение может не начаться. Кабель или другой беспроводной режим этого не требуют.</string>
     <string name="connection_issue_banner_home_wifi_rejoined">Это устройство постоянно переподключается к вашему домашнему WiFi во время Android Auto, из-за чего изображение может подтормаживать, особенно на устройствах с 2,4 ГГц. Нажмите, чтобы отключить автоподключение к этой сети, или подождите, пока вы окажетесь вне её зоны действия.</string>
+    <string name="connection_issue_banner_stale_usb_accessory">Android Auto на телефоне перестал отвечать по USB, и приложению не удалось его перезапустить. Отсоедините телефон, подождите пять секунд и подключите его снова.</string>
     <string name="native_aa_wake_remeasure">Измерить пробуждение по Bluetooth заново</string>
     <string name="native_aa_wake_verdict_unmeasured">Пока не измерено</string>
     <string name="native_aa_wake_verdict_safe">Безопасно на этом устройстве</string>

@@ -1238,6 +1238,7 @@
     <string name="connection_issue_banner_stale_endpoint">你的手机持续尝试以先前取得、但本机已不再使用的网络位址连上本机。它偏好使用该位址，而不是透过蓝牙重新连接，而且不会自行放弃。本机现在正告诉它停止尝试，通常一次就会生效。如果连接仍未开始，请在手机上开启 Android Auto，忘记这台主机后再重新连接。</string>
     <string name="connection_issue_banner_hands_free_record_refused">本机的蓝牙无法发布免持记录，而应用需要这个记录，你的手机才能在这里看到免持设置档。除非主机的蓝牙已透过设置档连接，否则 Android Auto 不会开始无线连接，因此唤醒后它可能永远不会回拨。应用会在每次连接尝试时重新要求这个记录。透过传输线连接，或以其他无线模式使用 WiFi 连接，则不需要它。</string>
     <string name="connection_issue_banner_home_wifi_rejoined">这台主机在 Android Auto 期间不断重新加入你的家用 WiFi，可能导致画面卡顿，在 2.4 GHz 主机上尤其明显。点选以关闭该网络的自动重新连接，或等到你离开其覆盖范围。</string>
+    <string name="connection_issue_banner_stale_usb_accessory">手机上的 Android Auto 已停止通过 USB 响应，应用无法将其重新启动。请拔下手机，等待五秒后再重新插入。</string>
     <string name="native_aa_wake_remeasure">重新测量蓝牙唤醒</string>
     <string name="native_aa_wake_verdict_unmeasured">尚未测量</string>
     <string name="native_aa_wake_verdict_safe">在本机是安全的</string>

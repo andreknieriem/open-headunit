@@ -2381,6 +2381,10 @@ class Settings(private val context: Context) {
         get() = prefs.getLong("connection-issue-home-wifi-rejoined", 0L)
         set(value) = prefs.edit().putLong("connection-issue-home-wifi-rejoined", value).apply()
 
+    var connectionIssueStaleUsbAccessoryAtEpochMs: Long
+        get() = prefs.getLong("connection-issue-stale-usb-accessory", 0L)
+        set(value) = prefs.edit().putLong("connection-issue-stale-usb-accessory", value).apply()
+
     /**
      * When the user last dismissed the failure banner.
      *

@@ -1245,6 +1245,7 @@
     <string name="connection_issue_banner_stale_endpoint">スマートフォンはこの機器の古いネットワークアドレスに接続しようとしています。接続できない場合は、スマートフォンのAndroid Autoでこの機器を削除し、再度接続してください。</string>
     <string name="connection_issue_banner_hands_free_record_refused">この機器のBluetoothがAndroid Autoに必要なハンズフリー設定を拒否したため、ワイヤレス接続が開始されない可能性があります。ケーブルまたは他のワイヤレスモードではこれは不要です。</string>
     <string name="connection_issue_banner_home_wifi_rejoined">この機器はAndroid Auto中に自宅のWiFiへ何度も再接続しており、特に2.4 GHzの機器では映像がカクつくことがあります。タップしてそのネットワークへの自動再接続をオフにするか、圏外に出るまでお待ちください。</string>
+    <string name="connection_issue_banner_stale_usb_accessory">スマートフォンのAndroid AutoがUSB経由で応答しなくなり、アプリで再起動できませんでした。スマートフォンを取り外し、5秒待ってからもう一度接続してください。</string>
     <string name="native_aa_wake_remeasure">Bluetoothの起動を再測定</string>
     <string name="native_aa_wake_verdict_unmeasured">まだ測定されていません</string>
     <string name="native_aa_wake_verdict_safe">この機器では安全です</string>

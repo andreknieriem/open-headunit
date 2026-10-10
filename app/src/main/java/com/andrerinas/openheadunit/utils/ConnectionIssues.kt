@@ -128,7 +128,13 @@ enum class ConnectionIssue {
      * the stand-down gave up, so both share one radio and the picture can stutter. The lever is
      * that network's auto-reconnect, which only Android's WiFi settings reach.
      */
-    HOME_WIFI_REJOINED_BESIDE_GROUP
+    HOME_WIFI_REJOINED_BESIDE_GROUP,
+
+    /**
+     * The phone stayed in accessory mode and answered no handshake after both recovery steps.
+     * Only a replug recovers it now.
+     */
+    STALE_USB_ACCESSORY
 }
 
 /** An issue that is currently true, and when it was last raised. */
@@ -248,6 +254,7 @@ object ConnectionIssues {
                 ConnectionIssue.HANDS_FREE_RECORD_REFUSED -> settings.connectionIssueHandsFreeRecordRefusedAtEpochMs
                 ConnectionIssue.PHONE_HOLDS_STALE_ENDPOINT -> settings.connectionIssueStaleEndpointAtEpochMs
                 ConnectionIssue.HOME_WIFI_REJOINED_BESIDE_GROUP -> settings.connectionIssueHomeWifiRejoinedAtEpochMs
+                ConnectionIssue.STALE_USB_ACCESSORY -> settings.connectionIssueStaleUsbAccessoryAtEpochMs
             }
         } catch (e: Exception) {
             0L
@@ -270,6 +277,7 @@ object ConnectionIssues {
                     ConnectionIssue.HANDS_FREE_RECORD_REFUSED -> settings.connectionIssueHandsFreeRecordRefusedAtEpochMs = atEpochMs
                     ConnectionIssue.PHONE_HOLDS_STALE_ENDPOINT -> settings.connectionIssueStaleEndpointAtEpochMs = atEpochMs
                     ConnectionIssue.HOME_WIFI_REJOINED_BESIDE_GROUP -> settings.connectionIssueHomeWifiRejoinedAtEpochMs = atEpochMs
+                    ConnectionIssue.STALE_USB_ACCESSORY -> settings.connectionIssueStaleUsbAccessoryAtEpochMs = atEpochMs
                 }
             } catch (e: Exception) {
                 AppLog.d("ConnectionIssues: could not record $issue: ${e.message}")

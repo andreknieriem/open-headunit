@@ -11,4 +11,19 @@ object HandshakeMessagePolicy {
             header[0] == 0.toByte() &&
             header[4] == 0.toByte() &&
             header[5] == 2.toByte()
+
+    /**
+     * A USB read returns -1 for a timeout and for an error alike, so there a -1 that took half its
+     * timeout or more is a timeout. A socket read returns 0 on a timeout, so its -1 is an error.
+     */
+    fun isReadError(ret: Int, elapsedMs: Long, timeoutMs: Int, timeoutLooksLikeError: Boolean): Boolean =
+        ret < 0 && (!timeoutLooksLikeError || elapsedMs * 2 < timeoutMs)
+
+    /** Names why the version exchange ended without a response; a transport error wins. */
+    fun versionFailure(peerSentBytes: Boolean, transportError: Boolean): AapTransport.HandshakeFailure =
+        when {
+            transportError -> AapTransport.HandshakeFailure.TRANSPORT_ERROR
+            !peerSentBytes -> AapTransport.HandshakeFailure.PEER_SILENT
+            else -> AapTransport.HandshakeFailure.OTHER
+        }
 }

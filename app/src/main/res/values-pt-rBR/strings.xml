@@ -1241,6 +1241,7 @@
     <string name="connection_issue_banner_stale_endpoint">Seu celular está tentando um endereço de rede antigo desta unidade. Se não conectar, esqueça esta unidade no Android Auto do seu celular e conecte novamente.</string>
     <string name="connection_issue_banner_hands_free_record_refused">O Bluetooth desta unidade recusou a configuração mãos-livres que o Android Auto precisa, então a conexão sem fio pode não iniciar. Um cabo ou outro modo sem fio não precisa disso.</string>
     <string name="connection_issue_banner_home_wifi_rejoined">Esta unidade fica reconectando ao WiFi da sua casa durante o Android Auto, o que pode fazer a imagem travar, principalmente em unidades de 2,4 GHz. Toque para desativar a reconexão automática a essa rede, ou espere até estar fora do alcance dela.</string>
+    <string name="connection_issue_banner_stale_usb_accessory">O Android Auto no celular parou de responder por USB e o app não conseguiu reiniciá-lo. Desconecte o celular, espere cinco segundos e conecte-o de novo.</string>
     <string name="native_aa_wake_remeasure">Medir novamente o despertar por Bluetooth</string>
     <string name="native_aa_wake_verdict_unmeasured">Ainda não medido</string>
     <string name="native_aa_wake_verdict_safe">Seguro nesta unidade</string>

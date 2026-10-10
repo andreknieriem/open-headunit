@@ -57,6 +57,8 @@ for marker, file, declaration in [
     code = code.replace('Dispatchers.Main', 'service.main').replace('this@AapService', 'this@Service')
     fixture = fixture.replace('// ' + marker + '\n', code + '\n')
 (OUT / 'SelfLaunchFixture.kt').write_text(fixture)
+(OUT / 'ProjectionRaiseDeadlinePolicy.kt').write_text((SRC / 'aap/ProjectionRaiseDeadlinePolicy.kt').read_text()
+    .replace('package com.andrerinas.openheadunit.aap', 'package selflaunch'))
 for name in ['SelfLaunchCoalescePolicy.kt', 'SelfLaunchTimeoutPolicy.kt']:
     source = (SRC / 'connection/self' / name).read_text()
     (OUT / name).write_text(source.replace('package com.andrerinas.openheadunit.connection.self', 'package selflaunch'))

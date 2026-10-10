@@ -16,7 +16,10 @@ object ProjectionRaiseDeadlinePolicy {
     /** One retry, then the session is ended so the phone can start a fresh one. */
     const val MAX_RAISES = 2
 
-    enum class Action { RETRY_RAISE, END_SESSION }
+    /** Sessions in a row that may end for a missing screen and still let a reconnect follow. */
+    const val MAX_RECOVERED_ENDS = 1
+
+    enum class Action { RETRY_RAISE, END_AND_RECOVER, END_AND_HOLD }
 
     /**
      * Armed only when a raise was actually attempted. A raise skipped on purpose - picture in
@@ -25,7 +28,17 @@ object ProjectionRaiseDeadlinePolicy {
      */
     fun arms(raiseAttempted: Boolean): Boolean = raiseAttempted
 
-    /** [raisesMade] counts the raises already attempted for this session, the first included. */
-    fun actionFor(raisesMade: Int): Action =
-        if (raisesMade < MAX_RAISES) Action.RETRY_RAISE else Action.END_SESSION
+    /**
+     * [raisesMade] counts the raises already attempted for this session, the first included.
+     * [unprojectedEndsInARow] counts earlier sessions that ended for the same reason.
+     */
+    fun actionFor(raisesMade: Int, unprojectedEndsInARow: Int): Action = when {
+        raisesMade < MAX_RAISES -> Action.RETRY_RAISE
+        unprojectedEndsInARow < MAX_RECOVERED_ENDS -> Action.END_AND_RECOVER
+        else -> Action.END_AND_HOLD
+    }
+
+    /** A projected session, or one the user asked for, starts the count again. */
+    fun endsInARowAfter(previous: Int, projected: Boolean, userRequested: Boolean): Int =
+        if (projected || userRequested) 0 else previous
 }

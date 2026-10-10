@@ -26,6 +26,24 @@ class UsbSettingsRestartTest {
         verify(manager).checkAlreadyConnected(force = true, userRequested = false, settingsRestart = saved)
     }
 
+    @Test fun `a hand-off to the service carries the open Save past the settings screen`() {
+        val manager = mock(UsbLauncherManager::class.java, CALLS_REAL_METHODS)
+        val saved = CommManager.ConnectionState.Disconnected(reason = CommManager.DisconnectReason.SETTINGS_RESTART, settingsRestartUntilMs = Long.MAX_VALUE)
+        doReturn(saved).`when`(manager).pendingSettingsRestart()
+        doNothing().`when`(manager).checkAlreadyConnected(anyBoolean(), anyBoolean(), anyOrNull(), anyBoolean())
+        manager.checkOnRequest(userRequested = false)
+        verify(manager).checkAlreadyConnected(force = true, userRequested = false, settingsRestart = saved, accessoryOnly = false)
+    }
+
+    @Test fun `a user's own USB request is not tied to a Save`() {
+        val manager = mock(UsbLauncherManager::class.java, CALLS_REAL_METHODS)
+        val saved = CommManager.ConnectionState.Disconnected(reason = CommManager.DisconnectReason.SETTINGS_RESTART, settingsRestartUntilMs = Long.MAX_VALUE)
+        doReturn(saved).`when`(manager).pendingSettingsRestart()
+        doNothing().`when`(manager).checkAlreadyConnected(anyBoolean(), anyBoolean(), anyOrNull(), anyBoolean())
+        manager.checkOnRequest(userRequested = true)
+        verify(manager).checkAlreadyConnected(force = true, userRequested = true, settingsRestart = null, accessoryOnly = false)
+    }
+
     @Test fun `revoking Save cancels queued and permission-waiting USB work without changing AAP state`() {
         mockStatic(android.os.SystemClock::class.java).use { clock ->
         mockStatic(androidx.appcompat.app.AppCompatDelegate::class.java).use {

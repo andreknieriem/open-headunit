@@ -1237,6 +1237,7 @@
     <string name="connection_issue_banner_stale_endpoint">Telefonul dvs. încearcă o adresă de rețea veche a acestei unități. Dacă nu se conectează, uitați această unitate în Android Auto de pe telefon și conectați-vă din nou.</string>
     <string name="connection_issue_banner_hands_free_record_refused">Bluetooth-ul acestei unități a refuzat configurația hands-free de care are nevoie Android Auto, așa că este posibil ca legătura wireless să nu pornească. Un cablu sau alt mod wireless nu are nevoie de ea.</string>
     <string name="connection_issue_banner_home_wifi_rejoined">Această unitate se reconectează întruna la WiFi-ul de acasă în timpul Android Auto, ceea ce poate face imaginea să se blocheze, mai ales la unitățile de 2,4 GHz. Atingeți pentru a opri reconectarea automată la acea rețea sau așteptați să ieșiți din raza ei.</string>
+    <string name="connection_issue_banner_stale_usb_accessory">Android Auto de pe telefon nu mai răspunde prin USB, iar aplicația nu l-a putut reporni. Deconectează telefonul, așteaptă cinci secunde și conectează-l din nou.</string>
     <string name="native_aa_wake_remeasure">Remăsoară trezirea Bluetooth</string>
     <string name="native_aa_wake_verdict_unmeasured">Nemăsurată încă</string>
     <string name="native_aa_wake_verdict_safe">Sigură pe această unitate</string>

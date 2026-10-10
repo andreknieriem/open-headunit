@@ -1238,6 +1238,7 @@
     <string name="connection_issue_banner_stale_endpoint">يحاول هاتفك الوصول إلى هذه الوحدة على عنوان شبكة قديم. إذا لم يتصل، فتناسَ هذه الوحدة في Android Auto على هاتفك ثم اتصل مرة أخرى.</string>
     <string name="connection_issue_banner_hands_free_record_refused">رفض بلوتوث هذه الوحدة إعداد اليدين الحرة الذي يحتاجه Android Auto، لذا قد لا يبدأ الاتصال اللاسلكي. الاتصال بكابل أو بوضع لاسلكي آخر لا يحتاج إلى ذلك.</string>
     <string name="connection_issue_banner_home_wifi_rejoined">تعيد هذه الوحدة الاتصال بشبكة WiFi المنزلية باستمرار أثناء Android Auto، مما قد يسبب تقطع الصورة، خصوصاً في الوحدات التي تعمل على 2.4 غيغاهرتز. انقر لإيقاف إعادة الاتصال التلقائي بتلك الشبكة، أو انتظر حتى تبتعد عن نطاقها.</string>
+    <string name="connection_issue_banner_stale_usb_accessory">توقف Android Auto على الهاتف عن الاستجابة عبر USB، ولم يتمكن التطبيق من إعادة تشغيله. افصل الهاتف، وانتظر خمس ثوانٍ، ثم أعد توصيله.</string>
     <string name="native_aa_wake_remeasure">إعادة قياس إيقاظ البلوتوث</string>
     <string name="native_aa_wake_verdict_unmeasured">لم يُقَس بعد</string>
     <string name="native_aa_wake_verdict_safe">آمن على هذه الوحدة</string>

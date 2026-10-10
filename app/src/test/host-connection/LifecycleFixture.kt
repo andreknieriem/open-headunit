@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.*
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
-private enum class DisconnectReason { CONNECTION_ENDED, SETTINGS_RESTART }
+private enum class DisconnectReason { CONNECTION_ENDED, SETTINGS_RESTART, PROJECTION_UNRAISED }
 private sealed class ConnectionState {
     object Connecting : ConnectionState()
     object Connected : ConnectionState()
@@ -48,6 +48,8 @@ private class ConnectionFixture(val settings: Settings = Settings()) {
     private val transportLifecycleLock = Any()
     private var usbRecoveryOwner: Any = Any()
     private var settingsUsbRestartInFlight: ConnectionState.Disconnected? = null
+    private var usbSaveOwner: ConnectionState.Disconnected? = null
+    private fun dropOwedScans() {}
     private var disconnectRequested = false
     private var physicalConnectionReached = true
     private var outgoingEndpoint: Pair<String, Int>? = null
@@ -85,6 +87,7 @@ private class ConnectionFixture(val settings: Settings = Settings()) {
     // PRODUCTION APPLY
     // PRODUCTION DISCONNECT
     // PRODUCTION CANCEL_SETTINGS
+    // PRODUCTION REACHED_SSL
     // PRODUCTION QUIT
     private fun doDisconnect(sendByeBye: Boolean,
         byeByeReason: com.andrerinas.openheadunit.aap.protocol.proto.Control.ByeByeReason =
@@ -104,7 +107,10 @@ private object SessionStateIntent {
 private object StationStandDown { fun onSessionLive(context: Any, held: Long?) {} }
 private class ObserverFixture {
     private fun wifiLockHeldForMs(): Long? = null
-    private class Connection { val connectionState = MutableStateFlow<ConnectionState>(ConnectionState.Disconnected()) }
+    private class Connection {
+        val connectionState = MutableStateFlow<ConnectionState>(ConnectionState.Disconnected())
+        val attemptUserRequested = false
+    }
     private class Usb { var projectionHandshakeFailures=0; fun onHandshakeFailed() {} }
     private val commManager = Connection()
     private class Self { fun onConnectionEstablished() {}; fun onConnectionEnded(state: ConnectionState.Disconnected) {} }
@@ -117,6 +123,8 @@ private class ObserverFixture {
     private var hasEverConnected = false
     private var projectingSinceMs = 0L
     private var projectionRaisesThisSession = 0
+    private var unprojectedEndsInARow = 0
+    private var sessionEndedByHand = false
     private val packageName = "test"
     private val ACTION_REQUEST_NIGHT_MODE_UPDATE = "night"
     var resourcesHeld = false

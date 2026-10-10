@@ -227,7 +227,7 @@ class UsbAttachedActivity : Activity() {
         UsbSwitchClaim.stake()
         Thread {
             val result = try {
-                usbMode.connectAndSwitch(device, useLibusb)
+                usbMode.connectAndSwitch(device, useLibusb).also { if (it) UsbSwitchClaim.noteSwitched() }
             } catch (e: Exception) {
                 AppLog.e("AOA switch threw for ${deviceCompat.uniqueName}", e)
                 false

@@ -57,6 +57,8 @@ object ConnectionIssueBannerPolicy {
      *   same mode on the same two transports, so it is keyed the same way.
      * - `HOME_WIFI_REJOINED_BESIDE_GROUP` is raised in `StationStandDown`, which only stands the
      *   station down for a Native AA WiFi Direct group.
+     * - `STALE_USB_ACCESSORY` is raised in `UsbLauncherManager` once both recovery steps fail. USB
+     *   runs in every wireless mode and on a cable-only unit, so it is keyed to all of them.
      *
      * A record is not deleted when it stops applying. It describes what the hardware did, and the
      * user may well be back on that route tomorrow; it is only hidden while it cannot be the
@@ -70,7 +72,10 @@ object ConnectionIssueBannerPolicy {
         // Keyed on its endpoint rather than on a mode or on wireless being chosen: it is raised
         // only when the peer we dialled was Android Auto's own head unit server, so its presence
         // already proves the route that produces it ran. Self Mode reaches it either way.
-        val anyMode = setOf(ConnectionIssue.HEADUNIT_SERVER_NOT_ANSWERING)
+        val anyMode = setOf(
+            ConnectionIssue.HEADUNIT_SERVER_NOT_ANSWERING,
+            ConnectionIssue.STALE_USB_ACCESSORY
+        )
         // A cable-only unit never brings the wireless stack up, so none of the rest can be the
         // reason its last attempt failed, however recently the record was written.
         if (!wirelessSelected) return anyMode

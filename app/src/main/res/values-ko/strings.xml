@@ -1248,6 +1248,7 @@
     <string name="connection_issue_banner_stale_endpoint">휴대전화가 이 기기의 이전 네트워크 주소로 연결을 시도하고 있습니다. 연결되지 않으면 휴대전화의 Android Auto에서 이 기기를 잊음 처리한 뒤 다시 연결하세요.</string>
     <string name="connection_issue_banner_hands_free_record_refused">이 기기의 블루투스가 Android Auto에 필요한 핸즈프리 설정을 거부해 무선 연결이 시작되지 않을 수 있습니다. 케이블이나 다른 무선 모드는 이것이 필요하지 않습니다.</string>
     <string name="connection_issue_banner_home_wifi_rejoined">이 기기가 Android Auto 중에 집 WiFi에 계속 다시 연결되어 화면이 끊길 수 있으며, 특히 2.4GHz 기기에서 심합니다. 해당 네트워크의 자동 재연결을 끄려면 탭하거나, 그 범위를 벗어날 때까지 기다리세요.</string>
+    <string name="connection_issue_banner_stale_usb_accessory">휴대전화의 Android Auto가 USB로 응답하지 않으며, 앱에서 다시 시작하지 못했습니다. 휴대전화를 분리하고 5초 기다린 뒤 다시 연결하세요.</string>
     <string name="native_aa_wake_remeasure">Bluetooth 웨이크 재측정</string>
     <string name="native_aa_wake_verdict_unmeasured">아직 측정되지 않음</string>
     <string name="native_aa_wake_verdict_safe">이 기기에서는 안전함</string>

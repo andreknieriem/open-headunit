@@ -10,12 +10,22 @@ import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy.Tier
 import com.andrerinas.openheadunit.connection.usb.UsbLauncherManager
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.Settings
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Assert.*
 import org.junit.Test
 import org.mockito.Mockito.*
+import kotlin.coroutines.CoroutineContext
 
 class UsbHandshakeRecheckTest {
+    private object Never : CoroutineDispatcher() {
+        override fun dispatch(context: CoroutineContext, block: Runnable) = Unit
+    }
+
+    private var manager: CommManager? = null
+
     @Test fun usbScanWaitsForEveryPreHandshakeStageAndReturnsAfterFailure() {
         for (stage in listOf(ConnectionState.Connecting, ConnectionState.Connected, ConnectionState.StartingTransport)) {
             scenario(stage) { scan, claim, returned, settle ->
@@ -84,11 +94,34 @@ class UsbHandshakeRecheckTest {
         }
     }
 
+    @Test fun aUserExitDuringSslGivesNoUsbScanBack() {
+        scenario(ConnectionState.StartingTransport) { scan, _, returned, settle ->
+            scan()
+            checkNotNull(manager).disconnect(sendByeBye = false, isUserExit = true, honorKillOnDisconnect = false)
+            CommManager::class.java.getDeclaredMethod("settleSessionClaim", Boolean::class.javaPrimitiveType)
+                .apply { isAccessible = true }.invoke(manager, false)
+            settle()
+            assertTrue(returned.isEmpty())
+        }
+    }
+
+    @Test fun theXOnAUsbAttemptStillGivesTheStoodDownWirelessBack() {
+        for (stage in listOf(ConnectionState.Disconnected(), ConnectionState.Connecting)) {
+            scenario(stage, claimOwner = Owner.USB, standsDown = true) { _, claim, returned, settle ->
+                checkNotNull(manager).disconnect()
+                ConnectionArbiter.release(claim, sessionFormed = false)
+                settle()
+                assertEquals("stage=$stage", listOf(true to false), returned)
+            }
+        }
+    }
+
     private fun scenario(
         state: ConnectionState,
         finishBeforeScan: ConnectionState? = null,
         force: Boolean = true,
         claimOwner: Owner = Owner.WIRELESS_STACK,
+        standsDown: Boolean = false,
         body: (() -> Unit, ConnectionArbiter.Claim, MutableList<Pair<Boolean, Boolean>>, () -> Unit) -> Unit,
     ) {
         val savedLogger = AppLog.LOGGER
@@ -103,7 +136,7 @@ class UsbHandshakeRecheckTest {
         ConnectionArbiter.clock = { 1000L }
         ConnectionArbiter.actions = object : ConnectionArbiter.Actions {
             override fun preempt(loser: ConnectionArbiter.Claim) = Unit
-            override fun standDownWireless(by: ConnectionArbiter.Claim) = false
+            override fun standDownWireless(by: ConnectionArbiter.Claim) = standsDown
             override fun giveBack(wireless: Boolean, usb: Boolean) { returned += wireless to usb }
             override fun schedule(delayMs: Long, block: () -> Unit) { timers.addLast(block) }
         }
@@ -119,6 +152,10 @@ class UsbHandshakeRecheckTest {
                 field("transportLifecycleLock", Any())
                 field("_connectionState", states)
                 field("connectionState", states)
+                field("usbRecoveryOwner", Any())
+                field("_scope", CoroutineScope(SupervisorJob() + Never))
+                field("settings", mock(Settings::class.java))
+                this@UsbHandshakeRecheckTest.manager = manager
                 App::class.java.getDeclaredField("component\$delegate")
                     .apply { isAccessible = true }.set(app, lazyOf(component))
                 `when`(service.applicationContext).thenReturn(app)

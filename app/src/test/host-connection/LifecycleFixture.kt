@@ -48,6 +48,8 @@ private class ConnectionFixture(val settings: Settings = Settings()) {
     private val transportLifecycleLock = Any()
     private var usbRecoveryOwner: Any = Any()
     private var settingsUsbRestartInFlight: ConnectionState.Disconnected? = null
+    private var usbSaveOwner: ConnectionState.Disconnected? = null
+    private fun dropOwedScans() {}
     private var disconnectRequested = false
     private var physicalConnectionReached = true
     private var outgoingEndpoint: Pair<String, Int>? = null
@@ -85,6 +87,7 @@ private class ConnectionFixture(val settings: Settings = Settings()) {
     // PRODUCTION APPLY
     // PRODUCTION DISCONNECT
     // PRODUCTION CANCEL_SETTINGS
+    // PRODUCTION REACHED_SSL
     // PRODUCTION QUIT
     private fun doDisconnect(sendByeBye: Boolean,
         byeByeReason: com.andrerinas.openheadunit.aap.protocol.proto.Control.ByeByeReason =

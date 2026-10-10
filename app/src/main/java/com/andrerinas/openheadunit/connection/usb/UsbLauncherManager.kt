@@ -9,6 +9,7 @@ import androidx.core.content.ContextCompat
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.aap.AapService
+import com.andrerinas.openheadunit.aap.AapTransport
 import com.andrerinas.openheadunit.connection.AutoConnectHoldPolicy
 import com.andrerinas.openheadunit.connection.CommManager
 import com.andrerinas.openheadunit.connection.ConnectionArbiter
@@ -18,6 +19,8 @@ import com.andrerinas.openheadunit.connection.ConnectionStage
 import com.andrerinas.openheadunit.connection.ConnectionStageTracker
 import com.andrerinas.openheadunit.main.SettingsActivity
 import com.andrerinas.openheadunit.utils.AppLog
+import com.andrerinas.openheadunit.utils.ConnectionIssue
+import com.andrerinas.openheadunit.utils.ConnectionIssues
 import com.andrerinas.openheadunit.utils.ToastUtils
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.CompletableDeferred
@@ -29,6 +32,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Master class for USB-related connection functionality.
@@ -37,7 +41,6 @@ class UsbLauncherManager(val service: AapService) {
 
     var isRegistered = false
     private lateinit var receiver: UsbReceiver
-    var projectionHandshakeFailures = 0
     private var noUsbServiceLogged = false
 
     /**
@@ -59,9 +62,12 @@ class UsbLauncherManager(val service: AapService) {
         val settingsRestart: CommManager.ConnectionState.Disconnected?,
         val recoveryOwner: Any,
         val accessoryOnly: Boolean,
+        // The Save came from the running attempt, not from this scan's own request.
+        val inheritedSave: Boolean = false,
     )
     private var pendingCheck: PendingCheck? = null
     private var accessorySwitchRequested = false
+    private var switchesAtBegin = 0L
 
     fun isSwitchingToProjection() = this.isSwitchingToProjection.get()
 
@@ -105,13 +111,19 @@ class UsbLauncherManager(val service: AapService) {
             // Exit, Save and a completed handshake revoke the old recovery interval even if
             // their StateFlow events were skipped. Never let a queued manual flag undo Exit.
             if (cancelledByUser || !manager.ownsUsbRecheck(request.recoveryOwner)) return@launch
-            if (request.settingsRestart?.let {
-                    !it.acceptsSettingsRestart(manager.connectionState.value) ||
-                        SystemClock.elapsedRealtime() >= it.settingsRestartUntilMs
-                } == true) return@launch
+            var restart = request.settingsRestart
+            if (restart != null && (!restart.acceptsSettingsRestart(manager.connectionState.value) ||
+                    SystemClock.elapsedRealtime() >= restart.settingsRestartUntilMs)) {
+                // A scan that only inherited an expired Save falls back to ordinary admission.
+                if (!request.inheritedSave || restart.isSettingsRestartCancelled) return@launch
+                restart = null
+            }
+            // A switch the activity is still running already sent ACC_REQ_START.
+            val accessoryOnly = request.accessoryOnly || isActivitySwitchInFlight()
             // AOA changes UsbDevice identity and permission. Replay the scan, not the old
             // connect(device), so the current device list and permission path are used again.
-            checkAlreadyConnected(request.force, request.userRequested, request.settingsRestart, request.accessoryOnly)
+            AppLog.i("UsbLauncher: replaying the USB scan queued during the attempt (accessoryOnly=$accessoryOnly)")
+            checkAlreadyConnected(request.force, request.userRequested, restart, accessoryOnly)
         }
     }
 
@@ -124,10 +136,12 @@ class UsbLauncherManager(val service: AapService) {
                 return@synchronized false
             }
             val previous = pendingCheck?.takeIf { it.recoveryOwner === recoveryOwner }
+            val earlierExplicit = previous?.settingsRestart != null && !previous.inheritedSave
             pendingCheck = PendingCheck(force || previous?.force == true,
                 userRequested || previous?.userRequested == true,
                 settingsRestart ?: attemptSettingsOwner ?: previous?.settingsRestart, recoveryOwner,
-                accessoryOnly && previous?.accessoryOnly != false)
+                accessoryOnly && previous?.accessoryOnly != false,
+                inheritedSave = settingsRestart == null && attemptSettingsOwner != null && !earlierExplicit)
             true
         }
 
@@ -143,6 +157,7 @@ class UsbLauncherManager(val service: AapService) {
             attemptClaim = claim
             attemptSettingsOwner = settingsRestart
             accessorySwitchRequested = false
+            switchesAtBegin = UsbSwitchClaim.switches()
             isSwitchingToProjection.set(true)
         }
         return true
@@ -265,39 +280,123 @@ class UsbLauncherManager(val service: AapService) {
 
     internal fun pendingSettingsRestart() = App.provide(service).commManager.pendingUsbSettingsRestart()
 
+    private var staleSteps = 0
+    private var staleLastStepAtMs = 0L
+    private var staleGaveUpOn: String? = null
+
     /**
-     * Called when a handshake fails. If an accessory-mode device is still present,
-     * it's likely a stale wireless AA dongle. Force re-enumeration by sending AOA
-     * descriptors — this resets the dongle's USB state so the next connection
-     * starts with clean buffers.
+     * A USB handshake ended. A failure on a phone still in accessory mode starts the bounded
+     * recovery ladder; a success resets it.
      */
-    fun onHandshakeFailed() {
+    fun onUsbHandshakeEnded(failure: AapTransport.HandshakeFailure) {
+        if (failure == AapTransport.HandshakeFailure.NONE) {
+            staleGaveUpOn = null
+            staleSteps = 0
+            staleLastStepAtMs = 0L
+            ConnectionIssues.clear(service, ConnectionIssue.STALE_USB_ACCESSORY)
+            return
+        }
         val usbManager = UsbDeviceCompat.usbManager(service) ?: return
-        val accessoryDevice = usbManager.deviceList.values.firstOrNull {
-            UsbDeviceCompat.isInAccessoryMode(it)
-        } ?: return
-
-        projectionHandshakeFailures++
-        val deviceName = UsbDeviceCompat(accessoryDevice).uniqueName
-        AppLog.w("Handshake failed on accessory device $deviceName (failure #$projectionHandshakeFailures)")
-
-        if (projectionHandshakeFailures > MAX_STALE_ACCESSORY_RETRIES) {
-            AppLog.i("Stale accessory detected: forcing re-enumeration via AOA descriptors for $deviceName")
-            projectionHandshakeFailures = 0
-            val settings = App.provide(service).settings
-            val usbMode = UsbAccessoryMode(usbManager)
-            if (!beginAttempt(Tier.USB, "USB re-enumeration of $deviceName")) return
-            launchAttempt(null, Dispatchers.IO) {
-                try {
-                    if (usbMode.connectAndSwitch(accessoryDevice, settings.useLibusb)) {
-                        noteAccessorySwitchRequested()
-                        AppLog.i("AOA re-enumeration requested for stale device $deviceName")
-                    } else {
-                        AppLog.w("AOA re-enumeration failed for $deviceName")
-                    }
-                } catch (e: Exception) {
-                    AppLog.e("AOA re-enumeration for $deviceName failed with exception", e)
+        val device = usbManager.deviceList.values.firstOrNull { UsbDeviceCompat.isInAccessoryMode(it) }
+        val now = SystemClock.elapsedRealtime()
+        val steps = StaleAccessoryRecoveryPolicy.stepsInEpisode(
+            staleSteps, now - staleLastStepAtMs, staleGaveUpOn, device?.deviceName
+        )
+        if (steps == 0 && staleGaveUpOn != null) {
+            AppLog.i("UsbLauncher: the accessory that recovery gave up on has left the bus; recovery can run again")
+            staleGaveUpOn = null
+            // The next plug-in starts a new episode; old step counts would give it up at once.
+            staleSteps = 0
+            staleLastStepAtMs = 0L
+        }
+        val step = StaleAccessoryRecoveryPolicy.decide(failure, device != null, cancelledByUser, steps)
+        if (step == StaleAccessoryRecoveryPolicy.Step.GIVE_UP) staleGaveUpOn = device?.deviceName
+        val name = device?.let { UsbDeviceCompat(it).uniqueName } ?: "(none)"
+        when (step) {
+            StaleAccessoryRecoveryPolicy.Step.NONE -> {
+                if (cancelledByUser) {
+                    AppLog.i("UsbLauncher: stale accessory recovery for $name refused: the status pill's X holds USB")
+                } else if (device != null) {
+                    AppLog.i("UsbLauncher: handshake failed ($failure) on accessory $name; " +
+                        "not a stale-accessory failure, no recovery")
                 }
+            }
+            StaleAccessoryRecoveryPolicy.Step.GIVE_UP -> {
+                AppLog.i("UsbLauncher: stale accessory $name: recovery used both steps; a replug is needed")
+                // The 3 s reconnect check fails here again and again; a moved stamp would defeat a dismissal.
+                ConnectionIssues.raiseOnce(service, ConnectionIssue.STALE_USB_ACCESSORY)
+            }
+            else -> {
+                if (device == null) return
+                if (isSwitchingToProjection()) {
+                    AppLog.i("UsbLauncher: stale accessory recovery for $name refused: the USB attempt slot is busy")
+                    return
+                }
+                if (!beginAttempt(Tier.USB, "USB recovery of $name")) {
+                    AppLog.i("UsbLauncher: stale accessory recovery for $name refused: another attempt holds the arbiter")
+                    return
+                }
+                staleSteps = steps + 1
+                staleLastStepAtMs = now
+                AppLog.i("UsbLauncher: stale accessory $name: handshake failed ($failure), " +
+                    "step $staleSteps of ${StaleAccessoryRecoveryPolicy.MAX_STEPS}: $step")
+                runRecoveryStep(usbManager, device, name, step)
+            }
+        }
+    }
+
+    /** One job, so its completion frees the slot and claim and replays the queued scan. */
+    private fun runRecoveryStep(
+        usbManager: UsbManager,
+        device: UsbDevice,
+        name: String,
+        step: StaleAccessoryRecoveryPolicy.Step,
+    ) {
+        val app = App.provide(service)
+        val commManager = app.commManager
+        val usbMode = UsbAccessoryMode(usbManager)
+        launchAttempt(null, Dispatchers.IO) {
+            commManager.awaitDisconnectComplete()
+            ConnectionStageTracker.report(ConnectionStage.USB_SWITCHING)
+            val before = usbManager.deviceList.keys.toSet()
+            val issued = if (step == StaleAccessoryRecoveryPolicy.Step.RESWITCH) {
+                usbMode.connectAndSwitch(device, app.settings.useLibusb).also { if (it) noteAccessorySwitchRequested() }
+            } else {
+                usbMode.resetDevice(device)
+            }
+            val startedAt = System.nanoTime() / 1_000_000L
+            var observation = if (issued) StaleAccessoryRecoveryPolicy.Observation.WAITING
+                else StaleAccessoryRecoveryPolicy.Observation.NO_CHANGE
+            while (observation == StaleAccessoryRecoveryPolicy.Observation.WAITING) {
+                delay(100)
+                val list = usbManager.deviceList
+                val reattached = list.any { (key, d) ->
+                    key !in before && UsbDeviceCompat.isConnectable(service, d)
+                }
+                val elapsed = System.nanoTime() / 1_000_000L - startedAt
+                observation = StaleAccessoryRecoveryPolicy.observe(
+                    !list.containsKey(device.deviceName), reattached, elapsed
+                )
+            }
+            val elapsed = System.nanoTime() / 1_000_000L - startedAt
+            when (observation) {
+                StaleAccessoryRecoveryPolicy.Observation.REENUMERATED ->
+                    AppLog.i("UsbLauncher: stale accessory $name: $step re-enumerated the phone in ${elapsed}ms")
+                StaleAccessoryRecoveryPolicy.Observation.NO_CHANGE ->
+                    AppLog.i("UsbLauncher: stale accessory $name: no re-enumeration within ${elapsed}ms " +
+                        "of $step; trying the handshake once more")
+                else ->
+                    AppLog.i("UsbLauncher: stale accessory $name: the phone left the bus after $step " +
+                        "and did not come back")
+            }
+            when (StaleAccessoryRecoveryPolicy.afterObservation(observation)) {
+                // The slot is busy, so this queues; the completion replays it once.
+                StaleAccessoryRecoveryPolicy.FollowUp.RECONNECT_ON_ATTACH ->
+                    deferCheckWhileSwitching(force = true, userRequested = false, settingsRestart = null,
+                        recoveryOwner = commManager.usbRecheckOwner(), accessoryOnly = false)
+                StaleAccessoryRecoveryPolicy.FollowUp.RETRY_HANDSHAKE ->
+                    connectWithRetry(device, maxRetries = 0)
+                StaleAccessoryRecoveryPolicy.FollowUp.STOP -> Unit
             }
         }
     }
@@ -306,6 +405,13 @@ class UsbLauncherManager(val service: AapService) {
     fun restartForSettings(state: CommManager.ConnectionState.Disconnected) {
         if (!cancelledByUser) checkAlreadyConnected(force = true, settingsRestart = state)
     }
+
+    /** A scan sent to the service, such as the attach screen's hand-off. An open Save still owns it. */
+    fun checkOnRequest(userRequested: Boolean) = checkAlreadyConnected(
+        force = true,
+        userRequested = userRequested,
+        settingsRestart = if (userRequested) null else pendingSettingsRestart(),
+    )
 
     /**
      * Scans currently connected USB devices and connects to any that are already in
@@ -513,7 +619,7 @@ class UsbLauncherManager(val service: AapService) {
                     attemptFinished = null
                     attemptClaim = null
                     isSwitchingToProjection.set(false)
-                    if (accessorySwitchRequested) {
+                    if (accessorySwitchRequested || UsbSwitchClaim.switches() != switchesAtBegin) {
                         pendingCheck = pendingCheck?.copy(accessoryOnly = true)
                     }
                     accessorySwitchRequested = false
@@ -630,9 +736,6 @@ class UsbLauncherManager(val service: AapService) {
 
 
     companion object {
-
-        /** Max handshake failures on a stale accessory device before forcing AOA re-enumeration. */
-        const val MAX_STALE_ACCESSORY_RETRIES = 1
 
         /** Delay before AapService tries to handle a normal-mode USB attach as a fallback
          *  when UsbAttachedActivity doesn't fire (common on Chinese MediaTek headunits). */

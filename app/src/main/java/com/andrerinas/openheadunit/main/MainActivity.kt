@@ -1287,6 +1287,8 @@ class MainActivity : BaseActivity() {
                     R.string.connection_issue_banner_stale_endpoint
                 ConnectionIssue.HOME_WIFI_REJOINED_BESIDE_GROUP ->
                     R.string.connection_issue_banner_home_wifi_rejoined
+                ConnectionIssue.STALE_USB_ACCESSORY ->
+                    R.string.connection_issue_banner_stale_usb_accessory
             }
         )
         banner.setOnClickListener { openRemedyFor(issue) }
@@ -1323,6 +1325,8 @@ class MainActivity : BaseActivity() {
         val query = when (issue) {
             // The remedy is on the phone, so there is no row here to send anyone to.
             ConnectionIssue.HEADUNIT_SERVER_NOT_ANSWERING -> return
+            // The remedy is the cable.
+            ConnectionIssue.STALE_USB_ACCESSORY -> return
             // The remedy is the other device's Bluetooth connection, which no setting here reaches.
             ConnectionIssue.HANDS_FREE_HELD_ELSEWHERE -> return
             // This unit's own Bluetooth stack refused the record. No row here changes its answer.

@@ -1240,6 +1240,7 @@
     <string name="connection_issue_banner_stale_endpoint">Váš telefon zkouší starou síťovou adresu této jednotky. Pokud se nepřipojí, zapomeňte tuto jednotku v Android Auto na telefonu a připojte se znovu.</string>
     <string name="connection_issue_banner_hands_free_record_refused">Bluetooth této jednotky odmítl handsfree nastavení, které Android Auto potřebuje, takže se bezdrátové připojení nemusí spustit. Kabel nebo jiný bezdrátový režim ho nepotřebuje.</string>
     <string name="connection_issue_banner_home_wifi_rejoined">Tato jednotka se během Android Auto stále znovu připojuje k vaší domácí síti WiFi, což může způsobit sekání obrazu, hlavně u jednotek na 2,4 GHz. Klepnutím vypněte automatické připojení k této síti, nebo počkejte, až budete mimo její dosah.</string>
+    <string name="connection_issue_banner_stale_usb_accessory">Android Auto v telefonu přestal přes USB odpovídat a aplikaci se ho nepodařilo znovu spustit. Odpojte telefon, počkejte pět sekund a znovu ho připojte.</string>
     <string name="native_aa_wake_remeasure">Znovu změřit Bluetooth probuzení</string>
     <string name="native_aa_wake_verdict_unmeasured">Zatím nezměřeno</string>
     <string name="native_aa_wake_verdict_safe">Bezpečné na této jednotce</string>

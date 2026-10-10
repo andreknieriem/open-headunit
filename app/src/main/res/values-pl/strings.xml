@@ -1239,6 +1239,7 @@
     <string name="connection_issue_banner_stale_endpoint">Telefon próbuje połączyć się ze starym adresem sieciowym tego urządzenia. Jeśli się nie połączy, zapomnij to urządzenie w Android Auto na telefonie i połącz się ponownie.</string>
     <string name="connection_issue_banner_hands_free_record_refused">Bluetooth tego urządzenia odmówił konfiguracji głośnomówiącej wymaganej przez Android Auto, więc połączenie bezprzewodowe może się nie rozpocząć. Kabel lub inny tryb bezprzewodowy tego nie wymaga.</string>
     <string name="connection_issue_banner_home_wifi_rejoined">To urządzenie podczas Android Auto stale łączy się ponownie z twoim domowym WiFi, co może powodować zacinanie się obrazu, głównie na urządzeniach z 2,4 GHz. Dotknij, aby wyłączyć automatyczne ponowne łączenie z tą siecią, albo poczekaj, aż wyjdziesz poza jej zasięg.</string>
+    <string name="connection_issue_banner_stale_usb_accessory">Android Auto na telefonie przestał odpowiadać przez USB, a aplikacja nie mogła go uruchomić ponownie. Odłącz telefon, poczekaj pięć sekund i podłącz go ponownie.</string>
     <string name="native_aa_wake_remeasure">Zmierz ponownie wybudzenie Bluetooth</string>
     <string name="native_aa_wake_verdict_unmeasured">Jeszcze nie zmierzono</string>
     <string name="native_aa_wake_verdict_safe">Bezpieczne na tym urządzeniu</string>

@@ -1235,6 +1235,7 @@
     <string name="connection_issue_banner_stale_endpoint">Telefonunuz bu cihazın eski bir ağ adresini deniyor. Bağlanmazsa, telefonunuzdaki Android Auto\'da bu cihazı unutun ve yeniden bağlanın.</string>
     <string name="connection_issue_banner_hands_free_record_refused">Bu cihazın Bluetooth\'u, Android Auto\'nun ihtiyaç duyduğu eller serbest kurulumunu reddetti, bu yüzden kablosuz bağlantı başlamayabilir. Bir kablo veya başka bir kablosuz mod buna ihtiyaç duymaz.</string>
     <string name="connection_issue_banner_home_wifi_rejoined">Bu cihaz Android Auto sırasında ev WiFi\'nize sürekli yeniden bağlanıyor ve bu, özellikle 2,4 GHz cihazlarda görüntünün takılmasına neden olabilir. O ağ için otomatik yeniden bağlanmayı kapatmak için dokunun veya menzilinin dışına çıkana kadar bekleyin.</string>
+    <string name="connection_issue_banner_stale_usb_accessory">Telefondaki Android Auto USB üzerinden yanıt vermeyi bıraktı ve uygulama onu yeniden başlatamadı. Telefonu çıkarın, beş saniye bekleyin ve tekrar takın.</string>
     <string name="native_aa_wake_remeasure">Bluetooth uyandırmasını yeniden ölç</string>
     <string name="native_aa_wake_verdict_unmeasured">Henüz ölçülmedi</string>
     <string name="native_aa_wake_verdict_safe">Bu cihazda güvenli</string>

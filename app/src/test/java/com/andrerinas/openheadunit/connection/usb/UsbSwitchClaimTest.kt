@@ -1,6 +1,7 @@
 package com.andrerinas.openheadunit.connection.usb
 
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -46,5 +47,20 @@ class UsbSwitchClaimTest {
         UsbSwitchClaim.release()
 
         assertFalse(UsbSwitchClaim.isLive())
+    }
+
+    @Test
+    fun `a completed switch moves the count`() {
+        val before = UsbSwitchClaim.switches()
+        UsbSwitchClaim.noteSwitched()
+        assertEquals(before + 1, UsbSwitchClaim.switches())
+    }
+
+    @Test
+    fun `a stake alone does not move the count`() {
+        val before = UsbSwitchClaim.switches()
+        UsbSwitchClaim.stake()
+        UsbSwitchClaim.release()
+        assertEquals(before, UsbSwitchClaim.switches())
     }
 }

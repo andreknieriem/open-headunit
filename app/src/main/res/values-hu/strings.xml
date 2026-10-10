@@ -1236,6 +1236,7 @@
     <string name="connection_issue_banner_stale_endpoint">A telefon egy régi hálózati címet próbál az egységhez. Ha nem csatlakozik, felejtse el az egységet az Android Autóban a telefonon, majd csatlakozzon újra.</string>
     <string name="connection_issue_banner_hands_free_record_refused">Az egység Bluetooth-ja elutasította az Android Auto által igényelt kihangosító beállítást, így a vezeték nélküli kapcsolat nem biztos, hogy elindul. Egy kábel vagy másik vezeték nélküli mód nem igényli.</string>
     <string name="connection_issue_banner_home_wifi_rejoined">Az egység az Android Auto alatt újra és újra csatlakozik az otthoni WiFihez, ami akadozóvá teheti a képet, főleg a 2,4 GHz-es egységeken. Érintse meg az adott hálózathoz tartozó automatikus újracsatlakozás kikapcsolásához, vagy várjon, amíg hatókörén kívülre kerül.</string>
+    <string name="connection_issue_banner_stale_usb_accessory">A telefonon az Android Auto nem válaszol USB-n, és az alkalmazás nem tudta újraindítani. Húzd ki a telefont, várj öt másodpercet, majd dugd vissza.</string>
     <string name="native_aa_wake_remeasure">Bluetooth-ébresztés újramérése</string>
     <string name="native_aa_wake_verdict_unmeasured">Még nincs megmérve</string>
     <string name="native_aa_wake_verdict_safe">Biztonságos ezen az egységen</string>

@@ -1089,6 +1089,7 @@
     <string name="connection_issue_banner_hands_free_held">Perangkat lain sudah menggunakan koneksi hands-free unit ini, sehingga ponsel yang dibangunkan tidak dapat menggunakannya. Putuskan sambungan perangkat lain atau matikan Bluetooth-nya, dan unit ini akan mencoba lagi secara otomatis.</string>
     <string name="connection_issue_banner_hands_free_record_refused">Bluetooth unit ini tidak memublikasikan rekaman hands-free yang dibutuhkan aplikasi agar ponsel melihat profil hands-free. Android Auto tidak akan memulai koneksi nirkabel kecuali Bluetooth head unit terhubung dengan profil. Sambungan kabel atau mode nirkabel lainnya tidak memerlukannya.</string>
     <string name="connection_issue_banner_home_wifi_rejoined">Unit ini terus tersambung kembali ke Wi-Fi rumah Anda saat Android Auto berjalan, yang dapat membuat gambar tersendat, terutama pada unit 2.4 GHz. Ketuk untuk mematikan sambung ulang otomatis untuk jaringan tersebut, atau tunggu sampai Anda berada di luar jangkauannya.</string>
+    <string name="connection_issue_banner_stale_usb_accessory">Android Auto di ponsel berhenti merespons lewat USB, dan aplikasi tidak dapat memulai ulang. Cabut ponsel, tunggu lima detik, lalu colokkan kembali.</string>
     <string name="connection_issue_banner_dismiss">Tutup</string>
     <string name="auto_connect_pill_cancel">Hentikan menghubungkan</string>
     <string name="connection_issue_remedy_hotspot_query">Nama dan kata sandi hotspot</string>

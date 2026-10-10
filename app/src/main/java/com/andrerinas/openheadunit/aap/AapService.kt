@@ -1058,6 +1058,9 @@ class AapService : Service() {
             emitSessionState(SessionStateIntent.STATE_FAILED, reason)
             projectingSinceMs = 0L
         }
+        commManager.onUsbHandshakeEnded = { f ->
+            serviceScope.launch(Dispatchers.Main) { usbLauncherManager.onUsbHandshakeEnded(f) }
+        }
         observeConnectionState()
         registerReceivers()
         carKeysManager.registerIdleReceivers(this)
@@ -1211,7 +1214,6 @@ class AapService : Service() {
                         cancelProjectionRaiseDeadline()
                         hasEverConnected = true
                         projectingSinceMs = SystemClock.elapsedRealtime()
-                        usbLauncherManager.projectionHandshakeFailures = 0
                         emitSessionState(SessionStateIntent.STATE_PROJECTING)
                         sendBroadcast(Intent(ACTION_REQUEST_NIGHT_MODE_UPDATE).apply {
                             setPackage(packageName)
@@ -1219,17 +1221,8 @@ class AapService : Service() {
                         maybeAutoResumePlaybackOnReconnect()
                     }
                     is CommManager.ConnectionState.Error -> {
-                        // Nothing may be counted here, and nothing new may be hung off this branch.
-                        // connectionState is a MutableStateFlow, so collection is conflated, and
-                        // startHandshake() calls disconnect() with no suspension point after
-                        // emitting Error — the value is already Disconnected by the time any
-                        // collector resumes, so this branch does not run while the Disconnected one
-                        // below runs normally. Anything that has to count failures counts them
-                        // where they happen; the silent-peer streak lives in CommManager for that
-                        // reason.
-                        if (state.message.contains("Handshake failed")) {
-                            usbLauncherManager.onHandshakeFailed()
-                        }
+                        // The flow is conflated and a synchronous disconnect() follows the emit, so
+                        // count failures where they happen (CommManager.onUsbHandshakeEnded).
                     }
                     is CommManager.ConnectionState.Disconnected -> {
                         selfLauncherManager.onConnectionEnded(state)
@@ -1562,8 +1555,8 @@ class AapService : Service() {
      */
     private fun onDisconnected(state: CommManager.ConnectionState.Disconnected) {
         // A failed USB open has no live AAP resources to retire. Its Save loop and fallback
-        // still own recovery; ordinary session-end cleanup would release their USB claim.
-        if (state.settingsRetryOwner?.acceptsSettingsRestart(state) == true) return
+        // still own recovery; an end after the open has run onConnected and needs the full cleanup.
+        if (!state.hadPhysicalConnection && state.settingsRetryOwner?.acceptsSettingsRestart(state) == true) return
         cancelProjectionRaiseDeadline()
         if (state.isSettingsRestart) {
             // The timed state gate holds queued wakes during Save. Do not also latch the
@@ -1947,7 +1940,8 @@ class AapService : Service() {
             val owner = commManager.usbRecheckOwner(state) ?: return
             usbReconnect.schedule(state, USB_RECONNECT_DELAY_MS,
                 ownsCheck = { commManager.ownsUsbRecheck(owner) }) {
-                usbLauncherManager.checkAlreadyConnected(force = true)
+                // Read when it fires: a Save still owed by this end must not meet the open settings screen.
+                usbLauncherManager.checkAlreadyConnected(force = true, settingsRestart = usbLauncherManager.pendingSettingsRestart())
             }
         }
 
@@ -3383,8 +3377,7 @@ class AapService : Service() {
                 // Caller already invoked commManager.connect(socket); the connectionState
                 // observer in observeConnectionState() handles the rest — nothing to do here.
             }
-            ACTION_CHECK_USB             -> usbLauncherManager.checkAlreadyConnected(
-                force = true,
+            ACTION_CHECK_USB             -> usbLauncherManager.checkOnRequest(
                 userRequested = intent?.getBooleanExtra(EXTRA_USER_REQUESTED, false) == true,
             )
             else                         -> {

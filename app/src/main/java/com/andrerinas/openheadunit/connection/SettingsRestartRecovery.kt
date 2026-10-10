@@ -12,6 +12,10 @@ internal object SettingsRestartRecovery {
     // wake hold earlier, after the old transport retires, so the first retry need not wait.
     const val WINDOW_MS = 30_000L
 
+    /** The Save an ended attempt hands on: kept until SSL, never after a user exit. */
+    fun <T : Any> ownerAtEnd(isUserExit: Boolean, reachedSsl: Boolean, explicit: T?, attempt: T?): T? =
+        if (isUserExit || reachedSsl) null else explicit ?: attempt
+
     suspend fun run(
         remainingMs: Long,
         isCurrent: () -> Boolean,

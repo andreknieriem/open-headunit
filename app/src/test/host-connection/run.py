@@ -58,6 +58,7 @@ class CommManager {
  private var usbRecoveryOwner:Any=Any()
  fun recoveryOwner()=usbRecoveryOwner
  private var settingsUsbRestartInFlight:ConnectionState.Disconnected?=null
+ private var usbSaveOwner:ConnectionState.Disconnected?=null
  private var physicalConnectionReached=true
  private var outgoingEndpoint:Pair<String,Int>?=null
  @Volatile private var _transport:AapTransport?=null
@@ -74,6 +75,7 @@ class CommManager {
  private var onAudioFocusStateChanged:((Boolean)->Unit)?=null
  private var onUpdateUiConfigReplyReceived:(()->Unit)?=null
  private var onSessionFailure:((String)->Unit)?={failures.add(it)}
+ private var onUsbHandshakeEnded:((AapTransport.HandshakeFailure)->Unit)?=null
  val failures=mutableListOf<String>()
  private var sessionReachedHandshake=false
  private var silentPeerFailures=0
@@ -81,6 +83,7 @@ class CommManager {
  private val keyStates=mutableMapOf<Int,Int>()
  private var btMediaLinkCached:Boolean?=null
  private var btMediaLinkCheckedAt:Long?=null
+ private fun dropOwedScans(){}
  private fun noteHandshakeOutcome(silent:Boolean){}
  private fun settleSessionClaim(formed:Boolean){}
  private fun noteSessionEnded(renderedAnyFrame:Boolean, settingsRestart:Boolean=false){}
@@ -114,7 +117,7 @@ for declaration in ['val isWirelessSession:', 'val isLoopbackSession:']:
     manager_head += comm[start:comm.index('\n\n', start)] + '\n'
 manager=manager_head+'\n'.join(extract(comm,n) for n in [
  'suspend fun startHandshake()', 'private inline fun withLiveTransport(', 'suspend fun startReading()',
- 'private fun transportedQuited(', 'fun applyAudioSettings()', 'fun disconnect(', 'fun cancelPendingSettingsRestart()', 'private fun doDisconnect(',
+ 'private fun reachedSsl()', 'private fun transportedQuited(', 'fun applyAudioSettings()', 'fun disconnect(', 'fun cancelPendingSettingsRestart()', 'private fun doDisconnect(',
  'private suspend fun connectIp(', 'private suspend fun connectUsb(', 'fun disconnectForLinkLoss(', 'fun destroy()'
 ])+'\n}\n'
 transport_head=r'''
@@ -553,6 +556,8 @@ fun destroyDuringCandidateConstruction()=runBlocking {
 extra += r'''
 object UsbDeviceCompat{fun getUniqueName(d:UsbDevice)="usb-fixture";fun usbManager(c:Context)=c.getSystemService(Context.USB_SERVICE) as UsbManager}
 object UsbBridge{ @Volatile var afterConnect:(()->Unit)?=null;var forcedOpen:(()->Boolean)?=null }
+// The production USB check has to match the fixture's USB double.
+typealias AbstractUsbProjectionConnection=StandardUsbProjectionConnection
 open class StandardUsbProjectionConnection(m:UsbManager,d:UsbDevice):ProjectionConnection(){
  private val actual=com.andrerinas.openheadunit.connection.projection.StandardUsbProjectionConnection(m,d)
  override fun connect():Boolean {UsbBridge.forcedOpen?.let{return it()};val r=runBlocking{actual.connect()};UsbBridge.afterConnect?.invoke();return r}

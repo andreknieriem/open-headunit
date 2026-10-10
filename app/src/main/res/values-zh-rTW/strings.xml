@@ -1239,6 +1239,7 @@
     <string name="connection_issue_banner_stale_endpoint">手機正在嘗試連上本機的舊網路位址。如果無法連線，請在手機的 Android Auto 中忘記本機，然後重新連線。</string>
     <string name="connection_issue_banner_hands_free_record_refused">本機的藍牙拒絕了 Android Auto 所需的免持設定，因此無線連線可能無法啟動。使用傳輸線或其他無線模式則不需要此設定。</string>
     <string name="connection_issue_banner_home_wifi_rejoined">本機在 Android Auto 期間不斷重新加入您家中的 WiFi，可能造成畫面卡頓，在 2.4 GHz 的機器上尤其明顯。輕觸以關閉該網路的自動重新連線，或等到您離開其涵蓋範圍。</string>
+    <string name="connection_issue_banner_stale_usb_accessory">手機上的 Android Auto 已停止透過 USB 回應，應用程式無法將其重新啟動。請拔下手機，等待五秒後再重新插入。</string>
     <string name="native_aa_wake_remeasure">重新測量藍牙喚醒</string>
     <string name="native_aa_wake_verdict_unmeasured">尚未測量</string>
     <string name="native_aa_wake_verdict_safe">在本機是安全的</string>

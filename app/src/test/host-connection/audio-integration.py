@@ -68,6 +68,7 @@ for marker, declaration, source in [
     ("DISCONNECT", "fun disconnect(", comm),
     ("CANCEL_SETTINGS", "fun cancelPendingSettingsRestart()", comm),
     ("DISCONNECTED_STATE", "class Disconnected(", comm),
+    ("REACHED_SSL", "private fun reachedSsl()", comm),
     ("QUIT", "private fun transportedQuited(", comm),
     ("OBSERVER", "private fun observeConnectionState()", service),
 ]:

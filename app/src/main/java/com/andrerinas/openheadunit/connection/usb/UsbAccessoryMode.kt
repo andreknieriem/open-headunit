@@ -50,6 +50,27 @@ class UsbAccessoryMode(private val usbMgr: UsbManager) {
         return result
     }
 
+    /** Resets the device on the bus through libusb; true when the reset was issued. */
+    fun resetDevice(device: UsbDevice): Boolean {
+        val name = UsbDeviceCompat(device).uniqueName
+        val connection = try { usbMgr.openDevice(device) } catch (e: Throwable) {
+            AppLog.e("UsbAccessoryMode: USB reset not issued to $name: cannot open", e)
+            return false
+        }
+        if (connection == null) {
+            AppLog.w("UsbAccessoryMode: USB reset not issued to $name: cannot open")
+            return false
+        }
+        val native = UsbNative()
+        val wrapped = native.wrap(connection, 0, 0)
+        if (wrapped) native.reset()
+        native.close()
+        connection.close()
+        if (wrapped) AppLog.i("UsbAccessoryMode: USB reset issued to $name")
+        else AppLog.w("UsbAccessoryMode: USB reset not issued to $name: cannot wrap for libusb")
+        return wrapped
+    }
+
     private fun switch(connection: UsbDeviceConnection): Boolean {
         // Do accessory negotiation and attempt to switch to accessory mode. Called only by usb_connect()
         val buffer = ByteArray(2)

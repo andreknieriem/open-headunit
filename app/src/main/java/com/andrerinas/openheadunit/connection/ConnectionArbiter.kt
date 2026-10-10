@@ -249,6 +249,12 @@ object ConnectionArbiter {
         usbEpisode++
     }
 
+    /** The user ended the attempt: a held USB check does not come back. Wireless still does. */
+    fun dropUsbDebt() = synchronized(this) {
+        usbOwed = false
+        if (!wirelessOwed) owedAfterSession = false
+    }
+
     private fun clearDebts() {
         wirelessOwed = false
         usbOwed = false

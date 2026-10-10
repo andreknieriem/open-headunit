@@ -143,7 +143,9 @@ class AdaptiveAudioTest {
         val out = ShortArray(960)
         assertTrue(buffer.render(out, 1))
         assertEquals(10000, out[478].toInt())
-        assertTrue(out.drop(480).all { it == 0.toShort() })
+        // A deliberate end appends a short ramp after the genuine final sample.
+        assertTrue(out[480].toInt() in 9900..9999)
+        assertEquals(0, out.last().toInt())
         assertEquals(0L, buffer.rebanks)
         assertEquals(0L, buffer.concealedFrames)
         assertTrue(buffer.isIdle())

@@ -24,6 +24,7 @@ private fun PlaybackFocusLease.activity(channel: Int, nowMs: Long) = activity(ch
 
 fun main() {
     audioTrackBufferRegression()
+    pcmEndingRegression()
     audioSettingsRegression()
     aacProgressOwnershipRegression(csdReplacement = true)
     aacProgressOwnershipRegression(csdReplacement = false)

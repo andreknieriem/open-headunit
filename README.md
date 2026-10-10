@@ -48,6 +48,42 @@ Choose from the five options below depending on your Android Auto version and se
 - Supports **Wi-Fi Direct (P2P)** or the **Headunit Hotspot** transport.
 - Configure under Open Headunit Settings -> **Android Auto Mode** -> **Native Mode**.
 
+#### Optional automatic Wi-Fi scan pause
+
+In advanced settings → **Wireless Connection** → **Pause automatic Wi-Fi searches**, enable
+**Pause during wireless connections**. It is off by default and applies immediately. The setup
+screen guides you through installing/starting Shizuku and granting this app access.
+
+- **Android 13+:** in Native mode (Wi-Fi Direct or Hotspot), pauses Android's periodic connectivity and PNO searches through the global
+  autojoin gate. Client modes keep automatic reconnection enabled. It reads the original value before changing it and restores that value on disconnect.
+- **Android 8–12L:** available only with Native Hotspot and ordinary Wi-Fi
+  off during the connection. The app temporarily disables the remaining scan-always path. It never
+  switches off a live Wi-Fi Direct connection. These releases lack a public getter for the original
+  global autojoin state, so the app does not guess a value to restore.
+- **Android 7 and older:** this option is unavailable; existing wireless behavior is unchanged.
+
+Android 11+ can start Shizuku through wireless debugging; the screen also points to its USB setup
+for devices without that option. Android 8–10 uses USB/computer setup, with an explicit on-device
+startup option on supported FYT systems. FYT startup asks for normal ADB RSA authorization and
+keeps its network ADB listener open, including after app restart. Use **Close wireless ADB**
+to stop the listener opened by this app; this can also stop Shizuku and disconnect USB debugging.
+Existing ADB ports and persistent settings are left alone. An interrupted explicit close is
+retried when the app reopens. On Android 8–10 FYT systems, a previously configured FYT start is
+attempted once per boot when Open Headunit runs after unlock, provided this option stays enabled
+and Native mode is selected. Boot broadcasts can trigger this without opening the settings screen;
+Android still controls job scheduling and debugging authorization. Explicitly closing ADB disables
+this automatic startup until the FYT start button is used again. A failed boot attempt is not
+repeated in the background; use the setup screen to retry.
+
+On app-process death, a separate shell helper attempts rollback. A device-local recovery record
+survives interruption of both processes and is retried when Shizuku is available again. Pending
+recovery is shown on the home screen and in settings, with automatic retries while an authorized
+helper is available. For a legacy scan-always recovery, Android can also restore scanning through
+a system confirmation without restarting Shizuku. The app verifies the resulting state before
+clearing its recovery record. If searches are re-enabled elsewhere, the app leaves them enabled
+for that connection instead of repeatedly forcing them off. Other apps' explicit scans, Wi-Fi Direct discovery and firmware roaming are outside
+this control; this option cannot promise to eliminate every radio interruption.
+
 #### FYT external Bluetooth module transport (experimental)
 On FYT units where the phone pairs for calls with a separate Bluetooth module (for example **DUDUAUTO** on DUDUOS), Native Mode can carry its Android Auto Bluetooth handshake through `/dev/auto_serial`, the relay the stock Car Link app (`com.syu.carlink`) uses, while calls remain on the module and the vehicle microphone/speakers. Tested so far only on DUDUOS with a BLINK module.
 

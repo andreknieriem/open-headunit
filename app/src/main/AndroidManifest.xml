@@ -262,6 +262,10 @@
         </service>
         <service android:name=".location.GpsLocationService" />
         <service
+            android:name=".connection.wifi.scan.FytBootStartJob"
+            android:permission="android.permission.BIND_JOB_SERVICE"
+            android:exported="true" />
+        <service
             android:name=".main.FloatingButtonService"
             android:exported="false" />
 

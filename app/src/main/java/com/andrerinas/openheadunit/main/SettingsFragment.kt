@@ -85,6 +85,8 @@ import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.ExternalBtTran
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeCredentialsPreflight
 import com.andrerinas.openheadunit.utils.BluetoothHelper
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import com.andrerinas.openheadunit.connection.wifi.modes.helper.HelperStrategy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeStrategy
 import com.andrerinas.openheadunit.connection.wifi.WifiLauncherMode
@@ -471,6 +473,26 @@ class SettingsFragment : Fragment() {
 
         updateSettingsList()
         setupToolbar()
+        if (Build.VERSION.SDK_INT >= 26) viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    com.andrerinas.openheadunit.connection.wifi.scan.WifiScanControl.state.collect {
+                        updateSettingsList()
+                    }
+                }
+                // Service/permission and Wi-Fi changes can leave the idle controller state
+                // unchanged. Observe only while this screen is visible, without binding it.
+                var previous = wifiScanSummary()
+                while (isActive) {
+                    delay(1_000)
+                    val current = wifiScanSummary()
+                    if (current != previous) {
+                        previous = current
+                        updateSettingsList()
+                    }
+                }
+            }
+        }
 
         savedInstanceState?.getParcelable<android.os.Parcelable>("recycler_scroll")?.let {
             settingsRecyclerView.layoutManager?.onRestoreInstanceState(it)
@@ -1146,6 +1168,29 @@ class SettingsFragment : Fragment() {
 
         // --- Wireless Connection ---
         items.add(SettingItem.CategoryHeader("wirelessConnection", R.string.category_wireless))
+
+        if (Build.VERSION.SDK_INT >= 26) {
+            items.add(SettingItem.SettingEntry(
+                stableId = "wifiScanControl",
+                nameResId = R.string.wifi_scan_title,
+                value = wifiScanSummary(),
+                // The row title does not name Shizuku; let the settings search find it.
+                searchKeywords = "Shizuku",
+                onClick = { _ ->
+                    // The sub-screen applies immediately; do not silently lose unsaved controls
+                    // in this screen when navigation recreates its view on return.
+                    if (hasChanges) MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
+                        .setTitle(R.string.unsaved_changes)
+                        .setMessage(R.string.unsaved_changes_message)
+                        .setPositiveButton(R.string.discard) { _, _ ->
+                            findNavController().navigate(R.id.wifiScanSettingsFragment)
+                        }
+                        .setNegativeButton(R.string.cancel, null)
+                        .show()
+                    else findNavController().navigate(R.id.wifiScanSettingsFragment)
+                }
+            ))
+        }
 
         // Add 2.4GHz Warning Banner
         items.add(SettingItem.InfoBanner(
@@ -4207,6 +4252,12 @@ class SettingsFragment : Fragment() {
     }
 
 
+
+    private fun wifiScanSummary(): String =
+        com.andrerinas.openheadunit.connection.wifi.scan.WifiScanControl.summaryText(
+            requireContext(),
+            nativeHost = (pendingWifiConnectionMode ?: settings.wifiConnectionMode) == WifiLauncherMode.NATIVE,
+            hotspot = (pendingNativeApTransport ?: settings.nativeApStrategy) == NativeStrategy.HOTSPOT)
 
     override fun onResume() {
         super.onResume()

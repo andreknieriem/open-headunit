@@ -1262,7 +1262,7 @@
     <string name="pref_default_launcher_status_inactive">설정 안 됨 (기본값으로 설정하려면 탭)</string>
     <string name="audio_settings_reconnect">오디오 설정을 저장했습니다. 적용하려면 Android Auto를 다시 연결해 주세요.</string>
     <!-- Optional Shizuku Wi-Fi scan control -->
-    <string name="wifi_scan_title">Wi-Fi 자동 탐색 일시 중지</string>
+    <string name="wifi_scan_title">Wi-Fi 자동 탐색 일시 중지 (Shizuku)</string>
     <string name="wifi_scan_explanation">Native 모드로 무선 Android Auto를 사용하는 동안 Android의 자동 Wi-Fi 탐색을 멈추고, 연결이 끝나면 이전 설정으로 복구합니다. Shizuku가 필요합니다. 변경은 즉시 적용됩니다.</string>
     <string name="wifi_scan_legacy">Android 8~12에서는 일반 Wi-Fi가 꺼진 상태에서 Native의 핫스팟을 사용해야 합니다. 이 버전의 Wi-Fi Direct에서는 이 옵션을 사용할 수 없습니다.</string>
     <string name="wifi_scan_enable">무선 연결 중 탐색 일시 중지</string>
@@ -1273,7 +1273,7 @@
     <string name="wifi_scan_developer_settings">디버깅 설정 열기</string>
     <string name="wifi_scan_open_shizuku">Shizuku 열기</string>
     <string name="wifi_scan_fyt_start">이 FYT 기기에서 Shizuku 시작</string>
-    <string name="wifi_scan_fyt_confirm">Shizuku를 시작하기 위해 네트워크 ADB를 잠시 켭니다. Android 디버깅 승인 창이 표시되면 허용하세요. 완료 후 이전 포트 설정으로 복구하며, 이미 켜져 있던 포트는 변경하지 않습니다. 앱이 중단되면 다시 열어 임시 포트 복구를 마치세요. 신뢰할 수 있는 네트워크에서 사용하세요.</string>
+    <string name="wifi_scan_fyt_confirm">Shizuku를 시작하기 위해 무선 ADB를 켜고, ‘무선 ADB 종료’를 누를 때까지 유지합니다. Android 디버깅 승인 창이 표시되면 허용하세요. 여기서는 Open Headunit이 연 ADB만 종료하며 기존 ADB 설정은 변경하지 않습니다. 신뢰할 수 있는 네트워크에서 사용하세요. 이 옵션이 켜져 있으면 재부팅 후 Open Headunit 실행 시 이전에 설정한 FYT 시작을 한 번 다시 시도합니다. Android가 디버깅 승인을 다시 요청할 수 있습니다.</string>
     <string name="wifi_scan_continue">계속</string>
     <string name="wifi_scan_fyt_authorize">시작 중… 이 기기에 디버깅 승인 창이 표시되면 허용하세요.</string>
     <string name="wifi_scan_wifi_settings">Wi-Fi 설정 열기</string>
@@ -1283,16 +1283,16 @@
     <string name="wifi_scan_retry">다시 시도</string>
     <string name="wifi_scan_fyt_finished">Shizuku를 시작했습니다. 계속하려면 접근을 허용하세요.</string>
     <string name="wifi_scan_fyt_failed">Shizuku를 시작하지 못했습니다. Shizuku 앱의 시작 안내를 이용하세요.</string>
-    <string name="wifi_scan_fyt_recovery">임시 ADB 포트를 복구해야 합니다. ADB 포트 복구를 누르세요. 실패하면 시스템 설정에서 디버깅을 끄거나 기기를 재시작하세요.</string>
-    <string name="wifi_scan_fyt_restore">ADB 포트 복구</string>
-    <string name="wifi_scan_fyt_restored">임시 ADB 포트를 복구했습니다.</string>
+    <string name="wifi_scan_fyt_recovery">ADB 정리를 완료하지 못했습니다. ‘무선 ADB 종료’를 눌러 다시 시도하세요. 실패하면 시스템 설정에서 디버깅을 끄거나 기기를 재시작하세요.</string>
+    <string name="wifi_scan_fyt_restore">무선 ADB 종료</string>
+    <string name="wifi_scan_fyt_restored">Open Headunit이 연 ADB를 더 이상 사용하지 않습니다.</string>
     <string name="wifi_scan_restore_system">Android에서 Wi-Fi 스캔 복구</string>
     <string name="wifi_scan_help">Shizuku 설정 도움말</string>
     <string name="wifi_scan_recovery_notice">지난 연결에서 변경한 Wi-Fi 설정을 복구해 주세요.</string>
     <string name="wifi_scan_restore_short">복구</string>
     <string name="wifi_scan_enable_debugging">먼저 개발자 옵션에서 USB 디버깅을 켠 뒤 돌아와 주세요. Shizuku를 시작할 때 디버깅 승인 창이 나오면 허용해 주세요.</string>
     <string name="wifi_scan_summary_recovery">이전 Wi-Fi 설정 복원 필요</string>
-    <string name="wifi_scan_summary_adb_recovery">임시 ADB 포트 복원 필요</string>
+    <string name="wifi_scan_summary_adb_recovery">ADB 정리 필요</string>
     <string name="wifi_scan_summary_changed">미적용 · 다른 곳에서 Wi-Fi 설정 변경됨</string>
     <string name="wifi_scan_summary_failed">Wi-Fi 탐색 설정 변경 실패</string>
     <string name="wifi_scan_summary_native">Native 연결 방식 필요</string>
@@ -1322,4 +1322,19 @@
     <string name="wifi_scan_detail_fyt_available">FYT 시작: 사용 가능</string>
     <string name="wifi_scan_detail_fyt_unavailable">FYT 시작: 이 기기 또는 Android 버전에서 지원 안 됨</string>
     <string name="wifi_scan_fyt_manual_setup">이 펌웨어에서는 임시 ADB를 열지 못했거나 Shizuku 시작을 완료하지 못했습니다. 개발자 옵션에서 USB 디버깅을 켜고 다시 시도하세요. 디버깅 승인 창이 표시되면 허용하세요. 계속 실패하면 Shizuku 앱의 시작 안내를 이용하세요.</string>
+    <string name="wifi_scan_detail_fyt_busy">FYT 시작: 현재 작업이 끝난 후 사용 가능</string>
+    <string name="wifi_scan_detail_fyt_recovery">FYT 시작: ADB 정리 필요</string>
+    <string name="wifi_scan_detail_fyt_running">FYT 시작: Shizuku가 이미 실행 중</string>
+    <string name="wifi_scan_detail_fyt_install">FYT 시작: Shizuku 설치 필요</string>
+    <string name="wifi_scan_fyt_failed_at">Shizuku 설정 실패 단계: %1$s</string>
+    <string name="wifi_scan_fyt_stage_prepare">시작 준비 확인</string>
+    <string name="wifi_scan_fyt_stage_vendor">FYT 서비스 연결</string>
+    <string name="wifi_scan_fyt_stage_open">무선 ADB 열기</string>
+    <string name="wifi_scan_fyt_stage_connect">ADB 연결·디버깅 승인</string>
+    <string name="wifi_scan_fyt_stage_start">Shizuku 시작 명령 실행</string>
+    <string name="wifi_scan_fyt_stage_wait">Shizuku 서비스 응답 대기</string>
+    <string name="wifi_scan_fyt_stage_restore">ADB 종료 및 설정 복구</string>
+    <string name="wifi_scan_fyt_close_help">Open Headunit이 연 ADB만 종료합니다. Shizuku가 중지되거나 USB 디버깅 연결이 끊길 수 있습니다. 이 앱에서 종료할 ADB가 없으면 버튼은 비활성화됩니다. 종료하면 재부팅 후 FYT 자동 시작도 중지합니다. 다시 사용하려면 FYT 시작 버튼을 누르세요.</string>
+    <string name="wifi_scan_fyt_adb_owned">무선 ADB: Open Headunit에서 관리 중 · 아래 버튼으로 종료</string>
+    <string name="wifi_scan_fyt_adb_unowned">무선 ADB: Open Headunit에서 관리하는 연결 없음</string>
 </resources>

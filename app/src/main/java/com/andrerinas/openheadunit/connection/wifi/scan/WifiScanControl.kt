@@ -68,6 +68,10 @@ object WifiScanControl {
             if (code == REQUEST_PERMISSION) scope.launch { completePermissionRequest(); refresh() }
         }
         refresh()
+        FytShizukuStarter.rememberPreviousFytChoice(this.context)
+        // Enqueue before returning from application/boot initialization. A coroutine alone
+        // does not keep a broadcast-started process alive after its receiver returns.
+        FytBootStartJob.schedule(this.context)
         scope.launch { FytShizukuStarter.recover(this@WifiScanControl.context) }
         scope.launch {
             while (true) {
@@ -117,6 +121,8 @@ object WifiScanControl {
     fun setEnabled(value: Boolean) {
         check(prefs.edit().putBoolean("enabled", value).commit())
         yielded = false
+        if (!value) FytBootStartJob.cancel(context)
+        else FytBootStartJob.schedule(context)
         refresh()
     }
     fun session(owner: Any, hotspot: Boolean, nativeHost: Boolean) {

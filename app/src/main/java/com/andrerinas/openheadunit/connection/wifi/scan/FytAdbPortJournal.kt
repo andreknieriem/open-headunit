@@ -21,25 +21,35 @@ internal object FytAdbPortPolicy {
 }
 
 internal class FytAdbPortJournal(context: Context) {
+    // Settings reads this journal while startup writes it from an IO coroutine. AtomicFile
+    // protects crash recovery, not concurrent access; all instances share this lock.
+    private companion object { val lock = Any() }
     private val file = AtomicFile(File(context.noBackupFilesDir, "fyt-adb-port.json"))
-    data class Record(val previous: String, val boot: Int, val daemon: String, val port: Int)
-    fun exists() = file.baseFile.exists()
-    fun read(): Record? {
-        if (!exists()) return null
+    // Missing flags identify records from older builds that promised automatic rollback.
+    data class Record(val previous: String, val boot: Int, val daemon: String, val port: Int,
+                      val keepOpen: Boolean = false, val stopRequested: Boolean = false) {
+        fun needsRecovery(currentBoot: Int) = boot == currentBoot && !keepOpen
+        fun canClose(currentBoot: Int) = boot == currentBoot
+    }
+    fun exists() = synchronized(lock) { file.baseFile.exists() }
+    fun read(): Record? = synchronized(lock) {
+        if (!exists()) return@synchronized null
         val obj = JSONObject(file.openRead().bufferedReader().use { it.readText() })
-        return Record(obj.getString("previous"), obj.getInt("boot"), obj.getString("daemon"), obj.getInt("port")).also {
+        Record(obj.getString("previous"), obj.getInt("boot"), obj.getString("daemon"), obj.getInt("port"),
+            obj.optBoolean("keepOpen", false), obj.optBoolean("stopRequested", false)).also {
             check(it.previous == "-1" || it.previous == "0")
             check(it.boot >= 0 && it.port in 1024..65535)
             check(it.daemon == "running" || it.daemon == "stopped")
         }
     }
-    fun write(record: Record) {
+    fun write(record: Record) = synchronized(lock) {
         val stream = file.startWrite()
         try {
             stream.write(JSONObject().put("previous", record.previous).put("boot", record.boot).put("daemon", record.daemon).put("port", record.port)
+                .put("keepOpen", record.keepOpen).put("stopRequested", record.stopRequested)
                 .toString().toByteArray())
             file.finishWrite(stream)
         } catch (e: Exception) { file.failWrite(stream); throw e }
     }
-    fun clear() = file.delete()
+    fun clear() = synchronized(lock) { file.delete() }
 }

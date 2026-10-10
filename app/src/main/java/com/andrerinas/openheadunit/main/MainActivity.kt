@@ -174,6 +174,34 @@ class MainActivity : BaseActivity() {
         }
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
+        if (Build.VERSION.SDK_INT >= 26) {
+            lifecycleScope.launch {
+                repeatOnLifecycle(Lifecycle.State.STARTED) {
+                    var notice: com.google.android.material.snackbar.Snackbar? = null
+                    try {
+                        while (true) {
+                            val state = com.andrerinas.openheadunit.connection.wifi.scan.WifiScanControl.state.value
+                            val adbRecovery = com.andrerinas.openheadunit.connection.wifi.scan.FytShizukuStarter.needsRecovery(this@MainActivity)
+                            if (adbRecovery || state == com.andrerinas.openheadunit.connection.wifi.scan.WifiScanControl.State.RECOVERY) {
+                                if (notice == null) {
+                                    notice = com.google.android.material.snackbar.Snackbar.make(
+                                        findViewById(android.R.id.content), if (adbRecovery) R.string.wifi_scan_fyt_recovery else R.string.wifi_scan_recovery_notice,
+                                        com.google.android.material.snackbar.Snackbar.LENGTH_INDEFINITE
+                                    ).setAction(R.string.wifi_scan_restore_short) {
+                                        startActivity(Intent(this@MainActivity, SettingsActivity::class.java)
+                                            .putExtra(SettingsActivity.EXTRA_SEARCH_QUERY, getString(R.string.wifi_scan_title)))
+                                    }
+                                    notice?.show()
+                                }
+                            } else if (state != com.andrerinas.openheadunit.connection.wifi.scan.WifiScanControl.State.WORKING) {
+                                notice?.dismiss(); notice = null
+                            }
+                            kotlinx.coroutines.delay(1_000)
+                        }
+                    } finally { notice?.dismiss() }
+                }
+            }
+        }
         if (isExtremeDark) {
             findViewById<View>(R.id.splash_overlay)?.setBackgroundColor(
                 ContextCompat.getColor(this, R.color.extreme_dark_background)
@@ -1172,6 +1200,7 @@ class MainActivity : BaseActivity() {
 
     override fun onResume() {
         super.onResume()
+        SettingsActivity.onMainScreenResumed()
         val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager
         window.peekDecorView()?.let { v ->
             imm?.hideSoftInputFromWindow(v.windowToken, 0)

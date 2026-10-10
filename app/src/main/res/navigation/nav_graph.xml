@@ -266,4 +266,8 @@
         android:name="com.andrerinas.openheadunit.main.AppDrawerFragment"
         android:label="@string/apps" />
 
+    <fragment
+        android:id="@+id/wifiScanSettingsFragment"
+        android:name="com.andrerinas.openheadunit.connection.wifi.scan.WifiScanSettingsFragment"
+        android:label="@string/wifi_scan_title" />
 </navigation>

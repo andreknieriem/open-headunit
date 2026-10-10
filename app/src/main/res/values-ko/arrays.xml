@@ -8,7 +8,7 @@
         <item>조도 센서</item>
         <item>화면 밝기</item>
         <item>차량 전조등 신호(ILL+)</item>
-        <item>위치(지역별)</item>
+        <item>장소별 설정</item>
     </string-array>
 
     <string-array name="app_theme">
@@ -21,7 +21,7 @@
         <item>조도 센서</item>
         <item>화면 밝기</item>
         <item>차량 전조등 신호(ILL+)</item>
-        <item>위치(지역별)</item>
+        <item>장소별 설정</item>
     </string-array>
 
     <string-array name="screen_orientation">

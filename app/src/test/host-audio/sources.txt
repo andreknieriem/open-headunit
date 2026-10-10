@@ -29,6 +29,7 @@ app/src/main/java/com/andrerinas/openheadunit/decoder/audio/AudioWriteLoop.kt
 app/src/main/java/com/andrerinas/openheadunit/decoder/audio/CallbackBufferSizing.kt
 app/src/main/java/com/andrerinas/openheadunit/decoder/audio/FallbackPcmOutput.kt
 app/src/main/java/com/andrerinas/openheadunit/decoder/audio/LatencyRecoveryPolicy.kt
+app/src/main/java/com/andrerinas/openheadunit/decoder/audio/PcmOverlap.kt
 app/src/main/java/com/andrerinas/openheadunit/decoder/audio/MixerDuckingEnvelope.kt
 app/src/main/java/com/andrerinas/openheadunit/decoder/audio/MixerOutputLifecycle.kt
 app/src/main/java/com/andrerinas/openheadunit/decoder/audio/MixerSoftClipper.kt
@@ -46,3 +47,6 @@ app/src/main/java/com/andrerinas/openheadunit/decoder/audio/PlaybackFocusPolicy.
 app/src/main/java/com/andrerinas/openheadunit/decoder/audio/RecoveringPcmOutput.kt
 app/src/main/java/com/andrerinas/openheadunit/decoder/audio/SinkQueueOverflowPolicy.kt
 app/src/main/java/com/andrerinas/openheadunit/aap/AudioSessionConfig.kt
+app/src/test/host-audio/AudioTrackBufferRegression.kt
+app/src/test/host-audio/PcmEndingRegression.kt
+app/src/main/java/com/andrerinas/openheadunit/decoder/audio/AudioTrackBufferSizing.kt

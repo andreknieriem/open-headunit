@@ -18,8 +18,12 @@ internal class AdaptivePcmBuffer(
     private val ring = ShortArray(capacityFrames * channels)
     private val lastGood = ShortArray(cycleSamples)
     private val previousOutput = ShortArray(cycleSamples)
+    private val endingSample = ShortArray(channels)
+    private var endingFrames = 0
     private val policy = AdaptiveJitterPolicy(sampleRate, latencyMultiplier)
     private val recovery = LatencyRecoveryPolicy(sampleRate)
+    private val overlap = PcmOverlap()
+    private var recoveryDeferrals = 0
     private val prerollDeadlineMs = maxOf(100L, AudioJitterBufferPolicy.targetMsFor(latencyMultiplier) + 50)
     // Music gets a small reserve while the connection settles, before arrival history exists.
     // Count actual PCM, not time since setup: a precreated sink or a pause must not use it up.
@@ -82,7 +86,8 @@ internal class AdaptivePcmBuffer(
     @Synchronized fun takeOverflow(): Overflow? = pendingOverflow.also { pendingOverflow = null }
     // An empty network rebank is still a live stream. Parking the device here adds a
     // pause/flush/play cycle to every late packet burst.
-    @Synchronized fun isIdle(): Boolean = count == 0 && (ended || (firstDataMs < 0 && !rebanking)) && !started
+    @Synchronized fun isIdle(): Boolean =
+        count == 0 && endingFrames == 0 && (ended || (firstDataMs < 0 && !rebanking)) && !started
 
     @Synchronized fun write(data: ShortArray, length: Int, nowMs: Long) {
         val aligned = length.coerceAtMost(data.size) / channels * channels
@@ -124,7 +129,15 @@ internal class AdaptivePcmBuffer(
                 isMediaSink || rebanking -> maxOf(prerollDeadlineMs, target * 1000L / sampleRate + 50)
                 else -> prerollDeadlineMs
             }
-            if (count == 0 || (!ended && count / channels < target && nowMs - firstDataMs < waitMs)) return false
+            if (count == 0 || (!ended && count / channels < target && nowMs - firstDataMs < waitMs)) {
+                if (endingFrames == 0) return false
+                renderEnding(out, 0)
+                System.arraycopy(out, 0, previousOutput, 0, cycleSamples)
+                return true
+            }
+            // Ready PCM takes precedence over a synthetic ending. A new Start with too
+            // little PCM still gets its normal preroll while the old ramp finishes.
+            endingFrames = 0
             started = true
             rebanking = false
             needsFade = true
@@ -134,14 +147,22 @@ internal class AdaptivePcmBuffer(
         // Both create normal depth peaks; allow for them before repaying sustained backlog.
         val outputSlack = (outputBurstFrames - cycleFrames).coerceAtLeast(0)
         val slack = maxOf(sampleRate * 30 / 1000, policy.largestChunkFrames - cycleFrames + outputSlack)
-        val canRecover = !ended && gapFrames == 0
+        val canRecover = !ended && gapFrames == 0 && !needsFade
         recovery.observe(nowMs, target, policy.largestChunkFrames, slack, count / channels,
             inputFrames, canRecover)
         // A late decoder batch is still playable PCM, even at a fixed latency setting.
         // Only write-side physical overflow may discard whole frames. Sustained excess
         // latency is repaid below in small overlaps after a stable rendering window.
 
-        val catchUp = if (canRecover) recovery.correction(nowMs, count / channels) else 0
+        val proposal = if (canRecover) recovery.correction(nowMs, count / channels) else 0
+        var catchUp = overlap.shift(ring, head, channels, cycleFrames / 2,
+            minOf(proposal, (count / channels - cycleFrames).coerceAtLeast(0)))
+        if (catchUp > 0 && overlap.protectAttack && recoveryDeferrals < 3) {
+            // Let an isolated attack pass without splitting its peak. Three render cycles
+            // is the limit: a continuous click train must not disable recovery forever.
+            recoveryDeferrals++
+            catchUp = 0
+        } else if (catchUp > 0 || proposal == 0) recoveryDeferrals = 0
         val skipped = catchUp * channels
         val real = minOf(count, cycleSamples)
         val readHead = (head + skipped) % ring.size
@@ -149,8 +170,8 @@ internal class AdaptivePcmBuffer(
         System.arraycopy(ring, readHead, out, 0, first)
         System.arraycopy(ring, 0, out, first, real - first)
         if (catchUp > 0) {
-            // Overlap the original and advanced waveforms for 5ms. The rest keeps its original
-            // sample spacing; do not resample every block or change the pitch of normal playback.
+            // Match the offset before overlapping for 5ms. The rest keeps its original
+            // sample spacing; all channels use the same shift to preserve stereo timing.
             val fadeFrames = cycleFrames / 2
             for (frame in 0 until fadeFrames) {
                 val mix = (frame + 1).toFloat() / fadeFrames
@@ -164,7 +185,9 @@ internal class AdaptivePcmBuffer(
         }
         head = (head + real + skipped) % ring.size
         count -= real + skipped
-        recovery.consumed(nowMs, catchUp)
+        // Unmatched noise retains the old 100ms spacing; short failed matches must not
+        // turn a 5ms crossfade dip into modulation on every 10ms render cycle.
+        recovery.consumed(nowMs, catchUp, if (overlap.matched) catchUp else sampleRate / 1000)
         startupFramesPlayed += real / channels
         if (real > 0) lastReadMs = nowMs
 
@@ -174,8 +197,6 @@ internal class AdaptivePcmBuffer(
             gapFrames = 0
         } else if (ended) {
             // Sink Stop is a deliberate end, not packet loss. Drain even a partial final block.
-            started = false
-            firstDataMs = -1L
             gapFrames = 0
             lastGood.fill(0)
             recovery.reset()
@@ -210,9 +231,10 @@ internal class AdaptivePcmBuffer(
 
         // Blend a new live position into the tail that was actually heard. This also fades back
         // from PLC and fades initial playback in, without adding a block of latency.
-        if (needsFade || recovering || real < cycleSamples) {
+        if (needsFade || recovering || (real < cycleSamples && !ended)) {
             val fadeFrames = cycleFrames / 2
-            for (frame in 0 until fadeFrames) {
+            val liveFrames = if (ended) minOf(fadeFrames, real / channels) else fadeFrames
+            for (frame in 0 until liveFrames) {
                 val mix = (frame + 1).toFloat() / fadeFrames
                 for (ch in 0 until channels) {
                     val index = frame * channels + ch
@@ -224,8 +246,34 @@ internal class AdaptivePcmBuffer(
             }
             needsFade = false
         }
+        var endingRendered = false
+        if (ended && count == 0) {
+            // Stop is input completion, not a command to truncate the last word. Preserve
+            // every real sample, then append a 5ms ramp from the actual final output sample.
+            // The ramp can cross a render boundary; pending frames keep focus/drain accounting
+            // active until it is emitted. Synthetic samples never count as consumed PCM.
+            for (ch in 0 until channels) endingSample[ch] = if (real > 0)
+                out[real - channels + ch] else previousOutput[cycleSamples - channels + ch]
+            endingFrames = if (endingSample.any { it != 0.toShort() }) cycleFrames / 2 else 0
+            started = false
+            firstDataMs = -1L
+            endingRendered = renderEnding(out, real / channels) > 0
+            lastGood.fill(0)
+        }
         System.arraycopy(out, 0, previousOutput, 0, cycleSamples)
-        return real > 0 || (!ended && real < cycleSamples)
+        return real > 0 || endingRendered || (!ended && real < cycleSamples)
+    }
+
+    private fun renderEnding(out: ShortArray, offsetFrames: Int): Int {
+        val frames = minOf(endingFrames, cycleFrames - offsetFrames)
+        repeat(frames) { frame ->
+            endingFrames--
+            for (ch in 0 until channels) {
+                out[(offsetFrames + frame) * channels + ch] =
+                    (endingSample[ch].toInt() * endingFrames / (cycleFrames / 2)).toShort()
+            }
+        }
+        return frames
     }
 
     private fun playbackTargetFrames(): Int {
@@ -252,6 +300,8 @@ internal class AdaptivePcmBuffer(
         rebanking = false
         lastReadMs = -1L
         needsFade = true; ended = false
+        endingFrames = 0
+        recoveryDeferrals = 0
         lastGood.fill(0); previousOutput.fill(0)
         policy.resetArrival()
         recovery.reset()

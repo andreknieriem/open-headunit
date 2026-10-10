@@ -73,7 +73,7 @@ internal class LatencyRecoveryPolicy(private val sampleRate: Int) {
             (depth - reserve()).coerceAtLeast(0))
     }
 
-    fun consumed(nowMs: Long, frames: Int) {
+    fun consumed(nowMs: Long, frames: Int, pacingFrames: Int = frames) {
         if (frames <= 0) return
         debt = (debt - frames).coerceAtLeast(0)
         excess = (excess - frames).coerceAtLeast(0)
@@ -81,7 +81,11 @@ internal class LatencyRecoveryPolicy(private val sampleRate: Int) {
         // Keep historical troughs in the same frame position as the current bank.
         if (minimumDepth != Int.MAX_VALUE) minimumDepth = (minimumDepth - frames).coerceAtLeast(0)
         maximumDepth = (maximumDepth - frames).coerceAtLeast(0)
-        nextCorrection = nowMs + 100
+        // A better waveform match can consume less than the 1ms proposal. Scale the wait
+        // to actual consumption so repeated small matches still repay backlog. The rate
+        // keeps the same long-run 1% catch-up ceiling; render cadence may make it slower.
+        nextCorrection = nowMs + maxOf(1L,
+            (maxOf(frames, pacingFrames) * 100_000L + sampleRate - 1) / sampleRate)
     }
 
     // Keep a render cycle plus 5ms beyond the expected trough of the packet sawtooth.

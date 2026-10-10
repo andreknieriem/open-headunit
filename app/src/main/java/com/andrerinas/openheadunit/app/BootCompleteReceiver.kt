@@ -45,20 +45,22 @@ class BootCompleteReceiver : BroadcastReceiver() {
             // boot is one closer to pausing wireless bring-up. Counted here rather than in the
             // service because only this side knows the start came from a boot — EXTRA_BOOT_START
             // does not reach AapService until onStartCommand, after onCreate has already run.
-            val strikes = BootLoopPolicy.nextStrikes(Settings.getBootLoopStrikes(context))
+            val previousStrikes = Settings.getBootLoopStrikes(context)
+            val strikes = BootLoopPolicy.nextStrikes(previousStrikes)
             Settings.setBootLoopStrikes(context, strikes)
             AppLog.i("Boot auto-start: starting AapService with BOOT_START (trigger=$action, boot-start #$strikes since the last healthy run)")
             val serviceIntent = Intent(context, AapService::class.java).apply {
                 putExtra(EXTRA_BOOT_START, true)
             }
-            ContextCompat.startForegroundService(context, serviceIntent)
+            // A refused start never runs the service that clears the strike, so give it back.
+            if (!startService(context, serviceIntent, action)) Settings.setBootLoopStrikes(context, previousStrikes)
         } else if (screenOnEnabled) {
             // "Start on screen on" needs the service alive to register its dynamic
             // SCREEN_ON receiver. On Quick Boot devices this is a real reboot, so
             // the service must be started after boot to listen for future SCREEN_ON.
             AppLog.i("Boot auto-start: screen-on auto-start enabled, starting AapService to register SCREEN_ON receiver (trigger=$action)")
             val serviceIntent = Intent(context, AapService::class.java)
-            ContextCompat.startForegroundService(context, serviceIntent)
+            startService(context, serviceIntent, action)
         } else if (usbEnabled) {
             // On hibernating head units, USB_DEVICE_ATTACHED may not fire after wake.
             // Start the service in the background so it can register its UsbReceiver
@@ -67,15 +69,25 @@ class BootCompleteReceiver : BroadcastReceiver() {
             val serviceIntent = Intent(context, AapService::class.java).apply {
                 this.action = AapService.ACTION_CHECK_USB
             }
-            ContextCompat.startForegroundService(context, serviceIntent)
+            startService(context, serviceIntent, action)
         } else if (wifiEnabled) {
             // Start the service to listen for WiFi connectivity changes dynamically.
             AppLog.i("Boot auto-start: WiFi auto-start enabled, starting AapService to listen for WiFi (trigger=$action)")
             val serviceIntent = Intent(context, AapService::class.java)
-            ContextCompat.startForegroundService(context, serviceIntent)
+            startService(context, serviceIntent, action)
         } else if (!floatingButtonEnabled) {
             AppLog.i("Boot auto-start: disabled, skipping")
         }
+    }
+
+    // From API 31 a background start can be refused, and API 35 also sends the boot broadcasts
+    // when a stopped app first starts, without the boot exemption. Log it rather than crash.
+    private fun startService(context: Context, intent: Intent, trigger: String?): Boolean = try {
+        ContextCompat.startForegroundService(context, intent)
+        true
+    } catch (e: IllegalStateException) {
+        AppLog.w("Boot auto-start: Android refused to start AapService (trigger=$trigger): ${e.message}")
+        false
     }
 
     companion object {

@@ -44,10 +44,12 @@ class AudioMixer(
         private val nextDiagnosticId = AtomicInteger()
     }
 
-    internal class Channel(val rate: Int, val channels: Int, multiplier: Int, val isMediaSink: Boolean,
+    internal class Channel(rate: Int, channels: Int, multiplier: Int, val isMediaSink: Boolean,
                            val onOutputStopped: () -> Unit) {
         val buffer = AdaptivePcmBuffer(latencyMultiplier = multiplier, isMediaSink = isMediaSink)
-        val format = PcmInputFormat(rate, channels)
+        @Volatile var format = PcmInputFormat(rate, channels)
+        val rate: Int get() = format.sampleRate
+        val channels: Int get() = format.channels
         val converter = PcmConverter()
         @Volatile var gain = 1f
         @Volatile var warmupUntilMs = 0L
@@ -166,8 +168,8 @@ class AudioMixer(
     fun depthFramesFor(channel: Int): Int = channels[channel]?.buffer?.depthFrames() ?: 0
 
     /** Called at transport ingress, before codec and playback scheduling can distort timing. */
-    internal fun noteArrival(state: Channel, inputFrames: Int, nowMs: Long) {
-        state.buffer.noteArrival(nowMs, (inputFrames.toLong() * OUTPUT_SAMPLE_RATE / state.rate).toInt())
+    internal fun noteArrival(state: Channel, inputFrames: Int, nowMs: Long, format: PcmInputFormat = state.format) {
+        state.buffer.noteArrival(nowMs, (inputFrames.toLong() * OUTPUT_SAMPLE_RATE / format.sampleRate).toInt())
     }
 
     /** PCM16 little endian -> 48kHz stereo, using reusable per-producer storage. */

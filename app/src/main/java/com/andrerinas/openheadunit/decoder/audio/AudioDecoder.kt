@@ -200,6 +200,10 @@ class AudioDecoder {
         }
     }
 
+    @Synchronized internal fun updatePcmFormat(channel: Int, sampleRate: Int, channels: Int,
+                                              session: PlaybackSession = activeSession): Boolean =
+        getTrack(channel, session)?.updatePcmFormat(sampleRate, channels) == true
+
     fun setGain(channel: Int, gain: Float, session: PlaybackSession = activeSession) {
         val track = synchronized(this) { if (accepts(session)) audioTracks[channel] else null }
         track?.setGain(gain)

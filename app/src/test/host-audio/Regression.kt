@@ -23,6 +23,12 @@ private fun focusLease() = PlaybackFocusLease().apply {
 private fun PlaybackFocusLease.activity(channel: Int, nowMs: Long) = activity(channel, fixtureOwner, nowMs)
 
 fun main() {
+    pcmRateChangeTailRegression()
+    singleFormatStartCompatibilityRegression()
+    guidanceConfigurationRegression(true)
+    guidanceConfigurationRegression(false)
+    mixedCodecRegression(staticFocus = true)
+    mixedCodecRegression(staticFocus = false)
     audioSettingsRegression()
     aacProgressOwnershipRegression(csdReplacement = true)
     aacProgressOwnershipRegression(csdReplacement = false)
@@ -1244,6 +1250,7 @@ private fun audioSettingsRegression() {
         "guidance route" to { it.guidanceAudioStream = 3 },
         "system route" to { it.systemAudioStream = 3 },
         "media codec" to { it.useAacAudio = true },
+        "guidance codec" to { it.usePcmGuidance = true },
         "sink disabled" to { it.enableAudioSink = false },
         "DSP route" to { it.attachHwDspEqualizer = true }
     )
@@ -1324,4 +1331,192 @@ private fun audioSettingsRegression() {
         check(decoder.playbackCallbacks.canRender())
     } finally { audio.releaseAllFocus(); decoder.stop(); handler.runAll(); handler.reset() }
     println("PASS session snapshots preserve focus/routing/format until replacement; local output changes retain the negotiated codec")
+}
+
+/** Mixed sinks share playback ownership, but never a codec or its lifecycle. */
+private fun mixedCodecRegression(staticFocus: Boolean) {
+    val handler = android.os.Handler
+    handler.reset()
+    val configs = com.andrerinas.openheadunit.aap.protocol.AudioConfigs
+    configs.formats = mapOf(4 to com.andrerinas.openheadunit.aap.protocol.AudioConfigs.Config(16000, 16, 1), 5 to com.andrerinas.openheadunit.aap.protocol.AudioConfigs.Config(16000, 16, 1))
+    val decoder = AudioDecoder()
+    val settings = com.andrerinas.openheadunit.utils.Settings().apply {
+        useAacAudio = false; usePcmGuidance = true; staticAudioFocus = staticFocus
+    }
+    val audio = com.andrerinas.openheadunit.aap.AapAudio(decoder, AudioManager(), settings)
+    try {
+        // Model AAC selected by the wireless cap while the saved AAC preference is off.
+        audio.noteAnnouncedAudioCodecs(true)
+        // Exercise unknown Setup fallback as well as repeated, valid Setup on each sink.
+        for ((id, type) in listOf(6 to 2, 4 to 1, 5 to 1)) {
+            audio.noteSinkCodec(id, 3)
+            audio.precreateAudioTrack(id)
+            val track = decoder.getTrack(id)!!
+            check(track.builtCodec().isAac == (id == 6))
+            check((field(track, "decoder") != null) == (id == 6))
+            audio.noteSinkCodec(id, type); audio.precreateAudioTrack(id)
+            check(decoder.getTrack(id) === track)
+        }
+        fun outputPositions() = AudioTrack.created.associateWith { it.samples.size }
+        fun hasNewSound(positions: Map<AudioTrack, Int>, requireNegative: Boolean = false): Boolean {
+            handler.runAll()
+            return AudioTrack.created.any { output ->
+                output.samples.drop(positions[output] ?: 0).any { sample ->
+                    if (requireNegative) sample.toInt() < 0 else sample.toInt() != 0
+                }
+            }
+        }
+        val music = decoder.getTrack(6)!!
+        audio.preparePlayback(6); handler.runAll()
+        val codec = field(music, "decoder") as MediaCodec
+        music.write(ByteArray(64), 0, 64)
+        waitFor("mixed music AAC input") { codec.queued == 1 }
+        // Guidance can finish while music has not supplied decoded output yet. A short 16 kHz
+        // PCM tail must reach playback without creating or waiting for a guidance MediaCodec.
+        for (id in listOf(4, 5, 4)) {
+            val before = outputPositions()
+            val voice = decoder.getTrack(id)!!
+            val bytes = ByteArray(320) { if (it % 2 == 0) 64 else 0 }
+            audio.preparePlayback(id); handler.runAll()
+            voice.write(bytes, 0, bytes.size); audio.stopAudio(id); handler.runAll()
+            waitFor("PCM tail on mixed sink $id") {
+                hasNewSound(before)
+            }
+            check(decoder.getTrack(6) === music && field(music, "decoder") === codec)
+        }
+        val beforeMusic = outputPositions()
+        // Music has a negative waveform, unlike the positive PCM prompts. A prompt still
+        // draining on the shared output cannot satisfy this music-tail assertion.
+        val musicPcm = ByteArray(960) { if (it % 2 == 0) 0 else 0xc0.toByte() }
+        codec.emit(musicPcm); audio.stopAudio(6); handler.runAll()
+        waitFor("music tail after PCM guidance") {
+            hasNewSound(beforeMusic, requireNegative = true)
+        }
+        audio.restartAudio()
+        for ((id, expected) in listOf(6 to true, 4 to false, 5 to false)) {
+            audio.precreateAudioTrack(id)
+            check(decoder.getTrack(id)!!.builtCodec().isAac == expected)
+        }
+        // Even with the option enabled, a phone's actual Setup is authoritative. Changing one
+        // sink's codec must not recreate the others or interpret compressed input as PCM.
+        val rebuiltMusic = decoder.getTrack(6)
+        audio.noteSinkCodec(4, 2); audio.precreateAudioTrack(4)
+        check(decoder.getTrack(4)!!.builtCodec() == AudioSinkCodec.AAC_LC)
+        check(decoder.getTrack(6) === rebuiltMusic)
+    } finally {
+        audio.releaseAllFocus(); decoder.stop(); handler.runAll(); handler.reset(); configs.formats = emptyMap()
+    }
+    println("PASS mixed AAC music and PCM voice/system (staticFocus=$staticFocus) preserve tails, repeated Setup and local restart; actual Setup wins")
+}
+
+/** Exercise the real sink, converter and timing monitor rather than only the advertised list. */
+private fun guidanceConfigurationRegression(staticFocus: Boolean) {
+    val handler = android.os.Handler
+    handler.reset()
+    val configs = com.andrerinas.openheadunit.aap.protocol.AudioConfigs
+    configs.formats = mapOf(4 to com.andrerinas.openheadunit.aap.protocol.AudioConfigs.Config(16000, 16, 1))
+    val settings = com.andrerinas.openheadunit.utils.Settings().apply {
+        useAacAudio = true; usePcmGuidance = true; prefer48kGuidance = true; staticAudioFocus = staticFocus
+    }
+    val decoder = AudioDecoder()
+    val audio = com.andrerinas.openheadunit.aap.AapAudio(decoder, AudioManager(), settings)
+    fun packet(frames: Int) = com.andrerinas.openheadunit.aap.AapMessage(4, 0,
+        ByteArray(8 + frames * 2) { if (it < 8) 0 else if (it % 2 == 0) 64 else 0 })
+    fun rate() = (field(decoder.getTrack(4)!!, "mixerChannel") as AudioMixer.Channel).rate
+    try {
+        audio.noteAnnouncedAudioCodecs(true, true)
+        audio.noteSinkCodec(4, 1); audio.precreateAudioTrack(4)
+        audio.noteSinkCodec(6, 2); audio.precreateAudioTrack(6)
+        val music = decoder.getTrack(6)
+        val initial = decoder.getTrack(4)
+        check(initial == null) { "multi-format Setup opened a speculative 16k sink" }
+        check(audio.configurationIndices(4) == listOf(0, 1))
+        val monitor = (field(audio, "pcmTiming") as Map<*, *>)[4]!!
+        audio.process(packet(2048))
+        check(field(monitor, "previousDurationUs") == 0L) { "multi-format data decoded before Start" }
+        check(audio.selectConfiguration(4, 1)); audio.preparePlayback(4); handler.runAll()
+        check(rate() == 48000 && decoder.getTrack(4) !== initial && decoder.getTrack(6) === music)
+        val positions = AudioTrack.created.associateWith { it.samples.size }
+        audio.process(packet(2048))
+        check(field(monitor, "previousDurationUs") == 42666L) { "48k PCM duration used the 16k fallback" }
+        audio.stopAudio(4); handler.runAll()
+        waitFor("48k short guidance tail") {
+            handler.runAll()
+            AudioTrack.created.any { it.samples.drop(positions[it] ?: 0).any { s -> s.toInt() != 0 } }
+        }
+        val high = decoder.getTrack(4)
+        audio.noteSinkCodec(4, 1); audio.precreateAudioTrack(4)
+        check(decoder.getTrack(4) === high) { "duplicate Setup rebuilt the selected format" }
+        check(audio.selectConfiguration(4, 1) && decoder.getTrack(4) === high)
+        audio.restartAudio(); audio.precreateAudioTrack(4)
+        check(rate() == 48000) { "local output restart lost the selected rate" }
+        val beforeRateChange = decoder.getTrack(4)
+        check(audio.selectConfiguration(4, 0)); audio.preparePlayback(4); handler.runAll()
+        check(rate() == 16000 && decoder.getTrack(4) === beforeRateChange) { "PCM rate change replaced the output owner" }
+        audio.process(packet(1024))
+        check(field(monitor, "previousDurationUs") == 64000L)
+        for (bad in listOf(-1, 2, Int.MAX_VALUE)) {
+            check(!audio.selectConfiguration(4, bad) && decoder.getTrack(4) == null)
+            audio.process(packet(2048))
+            check(decoder.getTrack(4) == null) { "invalid Start allowed fallback decoding" }
+            check(audio.selectConfiguration(4, 1) && rate() == 48000)
+        }
+        audio.noteSinkCodec(4, 2); audio.precreateAudioTrack(4)
+        check(audio.configurationIndices(4) == listOf(0) && rate() == 16000)
+        val aac = decoder.getTrack(4)!!
+        val codecConfig = field(aac, "incomingAacConfig") as AacCodecConfig
+        check(codecConfig.sameAs(AacCodecConfig.default(16000, 1)))
+        check(!audio.selectConfiguration(4, 1))
+        check(audio.selectConfiguration(4, 0) && decoder.getTrack(4)!!.builtCodec().isAac)
+    } finally {
+        audio.releaseAllFocus(); decoder.stop(); handler.runAll(); handler.reset(); configs.formats = emptyMap()
+    }
+    println("PASS guidance 16/48k selection, duration, restart, duplicate Setup and invalid-index recovery (staticFocus=$staticFocus)")
+}
+
+private fun pcmRateChangeTailRegression() {
+    // Do not start the render worker: both sides of Start remain buffered deterministically.
+    val mixer = AudioMixer(3, false)
+    var retired = 0
+    val track = AudioTrackWrapper(16000, 16, 1, false, 1f, mixer = mixer, channelId = 4,
+        onOwnerRetired = { retired++ })
+    val state = field(track, "mixerChannel") as AudioMixer.Channel
+    try {
+        val old = ByteArray(320) { if (it % 2 == 0) 64 else 0 }
+        track.write(old, 0, old.size)
+        track.pauseForIdle()
+        check(state.buffer.depthFrames() == 480)
+        check(track.updatePcmFormat(48000, 1))
+        check(state.buffer.depthFrames() == 480 && retired == 0)
+        track.preparePlayback()
+        val fresh = ByteArray(960) { if (it % 2 == 0) 64 else 0 }
+        track.write(fresh, 0, fresh.size)
+        check(state.buffer.depthFrames() == 960) { "48k input was resampled with the old rate, or the old tail was lost" }
+        check(track.updatePcmFormat(16000, 1))
+        track.write(old, 0, old.size)
+        check(state.buffer.depthFrames() == 1440 && state.rate == 16000 && retired == 0)
+    } finally { finish(track); mixer.stop() }
+    println("PASS PCM 16/48/16k changes preserve every queued frame and the playback owner")
+}
+
+private fun singleFormatStartCompatibilityRegression() {
+    val handler = android.os.Handler
+    handler.reset()
+    val decoder = AudioDecoder()
+    val audio = com.andrerinas.openheadunit.aap.AapAudio(decoder, AudioManager(), com.andrerinas.openheadunit.utils.Settings())
+    try {
+        val preferences = field(audio, "settings") as com.andrerinas.openheadunit.utils.Settings
+        preferences.prefer48kGuidance = true
+        check(!audio.needsSessionRestart()) { "inactive remembered rate required renegotiation" }
+        for (id in listOf(4, 5, 6)) {
+            audio.noteAnnouncedAudioCodecs(false)
+            audio.noteSinkCodec(id, 1); audio.precreateAudioTrack(id)
+            val original = decoder.getTrack(id)
+            for (index in listOf(1, -1, Int.MAX_VALUE)) {
+                check(audio.selectConfiguration(id, index))
+                check(decoder.getTrack(id) === original) { "single-format compatibility path rebuilt/muted its sink" }
+            }
+        }
+    } finally { audio.releaseAllFocus(); decoder.stop(); handler.runAll(); handler.reset() }
+    println("PASS legacy single-format sinks keep index-0 playback for unexpected Start indices")
 }

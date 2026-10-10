@@ -45,11 +45,10 @@ class AudioTrackWrapper(
         private const val MIN_POOLED_AUDIO_BUFFER_SIZE = 4096
     }
 
-    private val sampleRate = sampleRateInHz
-    private val trackChannelCount = channelCount
-    private val bytesPerFrame = channelCount * 2
-    private val mixerChannel = mixer.registerChannel(channelId, sampleRate, channelCount,
+    private val mixerChannel = mixer.registerChannel(channelId, sampleRateInHz, channelCount,
         audioLatencyMultiplier, isMediaSink, onOwnerRetired).also { it.gain = gain }
+    private val sampleRate: Int get() = mixerChannel.format.sampleRate
+    private val trackChannelCount: Int get() = mixerChannel.format.channels
     private var ownerRetired = false
     @Volatile private var isRunning = true
     @Volatile private var decoder: MediaCodec? = null
@@ -530,10 +529,11 @@ class AudioTrackWrapper(
 
     fun write(buffer: ByteArray, offset: Int, size: Int) {
         if (!isRunning) return
-        mixer.noteArrival(mixerChannel, if (isAac) 1024 else size / bytesPerFrame, SystemClock.elapsedRealtime())
+        val format = mixerChannel.format
+        mixer.noteArrival(mixerChannel, if (isAac) 1024 else size / format.bytesPerFrame, SystemClock.elapsedRealtime(), format)
         if (!isAac) {
             // The transport can reuse its decrypted array immediately after this bounded copy.
-            feedPcm(buffer, offset, size, mixerChannel.format)
+            feedPcm(buffer, offset, size, format)
             return
         }
         val data = obtainAudioBuffer(size)
@@ -541,6 +541,21 @@ class AudioTrackWrapper(
         shedStaleChunks()
         dataQueue.offer(AudioChunk(data, size, checkNotNull(incomingAacConfig)))
         if (inputSignal.availablePermits() == 0) inputSignal.release()
+    }
+
+    /**
+     * Start may select another PCM capture rate while the previous prompt still drains. The
+     * bank already contains 48 kHz stereo, so keep it and its focus/output owner. Only future
+     * input changes format; PcmConverter resets interpolation when it sees that new format.
+     * AAC retains a fixed negotiated format because its codec/CSD lifecycle is separate.
+     * Called on the same ingress path as PCM writes, through the decoder's session lock.
+     */
+    @Synchronized internal fun updatePcmFormat(sampleRate: Int, channels: Int): Boolean {
+        if (isAac || !isRunning) return false
+        val format = PcmInputFormat(sampleRate, channels)
+        require(format.supported)
+        synchronized(mixerChannel) { mixerChannel.format = format }
+        return true
     }
 
     private fun shedStaleChunks() {

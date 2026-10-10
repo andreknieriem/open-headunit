@@ -183,6 +183,8 @@ class SettingsFragment : Fragment() {
     private var pendingStaticAudioFocus: Boolean? = null
     private var pendingPlaybackFocusMode: PlaybackFocusPolicy.Mode? = null
     private var pendingUseAacAudio: Boolean? = null
+    private var pendingUsePcmGuidance: Boolean? = null
+    private var pendingPrefer48kGuidance: Boolean? = null
     private var pendingUseAAudioOutput: Boolean? = null
     private var pendingAttachHwDspEqualizer: Boolean? = null
     private var pendingMicInputSource: Int? = null
@@ -366,6 +368,8 @@ class SettingsFragment : Fragment() {
         pendingStaticAudioFocus = settings.staticAudioFocus
         pendingPlaybackFocusMode = settings.playbackFocusMode
         pendingUseAacAudio = settings.useAacAudio
+        pendingUsePcmGuidance = settings.usePcmGuidance
+        pendingPrefer48kGuidance = settings.prefer48kGuidance
         pendingUseAAudioOutput = settings.useAAudioOutput
         pendingAttachHwDspEqualizer = settings.attachHwDspEqualizer
         pendingMicInputSource = settings.micInputSource
@@ -507,6 +511,8 @@ class SettingsFragment : Fragment() {
         pendingStaticAudioFocus = settings.staticAudioFocus
         pendingPlaybackFocusMode = settings.playbackFocusMode
         pendingUseAacAudio = settings.useAacAudio
+        pendingUsePcmGuidance = settings.usePcmGuidance
+        pendingPrefer48kGuidance = settings.prefer48kGuidance
         pendingUseAAudioOutput = settings.useAAudioOutput
         pendingAttachHwDspEqualizer = settings.attachHwDspEqualizer
         pendingEnableRotary = settings.enableRotary
@@ -746,6 +752,8 @@ class SettingsFragment : Fragment() {
         pendingPlaybackFocusMode?.let { if (it != settings.playbackFocusMode) settings.playbackFocusMode = it }
         if (focusModeChanged) settings.playbackFocusSelfDefeating = false
         pendingUseAacAudio?.let { if (it != settings.useAacAudio) settings.useAacAudio = it }
+        pendingUsePcmGuidance?.let { if (it != settings.usePcmGuidance) settings.usePcmGuidance = it }
+        pendingPrefer48kGuidance?.let { if (it != settings.prefer48kGuidance) settings.prefer48kGuidance = it }
         pendingUseAAudioOutput?.let { if (it != settings.useAAudioOutput) settings.useAAudioOutput = it }
         pendingAttachHwDspEqualizer?.let { if (it != settings.attachHwDspEqualizer) settings.attachHwDspEqualizer = it }
         pendingMicInputSource?.let { if (it != settings.micInputSource) settings.micInputSource = it }
@@ -907,6 +915,8 @@ class SettingsFragment : Fragment() {
                         pendingStaticAudioFocus != settings.staticAudioFocus ||
                         pendingPlaybackFocusMode != settings.playbackFocusMode ||
                         pendingUseAacAudio != settings.useAacAudio ||
+                        pendingUsePcmGuidance != settings.usePcmGuidance ||
+                        pendingPrefer48kGuidance != settings.prefer48kGuidance ||
                         pendingUseAAudioOutput != settings.useAAudioOutput ||
                         pendingAttachHwDspEqualizer != settings.attachHwDspEqualizer ||
                         pendingMicInputSource != settings.micInputSource ||
@@ -975,6 +985,10 @@ class SettingsFragment : Fragment() {
 
         hasChanges = anyChange
 
+        // Preserve the hidden rate preference without interrupting a session that uses no PCM override.
+        val guidanceRateChanged = ((pendingUsePcmGuidance ?: settings.usePcmGuidance) &&
+            (pendingPrefer48kGuidance ?: settings.prefer48kGuidance)) !=
+            (settings.usePcmGuidance && settings.prefer48kGuidance)
         // Check for restart requirement
         requiresRestart = pendingResolution != settings.resolutionId ||
                           pendingVideoFitMode != settings.videoFitMode ||
@@ -991,6 +1005,8 @@ class SettingsFragment : Fragment() {
                           pendingStaticAudioFocus != settings.staticAudioFocus ||
                           pendingPlaybackFocusMode != settings.playbackFocusMode ||
                           pendingUseAacAudio != settings.useAacAudio ||
+                          pendingUsePcmGuidance != settings.usePcmGuidance ||
+                          guidanceRateChanged ||
                           pendingUseAAudioOutput != settings.useAAudioOutput ||
                           pendingAttachHwDspEqualizer != settings.attachHwDspEqualizer ||
                           pendingAudioLatencyMultiplier != settings.audioLatencyMultiplier ||
@@ -2639,6 +2655,39 @@ class SettingsFragment : Fragment() {
                 updateSettingsList()
             }
         ))
+
+        // Also available when the AAC toggle is off: the wireless band cap can select AAC.
+        items.add(SettingItem.ToggleSettingEntry(
+            stableId = "usePcmGuidance",
+            nameResId = R.string.use_pcm_guidance,
+            descriptionResId = R.string.use_pcm_guidance_description,
+            isChecked = pendingUsePcmGuidance ?: settings.usePcmGuidance,
+            onCheckedChanged = { isChecked ->
+                pendingUsePcmGuidance = isChecked
+                checkChanges()
+                updateSettingsList()
+            }
+        ))
+
+        // Keep the saved rate when PCM is toggled off; the session policy makes it inactive.
+        if (pendingUsePcmGuidance ?: settings.usePcmGuidance) {
+            items.add(SettingItem.SegmentedButtonSettingEntry(
+                stableId = "pcmGuidanceRate",
+                nameResId = R.string.pcm_guidance_rate,
+                options = listOf(getString(R.string.pcm_guidance_rate_16k), getString(R.string.pcm_guidance_rate_48k)),
+                selectedIndex = if (pendingPrefer48kGuidance ?: settings.prefer48kGuidance) 1 else 0,
+                onOptionSelected = { index ->
+                    pendingPrefer48kGuidance = index == 1
+                    checkChanges()
+                    updateSettingsList()
+                }
+            ))
+            items.add(SettingItem.InfoBanner(
+                stableId = "pcmGuidanceRateHint",
+                textResId = if (pendingPrefer48kGuidance ?: settings.prefer48kGuidance)
+                    R.string.pcm_guidance_rate_48k_hint else R.string.pcm_guidance_rate_16k_hint
+            ))
+        }
 
         items.add(SettingItem.ToggleSettingEntry(
             stableId = "attachHwDspEqualizer",

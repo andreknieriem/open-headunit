@@ -134,6 +134,8 @@ class App : Application(), Application.ActivityLifecycleCallbacks {
 
         // Root support
         component.suExecutor.register()
+        if (Build.VERSION.SDK_INT >= 26)
+            com.andrerinas.openheadunit.connection.wifi.scan.WifiScanControl.initialize(this)
 
         val settings = Settings(this) // Create a Settings instance
         AppLog.init(settings, this) // Initialize AppLog with settings for conditional logging

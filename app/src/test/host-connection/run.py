@@ -7,7 +7,7 @@ codecs, and Handler scheduling are not device simulations. Methods are extracted
 production so the tests exercise the whole entry/teardown paths, not copies of guards.
 """
 from pathlib import Path
-import os, subprocess, sys, hashlib, json, shutil
+import os, re, subprocess, sys, hashlib, json, shutil
 ROOT=Path(sys.argv[1]).resolve() if len(sys.argv)>1 else Path(__file__).resolve().parents[4]
 if not (ROOT/'app/src/main/java').is_dir():
     raise SystemExit('Pass the extracted source/ directory as the first argument.')
@@ -799,23 +799,26 @@ def cached(group,artifact,version="*"):
     found=sorted((cache/group/artifact).glob(version+"/*/*.jar"))
     if not found: raise FileNotFoundError(artifact)
     return found[0]
+# The build's Kotlin version, so the harness compiles with the jars Gradle already cached.
+KOTLIN=re.search(r'kotlin-gradle-plugin:([0-9.]+)',(ROOT/"build.gradle.kts").read_text()).group(1)
+COROUTINES="1.8.0"  # what kotlin-compiler-embeddable 2.4.x depends on, so Gradle caches it too
 try:
-    stdlib=cached("org.jetbrains.kotlin","kotlin-stdlib","1.9.22")
+    stdlib=cached("org.jetbrains.kotlin","kotlin-stdlib",KOTLIN)
     annotations=cached("org.jetbrains","annotations","13.0")
-    compile_jars=[cached("org.jetbrains.kotlin","kotlin-compiler-embeddable","1.9.22"),stdlib,
+    coroutines=cached("org.jetbrains.kotlinx","kotlinx-coroutines-core-jvm",COROUTINES)
+    compile_jars=[cached("org.jetbrains.kotlin","kotlin-compiler-embeddable",KOTLIN),stdlib,
         cached("org.jetbrains.kotlin","kotlin-reflect","1.6.10"),
-        cached("org.jetbrains.kotlin","kotlin-script-runtime","1.9.22"),
-        cached("org.jetbrains.intellij.deps","trove4j"),annotations]
-    runtime_jars=[stdlib,cached("org.jetbrains.kotlinx","kotlinx-coroutines-core-jvm","1.7.3"),annotations]
-    toolchain="Gradle cache: Kotlin 1.9.22 / kotlinx-coroutines 1.7.3"
+        cached("org.jetbrains.kotlin","kotlin-script-runtime",KOTLIN),coroutines,annotations]
+    runtime_jars=[stdlib,coroutines,annotations]
+    toolchain="Gradle cache: Kotlin "+KOTLIN+" / kotlinx-coroutines "+COROUTINES
 except FileNotFoundError:
     home=os.environ.get("KOTLIN_HOME")
     executable=shutil.which("kotlinc")
     if not home and not executable:
-        raise SystemExit("Run Gradle tests to cache Kotlin 1.9.22, or set KOTLIN_HOME to a Kotlin distribution.")
+        raise SystemExit("Run Gradle tests to cache Kotlin "+KOTLIN+", or set KOTLIN_HOME to a Kotlin distribution.")
     lib=(Path(home) if home else Path(executable).resolve().parents[1])/"lib"
     compile_jars=[lib/f for f in ["kotlin-compiler.jar","kotlin-stdlib.jar","kotlin-reflect.jar",
-        "kotlin-script-runtime.jar","trove4j.jar","annotations-13.0.jar"]]
+        "kotlin-script-runtime.jar","kotlinx-coroutines-core-jvm.jar","annotations-13.0.jar"]]
     runtime_jars=[lib/f for f in ["kotlin-stdlib.jar","kotlinx-coroutines-core-jvm.jar","annotations-13.0.jar"]]
     toolchain="Installed Kotlin distribution: "+str(lib.parent)
     for jar in compile_jars+runtime_jars:

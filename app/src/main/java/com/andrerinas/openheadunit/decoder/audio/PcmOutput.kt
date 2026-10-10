@@ -16,7 +16,7 @@ internal interface PcmOutput {
     val underrunsSupported: Boolean get() = true
     val stagingBufferFrames: Int get() = 0
     val producerUnderruns: Int get() = 0
-    val minimumBufferFrames: Int get() = 960 // AudioTrack producer retains its 20ms safety floor
+    val minimumBufferFrames: Int get() = 960
     /** Progress flushing PCM accepted by a previous software staging queue, not the current write. */
     val recoveryProgressSamples: Long get() = 0
     val outputEpoch: Long get() = 0
@@ -34,13 +34,15 @@ internal class AudioTrackPcmOutput(stream: Int, attachHwDsp: Boolean) : PcmOutpu
     private val track: AudioTrack
     private var equalizer: Equalizer? = null
     private val requestedBytes: Int
+    override val minimumBufferFrames: Int
     override val name = "AudioTrack"
-    override val burstFrames = 480 // framework does not expose the burst size through AudioTrack
+    override val burstFrames = 480 // tuning step, not a measured HAL burst
 
     init {
         val minimum = AudioTrack.getMinBufferSize(48000, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT)
         check(minimum > 0) { "No supported stereo PCM output: $minimum" }
-        requestedBytes = maxOf(minimum, if (Build.VERSION.SDK_INT >= 24) 48000 * 4 * 400 / 1000 else 3840)
+        minimumBufferFrames = AudioTrackBufferSizing.minimumFrames(minimum)
+        requestedBytes = AudioTrackBufferSizing.allocationBytes(minimumBufferFrames, Build.VERSION.SDK_INT >= 24)
         track = createTrack(stream, attachHwDsp)
         if (track.state != AudioTrack.STATE_INITIALIZED) {
             track.release()
@@ -80,8 +82,16 @@ internal class AudioTrackPcmOutput(stream: Int, attachHwDsp: Boolean) : PcmOutpu
     override val bufferFrames: Int get() = if (Build.VERSION.SDK_INT >= 23) track.bufferSizeInFrames else requestedBytes / 4
     override val underrunsSupported: Boolean get() = Build.VERSION.SDK_INT >= 24
     override val underruns: Int get() = if (underrunsSupported) track.underrunCount else 0
-    override fun setBufferFrames(frames: Int): Int =
-        if (Build.VERSION.SDK_INT >= 24) track.setBufferSizeInFrames(frames) else bufferFrames
+    override fun setBufferFrames(frames: Int): Int {
+        // AOSP ClientProxy::setBufferSizeInFrames (including Android 8.1 and 17) only
+        // clamps to 16 frames and capacity; it does not enforce the mixer's full-block
+        // requirement. Retain the platform estimate here as well as in the tuning policy,
+        // since fallback/recovery can apply a request made for another output backend.
+        // A restored ClientProxy initially exposes its full allocation as the effective
+        // size. That is not a new minimum: let OutputBufferTuner reapply the safe target.
+        if (Build.VERSION.SDK_INT < 24) return bufferFrames
+        return track.setBufferSizeInFrames(maxOf(frames, minimumBufferFrames))
+    }
     override fun start() {
         if (Build.VERSION.SDK_INT >= 31) track.setStartThresholdInFrames(bufferFrames)
         track.play()

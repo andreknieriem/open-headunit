@@ -46,3 +46,5 @@ app/src/main/java/com/andrerinas/openheadunit/decoder/audio/PlaybackFocusPolicy.
 app/src/main/java/com/andrerinas/openheadunit/decoder/audio/RecoveringPcmOutput.kt
 app/src/main/java/com/andrerinas/openheadunit/decoder/audio/SinkQueueOverflowPolicy.kt
 app/src/main/java/com/andrerinas/openheadunit/aap/AudioSessionConfig.kt
+app/src/test/host-audio/AudioTrackBufferRegression.kt
+app/src/main/java/com/andrerinas/openheadunit/decoder/audio/AudioTrackBufferSizing.kt

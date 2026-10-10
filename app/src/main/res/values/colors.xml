@@ -14,7 +14,7 @@
     <color name="text_second">#bdbebd</color>
     <color name="text_dark">#b5babd</color>
     <color name="black_overlay">#66000000</color>
-    
+
     <color name="setting_background_color">#F0F0F0</color>
     <color name="brand_teal">#009688</color>
     <color name="divider_color">#1F000000</color>
@@ -34,6 +34,10 @@
 
     <!-- Segmented Button Colors -->
     <color name="segmented_button_stroke">#808080</color>
+
+    <!-- Home Button Icon Tints -->
+    <color name="disabled_icon_tint">#40FFFFFF</color>
+    <color name="monochrome_icon_tint">#808080</color>
 
     <!-- Failure banner on the main screen. Amber rather than red: these are conditions the user
          can usually fix, and a red screen on a car dashboard reads as a fault in the car. -->

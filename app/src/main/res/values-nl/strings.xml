@@ -481,7 +481,7 @@
     <string name="vehicle_type_car">Auto</string>
     <string name="vehicle_type_truck">Vrachtwagen</string>
     <string name="vehicle_type_motorcycle">Motorfiets</string>
-    <string name="vehicle_type_forced_by_microphone">De microfoon van de hoofdunit staat uit, dus Android Auto krijgt te horen dat dit een motorfiets is, wat hier ook wordt gekozen. Dat is wat de telefoon zelf laat opnemen.</string>
+    <string name="vehicle_type_forced_by_microphone">De microfoon van de hoofdunit staat uit, dus de telefoon gebruikt zijn eigen microfoon. Android Auto ziet een motorfiets.</string>
     <string name="vehicle_id_description">Alleen interne identificatie. Wijzigen zorgt ervoor dat uw telefoon dit als een ander voertuig detecteert, waardoor uw Android Auto-voorkeuren voor deze auto worden gereset.</string>
     <string name="head_unit_make_label">Merk</string>
     <string name="head_unit_make_description">Fabrikant van de headunit</string>

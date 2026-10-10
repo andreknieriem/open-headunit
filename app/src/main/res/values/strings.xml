@@ -970,7 +970,7 @@
     <string name="vehicle_type_car">Car</string>
     <string name="vehicle_type_truck">Truck</string>
     <string name="vehicle_type_motorcycle">Motorcycle</string>
-    <string name="vehicle_type_forced_by_microphone">The head unit microphone is off, so Android Auto is told this is a motorcycle whatever is picked here. That is what makes the phone record for itself.</string>
+    <string name="vehicle_type_forced_by_microphone">Head unit microphone is off, so the phone uses its own. Android Auto will see a motorcycle.</string>
     <string name="vehicle_id_description">Internal identifier only. Changing this will cause your phone to treat this as a different vehicle, resetting your Android Auto preferences for this car.</string>
     <string name="head_unit_make_label">Make</string>
     <string name="head_unit_make_description">Head unit manufacturer</string>

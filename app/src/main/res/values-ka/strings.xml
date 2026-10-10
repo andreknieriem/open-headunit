@@ -528,7 +528,7 @@
     <string name="vehicle_type_car">მანქანა</string>
     <string name="vehicle_type_truck">სატვირთო</string>
     <string name="vehicle_type_motorcycle">მოტოციკლი</string>
-    <string name="vehicle_type_forced_by_microphone">მონიტორის მიკროფონი გამორთულია, ამიტომ Android Auto-ს ეუბნებიან, რომ ეს მოტოციკლია, რაც არ უნდა იყოს აქ არჩეული. სწორედ ეს აიძულებს ტელეფონს თავად ჩაწეროს.</string>
+    <string name="vehicle_type_forced_by_microphone">მთავარი მოწყობილობის მიკროფონი გამორთულია, ამიტომ ტელეფონი საკუთარს იყენებს. Android Auto მოტოციკლს დაინახავს.</string>
     <string name="vehicle_id_description">მხოლოდ შიდა იდენტიფიკატორი. ამის შეცვლა აიძულებს ტელეფონს ჩათვალოს ეს სხვა ავტომობილად, რაც ჩამოყრის თქვენს Android Auto-ს პარამეტრებს ამ მანქანისთვის.</string>
     <string name="head_unit_make_label">მონიტორის მარკა</string>
     <string name="head_unit_make_description">მონიტორის მწარმოებელი</string>

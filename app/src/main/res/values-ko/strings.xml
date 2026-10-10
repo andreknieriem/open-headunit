@@ -551,7 +551,7 @@
     <string name="vehicle_type_car">승용차</string>
     <string name="vehicle_type_truck">트럭</string>
     <string name="vehicle_type_motorcycle">오토바이</string>
-    <string name="vehicle_type_forced_by_microphone">헤드유닛 마이크가 꺼져 있어 여기서 무엇을 선택하든 Android Auto에는 오토바이라고 전달됩니다. 바로 이것이 휴대전화가 스스로 녹음하게 만듭니다.</string>
+    <string name="vehicle_type_forced_by_microphone">헤드유닛 마이크가 꺼져 있어 휴대전화의 마이크를 사용합니다. Android Auto에는 오토바이로 표시됩니다.</string>
     <string name="vehicle_id_description">내부 식별자로만 사용됩니다. 이 값을 변경하면 휴대폰이 다른 차량으로 인식하여 이 차량의 Android Auto 설정이 초기화됩니다.</string>
     <string name="head_unit_make_label">제조사</string>
     <string name="head_unit_make_description">헤드유닛 제조사</string>

@@ -941,7 +941,7 @@
     <string name="vehicle_type_car">Mobil</string>
     <string name="vehicle_type_truck">Truk</string>
     <string name="vehicle_type_motorcycle">Sepeda Motor</string>
-    <string name="vehicle_type_forced_by_microphone">Mikrofon head unit nonaktif, jadi Android Auto diberi tahu bahwa ini adalah sepeda motor apa pun yang dipilih di sini. Hal itulah yang membuat ponsel merekam secara mandiri.</string>
+    <string name="vehicle_type_forced_by_microphone">Mikrofon head unit nonaktif, jadi ponsel memakai mikrofonnya sendiri. Android Auto akan melihat sepeda motor.</string>
     <string name="vehicle_id_description">Hanya pengenal internal. Mengubah ini akan menyebabkan ponsel memperlakukan unit ini sebagai kendaraan yang berbeda, mengatur ulang preferensi Android Auto untuk mobil ini.</string>
     <string name="head_unit_make_label">Merek</string>
     <string name="head_unit_make_description">Pabrikan head unit</string>

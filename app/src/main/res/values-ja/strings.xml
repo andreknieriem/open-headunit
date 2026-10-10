@@ -491,7 +491,7 @@
     <string name="vehicle_type_car">乗用車</string>
     <string name="vehicle_type_truck">トラック</string>
     <string name="vehicle_type_motorcycle">バイク</string>
-    <string name="vehicle_type_forced_by_microphone">ヘッドユニットのマイクがオフのため、ここで何を選んでも Android Auto にはバイクとして伝えられます。これによりスマートフォンが自身で録音するようになります。</string>
+    <string name="vehicle_type_forced_by_microphone">ヘッドユニットのマイクがオフのため、スマートフォンの内蔵マイクを使用します。Android Auto にはバイクとして認識されます。</string>
     <string name="vehicle_id_description">内部識別子としてのみ使用されます。これを変更すると、お使いのスマートフォンはこの車両を別の車両として認識し、この車両に関するAndroid Autoの設定がリセットされます。</string>
     <string name="head_unit_make_label">メーカー</string>
     <string name="head_unit_make_description">車載機メーカー</string>

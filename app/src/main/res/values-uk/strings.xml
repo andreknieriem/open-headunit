@@ -482,7 +482,7 @@
     <string name="vehicle_type_car">Автомобіль</string>
     <string name="vehicle_type_truck">Вантажівка</string>
     <string name="vehicle_type_motorcycle">Мотоцикл</string>
-    <string name="vehicle_type_forced_by_microphone">Мікрофон головного пристрою вимкнено, тож Android Auto повідомляється, що це мотоцикл, незалежно від вибору тут. Саме це змушує телефон записувати самостійно.</string>
+    <string name="vehicle_type_forced_by_microphone">Мікрофон головного пристрою вимкнено, тож телефон використовує власний. Android Auto побачить мотоцикл.</string>
     <string name="vehicle_id_description">Лише внутрішній ідентифікатор. Його зміна призведе до того, що телефон визначить це як інший автомобіль, скинувши налаштування Android Auto для цієї машини.</string>
     <string name="head_unit_make_label">Виробник</string>
     <string name="head_unit_make_description">Виробник головного пристрою</string>

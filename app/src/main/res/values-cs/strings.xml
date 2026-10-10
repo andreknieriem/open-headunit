@@ -484,7 +484,7 @@
     <string name="vehicle_type_car">Automobil</string>
     <string name="vehicle_type_truck">Nákladní vůz</string>
     <string name="vehicle_type_motorcycle">Motocykl</string>
-    <string name="vehicle_type_forced_by_microphone">Mikrofon hlavní jednotky je vypnutý, takže Android Auto dostane informaci, že jde o motocykl, ať se zde zvolí cokoli. Právě to donutí telefon nahrávat samostatně.</string>
+    <string name="vehicle_type_forced_by_microphone">Mikrofon hlavní jednotky je vypnutý, proto telefon použije vlastní. Android Auto uvidí motocykl.</string>
     <string name="vehicle_id_description">Pouze interní identifikátor. Jeho změna způsobí, že váš telefon bude toto vozidlo považovat za jiné, čímž se resetují vaše předvolby Android Auto pro toto auto.</string>
     <string name="head_unit_make_label">Výrobce</string>
     <string name="head_unit_make_description">Výrobce autorádia</string>

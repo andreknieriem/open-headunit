@@ -941,7 +941,7 @@
     <string name="vehicle_type_car">Carro</string>
     <string name="vehicle_type_truck">Camião</string>
     <string name="vehicle_type_motorcycle">Motociclo</string>
-    <string name="vehicle_type_forced_by_microphone">O microfone da unidade está desligado, pelo que o Android Auto é informado de que se trata de um motociclo.</string>
+    <string name="vehicle_type_forced_by_microphone">O microfone da unidade está desligado, por isso o telemóvel usa o seu. O Android Auto vai ver um motociclo.</string>
     <string name="vehicle_id_description">Identificador apenas interno. Alterar isto fará com que o telemóvel trate este como um veículo diferente.</string>
     <string name="head_unit_make_label">Fabricante</string>
     <string name="head_unit_make_description">Fabricante da unidade</string>

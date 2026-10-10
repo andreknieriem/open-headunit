@@ -502,7 +502,7 @@
     <string name="vehicle_type_car">Ô tô</string>
     <string name="vehicle_type_truck">Xe tải</string>
     <string name="vehicle_type_motorcycle">Xe máy</string>
-    <string name="vehicle_type_forced_by_microphone">Micro của đầu máy đang tắt nên dù chọn gì ở đây, Android Auto vẫn được thông báo rằng đây là một xe máy. Đó chính là điều khiến điện thoại tự ghi âm.</string>
+    <string name="vehicle_type_forced_by_microphone">Micro của đầu máy đang tắt nên điện thoại dùng micro của chính nó. Android Auto sẽ thấy một xe máy.</string>
     <string name="vehicle_id_description">Định danh nội bộ. Đổi giá trị này sẽ khiến điện thoại coi đây là xe khác và đặt lại tuỳ chỉnh Android Auto cho xe này.</string>
     <string name="head_unit_make_label">Hãng</string>
     <string name="head_unit_make_description">Hãng sản xuất headunit</string>

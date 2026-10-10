@@ -540,7 +540,7 @@
     <string name="vehicle_type_car">Auto</string>
     <string name="vehicle_type_truck">Lkw</string>
     <string name="vehicle_type_motorcycle">Motorrad</string>
-    <string name="vehicle_type_forced_by_microphone">Das Mikrofon der Haupteinheit ist aus, daher wird Android Auto unabhängig von der Auswahl hier mitgeteilt, dass dies ein Motorrad ist. Genau das bringt das Telefon dazu, selbst aufzunehmen.</string>
+    <string name="vehicle_type_forced_by_microphone">Das Mikrofon der Haupteinheit ist aus, daher nutzt das Smartphone sein eigenes. Android Auto sieht ein Motorrad.</string>
     <string name="vehicle_id_description">Nur interne Kennung. Eine Änderung bewirkt, dass Ihr Telefon dies als ein anderes Fahrzeug erkennt und Ihre Android Auto-Einstellungen für dieses Auto zurückgesetzt werden.</string>
     <string name="head_unit_make_label">Hersteller</string>
     <string name="head_unit_make_description">Hersteller des Autoradios</string>

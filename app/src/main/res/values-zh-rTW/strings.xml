@@ -481,7 +481,7 @@
     <string name="vehicle_type_car">汽車</string>
     <string name="vehicle_type_truck">卡車</string>
     <string name="vehicle_type_motorcycle">機車</string>
-    <string name="vehicle_type_forced_by_microphone">主機麥克風已關閉，因此無論在此選擇什麼，系統都會告訴 Android Auto 這是機車。這正是讓手機自行錄音的原因。</string>
+    <string name="vehicle_type_forced_by_microphone">主機麥克風已關閉，因此手機會使用自己的麥克風。Android Auto 會視為機車。</string>
     <string name="vehicle_id_description">僅為內部識別碼。更改此項將導致您的手機將此視為不同的車輛，重置此車的 Android Auto 偏好設定。</string>
     <string name="head_unit_make_label">製造商</string>
     <string name="head_unit_make_description">車機製造商</string>

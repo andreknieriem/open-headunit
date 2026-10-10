@@ -485,7 +485,7 @@
     <string name="vehicle_type_car">Coche</string>
     <string name="vehicle_type_truck">Camión</string>
     <string name="vehicle_type_motorcycle">Motocicleta</string>
-    <string name="vehicle_type_forced_by_microphone">El micrófono de la unidad está desactivado, así que a Android Auto se le indica que esto es una motocicleta sea cual sea la opción elegida aquí. Eso es lo que hace que el teléfono grabe por sí mismo.</string>
+    <string name="vehicle_type_forced_by_microphone">El micrófono de la unidad principal está desactivado, por lo que el teléfono usa el suyo. Android Auto verá una moto.</string>
     <string name="vehicle_id_description">Identificador interno únicamente. Cambiarlo hará que tu móvil detecte este como un vehículo diferente, reiniciando las preferencias de Android Auto para este coche.</string>
     <string name="head_unit_make_label">Fabricante</string>
     <string name="head_unit_make_description">Fabricante de la radio</string>

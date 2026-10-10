@@ -373,6 +373,11 @@ class Settings(private val context: Context) {
             prefs.edit().putInt("dpi-pixel-density", value).apply()
         }
 
+    /** The wizard's screen size, a [SystemOptimizer.DisplaySizePreset] name; null until picked. */
+    var displaySizePreset: String?
+        get() = prefs.getString("display-size-preset", null)
+        set(value) { prefs.edit().putString("display-size-preset", value).apply() }
+
     var pixelAspectRatioE4: Int
         get() = prefs.getInt("pixel-aspect-ratio-e4", 10000) // Default 10000 = 1.0 (square pixels)
         set(value) {

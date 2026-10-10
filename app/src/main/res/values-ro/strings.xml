@@ -482,7 +482,7 @@
     <string name="vehicle_type_car">Automobil</string>
     <string name="vehicle_type_truck">Camion</string>
     <string name="vehicle_type_motorcycle">Motocicletă</string>
-    <string name="vehicle_type_forced_by_microphone">Microfonul unității este dezactivat, așa că Android Auto este informat că acesta este o motocicletă, indiferent ce se alege aici. Asta face telefonul să înregistreze singur.</string>
+    <string name="vehicle_type_forced_by_microphone">Microfonul unității este dezactivat, așa că telefonul îl folosește pe al său. Android Auto va vedea o motocicletă.</string>
     <string name="vehicle_id_description">Doar identificator intern. Schimbarea acestuia va face ca telefonul dvs. să detecteze acesta ca un vehicul diferit, resetând preferințele Android Auto pentru această mașină.</string>
     <string name="head_unit_make_label">Producător</string>
     <string name="head_unit_make_description">Producătorul unității principale</string>

@@ -15,6 +15,7 @@ import android.widget.TextView
 import android.widget.ViewFlipper
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.R
+import com.andrerinas.openheadunit.aap.VehicleTypePolicy
 import com.andrerinas.openheadunit.app.BaseActivity
 import com.andrerinas.openheadunit.decoder.video.VideoDecoder
 import com.andrerinas.openheadunit.utils.AppPermissions
@@ -23,6 +24,7 @@ import com.andrerinas.openheadunit.utils.AppThemeManager
 import com.andrerinas.openheadunit.utils.LocaleHelper
 import com.andrerinas.openheadunit.utils.PermissionRowBinder
 import com.andrerinas.openheadunit.utils.Settings
+import com.andrerinas.openheadunit.utils.OnboardingDisplayPolicy
 import com.andrerinas.openheadunit.utils.SystemOptimizer
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.ViewCompat
@@ -34,7 +36,6 @@ import com.google.android.material.chip.ChipGroup
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.switchmaterial.SwitchMaterial
 import com.google.android.material.textfield.TextInputEditText
-import kotlin.math.sqrt
 
 /**
  * Intelligent, device-aware first-run wizard. Replaces the old
@@ -99,7 +100,7 @@ class OnboardingActivity : BaseActivity() {
         stepper = findViewById(R.id.onb_stepper)
 
         selectedPortrait = resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT
-        selectedSize = estimateSizePreset()
+        selectedSize = OnboardingDisplayPolicy.initialPreset(settings.displaySizePreset, estimateSizePreset())
 
         buildStepperDots()
         bindSteps()
@@ -261,17 +262,19 @@ class OnboardingActivity : BaseActivity() {
                 R.id.onb_size_large -> SystemOptimizer.DisplaySizePreset.LARGE_11_PLUS
                 else -> SystemOptimizer.DisplaySizePreset.STANDARD_9_10
             }
+            followSizeWithPicker()
         }
         val orientGroup = findViewById<MaterialButtonToggleGroup>(R.id.onb_orient_group)
         orientGroup.check(if (selectedPortrait) R.id.onb_orient_port else R.id.onb_orient_land)
         orientGroup.addOnButtonCheckedListener { _, id, checked ->
             if (!checked) return@addOnButtonCheckedListener
             selectedPortrait = id == R.id.onb_orient_port
+            followSizeWithPicker()
         }
 
         // Graphical DPI picker (slider + preview + Small/Medium/Large tabs, all synced).
-        // Seed from the user's saved DPI when they already set one, so re-running the wizard
-        // does not overwrite their choice; the recommended value is shown as a hint instead.
+        // Seed from the user's saved DPI when they already set one. A size tap re-seeds it
+        // unless the picker was moved by hand (followSizeWithPicker).
         dpiPicker = findViewById<com.andrerinas.openheadunit.view.DpiPickerView>(R.id.onb_dpi_picker).apply {
             val m = realMetrics()
             setPanelResolution(m.widthPixels, m.heightPixels)
@@ -433,6 +436,12 @@ class OnboardingActivity : BaseActivity() {
             applyWheelSide(checked)
         }
 
+        findViewById<MaterialButtonToggleGroup>(R.id.onb_vehicle_type_group).apply {
+            check(vehicleTypeButtonId(settings.vehicleType))
+            addOnButtonCheckedListener { _, _, checked -> if (checked) applyVehicleTypeNote() }
+        }
+        applyVehicleTypeNote()
+
         val current = settings.vehicleDisplayName.trim()
         // Build the brand list with the current value first ("option 1"), then the presets.
         val brands = resources.getStringArray(R.array.vehicle_brands).toMutableList()
@@ -492,6 +501,25 @@ class OnboardingActivity : BaseActivity() {
         })
     }
 
+    /** Shown only when the microphone setting replaces the picked type with a motorcycle. */
+    private fun applyVehicleTypeNote() {
+        val picked = vehicleTypeOf(findViewById<MaterialButtonToggleGroup>(R.id.onb_vehicle_type_group).checkedButtonId)
+        findViewById<View>(R.id.onb_vehicle_type_forced).visibility =
+            if (VehicleTypePolicy.isOverriddenByMicrophone(picked, settings.useHeadUnitMicrophone)) View.VISIBLE else View.GONE
+    }
+
+    private fun vehicleTypeButtonId(type: Int): Int = when (VehicleTypePolicy.sanitised(type)) {
+        VehicleTypePolicy.TRUCK -> R.id.onb_vehicle_type_truck
+        VehicleTypePolicy.MOTORCYCLE -> R.id.onb_vehicle_type_motorcycle
+        else -> R.id.onb_vehicle_type_car
+    }
+
+    private fun vehicleTypeOf(buttonId: Int): Int = when (buttonId) {
+        R.id.onb_vehicle_type_truck -> VehicleTypePolicy.TRUCK
+        R.id.onb_vehicle_type_motorcycle -> VehicleTypePolicy.MOTORCYCLE
+        else -> VehicleTypePolicy.CAR
+    }
+
     private fun render() {
         flipper.displayedChild = step
         backBtn.visibility = if (step == 0) View.INVISIBLE else View.VISIBLE
@@ -507,6 +535,7 @@ class OnboardingActivity : BaseActivity() {
         if (step == STEP_AUDIO) applyAudioStepVisibility()
         if (step == STEP_AUTOMATION) applyAutomationVisibility()
         if (step == STEP_PERMISSIONS) permissionBinder?.rebind()
+        if (step == STEP_VEHICLE) applyVehicleTypeNote()
         if (step == STEP_DPI) {
             findViewById<TextView>(R.id.onb_dpi_recommended).text =
                 getString(R.string.onb_dpi_recommended, recommendedDpi())
@@ -559,6 +588,8 @@ class OnboardingActivity : BaseActivity() {
                 settings.vehicleMake = make
                 settings.headUnitMake = make
             }
+            val type = vehicleTypeOf(findViewById<MaterialButtonToggleGroup>(R.id.onb_vehicle_type_group).checkedButtonId)
+            if (type != settings.vehicleType) settings.vehicleType = type
         }
         if (step == STEP_COUNT - 1) finishOnboarding() else goForward()
     }
@@ -666,17 +697,17 @@ class OnboardingActivity : BaseActivity() {
         return metrics
     }
 
-    /** Estimate the physical diagonal from real pixels and physical DPI, pick the closest preset. */
     private fun estimateSizePreset(): SystemOptimizer.DisplaySizePreset {
         val m = realMetrics()
-        val xdpi = if (m.xdpi > 40f) m.xdpi else m.densityDpi.toFloat()
-        val ydpi = if (m.ydpi > 40f) m.ydpi else m.densityDpi.toFloat()
-        val wIn = m.widthPixels / xdpi
-        val hIn = m.heightPixels / ydpi
-        val diagonal = sqrt(wIn * wIn + hIn * hIn)
-        return SystemOptimizer.DisplaySizePreset.values().minByOrNull {
-            kotlin.math.abs(it.diagonalInch - diagonal)
-        } ?: SystemOptimizer.DisplaySizePreset.STANDARD_9_10
+        return OnboardingDisplayPolicy.estimatePreset(m.widthPixels, m.heightPixels, m.xdpi, m.ydpi, m.densityDpi)
+    }
+
+    /** The size and orientation only reach the saved DPI through the picker, so move it with them. */
+    private fun followSizeWithPicker() {
+        val picker = dpiPicker ?: return
+        picker.dpi = OnboardingDisplayPolicy.pickerDpiAfterSizeChange(
+            recommendedDpi(), picker.dpi, picker.hasUserInteracted
+        )
     }
 
     private fun sizeButtonId(preset: SystemOptimizer.DisplaySizePreset): Int = when (preset) {
@@ -746,6 +777,7 @@ class OnboardingActivity : BaseActivity() {
         // user typed and did not confirm would be dropped in favour of the previous one.
         dpiPicker?.commitPendingInput()
         settings.dpiPixelDensity = dpiPicker?.dpi ?: result.recommendedDpi
+        if (settings.displaySizePreset != selectedSize.name) settings.displaySizePreset = selectedSize.name
         settings.commit()
         updateDpiOverPanelWarning()
     }

@@ -20,6 +20,8 @@ internal class AdaptivePcmBuffer(
     private val previousOutput = ShortArray(cycleSamples)
     private val policy = AdaptiveJitterPolicy(sampleRate, latencyMultiplier)
     private val recovery = LatencyRecoveryPolicy(sampleRate)
+    private val overlap = PcmOverlap()
+    private var recoveryDeferrals = 0
     private val prerollDeadlineMs = maxOf(100L, AudioJitterBufferPolicy.targetMsFor(latencyMultiplier) + 50)
     // Music gets a small reserve while the connection settles, before arrival history exists.
     // Count actual PCM, not time since setup: a precreated sink or a pause must not use it up.
@@ -134,14 +136,22 @@ internal class AdaptivePcmBuffer(
         // Both create normal depth peaks; allow for them before repaying sustained backlog.
         val outputSlack = (outputBurstFrames - cycleFrames).coerceAtLeast(0)
         val slack = maxOf(sampleRate * 30 / 1000, policy.largestChunkFrames - cycleFrames + outputSlack)
-        val canRecover = !ended && gapFrames == 0
+        val canRecover = !ended && gapFrames == 0 && !needsFade
         recovery.observe(nowMs, target, policy.largestChunkFrames, slack, count / channels,
             inputFrames, canRecover)
         // A late decoder batch is still playable PCM, even at a fixed latency setting.
         // Only write-side physical overflow may discard whole frames. Sustained excess
         // latency is repaid below in small overlaps after a stable rendering window.
 
-        val catchUp = if (canRecover) recovery.correction(nowMs, count / channels) else 0
+        val proposal = if (canRecover) recovery.correction(nowMs, count / channels) else 0
+        var catchUp = overlap.shift(ring, head, channels, cycleFrames / 2,
+            minOf(proposal, (count / channels - cycleFrames).coerceAtLeast(0)))
+        if (catchUp > 0 && overlap.protectAttack && recoveryDeferrals < 3) {
+            // Let an isolated attack pass without splitting its peak. Three render cycles
+            // is the limit: a continuous click train must not disable recovery forever.
+            recoveryDeferrals++
+            catchUp = 0
+        } else if (catchUp > 0 || proposal == 0) recoveryDeferrals = 0
         val skipped = catchUp * channels
         val real = minOf(count, cycleSamples)
         val readHead = (head + skipped) % ring.size
@@ -149,8 +159,8 @@ internal class AdaptivePcmBuffer(
         System.arraycopy(ring, readHead, out, 0, first)
         System.arraycopy(ring, 0, out, first, real - first)
         if (catchUp > 0) {
-            // Overlap the original and advanced waveforms for 5ms. The rest keeps its original
-            // sample spacing; do not resample every block or change the pitch of normal playback.
+            // Match the offset before overlapping for 5ms. The rest keeps its original
+            // sample spacing; all channels use the same shift to preserve stereo timing.
             val fadeFrames = cycleFrames / 2
             for (frame in 0 until fadeFrames) {
                 val mix = (frame + 1).toFloat() / fadeFrames
@@ -164,7 +174,9 @@ internal class AdaptivePcmBuffer(
         }
         head = (head + real + skipped) % ring.size
         count -= real + skipped
-        recovery.consumed(nowMs, catchUp)
+        // Unmatched noise retains the old 100ms spacing; short failed matches must not
+        // turn a 5ms crossfade dip into modulation on every 10ms render cycle.
+        recovery.consumed(nowMs, catchUp, if (overlap.matched) catchUp else sampleRate / 1000)
         startupFramesPlayed += real / channels
         if (real > 0) lastReadMs = nowMs
 
@@ -252,6 +264,7 @@ internal class AdaptivePcmBuffer(
         rebanking = false
         lastReadMs = -1L
         needsFade = true; ended = false
+        recoveryDeferrals = 0
         lastGood.fill(0); previousOutput.fill(0)
         policy.resetArrival()
         recovery.reset()

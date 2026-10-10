@@ -4,6 +4,26 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class LatencyRecoveryPolicyTest {
+    @Test fun `unmatched pacing waits a full quantum but settles only actual consumption`() {
+        val policy = LatencyRecoveryPolicy(48000)
+        for (now in 0L..510L step 10) policy.observe(now, 4800, 2048, 1568, 9000, now * 48)
+        policy.consumed(510, 4, pacingFrames = 48)
+        assertEquals(0, policy.correction(609, 8996))
+        assertEquals(48, policy.correction(610, 8996))
+    }
+
+    @Test fun `small matched splices shorten the wait in proportion to actual consumption`() {
+        val policy = LatencyRecoveryPolicy(48000)
+        for (now in 0L..510L step 10) policy.observe(now, 4800, 2048, 1568, 9000, now * 48)
+        assertEquals(48, policy.correction(510, 9000))
+        policy.consumed(510, 4)
+        assertEquals(0, policy.correction(518, 8996))
+        assertEquals(48, policy.correction(519, 8996))
+        policy.consumed(519, 48)
+        assertEquals(0, policy.correction(618, 8948))
+        assertEquals(48, policy.correction(619, 8948))
+    }
+
     private fun tick(policy: LatencyRecoveryPolicy, now: Long, target: Int, packet: Int,
                      depth: Int, slack: Int = 1568): Int {
         policy.observe(now, target, packet, slack, depth, now * 48)

@@ -84,7 +84,7 @@ class CommManager(
     // abbreviated TLS handshakes on reconnect (session resumption).
     private val aapSslContext: AapSslContext = AapSslContext(SingleKeyKeyManager(context))
 
-    enum class DisconnectReason { CONNECTION_ENDED, SETTINGS_RESTART }
+    enum class DisconnectReason { CONNECTION_ENDED, SETTINGS_RESTART, PROJECTION_UNRAISED }
 
     /**
      * Represents the lifecycle state of the Android Auto connection.
@@ -121,6 +121,9 @@ class CommManager(
                 "wasLoopbackSession=$wasLoopbackSession, hadPhysicalConnection=$hadPhysicalConnection)"
 
             val isSettingsRestart get() = reason == DisconnectReason.SETTINGS_RESTART
+
+            // The projection screen never came up twice: no automatic reconnect follows this end.
+            val holdsRecovery get() = reason == DisconnectReason.PROJECTION_UNRAISED
 
             // Created with Save, before asynchronous teardown. A later manual Self launch
             // revokes this permission even while it is still waiting to dial our listener.
@@ -378,7 +381,11 @@ class CommManager(
         // Claim admission and cancellation must agree before USB can preempt that launch.
         if (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value)) null
         else ConnectionArbiter.claim(tier, ConnectionPriorityPolicy.Owner.USB, description)
-    }
+    }?.also { attemptUserRequested = tier == ConnectionPriorityPolicy.Tier.USER }
+
+    /** Whether the user asked for the attempt in flight; the raise deadline does not count those. */
+    @Volatile var attemptUserRequested = false
+        private set
 
     // Failed physical attempts and permission errors belong to the same recovery interval.
     // End it at the producer, not the conflated observer: a complete session can start and end
@@ -388,7 +395,7 @@ class CommManager(
     internal fun usbRecheckOwner(ended: ConnectionState.Disconnected): Any? =
         synchronized(transportLifecycleLock) {
             usbRecoveryOwner.takeIf {
-                _connectionState.value === ended && !ended.isUserExit && !ended.isSettingsRestart
+                _connectionState.value === ended && !ended.isUserExit && !ended.isSettingsRestart && !ended.holdsRecovery
             }
         }
 
@@ -808,13 +815,15 @@ class CommManager(
         description: String,
         expectedState: ConnectionState.Disconnected?,
     ): ConnectionArbiter.Claim? {
-        if (expectedState == null) return ConnectionArbiter.claim(tier, socketOwner(tier), description)
+        val claim = if (expectedState == null) ConnectionArbiter.claim(tier, socketOwner(tier), description)
         // Publication of a newer connection and Save's admission cannot cross here. The
         // ordinary connection routes keep their existing arbitration behavior.
-        return synchronized(transportLifecycleLock) {
+        else synchronized(transportLifecycleLock) {
             if (!expectedState.acceptsSettingsRestart(_connectionState.value)) null
             else ConnectionArbiter.claim(tier, socketOwner(tier), description)
         }
+        if (claim != null) attemptUserRequested = tier == ConnectionPriorityPolicy.Tier.USER
+        return claim
     }
 
     /** A socket the user asked for is theirs; any other belongs to the wireless stack. */
@@ -1427,7 +1436,7 @@ class CommManager(
         reason: DisconnectReason = DisconnectReason.CONNECTION_ENDED,
         settingsRetryOwner: ConnectionState.Disconnected? = null,
     ): Unit = synchronized(transportLifecycleLock) {
-        if (isUserExit || reason == DisconnectReason.SETTINGS_RESTART) usbRecoveryOwner = Any()
+        if (isUserExit || reason == DisconnectReason.SETTINGS_RESTART || reason == DisconnectReason.PROJECTION_UNRAISED) usbRecoveryOwner = Any()
         if (isUserExit && reason != DisconnectReason.SETTINGS_RESTART) {
             cancelPendingSettingsRestart()
             dropOwedScans()
@@ -1529,7 +1538,7 @@ class CommManager(
         // Self-guarding against the re-entrant second call described above: the flag is consumed
         // here, so the second pass sees a session that never reached the handshake and counts
         // nothing.
-        noteSessionEnded(renderedAnyFrame = videoDecoder.framesRenderedThisSession > 0L, settingsRestart = reason == DisconnectReason.SETTINGS_RESTART)
+        noteSessionEnded(renderedAnyFrame = videoDecoder.framesRenderedThisSession > 0L, deliberateEnd = reason != DisconnectReason.CONNECTION_ENDED)
         // The close is in its own phase because it is the one that must happen: a throw from the
         // ByeBye send or either decoder stop used to skip it, leaving the phone's head unit server
         // holding a peer that never came back. See TeardownGuard.
@@ -1572,11 +1581,11 @@ class CommManager(
      * would uncap, starve three more times and earn it again forever. Only the user changing the
      * resolution or the frame rate takes it off (`SettingsFragment`).
      */
-    private fun noteSessionEnded(renderedAnyFrame: Boolean, settingsRestart: Boolean = false) {
+    private fun noteSessionEnded(renderedAnyFrame: Boolean, deliberateEnd: Boolean = false) {
         val reachedHandshake = sessionReachedHandshake
         sessionReachedHandshake = false
-        // An intentional renegotiation says nothing about the link's ability to carry video.
-        if (settingsRestart) return
+        // An intentional end says nothing about the link's ability to carry video.
+        if (deliberateEnd) return
         starvedSessionStreak = VideoStarvationPolicy.nextStreak(
             starvedSessionStreak, reachedHandshake, renderedAnyFrame
         )

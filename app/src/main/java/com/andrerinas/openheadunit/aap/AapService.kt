@@ -348,6 +348,8 @@ class AapService : Service() {
      * re-arm does not wake the phone straight back into the session the user just ended.
      */
     @Volatile private var sessionEndedByHand = false
+    // Sessions in a row that ended for a missing projection screen; see ProjectionRaiseDeadlinePolicy.
+    private var unprojectedEndsInARow = 0
     @Volatile
     var userExitCooldownUntil = 0L
 
@@ -1204,6 +1206,9 @@ class AapService : Service() {
                         quiesceWirelessForWiredSession()
                         StationStandDown.onSessionLive(this@AapService, wifiLockHeldForMs())
                         projectionRaisesThisSession = 0
+                        sessionEndedByHand = false // A mark from a disconnect that found no session.
+                        unprojectedEndsInARow = ProjectionRaiseDeadlinePolicy.endsInARowAfter(
+                            unprojectedEndsInARow, projected = false, userRequested = commManager.attemptUserRequested)
                         armProjectionRaiseDeadline(launchAapProjectionActivity())
                     }
                     is CommManager.ConnectionState.TransportStarted -> {
@@ -1212,6 +1217,8 @@ class AapService : Service() {
                         // Backstop for a skipped Connected; a no-op once onConnected released it.
                         stopDummyVpn(DummyVpnPolicy.Reason.SELF_MODE_SESSION_LIVE)
                         cancelProjectionRaiseDeadline()
+                        unprojectedEndsInARow = ProjectionRaiseDeadlinePolicy.endsInARowAfter(
+                            unprojectedEndsInARow, projected = true, userRequested = false)
                         hasEverConnected = true
                         projectingSinceMs = SystemClock.elapsedRealtime()
                         emitSessionState(SessionStateIntent.STATE_PROJECTING)
@@ -1423,19 +1430,29 @@ class AapService : Service() {
         projectionRaiseJob = serviceScope.launch {
             delay(ProjectionRaiseDeadlinePolicy.DEADLINE_MS)
             if (commManager.connectionState.value is CommManager.ConnectionState.TransportStarted) return@launch
-            when (ProjectionRaiseDeadlinePolicy.actionFor(projectionRaisesThisSession)) {
+            when (ProjectionRaiseDeadlinePolicy.actionFor(projectionRaisesThisSession, unprojectedEndsInARow)) {
                 ProjectionRaiseDeadlinePolicy.Action.RETRY_RAISE -> {
                     AppLog.w("AapService: the handshake finished ${ProjectionRaiseDeadlinePolicy.DEADLINE_MS}ms " +
                         "ago and the projection screen has not come up, so nothing is reading the " +
                         "session. Raising it again.")
                     armProjectionRaiseDeadline(launchAapProjectionActivity())
                 }
-                ProjectionRaiseDeadlinePolicy.Action.END_SESSION -> {
+                ProjectionRaiseDeadlinePolicy.Action.END_AND_RECOVER -> {
                     AppLog.e("AapService: the projection screen never came up, so this session can " +
                         "carry nothing. Ending it so the phone can start a new one.")
+                    unprojectedEndsInARow++
                     // Close the formed session gracefully, but keep the service and automatic
                     // recovery available for the replacement this deadline is asking for.
                     commManager.disconnect(sendByeBye = true, isUserExit = false, honorKillOnDisconnect = false)
+                }
+                ProjectionRaiseDeadlinePolicy.Action.END_AND_HOLD -> {
+                    AppLog.e("AapService: the projection screen never came up again, so this session ends " +
+                        "and automatic reconnection waits until something asks for it.")
+                    unprojectedEndsInARow++
+                    // A Native re-arm must not wake the phone: that would start the same loop.
+                    sessionEndedByHand = true
+                    commManager.disconnect(sendByeBye = true, isUserExit = false, honorKillOnDisconnect = false,
+                        reason = CommManager.DisconnectReason.PROJECTION_UNRAISED)
                 }
             }
         }
@@ -1558,6 +1575,9 @@ class AapService : Service() {
         // still own recovery; an end after the open has run onConnected and needs the full cleanup.
         if (!state.hadPhysicalConnection && state.settingsRetryOwner?.acceptsSettingsRestart(state) == true) return
         cancelProjectionRaiseDeadline()
+        // Consumed by every end, so a mark that no Native re-arm reads cannot mute a later wake.
+        val endedByHand = sessionEndedByHand
+        sessionEndedByHand = false
         if (state.isSettingsRestart) {
             // The timed state gate holds queued wakes during Save. Do not also latch the
             // deliberate phone-exit gate, which would outlive the retry window.
@@ -1620,7 +1640,7 @@ class AapService : Service() {
                 return@launch
             }
             val rearmedAfterWiredSession = rearmWirelessAfterWiredSession()
-            ConnectionArbiter.sessionEnded(wirelessAlreadyRearmed = rearmedAfterWiredSession, userExit = state.isUserExit)
+            ConnectionArbiter.sessionEnded(wirelessAlreadyRearmed = rearmedAfterWiredSession, userExit = state.isUserExit || state.holdsRecovery)
 
             // Read before anything stops the launcher, and remembered. WifiLauncherManager.stop()
             // nulls `active`, so both decisions further down used to be taken from a launcher that
@@ -1655,8 +1675,6 @@ class AapService : Service() {
                     commManager.awaitDisconnectComplete()
                     val launcher = wifiLauncherManager.active as? WifiLauncherNative
                     AppLog.i("AapService: Native AA session ended; keeping the ${launcher?.strategy ?: "wireless"} network up for the phone's return.")
-                    val endedByHand = sessionEndedByHand
-                    sessionEndedByHand = false
                     launcher?.rearmAfterSessionEnd(
                         wakePhone = SessionEndGroupPolicy.wakesPhoneAfterSessionEnd(
                             state.isClean, endedByHand
@@ -1894,6 +1912,10 @@ class AapService : Service() {
             // refusing every later request.
             selfLauncherManager.clearLaunchInFlight()
             if (stopsWireless) wifiLauncherManager.stop()
+            return
+        }
+        if (state.holdsRecovery) {
+            AppLog.i("AapService: not reconnecting by itself, the projection screen could not be raised.")
             return
         }
 

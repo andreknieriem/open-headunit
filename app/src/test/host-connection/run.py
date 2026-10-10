@@ -38,7 +38,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import java.util.concurrent.*
 
-enum class DisconnectReason { CONNECTION_ENDED, SETTINGS_RESTART }
+enum class DisconnectReason { CONNECTION_ENDED, SETTINGS_RESTART, PROJECTION_UNRAISED }
 sealed class ConnectionState {
  class Disconnected(val isClean:Boolean=false,val isUserExit:Boolean=false, val reason:DisconnectReason=DisconnectReason.CONNECTION_ENDED, val restartEndpoint:Pair<String,Int>?=null):ConnectionState()
  object Connecting:ConnectionState();object Connected:ConnectionState();object StartingTransport:ConnectionState()
@@ -86,7 +86,7 @@ class CommManager {
  private fun dropOwedScans(){}
  private fun noteHandshakeOutcome(silent:Boolean){}
  private fun settleSessionClaim(formed:Boolean){}
- private fun noteSessionEnded(renderedAnyFrame:Boolean, settingsRestart:Boolean=false){}
+ private fun noteSessionEnded(renderedAnyFrame:Boolean, deliberateEnd:Boolean=false){}
  val connectionState get()=_connectionState
  val state get()=_connectionState.value
  fun owner()=checkNotNull(_transport)

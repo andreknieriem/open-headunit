@@ -51,7 +51,8 @@ class QueuedMain : MainCoroutineDispatcher(), Delay {
     fun awaitTask() { if (tasks.isEmpty()) advanceBy(checkNotNull(timers.minOfOrNull { it.at }) - now) }
 }
 class CommManager {
-    enum class DisconnectReason { CONNECTION_ENDED, SETTINGS_RESTART }
+    val attemptUserRequested = false
+    enum class DisconnectReason { CONNECTION_ENDED, SETTINGS_RESTART, PROJECTION_UNRAISED }
     sealed class ConnectionState {
         // STATE
         object Connecting : ConnectionState()
@@ -170,6 +171,8 @@ class Service(private var hasEverConnected: Boolean = true, val commManager: Com
     val selfLauncherManager get() = manager
     private var projectingSinceMs = 0L
     private var projectionRaisesThisSession = 0
+    private var unprojectedEndsInARow = 0
+    private var sessionEndedByHand = false
     private val packageName = "fixture"
     private val ACTION_REQUEST_NIGHT_MODE_UPDATE = "night"
     var connectedCallbacks = 0

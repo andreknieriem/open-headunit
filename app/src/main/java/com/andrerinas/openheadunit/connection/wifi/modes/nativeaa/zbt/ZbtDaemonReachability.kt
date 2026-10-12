@@ -154,16 +154,22 @@ object ZbtDaemonReachability {
             return report(ZbtReachabilityPolicy.classify(e.javaClass.simpleName, false), e.message)
         }
         try {
-            val deadline = SystemClock.elapsedRealtime() + HELLO_BUDGET_MS
-            while (SystemClock.elapsedRealtime() < deadline) {
-                if (channel.pumpOnce(deadline) == ZbtByteChannel.Pump.FRAME) {
-                    return report(ZbtReachabilityPolicy.Verdict.ANSWERED, null)
-                }
-            }
-            return report(ZbtReachabilityPolicy.Verdict.LISTENING_SILENT, null)
+            return report(awaitGreeting(channel, System.currentTimeMillis() + HELLO_BUDGET_MS), null)
         } finally {
             channel.close()
         }
+    }
+
+    /** The byte-channel deadline is wall time. A closed stream cannot produce another frame. */
+    internal fun awaitGreeting(channel: ZbtByteChannel, deadlineMs: Long): ZbtReachabilityPolicy.Verdict {
+        while (System.currentTimeMillis() < deadlineMs) {
+            when (channel.pumpOnce(deadlineMs)) {
+                ZbtByteChannel.Pump.FRAME -> return ZbtReachabilityPolicy.Verdict.ANSWERED
+                ZbtByteChannel.Pump.QUIET -> Unit
+                ZbtByteChannel.Pump.ENDED, ZbtByteChannel.Pump.EXPIRED -> break
+            }
+        }
+        return ZbtReachabilityPolicy.Verdict.LISTENING_SILENT
     }
 
     /** Say what the dial proved, and hand back whether the module route is worth taking. */

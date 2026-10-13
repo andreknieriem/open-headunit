@@ -19,6 +19,7 @@ class ZbtDiscoveryPolicyTest {
     private fun detectDecision(marker: String?, candidate: String?): ZbtDiscoveryPolicy.Decision =
         ZbtDiscoveryPolicy.detect({ marker }, when (candidate) {
             "HCT" -> nodes("/system/bin/fscsdkbw123", "/dev/goc_serial")
+            "QF" -> nodes("/system/bin/gocsdk_zj", "/system/lib/libzbt-main.so")
             else -> noNodes
         })
 
@@ -43,10 +44,29 @@ class ZbtDiscoveryPolicyTest {
     }
 
     @Test
+    fun `QF requires both the known loader and its system library without a visible relay`() {
+        val daemon = "/system/bin/gocsdk_zj"
+        val library = "/system/lib/libzbt-main.so"
+        val evidence = "QF gocsdk_zj with /system/lib/libzbt-main.so"
+        assertEquals(evidence, detectCandidate(nodes(daemon, library)))
+        assertEquals(evidence, detectCandidate(nodes(daemon, library, "/system/bin/gocsdk_lt")))
+        for (files in listOf(
+            emptyArray(), arrayOf(daemon), arrayOf(library),
+            arrayOf("/dev/goc_serial"), arrayOf(daemon, "/dev/goc_serial"),
+            arrayOf("/system/bin/gocsdk_lt", library, "/dev/goc_serial"),
+            arrayOf(daemon, "/system/lib64/libzbt-main.so")
+        )) {
+            assertNull(files.contentToString(), detectCandidate(nodes(*files)))
+        }
+        // Installed firmware is never the legacy marker that can block Android Bluetooth.
+        assertNull(ExternalBtPolicy.detect(nodes(daemon, library, "/dev/goc_serial"), noProps))
+    }
+
+    @Test
     fun `all established external markers and firmware hints select a procedure in one policy`() {
         for (node in listOf("/dev/rf_serial", "/dev/zj_bt_serial")) {
             val marker = ExternalBtPolicy.detect(nodes(node), noProps)
-            for (candidate in listOf(null, "HCT")) {
+            for (candidate in listOf(null, "HCT", "QF")) {
                 val decision = detectDecision(marker, candidate)
                 assertEquals(ZbtDiscoveryPolicy.Mode.REACHABILITY, decision.mode)
                 assertEquals(marker, decision.evidence)
@@ -56,12 +76,13 @@ class ZbtDiscoveryPolicyTest {
         }
         for (key in listOf("rw.zlink.bt.type", "rw.zj.bt.type")) {
             val marker = ExternalBtPolicy.detect(noNodes) { if (it == key) "extra" else null }
-            assertEquals(ZbtDiscoveryPolicy.Mode.REACHABILITY, detectDecision(marker, "HCT").mode)
+            assertEquals(ZbtDiscoveryPolicy.Mode.REACHABILITY, detectDecision(marker, "QF").mode)
         }
-        for (candidate in listOf("HCT")) {
+        for (candidate in listOf("HCT", "QF")) {
             val decision = detectDecision(null, candidate)
             assertEquals(ZbtDiscoveryPolicy.Mode.IDENTITY, decision.mode)
-            assertEquals("HCT Bluetooth bridge with fscsdkbw123", decision.evidence)
+            assertEquals(if (candidate == "HCT") "HCT Bluetooth bridge with fscsdkbw123"
+                else "QF gocsdk_zj with /system/lib/libzbt-main.so", decision.evidence)
             assertTrue(decision.requiresIdentity)
             assertTrue(decision.allowsAndroidFallback)
             assertFalse(decision.retriesOnPress)
@@ -77,7 +98,7 @@ class ZbtDiscoveryPolicyTest {
         var candidate: String? = null
         val latch = ZbtDiscoveryPolicy.Latch { detectDecision(marker, candidate) }
         val original = latch.decision()
-        candidate = "HCT"
+        candidate = "QF"
         marker = null // Even a temporarily unavailable source cannot change this arming.
         assertEquals(original, latch.decision())
         assertEquals(ZbtDiscoveryPolicy.Mode.REACHABILITY, latch.decision().mode)
@@ -85,7 +106,7 @@ class ZbtDiscoveryPolicyTest {
 
     @Test
     fun `identity mode survives late markers until a fresh arming with no carrier owner`() {
-        for (candidate in listOf("HCT")) {
+        for (candidate in listOf("HCT", "QF")) {
             var marker: String? = null
             val latch = ZbtDiscoveryPolicy.Latch { detectDecision(marker, candidate) }
             val initial = latch.decision()
@@ -158,4 +179,14 @@ class ZbtDiscoveryPolicyTest {
         }
     }
 
+    @Test
+    fun `HCT wins over QF and a service alone cannot identify either bridge`() {
+        val all = nodes("/system/bin/fscsdkbw123", "/dev/goc_serial",
+            "/system/bin/gocsdk_zj", "/system/lib/libzbt-main.so")
+        val result = ZbtDiscoveryPolicy.detect({ null }, all)
+        assertEquals(ZbtDiscoveryPolicy.Mode.IDENTITY, result.mode)
+        assertEquals("HCT Bluetooth bridge with fscsdkbw123", result.evidence)
+        assertEquals(ZbtDiscoveryPolicy.Mode.NONE,
+            ZbtDiscoveryPolicy.detect({ null }, noNodes, { true }).mode)
+    }
 }

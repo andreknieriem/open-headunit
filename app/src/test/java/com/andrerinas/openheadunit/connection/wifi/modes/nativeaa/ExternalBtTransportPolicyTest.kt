@@ -324,4 +324,25 @@ class ExternalBtTransportPolicyTest {
         assertEquals(ExternalBtTransportPolicy.Route.BLINK, ExternalBtTransportPolicy.route(candidate("HCT", true), false, false, blinkTransportEnabled = true))
     }
 
+    @Test
+    fun `QF candidates cannot override FYT or disable the Android picker after a failed probe`() {
+        val hint = "QF gocsdk_zj with /system/lib/libzbt-main.so"
+        for (answer in listOf(null, false, true)) {
+            assertEquals(ExternalBtTransportPolicy.Route.BLOCKED,
+                ExternalBtTransportPolicy.route(candidate(hint, answer), false, false, fytModuleEvidence = "FYT"))
+            assertFalse(ExternalBtTransportPolicy.needsDaemonMeasurement(candidate(hint, answer), false, false, fytModuleEvidence = "FYT"))
+            assertEquals(ExternalBtTransportPolicy.Route.BLINK,
+                ExternalBtTransportPolicy.route(candidate(hint, answer), false, false, blinkTransportEnabled = true))
+            assertEquals(ExternalBtTransportPolicy.Route.NORMAL,
+                ExternalBtTransportPolicy.route(candidate(hint, answer), false, true))
+            assertEquals(ExternalBtTransportPolicy.Route.ZBT,
+                ExternalBtTransportPolicy.route(candidate(hint, answer), true, false))
+            assertEquals(if (answer == true) ExternalBtTransportPolicy.Route.ZBT else ExternalBtTransportPolicy.Route.NORMAL,
+                ExternalBtTransportPolicy.route(candidate(hint, answer), false, false))
+            assertEquals(answer == null,
+                ExternalBtTransportPolicy.needsDaemonMeasurement(candidate(hint, answer), false, false))
+        }
+        assertEquals(ExternalBtTransportPolicy.WifiButton.ANDROID_RADIO,
+            ExternalBtTransportPolicy.wifiButton(candidate(hint, false), false, false))
+    }
 }

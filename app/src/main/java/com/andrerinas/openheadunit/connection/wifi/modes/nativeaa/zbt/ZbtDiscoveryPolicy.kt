@@ -38,7 +38,7 @@ object ZbtDiscoveryPolicy {
     }
 
     /**
-     * One ordered discovery entry point: common module markers, then HCT.
+     * One ordered discovery entry point: common module markers, then HCT, then QF.
      * [externalModuleEvidence] uses the process-latched
      * [com.andrerinas.openheadunit.utils.ExternalBtPolicy.detect] checks:
      * /dev/rf_serial, /dev/zj_bt_serial, rw.zlink.bt.type=extra and rw.zj.bt.type=extra.
@@ -55,6 +55,11 @@ object ZbtDiscoveryPolicy {
      * The relay node alone does not establish the backend, so require the matching daemon.
      * An exported HCT Bluetooth service substitutes for a relay node hidden by SELinux.
      *
+     * QF K706 Android 10's gocsdk_zj loads libzbt-main.so, including a /system/lib
+     * fallback. The inspected library matches the Dasaita ZLink TCP 3152 implementation.
+     * QF also ships gocsdk_lt, so installed files do not identify the active backend.
+     * Do not require its runtime-created goc_serial node: boot timing or SELinux can hide it.
+     *
      * Firmware hints only authorize a passive InitInfo probe. Missing or unrecognized replies
      * keep Android Bluetooth available. These checks neither open the UART nor start a daemon.
      */
@@ -69,6 +74,8 @@ object ZbtDiscoveryPolicy {
             nodeExists("/system/bin/fscsdkbw123") &&
                 (nodeExists("/dev/goc_serial") || hctServiceAvailable()) ->
                 Decision(Mode.IDENTITY, "HCT Bluetooth bridge with fscsdkbw123")
+            nodeExists("/system/bin/gocsdk_zj") && nodeExists("/system/lib/libzbt-main.so") ->
+                Decision(Mode.IDENTITY, "QF gocsdk_zj with /system/lib/libzbt-main.so")
             else -> Decision(Mode.NONE, null)
         }
     }

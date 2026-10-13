@@ -25,7 +25,17 @@ object ZbtDaemonReachability {
     /** How long an answer is trusted. A daemon down at app start can be up by the next attempt. */
     const val RECHECK_AFTER_MS = 10 * 60_000L
 
+    // Preserve dialOnce / ZbtReachabilityPolicy handling for established external-module markers:
+    // a listening-but-silent port lets the carrier try, but does not identify ZBT. Firmware
+    // candidates require a compatible greeting, so keep that answer out of the legacy cache.
+    private data class IdentityAnswer(val reachable: Boolean, val atMs: Long)
+    @Volatile private var identityAnswer: IdentityAnswer? = null
+
     private const val SLEEP_SLICE_MS = 250L
+    // Broad firmware markers also match units without an active ZBT backend. Give booting
+    // daemons a short grace period, not the known-module route's 30-second bring-up window.
+    private const val CANDIDATE_REFUSAL_WINDOW_MS = 3_000L
+    private const val CANDIDATE_BOOT_WINDOW_MS = 90_000L
 
     @Volatile
     private var answer: Boolean? = null
@@ -67,14 +77,35 @@ object ZbtDaemonReachability {
         carrierWantsSlot = wants
     }
 
-    /** The last answer, or null if there is none or it has gone stale. Never dials. */
-    fun cached(nowMs: Long = SystemClock.elapsedRealtime()): Boolean? =
-        answer?.takeIf { nowMs - answeredAt < RECHECK_AFTER_MS }
+    /**
+     * Read without dialing. Legacy answers expire by age; identity answers remain fixed until
+     * [expireIdleIdentity] runs at a fresh idle arming, so a live route cannot change under the UI.
+     */
+    fun cached(
+        nowMs: Long = SystemClock.elapsedRealtime(),
+        requireIdentity: Boolean = false
+    ): Boolean? = if (requireIdentity) {
+        // This answer chose the running transport. Expiry must not flip a live Android
+        // button into a module button (or vice versa) without replacing that transport.
+        // A fresh arming calls expireIdleIdentity before it decides whether to measure.
+        identityAnswer?.reachable
+    } else answer?.takeIf { nowMs - answeredAt < RECHECK_AFTER_MS }
+
+    /** Reconsider an old candidate answer at a fresh arming, never in the middle of a session. */
+    fun expireIdleIdentity(nowMs: Long = SystemClock.elapsedRealtime()) {
+        if (carrierLive() || carrierWantsClient()) return
+        val held = identityAnswer ?: return
+        if (nowMs - held.atMs >= RECHECK_AFTER_MS) identityAnswer = null
+    }
 
     /** Record what actually happened. The carrier's own open is a better measurement than a dial. */
     fun record(reachable: Boolean, nowMs: Long = SystemClock.elapsedRealtime()) {
         answer = reachable
         answeredAt = nowMs
+        // Traffic can extend an identity already checked, never create one from a silent port.
+        if (reachable && identityAnswer?.reachable == true) {
+            identityAnswer = IdentityAnswer(true, nowMs)
+        }
     }
 
     /** How old the answer is, or null if there is none. */
@@ -83,6 +114,7 @@ object ZbtDaemonReachability {
 
     /** Forget the answer, so the next caller measures again. */
     fun forget() {
+        identityAnswer = null
         answer = null
         answeredAt = 0L
     }
@@ -95,32 +127,66 @@ object ZbtDaemonReachability {
     @Synchronized
     fun resolve(
         nowMs: () -> Long = { SystemClock.elapsedRealtime() },
-        dial: () -> Boolean = ::dialOnce,
+        dial: (() -> Boolean)? = null,
         carrierLive: () -> Boolean = ::carrierLive,
         retryRefusals: Boolean = false,
         sleep: (Long) -> Unit = { Thread.sleep(it) },
-        keepTrying: () -> Boolean = { true }
+        keepTrying: () -> Boolean = { true },
+        requireIdentity: Boolean = false,
+        identityDial: (() -> ZbtIdentityProbe.Outcome)? = null,
+        cacheIdentityRefusal: Boolean = true
     ): Boolean {
         // A live carrier is the answer, and dialling past it would cache its own silence as a no.
+        if (requireIdentity && (carrierLive() || carrierWantsClient())) {
+            // Ownership is not a negative measurement. A forced carrier may never have been
+            // identified; leave that unknown so its next fresh arming can measure normally.
+            return identityAnswer?.reachable == true
+        }
         if (carrierLive()) return true
-        cached(nowMs())?.let { return it }
+        cached(nowMs(), requireIdentity)?.let { return it }
         // A caller stopped while queued on the lock must not dial for an arming that is gone.
         if (!keepTrying()) return false
         val firstRefusalAt = nowMs()
         var refusals = 0
         while (true) {
-            val reachable = dial()
+            val identity = if (requireIdentity) {
+                identityDial?.invoke() ?: dial?.invoke()?.let {
+                    if (it) ZbtIdentityProbe.Outcome.IDENTIFIED else ZbtIdentityProbe.Outcome.UNCONFIRMED
+                } ?: ZbtIdentityProbe.probe(keepTrying = {
+                    keepTrying() && !carrierLive() && !carrierWantsClient()
+                })
+            } else null
+            if (!keepTrying()) return false
+            if (requireIdentity && (carrierLive() || carrierWantsClient())) {
+                return identityAnswer?.reachable == true
+            }
+            val reachable = if (requireIdentity) identity == ZbtIdentityProbe.Outcome.IDENTIFIED
+                else (dial ?: ::dialOnce).invoke()
+            if (!keepTrying()) return false
             if (reachable) {
-                record(true, nowMs())
+                if (requireIdentity) identityAnswer = IdentityAnswer(true, nowMs())
+                else record(true, nowMs())
                 return true
             }
             refusals++
-            val wait = if (retryRefusals) {
-                ZbtReachabilityPolicy.redialAfterMs(refusals, nowMs() - firstRefusalAt)
+            val candidateBootRetry = firstRefusalAt < CANDIDATE_BOOT_WINDOW_MS
+            val windowMs = if (requireIdentity) CANDIDATE_REFUSAL_WINDOW_MS else ZbtReachabilityPolicy.REFUSAL_WINDOW_MS
+            val spentMs = nowMs() - firstRefusalAt
+            val wait = if (retryRefusals && spentMs < windowMs &&
+                (!requireIdentity || (candidateBootRetry && identity == ZbtIdentityProbe.Outcome.REFUSED))) {
+                ZbtReachabilityPolicy.redialAfterMs(refusals, spentMs)?.coerceAtMost(windowMs - spentMs)
             } else null
             if (wait == null) {
-                record(false, nowMs())
-                if (retryRefusals) AppLog.i(
+                if (requireIdentity) {
+                    // A settings preview must not settle the arming's boot-refusal decision.
+                    if (identity != ZbtIdentityProbe.Outcome.REFUSED || cacheIdentityRefusal) {
+                        identityAnswer = IdentityAnswer(false, nowMs())
+                    }
+                } else record(false, nowMs())
+                if (requireIdentity) AppLog.i(
+                    "NativeAA: [ZBT candidate] no confirmed ZBT greeting; retaining Android Bluetooth route."
+                )
+                if (retryRefusals && !requireIdentity) AppLog.i(
                     "NativeAA: [ZBT] nothing has listened on 127.0.0.1:3152 for " +
                         "${ZbtReachabilityPolicy.REFUSAL_WINDOW_MS / 1000}s, so the module cannot " +
                         "carry Android Auto on this unit."
@@ -136,6 +202,7 @@ object ZbtDaemonReachability {
                 left -= slice
             }
             if (!keepTrying()) return false
+            if (requireIdentity && (carrierLive() || carrierWantsClient())) return identityAnswer?.reachable == true
             if (carrierLive()) return true
         }
     }

@@ -1205,7 +1205,7 @@
     <string name="external_power_delay_value">%1$d 秒</string>
     <string name="external_power_delay_hint">只有超过此时间后电源仍未恢复，才会结束会话。范围为 5 到 3600 秒。</string>
     <string name="external_power_screen_off_label">同时关闭屏幕</string>
-    <string name="external_power_screen_off_description">会话结束后将屏幕调暗，电源恢复时重新点亮。</string>
+    <string name="external_power_screen_off_description">电源未恢复时，会在会话结束后或未连接任何设备时将屏幕调暗，电源恢复时重新点亮。</string>
     <string name="external_power_grant_label">允许 Open Headunit 关闭屏幕</string>
     <string name="external_power_grant_allowed">已允许</string>
     <string name="external_power_grant_missing">未允许</string>

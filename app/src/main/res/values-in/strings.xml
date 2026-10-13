@@ -493,7 +493,7 @@
     <string name="external_power_delay_value">%1$d dtk</string>
     <string name="external_power_delay_hint">Sesi hanya berakhir jika daya masih belum kembali setelah waktu ini. Antara 5 dan 3600 detik.</string>
     <string name="external_power_screen_off_label">Matikan juga layar</string>
-    <string name="external_power_screen_off_description">Meredupkan layar setelah sesi berakhir dan menyalakannya lagi saat daya kembali.</string>
+    <string name="external_power_screen_off_description">Meredupkan layar saat daya belum kembali, setelah sesi berakhir atau saat tidak ada yang terhubung, dan menyalakannya lagi saat daya kembali.</string>
     <string name="external_power_grant_label">Izinkan Open Headunit mematikan layar</string>
     <string name="external_power_grant_allowed">Diizinkan</string>
     <string name="external_power_grant_missing">Tidak diizinkan</string>

@@ -1194,7 +1194,7 @@
     <string name="external_power_delay_value">%1$d წმ</string>
     <string name="external_power_delay_hint">სესია მთავრდება მხოლოდ იმ შემთხვევაში, თუ ამ დროის შემდეგაც კვება არ დაბრუნებულა. 5-დან 3600 წამამდე.</string>
     <string name="external_power_screen_off_label">ეკრანის გამორთვაც</string>
-    <string name="external_power_screen_off_description">სესიის დასრულების შემდეგ ეკრანს ბნელს ხდის და კვების დაბრუნებისას ისევ ანათებს.</string>
+    <string name="external_power_screen_off_description">კვების არარსებობისას, სესიის დასრულების შემდეგ ან როცა არაფერია დაკავშირებული, ეკრანს ბნელს ხდის და კვების დაბრუნებისას ისევ ანათებს.</string>
     <string name="external_power_grant_label">Open Headunit-ისთვის ეკრანის გამორთვის დაშვება</string>
     <string name="external_power_grant_allowed">დაშვებულია</string>
     <string name="external_power_grant_missing">დაშვებული არ არის</string>

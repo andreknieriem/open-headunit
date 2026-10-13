@@ -519,7 +519,7 @@
     <string name="external_power_delay_value">%1$d s</string>
     <string name="external_power_delay_hint">The session only ends if power is still gone after this long. From 5 to 3600 seconds.</string>
     <string name="external_power_screen_off_label">Turn the screen off too</string>
-    <string name="external_power_screen_off_description">Darkens the screen after the session has ended, and lights it again when power returns.</string>
+    <string name="external_power_screen_off_description">Darkens the screen when power stays away, after the session has ended or when nothing is connected, and lights it again when power returns.</string>
     <string name="external_power_grant_label">Allow Open Headunit to turn the screen off</string>
     <string name="external_power_grant_allowed">Allowed</string>
     <string name="external_power_grant_missing">Not allowed</string>

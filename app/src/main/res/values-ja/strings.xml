@@ -1211,7 +1211,7 @@
     <string name="external_power_delay_value">%1$d 秒</string>
     <string name="external_power_delay_hint">この時間が経過しても電源が戻らない場合にのみ、セッションを終了します。5～3600秒で指定します。</string>
     <string name="external_power_screen_off_label">画面もオフにする</string>
-    <string name="external_power_screen_off_description">セッションの終了後に画面を暗くし、電源が戻ると再び点灯します。</string>
+    <string name="external_power_screen_off_description">電源が戻らない間、セッションの終了後や何も接続されていないときに画面を暗くし、電源が戻ると再び点灯します。</string>
     <string name="external_power_grant_label">Open Headunit による画面のオフを許可</string>
     <string name="external_power_grant_allowed">許可</string>
     <string name="external_power_grant_missing">許可されていません</string>

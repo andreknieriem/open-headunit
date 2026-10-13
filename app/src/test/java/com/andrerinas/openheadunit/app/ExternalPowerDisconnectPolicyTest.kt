@@ -11,31 +11,81 @@ class ExternalPowerDisconnectPolicyTest {
     private val P = ExternalPowerDisconnectPolicy
 
     @Test
-    fun `a switch that is off ignores every event`() {
-        assertEquals(ExternalPowerArm.IGNORE, P.onPowerEvent(false, connected = false, sessionUp = true))
-        assertEquals(ExternalPowerArm.IGNORE, P.onPowerEvent(false, connected = true, sessionUp = true))
-        assertEquals(ExternalPowerArm.IGNORE, P.onPowerEvent(false, connected = false, sessionUp = false))
+    fun `a switch that is off arms nothing`() {
+        assertEquals(ExternalPowerArm.IGNORE, P.onPowerEvent(false, connected = false, sessionUp = true, screenRow = true))
+        assertEquals(ExternalPowerArm.IGNORE, P.onPowerEvent(false, connected = false, sessionUp = false, screenRow = false))
+    }
+
+    @Test
+    fun `power back cancels even with the switch turned off`() {
+        assertEquals(ExternalPowerArm.CANCEL, P.onPowerEvent(false, connected = true, sessionUp = true, screenRow = true))
+        assertEquals(ExternalPowerArm.CANCEL, P.onPowerEvent(false, connected = true, sessionUp = false, screenRow = false))
     }
 
     @Test
     fun `power lost with a session arms`() {
-        assertEquals(ExternalPowerArm.ARM, P.onPowerEvent(true, connected = false, sessionUp = true))
+        assertEquals(ExternalPowerArm.ARM, P.onPowerEvent(true, connected = false, sessionUp = true, screenRow = true))
     }
 
     @Test
-    fun `power lost with nothing projecting arms nothing`() {
-        assertEquals(ExternalPowerArm.NOTHING_PROJECTING, P.onPowerEvent(true, connected = false, sessionUp = false))
+    fun `power lost with nothing projecting and the screen row off arms nothing`() {
+        assertEquals(ExternalPowerArm.NOTHING_PROJECTING, P.onPowerEvent(true, connected = false, sessionUp = false, screenRow = false))
+    }
+
+    @Test
+    fun `power lost with nothing projecting and the screen row on arms the screen only`() {
+        assertEquals(ExternalPowerArm.ARM_SCREEN_ONLY, P.onPowerEvent(true, connected = false, sessionUp = false, screenRow = true))
+    }
+
+    @Test
+    fun `a session up arms the full timer whatever the screen row`() {
+        assertEquals(ExternalPowerArm.ARM, P.onPowerEvent(true, connected = false, sessionUp = true, screenRow = true))
+        assertEquals(ExternalPowerArm.ARM, P.onPowerEvent(true, connected = false, sessionUp = true, screenRow = false))
+    }
+
+    @Test
+    fun `a switch that is off ignores power loss whatever the screen row`() {
+        assertEquals(ExternalPowerArm.IGNORE, P.onPowerEvent(false, connected = false, sessionUp = false, screenRow = true))
+        assertEquals(ExternalPowerArm.IGNORE, P.onPowerEvent(false, connected = false, sessionUp = true, screenRow = true))
+    }
+
+    @Test
+    fun `screen only outcome is the plug first`() {
+        assertEquals(ScreenOnlyOutcome.SKIP_POWER_BACK, P.screenOnlyOutcome(true, true, true, false, chargerBack = true))
+        assertEquals(ScreenOnlyOutcome.SKIP_POWER_BACK, P.screenOnlyOutcome(false, false, false, true, chargerBack = true))
+    }
+
+    @Test
+    fun `screen only outcome skips a switch or row turned off`() {
+        assertEquals(ScreenOnlyOutcome.SKIP_DISABLED, P.screenOnlyOutcome(false, true, true, false, chargerBack = false))
+        assertEquals(ScreenOnlyOutcome.SKIP_DISABLED, P.screenOnlyOutcome(true, false, true, false, chargerBack = false))
+    }
+
+    @Test
+    fun `screen only outcome leaves a session up or forming alone whatever the grant`() {
+        assertEquals(ScreenOnlyOutcome.SKIP_SESSION, P.screenOnlyOutcome(true, true, true, true, chargerBack = false))
+        assertEquals(ScreenOnlyOutcome.SKIP_SESSION, P.screenOnlyOutcome(true, true, false, true, chargerBack = false))
+    }
+
+    @Test
+    fun `screen only outcome without the grant warns`() {
+        assertEquals(ScreenOnlyOutcome.NO_GRANT, P.screenOnlyOutcome(true, true, false, false, chargerBack = false))
+    }
+
+    @Test
+    fun `screen only outcome turns the screen off when everything holds`() {
+        assertEquals(ScreenOnlyOutcome.SCREEN_OFF, P.screenOnlyOutcome(true, true, true, false, chargerBack = false))
     }
 
     @Test
     fun `power back cancels whatever the session state`() {
-        assertEquals(ExternalPowerArm.CANCEL, P.onPowerEvent(true, connected = true, sessionUp = true))
-        assertEquals(ExternalPowerArm.CANCEL, P.onPowerEvent(true, connected = true, sessionUp = false))
+        assertEquals(ExternalPowerArm.CANCEL, P.onPowerEvent(true, connected = true, sessionUp = true, screenRow = true))
+        assertEquals(ExternalPowerArm.CANCEL, P.onPowerEvent(true, connected = true, sessionUp = false, screenRow = false))
     }
 
     @Test
     fun `lost, back, lost arms once per live loss`() {
-        val seq = listOf(false, true, false).map { P.onPowerEvent(true, it, sessionUp = true) }
+        val seq = listOf(false, true, false).map { P.onPowerEvent(true, it, sessionUp = true, screenRow = true) }
         assertEquals(listOf(ExternalPowerArm.ARM, ExternalPowerArm.CANCEL, ExternalPowerArm.ARM), seq)
     }
 
@@ -65,9 +115,14 @@ class ExternalPowerDisconnectPolicyTest {
 
     @Test
     fun `a live session ends when power stayed away`() {
-        assertTrue(P.shouldEndSession(sessionUp = true, chargerBack = false))
-        assertFalse(P.shouldEndSession(sessionUp = false, chargerBack = false))
-        assertFalse(P.shouldEndSession(sessionUp = true, chargerBack = true))
+        assertTrue(P.shouldEndSession(enabled = true, sessionUp = true, chargerBack = false))
+        assertFalse(P.shouldEndSession(enabled = true, sessionUp = false, chargerBack = false))
+        assertFalse(P.shouldEndSession(enabled = true, sessionUp = true, chargerBack = true))
+    }
+
+    @Test
+    fun `a switch turned off during the delay ends nothing`() {
+        assertFalse(P.shouldEndSession(enabled = false, sessionUp = true, chargerBack = false))
     }
 
     @Test
@@ -89,7 +144,7 @@ class ExternalPowerDisconnectPolicyTest {
     fun `power back lights the screen and re-arms only after our own end`() {
         assertEquals(listOf(ExternalPowerStep.SCREEN_ON, ExternalPowerStep.REARM), P.planOnReturn(true, true))
         assertEquals(listOf(ExternalPowerStep.REARM), P.planOnReturn(true, false))
-        assertEquals(emptyList<ExternalPowerStep>(), P.planOnReturn(false, true))
+        assertEquals(listOf(ExternalPowerStep.SCREEN_ON), P.planOnReturn(false, true))
         assertEquals(emptyList<ExternalPowerStep>(), P.planOnReturn(false, false))
     }
 
@@ -111,7 +166,28 @@ class ExternalPowerDisconnectPolicyTest {
 
     @Test
     fun `the stand-down holds only while power is still out`() {
-        assertTrue(P.standDownHolds(powerBack = false))
-        assertFalse(P.standDownHolds(powerBack = true))
+        assertTrue(P.standDownHolds(powerBackSeen = false, pluggedNow = false))
+        assertFalse(P.standDownHolds(powerBackSeen = true, pluggedNow = true))
+    }
+
+    @Test
+    fun `a return unplugged again before the stand-down still stands down`() {
+        assertTrue(P.standDownHolds(powerBackSeen = true, pluggedNow = false))
+    }
+
+    @Test
+    fun `a wired re-arm runs now when the stand-down does not hold`() {
+        assertEquals(WiredRearm.NOW, P.wiredRearm(standDownHolds = false, endedByPower = true))
+        assertEquals(WiredRearm.NOW, P.wiredRearm(standDownHolds = false, endedByPower = false))
+    }
+
+    @Test
+    fun `a wired re-arm waits for power back after a power stand-down`() {
+        assertEquals(WiredRearm.ON_POWER_BACK, P.wiredRearm(standDownHolds = true, endedByPower = true))
+    }
+
+    @Test
+    fun `a wired re-arm is dropped after a Bluetooth stand-down`() {
+        assertEquals(WiredRearm.DROP, P.wiredRearm(standDownHolds = true, endedByPower = false))
     }
 }

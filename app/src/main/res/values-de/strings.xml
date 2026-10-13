@@ -1208,7 +1208,7 @@
     <string name="external_power_delay_value">%1$d s</string>
     <string name="external_power_delay_hint">Die Sitzung endet nur, wenn nach dieser Zeit noch kein Strom anliegt. 5 bis 3600 Sekunden.</string>
     <string name="external_power_screen_off_label">Bildschirm ebenfalls ausschalten</string>
-    <string name="external_power_screen_off_description">Dunkelt den Bildschirm nach dem Ende der Sitzung ab und schaltet ihn wieder ein, sobald Strom anliegt.</string>
+    <string name="external_power_screen_off_description">Dunkelt den Bildschirm ab, wenn kein Strom anliegt, nach dem Ende der Sitzung oder wenn nichts verbunden ist, und schaltet ihn wieder ein, sobald Strom anliegt.</string>
     <string name="external_power_grant_label">Open Headunit erlauben, den Bildschirm auszuschalten</string>
     <string name="external_power_grant_allowed">Erlaubt</string>
     <string name="external_power_grant_missing">Nicht erlaubt</string>

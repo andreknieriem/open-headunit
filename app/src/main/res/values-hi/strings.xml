@@ -493,7 +493,7 @@
     <string name="external_power_delay_value">%1$d से.</string>
     <string name="external_power_delay_hint">सेशन तभी समाप्त होता है जब इतने समय बाद भी पावर वापस न आए। 5 से 3600 सेकंड।</string>
     <string name="external_power_screen_off_label">स्क्रीन भी बंद करें</string>
-    <string name="external_power_screen_off_description">सेशन समाप्त होने के बाद स्क्रीन बंद कर देता है और पावर लौटने पर उसे फिर चालू करता है।</string>
+    <string name="external_power_screen_off_description">पावर न होने पर, सेशन समाप्त होने के बाद या कुछ भी कनेक्ट न होने पर स्क्रीन बंद कर देता है और पावर लौटने पर उसे फिर चालू करता है।</string>
     <string name="external_power_grant_label">Open Headunit को स्क्रीन बंद करने की अनुमति दें</string>
     <string name="external_power_grant_allowed">अनुमति दी गई</string>
     <string name="external_power_grant_missing">अनुमति नहीं दी गई</string>

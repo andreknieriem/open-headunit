@@ -1209,7 +1209,7 @@
     <string name="external_power_delay_value">%1$d mp</string>
     <string name="external_power_delay_hint">A munkamenet csak akkor ér véget, ha ennyi idő után még mindig nincs áram. 5 és 3600 másodperc között.</string>
     <string name="external_power_screen_off_label">A képernyő kikapcsolása is</string>
-    <string name="external_power_screen_off_description">A munkamenet befejezése után elsötétíti a képernyőt, az áram visszatérésekor pedig újra bekapcsolja.</string>
+    <string name="external_power_screen_off_description">Elsötétíti a képernyőt, ha nincs áram, a munkamenet befejezése után vagy ha semmi nincs csatlakoztatva, az áram visszatérésekor pedig újra bekapcsolja.</string>
     <string name="external_power_grant_label">Engedélyezés az Open Headunitnak a képernyő kikapcsolására</string>
     <string name="external_power_grant_allowed">Engedélyezett</string>
     <string name="external_power_grant_missing">Nem engedélyezett</string>

@@ -1205,7 +1205,7 @@
     <string name="external_power_delay_value">%1$d s</string>
     <string name="external_power_delay_hint">Sesiunea se încheie doar dacă după acest interval tot nu este curent. De la 5 la 3600 de secunde.</string>
     <string name="external_power_screen_off_label">Oprește și ecranul</string>
-    <string name="external_power_screen_off_description">Întunecă ecranul după încheierea sesiunii și îl aprinde din nou când revine curentul.</string>
+    <string name="external_power_screen_off_description">Întunecă ecranul când nu este curent, după încheierea sesiunii sau când nu este nimic conectat, și îl aprinde din nou când revine curentul.</string>
     <string name="external_power_grant_label">Permite aplicației Open Headunit să oprească ecranul</string>
     <string name="external_power_grant_allowed">Permis</string>
     <string name="external_power_grant_missing">Nepermis</string>

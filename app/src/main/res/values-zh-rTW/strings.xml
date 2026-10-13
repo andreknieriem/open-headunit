@@ -1205,7 +1205,7 @@
     <string name="external_power_delay_value">%1$d 秒</string>
     <string name="external_power_delay_hint">只有超過這段時間後電源仍未恢復，才會結束工作階段。範圍為 5 到 3600 秒。</string>
     <string name="external_power_screen_off_label">同時關閉螢幕</string>
-    <string name="external_power_screen_off_description">工作階段結束後會調暗螢幕，電源恢復時再重新亮起。</string>
+    <string name="external_power_screen_off_description">電源未恢復時，會在工作階段結束後或未連接任何裝置時調暗螢幕，電源恢復時再重新亮起。</string>
     <string name="external_power_grant_label">允許 Open Headunit 關閉螢幕</string>
     <string name="external_power_grant_allowed">已允許</string>
     <string name="external_power_grant_missing">未允許</string>

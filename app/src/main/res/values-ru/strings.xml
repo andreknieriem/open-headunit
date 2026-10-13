@@ -1206,7 +1206,7 @@ Open Headunit предоставляется «как есть» без каки
     <string name="external_power_delay_value">%1$d с</string>
     <string name="external_power_delay_hint">Сеанс завершится, только если по истечении этого времени питания по-прежнему нет. От 5 до 3600 секунд.</string>
     <string name="external_power_screen_off_label">Также выключать экран</string>
-    <string name="external_power_screen_off_description">Гасит экран после завершения сеанса и включает его, когда питание возвращается.</string>
+    <string name="external_power_screen_off_description">Гасит экран, когда питания нет, после завершения сеанса или когда ничего не подключено, и включает его, когда питание возвращается.</string>
     <string name="external_power_grant_label">Разрешить Open Headunit выключать экран</string>
     <string name="external_power_grant_allowed">Разрешено</string>
     <string name="external_power_grant_missing">Не разрешено</string>

@@ -7,6 +7,8 @@
         rikka.shizuku.api, rikka.shizuku.shared, rikka.shizuku.aidl, com.topjohnwu.superuser" />
 
     <queries>
+        <!-- Rootless HCT bridge discovery when SELinux hides /dev/goc_serial. -->
+        <package android:name="android.microntek.mtcser" />
         <intent>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />

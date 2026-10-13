@@ -19,27 +19,33 @@ object H264Units {
      * A new receiver is sent these first, since the phone only repeats them with a new stream.
      */
     fun parameterSets(buf: ByteArray, offset: Int, length: Int): ByteArray? {
-        val end = (offset + length).coerceAtMost(buf.size)
         val out = java.io.ByteArrayOutputStream()
-        var nal = nextNal(buf, offset, end)
-        while (nal != null) {
-            val (payloadStart, _) = nal
-            val following = nextNal(buf, payloadStart, end)
-            val payloadEnd = following?.let { startCodeBefore(buf, it.first) } ?: end
-            val type = buf[payloadStart].toInt() and 0x1F
+        forEachNal(buf, offset, length) { type, start, end ->
             if (type == NAL_SPS || type == NAL_PPS) {
                 out.write(START_CODE)
-                out.write(buf, payloadStart, payloadEnd - payloadStart)
+                out.write(buf, start, end - start)
             }
-            nal = following
         }
         return out.toByteArray().takeIf { it.isNotEmpty() }
+    }
+
+    /** Calls [block] for each NAL in the unit with its type and the bounds of its payload, header byte included. */
+    inline fun forEachNal(buf: ByteArray, offset: Int, length: Int, block: (type: Int, start: Int, end: Int) -> Unit) {
+        val end = (offset + length).coerceAtMost(buf.size)
+        var nal = nextNal(buf, offset, end)
+        while (nal != null) {
+            val payloadStart = nal.first
+            val following = nextNal(buf, payloadStart, end)
+            val payloadEnd = following?.let { startCodeBefore(buf, it.first) } ?: end
+            block(buf[payloadStart].toInt() and 0x1F, payloadStart, payloadEnd)
+            nal = following
+        }
     }
 
     private val START_CODE = byteArrayOf(0, 0, 0, 1)
 
     /** The next NAL after [from]: the index of its header byte, and the start code's length. */
-    private fun nextNal(buf: ByteArray, from: Int, end: Int): Pair<Int, Int>? {
+    @PublishedApi internal fun nextNal(buf: ByteArray, from: Int, end: Int): Pair<Int, Int>? {
         var i = from
         while (i + 3 <= end) {
             if (buf[i].toInt() == 0 && buf[i + 1].toInt() == 0) {
@@ -52,7 +58,7 @@ object H264Units {
     }
 
     /** Where the start code in front of the NAL header at [headerPos] begins. */
-    private fun startCodeBefore(buf: ByteArray, headerPos: Int): Int =
+    @PublishedApi internal fun startCodeBefore(buf: ByteArray, headerPos: Int): Int =
         if (headerPos >= 4 && buf[headerPos - 4].toInt() == 0 && buf[headerPos - 3].toInt() == 0 &&
             buf[headerPos - 2].toInt() == 0) headerPos - 4 else headerPos - 3
 }

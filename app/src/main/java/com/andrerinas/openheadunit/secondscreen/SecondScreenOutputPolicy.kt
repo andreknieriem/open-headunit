@@ -17,7 +17,10 @@ object SecondScreenOutputPolicy {
         MS912X,
 
         /** A device speaking the Open Headunit USB display protocol, which decodes for itself. */
-        USB_DISPLAY;
+        USB_DISPLAY,
+
+        /** RTP over UDP to a typed address, for a receiver that connects to nothing. */
+        RTP_PUSH;
 
         companion object {
             fun of(stored: String?): Output = values().firstOrNull { it.name == stored } ?: ANDROID_DISPLAY
@@ -33,6 +36,7 @@ object SecondScreenOutputPolicy {
         val network: Target? = null,
         val ms912x: Target? = null,
         val usbDisplay: Target? = null,
+        val rtpPush: Target? = null,
     )
 
     fun target(output: Output, available: Availability): Target? = when (output) {
@@ -40,6 +44,7 @@ object SecondScreenOutputPolicy {
         Output.NETWORK -> available.network
         Output.MS912X -> available.ms912x
         Output.USB_DISPLAY -> available.usbDisplay
+        Output.RTP_PUSH -> available.rtpPush
     }
 
     /** Whether the head unit decodes this output's picture, or only forwards the stream. */
@@ -54,4 +59,8 @@ object SecondScreenOutputPolicy {
     )
 
     fun networkTarget(index: Int): Target = NETWORK_SIZES.getOrElse(index) { NETWORK_SIZES.first() }
+
+    /** The RTP push is announced only once an address is stored, so a blank setting costs nothing. */
+    fun rtpPushTarget(hasDestination: Boolean, sizeIndex: Int): Target? =
+        if (hasDestination) networkTarget(sizeIndex) else null
 }

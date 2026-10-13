@@ -31,6 +31,8 @@ import com.andrerinas.openheadunit.decoder.video.VideoFaultInjector
 import com.andrerinas.openheadunit.decoder.video.AuxDisplayProfilePolicy
 import com.andrerinas.openheadunit.secondscreen.SecondScreenOutputPolicy
 import com.andrerinas.openheadunit.secondscreen.network.NetworkStreamPolicy
+import com.andrerinas.openheadunit.secondscreen.rtp.RtpDestinationPolicy
+import com.andrerinas.openheadunit.secondscreen.rtp.RtpRefreshPolicy
 import com.andrerinas.openheadunit.secondscreen.ms912x.Ms912xMode
 import com.andrerinas.openheadunit.secondscreen.ms912x.Ms912xModes
 import com.andrerinas.openheadunit.secondscreen.ms912x.Ms912xWireFormat
@@ -1355,6 +1357,26 @@ class Settings(private val context: Context) {
     var auxNetworkPort: Int
         get() = NetworkStreamPolicy.portOrDefault(prefs.getInt("aux-network-port", NetworkStreamPolicy.DEFAULT_PORT))
         set(value) { prefs.edit().putInt("aux-network-port", value).apply() }
+
+    /** The IPv4 address the RTP push sends to; empty until the user types one. */
+    var auxRtpDestination: String
+        get() = prefs.getString("aux-rtp-destination", RtpDestinationPolicy.DEFAULT_DESTINATION) ?: RtpDestinationPolicy.DEFAULT_DESTINATION
+        set(value) { prefs.edit().putString("aux-rtp-destination", value).apply() }
+
+    /** The UDP port the RTP push sends to. */
+    var auxRtpPort: Int
+        get() = RtpDestinationPolicy.portOrDefault(prefs.getInt("aux-rtp-port", RtpDestinationPolicy.DEFAULT_PORT))
+        set(value) { prefs.edit().putInt("aux-rtp-port", value).apply() }
+
+    /** Seconds between the RTP push's keyframe requests while none arrives; 0 is off. */
+    var auxRtpRefreshSeconds: Int
+        get() = RtpRefreshPolicy.intervalOrDefault(prefs.getInt("aux-rtp-refresh-seconds", RtpRefreshPolicy.DEFAULT_INTERVAL_S))
+        set(value) { prefs.edit().putInt("aux-rtp-refresh-seconds", value).apply() }
+
+    /** The stream's own profile and parameter sets for the settings SDP; empty until a session ran. */
+    var auxRtpStreamParameters: String
+        get() = prefs.getString("aux-rtp-stream-parameters", "") ?: ""
+        set(value) { prefs.edit().putString("aux-rtp-stream-parameters", value).apply() }
 
     /** The MacroSilicon adapter's HDMI mode; the chip does not scale, so this is the panel's size. */
     var ms912xMode: Ms912xMode

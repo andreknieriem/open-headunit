@@ -56,4 +56,23 @@ class SecondaryVideoFocusPolicyTest {
         assertTrue(SecondaryVideoFocusPolicy.mayCycleAux(nowMs = 1_000, lastCycleMs = 0, sinkConfigured = true))
         assertFalse(SecondaryVideoFocusPolicy.mayCycleAux(nowMs = 5_000, lastCycleMs = 1_000, sinkConfigured = true))
     }
+
+    @Test
+    fun `a 1 s floor allows a cycle at 1000 ms and refuses one at 999`() {
+        assertTrue(SecondaryVideoFocusPolicy.mayCycleAux(nowMs = 7_000, lastCycleMs = 6_000, sinkConfigured = true, minIntervalMs = 1_000))
+        assertFalse(SecondaryVideoFocusPolicy.mayCycleAux(nowMs = 6_999, lastCycleMs = 6_000, sinkConfigured = true, minIntervalMs = 1_000))
+        assertFalse(SecondaryVideoFocusPolicy.mayCycleAux(nowMs = 10_999, lastCycleMs = 6_000, sinkConfigured = true))
+    }
+
+    @Test
+    fun `the refresh floor is the interval only from 1000 to 4999 ms`() {
+        val five = SecondaryVideoFocusPolicy.AUX_CYCLE_MIN_INTERVAL_MS
+        assertEquals(five, SecondaryVideoFocusPolicy.refreshCycleMinIntervalMs(0))
+        assertEquals(five, SecondaryVideoFocusPolicy.refreshCycleMinIntervalMs(999))
+        assertEquals(1_000L, SecondaryVideoFocusPolicy.refreshCycleMinIntervalMs(1_000))
+        assertEquals(2_000L, SecondaryVideoFocusPolicy.refreshCycleMinIntervalMs(2_000))
+        assertEquals(4_999L, SecondaryVideoFocusPolicy.refreshCycleMinIntervalMs(4_999))
+        assertEquals(five, SecondaryVideoFocusPolicy.refreshCycleMinIntervalMs(5_000))
+        assertEquals(five, SecondaryVideoFocusPolicy.refreshCycleMinIntervalMs(10_000))
+    }
 }

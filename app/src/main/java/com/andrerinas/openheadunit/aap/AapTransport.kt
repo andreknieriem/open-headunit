@@ -1061,12 +1061,15 @@ class AapTransport(
      * budget, so it touches nothing the driver is watching.
      */
     @Synchronized
-    internal fun requestAuxKeyframe(reason: String) {
+    internal fun requestAuxKeyframe(
+        reason: String,
+        minIntervalMs: Long = SecondaryVideoFocusPolicy.AUX_CYCLE_MIN_INTERVAL_MS,
+    ) {
         if (auxVideoLane == null) return
         val handler = sendHandler ?: return
         val now = SystemClock.elapsedRealtime()
         val configured = auxSinkConfigured
-        if (!SecondaryVideoFocusPolicy.mayCycleAux(now, lastAuxCycleMs, configured)) {
+        if (!SecondaryVideoFocusPolicy.mayCycleAux(now, lastAuxCycleMs, configured, minIntervalMs)) {
             if (!configured) AppLog.i("AapTransport: no auxiliary keyframe cycle before its setup ()")
             return
         }
@@ -1107,7 +1110,11 @@ class AapTransport(
         if (closing) return null
         val output = SecondScreenHub.announced ?: return null
         // Opened here because only this session's service discovery says which output to open.
-        SecondScreenHub.open(context, settings) { requestAuxKeyframe("the second screen asked for one") }
+        // Only the RTP push's own timed ask may cycle faster than the 5 s floor.
+        val askFloorMs = if (output == SecondScreenOutputPolicy.Output.RTP_PUSH) {
+            SecondaryVideoFocusPolicy.refreshCycleMinIntervalMs(settings.auxRtpRefreshSeconds * 1000L)
+        } else SecondaryVideoFocusPolicy.AUX_CYCLE_MIN_INTERVAL_MS
+        SecondScreenHub.open(context, settings) { requestAuxKeyframe("the second screen asked for one", askFloorMs) }
         // Recovery cycles focus on this channel alone, so the main picture never pays for it.
         val onCorrupted = { requestAuxKeyframe("a corrupt frame") }
         // A forwarding output gets the stream as it arrives and no decoder is built for it.

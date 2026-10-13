@@ -105,6 +105,12 @@
     <string name="aux_output_network">Transmisión por red</string>
     <string name="aux_output_ms912x">Adaptador USB HDMI (MacroSilicon)</string>
     <string name="aux_output_usb_display">Pantalla USB de Open Headunit</string>
+    <string name="aux_output_rtp_push">Envío RTP a una dirección</string>
+    <string name="aux_rtp_destination">Dirección del receptor</string>
+    <string name="aux_rtp_destination_unset">Sin configurar</string>
+    <string name="aux_rtp_destination_invalid">Escribe una dirección IPv4, como 192.168.1.50</string>
+    <string name="aux_rtp_port">Puerto del receptor</string>
+    <string name="aux_rtp_hint">Guarda esto como stream.sdp en la computadora receptora y luego ejecuta %2$s\n\n%1$s</string>
     <string name="aux_network_size">Tamaño de la transmisión</string>
     <string name="aux_network_port">Puerto de la transmisión</string>
     <string name="aux_network_hint">En una computadora de la misma red, ejecuta: %1$s\nSi usas depuración USB, ejecuta adb forward tcp:%2$d tcp:%2$d y usa 127.0.0.1. También puedes abrir en VLC http://dirección de esta unidad:%2$d/</string>

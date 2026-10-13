@@ -105,6 +105,12 @@
     <string name="aux_output_network">Síťový stream</string>
     <string name="aux_output_ms912x">USB HDMI adaptér (MacroSilicon)</string>
     <string name="aux_output_usb_display">USB displej Open Headunit</string>
+    <string name="aux_output_rtp_push">Odeslání RTP na adresu</string>
+    <string name="aux_rtp_destination">Adresa příjemce</string>
+    <string name="aux_rtp_destination_unset">Nenastaveno</string>
+    <string name="aux_rtp_destination_invalid">Zadejte adresu IPv4, například 192.168.1.50</string>
+    <string name="aux_rtp_port">Port příjemce</string>
+    <string name="aux_rtp_hint">Uložte to jako stream.sdp v přijímajícím počítači a poté spusťte %2$s\n\n%1$s</string>
     <string name="aux_network_size">Velikost streamu</string>
     <string name="aux_network_port">Port streamu</string>
     <string name="aux_network_hint">V počítači ve stejné síti spusťte: %1$s\nPři ladění přes USB místo toho spusťte adb forward tcp:%2$d tcp:%2$d a použijte 127.0.0.1. VLC může také otevřít http://adresa této jednotky:%2$d/</string>

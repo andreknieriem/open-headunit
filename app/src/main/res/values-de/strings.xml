@@ -138,6 +138,12 @@
     <string name="aux_output_network">Netzwerkstream</string>
     <string name="aux_output_ms912x">USB-HDMI-Adapter (MacroSilicon)</string>
     <string name="aux_output_usb_display">Open-Headunit-USB-Display</string>
+    <string name="aux_output_rtp_push">RTP-Push an eine Adresse</string>
+    <string name="aux_rtp_destination">Empfängeradresse</string>
+    <string name="aux_rtp_destination_unset">Nicht festgelegt</string>
+    <string name="aux_rtp_destination_invalid">Gib eine IPv4-Adresse ein, z. B. 192.168.1.50</string>
+    <string name="aux_rtp_port">Empfängerport</string>
+    <string name="aux_rtp_hint">Speichere dies auf dem empfangenden Computer als stream.sdp und führe dann %2$s aus\n\n%1$s</string>
     <string name="aux_network_size">Streamgröße</string>
     <string name="aux_network_port">Streamport</string>
     <string name="aux_network_hint">Führe auf einem Computer im selben Netzwerk Folgendes aus: %1$s\nBei USB-Debugging führe stattdessen adb forward tcp:%2$d tcp:%2$d aus und verwende 127.0.0.1. VLC kann auch http://Adresse dieses Geräts:%2$d/ öffnen.</string>

@@ -396,6 +396,12 @@
     <string name="aux_output_network">Streaming jaringan</string>
     <string name="aux_output_ms912x">Adaptor USB HDMI (MacroSilicon)</string>
     <string name="aux_output_usb_display">Layar USB Open Headunit</string>
+    <string name="aux_output_rtp_push">Kirim RTP ke alamat</string>
+    <string name="aux_rtp_destination">Alamat penerima</string>
+    <string name="aux_rtp_destination_unset">Belum diatur</string>
+    <string name="aux_rtp_destination_invalid">Ketik alamat IPv4, misalnya 192.168.1.50</string>
+    <string name="aux_rtp_port">Port penerima</string>
+    <string name="aux_rtp_hint">Simpan ini sebagai stream.sdp di komputer penerima, lalu jalankan %2$s\n\n%1$s</string>
     <string name="aux_network_size">Ukuran streaming</string>
     <string name="aux_network_port">Port streaming</string>
     <string name="aux_network_hint">Di komputer pada jaringan yang sama, jalankan: %1$s\nJika memakai debugging USB, jalankan adb forward tcp:%2$d tcp:%2$d dan gunakan 127.0.0.1. VLC juga dapat membuka http://alamat unit ini:%2$d/</string>

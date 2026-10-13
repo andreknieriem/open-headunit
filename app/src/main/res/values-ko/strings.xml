@@ -160,6 +160,12 @@
     <string name="aux_output_network">네트워크 스트림</string>
     <string name="aux_output_ms912x">USB HDMI 어댑터(MacroSilicon)</string>
     <string name="aux_output_usb_display">Open Headunit USB 디스플레이</string>
+    <string name="aux_output_rtp_push">주소로 RTP 푸시</string>
+    <string name="aux_rtp_destination">수신기 주소</string>
+    <string name="aux_rtp_destination_unset">설정 안 됨</string>
+    <string name="aux_rtp_destination_invalid">192.168.1.50 같은 IPv4 주소를 입력하세요.</string>
+    <string name="aux_rtp_port">수신기 포트</string>
+    <string name="aux_rtp_hint">이 내용을 수신 컴퓨터에 stream.sdp로 저장한 다음 다음을 실행하세요: %2$s\n\n%1$s</string>
     <string name="aux_network_size">스트림 크기</string>
     <string name="aux_network_port">스트림 포트</string>
     <string name="aux_network_hint">같은 네트워크의 컴퓨터에서 다음을 실행하세요: %1$s\nUSB 디버깅을 사용하는 경우에는 대신 adb forward tcp:%2$d tcp:%2$d를 실행하고 127.0.0.1을 사용하세요. VLC에서 http://이 유닛의 주소:%2$d/를 열 수도 있습니다.</string>

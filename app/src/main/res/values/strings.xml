@@ -1327,4 +1327,6 @@
     <string name="copy_to_clipboard">Copy</string>
     <string name="copied_to_clipboard">Copied to clipboard</string>
     <string name="audio_settings_reconnect">Audio settings saved. Reconnect Android Auto to apply them.</string>
+    <string name="native_aa_candidate_android_radio_description">Use Android Bluetooth instead of automatically selecting the head unit Bluetooth module. Leave off for automatic selection. If a module connection option is enabled, turn it off first.</string>
+    <string name="external_bt_candidate_transport_description">Force connection through the head unit Bluetooth module instead of automatic selection. This requires a compatible module service. Leave off to allow Android Bluetooth when that service does not respond; forcing this option prevents that fallback.</string>
 </resources>

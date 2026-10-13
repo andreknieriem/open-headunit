@@ -243,11 +243,17 @@ class ZbtDaemonReachabilityTest {
     }
 
     @Test
-    fun `failed HCT identity remains cached until a fresh arming`() {
+    fun `failed HCT detection keeps the Android button until a fresh arming`() {
         assertFalse(ZbtDaemonReachability.resolve({ 1000L }, dial(false), requireIdentity = true))
         val later = 1000L + ZbtDaemonReachability.RECHECK_AFTER_MS
         val cached = ZbtDaemonReachability.cached(later, requireIdentity = true)
         assertEquals(false, cached)
+        assertEquals(com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.ExternalBtTransportPolicy.WifiButton.ANDROID_RADIO,
+            com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.ExternalBtTransportPolicy.wifiButton(
+                ZbtDiscoveryPolicy.Snapshot(ZbtDiscoveryPolicy.Decision(ZbtDiscoveryPolicy.Mode.IDENTITY, "HCT"), cached),
+                false,
+                false
+            ))
         ZbtDaemonReachability.expireIdleIdentity(later)
         assertNull(ZbtDaemonReachability.cached(later, requireIdentity = true))
         assertTrue(ZbtDaemonReachability.resolve({ later }, dial(true), requireIdentity = true))

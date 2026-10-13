@@ -1,5 +1,6 @@
 package com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zbt
 
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.ExternalBtTransportPolicy
 import com.andrerinas.openheadunit.utils.ExternalBtPolicy
 import org.junit.Assert.*
 import org.junit.Test
@@ -91,11 +92,24 @@ class ZbtDiscoveryPolicyTest {
             assertEquals(ZbtDiscoveryPolicy.Mode.IDENTITY, initial.mode)
             marker = "rw.zlink.bt.type=extra"
             assertEquals(initial, latch.decision())
+            // An unconfirmed strict probe leaves the phone picker available even after publication.
+            val snapshot = ZbtDiscoveryPolicy.Snapshot(latch.decision(), false)
+            assertEquals(ExternalBtTransportPolicy.Route.NORMAL,
+                ExternalBtTransportPolicy.route(snapshot, false, false))
+            assertEquals(ExternalBtTransportPolicy.WifiButton.ANDROID_RADIO,
+                ExternalBtTransportPolicy.wifiButton(snapshot, false, false))
+            assertTrue(snapshot.decision.allowsAndroidFallback)
+            assertEquals(ExternalBtTransportPolicy.Route.ZBT,
+                ExternalBtTransportPolicy.route(snapshot.copy(reachable = true), false, false))
+            assertEquals(ExternalBtTransportPolicy.WifiButton.MODULE,
+                ExternalBtTransportPolicy.wifiButton(snapshot.copy(reachable = true), false, false))
             latch.reconsiderForArming(carrierOwnsSlot = true)
             assertEquals(initial, latch.decision())
             latch.reconsiderForArming(carrierOwnsSlot = false)
             assertEquals(ZbtDiscoveryPolicy.Mode.REACHABILITY, latch.decision().mode)
             assertEquals(marker, latch.decision().evidence)
+            // A captured async read keeps its evidence and mode when another arming begins.
+            assertEquals(initial, snapshot.decision)
         }
     }
 

@@ -21,6 +21,7 @@ import android.widget.Toast
 import android.content.ClipData
 import android.content.ClipboardManager
 import com.andrerinas.openheadunit.aap.protocol.messages.BluetoothAnnouncePolicy
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zbt.ZbtDiscovery
 import com.andrerinas.openheadunit.utils.OemAppManager
 import com.andrerinas.openheadunit.utils.CarLauncherManager
 import com.andrerinas.openheadunit.ssl.ConscryptInitializer
@@ -39,7 +40,6 @@ import com.andrerinas.openheadunit.aap.AapService
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.CredentialField
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeAaWakeDamagePolicy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zbt.ZbtProbe
-import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zbt.ZbtDaemonReachability
 import com.andrerinas.openheadunit.input.MediaKeyRoutingPolicy
 import com.andrerinas.openheadunit.connection.wifi.direct.ObservedP2pCredentials
 import com.andrerinas.openheadunit.connection.wifi.direct.P2pIdentityEdit
@@ -1449,26 +1449,6 @@ class SettingsFragment : Fragment() {
                 }
             ))
 
-            // Only where the detection has fired: everywhere else this governs a gate that never
-            // closes, and a switch that changes nothing is what sends people down a wrong
-            // diagnosis. The evidence is a lazy, so asking on every rebuild costs one field read.
-            // FYT module evidence closes the same gate, so it must offer the same way out for a
-            // unit whose phone really pairs with the Android radio.
-            if (BluetoothHelper.externalBtEvidence != null || BluetoothHelper.fytModuleEvidence != null) {
-                items.add(SettingItem.ToggleSettingEntry(
-                    stableId = "nativeAaIgnoreExternalBt",
-                    nameResId = R.string.native_aa_ignore_external_bt,
-                    descriptionResId = R.string.native_aa_ignore_external_bt_description,
-                    isChecked = pendingNativeAaIgnoreExternalBt ?: settings.nativeAaIgnoreExternalBt,
-                    searchKeywords = "external bluetooth module rfcomm override compatibility anyway",
-                    onCheckedChanged = { isChecked ->
-                        pendingNativeAaIgnoreExternalBt = isChecked
-                        checkChanges()
-                        updateSettingsList()
-                    }
-                ))
-            }
-
             // An action, not a switch: the wake's cost is a property of this unit's own Bluetooth
             // stack, which is measured rather than asked. What a user can do is ask for the
             // measurement again, which is the only way back for a unit condemned by one reading.
@@ -1503,6 +1483,36 @@ class SettingsFragment : Fragment() {
                         .show()
                 }
             ))
+            }
+
+            // Moved out of the Android-radio-only settings block so this existing override is
+            // also available on the module route. Keep its setting key and callback unchanged;
+            // firmware candidates need the same way to explicitly choose Android Bluetooth.
+            // ZbtDiscovery reuses the established detector and reads its selected cache here,
+            // never a socket. A negative detection can read metadata again on a later rebuild.
+            // Preserve the original no-op-control rule: explicit ZBT or BLINK toggles win over
+            // this switch. Keep an already checked switch visible so it can still be cleared.
+            // FYT retains this override for a phone actually paired with the Android radio.
+            val radioDiscovery = ZbtDiscovery.snapshot()
+            val radioFytEvidence = BluetoothHelper.fytModuleEvidence
+            val ignoreChecked = pendingNativeAaIgnoreExternalBt ?: settings.nativeAaIgnoreExternalBt
+            val explicitModule = (pendingExternalBtBlinkTransport ?: settings.externalBtBlinkTransport) ||
+                (radioFytEvidence == null && (pendingExternalBtZbtTransport ?: settings.externalBtZbtTransport))
+            if ((radioDiscovery.decision.available || radioFytEvidence != null) &&
+                (ignoreChecked || !explicitModule)) {
+                items.add(SettingItem.ToggleSettingEntry(
+                    stableId = "nativeAaIgnoreExternalBt",
+                    nameResId = R.string.native_aa_ignore_external_bt,
+                    descriptionResId = if (radioDiscovery.decision.requiresIdentity && radioFytEvidence == null)
+                        R.string.native_aa_candidate_android_radio_description else R.string.native_aa_ignore_external_bt_description,
+                    isChecked = ignoreChecked,
+                    searchKeywords = "external bluetooth module rfcomm override compatibility anyway",
+                    onCheckedChanged = { isChecked ->
+                        pendingNativeAaIgnoreExternalBt = isChecked
+                        checkChanges()
+                        updateSettingsList()
+                    }
+                ))
             }
 
             // Rendering it here is half the gate: AapService re-tests the connection mode before
@@ -1558,9 +1568,8 @@ class SettingsFragment : Fragment() {
             ))
         }
 
-        // Only on units whose Bluetooth is an external module, where the native route is refused
-        // outright and this is the one thing that might change that. Everywhere else it would be an
-        // action with no meaning.
+        // Offer the existing ZBT override for known external modules and firmware candidates.
+        // A candidate may have a usable Android adapter; failed discovery alone does not refuse it.
         //
         // Deliberately outside the Native AA block: the reporters who need this are on units where
         // that mode does not work, so requiring them to select it first would hide the diagnostic
@@ -1568,11 +1577,14 @@ class SettingsFragment : Fragment() {
         // Not on FYT module units, which have no ZLink daemon; the route refuses ZBT there anyway.
         // Still shown while on, so a toggle left over from before can be turned off.
         val zbtChecked = pendingExternalBtZbtTransport ?: settings.externalBtZbtTransport
-        if (BluetoothHelper.externalBtEvidence != null && (BluetoothHelper.fytModuleEvidence == null || zbtChecked)) {
+        val zbtDiscovery = ZbtDiscovery.snapshot()
+        if (zbtDiscovery.decision.available &&
+            (BluetoothHelper.fytModuleEvidence == null || zbtChecked)) {
             items.add(SettingItem.ToggleSettingEntry(
                 stableId = "externalBtZbtTransport",
                 nameResId = R.string.external_bt_transport,
-                descriptionResId = R.string.external_bt_transport_description,
+                descriptionResId = if (zbtDiscovery.decision.requiresIdentity)
+                    R.string.external_bt_candidate_transport_description else R.string.external_bt_transport_description,
                 isChecked = pendingExternalBtZbtTransport ?: settings.externalBtZbtTransport,
                 searchKeywords = "zbt zlink external bluetooth module transport handshake vendor daemon",
                 onCheckedChanged = { isChecked ->
@@ -4332,12 +4344,11 @@ class SettingsFragment : Fragment() {
     /** The Bluetooth route represented by the unsaved controls currently on screen. */
     private fun pendingExternalBtRoute(): ExternalBtTransportPolicy.Route =
         ExternalBtTransportPolicy.route(
-            BluetoothHelper.externalBtEvidence,
+            ZbtDiscovery.snapshot(),
             pendingExternalBtZbtTransport ?: settings.externalBtZbtTransport,
             pendingNativeAaIgnoreExternalBt ?: settings.nativeAaIgnoreExternalBt,
-            ZbtDaemonReachability.cached(),
-            pendingExternalBtBlinkTransport ?: settings.externalBtBlinkTransport,
-            BluetoothHelper.fytModuleEvidence
+            blinkTransportEnabled = pendingExternalBtBlinkTransport ?: settings.externalBtBlinkTransport,
+            fytModuleEvidence = BluetoothHelper.fytModuleEvidence
         )
 
     /** The WiFi Direct band the block is currently showing settings for. */
@@ -4878,10 +4889,14 @@ class SettingsFragment : Fragment() {
     }
 
     private fun handleNativeAaSelection() {
-        // An external Bluetooth module is not a "might not work" — the phone is bonded to a chip
-        // this app cannot write to, so say so plainly and name the evidence instead of offering
-        // the generic "try it anyway".
-        val externalBtEvidence = BluetoothHelper.externalBtEvidence
+        // Retain the existing marker-specific explanation: the phone may be bonded to a chip
+        // outside Android's paired-device list, so a generic compatibility dialog is insufficient.
+        // Known external-module markers and firmware candidates both justify checking ZBT.
+        // Candidates get the normal Android compatibility dialog if the bridge is unconfirmed;
+        // only established external-module evidence can justify the module-specific refusal.
+        val discovery = ZbtDiscovery.snapshot()
+        val measurement = ZbtDiscovery.measurement(discovery.decision)
+        val externalBtEvidence = measurement.decision.evidence
         if (externalBtEvidence != null) {
             // Unless there is a route to that chip, in which case the flat refusal below would be
             // wrong: either the user turned the transport on, or the daemon answered when asked.
@@ -4893,14 +4908,27 @@ class SettingsFragment : Fragment() {
             externalBtRouteJob?.cancel()
             externalBtRouteJob = viewLifecycleOwner.lifecycleScope.launch {
                 val viaModule = if (chosen) true else if (BluetoothHelper.fytModuleEvidence != null) false else {
-                    ZbtDaemonReachability.cached()
-                        ?: withContext(Dispatchers.IO) { ZbtDaemonReachability.resolve() }
+                    discovery.reachable
+                        ?: withContext(Dispatchers.IO) {
+                            measurement.resolve(
+                                cacheIdentityRefusal = false
+                            )
+                        }
                 }
                 if (!isAdded) return@launch
-                showExternalBtNativeAaDialog(externalBtEvidence, viaModule)
+                if (measurement.fallsBackToAndroid && !viaModule) {
+                    showAndroidNativeAaCompatibility()
+                } else showExternalBtNativeAaDialog(externalBtEvidence, viaModule)
             }
             return
         }
+        showAndroidNativeAaCompatibility()
+    }
+
+    // Extracted from the no-external-marker branch of handleNativeAaSelection. An unconfirmed
+    // firmware candidate needs that same Android check and dialog, not the module refusal.
+    // Keep both callers on this implementation so their compatibility advice stays identical.
+    private fun showAndroidNativeAaCompatibility() {
         if (NativeAaHandshakeManager.checkCompatibility(requireContext())) {
             MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
                 .setTitle(R.string.supported_nativeaa)

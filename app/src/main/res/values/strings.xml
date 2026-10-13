@@ -393,6 +393,12 @@
     <string name="aux_output_network">Network stream</string>
     <string name="aux_output_ms912x">USB HDMI adapter (MacroSilicon)</string>
     <string name="aux_output_usb_display">Open Headunit USB display</string>
+    <string name="aux_output_rtp_push">RTP push to an address</string>
+    <string name="aux_rtp_destination">Receiver address</string>
+    <string name="aux_rtp_destination_unset">Not set</string>
+    <string name="aux_rtp_destination_invalid">Type an IPv4 address such as 192.168.1.50</string>
+    <string name="aux_rtp_port">Receiver port</string>
+    <string name="aux_rtp_hint">Save this as stream.sdp on the receiving computer, then run %2$s\n\n%1$s</string>
     <string name="aux_network_size">Stream size</string>
     <string name="aux_network_port">Stream port</string>
     <string name="aux_network_hint">On a computer on the same network, run: %1$s\nOver USB debugging instead, run adb forward tcp:%2$d tcp:%2$d and use 127.0.0.1. VLC can also open http://this unit\'s address:%2$d/</string>

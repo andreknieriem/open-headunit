@@ -83,6 +83,7 @@ import com.andrerinas.openheadunit.secondscreen.ms912x.Ms912xModes
 import com.andrerinas.openheadunit.secondscreen.ms912x.Ms912xWireFormat
 import com.andrerinas.openheadunit.utils.NetworkAddresses
 import com.andrerinas.openheadunit.secondscreen.network.NetworkStreamPolicy
+import com.andrerinas.openheadunit.secondscreen.rtp.RtpDestinationPolicy
 import com.andrerinas.openheadunit.utils.DisplayTargetPolicy
 import com.andrerinas.openheadunit.utils.DisplayTargets
 import com.andrerinas.openheadunit.utils.Settings
@@ -169,7 +170,7 @@ class SettingsFragment : Fragment() {
         "gpsNavigation",
         // Graphic
         "resolution", "dpiPixelDensity", "viewMode", "screenOrientation", "projectionDisplay",
-        "auxDisplay", "auxAndroidDisplay", "auxNetworkSize", "auxNetworkPort", "auxNetworkHint", "auxMs912xMode", "auxMs912xFormat",
+        "auxDisplay", "auxAndroidDisplay", "auxNetworkSize", "auxNetworkPort", "auxNetworkHint", "auxRtpDestination", "auxRtpPort", "auxRtpHint", "auxMs912xMode", "auxMs912xFormat",
         "auxMs912xHint", "auxUsbDisplayStatus", "auxUsbDisplayCheck", "auxDisplayRole", "auxDisplayContent", "startInFullscreenMode",
         // Theming
         "theming", "loadingScreen", "customization",
@@ -4716,6 +4717,69 @@ class SettingsFragment : Fragment() {
         ))
     }
 
+    /** The RTP push's stream size, destination and port, and the SDP a receiver opens. */
+    private fun addAuxRtpPushRows(items: MutableList<SettingItem>) {
+        val sizes = SecondScreenOutputPolicy.NETWORK_SIZES
+        val labels = sizes.map { "${it.widthPx}x${it.heightPx}" }
+        val sizeIndex = settings.auxNetworkSize.coerceIn(0, sizes.size - 1)
+        items.add(SettingItem.SettingEntry(
+            stableId = "auxNetworkSize",
+            nameResId = R.string.aux_network_size,
+            value = labels[sizeIndex],
+            searchKeywords = labels.joinToString(" "),
+            onClick = { _ ->
+                MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
+                    .setTitle(R.string.aux_network_size)
+                    .setSingleChoiceItems(labels.toTypedArray(), sizeIndex) { dialog, which ->
+                        if (which != settings.auxNetworkSize) settings.auxNetworkSize = which
+                        settings.commit()
+                        dialog.dismiss()
+                        updateSettingsList()
+                    }
+                    .show()
+            }
+        ))
+        items.add(SettingItem.SettingEntry(
+            stableId = "auxRtpDestination",
+            nameResId = R.string.aux_rtp_destination,
+            value = settings.auxRtpDestination.ifEmpty { getString(R.string.aux_rtp_destination_unset) },
+            onClick = { _ ->
+                showTextInputDialog(requireContext(), R.string.aux_rtp_destination, settings.auxRtpDestination) { typed ->
+                    val text = typed.trim()
+                    if (text.isNotEmpty() && RtpDestinationPolicy.parse(text) == null) {
+                        ToastUtils.showToast(requireContext(), R.string.aux_rtp_destination_invalid, Toast.LENGTH_LONG, force = true)
+                    } else {
+                        if (text != settings.auxRtpDestination) settings.auxRtpDestination = text
+                        settings.commit()
+                        updateSettingsList()
+                    }
+                }
+            }
+        ))
+        items.add(SettingItem.SettingEntry(
+            stableId = "auxRtpPort",
+            nameResId = R.string.aux_rtp_port,
+            value = settings.auxRtpPort.toString(),
+            onClick = { _ ->
+                showNumericInputDialog(getString(R.string.aux_rtp_port), null, settings.auxRtpPort) {
+                    val port = RtpDestinationPolicy.portOrDefault(it)
+                    if (port != settings.auxRtpPort) settings.auxRtpPort = port
+                    settings.commit()
+                    updateSettingsList()
+                }
+            }
+        ))
+        items.add(SettingItem.InfoBanner(
+            stableId = "auxRtpHint",
+            textResId = R.string.aux_rtp_hint,
+            text = getString(
+                R.string.aux_rtp_hint,
+                RtpDestinationPolicy.sdp(settings.auxRtpDestination, settings.auxRtpPort),
+                RtpDestinationPolicy.FFPLAY_COMMAND,
+            ),
+        ))
+    }
+
     /** The MacroSilicon adapter's mode and pixel format, and whether one is plugged in. */
     private fun addAuxMs912xRows(items: MutableList<SettingItem>) {
         val modes = Ms912xMode.values()
@@ -4799,6 +4863,7 @@ class SettingsFragment : Fragment() {
     private val offeredAuxOutputs = listOf(
         SecondScreenOutputPolicy.Output.ANDROID_DISPLAY,
         SecondScreenOutputPolicy.Output.NETWORK,
+        SecondScreenOutputPolicy.Output.RTP_PUSH,
         SecondScreenOutputPolicy.Output.MS912X,
         SecondScreenOutputPolicy.Output.USB_DISPLAY,
     )
@@ -4808,6 +4873,7 @@ class SettingsFragment : Fragment() {
         SecondScreenOutputPolicy.Output.NETWORK -> R.string.aux_output_network
         SecondScreenOutputPolicy.Output.MS912X -> R.string.aux_output_ms912x
         SecondScreenOutputPolicy.Output.USB_DISPLAY -> R.string.aux_output_usb_display
+        SecondScreenOutputPolicy.Output.RTP_PUSH -> R.string.aux_output_rtp_push
     })
 
     /** A second Android Auto picture for a cluster or passenger screen, and the chosen output's rows. */
@@ -4839,6 +4905,7 @@ class SettingsFragment : Fragment() {
         when (settings.auxOutput) {
             SecondScreenOutputPolicy.Output.ANDROID_DISPLAY -> addAuxAndroidDisplayRow(items)
             SecondScreenOutputPolicy.Output.NETWORK -> addAuxNetworkRows(items)
+            SecondScreenOutputPolicy.Output.RTP_PUSH -> addAuxRtpPushRows(items)
             SecondScreenOutputPolicy.Output.MS912X -> addAuxMs912xRows(items)
             SecondScreenOutputPolicy.Output.USB_DISPLAY -> addAuxUsbDisplayRows(items)
             else -> {}

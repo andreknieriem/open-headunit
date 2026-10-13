@@ -131,6 +131,12 @@
     <string name="aux_output_network">ქსელური სტრიმი</string>
     <string name="aux_output_ms912x">USB HDMI ადაპტერი (MacroSilicon)</string>
     <string name="aux_output_usb_display">Open Headunit-ის USB ეკრანი</string>
+    <string name="aux_output_rtp_push">RTP-ის გაგზავნა მისამართზე</string>
+    <string name="aux_rtp_destination">მიმღების მისამართი</string>
+    <string name="aux_rtp_destination_unset">დაყენებული არ არის</string>
+    <string name="aux_rtp_destination_invalid">შეიყვანეთ IPv4 მისამართი, მაგალითად 192.168.1.50</string>
+    <string name="aux_rtp_port">მიმღების პორტი</string>
+    <string name="aux_rtp_hint">შეინახეთ ეს როგორც stream.sdp მიმღებ კომპიუტერზე, შემდეგ გაუშვით %2$s\n\n%1$s</string>
     <string name="aux_network_size">სტრიმის ზომა</string>
     <string name="aux_network_port">სტრიმის პორტი</string>
     <string name="aux_network_hint">იმავე ქსელში მყოფ კომპიუტერზე გაუშვით: %1$s\nUSB გამართვის შემთხვევაში გაუშვით adb forward tcp:%2$d tcp:%2$d და გამოიყენეთ 127.0.0.1. VLC-ითაც შეგიძლიათ გახსნათ http://ამ მოწყობილობის მისამართი:%2$d/</string>

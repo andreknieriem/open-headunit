@@ -368,6 +368,12 @@
     <string name="aux_output_network">नेटवर्क स्ट्रीम</string>
     <string name="aux_output_ms912x">USB HDMI अडैप्टर (MacroSilicon)</string>
     <string name="aux_output_usb_display">Open Headunit USB डिसप्ले</string>
+    <string name="aux_output_rtp_push">किसी पते पर RTP पुश</string>
+    <string name="aux_rtp_destination">रिसीवर का पता</string>
+    <string name="aux_rtp_destination_unset">सेट नहीं है</string>
+    <string name="aux_rtp_destination_invalid">192.168.1.50 जैसा IPv4 पता लिखें</string>
+    <string name="aux_rtp_port">रिसीवर का पोर्ट</string>
+    <string name="aux_rtp_hint">इसे प्राप्त करने वाले कंप्यूटर पर stream.sdp के रूप में सेव करें, फिर %2$s चलाएं\n\n%1$s</string>
     <string name="aux_network_size">स्ट्रीम का साइज़</string>
     <string name="aux_network_port">स्ट्रीम पोर्ट</string>
     <string name="aux_network_hint">उसी नेटवर्क पर किसी कंप्यूटर में यह चलाएं: %1$s\nUSB डीबगिंग के मामले में इसके बजाय adb forward tcp:%2$d tcp:%2$d चलाएं और 127.0.0.1 का इस्तेमाल करें. VLC में http://इस यूनिट का पता:%2$d/ भी खोला जा सकता है.</string>

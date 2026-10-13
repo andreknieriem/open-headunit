@@ -125,6 +125,12 @@
     <string name="aux_output_network">ネットワーク ストリーム</string>
     <string name="aux_output_ms912x">USB HDMI アダプター（MacroSilicon）</string>
     <string name="aux_output_usb_display">Open Headunit USB ディスプレイ</string>
+    <string name="aux_output_rtp_push">アドレスへの RTP プッシュ</string>
+    <string name="aux_rtp_destination">受信側のアドレス</string>
+    <string name="aux_rtp_destination_unset">未設定</string>
+    <string name="aux_rtp_destination_invalid">192.168.1.50 のような IPv4 アドレスを入力してください</string>
+    <string name="aux_rtp_port">受信側のポート</string>
+    <string name="aux_rtp_hint">これを stream.sdp として受信側のパソコンに保存し、次を実行してください: %2$s\n\n%1$s</string>
     <string name="aux_network_size">ストリームのサイズ</string>
     <string name="aux_network_port">ストリームのポート</string>
     <string name="aux_network_hint">同じネットワーク上のパソコンで次を実行してください: %1$s\nUSB デバッグを使う場合は、代わりに adb forward tcp:%2$d tcp:%2$d を実行し、127.0.0.1 を使用してください。VLC で http://このユニットのアドレス:%2$d/ を開くこともできます。</string>

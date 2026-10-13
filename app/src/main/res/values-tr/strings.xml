@@ -126,6 +126,12 @@
     <string name="aux_output_network">Ağ yayını</string>
     <string name="aux_output_ms912x">USB HDMI adaptörü (MacroSilicon)</string>
     <string name="aux_output_usb_display">Open Headunit USB ekranı</string>
+    <string name="aux_output_rtp_push">Bir adrese RTP gönderimi</string>
+    <string name="aux_rtp_destination">Alıcı adresi</string>
+    <string name="aux_rtp_destination_unset">Ayarlanmadı</string>
+    <string name="aux_rtp_destination_invalid">192.168.1.50 gibi bir IPv4 adresi yazın</string>
+    <string name="aux_rtp_port">Alıcı portu</string>
+    <string name="aux_rtp_hint">Bunu alıcı bilgisayarda stream.sdp olarak kaydedin, sonra %2$s komutunu çalıştırın\n\n%1$s</string>
     <string name="aux_network_size">Yayın boyutu</string>
     <string name="aux_network_port">Yayın bağlantı noktası</string>
     <string name="aux_network_hint">Aynı ağdaki bir bilgisayarda şunu çalıştırın: %1$s\nBunun yerine USB hata ayıklama kullanıyorsanız adb forward tcp:%2$d tcp:%2$d komutunu çalıştırın ve 127.0.0.1 adresini kullanın. VLC ile http://bu ünitenin adresi:%2$d/ de açılabilir.</string>

@@ -121,6 +121,12 @@
     <string name="aux_output_network">Flux în rețea</string>
     <string name="aux_output_ms912x">Adaptor USB HDMI (MacroSilicon)</string>
     <string name="aux_output_usb_display">Afișaj USB Open Headunit</string>
+    <string name="aux_output_rtp_push">Trimitere RTP la o adresă</string>
+    <string name="aux_rtp_destination">Adresa receptorului</string>
+    <string name="aux_rtp_destination_unset">Nesetat</string>
+    <string name="aux_rtp_destination_invalid">Introdu o adresă IPv4, de exemplu 192.168.1.50</string>
+    <string name="aux_rtp_port">Portul receptorului</string>
+    <string name="aux_rtp_hint">Salvează acest text ca stream.sdp pe computerul receptor, apoi rulează %2$s\n\n%1$s</string>
     <string name="aux_network_size">Dimensiunea fluxului</string>
     <string name="aux_network_port">Portul fluxului</string>
     <string name="aux_network_hint">Pe un computer din aceeași rețea, rulează: %1$s\nCu depanare USB, rulează în schimb adb forward tcp:%2$d tcp:%2$d și folosește 127.0.0.1. VLC poate deschide și http://adresa acestei unități:%2$d/</string>

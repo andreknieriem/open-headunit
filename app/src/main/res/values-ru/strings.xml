@@ -121,6 +121,12 @@
     <string name="aux_output_network">Сетевая трансляция</string>
     <string name="aux_output_ms912x">USB-HDMI-адаптер (MacroSilicon)</string>
     <string name="aux_output_usb_display">USB-экран Open Headunit</string>
+    <string name="aux_output_rtp_push">Отправка RTP на адрес</string>
+    <string name="aux_rtp_destination">Адрес приёмника</string>
+    <string name="aux_rtp_destination_unset">Не задан</string>
+    <string name="aux_rtp_destination_invalid">Введите адрес IPv4, например 192.168.1.50</string>
+    <string name="aux_rtp_port">Порт приёмника</string>
+    <string name="aux_rtp_hint">Сохраните это как stream.sdp на принимающем компьютере, затем выполните %2$s\n\n%1$s</string>
     <string name="aux_network_size">Размер трансляции</string>
     <string name="aux_network_port">Порт трансляции</string>
     <string name="aux_network_hint">На компьютере в той же сети выполните: %1$s\nПри отладке по USB выполните вместо этого adb forward tcp:%2$d tcp:%2$d и используйте 127.0.0.1. В VLC можно также открыть http://адрес этого устройства:%2$d/</string>

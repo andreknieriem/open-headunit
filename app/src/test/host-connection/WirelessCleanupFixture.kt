@@ -48,7 +48,11 @@ enum class WifiLauncherMode { NATIVE }
 enum class WifiLauncherStopSequence { LAST, BEFORE_HOTSPOT_DISABLE }
 enum class HotspotExitAction { NONE, DISABLE, WARN_LEFT_UP }
 object UserExitHotspotPolicy { fun onUserExit(a: Any,b: Any,c: Any,d: Any,e: Any) = HotspotExitAction.NONE }
-object ExternalPowerDisconnectPolicy { fun standDownHolds(powerBack: Boolean) = !powerBack }
+enum class WiredRearm { NOW, ON_POWER_BACK, DROP }
+object ExternalPowerDisconnectPolicy {
+    fun standDownHolds(powerBack: Boolean, pluggedNow: Boolean) = !powerBack || !pluggedNow
+    fun wiredRearm(holds: Boolean, endedByPower: Boolean) = WiredRearm.DROP
+}
 object ScreenPower { fun turnOff(s: Service) = true }
 object HotspotManager { fun restart(s: Service) = true }
 class Settings {
@@ -100,6 +104,9 @@ class Service {
     var screenOffAfterStandDown=false; var externalPowerTurnedScreenOff=false; var powerEndsFinished=0
     val EXTERNAL_POWER_STAND_DOWN="external-power disconnect"
     fun finishExternalPowerEnd() { powerEndsFinished++ }
+    var wiredRearmHeldForStandDown=false; var wiredRearmOwedToPowerBack=false
+    fun isExternalPowerPresent()=false
+    fun launchWiredSessionRearm() {}
     var isDestroying=false; var userExitedAA=false; var userExitCooldownUntil=0L
     val USER_EXIT_COOLDOWN_MS=5000L
     val usbLauncherManager=UnitManager(); val nightModeManager: UnitManager?=UnitManager(); val carKeysManager=UnitManager()
@@ -119,7 +126,7 @@ class Service {
     fun updateMediaSessionState(active: Boolean) {}
     fun scheduleReconnectIfNeeded(state: CommManager.ConnectionState.Disconnected) { reconnects++ }
     suspend fun restartForAudioSettings(state: CommManager.ConnectionState.Disconnected) {}
-    fun rearmWirelessAfterWiredSession(quiesced: Boolean)=false
+    fun rearmWirelessAfterWiredSession(quiesced: Boolean, standDownPending: Boolean=false)=false
     fun notifyEnd(state: CommManager.ConnectionState.Disconnected) { onDisconnected(state) }
     // CALLBACK
 }

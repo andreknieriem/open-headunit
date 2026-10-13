@@ -1237,7 +1237,7 @@
     <string name="external_power_delay_value">%1$d s</string>
     <string name="external_power_delay_hint">Relace se ukončí, jen pokud napájení po této době stále chybí. Od 5 do 3600 sekund.</string>
     <string name="external_power_screen_off_label">Vypnout také obrazovku</string>
-    <string name="external_power_screen_off_description">Po ukončení relace ztmaví obrazovku a po obnovení napájení ji znovu rozsvítí.</string>
+    <string name="external_power_screen_off_description">Ztmaví obrazovku, když napájení chybí, po ukončení relace nebo když není nic připojeno, a po obnovení napájení ji znovu rozsvítí.</string>
     <string name="external_power_grant_label">Povolit aplikaci Open Headunit vypínat obrazovku</string>
     <string name="external_power_grant_allowed">Povoleno</string>
     <string name="external_power_grant_missing">Nepovoleno</string>

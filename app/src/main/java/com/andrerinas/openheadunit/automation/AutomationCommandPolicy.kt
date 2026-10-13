@@ -18,7 +18,9 @@ object AutomationCommandPolicy {
     /** The parts of the app's state that change what a command does. */
     data class State(
         /** "Allow external configuration" — off by default, and gates every configuring verb. */
-        val externalConfigAllowed: Boolean
+        val externalConfigAllowed: Boolean,
+        /** The force-lock device admin grant is held, which `ACTION_SCREEN_OFF` needs. */
+        val screenOffGranted: Boolean = false
     )
 
     sealed interface Effect {
@@ -37,6 +39,7 @@ object AutomationCommandPolicy {
         data class ImportSettings(val json: String?, val path: String?) : Effect
         data class ExportSettings(val path: String?) : Effect
         object ResetSettings : Effect
+        object TurnScreenOff : Effect
 
         data class SetLogLevel(val level: String) : Effect
         object StartLogCapture : Effect
@@ -69,7 +72,8 @@ object AutomationCommandPolicy {
         HeadUnitCommand.ACTION_SET_LOG_LEVEL,
         HeadUnitCommand.ACTION_START_LOG_CAPTURE,
         HeadUnitCommand.ACTION_STOP_LOG_CAPTURE,
-        HeadUnitCommand.ACTION_EXPORT_LOG
+        HeadUnitCommand.ACTION_EXPORT_LOG,
+        HeadUnitCommand.ACTION_SCREEN_OFF
     )
 
     /** Commands that need no extras and map straight onto a service action. */
@@ -84,6 +88,7 @@ object AutomationCommandPolicy {
         HeadUnitCommand.ACTION_REFRESH_SENSORS to AapService.ACTION_REFRESH_SENSORS,
         HeadUnitCommand.ACTION_RESTART_AUDIO to AapService.ACTION_RESTART_AUDIO,
         HeadUnitCommand.ACTION_RAISE_PROJECTION to AapService.ACTION_RAISE_PROJECTION,
+        HeadUnitCommand.ACTION_SCREEN_ON to AapService.ACTION_TURN_SCREEN_ON,
         // Relayed by its own name rather than an AapService constant: the handler ships with the
         // driver-selection feature, and the two strings are the same either way.
         HeadUnitCommand.ACTION_NATIVE_AA_CANCEL_POKE to HeadUnitCommand.ACTION_NATIVE_AA_CANCEL_POKE,
@@ -134,6 +139,9 @@ object AutomationCommandPolicy {
                 )
             }
             HeadUnitCommand.ACTION_QUERY_STATE -> listOf(Effect.QueryState)
+            HeadUnitCommand.ACTION_SCREEN_OFF ->
+                if (state.screenOffGranted) listOf(Effect.TurnScreenOff)
+                else listOf(Effect.Refuse("no device admin grant; allow it under Settings > Auto-start"))
 
             HeadUnitCommand.ACTION_SET_SETTINGS -> settingsImport(extras)
             HeadUnitCommand.ACTION_GET_SETTINGS ->

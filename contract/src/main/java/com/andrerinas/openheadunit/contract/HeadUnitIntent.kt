@@ -179,6 +179,10 @@ object HeadUnitCommand {
     // Control. Open to any caller, like the OEM key receivers already are.
     const val ACTION_CONNECT = "$PREFIX.ACTION_CONNECT"
     const val ACTION_DISCONNECT = "$PREFIX.ACTION_DISCONNECT"
+    /** Turns the screen on. Does not unlock it. */
+    const val ACTION_SCREEN_ON = "$PREFIX.ACTION_SCREEN_ON"
+    /** Turns the screen off. Needs the device admin grant in Settings, and never unlocks. */
+    const val ACTION_SCREEN_OFF = "$PREFIX.ACTION_SCREEN_OFF"
     const val ACTION_START_SELF_MODE = "$PREFIX.ACTION_START_SELF_MODE"
     /**
      * Ends the session and stops the service. The public name, which the shortcuts and existing

@@ -1237,7 +1237,7 @@
     <string name="external_power_delay_value">%1$d ث</string>
     <string name="external_power_delay_hint">تنتهي الجلسة فقط إذا ظلت الطاقة مفقودة بعد هذه المدة. من 5 إلى 3600 ثانية.</string>
     <string name="external_power_screen_off_label">إطفاء الشاشة أيضًا</string>
-    <string name="external_power_screen_off_description">تُعتم الشاشة بعد انتهاء الجلسة وتُضاء مجددًا عند عودة الطاقة.</string>
+    <string name="external_power_screen_off_description">تُعتم الشاشة عند غياب الطاقة، بعد انتهاء الجلسة أو عند عدم وجود أي اتصال، وتُضاء مجددًا عند عودة الطاقة.</string>
     <string name="external_power_grant_label">السماح لـ Open Headunit بإطفاء الشاشة</string>
     <string name="external_power_grant_allowed">مسموح</string>
     <string name="external_power_grant_missing">غير مسموح</string>

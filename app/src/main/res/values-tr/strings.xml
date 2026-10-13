@@ -1230,7 +1230,7 @@
     <string name="external_power_delay_value">%1$d sn</string>
     <string name="external_power_delay_hint">Oturum, bu süre sonunda güç hâlâ yoksa sonlanır. 5 ile 3600 saniye arasında.</string>
     <string name="external_power_screen_off_label">Ekranı da kapat</string>
-    <string name="external_power_screen_off_description">Oturum sona erdikten sonra ekranı karartır, güç geri gelince yeniden açar.</string>
+    <string name="external_power_screen_off_description">Güç yokken, oturum sona erdikten sonra veya hiçbir şey bağlı değilken ekranı karartır, güç geri gelince yeniden açar.</string>
     <string name="external_power_grant_label">Open Headunit\'in ekranı kapatmasına izin ver</string>
     <string name="external_power_grant_allowed">İzin verildi</string>
     <string name="external_power_grant_missing">İzin verilmedi</string>

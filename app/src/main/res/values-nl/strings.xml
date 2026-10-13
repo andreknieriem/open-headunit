@@ -1241,7 +1241,7 @@
     <string name="external_power_delay_value">%1$d s</string>
     <string name="external_power_delay_hint">De sessie eindigt alleen als er na deze tijd nog steeds geen stroom is. Van 5 tot 3600 seconden.</string>
     <string name="external_power_screen_off_label">Scherm ook uitschakelen</string>
-    <string name="external_power_screen_off_description">Dimt het scherm nadat de sessie is beëindigd en zet het weer aan zodra er weer stroom is.</string>
+    <string name="external_power_screen_off_description">Dimt het scherm als er geen stroom is, nadat de sessie is beëindigd of als er niets is verbonden, en zet het weer aan zodra er weer stroom is.</string>
     <string name="external_power_grant_label">Open Headunit toestaan het scherm uit te schakelen</string>
     <string name="external_power_grant_allowed">Toegestaan</string>
     <string name="external_power_grant_missing">Niet toegestaan</string>

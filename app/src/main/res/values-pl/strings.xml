@@ -1242,7 +1242,7 @@
     <string name="external_power_delay_value">%1$d s</string>
     <string name="external_power_delay_hint">Sesja kończy się tylko wtedy, gdy po tym czasie zasilanie nadal nie wróciło. Od 5 do 3600 sekund.</string>
     <string name="external_power_screen_off_label">Wyłącz też ekran</string>
-    <string name="external_power_screen_off_description">Wygasza ekran po zakończeniu sesji i włącza go ponownie po powrocie zasilania.</string>
+    <string name="external_power_screen_off_description">Wygasza ekran, gdy brakuje zasilania, po zakończeniu sesji lub gdy nic nie jest połączone, i włącza go ponownie po powrocie zasilania.</string>
     <string name="external_power_grant_label">Zezwól aplikacji Open Headunit na wyłączanie ekranu</string>
     <string name="external_power_grant_allowed">Dozwolone</string>
     <string name="external_power_grant_missing">Niedozwolone</string>

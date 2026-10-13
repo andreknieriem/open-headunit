@@ -1239,7 +1239,7 @@
     <string name="external_power_delay_value">%1$d s</string>
     <string name="external_power_delay_hint">La sessione termina solo se la corrente è ancora assente dopo questo tempo. Da 5 a 3600 secondi.</string>
     <string name="external_power_screen_off_label">Spegni anche lo schermo</string>
-    <string name="external_power_screen_off_description">Oscura lo schermo al termine della sessione e lo riaccende quando torna la corrente.</string>
+    <string name="external_power_screen_off_description">Oscura lo schermo quando manca la corrente, dopo la fine della sessione o se non c\'è nulla di connesso, e lo riaccende quando torna la corrente.</string>
     <string name="external_power_grant_label">Consenti a Open Headunit di spegnere lo schermo</string>
     <string name="external_power_grant_allowed">Consentito</string>
     <string name="external_power_grant_missing">Non consentito</string>

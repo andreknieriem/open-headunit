@@ -1238,7 +1238,7 @@
     <string name="external_power_delay_value">%1$d с</string>
     <string name="external_power_delay_hint">Сеанс завершиться, лише якщо після цього часу живлення досі немає. Від 5 до 3600 секунд.</string>
     <string name="external_power_screen_off_label">Також вимикати екран</string>
-    <string name="external_power_screen_off_description">Затемнює екран після завершення сеансу та вмикає його, коли живлення повертається.</string>
+    <string name="external_power_screen_off_description">Затемнює екран, коли живлення відсутнє, після завершення сеансу або коли нічого не підключено, і вмикає його, коли живлення повертається.</string>
     <string name="external_power_grant_label">Дозволити Open Headunit вимикати екран</string>
     <string name="external_power_grant_allowed">Дозволено</string>
     <string name="external_power_grant_missing">Не дозволено</string>

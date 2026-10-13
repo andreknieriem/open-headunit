@@ -1237,7 +1237,7 @@
     <string name="external_power_delay_value">%1$d s</string>
     <string name="external_power_delay_hint">A sessão só termina se ainda não houver energia após esse tempo. De 5 a 3600 segundos.</string>
     <string name="external_power_screen_off_label">Desligar a tela também</string>
-    <string name="external_power_screen_off_description">Escurece a tela depois que a sessão termina e a acende novamente quando a energia volta.</string>
+    <string name="external_power_screen_off_description">Escurece a tela quando não há energia, depois que a sessão termina ou quando não há nada conectado, e a acende novamente quando a energia volta.</string>
     <string name="external_power_grant_label">Permitir que o Open Headunit desligue a tela</string>
     <string name="external_power_grant_allowed">Permitido</string>
     <string name="external_power_grant_missing">Não permitido</string>

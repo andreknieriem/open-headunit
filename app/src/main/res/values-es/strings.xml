@@ -1296,7 +1296,7 @@
     <string name="external_power_delay_value">%1$d s</string>
     <string name="external_power_delay_hint">La sesión solo finaliza si sigue sin haber energía después de este tiempo. De 5 a 3600 segundos.</string>
     <string name="external_power_screen_off_label">Apagar también la pantalla</string>
-    <string name="external_power_screen_off_description">Apaga la pantalla cuando termina la sesión y la enciende de nuevo cuando vuelve la energía.</string>
+    <string name="external_power_screen_off_description">Apaga la pantalla cuando no hay energía, después de que termina la sesión o cuando no hay nada conectado, y la enciende de nuevo cuando vuelve la energía.</string>
     <string name="external_power_grant_label">Permitir que Open Headunit apague la pantalla</string>
     <string name="external_power_grant_allowed">Permitido</string>
     <string name="external_power_grant_missing">No permitido</string>

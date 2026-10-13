@@ -1237,7 +1237,7 @@
     <string name="external_power_delay_value">%1$d giây</string>
     <string name="external_power_delay_hint">Phiên chỉ kết thúc nếu sau khoảng thời gian này vẫn chưa có điện. Từ 5 đến 3600 giây.</string>
     <string name="external_power_screen_off_label">Tắt cả màn hình</string>
-    <string name="external_power_screen_off_description">Làm tối màn hình sau khi phiên kết thúc và bật lại khi có điện.</string>
+    <string name="external_power_screen_off_description">Làm tối màn hình khi vẫn chưa có điện, sau khi phiên kết thúc hoặc khi không có thiết bị nào được kết nối, và bật lại khi có điện.</string>
     <string name="external_power_grant_label">Cho phép Open Headunit tắt màn hình</string>
     <string name="external_power_grant_allowed">Đã cho phép</string>
     <string name="external_power_grant_missing">Chưa cho phép</string>

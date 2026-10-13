@@ -70,6 +70,34 @@ class AutomationCommandPolicyTest {
     }
 
     @Test
+    fun `screen off is refused while external configuration is off`() {
+        val e = single(HeadUnitCommand.ACTION_SCREEN_OFF, state = closed)
+        assertTrue(e is AutomationCommandPolicy.Effect.Refuse)
+        assertTrue((e as AutomationCommandPolicy.Effect.Refuse).reason.contains("Allow external configuration"))
+    }
+
+    @Test
+    fun `screen off is refused without the device admin grant`() {
+        val e = single(HeadUnitCommand.ACTION_SCREEN_OFF, state = open)
+        assertTrue(e is AutomationCommandPolicy.Effect.Refuse)
+        assertTrue((e as AutomationCommandPolicy.Effect.Refuse).reason.contains("device admin grant"))
+    }
+
+    @Test
+    fun `screen off runs with the gate open and the grant held`() {
+        val granted = AutomationCommandPolicy.State(externalConfigAllowed = true, screenOffGranted = true)
+        assertEquals(AutomationCommandPolicy.Effect.TurnScreenOff, single(HeadUnitCommand.ACTION_SCREEN_OFF, state = granted))
+    }
+
+    @Test
+    fun `screen on works with the gate off`() {
+        assertEquals(
+            AutomationCommandPolicy.Effect.StartService(AapService.ACTION_TURN_SCREEN_ON),
+            single(HeadUnitCommand.ACTION_SCREEN_ON, state = closed)
+        )
+    }
+
+    @Test
     fun `the gate opens the configuring verbs`() {
         assertEquals(
             AutomationCommandPolicy.Effect.ResetSettings,
@@ -349,6 +377,7 @@ class AutomationCommandPolicyTest {
     }
 
     private val ALL_COMMANDS = listOf(
+        HeadUnitCommand.ACTION_SCREEN_OFF, HeadUnitCommand.ACTION_SCREEN_ON,
         HeadUnitCommand.ACTION_CONNECT, HeadUnitCommand.ACTION_DISCONNECT,
         HeadUnitCommand.ACTION_START_SELF_MODE, HeadUnitCommand.ACTION_STOP_SERVICE,
         HeadUnitCommand.ACTION_EXIT, HeadUnitCommand.ACTION_SET_NIGHT_MODE,

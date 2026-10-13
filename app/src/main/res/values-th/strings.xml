@@ -521,7 +521,7 @@
     <string name="external_power_delay_value">%1$d วิ</string>
     <string name="external_power_delay_hint">เซสชันจะสิ้นสุดก็ต่อเมื่อไฟยังไม่กลับมาหลังพ้นเวลานี้ ตั้งได้ตั้งแต่ 5 ถึง 3600 วินาที</string>
     <string name="external_power_screen_off_label">ปิดหน้าจอด้วย</string>
-    <string name="external_power_screen_off_description">หรี่หน้าจอหลังเซสชันสิ้นสุด และเปิดหน้าจออีกครั้งเมื่อไฟกลับมา</string>
+    <string name="external_power_screen_off_description">หรี่หน้าจอเมื่อไฟยังไม่กลับมา หลังเซสชันสิ้นสุดหรือเมื่อไม่มีอุปกรณ์เชื่อมต่อ และเปิดหน้าจออีกครั้งเมื่อไฟกลับมา</string>
     <string name="external_power_grant_label">อนุญาตให้ Open Headunit ปิดหน้าจอ</string>
     <string name="external_power_grant_allowed">อนุญาตแล้ว</string>
     <string name="external_power_grant_missing">ไม่ได้รับอนุญาต</string>

@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.utils.AppLog
+import com.andrerinas.openheadunit.utils.ScreenPower
 import org.json.JSONObject
 
 /**
@@ -23,7 +24,8 @@ class AutomationReceiver : BroadcastReceiver() {
             action,
             IntentExtras(intent),
             AutomationCommandPolicy.State(
-                externalConfigAllowed = App.provide(context).settings.allowExternalConfiguration
+                externalConfigAllowed = App.provide(context).settings.allowExternalConfiguration,
+                screenOffGranted = ScreenPower.hasLockGrant(context)
             )
         )
 

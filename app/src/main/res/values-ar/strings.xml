@@ -106,6 +106,12 @@
     <string name="aux_output_network">بث عبر الشبكة</string>
     <string name="aux_output_ms912x">محول USB إلى HDMI (MacroSilicon)</string>
     <string name="aux_output_usb_display">شاشة USB لـ Open Headunit</string>
+    <string name="aux_output_rtp_push">إرسال RTP إلى عنوان</string>
+    <string name="aux_rtp_destination">عنوان المستقبِل</string>
+    <string name="aux_rtp_destination_unset">غير محدد</string>
+    <string name="aux_rtp_destination_invalid">اكتب عنوان IPv4 مثل 192.168.1.50</string>
+    <string name="aux_rtp_port">منفذ المستقبِل</string>
+    <string name="aux_rtp_hint">احفظ هذا باسم stream.sdp على الكمبيوتر المستقبِل، ثم شغّل %2$s\n\n%1$s</string>
     <string name="aux_network_size">حجم البث</string>
     <string name="aux_network_port">منفذ البث</string>
     <string name="aux_network_hint">على كمبيوتر متصل بالشبكة نفسها، شغّل: %1$s\nعند استخدام تصحيح أخطاء USB، شغّل بدلاً من ذلك adb forward tcp:%2$d tcp:%2$d واستخدم 127.0.0.1. يمكن أيضًا لتطبيق VLC فتح http://عنوان هذه الوحدة:%2$d/</string>

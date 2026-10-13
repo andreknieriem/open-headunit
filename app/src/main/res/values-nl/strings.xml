@@ -104,6 +104,12 @@
     <string name="aux_output_network">Netwerkstream</string>
     <string name="aux_output_ms912x">USB-HDMI-adapter (MacroSilicon)</string>
     <string name="aux_output_usb_display">Open Headunit-USB-scherm</string>
+    <string name="aux_output_rtp_push">RTP-push naar een adres</string>
+    <string name="aux_rtp_destination">Adres van de ontvanger</string>
+    <string name="aux_rtp_destination_unset">Niet ingesteld</string>
+    <string name="aux_rtp_destination_invalid">Typ een IPv4-adres, zoals 192.168.1.50</string>
+    <string name="aux_rtp_port">Poort van de ontvanger</string>
+    <string name="aux_rtp_hint">Sla dit op als stream.sdp op de ontvangende computer en voer dan %2$s uit\n\n%1$s</string>
     <string name="aux_network_size">Streamgrootte</string>
     <string name="aux_network_port">Streampoort</string>
     <string name="aux_network_hint">Voer op een computer in hetzelfde netwerk uit: %1$s\nGebruik je USB-foutopsporing, voer dan adb forward tcp:%2$d tcp:%2$d uit en gebruik 127.0.0.1. Je kunt ook http://adres van dit apparaat:%2$d/ openen in VLC.</string>

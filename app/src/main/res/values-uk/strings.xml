@@ -106,6 +106,12 @@
     <string name="aux_output_network">Мережева трансляція</string>
     <string name="aux_output_ms912x">USB-HDMI-адаптер (MacroSilicon)</string>
     <string name="aux_output_usb_display">USB-екран Open Headunit</string>
+    <string name="aux_output_rtp_push">Надсилання RTP на адресу</string>
+    <string name="aux_rtp_destination">Адреса приймача</string>
+    <string name="aux_rtp_destination_unset">Не вказано</string>
+    <string name="aux_rtp_destination_invalid">Введіть адресу IPv4, наприклад 192.168.1.50</string>
+    <string name="aux_rtp_port">Порт приймача</string>
+    <string name="aux_rtp_hint">Збережіть це як stream.sdp на приймальному комп’ютері, потім виконайте %2$s\n\n%1$s</string>
     <string name="aux_network_size">Розмір трансляції</string>
     <string name="aux_network_port">Порт трансляції</string>
     <string name="aux_network_hint">На комп’ютері в тій самій мережі виконайте: %1$s\nПри налагодженні через USB виконайте натомість adb forward tcp:%2$d tcp:%2$d і використайте 127.0.0.1. У VLC також можна відкрити http://адреса цього пристрою:%2$d/</string>

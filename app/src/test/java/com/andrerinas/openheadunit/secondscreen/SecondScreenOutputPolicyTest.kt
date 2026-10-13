@@ -24,7 +24,7 @@ class SecondScreenOutputPolicyTest {
     fun `each output announces only its own availability`() {
         val onlyNetwork = Availability(network = panel)
         assertEquals(panel, SecondScreenOutputPolicy.target(Output.NETWORK, onlyNetwork))
-        for (other in listOf(Output.ANDROID_DISPLAY, Output.MS912X, Output.USB_DISPLAY)) {
+        for (other in listOf(Output.ANDROID_DISPLAY, Output.MS912X, Output.USB_DISPLAY, Output.RTP_PUSH)) {
             assertNull(SecondScreenOutputPolicy.target(other, onlyNetwork))
         }
     }
@@ -35,6 +35,7 @@ class SecondScreenOutputPolicyTest {
         assertTrue(SecondScreenOutputPolicy.decodesOnHeadUnit(Output.MS912X))
         assertFalse(SecondScreenOutputPolicy.decodesOnHeadUnit(Output.NETWORK))
         assertFalse(SecondScreenOutputPolicy.decodesOnHeadUnit(Output.USB_DISPLAY))
+        assertFalse(SecondScreenOutputPolicy.decodesOnHeadUnit(Output.RTP_PUSH))
     }
 
     @Test
@@ -42,5 +43,18 @@ class SecondScreenOutputPolicyTest {
         assertEquals(Target(800, 480, 160), SecondScreenOutputPolicy.networkTarget(-1))
         assertEquals(Target(800, 480, 160), SecondScreenOutputPolicy.networkTarget(9))
         assertEquals(Target(1280, 720, 213), SecondScreenOutputPolicy.networkTarget(1))
+    }
+
+    @Test
+    fun `the RTP push output reads from storage and announces only its own target`() {
+        assertEquals(Output.RTP_PUSH, Output.of("RTP_PUSH"))
+        assertEquals(panel, SecondScreenOutputPolicy.target(Output.RTP_PUSH, Availability(rtpPush = panel)))
+        assertNull(SecondScreenOutputPolicy.target(Output.RTP_PUSH, Availability(network = panel)))
+    }
+
+    @Test
+    fun `the RTP push output is announced only with a destination`() {
+        assertNull(SecondScreenOutputPolicy.rtpPushTarget(false, 1))
+        assertEquals(Target(1280, 720, 213), SecondScreenOutputPolicy.rtpPushTarget(true, 1))
     }
 }

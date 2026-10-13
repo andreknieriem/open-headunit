@@ -9,6 +9,9 @@ import com.andrerinas.openheadunit.secondscreen.ms912x.Ms912xOutput
 import com.andrerinas.openheadunit.secondscreen.SecondScreenOutputPolicy.Output
 import com.andrerinas.openheadunit.secondscreen.SecondScreenOutputPolicy.Target
 import com.andrerinas.openheadunit.secondscreen.network.NetworkStreamOutput
+import com.andrerinas.openheadunit.secondscreen.rtp.RtpDestinationPolicy
+import com.andrerinas.openheadunit.secondscreen.rtp.RtpStreamOutput
+import com.andrerinas.openheadunit.secondscreen.rtp.UdpRtpSocket
 import com.andrerinas.openheadunit.secondscreen.usbdisplay.UsbDisplayOutput
 import com.andrerinas.openheadunit.secondscreen.usbdisplay.UsbDisplayProbe
 import com.andrerinas.openheadunit.utils.AppLog
@@ -52,6 +55,8 @@ object SecondScreenHub {
         Output.NETWORK -> SecondScreenOutputPolicy.Availability(network = SecondScreenOutputPolicy.networkTarget(settings.auxNetworkSize))
         Output.MS912X -> SecondScreenOutputPolicy.Availability(ms912x = ms912xTarget(context, settings))
         Output.USB_DISPLAY -> SecondScreenOutputPolicy.Availability(usbDisplay = usbDisplayTarget(context, settings))
+        Output.RTP_PUSH -> SecondScreenOutputPolicy.Availability(rtpPush = SecondScreenOutputPolicy.rtpPushTarget(
+            RtpDestinationPolicy.parse(settings.auxRtpDestination) != null, settings.auxNetworkSize))
     }
 
     /** The chosen Android display's size, as announced; read from the panel, so it needs no session. */
@@ -106,6 +111,10 @@ object SecondScreenHub {
             Output.USB_DISPLAY -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
                 UsbDisplayOutput(context)
             } else return null
+            Output.RTP_PUSH -> {
+                val octets = RtpDestinationPolicy.parse(settings.auxRtpDestination) ?: return null
+                RtpStreamOutput(UdpRtpSocket(context, octets, settings.auxRtpPort), System::nanoTime, java.util.Random())
+            }
             Output.ANDROID_DISPLAY -> return null
         }
         created.onKeyframeNeeded = onKeyframeNeeded

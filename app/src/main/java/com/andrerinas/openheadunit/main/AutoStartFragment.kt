@@ -24,11 +24,13 @@ import com.andrerinas.openheadunit.main.settings.SettingItem
 import com.andrerinas.openheadunit.main.settings.SettingsAdapter
 import com.andrerinas.openheadunit.aap.AapService
 import com.andrerinas.openheadunit.app.BtAutoDisconnectPolicy
+import com.andrerinas.openheadunit.app.ExternalPowerDisconnectPolicy
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.AppPermissions
 import com.andrerinas.openheadunit.connection.wifi.WifiLauncherMode
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.ExternalBtTransportPolicy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeAaHandshakeManager
+import com.andrerinas.openheadunit.utils.ScreenPower
 import com.andrerinas.openheadunit.utils.Settings
 import com.andrerinas.openheadunit.utils.BluetoothHelper
 import com.andrerinas.openheadunit.utils.CarLauncherManager
@@ -53,6 +55,9 @@ class AutoStartFragment : Fragment() {
     private val pendingNativePokeBtMacs = mutableSetOf<String>()
     private var pendingNativePokeAllPaired: Boolean? = null
     private var pendingAutoDisconnectBtDelaySeconds: Int? = null
+    private var pendingExternalPowerDisconnect: Boolean? = null
+    private var pendingExternalPowerDelaySeconds: Int? = null
+    private var pendingExternalPowerScreenOff: Boolean? = null
     private var pendingAutoStartOnWifi: Boolean? = null
 
     /** Which list the device picker edits; remembered across the permission and enable prompts. */
@@ -103,6 +108,9 @@ class AutoStartFragment : Fragment() {
         pendingNativePokeBtMacs.addAll(settings.nativePokeBtMacs)
         pendingNativePokeAllPaired = settings.nativePokeAllPairedDevices
         pendingAutoDisconnectBtDelaySeconds = settings.autoDisconnectBtDelaySeconds
+        pendingExternalPowerDisconnect = settings.externalPowerDisconnect
+        pendingExternalPowerDelaySeconds = settings.externalPowerDisconnectDelaySeconds
+        pendingExternalPowerScreenOff = settings.externalPowerScreenOff
         pendingAutoStartOnWifi = settings.autoStartOnWifi
         pendingAutoStartWifiSsid = settings.autoStartWifiSsid
         pendingReopenOnReconnection = settings.rawReopenOnReconnection
@@ -228,6 +236,9 @@ class AutoStartFragment : Fragment() {
         pendingReopenOnReconnection?.let { if (it != settings.rawReopenOnReconnection) settings.rawReopenOnReconnection = it }
         settings.autoDisconnectBluetoothDeviceMacs = pendingAutoDisconnectBtMacs.toSet()
         pendingAutoDisconnectBtDelaySeconds?.let { if (it != settings.autoDisconnectBtDelaySeconds) settings.autoDisconnectBtDelaySeconds = it }
+        pendingExternalPowerDisconnect?.let { if (it != settings.externalPowerDisconnect) settings.externalPowerDisconnect = it }
+        pendingExternalPowerDelaySeconds?.let { if (it != settings.externalPowerDisconnectDelaySeconds) settings.externalPowerDisconnectDelaySeconds = it }
+        pendingExternalPowerScreenOff?.let { if (it != settings.externalPowerScreenOff) settings.externalPowerScreenOff = it }
 
         // Check for Overlay permission if any auto-start is configured. Auto-disconnect launches
         // nothing, so it is not part of this.
@@ -286,6 +297,9 @@ class AutoStartFragment : Fragment() {
                 pendingNativePokeBtMacs != settings.nativePokeBtMacs ||
                 pendingNativePokeAllPaired != settings.nativePokeAllPairedDevices ||
                 pendingAutoDisconnectBtDelaySeconds != settings.autoDisconnectBtDelaySeconds ||
+                pendingExternalPowerDisconnect != settings.externalPowerDisconnect ||
+                pendingExternalPowerDelaySeconds != settings.externalPowerDisconnectDelaySeconds ||
+                pendingExternalPowerScreenOff != settings.externalPowerScreenOff ||
                 pendingAutoStartOnWifi != settings.autoStartOnWifi ||
                 pendingAutoStartWifiSsid != settings.autoStartWifiSsid ||
                 pendingReopenOnReconnection != settings.rawReopenOnReconnection
@@ -450,6 +464,53 @@ class AutoStartFragment : Fragment() {
                 stableId = "autoDisconnectBtKillHint",
                 textResId = R.string.auto_disconnect_bt_kill_hint
             ))
+        }
+
+        items.add(SettingItem.ToggleSettingEntry(
+            stableId = "externalPowerDisconnect",
+            nameResId = R.string.external_power_disconnect_label,
+            descriptionResId = R.string.external_power_disconnect_description,
+            isChecked = pendingExternalPowerDisconnect == true,
+            onCheckedChanged = { isChecked ->
+                pendingExternalPowerDisconnect = isChecked
+                checkChanges()
+                updateSettingsList()
+            }
+        ))
+
+        if (pendingExternalPowerDisconnect == true) {
+            items.add(SettingItem.SettingEntry(
+                stableId = "externalPowerDisconnectDelay",
+                nameResId = R.string.external_power_delay_label,
+                value = getString(R.string.external_power_delay_value, pendingExternalPowerDelaySeconds ?: ExternalPowerDisconnectPolicy.DEFAULT_DELAY_SECONDS),
+                onClick = { showExternalPowerDelayDialog() }
+            ))
+
+            items.add(SettingItem.ToggleSettingEntry(
+                stableId = "externalPowerScreenOff",
+                nameResId = R.string.external_power_screen_off_label,
+                descriptionResId = R.string.external_power_screen_off_description,
+                isChecked = pendingExternalPowerScreenOff == true,
+                onCheckedChanged = { isChecked ->
+                    pendingExternalPowerScreenOff = isChecked
+                    checkChanges()
+                    updateSettingsList()
+                }
+            ))
+
+            if (pendingExternalPowerScreenOff == true) {
+                val granted = ScreenPower.hasLockGrant(requireContext())
+                items.add(SettingItem.SettingEntry(
+                    stableId = "externalPowerScreenGrant",
+                    nameResId = R.string.external_power_grant_label,
+                    value = getString(if (granted) R.string.external_power_grant_allowed else R.string.external_power_grant_missing),
+                    onClick = { if (granted) confirmRemoveScreenGrant() else requestScreenGrant() }
+                ))
+                items.add(SettingItem.InfoBanner(
+                    stableId = "externalPowerScreenGrantHint",
+                    textResId = R.string.external_power_grant_uninstall_hint
+                ))
+            }
         }
 
         if (Build.VERSION.SDK_INT <= 32) {
@@ -627,6 +688,64 @@ class AutoStartFragment : Fragment() {
         )
         dialog.show()
         input.requestFocus()
+    }
+
+    private fun showExternalPowerDelayDialog() {
+        val input = EditText(requireContext())
+        input.inputType = InputType.TYPE_CLASS_NUMBER
+        input.setText((pendingExternalPowerDelaySeconds ?: ExternalPowerDisconnectPolicy.DEFAULT_DELAY_SECONDS).toString())
+        input.setSelection(input.text.length)
+
+        val dialog = MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
+            .setTitle(R.string.external_power_delay_label)
+            .setMessage(R.string.external_power_delay_hint)
+            .setView(input)
+            .setPositiveButton(R.string.save) { _, _ ->
+                val seconds = input.text.toString().toIntOrNull() ?: ExternalPowerDisconnectPolicy.DEFAULT_DELAY_SECONDS
+                pendingExternalPowerDelaySeconds = seconds.coerceIn(
+                    ExternalPowerDisconnectPolicy.MIN_DELAY_SECONDS, BtAutoDisconnectPolicy.MAX_DELAY_SECONDS
+                )
+                checkChanges()
+                updateSettingsList()
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .create()
+
+        dialog.window?.clearFlags(
+            android.view.WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+            android.view.WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM
+        )
+        dialog.show()
+        input.requestFocus()
+    }
+
+    private fun requestScreenGrant() {
+        val intent = Intent(android.app.admin.DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN).apply {
+            putExtra(android.app.admin.DevicePolicyManager.EXTRA_DEVICE_ADMIN, ScreenPower.adminComponent(requireContext()))
+            putExtra(android.app.admin.DevicePolicyManager.EXTRA_ADD_EXPLANATION, getString(R.string.external_power_grant_explanation))
+        }
+        try {
+            startActivity(intent)
+        } catch (e: Exception) {
+            AppLog.w("AutoStartFragment: device admin prompt unavailable: ${e.message}")
+        }
+    }
+
+    private fun confirmRemoveScreenGrant() {
+        MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
+            .setTitle(R.string.external_power_grant_label)
+            .setMessage(R.string.external_power_grant_remove_message)
+            .setPositiveButton(R.string.external_power_grant_remove) { _, _ ->
+                try {
+                    val dpm = requireContext().getSystemService(Context.DEVICE_POLICY_SERVICE) as android.app.admin.DevicePolicyManager
+                    dpm.removeActiveAdmin(ScreenPower.adminComponent(requireContext()))
+                } catch (e: Exception) {
+                    AppLog.w("AutoStartFragment: could not remove the device admin: ${e.message}")
+                }
+                updateSettingsList()
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
     }
 
     private fun showBluetoothPermissionDeniedDialog() {

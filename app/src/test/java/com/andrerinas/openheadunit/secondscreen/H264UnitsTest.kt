@@ -1,6 +1,7 @@
 package com.andrerinas.openheadunit.secondscreen
 
 import org.junit.Assert.assertArrayEquals
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -40,5 +41,13 @@ class H264UnitsTest {
     fun `an offset into a larger buffer is honoured`() {
         val au = byteArrayOf(9, 9, 9) + unit(sps, pps) + byteArrayOf(0, 0)
         assertArrayEquals(unit(sps, pps), H264Units.parameterSets(au, 3, au.size - 5))
+    }
+
+    @Test
+    fun `each NAL is reported with its type and exact payload bounds`() {
+        val a = byteArrayOf(9, 9) + byteArrayOf(0, 0, 0, 1) + sps + byteArrayOf(0, 0, 1) + pps + byteArrayOf(0, 0, 0, 1) + idr
+        val seen = ArrayList<Triple<Int, Int, Int>>()
+        H264Units.forEachNal(a, 2, a.size - 2) { type, start, end -> seen.add(Triple(type, start, end)) }
+        assertEquals(listOf(Triple(7, 6, 10), Triple(8, 13, 16), Triple(5, 20, 24)), seen)
     }
 }

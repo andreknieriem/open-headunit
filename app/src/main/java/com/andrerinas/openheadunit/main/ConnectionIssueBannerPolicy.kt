@@ -85,6 +85,7 @@ object ConnectionIssueBannerPolicy {
                 ConnectionIssue.BSSID_UNAVAILABLE,
                 ConnectionIssue.WIFI_DIRECT_GROUP_REFUSED,
                 ConnectionIssue.WIFI_DIRECT_STACK_CYCLED,
+                ConnectionIssue.WIFI_DIRECT_STACK_STUCK,
                 ConnectionIssue.WIFI_RADIO_OFF,
                 ConnectionIssue.FIVE_GHZ_CHANNEL_REFUSED,
                 ConnectionIssue.HOME_WIFI_REJOINED_BESIDE_GROUP
@@ -192,11 +193,15 @@ object ConnectionIssueBannerPolicy {
         //
         // One at a time rather than a list: these panels are commonly 1024x600 and often 800x480,
         // and three stacked warnings would be the screen.
-        val newest = standing
+        val candidates = standing
             .filter { it.raisedAtEpochMs != 0L }
             .filter { it.issue in relevant }
             .filter { it.issue !in remedyApplied }
-            .maxByOrNull { it.raisedAtEpochMs }
+        // A wedged stack is the cause of the refusal beside it, and the refusal is re-raised on
+        // every failed create while only the wedge's restart can fix it - so newest-wins would
+        // keep the symptom on screen and hide the one banner that carries the remedy.
+        val newest = candidates.firstOrNull { it.issue == ConnectionIssue.WIFI_DIRECT_STACK_STUCK }
+            ?: candidates.maxByOrNull { it.raisedAtEpochMs }
             ?: return null
 
         // Dismissal is per occurrence, not permanent. Hiding what the user has already read costs

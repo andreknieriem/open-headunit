@@ -1113,6 +1113,14 @@
     <string name="connection_issue_banner_bssid">Your phone was not told which network to join, because this unit would not share its WiFi address. Turn on Location, or tap to enter the address by hand.</string>
     <string name="connection_issue_banner_hotspot_off">This unit\'s hotspot is off, so your phone had no network to join. Turn it on, or tap to let the app switch it on.</string>
     <string name="connection_issue_banner_hotspot_config">This unit will not share its hotspot name and password with the app. Tap to enter them by hand.</string>
+    <string name="connection_issue_banner_wifi_direct_stuck">WiFi Direct on this unit is stuck and only a WiFi restart frees it. Tap to restart WiFi.</string>
+    <string name="wifi_restart_running">Restarting WiFi…</string>
+    <string name="wifi_restart_failed">Could not restart WiFi. Switch it off and on here.</string>
+    <string name="auto_restart_wifi_title">Restart WiFi when WiFi Direct gets stuck</string>
+    <string name="auto_restart_wifi_description">Switches WiFi off and on by itself if WiFi Direct jams, which can happen after the app is closed mid-session. Needs root or local ADB. Never runs during a session.</string>
+    <string name="auto_restart_wifi_root_granted">Root granted. WiFi will restart by itself if WiFi Direct gets stuck.</string>
+    <string name="auto_restart_wifi_adb">Local ADB found. WiFi will restart by itself if WiFi Direct gets stuck.</string>
+    <string name="auto_restart_wifi_unavailable">No root or local ADB on this unit, so the banner will offer a one-tap WiFi restart instead.</string>
     <string name="connection_issue_banner_wifi_direct_refused">This unit could not create the WiFi Direct network for your phone. Try disconnecting it from other WiFi, or tap to use its hotspot instead.</string>
     <string name="connection_issue_banner_wifi_direct_cycled">Another app keeps switching WiFi Direct off, usually a preinstalled projection app such as ZLink or CarLife. Disable it, or tap to use the hotspot instead.</string>
     <string name="connection_issue_banner_wifi_radio_off">This unit\'s WiFi is off, and Android does not let the app turn it on. Turn WiFi on, or tap to use this unit\'s hotspot instead.</string>

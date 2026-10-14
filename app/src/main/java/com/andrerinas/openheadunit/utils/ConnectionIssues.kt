@@ -53,6 +53,17 @@ enum class ConnectionIssue {
     WIFI_DIRECT_STACK_CYCLED,
 
     /**
+     * This unit's WiFi Direct stack is wedged: WiFi is on, the stack keeps reporting itself disabled,
+     * and every group request fails. Only a WiFi restart frees it. See
+     * [com.andrerinas.openheadunit.connection.wifi.direct.P2pStackWedgePolicy].
+     *
+     * Separate from [WIFI_DIRECT_STACK_CYCLED], whose cause is another app and whose remedy is
+     * stopping it: here the cause is a dead interface left in the supplicant, and the remedy is a
+     * WiFi restart, which the banner performs itself when root or local ADB allows.
+     */
+    WIFI_DIRECT_STACK_STUCK,
+
+    /**
      * This unit's WiFi is off, and this Android will not let an app switch it on.
      *
      * Separate from [WIFI_DIRECT_GROUP_REFUSED], which is a radio that was asked and said no: here
@@ -246,6 +257,7 @@ object ConnectionIssues {
                 ConnectionIssue.HOTSPOT_NOT_RUNNING -> settings.connectionIssueHotspotOffAtEpochMs
                 ConnectionIssue.WIFI_DIRECT_GROUP_REFUSED -> settings.connectionIssueWifiDirectRefusedAtEpochMs
                 ConnectionIssue.WIFI_DIRECT_STACK_CYCLED -> settings.connectionIssueWifiDirectCycledAtEpochMs
+                ConnectionIssue.WIFI_DIRECT_STACK_STUCK -> settings.connectionIssueWifiDirectStuckAtEpochMs
                 ConnectionIssue.WIFI_RADIO_OFF -> settings.connectionIssueWifiRadioOffAtEpochMs
                 ConnectionIssue.VIDEO_LINK_TOO_SLOW -> settings.connectionIssueVideoLinkTooSlowAtEpochMs
                 ConnectionIssue.FIVE_GHZ_CHANNEL_REFUSED -> settings.connectionIssueFiveGhzChannelRefusedAtEpochMs
@@ -269,6 +281,7 @@ object ConnectionIssues {
                     ConnectionIssue.HOTSPOT_NOT_RUNNING -> settings.connectionIssueHotspotOffAtEpochMs = atEpochMs
                     ConnectionIssue.WIFI_DIRECT_GROUP_REFUSED -> settings.connectionIssueWifiDirectRefusedAtEpochMs = atEpochMs
                     ConnectionIssue.WIFI_DIRECT_STACK_CYCLED -> settings.connectionIssueWifiDirectCycledAtEpochMs = atEpochMs
+                    ConnectionIssue.WIFI_DIRECT_STACK_STUCK -> settings.connectionIssueWifiDirectStuckAtEpochMs = atEpochMs
                     ConnectionIssue.WIFI_RADIO_OFF -> settings.connectionIssueWifiRadioOffAtEpochMs = atEpochMs
                     ConnectionIssue.VIDEO_LINK_TOO_SLOW -> settings.connectionIssueVideoLinkTooSlowAtEpochMs = atEpochMs
                     ConnectionIssue.FIVE_GHZ_CHANNEL_REFUSED -> settings.connectionIssueFiveGhzChannelRefusedAtEpochMs = atEpochMs

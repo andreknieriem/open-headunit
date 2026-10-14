@@ -57,6 +57,8 @@ import com.andrerinas.openheadunit.utils.ToastUtils
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
+import com.andrerinas.openheadunit.utils.WifiStackRecovery
+import com.andrerinas.openheadunit.utils.OemAppManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
@@ -1271,6 +1273,8 @@ class MainActivity : BaseActivity() {
                     R.string.connection_issue_banner_wifi_direct_refused
                 ConnectionIssue.WIFI_DIRECT_STACK_CYCLED ->
                     R.string.connection_issue_banner_wifi_direct_cycled
+                ConnectionIssue.WIFI_DIRECT_STACK_STUCK ->
+                    R.string.connection_issue_banner_wifi_direct_stuck
                 ConnectionIssue.WIFI_RADIO_OFF ->
                     R.string.connection_issue_banner_wifi_radio_off
                 ConnectionIssue.VIDEO_LINK_TOO_SLOW ->
@@ -1321,6 +1325,34 @@ class MainActivity : BaseActivity() {
      * instead of falling back. Seeding the name alone landed the user on one row, with nothing on
      * screen saying the other was also required.
      */
+    /**
+     * The stuck-stack banner's action. Restarts WiFi itself when it can; otherwise opens the system
+     * WiFi panel, where switching WiFi off and on is two taps.
+     */
+    private fun restartWifiFromBanner() {
+        lifecycleScope.launch {
+            val route = WifiStackRecovery.availableRoute()
+            if (route == OemAppManager.ExecutionBackend.NONE && !Settings(this@MainActivity).wifiRestartRootGranted) {
+                openWifiPanel()
+                return@launch
+            }
+            ToastUtils.showToast(this@MainActivity, R.string.wifi_restart_running, Toast.LENGTH_SHORT, force = true)
+            val (ok, _) = WifiStackRecovery.restartWifi(applicationContext, "banner tap")
+            if (!ok) {
+                ToastUtils.showToast(this@MainActivity, R.string.wifi_restart_failed, Toast.LENGTH_LONG, force = true)
+                openWifiPanel()
+            }
+        }
+    }
+
+    private fun openWifiPanel() {
+        try {
+            startActivity(WifiStackRecovery.wifiPanelIntent())
+        } catch (e: Exception) {
+            AppLog.w("MainActivity: could not open the WiFi panel: ${e.message}")
+        }
+    }
+
     private fun openRemedyFor(issue: ConnectionIssue) {
         val query = when (issue) {
             // The remedy is on the phone, so there is no row here to send anyone to.
@@ -1333,6 +1365,11 @@ class MainActivity : BaseActivity() {
             ConnectionIssue.HANDS_FREE_RECORD_REFUSED -> return
             // The remedy is on the phone, and this unit is already applying the one it has.
             ConnectionIssue.PHONE_HOLDS_STALE_ENDPOINT -> return
+            // The remedy is a WiFi restart: done here when root or local ADB allows, else the panel.
+            ConnectionIssue.WIFI_DIRECT_STACK_STUCK -> {
+                restartWifiFromBanner()
+                return
+            }
             // Auto-reconnect is a per-network switch in Android's own WiFi settings.
             ConnectionIssue.HOME_WIFI_REJOINED_BESIDE_GROUP -> {
                 try {

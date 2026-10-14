@@ -604,4 +604,13 @@ class ConnectionIssueBannerPolicyTest {
         assertTrue("no state retired the record", retired > 0)
         assertTrue("no state kept a record", kept > 0)
     }
+
+    @Test
+    fun `a wedged stack outranks the newer refusal it causes`() {
+        val shown = bannerFor(standing = listOf(
+            standing(ConnectionIssue.WIFI_DIRECT_STACK_STUCK, 1_000L),
+            standing(ConnectionIssue.WIFI_DIRECT_GROUP_REFUSED, 5_000L)
+        ))
+        assertEquals(ConnectionIssue.WIFI_DIRECT_STACK_STUCK, shown)
+    }
 }

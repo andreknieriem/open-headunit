@@ -1189,6 +1189,12 @@
 
     <string name="supported_nativeaa">Enhanced Wireless Support</string>
     <string name="supported_nativeaa_desc">Great news! Your device supports \"Native Wireless\" mode, which provides a more seamless Android Auto experience. \n\nTo enable this, we need to refresh your Bluetooth cache. Please: \n1. Remove the existing pairing on your phone \n2. Click OK to restart Bluetooth \n3. Re-pair your phone \n\nWould you like to switch to Native AA mode now?</string>
+    <string name="automation_connect_no_permission">Allow Bluetooth for this app to connect by name.</string>
+    <string name="automation_connect_not_found">No paired phone has that name.</string>
+    <string name="automation_connect_ambiguous">More than one paired phone has that name.</string>
+    <string name="automation_connect_not_a_phone">That paired device is not a phone.</string>
+    <string name="automation_connect_not_paired">That Bluetooth address is not paired.</string>
+    <string name="automation_connect_live_session">Another phone is already connected.</string>
     <string name="native_aa_poke_not_running">Wireless Bluetooth is not running on this head unit. Check Settings.</string>
     <string name="not_supported_nativeaa">Native Wireless may not be supported</string>
     <string name="not_supported_nativeaa_desc">Your device might not support the required Bluetooth or Wi-Fi features for Native Wireless. You can try it anyway, but if it fails, please use the \"Wireless Helper\" or \"Auto (Headunit Server)\" mode instead.</string>

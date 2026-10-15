@@ -22,6 +22,7 @@ import android.net.NetworkInfo
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import android.os.BatteryManager
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.IBinder
 import android.os.Looper
@@ -106,6 +107,8 @@ import com.andrerinas.openheadunit.connection.usb.UsbLauncherManager
 import com.andrerinas.openheadunit.connection.wifi.LinkLossTeardownPolicy
 import com.andrerinas.openheadunit.connection.wifi.LinkLossTrigger
 import com.andrerinas.openheadunit.connection.wifi.modes.helper.HelperStrategy
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.ConnectByNameGate
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NamedPhonePolicy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.ExternalBtTransportPolicy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.ModuleRearmPolicy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeAaHandshakeManager
@@ -3567,6 +3570,69 @@ class AapService : Service() {
         wifiLauncherManager.stop()
     }
 
+    /**
+     * Resolves the phone an automation command names to the MAC to wake, or null after a refusal.
+     * A refusal drops the no_ui latch only when this command set it, so another command's stays.
+     */
+    private fun commandPokeTarget(intent: Intent?): String? {
+        val name = intent?.getStringExtra(EXTRA_DEVICE_NAME)?.takeIf { it.isNotBlank() }
+        val given = intent?.getStringExtra(EXTRA_MAC)?.takeIf { it.isNotBlank() }
+        val label = if (given != null) "MAC $given" else "name \"$name\""
+        val settings = App.provide(this).settings
+        val readable = Build.VERSION.SDK_INT < 31 || ContextCompat.checkSelfPermission(
+            this, Manifest.permission.BLUETOOTH_CONNECT
+        ) == PackageManager.PERMISSION_GRANTED
+        val handoffPeer = (wifiLauncherManager.active as? WifiLauncherNative)?.handshakeManager?.handoffPeerAddress()
+        val live = ConnectByNameGate.live(
+            connected = commManager.isConnected,
+            busy = commManager.isBusy,
+            wirelessSession = commManager.isWirelessSession,
+            lastNativeMac = settings.lastConnectedNativeMac,
+            handoffPeer = handoffPeer
+        )
+        val decision = ConnectByNameGate.decide(
+            nativeMode = settings.wifiConnectionMode == WifiLauncherMode.NATIVE,
+            bluetoothReadable = readable,
+            resolve = {
+                val paired = BluetoothHelper.pairedForNaming(
+                    BluetoothHelper.driverCandidates(this, settings.nativePreferredDeviceMac, settings.lastConnectedNativeMac)
+                )
+                if (given != null) NamedPhonePolicy.resolveMac(given, paired)
+                else NamedPhonePolicy.resolve(name ?: "", paired)
+            },
+            sessionLive = live.live,
+            projectingMac = live.mac
+        )
+        when (decision) {
+            is ConnectByNameGate.Decision.Wake -> {
+                AppLog.i("AapService: connect by ${if (given != null) "MAC" else "name"} " +
+                    "${if (given != null) given else "\"$name\""} resolved to ${decision.mac}")
+                return decision.mac
+            }
+            ConnectByNameGate.Decision.AlreadyConnected ->
+                AppLog.i("AapService: connect by $label: that phone is already connected or connecting.")
+            ConnectByNameGate.Decision.RefuseLiveSession -> {
+                AppLog.w("AapService: connect by $label refused: another session is live.")
+                ToastUtils.showToast(this, getString(R.string.automation_connect_live_session))
+            }
+            is ConnectByNameGate.Decision.Refuse -> {
+                AppLog.w("AapService: connect by $label refused: ${decision.reason.logText}.")
+                ToastUtils.showToast(this, refusalToast(decision.reason))
+            }
+        }
+        if (intent?.getBooleanExtra(EXTRA_NO_UI, false) == true) suppressNextProjectionRaise = false
+        return null
+    }
+
+    private fun refusalToast(reason: ConnectByNameGate.Refusal): String = when (reason) {
+        ConnectByNameGate.Refusal.NOT_NATIVE -> "Native AA mode not active."
+        ConnectByNameGate.Refusal.NO_PERMISSION -> getString(R.string.automation_connect_no_permission)
+        ConnectByNameGate.Refusal.NOT_FOUND -> getString(R.string.automation_connect_not_found)
+        ConnectByNameGate.Refusal.AMBIGUOUS -> getString(R.string.automation_connect_ambiguous)
+        ConnectByNameGate.Refusal.NOT_A_PHONE -> getString(R.string.automation_connect_not_a_phone)
+        ConnectByNameGate.Refusal.NOT_PAIRED -> getString(R.string.automation_connect_not_paired)
+    }
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         try {
             startForegroundWithCurrentTypes()
@@ -3732,7 +3798,9 @@ class AapService : Service() {
             }
             ACTION_ROTATE_WIFI_DIRECT_IDENTITY -> rotateWifiDirectIdentity()
             ACTION_NATIVE_AA_POKE        -> {
-                val mac = intent?.getStringExtra(EXTRA_MAC)
+                val byCommand = intent?.getBooleanExtra(EXTRA_BY_COMMAND, false) == true
+                val mac = if (byCommand) commandPokeTarget(intent) else intent?.getStringExtra(EXTRA_MAC)
+                if (byCommand && mac == null) return START_STICKY
                 if (mac != null) {
                     AppLog.i("AapService: Received manual Native-AA poke request for $mac")
                     // [FIX] Reset exit flags so the subsequent connection is accepted
@@ -4507,6 +4575,8 @@ class AapService : Service() {
         const val EXTRA_UI_HELD = "ui_held"
         const val EXTRA_MAC = "extra_mac"
         const val EXTRA_EXPLICIT_PICK = "extra_explicit_pick"
+        const val EXTRA_DEVICE_NAME = "extra_device_name"
+        const val EXTRA_BY_COMMAND = "extra_by_command"
         const val EXTRA_ENDPOINT_ID = "extra_endpoint_id"
     }
 }

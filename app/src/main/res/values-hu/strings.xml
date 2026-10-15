@@ -530,6 +530,12 @@
     <string name="wireless_24ghz_warning">Megjegyzés: A vezeték nélküli Android Auto 2,4 GHz-es eszközökön akadozást, szaggatást és kapcsolatmegszakadást okozhat. Ha problémát tapasztal, próbálja ki USB-n keresztül, hogy kiderüljön, a hálózat korlátai okozzák-e.</string>
     <string name="supported_nativeaa">Továbbfejlesztett vezeték nélküli támogatás</string>
     <string name="supported_nativeaa_desc">Jó hír! Az eszköze támogatja a „Native Wireless” módot, amely zökkenőmentesebb Android Auto-élményt nyújt.\n\nA bekapcsoláshoz frissíteni kell a Bluetooth gyorsítótárát. Kérjük:\n1. Távolítsa el a meglévő párosítást a telefonján.\n2. A Bluetooth újraindításához koppintson az OK gombra.\n3. Párosítsa újra a telefont.\n\nÁtvált most Native AA módra?</string>
+    <string name="automation_connect_no_permission">Engedélyezd a Bluetoothot a név szerinti csatlakozáshoz.</string>
+    <string name="automation_connect_not_found">Nincs ilyen nevű párosított telefon.</string>
+    <string name="automation_connect_ambiguous">Több párosított telefonnak is ez a neve.</string>
+    <string name="automation_connect_not_a_phone">Ez a párosított eszköz nem telefon.</string>
+    <string name="automation_connect_not_paired">Ez a Bluetooth-cím nincs párosítva.</string>
+    <string name="automation_connect_live_session">Már csatlakoztatva van egy másik telefon.</string>
     <string name="wireless_mode_helper">Wireless Helper</string>
     <string name="wireless_mode_native">Native</string>
     <string name="wireless_mode_server">Headunit Server</string>

@@ -531,6 +531,12 @@
     <string name="wireless_24ghz_warning">Let op: draadloos Android Auto op apparaten met 2,4 GHz kan vertraging, haperingen en verbroken verbindingen geven. Heb je problemen, test dan via USB om te zien of het aan het netwerk ligt.</string>
     <string name="supported_nativeaa">Verbeterde draadloze ondersteuning</string>
     <string name="supported_nativeaa_desc">Goed nieuws! Je apparaat ondersteunt de modus \"Native Wireless\", voor een vlottere Android Auto-ervaring.\n\nOm dit in te schakelen, moeten we je Bluetooth-cache vernieuwen. Doe het volgende:\n1. Verwijder de bestaande koppeling op je telefoon\n2. Tik op OK om Bluetooth opnieuw op te starten\n3. Koppel je telefoon opnieuw\n\nWil je nu overschakelen naar de Native AA-modus?</string>
+    <string name="automation_connect_no_permission">Geef deze app toestemming voor Bluetooth om op naam te verbinden.</string>
+    <string name="automation_connect_not_found">Geen gekoppelde telefoon heeft die naam.</string>
+    <string name="automation_connect_ambiguous">Meer dan één gekoppelde telefoon heeft die naam.</string>
+    <string name="automation_connect_not_a_phone">Dat gekoppelde apparaat is geen telefoon.</string>
+    <string name="automation_connect_not_paired">Dat Bluetooth-adres is niet gekoppeld.</string>
+    <string name="automation_connect_live_session">Er is al een andere telefoon verbonden.</string>
     <string name="wireless_mode_helper">Wireless Helper</string>
     <string name="wireless_mode_native">Native</string>
     <string name="wireless_mode_server">Headunit Server</string>

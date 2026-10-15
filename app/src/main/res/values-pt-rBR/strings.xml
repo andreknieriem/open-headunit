@@ -532,6 +532,12 @@
     <string name="wireless_24ghz_warning">Nota: O Android Auto sem fio em dispositivos de 2,4 GHz pode causar atrasos, travamentos e desconexões. Se você tiver problemas, teste via USB para confirmar se é uma limitação da rede.</string>
     <string name="supported_nativeaa">Suporte sem fio aprimorado</string>
     <string name="supported_nativeaa_desc">Boas notícias! Seu dispositivo é compatível com o modo \"Sem Fio Nativo\", que oferece uma experiência mais fluida com o Android Auto.\n\nPara ativá-lo, é preciso atualizar o cache do Bluetooth. Siga estes passos:\n1. Remova o pareamento existente no celular\n2. Toque em OK para reiniciar o Bluetooth\n3. Pareie o celular novamente\n\nDeseja mudar para o modo Android Auto nativo agora?</string>
+    <string name="automation_connect_no_permission">Permita o Bluetooth para este app se conectar pelo nome.</string>
+    <string name="automation_connect_not_found">Nenhum smartphone pareado tem esse nome.</string>
+    <string name="automation_connect_ambiguous">Mais de um smartphone pareado tem esse nome.</string>
+    <string name="automation_connect_not_a_phone">Esse dispositivo pareado não é um smartphone.</string>
+    <string name="automation_connect_not_paired">Esse endereço Bluetooth não está pareado.</string>
+    <string name="automation_connect_live_session">Outro smartphone já está conectado.</string>
     <string name="wireless_mode_helper">Wireless Helper</string>
     <string name="wireless_mode_native">Nativo</string>
     <string name="wireless_mode_server">Headunit Server</string>

@@ -532,6 +532,12 @@
     <string name="wireless_24ghz_warning">Notă: Android Auto wireless pe dispozitive de 2,4 GHz poate duce la întârzieri, sacadări și deconectări. Dacă întâmpinați probleme, vă rugăm să testați prin USB pentru a confirma dacă este o limitare a rețelei.</string>
     <string name="supported_nativeaa">Suport wireless îmbunătățit</string>
     <string name="supported_nativeaa_desc">Veste bună! Dispozitivul dvs. acceptă modul „Native Wireless”, care oferă o experiență Android Auto mai fluidă.\n\nPentru a-l activa, trebuie să reîmprospătăm memoria cache Bluetooth. Vă rugăm:\n1. Eliminați asocierea existentă de pe telefon\n2. Atingeți OK pentru a reporni Bluetooth\n3. Asociați din nou telefonul\n\nDoriți să treceți acum la modul Native AA?</string>
+    <string name="automation_connect_no_permission">Permite Bluetooth pentru această aplicație, ca să se conecteze după nume.</string>
+    <string name="automation_connect_not_found">Niciun telefon asociat nu are acest nume.</string>
+    <string name="automation_connect_ambiguous">Mai multe telefoane asociate au acest nume.</string>
+    <string name="automation_connect_not_a_phone">Dispozitivul asociat nu este un telefon.</string>
+    <string name="automation_connect_not_paired">Această adresă Bluetooth nu este asociată.</string>
+    <string name="automation_connect_live_session">Alt telefon este deja conectat.</string>
     <string name="wireless_mode_helper">Wireless Helper</string>
     <string name="wireless_mode_native">Nativ</string>
     <string name="wireless_mode_server">Headunit Server</string>

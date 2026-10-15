@@ -524,6 +524,12 @@
 
     <string name="supported_nativeaa">Gelişmiş Kablosuz Desteği</string>
     <string name="supported_nativeaa_desc">Harika haber! Cihazınız, Android Auto\'yu daha sorunsuz çalıştıran \"Native Wireless\" (Yerel Kablosuz) modunu destekliyor.\n\nBunu etkinleştirmek için Bluetooth önbelleğinin yenilenmesi gerekiyor. Lütfen şunları yapın:\n1. Telefonunuzda mevcut eşleşmeyi kaldırın\n2. Bluetooth\'u yeniden başlatmak için Tamam\'a dokunun\n3. Telefonunuzu yeniden eşleştirin\n\nŞimdi Native AA moduna geçmek istiyor musunuz?</string>
+    <string name="automation_connect_no_permission">Ada göre bağlanmak için bu uygulamaya Bluetooth izni verin.</string>
+    <string name="automation_connect_not_found">Bu ada sahip eşlenmiş telefon yok.</string>
+    <string name="automation_connect_ambiguous">Bu ada sahip birden fazla eşlenmiş telefon var.</string>
+    <string name="automation_connect_not_a_phone">Eşlenmiş bu cihaz bir telefon değil.</string>
+    <string name="automation_connect_not_paired">Bu Bluetooth adresi eşlenmemiş.</string>
+    <string name="automation_connect_live_session">Başka bir telefon zaten bağlı.</string>
     <string name="native_aa_poke_not_running">Bu ana ünitede kablosuz Bluetooth çalışmıyor. Ayarları kontrol edin.</string>
     <string name="not_supported_nativeaa">Yerel Kablosuz desteklenmiyor olabilir</string>
     <string name="not_supported_nativeaa_desc">Cihazınız Yerel Kablosuz için gereken Bluetooth veya Wi-Fi özelliklerini desteklemiyor olabilir. Yine de deneyebilirsiniz ancak başarısız olursa lütfen bunun yerine \"Kablosuz Yardımcı\" veya \"Otomatik (Headunit Sunucusu)\" modunu kullanın.</string>

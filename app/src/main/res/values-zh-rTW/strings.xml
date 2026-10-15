@@ -531,6 +531,12 @@
     <string name="wireless_24ghz_warning">注意：在僅支援 2.4GHz 的裝置上使用無線 Android Auto，可能出現延遲、卡頓和斷線。如遇問題，請改用 USB 測試，以確認是否為網路限制。</string>
     <string name="supported_nativeaa">增強型無線支援</string>
     <string name="supported_nativeaa_desc">好消息！您的裝置支援「原生無線」模式，可提供更流暢的 Android Auto 體驗。\n\n要啟用此模式，需要重新整理藍牙快取。請依序操作：\n1. 在手機上移除現有的配對\n2. 輕觸「確定」以重新啟動藍牙\n3. 重新配對手機\n\n要現在切換為原生 AA 模式嗎？</string>
+    <string name="automation_connect_no_permission">請允許這個應用程式使用藍牙，以便依名稱連線。</string>
+    <string name="automation_connect_not_found">沒有名稱相符的已配對手機。</string>
+    <string name="automation_connect_ambiguous">有多支已配對手機使用這個名稱。</string>
+    <string name="automation_connect_not_a_phone">這個已配對裝置不是手機。</string>
+    <string name="automation_connect_not_paired">這個藍牙位址未配對。</string>
+    <string name="automation_connect_live_session">已連線另一支手機。</string>
     <string name="wireless_mode_helper">Wireless Helper</string>
     <string name="wireless_mode_native">原生</string>
     <string name="wireless_mode_server">Headunit Server</string>

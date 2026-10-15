@@ -1061,6 +1061,12 @@
 
     <string name="supported_nativeaa">Suporte sem fios melhorado</string>
     <string name="supported_nativeaa_desc">Boas notícias! O seu dispositivo suporta o modo \"Native Wireless\", que proporciona uma experiência Android Auto mais fluida.\n\nPara o ativar, é preciso atualizar a cache do Bluetooth. Por favor:\n1. Remova o emparelhamento existente no telemóvel\n2. Toque em OK para reiniciar o Bluetooth\n3. Volte a emparelhar o telemóvel\n\nDeseja mudar agora para o modo Native AA?</string>
+    <string name="automation_connect_no_permission">Permita o Bluetooth a esta app para ligar pelo nome.</string>
+    <string name="automation_connect_not_found">Nenhum telemóvel sincronizado tem esse nome.</string>
+    <string name="automation_connect_ambiguous">Mais de um telemóvel sincronizado tem esse nome.</string>
+    <string name="automation_connect_not_a_phone">Esse dispositivo sincronizado não é um telemóvel.</string>
+    <string name="automation_connect_not_paired">Esse endereço Bluetooth não está sincronizado.</string>
+    <string name="automation_connect_live_session">Já está ligado outro telemóvel.</string>
     <string name="native_aa_poke_not_running">O Bluetooth sem fios não está em execução nesta unidade. Verifique as Definições.</string>
     <string name="not_supported_nativeaa">O modo Native Wireless parece não ser suportado</string>
     <string name="not_supported_nativeaa_desc">O seu dispositivo pode não suportar as funcionalidades de Bluetooth ou Wi-Fi necessárias para o Native Wireless. Pode tentar na mesma, mas, se falhar, utilize antes o modo \"Wireless Helper\" ou \"Automático (Servidor da Unidade)\".</string>

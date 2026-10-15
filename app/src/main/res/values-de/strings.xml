@@ -581,6 +581,12 @@
 
     <string name="supported_nativeaa">Verbesserte Unterstützung für kabellose Verbindungen</string>
     <string name="supported_nativeaa_desc">Gute Nachrichten! Dein Gerät unterstützt den Modus \"Natives Wireless\", der Android Auto reibungsloser macht.\n\nDafür müssen wir den Bluetooth-Cache aktualisieren. Bitte:\n1. Entferne die bestehende Kopplung auf deinem Smartphone\n2. Tippe auf OK, um Bluetooth neu zu starten\n3. Koppele dein Smartphone erneut\n\nMöchtest du jetzt in den Modus \"Native AA\" wechseln?</string>
+    <string name="automation_connect_no_permission">Erlaube Bluetooth für diese App, um per Name zu verbinden.</string>
+    <string name="automation_connect_not_found">Kein gekoppeltes Smartphone hat diesen Namen.</string>
+    <string name="automation_connect_ambiguous">Mehrere gekoppelte Smartphones haben diesen Namen.</string>
+    <string name="automation_connect_not_a_phone">Das gekoppelte Gerät ist kein Smartphone.</string>
+    <string name="automation_connect_not_paired">Diese Bluetooth-Adresse ist nicht gekoppelt.</string>
+    <string name="automation_connect_live_session">Ein anderes Smartphone ist bereits verbunden.</string>
     <string name="native_aa_poke_not_running">Drahtloses Bluetooth läuft auf dieser Headunit nicht. Prüfe die Einstellungen.</string>
     <string name="not_supported_nativeaa">Natives Wireless wird anscheinend nicht unterstützt</string>
     <string name="not_supported_nativeaa_desc">Dein Gerät unterstützt möglicherweise nicht die nötigen Bluetooth- oder WLAN-Funktionen für Natives Wireless. Du kannst es trotzdem versuchen. Wenn es nicht klappt, nutze stattdessen den Modus \"Wireless Helper\" oder \"Auto (Headunit Server)\".</string>

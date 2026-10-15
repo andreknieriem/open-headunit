@@ -565,6 +565,12 @@
     <string name="wireless_24ghz_warning">注意：2.4GHzデバイスでのワイヤレスAndroid Autoは、ラグ、カクつき、切断の原因となる場合があります。問題が発生した場合は、USB接続でテストし、ネットワークの制限かどうかを確認してください。</string>
     <string name="supported_nativeaa">高度なワイヤレスサポート</string>
     <string name="supported_nativeaa_desc">お使いのデバイスは「ネイティブワイヤレス」モードに対応しています。Android Autoをよりスムーズに利用できます。\n\nこのモードを有効にするには、Bluetoothのキャッシュを更新する必要があります。次の手順で操作してください。\n1. スマートフォンで既存のペアリングを削除する\n2. [OK] をタップしてBluetoothを再起動する\n3. スマートフォンを再度ペアリングする\n\n今すぐネイティブAAモードに切り替えますか？</string>
+    <string name="automation_connect_no_permission">名前で接続するには、このアプリに Bluetooth を許可してください。</string>
+    <string name="automation_connect_not_found">その名前のペア設定済みスマートフォンはありません。</string>
+    <string name="automation_connect_ambiguous">その名前のペア設定済みスマートフォンが複数あります。</string>
+    <string name="automation_connect_not_a_phone">ペア設定済みのそのデバイスはスマートフォンではありません。</string>
+    <string name="automation_connect_not_paired">その Bluetooth アドレスはペア設定されていません。</string>
+    <string name="automation_connect_live_session">別のスマートフォンがすでに接続されています。</string>
     <string name="native_aa_poke_not_running">このヘッドユニットでワイヤレスの Bluetooth が動作していません。設定をご確認ください。</string>
     <string name="not_supported_nativeaa">ネイティブワイヤレスはサポートされていないようです</string>
     <string name="not_supported_nativeaa_desc">お使いのデバイスは、ネイティブワイヤレスに必要な Bluetooth または Wi-Fi 機能をサポートしていない可能性があります。とにかく試してみることもできますが、失敗した場合は、代わりに「Wireless Helper」または「Auto (Headunit Server)」モードを使用してください。</string>

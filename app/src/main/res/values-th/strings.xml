@@ -1089,6 +1089,12 @@
 
     <string name="supported_nativeaa">การสนับสนุนระบบไร้สายขั้นสูง</string>
     <string name="supported_nativeaa_desc">ข่าวดี! อุปกรณ์ของคุณรองรับโหมด \"Native Wireless\" ซึ่งช่วยให้ใช้ Android Auto ได้ราบรื่นยิ่งขึ้น\n\nหากต้องการเปิดใช้ ต้องรีเฟรชแคชบลูทูธ โปรดทำดังนี้\n1. ลบการจับคู่เดิมบนโทรศัพท์\n2. แตะ ตกลง เพื่อรีสตาร์ทบลูทูธ\n3. จับคู่โทรศัพท์ใหม่\n\nต้องการเปลี่ยนเป็นโหมด Native AA ตอนนี้ไหม</string>
+    <string name="automation_connect_no_permission">อนุญาตบลูทูธให้แอปนี้เพื่อเชื่อมต่อด้วยชื่อ</string>
+    <string name="automation_connect_not_found">ไม่มีโทรศัพท์ที่จับคู่ไว้ที่ใช้ชื่อนี้</string>
+    <string name="automation_connect_ambiguous">มีโทรศัพท์ที่จับคู่ไว้หลายเครื่องใช้ชื่อนี้</string>
+    <string name="automation_connect_not_a_phone">อุปกรณ์ที่จับคู่ไว้นี้ไม่ใช่โทรศัพท์</string>
+    <string name="automation_connect_not_paired">ที่อยู่บลูทูธนี้ยังไม่ได้จับคู่</string>
+    <string name="automation_connect_live_session">มีโทรศัพท์เครื่องอื่นเชื่อมต่ออยู่แล้ว</string>
     <string name="native_aa_poke_not_running">บลูทูธไร้สายไม่ได้ทำงานบนเฮดยูนิตนี้ ตรวจสอบการตั้งค่า</string>
     <string name="not_supported_nativeaa">Native Wireless อาจไม่รองรับ</string>
     <string name="not_supported_nativeaa_desc">อุปกรณ์ของคุณอาจไม่รองรับคุณสมบัติบลูทูธหรือ Wi-Fi ที่ Native Wireless ต้องใช้ คุณยังลองใช้ได้ แต่หากไม่สำเร็จ ให้ใช้โหมด \"Wireless Helper\" หรือ \"Auto (Headunit Server)\" แทน</string>

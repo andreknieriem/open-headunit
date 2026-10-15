@@ -890,6 +890,12 @@
 
     <string name="supported_nativeaa">Prise en charge sans fil améliorée</string>
     <string name="supported_nativeaa_desc">Bonne nouvelle ! Votre appareil prend en charge le mode « Sans fil natif », qui offre une expérience Android Auto plus fluide.\n\nPour l\'activer, il faut actualiser le cache Bluetooth. Procédez comme suit :\n1. Supprimez l\'association existante sur votre téléphone\n2. Appuyez sur OK pour redémarrer le Bluetooth\n3. Associez de nouveau votre téléphone\n\nVoulez-vous passer au mode Android Auto natif maintenant ?</string>
+    <string name="automation_connect_no_permission">Autorisez Bluetooth pour cette appli afin de vous connecter par nom.</string>
+    <string name="automation_connect_not_found">Aucun téléphone associé n\'a ce nom.</string>
+    <string name="automation_connect_ambiguous">Plusieurs téléphones associés portent ce nom.</string>
+    <string name="automation_connect_not_a_phone">Cet appareil associé n\'est pas un téléphone.</string>
+    <string name="automation_connect_not_paired">Cette adresse Bluetooth n\'est pas associée.</string>
+    <string name="automation_connect_live_session">Un autre téléphone est déjà connecté.</string>
     <string name="native_aa_poke_not_running">Le Bluetooth sans fil n\'est pas actif sur cet autoradio. Vérifiez les paramètres.</string>
     <string name="not_supported_nativeaa">Le sans fil natif ne semble pas pris en charge</string>
     <string name="not_supported_nativeaa_desc">Votre appareil pourrait ne pas prendre en charge les fonctionnalités Bluetooth ou Wi-Fi requises pour le sans fil natif. Vous pouvez essayer quand même, mais en cas d\'échec, utilisez plutôt le mode « Assistant sans fil » ou « Auto (Serveur Headunit) ».</string>

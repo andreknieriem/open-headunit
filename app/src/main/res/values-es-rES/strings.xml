@@ -560,6 +560,12 @@
     <string name="wireless_24ghz_warning">Nota: Android Auto inalámbrico en dispositivos de 2,4 GHz puede provocar retrasos, tirones y desconexiones. Si tienes problemas, prueba con USB para comprobar si se debe a una limitación de la red.</string>
     <string name="supported_nativeaa">Compatibilidad inalámbrica mejorada</string>
     <string name="supported_nativeaa_desc">¡Buenas noticias! Tu dispositivo es compatible con el modo \"Inalámbrico nativo\", que ofrece una experiencia de Android Auto más fluida.\n\nPara activarlo, hay que actualizar la caché de Bluetooth. Sigue estos pasos:\n1. Elimina la vinculación actual en tu móvil\n2. Pulsa Aceptar para reiniciar el Bluetooth\n3. Vuelve a vincular tu móvil\n\n¿Quieres cambiar ahora al modo AA nativo?</string>
+    <string name="automation_connect_no_permission">Permite que esta app use Bluetooth para conectar por nombre.</string>
+    <string name="automation_connect_not_found">Ningún móvil vinculado tiene ese nombre.</string>
+    <string name="automation_connect_ambiguous">Más de un móvil vinculado tiene ese nombre.</string>
+    <string name="automation_connect_not_a_phone">El dispositivo vinculado no es un móvil.</string>
+    <string name="automation_connect_not_paired">Esa dirección Bluetooth no está vinculada.</string>
+    <string name="automation_connect_live_session">Ya hay otro móvil conectado.</string>
     <string name="wireless_mode_helper">Wireless Helper</string>
     <string name="wireless_mode_native">Nativo</string>
     <string name="wireless_mode_server">Headunit Server</string>

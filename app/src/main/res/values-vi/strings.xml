@@ -572,6 +572,12 @@
 
     <string name="supported_nativeaa">Hỗ trợ không dây nâng cao</string>
     <string name="supported_nativeaa_desc">Tin tốt! Máy của bạn hỗ trợ chế độ \"Native Wireless\", mang lại trải nghiệm Android Auto liền mạch hơn. \n\nĐể bật, cần làm mới bộ nhớ đệm Bluetooth. Vui lòng: \n1. Xoá ghép nối hiện có trên điện thoại \n2. Bấm OK để khởi động lại Bluetooth \n3. Ghép nối lại điện thoại \n\nBạn có muốn chuyển sang chế độ Native AA bây giờ?</string>
+    <string name="automation_connect_no_permission">Cho phép ứng dụng này dùng Bluetooth để kết nối theo tên.</string>
+    <string name="automation_connect_not_found">Không có điện thoại nào đã ghép nối có tên này.</string>
+    <string name="automation_connect_ambiguous">Có nhiều điện thoại đã ghép nối có tên này.</string>
+    <string name="automation_connect_not_a_phone">Thiết bị đã ghép nối này không phải điện thoại.</string>
+    <string name="automation_connect_not_paired">Địa chỉ Bluetooth này chưa được ghép nối.</string>
+    <string name="automation_connect_live_session">Một điện thoại khác đã được kết nối.</string>
     <string name="native_aa_poke_not_running">Bluetooth không dây không chạy trên đầu phát này. Hãy kiểm tra phần cài đặt.</string>
     <string name="not_supported_nativeaa">Có vẻ chưa hỗ trợ Native Wireless</string>
     <string name="not_supported_nativeaa_desc">Máy của bạn có thể không hỗ trợ các tính năng Bluetooth hoặc Wi-Fi cần cho Native Wireless. Bạn vẫn có thể thử, nhưng nếu thất bại hãy dùng chế độ \"Wireless Helper\" hoặc \"Auto (Headunit Server)\".</string>

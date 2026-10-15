@@ -161,12 +161,15 @@ object AutomationCommandPolicy {
     }
 
     /**
-     * With an address this opens a TCP session to Android Auto's head unit server; without one it
-     * means "connect to whatever is there", which is the USB check.
+     * With `ip` this opens a TCP session to Android Auto's head unit server; with a phone MAC or
+     * name it wakes that phone; with none it is the USB check.
      */
     private fun connect(extras: Extras): List<Effect> {
         val ip = extras.string(HeadUnitCommand.EXTRA_IP)?.trim()
-        if (ip.isNullOrEmpty()) return listOf(checkUsb())
+        if (ip.isNullOrEmpty()) {
+            val target = phoneTarget(extras) ?: return listOf(checkUsb())
+            return listOf(namedWake(target, extras.flag(HeadUnitCommand.EXTRA_NO_UI)))
+        }
         return listOf(
             Effect.StartService(
                 AapService.ACTION_CONNECT_SOCKET,
@@ -209,12 +212,32 @@ object AutomationCommandPolicy {
 
     /** Without a MAC this is the main screen's WiFi button on an external-module unit, sent as it sends it. */
     private fun nativePoke(extras: Extras): List<Effect> {
-        val mac = extras.string(HeadUnitCommand.EXTRA_MAC)?.trim()
-        if (mac.isNullOrEmpty()) return listOf(Effect.StartService(AapService.ACTION_NATIVE_AA_POKE))
-        return listOf(
-            Effect.StartService(AapService.ACTION_NATIVE_AA_POKE, stringExtras = mapOf(AapService.EXTRA_MAC to mac))
-        )
+        val target = phoneTarget(extras) ?: return listOf(Effect.StartService(AapService.ACTION_NATIVE_AA_POKE))
+        // A MAC on the poke keeps its exact earlier effect; only the name form is new.
+        if (target.first == AapService.EXTRA_MAC) {
+            return listOf(Effect.StartService(AapService.ACTION_NATIVE_AA_POKE, stringExtras = mapOf(target)))
+        }
+        return listOf(namedWake(target, extras.flag(HeadUnitCommand.EXTRA_NO_UI)))
     }
+
+    /** The phone a command names: `mac`, then `extra_mac`, then `device_name`; blanks count as absent. */
+    private fun phoneTarget(extras: Extras): Pair<String, String>? {
+        fun value(key: String) = extras.string(key)?.trim()?.takeIf { it.isNotEmpty() }
+        value(HeadUnitCommand.EXTRA_PHONE_MAC)?.let { return AapService.EXTRA_MAC to it }
+        value(HeadUnitCommand.EXTRA_MAC)?.let { return AapService.EXTRA_MAC to it }
+        value(HeadUnitCommand.EXTRA_DEVICE_NAME)?.let { return AapService.EXTRA_DEVICE_NAME to it }
+        return null
+    }
+
+    private fun namedWake(target: Pair<String, String>, noUi: Boolean) = Effect.StartService(
+        AapService.ACTION_NATIVE_AA_POKE,
+        stringExtras = mapOf(target),
+        flagExtras = mapOf(
+            AapService.EXTRA_EXPLICIT_PICK to true,
+            AapService.EXTRA_BY_COMMAND to true,
+            AapService.EXTRA_NO_UI to noUi
+        )
+    )
 
     private fun requiring(extras: Extras, key: String, build: (String) -> Effect): List<Effect> {
         val value = extras.string(key)?.trim()

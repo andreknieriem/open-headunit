@@ -559,6 +559,12 @@
 
     <string name="supported_nativeaa">Supporto wireless avanzato</string>
     <string name="supported_nativeaa_desc">Ottime notizie! Il tuo dispositivo supporta la modalità \"Native Wireless\", che offre un\'esperienza Android Auto più fluida. \n\nPer attivarla bisogna aggiornare la cache Bluetooth. Procedi così: \n1. Rimuovi l\'associazione esistente sul telefono \n2. Tocca OK per riavviare il Bluetooth \n3. Associa di nuovo il telefono \n\nVuoi passare ora alla modalità Native AA?</string>
+    <string name="automation_connect_no_permission">Consenti a questa app di usare Bluetooth per connettersi tramite nome.</string>
+    <string name="automation_connect_not_found">Nessun telefono accoppiato ha questo nome.</string>
+    <string name="automation_connect_ambiguous">Più telefoni accoppiati hanno questo nome.</string>
+    <string name="automation_connect_not_a_phone">Il dispositivo accoppiato non è un telefono.</string>
+    <string name="automation_connect_not_paired">Questo indirizzo Bluetooth non è accoppiato.</string>
+    <string name="automation_connect_live_session">Un altro telefono è già connesso.</string>
     <string name="native_aa_poke_not_running">Il Bluetooth wireless non è attivo su questa unità. Controlla le impostazioni.</string>
     <string name="not_supported_nativeaa">Native Wireless potrebbe non essere supportato</string>
     <string name="not_supported_nativeaa_desc">Il tuo dispositivo potrebbe non supportare le funzioni Bluetooth o Wi-Fi necessarie per Native Wireless. Puoi provare comunque, ma se fallisce, utilizza la modalità \"Wireless Helper\" o \"Auto (Headunit Server)\".</string>

@@ -560,6 +560,12 @@
     <string name="wireless_24ghz_warning">Примітка: бездротовий Android Auto на пристроях із діапазоном 2,4 ГГц може спричиняти затримки, ривки та розриви з\'єднання. Якщо виникають проблеми, перевірте роботу через USB, щоб з\'ясувати, чи це обмеження мережі.</string>
     <string name="supported_nativeaa">Розширена бездротова підтримка</string>
     <string name="supported_nativeaa_desc">Чудові новини! Ваш пристрій підтримує режим «Native Wireless», який забезпечує плавнішу роботу Android Auto.\n\nЩоб увімкнути його, потрібно оновити кеш Bluetooth. Виконайте такі дії:\n1. Видаліть наявне сполучення на телефоні\n2. Натисніть OK, щоб перезапустити Bluetooth\n3. Знову сполучіть телефон із пристроєм\n\nПерейти на режим Native AA зараз?</string>
+    <string name="automation_connect_no_permission">Дозвольте цьому додатку використовувати Bluetooth, щоб підключатися за назвою.</string>
+    <string name="automation_connect_not_found">Немає спареного телефона з такою назвою.</string>
+    <string name="automation_connect_ambiguous">Кілька спарених телефонів мають таку назву.</string>
+    <string name="automation_connect_not_a_phone">Цей спарений пристрій не є телефоном.</string>
+    <string name="automation_connect_not_paired">Ця адреса Bluetooth не спарена.</string>
+    <string name="automation_connect_live_session">Інший телефон уже підключено.</string>
     <string name="wireless_mode_helper">Wireless Helper</string>
     <string name="wireless_mode_native">Нативний</string>
     <string name="wireless_mode_server">Headunit Server</string>

@@ -587,6 +587,12 @@ Open Headunit предоставляется «как есть» без каки
     <string name="loading_screen_loop_video">Повторять короткие анимации</string>
     <string name="supported_nativeaa">Расширенная беспроводная поддержка</string>
     <string name="supported_nativeaa_desc">Отличные новости! Ваше устройство поддерживает режим «Native Wireless», который обеспечивает более плавную работу Android Auto. \n\nЧтобы включить его, нам нужно обновить кеш Bluetooth. Пожалуйста: \n1. Удалите существующее сопряжение на телефоне \n2. Нажмите ОК, чтобы перезапустить Bluetooth \n3. Снова выполните сопряжение с телефоном \n\nХотите переключиться на режим Native AA сейчас?</string>
+    <string name="automation_connect_no_permission">Разрешите приложению использовать Bluetooth, чтобы подключаться по имени.</string>
+    <string name="automation_connect_not_found">Нет сопряжённого телефона с таким именем.</string>
+    <string name="automation_connect_ambiguous">Несколько сопряжённых телефонов с таким именем.</string>
+    <string name="automation_connect_not_a_phone">Это сопряжённое устройство не является телефоном.</string>
+    <string name="automation_connect_not_paired">Этот адрес Bluetooth не сопряжён.</string>
+    <string name="automation_connect_live_session">Другой телефон уже подключён.</string>
     <string name="wireless_mode_helper">Wireless Helper</string>
     <string name="wireless_mode_native">Нативный</string>
     <string name="wireless_mode_server">Headunit Server</string>

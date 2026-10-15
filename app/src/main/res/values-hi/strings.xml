@@ -1089,6 +1089,12 @@
 
     <string name="supported_nativeaa">बेहतर वायरलेस सपोर्ट</string>
     <string name="supported_nativeaa_desc">खुशखबरी! आपका डिवाइस \"नेटिव वायरलेस\" मोड सपोर्ट करता है, जिससे Android Auto का अनुभव ज़्यादा सहज होता है।\n\nइसे चालू करने के लिए ब्लूटूथ कैश रीफ़्रेश करना होगा। कृपया:\n1. अपने फ़ोन में मौजूदा पेयरिंग हटाएं\n2. ब्लूटूथ रीस्टार्ट करने के लिए ठीक है पर टैप करें\n3. फ़ोन को दोबारा पेयर करें\n\nक्या आप अभी नेटिव AA मोड पर जाना चाहेंगे?</string>
+    <string name="automation_connect_no_permission">नाम से कनेक्ट करने के लिए इस ऐप्लिकेशन को ब्लूटूथ की अनुमति दें.</string>
+    <string name="automation_connect_not_found">इस नाम वाला कोई पेयर किया गया फ़ोन नहीं है.</string>
+    <string name="automation_connect_ambiguous">इस नाम वाले एक से ज़्यादा पेयर किए गए फ़ोन हैं.</string>
+    <string name="automation_connect_not_a_phone">पेयर किया गया यह डिवाइस फ़ोन नहीं है.</string>
+    <string name="automation_connect_not_paired">यह ब्लूटूथ पता पेयर नहीं किया गया है.</string>
+    <string name="automation_connect_live_session">दूसरा फ़ोन पहले से कनेक्ट है.</string>
     <string name="native_aa_poke_not_running">इस हेड यूनिट पर वायरलेस ब्लूटूथ चालू नहीं है। सेटिंग जाँचें।</string>
     <string name="not_supported_nativeaa">नेटिव वायरलेस शायद सपोर्ट नहीं होता</string>
     <string name="not_supported_nativeaa_desc">हो सकता है आपका डिवाइस नेटिव वायरलेस के लिए ज़रूरी ब्लूटूथ या वाई-फ़ाई सुविधाएँ सपोर्ट न करे। आप फिर भी आज़मा सकते हैं, लेकिन न चले तो \"वायरलेस हेल्पर\" या \"ऑटो (हेडयूनिट सर्वर)\" मोड इस्तेमाल करें।</string>

@@ -28,7 +28,11 @@ object ZbtDaemonReachability {
     // Preserve dialOnce / ZbtReachabilityPolicy handling for established external-module markers:
     // a listening-but-silent port lets the carrier try, but does not identify ZBT. Firmware
     // candidates require a compatible greeting, so keep that answer out of the legacy cache.
-    private data class IdentityAnswer(val reachable: Boolean, val atMs: Long)
+    private data class IdentityAnswer(
+        val reachable: Boolean,
+        val atMs: Long,
+        val refused: Boolean = false
+    )
     @Volatile private var identityAnswer: IdentityAnswer? = null
 
     private const val SLEEP_SLICE_MS = 250L
@@ -91,11 +95,16 @@ object ZbtDaemonReachability {
         identityAnswer?.reachable
     } else answer?.takeIf { nowMs - answeredAt < RECHECK_AFTER_MS }
 
-    /** Reconsider an old candidate answer at a fresh arming, never in the middle of a session. */
+    /** Reconsider a refusal or old candidate answer at a fresh arming, never during a session. */
     fun expireIdleIdentity(nowMs: Long = SystemClock.elapsedRealtime()) {
         if (carrierLive() || carrierWantsClient()) return
         val held = identityAnswer ?: return
-        if (nowMs - held.atMs >= RECHECK_AFTER_MS) identityAnswer = null
+        // A refused connection did not occupy the daemon's client slot. The daemon may
+        // start late or restart after ACC resume, so the next arming may try again.
+        // Keep the refusal settled during the current arming to let Android fallback start.
+        // A silent or unrecognized listener may belong to another app: retain its normal
+        // expiry instead of repeatedly connecting to a potentially occupied bridge.
+        if (held.refused || nowMs - held.atMs >= RECHECK_AFTER_MS) identityAnswer = null
     }
 
     /** Record what actually happened. The carrier's own open is a better measurement than a dial. */
@@ -180,7 +189,9 @@ object ZbtDaemonReachability {
                 if (requireIdentity) {
                     // A settings preview must not settle the arming's boot-refusal decision.
                     if (identity != ZbtIdentityProbe.Outcome.REFUSED || cacheIdentityRefusal) {
-                        identityAnswer = IdentityAnswer(false, nowMs())
+                        identityAnswer = IdentityAnswer(
+                            false, nowMs(), refused = identity == ZbtIdentityProbe.Outcome.REFUSED
+                        )
                     }
                 } else record(false, nowMs())
                 if (requireIdentity) AppLog.i(

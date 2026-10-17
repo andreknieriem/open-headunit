@@ -328,4 +328,65 @@ class ZbtDaemonReachabilityTest {
             identityDial = { ZbtIdentityProbe.Outcome.IDENTIFIED }))
     }
 
+    @Test
+    fun `refused candidate stays settled until a fresh idle arming then can recover`() {
+        clock = 200_000L // Beyond the boot-only retry window, as after ACC resume.
+        assertFalse(ZbtDaemonReachability.resolve(nowMs = { clock }, requireIdentity = true,
+            identityDial = { dials++; ZbtIdentityProbe.Outcome.REFUSED }))
+        clock++
+        // Neither a UI read nor another resolve may change the running Android fallback.
+        assertEquals(false, ZbtDaemonReachability.cached(clock, requireIdentity = true))
+        assertFalse(ZbtDaemonReachability.resolve(nowMs = { clock }, requireIdentity = true,
+            identityDial = { fail("same arming must not redial"); ZbtIdentityProbe.Outcome.IDENTIFIED }))
+        assertEquals(1, dials)
+
+        ZbtDaemonReachability.expireIdleIdentity(clock)
+        assertNull(ZbtDaemonReachability.cached(clock, requireIdentity = true))
+        assertTrue(ZbtDaemonReachability.resolve(nowMs = { clock }, requireIdentity = true,
+            identityDial = { dials++; ZbtIdentityProbe.Outcome.IDENTIFIED }))
+        assertEquals(2, dials)
+    }
+
+    @Test
+    fun `rearming does not repeatedly probe a silent or incompatible listener`() {
+        clock = 200_000L
+        assertFalse(ZbtDaemonReachability.resolve(nowMs = { clock }, requireIdentity = true,
+            identityDial = { ZbtIdentityProbe.Outcome.UNCONFIRMED }))
+        ZbtDaemonReachability.expireIdleIdentity(clock + 1)
+        assertEquals(false, ZbtDaemonReachability.cached(clock + 1, requireIdentity = true))
+        assertFalse(ZbtDaemonReachability.resolve(nowMs = { clock + 1 }, requireIdentity = true,
+            identityDial = { fail("unconfirmed listener keeps its cooldown"); ZbtIdentityProbe.Outcome.IDENTIFIED }))
+        ZbtDaemonReachability.expireIdleIdentity(clock + ZbtDaemonReachability.RECHECK_AFTER_MS)
+        assertNull(ZbtDaemonReachability.cached(clock, requireIdentity = true))
+    }
+
+    @Test
+    fun `carrier ownership protects a refusal even at a fresh arming`() {
+        clock = 200_000L
+        assertFalse(ZbtDaemonReachability.resolve(nowMs = { clock }, requireIdentity = true,
+            identityDial = { ZbtIdentityProbe.Outcome.REFUSED }))
+        ZbtDaemonReachability.setCarrierLive(true)
+        ZbtDaemonReachability.expireIdleIdentity(clock + 1)
+        assertEquals(false, ZbtDaemonReachability.cached(clock, requireIdentity = true))
+        ZbtDaemonReachability.setCarrierLive(false)
+        ZbtDaemonReachability.setCarrierWantsClient(true)
+        ZbtDaemonReachability.expireIdleIdentity(clock + 1)
+        assertEquals(false, ZbtDaemonReachability.cached(clock, requireIdentity = true))
+        ZbtDaemonReachability.setCarrierWantsClient(false)
+        ZbtDaemonReachability.expireIdleIdentity(clock + 1)
+        assertNull(ZbtDaemonReachability.cached(clock, requireIdentity = true))
+    }
+
+    @Test
+    fun `a newer identity outcome replaces an earlier refusal`() {
+        clock = 200_000L
+        assertFalse(ZbtDaemonReachability.resolve(nowMs = { clock }, requireIdentity = true,
+            identityDial = { ZbtIdentityProbe.Outcome.REFUSED }))
+        ZbtDaemonReachability.expireIdleIdentity(++clock)
+        assertFalse(ZbtDaemonReachability.resolve(nowMs = { clock }, requireIdentity = true,
+            identityDial = { ZbtIdentityProbe.Outcome.UNCONFIRMED }))
+        ZbtDaemonReachability.expireIdleIdentity(++clock)
+        assertEquals(false, ZbtDaemonReachability.cached(clock, requireIdentity = true))
+    }
+
 }

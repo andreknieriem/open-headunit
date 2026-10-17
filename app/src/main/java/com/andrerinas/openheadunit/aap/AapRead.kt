@@ -18,7 +18,7 @@ internal interface AapRead {
     fun stop()
 
     /**
-     * @param onVideoRunHoled called when a video fragment run is incomplete or disagrees with its
+     * @param onVideoRunHoled called with the channel when a video fragment run is incomplete or disagrees with its
      *   declared length; the argument says whether the length mismatch requires that the assembled unit
      *   should be discarded rather than decoded ([AuditRecoveryPolicy.shouldDiscardAssembledUnit]).
      *   A callback rather than an [AapVideo] reference: the reader owes the video path one fact and
@@ -32,7 +32,7 @@ internal interface AapRead {
         private val connection: ProjectionConnection?,
         internal val ssl: AapSsl,
         internal val handler: AapMessageHandler,
-        private val onVideoRunHoled: (discardAssembledUnit: Boolean) -> Unit = {},
+        private val onVideoRunHoled: (channel: Int, discardAssembledUnit: Boolean) -> Unit = { _, _ -> },
         internal val faultInjector: VideoFaultInjector? = null) : AapRead {
 
         /** Every line [faultInjector] prints. Shared wording with [AapVideo]'s - see the class. */
@@ -187,7 +187,7 @@ internal interface AapRead {
             if (locallyDroppedVideo || auditNeedsRepair) {
                 // A copied run never reached the video worker. Do not leave a one-shot discard
                 // armed for its next healthy frame; streamed LAST still discards its own assembly.
-                onVideoRunHoled(!locallyDroppedVideo && willDeliver && result != null &&
+                onVideoRunHoled(channel, !locallyDroppedVideo && willDeliver && result != null &&
                     AuditRecoveryPolicy.shouldDiscardAssembledUnit(result))
             }
             if (result == null) return
@@ -250,7 +250,7 @@ internal interface AapRead {
 
             // Through the transport so the verdict lands on the video thread in front of the
             // fragment it belongs to, rather than on AapVideo's state from this one.
-            val onVideoRunHoled = { discard: Boolean -> transport.dispatchVideoRunHoled(discard) }
+            val onVideoRunHoled = { channel: Int, discard: Boolean -> transport.dispatchVideoRunHoled(channel, discard) }
 
             return if (connection is SocketProjectionConnection)
                 AapReadSingleMessage(connection, transport.ssl, handler, onVideoRunHoled, readerFaults,

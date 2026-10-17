@@ -59,11 +59,11 @@ internal class AapMessageHandlerType(
         val msgType = message.type
         val flags = message.flags
 
-        // 1. Video goes to its own worker (ID_VID). DATA credit is returned after that worker
+        // 1. Each video channel goes to its own lane worker. DATA credit is returned after that worker
         // processes the complete message, not after MediaCodec renders it. The queue also has
         // an explicit bound for peers exceeding their window. This handoff keeps video work
         // off the shared receive thread so audio can continue to be read and acknowledged.
-        if (message.channel == Channel.ID_VID) {
+        if (Channel.isVideo(message.channel)) {
             // False means control traffic on the video channel, which falls through to step 5 as
             // it always has. The video thread still sees it either way.
             if (transport.dispatchVideo(message)) {

@@ -14,6 +14,13 @@ import com.andrerinas.openheadunit.input.MediaKeyRoutingPolicy
 import com.andrerinas.openheadunit.view.PerformanceOverlayField
 import com.andrerinas.openheadunit.view.PerformanceOverlayPolicy
 import com.andrerinas.openheadunit.decoder.video.VideoFaultInjector
+import com.andrerinas.openheadunit.decoder.video.AuxDisplayProfilePolicy
+import com.andrerinas.openheadunit.secondscreen.SecondScreenOutputPolicy
+import com.andrerinas.openheadunit.secondscreen.network.NetworkStreamPolicy
+import com.andrerinas.openheadunit.secondscreen.rtp.RtpDestinationPolicy
+import com.andrerinas.openheadunit.secondscreen.ms912x.Ms912xMode
+import com.andrerinas.openheadunit.secondscreen.ms912x.Ms912xModes
+import com.andrerinas.openheadunit.secondscreen.ms912x.Ms912xWireFormat
 import com.andrerinas.openheadunit.decoder.video.DeviceMemoryProfile
 import com.andrerinas.openheadunit.decoder.audio.PlaybackFocusPolicy
 import com.andrerinas.openheadunit.aap.VehicleTypePolicy
@@ -1064,6 +1071,92 @@ class Settings(private val context: Context) {
     var narrowBandProfileCap: Boolean
         get() = prefs.getBoolean("narrow-band-profile-cap", true)
         set(value) { prefs.edit().putBoolean("narrow-band-profile-cap", value).apply() }
+
+    /** Which Android display the projection uses, by [DisplayTargetPolicy.Mode] ordinal. */
+    var preferredDisplayMode: Int
+        get() = prefs.getInt("preferred-display-mode", DisplayTargetPolicy.Mode.DEFAULT.ordinal)
+        set(value) { prefs.edit().putInt("preferred-display-mode", value).apply() }
+
+    /** The display id the user picked, honoured only while [preferredDisplayMode] is SECONDARY. */
+    var preferredDisplayId: Int
+        get() = prefs.getInt("preferred-display-id", DisplayTargetPolicy.DEFAULT_DISPLAY_ID)
+        set(value) { prefs.edit().putInt("preferred-display-id", value).apply() }
+
+    /**
+     * Whether to ask the phone for a second video stream for an auxiliary display. Off by default,
+     * and while off the service discovery bytes do not change.
+     */
+    var auxDisplayEnabled: Boolean
+        get() = prefs.getBoolean("aux-display-enabled", false)
+        set(value) { prefs.edit().putBoolean("aux-display-enabled", value).apply() }
+
+    /** Where the second stream goes: an Android display, the network, or a USB adapter. */
+    var auxOutput: SecondScreenOutputPolicy.Output
+        get() = SecondScreenOutputPolicy.Output.of(prefs.getString("aux-output", null))
+        set(value) { prefs.edit().putString("aux-output", value.name).apply() }
+
+    /** Which of [SecondScreenOutputPolicy.NETWORK_SIZES] a network receiver is sent. */
+    var auxNetworkSize: Int
+        get() = prefs.getInt("aux-network-size", 0)
+        set(value) { prefs.edit().putInt("aux-network-size", value).apply() }
+
+    /** The TCP port the network stream listens on. */
+    var auxNetworkPort: Int
+        get() = NetworkStreamPolicy.portOrDefault(prefs.getInt("aux-network-port", NetworkStreamPolicy.DEFAULT_PORT))
+        set(value) { prefs.edit().putInt("aux-network-port", value).apply() }
+
+    /** The IPv4 address the RTP push sends to; empty until the user types one. */
+    var auxRtpDestination: String
+        get() = prefs.getString("aux-rtp-destination", RtpDestinationPolicy.DEFAULT_DESTINATION) ?: RtpDestinationPolicy.DEFAULT_DESTINATION
+        set(value) { prefs.edit().putString("aux-rtp-destination", value).apply() }
+
+    /** The UDP port the RTP push sends to. */
+    var auxRtpPort: Int
+        get() = RtpDestinationPolicy.portOrDefault(prefs.getInt("aux-rtp-port", RtpDestinationPolicy.DEFAULT_PORT))
+        set(value) { prefs.edit().putInt("aux-rtp-port", value).apply() }
+
+    /** The MacroSilicon adapter's HDMI mode; the chip does not scale, so this is the panel's size. */
+    var ms912xMode: Ms912xMode
+        get() = Ms912xModes.modeOf(prefs.getString("ms912x-mode", null))
+        set(value) { prefs.edit().putString("ms912x-mode", value.name).apply() }
+
+    /** The pixel format sent to the MacroSilicon adapter. */
+    var ms912xFormat: Ms912xWireFormat
+        get() = Ms912xModes.formatOf(prefs.getString("ms912x-format", null))
+        set(value) { prefs.edit().putString("ms912x-format", value.name).apply() }
+
+    /**
+     * The size the Open Headunit USB display last reported, so it can be announced when the device
+     * cannot be asked in time. Null until one has answered.
+     */
+    var usbDisplayLastTarget: SecondScreenOutputPolicy.Target?
+        get() {
+            val w = prefs.getInt("usb-display-width", 0)
+            val h = prefs.getInt("usb-display-height", 0)
+            return if (w > 0 && h > 0) SecondScreenOutputPolicy.Target(w, h, prefs.getInt("usb-display-dpi", 160)) else null
+        }
+        set(value) {
+            prefs.edit()
+                .putInt("usb-display-width", value?.widthPx ?: 0)
+                .putInt("usb-display-height", value?.heightPx ?: 0)
+                .putInt("usb-display-dpi", value?.densityDpi ?: 160)
+                .apply()
+        }
+
+    /** The Android display the auxiliary stream is shown on. */
+    var auxDisplayId: Int
+        get() = prefs.getInt("aux-display-id", DisplayTargetPolicy.DEFAULT_DISPLAY_ID)
+        set(value) { prefs.edit().putInt("aux-display-id", value).apply() }
+
+    /** Whether the second sink is announced as an auxiliary display or as the instrument cluster. */
+    var auxDisplayRole: AuxDisplayProfilePolicy.Role
+        get() = AuxDisplayProfilePolicy.roleOrDefault(prefs.getString("aux-display-role", null))
+        set(value) { prefs.edit().putString("aux-display-role", value.name).apply() }
+
+    /** What the auxiliary display opens with: the navigation map, or the turn card. */
+    var auxDisplayContent: Int
+        get() = prefs.getInt("aux-display-content", AuxDisplayProfilePolicy.KEYCODE_NAVIGATION)
+        set(value) { prefs.edit().putInt("aux-display-content", value).apply() }
 
     var hasAcceptedDisclaimer: Boolean
         get() = prefs.getBoolean("has-accepted-disclaimer", false)

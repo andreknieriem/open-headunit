@@ -23,9 +23,8 @@ class PeerCloseReasonTest {
             .apply { isAccessible = true }.set(it, value)
         set("lifecycleLock", Any())
         set("terminated", java.util.concurrent.CountDownLatch(1))
-        set("videoBufferPool", java.util.concurrent.LinkedBlockingQueue<ByteArray>())
-        set("videoBacklog", java.util.concurrent.atomic.AtomicInteger())
-        set("videoShedTotal", java.util.concurrent.atomic.AtomicLong())
+        set("videoLane", VideoLane(com.andrerinas.openheadunit.aap.protocol.Channel.ID_VID, mock(AapVideo::class.java),
+            "test", { 0 }, { _, _ -> }, { FakeLaneWorker() }))
         // Keep the real retirement path: callback failure must not skip resource cleanup.
         for (name in listOf("videoDecoder", "aapAudio", "aapVideo", "ssl", "micSessions", "focusCycleLever")) {
             val field = AapTransport::class.java.getDeclaredField(name).apply { isAccessible = true }

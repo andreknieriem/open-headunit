@@ -128,6 +128,12 @@ public class AdbConnection implements Closeable {
     }
 
     public void connect() throws IOException, InterruptedException {
+        connect(8000);
+    }
+
+    /** Interactive setup can allow more time for RSA approval without changing other callers. */
+    public void connect(long timeoutMs) throws IOException, InterruptedException {
+        if (timeoutMs <= 0) throw new IllegalArgumentException("timeoutMs must be positive");
         if (this.connected) {
             throw new IllegalStateException("Already connected");
         }
@@ -137,8 +143,11 @@ public class AdbConnection implements Closeable {
         this.connectionThread.start();
 
         synchronized (this) {
-            if (!this.connected) {
-                wait(8000);
+            long deadline = System.nanoTime() + java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(timeoutMs);
+            while (!this.connected && this.connectAttempted) {
+                long remaining = deadline - System.nanoTime();
+                if (remaining <= 0) break;
+                java.util.concurrent.TimeUnit.NANOSECONDS.timedWait(this, remaining);
             }
             if (!this.connected) {
                 throw new IOException("Self-ADB Connection to localhost:5555 timed out or failed");

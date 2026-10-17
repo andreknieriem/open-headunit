@@ -33,6 +33,10 @@ compiler = [jar("org.jetbrains.kotlin", "kotlin-compiler-embeddable", kotlin), s
             jar("org.jetbrains.kotlin", "kotlin-reflect", "1.6.10"),
             jar("org.jetbrains.kotlin", "kotlin-script-runtime", kotlin), coroutines, annotations]
 sources = [repo / line for line in (audio_base / "sources.txt").read_text().splitlines() if line]
+# observeConnectionState owns scan-control activation. Compile its real route policy and
+# strategy enum; only the Android launcher and Shizuku side effects are doubled below.
+sources += [repo / "app/src/main/java/com/andrerinas/openheadunit/connection/wifi/scan/ScanControlPolicy.kt",
+            repo / "app/src/main/java/com/andrerinas/openheadunit/connection/wifi/modes/nativeaa/NativeStrategy.kt"]
 overrides = {p.name for p in (base / "audio-stubs").glob("*.kt")}
 sources += [p for p in sorted((audio_base / "stubs").glob("*.kt")) if p.name not in overrides]
 sources += sorted((base / "audio-stubs").glob("*.kt"))

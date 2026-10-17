@@ -1,5 +1,9 @@
 package selflaunch
 
+import com.andrerinas.openheadunit.connection.wifi.scan.WifiScanControl
+import com.andrerinas.openheadunit.connection.wifi.modes.WifiLauncherNative
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeStrategy
+
 import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.Delay
 import kotlinx.coroutines.DisposableHandle
@@ -71,6 +75,8 @@ class CommManager {
             it === ConnectionState.HandshakeComplete || it === ConnectionState.TransportStarted
     }
     val isUsbSession = false
+    var isWirelessSession = false
+    var acceptedWirelessSession: Any? = null
     var isLoopbackSession = false
     var reports = 0
     var metadata = "old"
@@ -128,7 +134,7 @@ object AppLog { fun i(s: String) {}; fun w(s: String) {}; fun w(s: String, e: Th
 object DummyVpnPolicy { enum class Reason { SELF_MODE_NEVER_CONNECTED, SELF_MODE_SESSION_LIVE } }
 class ConnectivityManager { var activeNetwork: Any? = null }
 object Context { const val CONNECTIVITY_SERVICE = "connectivity" }
-object Build { object VERSION { const val SDK_INT = 23 }; object VERSION_CODES { const val M = 23 } }
+object Build { object VERSION { var SDK_INT = 23 }; object VERSION_CODES { const val M = 23 } }
 const val AA_PACKAGE = "fixture.gearhead"
 class Intent(val action: String? = null) {
     fun setPackage(name: String) {}
@@ -140,11 +146,11 @@ class Intent(val action: String? = null) {
 }
 class WifiLauncherManual(manager: WifiLauncherManager)
 class WifiLauncherManager {
-    var active: WifiLauncherManual? = null
+    var active: Any? = null
     var listenerStarts = 0
     var stops = 0
     val sharedServices get() = this
-    fun startWirelessServer(launcher: WifiLauncherManual) { listenerStarts++ }
+    fun startWirelessServer(launcher: Any) { listenerStarts++ }
     fun stopForUser() { stops++ }
 }
 class UsbLauncherManager { var projectionHandshakeFailures = 0; fun onHandshakeFailed() {}; fun isSwitchingToProjection() = false; fun stopForUser() {} }
@@ -231,6 +237,32 @@ class Service(private var hasEverConnected: Boolean = true, val commManager: Com
 }
 
 fun main() {
+    val originalSdk = Build.VERSION.SDK_INT
+    try {
+        for (sdk in listOf(23, 33)) {
+            Build.VERSION.SDK_INT = sdk
+            WifiScanControl.calls.clear()
+            Service(false).use { s ->
+                // A local socket is still Self even when a Native launcher remains selected.
+                s.commManager.isWirelessSession = true
+                s.commManager.isLoopbackSession = true
+                s.commManager.acceptedWirelessSession = Any()
+                s.wifiLauncherManager.active = WifiLauncherNative(NativeStrategy.HOTSPOT)
+                s.startObserver(); s.main.drain()
+                s.commManager.connectionState.value = CommManager.ConnectionState.TransportStarted
+                s.main.drain()
+                check(WifiScanControl.calls.size == if (sdk >= 26) 2 else 0)
+                check(WifiScanControl.calls.all { it == WifiScanControl.Call(s) }) {
+                    "Self loopback acquired wireless scan control"
+                }
+            }
+        }
+    } finally {
+        Build.VERSION.SDK_INT = originalSdk
+        WifiScanControl.calls.clear()
+    }
+    println("PASS Self observer excludes loopback scan control on Android 13 and skips it below Android 8")
+
     // A manual launch can connect before its launcher returns or after its deadline is
     // armed. Save at t=8 must not be timed out by that launch's t=10 deadline in either order.
     for (beforeReturn in listOf(false, true)) for (conflated in listOf(false, true)) Service().use { s ->

@@ -1,5 +1,6 @@
 package com.andrerinas.openheadunit.aap
 
+import com.andrerinas.openheadunit.connection.wifi.scan.WifiScanControl
 import com.andrerinas.openheadunit.connection.SettingsRestartRecovery
 import android.Manifest
 import android.annotation.SuppressLint
@@ -1221,6 +1222,21 @@ class AapService : Service() {
             commManager.connectionState.collect { state ->
                 automaticReconnect.onStateChanged()
                 usbReconnect.onStateChanged()
+                if (Build.VERSION.SDK_INT >= 26) {
+                    val live = state is CommManager.ConnectionState.Connected ||
+                        state is CommManager.ConnectionState.StartingTransport ||
+                        state is CommManager.ConnectionState.HandshakeComplete ||
+                        state is CommManager.ConnectionState.TransportStarted
+                    if (com.andrerinas.openheadunit.connection.wifi.scan.ScanControlPolicy.wirelessTransport(
+                            live, commManager.isWirelessSession, commManager.isLoopbackSession)) {
+                        val native = wifiLauncherManager.active as? com.andrerinas.openheadunit.connection.wifi.modes.WifiLauncherNative
+                        val accepted = commManager.acceptedWirelessSession
+                        if (native != null && accepted != null) {
+                            WifiScanControl.session(this@AapService, accepted,
+                                native.strategy == com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeStrategy.HOTSPOT)
+                        } else WifiScanControl.end(this@AapService)
+                    } else WifiScanControl.end(this@AapService)
+                }
                 if (state === initialTerminal) return@collect
                 // Activity can advance the handshake before this conflated collector sees
                 // Connected. Every observed live phase must retire obsolete Save launch work.
@@ -2897,6 +2913,7 @@ class AapService : Service() {
         AppLog.i("AapService destroying... (wakeLock held=${bootWakeLock?.isHeld == true})")
         FloatingButtonManager.removeOverlay(this)
         isDestroying = true
+        if (Build.VERSION.SDK_INT >= 26) WifiScanControl.end(this)
         ConnectionArbiter.actions = null
         // The hold outlives this instance; the next one arms from its own onCreate.
         WirelessSleepHold.clear()

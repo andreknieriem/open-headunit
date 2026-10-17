@@ -8,6 +8,10 @@ Android framework and I/O endpoints are test doubles; no device is needed.
 When the playback host suite is present, the runner also exercises the settings/publication
 boundary with the real AapAudio and AudioDecoder owners. This optional integration check
 retains standalone execution of the connection PR without a playback dependency.
+It also exercises scan-control calls from the extracted connection observer with the real
+route policy and strategy enum. Recording doubles replace the launcher and Shizuku APIs:
+Direct/Hotspot startup, skipped live phases, disconnect/error, replacement connection identity,
+USB/loopback/non-native exclusion and the Android 8 SDK gate are covered without radio changes.
 
 ## CI and local execution
 

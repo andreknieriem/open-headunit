@@ -275,6 +275,7 @@ dependencies {
 
     // Shizuku for root / shell access
     implementation("dev.rikka.shizuku:api:13.1.5")
+    implementation("dev.rikka.shizuku:provider:13.1.5")
     implementation("com.github.topjohnwu.libsu:core:6.0.0")
 }
 

@@ -330,6 +330,20 @@ class CommManager(
     val isWirelessSession: Boolean
         get() = _connection is SocketProjectionConnection
 
+    /**
+     * Identity of an opened, accepted radio socket. The launcher can remain active while an
+     * IP/deep-link client dials out, so launcher state alone cannot authorize scan control.
+     * Read the socket, direction and attempt together; use the attempt as the session key so
+     * a conflated disconnect/reconnect still cancels the previous FYT startup.
+     */
+    internal val acceptedWirelessSession: Any?
+        get() = synchronized(transportLifecycleLock) {
+            val socket = _connection as? SocketProjectionConnection
+            if (socket != null && !socket.isLoopbackPeer && !socket.isSingleMessage &&
+                outgoingEndpoint == null && physicalConnectionReached && !disconnectRequested)
+                connectionAttempt else null
+        }
+
     /** `true` when this session, or the attempt in flight, runs over a USB cable. */
     val isUsbSession: Boolean
         get() = _connection is AbstractUsbProjectionConnection

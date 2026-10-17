@@ -6,6 +6,9 @@ import android.app.Application
 import android.media.AudioManager
 import android.os.*
 import com.andrerinas.openheadunit.aap.AapAudio
+import com.andrerinas.openheadunit.connection.wifi.scan.WifiScanControl
+import com.andrerinas.openheadunit.connection.wifi.modes.WifiLauncherNative
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeStrategy
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.Settings
 import kotlinx.coroutines.*
@@ -105,14 +108,26 @@ private object SessionStateIntent {
     const val REASON_SETTINGS_RESTART=4; const val REASON_USER_EXIT=1; const val REASON_LINK_LOST=2; const val REASON_PHONE_LEFT=3
 }
 private object StationStandDown { fun onSessionLive(context: Any, held: Long?) {} }
-private class ObserverFixture {
+private class ObserverFixture(
+    wireless: Boolean = false,
+    loopback: Boolean = false,
+    native: Boolean = true,
+    strategy: NativeStrategy = NativeStrategy.WIFI_DIRECT,
+    accepted: Any? = Any(),
+) {
     private fun wifiLockHeldForMs(): Long? = null
-    private class Connection {
+    private class Connection(
+        val isWirelessSession: Boolean,
+        val isLoopbackSession: Boolean,
+        var acceptedWirelessSession: Any?,
+    ) {
         val connectionState = MutableStateFlow<ConnectionState>(ConnectionState.Disconnected())
         val attemptUserRequested = false
     }
     private class Usb { var projectionHandshakeFailures=0; fun onHandshakeFailed() {} }
-    private val commManager = Connection()
+    private val commManager = Connection(wireless, loopback, accepted)
+    private class Wifi(val active: Any?)
+    private val wifiLauncherManager = Wifi(if (native) WifiLauncherNative(strategy) else Any())
     private class Self { fun onConnectionEstablished() {}; fun onConnectionEnded(state: ConnectionState.Disconnected) {} }
     private val selfLauncherManager = Self()
     private class ReconnectTimer { fun onStateChanged() {} }
@@ -139,13 +154,82 @@ private class ObserverFixture {
     private fun maybeAutoResumePlaybackOnReconnect() {}
     private fun stopDummyVpn(reason: DummyVpnPolicy.Reason) {}
     fun start() { observeConnectionState() }
-    fun connected() { commManager.connectionState.value = ConnectionState.Connected }
+    fun connected() { transition(ConnectionState.Connected) }
+    fun transition(state: ConnectionState) { commManager.connectionState.value = state }
+    fun replaceAccepted(connection: Any) { commManager.acceptedWirelessSession = connection }
     fun disconnected() { commManager.connectionState.value = ConnectionState.Disconnected() }
     fun close() { serviceScope.cancel() }
     // PRODUCTION OBSERVER
 }
 
+/** Exercise the extracted production observer, including phases a conflated flow can skip. */
+private fun scanControlObserverRegression() {
+    val originalSdk = Build.VERSION.SDK_INT
+    val liveStates = listOf(ConnectionState.Connected, ConnectionState.StartingTransport,
+        ConnectionState.HandshakeComplete, ConnectionState.TransportStarted)
+    try {
+        for (sdk in listOf(26, 29, 30, 32, 33, 36)) {
+            Build.VERSION.SDK_INT = sdk
+            for (strategy in NativeStrategy.entries) {
+                // A collector can first see any live phase, not necessarily Connected.
+                for (firstLive in liveStates) {
+                    val accepted = Any()
+                    val observer = ObserverFixture(wireless = true, strategy = strategy, accepted = accepted)
+                    WifiScanControl.calls.clear()
+                    try {
+                        observer.start()
+                        check(WifiScanControl.calls.single() == WifiScanControl.Call(observer))
+                        observer.transition(firstLive)
+                        check(WifiScanControl.calls.last() == WifiScanControl.Call(observer, accepted,
+                            strategy == NativeStrategy.HOTSPOT)) { "scan start missing: SDK=$sdk phase=$firstLive" }
+                        observer.disconnected()
+                        check(WifiScanControl.calls.last() == WifiScanControl.Call(observer))
+                        val replacement = Any()
+                        observer.replaceAccepted(replacement)
+                        observer.transition(ConnectionState.TransportStarted)
+                        check(WifiScanControl.calls.last().connection === replacement) { "old connection identity reused" }
+                        observer.transition(ConnectionState.Error("handshake failed"))
+                        check(WifiScanControl.calls.last() == WifiScanControl.Call(observer))
+                        check(WifiScanControl.calls.size == 5)
+                    } finally { observer.close() }
+                }
+            }
+        }
+        Build.VERSION.SDK_INT = 33
+        // Unsupported routes must release any old lease, never acquire a new one.
+        val excluded = listOf(
+            "USB" to ObserverFixture(wireless = false),
+            "loopback" to ObserverFixture(wireless = true, loopback = true),
+            "non-native" to ObserverFixture(wireless = true, native = false),
+            "no accepted connection" to ObserverFixture(wireless = true, accepted = null),
+        )
+        for ((name, observer) in excluded) {
+            WifiScanControl.calls.clear()
+            try {
+                observer.start()
+                observer.transition(ConnectionState.Connecting)
+                liveStates.forEach(observer::transition)
+                observer.disconnected()
+                check(WifiScanControl.calls.size == 7)
+                check(WifiScanControl.calls.all { it == WifiScanControl.Call(observer) }) { "scan control acquired for $name" }
+            } finally { observer.close() }
+        }
+        Build.VERSION.SDK_INT = 25
+        val legacy = ObserverFixture(wireless = true)
+        WifiScanControl.calls.clear()
+        try {
+            legacy.start(); liveStates.forEach(legacy::transition); legacy.disconnected()
+            check(WifiScanControl.calls.isEmpty()) { "scan API called below Android 8" }
+        } finally { legacy.close() }
+    } finally {
+        Build.VERSION.SDK_INT = originalSdk
+        WifiScanControl.calls.clear()
+    }
+    println("PASS scan observer: Direct/Hotspot, skipped live phases, disconnect/error, new connection identity, excluded routes and SDK gate")
+}
+
 internal fun audioLifecycleBoundaryRegression() {
+    scanControlObserverRegression()
     Handler.reset()
     val observer = ObserverFixture()
     try {

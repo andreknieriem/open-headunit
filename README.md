@@ -48,6 +48,53 @@ Choose from the five options below depending on your Android Auto version and se
 - Supports **Wi-Fi Direct (P2P)** or the **Headunit Hotspot** transport.
 - Configure under Open Headunit Settings -> **Android Auto Mode** -> **Native Mode**.
 
+#### Optional automatic Wi-Fi scan pause
+
+In advanced settings → **Wireless Connection** → **Pause automatic Wi-Fi searches**, enable
+**Pause during wireless connections**. It is off by default and applies immediately. The setup
+screen puts installation and app approval under **Common setup**, vendor startup under
+**On FYT devices**, and manual debugging instructions under **On other devices**.
+
+- **Android 13+:** in Native mode (Wi-Fi Direct or Hotspot), pauses Android's periodic connectivity and PNO searches through the global
+  autojoin gate. Client modes keep automatic reconnection enabled. It reads the original value before changing it and restores that value on disconnect.
+- **Android 11–12L Wi-Fi Direct:** disables global autojoin through Shizuku while keeping
+  the P2P group. These versions expose no state getter: on release, searches are enabled again,
+  even if they were disabled beforehand. Command acceptance is not a measured scan state.
+- **Android 8–10 Wi-Fi Direct:** disables the internal connectivity manager through Shizuku.
+  Apply on connection, then renew every five minutes while connected. Android network requests
+  can re-enable searches between renewals. The long interval limits repeated firmware roaming
+  cleanup on Android 8–9; this is best-effort, not a guarantee of continuous suppression.
+  Release enables the manager again; the previous
+  value cannot be read. Reboot resets these temporary legacy Direct controls.
+- **Android 8–12L Hotspot:** with ordinary Wi-Fi off, pauses the remaining scan-always path
+  and restores its recorded value. The app never turns off a live Wi-Fi Direct radio.
+- **Android 7 and older:** this option is unavailable; existing wireless behavior is unchanged.
+
+Android 11+ can start Shizuku through wireless debugging; the screen also points to its USB setup
+for devices without that option. Android 8–10 uses USB/computer setup, with an explicit on-device
+startup option on supported FYT systems. FYT startup asks for normal ADB RSA authorization and
+keeps its network ADB listener open, including after app restart. Use **Close wireless ADB**
+to restore paused Wi-Fi searches and then stop the listener opened by this app. If restoration
+cannot finish, ADB stays open for recovery. Closing can also stop Shizuku and disconnect USB debugging.
+Existing ADB ports and persistent settings are left alone. An interrupted explicit close is
+retried when the app reopens. On Android 8–10 FYT systems, a previously configured FYT start is
+attempted when a Native wireless transport opens, provided this option stays enabled and Shizuku
+is not already running. App launch and boot alone do not start it. The attempt runs alongside the
+Android Auto handshake and does not delay projection. Each connection gets at most one attempt;
+disconnecting cancels unfinished startup. USB, self and wireless client sessions are excluded.
+Explicitly closing ADB disables automatic startup until the FYT start button is used again.
+Android may still require debugging authorization; failure does not block Android Auto.
+
+On app-process death, a separate shell helper attempts rollback. A device-local recovery record
+survives interruption of both processes and is retried when Shizuku is available again. Pending
+recovery is shown on the home screen and in settings, with automatic retries while an authorized
+helper is available. For a legacy scan-always recovery, Android can also restore scanning through
+a system confirmation without restarting Shizuku. Where the state can be read, the app verifies
+restoration before clearing its recovery record. Legacy Direct clears the record after Android
+accepts the enable request. On paths with readable state, if searches are re-enabled elsewhere,
+the app leaves them enabled for that connection instead of repeatedly forcing them off. Other apps' explicit scans, Wi-Fi Direct discovery and firmware roaming are outside
+this control; this option cannot promise to eliminate every radio interruption.
+
 #### FYT external Bluetooth module transport (experimental)
 On FYT units where the phone pairs for calls with a separate Bluetooth module (for example **DUDUAUTO** on DUDUOS), Native Mode can carry its Android Auto Bluetooth handshake through `/dev/auto_serial`, the relay the stock Car Link app (`com.syu.carlink`) uses, while calls remain on the module and the vehicle microphone/speakers. Tested so far only on DUDUOS with a BLINK module.
 

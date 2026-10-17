@@ -17,6 +17,8 @@ import com.andrerinas.openheadunit.connection.wifi.direct.StoredP2pIdentity
 import com.andrerinas.openheadunit.aap.AapService
 
 import com.andrerinas.openheadunit.connection.wifi.direct.WifiBandCapability
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zbt.ZbtDiscovery
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zbt.ZbtDiscoveryPolicy
 import com.andrerinas.openheadunit.utils.BluetoothAddressSeedPolicy
 import com.andrerinas.openheadunit.utils.BluetoothHelper
 import com.andrerinas.openheadunit.aap.protocol.proto.Wireless
@@ -29,7 +31,6 @@ import android.widget.Toast
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zbt.ZbtAaCarrier
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zbt.ZbtAttemptPolicy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zbt.ZbtRetransmitPolicy
-import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zbt.ZbtDaemonReachability
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.ConnectionIssue
 import com.andrerinas.openheadunit.utils.ConnectionIssues
@@ -113,33 +114,35 @@ class NativeAaHandshakeManager(
         }
 
         /**
-         * The one-line explanation to log and show when this unit's Bluetooth is an external
-         * module, or null when it isn't. Kept here so the handshake manager and the settings
-         * compatibility probe say exactly the same thing.
+         * Keep the existing external-module refusal text shared with settings. Its evidence now
+         * comes from the same snapshot as routing, rather than a separate BluetoothHelper read:
+         * a candidate allowed to fall back must not acquire this warning from a late marker.
          */
-        fun externalBtDiagnostic(): String? = BluetoothHelper.externalBtEvidence?.let { evidence ->
-            "NativeAA: external Bluetooth module detected ($evidence) — the phone is bonded to " +
-                "the head unit's own Bluetooth chip, not the one Android exposes, so nothing we " +
-                "write over RFCOMM reaches it. Bluetooth-based wireless cannot work on this unit; " +
-                "use USB, or one of the WiFi modes that does not need the Bluetooth handshake."
-        }
+        fun externalBtDiagnostic(discovery: ZbtDiscoveryPolicy.Snapshot = ZbtDiscovery.snapshot()): String? =
+            discovery.decision.takeUnless { it.allowsAndroidFallback }?.evidence?.let { evidence ->
+                "NativeAA: external Bluetooth module detected ($evidence) — the phone is bonded to " +
+                    "the head unit's own Bluetooth chip, not the one Android exposes, so nothing we " +
+                    "write over RFCOMM reaches it. Bluetooth-based wireless cannot work on this unit; " +
+                    "use USB, or one of the WiFi modes that does not need the Bluetooth handshake."
+            }
 
         /**
          * Which Bluetooth route this unit takes on a flagged unit: its own radio, the external
          * module, or neither. The decision itself is pure and tested in [ExternalBtTransportPolicy];
-         * this only reads the two settings it needs. Every caller asks here rather than re-deriving
+         * this reads the settings and discovery snapshot. Every caller asks here rather than re-deriving
          * it, because four of them drifted apart once already.
          */
-        fun transportRoute(context: Context): ExternalBtTransportPolicy.Route {
+        fun transportRoute(
+            context: Context,
+            discovery: ZbtDiscoveryPolicy.Snapshot = ZbtDiscovery.snapshot()
+        ): ExternalBtTransportPolicy.Route {
             val settings = App.provide(context).settings
             return ExternalBtTransportPolicy.route(
-                BluetoothHelper.externalBtEvidence,
+                discovery,
                 settings.externalBtZbtTransport,
                 settings.nativeAaIgnoreExternalBt,
-                // A read, never a dial. This runs on the UI path, and the dial is a socket connect.
-                ZbtDaemonReachability.cached(),
-                settings.externalBtBlinkTransport,
-                BluetoothHelper.fytModuleEvidence
+                blinkTransportEnabled = settings.externalBtBlinkTransport,
+                fytModuleEvidence = BluetoothHelper.fytModuleEvidence
             )
         }
 
@@ -147,12 +150,11 @@ class NativeAaHandshakeManager(
         fun wifiButtonRoute(context: Context): ExternalBtTransportPolicy.WifiButton {
             val settings = App.provide(context).settings
             return ExternalBtTransportPolicy.wifiButton(
-                BluetoothHelper.externalBtEvidence,
+                ZbtDiscovery.snapshot(),
                 settings.externalBtZbtTransport,
                 settings.nativeAaIgnoreExternalBt,
-                ZbtDaemonReachability.cached(),
-                settings.externalBtBlinkTransport,
-                BluetoothHelper.fytModuleEvidence
+                blinkTransportEnabled = settings.externalBtBlinkTransport,
+                fytModuleEvidence = BluetoothHelper.fytModuleEvidence
             )
         }
 
@@ -160,17 +162,17 @@ class NativeAaHandshakeManager(
         fun wifiButtonRemeasures(context: Context): Boolean {
             val settings = App.provide(context).settings
             return ExternalBtTransportPolicy.remeasuresOnPress(
-                BluetoothHelper.externalBtEvidence,
+                ZbtDiscovery.snapshot(),
                 settings.externalBtZbtTransport,
                 settings.nativeAaIgnoreExternalBt,
-                ZbtDaemonReachability.cached(),
-                settings.externalBtBlinkTransport,
-                BluetoothHelper.fytModuleEvidence
+                blinkTransportEnabled = settings.externalBtBlinkTransport,
+                fytModuleEvidence = BluetoothHelper.fytModuleEvidence
             )
         }
 
         fun checkCompatibility(context: Context): Boolean {
-            when (transportRoute(context)) {
+            val discovery = ZbtDiscovery.snapshot()
+            when (transportRoute(context, discovery)) {
                 // The module has its own listener and its own compatibility, established by the
                 // daemon answering at connection time. Nothing below measures that.
                 ExternalBtTransportPolicy.Route.ZBT, ExternalBtTransportPolicy.Route.BLINK -> {
@@ -178,11 +180,11 @@ class NativeAaHandshakeManager(
                     return true
                 }
                 ExternalBtTransportPolicy.Route.BLOCKED -> {
-                    externalBtDiagnostic()?.let { AppLog.w(it) }
+                    externalBtDiagnostic(discovery)?.let { AppLog.w(it) }
                     return false
                 }
-                // Either an ordinary unit, or a flagged one whose user switched the check off.
-                ExternalBtTransportPolicy.Route.NORMAL -> externalBtDiagnostic()?.let {
+                // Ordinary hardware, an unconfirmed candidate, or an explicit Android-radio override.
+                ExternalBtTransportPolicy.Route.NORMAL -> externalBtDiagnostic(discovery)?.let {
                     AppLog.w(it)
                     AppLog.w("NativeAA: continuing anyway, because the Bluetooth compatibility check is switched off in Settings.")
                 }
@@ -804,17 +806,40 @@ class NativeAaHandshakeManager(
 
     fun isMeasuringDaemon(): Boolean = measuringDaemon
 
+    /** Finish the same arming; stop() invalidates its generation before a queued result can act. */
+    internal fun resumeAfterDaemonMeasurement(
+        generation: Int,
+        arm: () -> Unit = { start(resumingMeasurement = true) }
+    ) {
+        if (measureGeneration != generation) return
+        measuringDaemon = false
+        val deferredWake = wakeAwaitingModule
+        arm()
+        wakeAwaitingModule = false
+        // A module carrier consumes its queued wake in startOverExternalModule.
+        // Android fallback still owes the picker its explicitly selected phone.
+        if (deferredWake && moduleCarrier == null && isRunning && !isSelectionCanceled) {
+            pendingSelectionTargetMac?.let { manualPoke(it) } ?: triggerPoke()
+        }
+    }
+
+    fun start() = start(resumingMeasurement = false)
+
     @SuppressLint("MissingPermission")
-    fun start() {
+    private fun start(resumingMeasurement: Boolean) {
         // A measurement in flight calls start() itself when it ends; a second one would ask twice.
         if (isRunning || measuringDaemon) return
-        // None of these survived a mode rebuild by design, and nothing else clears them: a cancel
-        // from the last arming would otherwise refuse every phone this one accepts.
-        resetSelectionState()
-        // A fresh arming answers to nobody's last session: the mode is being brought up again.
-        wakeStoodDown = false
-        sessionEndedAt = 0L
-        noteWakeDamageVerdict()
+        if (!resumingMeasurement) {
+            ZbtDiscovery.beginArming()
+            // Retain start()'s original fresh-arming reset: a cancellation from the previous
+            // attempt must not reject every new phone, or leave the new session stood down.
+            // Measurement completion belongs to the same arming, so preserve a phone selected
+            // while it waited instead of clearing that selection a second time.
+            resetSelectionState()
+            wakeStoodDown = false
+            sessionEndedAt = 0L
+            noteWakeDamageVerdict()
+        }
 
         // Ahead of every Bluetooth check below, because this listener does not need Bluetooth. A
         // unit whose adapter the phone cannot reach returns early from all of them, and that is
@@ -824,31 +849,38 @@ class NativeAaHandshakeManager(
         startWppTcpServer()
 
         // Ask the daemon before deciding, on the units where the answer can change the route.
-        // Off the main thread and once per process, then straight back in here with an answer.
+        // Off the main thread when the selected cache has no answer, then resume the same arming.
+        val discovery = ZbtDiscovery.snapshot()
         if (ExternalBtTransportPolicy.needsDaemonMeasurement(
-                BluetoothHelper.externalBtEvidence,
+                discovery,
                 settings.externalBtZbtTransport,
                 settings.nativeAaIgnoreExternalBt,
-                ZbtDaemonReachability.cached(),
-                settings.externalBtBlinkTransport,
-                BluetoothHelper.fytModuleEvidence
+                blinkTransportEnabled = settings.externalBtBlinkTransport,
+                fytModuleEvidence = BluetoothHelper.fytModuleEvidence
             )
         ) {
             notStartedReason = "the vendor Bluetooth daemon is still being asked whether it will carry Android Auto."
-            AppLog.i("NativeAA: this unit's Bluetooth is an external module; asking the vendor daemon whether it will carry Android Auto before choosing a route.")
+            AppLog.i("NativeAA: vendor Bluetooth bridge candidate detected; checking the local daemon before choosing a route.")
             measuringDaemon = true
             val generation = measureGeneration
             scope.launch(Dispatchers.IO + CoroutineName("NativeAa-ZbtReachability")) {
-                ZbtDaemonReachability.resolve(
-                    retryRefusals = true,
-                    keepTrying = { measuringDaemon && measureGeneration == generation }
-                )
+                val measurement = ZbtDiscovery.measurement(discovery.decision)
+                while (measuringDaemon && measureGeneration == generation) {
+                    // A replaced carrier may still be leaving its backoff. Do not spin between
+                    // Main and IO, or cache ownership as a failed firmware measurement.
+                    if (measurement.waitsForCarrier) {
+                        delay(250L)
+                        continue
+                    }
+                    measurement.resolve(
+                        retryRefusals = true,
+                        keepTrying = { measuringDaemon && measureGeneration == generation }
+                    )
+                    if (measurement.settled) break
+                    delay(250L)
+                }
                 withContext(Dispatchers.Main.immediate) {
-                    if (measureGeneration != generation) return@withContext
-                    measuringDaemon = false
-                    start()
-                    // The module route took it if it opened; any other answer has nothing to wake.
-                    wakeAwaitingModule = false
+                    resumeAfterDaemonMeasurement(generation)
                 }
             }
             return
@@ -857,7 +889,7 @@ class NativeAaHandshakeManager(
         // Leave isRunning false, like the "adapter disabled" case below: isActive() callers must
         // see this as genuinely stopped. Nothing here is retryable, but a listener that was never
         // opened must not be reported as up.
-        when (transportRoute(context)) {
+        when (transportRoute(context, discovery)) {
             // The module carries the handshake instead, over its own channel. None of the RFCOMM
             // setup below applies to it.
             ExternalBtTransportPolicy.Route.ZBT -> {
@@ -876,14 +908,14 @@ class NativeAaHandshakeManager(
                     AppLog.e("NativeAA: $notStartedReason")
                     return
                 }
-                externalBtDiagnostic()?.let { AppLog.e(it) }
+                externalBtDiagnostic(discovery)?.let { AppLog.e(it) }
                 notStartedReason = "this unit's Bluetooth is an external module with no route through it " +
-                    "(${BluetoothHelper.externalBtEvidence}). Turn on \"Connect through the head unit's " +
+                    "(${discovery.decision.evidence}). Turn on \"Connect through the head unit's " +
                     "Bluetooth module\", or use USB or a WiFi mode."
                 return
             }
-            // Either an ordinary unit, or a flagged one whose user switched the check off.
-            ExternalBtTransportPolicy.Route.NORMAL -> externalBtDiagnostic()?.let {
+            // Ordinary hardware, an unconfirmed candidate, or an explicit Android-radio override.
+            ExternalBtTransportPolicy.Route.NORMAL -> externalBtDiagnostic(discovery)?.let {
                 AppLog.w("$it\nNativeAA: starting anyway, because the Bluetooth compatibility check is switched off in Settings.")
             }
         }
@@ -2654,7 +2686,7 @@ class NativeAaHandshakeManager(
         aaListenersClosedForSession = false
         localRadioName = "external Bluetooth module"
         AppLog.i(
-            "NativeAA: external Bluetooth module transport is on (${BluetoothHelper.externalBtEvidence}) " +
+            "NativeAA: external Bluetooth module transport is on (${ZbtDiscovery.snapshot().decision.evidence}) " +
                 "— the handshake will go over the module through the vendor daemon, not this unit's " +
                 "own Bluetooth radio."
         )

@@ -3202,7 +3202,8 @@ class AapService : Service() {
                             )
                             activeLauncher.handshakeManager?.start()
                             // start() logs why it gave up; the person who pressed the button gets told too.
-                            if (activeLauncher.handshakeManager?.notStartedReason() != null) {
+                            if (activeLauncher.handshakeManager?.isMeasuringDaemon() != true &&
+                                activeLauncher.handshakeManager?.notStartedReason() != null) {
                                 ToastUtils.showToast(this, getString(R.string.native_aa_poke_not_running))
                             }
                         } else if (activeLauncher is WifiLauncherNative && activeLauncher.handshakeManager?.isActive() != true) {

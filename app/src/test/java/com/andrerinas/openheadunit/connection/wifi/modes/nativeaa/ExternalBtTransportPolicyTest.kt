@@ -2,6 +2,7 @@ package com.andrerinas.openheadunit.connection.wifi.modes.nativeaa
 
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.ExternalBtTransportPolicy.Route
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.ExternalBtTransportPolicy.WifiButton
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zbt.ZbtDiscoveryPolicy
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -12,6 +13,13 @@ import org.junit.Test
  * from disagreeing is that they all read it from here.
  */
 class ExternalBtTransportPolicyTest {
+    private fun legacy(evidence: String?, answer: Boolean?): ZbtDiscoveryPolicy.Snapshot {
+        val mode = if (evidence == null) ZbtDiscoveryPolicy.Mode.NONE else ZbtDiscoveryPolicy.Mode.REACHABILITY
+        return ZbtDiscoveryPolicy.Snapshot(ZbtDiscoveryPolicy.Decision(mode, evidence), answer)
+    }
+
+    private fun candidate(evidence: String, answer: Boolean?) =
+        ZbtDiscoveryPolicy.Snapshot(ZbtDiscoveryPolicy.Decision(ZbtDiscoveryPolicy.Mode.IDENTITY, evidence), answer)
 
     private val evidence = "/dev/rf_serial exists"
 
@@ -20,21 +28,21 @@ class ExternalBtTransportPolicyTest {
         zbt: Boolean = false,
         ignore: Boolean = false,
         daemonReachable: Boolean? = null
-    ) = ExternalBtTransportPolicy.route(externalBtEvidence, zbt, ignore, daemonReachable)
+    ) = ExternalBtTransportPolicy.route(legacy(externalBtEvidence, daemonReachable), zbt, ignore)
 
     private fun needsMeasurement(
         externalBtEvidence: String? = null,
         zbt: Boolean = false,
         ignore: Boolean = false,
         cached: Boolean? = null
-    ) = ExternalBtTransportPolicy.needsDaemonMeasurement(externalBtEvidence, zbt, ignore, cached)
+    ) = ExternalBtTransportPolicy.needsDaemonMeasurement(legacy(externalBtEvidence, cached), zbt, ignore)
 
     private fun refuses(
         externalBtEvidence: String? = null,
         zbt: Boolean = false,
         ignore: Boolean = false,
         cached: Boolean? = null
-    ) = ExternalBtTransportPolicy.refusesBringUp(externalBtEvidence, zbt, ignore, cached)
+    ) = ExternalBtTransportPolicy.refusesBringUp(legacy(externalBtEvidence, cached), zbt, ignore)
 
     @Test
     fun `a unit with no external-BT markers is normal, whatever the settings say`() {
@@ -171,7 +179,7 @@ class ExternalBtTransportPolicyTest {
                 for (ignore in listOf(false, true))
                     for (cached in cases) {
                         val blocked = ExternalBtTransportPolicy
-                            .route(evidenceValue, zbt, ignore, cached) == Route.BLOCKED
+                            .route(legacy(evidenceValue, cached), zbt, ignore) == Route.BLOCKED
                         val refused = refuses(evidenceValue, zbt, ignore, cached)
                         val asking = needsMeasurement(evidenceValue, zbt, ignore, cached)
                         assertEquals(blocked, refused || asking)
@@ -186,9 +194,9 @@ class ExternalBtTransportPolicyTest {
             for (zbt in listOf(false, true))
                 for (ignore in listOf(false, true))
                     for (cached in cases) {
-                        val button = ExternalBtTransportPolicy.wifiButton(evidenceValue, zbt, ignore, cached)
-                        val route = ExternalBtTransportPolicy.route(evidenceValue, zbt, ignore, cached)
-                        val remeasures = ExternalBtTransportPolicy.remeasuresOnPress(evidenceValue, zbt, ignore, cached)
+                        val button = ExternalBtTransportPolicy.wifiButton(legacy(evidenceValue, cached), zbt, ignore)
+                        val route = ExternalBtTransportPolicy.route(legacy(evidenceValue, cached), zbt, ignore)
+                        val remeasures = ExternalBtTransportPolicy.remeasuresOnPress(legacy(evidenceValue, cached), zbt, ignore)
                         assertEquals(refuses(evidenceValue, zbt, ignore, cached), button == WifiButton.REFUSED || remeasures)
                         assertFalse(button == WifiButton.REFUSED && remeasures)
                         assertEquals(route == Route.NORMAL, button == WifiButton.ANDROID_RADIO)
@@ -197,49 +205,49 @@ class ExternalBtTransportPolicyTest {
 
     @Test
     fun `an unmeasured daemon sends the button to the module rather than refusing it`() {
-        assertEquals(WifiButton.MODULE, ExternalBtTransportPolicy.wifiButton(evidence, false, false, null))
+        assertEquals(WifiButton.MODULE, ExternalBtTransportPolicy.wifiButton(legacy(evidence, null), false, false))
         // A refusal already measured is asked again by the press, so it is no longer refused here.
-        assertEquals(WifiButton.MODULE, ExternalBtTransportPolicy.wifiButton(evidence, false, false, false))
+        assertEquals(WifiButton.MODULE, ExternalBtTransportPolicy.wifiButton(legacy(evidence, false), false, false))
     }
 
     @Test
     fun `a press re-asks a measured ZLink refusal and nothing else`() {
-        assertTrue(ExternalBtTransportPolicy.remeasuresOnPress(evidence, false, false, false))
-        assertFalse(ExternalBtTransportPolicy.remeasuresOnPress(evidence, false, false, true))
-        assertFalse(ExternalBtTransportPolicy.remeasuresOnPress(evidence, false, false, null))
-        assertFalse(ExternalBtTransportPolicy.remeasuresOnPress(evidence, true, false, false))
-        assertFalse(ExternalBtTransportPolicy.remeasuresOnPress(evidence, false, true, false))
-        assertFalse(ExternalBtTransportPolicy.remeasuresOnPress(evidence, false, false, false, true))
-        assertFalse(ExternalBtTransportPolicy.remeasuresOnPress(null, false, false, false))
+        assertTrue(ExternalBtTransportPolicy.remeasuresOnPress(legacy(evidence, false), false, false))
+        assertFalse(ExternalBtTransportPolicy.remeasuresOnPress(legacy(evidence, true), false, false))
+        assertFalse(ExternalBtTransportPolicy.remeasuresOnPress(legacy(evidence, null), false, false))
+        assertFalse(ExternalBtTransportPolicy.remeasuresOnPress(legacy(evidence, false), true, false))
+        assertFalse(ExternalBtTransportPolicy.remeasuresOnPress(legacy(evidence, false), false, true))
+        assertFalse(ExternalBtTransportPolicy.remeasuresOnPress(legacy(evidence, false), false, false, blinkTransportEnabled = true))
+        assertFalse(ExternalBtTransportPolicy.remeasuresOnPress(legacy(null, false), false, false))
     }
 
     @Test
     fun `a press never invents a ZLink measurement on FYT hardware`() {
-        assertFalse(ExternalBtTransportPolicy.remeasuresOnPress(evidence, false, false, false, false, "sys.fyt.bluetooth_type=2"))
+        assertFalse(ExternalBtTransportPolicy.remeasuresOnPress(legacy(evidence, false), false, false, blinkTransportEnabled = false, fytModuleEvidence = "sys.fyt.bluetooth_type=2"))
         assertEquals(
             WifiButton.REFUSED,
-            ExternalBtTransportPolicy.wifiButton(evidence, false, false, false, false, "sys.fyt.bluetooth_type=2")
+            ExternalBtTransportPolicy.wifiButton(legacy(evidence, false), false, false, blinkTransportEnabled = false, fytModuleEvidence = "sys.fyt.bluetooth_type=2")
         )
     }
 
     @Test
     fun `the BLINK transport wins whenever it is on, evidence or not`() {
-        assertEquals(Route.BLINK, ExternalBtTransportPolicy.route(null, false, false, null, true))
-        assertEquals(Route.BLINK, ExternalBtTransportPolicy.route(evidence, false, false, false, true))
-        assertEquals(Route.BLINK, ExternalBtTransportPolicy.route(evidence, true, true, true, true))
+        assertEquals(Route.BLINK, ExternalBtTransportPolicy.route(legacy(null, null), false, false, blinkTransportEnabled = true))
+        assertEquals(Route.BLINK, ExternalBtTransportPolicy.route(legacy(evidence, false), false, false, blinkTransportEnabled = true))
+        assertEquals(Route.BLINK, ExternalBtTransportPolicy.route(legacy(evidence, true), true, true, blinkTransportEnabled = true))
     }
 
     @Test
     fun `the BLINK transport never refuses bring-up or waits on the ZJ daemon`() {
-        assertFalse(ExternalBtTransportPolicy.refusesBringUp(evidence, false, false, false, true))
-        assertFalse(ExternalBtTransportPolicy.needsDaemonMeasurement(evidence, false, false, null, true))
-        assertEquals(WifiButton.MODULE, ExternalBtTransportPolicy.wifiButton(evidence, false, false, false, true))
+        assertFalse(ExternalBtTransportPolicy.refusesBringUp(legacy(evidence, false), false, false, blinkTransportEnabled = true))
+        assertFalse(ExternalBtTransportPolicy.needsDaemonMeasurement(legacy(evidence, null), false, false, blinkTransportEnabled = true))
+        assertEquals(WifiButton.MODULE, ExternalBtTransportPolicy.wifiButton(legacy(evidence, false), false, false, blinkTransportEnabled = true))
     }
 
     @Test
     fun `leaving the BLINK transport off changes nothing`() {
-        assertEquals(Route.BLOCKED, ExternalBtTransportPolicy.route(evidence, false, false, false, false))
-        assertEquals(Route.NORMAL, ExternalBtTransportPolicy.route(null, false, false, null, false))
+        assertEquals(Route.BLOCKED, ExternalBtTransportPolicy.route(legacy(evidence, false), false, false, blinkTransportEnabled = false))
+        assertEquals(Route.NORMAL, ExternalBtTransportPolicy.route(legacy(null, null), false, false, blinkTransportEnabled = false))
     }
 
     @Test
@@ -253,29 +261,29 @@ class ExternalBtTransportPolicyTest {
 
     @Test
     fun `an FYT module unit with the toggle off is refused without measuring a daemon`() {
-        assertEquals(Route.BLOCKED, ExternalBtTransportPolicy.route(null, false, false, null, false, fyt))
-        assertEquals(Route.BLOCKED, ExternalBtTransportPolicy.route(evidence, false, false, null, false, fyt))
-        assertFalse(ExternalBtTransportPolicy.needsDaemonMeasurement(evidence, false, false, null, false, fyt))
-        assertTrue(ExternalBtTransportPolicy.refusesBringUp(null, false, false, null, false, fyt))
-        assertEquals(WifiButton.REFUSED, ExternalBtTransportPolicy.wifiButton(null, false, false, null, false, fyt))
+        assertEquals(Route.BLOCKED, ExternalBtTransportPolicy.route(legacy(null, null), false, false, blinkTransportEnabled = false, fytModuleEvidence = fyt))
+        assertEquals(Route.BLOCKED, ExternalBtTransportPolicy.route(legacy(evidence, null), false, false, blinkTransportEnabled = false, fytModuleEvidence = fyt))
+        assertFalse(ExternalBtTransportPolicy.needsDaemonMeasurement(legacy(evidence, null), false, false, blinkTransportEnabled = false, fytModuleEvidence = fyt))
+        assertTrue(ExternalBtTransportPolicy.refusesBringUp(legacy(null, null), false, false, blinkTransportEnabled = false, fytModuleEvidence = fyt))
+        assertEquals(WifiButton.REFUSED, ExternalBtTransportPolicy.wifiButton(legacy(null, null), false, false, blinkTransportEnabled = false, fytModuleEvidence = fyt))
     }
 
     @Test
     fun `on an FYT module unit the toggle and the existing overrides still decide`() {
-        assertEquals(Route.BLINK, ExternalBtTransportPolicy.route(null, false, false, null, true, fyt))
-        assertEquals(Route.NORMAL, ExternalBtTransportPolicy.route(null, false, true, null, false, fyt))
-        assertEquals(WifiButton.MODULE, ExternalBtTransportPolicy.wifiButton(null, false, false, null, true, fyt))
+        assertEquals(Route.BLINK, ExternalBtTransportPolicy.route(legacy(null, null), false, false, blinkTransportEnabled = true, fytModuleEvidence = fyt))
+        assertEquals(Route.NORMAL, ExternalBtTransportPolicy.route(legacy(null, null), false, true, blinkTransportEnabled = false, fytModuleEvidence = fyt))
+        assertEquals(WifiButton.MODULE, ExternalBtTransportPolicy.wifiButton(legacy(null, null), false, false, blinkTransportEnabled = true, fytModuleEvidence = fyt))
     }
 
     @Test
     fun `an FYT module unit never takes the ZLink daemon route`() {
-        assertEquals(Route.BLOCKED, ExternalBtTransportPolicy.route(null, true, false, null, false, fyt))
-        assertEquals(Route.BLOCKED, ExternalBtTransportPolicy.route(evidence, true, false, true, false, fyt))
-        assertTrue(ExternalBtTransportPolicy.refusesBringUp(evidence, true, false, true, false, fyt))
-        assertEquals(WifiButton.REFUSED, ExternalBtTransportPolicy.wifiButton(null, true, false, null, false, fyt))
+        assertEquals(Route.BLOCKED, ExternalBtTransportPolicy.route(legacy(null, null), true, false, blinkTransportEnabled = false, fytModuleEvidence = fyt))
+        assertEquals(Route.BLOCKED, ExternalBtTransportPolicy.route(legacy(evidence, true), true, false, blinkTransportEnabled = false, fytModuleEvidence = fyt))
+        assertTrue(ExternalBtTransportPolicy.refusesBringUp(legacy(evidence, true), true, false, blinkTransportEnabled = false, fytModuleEvidence = fyt))
+        assertEquals(WifiButton.REFUSED, ExternalBtTransportPolicy.wifiButton(legacy(null, null), true, false, blinkTransportEnabled = false, fytModuleEvidence = fyt))
         // The FYT toggle still wins over a leftover ZBT toggle.
-        assertEquals(Route.BLINK, ExternalBtTransportPolicy.route(null, true, false, null, true, fyt))
-        assertEquals(WifiButton.MODULE, ExternalBtTransportPolicy.wifiButton(null, true, false, null, true, fyt))
+        assertEquals(Route.BLINK, ExternalBtTransportPolicy.route(legacy(null, null), true, false, blinkTransportEnabled = true, fytModuleEvidence = fyt))
+        assertEquals(WifiButton.MODULE, ExternalBtTransportPolicy.wifiButton(legacy(null, null), true, false, blinkTransportEnabled = true, fytModuleEvidence = fyt))
     }
 
     @Test
@@ -292,5 +300,50 @@ class ExternalBtTransportPolicyTest {
         assertFalse(ExternalBtTransportPolicy.usesExternalModule(Route.BLOCKED))
         assertTrue(ExternalBtTransportPolicy.usesExternalModule(Route.ZBT))
         assertTrue(ExternalBtTransportPolicy.usesExternalModule(Route.BLINK))
+    }
+    @Test
+    fun `HCT candidate is measured without refusing its Android radio`() {
+        for (answer in listOf(null, false, true)) {
+            assertEquals(if (answer == true) ExternalBtTransportPolicy.Route.ZBT else ExternalBtTransportPolicy.Route.NORMAL,
+                ExternalBtTransportPolicy.route(candidate("HCT", answer), false, false))
+            assertEquals(answer == null, ExternalBtTransportPolicy.needsDaemonMeasurement(candidate("HCT", answer), false, false))
+            assertFalse(ExternalBtTransportPolicy.refusesBringUp(candidate("HCT", answer), false, false))
+        }
+        assertEquals(ExternalBtTransportPolicy.WifiButton.MODULE,
+            ExternalBtTransportPolicy.wifiButton(candidate("HCT", null), false, false))
+        assertFalse(ExternalBtTransportPolicy.remeasuresOnPress(candidate("HCT", false), false, false))
+        assertEquals(ExternalBtTransportPolicy.WifiButton.ANDROID_RADIO,
+            ExternalBtTransportPolicy.wifiButton(candidate("HCT", false), false, false))
+    }
+
+    @Test
+    fun `HCT detection preserves FYT and explicit override priorities`() {
+        assertEquals(ExternalBtTransportPolicy.Route.BLOCKED, ExternalBtTransportPolicy.route(candidate("HCT", true), false, false, fytModuleEvidence = "FYT"))
+        assertFalse(ExternalBtTransportPolicy.needsDaemonMeasurement(candidate("HCT", null), false, false, fytModuleEvidence = "FYT"))
+        assertEquals(ExternalBtTransportPolicy.Route.NORMAL, ExternalBtTransportPolicy.route(candidate("HCT", true), false, true))
+        assertEquals(ExternalBtTransportPolicy.Route.BLINK, ExternalBtTransportPolicy.route(candidate("HCT", true), false, false, blinkTransportEnabled = true))
+    }
+
+    @Test
+    fun `QF candidates cannot override FYT or disable the Android picker after a failed probe`() {
+        val decision = ZbtDiscoveryPolicy.detect({ null }, { it == "/system/bin/gocsdk_zj" })
+        fun loaderCandidate(answer: Boolean?) = ZbtDiscoveryPolicy.Snapshot(decision, answer)
+        for (answer in listOf(null, false, true)) {
+            assertEquals(ExternalBtTransportPolicy.Route.BLOCKED,
+                ExternalBtTransportPolicy.route(loaderCandidate(answer), false, false, fytModuleEvidence = "FYT"))
+            assertFalse(ExternalBtTransportPolicy.needsDaemonMeasurement(loaderCandidate(answer), false, false, fytModuleEvidence = "FYT"))
+            assertEquals(ExternalBtTransportPolicy.Route.BLINK,
+                ExternalBtTransportPolicy.route(loaderCandidate(answer), false, false, blinkTransportEnabled = true))
+            assertEquals(ExternalBtTransportPolicy.Route.NORMAL,
+                ExternalBtTransportPolicy.route(loaderCandidate(answer), false, true))
+            assertEquals(ExternalBtTransportPolicy.Route.ZBT,
+                ExternalBtTransportPolicy.route(loaderCandidate(answer), true, false))
+            assertEquals(if (answer == true) ExternalBtTransportPolicy.Route.ZBT else ExternalBtTransportPolicy.Route.NORMAL,
+                ExternalBtTransportPolicy.route(loaderCandidate(answer), false, false))
+            assertEquals(answer == null,
+                ExternalBtTransportPolicy.needsDaemonMeasurement(loaderCandidate(answer), false, false))
+        }
+        assertEquals(ExternalBtTransportPolicy.WifiButton.ANDROID_RADIO,
+            ExternalBtTransportPolicy.wifiButton(loaderCandidate(false), false, false))
     }
 }

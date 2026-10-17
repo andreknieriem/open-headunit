@@ -16,6 +16,7 @@ import com.andrerinas.openheadunit.connection.wifi.direct.StationStandDown
 import com.andrerinas.openheadunit.connection.wifi.direct.StationStandDownMode
 import com.andrerinas.openheadunit.connection.wifi.direct.WifiBandCapability
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeAaHandshakeManager
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zbt.ZbtDiscovery
 import com.andrerinas.openheadunit.decoder.video.VideoFaultInjector
 import com.andrerinas.openheadunit.decoder.audio.AudioDiagnostics
 import kotlinx.coroutines.Dispatchers
@@ -188,10 +189,16 @@ object LogExporter {
         "${StationStandDownMode.fromSetting(settings.stationStandDownMode)}/" +
             StationStandDown.lastOutcome.token
 
-    /** Internal radio, or the external module and the route chosen for it. Both reads are cheap. */
-    private fun bluetoothRoute(context: Context): String =
-        if (BluetoothHelper.externalBtEvidence == null) "internal"
-        else "module:${NativeAaHandshakeManager.transportRoute(context)}"
+    /** Label ordinary hardware, a firmware candidate, or an established module with its route; never dial. */
+    private fun bluetoothRoute(context: Context): String {
+        val discovery = ZbtDiscovery.snapshot()
+        val decision = discovery.decision
+        return when {
+            !decision.available -> "internal"
+            decision.requiresIdentity -> "zbt-candidate:${NativeAaHandshakeManager.transportRoute(context, discovery)}"
+            else -> "module:${NativeAaHandshakeManager.transportRoute(context, discovery)}"
+        }
+    }
 
     /**
      * The transport selector that the reported mode actually reads.

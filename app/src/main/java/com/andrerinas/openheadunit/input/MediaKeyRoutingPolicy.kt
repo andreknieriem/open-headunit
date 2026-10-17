@@ -64,14 +64,42 @@ object MediaKeyRoutingPolicy {
      *                         broken app. Note this is the opposite resolution to
      *                         [com.andrerinas.openheadunit.decoder.audio.PlaybackFocusPolicy], where an unreadable state means "assume a link
      *                         is up" — there the cautious answer is to leave focus alone.
+     * @param isLoopbackSession Self Mode. The player is on this device and holds a real session of
+     *                         its own, while a forwarded key is routed by Android Auto's input focus
+     *                         and so works only while the player is on screen. Outranks every mode,
+     *                         [Mode.ALWAYS] included, which speaks for a session to a separate phone.
      */
-    fun shouldForward(mode: Mode, isMediaKey: Boolean, btMediaLinkActive: Boolean?): Boolean {
+    fun shouldForward(
+        mode: Mode,
+        isMediaKey: Boolean,
+        btMediaLinkActive: Boolean?,
+        isLoopbackSession: Boolean
+    ): Boolean {
         if (!isMediaKey) return true
+        if (isLoopbackSession) return false
 
         return when (mode) {
             Mode.ALWAYS -> true
             Mode.NEVER -> false
             Mode.AUTO -> btMediaLinkActive != true
         }
+    }
+
+    /** What happens to a media key [shouldForward] declined. */
+    enum class Declined {
+        /** Hand the logical key to the system. Not every route has an event to pass on, so Self Mode sends it itself. */
+        DISPATCH,
+
+        /** The caller's own event is the right key, so a caller holding one may pass it on. */
+        FALL_THROUGH,
+
+        /** The physical code means something else here, so passing the event on would be the wrong key. */
+        DROP
+    }
+
+    fun onDeclined(isLoopbackSession: Boolean, isRemapped: Boolean): Declined = when {
+        isLoopbackSession -> Declined.DISPATCH
+        isRemapped -> Declined.DROP
+        else -> Declined.FALL_THROUGH
     }
 }

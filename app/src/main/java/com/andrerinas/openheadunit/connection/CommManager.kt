@@ -1338,19 +1338,24 @@ class CommManager(
      * @param source   where this delivery came from, for the log. One press reaching several
      *                 sources is the normal case on these head units, and naming them is what makes
      *                 a user's log readable.
+     * @return `false` only when [MediaKeyRoutingPolicy] left this key to another consumer and the
+     *         caller's own `KeyEvent` is the right one to pass on, so the system can route it.
+     *         Self Mode hands the key to the system here and returns `true`.
+     *         A de-duplicated press still returns `true`: that key is ours and we chose not to
+     *         re-send it, and passing it on would be the double skip the de-duplication exists for.
      */
-    fun sendKey(keyCode: Int, isPress: Boolean, downTime: Long? = null, source: String = "unknown") {
+    fun sendKey(keyCode: Int, isPress: Boolean, downTime: Long? = null, source: String = "unknown"): Boolean {
         if (_connectionState.value !is ConnectionState.TransportStarted) {
-            return
+            return true
         }
 
         // 1. Bindings (physical key -> action). An unbound key goes on as itself.
         val logicalCode = when (val resolution = KeyBindingPolicy.resolve(settings.keyBindings, keyCode, isPress)) {
             is KeyBindingPolicy.Resolution.SendToAa -> resolution.logicalCode
-            is KeyBindingPolicy.Resolution.Swallow -> return
+            is KeyBindingPolicy.Resolution.Swallow -> return true
             is KeyBindingPolicy.Resolution.Run -> {
                 runBoundAction(resolution.action, keyCode)
-                return
+                return true
             }
             KeyBindingPolicy.Resolution.Unbound -> {
                 // 2. Proprietary Key Filtering
@@ -1358,21 +1363,27 @@ class CommManager(
                 // bound in the Keymap settings, and Android Auto would read them as KEYCODE_UNKNOWN.
                 if (keyCode >= 1000) {
                     AppLog.v("CommManager: Ignoring unmapped proprietary key $keyCode")
-                    return
+                    return true
                 }
                 keyCode
             }
         }
-        sendLogicalKey(logicalCode, isPress, downTime, source)
+        return sendLogicalKey(logicalCode, isPress, downTime, source, keyCode)
     }
 
     /**
      * Sends an Android Auto key as is, without looking at key bindings. For gestures bound to an
      * Android Auto key, and for [sendKey] once a binding was resolved.
      */
-    fun sendLogicalKey(code: Int, isPress: Boolean, downTime: Long? = null, source: String = "unknown") {
+    fun sendLogicalKey(
+        code: Int,
+        isPress: Boolean,
+        downTime: Long? = null,
+        source: String = "unknown",
+        physicalCode: Int? = null
+    ): Boolean {
         if (_connectionState.value !is ConnectionState.TransportStarted) {
-            return
+            return true
         }
         var logicalCode = code
 
@@ -1387,12 +1398,19 @@ class CommManager(
         // 3. Routing: a media button the head unit's own Bluetooth side is already acting on must
         // not be sent again, or one press performs the action twice. See MediaKeyRoutingPolicy.
         // Only media keys can be held back, so nothing else pays for the Bluetooth probe.
+        var toSystem = false
         if (isMedia) {
             val routing = settings.mediaKeyRouting
-            if (source != "auto-resume" && !MediaKeyRoutingPolicy.shouldForward(routing, true, btMediaLinkForKeys())) {
-                AppLog.v("CommManager: Not sending media key $logicalCode to Android Auto " +
-                        "(routing=$routing, src=$source)")
-                return
+            val loopback = isLoopbackSession
+            if (source != "auto-resume" &&
+                !MediaKeyRoutingPolicy.shouldForward(routing, true, btMediaLinkForKeys(), loopback)) {
+                AppLog.i("CommManager: Not sending media key $logicalCode to Android Auto " +
+                        "(routing=$routing, selfMode=$loopback, src=$source)")
+                when (MediaKeyRoutingPolicy.onDeclined(loopback, logicalCode != physicalCode)) {
+                    MediaKeyRoutingPolicy.Declined.DISPATCH -> toSystem = true
+                    MediaKeyRoutingPolicy.Declined.FALL_THROUGH -> return false
+                    MediaKeyRoutingPolicy.Declined.DROP -> return true
+                }
             }
         }
 
@@ -1409,7 +1427,15 @@ class CommManager(
 
         if (!decision.forward) {
             AppLog.v("CommManager: Dropping key $logicalCode (isPress=$isPress, src=$source) - ${decision.dropReason}")
-            return
+            return true
+        }
+
+        // After the de-duplication: one press arrives by several routes, and each copy sent on is a
+        // skip. A copy the system hands back to our own receivers is dropped there too.
+        if (toSystem) {
+            if (decision.releaseFirst) dispatchToSystem(logicalCode, false, downTime)
+            dispatchToSystem(logicalCode, isPress, downTime)
+            return true
         }
 
         if (decision.releaseFirst) {
@@ -1419,6 +1445,7 @@ class CommManager(
 
         AppLog.i("CommManager: TX Key -> AA=$logicalCode (isPress=$isPress) src=$source")
         _transport?.send(logicalCode, isPress)
+        return true
     }
 
     private fun runBoundAction(action: InputAction, keyCode: Int) {
@@ -1455,6 +1482,15 @@ class CommManager(
             btMediaLinkCached = state
         }
         return state
+    }
+
+    private fun dispatchToSystem(code: Int, isPress: Boolean, downTime: Long?) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) return
+        val now = SystemClock.uptimeMillis()
+        val action = if (isPress) KeyEvent.ACTION_DOWN else KeyEvent.ACTION_UP
+        AppLog.i("CommManager: Media key -> system=$code (isPress=$isPress)")
+        (context.getSystemService(Context.AUDIO_SERVICE) as AudioManager)
+            .dispatchMediaKeyEvent(KeyEvent(downTime ?: now, now, action, code, 0))
     }
 
     private fun isMediaKey(code: Int): Boolean {

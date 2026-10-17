@@ -55,10 +55,16 @@ object ZbtDiscoveryPolicy {
      * The relay node alone does not establish the backend, so require the matching daemon.
      * An exported HCT Bluetooth service substitutes for a relay node hidden by SELinux.
      *
-     * QF K706 Android 10's gocsdk_zj loads libzbt-main.so, including a /system/lib
-     * fallback. The inspected library matches the Dasaita ZLink TCP 3152 implementation.
-     * QF also ships gocsdk_lt, so installed files do not identify the active backend.
-     * Do not require its runtime-created goc_serial node: boot timing or SELinux can hide it.
+     * QF K706 Android 10's gocsdk_zj loader tries libzbt-main.so in the ZLink app's
+     * private directory, /usr/z-loader/lib and other locations, then the bare library
+     * name, /oem/lib and finally /system/lib (disassembly: sub_7bf10, logging
+     * "open_libzbt_so"). The inspected library matches the Dasaita ZLink TCP 3152
+     * implementation. Library visibility to this app
+     * is not required: the daemon can load a copy outside /system/lib or behind app access
+     * restrictions. The known loader filename only makes the unit a probe candidate;
+     * QF also ships gocsdk_lt, so it does not identify the active backend. Other gocsdk
+     * variants are not ZBT evidence. Do not require the runtime-created goc_serial node
+     * either: boot timing or SELinux can hide it.
      *
      * Firmware hints only authorize a passive InitInfo probe. Missing or unrecognized replies
      * keep Android Bluetooth available. These checks neither open the UART nor start a daemon.
@@ -74,8 +80,8 @@ object ZbtDiscoveryPolicy {
             nodeExists("/system/bin/fscsdkbw123") &&
                 (nodeExists("/dev/goc_serial") || hctServiceAvailable()) ->
                 Decision(Mode.IDENTITY, "HCT Bluetooth bridge with fscsdkbw123")
-            nodeExists("/system/bin/gocsdk_zj") && nodeExists("/system/lib/libzbt-main.so") ->
-                Decision(Mode.IDENTITY, "QF gocsdk_zj with /system/lib/libzbt-main.so")
+            nodeExists("/system/bin/gocsdk_zj") ->
+                Decision(Mode.IDENTITY, "QF gocsdk_zj loader")
             else -> Decision(Mode.NONE, null)
         }
     }

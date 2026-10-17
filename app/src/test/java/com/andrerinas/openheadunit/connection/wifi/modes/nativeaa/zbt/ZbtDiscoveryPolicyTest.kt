@@ -19,7 +19,7 @@ class ZbtDiscoveryPolicyTest {
     private fun detectDecision(marker: String?, candidate: String?): ZbtDiscoveryPolicy.Decision =
         ZbtDiscoveryPolicy.detect({ marker }, when (candidate) {
             "HCT" -> nodes("/system/bin/fscsdkbw123", "/dev/goc_serial")
-            "QF" -> nodes("/system/bin/gocsdk_zj", "/system/lib/libzbt-main.so")
+            "QF" -> nodes("/system/bin/gocsdk_zj")
             else -> noNodes
         })
 
@@ -44,22 +44,51 @@ class ZbtDiscoveryPolicyTest {
     }
 
     @Test
-    fun `QF requires both the known loader and its system library without a visible relay`() {
+    fun `QF loader is a candidate without a visible library or relay`() {
         val daemon = "/system/bin/gocsdk_zj"
-        val library = "/system/lib/libzbt-main.so"
-        val evidence = "QF gocsdk_zj with /system/lib/libzbt-main.so"
-        assertEquals(evidence, detectCandidate(nodes(daemon, library)))
-        assertEquals(evidence, detectCandidate(nodes(daemon, library, "/system/bin/gocsdk_lt")))
+        val evidence = "QF gocsdk_zj loader"
+        // The loader can use an app-private or OEM copy that OHU cannot inspect.
         for (files in listOf(
-            emptyArray(), arrayOf(daemon), arrayOf(library),
-            arrayOf("/dev/goc_serial"), arrayOf(daemon, "/dev/goc_serial"),
-            arrayOf("/system/bin/gocsdk_lt", library, "/dev/goc_serial"),
-            arrayOf(daemon, "/system/lib64/libzbt-main.so")
+            arrayOf(daemon), arrayOf(daemon, "/system/lib/libzbt-main.so"),
+            arrayOf(daemon, "/oem/lib/libzbt-main.so"),
+            arrayOf(daemon, "/data/data/com.zjinnova.zlink/lib/libzbt-main.so"),
+            arrayOf(daemon, "/dev/goc_serial", "/system/bin/gocsdk_lt")
+        )) {
+            assertEquals(files.contentToString(), evidence, detectCandidate(nodes(*files)))
+        }
+        // Installed firmware is never the legacy marker that can block Android Bluetooth.
+        assertNull(ExternalBtPolicy.detect(nodes(daemon, "/dev/goc_serial"), noProps))
+    }
+
+    @Test
+    fun `other GOC daemons or a library alone do not authorize a ZBT probe`() {
+        for (files in listOf(
+            emptyArray(), arrayOf("/system/lib/libzbt-main.so"),
+            arrayOf("/oem/lib/libzbt-main.so"), arrayOf("/dev/goc_serial"),
+            arrayOf("/system/bin/gocsdk_lt", "/system/lib/libzbt-main.so", "/dev/goc_serial"),
+            arrayOf("/system/bin/gocsdk_wl", "/dev/goc_serial")
         )) {
             assertNull(files.contentToString(), detectCandidate(nodes(*files)))
         }
-        // Installed firmware is never the legacy marker that can block Android Bluetooth.
-        assertNull(ExternalBtPolicy.detect(nodes(daemon, library, "/dev/goc_serial"), noProps))
+    }
+
+    @Test
+    fun `QF candidate inspection does not read library paths`() {
+        val result = ZbtDiscoveryPolicy.detect({ null }, { path ->
+            when (path) {
+                "/system/bin/fscsdkbw123" -> false
+                "/system/bin/gocsdk_zj" -> true
+                else -> error("Library and relay metadata must not be required: $path")
+            }
+        })
+        assertEquals(ZbtDiscoveryPolicy.Mode.IDENTITY, result.mode)
+        // No response and a failed response both keep Android Bluetooth as the route.
+        for (confirmed in listOf(null, false, true)) {
+            val snapshot = ZbtDiscoveryPolicy.Snapshot(result, confirmed)
+            assertEquals(if (confirmed == true) ExternalBtTransportPolicy.Route.ZBT
+                else ExternalBtTransportPolicy.Route.NORMAL,
+                ExternalBtTransportPolicy.route(snapshot, false, false))
+        }
     }
 
     @Test
@@ -82,7 +111,7 @@ class ZbtDiscoveryPolicyTest {
             val decision = detectDecision(null, candidate)
             assertEquals(ZbtDiscoveryPolicy.Mode.IDENTITY, decision.mode)
             assertEquals(if (candidate == "HCT") "HCT Bluetooth bridge with fscsdkbw123"
-                else "QF gocsdk_zj with /system/lib/libzbt-main.so", decision.evidence)
+                else "QF gocsdk_zj loader", decision.evidence)
             assertTrue(decision.requiresIdentity)
             assertTrue(decision.allowsAndroidFallback)
             assertFalse(decision.retriesOnPress)
@@ -181,8 +210,7 @@ class ZbtDiscoveryPolicyTest {
 
     @Test
     fun `HCT wins over QF and a service alone cannot identify either bridge`() {
-        val all = nodes("/system/bin/fscsdkbw123", "/dev/goc_serial",
-            "/system/bin/gocsdk_zj", "/system/lib/libzbt-main.so")
+        val all = nodes("/system/bin/fscsdkbw123", "/dev/goc_serial", "/system/bin/gocsdk_zj")
         val result = ZbtDiscoveryPolicy.detect({ null }, all)
         assertEquals(ZbtDiscoveryPolicy.Mode.IDENTITY, result.mode)
         assertEquals("HCT Bluetooth bridge with fscsdkbw123", result.evidence)

@@ -1,0 +1,302 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Portrait-specific home layout.
+
+    Strategy:
+    - Outer ConstraintLayout fills the screen; Exit button anchored bottom-right.
+    - The 2×2 button grid (LinearLayout, wrap_content height) is vertically
+      centered via ConstraintLayout bias. This eliminates the large gap that
+      occurs with weight-based rows on tall phones: the grid is exactly as
+      tall as its content — no more, no less.
+    - Each button lives inside a ConstraintLayout cell whose height is
+      wrap_content. The button itself is 0dp×0dp with dimensionRatio="1:1",
+      constrained to all four sides of its parent cell → always square.
+    - Labels are plain TextViews below each cell's ConstraintLayout.
+-->
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/main_buttons_container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!--
+        2×2 grid block — height is exactly wrap_content (2 × buttonSize + labels).
+        Width is capped at 480dp for large portrait tablets.
+        Vertically centred at bias 0.45 (slightly above true centre) so it
+        looks balanced with the WiFi-pill at the top and exit button at the
+        bottom.
+    -->
+    <LinearLayout
+        android:id="@+id/main_buttons_layout"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="8dp"
+        app:layout_constraintWidth_max="480dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintVertical_bias="0.45">
+
+        <!-- ── Row 1: Self Mode + USB ── -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <!-- Self Mode cell -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:padding="12dp">
+
+                <!--
+                    ConstraintLayout provides a square frame:
+                    - width  = match_parent (known = half screen − padding)
+                    - height = wrap_content → ConstraintLayout sizes to the
+                               button's measured height (which equals its width
+                               via dimensionRatio="1:1")
+                -->
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/self_mode_button"
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:elevation="6dp"
+                        app:layout_constraintDimensionRatio="1:1"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:backgroundTint="@null"
+                        android:background="@drawable/gradient_blue"
+                        app:iconGravity="textStart"
+                        app:icon="@drawable/ic_launch_white"
+                        app:iconTint="#ffffff"
+                        app:iconSize="48dp"
+                        app:iconPadding="0dp"
+                        android:paddingTop="0dp"
+                        android:paddingBottom="0dp" />
+
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+                <TextView
+                    android:id="@+id/self_mode_text"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/self_mode"
+                    android:textColor="@color/text_primary"
+                    android:shadowColor="@color/text_shadow"
+                    android:shadowDx="0"
+                    android:shadowDy="0"
+                    android:shadowRadius="8"
+                    android:textSize="15sp"
+                    android:textFontWeight="700"
+                    android:gravity="center_horizontal"
+                    android:layout_marginTop="6dp" />
+
+            </LinearLayout>
+
+            <!-- USB cell -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:padding="12dp">
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/usb_button"
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:elevation="6dp"
+                        app:layout_constraintDimensionRatio="1:1"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:backgroundTint="@null"
+                        android:background="@drawable/gradient_orange"
+                        app:iconGravity="textStart"
+                        app:icon="@drawable/ic_usb_white"
+                        app:iconTint="#ffffff"
+                        app:iconSize="48dp"
+                        app:iconPadding="0dp"
+                        android:paddingTop="0dp"
+                        android:paddingBottom="0dp" />
+
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+                <TextView
+                    android:id="@+id/usb_text"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/usb"
+                    android:textColor="@color/text_primary"
+                    android:shadowColor="@color/text_shadow"
+                    android:shadowDx="0"
+                    android:shadowDy="0"
+                    android:shadowRadius="8"
+                    android:textSize="15sp"
+                    android:textFontWeight="700"
+                    android:gravity="center_horizontal"
+                    android:layout_marginTop="6dp" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- ── Row 2: WiFi + Settings ── -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <!-- WiFi cell -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:padding="12dp">
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/wifi_button"
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:elevation="6dp"
+                        app:layout_constraintDimensionRatio="1:1"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:backgroundTint="@null"
+                        android:background="@drawable/gradient_purple"
+                        app:iconGravity="textStart"
+                        app:icon="@drawable/ic_network_wifi_white"
+                        app:iconTint="#ffffff"
+                        app:iconSize="48dp"
+                        app:iconPadding="0dp"
+                        android:paddingTop="0dp"
+                        android:paddingBottom="0dp" />
+
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+                <TextView
+                    android:id="@+id/wifi_text"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/wifi"
+                    android:textColor="@color/text_primary"
+                    android:shadowColor="@color/text_shadow"
+                    android:shadowDx="0"
+                    android:shadowDy="0"
+                    android:shadowRadius="8"
+                    android:textSize="15sp"
+                    android:textFontWeight="700"
+                    android:gravity="center_horizontal"
+                    android:layout_marginTop="6dp" />
+
+            </LinearLayout>
+
+            <!-- Settings cell -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:padding="12dp">
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/settings_button"
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:elevation="6dp"
+                        app:layout_constraintDimensionRatio="1:1"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:backgroundTint="@null"
+                        android:background="@drawable/gradient_darkblue"
+                        app:iconGravity="textStart"
+                        app:icon="@drawable/ic_settings_white"
+                        app:iconTint="#ffffff"
+                        app:iconSize="48dp"
+                        app:iconPadding="0dp"
+                        android:paddingTop="0dp"
+                        android:paddingBottom="0dp" />
+
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+                <TextView
+                    android:id="@+id/settings_text"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/settings"
+                    android:textColor="@color/text_primary"
+                    android:shadowColor="@color/text_shadow"
+                    android:shadowDx="0"
+                    android:shadowDy="0"
+                    android:shadowRadius="8"
+                    android:textSize="15sp"
+                    android:textFontWeight="700"
+                    android:gravity="center_horizontal"
+                    android:layout_marginTop="6dp" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+   <com.google.android.material.button.MaterialButton
+        android:id="@+id/apps_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/exit_button"
+        android:layout_marginEnd="12dp"
+        android:layout_marginBottom="16dp"
+        app:layout_goneMarginEnd="16dp"
+        android:text="@string/apps"
+        app:icon="@drawable/ic_apps"
+        app:iconTint="@android:color/white"
+        app:backgroundTint="@color/material_grey_700"
+        android:textColor="@android:color/white"
+        app:cornerRadius="8dp"
+        android:visibility="gone" />
+
+    <!-- Exit button — always at bottom-right, independent of the grid -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/exit_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_margin="16dp"
+        android:text="@string/exit"
+        app:backgroundTint="@color/material_grey_700"
+        android:textColor="@android:color/white"
+        app:cornerRadius="8dp" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

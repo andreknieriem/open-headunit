@@ -13,8 +13,10 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.PopupMenu
 import android.widget.ProgressBar
 import android.widget.TextView
+import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.lifecycleScope
@@ -24,6 +26,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.utils.AppLog
+import com.andrerinas.openheadunit.utils.ToastUtils
 import com.google.android.material.appbar.MaterialToolbar
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -51,6 +54,22 @@ class AppDrawerFragment : DialogFragment() {
 
     companion object {
         private const val TAG = "AppDrawerFragment"
+        private const val ARG_FAVORITE_SLOT = "favorite_slot"
+
+        /** Opens the drawer to choose the app for one of the home screen's favorite slots. */
+        fun pickFavoriteArgs(slot: Int) = Bundle().apply { putInt(ARG_FAVORITE_SLOT, slot) }
+
+        /** @return false when the package has no launcher entry or refused to start. */
+        fun launchPackage(context: Context, packageName: String): Boolean {
+            return try {
+                val intent = context.packageManager.getLaunchIntentForPackage(packageName) ?: return false
+                context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                true
+            } catch (e: Exception) {
+                AppLog.e(TAG, "Launch failed for $packageName", e)
+                false
+            }
+        }
 
         fun preload(context: Context) {
             if (AppDrawerCache.cachedApps != null) return
@@ -145,9 +164,14 @@ class AppDrawerFragment : DialogFragment() {
         val screenWidthDp = resources.displayMetrics.widthPixels / resources.displayMetrics.density
         rvApps.layoutManager = GridLayoutManager(requireContext(), (screenWidthDp / 120).toInt().coerceAtLeast(3))
 
-        val adapter = AppDrawerAdapter(emptyList(), viewLifecycleOwner.lifecycleScope) { app ->
-            launchApp(app)
-        }
+        val favoriteSlot = arguments?.getInt(ARG_FAVORITE_SLOT, -1) ?: -1
+        if (favoriteSlot >= 0) toolbar.setTitle(R.string.home_choose_favorite_app)
+        val adapter = AppDrawerAdapter(
+            emptyList(),
+            viewLifecycleOwner.lifecycleScope,
+            onItemClick = { app -> if (favoriteSlot >= 0) pickFavorite(favoriteSlot, app) else launchApp(app) },
+            onItemLongClick = { anchor, app -> if (favoriteSlot < 0) showAddToFavorites(anchor, app) }
+        )
         rvApps.adapter = adapter
 
         // If list is cached, display immediately without waiting for query
@@ -216,6 +240,28 @@ class AppDrawerFragment : DialogFragment() {
         }
     }
 
+    private fun pickFavorite(slot: Int, item: AppDrawerItem) {
+        val settings = App.provide(requireContext()).settings
+        settings.homeFavoriteApps = FavoriteAppsPolicy.place(settings.homeFavoriteApps, slot, item.packageName)
+        closeDrawer()
+    }
+
+    private fun showAddToFavorites(anchor: View, item: AppDrawerItem) {
+        PopupMenu(requireContext(), anchor).apply {
+            menu.add(R.string.home_add_to_favorites).setOnMenuItemClickListener {
+                val settings = App.provide(requireContext()).settings
+                val updated = FavoriteAppsPolicy.add(settings.homeFavoriteApps, item.packageName)
+                if (updated == null) {
+                    ToastUtils.showToast(requireContext(), R.string.home_favorites_full, Toast.LENGTH_LONG)
+                } else {
+                    settings.homeFavoriteApps = updated
+                }
+                true
+            }
+            show()
+        }
+    }
+
     private fun launchApp(item: AppDrawerItem) {
         val comp = ComponentName(item.packageName, item.activityName)
         val launchIntent = Intent(Intent.ACTION_MAIN).apply {
@@ -230,17 +276,7 @@ class AppDrawerFragment : DialogFragment() {
             launched = true
         } catch (e: Exception) {
             AppLog.w(TAG, "Direct launch failed for $comp, trying getLaunchIntentForPackage fallback", e)
-            try {
-                val fallbackIntent = requireContext().packageManager.getLaunchIntentForPackage(item.packageName)?.apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-                if (fallbackIntent != null) {
-                    startActivity(fallbackIntent)
-                    launched = true
-                }
-            } catch (e2: Exception) {
-                AppLog.e(TAG, "Fallback launch failed for ${item.packageName}", e2)
-            }
+            launched = launchPackage(requireContext(), item.packageName)
         }
 
         if (launched) {
@@ -252,7 +288,8 @@ class AppDrawerFragment : DialogFragment() {
 class AppDrawerAdapter(
     private var items: List<AppDrawerItem>,
     private val coroutineScope: CoroutineScope,
-    private val onItemClick: (AppDrawerItem) -> Unit
+    private val onItemClick: (AppDrawerItem) -> Unit,
+    private val onItemLongClick: (View, AppDrawerItem) -> Unit
 ) : RecyclerView.Adapter<AppDrawerAdapter.ViewHolder>() {
 
     @SuppressLint("NotifyDataSetChanged")
@@ -314,6 +351,10 @@ class AppDrawerAdapter(
             }
 
             itemView.setOnClickListener { onItemClick(item) }
+            itemView.setOnLongClickListener {
+                onItemLongClick(it, item)
+                true
+            }
         }
     }
 }

@@ -1332,4 +1332,42 @@
     <string name="copy_to_clipboard">Copy</string>
     <string name="copied_to_clipboard">Copied to clipboard</string>
     <string name="audio_settings_reconnect">Audio settings saved. Reconnect Android Auto to apply them.</string>
+
+    <!-- Home screen -->
+    <string name="home_kicker_active">Android Auto</string>
+    <string name="home_kicker_last_connection">Your last connection</string>
+    <string name="home_kicker_cable">Cable</string>
+    <string name="home_kicker_wireless">Wireless</string>
+    <string name="home_title_active">Your phone is connected</string>
+    <string name="home_title_reconnecting">Reconnecting</string>
+    <string name="home_title_searching">Searching for your phone…</string>
+    <string name="home_title_phone_detected">%1$s detected</string>
+    <string name="home_title_phone_detected_generic">Phone detected</string>
+    <string name="home_title_usb_ready">Plug in your phone</string>
+    <string name="home_title_wifi_ready">Connect wirelessly</string>
+    <string name="home_title_self_ready">Android Auto on this unit</string>
+    <string name="home_subtitle_searching">Open Android Auto on the phone if it does not show up</string>
+    <string name="home_subtitle_usb">Over USB cable</string>
+    <string name="home_subtitle_wifi">Over WiFi</string>
+    <string name="home_subtitle_self">Runs Android Auto on the radio itself</string>
+    <string name="home_action_back_to_android_auto">Back to Android Auto</string>
+    <string name="home_action_connect_now">Connect now</string>
+    <string name="home_action_search_again">Search again</string>
+    <string name="home_action_connect_usb">Connect over USB</string>
+    <string name="home_action_connect_wifi">Connect over WiFi</string>
+    <string name="home_action_start_self_mode">Start Self Mode</string>
+    <string name="home_all_apps">All</string>
+    <string name="home_add_favorite">Add app</string>
+    <string name="home_favorite_change">Change</string>
+    <string name="home_add_to_favorites">Add to favorites</string>
+    <string name="home_favorites_full">All four favorites are taken. Long-press one on the home screen to change it.</string>
+    <string name="home_choose_favorite_app">Choose an app</string>
+    <string name="home_show_favorite_apps">Favorite apps on the home screen</string>
+    <string name="home_show_favorite_apps_description">Four app shortcuts under the main button while Open Headunit is the launcher</string>
+    <string name="home_use_classic">Classic home screen</string>
+    <string name="home_use_classic_description">The previous design, with four equal buttons</string>
+    <string name="home_design_notice_title">A new home screen</string>
+    <string name="home_design_notice_message">Open Headunit has a new home screen: the connection you use is one big button, and the rest sits on the driver\'s side.\n\nDo you want to use it? You can switch back any time in Settings, Customization.</string>
+    <string name="home_design_notice_use_new">Use the new design</string>
+    <string name="home_design_notice_keep_classic">Keep the classic one</string>
 </resources>

@@ -102,4 +102,45 @@
         <item name="cornerFamily">rounded</item>
         <item name="cornerSize">24dp</item>
     </style>
+
+    <!-- Home screen tiles: the driver bar and the favorite apps share one look. -->
+    <style name="HomeTile">
+        <item name="android:layout_width">@dimen/home_tile_size</item>
+        <item name="android:layout_height">@dimen/home_tile_size</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:gravity">center</item>
+        <item name="android:background">@drawable/home_tile_bg</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+    </style>
+    <style name="HomeTile.Favorite">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">match_parent</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:background">@drawable/home_favorite_slot_bg</item>
+    </style>
+    <style name="HomeTileIcon">
+        <item name="android:layout_width">@dimen/home_tile_icon</item>
+        <item name="android:layout_height">@dimen/home_tile_icon</item>
+        <item name="android:scaleType">fitCenter</item>
+        <item name="android:importantForAccessibility">no</item>
+    </style>
+    <style name="HomeTileLabel">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">6dp</item>
+        <item name="android:paddingLeft">4dp</item>
+        <item name="android:paddingRight">4dp</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:ellipsize">end</item>
+        <item name="android:textColor">@android:color/white</item>
+        <item name="android:textSize">@dimen/home_tile_label</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+    <style name="HomeCardText">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">@android:color/white</item>
+        <item name="android:ellipsize">end</item>
+    </style>
 </resources>

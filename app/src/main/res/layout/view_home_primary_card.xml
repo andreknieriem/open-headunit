@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The main button: the connection the user uses, and its state. HomeUiHelper paints it. -->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/home_primary_card"
+    android:layout_width="match_parent"
+    android:layout_height="0dp"
+    android:layout_weight="1"
+    android:orientation="vertical"
+    android:paddingLeft="@dimen/home_card_padding_h"
+    android:paddingRight="@dimen/home_card_padding_h"
+    android:paddingTop="@dimen/home_card_padding_v"
+    android:paddingBottom="@dimen/home_card_padding_v">
+
+    <LinearLayout
+        android:id="@+id/home_primary_header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <FrameLayout
+            android:id="@+id/home_primary_icon_tile"
+            android:layout_width="@dimen/home_card_icon_tile"
+            android:layout_height="@dimen/home_card_icon_tile">
+            <ImageView
+                android:id="@+id/home_primary_icon"
+                android:layout_width="@dimen/home_card_icon"
+                android:layout_height="@dimen/home_card_icon"
+                android:layout_gravity="center"
+                android:importantForAccessibility="no"
+                app:srcCompat="@drawable/ic_usb_white" />
+        </FrameLayout>
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <TextView
+            android:id="@+id/home_countdown"
+            android:layout_width="@dimen/home_countdown_size"
+            android:layout_height="@dimen/home_countdown_size"
+            android:background="@drawable/home_countdown_ring"
+            android:gravity="center"
+            android:textColor="@android:color/white"
+            android:textSize="@dimen/home_countdown_text"
+            android:textStyle="bold"
+            android:visibility="gone" />
+
+    </LinearLayout>
+
+    <View
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <TextView
+        android:id="@+id/home_primary_kicker"
+        style="@style/HomeCardText"
+        android:maxLines="1"
+        android:textAllCaps="true"
+        android:textSize="@dimen/home_card_kicker"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/home_primary_title"
+        style="@style/HomeCardText"
+        android:layout_marginTop="6dp"
+        android:maxLines="2"
+        android:textSize="@dimen/home_card_title"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/home_primary_subtitle"
+        style="@style/HomeCardText"
+        android:layout_marginTop="6dp"
+        android:maxLines="2"
+        android:textSize="@dimen/home_card_subtitle" />
+
+    <View
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <LinearLayout
+        android:id="@+id/home_primary_actions"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:divider="@drawable/home_gap"
+        android:showDividers="middle">
+
+        <!-- Weighted in a wrap_content row: it keeps its size while both fit and gives up width,
+             not Cancel, when they do not (portrait). -->
+        <TextView
+            android:id="@+id/home_primary_action"
+            android:layout_width="wrap_content"
+            android:layout_height="@dimen/home_cta_height"
+            android:layout_weight="1"
+            tools:ignore="InefficientWeight"
+            android:minWidth="@dimen/home_cta_min_width"
+            android:paddingLeft="32dp"
+            android:paddingRight="32dp"
+            android:gravity="center"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:clickable="true"
+            android:focusable="true"
+            android:textSize="@dimen/home_cta_text"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/home_primary_cancel"
+            android:layout_width="wrap_content"
+            android:layout_height="@dimen/home_secondary_cta_height"
+            android:layout_gravity="center_vertical"
+            android:paddingLeft="28dp"
+            android:paddingRight="28dp"
+            android:gravity="center"
+            android:maxLines="1"
+            android:clickable="true"
+            android:focusable="true"
+            android:text="@string/cancel"
+            android:textColor="@android:color/white"
+            android:textSize="@dimen/home_secondary_cta_text"
+            android:textStyle="bold"
+            android:visibility="gone" />
+
+    </LinearLayout>
+
+</LinearLayout>

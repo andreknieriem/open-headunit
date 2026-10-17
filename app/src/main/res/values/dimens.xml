@@ -6,4 +6,29 @@
     <dimen name="activity_horizontal_margin">16dp</dimen>
     <dimen name="activity_vertical_margin">16dp</dimen>
     <dimen name="list_padding">16dp</dimen>
+
+    <!-- Home screen, sized for 800x480. values-h520dp has the 1024x600 sizes. -->
+    <dimen name="home_gap">12dp</dimen>
+    <dimen name="home_panel_radius">24dp</dimen>
+    <dimen name="home_tile_radius">18dp</dimen>
+    <dimen name="home_tile_size">80dp</dimen>
+    <dimen name="home_tile_icon">28dp</dimen>
+    <dimen name="home_tile_label">14sp</dimen>
+    <dimen name="home_exit_height">56dp</dimen>
+    <dimen name="home_card_padding_h">28dp</dimen>
+    <dimen name="home_card_padding_v">22dp</dimen>
+    <dimen name="home_card_icon_tile">64dp</dimen>
+    <dimen name="home_card_icon">36dp</dimen>
+    <dimen name="home_card_kicker">15sp</dimen>
+    <dimen name="home_card_title">32sp</dimen>
+    <dimen name="home_card_subtitle">18sp</dimen>
+    <dimen name="home_cta_height">76dp</dimen>
+    <dimen name="home_cta_min_width">300dp</dimen>
+    <dimen name="home_cta_text">24sp</dimen>
+    <dimen name="home_secondary_cta_height">64dp</dimen>
+    <dimen name="home_secondary_cta_text">20sp</dimen>
+    <dimen name="home_countdown_size">64dp</dimen>
+    <dimen name="home_countdown_text">28sp</dimen>
+    <dimen name="home_favorites_height">96dp</dimen>
+    <dimen name="home_favorite_icon">40dp</dimen>
 </resources>

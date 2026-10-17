@@ -1301,4 +1301,41 @@
     <string name="debug_video_fault_budget">दोष बजट</string>
     <string name="debug_force_memory_profile">मेमोरी प्रोफ़ाइल बाध्य करें</string>
 
+    <!-- Home screen -->
+    <string name="home_kicker_active">Android Auto</string>
+    <string name="home_kicker_last_connection">आपका पिछला कनेक्शन</string>
+    <string name="home_kicker_cable">केबल</string>
+    <string name="home_kicker_wireless">वायरलेस</string>
+    <string name="home_title_active">आपका फ़ोन कनेक्ट है</string>
+    <string name="home_title_reconnecting">फिर से कनेक्ट हो रहा है</string>
+    <string name="home_title_searching">आपका फ़ोन खोजा जा रहा है…</string>
+    <string name="home_title_phone_detected">%1$s मिला</string>
+    <string name="home_title_phone_detected_generic">फ़ोन मिला</string>
+    <string name="home_title_usb_ready">अपना फ़ोन लगाएं</string>
+    <string name="home_title_wifi_ready">वायरलेस कनेक्ट करें</string>
+    <string name="home_title_self_ready">इस कार स्टीरियो पर Android Auto</string>
+    <string name="home_subtitle_searching">अगर न दिखे तो फ़ोन पर Android Auto खोलें</string>
+    <string name="home_subtitle_usb">USB केबल से</string>
+    <string name="home_subtitle_wifi">वाई-फ़ाई से</string>
+    <string name="home_subtitle_self">Android Auto को सीधे कार स्टीरियो पर चलाता है</string>
+    <string name="home_action_back_to_android_auto">Android Auto पर वापस जाएं</string>
+    <string name="home_action_connect_now">अभी कनेक्ट करें</string>
+    <string name="home_action_search_again">फिर से खोजें</string>
+    <string name="home_action_connect_usb">USB से कनेक्ट करें</string>
+    <string name="home_action_connect_wifi">वाई-फ़ाई से कनेक्ट करें</string>
+    <string name="home_action_start_self_mode">सेल्फ़ मोड शुरू करें</string>
+    <string name="home_all_apps">सभी</string>
+    <string name="home_add_favorite">ऐप जोड़ें</string>
+    <string name="home_favorite_change">बदलें</string>
+    <string name="home_add_to_favorites">पसंदीदा में जोड़ें</string>
+    <string name="home_favorites_full">चारों पसंदीदा भरे हुए हैं। बदलने के लिए होम स्क्रीन पर किसी एक को दबाकर रखें।</string>
+    <string name="home_choose_favorite_app">ऐप चुनें</string>
+    <string name="home_show_favorite_apps">होम स्क्रीन पर पसंदीदा ऐप्स</string>
+    <string name="home_show_favorite_apps_description">जब Open Headunit होम ऐप हो, तब मुख्य बटन के नीचे चार ऐप शॉर्टकट</string>
+    <string name="home_use_classic">क्लासिक होम स्क्रीन</string>
+    <string name="home_use_classic_description">पिछला डिज़ाइन, चार बराबर बटनों के साथ</string>
+    <string name="home_design_notice_title">नई होम स्क्रीन</string>
+    <string name="home_design_notice_message">Open Headunit में नई होम स्क्रीन है: आप जो कनेक्शन इस्तेमाल करते हैं वह एक बड़ा बटन है, और बाकी सब ड्राइवर की तरफ़ है।\n\nक्या आप इसे इस्तेमाल करना चाहते हैं? आप कभी भी सेटिंग्स, कस्टमाइज़ेशन में वापस बदल सकते हैं।</string>
+    <string name="home_design_notice_use_new">नया डिज़ाइन इस्तेमाल करें</string>
+    <string name="home_design_notice_keep_classic">क्लासिक ही रखें</string>
 </resources>

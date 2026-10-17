@@ -1,0 +1,25 @@
+<resources>
+    <dimen name="home_gap">20dp</dimen>
+    <dimen name="home_panel_radius">28dp</dimen>
+    <dimen name="home_tile_radius">22dp</dimen>
+    <dimen name="home_tile_size">96dp</dimen>
+    <dimen name="home_tile_icon">34dp</dimen>
+    <dimen name="home_tile_label">16sp</dimen>
+    <dimen name="home_exit_height">64dp</dimen>
+    <dimen name="home_card_padding_h">40dp</dimen>
+    <dimen name="home_card_padding_v">32dp</dimen>
+    <dimen name="home_card_icon_tile">88dp</dimen>
+    <dimen name="home_card_icon">48dp</dimen>
+    <dimen name="home_card_kicker">20sp</dimen>
+    <dimen name="home_card_title">44sp</dimen>
+    <dimen name="home_card_subtitle">22sp</dimen>
+    <dimen name="home_cta_height">104dp</dimen>
+    <dimen name="home_cta_min_width">400dp</dimen>
+    <dimen name="home_cta_text">32sp</dimen>
+    <dimen name="home_secondary_cta_height">64dp</dimen>
+    <dimen name="home_secondary_cta_text">22sp</dimen>
+    <dimen name="home_countdown_size">88dp</dimen>
+    <dimen name="home_countdown_text">36sp</dimen>
+    <dimen name="home_favorites_height">120dp</dimen>
+    <dimen name="home_favorite_icon">48dp</dimen>
+</resources>

@@ -511,7 +511,8 @@ class MainActivity : BaseActivity() {
         applyStageText(ConnectionStageTracker.stage.value, animate = false)
         applyNetworkText(ConnectionStageTracker.network.value, animate = false)
         pill.visibility = View.VISIBLE
-        pill.bringToFront()
+        // The pill lives in the notice stack, so the stack is what has to come up.
+        findViewById<View>(R.id.status_notices)?.bringToFront()
         // If the splash overlay is still showing, keep it on top of the pill until the splash finishes
         findViewById<View>(R.id.splash_overlay)?.let { splash ->
             if (splash.visibility == View.VISIBLE) {

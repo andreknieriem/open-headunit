@@ -1301,4 +1301,41 @@
     <string name="debug_video_fault_budget">งบประมาณข้อผิดพลาด</string>
     <string name="debug_force_memory_profile">บังคับโปรไฟล์หน่วยความจำ</string>
 
+    <!-- Home screen -->
+    <string name="home_kicker_active">Android Auto</string>
+    <string name="home_kicker_last_connection">การเชื่อมต่อล่าสุด</string>
+    <string name="home_kicker_cable">สาย</string>
+    <string name="home_kicker_wireless">ไร้สาย</string>
+    <string name="home_title_active">โทรศัพท์ของคุณเชื่อมต่อแล้ว</string>
+    <string name="home_title_reconnecting">กำลังเชื่อมต่อใหม่</string>
+    <string name="home_title_searching">กำลังค้นหาโทรศัพท์…</string>
+    <string name="home_title_phone_detected">พบ %1$s</string>
+    <string name="home_title_phone_detected_generic">พบโทรศัพท์</string>
+    <string name="home_title_usb_ready">เสียบโทรศัพท์ของคุณ</string>
+    <string name="home_title_wifi_ready">เชื่อมต่อแบบไร้สาย</string>
+    <string name="home_title_self_ready">Android Auto บนวิทยุติดรถยนต์นี้</string>
+    <string name="home_subtitle_searching">เปิด Android Auto บนโทรศัพท์หากไม่ปรากฏ</string>
+    <string name="home_subtitle_usb">ผ่านสาย USB</string>
+    <string name="home_subtitle_wifi">ผ่าน Wi-Fi</string>
+    <string name="home_subtitle_self">เรียกใช้ Android Auto บนวิทยุติดรถยนต์โดยตรง</string>
+    <string name="home_action_back_to_android_auto">กลับไปที่ Android Auto</string>
+    <string name="home_action_connect_now">เชื่อมต่อเลย</string>
+    <string name="home_action_search_again">ค้นหาอีกครั้ง</string>
+    <string name="home_action_connect_usb">เชื่อมต่อผ่าน USB</string>
+    <string name="home_action_connect_wifi">เชื่อมต่อผ่าน Wi-Fi</string>
+    <string name="home_action_start_self_mode">เริ่มโหมดตนเอง</string>
+    <string name="home_all_apps">ทั้งหมด</string>
+    <string name="home_add_favorite">เพิ่มแอป</string>
+    <string name="home_favorite_change">เปลี่ยน</string>
+    <string name="home_add_to_favorites">เพิ่มในรายการโปรด</string>
+    <string name="home_favorites_full">รายการโปรดครบทั้งสี่แล้ว กดค้างที่แอปหนึ่งบนหน้าจอหลักเพื่อเปลี่ยน</string>
+    <string name="home_choose_favorite_app">เลือกแอป</string>
+    <string name="home_show_favorite_apps">แอปโปรดบนหน้าจอหลัก</string>
+    <string name="home_show_favorite_apps_description">ทางลัดแอปสี่รายการใต้ปุ่มหลักเมื่อ Open Headunit เป็นแอปหน้าจอหลัก</string>
+    <string name="home_use_classic">หน้าจอหลักแบบคลาสสิก</string>
+    <string name="home_use_classic_description">ดีไซน์เดิม มีปุ่มขนาดเท่ากันสี่ปุ่ม</string>
+    <string name="home_design_notice_title">หน้าจอหลักใหม่</string>
+    <string name="home_design_notice_message">Open Headunit มีหน้าจอหลักใหม่: การเชื่อมต่อที่คุณใช้จะเป็นปุ่มใหญ่ปุ่มเดียว และส่วนที่เหลืออยู่ฝั่งคนขับ\n\nต้องการใช้หน้าจอนี้ไหม? คุณเปลี่ยนกลับได้ทุกเมื่อใน การตั้งค่า, การปรับแต่ง</string>
+    <string name="home_design_notice_use_new">ใช้ดีไซน์ใหม่</string>
+    <string name="home_design_notice_keep_classic">ใช้แบบคลาสสิกต่อ</string>
 </resources>

@@ -45,4 +45,41 @@
     <color name="warning_banner_stroke">#66F57C00</color>
     <color name="warning_banner_icon">#F57C00</color>
 
+
+    <!-- Home screen: flat panels, so the zones read apart without elevation on old units.
+         Day colors here, dark ones in values-night. Extreme dark is a theme rather than a
+         resource qualifier, so its colors are the home_extreme_* set and HomeUiHelper picks them. -->
+    <color name="home_panel">#1A1F27</color>
+    <color name="home_panel_stroke">#00000000</color>
+    <color name="home_tile">#232934</color>
+    <color name="home_tile_pressed">#323A47</color>
+    <color name="home_tile_stroke">#00000000</color>
+    <color name="home_slot_stroke">#39414D</color>
+    <color name="home_text">#FFFFFF</color>
+    <color name="home_text_muted">#FFFFFF</color>
+    <color name="home_apps_tile">#0F766E</color>
+    <color name="home_apps_tile_pressed">#0B5A54</color>
+    <color name="home_apps_icon">#FFFFFF</color>
+    <color name="home_usb">#B9530F</color>
+    <color name="home_wifi">#5B3AB0</color>
+    <color name="home_self">#1F5FAE</color>
+    <color name="home_monochrome">#3A3F47</color>
+    <color name="home_countdown_ring">#99FFFFFF</color>
+
+    <color name="home_extreme_panel">#000000</color>
+    <color name="home_extreme_panel_stroke">#161616</color>
+    <color name="home_extreme_tile">#0A0A0A</color>
+    <color name="home_extreme_tile_pressed">#161616</color>
+    <color name="home_extreme_tile_stroke">#161616</color>
+    <color name="home_extreme_slot_stroke">#262626</color>
+    <color name="home_extreme_text">#B8B8B8</color>
+    <color name="home_extreme_text_muted">#7A7A7A</color>
+    <color name="home_extreme_apps_tile">#0A0A0A</color>
+    <color name="home_extreme_apps_tile_pressed">#161616</color>
+    <color name="home_extreme_apps_icon">#4A9A92</color>
+    <color name="home_extreme_usb">#B87445</color>
+    <color name="home_extreme_wifi">#8475BE</color>
+    <color name="home_extreme_self">#5A87C2</color>
+    <color name="home_extreme_monochrome">#7A7A7A</color>
+    <color name="home_extreme_countdown_ring">#44B8B8B8</color>
 </resources>

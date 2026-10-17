@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    style="@style/HomeTile.Favorite">
+    <ImageView
+        android:id="@+id/favorite_icon"
+        style="@style/HomeTileIcon"
+        android:layout_width="@dimen/home_favorite_icon"
+        android:layout_height="@dimen/home_favorite_icon"
+        app:srcCompat="@drawable/ic_add_white" />
+    <TextView
+        android:id="@+id/favorite_label"
+        style="@style/HomeTileLabel"
+        android:text="@string/home_add_favorite" />
+</LinearLayout>

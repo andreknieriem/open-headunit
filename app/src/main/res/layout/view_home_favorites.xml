@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- "All" plus four favorite apps. Only shown while Open Headunit is the launcher. -->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/home_favorites"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/home_favorites_height"
+    android:orientation="horizontal"
+    android:divider="@drawable/home_gap"
+    android:showDividers="middle"
+    android:visibility="gone">
+
+    <LinearLayout
+        android:id="@+id/apps_button"
+        style="@style/HomeTile.Favorite"
+        android:background="@drawable/home_apps_tile_bg">
+        <ImageView
+            style="@style/HomeTileIcon"
+            android:layout_width="@dimen/home_favorite_icon"
+            android:layout_height="@dimen/home_favorite_icon"
+            app:srcCompat="@drawable/ic_apps" />
+        <TextView
+            style="@style/HomeTileLabel"
+            android:text="@string/home_all_apps" />
+    </LinearLayout>
+
+    <include android:id="@+id/favorite_slot_1" layout="@layout/item_home_favorite" />
+    <include android:id="@+id/favorite_slot_2" layout="@layout/item_home_favorite" />
+    <include android:id="@+id/favorite_slot_3" layout="@layout/item_home_favorite" />
+    <include android:id="@+id/favorite_slot_4" layout="@layout/item_home_favorite" />
+
+</LinearLayout>

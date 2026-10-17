@@ -1303,4 +1303,41 @@
     <string name="debug_video_fault_budget">Batas anggaran kesalahan</string>
     <string name="debug_force_memory_profile">Paksa profil memori</string>
 
+    <!-- Home screen -->
+    <string name="home_kicker_active">Android Auto</string>
+    <string name="home_kicker_last_connection">Koneksi terakhir Anda</string>
+    <string name="home_kicker_cable">Kabel</string>
+    <string name="home_kicker_wireless">Nirkabel</string>
+    <string name="home_title_active">Ponsel Anda terhubung</string>
+    <string name="home_title_reconnecting">Menghubungkan ulang</string>
+    <string name="home_title_searching">Mencari ponsel Anda…</string>
+    <string name="home_title_phone_detected">%1$s terdeteksi</string>
+    <string name="home_title_phone_detected_generic">Ponsel terdeteksi</string>
+    <string name="home_title_usb_ready">Colokkan ponsel Anda</string>
+    <string name="home_title_wifi_ready">Hubungkan tanpa kabel</string>
+    <string name="home_title_self_ready">Android Auto di tape mobil ini</string>
+    <string name="home_subtitle_searching">Buka Android Auto di ponsel jika tidak muncul</string>
+    <string name="home_subtitle_usb">Lewat kabel USB</string>
+    <string name="home_subtitle_wifi">Lewat Wi-Fi</string>
+    <string name="home_subtitle_self">Menjalankan Android Auto langsung di tape mobil</string>
+    <string name="home_action_back_to_android_auto">Kembali ke Android Auto</string>
+    <string name="home_action_connect_now">Hubungkan sekarang</string>
+    <string name="home_action_search_again">Cari lagi</string>
+    <string name="home_action_connect_usb">Hubungkan lewat USB</string>
+    <string name="home_action_connect_wifi">Hubungkan lewat Wi-Fi</string>
+    <string name="home_action_start_self_mode">Mulai Mode Mandiri</string>
+    <string name="home_all_apps">Semua</string>
+    <string name="home_add_favorite">Tambah aplikasi</string>
+    <string name="home_favorite_change">Ganti</string>
+    <string name="home_add_to_favorites">Tambahkan ke favorit</string>
+    <string name="home_favorites_full">Keempat favorit sudah terisi. Tekan lama salah satunya di layar beranda untuk menggantinya.</string>
+    <string name="home_choose_favorite_app">Pilih aplikasi</string>
+    <string name="home_show_favorite_apps">Aplikasi favorit di layar beranda</string>
+    <string name="home_show_favorite_apps_description">Empat pintasan aplikasi di bawah tombol utama saat Open Headunit menjadi aplikasi beranda</string>
+    <string name="home_use_classic">Layar beranda klasik</string>
+    <string name="home_use_classic_description">Desain sebelumnya, dengan empat tombol sama besar</string>
+    <string name="home_design_notice_title">Layar beranda baru</string>
+    <string name="home_design_notice_message">Open Headunit punya layar beranda baru: koneksi yang Anda gunakan menjadi satu tombol besar, dan sisanya ada di sisi pengemudi.\n\nIngin menggunakannya? Anda bisa kembali kapan saja di Pengaturan, Kustomisasi.</string>
+    <string name="home_design_notice_use_new">Gunakan desain baru</string>
+    <string name="home_design_notice_keep_classic">Tetap pakai yang klasik</string>
 </resources>

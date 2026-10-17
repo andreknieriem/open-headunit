@@ -9,4 +9,22 @@
     <color name="segmented_button_stroke">#CCCCCC</color>
     <color name="splash_background">@color/setting_background_color</color>
     <color name="splash_text_revived">@color/color_projection_blue</color>
+
+    <!-- Home screen at night: neutral surfaces, the connection color only as an accent. -->
+    <color name="home_panel">#141820</color>
+    <color name="home_panel_stroke">#1E232C</color>
+    <color name="home_tile">#1C212A</color>
+    <color name="home_tile_pressed">#262C37</color>
+    <color name="home_tile_stroke">#232933</color>
+    <color name="home_slot_stroke">#2F3540</color>
+    <color name="home_text">#E6E8EB</color>
+    <color name="home_text_muted">#9AA1AB</color>
+    <color name="home_apps_tile">#1C212A</color>
+    <color name="home_apps_tile_pressed">#262C37</color>
+    <color name="home_apps_icon">#5FC0B5</color>
+    <color name="home_usb">#E0894B</color>
+    <color name="home_wifi">#A08BE6</color>
+    <color name="home_self">#6FA6EC</color>
+    <color name="home_monochrome">#9AA1AB</color>
+    <color name="home_countdown_ring">#66E6E8EB</color>
 </resources>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- View tags HomeUiHelper keeps the XML order and sizes under. -->
+    <item name="home_xml_order" type="id" />
+    <item name="home_base_size" type="id" />
+    <item name="home_favorite_filled" type="id" />
+</resources>

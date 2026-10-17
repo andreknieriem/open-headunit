@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/main_buttons_container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/main_buttons_layout"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:padding="16dp"
+        app:layout_constraintWidth_max="1200dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintVertical_bias="0.4">
+
+        <!-- Self Mode Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/self_mode_button"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:elevation="6dp"
+            app:layout_constraintDimensionRatio="1:1"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/usb_button"
+            app:layout_constraintHorizontal_chainStyle="spread"
+            android:layout_margin="40dp"
+            app:backgroundTint="@null"
+            android:background="@drawable/gradient_blue"
+            app:iconGravity="textStart"
+            app:icon="@drawable/ic_launch_white"
+            app:iconTint="#ffffff"
+            app:iconSize="72dp"
+            app:iconPadding="0dp"
+            android:paddingTop="0dp"
+            android:paddingBottom="0dp" />
+        <TextView
+            android:id="@+id/self_mode_text"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@+id/self_mode_button"
+            app:layout_constraintStart_toStartOf="@+id/self_mode_button"
+            app:layout_constraintEnd_toEndOf="@+id/self_mode_button"
+            android:text="@string/self_mode"
+            android:textColor="@color/text_primary"
+            android:shadowColor="@color/text_shadow"
+            android:shadowDx="0"
+            android:shadowDy="0"
+            android:shadowRadius="8"
+            android:textSize="18sp"
+            android:textFontWeight="700"
+            android:gravity="center_horizontal"
+            android:layout_marginTop="4dp" />
+
+        <!-- USB Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/usb_button"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:elevation="6dp"
+            app:layout_constraintDimensionRatio="1:1"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/self_mode_button"
+            app:layout_constraintEnd_toStartOf="@+id/wifi_button"
+            android:layout_margin="40dp"
+            app:backgroundTint="@null"
+            android:background="@drawable/gradient_orange"
+            app:iconGravity="textStart"
+            app:icon="@drawable/ic_usb_white"
+            app:iconTint="#ffffff"
+            app:iconSize="72dp"
+            app:iconPadding="0dp"
+            android:paddingTop="0dp"
+            android:paddingBottom="0dp" />
+        <TextView
+            android:id="@+id/usb_text"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@+id/usb_button"
+            app:layout_constraintStart_toStartOf="@+id/usb_button"
+            app:layout_constraintEnd_toEndOf="@+id/usb_button"
+            android:text="@string/usb"
+            android:textColor="@color/text_primary"
+            android:shadowColor="@color/text_shadow"
+            android:shadowDx="0"
+            android:shadowDy="0"
+            android:shadowRadius="8"
+            android:textSize="18sp"
+            android:textFontWeight="700"
+            android:gravity="center_horizontal"
+            android:layout_marginTop="4dp" />
+
+        <!-- WiFi Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/wifi_button"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:elevation="6dp"
+            app:layout_constraintDimensionRatio="1:1"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/usb_button"
+            app:layout_constraintEnd_toStartOf="@+id/settings_button"
+            android:layout_margin="40dp"
+            app:backgroundTint="@null"
+            android:background="@drawable/gradient_purple"
+            app:iconGravity="textStart"
+            app:icon="@drawable/ic_network_wifi_white"
+            app:iconTint="#ffffff"
+            app:iconSize="72dp"
+            app:iconPadding="0dp"
+            android:paddingTop="0dp"
+            android:paddingBottom="0dp" />
+        <TextView
+            android:id="@+id/wifi_text"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@+id/wifi_button"
+            app:layout_constraintStart_toStartOf="@+id/wifi_button"
+            app:layout_constraintEnd_toEndOf="@+id/wifi_button"
+            android:text="@string/wifi"
+            android:textColor="@color/text_primary"
+            android:shadowColor="@color/text_shadow"
+            android:shadowDx="0"
+            android:shadowDy="0"
+            android:shadowRadius="8"
+            android:textSize="18sp"
+            android:textFontWeight="700"
+            android:gravity="center_horizontal"
+            android:layout_marginTop="4dp" />
+
+        <!-- Settings Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/settings_button"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:elevation="6dp"
+            app:iconGravity="textStart"
+            app:layout_constraintDimensionRatio="1:1"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/wifi_button"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_margin="40dp"
+            app:backgroundTint="@null"
+            android:background="@drawable/gradient_darkblue"
+            app:icon="@drawable/ic_settings_white"
+            app:iconTint="#ffffff"
+            app:iconSize="72dp"
+            app:iconPadding="0dp"
+            android:paddingTop="0dp"
+            android:paddingBottom="0dp" />
+        <TextView
+            android:id="@+id/settings_text"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@+id/settings_button"
+            app:layout_constraintStart_toStartOf="@+id/settings_button"
+            app:layout_constraintEnd_toEndOf="@+id/settings_button"
+            android:text="@string/settings"
+            android:textColor="@color/text_primary"
+            android:shadowColor="@color/text_shadow"
+            android:shadowDx="0"
+            android:shadowDy="0"
+            android:shadowRadius="8"
+            android:textSize="18sp"
+            android:textFontWeight="700"
+            android:gravity="center_horizontal"
+            android:layout_marginTop="4dp" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/apps_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/exit_button"
+        android:layout_marginEnd="12dp"
+        android:layout_marginBottom="16dp"
+        app:layout_goneMarginEnd="16dp"
+        android:text="@string/apps"
+        app:icon="@drawable/ic_apps"
+        app:iconTint="@android:color/white"
+        app:backgroundTint="@color/material_grey_700"
+        android:textColor="@android:color/white"
+        app:cornerRadius="8dp"
+        android:visibility="gone" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/exit_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_margin="16dp"
+        android:text="@string/exit"
+        app:backgroundTint="@color/material_grey_700"
+        android:textColor="@android:color/white"
+        app:cornerRadius="8dp" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

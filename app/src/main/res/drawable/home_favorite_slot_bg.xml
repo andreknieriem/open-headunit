@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_pressed="true">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/home_tile" />
+            <corners android:radius="@dimen/home_tile_radius" />
+            <stroke android:width="2dp" android:color="@color/home_slot_stroke" android:dashWidth="8dp" android:dashGap="6dp" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/home_panel" />
+            <corners android:radius="@dimen/home_tile_radius" />
+            <stroke android:width="2dp" android:color="@color/home_slot_stroke" android:dashWidth="8dp" android:dashGap="6dp" />
+        </shape>
+    </item>
+</selector>

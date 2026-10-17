@@ -21,14 +21,18 @@ class MainViewModel(application: Application): AndroidViewModel(application), Us
         get() = getApplication()
     private val settings = Settings(application)
     private val usbReceiver = UsbReceiver(this)
+    private var isRegistered = false
 
     fun register() {
         ContextCompat.registerReceiver(app, usbReceiver, UsbReceiver.createFilter(), ContextCompat.RECEIVER_NOT_EXPORTED)
+        isRegistered = true
         usbDevices.value = createDeviceList(settings.allowedDevices)
     }
 
+    // Only MainActivity registers. SettingsActivity shares the nav graph, so it briefly hosts a
+    // HomeFragment that asks for this model too, and unregistering there throws.
     override fun onCleared() {
-        app.unregisterReceiver(usbReceiver)
+        if (isRegistered) app.unregisterReceiver(usbReceiver)
         super.onCleared()
     }
 

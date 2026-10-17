@@ -10,6 +10,7 @@ import android.location.Location
 import android.media.AudioManager
 import android.os.Build
 import com.andrerinas.openheadunit.input.KeyCode
+import com.andrerinas.openheadunit.main.FavoriteAppsPolicy
 import com.andrerinas.openheadunit.input.MediaKeyRoutingPolicy
 import com.andrerinas.openheadunit.view.PerformanceOverlayField
 import com.andrerinas.openheadunit.view.PerformanceOverlayPolicy
@@ -1560,6 +1561,24 @@ class Settings(private val context: Context) {
             val valid = if (value in 60..120) value else 100
             prefs.edit().putInt("home-button-scale-percent", valid).apply()
         }
+
+    /** Package names in slot order, empty for a free slot. See [FavoriteAppsPolicy]. */
+    var homeFavoriteApps: List<String>
+        get() = FavoriteAppsPolicy.decode(prefs.getString("home-favorite-apps", "") ?: "")
+        set(value) { prefs.edit().putString("home-favorite-apps", FavoriteAppsPolicy.encode(value)).apply() }
+
+    var showHomeFavoriteApps: Boolean
+        get() = prefs.getBoolean("show-home-favorite-apps", true)
+        set(value) { prefs.edit().putBoolean("show-home-favorite-apps", value).apply() }
+
+    /** The 2x2 grid from before the redesign, kept while users get used to the new home screen. */
+    var useClassicHome: Boolean
+        get() = prefs.getBoolean("use-classic-home", false)
+        set(value) { prefs.edit().putBoolean("use-classic-home", value).apply() }
+
+    var homeDesignNoticeShown: Boolean
+        get() = prefs.getBoolean("home-design-notice-shown", false)
+        set(value) { prefs.edit().putBoolean("home-design-notice-shown", value).apply() }
 
     @SuppressLint("ApplySharedPref")
     fun commit() {

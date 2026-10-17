@@ -102,8 +102,11 @@ internal class AapControlMedia(
             HeadUnitScreenConfig.adoptFallback()
         }
 
+        // DATA credits belong to the new wire session even when its configuration is rejected.
+        // Keep ACK correlation current, but do not prepare playback for an unknown format.
         aapTransport.setSessionId(channel, request.sessionId)
         aapTransport.noteAudioSinkStarted(channel)
+        if (!aapAudio.selectConfiguration(channel, request.configurationIndex)) return 0
         aapAudio.preparePlayback(channel)
         return 0
     }
@@ -113,12 +116,18 @@ internal class AapControlMedia(
         AppLog.i("Media Sink Setup Request: %d on channel %s", request.type, Channel.name(channel))
 
         val maxUnacked = maxUnackedFor(channel)
+        if (Channel.isAudio(channel)) aapAudio.noteSinkCodec(channel, request.type)
         val configResponse = Media.Config.newBuilder().apply {
             status = Media.Config.ConfigStatus.STATUS_READY
             this.maxUnacked = maxUnacked
 
-            val offered = channel == Channel.ID_VID && HeadUnitScreenConfig.hasOfferedFallback()
-            VideoFallbackPolicy.configurationIndices(offered).forEach { addConfigurationIndices(it) }
+            val indices = if (Channel.isAudio(channel)) {
+                aapAudio.configurationIndices(channel)
+            } else {
+                val offered = channel == Channel.ID_VID && HeadUnitScreenConfig.hasOfferedFallback()
+                VideoFallbackPolicy.configurationIndices(offered)
+            }
+            addAllConfigurationIndices(indices)
         }.build()
         AppLog.i("Config response: %s (maxUnacked=%d)", configResponse, maxUnacked)
         val msg = AapMessage(channel, Media.MsgType.MEDIA_MESSAGE_CONFIG_VALUE, configResponse)
@@ -130,7 +139,6 @@ internal class AapControlMedia(
 
         // Pushing AudioFocusNotification
         if (Channel.isAudio(channel)) {
-            aapAudio.noteSinkCodec(channel, request.type)
             aapAudio.precreateAudioTrack(channel)
             val focusNotification = Control.AudioFocusNotification.newBuilder()
                 .setFocusState(Control.AudioFocusNotification.AudioFocusStateType.STATE_GAIN)
@@ -351,7 +359,9 @@ internal class AapControlService(
     private fun serviceDiscoveryRequest(request: Control.ServiceDiscoveryRequest): Int {
         AppLog.i("Service Discovery Request: %s", request.phoneName)
 
-        val msg = ServiceDiscoveryResponse(context, aapAudio.sessionConfig)
+        val supports48kGuidance = aapTransport.negotiatedVersion?.supports16 == true
+        val msg = ServiceDiscoveryResponse(context, aapAudio.sessionConfig,
+            { mediaAac -> aapAudio.noteAnnouncedAudioCodecs(mediaAac, supports48kGuidance) }, supports48kGuidance)
         aapTransport.send(msg)
         return 0
     }

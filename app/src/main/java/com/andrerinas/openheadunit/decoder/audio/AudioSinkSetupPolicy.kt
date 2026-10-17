@@ -7,8 +7,8 @@ package com.andrerinas.openheadunit.decoder.audio
  * 298 ms of its capacity: the framework gave the first track a deep buffer and the replacement a
  * low-latency one, and every underrun and shed window of a 23 minute capture came after it.
  *
- * The channel's rate and channel count are fixed by `AudioConfigs`, so the codec is the whole of
- * what a setup can change.
+ * This policy compares codecs. AapAudio also checks the selected configuration, because SPEECH
+ * Start can select a different PCM rate from the advertised list.
  */
 object AudioSinkSetupPolicy {
 

@@ -1,14 +1,14 @@
 package com.andrerinas.openheadunit.aap.protocol
 
 import android.media.AudioManager
-import android.util.SparseArray
 import com.andrerinas.openheadunit.aap.protocol.proto.Media
 
 import com.andrerinas.openheadunit.decoder.audio.AudioDecoder
 import com.andrerinas.openheadunit.utils.Settings
 
 object AudioConfigs {
-    private val audioTracks = SparseArray<Media.AudioConfiguration>(3)
+    private val audioTracks: Map<Int, Media.AudioConfiguration>
+    private val guidance48k: Media.AudioConfiguration
 
     /**
      * Which system stream an Android Auto audio channel plays on.
@@ -42,8 +42,10 @@ object AudioConfigs {
         settings.systemAudioStream
     )
 
-    fun get(channel: Int): Media.AudioConfiguration {
-        return audioTracks.get(channel)
+    fun get(channel: Int, index: Int = 0): Media.AudioConfiguration {
+        require(index == 0 || (channel == Channel.ID_AU1 && index == 1))
+        val base = audioTracks.getValue(channel)
+        return if (index == 0) base else guidance48k
     }
 
     init {
@@ -52,14 +54,13 @@ object AudioConfigs {
             numberOfBits = 16
             numberOfChannels = 2
         }.build()
-        audioTracks.put(Channel.ID_AUD, audioConfig0)
 
         val audioConfig1 = Media.AudioConfiguration.newBuilder().apply {
             sampleRate = AudioDecoder.SAMPLE_RATE_HZ_16
             numberOfBits = 16
             numberOfChannels = 1
         }.build()
-        audioTracks.put(Channel.ID_AU1, audioConfig1)
+        guidance48k = audioConfig1.toBuilder().setSampleRate(48000).build()
 
         // 16 kHz mono is required here, not preferred. The phone accepts the SYSTEM sink only if
         // it offers that config, and with the audio sink off this is the only sink left - so
@@ -69,6 +70,8 @@ object AudioConfigs {
             numberOfBits = 16
             numberOfChannels = 1
         }.build()
-        audioTracks.put(Channel.ID_AU2, audioConfig2)
+        // Index 0 remains the compatibility format; SPEECH may also advertise 48 kHz at index 1.
+        audioTracks = mapOf(Channel.ID_AUD to audioConfig0, Channel.ID_AU1 to audioConfig1,
+            Channel.ID_AU2 to audioConfig2)
     }
 }

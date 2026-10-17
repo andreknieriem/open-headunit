@@ -190,7 +190,8 @@ class AudioStreamSettingsFragment : Fragment() {
             items.add(streamRow(
                 stableId = "guidanceAudioStream",
                 nameResId = R.string.audio_channel_guidance,
-                descriptionResId = R.string.audio_channel_guidance_description,
+                descriptionResId = if (settings.usePcmGuidance && settings.prefer48kGuidance)
+                    R.string.audio_channel_guidance_description_multirate else R.string.audio_channel_guidance_description,
                 current = { pendingGuidanceAudioStream ?: AudioManager.STREAM_VOICE_CALL },
                 onPicked = { pendingGuidanceAudioStream = it }
             ))

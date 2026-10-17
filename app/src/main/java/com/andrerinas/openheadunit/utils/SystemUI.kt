@@ -25,6 +25,12 @@ object SystemUI {
         notesCanvas: Boolean = true,
         onInsetsChanged: (() -> Unit)? = null,
     ) {
+        applySystemBars(window, mode)
+        applyInsets(window, root, mode, notesCanvas, onInsetsChanged)
+    }
+
+    /** Configures dialog windows without changing the projection's canvas or manual insets. */
+    fun applySystemBars(window: Window, mode: Settings.FullscreenMode) {
         // Always keep screen on for Headunit functionality
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
@@ -117,7 +123,15 @@ object SystemUI {
             controllerCompat.isAppearanceLightStatusBars = false
             controllerCompat.isAppearanceLightNavigationBars = false
         }
+    }
 
+    private fun applyInsets(
+        window: Window,
+        root: View,
+        mode: Settings.FullscreenMode,
+        notesCanvas: Boolean,
+        onInsetsChanged: (() -> Unit)?,
+    ) {
         val settings = Settings(root.context)
 
         // IMMEDIATE APPLICATION OF MANUAL INSETS

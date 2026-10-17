@@ -470,6 +470,7 @@
     <string name="ui_scale_description">Ajusta el tamaño del texto, menús y elementos de diseño en toda la aplicación. Recomendado para pantallas de alta resolución con texto pequeño.</string>
     <string name="ui_scale_home">Pantalla de inicio</string>
     <string name="ui_scale_settings">Pantalla de ajustes</string>
+    <string name="ui_scale_exit_dialog">Diálogo de salida</string>
     <string name="category_vehicle">Vehículo</string>
     <string name="category_head_unit">Radio</string>
     <string name="vehicle_display_name_label">Nombre para mostrar</string>

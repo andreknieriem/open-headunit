@@ -469,6 +469,7 @@
     <string name="ui_scale_description">Změní velikost textu, nabídek a prvků rozhraní v celé aplikaci. Doporučeno pro displeje s vysokým rozlišením a malým textem.</string>
     <string name="ui_scale_home">Hlavní obrazovka</string>
     <string name="ui_scale_settings">Obrazovka nastavení</string>
+    <string name="ui_scale_exit_dialog">Dialog ukončení</string>
     <string name="category_vehicle">Vozidlo</string>
     <string name="category_head_unit">Autorádio</string>
     <string name="vehicle_display_name_label">Zobrazovaný název</string>

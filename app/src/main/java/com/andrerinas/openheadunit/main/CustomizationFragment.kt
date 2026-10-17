@@ -821,7 +821,7 @@ class CustomizationFragment : Fragment() {
     }
 
     private fun updateUiScaleValue() {
-        txtUiScaleValue?.text = "${getString(R.string.ui_scale_home)}: ${settings.uiScaleHomePercent}% · ${getString(R.string.ui_scale_settings)}: ${settings.uiScaleSettingsPercent}%"
+        txtUiScaleValue?.text = "${getString(R.string.ui_scale_home)}: ${settings.uiScaleHomePercent}% · ${getString(R.string.ui_scale_settings)}: ${settings.uiScaleSettingsPercent}% · ${getString(R.string.ui_scale_exit_dialog)}: ${settings.uiScaleExitDialogPercent}%"
     }
 
     private fun showUiScaleDialog() {
@@ -863,6 +863,7 @@ class CustomizationFragment : Fragment() {
 
         val (homeLabel, homeSeek, homeValue) = makeRow(getString(R.string.ui_scale_home), homeInitial)
         val (settingsLabel, settingsSeek, settingsValue) = makeRow(getString(R.string.ui_scale_settings), settingsInitial)
+        val (exitLabel, exitSeek, exitValue) = makeRow(getString(R.string.ui_scale_exit_dialog), settings.uiScaleExitDialogPercent)
 
         container.addView(homeLabel, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
         container.addView(homeSeek, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
@@ -870,6 +871,9 @@ class CustomizationFragment : Fragment() {
         container.addView(settingsLabel, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
         container.addView(settingsSeek, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
         container.addView(settingsValue, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
+        container.addView(exitLabel, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
+        container.addView(exitSeek, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
+        container.addView(exitValue, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
 
         val scroll = ScrollView(ctx).apply {
             isFillViewport = true
@@ -887,6 +891,7 @@ class CustomizationFragment : Fragment() {
 
                 settings.uiScaleHomePercent = newHome
                 settings.uiScaleSettingsPercent = newSettings
+                settings.uiScaleExitDialogPercent = 100 + exitSeek.progress * 10
                 settings.commit()
 
                 updateUiScaleValue()

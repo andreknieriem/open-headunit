@@ -467,6 +467,7 @@
     <string name="ui_scale_description">Skaluje tekst, menu i elementy interfejsu w całej aplikacji. Zalecane dla ekranów o wysokiej rozdzielczości z małym tekstem.</string>
     <string name="ui_scale_home">Ekran główny</string>
     <string name="ui_scale_settings">Ekran ustawień</string>
+    <string name="ui_scale_exit_dialog">Okno dialogowe wyjścia</string>
     <string name="category_vehicle">Pojazd</string>
     <string name="category_head_unit">Radio</string>
     <string name="vehicle_display_name_label">Nazwa wyświetlana</string>

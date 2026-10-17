@@ -525,6 +525,7 @@
     <string name="ui_scale_description">Skaliert Schriften, Menüs und Abstände der gesamten App. Empfohlen für hochauflösende Displays mit kleiner Schrift.</string>
     <string name="ui_scale_home">Startbildschirm</string>
     <string name="ui_scale_settings">Einstellungsbildschirm</string>
+    <string name="ui_scale_exit_dialog">Beenden-Dialog</string>
     <string name="category_vehicle">Fahrzeug</string>
     <string name="category_head_unit">Autoradio</string>
     <string name="vehicle_display_name_label">Anzeigename</string>

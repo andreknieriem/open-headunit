@@ -475,6 +475,7 @@
     <string name="ui_scale_description">Масштабирует текст, меню и элементы интерфейса во всем приложении. Рекомендуется для экранов высокого разрешения с мелким шрифтом.</string>
     <string name="ui_scale_home">Главный экран</string>
     <string name="ui_scale_settings">Экран настроек</string>
+    <string name="ui_scale_exit_dialog">Диалог выхода</string>
     <string name="category_vehicle">Транспортное средство</string>
     <string name="category_head_unit">Головное устройство</string>
     <string name="vehicle_display_name_label">Отображаемое имя</string>

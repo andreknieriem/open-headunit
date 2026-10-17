@@ -536,6 +536,7 @@
     <string name="ui_scale_description">앱 전체의 텍스트, 메뉴 및 레이아웃 요소의 크기를 조정합니다. 글자가 작은 고해상도 디스플레이에 권장됩니다.</string>
     <string name="ui_scale_home">홈 화면</string>
     <string name="ui_scale_settings">설정 화면</string>
+    <string name="ui_scale_exit_dialog">종료 대화상자</string>
     <string name="category_vehicle">차량</string>
     <string name="category_head_unit">헤드유닛</string>
     <string name="vehicle_display_name_label">표시 이름</string>

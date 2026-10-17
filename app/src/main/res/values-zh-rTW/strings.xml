@@ -466,6 +466,7 @@
     <string name="ui_scale_description">縮放整個應用程式中的文字、選單和版面配置元件。建議在文字偏小的高解析度螢幕上使用。</string>
     <string name="ui_scale_home">主畫面</string>
     <string name="ui_scale_settings">設定畫面</string>
+    <string name="ui_scale_exit_dialog">結束對話框</string>
     <string name="category_vehicle">車輛</string>
     <string name="category_head_unit">車機</string>
     <string name="vehicle_display_name_label">顯示名稱</string>

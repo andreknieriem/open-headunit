@@ -211,6 +211,10 @@ class Settings(private val context: Context) {
         get() = prefs.getInt("ui-scale-settings-percent", 100)
         set(value) { prefs.edit().putInt("ui-scale-settings-percent", value).apply() }
 
+    var uiScaleExitDialogPercent: Int
+        get() = prefs.getInt("ui-scale-exit-dialog-percent", 100).coerceIn(100, 150)
+        set(value) { prefs.edit().putInt("ui-scale-exit-dialog-percent", value.coerceIn(100, 150)).apply() }
+
     /**
      * The rate the microphone hardware is opened at when 16 kHz cannot be opened. Not what the phone
      * receives: that is always 16 kHz mono, because Android Auto validates the announced config and

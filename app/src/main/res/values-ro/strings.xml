@@ -467,6 +467,7 @@
     <string name="ui_scale_description">Scalează textul, meniurile și elementele de aspect din întreaga aplicație. Recomandat pentru ecrane de înaltă rezoluție cu text mic.</string>
     <string name="ui_scale_home">Ecran principal</string>
     <string name="ui_scale_settings">Ecranul de setări</string>
+    <string name="ui_scale_exit_dialog">Dialog de ieșire</string>
     <string name="category_vehicle">Vehicul</string>
     <string name="category_head_unit">Unitate principală</string>
     <string name="vehicle_display_name_label">Nume afișat</string>

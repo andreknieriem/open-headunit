@@ -487,6 +487,7 @@
     <string name="ui_scale_description">Điều chỉnh tỷ lệ văn bản, menu và bố cục trên toàn bộ ứng dụng. Khuyên dùng cho màn hình độ phân giải cao có chữ nhỏ.</string>
     <string name="ui_scale_home">Màn hình chính</string>
     <string name="ui_scale_settings">Màn hình cài đặt</string>
+    <string name="ui_scale_exit_dialog">Hộp thoại thoát</string>
     <string name="category_vehicle">Xe</string>
     <string name="category_head_unit">Head Unit</string>
     <string name="vehicle_display_name_label">Tên hiển thị</string>

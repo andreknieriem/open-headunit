@@ -466,6 +466,7 @@
     <string name="ui_scale_description">Schaalt tekst, menu\'s en lay-outelementen in de hele app. Aanbevolen voor schermen met een hoge resolutie en kleine tekst.</string>
     <string name="ui_scale_home">Startscherm</string>
     <string name="ui_scale_settings">Instellingen scherm</string>
+    <string name="ui_scale_exit_dialog">Afsluitdialoog</string>
     <string name="category_vehicle">Voertuig</string>
     <string name="category_head_unit">Headunit</string>
     <string name="vehicle_display_name_label">Weergavenaam</string>

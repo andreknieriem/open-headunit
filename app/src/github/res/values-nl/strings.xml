@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="keep_dummy_vpn">Offline-VPN actief houden tijdens verbinding</string>
-    <string name="keep_dummy_vpn_description">Houdt de offline-VPN van de app actief zolang er een telefoon verbonden is om te voorkomen dat de Wi-Fi-chip op 2,4 GHz naar andere netwerken zoekt.</string>
+    <string name="keep_dummy_vpn_description">Houdt de offline-VPN van deze app actief zolang er een telefoon verbonden is. Bedoeld voor units op 2,4 GHz of met regelmatige haperingen in audio en video, zodat de wifichip van de headunit niet meer naar andere netwerken zoekt. Zolang dit aan staat, hebben andere apps op deze headunit geen internet. Geldt vanaf de volgende verbinding.</string>
     <string name="keep_dummy_vpn_denied">VPN-toestemming geweigerd. De offline-VPN kan niet automatisch worden gestart.</string>
 </resources>

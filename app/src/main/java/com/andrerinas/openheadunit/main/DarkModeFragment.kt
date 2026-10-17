@@ -455,7 +455,7 @@ class DarkModeFragment : Fragment(), SensorEventListener {
             nameResId = R.string.location_manage_places,
             value = run {
                 val n = settings.geofenceLocations.size
-                if (n == 0) getString(R.string.geofence_none) else getString(R.string.geofence_count_summary, n)
+                if (n == 0) getString(R.string.geofence_none) else resources.getQuantityString(R.plurals.geofence_count_summary, n, n)
             },
             onClick = { _ ->
                 // Persist the location mode before leaving, so it survives the fragment being

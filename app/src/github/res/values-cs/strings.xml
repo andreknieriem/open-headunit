@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="keep_dummy_vpn">Ponechat offline VPN aktivní během připojení</string>
-    <string name="keep_dummy_vpn_description">Udržuje offline VPN aplikace aktivní při připojení telefonu, aby Wi-Fi čip nehledal další sítě na 2,4 GHz.</string>
+    <string name="keep_dummy_vpn_description">Udržuje offline VPN aplikace aktivní, dokud je připojen telefon. Určeno pro jednotky na 2,4 GHz nebo s občasným sekáním zvuku a obrazu, aby čip Wi-Fi jednotky přestal hledat jiné sítě. Dokud je zapnuto, ostatní aplikace v této jednotce nemají internet. Platí od dalšího připojení.</string>
     <string name="keep_dummy_vpn_denied">Oprávnění VPN zamítnuto. Offline VPN nelze spustit automaticky.</string>
 </resources>

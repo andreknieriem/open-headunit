@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="keep_dummy_vpn">Giữ VPN ngoại tuyến hoạt động khi kết nối</string>
-    <string name="keep_dummy_vpn_description">Giữ VPN ngoại tuyến hoạt động trong khi điện thoại được kết nối để chip Wi-Fi không tìm kiếm các mạng khác trên 2.4 GHz.</string>
+    <string name="keep_dummy_vpn_description">Giữ VPN ngoại tuyến của ứng dụng hoạt động khi có điện thoại kết nối. Dành cho thiết bị dùng Wi-Fi 2.4 GHz hoặc thỉnh thoảng bị giật âm thanh và video, để chip Wi-Fi của head unit không tìm các mạng khác. Khi bật, các ứng dụng khác trên head unit sẽ không có internet. Có hiệu lực ở lần kết nối tiếp theo.</string>
     <string name="keep_dummy_vpn_denied">Quyền VPN bị từ chối. Không thể tự động khởi động VPN ngoại tuyến.</string>
 </resources>

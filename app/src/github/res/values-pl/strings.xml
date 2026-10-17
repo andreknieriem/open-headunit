@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="keep_dummy_vpn">Utrzymuj VPN offline podczas połączenia</string>
-    <string name="keep_dummy_vpn_description">Utrzymuje aktywny VPN offline podczas połączenia z telefonem, aby układ Wi-Fi nie szukał innych sieci na paśmie 2,4 GHz.</string>
+    <string name="keep_dummy_vpn_description">Włącza lokalny VPN (offline) na czas połączenia z telefonem. Opcja przydatna dla urządzeń działających na paśmie 2,4 GHz lub z okresowymi zacięciami dźwięku i obrazu — zapobiega wyszukiwaniu innych sieci przez układ Wi-Fi stacji. Gdy opcja jest włączona, inne aplikacje na tym urządzeniu nie mają dostępu do internetu. Zmiana zacznie obowiązywać od kolejnego połączenia.</string>
     <string name="keep_dummy_vpn_denied">Odmówiono uprawnień VPN. Nie można automatycznie uruchomić VPN offline.</string>
 </resources>

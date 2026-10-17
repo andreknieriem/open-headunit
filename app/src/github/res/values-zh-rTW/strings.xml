@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="keep_dummy_vpn">連線時保持離線 VPN 啟動</string>
-    <string name="keep_dummy_vpn_description">手機連線期間保持離線 VPN 啟用，以防止車機 Wi-Fi 晶片在 2.4 GHz 上搜尋其他網路。</string>
+    <string name="keep_dummy_vpn_description">手機連線期間，保持此應用程式的離線 VPN 啟動。適用於使用 2.4 GHz 的主機，或音訊與影像會定期卡頓的主機，可讓車機的 Wi-Fi 晶片不再搜尋其他網路。啟用期間，此車機上的其他應用程式無法使用網際網路。下次連線時生效。</string>
     <string name="keep_dummy_vpn_denied">VPN 權限已被拒絕。無法自動啟動離線 VPN。</string>
 </resources>

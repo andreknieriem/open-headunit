@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="keep_dummy_vpn">Păstrează VPN offline activ în timpul conexiunii</string>
-    <string name="keep_dummy_vpn_description">Menține VPN-ul offline activ în timp ce un telefon este conectat, împiedicând căutarea altor rețele pe 2,4 GHz.</string>
+    <string name="keep_dummy_vpn">Menține VPN-ul offline activ cât timp ești conectat</string>
+    <string name="keep_dummy_vpn_description">Menține activ VPN-ul offline al aplicației cât timp este conectat un telefon. Se adresează unităților pe 2,4 GHz sau cu sacadări periodice de sunet și imagine, pentru ca cipul Wi-Fi al unității să nu mai caute alte rețele. Cât timp este activat, celelalte aplicații de pe unitate nu au internet. Se aplică la următoarea conexiune.</string>
     <string name="keep_dummy_vpn_denied">Permisiune VPN refuzată. VPN-ul offline nu poate fi pornit automat.</string>
 </resources>

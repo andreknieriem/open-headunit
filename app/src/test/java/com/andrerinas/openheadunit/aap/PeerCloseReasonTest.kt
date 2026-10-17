@@ -22,6 +22,7 @@ class PeerCloseReasonTest {
         fun set(name: String, value: Any) = AapTransport::class.java.getDeclaredField(name)
             .apply { isAccessible = true }.set(it, value)
         set("lifecycleLock", Any())
+        set("presentationSession", AaPresentationSession())
         set("terminated", java.util.concurrent.CountDownLatch(1))
         set("videoBufferPool", java.util.concurrent.LinkedBlockingQueue<ByteArray>())
         set("videoBacklog", java.util.concurrent.atomic.AtomicInteger())

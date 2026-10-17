@@ -78,8 +78,9 @@ class AapTransport(
         internal val settings: Settings,
         private val notification: BackgroundNotification,
         val context: Context,
-        private val onAaMediaMetadata: ((MediaPlayback.MediaMetaData) -> Unit)? = null,
-        private val onAaPlaybackStatus: ((MediaPlayback.MediaPlaybackStatus) -> Unit)? = null,
+        private val onAaMediaMetadata: ((MediaPlayback.MediaMetaData, AaPresentationSession) -> Unit)? = null,
+        private val onAaPlaybackStatus: ((MediaPlayback.MediaPlaybackStatus, AaPresentationSession) -> Unit)? = null,
+        private val onAaPresentationClosed: ((AaPresentationSession) -> Unit)? = null,
         private val externalSsl: AapSslContext? = null) {
 
     val ssl: AapSsl = externalSsl?.newSession() ?: AapSslContext(SingleKeyKeyManager(context))
@@ -204,6 +205,7 @@ class AapTransport(
 
         return@Callback true
     }
+    private val presentationSession = AaPresentationSession()
     private var sendHandler: Handler? = null
     private val sendHandlerCallback = Handler.Callback {
         // Timed because the media channels are flow-controlled: acks that stay in here stall video
@@ -805,6 +807,7 @@ class AapTransport(
         val (cb, awaitHandshake, cleanEnd) = synchronized(lifecycleLock) {
             if (closing) return
             closing = true
+            presentationSession.retire()
             retiringWorkers = listOfNotNull(pollThread, sendThread, videoThread)
             aapRead?.stop()
             val callback = onQuit
@@ -1019,6 +1022,12 @@ class AapTransport(
         return shook && !closing
     }
 
+    /** Display updates stop immediately; the protocol reader may still finish a graceful ByeBye. */
+    internal fun retirePresentation() = synchronized(lifecycleLock) {
+        presentationSession.retire()
+        aapRead?.retirePresentation()
+    }
+
     /**
      * Phase 2 of startup: creates [AapRead] and posts the first [MSG_POLL] to begin the
      * inbound message loop.
@@ -1028,7 +1037,7 @@ class AapTransport(
      * frame is ever decoded before a render target exists.
      */
     internal fun startReading() = synchronized(lifecycleLock) {
-        if (closing || !handshakeStarted || handshakeFinished.count != 0L || aapRead != null) return@synchronized
+        if (closing || !presentationSession.isActive || !handshakeStarted || handshakeFinished.count != 0L || aapRead != null) return@synchronized
         AppLog.i("Start Aap transport read loop")
         aapRead = AapRead.Factory.create(
             connection!!,
@@ -1039,7 +1048,9 @@ class AapTransport(
             settings,
             context,
             onAaMediaMetadata,
-            onAaPlaybackStatus
+            onAaPlaybackStatus,
+            onAaPresentationClosed,
+            presentationSession
         )
         pollHandler?.sendEmptyMessage(MSG_POLL)
     }

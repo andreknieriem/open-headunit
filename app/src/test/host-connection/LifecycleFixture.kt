@@ -32,8 +32,10 @@ private class QueuedCleanup : CoroutineDispatcher() {
 }
 private class AapTransport(
     decoder: AudioDecoder, video: Any, manager: AudioManager, settings: Settings, notification: Any,
-    context: Context, externalSsl: Any, onAaMediaMetadata: (Any) -> Unit, onAaPlaybackStatus: (Any) -> Unit
+    context: Context, externalSsl: Any, onAaMediaMetadata: (Any, Any) -> Unit, onAaPlaybackStatus: (Any, Any) -> Unit,
+    onAaPresentationClosed: (Any) -> Unit
 ) {
+    fun retirePresentation() {}
     val aapAudio = AapAudio(decoder, manager, settings)
     var onQuit: ((Boolean) -> Unit)? = null
     var onAudioFocusStateChanged: ((Boolean) -> Unit)? = null
@@ -65,8 +67,9 @@ private class ConnectionFixture(val settings: Settings = Settings()) {
     private var _connection: Any? = Any()
     private var _transport: AapTransport? = null
     private var _disconnectJob: Job? = null
-    private var onAaMediaMetadata: ((Any) -> Unit)? = null
-    private var onAaPlaybackStatus: ((Any) -> Unit)? = null
+    private var onAaMediaMetadata: ((Any, Any) -> Unit)? = null
+    private var onAaPlaybackStatus: ((Any, Any) -> Unit)? = null
+    private var onAaPresentationClosed: ((Any) -> Unit)? = null
     private var onAudioFocusStateChanged: ((Boolean) -> Unit)? = null
     private var onUpdateUiConfigReplyReceived: (() -> Unit)? = null
     val disconnected get() = _connectionState.value is ConnectionState.Disconnected

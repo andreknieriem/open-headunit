@@ -16,6 +16,7 @@ import com.andrerinas.openheadunit.utils.Settings
 internal interface AapRead {
     fun read(): Int
     fun stop()
+    fun retirePresentation()
 
     /**
      * @param onVideoRunHoled called when a video fragment run is incomplete or disagrees with its
@@ -124,7 +125,12 @@ internal interface AapRead {
         @Volatile protected var isStopped = false
             private set
 
-        final override fun stop() { isStopped = true }
+        final override fun stop() {
+            isStopped = true
+            retirePresentation()
+        }
+
+        final override fun retirePresentation() = handler.close()
 
         override fun read(): Int {
             if (isStopped) return -1
@@ -219,8 +225,10 @@ internal interface AapRead {
             aapVideo: AapVideo,
             settings: Settings,
             context: Context,
-            onAaMediaMetadata: ((MediaPlayback.MediaMetaData) -> Unit)? = null,
-            onAaPlaybackStatus: ((MediaPlayback.MediaPlaybackStatus) -> Unit)? = null
+            onAaMediaMetadata: ((MediaPlayback.MediaMetaData, AaPresentationSession) -> Unit)? = null,
+            onAaPlaybackStatus: ((MediaPlayback.MediaPlaybackStatus, AaPresentationSession) -> Unit)? = null,
+            onAaPresentationClosed: ((AaPresentationSession) -> Unit)? = null,
+            presentationSession: AaPresentationSession = AaPresentationSession()
         ): AapRead {
             val handler = AapMessageHandlerType(
                 transport,
@@ -230,7 +238,9 @@ internal interface AapRead {
                 settings,
                 context,
                 onAaMediaMetadata,
-                onAaPlaybackStatus
+                onAaPlaybackStatus,
+                onAaPresentationClosed,
+                presentationSession
             )
 
             // Read framing is a transport-shape question, not a handshake-timing one:

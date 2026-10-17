@@ -70,8 +70,9 @@ class CommManager {
  private fun newDisconnectScope()=CoroutineScope(SupervisorJob()+queue)
  private val _connectionState=MutableStateFlow<ConnectionState>(ConnectionState.Connected)
  @Volatile private var _disconnectJob:Job?=null
- private var onAaMediaMetadata:((Any)->Unit)?=null
- private var onAaPlaybackStatus:((Any)->Unit)?=null
+ private var onAaMediaMetadata:((Any,Any)->Unit)?=null
+ private var onAaPlaybackStatus:((Any,Any)->Unit)?=null
+ private var onAaPresentationClosed:((Any)->Unit)?=null
  private var onAudioFocusStateChanged:((Boolean)->Unit)?=null
  private var onUpdateUiConfigReplyReceived:(()->Unit)?=null
  private var onSessionFailure:((String)->Unit)?={failures.add(it)}
@@ -110,6 +111,7 @@ manager_head=manager_head.replace(old_state, extract(comm, 'class Disconnected('
 for name in ['SettingsRestartRecovery.kt', 'SameEndpointConnectPolicy.kt']:
     source=(base/'connection'/name).read_text().replace('package com.andrerinas.openheadunit.connection', 'package lifecycle')
     (OUT/name).write_text(source)
+(OUT/'AaPresentationSession.kt').write_text((base/'aap/AaPresentationSession.kt').read_text().replace('package com.andrerinas.openheadunit.aap', 'package lifecycle'))
 (OUT/'FinalMessageDelivery.kt').write_text((base/'aap/FinalMessageDelivery.kt').read_text().replace('package com.andrerinas.openheadunit.aap', 'package lifecycle'))
 # These endpoint predicates must be the real ones when testing the terminal route snapshot.
 for declaration in ['val isWirelessSession:', 'val isLoopbackSession:']:
@@ -124,9 +126,11 @@ transport_head=r'''
 class AapTransport(
  audioDecoder:AudioDecoder,private val videoDecoder:VideoDecoder,manager:AudioManager,settings:Settings,
  notification:Any,context:Context,externalSsl:Ssl,
- onAaMediaMetadata:((Any)->Unit)?,onAaPlaybackStatus:((Any)->Unit)?
+ onAaMediaMetadata:((Any,Any)->Unit)?,onAaPlaybackStatus:((Any,Any)->Unit)?,
+ private val onAaPresentationClosed:((Any)->Unit)?
 ){
  private val lifecycleLock=Any()
+ private val presentationSession=AaPresentationSession()
  @Volatile private var closing=false
  private var handshakeStarted=false
  private val handshakeFinished=CountDownLatch(1)
@@ -184,7 +188,7 @@ class AapTransport(
   return !conn.closed
  }
  private val micRecorder=Unit; private val settings=Settings();private val context=Context()
- private val onAaMediaMetadata:((Any)->Unit)?=null;private val onAaPlaybackStatus:((Any)->Unit)?=null
+ private val onAaMediaMetadata:((Any,Any)->Unit)?=null;private val onAaPlaybackStatus:((Any,Any)->Unit)?=null
  fun installReader(reader:AapRead){aapRead=reader}
  fun postPoll(task:()->Unit){check(checkNotNull(pollHandler).post(Runnable{task()}))}
  fun pollSnapshot()=checkNotNull(pollThread)
@@ -196,7 +200,7 @@ callback_end=transport.index("    init {",callback_start)
 transport_head=transport_head.replace("// CALLBACK MEMBERS",transport[callback_start:callback_end])
 transport_head=transport_head.replace("// CALLBACK PUBLICATION",member(transport[callback_end:],"synchronized(videoDecoder)"))
 transport_fixture=transport_head+'\n'.join(extract(transport,n) for n in [
- 'internal fun startHandshake(connection:', 'internal fun startReading()', 'internal fun stop(', 'internal fun quit(',
+ 'internal fun retirePresentation()', 'internal fun startHandshake(connection:', 'internal fun startReading()', 'internal fun stop(', 'internal fun quit(',
  'private fun resetSessionObservations()', 'internal fun awaitTermination()', 'private inline fun awaitUninterruptibly(', 'private inline fun cleanupStep('
 ])+'\n}\n'
 bulk=(base/'aap/AapReadMultipleMessages.kt').read_text()
@@ -222,9 +226,9 @@ class AapAudio(decoder:AudioDecoder,private val settings:Settings){
 class AudioConfig{val enabled=true;val staticFocus=false;val focusMode=0}
 class VideoDecoder{var framesRenderedThisSession=0L;var onDecoderError:((String)->Unit)?=null;var onKeyframeStarved:(()->Unit)?=null;var onFrameDropped:(()->Unit)?=null;var onKeyframeObserved:(()->Unit)?=null;fun stop(s:String){}}
 class AapVideo{fun release(){}}
-open class AapRead{@Volatile protected var isStopped=false;fun stop(){isStopped=true};companion object{var creations=0};object Factory{
+open class AapRead{@Volatile protected var isStopped=false;fun stop(){isStopped=true;retirePresentation()};var onRetirePresentation:(()->Unit)?=null;fun retirePresentation(){onRetirePresentation?.invoke()};companion object{var creations=0};object Factory{
  fun create(connection:ProjectionConnection,transport:AapTransport,mic:Any,audio:AapAudio,video:AapVideo,
- settings:Settings,context:Context,metadata:((Any)->Unit)?,playback:((Any)->Unit)?):AapRead{creations++;return AapRead()}
+ settings:Settings,context:Context,metadata:((Any,Any)->Unit)?,playback:((Any,Any)->Unit)?,closed:((Any)->Unit)?,session:AaPresentationSession):AapRead{creations++;return AapRead()}
 }}
 open class ProjectionConnection{@Volatile var closed=false;open fun connect()=true;open fun disconnect(){closed=true}}
 class SocketProjectionConnection(private val ip:String,port:Int,context:Context):ProjectionConnection(){
@@ -494,9 +498,33 @@ fun main(){
  workerQuitBulkTail()
  lateRegisteredResults();destroyAfterCandidateRegistration();destroyDuringCandidateConstruction();
  usbOpenCancellation()
+ presentationRetirementBoundary()
  println("ALL EXTENDED TRANSPORT LIFECYCLE CHECKS PASSED")
 }
 '''.replace('// BULK METHOD',process)
+extra += r'''
+fun presentationRetirementBoundary()=runBlocking {
+ for(route in listOf("disconnect","transport","link-loss","destroy")) {
+  val c=CommManager();c.startHandshake();val old=c.owner()
+  val states=mutableListOf<Boolean>()
+  old.installReader(AapRead().apply { onRetirePresentation={states.add(c.state is ConnectionState.Disconnected)} })
+  when(route) {
+   "disconnect" -> c.disconnect(isUserExit=false,honorKillOnDisconnect=false)
+   "transport" -> checkNotNull(old.onQuit).invoke(false)
+   "link-loss" -> c.disconnectForLinkLoss(1)
+   "destroy" -> c.destroy()
+  }
+  check(states.isNotEmpty() && !states.first()) {"presentation retired after Disconnected: $route $states"}
+  c.cleanups();c.close()
+ }
+ val c=CommManager();c.startHandshake();val old=c.owner()
+ val creations=AapRead.creations
+ old.retirePresentation();old.startReading()
+ check(AapRead.creations==creations){"retired presentation created a new reader before quit"}
+ c.close()
+ println("PASS presentation retirement precedes all disconnect publications and prevents late reader creation")
+}
+'''
 extra += r'''
 fun lateRegisteredResults()=runBlocking {
  for (outcome in listOf("success","false","throw")) for(replace in listOf(false,true)) {

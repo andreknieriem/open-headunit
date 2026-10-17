@@ -577,7 +577,28 @@ class Settings(private val context: Context) {
             prefs.edit().putInt("wifi-direct-band", migrated).apply()
             return migrated
         }
-        set(value) = prefs.edit().putInt("wifi-direct-band", value).apply()
+        set(value) {
+            // A new choice is a new question: the remembered refusal below answered the old one.
+            prefs.edit()
+                .putInt("wifi-direct-band", value)
+                .remove(KEY_WIFI_DIRECT_BANDED_REFUSED_ON)
+                .apply()
+        }
+
+    /**
+     * The build fingerprint on which this unit refused every banded Native AA group request and
+     * then hosted the no-band group, or null. While it matches the running build, AUTO skips the
+     * banded ladder. See
+     * [com.andrerinas.openheadunit.connection.wifi.direct.NativeGroupBandPolicy.skipsBandedRequest].
+     */
+    var wifiDirectBandedRefusedOn: String?
+        get() = prefs.getString(KEY_WIFI_DIRECT_BANDED_REFUSED_ON, null)
+        set(value) {
+            val editor = prefs.edit()
+            if (value.isNullOrEmpty()) editor.remove(KEY_WIFI_DIRECT_BANDED_REFUSED_ON)
+            else editor.putString(KEY_WIFI_DIRECT_BANDED_REFUSED_ON, value)
+            editor.apply()
+        }
 
     /**
      * Which 5 GHz channel to ask for, on whichever transport is hosting the network.
@@ -1785,6 +1806,7 @@ class Settings(private val context: Context) {
         const val KEY_ASSISTANT_VOLUME_OFFSET = "assistant-volume-offset"
         const val KEY_NAVIGATION_VOLUME_OFFSET = "navigation-volume-offset"
         const val KEY_ENABLE_CAR_LAUNCHER = "enable-car-launcher"
+        const val KEY_WIFI_DIRECT_BANDED_REFUSED_ON = "wifi-direct-banded-refused-on"
 
         const val AUTO_CONNECT_LAST_SESSION = "last-session"
         const val AUTO_CONNECT_SELF_MODE = "self-mode"

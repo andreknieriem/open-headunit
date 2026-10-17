@@ -133,6 +133,40 @@ object NativeGroupBandPolicy {
         return WifiP2pOperatingChannelPolicy.frequencyMhzFor(channel)
     }
 
+    /**
+     * Whether this bring-up should skip the banded request and go straight to the no-band create.
+     *
+     * Measured on a MediaTek Helio P22 phone on Android 10: every `setGroupOperatingBand` create is
+     * refused with ERROR (Internal Error), on every session, and the no-band create that follows
+     * comes up on 5 GHz anyway. The ladder in front of it is four refusals two seconds apart, so
+     * each connection paid about 8.5 s for an answer the unit had already given. The refusal is
+     * a property of the radio firmware, not of the moment, so it is remembered against the build
+     * fingerprint and the ladder is skipped while that build is the one running.
+     *
+     * Only for [P2pBandPreference.AUTO], whose fallback is the platform's choice anyway: the two
+     * forced positions mean the user asked for that band, so they keep asking. Never with a pinned
+     * channel either, which is an explicit choice with its own ladder. A firmware update changes
+     * the fingerprint and so asks again, and changing the band setting clears the record.
+     *
+     * @param refusedOnFingerprint the build the refusal was recorded on, or null if none was.
+     */
+    fun skipsBandedRequest(
+        preference: P2pBandPreference,
+        channelPinned: Boolean,
+        refusedOnFingerprint: String?,
+        currentFingerprint: String,
+    ): Boolean = preference == P2pBandPreference.AUTO &&
+        !channelPinned &&
+        !refusedOnFingerprint.isNullOrEmpty() &&
+        refusedOnFingerprint == currentFingerprint
+
+    /**
+     * Whether a no-band group that formed after the banded ladder was exhausted should be recorded
+     * as this unit's standing answer. Only under [P2pBandPreference.AUTO], for the reason above.
+     */
+    fun recordsBandedRefusal(preference: P2pBandPreference, ladderExhausted: Boolean): Boolean =
+        ladderExhausted && preference == P2pBandPreference.AUTO
+
     /** What a failed Native AA group request does next. */
     enum class NextStep {
         /** Ask again for the same thing. */

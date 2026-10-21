@@ -643,6 +643,8 @@
     <!-- New strings merged from 2.3.1 -->
     <string name="key_back">뒤로</string>
     <string name="bt_devices_selected">개 기기 선택됨</string>
+    <string name="bluetooth_pairing_assist">Android Bluetooth 페어링 보조 (실험 기능)</string>
+    <string name="bluetooth_pairing_assist_description">기본값은 꺼짐입니다. Android 기본 Bluetooth를 사용하는 무선 Android Auto용입니다. 먼저 Android 설정에서 휴대폰을 페어링해 주세요. 광고할 주소와 실제 어댑터 주소가 같아야 하며, 사용자 지정 Bluetooth 관리자와 제조사 별도 모듈은 지원하지 않습니다. 휴대폰에서 기존 페어링을 삭제한 뒤 다시 연결할 때는 헤드유닛의 페어링 확인 창을 확인해 주세요. 이 기능은 통화 프로필을 추가하지 않습니다. 설정 변경 후 Android Auto를 다시 연결해 주세요.</string>
     <string name="bluetooth_adapter_label">블루투스 어댑터</string>
     <string name="bluetooth_adapter_description">핸드셰이크에 사용할 블루투스 어댑터/컨트롤러를 선택합니다. 듀얼 블루투스 시스템에서 유용합니다.</string>
     <string name="select_bt_adapter">블루투스 어댑터 선택</string>

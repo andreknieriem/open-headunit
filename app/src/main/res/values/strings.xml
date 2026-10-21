@@ -1079,6 +1079,8 @@
     <!-- New strings merged from 2.3.1 -->
     <string name="key_back">Back</string>
     <string name="bt_devices_selected">devices selected</string>
+    <string name="bluetooth_pairing_assist">Android Bluetooth pairing assistance (experimental)</string>
+    <string name="bluetooth_pairing_assist_description">Off by default. For wireless Android Auto using the built-in Android Bluetooth adapter. Pair the phone in Android settings first. The announced address must match that adapter; custom Bluetooth managers and external modules are not supported. Keep the head unit’s pairing confirmation visible when reconnecting a forgotten phone. This does not add hands-free calling support. Reconnect Android Auto after changing this option.</string>
     <string name="bluetooth_adapter_label">Bluetooth Adapter</string>
     <string name="bluetooth_adapter_description">Select the Bluetooth adapter/controller to use for the handshake. Useful for dual Bluetooth systems.</string>
     <string name="select_bt_adapter">Select Bluetooth Adapter</string>

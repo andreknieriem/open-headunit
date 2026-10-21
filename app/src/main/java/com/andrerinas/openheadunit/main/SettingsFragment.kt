@@ -207,6 +207,7 @@ class SettingsFragment : Fragment() {
     private var pendingAutoEnableHotspot: Boolean? = null
     private var pendingWaitForWifi: Boolean? = null
     private var pendingWaitForWifiTimeout: Int? = null
+    private var pendingBluetoothPairingAssist: Boolean? = null
     private var pendingBluetoothManagerServiceName: String? = null
     private var pendingNativeAaIgnoreExternalBt: Boolean? = null
     private var pendingExternalBtZbtTransport: Boolean? = null
@@ -406,6 +407,7 @@ class SettingsFragment : Fragment() {
         pendingHelperConnectionStrategy = settings.helperConnectionStrategy
         pendingWaitForWifi = settings.waitForWifiBeforeWifiDirect
         pendingWaitForWifiTimeout = settings.waitForWifiTimeout
+        pendingBluetoothPairingAssist = settings.bluetoothPairingAssist
         pendingBluetoothManagerServiceName = settings.bluetoothManagerServiceName
         pendingNativeAaIgnoreExternalBt = settings.nativeAaIgnoreExternalBt
         pendingExternalBtZbtTransport = settings.externalBtZbtTransport
@@ -563,6 +565,7 @@ class SettingsFragment : Fragment() {
         pendingHelperConnectionStrategy = settings.helperConnectionStrategy
         pendingWaitForWifi = settings.waitForWifiBeforeWifiDirect
         pendingWaitForWifiTimeout = settings.waitForWifiTimeout
+        pendingBluetoothPairingAssist = settings.bluetoothPairingAssist
         pendingBluetoothManagerServiceName = settings.bluetoothManagerServiceName
         pendingNativeAaIgnoreExternalBt = settings.nativeAaIgnoreExternalBt
         pendingExternalBtZbtTransport = settings.externalBtZbtTransport
@@ -817,6 +820,7 @@ class SettingsFragment : Fragment() {
         pendingHelperConnectionStrategy?.let { if (it != settings.helperConnectionStrategy) settings.helperConnectionStrategy = it }
         pendingWaitForWifi?.let { if (it != settings.waitForWifiBeforeWifiDirect) settings.waitForWifiBeforeWifiDirect = it }
         pendingWaitForWifiTimeout?.let { if (it != settings.waitForWifiTimeout) settings.waitForWifiTimeout = it }
+        pendingBluetoothPairingAssist?.let { if (it != settings.bluetoothPairingAssist) settings.bluetoothPairingAssist = it }
         pendingBluetoothManagerServiceName?.let { if (it != settings.bluetoothManagerServiceName) settings.bluetoothManagerServiceName = it }
         pendingNativeAaIgnoreExternalBt?.let { if (it != settings.nativeAaIgnoreExternalBt) settings.nativeAaIgnoreExternalBt = it }
         pendingExternalBtZbtTransport?.let { if (it != settings.externalBtZbtTransport) settings.externalBtZbtTransport = it }
@@ -963,6 +967,7 @@ class SettingsFragment : Fragment() {
                         pendingHelperConnectionStrategy != settings.helperConnectionStrategy ||
                         pendingWaitForWifi != settings.waitForWifiBeforeWifiDirect ||
                         pendingWaitForWifiTimeout != settings.waitForWifiTimeout ||
+                        pendingBluetoothPairingAssist != settings.bluetoothPairingAssist ||
                         pendingBluetoothManagerServiceName != settings.bluetoothManagerServiceName ||
                         pendingNativeAaIgnoreExternalBt != settings.nativeAaIgnoreExternalBt ||
                         pendingExternalBtZbtTransport != settings.externalBtZbtTransport ||
@@ -1232,6 +1237,19 @@ class SettingsFragment : Fragment() {
                     checkChanges()
                     updateSettingsList()
                 }
+            }
+        ))
+
+        items.add(SettingItem.ToggleSettingEntry(
+            stableId = "bluetoothPairingAssist",
+            nameResId = R.string.bluetooth_pairing_assist,
+            descriptionResId = R.string.bluetooth_pairing_assist_description,
+            isChecked = pendingBluetoothPairingAssist ?: false,
+            searchKeywords = "bluetooth pairing numeric comparison hands-free hfp experimental",
+            onCheckedChanged = { enabled ->
+                pendingBluetoothPairingAssist = enabled
+                checkChanges()
+                updateSettingsList()
             }
         ))
 

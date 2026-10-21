@@ -8,7 +8,7 @@ import java.io.IOException
  *
  * This is conditional restoration, not a lock: Zlink does not participate in our ownership
  * protocol. A different value relinquishes ownership; another writer using our identical value
- * cannot be distinguished. The opt-in therefore requires using OHU without another projection app.
+ * cannot be distinguished. Concurrent projection apps can therefore still compete for policy.
  */
 internal class XyAutoMediaLease(private val port: Port) {
     data class Journal(val previous: String, val boot: String)

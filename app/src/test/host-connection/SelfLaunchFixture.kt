@@ -1,5 +1,7 @@
 package selflaunch
 
+import com.andrerinas.openheadunit.connection.bluetooth.xyauto.XyAutoMediaSession
+
 import com.andrerinas.openheadunit.connection.wifi.scan.WifiScanControl
 import com.andrerinas.openheadunit.connection.wifi.modes.WifiLauncherNative
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeStrategy
@@ -82,6 +84,7 @@ class CommManager {
     val isUsbSession = false
     var isWirelessSession = false
     var acceptedWirelessSession: Any? = null
+    val acceptedWirelessAudioSession get() = acceptedWirelessSession
     var isLoopbackSession = false
     var reports = 0
     var metadata = "old"
@@ -186,6 +189,7 @@ class Service(private var hasEverConnected: Boolean = true, val commManager: Com
     private var sessionEndedByHand = false
     private val packageName = "fixture"
     private val ACTION_REQUEST_NIGHT_MODE_UPDATE = "night"
+    var isDestroying = false
     var connectedCallbacks = 0
     var ordinaryDisconnects = 0
     fun startObserver() { observeConnectionState() }
@@ -200,6 +204,7 @@ class Service(private var hasEverConnected: Boolean = true, val commManager: Com
     private fun armProjectionRaiseDeadline(value: Any) {}
     private fun launchAapProjectionActivity() = Unit
     private fun sendBroadcast(intent: Intent) {}
+    // XYAUTO
     private fun maybeAutoResumePlaybackOnReconnect() {}
     // OBSERVER
     val network = ConnectivityManager()
@@ -247,6 +252,7 @@ fun main() {
         for (sdk in listOf(23, 33)) {
             Build.VERSION.SDK_INT = sdk
             WifiScanControl.calls.clear()
+            XyAutoMediaSession.calls.clear()
             Service(false).use { s ->
                 // A local socket is still Self even when a Native launcher remains selected.
                 s.commManager.isWirelessSession = true
@@ -256,6 +262,7 @@ fun main() {
                 s.startObserver(); s.main.drain()
                 s.commManager.connectionState.value = CommManager.ConnectionState.TransportStarted
                 s.main.drain()
+                check(XyAutoMediaSession.calls.all { it.session == null }) { "Self loopback acquired XYAuto policy" }
                 check(WifiScanControl.calls.size == if (sdk >= 26) 2 else 0)
                 check(WifiScanControl.calls.all { it == WifiScanControl.Call(s) }) {
                     "Self loopback acquired wireless scan control"

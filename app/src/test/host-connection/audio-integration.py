@@ -79,6 +79,8 @@ for marker, declaration, source in [
     ("MANAGER_FOCUS_SUPPRESSION", "fun setProjectionVideoFocusSuppressed(", comm),
     ("TRANSPORT_FOCUS_SUPPRESSION", "internal fun setProjectionVideoFocusSuppressed(", transport),
     ("OBSERVER", "private fun observeConnectionState()", service),
+    ("XYAUTO", "private fun refreshXyAutoMediaPolicy(", service),
+    ("XYAUTO_SESSION", "internal val acceptedWirelessAudioSession:", comm),
 ]:
     lifecycle = lifecycle.replace("// PRODUCTION " + marker + "\n",
         member_block(declaration, source).replace("CommManager.ConnectionState", "ConnectionState").replace("this@AapService", "this@ObserverFixture") + "\n")

@@ -28,9 +28,11 @@ internal object XyAutoMediaSession {
     fun supported(context: Context): Boolean = try {
         val info = context.packageManager.getPackageInfo(PACKAGE, PackageManager.GET_SERVICES)
         // Match the XYAuto service family, not a particular CHQbt version: the reporter and
-        // analyzed SM4250 firmware have different builds. This exposes an opt-in experiment,
-        // not a claim that every blink daemon has the inspected policy. Writes still need
-        // return-code/readback confirmation and never bypass device permissions.
+        // analyzed SM4250 firmware have different builds. Family detection admits an attempt,
+        // not proof that every blink daemon has the inspected policy. Require setter success
+        // and readback; an unsupported or denied property must not interrupt projection.
+        // DUDU (com.syu.bt) and Ottocast (com.applepie.bluetooth) also ship a blink binary.
+        // Its filename alone does not identify the XYAuto projection policy.
         Build.VERSION.SDK_INT >= 24 && File("/system/bin/blink").exists() &&
             (info.applicationInfo?.flags ?: 0) and ApplicationInfo.FLAG_SYSTEM != 0 &&
             info.services?.any { it.name == "$PACKAGE.service.blinkService" && it.enabled } == true
@@ -48,7 +50,7 @@ internal object XyAutoMediaSession {
             releaseSafely(previous)
             if (requested.owner !== service) return@submit
             lease = createLease(app)
-            // Recovery also runs when the opt-in has since been switched off.
+            // Recover a previous session before any new projection can acquire the policy.
             releaseSafely(lease)
         }
     }
@@ -60,7 +62,7 @@ internal object XyAutoMediaSession {
         requested = request
         submit {
             // Cancellation is published by the caller, not queued behind slow property I/O.
-            // Stale tasks must not acquire policy after disconnect/toggle-off.
+            // Stale tasks must not acquire policy after disconnect.
             if (requested !== request || owner !== service) return@submit
             if (acceptedSession == null) {
                 releaseSafely(lease)
@@ -75,7 +77,6 @@ internal object XyAutoMediaSession {
             report(result)
             // Let blink's existing watchdog observe the property. Do not send a separate DA
             // broadcast: it has no completion/cancellation reply and can arrive after restore.
-
         }
     }
 

@@ -1148,6 +1148,7 @@ class AapService : Service() {
         commManager.onUsbHandshakeEnded = { f ->
             serviceScope.launch(Dispatchers.Main) { usbLauncherManager.onUsbHandshakeEnded(f) }
         }
+        com.andrerinas.openheadunit.connection.bluetooth.xyauto.XyAutoMediaSession.open(this, this)
         observeConnectionState()
         registerReceivers()
         carKeysManager.registerIdleReceivers(this)
@@ -1294,6 +1295,7 @@ class AapService : Service() {
                         } else WifiScanControl.end(this@AapService)
                     } else WifiScanControl.end(this@AapService)
                 }
+                refreshXyAutoMediaPolicy(state)
                 if (state === initialTerminal) return@collect
                 // Activity can advance the handshake before this conflated collector sees
                 // Connected. Every observed live phase must retire obsolete Save launch work.
@@ -1369,6 +1371,17 @@ class AapService : Service() {
                 }
             }
         }
+    }
+
+    private fun refreshXyAutoMediaPolicy(state: CommManager.ConnectionState) {
+        // Only a completed AA handshake can take ownership of the vendor projection policy.
+        // Flow is conflated, so TransportStarted also covers an unobserved HandshakeComplete event.
+        val accepted = if (!isDestroying &&
+            commManager.isWirelessSession && !commManager.isLoopbackSession &&
+            (state is CommManager.ConnectionState.HandshakeComplete ||
+                state is CommManager.ConnectionState.TransportStarted))
+            commManager.acceptedWirelessAudioSession else null
+        com.andrerinas.openheadunit.connection.bluetooth.xyauto.XyAutoMediaSession.update(this, this, accepted)
     }
 
     private fun maybeAutoResumePlaybackOnReconnect() {
@@ -2977,6 +2990,7 @@ class AapService : Service() {
         isDestroying = true
         deviceHackManager?.stop()
         deviceHackManager = null
+        com.andrerinas.openheadunit.connection.bluetooth.xyauto.XyAutoMediaSession.close(this)
         if (Build.VERSION.SDK_INT >= 26) WifiScanControl.end(this)
         ConnectionArbiter.actions = null
         // The hold outlives this instance; the next one arms from its own onCreate.
@@ -3075,6 +3089,7 @@ class AapService : Service() {
         super.onDestroy()
         instance = null
         if (killProcessOnDestroy) {
+            com.andrerinas.openheadunit.connection.bluetooth.xyauto.XyAutoMediaSession.beforeProcessExit()
             AppLog.i("AapService: killProcessOnDestroy is true. Triggering System.exit(0).")
             System.exit(0)
         }

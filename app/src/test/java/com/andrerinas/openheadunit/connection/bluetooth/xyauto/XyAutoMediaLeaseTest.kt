@@ -11,11 +11,12 @@ class XyAutoMediaLeaseTest {
         var writable = true
         var disk = true
         var corrupt = false
+        var readable = true
         var reads = 0
         var afterSave: (() -> Unit)? = null
         var afterWrite: (() -> Unit)? = null
         val writes = mutableListOf<String>()
-        override fun read(): String? { reads++; return value }
+        override fun read(): String? { reads++; return if (readable) value else null }
         override fun write(value: String): Boolean {
             check(journal != null) { "property changed before durable journal" }
             writes += value
@@ -72,6 +73,22 @@ class XyAutoMediaLeaseTest {
         val p = Fake(); p.disk = false
         assertEquals(XyAutoMediaLease.Result.UNAVAILABLE, XyAutoMediaLease(p).acquire())
         assertTrue(p.writes.isEmpty())
+    }
+    @Test fun unavailablePropertyCannotBecomeAnIdleAcquisition() {
+        val p = Fake(); p.readable = false
+        assertEquals(XyAutoMediaLease.Result.UNAVAILABLE, XyAutoMediaLease(p).acquire())
+        assertTrue(p.writes.isEmpty()); assertNull(p.journal)
+    }
+    @Test fun losingReadAccessAfterAWriteKeepsTheRecoveryRecord() {
+        val p = Fake(); val lease = XyAutoMediaLease(p)
+        p.afterWrite = { p.readable = false }
+        assertEquals(XyAutoMediaLease.Result.RECOVERY_PENDING, lease.acquire())
+        assertEquals("auto_wireless", p.value)
+        assertEquals("none", p.journal?.previous)
+        assertEquals(listOf("auto_wireless"), p.writes)
+        p.afterWrite = null; p.readable = true
+        assertEquals(XyAutoMediaLease.Result.RESTORED, lease.release())
+        assertEquals("none", p.value); assertNull(p.journal)
     }
     @Test fun failedWriteDoesNotBecomeActive() {
         val p = Fake(); p.writable = false

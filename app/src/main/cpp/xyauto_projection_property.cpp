@@ -8,8 +8,14 @@ constexpr const char* kProperty = "zj.phonelink.type";
 extern "C" JNIEXPORT jstring JNICALL
 Java_com_andrerinas_openheadunit_connection_bluetooth_xyauto_XyAutoProjectionProperty_nativeRead(
         JNIEnv* env, jobject) {
+    // get() returns an empty string for both an empty value and an unavailable lookup.
+    // Only an existing, readable property can establish an idle value or restoration.
+    // A missing property is deliberately unavailable; do not create vendor policy here.
+    const prop_info* property = __system_property_find(kProperty);
+    if (property == nullptr) return nullptr;
     char value[PROP_VALUE_MAX] = {};
-    __system_property_get(kProperty, value);
+    // Keep the API-24 path: read_callback() is only available from API 26.
+    if (__system_property_read(property, nullptr, value) < 0) return nullptr;
     return env->NewStringUTF(value);
 }
 

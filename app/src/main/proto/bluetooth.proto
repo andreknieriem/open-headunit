@@ -1,0 +1,20 @@
+syntax = "proto2";
+package com.andrerinas.openheadunit.aap.protocol.proto;
+
+// Bluetooth service (ID_BTH), not the media service with overlapping type numbers.
+// Shapes and required-field presence match Android Auto 17.6, 17.8 and 18.0.
+// There is no request ID: replies and authentication belong to the current link and phone.
+message PairingRequest {                       // phone -> HU, 0x8001
+    required string phone_address = 1;
+    required int32 pairing_method = 2;
+}
+message PairingResponse {                      // HU -> phone, 0x8002
+    required int32 status = 1;                 // Common.MessageStatus
+    required bool already_paired = 2;          // false must still be present on the wire
+}
+message AuthenticationData {                   // HU -> phone, 0x8003
+    required string auth_data = 1;             // never log or persist the PIN/comparison number
+}
+message AuthenticationResult {                 // phone -> HU, 0x8004
+    required int32 status = 1;
+}

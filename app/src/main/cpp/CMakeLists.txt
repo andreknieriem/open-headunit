@@ -11,6 +11,10 @@ target_link_libraries(hur_aaudio PRIVATE log dl)
 # Force 16 KB memory page size alignment for Android 15+ compatibility
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-z,max-page-size=16384")
 
+add_library(hur_xyauto SHARED xyauto_projection_property.cpp)
+target_compile_features(hur_xyauto PRIVATE cxx_std_17)
+target_compile_options(hur_xyauto PRIVATE -Wall -Wextra -Werror)
+
 # =========================================================================
 # Target 1: usbhelper (Libusb Support)
 # =========================================================================

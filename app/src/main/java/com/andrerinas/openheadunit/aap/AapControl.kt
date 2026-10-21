@@ -24,6 +24,7 @@ import com.andrerinas.openheadunit.utils.VideoFallbackPolicy
 import com.andrerinas.openheadunit.utils.Utils
 
 interface AapControl {
+    fun close() {}
     fun execute(message: AapMessage): Int
 }
 
@@ -305,7 +306,8 @@ internal class AapControlService(
         private val aapTransport: AapTransport,
         private val aapAudio: AapAudio,
         private val settings: Settings,
-        private val context: Context): AapControl {
+        private val context: Context,
+        private val bluetoothControl: AapBluetoothControl): AapControl {
 
     override fun execute(message: AapMessage): Int {
 
@@ -351,7 +353,7 @@ internal class AapControlService(
     private fun serviceDiscoveryRequest(request: Control.ServiceDiscoveryRequest): Int {
         AppLog.i("Service Discovery Request: %s", request.phoneName)
 
-        val msg = ServiceDiscoveryResponse(context, aapAudio.sessionConfig)
+        val msg = ServiceDiscoveryResponse(context, aapAudio.sessionConfig, bluetoothControl.announcement, bluetoothControl.pairingMethods())
         aapTransport.send(msg)
         return 0
     }
@@ -474,18 +476,21 @@ internal class AapControlGateway(
         private val serviceControl: AapControl,
         private val mediaControl: AapControl,
         private val touchControl: AapControl,
-        private val sensorControl: AapControl): AapControl {
+        private val sensorControl: AapControl,
+        private val bluetoothControl: AapControl): AapControl {
 
     constructor(aapTransport: AapTransport,
                 micRecorder: MicRecorder,
                 aapAudio: AapAudio,
                 settings: Settings,
-                context: Context) : this(
+                context: Context,
+                bluetoothControl: AapBluetoothControl = AapBluetoothControl(aapTransport, settings, context)) : this(
             aapTransport,
-            AapControlService(aapTransport, aapAudio, settings, context),
+            AapControlService(aapTransport, aapAudio, settings, context, bluetoothControl),
             AapControlMedia(aapTransport, micRecorder, aapAudio),
             AapControlTouch(aapTransport),
-            AapControlSensor(aapTransport, context, settings))
+            AapControlSensor(aapTransport, context, settings),
+            bluetoothControl)
 
     override fun execute(message: AapMessage): Int {
         if (message.type == 7) {
@@ -503,10 +508,13 @@ internal class AapControlGateway(
             Channel.ID_CTR -> return serviceControl.execute(message)
             Channel.ID_INP -> return touchControl.execute(message)
             Channel.ID_SEN -> return sensorControl.execute(message)
+            Channel.ID_BTH -> return bluetoothControl.execute(message)
             Channel.ID_VID, Channel.ID_AUD, Channel.ID_AU1, Channel.ID_AU2, Channel.ID_MIC -> return mediaControl.execute(message)
         }
         return 0
     }
+
+    override fun close() = bluetoothControl.close()
 
     private fun channelOpenRequest(request: Control.ChannelOpenRequest, channel: Int): Int {
         val msg = AapMessage(channel, Control.ControlMsgType.MESSAGE_CHANNEL_OPEN_RESPONSE_VALUE, Control.ChannelOpenResponse.newBuilder()

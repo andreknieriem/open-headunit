@@ -21,11 +21,11 @@ import com.andrerinas.openheadunit.utils.VideoFallbackPolicy
 import com.andrerinas.openheadunit.aap.AudioSessionConfig
 import com.google.protobuf.Message
 
-internal class ServiceDiscoveryResponse(context: Context, audioConfig: AudioSessionConfig)
-    : AapMessage(Channel.ID_CTR, Control.ControlMsgType.MESSAGE_SERVICE_DISCOVERY_RESPONSE_VALUE, makeProto(context, audioConfig)) {
+internal class ServiceDiscoveryResponse(context: Context, audioConfig: AudioSessionConfig, btAnnounce: BluetoothAnnouncePolicy.Announce, pairingMethods: List<Control.BluetoothPairingMethod>)
+    : AapMessage(Channel.ID_CTR, Control.ControlMsgType.MESSAGE_SERVICE_DISCOVERY_RESPONSE_VALUE, makeProto(context, audioConfig, btAnnounce, pairingMethods)) {
 
     companion object {
-        private fun makeProto(context: Context, audioConfig: AudioSessionConfig): Message {
+        private fun makeProto(context: Context, audioConfig: AudioSessionConfig, btAnnounce: BluetoothAnnouncePolicy.Announce, pairingMethods: List<Control.BluetoothPairingMethod>): Message {
             val settings = App.provide(context).settings
             // Initialize HeadUnitScreenConfig with actual physical screen dimensions
             HeadUnitScreenConfig.init(context, context.resources.displayMetrics, settings)
@@ -278,21 +278,13 @@ internal class ServiceDiscoveryResponse(context: Context, audioConfig: AudioSess
             }
 
             // Bluetooth Service
-            val btAnnounce = BluetoothAnnouncePolicy.decide(
-                settings.bluetoothAnnounceMode, settings.bluetoothAddress,
-                App.provide(context).commManager.isUsbSession)
             if (btAnnounce.carAddress != null) {
                 val bluetooth = Control.Service.newBuilder().also { service ->
                     service.id = Channel.ID_BTH
                     service.bluetoothService = Control.Service.BluetoothService.newBuilder().also {
                         it.carAddress = btAnnounce.carAddress
-                        // Pairing methods, not profiles: the old A2DP/HFP names on these two
-                        // values said otherwise. The values are unchanged, and numeric
-                        // comparison plus PIN is what Android's own stack offers a phone.
-                        it.addAllSupportedPairingMethods(
-                                listOf(Control.BluetoothPairingMethod.BLUETOOTH_PAIRING_NUMERIC_COMPARISON,
-                                        Control.BluetoothPairingMethod.BLUETOOTH_PAIRING_PIN)
-                        )
+                        // The same session handler supplies the methods and processes requests.
+                        it.addAllSupportedPairingMethods(pairingMethods)
                     }.build()
                 }.build()
                 services.add(bluetooth)

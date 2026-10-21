@@ -12,6 +12,14 @@ object MsgType {
     }
 
     fun name(type: Int, channel: Int): String {
+        if (channel == Channel.ID_BTH) {
+            when (type) {
+                0x8001 -> return "Bluetooth Pairing Request"
+                0x8002 -> return "Bluetooth Pairing Response"
+                0x8003 -> return "Bluetooth Authentication Data"
+                0x8004 -> return "Bluetooth Authentication Result"
+            }
+        }
 
         when (type) {
             Control.ControlMsgType.MESSAGE_VERSION_REQUEST_VALUE -> return "Version Request"

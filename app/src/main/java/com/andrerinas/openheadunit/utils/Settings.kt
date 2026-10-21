@@ -2287,6 +2287,11 @@ class Settings(private val context: Context) {
         get() = prefs.getString("last-nearby-device-name", "")!!
         set(value) = prefs.edit().putString("last-nearby-device-name", value).apply()
 
+    // Snapshot when a transport is created; changing pairing methods requires rediscovery.
+    var bluetoothPairingAssist: Boolean
+        get() = prefs.getBoolean("bluetooth-pairing-assist", false)
+        set(value) = prefs.edit().putBoolean("bluetooth-pairing-assist", value).apply()
+
     var bluetoothManagerServiceName: String
         get() = prefs.getString("bluetooth-manager-service-name", "bluetooth_manager")!!
         set(value) = prefs.edit().putString("bluetooth-manager-service-name", value).apply()

@@ -20,9 +20,8 @@ internal class AapMessageHandlerType(
         onAaPlaybackStatus: ((MediaPlayback.MediaPlaybackStatus, AaPresentationSession) -> Unit)? = null,
         private val onAaPresentationClosed: ((AaPresentationSession) -> Unit)? = null,
         private val presentationSession: AaPresentationSession = AaPresentationSession(),
-        private val presentation: PresentationQueue = mainPresentationQueue()) : AapMessageHandler {
-
-    private val aapControl: AapControl = AapControlGateway(transport, recorder, aapAudio, settings, context)
+        private val presentation: PresentationQueue = mainPresentationQueue(),
+        private val aapControl: AapControl = AapControlGateway(transport, recorder, aapAudio, settings, context)) : AapMessageHandler {
     private val mediaPlayback = AapMediaPlayback(
         { meta -> if (presentationSession.isActive) onAaMediaMetadata?.invoke(meta, presentationSession) },
         { status -> if (presentationSession.isActive) onAaPlaybackStatus?.invoke(status, presentationSession) },
@@ -31,6 +30,7 @@ internal class AapMessageHandlerType(
     private val aapNavigation = AapNavigation(context, settings, presentation)
 
     override fun close() {
+        aapControl.close()
         presentationSession.retire()
         presentation.close {
             try { aapNavigation.close() }

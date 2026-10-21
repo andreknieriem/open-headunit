@@ -126,7 +126,7 @@ class AapPresentationTest {
                 mockConstruction(AapNavigationHelper::class.java).use { helpers ->
                     val scheduler = PresentationScheduler()
                     val handler = AapMessageHandlerType(mock(), mock(), mock(), mock(), mock(), mock(),
-                        presentation = scheduler.queue())
+                        presentation = scheduler.queue(), aapControl = mock())
                     val helper = helpers.constructed().single()
                     handler.handle(AapMessage(Channel.ID_NAV, NavigationStatus.MsgType.NEXTTURNDETAILS_VALUE,
                         NavigationStatus.NextTurnDetail.newBuilder().setRoad("Last road").build()))
@@ -172,7 +172,7 @@ class AapPresentationTest {
         mockConstruction(AapNavigationHelper::class.java).use { helpers ->
             val scheduler = PresentationScheduler()
             val handler = AapMessageHandlerType(mock(), mock(), mock(), mock(), mock(), mock(),
-                presentation = scheduler.queue())
+                presentation = scheduler.queue(), aapControl = mock())
             handler.close()
             scheduler.drain()
             verify(helpers.constructed().single()).cancelNotification()
@@ -185,14 +185,14 @@ class AapPresentationTest {
             mockConstruction(AapNavigationHelper::class.java).use { helpers ->
                 val scheduler = PresentationScheduler()
                 val old = AapMessageHandlerType(mock(), mock(), mock(), mock(), mock(), mock(),
-                    presentation = scheduler.queue())
+                    presentation = scheduler.queue(), aapControl = mock())
                 old.handle(AapMessage(Channel.ID_NAV, NavigationStatus.MsgType.NEXTTURNDETAILS_VALUE,
                     NavigationStatus.NextTurnDetail.newBuilder().setRoad("Old road").build()))
                 // Simulate a task already removed from Main's queue, but not yet run.
                 val dequeued = scheduler.tasks.removeAt(0).runnable
                 old.close()
                 val replacement = AapMessageHandlerType(mock(), mock(), mock(), mock(), mock(), mock(),
-                    presentation = scheduler.queue())
+                    presentation = scheduler.queue(), aapControl = mock())
                 replacement.handle(AapMessage(Channel.ID_NAV, NavigationStatus.MsgType.NEXTTURNDETAILS_VALUE,
                     NavigationStatus.NextTurnDetail.newBuilder().setRoad("New road").build()))
                 dequeued.run()
@@ -216,7 +216,7 @@ class AapPresentationTest {
             mockConstruction(AapNavigationHelper::class.java).use { helpers ->
                 val scheduler = PresentationScheduler()
                 val handler = AapMessageHandlerType(mock(), mock(), mock(), mock(), mock(), mock(),
-                    presentation = scheduler.queue())
+                    presentation = scheduler.queue(), aapControl = mock())
                 val helper = helpers.constructed().single()
                 val events = mutableListOf<String>()
                 doAnswer {
@@ -244,7 +244,7 @@ class AapPresentationTest {
                 val session = AaPresentationSession()
                 val handler = AapMessageHandlerType(mock(), mock(), mock(), mock(), mock(), mock(),
                     onAaPresentationClosed = { calls.add(it) }, presentationSession = session,
-                    presentation = scheduler.queue())
+                    presentation = scheduler.queue(), aapControl = mock())
                 handler.handle(AapMessage(Channel.ID_NAV, NavigationStatus.MsgType.INSTRUMENT_CLUSTER_STOP_VALUE,
                     NavigationStatus.NavigationState.getDefaultInstance()))
                 val failure = AssertionError("broadcast unavailable")
@@ -280,7 +280,7 @@ class AapPresentationTest {
             val audio = mock<AapAudio> { on { process(any()) } doReturn true }
             val handler = AapMessageHandlerType(transport, mock(), audio, mock(), mock(), mock(),
                 onAaPlaybackStatus = { status, _ -> displayed.add(status) },
-                presentation = scheduler.queue())
+                presentation = scheduler.queue(), aapControl = mock())
             handler.handle(AapMessage(Channel.ID_MPB, 32769, MediaPlayback.MediaPlaybackStatus.newBuilder()
                 .setState(MediaPlayback.MediaPlaybackStatus.State.PLAYING).build()))
             handler.handle(AapMessage(Channel.ID_AUD, 0, MediaPlayback.MediaMetaData.getDefaultInstance()))
@@ -361,7 +361,7 @@ class AapPresentationTest {
             val session = AaPresentationSession()
             val handler = AapMessageHandlerType(mock(), mock(), mock(), mock(), mock(), mock(),
                 onAaPresentationClosed = { calls.add(it) }, presentationSession = session,
-                presentation = scheduler.queue())
+                presentation = scheduler.queue(), aapControl = mock())
             doThrow(IllegalStateException("notification service unavailable"))
                 .whenever(helpers.constructed().single()).cancelNotification()
             handler.close()

@@ -1090,6 +1090,7 @@ Open Headunit предоставляется «как есть» без каки
     <string name="audio_channel_all_short">все каналы</string>
     <string name="audio_channel_all_description">Все аудиоканалы Android Auto — воспроизведение приложений, голосовые подсказки, предупреждения и звуки уведомлений — используют этот единственный выходной поток.</string>
     <string name="audio_stream_test">Воспроизвести тестовый сигнал на этом потоке</string>
+    <string name="setting_help_for">Справка: %1$s</string>
     <string name="audio_stream_muted_warning">Поток «%1$s» отключён на этом устройстве. Увеличьте громкость, чтобы услышать тестовый сигнал.</string>
     <string name="audio_stream_test_failed">Не удалось воспроизвести тестовый сигнал на этом потоке.</string>
     <string name="audio_stream_pick_title">Поток для «%1$s»</string>

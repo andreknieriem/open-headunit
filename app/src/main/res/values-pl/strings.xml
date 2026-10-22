@@ -1098,6 +1098,7 @@
     <string name="audio_channel_all_short">wszystkie kanały</string>
     <string name="audio_channel_all_description">Wszystkie kanały dźwięku Android Auto — odtwarzanie z aplikacji, wskazówki głosowe, alerty i dźwięki powiadomień — korzystają z tego jednego strumienia wyjściowego.</string>
     <string name="audio_stream_test">Odtwórz ton testowy na tym strumieniu</string>
+    <string name="setting_help_for">Pomoc: %1$s</string>
     <string name="audio_stream_muted_warning">%1$s jest wyciszony na tym urządzeniu — zwiększ jego głośność, aby usłyszeć ton testowy.</string>
     <string name="audio_stream_test_failed">Nie udało się odtworzyć tonu testowego na tym strumieniu.</string>
     <string name="audio_stream_pick_title">Strumień dla: %1$s</string>

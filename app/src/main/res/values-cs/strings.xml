@@ -1093,6 +1093,7 @@
     <string name="audio_channel_all_short">všechny kanály</string>
     <string name="audio_channel_all_description">Všechny zvukové kanály Android Auto — přehrávání aplikací, mluvené pokyny, upozornění a zvuky oznámení — sdílejí tento jediný výstupní stream.</string>
     <string name="audio_stream_test">Přehrát na tomto streamu zkušební tón</string>
+    <string name="setting_help_for">Nápověda: %1$s</string>
     <string name="audio_stream_muted_warning">Stream %1$s je na tomto zařízení ztlumený. Zvyšte hlasitost, abyste uslyšeli zkušební tón.</string>
     <string name="audio_stream_test_failed">Na tomto streamu se nepodařilo přehrát zkušební tón.</string>
     <string name="audio_stream_pick_title">Stream pro %1$s</string>

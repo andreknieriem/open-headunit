@@ -1089,6 +1089,7 @@
     <string name="audio_channel_all_short">所有通道</string>
     <string name="audio_channel_all_description">Android Auto 的所有音频通道（应用播放、语音导航、提醒和通知音）共用这一个输出流。</string>
     <string name="audio_stream_test">在此流上播放测试音</string>
+    <string name="setting_help_for">%1$s 的帮助</string>
     <string name="audio_stream_muted_warning">此设备上的%1$s已静音，请调高音量以听到测试音。</string>
     <string name="audio_stream_test_failed">无法在此流上播放测试音。</string>
     <string name="audio_stream_pick_title">%1$s 使用的流</string>

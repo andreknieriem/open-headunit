@@ -582,6 +582,7 @@
     <string name="audio_channel_all_description">Semua saluran audio Android Auto (pemutaran aplikasi, panduan lisan, peringatan, dan suara notifikasi) berbagi satu aliran keluaran ini.</string>
     <string name="audio_channel_system_description">Peringatan, nada, dan suara notifikasi bawaan Android Auto (16 kHz mono).</string>
     <string name="audio_stream_test">Putar nada uji pada aliran ini</string>
+    <string name="setting_help_for">Bantuan untuk %1$s</string>
     <string name="audio_stream_muted_warning">%1$s dibisukan di perangkat ini. Naikkan volumenya untuk mendengar nada uji.</string>
     <string name="audio_stream_test_failed">Tidak dapat memutar nada uji pada aliran ini.</string>
     <string name="audio_stream_pick_title">Aliran untuk %1$s</string>

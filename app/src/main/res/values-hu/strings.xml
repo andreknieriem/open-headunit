@@ -1093,6 +1093,7 @@
     <string name="audio_channel_all_short">minden csatorna</string>
     <string name="audio_channel_all_description">Az Android Auto összes hangcsatornája (alkalmazások lejátszása, kimondott útmutatás, figyelmeztetések és értesítési hangok) ezt az egyetlen kimeneti folyamot használja.</string>
     <string name="audio_stream_test">Tesztjel lejátszása ezen a folyamon</string>
+    <string name="setting_help_for">Súgó: %1$s</string>
     <string name="audio_stream_muted_warning">Ezen az eszközön némítva van: %1$s. A tesztjel meghallgatásához növelje a hangerejét.</string>
     <string name="audio_stream_test_failed">Nem sikerült tesztjelet lejátszani ezen a folyamon.</string>
     <string name="audio_stream_pick_title">Folyam ehhez: %1$s</string>

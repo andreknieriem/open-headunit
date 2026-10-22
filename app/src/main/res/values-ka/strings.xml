@@ -1078,6 +1078,7 @@
     <string name="audio_channel_all_short">ყველა არხი</string>
     <string name="audio_channel_all_description">Android Auto-ს ყველა აუდიოარხი — აპების დაკვრა, ხმოვანი მითითებები, გაფრთხილებები და შეტყობინებების ხმები — იყენებს ამ ერთადერთ გამომავალ ნაკადს.</string>
     <string name="audio_stream_test">სატესტო სიგნალის დაკვრა ამ ნაკადზე</string>
+    <string name="setting_help_for">დახმარება: %1$s</string>
     <string name="audio_stream_muted_warning">%1$s ამ მოწყობილობაზე დადუმებულია — აწიეთ მისი ხმა, რომ სატესტო სიგნალი გაიგონოთ.</string>
     <string name="audio_stream_test_failed">ამ ნაკადზე სატესტო სიგნალის დაკვრა ვერ მოხერხდა.</string>
     <string name="audio_stream_pick_title">ნაკადი: %1$s</string>

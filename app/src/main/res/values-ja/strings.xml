@@ -1095,6 +1095,7 @@
     <string name="audio_channel_all_short">すべてのチャンネル</string>
     <string name="audio_channel_all_description">Android Auto のすべての音声チャンネル（アプリの再生、音声案内、警告音、通知音）が、この 1 つの出力ストリームを共有します。</string>
     <string name="audio_stream_test">このストリームでテスト音を再生</string>
+    <string name="setting_help_for">%1$s のヘルプ</string>
     <string name="audio_stream_muted_warning">%1$s はこの端末でミュートされています。テスト音を聞くには音量を上げてください。</string>
     <string name="audio_stream_test_failed">このストリームでテスト音を再生できませんでした。</string>
     <string name="audio_stream_pick_title">%1$s のストリーム</string>

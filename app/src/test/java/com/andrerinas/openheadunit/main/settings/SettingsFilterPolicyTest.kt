@@ -14,7 +14,12 @@ class SettingsFilterPolicyTest {
         INPUT to "Input",
         LIBUSB to "Use libusb",
         SAVE to "Save",
-        NOTICE to "USB settings. WiFi settings are hidden."
+        NOTICE to "USB settings. WiFi settings are hidden.",
+        AUDIO_SINK to "Audio Sink",
+        AUDIO_SUMMARY to "Plays phone audio through this unit.",
+        AUDIO_HELP to "Audio from apps. Calls never use it.",
+        PICKER_SUMMARY to "Chooses the codec.",
+        PICKER_HELP to "Pick the video codec the phone sends."
     )
 
     private fun text(id: Int): String = titles[id] ?: ""
@@ -228,6 +233,70 @@ class SettingsFilterPolicyTest {
         assertEquals(empty, SettingsFilterPolicy.withNoResultsNote(empty, "  ", noResults))
     }
 
+
+    private fun helpFilter(vararg rows: SettingItem, query: String): List<String> =
+        SettingsFilterPolicy.filter(
+            items = listOf(SettingItem.CategoryHeader(stableId = "general", titleResId = GENERAL)) + rows,
+            query = query,
+            advanced = true,
+            showsUsb = true,
+            showsWifi = true,
+            basicIds = emptySet(),
+            text = ::text
+        ).map { it.stableId }
+
+    private val audioSink = SettingItem.ToggleSettingEntry(
+        stableId = "audioSink",
+        nameResId = AUDIO_SINK,
+        descriptionResId = AUDIO_SUMMARY,
+        helpResId = AUDIO_HELP,
+        isChecked = true,
+        onCheckedChanged = {}
+    )
+
+    @Test
+    fun `a query found only in the help text keeps the row and its header`() {
+        assertEquals(listOf("general", "audioSink"), helpFilter(audioSink, query = "never use"))
+    }
+
+    @Test
+    fun `a query found in no text drops the row`() {
+        assertEquals(emptyList<String>(), helpFilter(audioSink, query = "zebra"))
+    }
+
+    @Test
+    fun `calls finds Audio Sink although its summary lacks the word`() {
+        assertEquals(false, text(AUDIO_SUMMARY).contains("calls", ignoreCase = true))
+        assertEquals(listOf("general", "audioSink"), helpFilter(audioSink, query = "calls"))
+    }
+
+    @Test
+    fun `a picker row is searched by its help text and its summary`() {
+        val picker = SettingItem.SettingEntry(
+            stableId = "videoCodec",
+            nameResId = LIBUSB,
+            value = "H.264",
+            descriptionResId = PICKER_SUMMARY,
+            helpResId = PICKER_HELP,
+            onClick = {}
+        )
+        assertEquals(listOf("general", "videoCodec"), helpFilter(picker, query = "phone sends"))
+        assertEquals(listOf("general", "videoCodec"), helpFilter(picker, query = "chooses the"))
+    }
+
+    @Test
+    fun `a segmented row is searched by its help text`() {
+        val segmented = SettingItem.SegmentedButtonSettingEntry(
+            stableId = "mode",
+            nameResId = WIFI_MODE,
+            options = listOf("A", "B"),
+            selectedIndex = 0,
+            helpResId = PICKER_HELP,
+            onOptionSelected = {}
+        )
+        assertEquals(listOf("general", "mode"), helpFilter(segmented, query = "video codec"))
+    }
+
     private companion object {
         const val GENERAL = 1
         const val LANGUAGE = 2
@@ -238,5 +307,10 @@ class SettingsFilterPolicyTest {
         const val LIBUSB = 7
         const val SAVE = 8
         const val NOTICE = 9
+        const val AUDIO_SINK = 10
+        const val AUDIO_SUMMARY = 11
+        const val AUDIO_HELP = 12
+        const val PICKER_SUMMARY = 13
+        const val PICKER_HELP = 14
     }
 }

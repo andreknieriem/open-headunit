@@ -1089,6 +1089,7 @@
     <string name="audio_channel_all_short">toate canalele</string>
     <string name="audio_channel_all_description">Toate canalele audio Android Auto (redarea aplicațiilor, ghidarea vocală, alertele și sunetele de notificare) folosesc în comun acest flux de ieșire.</string>
     <string name="audio_stream_test">Redă un ton de test pe acest flux</string>
+    <string name="setting_help_for">Ajutor pentru %1$s</string>
     <string name="audio_stream_muted_warning">%1$s este fără sunet pe acest dispozitiv. Ridică volumul ca să auzi tonul de test.</string>
     <string name="audio_stream_test_failed">Nu s-a putut reda un ton de test pe acest flux.</string>
     <string name="audio_stream_pick_title">Flux pentru %1$s</string>

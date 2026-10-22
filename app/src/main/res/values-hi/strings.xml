@@ -582,6 +582,7 @@
     <string name="audio_channel_all_description">Android Auto के सभी ऑडियो चैनल (ऐप प्लेबैक, बोले गए निर्देश, अलर्ट और नोटिफ़िकेशन की आवाज़ें) इसी एक आउटपुट स्ट्रीम को साझा करते हैं।</string>
     <string name="audio_channel_system_description">Android Auto के अपने अलर्ट, घंटियाँ और नोटिफ़िकेशन की आवाज़ें (16 kHz मोनो)।</string>
     <string name="audio_stream_test">इस स्ट्रीम पर टेस्ट टोन चलाएँ</string>
+    <string name="setting_help_for">%1$s के लिए सहायता</string>
     <string name="audio_stream_muted_warning">इस डिवाइस पर %1$s म्यूट है। टेस्ट टोन सुनने के लिए उसकी वॉल्यूम बढ़ाएँ।</string>
     <string name="audio_stream_test_failed">इस स्ट्रीम पर टेस्ट टोन नहीं चलाया जा सका।</string>
     <string name="audio_stream_pick_title">%1$s के लिए स्ट्रीम</string>

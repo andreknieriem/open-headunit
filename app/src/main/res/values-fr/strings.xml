@@ -1145,6 +1145,7 @@
     <string name="audio_channel_all_short">tous les canaux</string>
     <string name="audio_channel_all_description">Tous les canaux audio d\'Android Auto — lecture des applications, guidage vocal, alertes et sons de notification — partagent ce seul flux de sortie.</string>
     <string name="audio_stream_test">Écouter une tonalité de test sur ce flux</string>
+    <string name="setting_help_for">Aide pour %1$s</string>
     <string name="audio_stream_muted_warning">%1$s est coupé sur cet appareil : augmentez son volume pour entendre la tonalité de test.</string>
     <string name="audio_stream_test_failed">Impossible de lire une tonalité de test sur ce flux.</string>
     <string name="audio_stream_pick_title">Flux pour %1$s</string>

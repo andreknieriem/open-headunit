@@ -1093,6 +1093,7 @@
     <string name="audio_channel_all_short">كل القنوات</string>
     <string name="audio_channel_all_description">تشترك جميع قنوات صوت Android Auto، وهي تشغيل التطبيقات والإرشادات المنطوقة والتنبيهات وأصوات الإشعارات، في تدفق الإخراج هذا.</string>
     <string name="audio_stream_test">تشغيل نغمة اختبار على هذا التدفق</string>
+    <string name="setting_help_for">مساعدة بشأن %1$s</string>
     <string name="audio_stream_muted_warning">‏%1$s مكتوم على هذا الجهاز — ارفع مستوى صوته لسماع نغمة الاختبار.</string>
     <string name="audio_stream_test_failed">تعذّر تشغيل نغمة اختبار على هذا التدفق.</string>
     <string name="audio_stream_pick_title">التدفق الخاص بـ %1$s</string>

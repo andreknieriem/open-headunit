@@ -1093,6 +1093,7 @@
     <string name="audio_channel_all_short">todos os canais</string>
     <string name="audio_channel_all_description">Todos os canais de áudio do Android Auto — reprodução dos aplicativos, orientação falada, alertas e sons de notificação — compartilham este único fluxo de saída.</string>
     <string name="audio_stream_test">Tocar um tom de teste neste fluxo</string>
+    <string name="setting_help_for">Ajuda sobre %1$s</string>
     <string name="audio_stream_muted_warning">%1$s está sem som neste dispositivo; aumente o volume dele para ouvir o tom de teste.</string>
     <string name="audio_stream_test_failed">Não foi possível tocar um tom de teste neste fluxo.</string>
     <string name="audio_stream_pick_title">Fluxo para %1$s</string>

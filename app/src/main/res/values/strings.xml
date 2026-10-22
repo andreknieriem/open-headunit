@@ -595,6 +595,7 @@
     <string name="audio_channel_all_description">Every Android Auto audio channel — app playback, spoken guidance, alerts and notification sounds — shares this one output stream.</string>
     <string name="audio_channel_system_description">Android Auto\'s own alerts, chimes and notification sounds (16 kHz mono).</string>
     <string name="audio_stream_test">Play a test tone on this stream</string>
+    <string name="setting_help_for">Help for %1$s</string>
     <string name="audio_stream_muted_warning">%1$s is muted on this device — raise its volume to hear the test tone.</string>
     <string name="audio_stream_test_failed">Could not play a test tone on this stream.</string>
     <string name="audio_stream_pick_title">Stream for %1$s</string>

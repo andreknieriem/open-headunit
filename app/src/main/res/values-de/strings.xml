@@ -1092,6 +1092,7 @@
     <string name="audio_channel_all_short">alle Kanäle</string>
     <string name="audio_channel_all_description">Alle Audiokanäle von Android Auto – App-Wiedergabe, gesprochene Ansagen, Warntöne und Benachrichtigungstöne – teilen sich diesen einen Ausgabestream.</string>
     <string name="audio_stream_test">Testton auf diesem Stream abspielen</string>
+    <string name="setting_help_for">Hilfe zu %1$s</string>
     <string name="audio_stream_muted_warning">%1$s ist auf diesem Gerät stummgeschaltet – erhöhe die Lautstärke, um den Testton zu hören.</string>
     <string name="audio_stream_test_failed">Auf diesem Stream konnte kein Testton abgespielt werden.</string>
     <string name="audio_stream_pick_title">Stream für %1$s</string>

@@ -1097,6 +1097,7 @@
     <string name="audio_channel_all_short">alle kanalen</string>
     <string name="audio_channel_all_description">Alle audiokanalen van Android Auto (weergave door apps, gesproken aanwijzingen, waarschuwingen en meldingsgeluiden) delen deze ene uitvoerstream.</string>
     <string name="audio_stream_test">Testtoon afspelen op deze stream</string>
+    <string name="setting_help_for">Hulp bij %1$s</string>
     <string name="audio_stream_muted_warning">%1$s staat op dit apparaat uit; zet het volume hoger om de testtoon te horen.</string>
     <string name="audio_stream_test_failed">Kan geen testtoon afspelen op deze stream.</string>
     <string name="audio_stream_pick_title">Stream voor %1$s</string>

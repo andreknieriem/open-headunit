@@ -1094,6 +1094,7 @@
     <string name="audio_channel_all_short">усі канали</string>
     <string name="audio_channel_all_description">Усі аудіоканали Android Auto — відтворення застосунків, голосові підказки, попередження та звуки сповіщень — використовують цей єдиний вихідний потік.</string>
     <string name="audio_stream_test">Відтворити тестовий сигнал на цьому потоці</string>
+    <string name="setting_help_for">Довідка: %1$s</string>
     <string name="audio_stream_muted_warning">%1$s вимкнено на цьому пристрої — збільште гучність, щоб почути тестовий сигнал.</string>
     <string name="audio_stream_test_failed">Не вдалося відтворити тестовий сигнал на цьому потоці.</string>
     <string name="audio_stream_pick_title">Потік для «%1$s»</string>

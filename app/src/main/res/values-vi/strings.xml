@@ -1093,6 +1093,7 @@
     <string name="audio_channel_all_short">tất cả các kênh</string>
     <string name="audio_channel_all_description">Tất cả kênh âm thanh của Android Auto — phát từ ứng dụng, chỉ dẫn bằng giọng nói, cảnh báo và âm báo — đều dùng chung một luồng đầu ra này.</string>
     <string name="audio_stream_test">Phát âm thanh thử trên luồng này</string>
+    <string name="setting_help_for">Trợ giúp về %1$s</string>
     <string name="audio_stream_muted_warning">%1$s đang bị tắt tiếng trên thiết bị này — hãy tăng âm lượng để nghe âm thanh thử.</string>
     <string name="audio_stream_test_failed">Không thể phát âm thanh thử trên luồng này.</string>
     <string name="audio_stream_pick_title">Luồng cho %1$s</string>

@@ -1086,6 +1086,7 @@
     <string name="audio_channel_all_short">tüm kanallar</string>
     <string name="audio_channel_all_description">Android Auto’nun tüm ses kanalları — uygulama oynatımı, sesli yönlendirme, uyarılar ve bildirim sesleri — bu tek çıkış akışını paylaşır.</string>
     <string name="audio_stream_test">Bu akışta bir test tonu çal</string>
+    <string name="setting_help_for">%1$s yardımı</string>
     <string name="audio_stream_muted_warning">%1$s bu cihazda sessize alınmış; test tonunu duymak için sesini açın.</string>
     <string name="audio_stream_test_failed">Bu akışta test tonu çalınamadı.</string>
     <string name="audio_stream_pick_title">%1$s için akış</string>

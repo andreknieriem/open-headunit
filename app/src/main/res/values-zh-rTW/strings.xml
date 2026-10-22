@@ -1089,6 +1089,7 @@
     <string name="audio_channel_all_short">所有頻道</string>
     <string name="audio_channel_all_description">Android Auto 的所有音訊頻道（應用程式播放、語音導引、提示音和通知音效）共用這一個輸出串流。</string>
     <string name="audio_stream_test">在此串流播放測試音</string>
+    <string name="setting_help_for">%1$s 說明</string>
     <string name="audio_stream_muted_warning">%1$s 在這台裝置上已靜音，請調高音量才能聽到測試音。</string>
     <string name="audio_stream_test_failed">無法在此串流播放測試音。</string>
     <string name="audio_stream_pick_title">%1$s 的串流</string>

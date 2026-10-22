@@ -1085,6 +1085,7 @@
     <string name="audio_channel_all_short">모든 채널</string>
     <string name="audio_channel_all_description">Android Auto의 모든 오디오 채널(앱 재생, 음성 안내, 경고음, 알림음)이 이 하나의 출력 스트림을 함께 사용합니다.</string>
     <string name="audio_stream_test">이 스트림에서 테스트음 재생</string>
+    <string name="setting_help_for">%1$s 도움말</string>
     <string name="audio_stream_muted_warning">이 기기의 %1$s 음량이 0으로 설정되어 있습니다. 테스트음을 들으려면 음량을 올리세요.</string>
     <string name="audio_stream_test_failed">이 스트림에서 테스트음을 재생할 수 없습니다.</string>
     <string name="audio_stream_pick_title">%1$s 출력 스트림</string>

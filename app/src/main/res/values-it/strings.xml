@@ -1095,6 +1095,7 @@
     <string name="audio_channel_all_short">tutti i canali</string>
     <string name="audio_channel_all_description">Tutti i canali audio di Android Auto — riproduzione delle app, guida vocale, avvisi e suoni di notifica — condividono questo unico flusso di uscita.</string>
     <string name="audio_stream_test">Riproduci un tono di prova su questo flusso</string>
+    <string name="setting_help_for">Guida per %1$s</string>
     <string name="audio_stream_muted_warning">%1$s è disattivato su questo dispositivo: alza il volume per sentire il tono di prova.</string>
     <string name="audio_stream_test_failed">Impossibile riprodurre un tono di prova su questo flusso.</string>
     <string name="audio_stream_pick_title">Flusso per %1$s</string>

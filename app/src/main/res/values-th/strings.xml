@@ -582,6 +582,7 @@
     <string name="audio_channel_all_description">ทุกช่องเสียงของ Android Auto ได้แก่ การเล่นของแอป เสียงนำทาง เสียงเตือน และเสียงแจ้งเตือน ใช้สตรีมเอาต์พุตนี้ร่วมกัน</string>
     <string name="audio_channel_system_description">เสียงเตือน เสียงกระดิ่ง และเสียงแจ้งเตือนของ Android Auto (16 kHz โมโน)</string>
     <string name="audio_stream_test">เล่นเสียงทดสอบบนสตรีมนี้</string>
+    <string name="setting_help_for">ความช่วยเหลือ %1$s</string>
     <string name="audio_stream_muted_warning">%1$s ปิดเสียงอยู่บนอุปกรณ์นี้ เพิ่มระดับเสียงเพื่อฟังเสียงทดสอบ</string>
     <string name="audio_stream_test_failed">ไม่สามารถเล่นเสียงทดสอบบนสตรีมนี้ได้</string>
     <string name="audio_stream_pick_title">สตรีมสำหรับ %1$s</string>

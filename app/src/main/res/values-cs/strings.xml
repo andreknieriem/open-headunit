@@ -59,6 +59,7 @@
     <string name="night_mode_short">Android Auto</string>
     <string name="aa_monochrome">Černobílé zobrazení Android Auto</string>
     <string name="aa_monochrome_description">Snižuje barvy Android Auto pro noční jízdu. Vyžaduje režim zobrazení GLES. Projeví se pouze při zapnutém tmavém režimu.</string>
+    <string name="aa_monochrome_summary">Snižuje barevnost pro noční jízdu. Vyžaduje režim zobrazení GLES a tmavý režim.</string>
     <string name="aa_desaturation">Desaturace</string>
     <string name="aa_desaturation_description">Určuje, kolik barvy se odstraní. Projeví se pouze při zapnutém tmavém režimu.</string>
     <string name="gles_required_title">Vyžadován GLES</string>
@@ -84,6 +85,7 @@
     <string name="change_dpi">Změnit DPI</string>
     <string name="change_view_mode">Změnit režim zobrazení</string>
     <string name="view_mode">Režim zobrazení</string>
+    <string name="view_mode_help">Určuje, jak se obraz vykresluje na displeji tohoto autorádia. SurfaceView je nejrychlejší a funguje na většině autorádií. TextureView je pomalejší, ale umožňuje zrcadlení a změnu měřítka. GLES20 přidává efekty, například jednobarevný noční režim. Změňte ho, když je obraz černý, bliká nebo chybí efekt.</string>
     <string name="surface_view">SurfaceView</string>
     <string name="texture_view">TextureView</string>
     <string name="gles_view">GLES20</string>
@@ -185,14 +187,17 @@
     <string name="show_toast_messages_description">Zobrazit vyskakovací zprávy o stavu při připojení, odpojení a změně režimu.</string>
     <string name="auto_start_usb_label">Spuštění při připojení USB</string>
     <string name="auto_start_usb_description">Automaticky otevřít aplikaci a pokusit se o připojení při zapojení USB zařízení.</string>
+    <string name="auto_start_usb_summary">Otevře aplikaci a připojí se po zapojení zařízení USB.</string>
     <string name="auto_start_settings">Nastavení automatického spouštění</string>
     <string name="auto_start_settings_description">Nastavte, kdy se aplikace spouští automaticky.</string>
     <string name="auto_start_oem_warning">Toto zařízení může vyžadovat povolení automatického spuštění a odebrání optimalizace baterie nebo omezení na pozadí pro tuto aplikaci.\n\nNa autorádiích s Quick Boot (rychlé spuštění) nemusí automatické spuštění fungovat. Hledejte v nastavení systému \"DuraSpeed\" a povolte tam tuto aplikaci. Na některých autorádiích je DuraSpeed skrytý a k jeho nalezení můžete potřebovat aplikaci jako \"Hidden Settings\". Pokud DuraSpeed nemáte, zkuste vypnout Quick Boot.</string>
     <string name="car_launcher_autostart_info">Open Headunit je nastaven jako spouštěč v autě. Spouští se automaticky při startu systému.</string>
     <string name="auto_start_on_boot_label">Spustit při startu systému</string>
     <string name="auto_start_on_boot_description">Automaticky otevřít aplikaci při spuštění zařízení. V Androidu 10 a novějším vyžaduje oprávnění \"Zobrazení přes ostatní aplikace\".</string>
+    <string name="auto_start_on_boot_summary">Otevře aplikaci při spuštění zařízení.</string>
     <string name="auto_start_screen_on_label">Spustit při zapnutí obrazovky</string>
     <string name="auto_start_screen_on_description">Otevřít aplikaci pokaždé, když se zapne obrazovka. Ideální pro autorádia, která se nikdy úplně nevypnou nebo používají rychlé spuštění, kde ostatní možnosti automatického spuštění nefungují. Nedoporučuje se pro telefony ani tablety.</string>
+    <string name="auto_start_screen_on_summary">Otevře aplikaci při každém zapnutí displeje. Ne pro telefony a tablety.</string>
     <string name="select_bt_device">Vybrat zařízení Bluetooth</string>
     <string name="bt_device_not_set">Nenastaveno</string>
     <string name="bt_permission_denied_title">Vyžadováno oprávnění Bluetooth</string>
@@ -205,6 +210,7 @@
     <string name="right_hand_drive_description">Přizpůsobit rozhraní vozidlu s pravostranným řízením.</string>
     <string name="category_graphic">Grafika</string>
     <string name="custom_insets">Vlastní okraje</string>
+    <string name="custom_insets_help">Odsune obraz od okrajů obrazovky o tento počet pixelů: vlevo, nahoře, vpravo a dole. Použijte to, když rám, zaoblený okraj nebo systémová lišta zakrývá část Android Auto.</string>
     <string name="inset_top">Nahoře</string>
     <string name="inset_bottom">Dole</string>
     <string name="inset_left">Vlevo</string>
@@ -215,8 +221,9 @@
     <string name="category_video">Video</string>
     <string name="force_software_decoding">Vynutit softwarové dekódování</string>
     <string name="force_software_decoding_description">Může vyřešit problémy na některých zařízeních, ale je pomalejší.</string>
+    <string name="force_software_decoding_help">Dekóduje video hlavním procesorem místo videohardwaru. Zapněte to, jen když obraz zůstává černý, zasekává se nebo má špatné barvy při vypnuté volbě. Potřebuje mnohem více výkonu procesoru, takže obraz může být pomalejší. Řádek pod tím vybírá softwarový dekodér.</string>
     <string name="wireless_mode">Bezdrátový režim</string>
-    <string name="wireless_mode_description">Vyberte, jak se aplikace připojuje bezdrátově (ruční seznam, automatické vyhledání telefonu nebo režim Wireless Launcher).</string>
+    <string name="wireless_mode_description">Určuje, jak toto autorádio najde telefon bez kabelu. Wireless Helper používá doprovodnou aplikaci v telefonu. Nativní se chová jako bezdrátové autorádio Android Auto a nepotřebuje aplikaci, ale závisí na verzi Android Auto. Headunit Server najde server, který Android Auto spouští v telefonu. Měňte ho jen tehdy, když se současný režim nepřipojí. Změna restartuje bezdrátové nastavení.</string>
     <string-array name="wireless_connection_modes">
         <item>Ručně (seznam)</item>
         <item>Automatické vyhledávání (Headunit Server)</item>
@@ -237,6 +244,7 @@
     <string name="move_down">Posunout dolů</string>
     <string name="auto_connecting_single_usb">Automatické připojování k USB zařízení…</string>
     <string name="video_codec">Video kodek</string>
+    <string name="video_codec_help">Vybírá formát videa, který telefon posílá. Auto nechá aplikaci vybrat z toho, co toto autorádio umí dekódovat. H.265 dává ostřejší obraz při stejné datové rychlosti. H.264 funguje na každém dekodéru. Změňte ho, když obraz sekává nebo zůstává černý. Volba platí od dalšího připojení.</string>
     <string name="fps_limit">Limit FPS</string>
     <string name="save">Uložit</string>
     <string name="save_and_restart">Uložit (vyžaduje opětovné připojení)</string>
@@ -252,18 +260,24 @@
     <!-- Audio Settings -->
     <string name="forced_scale">Vynucené měřítko (oprava pro starší zařízení)</string>
     <string name="forced_scale_description">Opravuje problémy s měřítkem u některých starších zařízení používajících SurfaceView. Používejte pouze v případě, že obraz vypadá zkresleně nebo posunutě.</string>
+    <string name="forced_scale_summary">Opraví změnu měřítka na starších zařízeních se SurfaceView.</string>
     <string name="hud_mirroring">Režim HUD (vodorovné převrácení)</string>
     <string name="hud_mirroring_description">Převrátí obraz vodorovně pro odraz na čelním skle (Head-Up Display). Vyžaduje režim zobrazení TextureView nebo GLES20 (nefunguje s SurfaceView).</string>
+    <string name="hud_mirroring_summary">Převrátí obraz pro odraz na čelním skle (HUD).</string>
 
     <string name="category_audio">Zvuk</string>
     <string name="enable_audio_sink">Zvukový výstup (Sink)</string>
-    <string name="enable_audio_sink_description">Pokud je vypnuto, autorádio nebude přijímat zvuk. Zvuk se bude přehrávat z telefonu.</string>
+    <string name="enable_audio_sink_description">Přehrává zvuk Android Auto v tomto autorádiu. Vypněte, aby zvuk zůstal v telefonu, například když telefon už napájí reproduktory auta. Autorádio pak zobrazuje jen obraz. Hovory tento zvuk nikdy nepoužívají: přehrávají se na Bluetooth handsfree zařízení připojeném k telefonu (auto, interkom nebo headset) nebo v samotném telefonu.</string>
+    <string name="enable_audio_sink_summary">Přehrává zvuk Android Auto v tomto autorádiu. Vypnuto: přehrává ho telefon.</string>
     <string name="separate_audio_streams">Oddělit zvukové streamy</string>
     <string name="separate_audio_streams_description">Přidělí kanálům Média, Navigace a Systémové zvuky vlastní výstupní streamy místo jediného sdíleného multimediálního streamu (na některých zařízeních nemusí fungovat správně).</string>
+    <string name="separate_audio_streams_summary">Média, pokyny a systémové zvuky mají vlastní výstupní streamy.</string>
     <string name="use_aac_audio">Použít zvuk AAC</string>
     <string name="use_aac_audio_description">Použije pro zvuk kodek AAC a ušetří šířku pásma (experimentální). U bezdrátového připojení na 2,4 GHz se zapne automaticky, je-li zapnuto „Snížit video na spojení 2,4 GHz“.</string>
+    <string name="use_aac_audio_summary">Používá zvuk AAC pro úsporu šířky pásma (experimentální).</string>
     <string name="attach_hw_dsp_equalizer">Spouštěč HW DSP ekvalizéru</string>
     <string name="attach_hw_dsp_equalizer_description">Připojí k relaci zvuku virtuální ekvalizér pro vynucení směrování přes HW DSP na specifických autorádiích. Ponechte vypnuté, pokud používáte ViPER4Android / ViperFX nebo pokud je zvuk na starších verzích Androidu tlumený.</string>
+    <string name="attach_hw_dsp_equalizer_summary">Připojí fiktivní ekvalizér, který na některých autorádiích vynutí směrování přes hardwarový DSP.</string>
     <string name="audio_volume_offset">Posun hlasitosti</string>
     <string name="mic_input_source">Zdroj vstupu mikrofonu</string>
     <string name="mic_input_source_description">Vyberte zdroj zvuku pro mikrofon.</string>
@@ -389,11 +403,13 @@
     <string name="fullscreen_status_only">Skrýt pouze stavovou lištu</string>
     <string name="allow_external_configuration">Povolit externí konfiguraci</string>
     <string name="allow_external_configuration_description">Umožní automatizačním aplikacím jako Tasker nebo MacroDroid měnit nastavení, nastavit úroveň protokolu a exportovat protokoly. Připojení a odpojení funguje vždy; toto se týká pouze příkazů, které mění nastavení jednotky.</string>
+    <string name="allow_external_configuration_summary">Umožní aplikacím, například Taskeru, měnit nastavení a exportovat protokoly.</string>
     <string name="log_level">Úroveň protokolování</string>
     <string name="log_level_description">Filtrovat úroveň protokolu při exportu.</string>
     <string name="log_source">Zdroj protokolu</string>
     <string name="log_source_logcat">Logcat</string>
     <string name="log_source_applog_file">Přímo do souboru</string>
+    <string name="log_source_help">Logcat zaznamenává řádky aplikace spolu s řádky systému. Nejvíce pomáhá při hlášení chyby. Přímo do souboru zaznamenává jen řádky samotné aplikace, pro zařízení, kde Logcat nic nezaznamenává. Aplikace sama přepne na Přímo do souboru, když Logcat nic nezaznamenává.</string>
 <string name="log_location">Umístění protokolů</string>
     <string name="log_location_default">Výchozí (Úložiště aplikace)</string>
     <string name="log_location_downloads">Složka Ke stažení</string>
@@ -446,12 +462,15 @@
     <string name="use_white_background">Použít bílou tapetu domovské obrazovky</string>
     <string name="reopen_on_reconnection_label">Znovu otevřít při opětovném připojení</string>
     <string name="reopen_on_reconnection_description">Po stisknutí tlačítka Ukončit aplikace zůstane běžet na pozadí a nadále sleduje USB připojení. Pokud se zařízení znovu připojí, aplikace se automaticky otevře.</string>
+    <string name="reopen_on_reconnection_summary">Po Ukončit dál sleduje USB a znovu se otevře, když se zařízení znovu připojí.</string>
 
     <string name="category_input">Nastavení vstupu</string>
     <string name="enable_rotary">Povolit otočný ovladač (Rotary)</string>
     <string name="enable_rotary_description">Oznámí podporu fyzických otočných knoflíků a koleček. Tuto možnost vypněte, pokud vaše dotyková obrazovka nefunguje správně.</string>
+    <string name="enable_rotary_summary">Hlásí podporu otočného ovladače. Vypněte, pokud dotyk nefunguje správně.</string>
     <string name="kill_on_disconnect">Zavřít aplikaci při odpojení</string>
     <string name="kill_on_disconnect_description">Automaticky zavřít aplikaci, když se Android Auto odpojí.</string>
+    <string name="kill_on_disconnect_help">Zavře aplikaci, když se Android Auto odpojí, aby se autorádio vrátilo ke svým vlastním obrazovkám. Zapněte to, pokud má autorádio po každé jízdě zobrazit vlastní launcher. Nic nedělá, dokud je tato aplikace launcherem auta. Pokud je zapnuto Znovu otevřít při opětovném připojení, Spustit při startu systému nebo Spustit při zapnutí obrazovky, aplikace vás nejdřív upozorní, protože tyto volby potřebují otevřenou aplikaci.</string>
     <string name="kill_on_disconnect_warning_title">Varování</string>
     <string name="kill_on_disconnect_warning">Následující nastavení opětovného připojení budou v konfliktu se zavřením aplikace při odpojení:\n\n%1$s\n\nVaše nastavení počátečního připojení (automatické připojení, automatické spuštění) budou fungovat i po zapnutí jednotky. Po prvním odpojení se však aplikace okamžitě zavře místo opětovného připojení.\n\nPoznámka: Některá dodatečně instalovaná autorádia se nikdy zcela nevypnou. Místo toho přejdou do hibernace, podobně jako telefon, který zamkne obrazovku, ale nikdy se skutečně nevypne. Je-li tato možnost zapnutá, aplikace se po prvním odpojení zavře a při dalším nastartování se nemusí automaticky znovu otevřít.\n\nChcete výše uvedená nastavení opětovného připojení vypnout?</string>
     <string name="kill_on_disconnect_disable_and_enable">Vypnout a zapnout</string>
@@ -496,6 +515,7 @@
     <string name="vehicle_info_restart_note">Tyto údaje jsou odeslány do Android Auto při každém připojení.</string>
     <string name="auto_enable_hotspot">Automaticky zapnout hotspot</string>
     <string name="auto_enable_hotspot_description">Automaticky zapne hotspot Wi-Fi na tomto zařízení. (Nemusí fungovat na všech zařízeních.)</string>
+    <string name="auto_enable_hotspot_summary">Spustí hotspot Wi-Fi v tomto zařízení. Není na každém zařízení.</string>
     <string name="hotspot_warning_title">Experimentální funkce</string>
     <string name="hotspot_warning_message">Tato funkce používá reflexi a nemusí fungovat na všech zařízeních. Může být nutné ručně udělit oprávnění \"Změna systémových nastavení\".</string>
     <string name="hotspot_permission_title">Vyžadováno oprávnění</string>
@@ -505,20 +525,24 @@
     <string name="not_supported_nativeaa_desc">Vaše zařízení nemusí podporovat požadované funkce Bluetooth nebo Wi-Fi pro nativní bezdrátové připojení. Můžete to přesto zkusit, ale pokud to selže, použijte prosím místo toho režim „Wireless Helper“ nebo „Auto (Headunit Server)“.</string>
     <string name="wait_for_wifi">Počkat na Wi-Fi před Wi-Fi Direct</string>
     <string name="wait_for_wifi_description">Při startu počká na připojení k Wi-Fi, než spustí Wi-Fi Direct. Zapněte, pokud vaše autorádio potřebuje po zapnutí několik sekund na připojení k Wi-Fi.</string>
+    <string name="wait_for_wifi_summary">Při spuštění počká na Wi-Fi, než spustí Wi-Fi Direct.</string>
     <string name="wait_for_wifi_timeout">Časový limit čekání na Wi-Fi</string>
     <string name="wireless_24ghz_warning">Poznámka: Bezdrátové Android Auto na zařízeních s 2,4 GHz může způsobovat zpoždění, sekání a odpojování. Pokud máte potíže, vyzkoušejte USB a zjistěte, zda jde o omezení sítě.</string>
     <string name="supported_nativeaa">Vylepšená bezdrátová podpora</string>
     <string name="supported_nativeaa_desc">Skvělé zprávy! Vaše zařízení podporuje režim „Native Wireless“, který zajišťuje plynulejší používání Android Auto.\n\nPro jeho zapnutí je třeba obnovit mezipaměť Bluetooth. Postupujte takto:\n1. Odstraňte stávající spárování v telefonu\n2. Klepnutím na OK restartujte Bluetooth\n3. Telefon znovu spárujte\n\nChcete nyní přepnout do režimu Native AA?</string>
     <string name="fake_speed_title">Zakázat zámek videa (Fake Speed)</string>
     <string name="fake_speed_description">Hlásí telefonu stálou nízkou rychlost (0,5 m/s), aby se za jízdy neblokoval obsah videa. Používejte opatrně.</string>
+    <string name="fake_speed_summary">Hlásí stálou nízkou rychlost, aby se video za jízdy neblokovalo.</string>
     <string name="wireless_mode_helper">Wireless Helper</string>
     <string name="wireless_mode_native">Nativní</string>
     <string name="wireless_mode_server">Headunit Server</string>
     <string name="server_mode_label">Režim serveru</string>
     <string name="server_mode_manual">Ruční</string>
     <string name="server_mode_auto">Automaticky</string>
+    <string name="server_mode_help">Automaticky hledá v síti server autorádia v telefonu a připojí se samo. Ruční nehledá. Připojíte se ze seznamu sítí nebo adresou telefonu.</string>
 
     <string name="helper_strategy_label">Metoda připojení pomocníka</string>
+    <string name="helper_strategy_help">Určuje, jak telefon a toto autorádio sdílejí síť v režimu Wireless Helper. Společná Wi-Fi používá síť, kterou už sdílejí oba. Wi-Fi Direct vytvoří soukromé spojení. Zařízení v okolí je beta. Hotspot telefonu se připojí k hotspotu telefonu. Hotspot autorádia udělá z tohoto autorádia přístupový bod. Změňte ho, když telefon toto autorádio nenajde.</string>
     <string-array name="helper_strategies">
         <item>Společná Wi-Fi (NSD)</item>
         <item>Wi-Fi Direct (P2P)</item>
@@ -539,8 +563,10 @@
     <string name="audio_latency_multiplier">Násobitel latence zvuku</string>
     <string name="aaudio_output">Výstup AAudio (experimentální)</string>
     <string name="aaudio_output_description">Zkusí výstup médií s nízkou latencí. Pokud není dostupný, automaticky použije AudioTrack.</string>
+    <string name="aaudio_output_help">Přehrává média Android Auto přes AAudio, zvukový výstup s nízkou latencí. Aplikace jej používá jen na Androidu 9 a novějším. Zapněte to, pokud zvuk přichází později než obraz. Pokud se AAudio nespustí, aplikace použije svůj běžný zvukový výstup. Pokud zvuk při zapnuté volbě praská nebo vypadává, vypněte ji.</string>
     <string name="audio_latency_multiplier_description">Úprava velikosti zvukové vyrovnávací paměti (Nižší = menší zpoždění, Vyšší = méně sekání).</string>
     <string name="audio_queue_capacity">Kapacita zvukové fronty (Backpressure)</string>
+    <string name="audio_queue_capacity_help">Kolik přijatého zvuku může čekat před přehráním. Malá fronta drží zvuk blízko obrazu. Velká fronta přečká krátké výpadky spojení, ale zvuk se může zpožďovat. Když je fronta plná, nejstarší zvuk se zahodí. Bez omezení zachová všechno. Aplikace vždy povolí alespoň jednu sekundu zvuku.</string>
     <string name="media_action_previous">Předchozí</string>
     <string name="media_action_play">Přehrát</string>
     <string name="media_action_pause">Pozastavit</string>
@@ -548,8 +574,10 @@
     <string name="media_session_aa_status_placeholder">Připojeno</string>
     <string name="sync_media_session_aa_metadata">Aktuální skladba AA v mediální relaci</string>
     <string name="sync_media_session_aa_metadata_description">Zobrazovat název skladby, interpreta, délku a obal alba z telefonu v systémové mediální relaci a mediálním oznámení.</string>
+    <string name="sync_media_session_aa_metadata_summary">Zobrazí údaje o skladbě z telefonu v systémové relaci médií.</string>
     <string name="auto_resume_playback_on_reconnect">Obnovit přehrávání při opětovném připojení</string>
     <string name="auto_resume_playback_on_reconnect_description">Automaticky obnoví přehrávání hudby, pokud před krátkým výpadkem spojení hrála (do 60 sekund).</string>
+    <string name="auto_resume_playback_on_reconnect_summary">Obnoví hudbu, která hrála před krátkým výpadkem spojení (60 s).</string>
     <string name="error_usb_permission_failed">Systémová chyba: Nepodařilo se zobrazit dialog s žádostí o oprávnění USB.</string>
 
     <!-- Custom loading screen -->
@@ -576,15 +604,19 @@
     <string name="microphone_settings">Nastavení mikrofonu</string>
     <string name="use_head_unit_microphone">Mikrofon autorádia</string>
     <string name="use_head_unit_microphone_description">Zapnuto: Android Auto slyší mikrofon tohoto zařízení. Vypnuto: toto zařízení nikdy nenahrává a telefon použije vlastní mikrofon, případně náhlavní soupravu nebo interkom spárovaný s telefonem, takže hlasový asistent dál funguje. Vyžaduje Android 11 nebo novější v telefonu.</string>
+    <string name="use_head_unit_microphone_summary">Android Auto používá mikrofon tohoto zařízení. Vypnuto: mikrofon telefonu.</string>
     <string name="head_unit_microphone_off_info">Mikrofon autorádia je vypnutý, takže nic níže neplatí. Android Auto dostane informaci, že toto zařízení nemůže nahrávat a je motocykl, díky čemuž telefon nahrává samostatně. V Androidu 10 a starším to telefon mezi relacemi zapomene a může se přestat připojovat.</string>
     <string name="microphone_settings_description">Nastavení vstupu mikrofonu a zpracování zvuku.</string>
     <string name="mic_wire_format_info">Android Auto vždy přijímá mikrofon na 16000 Hz, 16 bitů, mono. Cokoli jiného odmítne, takže tato nastavení mění chování hardwaru, nikoli to, co se odesílá do telefonu.</string>
     <string name="mic_echo_canceler">Potlačení ozvěny (AEC)</string>
     <string name="mic_echo_canceler_description">Pokusí se odstranit ozvěnu z mikrofonu. Vypněte, pokud zaznamenáte ticho nebo zkreslení.</string>
+    <string name="mic_echo_canceler_summary">Odstraní z mikrofonu ozvěnu. Při tichu nebo zkreslení vypněte.</string>
     <string name="mic_noise_suppressor">Potlačení šumu (NS)</string>
     <string name="mic_noise_suppressor_description">Pokusí se snížit hluk na pozadí. Android Auto očekává, že je u jednoho mikrofonu vypnuto, a provádí vlastní zpracování. Vypněte, pokud váš hlas zní tlumeně.</string>
+    <string name="mic_noise_suppressor_summary">Snižuje hluk na pozadí. Android Auto očekává, že je vypnuto.</string>
     <string name="mic_auto_gain_control">Automatické řízení zesílení (AGC)</string>
     <string name="mic_auto_gain_control_description">Automaticky upravuje hlasitost mikrofonu. Android Auto očekává, že je vypnuto, a používá vlastní řízení zesílení. Obojí dohromady obvykle zní hůře. Vypněte, pokud je hlasitost nestabilní.</string>
+    <string name="mic_auto_gain_control_summary">Upravuje hlasitost mikrofonu. Android Auto očekává, že je vypnuto.</string>
     <string name="mic_feature_unsupported">Tato funkce není na vašem zařízení podporována.</string>
     <string name="bt_permission_denied">Oprávnění Bluetooth bylo zamítnuto. Nelze skenovat zařízení.</string>
     <string name="bt_external_module_no_picker">Bluetooth této jednotky zajišťuje externí modul, ne vlastní rádio Androidu, proto zde není k dispozici seznam zařízení Bluetooth z Androidu.</string>
@@ -594,7 +626,8 @@
     <!-- New strings merged from 2.3.1 -->
     <string name="bt_devices_selected">vybraných zařízení</string>
     <string name="static_audio_focus">Statické zvukové zaměření</string>
-    <string name="static_audio_focus_description">Telefon bude neustále považovat zvukové zaměření za své, což zabrání ztrátě směrování zvuku na běžných autorádiích. Během hlasových pokynů navigace také softwarově ztlumí ostatní zvuk (ducking).</string>
+    <string name="static_audio_focus_description">Řekne telefonu, že zvukové zaměření je vždy drženo. Tím se zabrání výpadkům zvuku na běžných autorádiích, která zaměření hlásí špatně. Také softwarově snižuje hlasitost hudby při hlasových pokynech navigace. Nechte vypnuté, pokud zvuk nevypadává.</string>
+    <string name="static_audio_focus_summary">Řekne telefonu, že zvukové zaměření je vždy drženo, aby nevypadával zvuk.</string>
     <string name="bluetooth_adapter_label">Adaptér Bluetooth</string>
     <string name="bluetooth_adapter_description">Vyberte adaptér/ovladač Bluetooth, který se má použít pro handshake. Užitečné pro systémy s duálním Bluetooth.</string>
     <string name="select_bt_adapter">Vybrat adaptér Bluetooth</string>
@@ -645,12 +678,14 @@
     <!-- Native USB Driver -->
     <string name="use_libusb">Použít nativní USB ovladač</string>
     <string name="use_libusb_description">Použít libusb pro komunikaci. Vypnutím použijete standardní USB API pro Android.</string>
+    <string name="use_libusb_help">Používá vlastní knihovnu USB aplikace místo systému USB Androidu pro kabelové připojení k telefonu. Nechte vypnuté. Zapněte jen tehdy, když se telefon na USB najde, ale Android Auto se nespustí. U bezdrátového připojení nic nemění.</string>
     <string name="usb_keep_phone_media_audio">Ponechat zvuk médií telefonu zapnutý přes USB</string>
     <string name="usb_keep_phone_media_audio_description">Android Auto může během relace USB vypnout zvuk médií Bluetooth telefonu pro toto autorádio. Tato volba tomu brání. Hovory pak mohou zůstat v telefonu místo v autorádiu.</string>
 
     <string name="software_video_decoder">Zdroj softwarového dekodéru</string>
     <string name="software_video_decoder_bundled">Integrovaný FFmpeg</string>
     <string name="software_video_decoder_device">MediaCodec zařízení</string>
+    <string name="software_video_decoder_help">Platí, jen když je zapnuto Vynutit softwarové dekódování. Integrovaný FFmpeg je vlastní dekodér aplikace a dekóduje jen H.265. MediaCodec zařízení používá softwarový dekodér systému. Video H.264 vždy používá dekodér systému.</string>
 
     <string name="btn_show_qr">Zobrazit QR kód</string>
     <string name="renderer_fallback_surface">Video se pořád zasekávalo, proto bylo zobrazení pro tuto relaci přepnuto na SurfaceView. Pokud je to stabilní, nastavte Režim zobrazení na SurfaceView v Nastavení.</string>
@@ -915,6 +950,7 @@
     </string-array>
     <string name="dpi_value_format">%1$d DPI</string>
     <string name="pixel_aspect_ratio">Poměr stran pixelu</string>
+    <string name="pixel_aspect_ratio_help">Změňte to, jen pokud kruhy na této obrazovce vypadají jako ovály. To nastává, když pixely panelu nejsou čtvercové. Hodnota 10000 znamená čtvercové pixely.</string>
     <string name="enter_pixel_aspect_ratio_value">Poměr stran pixelu x10000 (10000 = čtvercové pixely)</string>
     <string name="cannot_open_settings">Nastavení systému se nepodařilo otevřít</string>
     <string name="static_bssid_enter_value">Zadejte BSSID (XX:XX:XX:XX:XX:XX)</string>
@@ -923,17 +959,13 @@
     <string name="media_key_routing_always">Vždy</string>
     <string name="media_key_routing_auto">Automaticky</string>
     <string name="media_key_routing_never">Nikdy</string>
-    <string name="media_key_routing_always_hint">Tlačítka Další, Předchozí a Přehrát/Pozastavit se do Android Auto posílají vždy. Použijte, pokud jedno stisknutí nepřeskočí dvě skladby.</string>
-    <string name="media_key_routing_auto_hint">Odesílání se zastaví, když má toto autorádio s telefonem mediální připojení přes Bluetooth, protože tuto akci provádí již toto připojení. Zvolte, pokud jedno stisknutí přeskočí dvě skladby a telefon je spárován s tímto autorádiem.</string>
-    <string name="media_key_routing_never_hint">Tlačítka se neodesílají a ponechají se Bluetooth. Zvolte, pokud jedno stisknutí přeskočí dvě skladby a telefon je spárován s vlastním systémem vozu, ne s tímto autorádiem. Režim Automaticky takové připojení nezjistí.</string>
+    <string name="media_key_routing_help">Vždy: Tlačítka Další, Předchozí a Přehrát/Pozastavit se do Android Auto posílají vždy. Použijte, pokud jedno stisknutí nepřeskočí dvě skladby.\n\nAutomaticky: Odesílání se zastaví, když má toto autorádio s telefonem mediální připojení přes Bluetooth, protože tuto akci provádí již toto připojení. Zvolte, pokud jedno stisknutí přeskočí dvě skladby a telefon je spárován s tímto autorádiem.\n\nNikdy: Tlačítka se neodesílají a ponechají se Bluetooth. Zvolte, pokud jedno stisknutí přeskočí dvě skladby a telefon je spárován s vlastním systémem vozu, ne s tímto autorádiem. Režim Automaticky takové připojení nezjistí.</string>
     <string name="media_key_routing_hint_common">Ovlivněna jsou jen mediální tlačítka. Otočné ovladače, D-pad, Zpět a Enter se do Android Auto dostanou vždy.</string>
     <string name="playback_focus_mode">Pozastavit ostatní zvuk při přehrávání</string>
     <string name="playback_focus_mode_auto">Automaticky</string>
     <string name="playback_focus_mode_always">Vždy</string>
     <string name="playback_focus_mode_never">Nikdy</string>
-    <string name="playback_focus_mode_auto_hint">Pozastaví jiný přehrávač v autorádiu (například rádio), když hraje zvuk z Android Auto. Pokud se ukáže, že tím zastaví přehrávání samotného telefonu, což se stane, když je autorádio Bluetooth reproduktorem telefonu, přestane to dělat a zapamatuje si to. Chcete-li to zkusit znovu, zvolte tento režim znovu.</string>
-    <string name="playback_focus_mode_always_hint">Vždy pozastaví ostatní zvuk, když hraje Android Auto. Pokud se hudba po sekundě či dvou zastaví pokaždé, když je zapnutý Bluetooth, přepněte zpět na Automaticky.</string>
-    <string name="playback_focus_mode_never_hint">Nikdy nezasahuje do zvukového zaměření systému. Ostatní zvuk v autorádiu může hrát přes Android Auto dál.</string>
+    <string name="playback_focus_mode_help">Automaticky: Pozastaví jiný přehrávač v autorádiu (například rádio), když hraje zvuk z Android Auto. Pokud se ukáže, že tím zastaví přehrávání samotného telefonu, což se stane, když je autorádio Bluetooth reproduktorem telefonu, přestane to dělat a zapamatuje si to. Chcete-li to zkusit znovu, zvolte tento režim znovu.\n\nVždy: Vždy pozastaví ostatní zvuk, když hraje Android Auto. Pokud se hudba po sekundě či dvou zastaví pokaždé, když je zapnutý Bluetooth, přepněte zpět na Automaticky.\n\nNikdy: Nikdy nezasahuje do zvukového zaměření systému. Ostatní zvuk v autorádiu může hrát přes Android Auto dál.</string>
     <string name="playback_focus_mode_static_hint">Když je zapnuté Statické zvukové zaměření, platí to od připojení telefonu po celou relaci, ne jen během přehrávání zvuku.</string>
     <string name="boot_loop_paused_title">Bezdrátové spuštění pozastaveno</string>
     <string name="boot_loop_paused_generic">Toto zařízení se třikrát po sobě restartovalo krátce po tom, co Open Headunit spustila bezdrátové připojení, proto zůstalo tentokrát vypnuté. USB funguje dál. Znovu ho zapnete v aplikaci.</string>
@@ -944,7 +976,8 @@
     <string name="external_bt_module_nativeaa">Native Wireless přes modul ZJ/ZLink</string>
     <string name="external_bt_module_nativeaa_desc">Telefon se páruje s vlastním modulem Bluetooth této jednotky (%1$s), ne s Bluetooth, který Android poskytuje aplikacím, takže handshake bude odeslán přes službu ZJ/ZLink tohoto modulu.\n\nJde o experimentální funkci a tato služba je jediná možná cesta. Pokud telefon nikdy nespustí Android Auto, použijte USB nebo některý režim Wi-Fi.</string>
     <string name="external_bt_transport">Připojit přes modul Bluetooth jednotky</string>
-    <string name="external_bt_transport_description">Experimentální a jen pro jednotky se službou Bluetooth ZJ/ZLink. Posílá handshake bezdrátového Android Auto přes vlastní čip Bluetooth této jednotky, tedy ten, se kterým je telefon skutečně spárovaný, místo přes Bluetooth, které Android nabízí aplikacím.\n\nNejdřív s vypnutým tímto nastavením spusťte „Otestovat modul Bluetooth jednotky“. Pokud test nenajde nic, co naslouchá, nemůže toto nastavení na vaší jednotce nic změnit a Native Wireless tu nebude fungovat, ať nastavíte cokoli. Pokud modul odpoví, zapněte nastavení a zvolte Native. Test spuštěný, když je nastavení už zapnuté a připojené, to jen oznámí, a nejde o chybu. V obou případech prosím exportujte protokol.</string>
+    <string name="external_bt_transport_description">Experimentální, pro autorádia se službou Bluetooth ZJ/ZLink. Posílá bezdrátové navázání spojení Android Auto přes čip Bluetooth, se kterým je telefon spárován, ne přes ten, který Android ukazuje aplikacím. Nejdřív spusťte test modulu Bluetooth s vypnutou volbou. Pokud nic nenaslouchá, volba na vašem autorádiu nic nezmůže. Pokud odpoví, zapněte ji. Exportujte protokol v obou případech.</string>
+    <string name="external_bt_transport_summary">Experimentální. Posílá bezdrátové navázání spojení přes vlastní Bluetooth tohoto autorádia.</string>
     <string name="zbt_probe_title">Otestovat modul Bluetooth jednotky</string>
     <string name="zbt_probe_idle">Klepnutím spustíte</string>
     <string name="zbt_probe_running">Probíhá…</string>
@@ -954,7 +987,8 @@
     <string name="external_bt_blink_transport">Připojit přes externí modul Bluetooth FYT</string>
     <string name="external_bt_module_controls_hint">Párování telefonu, priorita připojení a výběr ovladače spravuje externí modul Bluetooth.</string>
     <string name="external_bt_module_last_phone">Poslední telefon připojený přes modul</string>
-    <string name="external_bt_blink_transport_description">Experimentální. Pro jednotky FYT, jejichž telefon se pro hovory páruje se samostatným modulem Bluetooth, například „DUDUAUTO“ v DUDUOS, jediném dosud testovaném ROM. Handshake bezdrátového Android Auto přenáší modul, ne Bluetooth této jednotky, a obvykle jej vyřizuje původní aplikace Car Link. Když je tato volba zapnutá, vyřizuje jej tato aplikace, takže hovory zůstanou na modulu a reproduktorech auta.\n\nNejdřív zakažte původní aplikaci Car Link (pm disable-user com.syu.carlink), jinak budou obě aplikace číst stejný kanál. Kanál se otevře bez roota, pokud to jednotka umožňuje, jinak přes root. Zvolte Native, spárujte telefon jen s modulem a pokud se nepřipojí, exportujte protokol.</string>
+    <string name="external_bt_blink_transport_description">Experimentální, pro autorádia FYT, jejichž telefon se pro hovory páruje s oddělným modulem Bluetooth, například DUDUAUTO na DUDUOS. Modul nese bezdrátové navázání spojení Android Auto, na které běžně odpovídá původní aplikace Car Link. Při zapnutí odpovídá tato aplikace, takže hovory zůstanou na modulu a reproduktorech auta. Nejdřív vypněte původní aplikaci Car Link (pm disable-user com.syu.carlink), jinak budou obě číst stejný kanál.</string>
+    <string name="external_bt_blink_transport_summary">Experimentální. Odpovídá na bezdrátové navázání spojení na modulu Bluetooth autorádia FYT.</string>
     <string name="external_bt_blink_refused_stock_enabled">Externí modul Bluetooth: původní aplikace Car Link je stále povolená. Zakažte ji (pm disable-user com.syu.carlink) nebo tento přenos vypněte.</string>
     <string name="external_bt_blink_refused_stock_running">Externí modul Bluetooth: původní aplikace Car Link je zakázaná, ale stále běží. Restartujte jednotku.</string>
     <string name="external_bt_blink_refused_root">Externí modul Bluetooth: otevření kanálu modulu vyžaduje na této jednotce root a přístup root byl odepřen nebo není k dispozici.</string>
@@ -1022,7 +1056,7 @@
     <string name="stand_down_station_auto">Automaticky</string>
     <string name="stand_down_station_always">Vždy</string>
     <string name="stand_down_station_never">Nikdy</string>
-    <string name="stand_down_station_hint">Automaticky opustí vlastní síť jednotky jen tehdy, když její rádio má pásmo 5 GHz a síť běží na 2,4 GHz. Skupina Wi-Fi Direct tak může mít kanál 5 GHz sama pro sebe. Na jednotce jen s 2,4 GHz zůstane připojená, protože odpojení by jen spustilo hledání sítí, a také když už síť běží na 5 GHz. Po skončení relace se k síti znovu připojí. Pokud obraz sekává, zkuste Vždy nebo Nikdy.</string>
+    <string name="stand_down_station_hint">Rozhoduje, zda toto autorádio opustí vlastní síť Wi-Fi, zatímco se připojuje telefon, aby skupina Wi-Fi Direct mohla použít kanál 5 GHz. Auto ji opustí jen tehdy, když rádio má pásmo 5 GHz a síť běží na 2,4 GHz, nebo když je skupina vynucena na 2,4 GHz vedle sítě 5 GHz. Autorádio jen s 2,4 GHz zůstane připojeno, protože odchod jen spustí hledání sítí. K síti se znovu připojí po skončení relace. Zkuste Vždy nebo Nikdy, když obraz sekává.</string>
     <string name="stand_down_station_needs_overlay">Na této verzi Androidu vyžaduje oprávnění „Zobrazení přes ostatní aplikace“.</string>
     <string name="connection_issue_banner_bt_silent">Telefon se připojil přes Bluetooth, ale Bluetooth této jednotky mu nedokázal nic poslat. Klepnutím zvolte režim, který ho nepotřebuje, například Wireless Helper.</string>
     <string name="connection_issue_banner_bssid">Telefon se nedozvěděl, ke které síti se má připojit, protože tato jednotka nesdílela svou adresu Wi-Fi. Zapněte polohu, nebo klepnutím zadejte adresu ručně.</string>
@@ -1030,8 +1064,11 @@
     <string name="connection_issue_banner_wifi_direct_refused">Tato jednotka nemohla vytvořit síť Wi-Fi Direct pro váš telefon. Zkuste ji odpojit od jiné sítě Wi-Fi, nebo klepnutím použijte její hotspot.</string>
     <string name="connection_issue_banner_wifi_direct_cycled">Jiná aplikace stále vypíná Wi-Fi Direct, obvykle jde o předinstalovanou aplikaci pro zrcadlení jako ZLink nebo CarLife. Zakažte ji, nebo klepnutím použijte hotspot.</string>
     <string name="connection_issue_banner_hotspot_config">Tato jednotka neposkytne aplikaci název a heslo hotspotu. Klepnutím je zadejte ručně.</string>
+    <string name="auto_restart_wifi_summary">Samo restartuje Wi-Fi, když se Wi-Fi Direct zasekne. Vyžaduje root nebo místní ADB.</string>
+    <string name="auto_restart_wifi_description">Samo vypne a zapne Wi-Fi, když se Wi-Fi Direct zasekne, což se může stát po zavření aplikace během relace. Vyžaduje root nebo místní ADB. Nikdy neběží během relace.</string>
     <string name="narrow_band_profile_cap">Snížit video na spojení 2,4 GHz</string>
-    <string name="narrow_band_profile_cap_description">Pokud relace běží na 2,4 GHz, ať už proto, že Wi-Fi této jednotky nemá pásmo 5 GHz, nebo proto, že síť vznikla na něm, požádá telefon nejvýše o 720p a 30 fps místo výše zvolených hodnot a o zvuk AAC. Na takovém spojení plný datový tok podle měření nepřenesl vůbec žádný obraz, zatímco nižší vydržel. Vypněte, pokud chcete dostat přesně to, co jste nastavili.</string>
+    <string name="narrow_band_profile_cap_description">Na spojení 2,4 GHz žádá od telefonu nejvýše 720p, 30 fps a zvuk AAC místo vašeho nastavení videa. Na takovém spojení stream s plnou rychlostí v měření neukázal žádný obraz, zatímco nižší vydržel. Vypněte, abyste dostali přesně to, co jste nastavili, a počítejte s prázdným obrazem, pokud to spojení neunese.</string>
+    <string name="narrow_band_profile_cap_summary">Na 2,4 GHz žádá od telefonu 720p, 30 fps a zvuk AAC.</string>
     <string name="connection_issue_banner_video_link_too_slow">Spojení Wi-Fi bylo pro video příliš pomalé, proto aplikace snížila kvalitu na 720p při 30 FPS. Klepnutím nastavte rozlišení sami. Pomůže i síť 5 GHz.</string>
     <string name="connection_issue_banner_five_ghz_channel_refused">Tato jednotka odmítla použít vámi zvolený kanál 5 GHz a vybrala kanál, který některé telefony nevidí. Klepnutím přepněte Wi-Fi Direct na 2,4 GHz, které funguje všude.</string>
     <string name="connection_issue_banner_headunit_server_deaf">Server autorádia služby Android Auto ve vašem telefonu přestal odpovídat. V telefonu ho zastavte a znovu spusťte ve vývojářských nastaveních Android Auto.</string>
@@ -1051,6 +1088,7 @@
     <string name="preflight_invalid_bssid">Neplatná adresa Wi-Fi. Zadejte šest dvojic hexadecimálních číslic, například 02:1A:11:FF:3C:4D.</string>
     <string name="native_aa_ignore_external_bt">Ignorovat kontrolu kompatibility Bluetooth</string>
     <string name="native_aa_ignore_external_bt_description">Tato jednotka podle všeho používá Bluetooth na samostatném modulu, ke kterému se Android nedostane, proto se bezdrátové Android Auto automaticky vypíná. Ve výchozím nastavení vypnuto. Zapněte jen tehdy, pokud si myslíte, že je to špatně: pokud je detekce správná, připojení tiše selže a protokol vypadá v pořádku.</string>
+    <string name="native_aa_ignore_external_bt_summary">Ponechá bezdrátový režim zapnutý, i když toto autorádio zřejmě skrývá svůj modul Bluetooth.</string>
     <string name="native_aa_setup_qr_title">Nastavení pomocí QR kódu</string>
     <string name="native_aa_setup_qr_description">Zobrazit kód, který může telefon naskenovat.</string>
     <string name="native_aa_setup_qr_content_description">QR kód pro nastavení bezdrátového Android Auto</string>
@@ -1080,11 +1118,13 @@
     <string name="failed_aa_not_installed">Selhalo: Android Auto není nainstalováno!</string>
     <string name="raise_projection_during_call">Zůstat v Android Auto během hovorů</string>
     <string name="raise_projection_during_call_description">Pouze samostatný režim. Vrátí projekci nad obrazovku hovoru telefonu, takže se hovory přijímají a ukončují v rozhraní Android Auto.</string>
+    <string name="raise_projection_during_call_summary">Jen samostatný režim. Zobrazí projekci nad obrazovkou hovoru v telefonu.</string>
     <string name="audio_stream_settings">Zvukové streamy</string>
     <string name="audio_stream_settings_description">Vyberte systémový stream, na kterém hraje každý kanál Android Auto.</string>
     <string name="audio_stream_settings_info">Android Auto posílá zvuk třemi kanály: Média, Navigace a Systémové zvuky. Každý se do autorádia dostane určitým systémovým streamem a zvolený stream určuje, kterým tlačítkem hlasitosti se řídí a u řady autorádií i to, zda se pro něj vůbec zapne zesilovač. Tlačítkem reproduktoru si před uložením přehrajte na streamu zkušební tón.</string>
     <string name="audio_channel_media">Média</string>
     <string name="audio_channel_media_description">Přehrávání aplikací: hudba, podcasty, rádio a audioknihy. Jediný kanál posílaný stereo (48 kHz).</string>
+    <string name="audio_channel_media_summary">Přehrávání z aplikací: hudba, podcasty, rádio, audioknihy. Stereo, 48 kHz.</string>
     <string name="audio_channel_guidance">Navigace / Pokyny</string>
     <string name="audio_channel_guidance_description">Mluvené navigační pokyny a odpovědi hlasového asistenta (16 kHz mono).</string>
     <string name="audio_channel_system">Systémové zvuky / Oznámení</string>
@@ -1092,6 +1132,7 @@
     <string name="audio_channel_all">Média, Navigace, Pokyny, Oznámení a Systém</string>
     <string name="audio_channel_all_short">všechny kanály</string>
     <string name="audio_channel_all_description">Všechny zvukové kanály Android Auto — přehrávání aplikací, mluvené pokyny, upozornění a zvuky oznámení — sdílejí tento jediný výstupní stream.</string>
+    <string name="audio_channel_all_summary">Všechny zvukové kanály Android Auto sdílejí tento jeden výstupní stream.</string>
     <string name="audio_stream_test">Přehrát na tomto streamu zkušební tón</string>
     <string name="setting_help_for">Nápověda: %1$s</string>
     <string name="audio_stream_muted_warning">Stream %1$s je na tomto zařízení ztlumený. Zvyšte hlasitost, abyste uslyšeli zkušební tón.</string>
@@ -1139,6 +1180,7 @@
     <string name="select_bt_poke_device">Vyberte zařízení Bluetooth k probuzení</string>
     <string name="native_poke_all_paired_label">Probudit všechna spárovaná zařízení</string>
     <string name="native_poke_all_paired_description">Není-li výše vybráno žádné zařízení, krátce se připojí ke každému spárovanému zařízení a spustí Android Auto. Po vypnutí se neprobudí nic, dokud nějaké zařízení nevyberete.</string>
+    <string name="native_poke_all_paired_summary">Když není vybráno žádné zařízení, probudí všechna spárovaná zařízení.</string>
     <string name="auto_disconnect_bt_delay_label">Čekání před odpojením</string>
     <string name="auto_disconnect_bt_delay_value">%1$d s</string>
     <string name="auto_disconnect_bt_delay_immediate">Ihned</string>
@@ -1156,21 +1198,26 @@
     <string name="five_ghz_channel_hint">Kanál je požadavek, nikoli záruka. Mnoho jednotek vytvoří síť jen na kanálu, který si zvolí jejich vlastní ovladač Wi-Fi, a aplikace to může zjistit až po pokusu. Pokud nefunguje žádný kanál v pásmu 5 GHz a telefon síť stále nevidí, pomůže nastavení pásma výše.</string>
     <string name="wifi_direct_stable_identity">Ponechat stejnou síť Wi-Fi Direct</string>
     <string name="wifi_direct_stable_identity_description">Používá stejný název sítě a heslo pokaždé, takže se telefon znovu připojí ke známé síti. Použijte řádek níže k jejich obnovení.</string>
+    <string name="wifi_direct_stable_identity_summary">Znovu použije jeden název sítě a heslo, aby se k ní telefon připojil znovu.</string>
     <string name="wifi_direct_new_identity">Nová identita sítě Wi-Fi Direct</string>
     <string name="wifi_direct_new_identity_none">Bude vybráno při příštím připojení</string>
     <string name="wifi_direct_new_identity_confirm">Zvolí nový název a heslo pro skupinu, které se použijí od příštího připojení. Telefon se nastaví přes Bluetooth, jako by šlo o nové autorádio. Použijte to, když se telefon stále pokouší o síť, ke které se už nemůže připojit.</string>
     <string name="wifi_direct_new_identity_done">Od příštího připojení bude použita nová identita sítě.</string>
     <string name="wifi_direct_new_identity_applied">Nová identita sítě se právě nastavuje. Telefon bude vyzván, aby se k ní připojil při příštím připojení.</string>
     <string name="wifi_direct_stable_identity_description_legacy">V této verzi Androidu název vybírá systém a aplikace o něj nemůže požádat. Nechte to zapnuté, aby se telefon znovu připojil ke známé síti všude tam, kde ji systém uchovává, a použijte řádek níže k jejímu obnovení.</string>
+    <string name="wifi_direct_stable_identity_legacy_summary">Název sítě určí systém. Nechte zapnuto, aby se k ní telefon připojil znovu.</string>
     <string name="debug_video_low_latency">Požádat o režim nízké latence dekodéru</string>
     <string name="debug_video_low_latency_description">Při konfiguraci videodekodéru nastaví klíč MediaFormat nízké latence od výrobce. Pokud dekodér klíč odmítne, automaticky se vrátí k výchozímu nastavení.</string>
+    <string name="debug_video_low_latency_summary">Požádá video dekodér o jeho režim nízké latence od výrobce.</string>
     <string name="debug_video_feed_hold">Simulovat pomalý dekodér</string>
 
     <string name="category_more_features">Další funkce</string>
     <string name="pref_enable_floating_button_title">Plovoucí tlačítko spouštěče</string>
-    <string name="pref_enable_floating_button_summary">Zobrazí plovoucí tlačítko nad OEM spouštěčem a jinými aplikacemi pro rychlý návrat do Open Headunit.</string>
+    <string name="pref_enable_floating_button_summary">Zobrazí tlačítko pro návrat do Open Headunit.</string>
+    <string name="pref_enable_floating_button_help">Zobrazí plovoucí tlačítko nad OEM spouštěčem a jinými aplikacemi pro rychlý návrat do Open Headunit.</string>
     <string name="pref_floating_button_connection_status_title">Indikátor stavu připojení</string>
-    <string name="pref_floating_button_connection_status_summary">Když není připojen telefon, použije Neprůhlednost při odpojení, a při připojeném telefonu přejde na Neprůhlednost plovoucího tlačítka. Při 0 % je tlačítko skryté a propouští klepnutí.</string>
+    <string name="pref_floating_button_connection_status_summary">Ztlumí tlačítko, dokud je připojen telefon.</string>
+    <string name="pref_floating_button_connection_status_help">Když není připojen telefon, použije Neprůhlednost při odpojení, a při připojeném telefonu přejde na Neprůhlednost plovoucího tlačítka. Při 0 % je tlačítko skryté a propouští klepnutí.</string>
     <string name="pref_floating_button_size_title">Velikost plovoucího tlačítka</string>
     <string name="pref_floating_button_opacity_title">Neprůhlednost plovoucího tlačítka</string>
     <string name="pref_floating_button_disconnected_opacity_title">Neprůhlednost při odpojení</string>
@@ -1270,7 +1317,8 @@
     <string name="native_aa_wake_remeasure_confirm">Android Auto spustí bezdrátové připojení, jen když zaznamená změnu připojení Bluetooth. Tam, kde tato jednotka už drží spojení handsfree, ho aplikace musí přerušit, aby ke změně došlo. Jednou proto změří, zda se spojení vrátí, a pokud ne, zastaví se. Použijte, pokud se bezdrátové připojení přestalo spouštět samo a jste ochotni na chvíli přijít o handsfree, zatímco aplikace zkouší znovu.</string>
     <string name="native_aa_wake_remeasure_done">Probuzení Bluetooth se znovu změří při dalším připojení.</string>
     <string name="pref_enable_car_launcher_title">Použít jako spouštěč v autě</string>
-    <string name="pref_enable_car_launcher_summary">Zaregistruje Open Headunit jako aplikaci domovské obrazovky, aby se spustil po stisknutí tlačítka Domů v autě nebo na autorádiu.</string>
+    <string name="pref_enable_car_launcher_summary">Otevře aplikaci tlačítkem Domů.</string>
+    <string name="pref_enable_car_launcher_help">Zaregistruje Open Headunit jako aplikaci domovské obrazovky, aby se spustil po stisknutí tlačítka Domů v autě nebo na autorádiu.</string>
     <string name="pref_set_default_launcher_title">Výchozí domovská aplikace</string>
     <string name="pref_default_launcher_status_active">Aktivní (Klepnutím spravovat)</string>
     <string name="pref_default_launcher_status_inactive">Nenastaveno (Klepnutím nastavit)</string>

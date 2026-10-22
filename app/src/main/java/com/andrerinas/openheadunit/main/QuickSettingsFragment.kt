@@ -96,6 +96,7 @@ class QuickSettingsFragment : DialogFragment() {
                 stableId = "useAAudioOutput",
                 nameResId = R.string.aaudio_output,
                 descriptionResId = R.string.aaudio_output_description,
+                helpResId = R.string.aaudio_output_help,
                 isChecked = settings.useAAudioOutput,
                 onCheckedChanged = { enabled ->
                     settings.useAAudioOutput = enabled
@@ -115,6 +116,7 @@ class QuickSettingsFragment : DialogFragment() {
         items.add(SettingItem.SettingEntry(
             stableId = "audioLatencyMultiplier",
             nameResId = R.string.audio_latency_multiplier,
+            descriptionResId = R.string.audio_latency_multiplier_description,
             value = "${settings.audioLatencyMultiplier}x",
             onClick = { showAudioLatencyDialog() }
         ))
@@ -122,6 +124,7 @@ class QuickSettingsFragment : DialogFragment() {
         items.add(SettingItem.SettingEntry(
             stableId = "audioQueueCapacity",
             nameResId = R.string.audio_queue_capacity,
+            helpResId = R.string.audio_queue_capacity_help,
             value = if (settings.audioQueueCapacity == 0) "Unbounded (Legacy)" else "${settings.audioQueueCapacity} chunks",
             onClick = { showAudioQueueCapacityDialog() }
         ))
@@ -149,6 +152,7 @@ class QuickSettingsFragment : DialogFragment() {
         items.add(SettingItem.SettingEntry(
             stableId = "fullscreenMode",
             nameResId = R.string.start_in_fullscreen_mode,
+            descriptionResId = R.string.start_in_fullscreen_mode_description,
             value = fullscreenModeLabels()[settings.fullscreenMode.value],
             onClick = { showFullscreenDialog() }
         ))
@@ -163,7 +167,8 @@ class QuickSettingsFragment : DialogFragment() {
         items.add(SettingItem.ToggleSettingEntry(
             stableId = "hudMirroring",
             nameResId = R.string.hud_mirroring,
-            descriptionResId = R.string.hud_mirroring_description,
+            descriptionResId = R.string.hud_mirroring_summary,
+            helpResId = R.string.hud_mirroring_description,
             isChecked = settings.hudMirroring,
             onCheckedChanged = { isChecked ->
                 settings.hudMirroring = isChecked
@@ -178,6 +183,7 @@ class QuickSettingsFragment : DialogFragment() {
         items.add(SettingItem.SettingEntry(
             stableId = "viewMode",
             nameResId = R.string.view_mode,
+            helpResId = R.string.view_mode_help,
             value = settings.viewMode.name,
             onClick = { showViewModeDialog() }
         ))
@@ -201,7 +207,8 @@ class QuickSettingsFragment : DialogFragment() {
         items.add(SettingItem.ToggleSettingEntry(
             stableId = "fakeSpeed",
             nameResId = R.string.fake_speed_title,
-            descriptionResId = R.string.fake_speed_description,
+            descriptionResId = R.string.fake_speed_summary,
+            helpResId = R.string.fake_speed_description,
             isChecked = settings.fakeSpeed,
             onCheckedChanged = { isChecked ->
                 settings.fakeSpeed = isChecked
@@ -216,6 +223,7 @@ class QuickSettingsFragment : DialogFragment() {
                 stableId = "killOnDisconnect",
                 nameResId = R.string.kill_on_disconnect,
                 descriptionResId = R.string.kill_on_disconnect_description,
+                helpResId = R.string.kill_on_disconnect_help,
                 isChecked = settings.rawKillOnDisconnect,
                 onCheckedChanged = { isChecked ->
                     settings.rawKillOnDisconnect = isChecked

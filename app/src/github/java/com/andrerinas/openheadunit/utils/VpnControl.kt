@@ -86,7 +86,9 @@ object VpnControl {
     @StringRes
     val toggleNameRes: Int = R.string.keep_dummy_vpn
     @StringRes
-    val toggleDescriptionRes: Int = R.string.keep_dummy_vpn_description
+    val toggleDescriptionRes: Int = R.string.keep_dummy_vpn_summary
+    @StringRes
+    val toggleHelpRes: Int = R.string.keep_dummy_vpn_description
     @StringRes
     val consentDeniedRes: Int = R.string.keep_dummy_vpn_denied
 }

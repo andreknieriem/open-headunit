@@ -59,6 +59,7 @@
     <string name="night_mode_short">Android Auto</string>
     <string name="aa_monochrome">Монохромний Android Auto</string>
     <string name="aa_monochrome_description">Зменшує кольори Android Auto для нічного водіння. Потрібен режим відображення GLES. Діє лише при увімкненому темному режимі.</string>
+    <string name="aa_monochrome_summary">Зменшує насиченість кольорів для нічної їзди. Потрібні режим відображення GLES і темний режим.</string>
     <string name="aa_desaturation">Знебарвлення</string>
     <string name="aa_desaturation_description">Визначає, скільки кольору буде видалено. Діє лише при увімкненому темному режимі.</string>
     <string name="gles_required_title">Потрібен GLES</string>
@@ -84,6 +85,7 @@
     <string name="change_dpi">Змінити DPI</string>
     <string name="change_view_mode">Змінити режим перегляду</string>
     <string name="view_mode">Режим перегляду</string>
+    <string name="view_mode_help">Обирає, як зображення малюється на екрані цього пристрою. SurfaceView найшвидший і підходить більшості пристроїв. TextureView повільніший, але підтримує дзеркалення й масштабування. GLES20 додає ефекти, наприклад монохромний нічний режим. Змініть режим, якщо картинка чорна, мерехтить або бракує ефекту.</string>
     <string name="surface_view">SurfaceView</string>
     <string name="texture_view">TextureView</string>
     <string name="gles_view">GLES 2.0</string>
@@ -185,14 +187,17 @@
     <string name="show_toast_messages_description">Показувати спливні повідомлення про стан під час підключення, відключення та зміни режиму.</string>
     <string name="auto_start_usb_label">Автозапуск за USB</string>
     <string name="auto_start_usb_description">Автоматично відкривати застосунок і намагатися підключитися, коли підключено USB-пристрій.</string>
+    <string name="auto_start_usb_summary">Відкриває застосунок і підключається, коли під\'єднано USB-пристрій.</string>
     <string name="auto_start_settings">Налаштування автозапуску</string>
     <string name="auto_start_settings_description">Налаштуйте, коли застосунок запускається автоматично.</string>
     <string name="auto_start_oem_warning">Для цього пристрою може знадобитися ввімкнути автозапуск і зняти для застосунку оптимізацію акумулятора або фонові обмеження.\n\nНа головних блоках із Quick Boot (швидке завантаження) автозапуск може не працювати. Знайдіть «DuraSpeed» у системних налаштуваннях і ввімкніть там цей застосунок. На деяких головних блоках DuraSpeed приховано, тож для його пошуку може знадобитися застосунок на кшталт «Hidden Settings». Якщо DuraSpeed немає, спробуйте вимкнути Quick Boot.</string>
     <string name="car_launcher_autostart_info">Open Headunit налаштовано як лаунчер автомобіля. Він запускається автоматично під час завантаження системи.</string>
     <string name="auto_start_on_boot_label">Запуск під час завантаження</string>
     <string name="auto_start_on_boot_description">Автоматично відкривати застосунок під час запуску пристрою. Для Android 10+ потрібен дозвіл «Показувати поверх інших застосунків».</string>
+    <string name="auto_start_on_boot_summary">Відкриває застосунок під час увімкнення пристрою.</string>
     <string name="auto_start_screen_on_label">Запуск після ввімкнення екрана</string>
     <string name="auto_start_screen_on_description">Відкривати застосунок щоразу, коли вмикається екран. Підходить для автомагнітол, які ніколи не вимикаються повністю або використовують режими швидкого запуску, де інші параметри автозапуску не працюють. Не рекомендовано для телефонів і планшетів.</string>
+    <string name="auto_start_screen_on_summary">Відкриває застосунок щоразу, коли вмикається екран. Не для телефонів і планшетів.</string>
     <string name="select_bt_device">Вибрати Bluetooth-пристрій</string>
     <string name="bt_device_not_set">Не задано</string>
     <string name="bt_permission_denied_title">Потрібен дозвіл Bluetooth</string>
@@ -205,6 +210,7 @@
     <string name="right_hand_drive_description">Налаштувати інтерфейс для авто з правим кермом.</string>
     <string name="category_graphic">Графіка</string>
     <string name="custom_insets">Власні відступи (поля)</string>
+    <string name="custom_insets_help">Відсуває зображення від країв екрана на вказану кількість пікселів: ліворуч, угорі, праворуч і внизу. Використовуйте, якщо рамка, заокруглений край або системна панель закриває частину Android Auto.</string>
     <string name="inset_top">Зверху</string>
     <string name="inset_bottom">Знизу</string>
     <string name="inset_left">Зліва</string>
@@ -215,8 +221,9 @@
     <string name="category_video">Відео</string>
     <string name="force_software_decoding">Примусове програмне декодування</string>
     <string name="force_software_decoding_description">Може вирішити проблеми на деяких пристроях, але працює повільніше.</string>
+    <string name="force_software_decoding_help">Декодує відео головним процесором замість відеоапаратури. Увімкніть, лише якщо за вимкненої опції зображення лишається чорним, зависає або має хибні кольори. Потрібно значно більше потужності процесора, тому зображення може сповільнитися. Рядок нижче вибирає програмний декодер.</string>
     <string name="wireless_mode">Бездротовий режим</string>
-    <string name="wireless_mode_description">Виберіть спосіб бездротового підключення (ручний список, автопошук або режим помічника).</string>
+    <string name="wireless_mode_description">Обирає, як цей пристрій знаходить телефон без кабелю. Wireless Helper використовує супровідний застосунок на телефоні. Нативний режим працює як бездротова магнітола Android Auto і не потребує застосунку, але залежить від версії Android Auto. Headunit Server знаходить сервер, який Android Auto запускає на телефоні. Змінюйте режим, лише якщо поточний не підключається. Зміна перезапускає бездротове налаштування.</string>
     <string-array name="wireless_connection_modes">
         <item>Вручну (список)</item>
         <item>Автопошук (Headunit Server)</item>
@@ -237,6 +244,7 @@
     <string name="move_down">Вниз</string>
     <string name="auto_connecting_single_usb">Автопідключення до USB-пристрою…</string>
     <string name="video_codec">Відеокодек</string>
+    <string name="video_codec_help">Обирає формат відео, який надсилає телефон. «Авто» дозволяє застосунку вибрати з того, що цей пристрій уміє декодувати. H.265 дає чіткішу картинку за того самого бітрейту. H.264 працює на кожному декодері. Змініть формат, якщо картинка гальмує або лишається чорною. Вибір діє з наступного підключення.</string>
     <string name="fps_limit">Обмеження FPS</string>
     <string name="save">Зберегти</string>
     <string name="save_and_restart">Зберегти (потрібне перепідключення)</string>
@@ -252,18 +260,24 @@
     <!-- Audio Settings -->
     <string name="forced_scale">Примусове масштабування (виправлення для старих пристроїв)</string>
     <string name="forced_scale_description">Виправляє проблеми з масштабуванням на деяких старих пристроях, що використовують SurfaceView. Використовуйте, лише якщо зображення спотворене або зміщене.</string>
+    <string name="forced_scale_summary">Виправляє масштабування на старих пристроях із SurfaceView.</string>
     <string name="hud_mirroring">Режим HUD (дзеркально по горизонталі)</string>
     <string name="hud_mirroring_description">Віддзеркалює зображення по горизонталі для відбиття на лобовому склі (Head-Up Display). Потрібен режим відображення TextureView або GLES20 (з SurfaceView не працює).</string>
+    <string name="hud_mirroring_summary">Перевертає зображення для відбиття на лобовому склі (HUD).</string>
 
     <string name="category_audio">Звук</string>
     <string name="enable_audio_sink">Аудіоприймач</string>
-    <string name="enable_audio_sink_description">Якщо вимкнено, головний пристрій не працюватиме як аудіоприймач. Звук відтворюватиметься з телефону.</string>
+    <string name="enable_audio_sink_description">Відтворює звук Android Auto на цьому пристрої. Вимкніть, щоб звук лишався на телефоні, наприклад якщо телефон уже живить динаміки авто. Пристрій тоді показує лише картинку. Дзвінки ніколи не використовують цей звук: вони йдуть через Bluetooth-гарнітуру hands-free, підключену до телефона (авто, інтерком чи навушники), або через сам телефон.</string>
+    <string name="enable_audio_sink_summary">Відтворює звук Android Auto на цьому пристрої. Вимкнено: звук відтворює телефон.</string>
     <string name="separate_audio_streams">Роздільні аудіопотоки</string>
     <string name="separate_audio_streams_description">Виділяє каналам «Мультимедіа», «Підказки» та «Системні звуки» окремі вихідні потоки замість одного спільного мультимедійного потоку (може працювати некоректно на деяких пристроях).</string>
+    <string name="separate_audio_streams_summary">Мультимедіа, підказки й системні звуки отримують власні вихідні потоки.</string>
     <string name="use_aac_audio">Використовувати аудіокодек AAC</string>
     <string name="use_aac_audio_description">Використовує кодек AAC для звуку, щоб заощадити смугу пропускання (експериментально). У бездротовому сеансі на частоті 2,4 ГГц він вмикається автоматично, поки ввімкнено «Знижувати якість відео на з’єднанні 2,4 ГГц».</string>
+    <string name="use_aac_audio_summary">Використовує звук AAC для економії смуги пропускання (експериментально).</string>
     <string name="attach_hw_dsp_equalizer">Запуск апаратного DSP-еквалайзера</string>
     <string name="attach_hw_dsp_equalizer_description">Додає фіктивний еквалайзер до аудіосесії, щоб примусово задіяти апаратний DSP на деяких магнітолах. Залишайте вимкненим, якщо використовуєте ViPER4Android / ViperFX або якщо на старих версіях Android звук приглушений.</string>
+    <string name="attach_hw_dsp_equalizer_summary">Підключає фіктивний еквалайзер, щоб на деяких пристроях примусово ввімкнути маршрутизацію через апаратний DSP.</string>
     <string name="audio_volume_offset">Зміщення гучності звуку</string>
     <string name="mic_input_source">Джерело мікрофона</string>
     <string name="mic_input_source_description">Виберіть джерело звуку для мікрофона.</string>
@@ -387,11 +401,13 @@
     <string name="fullscreen_status_only">Приховати лише рядок стану</string>
     <string name="allow_external_configuration">Дозволити зовнішнє налаштування</string>
     <string name="allow_external_configuration_description">Дозволяє застосункам автоматизації, як-от Tasker чи MacroDroid, змінювати налаштування, задавати рівень журналу та експортувати журнал. Підключення й відключення працюють завжди; це стосується лише команд, які змінюють налаштування головного блока.</string>
+    <string name="allow_external_configuration_summary">Дозволяє застосункам на кшталт Tasker змінювати налаштування й експортувати журнали.</string>
     <string name="log_level">Рівень журналу</string>
     <string name="log_level_description">Фільтр рівня журналу під час експорту.</string>
     <string name="log_source">Джерело журналу</string>
     <string name="log_source_logcat">Logcat</string>
     <string name="log_source_applog_file">Безпосередньо у файл</string>
+    <string name="log_source_help">Logcat записує рядки застосунку разом із рядками системи. Це найбільше допомагає у звіті про помилку. «Безпосередньо у файл» записує лише власні рядки застосунку, для пристроїв, де Logcat нічого не записує. Якщо Logcat нічого не записує, застосунок сам перемикається на «Безпосередньо у файл».</string>
     <string name="log_location">Місце збереження журналу</string>
     <string name="log_location_default">Типово (пам’ять застосунку)</string>
     <string name="log_location_downloads">Папка «Завантаження»</string>
@@ -444,12 +460,15 @@
     <string name="use_white_background">Використовувати білі шпалери головного екрана</string>
     <string name="reopen_on_reconnection_label">Відкривати при повторному підключенні</string>
     <string name="reopen_on_reconnection_description">Коли ви натискаєте кнопку «Вихід», додаток продовжує працювати у фоновому режимі та відстежує USB-підключення. Якщо пристрій підключається повторно, додаток відкривається автоматично.</string>
+    <string name="reopen_on_reconnection_summary">Після виходу далі стежить за USB і знову відкриває застосунок, коли пристрій підключається повторно.</string>
 
     <string name="category_input">Налаштування введення</string>
     <string name="enable_rotary">Увімкнути поворотний регулятор</string>
     <string name="enable_rotary_description">Повідомляти про підтримку фізичних поворотних ручок і коліс. Вимкніть, якщо сенсорний екран працює неправильно.</string>
+    <string name="enable_rotary_summary">Повідомляє про підтримку обертової ручки. Вимкніть, якщо сенсор працює хибно.</string>
     <string name="kill_on_disconnect">Закривати додаток після відключення</string>
     <string name="kill_on_disconnect_description">Автоматично закривати додаток, коли Android Auto відключається.</string>
+    <string name="kill_on_disconnect_help">Закриває застосунок, коли Android Auto відключається, і пристрій повертається до своїх екранів. Увімкніть, якщо після кожної поїздки пристрій має показувати власний лаунчер. Не діє, поки цей застосунок є лаунчером автомобіля. Якщо ввімкнено «Відкривати при повторному підключенні», «Запуск під час завантаження» або «Запуск після ввімкнення екрана», застосунок спершу попередить вас, бо цим опціям потрібен відкритий застосунок.</string>
     <string name="kill_on_disconnect_warning_title">Попередження</string>
     <string name="kill_on_disconnect_warning">Наступні налаштування перепідключення конфліктують із закриттям додатка після відключення:\n\n%1$s\n\nНалаштування першого підключення (автопідключення, автозапуск) і далі працюватимуть, коли магнітола вмикається. Але після першого відключення додаток одразу закриється, а не намагатиметься підключитися знову.\n\nПримітка: деякі магнітоли ніколи не вимикаються повністю, а переходять у сплячий режим, як телефон із заблокованим екраном, що насправді не вимикається. Якщо ввімкнути цей параметр, додаток закриється після першого відключення і може не відкритися автоматично під час наступного вмикання запалювання.\n\nВимкнути перелічені вище налаштування перепідключення?</string>
     <string name="kill_on_disconnect_disable_and_enable">Вимкнути та увімкнути</string>
@@ -494,6 +513,7 @@
     <string name="vehicle_info_restart_note">Ці дані надсилаються в Android Auto під час кожного підключення.</string>
     <string name="auto_enable_hotspot">Автоматично вмикати точку доступу</string>
     <string name="auto_enable_hotspot_description">Автоматично вмикає точку доступу Wi-Fi на цьому пристрої (працює не на всіх пристроях).</string>
+    <string name="auto_enable_hotspot_summary">Запускає точку доступу Wi-Fi на цьому пристрої. Є не на всіх пристроях.</string>
     <string name="hotspot_warning_title">Експериментальна функція</string>
     <string name="hotspot_warning_message">Ця функція використовує нестандартний доступ до системи й може не працювати на деяких пристроях. Можливо, потрібно вручну надати дозвіл «Змінення налаштувань системи».</string>
     <string name="hotspot_permission_title">Потрібен дозвіл</string>
@@ -506,20 +526,24 @@
     <string name="shortcut_selfmode_desc">Запустити Android Auto на цьому пристрої</string>
     <string name="wait_for_wifi">Чекати Wi-Fi перед Wi-Fi Direct</string>
     <string name="wait_for_wifi_description">Під час запуску чекати підключення до Wi-Fi, а потім запускати Wi-Fi Direct. Увімкніть, якщо головному пристрою потрібно кілька секунд, щоб підключитися до Wi-Fi після ввімкнення живлення.</string>
+    <string name="wait_for_wifi_summary">Під час завантаження чекає на Wi-Fi, перш ніж запустити Wi-Fi Direct.</string>
     <string name="wait_for_wifi_timeout">Тайм-аут очікування Wi-Fi</string>
     <string name="wireless_24ghz_warning">Примітка: бездротовий Android Auto на пристроях із діапазоном 2,4 ГГц може спричиняти затримки, ривки та розриви з\'єднання. Якщо виникають проблеми, перевірте роботу через USB, щоб з\'ясувати, чи це обмеження мережі.</string>
     <string name="supported_nativeaa">Розширена бездротова підтримка</string>
     <string name="supported_nativeaa_desc">Чудові новини! Ваш пристрій підтримує режим «Native Wireless», який забезпечує плавнішу роботу Android Auto.\n\nЩоб увімкнути його, потрібно оновити кеш Bluetooth. Виконайте такі дії:\n1. Видаліть наявне сполучення на телефоні\n2. Натисніть OK, щоб перезапустити Bluetooth\n3. Знову сполучіть телефон із пристроєм\n\nПерейти на режим Native AA зараз?</string>
     <string name="fake_speed_title">Вимкнути блокування відео (Fake Speed)</string>
     <string name="fake_speed_description">Повідомляє телефону постійну низьку швидкість (0,5 м/с), щоб відео не блокувалося під час руху. Використовуйте з обережністю.</string>
+    <string name="fake_speed_summary">Повідомляє постійну малу швидкість, щоб відео не блокувалося під час руху.</string>
     <string name="wireless_mode_helper">Wireless Helper</string>
     <string name="wireless_mode_native">Нативний</string>
     <string name="wireless_mode_server">Headunit Server</string>
     <string name="server_mode_label">Режим сервера</string>
     <string name="server_mode_manual">Вручну</string>
     <string name="server_mode_auto">Авто</string>
+    <string name="server_mode_help">«Авто» шукає в мережі сервер головного пристрою на телефоні й підключається сам. «Вручну» не шукає. Ви підключаєтеся зі списку мереж або за адресою телефона.</string>
 
     <string name="helper_strategy_label">Метод підключення (Helper)</string>
+    <string name="helper_strategy_help">Обирає, як телефон і цей пристрій ділять мережу в режимі Wireless Helper. «Спільний Wi-Fi» використовує мережу, у якій уже є обидва. Wi-Fi Direct створює приватне з\'єднання. «Пристрої поруч» перебувають в бета-версії. «Точка доступу телефона» приєднується до точки доступу телефона. «Точка доступу магнітоли» робить цей пристрій точкою доступу. Змініть спосіб, якщо телефон не знаходить цей пристрій.</string>
     <string-array name="helper_strategies">
         <item>Спільний WiFi (NSD)</item>
         <item>WiFi Direct (P2P)</item>
@@ -540,8 +564,10 @@
     <string name="audio_latency_multiplier">Множник затримки аудіо</string>
     <string name="aaudio_output">Вивід AAudio (експериментально)</string>
     <string name="aaudio_output_description">Спробувати вивід мультимедіа з низькою затримкою. Якщо він недоступний, автоматично використовується AudioTrack.</string>
+    <string name="aaudio_output_help">Відтворює медіа Android Auto через AAudio, аудіовихід із малою затримкою. Застосунок використовує його лише на Android 9 і новіших. Увімкніть, якщо звук відстає від зображення. Якщо AAudio не запускається, застосунок використовує звичайний аудіовихід. Якщо за ввімкненої опції звук тріщить або пропадає, вимкніть її.</string>
     <string name="audio_latency_multiplier_description">Налаштування розміру аудіобуфера (менше значення: менша затримка, більше: менше заїкань).</string>
     <string name="audio_queue_capacity">Розмір аудіочерги (Backpressure)</string>
+    <string name="audio_queue_capacity_help">Скільки отриманого звуку може чекати перед відтворенням. Мала черга тримає звук близько до зображення. Велика черга витримує короткі збої зв\'язку, але звук може відставати. Коли черга заповнена, найстаріший звук відкидається. «Без обмежень» зберігає все. Застосунок завжди допускає щонайменше секунду звуку.</string>
     <string name="media_action_previous">Попередній</string>
     <string name="media_action_play">Відтворити</string>
     <string name="media_action_pause">Пауза</string>
@@ -549,8 +575,10 @@
     <string name="media_session_aa_status_placeholder">Підключено</string>
     <string name="sync_media_session_aa_metadata">Поточний трек AA у медіасесії</string>
     <string name="sync_media_session_aa_metadata_description">Показувати з телефона назву треку, виконавця, тривалість і обкладинку в системній медіасесії та медіа-сповіщенні.</string>
+    <string name="sync_media_session_aa_metadata_summary">Показує дані треку з телефона в системному медіасеансі.</string>
     <string name="auto_resume_playback_on_reconnect">Відновлювати відтворення при перепідключенні</string>
     <string name="auto_resume_playback_on_reconnect_description">Автоматично продовжує відтворення, якщо музика грала перед короткочасним розривом зв\'язку (до 60 секунд).</string>
+    <string name="auto_resume_playback_on_reconnect_summary">Відновлює музику, що грала до короткого розриву зв\'язку (60 с).</string>
     <string name="error_usb_permission_failed">Системна помилка: не вдалося показати запит на дозвіл USB.</string>
 
     <!-- Custom loading screen -->
@@ -577,15 +605,19 @@
     <string name="microphone_settings">Налаштування мікрофона</string>
     <string name="use_head_unit_microphone">Мікрофон головного пристрою</string>
     <string name="use_head_unit_microphone_description">Увімкнено: Android Auto чує мікрофон цього пристрою. Вимкнено: цей пристрій ніколи не записує, а телефон використовує власний мікрофон або гарнітуру чи інтерком, спарені з телефоном, тож голосовий помічник продовжує працювати. Потрібен Android 11 або новіший на телефоні.</string>
+    <string name="use_head_unit_microphone_summary">Android Auto використовує мікрофон цього пристрою. Вимкнено: мікрофон телефона.</string>
     <string name="head_unit_microphone_off_info">Мікрофон магнітоли вимкнено, тож налаштування нижче не застосовуються. Android Auto отримує повідомлення, що цей пристрій не може записувати звук і є мотоциклом, через що телефон записує звук сам. На Android 10 і старіших телефон не запам’ятовує це між сеансами й може перестати підключатися.</string>
     <string name="microphone_settings_description">Налаштування входу мікрофона та обробки звуку.</string>
     <string name="mic_wire_format_info">Android Auto завжди отримує мікрофон із частотою 16000 Гц, 16 біт, моно. Усе інше відхиляється, тож ці налаштування змінюють роботу обладнання, а не те, що надсилається на телефон.</string>
     <string name="mic_echo_canceler">Придушення відлуння (AEC)</string>
     <string name="mic_echo_canceler_description">Намагається усунути відлуння з мікрофона. Вимкніть, якщо чути тишу або спотворення.</string>
+    <string name="mic_echo_canceler_summary">Прибирає відлуння з мікрофона. Вимкніть за тиші або спотворень.</string>
     <string name="mic_noise_suppressor">Шумоподавлення (NS)</string>
     <string name="mic_noise_suppressor_description">Намагається зменшити фоновий шум. Android Auto очікує, що на одному мікрофоні ця функція вимкнена, і виконує власну обробку. Вимкніть, якщо ваш голос звучить приглушено.</string>
+    <string name="mic_noise_suppressor_summary">Зменшує фоновий шум. Android Auto очікує, що функцію вимкнено.</string>
     <string name="mic_auto_gain_control">Автоматичне регулювання посилення (AGC)</string>
     <string name="mic_auto_gain_control_description">Автоматично регулює гучність мікрофона. Android Auto очікує, що ця функція вимкнена, і застосовує власне регулювання посилення; разом вони зазвичай звучать гірше. Вимкніть, якщо гучність нестабільна.</string>
+    <string name="mic_auto_gain_control_summary">Регулює гучність мікрофона. Android Auto очікує, що функцію вимкнено.</string>
     <string name="mic_feature_unsupported">Ця функція не підтримується на вашому пристрої.</string>
     <string name="bt_permission_denied">Немає дозволу на використання Bluetooth. Пошук пристроїв неможливий.</string>
     <string name="bt_external_module_no_picker">Bluetooth цього пристрою забезпечує зовнішній модуль, а не власний радіомодуль Android, тому тут немає списку пристроїв Bluetooth Android для вибору.</string>
@@ -595,7 +627,8 @@
     <!-- New strings merged from 2.3.1 -->
     <string name="bt_devices_selected">пристроїв вибрано</string>
     <string name="static_audio_focus">Статичний аудіофокус</string>
-    <string name="static_audio_focus_description">Змушує телефон вважати, що аудіофокус завжди утримується, щоб на універсальних магнітолах не втрачалася маршрутизація звуку. Також програмно приглушує звук під час голосових підказок навігації.</string>
+    <string name="static_audio_focus_description">Повідомляє телефону, що аудіофокус завжди утримується. Це запобігає зникненню звуку на звичайних магнітолах, які хибно повідомляють фокус. Також програмно знижує гучність музики під час голосових підказок навігації. Залиште вимкненим, якщо звук не зникає.</string>
+    <string name="static_audio_focus_summary">Повідомляє телефону, що аудіофокус завжди утримується, щоб звук не зникав.</string>
     <string name="bluetooth_adapter_label">Адаптер Bluetooth</string>
     <string name="bluetooth_adapter_description">Виберіть адаптер (контролер) Bluetooth для початкового узгодження зв\'язку. Корисно для систем із двома модулями Bluetooth.</string>
     <string name="select_bt_adapter">Вибрати адаптер Bluetooth</string>
@@ -646,12 +679,14 @@
     <!-- Native USB Driver -->
     <string name="use_libusb">Використовувати нативний USB-драйвер</string>
     <string name="use_libusb_description">Використовувати libusb для зв\'язку. Вимкніть, щоб використовувати стандартний USB API Android.</string>
+    <string name="use_libusb_help">Використовує власну USB-бібліотеку застосунку замість USB-системи Android для підключення телефона кабелем. Залиште вимкненим. Вмикайте, лише якщо телефон через USB виявляється, але Android Auto не запускається. Для бездротового підключення нічого не змінює.</string>
     <string name="usb_keep_phone_media_audio">Залишати мультимедійний звук телефона через USB</string>
     <string name="usb_keep_phone_media_audio_description">Під час сеансу USB Android Auto може вимкнути мультимедійний звук Bluetooth телефона для цієї магнітоли. Цей параметр запобігає цьому. Тоді виклики можуть залишитися на телефоні, а не на магнітолі.</string>
 
     <string name="software_video_decoder">Джерело програмного декодера</string>
     <string name="software_video_decoder_bundled">Вбудований FFmpeg</string>
     <string name="software_video_decoder_device">MediaCodec пристрою</string>
+    <string name="software_video_decoder_help">Діє, лише коли ввімкнено «Примусове програмне декодування». «Вбудований FFmpeg» є власним декодером застосунку й декодує лише H.265. «MediaCodec пристрою» використовує програмний декодер системи. Відео H.264 завжди використовує системний декодер.</string>
 
     <string name="btn_show_qr">Показати QR-код</string>
     <string name="renderer_fallback_surface">Відео постійно зависало, тому на цей сеанс відображення переключено на SurfaceView. Якщо все працює стабільно, виберіть SurfaceView як режим перегляду в налаштуваннях.</string>
@@ -916,6 +951,7 @@
     </string-array>
     <string name="dpi_value_format">%1$d DPI</string>
     <string name="pixel_aspect_ratio">Співвідношення сторін пікселя</string>
+    <string name="pixel_aspect_ratio_help">Змінюйте це, лише якщо кола на цьому екрані виглядають як овали. Так буває, коли пікселі панелі не квадратні. Значення 10000 означає квадратні пікселі.</string>
     <string name="enter_pixel_aspect_ratio_value">Співвідношення сторін пікселя ×10000 (10000 = квадратні пікселі)</string>
     <string name="cannot_open_settings">Не вдалося відкрити системні налаштування</string>
     <string name="static_bssid_enter_value">Введіть BSSID (XX:XX:XX:XX:XX:XX)</string>
@@ -924,17 +960,13 @@
     <string name="media_key_routing_always">Завжди</string>
     <string name="media_key_routing_auto">Автоматично</string>
     <string name="media_key_routing_never">Ніколи</string>
-    <string name="media_key_routing_always_hint">Кнопки «Наступний», «Попередній» і «Відтворити/Пауза» завжди надсилаються в Android Auto. Використовуйте цей режим, якщо одне натискання не пропускає два треки.</string>
-    <string name="media_key_routing_auto_hint">Не надсилає їх, поки ця магнітола має з’єднання Bluetooth для медіа з телефоном, бо це з’єднання вже виконує дію. Виберіть цей режим, якщо одне натискання пропускає два треки, а телефон спарено з цією магнітолою.</string>
-    <string name="media_key_routing_never_hint">Ніколи не надсилає їх, залишаючи кнопки для Bluetooth. Виберіть цей режим, якщо одне натискання пропускає два треки, а телефон спарено з власною системою автомобіля, а не з цією магнітолою: режим «Автоматично» не може виявити таке з’єднання.</string>
+    <string name="media_key_routing_help">Завжди: Кнопки «Наступний», «Попередній» і «Відтворити/Пауза» завжди надсилаються в Android Auto. Використовуйте цей режим, якщо одне натискання не пропускає два треки.\n\nАвтоматично: Не надсилає їх, поки ця магнітола має з’єднання Bluetooth для медіа з телефоном, бо це з’єднання вже виконує дію. Виберіть цей режим, якщо одне натискання пропускає два треки, а телефон спарено з цією магнітолою.\n\nНіколи: Ніколи не надсилає їх, залишаючи кнопки для Bluetooth. Виберіть цей режим, якщо одне натискання пропускає два треки, а телефон спарено з власною системою автомобіля, а не з цією магнітолою: режим «Автоматично» не може виявити таке з’єднання.</string>
     <string name="media_key_routing_hint_common">Це стосується лише медіакнопок. Поворотні контролери, D-pad, «Назад» і Enter завжди надходять до Android Auto.</string>
     <string name="playback_focus_mode">Призупиняти інший звук під час відтворення</string>
     <string name="playback_focus_mode_auto">Автоматично</string>
     <string name="playback_focus_mode_always">Завжди</string>
     <string name="playback_focus_mode_never">Ніколи</string>
-    <string name="playback_focus_mode_auto_hint">Призупиняє інший програвач на магнітолі (наприклад, радіо), поки звучить Android Auto. Якщо виявиться, що це зупиняє власне відтворення на телефоні, а так буває, коли магнітола є Bluetooth-динаміком телефону, режим припиняє це робити й запам’ятовує. Виберіть цей режим ще раз, щоб спробувати знову.</string>
-    <string name="playback_focus_mode_always_hint">Завжди призупиняє інший звук, поки відтворюється Android Auto. Якщо музика зупиняється за секунду-дві після ввімкнення Bluetooth, поверніться до режиму «Автоматично».</string>
-    <string name="playback_focus_mode_never_hint">Ніколи не змінює системний аудіофокус. Інший звук на магнітолі може продовжувати звучати разом з Android Auto.</string>
+    <string name="playback_focus_mode_help">Автоматично: Призупиняє інший програвач на магнітолі (наприклад, радіо), поки звучить Android Auto. Якщо виявиться, що це зупиняє власне відтворення на телефоні, а так буває, коли магнітола є Bluetooth-динаміком телефону, режим припиняє це робити й запам’ятовує. Виберіть цей режим ще раз, щоб спробувати знову.\n\nЗавжди: Завжди призупиняє інший звук, поки відтворюється Android Auto. Якщо музика зупиняється за секунду-дві після ввімкнення Bluetooth, поверніться до режиму «Автоматично».\n\nНіколи: Ніколи не змінює системний аудіофокус. Інший звук на магнітолі може продовжувати звучати разом з Android Auto.</string>
     <string name="playback_focus_mode_static_hint">Якщо ввімкнено «Статичний аудіофокус», це діє з моменту підключення телефону й протягом усього сеансу, а не лише під час відтворення звуку.</string>
     <string name="boot_loop_paused_title">Бездротовий запуск призупинено</string>
     <string name="boot_loop_paused_generic">Цей пристрій тричі поспіль перезавантажився невдовзі після того, як Open Headunit запустив бездротове підключення, тому цього разу його вимкнено. USB працює. Щоб увімкнути бездротове підключення знову, відкрийте додаток.</string>
@@ -945,7 +977,8 @@
     <string name="external_bt_module_nativeaa">Native Wireless через модуль ZJ/ZLink</string>
     <string name="external_bt_module_nativeaa_desc">Телефон сполучається з власним модулем Bluetooth цього пристрою (%1$s), а не з Bluetooth, який Android надає додаткам, тому початкове узгодження зв\'язку надсилатиметься через службу ZJ/ZLink цього модуля.\n\nФункція експериментальна, а ця служба є єдиним шляхом. Якщо телефон так і не запускає Android Auto, скористайтеся USB або режимом Wi-Fi.</string>
     <string name="external_bt_transport">Підключатися через модуль Bluetooth головного пристрою</string>
-    <string name="external_bt_transport_description">Експериментальна функція лише для пристроїв зі службою Bluetooth ZJ/ZLink. Надсилає початкове узгодження бездротового Android Auto через власний чип Bluetooth цього пристрою, з яким телефон справді сполучений, а не через Bluetooth, який Android надає додаткам.\n\nСпершу запустіть «Перевірити модуль Bluetooth головного пристрою» з вимкненим цим налаштуванням. Якщо тест не знайде жодної служби, що відповідає, це налаштування нічого не дасть на вашому пристрої, і Native Wireless тут не працюватиме за жодних налаштувань. Якщо модуль відповість, ввімкніть це налаштування й виберіть Native. Якщо тест запустити, коли налаштування вже ввімкнено й з\'єднання активне, він повідомить про це, і це не помилка. Експортуйте журнал в обох випадках.</string>
+    <string name="external_bt_transport_description">Експериментально, для пристроїв зі службою Bluetooth ZJ/ZLink. Надсилає бездротове рукостискання Android Auto через чип Bluetooth, з яким спарено телефон, а не через той, що Android показує застосункам. Спершу запустіть тест модуля Bluetooth за вимкненої функції. Якщо він нічого не знаходить, функція на вашому пристрої марна. Якщо модуль відповідає, увімкніть її. В обох випадках експортуйте журнал.</string>
+    <string name="external_bt_transport_summary">Експериментально. Надсилає бездротове рукостискання через власний Bluetooth цього пристрою.</string>
     <string name="zbt_probe_title">Перевірити модуль Bluetooth головного пристрою</string>
     <string name="zbt_probe_idle">Натисніть, щоб запустити</string>
     <string name="zbt_probe_running">Виконується…</string>
@@ -955,7 +988,8 @@
     <string name="external_bt_blink_transport">Підключатися через зовнішній модуль Bluetooth FYT</string>
     <string name="external_bt_module_controls_hint">Сполучення з телефоном, пріоритет підключення та вибір драйвера керуються зовнішнім модулем Bluetooth.</string>
     <string name="external_bt_module_last_phone">Останній телефон, підключений через модуль</string>
-    <string name="external_bt_blink_transport_description">Експериментальна функція. Для пристроїв FYT, де телефон сполучається для дзвінків з окремим модулем Bluetooth, наприклад «DUDUAUTO» в DUDUOS (єдина прошивка, перевірена досі). Початкове узгодження бездротового Android Auto передає цей модуль, а не Bluetooth пристрою, і зазвичай його обробляє штатний додаток Car Link. Коли функцію ввімкнено, його обробляє цей додаток, тому дзвінки залишаються на модулі й динаміках автомобіля.\n\nСпершу вимкніть штатний додаток Car Link (pm disable-user com.syu.carlink), інакше обидва додатки читатимуть один канал. Канал відкривається без root, якщо пристрій це дозволяє, а інакше через root. Виберіть Native, сполучіть телефон лише з модулем і експортуйте журнал, якщо підключитися не вдається.</string>
+    <string name="external_bt_blink_transport_description">Експериментально, для пристроїв FYT, у яких телефон для дзвінків спарюється з окремим модулем Bluetooth, наприклад DUDUAUTO у DUDUOS. Модуль несе бездротове рукостискання Android Auto, на яке зазвичай відповідає штатний застосунок Car Link. Коли функцію ввімкнено, відповідає цей застосунок, тож дзвінки лишаються на модулі й динаміках авто. Спершу вимкніть штатний застосунок Car Link (pm disable-user com.syu.carlink), інакше обидва читатимуть один канал.</string>
+    <string name="external_bt_blink_transport_summary">Експериментально. Відповідає на бездротове рукостискання на модулі Bluetooth пристрою FYT.</string>
     <string name="external_bt_blink_refused_stock_enabled">Зовнішній модуль Bluetooth: штатний додаток Car Link досі ввімкнено. Вимкніть його (pm disable-user com.syu.carlink) або вимкніть цей спосіб підключення.</string>
     <string name="external_bt_blink_refused_stock_running">Зовнішній модуль Bluetooth: штатний додаток Car Link вимкнено, але він досі працює. Перезавантажте пристрій.</string>
     <string name="external_bt_blink_refused_root">Зовнішній модуль Bluetooth: щоб відкрити канал модуля, на цьому пристрої потрібен root, але доступ до root відхилено або він недоступний.</string>
@@ -1023,7 +1057,7 @@
     <string name="stand_down_station_auto">Авто</string>
     <string name="stand_down_station_always">Завжди</string>
     <string name="stand_down_station_never">Ніколи</string>
-    <string name="stand_down_station_hint">У режимі «Авто» пристрій виходить зі своєї мережі лише тоді, коли його радіомодуль підтримує діапазон 5 ГГц, а мережа працює на 2,4 ГГц. Тоді група Wi-Fi Direct може займати канал 5 ГГц сама. На пристрої лише з діапазоном 2,4 ГГц, де вихід тільки змусить пристрій шукати мережі, а також коли мережа вже працює на 5 ГГц, з\'єднання зберігається. Після завершення сеансу пристрій знову підключається до мережі. Якщо зображення підвисає, спробуйте «Завжди» або «Ніколи».</string>
+    <string name="stand_down_station_hint">Визначає, чи залишає цей пристрій власну мережу Wi-Fi, поки підключається телефон, щоб група Wi-Fi Direct могла використати канал 5 ГГц. Режим «Авто» залишає її, лише якщо радіомодуль має діапазон 5 ГГц, а мережа працює на 2,4 ГГц, або якщо групу примусово переведено на 2,4 ГГц поруч із мережею 5 ГГц. Пристрій лише з 2,4 ГГц лишається в мережі, бо вихід лише запускає пошук мереж. До мережі він приєднується знову після завершення сеансу. Спробуйте «Завжди» або «Ніколи», якщо картинка гальмує.</string>
     <string name="stand_down_station_needs_overlay">У цій версії Android потрібен дозвіл «Показувати поверх інших додатків».</string>
     <string name="connection_issue_banner_bt_silent">Телефон підключився через Bluetooth, але Bluetooth цього пристрою нічого не зміг йому надіслати. Торкніться, щоб вибрати режим, якому Bluetooth не потрібен, наприклад Wireless Helper.</string>
     <string name="connection_issue_banner_bssid">Телефон не отримав інформації, до якої мережі підключатися, бо цей пристрій не надав свою адресу Wi-Fi. Увімкніть місцезнаходження або торкніться, щоб ввести адресу вручну.</string>
@@ -1031,8 +1065,11 @@
     <string name="connection_issue_banner_wifi_direct_refused">Цей пристрій не зміг створити мережу Wi-Fi Direct для телефона. Спробуйте відключити його від іншої мережі Wi-Fi або торкніться, щоб натомість використати точку доступу.</string>
     <string name="connection_issue_banner_wifi_direct_cycled">Інший додаток постійно вимикає Wi-Fi Direct, зазвичай це попередньо встановлений додаток для проекції, як-от ZLink або CarLife. Вимкніть його або торкніться, щоб натомість використати точку доступу.</string>
     <string name="connection_issue_banner_hotspot_config">Цей пристрій не передає додатку назву й пароль точки доступу. Торкніться, щоб ввести їх вручну.</string>
+    <string name="auto_restart_wifi_summary">Сам перезапускає Wi-Fi, якщо Wi-Fi Direct завис. Потрібен root або локальний ADB.</string>
+    <string name="auto_restart_wifi_description">Сам вимикає й вмикає Wi-Fi, якщо Wi-Fi Direct завис. Це буває після закриття застосунку посеред сеансу. Потрібен root або локальний ADB. Ніколи не спрацьовує під час сеансу.</string>
     <string name="narrow_band_profile_cap">Знижувати якість відео на з\'єднанні 2,4 ГГц</string>
-    <string name="narrow_band_profile_cap_description">Якщо сеанс працює на 2,4 ГГц (бо в Wi-Fi цього пристрою немає діапазону 5 ГГц або бо мережа запустилася саме на ньому), додаток запитує в телефона не більше 720p і 30 кадр/с замість налаштувань вище, а також звук AAC. На такому з\'єднанні потік повної якості в ході вимірювання зовсім не передавав зображення, а потік нижчої якості працював. Вимкніть, щоб отримувати саме те, що ви вказали.</string>
+    <string name="narrow_band_profile_cap_description">На з\'єднанні 2,4 ГГц просить у телефона щонайбільше 720p, 30 к/с і звук AAC замість ваших налаштувань відео. На такому з\'єднанні потік із повною швидкістю, за вимірами, не показав картинки взагалі, а менший тримався. Вимкніть, щоб отримати саме те, що ви задали, і чекайте порожню картинку, якщо з\'єднання не впорається.</string>
+    <string name="narrow_band_profile_cap_summary">На 2,4 ГГц просить у телефона 720p, 30 к/с і звук AAC.</string>
     <string name="connection_issue_banner_video_link_too_slow">З\'єднання Wi-Fi було надто повільним для відео, тому додаток знизив якість до 720p і 30 кадр/с. Торкніться, щоб вибрати роздільність самостійно. Мережа 5 ГГц також допомагає.</string>
     <string name="connection_issue_banner_five_ghz_channel_refused">Цей пристрій не став використовувати вибраний вами канал 5 ГГц і вибрав такий, який деякі телефони не бачать. Торкніться, щоб перемкнути Wi-Fi Direct на 2,4 ГГц, який працює всюди.</string>
     <string name="connection_issue_banner_headunit_server_deaf">Сервер головного пристрою Android Auto на вашому телефоні перестав відповідати. На телефоні зупиніть його й запустіть знову в налаштуваннях розробника Android Auto.</string>
@@ -1052,6 +1089,7 @@
     <string name="preflight_invalid_bssid">Це не адреса Wi-Fi. Введіть шість пар шістнадцяткових цифр, наприклад 02:1A:11:FF:3C:4D.</string>
     <string name="native_aa_ignore_external_bt">Ігнорувати перевірку сумісності Bluetooth</string>
     <string name="native_aa_ignore_external_bt_description">Схоже, цей пристрій використовує Bluetooth на окремому модулі, недоступному для Android, тому бездротовий Android Auto вимикається автоматично. За замовчуванням вимкнено. Вмикайте, лише якщо вважаєте це помилкою: якщо визначення правильне, з\'єднання мовчки не вдасться, а журнал виглядатиме нормально.</string>
+    <string name="native_aa_ignore_external_bt_summary">Лишає бездротовий режим увімкненим, навіть якщо пристрій, схоже, ховає свій модуль Bluetooth.</string>
     <string name="native_aa_setup_qr_title">Налаштування за QR-кодом</string>
     <string name="native_aa_setup_qr_description">Показати код, який може зчитати телефон.</string>
     <string name="native_aa_setup_qr_content_description">QR-код для налаштування бездротового Android Auto</string>
@@ -1081,11 +1119,13 @@
     <string name="failed_aa_not_installed">Помилка: Android Auto не встановлено!</string>
     <string name="raise_projection_during_call">Залишатися в Android Auto під час дзвінків</string>
     <string name="raise_projection_during_call_description">Лише Самостійний режим. Повертає проєкцію поверх екрана виклику телефону, щоб відповідати на дзвінки та завершувати їх в інтерфейсі Android Auto.</string>
+    <string name="raise_projection_during_call_summary">Лише в автономному режимі. Показує проєкцію поверх екрана дзвінка на телефоні.</string>
     <string name="audio_stream_settings">Аудіопотоки</string>
     <string name="audio_stream_settings_description">Виберіть системний потік, через який відтворюється кожен канал Android Auto.</string>
     <string name="audio_stream_settings_info">Android Auto передає звук трьома каналами: «Мультимедіа», «Підказки» та «Системні звуки». Кожен потрапляє до магнітоли через системний потік, і вибраний потік визначає, якій кнопці гучності він підпорядковується та, на багатьох магнітолах, чи ввімкнеться для нього підсилювач узагалі. Натисніть кнопку динаміка, щоб почути тестовий сигнал на потоці перед збереженням.</string>
     <string name="audio_channel_media">Мультимедіа</string>
     <string name="audio_channel_media_description">Відтворення застосунків: музика, подкасти, радіо та аудіокниги. Єдиний канал, що передається в стерео (48 кГц).</string>
+    <string name="audio_channel_media_summary">Відтворення із застосунків: музика, подкасти, радіо, аудіокниги. Стерео, 48 кГц.</string>
     <string name="audio_channel_guidance">Підказки / Навігація</string>
     <string name="audio_channel_guidance_description">Голосові вказівки навігації та відповіді голосового асистента (16 кГц, моно).</string>
     <string name="audio_channel_system">Системні звуки / Сповіщення</string>
@@ -1093,6 +1133,7 @@
     <string name="audio_channel_all">Мультимедіа, Підказки, Навігація, Сповіщення та Система</string>
     <string name="audio_channel_all_short">усі канали</string>
     <string name="audio_channel_all_description">Усі аудіоканали Android Auto — відтворення застосунків, голосові підказки, попередження та звуки сповіщень — використовують цей єдиний вихідний потік.</string>
+    <string name="audio_channel_all_summary">Усі аудіоканали Android Auto використовують цей один вихідний потік.</string>
     <string name="audio_stream_test">Відтворити тестовий сигнал на цьому потоці</string>
     <string name="setting_help_for">Довідка: %1$s</string>
     <string name="audio_stream_muted_warning">%1$s вимкнено на цьому пристрої — збільште гучність, щоб почути тестовий сигнал.</string>
@@ -1140,6 +1181,7 @@
     <string name="select_bt_poke_device">Виберіть пристрій Bluetooth для пробудження</string>
     <string name="native_poke_all_paired_label">Пробуджувати всі сполучені пристрої</string>
     <string name="native_poke_all_paired_description">Якщо вище не вибрано пристрій, програма ненадовго підключається до кожного сполученого пристрою, щоб запустити Android Auto. Вимкніть, щоб нічого не пробуджувати, доки ви не виберете пристрій.</string>
+    <string name="native_poke_all_paired_summary">Якщо пристрій не вибрано, будить усі спарені пристрої.</string>
     <string name="auto_disconnect_bt_delay_label">Затримка перед відключенням</string>
     <string name="auto_disconnect_bt_delay_value">%1$d с</string>
     <string name="auto_disconnect_bt_delay_immediate">Одразу</string>
@@ -1157,21 +1199,26 @@
     <string name="five_ghz_channel_hint">Канал є запитом, а не гарантією. Багато пристроїв створюють мережу лише на тому каналі, який обирає їхній власний драйвер Wi-Fi, і застосунок може повідомити про це тільки після спроби. Якщо жоден канал 5 ГГц не працює, а телефон досі не бачить мережу, допоможе налаштування діапазону вище.</string>
     <string name="wifi_direct_stable_identity">Зберігати ту саму мережу Wi-Fi Direct</string>
     <string name="wifi_direct_stable_identity_description">Щоразу використовує те саме ім\'я мережі та пароль, щоб телефон повторно підключався до вже відомої мережі. Використайте рядок нижче, щоб оновити їх.</string>
+    <string name="wifi_direct_stable_identity_summary">Використовує одну назву мережі й один пароль, щоб телефон знову приєднувався до неї.</string>
     <string name="wifi_direct_new_identity">Нові дані мережі Wi-Fi Direct</string>
     <string name="wifi_direct_new_identity_none">Буде вибрано під час наступного підключення</string>
     <string name="wifi_direct_new_identity_confirm">Вибирає нове ім\'я та пароль для групи, які діятимуть з наступного підключення. Телефон буде налаштовано на них через Bluetooth, як для нової магнітоли. Зробіть це, якщо телефон постійно пробує мережу, до якої вже не може приєднатися.</string>
     <string name="wifi_direct_new_identity_done">Нові дані мережі буде використано з наступного підключення.</string>
     <string name="wifi_direct_new_identity_applied">Нові дані мережі налаштовуються. Телефону буде запропоновано приєднатися до неї під час наступного підключення.</string>
     <string name="wifi_direct_stable_identity_description_legacy">У цій версії Android ім\'я обирає система, і застосунок не може запросити конкретне. Залиште увімкненим, щоб телефон повторно підключався до вже відомої мережі всюди, де система її зберігає, і використайте рядок нижче, щоб оновити її.</string>
+    <string name="wifi_direct_stable_identity_legacy_summary">Назву мережі призначає система. Залиште ввімкненим, щоб телефон знову приєднувався до неї.</string>
     <string name="debug_video_low_latency">Запитати режим низької затримки декодера</string>
     <string name="debug_video_low_latency_description">Встановлює ключ MediaFormat виробника для низької затримки під час налаштування відеодекодера. Якщо декодер його відхиляє, автоматично вимикається.</string>
+    <string name="debug_video_low_latency_summary">Просить відеодекодер увімкнути режим низької затримки від виробника.</string>
     <string name="debug_video_feed_hold">Імітувати повільний декодер</string>
 
     <string name="category_more_features">Додаткові функції</string>
     <string name="pref_enable_floating_button_title">Плаваюча кнопка запуску</string>
-    <string name="pref_enable_floating_button_summary">Відображає плаваючу кнопку поверх штатного лаунчера та інших програм для швидкого повернення до Open Headunit.</string>
+    <string name="pref_enable_floating_button_summary">Показує кнопку для повернення до Open Headunit.</string>
+    <string name="pref_enable_floating_button_help">Відображає плаваючу кнопку поверх штатного лаунчера та інших програм для швидкого повернення до Open Headunit.</string>
     <string name="pref_floating_button_connection_status_title">Індикатор стану підключення</string>
-    <string name="pref_floating_button_connection_status_summary">Коли телефон не підключено, використовує прозорість при відключенні, а коли підключено, плавно переходить до прозорості плаваючої кнопки. При 0% кнопка прихована й пропускає дотики.</string>
+    <string name="pref_floating_button_connection_status_summary">Робить кнопку блідішою, поки підключено телефон.</string>
+    <string name="pref_floating_button_connection_status_help">Коли телефон не підключено, використовує прозорість при відключенні, а коли підключено, плавно переходить до прозорості плаваючої кнопки. При 0% кнопка прихована й пропускає дотики.</string>
     <string name="pref_floating_button_size_title">Розмір плаваючої кнопки</string>
     <string name="pref_floating_button_opacity_title">Прозорість плаваючої кнопки</string>
     <string name="pref_floating_button_disconnected_opacity_title">Прозорість при відключенні</string>
@@ -1271,7 +1318,8 @@
     <string name="native_aa_wake_remeasure_confirm">Android Auto запускає бездротове з\'єднання, лише коли бачить зміну стану підключення Bluetooth. Якщо цей пристрій уже утримує з\'єднання hands-free, додатку доводиться його розірвати, щоб це спрацювало. Тому він один раз перевіряє, чи з\'єднання відновлюється, і зупиняється, якщо ні. Скористайтеся цим, якщо бездротове з\'єднання перестало запускатися саме і ви готові ненадовго втратити hands-free, поки додаток пробує знову.</string>
     <string name="native_aa_wake_remeasure_done">Пробудження Bluetooth буде виміряно знову під час наступного підключення.</string>
     <string name="pref_enable_car_launcher_title">Використовувати як лаунчер авто</string>
-    <string name="pref_enable_car_launcher_summary">Реєструє Open Headunit як додаток головного екрана, щоб він відкривався, коли натискають кнопку «Головна» на авто або магнітолі.</string>
+    <string name="pref_enable_car_launcher_summary">Відкриває застосунок кнопкою «Додому».</string>
+    <string name="pref_enable_car_launcher_help">Реєструє Open Headunit як додаток головного екрана, щоб він відкривався, коли натискають кнопку «Головна» на авто або магнітолі.</string>
     <string name="pref_set_default_launcher_title">Типовий застосунок головного екрана</string>
     <string name="pref_default_launcher_status_active">Активно (торкніться, щоб керувати)</string>
     <string name="pref_default_launcher_status_inactive">Не вибрано (торкніться, щоб призначити)</string>

@@ -58,6 +58,7 @@
     <string name="night_mode_short">Android Auto</string>
     <string name="aa_monochrome">Android Auto monochroom maken</string>
     <string name="aa_monochrome_description">Vermindert de kleuren van Android Auto voor nachtelijk rijden. Vereist GLES-weergavemodus. Werkt alleen wanneer donkere modus is ingeschakeld.</string>
+    <string name="aa_monochrome_summary">Verlaagt de kleuren voor rijden in het donker. Vereist de GLES-weergavemodus en de donkere modus.</string>
     <string name="aa_desaturation">Desaturatie</string>
     <string name="aa_desaturation_description">Bepaalt hoeveel kleur wordt verwijderd. Werkt alleen wanneer donkere modus is ingeschakeld.</string>
     <string name="gles_required_title">GLES vereist</string>
@@ -83,6 +84,7 @@
     <string name="change_dpi">DPI wijzigen</string>
     <string name="change_view_mode">Weergavemodus wijzigen</string>
     <string name="view_mode">Weergavemodus</string>
+    <string name="view_mode_help">Bepaalt hoe het beeld op het scherm van dit apparaat wordt getekend. SurfaceView is het snelst en werkt op de meeste apparaten. TextureView is trager, maar kan spiegelen en schalen. GLES20 voegt effecten toe, zoals de monochrome nachtmodus. Wijzig dit als het beeld zwart is, flikkert of een effect ontbreekt.</string>
     <string name="surface_view">SurfaceView</string>
     <string name="texture_view">TextureView</string>
     <string name="gles_view">GLES20</string>
@@ -184,14 +186,17 @@
     <string name="show_toast_messages_description">Statuspop-ups tonen bij verbinden, verbreken en moduswissel.</string>
     <string name="auto_start_usb_label">Automatisch starten bij USB</string>
     <string name="auto_start_usb_description">De app automatisch openen en verbinding proberen te maken wanneer een USB-apparaat wordt aangesloten.</string>
+    <string name="auto_start_usb_summary">Opent de app en maakt verbinding zodra een USB-apparaat wordt aangesloten.</string>
     <string name="auto_start_settings">Instellingen automatisch starten</string>
     <string name="auto_start_settings_description">Stel in wanneer de app automatisch start.</string>
     <string name="auto_start_oem_warning">Op dit apparaat moet je mogelijk automatisch starten inschakelen en batterijoptimalisatie of achtergrondbeperkingen voor deze app uitschakelen.\n\nOp headunits met Quick Boot (snel opstarten) werkt automatisch starten mogelijk niet. Zoek naar \"DuraSpeed\" in de systeeminstellingen en schakel deze app daar in. Op sommige headunits is DuraSpeed verborgen en heb je mogelijk een app zoals \"Hidden Settings\" nodig om het te vinden. Als je geen DuraSpeed hebt, probeer dan Quick Boot uit te schakelen.</string>
     <string name="car_launcher_autostart_info">Open Headunit is ingesteld als launcher van je auto. De app start automatisch bij het opstarten van het systeem.</string>
     <string name="auto_start_on_boot_label">Starten bij opstarten</string>
     <string name="auto_start_on_boot_description">Open de app automatisch wanneer het apparaat opstart. Vereist de machtiging \'Weergeven vóór andere apps\' op Android 10+.</string>
+    <string name="auto_start_on_boot_summary">Opent de app wanneer het apparaat opstart.</string>
     <string name="auto_start_screen_on_label">Starten bij scherm aan</string>
     <string name="auto_start_screen_on_description">Open de app telkens wanneer het scherm aangaat. Handig voor headunits die nooit volledig uitschakelen of een snelle opstartmodus gebruiken, waardoor de andere opties voor automatisch starten niet werken. Niet aanbevolen voor telefoons of tablets.</string>
+    <string name="auto_start_screen_on_summary">Opent de app telkens als het scherm aangaat. Niet voor telefoons of tablets.</string>
     <string name="select_bt_device">Selecteer Bluetooth-apparaat</string>
     <string name="bt_device_not_set">Niet ingesteld</string>
     <string name="bt_permission_denied_title">Bluetooth-toestemming vereist</string>
@@ -204,6 +209,7 @@
     <string name="right_hand_drive_description">Plaats de interface voor een auto met het stuur aan de rechterkant.</string>
     <string name="category_graphic">Grafisch</string>
     <string name="custom_insets">Aangepaste marges</string>
+    <string name="custom_insets_help">Verplaatst het beeld dit aantal pixels weg van de schermranden: links, boven, rechts en onder. Gebruik dit als een lijst, een gebogen rand of een systeembalk een deel van Android Auto bedekt.</string>
     <string name="inset_top">Boven</string>
     <string name="inset_bottom">Onder</string>
     <string name="inset_left">Links</string>
@@ -214,8 +220,9 @@
     <string name="category_video">Video</string>
     <string name="force_software_decoding">Softwaredecodering forceren</string>
     <string name="force_software_decoding_description">Kan problemen op sommige apparaten oplossen, maar is minder snel.</string>
+    <string name="force_software_decoding_help">Decodeert de video met de hoofdprocessor in plaats van de videohardware. Zet dit alleen aan als het beeld zwart blijft, vastloopt of verkeerde kleuren toont terwijl het uit staat. Het vraagt veel meer rekenkracht, dus het beeld kan trager zijn. De rij hieronder kiest de softwaredecoder.</string>
     <string name="wireless_mode">Draadloze modus</string>
-    <string name="wireless_mode_description">Kies hoe de app draadloos verbinding maakt (handmatige lijst, automatisch zoeken naar telefoon of Wireless Launcher-modus).</string>
+    <string name="wireless_mode_description">Bepaalt hoe dit apparaat de telefoon zonder kabel vindt. Wireless Helper gebruikt de begeleidende app op de telefoon. Native gedraagt zich als een draadloze Android Auto-headunit en heeft geen app nodig, maar hangt af van de Android Auto-versie. Headunit Server vindt de server die Android Auto op de telefoon draait. Wijzig dit alleen als de huidige modus geen verbinding maakt. Een wijziging start de draadloze installatie opnieuw.</string>
     <string-array name="wireless_connection_modes">
         <item>Handmatig (lijst)</item>
         <item>Automatisch zoeken (Headunit Server)</item>
@@ -236,6 +243,7 @@
     <string name="move_down">Omlaag</string>
     <string name="auto_connecting_single_usb">Automatisch verbinden met USB-apparaat…</string>
     <string name="video_codec">Videocodec</string>
+    <string name="video_codec_help">Bepaalt het videoformaat dat de telefoon verstuurt. Auto laat de app kiezen uit wat dit apparaat kan decoderen. H.265 geeft een scherper beeld bij dezelfde datasnelheid. H.264 werkt op elke decoder. Wijzig dit als het beeld hapert of zwart blijft. De keuze geldt vanaf de volgende verbinding.</string>
     <string name="fps_limit">FPS-limiet</string>
     <string name="save">Opslaan</string>
     <string name="save_and_restart">Opslaan (opnieuw verbinden nodig)</string>
@@ -251,18 +259,24 @@
     <!-- Audio Settings -->
     <string name="forced_scale">Geforceerde schaling (oplossing voor oudere apparaten)</string>
     <string name="forced_scale_description">Corrigeert schalingsproblemen op sommige oudere apparaten die SurfaceView gebruiken. Alleen gebruiken als het beeld vervormd of verschoven is.</string>
+    <string name="forced_scale_summary">Herstelt het schalen op oudere apparaten die SurfaceView gebruiken.</string>
     <string name="hud_mirroring">HUD-modus (Horizontaal spiegelen)</string>
     <string name="hud_mirroring_description">Spiegelt het scherm horizontaal voor reflectie op de voorruit (Head-Up Display). Vereist TextureView- of GLES20-weergavemodus (werkt niet met SurfaceView).</string>
+    <string name="hud_mirroring_summary">Spiegelt het scherm voor weerkaatsing op de voorruit (HUD).</string>
 
     <string name="category_audio">Audio</string>
     <string name="enable_audio_sink">Audio-sink</string>
-    <string name="enable_audio_sink_description">Als dit uit staat, ontvangt de headunit geen audio. Het geluid wordt dan afgespeeld via de telefoon.</string>
+    <string name="enable_audio_sink_description">Speelt het geluid van Android Auto af via dit apparaat. Zet het uit om het geluid op de telefoon te houden, bijvoorbeeld als de telefoon de speakers van de auto al voedt. Het apparaat toont dan alleen het beeld. Gesprekken gebruiken dit geluid nooit: ze lopen via het Bluetooth-handsfreeapparaat dat met de telefoon is verbonden (auto, intercom of headset) of via de telefoon zelf.</string>
+    <string name="enable_audio_sink_summary">Speelt het geluid van Android Auto af op dit apparaat. Uit: de telefoon speelt het af.</string>
     <string name="separate_audio_streams">Afzonderlijke audiostreams</string>
     <string name="separate_audio_streams_description">Geeft de kanalen Media, Navigatiestem en Systeemgeluiden hun eigen uitvoerstreams in plaats van één gedeelde multimediastream (werkt op sommige apparaten mogelijk niet goed).</string>
+    <string name="separate_audio_streams_summary">Media, navigatiestem en systeemgeluiden krijgen elk een eigen uitvoerstream.</string>
     <string name="use_aac_audio">AAC-audio gebruiken</string>
     <string name="use_aac_audio_description">Gebruik de AAC-codec voor audio om bandbreedte te besparen (experimenteel). Bij een draadloze sessie die op 2,4 GHz draait, wordt dit automatisch ingeschakeld zolang \"Lagere video bij een 2,4 GHz-verbinding\" is ingeschakeld.</string>
+    <string name="use_aac_audio_summary">Gebruik AAC-audio om bandbreedte te besparen (experimenteel).</string>
     <string name="attach_hw_dsp_equalizer">Trigger voor hardware-DSP-equalizer</string>
     <string name="attach_hw_dsp_equalizer_description">Koppelt een dummy-equalizereffect aan de audiosessie om hardware-DSP-routing te forceren op specifieke headunits. Laat dit uit als je ViPER4Android / ViperFX gebruikt of als het geluid dof klinkt op oudere Android-versies.</string>
+    <string name="attach_hw_dsp_equalizer_summary">Koppelt een dummy-equalizer om op sommige apparaten hardware-DSP-routering af te dwingen.</string>
     <string name="audio_volume_offset">Volumecorrectie</string>
     <string name="mic_input_source">Invoerbron van microfoon</string>
     <string name="mic_input_source_description">Kies de audiobron voor de microfoon.</string>
@@ -386,11 +400,13 @@
     <string name="fullscreen_status_only">Alleen statusbalk verbergen</string>
     <string name="allow_external_configuration">Externe configuratie toestaan</string>
     <string name="allow_external_configuration_description">Laat automatiseringsapps zoals Tasker of MacroDroid instellingen wijzigen, het logniveau instellen en logs exporteren. Verbinden en verbreken werkt altijd; dit geldt alleen voor opdrachten die de configuratie van de headunit wijzigen.</string>
+    <string name="allow_external_configuration_summary">Laat apps zoals Tasker instellingen wijzigen en logs exporteren.</string>
     <string name="log_level">Logniveau</string>
     <string name="log_level_description">Logniveau filteren bij exporteren.</string>
     <string name="log_source">Logbron</string>
     <string name="log_source_logcat">Logcat</string>
     <string name="log_source_applog_file">Rechtstreeks naar bestand</string>
+    <string name="log_source_help">Logcat legt de regels van de app vast samen met die van het systeem. Dat helpt het meest bij een bugrapport. Rechtstreeks naar bestand legt alleen de eigen regels van de app vast, voor apparaten waarop Logcat niets vastlegt. De app schakelt zelf over naar Rechtstreeks naar bestand als Logcat niets vastlegt.</string>
     <string name="log_location">Opslaglocatie voor logs</string>
     <string name="log_location_default">Standaard (opslagruimte van de app)</string>
     <string name="log_location_downloads">Map Downloads</string>
@@ -442,13 +458,16 @@
     <string name="use_white_background">Witte achtergrond voor startscherm gebruiken</string>
     <string name="reopen_on_reconnection_label">Heropenen bij herverbinding</string>
     <string name="reopen_on_reconnection_description">Als je op de knop Afsluiten drukt, blijft de app op de achtergrond draaien en blijft hij USB-verbindingen controleren. Als een apparaat opnieuw verbinding maakt, wordt de app automatisch geopend.</string>
+    <string name="reopen_on_reconnection_summary">Blijft na Afsluiten USB in de gaten houden en opent opnieuw als een apparaat weer verbinding maakt.</string>
     <string name="show_performance_overlay_description">Toont FPS, CPU-belasting, temperatuur en frameleeftijd over de projectie.</string>
 
     <string name="category_input">Invoerinstellingen</string>
     <string name="enable_rotary">Draaiknop (Rotary) inschakelen</string>
     <string name="enable_rotary_description">Meld ondersteuning voor fysieke draaiknoppen en -wielen. Schakel dit uit als je touchscreen niet goed werkt.</string>
+    <string name="enable_rotary_summary">Meldt ondersteuning voor de draaiknop. Zet uit als aanraking niet goed werkt.</string>
     <string name="kill_on_disconnect">App sluiten bij verbroken verbinding</string>
     <string name="kill_on_disconnect_description">De app automatisch sluiten wanneer Android Auto wordt losgekoppeld.</string>
+    <string name="kill_on_disconnect_help">Sluit de app als Android Auto de verbinding verbreekt, zodat het apparaat terugkeert naar zijn eigen schermen. Zet dit aan als het apparaat na elke rit zijn eigen launcher moet tonen. Het doet niets zolang deze app de autolauncher is. Als Heropenen bij herverbinding, Starten bij opstarten of Starten bij scherm aan aan staat, waarschuwt de app je eerst, omdat die opties de app open willen houden.</string>
     <string name="kill_on_disconnect_warning_title">Waarschuwing</string>
     <string name="kill_on_disconnect_warning">De volgende instellingen voor opnieuw verbinden conflicteren met het sluiten van de app bij verbroken verbinding:\n\n%1$s\n\nJe instellingen voor de eerste verbinding (automatisch verbinden, automatisch starten) blijven werken wanneer de head-unit wordt ingeschakeld. Na de eerste verbroken verbinding wordt de app echter meteen gesloten in plaats van opnieuw te verbinden.\n\nLet op: sommige head-units uit de nabewerkingsmarkt worden nooit helemaal uitgeschakeld. Ze gaan in de slaapstand, zoals een telefoon waarvan het scherm vergrendelt maar die nooit echt uitgaat. Met deze optie wordt de app na de eerste verbroken verbinding gesloten en wordt hij bij de volgende start van de auto mogelijk niet automatisch geopend.\n\nWil je de hierboven genoemde instellingen voor opnieuw verbinden uitschakelen?</string>
     <string name="kill_on_disconnect_disable_and_enable">Uitschakelen en inschakelen</string>
@@ -493,6 +512,7 @@
     <string name="vehicle_info_restart_note">Deze gegevens worden naar Android Auto gestuurd telkens als je verbinding maakt.</string>
     <string name="auto_enable_hotspot">Hotspot automatisch inschakelen</string>
     <string name="auto_enable_hotspot_description">Start automatisch een Wi-Fi-hotspot op dit apparaat. (Werkt niet op alle apparaten.)</string>
+    <string name="auto_enable_hotspot_summary">Start een wifi-hotspot op dit apparaat. Niet op elk apparaat beschikbaar.</string>
     <string name="hotspot_warning_title">Experimentele functie</string>
     <string name="hotspot_warning_message">Deze functie gebruikt reflectie en werkt mogelijk niet op alle apparaten. Mogelijk moet je de toestemming \"Systeeminstellingen wijzigen\" handmatig verlenen.</string>
     <string name="hotspot_permission_title">Toestemming vereist</string>
@@ -505,20 +525,24 @@
     <string name="shortcut_selfmode_desc">Start Android Auto op dit apparaat</string>
     <string name="wait_for_wifi">Op wifi wachten vóór Wi-Fi Direct</string>
     <string name="wait_for_wifi_description">Wacht bij het opstarten tot wifi is verbonden voordat Wi-Fi Direct start. Schakel dit in als je headunit na het aanzetten een paar seconden nodig heeft om met wifi te verbinden.</string>
+    <string name="wait_for_wifi_summary">Wacht bij het opstarten op wifi voordat WiFi Direct start.</string>
     <string name="wait_for_wifi_timeout">Wifi-wachttijd</string>
     <string name="wireless_24ghz_warning">Let op: draadloos Android Auto op apparaten met 2,4 GHz kan vertraging, haperingen en verbroken verbindingen geven. Heb je problemen, test dan via USB om te zien of het aan het netwerk ligt.</string>
     <string name="supported_nativeaa">Verbeterde draadloze ondersteuning</string>
     <string name="supported_nativeaa_desc">Goed nieuws! Je apparaat ondersteunt de modus \"Native Wireless\", voor een vlottere Android Auto-ervaring.\n\nOm dit in te schakelen, moeten we je Bluetooth-cache vernieuwen. Doe het volgende:\n1. Verwijder de bestaande koppeling op je telefoon\n2. Tik op OK om Bluetooth opnieuw op te starten\n3. Koppel je telefoon opnieuw\n\nWil je nu overschakelen naar de Native AA-modus?</string>
     <string name="fake_speed_title">Videovergrendeling uitschakelen (nepsnelheid)</string>
     <string name="fake_speed_description">Meldt een constante lage snelheid (0,5 m/s) aan de telefoon, zodat video tijdens het rijden niet wordt geblokkeerd. Wees voorzichtig.</string>
+    <string name="fake_speed_summary">Meldt een constante lage snelheid zodat video tijdens het rijden niet geblokkeerd wordt.</string>
     <string name="wireless_mode_helper">Wireless Helper</string>
     <string name="wireless_mode_native">Native</string>
     <string name="wireless_mode_server">Headunit Server</string>
     <string name="server_mode_label">Servermodus</string>
     <string name="server_mode_manual">Handmatig</string>
     <string name="server_mode_auto">Automatisch</string>
+    <string name="server_mode_help">Automatisch zoekt op het netwerk naar de headunit-server op de telefoon en verbindt zelf. Handmatig zoekt niet. Je verbindt via de netwerklijst of met het adres van de telefoon.</string>
 
     <string name="helper_strategy_label">Verbindingsmethode (Helper)</string>
+    <string name="helper_strategy_help">Bepaalt hoe de telefoon en dit apparaat een netwerk delen in de modus Wireless Helper. Gemeenschappelijke WiFi gebruikt een netwerk dat beide al delen. WiFi Direct maakt een privéverbinding. Apparaten in de buurt zitten in bèta. Telefoon-hotspot maakt verbinding met de hotspot van de telefoon. Headunit-hotspot maakt dit apparaat het toegangspunt. Wijzig dit als de telefoon dit apparaat niet vindt.</string>
     <string-array name="helper_strategies">
         <item>Gemeenschappelijke WiFi (NSD)</item>
         <item>WiFi Direct (P2P)</item>
@@ -539,8 +563,10 @@
     <string name="audio_latency_multiplier">Vermenigvuldiger audiovertraging</string>
     <string name="aaudio_output">AAudio-uitvoer (experimenteel)</string>
     <string name="aaudio_output_description">Probeer mediauitvoer met lage latentie. Schakelt automatisch over op AudioTrack als dit niet beschikbaar is.</string>
+    <string name="aaudio_output_help">Speelt Android Auto-media af via AAudio, een audio-uitvoer met lage latentie. De app gebruikt dit alleen op Android 9 en hoger. Zet het aan als het geluid later komt dan het beeld. Kan AAudio niet starten, dan gebruikt de app de gewone audio-uitvoer. Kraakt of hapert het geluid terwijl het aan staat, zet het dan uit.</string>
     <string name="audio_latency_multiplier_description">Audio-buffergrootte aanpassen (Lager = minder vertraging, Hoger = minder stotteren).</string>
     <string name="audio_queue_capacity">Capaciteit audiowachtrij (backpressure)</string>
+    <string name="audio_queue_capacity_help">Hoeveel ontvangen audio mag wachten voordat het wordt afgespeeld. Een kleine wachtrij houdt het geluid dicht bij het beeld. Een grote wachtrij overbrugt korte onderbrekingen in de verbinding, maar het geluid kan achterlopen. Als de wachtrij vol is, wordt de oudste audio weggegooid. Onbegrensd bewaart alles. De app staat altijd minstens een seconde audio toe.</string>
     <string name="media_action_previous">Vorige</string>
     <string name="media_action_play">Afspelen</string>
     <string name="media_action_pause">Pauze</string>
@@ -548,8 +574,10 @@
     <string name="media_session_aa_status_placeholder">Verbonden</string>
     <string name="sync_media_session_aa_metadata">Huidig AA-nummer in mediasessie</string>
     <string name="sync_media_session_aa_metadata_description">Toon titel, artiest, duur en albumhoes van de telefoon in de mediasessie van het systeem en in de mediamelding.</string>
+    <string name="sync_media_session_aa_metadata_summary">Toont de nummergegevens van de telefoon in de mediasessie van het systeem.</string>
     <string name="auto_resume_playback_on_reconnect">Afspelen hervatten bij opnieuw verbinden</string>
     <string name="auto_resume_playback_on_reconnect_description">Hervat automatisch de muziek als deze actief speelde voor een korte verbindingsonderbreking (binnen 60 seconden).</string>
+    <string name="auto_resume_playback_on_reconnect_summary">Hervat muziek die speelde vóór een korte onderbreking (60 s).</string>
     <string name="error_usb_permission_failed">Systeemfout: het USB-toestemmingsvenster kon niet worden geopend.</string>
 
     <!-- Custom loading screen -->
@@ -576,15 +604,19 @@
     <string name="microphone_settings">Microfooninstellingen</string>
     <string name="use_head_unit_microphone">Microfoon van headunit</string>
     <string name="use_head_unit_microphone_description">Aan: Android Auto hoort de microfoon van dit apparaat. Uit: dit apparaat neemt nooit op en de telefoon gebruikt zijn eigen microfoon, of een headset of intercom die met de telefoon is gekoppeld, zodat de spraakassistent blijft werken. Vereist Android 11 of nieuwer op de telefoon.</string>
+    <string name="use_head_unit_microphone_summary">Android Auto gebruikt de microfoon van dit apparaat. Uit: die van de telefoon.</string>
     <string name="head_unit_microphone_off_info">De microfoon van de headunit staat uit, dus de instellingen hieronder zijn niet van toepassing. Android Auto krijgt te horen dat dit apparaat niet kan opnemen en een motorfiets is. Daardoor neemt de telefoon zelf op. Op Android 10 en ouder vergeet de telefoon dit tussen sessies en maakt hij mogelijk geen verbinding meer.</string>
     <string name="microphone_settings_description">Microfooningang en audioverwerking configureren.</string>
     <string name="mic_wire_format_info">Android Auto ontvangt de microfoon altijd op 16000 Hz, 16-bits, mono. Al het andere wordt geweigerd, dus deze instellingen veranderen wat de hardware doet, niet wat naar de telefoon wordt gestuurd.</string>
     <string name="mic_echo_canceler">Echo-onderdrukking (AEC)</string>
     <string name="mic_echo_canceler_description">Probeert echo van de microfoon te verwijderen. Zet dit uit als je stilte of vervorming hoort.</string>
+    <string name="mic_echo_canceler_summary">Verwijdert echo uit de microfoon. Zet uit bij stilte of vervorming.</string>
     <string name="mic_noise_suppressor">Ruisonderdrukking (NS)</string>
     <string name="mic_noise_suppressor_description">Probeert achtergrondgeluid te verminderen. Android Auto verwacht dat dit uit staat bij één microfoon en doet zelf de verwerking. Zet dit uit als je stem gedempt klinkt.</string>
+    <string name="mic_noise_suppressor_summary">Vermindert achtergrondgeluid. Android Auto verwacht dat dit uit staat.</string>
     <string name="mic_auto_gain_control">Automatische versterkingsregeling (AGC)</string>
     <string name="mic_auto_gain_control_description">Past het microfoonvolume automatisch aan. Android Auto verwacht dat dit uit staat en past zelf versterkingsregeling toe. Samen klinkt het meestal slechter. Zet dit uit als het volume onstabiel is.</string>
+    <string name="mic_auto_gain_control_summary">Past het microfoonvolume aan. Android Auto verwacht dat dit uit staat.</string>
     <string name="mic_feature_unsupported">Deze functie wordt niet ondersteund op je apparaat.</string>
     <string name="bt_permission_denied">Bluetooth-toestemming geweigerd. Kan niet scannen naar apparaten.</string>
     <string name="bt_external_module_no_picker">De Bluetooth van dit apparaat wordt geleverd door een externe module en niet door de eigen radio van Android, dus er is hier geen Android-Bluetooth-apparatenlijst om uit te kiezen.</string>
@@ -594,7 +626,8 @@
     <!-- New strings merged from 2.3.1 -->
     <string name="bt_devices_selected">apparaten geselecteerd</string>
     <string name="static_audio_focus">Statische audiofocus</string>
-    <string name="static_audio_focus_description">Laat de telefoon geloven dat de audiofocus altijd wordt vastgehouden, zodat op generieke headunits geen audioroutering verloren gaat. Verlaagt ook softwarematig het volume (ducking) tijdens gesproken navigatie-instructies.</string>
+    <string name="static_audio_focus_description">Laat de telefoon geloven dat de audiofocus altijd vastgehouden wordt. Dit voorkomt geluidsonderbrekingen op generieke headunits die de focus verkeerd melden. Het verlaagt ook per software het muziekvolume tijdens gesproken navigatie-aanwijzingen. Laat het uit, tenzij het geluid wegvalt.</string>
+    <string name="static_audio_focus_summary">Meldt de telefoon dat de audiofocus altijd vastgehouden wordt, tegen geluidsonderbrekingen.</string>
     <string name="bluetooth_adapter_label">Bluetooth-adapter</string>
     <string name="bluetooth_adapter_description">Selecteer de Bluetooth-adapter/-controller die moet worden gebruikt voor de handshake. Handig voor systemen met dubbele Bluetooth.</string>
     <string name="select_bt_adapter">Bluetooth-adapter kiezen</string>
@@ -645,12 +678,14 @@
     <!-- Native USB Driver -->
     <string name="use_libusb">Native USB-stuurprogramma gebruiken</string>
     <string name="use_libusb_description">Gebruik libusb voor de communicatie. Zet dit uit om de standaard USB-API van Android te gebruiken.</string>
+    <string name="use_libusb_help">Gebruikt de eigen USB-bibliotheek van de app in plaats van het Android-USB-systeem voor de kabelverbinding met de telefoon. Laat dit uit. Zet het alleen aan als een telefoon via USB wordt gevonden maar Android Auto niet start. Voor een draadloze verbinding verandert het niets.</string>
     <string name="usb_keep_phone_media_audio">Media-audio van de telefoon aanhouden via USB</string>
     <string name="usb_keep_phone_media_audio_description">Android Auto kan tijdens een USB-sessie de Bluetooth-media-audio van de telefoon voor deze headunit uitschakelen. Met deze optie gebeurt dat niet. Gesprekken kunnen dan op de telefoon blijven in plaats van op de headunit.</string>
 
     <string name="software_video_decoder">Bron van softwaredecoder</string>
     <string name="software_video_decoder_bundled">Gebundeld FFmpeg</string>
     <string name="software_video_decoder_device">MediaCodec van het apparaat</string>
+    <string name="software_video_decoder_help">Geldt alleen als Softwaredecodering forceren aan staat. Gebundeld FFmpeg is de eigen decoder van de app en decodeert alleen H.265. MediaCodec van het apparaat gebruikt de softwaredecoder van het systeem. H.264-video gebruikt altijd de systeemdecoder.</string>
 
     <string name="btn_show_qr">QR-code tonen</string>
     <string name="renderer_fallback_surface">De video bleef bevriezen, daarom is de weergave voor deze sessie overgeschakeld naar SurfaceView. Als het stabiel is, stel View modes in op SurfaceView in Instellingen.</string>
@@ -917,6 +952,7 @@
     <string name="dpi_size_xl">XL</string>
     <string name="dpi_value_format">%1$d DPI</string>
     <string name="pixel_aspect_ratio">Pixelverhouding</string>
+    <string name="pixel_aspect_ratio_help">Wijzig dit alleen als cirkels op dit scherm als ovalen worden weergegeven. Dat gebeurt als de pixels van het paneel niet vierkant zijn. 10000 betekent vierkante pixels.</string>
     <string name="enter_pixel_aspect_ratio_value">Pixelverhouding x10000 (10000 = vierkante pixels)</string>
     <string name="cannot_open_settings">Systeeminstellingen konden niet worden geopend</string>
     <string name="static_bssid_enter_value">BSSID invoeren (XX:XX:XX:XX:XX:XX)</string>
@@ -925,17 +961,13 @@
     <string name="media_key_routing_always">Altijd</string>
     <string name="media_key_routing_auto">Automatisch</string>
     <string name="media_key_routing_never">Nooit</string>
-    <string name="media_key_routing_always_hint">Volgende, vorige en afspelen/pauzeren worden altijd naar Android Auto gestuurd. Kies dit, tenzij één druk twee nummers overslaat.</string>
-    <string name="media_key_routing_auto_hint">Stuurt ze niet door zolang deze headunit een Bluetooth-mediaverbinding met de telefoon heeft, omdat die verbinding de actie al uitvoert. Kies dit als één druk twee nummers overslaat en je telefoon met deze headunit is gekoppeld.</string>
-    <string name="media_key_routing_never_hint">Stuurt ze nooit door en laat de toetsen aan Bluetooth over. Kies dit als één druk twee nummers overslaat en je telefoon is gekoppeld met het eigen systeem van de auto en niet met deze headunit. Automatisch kan die verbinding niet herkennen.</string>
+    <string name="media_key_routing_help">Altijd: Volgende, vorige en afspelen/pauzeren worden altijd naar Android Auto gestuurd. Kies dit, tenzij één druk twee nummers overslaat.\n\nAutomatisch: Stuurt ze niet door zolang deze headunit een Bluetooth-mediaverbinding met de telefoon heeft, omdat die verbinding de actie al uitvoert. Kies dit als één druk twee nummers overslaat en je telefoon met deze headunit is gekoppeld.\n\nNooit: Stuurt ze nooit door en laat de toetsen aan Bluetooth over. Kies dit als één druk twee nummers overslaat en je telefoon is gekoppeld met het eigen systeem van de auto en niet met deze headunit. Automatisch kan die verbinding niet herkennen.</string>
     <string name="media_key_routing_hint_common">Dit geldt alleen voor de mediatoetsen. Draaiknoppen, D-pad, Terug en Enter bereiken Android Auto altijd.</string>
     <string name="playback_focus_mode">Andere audio pauzeren tijdens afspelen</string>
     <string name="playback_focus_mode_auto">Automatisch</string>
     <string name="playback_focus_mode_always">Altijd</string>
     <string name="playback_focus_mode_never">Nooit</string>
-    <string name="playback_focus_mode_auto_hint">Pauzeert een andere speler op de headunit (bijvoorbeeld de radio) terwijl Android Auto-audio wordt afgespeeld. Als blijkt dat daardoor het afspelen op je telefoon zelf stopt, wat gebeurt wanneer de headunit de Bluetooth-speaker van de telefoon is, doet het dit niet meer en onthoudt het dat. Kies deze modus opnieuw om het nog eens te proberen.</string>
-    <string name="playback_focus_mode_always_hint">Pauzeert andere audio altijd zolang Android Auto speelt. Stopt je muziek na een of twee seconden zodra Bluetooth aan staat, schakel dan terug naar Automatisch.</string>
-    <string name="playback_focus_mode_never_hint">Raakt de audiofocus van het systeem nooit aan. Andere audio op de headunit kan blijven doorspelen over Android Auto heen.</string>
+    <string name="playback_focus_mode_help">Automatisch: Pauzeert een andere speler op de headunit (bijvoorbeeld de radio) terwijl Android Auto-audio wordt afgespeeld. Als blijkt dat daardoor het afspelen op je telefoon zelf stopt, wat gebeurt wanneer de headunit de Bluetooth-speaker van de telefoon is, doet het dit niet meer en onthoudt het dat. Kies deze modus opnieuw om het nog eens te proberen.\n\nAltijd: Pauzeert andere audio altijd zolang Android Auto speelt. Stopt je muziek na een of twee seconden zodra Bluetooth aan staat, schakel dan terug naar Automatisch.\n\nNooit: Raakt de audiofocus van het systeem nooit aan. Andere audio op de headunit kan blijven doorspelen over Android Auto heen.</string>
     <string name="playback_focus_mode_static_hint">Als Statische audiofocus aan staat, geldt dit vanaf het moment dat de telefoon verbinding maakt en tijdens de hele sessie, en niet alleen terwijl er audio speelt.</string>
     <string name="github_issues_url">https://github.com/andreknieriem/open-headunit/issues</string>
     <string name="support_rules_english_title">All posts in English</string>
@@ -948,7 +980,8 @@
     <string name="external_bt_module_nativeaa">Native Wireless via de ZJ/ZLink-module</string>
     <string name="external_bt_module_nativeaa_desc">Je telefoon koppelt met de eigen Bluetooth-module van deze headunit (%1$s) en niet met de Bluetooth die Android aan apps aanbiedt. Daarom wordt de handshake via de ZJ/ZLink-dienst van de module verstuurd.\n\nExperimenteel: die ene dienst is de enige toegang. Start je telefoon Android Auto nooit, gebruik dan USB of een wifi-modus.</string>
     <string name="external_bt_transport">Verbinden via de Bluetooth-module van de headunit</string>
-    <string name="external_bt_transport_description">Experimenteel, en alleen voor apparaten met een ZJ/ZLink-Bluetooth-dienst. Stuurt de handshake voor draadloos Android Auto via de eigen Bluetooth-chip van dit apparaat, waarmee je telefoon echt is gekoppeld, in plaats van via de Bluetooth die Android aan apps aanbiedt.\n\nVoer eerst \"Bluetooth-module van de headunit testen\" uit, met deze instelling uit. Vindt de test niets dat luistert, dan doet deze instelling niets op jouw apparaat en werkt Native Wireless hier hoe dan ook niet. Antwoordt de module wel, zet dit dan aan en kies Native. Een test die draait terwijl deze instelling al aan staat en verbonden is, meldt dat, en dat is geen fout. Exporteer in beide gevallen het logboek.</string>
+    <string name="external_bt_transport_description">Experimenteel, voor apparaten met een ZJ/ZLink-Bluetoothservice. Stuurt de draadloze Android Auto-handshake via de Bluetooth-chip waaraan je telefoon is gekoppeld, niet via die Android aan apps toont. Voer eerst de test van de Bluetooth-module uit met dit uit. Vindt de test niets dat luistert, dan kan dit op jouw apparaat niets doen. Antwoordt hij, zet dit dan aan. Exporteer in beide gevallen het log.</string>
+    <string name="external_bt_transport_summary">Experimenteel. Stuurt de draadloze handshake via de eigen Bluetooth van dit apparaat.</string>
     <string name="zbt_probe_title">Bluetooth-module van de headunit testen</string>
     <string name="zbt_probe_idle">Tik om te starten</string>
     <string name="zbt_probe_running">Bezig…</string>
@@ -958,7 +991,8 @@
     <string name="external_bt_blink_transport">Verbinden via de externe FYT-Bluetooth-module</string>
     <string name="external_bt_module_controls_hint">Telefoonkoppeling, verbindingsprioriteit en stuurprogrammakeuze worden beheerd door de externe Bluetooth-module.</string>
     <string name="external_bt_module_last_phone">Laatste telefoon die via de module is verbonden</string>
-    <string name="external_bt_blink_transport_description">Experimenteel. Voor FYT-apparaten waarvan de telefoon voor gesprekken met een aparte Bluetooth-module koppelt, zoals \"DUDUAUTO\" op DUDUOS, de enige ROM die tot nu toe is getest. De module, en niet de Bluetooth van dit apparaat, voert de handshake voor draadloos Android Auto uit, en normaal beantwoordt de standaard Car Link-app die. Als dit aan staat, doet deze app dat in plaats daarvan, zodat gesprekken op de module en de autoluidsprekers blijven.\n\nSchakel eerst de standaard Car Link-app uit (pm disable-user com.syu.carlink), anders lezen beide apps hetzelfde kanaal. Het kanaal wordt zonder root geopend als het apparaat dat toestaat, anders via root. Kies Native, koppel de telefoon alleen met de module en exporteer het logboek als er geen verbinding komt.</string>
+    <string name="external_bt_blink_transport_description">Experimenteel, voor FYT-apparaten waarvan de telefoon voor gesprekken is gekoppeld met een aparte Bluetooth-module, zoals DUDUAUTO op DUDUOS. De module verzorgt de draadloze Android Auto-handshake, die normaal de originele Car Link-app beantwoordt. Als dit aan staat, beantwoordt deze app hem, zodat gesprekken op de module en de speakers van de auto blijven. Schakel eerst de originele Car Link-app uit (pm disable-user com.syu.carlink), anders lezen beide hetzelfde kanaal.</string>
+    <string name="external_bt_blink_transport_summary">Experimenteel. Beantwoordt de draadloze handshake op de Bluetooth-module van een FYT-apparaat.</string>
     <string name="external_bt_blink_refused_stock_enabled">Externe Bluetooth-module: de standaard Car Link-app is nog ingeschakeld. Schakel hem uit (pm disable-user com.syu.carlink) of zet dit transport uit.</string>
     <string name="external_bt_blink_refused_stock_running">Externe Bluetooth-module: de standaard Car Link-app is uitgeschakeld maar draait nog. Start het apparaat opnieuw op.</string>
     <string name="external_bt_blink_refused_root">Externe Bluetooth-module: voor het openen van het kanaal van de module is root nodig op dit apparaat, en roottoegang is geweigerd of niet beschikbaar.</string>
@@ -1026,7 +1060,7 @@
     <string name="stand_down_station_auto">Automatisch</string>
     <string name="stand_down_station_always">Altijd</string>
     <string name="stand_down_station_never">Nooit</string>
-    <string name="stand_down_station_hint">Automatisch verlaat het eigen netwerk van dit apparaat alleen als de radio een 5 GHz-band heeft en dat netwerk op 2,4 GHz draait, zodat de Wi-Fi Direct-groep een 5 GHz-kanaal voor zich heeft. Op een apparaat met alleen 2,4 GHz blijft het verbonden, omdat verlaten het apparaat alleen naar netwerken zou laten zoeken. Dat geldt ook als het netwerk al op 5 GHz zit. Na afloop van de sessie maakt het apparaat weer verbinding met het netwerk. Probeer Altijd of Nooit als het beeld hapert.</string>
+    <string name="stand_down_station_hint">Bepaalt of dit apparaat zijn eigen wifi-netwerk verlaat terwijl de telefoon verbindt, zodat de WiFi Direct-groep een 5 GHz-kanaal kan gebruiken. Auto verlaat het alleen als de radio een 5 GHz-band heeft en het netwerk op 2,4 GHz zit, of als de groep naast een 5 GHz-netwerk op 2,4 GHz wordt gedwongen. Een apparaat met alleen 2,4 GHz blijft verbonden, want verlaten laat het alleen netwerken zoeken. Het netwerk wordt opnieuw verbonden als de sessie eindigt. Probeer Altijd of Nooit als het beeld hapert.</string>
     <string name="stand_down_station_needs_overlay">Vereist op deze Android-versie de toestemming \"Weergeven vóór andere apps\".</string>
     <string name="connection_issue_banner_bt_silent">Je telefoon is via Bluetooth verbonden, maar de Bluetooth van dit apparaat kon niets sturen. Tik om een modus te kiezen die dit niet nodig heeft, zoals Wireless Helper.</string>
     <string name="connection_issue_banner_bssid">Je telefoon kreeg niet te horen met welk netwerk hij verbinding moest maken, omdat dit apparaat zijn wifi-adres niet deelde. Zet Locatie aan, of tik om het adres handmatig in te voeren.</string>
@@ -1034,8 +1068,11 @@
     <string name="connection_issue_banner_wifi_direct_refused">Dit apparaat kon geen Wi-Fi Direct-netwerk voor je telefoon aanmaken. Verbreek de verbinding met ander wifi, of tik om in plaats daarvan de hotspot te gebruiken.</string>
     <string name="connection_issue_banner_wifi_direct_cycled">Een andere app zet Wi-Fi Direct steeds uit, meestal een vooraf geïnstalleerde projectie-app zoals ZLink of CarLife. Schakel die uit, of tik om in plaats daarvan de hotspot te gebruiken.</string>
     <string name="connection_issue_banner_hotspot_config">Dit apparaat deelt de hotspotnaam en het wachtwoord niet met de app. Tik om ze handmatig in te voeren.</string>
+    <string name="auto_restart_wifi_summary">Start wifi zelf opnieuw als WiFi Direct vastloopt. Vereist root of lokale ADB.</string>
+    <string name="auto_restart_wifi_description">Zet wifi zelf uit en weer aan als WiFi Direct vastloopt. Dat kan gebeuren nadat de app midden in een sessie is gesloten. Vereist root of lokale ADB. Draait nooit tijdens een sessie.</string>
     <string name="narrow_band_profile_cap">Lagere video bij een 2,4 GHz-verbinding</string>
-    <string name="narrow_band_profile_cap_description">Als deze sessie op 2,4 GHz draait, of dat nu is omdat de wifi van dit apparaat geen 5GHz-band heeft of omdat het netwerk daar is opgekomen, vraag de telefoon dan om maximaal 720p en 30 fps in plaats van de instellingen hierboven, en om AAC-audio. Op zo\'n verbinding bleek uit metingen dat een stream op volle snelheid helemaal geen beeld doorgaf, terwijl een lagere het wel volhield. Zet dit uit om precies te krijgen wat je hebt ingesteld.</string>
+    <string name="narrow_band_profile_cap_description">Vraagt op een 2,4 GHz-verbinding de telefoon om hooguit 720p, 30 fps en AAC-audio in plaats van je video-instellingen. Op die verbinding bleek een stream op volle snelheid helemaal geen beeld te tonen, terwijl een lagere standhield. Zet uit om precies te krijgen wat je instelde, en verwacht een leeg beeld als de verbinding dat niet aankan.</string>
+    <string name="narrow_band_profile_cap_summary">Vraagt op 2,4 GHz de telefoon om 720p, 30 fps en AAC-audio.</string>
     <string name="connection_issue_banner_video_link_too_slow">De wifi-verbinding was te traag voor video, dus heeft de app dit verlaagd naar 720p bij 30 FPS. Tik om zelf de resolutie in te stellen. Een 5GHz-netwerk helpt ook.</string>
     <string name="connection_issue_banner_five_ghz_channel_refused">Dit apparaat wilde het door jou gekozen 5GHz-kanaal niet gebruiken en koos er een dat sommige telefoons niet zien. Tik om Wi-Fi Direct naar 2,4 GHz te zetten, wat overal werkt.</string>
     <string name="connection_issue_banner_headunit_server_deaf">De headunitserver van Android Auto op je telefoon reageert niet meer. Stop de server op je telefoon en start hem opnieuw in de ontwikkelaarsinstellingen van Android Auto.</string>
@@ -1055,6 +1092,7 @@
     <string name="preflight_invalid_bssid">Dat is geen wifi-adres. Voer zes paren hexadecimale cijfers in, zoals 02:1A:11:FF:3C:4D.</string>
     <string name="native_aa_ignore_external_bt">Bluetooth-compatibiliteitscontrole negeren</string>
     <string name="native_aa_ignore_external_bt_description">Dit apparaat lijkt Bluetooth op een aparte module te hebben die Android niet kan bereiken, daarom wordt draadloos Android Auto automatisch uitgeschakeld. Standaard uit. Schakel het alleen in als je denkt dat dat niet klopt: als de detectie klopt, mislukt de verbinding geruisloos en ziet het logboek er gezond uit.</string>
+    <string name="native_aa_ignore_external_bt_summary">Houdt draadloos aan, ook al lijkt dit apparaat zijn Bluetooth-module te verbergen.</string>
     <string name="native_aa_setup_qr_title">Instellen met QR-code</string>
     <string name="native_aa_setup_qr_description">Een code tonen die de telefoon kan scannen.</string>
     <string name="native_aa_setup_qr_content_description">QR-code om draadloos Android Auto in te stellen</string>
@@ -1084,11 +1122,13 @@
     <string name="failed_aa_not_installed">Mislukt: Android Auto is niet geïnstalleerd!</string>
     <string name="raise_projection_during_call">In Android Auto blijven tijdens gesprekken</string>
     <string name="raise_projection_during_call_description">Alleen Self Mode. Haalt de projectie terug over het belscherm van de telefoon, zodat gesprekken in de Android Auto-interface worden aangenomen en beëindigd.</string>
+    <string name="raise_projection_during_call_summary">Alleen in de zelfstandige modus. Toont de projectie over het gespreksscherm van de telefoon.</string>
     <string name="audio_stream_settings">Audiostreams</string>
     <string name="audio_stream_settings_description">Kies via welke systeemstream elk Android Auto-kanaal wordt afgespeeld.</string>
     <string name="audio_stream_settings_info">Android Auto verstuurt audio via drie kanalen: Media, Navigatiestem en Systeemgeluiden. Elk kanaal bereikt de headunit via een systeemstream. De gekozen stream bepaalt welke volumetoets erbij hoort en, op veel headunits, of de versterker er wel voor wordt aangezet. Gebruik de luidsprekerknop om vóór het opslaan een testtoon op de stream te horen.</string>
     <string name="audio_channel_media">Media</string>
     <string name="audio_channel_media_description">Weergave door apps: muziek, podcasts, radio en luisterboeken. Het enige kanaal dat in stereo wordt verstuurd (48 kHz).</string>
+    <string name="audio_channel_media_summary">Afspelen van apps: muziek, podcasts, radio, audioboeken. Stereo, 48 kHz.</string>
     <string name="audio_channel_guidance">Navigatiestem / Navigatie</string>
     <string name="audio_channel_guidance_description">Gesproken routeaanwijzingen en de antwoorden van de spraakassistent (16 kHz mono).</string>
     <string name="audio_channel_system">Systeemgeluiden / Meldingen</string>
@@ -1096,6 +1136,7 @@
     <string name="audio_channel_all">Media, Navigatiestem, Navigatie, Meldingen en Systeem</string>
     <string name="audio_channel_all_short">alle kanalen</string>
     <string name="audio_channel_all_description">Alle audiokanalen van Android Auto (weergave door apps, gesproken aanwijzingen, waarschuwingen en meldingsgeluiden) delen deze ene uitvoerstream.</string>
+    <string name="audio_channel_all_summary">Alle audiokanalen van Android Auto delen deze ene uitvoerstream.</string>
     <string name="audio_stream_test">Testtoon afspelen op deze stream</string>
     <string name="setting_help_for">Hulp bij %1$s</string>
     <string name="audio_stream_muted_warning">%1$s staat op dit apparaat uit; zet het volume hoger om de testtoon te horen.</string>
@@ -1143,6 +1184,7 @@
     <string name="select_bt_poke_device">Selecteer het te wekken Bluetooth-apparaat</string>
     <string name="native_poke_all_paired_label">Alle gekoppelde apparaten wekken</string>
     <string name="native_poke_all_paired_description">Als hierboven geen apparaat is gekozen, wordt kort verbinding gemaakt met elk gekoppeld apparaat om Android Auto te starten. Zet dit uit om niets te wekken tot je een apparaat kiest.</string>
+    <string name="native_poke_all_paired_summary">Als er geen apparaat is gekozen, worden alle gekoppelde apparaten gewekt.</string>
     <string name="auto_disconnect_bt_delay_label">Wachten vóór verbreken</string>
     <string name="auto_disconnect_bt_delay_value">%1$d s</string>
     <string name="auto_disconnect_bt_delay_immediate">Direct</string>
@@ -1160,21 +1202,26 @@
     <string name="five_ghz_channel_hint">Een kanaal is een verzoek, geen garantie. Veel units maken het netwerk alleen aan op het kanaal dat hun eigen Wi-Fi-driver kiest, en de app kan je dat pas na een poging laten weten. Werkt geen enkel 5 GHz-kanaal en ziet je telefoon het netwerk nog steeds niet, dan lost de band hierboven het probleem op.</string>
     <string name="wifi_direct_stable_identity">Hetzelfde Wi-Fi Direct-netwerk behouden</string>
     <string name="wifi_direct_stable_identity_description">Gebruikt elke keer dezelfde netwerknaam en hetzelfde wachtwoord, zodat je telefoon opnieuw verbindt met een netwerk dat hij al kent. Gebruik de regel hieronder om ze te vernieuwen.</string>
+    <string name="wifi_direct_stable_identity_summary">Hergebruikt één netwerknaam en wachtwoord zodat je telefoon opnieuw verbinding maakt.</string>
     <string name="wifi_direct_new_identity">Nieuwe Wi-Fi Direct-netwerkidentiteit</string>
     <string name="wifi_direct_new_identity_none">Gekozen bij de volgende verbinding</string>
     <string name="wifi_direct_new_identity_confirm">Kiest een nieuwe naam en een nieuw wachtwoord voor de groep, te gebruiken vanaf de volgende verbinding. Je telefoon wordt via Bluetooth ingesteld alsof dit een nieuwe head-unit is. Doe dit als je telefoon blijft proberen verbinding te maken met een netwerk waar hij niet meer op kan.</string>
     <string name="wifi_direct_new_identity_done">Vanaf de volgende verbinding wordt een nieuwe netwerkidentiteit gebruikt.</string>
     <string name="wifi_direct_new_identity_applied">Er wordt nu een nieuwe netwerkidentiteit ingesteld. Je telefoon krijgt bij de volgende verbinding het verzoek om er verbinding mee te maken.</string>
     <string name="wifi_direct_stable_identity_description_legacy">In deze Android-versie kiest het systeem de naam en kan de app er niet zelf een aanvragen. Laat dit aan staan zodat je telefoon opnieuw verbindt met een netwerk dat hij al kent, overal waar het systeem er een bewaart, en gebruik de regel hieronder om die te vernieuwen.</string>
+    <string name="wifi_direct_stable_identity_legacy_summary">Het systeem bepaalt de netwerknaam. Laat dit aan zodat je telefoon opnieuw verbinding maakt.</string>
     <string name="debug_video_low_latency">Lage-latentiemodus van decoder aanvragen</string>
     <string name="debug_video_low_latency_description">Stelt de fabrikantspecifieke MediaFormat-sleutel voor lage latentie in bij het configureren van de videodecoder. Valt automatisch terug als de decoder de sleutel weigert.</string>
+    <string name="debug_video_low_latency_summary">Vraagt de videodecoder om zijn low-latencymodus van de fabrikant.</string>
     <string name="debug_video_feed_hold">Trage decoder simuleren</string>
 
     <string name="category_more_features">Meer functies</string>
     <string name="pref_enable_floating_button_title">Zwevende startknop</string>
-    <string name="pref_enable_floating_button_summary">Toont een zwevende knop boven de OEM-launcher en andere apps om snel terug te keren naar Open Headunit.</string>
+    <string name="pref_enable_floating_button_summary">Toont een knop om terug te keren naar Open Headunit.</string>
+    <string name="pref_enable_floating_button_help">Toont een zwevende knop boven de OEM-launcher en andere apps om snel terug te keren naar Open Headunit.</string>
     <string name="pref_floating_button_connection_status_title">Verbindingsstatus-indicator</string>
-    <string name="pref_floating_button_connection_status_summary">Gebruikt Dekking bij verbroken verbinding als er geen telefoon is verbonden en vervaagt naar Dekking van zwevende knop zodra er een telefoon is verbonden. Bij 0% is de knop verborgen en laat hij tikken door.</string>
+    <string name="pref_floating_button_connection_status_summary">Dimt de knop zolang een telefoon verbonden is.</string>
+    <string name="pref_floating_button_connection_status_help">Gebruikt Dekking bij verbroken verbinding als er geen telefoon is verbonden en vervaagt naar Dekking van zwevende knop zodra er een telefoon is verbonden. Bij 0% is de knop verborgen en laat hij tikken door.</string>
     <string name="pref_floating_button_size_title">Grootte van zwevende knop</string>
     <string name="pref_floating_button_opacity_title">Dekking van zwevende knop</string>
     <string name="pref_floating_button_disconnected_opacity_title">Dekking bij verbroken verbinding</string>
@@ -1274,7 +1321,8 @@
     <string name="native_aa_wake_remeasure_confirm">Android Auto start draadloos alleen als het de Bluetooth-verbinding ziet veranderen. Als dit apparaat de handsfreeverbinding al vasthoudt, moet de app die verbreken om dat te laten gebeuren, dus meet hij één keer of de verbinding terugkomt en stopt hij als dat niet zo is. Gebruik dit als draadloos niet meer vanzelf start en je bereid bent handsfree even kwijt te raken terwijl hij het opnieuw probeert.</string>
     <string name="native_aa_wake_remeasure_done">De Bluetooth-wekking wordt bij de volgende verbinding opnieuw gemeten.</string>
     <string name="pref_enable_car_launcher_title">Gebruiken als autolauncher</string>
-    <string name="pref_enable_car_launcher_summary">Registreert Open Headunit als startschermapp wanneer op de Home-knop van de auto of headunit wordt gedrukt.</string>
+    <string name="pref_enable_car_launcher_summary">Opent de app met de Home-knop.</string>
+    <string name="pref_enable_car_launcher_help">Registreert Open Headunit als startschermapp wanneer op de Home-knop van de auto of headunit wordt gedrukt.</string>
     <string name="pref_set_default_launcher_title">Standaard startapp</string>
     <string name="pref_default_launcher_status_active">Actief (tik om te beheren)</string>
     <string name="pref_default_launcher_status_inactive">Niet ingesteld (tik om als standaard in te stellen)</string>

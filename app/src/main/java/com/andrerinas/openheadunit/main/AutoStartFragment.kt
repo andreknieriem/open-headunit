@@ -316,7 +316,8 @@ class AutoStartFragment : Fragment() {
             items.add(SettingItem.ToggleSettingEntry(
                 stableId = "autoStartOnBoot",
                 nameResId = R.string.auto_start_on_boot_label,
-                descriptionResId = R.string.auto_start_on_boot_description,
+                descriptionResId = R.string.auto_start_on_boot_summary,
+                helpResId = R.string.auto_start_on_boot_description,
                 isChecked = pendingAutoStartOnBoot!!,
                 onCheckedChanged = { isChecked ->
                     pendingAutoStartOnBoot = isChecked
@@ -329,7 +330,8 @@ class AutoStartFragment : Fragment() {
         items.add(SettingItem.ToggleSettingEntry(
             stableId = "autoStartOnScreenOn",
             nameResId = R.string.auto_start_screen_on_label,
-            descriptionResId = R.string.auto_start_screen_on_description,
+            descriptionResId = R.string.auto_start_screen_on_summary,
+            helpResId = R.string.auto_start_screen_on_description,
             isChecked = pendingAutoStartOnScreenOn!!,
             onCheckedChanged = { isChecked ->
                 pendingAutoStartOnScreenOn = isChecked
@@ -353,7 +355,8 @@ class AutoStartFragment : Fragment() {
         items.add(SettingItem.ToggleSettingEntry(
             stableId = "autoStartUsb",
             nameResId = R.string.auto_start_usb_label,
-            descriptionResId = R.string.auto_start_usb_description,
+            descriptionResId = R.string.auto_start_usb_summary,
+            helpResId = R.string.auto_start_usb_description,
             isChecked = pendingAutoStartOnUsb!!,
             onCheckedChanged = { isChecked ->
                 pendingAutoStartOnUsb = isChecked
@@ -366,7 +369,8 @@ class AutoStartFragment : Fragment() {
             items.add(SettingItem.ToggleSettingEntry(
                 stableId = "reopenOnReconnection",
                 nameResId = R.string.reopen_on_reconnection_label,
-                descriptionResId = R.string.reopen_on_reconnection_description,
+                descriptionResId = R.string.reopen_on_reconnection_summary,
+                helpResId = R.string.reopen_on_reconnection_description,
                 isChecked = pendingReopenOnReconnection ?: settings.rawReopenOnReconnection,
                 onCheckedChanged = { isChecked ->
                     pendingReopenOnReconnection = isChecked
@@ -378,6 +382,7 @@ class AutoStartFragment : Fragment() {
         items.add(SettingItem.SettingEntry(
             stableId = "autoStartBt",
             nameResId = R.string.auto_start_bt_label,
+            descriptionResId = R.string.auto_start_bt_description,
             value = getBluetoothSummaryText(),
             onClick = {
                 showBluetoothDeviceSelector(BtPickerTarget.AUTO_START)
@@ -414,7 +419,8 @@ class AutoStartFragment : Fragment() {
                 items.add(SettingItem.ToggleSettingEntry(
                     stableId = "nativePokeAllPaired",
                     nameResId = R.string.native_poke_all_paired_label,
-                    descriptionResId = R.string.native_poke_all_paired_description,
+                    descriptionResId = R.string.native_poke_all_paired_summary,
+                    helpResId = R.string.native_poke_all_paired_description,
                     isChecked = pendingNativePokeAllPaired ?: true,
                     onCheckedChanged = { isChecked ->
                         pendingNativePokeAllPaired = isChecked
@@ -427,6 +433,7 @@ class AutoStartFragment : Fragment() {
         items.add(SettingItem.SettingEntry(
             stableId = "autoDisconnectBt",
             nameResId = R.string.auto_disconnect_bt_label,
+            helpResId = R.string.auto_disconnect_bt_kill_hint,
             value = BluetoothDevicePicker.summaryFor(requireContext(), pendingAutoDisconnectBtMacs)
                 ?: getString(R.string.bt_device_not_set),
             onClick = {
@@ -444,11 +451,6 @@ class AutoStartFragment : Fragment() {
                 onClick = {
                     showAutoDisconnectDelayDialog()
                 }
-            ))
-
-            items.add(SettingItem.InfoBanner(
-                stableId = "autoDisconnectBtKillHint",
-                textResId = R.string.auto_disconnect_bt_kill_hint
             ))
         }
 
@@ -492,7 +494,7 @@ class AutoStartFragment : Fragment() {
             "autoStartWifiWarning", "autoStartWifi", "autoStartWifiSsid",
             "nativePokeBt", "nativePokeAllPaired",
         )
-        val btIds = setOf("autoStartBt", "autoDisconnectBt", "autoDisconnectBtDelay", "autoDisconnectBtKillHint")
+        val btIds = setOf("autoStartBt", "autoDisconnectBt", "autoDisconnectBtDelay")
         val filtered = items.filterNot { item ->
             (item.stableId in usbIds && !settings.showsUsb()) ||
                 (item.stableId in wifiIds && !settings.showsWifi()) ||

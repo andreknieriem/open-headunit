@@ -278,6 +278,11 @@
     <string name="auto_connect_settings">자동 연결 설정</string>
     <string name="auto_connect_settings_description">자동 연결 방법과 우선순위를 설정합니다.</string>
     <string name="auto_connect_help">앱을 열면 이 연결 방법들이 자동으로 실행됩니다. 원하는 방법을 사용 설정한 뒤 드래그하여 순서를 정하세요. 사용 설정된 방법 중 가장 먼저 연결에 성공한 방법을 사용합니다.</string>
+    <string name="auto_connect_screen_help">앱을 열 때 스스로 연결하는 방법을 설정합니다. 원하는 방법을 사용 설정하고 시도할 순서대로 끌어 놓으세요. 처음으로 성공한 방법이 사용됩니다. 지연 시간은 느린 기기에서 Wi-Fi가 깨어날 시간을 줍니다. 직접 시작한 연결은 여기서 바뀌지 않습니다. 저장을 누르면 변경사항이 적용됩니다.</string>
+    <string name="dpi_screen_help">Android Auto가 화면을 그릴 때 쓰는 픽셀 밀도를 설정합니다. DPI가 높으면 아이콘과 글자가 커져서 화면에 들어가는 내용이 줄어듭니다. DPI가 낮으면 작아져서 더 많이 들어갑니다. 자동은 이 기기의 밀도를 사용합니다. 새 값은 다음 연결부터 적용됩니다.</string>
+    <string name="keymap_screen_help">이 기기의 키와 버튼을 Android Auto 동작에 할당합니다. 행을 탭한 다음 할당할 키를 누르세요. 초기화하면 지정한 할당이 모두 삭제되고 기본값으로 돌아갑니다. 핸들이나 패널의 키가 잘못 동작할 때 사용하세요.</string>
+    <string name="customization_screen_help">이 앱 홈 화면의 모양을 변경합니다. 배경 이미지, 버튼 4개의 색상과 크기, 글자 크기가 해당됩니다. 야간 설정은 다크 모드의 배경을 제어합니다. 이 중 어느 것도 Android Auto가 투사 화면에 표시하는 내용을 바꾸지 않습니다.</string>
+    <string name="loading_screen_screen_help">Android Auto가 시작되는 동안 표시할 이미지나 짧은 동영상을 설정합니다. 10MB 이하의 이미지나 동영상을 선택하고, 화면에 맞게 크기를 조정하며, 짧은 애니메이션은 반복 재생할 수 있습니다. 시작 문구를 숨길 수도 있습니다. 제거하면 기본 화면으로 돌아갑니다.</string>
     <string name="auto_connect_priority">우선순위 %d</string>
     <string name="auto_connect_all_disabled">모두 사용 중지됨</string>
     <string name="drag_to_reorder">드래그하여 순서 변경</string>

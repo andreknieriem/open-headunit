@@ -237,6 +237,11 @@
     <string name="auto_connect_settings">Configurações de conexão automática</string>
     <string name="auto_connect_settings_description">Configure os métodos de conexão automática e a ordem de prioridade.</string>
     <string name="auto_connect_help">Estes métodos são executados automaticamente ao abrir o app. Ative os que desejar e arraste para definir a ordem. O primeiro método ativo que tiver sucesso será usado.</string>
+    <string name="auto_connect_screen_help">Define como o app se conecta sozinho ao abrir. Ative os métodos que quiser e arraste na ordem em que serão tentados. O primeiro que funcionar é usado. O atraso dá tempo para o Wi-Fi acordar em uma unidade lenta. Nada aqui altera uma conexão que você inicia. Salvar aplica as mudanças.</string>
+    <string name="dpi_screen_help">Define a densidade de pixels com que o Android Auto desenha. Um DPI maior deixa ícones e texto maiores, e cabe menos na tela. Um DPI menor os deixa menores, e cabe mais. Automático usa a densidade deste dispositivo. O novo valor vale a partir da próxima conexão.</string>
+    <string name="keymap_screen_help">Associa as teclas e os botões desta unidade a ações do Android Auto. Toque em uma linha e pressione a tecla a atribuir. Redefinir remove todas as suas atribuições e volta ao padrão. Use quando uma tecla do volante ou do painel fizer a coisa errada.</string>
+    <string name="customization_screen_help">Muda a aparência da tela inicial deste app: a imagem de fundo, as cores e o tamanho dos quatro botões e o tamanho do texto. A configuração noturna controla o fundo no modo escuro. Nada disso muda o que o Android Auto mostra na projeção.</string>
+    <string name="loading_screen_screen_help">Define a imagem ou o vídeo curto exibido enquanto o Android Auto inicia. Escolha uma imagem ou um vídeo de até 10 MB, ajuste à tela e repita animações curtas em loop. Também dá para ocultar o texto de inicialização. Remover volta à tela padrão.</string>
     <string name="auto_connect_priority">Prioridade %d</string>
     <string name="auto_connect_all_disabled">Todos desativados</string>
     <string name="drag_to_reorder">Arraste para reordenar</string>

@@ -236,6 +236,11 @@
     <string name="auto_connect_settings">自動連線設定</string>
     <string name="auto_connect_settings_description">設定自動連線方式及其優先順序。</string>
     <string name="auto_connect_help">這些方式會在開啟應用程式時自動執行。啟用您想要的方式，然後拖曳以設定順序。系統會使用第一個成功的已啟用方式。</string>
+    <string name="auto_connect_screen_help">設定應用程式開啟時如何自動連線。開啟需要的方式，並拖曳排列嘗試順序。系統會使用第一個成功的方式。延遲可讓速度較慢的車機有時間喚醒 Wi-Fi。這裡的設定不會影響你自行發起的連線。輕觸「儲存」即可套用變更。</string>
+    <string name="dpi_screen_help">設定 Android Auto 繪製時使用的像素密度。DPI 越高，圖示和文字越大，螢幕容納的內容越少。DPI 越低，圖示和文字越小，容納的內容越多。「自動」會使用本裝置的密度。新數值會在下次連線時生效。</string>
+    <string name="keymap_screen_help">將本車機的按鍵對應到 Android Auto 動作。輕觸一列，然後按下要指派的按鍵。「重設」會刪除你的所有對應並還原預設值。方向盤或面板按鍵反應錯誤時可以使用。</string>
+    <string name="customization_screen_help">變更本應用程式主畫面的外觀：背景圖片、四個按鈕的顏色和大小，以及文字大小。夜間設定會控制深色模式下的背景。這些都不會改變 Android Auto 在投影中顯示的內容。</string>
+    <string name="loading_screen_screen_help">設定 Android Auto 啟動時顯示的圖片或短片。可選擇不超過 10 MB 的圖片或影片，縮放以符合螢幕，並循環播放短動畫。也可以隱藏啟動文字。「移除」會還原預設畫面。</string>
     <string name="auto_connect_priority">優先順序 %d</string>
     <string name="auto_connect_all_disabled">全部已停用</string>
     <string name="drag_to_reorder">拖曳以重新排序</string>

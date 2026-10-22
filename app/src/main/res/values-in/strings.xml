@@ -510,6 +510,11 @@
     <string name="auto_connect_settings">Pengaturan Koneksi Otomatis</string>
     <string name="auto_connect_settings_description">Konfigurasikan metode koneksi otomatis dan urutan prioritasnya.</string>
     <string name="auto_connect_help">Metode ini berjalan otomatis saat aplikasi dibuka. Aktifkan metode yang diinginkan, lalu seret untuk mengatur urutan. Metode aktif pertama yang berhasil akan digunakan.</string>
+    <string name="auto_connect_screen_help">Mengatur cara aplikasi terhubung sendiri saat dibuka. Aktifkan metode yang diinginkan dan seret ke urutan percobaan. Metode pertama yang berhasil dipakai. Jeda memberi waktu bagi Wi-Fi untuk aktif di unit yang lambat. Tidak ada yang di sini mengubah koneksi yang Anda mulai sendiri. Simpan menerapkan perubahan.</string>
+    <string name="dpi_screen_help">Mengatur kepadatan piksel yang dipakai Android Auto untuk menggambar. DPI lebih tinggi membuat ikon dan teks lebih besar, jadi lebih sedikit yang muat di layar. DPI lebih rendah membuatnya lebih kecil, jadi lebih banyak yang muat. Otomatis memakai kepadatan perangkat ini. Nilai baru berlaku pada koneksi berikutnya.</string>
+    <string name="keymap_screen_help">Memetakan tombol unit ini ke tindakan Android Auto. Ketuk satu baris, lalu tekan tombol yang akan ditetapkan. Atur Ulang menghapus semua pemetaan Anda dan kembali ke bawaan. Gunakan saat tombol kemudi atau panel melakukan hal yang salah.</string>
+    <string name="customization_screen_help">Mengubah tampilan layar utama aplikasi ini: gambar latar, warna dan ukuran empat tombol, serta ukuran teks. Setelan malam mengatur latar di mode gelap. Tidak satu pun mengubah apa yang ditampilkan Android Auto pada proyeksi.</string>
+    <string name="loading_screen_screen_help">Mengatur gambar atau video singkat yang ditampilkan saat Android Auto dimulai. Pilih gambar atau video hingga 10 MB, skalakan agar pas dengan layar, dan ulang animasi pendek. Anda juga bisa menyembunyikan teks awal. Hapus kembali ke layar bawaan.</string>
     <string name="auto_connect_priority">Prioritas %d</string>
     <string name="auto_connect_all_disabled">Semua dinonaktifkan</string>
     <string name="drag_to_reorder">Seret untuk menyusun ulang</string>

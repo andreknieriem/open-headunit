@@ -237,6 +237,11 @@
     <string name="auto_connect_settings">Nastavení automatického připojení</string>
     <string name="auto_connect_settings_description">Nastavte metody automatického připojení a jejich pořadí.</string>
     <string name="auto_connect_help">Tyto metody se spouštějí automaticky při otevření aplikace. Zapněte požadované metody a přetažením nastavte jejich pořadí. Použije se první zapnutá metoda, která uspěje.</string>
+    <string name="auto_connect_screen_help">Určuje, jak se aplikace po otevření připojí sama. Zapněte požadované metody a přetažením je seřaďte do pořadí zkoušení. Použije se první, která uspěje. Prodleva dá Wi-Fi čas probudit se na pomalém autorádiu. Nic z toho nemění připojení, které spustíte sami. Uložit změny použije.</string>
+    <string name="dpi_screen_help">Nastavuje hustotu pixelů, ve které Android Auto vykresluje. Vyšší DPI zvětší ikony a text, takže se na obrazovku vejde méně. Nižší DPI je zmenší, takže se vejde více. Automaticky používá hustotu tohoto zařízení. Nová hodnota platí od dalšího připojení.</string>
+    <string name="keymap_screen_help">Přiřazuje klávesy a tlačítka tohoto autorádia k akcím Android Auto. Klepněte na řádek a stiskněte klávesu, kterou chcete přiřadit. Resetovat odstraní všechna vaše přiřazení a vrátí výchozí nastavení. Použijte to, když klávesa na volantu nebo panelu dělá něco jiného.</string>
+    <string name="customization_screen_help">Mění vzhled domovské obrazovky této aplikace: obrázek na pozadí, barvy a velikost čtyř tlačítek a velikost textu. Noční nastavení řídí pozadí v tmavém režimu. Nic z toho nemění, co Android Auto zobrazuje v projekci.</string>
+    <string name="loading_screen_screen_help">Nastavuje obrázek nebo krátké video zobrazené při spouštění Android Auto. Vyberte obrázek nebo video do 10 MB, přizpůsobte je obrazovce a krátké animace přehrávejte ve smyčce. Můžete také skrýt úvodní text. Odebrat vrátí výchozí obrazovku.</string>
     <string name="auto_connect_priority">Priorita %d</string>
     <string name="auto_connect_all_disabled">Vše vypnuto</string>
     <string name="drag_to_reorder">Přetáhněte pro změnu pořadí</string>

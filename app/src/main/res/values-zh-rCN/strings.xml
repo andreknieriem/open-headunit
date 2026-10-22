@@ -236,6 +236,11 @@
     <string name="auto_connect_settings">自动连接设置</string>
     <string name="auto_connect_settings_description">设置自动连接方式及其优先级。</string>
     <string name="auto_connect_help">这些方式会在应用打开时自动执行。启用您想要的方式，然后拖动以设置顺序。系统会使用第一个成功的已启用方式。</string>
+    <string name="auto_connect_screen_help">设置应用打开时如何自动连接。开启所需的方式，并拖动排列尝试顺序。使用第一个成功的方式。延迟可让速度较慢的车机有时间唤醒 Wi-Fi。这里的设置不会影响你自己发起的连接。点按“保存”即可应用更改。</string>
+    <string name="dpi_screen_help">设置 Android Auto 绘制时使用的像素密度。DPI 越高，图标和文字越大，屏幕容纳的内容越少。DPI 越低，图标和文字越小，容纳的内容越多。“自动”使用本设备的密度。新值将在下次连接时生效。</string>
+    <string name="keymap_screen_help">将本车机的按键映射到 Android Auto 操作。点按一行，然后按下要分配的按键。“重置”会删除你的所有映射并恢复默认值。方向盘或面板按键响应错误时可使用。</string>
+    <string name="customization_screen_help">更改本应用主屏幕的外观：背景图片、四个按钮的颜色和大小，以及文字大小。夜间设置控制深色模式下的背景。这些都不会改变 Android Auto 在投屏中显示的内容。</string>
+    <string name="loading_screen_screen_help">设置 Android Auto 启动时显示的图片或短视频。可选择不超过 10 MB 的图片或视频，缩放以适应屏幕，并循环播放短动画。也可以隐藏启动文字。“移除”会恢复默认屏幕。</string>
     <string name="auto_connect_priority">优先级 %d</string>
     <string name="auto_connect_all_disabled">全部已停用</string>
     <string name="drag_to_reorder">拖动以重新排序</string>

@@ -254,6 +254,11 @@
     <string name="auto_connect_settings">Cài đặt tự kết nối</string>
     <string name="auto_connect_settings_description">Cấu hình phương thức tự kết nối và thứ tự ưu tiên.</string>
     <string name="auto_connect_help">Các phương thức này chạy tự động khi mở ứng dụng. Bật các mục mong muốn rồi kéo để sắp thứ tự. Phương thức đầu tiên thành công sẽ được dùng.</string>
+    <string name="auto_connect_screen_help">Đặt cách ứng dụng tự kết nối khi mở. Bật các phương thức bạn muốn và kéo chúng theo thứ tự thử. Phương thức thành công đầu tiên được dùng. Độ trễ cho Wi-Fi thời gian khởi động trên thiết bị chậm. Không mục nào ở đây thay đổi kết nối do bạn tự bắt đầu. Lưu sẽ áp dụng các thay đổi.</string>
+    <string name="dpi_screen_help">Đặt mật độ điểm ảnh mà Android Auto dùng để vẽ. DPI cao hơn làm biểu tượng và chữ lớn hơn, nên màn hình chứa được ít hơn. DPI thấp hơn làm chúng nhỏ hơn, nên chứa được nhiều hơn. Tự động dùng mật độ của thiết bị này. Giá trị mới áp dụng từ lần kết nối tiếp theo.</string>
+    <string name="keymap_screen_help">Gán các phím và nút của thiết bị này cho thao tác của Android Auto. Chạm vào một hàng rồi nhấn phím cần gán. Đặt lại xóa mọi phép gán của bạn và về mặc định. Dùng khi phím trên vô lăng hoặc bảng điều khiển làm sai việc.</string>
+    <string name="customization_screen_help">Đổi giao diện màn hình chính của ứng dụng này: ảnh nền, màu sắc và kích thước của bốn nút, cùng cỡ chữ. Cài đặt ban đêm điều khiển nền ở chế độ tối. Không mục nào đổi những gì Android Auto hiển thị trên màn hình chiếu.</string>
+    <string name="loading_screen_screen_help">Đặt hình ảnh hoặc video ngắn hiển thị khi Android Auto khởi động. Chọn hình ảnh hoặc video tối đa 10 MB, co giãn cho vừa màn hình và lặp lại các hoạt ảnh ngắn. Bạn cũng có thể ẩn chữ khởi động. Xóa sẽ về màn hình mặc định.</string>
     <string name="auto_connect_priority">Ưu tiên %d</string>
     <string name="auto_connect_all_disabled">Tất cả đã tắt</string>
     <string name="drag_to_reorder">Kéo để sắp xếp lại</string>

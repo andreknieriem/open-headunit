@@ -56,7 +56,10 @@ class SettingsStringLimitsTest {
         "force_software_decoding_help", "aaudio_output_help", "kill_on_disconnect_help"
     )
 
-    private val screenHelp = emptyList<String>()
+    private val screenHelp = listOf(
+        "auto_connect_screen_help", "dpi_screen_help", "keymap_screen_help",
+        "customization_screen_help", "loading_screen_screen_help"
+    )
 
     @Test
     fun `every summary string is at most 80 characters`() {

@@ -260,6 +260,11 @@
     <string name="auto_connect_settings">Setări conectare automată</string>
     <string name="auto_connect_settings_description">Configurează metodele de conectare automată și ordinea lor de prioritate.</string>
     <string name="auto_connect_help">Aceste metode rulează automat la deschiderea aplicației. Activează-le pe cele dorite, apoi trage de ele pentru a le ordona. Se va folosi prima metodă reușită.</string>
+    <string name="auto_connect_screen_help">Stabilește cum se conectează aplicația singură la deschidere. Activează metodele dorite și trage-le în ordinea de încercare. Se folosește prima care reușește. Întârzierea dă timp Wi-Fi-ului să se trezească pe o unitate lentă. Nimic de aici nu schimbă o conexiune pornită de tine. Cu Salvează se aplică modificările.</string>
+    <string name="dpi_screen_help">Stabilește densitatea de pixeli cu care desenează Android Auto. Un DPI mai mare mărește pictogramele și textul, deci încape mai puțin pe ecran. Un DPI mai mic le micșorează, deci încape mai mult. Automat folosește densitatea acestui dispozitiv. Valoarea nouă se aplică la următoarea conectare.</string>
+    <string name="keymap_screen_help">Asociază tastele și butoanele acestei unități cu acțiuni Android Auto. Atinge un rând, apoi apasă tasta de atribuit. Cu Resetează se șterg toate atribuirile tale și se revine la valorile implicite. Folosește-l când o tastă de pe volan sau de pe panou face altceva decât trebuie.</string>
+    <string name="customization_screen_help">Schimbă aspectul ecranului de start al acestei aplicații: imaginea de fundal, culorile și dimensiunea celor patru butoane și dimensiunea textului. Setarea de noapte controlează fundalul în modul întunecat. Nimic din toate acestea nu schimbă ce afișează Android Auto în proiecție.</string>
+    <string name="loading_screen_screen_help">Stabilește imaginea sau videoclipul scurt afișat cât pornește Android Auto. Alege o imagine sau un videoclip de până la 10 MB, scalează-l pe ecran și repetă animațiile scurte în buclă. Poți ascunde și textul de pornire. Cu Elimină se revine la ecranul implicit.</string>
     <string name="auto_connect_priority">Prioritate %d</string>
     <string name="auto_connect_all_disabled">Toate dezactivate</string>
     <string name="drag_to_reorder">Trage pentru a reordona</string>

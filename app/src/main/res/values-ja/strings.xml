@@ -264,6 +264,11 @@
     <string name="auto_connect_settings">自動接続設定</string>
     <string name="auto_connect_settings_description">自動接続方法とその優先順位を設定します。</string>
     <string name="auto_connect_help">これらの方法はアプリを開くと自動的に実行されます。使う方法を有効にし、ドラッグして順番を決めてください。有効にした方法のうち、最初に成功したものが使われます。</string>
+    <string name="auto_connect_screen_help">アプリを開いたときに自動で接続する方法を設定します。使う方法をオンにして、試す順番にドラッグします。最初に成功した方法が使われます。遅延は、動作の遅い機器で Wi-Fi が起動するまでの時間を確保します。自分で開始した接続はここでは変わりません。保存で変更を適用します。</string>
+    <string name="dpi_screen_help">Android Auto が描画する画素密度を設定します。DPI を上げるとアイコンと文字が大きくなり、画面に入る量は減ります。DPI を下げると小さくなり、多く入ります。自動はこの機器の密度を使います。新しい値は次回の接続から有効です。</string>
+    <string name="keymap_screen_help">この機器のキーやボタンを Android Auto の操作に割り当てます。行をタップし、割り当てるキーを押します。リセットは割り当てをすべて削除して初期状態に戻します。ステアリングやパネルのキーが誤動作するときに使ってください。</string>
+    <string name="customization_screen_help">このアプリのホーム画面の見た目を変更します。背景画像、4 つのボタンの色とサイズ、文字サイズが対象です。夜間設定はダークモードの背景を制御します。Android Auto の投影内容は変わりません。</string>
+    <string name="loading_screen_screen_help">Android Auto の起動中に表示する画像または短い動画を設定します。10 MB までの画像か動画を選び、画面に合わせて拡大縮小し、短いアニメーションはループさせます。起動テキストを非表示にもできます。削除でデフォルトの画面に戻ります。</string>
     <string name="auto_connect_priority">優先度 %d</string>
     <string name="auto_connect_all_disabled">すべて無効</string>
     <string name="drag_to_reorder">ドラッグして並べ替える</string>

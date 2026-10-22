@@ -238,6 +238,11 @@
     <string name="auto_connect_settings">Ajustes de autoconexión</string>
     <string name="auto_connect_settings_description">Configurar métodos de autoconexión y su orden de prioridad.</string>
     <string name="auto_connect_help">Estos métodos se ejecutan automáticamente al abrir la app. Activa los que quieras y arrastra para ordenarlos. Se usará el primer método activado que funcione.</string>
+    <string name="auto_connect_screen_help">Define cómo se conecta la aplicación por sí sola al abrirse. Activa los métodos que quieras y arrástralos al orden en que se probarán. Se usa el primero que funcione. El retraso da tiempo a que el WiFi despierte en una unidad lenta. Nada de esto cambia una conexión que inicies tú. Guardar aplica los cambios.</string>
+    <string name="dpi_screen_help">Define la densidad de píxeles con la que dibuja Android Auto. Un DPI más alto agranda los iconos y el texto, y cabe menos en pantalla. Un DPI más bajo los reduce, y cabe más. Automático usa la densidad de este dispositivo. El nuevo valor se aplica en la próxima conexión.</string>
+    <string name="keymap_screen_help">Asigna las teclas y botones de esta unidad a acciones de Android Auto. Toca una fila y pulsa la tecla que quieras asignar. Restablecer borra todas tus asignaciones y vuelve a los valores predeterminados. Úsalo cuando una tecla del volante o del panel haga algo incorrecto.</string>
+    <string name="customization_screen_help">Cambia el aspecto de la pantalla de inicio de esta aplicación: la imagen de fondo, los colores y el tamaño de los cuatro botones, y el tamaño del texto. El ajuste nocturno controla el fondo en modo oscuro. Nada de esto cambia lo que Android Auto muestra en la proyección.</string>
+    <string name="loading_screen_screen_help">Define la imagen o el vídeo corto que se muestra mientras arranca Android Auto. Elige una imagen o un vídeo de hasta 10 MB, escálalo para ajustarlo a la pantalla y repite las animaciones cortas en bucle. También puedes ocultar el texto de inicio. Eliminar vuelve a la pantalla predeterminada.</string>
     <string name="auto_connect_priority">Prioridad %d</string>
     <string name="auto_connect_all_disabled">Todos desactivados</string>
     <string name="drag_to_reorder">Arrastra para reordenar</string>

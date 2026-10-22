@@ -236,6 +236,11 @@
     <string name="auto_connect_settings">Instellingen voor automatisch verbinden</string>
     <string name="auto_connect_settings_description">Stel de methoden voor automatisch verbinden en hun volgorde in.</string>
     <string name="auto_connect_help">Deze methoden worden automatisch uitgevoerd bij het openen van de app. Schakel de gewenste in en sleep om de volgorde te bepalen. De eerste ingeschakelde methode die slaagt, wordt gebruikt.</string>
+    <string name="auto_connect_screen_help">Bepaalt hoe de app zichzelf verbindt bij het openen. Schakel de gewenste methoden in en sleep ze in de volgorde waarin ze worden geprobeerd. De eerste die lukt wordt gebruikt. De vertraging geeft wifi tijd om wakker te worden op een traag apparaat. Niets hier verandert een verbinding die je zelf start. Met Opslaan worden de wijzigingen toegepast.</string>
+    <string name="dpi_screen_help">Bepaalt de pixeldichtheid waarmee Android Auto tekent. Een hogere DPI maakt pictogrammen en tekst groter, zodat er minder op het scherm past. Een lagere DPI maakt ze kleiner, zodat er meer op past. Automatisch gebruikt de dichtheid van dit apparaat. De nieuwe waarde geldt bij de volgende verbinding.</string>
+    <string name="keymap_screen_help">Koppelt de toetsen en knoppen van dit apparaat aan acties van Android Auto. Tik op een rij en druk dan op de toets die je wilt toewijzen. Reset verwijdert al je toewijzingen en herstelt de standaardwaarden. Gebruik dit als een stuur- of paneeltoets het verkeerde doet.</string>
+    <string name="customization_screen_help">Verandert hoe het startscherm van deze app eruitziet: de achtergrondafbeelding, de kleuren en grootte van de vier knoppen en de tekstgrootte. De nachtinstelling bepaalt de achtergrond in de donkere modus. Niets hiervan verandert wat Android Auto in de projectie toont.</string>
+    <string name="loading_screen_screen_help">Bepaalt de afbeelding of korte video die wordt getoond terwijl Android Auto start. Kies een afbeelding of video tot 10 MB, schaal die naar het scherm en laat korte animaties herhalen. Je kunt ook de starttekst verbergen. Verwijderen herstelt het standaardscherm.</string>
     <string name="auto_connect_priority">Prioriteit %d</string>
     <string name="auto_connect_all_disabled">Alles uitgezet</string>
     <string name="drag_to_reorder">Sleep om de volgorde te wijzigen</string>

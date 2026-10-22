@@ -37,6 +37,7 @@ import com.google.android.material.switchmaterial.SwitchMaterial
 import com.google.android.material.textfield.TextInputEditText
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.R
+import com.andrerinas.openheadunit.main.settings.SettingHelpDialog
 import com.andrerinas.openheadunit.app.BaseActivity
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.ColorUtils
@@ -153,6 +154,7 @@ class CustomizationFragment : Fragment() {
         toolbar.setNavigationOnClickListener {
             findNavController().navigateUp()
         }
+        SettingHelpDialog.addToolbarHelp(toolbar, toolbar.title, R.string.customization_screen_help, "customization")
 
         customizationMainContent = view.findViewById(R.id.customization_main_content)
 

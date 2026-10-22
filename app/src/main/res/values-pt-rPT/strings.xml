@@ -511,6 +511,11 @@
     <string name="auto_connect_settings">Definições de ligação automática</string>
     <string name="auto_connect_settings_description">Configurar métodos de ligação automática e a respetiva ordem de prioridade.</string>
     <string name="auto_connect_help">Estes métodos são executados automaticamente quando a aplicação abre. Ative os que pretende e arraste para definir a ordem. É utilizado o primeiro método ativado que tiver êxito.</string>
+    <string name="auto_connect_screen_help">Define como a aplicação se liga sozinha ao abrir. Ative os métodos pretendidos e arraste-os pela ordem em que serão tentados. É usado o primeiro que funcionar. O atraso dá tempo ao Wi-Fi para acordar numa unidade lenta. Nada aqui altera uma ligação que inicie por si. Guardar aplica as alterações.</string>
+    <string name="dpi_screen_help">Define a densidade de píxeis com que o Android Auto desenha. Um DPI mais alto aumenta ícones e texto, e cabe menos no ecrã. Um DPI mais baixo reduz-os, e cabe mais. Automático usa a densidade deste dispositivo. O novo valor aplica-se na próxima ligação.</string>
+    <string name="keymap_screen_help">Associa as teclas e os botões desta unidade a ações do Android Auto. Toque numa linha e prima a tecla a atribuir. Repor remove todas as suas atribuições e volta ao predefinido. Use quando uma tecla do volante ou do painel fizer a coisa errada.</string>
+    <string name="customization_screen_help">Altera o aspeto do ecrã inicial desta aplicação: a imagem de fundo, as cores e o tamanho dos quatro botões e o tamanho do texto. A definição noturna controla o fundo no modo escuro. Nada disto altera o que o Android Auto mostra na projeção.</string>
+    <string name="loading_screen_screen_help">Define a imagem ou o vídeo curto mostrado enquanto o Android Auto arranca. Escolha uma imagem ou um vídeo até 10 MB, ajuste ao ecrã e repita animações curtas em ciclo. Também pode ocultar o texto de arranque. Remover volta ao ecrã predefinido.</string>
     <string name="auto_connect_priority">Prioridade %d</string>
     <string name="auto_connect_all_disabled">Todos desativados</string>
     <string name="drag_to_reorder">Arrastar para reordenar</string>

@@ -517,6 +517,11 @@
     <string name="auto_connect_settings">Auto-Connect Settings</string>
     <string name="auto_connect_settings_description">Configure auto-connect methods and their priority order.</string>
     <string name="auto_connect_help">These methods run automatically when the app opens. Enable the ones you want, then drag to set the order. The first enabled method that succeeds will be used.</string>
+    <string name="auto_connect_screen_help">Sets how the app connects by itself when it opens. Turn on the methods you want and drag them into the order to try. The first that succeeds is used. The delay gives WiFi time to wake on a slow unit. Nothing here changes a connection you start yourself. Save applies the changes.</string>
+    <string name="dpi_screen_help">Sets the pixel density Android Auto draws at. A higher DPI makes icons and text larger, so less fits on screen. A lower DPI makes them smaller, so more fits. Automatic uses the density of this device. The new value applies the next time you connect.</string>
+    <string name="keymap_screen_help">Maps the keys and buttons of this unit to Android Auto actions. Tap a row, then press the key to assign. Reset removes every mapping you made and returns to the defaults. Use it when a steering wheel or panel key does the wrong thing.</string>
+    <string name="customization_screen_help">Changes how the home screen of this app looks: the background image, the colors and size of the four buttons, and the text size. The night setting controls the background in dark mode. None of this changes what Android Auto shows on the projection.</string>
+    <string name="loading_screen_screen_help">Sets the picture or short video shown while Android Auto starts. Choose an image or a video up to 10 MB, scale it to fit the screen and loop short animations. You can also hide the starting text. Remove returns to the default screen.</string>
     <string name="auto_connect_priority">Priority %d</string>
     <string name="auto_connect_all_disabled">All disabled</string>
     <string name="drag_to_reorder">Drag to reorder</string>

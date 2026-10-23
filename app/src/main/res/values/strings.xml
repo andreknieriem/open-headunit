@@ -17,6 +17,12 @@
     <string name="settings_tab_basic">Basic</string>
     <string name="settings_tab_advanced">Advanced</string>
     <string name="settings_search_hint">Search settings</string>
+    <string name="settings_scope_wifi_hidden">Showing USB settings. WiFi settings are hidden.</string>
+    <string name="settings_scope_usb_hidden">Showing WiFi settings. USB settings are hidden.</string>
+    <string name="settings_scope_usb_wifi_hidden">Showing Self Mode settings. USB and WiFi settings are hidden.</string>
+    <string name="settings_scope_change">Change</string>
+    <string name="settings_search_clear">Clear search</string>
+    <string name="settings_search_no_results">No settings match \"%1$s\".</string>
 
     <!-- Connection mode selector -->
     <string name="connection_mode">Connection mode</string>

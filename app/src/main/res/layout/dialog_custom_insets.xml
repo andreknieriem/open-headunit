@@ -35,7 +35,7 @@
                 android:padding="0dp"
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
-                app:backgroundTint="@color/brand_teal"
+                app:backgroundTint="@color/brand_primary"
                 app:iconPadding="0dp" />
             <EditText
                 android:id="@+id/input_top"
@@ -57,7 +57,7 @@
                 android:padding="0dp"
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
-                app:backgroundTint="@color/brand_teal"
+                app:backgroundTint="@color/brand_primary"
                 app:iconPadding="0dp" />
         </LinearLayout>
 
@@ -86,7 +86,7 @@
                 android:padding="0dp"
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
-                app:backgroundTint="@color/brand_teal" />
+                app:backgroundTint="@color/brand_primary" />
             <EditText
                 android:id="@+id/input_bottom"
                 android:layout_width="0dp"
@@ -107,7 +107,7 @@
                 android:padding="0dp"
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
-                app:backgroundTint="@color/brand_teal" />
+                app:backgroundTint="@color/brand_primary" />
         </LinearLayout>
 
         <!-- Left -->
@@ -135,7 +135,7 @@
                 android:padding="0dp"
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
-                app:backgroundTint="@color/brand_teal" />
+                app:backgroundTint="@color/brand_primary" />
             <EditText
                 android:id="@+id/input_left"
                 android:layout_width="0dp"
@@ -156,7 +156,7 @@
                 android:padding="0dp"
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
-                app:backgroundTint="@color/brand_teal" />
+                app:backgroundTint="@color/brand_primary" />
         </LinearLayout>
 
         <!-- Right -->
@@ -184,7 +184,7 @@
                 android:padding="0dp"
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
-                app:backgroundTint="@color/brand_teal" />
+                app:backgroundTint="@color/brand_primary" />
             <EditText
                 android:id="@+id/input_right"
                 android:layout_width="0dp"
@@ -205,7 +205,7 @@
                 android:padding="0dp"
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
-                app:backgroundTint="@color/brand_teal" />
+                app:backgroundTint="@color/brand_primary" />
         </LinearLayout>
 
     </LinearLayout>

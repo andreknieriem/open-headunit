@@ -7,6 +7,12 @@
     <string name="settings_tab_basic">Dasar</string>
     <string name="settings_tab_advanced">Lanjutan</string>
     <string name="settings_search_hint">Telusuri setelan</string>
+    <string name="settings_scope_wifi_hidden">Menampilkan pengaturan USB. Pengaturan WiFi disembunyikan.</string>
+    <string name="settings_scope_usb_hidden">Menampilkan pengaturan WiFi. Pengaturan USB disembunyikan.</string>
+    <string name="settings_scope_usb_wifi_hidden">Menampilkan pengaturan Mode Mandiri. Pengaturan USB dan WiFi disembunyikan.</string>
+    <string name="settings_scope_change">Ubah</string>
+    <string name="settings_search_clear">Hapus pencarian</string>
+    <string name="settings_search_no_results">Tidak ada pengaturan yang cocok dengan \"%1$s\".</string>
 
     <!-- Connection mode selector -->
     <string name="connection_mode">Mode koneksi</string>

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The category rail on car panels, wider for the car-sized labels (values-h460dp-land). -->
+    <dimen name="settings_rail_width">256dp</dimen>
+</resources>

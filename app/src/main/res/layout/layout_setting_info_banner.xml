@@ -1,31 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- A hint inside a group. The background (a step darker than the rows) is set in code. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:layout_marginBottom="2dp"
+    android:gravity="top"
     android:orientation="horizontal"
-    android:background="@drawable/bg_info_banner"
-    android:padding="14dp"
-    android:layout_marginBottom="12dp"
-    android:gravity="center_vertical">
+    android:paddingStart="@dimen/settings_row_padding_start"
+    android:paddingLeft="@dimen/settings_row_padding_start"
+    android:paddingTop="12dp"
+    android:paddingEnd="@dimen/settings_row_padding_start"
+    android:paddingRight="@dimen/settings_row_padding_start"
+    android:paddingBottom="12dp">
 
     <ImageView
-        android:layout_width="20dp"
-        android:layout_height="20dp"
-        android:layout_marginEnd="10dp"
-        app:srcCompat="@android:drawable/ic_dialog_info"
-        app:tint="?android:attr/textColorSecondary"
-        android:importantForAccessibility="no" />
+        android:layout_width="@dimen/settings_row_icon_size"
+        android:layout_height="@dimen/settings_row_icon_size"
+        android:layout_marginTop="1dp"
+        android:layout_marginEnd="12dp"
+        android:layout_marginRight="12dp"
+        android:importantForAccessibility="no"
+        app:srcCompat="@drawable/ic_sym_info"
+        app:tint="?attr/settingsOnSurfaceVariant"
+        tools:ignore="ContentDescription" />
 
     <TextView
         android:id="@+id/infoText"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:textColor="?android:attr/textColorSecondary"
-        android:textSize="13sp"
         android:lineSpacingExtra="2dp"
-        tools:text="Info banner text" />
+        android:textColor="?attr/settingsOnSurfaceVariant"
+        android:textSize="@dimen/settings_row_description_size"
+        tools:text="Auto asks for 5 GHz and falls back to 2.4 GHz." />
 
 </LinearLayout>

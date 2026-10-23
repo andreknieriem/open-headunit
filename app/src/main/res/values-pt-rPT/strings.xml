@@ -8,6 +8,12 @@
     <string name="settings_tab_basic">Básico</string>
     <string name="settings_tab_advanced">Avançado</string>
     <string name="settings_search_hint">Pesquisar definições</string>
+    <string name="settings_scope_wifi_hidden">A mostrar definições de USB. As definições de WiFi estão ocultas.</string>
+    <string name="settings_scope_usb_hidden">A mostrar definições de WiFi. As definições de USB estão ocultas.</string>
+    <string name="settings_scope_usb_wifi_hidden">A mostrar definições do Modo Próprio. As definições de USB e WiFi estão ocultas.</string>
+    <string name="settings_scope_change">Alterar</string>
+    <string name="settings_search_clear">Limpar pesquisa</string>
+    <string name="settings_search_no_results">Nenhuma definição corresponde a \"%1$s\".</string>
 
     <!-- Connection mode selector -->
     <string name="connection_mode">Modo de ligação</string>

@@ -7,6 +7,12 @@
     <string name="settings_tab_basic">Basique</string>
     <string name="settings_tab_advanced">Avancé</string>
     <string name="settings_search_hint">Rechercher dans les paramètres</string>
+    <string name="settings_scope_wifi_hidden">Paramètres USB affichés. Les paramètres WiFi sont masqués.</string>
+    <string name="settings_scope_usb_hidden">Paramètres WiFi affichés. Les paramètres USB sont masqués.</string>
+    <string name="settings_scope_usb_wifi_hidden">Paramètres du Self Mode affichés. Les paramètres USB et WiFi sont masqués.</string>
+    <string name="settings_scope_change">Modifier</string>
+    <string name="settings_search_clear">Effacer la recherche</string>
+    <string name="settings_search_no_results">Aucun paramètre ne correspond à « %1$s ».</string>
 
     <!-- Connection mode selector -->
     <string name="connection_mode">Mode de connexion</string>

@@ -105,15 +105,6 @@ class BrokerSettingsFragment : Fragment() {
             ))
         }
         items.add(SettingItem.SettingEntry(
-            stableId = "brokerConnect",
-            nameResId = R.string.broker_connect,
-            value = getString(R.string.broker_connect_value),
-            isEnabled = brokerSaved,
-            onClick = {
-                sendCurrentGroup(pairIfIncomplete = false)
-            },
-        ))
-        items.add(SettingItem.SettingEntry(
             stableId = "brokerPair",
             nameResId = R.string.broker_pair,
             value = getString(R.string.broker_pair_value),
@@ -193,12 +184,8 @@ class BrokerSettingsFragment : Fragment() {
         store.deviceName = name
         scanner.stopScan()
         scanning = false
-        sendCurrentGroup(pairIfIncomplete = true)
-    }
-
-    private fun sendCurrentGroup(pairIfIncomplete: Boolean) {
         WifiDirectDisplayInfo.read(requireContext()) { info ->
-            if (info.isComplete || !pairIfIncomplete) {
+            if (info.isComplete) {
                 NativeBTBrokerSession.offer(requireContext(), info)
             } else {
                 NativeBTBrokerSession.openPairing(requireContext())

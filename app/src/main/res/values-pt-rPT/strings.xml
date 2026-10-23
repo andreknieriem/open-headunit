@@ -633,8 +633,8 @@
     <string name="onb_audio_help">Escolha o fluxo do sistema onde cada canal do Android Auto é reproduzido e toque no altifalante para o ouvir. Se um canal ficar sem som no carro, normalmente basta mudá-lo para outro fluxo.</string>
     <string name="onb_audio_more_hint">Pode alterar estas definições mais tarde em Definições → Fluxos de áudio.</string>
     <string name="use_aac_audio">Utilizar áudio AAC</string>
-    <string name="use_aac_audio_description">Utiliza o codec AAC para o áudio, para poupar largura de banda (experimental). Numa sessão sem fios a 2.4 GHz, é ativado automaticamente enquanto \"Reduzir qualidade de vídeo em ligações de 2.4 GHz\" estiver ativo.</string>
-    <string name="use_aac_audio_summary">Usa áudio AAC para poupar largura de banda (experimental).</string>
+    <string name="use_aac_audio_description">Utiliza o codec AAC para o áudio, para poupar largura de banda. Numa sessão sem fios a 2.4 GHz, é ativado automaticamente enquanto \"Reduzir qualidade de vídeo em ligações de 2.4 GHz\" estiver ativo.</string>
+    <string name="use_aac_audio_summary">Usa áudio AAC para poupar largura de banda.</string>
     <string name="attach_hw_dsp_equalizer">Ativação do equalizador DSP por hardware</string>
     <string name="attach_hw_dsp_equalizer_description">Anexa um efeito de equalizador fictício à sessão de áudio para forçar o encaminhamento DSP por hardware em unidades específicas. Mantenha desativado se utilizar ViPER4Android / ViperFX ou se o som ficar abafado em versões mais antigas do Android.</string>
     <string name="attach_hw_dsp_equalizer_summary">Anexa um equalizador fictício para forçar o encaminhamento pelo DSP de hardware em algumas unidades.</string>
@@ -1065,7 +1065,7 @@
     <string name="exit_dialog_settings">Definições rápidas</string>
     <string name="gesture_hint">Dica: deslize com 2 dedos a partir do limite esquerdo do ecrã para abrir o menu de saída.</string>
     <string name="audio_latency_multiplier">Multiplicador de latência de áudio</string>
-    <string name="aaudio_output">Saída AAudio (experimental)</string>
+    <string name="aaudio_output">Saída AAudio</string>
     <string name="aaudio_output_description">Tenta uma saída multimédia de baixa latência. Utiliza automaticamente AudioTrack se não estiver disponível.</string>
     <string name="aaudio_output_help">Reproduz o conteúdo multimédia do Android Auto através do AAudio, uma saída de áudio de baixa latência. A app só a utiliza no Android 9 ou posterior. Ative se o som chegar depois da imagem. Se o AAudio não conseguir iniciar, a app utiliza a saída de áudio normal. Se o som estalar ou falhar com a opção ativada, desative-a.</string>
     <string name="audio_latency_multiplier_description">Ajustar tamanho do buffer de áudio (Menor = Menos atraso, Maior = Menos paragens).</string>

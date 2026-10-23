@@ -300,8 +300,8 @@
     <string name="separate_audio_streams_description">Medya, Yönlendirme ve Sistem sesleri kanallarına tek bir ortak ses akışı yerine kendi çıkış akışlarını verir (bazı cihazlarda düzgün çalışmayabilir).</string>
     <string name="separate_audio_streams_summary">Medya, yönlendirme ve sistem sesleri kendi çıkış akışlarını alır.</string>
     <string name="use_aac_audio">AAC Ses Kullan</string>
-    <string name="use_aac_audio_description">Bant genişliğinden tasarruf etmek için ses için AAC kodeğini kullan (Deneysel). 2,4 GHz üzerinde çalışan kablosuz bir oturumda, \"2,4 GHz bağlantıda videoyu düşür\" açıkken bu otomatik olarak açılır.</string>
-    <string name="use_aac_audio_summary">Bant genişliğinden tasarruf için AAC ses kullanır (deneysel).</string>
+    <string name="use_aac_audio_description">Bant genişliğinden tasarruf etmek için ses için AAC kodeğini kullan. 2,4 GHz üzerinde çalışan kablosuz bir oturumda, \"2,4 GHz bağlantıda videoyu düşür\" açıkken bu otomatik olarak açılır.</string>
+    <string name="use_aac_audio_summary">Bant genişliğinden tasarruf için AAC ses kullanır.</string>
     <string name="attach_hw_dsp_equalizer">Donanım DSP Ekolayzır Tetikleyici</string>
     <string name="attach_hw_dsp_equalizer_description">Belirli multimedya cihazlarında donanım DSP yönlendirmesini zorlamak için ses oturumuna sahte bir ekolayzır efekti ekler. ViPER4Android / ViperFX kullanıyorsanız veya eski Android sürümlerinde ses boğuk çıkıyorsa kapalı tutun.</string>
     <string name="attach_hw_dsp_equalizer_summary">Bazı ünitelerde donanım DSP yönlendirmesini zorlamak için sahte bir ekolayzır ekler.</string>
@@ -569,7 +569,7 @@
     <string name="exit_dialog_background">Arka Plana Al</string>
     <string name="gesture_hint">İpucu: Çıkış menüsünü açmak için sol kenardan 2 parmağınızla kaydırın.</string>
     <string name="audio_latency_multiplier">Ses Gecikme Çarpanı</string>
-    <string name="aaudio_output">AAudio çıkışı (deneysel)</string>
+    <string name="aaudio_output">AAudio çıkışı</string>
     <string name="aaudio_output_description">Düşük gecikmeli medya çıkışını dener. Kullanılamıyorsa otomatik olarak AudioTrack kullanılır.</string>
     <string name="aaudio_output_help">Android Auto medyasını düşük gecikmeli bir ses çıkışı olan AAudio ile oynatır. Uygulama bunu yalnızca Android 9 ve sonrasında kullanır. Ses görüntüden geç geliyorsa açın. AAudio başlatılamazsa uygulama normal ses çıkışını kullanır. Açıkken ses çatırdıyor veya kesiliyorsa kapatın.</string>
     <string name="audio_latency_multiplier_description">Ses tampon boyutunu ayarlar (Düşük = Daha az gecikme, Yüksek = Daha az takılma).</string>

@@ -277,8 +277,8 @@
     <string name="separate_audio_streams_description">讓媒體、語音導引和系統音效頻道各自使用專屬的輸出串流，而非共用單一多媒體串流（在某些裝置上可能無法正常運作）。</string>
     <string name="separate_audio_streams_summary">媒體、語音導引和系統音效各自使用獨立的輸出串流。</string>
     <string name="use_aac_audio">使用 AAC 音訊</string>
-    <string name="use_aac_audio_description">使用 AAC 編碼處理音訊以節省頻寬（實驗性）。在 2.4 GHz 上執行的無線連線中，只要開啟「在 2.4 GHz 連線時降低影像」，就會自動啟用此選項。</string>
-    <string name="use_aac_audio_summary">使用 AAC 音訊以節省頻寬（實驗性）。</string>
+    <string name="use_aac_audio_description">使用 AAC 編碼處理音訊以節省頻寬。在 2.4 GHz 上執行的無線連線中，只要開啟「在 2.4 GHz 連線時降低影像」，就會自動啟用此選項。</string>
+    <string name="use_aac_audio_summary">使用 AAC 音訊以節省頻寬。</string>
     <string name="attach_hw_dsp_equalizer">硬體 DSP 等化器觸發器</string>
     <string name="attach_hw_dsp_equalizer_description">在音訊工作階段附加一個虛設的等化器效果，以在特定車機上強制進行硬體 DSP 路由。如果使用 ViPER4Android / ViperFX，或在舊版 Android 上聲音沉悶，請保持停用。</string>
     <string name="attach_hw_dsp_equalizer_summary">掛接一個虛擬等化器，在部分裝置上強制使用硬體 DSP 路由。</string>
@@ -566,7 +566,7 @@
     <string name="exit_dialog_background">移至背景</string>
     <string name="gesture_hint">提示：用兩指從左側邊緣滑入，即可開啟結束選單。</string>
     <string name="audio_latency_multiplier">音訊延遲倍數</string>
-    <string name="aaudio_output">AAudio 輸出（實驗性）</string>
+    <string name="aaudio_output">AAudio 輸出</string>
     <string name="aaudio_output_description">嘗試使用低延遲媒體輸出。若無法使用，會自動改用 AudioTrack。</string>
     <string name="aaudio_output_help">透過低延遲音訊輸出 AAudio 播放 Android Auto 媒體。應用程式只會在 Android 9 以上版本使用。如果聲音比畫面慢，請開啟。如果 AAudio 無法啟動，應用程式會使用一般音訊輸出。如果開啟後聲音有雜音或中斷，請關閉。</string>
     <string name="audio_latency_multiplier_description">調整音訊緩衝區大小（較低 = 延遲較低，較高 = 較不易斷續）。</string>

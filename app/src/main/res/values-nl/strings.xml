@@ -277,8 +277,8 @@
     <string name="separate_audio_streams_description">Geeft de kanalen Media, Navigatiestem en Systeemgeluiden hun eigen uitvoerstreams in plaats van één gedeelde multimediastream (werkt op sommige apparaten mogelijk niet goed).</string>
     <string name="separate_audio_streams_summary">Media, navigatiestem en systeemgeluiden krijgen elk een eigen uitvoerstream.</string>
     <string name="use_aac_audio">AAC-audio gebruiken</string>
-    <string name="use_aac_audio_description">Gebruik de AAC-codec voor audio om bandbreedte te besparen (experimenteel). Bij een draadloze sessie die op 2,4 GHz draait, wordt dit automatisch ingeschakeld zolang \"Lagere video bij een 2,4 GHz-verbinding\" is ingeschakeld.</string>
-    <string name="use_aac_audio_summary">Gebruik AAC-audio om bandbreedte te besparen (experimenteel).</string>
+    <string name="use_aac_audio_description">Gebruik de AAC-codec voor audio om bandbreedte te besparen. Bij een draadloze sessie die op 2,4 GHz draait, wordt dit automatisch ingeschakeld zolang \"Lagere video bij een 2,4 GHz-verbinding\" is ingeschakeld.</string>
+    <string name="use_aac_audio_summary">Gebruik AAC-audio om bandbreedte te besparen.</string>
     <string name="attach_hw_dsp_equalizer">Trigger voor hardware-DSP-equalizer</string>
     <string name="attach_hw_dsp_equalizer_description">Koppelt een dummy-equalizereffect aan de audiosessie om hardware-DSP-routing te forceren op specifieke headunits. Laat dit uit als je ViPER4Android / ViperFX gebruikt of als het geluid dof klinkt op oudere Android-versies.</string>
     <string name="attach_hw_dsp_equalizer_summary">Koppelt een dummy-equalizer om op sommige apparaten hardware-DSP-routering af te dwingen.</string>
@@ -566,7 +566,7 @@
     <string name="exit_dialog_background">Naar achtergrond verplaatsen</string>
     <string name="gesture_hint">Tip: Veeg met 2 vingers vanaf de linkerrand om het afsluitmenu te openen.</string>
     <string name="audio_latency_multiplier">Vermenigvuldiger audiovertraging</string>
-    <string name="aaudio_output">AAudio-uitvoer (experimenteel)</string>
+    <string name="aaudio_output">AAudio-uitvoer</string>
     <string name="aaudio_output_description">Probeer mediauitvoer met lage latentie. Schakelt automatisch over op AudioTrack als dit niet beschikbaar is.</string>
     <string name="aaudio_output_help">Speelt Android Auto-media af via AAudio, een audio-uitvoer met lage latentie. De app gebruikt dit alleen op Android 9 en hoger. Zet het aan als het geluid later komt dan het beeld. Kan AAudio niet starten, dan gebruikt de app de gewone audio-uitvoer. Kraakt of hapert het geluid terwijl het aan staat, zet het dan uit.</string>
     <string name="audio_latency_multiplier_description">Audio-buffergrootte aanpassen (Lager = minder vertraging, Hoger = minder stotteren).</string>

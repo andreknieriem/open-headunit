@@ -277,8 +277,8 @@
     <string name="separate_audio_streams_description">A Média, Útmutatás és Rendszerhangok csatornák saját kimeneti folyamot kapnak egyetlen közös multimédiás folyam helyett (egyes eszközökön nem működik megfelelően).</string>
     <string name="separate_audio_streams_summary">A Média, az Útmutatás és a Rendszerhangok saját kimeneti adatfolyamot kap.</string>
     <string name="use_aac_audio">AAC hang használata</string>
-    <string name="use_aac_audio_description">AAC kódek használata a hanghoz a sávszélesség csökkentéséért (kísérleti). 2,4 GHz-en futó vezeték nélküli munkamenetben ez automatikusan bekapcsol, amíg a \"Gyengébb kép 2,4 GHz-es kapcsolaton\" be van kapcsolva.</string>
-    <string name="use_aac_audio_summary">AAC hangot használ a sávszélesség spórolásához (kísérleti).</string>
+    <string name="use_aac_audio_description">AAC kódek használata a hanghoz a sávszélesség csökkentéséért. 2,4 GHz-en futó vezeték nélküli munkamenetben ez automatikusan bekapcsol, amíg a \"Gyengébb kép 2,4 GHz-es kapcsolaton\" be van kapcsolva.</string>
+    <string name="use_aac_audio_summary">AAC hangot használ a sávszélesség spórolásához.</string>
     <string name="attach_hw_dsp_equalizer">Hardveres DSP-hangszínszabályzó indítása</string>
     <string name="attach_hw_dsp_equalizer_description">Egy üres hangszínszabályzó effektet csatol a hangmunkamenethez, hogy egyes fejegységeken kikényszerítse a hardveres DSP-útvonalat. Hagyja kikapcsolva, ha ViPER4Android / ViperFX-et használ, vagy ha a hang tompa a régebbi Android-verziókon.</string>
     <string name="attach_hw_dsp_equalizer_summary">Álegalizálót csatol, hogy egyes fejegységeken kikényszerítse a hardveres DSP-útválasztást.</string>
@@ -565,7 +565,7 @@
     <string name="exit_dialog_background">Áthelyezés a háttérbe</string>
     <string name="gesture_hint">Tipp: Húzza végig két ujját a bal szélről a kilépési menü megnyitásához.</string>
     <string name="audio_latency_multiplier">Hangkésleltetési szorzó</string>
-    <string name="aaudio_output">AAudio-kimenet (kísérleti)</string>
+    <string name="aaudio_output">AAudio-kimenet</string>
     <string name="aaudio_output_description">Alacsony késleltetésű médiakimenet kipróbálása. Ha nem érhető el, automatikusan az AudioTrack lép működésbe.</string>
     <string name="aaudio_output_help">Az Android Auto médiát AAudióval játssza le, amely alacsony késleltetésű hangkimenet. Az alkalmazás csak Android 9 vagy újabb rendszeren használja. Kapcsolja be, ha a hang később szól, mint a kép. Ha az AAudio nem indul el, az alkalmazás a szokásos hangkimenetet használja. Ha bekapcsolt állapotban a hang recseg vagy kihagy, kapcsolja ki.</string>
     <string name="audio_latency_multiplier_description">A hangpuffer méretének beállítása (alacsonyabb = kisebb késleltetés, magasabb = kevesebb akadozás).</string>

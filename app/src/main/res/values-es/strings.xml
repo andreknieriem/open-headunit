@@ -279,8 +279,8 @@
     <string name="separate_audio_streams_description">Da a los canales Multimedia, Guía y Sonidos del sistema sus propios flujos de salida en lugar de un único flujo multimedia compartido (puede no funcionar correctamente en algunos dispositivos).</string>
     <string name="separate_audio_streams_summary">Medios, guía y sonidos del sistema tienen sus propias salidas.</string>
     <string name="use_aac_audio">Usar audio AAC</string>
-    <string name="use_aac_audio_description">Usa el códec AAC para el audio y ahorrar ancho de banda (experimental). En una sesión inalámbrica en 2,4 GHz, se activa automáticamente mientras esté activada la opción \"Bajar el video en un enlace de 2,4 GHz\".</string>
-    <string name="use_aac_audio_summary">Usa audio AAC para ahorrar ancho de banda (experimental).</string>
+    <string name="use_aac_audio_description">Usa el códec AAC para el audio y ahorrar ancho de banda. En una sesión inalámbrica en 2,4 GHz, se activa automáticamente mientras esté activada la opción \"Bajar el video en un enlace de 2,4 GHz\".</string>
+    <string name="use_aac_audio_summary">Usa audio AAC para ahorrar ancho de banda.</string>
     <string name="attach_hw_dsp_equalizer">Activador del ecualizador DSP por hardware</string>
     <string name="attach_hw_dsp_equalizer_description">Agrega un efecto de ecualizador ficticio a la sesión de audio para forzar el enrutamiento por DSP de hardware en ciertas unidades centrales. Déjalo desactivado si usas ViPER4Android / ViperFX o si el sonido suena apagado en versiones antiguas de Android.</string>
     <string name="attach_hw_dsp_equalizer_summary">Adjunta un ecualizador ficticio para forzar el enrutamiento por DSP de hardware en algunas unidades.</string>
@@ -567,7 +567,7 @@
     <string name="exit_dialog_background">Mover a segundo plano</string>
     <string name="gesture_hint">Consejo: desliza desde el borde izquierdo con 2 dedos para abrir el menú de salida.</string>
     <string name="audio_latency_multiplier">Multiplicador de latencia de audio</string>
-    <string name="aaudio_output">Salida AAudio (experimental)</string>
+    <string name="aaudio_output">Salida AAudio</string>
     <string name="aaudio_output_description">Prueba la salida de audio multimedia con baja latencia. Usa AudioTrack automáticamente si no está disponible.</string>
     <string name="aaudio_output_help">Reproduce el contenido multimedia de Android Auto con AAudio, una salida de audio de baja latencia. La app la usa solo en Android 9 o posterior. Actívala si el sonido llega más tarde que la imagen. Si AAudio no puede iniciarse, la app usa su salida de audio normal. Si el sonido cruje o se corta con ella activada, desactívala.</string>
     <string name="audio_latency_multiplier_description">Ajusta el tamaño del búfer de audio (menor = menos retraso, mayor = menos cortes).</string>

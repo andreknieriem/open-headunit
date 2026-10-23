@@ -347,8 +347,8 @@
     <string name="separate_audio_streams_description">Weist den Kanälen Medien, Ansagen und Systemtöne jeweils einen eigenen Ausgabestream zu, statt eines gemeinsamen Multimedia-Streams (funktioniert auf manchen Geräten möglicherweise nicht richtig).</string>
     <string name="separate_audio_streams_summary">Medien, Ansagen und Systemtöne erhalten eigene Ausgabe-Streams.</string>
     <string name="use_aac_audio">AAC-Audio verwenden</string>
-    <string name="use_aac_audio_description">Verwendet den AAC-Codec für Audio, um Bandbreite zu sparen (experimentell). Bei einer kabellosen Sitzung über 2,4 GHz wird er automatisch aktiviert, solange „Video bei einer 2,4-GHz-Verbindung verringern“ aktiviert ist.</string>
-    <string name="use_aac_audio_summary">AAC-Audio nutzen, um Bandbreite zu sparen (experimentell).</string>
+    <string name="use_aac_audio_description">Verwendet den AAC-Codec für Audio, um Bandbreite zu sparen. Bei einer kabellosen Sitzung über 2,4 GHz wird er automatisch aktiviert, solange „Video bei einer 2,4-GHz-Verbindung verringern“ aktiviert ist.</string>
+    <string name="use_aac_audio_summary">AAC-Audio nutzen, um Bandbreite zu sparen.</string>
     <string name="attach_hw_dsp_equalizer">Auslöser für Hardware-DSP-Equalizer</string>
     <string name="attach_hw_dsp_equalizer_description">Hängt einen Dummy-Equalizer-Effekt an die Audiositzung an, um auf bestimmten Headunits das Hardware-DSP-Routing zu erzwingen. Deaktiviert lassen, wenn du ViPER4Android / ViperFX nutzt oder der Ton auf älteren Android-Versionen dumpf klingt.</string>
     <string name="attach_hw_dsp_equalizer_summary">Einen Dummy-Equalizer einhängen, um auf manchen Geräten das Hardware-DSP-Routing zu erzwingen.</string>
@@ -631,7 +631,7 @@
     <string name="exit_dialog_background">In den Hintergrund</string>
     <string name="gesture_hint">Tipp: Wische mit zwei Fingern vom linken Rand nach innen, um das Beenden-Menü zu öffnen.</string>
     <string name="audio_latency_multiplier">Audio-Latenz-Multiplikator</string>
-    <string name="aaudio_output">AAudio-Ausgabe (experimentell)</string>
+    <string name="aaudio_output">AAudio-Ausgabe</string>
     <string name="aaudio_output_description">Versucht eine Medienausgabe mit niedriger Latenz. Wenn sie nicht verfügbar ist, wird automatisch AudioTrack verwendet.</string>
     <string name="aaudio_output_help">Gibt Android-Auto-Medien über AAudio aus, einen Audioausgang mit niedriger Latenz. Die App nutzt ihn nur ab Android 9. Aktiviere ihn, wenn der Ton später als das Bild kommt. Kann AAudio nicht starten, nutzt die App ihren normalen Audioausgang. Knistert oder hakt der Ton, solange er an ist, schalte ihn aus.</string>
     <string name="audio_latency_multiplier_description">Audio-Puffergröße anpassen (Niedriger = weniger Verzögerung, Höher = weniger Stottern).</string>

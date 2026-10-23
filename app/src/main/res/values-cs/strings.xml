@@ -278,8 +278,8 @@
     <string name="separate_audio_streams_description">Přidělí kanálům Média, Navigace a Systémové zvuky vlastní výstupní streamy místo jediného sdíleného multimediálního streamu (na některých zařízeních nemusí fungovat správně).</string>
     <string name="separate_audio_streams_summary">Média, pokyny a systémové zvuky mají vlastní výstupní streamy.</string>
     <string name="use_aac_audio">Použít zvuk AAC</string>
-    <string name="use_aac_audio_description">Použije pro zvuk kodek AAC a ušetří šířku pásma (experimentální). U bezdrátového připojení na 2,4 GHz se zapne automaticky, je-li zapnuto „Snížit video na spojení 2,4 GHz“.</string>
-    <string name="use_aac_audio_summary">Používá zvuk AAC pro úsporu šířky pásma (experimentální).</string>
+    <string name="use_aac_audio_description">Použije pro zvuk kodek AAC a ušetří šířku pásma. U bezdrátového připojení na 2,4 GHz se zapne automaticky, je-li zapnuto „Snížit video na spojení 2,4 GHz“.</string>
+    <string name="use_aac_audio_summary">Používá zvuk AAC pro úsporu šířky pásma.</string>
     <string name="attach_hw_dsp_equalizer">Spouštěč HW DSP ekvalizéru</string>
     <string name="attach_hw_dsp_equalizer_description">Připojí k relaci zvuku virtuální ekvalizér pro vynucení směrování přes HW DSP na specifických autorádiích. Ponechte vypnuté, pokud používáte ViPER4Android / ViperFX nebo pokud je zvuk na starších verzích Androidu tlumený.</string>
     <string name="attach_hw_dsp_equalizer_summary">Připojí fiktivní ekvalizér, který na některých autorádiích vynutí směrování přes hardwarový DSP.</string>
@@ -566,7 +566,7 @@
     <string name="exit_dialog_background">Přesunout na pozadí</string>
     <string name="gesture_hint">Tip: Přejetím 2 prsty od levého okraje otevřete nabídku ukončení.</string>
     <string name="audio_latency_multiplier">Násobitel latence zvuku</string>
-    <string name="aaudio_output">Výstup AAudio (experimentální)</string>
+    <string name="aaudio_output">Výstup AAudio</string>
     <string name="aaudio_output_description">Zkusí výstup médií s nízkou latencí. Pokud není dostupný, automaticky použije AudioTrack.</string>
     <string name="aaudio_output_help">Přehrává média Android Auto přes AAudio, zvukový výstup s nízkou latencí. Aplikace jej používá jen na Androidu 9 a novějším. Zapněte to, pokud zvuk přichází později než obraz. Pokud se AAudio nespustí, aplikace použije svůj běžný zvukový výstup. Pokud zvuk při zapnuté volbě praská nebo vypadává, vypněte ji.</string>
     <string name="audio_latency_multiplier_description">Úprava velikosti zvukové vyrovnávací paměti (Nižší = menší zpoždění, Vyšší = méně sekání).</string>

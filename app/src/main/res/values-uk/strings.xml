@@ -278,8 +278,8 @@
     <string name="separate_audio_streams_description">Виділяє каналам «Мультимедіа», «Підказки» та «Системні звуки» окремі вихідні потоки замість одного спільного мультимедійного потоку (може працювати некоректно на деяких пристроях).</string>
     <string name="separate_audio_streams_summary">Мультимедіа, підказки й системні звуки отримують власні вихідні потоки.</string>
     <string name="use_aac_audio">Використовувати аудіокодек AAC</string>
-    <string name="use_aac_audio_description">Використовує кодек AAC для звуку, щоб заощадити смугу пропускання (експериментально). У бездротовому сеансі на частоті 2,4 ГГц він вмикається автоматично, поки ввімкнено «Знижувати якість відео на з’єднанні 2,4 ГГц».</string>
-    <string name="use_aac_audio_summary">Використовує звук AAC для економії смуги пропускання (експериментально).</string>
+    <string name="use_aac_audio_description">Використовує кодек AAC для звуку, щоб заощадити смугу пропускання. У бездротовому сеансі на частоті 2,4 ГГц він вмикається автоматично, поки ввімкнено «Знижувати якість відео на з’єднанні 2,4 ГГц».</string>
+    <string name="use_aac_audio_summary">Використовує звук AAC для економії смуги пропускання.</string>
     <string name="attach_hw_dsp_equalizer">Запуск апаратного DSP-еквалайзера</string>
     <string name="attach_hw_dsp_equalizer_description">Додає фіктивний еквалайзер до аудіосесії, щоб примусово задіяти апаратний DSP на деяких магнітолах. Залишайте вимкненим, якщо використовуєте ViPER4Android / ViperFX або якщо на старих версіях Android звук приглушений.</string>
     <string name="attach_hw_dsp_equalizer_summary">Підключає фіктивний еквалайзер, щоб на деяких пристроях примусово ввімкнути маршрутизацію через апаратний DSP.</string>
@@ -567,7 +567,7 @@
     <string name="exit_dialog_background">У фоновий режим</string>
     <string name="gesture_hint">Порада: проведіть двома пальцями від лівого краю, щоб відкрити меню виходу.</string>
     <string name="audio_latency_multiplier">Множник затримки аудіо</string>
-    <string name="aaudio_output">Вивід AAudio (експериментально)</string>
+    <string name="aaudio_output">Вивід AAudio</string>
     <string name="aaudio_output_description">Спробувати вивід мультимедіа з низькою затримкою. Якщо він недоступний, автоматично використовується AudioTrack.</string>
     <string name="aaudio_output_help">Відтворює медіа Android Auto через AAudio, аудіовихід із малою затримкою. Застосунок використовує його лише на Android 9 і новіших. Увімкніть, якщо звук відстає від зображення. Якщо AAudio не запускається, застосунок використовує звичайний аудіовихід. Якщо за ввімкненої опції звук тріщить або пропадає, вимкніть її.</string>
     <string name="audio_latency_multiplier_description">Налаштування розміру аудіобуфера (менше значення: менша затримка, більше: менше заїкань).</string>

@@ -278,8 +278,8 @@
     <string name="separate_audio_streams_description">Rozdziela dźwięki multimediów, nawigacji i powiadomień na osobne kanały audio zamiast jednego wspólnego (może nie działać poprawnie na niektórych urządzeniach).</string>
     <string name="separate_audio_streams_summary">Multimedia, wskazówki i dźwięki systemowe dostają własne strumienie wyjściowe.</string>
     <string name="use_aac_audio">Użyj dźwięku AAC</string>
-    <string name="use_aac_audio_description">Używaj kodeka AAC do przesyłania dźwięku, aby zmniejszyć zużycie pasma (funkcja eksperymentalna). W połączeniu bezprzewodowym 2,4 GHz włącza się automatycznie, gdy aktywna jest opcja „Niższa jakość obrazu przy łączu 2,4 GHz”.</string>
-    <string name="use_aac_audio_summary">Używa dźwięku AAC, aby oszczędzać pasmo (funkcja eksperymentalna).</string>
+    <string name="use_aac_audio_description">Używaj kodeka AAC do przesyłania dźwięku, aby zmniejszyć zużycie pasma. W połączeniu bezprzewodowym 2,4 GHz włącza się automatycznie, gdy aktywna jest opcja „Niższa jakość obrazu przy łączu 2,4 GHz”.</string>
+    <string name="use_aac_audio_summary">Używa dźwięku AAC, aby oszczędzać pasmo.</string>
     <string name="attach_hw_dsp_equalizer">Wyzwalacz sprzętowego korektora DSP</string>
     <string name="attach_hw_dsp_equalizer_description">Dodaje neutralny korektor do sesji audio, aby wymusić sprzętowe przetwarzanie DSP w wybranych stacjach. Pozostaw wyłączone, jeśli korzystasz z ViPER4Android / ViperFX lub jeśli dźwięk w starszych wersjach Androida jest przytłumiony.</string>
     <string name="attach_hw_dsp_equalizer_summary">Dołącza atrapę korektora, aby wymusić routing przez sprzętowy DSP na niektórych stacjach.</string>
@@ -567,7 +567,7 @@
     <string name="exit_dialog_background">Przenieś do tła</string>
     <string name="gesture_hint">Wskazówka: Przesuń dwoma palcami od lewej krawędzi, aby otworzyć menu wyjścia.</string>
     <string name="audio_latency_multiplier">Mnożnik opóźnienia dźwięku</string>
-    <string name="aaudio_output">Wyjście AAudio (eksperymentalne)</string>
+    <string name="aaudio_output">Wyjście AAudio</string>
     <string name="aaudio_output_description">Próbuje użyć wyjścia multimediów o niskim opóźnieniu. Jeśli jest niedostępne, automatycznie używa AudioTrack.</string>
     <string name="aaudio_output_help">Odtwarza multimedia Android Auto przez AAudio, wyjście audio o niskim opóźnieniu. Aplikacja używa go tylko w Androidzie 9 i nowszym. Włącz to, jeśli dźwięk pojawia się później niż obraz. Jeśli AAudio nie uruchomi się, aplikacja używa zwykłego wyjścia audio. Jeśli przy włączonej opcji dźwięk trzeszczy lub się urywa, wyłącz ją.</string>
     <string name="audio_latency_multiplier_description">Dostosuj rozmiar bufora audio (Niższy = mniejsze opóźnienie, Wyższy = mniej zacinania).</string>

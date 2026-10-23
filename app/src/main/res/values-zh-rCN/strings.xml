@@ -277,8 +277,8 @@
     <string name="separate_audio_streams_description">让媒体、导航语音和系统提示音通道各自使用独立的输出流，而不是共用一个多媒体流（在某些设备上可能无法正常工作）。</string>
     <string name="separate_audio_streams_summary">媒体、导航语音和系统提示音使用各自的输出流。</string>
     <string name="use_aac_audio">使用 AAC 音频</string>
-    <string name="use_aac_audio_description">使用 AAC 编码处理音频以节省带宽（实验性）。在 2.4 GHz 下运行的无线会话中，只要“在 2.4 GHz 连接时降低视频质量”已开启，此选项就会自动开启。</string>
-    <string name="use_aac_audio_summary">使用 AAC 音频以节省带宽（实验性）。</string>
+    <string name="use_aac_audio_description">使用 AAC 编码处理音频以节省带宽。在 2.4 GHz 下运行的无线会话中，只要“在 2.4 GHz 连接时降低视频质量”已开启，此选项就会自动开启。</string>
+    <string name="use_aac_audio_summary">使用 AAC 音频以节省带宽。</string>
     <string name="attach_hw_dsp_equalizer">硬件 DSP 均衡器触发器</string>
     <string name="attach_hw_dsp_equalizer_description">在音频会话中附加一个虚拟均衡器效果，以在特定车机上强制使用硬件 DSP 路由。如果使用 ViPER4Android / ViperFX，或在旧版 Android 上声音发闷，请保持关闭。</string>
     <string name="attach_hw_dsp_equalizer_summary">挂接一个虚拟均衡器，在部分设备上强制使用硬件 DSP 路由。</string>
@@ -566,7 +566,7 @@
     <string name="exit_dialog_background">移至后台</string>
     <string name="gesture_hint">提示：用两根手指从左边缘向内滑动，即可打开退出菜单。</string>
     <string name="audio_latency_multiplier">音频延迟倍数</string>
-    <string name="aaudio_output">AAudio 输出（实验性）</string>
+    <string name="aaudio_output">AAudio 输出</string>
     <string name="aaudio_output_description">尝试低延迟媒体输出。如果不可用，会自动改用 AudioTrack。</string>
     <string name="aaudio_output_help">通过低延迟音频输出 AAudio 播放 Android Auto 媒体。应用仅在 Android 9 及更高版本上使用它。如果声音比画面晚，请开启。如果 AAudio 无法启动，应用会使用普通音频输出。如果开启后声音有杂音或中断，请关闭。</string>
     <string name="audio_latency_multiplier_description">调整音频缓冲区大小（调低 = 延迟更低，调高 = 卡顿更少）。</string>

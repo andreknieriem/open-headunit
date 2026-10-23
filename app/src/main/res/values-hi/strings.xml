@@ -632,8 +632,8 @@
     <string name="onb_audio_help">चुनें कि हर Android Auto चैनल किस सिस्टम स्ट्रीम पर चले, और सुनने के लिए स्पीकर पर टैप करें। कार में कोई चैनल शांत रहे, तो उसे दूसरी स्ट्रीम पर ले जाने से आमतौर पर बात बन जाती है।</string>
     <string name="onb_audio_more_hint">इन्हें आप बाद में सेटिंग्स → ऑडियो स्ट्रीम में फिर से बदल सकते हैं।</string>
     <string name="use_aac_audio">AAC ऑडियो का उपयोग करें</string>
-    <string name="use_aac_audio_description">बैंडविड्थ बचाने के लिए ऑडियो में AAC कोडेक इस्तेमाल करें (प्रायोगिक)। 2.4 GHz पर चल रहे वायरलेस सत्र में, \"2.4 GHz लिंक पर वीडियो कम करें\" चालू होने पर यह अपने-आप चालू रहता है।</string>
-    <string name="use_aac_audio_summary">बैंडविड्थ बचाने के लिए AAC ऑडियो का इस्तेमाल करता है (प्रायोगिक)।</string>
+    <string name="use_aac_audio_description">बैंडविड्थ बचाने के लिए ऑडियो में AAC कोडेक इस्तेमाल करें। 2.4 GHz पर चल रहे वायरलेस सत्र में, \"2.4 GHz लिंक पर वीडियो कम करें\" चालू होने पर यह अपने-आप चालू रहता है।</string>
+    <string name="use_aac_audio_summary">बैंडविड्थ बचाने के लिए AAC ऑडियो का इस्तेमाल करता है।</string>
     <string name="attach_hw_dsp_equalizer">हार्डवेयर DSP इक्वलाइज़र ट्रिगर</string>
     <string name="attach_hw_dsp_equalizer_description">कुछ हेडयूनिट पर हार्डवेयर DSP रूटिंग ज़बरदस्ती चालू करने के लिए ऑडियो सत्र में एक नकली इक्वलाइज़र इफ़ेक्ट जोड़ता है। ViPER4Android / ViperFX इस्तेमाल करने पर, या पुराने Android वर्शन में आवाज़ दबी लगे तो इसे बंद रखें।</string>
     <string name="attach_hw_dsp_equalizer_summary">कुछ यूनिट पर हार्डवेयर DSP रूटिंग के लिए नकली इक्वलाइज़र जोड़ता है।</string>
@@ -1065,7 +1065,7 @@
     <string name="exit_dialog_settings">त्वरित सेटिंग्स</string>
     <string name="gesture_hint">सुझाव: निकास मेनू खोलने के लिए 2 उंगलियों से बाएं किनारे से स्वाइप करें।</string>
     <string name="audio_latency_multiplier">ऑडियो विलंबता गुणक</string>
-    <string name="aaudio_output">AAudio आउटपुट (प्रयोगात्मक)</string>
+    <string name="aaudio_output">AAudio आउटपुट</string>
     <string name="aaudio_output_description">कम विलंब वाला मीडिया आउटपुट आज़माएँ। उपलब्ध न होने पर अपने आप AudioTrack इस्तेमाल होता है।</string>
     <string name="aaudio_output_help">Android Auto की मीडिया को AAudio से चलाता है, जो कम विलंब वाला ऑडियो आउटपुट है। ऐप इसे सिर्फ़ Android 9 और उसके बाद के वर्शन पर इस्तेमाल करता है। अगर आवाज़ तस्वीर से देर से आए, तो इसे चालू करें। AAudio शुरू न हो पाए, तो ऐप सामान्य ऑडियो आउटपुट इस्तेमाल करता है। चालू होने पर आवाज़ कड़कड़ाए या कटे, तो इसे बंद करें।</string>
     <string name="audio_latency_multiplier_description">ऑडियो बफ़र आकार समायोजित करें (कम = कम विलंब, अधिक = कम रुकावट)।</string>

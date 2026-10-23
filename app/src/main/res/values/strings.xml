@@ -650,8 +650,8 @@
     <string name="onb_audio_help">Pick the system stream each Android Auto channel plays on, and tap the speaker to hear it. If a channel stays silent in the car, moving it to another stream is usually the fix.</string>
     <string name="onb_audio_more_hint">You can change these again later under Settings → Audio Streams.</string>
     <string name="use_aac_audio">Use AAC Audio</string>
-    <string name="use_aac_audio_description">Use AAC codec for audio to save bandwidth (Experimental). On a wireless session running on 2.4 GHz this is on automatically while \"Lower video on a 2.4 GHz link\" is on.</string>
-    <string name="use_aac_audio_summary">Use AAC audio to save bandwidth (experimental).</string>
+    <string name="use_aac_audio_description">Use AAC codec for audio to save bandwidth. On a wireless session running on 2.4 GHz this is on automatically while \"Lower video on a 2.4 GHz link\" is on.</string>
+    <string name="use_aac_audio_summary">Use AAC audio to save bandwidth.</string>
     <string name="attach_hw_dsp_equalizer">Hardware DSP Equalizer Trigger</string>
     <string name="attach_hw_dsp_equalizer_description">Attaches a dummy Equalizer effect to the audio session to force hardware DSP routing on specific headunits. Keep disabled if using ViPER4Android / ViperFX or if sound is muffled on older Android versions.</string>
     <string name="attach_hw_dsp_equalizer_summary">Attach a dummy Equalizer to force hardware DSP routing on some units.</string>
@@ -1093,7 +1093,7 @@
     <string name="exit_dialog_settings">Quick Settings</string>
     <string name="gesture_hint">Tip: Swipe from the left edge with 2 fingers to open the exit menu.</string>
     <string name="audio_latency_multiplier">Audio Latency Multiplier</string>
-    <string name="aaudio_output">AAudio output (experimental)</string>
+    <string name="aaudio_output">AAudio output</string>
     <string name="aaudio_output_description">Try low-latency media output. Automatically uses AudioTrack if unavailable.</string>
     <string name="aaudio_output_help">Plays Android Auto media through AAudio, a low-latency audio output. The app uses it only on Android 9 and later. Turn it on if the sound comes later than the picture. If AAudio cannot start, the app uses its normal audio output. If the sound crackles or drops with it on, turn it off.</string>
     <string name="audio_latency_multiplier_description">Adjust audio buffer size (Lower = Less Lag, Higher = Less Stutter).</string>

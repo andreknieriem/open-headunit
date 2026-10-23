@@ -632,8 +632,8 @@
     <string name="onb_audio_help">Pilih aliran sistem tempat setiap saluran Android Auto diputar, lalu ketuk speaker untuk mendengarnya. Jika sebuah saluran tidak bersuara di mobil, memindahkannya ke aliran lain biasanya memperbaiki masalah.</string>
     <string name="onb_audio_more_hint">Anda dapat mengubahnya lagi nanti di Pengaturan → Aliran Audio.</string>
     <string name="use_aac_audio">Gunakan Audio AAC</string>
-    <string name="use_aac_audio_description">Gunakan kodek AAC untuk audio guna menghemat bandwidth (Eksperimental). Pada sesi nirkabel pada 2,4 GHz, ini aktif otomatis saat \"Turunkan video pada tautan 2,4 GHz\" aktif.</string>
-    <string name="use_aac_audio_summary">Memakai audio AAC untuk menghemat bandwidth (eksperimental).</string>
+    <string name="use_aac_audio_description">Gunakan kodek AAC untuk audio guna menghemat bandwidth. Pada sesi nirkabel pada 2,4 GHz, ini aktif otomatis saat \"Turunkan video pada tautan 2,4 GHz\" aktif.</string>
+    <string name="use_aac_audio_summary">Memakai audio AAC untuk menghemat bandwidth.</string>
     <string name="attach_hw_dsp_equalizer">Pemicu Equalizer DSP Perangkat Keras</string>
     <string name="attach_hw_dsp_equalizer_description">Menambahkan efek Equalizer tiruan ke sesi audio untuk memaksa perutean DSP perangkat keras pada head unit tertentu. Biarkan nonaktif jika Anda memakai ViPER4Android / ViperFX atau jika suara teredam pada Android versi lama.</string>
     <string name="attach_hw_dsp_equalizer_summary">Memasang Equalizer palsu untuk memaksa perutean DSP perangkat keras di beberapa unit.</string>
@@ -1065,7 +1065,7 @@
     <string name="exit_dialog_settings">Setelan Cepat</string>
     <string name="gesture_hint">Tips: Geser dari tepi kiri dengan 2 jari untuk membuka menu keluar.</string>
     <string name="audio_latency_multiplier">Pengali Latensi Audio</string>
-    <string name="aaudio_output">Output AAudio (eksperimental)</string>
+    <string name="aaudio_output">Output AAudio</string>
     <string name="aaudio_output_description">Coba output media berlatensi rendah. Otomatis memakai AudioTrack jika tidak tersedia.</string>
     <string name="aaudio_output_help">Memutar media Android Auto lewat AAudio, keluaran audio berlatensi rendah. Aplikasi hanya memakainya di Android 9 ke atas. Aktifkan jika suara muncul lebih lambat dari gambar. Jika AAudio tidak bisa dimulai, aplikasi memakai keluaran audio biasa. Jika suara berderak atau putus saat opsi aktif, nonaktifkan.</string>
     <string name="audio_latency_multiplier_description">Sesuaikan ukuran buffer audio (lebih rendah = lebih sedikit lag, lebih tinggi = lebih sedikit tersendat).</string>

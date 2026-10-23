@@ -175,4 +175,19 @@ class SettingsStringLimitsTest {
         }
         assertTrue("joined help gaps (${gaps.size}): ${gaps.take(20)}", gaps.isEmpty())
     }
+
+    @Test
+    fun `the experimental label is gone from the AAC and AAudio strings`() {
+        val keys = listOf("use_aac_audio_description", "use_aac_audio_summary", "aaudio_output")
+        val bad = mutableListOf<String>()
+        (listOf(File(res, "values")) + localeDirs()).forEach { dir ->
+            val have = strings(File(dir, "strings.xml"))
+            keys.forEach { key ->
+                val text = have[key]
+                if (text == null) bad.add("${dir.name}: $key missing")
+                else if (text.contains("(") || text.contains("\uFF08")) bad.add("${dir.name}: $key")
+            }
+        }
+        assertTrue("strings that still carry a label (${bad.size}): ${bad.take(30)}", bad.isEmpty())
+    }
 }

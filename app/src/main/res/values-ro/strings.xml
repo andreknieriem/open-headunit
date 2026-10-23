@@ -301,8 +301,8 @@
     <string name="separate_audio_streams_description">Oferă canalelor Media, Ghidare și Sunete de sistem fluxuri de ieșire proprii în locul unui singur flux multimedia comun (s-ar putea să nu funcționeze corect pe anumite dispozitive).</string>
     <string name="separate_audio_streams_summary">Media, ghidarea și sunetele de sistem primesc fluxuri de ieșire proprii.</string>
     <string name="use_aac_audio">Folosește Audio AAC</string>
-    <string name="use_aac_audio_description">Folosește codecul AAC pentru audio pentru a economisi lățime de bandă (Experimental). Într-o sesiune fără fir care rulează pe 2,4 GHz, aceasta se activează automat cât timp \"Video redus pe o legătură de 2,4 GHz\" este activat.</string>
-    <string name="use_aac_audio_summary">Folosește audio AAC pentru a economisi lățime de bandă (experimental).</string>
+    <string name="use_aac_audio_description">Folosește codecul AAC pentru audio pentru a economisi lățime de bandă. Într-o sesiune fără fir care rulează pe 2,4 GHz, aceasta se activează automat cât timp \"Video redus pe o legătură de 2,4 GHz\" este activat.</string>
+    <string name="use_aac_audio_summary">Folosește audio AAC pentru a economisi lățime de bandă.</string>
     <string name="attach_hw_dsp_equalizer">Declanșator egalizator DSP hardware</string>
     <string name="attach_hw_dsp_equalizer_description">Atașează un efect de egalizator fictiv la sesiunea audio pentru a forța direcționarea prin DSP hardware pe anumite unități auto. Lasă dezactivat dacă folosești ViPER4Android / ViperFX sau dacă sunetul este înfundat pe versiuni vechi de Android.</string>
     <string name="attach_hw_dsp_equalizer_summary">Atașează un egalizator fals pentru a forța rutarea prin DSP hardware pe unele unități.</string>
@@ -567,7 +567,7 @@
     <string name="exit_dialog_background">Mută în fundal</string>
     <string name="gesture_hint">Sfat: glisați cu 2 degete dinspre marginea stângă pentru a deschide meniul de ieșire.</string>
     <string name="audio_latency_multiplier">Multiplicator latență audio</string>
-    <string name="aaudio_output">Ieșire AAudio (experimental)</string>
+    <string name="aaudio_output">Ieșire AAudio</string>
     <string name="aaudio_output_description">Încearcă ieșirea media cu latență redusă. Folosește automat AudioTrack dacă nu este disponibilă.</string>
     <string name="aaudio_output_help">Redă conținutul media Android Auto prin AAudio, o ieșire audio cu latență mică. Aplicația o folosește doar pe Android 9 sau mai nou. Activează-o dacă sunetul vine după imagine. Dacă AAudio nu pornește, aplicația folosește ieșirea audio obișnuită. Dacă sunetul pârâie sau se întrerupe cu opțiunea activată, dezactivează-o.</string>
     <string name="audio_latency_multiplier_description">Ajustare dimensiune buffer audio (Mai mic = latență mai mică, Mai mare = mai puține întreruperi).</string>

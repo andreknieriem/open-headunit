@@ -298,8 +298,8 @@
     <string name="separate_audio_streams_description">Cấp cho các kênh Đa phương tiện, Chỉ dẫn và Âm thanh hệ thống luồng đầu ra riêng thay vì một luồng đa phương tiện dùng chung (có thể không hoạt động đúng trên một số thiết bị).</string>
     <string name="separate_audio_streams_summary">Phương tiện, Chỉ đường và Âm thanh hệ thống có luồng đầu ra riêng.</string>
     <string name="use_aac_audio">Dùng âm thanh AAC</string>
-    <string name="use_aac_audio_description">Dùng codec AAC để tiết kiệm băng thông (Thử nghiệm). Trong phiên không dây chạy trên 2,4 GHz, tùy chọn này tự động bật trong khi \"Giảm video trên đường truyền 2,4 GHz\" đang bật.</string>
-    <string name="use_aac_audio_summary">Dùng âm thanh AAC để tiết kiệm băng thông (thử nghiệm).</string>
+    <string name="use_aac_audio_description">Dùng codec AAC để tiết kiệm băng thông. Trong phiên không dây chạy trên 2,4 GHz, tùy chọn này tự động bật trong khi \"Giảm video trên đường truyền 2,4 GHz\" đang bật.</string>
+    <string name="use_aac_audio_summary">Dùng âm thanh AAC để tiết kiệm băng thông.</string>
     <string name="attach_hw_dsp_equalizer">Bộ kích hoạt bộ cân bằng DSP phần cứng</string>
     <string name="attach_hw_dsp_equalizer_description">Gắn hiệu ứng bộ cân bằng giả vào phiên âm thanh để buộc định tuyến DSP phần cứng trên một số màn hình. Giữ tắt nếu sử dụng ViPER4Android / ViperFX hoặc nếu âm thanh bị nghẹt trên các phiên bản Android cũ.</string>
     <string name="attach_hw_dsp_equalizer_summary">Gắn một bộ chỉnh âm giả để buộc định tuyến qua DSP phần cứng trên một số thiết bị.</string>
@@ -593,7 +593,7 @@
     <string name="exit_dialog_background">Đưa xuống nền</string>
     <string name="gesture_hint">Mẹo: Vuốt từ cạnh trái bằng 2 ngón để mở menu thoát.</string>
     <string name="audio_latency_multiplier">Hệ số độ trễ âm thanh</string>
-    <string name="aaudio_output">Xuất âm thanh AAudio (thử nghiệm)</string>
+    <string name="aaudio_output">Xuất âm thanh AAudio</string>
     <string name="aaudio_output_description">Thử xuất âm thanh phương tiện với độ trễ thấp. Tự dùng AudioTrack nếu không khả dụng.</string>
     <string name="aaudio_output_help">Phát phương tiện của Android Auto qua AAudio, một đầu ra âm thanh có độ trễ thấp. Ứng dụng chỉ dùng trên Android 9 trở lên. Bật nếu âm thanh đến chậm hơn hình ảnh. Nếu AAudio không khởi động được, ứng dụng dùng đầu ra âm thanh thông thường. Nếu âm thanh bị rè hoặc ngắt khi bật, hãy tắt.</string>
     <string name="audio_latency_multiplier_description">Điều chỉnh kích thước bộ đệm âm thanh (Thấp = ít lag, Cao = ít giật).</string>

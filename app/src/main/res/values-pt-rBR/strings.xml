@@ -278,8 +278,8 @@
     <string name="separate_audio_streams_description">Dá aos canais Mídia, Orientação e Sons do sistema fluxos de saída próprios em vez de um único fluxo multimídia compartilhado (pode não funcionar corretamente em alguns dispositivos).</string>
     <string name="separate_audio_streams_summary">Mídia, orientação e sons do sistema têm saídas próprias.</string>
     <string name="use_aac_audio">Usar áudio AAC</string>
-    <string name="use_aac_audio_description">Usa o codec AAC para áudio para economizar banda (experimental). Em uma sessão sem fio rodando em 2,4 GHz, isso é ativado automaticamente enquanto \"Reduzir o vídeo em um enlace de 2,4 GHz\" estiver ativado.</string>
-    <string name="use_aac_audio_summary">Usa áudio AAC para economizar banda (experimental).</string>
+    <string name="use_aac_audio_description">Usa o codec AAC para áudio para economizar banda. Em uma sessão sem fio rodando em 2,4 GHz, isso é ativado automaticamente enquanto \"Reduzir o vídeo em um enlace de 2,4 GHz\" estiver ativado.</string>
+    <string name="use_aac_audio_summary">Usa áudio AAC para economizar banda.</string>
     <string name="attach_hw_dsp_equalizer">Ativador de equalizador DSP via hardware</string>
     <string name="attach_hw_dsp_equalizer_description">Anexa um efeito de equalizador fictício à sessão de áudio para forçar o roteamento por DSP via hardware em algumas centrais multimídia. Mantenha desativado se usar ViPER4Android / ViperFX ou se o som ficar abafado em versões antigas do Android.</string>
     <string name="attach_hw_dsp_equalizer_summary">Anexa um equalizador fictício para forçar o roteamento pelo DSP de hardware em algumas unidades.</string>
@@ -567,7 +567,7 @@
     <string name="exit_dialog_background">Mover para segundo plano</string>
     <string name="gesture_hint">Dica: Deslize com 2 dedos a partir da borda esquerda para abrir o menu de saída.</string>
     <string name="audio_latency_multiplier">Multiplicador de latência de áudio</string>
-    <string name="aaudio_output">Saída AAudio (experimental)</string>
+    <string name="aaudio_output">Saída AAudio</string>
     <string name="aaudio_output_description">Tenta usar saída de mídia com baixa latência. Usa o AudioTrack automaticamente se ela não estiver disponível.</string>
     <string name="aaudio_output_help">Reproduz a mídia do Android Auto por AAudio, uma saída de áudio de baixa latência. O app só a usa no Android 9 ou posterior. Ative se o som chegar depois da imagem. Se o AAudio não iniciar, o app usa a saída de áudio normal. Se o som chiar ou cair com a opção ativada, desative.</string>
     <string name="audio_latency_multiplier_description">Ajuste o tamanho do buffer de áudio (Menor = menos lag, Maior = menos engasgos).</string>

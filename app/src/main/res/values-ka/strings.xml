@@ -310,8 +310,8 @@
     <string name="separate_audio_streams_description">აძლევს არხებს მედია, მითითებები და სისტემური ხმები ცალკე გამომავალ ნაკადებს ერთი საერთო მულტიმედიური ნაკადის ნაცვლად (ზოგიერთ მოწყობილობაზე შესაძლოა გამართულად არ იმუშაოს).</string>
     <string name="separate_audio_streams_summary">მედიას, მითითებებსა და სისტემურ ხმებს საკუთარი გამომავალი ნაკადები ექნებათ.</string>
     <string name="use_aac_audio">AAC აუდიოს გამოყენება</string>
-    <string name="use_aac_audio_description">AAC კოდეკის გამოყენება აუდიოსთვის გამტარუნარიანობის დასაზოგად (ექსპერიმენტული). 2.4 გჰც-ზე მომუშავე უსადენო სესიისას, ეს ავტომატურად ირთვება, სანამ \"ვიდეოს დაწევა 2.4 გჰც კავშირზე\" ჩართულია.</string>
-    <string name="use_aac_audio_summary">იყენებს AAC აუდიოს გამტარუნარიანობის დასაზოგად (ექსპერიმენტული).</string>
+    <string name="use_aac_audio_description">AAC კოდეკის გამოყენება აუდიოსთვის გამტარუნარიანობის დასაზოგად. 2.4 გჰც-ზე მომუშავე უსადენო სესიისას, ეს ავტომატურად ირთვება, სანამ \"ვიდეოს დაწევა 2.4 გჰც კავშირზე\" ჩართულია.</string>
+    <string name="use_aac_audio_summary">იყენებს AAC აუდიოს გამტარუნარიანობის დასაზოგად.</string>
     <string name="attach_hw_dsp_equalizer">აპარატურული DSP ეკვალაიზერის ტრიგერი</string>
     <string name="attach_hw_dsp_equalizer_description">ამატებს ფიქტიურ ეკვალაიზერის ეფექტს აუდიო სესიას აპარატურული DSP მარშრუტიზაციის იძულებით ჩართვისთვის. დატოვეთ გამორთული თუ იყენებთ ViPER4Android / ViperFX-ს ან თუ ხმა დახშულია ძველ Android ვერსიებზე.</string>
     <string name="attach_hw_dsp_equalizer_summary">აერთებს ყალბ ეკვალაიზერს, რათა ზოგ მოწყობილობაზე აპარატურული DSP-ით მარშრუტიზაცია აიძულოს.</string>
@@ -621,7 +621,7 @@
     <string name="exit_dialog_settings">სწრაფი პარამეტრები</string>
     <string name="gesture_hint">რჩევა: გადაუსვით მარცხენა კიდიდან 2 თითით გასვლის მენიუს გასახსნელად.</string>
     <string name="audio_latency_multiplier">აუდიოს დაყოვნების მამრავლი</string>
-    <string name="aaudio_output">AAudio გამოტანა (ექსპერიმენტული)</string>
+    <string name="aaudio_output">AAudio გამოტანა</string>
     <string name="aaudio_output_description">სცადეთ მედიის დაბალი დაყოვნებით გამოტანა. თუ მიუწვდომელია, ავტომატურად გამოიყენება AudioTrack.</string>
     <string name="aaudio_output_help">Android Auto-ს მედიას უკრავს AAudio-ით, დაბალი შეყოვნების აუდიოგამოსავლით. აპი მას მხოლოდ Android 9-ზე და უფრო ახალზე იყენებს. ჩართეთ, თუ ხმა სურათს ჩამორჩება. თუ AAudio ვერ ეშვება, აპი ჩვეულებრივ აუდიოგამოსავალს იყენებს. თუ ჩართულისას ხმა ტკაცუნობს ან წყდება, გამორთეთ.</string>
     <string name="audio_latency_multiplier_description">აუდიო ბუფერის ზომის რეგულირება (დაბალი = ნაკლები დაყოვნება, მაღალი = ნაკლები წყვეტა).</string>

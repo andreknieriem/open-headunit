@@ -306,8 +306,8 @@
     <string name="separate_audio_streams_description">「メディア」「音声案内」「システム音」の各チャンネルに、共有の 1 つのマルチメディアストリームではなく専用の出力ストリームを割り当てます（一部の端末では正しく動作しない場合があります）。</string>
     <string name="separate_audio_streams_summary">メディア、ガイダンス、システム音に、それぞれ専用の出力ストリームを使います。</string>
     <string name="use_aac_audio">AAC 音声を使用</string>
-    <string name="use_aac_audio_description">帯域幅を節約するために、音声に AAC コーデックを使用します（試験運用）。2.4 GHz で動作するワイヤレスセッションでは、「2.4 GHz の回線ではビデオを下げる」がオンの間、この設定は自動的にオンになります。</string>
-    <string name="use_aac_audio_summary">帯域を節約するため AAC 音声を使います (試験的)。</string>
+    <string name="use_aac_audio_description">帯域幅を節約するために、音声に AAC コーデックを使用します。2.4 GHz で動作するワイヤレスセッションでは、「2.4 GHz の回線ではビデオを下げる」がオンの間、この設定は自動的にオンになります。</string>
+    <string name="use_aac_audio_summary">帯域を節約するため AAC 音声を使います。</string>
     <string name="attach_hw_dsp_equalizer">ハードウェアDSPイコライザートリガー</string>
     <string name="attach_hw_dsp_equalizer_description">オーディオセッションにダミーのイコライザーエフェクトをアタッチし、一部のヘッドユニットでハードウェアDSPルーティングを強制します。ViPER4Android / ViperFXを使用している場合や、古いAndroidで音声がこもる場合は無効にしてください。</string>
     <string name="attach_hw_dsp_equalizer_summary">一部の機器でハードウェア DSP 経由を強制するため、ダミーのイコライザーを接続します。</string>
@@ -575,7 +575,7 @@
     <string name="exit_dialog_background">バックグラウンドへ移動</string>
     <string name="gesture_hint">ヒント：左端から 2 本の指でスワイプすると、終了メニューが開きます。</string>
     <string name="audio_latency_multiplier">音声遅延の倍率</string>
-    <string name="aaudio_output">AAudio出力（試験運用）</string>
+    <string name="aaudio_output">AAudio出力</string>
     <string name="aaudio_output_description">低遅延のメディア出力を試します。利用できない場合は、自動的にAudioTrackを使用します。</string>
     <string name="aaudio_output_help">Android Autoのメディアを、低遅延の音声出力であるAAudioで再生します。アプリはAndroid 9以降でのみ使用します。音が映像より遅れるときにオンにしてください。AAudioを開始できない場合、アプリは通常の音声出力を使います。オンにして音が途切れたりプチプチ鳴ったりする場合は、オフにしてください。</string>
     <string name="audio_latency_multiplier_description">音声バッファサイズを調整します（小さい：遅延が少ない、大きい：音切れが少ない）。</string>

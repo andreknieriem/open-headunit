@@ -278,8 +278,8 @@
     <string name="separate_audio_streams_description">يمنح قنوات الوسائط والإرشادات وأصوات النظام تدفقات إخراج خاصة بها بدلًا من تدفق وسائط واحد مشترك (قد لا يعمل بشكل صحيح على بعض الأجهزة).</string>
     <string name="separate_audio_streams_summary">تحصل الوسائط والإرشادات وأصوات النظام على مجاري إخراج خاصة بها.</string>
     <string name="use_aac_audio">استخدام ترميز AAC للصوت</string>
-    <string name="use_aac_audio_description">استخدام ترميز AAC للصوت لتوفير عرض النطاق (تجريبي). في جلسة لاسلكية على 2.4 غيغاهرتز، يُفعَّل هذا تلقائيًا ما دام خيار \"خفض جودة الفيديو على وصلة 2.4 غيغاهرتز\" مفعّلًا.</string>
-    <string name="use_aac_audio_summary">يستخدم صوت AAC لتوفير عرض النطاق (تجريبي).</string>
+    <string name="use_aac_audio_description">استخدام ترميز AAC للصوت لتوفير عرض النطاق. في جلسة لاسلكية على 2.4 غيغاهرتز، يُفعَّل هذا تلقائيًا ما دام خيار \"خفض جودة الفيديو على وصلة 2.4 غيغاهرتز\" مفعّلًا.</string>
+    <string name="use_aac_audio_summary">يستخدم صوت AAC لتوفير عرض النطاق.</string>
     <string name="attach_hw_dsp_equalizer">مشغل معادل الصوت DSP للأجهزة</string>
     <string name="attach_hw_dsp_equalizer_description">يربط تأثير معادل صوت وهمي بجلسة الصوت لفرض التوجيه عبر DSP للأجهزة في وحدات معينة. اتركه معطلاً إذا كنت تستخدم ViPER4Android / ViperFX أو إذا كان الصوت مكتوماً على إصدارات Android القديمة.</string>
     <string name="attach_hw_dsp_equalizer_summary">يرفق معادلًا صوتيًا وهميًا لفرض التوجيه عبر DSP العتاد على بعض الوحدات.</string>
@@ -566,7 +566,7 @@
     <string name="exit_dialog_background">نقل إلى الخلفية</string>
     <string name="gesture_hint">نصيحة: اسحب بإصبعين من الحافة اليسرى لفتح قائمة الخروج.</string>
     <string name="audio_latency_multiplier">مضاعف زمن انتقال الصوت</string>
-    <string name="aaudio_output">إخراج AAudio (تجريبي)</string>
+    <string name="aaudio_output">إخراج AAudio</string>
     <string name="aaudio_output_description">جرّب إخراج الوسائط بزمن انتقال منخفض. يُستخدم AudioTrack تلقائيًا إذا لم يتوفر.</string>
     <string name="aaudio_output_help">يشغّل وسائط Android Auto عبر AAudio، وهو خرج صوت منخفض التأخير. يستخدمه التطبيق فقط على Android 9 أو أحدث. فعّله إذا وصل الصوت متأخرًا عن الصورة. إذا تعذّر بدء AAudio، يستخدم التطبيق خرج الصوت العادي. إذا تقطّع الصوت أو تشوّش عند تفعيله، فأوقفه.</string>
     <string name="audio_latency_multiplier_description">ضبط حجم مخزن الصوت (أقل = تأخير أقل، أعلى = تقطع أقل).</string>

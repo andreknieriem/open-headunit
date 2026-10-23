@@ -632,8 +632,8 @@
     <string name="onb_audio_help">เลือกสตรีมระบบที่แต่ละช่องของ Android Auto ใช้เล่นเสียง แล้วแตะลำโพงเพื่อฟัง หากช่องใดเงียบในรถ การย้ายไปสตรีมอื่นมักช่วยได้</string>
     <string name="onb_audio_more_hint">คุณเปลี่ยนค่าเหล่านี้ได้ภายหลังที่ การตั้งค่า → สตรีมเสียง</string>
     <string name="use_aac_audio">ใช้เสียง AAC</string>
-    <string name="use_aac_audio_description">ใช้ตัวแปลงสัญญาณ AAC สำหรับเสียงเพื่อประหยัดแบนด์วิดท์ (ทดลอง) ในเซสชันไร้สายบนความถี่ 2.4 GHz ตัวเลือกนี้จะเปิดอัตโนมัติขณะที่เปิด \"ลดวิดีโอบนลิงก์ 2.4 GHz\" อยู่</string>
-    <string name="use_aac_audio_summary">ใช้เสียง AAC เพื่อประหยัดแบนด์วิดท์ (ทดลอง)</string>
+    <string name="use_aac_audio_description">ใช้ตัวแปลงสัญญาณ AAC สำหรับเสียงเพื่อประหยัดแบนด์วิดท์ ในเซสชันไร้สายบนความถี่ 2.4 GHz ตัวเลือกนี้จะเปิดอัตโนมัติขณะที่เปิด \"ลดวิดีโอบนลิงก์ 2.4 GHz\" อยู่</string>
+    <string name="use_aac_audio_summary">ใช้เสียง AAC เพื่อประหยัดแบนด์วิดท์</string>
     <string name="attach_hw_dsp_equalizer">ตัวกระตุ้นอีควอไลเซอร์ DSP ฮาร์ดแวร์</string>
     <string name="attach_hw_dsp_equalizer_description">แนบเอฟเฟกต์อีควอไลเซอร์จำลองกับเซสชันเสียงเพื่อบังคับให้ส่งเสียงผ่าน DSP ฮาร์ดแวร์บนเฮดยูนิตบางรุ่น ควรปิดไว้หากใช้ ViPER4Android / ViperFX หรือเสียงอู้อี้บน Android รุ่นเก่า</string>
     <string name="attach_hw_dsp_equalizer_summary">เชื่อมอีควอไลเซอร์ปลอมเพื่อบังคับการส่งผ่าน DSP ฮาร์ดแวร์บนบางเครื่อง</string>
@@ -1065,7 +1065,7 @@
     <string name="exit_dialog_settings">การตั้งค่าด่วน</string>
     <string name="gesture_hint">เคล็ดลับ: ปัดจากขอบซ้ายด้วย 2 นิ้วเพื่อเปิดเมนูออก</string>
     <string name="audio_latency_multiplier">ตัวคูณความหน่วงเสียง</string>
-    <string name="aaudio_output">เอาต์พุต AAudio (ทดลอง)</string>
+    <string name="aaudio_output">เอาต์พุต AAudio</string>
     <string name="aaudio_output_description">ลองใช้เอาต์พุตสื่อแบบหน่วงต่ำ หากใช้ไม่ได้ จะใช้ AudioTrack โดยอัตโนมัติ</string>
     <string name="aaudio_output_help">เล่นสื่อของ Android Auto ผ่าน AAudio ซึ่งเป็นเอาต์พุตเสียงที่หน่วงต่ำ แอปใช้เฉพาะบน Android 9 ขึ้นไป เปิดเมื่อเสียงมาช้ากว่าภาพ หาก AAudio เริ่มไม่ได้ แอปจะใช้เอาต์พุตเสียงปกติ หากเปิดแล้วเสียงแตกหรือขาดหาย ให้ปิด</string>
     <string name="audio_latency_multiplier_description">ปรับขนาดบัฟเฟอร์เสียง (ต่ำ = หน่วงน้อยลง, สูง = กระตุกน้อยลง)</string>

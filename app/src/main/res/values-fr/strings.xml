@@ -511,8 +511,8 @@
     <string name="separate_audio_streams_description">Attribue aux canaux Multimédia, Guidage et Sons système leurs propres flux de sortie au lieu d\'un seul flux multimédia partagé (peut ne pas fonctionner correctement sur certains appareils).</string>
     <string name="separate_audio_streams_summary">Média, guidage et sons système ont chacun leur propre sortie.</string>
     <string name="use_aac_audio">Utiliser l\'audio AAC</string>
-    <string name="use_aac_audio_description">Utiliser le codec AAC pour l\'audio pour économiser de la bande passante (Expérimental). Lors d\'une session sans fil tournant en 2,4 GHz, ceci s\'active automatiquement tant que \"Réduire la vidéo sur une liaison 2,4 GHz\" est activé.</string>
-    <string name="use_aac_audio_summary">Utilise l\'audio AAC pour économiser la bande passante (expérimental).</string>
+    <string name="use_aac_audio_description">Utiliser le codec AAC pour l\'audio pour économiser de la bande passante. Lors d\'une session sans fil tournant en 2,4 GHz, ceci s\'active automatiquement tant que \"Réduire la vidéo sur une liaison 2,4 GHz\" est activé.</string>
+    <string name="use_aac_audio_summary">Utilise l\'audio AAC pour économiser la bande passante.</string>
     <string name="attach_hw_dsp_equalizer">Déclencheur d\'égaliseur DSP matériel</string>
     <string name="attach_hw_dsp_equalizer_description">Attache un effet d\'égaliseur factice à la session audio pour forcer le routage DSP matériel sur certains autoradios. Laissez cette option désactivée si vous utilisez ViPER4Android / ViperFX ou si le son est étouffé sur d\'anciennes versions d\'Android.</string>
     <string name="attach_hw_dsp_equalizer_summary">Associe un égaliseur factice pour forcer le routage par le DSP matériel sur certains appareils.</string>
@@ -908,7 +908,7 @@
     <string name="exit_dialog_settings">Paramètres rapides</string>
     <string name="gesture_hint">Astuce : balayez depuis le bord gauche avec deux doigts pour ouvrir le menu de sortie.</string>
     <string name="audio_latency_multiplier">Multiplicateur de latence audio</string>
-    <string name="aaudio_output">Sortie AAudio (expérimental)</string>
+    <string name="aaudio_output">Sortie AAudio</string>
     <string name="aaudio_output_description">Essayez la sortie multimédia à faible latence. AudioTrack est utilisé automatiquement si elle n\'est pas disponible.</string>
     <string name="aaudio_output_help">Lit les médias d\'Android Auto via AAudio, une sortie audio à faible latence. L\'appli ne l\'utilise que sous Android 9 ou plus. Activez-la si le son arrive après l\'image. Si AAudio ne démarre pas, l\'appli utilise sa sortie audio normale. Si le son grésille ou saute avec cette option, désactivez-la.</string>
     <string name="audio_latency_multiplier_description">Ajuster la taille du tampon audio (Plus bas = Moins de décalage, Plus haut = Moins de saccades).</string>

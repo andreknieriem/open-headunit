@@ -1,5 +1,5 @@
 <resources>
-    <string name="aaudio_output">AAudio 출력(실험적 기능)</string>
+    <string name="aaudio_output">AAudio 출력</string>
     <string name="aaudio_output_description">AAudio로 저지연 미디어 출력을 시도합니다. AAudio를 사용할 수 없으면 AudioTrack을 자동으로 사용합니다.</string>
     <string name="aaudio_output_help">Android Auto 미디어를 지연 시간이 짧은 오디오 출력인 AAudio로 재생합니다. 앱은 Android 9 이상에서만 사용합니다. 소리가 화면보다 늦을 때 사용 설정하세요. AAudio를 시작할 수 없으면 앱이 일반 오디오 출력을 사용합니다. 사용 설정했을 때 소리가 지직거리거나 끊기면 사용 중지하세요.</string>
     <string name="app_name">Open Headunit</string>
@@ -322,8 +322,8 @@
     <string name="separate_audio_streams_description">미디어, 안내 음성, 시스템 소리 채널이 공용 멀티미디어 스트림 하나를 함께 쓰는 대신, 채널별로 출력 스트림을 따로 지정합니다(일부 기기에서는 제대로 작동하지 않을 수 있습니다).</string>
     <string name="separate_audio_streams_summary">미디어, 안내 음성, 시스템 소리에 각각 별도의 출력 스트림을 사용합니다.</string>
     <string name="use_aac_audio">AAC 오디오 사용</string>
-    <string name="use_aac_audio_description">대역폭을 절약하기 위해 오디오에 AAC 코덱을 사용합니다(실험적 기능). 2.4 GHz 무선 연결에서는 \"2.4 GHz 연결에서 영상 화질 낮추기\"가 켜져 있는 동안 이 설정도 자동으로 켜집니다.</string>
-    <string name="use_aac_audio_summary">대역폭을 절약하려고 AAC 오디오를 사용합니다(실험적).</string>
+    <string name="use_aac_audio_description">대역폭을 절약하기 위해 오디오에 AAC 코덱을 사용합니다. 2.4 GHz 무선 연결에서는 \"2.4 GHz 연결에서 영상 화질 낮추기\"가 켜져 있는 동안 이 설정도 자동으로 켜집니다.</string>
+    <string name="use_aac_audio_summary">대역폭을 절약하려고 AAC 오디오를 사용합니다.</string>
     <string name="attach_hw_dsp_equalizer">하드웨어 DSP 이퀄라이저 트리거</string>
     <string name="attach_hw_dsp_equalizer_description">오디오 세션에 더미 Equalizer 효과를 연결하여 특정 헤드유닛에서 하드웨어 DSP 라우팅을 강제합니다. ViPER4Android / ViperFX를 사용 중이거나 이전 Android 버전에서 소리가 먹먹하게 들리면 사용 중지 상태로 유지하세요.</string>
     <string name="attach_hw_dsp_equalizer_summary">일부 기기에서 하드웨어 DSP 라우팅을 강제하려고 가짜 이퀄라이저를 연결합니다.</string>

@@ -87,25 +87,38 @@ object ScreenOrientationPolicy {
      * the setting itself applies.
      *
      * The stream keeps the shape it was negotiated in, so a window that turns under it is drawn
-     * stretched. AUTO has held its shape since the lock existed; SYSTEM followed every rotation.
-     * SYSTEM holds with the USER_ variants, so a unit mounted the other way up stays that way up.
-     * They arrived in API 18; the sensor variants would turn against a rotation lock, so below
-     * that SYSTEM holds the fixed shape AUTO does.
+     * stretched. AUTO has held its shape since the lock existed. SYSTEM is not held: it follows
+     * the system, and a turn to the other shape redraws the session ([redrawsSession]). Holding it
+     * kept a session started on a unit locked portrait in portrait after rotation was turned on.
      */
-    fun sessionOrientation(setting: Settings.ScreenOrientation, negotiatedLandscape: Boolean, sdkInt: Int): Int? =
+    fun sessionOrientation(setting: Settings.ScreenOrientation, negotiatedLandscape: Boolean): Int? =
         when (setting) {
             Settings.ScreenOrientation.AUTO -> fixedShape(negotiatedLandscape)
-            Settings.ScreenOrientation.SYSTEM ->
-                if (sdkInt < USER_SHAPES_SDK) fixedShape(negotiatedLandscape)
-                else if (negotiatedLandscape) ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE
-                else ActivityInfo.SCREEN_ORIENTATION_USER_PORTRAIT
             else -> null
         }
 
+    /** How long a turned window must stay turned before its session is redrawn. */
+    const val SHAPE_SETTLE_MS = 1_000L
+
+    /**
+     * Whether a session should end and reconnect so Android Auto draws it in the window's new shape.
+     *
+     * A session cannot change its resolution, so this is the only way a SYSTEM projection follows
+     * the system to the other shape. Only for a window that is ours: the keyguard reads portrait
+     * whatever the mount. Only to the other shape: reverse landscape is still landscape. And once per
+     * window shape, so a session that comes back in the old shape is not redrawn on every landing.
+     */
+    fun redrawsSession(
+        setting: Settings.ScreenOrientation,
+        negotiated: Normalisation?,
+        window: Normalisation?,
+        readingIsOurs: Boolean,
+        alreadyRedrawnFor: Normalisation?,
+    ): Boolean = setting == Settings.ScreenOrientation.SYSTEM && readingIsOurs &&
+        negotiated != null && window != null && window != negotiated && window != alreadyRedrawnFor
+
     private fun fixedShape(landscape: Boolean): Int =
         if (landscape) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-
-    private const val USER_SHAPES_SDK = 18
 
     /** A reading turned the way [normalisation] says. */
     fun normalise(w: Int, h: Int, normalisation: Normalisation): ProjectionCanvasPolicy.Rect =

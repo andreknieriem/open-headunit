@@ -1,6 +1,7 @@
 package com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.hct
 
 import com.andrerinas.openheadunit.aap.protocol.proto.Wireless
+import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.HandshakeLink
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.WppFraming
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.WppMessageType
@@ -47,6 +48,8 @@ internal class HctRetainedChannel(private val physical: HandshakeLink, private v
 
     suspend fun run() = coroutineScope {
         val reader = launch(Dispatchers.IO) {
+            var pingRequests = 0L
+            var pingResponses = 0L
             try {
                 val input = DataInputStream(physical.input)
                 while (isActive && !closed.get()) {
@@ -55,8 +58,11 @@ internal class HctRetainedChannel(private val physical: HandshakeLink, private v
                     val payload = ByteArray(WppFraming.decodePayloadSize(header))
                     input.readFully(payload)
                     when (WppFraming.decodeType(header)) {
-                        WppMessageType.PING_REQUEST -> write(null,
-                            WppFraming.encodeFrame(payload, WppMessageType.PING_RESPONSE))
+                        WppMessageType.PING_REQUEST -> {
+                            pingRequests++
+                            write(null, WppFraming.encodeFrame(payload, WppMessageType.PING_RESPONSE))
+                            pingResponses++
+                        }
                         WppMessageType.PING_RESPONSE -> Unit
                         // Opening already checked 1.7. Its buffered response is consumed here,
                         // not replayed into a new projection state machine on each reuse.
@@ -73,7 +79,21 @@ internal class HctRetainedChannel(private val physical: HandshakeLink, private v
                         }
                     }
                 }
-            } finally { close() }
+            } catch (error: IOException) {
+                // This channel has already passed HctOpening. Losing it is PeerClosed for
+                // its projection lease, not failure to acquire the manufacturer's carrier.
+                // AA can close WPP while joining Wi-Fi or after GAL is connected; the normal
+                // handshake FSM owns the remaining association deadline. Keep this boundary
+                // here so a delayed EOF cannot notify a later client of the retained owner.
+                AppLog.w("NativeAA: [HCT] owned WPP channel ended; reuse revoked: " +
+                    "${error.javaClass.simpleName}: ${error.message}")
+            } finally {
+                close()
+                // Ping is consumed here, before the lease FSM. Its HOLD counter therefore
+                // cannot describe physical traffic on an HCT channel, including while parked.
+                AppLog.i("NativeAA: [HCT] physical WPP reader closed: " +
+                    "pingRequests=$pingRequests, pingResponses=$pingResponses")
+            }
         }
         try { ended.await() } finally { close(); reader.cancel() }
     }

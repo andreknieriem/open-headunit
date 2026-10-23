@@ -3365,9 +3365,9 @@ class NativeAaHandshakeManager(
                     is WppAction.Release -> {
                         val heldS = (SystemClock.elapsedRealtime() - holdingSince) / 1000
                         if (action.peerClosed) {
-                            AppLog.w("NativeAA: the phone closed the held Bluetooth channel after ${heldS}s and $pingsWhileHolding pings; the Android Auto listeners reopen when this session ends.")
+                            AppLog.w("NativeAA: the phone closed the held Bluetooth channel after ${heldS}s and $pingsWhileHolding lease-handled pings; the Android Auto listeners reopen when this session ends.")
                         } else {
-                            AppLog.i("NativeAA: the session ended; releasing the held Bluetooth channel after ${heldS}s and $pingsWhileHolding pings.")
+                            AppLog.i("NativeAA: the session ended; releasing the held Bluetooth channel after ${heldS}s and $pingsWhileHolding lease-handled pings.")
                         }
                     }
                     is WppAction.Fail -> {
@@ -3468,7 +3468,7 @@ class NativeAaHandshakeManager(
                         !sessionAlive -> feed(WppEvent.SessionEnded)
                         now - lastHoldSummaryAt >= HOLD_SUMMARY_INTERVAL_MS -> {
                             lastHoldSummaryAt = now
-                            AppLog.i("NativeAA: [HOLD] Bluetooth channel held ${(now - holdingSince) / 1000}s, $pingsWhileHolding pings answered.")
+                            AppLog.i("NativeAA: [HOLD] Bluetooth channel held ${(now - holdingSince) / 1000}s, $pingsWhileHolding lease-handled pings answered.")
                         }
                     }
                     return

@@ -86,6 +86,32 @@ class HctRetainedChannelTest {
         scope.cancel()
     }
 
+    @Test fun `acquired channel read failures close the lease without becoming opening failures`() = runBlocking {
+        // Include EOF in a header/body, socket failure, and an invalid later version reply.
+        // None may escape to HctAaCarrier's initial handoff-failed callback. The lease sees
+        // EOF and the normal WPP FSM retains its existing association deadline policy.
+        for (input in listOf<InputStream>(
+            ByteArrayInputStream(byteArrayOf()),
+            ByteArrayInputStream(byteArrayOf(0, 2)),
+            ByteArrayInputStream(WppFraming.encodeHeader(2, 2) + byteArrayOf(1)),
+            object : InputStream() { override fun read(): Int = throw IOException("socket reset") },
+            ByteArrayInputStream(WppFraming.encodeFrame(byteArrayOf(), WppMessageType.VERSION_RESPONSE))
+        )) {
+            val wire = Wire()
+            val link = object : HandshakeLink by wire { override val input = input }
+            val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+            val owner = HctRetainedChannel(link, scope)
+            val lease = owner.lease()!!
+            try {
+                withTimeout(2_000) { owner.run() } // Must return normally, not merely finish a failed Job.
+                assertEquals(-1, lease.input.read())
+                assertFalse(owner.isOpen)
+                assertNull(owner.lease())
+                assertEquals(1, wire.closes)
+            } finally { owner.close(); scope.cancel() }
+        }
+    }
+
     @Test fun `closing a lease unblocks its reader and rejects stale writes`() = runBlocking {
         val wire = Wire()
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)

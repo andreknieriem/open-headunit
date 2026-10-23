@@ -4,8 +4,9 @@ import android.os.Build
 import com.andrerinas.openheadunit.utils.AppLog
 
 internal object AudioOutputFactory {
-    fun create(stream: Int, attachHwDsp: Boolean, preferAAudio: Boolean): PcmOutput {
-        val fallback = { AudioTrackPcmOutput(stream, attachHwDsp) }
+    fun create(stream: Int, attachHwDsp: Boolean, preferAAudio: Boolean,
+               timing: AudioTimingDiagnostics? = null): PcmOutput {
+        val fallback = { AudioTrackPcmOutput(stream, attachHwDsp, timing) }
         if (AudioOutputPolicy.useAAudio(Build.VERSION.SDK_INT, stream, attachHwDsp, preferAAudio)) {
             try {
                 return FallbackPcmOutput(AAudioPcmOutput(), fallback, { AppLog.w(it) })

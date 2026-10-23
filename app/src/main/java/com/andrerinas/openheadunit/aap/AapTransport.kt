@@ -34,6 +34,8 @@ import com.andrerinas.openheadunit.connection.projection.SocketProjectionConnect
 import com.andrerinas.openheadunit.contract.ProjectionActivityRequest
 import com.andrerinas.openheadunit.decoder.audio.AudioDecoder
 import com.andrerinas.openheadunit.decoder.audio.AudioDiagnostics
+import com.andrerinas.openheadunit.decoder.audio.AudioTimingDiagnostics
+import com.andrerinas.openheadunit.decoder.audio.AudioTimingWindow
 import com.andrerinas.openheadunit.decoder.audio.MicRecorder
 import com.andrerinas.openheadunit.decoder.video.DecoderStopPolicy
 import com.andrerinas.openheadunit.decoder.video.VideoDecoder
@@ -184,13 +186,21 @@ class AapTransport(
     var negotiatedVersion: AapVersionNegotiation.Result? = null
         private set
     private var pollHandler: Handler? = null
+    private val receiveTiming = if (AppLog.LOG_DEBUG)
+        AudioTimingDiagnostics("receiver=${System.identityHashCode(this)}") else null
     private val pollHandlerCallback = Handler.Callback {
         val readInstance = aapRead
         if (readInstance == null) {
             return@Callback false
         }
 
-        val ret = readInstance.read()
+        receiveTiming?.poll()
+        val readStart = receiveTiming?.begin() ?: 0L
+        // Includes waiting for bytes, TLS processing and dispatch. Existing per-message
+        // slow-read logs split those stages; this window adds the receive thread's CPU time.
+        val ret = try { readInstance.read() }
+        finally { receiveTiming?.end(AudioTimingWindow.Phase.RECEIVE, readStart) }
+        receiveTiming?.poll()
 
         if (ret < 0) {
             AppLog.i("Quitting because ret < 0 ($ret)")

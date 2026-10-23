@@ -12,7 +12,8 @@ internal object AudioDiagnostics {
     private data class Event(val elapsedMs: Long, val message: String)
     private val events = ArrayDeque<Event>()
     private const val LIMIT = 64
-    private data class LogEntry(val elapsedMs: Long, val message: String, val warning: Boolean)
+    private data class LogEntry(val elapsedMs: Long, val message: String, val warning: Boolean,
+                               val deferred: (() -> String)? = null)
     private val pending = ArrayBlockingQueue<LogEntry>(LIMIT)
     private val skippedLogs = AtomicLong()
     private val logger by lazy {
@@ -21,7 +22,7 @@ internal object AudioDiagnostics {
             while (!Thread.currentThread().isInterrupted) {
                 try {
                     val entry = pending.take()
-                    val line = "${entry.message} eventElapsedMs=${entry.elapsedMs}"
+                    val line = "${entry.deferred?.invoke() ?: entry.message} eventElapsedMs=${entry.elapsedMs}"
                     if (entry.warning) AppLog.w(line) else AppLog.i(line)
                 } catch (_: InterruptedException) {
                     Thread.currentThread().interrupt()
@@ -37,6 +38,13 @@ internal object AudioDiagnostics {
         if (remember) record(elapsedMs, message)
         logger
         if (!pending.offer(LogEntry(elapsedMs, message, warning))) skippedLogs.incrementAndGet()
+    }
+
+    /** Fixed-size timing snapshots are formatted here, away from receive/output deadlines.
+     * They deliberately do not displace rare failure events in the export history. */
+    fun reportDeferred(elapsedMs: Long, message: () -> String) {
+        logger
+        if (!pending.offer(LogEntry(elapsedMs, "", false, message))) skippedLogs.incrementAndGet()
     }
 
     @Synchronized fun record(elapsedMs: Long, message: String) {

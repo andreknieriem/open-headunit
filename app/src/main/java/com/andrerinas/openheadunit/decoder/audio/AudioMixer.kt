@@ -45,7 +45,8 @@ class AudioMixer(
     }
 
     internal class Channel(val rate: Int, val channels: Int, multiplier: Int, val isMediaSink: Boolean,
-                           val onOutputStopped: () -> Unit) {
+                           val onOutputStopped: () -> Unit,
+                           val inputTiming: AudioTimingDiagnostics? = null) {
         val buffer = AdaptivePcmBuffer(latencyMultiplier = multiplier, isMediaSink = isMediaSink)
         val format = PcmInputFormat(rate, channels)
         val converter = PcmConverter()
@@ -70,6 +71,9 @@ class AudioMixer(
     private val channels = ConcurrentHashMap<Int, Channel>()
     @Volatile private var channelSnapshot = emptyArray<Channel>()
     private val diagnosticId = nextDiagnosticId.incrementAndGet()
+    // Capture once per session. INFO disables the probe completely for a comparison run;
+    // DEBUG/VERBOSE enables it. Existing playback policies are identical in both cases.
+    private val timing = if (AppLog.LOG_DEBUG) AudioTimingDiagnostics("mixer=$diagnosticId") else null
     private val running = AtomicBoolean(false)
     private val hasReceivedAudio = AtomicBoolean(false)
     private val feedSignal = Semaphore(0)
@@ -89,7 +93,7 @@ class AudioMixer(
     fun start() {
         if (!running.compareAndSet(false, true)) return
         try {
-            val createOutput = { AudioOutputFactory.create(stream, attachHwDspEqualizer, preferAAudio) }
+            val createOutput = { AudioOutputFactory.create(stream, attachHwDspEqualizer, preferAAudio, timing) }
             output = RecoveringPcmOutput(null, createOutput, SystemClock::elapsedRealtime) {
                 recordDiagnostic(SystemClock.elapsedRealtime(), it, warning = true)
             }
@@ -137,7 +141,8 @@ class AudioMixer(
     @Synchronized internal fun registerChannel(channel: Int, sampleRate: Int, channelCount: Int,
                         latencyMultiplier: Int = audioLatencyMultiplier, isMediaSink: Boolean = false,
                         onOutputStopped: () -> Unit = {}): Channel {
-        return Channel(sampleRate, channelCount, latencyMultiplier, isMediaSink, onOutputStopped).also {
+        return Channel(sampleRate, channelCount, latencyMultiplier, isMediaSink, onOutputStopped,
+            if (timing != null) AudioTimingDiagnostics("mixer=$diagnosticId inputChannel=$channel") else null).also {
             channels[channel] = it
             channelSnapshot = channels.values.toTypedArray()
         }
@@ -183,12 +188,29 @@ class AudioMixer(
                       format: PcmInputFormat = state.format) {
         // A wrapper retains its exact registration. A retired codec can neither feed nor
         // unregister a replacement channel that happens to reuse the same protocol id.
+        val inputTiming = state.inputTiming
+        val enter = inputTiming?.begin() ?: 0L
         synchronized(state) {
+            inputTiming?.end(AudioTimingWindow.Phase.FEED_ENTER, enter)
+            inputTiming?.poll()
+            val convert = inputTiming?.begin() ?: 0L
             val shorts = state.converter.convert(data, offset, length, format)
+            inputTiming?.end(AudioTimingWindow.Phase.CONVERT, convert)
             if (shorts == 0) return
             val now = SystemClock.elapsedRealtime()
             if (state.firstPcmMs < 0) state.firstPcmMs = now
-            state.buffer.write(state.converter.samples, shorts, now)
+            if (inputTiming == null) state.buffer.write(state.converter.samples, shorts, now)
+            else {
+                val bankEnter = inputTiming.begin()
+                // Same monitor as the synchronized bank method; reentrant acquisition does
+                // not change lock ordering. Entry time may include OS preemption, not only contention.
+                synchronized(state.buffer) {
+                    inputTiming.end(AudioTimingWindow.Phase.BANK_WRITE_ENTER, bankEnter)
+                    val bankWrite = inputTiming.begin()
+                    state.buffer.write(state.converter.samples, shorts, now)
+                    inputTiming.end(AudioTimingWindow.Phase.BANK_WRITE, bankWrite)
+                }
+            }
             state.warmupUntilMs = 0
             hasReceivedAudio.set(true)
             if (feedSignal.availablePermits() == 0) feedSignal.release()
@@ -209,7 +231,17 @@ class AudioMixer(
         var speechActive = false
         var boosted = false
         for (state in cycleChannels) {
-            val active = state.buffer.render(channelBuffer, nowMs, outputBurstFrames)
+            val active = if (timing == null) state.buffer.render(channelBuffer, nowMs, outputBurstFrames)
+            else {
+                val enter = timing.begin()
+                synchronized(state.buffer) {
+                    timing.end(AudioTimingWindow.Phase.BANK_ENTER, enter)
+                    val render = timing.begin()
+                    val result = state.buffer.render(channelBuffer, nowMs, outputBurstFrames)
+                    timing.end(AudioTimingWindow.Phase.BANK_RENDER, render)
+                    result
+                }
+            }
             state.activeThisCycle = active
             val gain = state.gain
             if (active && gain > 0f) activeChannels++
@@ -290,6 +322,7 @@ class AudioMixer(
         var writeMaxMs = 0L
         var renderWaits = 0L
         while (running.get()) {
+            timing?.poll()
             val now = SystemClock.elapsedRealtime()
             if (lastCycleMs >= 0) loopGapMaxMs = maxOf(loopGapMaxMs, now - lastCycleMs)
             lastCycleMs = now
@@ -428,8 +461,11 @@ class AudioMixer(
                         onRecoveryActivity()
                         replayAnnounced = true
                     }
-                    val written = if ((!replay && cycleChannels.none { it.activeThisCycle }) || canRender())
-                        device.write(outputBuffer, offset, remaining) else {
+                    val written = if ((!replay && cycleChannels.none { it.activeThisCycle }) || canRender()) {
+                        val attempt = timing?.begin() ?: 0L
+                        try { device.write(outputBuffer, offset, remaining) }
+                        finally { timing?.end(AudioTimingWindow.Phase.WRITE_ATTEMPT, attempt) }
+                    } else {
                         feedSignal.tryAcquire(if (outputUnavailableSinceMs >= 0) 200 else 10,
                             TimeUnit.MILLISECONDS)
                         0
@@ -447,7 +483,12 @@ class AudioMixer(
                         0
                     } else written
                 },
-                {}, { Thread.sleep(1) })
+                {}, {
+                    val sleep = timing?.begin() ?: 0L
+                    try { Thread.sleep(1) }
+                    finally { timing?.end(AudioTimingWindow.Phase.RETRY_SLEEP, sleep) }
+                    timing?.poll()
+                })
             writeMaxMs = maxOf(writeMaxMs, SystemClock.elapsedRealtime() - writeStartMs)
             check(result >= 0) { "${device.name} write failed: $result" }
             val writeCompletedMs = SystemClock.elapsedRealtime()

@@ -7,6 +7,7 @@ import android.media.audiofx.Equalizer
 import android.os.Build
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.util.concurrent.atomic.AtomicInteger
 
 /** Output owns only the device buffer. Called exclusively by the mixer thread, including close. */
 internal interface PcmOutput {
@@ -35,7 +36,11 @@ internal interface PcmOutput {
     fun closeForRecovery(): ShortArray { close(); return ShortArray(0) }
 }
 
-internal class AudioTrackPcmOutput(stream: Int, attachHwDsp: Boolean) : PcmOutput {
+internal class AudioTrackPcmOutput(stream: Int, attachHwDsp: Boolean,
+                                  private val timing: AudioTimingDiagnostics? = null) : PcmOutput {
+    companion object { private val nextTimingId = AtomicInteger() }
+    private var timingId = nextTimingId.incrementAndGet()
+    private val timingCapacity: Int
     private val track: AudioTrack
     private var equalizer: Equalizer? = null
     private val requestedBytes: Int
@@ -59,6 +64,7 @@ internal class AudioTrackPcmOutput(stream: Int, attachHwDsp: Boolean) : PcmOutpu
             track.release()
             error("AudioTrack did not initialize")
         }
+        timingCapacity = if (timing != null) capacityFrames else 0
         if (attachHwDsp) {
             try { equalizer = Equalizer(0, track.audioSessionId).also { it.enabled = true } } catch (_: Exception) { }
         }
@@ -108,8 +114,16 @@ internal class AudioTrackPcmOutput(stream: Int, attachHwDsp: Boolean) : PcmOutpu
     }
     override val writtenFrames: Long get() =
         if (Build.VERSION.SDK_INT < 21 || position.isValid) position.writtenFrames else -1L
-    override fun playedFrames(): Long = try { position.played(track.playbackHeadPosition) }
+    override fun playedFrames(): Long = try {
+        position.played(readHead()).also { timing?.output(timingId, position.writtenFrames, it, timingCapacity) }
+    }
         catch (_: IllegalStateException) { -1L }
+
+    private fun readHead(): Int {
+        val begin = timing?.begin() ?: 0L
+        return try { track.playbackHeadPosition }
+        finally { timing?.end(AudioTimingWindow.Phase.HEAD_QUERY, begin) }
+    }
 
     private fun legacyBufferFrames(): Int =
         (track as LegacyAudioTrack).allocatedFrames.coerceAtLeast(1)
@@ -124,14 +138,16 @@ internal class AudioTrackPcmOutput(stream: Int, attachHwDsp: Boolean) : PcmOutpu
         if (Build.VERSION.SDK_INT >= 19) {
             track.flush()
             position.reset()
+            timingId = nextTimingId.incrementAndGet() // A flush starts a new progress epoch.
         }
     }
     override fun write(data: ShortArray, offset: Int, count: Int): Int {
         // API 16-20 has no public nonblocking write. With one writer, the native
         // allocation minus submitted-but-unconsumed frames is a conservative admission bound.
         // A full track returns 0 here, keeping the outer stall/recovery loop runnable.
-        val head = track.playbackHeadPosition
+        val head = readHead()
         val played = position.played(head)
+        timing?.output(timingId, position.writtenFrames, played, timingCapacity)
         // Admission on API 16-20 requires a trustworthy ring position. In particular, 4.1-4.3
         // native restore may insert uncounted silence: rebasing would falsely free that space.
         // API 21+ has nonblocking writes, so a vendor/direct-output head anomaly only disables
@@ -140,12 +156,17 @@ internal class AudioTrackPcmOutput(stream: Int, attachHwDsp: Boolean) : PcmOutpu
             check(played >= 0) { "AudioTrack playback head reset or exceeded submitted PCM" }
         val size = if (Build.VERSION.SDK_INT >= 21) count else
             minOf(count, position.writableFrames(bufferFrames, head) * 2)
-        if (size == 0) return 0
-        val written = when {
+        if (size == 0) {
+            timing?.writeResult(0, admissionRejected = true)
+            return 0
+        }
+        val nativeBegin = timing?.begin() ?: 0L
+        val written = try { when {
             Build.VERSION.SDK_INT >= 23 -> track.write(data, offset, size, AudioTrack.WRITE_NON_BLOCKING)
             Build.VERSION.SDK_INT >= 21 -> writeLollipop(data, offset, size)
             else -> track.write(data, offset, size)
-        }
+        } } finally { timing?.end(AudioTimingWindow.Phase.NATIVE_WRITE, nativeBegin) }
+        timing?.writeResult(written)
         if (written > 0) position.written(written.toLong() / 2)
         return written
     }

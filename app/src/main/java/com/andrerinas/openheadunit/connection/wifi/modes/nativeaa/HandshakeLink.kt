@@ -74,6 +74,10 @@ interface HandshakeLink : Closeable {
      * the common reader must not send a different version request or advertise a TCP endpoint.
      */
     val versionRequestAlreadySent: Boolean get() = false
+
+    /** An existing verified physical connection starts a new projection without version replay. */
+    val versionNegotiated: Boolean get() = false
+
 }
 
 /** The ordinary route: a phone that connected to one of this unit's own RFCOMM listeners. */

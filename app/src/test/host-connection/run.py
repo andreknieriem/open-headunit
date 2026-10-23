@@ -674,6 +674,7 @@ class SettingsActionFixture(val commManager:CommManager) {
  private val intent:android.content.Intent?=null
  private val EXTRA_USB_ATTEMPT="usb";private val EXTRA_SETTINGS_REARM="settings";private val START_STICKY=1
  var userExitedAA=false
+ private fun parkRetainedHct(){}
  private val isDestroying=false
  private fun stopWirelessForCommand(settingsRearm:Boolean){commManager.cancelPendingSettingsRestart()}
  private var wirelessRearmPendingForSettings=false
@@ -946,6 +947,9 @@ subprocess.run(["python3", str(Path(__file__).with_name("self-launch.py"))], che
 
 # Full service disconnect callback: immediate policy and deferred resource ownership.
 subprocess.run(["python3", str(Path(__file__).with_name("wireless-cleanup.py"))], check=True)
+
+# Service-owned HCT transport lifetime.
+subprocess.run(["python3", str(Path(__file__).with_name("hct-owner.py"))], check=True)
 
 # VPN startService delivery can outlive a synchronous stop on the bound instance.
 subprocess.run(["python3", str(Path(__file__).with_name("vpn-start.py"))], check=True)

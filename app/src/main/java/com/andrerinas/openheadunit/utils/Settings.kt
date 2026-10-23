@@ -2499,6 +2499,11 @@ class Settings(private val context: Context) {
         get() = prefs.getLong("connection-issue-hands-free-record-refused", 0L)
         set(value) = prefs.edit().putLong("connection-issue-hands-free-record-refused", value).apply()
 
+    /** The phone took this unit's hands-free connection and dropped it: no audio-device place left. */
+    var connectionIssuePhoneRefusedHandsFreeAtEpochMs: Long
+        get() = prefs.getLong("connection-issue-phone-refused-hands-free", 0L)
+        set(value) = prefs.edit().putLong("connection-issue-phone-refused-hands-free", value).apply()
+
     /** The phone kept dialling a TCP endpoint this unit no longer honours. */
     var connectionIssueStaleEndpointAtEpochMs: Long
         get() = prefs.getLong("connection-issue-stale-endpoint", 0L)

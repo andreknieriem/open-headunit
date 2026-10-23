@@ -1421,6 +1421,8 @@ class MainActivity : BaseActivity() {
                     R.string.connection_issue_banner_hands_free_held
                 ConnectionIssue.HANDS_FREE_RECORD_REFUSED ->
                     R.string.connection_issue_banner_hands_free_record_refused
+                ConnectionIssue.PHONE_REFUSED_HANDS_FREE ->
+                    R.string.connection_issue_banner_phone_refused_hands_free
                 ConnectionIssue.PHONE_HOLDS_STALE_ENDPOINT ->
                     R.string.connection_issue_banner_stale_endpoint
                 ConnectionIssue.HOME_WIFI_REJOINED_BESIDE_GROUP ->
@@ -1497,6 +1499,8 @@ class MainActivity : BaseActivity() {
             ConnectionIssue.HANDS_FREE_HELD_ELSEWHERE -> return
             // This unit's own Bluetooth stack refused the record. No row here changes its answer.
             ConnectionIssue.HANDS_FREE_RECORD_REFUSED -> return
+            // The remedy is one of the phone's other audio devices, which no setting here reaches.
+            ConnectionIssue.PHONE_REFUSED_HANDS_FREE -> return
             // The remedy is on the phone, and this unit is already applying the one it has.
             ConnectionIssue.PHONE_HOLDS_STALE_ENDPOINT -> return
             // The remedy is a WiFi restart: done here when root or local ADB allows, else the panel.

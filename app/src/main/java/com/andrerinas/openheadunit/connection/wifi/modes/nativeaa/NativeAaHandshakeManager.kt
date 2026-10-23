@@ -2,6 +2,7 @@ package com.andrerinas.openheadunit.connection.wifi.modes.nativeaa
 
 import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.hct.HctWppOwner
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.hct.HctProjectionStage
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.hct.HctOpening
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.hct.HctServiceObserver
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.hct.HctWakePolicy
@@ -2843,6 +2844,12 @@ class NativeAaHandshakeManager(
             if (hctStageOwner === stageOwner && mayReportFailure())
                 ConnectionStageTracker.reportWirelessHandoffEnded()
         }
+        // Retained-channel reuse can start a lease before the cancelled lease's Main
+        // cleanup runs. Arming identity alone cannot distinguish those two projections.
+        val stageLease = HctProjectionStage(
+            started = { ConnectionStageTracker.report(ConnectionStage.PHONE_ANSWERED) },
+            ended = ::finishStageIfIdle
+        )
         lateinit var carrier: HctWppOwner.Client
         carrier = context.hctWppOwner.attach(
             openingRequest = {
@@ -2851,14 +2858,7 @@ class NativeAaHandshakeManager(
                     WifiBandCapability.sessionFrequencyMhz()
                 )
             },
-            serve = { link ->
-                ConnectionStageTracker.report(ConnectionStage.PHONE_ANSWERED)
-                try { handleHandshake(link) } finally {
-                    // handleHandshake also returns normally after a write failure or timeout.
-                    // Restore retry access after that result, not just a carrier exception.
-                    withContext(NonCancellable + Dispatchers.Main.immediate) { finishStageIfIdle() }
-                }
-            },
+            serve = { link -> stageLease.serve { handleHandshake(link) } },
             mayServe = {
                 val now = SystemClock.elapsedRealtime()
                 // Match the normal radio's bounded cancel/prompt hold. The peer gate below

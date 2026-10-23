@@ -35,4 +35,16 @@ class BluetoothAddressSeedPolicyTest {
         assertFalse(BluetoothAddressSeedPolicy.isLegacyDefault(""))
         assertFalse(BluetoothAddressSeedPolicy.isLegacyDefault(null))
     }
+
+    @Test
+    fun `a ZJ module address with no separators seeds the canonical form`() {
+        val canonical = BluetoothHelper.normalizeMacAddress("008761BF6706")
+        assertEquals("00:87:61:BF:67:06", BluetoothAddressSeedPolicy.seed("", canonical))
+    }
+
+    @Test
+    fun `a typed address is kept when the ZJ module names another one`() {
+        val canonical = BluetoothHelper.normalizeMacAddress("008761BF6706")
+        assertEquals("11:22:33:44:55:66", BluetoothAddressSeedPolicy.seed("11:22:33:44:55:66", canonical))
+    }
 }

@@ -171,11 +171,131 @@ class ExternalBtTransportPolicyTest {
     }
 
     @Test
-    fun `unix socket presence takes RAW_UNIX_SOCKET route even on external BT evidence`() {
+    fun `a connecting ZJ socket takes the route when the ZBT daemon was never asked`() {
         val snapshot = legacy(evidence, null)
-        assertEquals(Route.RAW_UNIX_SOCKET, ExternalBtTransportPolicy.route(snapshot, false, false, unixSocketAvailable = true))
-        assertFalse(ExternalBtTransportPolicy.refusesBringUp(snapshot, false, false, unixSocketAvailable = true))
-        assertFalse(ExternalBtTransportPolicy.needsDaemonMeasurement(snapshot, false, false, unixSocketAvailable = true))
+        assertEquals(Route.ZJ_SOCKET, ExternalBtTransportPolicy.route(snapshot, false, false, zjSocketConnects = true))
+        assertFalse(ExternalBtTransportPolicy.refusesBringUp(snapshot, false, false, zjSocketConnects = true))
+        assertFalse(ExternalBtTransportPolicy.needsDaemonMeasurement(snapshot, false, false, zjSocketConnects = true))
+    }
+
+    private val socketAnswers = listOf<Boolean?>(null, false, true)
+
+    @Test
+    fun `a ZBT daemon that answers keeps the route over a connecting socket`() {
+        assertEquals(Route.ZBT, ExternalBtTransportPolicy.route(legacy(evidence, true), false, false, zjSocketConnects = true))
+    }
+
+    @Test
+    fun `a refused ZBT daemon and a connecting socket take the socket`() {
+        val snapshot = legacy(evidence, false)
+        assertEquals(Route.ZJ_SOCKET, ExternalBtTransportPolicy.route(snapshot, false, false, zjSocketConnects = true))
+        assertFalse(ExternalBtTransportPolicy.refusesBringUp(snapshot, false, false, zjSocketConnects = true))
+    }
+
+    @Test
+    fun `an HCT service beats a connecting socket`() {
+        assertEquals(
+            Route.HCT,
+            ExternalBtTransportPolicy.route(legacy(evidence, false), false, false, hctServiceAvailable = true, zjSocketConnects = true)
+        )
+    }
+
+    @Test
+    fun `BLINK and FYT routes ignore the socket answer`() {
+        for (blink in listOf(false, true))
+            for (fyt in listOf(null, "FYT"))
+                for (zbt in listOf(false, true))
+                    for (ignore in listOf(false, true))
+                        for (cached in socketAnswers) {
+                            val snapshot = legacy(evidence, cached)
+                            val without = ExternalBtTransportPolicy.route(snapshot, zbt, ignore, blink, fyt)
+                            val with = ExternalBtTransportPolicy.route(snapshot, zbt, ignore, blink, fyt, zjSocketConnects = true)
+                            if (blink || fyt != null) assertEquals("$blink/$fyt/$zbt/$ignore/$cached", without, with)
+                        }
+    }
+
+    @Test
+    fun `the socket toggle takes the route whatever the socket answer is`() {
+        for (answer in socketAnswers)
+            assertEquals(Route.ZJ_SOCKET, ExternalBtTransportPolicy.route(legacy(null, null), false, false, zjSocketEnabled = true, zjSocketConnects = answer))
+    }
+
+    @Test
+    fun `the ZBT toggle wins over the socket toggle on a marked unit`() {
+        assertEquals(Route.ZBT, ExternalBtTransportPolicy.route(legacy(evidence, null), true, false, zjSocketEnabled = true))
+    }
+
+    @Test
+    fun `a refused daemon and a refused socket stay blocked`() {
+        val snapshot = legacy(evidence, false)
+        assertEquals(Route.BLOCKED, ExternalBtTransportPolicy.route(snapshot, false, false, zjSocketConnects = false))
+        assertTrue(ExternalBtTransportPolicy.refusesBringUp(snapshot, false, false, zjSocketConnects = false))
+    }
+
+    @Test
+    fun `a refused daemon and an unmeasured socket ask the socket before refusing`() {
+        val snapshot = legacy(evidence, false)
+        assertTrue(ExternalBtTransportPolicy.needsDaemonMeasurement(snapshot, false, false, zjSocketConnects = null))
+        assertFalse(ExternalBtTransportPolicy.refusesBringUp(snapshot, false, false, zjSocketConnects = null))
+    }
+
+    @Test
+    fun `a connecting socket stops a re-dial of the ZBT daemon`() {
+        assertFalse(ExternalBtTransportPolicy.needsDaemonMeasurement(legacy(evidence, null), false, false, zjSocketConnects = true))
+    }
+
+    @Test
+    fun `the socket needs markers or its toggle`() {
+        assertEquals(Route.NORMAL, ExternalBtTransportPolicy.route(legacy(null, null), false, false, zjSocketConnects = true))
+    }
+
+    @Test
+    fun `the socket toggle needs no measurement`() {
+        assertFalse(ExternalBtTransportPolicy.needsDaemonMeasurement(legacy(evidence, false), false, false, zjSocketEnabled = true, zjSocketConnects = null))
+    }
+
+    @Test
+    fun `a unit whose socket connects sends the button to the module without a re-ask`() {
+        val snapshot = legacy(evidence, false)
+        assertEquals(WifiButton.MODULE, ExternalBtTransportPolicy.wifiButton(snapshot, false, false, zjSocketConnects = true))
+        assertFalse(ExternalBtTransportPolicy.remeasuresOnPress(snapshot, false, false, zjSocketConnects = true))
+    }
+
+    @Test
+    fun `a press re-asks when both the daemon and the socket refused`() {
+        assertTrue(ExternalBtTransportPolicy.remeasuresOnPress(legacy(evidence, false), false, false, zjSocketConnects = false))
+    }
+
+    @Test
+    fun `the radio override shows beside a connecting socket only while the user has not chosen it`() {
+        val snapshot = legacy(evidence, false)
+        assertFalse(ExternalBtTransportPolicy.showsAndroidRadioOverride(snapshot, false, false, zjSocketEnabled = true))
+        assertTrue(ExternalBtTransportPolicy.showsAndroidRadioOverride(snapshot, false, true, zjSocketEnabled = true))
+        assertTrue(ExternalBtTransportPolicy.showsAndroidRadioOverride(legacy(null, null), false, false, zjSocketConnects = true))
+    }
+
+    @Test
+    fun `the ZJ socket is an external module that rearms without the Android radio`() {
+        assertTrue(ExternalBtTransportPolicy.usesExternalModule(Route.ZJ_SOCKET))
+        assertTrue(ExternalBtTransportPolicy.rearmsWithoutAndroidRadio(Route.ZJ_SOCKET))
+    }
+
+    @Test
+    fun `refusal and measurement stay complements over the socket inputs`() {
+        for (cached in listOf<Boolean?>(null, true, false))
+            for (zbt in listOf(false, true))
+                for (ignore in listOf(false, true))
+                    for (enabled in listOf(false, true))
+                        for (answer in socketAnswers) {
+                            val snapshot = legacy(evidence, cached)
+                            val route = ExternalBtTransportPolicy.route(snapshot, zbt, ignore, zjSocketEnabled = enabled, zjSocketConnects = answer)
+                            val refused = ExternalBtTransportPolicy.refusesBringUp(snapshot, zbt, ignore, zjSocketEnabled = enabled, zjSocketConnects = answer)
+                            val asking = ExternalBtTransportPolicy.needsDaemonMeasurement(snapshot, zbt, ignore, zjSocketEnabled = enabled, zjSocketConnects = answer)
+                            val key = "$cached/$zbt/$ignore/$enabled/$answer"
+                            assertFalse(key, refused && asking)
+                            if (route == Route.BLOCKED) assertTrue(key, refused || asking)
+                            if (refused) assertEquals(key, Route.BLOCKED, route)
+                        }
     }
 
     @Test
@@ -307,6 +427,7 @@ class ExternalBtTransportPolicyTest {
         assertFalse(ExternalBtTransportPolicy.rearmsWithoutAndroidRadio(Route.NORMAL))
         assertFalse(ExternalBtTransportPolicy.rearmsWithoutAndroidRadio(Route.BLOCKED))
         assertFalse(ExternalBtTransportPolicy.rearmsWithoutAndroidRadio(Route.ZBT))
+        assertTrue(ExternalBtTransportPolicy.rearmsWithoutAndroidRadio(Route.ZJ_SOCKET))
         assertTrue(ExternalBtTransportPolicy.rearmsWithoutAndroidRadio(Route.BLINK))
     }
 
@@ -316,6 +437,7 @@ class ExternalBtTransportPolicyTest {
         assertFalse(ExternalBtTransportPolicy.usesExternalModule(Route.BLOCKED))
         assertTrue(ExternalBtTransportPolicy.usesExternalModule(Route.ZBT))
         assertTrue(ExternalBtTransportPolicy.usesExternalModule(Route.BLINK))
+        assertTrue(ExternalBtTransportPolicy.usesExternalModule(Route.ZJ_SOCKET))
     }
     @Test
     fun `HCT candidate is measured without refusing its Android radio`() {

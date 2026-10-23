@@ -117,4 +117,9 @@ class ExternalBtPolicyTest {
         assertNull(ExternalBtPolicy.detectFytModule(none) { "" })
         assertNull(ExternalBtPolicy.detectFytModule(none) { "abc" })
     }
+
+    @Test
+    fun `the ZJ socket path list holds the vendor daemon socket`() {
+        assertEquals(listOf("/dev/socket/zj_bt_socket"), ExternalBtPolicy.ZJ_SOCKET_PATHS)
+    }
 }

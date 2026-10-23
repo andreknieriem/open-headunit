@@ -1,7 +1,8 @@
-package com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.unix
+package com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zjsocket
 
 import android.net.LocalSocket
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.HandshakeLink
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.hct.HctLocalSocket
 import java.io.InputStream
 import java.io.OutputStream
 
@@ -13,7 +14,7 @@ import java.io.OutputStream
  * handles the RFCOMM server link and presents incoming/outgoing RFCOMM byte streams
  * directly over `/dev/socket/zj_bt_socket` without any ZBT multiplexing wrappers.
  */
-class RawUnixHandshakeLink(
+class ZjSocketHandshakeLink(
     private val socket: LocalSocket,
     override val peerName: String? = null,
     override val peerAddress: String? = null,
@@ -29,10 +30,8 @@ class RawUnixHandshakeLink(
      */
     override val persistPeerForAutoStart: Boolean = false
 
-    /**
-     * An active connection to the Unix domain socket indicates a phone session is present.
-     */
-    override val peerReportedPresent: Boolean = true
+    /** A connect proves the daemon accepted, not that a phone is there. */
+    override val peerReportedPresent: Boolean = false
 
     /**
      * The head unit sends Type 4 (WifiVersionRequest) immediately upon connection.
@@ -42,6 +41,6 @@ class RawUnixHandshakeLink(
     override val retransmitsWhileSilent: Boolean = true
 
     override fun close() {
-        runCatching { socket.close() }
+        HctLocalSocket.close(socket)
     }
 }

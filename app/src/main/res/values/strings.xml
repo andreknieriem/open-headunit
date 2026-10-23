@@ -565,6 +565,9 @@
     <string name="aa_exit_action_oem_launcher">Return to OEM Launcher (Minimize)</string>
     <string name="aa_exit_action_app_home">Return to App Home</string>
     <string name="aa_exit_action_disconnect">Disconnect Session</string>
+    <string name="pref_default_projection_exit_title">Default projection exit</string>
+    <string name="pref_default_projection_exit_summary">What happens on Back or the exit swipe during projection. Choose Ask each time to keep the exit menu.</string>
+    <string name="projection_exit_default_ask">Ask each time</string>
     <string name="forced_scale">Forced Scale (Legacy Fix)</string>
     <string name="forced_scale_description">Corrects scaling issues on some older devices using SurfaceView. Only use if the image looks distorted or shifted.</string>
     <string name="hud_mirroring">HUD Mode (Horizontal Flip)</string>
@@ -1377,6 +1380,29 @@
     <string name="copy_to_clipboard">Copy</string>
     <string name="copied_to_clipboard">Copied to clipboard</string>
     <string name="audio_settings_reconnect">Audio settings saved. Reconnect Android Auto to apply them.</string>
+    <string name="broker_settings_title">Native BT Broker</string>
+    <string name="broker_settings_summary">Pair the Bluetooth relay and send this display</string>
+    <string name="broker_saved_device">Saved broker</string>
+    <string name="broker_none">None</string>
+    <string name="broker_status">Link</string>
+    <string name="broker_scan">Scan</string>
+    <string name="broker_scan_action">Look for OpenHU-NativeBTBroker-Setter</string>
+    <string name="broker_scanning">Scanning…</string>
+    <string name="broker_found_device">Found device</string>
+    <string name="broker_forget">Forget broker</string>
+    <string name="broker_forget_value">Clear the saved device</string>
+    <string name="broker_phase_idle">Not connected</string>
+    <string name="broker_phase_connecting">Connecting…</string>
+    <string name="broker_phase_ready">Connected</string>
+    <string name="broker_phase_incomplete">Wi-Fi Direct group is not ready</string>
+    <string name="broker_phase_pairing">Search for OpenHU-NativeBTBroker on the phone</string>
+    <string name="broker_pair">Pair phone</string>
+    <string name="broker_pair_value">Clear phone bonds on the broker and open discovery for 120 seconds, PIN 0000</string>
+    <string name="broker_disconnect">Disconnect</string>
+    <string name="broker_disconnect_value">Close the link and keep the saved broker</string>
+    <string name="broker_end_aa_on_disconnect">End Android Auto when the broker disconnects</string>
+    <string name="broker_end_aa_on_disconnect_description">While on, probes the broker every second. If the BLE write fails twice, the Android Auto session is closed</string>
+    <string name="broker_phase_failed">Failed: %1$s</string>
 
     <!-- Home screen -->
     <string name="home_kicker_active">Android Auto</string>

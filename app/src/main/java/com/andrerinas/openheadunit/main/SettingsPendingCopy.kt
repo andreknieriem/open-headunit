@@ -85,6 +85,7 @@ class SettingsPendingCopy {
     var floatingButtonXPercent: Int? = null
     var floatingButtonYPercent: Int? = null
     var aaExitAction: Settings.ExitAction? = null
+    var defaultProjectionExit: com.andrerinas.openheadunit.aap.ProjectionExitMenuPolicy.Default? = null
     var videoFitMode: Settings.VideoFitMode? = null
     var forcedScale: Boolean? = null
     var hudMirroring: Boolean? = null
@@ -173,6 +174,7 @@ class SettingsPendingCopy {
         floatingButtonXPercent = settings.floatingButtonXPercent
         floatingButtonYPercent = settings.floatingButtonYPercent
         aaExitAction = settings.rawAaExitAction
+        defaultProjectionExit = settings.defaultProjectionExit
         videoFitMode = settings.videoFitMode
         forcedScale = settings.forcedScale
         hudMirroring = settings.hudMirroring
@@ -262,6 +264,7 @@ class SettingsPendingCopy {
         floatingButtonXPercent != settings.floatingButtonXPercent ||
         floatingButtonYPercent != settings.floatingButtonYPercent ||
         aaExitAction != settings.rawAaExitAction ||
+        defaultProjectionExit != settings.defaultProjectionExit ||
         videoFitMode != settings.videoFitMode ||
         forcedScale != settings.forcedScale ||
         hudMirroring != settings.hudMirroring ||

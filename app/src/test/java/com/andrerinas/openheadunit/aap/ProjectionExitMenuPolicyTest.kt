@@ -1,8 +1,10 @@
 package com.andrerinas.openheadunit.aap
 
+import com.andrerinas.openheadunit.aap.ProjectionExitMenuPolicy.Default
 import com.andrerinas.openheadunit.aap.ProjectionExitMenuPolicy.Input
 import com.andrerinas.openheadunit.aap.ProjectionExitMenuPolicy.Option
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -52,5 +54,21 @@ class ProjectionExitMenuPolicyTest {
     fun `an external Bluetooth module has no phone switch`() {
         val options = ProjectionExitMenuPolicy.options(input(nativeWireless = true, externalBtModule = true))
         assertTrue(Option.SWITCH_PHONE !in options)
+    }
+
+    @Test
+    fun `ask each time leaves the exit dialog`() {
+        assertNull(ProjectionExitMenuPolicy.resolve(Default.ASK, input()))
+    }
+
+    @Test
+    fun `a stored favourite applies when the menu offers it`() {
+        assertEquals(Option.BACKGROUND, ProjectionExitMenuPolicy.resolve(Default.BACKGROUND, input()))
+    }
+
+    @Test
+    fun `a favourite missing from this session falls back to asking`() {
+        assertNull(ProjectionExitMenuPolicy.resolve(Default.PIP, input(isHomeApp = true)))
+        assertNull(ProjectionExitMenuPolicy.resolve(Default.END_STAY_ARMED, input()))
     }
 }

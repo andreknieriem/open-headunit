@@ -2553,21 +2553,21 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
 
     /** Ends a session whose window settled in the other shape, so it lands again drawn in that one. */
     private fun redrawIfTurned() {
-        if (!commManager.isConnected) return
         val negotiated = HeadUnitScreenConfig.announcedShape()
         val window = when (resources.configuration.orientation) {
             android.content.res.Configuration.ORIENTATION_LANDSCAPE -> ScreenOrientationPolicy.Normalisation.LANDSCAPE
             android.content.res.Configuration.ORIENTATION_PORTRAIT -> ScreenOrientationPolicy.Normalisation.PORTRAIT
             else -> null
         }
-        if (!ScreenOrientationPolicy.redrawsSession(
-                settings.screenOrientation, negotiated, window,
-                readingIsOurs = HeadUnitScreenConfig.readingDescribesProjection(this),
-                alreadyRedrawnFor = shapeRedrawnFor,
-            )
-        ) {
-            if (window != null && window != negotiated && window == shapeRedrawnFor) {
-                AppLog.w("[AapProjectionActivity] The session came back drawn $negotiated in a $window window; not redrawing it again.")
+        val connected = commManager.isConnected
+        val ours = HeadUnitScreenConfig.readingDescribesProjection(this)
+        if (!connected || !ScreenOrientationPolicy.redrawsSession(negotiated, window, ours, shapeRedrawnFor)) {
+            // Only when the two disagree: the same shape is the common case and has nothing to say.
+            if (window != null && window != negotiated) {
+                AppLog.i(
+                    "[AapProjectionActivity] The window is $window and the stream ${negotiated ?: "unknown"}, " +
+                        "not redrawing: connected=$connected, our window=$ours, already redrawn for ${shapeRedrawnFor ?: "nothing"}."
+                )
             }
             return
         }

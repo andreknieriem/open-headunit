@@ -142,14 +142,20 @@ object HeadUnitScreenConfig {
 
     // The canvas the announced pixel shape was derived from. Only service discovery carries a pixel
     // shape, so this is what a later canvas change can no longer be told to the phone.
-    @Volatile private var announcedCanvasW: Int = 0
-    @Volatile private var announcedCanvasH: Int = 0
+    private var announcedCanvasW: Int = 0
+    private var announcedCanvasH: Int = 0
     private var loggedCanvasDrift: Boolean = false
     private var canvasDriftLines: Int = 0
+
+    // The shape that canvas gave the stream, kept for the session rather than for the projection
+    // window: the window is recreated under a running session, and the old one's onDestroy clears
+    // the announced canvas after the new one has started.
+    @Volatile private var sessionShape: ScreenOrientationPolicy.Normalisation? = null
 
     fun recordAnnouncedCanvas() {
         announcedCanvasW = screenWidthPx
         announcedCanvasH = screenHeightPx
+        recordSessionShape(screenWidthPx, screenHeightPx)
         loggedCanvasDrift = false
         canvasDriftLines = 0
     }
@@ -161,8 +167,11 @@ object HeadUnitScreenConfig {
      * cannot follow (measured 2026-10-23: _1080x1920 re-chosen as _1920x1080 mid-session). This
      * changes only at service discovery and at the session's end.
      */
-    fun announcedShape(): ScreenOrientationPolicy.Normalisation? =
-        ScreenOrientationPolicy.shapeOf(announcedCanvasW, announcedCanvasH)
+    fun announcedShape(): ScreenOrientationPolicy.Normalisation? = sessionShape
+
+    internal fun recordSessionShape(width: Int, height: Int) {
+        sessionShape = ScreenOrientationPolicy.shapeOf(width, height)
+    }
 
     /** True when the live margins are already on the wire, so sending them again would only repeat it. */
     fun marginsMatchAnnounced(): Boolean =
@@ -828,8 +837,7 @@ object HeadUnitScreenConfig {
             offeredFallback = null
             // The stream it described ends with the session, so a reconnect reads no shape until
             // its own service discovery announces one.
-            announcedCanvasW = 0
-            announcedCanvasH = 0
+            sessionShape = null
         }
         if (isResolutionLocked) {
             AppLog.i("[UI_DEBUG] HeadUnitScreenConfig: Unlocking resolution (was $negotiatedResolutionType)")

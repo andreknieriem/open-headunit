@@ -103,18 +103,19 @@ object ScreenOrientationPolicy {
     /**
      * Whether a session should end and reconnect so Android Auto draws it in the window's new shape.
      *
-     * A session cannot change its resolution, so this is the only way a SYSTEM projection follows
-     * the system to the other shape. Only for a window that is ours: the keyguard reads portrait
-     * whatever the mount. Only to the other shape: reverse landscape is still landscape. And once per
-     * window shape, so a session that comes back in the old shape is not redrawn on every landing.
+     * A session cannot change its resolution, so this is the only way the stream follows a window
+     * that turned: under SYSTEM when the system turns, and under any setting when the setting itself
+     * is changed mid-session. AUTO holds the window in the session's shape, so it never differs there.
+     * Only for a window that is ours: the keyguard reads portrait whatever the mount. Only to the
+     * other shape: reverse landscape is still landscape. And once per window shape, so a session that
+     * comes back in the old shape is not redrawn on every landing.
      */
     fun redrawsSession(
-        setting: Settings.ScreenOrientation,
         negotiated: Normalisation?,
         window: Normalisation?,
         readingIsOurs: Boolean,
         alreadyRedrawnFor: Normalisation?,
-    ): Boolean = setting == Settings.ScreenOrientation.SYSTEM && readingIsOurs &&
+    ): Boolean = readingIsOurs &&
         negotiated != null && window != null && window != negotiated && window != alreadyRedrawnFor
 
     private fun fixedShape(landscape: Boolean): Int =

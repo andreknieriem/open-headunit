@@ -1386,10 +1386,6 @@
     <string name="broker_scan_action">Look for OpenHU-NativeBTBroker-Setter</string>
     <string name="broker_scanning">Scanning…</string>
     <string name="broker_found_device">Found device</string>
-    <string name="broker_connect">Connect</string>
-    <string name="broker_connect_value">Open the BLE link and send the current Wi-Fi Direct group</string>
-    <string name="broker_send_now">Send display info</string>
-    <string name="broker_send_now_value">Wi-Fi Direct group and port 5288</string>
     <string name="broker_forget">Forget broker</string>
     <string name="broker_forget_value">Clear the saved device</string>
     <string name="broker_phase_idle">Not connected</string>

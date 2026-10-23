@@ -73,6 +73,25 @@ class NativeBTBrokerClient(context: Context) {
         writeNext(link)
     }
 
+    /**
+     * Lightweight write used as a link probe. The broker answers with EVT_STATUS; we only need the
+     * GATT write to succeed or fail to know whether the BLE link is still up.
+     */
+    fun ping(onRecorded: ((Boolean) -> Unit)? = null) {
+        val link = gatt
+        if (link == null) {
+            if (onRecorded != null) main.post { onRecorded(false) }
+            return
+        }
+        queueFrame(
+            NativeBTBrokerProtocol.CMD_GET_STATUS,
+            NativeBTBrokerProtocol.CH_CONTROL,
+            ByteArray(0),
+            onRecorded = onRecorded,
+        )
+        writeNext(link)
+    }
+
     @SuppressLint("MissingPermission")
     fun scan(onDevice: (BluetoothDevice, String?) -> Unit, onFinished: () -> Unit) {
         stopScan()

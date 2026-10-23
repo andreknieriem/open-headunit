@@ -247,6 +247,7 @@ class SettingsFragment : Fragment() {
     private var pendingFloatingButtonXPercent by pending::floatingButtonXPercent
     private var pendingFloatingButtonYPercent by pending::floatingButtonYPercent
     private var pendingAaExitAction by pending::aaExitAction
+    private var pendingDefaultProjectionExit by pending::defaultProjectionExit
     private var pendingVideoFitMode by pending::videoFitMode
     private var pendingForcedScale by pending::forcedScale
     private var pendingHudMirroring by pending::hudMirroring
@@ -610,6 +611,7 @@ class SettingsFragment : Fragment() {
         pendingFloatingButtonXPercent?.let { if (it != settings.floatingButtonXPercent) settings.floatingButtonXPercent = it }
         pendingFloatingButtonYPercent?.let { if (it != settings.floatingButtonYPercent) settings.floatingButtonYPercent = it }
         pendingAaExitAction?.let { if (it != settings.rawAaExitAction) settings.rawAaExitAction = it }
+        pendingDefaultProjectionExit?.let { if (it != settings.defaultProjectionExit) settings.defaultProjectionExit = it }
         FloatingButtonManager.update(requireContext())
         pendingVideoFitMode?.let { if (it != settings.videoFitMode) settings.videoFitMode = it }
         pendingForcedScale?.let { if (it != settings.forcedScale) settings.forcedScale = it }
@@ -1840,6 +1842,35 @@ class SettingsFragment : Fragment() {
                 }
             ))
         }
+
+        val projectionExitChoices = arrayOf(
+            getString(R.string.projection_exit_default_ask),
+            getString(R.string.exit_dialog_stop),
+            getString(R.string.exit_dialog_end_stay_armed),
+            getString(R.string.exit_dialog_pip),
+            getString(R.string.exit_dialog_background),
+            getString(R.string.exit_dialog_settings),
+            getString(R.string.switch_driver),
+        )
+        val currentProjectionExit = pendingDefaultProjectionExit ?: settings.defaultProjectionExit
+        items.add(SettingItem.SettingEntry(
+            stableId = "defaultProjectionExit",
+            nameResId = R.string.pref_default_projection_exit_title,
+            value = projectionExitChoices.getOrElse(currentProjectionExit.value) { projectionExitChoices[0] },
+            searchKeywords = getString(R.string.pref_default_projection_exit_summary),
+            onClick = { _ ->
+                MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
+                    .setTitle(R.string.pref_default_projection_exit_title)
+                    .setSingleChoiceItems(projectionExitChoices, currentProjectionExit.value) { dialog, which ->
+                        pendingDefaultProjectionExit =
+                            com.andrerinas.openheadunit.aap.ProjectionExitMenuPolicy.Default.fromInt(which)
+                        checkChanges()
+                        dialog.dismiss()
+                        updateSettingsList()
+                    }
+                    .show()
+            }
+        ))
 
         // --- Navigation Settings ---
                 items.add(SettingItem.SettingEntry(

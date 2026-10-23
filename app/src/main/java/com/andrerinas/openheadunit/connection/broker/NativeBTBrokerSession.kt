@@ -36,6 +36,9 @@ object NativeBTBrokerSession {
     private var lastDialAtMs = 0L
     /** BLE is down and the retry window has not expired. The displayed phase stays as it was. */
     private var awaitingBroker = false
+    /** 1 Hz CMD_GET_STATUS probe while [NativeBTBrokerStore.endAaOnDisconnect] is on. */
+    private var watchdogPosted = false
+    private var watchdogFailures = 0
 
     /** Runs once when the broker stays down for the whole retry window. */
     var onGiveUp: (() -> Unit)? = null
@@ -69,6 +72,7 @@ object NativeBTBrokerSession {
         val address = NativeBTBrokerStore(app).deviceAddress ?: return
         appContext = app
         if (status.phase == Phase.CONNECTING || status.phase == Phase.READY || status.phase == Phase.PAIRING) {
+            syncWatchdog()
             return
         }
         publish(Status(Phase.CONNECTING))
@@ -88,6 +92,7 @@ object NativeBTBrokerSession {
             if (result.isSuccess) {
                 awaitingBroker = false
                 stopRetry()
+                gaveUp = false
                 publish(Status(Phase.READY, address))
             } else {
                 if (!noteLinkLost()) {
@@ -95,6 +100,7 @@ object NativeBTBrokerSession {
                 }
             }
         }
+        syncWatchdog()
     }
 
     private val retry = Runnable {
@@ -196,6 +202,7 @@ object NativeBTBrokerSession {
             if (result.isSuccess) {
                 awaitingBroker = false
                 stopRetry()
+                gaveUp = false
                 publish(Status(Phase.READY, address))
             } else {
                 lastSnapshot = null
@@ -307,6 +314,7 @@ object NativeBTBrokerSession {
 
     fun close() {
         stopRetry()
+        stopWatchdog()
         gaveUp = false
         awaitingBroker = false
         client?.close()
@@ -321,6 +329,15 @@ object NativeBTBrokerSession {
         lastSnapshot = null
         lastInfo = null
         publish(Status(Phase.IDLE))
+    }
+
+    /**
+     * Re-reads [NativeBTBrokerStore.endAaOnDisconnect] and starts or stops the 1 Hz link probe.
+     * Call after the setting changes while a broker session may already be up.
+     */
+    fun syncWatchdog(context: Context? = null) {
+        if (context != null) appContext = context.applicationContext
+        main.post { syncWatchdogLocked() }
     }
 
     private fun brokerClient(app: Context): NativeBTBrokerClient {
@@ -366,8 +383,67 @@ object NativeBTBrokerSession {
         gaveUp = true
         awaitingBroker = false
         stopRetry()
+        stopWatchdog()
         AppLog.w("Broker: still down after ${RETRY_WINDOW_MS / 1000}s, stopping the phone session")
-        onGiveUp?.invoke()
+        publish(Status(Phase.FAILED, "broker link lost"))
+        main.post { onGiveUp?.invoke() }
+    }
+
+    private fun endAaOnDisconnectEnabled(): Boolean {
+        val app = appContext ?: return false
+        return NativeBTBrokerStore(app).endAaOnDisconnect
+    }
+
+    private fun syncWatchdogLocked() {
+        val live = client != null &&
+            (status.phase == Phase.READY || status.phase == Phase.CONNECTING || status.phase == Phase.PAIRING)
+        if (endAaOnDisconnectEnabled() && live) {
+            startWatchdog()
+        } else {
+            stopWatchdog()
+        }
+    }
+
+    private fun startWatchdog() {
+        if (watchdogPosted) return
+        watchdogPosted = true
+        watchdogFailures = 0
+        AppLog.i("Broker: 1 Hz link probe on (endAaOnDisconnect)")
+        main.post(linkWatchdog)
+    }
+
+    private fun stopWatchdog() {
+        watchdogPosted = false
+        watchdogFailures = 0
+        main.removeCallbacks(linkWatchdog)
+    }
+
+    private val linkWatchdog: Runnable = Runnable {
+        watchdogPosted = false
+        if (!endAaOnDisconnectEnabled()) return@Runnable
+        val link = client
+        if (link == null ||
+            (status.phase != Phase.READY && status.phase != Phase.CONNECTING && status.phase != Phase.PAIRING)
+        ) {
+            return@Runnable
+        }
+        link.ping { ok ->
+            if (ok) {
+                watchdogFailures = 0
+            } else {
+                watchdogFailures += 1
+                AppLog.w("Broker: link probe failed ($watchdogFailures/$WATCHDOG_FAILURES)")
+                if (watchdogFailures >= WATCHDOG_FAILURES) {
+                    AppLog.w("Broker: link probe lost, ending the phone session")
+                    giveUp()
+                    return@ping
+                }
+            }
+            if (!gaveUp && endAaOnDisconnectEnabled() && client != null) {
+                watchdogPosted = true
+                main.postDelayed(linkWatchdog, WATCHDOG_EVERY_MS)
+            }
+        }
     }
 
     private const val RETRY_WINDOW_MS = 10_000L
@@ -375,6 +451,8 @@ object NativeBTBrokerSession {
     /** Shorter than the broker's 4s silence limit, so a missed write does not look like the socket closed. */
     private const val PROJECTION_HEARTBEAT_MS = 1_000L
     private const val PROJECTION_RECORD_FAILURES = 10
+    private const val WATCHDOG_EVERY_MS = 1_000L
+    private const val WATCHDOG_FAILURES = 2
 
     /**
      * The Wi-Fi group often finishes about a second after the first snapshot. The start waits
@@ -386,6 +464,9 @@ object NativeBTBrokerSession {
 
     private fun publish(next: Status) {
         status = next
-        main.post { listener?.invoke(next) }
+        main.post {
+            listener?.invoke(next)
+            syncWatchdogLocked()
+        }
     }
 }

@@ -124,6 +124,17 @@ class BrokerSettingsFragment : Fragment() {
                 refresh()
             },
         ))
+        items.add(SettingItem.ToggleSettingEntry(
+            stableId = "brokerEndAaOnDisconnect",
+            nameResId = R.string.broker_end_aa_on_disconnect,
+            descriptionResId = R.string.broker_end_aa_on_disconnect_description,
+            isChecked = store.endAaOnDisconnect,
+            onCheckedChanged = { checked ->
+                store.endAaOnDisconnect = checked
+                NativeBTBrokerSession.syncWatchdog(requireContext())
+                refresh()
+            },
+        ))
         items.add(SettingItem.SettingEntry(
             stableId = "brokerForget",
             nameResId = R.string.broker_forget,

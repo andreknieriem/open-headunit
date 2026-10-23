@@ -28,8 +28,9 @@ import com.andrerinas.openheadunit.utils.BluetoothAddressSeedPolicy
 import com.andrerinas.openheadunit.utils.BluetoothHelper
 import com.andrerinas.openheadunit.utils.bluetooth.BluetoothPeerDiscovery
 import com.andrerinas.openheadunit.aap.protocol.proto.Wireless
-import com.andrerinas.openheadunit.connection.broker.NativeBTBrokerSession
 import com.andrerinas.openheadunit.connection.broker.NativeBTBrokerCarrier
+import com.andrerinas.openheadunit.connection.broker.NativeBTBrokerSession
+import com.andrerinas.openheadunit.connection.broker.NativeBTBrokerStore
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.blink.BlinkAaCarrier
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.blink.BlinkAutoSerialChannel
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.blink.BlinkRefusal
@@ -2960,6 +2961,10 @@ class NativeAaHandshakeManager(
             grantCredit = { extra -> NativeBTBrokerSession.grantCredit(extra) },
         )
         NativeBTBrokerSession.setFrameSink { frame -> carrier.onFrame(frame) }
+        NativeBTBrokerSession.onGiveUp = { endAndroidAutoIfBrokerSetting("link stayed down") }
+        NativeBTBrokerSession.onProjectionRecordFailed = {
+            endAndroidAutoIfBrokerSetting("projection status could not be recorded")
+        }
         moduleCarrier = carrier
         NativeBTBrokerSession.armRelay(context)
         NativeBTBrokerSession.offerLiveGroup(context, force = true)
@@ -2972,7 +2977,27 @@ class NativeAaHandshakeManager(
                 AppLog.e("NativeAA: [Broker] carrier stopped unexpectedly: ${e.message}", e)
             } finally {
                 NativeBTBrokerSession.setFrameSink(null)
+                NativeBTBrokerSession.onGiveUp = null
+                NativeBTBrokerSession.onProjectionRecordFailed = null
             }
+        }
+    }
+
+    /** Ends the Android Auto session when the Native BT Broker setting asks for it. */
+    private fun endAndroidAutoIfBrokerSetting(reason: String) {
+        if (!NativeBTBrokerStore(context).endAaOnDisconnect) return
+        if (!commManager.isConnected &&
+            commManager.connectionState.value !is CommManager.ConnectionState.Connecting
+        ) {
+            return
+        }
+        AppLog.w("NativeAA: [Broker] $reason — ending Android Auto (endAaOnDisconnect)")
+        scope.launch(Dispatchers.Main.immediate) {
+            commManager.disconnect(
+                sendByeBye = true,
+                isUserExit = false,
+                honorKillOnDisconnect = false,
+            )
         }
     }
 
@@ -4136,6 +4161,8 @@ class NativeAaHandshakeManager(
         moduleCarrier?.close()
         moduleCarrier = null
         NativeBTBrokerSession.setFrameSink(null)
+        NativeBTBrokerSession.onGiveUp = null
+        NativeBTBrokerSession.onProjectionRecordFailed = null
         wppTcpServer?.stop()
         wppTcpServer = null
         try { aaServerSocket?.close() } catch (e: Exception) {}

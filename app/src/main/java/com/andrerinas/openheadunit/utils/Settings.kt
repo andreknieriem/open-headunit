@@ -195,6 +195,18 @@ class Settings(private val context: Context) {
         }
     }
 
+    /**
+     * Preferred action when leaving the projection screen (back / edge swipe).
+     * [com.andrerinas.openheadunit.aap.ProjectionExitMenuPolicy.Default.ASK] shows the exit dialog.
+     */
+    var defaultProjectionExit: com.andrerinas.openheadunit.aap.ProjectionExitMenuPolicy.Default
+        get() = com.andrerinas.openheadunit.aap.ProjectionExitMenuPolicy.Default.fromInt(
+            prefs.getInt(KEY_DEFAULT_PROJECTION_EXIT, com.andrerinas.openheadunit.aap.ProjectionExitMenuPolicy.Default.ASK.value)
+        )
+        set(value) {
+            prefs.edit().putInt(KEY_DEFAULT_PROJECTION_EXIT, value.value).apply()
+        }
+
     // Forced scale for older devices (SurfaceView fix)
     var forcedScale: Boolean
         get() = prefs.getBoolean("forced_scale", false)
@@ -1882,6 +1894,7 @@ class Settings(private val context: Context) {
         const val KEY_ASSISTANT_VOLUME_OFFSET = "assistant-volume-offset"
         const val KEY_NAVIGATION_VOLUME_OFFSET = "navigation-volume-offset"
         const val KEY_ENABLE_CAR_LAUNCHER = "enable-car-launcher"
+        const val KEY_DEFAULT_PROJECTION_EXIT = "default-projection-exit"
         const val KEY_WIFI_DIRECT_BANDED_REFUSED_ON = "wifi-direct-banded-refused-on"
 
         const val AUTO_CONNECT_LAST_SESSION = "last-session"

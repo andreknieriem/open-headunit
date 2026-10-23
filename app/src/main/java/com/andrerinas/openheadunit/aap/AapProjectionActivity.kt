@@ -1060,7 +1060,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                showExitDialog()
+                requestExit()
             }
         })
 
@@ -1703,6 +1703,42 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         ProjectionExitMenuPolicy.Option.SWITCH_PHONE -> ExitOption(R.string.switch_driver, R.drawable.ic_phone, Color.LTGRAY)
     }
 
+    private fun projectionExitInput(): ProjectionExitMenuPolicy.Input = ProjectionExitMenuPolicy.Input(
+        isHomeApp = CarLauncherManager.isDefaultLauncher(this),
+        pipWorks = supportsPictureInPicture(),
+        nativeWireless = settings.wifiConnectionMode ==
+            com.andrerinas.openheadunit.connection.wifi.WifiLauncherMode.NATIVE,
+        externalBtModule = ExternalBtTransportPolicy.usesExternalModule(NativeAaHandshakeManager.transportRoute(this)),
+        // WiFi Direct only: the group is ours, created for the session. An access point is
+        // usually the user's own, and UserExitHotspotPolicy already leaves it alone.
+        wifiDirectGroup = settings.nativeApStrategy ==
+            com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeStrategy.WIFI_DIRECT
+    )
+
+    private fun applyExitOption(option: ProjectionExitMenuPolicy.Option) {
+        when (option) {
+            ProjectionExitMenuPolicy.Option.STOP -> {
+                commManager.disconnect(sendByeBye = true)
+                finish()
+            }
+            ProjectionExitMenuPolicy.Option.END_STAY_ARMED -> endSessionStayArmed()
+            ProjectionExitMenuPolicy.Option.PIP -> enterPiP()
+            ProjectionExitMenuPolicy.Option.BACKGROUND -> moveToBackground()
+            ProjectionExitMenuPolicy.Option.SETTINGS -> showQuickSettings()
+            ProjectionExitMenuPolicy.Option.SWITCH_PHONE -> switchDriver()
+        }
+    }
+
+    /** Back / exit swipe: honour the settings default, or open the exit menu when set to ask. */
+    private fun requestExit() {
+        val resolved = ProjectionExitMenuPolicy.resolve(settings.defaultProjectionExit, projectionExitInput())
+        if (resolved != null) {
+            applyExitOption(resolved)
+        } else {
+            showExitDialog()
+        }
+    }
+
     private fun showExitDialog() {
         // Copy the live configuration: a blank one resets the font scale on API 17-23.
         val exitScale = settings.uiScaleExitDialogPercent / 100f
@@ -1717,19 +1753,8 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         }
         val builder = MaterialAlertDialogBuilder(dialogContext, R.style.DarkAlertDialog)
         val dialogInflater = android.view.LayoutInflater.from(builder.context)
-        val options = ProjectionExitMenuPolicy.options(
-            ProjectionExitMenuPolicy.Input(
-                isHomeApp = CarLauncherManager.isDefaultLauncher(this),
-                pipWorks = supportsPictureInPicture(),
-                nativeWireless = settings.wifiConnectionMode ==
-                    com.andrerinas.openheadunit.connection.wifi.WifiLauncherMode.NATIVE,
-                externalBtModule = ExternalBtTransportPolicy.usesExternalModule(NativeAaHandshakeManager.transportRoute(this)),
-                // WiFi Direct only: the group is ours, created for the session. An access point is
-                // usually the user's own, and UserExitHotspotPolicy already leaves it alone.
-                wifiDirectGroup = settings.nativeApStrategy ==
-                    com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeStrategy.WIFI_DIRECT
-            )
-        ).map(::exitOption)
+        val menuOptions = ProjectionExitMenuPolicy.options(projectionExitInput())
+        val options = menuOptions.map(::exitOption)
 
         val adapter = object : android.widget.BaseAdapter() {
             override fun getCount(): Int = options.size
@@ -1752,28 +1777,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         val dialog = builder
             .setTitle(R.string.exit_dialog_title)
             .setAdapter(adapter) { _, which ->
-                val selected = options[which]
-                when (selected.titleResId) {
-                    R.string.exit_dialog_stop -> {
-                        commManager.disconnect(sendByeBye = true)
-                        finish()
-                    }
-                    R.string.exit_dialog_end_stay_armed -> {
-                        endSessionStayArmed()
-                    }
-                    R.string.exit_dialog_pip -> {
-                        enterPiP()
-                    }
-                    R.string.exit_dialog_background -> {
-                        moveToBackground()
-                    }
-                    R.string.exit_dialog_settings -> {
-                        showQuickSettings()
-                    }
-                    R.string.switch_driver -> {
-                        switchDriver()
-                    }
-                }
+                applyExitOption(menuOptions[which])
             }
             .setNegativeButton(R.string.cancel, null)
             .create()
@@ -2061,7 +2065,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                         val deltaY = abs(ev.getY(0) - initialY)
                         if (deltaX > 200 && deltaY < 100) {
                             isPotentialGesture = false
-                            showExitDialog()
+                            requestExit()
                             return true // Consume
                         }
 

@@ -12,6 +12,35 @@ object ProjectionExitMenuPolicy {
 
     enum class Option { STOP, END_STAY_ARMED, PIP, BACKGROUND, SETTINGS, SWITCH_PHONE }
 
+    /**
+     * What the settings screen stores as the preferred projection exit.
+     * [ASK] keeps the exit dialog; the rest apply that menu option when it is offered now.
+     */
+    enum class Default(val value: Int) {
+        ASK(0),
+        STOP(1),
+        END_STAY_ARMED(2),
+        PIP(3),
+        BACKGROUND(4),
+        SETTINGS(5),
+        SWITCH_PHONE(6);
+
+        fun toOption(): Option? = when (this) {
+            ASK -> null
+            STOP -> Option.STOP
+            END_STAY_ARMED -> Option.END_STAY_ARMED
+            PIP -> Option.PIP
+            BACKGROUND -> Option.BACKGROUND
+            SETTINGS -> Option.SETTINGS
+            SWITCH_PHONE -> Option.SWITCH_PHONE
+        }
+
+        companion object {
+            private val map = entries.associateBy(Default::value)
+            fun fromInt(value: Int) = map[value] ?: ASK
+        }
+    }
+
     data class Input(
         /** This app holds the home role, not only the car launcher switch: a declined role leaves the factory home. */
         val isHomeApp: Boolean,
@@ -35,5 +64,14 @@ object ProjectionExitMenuPolicy {
         if (!short) options.add(Option.SETTINGS)
         if (input.nativeWireless && !input.externalBtModule) options.add(Option.SWITCH_PHONE)
         return options
+    }
+
+    /**
+     * The option to run immediately, or null when the exit dialog should be shown.
+     * A stored favourite that is not offered in this session falls back to asking.
+     */
+    fun resolve(default: Default, input: Input): Option? {
+        val preferred = default.toOption() ?: return null
+        return preferred.takeIf { it in options(input) }
     }
 }

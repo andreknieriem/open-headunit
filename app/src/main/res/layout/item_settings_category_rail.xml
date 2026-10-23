@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One section in the landscape category rail. Background and colors are set in code from the
+     settings palette, so the active pill follows day, night and extreme dark. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/settings_rail_item_height"
+    android:layout_marginBottom="2dp"
+    android:clickable="true"
+    android:focusable="true"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingStart="14dp"
+    android:paddingLeft="14dp"
+    android:paddingEnd="12dp"
+    android:paddingRight="12dp">
+
+    <ImageView
+        android:id="@+id/categoryIcon"
+        android:layout_width="@dimen/settings_rail_icon_size"
+        android:layout_height="@dimen/settings_rail_icon_size"
+        android:importantForAccessibility="no"
+        tools:ignore="ContentDescription" />
+
+    <TextView
+        android:id="@+id/categoryTitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_marginLeft="12dp"
+        android:layout_weight="1"
+        android:ellipsize="end"
+        android:fontFamily="sans-serif-medium"
+        android:maxLines="1"
+        android:textSize="@dimen/settings_rail_text_size"
+        tools:text="General" />
+
+</LinearLayout>

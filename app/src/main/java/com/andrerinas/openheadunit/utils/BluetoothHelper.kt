@@ -1,13 +1,16 @@
 package com.andrerinas.openheadunit.utils
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.content.Context
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.IBinder
+import androidx.core.content.ContextCompat
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.DriverCandidatePolicy
 import java.lang.reflect.Constructor
@@ -281,6 +284,34 @@ object BluetoothHelper {
 
     @Volatile
     private var lastCandidateSummary: String? = null
+
+    /**
+     * Whether the app may list the paired devices and read their names. Android 12 (API 31) made
+     * that a runtime permission, BLUETOOTH_CONNECT; before it the install-time BLUETOOTH
+     * permission covers it.
+     */
+    fun canReadPairedDevices(context: Context): Boolean =
+        Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
+            ContextCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) ==
+            PackageManager.PERMISSION_GRANTED
+
+    /**
+     * The paired devices, or an empty list when there is no adapter or the app may not read them.
+     * Never throws: a settings screen that lists them used to crash on open on Android 12+ when
+     * BLUETOOTH_CONNECT had not been granted yet (a fresh install that skipped the setup wizard).
+     */
+    @SuppressLint("MissingPermission")
+    fun pairedDevicesOrEmpty(context: Context): List<BluetoothDevice> {
+        if (!canReadPairedDevices(context)) return emptyList()
+        val adapter = getBluetoothAdapter(context) ?: return emptyList()
+        return try {
+            adapter.bondedDevices?.toList() ?: emptyList()
+        } catch (e: SecurityException) {
+            // Granted but refused anyway: some head unit ROMs guard the adapter more tightly.
+            AppLog.w("BluetoothHelper: paired devices refused: ${e.message}")
+            emptyList()
+        }
+    }
 
     /**
      * The bonded devices classified for driver selection and the wake poke. Enumerated every poke

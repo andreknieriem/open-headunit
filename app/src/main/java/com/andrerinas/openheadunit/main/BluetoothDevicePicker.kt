@@ -48,7 +48,8 @@ object BluetoothDevicePicker {
         val adapter = BluetoothHelper.getBluetoothAdapter(context)
         if (adapter == null || !adapter.isEnabled) return false
 
-        val allBonded = adapter.bondedDevices.toList()
+        // Never throws: empty without BLUETOOTH_CONNECT, where the stored addresses still get rows.
+        val allBonded = BluetoothHelper.pairedDevicesOrEmpty(context)
         val bondedDevices = deviceFilter
             ?.let { f -> allBonded.filter { f(it) || it.address in selectedMacs } }
             ?.ifEmpty { allBonded }

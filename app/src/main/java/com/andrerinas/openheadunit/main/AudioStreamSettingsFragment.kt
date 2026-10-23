@@ -164,7 +164,8 @@ class AudioStreamSettingsFragment : Fragment() {
         items.add(SettingItem.ToggleSettingEntry(
             stableId = "separateAudioStreams",
             nameResId = R.string.separate_audio_streams,
-            descriptionResId = R.string.separate_audio_streams_description,
+            descriptionResId = R.string.separate_audio_streams_summary,
+            helpResId = R.string.separate_audio_streams_description,
             isChecked = separate,
             onCheckedChanged = { isChecked ->
                 pendingSeparateAudioStreams = isChecked
@@ -176,7 +177,9 @@ class AudioStreamSettingsFragment : Fragment() {
         items.add(streamRow(
             stableId = "mediaAudioStream",
             nameResId = if (separate) R.string.audio_channel_media else R.string.audio_channel_all,
-            descriptionResId = if (separate) R.string.audio_channel_media_description
+            descriptionResId = if (separate) R.string.audio_channel_media_summary
+                else R.string.audio_channel_all_summary,
+            helpResId = if (separate) R.string.audio_channel_media_description
                 else R.string.audio_channel_all_description,
             pickerTitle = getString(
                 if (separate) R.string.audio_channel_media else R.string.audio_channel_all_short),
@@ -213,6 +216,7 @@ class AudioStreamSettingsFragment : Fragment() {
         stableId: String,
         nameResId: Int,
         descriptionResId: Int,
+        helpResId: Int? = null,
         current: () -> Int,
         onPicked: (Int) -> Unit,
         pickerTitle: String = getString(nameResId)
@@ -220,6 +224,7 @@ class AudioStreamSettingsFragment : Fragment() {
         stableId = stableId,
         nameResId = nameResId,
         descriptionResId = descriptionResId,
+        helpResId = helpResId,
         value = AudioStreamTester.label(requireContext(), current()),
         onClick = {
             val labels = AudioStreamTester.labels(requireContext())

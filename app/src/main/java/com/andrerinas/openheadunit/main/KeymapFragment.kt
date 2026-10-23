@@ -18,6 +18,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.R
+import com.andrerinas.openheadunit.main.settings.SettingHelpDialog
 import com.andrerinas.openheadunit.contract.KeyIntent
 import com.andrerinas.openheadunit.input.BydPanelKey
 import com.andrerinas.openheadunit.input.KeyCode
@@ -103,8 +104,9 @@ class KeymapFragment : Fragment(), MainActivity.KeyListener {
         toolbar.setNavigationOnClickListener {
             findNavController().popBackStack()
         }
-        
-        val resetItem = toolbar.menu.add(0, RESET_ITEM_ID, 0, getString(R.string.reset))
+        SettingHelpDialog.addToolbarHelp(toolbar, toolbar.title, R.string.keymap_screen_help, "keymap")
+
+        val resetItem = toolbar.menu.add(0, RESET_ITEM_ID, 1, getString(R.string.reset))
         resetItem.setShowAsAction(android.view.MenuItem.SHOW_AS_ACTION_ALWAYS)
         resetItem.setActionView(R.layout.layout_reset_button)
         
@@ -161,7 +163,7 @@ class KeymapFragment : Fragment(), MainActivity.KeyListener {
                 val displayText = "Action: $action\n$codeText\n$extras"
                 
                 keypressDebuggerTextView.text = displayText
-                keypressDebuggerTextView.setTextColor(ContextCompat.getColor(requireContext(), R.color.brand_teal))
+                keypressDebuggerTextView.setTextColor(ContextCompat.getColor(requireContext(), R.color.brand_primary))
                 return
             }
 
@@ -218,7 +220,7 @@ class KeymapFragment : Fragment(), MainActivity.KeyListener {
         AppLog.i("KeymapFragment: Captured $keyName ($keyCode) $actionName")
         
         keypressDebuggerTextView.text = "Key: $keyName ($keyCode) - $actionName"
-        keypressDebuggerTextView.setTextColor(ContextCompat.getColor(requireContext(), R.color.brand_teal))
+        keypressDebuggerTextView.setTextColor(ContextCompat.getColor(requireContext(), R.color.brand_primary))
 
         if (assignTargetCode != KeyEvent.KEYCODE_UNKNOWN) {
             // Only finalize assignment on ACTION_UP to avoid accidental multiple mappings

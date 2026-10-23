@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The note above the list saying which settings the chosen connection type hides, with a
+     shortcut to change it. Background set in code from the settings palette. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="4dp"
+    android:gravity="center_vertical"
+    android:minHeight="@dimen/settings_scope_notice_min_height"
+    android:orientation="horizontal"
+    android:paddingStart="16dp"
+    android:paddingLeft="16dp"
+    android:paddingTop="2dp"
+    android:paddingEnd="4dp"
+    android:paddingRight="4dp"
+    android:paddingBottom="2dp">
+
+    <ImageView
+        android:id="@+id/scopeIcon"
+        android:layout_width="@dimen/settings_row_icon_size"
+        android:layout_height="@dimen/settings_row_icon_size"
+        android:importantForAccessibility="no"
+        app:tint="?attr/settingsOnSecondaryContainer"
+        tools:ignore="ContentDescription"
+        tools:srcCompat="@drawable/ic_sym_usb_fill" />
+
+    <TextView
+        android:id="@+id/scopeText"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
+        android:layout_marginLeft="10dp"
+        android:layout_weight="1"
+        android:textColor="?attr/settingsOnSecondaryContainer"
+        android:textSize="@dimen/settings_row_description_size"
+        tools:text="Showing USB settings. WiFi settings are hidden." />
+
+    <Button
+        android:id="@+id/scopeAction"
+        style="@style/Widget.Material3.Button.TextButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:minWidth="0dp"
+        android:minHeight="@dimen/settings_text_button_min_height"
+        android:textColor="?attr/settingsPrimary"
+        android:textSize="@dimen/settings_control_text_size"
+        tools:text="Change" />
+
+</LinearLayout>

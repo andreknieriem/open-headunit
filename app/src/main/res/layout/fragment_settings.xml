@@ -1,92 +1,124 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Settings, portrait: title row, tabs, search (a row of its own when the panel is tall
+     enough, behind a button otherwise) and category chips above the list. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/settingsRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="?android:attr/colorBackground"
-    android:focusableInTouchMode="true">
-
-    <com.google.android.material.appbar.AppBarLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:elevation="0dp"
-        android:background="?android:attr/colorBackground">
-
-        <com.google.android.material.appbar.MaterialToolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            app:title="@string/settings"
-            app:navigationIcon="@drawable/ic_arrow_back_white"
-            app:titleTextColor="?android:attr/textColorPrimary"
-            app:navigationIconTint="?android:attr/textColorPrimary" />
-
-    </com.google.android.material.appbar.AppBarLayout>
+    android:background="?attr/settingsSurface"
+    android:focusableInTouchMode="true"
+    android:orientation="vertical">
 
     <LinearLayout
+        android:id="@+id/settingsHeader"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:paddingStart="16dp"
-        android:paddingEnd="16dp"
-        android:paddingTop="4dp"
-        android:paddingBottom="8dp">
+        android:layout_height="56dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="4dp"
+        android:paddingLeft="4dp"
+        android:paddingEnd="12dp"
+        android:paddingRight="12dp">
 
-        <com.google.android.material.button.MaterialButtonToggleGroup
-            android:id="@+id/settingsTabGroup"
-            android:layout_width="match_parent"
+        <ImageButton
+            android:id="@+id/settingsBack"
+            style="@style/SettingsIconButton"
+            android:contentDescription="@string/back"
+            app:srcCompat="@drawable/ic_sym_arrow_back"
+            app:tint="?attr/settingsOnSurface" />
+
+        <TextView
+            android:id="@+id/settingsTitle"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            app:singleSelection="true"
-            app:selectionRequired="true">
+            android:layout_marginStart="4dp"
+            android:layout_marginLeft="4dp"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="@string/settings"
+            android:textColor="?attr/settingsOnSurface"
+            android:textSize="@dimen/settings_title_text_size" />
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/tabBasic"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="@string/settings_tab_basic" />
+        <ImageButton
+            android:id="@+id/settingsSearchButton"
+            style="@style/SettingsIconButton"
+            android:contentDescription="@string/settings_search_hint"
+            app:srcCompat="@drawable/ic_sym_search"
+            app:tint="?attr/settingsOnSurfaceVariant" />
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/tabAdvanced"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="@string/settings_tab_advanced" />
+        <ImageButton
+            android:id="@+id/settingsReset"
+            style="@style/SettingsIconButton"
+            android:contentDescription="@string/reset_settings"
+            app:srcCompat="@drawable/ic_sym_restart_alt"
+            app:tint="?attr/settingsOnSurfaceVariant" />
 
-        </com.google.android.material.button.MaterialButtonToggleGroup>
-
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/settingsSearchLayout"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:hint="@string/settings_search_hint"
-            app:startIconDrawable="@drawable/ic_search"
-            app:endIconMode="clear_text">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/settingsSearch"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:imeOptions="actionSearch"
-                android:inputType="text"
-                android:maxLines="1" />
-
-        </com.google.android.material.textfield.TextInputLayout>
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/settingsSave"
+            style="@style/Widget.Material3.Button"
+            android:layout_width="wrap_content"
+            android:layout_height="@dimen/settings_header_control_height"
+            android:layout_marginStart="4dp"
+            android:layout_marginLeft="4dp"
+            android:enabled="false"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:maxLines="1"
+            android:minWidth="64dp"
+            android:paddingLeft="20dp"
+            android:paddingRight="20dp"
+            android:text="@string/save"
+            android:textAllCaps="false"
+            android:textSize="@dimen/settings_control_text_size"
+            app:iconPadding="6dp"
+            app:iconSize="@dimen/settings_control_icon_size" />
 
     </LinearLayout>
+
+    <include
+        layout="@layout/layout_settings_tabs"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginLeft="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginRight="16dp"
+        android:layout_marginBottom="8dp" />
+
+    <include
+        layout="@layout/layout_settings_search_bar"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/settings_header_control_height"
+        android:layout_marginStart="16dp"
+        android:layout_marginLeft="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginRight="16dp"
+        android:layout_marginBottom="8dp" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/settingsCategories"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="4dp"
+        android:clipToPadding="false"
+        android:paddingStart="16dp"
+        android:paddingLeft="16dp"
+        android:paddingEnd="8dp"
+        android:paddingRight="8dp" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/settingsRecyclerView"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:clipToPadding="false"
-        android:padding="16dp"
-        android:scrollbars="vertical"
-        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+        android:paddingStart="16dp"
+        android:paddingLeft="16dp"
+        android:paddingEnd="16dp"
+        android:paddingRight="16dp"
+        android:paddingBottom="24dp"
+        android:scrollbars="vertical" />
 
 </LinearLayout>

@@ -14,6 +14,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.R
+import com.andrerinas.openheadunit.main.settings.SettingHelpDialog
 import com.andrerinas.openheadunit.main.settings.AutoConnectAdapter
 import com.andrerinas.openheadunit.main.settings.AutoConnectMethod
 import com.andrerinas.openheadunit.main.settings.AutoConnectTouchCallback
@@ -194,8 +195,9 @@ class AutoConnectFragment : Fragment() {
         toolbar.setNavigationOnClickListener {
             handleBackPress()
         }
+        SettingHelpDialog.addToolbarHelp(toolbar, toolbar.title, R.string.auto_connect_screen_help, "autoConnect")
 
-        val saveItem = toolbar.menu.add(0, SAVE_ITEM_ID, 0, getString(R.string.save))
+        val saveItem = toolbar.menu.add(0, SAVE_ITEM_ID, 1, getString(R.string.save))
         saveItem.setShowAsAction(android.view.MenuItem.SHOW_AS_ACTION_ALWAYS)
         saveItem.setActionView(R.layout.layout_save_button)
 

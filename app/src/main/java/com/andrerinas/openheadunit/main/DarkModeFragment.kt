@@ -326,10 +326,10 @@ class DarkModeFragment : Fragment(), SensorEventListener {
      */
     private fun addSunriseReference(items: MutableList<SettingItem>, idSuffix: String) {
         val useFixed = pendingUseFixedSunriseLocation == true
-        items.add(SettingItem.InfoBanner("sunriseHelp_$idSuffix", R.string.sunrise_reference_help))
         items.add(SettingItem.SettingEntry(
             stableId = "sunriseSource_$idSuffix",
             nameResId = R.string.sunrise_location_title,
+            helpResId = R.string.sunrise_reference_help,
             value = if (useFixed)
                 getString(R.string.sunrise_location_fixed) +
                     " (%.3f, %.3f)".format(settings.fixedSunriseLatitude, settings.fixedSunriseLongitude)
@@ -844,7 +844,8 @@ class DarkModeFragment : Fragment(), SensorEventListener {
             items.add(SettingItem.ToggleSettingEntry(
                 stableId = "aaMonochrome",
                 nameResId = R.string.aa_monochrome,
-                descriptionResId = R.string.aa_monochrome_description,
+                descriptionResId = R.string.aa_monochrome_summary,
+                helpResId = R.string.aa_monochrome_description,
                 isChecked = pendingAaMonochromeEnabled!!,
                 onCheckedChanged = { isChecked ->
                     if (isChecked && pendingViewMode != Settings.ViewMode.GLES) {
@@ -886,6 +887,7 @@ class DarkModeFragment : Fragment(), SensorEventListener {
                 items.add(SettingItem.SliderSettingEntry(
                     stableId = "aaDesaturation",
                     nameResId = R.string.aa_desaturation,
+                    helpResId = R.string.aa_desaturation_description,
                     value = "${pendingAaDesaturationLevel}%",
                     sliderValue = pendingAaDesaturationLevel!!.toFloat(),
                     valueFrom = 0f,

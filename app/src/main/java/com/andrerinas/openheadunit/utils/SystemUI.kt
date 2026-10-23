@@ -15,6 +15,30 @@ import com.andrerinas.openheadunit.utils.AppLog
 object SystemUI {
 
     /**
+     * Keeps immersive full screen hidden on API 16 to 18, after [apply]: those versions have no
+     * sticky immersive mode, so once a touch brings the navigation bar back it stays over the edge
+     * of the window. The bars hide again after [LegacyImmersivePolicy.REHIDE_DELAY_MS]. Does
+     * nothing from API 19, where sticky immersive does this itself. The projection screen keeps its
+     * own version of this, which also rescales the video.
+     */
+    fun keepLegacyBarsHidden(window: Window, mode: Settings.FullscreenMode) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) return
+        val decor = window.decorView
+        if (!LegacyImmersivePolicy.applies(Build.VERSION.SDK_INT, mode)) {
+            decor.setOnSystemUiVisibilityChangeListener(null)
+            return
+        }
+        val hiddenFlags = decor.systemUiVisibility
+        val rehide = Runnable { decor.systemUiVisibility = hiddenFlags }
+        decor.setOnSystemUiVisibilityChangeListener { visibility ->
+            if (LegacyImmersivePolicy.barsShown(visibility)) {
+                decor.removeCallbacks(rehide)
+                decor.postDelayed(rehide, LegacyImmersivePolicy.REHIDE_DELAY_MS)
+            }
+        }
+    }
+
+    /**
      * [notesCanvas] false for a window that is not the projection, so it cannot describe a canvas
      * the video will never be drawn into.
      */

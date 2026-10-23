@@ -65,6 +65,7 @@
     <string name="night_mode_short">Android Auto</string>
     <string name="aa_monochrome">Android Auto-ს გაშავთეთრება</string>
     <string name="aa_monochrome_description">ამცირებს Android Auto-ს ფერებს ღამით მართვისას. საჭიროებს GLES რეჟიმს. მოქმედებს მხოლოდ მაშინ, როდესაც ბნელი რეჟიმი ჩართულია.</string>
+    <string name="aa_monochrome_summary">ამცირებს ფერებს ღამის მართვისთვის. საჭიროა GLES ხედის რეჟიმი და მუქი რეჟიმი.</string>
     <string name="aa_desaturation">დესატურაცია</string>
     <string name="aa_desaturation_description">მართავს ფერების მოცილების ინტენსივობას. მოქმედებს მხოლოდ ბნელი რეჟიმის ჩართვისას.</string>
     <string name="gles_required_title">საჭიროა GLES</string>
@@ -93,6 +94,7 @@
     <string name="change_dpi">DPI-ს შეცვლა</string>
     <string name="change_view_mode">ხედვის რეჟიმის შეცვლა</string>
     <string name="view_mode">ხედვის რეჟიმი</string>
+    <string name="view_mode_help">ირჩევს, როგორ დაიხატოს გამოსახულება ამ მოწყობილობის ეკრანზე. SurfaceView ყველაზე სწრაფია და მუშაობს მოწყობილობათა უმეტესობაზე. TextureView უფრო ნელია, მაგრამ იძლევა სარკისებური ასახვისა და მასშტაბირების საშუალებას. GLES20 ამატებს ეფექტებს, მაგალითად, მონოქრომულ ღამის რეჟიმს. შეცვალეთ, თუ გამოსახულება შავია, ციმციმებს ან ეფექტი აკლია.</string>
     <string name="surface_view">SurfaceView</string>
     <string name="texture_view">TextureView</string>
     <string name="gles_view">GLES20</string>
@@ -136,11 +138,13 @@
     <string name="debug_mode_description">უფრო დეტალური ჟურნალის ჩართვა ან გამორთვა.</string>
     <string name="allow_external_configuration">გარე კონფიგურაციისთვის ნების დართვა</string>
     <string name="allow_external_configuration_description">ავტომატიზაციის აპებს, როგორიცაა Tasker ან MacroDroid, აძლევს პარამეტრების შეცვლის, ჟურნალის დონის დაყენებისა და ჟურნალების ექსპორტის საშუალებას. დაკავშირება და გათიშვა ყოველთვის მუშაობს; ეს ეხება მხოლოდ იმ ბრძანებებს, რომლებიც მოწყობილობის კონფიგურაციას ცვლის.</string>
+    <string name="allow_external_configuration_summary">საშუალებას აძლევს Tasker-ის მსგავს აპებს, შეცვალონ პარამეტრები და გააექსპორტონ ჟურნალები.</string>
     <string name="log_level">ჟურნალის დონე</string>
     <string name="log_level_description">ჟურნალის დონის ფილტრი ექსპორტისას.</string>
     <string name="log_source">ჟურნალის წყარო</string>
     <string name="log_source_logcat">Logcat</string>
     <string name="log_source_applog_file">პირდაპირ ფაილში</string>
+    <string name="log_source_help">Logcat აპის ხაზებს სისტემის ხაზებთან ერთად ჩაწერს. ეს ყველაზე მეტად შეცდომის ანგარიშში გეხმარებათ. პირდაპირ ფაილში მხოლოდ აპის საკუთარ ხაზებს ჩაწერს, იმ მოწყობილობებისთვის, სადაც Logcat არაფერს წერს. როცა Logcat არაფერს წერს, აპი თავისით გადადის რეჟიმზე პირდაპირ ფაილში.</string>
     <string name="log_location">ჟურნალის შენახვის ადგილი</string>
     <string name="log_location_default">ნაგულისხმევი (აპის მეხსიერება)</string>
     <string name="log_location_downloads">ჩამოტვირთვების საქაღალდე</string>
@@ -204,14 +208,17 @@
     <string name="show_toast_messages_description">სტატუსის შეტყობინებების ჩვენება დაკავშირების, გათიშვის და რეჟიმის შეცვლისას.</string>
     <string name="auto_start_usb_label">ავტო-გაშვება USB-ით</string>
     <string name="auto_start_usb_description">აპის ავტომატური გახსნა და დაკავშირების მცდელობა USB მოწყობილობის შეერთებისას.</string>
+    <string name="auto_start_usb_summary">USB მოწყობილობის შეერთებისას ხსნის აპს და უკავშირდება.</string>
     <string name="auto_start_settings">ავტო-გაშვების პარამეტრები</string>
     <string name="auto_start_settings_description">აირჩიეთ, როდის გაიშვას აპი ავტომატურად.</string>
     <string name="auto_start_oem_warning">ამ მოწყობილობაზე შესაძლოა საჭირო გახდეს ავტომატური გაშვების ჩართვა და ამ აპისთვის ბატარეის ოპტიმიზაციის ან ფონური შეზღუდვების გამორთვა.\n\nსწრაფი ჩატვირთვის (Quick Boot) მქონე მაგნიტოლებზე ავტომატური გაშვება შეიძლება არ იმუშაოს. მოძებნეთ „DuraSpeed“ სისტემის პარამეტრებში და იქ ჩართეთ ეს აპი. ზოგ მაგნიტოლაზე DuraSpeed დამალულია და მის საპოვნელად შესაძლოა დაგჭირდეთ აპი „Hidden Settings“. თუ DuraSpeed არ გაქვთ, სცადეთ Quick Boot-ის გამორთვა.</string>
     <string name="car_launcher_autostart_info">Open Headunit დაყენებულია თქვენი მანქანის ლანჩერად. ის სისტემის ჩატვირთვისას ავტომატურად იწყება.</string>
     <string name="auto_start_on_boot_label">გაშვება ჩატვირთვისას</string>
     <string name="auto_start_on_boot_description">აპის ავტომატური გახსნა მოწყობილობის ჩართვისას. Android 10+ ვერსიაზე საჭიროა „სხვა აპების ზემოდან გამოჩენის“ ნებართვა.</string>
+    <string name="auto_start_on_boot_summary">მოწყობილობის ჩართვისას ხსნის აპს.</string>
     <string name="auto_start_screen_on_label">გაშვება ეკრანის ჩართვისას</string>
     <string name="auto_start_screen_on_description">აპის გახსნა ეკრანის ყოველ ჩართვაზე. იდეალურია მაგნიტოლებისთვის, რომლებიც არასდროს ითიშება სრულად ან იყენებენ სწრაფი ჩატვირთვის რეჟიმებს, სადაც ავტომატური გაშვების სხვა ვარიანტები არ მუშაობს. ტელეფონებისა და ტაბლეტებისთვის რეკომენდებული არ არის.</string>
+    <string name="auto_start_screen_on_summary">ეკრანის ყოველი ჩართვისას ხსნის აპს. არ არის განკუთვნილი ტელეფონებისა და ტაბლეტებისთვის.</string>
     <string name="select_bt_device">აირჩიეთ Bluetooth მოწყობილობა</string>
     <string name="bt_device_not_set">არ არის მითითებული</string>
     <string name="auto_start_wifi_label">ავტო-გაშვება WiFi-ით</string>
@@ -231,6 +238,7 @@
     <string name="wireless_connection_settings">უსადენო კავშირი</string>
     <string name="category_graphic">გრაფიკა</string>
     <string name="custom_insets">მორგებული დაშორებები (Insets)</string>
+    <string name="custom_insets_help">სურათს ეკრანის კიდეებიდან ამდენი პიქსელით აშორებს: მარცხნივ, ზემოთ, მარჯვნივ და ქვემოთ. გამოიყენეთ, როცა ჩარჩო, მომრგვალებული კიდე ან სისტემის ზოლი Android Auto-ს ნაწილს ფარავს.</string>
     <string name="inset_top">ზედა</string>
     <string name="inset_bottom">ქვედა</string>
     <string name="inset_left">მარცხენა</string>
@@ -239,12 +247,14 @@
     <string name="category_input">შეყვანის პარამეტრები</string>
     <string name="enable_rotary">მბრუნავი კონტროლერის ჩართვა</string>
     <string name="enable_rotary_description">ფიზიკური მბრუნავი ღილაკებისა და ბორბლების მხარდაჭერის გაცხადება. გამორთეთ, თუ სენსორული ეკრანი არასწორად მუშაობს.</string>
+    <string name="enable_rotary_summary">აცხადებს მბრუნავი ღილაკის მხარდაჭერას. გამორთეთ, თუ შეხება არასწორად მუშაობს.</string>
 
     <string name="category_video">ვიდეო</string>
     <string name="force_software_decoding">პროგრამული დეკოდირების იძულება</string>
     <string name="force_software_decoding_description">შეიძლება ზოგ მოწყობილობაზე პრობლემები გამოასწოროს, მაგრამ უფრო ნელია.</string>
+    <string name="force_software_decoding_help">ვიდეოს დეკოდირებას ვიდეო აპარატურის ნაცვლად მთავარი პროცესორი ასრულებს. ჩართეთ მხოლოდ მაშინ, თუ გამორთულისას სურათი შავი რჩება, იყინება ან ფერები არასწორია. ის გაცილებით მეტ პროცესორულ სიმძლავრეს მოითხოვს, ამიტომ სურათი შეიძლება უფრო ნელი იყოს. ქვემოთა მწკრივი პროგრამულ დეკოდერს ირჩევს.</string>
     <string name="wireless_mode">უსადენო რეჟიმი</string>
-    <string name="wireless_mode_description">აირჩიეთ, როგორ დაუკავშირდეს აპი უსადენოდ (სია ხელით, ტელეფონის ავტომატური ძებნა ან Wireless Launcher რეჟიმი).</string>
+    <string name="wireless_mode_description">ირჩევს, როგორ პოულობს ეს მოწყობილობა ტელეფონს კაბელის გარეშე. Wireless Helper იყენებს ტელეფონზე არსებულ თანმხლებ აპს. Native მუშაობს უსადენო Android Auto-ს ჰედუნიტივით და აპს არ საჭიროებს, თუმცა დამოკიდებულია Android Auto-ს ვერსიაზე. Headunit Server პოულობს სერვერს, რომელსაც Android Auto ტელეფონზე უშვებს. შეცვალეთ მხოლოდ მაშინ, თუ მიმდინარე რეჟიმი არ უკავშირდება. ცვლილება თავიდან იწყებს უსადენო დაყენებას.</string>
     <string-array name="wireless_connection_modes">
         <item>მექანიკური (სია)</item>
         <item>ავტო-ძებნა (Headunit Server)</item>
@@ -258,6 +268,11 @@
     <string name="auto_connect_settings">ავტო-კავშირის პარამეტრები</string>
     <string name="auto_connect_settings_description">ავტო-კავშირის მეთოდებისა და მათი პრიორიტეტების კონფიგურაცია.</string>
     <string name="auto_connect_help">ეს მეთოდები ავტომატურად ეშვება აპის გახსნისას. ჩართეთ სასურველი მეთოდები, შემდეგ გადაათრიეთ რიგითობის დასაყენებლად. გამოყენებული იქნება პირველივე ჩართული მეთოდი, რომელიც წარმატებით დაუკავშირდება.</string>
+    <string name="auto_connect_screen_help">განსაზღვრავს, როგორ უკავშირდება აპი თავისით გახსნისას. ჩართეთ სასურველი მეთოდები და გადაათრიეთ საცდელი თანმიმდევრობით. გამოიყენება პირველი წარმატებული მეთოდი. შეყოვნება Wi-Fi-ს აძლევს გაღვიძების დროს ნელ მოწყობილობაზე. აქ არაფერი ცვლის თქვენ მიერ დაწყებულ კავშირს. „შენახვა“ ცვლილებებს ამოქმედებს.</string>
+    <string name="dpi_screen_help">ადგენს პიქსელების სიმკვრივეს, რომლითაც Android Auto ხატავს. მაღალი DPI ზრდის ხატულებსა და ტექსტს, ამიტომ ეკრანზე ნაკლები ეტევა. დაბალი DPI მათ ამცირებს, ამიტომ მეტი ეტევა. „ავტომატური“ იყენებს ამ მოწყობილობის სიმკვრივეს. ახალი მნიშვნელობა მოქმედებს შემდეგი კავშირიდან.</string>
+    <string name="keymap_screen_help">ამ მოწყობილობის კლავიშებსა და ღილაკებს აკავშირებს Android Auto-ს მოქმედებებთან. შეეხეთ სტრიქონს და დააჭირეთ მისანიჭებელ კლავიშს. „გადაყენება“ შლის თქვენს ყველა მინიჭებას და აბრუნებს ნაგულისხმევს. გამოიყენეთ, როცა საჭის ან პანელის კლავიში არასწორად მუშაობს.</string>
+    <string name="customization_screen_help">ცვლის ამ აპის მთავარი ეკრანის იერს: ფონის სურათს, ოთხი ღილაკის ფერებსა და ზომას და ტექსტის ზომას. ღამის პარამეტრი მართავს ფონს მუქ რეჟიმში. ეს არაფერი ცვლის იმას, რასაც Android Auto პროექციაზე აჩვენებს.</string>
+    <string name="loading_screen_screen_help">ადგენს სურათს ან მოკლე ვიდეოს, რომელიც Android Auto-ს გაშვებისას გამოჩნდება. აირჩიეთ სურათი ან ვიდეო 10 მბ-მდე, მოარგეთ ეკრანს და მოკლე ანიმაციები ციკლში გაუშვით. ასევე შეგიძლიათ საწყისი ტექსტის დამალვა. „წაშლა“ აბრუნებს ნაგულისხმევ ეკრანს.</string>
     <string name="auto_connect_priority">პრიორიტეტი %d</string>
     <string name="auto_connect_all_disabled">ყველა გათიშულია</string>
     <string name="drag_to_reorder">გადაათრიეთ რიგის შესაცვლელად</string>
@@ -265,6 +280,7 @@
     <string name="move_down">ქვემოთ გადაადგილება</string>
     <string name="auto_connecting_single_usb">მიმდინარეობს ავტო-კავშირი USB მოწყობილობასთან…</string>
     <string name="video_codec">ვიდეო კოდეკი</string>
+    <string name="video_codec_help">ირჩევს ვიდეოფორმატს, რომელსაც ტელეფონი გამოგზავნის. „ავტო“ რეჟიმში აპი ირჩევს იმ ფორმატებიდან, რომლებსაც ეს მოწყობილობა დეკოდირებს. H.265 იგივე მონაცემთა სიჩქარით უფრო მკაფიო გამოსახულებას იძლევა. H.264 მუშაობს ნებისმიერ დეკოდერზე. შეცვალეთ, თუ გამოსახულება ეჩხირება ან შავი რჩება. არჩევანი მოქმედებს შემდეგი კავშირიდან.</string>
     <string name="fps_limit">FPS ლიმიტი</string>
     <string name="save">შენახვა</string>
     <string name="save_and_restart">შენახვა (საჭიროებს ხელახალ კავშირს)</string>
@@ -278,24 +294,32 @@
     <string name="video_fit_mode_cover">შევსება ჩამოჭრით (ზოლებისა და დამახინჯების გარეშე)</string>
     <string name="forced_scale">იძულებითი მასშტაბირება (Legacy Fix)</string>
     <string name="forced_scale_description">ასწორებს მასშტაბირების პრობლემებს ზოგიერთ ძველ მოწყობილობაზე SurfaceView-ს გამოყენებისას. გამოიყენეთ მხოლოდ იმ შემთხვევაში, თუ გამოსახულება დამახინჯებულია ან გადაადგილებულია.</string>
+    <string name="forced_scale_summary">ასწორებს მასშტაბირებას SurfaceView-ს მომხმარებელ ძველ მოწყობილობებზე.</string>
     <string name="hud_mirroring">HUD რეჟიმი (ჰორიზონტალური სარკე)</string>
     <string name="hud_mirroring_description">ჰორიზონტალურად ასახავს ეკრანს საქარე მინის რეკლამისთვის (Head-Up Display). მოითხოვს TextureView ან GLES20 ხედვის რეჟიმს (არ მუშაობს SurfaceView-თან).</string>
+    <string name="hud_mirroring_summary">აბრუნებს გამოსახულებას საქარე მინაზე არეკვლისთვის (HUD).</string>
 
     <string name="category_audio">აუდიო</string>
     <string name="enable_audio_sink">აუდიო მიმღები (Audio Sink)</string>
-    <string name="enable_audio_sink_description">თუ გამორთულია, მაგნიტოლა ხმას არ მიიღებს. ხმა ტელეფონიდან გაისმება.</string>
+    <string name="enable_audio_sink_description">უკრავს Android Auto-ს ხმას ამ მოწყობილობაზე. გამორთეთ, რომ ხმა ტელეფონზე დარჩეს, მაგალითად, როცა ტელეფონი უკვე კვებავს მანქანის დინამიკებს. მაშინ მოწყობილობა მხოლოდ გამოსახულებას აჩვენებს. ზარები ამ აუდიოს არასდროს იყენებს: ისინი უკრავს ტელეფონთან დაკავშირებულ Bluetooth Hands-free მოწყობილობაზე (მანქანა, ინტერკომი ან ყურსაცვამი) ან თავად ტელეფონზე.</string>
+    <string name="enable_audio_sink_summary">უკრავს Android Auto-ს ხმას ამ მოწყობილობაზე. გამორთულია: უკრავს ტელეფონი.</string>
     <string name="static_audio_focus">სტატიკური აუდიო ფოკუსი</string>
-    <string name="static_audio_focus_description">აიძულებს ტელეფონს ჩათვალოს, რომ აუდიო ფოკუსი ყოველთვის დაკავებულია, რაც თავიდან აგვაცილებს ხმის დაკარგვას უბრენდო მაგნიტოლებზე. ასევე პროგრამულად ამცირებს სხვა ხმას ნავიგაციის ხმოვანი მითითებების დროს.</string>
+    <string name="static_audio_focus_description">ეუბნება ტელეფონს, რომ აუდიოფოკუსი ყოველთვის შენარჩუნებულია. ეს ხელს უშლის ხმის გაწყვეტას ჩვეულებრივ მოწყობილობებზე, რომლებიც ფოკუსს არასწორად აცხადებენ. ასევე პროგრამულად ამცირებს მუსიკის ხმას ნავიგაციის ხმოვანი მითითებების დროს. დატოვეთ გამორთული, თუ ხმა არ წყდება.</string>
+    <string name="static_audio_focus_summary">ეუბნება ტელეფონს, რომ აუდიოფოკუსი ყოველთვის შენარჩუნებულია, ხმის გაწყვეტის თავიდან ასაცილებლად.</string>
     <string name="separate_audio_streams">აუდიო ნაკადების განცალკევება</string>
     <string name="separate_audio_streams_description">აძლევს არხებს მედია, მითითებები და სისტემური ხმები ცალკე გამომავალ ნაკადებს ერთი საერთო მულტიმედიური ნაკადის ნაცვლად (ზოგიერთ მოწყობილობაზე შესაძლოა გამართულად არ იმუშაოს).</string>
+    <string name="separate_audio_streams_summary">მედიას, მითითებებსა და სისტემურ ხმებს საკუთარი გამომავალი ნაკადები ექნებათ.</string>
     <string name="use_aac_audio">AAC აუდიოს გამოყენება</string>
-    <string name="use_aac_audio_description">AAC კოდეკის გამოყენება აუდიოსთვის გამტარუნარიანობის დასაზოგად (ექსპერიმენტული). 2.4 გჰც-ზე მომუშავე უსადენო სესიისას, ეს ავტომატურად ირთვება, სანამ \"ვიდეოს დაწევა 2.4 გჰც კავშირზე\" ჩართულია.</string>
+    <string name="use_aac_audio_description">AAC კოდეკის გამოყენება აუდიოსთვის გამტარუნარიანობის დასაზოგად. 2.4 გჰც-ზე მომუშავე უსადენო სესიისას, ეს ავტომატურად ირთვება, სანამ \"ვიდეოს დაწევა 2.4 გჰც კავშირზე\" ჩართულია.</string>
+    <string name="use_aac_audio_summary">იყენებს AAC აუდიოს გამტარუნარიანობის დასაზოგად.</string>
     <string name="attach_hw_dsp_equalizer">აპარატურული DSP ეკვალაიზერის ტრიგერი</string>
     <string name="attach_hw_dsp_equalizer_description">ამატებს ფიქტიურ ეკვალაიზერის ეფექტს აუდიო სესიას აპარატურული DSP მარშრუტიზაციის იძულებით ჩართვისთვის. დატოვეთ გამორთული თუ იყენებთ ViPER4Android / ViperFX-ს ან თუ ხმა დახშულია ძველ Android ვერსიებზე.</string>
+    <string name="attach_hw_dsp_equalizer_summary">აერთებს ყალბ ეკვალაიზერს, რათა ზოგ მოწყობილობაზე აპარატურული DSP-ით მარშრუტიზაცია აიძულოს.</string>
     <string name="audio_volume_offset">აუდიოს ხმის დონის კორექტირება</string>
     <string name="microphone_settings">მიკროფონის პარამეტრები</string>
     <string name="use_head_unit_microphone">მაგნიტოლას მიკროფონი</string>
     <string name="use_head_unit_microphone_description">ჩართული: Android Auto ისმენს ამ მოწყობილობის მიკროფონს. გამორთული: ეს მოწყობილობა არასოდეს იწერს და ტელეფონი იყენებს საკუთარ მიკროფონს, ან ტელეფონთან დაწყვილებულ ყურსასმენს ან ინტერკომს, ასე რომ ხმოვანი ასისტენტი კვლავ მუშაობს. ტელეფონზე საჭიროა Android 11 ან უფრო ახალი.</string>
+    <string name="use_head_unit_microphone_summary">Android Auto იყენებს ამ მოწყობილობის მიკროფონს. გამორთულია: ტელეფონის მიკროფონს.</string>
     <string name="head_unit_microphone_off_info">მაგნიტოლას მიკროფონი გამორთულია, ამიტომ ქვემოთ მოცემული არაფერი მოქმედებს. Android Auto-ს ეცნობება, რომ ეს მოწყობილობა ვერ იწერს და მოტოციკლია, და სწორედ ამიტომ იწერს ტელეფონი თავად. Android 10-ზე და უფრო ძველზე ტელეფონი ამას სესიებს შორის ივიწყებს და შეიძლება დაკავშირება შეწყვიტოს.</string>
     <string name="microphone_settings_description">მიკროფონის შეყვანისა და აუდიო დამუშავების კონფიგურაცია.</string>
     <string name="mic_wire_format_info">Android Auto მიკროფონს ყოველთვის იღებს 16000 ჰც, 16 ბიტი, მონო ფორმატში. ყველაფერ დანარჩენს უარყოფს, ამიტომ ეს პარამეტრები ცვლის იმას, რასაც აპარატურა აკეთებს და არა იმას, რაც ტელეფონს ეგზავნება.</string>
@@ -310,10 +334,13 @@
     </string-array>
     <string name="mic_echo_canceler">ექოს ჩახშობა (AEC)</string>
     <string name="mic_echo_canceler_description">ცდილობს მიკროფონიდან ექოს მოცილებას. გამორთეთ, თუ შეამჩნევთ ხმის გაქრობას ან დამახინჯებას.</string>
+    <string name="mic_echo_canceler_summary">შლის ექოს მიკროფონიდან. გამორთეთ, თუ სიჩუმეა ან ხმა დამახინჯებულია.</string>
     <string name="mic_noise_suppressor">ხმაურის ფილტრაცია (NS)</string>
     <string name="mic_noise_suppressor_description">ცდილობს ფონური ხმაურის შემცირებას. ერთი მიკროფონის შემთხვევაში Android Auto-ს ეს გამორთული უნდა იყოს, რადგან ხმას თავად ამუშავებს. გამორთეთ, თუ თქვენი ხმა ჩახლეჩილად ჟღერს.</string>
+    <string name="mic_noise_suppressor_summary">ამცირებს ფონურ ხმაურს. Android Auto ელის, რომ ეს გამორთული იქნება.</string>
     <string name="mic_auto_gain_control">ხმის ავტომატური გაძლიერება (AGC)</string>
     <string name="mic_auto_gain_control_description">ავტომატურად არეგულირებს მიკროფონის ხმას. Android Auto-ს ეს გამორთული უნდა იყოს და თავისი გაძლიერება აქვს; ორივე ერთად ჩვეულებრივ უარესად ჟღერს. გამორთეთ, თუ ხმის სიძლიერე არასტაბილურია.</string>
+    <string name="mic_auto_gain_control_summary">არეგულირებს მიკროფონის ხმას. Android Auto ელის, რომ ეს გამორთული იქნება.</string>
     <string name="mic_feature_unsupported">ეს ფუნქცია არ არის მხარდაჭერილი თქვენს მოწყობილობაზე.</string>
 
     <string name="category_info">ინფორმაცია</string>
@@ -454,8 +481,10 @@
     <string name="media_session_aa_status_placeholder">დაკავშირებულია</string>
     <string name="sync_media_session_aa_metadata">AA მუსიკის სინქრონიზაცია მედიასესიასთან</string>
     <string name="sync_media_session_aa_metadata_description">ტელეფონიდან ტრეკის დასახელების, შემსრულებლის, ხანგრძლივობისა და ალბომის ყდის ჩვენება სისტემურ მედიასესიაში და მედიაშეტყობინებაში.</string>
+    <string name="sync_media_session_aa_metadata_summary">აჩვენებს ტელეფონის ტრეკის დეტალებს სისტემის მედიასესიაში.</string>
     <string name="auto_resume_playback_on_reconnect">დაკვრის გაგრძელება ხელახალი დაკავშირებისას</string>
     <string name="auto_resume_playback_on_reconnect_description">ავტომატურად აგრძელებს მუსიკის დაკვრას, თუ ის უკრავდა ხანმოკლე გათიშვამდე (60 წამის განმავლობაში).</string>
+    <string name="auto_resume_playback_on_reconnect_summary">განაახლებს მუსიკას, რომელიც მოკლე გაწყვეტამდე (60 წმ) უკრავდა.</string>
     <string name="nav_notification_channel_name">ნავიგაცია</string>
     <string name="nav_notification_channel_description">ნაბიჯ-ნაბიჯ ნავიგაციის განახლებები Android Auto-დან.</string>
     <string name="nav_notification_title_format">%1$d მეტრში — %2$s</string>
@@ -489,11 +518,13 @@
 
     <string name="reopen_on_reconnection_label">ხელახალი კავშირისას გახსნა</string>
     <string name="reopen_on_reconnection_description">\"გასვლა\" ღილაკზე დაჭერისას აპლიკაცია აგრძელებს მუშაობას ფონურ რეჟიმში და აკონტროლებს USB კავშირებს. მოწყობილობის ხელახალი შეერთებისას აპი ავტომატურად გაიხსნება.</string>
+    <string name="reopen_on_reconnection_summary">„გასვლის“ შემდეგ კვლავ აკვირდება USB-ს და ხსნის აპს, როცა მოწყობილობა თავიდან დაუკავშირდება.</string>
     <string name="overlay_permission_required">ავტოგაშვებისთვის საჭიროა ნებართვა „სხვა აპების ზემოდან გამოჩენა“</string>
     <string name="usb_permission_denied">USB ნებართვა უარყოფილია. ავტომატური დაკავშირებისთვის დაუშვით USB წვდომა.</string>
 
     <string name="kill_on_disconnect">აპის დახურვა კავშირის გაწყვეტისას</string>
     <string name="kill_on_disconnect_description">Android Auto-სთან კავშირის გაწყვეტისას აპის ავტომატური დახურვა.</string>
+    <string name="kill_on_disconnect_help">Android Auto-ს გათიშვისას ხურავს აპს, რათა მოწყობილობა თავის ეკრანებს დაუბრუნდეს. ჩართეთ, თუ მოწყობილობამ ყოველი მგზავრობის შემდეგ საკუთარი ლაუნჩერი უნდა აჩვენოს. არაფერს აკეთებს, სანამ ეს აპი მანქანის ლაუნჩერია. თუ ჩართულია ხელახალი კავშირისას გახსნა, გაშვება ჩატვირთვისას ან გაშვება ეკრანის ჩართვისას, აპი ჯერ გაგაფრთხილებთ, რადგან ეს პარამეტრები აპის ღიად ყოფნას საჭიროებს.</string>
     <string name="kill_on_disconnect_warning_title">გაფრთხილება</string>
     <string name="kill_on_disconnect_warning">ხელახალი დაკავშირების შემდეგი პარამეტრები ეწინააღმდეგება კავშირის გაწყვეტისას აპის დახურვას:\n\n%1$s\n\nთქვენი საწყისი დაკავშირების პარამეტრები (ავტოდაკავშირება, ავტოგაშვება) მაგნიტოლას ჩართვისას კვლავ იმუშავებს. თუმცა პირველი გათიშვის შემდეგ აპი ხელახლა დაკავშირებას აღარ სცდის და მაშინვე დაიხურება.\n\nშენიშვნა: ზოგიერთი დამატებით დაყენებული მაგნიტოლა არასდროს ითიშება სრულად და ძილის რეჟიმში გადადის, ისევე როგორც ტელეფონი, რომლის ეკრანი იბლოკება, მაგრამ რომელიც არ ითიშება. ამ ოპციის ჩართვისას აპი პირველივე გათიშვისას დაიხურება და მანქანის მომდევნო დაქოქვისას შეიძლება ავტომატურად აღარ გაიხსნას.\n\nგსურთ ზემოთ ჩამოთვლილი ხელახალი დაკავშირების პარამეტრების გამორთვა?</string>
     <string name="kill_on_disconnect_disable_and_enable">გამორთვა და ჩართვა</string>
@@ -541,6 +572,7 @@
 
     <string name="auto_enable_hotspot">ჰოტსპოტის ავტომატური ჩართვა</string>
     <string name="auto_enable_hotspot_description">ავტომატურად რთავს Wi-Fi ჰოტსპოტს ამ მოწყობილობაზე. (ყველა მოწყობილობაზე არ იმუშავებს.)</string>
+    <string name="auto_enable_hotspot_summary">უშვებს Wi-Fi ჰოტსპოტს ამ მოწყობილობაზე. ყველა მოწყობილობაზე არ არის.</string>
     <string name="hotspot_warning_title">ექსპერიმენტული ფუნქცია</string>
     <string name="hotspot_warning_message">ეს ფუნქცია იყენებს რეფლექსიას და შეიძლება ყველა მოწყობილობაზე არ იმუშაოს. შესაძლოა ასევე დაგჭირდეთ ნებართვის „სისტემური პარამეტრების შეცვლა“ ხელით მიცემა.</string>
     <string name="hotspot_permission_title">საჭიროა ნებართვა</string>
@@ -554,18 +586,22 @@
 
     <string name="wait_for_wifi">WiFi-ს მოლოდინი WiFi Direct-ის წინ</string>
     <string name="wait_for_wifi_description">ჩატვირთვისას დაელოდეთ WiFi-სთან დაკავშირებას, სანამ WiFi Direct გაეშვება. ჩართეთ, თუ თქვენს მაგნიტოლას ჩართვის შემდეგ WiFi-სთან დასაკავშირებლად რამდენიმე წამი სჭირდება.</string>
+    <string name="wait_for_wifi_summary">ჩატვირთვისას ელოდება Wi-Fi-ს და მხოლოდ შემდეგ უშვებს WiFi Direct-ს.</string>
     <string name="wait_for_wifi_timeout">WiFi-ს მოლოდინის დროის ლიმიტი</string>
     <string name="wireless_24ghz_warning">შენიშვნა: უსადენო Android Auto 2.4GHz მოწყობილობებზე შეიძლება იწვევდეს დაყოვნებას, კადრების გაჭედვას და გათიშვას. პრობლემების შემთხვევაში, გთხოვთ, შეამოწმოთ კავშირი USB კაბელით, რათა დარწმუნდეთ, არის თუ არა ეს ქსელის შეზღუდვა.</string>
     <string name="fake_speed_title">ვიდეოს ბლოკირების მოხსნა (Fake Speed)</string>
     <string name="fake_speed_description">ტელეფონს გადასცემს მუდმივ დაბალ სიჩქარეს (0.5 მ/წმ), რათა თავიდან აიცილოს ვიდეო კონტენტის დაბლოკვა მართვის დროს. გამოიყენეთ სიფრთხილით.</string>
+    <string name="fake_speed_summary">აცხადებს მუდმივ დაბალ სიჩქარეს, რომ მართვისას ვიდეო არ დაიბლოკოს.</string>
     <string name="wireless_mode_helper">Wireless Helper</string>
     <string name="wireless_mode_native">Native</string>
     <string name="wireless_mode_server">Headunit Server</string>
     <string name="server_mode_label">სერვერის რეჟიმი</string>
     <string name="server_mode_manual">ხელით</string>
     <string name="server_mode_auto">ავტო</string>
+    <string name="server_mode_help">ავტო ქსელში ეძებს ტელეფონზე არსებულ Headunit სერვერს და თავისით უკავშირდება. ხელით არ ეძებს. უკავშირდებით ქსელების სიიდან ან ტელეფონის მისამართით.</string>
 
     <string name="helper_strategy_label">დამხმარე კავშირის სტრატეგია</string>
+    <string name="helper_strategy_help">ირჩევს, როგორ იზიარებენ ტელეფონი და ეს მოწყობილობა ქსელს Wireless Helper-ის რეჟიმში. „საერთო Wi-Fi“ იყენებს ქსელს, რომელშიც ორივე უკვე არის. WiFi Direct ქმნის კერძო კავშირს. Google Nearby ბეტაა. „ტელეფონის ჰოტსპოტი“ უერთდება ტელეფონის ჰოტსპოტს. „ჰედუნიტის ჰოტსპოტი“ ამ მოწყობილობას წვდომის წერტილად აქცევს. შეცვალეთ, თუ ტელეფონი ამ მოწყობილობას ვერ პოულობს.</string>
     <string-array name="helper_strategies">
         <item>საერთო Wifi (NSD)</item>
         <item>WiFi Direct (P2P)</item>
@@ -585,10 +621,12 @@
     <string name="exit_dialog_settings">სწრაფი პარამეტრები</string>
     <string name="gesture_hint">რჩევა: გადაუსვით მარცხენა კიდიდან 2 თითით გასვლის მენიუს გასახსნელად.</string>
     <string name="audio_latency_multiplier">აუდიოს დაყოვნების მამრავლი</string>
-    <string name="aaudio_output">AAudio გამოტანა (ექსპერიმენტული)</string>
+    <string name="aaudio_output">AAudio გამოტანა</string>
     <string name="aaudio_output_description">სცადეთ მედიის დაბალი დაყოვნებით გამოტანა. თუ მიუწვდომელია, ავტომატურად გამოიყენება AudioTrack.</string>
+    <string name="aaudio_output_help">Android Auto-ს მედიას უკრავს AAudio-ით, დაბალი შეყოვნების აუდიოგამოსავლით. აპი მას მხოლოდ Android 9-ზე და უფრო ახალზე იყენებს. ჩართეთ, თუ ხმა სურათს ჩამორჩება. თუ AAudio ვერ ეშვება, აპი ჩვეულებრივ აუდიოგამოსავალს იყენებს. თუ ჩართულისას ხმა ტკაცუნობს ან წყდება, გამორთეთ.</string>
     <string name="audio_latency_multiplier_description">აუდიო ბუფერის ზომის რეგულირება (დაბალი = ნაკლები დაყოვნება, მაღალი = ნაკლები წყვეტა).</string>
     <string name="audio_queue_capacity">აუდიო რიგის ტევადობა (Backpressure)</string>
+    <string name="audio_queue_capacity_help">რამდენ მიღებულ აუდიოს შეუძლია დაკვრამდე ლოდინი. პატარა რიგი ხმას სურათთან ახლოს ინახავს. დიდი რიგი კავშირის მოკლე ხარვეზებს უძლებს, მაგრამ ხმა შეიძლება ჩამორჩეს. როცა რიგი სავსეა, ყველაზე ძველი აუდიო იკარგება. შეუზღუდავი ყველაფერს ინახავს. აპი ყოველთვის დაუშვებს მინიმუმ ერთი წამის აუდიოს.</string>
 
     <string name="loading_screen">ჩატვირთვის ეკრანი</string>
     <string name="loading_screen_default">ნაგულისხმევი</string>
@@ -632,12 +670,14 @@
     <!-- Native USB Driver -->
     <string name="use_libusb">USB-ის ნატივი დრაივერის გამოყენება</string>
     <string name="use_libusb_description">libusb-ის გამოყენება კავშირისთვის. გამორთეთ Android-ის სტანდარტული USB API-ის გამოსაყენებლად.</string>
+    <string name="use_libusb_help">ტელეფონთან კაბელით დასაკავშირებლად Android-ის USB სისტემის ნაცვლად აპის საკუთარ USB ბიბლიოთეკას იყენებს. დატოვეთ გამორთული. ჩართეთ მხოლოდ მაშინ, თუ USB-ზე ტელეფონი იძებნება, მაგრამ Android Auto არ იწყება. უსადენო კავშირზე გავლენას არ ახდენს.</string>
     <string name="usb_keep_phone_media_audio">USB-ით ტელეფონის მედიის აუდიოს შენარჩუნება</string>
     <string name="usb_keep_phone_media_audio_description">USB სესიის დროს Android Auto-მ შეიძლება გამორთოს ტელეფონის Bluetooth მედიის აუდიო ამ მაგნიტოლისთვის. ეს პარამეტრი ამას აჩერებს. ამის შემდეგ ზარები შეიძლება მაგნიტოლის ნაცვლად ტელეფონზე დარჩეს.</string>
 
     <string name="software_video_decoder">პროგრამული დეკოდერის წყარო</string>
     <string name="software_video_decoder_bundled">ჩაშენებული FFmpeg</string>
     <string name="software_video_decoder_device">მოწყობილობის MediaCodec</string>
+    <string name="software_video_decoder_help">მოქმედებს მხოლოდ მაშინ, როცა პროგრამული დეკოდირების იძულება ჩართულია. ჩაშენებული FFmpeg აპის საკუთარი დეკოდერია და მხოლოდ H.265-ს დეკოდირებს. მოწყობილობის MediaCodec სისტემის პროგრამულ დეკოდერს იყენებს. H.264 ვიდეო ყოველთვის სისტემის დეკოდერს იყენებს.</string>
 
     <string name="btn_show_qr">QR კოდის ჩვენება</string>
     <string name="renderer_fallback_surface">ვიდეო მუდმივად იყინებოდა, ამიტომ ამ სესიისთვის ჩვენება გადაერთო SurfaceView-ზე. თუ სტაბილურია, პარამეტრებში დააყენეთ ხედვის რეჟიმი SurfaceView-ზე.</string>
@@ -652,6 +692,12 @@
     <string name="settings_tab_basic">ძირითადი</string>
     <string name="settings_tab_advanced">დამატებითი</string>
     <string name="settings_search_hint">პარამეტრების ძებნა</string>
+    <string name="settings_scope_wifi_hidden">ნაჩვენებია USB-ის პარამეტრები. WiFi-ის პარამეტრები დამალულია.</string>
+    <string name="settings_scope_usb_hidden">ნაჩვენებია WiFi-ის პარამეტრები. USB-ის პარამეტრები დამალულია.</string>
+    <string name="settings_scope_usb_wifi_hidden">ნაჩვენებია ავტონომიური რეჟიმის პარამეტრები. USB-ისა და WiFi-ის პარამეტრები დამალულია.</string>
+    <string name="settings_scope_change">შეცვლა</string>
+    <string name="settings_search_clear">ძებნის გასუფთავება</string>
+    <string name="settings_search_no_results">„%1$s“-ს არცერთი პარამეტრი არ ემთხვევა.</string>
     <string name="connection_mode">კავშირის რეჟიმი</string>
     <string name="connection_kind_usb_cable">USB კაბელი (პირდაპირი)</string>
     <string name="connection_kind_usb_wireless_adapter">USB უსადენო ადაპტერი</string>
@@ -836,6 +882,7 @@
     <string name="onb_dpi_recommended">რეკომენდებულია თქვენი ეკრანისთვის: %1$d dpi</string>
     <string name="dpi_value_format">%1$d DPI</string>
     <string name="pixel_aspect_ratio">პიქსელის თანაფარდობა</string>
+    <string name="pixel_aspect_ratio_help">შეცვალეთ მხოლოდ მაშინ, თუ ამ ეკრანზე წრეები ოვალებივით ჩანს. ეს ხდება, როცა პანელის პიქსელები კვადრატული არ არის. 10000 კვადრატულ პიქსელებს ნიშნავს.</string>
     <string name="enter_pixel_aspect_ratio_value">პიქსელის თანაფარდობა x10000 (10000 = კვადრატული პიქსელები)</string>
     <string name="cannot_open_settings">სისტემის პარამეტრების გახსნა ვერ მოხერხდა</string>
     <string name="static_bssid_enter_value">შეიყვანეთ BSSID (XX:XX:XX:XX:XX:XX)</string>
@@ -844,17 +891,13 @@
     <string name="media_key_routing_always">ყოველთვის</string>
     <string name="media_key_routing_auto">ავტომატურად</string>
     <string name="media_key_routing_never">არასოდეს</string>
-    <string name="media_key_routing_always_hint">შემდეგი, წინა და დაკვრა/პაუზა ყოველთვის იგზავნება Android Auto-ში. გამოიყენეთ ეს რეჟიმი, თუ ერთი დაჭერა ორ ტრეკს არ გამოტოვებს.</string>
-    <string name="media_key_routing_auto_hint">ღილაკების გაგზავნა წყდება, სანამ მაგნიტოლას ტელეფონთან Bluetooth მედია კავშირი აქვს, რადგან ეს კავშირი მოქმედებას თავად ასრულებს. აირჩიეთ, თუ ერთი დაჭერა ორ ტრეკს გამოტოვებს და ტელეფონი ამ მაგნიტოლასთანაა დაწყვილებული.</string>
-    <string name="media_key_routing_never_hint">ღილაკები არასოდეს იგზავნება და Bluetooth-ს რჩება. აირჩიეთ, თუ ერთი დაჭერა ორ ტრეკს გამოტოვებს და ტელეფონი ამ მაგნიტოლასთან კი არა, მანქანის საკუთარ სისტემასთანაა დაწყვილებული: რეჟიმი „ავტომატურად“ ამ კავშირს ვერ აღმოაჩენს.</string>
+    <string name="media_key_routing_help">ყოველთვის: შემდეგი, წინა და დაკვრა/პაუზა ყოველთვის იგზავნება Android Auto-ში. გამოიყენეთ ეს რეჟიმი, თუ ერთი დაჭერა ორ ტრეკს არ გამოტოვებს.\n\nავტომატურად: ღილაკების გაგზავნა წყდება, სანამ მაგნიტოლას ტელეფონთან Bluetooth მედია კავშირი აქვს, რადგან ეს კავშირი მოქმედებას თავად ასრულებს. აირჩიეთ, თუ ერთი დაჭერა ორ ტრეკს გამოტოვებს და ტელეფონი ამ მაგნიტოლასთანაა დაწყვილებული.\n\nარასოდეს: ღილაკები არასოდეს იგზავნება და Bluetooth-ს რჩება. აირჩიეთ, თუ ერთი დაჭერა ორ ტრეკს გამოტოვებს და ტელეფონი ამ მაგნიტოლასთან კი არა, მანქანის საკუთარ სისტემასთანაა დაწყვილებული: რეჟიმი „ავტომატურად“ ამ კავშირს ვერ აღმოაჩენს.</string>
     <string name="media_key_routing_hint_common">მხოლოდ მედია ღილაკებზე მოქმედებს. მბრუნავი მართვის ელემენტები, D-pad, „უკან“ და Enter ყოველთვის Android Auto-ში იგზავნება.</string>
     <string name="playback_focus_mode">სხვა აუდიოს პაუზა დაკვრისას</string>
     <string name="playback_focus_mode_auto">ავტომატურად</string>
     <string name="playback_focus_mode_always">ყოველთვის</string>
     <string name="playback_focus_mode_never">არასოდეს</string>
-    <string name="playback_focus_mode_auto_hint">Android Auto-ს ხმის დაკვრისას აჩერებს მაგნიტოლას სხვა ფლეერს (მაგალითად, რადიოს). თუ აღმოჩნდება, რომ ამით ტელეფონის საკუთარი დაკვრა ჩერდება, რაც ხდება, როცა მაგნიტოლა ტელეფონის Bluetooth დინამიკია, ამას აღარ აკეთებს და ამას იმახსოვრებს. ხელახლა საცდელად ეს რეჟიმი კვლავ აირჩიეთ.</string>
-    <string name="playback_focus_mode_always_hint">Android Auto-ს დაკვრისას სხვა აუდიოს ყოველთვის აჩერებს. თუ Bluetooth-ის ჩართვისას მუსიკა ერთ-ორ წამში ჩერდება, დაუბრუნდით რეჟიმს „ავტომატურად“.</string>
-    <string name="playback_focus_mode_never_hint">სისტემის აუდიო ფოკუსს არასოდეს ეხება. მაგნიტოლას სხვა აუდიო შეიძლება Android Auto-ს გვერდით გაგრძელდეს.</string>
+    <string name="playback_focus_mode_help">ავტომატურად: Android Auto-ს ხმის დაკვრისას აჩერებს მაგნიტოლას სხვა ფლეერს (მაგალითად, რადიოს). თუ აღმოჩნდება, რომ ამით ტელეფონის საკუთარი დაკვრა ჩერდება, რაც ხდება, როცა მაგნიტოლა ტელეფონის Bluetooth დინამიკია, ამას აღარ აკეთებს და ამას იმახსოვრებს. ხელახლა საცდელად ეს რეჟიმი კვლავ აირჩიეთ.\n\nყოველთვის: Android Auto-ს დაკვრისას სხვა აუდიოს ყოველთვის აჩერებს. თუ Bluetooth-ის ჩართვისას მუსიკა ერთ-ორ წამში ჩერდება, დაუბრუნდით რეჟიმს „ავტომატურად“.\n\nარასოდეს: სისტემის აუდიო ფოკუსს არასოდეს ეხება. მაგნიტოლას სხვა აუდიო შეიძლება Android Auto-ს გვერდით გაგრძელდეს.</string>
     <string name="playback_focus_mode_static_hint">როცა სტატიკური აუდიო ფოკუსი ჩართულია, ეს ტელეფონის დაკავშირებიდან მოქმედებს და მთელ სესიას გრძელდება და არა მხოლოდ აუდიოს დაკვრისას.</string>
     <string name="github_issues_url">https://github.com/andreknieriem/open-headunit/issues</string>
     <string name="support_rules_english_title">All posts in English</string>
@@ -867,7 +910,8 @@
     <string name="external_bt_module_nativeaa">Native Wireless ZJ/ZLink მოდულით</string>
     <string name="external_bt_module_nativeaa_desc">თქვენი ტელეფონი ამ მოწყობილობის საკუთარ Bluetooth მოდულთან (%1$s) წყვილდება და არა იმ Bluetooth-თან, რომელსაც Android აპებს აძლევს, ამიტომ ხელის ჩამორთმევა მოდულის ZJ/ZLink სერვისით გაიგზავნება.\n\nექსპერიმენტულია და ამ სერვისის გარდა სხვა გზა არ არსებობს. თუ ტელეფონი Android Auto-ს არ ხსნის, გამოიყენეთ USB ან რომელიმე WiFi რეჟიმი.</string>
     <string name="external_bt_transport">მაგნიტოლის Bluetooth მოდულით დაკავშირება</string>
-    <string name="external_bt_transport_description">ექსპერიმენტულია და მხოლოდ იმ მოწყობილობებისთვის, რომლებსაც ZJ/ZLink Bluetooth სერვისი აქვთ. უსადენო Android Auto-ს ხელის ჩამორთმევას აგზავნის ამ მოწყობილობის საკუთარი Bluetooth ჩიპით, იმით, რომელთანაც თქვენი ტელეფონი ფაქტობრივად წყვილდება, და არა იმ Bluetooth-ით, რომელსაც Android აპებს აძლევს.\n\nჯერ გაუშვით „მაგნიტოლის Bluetooth მოდულის შემოწმება“, როცა ეს პარამეტრი გამორთულია. თუ ტესტი არაფერს პოულობს, რაც მოუსმენს, ეს პარამეტრი თქვენს მოწყობილობაზე ვერაფერს შეცვლის და Native Wireless აქ ვერ იმუშავებს, რასაც არ უნდა მიუთითოთ. თუ პასუხობს, ჩართეთ ეს პარამეტრი და აირჩიეთ Native. ტესტი, რომელიც ამ პარამეტრის უკვე ჩართულ და დაკავშირებულ მდგომარეობაში ეშვება, ამას გაცნობებთ, და ეს შეცდომა არ არის. ორივე შემთხვევაში გააექსპორტეთ ჟურნალი.</string>
+    <string name="external_bt_transport_description">ექსპერიმენტული, მოწყობილობებისთვის, რომლებსაც ZJ/ZLink Bluetooth სერვისი აქვთ. უსადენო Android Auto-ს ხელის ჩამორთმევას აგზავნის Bluetooth ჩიპით, რომელთანაც ტელეფონია დაწყვილებული, და არა იმით, რასაც Android აპებს აჩვენებს. ჯერ გაუშვით Bluetooth მოდულის ტესტი ამ პარამეტრის გამორთვით. თუ არაფერი უსმენს, ეს პარამეტრი თქვენს მოწყობილობას ვერ დაეხმარება. თუ პასუხობს, ჩართეთ. ორივე შემთხვევაში გააექსპორტეთ ჟურნალი.</string>
+    <string name="external_bt_transport_summary">ექსპერიმენტული. აგზავნის უსადენო ხელის ჩამორთმევას ამ მოწყობილობის საკუთარი Bluetooth-ით.</string>
     <string name="zbt_probe_title">მაგნიტოლის Bluetooth მოდულის შემოწმება</string>
     <string name="zbt_probe_idle">გასაშვებად შეეხეთ</string>
     <string name="zbt_probe_running">მიმდინარეობს…</string>
@@ -877,7 +921,8 @@
     <string name="external_bt_blink_transport">FYT-ის გარე Bluetooth მოდულით დაკავშირება</string>
     <string name="external_bt_module_controls_hint">ტელეფონის დაწყვილებას, კავშირის პრიორიტეტს და დრაივერის არჩევას გარე Bluetooth მოდული მართავს.</string>
     <string name="external_bt_module_last_phone">მოდულით ბოლოს დაკავშირებული ტელეფონი</string>
-    <string name="external_bt_blink_transport_description">ექსპერიმენტულია. განკუთვნილია FYT მოწყობილობებისთვის, რომლებზეც ტელეფონი ზარებისთვის ცალკე Bluetooth მოდულთან წყვილდება, მაგალითად DUDUOS-ზე „DUDUAUTO“, ერთადერთ ROM-ზე, რომელიც ჯერჯერობით შემოწმდა. უსადენო Android Auto-ს ხელის ჩამორთმევას ამ მოწყობილობის Bluetooth კი არა, მოდული ატარებს და მას ჩვეულებრივ სტანდარტული Car Link აპი პასუხობს. ჩართვისას მას ეს აპი პასუხობს, ამიტომ ზარები მოდულზე და მანქანის დინამიკებზე რჩება.\n\nჯერ გამორთეთ სტანდარტული Car Link აპი (pm disable-user com.syu.carlink), თორემ ორივე აპი ერთსა და იმავე არხს წაიკითხავს. არხი იხსნება root-ის გარეშე, თუ მოწყობილობა ამის საშუალებას იძლევა, წინააღმდეგ შემთხვევაში root-ით. აირჩიეთ Native, ტელეფონი დააწყვილეთ მხოლოდ მოდულთან და თუ არ დაკავშირდა, გააექსპორტეთ ჟურნალი.</string>
+    <string name="external_bt_blink_transport_description">ექსპერიმენტული, FYT მოწყობილობებისთვის, რომლებშიც ტელეფონი ზარებისთვის ცალკე Bluetooth მოდულთან წყვილდება, მაგალითად, DUDUAUTO DUDUOS-ზე. მოდული ატარებს უსადენო Android Auto-ს ხელის ჩამორთმევას, რომელსაც ჩვეულებრივ ორიგინალური Car Link აპი პასუხობს. ჩართვისას მის ნაცვლად ეს აპი პასუხობს, ამიტომ ზარები მოდულსა და მანქანის დინამიკებზე რჩება. ჯერ გამორთეთ ორიგინალური Car Link აპი (pm disable-user com.syu.carlink), თორემ ორივე ერთსა და იმავე არხს წაიკითხავს.</string>
+    <string name="external_bt_blink_transport_summary">ექსპერიმენტული. პასუხობს უსადენო ხელის ჩამორთმევას FYT მოწყობილობის Bluetooth მოდულზე.</string>
     <string name="external_bt_blink_refused_stock_enabled">გარე Bluetooth მოდული: სტანდარტული Car Link აპი ჯერ კიდევ ჩართულია. გამორთეთ (pm disable-user com.syu.carlink) ან გამორთეთ ეს ტრანსპორტი.</string>
     <string name="external_bt_blink_refused_stock_running">გარე Bluetooth მოდული: სტანდარტული Car Link აპი გამორთულია, მაგრამ ჯერ კიდევ მუშაობს. გადატვირთეთ მოწყობილობა.</string>
     <string name="external_bt_blink_refused_root">გარე Bluetooth მოდული: მოდულის არხის გასახსნელად ამ მოწყობილობაზე root არის საჭირო, root წვდომა კი უარყოფილია ან მიუწვდომელია.</string>
@@ -1001,7 +1046,7 @@
     <string name="stand_down_station_auto">ავტომატური</string>
     <string name="stand_down_station_always">ყოველთვის</string>
     <string name="stand_down_station_never">არასდროს</string>
-    <string name="stand_down_station_hint">ავტომატური რეჟიმი ამ მოწყობილობის საკუთარ ქსელს ტოვებს მხოლოდ მაშინ, როცა რადიოს აქვს 5 GHz დიაპაზონი, ხოლო ქსელი 2.4 GHz-ზეა, რათა WiFi Direct ჯგუფს 5 GHz არხი მხოლოდ თავისთვის ჰქონდეს. მხოლოდ 2.4 GHz-ის მქონე მოწყობილობაზე ქსელთან კავშირი რჩება, რადგან დატოვება მხოლოდ ქსელების ძებნას იწვევს. კავშირი ასევე რჩება, თუ ქსელი უკვე 5 GHz-ზეა. სესიის დასრულებისას მოწყობილობა ქსელს ისევ უერთდება. თუ გამოსახულება წყდება, სცადეთ „ყოველთვის“ ან „არასდროს“.</string>
+    <string name="stand_down_station_hint">განსაზღვრავს, ტოვებს თუ არა ეს მოწყობილობა საკუთარ Wi-Fi ქსელს ტელეფონის დაკავშირებისას, რათა WiFi Direct ჯგუფმა 5 გჰც არხი გამოიყენოს. „ავტო“ მას ტოვებს მხოლოდ მაშინ, როცა რადიოს აქვს 5 გჰც დიაპაზონი და ქსელი 2,4 გჰც-ზეა, ან როცა ჯგუფი 5 გჰც ქსელის გვერდით 2,4 გჰც-ზე იძულებულია. მხოლოდ 2,4 გჰც-იანი მოწყობილობა დაკავშირებული რჩება, რადგან გასვლა მხოლოდ ქსელების სკანირებას იწვევს. ქსელს სესიის დასრულებისას ისევ უერთდება. თუ გამოსახულება ეჩხირება, სცადეთ „ყოველთვის“ ან „არასდროს“.</string>
     <string name="stand_down_station_needs_overlay">ამ Android-ის ვერსიაზე საჭიროა ნებართვა „სხვა აპების ზემოდან გამოჩენა“.</string>
     <string name="connection_issue_banner_bt_silent">თქვენი ტელეფონი დაუკავშირდა Bluetooth-ით, მაგრამ ამ მოწყობილობის Bluetooth-მა ვერაფერი გაუგზავნა. შეეხეთ, რომ აირჩიოთ რეჟიმი, რომელსაც ეს არ სჭირდება, მაგალითად Wireless Helper.</string>
     <string name="connection_issue_banner_bssid">თქვენმა ტელეფონმა ვერ გაიგო, რომელ ქსელს უნდა შეუერთდეს, რადგან ამ მოწყობილობამ არ გაუზიარა თავისი WiFi მისამართი. ჩართეთ მდებარეობა ან შეეხეთ მისამართის ხელით შესაყვანად.</string>
@@ -1009,8 +1054,11 @@
     <string name="connection_issue_banner_wifi_direct_refused">ამ მოწყობილობამ თქვენი ტელეფონისთვის WiFi Direct ქსელი ვერ შექმნა. სცადეთ მისი სხვა WiFi ქსელისგან გათიშვა ან შეეხეთ, რომ ჰოტსპოტი გამოიყენოთ.</string>
     <string name="connection_issue_banner_wifi_direct_cycled">სხვა აპი WiFi Direct-ს განუწყვეტლივ თიშავს, ჩვეულებრივ ეს წინასწარ დაყენებული პროექციის აპია, მაგალითად ZLink ან CarLife. გამორთეთ ის ან შეეხეთ, რომ ჰოტსპოტი გამოიყენოთ.</string>
     <string name="connection_issue_banner_hotspot_config">ეს მოწყობილობა აპს თავისი ჰოტსპოტის სახელსა და პაროლს არ გადასცემს. შეეხეთ და შეიყვანეთ ისინი ხელით.</string>
+    <string name="auto_restart_wifi_summary">თავისით რესტარტს უკეთებს Wi-Fi-ს, თუ WiFi Direct გაიჭედა. საჭიროა root ან ლოკალური ADB.</string>
+    <string name="auto_restart_wifi_description">თავისით თიშავს და რთავს Wi-Fi-ს, თუ WiFi Direct გაიჭედა. ეს შეიძლება მოხდეს, თუ აპი სესიის შუაში დაიხურა. საჭიროა root ან ლოკალური ADB. სესიის დროს არასოდეს ეშვება.</string>
     <string name="narrow_band_profile_cap">ვიდეოს დაწევა 2.4 გჰც კავშირზე</string>
-    <string name="narrow_band_profile_cap_description">როცა სესია 2.4 გჰც-ზე მუშაობს, იქნება ეს იმიტომ, რომ ამ მოწყობილობის WiFi-ს 5 გჰც დიაპაზონი არ აქვს, თუ იმიტომ, რომ ქსელი 2.4 გჰც-ზე ამოვიდა, ტელეფონს ზემოთ მითითებული პარამეტრების ნაცვლად მაქსიმუმ 720p და 30 კადრი/წმ და AAC აუდიო მოეთხოვება. გაზომვამ აჩვენა, რომ ასეთ კავშირზე სრული სიჩქარის ნაკადს სურათი საერთოდ არ მოჰქონდა, დაბალი კი მუშაობდა. გამორთეთ, რომ ზუსტად ის მიიღოთ, რასაც მოითხოვთ.</string>
+    <string name="narrow_band_profile_cap_description">2,4 გჰც კავშირზე თქვენი ვიდეოპარამეტრების ნაცვლად ტელეფონს სთხოვს მაქსიმუმ 720p-ს, 30 კადრს წამში და AAC აუდიოს. ამ კავშირზე სრული სიჩქარის ნაკადმა გაზომვებით სურათი საერთოდ არ აჩვენა, დაბალმა კი გაძლო. გამორთეთ, რომ ზუსტად ის მიიღოთ, რაც დააყენეთ, და თუ კავშირი ვერ გაუძლებს, ცარიელი გამოსახულება მოელოდეთ.</string>
+    <string name="narrow_band_profile_cap_summary">2,4 გჰც-ზე ტელეფონს სთხოვს 720p-ს, 30 კადრს წამში და AAC აუდიოს.</string>
     <string name="connection_issue_banner_video_link_too_slow">WiFi კავშირი ვიდეოსთვის ძალიან ნელი იყო, ამიტომ აპმა ვიდეო 720p-მდე და 30 FPS-მდე შეამცირა. შეეხეთ, რომ გარჩევადობა თავად დააყენოთ. 5 გჰც ქსელიც დაგეხმარებათ.</string>
     <string name="connection_issue_banner_five_ghz_channel_refused">ამ მოწყობილობამ თქვენ მიერ არჩეული 5 გჰც არხი ვერ გამოიყენა და აირჩია ისეთი, რომელსაც ზოგი ტელეფონი ვერ ხედავს. შეეხეთ, რომ WiFi Direct 2.4 გჰც-ზე გადაერთოს, რომელიც ყველგან მუშაობს.</string>
     <string name="connection_issue_banner_headunit_server_deaf">თქვენს ტელეფონზე Android Auto-ს მაგნიტოლის სერვერმა პასუხის გაცემა შეწყვიტა. ტელეფონზე გააჩერეთ და ხელახლა გაუშვით ის Android Auto-ს დეველოპერის პარამეტრებში.</string>
@@ -1030,6 +1078,7 @@
     <string name="preflight_invalid_bssid">ეს არ არის WiFi მისამართი. შეიყვანეთ ექვსი წყვილი თექვსმეტობითი ციფრი, მაგალითად 02:1A:11:FF:3C:4D.</string>
     <string name="native_aa_ignore_external_bt">Bluetooth-თავსებადობის შემოწმების გამოტოვება</string>
     <string name="native_aa_ignore_external_bt_description">როგორც ჩანს, ამ მოწყობილობაზე Bluetooth ცალკე მოდულშია, რომელსაც Android ვერ წვდება, ამიტომ უსადენო Android Auto ავტომატურად გათიშულია. ეს პარამეტრი ნაგულისხმევად გამორთულია. ჩართეთ მხოლოდ მაშინ, თუ ფიქრობთ, რომ ეს შეფასება არასწორია: თუ ის სწორია, კავშირი უჩუმრად ჩაიშლება, ჟურნალი კი ჯანსაღად გამოიყურება.</string>
+    <string name="native_aa_ignore_external_bt_summary">უსადენო რეჟიმს ჩართულს ტოვებს, თუნდაც ეს მოწყობილობა თავის Bluetooth მოდულს მალავდეს.</string>
     <string name="native_aa_setup_qr_title">დაყენება QR კოდით</string>
     <string name="native_aa_setup_qr_description">კოდის ჩვენება, რომელსაც ტელეფონი დაასკანერებს.</string>
     <string name="native_aa_setup_qr_content_description">QR კოდი უსადენო Android Auto-ს დასაყენებლად</string>
@@ -1059,11 +1108,13 @@
     <string name="failed_aa_not_installed">ვერ მოხერხდა: Android Auto არ არის დაინსტალირებული!</string>
     <string name="raise_projection_during_call">ზარების დროს Android Auto-ში დარჩენა</string>
     <string name="raise_projection_during_call_description">მხოლოდ ავტონომიური რეჟიმი. აბრუნებს პროექციას ტელეფონის ზარის ეკრანის ზემოთ, ასე რომ ზარებზე პასუხი და დასრულება Android Auto-ს ინტერფეისში ხდება.</string>
+    <string name="raise_projection_during_call_summary">მხოლოდ ავტონომიური რეჟიმისთვის. აჩვენებს პროექციას ტელეფონის ზარის ეკრანის ზემოდან.</string>
     <string name="audio_stream_settings">აუდიონაკადები</string>
     <string name="audio_stream_settings_description">აირჩიეთ სისტემური ნაკადი, რომელზეც უკრავს Android Auto-ს თითოეული არხი.</string>
     <string name="audio_stream_settings_info">Android Auto ხმას სამ არხზე აგზავნის: მედია, სავიგაციო მითითებები და სისტემური ხმები. თითოეული სისტემური ნაკადით აღწევს მაგნიტოლამდე და არჩეული ნაკადი განსაზღვრავს, ხმის რომელ ღილაკს დაემორჩილება და, ბევრ მაგნიტოლაზე, ჩაირთვება თუ არა მისთვის გამაძლიერებელი. დინამიკის ღილაკით შენახვამდე მოისმინეთ სატესტო სიგნალი ამ ნაკადზე.</string>
     <string name="audio_channel_media">მედია</string>
     <string name="audio_channel_media_description">აპების დაკვრა: მუსიკა, პოდკასტები, რადიო და აუდიოწიგნები. ერთადერთი არხი, რომელიც სტერეოში იგზავნება (48 kHz).</string>
+    <string name="audio_channel_media_summary">აპების დაკვრა: მუსიკა, პოდკასტები, რადიო, აუდიოწიგნები. სტერეო, 48 კჰც.</string>
     <string name="audio_channel_guidance">მითითებები / ნავიგაცია</string>
     <string name="audio_channel_guidance_description">ხმოვანი სანავიგაციო მითითებები და ხმოვანი ასისტენტის პასუხები (16 kHz მონო).</string>
     <string name="audio_channel_system">სისტემური ხმები / შეტყობინებები</string>
@@ -1071,7 +1122,9 @@
     <string name="audio_channel_all">მედია, მითითებები, ნავიგაცია, შეტყობინებები და სისტემა</string>
     <string name="audio_channel_all_short">ყველა არხი</string>
     <string name="audio_channel_all_description">Android Auto-ს ყველა აუდიოარხი — აპების დაკვრა, ხმოვანი მითითებები, გაფრთხილებები და შეტყობინებების ხმები — იყენებს ამ ერთადერთ გამომავალ ნაკადს.</string>
+    <string name="audio_channel_all_summary">Android Auto-ს ყველა აუდიოარხი ამ ერთ გამომავალ ნაკადს იზიარებს.</string>
     <string name="audio_stream_test">სატესტო სიგნალის დაკვრა ამ ნაკადზე</string>
+    <string name="setting_help_for">დახმარება: %1$s</string>
     <string name="audio_stream_muted_warning">%1$s ამ მოწყობილობაზე დადუმებულია — აწიეთ მისი ხმა, რომ სატესტო სიგნალი გაიგონოთ.</string>
     <string name="audio_stream_test_failed">ამ ნაკადზე სატესტო სიგნალის დაკვრა ვერ მოხერხდა.</string>
     <string name="audio_stream_pick_title">ნაკადი: %1$s</string>
@@ -1117,6 +1170,7 @@
     <string name="select_bt_poke_device">აირჩიეთ Bluetooth მოწყობილობა გასაღვიძებლად</string>
     <string name="native_poke_all_paired_label">ყველა დაწყვილებული მოწყობილობის გაღვიძება</string>
     <string name="native_poke_all_paired_description">თუ ზემოთ მოწყობილობა არჩეული არ არის, Android Auto-ს გასაშვებად მცირე ხნით უკავშირდება ყველა დაწყვილებულ მოწყობილობას. გამორთეთ, რომ მოწყობილობის არჩევამდე არაფერი გაიღვიძოს.</string>
+    <string name="native_poke_all_paired_summary">თუ მოწყობილობა არჩეული არ არის, აღვიძებს ყველა დაწყვილებულ მოწყობილობას.</string>
     <string name="auto_disconnect_bt_delay_label">ლოდინი გათიშვამდე</string>
     <string name="auto_disconnect_bt_delay_value">%1$d წმ</string>
     <string name="auto_disconnect_bt_delay_immediate">დაუყოვნებლივ</string>
@@ -1134,21 +1188,26 @@
     <string name="five_ghz_channel_hint">არხი მოთხოვნაა და არა გარანტია. ბევრი მოწყობილობა ქსელს მხოლოდ იმ არხზე ქმნის, რომელსაც საკუთარი Wi-Fi დრაივერი ირჩევს, და აპი ამას მხოლოდ ცდის შემდეგ ხვდება. თუ არცერთი 5 გჰც არხი არ მუშაობს და ტელეფონი ქსელს მაინც ვერ ხედავს, დაგეხმარებათ ზემოთ მოცემული დიაპაზონის პარამეტრი.</string>
     <string name="wifi_direct_stable_identity">იგივე Wi-Fi Direct ქსელის შენარჩუნება</string>
     <string name="wifi_direct_stable_identity_description">ყოველთვის იყენებს ერთსა და იმავე ქსელის სახელსა და პაროლს, რათა თქვენი ტელეფონი უკვე ნაცნობ ქსელს დაუკავშირდეს. მათ განსაახლებლად გამოიყენეთ ქვემოთ მოცემული პარამეტრი.</string>
+    <string name="wifi_direct_stable_identity_summary">ხელახლა იყენებს ერთ ქსელის სახელსა და პაროლს, რომ ტელეფონი ქსელს ისევ შეუერთდეს.</string>
     <string name="wifi_direct_new_identity">ახალი Wi-Fi Direct ქსელის იდენტიფიკატორი</string>
     <string name="wifi_direct_new_identity_none">შეირჩევა შემდეგი დაკავშირებისას</string>
     <string name="wifi_direct_new_identity_confirm">ირჩევს ახალ სახელსა და პაროლს ჯგუფისთვის, რომლებიც გამოყენებული იქნება შემდეგი დაკავშირებიდან. თქვენი ტელეფონი Bluetooth-ით მათთვის გამართული იქნება ისე, თითქოს ეს ახალი მაგნიტოლაა. გააკეთეთ ეს, თუ ტელეფონი ისევ ცდილობს ისეთ ქსელთან დაკავშირებას, რომელსაც უკვე ვერ უერთდება.</string>
     <string name="wifi_direct_new_identity_done">ახალი ქსელის იდენტიფიკატორი გამოყენებული იქნება შემდეგი დაკავშირებისას.</string>
     <string name="wifi_direct_new_identity_applied">ახალი ქსელის იდენტიფიკატორი ახლა მზადდება. თქვენს ტელეფონს მასთან დაკავშირება შემდეგ ჯერზე შეეთავაზება.</string>
     <string name="wifi_direct_stable_identity_description_legacy">Android-ის ამ ვერსიაში სახელს სისტემა ირჩევს და აპს მისი მოთხოვნა არ შეუძლია. დატოვეთ ჩართული, რომ თქვენი ტელეფონი უკვე ნაცნობ ქსელს დაუკავშირდეს იქ, სადაც სისტემა მას ინახავს. მის განსაახლებლად გამოიყენეთ ქვემოთ მოცემული პარამეტრი.</string>
+    <string name="wifi_direct_stable_identity_legacy_summary">ქსელის სახელს სისტემა ირჩევს. დატოვეთ ჩართული, რომ ტელეფონი ქსელს ისევ შეუერთდეს.</string>
     <string name="debug_video_low_latency">დეკოდერის დაბალი დაყოვნების რეჟიმის მოთხოვნა</string>
     <string name="debug_video_low_latency_description">ვიდეო დეკოდერის კონფიგურაციისას აყენებს მწარმოებლის დაბალი დაყოვნების MediaFormat გასაღებს. თუ დეკოდერი მას უარყოფს, ავტომატურად უბრუნდება წინა რეჟიმს.</string>
+    <string name="debug_video_low_latency_summary">ვიდეოდეკოდერს სთხოვს მწარმოებლის დაბალი დაყოვნების რეჟიმს.</string>
     <string name="debug_video_feed_hold">ნელი დეკოდერის სიმულაცია</string>
 
     <string name="category_more_features">მეტი ფუნქცია</string>
     <string name="pref_enable_floating_button_title">მცურავი ღილაკი</string>
-    <string name="pref_enable_floating_button_summary">აჩვენებს მცურავ ღილაკს სისტემურ ლაუნჩერსა და აპებზე Open Headunit-ში სწრაფად დასაბრუნებლად.</string>
+    <string name="pref_enable_floating_button_summary">აჩვენებს ღილაკს Open Headunit-ზე დასაბრუნებლად.</string>
+    <string name="pref_enable_floating_button_help">აჩვენებს მცურავ ღილაკს სისტემურ ლაუნჩერსა და აპებზე Open Headunit-ში სწრაფად დასაბრუნებლად.</string>
     <string name="pref_floating_button_connection_status_title">კავშირის სტატუსის ინდიკატორი</string>
-    <string name="pref_floating_button_connection_status_summary">ტელეფონის არარსებობისას იყენებს გათიშულის გამჭვირვალობას, ხოლო ტელეფონის დაკავშირებისას ქრება მცურავი ღილაკის გამჭვირვალობამდე. 0%-ზე ღილაკი დამალულია და შეხებებს გაატარებს.</string>
+    <string name="pref_floating_button_connection_status_summary">ამცირებს ღილაკის გამოკვეთილობას, სანამ ტელეფონი დაკავშირებულია.</string>
+    <string name="pref_floating_button_connection_status_help">ტელეფონის არარსებობისას იყენებს გათიშულის გამჭვირვალობას, ხოლო ტელეფონის დაკავშირებისას ქრება მცურავი ღილაკის გამჭვირვალობამდე. 0%-ზე ღილაკი დამალულია და შეხებებს გაატარებს.</string>
     <string name="pref_floating_button_size_title">მცურავი ღილაკის ზომა</string>
     <string name="pref_floating_button_opacity_title">მცურავი ღილაკის გამჭვირვალობა</string>
     <string name="pref_floating_button_disconnected_opacity_title">გათიშულის გამჭვირვალობა</string>
@@ -1248,7 +1307,8 @@
     <string name="native_aa_wake_remeasure_confirm">Android Auto უსადენო კავშირს მხოლოდ მაშინ იწყებს, როცა Bluetooth კავშირის ცვლილებას დაინახავს. თუ ამ მოწყობილობას ჰენდსფრის კავშირი უკვე უჭირავს, აპმა ის უნდა გაწყვიტოს, ამიტომ ერთხელ ზომავს, აღდგება თუ არა კავშირი, და წყდება, თუ არ აღდგა. გამოიყენეთ, თუ უსადენო კავშირი თავისით აღარ იწყება და მზად ხართ, ცოტა ხნით ჰენდსფრის გარეშე დარჩეთ, სანამ ის კვლავ ცდის.</string>
     <string name="native_aa_wake_remeasure_done">Bluetooth გაღვიძება ხელახლა გაიზომება შემდეგ დაკავშირებაზე.</string>
     <string name="pref_enable_car_launcher_title">მანქანის გამშვებად გამოყენება</string>
-    <string name="pref_enable_car_launcher_summary">Open Headunit-ს მთავარი ეკრანის აპად არეგისტრირებს, რათა მანქანის ან მაგნიტოლის Home ღილაკზე დაჭერისას გაიხსნას.</string>
+    <string name="pref_enable_car_launcher_summary">ხსნის აპს მთავარი ეკრანის ღილაკით.</string>
+    <string name="pref_enable_car_launcher_help">Open Headunit-ს მთავარი ეკრანის აპად არეგისტრირებს, რათა მანქანის ან მაგნიტოლის Home ღილაკზე დაჭერისას გაიხსნას.</string>
     <string name="pref_set_default_launcher_title">ნაგულისხმევი მთავარი აპი</string>
     <string name="pref_default_launcher_status_active">აქტიური (შეეხეთ მართვისთვის)</string>
     <string name="pref_default_launcher_status_inactive">არ არის დაყენებული (შეეხეთ ასარჩევად)</string>

@@ -59,6 +59,7 @@
     <string name="night_mode_short">Android Auto</string>
     <string name="aa_monochrome">Android Auto monocrom</string>
     <string name="aa_monochrome_description">Reduce culorile din Android Auto pentru condusul pe timp de noapte. Necesită modul de vizualizare GLES. Are efect doar când modul întunecat este activat.</string>
+    <string name="aa_monochrome_summary">Reduce culorile pentru condusul pe timp de noapte. Necesită modul de vizualizare GLES și modul întunecat.</string>
     <string name="aa_desaturation">Desaturare</string>
     <string name="aa_desaturation_description">Controlează cât de multă culoare este eliminată. Are efect doar când modul întunecat este activat.</string>
     <string name="gles_required_title">GLES necesar</string>
@@ -84,6 +85,7 @@
     <string name="change_dpi">Schimbă DPI-ul</string>
     <string name="change_view_mode">Schimbă modul de vizualizare</string>
     <string name="view_mode">Mod de vizualizare</string>
+    <string name="view_mode_help">Alege cum este desenată imaginea pe ecranul acestei unități. SurfaceView este cel mai rapid și merge pe majoritatea unităților. TextureView este mai lent, dar permite oglindirea și scalarea. GLES20 adaugă efecte, precum modul de noapte monocrom. Schimbă-l dacă imaginea este neagră, pâlpâie sau lipsește un efect.</string>
     <string name="surface_view">SurfaceView</string>
     <string name="texture_view">TextureView</string>
     <string name="gles_view">GLES20</string>
@@ -127,11 +129,13 @@
     <string name="debug_mode_description">Activează sau dezactivează jurnalizarea mai detaliată.</string>
     <string name="allow_external_configuration">Permite configurarea externă</string>
     <string name="allow_external_configuration_description">Permite aplicațiilor de automatizare precum Tasker sau MacroDroid să modifice setările, să seteze nivelul de jurnalizare și să exporte jurnalele. Conectarea și deconectarea funcționează întotdeauna; aceasta se aplică doar comenzilor care schimbă configurația unității.</string>
+    <string name="allow_external_configuration_summary">Permite aplicațiilor precum Tasker să schimbe setări și să exporte jurnale.</string>
     <string name="log_level">Nivel de jurnalizare</string>
     <string name="log_level_description">Filtrează jurnalele după nivel la export.</string>
     <string name="log_source">Sursă de jurnalizare</string>
     <string name="log_source_logcat">Logcat</string>
     <string name="log_source_applog_file">Direct în fișier</string>
+    <string name="log_source_help">Logcat înregistrează liniile aplicației împreună cu cele ale sistemului. Ajută cel mai mult într-un raport de eroare. Direct în fișier înregistrează doar liniile proprii ale aplicației, pentru dispozitivele în care Logcat nu înregistrează nimic. Aplicația trece singură la Direct în fișier când Logcat nu înregistrează nimic.</string>
     <string name="log_location">Locul de salvare a jurnalelor</string>
     <string name="log_location_default">Implicit (stocarea aplicației)</string>
     <string name="log_location_downloads">Dosar Descărcări</string>
@@ -206,14 +210,17 @@
     <string name="show_toast_messages_description">Afișează mesaje pop-up de stare la conectare, deconectare și schimbarea modului.</string>
     <string name="auto_start_usb_label">Pornire automată prin USB</string>
     <string name="auto_start_usb_description">Deschide aplicația automat și încearcă conectarea când un dispozitiv USB este conectat.</string>
+    <string name="auto_start_usb_summary">Deschide aplicația și se conectează când este introdus un dispozitiv USB.</string>
     <string name="auto_start_settings">Setări pornire automată</string>
     <string name="auto_start_settings_description">Configurează când aplicația pornește automat.</string>
     <string name="auto_start_oem_warning">Acest dispozitiv ar putea necesita activarea pornirii automate și eliminarea optimizării bateriei sau a restricțiilor de fundal pentru această aplicație.\n\nPe unitățile cu Quick Boot (pornire rapidă), pornirea automată ar putea să nu funcționeze. Caută \"DuraSpeed\" în setările sistemului și activează aplicația acolo. Pe unele unități, DuraSpeed este ascuns și poate fi nevoie de o aplicație precum \"Hidden Settings\" pentru a-l găsi. Dacă nu ai DuraSpeed, încearcă să dezactivezi Quick Boot.</string>
     <string name="car_launcher_autostart_info">Open Headunit este configurat ca lansator auto. Pornește automat la pornirea sistemului.</string>
     <string name="auto_start_on_boot_label">Pornire la boot</string>
     <string name="auto_start_on_boot_description">Deschide aplicația automat când dispozitivul pornește. Necesită permisiunea \'Afișare peste alte aplicații\' pe Android 10+.</string>
+    <string name="auto_start_on_boot_summary">Deschide aplicația la pornirea dispozitivului.</string>
     <string name="auto_start_screen_on_label">Pornire la aprinderea ecranului</string>
     <string name="auto_start_screen_on_description">Deschide aplicația de fiecare dată când ecranul se aprinde. Ideal pentru unitățile auto care nu se opresc niciodată complet sau folosesc moduri de pornire rapidă unde celelalte opțiuni de pornire automată nu funcționează. Nu este recomandat pentru telefoane sau tablete.</string>
+    <string name="auto_start_screen_on_summary">Deschide aplicația la fiecare aprindere a ecranului. Nu pentru telefoane sau tablete.</string>
     <string name="select_bt_device">Selectează dispozitivul Bluetooth</string>
     <string name="bt_device_not_set">Nesetat</string>
     <string name="bt_permission_denied_title">Permisiune Bluetooth necesară</string>
@@ -226,6 +233,7 @@
     <string name="right_hand_drive_description">Poziționează interfața pentru o mașină cu volan pe dreapta.</string>
     <string name="category_graphic">Grafică</string>
     <string name="custom_insets">Margini interne personalizate</string>
+    <string name="custom_insets_help">Mută imaginea la distanța de acest număr de pixeli față de marginile ecranului: stânga, sus, dreapta și jos. Folosește-l când o ramă, o margine curbată sau o bară de sistem acoperă o parte din Android Auto.</string>
     <string name="inset_top">Sus</string>
     <string name="inset_bottom">Jos</string>
     <string name="inset_left">Stânga</string>
@@ -236,8 +244,9 @@
     <string name="category_video">Video</string>
     <string name="force_software_decoding">Forțează decodarea software</string>
     <string name="force_software_decoding_description">Poate remedia probleme pe unele dispozitive, dar are performanță mai scăzută.</string>
+    <string name="force_software_decoding_help">Decodează videoclipul cu procesorul principal, nu cu hardware-ul video. Activează-l doar dacă imaginea rămâne neagră, îngheață sau arată culori greșite când este dezactivat. Cere mult mai multă putere de procesare, deci imaginea poate fi mai lentă. Rândul de mai jos alege decodorul software.</string>
     <string name="wireless_mode">Mod Wireless</string>
-    <string name="wireless_mode_description">Alege cum se conectează aplicația fără fir (listă manuală, căutare automată a telefonului sau modul Wireless Launcher).</string>
+    <string name="wireless_mode_description">Alege cum găsește această unitate telefonul fără cablu. Wireless Helper folosește aplicația însoțitoare de pe telefon. Nativ se comportă ca o unitate Android Auto fără fir și nu necesită aplicație, dar depinde de versiunea Android Auto. Headunit Server găsește serverul pe care Android Auto îl rulează pe telefon. Schimbă-l doar dacă modul actual nu se conectează. O schimbare repornește configurarea fără fir.</string>
     <string-array name="wireless_connection_modes">
         <item>Manual (Listă)</item>
         <item>Căutare automată (Server Headunit)</item>
@@ -251,6 +260,11 @@
     <string name="auto_connect_settings">Setări conectare automată</string>
     <string name="auto_connect_settings_description">Configurează metodele de conectare automată și ordinea lor de prioritate.</string>
     <string name="auto_connect_help">Aceste metode rulează automat la deschiderea aplicației. Activează-le pe cele dorite, apoi trage de ele pentru a le ordona. Se va folosi prima metodă reușită.</string>
+    <string name="auto_connect_screen_help">Stabilește cum se conectează aplicația singură la deschidere. Activează metodele dorite și trage-le în ordinea de încercare. Se folosește prima care reușește. Întârzierea dă timp Wi-Fi-ului să se trezească pe o unitate lentă. Nimic de aici nu schimbă o conexiune pornită de tine. Cu Salvează se aplică modificările.</string>
+    <string name="dpi_screen_help">Stabilește densitatea de pixeli cu care desenează Android Auto. Un DPI mai mare mărește pictogramele și textul, deci încape mai puțin pe ecran. Un DPI mai mic le micșorează, deci încape mai mult. Automat folosește densitatea acestui dispozitiv. Valoarea nouă se aplică la următoarea conectare.</string>
+    <string name="keymap_screen_help">Asociază tastele și butoanele acestei unități cu acțiuni Android Auto. Atinge un rând, apoi apasă tasta de atribuit. Cu Resetează se șterg toate atribuirile tale și se revine la valorile implicite. Folosește-l când o tastă de pe volan sau de pe panou face altceva decât trebuie.</string>
+    <string name="customization_screen_help">Schimbă aspectul ecranului de start al acestei aplicații: imaginea de fundal, culorile și dimensiunea celor patru butoane și dimensiunea textului. Setarea de noapte controlează fundalul în modul întunecat. Nimic din toate acestea nu schimbă ce afișează Android Auto în proiecție.</string>
+    <string name="loading_screen_screen_help">Stabilește imaginea sau videoclipul scurt afișat cât pornește Android Auto. Alege o imagine sau un videoclip de până la 10 MB, scalează-l pe ecran și repetă animațiile scurte în buclă. Poți ascunde și textul de pornire. Cu Elimină se revine la ecranul implicit.</string>
     <string name="auto_connect_priority">Prioritate %d</string>
     <string name="auto_connect_all_disabled">Toate dezactivate</string>
     <string name="drag_to_reorder">Trage pentru a reordona</string>
@@ -258,6 +272,7 @@
     <string name="move_down">Mută mai jos</string>
     <string name="auto_connecting_single_usb">Se conectează automat la USB…</string>
     <string name="video_codec">Codec video</string>
+    <string name="video_codec_help">Alege formatul video trimis de telefon. Auto lasă aplicația să aleagă dintre ce poate decoda această unitate. H.265 dă o imagine mai clară la același debit. H.264 merge pe orice decodor. Schimbă-l dacă imaginea se blochează sau rămâne neagră. Alegerea se aplică de la următoarea conectare.</string>
     <string name="fps_limit">Limită FPS</string>
     <string name="save">Salvează</string>
     <string name="save_and_restart">Salvează (Necesită reconectare)</string>
@@ -273,18 +288,24 @@
     <!-- Audio Settings -->
     <string name="forced_scale">Scalare forțată (remediere pentru dispozitive vechi)</string>
     <string name="forced_scale_description">Corectează problemele de scalare pe unele dispozitive mai vechi care folosesc SurfaceView. Folosește doar dacă imaginea pare distorsionată sau deplasată.</string>
+    <string name="forced_scale_summary">Corectează scalarea pe dispozitive vechi care folosesc SurfaceView.</string>
     <string name="hud_mirroring">Mod HUD (Oglindire orizontală)</string>
     <string name="hud_mirroring_description">Oglindește afișajul pe orizontală pentru reflexia pe parbriz (Head-Up Display). Necesită modul de vizualizare TextureView sau GLES20 (nu funcționează cu SurfaceView).</string>
+    <string name="hud_mirroring_summary">Răstoarnă afișajul pentru reflexia în parbriz (HUD).</string>
 
     <string name="category_audio">Audio</string>
     <string name="enable_audio_sink">Receptor audio</string>
-    <string name="enable_audio_sink_description">Dacă este dezactivat, unitatea auto nu va primi sunet. Sunetul se va auzi de la telefon.</string>
+    <string name="enable_audio_sink_description">Redă sunetul Android Auto pe această unitate. Dezactivează pentru a păstra sunetul pe telefon, de exemplu când telefonul alimentează deja boxele mașinii. Unitatea afișează atunci doar imaginea. Apelurile nu folosesc niciodată acest sunet: se redau pe dispozitivul handsfree Bluetooth conectat la telefon (mașină, intercom sau cască) sau pe telefon.</string>
+    <string name="enable_audio_sink_summary">Redă sunetul Android Auto pe această unitate. Dezactivat: îl redă telefonul.</string>
     <string name="separate_audio_streams">Fluxuri audio separate</string>
     <string name="separate_audio_streams_description">Oferă canalelor Media, Ghidare și Sunete de sistem fluxuri de ieșire proprii în locul unui singur flux multimedia comun (s-ar putea să nu funcționeze corect pe anumite dispozitive).</string>
+    <string name="separate_audio_streams_summary">Media, ghidarea și sunetele de sistem primesc fluxuri de ieșire proprii.</string>
     <string name="use_aac_audio">Folosește Audio AAC</string>
-    <string name="use_aac_audio_description">Folosește codecul AAC pentru audio pentru a economisi lățime de bandă (Experimental). Într-o sesiune fără fir care rulează pe 2,4 GHz, aceasta se activează automat cât timp \"Video redus pe o legătură de 2,4 GHz\" este activat.</string>
+    <string name="use_aac_audio_description">Folosește codecul AAC pentru audio pentru a economisi lățime de bandă. Într-o sesiune fără fir care rulează pe 2,4 GHz, aceasta se activează automat cât timp \"Video redus pe o legătură de 2,4 GHz\" este activat.</string>
+    <string name="use_aac_audio_summary">Folosește audio AAC pentru a economisi lățime de bandă.</string>
     <string name="attach_hw_dsp_equalizer">Declanșator egalizator DSP hardware</string>
     <string name="attach_hw_dsp_equalizer_description">Atașează un efect de egalizator fictiv la sesiunea audio pentru a forța direcționarea prin DSP hardware pe anumite unități auto. Lasă dezactivat dacă folosești ViPER4Android / ViperFX sau dacă sunetul este înfundat pe versiuni vechi de Android.</string>
+    <string name="attach_hw_dsp_equalizer_summary">Atașează un egalizator fals pentru a forța rutarea prin DSP hardware pe unele unități.</string>
     <string name="audio_volume_offset">Ajustare volum audio</string>
     <string name="mic_input_source">Sursa microfonului</string>
     <string name="mic_input_source_description">Alege de unde își ia microfonul sunetul.</string>
@@ -443,13 +464,16 @@
     <string name="use_white_background">Folosește tapet alb pe ecranul principal</string>
     <string name="reopen_on_reconnection_label">Redeschide la reconectare</string>
     <string name="reopen_on_reconnection_description">Când apeși butonul Ieșire, aplicația rămâne activă în fundal și continuă să monitorizeze conexiunile USB. Dacă un dispozitiv se reconectează, aplicația se redeschide automat.</string>
+    <string name="reopen_on_reconnection_summary">După Ieșire, continuă să urmărească USB și redeschide când un dispozitiv se reconectează.</string>
     <string name="show_performance_overlay_description">Afișează FPS, încărcarea procesorului, temperatura și vechimea cadrului peste proiecție.</string>
 
     <string name="category_input">Setări de intrare</string>
     <string name="enable_rotary">Activează controlerul rotativ (Rotary)</string>
     <string name="enable_rotary_description">Anunță suportul pentru butoane și rotițe rotative fizice. Dezactivează această opțiune dacă ecranul tactil nu funcționează corect.</string>
+    <string name="enable_rotary_summary">Anunță suportul pentru butonul rotativ. Dezactivează dacă atingerea nu merge bine.</string>
     <string name="kill_on_disconnect">Închide aplicația la deconectare</string>
     <string name="kill_on_disconnect_description">Închide automat aplicația când Android Auto se deconectează.</string>
+    <string name="kill_on_disconnect_help">Închide aplicația când Android Auto se deconectează, astfel încât unitatea revine la ecranele ei. Activează-l dacă unitatea trebuie să afișeze propriul launcher după fiecare drum. Nu face nimic cât timp aceasta este aplicația launcher a mașinii. Dacă Redeschide la reconectare, Pornire la boot sau Pornire la aprinderea ecranului este activată, aplicația te avertizează mai întâi, pentru că aceste opțiuni cer aplicația deschisă.</string>
     <string name="kill_on_disconnect_warning_title">Avertisment</string>
     <string name="kill_on_disconnect_warning">Următoarele setări de reconectare intră în conflict cu închiderea aplicației la deconectare:\n\n%1$s\n\nSetările pentru conectarea inițială (conectare automată, pornire automată) vor funcționa în continuare când pornește unitatea auto. Totuși, după prima deconectare, aplicația se va închide imediat, în loc să încerce reconectarea.\n\nNotă: unele unități auto montate ulterior nu se opresc niciodată complet, ci intră în hibernare, ca un telefon cu ecranul blocat, dar care nu se oprește de fapt. Dacă această opțiune este activată, aplicația se va închide după prima deconectare și este posibil să nu se redeschidă automat la următoarea pornire a motorului.\n\nVrei să dezactivezi setările de reconectare enumerate mai sus?</string>
     <string name="kill_on_disconnect_disable_and_enable">Dezactivează și activează</string>
@@ -494,6 +518,7 @@
     <string name="vehicle_info_restart_note">Aceste date sunt trimise către Android Auto de fiecare dată când vă conectați.</string>
     <string name="auto_enable_hotspot">Activare automată hotspot</string>
     <string name="auto_enable_hotspot_description">Activează automat un hotspot Wi-Fi pe acest dispozitiv. (Nu va funcționa pe toate dispozitivele.)</string>
+    <string name="auto_enable_hotspot_summary">Pornește un hotspot Wi-Fi pe acest dispozitiv. Nu este disponibil pe toate.</string>
     <string name="hotspot_warning_title">Funcție experimentală</string>
     <string name="hotspot_warning_message">Această funcție folosește reflexie și este posibil să nu funcționeze pe toate dispozitivele. Este posibil să fie nevoie să acordați manual permisiunea \"Modificare setări de sistem\".</string>
     <string name="hotspot_permission_title">Permisiune necesară</string>
@@ -506,20 +531,24 @@
     <string name="shortcut_selfmode_desc">Pornește Android Auto pe acest dispozitiv</string>
     <string name="wait_for_wifi">Așteaptă WiFi înainte de WiFi Direct</string>
     <string name="wait_for_wifi_description">La pornire, așteaptă conectarea la WiFi înainte de a porni WiFi Direct. Activați opțiunea dacă unitatea are nevoie de câteva secunde pentru a se conecta la WiFi după pornire.</string>
+    <string name="wait_for_wifi_summary">La pornire, așteaptă Wi-Fi înainte de a porni WiFi Direct.</string>
     <string name="wait_for_wifi_timeout">Limita de așteptare WiFi</string>
     <string name="wireless_24ghz_warning">Notă: Android Auto wireless pe dispozitive de 2,4 GHz poate duce la întârzieri, sacadări și deconectări. Dacă întâmpinați probleme, vă rugăm să testați prin USB pentru a confirma dacă este o limitare a rețelei.</string>
     <string name="supported_nativeaa">Suport wireless îmbunătățit</string>
     <string name="supported_nativeaa_desc">Veste bună! Dispozitivul dvs. acceptă modul „Native Wireless”, care oferă o experiență Android Auto mai fluidă.\n\nPentru a-l activa, trebuie să reîmprospătăm memoria cache Bluetooth. Vă rugăm:\n1. Eliminați asocierea existentă de pe telefon\n2. Atingeți OK pentru a reporni Bluetooth\n3. Asociați din nou telefonul\n\nDoriți să treceți acum la modul Native AA?</string>
     <string name="fake_speed_title">Dezactivează blocarea video (viteză simulată)</string>
     <string name="fake_speed_description">Raportează telefonului o viteză redusă constantă (0,5 m/s) pentru a preveni blocarea conținutului video în timpul conducerii. Utilizați cu prudență.</string>
+    <string name="fake_speed_summary">Raportează o viteză mică constantă, ca videoul să nu fie blocat în timpul condusului.</string>
     <string name="wireless_mode_helper">Wireless Helper</string>
     <string name="wireless_mode_native">Nativ</string>
     <string name="wireless_mode_server">Headunit Server</string>
     <string name="server_mode_label">Mod Server</string>
     <string name="server_mode_manual">Manual</string>
     <string name="server_mode_auto">Auto</string>
+    <string name="server_mode_help">Auto caută în rețea serverul unității pe telefon și se conectează singur. Manual nu caută. Te conectezi din lista de rețele sau cu adresa telefonului.</string>
 
     <string name="helper_strategy_label">Metoda de conectare Helper</string>
+    <string name="helper_strategy_help">Alege cum împart telefonul și această unitate o rețea în modul Wireless Helper. WiFi Comun folosește o rețea pe care ambele o au deja. WiFi Direct creează o legătură privată. Dispozitive în apropiere sunt în beta. Hotspot telefon se alătură hotspotului telefonului. Hotspot unitate face din această unitate punctul de acces. Schimbă-l dacă telefonul nu găsește această unitate.</string>
     <string-array name="helper_strategies">
         <item>WiFi Comun (NSD)</item>
         <item>WiFi Direct (P2P)</item>
@@ -538,10 +567,12 @@
     <string name="exit_dialog_background">Mută în fundal</string>
     <string name="gesture_hint">Sfat: glisați cu 2 degete dinspre marginea stângă pentru a deschide meniul de ieșire.</string>
     <string name="audio_latency_multiplier">Multiplicator latență audio</string>
-    <string name="aaudio_output">Ieșire AAudio (experimental)</string>
+    <string name="aaudio_output">Ieșire AAudio</string>
     <string name="aaudio_output_description">Încearcă ieșirea media cu latență redusă. Folosește automat AudioTrack dacă nu este disponibilă.</string>
+    <string name="aaudio_output_help">Redă conținutul media Android Auto prin AAudio, o ieșire audio cu latență mică. Aplicația o folosește doar pe Android 9 sau mai nou. Activează-o dacă sunetul vine după imagine. Dacă AAudio nu pornește, aplicația folosește ieșirea audio obișnuită. Dacă sunetul pârâie sau se întrerupe cu opțiunea activată, dezactivează-o.</string>
     <string name="audio_latency_multiplier_description">Ajustare dimensiune buffer audio (Mai mic = latență mai mică, Mai mare = mai puține întreruperi).</string>
     <string name="audio_queue_capacity">Capacitate coadă audio (Backpressure)</string>
+    <string name="audio_queue_capacity_help">Cât audio primit poate aștepta înainte de redare. O coadă mică ține sunetul aproape de imagine. O coadă mare trece peste scurte întreruperi ale legăturii, dar sunetul poate rămâne în urmă. Când coada este plină, cel mai vechi audio este eliminat. Nelimitat păstrează tot. Aplicația permite mereu cel puțin o secundă de audio.</string>
     <string name="media_action_previous">Anterior</string>
     <string name="media_action_play">Redare</string>
     <string name="media_action_pause">Pauză</string>
@@ -549,8 +580,10 @@
     <string name="media_session_aa_status_placeholder">Conectat</string>
     <string name="sync_media_session_aa_metadata">Piesa curentă AA în sesiunea media</string>
     <string name="sync_media_session_aa_metadata_description">Afișează titlul piesei, artistul, durata și coperta albumului de pe telefon în sesiunea media a sistemului și în notificarea media.</string>
+    <string name="sync_media_session_aa_metadata_summary">Afișează detaliile piesei de pe telefon în sesiunea media a sistemului.</string>
     <string name="auto_resume_playback_on_reconnect">Reia redarea la reconectare</string>
     <string name="auto_resume_playback_on_reconnect_description">Reia automat muzica dacă rula înainte de o scurtă deconectare (în decurs de 60 de secunde).</string>
+    <string name="auto_resume_playback_on_reconnect_summary">Reia muzica redată înaintea unei căderi scurte a conexiunii (60 s).</string>
     <string name="error_usb_permission_failed">Eroare de sistem: nu s-a putut deschide fereastra de permisiune USB.</string>
 
     <!-- Custom loading screen -->
@@ -577,15 +610,19 @@
     <string name="microphone_settings">Setări microfon</string>
     <string name="use_head_unit_microphone">Microfonul unității</string>
     <string name="use_head_unit_microphone_description">Activat: Android Auto aude microfonul acestui dispozitiv. Dezactivat: acest dispozitiv nu înregistrează niciodată, iar telefonul folosește propriul microfon sau o cască ori un interfon asociat telefonului, astfel încât asistentul vocal continuă să funcționeze. Necesită Android 11 sau mai nou pe telefon.</string>
+    <string name="use_head_unit_microphone_summary">Android Auto folosește microfonul acestui dispozitiv. Dezactivat: cel al telefonului.</string>
     <string name="head_unit_microphone_off_info">Microfonul unității este dezactivat, așa că nimic din ce urmează nu se aplică. Android Auto este informat că acest dispozitiv nu poate înregistra și că este o motocicletă, iar asta face telefonul să înregistreze singur. Pe Android 10 și mai vechi telefonul uită acest lucru între sesiuni și s-ar putea să nu se mai conecteze.</string>
     <string name="microphone_settings_description">Configurează intrarea microfonului și procesarea audio.</string>
     <string name="mic_wire_format_info">Android Auto primește întotdeauna microfonul la 16000 Hz, 16 biți, mono. Respinge orice altceva, așa că aceste setări schimbă ce face hardware-ul, nu ce se trimite către telefon.</string>
     <string name="mic_echo_canceler">Anularea ecoului (AEC)</string>
     <string name="mic_echo_canceler_description">Încearcă să elimine ecoul din microfon. Dezactivează dacă auzi liniște sau distorsiuni.</string>
+    <string name="mic_echo_canceler_summary">Elimină ecoul din microfon. Dezactivează dacă auzi liniște sau distorsiuni.</string>
     <string name="mic_noise_suppressor">Suprimarea zgomotului (NS)</string>
     <string name="mic_noise_suppressor_description">Încearcă să reducă zgomotul de fundal. Android Auto se așteaptă ca această opțiune să fie dezactivată la un singur microfon și își face propria procesare. Dezactivează dacă vocea ta sună înfundat.</string>
+    <string name="mic_noise_suppressor_summary">Reduce zgomotul de fond. Android Auto se așteaptă ca acesta să fie dezactivat.</string>
     <string name="mic_auto_gain_control">Control automat al amplificării (AGC)</string>
     <string name="mic_auto_gain_control_description">Reglează automat volumul microfonului. Android Auto se așteaptă ca aceasta să fie dezactivată și aplică propriul control al amplificării; împreună, de obicei sună mai rău. Dezactivează dacă volumul este instabil.</string>
+    <string name="mic_auto_gain_control_summary">Reglează volumul microfonului. Android Auto se așteaptă ca acesta să fie dezactivat.</string>
     <string name="mic_feature_unsupported">Această funcție nu este acceptată pe dispozitivul tău.</string>
     <string name="bt_permission_denied">Permisiunea Bluetooth a fost refuzată. Nu se pot scana dispozitive.</string>
     <string name="bt_external_module_no_picker">Bluetooth-ul acestei unități este asigurat de un modul extern, nu de radioul propriu al Android, așa că aici nu există o listă de dispozitive Bluetooth Android din care să alegeți.</string>
@@ -595,7 +632,8 @@
     <!-- New strings merged from 2.3.1 -->
     <string name="bt_devices_selected">dispozitive selectate</string>
     <string name="static_audio_focus">Focus audio static</string>
-    <string name="static_audio_focus_description">Forțează telefonul să creadă că focusul audio este menținut mereu, prevenind pierderile de rutare audio pe unitățile auto generice. De asemenea, efectuează atenuarea volumului prin software (ducking) în timpul instrucțiunilor vocale de navigare.</string>
+    <string name="static_audio_focus_description">Spune telefonului că focalizarea audio este mereu ținută. Asta oprește pierderile de sunet pe unitățile generice care raportează greșit focalizarea. Reduce și volumul muzicii prin software în timpul indicațiilor vocale de navigare. Lasă-l dezactivat, în afară de cazul în care sunetul se întrerupe.</string>
+    <string name="static_audio_focus_summary">Spune telefonului că focalizarea audio este mereu ținută, ca să oprească pierderile de sunet.</string>
     <string name="bluetooth_adapter_label">Adaptor Bluetooth</string>
     <string name="bluetooth_adapter_description">Selectați adaptorul/controlerul Bluetooth de utilizat pentru handshake. Util pentru sistemele cu Bluetooth dual.</string>
     <string name="select_bt_adapter">Selectați adaptorul Bluetooth</string>
@@ -646,12 +684,14 @@
     <!-- Native USB Driver -->
     <string name="use_libusb">Folosește driverul USB nativ</string>
     <string name="use_libusb_description">Folosește libusb pentru comunicare. Dezactivează pentru a folosi API-ul USB standard Android.</string>
+    <string name="use_libusb_help">Folosește biblioteca USB proprie a aplicației în locul sistemului USB Android pentru conexiunea prin cablu cu telefonul. Lasă-l dezactivat. Activează-l doar dacă un telefon pe USB este găsit, dar Android Auto nu pornește. Nu schimbă nimic la o conexiune wireless.</string>
     <string name="usb_keep_phone_media_audio">Păstrează activ audio media al telefonului prin USB</string>
     <string name="usb_keep_phone_media_audio_description">Android Auto poate dezactiva audio media Bluetooth al telefonului pentru această unitate auto în timpul unei sesiuni USB. Această opțiune împiedică acest lucru. Apelurile pot rămâne astfel pe telefon, nu pe unitatea auto.</string>
 
     <string name="software_video_decoder">Sursă decodor software</string>
     <string name="software_video_decoder_bundled">FFmpeg integrat</string>
     <string name="software_video_decoder_device">MediaCodec dispozitiv</string>
+    <string name="software_video_decoder_help">Se aplică doar cât timp Forțează decodarea software este activată. FFmpeg integrat este decodorul propriu al aplicației și decodează doar H.265. MediaCodec dispozitiv folosește decodorul software al sistemului. Video H.264 folosește mereu decodorul sistemului.</string>
 
     <string name="btn_show_qr">Afișează codul QR</string>
     <string name="renderer_fallback_surface">Imaginea video se bloca întruna, așa că afișarea a trecut pe SurfaceView pentru această sesiune. Dacă funcționează stabil, setează Mod de vizualizare pe SurfaceView în Setări.</string>
@@ -724,6 +764,12 @@
     <string name="settings_tab_basic">De bază</string>
     <string name="settings_tab_advanced">Avansate</string>
     <string name="settings_search_hint">Caută în setări</string>
+    <string name="settings_scope_wifi_hidden">Se afișează setările USB. Setările WiFi sunt ascunse.</string>
+    <string name="settings_scope_usb_hidden">Se afișează setările WiFi. Setările USB sunt ascunse.</string>
+    <string name="settings_scope_usb_wifi_hidden">Se afișează setările pentru modul local. Setările USB și WiFi sunt ascunse.</string>
+    <string name="settings_scope_change">Schimbă</string>
+    <string name="settings_search_clear">Șterge căutarea</string>
+    <string name="settings_search_no_results">Nicio setare nu corespunde cu „%1$s”.</string>
     <string name="connection_mode">Mod de conectare</string>
     <string name="connection_kind_usb_cable">Cablu USB (direct)</string>
     <string name="connection_kind_usb_wireless_adapter">Adaptor wireless USB</string>
@@ -905,6 +951,7 @@
     <string name="onb_dpi_recommended">Recomandat pentru ecranul tău: %1$d dpi</string>
     <string name="dpi_value_format">%1$d DPI</string>
     <string name="pixel_aspect_ratio">Raport de aspect al pixelilor</string>
+    <string name="pixel_aspect_ratio_help">Modifică această setare doar dacă cercurile arată ca niște ovale pe acest ecran. Asta se întâmplă când pixelii panoului nu sunt pătrați. 10000 înseamnă pixeli pătrați.</string>
     <string name="enter_pixel_aspect_ratio_value">Raport de aspect al pixelilor x10000 (10000 = pixeli pătrați)</string>
     <string name="cannot_open_settings">Nu s-au putut deschide setările sistemului</string>
     <string name="static_bssid_enter_value">Introdu BSSID (XX:XX:XX:XX:XX:XX)</string>
@@ -913,17 +960,13 @@
     <string name="media_key_routing_always">Întotdeauna</string>
     <string name="media_key_routing_auto">Automat</string>
     <string name="media_key_routing_never">Niciodată</string>
-    <string name="media_key_routing_always_hint">Butoanele următorul, anteriorul și redare/pauză sunt trimise întotdeauna către Android Auto. Folosește această opțiune, cu excepția cazului în care o apăsare sare peste două melodii.</string>
-    <string name="media_key_routing_auto_hint">Nu le mai trimite cât timp unitatea auto are o conexiune media Bluetooth cu telefonul, deoarece acea conexiune execută deja acțiunea. Alege această opțiune dacă o apăsare sare peste două melodii, iar telefonul este asociat cu această unitate auto.</string>
-    <string name="media_key_routing_never_hint">Nu le trimite niciodată și lasă butoanele în seama Bluetooth. Alege această opțiune dacă o apăsare sare peste două melodii, iar telefonul este asociat cu sistemul propriu al mașinii, nu cu această unitate auto. Modul Automat nu poate detecta acea conexiune.</string>
+    <string name="media_key_routing_help">Întotdeauna: Butoanele următorul, anteriorul și redare/pauză sunt trimise întotdeauna către Android Auto. Folosește această opțiune, cu excepția cazului în care o apăsare sare peste două melodii.\n\nAutomat: Nu le mai trimite cât timp unitatea auto are o conexiune media Bluetooth cu telefonul, deoarece acea conexiune execută deja acțiunea. Alege această opțiune dacă o apăsare sare peste două melodii, iar telefonul este asociat cu această unitate auto.\n\nNiciodată: Nu le trimite niciodată și lasă butoanele în seama Bluetooth. Alege această opțiune dacă o apăsare sare peste două melodii, iar telefonul este asociat cu sistemul propriu al mașinii, nu cu această unitate auto. Modul Automat nu poate detecta acea conexiune.</string>
     <string name="media_key_routing_hint_common">Sunt afectate doar butoanele media. Controalele rotative, D-pad, Înapoi și Enter ajung întotdeauna la Android Auto.</string>
     <string name="playback_focus_mode">Pune pe pauză alt sunet în timpul redării</string>
     <string name="playback_focus_mode_auto">Automat</string>
     <string name="playback_focus_mode_always">Întotdeauna</string>
     <string name="playback_focus_mode_never">Niciodată</string>
-    <string name="playback_focus_mode_auto_hint">Pune pe pauză alt player de pe unitatea auto (de exemplu radioul) cât timp se aude Android Auto. Dacă se dovedește că oprește în schimb redarea de pe telefon, ceea ce se întâmplă când unitatea este difuzorul Bluetooth al telefonului, nu mai face asta și reține acest lucru. Alege din nou acest mod ca să mai încerce o dată.</string>
-    <string name="playback_focus_mode_always_hint">Pune întotdeauna pe pauză alt sunet cât timp se aude Android Auto. Dacă muzica se oprește după o secundă sau două de fiecare dată când Bluetooth este activ, revino la Automat.</string>
-    <string name="playback_focus_mode_never_hint">Nu modifică niciodată focusul audio al sistemului. Alt sunet de pe unitatea auto poate continua să se audă peste Android Auto.</string>
+    <string name="playback_focus_mode_help">Automat: Pune pe pauză alt player de pe unitatea auto (de exemplu radioul) cât timp se aude Android Auto. Dacă se dovedește că oprește în schimb redarea de pe telefon, ceea ce se întâmplă când unitatea este difuzorul Bluetooth al telefonului, nu mai face asta și reține acest lucru. Alege din nou acest mod ca să mai încerce o dată.\n\nÎntotdeauna: Pune întotdeauna pe pauză alt sunet cât timp se aude Android Auto. Dacă muzica se oprește după o secundă sau două de fiecare dată când Bluetooth este activ, revino la Automat.\n\nNiciodată: Nu modifică niciodată focusul audio al sistemului. Alt sunet de pe unitatea auto poate continua să se audă peste Android Auto.</string>
     <string name="playback_focus_mode_static_hint">Cu Focus audio static activat, aceasta se aplică din momentul în care se conectează telefonul și ține toată sesiunea, nu doar cât se redă sunet.</string>
     <string name="boot_loop_paused_title">Pornirea wireless a fost oprită</string>
     <string name="boot_loop_paused_generic">Dispozitivul a repornit de trei ori la rând, la scurt timp după ce Open Headunit a pornit conexiunea wireless, așa că wireless a fost lăsat dezactivat de data aceasta. USB funcționează în continuare. Deschide aplicația pentru a-l reactiva.</string>
@@ -934,7 +977,8 @@
     <string name="external_bt_module_nativeaa">Wireless nativ prin modulul ZJ/ZLink</string>
     <string name="external_bt_module_nativeaa_desc">Telefonul dvs. se asociază cu modulul Bluetooth propriu al acestei unități (%1$s), nu cu Bluetooth-ul pe care Android îl pune la dispoziția aplicațiilor, așa că negocierea va fi trimisă prin serviciul ZJ/ZLink al modulului.\n\nFuncție experimentală, iar acest serviciu este singura cale. Dacă telefonul nu pornește niciodată Android Auto, folosiți USB sau un mod WiFi.</string>
     <string name="external_bt_transport">Conectează prin modulul Bluetooth al unității</string>
-    <string name="external_bt_transport_description">Funcție experimentală, doar pentru unitățile care au un serviciu Bluetooth ZJ/ZLink. Trimite negocierea Android Auto wireless prin cipul Bluetooth propriu al acestei unități, cel cu care telefonul este de fapt asociat, în loc de Bluetooth-ul pe care Android îl pune la dispoziția aplicațiilor.\n\nRulați mai întâi „Testează modulul Bluetooth al unității”, cu această setare dezactivată. Dacă testul nu găsește nimic care să asculte, această setare nu poate face nimic pe unitatea dvs., iar Native Wireless nu va funcționa aici, indiferent de setări. Dacă modulul răspunde, activați această setare și alegeți Nativ. Un test rulat când setarea este deja activată și conectată raportează exact acest lucru, ceea ce nu este o eroare. Exportați jurnalul în ambele cazuri.</string>
+    <string name="external_bt_transport_description">Experimental, pentru unități cu serviciu Bluetooth ZJ/ZLink. Trimite handshake-ul fără fir Android Auto prin cipul Bluetooth cu care este asociat telefonul, nu prin cel pe care Android îl arată aplicațiilor. Rulează întâi testul modulului Bluetooth cu opțiunea dezactivată. Dacă nu găsește nimic care ascultă, nu poate ajuta pe unitatea ta. Dacă răspunde, activează-o. Exportă jurnalul în ambele cazuri.</string>
+    <string name="external_bt_transport_summary">Experimental. Trimite handshake-ul fără fir prin Bluetooth-ul propriu al acestei unități.</string>
     <string name="zbt_probe_title">Testează modulul Bluetooth al unității</string>
     <string name="zbt_probe_idle">Atingeți pentru a rula</string>
     <string name="zbt_probe_running">Se execută…</string>
@@ -944,7 +988,8 @@
     <string name="external_bt_blink_transport">Conectare prin modulul Bluetooth extern FYT</string>
     <string name="external_bt_module_controls_hint">Asocierea telefonului, prioritatea conexiunii și selecția driverului sunt gestionate de modulul Bluetooth extern.</string>
     <string name="external_bt_module_last_phone">Ultimul telefon conectat prin modul</string>
-    <string name="external_bt_blink_transport_description">Funcție experimentală. Pentru unitățile FYT al căror telefon se asociază pentru apeluri cu un modul Bluetooth separat, precum „DUDUAUTO” pe DUDUOS, singurul ROM testat până acum. Modulul, nu Bluetooth-ul unității, transportă negocierea Android Auto wireless, iar aplicația Car Link originală îi răspunde de obicei. Cu această opțiune activată, îi răspunde această aplicație, astfel încât apelurile rămân pe modul și pe difuzoarele mașinii.\n\nDezactivați mai întâi aplicația Car Link originală (pm disable-user com.syu.carlink), altfel ambele aplicații vor citi același canal. Canalul se deschide fără root, dacă unitatea permite, iar în caz contrar prin root. Alegeți Nativ, asociați telefonul doar cu modulul și exportați jurnalul dacă nu se conectează.</string>
+    <string name="external_bt_blink_transport_description">Experimental, pentru unitățile FYT al căror telefon se asociază pentru apeluri cu un modul Bluetooth separat, cum este DUDUAUTO pe DUDUOS. Modulul duce handshake-ul fără fir Android Auto, la care răspunde de obicei aplicația Car Link originală. Cu opțiunea activată, răspunde această aplicație, deci apelurile rămân pe modul și pe boxele mașinii. Dezactivează întâi aplicația Car Link originală (pm disable-user com.syu.carlink), altfel ambele citesc același canal.</string>
+    <string name="external_bt_blink_transport_summary">Experimental. Răspunde la handshake-ul fără fir pe modulul Bluetooth al unei unități FYT.</string>
     <string name="external_bt_blink_refused_stock_enabled">Modul Bluetooth extern: aplicația Car Link originală este încă activată. Dezactivați-o (pm disable-user com.syu.carlink) sau opriți acest transport.</string>
     <string name="external_bt_blink_refused_stock_running">Modul Bluetooth extern: aplicația Car Link originală este dezactivată, dar încă rulează. Reporniți unitatea.</string>
     <string name="external_bt_blink_refused_root">Modul Bluetooth extern: deschiderea canalului modulului necesită root pe această unitate, iar accesul root a fost refuzat sau nu este disponibil.</string>
@@ -1012,7 +1057,7 @@
     <string name="stand_down_station_auto">Automat</string>
     <string name="stand_down_station_always">Întotdeauna</string>
     <string name="stand_down_station_never">Niciodată</string>
-    <string name="stand_down_station_hint">Automat părăsește rețeaua proprie a unității doar când radioul ei are bandă de 5 GHz, iar rețeaua este pe 2,4 GHz, astfel încât grupul WiFi Direct să aibă un canal de 5 GHz numai pentru el. Rămâne conectată pe o unitate doar de 2,4 GHz, unde părăsirea ar face unitatea doar să caute rețele, precum și atunci când rețeaua este deja pe 5 GHz. Rețeaua este reconectată la sfârșitul sesiunii. Încercați Întotdeauna sau Niciodată dacă imaginea se blochează.</string>
+    <string name="stand_down_station_hint">Decide dacă această unitate își părăsește propria rețea Wi-Fi cât se conectează telefonul, ca grupul WiFi Direct să poată folosi un canal de 5 GHz. Auto o părăsește doar când radioul are bandă de 5 GHz și rețeaua este pe 2,4 GHz, sau când grupul este forțat pe 2,4 GHz lângă o rețea de 5 GHz. O unitate doar de 2,4 GHz rămâne conectată, fiindcă ieșirea doar pornește o căutare de rețele. La sfârșitul sesiunii unitatea se reconectează la rețea. Încearcă Întotdeauna sau Niciodată dacă imaginea se blochează.</string>
     <string name="stand_down_station_needs_overlay">Necesită permisiunea «afișare peste alte aplicații» pe această versiune de Android.</string>
     <string name="connection_issue_banner_bt_silent">Telefonul dvs. s-a conectat prin Bluetooth, dar Bluetooth-ul acestei unități nu a putut trimite nimic. Atingeți pentru a alege un mod care nu are nevoie de el, precum Wireless Helper.</string>
     <string name="connection_issue_banner_bssid">Telefonul nu a aflat la ce rețea să se conecteze, deoarece această unitate nu a partajat adresa sa WiFi. Activați Locația sau atingeți pentru a introduce adresa manual.</string>
@@ -1020,8 +1065,11 @@
     <string name="connection_issue_banner_wifi_direct_refused">Această unitate nu a putut crea rețeaua WiFi Direct pentru telefon. Încercați să o deconectați de la alt WiFi sau atingeți pentru a folosi hotspotul ei.</string>
     <string name="connection_issue_banner_wifi_direct_cycled">O altă aplicație oprește întruna WiFi Direct, de obicei o aplicație de proiecție preinstalată, precum ZLink sau CarLife. Dezactivați-o sau atingeți pentru a folosi hotspotul.</string>
     <string name="connection_issue_banner_hotspot_config">Această unitate nu partajează numele și parola hotspotului cu aplicația. Atingeți pentru a le introduce manual.</string>
+    <string name="auto_restart_wifi_summary">Repornește singur Wi-Fi dacă WiFi Direct se blochează. Necesită root sau ADB local.</string>
+    <string name="auto_restart_wifi_description">Oprește și pornește singur Wi-Fi dacă WiFi Direct se blochează, ceea ce se poate întâmpla după închiderea aplicației în timpul unei sesiuni. Necesită root sau ADB local. Nu rulează niciodată în timpul unei sesiuni.</string>
     <string name="narrow_band_profile_cap">Video redus pe o legătură de 2,4 GHz</string>
-    <string name="narrow_band_profile_cap_description">Când această sesiune rulează pe 2,4 GHz, fie pentru că Wi-Fi-ul acestei unități nu are banda de 5 GHz, fie pentru că rețeaua s-a format acolo, cere telefonului cel mult 720p și 30 fps în locul setărilor de mai sus, și audio AAC. Pe o astfel de legătură s-a măsurat că fluxul la rată completă nu transporta deloc imagine, în timp ce unul mai mic rezista. Dezactivează pentru a primi exact ce ai cerut.</string>
+    <string name="narrow_band_profile_cap_description">Pe o legătură de 2,4 GHz, cere telefonului cel mult 720p, 30 fps și audio AAC în loc de setările tale video. Pe acea legătură, un flux la debit complet nu a afișat nicio imagine în măsurători, în timp ce unul mai mic a rezistat. Dezactivează pentru a primi exact ce ai setat și așteaptă-te la o imagine goală dacă legătura nu le duce.</string>
+    <string name="narrow_band_profile_cap_summary">Pe 2,4 GHz, cere telefonului 720p, 30 fps și audio AAC.</string>
     <string name="connection_issue_banner_video_link_too_slow">Legătura WiFi era prea lentă pentru video, așa că aplicația a redus-o la 720p la 30 FPS. Atingeți pentru a seta chiar dvs. rezoluția. O rețea de 5 GHz ajută de asemenea.</string>
     <string name="connection_issue_banner_five_ghz_channel_refused">Această unitate nu a vrut să folosească canalul de 5 GHz ales de dvs. și a ales unul pe care unele telefoane nu îl văd. Atingeți pentru a comuta WiFi Direct pe 2,4 GHz, care funcționează peste tot.</string>
     <string name="connection_issue_banner_headunit_server_deaf">Serverul unității centrale Android Auto de pe telefonul dvs. a încetat să răspundă. Pe telefon, opriți-l și porniți-l din nou din setările pentru dezvoltatori Android Auto.</string>
@@ -1041,6 +1089,7 @@
     <string name="preflight_invalid_bssid">Aceasta nu este o adresă WiFi. Introduceți șase perechi de cifre hexazecimale, de exemplu 02:1A:11:FF:3C:4D.</string>
     <string name="native_aa_ignore_external_bt">Ignoră verificarea de compatibilitate Bluetooth</string>
     <string name="native_aa_ignore_external_bt_description">Această unitate pare să țină Bluetooth-ul pe un modul separat la care Android nu ajunge, așa că Android Auto wireless este dezactivat automat. Dezactivat implicit. Activați-l doar dacă credeți că este greșit: când detectarea este corectă, conexiunea eșuează fără niciun semn, iar jurnalul pare în regulă.</string>
+    <string name="native_aa_ignore_external_bt_summary">Păstrează conexiunea fără fir activă chiar dacă această unitate pare să-și ascundă modulul Bluetooth.</string>
     <string name="native_aa_setup_qr_title">Configurare prin cod QR</string>
     <string name="native_aa_setup_qr_description">Afișează un cod pe care telefonul îl poate scana.</string>
     <string name="native_aa_setup_qr_content_description">Cod QR pentru configurarea Android Auto wireless</string>
@@ -1070,11 +1119,13 @@
     <string name="failed_aa_not_installed">Eșec: Android Auto nu este instalat!</string>
     <string name="raise_projection_during_call">Rămâi în Android Auto în timpul apelurilor</string>
     <string name="raise_projection_during_call_description">Doar Mod Self. Readuce proiecția peste ecranul de apel al telefonului, astfel încât să răspunzi la apeluri și să le închizi din interfața Android Auto.</string>
+    <string name="raise_projection_during_call_summary">Doar în modul autonom. Afișează proiecția peste ecranul de apel al telefonului.</string>
     <string name="audio_stream_settings">Fluxuri audio</string>
     <string name="audio_stream_settings_description">Alege fluxul de sistem pe care se redă fiecare canal Android Auto.</string>
     <string name="audio_stream_settings_info">Android Auto trimite sunetul pe trei canale: Media, Ghidare și Sunete de sistem. Fiecare ajunge la unitatea auto pe un flux de sistem, iar fluxul ales stabilește ce tastă de volum urmează și, pe multe unități, dacă amplificatorul se activează pentru el. Folosește butonul difuzorului pentru a auzi un ton de test pe flux înainte de salvare.</string>
     <string name="audio_channel_media">Media</string>
     <string name="audio_channel_media_description">Redarea aplicațiilor: muzică, podcasturi, radio și cărți audio. Singurul canal trimis în stereo (48 kHz).</string>
+    <string name="audio_channel_media_summary">Redarea aplicațiilor: muzică, podcasturi, radio, cărți audio. Stereo, 48 kHz.</string>
     <string name="audio_channel_guidance">Ghidare / Navigație</string>
     <string name="audio_channel_guidance_description">Indicații vocale pas cu pas și răspunsurile asistentului vocal (16 kHz mono).</string>
     <string name="audio_channel_system">Sunete de sistem / Notificări</string>
@@ -1082,7 +1133,9 @@
     <string name="audio_channel_all">Media, Ghidare, Navigație, Notificări și Sistem</string>
     <string name="audio_channel_all_short">toate canalele</string>
     <string name="audio_channel_all_description">Toate canalele audio Android Auto (redarea aplicațiilor, ghidarea vocală, alertele și sunetele de notificare) folosesc în comun acest flux de ieșire.</string>
+    <string name="audio_channel_all_summary">Toate canalele audio Android Auto împart acest flux de ieșire.</string>
     <string name="audio_stream_test">Redă un ton de test pe acest flux</string>
+    <string name="setting_help_for">Ajutor pentru %1$s</string>
     <string name="audio_stream_muted_warning">%1$s este fără sunet pe acest dispozitiv. Ridică volumul ca să auzi tonul de test.</string>
     <string name="audio_stream_test_failed">Nu s-a putut reda un ton de test pe acest flux.</string>
     <string name="audio_stream_pick_title">Flux pentru %1$s</string>
@@ -1128,6 +1181,7 @@
     <string name="select_bt_poke_device">Selectează dispozitivul Bluetooth de trezit</string>
     <string name="native_poke_all_paired_label">Trezește toate dispozitivele asociate</string>
     <string name="native_poke_all_paired_description">Dacă nu ai ales un dispozitiv mai sus, aplicația se conectează scurt la fiecare dispozitiv asociat pentru a porni Android Auto. Dezactivează opțiunea ca să nu fie trezit niciun dispozitiv până alegi unul.</string>
+    <string name="native_poke_all_paired_summary">Dacă nu este ales niciun dispozitiv, trezește toate dispozitivele asociate.</string>
     <string name="auto_disconnect_bt_delay_label">Așteaptă înainte de deconectare</string>
     <string name="auto_disconnect_bt_delay_value">%1$d s</string>
     <string name="auto_disconnect_bt_delay_immediate">Imediat</string>
@@ -1145,21 +1199,26 @@
     <string name="five_ghz_channel_hint">Un canal este o cerere, nu o garanție. Multe unități creează rețeaua doar pe canalul ales de propriul driver Wi-Fi, iar aplicația îți poate spune asta abia după încercare. Dacă niciun canal de 5 GHz nu funcționează și telefonul tot nu vede rețeaua, banda de mai sus este setarea care va rezolva problema.</string>
     <string name="wifi_direct_stable_identity">Păstrează aceeași rețea Wi-Fi Direct</string>
     <string name="wifi_direct_stable_identity_description">Folosește același nume de rețea și aceeași parolă de fiecare dată, astfel încât telefonul să se reconecteze la o rețea pe care o cunoaște deja. Folosește rândul de mai jos pentru a le reînnoi.</string>
+    <string name="wifi_direct_stable_identity_summary">Refolosește un singur nume de rețea și o singură parolă, ca telefonul să se reconecteze la rețea.</string>
     <string name="wifi_direct_new_identity">Identitate nouă de rețea Wi-Fi Direct</string>
     <string name="wifi_direct_new_identity_none">Se va alege la următoarea conexiune</string>
     <string name="wifi_direct_new_identity_confirm">Alege un nume și o parolă noi pentru grup, folosite începând cu următoarea conexiune. Telefonul va fi configurat pentru ele prin Bluetooth, ca și cum ar fi o unitate auto nouă. Fă asta dacă telefonul încearcă mereu o rețea la care nu se mai poate conecta.</string>
     <string name="wifi_direct_new_identity_done">De la următoarea conexiune se va folosi o identitate de rețea nouă.</string>
     <string name="wifi_direct_new_identity_applied">Se configurează acum o identitate de rețea nouă. La următoarea conexiune, telefonului i se va cere să se conecteze la ea.</string>
     <string name="wifi_direct_stable_identity_description_legacy">Pe această versiune de Android, sistemul alege numele, iar aplicația nu poate cere unul anume. Lasă opțiunea activată pentru ca telefonul să se reconecteze la o rețea pe care o cunoaște deja, oriunde sistemul păstrează una, și folosește rândul de mai jos pentru a o reînnoi.</string>
+    <string name="wifi_direct_stable_identity_legacy_summary">Sistemul alege numele rețelei. Lasă activat ca telefonul să se reconecteze la rețea.</string>
     <string name="debug_video_low_latency">Solicită mod de latență redusă a decodorului</string>
     <string name="debug_video_low_latency_description">Setează cheia MediaFormat de latență redusă a producătorului la configurarea decodorului video. Dacă decodorul o respinge, se revine automat la setarea obișnuită.</string>
+    <string name="debug_video_low_latency_summary">Cere decodorului video modul lui de latență redusă specific producătorului.</string>
     <string name="debug_video_feed_hold">Simulează un decodor lent</string>
 
     <string name="category_more_features">Mai multe funcții</string>
     <string name="pref_enable_floating_button_title">Buton plutitor lansator</string>
-    <string name="pref_enable_floating_button_summary">Afișează un buton plutitor peste lansatorul OEM și alte aplicații pentru a reveni rapid la Open Headunit.</string>
+    <string name="pref_enable_floating_button_summary">Afișează un buton pentru revenirea la Open Headunit.</string>
+    <string name="pref_enable_floating_button_help">Afișează un buton plutitor peste lansatorul OEM și alte aplicații pentru a reveni rapid la Open Headunit.</string>
     <string name="pref_floating_button_connection_status_title">Indicator stare conexiune</string>
-    <string name="pref_floating_button_connection_status_summary">Folosește Opacitate deconectat când niciun telefon nu este conectat și se estompează la Opacitate buton plutitor cât timp un telefon este conectat. La 0%, butonul este ascuns și lasă atingerile să treacă.</string>
+    <string name="pref_floating_button_connection_status_summary">Estompează butonul cât timp un telefon este conectat.</string>
+    <string name="pref_floating_button_connection_status_help">Folosește Opacitate deconectat când niciun telefon nu este conectat și se estompează la Opacitate buton plutitor cât timp un telefon este conectat. La 0%, butonul este ascuns și lasă atingerile să treacă.</string>
     <string name="pref_floating_button_size_title">Dimensiune buton plutitor</string>
     <string name="pref_floating_button_opacity_title">Opacitate buton plutitor</string>
     <string name="pref_floating_button_disconnected_opacity_title">Opacitate deconectat</string>
@@ -1259,7 +1318,8 @@
     <string name="native_aa_wake_remeasure_confirm">Android Auto pornește conexiunea wireless doar când vede că se schimbă conexiunea Bluetooth. Dacă unitatea deține deja legătura hands-free, aplicația trebuie să o întrerupă pentru a provoca schimbarea, așa că măsoară o dată dacă legătura revine și se oprește dacă nu revine. Folosiți opțiunea dacă wireless nu mai pornește singur și acceptați să pierdeți hands-free pentru scurt timp cât se face încercarea.</string>
     <string name="native_aa_wake_remeasure_done">Trezirea Bluetooth va fi măsurată din nou la următoarea conexiune.</string>
     <string name="pref_enable_car_launcher_title">Utilizare ca lansator auto</string>
-    <string name="pref_enable_car_launcher_summary">Înregistrează Open Headunit ca aplicație pentru ecranul principal, astfel încât să se deschidă când se apasă butonul Home al mașinii sau al unității auto.</string>
+    <string name="pref_enable_car_launcher_summary">Deschide aplicația cu butonul Acasă.</string>
+    <string name="pref_enable_car_launcher_help">Înregistrează Open Headunit ca aplicație pentru ecranul principal, astfel încât să se deschidă când se apasă butonul Home al mașinii sau al unității auto.</string>
     <string name="pref_set_default_launcher_title">Aplicație principală implicită</string>
     <string name="pref_default_launcher_status_active">Activ (atinge pentru gestionare)</string>
     <string name="pref_default_launcher_status_inactive">Nesetat (atinge pentru a seta ca implicit)</string>

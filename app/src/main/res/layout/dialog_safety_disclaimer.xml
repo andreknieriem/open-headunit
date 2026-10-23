@@ -84,7 +84,7 @@
                 android:layout_height="wrap_content"
                 android:text="@string/disclaimer_accept"
                 android:textColor="@android:color/white"
-                app:backgroundTint="@color/brand_teal"
+                app:backgroundTint="@color/brand_primary"
                 android:textStyle="bold"/>
 
         </LinearLayout>

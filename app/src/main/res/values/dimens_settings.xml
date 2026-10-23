@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Settings screen spacing. Very low panels (under 330dp tall, e.g. 480x240 or 1560x720 at 400 dpi). -->
+    <dimen name="settings_header_height">48dp</dimen>
+    <dimen name="settings_header_control_height">36dp</dimen>
+    <dimen name="settings_tab_height">36dp</dimen>
+    <dimen name="settings_tab_min_width">80dp</dimen>
+    <dimen name="settings_rail_item_height">40dp</dimen>
+    <dimen name="settings_rail_text_size">14sp</dimen>
+    <dimen name="settings_row_min_height">48dp</dimen>
+    <dimen name="settings_row_padding_vertical">6dp</dimen>
+    <dimen name="settings_row_padding_start">16dp</dimen>
+    <dimen name="settings_group_radius">16dp</dimen>
+    <dimen name="settings_section_spacing">8dp</dimen>
+    <dimen name="settings_section_title_padding_top">8dp</dimen>
+    <dimen name="settings_section_title_padding_bottom">4dp</dimen>
+    <dimen name="settings_scope_notice_min_height">40dp</dimen>
+    <dimen name="settings_row_title_size">15sp</dimen>
+    <dimen name="settings_row_description_size">13sp</dimen>
+    <dimen name="settings_content_padding_start">8dp</dimen>
+    <dimen name="settings_content_padding_end">12dp</dimen>
+    <dimen name="settings_title_text_size">20sp</dimen>
+    <integer name="settings_description_max_lines">1</integer>
+
+    <!-- Size-independent. -->
+    <dimen name="settings_rail_width">176dp</dimen>
+    <dimen name="settings_inline_value_max_width">220dp</dimen>
+    <dimen name="settings_icon_button_size">48dp</dimen>
+    <dimen name="settings_icon_button_padding">12dp</dimen>
+    <dimen name="settings_row_icon_size">20dp</dimen>
+    <dimen name="settings_rail_icon_size">22dp</dimen>
+    <dimen name="settings_row_value_size">14sp</dimen>
+    <dimen name="settings_section_title_size">14sp</dimen>
+    <dimen name="settings_control_text_size">14sp</dimen>
+    <dimen name="settings_control_icon_size">18dp</dimen>
+    <dimen name="settings_search_text_size">16sp</dimen>
+    <dimen name="settings_search_icon_size">22dp</dimen>
+    <dimen name="settings_search_clear_size">40dp</dimen>
+    <dimen name="settings_segment_min_height">48dp</dimen>
+    <dimen name="settings_segment_radius">20dp</dimen>
+    <dimen name="settings_switch_track_width">52dp</dimen>
+    <dimen name="settings_switch_track_height">32dp</dimen>
+    <dimen name="settings_switch_thumb_on_size">24dp</dimen>
+    <dimen name="settings_switch_thumb_off_size">16dp</dimen>
+    <dimen name="settings_action_button_height">56dp</dimen>
+    <dimen name="settings_action_button_text_size">15sp</dimen>
+    <dimen name="settings_text_button_min_height">40dp</dimen>
+    <dimen name="settings_scope_notice_radius">16dp</dimen>
+</resources>

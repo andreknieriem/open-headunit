@@ -64,6 +64,7 @@
     <string name="night_mode_short">Android Auto</string>
     <string name="aa_monochrome">Android Auto đơn sắc</string>
     <string name="aa_monochrome_description">Giảm màu của Android Auto cho việc lái xe ban đêm. Yêu cầu chế độ hiển thị GLES. Chỉ áp dụng khi chế độ tối đang bật.</string>
+    <string name="aa_monochrome_summary">Giảm màu sắc khi lái xe ban đêm. Cần chế độ xem GLES và chế độ tối.</string>
     <string name="aa_desaturation">Mức khử bão hoà màu</string>
     <string name="aa_desaturation_description">Điều chỉnh lượng màu bị loại bỏ. Chỉ áp dụng khi chế độ tối đang bật.</string>
     <string name="gles_required_title">Cần GLES</string>
@@ -89,6 +90,7 @@
     <string name="change_dpi">Đổi DPI</string>
     <string name="change_view_mode">Đổi chế độ hiển thị</string>
     <string name="view_mode">Chế độ hiển thị</string>
+    <string name="view_mode_help">Chọn cách vẽ hình ảnh trên màn hình của thiết bị này. SurfaceView nhanh nhất và chạy được trên hầu hết thiết bị. TextureView chậm hơn nhưng cho phép phản chiếu và co giãn. GLES20 thêm các hiệu ứng, như chế độ đêm đơn sắc. Hãy đổi khi hình ảnh bị đen, nhấp nháy hoặc thiếu hiệu ứng.</string>
     <string name="surface_view">SurfaceView</string>
     <string name="texture_view">TextureView</string>
     <string name="gles_view">GLES20</string>
@@ -132,6 +134,7 @@
     <string name="debug_mode_description">Bật/tắt ghi log chi tiết.</string>
     <string name="allow_external_configuration">Cho phép cấu hình từ bên ngoài</string>
     <string name="allow_external_configuration_description">Cho phép các ứng dụng tự động hóa như Tasker hoặc MacroDroid thay đổi cài đặt, đặt mức nhật ký và xuất nhật ký. Kết nối và ngắt kết nối luôn hoạt động; tùy chọn này chỉ áp dụng cho các lệnh thay đổi cách thiết lập headunit.</string>
+    <string name="allow_external_configuration_summary">Cho phép các ứng dụng như Tasker thay đổi cài đặt và xuất nhật ký.</string>
     <string name="log_level">Mức log</string>
     <string name="log_level_description">Lọc mức log khi xuất.</string>
     <string name="start_log_capture">Bắt đầu ghi log</string>
@@ -193,14 +196,17 @@
     <string name="show_toast_messages_description">Hiển thị thông báo trạng thái khi kết nối, ngắt kết nối và chuyển chế độ.</string>
     <string name="auto_start_usb_label">Tự khởi động khi có USB</string>
     <string name="auto_start_usb_description">Tự động mở ứng dụng và thử kết nối khi cắm thiết bị USB.</string>
+    <string name="auto_start_usb_summary">Mở ứng dụng và kết nối khi cắm thiết bị USB.</string>
     <string name="auto_start_settings">Cài đặt tự khởi động</string>
     <string name="auto_start_settings_description">Cấu hình khi nào ứng dụng tự khởi động.</string>
     <string name="auto_start_oem_warning">Thiết bị này có thể cần bật tự khởi động và tắt tối ưu hóa pin hoặc giới hạn nền cho ứng dụng.\n\nVới headunit có Quick Boot (khởi động nhanh), tự khởi động có thể không hoạt động. Hãy tìm \"DuraSpeed\" trong cài đặt hệ thống và bật cho ứng dụng này. Trên một số headunit, DuraSpeed bị ẩn và bạn có thể cần ứng dụng như \"Hidden Settings\" để tìm. Nếu không có DuraSpeed, hãy thử tắt Quick Boot.</string>
     <string name="car_launcher_autostart_info">Open Headunit được định cấu hình làm trình khởi chạy trên xe. Ứng dụng sẽ tự động khởi động khi hệ thống khởi động.</string>
     <string name="auto_start_on_boot_label">Khởi động khi mở máy</string>
     <string name="auto_start_on_boot_description">Tự động mở ứng dụng khi thiết bị khởi động. Cần quyền \"Hiện trên các ứng dụng khác\" trên Android 10 trở lên.</string>
+    <string name="auto_start_on_boot_summary">Mở ứng dụng khi thiết bị khởi động.</string>
     <string name="auto_start_screen_on_label">Khởi động khi bật màn hình</string>
     <string name="auto_start_screen_on_description">Mở ứng dụng mỗi lần màn hình bật. Phù hợp với headunit không bao giờ tắt hẳn hoặc dùng khởi động nhanh khi các tuỳ chọn tự khởi động khác không hoạt động. Không khuyến nghị cho điện thoại hay máy tính bảng.</string>
+    <string name="auto_start_screen_on_summary">Mở ứng dụng mỗi khi màn hình bật. Không dùng cho điện thoại hoặc máy tính bảng.</string>
     <string name="select_bt_device">Chọn thiết bị Bluetooth</string>
     <string name="bt_device_not_set">Chưa đặt</string>
     <string name="bt_devices_selected">thiết bị đã chọn</string>
@@ -221,6 +227,7 @@
     <string name="wireless_connection_settings">Kết nối không dây</string>
     <string name="category_graphic">Đồ hoạ</string>
     <string name="custom_insets">Chèn lề tuỳ chỉnh</string>
+    <string name="custom_insets_help">Đẩy hình ảnh cách xa mép màn hình theo số điểm ảnh này: trái, trên, phải và dưới. Dùng khi khung viền, mép cong hoặc thanh hệ thống che một phần Android Auto.</string>
     <string name="inset_top">Trên</string>
     <string name="inset_bottom">Dưới</string>
     <string name="inset_left">Trái</string>
@@ -231,8 +238,9 @@
     <string name="category_video">Video</string>
     <string name="force_software_decoding">Buộc giải mã bằng phần mềm</string>
     <string name="force_software_decoding_description">Có thể khắc phục lỗi trên một số máy nhưng hiệu năng kém hơn.</string>
+    <string name="force_software_decoding_help">Giải mã video bằng bộ xử lý chính thay vì phần cứng video. Chỉ bật khi hình ảnh vẫn đen, bị đứng hoặc sai màu lúc tắt. Tùy chọn này cần nhiều sức xử lý hơn hẳn nên hình ảnh có thể chậm hơn. Hàng bên dưới chọn bộ giải mã phần mềm.</string>
     <string name="wireless_mode">Chế độ không dây</string>
-    <string name="wireless_mode_description">Chọn cách ứng dụng kết nối không dây (Danh sách thủ công, Tự tìm điện thoại, hoặc chế độ Wireless Launcher).</string>
+    <string name="wireless_mode_description">Chọn cách thiết bị này tìm điện thoại không cần cáp. Wireless Helper dùng ứng dụng đồng hành trên điện thoại. Chế độ Gốc hoạt động như một đầu phát Android Auto không dây và không cần ứng dụng, nhưng phụ thuộc vào phiên bản Android Auto. Máy chủ Headunit tìm máy chủ mà Android Auto chạy trên điện thoại. Chỉ đổi khi chế độ hiện tại không kết nối được. Thay đổi sẽ khởi động lại phần thiết lập không dây.</string>
     <string-array name="wireless_connection_modes">
         <item>Thủ công (Danh sách)</item>
         <item>Tự tìm (Headunit Server)</item>
@@ -246,6 +254,11 @@
     <string name="auto_connect_settings">Cài đặt tự kết nối</string>
     <string name="auto_connect_settings_description">Cấu hình phương thức tự kết nối và thứ tự ưu tiên.</string>
     <string name="auto_connect_help">Các phương thức này chạy tự động khi mở ứng dụng. Bật các mục mong muốn rồi kéo để sắp thứ tự. Phương thức đầu tiên thành công sẽ được dùng.</string>
+    <string name="auto_connect_screen_help">Đặt cách ứng dụng tự kết nối khi mở. Bật các phương thức bạn muốn và kéo chúng theo thứ tự thử. Phương thức thành công đầu tiên được dùng. Độ trễ cho Wi-Fi thời gian khởi động trên thiết bị chậm. Không mục nào ở đây thay đổi kết nối do bạn tự bắt đầu. Lưu sẽ áp dụng các thay đổi.</string>
+    <string name="dpi_screen_help">Đặt mật độ điểm ảnh mà Android Auto dùng để vẽ. DPI cao hơn làm biểu tượng và chữ lớn hơn, nên màn hình chứa được ít hơn. DPI thấp hơn làm chúng nhỏ hơn, nên chứa được nhiều hơn. Tự động dùng mật độ của thiết bị này. Giá trị mới áp dụng từ lần kết nối tiếp theo.</string>
+    <string name="keymap_screen_help">Gán các phím và nút của thiết bị này cho thao tác của Android Auto. Chạm vào một hàng rồi nhấn phím cần gán. Đặt lại xóa mọi phép gán của bạn và về mặc định. Dùng khi phím trên vô lăng hoặc bảng điều khiển làm sai việc.</string>
+    <string name="customization_screen_help">Đổi giao diện màn hình chính của ứng dụng này: ảnh nền, màu sắc và kích thước của bốn nút, cùng cỡ chữ. Cài đặt ban đêm điều khiển nền ở chế độ tối. Không mục nào đổi những gì Android Auto hiển thị trên màn hình chiếu.</string>
+    <string name="loading_screen_screen_help">Đặt hình ảnh hoặc video ngắn hiển thị khi Android Auto khởi động. Chọn hình ảnh hoặc video tối đa 10 MB, co giãn cho vừa màn hình và lặp lại các hoạt ảnh ngắn. Bạn cũng có thể ẩn chữ khởi động. Xóa sẽ về màn hình mặc định.</string>
     <string name="auto_connect_priority">Ưu tiên %d</string>
     <string name="auto_connect_all_disabled">Tất cả đã tắt</string>
     <string name="drag_to_reorder">Kéo để sắp xếp lại</string>
@@ -253,6 +266,7 @@
     <string name="move_down">Di chuyển xuống</string>
     <string name="auto_connecting_single_usb">Đang tự kết nối thiết bị USB…</string>
     <string name="video_codec">Codec video</string>
+    <string name="video_codec_help">Chọn định dạng video mà điện thoại gửi. Tự động để ứng dụng chọn trong số những gì thiết bị này giải mã được. H.265 cho hình ảnh nét hơn ở cùng tốc độ dữ liệu. H.264 chạy trên mọi bộ giải mã. Hãy đổi khi hình ảnh bị giật hoặc vẫn đen. Lựa chọn áp dụng từ lần kết nối tiếp theo.</string>
     <string name="fps_limit">Giới hạn FPS</string>
     <string name="save">Lưu</string>
     <string name="save_and_restart">Lưu (Cần kết nối lại)</string>
@@ -266,26 +280,34 @@
     <string name="video_fit_mode_cover">Lấp đầy bằng cách cắt (không viền, không méo)</string>
     <string name="forced_scale">Tỉ lệ ép buộc (Khắc phục cho máy cũ)</string>
     <string name="forced_scale_description">Khắc phục lỗi tỉ lệ trên một số máy cũ dùng SurfaceView. Chỉ dùng khi hình bị méo hoặc lệch.</string>
+    <string name="forced_scale_summary">Sửa lỗi co giãn trên thiết bị cũ dùng SurfaceView.</string>
     <string name="hud_mirroring">Chế độ HUD (Lật ngang)</string>
     <string name="hud_mirroring_description">Lật màn hình theo chiều ngang để phản chiếu lên kính chắn gió (Head-Up Display). Yêu cầu chế độ hiển thị TextureView hoặc GLES20 (không hoạt động với SurfaceView).</string>
+    <string name="hud_mirroring_summary">Lật màn hình để phản chiếu lên kính chắn gió (HUD).</string>
 
 
     <!-- Audio Settings -->
     <string name="category_audio">Âm thanh</string>
     <string name="enable_audio_sink">Nhận âm thanh trên đầu máy</string>
-    <string name="enable_audio_sink_description">Nếu tắt, đầu máy sẽ không nhận âm thanh. Âm thanh sẽ phát từ điện thoại.</string>
+    <string name="enable_audio_sink_description">Phát âm thanh Android Auto trên thiết bị này. Hãy tắt để giữ âm thanh trên điện thoại, ví dụ khi điện thoại đã cấp tín hiệu cho loa xe. Khi đó thiết bị chỉ hiển thị hình ảnh. Cuộc gọi không bao giờ dùng âm thanh này: cuộc gọi phát trên thiết bị rảnh tay Bluetooth đã kết nối với điện thoại (xe, bộ đàm nội bộ hoặc tai nghe) hoặc trên chính điện thoại.</string>
+    <string name="enable_audio_sink_summary">Phát âm thanh Android Auto trên thiết bị này. Tắt: điện thoại phát.</string>
     <string name="static_audio_focus">Tiêu điểm âm thanh tĩnh</string>
-    <string name="static_audio_focus_description">Buộc điện thoại tin rằng tiêu điểm âm thanh luôn được giữ, tránh mất định tuyến âm thanh trên các đầu máy phổ thông. Đồng thời tự giảm âm lượng bằng phần mềm khi có lời nhắc dẫn đường bằng giọng nói.</string>
+    <string name="static_audio_focus_description">Báo cho điện thoại biết tiêu điểm âm thanh luôn được giữ. Việc này ngăn mất tiếng trên các thiết bị thông thường báo sai tiêu điểm. Nó cũng hạ âm lượng nhạc bằng phần mềm khi có lời chỉ đường. Hãy để tắt trừ khi âm thanh bị mất.</string>
+    <string name="static_audio_focus_summary">Báo cho điện thoại biết tiêu điểm âm thanh luôn được giữ, để tránh mất tiếng.</string>
     <string name="separate_audio_streams">Tách luồng âm thanh</string>
     <string name="separate_audio_streams_description">Cấp cho các kênh Đa phương tiện, Chỉ dẫn và Âm thanh hệ thống luồng đầu ra riêng thay vì một luồng đa phương tiện dùng chung (có thể không hoạt động đúng trên một số thiết bị).</string>
+    <string name="separate_audio_streams_summary">Phương tiện, Chỉ đường và Âm thanh hệ thống có luồng đầu ra riêng.</string>
     <string name="use_aac_audio">Dùng âm thanh AAC</string>
-    <string name="use_aac_audio_description">Dùng codec AAC để tiết kiệm băng thông (Thử nghiệm). Trong phiên không dây chạy trên 2,4 GHz, tùy chọn này tự động bật trong khi \"Giảm video trên đường truyền 2,4 GHz\" đang bật.</string>
+    <string name="use_aac_audio_description">Dùng codec AAC để tiết kiệm băng thông. Trong phiên không dây chạy trên 2,4 GHz, tùy chọn này tự động bật trong khi \"Giảm video trên đường truyền 2,4 GHz\" đang bật.</string>
+    <string name="use_aac_audio_summary">Dùng âm thanh AAC để tiết kiệm băng thông.</string>
     <string name="attach_hw_dsp_equalizer">Bộ kích hoạt bộ cân bằng DSP phần cứng</string>
     <string name="attach_hw_dsp_equalizer_description">Gắn hiệu ứng bộ cân bằng giả vào phiên âm thanh để buộc định tuyến DSP phần cứng trên một số màn hình. Giữ tắt nếu sử dụng ViPER4Android / ViperFX hoặc nếu âm thanh bị nghẹt trên các phiên bản Android cũ.</string>
+    <string name="attach_hw_dsp_equalizer_summary">Gắn một bộ chỉnh âm giả để buộc định tuyến qua DSP phần cứng trên một số thiết bị.</string>
     <string name="audio_volume_offset">Bù âm lượng</string>
     <string name="microphone_settings">Cài đặt micro</string>
     <string name="use_head_unit_microphone">Micro của đầu máy</string>
     <string name="use_head_unit_microphone_description">Bật: Android Auto nghe micro của thiết bị này. Tắt: thiết bị này không bao giờ ghi âm và điện thoại dùng micro của chính nó, hoặc tai nghe hay bộ đàm đã ghép nối với điện thoại, nên trợ lý giọng nói vẫn hoạt động. Cần Android 11 trở lên trên điện thoại.</string>
+    <string name="use_head_unit_microphone_summary">Android Auto dùng micrô của thiết bị này. Tắt: dùng micrô của điện thoại.</string>
     <string name="head_unit_microphone_off_info">Micro của đầu máy đang tắt nên không có mục nào bên dưới được áp dụng. Android Auto được thông báo rằng thiết bị này không thể ghi âm và là một xe máy, đó chính là điều khiến điện thoại tự ghi âm. Trên Android 10 trở xuống, điện thoại quên điều này giữa các phiên và có thể ngừng kết nối.</string>
     <string name="microphone_settings_description">Cấu hình đầu vào micro và xử lý âm thanh.</string>
     <string name="mic_wire_format_info">Android Auto luôn nhận micro ở 16000 Hz, 16 bit, đơn kênh. Mọi định dạng khác đều bị từ chối, nên các cài đặt này thay đổi cách phần cứng hoạt động chứ không thay đổi những gì được gửi tới điện thoại.</string>
@@ -300,10 +322,13 @@
     </string-array>
     <string name="mic_echo_canceler">Khử tiếng vang (AEC)</string>
     <string name="mic_echo_canceler_description">Cố gắng loại bỏ tiếng vang ở micro. Tắt nếu bị im lặng hoặc méo tiếng.</string>
+    <string name="mic_echo_canceler_summary">Loại bỏ tiếng vọng khỏi micrô. Hãy tắt nếu bị im lặng hoặc méo tiếng.</string>
     <string name="mic_noise_suppressor">Khử nhiễu (NS)</string>
     <string name="mic_noise_suppressor_description">Cố gắng giảm tạp âm nền. Android Auto mong muốn tùy chọn này tắt khi chỉ có một micro và tự xử lý âm thanh. Hãy tắt nếu giọng nói nghe bị mờ.</string>
+    <string name="mic_noise_suppressor_summary">Giảm tiếng ồn nền. Android Auto mong muốn mục này tắt.</string>
     <string name="mic_auto_gain_control">Tự điều chỉnh âm lượng (AGC)</string>
     <string name="mic_auto_gain_control_description">Tự động điều chỉnh âm lượng micro. Android Auto mong muốn tùy chọn này tắt và tự điều chỉnh độ khuếch đại. Bật cả hai thường cho âm thanh kém hơn. Hãy tắt nếu âm lượng không ổn định.</string>
+    <string name="mic_auto_gain_control_summary">Điều chỉnh âm lượng micrô. Android Auto mong muốn mục này tắt.</string>
     <string name="mic_feature_unsupported">Tính năng này không được máy hỗ trợ.</string>
 
     <!-- Info Settings -->
@@ -420,8 +445,10 @@
     <string name="media_session_aa_status_placeholder">Đã kết nối</string>
     <string name="sync_media_session_aa_metadata">Bài đang phát trên AA hiển thị ở media session</string>
     <string name="sync_media_session_aa_metadata_description">Hiển thị tên bài, nghệ sĩ, thời lượng và ảnh album từ điện thoại trong media session và thông báo media của hệ thống.</string>
+    <string name="sync_media_session_aa_metadata_summary">Hiện thông tin bài hát từ điện thoại trong phiên phương tiện của hệ thống.</string>
     <string name="auto_resume_playback_on_reconnect">Tiếp tục phát khi kết nối lại</string>
     <string name="auto_resume_playback_on_reconnect_description">Tự động tiếp tục phát nhạc nếu nhạc đang phát trước khi mất kết nối ngắn (trong vòng 60 giây).</string>
+    <string name="auto_resume_playback_on_reconnect_summary">Phát tiếp nhạc đang phát trước khi mất kết nối ngắn (60 giây).</string>
     <string name="nav_notification_channel_name">Điều hướng</string>
     <string name="nav_notification_channel_description">Cập nhật chỉ đường từng đoạn từ Android Auto.</string>
     <string name="nav_notification_title_format">Sau %1$d m: %2$s</string>
@@ -456,6 +483,7 @@
     <!-- Auto-start permission strings -->
     <string name="reopen_on_reconnection_label">Mở lại khi kết nối lại</string>
     <string name="reopen_on_reconnection_description">Khi bạn nhấn nút Thoát, ứng dụng vẫn chạy ngầm và tiếp tục theo dõi kết nối USB. Nếu thiết bị kết nối lại, ứng dụng sẽ tự mở lại.</string>
+    <string name="reopen_on_reconnection_summary">Sau khi Thoát, tiếp tục theo dõi USB và mở lại khi thiết bị kết nối lại.</string>
     <string name="overlay_permission_required">Tự khởi động cần quyền \'Hiện trên các ứng dụng khác\'</string>
     <string name="usb_permission_denied">Đã từ chối quyền USB. Hãy cho phép truy cập USB để tự kết nối.</string>
 
@@ -464,9 +492,11 @@
     <string name="category_input">Cài đặt đầu vào</string>
     <string name="enable_rotary">Bật điều khiển xoay</string>
     <string name="enable_rotary_description">Khai báo hỗ trợ núm xoay và vòng xoay vật lý. Hãy tắt nếu màn hình cảm ứng không hoạt động đúng.</string>
+    <string name="enable_rotary_summary">Thông báo hỗ trợ núm xoay. Hãy tắt nếu cảm ứng hoạt động sai.</string>
 
     <string name="kill_on_disconnect">Đóng ứng dụng khi ngắt kết nối</string>
     <string name="kill_on_disconnect_description">Tự động đóng ứng dụng khi Android Auto ngắt kết nối.</string>
+    <string name="kill_on_disconnect_help">Đóng ứng dụng khi Android Auto ngắt kết nối, để thiết bị quay về các màn hình riêng. Bật nếu thiết bị phải hiển thị trình khởi chạy riêng sau mỗi chuyến đi. Không có tác dụng khi ứng dụng này là trình khởi chạy của xe. Nếu Mở lại khi kết nối lại, Khởi động khi mở máy hoặc Khởi động khi bật màn hình đang bật, ứng dụng sẽ cảnh báo bạn trước, vì các tùy chọn đó cần ứng dụng luôn mở.</string>
     <string name="kill_on_disconnect_warning_title">Cảnh báo</string>
     <string name="kill_on_disconnect_warning">Các cài đặt kết nối lại sau sẽ xung đột với việc đóng ứng dụng khi ngắt kết nối:\n\n%1$s\n\nCài đặt kết nối ban đầu (tự kết nối, tự khởi động) vẫn hoạt động khi đầu máy bật. Tuy nhiên, sau lần ngắt kết nối đầu tiên, ứng dụng sẽ đóng ngay thay vì cố kết nối lại.\n\nLưu ý: một số đầu máy lắp thêm không bao giờ tắt hẳn mà chuyển sang chế độ ngủ đông, giống điện thoại khóa màn hình nhưng không tắt nguồn. Khi bật tùy chọn này, ứng dụng sẽ đóng sau lần ngắt kết nối đầu tiên và có thể không tự mở lại ở lần khởi động xe tiếp theo.\n\nBạn có muốn tắt các cài đặt kết nối lại nêu trên không?</string>
     <string name="kill_on_disconnect_disable_and_enable">Tắt chúng và bật</string>
@@ -515,6 +545,7 @@
 
     <string name="auto_enable_hotspot">Tự bật điểm phát sóng</string>
     <string name="auto_enable_hotspot_description">Tự động bật điểm phát Wi-Fi trên thiết bị này. (Không hoạt động trên mọi máy.)</string>
+    <string name="auto_enable_hotspot_summary">Bật điểm phát Wi-Fi trên thiết bị này. Không có trên mọi thiết bị.</string>
     <string name="hotspot_warning_title">Tính năng thử nghiệm</string>
     <string name="hotspot_warning_message">Tính năng này dùng reflection và có thể không hoạt động trên mọi máy. Cũng có thể cần cấp quyền \"Thay đổi cài đặt hệ thống\" thủ công.</string>
     <string name="hotspot_permission_title">Cần cấp quyền</string>
@@ -528,18 +559,22 @@
 
     <string name="wait_for_wifi">Chờ WiFi trước khi dùng WiFi Direct</string>
     <string name="wait_for_wifi_description">Khi khởi động, chờ WiFi kết nối trước khi bắt đầu WiFi Direct. Bật nếu headunit cần vài giây để kết nối WiFi sau khi bật nguồn.</string>
+    <string name="wait_for_wifi_summary">Khi khởi động, chờ Wi-Fi trước khi bật WiFi Direct.</string>
     <string name="wait_for_wifi_timeout">Thời gian chờ WiFi</string>
     <string name="wireless_24ghz_warning">Lưu ý: Android Auto không dây trên thiết bị 2.4GHz có thể gây giật, lag và ngắt kết nối. Nếu gặp vấn đề, vui lòng kiểm tra qua USB để xác nhận có phải giới hạn mạng không.</string>
     <string name="fake_speed_title">Tắt khoá video (Giả tốc độ)</string>
     <string name="fake_speed_description">Báo cho điện thoại tốc độ thấp không đổi (0.5 m/s) để không bị chặn nội dung video khi lái. Dùng cẩn thận.</string>
+    <string name="fake_speed_summary">Báo tốc độ thấp không đổi để video không bị chặn khi lái xe.</string>
     <string name="wireless_mode_helper">Wireless Helper</string>
     <string name="wireless_mode_native">Native</string>
     <string name="wireless_mode_server">Headunit Server</string>
     <string name="server_mode_label">Chế độ máy chủ</string>
     <string name="server_mode_manual">Thủ công</string>
     <string name="server_mode_auto">Tự động</string>
+    <string name="server_mode_help">Tự động tìm máy chủ của đầu xe trên điện thoại qua mạng và tự kết nối. Thủ công không tìm. Bạn kết nối từ danh sách mạng hoặc bằng địa chỉ của điện thoại.</string>
 
     <string name="helper_strategy_label">Chiến lược kết nối Helper</string>
+    <string name="helper_strategy_help">Chọn cách điện thoại và thiết bị này dùng chung mạng ở chế độ Wireless Helper. WiFi chung dùng mạng mà cả hai đã có. WiFi Direct tạo liên kết riêng. Google Nearby đang ở bản beta. Hotspot điện thoại tham gia điểm phát của điện thoại. Hotspot Headunit biến thiết bị này thành điểm truy cập. Hãy đổi khi điện thoại không tìm thấy thiết bị này.</string>
     <string-array name="helper_strategies">
         <item>WiFi chung (NSD)</item>
         <item>WiFi Direct (P2P)</item>
@@ -558,10 +593,12 @@
     <string name="exit_dialog_background">Đưa xuống nền</string>
     <string name="gesture_hint">Mẹo: Vuốt từ cạnh trái bằng 2 ngón để mở menu thoát.</string>
     <string name="audio_latency_multiplier">Hệ số độ trễ âm thanh</string>
-    <string name="aaudio_output">Xuất âm thanh AAudio (thử nghiệm)</string>
+    <string name="aaudio_output">Xuất âm thanh AAudio</string>
     <string name="aaudio_output_description">Thử xuất âm thanh phương tiện với độ trễ thấp. Tự dùng AudioTrack nếu không khả dụng.</string>
+    <string name="aaudio_output_help">Phát phương tiện của Android Auto qua AAudio, một đầu ra âm thanh có độ trễ thấp. Ứng dụng chỉ dùng trên Android 9 trở lên. Bật nếu âm thanh đến chậm hơn hình ảnh. Nếu AAudio không khởi động được, ứng dụng dùng đầu ra âm thanh thông thường. Nếu âm thanh bị rè hoặc ngắt khi bật, hãy tắt.</string>
     <string name="audio_latency_multiplier_description">Điều chỉnh kích thước bộ đệm âm thanh (Thấp = ít lag, Cao = ít giật).</string>
     <string name="audio_queue_capacity">Sức chứa hàng đợi âm thanh (Backpressure)</string>
+    <string name="audio_queue_capacity_help">Lượng âm thanh nhận được có thể chờ trước khi phát. Hàng đợi nhỏ giữ âm thanh sát với hình ảnh. Hàng đợi lớn chịu được các lần đứt kết nối ngắn, nhưng âm thanh có thể bị trễ. Khi hàng đợi đầy, âm thanh cũ nhất bị bỏ. Không giới hạn giữ lại tất cả. Ứng dụng luôn cho phép ít nhất một giây âm thanh.</string>
     <string name="media_action_previous">Trước</string>
     <string name="media_action_play">Phát</string>
     <string name="media_action_pause">Tạm dừng</string>
@@ -644,6 +681,7 @@
     <string name="log_source">Nguồn nhật ký</string>
     <string name="log_source_logcat">Logcat</string>
     <string name="log_source_applog_file">Trực tiếp vào tệp</string>
+    <string name="log_source_help">Logcat ghi các dòng của ứng dụng cùng với các dòng của hệ thống. Cách này hữu ích nhất cho báo cáo lỗi. Trực tiếp vào tệp chỉ ghi các dòng của riêng ứng dụng, dành cho thiết bị mà Logcat không ghi gì. Ứng dụng tự chuyển sang Trực tiếp vào tệp khi Logcat không ghi gì.</string>
 <string name="log_location">Vị trí lưu nhật ký</string>
     <string name="log_location_default">Mặc định (Bộ nhớ ứng dụng)</string>
     <string name="log_location_downloads">Thư mục Tải về</string>
@@ -651,12 +689,14 @@
     <!-- Native USB Driver -->
     <string name="use_libusb">Sử dụng trình điều khiển USB gốc</string>
     <string name="use_libusb_description">Sử dụng libusb để giao tiếp. Tắt để sử dụng API USB tiêu chuẩn của Android.</string>
+    <string name="use_libusb_help">Dùng thư viện USB riêng của ứng dụng thay cho hệ thống USB của Android để kết nối cáp với điện thoại. Hãy để tắt. Chỉ bật nếu điện thoại qua USB được phát hiện nhưng Android Auto không khởi động. Không thay đổi gì với kết nối không dây.</string>
     <string name="usb_keep_phone_media_audio">Giữ âm thanh đa phương tiện của điện thoại qua USB</string>
     <string name="usb_keep_phone_media_audio_description">Android Auto có thể tắt âm thanh đa phương tiện Bluetooth của điện thoại cho đầu máy này trong phiên USB. Tùy chọn này ngăn việc đó. Khi đó, cuộc gọi có thể ở lại điện thoại thay vì đầu máy.</string>
 
     <string name="software_video_decoder">Nguồn bộ giải mã phần mềm</string>
     <string name="software_video_decoder_bundled">FFmpeg tích hợp</string>
     <string name="software_video_decoder_device">MediaCodec thiết bị</string>
+    <string name="software_video_decoder_help">Chỉ áp dụng khi Buộc giải mã bằng phần mềm đang bật. FFmpeg tích hợp là bộ giải mã riêng của ứng dụng và chỉ giải mã H.265. MediaCodec thiết bị dùng bộ giải mã phần mềm của hệ thống. Video H.264 luôn dùng bộ giải mã của hệ thống.</string>
 
     <string name="btn_show_qr">Hiển thị mã QR</string>
     <string name="renderer_fallback_surface">Video liên tục bị đứng, nên màn hình đã chuyển sang SurfaceView cho phiên này. Nếu ổn định, hãy đặt Chế độ hiển thị thành SurfaceView trong Cài đặt.</string>
@@ -727,6 +767,12 @@
     <string name="settings_tab_basic">Cơ bản</string>
     <string name="settings_tab_advanced">Nâng cao</string>
     <string name="settings_search_hint">Tìm cài đặt</string>
+    <string name="settings_scope_wifi_hidden">Đang hiện cài đặt USB. Cài đặt WiFi đang bị ẩn.</string>
+    <string name="settings_scope_usb_hidden">Đang hiện cài đặt WiFi. Cài đặt USB đang bị ẩn.</string>
+    <string name="settings_scope_usb_wifi_hidden">Đang hiện cài đặt chế độ độc lập. Cài đặt USB và WiFi đang bị ẩn.</string>
+    <string name="settings_scope_change">Thay đổi</string>
+    <string name="settings_search_clear">Xóa tìm kiếm</string>
+    <string name="settings_search_no_results">Không có cài đặt nào khớp với \"%1$s\".</string>
     <string name="connection_mode">Chế độ kết nối</string>
     <string name="connection_kind_usb_cable">Cáp USB (trực tiếp)</string>
     <string name="connection_kind_usb_wireless_adapter">Bộ chuyển không dây USB</string>
@@ -909,6 +955,7 @@
     <string name="onb_dpi_recommended">Đề xuất cho màn hình của bạn: %1$d dpi</string>
     <string name="dpi_value_format">%1$d DPI</string>
     <string name="pixel_aspect_ratio">Tỷ lệ khung hình điểm ảnh</string>
+    <string name="pixel_aspect_ratio_help">Chỉ thay đổi nếu hình tròn trông như hình bầu dục trên màn hình này. Điều đó xảy ra khi điểm ảnh của tấm nền không vuông. 10000 nghĩa là điểm ảnh vuông.</string>
     <string name="enter_pixel_aspect_ratio_value">Tỷ lệ khung hình pixel x10000 (10000 = pixel vuông)</string>
     <string name="cannot_open_settings">Không thể mở cài đặt hệ thống</string>
     <string name="static_bssid_enter_value">Nhập BSSID (XX:XX:XX:XX:XX:XX)</string>
@@ -917,17 +964,13 @@
     <string name="media_key_routing_always">Luôn luôn</string>
     <string name="media_key_routing_auto">Tự động</string>
     <string name="media_key_routing_never">Không bao giờ</string>
-    <string name="media_key_routing_always_hint">Phím chuyển bài tiếp theo, quay lại và phát/tạm dừng luôn được gửi tới Android Auto. Hãy dùng chế độ này, trừ khi một lần bấm làm nhảy qua hai bài.</string>
-    <string name="media_key_routing_auto_hint">Ngừng gửi các phím này khi đầu máy có kết nối âm thanh Bluetooth với điện thoại, vì kết nối đó đã thực hiện thao tác rồi. Hãy chọn chế độ này nếu một lần bấm nhảy qua hai bài và điện thoại của bạn đã ghép nối với đầu máy này.</string>
-    <string name="media_key_routing_never_hint">Không bao giờ gửi các phím này, để Bluetooth xử lý. Hãy chọn chế độ này nếu một lần bấm nhảy qua hai bài và điện thoại của bạn được ghép nối với hệ thống của chính xe thay vì đầu máy này, vì chế độ Tự động không phát hiện được kết nối đó.</string>
+    <string name="media_key_routing_help">Luôn luôn: Phím chuyển bài tiếp theo, quay lại và phát/tạm dừng luôn được gửi tới Android Auto. Hãy dùng chế độ này, trừ khi một lần bấm làm nhảy qua hai bài.\n\nTự động: Ngừng gửi các phím này khi đầu máy có kết nối âm thanh Bluetooth với điện thoại, vì kết nối đó đã thực hiện thao tác rồi. Hãy chọn chế độ này nếu một lần bấm nhảy qua hai bài và điện thoại của bạn đã ghép nối với đầu máy này.\n\nKhông bao giờ: Không bao giờ gửi các phím này, để Bluetooth xử lý. Hãy chọn chế độ này nếu một lần bấm nhảy qua hai bài và điện thoại của bạn được ghép nối với hệ thống của chính xe thay vì đầu máy này, vì chế độ Tự động không phát hiện được kết nối đó.</string>
     <string name="media_key_routing_hint_common">Chỉ các phím đa phương tiện bị ảnh hưởng. Núm xoay, D-pad, phím Quay lại và phím Enter luôn được gửi tới Android Auto.</string>
     <string name="playback_focus_mode">Tạm dừng âm thanh khác khi đang phát</string>
     <string name="playback_focus_mode_auto">Tự động</string>
     <string name="playback_focus_mode_always">Luôn luôn</string>
     <string name="playback_focus_mode_never">Không bao giờ</string>
-    <string name="playback_focus_mode_auto_hint">Tạm dừng trình phát khác trên đầu máy (ví dụ radio) khi âm thanh Android Auto đang phát. Nếu việc này lại làm dừng chính trình phát trên điện thoại, như khi đầu máy là loa Bluetooth của điện thoại, chế độ này sẽ ngừng làm vậy và ghi nhớ. Hãy chọn lại chế độ này để thử một lần nữa.</string>
-    <string name="playback_focus_mode_always_hint">Luôn tạm dừng âm thanh khác khi Android Auto đang phát. Nếu nhạc của bạn dừng sau một hai giây mỗi khi bật Bluetooth, hãy chuyển lại sang Tự động.</string>
-    <string name="playback_focus_mode_never_hint">Không bao giờ can thiệp vào tiêu điểm âm thanh của hệ thống. Âm thanh khác trên đầu máy có thể vẫn phát chồng lên Android Auto.</string>
+    <string name="playback_focus_mode_help">Tự động: Tạm dừng trình phát khác trên đầu máy (ví dụ radio) khi âm thanh Android Auto đang phát. Nếu việc này lại làm dừng chính trình phát trên điện thoại, như khi đầu máy là loa Bluetooth của điện thoại, chế độ này sẽ ngừng làm vậy và ghi nhớ. Hãy chọn lại chế độ này để thử một lần nữa.\n\nLuôn luôn: Luôn tạm dừng âm thanh khác khi Android Auto đang phát. Nếu nhạc của bạn dừng sau một hai giây mỗi khi bật Bluetooth, hãy chuyển lại sang Tự động.\n\nKhông bao giờ: Không bao giờ can thiệp vào tiêu điểm âm thanh của hệ thống. Âm thanh khác trên đầu máy có thể vẫn phát chồng lên Android Auto.</string>
     <string name="playback_focus_mode_static_hint">Khi bật Tiêu điểm âm thanh tĩnh, chế độ này áp dụng từ lúc điện thoại kết nối và kéo dài suốt phiên, chứ không chỉ khi đang phát âm thanh.</string>
     <string name="boot_loop_paused_title">Đã tạm dừng khởi động không dây</string>
     <string name="boot_loop_paused_generic">Thiết bị này đã khởi động lại ba lần liên tiếp ngay sau khi Open Headunit bật chế độ không dây, nên lần này chế độ không dây được để tắt. USB vẫn hoạt động. Hãy mở ứng dụng để bật lại.</string>
@@ -938,7 +981,8 @@
     <string name="external_bt_module_nativeaa">Native Wireless qua mô-đun ZJ/ZLink</string>
     <string name="external_bt_module_nativeaa_desc">Điện thoại của bạn ghép nối với mô-đun Bluetooth riêng của đầu phát này (%1$s), không phải Bluetooth mà Android cung cấp cho ứng dụng, nên quá trình bắt tay sẽ được gửi qua dịch vụ ZJ/ZLink của mô-đun.\n\nĐây là tính năng thử nghiệm và dịch vụ đó là cách duy nhất. Nếu điện thoại không khởi động Android Auto, hãy dùng USB hoặc một chế độ WiFi.</string>
     <string name="external_bt_transport">Kết nối qua mô-đun Bluetooth của đầu phát</string>
-    <string name="external_bt_transport_description">Thử nghiệm, và chỉ dành cho thiết bị có dịch vụ Bluetooth ZJ/ZLink. Gửi bắt tay Android Auto không dây qua chính chip Bluetooth của thiết bị này, chip mà điện thoại của bạn thực sự ghép nối, thay vì Bluetooth mà Android cung cấp cho ứng dụng.\n\nHãy chạy \"Kiểm tra mô-đun Bluetooth của đầu phát\" trước, khi tùy chọn này đang tắt. Nếu phép thử không thấy gì đang lắng nghe, tùy chọn này không làm được gì trên thiết bị của bạn và Native Wireless sẽ không hoạt động ở đây dù bạn đặt thế nào. Nếu có phản hồi, hãy bật tùy chọn này và chọn Native. Phép thử chạy khi tùy chọn đã bật và đang kết nối sẽ báo đúng điều đó, và đây không phải lỗi. Hãy xuất nhật ký trong cả hai trường hợp.</string>
+    <string name="external_bt_transport_description">Thử nghiệm, dành cho thiết bị có dịch vụ Bluetooth ZJ/ZLink. Gửi bước bắt tay Android Auto không dây qua chip Bluetooth mà điện thoại đã ghép nối, không qua chip Android hiện cho ứng dụng. Hãy chạy kiểm tra mô-đun Bluetooth trước, khi mục này đang tắt. Nếu không thấy gì lắng nghe, mục này không giúp được trên thiết bị của bạn. Nếu có phản hồi, hãy bật. Xuất nhật ký trong cả hai trường hợp.</string>
+    <string name="external_bt_transport_summary">Thử nghiệm. Gửi bước bắt tay không dây qua Bluetooth riêng của thiết bị này.</string>
     <string name="zbt_probe_title">Kiểm tra mô-đun Bluetooth của đầu phát</string>
     <string name="zbt_probe_idle">Chạm để chạy</string>
     <string name="zbt_probe_running">Đang chạy…</string>
@@ -948,7 +992,8 @@
     <string name="external_bt_blink_transport">Kết nối qua mô-đun Bluetooth ngoài FYT</string>
     <string name="external_bt_module_controls_hint">Mô-đun Bluetooth ngoài quản lý việc ghép nối điện thoại, mức ưu tiên kết nối và lựa chọn trình điều khiển.</string>
     <string name="external_bt_module_last_phone">Điện thoại kết nối gần nhất qua mô-đun</string>
-    <string name="external_bt_blink_transport_description">Thử nghiệm. Dành cho thiết bị FYT mà điện thoại ghép nối để gọi với một mô-đun Bluetooth riêng, như \"DUDUAUTO\" trên DUDUOS, ROM duy nhất đã được thử đến nay. Mô-đun này, không phải Bluetooth của thiết bị, truyền bắt tay Android Auto không dây, và ứng dụng Car Link gốc thường trả lời nó. Khi bật tùy chọn này, ứng dụng này sẽ trả lời thay, nên cuộc gọi vẫn ở trên mô-đun và loa xe.\n\nHãy tắt ứng dụng Car Link gốc trước (pm disable-user com.syu.carlink), nếu không cả hai ứng dụng sẽ đọc cùng một kênh. Kênh được mở không cần root nếu thiết bị cho phép, nếu không thì mở qua root. Chọn Native, chỉ ghép nối điện thoại với mô-đun, và xuất nhật ký nếu không kết nối được.</string>
+    <string name="external_bt_blink_transport_description">Thử nghiệm, dành cho thiết bị FYT có điện thoại ghép nối cuộc gọi với một mô-đun Bluetooth riêng, như DUDUAUTO trên DUDUOS. Mô-đun mang bước bắt tay Android Auto không dây, thường do ứng dụng Car Link gốc phản hồi. Khi bật, ứng dụng này phản hồi thay, nên cuộc gọi vẫn ở mô-đun và loa xe. Hãy tắt ứng dụng Car Link gốc trước (pm disable-user com.syu.carlink), nếu không cả hai sẽ đọc cùng một kênh.</string>
+    <string name="external_bt_blink_transport_summary">Thử nghiệm. Phản hồi bước bắt tay không dây trên mô-đun Bluetooth của thiết bị FYT.</string>
     <string name="external_bt_blink_refused_stock_enabled">Mô-đun Bluetooth ngoài: ứng dụng Car Link gốc vẫn đang bật. Hãy tắt nó (pm disable-user com.syu.carlink) hoặc tắt phương thức truyền này.</string>
     <string name="external_bt_blink_refused_stock_running">Mô-đun Bluetooth ngoài: ứng dụng Car Link gốc đã tắt nhưng vẫn đang chạy. Hãy khởi động lại thiết bị.</string>
     <string name="external_bt_blink_refused_root">Mô-đun Bluetooth ngoài: mở kênh của mô-đun cần quyền root trên thiết bị này, nhưng quyền root bị từ chối hoặc không có.</string>
@@ -1016,7 +1061,7 @@
     <string name="stand_down_station_auto">Tự động</string>
     <string name="stand_down_station_always">Luôn luôn</string>
     <string name="stand_down_station_never">Không bao giờ</string>
-    <string name="stand_down_station_hint">Tự động chỉ rời khỏi mạng của thiết bị này khi bộ thu phát có băng tần 5 GHz và mạng đó đang ở 2.4 GHz, để nhóm WiFi Direct có riêng một kênh 5 GHz. Thiết bị vẫn giữ kết nối nếu chỉ hỗ trợ 2.4 GHz, vì rời mạng chỉ khiến thiết bị quét tìm mạng, và cũng giữ kết nối khi mạng đã ở 5 GHz. Mạng sẽ được kết nối lại khi phiên kết thúc. Hãy thử Luôn luôn hoặc Không bao giờ nếu hình ảnh bị giật.</string>
+    <string name="stand_down_station_hint">Quyết định thiết bị này có rời mạng Wi-Fi của chính nó khi điện thoại kết nối hay không, để nhóm WiFi Direct dùng được kênh 5 GHz. Tự động chỉ rời khi radio có băng tần 5 GHz và mạng đang ở 2,4 GHz, hoặc khi nhóm bị buộc sang 2,4 GHz bên cạnh mạng 5 GHz. Thiết bị chỉ có 2,4 GHz vẫn ở lại mạng, vì rời đi chỉ khiến nó quét mạng. Thiết bị kết nối lại mạng khi phiên kết thúc. Hãy thử Luôn luôn hoặc Không bao giờ nếu hình ảnh bị giật.</string>
     <string name="stand_down_station_needs_overlay">Cần quyền \"hiển thị trên các ứng dụng khác\" trên phiên bản Android này.</string>
     <string name="connection_issue_banner_bt_silent">Điện thoại đã kết nối qua Bluetooth, nhưng Bluetooth của thiết bị này không thể gửi được gì. Nhấn để chọn chế độ không cần đến nó, chẳng hạn như Wireless Helper.</string>
     <string name="connection_issue_banner_bssid">Điện thoại không biết cần tham gia mạng nào, vì thiết bị này không chia sẻ địa chỉ WiFi của nó. Bật Vị trí, hoặc nhấn để nhập địa chỉ thủ công.</string>
@@ -1024,8 +1069,11 @@
     <string name="connection_issue_banner_wifi_direct_refused">Thiết bị này không thể tạo mạng WiFi Direct cho điện thoại. Hãy thử ngắt kết nối khỏi WiFi khác, hoặc nhấn để dùng điểm phát sóng thay thế.</string>
     <string name="connection_issue_banner_wifi_direct_cycled">Một ứng dụng khác liên tục tắt WiFi Direct, thường là ứng dụng chiếu màn hình cài sẵn như ZLink hoặc CarLife. Hãy tắt nó, hoặc nhấn để dùng điểm phát sóng thay thế.</string>
     <string name="connection_issue_banner_hotspot_config">Thiết bị này không chia sẻ tên và mật khẩu điểm phát sóng với ứng dụng. Nhấn để nhập thủ công.</string>
+    <string name="auto_restart_wifi_summary">Tự khởi động lại Wi-Fi nếu WiFi Direct bị treo. Cần root hoặc ADB cục bộ.</string>
+    <string name="auto_restart_wifi_description">Tự tắt rồi bật lại Wi-Fi nếu WiFi Direct bị treo, điều này có thể xảy ra sau khi đóng ứng dụng giữa phiên. Cần root hoặc ADB cục bộ. Không bao giờ chạy trong phiên.</string>
     <string name="narrow_band_profile_cap">Giảm video trên đường truyền 2,4 GHz</string>
-    <string name="narrow_band_profile_cap_description">Khi phiên này chạy trên 2,4 GHz, dù vì Wi-Fi của thiết bị này không có băng tần 5 GHz hay vì mạng được thiết lập ở băng tần đó, ứng dụng yêu cầu điện thoại tối đa 720p và 30 fps thay cho các cài đặt ở trên, cùng âm thanh AAC. Trên đường truyền như vậy, luồng tốc độ đầy đủ đã được đo là không hiển thị hình nào, còn luồng thấp hơn vẫn giữ được. Tắt tùy chọn này để nhận đúng những gì bạn đã đặt.</string>
+    <string name="narrow_band_profile_cap_description">Trên liên kết 2,4 GHz, yêu cầu điện thoại tối đa 720p, 30 fps và âm thanh AAC thay cho cài đặt video của bạn. Trên liên kết đó, luồng tốc độ đầy đủ được đo là không hiện hình ảnh nào, còn luồng thấp hơn vẫn giữ được. Hãy tắt để nhận đúng như bạn đặt, và chấp nhận hình ảnh trống nếu liên kết không tải nổi.</string>
+    <string name="narrow_band_profile_cap_summary">Ở 2,4 GHz, yêu cầu điện thoại 720p, 30 fps và âm thanh AAC.</string>
     <string name="connection_issue_banner_video_link_too_slow">Đường truyền WiFi quá chậm đối với video, nên ứng dụng đã giảm xuống 720p ở 30 FPS. Nhấn để tự đặt độ phân giải. Mạng 5 GHz cũng hữu ích.</string>
     <string name="connection_issue_banner_five_ghz_channel_refused">Thiết bị này không dùng kênh 5 GHz bạn đã chọn mà chọn một kênh một số điện thoại không thấy được. Nhấn để chuyển WiFi Direct sang 2,4 GHz, hoạt động ở mọi nơi.</string>
     <string name="connection_issue_banner_headunit_server_deaf">Máy chủ head unit của Android Auto trên điện thoại của bạn đã ngừng phản hồi. Trên điện thoại, hãy dừng rồi khởi động lại trong cài đặt nhà phát triển của Android Auto.</string>
@@ -1045,6 +1093,7 @@
     <string name="preflight_invalid_bssid">Địa chỉ WiFi không hợp lệ. Nhập 6 cặp ký tự thập lục phân (vd: 02:1A:11:FF:3C:4D).</string>
     <string name="native_aa_ignore_external_bt">Bỏ qua kiểm tra tương thích Bluetooth</string>
     <string name="native_aa_ignore_external_bt_description">Thiết bị này có vẻ giữ Bluetooth trên một mô-đun riêng mà Android không tiếp cận được, nên Android Auto không dây bị tắt tự động. Tắt theo mặc định. Chỉ bật nếu bạn cho rằng điều đó là sai: nếu phát hiện đúng, kết nối sẽ thất bại trong im lặng và nhật ký trông vẫn bình thường.</string>
+    <string name="native_aa_ignore_external_bt_summary">Giữ chế độ không dây bật dù thiết bị này có vẻ ẩn mô-đun Bluetooth của nó.</string>
     <string name="native_aa_setup_qr_title">Thiết lập bằng mã QR</string>
     <string name="native_aa_setup_qr_description">Hiển thị mã để điện thoại quét.</string>
     <string name="native_aa_setup_qr_content_description">Mã QR để thiết lập Android Auto không dây</string>
@@ -1074,11 +1123,13 @@
     <string name="failed_aa_not_installed">Thất bại: Android Auto chưa được cài đặt!</string>
     <string name="raise_projection_during_call">Ở lại Android Auto trong khi gọi điện</string>
     <string name="raise_projection_during_call_description">Chỉ áp dụng cho Chế độ độc lập. Đưa màn hình chiếu trở lại phía trên màn hình cuộc gọi của điện thoại, để trả lời và kết thúc cuộc gọi trong giao diện Android Auto.</string>
+    <string name="raise_projection_during_call_summary">Chỉ dành cho Chế độ độc lập. Hiện màn hình chiếu trên màn hình cuộc gọi của điện thoại.</string>
     <string name="audio_stream_settings">Luồng âm thanh</string>
     <string name="audio_stream_settings_description">Chọn luồng hệ thống mà mỗi kênh Android Auto sẽ phát trên đó.</string>
     <string name="audio_stream_settings_info">Android Auto gửi âm thanh qua ba kênh: Đa phương tiện, Chỉ dẫn và Âm thanh hệ thống. Mỗi kênh được chuyển tới đầu máy qua một luồng hệ thống. Luồng bạn chọn quyết định kênh đó theo phím âm lượng nào và, trên nhiều đầu máy, có bật tiếng bộ khuếch đại cho kênh đó hay không. Hãy dùng nút loa để nghe âm thanh thử trên luồng trước khi lưu.</string>
     <string name="audio_channel_media">Đa phương tiện</string>
     <string name="audio_channel_media_description">Phát từ ứng dụng: nhạc, podcast, radio và sách nói. Kênh duy nhất được gửi ở dạng stereo (48 kHz).</string>
+    <string name="audio_channel_media_summary">Phát từ ứng dụng: nhạc, podcast, radio, sách nói. Âm thanh nổi, 48 kHz.</string>
     <string name="audio_channel_guidance">Chỉ dẫn / Dẫn đường</string>
     <string name="audio_channel_guidance_description">Hướng dẫn chỉ đường bằng giọng nói và câu trả lời của trợ lý ảo (16 kHz mono).</string>
     <string name="audio_channel_system">Âm thanh hệ thống / Thông báo</string>
@@ -1086,7 +1137,9 @@
     <string name="audio_channel_all">Đa phương tiện, Chỉ dẫn, Dẫn đường, Thông báo và Hệ thống</string>
     <string name="audio_channel_all_short">tất cả các kênh</string>
     <string name="audio_channel_all_description">Tất cả kênh âm thanh của Android Auto — phát từ ứng dụng, chỉ dẫn bằng giọng nói, cảnh báo và âm báo — đều dùng chung một luồng đầu ra này.</string>
+    <string name="audio_channel_all_summary">Mọi kênh âm thanh của Android Auto dùng chung một luồng đầu ra này.</string>
     <string name="audio_stream_test">Phát âm thanh thử trên luồng này</string>
+    <string name="setting_help_for">Trợ giúp về %1$s</string>
     <string name="audio_stream_muted_warning">%1$s đang bị tắt tiếng trên thiết bị này — hãy tăng âm lượng để nghe âm thanh thử.</string>
     <string name="audio_stream_test_failed">Không thể phát âm thanh thử trên luồng này.</string>
     <string name="audio_stream_pick_title">Luồng cho %1$s</string>
@@ -1132,6 +1185,7 @@
     <string name="select_bt_poke_device">Chọn thiết bị Bluetooth cần đánh thức</string>
     <string name="native_poke_all_paired_label">Đánh thức tất cả thiết bị đã ghép nối</string>
     <string name="native_poke_all_paired_description">Nếu không chọn thiết bị ở trên, ứng dụng sẽ kết nối ngắn tới mọi thiết bị đã ghép nối để khởi động Android Auto. Hãy tắt tùy chọn này để không đánh thức thiết bị nào cho đến khi bạn chọn một thiết bị.</string>
+    <string name="native_poke_all_paired_summary">Khi chưa chọn thiết bị, đánh thức mọi thiết bị đã ghép nối.</string>
     <string name="auto_disconnect_bt_delay_label">Chờ trước khi ngắt kết nối</string>
     <string name="auto_disconnect_bt_delay_value">%1$d giây</string>
     <string name="auto_disconnect_bt_delay_immediate">Ngay lập tức</string>
@@ -1149,21 +1203,26 @@
     <string name="five_ghz_channel_hint">Kênh chỉ là một yêu cầu, không phải điều bảo đảm. Nhiều thiết bị chỉ tạo mạng trên kênh do trình điều khiển Wi-Fi của chính nó chọn, và ứng dụng chỉ có thể cho bạn biết điều đó sau khi đã thử. Nếu không kênh 5 GHz nào hoạt động và điện thoại vẫn không thấy mạng, hãy đổi băng tần ở phía trên.</string>
     <string name="wifi_direct_stable_identity">Giữ nguyên mạng Wi-Fi Direct</string>
     <string name="wifi_direct_stable_identity_description">Sử dụng cùng một tên mạng và mật khẩu mỗi lần, để điện thoại kết nối lại với mạng đã biết. Hãy dùng dòng bên dưới để làm mới chúng.</string>
+    <string name="wifi_direct_stable_identity_summary">Dùng lại một tên mạng và mật khẩu để điện thoại tham gia lại.</string>
     <string name="wifi_direct_new_identity">Nhận dạng mạng Wi-Fi Direct mới</string>
     <string name="wifi_direct_new_identity_none">Được chọn ở lần kết nối tiếp theo</string>
     <string name="wifi_direct_new_identity_confirm">Chọn tên và mật khẩu mới cho nhóm, áp dụng từ lần kết nối tiếp theo. Điện thoại sẽ được thiết lập qua Bluetooth như thể đây là một đầu máy mới. Hãy làm vậy nếu điện thoại cứ thử một mạng mà nó không còn vào được.</string>
     <string name="wifi_direct_new_identity_done">Nhận dạng mạng mới sẽ được dùng từ lần kết nối tiếp theo.</string>
     <string name="wifi_direct_new_identity_applied">Đang thiết lập nhận dạng mạng mới. Điện thoại sẽ được yêu cầu kết nối vào mạng này ở lần kết nối tiếp theo.</string>
     <string name="wifi_direct_stable_identity_description_legacy">Trên phiên bản Android này, hệ thống tự chọn tên mạng và ứng dụng không thể yêu cầu tên cụ thể. Hãy giữ tùy chọn này bật để điện thoại kết nối lại với mạng đã biết, nếu hệ thống còn giữ mạng đó. Dùng dòng bên dưới để làm mới.</string>
+    <string name="wifi_direct_stable_identity_legacy_summary">Hệ thống đặt tên mạng. Hãy để bật để điện thoại tham gia lại.</string>
     <string name="debug_video_low_latency">Yêu cầu chế độ độ trễ thấp của bộ giải mã</string>
     <string name="debug_video_low_latency_description">Đặt khóa MediaFormat độ trễ thấp của nhà sản xuất khi cấu hình bộ giải mã video. Tự động quay lại mặc định nếu bộ giải mã từ chối.</string>
+    <string name="debug_video_low_latency_summary">Yêu cầu bộ giải mã video bật chế độ độ trễ thấp của nhà sản xuất.</string>
     <string name="debug_video_feed_hold">Mô phỏng bộ giải mã chậm</string>
 
     <string name="category_more_features">Tính năng khác</string>
     <string name="pref_enable_floating_button_title">Nút khởi chạy nổi</string>
-    <string name="pref_enable_floating_button_summary">Hiển thị nút nổi trên trình khởi chạy gốc và các ứng dụng khác để nhanh chóng quay lại Open Headunit.</string>
+    <string name="pref_enable_floating_button_summary">Hiện một nút để quay lại Open Headunit.</string>
+    <string name="pref_enable_floating_button_help">Hiển thị nút nổi trên trình khởi chạy gốc và các ứng dụng khác để nhanh chóng quay lại Open Headunit.</string>
     <string name="pref_floating_button_connection_status_title">Chỉ báo trạng thái kết nối</string>
-    <string name="pref_floating_button_connection_status_summary">Dùng Độ mờ khi ngắt kết nối nếu chưa có điện thoại nào kết nối, rồi mờ dần về Độ mờ nút nổi khi có điện thoại kết nối. Ở 0%, nút bị ẩn và cho phép chạm xuyên qua.</string>
+    <string name="pref_floating_button_connection_status_summary">Làm mờ nút khi điện thoại đang kết nối.</string>
+    <string name="pref_floating_button_connection_status_help">Dùng Độ mờ khi ngắt kết nối nếu chưa có điện thoại nào kết nối, rồi mờ dần về Độ mờ nút nổi khi có điện thoại kết nối. Ở 0%, nút bị ẩn và cho phép chạm xuyên qua.</string>
     <string name="pref_floating_button_size_title">Kích thước nút nổi</string>
     <string name="pref_floating_button_opacity_title">Độ mờ nút nổi</string>
     <string name="pref_floating_button_disconnected_opacity_title">Độ mờ khi ngắt kết nối</string>
@@ -1263,7 +1322,8 @@
     <string name="native_aa_wake_remeasure_confirm">Android Auto chỉ khởi động kết nối không dây khi thấy kết nối Bluetooth thay đổi. Nếu thiết bị này đang giữ liên kết rảnh tay, ứng dụng phải ngắt liên kết đó để tạo thay đổi, nên sẽ đo một lần xem liên kết có quay lại không và dừng nếu không. Hãy dùng tùy chọn này nếu kết nối không dây đã ngừng tự khởi động và bạn chấp nhận mất rảnh tay trong chốc lát khi ứng dụng thử lại.</string>
     <string name="native_aa_wake_remeasure_done">Việc đánh thức Bluetooth sẽ được đo lại vào lần kết nối tiếp theo.</string>
     <string name="pref_enable_car_launcher_title">Dùng làm launcher xe</string>
-    <string name="pref_enable_car_launcher_summary">Đăng ký Open Headunit làm ứng dụng Màn hình chính, để ứng dụng mở khi nhấn nút Home của xe hoặc của đầu phát.</string>
+    <string name="pref_enable_car_launcher_summary">Mở ứng dụng bằng nút Màn hình chính.</string>
+    <string name="pref_enable_car_launcher_help">Đăng ký Open Headunit làm ứng dụng Màn hình chính, để ứng dụng mở khi nhấn nút Home của xe hoặc của đầu phát.</string>
     <string name="pref_set_default_launcher_title">Màn hình chính mặc định</string>
     <string name="pref_default_launcher_status_active">Đang hoạt động (Chạm để quản lý)</string>
     <string name="pref_default_launcher_status_inactive">Chưa đặt (Chạm để đặt làm mặc định)</string>

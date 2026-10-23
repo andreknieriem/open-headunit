@@ -2635,4 +2635,10 @@ class Settings(private val context: Context) {
         get() = prefs.getBoolean("external-bt-blink-transport", false)
         set(value) = prefs.edit().putBoolean("external-bt-blink-transport", value).apply()
 
+    // Carry the Native AA handshake over the ZJ daemon's Unix socket. Off by default: the app also
+    // takes this route unasked when the socket accepts a connect.
+    var externalBtZjSocketTransport: Boolean
+        get() = prefs.getBoolean("external-bt-zj-socket-transport", false)
+        set(value) = prefs.edit().putBoolean("external-bt-zj-socket-transport", value).apply()
+
 }

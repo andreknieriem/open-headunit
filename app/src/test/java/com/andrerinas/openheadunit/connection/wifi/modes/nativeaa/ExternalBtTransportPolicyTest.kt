@@ -484,4 +484,18 @@ class ExternalBtTransportPolicyTest {
         assertEquals(ExternalBtTransportPolicy.WifiButton.ANDROID_RADIO,
             ExternalBtTransportPolicy.wifiButton(loaderCandidate(false), false, false))
     }
+
+    @Test
+    fun `the ZJ socket switch shows on marked units and where the socket file exists`() {
+        assertTrue(ExternalBtTransportPolicy.showZjSocketToggle(legacy(evidence, null), null, false, false))
+        assertTrue(ExternalBtTransportPolicy.showZjSocketToggle(legacy(null, null), null, true, false))
+        assertFalse(ExternalBtTransportPolicy.showZjSocketToggle(legacy(null, null), null, false, false))
+    }
+
+    @Test
+    fun `the ZJ socket switch hides on FYT units unless it is already on`() {
+        assertFalse(ExternalBtTransportPolicy.showZjSocketToggle(legacy(evidence, null), "FYT", true, false))
+        assertTrue(ExternalBtTransportPolicy.showZjSocketToggle(legacy(evidence, null), "FYT", true, true))
+        assertTrue(ExternalBtTransportPolicy.showZjSocketToggle(legacy(null, null), null, false, true))
+    }
 }

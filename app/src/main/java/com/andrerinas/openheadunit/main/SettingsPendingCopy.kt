@@ -62,6 +62,7 @@ class SettingsPendingCopy {
     var nativeAaIgnoreExternalBt: Boolean? = null
     var externalBtZbtTransport: Boolean? = null
     var externalBtBlinkTransport: Boolean? = null
+    var externalBtZjSocketTransport: Boolean? = null
     var nativeApTransport: NativeStrategy? = null
     var nativeDriverSelectionMode: NativeDriverSelectionPolicy.Mode? = null
     var nativeDriverSelectionTimeout: Int? = null
@@ -150,6 +151,7 @@ class SettingsPendingCopy {
         nativeAaIgnoreExternalBt = settings.nativeAaIgnoreExternalBt
         externalBtZbtTransport = settings.externalBtZbtTransport
         externalBtBlinkTransport = settings.externalBtBlinkTransport
+        externalBtZjSocketTransport = settings.externalBtZjSocketTransport
         nativeApTransport = settings.nativeApStrategy
         nativeDriverSelectionMode = settings.nativeDriverSelectionMode
         nativeDriverSelectionTimeout = settings.nativeDriverSelectionTimeoutSec
@@ -239,6 +241,7 @@ class SettingsPendingCopy {
         nativeAaIgnoreExternalBt != settings.nativeAaIgnoreExternalBt ||
         externalBtZbtTransport != settings.externalBtZbtTransport ||
         externalBtBlinkTransport != settings.externalBtBlinkTransport ||
+        externalBtZjSocketTransport != settings.externalBtZjSocketTransport ||
         nativeApTransport != settings.nativeApStrategy ||
         nativeDriverSelectionMode != settings.nativeDriverSelectionMode ||
         nativeDriverSelectionTimeout != settings.nativeDriverSelectionTimeoutSec ||

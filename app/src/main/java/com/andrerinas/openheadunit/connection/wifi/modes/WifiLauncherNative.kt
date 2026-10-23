@@ -101,6 +101,7 @@ class WifiLauncherNative : WifiLauncher {
             blinkTransportEnabled = settings.externalBtBlinkTransport,
             fytModuleEvidence = BluetoothHelper.fytModuleEvidence,
             hctServiceAvailable = HctServiceObserver.available(service),
+            zjSocketEnabled = settings.externalBtZjSocketTransport,
             zjSocketConnects = ZjSocketProbe.answer()
         )
         refusedModuleAtStart = blockedByExternalBt

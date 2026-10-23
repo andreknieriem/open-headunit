@@ -938,6 +938,8 @@
     <string name="external_bt_module_controls_hint">휴대전화 페어링, 연결 우선순위, 운전자 휴대전화 선택은 외장 블루투스 모듈에서 관리합니다.</string>
     <string name="external_bt_module_last_phone">모듈을 통해 마지막으로 연결된 휴대전화</string>
     <string name="external_bt_blink_transport_description">실험적 기능입니다. 통화용으로 별도의 블루투스 모듈에 휴대전화를 페어링하는 FYT 기기용입니다(예: DUDUOS의 \"DUDUAUTO\". 지금까지 테스트한 ROM은 이것뿐입니다). 무선 Android Auto 핸드셰이크는 이 기기의 블루투스가 아니라 이 모듈이 받으며, 평소에는 기본 Car Link 앱이 응답합니다. 이 설정을 켜면 이 앱이 대신 응답하므로 통화는 모듈과 차량 스피커에 그대로 유지됩니다.\n\n먼저 기본 Car Link 앱을 사용 중지하세요(pm disable-user com.syu.carlink). 그러지 않으면 두 앱이 같은 채널을 읽습니다. 기기가 허용하면 루트 없이 채널을 열고, 허용하지 않으면 루트로 엽니다. Native를 선택하고 휴대전화를 이 모듈에만 페어링하세요. 연결되지 않으면 로그를 내보내 주세요.</string>
+    <string name="external_bt_zj_socket_transport">ZJ 블루투스 소켓으로 연결</string>
+    <string name="external_bt_zj_socket_transport_description">ZJ 블루투스 모듈이 무선 Android Auto 핸드셰이크를 로컬 소켓(/dev/socket/zj_bt_socket)으로 전달하는 기기용입니다. 이 소켓이 연결을 받으면 앱이 자동으로 사용합니다. 기기에 소켓이 있는데 앱이 인식하지 못할 때만 사용 설정하세요.</string>
     <string name="external_bt_blink_refused_stock_enabled">외장 블루투스 모듈: 기본 Car Link 앱이 아직 사용 설정되어 있습니다. 앱을 사용 중지하거나(pm disable-user com.syu.carlink) 이 연결 방식을 끄세요.</string>
     <string name="external_bt_blink_refused_stock_running">외장 블루투스 모듈: 기본 Car Link 앱이 사용 중지되었지만 아직 실행 중입니다. 기기를 다시 시작하세요.</string>
     <string name="external_bt_blink_refused_root">외장 블루투스 모듈: 이 기기에서는 모듈 채널을 열려면 루트 권한이 필요한데, 루트 권한이 거부되었거나 사용할 수 없습니다.</string>

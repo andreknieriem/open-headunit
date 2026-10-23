@@ -954,6 +954,8 @@
     <string name="external_bt_module_controls_hint">スマートフォンのペアリング、接続の優先順位、ドライバーの選択は、外部Bluetoothモジュールが管理します。</string>
     <string name="external_bt_module_last_phone">モジュール経由で最後に接続したスマートフォン</string>
     <string name="external_bt_blink_transport_description">実験的な機能です。通話用のスマートフォンを別のBluetoothモジュールとペアリングするFYT機器向けです。例：DUDUOSの「DUDUAUTO」（現在、動作を確認した唯一のROM）。ワイヤレスAndroid Autoのハンドシェイクは、この機器のBluetoothではなくモジュールが運び、通常は標準のCar Linkアプリが応答します。これをオンにすると、代わりにこのアプリが応答するため、通話はモジュールと車のスピーカーのままになります。\n\n先に標準のCar Linkアプリを無効にしてください（pm disable-user com.syu.carlink）。そうしないと、両方のアプリが同じチャンネルを読み取ります。チャンネルは、機器が許可していればroot権限なしで、そうでなければroot権限で開きます。「ネイティブ」を選び、スマートフォンをモジュールにのみペアリングしてください。接続できない場合は、ログを書き出してください。</string>
+    <string name="external_bt_zj_socket_transport">ZJ Bluetoothソケット経由で接続</string>
+    <string name="external_bt_zj_socket_transport_description">ZJ Bluetoothモジュールがワイヤレス Android Autoのハンドシェイクをローカルソケット（/dev/socket/zj_bt_socket）で処理するユニット向けです。このソケットが接続を受け付ける場合、アプリは自動的に使用します。ユニットにソケットがあるのにアプリが検出しない場合のみ、オンにしてください。</string>
     <string name="external_bt_blink_refused_stock_enabled">外部Bluetoothモジュール：標準のCar Linkアプリがまだ有効です。無効にする（pm disable-user com.syu.carlink）か、この接続方式をオフにしてください。</string>
     <string name="external_bt_blink_refused_stock_running">外部Bluetoothモジュール：標準のCar Linkアプリは無効ですが、まだ動作しています。機器を再起動してください。</string>
     <string name="external_bt_blink_refused_root">外部Bluetoothモジュール：モジュールのチャンネルを開くには、この機器でroot権限が必要ですが、root権限が拒否されたか、利用できません。</string>

@@ -153,6 +153,7 @@ class NativeAaHandshakeManager(
                 blinkTransportEnabled = settings.externalBtBlinkTransport,
                 fytModuleEvidence = BluetoothHelper.fytModuleEvidence,
                 hctServiceAvailable = HctServiceObserver.available(context),
+                zjSocketEnabled = settings.externalBtZjSocketTransport,
                 zjSocketConnects = ZjSocketProbe.answer()
             )
         }
@@ -167,6 +168,7 @@ class NativeAaHandshakeManager(
                 blinkTransportEnabled = settings.externalBtBlinkTransport,
                 fytModuleEvidence = BluetoothHelper.fytModuleEvidence,
                 hctServiceAvailable = HctServiceObserver.available(context),
+                zjSocketEnabled = settings.externalBtZjSocketTransport,
                 zjSocketConnects = ZjSocketProbe.answer()
             )
         }
@@ -181,6 +183,7 @@ class NativeAaHandshakeManager(
                 blinkTransportEnabled = settings.externalBtBlinkTransport,
                 fytModuleEvidence = BluetoothHelper.fytModuleEvidence,
                 hctServiceAvailable = HctServiceObserver.available(context),
+                zjSocketEnabled = settings.externalBtZjSocketTransport,
                 zjSocketConnects = ZjSocketProbe.answer()
             )
         }
@@ -896,6 +899,7 @@ class NativeAaHandshakeManager(
             blinkTransportEnabled = settings.externalBtBlinkTransport,
             fytModuleEvidence = BluetoothHelper.fytModuleEvidence,
             hctServiceAvailable = HctServiceObserver.available(context),
+            zjSocketEnabled = settings.externalBtZjSocketTransport,
             zjSocketConnects = ZjSocketProbe.answer()
         )
     }
@@ -936,6 +940,7 @@ class NativeAaHandshakeManager(
                 blinkTransportEnabled = settings.externalBtBlinkTransport,
                 fytModuleEvidence = BluetoothHelper.fytModuleEvidence,
                 hctServiceAvailable = HctServiceObserver.available(context),
+                zjSocketEnabled = settings.externalBtZjSocketTransport,
                 zjSocketConnects = ZjSocketProbe.answer()
             )
         ) {

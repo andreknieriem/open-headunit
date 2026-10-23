@@ -948,6 +948,8 @@
     <string name="external_bt_module_controls_hint">手机配对、连接优先级和驱动选择均由外接蓝牙模块管理。</string>
     <string name="external_bt_module_last_phone">最近通过该模块连接的手机</string>
     <string name="external_bt_blink_transport_description">实验性功能。适用于手机通过独立蓝牙模块配对通话的 FYT 主机，例如 DUDUOS 上的“DUDUAUTO”（目前唯一测试过的 ROM）。无线 Android Auto 握手由该模块而非本机蓝牙承载，通常由原厂 Car Link 应用响应。开启后改由本应用响应，因此通话仍保留在该模块和车载扬声器上。\n\n请先停用原厂 Car Link 应用 (pm disable-user com.syu.carlink)，否则两个应用会读取同一通道。在主机允许时，无需 root 即可打开该通道，否则通过 root 打开。请选择“原生”，只将手机与该模块配对；如果无法连接，请导出日志。</string>
+    <string name="external_bt_zj_socket_transport">通过 ZJ 蓝牙套接字连接</string>
+    <string name="external_bt_zj_socket_transport_description">适用于 ZJ 蓝牙模块通过本地套接字（/dev/socket/zj_bt_socket）传输无线 Android Auto 握手的设备。当该套接字接受连接时，应用会自动使用。仅当你的设备有此套接字而应用未检测到时，才需开启。</string>
     <string name="external_bt_blink_refused_stock_enabled">外接蓝牙模块：原厂 Car Link 应用仍处于启用状态。请将其停用 (pm disable-user com.syu.carlink)，或关闭此传输方式。</string>
     <string name="external_bt_blink_refused_stock_running">外接蓝牙模块：原厂 Car Link 应用已停用，但仍在运行。请重启本机。</string>
     <string name="external_bt_blink_refused_root">外接蓝牙模块：打开该模块的通道需要本机具有 root 权限，但 root 访问被拒绝或不可用。</string>

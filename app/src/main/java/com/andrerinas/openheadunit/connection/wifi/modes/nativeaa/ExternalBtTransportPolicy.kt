@@ -188,6 +188,17 @@ object ExternalBtTransportPolicy {
     fun showBlinkToggle(fytModuleEvidence: String?, enabled: Boolean): Boolean =
         fytModuleEvidence != null || enabled
 
+    /**
+     * Offered where the ZJ markers or the socket file are present and the unit is not an FYT one,
+     * and kept while enabled so the control that turns it off stays reachable.
+     */
+    fun showZjSocketToggle(
+        discovery: ZbtDiscoveryPolicy.Snapshot,
+        fytModuleEvidence: String?,
+        socketFilePresent: Boolean,
+        enabled: Boolean
+    ): Boolean = enabled || (fytModuleEvidence == null && (discovery.decision.available || socketFilePresent))
+
     /** Keep the radio escape visible only where it can affect routing, or is already checked. */
     fun showsAndroidRadioOverride(
         discovery: ZbtDiscoveryPolicy.Snapshot,

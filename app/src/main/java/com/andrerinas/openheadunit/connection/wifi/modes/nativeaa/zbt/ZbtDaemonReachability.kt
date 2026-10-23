@@ -17,7 +17,7 @@ import com.andrerinas.openheadunit.utils.AppLog
 object ZbtDaemonReachability {
 
     /**
-     * How long to wait for the daemon's first frame once it has taken our `RequestInit`. One read
+     * How long to wait for the daemon's first unsolicited frame after connecting. One read
      * timeout. Silence is not an application answer and does not identify which client owns the
      * server or whether initialization has completed, so it never rejects the route on its own.
      */
@@ -263,9 +263,8 @@ object ZbtDaemonReachability {
                     "NativeAA: [ZBT candidate] no confirmed ZBT greeting; retaining Android Bluetooth route."
                 )
                 if (retryRefusals && !requireIdentity) AppLog.i(
-                    "NativeAA: [ZBT] the local daemon check did not establish reachability during this " +
-                        "attempt's ${ZbtReachabilityPolicy.REFUSAL_WINDOW_MS / 1000}s retry window. " +
-                        "This does not determine whether the module can become available later."
+                    "NativeAA: [ZBT] could not connect to 127.0.0.1:3152 during this attempt's " +
+                        "${ZbtReachabilityPolicy.REFUSAL_WINDOW_MS / 1000}s retry window; ending this attempt."
                 )
                 return false
             }
@@ -284,15 +283,16 @@ object ZbtDaemonReachability {
     }
 
     /**
-     * Connect, send `RequestInit`, and wait for one frame back. Init is protocol setup, not a passive
-     * query: candidate firmware forwards enable_type to its Bluetooth enable callback. This path
-     * must yield to the app's carrier even before init; a reply still does not prove working HFP.
+     * Observe reachability without activating Bluetooth. RequestInit invokes the vendor's enable
+     * callback, just like RequestReconn, so a preliminary route check must not send an extra one.
+     * Legacy routing already accepts silence; unconfirmed firmware still requires InitInfo through
+     * ZbtIdentityProbe. Neither TCP acceptance nor an identity greeting proves a working HFP link.
      */
     private fun dialOnce(keepTrying: () -> Boolean): Boolean {
         val opening = observerOpening(keepTrying) ?: throw ZbtChannelOpening.Cancelled()
         try {
             val channel = try {
-                ZbtByteChannel.open(bufferRfcommData = false, opening = opening)
+                ZbtByteChannel.open(bufferRfcommData = false, opening = opening, initialize = false)
             } catch (e: ZbtChannelOpening.Cancelled) {
                 throw e
             } catch (e: ZbtByteChannel.NotConnected) {
@@ -343,7 +343,7 @@ object ZbtDaemonReachability {
             )
             // No application reply cannot distinguish another client, pending initialization, or
             // another busy state. Retain the existing route decision without diagnosing the cause.
-            ZbtReachabilityPolicy.Verdict.LISTENING_SILENT -> AppLog.w(
+            ZbtReachabilityPolicy.Verdict.LISTENING_SILENT -> AppLog.i(
                 "NativeAA: [ZBT] no usable module reply confirmed during this connection attempt; " +
                     "client ownership and phone state remain unknown. Retaining the module route" +
                     (detail?.let { " ($it)" } ?: "") + "."

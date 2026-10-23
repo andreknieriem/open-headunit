@@ -18,13 +18,14 @@ class ZbtChannelOpeningTest {
         val connected: () -> Unit = {},
         val beforeInit: () -> Unit = {},
         val closed: () -> Unit = {},
-        val output: OutputStream = ByteArrayOutputStream()
+        val output: OutputStream = ByteArrayOutputStream(),
+        val input: InputStream = ByteArrayInputStream(byteArrayOf())
     ) : Socket() {
         var connects = 0
         var closes = 0
         override fun connect(endpoint: SocketAddress, timeout: Int) { connects++; connected() }
         override fun setSoTimeout(timeout: Int) = Unit
-        override fun getInputStream(): InputStream = ByteArrayInputStream(byteArrayOf())
+        override fun getInputStream(): InputStream = input
         override fun getOutputStream(): OutputStream { beforeInit(); return output }
         override fun close() { closes++; closed() }
     }
@@ -164,5 +165,41 @@ class ZbtChannelOpeningTest {
             }, 0)
         }
         assertEquals(emptyList<String>(), casts)
+    }
+
+    @Test fun `passive observation receives daemon bytes without an enable request`() {
+        val socket = FakeSocket(input = ByteArrayInputStream(
+            ZbtFraming.encodeFrame(byteArrayOf(42), ZbtMessages.RFCOMM_DATA)))
+        val opening = ZbtChannelOpening()
+        org.mockito.Mockito.mockStatic(android.os.SystemClock::class.java).use { clock ->
+            clock.`when`<Long> { android.os.SystemClock.elapsedRealtime() }.thenReturn(1_000L)
+            ZbtByteChannel.open(opening = opening, socketFactory = { socket }, initialize = false).use {
+                assertEquals(it.closeReason, 42, it.input.read())
+                assertEquals(0, (socket.output as ByteArrayOutputStream).size())
+                assertFalse(opening.initWasAdmitted())
+            }
+        }
+    }
+
+    @Test fun `a carrier claim interrupts passive identity connect without sending init`() {
+        val entered = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        val error = AtomicReference<Throwable>()
+        val socket = FakeSocket(
+            connected = { entered.countDown(); check(release.await(2, TimeUnit.SECONDS)) },
+            closed = { release.countDown() }
+        )
+        val worker = Thread {
+            try { ZbtIdentityProbe.probe(socketFactory = { socket }) }
+            catch (e: Throwable) { error.set(e) }
+        }
+        worker.start()
+        assertTrue(entered.await(2, TimeUnit.SECONDS))
+        ZbtDaemonReachability.claimCarrier().use {
+            worker.join(2_000)
+            assertFalse(worker.isAlive)
+            assertTrue(error.get() is ZbtChannelOpening.Cancelled)
+            assertEquals(0, (socket.output as ByteArrayOutputStream).size())
+        }
     }
 }

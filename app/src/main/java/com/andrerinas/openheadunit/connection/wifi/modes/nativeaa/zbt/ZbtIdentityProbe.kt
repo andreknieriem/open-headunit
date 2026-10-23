@@ -17,7 +17,8 @@ import java.net.Socket
  * The app uses its normal INTERNET permission; the system daemon retains UART ownership.
  *
  * On unconfirmed candidates, send neither RequestInit nor reconnect: do not issue commands
- * before identifying the daemon. The established marker path keeps its existing RequestInit.
+ * before identifying the daemon. Automatic reachability is passive too; the real carrier
+ * retains RequestInit when it takes over the connection.
  * A port accepting connections is insufficient, especially when ZLink holds its one
  * client slot. Only a complete InitInfo selects ZBT automatically. This identifies
  * the protocol, not the peer's authenticity or successful over-the-air communication.
@@ -42,26 +43,42 @@ object ZbtIdentityProbe {
         host: String = ZbtByteChannel.HOST,
         port: Int = ZbtByteChannel.PORT,
         budgetMs: Int = 3000,
-        keepTrying: () -> Boolean = { true }
+        keepTrying: () -> Boolean = { true },
+        socketFactory: () -> Socket = { Socket() }
     ): Outcome {
         require(budgetMs > 0)
+        // Losing admission before socket creation is a yielded probe, not negative identity.
+        if (!keepTrying()) throw ZbtChannelOpening.Cancelled()
+        // Share the carrier registry with legacy discovery and the explicit probe. A carrier
+        // can close this socket while connect/read blocks, not only after its timeout returns.
+        val opening = ZbtDaemonReachability.observerOpening(keepTrying)
+            ?: throw ZbtChannelOpening.Cancelled()
+        // A carrier can claim and release the slot before parsing finishes. Current registry
+        // state alone cannot tell that this measurement was preempted; every result keeps
+        // the opening's cancellation history until classification, before finally closes it.
+        fun complete(outcome: Outcome): Outcome {
+            if (opening.wasCancelled()) throw ZbtChannelOpening.Cancelled()
+            return outcome
+        }
         val deadline = System.nanoTime() + budgetMs.toLong() * 1_000_000L
         fun remainingMs(): Int {
-            if (!keepTrying()) throw IOException("probe cancelled")
+            if (opening.wasCancelled()) throw ZbtChannelOpening.Cancelled()
             val left = deadline - System.nanoTime()
             if (left <= 0) throw IOException("greeting deadline expired")
             return ((left + 999_999L) / 1_000_000L).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
         }
         return try {
             // Socket is Closeable only from API 19, so close it by hand rather than with use().
-            val socket = Socket()
+            val socket = socketFactory()
             try {
+                opening.attach(socketCloser(socket))
                 try {
                     socket.connect(InetSocketAddress(host, port), remainingMs())
                 } catch (_: ConnectException) {
+                    if (opening.wasCancelled()) throw ZbtChannelOpening.Cancelled()
                     // A booting daemon can start listening shortly. Retry only this case;
                     // connecting repeatedly to a busy single-client daemon is not harmless.
-                    return Outcome.REFUSED
+                    return complete(Outcome.REFUSED)
                 }
                 val input = socket.getInputStream()
                 fun read(size: Int): ByteArray {
@@ -78,21 +95,26 @@ object ZbtIdentityProbe {
                 repeat(MAX_FRAMES) {
                     val header = read(ZbtFraming.HEADER_SIZE)
                     val size = ZbtFraming.decodeBodySize(header)
-                    if (size !in 0..MAX_GREETING_BYTES) return Outcome.UNCONFIRMED
+                    if (size !in 0..MAX_GREETING_BYTES) return complete(Outcome.UNCONFIRMED)
                     val body = read(size)
                     if (isIdentity(ZbtFraming.decodeMsgId(header), body)) {
-                        return if (keepTrying()) Outcome.IDENTIFIED else Outcome.UNCONFIRMED
+                        if (opening.wasCancelled()) throw ZbtChannelOpening.Cancelled()
+                        return complete(Outcome.IDENTIFIED)
                     }
                 }
-                Outcome.UNCONFIRMED
+                complete(Outcome.UNCONFIRMED)
             } finally {
                 try { socket.close() } catch (_: IOException) {}
             }
-        } catch (_: IOException) {
-            Outcome.UNCONFIRMED
+        } catch (e: IOException) {
+            if (e is ZbtChannelOpening.Cancelled || opening.wasCancelled()) throw ZbtChannelOpening.Cancelled()
+            complete(Outcome.UNCONFIRMED)
         } catch (_: SecurityException) {
             // Vendor SELinux rules may differ even when the same daemon file is installed.
-            Outcome.UNCONFIRMED
+            complete(Outcome.UNCONFIRMED)
+        } finally {
+            opening.close()
+            ZbtDaemonReachability.releaseObserver(opening)
         }
     }
 }

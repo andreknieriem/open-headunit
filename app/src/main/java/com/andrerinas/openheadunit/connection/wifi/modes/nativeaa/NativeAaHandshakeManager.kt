@@ -20,6 +20,8 @@ import com.andrerinas.openheadunit.connection.wifi.direct.WifiBandCapability
 import com.andrerinas.openheadunit.utils.BluetoothAddressSeedPolicy
 import com.andrerinas.openheadunit.utils.BluetoothHelper
 import com.andrerinas.openheadunit.aap.protocol.proto.Wireless
+import com.andrerinas.openheadunit.connection.broker.NativeBTBrokerSession
+import com.andrerinas.openheadunit.connection.broker.NativeBTBrokerCarrier
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.blink.BlinkAaCarrier
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.blink.BlinkAutoSerialChannel
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.blink.BlinkRefusal
@@ -170,6 +172,10 @@ class NativeAaHandshakeManager(
         }
 
         fun checkCompatibility(context: Context): Boolean {
+            if (NativeBTBrokerSession.hasSavedBroker(context)) {
+                AppLog.i("NativeAA: Bluetooth runs over the Native BT Broker, so the RFCOMM compatibility check does not apply.")
+                return true
+            }
             when (transportRoute(context)) {
                 // The module has its own listener and its own compatibility, established by the
                 // daemon answering at connection time. Nothing below measures that.
@@ -857,6 +863,11 @@ class NativeAaHandshakeManager(
         // Leave isRunning false, like the "adapter disabled" case below: isActive() callers must
         // see this as genuinely stopped. Nothing here is retryable, but a listener that was never
         // opened must not be reported as up.
+        // A saved Native BT Broker wins like BLINK: the ESP32 owns Classic RFCOMM and BLE relays bytes.
+        if (NativeBTBrokerSession.hasSavedBroker(context)) {
+            startOverBrokerModule()
+            return
+        }
         when (transportRoute(context)) {
             // The module carries the handshake instead, over its own channel. None of the RFCOMM
             // setup below applies to it.
@@ -1196,11 +1207,13 @@ class NativeAaHandshakeManager(
         handoffSettlingSince = 0L
         resetHandshakeBackoff()
 
-        if (ExternalBtTransportPolicy.rearmsWithoutAndroidRadio(transportRoute(context))) {
+        if (moduleCarrier?.rearmsWithoutAndroidRadio == true ||
+            ExternalBtTransportPolicy.rearmsWithoutAndroidRadio(transportRoute(context))
+        ) {
             aaListenersClosedForSession = false
             aaListenerLost = false
             aaReopenAttempts = 0
-            AppLog.i("NativeAA: [BLINK] session state re-armed; the module bridge remains ready for the next phone channel.")
+            AppLog.i("NativeAA: module session state re-armed; the bridge remains ready for the next phone channel.")
             return
         }
 
@@ -2698,6 +2711,48 @@ class NativeAaHandshakeManager(
             }
         }
     }
+    private fun startOverBrokerModule() {
+        isRunning = true
+        notStartedReason = null
+        aaListenersClosedForSession = false
+        localRadioName = "Native BT Broker"
+        AppLog.i(
+            "NativeAA: Native BT Broker transport is on — the handshake goes over Classic RFCOMM on the " +
+                "ESP32, relayed to this unit by BLE GATT write/indicate (BLINK-style)."
+        )
+        val carrier = NativeBTBrokerCarrier(
+            serve = { link ->
+                ConnectionStageTracker.report(ConnectionStage.PHONE_ANSWERED)
+                handleHandshake(link)
+            },
+            isRunning = { isRunning },
+            isFinishedForSession = { aaListenersClosedForSession },
+            mayServeHandshake = { NativeHandoffPolicy.shouldServeHandshake(consecutiveHandshakeFailures) },
+            onPhoneEvidence = { resetHandshakeBackoff() },
+            ensureLink = {
+                NativeBTBrokerSession.armRelay(context)
+                NativeBTBrokerSession.offerLiveGroup(context, force = false)
+            },
+            sendToPhone = { bytes -> NativeBTBrokerSession.sendRfcomm(bytes) },
+            grantCredit = { extra -> NativeBTBrokerSession.grantCredit(extra) },
+        )
+        NativeBTBrokerSession.setFrameSink { frame -> carrier.onFrame(frame) }
+        moduleCarrier = carrier
+        NativeBTBrokerSession.armRelay(context)
+        NativeBTBrokerSession.offerLiveGroup(context, force = true)
+        scope.launch(Dispatchers.IO + CoroutineName("NativeAa-NativeBTBrokerCarrier")) {
+            try {
+                carrier.run()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                AppLog.e("NativeAA: [Broker] carrier stopped unexpectedly: ${e.message}", e)
+            } finally {
+                NativeBTBrokerSession.setFrameSink(null)
+            }
+        }
+    }
+
     private fun startOverBlinkModule() {
         isRunning = true
         notStartedReason = null
@@ -3846,6 +3901,7 @@ class NativeAaHandshakeManager(
         // wake requests to a dead channel.
         moduleCarrier?.close()
         moduleCarrier = null
+        NativeBTBrokerSession.setFrameSink(null)
         wppTcpServer?.stop()
         wppTcpServer = null
         try { aaServerSocket?.close() } catch (e: Exception) {}

@@ -334,6 +334,10 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
      */
     private val warmRelaunchCheckRunnable = Runnable { maybeRecoverWarmRelaunch() }
 
+    /** The window shape the session was last redrawn for while this stayed in front, or null. */
+    private var shapeRedrawnFor: ScreenOrientationPolicy.Normalisation? = null
+    private val shapeCheckRunnable = Runnable { redrawIfTurned() }
+
     /** Starts the no-picture window afresh, for a new surface or a return to a kept one. */
     private fun armWarmRelaunch() {
         lastSurfaceSetMs = SystemClock.elapsedRealtime()
@@ -1290,6 +1294,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         settleFocusCycle()
         watchdogHandler.removeCallbacks(warmRelaunchCheckRunnable)
         watchdogHandler.removeCallbacks(returnRearmRunnable)
+        watchdogHandler.removeCallbacks(shapeCheckRunnable)
         watchdogHandler.removeCallbacks(watchdogRunnable)
         watchdogHandler.removeCallbacks(videoWatchdogRunnable)
         watchdogHandler.removeCallbacks(reconnectingWatchdog)
@@ -1356,6 +1361,9 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         // The whole rule, not only the session hold: an orientation changed in Settings while this
         // was paused arrived while its receiver was unregistered.
         applyOrientationSettings()
+        // Back in front, a window turned while it was away (behind the keyguard, say) is a new turn.
+        shapeRedrawnFor = null
+        scheduleShapeCheck()
         if (!isProjectionPausedByDevice && isSurfaceSet && commManager.connectionState.value is CommManager.ConnectionState.TransportStarted) {
             commManager.retakeVideoFocusForKeyframe()
         }
@@ -2428,7 +2436,6 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         val target = ScreenOrientationPolicy.sessionOrientation(
             settings.screenOrientation,
             negotiatedLandscape = HeadUnitScreenConfig.getNegotiatedWidth() > HeadUnitScreenConfig.getNegotiatedHeight(),
-            sdkInt = Build.VERSION.SDK_INT,
         ) ?: return false
         if (requestedOrientation != target) {
             AppLog.i("[UI_DEBUG] Sticky Orientation: Session active (${settings.screenOrientation}), forcing orientation to $target")
@@ -2536,6 +2543,44 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         if (!HeadUnitScreenConfig.isResolutionLocked) {
             HeadUnitScreenConfig.init(this, resources.displayMetrics, settings)
         }
+        scheduleShapeCheck()
+    }
+
+    private fun scheduleShapeCheck() {
+        watchdogHandler.removeCallbacks(shapeCheckRunnable)
+        watchdogHandler.postDelayed(shapeCheckRunnable, ScreenOrientationPolicy.SHAPE_SETTLE_MS)
+    }
+
+    /** Ends a session whose window settled in the other shape, so it lands again drawn in that one. */
+    private fun redrawIfTurned() {
+        if (!commManager.isConnected) return
+        val negotiated = HeadUnitScreenConfig.announcedShape()
+        val window = when (resources.configuration.orientation) {
+            android.content.res.Configuration.ORIENTATION_LANDSCAPE -> ScreenOrientationPolicy.Normalisation.LANDSCAPE
+            android.content.res.Configuration.ORIENTATION_PORTRAIT -> ScreenOrientationPolicy.Normalisation.PORTRAIT
+            else -> null
+        }
+        if (!ScreenOrientationPolicy.redrawsSession(
+                settings.screenOrientation, negotiated, window,
+                readingIsOurs = HeadUnitScreenConfig.readingDescribesProjection(this),
+                alreadyRedrawnFor = shapeRedrawnFor,
+            )
+        ) {
+            if (window != null && window != negotiated && window == shapeRedrawnFor) {
+                AppLog.w("[AapProjectionActivity] The session came back drawn $negotiated in a $window window; not redrawing it again.")
+            }
+            return
+        }
+        AppLog.i(
+            "[AapProjectionActivity] The window turned $window under a session drawn $negotiated: " +
+                "reconnecting so Android Auto draws it $window."
+        )
+        shapeRedrawnFor = window
+        commManager.disconnect(
+            isUserExit = false,
+            honorKillOnDisconnect = false,
+            reason = CommManager.DisconnectReason.SETTINGS_RESTART,
+        )
     }
 
     private fun applyOrientationSettings() {

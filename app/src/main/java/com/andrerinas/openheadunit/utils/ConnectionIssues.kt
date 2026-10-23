@@ -120,6 +120,18 @@ enum class ConnectionIssue {
     HANDS_FREE_RECORD_REFUSED,
 
     /**
+     * The phone took this unit's hands-free connection and dropped it at once, with its whole link.
+     *
+     * The other side of [HANDS_FREE_HELD_ELSEWHERE]: here the phone has no place left. It holds two
+     * Bluetooth audio devices at a time, and measured on a Z Fold3 the car's own Bluetooth and a
+     * pair of earbuds filled them, so every wake ended in Android Auto opening on the phone for 5 s
+     * and closing. Certain only when the walk got no answer and the link went too
+     * ([com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.HandsFreeRefusalPolicy]). The
+     * lever is one of the other devices; a hands-free connection that completes disproves it.
+     */
+    PHONE_REFUSED_HANDS_FREE,
+
+    /**
      * The phone is dialling a TCP endpoint this unit no longer honours, and cannot be told to stop.
      *
      * Android Auto stores that endpoint beside the network it was given and prefers it over the
@@ -260,6 +272,7 @@ object ConnectionIssues {
                 ConnectionIssue.HEADUNIT_SERVER_NOT_ANSWERING -> settings.connectionIssueHeadUnitServerDeafAtEpochMs
                 ConnectionIssue.HANDS_FREE_HELD_ELSEWHERE -> settings.connectionIssueHandsFreeHeldAtEpochMs
                 ConnectionIssue.HANDS_FREE_RECORD_REFUSED -> settings.connectionIssueHandsFreeRecordRefusedAtEpochMs
+                ConnectionIssue.PHONE_REFUSED_HANDS_FREE -> settings.connectionIssuePhoneRefusedHandsFreeAtEpochMs
                 ConnectionIssue.PHONE_HOLDS_STALE_ENDPOINT -> settings.connectionIssueStaleEndpointAtEpochMs
                 ConnectionIssue.HOME_WIFI_REJOINED_BESIDE_GROUP -> settings.connectionIssueHomeWifiRejoinedAtEpochMs
                 ConnectionIssue.STALE_USB_ACCESSORY -> settings.connectionIssueStaleUsbAccessoryAtEpochMs
@@ -284,6 +297,7 @@ object ConnectionIssues {
                     ConnectionIssue.HEADUNIT_SERVER_NOT_ANSWERING -> settings.connectionIssueHeadUnitServerDeafAtEpochMs = atEpochMs
                     ConnectionIssue.HANDS_FREE_HELD_ELSEWHERE -> settings.connectionIssueHandsFreeHeldAtEpochMs = atEpochMs
                     ConnectionIssue.HANDS_FREE_RECORD_REFUSED -> settings.connectionIssueHandsFreeRecordRefusedAtEpochMs = atEpochMs
+                    ConnectionIssue.PHONE_REFUSED_HANDS_FREE -> settings.connectionIssuePhoneRefusedHandsFreeAtEpochMs = atEpochMs
                     ConnectionIssue.PHONE_HOLDS_STALE_ENDPOINT -> settings.connectionIssueStaleEndpointAtEpochMs = atEpochMs
                     ConnectionIssue.HOME_WIFI_REJOINED_BESIDE_GROUP -> settings.connectionIssueHomeWifiRejoinedAtEpochMs = atEpochMs
                     ConnectionIssue.STALE_USB_ACCESSORY -> settings.connectionIssueStaleUsbAccessoryAtEpochMs = atEpochMs

@@ -39,6 +39,7 @@ comm = 'connection/CommManager.kt'
 manager = 'connection/self/SelfLauncherManager.kt'
 legacy = 'connection/self/launchers/SelfLauncherLegacy.kt'
 for marker, file, declaration in [
+    ('XYAUTO', 'aap/AapService.kt', 'private fun refreshXyAutoMediaPolicy('),
     ('STATE', comm, 'class Disconnected('),
     ('CANCEL', comm, 'fun cancelPendingSettingsRestart()'),
     ('START', manager, 'fun start(settingsRestart:'),
@@ -73,7 +74,8 @@ scan_sources = [SRC / 'connection/wifi/scan/ScanControlPolicy.kt',
                 SRC / 'connection/wifi/modes/nativeaa/NativeStrategy.kt',
                 HERE / 'audio-stubs/WifiLauncherNative.kt',
                 HERE / 'audio-stubs/WifiScanControl.kt',
-                HERE / 'audio-stubs/VideoFocusEvent.kt']
+                HERE / 'audio-stubs/VideoFocusEvent.kt',
+                HERE / 'audio-stubs/XyAutoMediaSession.kt']
 subprocess.run(['java', '-cp', cp, 'org.jetbrains.kotlin.cli.jvm.K2JVMCompiler',
                 '-no-stdlib', '-no-reflect', '-nowarn', '-classpath', cp,
                 '-d', str(OUT / 'regression.jar'), *map(str, sorted(OUT.glob('*.kt')) + scan_sources)],

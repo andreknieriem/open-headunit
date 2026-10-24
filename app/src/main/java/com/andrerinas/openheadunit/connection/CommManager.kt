@@ -366,6 +366,18 @@ class CommManager(
                 connectionAttempt else null
         }
 
+    /**
+     * Vendor A2DP suppression belongs only to an accepted session that actually receives audio.
+     * Read the immutable transport config with its identity: Save may already hold the next
+     * session's preference while the old transport is still retiring.
+     */
+    internal val acceptedWirelessAudioSession: Any?
+        get() = synchronized(transportLifecycleLock) {
+            val state = _connectionState.value
+            if ((state is ConnectionState.HandshakeComplete || state is ConnectionState.TransportStarted) &&
+                _transport?.aapAudio?.sessionConfig?.enabled == true) acceptedWirelessSession else null
+        }
+
     /** `true` when this session, or the attempt in flight, runs over a USB cable. */
     val isUsbSession: Boolean
         get() = _connection is AbstractUsbProjectionConnection

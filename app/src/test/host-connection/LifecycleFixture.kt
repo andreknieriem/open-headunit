@@ -6,6 +6,7 @@ import android.app.Application
 import android.media.AudioManager
 import android.os.*
 import com.andrerinas.openheadunit.aap.AapAudio
+import com.andrerinas.openheadunit.connection.bluetooth.xyauto.XyAutoMediaSession
 import com.andrerinas.openheadunit.connection.wifi.scan.WifiScanControl
 import com.andrerinas.openheadunit.connection.wifi.modes.WifiLauncherNative
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeStrategy
@@ -125,14 +126,24 @@ private class ObserverFixture(
     native: Boolean = true,
     strategy: NativeStrategy = NativeStrategy.WIFI_DIRECT,
     accepted: Any? = Any(),
+    audioEnabled: Boolean = true,
 ) {
     private fun wifiLockHeldForMs(): Long? = null
     private class Connection(
         val isWirelessSession: Boolean,
         val isLoopbackSession: Boolean,
         var acceptedWirelessSession: Any?,
+        audioEnabled: Boolean,
+
     ) {
         val connectionState = MutableStateFlow<ConnectionState>(ConnectionState.Disconnected())
+        private val transportLifecycleLock = Any()
+        private val _connectionState get() = connectionState
+        data class Config(val enabled: Boolean)
+        data class Audio(val sessionConfig: Config)
+        data class Output(val aapAudio: Audio)
+        private val _transport = Output(Audio(Config(audioEnabled)))
+        // PRODUCTION XYAUTO_SESSION
         val attemptUserRequested = false
         var isProjectionVideoFocusSuppressed = false
         val videoFocus = mutableListOf<com.andrerinas.openheadunit.aap.protocol.messages.VideoFocusEvent>()
@@ -141,7 +152,7 @@ private class ObserverFixture(
         }
     }
     private class Usb { var projectionHandshakeFailures=0; fun onHandshakeFailed() {} }
-    private val commManager = Connection(wireless, loopback, accepted)
+    private val commManager = Connection(wireless, loopback, accepted, audioEnabled)
     private class Wifi(val active: Any?)
     private val wifiLauncherManager = Wifi(if (native) WifiLauncherNative(strategy) else Any())
     private class Self { fun onConnectionEstablished() {}; fun onConnectionEnded(state: ConnectionState.Disconnected) {} }
@@ -167,11 +178,14 @@ private class ObserverFixture(
     private fun armProjectionRaiseDeadline(value: Any) {}
     private fun launchAapProjectionActivity() = Unit
     private fun sendBroadcast(intent: Intent) {}
+    private var isDestroying = false
+    // PRODUCTION XYAUTO
     private fun maybeAutoResumePlaybackOnReconnect() {}
     private fun stopDummyVpn(reason: DummyVpnPolicy.Reason) {}
     fun start() { observeConnectionState() }
     fun connected() { transition(ConnectionState.Connected) }
     fun transition(state: ConnectionState) { commManager.connectionState.value = state }
+    fun stopMediaPolicy() { isDestroying = true; refreshXyAutoMediaPolicy(commManager.connectionState.value) }
     fun replaceAccepted(connection: Any) { commManager.acceptedWirelessSession = connection }
     fun suppressVideo(value: Boolean) { commManager.isProjectionVideoFocusSuppressed = value }
     fun videoFocusEvents() = commManager.videoFocus.toList()
@@ -194,17 +208,23 @@ private fun scanControlObserverRegression() {
                     val accepted = Any()
                     val observer = ObserverFixture(wireless = true, strategy = strategy, accepted = accepted)
                     WifiScanControl.calls.clear()
+                    XyAutoMediaSession.calls.clear()
                     try {
                         observer.start()
                         check(WifiScanControl.calls.single() == WifiScanControl.Call(observer))
                         observer.transition(firstLive)
+                        val xyExpected = if (firstLive == ConnectionState.HandshakeComplete ||
+                            firstLive == ConnectionState.TransportStarted) accepted else null
+                        check(XyAutoMediaSession.calls.last() == XyAutoMediaSession.Call(observer, xyExpected))
                         check(WifiScanControl.calls.last() == WifiScanControl.Call(observer, accepted,
                             strategy == NativeStrategy.HOTSPOT)) { "scan start missing: SDK=$sdk phase=$firstLive" }
                         observer.disconnected()
+                        check(XyAutoMediaSession.calls.last().session == null)
                         check(WifiScanControl.calls.last() == WifiScanControl.Call(observer))
                         val replacement = Any()
                         observer.replaceAccepted(replacement)
                         observer.transition(ConnectionState.TransportStarted)
+                        check(XyAutoMediaSession.calls.last().session === replacement)
                         check(WifiScanControl.calls.last().connection === replacement) { "old connection identity reused" }
                         observer.transition(ConnectionState.Error("handshake failed"))
                         check(WifiScanControl.calls.last() == WifiScanControl.Call(observer))
@@ -223,15 +243,35 @@ private fun scanControlObserverRegression() {
         )
         for ((name, observer) in excluded) {
             WifiScanControl.calls.clear()
+            XyAutoMediaSession.calls.clear()
             try {
                 observer.start()
                 observer.transition(ConnectionState.Connecting)
                 liveStates.forEach(observer::transition)
                 observer.disconnected()
+                if (name != "non-native") check(XyAutoMediaSession.calls.all { it.session == null }) {
+                    "XYAuto policy acquired for $name"
+                }
                 check(WifiScanControl.calls.size == 7)
                 check(WifiScanControl.calls.all { it == WifiScanControl.Call(observer) }) { "scan control acquired for $name" }
             } finally { observer.close() }
         }
+        val silent = ObserverFixture(wireless = true, audioEnabled = false)
+        XyAutoMediaSession.calls.clear()
+        try {
+            silent.start(); liveStates.forEach(silent::transition)
+            check(XyAutoMediaSession.calls.all { it.session == null }) {
+                "Audio Sink disabled must preserve the phone's alternate Bluetooth audio route"
+            }
+        } finally { silent.close() }
+        val retiring = ObserverFixture(wireless = true)
+        XyAutoMediaSession.calls.clear()
+        try {
+            retiring.start(); retiring.transition(ConnectionState.TransportStarted)
+            check(XyAutoMediaSession.calls.last().session != null)
+            retiring.stopMediaPolicy()
+            check(XyAutoMediaSession.calls.last().session == null)
+        } finally { retiring.close() }
         Build.VERSION.SDK_INT = 25
         val legacy = ObserverFixture(wireless = true)
         WifiScanControl.calls.clear()

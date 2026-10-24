@@ -7,6 +7,7 @@
         rikka.shizuku.provider, rikka.shizuku.api, rikka.shizuku.shared, rikka.shizuku.aidl, com.topjohnwu.superuser" />
 
     <queries>
+        <package android:name="com.xygala.bluetooth" />
         <package android:name="moe.shizuku.privileged.api" />
         <package android:name="com.syu.ms" />
         <!-- Rootless HCT bridge discovery when SELinux hides /dev/goc_serial. -->

@@ -49,7 +49,7 @@ class AudioTrackWrapper(
     private val trackChannelCount = channelCount
     private val bytesPerFrame = channelCount * 2
     private val mixerChannel = mixer.registerChannel(channelId, sampleRate, channelCount,
-        audioLatencyMultiplier, isMediaSink, onOwnerRetired).also { it.gain = gain }
+        audioLatencyMultiplier, isMediaSink, onOwnerRetired, allowNativeTimeCorrection = !isAac).also { it.gain = gain }
     private var ownerRetired = false
     @Volatile private var isRunning = true
     @Volatile private var decoder: MediaCodec? = null
@@ -101,7 +101,12 @@ class AudioTrackWrapper(
         isAdts -> AudioSinkCodec.AAC_LC_ADTS
         else -> AudioSinkCodec.AAC_LC
     }
-    fun isPlaybackHealthy(): Boolean = isRunning && mixer.isRunning()
+    /** A failed DSP still owns its ready/device tail. Keep that owner until explicit
+     * local restart or teardown; replacing it on each DATA would cut the tail and
+     * repeatedly construct the same failing engine. Input acceptance is separate.
+     */
+    fun isOutputOwnerAlive(): Boolean = isRunning && mixer.isRunning()
+    fun canAcceptAudioInput(): Boolean = isRunning && mixerChannel.timeStretch?.failure == null
     fun setGain(gain: Float) { mixerChannel.gain = gain }
 
     private fun initDecoder(sampleRate: Int, channels: Int): Boolean {
@@ -322,8 +327,10 @@ class AudioTrackWrapper(
     private fun feedPcm(buffer: ByteArray, offset: Int, size: Int, format: PcmInputFormat) {
         handoffInFlight = true
         try {
-            lastPcmActivityMs = SystemClock.elapsedRealtime()
-            onPcmActivity()
+            if (canAcceptAudioInput()) {
+                lastPcmActivityMs = SystemClock.elapsedRealtime()
+                onPcmActivity()
+            }
             mixer.feed(mixerChannel, buffer, offset, size, format)
         } finally { handoffInFlight = false }
     }
@@ -585,6 +592,9 @@ class AudioTrackWrapper(
     }
 
     fun preparePlayback() {
+        // Protocol Start is not an explicit local recovery request. A terminal native
+        // owner can drain old PCM but cannot accept this segment or reacquire focus for it.
+        if (!canAcceptAudioInput()) return
         if (inputClosed && synchronized(dataQueue) { !submitInFlight && dataQueue.isEmpty() }) {
             progressWatchdog.idleClosedTail()
         }

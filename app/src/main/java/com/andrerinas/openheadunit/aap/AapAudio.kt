@@ -452,7 +452,7 @@ internal class AapAudio(
         audioDecoder.start(channel, stream, config.sampleRate, config.numberOfBits, config.numberOfChannels,
             codec.isAac, gain, effectiveMultiplier, audioQueueCapacity, staticAudioFocus, attachHwDspEqualizer,
             preferAAudio = settings.useAAudioOutput, isAdts = codec == AudioSinkCodec.AAC_LC_ADTS, session = decoderSession)
-        if (announcePlayback) audioDecoder.getTrack(channel, decoderSession)?.let {
+        if (announcePlayback) audioDecoder.getTrack(channel, decoderSession)?.takeIf { it.canAcceptAudioInput() }?.let {
             onAudioPlaybackStarted(channel, it.playbackOwner)
         }
     }
@@ -586,7 +586,7 @@ internal class AapAudio(
         val track = audioDecoder.getTrack(channel, decoderSession)
         if (track == null) {
             startAudioTrack(channel)
-        } else {
+        } else if (track.canAcceptAudioInput()) {
             // Cheap and already guarded: it returns at once unless this is the first channel to
             // carry audio. The track may have been built at setup, so this is where focus is taken.
             onAudioPlaybackStarted(channel, track.playbackOwner)

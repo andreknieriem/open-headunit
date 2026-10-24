@@ -59,3 +59,7 @@ app/src/main/java/com/andrerinas/openheadunit/decoder/audio/AudioTimeCorrectionM
 app/src/main/java/com/andrerinas/openheadunit/decoder/audio/TimeStretchEngine.kt
 app/src/main/java/com/andrerinas/openheadunit/decoder/audio/NativePcmQueue.kt
 app/src/main/java/com/andrerinas/openheadunit/decoder/audio/NativeTempoPolicy.kt
+app/src/main/java/com/andrerinas/openheadunit/decoder/audio/TimeStretchWorker.kt
+app/src/test/host-audio/TimeStretchWorkerRegression.kt
+app/src/test/host-audio/NativeMusicIntegration.kt
+app/src/test/host-audio/NativeFailureOwnershipRegression.kt

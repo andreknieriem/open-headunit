@@ -1,6 +1,7 @@
 package com.andrerinas.openheadunit.decoder.audio
 
 import android.media.AudioManager
+import android.os.Build
 import android.os.Process
 import android.os.SystemClock
 import com.andrerinas.openheadunit.utils.AppLog
@@ -31,7 +32,8 @@ class AudioMixer(
     private val keepOutputActive: Boolean = false,
     private val duckMediaForSpeech: Boolean = false,
     private val canRender: () -> Boolean = { true },
-    private val onRecoveryActivity: () -> Unit = {}
+    private val onRecoveryActivity: () -> Unit = {},
+    private val matchingMode: AudioTimeCorrectionMode = AudioTimeCorrectionMode.OHU
 ) {
     companion object {
         const val OUTPUT_SAMPLE_RATE = 48000
@@ -45,8 +47,17 @@ class AudioMixer(
     }
 
     internal class Channel(val rate: Int, val channels: Int, multiplier: Int, val isMediaSink: Boolean,
-                           val onOutputStopped: () -> Unit) {
-        val buffer = AdaptivePcmBuffer(latencyMultiplier = multiplier, isMediaSink = isMediaSink)
+                           val onOutputStopped: () -> Unit, matchingMode: AudioTimeCorrectionMode = AudioTimeCorrectionMode.OHU,
+                           onReady: () -> Unit = {},
+                           createEngine: () -> TimeStretchEngine = { NativeTimeStretchEngine(matchingMode) }) {
+        val buffer = AdaptivePcmBuffer(latencyMultiplier = multiplier, isMediaSink = isMediaSink,
+            nativeTimeCorrection = matchingMode != AudioTimeCorrectionMode.OHU)
+        val timeStretch = if (matchingMode == AudioTimeCorrectionMode.OHU) null else
+            TimeStretchWorker(matchingMode, buffer, SystemClock::elapsedRealtime, onReady,
+                { AppLog.w("Audio time correction: $it") }, createEngine)
+        // The worker publishes idle only after its last bank write. Read it first:
+        // reading an empty bank first could miss a tail delivered between the two reads.
+        fun isIdle() = timeStretch?.isIdle() != false && buffer.isIdle()
         val format = PcmInputFormat(rate, channels)
         val converter = PcmConverter()
         @Volatile var gain = 1f
@@ -61,6 +72,7 @@ class AudioMixer(
         var lastRealEpoch = -1L
         @Volatile var outputConsumed = true
         var activeThisCycle = false
+        var timeStretchFailureReported = false
         var startupReported = false
         var reportedRebanks = 0L
         var reportedRebankEntries = 0L
@@ -74,6 +86,7 @@ class AudioMixer(
     private val hasReceivedAudio = AtomicBoolean(false)
     private val feedSignal = Semaphore(0)
     private var mixThread: Thread? = null
+    private var bankRecoveryAnnounced = false // Output-owner thread only.
     @Volatile private var output: RecoveringPcmOutput? = null
     @Volatile private var outputDrainMs = 40L
     @Volatile private var recoveryPending = false
@@ -100,6 +113,7 @@ class AudioMixer(
                 finally {
                     running.set(false)
                     retireOutputOwners()
+                    channels.values.forEach { it.timeStretch?.close() }
                     try { output?.close() } catch (e: Exception) { AppLog.e("AudioMixer: close failed", e) }
                     output = null
                 }
@@ -116,6 +130,7 @@ class AudioMixer(
         running.set(false)
         mixThread?.interrupt()
         retireOutputOwners()
+        channels.values.forEach { it.timeStretch?.close() }
         channels.clear()
         channelSnapshot = emptyArray()
     }
@@ -136,13 +151,20 @@ class AudioMixer(
 
     @Synchronized internal fun registerChannel(channel: Int, sampleRate: Int, channelCount: Int,
                         latencyMultiplier: Int = audioLatencyMultiplier, isMediaSink: Boolean = false,
-                        onOutputStopped: () -> Unit = {}): Channel {
-        return Channel(sampleRate, channelCount, latencyMultiplier, isMediaSink, onOutputStopped).also {
+                        onOutputStopped: () -> Unit = {}, allowNativeTimeCorrection: Boolean = true): Channel {
+        val effectiveMode = matchingMode.forSink(isMediaSink, allowNativeTimeCorrection, Build.VERSION.SDK_INT) {
+            NativeTimeStretch.supported
+        }
+        if (effectiveMode != matchingMode)
+            AppLog.i("Audio time correction: selected=${matchingMode.preferenceValue}, effective=ohu (non-media, AAC or unavailable native engine)")
+        return Channel(sampleRate, channelCount, latencyMultiplier, isMediaSink, onOutputStopped, effectiveMode,
+            { if (feedSignal.availablePermits() == 0) feedSignal.release() }).also {
             channels[channel] = it
             channelSnapshot = channels.values.toTypedArray()
         }
     }
     @Synchronized internal fun unregisterChannel(channel: Int, state: Channel) {
+        state.timeStretch?.close()
         if (channels.remove(channel, state)) channelSnapshot = channels.values.toTypedArray()
     }
     internal fun resetConverter(state: Channel) {
@@ -159,7 +181,9 @@ class AudioMixer(
     internal fun finishChannel(state: Channel) {
         state.warmupUntilMs = 0
         if (state.firstPcmMs < 0) state.preparedMs = -1L
-        state.buffer.finish()
+        synchronized(state) {
+            if (state.timeStretch != null) state.timeStretch.finish() else state.buffer.finish()
+        }
         if (feedSignal.availablePermits() == 0) feedSignal.release()
     }
     fun isRunning(): Boolean = running.get()
@@ -168,14 +192,48 @@ class AudioMixer(
         // Terminal recovery parks retained audio. It must not hold the car radio's focus forever.
         (output?.isParked == true && outputUnavailableSinceMs >= 0 &&
             nowMs - outputUnavailableSinceMs >= 1000) ||
-        (!state.writePending && state.outputConsumed && state.buffer.isIdle() && !recoveryPending &&
+        isOutputDrained(state, nowMs)
+
+    // Parking can release focus temporarily without discarding its registration. Permanent
+    // native retirement must use actual drain, so retained PCM can still reacquire focus.
+    private fun isOutputDrained(state: Channel, nowMs: Long): Boolean =
+        (!state.writePending && state.outputConsumed && state.isIdle() && !recoveryPending &&
             (state.lastWriteCompletedMs < 0 || nowMs - state.lastWriteCompletedMs >= outputDrainMs) &&
             !state.writePending)
+    /** Called after device-consumption publication, even when lifecycle will WAIT.
+     * A native failure before the first output must release its owner; a later failure
+     * must keep focus until both the ready bank and already-written device tail drain.
+     */
+    internal fun retireFailedTimeStretch(state: Channel, nowMs: Long) {
+        if (state.timeStretch?.failure != null && !state.timeStretchFailureReported && isOutputDrained(state, nowMs)) {
+            state.timeStretchFailureReported = true
+            recordDiagnostic(nowMs, "native time correction failed; ready/device tail drained; " +
+                "local audio restart or reconnect required", warning = true)
+            try { state.onOutputStopped() }
+            catch (e: Exception) { AppLog.e("AudioMixer: native owner retirement failed", e) }
+        }
+    }
+
+    /** Native tail can reach the bank after temporary focus release, before a mixed
+     * block exists. Request focus outside writeFully too, but only when output cooldown
+     * permits a retry. Keep one request in flight while the main thread acquires focus.
+     */
+    internal fun requestBankedRecovery(device: RecoveringPcmOutput, states: Array<Channel> = channelSnapshot) {
+        if (device.isParked) bankRecoveryAnnounced = false
+        if (!bankRecoveryAnnounced && device.retryReady && states.any { it.buffer.depthFrames() > 0 }) {
+            bankRecoveryAnnounced = true
+            onRecoveryActivity()
+        }
+    }
+
     fun depthFramesFor(channel: Int): Int = channels[channel]?.buffer?.depthFrames() ?: 0
 
     /** Called at transport ingress, before codec and playback scheduling can distort timing. */
     internal fun noteArrival(state: Channel, inputFrames: Int, nowMs: Long) {
-        state.buffer.noteArrival(nowMs, (inputFrames.toLong() * OUTPUT_SAMPLE_RATE / state.rate).toInt())
+        // Native PCM queues carry the original arrival timestamp. Advance bank segments
+        // on their ordered worker, after the previous engine tail, not at transport ingress.
+        if (state.timeStretch == null)
+            state.buffer.noteArrival(nowMs, (inputFrames.toLong() * OUTPUT_SAMPLE_RATE / state.rate).toInt())
     }
 
     /** PCM16 little endian -> 48kHz stereo, using reusable per-producer storage. */
@@ -188,7 +246,8 @@ class AudioMixer(
             if (shorts == 0) return
             val now = SystemClock.elapsedRealtime()
             if (state.firstPcmMs < 0) state.firstPcmMs = now
-            state.buffer.write(state.converter.samples, shorts, now)
+            if (state.timeStretch != null) state.timeStretch.offer(state.converter.samples, shorts, now)
+            else state.buffer.write(state.converter.samples, shorts, now)
             state.warmupUntilMs = 0
             hasReceivedAudio.set(true)
             if (feedSignal.availablePermits() == 0) feedSignal.release()
@@ -209,7 +268,10 @@ class AudioMixer(
         var speechActive = false
         var boosted = false
         for (state in cycleChannels) {
+            state.timeStretch?.policy?.observe(nowMs, state.buffer.targetFrames(), state.buffer.depthFrames(),
+                outputBurstFrames, state.buffer.canTimeCorrect())
             val active = state.buffer.render(channelBuffer, nowMs, outputBurstFrames)
+            state.timeStretch?.spaceAvailable()
             state.activeThisCycle = active
             val gain = state.gain
             if (active && gain > 0f) activeChannels++
@@ -371,11 +433,14 @@ class AudioMixer(
                         it.lastOutputEpoch != device.outputEpoch || played >= it.lastOutputFrame
                 }
             }
-            val idle = channels.values.all { it.buffer.isIdle() }
+            channels.values.forEach { retireFailedTimeStretch(it, now) }
+            val idle = channels.values.all { it.isIdle() }
             if (!idle && !canRender()) {
+                requestBankedRecovery(device)
                 feedSignal.tryAcquire(10, TimeUnit.MILLISECONDS)
                 continue
             }
+            bankRecoveryAnnounced = false
             val warming = device.hasPendingRecovery || channels.values.any { now < it.warmupUntilMs }
             when (lifecycle.update(now, idle, warming, hasReceivedAudio.get(),
                 device.bufferFrames * 1000L / OUTPUT_SAMPLE_RATE + 20,
@@ -520,6 +585,12 @@ class AudioMixer(
                     "loopGapMax=${loopGapMaxMs}ms mixWorkMax=${mixWorkMaxMs}ms writeMax=${writeMaxMs}ms " +
                     "renderWaits=$renderWaits", remember = false)
                 for ((id, state) in channels) {
+                    state.timeStretch?.let { native ->
+                        AudioDiagnostics.report(now, "AudioMixer: id=$diagnosticId channel=$id native " +
+                            "accepted=${native.acceptedFrames} submitted=${native.submittedFrames} " +
+                            "produced=${native.producedFrames} delivered=${native.deliveredFrames} " +
+                            "rejected=${native.rejectedFrames} failure=${native.failure}", remember = false)
+                    }
                     AudioDiagnostics.report(now, "AudioMixer: id=$diagnosticId channel=$id target=${state.buffer.targetFrames() * 1000L / OUTPUT_SAMPLE_RATE}ms " +
                         "depth=${state.buffer.depthFrames() * 1000L / OUTPUT_SAMPLE_RATE}ms " +
                         "arrivalGapMax=${state.buffer.maxArrivalGapMs()}ms pcmGapMax=${state.buffer.maxPcmGapMs()}ms " +

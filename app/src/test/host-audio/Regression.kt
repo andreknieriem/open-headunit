@@ -23,6 +23,9 @@ private fun focusLease() = PlaybackFocusLease().apply {
 private fun PlaybackFocusLease.activity(channel: Int, nowMs: Long) = activity(channel, fixtureOwner, nowMs)
 
 fun main() {
+    nativeMusicIntegration()
+    timeStretchWorkerRegression()
+    nativeFailureOwnershipRegression()
     for (sdk in listOf(16, 21, 22)) aacHealthySyncProgressRegression(sdk)
     aacHealthyProgressRegression()
     audioTrackBufferRegression()

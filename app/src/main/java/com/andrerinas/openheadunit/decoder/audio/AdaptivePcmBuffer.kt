@@ -6,7 +6,8 @@ internal class AdaptivePcmBuffer(
     private val sampleRate: Int = 48000,
     private val channels: Int = 2,
     latencyMultiplier: Int = AudioJitterBufferPolicy.DEFAULT_MULTIPLIER,
-    private val isMediaSink: Boolean = false
+    private val isMediaSink: Boolean = false,
+    private val nativeTimeCorrection: Boolean = false
 ) {
     private val mediaPrerollDeadlineMs = 1500L
     private val cycleFrames = sampleRate / 100
@@ -177,6 +178,15 @@ internal class AdaptivePcmBuffer(
     @Synchronized fun isIdle(): Boolean =
         count == 0 && endingFrames == 0 && (ended || (firstDataMs < 0 && !rebanking)) && !started
 
+    /** Native output has already spent CPU and can contain a final prompt tail. Apply
+     * backpressure to its worker instead of overwriting earlier ready PCM on a burst. */
+    @Synchronized fun writeIfFits(data: ShortArray, length: Int, nowMs: Long): Boolean {
+        require(length in 0..data.size && length % channels == 0)
+        if (length > ring.size - count) return false
+        write(data, length, nowMs)
+        return true
+    }
+
     @Synchronized fun write(data: ShortArray, length: Int, nowMs: Long) {
         val aligned = length.coerceAtMost(data.size) / channels * channels
         if (aligned == 0) return
@@ -208,6 +218,10 @@ internal class AdaptivePcmBuffer(
     // Stop and a closing prefix are deliberate ends, not missing input to wait for.
     @Synchronized fun wouldConceal(): Boolean =
         started && !ended && closedPrefixSamples < 0 && gapFrames == 0 && count < cycleSamples
+
+    /** Ready-output control must not treat preroll, a closed prefix or PLC as stable playback. */
+    @Synchronized fun canTimeCorrect(): Boolean =
+        started && !ended && closedPrefixSamples < 0 && gapFrames == 0 && !needsFade
 
     var lastRenderRealFrames = 0
         private set
@@ -252,7 +266,7 @@ internal class AdaptivePcmBuffer(
         // Both create normal depth peaks; allow for them before repaying sustained backlog.
         val outputSlack = (outputBurstFrames - cycleFrames).coerceAtLeast(0)
         val slack = maxOf(sampleRate * 30 / 1000, policy.largestChunkFrames - cycleFrames + outputSlack)
-        val canRecover = !ended && !drainingPrefix && gapFrames == 0 && !needsFade
+        val canRecover = !nativeTimeCorrection && !ended && !drainingPrefix && gapFrames == 0 && !needsFade
         recovery.observe(nowMs, target, policy.largestChunkFrames, slack, count / channels,
             inputFrames, canRecover)
         // A late decoder batch is still playable PCM, even at a fixed latency setting.

@@ -22,6 +22,8 @@ import com.andrerinas.openheadunit.connection.wifi.direct.StoredP2pIdentity
 import com.andrerinas.openheadunit.aap.AapService
 
 import com.andrerinas.openheadunit.connection.wifi.direct.WifiBandCapability
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zjsocket.ZjSocketCarrier
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zjsocket.ZjSocketProbe
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zbt.ZbtDiscovery
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zbt.ZbtDiscoveryPolicy
 import com.andrerinas.openheadunit.utils.BluetoothAddressSeedPolicy
@@ -56,6 +58,7 @@ import com.andrerinas.openheadunit.connection.ConnectionStage
 import com.andrerinas.openheadunit.connection.ConnectionStageTracker
 import com.andrerinas.openheadunit.connection.wifi.modes.WifiLauncherNative
 import com.andrerinas.openheadunit.utils.Settings
+import com.andrerinas.openheadunit.utils.ExternalBtPolicy
 import com.andrerinas.openheadunit.utils.SystemProperties
 import java.io.DataInputStream
 import java.io.OutputStream
@@ -149,7 +152,9 @@ class NativeAaHandshakeManager(
                 settings.nativeAaIgnoreExternalBt,
                 blinkTransportEnabled = settings.externalBtBlinkTransport,
                 fytModuleEvidence = BluetoothHelper.fytModuleEvidence,
-                hctServiceAvailable = HctServiceObserver.available(context)
+                hctServiceAvailable = HctServiceObserver.available(context),
+                zjSocketEnabled = settings.externalBtZjSocketTransport,
+                zjSocketConnects = ZjSocketProbe.answer()
             )
         }
 
@@ -162,7 +167,9 @@ class NativeAaHandshakeManager(
                 settings.nativeAaIgnoreExternalBt,
                 blinkTransportEnabled = settings.externalBtBlinkTransport,
                 fytModuleEvidence = BluetoothHelper.fytModuleEvidence,
-                hctServiceAvailable = HctServiceObserver.available(context)
+                hctServiceAvailable = HctServiceObserver.available(context),
+                zjSocketEnabled = settings.externalBtZjSocketTransport,
+                zjSocketConnects = ZjSocketProbe.answer()
             )
         }
 
@@ -175,13 +182,20 @@ class NativeAaHandshakeManager(
                 settings.nativeAaIgnoreExternalBt,
                 blinkTransportEnabled = settings.externalBtBlinkTransport,
                 fytModuleEvidence = BluetoothHelper.fytModuleEvidence,
-                hctServiceAvailable = HctServiceObserver.available(context)
+                hctServiceAvailable = HctServiceObserver.available(context),
+                zjSocketEnabled = settings.externalBtZjSocketTransport,
+                zjSocketConnects = ZjSocketProbe.answer()
             )
         }
 
         fun checkCompatibility(context: Context): Boolean {
             val discovery = ZbtDiscovery.snapshot()
             when (transportRoute(context, discovery)) {
+                // The raw Unix domain socket (/dev/socket/zj_bt_socket) directly carries RFCOMM frames.
+                ExternalBtTransportPolicy.Route.ZJ_SOCKET -> {
+                    AppLog.i("NativeAA: Bluetooth runs over raw Unix domain socket (/dev/socket/zj_bt_socket), compatibility check SUCCESS.")
+                    return true
+                }
                 // The module has its own listener and its own compatibility, established by the
                 // daemon answering at connection time. Nothing below measures that.
                 ExternalBtTransportPolicy.Route.ZBT, ExternalBtTransportPolicy.Route.BLINK,
@@ -875,6 +889,21 @@ class NativeAaHandshakeManager(
         resumeAfterDaemonMeasurement(generation, arm)
     }
 
+    /** The socket is asked only once the ZBT daemon has refused and nothing else decided. */
+    private fun wantsZjSocketProbe(): Boolean {
+        val after = ZbtDiscovery.snapshot()
+        return after.reachable == false && ExternalBtTransportPolicy.needsDaemonMeasurement(
+            after,
+            settings.externalBtZbtTransport,
+            settings.nativeAaIgnoreExternalBt,
+            blinkTransportEnabled = settings.externalBtBlinkTransport,
+            fytModuleEvidence = BluetoothHelper.fytModuleEvidence,
+            hctServiceAvailable = HctServiceObserver.available(context),
+            zjSocketEnabled = settings.externalBtZjSocketTransport,
+            zjSocketConnects = ZjSocketProbe.answer()
+        )
+    }
+
     fun start() = start(resumingMeasurement = false)
 
     @SuppressLint("MissingPermission")
@@ -883,6 +912,7 @@ class NativeAaHandshakeManager(
         if (isRunning || measuringDaemon) return
         if (!resumingMeasurement) {
             ZbtDiscovery.beginArming()
+            ZjSocketProbe.beginArming()
             // Retain start()'s original fresh-arming reset: a cancellation from the previous
             // attempt must not reject every new phone, or leave the new session stood down.
             // Measurement completion belongs to the same arming, so preserve a phone selected
@@ -909,7 +939,9 @@ class NativeAaHandshakeManager(
                 settings.nativeAaIgnoreExternalBt,
                 blinkTransportEnabled = settings.externalBtBlinkTransport,
                 fytModuleEvidence = BluetoothHelper.fytModuleEvidence,
-                hctServiceAvailable = HctServiceObserver.available(context)
+                hctServiceAvailable = HctServiceObserver.available(context),
+                zjSocketEnabled = settings.externalBtZjSocketTransport,
+                zjSocketConnects = ZjSocketProbe.answer()
             )
         ) {
             notStartedReason = "the vendor Bluetooth daemon is still being asked whether it will carry Android Auto."
@@ -921,6 +953,12 @@ class NativeAaHandshakeManager(
                 val completion = measurement.awaitResolution(
                     keepTrying = { measuringDaemon && measureGeneration == generation }
                 )
+                // Only after ZBT refused, so a daemon that answers is never joined by a second dial.
+                if (completion != ZbtDiscovery.Measurement.Completion.CANCELLED &&
+                    measuringDaemon && measureGeneration == generation && wantsZjSocketProbe()
+                ) {
+                    ZjSocketProbe.measure()
+                }
                 withContext(Dispatchers.Main.immediate) {
                     completeDaemonMeasurement(generation, discovery.decision, completion)
                 }
@@ -932,6 +970,11 @@ class NativeAaHandshakeManager(
         // see this as genuinely stopped. Nothing here is retryable, but a listener that was never
         // opened must not be reported as up.
         when (transportRoute(context, discovery)) {
+            // The raw Unix domain socket (/dev/socket/zj_bt_socket) carries the RFCOMM stream directly.
+            ExternalBtTransportPolicy.Route.ZJ_SOCKET -> {
+                startOverZjSocket()
+                return
+            }
             // The module carries the handshake instead, over its own channel. None of the RFCOMM
             // setup below applies to it.
             ExternalBtTransportPolicy.Route.ZBT -> {
@@ -2977,6 +3020,55 @@ class NativeAaHandshakeManager(
         ConnectionStageTracker.retreat(ConnectionStage.WAKING_PHONE, ConnectionStage.WAITING_FOR_PHONE)
         scope.launch(Dispatchers.Main) {
             ToastUtils.showToast(context, refusal.message, Toast.LENGTH_LONG, force = true)
+        }
+    }
+
+    private fun startOverZjSocket() {
+        isRunning = true
+        notStartedReason = null
+        aaListenersClosedForSession = false
+        localRadioName = "ZJ socket (${ZjSocketProbe.path()})"
+        // The module's own address, which the phone is bonded to. Without it no Bluetooth service
+        // is announced and calls stay on the phone.
+        val moduleAddress = SystemProperties.get(ExternalBtPolicy.ZJ_MODULE_ADDRESS_PROPERTY, "").trim()
+        if (moduleAddress.isNotEmpty()) {
+            seedBluetoothAddressFromModule(moduleAddress)
+        } else {
+            AppLog.i(
+                "NativeAA: [ZJ] ${ExternalBtPolicy.ZJ_MODULE_ADDRESS_PROPERTY} is not set, so the module's " +
+                    "Bluetooth address is unknown here. Unless the Bluetooth address setting holds it, " +
+                    "calls may stay on the phone."
+            )
+        }
+        AppLog.i(
+            "NativeAA: [ZJ] socket transport is on (${BluetoothHelper.externalBtEvidence}); " +
+                "the handshake will connect to ${ZjSocketProbe.path()} directly."
+        )
+        val carrier = ZjSocketCarrier(
+            socketPath = ZjSocketProbe.path(),
+            serve = { link ->
+                ConnectionStageTracker.report(ConnectionStage.PHONE_ANSWERED)
+                handleHandshake(link)
+            },
+            isRunning = { isRunning },
+            isSessionConnected = { commManager.isConnected },
+            isHandshakeInFlight = { isHandshakeInFlight() },
+            isSettling = { isHandoffSettling() },
+            mayServeHandshake = { NativeHandoffPolicy.shouldServeHandshake(consecutiveHandshakeFailures) },
+            onPhoneEvidence = { resetHandshakeBackoff() },
+            servedRefusals = { consecutiveJoinRefusals }
+        )
+        moduleCarrier = carrier
+        // A wake queued during the measurement needs no send and no pill claim on this route.
+        wakeAwaitingModule = false
+        scope.launch(Dispatchers.IO + CoroutineName("NativeAa-ZjSocketCarrier")) {
+            try {
+                carrier.run()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                AppLog.e("NativeAA: [ZJ] carrier stopped unexpectedly: ${e.message}", e)
+            }
         }
     }
 

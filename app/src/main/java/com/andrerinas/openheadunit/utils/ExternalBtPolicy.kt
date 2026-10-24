@@ -22,6 +22,12 @@ object ExternalBtPolicy {
     /** Serial device nodes that only exist when a discrete Bluetooth module is wired to a UART. */
     private val DEVICE_NODES = listOf("/dev/rf_serial", "/dev/zj_bt_serial")
 
+    /** Unix sockets on which a ZJ daemon carries the RFCOMM stream; the probe tries them in order. */
+    val ZJ_SOCKET_PATHS = listOf("/dev/socket/zj_bt_socket")
+
+    /** The property that holds the ZJ module's own Bluetooth address, unseparated. */
+    const val ZJ_MODULE_ADDRESS_PROPERTY = "persist.zj.BTmac"
+
     /** Vendor properties that name the Bluetooth topology outright. */
     private val PROPERTY_KEYS = listOf("rw.zlink.bt.type", "rw.zj.bt.type")
 

@@ -51,6 +51,7 @@ import com.andrerinas.openheadunit.connection.wifi.UserExitHotspotPolicy
 import com.andrerinas.openheadunit.main.MainActivity
 import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zbt.ZbtDaemonReachability
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zjsocket.ZjSocketProbe
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.AppPermissions
 import com.andrerinas.openheadunit.utils.BluetoothAddressSeedPolicy
@@ -3335,6 +3336,7 @@ class AapService : Service() {
                         val age = ZbtDaemonReachability.answerAgeMs()?.let { it / 1000 }
                         AppLog.i("AapService: WiFi button: the vendor daemon refused ${age}s ago; asking it again.")
                         ZbtDaemonReachability.forget()
+                        ZjSocketProbe.forgetNegative()
                     }
                     val action = ModuleRearmPolicy.action(
                         nativeLauncherStarted = native != null && wifiLauncherManager.activeIsStarted,

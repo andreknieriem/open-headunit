@@ -1440,4 +1440,10 @@ Open Headunit предоставляется «как есть» без каки
     <string name="audio_settings_reconnect">Настройки звука сохранены. Чтобы применить их, переподключите Android Auto.</string>
     <string name="native_aa_candidate_android_radio_description">Использовать Bluetooth Android вместо автоматического выбора Bluetooth-модуля головного устройства. Для автоматического выбора оставьте выключенным. Если включена опция подключения через модуль, сначала выключите её.</string>
     <string name="external_bt_candidate_transport_description">Принудительно подключаться через Bluetooth-модуль головного устройства вместо автоматического выбора. Нужна совместимая служба модуля. Оставьте выключенным, чтобы использовать Bluetooth Android, если служба не отвечает; включение блокирует этот запасной путь.</string>
+    <string name="audio_matching_mode">Временная коррекция музыки</string>
+    <string name="audio_matching_ohu">OHU (низкая нагрузка на ЦП, по умолчанию)</string>
+    <string name="audio_matching_soundtouch">SoundTouch (баланс)</string>
+    <string name="audio_matching_r3">Rubber Band R3 (приоритет качества)</string>
+    <string name="audio_matching_r3_short">Rubber Band R3 Short (облегчённый R3)</string>
+    <string name="audio_matching_description">Выбирает способ компенсации отставания звука без изменения его высоты. OHU предназначен для маломощных устройств. SoundTouch и R3 требуют больше ресурсов ЦП и добавляют задержку обработки. R3 Short снижает вычислительную нагрузку R3.\n\nSoundTouch и R3: музыка PCM на Android 5.0 и новее. Для подсказок навигации, голосовых ответов, системных звуков, AAC и старых устройств используется OHU.\nПереподключитесь, чтобы применить изменение.</string>
 </resources>

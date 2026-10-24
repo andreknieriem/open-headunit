@@ -74,7 +74,7 @@ class WppTcpLifecycleTest {
         val projecting = AtomicBoolean(true)
         val callbacks = mock(WppTcpServer.Callbacks::class.java)
         `when`(callbacks.strategy()).thenReturn(NativeStrategy.WIFI_DIRECT)
-        `when`(callbacks.identity()).thenReturn(GroupIdentityStability.RENAMED)
+        `when`(callbacks.credentials()).thenReturn(NativeNetworkCredentials("DIRECT-AA", "12345678", "192.168.49.1", "02:11:22:33:44:55", GroupIdentityStability.RENAMED))
         `when`(callbacks.projectionSessionUp()).thenAnswer { projecting.get() }
         val owner = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         val server = WppTcpServer(mock(Context::class.java), owner, callbacks)
@@ -110,7 +110,7 @@ class WppTcpLifecycleTest {
             assertArrayEquals(WppFraming.encodeFrame(payload, WppMessageType.PING_RESPONSE), output.toByteArray())
             verify(tls, never()).close()
             verify(callbacks, never()).noteDialRefused()
-            verify(callbacks, never()).noteEndpointAdvertised()
+            verify(callbacks, never()).noteEndpointAdvertised(org.mockito.kotlin.any())
             projecting.set(false)
             withTimeout(3000) { session.await() }
             verify(tls).close()
@@ -122,6 +122,51 @@ class WppTcpLifecycleTest {
             session.cancelAndJoin()
             owner.cancel()
         }
+    }
+
+    @Test fun `version endpoint and advertisement record use the selected network`() = runBlocking {
+        val original = NativeNetworkCredentials("DIRECT-AA", "12345678", "192.168.49.1",
+            "02:11:22:33:44:55", GroupIdentityStability.STABLE)
+        var published = original
+        val callbacks = mock(WppTcpServer.Callbacks::class.java)
+        `when`(callbacks.credentials()).thenAnswer { published }
+        // Replace the group between selecting its credentials and deciding whether to advertise.
+        `when`(callbacks.strategy()).thenAnswer {
+            published = original.copy(ip = "192.168.50.1", identity = GroupIdentityStability.RENAMED)
+            NativeStrategy.WIFI_DIRECT
+        }
+        `when`(callbacks.carInfo()).thenReturn(WppMessages.carInfo("OHU", "HU", "2026", "1", "OHU", "HU"))
+        val scope = CoroutineScope(SupervisorJob())
+        val server = WppTcpServer(mock(Context::class.java), scope, callbacks)
+        val running = WppTcpServer::class.java.getDeclaredField("running").apply { isAccessible = true }
+        val listener = mock(ServerSocket::class.java)
+        `when`(listener.localPort).thenReturn(5289)
+        WppTcpServer::class.java.getDeclaredField("serverSocket").apply { isAccessible = true }.set(server, listener)
+        running.setBoolean(server, true)
+        val output = object : ByteArrayOutputStream() {
+            override fun write(bytes: ByteArray) {
+                super.write(bytes)
+                running.setBoolean(server, false) // End the exchange after its opening frame.
+            }
+        }
+        val inbound = kotlinx.coroutines.channels.Channel<NativeAaHandshakeManager.ProtobufMessage>()
+        try {
+            mockStatic(android.os.SystemClock::class.java).use { clock ->
+                clock.`when`<Long> { android.os.SystemClock.elapsedRealtime() }.thenReturn(1_000L)
+                suspendCoroutineUninterceptedOrReturn<Unit> { continuation ->
+                    WppTcpServer::class.java.getDeclaredMethod("runExchange", java.io.OutputStream::class.java,
+                        kotlinx.coroutines.channels.Channel::class.java, Long::class.javaPrimitiveType,
+                        NativeNetworkCredentials::class.java, Continuation::class.java).apply { isAccessible = true }
+                        .invoke(server, output, inbound, 0L, original, continuation)
+                }
+            }
+            val bytes = output.toByteArray()
+            assertEquals(WppMessageType.VERSION_REQUEST, WppFraming.decodeType(bytes))
+            val version = com.andrerinas.openheadunit.aap.protocol.proto.Wireless.WifiVersionRequest
+                .parseFrom(bytes.copyOfRange(4, bytes.size))
+            assertEquals(original.ip, version.wppInfo.ipAddress)
+            verify(callbacks).noteEndpointAdvertised(original)
+        } finally { inbound.close(); scope.cancel() }
     }
 
     private suspend fun runConnection(server: WppTcpServer, raw: Socket, factory: SSLSocketFactory): Unit =

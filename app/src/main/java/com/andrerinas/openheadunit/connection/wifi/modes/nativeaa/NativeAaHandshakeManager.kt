@@ -315,31 +315,12 @@ class NativeAaHandshakeManager(
     private val ownSocketCloseAt = ConcurrentHashMap<String, Long>()
 
     /**
-     * The credentials to hand the phone, as one value.
-     *
-     * Four separate fields were written by WifiDirectManager's delivery thread and read by the
-     * handshake coroutine with no synchronisation, which allowed two failures. A read could see the
-     * SSID and passphrase of one group beside the BSSID of another, and Gearhead joins with a
-     * WifiNetworkSpecifier matching SSID *and* BSSID under a full mask, so it rejects the pair with
-     * no clue as to why. And the null check and the `!!` that followed it were separate reads, so an
-     * invalidate landing between them threw a KotlinNullPointerException that surfaced as
-     * "Handshake error: null" and named nothing.
-     *
-     * One immutable snapshot behind one volatile reference: a reader gets all four fields from the
-     * same group or none of them, and reads them once. [identity] travels with them for the same
-     * reason: whether this network will still exist under this name and address next time is a
-     * fact about this group, and WppEndpointPolicy reads it beside the address it describes.
+     * Publish one complete Wi-Fi configuration together with its withdrawal generation.
+     * The sender uses the same snapshot for SSID, key, BSSID and STATIC/DYNAMIC policy;
+     * a later withdrawal is still visible while the phone is joining that network.
      */
-    private data class WifiCredentials(
-        val ssid: String,
-        val psk: String,
-        val ip: String,
-        val bssid: String,
-        val identity: GroupIdentityStability,
-    )
-
-    @Volatile
-    private var credentials: WifiCredentials? = null
+    private val credentialStore = WppCredentialStore()
+    private val credentials: NativeNetworkCredentials? get() = credentialStore.current.credentials
 
     /**
      * Whether the user is on a screen the wake poke must not interrupt. Answered by the launcher;
@@ -729,19 +710,15 @@ class NativeAaHandshakeManager(
         identity: GroupIdentityStability,
     ) {
         AppLog.i("NativeAA: Credentials updated. SSID=$ssid, IP=$ip, BSSID=$bssid, identity stable=${GroupIdentityStabilityPolicy.label(identity)}")
-        credentials = WifiCredentials(ssid = ssid, psk = psk, ip = ip, bssid = bssid, identity = identity)
+        credentialStore.publish(NativeNetworkCredentials(ssid, psk, ip, bssid, identity))
         earlyWakeSpent = false
     }
 
     /** Clears cached credentials so an in-progress wait doesn't hand out stale ones for a group
      *  that's about to be torn down. */
     fun invalidateCredentials() {
-        credentials = null
-        credentialsWithdrawals.incrementAndGet()
+        credentialStore.withdraw()
     }
-
-    /** Counts groups taken down, so a handshake can tell the network it sent has since gone. */
-    private val credentialsWithdrawals = java.util.concurrent.atomic.AtomicInteger()
 
     // isRunning alone isn't enough once closeAaListeners() can close the AA_UUID listener while
     // leaving the manager otherwise running (HFP stays up) — callers like AutoStartReceiver's
@@ -3203,10 +3180,14 @@ class NativeAaHandshakeManager(
             // What the credentials looked like when this exchange captured them, kept as resolved
             // so the re-read before Type 3 compares like with like.
             var capturedCreds = NativeNetworkCredentials("", "", "", "")
+            // The network whose WPP endpoint (Type 4, TCP 5299) went out, or null while none has.
+            // Not the projection address: that is credIp:5288 in Type 1. Kept as first advertised,
+            // so a repeated Type 4 cannot move it; see CredentialFreshnessPolicy.keepsEndpoint.
+            var advertisedNetwork: NativeNetworkCredentials? = null
             // Set when the network named above stopped existing before Type 3 could go out.
             var credentialsWentStale = false
             // The withdrawal count the credentials were sent under, or -1 before Type 3.
-            var sentUnderWithdrawals = -1
+            var sentUnderWithdrawals = -1L
             // When the opening message last went out, for the transports that have to repeat it.
             var lastOpenerSentAt = 0L
             // The held channel's bookkeeping, for its periodic summary and its release line.
@@ -3224,7 +3205,7 @@ class NativeAaHandshakeManager(
                             return
                         }
                         AppLog.i("NativeAA: [TX] Sending WifiVersionRequest (Type 4) v${WppHandshakeSession.WPP_VERSION_MAJOR}.${WppHandshakeSession.WPP_VERSION_MINOR}")
-                        sendWifiVersionRequest(output, transport)
+                        sendWifiVersionRequest(output, transport, advertisedNetwork)?.let { advertisedNetwork = it }
                         lastOpenerSentAt = SystemClock.elapsedRealtime()
                         spokeToPhone = true
                     }
@@ -3251,11 +3232,15 @@ class NativeAaHandshakeManager(
                         // Read again here rather than trusting the snapshot this exchange started
                         // with. A group removed inside the pause above leaves the phone hunting an
                         // SSID that is gone, which it cannot recover from without a new handshake.
-                        val withdrawalsAtSend = credentialsWithdrawals.get()
-                        val live = credentials
+                        // Read the network and its withdrawal generation together. A replacement
+                        // published between two reads must not inherit the old generation.
+                        val publication = credentialStore.current
+                        val withdrawalsAtSend = publication.withdrawals
+                        val live = publication.credentials
                         when (CredentialFreshnessPolicy.decide(
                             captured = capturedCreds,
-                            live = live?.let { NativeNetworkCredentials(it.ssid, it.psk, it.ip, it.bssid.uppercase()) },
+                            live = live?.copy(bssid = live.bssid.uppercase()),
+                            endpointNetwork = advertisedNetwork,
                         )) {
                             CredentialFreshnessPolicy.Action.SEND_AS_CAPTURED ->
                                 AppLog.d("NativeAA: the live credentials still match the ones this handshake captured.")
@@ -3276,7 +3261,7 @@ class NativeAaHandshakeManager(
                             }
 
                             CredentialFreshnessPolicy.Action.ABORT -> {
-                                AppLog.e("NativeAA: the network these credentials name was taken down while Type 3 was pending, so nothing is sent; the phone retries once a group is up.")
+                                AppLog.e("NativeAA: WiFi credentials were withdrawn, incomplete, moved to another endpoint, or no longer the network whose WPP endpoint went out before Type 3; ending this exchange so the next one describes the network that exists now.")
                                 credentialsWentStale = true
                             }
                         }
@@ -3289,7 +3274,7 @@ class NativeAaHandshakeManager(
                         }
                         sendWifiSecurityResponse(
                             output, credSsid, credPsk, credBssid,
-                            credentials?.identity ?: GroupIdentityStability.UNPROVEN
+                            live!!.identity
                         )
                         // Set after the write returns, not before the delay above: this marks that
                         // we put bytes on the channel, and a phone that opened the exchange itself
@@ -3468,7 +3453,7 @@ class NativeAaHandshakeManager(
                     return
                 }
                 if (session.stage == WppStage.SETTLING && sentUnderWithdrawals >= 0 &&
-                    credentialsWithdrawals.get() != sentUnderWithdrawals
+                    credentialStore.current.withdrawals != sentUnderWithdrawals
                 ) {
                     AppLog.w("NativeAA: the network the phone was sent was taken down while it was joining, so this handshake ends now and the phone is woken for the new one.")
                     feed(WppEvent.NetworkWithdrawn)
@@ -3547,7 +3532,7 @@ class NativeAaHandshakeManager(
                 }
                 resendOpener(
                     now,
-                    { sendWifiVersionRequest(output, transport) },
+                    { sendWifiVersionRequest(output, transport, advertisedNetwork)?.let { advertisedNetwork = it } },
                     "WifiVersionRequest (Type 4)"
                 )
                 tick(500)
@@ -3579,11 +3564,22 @@ class NativeAaHandshakeManager(
                 return@withContext
             }
 
+            // Before Type 1 names this network's projection address. A Type 4 that advertised another
+            // network's endpoint (it was replaced, or re-judged as not to be kept, during the wait)
+            // cannot be followed by this one's credentials, so the exchange ends here and the next
+            // one opens with a Type 4 that matches. A cold start whose Type 4 carried no endpoint
+            // has nothing to keep, and carries on.
+            if (!CredentialFreshnessPolicy.keepsEndpoint(advertisedNetwork, snapshot)) {
+                AppLog.w("NativeAA: the WPP endpoint went out for ${advertisedNetwork?.ssid}, and the network now is ${snapshot.ssid} (identity stable=${GroupIdentityStabilityPolicy.label(snapshot.identity)}); ending this exchange rather than send Type 1 and Type 3 for a network the endpoint does not describe.")
+                abortedLocally = true
+                return@withContext
+            }
+
             credIp = snapshot.ip
             credSsid = snapshot.ssid
             credPsk = snapshot.psk
             credBssid = snapshot.bssid.uppercase()
-            capturedCreds = NativeNetworkCredentials(credSsid, credPsk, credIp, credBssid)
+            capturedCreds = snapshot.copy(bssid = credBssid)
 
             // Before the BSSID, because this one is certain rather than merely likely: an open
             // network is refused by every client, and sending it spends a wake poke, which takes
@@ -3871,34 +3867,53 @@ class NativeAaHandshakeManager(
      * which is worse than staying quiet: it stores what we advertise and dials it in preference to
      * running this handshake again. On WiFi Direct that is decided by whether this unit's group has
      * been seen to keep its name and address, which travels with the credentials.
+     *
+     * Returns the network whose endpoint went out, or null when none did. That is the WPP-over-TCP
+     * endpoint (5299) the phone stores; the projection address (5288) is Type 1's, not this one's.
      */
-    private fun sendWifiVersionRequest(output: OutputStream, transport: NativeStrategy) {
-        val endpoint = when (val decision =
-            WppEndpointPolicy.decide(
-                transport,
-                wppTcpServer?.listeningPort,
-                credentials?.identity ?: GroupIdentityStability.UNPROVEN,
-            )) {
-            is WppEndpointDecision.Withhold -> {
+    private fun sendWifiVersionRequest(
+        output: OutputStream,
+        transport: NativeStrategy,
+        alreadyAdvertised: NativeNetworkCredentials?,
+    ): NativeNetworkCredentials? {
+        val snapshot = credentials
+        val decision = WppEndpointPolicy.decide(
+            transport,
+            wppTcpServer?.listeningPort,
+            snapshot?.identity ?: GroupIdentityStability.UNPROVEN,
+        )
+        // A repeat after the network changed: the phone may already hold the first endpoint, so
+        // this one must not quietly become the exchange's new baseline. The check before Type 1
+        // ends the exchange instead.
+        val rebases = decision is WppEndpointDecision.Advertise && alreadyAdvertised != null &&
+            snapshot != null && !alreadyAdvertised.sameNetworkAs(snapshot)
+        val endpoint = when {
+            decision is WppEndpointDecision.Withhold -> {
                 AppLog.i("NativeAA: not advertising WPP over TCP: ${decision.reason}")
                 null
             }
-            is WppEndpointDecision.Advertise ->
-                WppMessages.endpoint(credentials?.ip.orEmpty(), decision.port).also {
+            rebases -> {
+                AppLog.w("NativeAA: repeating Type 4 without an endpoint; the one already sent was for ${alreadyAdvertised?.ssid}, not ${snapshot?.ssid}.")
+                null
+            }
+            snapshot != null && decision is WppEndpointDecision.Advertise ->
+                WppMessages.endpoint(snapshot.ip, decision.port).also {
                     AppLog.i("NativeAA: advertising WPP over TCP at ${it.ip}:${it.port}")
-                    recordAdvertisedEndpoint(transport)
+                    recordAdvertisedEndpoint(transport, snapshot)
                 }
+            else -> null
         }
         val channelType = WppChannelTypePolicy.forHeadUnit(WifiBandCapability.supports5Ghz(context))
         val channels = WppChannelListPolicy.forGroup(WifiBandCapability.sessionFrequencyMhz())
         AppLog.i("NativeAA: [TX] version request channel type=$channelType channels=$channels")
         val request = WppMessages.versionRequest(carInfo(), endpoint, channelType, channels)
         sendProtobuf(output, request.toByteArray(), WppMessageType.VERSION_REQUEST)
+        return snapshot.takeIf { endpoint != null }
     }
 
     /** Remembers the network an endpoint went out under, which is the one the phone will insist on. */
-    private fun recordAdvertisedEndpoint(transport: NativeStrategy) {
-        val creds = credentials ?: return
+    private fun recordAdvertisedEndpoint(transport: NativeStrategy, snapshot: NativeNetworkCredentials?) {
+        val creds = snapshot ?: return
         if (transport == NativeStrategy.HOTSPOT) {
             val ap = SoftApEndpointStabilityPolicy.advertisement(creds.ssid, creds.psk, creds.bssid, creds.ip) ?: return
             if (settings.softApAdvertisedEndpoint != ap) settings.softApAdvertisedEndpoint = ap
@@ -3942,13 +3957,9 @@ class NativeAaHandshakeManager(
         if (wppTcpServer != null) return
         val server = WppTcpServer(context, scope, object : WppTcpServer.Callbacks {
             override fun credentials(): NativeNetworkCredentials? = this@NativeAaHandshakeManager.credentials
-                ?.let { NativeNetworkCredentials(it.ssid, it.psk, it.ip, it.bssid) }
 
             // The hosted transport, not the saved one: see handleHandshake().
             override fun strategy(): NativeStrategy = launcher.strategy
-
-            override fun identity(): GroupIdentityStability =
-                this@NativeAaHandshakeManager.credentials?.identity ?: GroupIdentityStability.UNPROVEN
 
             override fun carInfo(): Wireless.WppCarInfo = this@NativeAaHandshakeManager.carInfo()
 
@@ -3958,8 +3969,8 @@ class NativeAaHandshakeManager(
 
             override fun projectionSessionUp(): Boolean = commManager.isConnected
 
-            override fun projectionEndpoint(): Pair<String, Int>? =
-                this@NativeAaHandshakeManager.credentials?.ip?.takeIf { it.isNotBlank() }?.let { it to 5288 }
+            override fun projectionEndpoint(network: NativeNetworkCredentials): Pair<String, Int>? =
+                network.ip.takeIf { it.isNotBlank() }?.let { it to 5288 }
 
             override fun noteDialRefused() { dialRefusedSinceLastLanding = true }
 
@@ -3967,7 +3978,8 @@ class NativeAaHandshakeManager(
 
             override fun noteEndpointRetired() = retireAdvertisedEndpoint("the phone's dial was rejected")
 
-            override fun noteEndpointAdvertised() = recordAdvertisedEndpoint(launcher.strategy)
+            override fun noteEndpointAdvertised(credentials: NativeNetworkCredentials) =
+                recordAdvertisedEndpoint(launcher.strategy, credentials)
         })
         wppTcpServer = server
         server.start()
@@ -4094,7 +4106,7 @@ class NativeAaHandshakeManager(
         }
         aaServerSocket = null
         hfpServerSocket = null
-        credentials = null
+        credentialStore.withdraw()
         pokeJob?.cancel()
         pokeJob = null
         lastPokeTriggerCredentials = null

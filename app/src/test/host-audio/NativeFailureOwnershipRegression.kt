@@ -62,12 +62,12 @@ internal fun nativeFailureOwnershipRegression() {
                         object : TimeStretchEngine {
                             var supplied = false
                             var returned = false
-                            override fun process(pcm: ShortArray, frames: Int, tempo: Double) { supplied = true }
-                            override fun receive(pcm: ShortArray): Int {
+                            override fun process(pcm: TimeStretchBlock, frames: Int, tempo: Double) { supplied = true }
+                            override fun receive(pcm: TimeStretchBlock): Int {
                                 check(supplied)
                                 if (returned) throw IllegalStateException("fixture failure after ready PCM")
                                 returned = true
-                                pcm.fill(5000, 0, 480)
+                                repeat(480) { pcm[it] = 5000 }
                                 return 240
                             }
                             override fun finish() = error("failed engine must not be reused for Stop")

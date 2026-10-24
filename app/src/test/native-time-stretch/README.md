@@ -13,7 +13,7 @@ The executable uses the same adapters and pinned library source as the APK. It c
 short inputs, native finalization and complete retrieval, including output returned only
 at Stop, changing tempo, and nonzero source at the end of a stream. A separate JVM
 smoke loads the production JNI library and calls all of its entry points for each engine,
-including malformed array/count/tempo requests followed by valid playback on the same owner.
+including malformed buffer/count/tempo requests followed by valid playback on the same owner.
 The linked-library scope check also requires SoundTouch/R3 while rejecting R2,
 LiveShifter, the upstream C facade and unused BPM detection implementations.
 It does not infer subjective audio quality or Android CPU performance from a
@@ -47,3 +47,11 @@ the last sample exceeding magnitude 32 as well as the total length, since the ex
 output is not necessarily all silence and must not be trimmed by a guessed duration.
 These measurements explain why native processing cannot be made transparent to
 short guidance simply by moving it onto a faster worker thread.
+
+The JNI test binds reusable native-order direct blocks once per engine and checks
+invalid/repeated binding, unbound calls, GC lifetime, final drain, and close. A
+test-only array bridge feeds the same DSP implementation as a reference: 60
+fixtures compare every returned PCM sample and block length for asymmetric
+stereo, full-scale values, silence, partial input blocks and changing tempo.
+The reference library is only built by this host test project, never into the APK.
+`-Xcheck:jni` also checks reference and exception handling during the run.

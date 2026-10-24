@@ -56,8 +56,8 @@ internal class TimeStretchWorker(
 
     private fun run() {
         var engine: TimeStretchEngine? = null
-        val source = ShortArray(960)
-        val output = ShortArray(960)
+        val source = TimeStretchBlock()
+        val output = TimeStretchBlock()
         val read = NativePcmQueue.Read()
         try {
             // DSP is not the device callback. Let its consumer keep the higher audio priority.
@@ -89,6 +89,7 @@ internal class TimeStretchWorker(
                 if (engine == null) {
                     policy.beginSegment()
                     engine = createEngine()
+                    engine.bind(source, output)
                     activeSegment = true
                 }
                 if (read.packetFrames > 0) bank.noteArrival(read.arrivalMs, read.packetFrames)
@@ -126,7 +127,7 @@ internal class TimeStretchWorker(
         // retaining an idle thread and native workspace cannot recover uncertain input.
     }
 
-    private fun drain(engine: TimeStretchEngine, output: ShortArray) {
+    private fun drain(engine: TimeStretchEngine, output: TimeStretchBlock) {
         while (running) {
             val frames = engine.receive(output)
             check(frames in 0..480) { "Invalid native output size: $frames" }

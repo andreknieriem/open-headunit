@@ -53,6 +53,20 @@ internal class NativePcmQueue(private val capacityFrames: Int = 72_000) {
     }
 
     @Synchronized fun poll(destination: ShortArray, result: Read) {
+        poll(destination.size, result) { sourceOffset, destinationOffset, length ->
+            System.arraycopy(pcm, sourceOffset, destination, destinationOffset, length)
+        }
+    }
+
+    @Synchronized fun poll(destination: TimeStretchBlock, result: Read) {
+        poll(destination.size, result) { sourceOffset, destinationOffset, length ->
+            destination.put(pcm, sourceOffset, length, destinationOffset)
+        }
+    }
+
+    // The queue owns PCM until this bounded transfer finishes. Only the worker's
+    // private direct block crosses JNI; the producer can keep filling this ring.
+    private inline fun poll(capacity: Int, result: Read, copy: (Int, Int, Int) -> Unit) {
         result.frames = 0
         result.packetFrames = 0
         if (events == 0) return
@@ -62,15 +76,15 @@ internal class NativePcmQueue(private val capacityFrames: Int = 72_000) {
             advanceEvent()
             return
         }
-        val samples = minOf(destination.size / 2 * 2, length)
+        val samples = minOf(capacity / 2 * 2, length)
         if (!eventStarted) {
             result.packetFrames = packetFrames[eventRead]
             result.arrivalMs = arrivals[eventRead]
             eventStarted = true
         }
         val first = minOf(samples, pcm.size - read)
-        System.arraycopy(pcm, read, destination, 0, first)
-        System.arraycopy(pcm, 0, destination, first, samples - first)
+        copy(read, 0, first)
+        if (samples > first) copy(0, first, samples - first)
         read = (read + samples) % pcm.size
         count -= samples
         lengths[eventRead] -= samples

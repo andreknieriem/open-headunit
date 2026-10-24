@@ -16,6 +16,10 @@ add_library(hur_time_stretch SHARED ${AUDIO_ROOT}/audio_time_stretcher.cpp ${AUD
 target_compile_features(hur_time_stretch PRIVATE cxx_std_17)
 target_include_directories(hur_time_stretch PRIVATE ${JNI_INCLUDE_DIRS})
 target_link_libraries(hur_time_stretch PRIVATE ohu_rubberband ohu_soundtouch)
+add_library(hur_time_stretch_reference SHARED reference_bridge.cpp ${AUDIO_ROOT}/audio_time_stretcher.cpp)
+target_compile_features(hur_time_stretch_reference PRIVATE cxx_std_17)
+target_include_directories(hur_time_stretch_reference PRIVATE ${JNI_INCLUDE_DIRS} ${AUDIO_ROOT})
+target_link_libraries(hur_time_stretch_reference PRIVATE ohu_rubberband ohu_soundtouch)
 set(JNI_CLASSES "${CMAKE_CURRENT_BINARY_DIR}/jni-smoke")
 set(JNI_CLASS "${JNI_CLASSES}/com/andrerinas/openheadunit/decoder/audio/NativeTimeStretch.class")
 add_custom_command(OUTPUT "${JNI_CLASS}"
@@ -24,7 +28,7 @@ add_custom_command(OUTPUT "${JNI_CLASS}"
     DEPENDS NativeTimeStretch.java VERBATIM)
 add_custom_target(jni_smoke_classes ALL DEPENDS "${JNI_CLASS}")
 add_test(NAME time_stretch_jni COMMAND ${Java_JAVA_EXECUTABLE}
-    "-Djava.library.path=$<TARGET_FILE_DIR:hur_time_stretch>" -cp "${JNI_CLASSES}"
+    -Xcheck:jni "-Djava.library.path=$<TARGET_FILE_DIR:hur_time_stretch>" -cp "${JNI_CLASSES}"
     com.andrerinas.openheadunit.decoder.audio.NativeTimeStretch)
 
 # Inspect the linked library, not just the source list: the public facade can

@@ -189,6 +189,23 @@ internal class AdaptivePcmBuffer(
 
     @Synchronized fun write(data: ShortArray, length: Int, nowMs: Long) {
         val aligned = length.coerceAtMost(data.size) / channels * channels
+        writeFrom(aligned, nowMs) { sourceOffset, destinationOffset, samples ->
+            System.arraycopy(data, sourceOffset, ring, destinationOffset, samples)
+        }
+    }
+
+    @Synchronized fun writeIfFits(data: TimeStretchBlock, length: Int, nowMs: Long): Boolean {
+        require(length in 0..data.size && length % channels == 0)
+        if (length > ring.size - count) return false
+        writeFrom(length, nowMs) { sourceOffset, destinationOffset, samples ->
+            data.get(sourceOffset, ring, destinationOffset, samples)
+        }
+        return true
+    }
+
+    // Copy ready PCM while holding the bank monitor, never run native DSP under it.
+    // All sources share the same delivery, overflow and segment accounting.
+    private inline fun writeFrom(aligned: Int, nowMs: Long, copy: (Int, Int, Int) -> Unit) {
         if (aligned == 0) return
         lastPcmMs = nowMs
         if (closedPrefixSamples >= 0 && nextSegmentFirstDataMs < 0) nextSegmentFirstDataMs = nowMs
@@ -207,8 +224,8 @@ internal class AdaptivePcmBuffer(
         if (skip > 0) { droppedFrames += skip / channels; needsFade = true; recovery.reset() }
         val tail = (head + count) % ring.size
         val first = minOf(keep, ring.size - tail)
-        System.arraycopy(data, skip, ring, tail, first)
-        System.arraycopy(data, skip + first, ring, 0, keep - first)
+        copy(skip, tail, first)
+        if (keep > first) copy(skip + first, 0, keep - first)
         count += keep
         offeredFrames += aligned / channels
         inputFrames += keep / channels

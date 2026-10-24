@@ -4,6 +4,52 @@ import java.util.concurrent.CopyOnWriteArrayList
 
 /** A deliberately delayed engine exposes output ownership/Stop ordering without Android JNI. */
 internal fun timeStretchWorkerRegression() {
+    // Compare direct transfers with array transfers through both ring boundaries.
+    // Extreme values and asymmetric stereo expose byte order/offset mistakes; Stop
+    // and backpressure must preserve the same samples and arrival metadata.
+    val arrayQueue = NativePcmQueue(1000)
+    val directQueue = NativePcmQueue(1000)
+    val arrayRead = NativePcmQueue.Read()
+    val directRead = NativePcmQueue.Read()
+    val directBlock = TimeStretchBlock()
+    val arrayBlock = ShortArray(960)
+    val arrayBank = AdaptivePcmBuffer(nativeTimeCorrection = true)
+    val directBank = AdaptivePcmBuffer(nativeTimeCorrection = true)
+    val expected = ShortArray(960)
+    val actual = ShortArray(960)
+    repeat(200) { round ->
+        val packet = ShortArray(1478) { (round * 1701 + it * 8191).toShort() }
+        check(arrayQueue.offer(packet, packet.size, round.toLong()))
+        check(directQueue.offer(packet, packet.size, round.toLong()))
+        arrayQueue.stop(); directQueue.stop()
+        do {
+            arrayQueue.poll(arrayBlock, arrayRead)
+            directQueue.poll(directBlock, directRead)
+            check(arrayRead.frames == directRead.frames && arrayRead.packetFrames == directRead.packetFrames &&
+                arrayRead.arrivalMs == directRead.arrivalMs)
+            if (arrayRead.frames > 0) {
+                repeat(arrayRead.frames * 2) { check(arrayBlock[it] == directBlock[it]) }
+                val now = round * 30L
+                check(arrayBank.writeIfFits(arrayBlock, arrayRead.frames * 2, now))
+                check(directBank.writeIfFits(directBlock, directRead.frames * 2, now))
+            }
+        } while (arrayRead.frames > 0)
+        check(arrayRead.frames == -1 && arrayQueue.isEmpty() && directQueue.isEmpty())
+        arrayBank.finish(); directBank.finish()
+        repeat(3) { cycle ->
+            val now = round * 30L + cycle * 10L
+            check(arrayBank.render(expected, now) == directBank.render(actual, now))
+            check(expected.contentEquals(actual))
+        }
+    }
+    val blockedBank = AdaptivePcmBuffer(nativeTimeCorrection = true)
+    blockedBank.write(ShortArray(144_000) { 7 }, 144_000, 0)
+    repeat(960) { directBlock[it] = (it * 31).toShort() }
+    check(!blockedBank.writeIfFits(directBlock, 960, 1))
+    repeat(960) { check(directBlock[it] == (it * 31).toShort()) }
+    check(blockedBank.droppedFrames == 0L)
+    println("PASS shared native blocks: wrap, stereo extremes, Stop, bank parity and backpressure")
+
     fun waitUntil(message: String, predicate: () -> Boolean) {
         val limit = System.nanoTime() + 3_000_000_000L
         while (!predicate()) { check(System.nanoTime() < limit) { message }; Thread.sleep(1) }
@@ -17,11 +63,11 @@ internal fun timeStretchWorkerRegression() {
             val pcm = ArrayList<Short>()
             var final = false
             var index = 0
-            override fun process(pcm: ShortArray, frames: Int, tempo: Double) {
+            override fun process(pcm: TimeStretchBlock, frames: Int, tempo: Double) {
                 check(!final); check(Thread.currentThread().name.startsWith("AudioTime-"))
-                this.pcm.addAll(pcm.take(frames * 2)); events += "input$id"
+                repeat(frames * 2) { this.pcm.add(pcm[it]) }; events += "input$id"
             }
-            override fun receive(pcm: ShortArray): Int {
+            override fun receive(pcm: TimeStretchBlock): Int {
                 if (!final) return 0
                 val n = minOf(13, (this.pcm.size - index) / 2)
                 repeat(n * 2) { pcm[it] = this.pcm[index++] }
@@ -140,7 +186,7 @@ internal fun timeStretchWorkerRegression() {
                     delayedFinal.countDown(); check(releaseFinal.await(2, java.util.concurrent.TimeUnit.SECONDS))
                     delegate.finish(); finalized = true
                 }
-                override fun receive(pcm: ShortArray): Int {
+                override fun receive(pcm: TimeStretchBlock): Int {
                     val result = delegate.receive(pcm)
                     if (finalized && result == 0 && failAfterTail) throw IllegalStateException("failure after final PCM")
                     return result

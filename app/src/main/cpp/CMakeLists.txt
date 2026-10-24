@@ -79,3 +79,10 @@ else()
 endif()
 
 target_link_libraries(hur_soft_hevc PRIVATE ${log-lib} ${android-lib})
+
+# Time correction is optional; the OHU matcher has no native dependency.
+add_subdirectory(third_party)
+add_library(hur_time_stretch SHARED audio_time_stretcher.cpp audio_time_stretcher_jni.cpp)
+target_compile_features(hur_time_stretch PRIVATE cxx_std_17)
+target_compile_options(hur_time_stretch PRIVATE -O3 -Wall -Wextra -Werror)
+target_link_libraries(hur_time_stretch PRIVATE ohu_rubberband ohu_soundtouch)

@@ -979,7 +979,7 @@
     <string name="zbt_probe_title">Testar o módulo Bluetooth da central</string>
     <string name="zbt_probe_idle">Toque para executar</string>
     <string name="zbt_probe_running">Executando…</string>
-    <string name="zbt_probe_message">Pergunta ao chip Bluetooth separado desta central se ele consegue carregar uma conexão do Android Auto. O teste verifica em cerca de oito segundos se o chip responde e, só nesse caso, observa por cerca de um minuto e meio. A linha abaixo desta configuração mostra o que está acontecendo, e nada mais na central é alterado.\n\nO chip fala com um programa por vez. Se já houver uma conexão passando por ele, o teste avisa isso em vez de testar. Desligue antes a configuração acima para testá-lo sozinho.\n\nAcordar e observar também pede ao chip que se reconecte ao seu celular para o Android Auto. Essa é a única parte que muda algo, e reiniciar a central desfaz. Exporte o log depois e anexe.</string>
+    <string name="zbt_probe_message">As duas opções inicializam o módulo Bluetooth antes de observar seu estado. Isso pode afetar o estado do Bluetooth. Acordar e observar também solicita uma conexão com o celular.\n\nO teste dá prioridade ao OHU enquanto ele usa ou verifica o módulo. Exporte o registro após o teste.</string>
     <string name="zbt_probe_watch_only">Apenas observar</string>
     <string name="zbt_probe_wake_and_watch">Acordar e observar</string>
     <string name="external_bt_blink_transport">Conectar pelo módulo Bluetooth externo da FYT</string>

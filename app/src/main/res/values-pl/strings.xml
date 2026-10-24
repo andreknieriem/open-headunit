@@ -984,7 +984,7 @@
     <string name="zbt_probe_title">Przetestuj moduł Bluetooth jednostki</string>
     <string name="zbt_probe_idle">Dotknij, aby uruchomić</string>
     <string name="zbt_probe_running">Trwa…</string>
-    <string name="zbt_probe_message">Sprawdza, czy dedykowany układ Bluetooth stacji obsługuje połączenie Android Auto. Przez około 8 sekund sprawdza, czy układ w ogóle odpowiada, a jeśli tak — monitoruje go przez ok. półtorej minuty. Wiersz poniżej informuje o postępie; żadne inne funkcje stacji nie są w tym czasie modyfikowane.\n\nUkład Bluetooth może komunikować się tylko z jedną aplikacją naraz. Jeśli połączenie jest już aktywne, test poinformuje o tym zamiast ponawiać próbę. Aby przetestować go osobno, najpierw wyłącz powyższe ustawienie.\n\nOpcja „Obudź i obserwuj” dodatkowo wymusza ponowne połączenie układu z telefonem na potrzeby Android Auto. To jedyny krok wprowadzający jakiekolwiek zmiany — restart stacji przywraca stan początkowy. Po teście wyeksportuj logi i dołącz je do zgłoszenia.</string>
+    <string name="zbt_probe_message">Obie opcje inicjalizują moduł Bluetooth przed obserwacją. Może to wpłynąć na jego stan. Wybudzenie i obserwacja dodatkowo żąda połączenia z telefonem.\n\nTest ustępuje, gdy OHU używa modułu lub go sprawdza. Po teście wyeksportuj dziennik.</string>
     <string name="zbt_probe_watch_only">Tylko obserwuj</string>
     <string name="zbt_probe_wake_and_watch">Obudź i obserwuj</string>
     <string name="external_bt_blink_transport">Połącz przez zewnętrzny moduł Bluetooth FYT</string>

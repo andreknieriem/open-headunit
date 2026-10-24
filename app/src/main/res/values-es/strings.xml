@@ -987,7 +987,7 @@
     <string name="zbt_probe_title">Probar el módulo Bluetooth de la unidad</string>
     <string name="zbt_probe_idle">Toca para ejecutar</string>
     <string name="zbt_probe_running">Ejecutando…</string>
-    <string name="zbt_probe_message">Pregunta al chip Bluetooth independiente de esta unidad si puede transportar una conexión de Android Auto. En unos ocho segundos comprueba si el chip responde y, solo si lo hace, observa durante un minuto y medio aproximadamente. La línea bajo esta opción muestra lo que ocurre, y no se toca nada más en la unidad.\n\nEl chip habla con un solo programa a la vez. Si ya hay una conexión pasando por él, la prueba lo indica en lugar de probar. Apaga primero la opción anterior para probarlo por separado.\n\nDespertar y observar también pide al chip que se reconecte a tu teléfono para Android Auto. Es lo único que cambia algo, y reiniciar la unidad lo deshace. Exporta el registro después y adjúntalo.</string>
+    <string name="zbt_probe_message">Ambas opciones inicializan el módulo Bluetooth antes de observarlo. Esto puede afectar a su estado Bluetooth. Despertar y observar también solicita una conexión al teléfono.\n\nLa prueba cede el paso cuando OHU utiliza o comprueba el módulo. Exporta el registro al terminar.</string>
     <string name="zbt_probe_watch_only">Solo observar</string>
     <string name="zbt_probe_wake_and_watch">Despertar y observar</string>
     <string name="external_bt_blink_transport">Conectar mediante el módulo Bluetooth externo de FYT</string>

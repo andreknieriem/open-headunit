@@ -98,4 +98,35 @@ class ZbtWakePolicyTest {
         )
         assertEquals(ZbtWakePolicy.Pending.EXPIRED, pending(requestedAtMs = at, nowMs = at - 1))
     }
+
+    @Test
+    fun `opening observation has a finite boundary without requiring a presence report`() {
+        fun opening(age: Long) = ZbtWakePolicy.pending(
+            requestedAtMs = 1_000L, lastSentAtMs = 0L, nowMs = 10_000L,
+            settling = false, handshakeInFlight = false, sessionConnected = false,
+            channelOpenForMs = age
+        )
+        assertEquals(ZbtWakePolicy.Pending.HOLD, opening(-1))
+        assertEquals(ZbtWakePolicy.Pending.HOLD, opening(ZbtWakePolicy.INITIAL_STATE_WAIT_MS - 1))
+        assertEquals(ZbtWakePolicy.Pending.SEND, opening(ZbtWakePolicy.INITIAL_STATE_WAIT_MS))
+    }
+
+    @Test
+    fun `a connected AA peer consumes a wake even before opening observation finishes`() {
+        assertEquals(ZbtWakePolicy.Pending.PHONE_PRESENT, ZbtWakePolicy.pending(
+            requestedAtMs = 1_000L, lastSentAtMs = 0L, nowMs = 1_001L,
+            settling = false, handshakeInFlight = false, sessionConnected = false,
+            channelOpenForMs = 1, phonePresent = true
+        ))
+    }
+
+    @Test
+    fun `an expired request is discarded even on a newly reopened channel`() {
+        assertEquals(ZbtWakePolicy.Pending.EXPIRED, ZbtWakePolicy.pending(
+            requestedAtMs = 1_000L, lastSentAtMs = 0L,
+            nowMs = 1_000L + ZbtWakePolicy.PENDING_MAX_MS,
+            settling = false, handshakeInFlight = false, sessionConnected = false,
+            channelOpenForMs = 0
+        ))
+    }
 }

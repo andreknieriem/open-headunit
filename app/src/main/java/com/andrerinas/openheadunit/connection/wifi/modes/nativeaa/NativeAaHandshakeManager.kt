@@ -869,6 +869,17 @@ class NativeAaHandshakeManager(
         if (measureGeneration != generation || !measuringDaemon) return
         if (completion == ZbtDiscovery.Measurement.Completion.CANCELLED) return
         if (completion == ZbtDiscovery.Measurement.Completion.CARRIER_BUSY) {
+            if (!decision.requiresIdentity) {
+                // Known external-module markers cannot fall back to Android's separate radio.
+                // Occupancy is not a daemon refusal either. Finish this arming without caching
+                // failure or immediately re-arming against the same unknown result. The WiFi
+                // button can start a fresh measurement after the previous owner has retired.
+                measuringDaemon = false
+                wakeAwaitingModule = false
+                notStartedReason = "the Bluetooth module is still in use by another OHU operation; try again when it finishes"
+                AppLog.w("NativeAA: $notStartedReason")
+                return
+            }
             ZbtDiscovery.deferIdentityForArming(decision)
             AppLog.w("NativeAA: Bluetooth module still busy after 10s; using Android Bluetooth for this arming.")
         }

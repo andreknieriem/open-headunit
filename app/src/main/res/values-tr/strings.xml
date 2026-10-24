@@ -972,7 +972,7 @@
     <string name="zbt_probe_title">Ana ünitenin Bluetooth modülünü test et</string>
     <string name="zbt_probe_idle">Çalıştırmak için dokunun</string>
     <string name="zbt_probe_running">Çalışıyor…</string>
-    <string name="zbt_probe_message">Bu ünitenin ayrı Bluetooth çipine bir Android Auto bağlantısı taşıyıp taşıyamayacağını sorar. Önce yaklaşık sekiz saniyede çipin yanıt verip vermediğini kontrol eder. Yanıt veriyorsa yaklaşık bir buçuk dakika izler. Bu ayarın altındaki satır ne olduğunu gösterir. Ünitede başka hiçbir şeye dokunulmaz.\n\nÇip aynı anda tek bir programla konuşur. Üzerinden zaten bir bağlantı geçiyorsa test, çalışmak yerine bunu bildirir. Tek başına denemek için önce yukarıdaki ayarı kapatın.\n\nUyandır ve izle, çipten Android Auto için telefonunuza yeniden bağlanmasını da ister. Bir şeyi değiştiren tek kısım budur ve üniteyi yeniden başlatmak bunu geri alır. Lütfen sonrasında günlüğü dışa aktarıp ekleyin.</string>
+    <string name="zbt_probe_message">Her iki seçenek de izlemeden önce Bluetooth modülünü başlatır. Bu, Bluetooth durumunu etkileyebilir. Uyandır ve izle ayrıca telefona bağlantı ister.\n\nOHU modülü kullanırken veya kontrol ederken test önceliği ona verir. Testten sonra günlüğü dışa aktarın.</string>
     <string name="zbt_probe_watch_only">Yalnızca izle</string>
     <string name="zbt_probe_wake_and_watch">Uyandır ve izle</string>
     <string name="external_bt_blink_transport">FYT harici Bluetooth modülü üzerinden bağlan</string>

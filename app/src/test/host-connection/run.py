@@ -908,3 +908,6 @@ subprocess.run(["python3", str(Path(__file__).with_name("audio-integration.py"))
 
 # Exercise actual Self launch jobs and the service cancel action on a queued Main dispatcher.
 subprocess.run(["python3", str(Path(__file__).with_name("self-launch.py"))], check=True)
+
+# Exercise the service module-retry branch with production wake and completion methods.
+subprocess.run(["python3", str(Path(__file__).with_name("module-retry.py"))], check=True)

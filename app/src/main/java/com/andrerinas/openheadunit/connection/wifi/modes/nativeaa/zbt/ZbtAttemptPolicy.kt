@@ -48,7 +48,13 @@ object ZbtAttemptPolicy {
      * than open-coded at the call site.
      */
     fun readPresence(msgId: Int, fields: ZbtMessages.Record?): Presence? {
-        if (fields == null) return null
+        if (fields == null || msgId !in setOf(ZbtMessages.LINK_INFO, ZbtMessages.LINK_INFO2)) return null
+        // The vendor LinkInfo descriptors require is_connect (field 3) and phone_type (2).
+        // Missing fields are unknown, not a down edge. An explicit is_connect=0 can still
+        // release the current link even if its phone type was omitted.
+        val connected = fields.int(3)
+        if (connected != 0 && connected != 1) return null
+        if (connected == 1 && fields.int(2) == null) return null
         return when (msgId) {
             // { 1 id, 2 phone_type, 3 is_connect, 4 is_pair, 5 local_mac_address }
             ZbtMessages.LINK_INFO -> Presence(
@@ -72,9 +78,19 @@ object ZbtAttemptPolicy {
      * The module re-sends link state on a timer — roughly every twelve seconds on the unit this was
      * measured on — so acting on every message would start an attempt every twelve seconds forever.
      * Only the edge is interesting.
+     *
+     * A usable report naming a different phone than a usable [previous] is also an arrival: that is
+     * a new peer, not a heartbeat. Only both addresses being present can show that; a report
+     * without one (legacy LinkInfo) never counts as a different phone.
      */
     fun isArrival(previous: Presence?, current: Presence): Boolean =
-        current.usable && previous?.usable != true
+        current.usable && (previous?.usable != true || isDifferentPhone(previous.phoneMac, current.phoneMac))
+
+    private fun isDifferentPhone(before: String?, now: String?): Boolean {
+        if (before == null || now == null) return false
+        fun canonical(mac: String) = mac.filter { it.isLetterOrDigit() }.uppercase()
+        return canonical(before) != canonical(now)
+    }
 
     /**
      * Whether an attempt may start now.

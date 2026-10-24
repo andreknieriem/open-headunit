@@ -975,7 +975,7 @@
     <string name="zbt_probe_title">Testează modulul Bluetooth al unității</string>
     <string name="zbt_probe_idle">Atingeți pentru a rula</string>
     <string name="zbt_probe_running">Se execută…</string>
-    <string name="zbt_probe_message">Întreabă cipul Bluetooth separat al acestei unități dacă poate transporta o conexiune Android Auto. Verifică în aproximativ opt secunde dacă cipul răspunde și, doar dacă răspunde, urmărește aproximativ un minut și jumătate. Linia de sub această setare arată ce se întâmplă, iar nimic altceva de pe unitate nu este modificat.\n\nCipul comunică cu un singur program la un moment dat. Dacă o conexiune trece deja prin el, testul indică acest lucru în loc să testeze. Dezactivează mai întâi setarea de mai sus pentru a-l testa separat.\n\nOpțiunea „Trezește și urmărește” cere în plus cipului să se reconecteze la telefon pentru Android Auto. Este singura parte care modifică ceva, iar repornirea unității o anulează. Exportă apoi jurnalul și atașează-l.</string>
+    <string name="zbt_probe_message">Ambele opțiuni inițializează modulul Bluetooth înainte de monitorizare. Acest lucru îi poate afecta starea. Trezirea și monitorizarea solicită și conectarea la telefon.\n\nTestul cedează accesul când OHU utilizează sau verifică modulul. Exportați jurnalul după test.</string>
     <string name="zbt_probe_watch_only">Doar urmărește</string>
     <string name="zbt_probe_wake_and_watch">Trezește și urmărește</string>
     <string name="external_bt_blink_transport">Conectare prin modulul Bluetooth extern FYT</string>

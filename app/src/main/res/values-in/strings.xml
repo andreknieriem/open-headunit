@@ -1185,7 +1185,7 @@
     <string name="zbt_probe_title">Uji modul Bluetooth head unit</string>
     <string name="zbt_probe_idle">Ketuk untuk menjalankan</string>
     <string name="zbt_probe_running">Sedang berjalan…</string>
-    <string name="zbt_probe_message">Menanyakan kepada chip Bluetooth terpisah di unit ini apakah chip itu dapat membawa koneksi Android Auto. Dalam sekitar delapan detik, pengujian memeriksa apakah chip merespons. Hanya jika merespons, pengujian mengamati selama sekitar satu setengah menit. Baris di bawah setelan ini menunjukkan apa yang sedang terjadi, dan tidak ada hal lain di unit yang diubah.\n\nChip hanya dapat berbicara dengan satu program pada satu waktu. Jika sebuah koneksi sudah berjalan melaluinya, pengujian menyatakan hal itu dan tidak menguji. Nonaktifkan setelan di atas terlebih dahulu untuk mengujinya secara terpisah.\n\n\"Bangunkan dan amati\" juga meminta chip menghubungkan kembali ke ponsel Anda untuk Android Auto. Hanya bagian itu yang mengubah sesuatu, dan memulai ulang unit akan membatalkannya. Ekspor log setelahnya dan lampirkan.</string>
+    <string name="zbt_probe_message">Kedua opsi menginisialisasi modul Bluetooth sebelum memantaunya. Ini dapat memengaruhi status Bluetooth. Bangunkan dan amati juga meminta koneksi ke ponsel.\n\nPengujian memberi prioritas saat OHU menggunakan atau memeriksa modul. Ekspor log setelah pengujian.</string>
     <string name="zbt_probe_watch_only">Amati saja</string>
     <string name="zbt_probe_wake_and_watch">Bangunkan dan amati</string>
     <string name="external_bt_blink_transport">Hubungkan melalui modul Bluetooth eksternal FYT</string>

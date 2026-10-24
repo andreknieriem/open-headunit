@@ -12,20 +12,22 @@ import org.junit.Test
 class ZbtDaemonReachabilityTest {
 
     private var dials = 0
+    private val claims = mutableListOf<ZbtDaemonReachability.CarrierClaim>()
+    private fun claim() = ZbtDaemonReachability.claimCarrier().also { claims.add(it) }
 
     @Before
     fun clear() {
         ZbtDaemonReachability.forget()
-        ZbtDaemonReachability.setCarrierLive(false)
-        ZbtDaemonReachability.setCarrierWantsClient(false)
+        claims.forEach { it.close() }
+        claims.clear()
         dials = 0
     }
 
     @After
     fun leaveNothingBehind() {
         ZbtDaemonReachability.forget()
-        ZbtDaemonReachability.setCarrierLive(false)
-        ZbtDaemonReachability.setCarrierWantsClient(false)
+        claims.forEach { it.close() }
+        claims.clear()
     }
 
     private fun dial(answer: Boolean): () -> Boolean = { dials++; answer }
@@ -96,9 +98,10 @@ class ZbtDaemonReachabilityTest {
     @Test
     fun `the carrier flag tracks what it is set to`() {
         assertFalse(ZbtDaemonReachability.carrierLive())
-        ZbtDaemonReachability.setCarrierLive(true)
+        val owner = claim()
+        owner.setLive(true)
         assertTrue(ZbtDaemonReachability.carrierLive())
-        ZbtDaemonReachability.setCarrierLive(false)
+        owner.setLive(false)
         assertFalse(ZbtDaemonReachability.carrierLive())
     }
 
@@ -107,11 +110,65 @@ class ZbtDaemonReachabilityTest {
         // A carrier between reopen attempts holds nothing and still needs the slot back, which is
         // the whole window a probe used to be able to sit in.
         assertFalse(ZbtDaemonReachability.carrierWantsClient())
-        ZbtDaemonReachability.setCarrierWantsClient(true)
+        val owner = claim()
         assertTrue(ZbtDaemonReachability.carrierWantsClient())
         assertFalse(ZbtDaemonReachability.carrierLive())
-        ZbtDaemonReachability.setCarrierWantsClient(false)
+        owner.close()
         assertFalse(ZbtDaemonReachability.carrierWantsClient())
+    }
+
+    @Test
+    fun `late release from old carrier preserves a replacement's live claim`() {
+        val old = claim().also { it.setLive(true) }
+        val fresh = claim().also { it.setLive(true) }
+        old.setLive(false)
+        old.close()
+        old.close()
+        assertTrue(ZbtDaemonReachability.carrierWantsClient())
+        assertTrue(ZbtDaemonReachability.carrierLive())
+        fresh.close()
+        assertFalse(ZbtDaemonReachability.carrierWantsClient())
+        assertFalse(ZbtDaemonReachability.carrierLive())
+        old.setLive(true)
+        assertFalse(ZbtDaemonReachability.carrierLive())
+    }
+
+    @Test
+    fun `old live and replacement pending retain separate ownership facts`() {
+        val old = claim().also { it.setLive(true) }
+        val fresh = claim()
+        old.close()
+        assertTrue(ZbtDaemonReachability.carrierWantsClient())
+        assertFalse(ZbtDaemonReachability.carrierLive())
+        fresh.setLive(true)
+        assertTrue(ZbtDaemonReachability.carrierLive())
+    }
+
+    @Test
+    fun `carrier claim retires observer before its init admission`() {
+        val opening = ZbtDaemonReachability.observerOpening { true }!!
+        var closed = false
+        try {
+            opening.attach(java.io.Closeable { closed = true })
+            claim()
+            assertTrue(closed)
+            try {
+                opening.admitInit()
+                org.junit.Assert.fail("retired observer must not admit init")
+            } catch (_: ZbtChannelOpening.Cancelled) { }
+            assertNull(ZbtDaemonReachability.observerOpening { true })
+        } finally {
+            opening.close()
+            ZbtDaemonReachability.releaseObserver(opening)
+        }
+    }
+
+    @Test
+    fun `pending carrier makes measurement defer without dial or cache`() {
+        claim()
+        assertTrue(ZbtDaemonReachability.resolve({ 1_000L }, dial(false)))
+        assertEquals(0, dials)
+        assertNull(ZbtDaemonReachability.cached(nowMs = 1_000L))
     }
 
     private var clock = 0L
@@ -221,14 +278,13 @@ class ZbtDaemonReachabilityTest {
     fun `identified live carrier keeps its route after cache expiry`() {
         assertTrue(ZbtDaemonReachability.resolve({ 1000L }, dial(true), requireIdentity = true))
         val later = 1000L + ZbtDaemonReachability.RECHECK_AFTER_MS
-        ZbtDaemonReachability.setCarrierLive(true)
+        val owner = claim().also { it.setLive(true) }
         ZbtDaemonReachability.expireIdleIdentity(later)
         assertEquals(true, ZbtDaemonReachability.cached(later, requireIdentity = true))
-        ZbtDaemonReachability.setCarrierLive(false)
-        ZbtDaemonReachability.setCarrierWantsClient(true)
+        owner.setLive(false)
         ZbtDaemonReachability.expireIdleIdentity(later)
         assertEquals(true, ZbtDaemonReachability.cached(later, requireIdentity = true))
-        ZbtDaemonReachability.setCarrierWantsClient(false)
+        owner.close()
         ZbtDaemonReachability.record(true, later)
         ZbtDaemonReachability.expireIdleIdentity(later)
         assertEquals(true, ZbtDaemonReachability.cached(later, requireIdentity = true))
@@ -293,7 +349,7 @@ class ZbtDaemonReachabilityTest {
 
     @Test
     fun `HCT probe yields to reconnecting carrier without caching a refusal`() {
-        ZbtDaemonReachability.setCarrierWantsClient(true)
+        claim()
         assertFalse(ZbtDaemonReachability.resolve({ 1000L }, dial(true), requireIdentity = true))
         assertEquals(0, dials)
         assertNull(ZbtDaemonReachability.cached(1000L, requireIdentity = true))
@@ -365,14 +421,13 @@ class ZbtDaemonReachabilityTest {
         clock = 200_000L
         assertFalse(ZbtDaemonReachability.resolve(nowMs = { clock }, requireIdentity = true,
             identityDial = { ZbtIdentityProbe.Outcome.REFUSED }))
-        ZbtDaemonReachability.setCarrierLive(true)
+        val owner = claim().also { it.setLive(true) }
         ZbtDaemonReachability.expireIdleIdentity(clock + 1)
         assertEquals(false, ZbtDaemonReachability.cached(clock, requireIdentity = true))
-        ZbtDaemonReachability.setCarrierLive(false)
-        ZbtDaemonReachability.setCarrierWantsClient(true)
+        owner.setLive(false)
         ZbtDaemonReachability.expireIdleIdentity(clock + 1)
         assertEquals(false, ZbtDaemonReachability.cached(clock, requireIdentity = true))
-        ZbtDaemonReachability.setCarrierWantsClient(false)
+        owner.close()
         ZbtDaemonReachability.expireIdleIdentity(clock + 1)
         assertNull(ZbtDaemonReachability.cached(clock, requireIdentity = true))
     }

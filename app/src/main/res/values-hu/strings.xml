@@ -979,7 +979,7 @@
     <string name="zbt_probe_title">Fejegység Bluetooth-moduljának tesztelése</string>
     <string name="zbt_probe_idle">Koppintson a futtatáshoz</string>
     <string name="zbt_probe_running">Fut…</string>
-    <string name="zbt_probe_message">Megkérdezi az egység különálló Bluetooth-chipjét, hogy továbbít-e Android Auto kapcsolatot. Nagyjából nyolc másodperc alatt ellenőrzi, hogy a chip egyáltalán válaszol-e, és csak ha igen, figyeli körülbelül másfél percig. A beállítás alatti sor mutatja, mi történik, az egységen pedig semmi máshoz nem nyúl.\n\nA chip egyszerre csak egy programmal kommunikál, ezért ha már fut rajta keresztül kapcsolat, a teszt ezt jelzi a tesztelés helyett. Előbb kapcsolja ki a fenti beállítást, hogy önmagában tesztelhesse.\n\nAz Ébresztés és figyelés ezenfelül megkéri a chipet, hogy csatlakozzon újra a telefonhoz az Android Autóhoz. Csak ez a rész változtat bármit, és az egység újraindítása visszavonja. Kérjük, utána exportálja a naplót, és csatolja.</string>
+    <string name="zbt_probe_message">Mindkét lehetőség inicializálja a Bluetooth-modult a megfigyelés előtt. Ez befolyásolhatja a Bluetooth állapotát. Az ébresztés és megfigyelés telefonkapcsolatot is kér.\n\nA teszt átadja a hozzáférést, amíg az OHU használja vagy ellenőrzi a modult. A teszt után exportálja a naplót.</string>
     <string name="zbt_probe_watch_only">Csak figyelés</string>
     <string name="zbt_probe_wake_and_watch">Ébresztés és figyelés</string>
     <string name="external_bt_blink_transport">Csatlakozás az FYT külső Bluetooth-modulján át</string>

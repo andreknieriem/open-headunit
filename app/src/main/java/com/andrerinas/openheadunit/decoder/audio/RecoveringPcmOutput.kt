@@ -43,6 +43,7 @@ internal class RecoveringPcmOutput(
     override val stagingBufferFrames get() = delegate?.stagingBufferFrames ?: metadata.stagingBufferFrames
     override val underruns get() = delegate?.underruns ?: metadata.underruns
     override val underrunsSupported get() = delegate?.underrunsSupported ?: metadata.underrunsSupported
+    override val writeRetryDelayMs get() = delegate?.writeRetryDelayMs ?: 1L
     override val writtenFrames get() = delegate?.writtenFrames ?: -1L
     override fun playedFrames(): Long = delegate?.playedFrames() ?: -1L
     override val producerUnderruns get() = delegate?.producerUnderruns ?: metadata.producerUnderruns

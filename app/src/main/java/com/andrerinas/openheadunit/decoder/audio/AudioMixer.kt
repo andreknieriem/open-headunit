@@ -421,9 +421,11 @@ class AudioMixer(
             val writtenBeforeWrite = device.writtenFrames
             val replayBeforeWrite = device.recoveryProgressSamples
             var replayAnnounced = false
+            var writeRetryDelayMs = 1L
             mixWorkMaxMs = maxOf(mixWorkMaxMs, writeStartMs - now)
             val result = AudioWriteLoop.writeFully(SHORTS_PER_CYCLE, { running.get() },
                 write@{ offset, remaining ->
+                    writeRetryDelayMs = 1L
                     val replay = device.hasPendingRecovery
                     // No real PCM is in this block or the recovery prefix. Let the normal idle
                     // lifecycle finish instead of reopening a dead route just to write silence.
@@ -443,7 +445,9 @@ class AudioMixer(
                         replayAnnounced = true
                     }
                     val written = if ((!replay && cycleChannels.none { it.activeThisCycle }) || canRender())
-                        device.write(outputBuffer, offset, remaining) else {
+                        device.write(outputBuffer, offset, remaining).also {
+                            if (it == 0) writeRetryDelayMs = device.writeRetryDelayMs.coerceIn(1L, 4L)
+                        } else {
                         feedSignal.tryAcquire(if (outputUnavailableSinceMs >= 0) 200 else 10,
                             TimeUnit.MILLISECONDS)
                         0
@@ -461,7 +465,7 @@ class AudioMixer(
                         0
                     } else written
                 },
-                {}, { Thread.sleep(1) })
+                {}, { Thread.sleep(writeRetryDelayMs) })
             writeMaxMs = maxOf(writeMaxMs, SystemClock.elapsedRealtime() - writeStartMs)
             check(result >= 0) { "${device.name} write failed: $result" }
             val writeCompletedMs = SystemClock.elapsedRealtime()

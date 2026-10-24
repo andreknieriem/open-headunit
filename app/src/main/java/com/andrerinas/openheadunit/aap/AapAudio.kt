@@ -448,10 +448,11 @@ internal class AapAudio(
         val fromSetup = sinkCodecs[channel]
         val codec = fromSetup ?: defaultCodec
         val codecSource = if (fromSetup != null) "setup" else "setting"
-        AppLog.i("AudioDecoder.start: channel=$channel, stream=$stream, gain=$gain, sampleRate=${config.sampleRate}, numberOfBits=${config.numberOfBits}, numberOfChannels=${config.numberOfChannels}, codec=$codec, source=$codecSource, latencyMultiplier=$effectiveMultiplier, queueCapacity=$audioQueueCapacity, attachHwDspEqualizer=$attachHwDspEqualizer")
+        AppLog.i("AudioDecoder.start: channel=$channel, stream=$stream, gain=$gain, sampleRate=${config.sampleRate}, numberOfBits=${config.numberOfBits}, numberOfChannels=${config.numberOfChannels}, codec=$codec, source=$codecSource, latencyMultiplier=$effectiveMultiplier, queueCapacity=$audioQueueCapacity, matching=${sessionConfig.matchingMode.preferenceValue}, attachHwDspEqualizer=$attachHwDspEqualizer")
         audioDecoder.start(channel, stream, config.sampleRate, config.numberOfBits, config.numberOfChannels,
             codec.isAac, gain, effectiveMultiplier, audioQueueCapacity, staticAudioFocus, attachHwDspEqualizer,
-            preferAAudio = settings.useAAudioOutput, isAdts = codec == AudioSinkCodec.AAC_LC_ADTS, session = decoderSession)
+            preferAAudio = settings.useAAudioOutput, isAdts = codec == AudioSinkCodec.AAC_LC_ADTS, session = decoderSession,
+            matchingMode = sessionConfig.matchingMode)
         if (announcePlayback) audioDecoder.getTrack(channel, decoderSession)?.takeIf { it.canAcceptAudioInput() }?.let {
             onAudioPlaybackStarted(channel, it.playbackOwner)
         }

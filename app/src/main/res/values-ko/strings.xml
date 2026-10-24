@@ -1520,4 +1520,11 @@
     <string name="wifi_scan_legacy_limit">Android 8~10의 재요청\n• 연결 시 한 번, 연결 중에는 5분마다 일시 중지를 요청합니다.\n• Android가 그 사이 탐색을 다시 켤 수 있습니다. 반복 처리 부담을 줄이기 위한 간격이며, 모든 탐색을 계속 막지는 못합니다.\n\n탐색을 다시 켜지 못하면 Shizuku를 실행한 상태에서 재시도하세요. 기기를 재부팅하면 이 임시 제어는 초기화됩니다.</string>
     <string name="native_aa_candidate_android_radio_description">헤드유닛의 Bluetooth 모듈을 자동 선택하는 대신 Android Bluetooth를 사용합니다. 자동 선택을 사용하려면 꺼 두세요. 모듈을 통한 연결 옵션이 켜져 있다면 먼저 꺼 주세요.</string>
     <string name="external_bt_candidate_transport_description">자동 선택 대신 헤드유닛의 Bluetooth 모듈을 통해 연결하도록 강제합니다. 호환되는 모듈 서비스가 필요합니다. 서비스가 응답하지 않을 때 Android Bluetooth로 연결하려면 꺼 두세요. 이 옵션을 켜면 Android Bluetooth로 전환하지 않습니다.</string>
+
+    <string name="audio_matching_mode">음악 시간 보정</string>
+    <string name="audio_matching_ohu">OHU (저사양 기기용, 기본값)</string>
+    <string name="audio_matching_soundtouch">SoundTouch (균형)</string>
+    <string name="audio_matching_r3">Rubber Band R3 (음질 우선)</string>
+    <string name="audio_matching_r3_short">Rubber Band R3 Short (R3보다 가벼움)</string>
+    <string name="audio_matching_description">음높이를 유지하면서 밀린 오디오를 따라잡는 방식입니다. OHU는 저사양 기기에 적합합니다. SoundTouch와 R3는 CPU 사용량과 처리 지연이 늘어납니다. R3 Short는 R3의 처리 비용을 줄인 방식입니다. \n\nSoundTouch·R3: Android 5.0 이상, PCM 음악에 적용\n길 안내·음성 응답·시스템 소리·AAC·이전 Android: OHU 사용\n다시 연결하면 적용됩니다.</string>
 </resources>

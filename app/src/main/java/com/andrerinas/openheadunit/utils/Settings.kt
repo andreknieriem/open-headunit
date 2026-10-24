@@ -1323,6 +1323,11 @@ class Settings(private val context: Context) {
         get() = prefs.getInt("audio-queue-capacity", 50)
         set(value) { prefs.edit().putInt("audio-queue-capacity", value).apply() }
 
+    var audioMatchingMode: com.andrerinas.openheadunit.decoder.audio.AudioTimeCorrectionMode
+        get() = com.andrerinas.openheadunit.decoder.audio.AudioTimeCorrectionMode.fromPreference(
+            prefs.getString("audio-matching-mode", null))
+        set(value) { prefs.edit().putString("audio-matching-mode", value.preferenceValue).apply() }
+
     var useAacAudio: Boolean
         get() = prefs.getBoolean("use-aac-audio", false)
         set(value) { prefs.edit().putBoolean("use-aac-audio", value).apply() }

@@ -1294,7 +1294,8 @@ private fun audioSettingsRegression() {
         "system route" to { it.systemAudioStream = 3 },
         "media codec" to { it.useAacAudio = true },
         "sink disabled" to { it.enableAudioSink = false },
-        "DSP route" to { it.attachHwDspEqualizer = true }
+        "DSP route" to { it.attachHwDspEqualizer = true },
+        "time correction" to { it.audioMatchingMode = AudioTimeCorrectionMode.SOUNDTOUCH }
     )
     val cases = changes.map { (label, change) ->
         Triple(label, com.andrerinas.openheadunit.utils.Settings(), change)

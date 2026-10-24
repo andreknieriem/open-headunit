@@ -57,3 +57,5 @@ app/src/main/java/com/andrerinas/openheadunit/decoder/audio/OptimizedPcmOverlap.
 app/src/main/java/com/andrerinas/openheadunit/decoder/audio/LegacyAudioWritePacer.kt
 app/src/main/java/com/andrerinas/openheadunit/decoder/audio/AudioTimeCorrectionMode.kt
 app/src/main/java/com/andrerinas/openheadunit/decoder/audio/TimeStretchEngine.kt
+app/src/main/java/com/andrerinas/openheadunit/decoder/audio/NativePcmQueue.kt
+app/src/main/java/com/andrerinas/openheadunit/decoder/audio/NativeTempoPolicy.kt

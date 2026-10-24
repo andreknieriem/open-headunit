@@ -60,7 +60,6 @@ struct Api {
 static Api& api() { static Api instance; return instance; }
 struct Output {
     AAudioStream* stream = nullptr;
-    std::array<jshort, 960> scratch{}; // exactly one 10ms, stereo PCM16 block
     CallbackPcmBuffer buffer;
     std::atomic<int32_t> error{AAUDIO_OK};
     uint32_t burstFrames = 480;
@@ -190,11 +189,22 @@ Java_com_andrerinas_openheadunit_decoder_audio_NativeAAudio_write(JNIEnv* env, j
     // combined budget once, then bound steady staging to its own small share of that budget.
     const auto limit = sink->started ? sink->effectiveQueueLimit() :
         std::min(CallbackPcmBuffer::capacity, sink->deviceBufferFrames + sink->effectiveQueueLimit());
-    const auto used = sink->buffer.available();
-    const auto accepted = std::min(static_cast<uint32_t>(count / 2), used < limit ? limit - used : 0u);
-    env->GetShortArrayRegion(data, offset, static_cast<jint>(accepted * 2), sink->scratch.data());
-    if (env->ExceptionCheck()) return AAUDIO_ERROR_INTERNAL;
-    const auto frames = sink->buffer.write(sink->scratch.data(), accepted, limit);
+    // Copy from Java straight into unpublished ring spans. Publication only follows
+    // two successful reads, so wraparound or a JNI failure cannot expose half a block.
+    bool copyFailed = false;
+    const auto frames = sink->buffer.writeWith(static_cast<uint32_t>(count / 2), limit,
+        [&](int16_t* first, uint32_t firstFrames, int16_t* second, uint32_t secondFrames) {
+            env->GetShortArrayRegion(data, offset, static_cast<jint>(firstFrames * 2), first);
+            copyFailed = env->ExceptionCheck();
+            if (copyFailed) return false;
+            if (secondFrames != 0) {
+                env->GetShortArrayRegion(data, offset + static_cast<jint>(firstFrames * 2),
+                    static_cast<jint>(secondFrames * 2), second);
+                copyFailed = env->ExceptionCheck();
+            }
+            return !copyFailed;
+        });
+    if (copyFailed) return AAUDIO_ERROR_INTERNAL;
     if (sink->startWanted && !sink->started && sink->buffer.available() >= limit) {
         const auto result = api().AAudioStream_requestStart(sink->stream);
         if (result < 0) {

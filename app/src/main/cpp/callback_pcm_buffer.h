@@ -19,13 +19,27 @@ public:
     }
 
     uint32_t write(const int16_t* source, uint32_t frames, uint32_t limit) {
+        return writeWith(frames, limit, [source](int16_t* first, uint32_t firstFrames,
+                                               int16_t* second, uint32_t secondFrames) {
+            std::memcpy(first, source, firstFrames * channels * sizeof(int16_t));
+            std::memcpy(second, source + firstFrames * channels, secondFrames * channels * sizeof(int16_t));
+            return true;
+        });
+    }
+
+    // The sole producer fills unpublished free spans, then publishes BOTH together.
+    // A failed fill leaves the write position unchanged; the callback cannot observe a
+    // partially copied block. The filler must not retain pointers or reenter/reset this
+    // buffer. The consumer remains lock-free and never calls into the JVM.
+    template<class Fill>
+    uint32_t writeWith(uint32_t frames, uint32_t limit, Fill&& fill) {
         const auto tail = written_.load(std::memory_order_relaxed);
         const auto used = tail - read_.load(std::memory_order_acquire);
         const auto bound = std::min(limit, capacity);
         const auto count = std::min(frames, used < bound ? bound - used : 0u);
+        if (count == 0) return 0;
         const auto first = std::min(count, capacity - tail % capacity);
-        std::memcpy(pcm_.data() + tail % capacity * channels, source, first * channels * sizeof(int16_t));
-        std::memcpy(pcm_.data(), source + first * channels, (count - first) * channels * sizeof(int16_t));
+        if (!fill(pcm_.data() + tail % capacity * channels, first, pcm_.data(), count - first)) return 0;
         written_.store(tail + count, std::memory_order_release);
         return count;
     }

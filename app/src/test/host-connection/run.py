@@ -126,7 +126,7 @@ for declaration in ['val isWirelessSession:', 'val isLoopbackSession:']:
     manager_head += comm[start:comm.index('\n\n', start)] + '\n'
 manager=manager_head+'\n'.join(extract(comm,n) for n in [
  'suspend fun startHandshake()', 'private inline fun withLiveTransport(', 'suspend fun startReading()',
- 'private fun reachedSsl()', 'private fun transportedQuited(', 'fun applyAudioSettings()', 'fun disconnect(', 'fun cancelPendingSettingsRestart()', 'private fun doDisconnect(',
+ 'private fun reachedSsl()', 'private fun transportedQuited(', 'fun applyAudioSettings()', 'fun disconnect(', 'fun cancelPendingSettingsRestart()', 'internal fun rearmSnapshot()', 'private fun doDisconnect(',
  'private suspend fun connectIp(', 'private suspend fun connectUsb(', 'fun disconnectForLinkLoss(', 'fun destroy()',
  'fun setProjectionVideoFocusSuppressed('
 ])+'\n}\n'
@@ -674,10 +674,17 @@ class SettingsActionFixture(val commManager:CommManager) {
  private val intent:android.content.Intent?=null
  private val EXTRA_USB_ATTEMPT="usb";private val EXTRA_SETTINGS_REARM="settings";private val START_STICKY=1
  var userExitedAA=false
+ private val isDestroying=false
  private fun stopWirelessForCommand(settingsRearm:Boolean){commManager.cancelPendingSettingsRestart()}
  private var wirelessRearmPendingForSettings=false
  private var usbCheckPendingForSettings=false;private var bluetoothLaunchPendingForSettings=false
- private class Wifi {val active:Any?=null;fun stop(){};fun stopForUser(){}}
+ private class Wifi {
+  private val ticket=Any()
+  fun holdForUser(){}
+  fun cleanupTicket()=ticket
+  fun isCleanupCurrent(value:Any)=value===ticket
+  val active:Any?=null;fun stop(){};fun stopForUser(){}
+ }
  private class WifiLauncherNative {val handshakeManager=Handshake()}
  private class Handshake {fun noteSessionEnded(wake:Boolean){}}
  private class Usb {fun isSwitchingToProjection()=false;fun stopForUser(){}}
@@ -728,6 +735,34 @@ fun terminalRouteSnapshots()=runBlocking {
 }
 """
 extra += r"""
+// Self Mode can be admitted while another attempt is Connecting. The launcher arm records
+// that attempt through the real snapshot, and the real failed open must publish its end with
+// the same identity; a later attempt's end must not match it.
+fun rearmSnapshotIdentifiesConnectingAttempt()=runBlocking {
+ for(outcome in listOf("false","throw")) {
+  val c=CommManager();c.connectNext()
+  c.disconnect(honorKillOnDisconnect=false);c.cleanups();c.awaitCleanup()
+  var armed:Pair<ConnectionState.Disconnected?,Any?>?=null
+  SocketProjectionConnection.connectionHook={
+   armed=c.rearmSnapshot()
+   if(outcome=="throw")throw IllegalStateException("open failed") else false
+  }
+  try { c.connectNext() } finally { SocketProjectionConnection.connectionHook=null }
+  val (terminalAtArm,attempt)=checkNotNull(armed)
+  check(terminalAtArm==null && attempt!=null){"arm during Connecting recorded no attempt"}
+  val ended=c.state as ConnectionState.Disconnected
+  check(ended.endedAttempt===attempt && !ended.hadPhysicalConnection){"failed open lost its attempt: $outcome"}
+  check(c.rearmSnapshot().let{it.first===ended && it.second==null})
+  c.cleanups();c.awaitCleanup()
+  c.connectNext()
+  val live=c.rearmSnapshot().second
+  c.disconnect(honorKillOnDisconnect=false)
+  val next=c.state as ConnectionState.Disconnected
+  check(live!=null && live!==attempt && next.endedAttempt===live && next.hadPhysicalConnection)
+  c.cleanups();c.close()
+ }
+ println("PASS real Connecting attempt identity reaches its failed terminal and differs from the next attempt")
+}
 fun usbSaveOpenFailures()=runBlocking {
  val permissionCase=CommManager()
  permissionCase.disconnect(sendByeBye=false,isUserExit=false,honorKillOnDisconnect=false,reason=DisconnectReason.SETTINGS_RESTART)
@@ -776,7 +811,7 @@ fun failedAttemptDoesNotInheritPhysicalSuccess()=runBlocking {
  println("PASS new failed attempts do not inherit physical success from the previous connection")
 }
 """
-extra=extra.replace('fun main(){', 'fun main(){\n usbSaveOpenFailures();failedAttemptDoesNotInheritPhysicalSuccess();terminalRouteSnapshots();settingsActionCancellation()')
+extra=extra.replace('fun main(){', 'fun main(){\n usbSaveOpenFailures();failedAttemptDoesNotInheritPhysicalSuccess();rearmSnapshotIdentifiesConnectingAttempt();terminalRouteSnapshots();settingsActionCancellation()')
 (OUT/'Probe.kt').write_text(manager+transport_fixture+support+extra)
 (OUT/'Os.kt').write_text(r'''package android.os
 import java.util.concurrent.*
@@ -908,3 +943,12 @@ subprocess.run(["python3", str(Path(__file__).with_name("audio-integration.py"))
 
 # Exercise actual Self launch jobs and the service cancel action on a queued Main dispatcher.
 subprocess.run(["python3", str(Path(__file__).with_name("self-launch.py"))], check=True)
+
+# Full service disconnect callback: immediate policy and deferred resource ownership.
+subprocess.run(["python3", str(Path(__file__).with_name("wireless-cleanup.py"))], check=True)
+
+# VPN startService delivery can outlive a synchronous stop on the bound instance.
+subprocess.run(["python3", str(Path(__file__).with_name("vpn-start.py"))], check=True)
+
+# Platform-version configuration: session exclusion must not silently become an all-app VPN.
+subprocess.run(["python3", str(Path(__file__).with_name("vpn-config.py"))], check=True)

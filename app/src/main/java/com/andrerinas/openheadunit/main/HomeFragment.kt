@@ -98,8 +98,7 @@ class HomeFragment : Fragment() {
     private val vpnPermissionLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == android.app.Activity.RESULT_OK) {
             AppLog.i("VPN permission granted. Starting DummyVpnService and Self Mode.")
-            VpnControl.startVpn(requireContext());
-            startSelfModeInternal()
+            startSelfModeInternal(needsDummyVpn = true)
         } else {
             AppLog.w("VPN permission denied. Offline Self Mode might fail.")
             ToastUtils.showToast(requireContext(), getString(R.string.failed_start_android_auto), Toast.LENGTH_LONG, force = true)
@@ -1616,9 +1615,10 @@ class HomeFragment : Fragment() {
         startActivity(aapIntent)
     }
 
-    private fun startSelfModeInternal() {
+    private fun startSelfModeInternal(needsDummyVpn: Boolean = false) {
         val intent = Intent(requireContext(), AapService::class.java)
         intent.action = AapService.ACTION_START_SELF_MODE
+        intent.putExtra(AapService.EXTRA_SELF_MODE_VPN, needsDummyVpn)
         ContextCompat.startForegroundService(requireContext(), intent)
         AppLog.i("Auto start selfmode")
     }
@@ -1632,15 +1632,15 @@ class HomeFragment : Fragment() {
         val path = SelfLauncherManager.installedPath(requireContext())
         val offline = activeNetwork == null
 
-        if (SelfLaunchRoutePolicy.needsDummyVpn(path, offline, VpnControl.isVpnAvailable())) {
+        val needsDummyVpn = SelfLaunchRoutePolicy.needsDummyVpn(path, offline, VpnControl.isVpnAvailable())
+        if (needsDummyVpn) {
             AppLog.i("Device is offline. Preparing Dummy VPN for Self Mode.")
             val vpnIntent = VpnControl.consentIntent(requireContext())
             if (vpnIntent != null) {
                 vpnPermissionLauncher.launch(vpnIntent)
                 return
             } else {
-                AppLog.i("VPN permission already granted. Starting VPN service.")
-                VpnControl.startVpn(requireContext());
+                AppLog.i("VPN permission already granted. Self Mode will prepare it after launch admission.")
             }
         } else if (offline) {
             if (path == SelfLaunchPath.HEADUNIT_SERVER) {
@@ -1649,7 +1649,7 @@ class HomeFragment : Fragment() {
                 AppLog.i("Device is offline and VPN is not available in this build. Self Mode may fail.")
             }
         }
-        startSelfModeInternal()
+        startSelfModeInternal(needsDummyVpn)
     }
 
     /**

@@ -1296,7 +1296,8 @@ class SettingsFragment : Fragment() {
             // acting on it, because a preference turned on under Native AA and then hidden by a
             // mode change would otherwise put a blackholing tun on a USB session. The other half
             // is DummyVpnPolicy.shouldStartForSession.
-            if (VpnControl.isVpnAvailable()) {
+            if (VpnControl.isVpnAvailable() &&
+                com.andrerinas.openheadunit.utils.DummyVpnPolicy.supportsSessionVpn(Build.VERSION.SDK_INT)) {
                 items.add(SettingItem.ToggleSettingEntry(
                     stableId = "keepDummyVpnDuringSession",
                     // Through VpnControl, not R: this copy lives in the github flavor's

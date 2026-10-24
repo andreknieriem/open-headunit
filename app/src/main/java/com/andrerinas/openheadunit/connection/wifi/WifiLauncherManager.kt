@@ -3,6 +3,7 @@ package com.andrerinas.openheadunit.connection.wifi
 import android.os.SystemClock
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.aap.AapService
+import com.andrerinas.openheadunit.connection.CommManager
 import com.andrerinas.openheadunit.connection.ConnectionArbiter
 import com.andrerinas.openheadunit.connection.ConnectionStage
 import com.andrerinas.openheadunit.connection.ConnectionStageTracker
@@ -12,6 +13,23 @@ import com.andrerinas.openheadunit.utils.ScreenPower
 import com.andrerinas.openheadunit.utils.Settings
 
 open class WifiLauncherManager(val service: AapService) {
+
+    private val cleanupGeneration = WirelessCleanupGeneration()
+
+    /** These methods share the main thread with launcher start, stop and explicit re-arm. */
+    internal fun cleanupTicket(): Any = cleanupGeneration.capture()
+    internal fun isCleanupCurrent(ticket: Any): Boolean = cleanupGeneration.isCurrent(ticket)
+    internal fun cleanupTicketFor(state: CommManager.ConnectionState.Disconnected): Any? =
+        cleanupGeneration.captureFor(state, state.endedAttempt, state.hadPhysicalConnection)
+    internal fun noteRearm() {
+        // A Start can run before the queued Disconnected observer. Record the terminal
+        // object already published when this arm begins, not just the observer's later epoch.
+        // Self Mode is also admitted while another attempt is still Connecting; that attempt's
+        // terminal does not exist yet, so record the attempt itself. Read both atomically:
+        // the attempt's IO thread can publish its terminal while this runs on Main.
+        val (terminal, attempt) = App.provide(service).commManager.rearmSnapshot()
+        cleanupGeneration.advance(terminal, attempt)
+    }
 
     val sharedServices: WifiLauncherSharedServices = WifiLauncherSharedServices(service)
     var active: WifiLauncher? = null
@@ -157,7 +175,7 @@ open class WifiLauncherManager(val service: AapService) {
         // when that attempt ends. A bring-up the user asked for ends that attempt instead.
         if (ConnectionArbiter.refusesBackground(userRequested)) return
         if (userRequested) ConnectionArbiter.yieldToUser("a wireless bring-up the user asked for")
-        liftUserCancel("the user asked for a wireless connection")
+        if (userRequested) liftUserCancel("the user asked for a wireless connection")
 
         // A forced re-arm gets past the restart policy by design, and the teardown below then wipes
         // the claim WifiDirectManager holds, so two of them raced and the loser's group replaced a
@@ -187,6 +205,7 @@ open class WifiLauncherManager(val service: AapService) {
 
         WirelessSleepHold.started(userRequested)
 
+        noteRearm()
         // stop old launcher
         active?.stop(WifiLauncherStopSequence.ANY)
 
@@ -226,8 +245,10 @@ open class WifiLauncherManager(val service: AapService) {
         stop(WifiLauncherStopSequence.LAST)
     }
 
-    /** An explicit ask for wireless. No-op unless the X is holding. */
+    /** An explicit ask retires old cleanup and lifts the status pill's X hold, if any. */
     fun liftUserCancel(reason: String) {
+        // Even an already-running launcher can be explicitly chosen while old Exit awaits IO.
+        noteRearm()
         if (!cancelledByUser) return
         AppLog.i("WifiLauncher: $reason, so the stop from the status pill is lifted.")
         cancelledByUser = false

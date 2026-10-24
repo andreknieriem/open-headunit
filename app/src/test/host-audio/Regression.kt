@@ -23,6 +23,9 @@ private fun focusLease() = PlaybackFocusLease().apply {
 private fun PlaybackFocusLease.activity(channel: Int, nowMs: Long) = activity(channel, fixtureOwner, nowMs)
 
 fun main() {
+    nativeMusicIntegration()
+    timeStretchWorkerRegression()
+    nativeFailureOwnershipRegression()
     for (sdk in listOf(16, 21, 22)) aacHealthySyncProgressRegression(sdk)
     aacHealthyProgressRegression()
     audioTrackBufferRegression()
@@ -1291,7 +1294,8 @@ private fun audioSettingsRegression() {
         "system route" to { it.systemAudioStream = 3 },
         "media codec" to { it.useAacAudio = true },
         "sink disabled" to { it.enableAudioSink = false },
-        "DSP route" to { it.attachHwDspEqualizer = true }
+        "DSP route" to { it.attachHwDspEqualizer = true },
+        "time correction" to { it.audioMatchingMode = AudioTimeCorrectionMode.SOUNDTOUCH }
     )
     val cases = changes.map { (label, change) ->
         Triple(label, com.andrerinas.openheadunit.utils.Settings(), change)

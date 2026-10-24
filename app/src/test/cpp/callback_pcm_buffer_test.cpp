@@ -63,15 +63,18 @@ static void concurrentOrder() {
     CallbackPcmBuffer buffer;
     constexpr uint32_t total = 2'000'000;
     std::thread producer([&] {
-        std::array<int16_t, 960> data{};
         uint32_t position = 0;
         while (position < total) {
             const auto frames = std::min(480u, total - position);
-            for (uint32_t f = 0; f < frames; ++f) {
-                data[f * 2] = sample(position + f, 0);
-                data[f * 2 + 1] = sample(position + f, 1);
-            }
-            position += buffer.write(data.data(), frames, 768);
+            position += buffer.writeWith(frames, 768,
+                [&](int16_t* first, uint32_t firstFrames, int16_t* second, uint32_t secondFrames) {
+                    for (uint32_t f = 0; f < firstFrames + secondFrames; ++f) {
+                        auto* dest = f < firstFrames ? first + f * 2 : second + (f - firstFrames) * 2;
+                        dest[0] = sample(position + f, 0);
+                        dest[1] = sample(position + f, 1);
+                    }
+                    return true;
+                });
             std::this_thread::yield();
         }
     });
@@ -90,6 +93,33 @@ static void concurrentOrder() {
     producer.join();
     CHECK(buffer.available() == 0);
     CHECK(buffer.starvationEvents() == 0);
+}
+
+static void failedFillIsNeverPublished() {
+    CallbackPcmBuffer buffer;
+    buffer.resetStopped(CallbackPcmBuffer::capacity - 12);
+    std::array<int16_t, 64> initial{}, output{}, next{};
+    initial.fill(1000);
+    for (uint32_t i = 0; i < next.size(); ++i) next[i] = sample(i / 2, i % 2);
+    CHECK(buffer.write(initial.data(), 8, 64) == 8);
+    unsigned calls = 0;
+    CHECK(buffer.writeWith(32, 64, [&](int16_t* first, uint32_t n, int16_t*, uint32_t rest) {
+        ++calls;
+        CHECK(n == 4 && rest == 28);
+        std::memcpy(first, next.data(), n * 2 * sizeof(int16_t));
+        CHECK(buffer.available() == 8); // first span is still invisible
+        CHECK(buffer.render(output.data(), 8)); // consumer can progress during filling
+        for (unsigned i = 0; i < 16; ++i) CHECK(output[i] == 1000);
+        return false; // e.g. the second JNI region read fails
+    }) == 0);
+    CHECK(calls == 1 && buffer.available() == 0);
+    CHECK(buffer.write(next.data(), 32, 32) == 32);
+    CHECK(buffer.writeWith(1, 16, [&](int16_t*, uint32_t, int16_t*, uint32_t) {
+        std::abort(); return true; // full or lowered limit must not invoke the filler
+    }) == 0);
+    CHECK(buffer.takePendingStopped(output.data(), 32) == 32);
+    CHECK(output == next); // recovery sees only the retried, successfully committed PCM
+    CHECK(buffer.available() == 0);
 }
 
 static void producerSchedulingGap() {
@@ -123,6 +153,7 @@ static void transferOnlyUnreadAfterClose() {
 }
 
 int main() {
+    failedFillIsNeverPublished();
     transferOnlyUnreadAfterClose();
     producerSchedulingGap();
     writeLimitAndWrap();

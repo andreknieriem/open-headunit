@@ -1445,4 +1445,10 @@
     <string name="audio_settings_reconnect">オーディオ設定を保存しました。適用するにはAndroid Autoを再接続してください。</string>
     <string name="native_aa_candidate_android_radio_description">ヘッドユニットの Bluetooth モジュールを自動選択する代わりに、Android の Bluetooth を使用します。自動選択する場合はオフにしてください。モジュール経由の接続オプションがオンの場合は、先にオフにしてください。</string>
     <string name="external_bt_candidate_transport_description">自動選択の代わりに、ヘッドユニットの Bluetooth モジュール経由の接続を強制します。対応するモジュールサービスが必要です。サービスが応答しないときに Android の Bluetooth を使用できるようにするには、オフにしてください。オンにすると、この代替経路は使えなくなります。</string>
+    <string name="audio_matching_mode">音楽の時間補正</string>
+    <string name="audio_matching_ohu">OHU（低性能端末向け、既定）</string>
+    <string name="audio_matching_soundtouch">SoundTouch（バランス重視）</string>
+    <string name="audio_matching_r3">Rubber Band R3（音質優先）</string>
+    <string name="audio_matching_r3_short">Rubber Band R3 Short（R3より軽量）</string>
+    <string name="audio_matching_description">音程を変えずに音声の遅れを取り戻す方法を選びます。OHUは処理能力の低い端末に適しています。SoundTouchとR3はCPU負荷と処理遅延が増えます。R3 ShortはR3の処理負荷を軽減します。\n\nSoundTouchとR3：Android 5.0以降のPCM音楽に適用。経路案内・音声応答・システム音・AAC・古い端末ではOHUを使用します。\n再接続すると適用されます。</string>
 </resources>

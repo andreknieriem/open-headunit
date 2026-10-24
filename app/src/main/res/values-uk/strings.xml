@@ -1444,4 +1444,10 @@
     <string name="audio_settings_reconnect">Налаштування звуку збережено. Щоб застосувати їх, повторно підключіть Android Auto.</string>
     <string name="native_aa_candidate_android_radio_description">Використовувати Bluetooth Android замість автоматичного вибору Bluetooth-модуля головного пристрою. Для автоматичного вибору залиште вимкненим. Якщо ввімкнено опцію з’єднання через модуль, спочатку вимкніть її.</string>
     <string name="external_bt_candidate_transport_description">Примусово з’єднуватися через Bluetooth-модуль головного пристрою замість автоматичного вибору. Потрібна сумісна служба модуля. Залиште вимкненим, щоб використовувати Bluetooth Android, коли служба не відповідає; увімкнення блокує цей запасний шлях.</string>
+    <string name="audio_matching_mode">Часова корекція музики</string>
+    <string name="audio_matching_ohu">OHU (низьке навантаження на ЦП, типово)</string>
+    <string name="audio_matching_soundtouch">SoundTouch (збалансований)</string>
+    <string name="audio_matching_r3">Rubber Band R3 (пріоритет якості)</string>
+    <string name="audio_matching_r3_short">Rubber Band R3 Short (полегшений R3)</string>
+    <string name="audio_matching_description">Вибирає спосіб надолуження відставання звуку без зміни його висоти. OHU призначений для малопотужних пристроїв. SoundTouch і R3 потребують більше ресурсів ЦП і додають затримку обробки. R3 Short зменшує обчислювальне навантаження R3.\n\nSoundTouch і R3: музика PCM на Android 5.0 і новіших версіях. Для навігаційних підказок, голосових відповідей, системних звуків, AAC і старіших пристроїв використовується OHU.\nПідключіться повторно, щоб застосувати зміну.</string>
 </resources>

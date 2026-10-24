@@ -1,5 +1,7 @@
 package com.andrerinas.openheadunit.connection.wifi.modes.nativeaa
 
+import com.andrerinas.openheadunit.decoder.audio.AudioProbeLog
+
 import android.content.Context
 import android.os.SystemClock
 import com.andrerinas.openheadunit.connection.wifi.direct.GroupIdentityStability
@@ -263,7 +265,18 @@ class WppTcpServer(
             val tls = WppTcpTls.clientSocket(factory, raw)
             socket = tls
             tls.soTimeout = TLS_HANDSHAKE_TIMEOUT_MS
-            tls.startHandshake()
+            val diagnosticTlsStart = if (AudioProbeLog.enabled) System.nanoTime() else 0L
+            val diagnosticCpuStart = if (diagnosticTlsStart != 0L) android.os.Debug.threadCpuTimeNanos() else 0L
+            var diagnosticTlsComplete = false
+            try {
+                tls.startHandshake()
+                diagnosticTlsComplete = true
+            } finally {
+                if (diagnosticTlsStart != 0L) {
+                    AudioProbeLog.event(
+                        "wpp TLS complete=$diagnosticTlsComplete wallNs=${System.nanoTime() - diagnosticTlsStart} cpuNs=${android.os.Debug.threadCpuTimeNanos() - diagnosticCpuStart}")
+                }
+            }
             if (!isCurrentRun(generation)) return@withContext
             tls.soTimeout = 0
             AppLog.i(

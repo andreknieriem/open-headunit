@@ -6,7 +6,9 @@ internal class AdaptivePcmBuffer(
     private val sampleRate: Int = 48000,
     private val channels: Int = 2,
     latencyMultiplier: Int = AudioJitterBufferPolicy.DEFAULT_MULTIPLIER,
-    private val isMediaSink: Boolean = false
+    private val isMediaSink: Boolean = false,
+    private val nativeTimeCorrection: Boolean = false,
+    private val probe: AudioProbe? = null
 ) {
     private val mediaPrerollDeadlineMs = 1500L
     private val cycleFrames = sampleRate / 100
@@ -21,8 +23,8 @@ internal class AdaptivePcmBuffer(
     private val endingSample = ShortArray(channels)
     private var endingFrames = 0
     private val policy = AdaptiveJitterPolicy(sampleRate, latencyMultiplier)
-    private val recovery = LatencyRecoveryPolicy(sampleRate)
-    private val overlap = PcmOverlap()
+    private val recovery = LatencyRecoveryPolicy(sampleRate, probe)
+    private val overlap = PcmOverlap(optimized = true)
     private var recoveryDeferrals = 0
     private val prerollDeadlineMs = maxOf(100L, AudioJitterBufferPolicy.targetMsFor(latencyMultiplier) + 50)
     // Music gets a small reserve while the connection settles, before arrival history exists.
@@ -77,6 +79,27 @@ internal class AdaptivePcmBuffer(
         val rebanking: Boolean,
         val ended: Boolean
     )
+    /** Copy one coherent frame ledger under the bank monitor. This is not output/DAC
+     * progress. Lifetime counts remain comparable through reset; resetDiscarded closes it. */
+    @Synchronized fun sampleDiagnostics(boundary: Int = 0, close: Boolean = false) {
+        val p = probe ?: return
+        val now = System.nanoTime()
+        if (!close && boundary == 0 && !p.due(now)) return
+        p.set(AudioProbe.Counter.OFFERED, offeredFrames)
+        p.set(AudioProbe.Counter.REAL_RENDERED, startupFramesPlayed)
+        p.set(AudioProbe.Counter.COMPRESSED, compressedFrames)
+        p.set(AudioProbe.Counter.DROPPED, droppedFrames)
+        p.set(AudioProbe.Counter.RESET_DISCARDED, resetDiscardedFrames)
+        p.set(AudioProbe.Counter.DEPTH, (count / channels).toLong())
+        p.set(AudioProbe.Counter.TARGET, playbackTargetFrames().toLong())
+        p.set(AudioProbe.Counter.CONCEALED, concealedFrames)
+        p.set(AudioProbe.Counter.REBANKS, rebankEntries)
+        p.set(AudioProbe.Counter.STARTED, if (started) 1 else 0)
+        p.set(AudioProbe.Counter.ENDED, if (ended) 1 else 0)
+        p.set(AudioProbe.Counter.REBANKING, if (rebanking) 1 else 0)
+        if (close) p.close(now) else p.publish(now, boundary = boundary)
+    }
+
     @Volatile var silentCycles = 0L
         private set
     // Historical name: counts new underrun events, even if the next packet avoids a rebank.
@@ -152,6 +175,8 @@ internal class AdaptivePcmBuffer(
         policy.onArrival(nowMs, frames)
     }
     @Synchronized fun finish() {
+        probe?.add(AudioProbe.Counter.STOPS)
+        sampleDiagnostics(boundary = 2)
         ended = true
         // All queued segments are now complete and may drain together, even below target.
         closedPrefixSamples = -1
@@ -177,8 +202,34 @@ internal class AdaptivePcmBuffer(
     @Synchronized fun isIdle(): Boolean =
         count == 0 && endingFrames == 0 && (ended || (firstDataMs < 0 && !rebanking)) && !started
 
+    /** Native output has already spent CPU and can contain a final prompt tail. Apply
+     * backpressure to its worker instead of overwriting earlier ready PCM on a burst. */
+    @Synchronized fun writeIfFits(data: ShortArray, length: Int, nowMs: Long): Boolean {
+        require(length in 0..data.size && length % channels == 0)
+        if (length > ring.size - count) return false
+        write(data, length, nowMs)
+        return true
+    }
+
     @Synchronized fun write(data: ShortArray, length: Int, nowMs: Long) {
         val aligned = length.coerceAtMost(data.size) / channels * channels
+        writeFrom(aligned, nowMs) { sourceOffset, destinationOffset, samples ->
+            System.arraycopy(data, sourceOffset, ring, destinationOffset, samples)
+        }
+    }
+
+    @Synchronized fun writeIfFits(data: TimeStretchBlock, length: Int, nowMs: Long): Boolean {
+        require(length in 0..data.size && length % channels == 0)
+        if (length > ring.size - count) return false
+        writeFrom(length, nowMs) { sourceOffset, destinationOffset, samples ->
+            data.get(sourceOffset, ring, destinationOffset, samples)
+        }
+        return true
+    }
+
+    // Copy ready PCM while holding the bank monitor, never run native DSP under it.
+    // All sources share the same delivery, overflow and segment accounting.
+    private inline fun writeFrom(aligned: Int, nowMs: Long, copy: (Int, Int, Int) -> Unit) {
         if (aligned == 0) return
         lastPcmMs = nowMs
         if (closedPrefixSamples >= 0 && nextSegmentFirstDataMs < 0) nextSegmentFirstDataMs = nowMs
@@ -187,6 +238,7 @@ internal class AdaptivePcmBuffer(
         val keep = minOf(aligned, ring.size)
         val skip = aligned - keep
         val oldDrop = (count + keep - ring.size).coerceAtLeast(0)
+        if (oldDrop > 0 || skip > 0) probe?.add(AudioProbe.Counter.OVERFLOWS)
         if ((oldDrop > 0 || skip > 0) && pendingOverflow == null) {
             pendingOverflow = Overflow(nowMs, aligned / channels, count / channels, capacityFrames,
                 oldDrop / channels, skip / channels, offeredFrames, startupFramesPlayed,
@@ -197,8 +249,8 @@ internal class AdaptivePcmBuffer(
         if (skip > 0) { droppedFrames += skip / channels; needsFade = true; recovery.reset() }
         val tail = (head + count) % ring.size
         val first = minOf(keep, ring.size - tail)
-        System.arraycopy(data, skip, ring, tail, first)
-        System.arraycopy(data, skip + first, ring, 0, keep - first)
+        copy(skip, tail, first)
+        if (keep > first) copy(skip + first, 0, keep - first)
         count += keep
         offeredFrames += aligned / channels
         inputFrames += keep / channels
@@ -208,6 +260,10 @@ internal class AdaptivePcmBuffer(
     // Stop and a closing prefix are deliberate ends, not missing input to wait for.
     @Synchronized fun wouldConceal(): Boolean =
         started && !ended && closedPrefixSamples < 0 && gapFrames == 0 && count < cycleSamples
+
+    /** Ready-output control must not treat preroll, a closed prefix or PLC as stable playback. */
+    @Synchronized fun canTimeCorrect(): Boolean =
+        started && !ended && closedPrefixSamples < 0 && gapFrames == 0 && !needsFade
 
     var lastRenderRealFrames = 0
         private set
@@ -252,7 +308,15 @@ internal class AdaptivePcmBuffer(
         // Both create normal depth peaks; allow for them before repaying sustained backlog.
         val outputSlack = (outputBurstFrames - cycleFrames).coerceAtLeast(0)
         val slack = maxOf(sampleRate * 30 / 1000, policy.largestChunkFrames - cycleFrames + outputSlack)
-        val canRecover = !ended && !drainingPrefix && gapFrames == 0 && !needsFade
+        // Reasons can overlap; their counts are observations, not disjoint lost frames.
+        if (probe != null) {
+            if (nativeTimeCorrection) probe.add(AudioProbe.Counter.BLOCK_NATIVE)
+            if (ended) probe.add(AudioProbe.Counter.BLOCK_ENDED)
+            if (drainingPrefix) probe.add(AudioProbe.Counter.BLOCK_PREFIX)
+            if (gapFrames != 0) probe.add(AudioProbe.Counter.BLOCK_GAP)
+            if (needsFade) probe.add(AudioProbe.Counter.BLOCK_FADE)
+        }
+        val canRecover = !nativeTimeCorrection && !ended && !drainingPrefix && gapFrames == 0 && !needsFade
         recovery.observe(nowMs, target, policy.largestChunkFrames, slack, count / channels,
             inputFrames, canRecover)
         // A late decoder batch is still playable PCM, even at a fixed latency setting.
@@ -260,11 +324,18 @@ internal class AdaptivePcmBuffer(
         // latency is repaid below in small overlaps after a stable rendering window.
 
         val proposal = if (canRecover) recovery.correction(nowMs, count / channels) else 0
+        val overlapStart = if (probe != null && proposal > 0) System.nanoTime() else 0L
         var catchUp = overlap.shift(ring, head, channels, cycleFrames / 2,
             minOf(proposal, (count / channels - cycleFrames).coerceAtLeast(0)))
+        if (proposal > 0) {
+            probe?.phase(AudioProbe.Phase.OVERLAP, System.nanoTime() - overlapStart)
+            probe?.add(if (overlap.matched) AudioProbe.Counter.MATCHED else AudioProbe.Counter.UNMATCHED)
+            probe?.add(AudioProbe.Counter.SELECTED_FRAMES, catchUp.toLong())
+        }
         if (catchUp > 0 && overlap.protectAttack && recoveryDeferrals < 3) {
             // Let an isolated attack pass without splitting its peak. Three render cycles
             // is the limit: a continuous click train must not disable recovery forever.
+            probe?.add(AudioProbe.Counter.ATTACK_DEFERRED)
             recoveryDeferrals++
             catchUp = 0
         } else if (catchUp > 0 || proposal == 0) recoveryDeferrals = 0
@@ -289,6 +360,7 @@ internal class AdaptivePcmBuffer(
                 }
             }
             compressedFrames += catchUp
+            probe?.add(AudioProbe.Counter.EXECUTED, catchUp.toLong())
         }
         head = (head + real + skipped) % ring.size
         count -= real + skipped
@@ -439,6 +511,8 @@ internal class AdaptivePcmBuffer(
     }
 
     @Synchronized fun reset() {
+        probe?.add(AudioProbe.Counter.BANK_RESETS)
+        sampleDiagnostics(boundary = 3)
         clearReserveWindow()
         pendingStoppedReserve = null
         skippedReserveWindows = 0

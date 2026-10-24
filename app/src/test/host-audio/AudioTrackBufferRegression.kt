@@ -67,8 +67,13 @@ internal fun audioTrackBufferRegression() {
                     val calls = track.writeCalls
                     check(output.write(pcm, 0, 960) == 0)
                     check(track.writeCalls == calls) { "API $api entered blocking write on a full track" }
+                    check(output.writeRetryDelayMs == 1L)
+                    repeat(2) { check(output.write(pcm, 0, 960) == 0) }
+                    check(output.writeRetryDelayMs == 4L)
+                    check(track.writeCalls == calls)
                     track.playbackHeadPosition = 120
                     check(output.write(pcm, 0, 960) == 240)
+                    check(output.writeRetryDelayMs == 1L)
                 }
                 track.playbackHeadPosition = track.acceptedFrames
                 val drained = output.playedFrames()

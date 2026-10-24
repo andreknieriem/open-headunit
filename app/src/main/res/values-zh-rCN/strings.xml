@@ -1439,4 +1439,10 @@
     <string name="audio_settings_reconnect">音频设置已保存。重新连接 Android Auto 后生效。</string>
     <string name="native_aa_candidate_android_radio_description">使用 Android 蓝牙，而不是自动选择车机的蓝牙模块。保持关闭以使用自动选择。如果已开启通过模块连接的选项，请先将其关闭。</string>
     <string name="external_bt_candidate_transport_description">强制通过车机的蓝牙模块连接，而不是自动选择。需要兼容的模块服务。保持关闭可在服务无响应时使用 Android 蓝牙；开启此选项将禁止这一备用连接方式。</string>
+    <string name="audio_matching_mode">音乐时间校正</string>
+    <string name="audio_matching_ohu">OHU（低性能设备适用，默认）</string>
+    <string name="audio_matching_soundtouch">SoundTouch（均衡）</string>
+    <string name="audio_matching_r3">Rubber Band R3（音质优先）</string>
+    <string name="audio_matching_r3_short">Rubber Band R3 Short（比 R3 更轻量）</string>
+    <string name="audio_matching_description">选择在不改变音高的情况下，让滞后的音频赶上进度的方式。OHU 适用于低性能设备。SoundTouch 和 R3 需要更多 CPU 资源，并会增加处理延迟。R3 Short 可降低 R3 的处理开销。\n\nSoundTouch 和 R3：适用于 Android 5.0 及以上版本的 PCM 音乐。导航提示、语音回复、系统声音、AAC 和旧版设备使用 OHU。\n重新连接后生效。</string>
 </resources>

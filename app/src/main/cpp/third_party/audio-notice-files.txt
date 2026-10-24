@@ -1,0 +1,8 @@
+NOTICE_AUDIO.txt
+docs/AUDIO_SOURCE.md
+app/src/main/cpp/third_party/README.md
+app/src/main/cpp/third_party/soundtouch/COPYING.TXT
+app/src/main/cpp/third_party/rubberband/COPYING
+app/src/main/cpp/third_party/GPL-3.0.txt
+app/src/main/cpp/third_party/rubberband/src/ext/kissfft/COPYING
+app/src/main/cpp/third_party/rubberband/src/ext/speex/COPYING

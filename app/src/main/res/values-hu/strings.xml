@@ -1443,4 +1443,10 @@
     <string name="audio_settings_reconnect">Hangbeállítások elmentve. Az alkalmazásukhoz csatlakoztassa újra az Android Auto-t.</string>
     <string name="native_aa_candidate_android_radio_description">Az Android Bluetooth használata a fejegység Bluetooth-moduljának automatikus kiválasztása helyett. Az automatikus választáshoz hagyja kikapcsolva. Ha valamelyik modulkapcsolati lehetőség be van kapcsolva, előbb kapcsolja ki.</string>
     <string name="external_bt_candidate_transport_description">Kapcsolódás kényszerítése a fejegység Bluetooth-modulján keresztül az automatikus választás helyett. Kompatibilis modulszolgáltatás szükséges. Hagyja kikapcsolva, hogy az Android Bluetooth használható maradjon, ha a szolgáltatás nem válaszol; bekapcsolva ez a tartalék út nem használható.</string>
+    <string name="audio_matching_mode">Zene időkorrekciója</string>
+    <string name="audio_matching_ohu">OHU (alacsony CPU-terhelés, alapértelmezett)</string>
+    <string name="audio_matching_soundtouch">SoundTouch (kiegyensúlyozott)</string>
+    <string name="audio_matching_r3">Rubber Band R3 (minőség előnyben)</string>
+    <string name="audio_matching_r3_short">Rubber Band R3 Short (kisebb terhelésű R3)</string>
+    <string name="audio_matching_description">Meghatározza, hogyan hozza be a hang a késést a hangmagasság megváltoztatása nélkül. Az OHU kisebb teljesítményű eszközökhöz készült. A SoundTouch és az R3 több CPU-t igényel, és feldolgozási késleltetést okoz. Az R3 Short csökkenti az R3 számításigényét.\n\nSoundTouch és R3: PCM-zene Android 5.0 vagy újabb rendszeren. A navigációs utasítások, hangos válaszok, rendszerhangok, AAC és régebbi eszközök az OHU-t használják.\nAz alkalmazáshoz csatlakozzon újra.</string>
 </resources>

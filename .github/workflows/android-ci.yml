@@ -51,19 +51,28 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      # github flavor only: the playstore flavor cannot compile because
-      # VpnControl.kt lives solely in app/src/github. When that source-set
-      # split is fixed, add an assemblePlaystoreDebug build here.
+      - name: Archive matching source
+        run: bash tools/package-source.sh
+
+      # This check covers the github flavor; playstore is not in the CI matrix.
       - name: Assemble github debug APK
         run: ./gradlew :app:assembleGithubDebug --stacktrace
 
-      - name: Upload debug APK
-        if: always()
+      - name: Verify packaged audio notices
+        run: |
+          python3 -B -m unittest discover -s app/src/test/packaging -v
+          python3 app/src/test/packaging/check_audio_notices.py app/build/outputs/apk/github/debug/*.apk
+
+      - name: Upload debug APK and matching source
         uses: actions/upload-artifact@v4
         with:
           name: app-github-debug-apk
-          path: app/build/outputs/apk/github/debug/*.apk
-          if-no-files-found: warn
+          path: |
+            app/build/outputs/apk/github/debug/*.apk
+            build/source/open-headunit-source.tar.gz
+            build/source/SOURCE_REVISION.txt
+            build/source/SOURCE_SHA256.txt
+          if-no-files-found: error
 
   unit-test:
     name: Unit tests (github debug)
@@ -97,6 +106,24 @@ jobs:
         run: |
           mkdir -p build
           python3 -u app/src/test/host-connection/run.py 2>&1 | tee build/host-connection.log
+
+      # Uses the runner's host compiler/CMake (3.24+), not Android's CMake.
+      # The preceding Gradle tests populate the Kotlin compiler/runtime cache.
+      - name: Run native and JNI audio regressions
+        shell: bash
+        timeout-minutes: 15
+        run: bash app/src/test/run-audio-host.sh
+
+      - name: Upload audio regression diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: host-audio-diagnostics
+          path: |
+            build/audio-host/*.log
+            build/callback-audio/Testing/Temporary/*.log
+            build/native-time-stretch/Testing/Temporary/*.log
+          if-no-files-found: ignore
 
       - name: Upload connection lifecycle diagnostics
         if: always()

@@ -977,6 +977,11 @@ class Settings(private val context: Context) {
         get() = prefs.getBoolean("video-profile-starvation-cap", false)
         set(value) { prefs.edit().putBoolean("video-profile-starvation-cap", value).apply() }
 
+    /** Applies to newly connected audio owners; independent of ordinary log verbosity. */
+    var detailedAudioDiagnostics: Boolean
+        get() = prefs.getBoolean("detailed-audio-diagnostics", false)
+        set(value) { prefs.edit().putBoolean("detailed-audio-diagnostics", value).apply() }
+
     /**
      * Asks the decoder for low-latency mode, through whichever key its vendor understands.
      *
@@ -1322,6 +1327,11 @@ class Settings(private val context: Context) {
     var audioQueueCapacity: Int
         get() = prefs.getInt("audio-queue-capacity", 50)
         set(value) { prefs.edit().putInt("audio-queue-capacity", value).apply() }
+
+    var audioMatchingMode: com.andrerinas.openheadunit.decoder.audio.AudioTimeCorrectionMode
+        get() = com.andrerinas.openheadunit.decoder.audio.AudioTimeCorrectionMode.fromPreference(
+            prefs.getString("audio-matching-mode", null))
+        set(value) { prefs.edit().putString("audio-matching-mode", value.preferenceValue).apply() }
 
     var useAacAudio: Boolean
         get() = prefs.getBoolean("use-aac-audio", false)

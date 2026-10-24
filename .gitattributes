@@ -1,0 +1,3 @@
+# Keep pinned library sources collapsed in reviews; adapter/build code stays visible.
+app/src/main/cpp/third_party/rubberband/** linguist-vendored
+app/src/main/cpp/third_party/soundtouch/** linguist-vendored

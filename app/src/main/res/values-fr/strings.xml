@@ -1488,4 +1488,10 @@
     <string name="audio_settings_reconnect">Paramètres audio enregistrés. Reconnectez Android Auto pour les appliquer.</string>
     <string name="native_aa_candidate_android_radio_description">Utiliser le Bluetooth Android au lieu de sélectionner automatiquement le module Bluetooth de l’autoradio. Laisser désactivé pour la sélection automatique. Si une option de connexion via le module est activée, la désactiver d’abord.</string>
     <string name="external_bt_candidate_transport_description">Forcer la connexion via le module Bluetooth de l’autoradio au lieu de la sélection automatique. Nécessite un service de module compatible. Laisser désactivé pour permettre le Bluetooth Android si le service ne répond pas ; forcer cette option empêche ce recours.</string>
+    <string name="audio_matching_mode">Correction temporelle de la musique</string>
+    <string name="audio_matching_ohu">OHU (faible charge CPU, par défaut)</string>
+    <string name="audio_matching_soundtouch">SoundTouch (équilibré)</string>
+    <string name="audio_matching_r3">Rubber Band R3 (priorité à la qualité)</string>
+    <string name="audio_matching_r3_short">Rubber Band R3 Short (R3 plus léger)</string>
+    <string name="audio_matching_description">Choisit comment rattraper le retard audio sans changer la hauteur du son. OHU convient aux appareils peu puissants. SoundTouch et R3 sollicitent davantage le processeur et ajoutent un délai de traitement. R3 Short réduit le coût de traitement de R3.\n\nSoundTouch et R3 : musique PCM sous Android 5.0 ou version ultérieure. Les instructions de navigation, les réponses vocales, les sons système, AAC et les appareils plus anciens utilisent OHU.\nReconnectez-vous pour appliquer le changement.</string>
 </resources>

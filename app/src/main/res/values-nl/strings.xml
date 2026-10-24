@@ -983,7 +983,7 @@
     <string name="zbt_probe_title">Bluetooth-module van de headunit testen</string>
     <string name="zbt_probe_idle">Tik om te starten</string>
     <string name="zbt_probe_running">Bezig…</string>
-    <string name="zbt_probe_message">Vraagt de aparte Bluetooth-chip van dit apparaat of die een Android Auto-verbinding kan dragen. In ongeveer acht seconden wordt gecontroleerd of de chip helemaal antwoordt, en alleen dan wordt er ongeveer anderhalve minuut gekeken. De regel onder deze instelling laat zien wat er gebeurt. Er wordt verder niets op het apparaat veranderd.\n\nDe chip praat met één programma tegelijk. Loopt er al een verbinding overheen, dan meldt de test dat in plaats van te testen. Zet de instelling hierboven eerst uit om de chip los te testen.\n\n\"Wekken en meekijken\" vraagt de chip bovendien om opnieuw verbinding te maken met je telefoon voor Android Auto. Dat is het enige deel dat iets verandert, en het apparaat opnieuw opstarten maakt het ongedaan. Exporteer daarna het logboek en voeg het bij.</string>
+    <string name="zbt_probe_message">Beide opties initialiseren de Bluetooth-module voordat deze wordt gevolgd. Dit kan de Bluetooth-status beïnvloeden. Wekken en meekijken vraagt ook om een verbinding met de telefoon.\n\nDe test geeft voorrang als OHU de module gebruikt of controleert. Exporteer na de test het logboek.</string>
     <string name="zbt_probe_watch_only">Alleen meekijken</string>
     <string name="zbt_probe_wake_and_watch">Wekken en meekijken</string>
     <string name="external_bt_blink_transport">Verbinden via de externe FYT-Bluetooth-module</string>

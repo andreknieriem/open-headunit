@@ -981,7 +981,7 @@
     <string name="zbt_probe_title">Prova il modulo Bluetooth dell\'unità</string>
     <string name="zbt_probe_idle">Tocca per eseguire</string>
     <string name="zbt_probe_running">In corso…</string>
-    <string name="zbt_probe_message">Chiede al chip Bluetooth separato di questa unità se può gestire una connessione Android Auto. In circa otto secondi verifica che il chip risponda e, solo in quel caso, osserva per circa un minuto e mezzo. La riga sotto questa impostazione mostra cosa sta succedendo; il resto dell\'unità non viene toccato.\n\nIl chip comunica con un solo programma alla volta: se una connessione lo sta già usando, il test lo segnala invece di eseguirsi. Disattiva prima l\'impostazione qui sopra per provarlo da solo.\n\n\"Sveglia e osserva\" chiede inoltre al chip di riconnettersi al telefono per Android Auto. È l\'unica parte che cambia qualcosa, e riavviando l\'unità si annulla. Poi esporta il log e allegalo.</string>
+    <string name="zbt_probe_message">Entrambe le opzioni inizializzano il modulo Bluetooth prima di osservarlo. Questo può modificarne lo stato Bluetooth. Sveglia e osserva richiede anche una connessione al telefono.\n\nIl test cede il passo mentre OHU usa o controlla il modulo. Esporta il registro al termine.</string>
     <string name="zbt_probe_watch_only">Solo osservazione</string>
     <string name="zbt_probe_wake_and_watch">Sveglia e osserva</string>
     <string name="external_bt_blink_transport">Connetti tramite il modulo Bluetooth esterno FYT</string>

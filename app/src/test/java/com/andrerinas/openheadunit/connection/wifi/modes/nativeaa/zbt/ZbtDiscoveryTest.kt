@@ -11,11 +11,14 @@ import org.junit.Test
 import org.mockito.Mockito.mockStatic
 
 class ZbtDiscoveryTest {
+    private val claims = mutableListOf<ZbtDaemonReachability.CarrierClaim>()
+    private fun claim() = ZbtDaemonReachability.claimCarrier().also { claims.add(it) }
+
     @Before
     fun reset() {
         ZbtDaemonReachability.forget()
-        ZbtDaemonReachability.setCarrierLive(false)
-        ZbtDaemonReachability.setCarrierWantsClient(false)
+        claims.forEach { it.close() }
+        claims.clear()
     }
 
     @After
@@ -71,12 +74,11 @@ class ZbtDiscoveryTest {
     fun `candidate measurements wait for a live or retiring carrier without changing mode`() {
         val measurement = ZbtDiscovery.measurement(ZbtDiscoveryPolicy.Decision(ZbtDiscoveryPolicy.Mode.IDENTITY, "QF"))
         assertFalse(measurement.waitsForCarrier)
-        ZbtDaemonReachability.setCarrierLive(true)
+        val owner = claim().also { it.setLive(true) }
         assertTrue(measurement.waitsForCarrier)
-        ZbtDaemonReachability.setCarrierLive(false)
-        ZbtDaemonReachability.setCarrierWantsClient(true)
+        owner.setLive(false)
         assertTrue(measurement.waitsForCarrier)
-        ZbtDaemonReachability.setCarrierWantsClient(false)
+        owner.close()
         assertFalse(measurement.waitsForCarrier)
         assertEquals(ZbtDiscoveryPolicy.Mode.IDENTITY, measurement.decision.mode)
     }

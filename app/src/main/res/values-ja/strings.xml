@@ -981,7 +981,7 @@
     <string name="zbt_probe_title">ヘッドユニットの Bluetooth モジュールをテスト</string>
     <string name="zbt_probe_idle">タップして実行</string>
     <string name="zbt_probe_running">実行中…</string>
-    <string name="zbt_probe_message">この機器に内蔵された別のBluetoothチップに、Android Autoの接続を中継できるかどうかを問い合わせます。まず約8秒でチップが応答するかを確認し、応答した場合のみ、約1分半のあいだ監視します。この設定の下の行に状況が表示されます。機器のそれ以外の部分には一切手を加えません。\n\nチップは一度に1つのプログラムとしか通信しません。すでにチップ経由の接続が動作している場合、テストは実行されず、その旨が表示されます。単独でテストするには、先に上の設定をオフにしてください。\n\n「起こして監視」では、さらにチップに対して、Android Autoのためにスマートフォンへ再接続するよう要求します。変更が加わるのはこの部分だけで、機器を再起動すると元に戻ります。終わったらログを書き出して添付してください。</string>
+    <string name="zbt_probe_message">どちらの操作もBluetoothモジュールを初期化してから状態を監視するため、Bluetoothの状態に影響する場合があります。「起こして監視」は、スマートフォンへの接続も要求します。\n\nOHUがモジュールを使用中または確認中の場合、テストは処理を譲ります。テスト後にログを書き出してください。</string>
     <string name="zbt_probe_watch_only">監視のみ</string>
     <string name="zbt_probe_wake_and_watch">起こして監視</string>
     <string name="external_bt_blink_transport">FYTの外部Bluetoothモジュール経由で接続</string>

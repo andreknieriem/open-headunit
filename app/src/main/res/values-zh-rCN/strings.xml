@@ -975,7 +975,7 @@
     <string name="zbt_probe_title">测试主机的蓝牙模块</string>
     <string name="zbt_probe_idle">点按运行</string>
     <string name="zbt_probe_running">正在运行…</string>
-    <string name="zbt_probe_message">询问本机独立的蓝牙芯片是否能承载 Android Auto 连接。约八秒内先确认芯片是否有响应，只有有响应时才会再观察约一分半钟。本设置下方的文字会显示进度，本机的其他部分都不会被改动。\n\n芯片一次只与一个程序通信，因此如果已有连接在使用它，测试会直接告知，而不会进行测试。如需单独测试，请先关闭上方的设置。\n\n“唤醒并观察”还会要求芯片为 Android Auto 重新连接您的手机。只有这一步会改变状态，重启本机即可恢复。完成后请导出日志并附上。</string>
+    <string name="zbt_probe_message">两个选项都会先初始化蓝牙模块，再观察其状态，因此可能影响蓝牙状态。“唤醒并观察”还会请求连接手机。\n\nOHU正在使用或检查模块时，测试会让出模块。测试后请导出日志。</string>
     <string name="zbt_probe_watch_only">仅观察</string>
     <string name="zbt_probe_wake_and_watch">唤醒并观察</string>
     <string name="external_bt_blink_transport">通过 FYT 外接蓝牙模块连接</string>

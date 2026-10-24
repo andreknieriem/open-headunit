@@ -979,7 +979,7 @@
     <string name="zbt_probe_title">Otestovat modul Bluetooth jednotky</string>
     <string name="zbt_probe_idle">Klepnutím spustíte</string>
     <string name="zbt_probe_running">Probíhá…</string>
-    <string name="zbt_probe_message">Zeptá se samostatného čipu Bluetooth této jednotky, zda dokáže přenášet spojení Android Auto. Zhruba za osm sekund ověří, že čip vůbec odpovídá, a jen pokud odpoví, sleduje ho asi půldruhé minuty. Řádek pod tímto nastavením ukazuje, co se právě děje. Na jednotce se nic jiného nemění.\n\nČip komunikuje vždy jen s jedním programem. Pokud přes něj už běží spojení, test to oznámí a netestuje. Chcete-li čip otestovat samostatně, nejdřív vypněte nastavení výše.\n\nProbudit a sledovat navíc požádá čip, aby se kvůli Android Auto znovu spojil s telefonem. Jen tato část něco mění a restart jednotky ji vrátí zpět. Poté prosím exportujte protokol a přiložte jej.</string>
+    <string name="zbt_probe_message">Obě možnosti inicializují modul Bluetooth před sledováním. To může ovlivnit jeho stav. Probudit a sledovat navíc požádá o připojení k telefonu.\n\nTest ustoupí, pokud OHU modul používá nebo kontroluje. Po testu exportujte protokol.</string>
     <string name="zbt_probe_watch_only">Jen sledovat</string>
     <string name="zbt_probe_wake_and_watch">Probudit a sledovat</string>
     <string name="external_bt_blink_transport">Připojit přes externí modul Bluetooth FYT</string>

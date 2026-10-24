@@ -57,7 +57,16 @@ object ZbtWakePolicy {
     /** How long a wake asked for before it could go out is still worth sending. */
     const val PENDING_MAX_MS = 60_000L
 
-    enum class Pending { SEND, HOLD, SESSION_UP, EXPIRED }
+    /**
+     * Give the daemon the same opening-state budget as the diagnostic hello. InitInfo
+     * (0x102) identifies the module; LinkInfo/LinkInfo2 (0x104/0x10c) arrive separately.
+     * There is no end-of-burst marker. A usable peer can start its handshake immediately,
+     * while a silent or unclassified module must still get a chance to be woken.
+     * This bounds observation, not the time required for HFP to connect.
+     */
+    const val INITIAL_STATE_WAIT_MS = 8_000L
+
+    enum class Pending { SEND, HOLD, SESSION_UP, PHONE_PRESENT, EXPIRED }
 
     /**
      * What to do with a wake that was asked for and not yet sent. A cold bring-up asks before the
@@ -69,10 +78,16 @@ object ZbtWakePolicy {
         nowMs: Long,
         settling: Boolean,
         handshakeInFlight: Boolean,
-        sessionConnected: Boolean
+        sessionConnected: Boolean,
+        channelOpenForMs: Long = INITIAL_STATE_WAIT_MS,
+        phonePresent: Boolean = false
     ): Pending = when {
         sessionConnected -> Pending.SESSION_UP
+        // Link presence proves enough to attempt AA, not a bond or a working HFP
+        // profile. Neither the vendor's is_pair scalar nor HFP=0 authorizes recovery.
+        phonePresent -> Pending.PHONE_PRESENT
         nowMs < requestedAtMs || nowMs - requestedAtMs >= PENDING_MAX_MS -> Pending.EXPIRED
+        channelOpenForMs < INITIAL_STATE_WAIT_MS -> Pending.HOLD
         shouldSend(lastSentAtMs, nowMs, settling, handshakeInFlight, sessionConnected) -> Pending.SEND
         else -> Pending.HOLD
     }

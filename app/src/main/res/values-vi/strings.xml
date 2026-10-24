@@ -979,7 +979,7 @@
     <string name="zbt_probe_title">Kiểm tra mô-đun Bluetooth của đầu phát</string>
     <string name="zbt_probe_idle">Chạm để chạy</string>
     <string name="zbt_probe_running">Đang chạy…</string>
-    <string name="zbt_probe_message">Hỏi chip Bluetooth riêng của thiết bị này xem nó có mang được kết nối Android Auto hay không. Trong khoảng tám giây, phép thử kiểm tra xem chip có trả lời hay không, và chỉ khi có mới theo dõi khoảng một phút rưỡi. Dòng bên dưới tùy chọn này cho biết điều gì đang diễn ra, và không có gì khác trên thiết bị bị đụng tới.\n\nChip chỉ nói chuyện với một chương trình tại một thời điểm. Nếu đã có một kết nối đi qua nó, phép thử sẽ báo điều đó thay vì kiểm tra. Hãy tắt tùy chọn phía trên trước để thử riêng.\n\nĐánh thức và theo dõi còn yêu cầu chip kết nối lại với điện thoại của bạn cho Android Auto. Đó là phần duy nhất thay đổi điều gì đó, và khởi động lại thiết bị sẽ hoàn tác. Sau đó hãy xuất nhật ký và đính kèm.</string>
+    <string name="zbt_probe_message">Cả hai tùy chọn đều khởi tạo mô-đun Bluetooth trước khi theo dõi. Việc này có thể ảnh hưởng đến trạng thái Bluetooth. Đánh thức và theo dõi còn yêu cầu kết nối với điện thoại.\n\nPhép thử nhường quyền khi OHU đang sử dụng hoặc kiểm tra mô-đun. Hãy xuất nhật ký sau khi thử.</string>
     <string name="zbt_probe_watch_only">Chỉ theo dõi</string>
     <string name="zbt_probe_wake_and_watch">Đánh thức và theo dõi</string>
     <string name="external_bt_blink_transport">Kết nối qua mô-đun Bluetooth ngoài FYT</string>

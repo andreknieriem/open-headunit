@@ -975,7 +975,7 @@
     <string name="zbt_probe_title">測試主機的藍牙模組</string>
     <string name="zbt_probe_idle">輕觸即可執行</string>
     <string name="zbt_probe_running">執行中…</string>
-    <string name="zbt_probe_message">詢問本機獨立的藍牙晶片是否能承載 Android Auto 連線。約八秒內會先確認晶片是否有回應，只有在有回應時，才會再觀察約一分半鐘。此設定下方的文字會顯示進度，本機的其他部分都不會被更動。\n\n晶片一次只能與一個程式通訊，因此若已有連線正透過它運作，測試會直接告知，而不會進行測試。若要單獨測試，請先關閉上方的設定。\n\n「喚醒並觀察」還會要求晶片為了 Android Auto 重新連上您的手機。只有這部分會改變狀態，重新啟動本機即可復原。結束後請匯出紀錄並附上。</string>
+    <string name="zbt_probe_message">兩個選項都會先初始化藍牙模組，再觀察其狀態，因此可能影響藍牙狀態。「喚醒並觀察」還會要求連接手機。\n\nOHU正在使用或檢查模組時，測試會讓出模組。測試後請匯出記錄。</string>
     <string name="zbt_probe_watch_only">僅觀察</string>
     <string name="zbt_probe_wake_and_watch">喚醒並觀察</string>
     <string name="external_bt_blink_transport">透過 FYT 外接藍牙模組連線</string>

@@ -988,7 +988,7 @@
     <string name="zbt_probe_title">Bluetooth-Modul der Headunit testen</string>
     <string name="zbt_probe_idle">Zum Ausführen tippen</string>
     <string name="zbt_probe_running">Läuft…</string>
-    <string name="zbt_probe_message">Fragt den separaten Bluetooth-Chip dieses Geräts, ob er eine Android-Auto-Verbindung tragen kann. In etwa acht Sekunden wird geprüft, ob der Chip überhaupt antwortet, und nur dann wird etwa anderthalb Minuten lang beobachtet. Die Zeile unter dieser Einstellung zeigt, was passiert, und sonst wird am Gerät nichts verändert.\n\nDer Chip spricht immer nur mit einem Programm. Läuft bereits eine Verbindung darüber, sagt der Test das, statt zu testen. Schalte dafür zuerst die Einstellung darüber aus.\n\nWecken und beobachten bittet den Chip zusätzlich, sich für Android Auto mit deinem Handy zu verbinden. Nur dieser Teil verändert etwas, und ein Neustart des Geräts macht es rückgängig. Bitte exportiere danach das Protokoll und hänge es an.</string>
+    <string name="zbt_probe_message">Beide Optionen initialisieren das Bluetooth-Modul vor der Beobachtung. Dies kann seinen Bluetooth-Zustand beeinflussen. Aufwecken und beobachten fordert zusätzlich eine Verbindung zum Telefon an.\n\nWährend OHU das Modul verwendet oder prüft, gibt der Test den Zugriff frei. Exportiere anschließend das Protokoll.</string>
     <string name="zbt_probe_watch_only">Nur beobachten</string>
     <string name="zbt_probe_wake_and_watch">Wecken und beobachten</string>
     <string name="external_bt_blink_transport">Über das externe FYT-Bluetooth-Modul verbinden</string>

@@ -411,9 +411,9 @@ class SettingsFragment : Fragment() {
     /**
      * Explain what the probe does, then run it off the main thread if the user agrees.
      *
-     * Asked rather than run on tap because the name alone does not say that it touches nothing. On
-     * a head unit that already refuses to connect, an unexplained "test" invites the fear that it
-     * will make things worse.
+     * Both modes open the vendor channel and send RequestInit, which may activate Android Auto
+     * handling on the module. Watch-only skips the additional reconnect command; confirmation
+     * keeps this diagnostic separate from automatic route selection.
      */
     private fun confirmAndRunZbtProbe() {
         // Same builder and theme as every other dialog here. A bare AlertDialog.Builder came up

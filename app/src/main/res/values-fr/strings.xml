@@ -857,7 +857,7 @@
     <string name="zbt_probe_title">Tester le module Bluetooth de l\'autoradio</string>
     <string name="zbt_probe_idle">Appuyer pour lancer</string>
     <string name="zbt_probe_running">En cours…</string>
-    <string name="zbt_probe_message">Demande à la puce Bluetooth séparée de cet appareil si elle peut prendre en charge une connexion Android Auto. Le test vérifie en huit secondes environ que la puce répond et, seulement si c\'est le cas, l\'observe pendant une minute et demie environ. La ligne sous ce réglage indique ce qui se passe ; rien d\'autre n\'est modifié sur l\'appareil.\n\nLa puce ne communique qu\'avec un programme à la fois. Si une connexion passe déjà par elle, le test l\'indique au lieu de s\'exécuter. Désactivez d\'abord le réglage ci-dessus pour tester la puce seule.\n\n« Réveiller et observer » demande aussi à la puce de se reconnecter à votre téléphone pour Android Auto. C\'est la seule partie qui modifie quelque chose, et un redémarrage de l\'appareil l\'annule. Exportez ensuite le journal et joignez-le.</string>
+    <string name="zbt_probe_message">Les deux options initialisent le module Bluetooth avant de le surveiller. Cela peut modifier son état Bluetooth. Réveiller et observer demande aussi une connexion au téléphone.\n\nLe test cède la place lorsque OHU utilise ou vérifie le module. Exportez le journal après le test.</string>
     <string name="zbt_probe_watch_only">Observer seulement</string>
     <string name="zbt_probe_wake_and_watch">Réveiller et observer</string>
     <string name="external_bt_blink_transport">Se connecter via le module Bluetooth externe FYT</string>

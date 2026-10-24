@@ -982,7 +982,7 @@
     <string name="zbt_probe_title">헤드유닛 블루투스 모듈 테스트</string>
     <string name="zbt_probe_idle">실행하려면 탭하세요.</string>
     <string name="zbt_probe_running">실행 중…</string>
-    <string name="zbt_probe_message">이 기기의 별도 블루투스 칩이 Android Auto 연결을 전달할 수 있는지 확인합니다. 약 8초 동안 칩이 응답하는지 확인하고, 응답할 때만 약 1분 30초 동안 상태를 관찰합니다. 이 설정 아래에 진행 상황이 표시되며, 기기의 다른 부분은 변경하지 않습니다.\n\n칩은 한 번에 하나의 프로그램과만 통신합니다. 이미 연결이 그 칩을 통해 실행 중이면 테스트하지 않고 그 사실을 알려 줍니다. 따로 테스트하려면 위 설정을 먼저 사용 중지하세요.\n\n\'깨우기 및 관찰\'은 칩에 Android Auto 연결을 위해 휴대전화와 다시 연결하도록 요청합니다. 상태를 변경하는 작업은 이것뿐이며, 기기를 다시 시작하면 원래대로 돌아갑니다. 테스트가 끝나면 로그를 내보내 첨부하세요.</string>
+    <string name="zbt_probe_message">두 옵션 모두 Bluetooth 모듈을 초기화한 뒤 상태를 관찰하므로 Bluetooth 상태에 영향을 줄 수 있습니다. 깨우기 및 관찰은 휴대전화 연결도 요청합니다.\n\nOHU가 모듈을 사용하거나 확인 중이면 테스트가 양보합니다. 테스트 후 로그를 내보내 주세요.</string>
     <string name="zbt_probe_watch_only">관찰만 하기</string>
     <string name="zbt_probe_wake_and_watch">깨우기 및 관찰</string>
     <string name="native_ap_transport">네트워크 연결 방식</string>

@@ -1296,7 +1296,7 @@
     <string name="zbt_probe_title">Test the head unit\'s Bluetooth module</string>
     <string name="zbt_probe_idle">Tap to run</string>
     <string name="zbt_probe_running">Running…</string>
-    <string name="zbt_probe_message">Asks this unit\'s separate Bluetooth chip whether it will carry an Android Auto connection. It spends about eight seconds checking that the chip answers at all and, only if it does, watches for about a minute and a half. The line under this setting shows what is happening, and nothing else on the unit is touched.\n\nThe chip talks to one program at a time, so if a connection is already running through it the test says so instead of testing. Turn the setting above off first to test it on its own.\n\nWake and watch also asks the chip to reconnect to your phone for Android Auto. That is the only part that changes anything, and restarting the unit undoes it. Please export the log afterwards and attach it.</string>
+    <string name="zbt_probe_message">Both options initialize the Bluetooth module before monitoring it. This may affect its Bluetooth state. Wake and watch also requests a connection to your phone.\n\nThe test yields while OHU is using or checking the module. Export the log after the test.</string>
     <string name="zbt_probe_watch_only">Watch only</string>
     <string name="zbt_probe_wake_and_watch">Wake and watch</string>
     <string name="external_bt_blink_transport">Connect through the FYT external Bluetooth module</string>

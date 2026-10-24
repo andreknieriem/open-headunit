@@ -3348,6 +3348,9 @@ class AapService : Service() {
                             wifiLauncherManager.setActiveFromSettings(force = true, userRequested = true)
                         ModuleRearmPolicy.Action.START_HANDSHAKE -> {
                             native?.handshakeManager?.start()
+                            // This press also requests a wake: queue it during discovery, or send
+                            // it to a carrier started immediately, without another credential event.
+                            native?.handshakeManager?.wakeOverModule()
                             // A press that started the measurement is working, not failing.
                             if (native?.handshakeManager?.isMeasuringDaemon() != true) {
                                 native?.handshakeManager?.notStartedReason()?.let {

@@ -67,8 +67,8 @@ class ZbtByteChannel(
 ) : Closeable {
 
     /**
-     * The daemon's port could not be opened. [verdict] separates failures classified
-     * as refused from other unconfirmed connection failures for the retry policy.
+     * The daemon's port could not be opened. [verdict] keeps a refusal, which is a
+     * failed opening classified for retry, apart from other unconfirmed connection failures.
      * Neither outcome establishes hardware absence or another application's ownership.
      */
     class NotConnected(
@@ -148,7 +148,15 @@ class ZbtByteChannel(
         const val REQUEST_INIT_ID = 1
 
         /**
-         * Open a session: connect, then send `RequestInit` for [enableType].
+         * Open a session and normally send `RequestInit` for [enableType].
+         * [initialize] is false only for automatic reachability observation: the inspected ZBT
+         * server sends its opening reports before reading requests, and even a silent TCP accept
+         * retains the existing legacy route. Discovery therefore needs no Bluetooth enable call.
+         * Actual carriers and the explicit diagnostic tool retain their normal initialization.
+         *
+         * Init is not passive observation: inspected vendor firmware forwards enable_type to a
+         * Bluetooth enable callback. The caller must publish [opening] before starting, and cancel
+         * it when retiring. An init already admitted may finish; a cancelled opening admits none.
          *
          * @throws NotConnected if the port could not be opened, carrying the verdict that says
          *   whether that was a refusal or a daemon that is there and not accepting.
@@ -159,14 +167,22 @@ class ZbtByteChannel(
             enableType: Int = ZbtMessages.ENABLE_TYPE_ANDROID_AUTO,
             onControlFrame: (msgId: Int, body: ByteArray) -> Unit = { _, _ -> },
             onRfcommData: (ByteArray) -> Unit = {},
-            bufferRfcommData: Boolean = true
+            bufferRfcommData: Boolean = true,
+            opening: ZbtChannelOpening = ZbtChannelOpening(),
+            socketFactory: () -> Socket = { Socket() },
+            initialize: Boolean = true
         ): ZbtByteChannel {
-            val socket = Socket()
+            val socket = socketFactory()
+            // One close handle for both owners: the opening (before connect) and the channel.
+            // Never pass the Socket itself where a Closeable is expected; see [socketCloser].
+            val closeSocket = socketCloser(socket)
+            opening.attach(closeSocket)
             try {
                 socket.connect(InetSocketAddress(host, port), CONNECT_TIMEOUT_MS)
                 socket.soTimeout = READ_TIMEOUT_MS
             } catch (e: Exception) {
                 try { socket.close() } catch (ignored: Exception) { /* best effort */ }
+                if (opening.wasCancelled()) throw ZbtChannelOpening.Cancelled()
                 val verdict = ZbtReachabilityPolicy.classify(e.javaClass.simpleName, answered = false)
                 val what = if (verdict == ZbtReachabilityPolicy.Verdict.NOTHING_LISTENING) {
                     "connection to $host:$port failed on this attempt (classified as refused)"
@@ -181,15 +197,26 @@ class ZbtByteChannel(
                     sink = socket.getOutputStream(),
                     onControlFrame = onControlFrame,
                     onRfcommData = onRfcommData,
-                    onClose = socketCloser(socket),
+                    onClose = closeSocket,
                     bufferRfcommData = bufferRfcommData
-                ).also { it.sendRequestInit(enableType) }
+                ).also {
+                    if (initialize) {
+                        opening.admitInit()
+                        AppLog.i("ZbtByteChannel: [open=${opening.id}] RequestInit admitted, enable_type=$enableType; delivery unconfirmed")
+                        it.sendRequestInit(enableType)
+                    } else if (opening.wasCancelled()) {
+                        throw ZbtChannelOpening.Cancelled()
+                    }
+                }
             } catch (e: Exception) {
                 // A socket that accepted a connection and then would not take our first message is
                 // not a channel. Close it here rather than handing back one nothing can use, or
                 // leaking it because the failure happened between connect and the first write.
                 try { socket.close() } catch (ignored: Exception) { /* best effort */ }
-                throw IOException("ZBT channel setup failed on $host:$port", e)
+                if (e is ZbtChannelOpening.Cancelled || opening.wasCancelled()) {
+                    throw ZbtChannelOpening.Cancelled()
+                }
+                throw IOException("ZBT channel setup failed on $host:$port (initialize=$initialize)", e)
             }
         }
     }

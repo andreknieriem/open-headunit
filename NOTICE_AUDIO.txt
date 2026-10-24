@@ -1,0 +1,51 @@
+Third-party audio software in Open Headunit
+==========================================
+
+These components are compiled into libhur_time_stretch.so and are included in
+this APK even when the OHU time-correction algorithm is selected.
+
+SoundTouch 2.4.0
+---------------
+Copyright (c) Olli Parviainen
+https://www.surina.net/soundtouch/
+https://codeberg.org/soundtouch/soundtouch
+
+SoundTouch is licensed under the GNU Lesser General Public License, version 2.1
+or (at your option) any later version. Its original COPYRIGHT/license headers
+are preserved in the included source. The upstream COPYING.TXT is reproduced
+below. OHU builds a selected subset with float samples and full waveform search;
+it does not include the BPM detector or command-line utilities.
+
+Rubber Band Library 4.0.0
+------------------------
+Copyright 2007-2024 Particular Programs Ltd.
+Written by Chris Cannam; published by Particular Programs Ltd t/a Breakfast Quay.
+https://breakfastquay.com/rubberband/
+https://github.com/breakfastquay/rubberband/tree/v4.0.0
+
+Rubber Band is licensed under the GNU General Public License, version 2 or
+(at your option) any later version. For its combination with this AGPLv3 app,
+OHU uses the GPLv3 option. The upstream COPYING and the GNU GPLv3 text are
+reproduced below; this does not relicense the library itself as AGPL.
+
+OHU uses only the pinned R3 implementation, its built-in FFT and BQ resampler.
+The local 2026-10-24 change in src/finer/PhaseAdvance.h skips peak-map and
+strongest-channel preparation only when the input and output hops are equal;
+phase/history updates are retained. The adapter/build subset and this change
+are described in app/src/main/cpp/third_party/README.md, included below.
+
+Upstream KissFFT and Speex license files are also retained and reproduced.
+Those optional implementations are NOT compiled into this build. Their
+notices do not imply that those backends are in use.
+
+Rights, warranty and source
+---------------------------
+These libraries are free software under the licenses reproduced below and
+come WITHOUT ANY WARRANTY, including implied warranties of MERCHANTABILITY
+or FITNESS FOR A PARTICULAR PURPOSE, to the extent permitted by law. You may
+modify and redistribute them under their respective license terms.
+
+Open Headunit's own license is GNU AGPLv3, available in the app's LICENSE
+section and the source tree. The build/source guide below explains how to
+obtain the matching source, modify the libraries and rebuild/relink the APK.
+No original release signing key is required to build your own version.

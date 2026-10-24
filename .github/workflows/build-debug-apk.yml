@@ -39,12 +39,22 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
 
+      - name: Archive matching source
+        run: bash tools/package-source.sh
+
       - name: Build debug APK
         run: ./gradlew :app:assembleGithubDebug --no-daemon --stacktrace
 
-      - name: Upload debug APK
+      - name: Verify packaged audio notices
+        run: python3 app/src/test/packaging/check_audio_notices.py app/build/outputs/apk/github/debug/*.apk
+
+      - name: Upload debug APK and matching source
         uses: actions/upload-artifact@v4
         with:
           name: open-headunit-github-debug
-          path: app/build/outputs/apk/github/debug/*.apk
+          path: |
+            app/build/outputs/apk/github/debug/*.apk
+            build/source/open-headunit-source.tar.gz
+            build/source/SOURCE_REVISION.txt
+            build/source/SOURCE_SHA256.txt
           if-no-files-found: error

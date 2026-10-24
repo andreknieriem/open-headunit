@@ -29,6 +29,24 @@ android {
         into("${project.layout.buildDirectory.get().asFile}/generated/assets/root")
     }
 
+    // Generate from the original texts, rather than maintaining edited license copies.
+    val audioNoticeManifest = file("src/main/cpp/third_party/audio-notice-files.txt")
+    val audioNoticePaths = audioNoticeManifest.readLines().filter { it.isNotBlank() }
+    val audioNoticeAssets = layout.buildDirectory.dir("generated/assets/audio-notices")
+    val generateAudioNotices = tasks.register("generateAudioNotices") {
+        inputs.file(audioNoticeManifest)
+        inputs.files(audioNoticePaths.map { rootProject.file(it) })
+        outputs.dir(audioNoticeAssets)
+        doLast {
+            val text = audioNoticePaths.joinToString("\n\n") { path ->
+                "===== $path =====\n\n" + rootProject.file(path).readText(Charsets.UTF_8)
+            }
+            val output = audioNoticeAssets.get().file("audio-third-party.txt").asFile
+            output.parentFile.mkdirs()
+            output.writeText(text, Charsets.UTF_8)
+        }
+    }
+
     // Scan available locales at configuration time and store as BuildConfig field
     val resDir = file("src/main/res")
     val availableLocales = resDir.listFiles { file ->
@@ -74,17 +92,17 @@ android {
 
     sourceSets {
         getByName("main") {
-            assets.srcDirs("${project.layout.buildDirectory.get().asFile}/generated/assets/root")
+            assets.srcDirs("${project.layout.buildDirectory.get().asFile}/generated/assets/root", audioNoticeAssets)
         }
     }
 
     tasks.withType<com.android.build.gradle.tasks.MergeSourceSetFolders>().configureEach {
-        dependsOn(copyRootAssets)
+        dependsOn(copyRootAssets, generateAudioNotices)
     }
 
     tasks.configureEach {
         if (name.contains("lint", ignoreCase = true)) {
-            dependsOn(copyRootAssets)
+            dependsOn(copyRootAssets, generateAudioNotices)
         }
     }
 

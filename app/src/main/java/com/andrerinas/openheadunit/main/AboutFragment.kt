@@ -4,6 +4,7 @@ import android.os.Build
 import android.os.Bundle
 import android.text.Html
 import android.text.Spanned
+import android.text.TextUtils
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -11,6 +12,7 @@ import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.andrerinas.openheadunit.R
+import com.andrerinas.openheadunit.BuildConfig
 import com.google.android.material.appbar.MaterialToolbar
 import java.util.Calendar
 
@@ -41,13 +43,15 @@ class AboutFragment : Fragment() {
         sb.append("If you need any help, go to the github page of this app. You will additionally can support me via <a href=\"https://www.paypal.me/anrinas\">Paypal</a><br/>")
         sb.append("<a href=\"https://github.com/andreknieriem/open-headunit\">https://github.com/andreknieriem/open-headunit</a><br/><br/>")
 
+        sb.append("<p>Build: ${TextUtils.htmlEncode(BuildConfig.GIT_SHA)}</p>")
         sb.append(parseMarkdownToHtml(readAsset("CHANGELOG.md")))
         sb.append("<br/><br/>")
 
-        sb.append("<h3>LICENSE</h3>")
-        // License is plain text, preserve newlines
-        val license = readAsset("LICENSE").replace("\n", "<br/>")
-        sb.append(license)
+        sb.append("<h3>SoundTouch / Rubber Band — licenses &amp; source</h3>")
+        // Keep notices available offline, and preserve literal <...> in license texts.
+        sb.append(TextUtils.htmlEncode(readAsset("audio-third-party.txt")).replace("\n", "<br/>"))
+        sb.append("<br/><br/><h3>LICENSE</h3>")
+        sb.append(TextUtils.htmlEncode(readAsset("LICENSE")).replace("\n", "<br/>"))
 
         contentText.text = fromHtml(sb.toString())
         contentText.movementMethod = android.text.method.LinkMovementMethod.getInstance() // Make links clickable

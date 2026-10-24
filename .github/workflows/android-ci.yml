@@ -51,19 +51,30 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Archive matching source
+        run: bash tools/package-source.sh
+
       # github flavor only: the playstore flavor cannot compile because
       # VpnControl.kt lives solely in app/src/github. When that source-set
       # split is fixed, add an assemblePlaystoreDebug build here.
       - name: Assemble github debug APK
         run: ./gradlew :app:assembleGithubDebug --stacktrace
 
-      - name: Upload debug APK
-        if: always()
+      - name: Verify packaged audio notices
+        run: |
+          python3 -B -m unittest discover -s app/src/test/packaging -v
+          python3 app/src/test/packaging/check_audio_notices.py app/build/outputs/apk/github/debug/*.apk
+
+      - name: Upload debug APK and matching source
         uses: actions/upload-artifact@v4
         with:
           name: app-github-debug-apk
-          path: app/build/outputs/apk/github/debug/*.apk
-          if-no-files-found: warn
+          path: |
+            app/build/outputs/apk/github/debug/*.apk
+            build/source/open-headunit-source.tar.gz
+            build/source/SOURCE_REVISION.txt
+            build/source/SOURCE_SHA256.txt
+          if-no-files-found: error
 
   unit-test:
     name: Unit tests (github debug)

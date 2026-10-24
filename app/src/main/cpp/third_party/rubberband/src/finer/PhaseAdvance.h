@@ -21,6 +21,9 @@
     you must obtain a valid commercial licence before doing so.
 */
 
+// OHU modification, 2026-10-24: skip unused peak-map preparation for equal
+// input/output hops; retain phase/history updates. See third_party/README.md.
+
 #ifndef RUBBERBAND_PHASE_ADVANCE_H
 #define RUBBERBAND_PHASE_ADVANCE_H
 

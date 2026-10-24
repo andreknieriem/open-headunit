@@ -1,13 +1,14 @@
 #include "audio_time_stretcher.h"
-#include "third_party/rubberband/rubberband/RubberBandStretcher.h"
+#include <finer/R3Stretcher.h>
 #include "third_party/soundtouch/include/SoundTouch.h"
 #include <algorithm>
 #include <cmath>
+#include <iostream>
 #include <stdexcept>
 
 using RubberBand::RubberBandStretcher;
 struct AudioTimeStretcher::Impl {
-    std::unique_ptr<RubberBandStretcher> rb;
+    std::unique_ptr<RubberBand::R3Stretcher> rb;
     std::unique_ptr<soundtouch::SoundTouch> st;
     float left[480]{}, right[480]{}, interleaved[960]{};
     float* planes[2]{left, right};
@@ -32,7 +33,24 @@ struct AudioTimeStretcher::Impl {
                 RubberBandStretcher::OptionEngineFiner | RubberBandStretcher::OptionThreadingNever |
                 RubberBandStretcher::OptionChannelsTogether;
             if (engine == Engine::R3Short) options |= RubberBandStretcher::OptionWindowShort;
-            rb = std::make_unique<RubberBandStretcher>(48000, 2, options, 1.0, 1.0);
+            // The pinned 4.0.0 public facade only forwards these operations to R3.
+            // Construct that same implementation without linking its unused R2
+            // branch. Preserve the default logger and all padding/drain behavior.
+            // Recheck this boundary when upgrading Rubber Band's internal API.
+            RubberBand::Log log(
+                [](const char* message) { std::cerr << "RubberBand: " << message << '\n'; },
+                [](const char* message, double value) {
+                    auto precision = std::cerr.precision(10);
+                    std::cerr << "RubberBand: " << message << ": " << value << '\n';
+                    std::cerr.precision(precision);
+                },
+                [](const char* message, double first, double second) {
+                    auto precision = std::cerr.precision(10);
+                    std::cerr << "RubberBand: " << message << ": (" << first << ", " << second << ")\n";
+                    std::cerr.precision(precision);
+                });
+            rb = std::make_unique<RubberBand::R3Stretcher>(
+                RubberBand::R3Stretcher::Parameters(48000, 2, options), 1.0, 1.0, log);
             rb->setMaxProcessSize(480);
             // Official real-time alignment contract: prepend the recommended silent input
             // and discard only getStartDelay() output. Ratio changes do not re-prime a stream.

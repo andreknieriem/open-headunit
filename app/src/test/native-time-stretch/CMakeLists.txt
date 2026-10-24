@@ -26,3 +26,9 @@ add_custom_target(jni_smoke_classes ALL DEPENDS "${JNI_CLASS}")
 add_test(NAME time_stretch_jni COMMAND ${Java_JAVA_EXECUTABLE}
     "-Djava.library.path=$<TARGET_FILE_DIR:hur_time_stretch>" -cp "${JNI_CLASSES}"
     com.andrerinas.openheadunit.decoder.audio.NativeTimeStretch)
+
+# Inspect the linked library, not just the source list: the public facade can
+# pull unused engines back in through references even when OHU selects only R3.
+add_test(NAME time_stretch_library_scope COMMAND ${CMAKE_COMMAND}
+    "-DNM=${CMAKE_NM}" "-DLIBRARY=$<TARGET_FILE:hur_time_stretch>"
+    -P "${CMAKE_CURRENT_SOURCE_DIR}/check_library_scope.cmake")

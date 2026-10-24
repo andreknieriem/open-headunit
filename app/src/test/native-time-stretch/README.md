@@ -14,6 +14,8 @@ short inputs, native finalization and complete retrieval, including output retur
 at Stop, changing tempo, and nonzero source at the end of a stream. A separate JVM
 smoke loads the production JNI library and calls all of its entry points for each engine,
 including malformed array/count/tempo requests followed by valid playback on the same owner.
+The linked-library scope check also requires SoundTouch/R3 while rejecting R2,
+LiveShifter, the upstream C facade and unused BPM detection implementations.
 It does not infer subjective audio quality or Android CPU performance from a
 host pass. The Kotlin queue/control tests run with Gradle, and the production worker's
 ordering/backpressure cases run through `app/src/test/host-audio/run.py`.

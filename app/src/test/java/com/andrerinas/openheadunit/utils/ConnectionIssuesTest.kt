@@ -37,6 +37,26 @@ class ConnectionIssuesTest {
         }
     }
 
+    // A refusal is found while the main screen is already up and retrying, and that screen read the
+    // record only on resume, so the banner stayed away (2026-10-24, Note8). It collects these now.
+    @Test
+    fun `a write that changes the record is announced`() {
+        val before = ConnectionIssues.changes.value
+        ConnectionIssues.raiseOnce(store, ConnectionIssue.PHONE_REFUSED_HANDS_FREE, 1_000L)
+        assertEquals(before + 1, ConnectionIssues.changes.value)
+        ConnectionIssues.clear(store, ConnectionIssue.PHONE_REFUSED_HANDS_FREE)
+        assertEquals(before + 2, ConnectionIssues.changes.value)
+    }
+
+    @Test
+    fun `a write that changes nothing is not announced`() {
+        ConnectionIssues.raiseOnce(store, ConnectionIssue.PHONE_REFUSED_HANDS_FREE, 1_000L)
+        val before = ConnectionIssues.changes.value
+        ConnectionIssues.raiseOnce(store, ConnectionIssue.PHONE_REFUSED_HANDS_FREE, 2_000L)
+        ConnectionIssues.clear(store, ConnectionIssue.BSSID_UNAVAILABLE)
+        assertEquals(before, ConnectionIssues.changes.value)
+    }
+
     @Test
     fun `nothing raised means nothing standing`() {
         assertTrue(ConnectionIssues.standing(store).isEmpty())

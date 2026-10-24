@@ -625,6 +625,13 @@ class MainActivity : BaseActivity() {
                 }
             }
         }
+        // A refusal is found while this screen is up and the phone is being asked again, so the
+        // reason cannot wait for the next resume.
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                ConnectionIssues.changes.collect { updateConnectionIssueBanner() }
+            }
+        }
     }
 
     /** The pill's third line, logged like the step so a screenshot can be read against the log. */

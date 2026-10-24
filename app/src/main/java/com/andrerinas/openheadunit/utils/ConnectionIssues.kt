@@ -2,6 +2,10 @@ package com.andrerinas.openheadunit.utils
 
 import android.content.Context
 import com.andrerinas.openheadunit.App
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 
 /**
  * A reason the last connection attempt failed, in terms a user can act on.
@@ -194,6 +198,14 @@ interface ConnectionIssueStore {
  */
 object ConnectionIssues {
 
+    private val _changes = MutableStateFlow(0L)
+
+    /**
+     * Counts the writes that changed the record. The main screen reads it on resume, but some
+     * reasons are found while that screen is already up and retrying, so it collects this too.
+     */
+    val changes: StateFlow<Long> = _changes.asStateFlow()
+
     fun raise(context: Context, issue: ConnectionIssue) {
         storeFor(context)?.let { raise(it, issue, System.currentTimeMillis()) }
     }
@@ -218,6 +230,7 @@ object ConnectionIssues {
      */
     fun raise(store: ConnectionIssueStore, issue: ConnectionIssue, nowMs: Long) {
         store.write(issue, nowMs)
+        _changes.update { it + 1 }
     }
 
     /**
@@ -227,12 +240,16 @@ object ConnectionIssues {
      * past the user's dismissal on every pass, so the banner could never be dismissed at all.
      */
     fun raiseOnce(store: ConnectionIssueStore, issue: ConnectionIssue, nowMs: Long) {
-        if (store.read(issue) == 0L) store.write(issue, nowMs)
+        if (store.read(issue) != 0L) return
+        store.write(issue, nowMs)
+        _changes.update { it + 1 }
     }
 
     /** Safe to call when the issue was never raised. */
     fun clear(store: ConnectionIssueStore, issue: ConnectionIssue) {
-        if (store.read(issue) != 0L) store.write(issue, 0L)
+        if (store.read(issue) == 0L) return
+        store.write(issue, 0L)
+        _changes.update { it + 1 }
     }
 
     /** Everything currently true, most recently raised first. */

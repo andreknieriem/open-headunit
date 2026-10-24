@@ -1,5 +1,7 @@
 package com.andrerinas.openheadunit.aap
 
+import com.andrerinas.openheadunit.decoder.audio.AudioProbeLog
+
 import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
@@ -613,11 +615,13 @@ internal class AapAudio(
     internal fun needsSessionRestart(): Boolean = sessionConfig != AudioSessionConfig.from(settings)
 
     fun restartAudio() {
+        AudioProbeLog.event("restart requested latency=${settings.audioLatencyMultiplier} queue=${settings.audioQueueCapacity} matching=${settings.audioMatchingMode}")
         AppLog.i("AapAudio: Restarting all audio tracks")
         pcmTiming.keys.forEach { finishPcmTiming(it, "Restart") }
         // sinkCodecs is kept: the phone sets a sink up once per session, and a restarted track
         // still carries the codec that setup named.
         audioDecoder.stop(decoderSession)
+        AudioProbeLog.event("restart retired audio owners")
     }
 
     fun stopAudio(channel: Int) {

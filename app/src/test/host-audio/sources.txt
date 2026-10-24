@@ -63,3 +63,4 @@ app/src/main/java/com/andrerinas/openheadunit/decoder/audio/TimeStretchWorker.kt
 app/src/test/host-audio/TimeStretchWorkerRegression.kt
 app/src/test/host-audio/NativeMusicIntegration.kt
 app/src/test/host-audio/NativeFailureOwnershipRegression.kt
+app/src/main/java/com/andrerinas/openheadunit/decoder/audio/AudioProbe.kt

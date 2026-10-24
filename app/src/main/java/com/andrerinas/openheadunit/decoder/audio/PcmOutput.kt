@@ -37,7 +37,32 @@ internal interface PcmOutput {
     fun closeForRecovery(): ShortArray { close(); return ShortArray(0) }
 }
 
-internal class AudioTrackPcmOutput(stream: Int, attachHwDsp: Boolean) : PcmOutput {
+internal class AudioTrackPcmOutput(stream: Int, attachHwDsp: Boolean,
+    private val probe: AudioProbe? = null) : PcmOutput {
+    companion object { private val probeIds = java.util.concurrent.atomic.AtomicLong() }
+    private var probeHeadAtNs = 0L
+    private var probeEpoch = probeIds.incrementAndGet()
+    private fun readHead(): Int {
+        val began = if (probe != null) System.nanoTime() else 0L
+        val head = track.playbackHeadPosition
+        probe?.phase(AudioProbe.Phase.HEAD_QUERY, System.nanoTime() - began)
+        probe?.set(AudioProbe.Counter.RAW_HEAD, head.toLong() and 0xffffffffL)
+        return head
+    }
+    private fun recordHead(played: Long) {
+        val p = probe ?: return
+        val now = System.nanoTime()
+        if (probeHeadAtNs != 0L) p.maximum(AudioProbe.Counter.HEAD_GAP_MAX_NS, now - probeHeadAtNs)
+        probeHeadAtNs = now
+        p.add(AudioProbe.Counter.HEAD_OBSERVATIONS)
+        if (played >= 0 && position.writtenFrames == played) p.add(AudioProbe.Counter.HEAD_EMPTY)
+        p.set(AudioProbe.Counter.TRACK_EPOCH, probeEpoch)
+        p.set(AudioProbe.Counter.WRITTEN, position.writtenFrames)
+        p.set(AudioProbe.Counter.PLAYED, played)
+        p.set(AudioProbe.Counter.HEAD_AT_NS, now)
+        p.set(AudioProbe.Counter.QUEUED, if (played >= 0) position.writtenFrames - played else -1)
+        if (played < 0) p.add(AudioProbe.Counter.INVALID_HEAD)
+    }
     private val track: AudioTrack
     private var equalizer: Equalizer? = null
     private val requestedBytes: Int
@@ -113,7 +138,7 @@ internal class AudioTrackPcmOutput(stream: Int, attachHwDsp: Boolean) : PcmOutpu
     }
     override val writtenFrames: Long get() =
         if (Build.VERSION.SDK_INT < 21 || position.isValid) position.writtenFrames else -1L
-    override fun playedFrames(): Long = try { position.played(track.playbackHeadPosition) }
+    override fun playedFrames(): Long = try { position.played(readHead()).also { recordHead(it) } }
         catch (_: IllegalStateException) { -1L }
 
     private fun legacyBufferFrames(): Int =
@@ -130,14 +155,16 @@ internal class AudioTrackPcmOutput(stream: Int, attachHwDsp: Boolean) : PcmOutpu
         if (Build.VERSION.SDK_INT >= 19) {
             track.flush()
             position.reset()
+            probeEpoch = probeIds.incrementAndGet() // Flush invalidates the output clock.
         }
     }
     override fun write(data: ShortArray, offset: Int, count: Int): Int {
         // API 16-20 has no public nonblocking write. With one writer, the native
         // allocation minus submitted-but-unconsumed frames is a conservative admission bound.
         // A full track returns 0 here, keeping the outer stall/recovery loop runnable.
-        val head = track.playbackHeadPosition
+        val head = readHead()
         val played = position.played(head)
+        recordHead(played)
         // Admission on API 16-20 requires a trustworthy ring position. In particular, 4.1-4.3
         // native restore may insert uncounted silence: rebasing would falsely free that space.
         // API 21+ has nonblocking writes, so a vendor/direct-output head anomaly only disables
@@ -147,17 +174,25 @@ internal class AudioTrackPcmOutput(stream: Int, attachHwDsp: Boolean) : PcmOutpu
         val size = if (Build.VERSION.SDK_INT >= 21) count else
             minOf(count, position.writableFrames(bufferFrames, head) * 2)
         if (Build.VERSION.SDK_INT < 21 && size == 0 && count > 0) {
+            probe?.add(AudioProbe.Counter.ADMISSION_REJECTED)
+            probe?.add(AudioProbe.Counter.ZERO_WRITES)
             retryPacer.full(position.writtenFrames - played)
             return 0
         }
         // Progress, errors and public nonblocking paths never inherit an old full-ring delay.
         retryPacer.reset()
         if (size == 0) return 0
+        val nativeBegin = if (probe != null) System.nanoTime() else 0L
         val written = when {
             Build.VERSION.SDK_INT >= 23 -> track.write(data, offset, size, AudioTrack.WRITE_NON_BLOCKING)
             Build.VERSION.SDK_INT >= 21 -> writeLollipop(data, offset, size)
             else -> track.write(data, offset, size)
         }
+        probe?.phase(AudioProbe.Phase.NATIVE_WRITE, System.nanoTime() - nativeBegin)
+        probe?.add(AudioProbe.Counter.WRITE_CALLS)
+        if (written == 0) probe?.add(AudioProbe.Counter.ZERO_WRITES)
+        if (written < 0) probe?.add(AudioProbe.Counter.WRITE_ERRORS)
+        if (written > 0) probe?.add(AudioProbe.Counter.ACCEPTED_SHORTS, written.toLong())
         if (written > 0) position.written(written.toLong() / 2)
         return written
     }

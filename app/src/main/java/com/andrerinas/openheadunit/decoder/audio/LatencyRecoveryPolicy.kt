@@ -2,7 +2,7 @@ package com.andrerinas.openheadunit.decoder.audio
 
 /** Repay lower targets and sustained backlog with small overlaps. A transient peak is not
  * stale PCM: only a full input/render window can authorize extra consumption. */
-internal class LatencyRecoveryPolicy(private val sampleRate: Int) {
+internal class LatencyRecoveryPolicy(private val sampleRate: Int, private val probe: AudioProbe? = null) {
     private var previousTarget = 0
     private var previousPacket = 0
     private var budget = 0
@@ -26,6 +26,10 @@ internal class LatencyRecoveryPolicy(private val sampleRate: Int) {
         val newBudget = (target.toLong() + slack).coerceIn(0, sampleRate.toLong()).toInt()
         if (target > previousTarget) debt = 0
         else debt = (debt + previousTarget - target).coerceAtMost(sampleRate)
+        if (target != previousTarget) probe?.add(AudioProbe.Counter.POLICY_TARGET_RESET)
+        if (packetFrames != previousPacket) probe?.add(AudioProbe.Counter.POLICY_PACKET_RESET)
+        if (newBudget != budget) probe?.add(AudioProbe.Counter.POLICY_BUDGET_RESET)
+        if (lastObservation < 0 || nowMs - lastObservation !in 0..499) probe?.add(AudioProbe.Counter.POLICY_GAP_RESET)
         if (target != previousTarget || packetFrames != previousPacket || newBudget != budget ||
             lastObservation < 0 || nowMs - lastObservation !in 0..499) resetWindow()
         if (lastObservation >= 0 && nowMs - lastObservation in 0..499) renderSlack = maxOf(renderSlack,
@@ -34,7 +38,7 @@ internal class LatencyRecoveryPolicy(private val sampleRate: Int) {
         previousPacket = packetFrames
         budget = newBudget
         lastObservation = nowMs
-        if (!canRecover) { debt = 0; resetWindow(); return }
+        if (!canRecover) { probe?.add(AudioProbe.Counter.POLICY_INELIGIBLE); debt = 0; resetWindow(); return }
         if (windowStart < 0) { windowStart = nowMs; windowInput = inputFrames }
         minimumDepth = minOf(minimumDepth, depth)
         maximumDepth = maxOf(maximumDepth, depth)
@@ -42,7 +46,10 @@ internal class LatencyRecoveryPolicy(private val sampleRate: Int) {
         if (nowMs - windowStart >= 500) {
             // HALs can drain several cycles together. Require render progress as well as
             // elapsed time, and use the trough so one decoder burst cannot authorize catch-up.
+            if (inputFrames <= windowInput) probe?.add(AudioProbe.Counter.PROOF_NO_INPUT)
+            if (windowCycles < 50) probe?.add(AudioProbe.Counter.PROOF_FEW_CYCLES)
             if (inputFrames > windowInput && windowCycles >= 50) {
+                probe?.add(AudioProbe.Counter.PROOF_OK)
                 allowance = (minimumDepth - reserve()).coerceAtLeast(0)
                 // The budget describes a peak. Reconstruct at most one packet above the
                 // observed trough, capped by the actual peak; an isolated decoder spike
@@ -64,13 +71,25 @@ internal class LatencyRecoveryPolicy(private val sampleRate: Int) {
 
     /** A proposal only; settle it after the ring actually consumes these extra frames. */
     fun correction(nowMs: Long, depth: Int): Int {
-        if (nowMs < nextCorrection) return 0
+        probe?.set(AudioProbe.Counter.DEBT, debt.toLong())
+        probe?.set(AudioProbe.Counter.EXCESS, excess.toLong())
+        probe?.set(AudioProbe.Counter.ALLOWANCE, allowance.toLong())
+        probe?.set(AudioProbe.Counter.RESERVE, reserve().toLong())
+        if (nowMs < nextCorrection) { probe?.add(AudioProbe.Counter.COOLDOWN); return 0 }
         // A lower target is not proof that this depth contains dispensable PCM.
         // Repay target debt only above the current target plus recent renderer slack;
         // the separately proven sustained-excess path and trough guard remain intact.
         val liveDebt = minOf(debt, (depth - previousTarget - maxOf(renderSlack, previousRenderSlack)).coerceAtLeast(0))
-        return minOf(sampleRate / 1000, maxOf(liveDebt, excess), allowance,
+        if (allowance == 0) probe?.add(AudioProbe.Counter.NO_ALLOWANCE)
+        if (maxOf(liveDebt, excess) == 0) probe?.add(AudioProbe.Counter.NO_DEBT)
+        if (depth <= reserve()) probe?.add(AudioProbe.Counter.RESERVE_GUARD)
+        val proposed = minOf(sampleRate / 1000, maxOf(liveDebt, excess), allowance,
             (depth - reserve()).coerceAtLeast(0))
+        if (proposed > 0) {
+            probe?.add(AudioProbe.Counter.PROPOSALS)
+            probe?.add(AudioProbe.Counter.PROPOSED_FRAMES, proposed.toLong())
+        }
+        return proposed
     }
 
     fun consumed(nowMs: Long, frames: Int, pacingFrames: Int = frames) {
@@ -92,6 +111,7 @@ internal class LatencyRecoveryPolicy(private val sampleRate: Int) {
     private fun reserve() = maxOf(sampleRate / 100, previousTarget - previousPacket) + sampleRate / 200
 
     fun reset() {
+        probe?.add(AudioProbe.Counter.POLICY_RESET)
         previousTarget = 0; previousPacket = 0; budget = 0
         debt = 0; nextCorrection = 0L; lastObservation = -1L
         resetWindow()

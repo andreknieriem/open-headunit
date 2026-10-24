@@ -1,5 +1,7 @@
 package com.andrerinas.openheadunit.main
 
+import com.andrerinas.openheadunit.decoder.audio.AudioProbeLog
+
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.hct.HctServiceObserver
 import android.app.AlertDialog
 import android.content.ActivityNotFoundException
@@ -584,9 +586,15 @@ class SettingsFragment : Fragment() {
         pendingMicInputSource?.let { if (it != settings.micInputSource) settings.micInputSource = it }
         pendingEnableRotary?.let { if (it != settings.enableRotary) settings.enableRotary = it }
         pendingMediaKeyRouting?.let { if (it != settings.mediaKeyRouting) settings.mediaKeyRouting = it }
-        pendingAudioLatencyMultiplier?.let { if (it != settings.audioLatencyMultiplier) settings.audioLatencyMultiplier = it }
+        pendingAudioLatencyMultiplier?.let {
+            AudioProbeLog.event("setting audioLatencyMultiplier old=${settings.audioLatencyMultiplier} selected=$it")
+            if (it != settings.audioLatencyMultiplier) settings.audioLatencyMultiplier = it
+        }
         pendingAudioTimeCorrectionMode?.let { if (it != settings.audioMatchingMode) settings.audioMatchingMode = it }
-        pendingAudioQueueCapacity?.let { if (it != settings.audioQueueCapacity) settings.audioQueueCapacity = it }
+        pendingAudioQueueCapacity?.let {
+            AudioProbeLog.event("setting audioQueueCapacity old=${settings.audioQueueCapacity} selected=$it")
+            if (it != settings.audioQueueCapacity) settings.audioQueueCapacity = it
+        }
         pendingShowToastMessages?.let { if (it != settings.showToastMessages) settings.showToastMessages = it }
         pendingScreenOrientation?.let { if (it != settings.screenOrientation) settings.screenOrientation = it }
 
@@ -2786,6 +2794,18 @@ class SettingsFragment : Fragment() {
             onCheckedChanged = { isChecked ->
                 pendingAllowExternalConfiguration = isChecked
                 checkChanges()
+                updateSettingsList()
+            }
+        ))
+
+        items.add(SettingItem.ToggleSettingEntry(
+            stableId = "detailedAudioDiagnostics",
+            nameResId = R.string.detailed_audio_diagnostics,
+            descriptionResId = R.string.detailed_audio_diagnostics_description,
+            isChecked = settings.detailedAudioDiagnostics,
+            onCheckedChanged = { checked ->
+                settings.detailedAudioDiagnostics = checked
+                AudioProbeLog.enabled = checked
                 updateSettingsList()
             }
         ))

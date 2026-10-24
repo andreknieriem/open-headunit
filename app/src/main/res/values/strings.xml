@@ -1625,4 +1625,6 @@
     <string name="audio_matching_r3">Rubber Band R3 (quality priority)</string>
     <string name="audio_matching_r3_short">Rubber Band R3 Short (lighter R3)</string>
     <string name="audio_matching_description">Chooses how audio catches up without changing pitch. OHU is intended for low-powered devices. SoundTouch and R3 need more CPU and add processing latency. R3 Short reduces the processing cost of R3. \n\nSoundTouch and R3: PCM music on Android 5.0+. Navigation, voice responses, system sounds, AAC and older devices use OHU.\nReconnect to apply.</string>
+    <string name="detailed_audio_diagnostics">Detailed audio diagnostics</string>
+    <string name="detailed_audio_diagnostics_description">Record audio processing, buffer recovery and output progress. Reconnect to apply turning this on or off. Export Logs includes the retained history even if ordinary log capture is stopped. History is cleared when the app process exits.</string>
 </resources>

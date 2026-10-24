@@ -1,5 +1,7 @@
 package com.andrerinas.openheadunit.utils
 
+import com.andrerinas.openheadunit.decoder.audio.AudioProbeLog
+
 import android.content.Context
 import android.content.Intent
 import android.util.Log
@@ -145,6 +147,7 @@ object AppLog {
         // Settings.exporterLogLevel — a lock plus a map lookup for lines that are mostly discarded.
         // Every caller of init() is a place the level can change, so the cache cannot go stale.
         cachedLogLevel = settings?.logLevel ?: Log.INFO
+        AudioProbeLog.enabled = settings?.detailedAudioDiagnostics == true
 
         val desiredSource = settings?.logSource ?: Settings.LogSource.LOGCAT
         val captureEnabled = settings?.exporterCaptureEnabled == true

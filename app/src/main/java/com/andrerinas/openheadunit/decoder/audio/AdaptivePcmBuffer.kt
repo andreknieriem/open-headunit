@@ -7,7 +7,8 @@ internal class AdaptivePcmBuffer(
     private val channels: Int = 2,
     latencyMultiplier: Int = AudioJitterBufferPolicy.DEFAULT_MULTIPLIER,
     private val isMediaSink: Boolean = false,
-    private val nativeTimeCorrection: Boolean = false
+    private val nativeTimeCorrection: Boolean = false,
+    private val probe: AudioProbe? = null
 ) {
     private val mediaPrerollDeadlineMs = 1500L
     private val cycleFrames = sampleRate / 100
@@ -22,7 +23,7 @@ internal class AdaptivePcmBuffer(
     private val endingSample = ShortArray(channels)
     private var endingFrames = 0
     private val policy = AdaptiveJitterPolicy(sampleRate, latencyMultiplier)
-    private val recovery = LatencyRecoveryPolicy(sampleRate)
+    private val recovery = LatencyRecoveryPolicy(sampleRate, probe)
     private val overlap = PcmOverlap(optimized = true)
     private var recoveryDeferrals = 0
     private val prerollDeadlineMs = maxOf(100L, AudioJitterBufferPolicy.targetMsFor(latencyMultiplier) + 50)
@@ -78,6 +79,27 @@ internal class AdaptivePcmBuffer(
         val rebanking: Boolean,
         val ended: Boolean
     )
+    /** Copy one coherent frame ledger under the bank monitor. This is not output/DAC
+     * progress. Lifetime counts remain comparable through reset; resetDiscarded closes it. */
+    @Synchronized fun sampleDiagnostics(boundary: Int = 0, close: Boolean = false) {
+        val p = probe ?: return
+        val now = System.nanoTime()
+        if (!close && boundary == 0 && !p.due(now)) return
+        p.set(AudioProbe.Counter.OFFERED, offeredFrames)
+        p.set(AudioProbe.Counter.REAL_RENDERED, startupFramesPlayed)
+        p.set(AudioProbe.Counter.COMPRESSED, compressedFrames)
+        p.set(AudioProbe.Counter.DROPPED, droppedFrames)
+        p.set(AudioProbe.Counter.RESET_DISCARDED, resetDiscardedFrames)
+        p.set(AudioProbe.Counter.DEPTH, (count / channels).toLong())
+        p.set(AudioProbe.Counter.TARGET, playbackTargetFrames().toLong())
+        p.set(AudioProbe.Counter.CONCEALED, concealedFrames)
+        p.set(AudioProbe.Counter.REBANKS, rebankEntries)
+        p.set(AudioProbe.Counter.STARTED, if (started) 1 else 0)
+        p.set(AudioProbe.Counter.ENDED, if (ended) 1 else 0)
+        p.set(AudioProbe.Counter.REBANKING, if (rebanking) 1 else 0)
+        if (close) p.close(now) else p.publish(now, boundary = boundary)
+    }
+
     @Volatile var silentCycles = 0L
         private set
     // Historical name: counts new underrun events, even if the next packet avoids a rebank.
@@ -153,6 +175,8 @@ internal class AdaptivePcmBuffer(
         policy.onArrival(nowMs, frames)
     }
     @Synchronized fun finish() {
+        probe?.add(AudioProbe.Counter.STOPS)
+        sampleDiagnostics(boundary = 2)
         ended = true
         // All queued segments are now complete and may drain together, even below target.
         closedPrefixSamples = -1
@@ -214,6 +238,7 @@ internal class AdaptivePcmBuffer(
         val keep = minOf(aligned, ring.size)
         val skip = aligned - keep
         val oldDrop = (count + keep - ring.size).coerceAtLeast(0)
+        if (oldDrop > 0 || skip > 0) probe?.add(AudioProbe.Counter.OVERFLOWS)
         if ((oldDrop > 0 || skip > 0) && pendingOverflow == null) {
             pendingOverflow = Overflow(nowMs, aligned / channels, count / channels, capacityFrames,
                 oldDrop / channels, skip / channels, offeredFrames, startupFramesPlayed,
@@ -283,6 +308,14 @@ internal class AdaptivePcmBuffer(
         // Both create normal depth peaks; allow for them before repaying sustained backlog.
         val outputSlack = (outputBurstFrames - cycleFrames).coerceAtLeast(0)
         val slack = maxOf(sampleRate * 30 / 1000, policy.largestChunkFrames - cycleFrames + outputSlack)
+        // Reasons can overlap; their counts are observations, not disjoint lost frames.
+        if (probe != null) {
+            if (nativeTimeCorrection) probe.add(AudioProbe.Counter.BLOCK_NATIVE)
+            if (ended) probe.add(AudioProbe.Counter.BLOCK_ENDED)
+            if (drainingPrefix) probe.add(AudioProbe.Counter.BLOCK_PREFIX)
+            if (gapFrames != 0) probe.add(AudioProbe.Counter.BLOCK_GAP)
+            if (needsFade) probe.add(AudioProbe.Counter.BLOCK_FADE)
+        }
         val canRecover = !nativeTimeCorrection && !ended && !drainingPrefix && gapFrames == 0 && !needsFade
         recovery.observe(nowMs, target, policy.largestChunkFrames, slack, count / channels,
             inputFrames, canRecover)
@@ -291,11 +324,18 @@ internal class AdaptivePcmBuffer(
         // latency is repaid below in small overlaps after a stable rendering window.
 
         val proposal = if (canRecover) recovery.correction(nowMs, count / channels) else 0
+        val overlapStart = if (probe != null && proposal > 0) System.nanoTime() else 0L
         var catchUp = overlap.shift(ring, head, channels, cycleFrames / 2,
             minOf(proposal, (count / channels - cycleFrames).coerceAtLeast(0)))
+        if (proposal > 0) {
+            probe?.phase(AudioProbe.Phase.OVERLAP, System.nanoTime() - overlapStart)
+            probe?.add(if (overlap.matched) AudioProbe.Counter.MATCHED else AudioProbe.Counter.UNMATCHED)
+            probe?.add(AudioProbe.Counter.SELECTED_FRAMES, catchUp.toLong())
+        }
         if (catchUp > 0 && overlap.protectAttack && recoveryDeferrals < 3) {
             // Let an isolated attack pass without splitting its peak. Three render cycles
             // is the limit: a continuous click train must not disable recovery forever.
+            probe?.add(AudioProbe.Counter.ATTACK_DEFERRED)
             recoveryDeferrals++
             catchUp = 0
         } else if (catchUp > 0 || proposal == 0) recoveryDeferrals = 0
@@ -320,6 +360,7 @@ internal class AdaptivePcmBuffer(
                 }
             }
             compressedFrames += catchUp
+            probe?.add(AudioProbe.Counter.EXECUTED, catchUp.toLong())
         }
         head = (head + real + skipped) % ring.size
         count -= real + skipped
@@ -470,6 +511,8 @@ internal class AdaptivePcmBuffer(
     }
 
     @Synchronized fun reset() {
+        probe?.add(AudioProbe.Counter.BANK_RESETS)
+        sampleDiagnostics(boundary = 3)
         clearReserveWindow()
         pendingStoppedReserve = null
         skippedReserveWindows = 0

@@ -1527,4 +1527,6 @@
     <string name="audio_matching_r3">Rubber Band R3 (음질 우선)</string>
     <string name="audio_matching_r3_short">Rubber Band R3 Short (R3보다 가벼움)</string>
     <string name="audio_matching_description">음높이를 유지하면서 밀린 오디오를 따라잡는 방식입니다. OHU는 저사양 기기에 적합합니다. SoundTouch와 R3는 CPU 사용량과 처리 지연이 늘어납니다. R3 Short는 R3의 처리 비용을 줄인 방식입니다. \n\nSoundTouch·R3: Android 5.0 이상, PCM 음악에 적용\n길 안내·음성 응답·시스템 소리·AAC·이전 Android: OHU 사용\n다시 연결하면 적용됩니다.</string>
+    <string name="detailed_audio_diagnostics">상세 오디오 진단</string>
+    <string name="detailed_audio_diagnostics_description">오디오 처리 시간, 버퍼 복구, 출력 진행량을 기록합니다. 켜거나 끈 뒤 다시 연결하면 적용됩니다. 일반 로그 캡처를 중지해도 보관된 기록은 로그 내보내기에 포함됩니다. 앱 프로세스가 종료되면 기록이 지워집니다.</string>
 </resources>

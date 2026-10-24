@@ -977,6 +977,11 @@ class Settings(private val context: Context) {
         get() = prefs.getBoolean("video-profile-starvation-cap", false)
         set(value) { prefs.edit().putBoolean("video-profile-starvation-cap", value).apply() }
 
+    /** Applies to newly connected audio owners; independent of ordinary log verbosity. */
+    var detailedAudioDiagnostics: Boolean
+        get() = prefs.getBoolean("detailed-audio-diagnostics", false)
+        set(value) { prefs.edit().putBoolean("detailed-audio-diagnostics", value).apply() }
+
     /**
      * Asks the decoder for low-latency mode, through whichever key its vendor understands.
      *

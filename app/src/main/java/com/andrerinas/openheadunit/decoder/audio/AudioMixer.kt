@@ -49,9 +49,10 @@ class AudioMixer(
     internal class Channel(val rate: Int, val channels: Int, multiplier: Int, val isMediaSink: Boolean,
                            val onOutputStopped: () -> Unit, matchingMode: AudioTimeCorrectionMode = AudioTimeCorrectionMode.OHU,
                            onReady: () -> Unit = {},
-                           createEngine: () -> TimeStretchEngine = { NativeTimeStretchEngine(matchingMode) }) {
+                           createEngine: () -> TimeStretchEngine = { NativeTimeStretchEngine(matchingMode) },
+                           bankProbe: AudioProbe? = null, val inputProbe: AudioProbe? = null) {
         val buffer = AdaptivePcmBuffer(latencyMultiplier = multiplier, isMediaSink = isMediaSink,
-            nativeTimeCorrection = matchingMode != AudioTimeCorrectionMode.OHU)
+            nativeTimeCorrection = matchingMode != AudioTimeCorrectionMode.OHU, probe = bankProbe)
         val timeStretch = if (matchingMode == AudioTimeCorrectionMode.OHU) null else
             TimeStretchWorker(matchingMode, buffer, SystemClock::elapsedRealtime, onReady,
                 { AppLog.w("Audio time correction: $it") }, createEngine)
@@ -82,6 +83,7 @@ class AudioMixer(
     private val channels = ConcurrentHashMap<Int, Channel>()
     @Volatile private var channelSnapshot = emptyArray<Channel>()
     private val diagnosticId = nextDiagnosticId.incrementAndGet()
+    private val probe = AudioProbeLog.open("mixer=$diagnosticId")
     private val running = AtomicBoolean(false)
     private val hasReceivedAudio = AtomicBoolean(false)
     private val feedSignal = Semaphore(0)
@@ -102,7 +104,7 @@ class AudioMixer(
     fun start() {
         if (!running.compareAndSet(false, true)) return
         try {
-            val createOutput = { AudioOutputFactory.create(stream, attachHwDspEqualizer, preferAAudio) }
+            val createOutput = { AudioOutputFactory.create(stream, attachHwDspEqualizer, preferAAudio, probe) }
             output = RecoveringPcmOutput(null, createOutput, SystemClock::elapsedRealtime) {
                 recordDiagnostic(SystemClock.elapsedRealtime(), it, warning = true)
             }
@@ -115,6 +117,7 @@ class AudioMixer(
                     retireOutputOwners()
                     channels.values.forEach { it.timeStretch?.close() }
                     try { output?.close() } catch (e: Exception) { AppLog.e("AudioMixer: close failed", e) }
+                    probe?.close(System.nanoTime(), AudioProbeLog.cpu(), Process.myTid())
                     output = null
                 }
             }, "AudioMixer-$stream").also { it.start() }
@@ -122,6 +125,7 @@ class AudioMixer(
             running.set(false)
             output?.close()
             output = null
+            probe?.close(System.nanoTime())
             throw e
         }
     }
@@ -130,7 +134,11 @@ class AudioMixer(
         running.set(false)
         mixThread?.interrupt()
         retireOutputOwners()
-        channels.values.forEach { it.timeStretch?.close() }
+        channels.values.forEach {
+            it.timeStretch?.close()
+            synchronized(it) { it.inputProbe?.close(System.nanoTime()) }
+            it.buffer.sampleDiagnostics(close = true)
+        }
         channels.clear()
         channelSnapshot = emptyArray()
     }
@@ -158,13 +166,17 @@ class AudioMixer(
         if (effectiveMode != matchingMode)
             AppLog.i("Audio time correction: selected=${matchingMode.preferenceValue}, effective=ohu (non-media, AAC or unavailable native engine)")
         return Channel(sampleRate, channelCount, latencyMultiplier, isMediaSink, onOutputStopped, effectiveMode,
-            { if (feedSignal.availablePermits() == 0) feedSignal.release() }).also {
+            { if (feedSignal.availablePermits() == 0) feedSignal.release() },
+            bankProbe = if (probe != null) AudioProbeLog.open("bank mixer=$diagnosticId channel=$channel") else null,
+            inputProbe = if (probe != null) AudioProbeLog.open("input mixer=$diagnosticId channel=$channel sourceRate=$sampleRate sourceChannels=$channelCount") else null).also {
             channels[channel] = it
             channelSnapshot = channels.values.toTypedArray()
         }
     }
     @Synchronized internal fun unregisterChannel(channel: Int, state: Channel) {
         state.timeStretch?.close()
+        synchronized(state) { state.inputProbe?.close(System.nanoTime()) }
+        state.buffer.sampleDiagnostics(close = true)
         if (channels.remove(channel, state)) channelSnapshot = channels.values.toTypedArray()
     }
     internal fun resetConverter(state: Channel) {
@@ -241,13 +253,23 @@ class AudioMixer(
                       format: PcmInputFormat = state.format) {
         // A wrapper retains its exact registration. A retired codec can neither feed nor
         // unregister a replacement channel that happens to reuse the same protocol id.
+        val entered = if (state.inputProbe != null) System.nanoTime() else 0L
         synchronized(state) {
+            val ip = state.inputProbe
+            ip?.phase(AudioProbe.Phase.FEED_ENTER, System.nanoTime() - entered)
+            AudioProbeLog.poll(ip)
+            ip?.add(AudioProbe.Counter.INPUT_BYTES, length.toLong())
+            val convertBegin = if (ip != null) System.nanoTime() else 0L
             val shorts = state.converter.convert(data, offset, length, format)
+            ip?.phase(AudioProbe.Phase.CONVERT, System.nanoTime() - convertBegin)
+            ip?.add(AudioProbe.Counter.INPUT_FRAMES, shorts.toLong() / OUTPUT_CHANNELS)
             if (shorts == 0) return
             val now = SystemClock.elapsedRealtime()
             if (state.firstPcmMs < 0) state.firstPcmMs = now
+            val bankBegin = if (ip != null) System.nanoTime() else 0L
             if (state.timeStretch != null) state.timeStretch.offer(state.converter.samples, shorts, now)
             else state.buffer.write(state.converter.samples, shorts, now)
+            ip?.phase(AudioProbe.Phase.BANK_WRITE, System.nanoTime() - bankBegin)
             state.warmupUntilMs = 0
             hasReceivedAudio.set(true)
             if (feedSignal.availablePermits() == 0) feedSignal.release()
@@ -262,6 +284,7 @@ class AudioMixer(
 
     /** Render-clock DSP, independent of Android scheduling and device I/O. Output storage is reused. */
     internal fun renderCycle(nowMs: Long, outputBurstFrames: Int, cycleChannels: Array<Channel> = channelSnapshot): ShortArray {
+        val renderBegin = if (probe != null) System.nanoTime() else 0L
         mixBuffer.fill(0)
         if (duckMediaForSpeech) mediaBuffer.fill(0)
         var activeChannels = 0
@@ -270,7 +293,16 @@ class AudioMixer(
         for (state in cycleChannels) {
             state.timeStretch?.policy?.observe(nowMs, state.buffer.targetFrames(), state.buffer.depthFrames(),
                 outputBurstFrames, state.buffer.canTimeCorrect())
-            val active = state.buffer.render(channelBuffer, nowMs, outputBurstFrames)
+            val bankBegin = if (probe != null) System.nanoTime() else 0L
+            val active = if (probe == null) state.buffer.render(channelBuffer, nowMs, outputBurstFrames)
+            else synchronized(state.buffer) {
+                probe.phase(AudioProbe.Phase.BANK_ENTER, System.nanoTime() - bankBegin)
+                val entered = System.nanoTime()
+                state.buffer.render(channelBuffer, nowMs, outputBurstFrames).also {
+                    probe.phase(AudioProbe.Phase.BANK_RENDER, System.nanoTime() - entered)
+                }
+            }
+            if (probe != null) state.buffer.sampleDiagnostics()
             state.timeStretch?.spaceAvailable()
             state.activeThisCycle = active
             val gain = state.gain
@@ -280,6 +312,7 @@ class AudioMixer(
             // Render even inactive/muted banks so Stop tails, PLC and reserve accounting
             // keep advancing. Only their zero contribution to the sum can be skipped.
             if (!active || gain == 0f) continue
+            val sumBegin = if (probe != null) System.nanoTime() else 0L
             val destination = if (duckMediaForSpeech && state.isMediaSink) mediaBuffer else mixBuffer
             if (gain == 1f) {
                 // PCM16 integers are represented exactly by Float, so unity multiplication
@@ -288,7 +321,9 @@ class AudioMixer(
             } else {
                 for (i in destination.indices) destination[i] += (channelBuffer[i] * gain).toInt()
             }
+            probe?.phase(AudioProbe.Phase.MIX_SUM, System.nanoTime() - sumBegin)
         }
+        val limiterBegin = if (probe != null) System.nanoTime() else 0L
         ducking.setSpeechActive(duckMediaForSpeech && speechActive)
         limiter.setEnabled(activeChannels > 1 || boosted)
         var mediaGain = 1f
@@ -303,6 +338,10 @@ class AudioMixer(
             // Moving a normal media sink through this renderer must not compress its music.
             outputBuffer[i] = limiter.process(mixBuffer[i])
         }
+        probe?.phase(AudioProbe.Phase.LIMITER, System.nanoTime() - limiterBegin)
+        probe?.phase(AudioProbe.Phase.RENDER, System.nanoTime() - renderBegin)
+        probe?.add(AudioProbe.Counter.MIXED_FRAMES, SAMPLES_PER_CYCLE.toLong())
+        probe?.add(if (activeChannels > 0) AudioProbe.Counter.ACTIVE_CYCLES else AudioProbe.Counter.SILENT_CYCLES)
         return outputBuffer
     }
 
@@ -366,6 +405,8 @@ class AudioMixer(
         var writeMaxMs = 0L
         var renderWaits = 0L
         while (running.get()) {
+            AudioProbeLog.poll(probe)
+            val diagnosticBegin = if (probe != null) System.nanoTime() else 0L
             val now = SystemClock.elapsedRealtime()
             if (lastCycleMs >= 0) loopGapMaxMs = maxOf(loopGapMaxMs, now - lastCycleMs)
             lastCycleMs = now
@@ -422,6 +463,7 @@ class AudioMixer(
                 }
                 nextPcmDiagnosticMs = now + 1000
             }
+            probe?.phase(AudioProbe.Phase.OWNER_DIAGNOSTICS, System.nanoTime() - diagnosticBegin)
             // Playback-head reads belong to the output owner. Focus polling reads only this
             // snapshot, never the device while it may be replaced or released.
             val played = device.playedFrames()
@@ -446,12 +488,14 @@ class AudioMixer(
                 device.bufferFrames * 1000L / OUTPUT_SAMPLE_RATE + 20,
                 channels.values.all { it.outputConsumed })) {
                 MixerOutputLifecycle.Action.WAIT -> {
+                    probe?.add(AudioProbe.Counter.WAIT_CYCLES)
                     lastCycleMs = -1L
                     feedSignal.tryAcquire(200, TimeUnit.MILLISECONDS)
                     continue
                 }
-                MixerOutputLifecycle.Action.START -> device.start()
+                MixerOutputLifecycle.Action.START -> { probe?.add(AudioProbe.Counter.STARTS); device.start() }
                 MixerOutputLifecycle.Action.PAUSE -> {
+                    probe?.add(AudioProbe.Counter.PAUSES)
                     device.pause()
                     renderDeadline.reset()
                     // These markers drained; API 19+ pause/flush also resets the frame clock.
@@ -466,6 +510,7 @@ class AudioMixer(
                 // All channels share the same output clock. Keep their PCM in the banks
                 // while queued sound plays; never insert silence in the other channels.
                 renderWaits++
+                probe?.add(AudioProbe.Counter.WAIT_CYCLES)
                 feedSignal.tryAcquire(waitMs, TimeUnit.MILLISECONDS)
                 continue
             }
@@ -488,6 +533,7 @@ class AudioMixer(
             var replayAnnounced = false
             var writeRetryDelayMs = 1L
             mixWorkMaxMs = maxOf(mixWorkMaxMs, writeStartMs - now)
+            val writeBegin = if (probe != null) System.nanoTime() else 0L
             val result = AudioWriteLoop.writeFully(SHORTS_PER_CYCLE, { running.get() },
                 write@{ offset, remaining ->
                     writeRetryDelayMs = 1L
@@ -530,7 +576,18 @@ class AudioMixer(
                         0
                     } else written
                 },
-                {}, { Thread.sleep(writeRetryDelayMs) })
+                {}, {
+                    val sleepBegin = if (probe != null) System.nanoTime() else 0L
+                    probe?.add(AudioProbe.Counter.SLEEP_REQUEST_MS, writeRetryDelayMs)
+                    probe?.add(when (writeRetryDelayMs) {
+                        1L -> AudioProbe.Counter.SLEEP_1
+                        2L -> AudioProbe.Counter.SLEEP_2
+                        else -> AudioProbe.Counter.SLEEP_4
+                    })
+                    try { Thread.sleep(writeRetryDelayMs) }
+                    finally { probe?.phase(AudioProbe.Phase.RETRY_SLEEP, System.nanoTime() - sleepBegin) }
+                })
+            probe?.phase(AudioProbe.Phase.WRITE_FULL, System.nanoTime() - writeBegin)
             writeMaxMs = maxOf(writeMaxMs, SystemClock.elapsedRealtime() - writeStartMs)
             check(result >= 0) { "${device.name} write failed: $result" }
             val writeCompletedMs = SystemClock.elapsedRealtime()

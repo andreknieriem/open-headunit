@@ -19,11 +19,20 @@ object HandsFreeRefusalPolicy {
     /** When the phone's link is read after the poke connects. The Fold dropped it within 0.34 s. */
     const val LINK_PROBE_MS = 2_000L
 
-    /** How long a refusing phone is asked again after the first refusal of a wake. */
+    /** How long a refusing phone is asked at [RETRY_GAP_MS] after the first refusal of a wake. */
     const val PATIENCE_MS = 10 * 60_000L
 
     /** The gap between asks while it refuses: each ask opens Android Auto on the phone for 5 s. */
     const val RETRY_GAP_MS = 30_000L
+
+    /** The gap after [PATIENCE_MS]: the asking slows rather than stops. */
+    const val SLOW_RETRY_GAP_MS = 2 * 60_000L
+
+    /**
+     * How long a refusing phone is asked at all. Earbuds taken out a quarter of an hour into a drive
+     * still connect by themselves, as the banner promises (the user's choice, 2026-10-24).
+     */
+    const val SLOW_PATIENCE_MS = 60 * 60_000L
 
     /**
      * Refused, as opposed to silent: the hands-free walk got no answer and the phone's whole link
@@ -34,7 +43,23 @@ object HandsFreeRefusalPolicy {
         (stage == HfpSlcInitiator.Stage.IDLE || stage == HfpSlcInitiator.Stage.BRSF) &&
             linkAfterProbe == BluetoothWakePolicy.TargetLink.ABSENT
 
-    /** Whether a chosen phone's wake keeps going past its ordinary rounds because it refused. */
-    fun keepsAsking(refusedLastRound: Boolean, sinceFirstRefusalMs: Long): Boolean =
-        refusedLastRound && sinceFirstRefusalMs < PATIENCE_MS
+    /**
+     * Whether a chosen phone's wake keeps going past its ordinary rounds because it refused.
+     *
+     * The refusal decides, not the last round: on the Fold the ask after a refusal failed to connect
+     * at all (2026-10-24), and a wake that needed every round to be a refusal stopped right there.
+     * [firstRefusalAtMs] is 0 while the phone has not refused during this wake.
+     */
+    fun keepsAsking(firstRefusalAtMs: Long, nowMs: Long): Boolean =
+        firstRefusalAtMs != 0L && nowMs - firstRefusalAtMs < SLOW_PATIENCE_MS
+
+    /**
+     * The gap before the next ask: [ordinaryGapMs] until the phone refuses, then [RETRY_GAP_MS] for
+     * [PATIENCE_MS], then [SLOW_RETRY_GAP_MS].
+     */
+    fun gapMs(firstRefusalAtMs: Long, nowMs: Long, ordinaryGapMs: Long): Long = when {
+        firstRefusalAtMs == 0L -> ordinaryGapMs
+        nowMs - firstRefusalAtMs < PATIENCE_MS -> RETRY_GAP_MS
+        else -> SLOW_RETRY_GAP_MS
+    }
 }

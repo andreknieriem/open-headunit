@@ -2,6 +2,7 @@ package com.andrerinas.openheadunit.connection.wifi.modes.nativeaa
 
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.BluetoothWakePolicy.TargetLink
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.HfpSlcInitiator.Stage
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -35,26 +36,54 @@ class HandsFreeRefusalPolicyTest {
         }
     }
 
-    // Putting the earbuds away has to be all it takes: the chosen phone is asked again while it
+    // Putting the earbuds away has to be all it takes: the chosen phone is asked again after it
     // refuses, so the session comes up without anybody pressing the button a second time.
     @Test
-    fun `a refusing phone is asked again until patience runs out`() {
-        assertTrue(HandsFreeRefusalPolicy.keepsAsking(refusedLastRound = true, sinceFirstRefusalMs = 0L))
+    fun `a phone that refused is asked again until patience runs out`() {
+        val refusedAt = 1_000L
+        assertTrue(HandsFreeRefusalPolicy.keepsAsking(firstRefusalAtMs = refusedAt, nowMs = refusedAt))
         assertTrue(
-            HandsFreeRefusalPolicy.keepsAsking(true, HandsFreeRefusalPolicy.PATIENCE_MS - 1)
+            HandsFreeRefusalPolicy.keepsAsking(refusedAt, refusedAt + HandsFreeRefusalPolicy.SLOW_PATIENCE_MS - 1)
         )
-        assertFalse(HandsFreeRefusalPolicy.keepsAsking(true, HandsFreeRefusalPolicy.PATIENCE_MS))
+        assertFalse(HandsFreeRefusalPolicy.keepsAsking(refusedAt, refusedAt + HandsFreeRefusalPolicy.SLOW_PATIENCE_MS))
+    }
+
+    // Measured 2026-10-24: the asking stopped ten minutes after the first refusal (11:18), the
+    // earbuds went into their case at 11:20, and nothing was asking any more. It slows down instead.
+    @Test
+    fun `after the fast ten minutes the asking slows instead of stopping`() {
+        val refusedAt = 1_000L
+        val tenMinutesOn = refusedAt + HandsFreeRefusalPolicy.PATIENCE_MS
+        assertTrue(HandsFreeRefusalPolicy.keepsAsking(refusedAt, tenMinutesOn + 2 * 60_000L))
+        assertEquals(HandsFreeRefusalPolicy.RETRY_GAP_MS, HandsFreeRefusalPolicy.gapMs(refusedAt, tenMinutesOn - 1, 15_000L))
+        assertEquals(HandsFreeRefusalPolicy.SLOW_RETRY_GAP_MS, HandsFreeRefusalPolicy.gapMs(refusedAt, tenMinutesOn, 15_000L))
+    }
+
+    // Measured 2026-10-24 on the Fold: the ask after a refusal failed to connect at all, and the
+    // wake stopped there because only a take-and-drop round kept it going. Fifteen minutes later the
+    // earbuds were in their case and nothing was asking. The refusal, not the last round, decides.
+    @Test
+    fun `later rounds that fail another way do not end the asking`() {
+        val refusedAt = 1_000L
+        val aRoundLater = refusedAt + HandsFreeRefusalPolicy.RETRY_GAP_MS
+        assertTrue(HandsFreeRefusalPolicy.keepsAsking(firstRefusalAtMs = refusedAt, nowMs = aRoundLater))
     }
 
     @Test
-    fun `a round that was not refused earns no extra asking`() {
-        assertFalse(HandsFreeRefusalPolicy.keepsAsking(refusedLastRound = false, sinceFirstRefusalMs = 0L))
+    fun `a phone that never refused earns no extra asking`() {
+        assertFalse(HandsFreeRefusalPolicy.keepsAsking(firstRefusalAtMs = 0L, nowMs = 1_000L))
     }
 
     // Each ask opens Android Auto on the phone for about 5 s, so asking is spaced well apart.
     @Test
     fun `a refusing phone is not asked more often than every half minute`() {
         assertTrue(HandsFreeRefusalPolicy.RETRY_GAP_MS >= 30_000L)
+        assertEquals(HandsFreeRefusalPolicy.RETRY_GAP_MS, HandsFreeRefusalPolicy.gapMs(firstRefusalAtMs = 1_000L, nowMs = 1_000L, ordinaryGapMs = 15_000L))
+    }
+
+    @Test
+    fun `a phone that never refused keeps the ordinary gap`() {
+        assertEquals(15_000L, HandsFreeRefusalPolicy.gapMs(firstRefusalAtMs = 0L, nowMs = 1_000L, ordinaryGapMs = 15_000L))
     }
 
     // The Fold dropped the link 0.34 s after the socket connected; the read must come after that.

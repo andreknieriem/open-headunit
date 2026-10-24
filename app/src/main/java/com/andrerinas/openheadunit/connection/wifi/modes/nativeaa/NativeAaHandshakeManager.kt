@@ -2718,16 +2718,14 @@ class NativeAaHandshakeManager(
                     val wakeStartedAt = SystemClock.elapsedRealtime()
                     var roundsDialled = 0
                     var outcome = BluetoothWakePolicy.WakeOutcome.STOOD_DOWN
-                    // A phone refusing the link is asked again, slowly, past the ordinary rounds, so
-                    // the driver putting earbuds away is all it takes. See HandsFreeRefusalPolicy.
-                    var refusedLastRound = false
+                    // A phone that refused the link is asked again, slowly, past the ordinary rounds
+                    // and whatever later rounds do, so the driver putting earbuds away is all it
+                    // takes. See HandsFreeRefusalPolicy.
                     var firstRefusalAt = 0L
                     val pickStamp = selectionTargetSetAt
                     fun keepWaking() = NativeDriverSelectionPolicy.chosenWakeContinues(
                         outcome, roundsDialled, SystemClock.elapsedRealtime() - wakeStartedAt
-                    ) || HandsFreeRefusalPolicy.keepsAsking(
-                        refusedLastRound, SystemClock.elapsedRealtime() - firstRefusalAt
-                    )
+                    ) || HandsFreeRefusalPolicy.keepsAsking(firstRefusalAt, SystemClock.elapsedRealtime())
                     while (keepWaking()) {
                         if (!isActive() || !isActive || isHandshakeInFlight() || isHandoffSettling()) break
                         if (usesHctCarrier()) {
@@ -2750,8 +2748,9 @@ class NativeAaHandshakeManager(
                         // runs, back to waiting after one the phone did not answer.
                         ConnectionStageTracker.report(ConnectionStage.WAKING_PHONE)
                         outcome = pokeDevice(device, holdMs = 20000)
-                        refusedLastRound = lastPokeRefusedMac.equals(device.address, ignoreCase = true)
-                        if (refusedLastRound && firstRefusalAt == 0L) firstRefusalAt = SystemClock.elapsedRealtime()
+                        if (firstRefusalAt == 0L && lastPokeRefusedMac.equals(device.address, ignoreCase = true)) {
+                            firstRefusalAt = SystemClock.elapsedRealtime()
+                        }
                         AppLog.i("NativeAA: Manual poke to ${device.name} finished.")
                         // A cancelled job's blocking connect can return after a newer pick.
                         if (selectionTargetSetAt == pickStamp &&
@@ -2775,12 +2774,13 @@ class NativeAaHandshakeManager(
                         }
                         if (NativeDriverSelectionPolicy.wakeRoundSpent(outcome)) roundsDialled++
                         if (keepWaking()) {
-                            if (refusedLastRound) {
-                                AppLog.i("NativeAA: asking ${device.name ?: "unnamed"} again in " +
-                                    "${HandsFreeRefusalPolicy.RETRY_GAP_MS / 1000}s, until it has a free " +
-                                    "Bluetooth audio place for this unit.")
+                            val gap = HandsFreeRefusalPolicy.gapMs(firstRefusalAt, SystemClock.elapsedRealtime(), POKE_RETRY_GAP_MS)
+                            // Only when that ask will happen: the window can close during the gap.
+                            if (HandsFreeRefusalPolicy.keepsAsking(firstRefusalAt, SystemClock.elapsedRealtime() + gap)) {
+                                AppLog.i("NativeAA: asking ${device.name ?: "unnamed"} again in ${gap / 1000}s, " +
+                                    "until it has a free Bluetooth audio place for this unit.")
                             }
-                            delay(if (refusedLastRound) HandsFreeRefusalPolicy.RETRY_GAP_MS else POKE_RETRY_GAP_MS)
+                            delay(gap)
                         }
                     }
                 } finally {

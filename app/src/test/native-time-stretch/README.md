@@ -1,7 +1,12 @@
 # Native time-stretch regression tool
 
-This is a manual host tool. Android Gradle unit tests do not load the Android JNI library.
-Run from the repository root with CMake 3.24+, a host C++17 compiler and a JDK (set JAVA_HOME if discovery fails):
+Android CI runs this host suite and the JNI-enabled Kotlin audio harness through
+`bash app/src/test/run-audio-host.sh`, after Gradle unit tests populate the Kotlin cache.
+Failures fail the Unit tests check; logs are uploaded as `host-audio-diagnostics`.
+Gradle unit tests alone still do not load the Android JNI library.
+
+To run just this suite locally, use CMake 3.24+, a host C++17 compiler and a JDK
+(set JAVA_HOME if discovery fails), from the repository root:
 
 ```sh
 cmake -S app/src/test/native-time-stretch -B build/native-time-stretch -DCMAKE_BUILD_TYPE=Release

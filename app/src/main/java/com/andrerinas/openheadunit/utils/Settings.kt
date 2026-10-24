@@ -530,6 +530,26 @@ class Settings(private val context: Context) {
         }
         set(value) { prefs.edit().putInt("fullscreen-mode", value.value).apply() }
 
+    var leftTwoFingerGesture: GestureAction
+        get() = GestureAction.fromInt(prefs.getInt("left-two-finger-gesture", GestureAction.EXIT_DIALOG.value))
+            ?: GestureAction.EXIT_DIALOG
+        set(value) { prefs.edit().putInt("left-two-finger-gesture", value.value).apply() }
+
+    var rightTwoFingerGesture: GestureAction
+        get() = GestureAction.fromInt(prefs.getInt("right-two-finger-gesture", GestureAction.TOGGLE_FULLSCREEN.value))
+            ?: GestureAction.TOGGLE_FULLSCREEN
+        set(value) { prefs.edit().putInt("right-two-finger-gesture", value.value).apply() }
+
+    var downTwoFingerGesture: GestureAction
+        get() = GestureAction.fromInt(prefs.getInt("down-two-finger-gesture", GestureAction.DISABLED.value))
+            ?: GestureAction.DISABLED
+        set(value) { prefs.edit().putInt("down-two-finger-gesture", value.value).apply() }
+
+    var longPressTwoFingerGesture: GestureAction
+        get() = GestureAction.fromInt(prefs.getInt("long-press-two-finger-gesture", GestureAction.DISABLED.value))
+            ?: GestureAction.DISABLED
+        set(value) { prefs.edit().putInt("long-press-two-finger-gesture", value.value).apply() }
+
     @Deprecated("Use fullscreenMode instead")
     var startInFullscreenMode: Boolean
         get() = fullscreenMode != FullscreenMode.NONE
@@ -2270,6 +2290,18 @@ class Settings(private val context: Context) {
 
         companion object {
             private val map = values().associateBy(FullscreenMode::value)
+            fun fromInt(value: Int) = map[value]
+        }
+    }
+
+    enum class GestureAction(val value: Int) {
+        DISABLED(0),
+        EXIT_DIALOG(1),
+        TOGGLE_FULLSCREEN(2),
+        NIGHT_OVERLAY(3);
+
+        companion object {
+            private val map = values().associateBy(GestureAction::value)
             fun fromInt(value: Int) = map[value]
         }
     }

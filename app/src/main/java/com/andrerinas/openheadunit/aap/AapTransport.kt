@@ -82,7 +82,8 @@ class AapTransport(
         private val onAaMediaMetadata: ((MediaPlayback.MediaMetaData, AaPresentationSession) -> Unit)? = null,
         private val onAaPlaybackStatus: ((MediaPlayback.MediaPlaybackStatus, AaPresentationSession) -> Unit)? = null,
         private val onAaPresentationClosed: ((AaPresentationSession) -> Unit)? = null,
-        private val externalSsl: AapSslContext? = null) {
+        private val externalSsl: AapSslContext? = null,
+        private val nightOverlayState: NightOverlayState? = null) {
 
     val ssl: AapSsl = externalSsl?.newSession() ?: AapSslContext(SingleKeyKeyManager(context))
     private val tlsWriter = AapTlsWriter(ssl, ::writeTlsFrame)
@@ -1075,7 +1076,8 @@ class AapTransport(
             onAaMediaMetadata,
             onAaPlaybackStatus,
             onAaPresentationClosed,
-            presentationSession
+            presentationSession,
+            nightOverlayState
         )
         pollHandler?.sendEmptyMessage(MSG_POLL)
     }

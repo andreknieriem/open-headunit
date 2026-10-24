@@ -2251,6 +2251,15 @@ class SettingsFragment : Fragment() {
             }
         ))
 
+        items.add(SettingItem.SettingEntry(
+            stableId = "gestures",
+            nameResId = R.string.gestures,
+            value = getString(R.string.gestures_description),
+            onClick = { _ ->
+                findNavController().navigate(R.id.action_settingsFragment_to_gesturesFragment)
+            }
+        ))
+
         items.add(SettingItem.ToggleSettingEntry(
             stableId = "enableRotary",
             nameResId = R.string.enable_rotary,

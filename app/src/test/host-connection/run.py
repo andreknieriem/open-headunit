@@ -135,7 +135,8 @@ class AapTransport(
  audioDecoder:AudioDecoder,private val videoDecoder:VideoDecoder,manager:AudioManager,settings:Settings,
  notification:Any,context:Context,externalSsl:Ssl,
  onAaMediaMetadata:((Any,Any)->Unit)?,onAaPlaybackStatus:((Any,Any)->Unit)?,
- private val onAaPresentationClosed:((Any)->Unit)?
+ private val onAaPresentationClosed:((Any)->Unit)?,
+ private val nightOverlayState:Any?=null
 ){
  private val lifecycleLock=Any()
  private val presentationSession=AaPresentationSession()
@@ -241,7 +242,7 @@ class AapVideo{fun release(){}}
 object ProjectionHealthRecorder{fun reset(){}}
 open class AapRead{@Volatile protected var isStopped=false;fun stop(){isStopped=true;retirePresentation()};var onRetirePresentation:(()->Unit)?=null;fun retirePresentation(){onRetirePresentation?.invoke()};companion object{var creations=0};object Factory{
  fun create(connection:ProjectionConnection,transport:AapTransport,mic:Any,audio:AapAudio,video:AapVideo,
- settings:Settings,context:Context,metadata:((Any,Any)->Unit)?,playback:((Any,Any)->Unit)?,closed:((Any)->Unit)?,session:AaPresentationSession):AapRead{creations++;return AapRead()}
+ settings:Settings,context:Context,metadata:((Any,Any)->Unit)?,playback:((Any,Any)->Unit)?,closed:((Any)->Unit)?,session:AaPresentationSession,nightOverlayState:Any?=null):AapRead{creations++;return AapRead()}
 }}
 open class ProjectionConnection{@Volatile var closed=false;open fun connect()=true;open fun disconnect(){closed=true}}
 class SocketProjectionConnection(private val ip:String,port:Int,context:Context):ProjectionConnection(){
@@ -825,6 +826,15 @@ class Context{
 }
 ''')
 (OUT/'App.kt').write_text('package android.app\nobject Application{const val AUDIO_SERVICE="audio"}\nclass ActivityManager{val appTasks=emptyList<AppTask>();class AppTask{fun finishAndRemoveTask(){}}}\n')
+(OUT/'OpenHeadunitApp.kt').write_text('''package com.andrerinas.openheadunit
+import android.content.Context
+object App {
+ fun provide(context: Context): ProvidedApp = ProvidedApp
+ object ProvidedApp {
+  val nightOverlayState: Any? = null
+ }
+}
+''')
 (OUT/'Media.kt').write_text('package android.media\nclass AudioManager{fun interface OnAudioFocusChangeListener{fun onAudioFocusChange(i:Int)};companion object{const val STREAM_MUSIC=3;const val AUDIOFOCUS_GAIN=1}}\n')
 (OUT/'Service.kt').write_text('package com.andrerinas.openheadunit.aap\nclass AapService{companion object{const val ACTION_STOP_SERVICE="stop";var killProcessOnDestroy=false;var destroyIsUserStop=false}}\n')
 (OUT/'Proto.kt').write_text(r'''package com.andrerinas.openheadunit.aap.protocol.proto

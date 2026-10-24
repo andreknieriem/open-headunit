@@ -1006,7 +1006,8 @@ class CommManager(
                             context, externalSsl = aapSslContext,
                             onAaMediaMetadata = { meta, session -> onAaMediaMetadata?.invoke(meta, session) },
                             onAaPlaybackStatus = { status, session -> onAaPlaybackStatus?.invoke(status, session) },
-                            onAaPresentationClosed = { session -> onAaPresentationClosed?.invoke(session) }
+                            onAaPresentationClosed = { session -> onAaPresentationClosed?.invoke(session) },
+                            nightOverlayState = com.andrerinas.openheadunit.App.provide(context).nightOverlayState
                         )
                         candidate.setProjectionVideoFocusSuppressed(projectionVideoFocusSuppressed)
                         // A late quit belongs only to the transport that installed this callback.

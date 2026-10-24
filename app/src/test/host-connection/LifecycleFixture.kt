@@ -36,7 +36,7 @@ private class QueuedCleanup : CoroutineDispatcher() {
 private class AapTransport(
     decoder: AudioDecoder, video: Any, manager: AudioManager, settings: Settings, notification: Any,
     context: Context, externalSsl: Any, onAaMediaMetadata: (Any, Any) -> Unit, onAaPlaybackStatus: (Any, Any) -> Unit,
-    onAaPresentationClosed: (Any) -> Unit
+    onAaPresentationClosed: (Any) -> Unit, nightOverlayState: Any? = null
 ) {
     fun retirePresentation() {}
     val aapAudio = AapAudio(decoder, manager, settings)

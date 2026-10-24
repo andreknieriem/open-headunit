@@ -22,7 +22,7 @@ internal class AdaptivePcmBuffer(
     private var endingFrames = 0
     private val policy = AdaptiveJitterPolicy(sampleRate, latencyMultiplier)
     private val recovery = LatencyRecoveryPolicy(sampleRate)
-    private val overlap = PcmOverlap()
+    private val overlap = PcmOverlap(optimized = true)
     private var recoveryDeferrals = 0
     private val prerollDeadlineMs = maxOf(100L, AudioJitterBufferPolicy.targetMsFor(latencyMultiplier) + 50)
     // Music gets a small reserve while the connection settles, before arrival history exists.

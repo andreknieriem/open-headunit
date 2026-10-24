@@ -4,13 +4,20 @@ package com.andrerinas.openheadunit.decoder.audio
  * Compare channels separately: a quiet or opposite-polarity stereo channel must not be
  * hidden by a louder channel or by cancellation in a mono downmix. No PCM is discarded
  * here; the caller accounts for the selected shift only after rendering the overlap. */
-internal class PcmOverlap {
+internal class PcmOverlap(private val optimized: Boolean = false) {
+    private val fast = if (optimized) OptimizedPcmOverlap() else null
     var matched = false
         private set
     var protectAttack = false
         private set
 
     fun shift(ring: ShortArray, head: Int, channels: Int, overlapFrames: Int, maximum: Int): Int {
+        if (fast != null && channels in 1..2 && overlapFrames in 1..240 && maximum in 1..48) {
+            val selected = fast.shift(ring, head, channels, overlapFrames, maximum)
+            matched = fast.matched
+            protectAttack = fast.protectAttack
+            return selected
+        }
         matched = false
         protectAttack = false
         if (maximum <= 0) return 0

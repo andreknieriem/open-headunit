@@ -53,3 +53,4 @@ app/src/main/java/com/andrerinas/openheadunit/decoder/audio/AudioTrackBufferSizi
 app/src/main/java/com/andrerinas/openheadunit/decoder/audio/PcmPlaybackPosition.kt
 app/src/main/java/com/andrerinas/openheadunit/decoder/audio/PcmRenderDeadline.kt
 app/src/test/host-audio/PcmRenderDeadlineRegression.kt
+app/src/main/java/com/andrerinas/openheadunit/decoder/audio/OptimizedPcmOverlap.kt

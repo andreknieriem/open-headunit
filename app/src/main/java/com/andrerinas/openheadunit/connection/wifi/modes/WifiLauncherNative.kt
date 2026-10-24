@@ -395,6 +395,7 @@ class WifiLauncherNative : WifiLauncher {
      * sessions.
      */
     fun reopenListeners() {
+        manager.noteRearm()
         manager.sharedServices.startWirelessServer(this)
         handshakeManager?.rearmForNextSession()
         triggerWifiDirectRefresh()

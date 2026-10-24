@@ -1,7 +1,8 @@
 package com.andrerinas.openheadunit.connection.wifi.modes.nativeaa
 
 import com.andrerinas.openheadunit.R
-import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.hct.HctAaCarrier
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.hct.HctWppOwner
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.hct.HctProjectionStage
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.hct.HctOpening
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.hct.HctServiceObserver
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.hct.HctWakePolicy
@@ -483,7 +484,7 @@ class NativeAaHandshakeManager(
      */
     fun selectDriver(mac: String, explicit: Boolean) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            (moduleCarrier as? HctAaCarrier)?.let { carrier ->
+            (moduleCarrier as? HctWppOwner.Client)?.let { carrier ->
                 val accepted = carrier.requestWakeFor(mac, allowReplacePending = explicit) {
                     commitDriverSelection(mac, explicit)
                     wakeStoodDown = false
@@ -931,7 +932,9 @@ class NativeAaHandshakeManager(
         // Leave isRunning false, like the "adapter disabled" case below: isActive() callers must
         // see this as genuinely stopped. Nothing here is retryable, but a listener that was never
         // opened must not be reported as up.
-        when (transportRoute(context, discovery)) {
+        val selectedRoute = transportRoute(context, discovery)
+        if (selectedRoute != ExternalBtTransportPolicy.Route.HCT) context.closeRetainedHct()
+        when (selectedRoute) {
             // The module carries the handshake instead, over its own channel. None of the RFCOMM
             // setup below applies to it.
             ExternalBtTransportPolicy.Route.ZBT -> {
@@ -1254,7 +1257,7 @@ class NativeAaHandshakeManager(
     }
 
     private fun usesHctCarrier(): Boolean =
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && moduleCarrier is HctAaCarrier
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && moduleCarrier is HctWppOwner.Client
 
     /**
      * Puts the Bluetooth side back where it was before the session, without taking it down.
@@ -2622,7 +2625,7 @@ class NativeAaHandshakeManager(
      */
     fun manualPoke(address: String) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            (moduleCarrier as? HctAaCarrier)?.let {
+            (moduleCarrier as? HctWppOwner.Client)?.let {
                 wakeStoodDown = false
                 sessionEndedAt = 0L
                 resetHandshakeBackoff()
@@ -2841,23 +2844,21 @@ class NativeAaHandshakeManager(
             if (hctStageOwner === stageOwner && mayReportFailure())
                 ConnectionStageTracker.reportWirelessHandoffEnded()
         }
-        lateinit var carrier: HctAaCarrier
-        carrier = HctAaCarrier(
-            context = context,
+        // Retained-channel reuse can start a lease before the cancelled lease's Main
+        // cleanup runs. Arming identity alone cannot distinguish those two projections.
+        val stageLease = HctProjectionStage(
+            started = { ConnectionStageTracker.report(ConnectionStage.PHONE_ANSWERED) },
+            ended = ::finishStageIfIdle
+        )
+        lateinit var carrier: HctWppOwner.Client
+        carrier = context.hctWppOwner.attach(
             openingRequest = {
                 HctOpening.versionRequest(
                     WppChannelTypePolicy.forHeadUnit(WifiBandCapability.supports5Ghz(context)),
                     WifiBandCapability.sessionFrequencyMhz()
                 )
             },
-            serve = { link ->
-                ConnectionStageTracker.report(ConnectionStage.PHONE_ANSWERED)
-                try { handleHandshake(link) } finally {
-                    // handleHandshake also returns normally after a write failure or timeout.
-                    // Restore retry access after that result, not just a carrier exception.
-                    withContext(NonCancellable + Dispatchers.Main.immediate) { finishStageIfIdle() }
-                }
-            },
+            serve = { link -> stageLease.serve { handleHandshake(link) } },
             mayServe = {
                 val now = SystemClock.elapsedRealtime()
                 // Match the normal radio's bounded cancel/prompt hold. The peer gate below
@@ -2869,9 +2870,17 @@ class NativeAaHandshakeManager(
                     !isHandshakeInFlight() && !isHandoffSettling() &&
                     NativeHandoffPolicy.shouldServeHandshake(consecutiveHandshakeFailures)
             },
+            // A deliberate same-phone reuse is allowed to clear only selection holds.
+            // Busy/session conditions stay independent of those holds and are checked before
+            // committing the chosen driver, under the retained owner's admission lock.
+            maySelect = {
+                isRunning && !aaListenersClosedForSession && !commManager.isConnected &&
+                    commManager.connectionState.value !is CommManager.ConnectionState.Connecting &&
+                    !isHandshakeInFlight() && !isHandoffSettling()
+            },
             acceptPeer = ::shouldAcceptHandshake,
             onPhoneEvidence = { resetHandshakeBackoff() },
-            onUnavailable = { result, stillCurrent ->
+            onUnavailable = { result ->
                 val message = when (result) {
                     HctWakePolicy.Result.HFP_ALREADY_CONNECTED -> R.string.hct_aa_waiting_existing_bluetooth
                     HctWakePolicy.Result.HFP_BUSY -> R.string.hct_aa_bluetooth_busy
@@ -2879,13 +2888,11 @@ class NativeAaHandshakeManager(
                     HctWakePolicy.Result.LOCAL_NOT_READY -> R.string.hct_aa_wake_not_sent
                     else -> R.string.hct_aa_handoff_unavailable
                 }
-                scope.launch(Dispatchers.Main) {
-                    // A queued failure belongs to this carrier, not a replacement started by
-                    // a later Wi-Fi button press. Check again at UI delivery, after dispatch.
-                    if (moduleCarrier === carrier && isRunning && stillCurrent() && mayReportFailure()) {
-                        finishStageIfIdle()
-                        ToastUtils.showToast(context, context.getString(message), Toast.LENGTH_LONG, force = true)
-                    }
+                // Owner delivery is already on Main, fenced by carrier, client and source
+                // event. Do not redispatch and open another stale-notification window.
+                if (moduleCarrier === carrier && isRunning && mayReportFailure()) {
+                    finishStageIfIdle()
+                    ToastUtils.showToast(context, context.getString(message), Toast.LENGTH_LONG, force = true)
                 }
             }
         )
@@ -3127,14 +3134,23 @@ class NativeAaHandshakeManager(
         // actually hosting, and a saved transport does not reach the running launcher until it is
         // re-armed.
         val transport = launcher.strategy
-        val session = WppHandshakeSession(holdsChannel = true)
+        val session = WppHandshakeSession(holdsChannel = true, versionNegotiated = link.versionNegotiated)
         // Everything the phone sends, in order. Replaces the single bounded read this used to do:
         // types 6 and 7 arrive *after* the credentials go out, so a one-shot read could never see
         // them, and the phone is free to interject a ping at any point in between.
-        val inbound = Channel<ProtobufMessage>(Channel.UNLIMITED)
+        val input = DataInputStream(link.input)
+        val messages = WppInboundMessages(link.versionNegotiated) { readProtobuf(input) }
+        val inbound = messages.channel
         var readerJob: Job? = null
         var arbiterClaim: ConnectionArbiter.Claim? = null
         try {
+            if (link.versionNegotiated) {
+                // Version/Ping belong to the physical reader and are intentionally absent
+                // from this lease's message count. No Start response is not radio silence.
+                resetHandshakeBackoff()
+                ConnectionIssues.clear(context, ConnectionIssue.BLUETOOTH_SENT_NO_DATA)
+                retiredSilentRecord = true
+            }
             val peerName = link.peerName
             val peerAddress = link.peerAddress
             AppLog.i("NativeAA: Handling handshake for $peerName ($peerAddress) on local radio [${link.radioLabel ?: "?"}]")
@@ -3168,7 +3184,6 @@ class NativeAaHandshakeManager(
                 settings.nativePokeBtMacs = setOf(peerAddress)
             }
 
-            val input = DataInputStream(link.input)
             val output = link.output
 
             // [BUG_FIX] There is no BluetoothSocket.setSoTimeout(), and the old workaround —
@@ -3180,7 +3195,7 @@ class NativeAaHandshakeManager(
             // still unreclaimable on such a stack; consecutiveHandshakeFailures bounds that.
             readerJob = scope.launch(Dispatchers.IO + CoroutineName("NativeAa-Reader-$peerAddress")) {
                 try {
-                    while (isActive) inbound.send(readProtobuf(input))
+                    messages.readUntilClosed()
                 } catch (e: Exception) {
                     AppLog.d("NativeAA: Bluetooth reader ended: ${e.message}")
                 } finally {
@@ -3350,9 +3365,9 @@ class NativeAaHandshakeManager(
                     is WppAction.Release -> {
                         val heldS = (SystemClock.elapsedRealtime() - holdingSince) / 1000
                         if (action.peerClosed) {
-                            AppLog.w("NativeAA: the phone closed the held Bluetooth channel after ${heldS}s and $pingsWhileHolding pings; the Android Auto listeners reopen when this session ends.")
+                            AppLog.w("NativeAA: the phone closed the held Bluetooth channel after ${heldS}s and $pingsWhileHolding lease-handled pings; the Android Auto listeners reopen when this session ends.")
                         } else {
-                            AppLog.i("NativeAA: the session ended; releasing the held Bluetooth channel after ${heldS}s and $pingsWhileHolding pings.")
+                            AppLog.i("NativeAA: the session ended; releasing the held Bluetooth channel after ${heldS}s and $pingsWhileHolding lease-handled pings.")
                         }
                     }
                     is WppAction.Fail -> {
@@ -3439,7 +3454,8 @@ class NativeAaHandshakeManager(
                                 ConnectionIssues.clear(context, ConnectionIssue.BLUETOOTH_SENT_NO_DATA)
                             }
                         }
-                        feed(WppEvent.MessageReceived(msg.type, parseStatus(msg)), msg)
+                        val status = parseStatus(msg)
+                        feed(WppEvent.MessageReceived(msg.type, status), msg)
                         if (session.isTerminal()) return
                     }
                 }
@@ -3452,7 +3468,7 @@ class NativeAaHandshakeManager(
                         !sessionAlive -> feed(WppEvent.SessionEnded)
                         now - lastHoldSummaryAt >= HOLD_SUMMARY_INTERVAL_MS -> {
                             lastHoldSummaryAt = now
-                            AppLog.i("NativeAA: [HOLD] Bluetooth channel held ${(now - holdingSince) / 1000}s, $pingsWhileHolding pings answered.")
+                            AppLog.i("NativeAA: [HOLD] Bluetooth channel held ${(now - holdingSince) / 1000}s, $pingsWhileHolding lease-handled pings answered.")
                         }
                     }
                     return
@@ -3723,7 +3739,7 @@ class NativeAaHandshakeManager(
                 // Excludes our own pre-exchange aborts (no credentials, masked BSSID, USB already
                 // up) — those repeat for as long as location services are off, and backing off
                 // would bury the log line saying how to fix it.
-                if (spokeToPhone && !abortedLocally && session.messagesReceived == 0) {
+                if (spokeToPhone && !abortedLocally && session.messagesReceived == 0 && !link.versionNegotiated) {
                     consecutiveHandshakeFailures++
                     // The same fact, written down where the user can be told about it. Our bytes
                     // went out and the phone answered none of them, which is what a head unit

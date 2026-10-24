@@ -266,6 +266,13 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
      * is ever followed by a picture. [WarmRelaunchKeyframePolicy] decides when to escalate to the
      * release/regain cycle instead, and why each gate is there.
      */
+    /** The service revokes the retained WPP lease before publishing Disconnected. */
+    private fun requestProjectionExit() {
+        ContextCompat.startForegroundService(this, Intent(this, AapService::class.java).apply {
+            action = AapService.ACTION_DISCONNECT
+        })
+    }
+
     private fun maybeRecoverWarmRelaunch() {
         if (isProjectionPausedByDevice) return
         if (lastSurfaceSetMs == 0L) return
@@ -1247,7 +1254,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         setupCustomLoadingScreen()
 
         findViewById<Button>(R.id.disconnect_button)?.setOnClickListener {
-            commManager.disconnect()
+            requestProjectionExit()
             finish()
         }
 
@@ -1785,7 +1792,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                 val selected = options[which]
                 when (selected.titleResId) {
                     R.string.exit_dialog_stop -> {
-                        commManager.disconnect(sendByeBye = true)
+                        requestProjectionExit()
                         finish()
                     }
                     R.string.exit_dialog_end_stay_armed -> {

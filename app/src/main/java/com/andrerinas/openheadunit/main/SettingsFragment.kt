@@ -1296,7 +1296,8 @@ class SettingsFragment : Fragment() {
             // acting on it, because a preference turned on under Native AA and then hidden by a
             // mode change would otherwise put a blackholing tun on a USB session. The other half
             // is DummyVpnPolicy.shouldStartForSession.
-            if (VpnControl.isVpnAvailable()) {
+            if (VpnControl.isVpnAvailable() &&
+                com.andrerinas.openheadunit.utils.DummyVpnPolicy.supportsSessionVpn(Build.VERSION.SDK_INT)) {
                 items.add(SettingItem.ToggleSettingEntry(
                     stableId = "keepDummyVpnDuringSession",
                     // Through VpnControl, not R: this copy lives in the github flavor's
@@ -3294,9 +3295,16 @@ class SettingsFragment : Fragment() {
                 touched = true
             }
             .setPositiveButton(android.R.string.ok) { dialog, _ ->
-                // Left alone, "All" stays "All" instead of turning into the three modes spelled out.
+                // Left alone, "All" stays "All" instead of becoming three explicit modes.
                 if (!(all && !touched)) {
+                    // This dialog saves immediately, so the toolbar's later Save snapshot
+                    // cannot detect the change. Apply wireless routing when it changes here.
+                    val before = wirelessRearmConfig()
                     settings.connectionModes = order.filterIndexed { i, _ -> checked[i] }.toSet()
+                    if (WirelessRearmPolicy.requiresRearm(before, wirelessRearmConfig())) {
+                        AapService.applyWirelessSettings(requireContext(),
+                            startWireless = settings.wifiConnectionMode != WifiLauncherMode.MANUAL && settings.showsWifi())
+                    }
                 }
                 dialog.dismiss()
                 updateSettingsList()

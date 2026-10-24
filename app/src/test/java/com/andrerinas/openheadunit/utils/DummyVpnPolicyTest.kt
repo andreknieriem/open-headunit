@@ -107,4 +107,10 @@ class DummyVpnPolicyTest {
         assertFalse(start(nativeWirelessSession = false, selfMode = true))
         assertFalse(start(nativeWirelessSession = false, alreadyPrepared = false))
     }
+    @Test
+    fun `session VPN requires per app exclusion but legacy Self ownership still works`() {
+        for (sdk in 16..20) assertFalse(DummyVpnPolicy.supportsSessionVpn(sdk))
+        for (sdk in 21..36) assertTrue(DummyVpnPolicy.supportsSessionVpn(sdk))
+        assertTrue(DummyVpnPolicy.shouldStop(Owner.SELF_MODE, Reason.SELF_MODE_NEVER_CONNECTED))
+    }
 }

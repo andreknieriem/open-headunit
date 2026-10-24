@@ -122,6 +122,10 @@ class CommManager(
             // Only a failed physical USB open may inherit Save. Ordinary link failures and
             // newer sessions must not grant its retry loop permission to replace their state.
             val settingsRetryOwner: Disconnected? = null,
+            // The connectionAttempt this terminal ended, read under transportLifecycleLock with
+            // the publication. A launcher armed while that attempt was still Connecting uses it
+            // to recognise the attempt's later end as older than the arm (see rearmSnapshot).
+            internal val endedAttempt: Any? = null,
         ) : ConnectionState() {
             override fun toString() = "Disconnected(isClean=$isClean, isUserExit=$isUserExit, " +
                 "reason=$reason, restartEndpoint=$restartEndpoint, settingsRestartUntilMs=$settingsRestartUntilMs, " +
@@ -904,6 +908,17 @@ class CommManager(
         }
     }
 
+    /**
+     * What a launcher arm supersedes: the terminal already published, or else the attempt
+     * still in progress. One lock read, because IO publishes Connecting and its terminal
+     * under this lock while the arm runs on Main; reading state and attempt separately
+     * could pair an old terminal with a newer attempt, or miss the attempt between them.
+     */
+    internal fun rearmSnapshot(): Pair<ConnectionState.Disconnected?, Any?> = synchronized(transportLifecycleLock) {
+        val terminal = _connectionState.value as? ConnectionState.Disconnected
+        terminal to (if (terminal == null) connectionAttempt else null)
+    }
+
     /** A manual start or stop supersedes Save before it publishes an AAP connection. */
     fun cancelPendingSettingsRestart(): Unit = synchronized(transportLifecycleLock) {
         val terminal = _connectionState.value as? ConnectionState.Disconnected
@@ -1243,7 +1258,7 @@ class CommManager(
         // Publish cleanup before state: a reconnect observer must be able to await this job.
         _disconnectJob = _scope.launch { doDisconnect(sendByeBye = false) }
         source.retirePresentation()
-        _connectionState.value = ConnectionState.Disconnected(isClean, isUserExit = wasUserExit, wasLoopbackSession = isLoopbackSession, hadPhysicalConnection = physicalConnectionReached, settingsRetryOwner = save)
+        _connectionState.value = ConnectionState.Disconnected(isClean, isUserExit = wasUserExit, wasLoopbackSession = isLoopbackSession, hadPhysicalConnection = physicalConnectionReached, settingsRetryOwner = save, endedAttempt = connectionAttempt)
         if (settings.killOnDisconnect) {
             context.sendBroadcast(android.content.Intent("com.andrerinas.openheadunit.ACTION_FINISH_ACTIVITIES").apply {
                 setPackage(context.packageName)
@@ -1595,6 +1610,7 @@ class CommManager(
             restartEndpoint = if (reason == DisconnectReason.SETTINGS_RESTART) outgoingEndpoint else null,
             settingsRestartUntilMs = if (reason == DisconnectReason.SETTINGS_RESTART)
                 SystemClock.elapsedRealtime() + SettingsRestartRecovery.WINDOW_MS else 0L,
+            endedAttempt = connectionAttempt,
         )
         if (settings.killOnDisconnect && honorKillOnDisconnect) {
             context.sendBroadcast(android.content.Intent("com.andrerinas.openheadunit.ACTION_FINISH_ACTIVITIES").apply {
@@ -1651,10 +1667,11 @@ class CommManager(
             // destroy() also reaches this path without a preceding disconnect(). Retire an
             // unpublished candidate before the owner-null fast path, just like an active owner.
             disconnectRequested = true
+            val endedAttempt = connectionAttempt
             connectionAttempt = null
             if (_connectionState.value !is ConnectionState.Disconnected) {
                 _transport?.retirePresentation()
-                _connectionState.value = ConnectionState.Disconnected(wasLoopbackSession = isLoopbackSession, hadPhysicalConnection = physicalConnectionReached)
+                _connectionState.value = ConnectionState.Disconnected(wasLoopbackSession = isLoopbackSession, hadPhysicalConnection = physicalConnectionReached, endedAttempt = endedAttempt)
             }
             val transport = _transport
             val connection = _connection
@@ -1799,7 +1816,7 @@ class CommManager(
             val cleanup = _scope.launch { doDisconnect(sendByeBye = true) }
             _disconnectJob = cleanup
             _transport?.retirePresentation()
-            _connectionState.value = ConnectionState.Disconnected(isClean = false, isUserExit = false, wasLoopbackSession = isLoopbackSession, hadPhysicalConnection = physicalConnectionReached)
+            _connectionState.value = ConnectionState.Disconnected(isClean = false, isUserExit = false, wasLoopbackSession = isLoopbackSession, hadPhysicalConnection = physicalConnectionReached, endedAttempt = connectionAttempt)
             cleanup
         }
         runBlocking { withTimeoutOrNull(timeoutMs) { job.join() } }

@@ -37,6 +37,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.aap.AapService
+import com.andrerinas.openheadunit.connection.broker.NativeBTBrokerStore
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.CredentialField
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeAaWakeDamagePolicy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zbt.ZbtProbe
@@ -146,7 +147,7 @@ class SettingsFragment : Fragment() {
         // Dark mode
         "darkModeSettings",
         // Automation
-        "autoStartSettings", "autoConnectSettings", "enableCarLauncher",
+        "autoStartSettings", "autoConnectSettings", "NativeBTBroker", "enableCarLauncher",
         // Navigation
         "gpsNavigation",
         // Graphic
@@ -963,6 +964,22 @@ class SettingsFragment : Fragment() {
         ))
 
         if (pendingWifiConnectionMode == WifiLauncherMode.NATIVE) {
+            val brokerStore = NativeBTBrokerStore(requireContext())
+            val brokerLabel = brokerStore.deviceName
+                ?: brokerStore.deviceAddress
+                ?: getString(R.string.broker_settings_summary)
+            items.add(SettingItem.SettingEntry(
+                stableId = "NativeBTBroker",
+                nameResId = R.string.broker_settings_title,
+                value = brokerLabel,
+                searchKeywords = "Native BT Broker bluetooth pair disconnect ble relay openhu",
+                onClick = {
+                    try {
+                        findNavController().navigate(R.id.action_settingsFragment_to_brokerSettingsFragment)
+                    } catch (_: Exception) { }
+                }
+            ))
+
             items.add(SettingItem.SegmentedButtonSettingEntry(
                 stableId = "nativeApTransport",
                 nameResId = R.string.native_ap_transport,

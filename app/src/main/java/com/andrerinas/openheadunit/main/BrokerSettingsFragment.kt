@@ -25,7 +25,7 @@ import com.andrerinas.openheadunit.main.settings.SettingsAdapter
 import com.google.android.material.appbar.MaterialToolbar
 
 /**
- * Chooses the Native BT Broker, pairs a phone through it, and closes the BLE link.
+ * Chooses the Native BT Broker and pairs a phone through it.
  */
 class BrokerSettingsFragment : Fragment() {
     private lateinit var store: NativeBTBrokerStore
@@ -74,8 +74,6 @@ class BrokerSettingsFragment : Fragment() {
         val items = mutableListOf<SettingItem>()
         val saved = store.deviceName ?: store.deviceAddress
         val brokerSaved = store.deviceAddress != null
-        val phase = NativeBTBrokerSession.current().phase
-        val linked = phase != NativeBTBrokerSession.Phase.IDLE
 
         items.add(SettingItem.SettingEntry(
             stableId = "brokerSaved",
@@ -111,16 +109,6 @@ class BrokerSettingsFragment : Fragment() {
             isEnabled = brokerSaved,
             onClick = {
                 NativeBTBrokerSession.openPairing(requireContext())
-                refresh()
-            },
-        ))
-        items.add(SettingItem.SettingEntry(
-            stableId = "brokerDisconnect",
-            nameResId = R.string.broker_disconnect,
-            value = getString(R.string.broker_disconnect_value),
-            isEnabled = brokerSaved && linked,
-            onClick = {
-                NativeBTBrokerSession.close()
                 refresh()
             },
         ))

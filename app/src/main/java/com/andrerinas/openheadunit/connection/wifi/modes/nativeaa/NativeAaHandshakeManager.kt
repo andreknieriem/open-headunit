@@ -3001,6 +3001,7 @@ class NativeAaHandshakeManager(
             mayServeHandshake = { NativeHandoffPolicy.shouldServeHandshake(consecutiveHandshakeFailures) },
             onPhoneEvidence = { resetHandshakeBackoff() },
             ensureLink = {
+                // Keep-alive only — must not re-arm HFP every poll tick.
                 NativeBTBrokerSession.armRelay(context)
                 NativeBTBrokerSession.offerLiveGroup(context, force = false)
             },
@@ -3010,7 +3011,9 @@ class NativeAaHandshakeManager(
         NativeBTBrokerSession.setFrameSink { frame -> carrier.onFrame(frame) }
         NativeBTBrokerSession.setTransportErrorHandler { reason -> carrier.onTransportError(reason) }
         moduleCarrier = carrier
-        NativeBTBrokerSession.armRelay(context)
+        // Always HFP_ON + AA_ENABLE for a Wi-Fi AA bring-up, even if BLE is already READY
+        // after a cancel (armRelay is a no-op then and would leave HFP off).
+        NativeBTBrokerSession.requestAaWake(context)
         NativeBTBrokerSession.offerLiveGroup(context, force = true)
         scope.launch(Dispatchers.IO + CoroutineName("NativeAa-NativeBTBrokerCarrier")) {
             try {
@@ -4286,6 +4289,10 @@ class NativeAaHandshakeManager(
         // wake requests to a dead channel.
         moduleCarrier?.close()
         moduleCarrier = null
+        // Cancel / mode stop: HFP may still be up from HFP_ON before projection ever landed.
+        if (NativeBTBrokerSession.hasSavedBroker(context)) {
+            NativeBTBrokerSession.releaseHfp("native AA stop")
+        }
         NativeBTBrokerSession.setFrameSink(null)
         wppTcpServer?.stop()
         wppTcpServer = null

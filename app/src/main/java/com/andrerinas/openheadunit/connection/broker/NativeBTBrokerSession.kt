@@ -104,8 +104,8 @@ object NativeBTBrokerSession {
     }
 
     /**
-     * Intentional AA start: HFP_ON then AA_ENABLE.
-     * Used when the user/system asks to start AA again after a projection session ended.
+     * Intentional AA / Wi-Fi start: HFP_ON then AA_ENABLE even when BLE is already READY.
+     * Call this for every bring-up; [armRelay] alone skips wake once the link is up.
      */
     fun requestAaWake(context: Context? = null) {
         val app = context?.applicationContext ?: appContext ?: return
@@ -347,6 +347,7 @@ object NativeBTBrokerSession {
             startSent = true
             dialArmed = false
             main.removeCallbacks(sendDial)
+            client?.setHfp(false)
         }
         if (changed) {
             AppLog.i("Broker: projection socket ${if (up) "up" else "down"}")
@@ -398,10 +399,25 @@ object NativeBTBrokerSession {
         WifiDirectDisplayInfo.read(app) { info -> offer(app, info, force) }
     }
 
+    /**
+     * User cancelled wireless connect, or the Native AA mode stopped before projection.
+     * Drops HFP immediately and blocks auto re-dial until the next intentional start.
+     */
+    fun releaseHfp(why: String = "stand-down") {
+        allowAutoDial = false
+        startSent = true
+        dialArmed = false
+        main.removeCallbacks(sendDial)
+        val link = client ?: return
+        AppLog.i("Broker: releasing HFP ($why)")
+        link.setHfp(false)
+    }
+
     fun close() {
         stopRetry()
         gaveUp = false
         awaitingBroker = false
+        client?.setHfp(false)
         client?.close()
         client = null
         projectionUp = false

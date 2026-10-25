@@ -30,7 +30,8 @@ object NativeBTBrokerSession {
     private var fromRetry = false
     private var gaveUp = false
     private var projectionUp = false
-    private var projectionRecordFailures = 0
+    /** Last time PROJECTION_UP was recorded on the broker. 0 while projection is down. */
+    private var lastProjectionOkAtMs = 0L
     /** This down period already handed the broker one AA_ENABLE. */
     private var startSent = false
     /**
@@ -48,7 +49,10 @@ object NativeBTBrokerSession {
     /** Runs once when the broker stays down for the whole retry window. */
     var onGiveUp: (() -> Unit)? = null
 
-    /** Projection status could not be recorded ten times in a row. Android Auto should stop. */
+    /**
+     * PROJECTION_UP could not be recorded for [PROJECTION_FAIL_TIMEOUT_MS].
+     * Android Auto projection should stop.
+     */
     var onProjectionRecordFailed: (() -> Unit)? = null
 
     /** Native AA carrier that consumes RFCOMM bytes relayed over BLE. */
@@ -333,15 +337,16 @@ object NativeBTBrokerSession {
         val changed = projectionUp != up
         projectionUp = up
         main.removeCallbacks(projectionHeartbeat)
+        main.removeCallbacks(projectionFailWatch)
         if (changed && up) {
-            projectionRecordFailures = 0
+            lastProjectionOkAtMs = SystemClock.elapsedRealtime()
             main.removeCallbacks(sendDial)
             dialArmed = false
             allowAutoDial = false
             startSent = true
         }
         if (changed && !up) {
-            projectionRecordFailures = 0
+            lastProjectionOkAtMs = 0L
             // Session ended — do not auto HFP_ON / AA_ENABLE from the next Wi-Fi snapshot.
             allowAutoDial = false
             startSent = true
@@ -358,6 +363,7 @@ object NativeBTBrokerSession {
         }
         if (up && projectionUp) {
             main.postDelayed(projectionHeartbeat, PROJECTION_HEARTBEAT_MS)
+            armProjectionFailWatch()
         }
     }
 
@@ -379,16 +385,53 @@ object NativeBTBrokerSession {
     private fun noteProjectionRecord(ok: Boolean) {
         if (!projectionUp) return
         if (ok) {
-            projectionRecordFailures = 0
+            lastProjectionOkAtMs = SystemClock.elapsedRealtime()
+            armProjectionFailWatch()
             return
         }
-        projectionRecordFailures += 1
-        AppLog.w("Broker: projection status was not recorded ($projectionRecordFailures/$PROJECTION_RECORD_FAILURES)")
-        if (projectionRecordFailures < PROJECTION_RECORD_FAILURES) return
-        projectionRecordFailures = 0
+        val silentMs = SystemClock.elapsedRealtime() - lastProjectionOkAtMs
+        AppLog.w(
+            "Broker: PROJECTION_UP was not recorded " +
+                "(${silentMs}ms without success, limit ${PROJECTION_FAIL_TIMEOUT_MS}ms)"
+        )
+        if (silentMs >= PROJECTION_FAIL_TIMEOUT_MS) {
+            stopProjectionDueToRecordFailure()
+        } else {
+            armProjectionFailWatch()
+        }
+    }
+
+    /** Fires if PROJECTION_UP stays unrecorded (write fail or hang) for the timeout. */
+    private val projectionFailWatch: Runnable = Runnable {
+        if (!projectionUp || lastProjectionOkAtMs == 0L) return@Runnable
+        val silentMs = SystemClock.elapsedRealtime() - lastProjectionOkAtMs
+        if (silentMs >= PROJECTION_FAIL_TIMEOUT_MS) {
+            AppLog.w(
+                "Broker: PROJECTION_UP silent for ${silentMs}ms " +
+                    "(limit ${PROJECTION_FAIL_TIMEOUT_MS}ms), stopping Android Auto"
+            )
+            stopProjectionDueToRecordFailure()
+        } else {
+            armProjectionFailWatch()
+        }
+    }
+
+    private fun armProjectionFailWatch() {
+        main.removeCallbacks(projectionFailWatch)
+        if (!projectionUp || lastProjectionOkAtMs == 0L) return
+        val remaining =
+            (PROJECTION_FAIL_TIMEOUT_MS - (SystemClock.elapsedRealtime() - lastProjectionOkAtMs))
+                .coerceAtLeast(0L)
+        main.postDelayed(projectionFailWatch, remaining)
+    }
+
+    private fun stopProjectionDueToRecordFailure() {
+        if (!projectionUp) return
         projectionUp = false
+        lastProjectionOkAtMs = 0L
         main.removeCallbacks(projectionHeartbeat)
-        AppLog.w("Broker: projection status failed $PROJECTION_RECORD_FAILURES times, stopping Android Auto")
+        main.removeCallbacks(projectionFailWatch)
+        AppLog.w("Broker: PROJECTION_UP failed for ${PROJECTION_FAIL_TIMEOUT_MS / 1000}s, stopping Android Auto")
         main.post { onProjectionRecordFailed?.invoke() }
     }
 
@@ -421,11 +464,12 @@ object NativeBTBrokerSession {
         client?.close()
         client = null
         projectionUp = false
-        projectionRecordFailures = 0
+        lastProjectionOkAtMs = 0L
         startSent = false
         allowAutoDial = true
         dialArmed = false
         main.removeCallbacks(projectionHeartbeat)
+        main.removeCallbacks(projectionFailWatch)
         main.removeCallbacks(sendDial)
         lastDialAtMs = 0L
         lastSnapshot = null
@@ -485,7 +529,8 @@ object NativeBTBrokerSession {
     private const val RETRY_EVERY_MS = 2_000L
     /** Shorter than the broker's 4s silence limit, so a missed write does not look like the socket closed. */
     private const val PROJECTION_HEARTBEAT_MS = 1_000L
-    private const val PROJECTION_RECORD_FAILURES = 10
+    /** No successful PROJECTION_UP write for this long ends the Android Auto session. */
+    private const val PROJECTION_FAIL_TIMEOUT_MS = 10_000L
 
     /**
      * The Wi-Fi group often finishes about a second after the first snapshot. The start waits

@@ -1202,6 +1202,17 @@ class AapService : Service() {
         }
         com.andrerinas.openheadunit.connection.bluetooth.xyauto.XyAutoMediaSession.open(this, this)
         observeConnectionState()
+        // Broker PROJECTION_UP must keep landing; 10s without a recorded write ends the session.
+        NativeBTBrokerSession.onProjectionRecordFailed = {
+            AppLog.w("AapService: PROJECTION_UP not recorded for 10s — ending projection")
+            if (commManager.isConnected) {
+                commManager.disconnect(
+                    sendByeBye = true,
+                    isUserExit = false,
+                    honorKillOnDisconnect = false,
+                )
+            }
+        }
         registerReceivers()
         carKeysManager.registerIdleReceivers(this)
 
@@ -3140,6 +3151,7 @@ class AapService : Service() {
         commManager.onAaMediaMetadata = null
         commManager.onAaPlaybackStatus = null
         commManager.onAaPresentationClosed = null
+        NativeBTBrokerSession.onProjectionRecordFailed = null
         settingsPrefs?.unregisterOnSharedPreferenceChangeListener(settingsPreferenceListener)
         settingsPrefs?.unregisterOnSharedPreferenceChangeListener(deviceHackPreferenceListener)
         settingsPrefs = null

@@ -1520,6 +1520,8 @@
     <string name="copy_to_clipboard">Copy</string>
     <string name="copied_to_clipboard">Copied to clipboard</string>
     <string name="audio_settings_reconnect">Audio settings saved. Reconnect Android Auto to apply them.</string>
+
+    <!-- Native BT Broker -->
     <string name="broker_settings_title">Native BT Broker</string>
     <string name="broker_settings_summary">Pair the Bluetooth relay and send this display</string>
     <string name="broker_saved_device">Saved broker</string>
@@ -1538,8 +1540,6 @@
     <string name="broker_phase_pairing">Search for OpenHU-NativeBTBroker on the phone</string>
     <string name="broker_pair">Pair phone</string>
     <string name="broker_pair_value">Clear phone bonds on the broker and open discovery for 120 seconds, PIN 0000</string>
-    <string name="broker_disconnect">Disconnect</string>
-    <string name="broker_disconnect_value">Close the link and keep the saved broker</string>
     <string name="broker_phase_failed">Failed: %1$s</string>
 
     <!-- Home screen -->

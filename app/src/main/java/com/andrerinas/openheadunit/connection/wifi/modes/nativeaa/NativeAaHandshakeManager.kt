@@ -33,6 +33,7 @@ import com.andrerinas.openheadunit.utils.BluetoothHelper
 import com.andrerinas.openheadunit.utils.bluetooth.BluetoothPeerDiscovery
 import com.andrerinas.openheadunit.aap.protocol.proto.Wireless
 import com.andrerinas.openheadunit.connection.broker.NativeBTBrokerSession
+import com.andrerinas.openheadunit.connection.broker.NativeBTBrokerStore
 import com.andrerinas.openheadunit.connection.broker.NativeBTBrokerCarrier
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.blink.BlinkAaCarrier
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.blink.BlinkAutoSerialChannel
@@ -194,7 +195,7 @@ class NativeAaHandshakeManager(
 
         fun checkCompatibility(context: Context): Boolean {
             if (NativeBTBrokerSession.hasSavedBroker(context)) {
-                AppLog.i("NativeAA: Bluetooth runs over the Native BT Broker, so the RFCOMM compatibility check does not apply.")
+                AppLog.i("NativeAA: Bluetooth runs over the Bluetooth relay, so the RFCOMM compatibility check does not apply.")
                 return true
             }
             val discovery = ZbtDiscovery.snapshot()
@@ -974,7 +975,7 @@ class NativeAaHandshakeManager(
         // Leave isRunning false, like the "adapter disabled" case below: isActive() callers must
         // see this as genuinely stopped. Nothing here is retryable, but a listener that was never
         // opened must not be reported as up.
-        // A saved Native BT Broker wins like BLINK: the ESP32 owns Classic RFCOMM and BLE relays bytes.
+        // A saved Bluetooth relay wins like BLINK: the ESP32 owns Classic RFCOMM and BLE relays bytes.
         if (NativeBTBrokerSession.hasSavedBroker(context)) {
             startOverBrokerModule()
             return
@@ -2986,10 +2987,10 @@ class NativeAaHandshakeManager(
         isRunning = true
         notStartedReason = null
         aaListenersClosedForSession = false
-        localRadioName = "Native BT Broker"
+        localRadioName = "Bluetooth relay"
         AppLog.i(
-            "NativeAA: Native BT Broker transport is on — the handshake goes over Classic RFCOMM on the " +
-                "ESP32, relayed to this unit by BLE GATT write/indicate (BLINK-style)."
+            "NativeAA: Bluetooth relay transport is on — the handshake goes over Classic RFCOMM on the " +
+                "original ESP32, relayed to this unit by BLE GATT write/indicate (BLINK-style)."
         )
         val carrier = NativeBTBrokerCarrier(
             serve = { link ->
@@ -3002,6 +3003,7 @@ class NativeAaHandshakeManager(
             onPhoneEvidence = { resetHandshakeBackoff() },
             ensureLink = {
                 // Keep-alive only — must not re-arm HFP every poll tick.
+                // offerLiveGroup is throttled; armRelay alone keeps BLE without P2P thrash.
                 NativeBTBrokerSession.armRelay(context)
                 NativeBTBrokerSession.offerLiveGroup(context, force = false)
             },
@@ -3010,6 +3012,7 @@ class NativeAaHandshakeManager(
         )
         NativeBTBrokerSession.setFrameSink { frame -> carrier.onFrame(frame) }
         NativeBTBrokerSession.setTransportErrorHandler { reason -> carrier.onTransportError(reason) }
+        NativeBTBrokerSession.onGiveUp = { endAndroidAutoIfBrokerSetting("link stayed down") }
         moduleCarrier = carrier
         // Always HFP_ON + AA_ENABLE for a Wi-Fi AA bring-up, even if BLE is already READY
         // after a cancel (armRelay is a no-op then and would leave HFP off).
@@ -3025,7 +3028,26 @@ class NativeAaHandshakeManager(
             } finally {
                 NativeBTBrokerSession.setFrameSink(null)
                 NativeBTBrokerSession.setTransportErrorHandler(null)
+                NativeBTBrokerSession.onGiveUp = null
             }
+        }
+    }
+
+    /** Ends the Android Auto session when the BT Broker setting asks for it. */
+    private fun endAndroidAutoIfBrokerSetting(reason: String) {
+        if (!NativeBTBrokerStore(context).endAaOnDisconnect) return
+        if (!commManager.isConnected &&
+            commManager.connectionState.value !is CommManager.ConnectionState.Connecting
+        ) {
+            return
+        }
+        AppLog.w("NativeAA: [Broker] $reason — ending Android Auto (endAaOnDisconnect)")
+        scope.launch(Dispatchers.Main.immediate) {
+            commManager.disconnect(
+                sendByeBye = true,
+                isUserExit = false,
+                honorKillOnDisconnect = false,
+            )
         }
     }
 
@@ -4294,6 +4316,8 @@ class NativeAaHandshakeManager(
             NativeBTBrokerSession.releaseHfp("native AA stop")
         }
         NativeBTBrokerSession.setFrameSink(null)
+        NativeBTBrokerSession.setTransportErrorHandler(null)
+        NativeBTBrokerSession.onGiveUp = null
         wppTcpServer?.stop()
         wppTcpServer = null
         try { aaServerSocket?.close() } catch (e: Exception) {}

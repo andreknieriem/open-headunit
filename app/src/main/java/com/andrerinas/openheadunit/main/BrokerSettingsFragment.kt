@@ -25,7 +25,7 @@ import com.andrerinas.openheadunit.main.settings.SettingsAdapter
 import com.google.android.material.appbar.MaterialToolbar
 
 /**
- * Chooses the Native BT Broker and pairs a phone through it.
+ * Chooses the Bluetooth relay and pairs a phone through it.
  */
 class BrokerSettingsFragment : Fragment() {
     private lateinit var store: NativeBTBrokerStore
@@ -45,6 +45,10 @@ class BrokerSettingsFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        if (!NativeBTBrokerSession.isSupported()) {
+            leave()
+            return
+        }
         store = NativeBTBrokerStore(requireContext())
         scanner = NativeBTBrokerClient(requireContext())
         val recycler = view.findViewById<RecyclerView>(R.id.recycler_view)
@@ -72,43 +76,80 @@ class BrokerSettingsFragment : Fragment() {
 
     private fun rows(): List<SettingItem> {
         val items = mutableListOf<SettingItem>()
+        val enabled = store.enabled
         val saved = store.deviceName ?: store.deviceAddress
         val brokerSaved = store.deviceAddress != null
 
+        items.add(SettingItem.ToggleSettingEntry(
+            stableId = "brokerEnabled",
+            nameResId = R.string.broker_enabled,
+            descriptionResId = R.string.broker_enabled_description,
+            isChecked = enabled,
+            onCheckedChanged = { checked ->
+                store.enabled = checked
+                if (!checked) {
+                    scanner.stopScan()
+                    scanning = false
+                    found.clear()
+                    NativeBTBrokerSession.close()
+                }
+                NativeBTBrokerSession.syncWatchdog(requireContext())
+                refresh()
+            },
+        ))
         items.add(SettingItem.SettingEntry(
             stableId = "brokerSaved",
             nameResId = R.string.broker_saved_device,
             value = saved ?: getString(R.string.broker_none),
+            isEnabled = enabled,
             onClick = { _ -> },
         ))
         items.add(SettingItem.SettingEntry(
             stableId = "brokerStatus",
             nameResId = R.string.broker_status,
-            value = statusText(),
+            value = if (enabled) statusText() else getString(R.string.broker_phase_idle),
+            isEnabled = enabled,
             onClick = { _ -> },
         ))
         items.add(SettingItem.SettingEntry(
             stableId = "brokerScan",
             nameResId = R.string.broker_scan,
             value = if (scanning) getString(R.string.broker_scanning) else getString(R.string.broker_scan_action),
+            isEnabled = enabled,
             onClick = { requestScan() },
         ))
-        found.forEach { (address, name) ->
-            items.add(SettingItem.SettingEntry(
-                stableId = "broker-$address",
-                nameResId = R.string.broker_found_device,
-                nameOverride = name,
-                value = address,
-                onClick = { select(address, name) },
-            ))
+        if (enabled) {
+            found.forEach { (address, name) ->
+                items.add(SettingItem.SettingEntry(
+                    stableId = "broker-$address",
+                    nameResId = R.string.broker_found_device,
+                    nameOverride = name,
+                    value = address,
+                    onClick = { select(address, name) },
+                ))
+            }
         }
+        items.add(SettingItem.CategoryHeader("brokerPairing", R.string.broker_pairing_header))
+        items.add(SettingItem.InfoBanner("brokerPairingSteps", R.string.broker_pairing_steps))
         items.add(SettingItem.SettingEntry(
             stableId = "brokerPair",
             nameResId = R.string.broker_pair,
             value = getString(R.string.broker_pair_value),
-            isEnabled = brokerSaved,
+            isEnabled = enabled && brokerSaved,
             onClick = {
                 NativeBTBrokerSession.openPairing(requireContext())
+                refresh()
+            },
+        ))
+        items.add(SettingItem.ToggleSettingEntry(
+            stableId = "brokerEndAaOnDisconnect",
+            nameResId = R.string.broker_end_aa_on_disconnect,
+            descriptionResId = R.string.broker_end_aa_on_disconnect_description,
+            isChecked = store.endAaOnDisconnect,
+            isEnabled = enabled,
+            onCheckedChanged = { checked ->
+                store.endAaOnDisconnect = checked
+                NativeBTBrokerSession.syncWatchdog(requireContext())
                 refresh()
             },
         ))
@@ -116,7 +157,7 @@ class BrokerSettingsFragment : Fragment() {
             stableId = "brokerForget",
             nameResId = R.string.broker_forget,
             value = getString(R.string.broker_forget_value),
-            isEnabled = brokerSaved,
+            isEnabled = enabled && brokerSaved,
             onClick = {
                 store.clear()
                 NativeBTBrokerSession.close()
@@ -140,6 +181,7 @@ class BrokerSettingsFragment : Fragment() {
     }
 
     private fun requestScan() {
+        if (!store.enabled) return
         val needed = mutableListOf<String>()
         if (Build.VERSION.SDK_INT >= 31) {
             if (!granted(Manifest.permission.BLUETOOTH_SCAN)) needed += Manifest.permission.BLUETOOTH_SCAN
@@ -150,13 +192,14 @@ class BrokerSettingsFragment : Fragment() {
     }
 
     private fun startScan() {
+        if (!store.enabled) return
         scanning = true
         found.clear()
         refresh()
         scanner.scan(
             onDevice = { device, name ->
                 val label = name?.trim().orEmpty()
-                if (!label.startsWith(NativeBTBrokerProtocol.BLE_NAME_PREFIX)) return@scan
+                if (!NativeBTBrokerProtocol.isBrokerBleName(label)) return@scan
                 found[device.address] = label
                 refresh()
             },
@@ -168,11 +211,16 @@ class BrokerSettingsFragment : Fragment() {
     }
 
     private fun select(address: String, name: String) {
+        if (!store.enabled) return
         store.deviceAddress = address
         store.deviceName = name
         scanner.stopScan()
         scanning = false
         WifiDirectDisplayInfo.read(requireContext()) { info ->
+            if (!store.enabled) {
+                refresh()
+                return@read
+            }
             if (info.isComplete) {
                 NativeBTBrokerSession.offer(requireContext(), info)
             } else {

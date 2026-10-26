@@ -96,6 +96,22 @@ class NativeBTBrokerClient(context: Context) {
         writeNext(link)
     }
 
+    /** Stay-alive probe: CMD_GET_STATUS write success means the BLE link still accepts commands. */
+    fun ping(onRecorded: ((Boolean) -> Unit)? = null) {
+        val link = gatt
+        if (link == null) {
+            if (onRecorded != null) main.post { onRecorded(false) }
+            return
+        }
+        queueFrame(
+            NativeBTBrokerProtocol.CMD_GET_STATUS,
+            NativeBTBrokerProtocol.CH_CONTROL,
+            ByteArray(0),
+            onRecorded = onRecorded,
+        )
+        writeNext(link)
+    }
+
     @SuppressLint("MissingPermission")
     fun scan(onDevice: (BluetoothDevice, String?) -> Unit, onFinished: () -> Unit) {
         stopScan()
@@ -167,13 +183,7 @@ class NativeBTBrokerClient(context: Context) {
     fun allowPhonePairing(address: String, onResult: (Result<Unit>) -> Unit) {
         prepare(
             address,
-            NativeBTBrokerProtocol.DisplayInfo(
-                ipAddress = "",
-                port = NativeBTBrokerProtocol.PROJECTION_PORT,
-                ssid = "",
-                key = "",
-                bssid = "",
-            ),
+            NativeBTBrokerProtocol.emptyDisplayInfo(),
             restartProjection = false,
             bondMode = NativeBTBrokerProtocol.BOND_MODE_NEW_PHONE,
             onResult = onResult,

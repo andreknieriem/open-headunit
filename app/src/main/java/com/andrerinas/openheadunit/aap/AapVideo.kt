@@ -23,6 +23,15 @@ internal class AapVideo(private val videoDecoder: VideoDecoder, private val sett
         private const val ANOMALY_REPORT_INTERVAL_MS = 5000L
     }
 
+    /** Set from ServiceDiscovery's wire value, never from a mutable preference or decoder state. */
+    @Volatile
+    var announcedCodec: VideoDecoder.CodecType? = null
+        private set
+
+    fun recordAnnouncedCodec(codec: VideoDecoder.CodecType) {
+        announcedCodec = codec
+    }
+
     /**
      * Reassembly buffer for fragmented frames. Grows on demand.
      *
@@ -73,26 +82,22 @@ internal class AapVideo(private val videoDecoder: VideoDecoder, private val sett
      * gates, and the phone rebuilds the stream in response.
      */
     /**
-     * The reader's framing audit found a run short of the bytes its first fragment declared.
+     * The reader's framing audit or the transport's backlog shedding found missing video bytes.
      *
-     * This is the one corruption mode nothing downstream of the reader can see. A middle fragment
-     * that never arrives leaves [VideoFragmentAssembler] looking at a first, some middles and a last
-     * in order, so the frame is assembled with a hole and decoded as though it were whole - no
-     * anomaly, no ask, and a picture that drifts until the phone's own keyframe cadence comes round.
-     * [FragmentedMessageAudit] is the only thing that notices, and until now all it did was log.
+     * A missing middle fragment leaves [VideoFragmentAssembler] seeing otherwise valid ordering.
+     * The reader reports that hole immediately before LAST, whereas backlog shedding can report
+     * it before more surviving MIDDLE fragments. Keep the discard verdict on the current run
+     * until LAST, or until a new FIRST/whole message replaces it.
      *
-     * Runs on the poll thread, which is the thread [process] and every other keyframe request
-     * already run on, so it shares their throttle and their ordering without any locking of its own.
+     * Both notifications are posted to the video worker in fragment order, so this shares
+     * [process]'s state and keyframe-request throttle without additional locking.
      */
     fun onFragmentRunHoled(discardAssembledUnit: Boolean) {
-        // One-shot, consumed by the very next process() call: the audit raises the finding on the
-        // run's last fragment, and that same message is the next thing this class sees. Any other
-        // action arriving instead means the run did not complete normally and the verdict is moot.
-        if (discardAssembledUnit) discardNextAssembly = true
+        if (discardAssembledUnit) discardCurrentAssembly = true
         requestKeyframe("fragment run lost bytes")
     }
 
-    private var discardNextAssembly = false
+    private var discardCurrentAssembly = false
 
     private fun requestKeyframe(reason: String) {
         // Above the throttle, on purpose: the throttle paces messages on the wire, and the
@@ -133,15 +138,16 @@ internal class AapVideo(private val videoDecoder: VideoDecoder, private val sett
             }
             VideoFragmentAssembler.Anomaly.HEADLESS_FIRST_FRAGMENT -> {
                 AppLog.w(
-                    "AapVideo: First fragment has no start code at offset 10 or 2 (len=%d, first bytes %s). " +
+                    "AapVideo: First fragment has no start code at its type's payload offset (type=%d, len=%d, first bytes %s). " +
                         "Discarding the frame instead of assembling it headless.",
-                    message.size, firstBytesOf(message)
+                    message.type, message.size, firstBytesOf(message)
                 )
                 messageBuffer.clear()
                 requestKeyframe("first fragment has no start code")
             }
             VideoFragmentAssembler.Anomaly.OVERFLOW -> {
                 // Message logged at the overflow site, which knows which flag and how far in.
+                discardCurrentAssembly = false
                 messageBuffer.clear()
                 requestKeyframe("frame exceeded the reassembly buffer")
             }
@@ -245,12 +251,15 @@ internal class AapVideo(private val videoDecoder: VideoDecoder, private val sett
         val len = message.size
         return VideoFragmentAssembler.isPayload(
             flags = message.flags.toInt(),
+            type = message.type,
             payloadStartsAt10 = payloadStartsAt(buf, VideoFragmentAssembler.OFFSET_TIMESTAMP_INDICATION, len),
             payloadStartsAt2 = payloadStartsAt(buf, VideoFragmentAssembler.OFFSET_MEDIA_INDICATION, len)
         )
     }
 
     fun process(message: AapMessage): Boolean {
+        // Media must follow ServiceDiscovery. Do not guess a codec for premature/stale packets.
+        val announcedCodec = announcedCodec ?: return isPayload(message)
         val buf = message.data
         val len = message.size
         val flags = message.flags.toInt()
@@ -264,9 +273,13 @@ internal class AapVideo(private val videoDecoder: VideoDecoder, private val sett
             if (fault == VideoFaultInjector.Effect.DROP) return true
         }
         val hideStartCode = fault == VideoFaultInjector.Effect.HIDE_START_CODE
+        if (flags == VideoFragmentAssembler.FLAG_FIRST || flags == VideoFragmentAssembler.FLAG_SINGLE) {
+            discardCurrentAssembly = false
+        }
 
         val decision = assembler.onMessage(
             flags = flags,
+            type = message.type,
             payloadStartsAt10 = !hideStartCode &&
                 payloadStartsAt(buf, VideoFragmentAssembler.OFFSET_TIMESTAMP_INDICATION, len),
             payloadStartsAt2 = !hideStartCode &&
@@ -276,15 +289,10 @@ internal class AapVideo(private val videoDecoder: VideoDecoder, private val sett
         decision.anomaly?.let { handleAnomaly(it, message) }
         reportAnomalies()
 
-        // Consumed whatever the action turns out to be, so a verdict against a run that never
-        // completes cannot linger and eat the following healthy frame.
-        val discardCompletedAssembly = discardNextAssembly
-        discardNextAssembly = false
-
         return when (val action = decision.action) {
             is VideoFragmentAssembler.Action.DecodeWhole -> {
                 messageBuffer.clear()
-                videoDecoder.decode(buf, action.payloadOffset, len - action.payloadOffset, settings.forceSoftwareDecoding, settings.videoCodec)
+                videoDecoder.decode(buf, action.payloadOffset, len - action.payloadOffset, settings.forceSoftwareDecoding, announcedCodec)
                 true
             }
 
@@ -320,6 +328,8 @@ internal class AapVideo(private val videoDecoder: VideoDecoder, private val sett
             }
 
             VideoFragmentAssembler.Action.AppendAndDecode -> {
+                val discardCompletedAssembly = discardCurrentAssembly
+                discardCurrentAssembly = false
                 if (!ensureCapacity(len)) {
                     AppLog.e(
                         "AapVideo: Final fragment overflow (Flag 10)! Frame exceeds the " +
@@ -333,12 +343,10 @@ internal class AapVideo(private val videoDecoder: VideoDecoder, private val sett
                 val assembledSize = messageBuffer.limit()
 
                 if (discardCompletedAssembly) {
-                    // The framing audit found this run short by at least a whole fragment. Decoding
-                    // the unit anyway is what used to smear the picture with no anomaly and no
-                    // second reporter; the concealment window the audit's ask opened is already
-                    // holding the screen, so the gap this leaves is invisible.
+                    // The reader audit or worker backlog shedding found missing bytes in this run.
+                    // Recovery has already opened the concealment window; never decode the hole.
                     AppLog.w(
-                        "AapVideo: discarding a %d-byte access unit the framing audit found short",
+                        "AapVideo: discarding a %d-byte access unit with missing fragments",
                         assembledSize
                     )
                     messageBuffer.clear()
@@ -350,9 +358,9 @@ internal class AapVideo(private val videoDecoder: VideoDecoder, private val sett
                         legacyAssembledBuffer = ByteArray(assembledSize + 1024)
                     }
                     messageBuffer.get(legacyAssembledBuffer!!, 0, assembledSize)
-                    videoDecoder.decode(legacyAssembledBuffer!!, 0, assembledSize, settings.forceSoftwareDecoding, settings.videoCodec)
+                    videoDecoder.decode(legacyAssembledBuffer!!, 0, assembledSize, settings.forceSoftwareDecoding, announcedCodec)
                 } else {
-                    videoDecoder.decode(messageBuffer.array(), 0, assembledSize, settings.forceSoftwareDecoding, settings.videoCodec)
+                    videoDecoder.decode(messageBuffer.array(), 0, assembledSize, settings.forceSoftwareDecoding, announcedCodec)
                 }
 
                 messageBuffer.clear()
@@ -360,6 +368,7 @@ internal class AapVideo(private val videoDecoder: VideoDecoder, private val sett
             }
 
             is VideoFragmentAssembler.Action.Discard -> {
+                if (!assembler.isAssembling || assembler.isFrameCorrupt) discardCurrentAssembly = false
                 if (flags == VideoFragmentAssembler.FLAG_SINGLE) {
                     // A complete frame we cannot find the start of. Deliberately not an anomaly:
                     // the small ones seen in the wild (len=4, len=6 at session start) are control
@@ -376,7 +385,8 @@ internal class AapVideo(private val videoDecoder: VideoDecoder, private val sett
         // Decoding is synchronous here, so there is nothing to drain - but the fragment run has to
         // be closed, or a session that ends mid-frame leaves the next one's first fragments looking
         // like a truncation.
-        discardNextAssembly = false
+        announcedCodec = null
+        discardCurrentAssembly = false
         assembler.reset()
         lastAnomalyReportMs = 0L
     }

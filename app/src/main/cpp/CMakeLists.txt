@@ -32,13 +32,17 @@ target_link_libraries(usbhelper
 )
 
 # =========================================================================
-# Target 2: hur_soft_hevc (FFmpeg HEVC Software Decoder Support)
+# Target 2: hur_soft_video (FFmpeg H.264/H.265 Software Decoder Support)
 # =========================================================================
 
-add_library(hur_soft_hevc SHARED ffmpeg_hevc_decoder.cpp)
+add_library(hur_soft_video SHARED ffmpeg_video_decoder.cpp)
 
-target_compile_features(hur_soft_hevc PRIVATE cxx_std_17)
-target_compile_options(hur_soft_hevc PRIVATE -Wall -Wextra -Werror)
+target_compile_features(hur_soft_video PRIVATE cxx_std_17)
+target_compile_options(hur_soft_video PRIVATE -Wall -Wextra -Werror)
+if(ANDROID_ABI STREQUAL "armeabi-v7a")
+    # FFmpeg dispatches NEON at runtime; the JNI bridge keeps the ARMv7 baseline.
+    target_compile_options(hur_soft_video PRIVATE -mfpu=vfpv3-d16)
+endif()
 
 find_library(log-lib log)
 find_library(android-lib android)
@@ -71,11 +75,11 @@ endforeach()
 message(STATUS "HUR FFmpeg for ${ANDROID_ABI}: ${HUR_FFMPEG_READY} (${FFMPEG_LIB_DIR})")
 
 if(HUR_FFMPEG_READY)
-    target_compile_definitions(hur_soft_hevc PRIVATE HUR_HAVE_FFMPEG=1)
-    target_include_directories(hur_soft_hevc PRIVATE "${FFMPEG_INCLUDE_DIR}")
-    target_link_libraries(hur_soft_hevc PRIVATE ${FFMPEG_LIBS})
+    target_compile_definitions(hur_soft_video PRIVATE HUR_HAVE_FFMPEG=1)
+    target_include_directories(hur_soft_video PRIVATE "${FFMPEG_INCLUDE_DIR}")
+    target_link_libraries(hur_soft_video PRIVATE ${FFMPEG_LIBS})
 else()
-    target_compile_definitions(hur_soft_hevc PRIVATE HUR_HAVE_FFMPEG=0)
+    target_compile_definitions(hur_soft_video PRIVATE HUR_HAVE_FFMPEG=0)
 endif()
 
-target_link_libraries(hur_soft_hevc PRIVATE ${log-lib} ${android-lib})
+target_link_libraries(hur_soft_video PRIVATE ${log-lib} ${android-lib})

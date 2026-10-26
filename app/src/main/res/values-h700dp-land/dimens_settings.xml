@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Large landscape panels in a car: head units at around 160 dpi are read from an arm's
+         length away, so the phone sizes look half as big there. Everything is 1.3 times the
+         values-h700dp sizes, the factor that made the screen comfortable on a 1280x720 unit.
+         Phones never land here: in landscape they are under 460dp tall. -->
+    <dimen name="settings_header_height">94dp</dimen>
+    <dimen name="settings_header_control_height">58dp</dimen>
+    <dimen name="settings_tab_height">58dp</dimen>
+    <dimen name="settings_tab_min_width">166dp</dimen>
+    <dimen name="settings_rail_item_height">68dp</dimen>
+    <dimen name="settings_rail_text_size">20sp</dimen>
+    <dimen name="settings_row_min_height">84dp</dimen>
+    <dimen name="settings_row_padding_vertical">16dp</dimen>
+    <dimen name="settings_row_padding_start">26dp</dimen>
+    <dimen name="settings_group_radius">26dp</dimen>
+    <dimen name="settings_section_spacing">26dp</dimen>
+    <dimen name="settings_section_title_padding_top">20dp</dimen>
+    <dimen name="settings_section_title_padding_bottom">10dp</dimen>
+    <dimen name="settings_scope_notice_min_height">68dp</dimen>
+    <dimen name="settings_row_title_size">21sp</dimen>
+    <dimen name="settings_row_description_size">18sp</dimen>
+    <dimen name="settings_content_padding_start">20dp</dimen>
+    <dimen name="settings_content_padding_end">42dp</dimen>
+    <dimen name="settings_title_text_size">29sp</dimen>
+    <dimen name="settings_icon_button_size">62dp</dimen>
+    <dimen name="settings_icon_button_padding">16dp</dimen>
+    <dimen name="settings_row_icon_size">26dp</dimen>
+    <dimen name="settings_rail_icon_size">28dp</dimen>
+    <dimen name="settings_row_value_size">18sp</dimen>
+    <dimen name="settings_section_title_size">18sp</dimen>
+    <dimen name="settings_control_text_size">18sp</dimen>
+    <dimen name="settings_control_icon_size">24dp</dimen>
+    <dimen name="settings_search_text_size">21sp</dimen>
+    <dimen name="settings_search_icon_size">28dp</dimen>
+    <dimen name="settings_search_clear_size">52dp</dimen>
+    <dimen name="settings_segment_min_height">62dp</dimen>
+    <dimen name="settings_segment_radius">26dp</dimen>
+    <dimen name="settings_switch_track_width">68dp</dimen>
+    <dimen name="settings_switch_track_height">42dp</dimen>
+    <dimen name="settings_switch_thumb_on_size">32dp</dimen>
+    <dimen name="settings_switch_thumb_off_size">20dp</dimen>
+    <dimen name="settings_action_button_height">72dp</dimen>
+    <dimen name="settings_action_button_text_size">20sp</dimen>
+    <dimen name="settings_text_button_min_height">52dp</dimen>
+    <dimen name="settings_scope_notice_radius">20dp</dimen>
+</resources>

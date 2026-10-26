@@ -19,5 +19,5 @@
         android:enabled="true"
         android:textColor="@android:color/white"
         app:cornerRadius="20dp"
-        app:backgroundTint="@color/brand_teal" />
+        app:backgroundTint="@color/brand_primary" />
 </FrameLayout>

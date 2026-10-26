@@ -776,6 +776,12 @@
     <string name="settings_tab_basic">Grundlagen</string>
     <string name="settings_tab_advanced">Erweitert</string>
     <string name="settings_search_hint">Einstellungen suchen</string>
+    <string name="settings_scope_wifi_hidden">USB-Einstellungen werden angezeigt. WiFi-Einstellungen sind ausgeblendet.</string>
+    <string name="settings_scope_usb_hidden">WiFi-Einstellungen werden angezeigt. USB-Einstellungen sind ausgeblendet.</string>
+    <string name="settings_scope_usb_wifi_hidden">Self-Mode-Einstellungen werden angezeigt. USB- und WiFi-Einstellungen sind ausgeblendet.</string>
+    <string name="settings_scope_change">Ändern</string>
+    <string name="settings_search_clear">Suche löschen</string>
+    <string name="settings_search_no_results">Keine Einstellung passt zu „%1$s“.</string>
     <string name="connection_mode">Verbindungsart</string>
     <string name="connection_kind_usb_cable">USB-Kabel (direkt)</string>
     <string name="connection_kind_usb_wireless_adapter">Kabelloser USB-Adapter</string>

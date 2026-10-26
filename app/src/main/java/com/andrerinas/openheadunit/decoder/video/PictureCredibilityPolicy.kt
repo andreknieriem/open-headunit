@@ -28,7 +28,7 @@ object PictureCredibilityPolicy {
      * @param renderedSinceCodecStart whether any frame has reached the surface since this codec
      *   started.
      * @param keyframeAccountingAvailable whether keyframes are tracked at all on this path. The
-     *   bundled software HEVC decoder does not feed [KeyframeRepairTracker], so a rendered frame is
+     *   bundled software video decoder does not feed [KeyframeRepairTracker], so a rendered frame is
      *   the only evidence there is and asking for more would starve it forever.
      * @param keyframeDecodedSinceCodecStart whether a keyframe has produced output.
      * @param msSincePendingKeyframeFed age of the keyframe still waiting at the output, or

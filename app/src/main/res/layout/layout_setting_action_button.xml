@@ -1,25 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- The Save button at the end of the list. Its colors come from the settings palette in code. -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:paddingStart="16dp"
-    android:paddingEnd="16dp"
-    android:paddingTop="8dp"
+    android:paddingTop="12dp"
     android:paddingBottom="16dp">
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/action_button"
-        style="@style/Widget.MaterialComponents.Button"
+        style="@style/Widget.Material3.Button"
         android:layout_width="match_parent"
-        android:layout_height="64dp"
+        android:layout_height="@dimen/settings_action_button_height"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
         android:text="@string/save"
-        android:textAllCaps="true"
-        android:textColor="@android:color/white"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        app:backgroundTint="@color/brand_teal"
-        app:cornerRadius="12dp"
-        app:rippleColor="#33FFFFFF" />
+        android:textSize="@dimen/settings_action_button_text_size" />
 
 </FrameLayout>

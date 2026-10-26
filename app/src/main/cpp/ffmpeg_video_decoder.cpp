@@ -7,7 +7,7 @@
 #include <cstring>
 #include <memory>
 
-#define LOG_TAG "HurSoftHevc"
+#define LOG_TAG "HurSoftVideo"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 
@@ -24,48 +24,57 @@ extern "C" {
 namespace {
 
 #if HUR_HAVE_FFMPEG
-class HevcDecoder {
+// Positive decode results carry a frame count plus this output-side repair indication.
+constexpr int kRenderedKeyframe = 1 << 30;
+// Stable JNI identifiers, independent of FFmpeg's AVCodecID enum values.
+const AVCodec* findDecoder(jint codecId) {
+    switch (codecId) {
+        case 1: return avcodec_find_decoder(AV_CODEC_ID_H264);
+        case 2: return avcodec_find_decoder(AV_CODEC_ID_HEVC);
+        default: return nullptr;
+    }
+}
+
+class FfmpegDecoder {
 public:
-    HevcDecoder(JNIEnv* env, ANativeWindow* outputWindow, jobject yuvCallback, int fallbackWidth, int fallbackHeight, int threadCount)
-        : window(outputWindow), requestedWidth(fallbackWidth), requestedHeight(fallbackHeight), threads(threadCount) {
+    FfmpegDecoder(JNIEnv* env, const AVCodec* decoder, ANativeWindow* outputWindow,
+                  jobject decoderCallback, bool useYuvCallback,
+                  int fallbackWidth, int fallbackHeight, int threadCount)
+        : selectedCodec(decoder), window(outputWindow), requestedWidth(fallbackWidth),
+          requestedHeight(fallbackHeight), threads(threadCount) {
         env->GetJavaVM(&javaVm);
-        if (yuvCallback != nullptr) {
-            callback = env->NewGlobalRef(yuvCallback);
-            jclass callbackClass = env->GetObjectClass(yuvCallback);
+        if (decoderCallback == nullptr) return;
+        callback = env->NewGlobalRef(decoderCallback);
+        if (callback == nullptr) return;
+        jclass callbackClass = env->GetObjectClass(decoderCallback);
+        onOutputSizeMethod = env->GetMethodID(callbackClass, "onNativeOutputSize", "(II)V");
+        if (useYuvCallback && !env->ExceptionCheck()) {
             onYuvFrameMethod = env->GetMethodID(
                 callbackClass,
                 "onNativeYuv420Frame",
                 "(IILjava/nio/ByteBuffer;ILjava/nio/ByteBuffer;ILjava/nio/ByteBuffer;I)Z");
-            env->DeleteLocalRef(callbackClass);
-            if (env->ExceptionCheck() || onYuvFrameMethod == nullptr) {
-                env->ExceptionClear();
-                LOGE("YUV callback method onNativeYuv420Frame not found");
-                env->DeleteGlobalRef(callback);
-                callback = nullptr;
-            }
+        }
+        env->DeleteLocalRef(callbackClass);
+        if (env->ExceptionCheck() || onOutputSizeMethod == nullptr ||
+            (useYuvCallback && onYuvFrameMethod == nullptr)) {
+            env->ExceptionClear();
+            LOGE("Video output callback methods not found");
+            env->DeleteGlobalRef(callback);
+            callback = nullptr;
         }
     }
 
-    ~HevcDecoder() {
+    ~FfmpegDecoder() {
         release(nullptr);
     }
 
     bool start() {
-        if (window == nullptr && callback == nullptr) {
-            LOGE("No output window or YUV callback configured");
+        if (callback == nullptr || (window == nullptr && onYuvFrameMethod == nullptr)) {
+            LOGE("No output target or decoder callback configured");
             return false;
         }
 
-        const AVCodec* decoder = avcodec_find_decoder_by_name("hevc");
-        if (decoder == nullptr) {
-            decoder = avcodec_find_decoder(AV_CODEC_ID_HEVC);
-        }
-        if (decoder == nullptr) {
-            LOGE("FFmpeg HEVC decoder not found");
-            return false;
-        }
-
-        codecContext = avcodec_alloc_context3(decoder);
+        codecContext = avcodec_alloc_context3(selectedCodec);
         if (codecContext == nullptr) {
             LOGE("Failed to allocate AVCodecContext");
             return false;
@@ -74,10 +83,15 @@ public:
         codecContext->thread_count = std::max(1, threads);
         codecContext->thread_type = FF_THREAD_SLICE;
         codecContext->flags2 |= AV_CODEC_FLAG2_FAST;
+        if (selectedCodec->id == AV_CODEC_ID_H264) {
+            // Android Auto can send SPS/PPS separately from the picture. AVC's
+            // chunk mode accepts those packets and completes output at picture end.
+            codecContext->flags2 |= AV_CODEC_FLAG2_CHUNKS;
+        }
         codecContext->lowres = 0;
 
-        if (avcodec_open2(codecContext, decoder, nullptr) < 0) {
-            LOGE("Failed to open FFmpeg HEVC decoder");
+        if (avcodec_open2(codecContext, selectedCodec, nullptr) < 0) {
+            LOGE("Failed to open FFmpeg %s decoder", selectedCodec->name);
             return false;
         }
 
@@ -172,6 +186,7 @@ public:
 private:
     int receiveFrames(JNIEnv* env) {
         int rendered = 0;
+        bool renderedKeyframe = false;
         while (true) {
             const int result = avcodec_receive_frame(codecContext, frame);
             if (result == AVERROR(EAGAIN) || result == AVERROR_EOF) {
@@ -181,14 +196,27 @@ private:
                 LOGE("avcodec_receive_frame failed: %d", result);
                 return -5;
             }
-            if (!renderFrame(env)) {
+            const int width = frame->width > 0 ? frame->width : codecContext->width;
+            const int height = frame->height > 0 ? frame->height : codecContext->height;
+            if (!renderFrame(env, width, height)) {
                 av_frame_unref(frame);
                 return -6;
             }
+            if (width != reportedWidth || height != reportedHeight) {
+                env->CallVoidMethod(callback, onOutputSizeMethod, width, height);
+                if (env->ExceptionCheck()) {
+                    av_frame_unref(frame);
+                    return -6;
+                }
+                reportedWidth = width;
+                reportedHeight = height;
+            }
+            renderedKeyframe |= (frame->flags & AV_FRAME_FLAG_KEY) != 0 &&
+                (frame->flags & AV_FRAME_FLAG_CORRUPT) == 0 && frame->decode_error_flags == 0;
             rendered++;
             av_frame_unref(frame);
         }
-        return rendered;
+        return rendered | (renderedKeyframe ? kRenderedKeyframe : 0);
     }
 
     bool ensureRgbaBuffer(int width, int height) {
@@ -224,11 +252,8 @@ private:
         return true;
     }
 
-    bool renderFrame(JNIEnv* env) {
-        const int width = frame->width > 0 ? frame->width : codecContext->width;
-        const int height = frame->height > 0 ? frame->height : codecContext->height;
-
-        if (callback != nullptr) {
+    bool renderFrame(JNIEnv* env, int width, int height) {
+        if (onYuvFrameMethod != nullptr) {
             logYuvFrameFormat(width, height);
             return renderYuvFrame(env, width, height);
         }
@@ -289,7 +314,11 @@ private:
             std::memcpy(dst + y * dstStride, src + y * srcStride, bytesPerRow);
         }
 
-        ANativeWindow_unlockAndPost(window);
+        const int postResult = ANativeWindow_unlockAndPost(window);
+        if (postResult != 0) {
+            LOGE("ANativeWindow_unlockAndPost failed: %d", postResult);
+            return false;
+        }
         return true;
     }
 
@@ -410,10 +439,14 @@ private:
         return true;
     }
 
+    const AVCodec* selectedCodec;
     ANativeWindow* window = nullptr;
     JavaVM* javaVm = nullptr;
     jobject callback = nullptr;
     jmethodID onYuvFrameMethod = nullptr;
+    jmethodID onOutputSizeMethod = nullptr;
+    int reportedWidth = 0;
+    int reportedHeight = 0;
     AVCodecContext* codecContext = nullptr;
     AVPacket* packet = nullptr;
     AVFrame* frame = nullptr;
@@ -437,20 +470,26 @@ private:
 } // namespace
 
 extern "C" JNIEXPORT jboolean JNICALL
-Java_com_andrerinas_openheadunit_decoder_video_FfmpegHevcDecoder_00024Companion_nativeIsAvailable(
-    JNIEnv*, jobject) {
+Java_com_andrerinas_openheadunit_decoder_video_FfmpegVideoDecoder_00024Companion_nativeIsAvailable(
+    JNIEnv*, jobject, jint codecId) {
 #if HUR_HAVE_FFMPEG
-    return avcodec_find_decoder_by_name("hevc") != nullptr ||
-           avcodec_find_decoder(AV_CODEC_ID_HEVC) != nullptr;
+    return findDecoder(codecId) != nullptr;
 #else
+    (void)codecId;
     return JNI_FALSE;
 #endif
 }
 
 extern "C" JNIEXPORT jlong JNICALL
-Java_com_andrerinas_openheadunit_decoder_video_FfmpegHevcDecoder_00024Companion_nativeCreate(
-    JNIEnv* env, jobject, jobject surface, jobject callback, jboolean useYuvCallback, jint width, jint height, jint threadCount) {
+Java_com_andrerinas_openheadunit_decoder_video_FfmpegVideoDecoder_00024Companion_nativeCreate(
+    JNIEnv* env, jobject, jint codecId, jobject surface, jobject callback, jboolean useYuvCallback,
+    jint width, jint height, jint threadCount) {
 #if HUR_HAVE_FFMPEG
+    const AVCodec* selectedCodec = findDecoder(codecId);
+    if (selectedCodec == nullptr) {
+        LOGE("Unsupported or unavailable FFmpeg codec: %d", codecId);
+        return 0;
+    }
     ANativeWindow* window = nullptr;
     if (surface != nullptr) {
         window = ANativeWindow_fromSurface(env, surface);
@@ -460,10 +499,12 @@ Java_com_andrerinas_openheadunit_decoder_video_FfmpegHevcDecoder_00024Companion_
         return 0;
     }
 
-    auto decoder = std::make_unique<HevcDecoder>(
+    auto decoder = std::make_unique<FfmpegDecoder>(
         env,
+        selectedCodec,
         window,
-        useYuvCallback == JNI_TRUE ? callback : nullptr,
+        callback,
+        useYuvCallback == JNI_TRUE,
         width,
         height,
         threadCount);
@@ -473,6 +514,7 @@ Java_com_andrerinas_openheadunit_decoder_video_FfmpegHevcDecoder_00024Companion_
     return reinterpret_cast<jlong>(decoder.release());
 #else
     (void)env;
+    (void)codecId;
     (void)surface;
     (void)callback;
     (void)useYuvCallback;
@@ -484,10 +526,10 @@ Java_com_andrerinas_openheadunit_decoder_video_FfmpegHevcDecoder_00024Companion_
 }
 
 extern "C" JNIEXPORT jint JNICALL
-Java_com_andrerinas_openheadunit_decoder_video_FfmpegHevcDecoder_00024Companion_nativeDecode(
+Java_com_andrerinas_openheadunit_decoder_video_FfmpegVideoDecoder_00024Companion_nativeDecode(
     JNIEnv* env, jobject, jlong handle, jbyteArray buffer, jint offset, jint size, jlong presentationTimeUs) {
 #if HUR_HAVE_FFMPEG
-    auto* decoder = reinterpret_cast<HevcDecoder*>(handle);
+    auto* decoder = reinterpret_cast<FfmpegDecoder*>(handle);
     if (decoder == nullptr) return -1;
     return decoder->decode(env, buffer, offset, size, presentationTimeUs);
 #else
@@ -502,10 +544,10 @@ Java_com_andrerinas_openheadunit_decoder_video_FfmpegHevcDecoder_00024Companion_
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_andrerinas_openheadunit_decoder_video_FfmpegHevcDecoder_00024Companion_nativeRelease(
+Java_com_andrerinas_openheadunit_decoder_video_FfmpegVideoDecoder_00024Companion_nativeRelease(
     JNIEnv* env, jobject, jlong handle) {
 #if HUR_HAVE_FFMPEG
-    auto* decoder = reinterpret_cast<HevcDecoder*>(handle);
+    auto* decoder = reinterpret_cast<FfmpegDecoder*>(handle);
     if (decoder != nullptr) {
         decoder->release(env);
     }

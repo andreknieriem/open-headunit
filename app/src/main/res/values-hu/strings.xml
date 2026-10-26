@@ -732,6 +732,12 @@
     <string name="settings_tab_basic">Alapvető</string>
     <string name="settings_tab_advanced">Speciális</string>
     <string name="settings_search_hint">Beállítások keresése</string>
+    <string name="settings_scope_wifi_hidden">USB-beállítások láthatók. A WiFi-beállítások rejtve vannak.</string>
+    <string name="settings_scope_usb_hidden">WiFi-beállítások láthatók. Az USB-beállítások rejtve vannak.</string>
+    <string name="settings_scope_usb_wifi_hidden">Az önálló mód beállításai láthatók. Az USB- és WiFi-beállítások rejtve vannak.</string>
+    <string name="settings_scope_change">Módosítás</string>
+    <string name="settings_search_clear">Keresés törlése</string>
+    <string name="settings_search_no_results">Egy beállítás sem felel meg ennek: „%1$s”.</string>
     <string name="connection_mode">Csatlakozási mód</string>
     <string name="connection_kind_usb_cable">USB-kábel (közvetlen)</string>
     <string name="connection_kind_usb_wireless_adapter">USB-s vezeték nélküli adapter</string>

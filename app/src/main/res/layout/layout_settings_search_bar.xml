@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The settings search field: a pill with an icon, the input and a clear button. The pill
+     background is set in code from the settings palette. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/settingsSearchBar"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/settings_header_control_height"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingStart="14dp"
+    android:paddingLeft="14dp"
+    android:paddingEnd="2dp"
+    android:paddingRight="2dp">
+
+    <ImageView
+        android:layout_width="@dimen/settings_search_icon_size"
+        android:layout_height="@dimen/settings_search_icon_size"
+        android:importantForAccessibility="no"
+        app:srcCompat="@drawable/ic_sym_search"
+        app:tint="?attr/settingsOnSurfaceVariant"
+        tools:ignore="ContentDescription" />
+
+    <EditText
+        android:id="@+id/settingsSearch"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_marginStart="10dp"
+        android:layout_marginLeft="10dp"
+        android:layout_weight="1"
+        android:background="@null"
+        android:hint="@string/settings_search_hint"
+        android:imeOptions="actionSearch|flagNoExtractUi"
+        android:importantForAutofill="no"
+        android:inputType="text"
+        android:maxLines="1"
+        android:textColor="?attr/settingsOnSurface"
+        android:textColorHint="?attr/settingsOnSurfaceVariant"
+        android:textSize="@dimen/settings_search_text_size"
+        tools:targetApi="o" />
+
+    <ImageButton
+        android:id="@+id/settingsSearchClear"
+        android:layout_width="@dimen/settings_search_clear_size"
+        android:layout_height="@dimen/settings_search_clear_size"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/settings_search_clear"
+        android:scaleType="center"
+        android:visibility="gone"
+        app:srcCompat="@drawable/ic_sym_close"
+        app:tint="?attr/settingsOnSurfaceVariant" />
+
+</LinearLayout>

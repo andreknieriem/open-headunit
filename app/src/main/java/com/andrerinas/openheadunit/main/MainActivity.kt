@@ -1294,6 +1294,7 @@ class MainActivity : BaseActivity() {
         val root = findViewById<View>(R.id.root)
         val appSettings = Settings(this)
         SystemUI.apply(window, root, appSettings.fullscreenMode)
+        SystemUI.keepLegacyBarsHidden(window, appSettings.fullscreenMode)
     }
 
     override fun onResume() {

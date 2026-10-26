@@ -7,6 +7,7 @@ import com.andrerinas.openheadunit.aap.protocol.messages.VideoFocusEvent
 import com.andrerinas.openheadunit.aap.protocol.proto.Media
 import com.andrerinas.openheadunit.decoder.audio.MicRecorder
 import com.andrerinas.openheadunit.decoder.video.FocusCycleLever
+import com.andrerinas.openheadunit.decoder.video.VideoDecoder
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.Settings
 import org.junit.Assert.*
@@ -115,7 +116,12 @@ class VideoFocusStartupTest {
         }
         try {
             val f = Fixture()
-            f.set("settings", mock(Settings::class.java))
+            val settings = mock(Settings::class.java)
+            `when`(settings.softwareVideoDecoder).thenReturn(Settings.SoftwareVideoDecoder.DEVICE_MEDIACODEC)
+            f.set("settings", settings)
+            val video = mock(AapVideo::class.java)
+            `when`(video.announcedCodec).thenReturn(VideoDecoder.CodecType.H264)
+            f.set("aapVideo", video)
             f.set("focusCycleLever", FocusCycleLever())
             doNothing().`when`(f.transport).gainVideoFocus()
             val media = AapControlMedia(f.transport, mock(MicRecorder::class.java), mock(AapAudio::class.java))

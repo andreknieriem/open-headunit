@@ -127,6 +127,13 @@ android {
         }
     }
 
+    testOptions {
+        unitTests {
+            // Robolectric needs the merged resources and manifest to resolve the app themes.
+            isIncludeAndroidResources = true
+        }
+    }
+
     signingConfigs {
         getByName("debug") {
             // storeFile = file("../keystore.jkc")
@@ -265,6 +272,8 @@ dependencies {
     testImplementation("org.mockito.kotlin:mockito-kotlin:4.1.0")
     // Inline mocks exercise the final Android transport classes on JDK 21.
     testImplementation("org.mockito:mockito-core:5.14.2")
+    // Runs the parts that need real Android classes (theme attributes, drawables) on the JVM.
+    testImplementation("org.robolectric:robolectric:4.16")
 
     implementation(project(":contract"))
 
@@ -288,6 +297,15 @@ dependencies {
     implementation("dev.rikka.shizuku:api:13.1.5")
     implementation("dev.rikka.shizuku:provider:13.1.5")
     implementation("com.github.topjohnwu.libsu:core:6.0.0")
+}
+
+// Robolectric installs Conscrypt's OpenSSL provider, which needs the desktop JNI library. The app
+// ships the Android build of Conscrypt, so the unit test classpath drops it and keeps Robolectric's
+// openjdk-uber copy, which includes that library.
+configurations.configureEach {
+    if (name.endsWith("UnitTestRuntimeClasspath")) {
+        exclude(group = "org.conscrypt", module = "conscrypt-android")
+    }
 }
 
 kotlin {

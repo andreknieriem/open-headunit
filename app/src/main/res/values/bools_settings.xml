@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Category chips in portrait; the side rail in landscape only once it leaves room for the list (560dp). -->
+    <bool name="settings_show_categories">true</bool>
+    <!-- A search field in the header when it fits; otherwise a search button that opens one. -->
+    <bool name="settings_search_inline">false</bool>
+    <!-- "Save (Reconnect needed)" spelled out when it fits; otherwise "Save" with a sync icon. -->
+    <bool name="settings_save_full_label">false</bool>
+    <!-- The screen title, dropped on narrow landscape panels where the header is one row. -->
+    <bool name="settings_show_title">true</bool>
+    <!-- The check mark on the selected tab, dropped where the tabs are tight. -->
+    <bool name="settings_tab_check_icon">false</bool>
+</resources>

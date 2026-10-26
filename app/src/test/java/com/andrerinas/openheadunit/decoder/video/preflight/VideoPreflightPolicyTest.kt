@@ -231,6 +231,42 @@ class VideoPreflightPolicyTest {
         assertTrue(result.verified)
     }
 
+    @Test
+    fun `forced session HEVC failure is reported without changing software recommendations`() {
+        for (preference in listOf("H.264", "Auto")) {
+            for (softwareAvailable in listOf(false, true)) {
+                val panel = Settings.Resolution._2560x1440
+                val clips = VideoPreflightClips.forPanel(
+                    panelCeiling = panel,
+                    configuredResolution = panel.codec!!,
+                    hardwareHevcSupported = true,
+                    hardwareHevcReliable = true,
+                    storedCodec = preference,
+                    forceSoftware = true,
+                    selectedSoftwareHevcAvailable = softwareAvailable,
+                )
+                val outcomes = clips.map { clip ->
+                    if (clip.codec == h265) fail(clip, VideoPreflightFailure.DECODER_ERROR)
+                    else pass(clip)
+                }
+                val result = VideoPreflightPolicy.recommend(
+                    staticCodec = h264,
+                    staticResolution = panel,
+                    staticViewMode = Settings.ViewMode.TEXTURE,
+                    panelCeiling = panel,
+                    hevcSupported = true,
+                    backends = listOf(VideoPreflightBackendOutcome(Settings.ViewMode.TEXTURE, outcomes)),
+                    allowCodecChange = false,
+                )
+
+                assertTrue("$preference/available=$softwareAvailable", VideoPreflightNote.H265_FAILED in result.notes)
+                assertEquals(h264, result.codec)
+                assertEquals(panel, result.resolution)
+                assertFalse(VideoPreflightNote.RESOLUTION_CAPPED in result.notes)
+            }
+        }
+    }
+
     private fun recommend(
         panel: Settings.Resolution,
         staticResolution: Settings.Resolution,

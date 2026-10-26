@@ -5,7 +5,6 @@
     <color name="divider_color">#1FFFFFFF</color>
     <color name="adaptive_text_color">#FFFFFF</color>
     <color name="text_primary">#f7f7f7</color>
-    <color name="segmented_button_stroke">#CCCCCC</color>
     <color name="splash_background">@color/setting_background_color</color>
     <color name="splash_text_revived">@color/color_projection_blue</color>
     <color name="onb_audio_card">#1B2B28</color>
@@ -13,6 +12,19 @@
     <color name="onb_audio_option_selected">#22332F</color>
     <color name="onb_audio_chip_bg">#1D3A2F</color>
     <color name="onb_audio_chip_text">#A5D6A7</color>
+
+    <color name="md_surface">#111318</color>
+    <color name="md_surface_container">#1D2024</color>
+    <color name="md_surface_container_high">#282A2F</color>
+    <color name="md_surface_container_highest">#33353A</color>
+    <color name="md_on_surface">#E2E2E9</color>
+    <color name="md_on_surface_variant">#C4C6D0</color>
+    <color name="md_outline">#8E9099</color>
+    <color name="md_outline_variant">#44474E</color>
+    <color name="md_primary">#AAC7FF</color>
+    <color name="md_on_primary">#0A305F</color>
+    <color name="md_secondary_container">#3E4759</color>
+    <color name="md_on_secondary_container">#DAE2F9</color>
 
     <!-- Home screen at night: neutral surfaces, the connection color only as an accent. -->
     <color name="home_panel">#141820</color>

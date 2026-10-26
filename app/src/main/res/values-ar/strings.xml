@@ -737,6 +737,12 @@
     <string name="settings_tab_basic">أساسي</string>
     <string name="settings_tab_advanced">متقدم</string>
     <string name="settings_search_hint">البحث في الإعدادات</string>
+    <string name="settings_scope_wifi_hidden">عرض إعدادات USB. إعدادات WiFi مخفية.</string>
+    <string name="settings_scope_usb_hidden">عرض إعدادات WiFi. إعدادات USB مخفية.</string>
+    <string name="settings_scope_usb_wifi_hidden">عرض إعدادات الوضع الذاتي. إعدادات USB وWiFi مخفية.</string>
+    <string name="settings_scope_change">تغيير</string>
+    <string name="settings_search_clear">مسح البحث</string>
+    <string name="settings_search_no_results">لا توجد إعدادات تطابق \"%1$s\".</string>
     <string name="connection_mode">وضع الاتصال</string>
     <string name="connection_kind_usb_cable">كابل USB (مباشر)</string>
     <string name="connection_kind_usb_wireless_adapter">محول USB لاسلكي</string>

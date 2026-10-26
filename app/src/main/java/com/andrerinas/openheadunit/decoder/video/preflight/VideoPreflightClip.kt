@@ -2,6 +2,9 @@ package com.andrerinas.openheadunit.decoder.video.preflight
 
 import androidx.annotation.RawRes
 import com.andrerinas.openheadunit.R
+import com.andrerinas.openheadunit.aap.protocol.messages.VideoCodecNegotiationPolicy
+import com.andrerinas.openheadunit.aap.protocol.proto.Control.Service.MediaSinkService.VideoConfiguration.VideoCodecResolutionType
+import com.andrerinas.openheadunit.aap.protocol.proto.Media.MediaCodecType
 import com.andrerinas.openheadunit.decoder.video.VideoDecoder
 import com.andrerinas.openheadunit.utils.Settings
 
@@ -66,25 +69,45 @@ data class VideoPreflightClip(
 /**
  * Chooses the clips worth playing for a panel.
  *
- * The list grows with the panel, so a 480p unit is not asked to decode 1080p only to be told it
- * cannot display it. H.265 is played when the panel is above Full HD, where Android Auto forces
- * it, or when the unit already stores H.265: an existing setting that produces artifacts is
- * exactly the case this test exists for.
+ * The AVC ladder grows with the panel. HEVC covers both the configured session and the panel's
+ * possible next setting, using the same codec rule as service discovery. A hardware-backed
+ * high-resolution recommendation also tries explicit HEVC, as before. Forced software keeps the
+ * stored preference for that progression; software capability by itself never opts into HEVC.
+ *
+ * A negotiated HEVC stream must be exercised even when the selected software backend cannot
+ * decode it: the resulting failure is useful evidence, not a reason to silently skip the clip.
+ * The HEVC clip is 1080p, so it does not verify 1440p/4K throughput.
  */
 object VideoPreflightClips {
 
     fun forPanel(
         panelCeiling: Settings.Resolution,
-        hevcSupported: Boolean,
+        configuredResolution: VideoCodecResolutionType,
+        hardwareHevcSupported: Boolean,
+        hardwareHevcReliable: Boolean,
         storedCodec: String,
         forceSoftware: Boolean,
+        selectedSoftwareHevcAvailable: Boolean = false,
     ): List<VideoPreflightClip> {
         val clips = mutableListOf(VideoPreflightClip.H264_480P)
         if (panelCeiling.height >= 720) clips += VideoPreflightClip.H264_720P
         if (panelCeiling.height >= 1080) clips += VideoPreflightClip.H264_1080P
-        val wantsH265 = !forceSoftware &&
-            (panelCeiling.height > 1080 || storedCodec.contains("265"))
-        if (hevcSupported && wantsH265) clips += VideoPreflightClip.H265_1080P
+        fun selectsHevc(resolution: VideoCodecResolutionType, preference: String): Boolean =
+            VideoCodecNegotiationPolicy.select(
+                preference = preference,
+                resolution = resolution,
+                forceSoftware = forceSoftware,
+                selectedSoftwareHevcAvailable = selectedSoftwareHevcAvailable,
+                hardwareHevcSupported = hardwareHevcSupported,
+                hardwareHevcReliable = hardwareHevcReliable,
+            ) == MediaCodecType.MEDIA_CODEC_VIDEO_H265
+
+        // Keep testing the panel's potential upgrade, not just the currently selected resolution.
+        val panelPreference =
+            if (!forceSoftware && panelCeiling.height > 1080) "H.265" else storedCodec
+        val wantsH265 = selectsHevc(configuredResolution, storedCodec) ||
+            panelCeiling.codec?.let { selectsHevc(it, panelPreference) } == true
+        if (wantsH265) clips += VideoPreflightClip.H265_1080P
         return clips
     }
 }

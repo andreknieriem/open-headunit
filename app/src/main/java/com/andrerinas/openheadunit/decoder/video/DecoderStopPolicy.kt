@@ -4,11 +4,9 @@ package com.andrerinas.openheadunit.decoder.video
  * Decides whether a [VideoDecoder.stop] call ends the projection session or only tears the decoder
  * down while the phone keeps streaming.
  *
- * The distinction matters because some of the decoder's state describes the *stream* rather than
- * the decoder instance - the pinned codec type above all - and throwing it away while the stream is
- * still running forces a re-detection on whatever mid-stream packet happens to arrive next. That
- * heuristic cannot tell an ordinary H.264 P-slice header (0x41) from an HEVC VPS, so the re-detect
- * can hand an H.264 stream an HEVC decoder.
+ * Some state describes the stream rather than the decoder instance. Surface teardown cannot
+ * renegotiate the codec, so the pinned codec and parameter sets must survive it. Only a new
+ * session can replace the announcement used when the stream has no readable parameter sets.
  *
  * Anything not listed here ends the session, so an unrecognised reason keeps the old behaviour of
  * resetting everything.

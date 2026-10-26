@@ -15,6 +15,7 @@ import com.andrerinas.openheadunit.aap.protocol.proto.Sensors
 import com.andrerinas.openheadunit.decoder.audio.MicRecorder
 import com.andrerinas.openheadunit.decoder.audio.MicrophonePolicy
 import com.andrerinas.openheadunit.decoder.video.VideoDecoder
+import com.andrerinas.openheadunit.decoder.video.VideoDecoderBackendPolicy
 import com.andrerinas.openheadunit.location.LocationHolder
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.utils.AppLog
@@ -144,22 +145,23 @@ internal class AapControlMedia(
 
     private fun maxUnackedFor(channel: Int): Int {
         if (channel == Channel.ID_VID) {
-            val softwareHevc =
-                aapTransport.settings.videoCodec == VideoDecoder.CodecType.H265.settingsValue &&
-                        aapTransport.settings.forceSoftwareDecoding &&
-                        aapTransport.settings.softwareVideoDecoder == Settings.SoftwareVideoDecoder.BUNDLED_FFMPEG
-            if (softwareHevc) {
-                // Keep the phone closer to decoder pace. A large wireless window lets video
-                // backlog turn into visible input lag when 2K HEVC is decoded in software.
-                return if (aapTransport.isWireless) 6 else 8
-            }
-            // Keep the hardware path's wider window: shrinking it limits throughput by the
-            // number of outstanding DATA messages and their ACK round-trip time. Credits count
-            // complete DATA messages, not individual fragments of a keyframe.
-            // The advertised window alone is not a memory bound: a captured peer told to use 12
-            // still drove the backlog to 120. The video queue therefore has its own bound for
-            // peers that exceed the window. The software-HEVC window above remains separate.
-            return if (aapTransport.isWireless) 12 else 16
+            // ServiceDiscovery's announcement, not the stored preference, chooses the decoder.
+            val codec = aapTransport.aapVideo.announcedCodec
+                ?: if (aapTransport.settings.videoCodec == VideoDecoder.CodecType.H265.settingsValue) {
+                    VideoDecoder.CodecType.H265
+                } else {
+                    VideoDecoder.CodecType.H264
+                }
+            val bundled = VideoDecoderBackendPolicy.useBundled(
+                codec,
+                aapTransport.settings.forceSoftwareDecoding,
+                aapTransport.settings.softwareVideoDecoder,
+            )
+            // Software decoding needs a tighter window to prevent input lag. Preserve platform
+            // throughput when bundled decoding is not selected or unavailable for this codec.
+            // Credits count complete DATA messages, not individual keyframe fragments; the
+            // transport queue separately bounds peers that exceed the advertised window.
+            return VideoDecoderBackendPolicy.videoAckWindow(aapTransport.isWireless, bundled)
         }
 
         // Audio still benefits from a wider jitter window, especially on wireless.
@@ -351,7 +353,7 @@ internal class AapControlService(
     private fun serviceDiscoveryRequest(request: Control.ServiceDiscoveryRequest): Int {
         AppLog.i("Service Discovery Request: %s", request.phoneName)
 
-        val msg = ServiceDiscoveryResponse(context, aapAudio.sessionConfig)
+        val msg = ServiceDiscoveryResponse(context, aapAudio.sessionConfig, aapTransport)
         aapTransport.send(msg)
         return 0
     }

@@ -496,8 +496,8 @@ class GlProjectionView(context: Context) : GLSurfaceView(context), IProjectionVi
             }
             for (y in 0 until height) {
                 val rowStart = y * sourceStride
-                duplicate.position(rowStart)
                 duplicate.limit(rowStart + width)
+                duplicate.position(rowStart)
                 dest.put(duplicate)
             }
             dest.position(0)
@@ -633,6 +633,9 @@ class GlProjectionView(context: Context) : GLSurfaceView(context), IProjectionVi
             AppLog.i("GlProjectionView: YUV handles pos=$yuvPositionHandle tex=$yuvTextureHandle mvp=$yuvMVPMatrixHandle st=$yuvSTMatrixHandle y=$yTextureHandle u=$uTextureHandle v=$vTextureHandle")
 
             GLES20.glGenTextures(3, yuvTextureIds, 0)
+            // Storage belongs to these new texture objects, not the previous GL context.
+            uploadedPlaneWidths.fill(0)
+            uploadedPlaneHeights.fill(0)
             for (id in yuvTextureIds) {
                 GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, id)
                 GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR)

@@ -78,8 +78,9 @@ data class VideoPreflightRecommendation(
  * resolution that actually played. A failed backend is only replaced by one that played a clip,
  * so the result is always something the test saw work (or the stored settings when nothing did).
  *
- * With [allowCodecChange] false (forced software decoding) the codec and resolution stay as they
- * are: the hardware H.265 clip was not run, so changing them would not be based on a measurement.
+ * With [allowCodecChange] false (forced software decoding), the static codec and resolution stay
+ * unchanged. HEVC may still be tested to expose a configured-session failure, but that diagnostic
+ * does not authorize changing the software codec or increasing its resolution.
  */
 object VideoPreflightPolicy {
 

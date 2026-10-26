@@ -1,39 +1,73 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- A setting that opens a picker or a sub-screen. A short value sits at the trailing edge
+     (settingValueInline); a long one wraps under the title (settingValue). The adapter picks
+     with SettingsLayoutPolicy.showValueInline and sets the group background. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginBottom="2dp"
-    android:paddingStart="16dp"
-    android:paddingEnd="16dp"
-    android:paddingTop="12dp"
-    android:paddingBottom="12dp"
-    android:background="?android:attr/selectableItemBackground"
     android:clickable="true"
-    android:focusable="true">
+    android:focusable="true"
+    android:gravity="center_vertical"
+    android:minHeight="@dimen/settings_row_min_height"
+    android:orientation="horizontal"
+    android:paddingStart="@dimen/settings_row_padding_start"
+    android:paddingLeft="@dimen/settings_row_padding_start"
+    android:paddingTop="@dimen/settings_row_padding_vertical"
+    android:paddingEnd="12dp"
+    android:paddingRight="12dp"
+    android:paddingBottom="@dimen/settings_row_padding_vertical">
 
-    <TextView
-        android:id="@+id/settingName"
+    <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:textColor="?android:attr/textColorPrimary"
-        android:textSize="16sp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        tools:text="Name der Einstellung" />
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/settingName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="?attr/settingsOnSurface"
+            android:textSize="@dimen/settings_row_title_size"
+            tools:text="Connection mode" />
+
+        <TextView
+            android:id="@+id/settingValue"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:ellipsize="end"
+            android:maxLines="@integer/settings_description_max_lines"
+            android:textColor="?attr/settingsOnSurfaceVariant"
+            android:textSize="@dimen/settings_row_description_size"
+            tools:text="Run the system check to find the best settings for your device." />
+
+    </LinearLayout>
 
     <TextView
-        android:id="@+id/settingValue"
-        android:layout_width="0dp"
+        android:id="@+id/settingValueInline"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:textColor="?android:attr/textColorSecondary"
-        android:textSize="14sp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/settingName"
-        app:layout_constraintEnd_toEndOf="parent"
-        tools:text="Zustand oder Wert" />
+        android:layout_marginStart="16dp"
+        android:layout_marginLeft="16dp"
+        android:ellipsize="end"
+        android:maxWidth="@dimen/settings_inline_value_max_width"
+        android:maxLines="1"
+        android:textColor="?attr/settingsOnSurfaceVariant"
+        android:textSize="@dimen/settings_row_value_size"
+        tools:text="USB" />
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+    <ImageView
+        android:layout_width="@dimen/settings_row_icon_size"
+        android:layout_height="@dimen/settings_row_icon_size"
+        android:layout_marginStart="8dp"
+        android:layout_marginLeft="8dp"
+        android:importantForAccessibility="no"
+        app:srcCompat="@drawable/ic_sym_chevron_right"
+        app:tint="?attr/settingsOnSurfaceVariant"
+        tools:ignore="ContentDescription" />
+
+</LinearLayout>

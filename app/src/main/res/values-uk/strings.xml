@@ -737,6 +737,12 @@
     <string name="settings_tab_basic">Основні</string>
     <string name="settings_tab_advanced">Додатково</string>
     <string name="settings_search_hint">Пошук налаштувань</string>
+    <string name="settings_scope_wifi_hidden">Показано налаштування USB. Налаштування WiFi приховано.</string>
+    <string name="settings_scope_usb_hidden">Показано налаштування WiFi. Налаштування USB приховано.</string>
+    <string name="settings_scope_usb_wifi_hidden">Показано налаштування самостійного режиму. Налаштування USB і WiFi приховано.</string>
+    <string name="settings_scope_change">Змінити</string>
+    <string name="settings_search_clear">Очистити пошук</string>
+    <string name="settings_search_no_results">Немає налаштувань за запитом «%1$s».</string>
     <string name="connection_mode">Режим підключення</string>
     <string name="connection_kind_usb_cable">USB-кабель (напряму)</string>
     <string name="connection_kind_usb_wireless_adapter">USB бездротовий адаптер</string>

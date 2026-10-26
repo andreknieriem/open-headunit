@@ -735,6 +735,12 @@
     <string name="settings_tab_basic">De bază</string>
     <string name="settings_tab_advanced">Avansate</string>
     <string name="settings_search_hint">Caută în setări</string>
+    <string name="settings_scope_wifi_hidden">Se afișează setările USB. Setările WiFi sunt ascunse.</string>
+    <string name="settings_scope_usb_hidden">Se afișează setările WiFi. Setările USB sunt ascunse.</string>
+    <string name="settings_scope_usb_wifi_hidden">Se afișează setările pentru modul local. Setările USB și WiFi sunt ascunse.</string>
+    <string name="settings_scope_change">Schimbă</string>
+    <string name="settings_search_clear">Șterge căutarea</string>
+    <string name="settings_search_no_results">Nicio setare nu corespunde cu „%1$s”.</string>
     <string name="connection_mode">Mod de conectare</string>
     <string name="connection_kind_usb_cable">Cablu USB (direct)</string>
     <string name="connection_kind_usb_wireless_adapter">Adaptor wireless USB</string>

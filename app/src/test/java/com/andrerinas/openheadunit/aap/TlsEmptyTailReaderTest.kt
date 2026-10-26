@@ -19,10 +19,10 @@ class TlsEmptyTailReaderTest {
     private fun exercise(bulk: Boolean) {
         val settings = mock<Settings>()
         whenever(settings.debugVideoFaultInjection).thenReturn(VideoFaultInjector.Mode.OFF)
-        whenever(settings.videoCodec).thenReturn("h264")
         val decoder = mock<VideoDecoder>()
         var corruptions = 0
         val video = AapVideo(decoder, settings) { corruptions++ }
+        video.recordAnnouncedCodec(VideoDecoder.CodecType.H264)
         val decoded = mutableListOf<List<Byte>>()
         doAnswer {
             val data = it.getArgument<ByteArray>(0)

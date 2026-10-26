@@ -1,14 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Section title above a group. Primary color, set in code from the settings palette. -->
 <TextView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/categoryTitle"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:paddingStart="16dp"
-    android:paddingEnd="16dp"
-    android:paddingTop="16dp"
-    android:paddingBottom="8dp"
-    android:textColor="?attr/colorAccent"
-    android:textSize="14sp"
-    android:textStyle="bold"
-    tools:text="KATEGORIE ÜBERSCHRIFT" />
+    android:layout_marginTop="@dimen/settings_section_spacing"
+    android:fontFamily="sans-serif-medium"
+    android:paddingStart="@dimen/settings_row_padding_start"
+    android:paddingLeft="@dimen/settings_row_padding_start"
+    android:paddingTop="@dimen/settings_section_title_padding_top"
+    android:paddingEnd="@dimen/settings_row_padding_start"
+    android:paddingRight="@dimen/settings_row_padding_start"
+    android:paddingBottom="@dimen/settings_section_title_padding_bottom"
+    android:textColor="?attr/settingsPrimary"
+    android:textSize="@dimen/settings_section_title_size"
+    tools:text="General" />

@@ -740,6 +740,12 @@
     <string name="settings_tab_basic">基本</string>
     <string name="settings_tab_advanced">詳細</string>
     <string name="settings_search_hint">設定を検索</string>
+    <string name="settings_scope_wifi_hidden">USB の設定を表示中です。WiFi の設定は非表示です。</string>
+    <string name="settings_scope_usb_hidden">WiFi の設定を表示中です。USB の設定は非表示です。</string>
+    <string name="settings_scope_usb_wifi_hidden">セルフモードの設定を表示中です。USB と WiFi の設定は非表示です。</string>
+    <string name="settings_scope_change">変更</string>
+    <string name="settings_search_clear">検索をクリア</string>
+    <string name="settings_search_no_results">「%1$s」に一致する設定はありません。</string>
     <string name="connection_mode">接続モード</string>
     <string name="connection_kind_usb_cable">USBケーブル (直接)</string>
     <string name="connection_kind_usb_wireless_adapter">USBワイヤレスアダプター</string>

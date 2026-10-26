@@ -3,16 +3,9 @@ package com.andrerinas.openheadunit.decoder.video
 /**
  * Notices when the stream's parameter sets stop being the ones the codec was configured from.
  *
- * `VideoDecoder` reads VPS/SPS/PPS exactly once, while it is deciding how to configure the codec,
- * and then stops looking: the scan is inside `if (codec == null)` and gated on `!codecConfigured`.
- * Every parameter set after the first is discarded unread. Both reference implementations do the
- * opposite - VLC stores them by id, compares the bytes and bumps a config version on a genuine
- * difference; Moonlight resubmits CSD - and neither could tell you whether it matters here, because
- * no log this project has ever collected carries the answer.
- *
- * So this measures it and nothing else. It does not touch the stored CSD, the configured size or the
- * codec: a mid-session reconfiguration is a behaviour change to make once there is evidence one
- * happens, and this is the evidence.
+ * Observes parameter-set changes independently of decoder configuration and recovery caching.
+ * It does not modify stored CSD, dimensions, or the live codec. The platform decoder's output
+ * format remains the authority for a running component's dimensions.
  *
  * ### Why the change is latched
  *

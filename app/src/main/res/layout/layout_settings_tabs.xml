@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Basic / Advanced as a Material 3 segmented button. Colors and the check icon are set in
+     code (SettingsFragment.styleHeader) from the settings palette. -->
+<com.google.android.material.button.MaterialButtonToggleGroup xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/settingsTabGroup"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    app:selectionRequired="true"
+    app:singleSelection="true">
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/tabBasic"
+        style="@style/SettingsTab"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/settings_tab_height"
+        android:layout_weight="1"
+        android:minWidth="@dimen/settings_tab_min_width"
+        android:text="@string/settings_tab_basic" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/tabAdvanced"
+        style="@style/SettingsTab"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/settings_tab_height"
+        android:layout_weight="1"
+        android:minWidth="@dimen/settings_tab_min_width"
+        android:text="@string/settings_tab_advanced" />
+
+</com.google.android.material.button.MaterialButtonToggleGroup>

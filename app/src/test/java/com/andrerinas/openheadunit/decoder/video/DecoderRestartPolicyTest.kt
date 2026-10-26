@@ -7,11 +7,11 @@ import org.junit.Test
 class DecoderRestartPolicyTest {
 
     @Test
-    fun `a session that never rendered counts restarts against the pin`() {
+    fun `a session that never rendered counts failed starts`() {
         // The one case the ladder exists for: a component that cannot decode this type at all.
         assertTrue(
             DecoderRestartPolicy.countsTowardFailure(
-                codecTypePinned = true, renderedSinceLastStart = false, renderedThisSession = false
+                renderedSinceLastStart = false, renderedThisSession = false
             )
         )
     }
@@ -22,7 +22,7 @@ class DecoderRestartPolicyTest {
         // has decoded this stream - warm-up churn is not evidence the codec is broken.
         assertFalse(
             DecoderRestartPolicy.countsTowardFailure(
-                codecTypePinned = true, renderedSinceLastStart = false, renderedThisSession = true
+                renderedSinceLastStart = false, renderedThisSession = true
             )
         )
     }
@@ -31,18 +31,9 @@ class DecoderRestartPolicyTest {
     fun `a restart after a frame from the current start never counts`() {
         assertFalse(
             DecoderRestartPolicy.countsTowardFailure(
-                codecTypePinned = true, renderedSinceLastStart = true, renderedThisSession = true
+                renderedSinceLastStart = true, renderedThisSession = true
             )
         )
     }
 
-    @Test
-    fun `an unpinned session never counts restarts`() {
-        // Before the first successful start there is no codec type to hold anything against.
-        assertFalse(
-            DecoderRestartPolicy.countsTowardFailure(
-                codecTypePinned = false, renderedSinceLastStart = false, renderedThisSession = false
-            )
-        )
-    }
 }

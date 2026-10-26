@@ -9,4 +9,25 @@
         <attr name="metaButtonBarButtonStyle" format="reference" />
     </declare-styleable>
 
+    <!-- The settings screen's Material 3 palette. AppTheme points these at the md_* colors
+         (which have night variants) and ThemeOverlay.ExtremeDark re-points them to pure black.
+         Code resolves them into drawables (SettingsPalette), because a shape drawable cannot
+         read a theme attribute before API 21. -->
+    <attr name="settingsSurface" format="color" />
+    <attr name="settingsContainer" format="color" />
+    <attr name="settingsContainerHigh" format="color" />
+    <attr name="settingsContainerHighest" format="color" />
+    <attr name="settingsOnSurface" format="color" />
+    <attr name="settingsOnSurfaceVariant" format="color" />
+    <attr name="settingsOutline" format="color" />
+    <attr name="settingsOutlineVariant" format="color" />
+    <attr name="settingsPrimary" format="color" />
+    <attr name="settingsOnPrimary" format="color" />
+    <attr name="settingsSecondaryContainer" format="color" />
+    <attr name="settingsOnSecondaryContainer" format="color" />
+    <!-- True where surfaces are all one color, so groups need an outline to be told apart. -->
+    <attr name="settingsOutlinedGroups" format="boolean" />
+    <!-- Filled Material Symbols in day and night; outline-only ones on extreme dark. -->
+    <attr name="settingsFilledIcons" format="boolean" />
+
 </resources>

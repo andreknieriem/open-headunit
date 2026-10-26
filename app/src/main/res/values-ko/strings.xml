@@ -735,6 +735,12 @@
     <string name="settings_tab_basic">기본</string>
     <string name="settings_tab_advanced">고급</string>
     <string name="settings_search_hint">설정 검색</string>
+    <string name="settings_scope_wifi_hidden">USB 설정을 표시하는 중입니다. WiFi 설정은 숨겨져 있습니다.</string>
+    <string name="settings_scope_usb_hidden">WiFi 설정을 표시하는 중입니다. USB 설정은 숨겨져 있습니다.</string>
+    <string name="settings_scope_usb_wifi_hidden">단독 모드 설정을 표시하는 중입니다. USB 및 WiFi 설정은 숨겨져 있습니다.</string>
+    <string name="settings_scope_change">변경</string>
+    <string name="settings_search_clear">검색어 지우기</string>
+    <string name="settings_search_no_results">\"%1$s\"과(와) 일치하는 설정이 없습니다.</string>
     <string name="connection_mode">연결 방식</string>
     <string name="connection_kind_usb_cable">USB 케이블(직접 연결)</string>
     <string name="connection_kind_usb_wireless_adapter">USB 무선 어댑터</string>

@@ -757,11 +757,10 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         val reason = if (collapsed) "$longFramesInWindow slow frames in window" else "no draw for ${now - effectiveDrawn}ms"
 
         val effectiveMode = forcedViewModeOverride ?: settings.viewMode
-        // After a plain rebuild fails to stick, escalate away from a non-SurfaceView backend
-        // (unless the bundled software HEVC decoder is active, which needs the GLES YUV sink).
-        val shouldFallBack = displayStallRecoveries >= 2 &&
-            effectiveMode != Settings.ViewMode.SURFACE &&
-            !videoDecoder.usingBundledSoftwareHevc
+        // Both MediaCodec and FFmpeg can render to a Surface after a consumer stalls.
+        val shouldFallBack = ProjectionWatchdogPolicy.shouldFallBackToSurface(
+            displayStallRecoveries, effectiveMode == Settings.ViewMode.SURFACE
+        )
         ProjectionHealthRecorder.noteRendererRecovery(shouldFallBack)
         if (shouldFallBack) {
             AppLog.w("Display stall ($reason) again on $effectiveMode. Falling back to SurfaceView for this session. See issue #650.")
@@ -2591,7 +2590,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         container.addView(view)
         videoDecoder.softwareYuvFrameSink = projectionView as? SoftwareYuvFrameSink
         if (videoDecoder.softwareYuvFrameSink != null) {
-            AppLog.i("Using GLES YUV sink for bundled software HEVC")
+            AppLog.i("GLES YUV output sink attached")
         }
 
         projectionView.addCallback(this)

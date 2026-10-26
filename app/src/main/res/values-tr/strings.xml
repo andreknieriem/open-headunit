@@ -730,6 +730,12 @@
     <string name="settings_tab_basic">Temel</string>
     <string name="settings_tab_advanced">Gelişmiş</string>
     <string name="settings_search_hint">Ayarlarda ara</string>
+    <string name="settings_scope_wifi_hidden">USB ayarları gösteriliyor. WiFi ayarları gizli.</string>
+    <string name="settings_scope_usb_hidden">WiFi ayarları gösteriliyor. USB ayarları gizli.</string>
+    <string name="settings_scope_usb_wifi_hidden">Dahili Mod ayarları gösteriliyor. USB ve WiFi ayarları gizli.</string>
+    <string name="settings_scope_change">Değiştir</string>
+    <string name="settings_search_clear">Aramayı temizle</string>
+    <string name="settings_search_no_results">\"%1$s\" ile eşleşen ayar yok.</string>
     <string name="connection_mode">Bağlantı modu</string>
     <string name="connection_kind_usb_cable">USB kablosu (doğrudan)</string>
     <string name="connection_kind_usb_wireless_adapter">USB kablosuz adaptör</string>

@@ -73,10 +73,10 @@ class TlsVideoAccountingTest {
                     ByteArrayWithLimit(plaintext.array(), plaintext.position())
                 }
                 val settings = mock<Settings>()
-                whenever(settings.videoCodec).thenReturn("h264")
                 whenever(settings.debugVideoFaultInjection).thenReturn(VideoFaultInjector.Mode.OFF)
                 val decoder = mock<VideoDecoder>()
                 val video = AapVideo(decoder, settings) {}
+                video.recordAnnouncedCodec(VideoDecoder.CodecType.H264)
                 val repairs = mutableListOf<Boolean>()
                 val repair: (Boolean) -> Unit = { discard -> repairs += discard; video.onFragmentRunHoled(discard) }
                 val handler = object : AapMessageHandler {

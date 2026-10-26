@@ -731,6 +731,12 @@
     <string name="settings_tab_basic">基础</string>
     <string name="settings_tab_advanced">高级</string>
     <string name="settings_search_hint">搜索设置</string>
+    <string name="settings_scope_wifi_hidden">正在显示 USB 设置。WiFi 设置已隐藏。</string>
+    <string name="settings_scope_usb_hidden">正在显示 WiFi 设置。USB 设置已隐藏。</string>
+    <string name="settings_scope_usb_wifi_hidden">正在显示独立模式设置。USB 和 WiFi 设置已隐藏。</string>
+    <string name="settings_scope_change">更改</string>
+    <string name="settings_search_clear">清除搜索</string>
+    <string name="settings_search_no_results">没有与“%1$s”匹配的设置。</string>
     <string name="connection_mode">连接方式</string>
     <string name="connection_kind_usb_cable">USB 线缆（直连）</string>
     <string name="connection_kind_usb_wireless_adapter">USB 无线适配器</string>

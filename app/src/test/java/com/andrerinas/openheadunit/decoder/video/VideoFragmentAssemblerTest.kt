@@ -28,15 +28,15 @@ class VideoFragmentAssemblerTest {
 
     /** A message whose payload begins at offset 10. */
     private fun VideoFragmentAssembler.timestampIndication(flags: Int) =
-        onMessage(flags, payloadStartsAt10 = true, payloadStartsAt2 = false)
+        onMessage(flags, type = 0, payloadStartsAt10 = true, payloadStartsAt2 = false)
 
     /** A message whose payload begins at offset 2. */
     private fun VideoFragmentAssembler.mediaIndication(flags: Int) =
-        onMessage(flags, payloadStartsAt10 = false, payloadStartsAt2 = true)
+        onMessage(flags, type = 1, payloadStartsAt10 = false, payloadStartsAt2 = true)
 
     /** A continuation fragment: no start code is expected anywhere in it. */
     private fun VideoFragmentAssembler.continuation(flags: Int) =
-        onMessage(flags, payloadStartsAt10 = false, payloadStartsAt2 = false)
+        onMessage(flags, type = 0, payloadStartsAt10 = false, payloadStartsAt2 = false)
 
     // ---- the happy paths ----
 
@@ -50,11 +50,23 @@ class VideoFragmentAssemblerTest {
     }
 
     @Test
-    fun `the timestamp offset wins when both offsets look like a start code`() {
-        // Offset 2 can hold a false positive because a media indication and a timestamp indication
-        // are the same message with different headers. 10 is checked first, as it always was.
-        val d = VideoFragmentAssembler().onMessage(single, payloadStartsAt10 = true, payloadStartsAt2 = true)
-        assertEquals(Action.DecodeWhole(atTimestamp), d.action)
+    fun `the envelope selects the payload when both offsets have a start code`() {
+        for ((type, offset) in listOf(0 to atTimestamp, 1 to atMedia)) {
+            val d = VideoFragmentAssembler().onMessage(single, type, payloadStartsAt10 = true, payloadStartsAt2 = true)
+            assertEquals(Action.DecodeWhole(offset), d.action)
+        }
+    }
+
+    @Test
+    fun `DATA cannot fall back to a start code in its timestamp`() {
+        val d = VideoFragmentAssembler().onMessage(single, type = 0, payloadStartsAt10 = false, payloadStartsAt2 = true)
+        assertEquals(Action.Discard(consumed = false), d.action)
+    }
+
+    @Test
+    fun `CSD cannot skip a malformed head to a later NAL`() {
+        val d = VideoFragmentAssembler().onMessage(single, type = 1, payloadStartsAt10 = true, payloadStartsAt2 = false)
+        assertEquals(Action.Discard(consumed = false), d.action)
     }
 
     @Test
@@ -185,16 +197,15 @@ class VideoFragmentAssemblerTest {
 
     @Test
     fun `a headless first fragment does not consume the message`() {
-        // Preserved from the original: process() returned false here, which is what decides whether
-        // a media ack goes out and whether the other channel handlers get a look.
+        // The dispatch chain may inspect a rejected payload, but DATA credit is independently
+        // returned by the transport at LAST rather than inferred from this answer.
         val a = VideoFragmentAssembler()
         assertEquals(Action.Discard(consumed = false), a.continuation(first).action)
     }
 
     @Test
     fun `a complete frame with no start code is dropped without asking for a keyframe`() {
-        // Small ones are control traffic on the video channel, not lost picture - len=4 and len=6
-        // arrive at session start on real units. No anomaly, so no keyframe request during setup.
+        // An invalid complete payload has no continuation to invalidate.
         val a = VideoFragmentAssembler()
         val d = a.continuation(single)
         assertEquals(Action.Discard(consumed = false), d.action)
@@ -259,10 +270,21 @@ class VideoFragmentAssemblerTest {
     // ---- flags that are not video payload ----
 
     @Test
+    fun `channel control replaces an open run without decoding its start code lookalikes`() {
+        val a = VideoFragmentAssembler()
+        a.timestampIndication(first)
+        val d = a.onMessage(single, type = 0x8000, payloadStartsAt10 = true, payloadStartsAt2 = true)
+        assertEquals(Action.Discard(consumed = false), d.action)
+        assertEquals(Anomaly.TRUNCATED_PREVIOUS, d.anomaly)
+        assertFalse(a.isAssembling)
+        assertEquals(Action.Discard(consumed = true), a.continuation(last).action)
+    }
+
+    @Test
     fun `an unhandled flag is passed on without touching the run`() {
         val a = VideoFragmentAssembler()
         a.timestampIndication(first)
-        val d = a.onMessage(0, payloadStartsAt10 = false, payloadStartsAt2 = false)
+        val d = a.onMessage(0, type = 0, payloadStartsAt10 = false, payloadStartsAt2 = false)
         assertEquals(Action.Discard(consumed = false), d.action)
         assertNull(d.anomaly)
         assertTrue("an unrelated flag must not close an open run", a.isAssembling)
@@ -277,42 +299,45 @@ class VideoFragmentAssemblerTest {
  */
 class VideoFragmentAssemblerPayloadTest {
 
-    private fun consumes(flags: Int, at10: Boolean, at2: Boolean): Boolean {
-        val decision = VideoFragmentAssembler().onMessage(flags, at10, at2)
+    private fun consumes(flags: Int, type: Int, at10: Boolean, at2: Boolean): Boolean {
+        val decision = VideoFragmentAssembler().onMessage(flags, type, at10, at2)
         val action = decision.action
         return if (action is VideoFragmentAssembler.Action.Discard) action.consumed else true
     }
 
     @Test
     fun `a payload message is one a fresh assembler would consume`() {
-        // A fresh assembler is the read thread's view: it has no run state and neither does the
-        // predicate. Middle and last fragments are excluded because on a fresh assembler they are
-        // orphans, which the predicate deliberately still routes to the video thread.
-        for (flags in intArrayOf(VideoFragmentAssembler.FLAG_SINGLE, VideoFragmentAssembler.FLAG_FIRST)) {
-            for (at10 in booleanArrayOf(true, false)) {
-                for (at2 in booleanArrayOf(true, false)) {
-                    assertEquals(
-                        "flags $flags at10=$at10 at2=$at2",
-                        consumes(flags, at10, at2),
-                        VideoFragmentAssembler.isPayload(flags, at10, at2)
-                    )
+        // Continuations retain FIRST's media type; raw unknown-type fragments never reach this
+        // consumer. Include controls whose bytes happen to resemble Annex B.
+        for (flags in intArrayOf(11, 9, 8, 10, 15, 13, 12, 14, 0)) {
+            for (type in intArrayOf(0, 1, -1, 0x8000)) {
+                for (at10 in booleanArrayOf(true, false)) {
+                    for (at2 in booleanArrayOf(true, false)) {
+                        assertEquals(
+                            "flags=$flags type=$type at10=$at10 at2=$at2",
+                            consumes(flags, type, at10, at2),
+                            VideoFragmentAssembler.isPayload(flags, type, at10, at2)
+                        )
+                    }
                 }
             }
         }
     }
 
     @Test
-    fun `a continuation fragment is always picture`() {
-        assertTrue(VideoFragmentAssembler.isPayload(VideoFragmentAssembler.FLAG_MIDDLE, false, false))
-        assertTrue(VideoFragmentAssembler.isPayload(VideoFragmentAssembler.FLAG_LAST, false, false))
+    fun `a continuation fragment with a retained media type is picture`() {
+        for (type in 0..1) {
+            assertTrue(VideoFragmentAssembler.isPayload(VideoFragmentAssembler.FLAG_MIDDLE, type, false, false))
+            assertTrue(VideoFragmentAssembler.isPayload(VideoFragmentAssembler.FLAG_LAST, type, false, false))
+        }
+        assertFalse(VideoFragmentAssembler.isPayload(VideoFragmentAssembler.FLAG_LAST, -1, true, true))
     }
 
     @Test
     fun `control traffic on the video channel is not picture`() {
-        // A Media Sink Setup arrives here as a single message with no start code. Answering true
-        // would send it to the video thread and never set the sink up.
-        assertFalse(VideoFragmentAssembler.isPayload(VideoFragmentAssembler.FLAG_SINGLE, false, false))
-        assertFalse(VideoFragmentAssembler.isPayload(0, false, false))
-        assertFalse(VideoFragmentAssembler.isPayload(7, true, true))
+        assertFalse(VideoFragmentAssembler.isPayload(VideoFragmentAssembler.FLAG_SINGLE, 0x8000, true, true))
+        assertFalse(VideoFragmentAssembler.isPayload(0, 0, false, false))
+        assertFalse(VideoFragmentAssembler.isPayload(7, 0, true, true))
+        assertFalse(VideoFragmentAssembler.isPayload(15, 0, true, true))
     }
 }

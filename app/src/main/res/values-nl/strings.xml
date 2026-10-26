@@ -733,6 +733,12 @@
     <string name="settings_tab_basic">Basis</string>
     <string name="settings_tab_advanced">Geavanceerd</string>
     <string name="settings_search_hint">Instellingen zoeken</string>
+    <string name="settings_scope_wifi_hidden">USB-instellingen worden getoond. WiFi-instellingen zijn verborgen.</string>
+    <string name="settings_scope_usb_hidden">WiFi-instellingen worden getoond. USB-instellingen zijn verborgen.</string>
+    <string name="settings_scope_usb_wifi_hidden">Self Mode-instellingen worden getoond. USB- en WiFi-instellingen zijn verborgen.</string>
+    <string name="settings_scope_change">Wijzigen</string>
+    <string name="settings_search_clear">Zoekopdracht wissen</string>
+    <string name="settings_search_no_results">Geen instellingen gevonden voor \"%1$s\".</string>
     <string name="connection_mode">Verbindingsmodus</string>
     <string name="connection_kind_usb_cable">USB-kabel (direct)</string>
     <string name="connection_kind_usb_wireless_adapter">Draadloze USB-adapter</string>

@@ -906,6 +906,10 @@ class AapTransport(
         }
     }
 
+    internal fun recordAnnouncedVideoCodec(codec: VideoDecoder.CodecType) {
+        aapVideo.recordAnnouncedCodec(codec)
+    }
+
     /**
      * Hands a video-channel message to the video thread, and answers whether it was picture.
      *
@@ -931,7 +935,8 @@ class AapTransport(
         // while video is queued; its eventual ACK still belongs to this message's original one.
         val ackSession = getSessionId(message.channel)
         val handler = videoHandler
-        if (handler == null) {
+        // Drop pre-discovery packets at receipt, not later after the worker observes a codec.
+        if (handler == null || aapVideo.announcedCodec == null) {
             if (acks) sendMediaAck(message.channel, ackSession)
             return isPayload
         }

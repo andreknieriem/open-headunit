@@ -16,7 +16,9 @@
     <color name="black_overlay">#66000000</color>
 
     <color name="setting_background_color">#F0F0F0</color>
-    <color name="brand_teal">#009688</color>
+    <!-- The app's accent: Material's blue primary, the family of the background gradient.
+         Constant across day and night: it sits under white text on buttons and dialogs. -->
+    <color name="brand_primary">#415F91</color>
     <color name="onb_audio_card">#EEF5F3</color>
     <color name="onb_audio_option">#F6FAF9</color>
     <color name="onb_audio_option_selected">#FFFFFF</color>
@@ -36,9 +38,6 @@
     <color name="color_wifi_purple">#8e44ad</color>
     <color name="color_settings_darkblue">#2c3e50</color>
 
-    <!-- Segmented Button Colors -->
-    <color name="segmented_button_stroke">#808080</color>
-
     <!-- Home Button Icon Tints -->
 
     <!-- Failure banner on the main screen. Amber rather than red: these are conditions the user
@@ -47,6 +46,32 @@
     <color name="warning_banner_stroke">#66F57C00</color>
     <color name="warning_banner_icon">#F57C00</color>
 
+
+    <!-- Material 3 color roles: the blue scheme Material Theme Builder generates (source #415F91).
+         Selections use the secondary container, a muted slate blue, as Material does. The
+         settings screen reads them through the settings* theme attributes (see attrs.xml), so
+         extreme dark can swap them. -->
+    <color name="md_surface">#F9F9FF</color>
+    <color name="md_surface_container">#EDEDF4</color>
+    <color name="md_surface_container_highest">#E2E2E9</color>
+    <color name="md_surface_container_high">#E7E8EE</color>
+    <color name="md_on_surface">#191C20</color>
+    <color name="md_on_surface_variant">#44474E</color>
+    <color name="md_outline">#74777F</color>
+    <color name="md_outline_variant">#C4C6D0</color>
+    <color name="md_primary">#415F91</color>
+    <color name="md_on_primary">#FFFFFF</color>
+    <color name="md_secondary_container">#DAE2F9</color>
+    <color name="md_on_secondary_container">#131C2B</color>
+
+    <!-- Extreme dark: every surface is black and only faint outlines separate groups. -->
+    <color name="md_extreme_container_highest">#0D0D0D</color>
+    <color name="md_extreme_on_surface">#B8B8B8</color>
+    <color name="md_extreme_on_surface_variant">#7A7A7A</color>
+    <color name="md_extreme_outline">#4D4D4D</color>
+    <color name="md_extreme_outline_variant">#1F1F1F</color>
+    <color name="md_extreme_primary">#7C95BA</color>
+    <color name="md_extreme_secondary_container">#14171C</color>
 
     <!-- Home screen: flat panels, so the zones read apart without elevation on old units.
          Day colors here, dark ones in values-night. Extreme dark is a theme rather than a

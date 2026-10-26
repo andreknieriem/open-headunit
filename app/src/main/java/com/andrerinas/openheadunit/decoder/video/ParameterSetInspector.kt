@@ -69,6 +69,58 @@ object ParameterSetInspector {
                 "max_dec_pic_buffering=$maxDecPicBuffering max_num_reorder_pics=$maxNumReorderPics"
     }
 
+    /** The syntax-bounded ID used to replace a parameter set without discarding other active IDs. */
+    fun parameterSetId(data: ByteArray, offset: Int, length: Int, hevc: Boolean): Int? {
+        val headerSize = if (hevc) 2 else 1
+        if (offset < 0 || length <= headerSize || offset > data.size - length) return null
+        val first = data[offset].toInt() and 0xff
+        if (first and 0x80 != 0 || (hevc && data[offset + 1].toInt() and 7 == 0)) return null
+        val kind = if (hevc) (first and 0x7e) shr 1 else first and 0x1f
+        val r = RbspReader(data, offset + headerSize, length - headerSize)
+        val id: Int
+        val maximum: Int
+        when {
+            !hevc && kind == 7 -> {
+                r.skip(24)
+                id = r.ue()
+                maximum = 31
+            }
+            !hevc && kind == 8 -> {
+                id = r.ue()
+                maximum = 255
+            }
+            hevc && kind == 32 -> {
+                id = r.u(4)
+                maximum = 15
+            }
+            hevc && kind == 33 -> {
+                r.skip(4)
+                val subLayers = r.u(3)
+                if (subLayers > 6) return null
+                r.skip(1 + 96) // temporal nesting and general profile_tier_level
+                var profiles = 0
+                var levels = 0
+                for (i in 0 until subLayers) {
+                    profiles = profiles or (r.u(1) shl i)
+                    levels = levels or (r.u(1) shl i)
+                }
+                if (subLayers > 0) r.skip(2 * (8 - subLayers))
+                for (i in 0 until subLayers) {
+                    if (profiles and (1 shl i) != 0) r.skip(88)
+                    if (levels and (1 shl i) != 0) r.skip(8)
+                }
+                id = r.ue()
+                maximum = 15
+            }
+            hevc && kind == 34 -> {
+                id = r.ue()
+                maximum = 63
+            }
+            else -> return null
+        }
+        return id.takeIf { !r.overran && it in 0..maximum }
+    }
+
     /**
      * Parses an H.264 SPS.
      *
@@ -363,7 +415,7 @@ object ParameterSetInspector {
             var leadingZeros = 0
             while (bit() == 0) {
                 leadingZeros++
-                if (overran || leadingZeros > 32) {
+                if (overran || leadingZeros >= 32) {
                     overran = true
                     return 0
                 }

@@ -663,6 +663,12 @@
     <string name="settings_tab_basic">ძირითადი</string>
     <string name="settings_tab_advanced">დამატებითი</string>
     <string name="settings_search_hint">პარამეტრების ძებნა</string>
+    <string name="settings_scope_wifi_hidden">ნაჩვენებია USB-ის პარამეტრები. WiFi-ის პარამეტრები დამალულია.</string>
+    <string name="settings_scope_usb_hidden">ნაჩვენებია WiFi-ის პარამეტრები. USB-ის პარამეტრები დამალულია.</string>
+    <string name="settings_scope_usb_wifi_hidden">ნაჩვენებია ავტონომიური რეჟიმის პარამეტრები. USB-ისა და WiFi-ის პარამეტრები დამალულია.</string>
+    <string name="settings_scope_change">შეცვლა</string>
+    <string name="settings_search_clear">ძებნის გასუფთავება</string>
+    <string name="settings_search_no_results">„%1$s“-ს არცერთი პარამეტრი არ ემთხვევა.</string>
     <string name="connection_mode">კავშირის რეჟიმი</string>
     <string name="connection_kind_usb_cable">USB კაბელი (პირდაპირი)</string>
     <string name="connection_kind_usb_wireless_adapter">USB უსადენო ადაპტერი</string>

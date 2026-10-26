@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!--
+        The app manifest declares these overrides, but the main merge consumes them, so the unit
+        test merge (which starts from that output) sees each library's minSdk 21 again and fails
+        for the github flavor. Repeat them here, for the test manifest only.
+    -->
+    <uses-sdk tools:overrideLibrary="
+        com.google.android.gms.nearby, com.google.android.gms.base, com.google.android.gms.tasks, com.google.android.gms.common,
+        rikka.shizuku.provider, rikka.shizuku.api, rikka.shizuku.shared, rikka.shizuku.aidl, com.topjohnwu.superuser,
+        androidx.test.monitor, androidx.test.espresso.idling.resource" />
+
+</manifest>

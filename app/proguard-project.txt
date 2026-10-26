@@ -32,8 +32,8 @@
 # --- JNI ---
 -keep class com.andrerinas.openheadunit.decoder.audio.NativeAAudio { *; }
 -keep class com.andrerinas.openheadunit.aap.AapSslNative { *; }
--keep class com.andrerinas.openheadunit.decoder.video.FfmpegHevcDecoder { *; }
--keep class com.andrerinas.openheadunit.decoder.video.FfmpegHevcDecoder$Companion { *; }
+-keep class com.andrerinas.openheadunit.decoder.video.FfmpegVideoDecoder { *; }
+-keep class com.andrerinas.openheadunit.decoder.video.FfmpegVideoDecoder$Companion { *; }
 
 # --- Conscrypt Rules ---
 -dontwarn org.conscrypt.**

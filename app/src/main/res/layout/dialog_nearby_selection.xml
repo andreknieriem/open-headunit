@@ -49,7 +49,7 @@
             android:id="@+id/connectionProgress"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:indeterminateTint="@color/brand_teal"
+            android:indeterminateTint="@color/brand_primary"
             android:indeterminateTintMode="src_in" />
 
         <TextView

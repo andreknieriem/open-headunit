@@ -10,8 +10,10 @@ import android.view.WindowManager
 import android.widget.FrameLayout
 import androidx.core.graphics.get
 import com.andrerinas.openheadunit.decoder.video.DeviceMemoryProfile
+import com.andrerinas.openheadunit.decoder.video.SoftwareYuvFrameSink
 import com.andrerinas.openheadunit.decoder.video.VideoDecoder
 import com.andrerinas.openheadunit.utils.AppLog
+import com.andrerinas.openheadunit.utils.HeadUnitScreenConfig
 import com.andrerinas.openheadunit.utils.Settings
 import com.andrerinas.openheadunit.utils.SystemOptimizer
 import com.andrerinas.openheadunit.view.GlProjectionView
@@ -68,11 +70,23 @@ class VideoPreflightRunner(
             ?: Settings.Resolution._1280x720
         val panel = panelCeiling()
         val hevc = VideoDecoder.isHevcSupported()
+        val softwareHevc = settings.forceSoftwareDecoding && when (settings.softwareVideoDecoder) {
+            Settings.SoftwareVideoDecoder.BUNDLED_FFMPEG ->
+                VideoDecoder.isBundledDecoderAvailable(VideoDecoder.CodecType.H265)
+            Settings.SoftwareVideoDecoder.DEVICE_MEDIACODEC ->
+                VideoDecoder.isHevcDecoderAvailable(includeSoftware = true)
+        }
         val clips = VideoPreflightClips.forPanel(
-            panel,
-            hevc,
-            settings.videoCodec,
-            settings.forceSoftwareDecoding,
+            panelCeiling = panel,
+            // Include an explicit choice even before runtime caps; Auto uses the negotiated canvas.
+            // The panel progression below still runs when that canvas has not been initialized yet.
+            configuredResolution = Settings.Resolution.fromId(settings.resolutionId)?.codec
+                ?: HeadUnitScreenConfig.negotiatedResolutionType,
+            hardwareHevcSupported = hevc,
+            hardwareHevcReliable = VideoDecoder.isHevcReliable(),
+            storedCodec = settings.videoCodec,
+            forceSoftware = settings.forceSoftwareDecoding,
+            selectedSoftwareHevcAvailable = softwareHevc,
         )
         val backends = backendLadder(optimizerResult.recommendedViewMode)
         val outcomes = mutableListOf<VideoPreflightBackendOutcome>()
@@ -179,6 +193,8 @@ class VideoPreflightRunner(
         }
         val decoderError = AtomicReference<String?>(null)
         decoder.onDecoderError = { reason -> decoderError.set(reason) }
+        // The preview renderer, not the saved renderer preference, owns this clip's output.
+        decoder.softwareYuvFrameSink = preview.view as? SoftwareYuvFrameSink
         decoder.setSurface(surface)
         var fed = 0
         val samples = mutableListOf<Int>()
@@ -195,9 +211,9 @@ class VideoPreflightRunner(
             val first = units[0]
             val config = AnnexBAccessUnits.parameterSetPrefix(data, first, clip.codec)
             if (config > 0) {
-                decoder.decode(data, first.offset, config, false, clip.codec.settingsValue)
+                decoder.decode(data, first.offset, config, false, clip.codec)
             }
-            decoder.decode(data, first.offset + config, first.length - config, false, clip.codec.settingsValue)
+            decoder.decode(data, first.offset + config, first.length - config, false, clip.codec)
             // The warm-up keeps feeding at the clip's rate. Plenty of decoders (MediaTek's OMX one,
             // Android's own software AVC) hold their first picture until more input arrives, which
             // the phone always provides. Waiting on a lone IDR read as "no picture" on units that
@@ -219,7 +235,7 @@ class VideoPreflightRunner(
                 val waitMs = (dueNs - System.nanoTime()) / 1_000_000L
                 if (waitMs > 0) delay(waitMs)
                 val unit = units[index]
-                decoder.decode(data, unit.offset, unit.length, false, clip.codec.settingsValue)
+                decoder.decode(data, unit.offset, unit.length, false, clip.codec)
                 fed++
                 if (index % SAMPLE_EVERY == 0) {
                     captureMarker(preview, clip, samples) { badSamples++ }
@@ -295,7 +311,7 @@ class VideoPreflightRunner(
             val dueNs = startNs + fed * 1_000_000_000L / clip.fps
             if (fed < units.size && System.nanoTime() >= dueNs) {
                 val unit = units[fed]
-                decoder.decode(data, unit.offset, unit.length, false, clip.codec.settingsValue)
+                decoder.decode(data, unit.offset, unit.length, false, clip.codec)
                 fed++
             }
             delay(5)

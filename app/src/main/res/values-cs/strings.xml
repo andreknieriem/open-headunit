@@ -735,6 +735,12 @@
     <string name="settings_tab_basic">Základní</string>
     <string name="settings_tab_advanced">Pokročilé</string>
     <string name="settings_search_hint">Hledat v nastavení</string>
+    <string name="settings_scope_wifi_hidden">Zobrazeno nastavení USB. Nastavení WiFi je skryté.</string>
+    <string name="settings_scope_usb_hidden">Zobrazeno nastavení WiFi. Nastavení USB je skryté.</string>
+    <string name="settings_scope_usb_wifi_hidden">Zobrazeno nastavení Self Mode. Nastavení USB a WiFi je skryté.</string>
+    <string name="settings_scope_change">Změnit</string>
+    <string name="settings_search_clear">Vymazat hledání</string>
+    <string name="settings_search_no_results">Žádné nastavení neodpovídá „%1$s“.</string>
     <string name="connection_mode">Režim připojení</string>
     <string name="connection_kind_usb_cable">USB kabel (přímé připojení)</string>
     <string name="connection_kind_usb_wireless_adapter">Bezdrátový USB adaptér</string>

@@ -741,6 +741,12 @@
     <string name="settings_tab_basic">Base</string>
     <string name="settings_tab_advanced">Avanzate</string>
     <string name="settings_search_hint">Cerca impostazioni</string>
+    <string name="settings_scope_wifi_hidden">Impostazioni USB visibili. Le impostazioni WiFi sono nascoste.</string>
+    <string name="settings_scope_usb_hidden">Impostazioni WiFi visibili. Le impostazioni USB sono nascoste.</string>
+    <string name="settings_scope_usb_wifi_hidden">Impostazioni della Modalità Self visibili. Le impostazioni USB e WiFi sono nascoste.</string>
+    <string name="settings_scope_change">Cambia</string>
+    <string name="settings_search_clear">Cancella ricerca</string>
+    <string name="settings_search_no_results">Nessuna impostazione corrisponde a \"%1$s\".</string>
     <string name="connection_mode">Modalità di connessione</string>
     <string name="connection_kind_usb_cable">Cavo USB (diretto)</string>
     <string name="connection_kind_usb_wireless_adapter">Adattatore wireless USB</string>

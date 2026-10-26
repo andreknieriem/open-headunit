@@ -20,6 +20,16 @@ import org.junit.Test
  * and no overlay, and neither signal alone is enough for the overlay.
  */
 class ProjectionWatchdogPolicyTest {
+    @Test
+    fun `a repeated consumer stall escalates but Surface remains terminal`() {
+        assertFalse(ProjectionWatchdogPolicy.shouldFallBackToSurface(0, false))
+        assertFalse(ProjectionWatchdogPolicy.shouldFallBackToSurface(1, false))
+        assertTrue(ProjectionWatchdogPolicy.shouldFallBackToSurface(2, false))
+        assertTrue(ProjectionWatchdogPolicy.shouldFallBackToSurface(3, false))
+        assertFalse(ProjectionWatchdogPolicy.shouldFallBackToSurface(2, true))
+        assertFalse(ProjectionWatchdogPolicy.shouldFallBackToSurface(3, true))
+    }
+
 
     @Test
     fun `the session is live through the handshake window and the whole projection`() {

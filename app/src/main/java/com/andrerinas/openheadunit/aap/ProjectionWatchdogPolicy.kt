@@ -19,6 +19,10 @@ import com.andrerinas.openheadunit.decoder.video.VideoRecoveryPolicy
  * mid-session stayed black with nothing ever asking for it back.
  */
 object ProjectionWatchdogPolicy {
+    /** Rebuild once, then switch a repeatedly stalled consumer; decoder choice is irrelevant. */
+    fun shouldFallBackToSurface(recoveries: Int, alreadySurface: Boolean): Boolean =
+        recoveries >= 2 && !alreadySurface
+
 
     /**
      * True while the projection session is live: [CommManager.ConnectionState.HandshakeComplete]

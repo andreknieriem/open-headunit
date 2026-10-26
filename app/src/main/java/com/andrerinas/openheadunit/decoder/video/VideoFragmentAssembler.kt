@@ -6,8 +6,8 @@ package com.andrerinas.openheadunit.decoder.video
  * Video arrives either complete in one message (flags 11) or split across a run of them: 9 first,
  * 8 in the middle, 10 last. Reassembly is only correct while that run is intact, and the stream
  * gives us three ways for it not to be - a run that stops before its 10, a fragment that arrives
- * with no run open, and a first fragment whose payload does not begin with a start code at either
- * offset the protocol uses. All three end with the codec being handed something that is not a
+ * with no run open, and a first fragment whose payload does not begin with a start code at its
+ * message type's payload offset. All three end with the codec being handed something that is not a
  * decodable access unit, which is what a smeared or melting picture is.
  *
  * This object holds the ordering rules and nothing else: no buffer, no logging, no clock. That is
@@ -34,10 +34,9 @@ class VideoFragmentAssembler {
         /**
          * Throw this message away.
          *
-         * [consumed] mirrors what `AapVideo.process` has always returned for the case, because the
-         * caller uses it to decide whether to send a media ack and whether to try the other channel
-         * handlers. Getting it wrong changes protocol behaviour, so it is carried explicitly rather
-         * than inferred.
+         * [consumed] tells the caller whether this is video payload rather than channel control
+         * traffic. DATA credit is independent: the transport acknowledges type 0 only at LAST,
+         * even if decoding discards it. CSD and partial fragments never consume a credit.
          */
         data class Discard(val consumed: Boolean) : Action()
     }
@@ -55,7 +54,7 @@ class VideoFragmentAssembler {
         ORPHANED_FRAGMENT,
 
         /**
-         * A first fragment whose payload begins with no start code at offset 10 or offset 2.
+         * A first fragment with no start code at its type's offset (DATA: 10, CSD: 2).
          *
          * This is the one that used to be silent. The run stayed open, so the 8s and 10 behind it
          * were appended and assembled without it, and the codec was fed an access unit missing its
@@ -92,12 +91,15 @@ class VideoFragmentAssembler {
     /**
      * Applies one video message to the state machine.
      *
-     * [payloadStartsAt10] and [payloadStartsAt2] are the two offsets the protocol puts a frame at -
-     * 10 for a timestamp indication, 2 for a media indication - and each is true only when a start
-     * code is present there *and* there is payload behind it. The caller resolves them because it
-     * owns the bytes; which one wins, and what happens when neither does, is decided here.
+     * [type] is the reassembler's message type: DATA (0) has an eight-byte timestamp after the
+     * two-byte type, whereas CSD (1) has no timestamp. Validate only that type's payload offset;
+     * a second NAL at offset 10 must never hide a CSD NAL at offset 2, nor may timestamp bytes
+     * masquerade as CSD. Continuations have no new envelope: the upstream reassembler propagates
+     * the FIRST's type and buffers short/split headers before this consumer sees them.
+     *
+     * The caller checks start codes against the valid message length, not its buffer capacity.
      */
-    fun onMessage(flags: Int, payloadStartsAt10: Boolean, payloadStartsAt2: Boolean): Decision {
+    fun onMessage(flags: Int, type: Int, payloadStartsAt10: Boolean, payloadStartsAt2: Boolean): Decision {
         var anomaly: Anomaly? = null
 
         when (flags) {
@@ -107,6 +109,7 @@ class VideoFragmentAssembler {
                 isFrameCorrupt = false
             }
             FLAG_MIDDLE, FLAG_LAST -> {
+                if (type !in 0..1) return Decision(Action.Discard(consumed = false))
                 if (!isAssembling) {
                     anomaly = Anomaly.ORPHANED_FRAGMENT
                     isFrameCorrupt = true
@@ -118,11 +121,9 @@ class VideoFragmentAssembler {
 
         anomaly?.let { counts[it.ordinal]++ }
 
-        val payloadOffset = when {
-            payloadStartsAt10 -> OFFSET_TIMESTAMP_INDICATION
-            payloadStartsAt2 -> OFFSET_MEDIA_INDICATION
-            else -> null
-        }
+        // A channel control message can replace an unfinished run, but never supplies video bytes.
+        if (type !in 0..1) return Decision(Action.Discard(consumed = false), anomaly)
+        val payloadOffset = payloadOffset(type, payloadStartsAt10, payloadStartsAt2)
 
         return when (flags) {
             FLAG_SINGLE -> {
@@ -199,12 +200,18 @@ class VideoFragmentAssembler {
          * they always were. It is the exact complement of the `consumed = false` answers [onMessage]
          * gives, and a test holds the two together.
          */
-        fun isPayload(flags: Int, payloadStartsAt10: Boolean, payloadStartsAt2: Boolean): Boolean =
-            when (flags) {
+        fun isPayload(flags: Int, type: Int, payloadStartsAt10: Boolean, payloadStartsAt2: Boolean): Boolean =
+            type in 0..1 && when (flags) {
                 FLAG_MIDDLE, FLAG_LAST -> true
-                FLAG_SINGLE, FLAG_FIRST -> payloadStartsAt10 || payloadStartsAt2
+                FLAG_SINGLE, FLAG_FIRST -> payloadOffset(type, payloadStartsAt10, payloadStartsAt2) != null
                 else -> false
             }
+
+        private fun payloadOffset(type: Int, at10: Boolean, at2: Boolean): Int? = when (type) {
+            0 -> if (at10) OFFSET_TIMESTAMP_INDICATION else null
+            1 -> if (at2) OFFSET_MEDIA_INDICATION else null
+            else -> null
+        }
 
         /** A whole frame in one message. */
         const val FLAG_SINGLE = 11

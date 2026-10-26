@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Settings, landscape: one header row and the category rail beside the list. Which header
+     pieces show (title, search field or button, rail) follows bools_settings.xml per panel size,
+     applied in SettingsFragment. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/settingsRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/settingsSurface"
+    android:focusableInTouchMode="true"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:id="@+id/settingsHeader"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/settings_header_height"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="4dp"
+        android:paddingLeft="4dp"
+        android:paddingEnd="12dp"
+        android:paddingRight="12dp">
+
+        <ImageButton
+            android:id="@+id/settingsBack"
+            style="@style/SettingsIconButton"
+            android:contentDescription="@string/back"
+            app:srcCompat="@drawable/ic_sym_arrow_back"
+            app:tint="?attr/settingsOnSurface" />
+
+        <TextView
+            android:id="@+id/settingsTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:layout_marginLeft="4dp"
+            android:layout_marginEnd="12dp"
+            android:layout_marginRight="12dp"
+            android:maxLines="1"
+            android:text="@string/settings"
+            android:textColor="?attr/settingsOnSurface"
+            android:textSize="@dimen/settings_title_text_size" />
+
+        <include layout="@layout/layout_settings_tabs" />
+
+        <include
+            layout="@layout/layout_settings_search_bar"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/settings_header_control_height"
+            android:layout_marginStart="12dp"
+            android:layout_marginLeft="12dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginRight="8dp"
+            android:layout_weight="1" />
+
+        <View
+            android:id="@+id/settingsHeaderSpacer"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <ImageButton
+            android:id="@+id/settingsSearchButton"
+            style="@style/SettingsIconButton"
+            android:contentDescription="@string/settings_search_hint"
+            app:srcCompat="@drawable/ic_sym_search"
+            app:tint="?attr/settingsOnSurfaceVariant" />
+
+        <ImageButton
+            android:id="@+id/settingsReset"
+            style="@style/SettingsIconButton"
+            android:contentDescription="@string/reset_settings"
+            app:srcCompat="@drawable/ic_sym_restart_alt"
+            app:tint="?attr/settingsOnSurfaceVariant" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/settingsSave"
+            style="@style/Widget.Material3.Button"
+            android:layout_width="wrap_content"
+            android:layout_height="@dimen/settings_header_control_height"
+            android:layout_marginStart="4dp"
+            android:layout_marginLeft="4dp"
+            android:enabled="false"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:maxLines="1"
+            android:minWidth="64dp"
+            android:paddingLeft="20dp"
+            android:paddingRight="20dp"
+            android:text="@string/save"
+            android:textAllCaps="false"
+            android:textSize="@dimen/settings_control_text_size"
+            app:iconPadding="6dp"
+            app:iconSize="@dimen/settings_control_icon_size" />
+
+    </LinearLayout>
+
+    <!-- A RelativeLayout rather than a weighted row: one weight level keeps the list from being
+         measured twice, and when the rail is gone the list simply aligns with the parent. -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/settingsCategories"
+            android:layout_width="@dimen/settings_rail_width"
+            android:layout_height="match_parent"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentLeft="true"
+            android:clipToPadding="false"
+            android:paddingStart="8dp"
+            android:paddingLeft="8dp"
+            android:paddingTop="4dp"
+            android:paddingEnd="8dp"
+            android:paddingRight="8dp"
+            android:paddingBottom="16dp" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/settingsRecyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_toEndOf="@id/settingsCategories"
+            android:layout_toRightOf="@id/settingsCategories"
+            android:layout_alignWithParentIfMissing="true"
+            android:clipToPadding="false"
+            android:paddingStart="@dimen/settings_content_padding_start"
+            android:paddingLeft="@dimen/settings_content_padding_start"
+            android:paddingEnd="@dimen/settings_content_padding_end"
+            android:paddingRight="@dimen/settings_content_padding_end"
+            android:paddingBottom="24dp"
+            android:scrollbars="vertical" />
+
+    </RelativeLayout>
+
+</LinearLayout>

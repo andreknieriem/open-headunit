@@ -744,6 +744,12 @@
     <string name="settings_tab_basic">Básico</string>
     <string name="settings_tab_advanced">Avanzado</string>
     <string name="settings_search_hint">Buscar ajustes</string>
+    <string name="settings_scope_wifi_hidden">Mostrando ajustes de USB. Los ajustes de WiFi están ocultos.</string>
+    <string name="settings_scope_usb_hidden">Mostrando ajustes de WiFi. Los ajustes de USB están ocultos.</string>
+    <string name="settings_scope_usb_wifi_hidden">Mostrando ajustes del modo autónomo. Los ajustes de USB y WiFi están ocultos.</string>
+    <string name="settings_scope_change">Cambiar</string>
+    <string name="settings_search_clear">Borrar búsqueda</string>
+    <string name="settings_search_no_results">Ningún ajuste coincide con «%1$s».</string>
     <string name="connection_mode">Modo de conexión</string>
     <string name="connection_kind_usb_cable">Cable USB (directo)</string>
     <string name="connection_kind_usb_wireless_adapter">Adaptador inalámbrico USB</string>

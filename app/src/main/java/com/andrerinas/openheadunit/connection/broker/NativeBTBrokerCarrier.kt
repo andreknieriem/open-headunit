@@ -80,6 +80,14 @@ class NativeBTBrokerCarrier(
             }
             NativeBTBrokerProtocol.EVT_RFCOMM_OPEN -> {
                 AppLog.i("NativeAA: [Broker] the phone opened Android Auto on the broker.")
+                val live = current
+                if (live != null && !live.closed) {
+                    // Duplicate OPEN while WPP is in flight — keep the stream.
+                    channelOpenedAt.set(now())
+                    grantCredit(CREDIT_TOP_UP)
+                    onPhoneEvidence()
+                    return
+                }
                 // Create the stream before granting credit so early WPP bytes are not discarded.
                 current?.close()
                 current = FrameStream(sendToPhone)
@@ -199,7 +207,7 @@ class NativeBTBrokerCarrier(
         override val input: InputStream get() = stream.input
         override val output: OutputStream get() = stream.output
         override val peerName: String? = null
-        override val radioLabel: String = "Native BT Broker (BLE RFCOMM relay)"
+        override val radioLabel: String = "Bluetooth relay (BLE RFCOMM)"
         override val persistPeerForAutoStart: Boolean = false
         override val peerReportedPresent: Boolean = true
         override val retransmitsWhileSilent: Boolean = false

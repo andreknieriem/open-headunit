@@ -16,8 +16,26 @@ object NativeBTBrokerProtocol {
     val DATA_TX_UUID: UUID = UUID.fromString("8e6d1004-3f45-4f1e-a000-6e2b8d012345")
 
     const val PROJECTION_PORT = 5288
-    const val BLE_NAME_PREFIX = "OpenHU-NativeBTBroker-Setter"
+    /** Classic Bluetooth name advertised to the phone. */
+    const val CLASSIC_NAME = "OpenHU-BT-Relay"
+    /** BLE advertising name for head-unit scan / setup. */
+    const val BLE_NAME_PREFIX = "OpenHU-BT-Relay-Setup"
     const val VERSION: Int = 0x01
+
+    /** True for BLE ads from this relay. */
+    fun isBrokerBleName(name: String?): Boolean {
+        val label = name?.trim().orEmpty()
+        if (label.isEmpty()) return false
+        return label.startsWith(BLE_NAME_PREFIX, ignoreCase = true)
+    }
+
+    /** True for the ESP32 relay — never a driver phone. Setup BLE names share the Classic prefix. */
+    fun isBrokerDeviceName(name: String?): Boolean {
+        val label = name?.trim().orEmpty()
+        if (label.isEmpty()) return false
+        return label.startsWith(CLASSIC_NAME, ignoreCase = true)
+    }
+
     const val HEADER_LEN = 12
     const val MAX_PAYLOAD = 4096
 
@@ -69,6 +87,15 @@ object NativeBTBrokerProtocol {
         val isComplete: Boolean
             get() = ipAddress.isNotBlank() && ssid.isNotBlank() && key.isNotBlank() && bssid.isNotBlank()
     }
+
+    /** Empty Wi-Fi snapshot used for BLE keep-alive / early HFP wake before the group exists. */
+    fun emptyDisplayInfo(): DisplayInfo = DisplayInfo(
+        ipAddress = "",
+        port = PROJECTION_PORT,
+        ssid = "",
+        key = "",
+        bssid = "",
+    )
 
     data class Frame(
         val type: Int,

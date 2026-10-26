@@ -581,7 +581,10 @@ class AutoStartFragment : Fragment() {
             if (target == BtPickerTarget.NATIVE_POKE) {
                 { device ->
                     BluetoothHelper.isLikelyPhone(
-                        device, settings.nativePreferredDeviceMac, settings.lastConnectedNativeMac
+                        device,
+                        settings.nativePreferredDeviceMac,
+                        settings.lastConnectedNativeMac,
+                        requireContext()
                     )
                 }
             } else null

@@ -11,25 +11,51 @@ import com.andrerinas.openheadunit.App
 /**
  * Reads the live Wi-Fi Direct group this display is hosting.
  * The passphrase only exists on the live group, not in the saved advertisement digest.
+ *
+ * Reuses one [WifiP2pManager.Channel]. Calling [WifiP2pManager.initialize] on every poll
+ * floods system_server with P2P clients and can freeze the phone.
  */
 object WifiDirectDisplayInfo {
+    private val lock = Any()
+    private var manager: WifiP2pManager? = null
+    private var channel: WifiP2pManager.Channel? = null
+
     @SuppressLint("MissingPermission")
     fun read(context: Context, onResult: (NativeBTBrokerProtocol.DisplayInfo) -> Unit) {
         val app = context.applicationContext
-        val manager = app.getSystemService(Context.WIFI_P2P_SERVICE) as? WifiP2pManager
-        if (manager == null) {
+        val mgr = manager(app)
+        val ch = channel(app)
+        if (mgr == null || ch == null) {
             onResult(fallback(context))
             return
         }
-        val channel = manager.initialize(app, Looper.getMainLooper(), null)
-        if (channel == null) {
-            onResult(fallback(context))
-            return
-        }
-        manager.requestGroupInfo(channel) { group: WifiP2pGroup? ->
-            manager.requestConnectionInfo(channel) { info: WifiP2pInfo? ->
+        mgr.requestGroupInfo(ch) { group: WifiP2pGroup? ->
+            mgr.requestConnectionInfo(ch) { info: WifiP2pInfo? ->
                 onResult(fromGroup(context, group, info))
             }
+        }
+    }
+
+    private fun manager(app: Context): WifiP2pManager? {
+        synchronized(lock) {
+            manager?.let { return it }
+            val next = app.getSystemService(Context.WIFI_P2P_SERVICE) as? WifiP2pManager
+            manager = next
+            return next
+        }
+    }
+
+    private fun channel(app: Context): WifiP2pManager.Channel? {
+        synchronized(lock) {
+            channel?.let { return it }
+            val mgr = manager(app) ?: return null
+            val next = mgr.initialize(app, Looper.getMainLooper()) {
+                synchronized(lock) {
+                    channel = null
+                }
+            }
+            channel = next
+            return next
         }
     }
 

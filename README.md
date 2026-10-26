@@ -114,6 +114,14 @@ On a detected FYT module unit with this transport off, Native Mode refuses to st
 
 Android Bluetooth driver selection, preferred-phone and wake-list controls are intentionally hidden on this route because Android cannot see or dial phones bonded to the external module. To roll back, turn this transport off and re-enable the stock client with `adb shell pm enable com.syu.carlink` (prefix with `su -c` if needed).
 
+#### Bluetooth Relay (ESP32 Classic BT relay)
+- You can use Android Auto Native by implementing an AA relay on an ESP32.
+- See [aa-native-bt-broker-for-openheadunit](https://github.com/kendrickkim/aa-native-bt-broker-for-openheadunit) for more detail on implementing the relay on an ESP32.
+- When the relay is ready: Settings → Wireless mode: Native → choose Bluetooth relay (ESP32).
+- In the sub-settings, scan and select OpenHU-BT-Relay(-Setup). Then pair the phone (PIN 0000, 120 seconds).
+- When pairing finishes, the status shows Connected. The phone may briefly report that the Bluetooth connection failed — that is usually harmless: the relay drops HFP (Hands-Free Profile) after pairing completes.
+- Leave the settings screen and try a Wi-Fi connection.
+
 #### 3. Headunit Server (No-Root Option for Self-Mode on AA 17.4+)
 - Starts the native Android Auto developer server directly on your phone or on the same device (Self-Mode).
 - **Setup:**

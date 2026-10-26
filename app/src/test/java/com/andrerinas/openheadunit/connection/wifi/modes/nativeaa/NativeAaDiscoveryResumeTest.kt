@@ -81,4 +81,39 @@ class NativeAaDiscoveryResumeTest {
         manager.resumeAfterDaemonMeasurement(4) { fail("stale completion armed listeners") }
         assertNull(manager.pendingSelectionTargetMac)
     }
+    @Test fun busyLegacyRouteStopsWithoutFalseCacheFallbackOrImmediateRearm() {
+        val manager = mock(NativeAaHandshakeManager::class.java, CALLS_REAL_METHODS)
+        set(manager, "measureGeneration", 4)
+        set(manager, "measuringDaemon", true)
+        set(manager, "wakeAwaitingModule", true)
+        val decision = ZbtDiscoveryPolicy.Decision(ZbtDiscoveryPolicy.Mode.REACHABILITY, "external")
+        manager.completeDaemonMeasurement(4, decision, ZbtDiscovery.Measurement.Completion.CARRIER_BUSY) {
+            fail("busy legacy completion immediately rearmed")
+        }
+        assertFalse(manager.isMeasuringDaemon())
+        assertTrue(manager.notStartedReason()!!.contains("still in use"))
+        val measurement = ZbtDiscovery.measurement(decision)
+        assertNull(measurement.snapshot().reachable)
+        assertNull(measurement.cached())
+        assertEquals(ExternalBtTransportPolicy.WifiButton.MODULE,
+            ExternalBtTransportPolicy.wifiButton(measurement.snapshot(), false, false))
+        assertEquals(ModuleRearmPolicy.Action.START_HANDSHAKE, ModuleRearmPolicy.action(
+            nativeLauncherStarted = true, launcherRefusedModule = false,
+            handshakeStarted = manager.isStarted(), measuringDaemon = manager.isMeasuringDaemon()))
+
+        // The next explicit button press can measure again. A real answer then resumes once;
+        // the busy result did not install a refusal or force the Android fallback snapshot.
+        set(manager, "measuringDaemon", true)
+        ZbtDaemonReachability.record(true)
+        var arms = 0
+        manager.completeDaemonMeasurement(4, decision, ZbtDiscovery.Measurement.Completion.SETTLED) {
+            arms++
+            assertFalse(ExternalBtTransportPolicy.needsDaemonMeasurement(
+                measurement.snapshot(), false, false))
+            assertEquals(ExternalBtTransportPolicy.Route.ZBT,
+                ExternalBtTransportPolicy.route(measurement.snapshot(), false, false))
+        }
+        assertEquals(1, arms)
+    }
+
 }

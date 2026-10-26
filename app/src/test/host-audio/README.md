@@ -26,12 +26,20 @@ They also pause old AAC output-copy progress until a CSD/watchdog replacement ac
 then check that retired progress cannot change its watchdog, copy timestamp or PTS. Recovery
 must still run without more DATA or Stop, and the old PCM must not reach the replacement's bank.
 Static focus is checked through its AapAudio session owner on API 16/19/25/33.
-Settings cases retain the negotiated routing and codec snapshot until the session is replaced,
-then require nonzero PCM from the new owner. Local output changes preserve the negotiated codec.
+Settings cases use production `AudioConfigs` for channel formats and separate-stream routing.
+They check prompt/music packet duration at the mixer bank and the requested AudioTrack stream,
+retaining the old routing/codec snapshot until session replacement. Local output changes preserve
+the negotiated codec. These are owner-path tests, not UI Save or vendor routing emulation.
 Connection publication and worker-retirement checks live in the independent host-connection suite.
 Framing cases check ADTS codec configuration, repeated Setup and raw/ADTS transitions.
 The codec doubles do not decode ADTS bitstreams. They complement JVM policy/PCM tests and native CTest. They do not emulate HAL playback clocks,
 Binder scheduling, real codec output timing or acoustic latency; those require device validation.
+
+AudioTrack retries back off only after a zero write with a known playback-head reserve,
+using one quarter of that reserve with 1–4 ms bounds. Partial progress, errors, pause/start,
+and unknown heads restore the short retry path; admission remains nonblocking on API 21+
+and playback-head-checked on older devices. The adapter cases exercise these transitions
+on API 16..37. AAudio retains its callback-specific 1 ms retry behavior.
 
 Artifacts go under the ignored `build/host-audio` directory. The script uses the existing Gradle
 compiler cache and does not download or execute a separately supplied compiler.

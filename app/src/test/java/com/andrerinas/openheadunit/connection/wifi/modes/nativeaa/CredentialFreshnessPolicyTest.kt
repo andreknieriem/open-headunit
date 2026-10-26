@@ -38,4 +38,45 @@ class CredentialFreshnessPolicyTest {
         assertEquals(Action.SEND_LIVE, CredentialFreshnessPolicy.decide(captured, captured.copy(bssid = "7E:D6:68:AC:67:06")))
         assertEquals(Action.SEND_LIVE, CredentialFreshnessPolicy.decide(captured, captured.copy(psk = "wxyz9876")))
     }
+    @Test
+    fun `replacement must pass credential checks again`() {
+        assertEquals(Action.ABORT, CredentialFreshnessPolicy.decide(captured, captured.copy(psk = "")))
+        assertEquals(Action.ABORT, CredentialFreshnessPolicy.decide(captured, captured.copy(ssid = "  ")))
+    }
+    @Test fun `identity reassessment alone does not substitute the network`() {
+        assertEquals(Action.SEND_AS_CAPTURED, CredentialFreshnessPolicy.decide(captured,
+            captured.copy(identity = com.andrerinas.openheadunit.connection.wifi.direct.GroupIdentityStability.STABLE)))
+    }
+
+    private val advertised = captured.copy(identity = com.andrerinas.openheadunit.connection.wifi.direct.GroupIdentityStability.STABLE)
+
+    @Test fun `a cold start whose Type 4 carried no endpoint takes whatever network becomes ready`() {
+        assertEquals(true, CredentialFreshnessPolicy.keepsEndpoint(null, captured))
+        assertEquals(Action.SEND_LIVE, CredentialFreshnessPolicy.decide(captured, captured.copy(ssid = "DIRECT-ET-Navegadortz2"), null))
+    }
+
+    @Test fun `the advertised network still kept matches its endpoint, whatever the BSSID case`() {
+        val redelivered = advertised.copy(bssid = advertised.bssid.lowercase())
+        assertEquals(true, CredentialFreshnessPolicy.keepsEndpoint(advertised, redelivered))
+        assertEquals(Action.SEND_AS_CAPTURED, CredentialFreshnessPolicy.decide(advertised, redelivered, advertised))
+    }
+
+    @Test fun `a same-IP replacement is not sent under an advertised endpoint`() {
+        val replaced = advertised.copy(ssid = "DIRECT-ET-Navegadortz2", bssid = "7E:D6:68:AC:67:06")
+        assertEquals(false, CredentialFreshnessPolicy.keepsEndpoint(advertised, replaced))
+        assertEquals(Action.ABORT, CredentialFreshnessPolicy.decide(advertised, replaced, advertised))
+        // Even one judged stable: the endpoint went out for the other network.
+        assertEquals(Action.ABORT, CredentialFreshnessPolicy.decide(advertised, replaced.copy(identity = advertised.identity), advertised))
+    }
+
+    @Test fun `a network replaced before Type 1 fails the advertised endpoint even on another IP`() {
+        assertEquals(false, CredentialFreshnessPolicy.keepsEndpoint(advertised, advertised.copy(ssid = "DIRECT-ET-Navegadortz2", ip = "192.168.49.7")))
+        assertEquals(false, CredentialFreshnessPolicy.keepsEndpoint(advertised, null))
+    }
+
+    @Test fun `the advertised network re-judged as not to be kept no longer matches its endpoint`() {
+        val downgraded = advertised.copy(identity = com.andrerinas.openheadunit.connection.wifi.direct.GroupIdentityStability.UNPROVEN)
+        assertEquals(false, CredentialFreshnessPolicy.keepsEndpoint(advertised, downgraded))
+        assertEquals(Action.ABORT, CredentialFreshnessPolicy.decide(advertised, downgraded, advertised))
+    }
 }

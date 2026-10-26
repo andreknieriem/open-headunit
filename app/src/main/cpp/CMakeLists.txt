@@ -83,3 +83,17 @@ else()
 endif()
 
 target_link_libraries(hur_soft_video PRIVATE ${log-lib} ${android-lib})
+
+# Time correction is optional; the OHU matcher has no native dependency.
+add_library(hur_time_stretch SHARED audio_time_stretcher.cpp audio_time_stretcher_jni.cpp)
+target_compile_features(hur_time_stretch PRIVATE cxx_std_17)
+target_compile_options(hur_time_stretch PRIVATE -O3 -Wall -Wextra -Werror -fno-exceptions -fno-rtti)
+if(ANDROID_ABI STREQUAL "armeabi-v7a")
+    # Android 4.x ARMv7 guarantees VFPv3-D16, not NEON.
+    target_compile_options(hur_time_stretch PRIVATE -mfpu=vfpv3-d16)
+endif()
+# NDK 29's C++ exception/allocation runtime imports symbols absent on API 16.
+# This target uses header-only C++ and checked malloc/placement ownership instead.
+target_link_options(hur_time_stretch PRIVATE -nostdlib++)
+target_link_libraries(hur_time_stretch PRIVATE m)
+# The DSP and radix-2 FFT are independent implementations; no vendor libraries.

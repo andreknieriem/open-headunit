@@ -15,6 +15,8 @@ import com.andrerinas.openheadunit.aap.DummyVpnService
  * VPN component at all. Every caller in `main` asks [isVpnAvailable] first.
  */
 object VpnControl {
+    internal val startRequests = DummyVpnStartRequests()
+
     /**
      * @param excludeSelf leaves this app out of the tun's route set. An Android VPN captures its
      * own app's sockets too, and this one routes 0.0.0.0/0 into a descriptor nobody reads, so any
@@ -23,10 +25,12 @@ object VpnControl {
      */
     fun startVpn(context: Context, excludeSelf: Boolean = false) {
         AppLog.i("VpnControl: Starting DummyVpnService (GitHub Build, excludeSelf=$excludeSelf)")
+        val request = startRequests.issue()
         try {
             context.startService(
                 Intent(context, DummyVpnService::class.java)
                     .putExtra(DummyVpnService.EXTRA_EXCLUDE_SELF, excludeSelf)
+                    .putExtra(DummyVpnService.EXTRA_START_REQUEST, request)
             )
         } catch (e: Exception) {
             // Starting a non-foreground service from the background throws on O+. Every caller
@@ -37,7 +41,7 @@ object VpnControl {
         }
     }
 
-    fun stopVpn(context: Context) {
+    fun stopVpn(context: Context) = startRequests.stop {
         AppLog.i("VpnControl: Stopping DummyVpnService (GitHub Build)")
         try {
             // Closing the descriptor is the teardown, and no Intent can ask for it. The framework

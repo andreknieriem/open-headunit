@@ -981,7 +981,7 @@
     <string name="zbt_probe_title">Testează modulul Bluetooth al unității</string>
     <string name="zbt_probe_idle">Atingeți pentru a rula</string>
     <string name="zbt_probe_running">Se execută…</string>
-    <string name="zbt_probe_message">Întreabă cipul Bluetooth separat al acestei unități dacă poate transporta o conexiune Android Auto. Verifică în aproximativ opt secunde dacă cipul răspunde și, doar dacă răspunde, urmărește aproximativ un minut și jumătate. Linia de sub această setare arată ce se întâmplă, iar nimic altceva de pe unitate nu este modificat.\n\nCipul comunică cu un singur program la un moment dat. Dacă o conexiune trece deja prin el, testul indică acest lucru în loc să testeze. Dezactivează mai întâi setarea de mai sus pentru a-l testa separat.\n\nOpțiunea „Trezește și urmărește” cere în plus cipului să se reconecteze la telefon pentru Android Auto. Este singura parte care modifică ceva, iar repornirea unității o anulează. Exportă apoi jurnalul și atașează-l.</string>
+    <string name="zbt_probe_message">Ambele opțiuni inițializează modulul Bluetooth înainte de monitorizare. Acest lucru îi poate afecta starea. Trezirea și monitorizarea solicită și conectarea la telefon.\n\nTestul cedează accesul când OHU utilizează sau verifică modulul. Exportați jurnalul după test.</string>
     <string name="zbt_probe_watch_only">Doar urmărește</string>
     <string name="zbt_probe_wake_and_watch">Trezește și urmărește</string>
     <string name="external_bt_blink_transport">Conectare prin modulul Bluetooth extern FYT</string>
@@ -1445,4 +1445,16 @@
     <string name="audio_settings_reconnect">Setările audio au fost salvate. Reconectează Android Auto pentru a le aplica.</string>
     <string name="native_aa_candidate_android_radio_description">Folosește Bluetooth din Android în loc să selectezi automat modulul Bluetooth al unității. Lasă dezactivat pentru selecție automată. Dacă este activată o opțiune de conectare prin modul, dezactiveaz-o mai întâi.</string>
     <string name="external_bt_candidate_transport_description">Forțează conectarea prin modulul Bluetooth al unității în locul selecției automate. Necesită un serviciu de modul compatibil. Lasă dezactivat pentru a permite Bluetooth din Android când serviciul nu răspunde; activarea împiedică această alternativă.</string>
+    <string name="audio_matching_mode">Corecție temporală a muzicii</string>
+    <string name="audio_matching_ohu">OHU</string>
+    <string name="audio_matching_wsola">WSOLA</string>
+    <string name="audio_matching_phase_vocoder">Phase Vocoder</string>
+    <string name="audio_matching_phase_vocoder_short">Phase Vocoder Short</string>
+    <string name="audio_matching_phase_gradient">Phase Gradient</string>
+    <string name="audio_matching_ohu_hint">Implicit</string>
+    <string name="audio_matching_wsola_hint">Consum redus</string>
+    <string name="audio_matching_phase_vocoder_hint">Echilibrat</string>
+    <string name="audio_matching_phase_vocoder_short_hint">Latență redusă</string>
+    <string name="audio_matching_phase_gradient_hint">Redare lentă</string>
+    <string name="audio_matching_description">OHU rămâne implicit. WSOLA aliniază formele de undă suprapuse; Phase Vocoder ajustează fazele spectrale. Short folosește o fereastră de analiză mai scurtă. Phase Gradient reconstruiește fazele prin integrarea gradienților de fază. Aceste implementări independente adaugă latență de procesare; numele nu clasifică calitatea sunetului.\n\nMetode native: muzică PCM. Navigarea, răspunsurile vocale, sunetele de sistem și AAC folosesc OHU.\nReconectează-te pentru aplicare. Setările motoarelor eliminate revin la OHU.</string>
 </resources>

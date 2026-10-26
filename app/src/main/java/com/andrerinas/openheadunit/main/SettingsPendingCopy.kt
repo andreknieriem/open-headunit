@@ -42,6 +42,7 @@ class SettingsPendingCopy {
     var enableRotary: Boolean? = null
     var mediaKeyRouting: MediaKeyRoutingPolicy.Mode? = null
     var audioLatencyMultiplier: Int? = null
+    var audioMatchingMode: com.andrerinas.openheadunit.decoder.audio.AudioTimeCorrectionMode? = null
     var useLibusb: Boolean? = null
     var audioQueueCapacity: Int? = null
     var showToastMessages: Boolean? = null
@@ -130,6 +131,7 @@ class SettingsPendingCopy {
         enableRotary = settings.enableRotary
         mediaKeyRouting = settings.mediaKeyRouting
         audioLatencyMultiplier = settings.audioLatencyMultiplier
+        audioMatchingMode = settings.audioMatchingMode
         useLibusb = settings.useLibusb
         audioQueueCapacity = settings.audioQueueCapacity
         showToastMessages = settings.showToastMessages
@@ -219,6 +221,7 @@ class SettingsPendingCopy {
         enableRotary != settings.enableRotary ||
         mediaKeyRouting != settings.mediaKeyRouting ||
         audioLatencyMultiplier != settings.audioLatencyMultiplier ||
+        audioMatchingMode != settings.audioMatchingMode ||
         useLibusb != settings.useLibusb ||
         audioQueueCapacity != settings.audioQueueCapacity ||
         showToastMessages != settings.showToastMessages ||

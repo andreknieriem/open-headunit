@@ -48,6 +48,7 @@ class WppTcpServer(
     private val callbacks: Callbacks,
     private val createServerSocket: () -> ServerSocket = { ServerSocket() },
     private val createTlsFactory: () -> SSLSocketFactory = { SslContextFactory.create(context).socketFactory },
+    private val elapsedRealtime: () -> Long = { SystemClock.elapsedRealtime() },
 ) {
 
     /** What the server needs from its owner, so it does not have to reach into the manager. */
@@ -57,9 +58,6 @@ class WppTcpServer(
 
         /** Which access point we are running, deciding the credentials' access-point type. */
         fun strategy(): NativeStrategy
-
-        /** Whether the network's name and address are known to repeat, from the credentials. */
-        fun identity(): GroupIdentityStability
 
         /** Our identity, built once by the owner so both transports announce the same thing. */
         fun carInfo(): Wireless.WppCarInfo
@@ -73,8 +71,11 @@ class WppTcpServer(
         /** True once the projection session has landed, which ends the handshake. */
         fun projectionSessionUp(): Boolean
 
-        /** The address and port to advertise for the projection session itself. */
-        fun projectionEndpoint(): Pair<String, Int>?
+        /**
+         * The AAP projection address and port (5288) to put in Type 1 for [network], the network
+         * this exchange already chose. Not the WPP endpoint (5299) Type 4 carries.
+         */
+        fun projectionEndpoint(network: NativeNetworkCredentials): Pair<String, Int>?
 
         /**
          * A dial was turned away. The owner tracks it, because what disproves the record is a
@@ -89,7 +90,7 @@ class WppTcpServer(
         fun noteEndpointRetired()
 
         /** An endpoint went out on a served dial, so the phone now stores this network. */
-        fun noteEndpointAdvertised()
+        fun noteEndpointAdvertised(credentials: NativeNetworkCredentials)
     }
 
     companion object {
@@ -275,10 +276,13 @@ class WppTcpServer(
             // unsafe to be remembered by. Serving it hands out a name the next create replaces,
             // which it then retries instead of falling back to Bluetooth - fifteen minutes of it,
             // measured. See [WppTcpServePolicy].
-            val decision = WppEndpointPolicy.decide(callbacks.strategy(), listeningPort, callbacks.identity())
+            // Read once: the exchange below is held to the network admitted here.
+            val admitted = callbacks.credentials()
+            val identity = admitted?.identity ?: GroupIdentityStability.UNPROVEN
+            val decision = WppEndpointPolicy.decide(callbacks.strategy(), listeningPort, identity)
             val servesDial = WppTcpServePolicy.servesDial(decision)
             if (!servesDial && !callbacks.projectionSessionUp()) {
-                refuse(tls, decision, callbacks.projectionSessionUp())
+                refuse(tls, decision, callbacks.projectionSessionUp(), identity)
                 return@withContext
             }
             // A dial we serve is a phone whose stored endpoint is this one, so whatever it held
@@ -298,8 +302,8 @@ class WppTcpServer(
                 }
             }
 
-            if (servesDial) {
-                runExchange(output, inbound, generation)
+            if (servesDial && admitted != null) {
+                runExchange(output, inbound, generation, admitted)
             } else {
                 // An active projection is not stranded on the withheld endpoint. Keep its
                 // control socket alive without sending setup or rejection messages. If the
@@ -326,7 +330,7 @@ class WppTcpServer(
      * endpoint for as long as Android Auto runs. The rejection is the only thing that ends that,
      * and it needs a Bluetooth route to send the phone back to.
      */
-    private fun refuse(socket: SSLSocket, decision: WppEndpointDecision, projectionUp: Boolean) {
+    private fun refuse(socket: SSLSocket, decision: WppEndpointDecision, projectionUp: Boolean, identity: GroupIdentityStability) {
         val reason = WppTcpServePolicy.refusalReason(decision)
         if (!WppTcpServePolicy.blamesStaleEndpoint(decision)) {
             AppLog.i("WppTcpServer: not serving this dial, and it says nothing about the phone: $reason")
@@ -346,7 +350,7 @@ class WppTcpServer(
             return
         }
         val rejects = WppTcpServePolicy.rejectsDial(decision, callbacks.canRunRfcomm(), projectionUp)
-        if (WppTcpServePolicy.raisesStaleEndpointRecord(callbacks.strategy(), callbacks.identity(), rejects)) {
+        if (WppTcpServePolicy.raisesStaleEndpointRecord(callbacks.strategy(), identity, rejects)) {
             // Once, not per dial: the phone re-dials on its own backoff and a moving stamp would
             // overtake the user's dismissal every time.
             ConnectionIssues.raiseOnce(context, ConnectionIssue.PHONE_HOLDS_STALE_ENDPOINT)
@@ -373,30 +377,54 @@ class WppTcpServer(
      * Same shape as the Bluetooth path's loop, and deliberately not shared with it: that one also
      * owns the wake poke, the RFCOMM listeners and the auto-start device list, none of which exist
      * here. What both must agree on is the message bytes, and that is [WppMessages]' job.
+     *
+     * [admitted] is the network this dial was served on: the phone reached us through a WPP
+     * endpoint it stores for it. Type 4 (its WPP endpoint, 5299), Type 1 (the AAP address, 5288)
+     * and Type 3 (the credentials) are each held to that network, re-read at the moment they are
+     * written. When it has been replaced, withdrawn, left incomplete or re-judged as not to be
+     * kept, the whole exchange ends rather than only the message: returning from here lets
+     * [handleConnection] close the socket and the accept loop release this peer's reservation, so
+     * the phone's next dial is admitted afresh.
      */
     private suspend fun runExchange(
         output: OutputStream,
         inbound: Channel<NativeAaHandshakeManager.ProtobufMessage>,
-        generation: Long
+        generation: Long,
+        admitted: NativeNetworkCredentials,
     ) {
         val session = WppHandshakeSession()
-        var stageEnteredAt = SystemClock.elapsedRealtime()
+        var stageEnteredAt = elapsedRealtime()
         var readerClosed = false
+        // The network Type 1 sent the phone to, once it has.
+        var startedOn: NativeNetworkCredentials? = null
+        // Set by an action that found the network moved under it. Ends the exchange, not just the action.
+        var abortReason: String? = null
+
+        /** The live network when it is still the admitted one, else null after marking the abort. */
+        fun admittedNetworkOrAbort(what: String): NativeNetworkCredentials? {
+            val live = callbacks.credentials()
+            if (live != null && CredentialFreshnessPolicy.isJoinable(live) &&
+                CredentialFreshnessPolicy.keepsEndpoint(admitted, live)
+            ) return live
+            abortReason = "the network this dial was admitted on (${admitted.ssid}) is no longer the one to send before $what"
+            return null
+        }
 
         suspend fun runAction(action: WppAction, source: NativeAaHandshakeManager.ProtobufMessage?) {
             when (action) {
                 WppAction.SendVersionRequest -> {
+                    val snapshot = admittedNetworkOrAbort("Type 4") ?: return
                     // The same rule as the Bluetooth path: an endpoint outlives the connection that
                     // carried it, so it only goes out for a network that will still be there.
                     val endpoint = when (val decision =
-                        WppEndpointPolicy.decide(callbacks.strategy(), listeningPort, callbacks.identity())) {
+                        WppEndpointPolicy.decide(callbacks.strategy(), listeningPort, snapshot.identity)) {
                         is WppEndpointDecision.Withhold -> {
                             AppLog.i("WppTcpServer: not advertising WPP over TCP: ${decision.reason}")
                             null
                         }
                         is WppEndpointDecision.Advertise ->
-                            WppMessages.endpoint(callbacks.credentials()?.ip.orEmpty(), decision.port)
-                                .also { callbacks.noteEndpointAdvertised() }
+                            WppMessages.endpoint(snapshot.ip, decision.port)
+                                .also { callbacks.noteEndpointAdvertised(snapshot) }
                     }
                     AppLog.i("WppTcpServer: [TX] WifiVersionRequest (Type 4) v${WppHandshakeSession.WPP_VERSION_MAJOR}.${WppHandshakeSession.WPP_VERSION_MINOR}")
                     val channelType = WppChannelTypePolicy.forHeadUnit(WifiBandCapability.supports5Ghz(context))
@@ -405,25 +433,33 @@ class WppTcpServer(
                     send(output, WppMessages.versionRequest(callbacks.carInfo(), endpoint, channelType, channels).toByteArray(), WppMessageType.VERSION_REQUEST)
                 }
                 WppAction.SendStartRequest -> {
-                    val endpoint = callbacks.projectionEndpoint()
+                    val network = admittedNetworkOrAbort("Type 1") ?: return
+                    val endpoint = callbacks.projectionEndpoint(network)
                     if (endpoint == null) {
-                        AppLog.w("WppTcpServer: no projection endpoint yet; cannot send WifiStartRequest")
+                        abortReason = "no projection endpoint for ${network.ssid}; cannot send WifiStartRequest"
                         return
                     }
+                    startedOn = network
                     AppLog.i("WppTcpServer: [TX] WifiStartRequest (Type 1) -> ${endpoint.first}:${endpoint.second}")
                     send(output, WppMessages.startRequest(endpoint.first, endpoint.second).toByteArray(), WppMessageType.START_REQUEST)
                 }
                 WppAction.SendInfoResponse -> {
                     val creds = callbacks.credentials()
-                    if (creds == null) {
-                        AppLog.w("WppTcpServer: no credentials to send")
+                    val started = startedOn
+                    // Same rule as the Bluetooth path, with the admitted network as the endpoint
+                    // the phone holds and Type 1's network as the address it was sent to.
+                    if (creds == null || started == null ||
+                        CredentialFreshnessPolicy.decide(started, creds, admitted) !=
+                        CredentialFreshnessPolicy.Action.SEND_AS_CAPTURED
+                    ) {
+                        abortReason = "no complete credentials for the network this exchange sent the phone to"
                         return
                     }
                     AppLog.i("WppTcpServer: [TX] WifiInfoResponse (Type 3) with credentials")
                     send(
                         output,
                         WppMessages.infoResponse(
-                            creds.ssid, creds.psk, creds.bssid, callbacks.identity()
+                            creds.ssid, creds.psk, creds.bssid, creds.identity
                         ).toByteArray(),
                         WppMessageType.INFO_RESPONSE
                     )
@@ -442,9 +478,14 @@ class WppTcpServer(
 
         suspend fun feed(event: WppEvent, source: NativeAaHandshakeManager.ProtobufMessage? = null) {
             val before = session.stage
-            for (action in session.on(event)) runAction(action, source)
+            for (action in session.on(event)) {
+                runAction(action, source)
+                // Nothing after an abandoned message may go out: a Type 3 behind a missing Type 1
+                // would name a network the phone was never sent to.
+                if (abortReason != null) break
+            }
             if (session.stage != before) {
-                stageEnteredAt = SystemClock.elapsedRealtime()
+                stageEnteredAt = elapsedRealtime()
                 AppLog.d("WppTcpServer: stage $before -> ${session.stage}")
             }
         }
@@ -461,7 +502,7 @@ class WppTcpServer(
             if (callbacks.credentials() != null) feed(WppEvent.CredentialsReady)
         }
 
-        while (isCurrentRun(generation) && !session.isTerminal()) {
+        while (isCurrentRun(generation) && !session.isTerminal() && abortReason == null) {
             if (callbacks.projectionSessionUp()) {
                 feed(WppEvent.TcpSessionUp)
                 continue
@@ -470,13 +511,13 @@ class WppTcpServer(
             if (readerClosed) {
                 delay(TICK_MS)
             } else {
-                val deadline = SystemClock.elapsedRealtime() + TICK_MS
+                val deadline = elapsedRealtime() + TICK_MS
                 while (true) {
                     val result = inbound.tryReceive()
                     val received = result.getOrNull()
                     if (received != null) { msg = received; break }
                     if (result.isClosed) { readerClosed = true; break }
-                    if (SystemClock.elapsedRealtime() >= deadline) break
+                    if (elapsedRealtime() >= deadline) break
                     delay(25)
                 }
             }
@@ -491,7 +532,7 @@ class WppTcpServer(
                 continue
             }
 
-            val waitedInStage = SystemClock.elapsedRealtime() - stageEnteredAt
+            val waitedInStage = elapsedRealtime() - stageEnteredAt
 
             if (session.stage == WppStage.AWAIT_CREDENTIALS) {
                 if (callbacks.credentials() != null) {
@@ -504,7 +545,9 @@ class WppTcpServer(
             }
             val timeout = session.currentStageTimeoutMs()
             if (timeout != null && waitedInStage >= timeout) {
-                feed(WppEvent.StageTimeout)
+                // SETTLING ends on its own event; it ignores StageTimeout, so feeding that one here
+                // left a settled exchange waiting forever, holding this peer's reservation with it.
+                feed(if (session.stage == WppStage.SETTLING) WppEvent.SettleTimeout else WppEvent.StageTimeout)
                 continue
             }
             // Nothing left to wait for: the phone has gone and this stage has no deadline to end
@@ -515,6 +558,10 @@ class WppTcpServer(
             }
         }
 
+        abortReason?.let {
+            AppLog.w("WppTcpServer: ending the exchange: $it")
+            return
+        }
         if (session.stage == WppStage.DONE && !readerClosed) holdOpen(output, inbound, generation)
     }
 

@@ -990,7 +990,7 @@
     <string name="zbt_probe_title">Przetestuj moduł Bluetooth jednostki</string>
     <string name="zbt_probe_idle">Dotknij, aby uruchomić</string>
     <string name="zbt_probe_running">Trwa…</string>
-    <string name="zbt_probe_message">Sprawdza, czy dedykowany układ Bluetooth stacji obsługuje połączenie Android Auto. Przez około 8 sekund sprawdza, czy układ w ogóle odpowiada, a jeśli tak — monitoruje go przez ok. półtorej minuty. Wiersz poniżej informuje o postępie; żadne inne funkcje stacji nie są w tym czasie modyfikowane.\n\nUkład Bluetooth może komunikować się tylko z jedną aplikacją naraz. Jeśli połączenie jest już aktywne, test poinformuje o tym zamiast ponawiać próbę. Aby przetestować go osobno, najpierw wyłącz powyższe ustawienie.\n\nOpcja „Obudź i obserwuj” dodatkowo wymusza ponowne połączenie układu z telefonem na potrzeby Android Auto. To jedyny krok wprowadzający jakiekolwiek zmiany — restart stacji przywraca stan początkowy. Po teście wyeksportuj logi i dołącz je do zgłoszenia.</string>
+    <string name="zbt_probe_message">Obie opcje inicjalizują moduł Bluetooth przed obserwacją. Może to wpłynąć na jego stan. Wybudzenie i obserwacja dodatkowo żąda połączenia z telefonem.\n\nTest ustępuje, gdy OHU używa modułu lub go sprawdza. Po teście wyeksportuj dziennik.</string>
     <string name="zbt_probe_watch_only">Tylko obserwuj</string>
     <string name="zbt_probe_wake_and_watch">Obudź i obserwuj</string>
     <string name="external_bt_blink_transport">Połącz przez zewnętrzny moduł Bluetooth FYT</string>
@@ -1454,4 +1454,16 @@
     <string name="audio_settings_reconnect">Ustawienia dźwięku zapisane. Połącz ponownie Android Auto, aby je zastosować.</string>
     <string name="native_aa_candidate_android_radio_description">Używaj Bluetooth Androida zamiast automatycznie wybierać moduł Bluetooth jednostki. Pozostaw wyłączone, aby wybierać automatycznie. Jeśli włączono opcję połączenia przez moduł, najpierw ją wyłącz.</string>
     <string name="external_bt_candidate_transport_description">Wymuś połączenie przez moduł Bluetooth jednostki zamiast automatycznego wyboru. Wymaga zgodnej usługi modułu. Pozostaw wyłączone, aby umożliwić użycie Bluetooth Androida, gdy usługa nie odpowiada; włączenie blokuje tę drogę zastępczą.</string>
+    <string name="audio_matching_mode">Korekcja czasu muzyki</string>
+    <string name="audio_matching_ohu">OHU</string>
+    <string name="audio_matching_wsola">WSOLA</string>
+    <string name="audio_matching_phase_vocoder">Phase Vocoder</string>
+    <string name="audio_matching_phase_vocoder_short">Phase Vocoder Short</string>
+    <string name="audio_matching_phase_gradient">Phase Gradient</string>
+    <string name="audio_matching_ohu_hint">Domyślny</string>
+    <string name="audio_matching_wsola_hint">Lekki</string>
+    <string name="audio_matching_phase_vocoder_hint">Zrównoważony</string>
+    <string name="audio_matching_phase_vocoder_short_hint">Niskie opóźnienie</string>
+    <string name="audio_matching_phase_gradient_hint">Wolne odtwarzanie</string>
+    <string name="audio_matching_description">OHU pozostaje domyślny. WSOLA wyrównuje nakładające się przebiegi; Phase Vocoder dostosowuje fazy widmowe. Short używa krótszego okna analizy. Phase Gradient odtwarza fazy przez całkowanie gradientów fazy. Te niezależne implementacje dodają opóźnienie przetwarzania; nazwy nie określają rankingu jakości dźwięku.\n\nMetody natywne: muzyka PCM. Nawigacja, odpowiedzi głosowe, dźwięki systemowe i AAC używają OHU.\nPołącz ponownie, aby zastosować. Ustawienia usuniętych silników wracają do OHU.</string>
 </resources>

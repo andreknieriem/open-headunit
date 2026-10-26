@@ -23,6 +23,9 @@ private fun focusLease() = PlaybackFocusLease().apply {
 private fun PlaybackFocusLease.activity(channel: Int, nowMs: Long) = activity(channel, fixtureOwner, nowMs)
 
 fun main() {
+    nativeMusicIntegration()
+    timeStretchWorkerRegression()
+    nativeFailureOwnershipRegression()
     for (sdk in listOf(16, 21, 22)) aacHealthySyncProgressRegression(sdk)
     aacHealthyProgressRegression()
     audioTrackBufferRegression()
@@ -273,7 +276,10 @@ private fun setupReplacementFocusRegression() {
         check(manager.focus.size == 1)
         val old = decoder.getTrack(5)!!
         val oldMixer = field(old, "mixer") as AudioMixer
-        old.write(pcm(240), 0, 960); old.pauseForIdle()
+        // 80 mono source frames become 240 mixer frames: the final block can leave the bank
+        // completely while the output still owns its unaccepted tail.
+        val prompt = pcm(40)
+        old.write(prompt, 0, prompt.size); old.pauseForIdle()
         val blockedOutput = object : PcmOutput {
             override val name = "Blocked tail"
             override val capacityFrames = 19200
@@ -804,7 +810,7 @@ private fun aacProgressOwnershipRegression(csdReplacement: Boolean) {
         if (csdReplacement) {
             check(audio.process(com.andrerinas.openheadunit.aap.AapMessage(5,
                 com.andrerinas.openheadunit.aap.protocol.proto.Media.MsgType.MEDIA_MESSAGE_CODEC_CONFIG_VALUE,
-                byteArrayOf(0x11, 0x90.toByte(), 0))))
+                byteArrayOf(0x14, 0x08, 0)))) // Same 16 kHz mono format, distinct padded CSD.
             data()
         } else {
             SystemClock.offsetMs += 1500
@@ -1259,9 +1265,19 @@ private fun audioLatencyPreferenceRegression() {
         val settings = com.andrerinas.openheadunit.utils.Settings().apply {
             audioLatencyMultiplier = multiplier
             staticAudioFocus = shared
+            separateAudioStreams = !shared
+            mediaAudioStream = 3
+            guidanceAudioStream = 0
+            systemAudioStream = 5
         }
         val decoder = AudioDecoder()
         val audio = com.andrerinas.openheadunit.aap.AapAudio(decoder, AudioManager(), settings)
+        val renderGate = CountDownLatch(1)
+        val previousPriorityHook = android.os.Process.hook
+        android.os.Process.hook = { name ->
+            previousPriorityHook?.invoke(name)
+            if (name.startsWith("AudioMixer")) renderGate.await()
+        }
         try {
             for (id in listOf(4, 5, 6)) {
                 audio.noteSinkCodec(id, codec)
@@ -1273,8 +1289,24 @@ private fun audioLatencyPreferenceRegression() {
                 check(bank.targetFrames().toLong() == requested) {
                     "sdk=$sdk channel=$id codec=$codec multiplier=$multiplier target=${bank.targetFrames()} requested=$requested"
                 }
+                if (codec == 1) {
+                    // A 320-frame packet must retain its duration after the real advertised
+                    // mono 16 kHz prompt / stereo 48 kHz music format reaches the converter.
+                    val media = id == com.andrerinas.openheadunit.aap.protocol.Channel.ID_AUD
+                    val input = ByteArray(320 * (if (media) 2 else 1) * 2) {
+                        if (it % 2 == 0) 64 else 0
+                    }
+                    track.write(input, 0, input.size)
+                    check(bank.depthFrames() == if (media) 320 else 960) {
+                        "channel=$id source duration changed: bank=${bank.depthFrames()}"
+                    }
+                }
             }
-        } finally { audio.releaseAllFocus(); decoder.stop(); handler.runAll(); handler.reset() }
+        } finally {
+            android.os.Process.hook = previousPriorityHook
+            renderGate.countDown()
+            audio.releaseAllFocus(); decoder.stop(); handler.runAll(); handler.reset()
+        }
     }
     println("PASS all audio sinks honor each selected reserve through AapAudio Setup for PCM and AAC with shared and separate outputs on API 16/33")
 }
@@ -1291,10 +1323,13 @@ private fun audioSettingsRegression() {
         "system route" to { it.systemAudioStream = 3 },
         "media codec" to { it.useAacAudio = true },
         "sink disabled" to { it.enableAudioSink = false },
-        "DSP route" to { it.attachHwDspEqualizer = true }
+        "DSP route" to { it.attachHwDspEqualizer = true },
+        "time correction" to { it.audioMatchingMode = AudioTimeCorrectionMode.WSOLA }
     )
     val cases = changes.map { (label, change) ->
-        Triple(label, com.andrerinas.openheadunit.utils.Settings(), change)
+        Triple(label, com.andrerinas.openheadunit.utils.Settings().apply {
+            separateAudioStreams = label == "guidance route" || label == "system route"
+        }, change)
     } + listOf(
         Triple("static to dynamic", com.andrerinas.openheadunit.utils.Settings().apply { staticAudioFocus = true },
             { settings: com.andrerinas.openheadunit.utils.Settings -> settings.staticAudioFocus = false }),
@@ -1303,19 +1338,25 @@ private fun audioSettingsRegression() {
     )
     for ((label, settings, change) in cases) {
         handler.reset()
+        val channelId = when (label) {
+            "guidance route" -> 4
+            "media route", "time correction" -> 6
+            else -> 5
+        }
+        val pcmPacket = pcm(if (channelId == 6) 240 else 120)
         val decoder = AudioDecoder()
         val manager = AudioManager()
         val old = com.andrerinas.openheadunit.aap.AapAudio(decoder, manager, settings)
         val original = old.sessionConfig
-        val originalStream = old.streamFor(5)
+        val originalStream = old.streamFor(channelId)
         var fresh: com.andrerinas.openheadunit.aap.AapAudio? = null
         try {
-            old.noteSinkCodec(5, if (settings.useAacAudio) 2 else 1); old.precreateAudioTrack(5)
-            val originalTrack = decoder.getTrack(5)!!
+            old.noteSinkCodec(channelId, if (settings.useAacAudio) 2 else 1); old.precreateAudioTrack(channelId)
+            val originalTrack = decoder.getTrack(channelId)!!
             change(settings)
-            check(old.sessionConfig == original && old.streamFor(5) == originalStream)
+            check(old.sessionConfig == original && old.streamFor(channelId) == originalStream)
             check(old.needsSessionRestart()) { "$label was applied without renegotiation" }
-            check(decoder.getTrack(5) === originalTrack) { "old tracks rebuilt before disconnect" }
+            check(decoder.getTrack(channelId) === originalTrack) { "old tracks rebuilt before disconnect" }
             old.releaseAllFocus(); handler.runAll()
             check(manager.focus.isEmpty())
             // Same decoder, settings and process; only the projection session is replaced.
@@ -1323,26 +1364,34 @@ private fun audioSettingsRegression() {
             val current = com.andrerinas.openheadunit.aap.AapAudio(decoder, manager, settings).also { fresh = it }
             check(!current.needsSessionRestart())
             check(current.sessionConfig != original)
-            current.noteSinkCodec(5, if (settings.useAacAudio) 2 else 1)
-            current.precreateAudioTrack(5)
-            check(decoder.getTrack(5) !== originalTrack && decoder.getTrack(5) != null)
-            check(decoder.sinkCodecFor(5)?.isAac == settings.useAacAudio)
-            current.preparePlayback(5); handler.runAll()
+            current.noteSinkCodec(channelId, if (settings.useAacAudio) 2 else 1)
+            current.precreateAudioTrack(channelId)
+            check(decoder.getTrack(channelId) !== originalTrack && decoder.getTrack(channelId) != null)
+            check(decoder.sinkCodecFor(channelId)?.isAac == settings.useAacAudio)
+            current.preparePlayback(channelId); handler.runAll()
             old.releaseAllFocus(); handler.runAll()
-            val track = decoder.getTrack(5)!!
+            val track = decoder.getTrack(channelId)!!
             if (settings.useAacAudio) {
                 val codec = field(track, "decoder") as MediaCodec
                 track.write(ByteArray(64), 0, 64)
                 waitFor("AAC input after settings reconnect") { codec.queued == 1 }
-                codec.emit(pcm(240))
+                codec.emit(pcmPacket)
             } else {
-                track.write(pcm(240), 0, 960)
+                track.write(pcmPacket, 0, pcmPacket.size)
             }
-            current.stopAudio(5); handler.runAll()
+            current.stopAudio(channelId); handler.runAll()
             waitFor("non-silent output after changing $label") {
                 AudioTrack.created.drop(outputsBeforeReconnect).any { output ->
                     output.samples.any { it.toInt() != 0 }
                 }
+            }
+            val expectedStream = if (!settings.separateAudioStreams) settings.mediaAudioStream else when (channelId) {
+                4 -> settings.guidanceAudioStream
+                5 -> settings.systemAudioStream
+                else -> settings.mediaAudioStream
+            }
+            check(AudioTrack.created.drop(outputsBeforeReconnect).all { it.stream == expectedStream }) {
+                "$label did not reach the replacement output route $expectedStream"
             }
         } finally {
             old.releaseAllFocus(); fresh?.releaseAllFocus(); decoder.stop(); handler.runAll(); handler.reset()

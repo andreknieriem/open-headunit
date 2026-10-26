@@ -1302,7 +1302,7 @@
     <string name="zbt_probe_title">Test the head unit\'s Bluetooth module</string>
     <string name="zbt_probe_idle">Tap to run</string>
     <string name="zbt_probe_running">Running…</string>
-    <string name="zbt_probe_message">Asks this unit\'s separate Bluetooth chip whether it will carry an Android Auto connection. It spends about eight seconds checking that the chip answers at all and, only if it does, watches for about a minute and a half. The line under this setting shows what is happening, and nothing else on the unit is touched.\n\nThe chip talks to one program at a time, so if a connection is already running through it the test says so instead of testing. Turn the setting above off first to test it on its own.\n\nWake and watch also asks the chip to reconnect to your phone for Android Auto. That is the only part that changes anything, and restarting the unit undoes it. Please export the log afterwards and attach it.</string>
+    <string name="zbt_probe_message">Both options initialize the Bluetooth module before monitoring it. This may affect its Bluetooth state. Wake and watch also requests a connection to your phone.\n\nThe test yields while OHU is using or checking the module. Export the log after the test.</string>
     <string name="zbt_probe_watch_only">Watch only</string>
     <string name="zbt_probe_wake_and_watch">Wake and watch</string>
     <string name="external_bt_blink_transport">Connect through the FYT external Bluetooth module</string>
@@ -1653,4 +1653,18 @@
     <string name="wifi_scan_legacy_limit">Renewal on Android 8–10\n• Request a pause on connection, then every five minutes while connected.\n• Android may enable searches between requests. The interval limits repeated cleanup work; it cannot keep every scan stopped.\n\nIf enabling searches fails, keep Shizuku running and retry. Rebooting resets this temporary control.</string>
     <string name="native_aa_candidate_android_radio_description">Use Android Bluetooth instead of automatically selecting the head unit Bluetooth module. Leave off for automatic selection. If a module connection option is enabled, turn it off first.</string>
     <string name="external_bt_candidate_transport_description">Force connection through the head unit Bluetooth module instead of automatic selection. This requires a compatible module service. Leave off to allow Android Bluetooth when that service does not respond; forcing this option prevents that fallback.</string>
+
+    <string name="audio_matching_mode">Music time correction</string>
+    <string name="audio_matching_ohu">OHU</string>
+    <string name="audio_matching_wsola">WSOLA</string>
+    <string name="audio_matching_phase_vocoder">Phase Vocoder</string>
+    <string name="audio_matching_phase_vocoder_short">Phase Vocoder Short</string>
+    <string name="audio_matching_phase_gradient">Phase Gradient</string>
+    <string name="audio_matching_ohu_hint">Default</string>
+    <string name="audio_matching_wsola_hint">Lightweight</string>
+    <string name="audio_matching_phase_vocoder_hint">Balanced</string>
+    <string name="audio_matching_phase_vocoder_short_hint">Low latency</string>
+    <string name="audio_matching_phase_gradient_hint">Slow playback</string>
+    <string name="audio_matching_option" translatable="false">%1$s\n(%2$s)</string>
+    <string name="audio_matching_description">OHU remains the default. WSOLA aligns overlapping waveforms; Phase Vocoder adjusts spectral phases. Short uses a shorter analysis window. Phase Gradient integrates phase gradients to reconstruct phases. These independent methods add processing latency; their names do not rank sound quality.\n\nNative methods: PCM music. Navigation, voice responses, system sounds and AAC use OHU.\nReconnect to apply. Removed engine preferences reset to OHU.</string>
 </resources>

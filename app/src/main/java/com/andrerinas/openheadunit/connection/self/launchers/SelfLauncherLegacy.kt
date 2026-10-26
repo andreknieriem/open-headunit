@@ -56,6 +56,8 @@ class SelfLauncherLegacy(
         //
         // The launcher argument only decides whether an NSD record is registered, and Self Mode
         // wants none: WifiLauncherManual answers false and starts nothing of its own.
+        services.ensureLaunchAllowed()
+        services.wifiLauncherManager.noteRearm()
         services.wifiLauncherManager.sharedServices.startWirelessServer(
             services.wifiLauncherManager.active ?: WifiLauncherManual(services.wifiLauncherManager)
         )

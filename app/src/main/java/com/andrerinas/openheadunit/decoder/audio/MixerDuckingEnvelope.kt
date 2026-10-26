@@ -8,6 +8,9 @@ internal class MixerDuckingEnvelope(private val sampleRate: Int = 48000) {
     private var step = 0f
     private var remaining = 0
 
+    /** Safe for an entire block only after setSpeechActive has selected this block's target. */
+    val isSettledUnity: Boolean get() = remaining == 0 && gain == 1f
+
     fun setSpeechActive(active: Boolean) {
         val next = if (active) 0.4f else 1f
         if (next == target) return

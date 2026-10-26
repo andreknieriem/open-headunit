@@ -3,6 +3,7 @@ app/src/main/java/com/andrerinas/openheadunit/aap/AudioMediaPayload.kt
 app/src/main/java/com/andrerinas/openheadunit/aap/AudioSinkCodecPolicy.kt
 app/src/main/java/com/andrerinas/openheadunit/aap/AudioTimestampMonitor.kt
 app/src/main/java/com/andrerinas/openheadunit/aap/LinkGapMonitor.kt
+app/src/main/java/com/andrerinas/openheadunit/aap/protocol/AudioConfigs.kt
 app/src/main/java/com/andrerinas/openheadunit/aap/protocol/Channel.kt
 app/src/main/java/com/andrerinas/openheadunit/decoder/audio/AAudioPcmOutput.kt
 app/src/main/java/com/andrerinas/openheadunit/decoder/audio/AacCodecConfig.kt
@@ -53,3 +54,13 @@ app/src/main/java/com/andrerinas/openheadunit/decoder/audio/AudioTrackBufferSizi
 app/src/main/java/com/andrerinas/openheadunit/decoder/audio/PcmPlaybackPosition.kt
 app/src/main/java/com/andrerinas/openheadunit/decoder/audio/PcmRenderDeadline.kt
 app/src/test/host-audio/PcmRenderDeadlineRegression.kt
+app/src/main/java/com/andrerinas/openheadunit/decoder/audio/OptimizedPcmOverlap.kt
+app/src/main/java/com/andrerinas/openheadunit/decoder/audio/AudioTrackWritePacer.kt
+app/src/main/java/com/andrerinas/openheadunit/decoder/audio/AudioTimeCorrectionMode.kt
+app/src/main/java/com/andrerinas/openheadunit/decoder/audio/TimeStretchEngine.kt
+app/src/main/java/com/andrerinas/openheadunit/decoder/audio/NativePcmQueue.kt
+app/src/main/java/com/andrerinas/openheadunit/decoder/audio/NativeTempoPolicy.kt
+app/src/main/java/com/andrerinas/openheadunit/decoder/audio/TimeStretchWorker.kt
+app/src/test/host-audio/TimeStretchWorkerRegression.kt
+app/src/test/host-audio/NativeMusicIntegration.kt
+app/src/test/host-audio/NativeFailureOwnershipRegression.kt

@@ -90,12 +90,17 @@ class SelfLauncherManager(
     }
 
     @SuppressLint("MissingPermission", "HardwareIds")
-    fun start(settingsRestart: CommManager.ConnectionState.Disconnected? = null) {
+    fun start(settingsRestart: CommManager.ConnectionState.Disconnected? = null, needsDummyVpn: Boolean = false) {
         val commManager = App.provide(service).commManager
 
         // auto-start-self-mode and an explicit ACTION_START_SELF_MODE both land here, and running
         // two launches at once costs a session rather than a retry. See SelfLaunchCoalescePolicy.
         if (!SelfLaunchCoalescePolicy.shouldStart(launchInFlight, commManager.isConnected)) {
+            // MainActivity can begin the launch before Home finishes its offline-VPN
+            // decision/consent. Merge that requirement into the still-running Self job;
+            // do not start a second launcher or alter an already connected session.
+            if (needsDummyVpn && isActive && launchInFlight && !commManager.isConnected &&
+                launchJob?.isActive == true) adoptDummyVpn(needsDummyVpn = true)
             AppLog.i(
                 "SelfMode: a launch is already " +
                     (if (commManager.isConnected) "connected" else "in flight") +
@@ -109,6 +114,9 @@ class SelfLauncherManager(
         if (settingsRestart == null) commManager.cancelPendingSettingsRestart()
         else if (!settingsRestart.acceptsSettingsRestart(commManager.connectionState.value)) return
 
+        // Acceptance precedes the queued Main job and its server acquisition. An older
+        // terminal observer must not clear this new Self launch in that scheduling gap.
+        wifiLauncherManager.noteRearm()
         // A new launch owns its own deadline; the previous session cannot time it out.
         launchTimeoutJob?.cancel()
         launchConnected = false
@@ -116,6 +124,9 @@ class SelfLauncherManager(
         retiredSettingsTerminal = null
         isActive = true
         launchInFlight = true
+        // Own the retained VPN before queued work can be cancelled. Otherwise a cancel
+        // between acceptance and Main dispatch would still see the old SESSION owner.
+        adoptDummyVpn(needsDummyVpn)
         // Publish and bind the job before it can run. Revoking Save then cancels both a queued
         // launch and a launcher suspended while waiting for the network, without touching a new job.
         val job = service.serviceScope.launch(Dispatchers.Main, start = CoroutineStart.LAZY) {
@@ -123,7 +134,6 @@ class SelfLauncherManager(
                 stopIfCurrent(coroutineContext[Job], preserveVpn = commManager.connectionState.value !== settingsRestart)
                 return@launch
             }
-            adoptDummyVpn()
             // prepare launchers
             val services = SelfLauncherServices(service, wifiLauncherManager, settingsRestart)
             val launchers: Array<SelfLauncher>
@@ -244,15 +254,26 @@ class SelfLauncherManager(
     }
 
     /**
-     * Records that a Self Mode VPN - started by `HomeFragment`, which owns the consent dialog - is
-     * ours to clean up, and arms the watchdog that does it if no phone ever arrives.
+     * Prepares the VPN requested by Home after launch admission, adopts any retained tunnel,
+     * and arms the watchdog that cleans it up if no phone ever arrives. Home owns consent.
      */
-    private fun adoptDummyVpn() {
+    private fun adoptDummyVpn(needsDummyVpn: Boolean) {
         val commManager = App.provide(service).commManager
 
         // Nothing to adopt where the flavor has no VPN - see VpnControl.
         if (!VpnControl.isVpnAvailable()) return
-        if (service.dummyVpnOwner == null) service.dummyVpnOwner = DummyVpnPolicy.Owner.SELF_MODE
+        // Home carries its offline-VPN requirement with the service command instead of
+        // issuing a separate startService request before this admission. Old disconnect
+        // cleanup can run between the two UI/service calls; only the accepted launch
+        // may issue the token that must survive it. Online/5277 and Save default to false.
+        // A new Self launch can precede the previous session's terminal observer. Take over
+        // its retained VPN along with the new launch. SESSION excludes
+        // OHU from the routes; Self Mode needs activeNetwork for OHU too, so request that
+        // configuration before assigning its watchdog. DummyVpnService reuses an equal config.
+        if ((needsDummyVpn || service.dummyVpnOwner == DummyVpnPolicy.Owner.SESSION) && VpnControl.isPrepared(service)) {
+            VpnControl.startVpn(service, excludeSelf = false)
+        }
+        service.dummyVpnOwner = DummyVpnPolicy.Owner.SELF_MODE
         selfModeVpnWatchdog?.cancel()
         selfModeVpnWatchdog = service.serviceScope.launch {
             delay(VPN_TIMEOUT_MS)

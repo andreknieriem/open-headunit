@@ -1,0 +1,249 @@
+package cleanup
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import java.util.concurrent.ConcurrentLinkedQueue
+import kotlin.coroutines.CoroutineContext
+
+class Queued : CoroutineDispatcher() {
+    val queue = ConcurrentLinkedQueue<Runnable>()
+    override fun dispatch(context: CoroutineContext, block: Runnable) { queue.add(block) }
+    fun drain() { while (true) (queue.poll() ?: return).run() }
+}
+class CommManager {
+    sealed class ConnectionState {
+        class Disconnected(val isUserExit: Boolean = true, val isClean: Boolean = false,
+            val isSettingsRestart: Boolean = false, val holdsRecovery: Boolean = false,
+            val hadPhysicalConnection: Boolean = true, val endedAttempt: Any? = null) : ConnectionState() {
+            val settingsRetryOwner: Disconnected? = null
+            fun acceptsSettingsRestart(other: Disconnected) = false
+        }
+        object Connecting : ConnectionState()
+        object Connected : ConnectionState()
+    }
+    val connectionState = MutableStateFlow<ConnectionState>(ConnectionState.Disconnected())
+    // Production reads both under transportLifecycleLock; run.py exercises that method itself.
+    var attempt: Any? = null
+    fun rearmSnapshot(): Pair<ConnectionState.Disconnected?, Any?> {
+        val terminal = connectionState.value as? ConnectionState.Disconnected
+        return terminal to (if (terminal == null) attempt else null)
+    }
+    val isConnected get() = connectionState.value is ConnectionState.Connected
+    var gate = CompletableDeferred<Unit>()
+    suspend fun awaitDisconnectComplete() { gate.await() }
+}
+object SystemClock { fun elapsedRealtime() = 100L }
+object android { object os { val SystemClock = cleanup.SystemClock } }
+object AppLog { fun i(s: String) {}; fun w(s: String) {} }
+object ConnectionStageTracker { var ends=0; fun endAttempt() { ends++ }; fun notePhoneLeft(t: Long) {} }
+object GpsLocationService { fun intent(s: Service) = Unit }
+object DummyVpnPolicy { enum class Reason { SESSION_ENDED } }
+object ConnectionArbiter { fun sessionEnded(wirelessAlreadyRearmed: Boolean, userExit: Boolean) {} }
+object SessionEndGroupPolicy {
+    enum class Action { STOP, KEEP_AND_REARM, NONE }
+    fun decide(activeModeIsNative: Boolean,isUserExit: Boolean,rearmedAfterWiredSession: Boolean) =
+        if (activeModeIsNative && isUserExit && !rearmedAfterWiredSession) Action.STOP else Action.NONE
+    fun wakesPhoneAfterSessionEnd(clean: Boolean, hand: Boolean) = !clean && !hand
+}
+enum class WifiLauncherMode { NATIVE }
+enum class WifiLauncherStopSequence { LAST, BEFORE_HOTSPOT_DISABLE }
+enum class HotspotExitAction { NONE, DISABLE, WARN_LEFT_UP }
+object UserExitHotspotPolicy { fun onUserExit(a: Any,b: Any,c: Any,d: Any,e: Any) = HotspotExitAction.NONE }
+object HotspotManager { fun restart(s: Service) = true }
+class Settings {
+    val wifiConnectionMode=WifiLauncherMode.NATIVE; val helperConnectionStrategy=0; val nativeApStrategy=0
+    val autoEnableHotspot=false; var hotspotTeardownProvenUnsafe=false
+}
+class WifiLauncherNative {
+    val handshakeManager: WifiLauncherNative? = null
+    val strategy="Direct"
+    fun hasWifiDirect() = true
+    fun noteSessionEnded(b: Boolean) {}
+    fun rearmAfterSessionEnd(wakePhone: Boolean) {}
+}
+class WifiManager(val service: Service) {
+    private val cleanupGeneration=WirelessCleanupGeneration()
+    var active: WifiLauncherNative? = WifiLauncherNative()
+    val activeMode=WifiLauncherMode.NATIVE
+    var cancelledByUser=false
+    var stops=0
+    val sharedServices=this
+    val wifiDirectManager: WifiManager?=null
+    fun cleanupTicket()=cleanupGeneration.capture()
+    fun isCleanupCurrent(ticket: Any)=cleanupGeneration.isCurrent(ticket)
+    // LAUNCHER_ARM
+    fun stop(seq: WifiLauncherStopSequence?=null) { stops++; active=null }
+    fun restartDiscovery() {}
+}
+class UnitManager { fun stop() {}; fun onSessionEnded() {}; fun setSwitchingToProjection(b: Boolean) {} }
+class MediaSession { var isActive=true }
+class ReconnectPlayback { var records=0; fun onDisconnected(b: Boolean?, now: Long, deliberate: Boolean) { records++ } }
+class MediaNotification { fun cancel() {} }
+object App { fun provide(s: Service)=s }
+class VideoDecoder { var stops=0; fun stop(reason: String) { stops++ } }
+class SelfManager { var isActive=false }
+class Service {
+    val main=Queued()
+    val serviceScope=CoroutineScope(SupervisorJob()+main)
+    val commManager=CommManager()
+    val selfLauncherManager=SelfManager()
+    val wifiLauncherManager=WifiManager(this)
+    val settings=Settings()
+    val videoDecoder=VideoDecoder()
+    var sessionEndedByHand=false; var pendingBtStandDown: Any?=null; var wirelessQuiescedForWiredSession=false
+    var exitTeardownDone: CompletableDeferred<Unit>?=null
+    var exitTeardownState: CommManager.ConnectionState.Disconnected?=null
+    var isDestroying=false; var userExitedAA=false; var userExitCooldownUntil=0L
+    val USER_EXIT_COOLDOWN_MS=5000L
+    val usbLauncherManager=UnitManager(); val nightModeManager: UnitManager?=UnitManager(); val carKeysManager=UnitManager()
+    var autoResumePlaybackJob: Job?=null; var mediaMetadataDecodeJob: Job?=null
+    var lastAaMediaMetadata: Any?=null; var lastAaPlaybackPositionMs=0L; var lastAaPlaybackIsPlaying: Boolean?=null
+    var cachedAaAlbumArtBitmap: Any?=null
+    val reconnectPlayback=ReconnectPlayback(); val mediaNotification=MediaNotification()
+    var gpsStops=0; var wifiReleases=0; var vpnStops=0; var reconnects=0; var deadlineCancels=0
+    fun cancelProjectionRaiseDeadline() { deadlineCancels++ }
+    fun cancelAllBtAutoDisconnects() {}
+    fun releaseWifiLock() { wifiReleases++ }
+    fun stopDummyVpn(r: DummyVpnPolicy.Reason) { vpnStops++ }
+    fun stopService(intent: Unit) { gpsStops++ }
+    fun updateNotification() {}
+    fun applyPlaceholderMediaMetadata() {}
+    fun safeMediaSessionCall(action: (MediaSession)->Unit) { action(MediaSession()) }
+    fun updateMediaSessionState(active: Boolean) {}
+    fun scheduleReconnectIfNeeded(state: CommManager.ConnectionState.Disconnected) { reconnects++ }
+    suspend fun restartForAudioSettings(state: CommManager.ConnectionState.Disconnected) {}
+    fun rearmWirelessAfterWiredSession(quiesced: Boolean)=false
+    fun notifyEnd(state: CommManager.ConnectionState.Disconnected) { onDisconnected(state) }
+    // CALLBACK
+}
+fun main() {
+    // Explicit arm before observer: session resources still retire, new attempt state survives.
+    Service().apply {
+        val ended=commManager.connectionState.value as CommManager.ConnectionState.Disconnected
+        wifiLauncherManager.noteRearm()
+        notifyEnd(ended); commManager.gate.complete(Unit); main.drain()
+        check(gpsStops==1 && wifiReleases==1)
+        check(vpnStops==1 && deadlineCancels==1 && reconnects==0)
+        check(!userExitedAA && userExitCooldownUntil==0L && wifiLauncherManager.stops==0)
+        serviceScope.cancel()
+    }
+    Service().apply {
+        val ended=commManager.connectionState.value as CommManager.ConnectionState.Disconnected
+        wifiLauncherManager.noteRearm(); selfLauncherManager.isActive=true
+        exitTeardownState=ended; exitTeardownDone=CompletableDeferred()
+        notifyEnd(ended); main.drain()
+        check(vpnStops==0 && !exitTeardownDone!!.isCompleted)
+        commManager.gate.complete(Unit); main.drain()
+        check(exitTeardownDone!!.isCompleted)
+        serviceScope.cancel()
+    }
+    // Explicit arm after observer but before teardown: old asynchronous stop is discarded.
+    Service().apply {
+        val ended=commManager.connectionState.value as CommManager.ConnectionState.Disconnected
+        notifyEnd(ended); main.drain(); wifiLauncherManager.noteRearm()
+        commManager.gate.complete(Unit); main.drain()
+        check(wifiLauncherManager.stops==0)
+        serviceScope.cancel()
+    }
+    // A separate terminal event still performs normal policy and completes only its own waiter.
+    Service().apply {
+        wifiLauncherManager.noteRearm()
+        val ended=CommManager.ConnectionState.Disconnected()
+        commManager.connectionState.value=ended
+        exitTeardownState=ended; exitTeardownDone=CompletableDeferred()
+        notifyEnd(ended); commManager.gate.complete(Unit); main.drain()
+        check(wifiLauncherManager.stops==1 && gpsStops==1 && userExitedAA)
+        check(exitTeardownDone!!.isCompleted)
+        serviceScope.cancel()
+    }
+    // An old queued terminal must neither touch a new attempt's policy nor complete its Stop
+    // waiter. The new state's onConnected follows on this same collector, so the old session's
+    // own resources are released now rather than leaked until the new session ends.
+    Service().apply {
+        val old=commManager.connectionState.value as CommManager.ConnectionState.Disconnected
+        exitTeardownState=CommManager.ConnectionState.Disconnected(); exitTeardownDone=CompletableDeferred()
+        commManager.connectionState.value=CommManager.ConnectionState.Connected
+        val stageEnds=ConnectionStageTracker.ends
+        notifyEnd(old); main.drain()
+        check(gpsStops==1 && wifiReleases==1 && deadlineCancels==1 && reconnectPlayback.records==1)
+        check(vpnStops==0 && reconnects==0 && userExitCooldownUntil==0L && ConnectionStageTracker.ends==stageEnds)
+        check(!exitTeardownDone!!.isCompleted)
+        commManager.gate.complete(Unit); main.drain()
+        check(!exitTeardownDone!!.isCompleted && wifiLauncherManager.stops==0 && videoDecoder.stops==0)
+        serviceScope.cancel()
+    }
+    // Self is admitted while an earlier attempt is still Connecting (isConnected is false). That
+    // attempt's failure is created after the arm and must not end the new launch: no VPN stop,
+    // Self clear (scheduleReconnectIfNeeded's Self branch), cooldown, stage end or deferred stop.
+    for (userExit in listOf(false, true)) Service().apply {
+        val attempt=Any()
+        commManager.attempt=attempt; commManager.connectionState.value=CommManager.ConnectionState.Connecting
+        selfLauncherManager.isActive=true; wifiLauncherManager.noteRearm()
+        val failed=CommManager.ConnectionState.Disconnected(isUserExit=userExit, hadPhysicalConnection=false, endedAttempt=attempt)
+        commManager.attempt=null; commManager.connectionState.value=failed
+        val stageEnds=ConnectionStageTracker.ends
+        notifyEnd(failed); commManager.gate.complete(Unit); main.drain()
+        check(vpnStops==0 && reconnects==0 && selfLauncherManager.isActive) { "old Connecting end cleared new Self" }
+        check(!userExitedAA && userExitCooldownUntil==0L && ConnectionStageTracker.ends==stageEnds)
+        check(wifiLauncherManager.stops==0 && videoDecoder.stops==0)
+        check(gpsStops==1 && wifiReleases==1)
+        // Self's own later attempt is not fenced and ends with the ordinary policy.
+        val own=Any()
+        commManager.attempt=own; commManager.connectionState.value=CommManager.ConnectionState.Connecting
+        val selfEnd=CommManager.ConnectionState.Disconnected(isUserExit=false, endedAttempt=own)
+        commManager.attempt=null; commManager.connectionState.value=selfEnd
+        notifyEnd(selfEnd); main.drain()
+        check(vpnStops==1 && reconnects==1)
+        serviceScope.cancel()
+    }
+    // The same Connecting attempt reaching a physical connection after the arm superseded it.
+    Service().apply {
+        val attempt=Any()
+        commManager.attempt=attempt; commManager.connectionState.value=CommManager.ConnectionState.Connecting
+        selfLauncherManager.isActive=true; wifiLauncherManager.noteRearm()
+        val ended=CommManager.ConnectionState.Disconnected(isUserExit=false, hadPhysicalConnection=true, endedAttempt=attempt)
+        commManager.attempt=null; commManager.connectionState.value=ended
+        notifyEnd(ended); commManager.gate.complete(Unit); main.drain()
+        check(vpnStops==1 && reconnects==1)
+        serviceScope.cancel()
+    }
+    // Bluetooth stand-down belongs to the ended session. A socket that only publishes a newer
+    // state, before or during teardown, does not withdraw it; a launcher arm since then does.
+    for (supersededAtCallback in listOf(true, false)) for (armed in listOf(false, true)) Service().apply {
+        val ended=CommManager.ConnectionState.Disconnected(isUserExit=true)
+        commManager.connectionState.value=ended
+        pendingBtStandDown=wifiLauncherManager.cleanupTicket()
+        if (supersededAtCallback) commManager.connectionState.value=CommManager.ConnectionState.Connecting
+        notifyEnd(ended); main.drain()
+        check(pendingBtStandDown==null && gpsStops==1 && wifiReleases==1 && reconnectPlayback.records==1)
+        check(wifiLauncherManager.stops==0) // Not before CommManager finishes ByeBye/close.
+        if (!supersededAtCallback) commManager.connectionState.value=CommManager.ConnectionState.Connecting
+        if (armed) {
+            wifiLauncherManager.noteRearm()
+            userExitedAA = false // Explicit Start clears the exit hold before re-arming.
+        }
+        commManager.gate.complete(Unit); main.drain()
+        check(wifiLauncherManager.stops==(if (armed) 0 else 1) && userExitedAA==!armed) {
+            "stand-down supersededAtCallback=$supersededAtCallback armed=$armed"
+        }
+        serviceScope.cancel()
+    }
+    // The original BT terminal may never reach this callback (first failed open or
+    // StateFlow conflation). Explicit rearm revokes that pending intent before any new end.
+    for (rearmed in listOf(false, true)) Service().apply {
+        commManager.connectionState.value=CommManager.ConnectionState.Connecting
+        pendingBtStandDown=wifiLauncherManager.cleanupTicket()
+        val skipped=CommManager.ConnectionState.Disconnected(hadPhysicalConnection=false)
+        commManager.connectionState.value=skipped
+        if (rearmed) wifiLauncherManager.noteRearm()
+        commManager.connectionState.value=CommManager.ConnectionState.Connected
+        val ended=CommManager.ConnectionState.Disconnected(isUserExit=false)
+        commManager.connectionState.value=ended
+        notifyEnd(ended); commManager.gate.complete(Unit); main.drain()
+        check(pendingBtStandDown==null)
+        check(wifiLauncherManager.stops==(if (rearmed) 0 else 1))
+        check(userExitedAA==!rearmed)
+        serviceScope.cancel()
+    }
+    println("PASS actual disconnect callback: stale policy vs session resources, rearm across await, separate terminal and captured Stop waiter")
+    println("PASS actual disconnect callback: Connecting attempt older than Self arm, superseded resource release, Bluetooth stand-down ownership")
+}

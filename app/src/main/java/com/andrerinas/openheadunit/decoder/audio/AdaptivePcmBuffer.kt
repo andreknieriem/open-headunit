@@ -6,7 +6,8 @@ internal class AdaptivePcmBuffer(
     private val sampleRate: Int = 48000,
     private val channels: Int = 2,
     latencyMultiplier: Int = AudioJitterBufferPolicy.DEFAULT_MULTIPLIER,
-    private val isMediaSink: Boolean = false
+    private val isMediaSink: Boolean = false,
+    private val nativeTimeCorrection: Boolean = false
 ) {
     private val mediaPrerollDeadlineMs = 1500L
     private val cycleFrames = sampleRate / 100
@@ -22,7 +23,7 @@ internal class AdaptivePcmBuffer(
     private var endingFrames = 0
     private val policy = AdaptiveJitterPolicy(sampleRate, latencyMultiplier)
     private val recovery = LatencyRecoveryPolicy(sampleRate)
-    private val overlap = PcmOverlap()
+    private val overlap = PcmOverlap(optimized = true)
     private var recoveryDeferrals = 0
     private val prerollDeadlineMs = maxOf(100L, AudioJitterBufferPolicy.targetMsFor(latencyMultiplier) + 50)
     // Music gets a small reserve while the connection settles, before arrival history exists.
@@ -177,8 +178,34 @@ internal class AdaptivePcmBuffer(
     @Synchronized fun isIdle(): Boolean =
         count == 0 && endingFrames == 0 && (ended || (firstDataMs < 0 && !rebanking)) && !started
 
+    /** Native output has already spent CPU and can contain a final prompt tail. Apply
+     * backpressure to its worker instead of overwriting earlier ready PCM on a burst. */
+    @Synchronized fun writeIfFits(data: ShortArray, length: Int, nowMs: Long): Boolean {
+        require(length in 0..data.size && length % channels == 0)
+        if (length > ring.size - count) return false
+        write(data, length, nowMs)
+        return true
+    }
+
     @Synchronized fun write(data: ShortArray, length: Int, nowMs: Long) {
         val aligned = length.coerceAtMost(data.size) / channels * channels
+        writeFrom(aligned, nowMs) { sourceOffset, destinationOffset, samples ->
+            System.arraycopy(data, sourceOffset, ring, destinationOffset, samples)
+        }
+    }
+
+    @Synchronized fun writeIfFits(data: TimeStretchBlock, length: Int, nowMs: Long): Boolean {
+        require(length in 0..data.size && length % channels == 0)
+        if (length > ring.size - count) return false
+        writeFrom(length, nowMs) { sourceOffset, destinationOffset, samples ->
+            data.get(sourceOffset, ring, destinationOffset, samples)
+        }
+        return true
+    }
+
+    // Copy ready PCM while holding the bank monitor, never run native DSP under it.
+    // All sources share the same delivery, overflow and segment accounting.
+    private inline fun writeFrom(aligned: Int, nowMs: Long, copy: (Int, Int, Int) -> Unit) {
         if (aligned == 0) return
         lastPcmMs = nowMs
         if (closedPrefixSamples >= 0 && nextSegmentFirstDataMs < 0) nextSegmentFirstDataMs = nowMs
@@ -197,8 +224,8 @@ internal class AdaptivePcmBuffer(
         if (skip > 0) { droppedFrames += skip / channels; needsFade = true; recovery.reset() }
         val tail = (head + count) % ring.size
         val first = minOf(keep, ring.size - tail)
-        System.arraycopy(data, skip, ring, tail, first)
-        System.arraycopy(data, skip + first, ring, 0, keep - first)
+        copy(skip, tail, first)
+        if (keep > first) copy(skip + first, 0, keep - first)
         count += keep
         offeredFrames += aligned / channels
         inputFrames += keep / channels
@@ -208,6 +235,20 @@ internal class AdaptivePcmBuffer(
     // Stop and a closing prefix are deliberate ends, not missing input to wait for.
     @Synchronized fun wouldConceal(): Boolean =
         started && !ended && closedPrefixSamples < 0 && gapFrames == 0 && count < cycleSamples
+
+    /** Ready-output control must not treat preroll, a closed prefix or PLC as stable playback. */
+    @Synchronized fun canTimeCorrect(): Boolean = timeCorrectionActive()
+
+    private fun timeCorrectionActive(): Boolean =
+        started && !ended && closedPrefixSamples < 0 && gapFrames == 0 && !needsFade
+
+    // Bank -> policy is the sole nested lock order. Keep the snapshot/decision atomic,
+    // without allocating per block; native DSP always runs after this monitor is released.
+    @Synchronized fun observeTimeCorrection(policy: NativeTempoPolicy, nowMs: Long, burstFrames: Int) =
+        policy.observe(nowMs, playbackTargetFrames(), count / channels, burstFrames, timeCorrectionActive())
+
+    @Synchronized fun timeCorrectionTempo(policy: NativeTempoPolicy, nowMs: Long, sourceFrames: Int): Double =
+        policy.tempo(nowMs, playbackTargetFrames(), count / channels, sourceFrames, timeCorrectionActive())
 
     var lastRenderRealFrames = 0
         private set
@@ -252,7 +293,7 @@ internal class AdaptivePcmBuffer(
         // Both create normal depth peaks; allow for them before repaying sustained backlog.
         val outputSlack = (outputBurstFrames - cycleFrames).coerceAtLeast(0)
         val slack = maxOf(sampleRate * 30 / 1000, policy.largestChunkFrames - cycleFrames + outputSlack)
-        val canRecover = !ended && !drainingPrefix && gapFrames == 0 && !needsFade
+        val canRecover = !nativeTimeCorrection && !ended && !drainingPrefix && gapFrames == 0 && !needsFade
         recovery.observe(nowMs, target, policy.largestChunkFrames, slack, count / channels,
             inputFrames, canRecover)
         // A late decoder batch is still playable PCM, even at a fixed latency setting.

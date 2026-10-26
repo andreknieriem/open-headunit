@@ -1191,7 +1191,7 @@
     <string name="zbt_probe_title">Uji modul Bluetooth head unit</string>
     <string name="zbt_probe_idle">Ketuk untuk menjalankan</string>
     <string name="zbt_probe_running">Sedang berjalan…</string>
-    <string name="zbt_probe_message">Menanyakan kepada chip Bluetooth terpisah di unit ini apakah chip itu dapat membawa koneksi Android Auto. Dalam sekitar delapan detik, pengujian memeriksa apakah chip merespons. Hanya jika merespons, pengujian mengamati selama sekitar satu setengah menit. Baris di bawah setelan ini menunjukkan apa yang sedang terjadi, dan tidak ada hal lain di unit yang diubah.\n\nChip hanya dapat berbicara dengan satu program pada satu waktu. Jika sebuah koneksi sudah berjalan melaluinya, pengujian menyatakan hal itu dan tidak menguji. Nonaktifkan setelan di atas terlebih dahulu untuk mengujinya secara terpisah.\n\n\"Bangunkan dan amati\" juga meminta chip menghubungkan kembali ke ponsel Anda untuk Android Auto. Hanya bagian itu yang mengubah sesuatu, dan memulai ulang unit akan membatalkannya. Ekspor log setelahnya dan lampirkan.</string>
+    <string name="zbt_probe_message">Kedua opsi menginisialisasi modul Bluetooth sebelum memantaunya. Ini dapat memengaruhi status Bluetooth. Bangunkan dan amati juga meminta koneksi ke ponsel.\n\nPengujian memberi prioritas saat OHU menggunakan atau memeriksa modul. Ekspor log setelah pengujian.</string>
     <string name="zbt_probe_watch_only">Amati saja</string>
     <string name="zbt_probe_wake_and_watch">Bangunkan dan amati</string>
     <string name="external_bt_blink_transport">Hubungkan melalui modul Bluetooth eksternal FYT</string>
@@ -1496,4 +1496,16 @@
     <string name="audio_settings_reconnect">Pengaturan audio disimpan. Hubungkan ulang Android Auto untuk menerapkannya.</string>
     <string name="native_aa_candidate_android_radio_description">Gunakan Bluetooth Android alih-alih memilih modul Bluetooth head unit secara otomatis. Biarkan nonaktif untuk pemilihan otomatis. Jika opsi koneksi melalui modul aktif, nonaktifkan terlebih dahulu.</string>
     <string name="external_bt_candidate_transport_description">Paksa koneksi melalui modul Bluetooth head unit alih-alih pemilihan otomatis. Memerlukan layanan modul yang kompatibel. Biarkan nonaktif agar Bluetooth Android dapat digunakan saat layanan tidak merespons; mengaktifkannya mencegah jalur cadangan ini.</string>
+    <string name="audio_matching_mode">Koreksi waktu musik</string>
+    <string name="audio_matching_ohu">OHU</string>
+    <string name="audio_matching_wsola">WSOLA</string>
+    <string name="audio_matching_phase_vocoder">Phase Vocoder</string>
+    <string name="audio_matching_phase_vocoder_short">Phase Vocoder Short</string>
+    <string name="audio_matching_phase_gradient">Phase Gradient</string>
+    <string name="audio_matching_ohu_hint">Bawaan</string>
+    <string name="audio_matching_wsola_hint">Ringan</string>
+    <string name="audio_matching_phase_vocoder_hint">Seimbang</string>
+    <string name="audio_matching_phase_vocoder_short_hint">Latensi rendah</string>
+    <string name="audio_matching_phase_gradient_hint">Pemutaran lambat</string>
+    <string name="audio_matching_description">OHU tetap menjadi bawaan. WSOLA menyelaraskan gelombang yang tumpang tindih; Phase Vocoder menyesuaikan fase spektral. Short memakai jendela analisis lebih pendek. Phase Gradient merekonstruksi fase dengan mengintegrasikan gradien fase. Implementasi independen ini menambah latensi pemrosesan; namanya bukan peringkat kualitas suara.\n\nMetode native: musik PCM. Navigasi, respons suara, suara sistem, dan AAC memakai OHU.\nHubungkan ulang untuk menerapkan. Pengaturan mesin yang dihapus kembali ke OHU.</string>
 </resources>

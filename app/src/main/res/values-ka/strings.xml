@@ -914,7 +914,7 @@
     <string name="zbt_probe_title">მაგნიტოლის Bluetooth მოდულის შემოწმება</string>
     <string name="zbt_probe_idle">გასაშვებად შეეხეთ</string>
     <string name="zbt_probe_running">მიმდინარეობს…</string>
-    <string name="zbt_probe_message">ეკითხება ამ მოწყობილობის ცალკე Bluetooth ჩიპს, გაატარებს თუ არა ის Android Auto-ს კავშირს. დაახლოებით რვა წამში ამოწმებს, პასუხობს თუ არა ჩიპი საერთოდ, და მხოლოდ თუ პასუხობს, დაახლოებით წუთნახევარს აკვირდება. ამ პარამეტრის ქვემოთ მოცემული ხაზი აჩვენებს, რა ხდება. მოწყობილობაზე სხვა არაფერს ეხება.\n\nჩიპი ერთდროულად მხოლოდ ერთ პროგრამასთან მუშაობს, ამიტომ თუ კავშირი უკვე მასზე გადის, ტესტი ამას გაცნობებთ და არ ჩაატარებს. ცალკე შესამოწმებლად ჯერ გამორთეთ ზემოთ მოცემული პარამეტრი.\n\n„გაღვიძება და დაკვირვება“ დამატებით ჩიპს სთხოვს, Android Auto-სთვის ხელახლა დაუკავშირდეს თქვენს ტელეფონს. მხოლოდ ეს ნაწილი ცვლის რამეს და მოწყობილობის გადატვირთვა მას აუქმებს. გთხოვთ, შემდეგ ჟურნალი გააექსპორტოთ და დაურთოთ.</string>
+    <string name="zbt_probe_message">ორივე ვარიანტი დაკვირვებამდე Bluetooth მოდულს ინიციალიზაციას უკეთებს. ამან შეიძლება Bluetooth-ის მდგომარეობაზე იმოქმედოს. გაღვიძება და დაკვირვება ასევე ითხოვს ტელეფონთან დაკავშირებას.\n\nტესტი წვდომას უთმობს OHU-ს, როცა ის მოდულს იყენებს ან ამოწმებს. ტესტის შემდეგ ჟურნალი გააექსპორტეთ.</string>
     <string name="zbt_probe_watch_only">მხოლოდ დაკვირვება</string>
     <string name="zbt_probe_wake_and_watch">გაღვიძება და დაკვირვება</string>
     <string name="external_bt_blink_transport">FYT-ის გარე Bluetooth მოდულით დაკავშირება</string>
@@ -1434,4 +1434,16 @@
     <string name="audio_settings_reconnect">აუდიოს პარამეტრები შენახულია. გასააქტიურებლად Android Auto-ს ხელახლა დაუკავშირდით.</string>
     <string name="native_aa_candidate_android_radio_description">მოწყობილობის Bluetooth მოდულის ავტომატური არჩევის ნაცვლად გამოიყენეთ Android-ის Bluetooth. ავტომატური არჩევისთვის დატოვეთ გამორთული. თუ მოდულით დაკავშირების რომელიმე ვარიანტი ჩართულია, ჯერ ის გამორთეთ.</string>
     <string name="external_bt_candidate_transport_description">ავტომატური არჩევის ნაცვლად იძულებით გამოიყენეთ მოწყობილობის Bluetooth მოდულით კავშირი. საჭიროა მოდულის თავსებადი სერვისი. დატოვეთ გამორთული, რათა სერვისის უპასუხოდ დარჩენისას Android-ის Bluetooth გამოიყენოთ; ჩართვა ამ სათადარიგო გზას გამორიცხავს.</string>
+    <string name="audio_matching_mode">მუსიკის დროითი კორექცია</string>
+    <string name="audio_matching_ohu">OHU</string>
+    <string name="audio_matching_wsola">WSOLA</string>
+    <string name="audio_matching_phase_vocoder">Phase Vocoder</string>
+    <string name="audio_matching_phase_vocoder_short">Phase Vocoder Short</string>
+    <string name="audio_matching_phase_gradient">Phase Gradient</string>
+    <string name="audio_matching_ohu_hint">ნაგულისხმევი</string>
+    <string name="audio_matching_wsola_hint">მსუბუქი</string>
+    <string name="audio_matching_phase_vocoder_hint">დაბალანსებული</string>
+    <string name="audio_matching_phase_vocoder_short_hint">მცირე დაყოვნება</string>
+    <string name="audio_matching_phase_gradient_hint">ნელი დაკვრა</string>
+    <string name="audio_matching_description">OHU რჩება ნაგულისხმევ ვარიანტად. WSOLA ასწორებს გადაფარულ ტალღებს; Phase Vocoder ცვლის სპექტრულ ფაზებს. Short იყენებს უფრო მოკლე ანალიზის ფანჯარას. Phase Gradient აღადგენს ფაზებს ფაზის გრადიენტების ინტეგრირებით. ეს დამოუკიდებელი იმპლემენტაციები ამატებს დამუშავების დაყოვნებას; სახელები არ აღნიშნავს ხმის ხარისხის რეიტინგს.\n\nნატიური მეთოდები: PCM მუსიკა. ნავიგაცია, ხმოვანი პასუხები, სისტემური ხმები და AAC იყენებს OHU-ს.\nგამოსაყენებლად ხელახლა დაუკავშირდით. წაშლილი ძრავების პარამეტრები ბრუნდება OHU-ზე.</string>
 </resources>

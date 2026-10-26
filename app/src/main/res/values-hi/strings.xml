@@ -1191,7 +1191,7 @@
     <string name="zbt_probe_title">हेड यूनिट के ब्लूटूथ मॉड्यूल की जाँच करें</string>
     <string name="zbt_probe_idle">चलाने के लिए टैप करें</string>
     <string name="zbt_probe_running">चल रहा है…</string>
-    <string name="zbt_probe_message">इस यूनिट की अलग ब्लूटूथ चिप से पूछता है कि क्या वह Android Auto कनेक्शन चला सकती है। यह करीब आठ सेकंड में जाँचता है कि चिप जवाब देती भी है या नहीं, और जवाब देने पर ही करीब डेढ़ मिनट तक निगरानी करता है। इस सेटिंग के नीचे की लाइन में दिखता है कि क्या हो रहा है। यूनिट में और कुछ नहीं बदला जाता।\n\nचिप एक बार में एक ही प्रोग्राम से बात करती है, इसलिए अगर उससे कोई कनेक्शन पहले से चल रहा है तो जाँच करने के बजाय यही बताया जाता है। अकेले जाँचने के लिए पहले ऊपर की सेटिंग बंद करें।\n\n\"जगाएं और देखें\" चिप से Android Auto के लिए आपके फ़ोन से दोबारा जुड़ने को भी कहता है। सिर्फ़ यही हिस्सा कुछ बदलता है, और यूनिट रीस्टार्ट करने पर वह पहले जैसा हो जाता है। कृपया बाद में लॉग एक्सपोर्ट करके भेजें।</string>
+    <string name="zbt_probe_message">दोनों विकल्प निगरानी से पहले Bluetooth मॉड्यूल को आरंभ करते हैं। इससे उसकी Bluetooth स्थिति प्रभावित हो सकती है। जगाएँ और देखें विकल्प फ़ोन से कनेक्शन का अनुरोध भी करता है।\n\nजब OHU मॉड्यूल का उपयोग या जाँच करता है, तब परीक्षण उसे प्राथमिकता देता है। परीक्षण के बाद लॉग निर्यात करें।</string>
     <string name="zbt_probe_watch_only">केवल देखें</string>
     <string name="zbt_probe_wake_and_watch">जगाएं और देखें</string>
     <string name="external_bt_blink_transport">FYT के बाहरी ब्लूटूथ मॉड्यूल से कनेक्ट करें</string>
@@ -1495,4 +1495,16 @@
     <string name="audio_settings_reconnect">ऑडियो सेटिंग्स सेव हो गईं। इन्हें लागू करने के लिए Android Auto को दोबारा कनेक्ट करें।</string>
     <string name="native_aa_candidate_android_radio_description">हेड यूनिट का Bluetooth मॉड्यूल अपने आप चुनने के बजाय Android Bluetooth इस्तेमाल करें। अपने आप चुनने के लिए इसे बंद रखें। अगर मॉड्यूल से कनेक्शन का कोई विकल्प चालू है, तो पहले उसे बंद करें।</string>
     <string name="external_bt_candidate_transport_description">अपने आप चुनने के बजाय हेड यूनिट के Bluetooth मॉड्यूल से कनेक्शन अनिवार्य करें। इसके लिए संगत मॉड्यूल सेवा ज़रूरी है। सेवा जवाब न दे तो Android Bluetooth इस्तेमाल करने देने के लिए इसे बंद रखें; चालू करने पर यह विकल्प उपलब्ध नहीं होगा।</string>
+    <string name="audio_matching_mode">संगीत समय सुधार</string>
+    <string name="audio_matching_ohu">OHU</string>
+    <string name="audio_matching_wsola">WSOLA</string>
+    <string name="audio_matching_phase_vocoder">Phase Vocoder</string>
+    <string name="audio_matching_phase_vocoder_short">Phase Vocoder Short</string>
+    <string name="audio_matching_phase_gradient">Phase Gradient</string>
+    <string name="audio_matching_ohu_hint">डिफ़ॉल्ट</string>
+    <string name="audio_matching_wsola_hint">हल्का</string>
+    <string name="audio_matching_phase_vocoder_hint">संतुलित</string>
+    <string name="audio_matching_phase_vocoder_short_hint">कम विलंब</string>
+    <string name="audio_matching_phase_gradient_hint">धीमा प्लेबैक</string>
+    <string name="audio_matching_description">OHU डिफ़ॉल्ट बना रहता है। WSOLA ओवरलैप होती तरंगों को संरेखित करता है; Phase Vocoder स्पेक्ट्रम के फेज़ समायोजित करता है। Short छोटी विश्लेषण विंडो का उपयोग करता है। Phase Gradient फेज़ ग्रेडिएंट का समाकलन करके फेज़ पुनर्निर्मित करता है। ये स्वतंत्र कार्यान्वयन प्रोसेसिंग में देरी जोड़ते हैं; इनके नाम ध्वनि गुणवत्ता की रैंकिंग नहीं हैं।\n\nनेटिव तरीके: PCM संगीत। नेविगेशन, बोलकर दिए गए जवाब, सिस्टम ध्वनियाँ और AAC OHU का उपयोग करते हैं।\nलागू करने के लिए फिर से कनेक्ट करें। हटाए गए इंजन की सेटिंग OHU पर रीसेट होती है।</string>
 </resources>

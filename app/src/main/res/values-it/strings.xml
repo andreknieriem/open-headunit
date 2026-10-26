@@ -987,7 +987,7 @@
     <string name="zbt_probe_title">Prova il modulo Bluetooth dell\'unità</string>
     <string name="zbt_probe_idle">Tocca per eseguire</string>
     <string name="zbt_probe_running">In corso…</string>
-    <string name="zbt_probe_message">Chiede al chip Bluetooth separato di questa unità se può gestire una connessione Android Auto. In circa otto secondi verifica che il chip risponda e, solo in quel caso, osserva per circa un minuto e mezzo. La riga sotto questa impostazione mostra cosa sta succedendo; il resto dell\'unità non viene toccato.\n\nIl chip comunica con un solo programma alla volta: se una connessione lo sta già usando, il test lo segnala invece di eseguirsi. Disattiva prima l\'impostazione qui sopra per provarlo da solo.\n\n\"Sveglia e osserva\" chiede inoltre al chip di riconnettersi al telefono per Android Auto. È l\'unica parte che cambia qualcosa, e riavviando l\'unità si annulla. Poi esporta il log e allegalo.</string>
+    <string name="zbt_probe_message">Entrambe le opzioni inizializzano il modulo Bluetooth prima di osservarlo. Questo può modificarne lo stato Bluetooth. Sveglia e osserva richiede anche una connessione al telefono.\n\nIl test cede il passo mentre OHU usa o controlla il modulo. Esporta il registro al termine.</string>
     <string name="zbt_probe_watch_only">Solo osservazione</string>
     <string name="zbt_probe_wake_and_watch">Sveglia e osserva</string>
     <string name="external_bt_blink_transport">Connetti tramite il modulo Bluetooth esterno FYT</string>
@@ -1451,4 +1451,16 @@
     <string name="audio_settings_reconnect">Impostazioni audio salvate. Riconnetti Android Auto per applicarle.</string>
     <string name="native_aa_candidate_android_radio_description">Usa il Bluetooth di Android invece di selezionare automaticamente il modulo Bluetooth dell’autoradio. Lascia disattivato per la selezione automatica. Se è attiva un’opzione di connessione tramite modulo, disattivala prima.</string>
     <string name="external_bt_candidate_transport_description">Forza la connessione tramite il modulo Bluetooth dell’autoradio invece della selezione automatica. Richiede un servizio del modulo compatibile. Lascia disattivato per consentire il Bluetooth di Android se il servizio non risponde; attivarlo impedisce questa alternativa.</string>
+    <string name="audio_matching_mode">Correzione temporale della musica</string>
+    <string name="audio_matching_ohu">OHU</string>
+    <string name="audio_matching_wsola">WSOLA</string>
+    <string name="audio_matching_phase_vocoder">Phase Vocoder</string>
+    <string name="audio_matching_phase_vocoder_short">Phase Vocoder Short</string>
+    <string name="audio_matching_phase_gradient">Phase Gradient</string>
+    <string name="audio_matching_ohu_hint">Predefinito</string>
+    <string name="audio_matching_wsola_hint">Leggero</string>
+    <string name="audio_matching_phase_vocoder_hint">Bilanciato</string>
+    <string name="audio_matching_phase_vocoder_short_hint">Bassa latenza</string>
+    <string name="audio_matching_phase_gradient_hint">Riproduzione lenta</string>
+    <string name="audio_matching_description">OHU resta predefinito. WSOLA allinea forme d’onda sovrapposte; Phase Vocoder regola le fasi spettrali. Short usa una finestra di analisi più breve. Phase Gradient ricostruisce le fasi integrandone i gradienti. Queste implementazioni indipendenti aggiungono latenza; i nomi non indicano una classifica della qualità sonora.\n\nMetodi nativi: musica PCM. Navigazione, risposte vocali, suoni di sistema e AAC usano OHU.\nRiconnetti per applicare. Le impostazioni dei motori rimossi tornano a OHU.</string>
 </resources>

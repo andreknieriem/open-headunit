@@ -67,8 +67,37 @@ internal fun audioTrackBufferRegression() {
                     val calls = track.writeCalls
                     check(output.write(pcm, 0, 960) == 0)
                     check(track.writeCalls == calls) { "API $api entered blocking write on a full track" }
+                    check(output.writeRetryDelayMs == 1L)
+                    repeat(2) { check(output.write(pcm, 0, 960) == 0) }
+                    check(output.writeRetryDelayMs == 4L)
+                    check(track.writeCalls == calls)
                     track.playbackHeadPosition = 120
                     check(output.write(pcm, 0, 960) == 240)
+                    check(output.writeRetryDelayMs == 1L)
+                }
+                else {
+                    if (api >= 23) track.replies.addAll(listOf(0, 0, 0))
+                    repeat(3) { check(output.write(pcm, 0, 960) == 0) }
+                    check(output.writeRetryDelayMs == 4L)
+                    track.playbackHeadPosition = 120
+                    if (api >= 23) track.replies.add(240)
+                    check(output.write(pcm, 0, 960) == 240)
+                    check(output.writeRetryDelayMs == 1L)
+                    val replies = if (api >= 23) track.replies else track.byteReplies
+                    replies.addAll(listOf(0, 0, 0, -6, 0))
+                    repeat(3) { check(output.write(pcm, 0, 960) == 0) }
+                    check(output.writeRetryDelayMs == 4L)
+                    check(output.write(pcm, 0, 960) == -6)
+                    check(output.writeRetryDelayMs == 1L)
+                    check(output.write(pcm, 0, 960) == 0)
+                    check(output.writeRetryDelayMs == 1L)
+                    // An invalid head disables pacing rather than trusting fictional reserve.
+                    track.playbackHeadPosition = track.acceptedFrames + 4800
+                    replies.addAll(listOf(0, 0, 0))
+                    repeat(3) {
+                        check(output.write(pcm, 0, 960) == 0)
+                        check(output.writeRetryDelayMs == 1L)
+                    }
                 }
                 track.playbackHeadPosition = track.acceptedFrames
                 val drained = output.playedFrames()

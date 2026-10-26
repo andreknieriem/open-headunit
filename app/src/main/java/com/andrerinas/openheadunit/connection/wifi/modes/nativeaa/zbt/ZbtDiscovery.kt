@@ -61,8 +61,10 @@ object ZbtDiscovery {
 
     class Measurement internal constructor(val decision: ZbtDiscoveryPolicy.Decision) {
         private val requireIdentity: Boolean get() = decision.requiresIdentity
-        val waitsForCarrier: Boolean get() = requireIdentity && carrierOwnsSlot()
-        val settled: Boolean get() = !requireIdentity || cached() != null
+        val waitsForCarrier: Boolean get() = carrierOwnsSlot()
+        // A yielded observer has no measurement. Legacy discovery must wait too, rather
+        // than re-arm immediately with the same unknown cache and start another measurement.
+        val settled: Boolean get() = cached() != null
         val fallsBackToAndroid: Boolean get() = decision.allowsAndroidFallback
 
         fun cached(): Boolean? = if (decision.available) {
@@ -78,8 +80,10 @@ object ZbtDiscovery {
         /**
          * A retiring carrier may keep its single-client slot through a read or reopen backoff.
          * Bound the polling across ownership races; never probe through that carrier or record
-         * its ownership as a negative identity. The caller applies fallback only after checking
-         * that this arming is still current. Socket probes retain their own bounded deadlines.
+         * its ownership as a negative measurement. A carrier claim without a cached answer is
+         * not completion: the manager would otherwise re-arm and immediately ask again. The
+         * caller handles a busy result according to the route, after checking this arming is
+         * current. An actual socket probe retains its own bounded deadline/refusal window.
          */
         internal suspend fun awaitResolution(
             keepTrying: () -> Boolean,
@@ -89,7 +93,7 @@ object ZbtDiscovery {
         ): Completion {
             val startedAt = nowMs()
             while (keepTrying()) {
-                if (requireIdentity && nowMs() - startedAt >= CARRIER_WAIT_MS) {
+                if (nowMs() - startedAt >= CARRIER_WAIT_MS) {
                     return Completion.CARRIER_BUSY
                 }
                 if (!waitsForCarrier) {
@@ -98,7 +102,7 @@ object ZbtDiscovery {
                     if (settled) return Completion.SETTLED
                 }
                 val remaining = CARRIER_WAIT_MS - (nowMs() - startedAt)
-                pause(if (requireIdentity) minOf(250L, remaining.coerceAtLeast(0L)) else 250L)
+                pause(minOf(250L, remaining.coerceAtLeast(0L)))
             }
             return Completion.CANCELLED
         }

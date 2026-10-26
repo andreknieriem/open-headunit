@@ -981,7 +981,7 @@
     <string name="zbt_probe_title">测试主机的蓝牙模块</string>
     <string name="zbt_probe_idle">点按运行</string>
     <string name="zbt_probe_running">正在运行…</string>
-    <string name="zbt_probe_message">询问本机独立的蓝牙芯片是否能承载 Android Auto 连接。约八秒内先确认芯片是否有响应，只有有响应时才会再观察约一分半钟。本设置下方的文字会显示进度，本机的其他部分都不会被改动。\n\n芯片一次只与一个程序通信，因此如果已有连接在使用它，测试会直接告知，而不会进行测试。如需单独测试，请先关闭上方的设置。\n\n“唤醒并观察”还会要求芯片为 Android Auto 重新连接您的手机。只有这一步会改变状态，重启本机即可恢复。完成后请导出日志并附上。</string>
+    <string name="zbt_probe_message">两个选项都会先初始化蓝牙模块，再观察其状态，因此可能影响蓝牙状态。“唤醒并观察”还会请求连接手机。\n\nOHU正在使用或检查模块时，测试会让出模块。测试后请导出日志。</string>
     <string name="zbt_probe_watch_only">仅观察</string>
     <string name="zbt_probe_wake_and_watch">唤醒并观察</string>
     <string name="external_bt_blink_transport">通过 FYT 外接蓝牙模块连接</string>
@@ -1445,4 +1445,16 @@
     <string name="audio_settings_reconnect">音频设置已保存。重新连接 Android Auto 后生效。</string>
     <string name="native_aa_candidate_android_radio_description">使用 Android 蓝牙，而不是自动选择车机的蓝牙模块。保持关闭以使用自动选择。如果已开启通过模块连接的选项，请先将其关闭。</string>
     <string name="external_bt_candidate_transport_description">强制通过车机的蓝牙模块连接，而不是自动选择。需要兼容的模块服务。保持关闭可在服务无响应时使用 Android 蓝牙；开启此选项将禁止这一备用连接方式。</string>
+    <string name="audio_matching_mode">音乐时间校正</string>
+    <string name="audio_matching_ohu">OHU</string>
+    <string name="audio_matching_wsola">WSOLA</string>
+    <string name="audio_matching_phase_vocoder">Phase Vocoder</string>
+    <string name="audio_matching_phase_vocoder_short">Phase Vocoder Short</string>
+    <string name="audio_matching_phase_gradient">Phase Gradient</string>
+    <string name="audio_matching_ohu_hint">默认</string>
+    <string name="audio_matching_wsola_hint">轻量</string>
+    <string name="audio_matching_phase_vocoder_hint">均衡</string>
+    <string name="audio_matching_phase_vocoder_short_hint">低延迟</string>
+    <string name="audio_matching_phase_gradient_hint">慢速播放</string>
+    <string name="audio_matching_description">OHU 仍为默认选项。WSOLA 对齐重叠波形，Phase Vocoder 调整频谱相位，Short 使用更短的分析窗口。Phase Gradient 通过积分相位梯度重建相位。这些独立实现的方法会增加处理延迟；名称不代表音质排名。\n\n原生方法：适用于 PCM 音乐。导航提示、语音回复、系统声音和 AAC 使用 OHU。\n重新连接后生效。已删除引擎的保存设置会重置为 OHU。</string>
 </resources>

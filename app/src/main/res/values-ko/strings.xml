@@ -988,7 +988,7 @@
     <string name="zbt_probe_title">헤드유닛 블루투스 모듈 테스트</string>
     <string name="zbt_probe_idle">실행하려면 탭하세요.</string>
     <string name="zbt_probe_running">실행 중…</string>
-    <string name="zbt_probe_message">이 기기의 별도 블루투스 칩이 Android Auto 연결을 전달할 수 있는지 확인합니다. 약 8초 동안 칩이 응답하는지 확인하고, 응답할 때만 약 1분 30초 동안 상태를 관찰합니다. 이 설정 아래에 진행 상황이 표시되며, 기기의 다른 부분은 변경하지 않습니다.\n\n칩은 한 번에 하나의 프로그램과만 통신합니다. 이미 연결이 그 칩을 통해 실행 중이면 테스트하지 않고 그 사실을 알려 줍니다. 따로 테스트하려면 위 설정을 먼저 사용 중지하세요.\n\n\'깨우기 및 관찰\'은 칩에 Android Auto 연결을 위해 휴대전화와 다시 연결하도록 요청합니다. 상태를 변경하는 작업은 이것뿐이며, 기기를 다시 시작하면 원래대로 돌아갑니다. 테스트가 끝나면 로그를 내보내 첨부하세요.</string>
+    <string name="zbt_probe_message">두 옵션 모두 Bluetooth 모듈을 초기화한 뒤 상태를 관찰하므로 Bluetooth 상태에 영향을 줄 수 있습니다. 깨우기 및 관찰은 휴대전화 연결도 요청합니다.\n\nOHU가 모듈을 사용하거나 확인 중이면 테스트가 양보합니다. 테스트 후 로그를 내보내 주세요.</string>
     <string name="zbt_probe_watch_only">관찰만 하기</string>
     <string name="zbt_probe_wake_and_watch">깨우기 및 관찰</string>
     <string name="native_ap_transport">네트워크 연결 방식</string>
@@ -1555,4 +1555,17 @@
     <string name="wifi_scan_legacy_limit">Android 8~10의 재요청\n• 연결 시 한 번, 연결 중에는 5분마다 일시 중지를 요청합니다.\n• Android가 그 사이 탐색을 다시 켤 수 있습니다. 반복 처리 부담을 줄이기 위한 간격이며, 모든 탐색을 계속 막지는 못합니다.\n\n탐색을 다시 켜지 못하면 Shizuku를 실행한 상태에서 재시도하세요. 기기를 재부팅하면 이 임시 제어는 초기화됩니다.</string>
     <string name="native_aa_candidate_android_radio_description">헤드유닛의 Bluetooth 모듈을 자동 선택하는 대신 Android Bluetooth를 사용합니다. 자동 선택을 사용하려면 꺼 두세요. 모듈을 통한 연결 옵션이 켜져 있다면 먼저 꺼 주세요.</string>
     <string name="external_bt_candidate_transport_description">자동 선택 대신 헤드유닛의 Bluetooth 모듈을 통해 연결하도록 강제합니다. 호환되는 모듈 서비스가 필요합니다. 서비스가 응답하지 않을 때 Android Bluetooth로 연결하려면 꺼 두세요. 이 옵션을 켜면 Android Bluetooth로 전환하지 않습니다.</string>
+
+    <string name="audio_matching_mode">음악 시간 보정</string>
+    <string name="audio_matching_ohu">OHU</string>
+    <string name="audio_matching_wsola">WSOLA</string>
+    <string name="audio_matching_phase_vocoder">Phase Vocoder</string>
+    <string name="audio_matching_phase_vocoder_short">Phase Vocoder Short</string>
+    <string name="audio_matching_phase_gradient">Phase Gradient</string>
+    <string name="audio_matching_ohu_hint">기본값</string>
+    <string name="audio_matching_wsola_hint">경량</string>
+    <string name="audio_matching_phase_vocoder_hint">균형형</string>
+    <string name="audio_matching_phase_vocoder_short_hint">저지연</string>
+    <string name="audio_matching_phase_gradient_hint">저속 재생</string>
+    <string name="audio_matching_description">OHU가 기본값입니다. WSOLA는 겹치는 파형을 정렬하고 Phase Vocoder는 주파수 성분의 위상을 조정합니다. Short는 더 짧은 분석 창을 사용합니다. Phase Gradient는 위상 기울기를 적분하여 위상을 복원합니다. 독립 구현된 방식이며 처리 지연이 추가됩니다. 이름은 음질 순위를 뜻하지 않습니다.\n\n네이티브 방식: PCM 음악에 적용\n길 안내·음성 응답·시스템 소리·AAC: OHU 사용\n다시 연결하면 적용됩니다. 삭제된 엔진의 저장 설정은 OHU로 초기화됩니다.</string>
 </resources>

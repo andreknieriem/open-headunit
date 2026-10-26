@@ -986,7 +986,7 @@
     <string name="zbt_probe_title">Перевірити модуль Bluetooth головного пристрою</string>
     <string name="zbt_probe_idle">Натисніть, щоб запустити</string>
     <string name="zbt_probe_running">Виконується…</string>
-    <string name="zbt_probe_message">Запитує окремий чип Bluetooth цього пристрою, чи зможе він передавати з\'єднання Android Auto. Приблизно за вісім секунд перевіряє, чи чип взагалі відповідає, і лише тоді спостерігає близько півтори хвилини. Рядок під цим налаштуванням показує, що відбувається. Більше нічого на пристрої не змінюється.\n\nЧип працює лише з однією програмою одночасно. Якщо з\'єднання через нього вже активне, тест повідомить про це замість перевірки. Щоб перевірити чип окремо, спершу вимкніть налаштування вище.\n\nФункція «Розбудити та спостерігати» також просить чип повторно підключитися до телефона для Android Auto. Це єдина дія, що щось змінює, і перезавантаження пристрою її скасовує. Після цього експортуйте журнал і додайте його.</string>
+    <string name="zbt_probe_message">Обидва варіанти ініціалізують модуль Bluetooth перед спостереженням. Це може вплинути на його стан. «Розбудити та спостерігати» також запитує підключення до телефона.\n\nТест поступається доступом, поки OHU використовує або перевіряє модуль. Після тесту експортуйте журнал.</string>
     <string name="zbt_probe_watch_only">Лише спостерігати</string>
     <string name="zbt_probe_wake_and_watch">Розбудити та спостерігати</string>
     <string name="external_bt_blink_transport">Підключатися через зовнішній модуль Bluetooth FYT</string>
@@ -1450,4 +1450,16 @@
     <string name="audio_settings_reconnect">Налаштування звуку збережено. Щоб застосувати їх, повторно підключіть Android Auto.</string>
     <string name="native_aa_candidate_android_radio_description">Використовувати Bluetooth Android замість автоматичного вибору Bluetooth-модуля головного пристрою. Для автоматичного вибору залиште вимкненим. Якщо ввімкнено опцію з’єднання через модуль, спочатку вимкніть її.</string>
     <string name="external_bt_candidate_transport_description">Примусово з’єднуватися через Bluetooth-модуль головного пристрою замість автоматичного вибору. Потрібна сумісна служба модуля. Залиште вимкненим, щоб використовувати Bluetooth Android, коли служба не відповідає; увімкнення блокує цей запасний шлях.</string>
+    <string name="audio_matching_mode">Часова корекція музики</string>
+    <string name="audio_matching_ohu">OHU</string>
+    <string name="audio_matching_wsola">WSOLA</string>
+    <string name="audio_matching_phase_vocoder">Phase Vocoder</string>
+    <string name="audio_matching_phase_vocoder_short">Phase Vocoder Short</string>
+    <string name="audio_matching_phase_gradient">Phase Gradient</string>
+    <string name="audio_matching_ohu_hint">Типово</string>
+    <string name="audio_matching_wsola_hint">Легкий</string>
+    <string name="audio_matching_phase_vocoder_hint">Збалансований</string>
+    <string name="audio_matching_phase_vocoder_short_hint">Низька затримка</string>
+    <string name="audio_matching_phase_gradient_hint">Повільне відтворення</string>
+    <string name="audio_matching_description">OHU залишається типовим варіантом. WSOLA вирівнює хвилі, що перекриваються; Phase Vocoder коригує спектральні фази. Short використовує коротше вікно аналізу. Phase Gradient відновлює фази інтегруванням фазових градієнтів. Ці незалежні реалізації додають затримку обробки; назви не є рейтингом якості звуку.\n\nНативні методи: музика PCM. Навігація, голосові відповіді, системні звуки і AAC використовують OHU.\nПідключіться повторно для застосування. Налаштування видалених рушіїв скидаються на OHU.</string>
 </resources>

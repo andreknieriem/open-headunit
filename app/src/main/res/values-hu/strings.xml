@@ -985,7 +985,7 @@
     <string name="zbt_probe_title">Fejegység Bluetooth-moduljának tesztelése</string>
     <string name="zbt_probe_idle">Koppintson a futtatáshoz</string>
     <string name="zbt_probe_running">Fut…</string>
-    <string name="zbt_probe_message">Megkérdezi az egység különálló Bluetooth-chipjét, hogy továbbít-e Android Auto kapcsolatot. Nagyjából nyolc másodperc alatt ellenőrzi, hogy a chip egyáltalán válaszol-e, és csak ha igen, figyeli körülbelül másfél percig. A beállítás alatti sor mutatja, mi történik, az egységen pedig semmi máshoz nem nyúl.\n\nA chip egyszerre csak egy programmal kommunikál, ezért ha már fut rajta keresztül kapcsolat, a teszt ezt jelzi a tesztelés helyett. Előbb kapcsolja ki a fenti beállítást, hogy önmagában tesztelhesse.\n\nAz Ébresztés és figyelés ezenfelül megkéri a chipet, hogy csatlakozzon újra a telefonhoz az Android Autóhoz. Csak ez a rész változtat bármit, és az egység újraindítása visszavonja. Kérjük, utána exportálja a naplót, és csatolja.</string>
+    <string name="zbt_probe_message">Mindkét lehetőség inicializálja a Bluetooth-modult a megfigyelés előtt. Ez befolyásolhatja a Bluetooth állapotát. Az ébresztés és megfigyelés telefonkapcsolatot is kér.\n\nA teszt átadja a hozzáférést, amíg az OHU használja vagy ellenőrzi a modult. A teszt után exportálja a naplót.</string>
     <string name="zbt_probe_watch_only">Csak figyelés</string>
     <string name="zbt_probe_wake_and_watch">Ébresztés és figyelés</string>
     <string name="external_bt_blink_transport">Csatlakozás az FYT külső Bluetooth-modulján át</string>
@@ -1449,4 +1449,16 @@
     <string name="audio_settings_reconnect">Hangbeállítások elmentve. Az alkalmazásukhoz csatlakoztassa újra az Android Auto-t.</string>
     <string name="native_aa_candidate_android_radio_description">Az Android Bluetooth használata a fejegység Bluetooth-moduljának automatikus kiválasztása helyett. Az automatikus választáshoz hagyja kikapcsolva. Ha valamelyik modulkapcsolati lehetőség be van kapcsolva, előbb kapcsolja ki.</string>
     <string name="external_bt_candidate_transport_description">Kapcsolódás kényszerítése a fejegység Bluetooth-modulján keresztül az automatikus választás helyett. Kompatibilis modulszolgáltatás szükséges. Hagyja kikapcsolva, hogy az Android Bluetooth használható maradjon, ha a szolgáltatás nem válaszol; bekapcsolva ez a tartalék út nem használható.</string>
+    <string name="audio_matching_mode">Zene időkorrekciója</string>
+    <string name="audio_matching_ohu">OHU</string>
+    <string name="audio_matching_wsola">WSOLA</string>
+    <string name="audio_matching_phase_vocoder">Phase Vocoder</string>
+    <string name="audio_matching_phase_vocoder_short">Phase Vocoder Short</string>
+    <string name="audio_matching_phase_gradient">Phase Gradient</string>
+    <string name="audio_matching_ohu_hint">Alapértelmezett</string>
+    <string name="audio_matching_wsola_hint">Kis erőforrásigény</string>
+    <string name="audio_matching_phase_vocoder_hint">Kiegyensúlyozott</string>
+    <string name="audio_matching_phase_vocoder_short_hint">Alacsony késleltetés</string>
+    <string name="audio_matching_phase_gradient_hint">Lassú lejátszás</string>
+    <string name="audio_matching_description">Az OHU marad az alapértelmezett. A WSOLA átfedő hullámformákat igazít; a Phase Vocoder spektrális fázisokat módosít. A Short rövidebb elemzési ablakot használ. A Phase Gradient fázisgradiensek integrálásával rekonstruálja a fázisokat. Ezek az önálló megvalósítások feldolgozási késleltetést okoznak; nevük nem hangminőségi rangsor.\n\nNatív módszerek: PCM-zene. A navigáció, hangos válaszok, rendszerhangok és AAC OHU-t használnak.\nAz alkalmazáshoz csatlakozzon újra. Az eltávolított motorok beállítása OHU-ra áll vissza.</string>
 </resources>

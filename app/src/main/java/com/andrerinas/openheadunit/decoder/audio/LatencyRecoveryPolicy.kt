@@ -39,9 +39,11 @@ internal class LatencyRecoveryPolicy(private val sampleRate: Int) {
         minimumDepth = minOf(minimumDepth, depth)
         maximumDepth = maxOf(maximumDepth, depth)
         windowCycles++
-        if (nowMs - windowStart >= 500) {
-            // HALs can drain several cycles together. Require render progress as well as
-            // elapsed time, and use the trough so one decoder burst cannot authorize catch-up.
+        val elapsed = nowMs - windowStart
+        if (elapsed >= 500 && (windowCycles >= 50 || elapsed >= 1000)) {
+            // Require both elapsed time and render progress, not exactly 50 calls in 500ms.
+            // A slightly late renderer may finish the same observation window later.
+            // Sparse playback still expires after one second without authorizing correction.
             if (inputFrames > windowInput && windowCycles >= 50) {
                 allowance = (minimumDepth - reserve()).coerceAtLeast(0)
                 // The budget describes a peak. Reconstruct at most one packet above the

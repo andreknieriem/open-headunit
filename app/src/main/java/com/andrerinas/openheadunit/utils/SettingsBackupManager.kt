@@ -147,6 +147,7 @@ object SettingsBackupManager {
         "use-head-unit-microphone" to ValueType.BOOLEAN,
         "mic-input-source" to ValueType.INT,
         "audio-latency-multiplier" to ValueType.INT,
+        "audio-matching-mode" to ValueType.STRING,
         "audio-queue-capacity" to ValueType.INT,
         "use-aac-audio" to ValueType.BOOLEAN,
         "mic-echo-canceler" to ValueType.BOOLEAN,

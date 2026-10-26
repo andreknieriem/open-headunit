@@ -10,7 +10,14 @@ import java.util.Locale
 
 object LogFilesHelper {
 
-    const val LOG_FILE_PREFIX = "HUR_Log_"
+    const val LOG_FILE_PREFIX = "OHU_Log_"
+
+    /**
+     * Prefixes written by earlier names of the project. Rotation matches them too, so captures a
+     * unit took before it upgraded still count against the file and size budget instead of sitting
+     * in the directory forever, outside it.
+     */
+    val LEGACY_LOG_FILE_PREFIXES = listOf("HUR_Log_")
     private const val LOG_FILE_SUFFIX = ".txt"
     const val DEFAULT_MAX_LOG_FILES = 10
     const val DEFAULT_MAX_TOTAL_SIZE = 50L * 1024 * 1024 // 50 MB
@@ -54,7 +61,9 @@ object LogFilesHelper {
         maxFiles: Int = DEFAULT_MAX_LOG_FILES,
         maxTotalSizeBytes: Long = DEFAULT_MAX_TOTAL_SIZE
     ) {
-        val files = logDir.listFiles { _, name -> name.startsWith(prefix) }
+        val files = logDir.listFiles { _, name ->
+            name.startsWith(prefix) || (prefix == LOG_FILE_PREFIX && LEGACY_LOG_FILE_PREFIXES.any { name.startsWith(it) })
+        }
             ?.sortedBy { it.lastModified() }
             ?.toMutableList() ?: return
 

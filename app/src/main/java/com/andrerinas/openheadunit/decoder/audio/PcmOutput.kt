@@ -26,6 +26,8 @@ internal interface PcmOutput {
     val recoveryProgressSamples: Long get() = 0
     val outputEpoch: Long get() = 0
     val hasPendingRecovery: Boolean get() = false
+    /** Owner-thread hint after a zero write. It never substitutes for the next admission check. */
+    val writeRetryDelayMs: Long get() = 1L
     fun setBufferFrames(frames: Int): Int
     fun start()
     fun pause()
@@ -40,6 +42,8 @@ internal class AudioTrackPcmOutput(stream: Int, attachHwDsp: Boolean) : PcmOutpu
     private var equalizer: Equalizer? = null
     private val requestedBytes: Int
     private val position = PcmPlaybackPosition()
+    private val retryPacer = AudioTrackWritePacer()
+    override val writeRetryDelayMs: Long get() = retryPacer.delayMs
     // Lollipop exposes nonblocking writes for ByteBuffer, but not yet for short[]. Keep one
     // native-order conversion buffer per output, rather than allocating on the mixer thread.
     private val byteBuffer = if (Build.VERSION.SDK_INT in 21..22)
@@ -103,6 +107,7 @@ internal class AudioTrackPcmOutput(stream: Int, attachHwDsp: Boolean) : PcmOutpu
         return track.setBufferSizeInFrames(maxOf(frames, minimumBufferFrames))
     }
     override fun start() {
+        retryPacer.reset()
         if (Build.VERSION.SDK_INT >= 31) track.setStartThresholdInFrames(bufferFrames)
         track.play()
     }
@@ -115,6 +120,7 @@ internal class AudioTrackPcmOutput(stream: Int, attachHwDsp: Boolean) : PcmOutpu
         (track as LegacyAudioTrack).allocatedFrames.coerceAtLeast(1)
 
     override fun pause() {
+        retryPacer.reset()
         track.pause()
         // AOSP 4.1-4.3 AudioFlinger defers flush/reset until presentation completes. A fast
         // start can cancel that reset while the client already expects a zero head. Pause
@@ -140,12 +146,19 @@ internal class AudioTrackPcmOutput(stream: Int, attachHwDsp: Boolean) : PcmOutpu
             check(played >= 0) { "AudioTrack playback head reset or exceeded submitted PCM" }
         val size = if (Build.VERSION.SDK_INT >= 21) count else
             minOf(count, position.writableFrames(bufferFrames, head) * 2)
+        if (Build.VERSION.SDK_INT < 21 && size == 0 && count > 0) {
+            retryPacer.full(position.writtenFrames - played)
+            return 0
+        }
+        if (size == 0) retryPacer.reset()
         if (size == 0) return 0
         val written = when {
             Build.VERSION.SDK_INT >= 23 -> track.write(data, offset, size, AudioTrack.WRITE_NON_BLOCKING)
             Build.VERSION.SDK_INT >= 21 -> writeLollipop(data, offset, size)
             else -> track.write(data, offset, size)
         }
+        if (written == 0 && played >= 0) retryPacer.full(position.writtenFrames - played)
+        else retryPacer.reset()
         if (written > 0) position.written(written.toLong() / 2)
         return written
     }

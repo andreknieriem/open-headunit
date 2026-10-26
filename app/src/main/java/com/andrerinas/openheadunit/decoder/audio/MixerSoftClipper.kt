@@ -7,6 +7,9 @@ internal class MixerSoftClipper {
     private var step = 0f
     private var remaining = 0
 
+    /** Safe for an entire block only after setEnabled has selected this block's target. */
+    val isSettledDry: Boolean get() = remaining == 0 && wet == 0f
+
     fun setEnabled(enabled: Boolean) {
         val next = if (enabled) 1f else 0f
         if (next == target) return

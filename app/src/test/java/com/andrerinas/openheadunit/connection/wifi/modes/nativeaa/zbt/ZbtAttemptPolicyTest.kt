@@ -73,6 +73,15 @@ class ZbtAttemptPolicyTest {
         assertNull(ZbtAttemptPolicy.readPresence(ZbtMessages.LINK_INFO, null))
     }
 
+    @Test fun `incomplete link reports do not manufacture a disconnect`() {
+        for (id in listOf(ZbtMessages.LINK_INFO, ZbtMessages.LINK_INFO2)) {
+            assertNull(presence(id, "10 01"))
+            assertNull(presence(id, "18 01"))
+            assertNull(presence(id, "10 01 18 02"))
+            assertFalse(presence(id, "18 00")!!.connected)
+        }
+    }
+
     // ---------------------------------------------------------------------------------------------
     // Arrival is the edge, not the level
     // ---------------------------------------------------------------------------------------------

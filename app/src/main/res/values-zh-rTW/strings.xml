@@ -981,7 +981,7 @@
     <string name="zbt_probe_title">測試主機的藍牙模組</string>
     <string name="zbt_probe_idle">輕觸即可執行</string>
     <string name="zbt_probe_running">執行中…</string>
-    <string name="zbt_probe_message">詢問本機獨立的藍牙晶片是否能承載 Android Auto 連線。約八秒內會先確認晶片是否有回應，只有在有回應時，才會再觀察約一分半鐘。此設定下方的文字會顯示進度，本機的其他部分都不會被更動。\n\n晶片一次只能與一個程式通訊，因此若已有連線正透過它運作，測試會直接告知，而不會進行測試。若要單獨測試，請先關閉上方的設定。\n\n「喚醒並觀察」還會要求晶片為了 Android Auto 重新連上您的手機。只有這部分會改變狀態，重新啟動本機即可復原。結束後請匯出紀錄並附上。</string>
+    <string name="zbt_probe_message">兩個選項都會先初始化藍牙模組，再觀察其狀態，因此可能影響藍牙狀態。「喚醒並觀察」還會要求連接手機。\n\nOHU正在使用或檢查模組時，測試會讓出模組。測試後請匯出記錄。</string>
     <string name="zbt_probe_watch_only">僅觀察</string>
     <string name="zbt_probe_wake_and_watch">喚醒並觀察</string>
     <string name="external_bt_blink_transport">透過 FYT 外接藍牙模組連線</string>
@@ -1445,4 +1445,16 @@
     <string name="audio_settings_reconnect">音訊設定已儲存。重新連線 Android Auto 後生效。</string>
     <string name="native_aa_candidate_android_radio_description">使用 Android 藍牙，而不是自動選擇車機的藍牙模組。保持關閉以使用自動選擇。如果已開啟透過模組連線的選項，請先將其關閉。</string>
     <string name="external_bt_candidate_transport_description">強制透過車機的藍牙模組連線，而不是自動選擇。需要相容的模組服務。保持關閉可在服務無回應時使用 Android 藍牙；開啟此選項將禁止這個備用連線方式。</string>
+    <string name="audio_matching_mode">音樂時間校正</string>
+    <string name="audio_matching_ohu">OHU</string>
+    <string name="audio_matching_wsola">WSOLA</string>
+    <string name="audio_matching_phase_vocoder">Phase Vocoder</string>
+    <string name="audio_matching_phase_vocoder_short">Phase Vocoder Short</string>
+    <string name="audio_matching_phase_gradient">Phase Gradient</string>
+    <string name="audio_matching_ohu_hint">預設</string>
+    <string name="audio_matching_wsola_hint">輕量</string>
+    <string name="audio_matching_phase_vocoder_hint">均衡</string>
+    <string name="audio_matching_phase_vocoder_short_hint">低延遲</string>
+    <string name="audio_matching_phase_gradient_hint">慢速播放</string>
+    <string name="audio_matching_description">OHU 仍為預設選項。WSOLA 對齊重疊波形，Phase Vocoder 調整頻譜相位，Short 使用較短的分析視窗。Phase Gradient 透過積分相位梯度重建相位。這些獨立實作的方法會增加處理延遲；名稱不代表音質排名。\n\n原生方法：適用於 PCM 音樂。導航提示、語音回覆、系統音效和 AAC 使用 OHU。\n重新連線後生效。已刪除引擎的儲存設定會重設為 OHU。</string>
 </resources>

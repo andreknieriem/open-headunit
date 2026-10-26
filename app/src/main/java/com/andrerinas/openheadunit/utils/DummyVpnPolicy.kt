@@ -13,6 +13,9 @@ package com.andrerinas.openheadunit.utils
  */
 object DummyVpnPolicy {
 
+    /** Per-app exclusion arrived in API 21. An undrained session VPN must never capture OHU. */
+    fun supportsSessionVpn(sdk: Int): Boolean = sdk >= 21
+
     /** Why the VPN is up. `null` means we did not start it, so we must not stop it. */
     enum class Owner {
         /** Offline Self Mode, which needs a non-null `activeNetwork` for our own process. */

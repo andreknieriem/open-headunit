@@ -1,12 +1,19 @@
 package com.andrerinas.openheadunit.connection.wifi.modes.nativeaa
 
+import com.andrerinas.openheadunit.connection.wifi.direct.GroupIdentityStability
+
 /** Everything the phone needs in order to join the network this head unit is offering it. */
 data class NativeNetworkCredentials(
     val ssid: String,
     val psk: String,
     val ip: String,
-    val bssid: String
-)
+    val bssid: String,
+    val identity: GroupIdentityStability = GroupIdentityStability.UNPROVEN
+) {
+    /** Identity is a persistence judgment; changing it alone does not replace the network. */
+    fun sameNetworkAs(other: NativeNetworkCredentials): Boolean =
+        ssid == other.ssid && psk == other.psk && ip == other.ip && bssid.equals(other.bssid, ignoreCase = true)
+}
 
 /**
  * Carries one set of credentials from the transport that resolved them to the listener that

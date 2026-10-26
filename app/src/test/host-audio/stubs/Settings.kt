@@ -11,6 +11,7 @@ class Settings {
     var guidanceVolumeOffset=0
     var systemVolumeOffset=0
     var audioLatencyMultiplier=2
+    var audioMatchingMode=com.andrerinas.openheadunit.decoder.audio.AudioTimeCorrectionMode.OHU
     var audioQueueCapacity=0
     var useAacAudio=false
     var useAAudioOutput=false

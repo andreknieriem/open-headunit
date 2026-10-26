@@ -30,6 +30,19 @@ class WppHandshakeSessionTest {
         return s
     }
 
+    @Test fun `early channel mismatch can recover when credentials become ready`() {
+        val s = session()
+        s.on(WppEvent.SocketReady)
+        // #1085 includes an early -8 (NO_SUPPORTED_WIFI_CHANNELS) followed by setup progress.
+        // Publishing a group must not turn that version response into an unconditional abort.
+        s.on(msg(WppMessageType.VERSION_RESPONSE, -8))
+        assertEquals(WppStage.AWAIT_CREDENTIALS, s.stage)
+        assertEquals(listOf(WppAction.SendStartRequest), s.on(WppEvent.CredentialsReady))
+        assertEquals(listOf(WppAction.SendInfoResponse), s.on(msg(WppMessageType.INFO_REQUEST)))
+        s.on(WppEvent.TcpSessionUp)
+        assertEquals(WppStage.DONE, s.stage)
+    }
+
     // --- opening the exchange -------------------------------------------------------------
 
     @Test

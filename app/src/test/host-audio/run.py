@@ -39,3 +39,7 @@ subprocess.run(["java", "-cp", os.pathsep.join(map(str, compiler)),
                 *map(str, sources)], check=True)
 subprocess.run(["java", "-cp", str(target) + os.pathsep + str(stdlib),
                 "com.andrerinas.openheadunit.decoder.audio.RegressionKt"], check=True, timeout=30)
+if os.environ.get("OHU_TEST_NATIVE_DSP") == "1":
+    subprocess.run(["java", "-cp", str(target) + os.pathsep + str(stdlib),
+                    "com.andrerinas.openheadunit.decoder.audio.NativeMusicIntegrationKt"],
+                   check=True, timeout=30)

@@ -117,6 +117,24 @@ class LatencyRecoveryPolicyTest {
         }
     }
 
+    @Test fun `moderately late rendering still repays proven surplus within the rate limit`() {
+        for (cadenceUs in listOf(10_500L, 12_500L, 20_000L)) {
+            val policy = LatencyRecoveryPolicy(48000)
+            var removed = 0
+            for (us in 0L..5_000_000L step cadenceUs) {
+                val now = us / 1000
+                policy.observe(now, 4800, 2048, 1568, 12000 - removed, us * 48 / 1000)
+                val correction = policy.correction(now, 12000 - removed)
+                if (now < 500) assertEquals(0, correction)
+                removed += correction
+                policy.consumed(now, correction)
+                assertTrue("cadence=$cadenceUs rate", removed <= now * 480 / 1000 + 48)
+                assertTrue("reserve remains", 12000 - removed >= 4800)
+            }
+            assertTrue("cadence=$cadenceUs must make sustained progress", removed >= 1200)
+        }
+    }
+
     @Test fun `growing target reset or starvation cancels outstanding correction`() {
         for (mode in 0..2) {
             val policy = LatencyRecoveryPolicy(48000)

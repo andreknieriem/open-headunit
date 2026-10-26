@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import android.net.VpnService
 import android.os.Build
 import android.os.ParcelFileDescriptor
+import com.andrerinas.openheadunit.utils.VpnControl
 import com.andrerinas.openheadunit.utils.AppLog
 
 /**
@@ -27,7 +28,10 @@ class DummyVpnService : VpnService() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        startVpn(intent?.getBooleanExtra(EXTRA_EXCLUDE_SELF, false) ?: false)
+        // A cancelled startService command can still reach an already bound instance.
+        VpnControl.startRequests.runIfCurrent(intent?.getStringExtra(EXTRA_START_REQUEST)) {
+            startVpn(intent?.getBooleanExtra(EXTRA_EXCLUDE_SELF, false) ?: false)
+        }
         return START_NOT_STICKY
     }
 
@@ -35,6 +39,12 @@ class DummyVpnService : VpnService() {
     // binder callback, and closeRunningTun() runs on whichever thread asked for the stop.
     @Synchronized
     private fun startVpn(excludeSelf: Boolean) {
+        // Also guard delivered commands and restored preferences. The legacy offline Self VPN
+        // intentionally includes OHU, so only the session configuration requires API 21.
+        if (excludeSelf && !com.andrerinas.openheadunit.utils.DummyVpnPolicy.supportsSessionVpn(Build.VERSION.SDK_INT)) {
+            AppLog.w("DummyVpnService: session VPN requires per-app exclusion (Android 5.0+)")
+            return
+        }
         // Idempotent for the same configuration, but a different one has to re-establish: the two
         // callers want opposite things from the route set.
         if (vpnInterface != null && establishedExcludingSelf == excludeSelf) return
@@ -52,10 +62,8 @@ class DummyVpnService : VpnService() {
                 try {
                     builder.addDisallowedApplication(packageName)
                 } catch (e: PackageManager.NameNotFoundException) {
-                    AppLog.w(
-                        "DummyVpnService: could not exclude this app from the tun, so the " +
-                            "projection link will be routed through it"
-                    )
+                    // Do not establish a blackhole route that includes our own reconnects.
+                    throw IllegalStateException("Cannot exclude OHU from the session VPN", e)
                 }
             }
 
@@ -98,7 +106,7 @@ class DummyVpnService : VpnService() {
      */
     override fun onRevoke() {
         AppLog.i("DummyVpnService: consent was revoked, so the tun is down")
-        stopVpn()
+        VpnControl.startRequests.stop { stopVpn() }
         super.onRevoke()
     }
 
@@ -109,6 +117,7 @@ class DummyVpnService : VpnService() {
     }
 
     companion object {
+        const val EXTRA_START_REQUEST = "vpn_start_request"
         /** See [com.andrerinas.openheadunit.utils.VpnControl.startVpn]. */
         const val EXTRA_EXCLUDE_SELF = "exclude_self"
 

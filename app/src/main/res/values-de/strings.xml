@@ -994,7 +994,7 @@
     <string name="zbt_probe_title">Bluetooth-Modul der Headunit testen</string>
     <string name="zbt_probe_idle">Zum Ausführen tippen</string>
     <string name="zbt_probe_running">Läuft…</string>
-    <string name="zbt_probe_message">Fragt den separaten Bluetooth-Chip dieses Geräts, ob er eine Android-Auto-Verbindung tragen kann. In etwa acht Sekunden wird geprüft, ob der Chip überhaupt antwortet, und nur dann wird etwa anderthalb Minuten lang beobachtet. Die Zeile unter dieser Einstellung zeigt, was passiert, und sonst wird am Gerät nichts verändert.\n\nDer Chip spricht immer nur mit einem Programm. Läuft bereits eine Verbindung darüber, sagt der Test das, statt zu testen. Schalte dafür zuerst die Einstellung darüber aus.\n\nWecken und beobachten bittet den Chip zusätzlich, sich für Android Auto mit deinem Handy zu verbinden. Nur dieser Teil verändert etwas, und ein Neustart des Geräts macht es rückgängig. Bitte exportiere danach das Protokoll und hänge es an.</string>
+    <string name="zbt_probe_message">Beide Optionen initialisieren das Bluetooth-Modul vor der Beobachtung. Dies kann seinen Bluetooth-Zustand beeinflussen. Aufwecken und beobachten fordert zusätzlich eine Verbindung zum Telefon an.\n\nWährend OHU das Modul verwendet oder prüft, gibt der Test den Zugriff frei. Exportiere anschließend das Protokoll.</string>
     <string name="zbt_probe_watch_only">Nur beobachten</string>
     <string name="zbt_probe_wake_and_watch">Wecken und beobachten</string>
     <string name="external_bt_blink_transport">Über das externe FYT-Bluetooth-Modul verbinden</string>
@@ -1452,4 +1452,16 @@
     <string name="audio_settings_reconnect">Audioeinstellungen gespeichert. Verbinde Android Auto neu, um sie zu übernehmen.</string>
     <string name="native_aa_candidate_android_radio_description">Android-Bluetooth statt der automatischen Auswahl des Bluetooth-Moduls der Headunit verwenden. Für die automatische Auswahl ausgeschaltet lassen. Eine aktivierte Verbindungsoption für das Modul zuerst ausschalten.</string>
     <string name="external_bt_candidate_transport_description">Verbindung über das Bluetooth-Modul der Headunit statt automatischer Auswahl erzwingen. Erfordert einen kompatiblen Moduldienst. Ausgeschaltet lassen, damit bei ausbleibender Antwort Android-Bluetooth verwendet werden kann. Das Erzwingen verhindert diesen Rückfall.</string>
+    <string name="audio_matching_mode">Zeitkorrektur für Musik</string>
+    <string name="audio_matching_ohu">OHU</string>
+    <string name="audio_matching_wsola">WSOLA</string>
+    <string name="audio_matching_phase_vocoder">Phase Vocoder</string>
+    <string name="audio_matching_phase_vocoder_short">Phase Vocoder Short</string>
+    <string name="audio_matching_phase_gradient">Phase Gradient</string>
+    <string name="audio_matching_ohu_hint">Standard</string>
+    <string name="audio_matching_wsola_hint">Ressourcenschonend</string>
+    <string name="audio_matching_phase_vocoder_hint">Ausgewogen</string>
+    <string name="audio_matching_phase_vocoder_short_hint">Geringe Latenz</string>
+    <string name="audio_matching_phase_gradient_hint">Langsame Wiedergabe</string>
+    <string name="audio_matching_description">OHU bleibt Standard. WSOLA richtet überlappende Wellenformen aus; Phase Vocoder passt spektrale Phasen an. Short verwendet ein kürzeres Analysefenster. Phase Gradient rekonstruiert Phasen durch Integration von Phasengradienten. Diese eigenständigen Implementierungen verursachen Verarbeitungsverzögerung; die Namen sind keine Rangfolge der Klangqualität.\n\nNative Methoden: PCM-Musik. Navigationsansagen, Sprachantworten, Systemtöne und AAC verwenden OHU.\nZum Anwenden erneut verbinden. Gespeicherte Einstellungen entfernter Engines fallen auf OHU zurück.</string>
 </resources>

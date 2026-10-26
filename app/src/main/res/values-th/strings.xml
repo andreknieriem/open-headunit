@@ -1191,7 +1191,7 @@
     <string name="zbt_probe_title">ทดสอบโมดูลบลูทูธของเฮดยูนิต</string>
     <string name="zbt_probe_idle">แตะเพื่อเริ่มทดสอบ</string>
     <string name="zbt_probe_running">กำลังทดสอบ…</string>
-    <string name="zbt_probe_message">สอบถามชิปบลูทูธแยกของยูนิตนี้ว่าจะรองรับการเชื่อมต่อ Android Auto หรือไม่ ระบบใช้เวลาราว 8 วินาทีเพื่อตรวจว่าชิปตอบสนองหรือไม่ และเฉพาะเมื่อชิปตอบสนอง จึงจะเฝ้าดูต่ออีกราวหนึ่งนาทีครึ่ง บรรทัดใต้การตั้งค่านี้แสดงสิ่งที่กำลังเกิดขึ้น และไม่มีการเปลี่ยนแปลงสิ่งอื่นบนยูนิต\n\nชิปคุยกับโปรแกรมได้ครั้งละหนึ่งโปรแกรม หากมีการเชื่อมต่อที่ทำงานผ่านชิปอยู่แล้ว การทดสอบจะแจ้งเรื่องนี้แทนการทดสอบ ให้ปิดการตั้งค่าด้านบนก่อน เพื่อทดสอบแยกต่างหาก\n\nตัวเลือก ปลุกและเฝ้าดู จะสั่งให้ชิปเชื่อมต่อกับโทรศัพท์ของคุณใหม่สำหรับ Android Auto ด้วย ขั้นตอนนี้เป็นขั้นตอนเดียวที่เปลี่ยนแปลงค่าใดๆ และการรีสตาร์ทยูนิตจะย้อนค่ากลับ โปรดส่งออกล็อกหลังจากนั้นและแนบมาด้วย</string>
+    <string name="zbt_probe_message">ทั้งสองตัวเลือกจะเริ่มต้นโมดูล Bluetooth ก่อนตรวจดูสถานะ ซึ่งอาจส่งผลต่อสถานะ Bluetooth ตัวเลือกปลุกและเฝ้าดูจะขอเชื่อมต่อกับโทรศัพท์ด้วย\n\nการทดสอบจะหลีกทางเมื่อ OHU กำลังใช้หรือตรวจสอบโมดูล โปรดส่งออกบันทึกหลังการทดสอบ</string>
     <string name="zbt_probe_watch_only">ดูอย่างเดียว</string>
     <string name="zbt_probe_wake_and_watch">ปลุกและเฝ้าดู</string>
     <string name="external_bt_blink_transport">เชื่อมต่อผ่านโมดูลบลูทูธภายนอกของ FYT</string>
@@ -1500,4 +1500,16 @@
     <string name="audio_settings_reconnect">บันทึกการตั้งค่าเสียงแล้ว เชื่อมต่อ Android Auto ใหม่เพื่อใช้การตั้งค่า</string>
     <string name="native_aa_candidate_android_radio_description">ใช้ Bluetooth ของ Android แทนการเลือกโมดูล Bluetooth ของเครื่องโดยอัตโนมัติ ปิดไว้เพื่อใช้การเลือกอัตโนมัติ หากเปิดตัวเลือกการเชื่อมต่อผ่านโมดูลอยู่ ให้ปิดตัวเลือกนั้นก่อน</string>
     <string name="external_bt_candidate_transport_description">บังคับเชื่อมต่อผ่านโมดูล Bluetooth ของเครื่องแทนการเลือกอัตโนมัติ ต้องมีบริการโมดูลที่เข้ากันได้ ปิดไว้เพื่อให้ใช้ Bluetooth ของ Android ได้เมื่อบริการไม่ตอบสนอง การเปิดตัวเลือกนี้จะปิดทางเลือกสำรองดังกล่าว</string>
+    <string name="audio_matching_mode">การแก้ไขจังหวะเวลาของเพลง</string>
+    <string name="audio_matching_ohu">OHU</string>
+    <string name="audio_matching_wsola">WSOLA</string>
+    <string name="audio_matching_phase_vocoder">Phase Vocoder</string>
+    <string name="audio_matching_phase_vocoder_short">Phase Vocoder Short</string>
+    <string name="audio_matching_phase_gradient">Phase Gradient</string>
+    <string name="audio_matching_ohu_hint">ค่าเริ่มต้น</string>
+    <string name="audio_matching_wsola_hint">ใช้ทรัพยากรน้อย</string>
+    <string name="audio_matching_phase_vocoder_hint">สมดุล</string>
+    <string name="audio_matching_phase_vocoder_short_hint">ความหน่วงต่ำ</string>
+    <string name="audio_matching_phase_gradient_hint">เล่นแบบช้า</string>
+    <string name="audio_matching_description">OHU ยังคงเป็นค่าเริ่มต้น WSOLA จัดแนวรูปคลื่นที่ซ้อนกัน ส่วน Phase Vocoder ปรับเฟสของสเปกตรัม Short ใช้หน้าต่างวิเคราะห์ที่สั้นกว่า Phase Gradient สร้างเฟสใหม่โดยอินทิเกรตเกรเดียนต์ของเฟส วิธีที่พัฒนาขึ้นอย่างอิสระเหล่านี้เพิ่มความหน่วงในการประมวลผล ชื่อไม่ได้จัดอันดับคุณภาพเสียง\n\nวิธีเนทีฟ: เพลง PCM\nเสียงนำทาง เสียงตอบกลับ เสียงระบบ และ AAC ใช้ OHU\nเชื่อมต่อใหม่เพื่อใช้การเปลี่ยนแปลง การตั้งค่าเอนจินที่ถูกลบจะกลับเป็น OHU</string>
 </resources>

@@ -737,6 +737,8 @@
     <string name="exit_dialog_settings">Rychlé nastavení</string>
     <string name="key_back">Zpět</string>
     <string name="category_backup_reset">Záloha a resetování</string>
+    <string name="settings_rail_collapse">Skrýt názvy sekcí</string>
+    <string name="settings_rail_expand">Zobrazit názvy sekcí</string>
     <string name="export_settings">Exportovat nastavení</string>
     <string name="export_settings_description">Uložit zálohu nastavení jako soubor JSON.</string>
     <string name="export_settings_app_folder">Uložit do složky záloh aplikace</string>

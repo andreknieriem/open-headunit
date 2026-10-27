@@ -738,6 +738,8 @@
     <string name="exit_dialog_settings">Setări rapide</string>
     <string name="key_back">Înapoi</string>
     <string name="category_backup_reset">Backup și resetare</string>
+    <string name="settings_rail_collapse">Ascunde numele secțiunilor</string>
+    <string name="settings_rail_expand">Afișează numele secțiunilor</string>
     <string name="export_settings">Exportă setările</string>
     <string name="export_settings_description">Salvează o copie de rezervă a setărilor ca fișier JSON.</string>
     <string name="export_settings_app_folder">Salvează în folderul de copii al aplicației</string>

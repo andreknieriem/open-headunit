@@ -741,6 +741,8 @@
 
     <!-- Settings backup, export, import and reset -->
     <string name="category_backup_reset">Copia de seguridad y restablecimiento</string>
+    <string name="settings_rail_collapse">Ocultar los nombres de las secciones</string>
+    <string name="settings_rail_expand">Mostrar los nombres de las secciones</string>
     <string name="export_settings">Exportar configuración</string>
     <string name="export_settings_description">Guardar una copia de seguridad como archivo JSON.</string>
     <string name="export_settings_choose_location">Elegir ubicación para guardar</string>

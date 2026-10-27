@@ -737,6 +737,8 @@
     <string name="exit_dialog_settings">الإعدادات السريعة</string>
     <string name="key_back">رجوع</string>
     <string name="category_backup_reset">النسخ الاحتياطي وإعادة التعيين</string>
+    <string name="settings_rail_collapse">إخفاء أسماء الأقسام</string>
+    <string name="settings_rail_expand">إظهار أسماء الأقسام</string>
     <string name="export_settings">تصدير الإعدادات</string>
     <string name="export_settings_description">حفظ نسخة احتياطية من الإعدادات كملف JSON.</string>
     <string name="export_settings_app_folder">حفظ في مجلد نسخ التطبيق</string>

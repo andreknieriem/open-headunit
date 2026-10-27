@@ -973,6 +973,8 @@
     <string name="stopping_service">Stopping service to apply changes…</string>
     <string name="settings_saved">Settings saved</string>
     <string name="category_backup_reset">Backup and reset</string>
+    <string name="settings_rail_collapse">Hide section names</string>
+    <string name="settings_rail_expand">Show section names</string>
     <string name="export_settings">Export settings</string>
     <string name="export_settings_description">Save a settings backup as a JSON file.</string>
     <string name="export_settings_choose_location">Choose save location</string>

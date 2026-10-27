@@ -711,6 +711,8 @@
     <string name="exit_dialog_settings">Hızlı Ayarlar</string>
     <string name="key_back">Geri</string>
     <string name="category_backup_reset">Yedekleme ve sıfırlama</string>
+    <string name="settings_rail_collapse">Bölüm adlarını gizle</string>
+    <string name="settings_rail_expand">Bölüm adlarını göster</string>
     <string name="export_settings">Ayarları dışa aktar</string>
     <string name="export_settings_description">Ayarların yedeğini bir JSON dosyası olarak kaydet.</string>
     <string name="export_settings_app_folder">Uygulama yedek klasörüne kaydet</string>

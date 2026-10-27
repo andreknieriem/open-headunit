@@ -465,6 +465,8 @@
     <string name="stopping_service">სერვისი ჩერდება ცვლილებების გასააქტიურებლად…</string>
     <string name="settings_saved">პარამეტრები შენახულია</string>
     <string name="category_backup_reset">სარეზერვო ასლი და გადაყენება</string>
+    <string name="settings_rail_collapse">განყოფილებების სახელების დამალვა</string>
+    <string name="settings_rail_expand">განყოფილებების სახელების ჩვენება</string>
     <string name="export_settings">პარამეტრების ექსპორტი</string>
     <string name="export_settings_description">პარამეტრების სარეზერვო ასლის შენახვა JSON ფაილად.</string>
     <string name="export_settings_choose_location">აირჩიეთ შენახვის ადგილი</string>

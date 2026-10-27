@@ -879,6 +879,8 @@
     <string name="stopping_service">A parar serviço para aplicar alterações…</string>
     <string name="settings_saved">Definições guardadas</string>
     <string name="category_backup_reset">Cópia de segurança e reposição</string>
+    <string name="settings_rail_collapse">Ocultar os nomes das secções</string>
+    <string name="settings_rail_expand">Mostrar os nomes das secções</string>
     <string name="export_settings">Exportar definições</string>
     <string name="export_settings_description">Guardar cópia de segurança das definições em formato JSON.</string>
     <string name="export_settings_choose_location">Escolher local para guardar</string>

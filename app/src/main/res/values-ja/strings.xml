@@ -746,6 +746,8 @@
     <string name="exit_dialog_settings">クイック設定</string>
     <string name="key_back">戻る</string>
     <string name="category_backup_reset">バックアップとリセット</string>
+    <string name="settings_rail_collapse">セクション名を隠す</string>
+    <string name="settings_rail_expand">セクション名を表示</string>
     <string name="export_settings">設定をエクスポート</string>
     <string name="export_settings_description">設定のバックアップを JSON ファイルとして保存。</string>
     <string name="export_settings_app_folder">アプリのバックアップフォルダに保存</string>

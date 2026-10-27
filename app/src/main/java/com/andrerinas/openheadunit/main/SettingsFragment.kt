@@ -3123,6 +3123,7 @@ class SettingsFragment : Fragment() {
         header = SettingsHeaderController(
             root = view,
             advanced = settings.isAdvancedSettingsActive,
+            railCollapsed = settings.settingsRailCollapsed,
             onBack = { handleBackPress() },
             onReset = { startResetSettings() },
             onSave = { saveSettings() },
@@ -3134,7 +3135,8 @@ class SettingsFragment : Fragment() {
             onQueryChanged = { query ->
                 searchQuery = query
                 renderSettings()
-            }
+            },
+            onRailCollapsedChanged = { settings.settingsRailCollapsed = it }
         )
         updateSaveButtonState()
         applyRequestedSearchQuery()

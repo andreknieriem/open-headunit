@@ -737,6 +737,8 @@
     <string name="exit_dialog_settings">快速设置</string>
     <string name="key_back">返回</string>
     <string name="category_backup_reset">备份和重置</string>
+    <string name="settings_rail_collapse">隐藏分区名称</string>
+    <string name="settings_rail_expand">显示分区名称</string>
     <string name="export_settings">导出设置</string>
     <string name="export_settings_description">将设置备份保存为 JSON 文件。</string>
     <string name="export_settings_app_folder">保存到应用备份文件夹</string>

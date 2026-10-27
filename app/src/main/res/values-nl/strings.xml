@@ -737,6 +737,8 @@
     <string name="exit_dialog_settings">Snelle instellingen</string>
     <string name="key_back">Terug</string>
     <string name="category_backup_reset">Back-up en reset</string>
+    <string name="settings_rail_collapse">Sectienamen verbergen</string>
+    <string name="settings_rail_expand">Sectienamen tonen</string>
     <string name="export_settings">Instellingen exporteren</string>
     <string name="export_settings_description">Sla een back-up van je instellingen op als JSON-bestand.</string>
     <string name="export_settings_app_folder">Opslaan in back-upmap van app</string>

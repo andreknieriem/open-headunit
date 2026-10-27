@@ -482,6 +482,8 @@
     <string name="stopping_service">변경 사항을 적용하기 위해 서비스를 중지하는 중…</string>
     <string name="settings_saved">설정이 저장되었습니다.</string>
     <string name="category_backup_reset">백업 및 초기화</string>
+    <string name="settings_rail_collapse">섹션 이름 숨기기</string>
+    <string name="settings_rail_expand">섹션 이름 표시</string>
     <string name="export_settings">설정 내보내기</string>
     <string name="export_settings_description">설정 백업을 JSON 파일로 저장합니다.</string>
     <string name="export_settings_choose_location">저장 위치 선택</string>

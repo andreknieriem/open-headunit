@@ -738,6 +738,8 @@
     <string name="exit_dialog_settings">Szybkie ustawienia</string>
     <string name="key_back">Wstecz</string>
     <string name="category_backup_reset">Kopia zapasowa i reset</string>
+    <string name="settings_rail_collapse">Ukryj nazwy sekcji</string>
+    <string name="settings_rail_expand">Pokaż nazwy sekcji</string>
     <string name="export_settings">Eksportuj ustawienia</string>
     <string name="export_settings_description">Zapisz kopię zapasową ustawień jako plik JSON.</string>
     <string name="export_settings_app_folder">Zapisz w folderze kopii zapasowych aplikacji</string>

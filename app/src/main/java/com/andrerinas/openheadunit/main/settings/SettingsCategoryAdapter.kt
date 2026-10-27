@@ -8,6 +8,8 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
+import androidx.appcompat.widget.TooltipCompat
+import androidx.core.view.ViewCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.andrerinas.openheadunit.R
 
@@ -57,6 +59,15 @@ class SettingsCategoryAdapter(
     private var activeId: String? = null
     private var palette: SettingsPalette? = null
 
+    /** The rail folded to its icons; each row then names its section in a tooltip instead. */
+    var collapsed: Boolean = false
+        @SuppressLint("NotifyDataSetChanged")
+        set(value) {
+            if (field == value) return
+            field = value
+            notifyDataSetChanged()
+        }
+
     fun categoryIdAt(index: Int): String? = categories.getOrNull(index)?.id
 
     @SuppressLint("NotifyDataSetChanged")
@@ -95,6 +106,7 @@ class SettingsCategoryAdapter(
     inner class CategoryViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val icon: ImageView = itemView.findViewById(R.id.categoryIcon)
         private val title: TextView = itemView.findViewById(R.id.categoryTitle)
+        private val paddingEnd = ViewCompat.getPaddingEnd(itemView)
 
         fun bind(category: SettingsCategory, active: Boolean, colors: SettingsPalette) {
             val context = itemView.context
@@ -112,7 +124,17 @@ class SettingsCategoryAdapter(
             val stroke = if (!asRail && !active) colors.outlineVariant else null
             itemView.background = SettingsDrawables.selectionPill(context, fill, stroke, radius, colors)
             itemView.isSelected = active
+            if (asRail) foldTo(collapsed, context.getString(category.titleResId))
             itemView.setOnClickListener { onPick(category) }
+        }
+
+        /** Folded, the row is its icon with the start padding on both sides, so the icon stays put. */
+        private fun foldTo(folded: Boolean, name: String) {
+            title.visibility = if (folded) View.GONE else View.VISIBLE
+            val start = ViewCompat.getPaddingStart(itemView)
+            ViewCompat.setPaddingRelative(itemView, start, itemView.paddingTop, if (folded) start else paddingEnd, itemView.paddingBottom)
+            itemView.contentDescription = if (folded) name else null
+            TooltipCompat.setTooltipText(itemView, if (folded) name else null)
         }
     }
 

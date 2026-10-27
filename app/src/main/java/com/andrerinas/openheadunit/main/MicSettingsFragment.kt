@@ -165,7 +165,8 @@ class MicSettingsFragment : Fragment() {
         items.add(SettingItem.ToggleSettingEntry(
             stableId = "useHeadUnitMicrophone",
             nameResId = R.string.use_head_unit_microphone,
-            descriptionResId = R.string.use_head_unit_microphone_description,
+            descriptionResId = R.string.use_head_unit_microphone_summary,
+            helpResId = R.string.use_head_unit_microphone_description,
             isChecked = micEnabled,
             onCheckedChanged = { isChecked ->
                 pendingUseHeadUnitMicrophone = isChecked
@@ -194,6 +195,7 @@ class MicSettingsFragment : Fragment() {
         items.add(SettingItem.SettingEntry(
             stableId = "micSampleRate",
             nameResId = R.string.mic_sample_rate,
+            helpResId = R.string.mic_sample_rate_help,
             value = "${pendingMicSampleRate} Hz",
             onClick = { _ ->
                 val nextRate = Settings.getNextMicSampleRate(pendingMicSampleRate!!)
@@ -208,6 +210,7 @@ class MicSettingsFragment : Fragment() {
         items.add(SettingItem.SettingEntry(
             stableId = "micInputSource",
             nameResId = R.string.mic_input_source,
+            helpResId = R.string.mic_input_source_help,
             value = inputSourceTitles.getOrElse(pendingMicInputSource!!) { getString(R.string.not_set) },
             onClick = { _ ->
                 MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
@@ -227,7 +230,8 @@ class MicSettingsFragment : Fragment() {
             stableId = "micEchoCanceler",
             nameResId = R.string.mic_echo_canceler,
             descriptionResId = if (AcousticEchoCanceler.isAvailable())
-                R.string.mic_echo_canceler_description else R.string.mic_feature_unsupported,
+                R.string.mic_echo_canceler_summary else R.string.mic_feature_unsupported,
+            helpResId = R.string.mic_echo_canceler_description,
             isChecked = pendingMicEchoCanceler ?:false,
             isEnabled = AcousticEchoCanceler.isAvailable(),
             onCheckedChanged = { isChecked ->
@@ -242,7 +246,8 @@ class MicSettingsFragment : Fragment() {
             stableId = "micNoiseSuppressor",
             nameResId = R.string.mic_noise_suppressor,
             descriptionResId = if (NoiseSuppressor.isAvailable())
-                R.string.mic_noise_suppressor_description else R.string.mic_feature_unsupported,
+                R.string.mic_noise_suppressor_summary else R.string.mic_feature_unsupported,
+            helpResId = R.string.mic_noise_suppressor_description,
             isChecked = pendingMicNoiseSuppressor ?:false,
             isEnabled = NoiseSuppressor.isAvailable(),
             onCheckedChanged = { isChecked ->
@@ -257,7 +262,8 @@ class MicSettingsFragment : Fragment() {
             stableId = "micAutoGainControl",
             nameResId = R.string.mic_auto_gain_control,
             descriptionResId = if (AutomaticGainControl.isAvailable())
-                R.string.mic_auto_gain_control_description else R.string.mic_feature_unsupported,
+                R.string.mic_auto_gain_control_summary else R.string.mic_feature_unsupported,
+            helpResId = R.string.mic_auto_gain_control_description,
             isChecked = pendingMicAutoGainControl ?:false,
             isEnabled = AutomaticGainControl.isAvailable(),
             onCheckedChanged = { isChecked ->

@@ -25,6 +25,7 @@
     <string name="wifi">WiFi</string>
     <string name="dpi">像素密度（DPI）</string>
     <string name="mic_sample_rate">麦克风采样率</string>
+    <string name="mic_sample_rate_help">Android Auto 始终以 16000 Hz 获取麦克风，应用也先以该采样率打开麦克风。如果本机拒绝 16000 Hz，应用会以 48000 Hz 录音并向下转换声音。如果 Android Auto 已连接，保存更改会停止会话以使其生效。</string>
     <string name="keymap">按键映射</string>
     <string name="gestures">手势</string>
     <string name="gestures_description">配置双指滑动和长按。</string>
@@ -55,12 +56,15 @@
     <string name="night_overlay_traffic_delay">拥堵延迟：+%1$s</string>
     <string name="night_overlay_speed_value">%1$d km/h</string>
     <string name="night_mode">深色模式（Android Auto）</string>
+    <string name="night_mode_help">选择 Android Auto 何时显示深色外观。应用告诉手机是白天还是夜晚，手机随之切换其界面。“Auto”跟随日出日落。“Car Headlight Signal”在会上报的设备上读取 ILL+ 信号。其他模式的工作方式与上方的应用设置相同。</string>
     <string name="night_mode_threshold">夜间模式阈值</string>
     <string name="enter_threshold_value">输入阈值</string>
     <string name="threshold_lux_desc">Lux 值（0–10000）。低于此值即为夜间。</string>
     <string name="threshold_brightness_desc">亮度值（0–255）。低于此值即为夜间。</string>
     <string name="threshold_light_title">光线灵敏度</string>
+    <string name="threshold_light_help">光线传感器读数低于此级别（单位为勒克斯）时开启深色模式。只在比此级别高 10 勒克斯时才再次关闭，以免闪烁。变化需持续 2 秒才会生效。对话框会显示当前读数，帮助您选择。</string>
     <string name="threshold_brightness_title">亮度等级</string>
+    <string name="threshold_brightness_help">屏幕亮度低于此值时开启深色模式。Android 报告的亮度范围为 0 到 255，但有些设备使用较小的范围。深色模式只在比此值高 10 时才再次关闭，以免闪烁。对话框会显示当前读数，帮助您选择。</string>
     <string name="threshold_light_hint">当环境光线低于此等级时，将启用深色模式。</string>
     <string name="threshold_brightness_hint">当屏幕亮度低于此值时启用深色模式。Android 报告的亮度范围为 0–255，但实际范围可能因设备而异。您可能需要多次尝试，才能找到适合您设备的阈值。</string>
     <string name="current_light_reading">当前光线：%d Lux</string>
@@ -77,9 +81,11 @@
     <string name="car_signal_calibration_saved">ILL+ 校准已保存并应用</string>
     <string name="night_mode_start">夜间模式开始时间</string>
     <string name="night_mode_end">夜间模式结束时间</string>
+    <string name="night_mode_time_help">深色模式每天从开始时间到结束时间开启。时间范围可以跨过午夜，例如 22:00 到 06:00。时间使用本机的时钟。</string>
 
     <string name="app_theme">深色模式（应用）</string>
     <string name="app_theme_description">控制应用的视觉外观。</string>
+    <string name="app_theme_help">选择应用自身界面何时使用深色。Android Auto 在下方有自己的设置。Clear、Dark 和 Extreme Dark 不会变化。Automatic 跟随系统。其他模式会根据日出日落、时间范围、光线传感器、屏幕亮度、车辆大灯信号或已保存的地点切换。</string>
     <string name="change_app_theme">更改应用主题</string>
     <string name="use_gradient_background">使用渐变背景</string>
     <string name="use_gradient_background_description_on">应用绘制自己的背景，渐变圆形居中显示</string>
@@ -102,6 +108,7 @@
     <string name="night_mode_short">Android Auto</string>
     <string name="aa_monochrome">将 Android Auto 设为单色</string>
     <string name="aa_monochrome_description">减少 Android Auto 的色彩，适合夜间驾驶。需要 GLES 视图模式。仅在启用深色模式时生效。</string>
+    <string name="aa_monochrome_summary">降低颜色饱和度，适合夜间驾驶。需要 GLES 视图模式和深色模式。</string>
     <string name="aa_desaturation">去饱和度</string>
     <string name="aa_desaturation_description">控制去除多少色彩。仅在启用深色模式时生效。</string>
     <string name="gles_required_title">需要 GLES</string>
@@ -120,18 +127,22 @@
     <string name="reset">重置</string>
     <string name="gps_for_navigation">用于导航的 GPS</string>
     <string name="gps_for_navigation_description">使用 GPS 进行导航。</string>
+    <string name="gps_for_navigation_help">把本机自己的 GPS 位置发送给手机，Android Auto 将其用于导航。应用只发送真实的 GPS 定位，从不发送网络位置。如果本机一段时间丢失 GPS 定位，应用会停止发送，手机改用自己的位置。下次连接时生效。</string>
     <string name="enabled">已启用</string>
     <string name="disabled">已停用</string>
     <string name="resolution">分辨率</string>
+    <string name="resolution_help">设置 Android Auto 发送的画面大小。列表会把最适合本机屏幕的大小标为“推荐”。大于屏幕的大小只会占用更多带宽，画面不会更清晰。大尺寸需要稳定的 5 GHz Wi-Fi 或 USB 连接。下次连接时生效。</string>
     <string name="change_resolution">更改分辨率</string>
     <string name="change_dpi">更改 DPI</string>
     <string name="change_view_mode">更改视图模式</string>
     <string name="view_mode">视图模式</string>
+    <string name="view_mode_help">选择画面在本车机屏幕上的绘制方式。SurfaceView 最快，适用于大多数车机。TextureView 较慢，但支持镜像和缩放。GLES20 增加单色夜间模式等效果。画面发黑、闪烁或缺少效果时再更改。</string>
     <string name="surface_view">SurfaceView</string>
     <string name="texture_view">TextureView</string>
     <string name="gles_view">GLES20</string>
     <string name="auto">自动</string>
     <string name="screen_orientation">屏幕方向</string>
+    <string name="screen_orientation_help">设置本应用在屏幕上的旋转方向。“System Default”跟随系统设置，“Auto”跟随传感器。其他选项锁定一个方向。选择竖屏还会让 Android Auto 发送竖向画面。Android Auto 只在会话开始时获取画面形状，因此更改后请重新连接。</string>
     <string name="change_screen_orientation">更改屏幕方向</string>
     <string name="orientation_system_default">系统默认</string>
     <string name="orientation_auto_sensor">自动（传感器）</string>
@@ -151,6 +162,7 @@
 
     <string name="start_in_fullscreen_mode">屏幕模式</string>
     <string name="start_in_fullscreen_mode_description">选择如何处理系统栏（状态栏和导航栏）。</string>
+    <string name="start_in_fullscreen_mode_help">选择系统栏如何显示在本应用和投屏画面上。“正常”保留所有栏。“沉浸式”隐藏所有栏，画面可延伸到刘海下方。“仅隐藏状态栏”保留导航栏。“沉浸式（避开刘海）”隐藏所有栏，并让画面避开刘海。屏幕会立即重新加载以应用设置。</string>
 
     <string name="usb_status">USB 状态：%s</string>
     <string name="projection_status">投屏状态：%s</string>
@@ -210,6 +222,7 @@
     <string name="auto_start_bt_label">蓝牙连接时自动启动</string>
     <string name="auto_start_overlay_missing_hint">未授予“显示在其他应用的上层”权限，因此自动启动只会显示通知，而不会打开界面。点按即可授权。</string>
     <string name="auto_start_bt_description">当特定蓝牙设备连接时，自动打开 Open Headunit。</string>
+    <string name="auto_start_bt_help">当所选蓝牙设备之一连接到本机时打开应用，例如手机或车载蓝牙。Android Auto 已连接时，或本机首次解锁之前，不会有任何动作。没有“显示在其他应用的上层”权限时，应用会显示通知而不是界面。</string>
     <string name="auto_start_offer_title">自动启动？</string>
     <string name="auto_start_offer_message">要在连接此设备（%1$s）时自动启动应用吗？</string>
     <string name="auto_start_offer_yes">是</string>
@@ -217,26 +230,33 @@
     <string name="auto_start_offer_countdown">%1$d 秒后选“否”</string>
     <string name="auto_start_wifi_label">Wi-Fi 连接时自动启动</string>
     <string name="auto_start_wifi_description">连接到特定 Wi-Fi SSID 时，自动打开 Open Headunit。</string>
+    <string name="auto_start_wifi_help">当本机连接到下方一行所指定的 Wi-Fi 网络时打开应用。Android Auto 已连接时不会有任何动作。从 Android 8 起，后台限制可能会阻止此功能，因此请将应用从电池优化中移除。</string>
     <string name="auto_start_wifi_ssid_label">Wi-Fi SSID</string>
     <string name="auto_start_wifi_ssid_description">仅在连接到此 Wi-Fi SSID 时才启动。</string>
+    <string name="auto_start_wifi_ssid_help">用于打开应用的 Wi-Fi 网络名称。请按网络显示的样子输入。不区分大小写。如果留空，“Wi-Fi 连接时自动启动”不会执行任何操作。</string>
     <string name="auto_start_wifi_warning">旧版功能：受后台限制影响，在 Android 8 及以上版本中可能不稳定。请确保已将应用从电池优化中排除。</string>
     <string name="enter_wifi_ssid">输入 Wi-Fi SSID</string>
     <string name="wifi_ssid_not_set">未设置</string>
 
     <string name="listen_for_usb_devices_label">监听 USB 设备</string>
     <string name="listen_for_usb_devices_description">插入 USB 设备时显示 Android 系统提示。</string>
+    <string name="listen_for_usb_devices_help">让 Android 在每次插入 USB 设备时提供此应用。如果 U 盘和其他设备也出现该提示，请关闭。关闭后，插入手机不会打开应用。</string>
     <string name="show_toast_messages">显示 Toast 提示</string>
     <string name="show_toast_messages_description">在连接、断开连接和切换模式时显示状态提示。</string>
+    <string name="show_toast_messages_help">在手机连接或断开，以及连接模式改变时，显示简短的弹出消息。关闭可保持屏幕整洁。关于失败或拒绝的消息仍会显示。</string>
     <string name="auto_start_usb_label">USB 连接时自动启动</string>
     <string name="auto_start_usb_description">插入 USB 设备时，自动打开应用并尝试连接。</string>
+    <string name="auto_start_usb_summary">插入 USB 设备时打开应用并连接。</string>
     <string name="auto_start_settings">自动启动设置</string>
     <string name="auto_start_settings_description">设置应用自动启动的时机。</string>
     <string name="auto_start_oem_warning">此设备可能需要为本应用启用自动启动，并取消电池优化或后台限制。\n\n在带有快速启动（Quick Boot）的车机上，自动启动可能无效。请在系统设置中找到“DuraSpeed”，并在其中启用本应用。部分车机会隐藏 DuraSpeed，您可能需要借助“Hidden Settings”等应用才能找到它。如果没有 DuraSpeed，请尝试关闭快速启动。</string>
     <string name="car_launcher_autostart_info">Open Headunit 已设为车机桌面，会在系统启动时自动启动。</string>
     <string name="auto_start_on_boot_label">开机时启动</string>
     <string name="auto_start_on_boot_description">设备启动时自动打开应用。Android 10 及以上版本需要“显示在其他应用的上层”权限。</string>
+    <string name="auto_start_on_boot_summary">设备启动时打开应用。</string>
     <string name="auto_start_screen_on_label">亮屏时启动</string>
     <string name="auto_start_screen_on_description">每次屏幕亮起时打开应用。适用于从不完全关机，或使用快速启动模式导致其他自动启动选项无效的车机。不建议用于手机或平板电脑。</string>
+    <string name="auto_start_screen_on_summary">每次屏幕亮起时打开应用。不适用于手机或平板。</string>
     <string name="select_bt_device">选择蓝牙设备</string>
     <string name="bt_device_not_set">未设置</string>
     <string name="bt_permission_denied_title">需要蓝牙权限</string>
@@ -247,8 +267,10 @@
     <string name="wireless_connection_settings">无线连接</string>
     <string name="right_hand_drive">右舵驾驶</string>
     <string name="right_hand_drive_description">按右舵车调整界面布局。</string>
+    <string name="right_hand_drive_help">告知 Android Auto 驾驶员坐在右侧。本应用的主屏幕也会把主要内容移到右侧。更改会在下次连接时传达给 Android Auto。</string>
     <string name="category_graphic">图形</string>
     <string name="custom_insets">自定义边距</string>
+    <string name="custom_insets_help">按此像素数让画面远离屏幕边缘，依次为左、上、右、下。当边框、弧形边缘或系统栏遮挡了 Android Auto 的一部分时使用。</string>
     <string name="inset_top">上</string>
     <string name="inset_bottom">下</string>
     <string name="inset_left">左</string>
@@ -258,9 +280,10 @@
     <!-- Video Settings -->
     <string name="category_video">视频</string>
     <string name="force_software_decoding">强制软件解码</string>
-    <string name="force_software_decoding_description">可能解决某些设备上的问题，但速度较慢。</string>
+    <string name="force_software_decoding_description">可能解决部分设备上的问题，但速度较慢。</string>
+    <string name="force_software_decoding_help">用主处理器而不是视频硬件来解码视频。仅当关闭时画面一直发黑、卡住或颜色不对，才将其开启。它需要多得多的处理器性能，因此画面可能变慢。下面一行用于选择软件解码器。</string>
     <string name="wireless_mode">无线模式</string>
-    <string name="wireless_mode_description">选择应用的无线连接方式（手动列表、自动搜索手机或无线启动器模式）。</string>
+    <string name="wireless_mode_description">选择本车机如何无线查找手机。唤醒助手使用手机上的配套应用。原生模式相当于无线 Android Auto 车机，无需应用，但取决于 Android Auto 版本。车机服务器会查找 Android Auto 在手机上运行的服务器。仅在当前模式无法连接时更改。更改后会重新开始无线设置。</string>
     <string-array name="wireless_connection_modes">
         <item>手动 (列表)</item>
         <item>自动搜索 (Headunit Server)</item>
@@ -274,6 +297,11 @@
     <string name="auto_connect_settings">自动连接设置</string>
     <string name="auto_connect_settings_description">设置自动连接方式及其优先级。</string>
     <string name="auto_connect_help">这些方式会在应用打开时自动执行。启用您想要的方式，然后拖动以设置顺序。系统会使用第一个成功的已启用方式。</string>
+    <string name="auto_connect_screen_help">设置应用打开时如何自动连接。开启所需的方式，并拖动排列尝试顺序。使用第一个成功的方式。延迟可让速度较慢的车机有时间唤醒 Wi-Fi。这里的设置不会影响你自己发起的连接。点按“保存”即可应用更改。</string>
+    <string name="dpi_screen_help">设置 Android Auto 绘制时使用的像素密度。DPI 越高，图标和文字越大，屏幕容纳的内容越少。DPI 越低，图标和文字越小，容纳的内容越多。“自动”使用本设备的密度。新值将在下次连接时生效。</string>
+    <string name="keymap_screen_help">将本车机的按键映射到 Android Auto 操作。点按一行，然后按下要分配的按键。“重置”会删除你的所有映射并恢复默认值。方向盘或面板按键响应错误时可使用。</string>
+    <string name="customization_screen_help">更改本应用主屏幕的外观：背景图片、四个按钮的颜色和大小，以及文字大小。夜间设置控制深色模式下的背景。这些都不会改变 Android Auto 在投屏中显示的内容。</string>
+    <string name="loading_screen_screen_help">设置 Android Auto 启动时显示的图片或短视频。可选择不超过 10 MB 的图片或视频，缩放以适应屏幕，并循环播放短动画。也可以隐藏启动文字。“移除”会恢复默认屏幕。</string>
     <string name="auto_connect_priority">优先级 %d</string>
     <string name="auto_connect_all_disabled">全部已停用</string>
     <string name="drag_to_reorder">拖动以重新排序</string>
@@ -281,13 +309,16 @@
     <string name="move_down">下移</string>
     <string name="auto_connecting_single_usb">正在自动连接 USB 设备…</string>
     <string name="video_codec">视频编解码器</string>
+    <string name="video_codec_help">选择手机发送的视频格式。“自动”由应用在本车机能解码的格式中选择。H.265 在相同码率下画面更清晰。H.264 适用于所有解码器。画面卡顿或一直发黑时再更改。所选格式将从下次连接起生效。</string>
     <string name="fps_limit">帧率上限 (FPS)</string>
+    <string name="fps_limit_help">本机向 Android Auto 请求的最高帧率。60 的动画更流畅，但需要更多带宽和解码能力。如果画面延迟或卡顿，请选择 30。下次连接时生效。</string>
     <string name="save">保存</string>
     <string name="save_and_restart">保存（需要重新连接）</string>
     <string name="add_new">添加</string>
     <string name="cancel">取消</string>
     <string name="enable">启用</string>
     <string name="video_fit_mode">视频适配方式</string>
+    <string name="video_fit_mode_help">选择两者形状不同时，Android Auto 画面如何适应本机屏幕。“Stretch to fill”使用整个屏幕，可能使画面变形。“Fit with bars”显示完整画面，在两侧留出黑边。“Fill by cropping”使用整个屏幕，并裁掉部分边缘。</string>
     <string name="change_video_fit_mode">更改视频适配方式</string>
     <string name="video_fit_mode_fill">拉伸填满（无黑边，可能变形）</string>
     <string name="video_fit_mode_contain">完整显示（有黑边，不裁剪不变形）</string>
@@ -296,21 +327,29 @@
     <!-- Audio Settings -->
     <string name="forced_scale">强制缩放（旧版修复）</string>
     <string name="forced_scale_description">修复某些使用 SurfaceView 的旧设备上的缩放问题。仅在画面看起来扭曲或偏移时使用。</string>
+    <string name="forced_scale_summary">修正使用 SurfaceView 的旧设备上的缩放问题。</string>
     <string name="hud_mirroring">HUD 模式（水平翻转）</string>
     <string name="hud_mirroring_description">水平翻转画面，用于挡风玻璃反射（抬头显示 HUD）。需要 TextureView 或 GLES20 视图模式（不适用于 SurfaceView）。</string>
+    <string name="hud_mirroring_summary">翻转显示，用于挡风玻璃反射 (HUD)。</string>
 
     <string name="category_audio">音频</string>
     <string name="enable_audio_sink">音频接收器</string>
-    <string name="enable_audio_sink_description">关闭后，车机将不接收音频，声音由手机播放。</string>
+    <string name="enable_audio_sink_description">在本车机上播放 Android Auto 的声音。关闭后声音保留在手机上，例如手机已连接车载扬声器时。此时车机只显示画面。通话从不使用此音频：通话会在连接到手机的蓝牙免提设备（车载、对讲或耳机）上播放，或在手机本身上播放。</string>
+    <string name="enable_audio_sink_summary">在本车机上播放 Android Auto 的声音。关闭：由手机播放。</string>
     <string name="separate_audio_streams">分离音频流</string>
     <string name="separate_audio_streams_description">让媒体、导航语音和系统提示音通道各自使用独立的输出流，而不是共用一个多媒体流（在某些设备上可能无法正常工作）。</string>
+    <string name="separate_audio_streams_summary">媒体、导航语音和系统提示音使用各自的输出流。</string>
     <string name="use_aac_audio">使用 AAC 音频</string>
-    <string name="use_aac_audio_description">使用 AAC 编码处理音频以节省带宽（实验性）。在 2.4 GHz 下运行的无线会话中，只要“在 2.4 GHz 连接时降低视频质量”已开启，此选项就会自动开启。</string>
+    <string name="use_aac_audio_description">使用 AAC 编码处理音频以节省带宽。在 2.4 GHz 下运行的无线会话中，只要“在 2.4 GHz 连接时降低视频质量”已开启，此选项就会自动开启。</string>
+    <string name="use_aac_audio_summary">使用 AAC 音频以节省带宽。</string>
     <string name="attach_hw_dsp_equalizer">硬件 DSP 均衡器触发器</string>
     <string name="attach_hw_dsp_equalizer_description">在音频会话中附加一个虚拟均衡器效果，以在特定车机上强制使用硬件 DSP 路由。如果使用 ViPER4Android / ViperFX，或在旧版 Android 上声音发闷，请保持关闭。</string>
+    <string name="attach_hw_dsp_equalizer_summary">挂接一个虚拟均衡器，在部分设备上强制使用硬件 DSP 路由。</string>
     <string name="audio_volume_offset">音频音量偏移</string>
+    <string name="audio_volume_offset_help">设置本机上三种 Android Auto 音频流的音量：媒体、导航语音和系统提示音。每种范围为 0% 到 200%。100% 按手机发送的原样播放。可用来平衡导航和音乐的音量。</string>
     <string name="mic_input_source">麦克风输入源</string>
     <string name="mic_input_source_description">选择麦克风的音频源。</string>
+    <string name="mic_input_source_help">选择应用录音所用的 Android 音频来源。“默认”由系统决定。“麦克风”录制原始声音。“语音辨识”和“语音通讯”会加入系统自带的降噪和回声过滤。“蓝牙耳机”通过蓝牙耳机录音。如果手机听不到您的声音，请更改。如果 Android Auto 已连接，保存更改会停止会话。</string>
     <string-array name="mic_input_sources">
         <item>默认</item>
         <item>麦克风</item>
@@ -424,6 +463,7 @@
     <string name="setup_apply">应用</string>
     <string name="setup_widescreen_detected">检测到宽屏。</string>
     <string name="auto_optimize">自动优化设置</string>
+    <string name="auto_optimize_help">重新打开设置向导。向导依次完成连接、视频、显示、音频、启动、启动器、GPS 和车辆步骤，离开每一步时都会保存。首次设置后，向导会保留分辨率、编解码器、渲染器和屏幕方向，除非您应用视频测试的结果。它始终会保存您选择的屏幕尺寸和 DPI。</string>
     <string name="auto_optimize_desc">运行系统检查，为你的设备找出最佳设置。</string>
     <string name="fullscreen_none">正常（显示所有栏）</string>
     <string name="fullscreen_immersive">沉浸式（覆盖刘海）</string>
@@ -432,16 +472,21 @@
     <string name="fullscreen_status_only">仅隐藏状态栏</string>
     <string name="allow_external_configuration">允许外部配置</string>
     <string name="allow_external_configuration_description">允许 Tasker、MacroDroid 等自动化应用更改设置、设置日志级别和导出日志。连接和断开连接始终可用；此选项仅针对会更改车机配置的命令。</string>
+    <string name="allow_external_configuration_summary">允许 Tasker 等应用更改设置和导出日志。</string>
     <string name="log_level">日志级别</string>
     <string name="log_level_description">导出时按级别过滤日志。</string>
+    <string name="log_level_help">设置应用在日志中记录的详细程度。“Verbose”记录最多，“Error”最少。“Silent”在后台不记录任何内容，并停止捕获。提交错误报告时请选择“Verbose”。</string>
     <string name="log_source">日志来源</string>
     <string name="log_source_logcat">Logcat</string>
     <string name="log_source_applog_file">直接写入文件</string>
+    <string name="log_source_help">Logcat 会同时记录应用和系统的日志行，对提交错误报告最有帮助。“直接写入文件”只记录应用自身的日志行，适用于 Logcat 什么都不记录的设备。当 Logcat 什么都不记录时，应用会自动切换为“直接写入文件”。</string>
     <string name="log_location">日志存储位置</string>
+    <string name="log_location_help">选择日志文件的文件夹。“默认”把它们保存在应用自己的存储空间。“下载”文件夹会把它们放在“下载”下的 OpenHeadunitLogs 文件夹中。从 Android 10 起，这是应用自身存储空间中的“下载”文件夹。应用可能会先请求存储权限。应用最多保留 10 个日志文件。</string>
     <string name="log_location_default">默认（应用存储空间）</string>
     <string name="log_location_downloads">“下载”文件夹</string>
     <string name="start_log_capture">开始捕获日志</string>
     <string name="start_log_capture_description">开始记录完整日志，用于调试。</string>
+    <string name="start_log_capture_help">按上方设置的日志级别，开始或停止将完整日志录制到文件。应用重启后录制仍会继续，直到您停止。然后使用“导出日志”分享该文件。日志级别为“Silent”时无法开始。</string>
     <string name="start_log_capture_in_applog_file">仅在捕获进行期间，日志消息才会写入文件</string>
     <string name="start_log_capture_in_silent">无法开始记录：已选择“静默”日志级别</string>
     <string name="stop_log_capture">停止捕获日志</string>
@@ -450,6 +495,7 @@
     <!-- Navigation notifications -->
     <string name="show_navigation_notifications">导航通知</string>
     <string name="show_navigation_notifications_description">在通知中显示“X 米后执行 Y”和当前街道（用于调试）。</string>
+    <string name="show_navigation_notifications_help">把 Android Auto 导航的下一个转弯以通知的形式显示在本机上，并附带距离和街道名称。可用来检查转弯数据是否从手机送达。</string>
     <string name="nav_notification_channel_name">导航</string>
     <string name="nav_notification_channel_description">来自 Android Auto 的逐向导航更新。</string>
     <string name="nav_notification_title_format">%1$d 米后 — %2$s</string>
@@ -475,29 +521,40 @@
     <string name="monochrome_icons_description">在深色或极致黑暗模式下，主屏幕使用灰度图标。</string>
     <string name="use_extreme_dark">使用极致黑暗</string>
     <string name="use_extreme_dark_description">启用深色模式时使用纯黑背景。</string>
+    <string name="use_extreme_dark_help">应用处于深色时使用纯黑背景。它只适用于自动切换的模式，因为“Extreme Dark”始终为黑色。不会更改 Android Auto。</string>
     <string name="performance_overlay_settings">性能浮层</string>
     <string name="overlay_field_fps">FPS</string>
     <string name="overlay_field_cpu">CPU</string>
+    <string name="overlay_field_cpu_summary">本应用和整台设备的处理器负载。</string>
     <string name="overlay_field_temperature">温度</string>
+    <string name="overlay_field_temperature_summary">本机上最热的温度传感器。</string>
     <string name="overlay_field_frame_age">帧时间</string>
+    <string name="overlay_field_frame_age_summary">自上一帧显示在屏幕上以来的时间。</string>
     <string name="overlay_field_battery">电池</string>
+    <string name="overlay_field_battery_summary">电量。+ 表示本机已接通电源。</string>
     <string name="overlay_field_memory">可用内存</string>
     <string name="overlay_field_wifi_signal">Wi-Fi 信号</string>
+    <string name="overlay_field_wifi_signal_summary">本机所连 Wi-Fi 网络的信号强度，单位为 dBm。</string>
     <string name="performance_overlay_no_lines">无行</string>
     <string name="show_performance_overlay">显示性能浮层</string>
     <string name="overlay_position">性能浮层位置</string>
+    <string name="overlay_position_help">把读数框放在画面的左上角或右上角。如果本机屏幕上的栏遮住了该角，请移动它。</string>
     <string name="overlay_permission_required">自动启动需要“显示在其他应用的上层”权限</string>
     <string name="usb_permission_denied">USB 权限被拒绝。请允许 USB 访问，以便自动连接。</string>
     <string name="use_white_background">使用白色主屏幕壁纸</string>
     <string name="reopen_on_reconnection_label">重新连接时重新打开</string>
     <string name="reopen_on_reconnection_description">按下“退出”按钮后，应用会继续在后台运行并监控 USB 连接。设备重新连接时，应用会自动重新打开。</string>
+    <string name="reopen_on_reconnection_summary">退出后继续监视 USB，并在设备重新连接时再次打开。</string>
     <string name="show_performance_overlay_description">在投屏画面上显示 FPS、CPU 负载、温度和帧时间。</string>
+    <string name="show_performance_overlay_help">在 Android Auto 画面上方显示一个包含实时读数的小框，例如帧率、处理器负载和温度。可用来查找画面变慢的原因。读数在下方各行中选择。该框只显示在本机上，不显示在手机上。</string>
 
     <string name="category_input">输入设置</string>
     <string name="enable_rotary">启用旋钮控制器</string>
     <string name="enable_rotary_description">声明支持物理旋钮和滚轮。如果触摸屏无法正常工作，请关闭此选项。</string>
+    <string name="enable_rotary_summary">声明支持旋钮。触控异常时请关闭。</string>
     <string name="kill_on_disconnect">断开连接时关闭应用</string>
     <string name="kill_on_disconnect_description">Android Auto 断开连接时自动关闭应用。</string>
+    <string name="kill_on_disconnect_help">Android Auto 断开连接时关闭应用，让设备回到自己的界面。如果设备在每次行程后都要显示自己的启动器，请开启。当本应用是车机启动器时，此项不起作用。如果开启了“重新连接时重新打开”“开机时启动”或“亮屏时启动”，应用会先发出警告，因为这些选项需要应用保持打开。</string>
     <string name="kill_on_disconnect_warning_title">警告</string>
     <string name="kill_on_disconnect_warning">以下重新连接设置与“断开连接时关闭应用”冲突：\n\n%1$s\n\n车机开机时，初始连接设置（自动连接、自动启动）仍然有效。但首次断开连接后，应用会立即关闭，而不会尝试重新连接。\n\n注意：部分后装车机不会完全关机，而是进入休眠，就像手机锁屏后并未真正关机一样。启用此选项后，应用会在首次断开连接后关闭，下次点火时可能不会自动重新打开。\n\n要停用上面列出的重新连接设置吗？</string>
     <string name="kill_on_disconnect_disable_and_enable">停用并启用</string>
@@ -520,29 +577,37 @@
     <string name="category_head_unit">车机</string>
     <string name="vehicle_display_name_label">显示名称</string>
     <string name="vehicle_display_name_description">在手机上显示的车辆名称。</string>
+    <string name="vehicle_display_name_help">这辆车的名称。应用每次连接时都会把它发送给 Android Auto，手机会显示它。更改会在下次连接时生效。</string>
     <string name="vehicle_make_label">制造商</string>
     <string name="vehicle_make_description">车辆制造商（例如 Honda、Toyota）。</string>
+    <string name="vehicle_make_help">应用发送给 Android Auto 的汽车制造商。真实的汽车品牌会在 Android Auto 的退出按钮上显示该品牌的徽标，但这样 Android Auto 就不再列出从 Play 商店之外安装的应用。改回“Google”即可重新列出这些应用。更改会在下次连接时生效。</string>
     <string name="vehicle_model_label">型号</string>
     <string name="vehicle_model_description">车辆型号（例如 Civic、Corolla）。</string>
+    <string name="vehicle_model_help">应用发送给 Android Auto 的车型和年份。手机将它们与品牌和车辆 ID 一起使用，以找到这辆车已保存的记录。因此更改可能让手机把本机当作一辆新车。年份最多可比今年晚 2 年。</string>
     <string name="vehicle_year_label">年份</string>
     <string name="vehicle_year_description">车辆年份。</string>
     <string name="vehicle_id_label">车辆 ID</string>
     <string name="vehicle_type_label">车辆类型</string>
+    <string name="vehicle_type_help">告知 Android Auto 这是哪种车辆。选为“摩托车”时，手机用自己的麦克风录音，而不是本机的麦克风。如果“车机麦克风”已关闭，应用始终发送“摩托车”。每种类型在手机上都算作不同的车。</string>
     <string name="vehicle_type_car">汽车</string>
     <string name="vehicle_type_truck">卡车</string>
     <string name="vehicle_type_motorcycle">摩托车</string>
     <string name="vehicle_type_forced_by_microphone">车机麦克风已关闭，因此手机将使用自带麦克风。Android Auto 会识别为摩托车。</string>
     <string name="vehicle_id_description">仅为内部标识符。更改后，手机会将此车视为另一辆车，并重置此车的 Android Auto 偏好设置。</string>
+    <string name="vehicle_id_help">Android Auto 用此 ID 连同品牌、型号和年份来重新识别这辆车。新的 ID 会让手机把本机当作一辆新车，并为它重置 Android Auto 设置。“卡车”和“摩托车”会在 ID 后加上各自的后缀，因此每种类型都算作不同的车。</string>
     <string name="head_unit_make_label">制造商</string>
     <string name="head_unit_make_description">车机制造商。</string>
+    <string name="head_unit_make_help">应用发送给 Android Auto 的本车机制造商。手机会在 Android Auto 设置中显示此名称。真实的汽车品牌会在 Android Auto 的退出按钮上显示该品牌的徽标，但这样 Android Auto 就不再列出从 Play 商店之外安装的应用。改回“Google”即可重新列出这些应用。</string>
     <string name="head_unit_make_hint">您的手机会在 Android Auto 设置中显示此名称。\n\n如果填写真实的汽车品牌，Android Auto 的退出按钮上会显示该品牌的标志，但 Android Auto 将不再列出从 Play 商店以外安装的应用。改回“Google”即可重新列出这些应用。</string>
     <string name="head_unit_model_label">型号</string>
     <string name="head_unit_model_description">车机型号。</string>
+    <string name="head_unit_model_help">本车机的型号。应用每次连接时会将它与上面的制造商一起发送给 Android Auto。</string>
     <string name="vehicle_year_error_invalid">请输入有效年份</string>
     <string name="vehicle_year_error_max">年份不能晚于 %1$d</string>
     <string name="vehicle_info_restart_note">每次连接时，这些信息都会发送给 Android Auto。</string>
     <string name="auto_enable_hotspot">自动启用热点</string>
     <string name="auto_enable_hotspot_description">自动在此设备上开启 WLAN 热点。（并非所有设备都支持。）</string>
+    <string name="auto_enable_hotspot_summary">在本设备上启动 Wi-Fi 热点。并非所有设备都支持。</string>
     <string name="hotspot_warning_title">实验性功能</string>
     <string name="hotspot_warning_message">此功能使用反射机制，可能无法在所有设备上正常运行。可能还需要手动授予“修改系统设置”权限。</string>
     <string name="hotspot_permission_title">需要权限</string>
@@ -555,7 +620,9 @@
     <string name="shortcut_selfmode_desc">在此设备上启动 Android Auto</string>
     <string name="wait_for_wifi">启动 Wi-Fi Direct 前等待 WLAN</string>
     <string name="wait_for_wifi_description">开机时，先等待 WLAN 连接，再启动 Wi-Fi Direct。如果主机开机后需要几秒钟才能连上 WLAN，请启用此项。</string>
+    <string name="wait_for_wifi_summary">开机时先等待 Wi-Fi，再启动 WiFi Direct。</string>
     <string name="wait_for_wifi_timeout">WLAN 等待超时</string>
+    <string name="wait_for_wifi_timeout_help">应用在启动 Wi-Fi Direct 之前等待本机连接 Wi-Fi 多久，范围为 5 到 30 秒。Wi-Fi 一连接上或这段时间用完，应用就立即启动 Wi-Fi Direct。如果本机开机后连接 Wi-Fi 很慢，请调大。</string>
     <string name="wireless_24ghz_warning">注意：在 2.4GHz 设备上使用无线 Android Auto 可能导致延迟、卡顿和断连。如遇问题，请通过 USB 测试，以确认是否受网络限制。</string>
     <string name="supported_nativeaa">增强型无线支持</string>
     <string name="supported_nativeaa_desc">好消息！您的设备支持“原生无线”模式，可提供更流畅的 Android Auto 体验。\n\n要启用此模式，需要刷新蓝牙缓存。请按以下步骤操作：\n1. 在手机上移除现有配对\n2. 点按“确定”重启蓝牙\n3. 重新配对手机\n\n要现在切换到原生 AA 模式吗？</string>
@@ -565,8 +632,10 @@
     <string name="server_mode_label">服务器模式</string>
     <string name="server_mode_manual">手动</string>
     <string name="server_mode_auto">自动</string>
+    <string name="server_mode_help">“自动”会在网络中搜索手机上的车机服务器并自动连接。“手动”不搜索。你可以从网络列表连接，或使用手机的地址连接。</string>
 
     <string name="helper_strategy_label">助手连接策略</string>
+    <string name="helper_strategy_help">选择在唤醒助手模式下手机与本车机如何共用网络。“普通 Wifi”使用双方已共用的网络。WiFi Direct 建立专用链路。“搜索附近设备”为测试版。“手机热点”加入手机的热点。“车机热点”将本车机作为接入点。手机找不到本车机时再更改。</string>
     <string-array name="helper_strategies">
         <item>普通 Wifi (NSD)</item>
         <item>WiFi 直连 (P2P)</item>
@@ -585,10 +654,13 @@
     <string name="exit_dialog_background">移至后台</string>
     <string name="gesture_hint">提示：用两根手指从左边缘向内滑动，即可打开退出菜单。</string>
     <string name="audio_latency_multiplier">音频延迟倍数</string>
-    <string name="aaudio_output">AAudio 输出（实验性）</string>
+    <string name="aaudio_output">AAudio 输出</string>
     <string name="aaudio_output_description">尝试低延迟媒体输出。如果不可用，会自动改用 AudioTrack。</string>
+    <string name="aaudio_output_help">通过低延迟音频输出 AAudio 播放 Android Auto 媒体。应用仅在 Android 9 及更高版本上使用它。如果声音比画面晚，请开启。如果 AAudio 无法启动，应用会使用普通音频输出。如果开启后声音有杂音或中断，请关闭。</string>
     <string name="audio_latency_multiplier_description">调整音频缓冲区大小（调低 = 延迟更低，调高 = 卡顿更少）。</string>
+    <string name="audio_latency_multiplier_help">设置应用预留多少声音，使连接的短暂中断不会切断声音。默认的 16x 预留约 400 毫秒。每降一档减半，1x 时为 25 毫秒。预留越少延迟越低，但连接较差时可能卡顿。对所有 Android Auto 音频流生效。</string>
     <string name="audio_queue_capacity">音频队列容量 (Backpressure)</string>
+    <string name="audio_queue_capacity_help">决定收到的音频在播放前最多可等待多久。队列小，声音与画面更同步。队列大，能承受连接的短暂中断，但声音可能落后。队列已满时，最旧的音频会被丢弃。“无限制”会保留全部。应用始终允许至少一秒的音频。</string>
     <string name="media_action_previous">上一首</string>
     <string name="media_action_play">播放</string>
     <string name="media_action_pause">暂停</string>
@@ -596,8 +668,10 @@
     <string name="media_session_aa_status_placeholder">已连接</string>
     <string name="sync_media_session_aa_metadata">在媒体会话中显示 AA 正在播放的内容</string>
     <string name="sync_media_session_aa_metadata_description">在系统媒体会话和媒体通知中显示来自手机的曲目标题、艺术家、时长和专辑封面。</string>
+    <string name="sync_media_session_aa_metadata_summary">在系统媒体会话中显示手机的曲目信息。</string>
     <string name="auto_resume_playback_on_reconnect">重新连接后继续播放</string>
     <string name="auto_resume_playback_on_reconnect_description">如果连接短暂中断（60 秒内）前正在播放音乐，重新连接后自动继续播放。</string>
+    <string name="auto_resume_playback_on_reconnect_summary">恢复短暂断开（60 秒）前正在播放的音乐。</string>
     <string name="error_usb_permission_failed">系统错误：无法打开 USB 权限对话框。</string>
 
     <!-- Custom loading screen -->
@@ -624,15 +698,19 @@
     <string name="microphone_settings">麦克风设置</string>
     <string name="use_head_unit_microphone">车机麦克风</string>
     <string name="use_head_unit_microphone_description">开启：Android Auto 使用本设备的麦克风。关闭：本设备不录音，改由手机使用自带麦克风，或与手机配对的耳机或对讲设备，语音助手仍可正常使用。需要手机运行 Android 11 或更高版本。</string>
+    <string name="use_head_unit_microphone_summary">Android Auto 使用本设备的麦克风。关闭：使用手机的麦克风。</string>
     <string name="head_unit_microphone_off_info">车机麦克风已关闭，因此下方设置均不适用。系统会告知 Android Auto：本设备无法录音，且是一辆摩托车，这样手机就会自行录音。在 Android 10 及更低版本上，手机会在会话之间忘记这一点，可能因此无法连接。</string>
     <string name="microphone_settings_description">设置麦克风输入和音频处理方式。</string>
     <string name="mic_wire_format_info">Android Auto 一律以 16000 Hz、16 位、单声道接收麦克风音频，其他格式一概拒绝。因此这些设置改变的是硬件的行为，而不是发送给手机的内容。</string>
     <string name="mic_echo_canceler">回声消除 (AEC)</string>
     <string name="mic_echo_canceler_description">尝试消除麦克风中的回声。若出现无声或失真，请关闭此功能。</string>
+    <string name="mic_echo_canceler_summary">消除麦克风的回声。无声或失真时请关闭。</string>
     <string name="mic_noise_suppressor">噪声抑制 (NS)</string>
     <string name="mic_noise_suppressor_description">尝试降低背景噪声。单麦克风时，Android Auto 期望关闭此项，并自行处理。若您的声音听起来发闷，请关闭此功能。</string>
+    <string name="mic_noise_suppressor_summary">降低背景噪声。Android Auto 要求此项关闭。</string>
     <string name="mic_auto_gain_control">自动增益控制 (AGC)</string>
     <string name="mic_auto_gain_control_description">自动调整麦克风音量。Android Auto 期望关闭此项，并自行进行增益控制，两者同时使用通常效果更差。若音量不稳定，请关闭此功能。</string>
+    <string name="mic_auto_gain_control_summary">调整麦克风音量。Android Auto 要求此项关闭。</string>
     <string name="mic_feature_unsupported">您的设备不支持此功能。</string>
     <string name="bt_permission_denied">蓝牙权限遭拒，无法扫描设备。</string>
     <string name="bt_external_module_no_picker">此主机的蓝牙由外接模块提供，而非 Android 自带的蓝牙，因此这里没有可供选择的 Android 蓝牙设备列表。</string>
@@ -642,7 +720,8 @@
     <!-- New strings merged from 2.3.1 -->
     <string name="bt_devices_selected">个已选择的设备</string>
     <string name="static_audio_focus">静态音频焦点</string>
-    <string name="static_audio_focus_description">强制让手机认为音频焦点一直被持有，以防止通用车机上的音频路由丢失。导航语音提示期间还会通过软件压低其他声音的音量。</string>
+    <string name="static_audio_focus_description">告知手机音频焦点始终被持有。这可避免在错误上报焦点的通用车机上声音中断。导航语音播报时，还会通过软件降低音乐音量。除非声音中断，否则请保持关闭。</string>
+    <string name="static_audio_focus_summary">告知手机音频焦点始终被持有，以避免声音中断。</string>
     <string name="bluetooth_adapter_label">蓝牙适配器</string>
     <string name="bluetooth_adapter_description">选择用于握手的蓝牙适配器/控制器。适用于双蓝牙系统。</string>
     <string name="select_bt_adapter">选择蓝牙适配器</string>
@@ -693,12 +772,14 @@
     <!-- Native USB Driver -->
     <string name="use_libusb">使用原生 USB 驱动程序</string>
     <string name="use_libusb_description">使用 libusb 进行通信。关闭后将使用 Android 标准 USB API。</string>
+    <string name="use_libusb_help">通过数据线连接手机时，使用应用自带的 USB 库，而不是 Android 的 USB 系统。请保持关闭。仅当通过 USB 能找到手机但 Android Auto 无法启动时才开启。对无线连接没有影响。</string>
     <string name="usb_keep_phone_media_audio">通过 USB 保持手机媒体音频开启</string>
     <string name="usb_keep_phone_media_audio_description">在 USB 会话期间，Android Auto 可能会关闭手机面向此车机的蓝牙媒体音频。启用此选项可阻止这种情况。这样一来，通话可能会留在手机上，而不是车机上。</string>
 
     <string name="software_video_decoder">软件解码器来源</string>
     <string name="software_video_decoder_bundled">内置 FFmpeg</string>
     <string name="software_video_decoder_device">设备 MediaCodec</string>
+    <string name="software_video_decoder_help">仅在开启“强制软件解码”时生效。“内置 FFmpeg”是应用自带的解码器，只能解码 H.265。“设备 MediaCodec”使用系统的软件解码器。H.264 视频始终使用系统解码器。</string>
 
     <string name="btn_show_qr">显示二维码</string>
     <string name="renderer_fallback_surface">画面持续卡住，因此本次连接已切换为 SurfaceView。如果运行稳定，请在“设置”中将视图模式设为 SurfaceView。</string>
@@ -745,6 +826,7 @@
     <string name="geofence_override_theme">在此强制使用主题</string>
     <string name="geofence_dark_inside">在此区域内使用深色</string>
     <string name="geofence_scope_label">适用范围</string>
+    <string name="geofence_scope_help">选择已保存的地点控制什么：应用自身界面、Android Auto，或两者。您的选择会把该部分的深色模式设为“Location (by area)”。在已保存的地点内，由该地点决定浅色或深色。在所有地点之外，由下方一行决定。</string>
     <string name="geofence_scope_app">应用</string>
     <string name="geofence_scope_aa">Android Auto</string>
     <string name="geofence_scope_both">两者</string>
@@ -757,6 +839,7 @@
     <string name="appearance_off">关闭</string>
     <string name="location_manage_places">已保存的地点</string>
     <string name="location_outside_label">已保存地点之外</string>
+    <string name="location_outside_help">设置本机位于所有已保存地点之外，以及尚无位置时使用浅色还是深色。在已保存的地点内，使用该地点自己的选择。仅当某个深色模式设为“Location (by area)”时有效。</string>
     <string name="location_places_desc">位于某个区域内时，设置浅色或深色外观。需要使用 GPS。</string>
     <string name="coordinates_enter">输入坐标</string>
     <string name="coordinate_latitude">纬度</string>
@@ -775,6 +858,7 @@
     <string name="settings_search_clear">清除搜索</string>
     <string name="settings_search_no_results">没有与“%1$s”匹配的设置。</string>
     <string name="connection_mode">连接方式</string>
+    <string name="connection_mode_help">选择本机连接手机的方式：USB、Wi-Fi、独立模式，或任意组合。主屏幕和设置只会显示您所选方式的选项。如果未选择 Wi-Fi，应用不会在后台启动无线连接。</string>
     <string name="connection_kind_usb_cable">USB 线缆（直连）</string>
     <string name="connection_kind_usb_wireless_adapter">USB 无线适配器</string>
     <string name="connection_kind_wifi">WiFi</string>
@@ -985,6 +1069,7 @@
     </string-array>
     <string name="dpi_value_format">%1$d DPI</string>
     <string name="pixel_aspect_ratio">像素宽高比</string>
+    <string name="pixel_aspect_ratio_help">仅当此屏幕上的圆形看起来像椭圆时才更改。这是因为面板像素不是正方形。10000 表示正方形像素。</string>
     <string name="enter_pixel_aspect_ratio_value">像素宽高比 x10000（10000 = 方形像素）</string>
     <string name="cannot_open_settings">无法打开系统设置</string>
     <string name="static_bssid_enter_value">输入 BSSID (XX:XX:XX:XX:XX:XX)</string>
@@ -993,17 +1078,13 @@
     <string name="media_key_routing_always">始终</string>
     <string name="media_key_routing_auto">自动</string>
     <string name="media_key_routing_never">从不</string>
-    <string name="media_key_routing_always_hint">上一首、下一首和播放/暂停始终发送到 Android Auto。除非按一次会跳过两首曲目，否则请使用此项。</string>
-    <string name="media_key_routing_auto_hint">当此车机与手机建立了蓝牙媒体连接时，不再发送这些按键，因为该连接已经执行了相应操作。如果按一次会跳过两首曲目，且手机已与此车机配对，请选择此项。</string>
-    <string name="media_key_routing_never_hint">从不发送这些按键，交由蓝牙处理。如果按一次会跳过两首曲目，且手机配对的是车辆自带系统而非此车机，请选择此项（“自动”无法检测到该连接）。</string>
+    <string name="media_key_routing_help">始终：上一首、下一首和播放/暂停始终发送到 Android Auto。除非按一次会跳过两首曲目，否则请使用此项。\n\n自动：当此车机与手机建立了蓝牙媒体连接时，不再发送这些按键，因为该连接已经执行了相应操作。如果按一次会跳过两首曲目，且手机已与此车机配对，请选择此项。\n\n从不：从不发送这些按键，交由蓝牙处理。如果按一次会跳过两首曲目，且手机配对的是车辆自带系统而非此车机，请选择此项（“自动”无法检测到该连接）。</string>
     <string name="media_key_routing_hint_common">仅影响媒体按键。旋钮控制器、方向键、返回键和确认键始终会传到 Android Auto。</string>
     <string name="playback_focus_mode">播放时暂停其他音频</string>
     <string name="playback_focus_mode_auto">自动</string>
     <string name="playback_focus_mode_always">始终</string>
     <string name="playback_focus_mode_never">从不</string>
-    <string name="playback_focus_mode_auto_hint">Android Auto 播放音频时，暂停车机上的其他播放器（例如收音机）。如果发现这样做反而停掉了手机自身的播放（车机是手机的蓝牙扬声器时会出现这种情况），则不再暂停，并记住这一点。再次选择此模式可让它重新尝试一次。</string>
-    <string name="playback_focus_mode_always_hint">Android Auto 播放时始终暂停其他音频。如果开启蓝牙后音乐在一两秒后停止，请切换回“自动”。</string>
-    <string name="playback_focus_mode_never_hint">从不干预系统音频焦点。车机上的其他音频可能会在 Android Auto 之上继续播放。</string>
+    <string name="playback_focus_mode_help">自动：Android Auto 播放音频时，暂停车机上的其他播放器（例如收音机）。如果发现这样做反而停掉了手机自身的播放（车机是手机的蓝牙扬声器时会出现这种情况），则不再暂停，并记住这一点。再次选择此模式可让它重新尝试一次。\n\n始终：Android Auto 播放时始终暂停其他音频。如果开启蓝牙后音乐在一两秒后停止，请切换回“自动”。\n\n从不：从不干预系统音频焦点。车机上的其他音频可能会在 Android Auto 之上继续播放。</string>
     <string name="playback_focus_mode_static_hint">开启“静态音频焦点”后，此设置从手机连接的那一刻起生效，并持续整个会话，而不是只在播放音频时生效。</string>
     <string name="boot_loop_paused_title">无线启动已暂停</string>
     <string name="boot_loop_paused_generic">Open Headunit 启动无线功能后不久，此设备连续重启了三次，因此这次没有开启无线功能。USB 仍可使用。打开应用即可重新开启。</string>
@@ -1014,8 +1095,10 @@
     <string name="external_bt_module_nativeaa">通过 ZJ/ZLink 模块的原生无线</string>
     <string name="external_bt_module_nativeaa_desc">您的手机与这台主机自带的蓝牙模块 (%1$s) 配对，而不是与 Android 提供给应用的蓝牙配对，因此握手信号将通过该模块的 ZJ/ZLink 服务发送。\n\n这是实验性功能，而且该服务是唯一的通道。如果手机始终没有启动 Android Auto，请使用 USB 或 Wi-Fi 模式。</string>
     <string name="external_bt_transport">通过主机的蓝牙模块连接</string>
-    <string name="external_bt_transport_description">实验性功能，仅适用于具备 ZJ/ZLink 蓝牙服务的主机。通过本机自己的蓝牙芯片（您的手机实际配对的那一颗）发送无线 Android Auto 握手，而不是通过 Android 提供给应用的蓝牙。\n\n请先在关闭本设置的状态下运行“测试主机的蓝牙模块”。如果测试发现没有任何服务在监听，本设置在您的主机上不会起作用，无论如何设置，原生无线都无法使用。如果有响应，请开启本设置并选择“原生”。如果在本设置已开启且已连接时运行测试，测试会直接说明这一点，这并不是失败。无论哪种情况，都请导出日志。</string>
+    <string name="external_bt_transport_description">实验性功能，适用于带有 ZJ/ZLink 蓝牙服务的车机。通过手机已配对的蓝牙芯片发送无线 Android Auto 握手，而不是 Android 向应用展示的那一个。请先在此项关闭时运行蓝牙模块测试。如果没有发现监听方，此项在你的车机上无效。如果有响应，请开启。无论哪种情况，都请导出日志。</string>
+    <string name="external_bt_transport_summary">实验性功能。通过本车机自己的蓝牙发送无线握手。</string>
     <string name="zbt_probe_title">测试主机的蓝牙模块</string>
+    <string name="zbt_probe_help">测试本机自带的蓝牙模块能否承载无线 Android Auto 握手。测试约需两分钟，并在此行显示每个阶段。“仅观察”只启动模块并监视它。“唤醒并观察”还会让模块连接手机。测试可能改变模块的蓝牙状态。测试后请导出日志。</string>
     <string name="zbt_probe_idle">点按运行</string>
     <string name="zbt_probe_running">正在运行…</string>
     <string name="zbt_probe_message">两个选项都会先初始化蓝牙模块，再观察其状态，因此可能影响蓝牙状态。“唤醒并观察”还会请求连接手机。\n\nOHU正在使用或检查模块时，测试会让出模块。测试后请导出日志。</string>
@@ -1024,9 +1107,11 @@
     <string name="external_bt_blink_transport">通过 FYT 外接蓝牙模块连接</string>
     <string name="external_bt_module_controls_hint">手机配对、连接优先级和驱动选择均由外接蓝牙模块管理。</string>
     <string name="external_bt_module_last_phone">最近通过该模块连接的手机</string>
-    <string name="external_bt_blink_transport_description">实验性功能。适用于手机通过独立蓝牙模块配对通话的 FYT 主机，例如 DUDUOS 上的“DUDUAUTO”（目前唯一测试过的 ROM）。无线 Android Auto 握手由该模块而非本机蓝牙承载，通常由原厂 Car Link 应用响应。开启后改由本应用响应，因此通话仍保留在该模块和车载扬声器上。\n\n请先停用原厂 Car Link 应用 (pm disable-user com.syu.carlink)，否则两个应用会读取同一通道。在主机允许时，无需 root 即可打开该通道，否则通过 root 打开。请选择“原生”，只将手机与该模块配对；如果无法连接，请导出日志。</string>
+    <string name="external_bt_blink_transport_description">实验性功能，适用于手机为通话与独立蓝牙模块配对的 FYT 车机，例如 DUDUOS 上的 DUDUAUTO。该模块负责无线 Android Auto 握手，通常由原厂 Car Link 应用响应。开启后改由本应用响应，因此通话保留在该模块和车载扬声器上。请先停用原厂 Car Link 应用 (pm disable-user com.syu.carlink)，否则两者会读取同一通道。</string>
+    <string name="external_bt_blink_transport_summary">实验性功能。在 FYT 车机的蓝牙模块上响应无线握手。</string>
     <string name="external_bt_zj_socket_transport">通过 ZJ 蓝牙套接字连接</string>
     <string name="external_bt_zj_socket_transport_description">适用于 ZJ 蓝牙模块通过本地套接字（/dev/socket/zj_bt_socket）传输无线 Android Auto 握手的设备。当该套接字接受连接时，应用会自动使用。仅当你的设备有此套接字而应用未检测到时，才需开启。</string>
+    <string name="external_bt_zj_socket_transport_summary">通过 ZJ 模块的本地套接字进行无线握手。</string>
     <string name="external_bt_blink_refused_stock_enabled">外接蓝牙模块：原厂 Car Link 应用仍处于启用状态。请将其停用 (pm disable-user com.syu.carlink)，或关闭此传输方式。</string>
     <string name="external_bt_blink_refused_stock_running">外接蓝牙模块：原厂 Car Link 应用已停用，但仍在运行。请重启本机。</string>
     <string name="external_bt_blink_refused_root">外接蓝牙模块：打开该模块的通道需要本机具有 root 权限，但 root 访问被拒绝或不可用。</string>
@@ -1036,10 +1121,13 @@
     <string name="native_ap_transport_wifi_direct">Wi-Fi Direct</string>
     <string name="native_ap_transport_hotspot">热点</string>
     <string name="hotspot_interface_override">热点网络接口</string>
+    <string name="hotspot_interface_override_help">承载本机热点的网络接口。留空则由应用自行查找。仅当日志显示应用选错了接口或找到多个接口时才填写。此时即使系统报告没有热点，应用也会发送热点信息，因此请确认热点已开启。</string>
     <string name="hotspot_interface_override_message">留空则自动判断。如果日志显示有多个接口都可能是接入点，或选错了接口，请设置此项。名称取自日志中“Providing credentials from”之后显示的内容，或在 shell 中运行“ip -brief addr”时包含您热点地址的那一项。常见名称：ap0、wlan0、wlan1、wlan2、softap0、ra0。</string>
     <string name="hotspot_ssid_override">热点名称（手动）</string>
+    <string name="hotspot_ssid_override_help">手机加入本机热点时获得的名称。留空则由应用从本机读取名称。仅当本机不允许应用读取时才填写。如果输入了名称，也请输入密码：此时应用不会从本机读取密码。</string>
     <string name="hotspot_ssid_override_message">留空则自动从本设备的热点设置中读取名称。有些设备不允许应用读取该名称；如果日志提示无法读取名称，请按热点设置中显示的内容原样输入。</string>
     <string name="hotspot_password_override">热点密码（手动）</string>
+    <string name="hotspot_password_override_help">手机加入本机热点时获得的密码。留空则由应用从本机读取。当本机不允许应用读取，或您已自行输入热点名称时，请填写。如果输入了名称却没有密码，手机会得到一个开放网络并拒绝它。</string>
     <string name="hotspot_password_override_message">留空则自动读取密码。在不允许应用读取热点配置的设备上需要填写。手机将使用此密码加入。</string>
     <string name="su_needed_keymaps_warning">警告：您的车机必须已获取 Root 权限，或已安装 Shizuku。如果是这样，出现提示时请授予 SU 权限。在此问题解决之前，方向盘按键可能无法使用。</string>
 
@@ -1078,6 +1166,7 @@
     <string name="home_button_scale_preview">主屏幕实时预览</string>
     <string name="btn_reset_scale">重置按钮大小</string>
     <string name="static_bssid_title">静态 BSSID（MAC 地址）</string>
+    <string name="static_bssid_help">手机为本机网络获得的 Wi-Fi 地址（BSSID）。留空则由应用自行读取地址。仅当日志显示没有来源报告地址时才输入。使用 Wi-Fi Direct 时，此行设置群组的地址。使用热点时，设置热点的地址。应用读取到的地址始终优先于输入的地址。</string>
     <string name="native_ap_transport_hint">手机将加入本设备自己的热点，而不是 Wi-Fi Direct 群组。连接前请先开启热点。</string>
     <string name="hotspot_band">热点频段</string>
     <string name="hotspot_band_auto">自动</string>
@@ -1093,7 +1182,7 @@
     <string name="stand_down_station_auto">自动</string>
     <string name="stand_down_station_always">始终</string>
     <string name="stand_down_station_never">从不</string>
-    <string name="stand_down_station_hint">“自动”仅在本机无线模块支持 5 GHz 频段、且该网络正使用 2.4 GHz 时才退出本机自己的网络，以便让 Wi-Fi Direct 群组独占一个 5 GHz 信道。在仅支持 2.4 GHz 的主机上，以及网络已经使用 5 GHz 时，则保持加入，因为退出只会让主机重新扫描网络。会话结束后会重新加入该网络。如果画面卡顿，请尝试“始终”或“从不”。</string>
+    <string name="stand_down_station_hint">决定手机连接期间本车机是否离开自己的 Wi-Fi 网络，以便 WiFi Direct 群组使用 5 GHz 信道。“自动”仅在无线模块支持 5 GHz 频段且网络处于 2.4 GHz 时离开，或在群组被强制使用 2.4 GHz 且旁边有 5 GHz 网络时离开。仅支持 2.4 GHz 的车机会保持连接，因为离开只会触发网络扫描。会话结束时会重新加入网络。画面卡顿时请尝试“始终”或“从不”。</string>
     <string name="stand_down_station_needs_overlay">在此 Android 版本上，需要“显示在其他应用的上层”权限。</string>
     <string name="connection_issue_banner_bt_silent">您的手机已通过蓝牙连接，但本机的蓝牙未能向其发送任何数据。点按可选择无需蓝牙的模式，例如 Wireless Helper。</string>
     <string name="connection_issue_banner_bssid">本机不肯提供其 WLAN 地址，因此手机不知道该加入哪个网络。请开启位置信息，或点按手动输入地址。</string>
@@ -1101,8 +1190,11 @@
     <string name="connection_issue_banner_wifi_direct_refused">本机无法为手机创建 Wi-Fi Direct 网络。请尝试让本机断开其他 WLAN，或点按改用本机热点。</string>
     <string name="connection_issue_banner_wifi_direct_cycled">另一个应用不断关闭 Wi-Fi Direct，通常是预装的投屏应用，如 ZLink 或 CarLife。请停用该应用，或点按改用热点。</string>
     <string name="connection_issue_banner_hotspot_config">本机不向应用提供其热点名称和密码。点按即可手动输入。</string>
+    <string name="auto_restart_wifi_summary">WiFi Direct 卡住时自动重启 Wi-Fi。需要 root 或本地 ADB。</string>
+    <string name="auto_restart_wifi_description">WiFi Direct 卡住时自动关闭再打开 Wi-Fi。在会话中途关闭应用后可能出现这种情况。需要 root 或本地 ADB。会话期间从不运行。</string>
     <string name="narrow_band_profile_cap">2.4 GHz 连接时降低视频画质</string>
-    <string name="narrow_band_profile_cap_description">当本次会话运行在 2.4 GHz 上时（无论是因为本机 WLAN 没有 5 GHz 频段，还是因为网络在该频段上建立），会向手机请求最高 720p、30 fps 和 AAC 音频，而不使用上方的设置。实测表明，在这种连接上全速码流完全传不出画面，而较低的码流则能保持稳定。关闭此项后，将按您的设置请求。</string>
+    <string name="narrow_band_profile_cap_description">在 2.4 GHz 链路上，向手机请求最高 720p、30 fps 和 AAC 音频，而不使用你的视频设置。实测在该链路上，满速率码流完全没有画面，而较低速率的码流可以维持。关闭后将使用你设置的参数；如果链路无法承载，可能出现空白画面。</string>
+    <string name="narrow_band_profile_cap_summary">在 2.4 GHz 上，向手机请求 720p、30 fps 和 AAC 音频。</string>
     <string name="connection_issue_banner_video_link_too_slow">WLAN 连接速度太慢，无法传输视频，因此应用已将视频降至 720p、30 FPS。点按可自行设置分辨率。使用 5 GHz 网络也会有帮助。</string>
     <string name="connection_issue_banner_five_ghz_channel_refused">本机不使用您选择的 5 GHz 信道，而选了一个部分手机看不到的信道。点按可将 Wi-Fi Direct 切换为 2.4 GHz，该频段适用于所有地区。</string>
     <string name="connection_issue_banner_headunit_server_deaf">您手机上 Android Auto 的主机服务器已停止响应。请在手机上，到 Android Auto 的开发者设置中停止并重新启动它。</string>
@@ -1122,8 +1214,10 @@
     <string name="preflight_invalid_bssid">这不是有效的 WLAN 地址。请输入六组十六进制数字，例如 02:1A:11:FF:3C:4D。</string>
     <string name="native_aa_ignore_external_bt">忽略蓝牙兼容性检查</string>
     <string name="native_aa_ignore_external_bt_description">本机似乎把蓝牙放在 Android 无法访问的独立模块上，因此会自动关闭无线 Android Auto。默认关闭。仅当您认为判断有误时才开启：如果判断正确，连接会静默失败，而日志看起来一切正常。</string>
+    <string name="native_aa_ignore_external_bt_summary">即使本车机似乎隐藏了蓝牙模块，也保持无线连接开启。</string>
     <string name="native_aa_setup_qr_title">通过二维码设置</string>
     <string name="native_aa_setup_qr_description">显示手机可扫描的二维码。</string>
+    <string name="native_aa_setup_qr_help">显示一个二维码，无需蓝牙握手即可在手机上设置本机。该二维码包含本机热点的名称、密码和地址。仅在热点传输方式下、连接运行期间有效。Android Auto 18.0 尚不处理此二维码，因此仍需要蓝牙握手。</string>
     <string name="native_aa_setup_qr_content_description">用于设置无线 Android Auto 的二维码</string>
     <string name="native_aa_setup_qr_instruction">用手机相机扫描，然后在手机上确认。只需操作一次，之后手机会自行连接。</string>
     <string name="native_aa_setup_qr_not_drawn">无法绘制二维码。</string>
@@ -1138,8 +1232,12 @@
     <string name="native_aa_setup_qr_dongle">此主机的蓝牙名称看起来像无线适配器，手机会将其视为另一类设备。请重命名此主机的蓝牙后重试。</string>
     <string name="category_ui">界面</string>
     <string name="hide_phone_signal_label">隐藏手机信号图标</string>
+    <string name="hide_phone_signal_help">请求 Android Auto 不要在本机屏幕上显示手机的信号强度。部分较新版本的 Android Auto 会忽略此请求。下次连接时生效。</string>
     <string name="hide_battery_level_label">隐藏手机电量图示</string>
+    <string name="hide_battery_level_help">请求 Android Auto 不要在本机屏幕上显示手机的电量。部分较新版本的 Android Auto 会忽略此请求。下次连接时生效。</string>
     <string name="hide_clock_label">隐藏时钟</string>
+    <string name="hide_clock_help">请求 Android Auto 不要在本机屏幕上显示它自己的时钟。本机已显示时钟时可使用。下次连接时生效。</string>
+    <string name="hide_clock_summary">请求 Android Auto 不显示它自己的时钟。</string>
     <string name="might_broken_on_newer_aa_versions">此功能在较新版本的 Android Auto 上可能无法正常运作</string>
     <string name="auto_connect_delay">自动连接延迟</string>
     <string name="auto_connect_delay_description">启动时先等待一段时间再尝试连接（适用于 Wi-Fi 需要时间唤醒的情况）。</string>
@@ -1151,11 +1249,13 @@
     <string name="failed_aa_not_installed">失败：未安装 Android Auto！</string>
     <string name="raise_projection_during_call">通话期间停留在 Android Auto</string>
     <string name="raise_projection_during_call_description">仅限本机模式。将投屏画面重新显示在手机的通话界面之上，这样就能在 Android Auto 界面中接听和结束通话。</string>
+    <string name="raise_projection_during_call_summary">仅限独立模式。在手机的通话界面上方显示投屏。</string>
     <string name="audio_stream_settings">音频流</string>
     <string name="audio_stream_settings_description">选择每个 Android Auto 通道使用哪个系统流播放。</string>
     <string name="audio_stream_settings_info">Android Auto 通过媒体、导航语音和系统提示音三个通道传送音频。每个通道都会以某个系统流交给车机，所选的流决定它跟随哪个音量键，在许多车机上还决定功放是否会为它取消静音。保存前，可点按喇叭按钮在该流上播放测试音。</string>
     <string name="audio_channel_media">媒体</string>
     <string name="audio_channel_media_description">应用播放：音乐、播客、广播和有声书。唯一以立体声（48 kHz）传送的通道。</string>
+    <string name="audio_channel_media_summary">应用播放：音乐、播客、广播、有声书。立体声，48 kHz。</string>
     <string name="audio_channel_guidance">导航语音 / 导航</string>
     <string name="audio_channel_guidance_description">逐向语音导航指引和语音助手的回复（16 kHz 单声道）。</string>
     <string name="audio_channel_system">系统提示音 / 通知</string>
@@ -1163,7 +1263,9 @@
     <string name="audio_channel_all">媒体、导航语音、导航、通知和系统</string>
     <string name="audio_channel_all_short">所有通道</string>
     <string name="audio_channel_all_description">Android Auto 的所有音频通道（应用播放、语音导航、提醒和通知音）共用这一个输出流。</string>
+    <string name="audio_channel_all_summary">所有 Android Auto 音频通道共用这一个输出流。</string>
     <string name="audio_stream_test">在此流上播放测试音</string>
+    <string name="setting_help_for">%1$s 的帮助</string>
     <string name="audio_stream_muted_warning">此设备上的%1$s已静音，请调高音量以听到测试音。</string>
     <string name="audio_stream_test_failed">无法在此流上播放测试音。</string>
     <string name="audio_stream_pick_title">%1$s 使用的流</string>
@@ -1203,7 +1305,9 @@
     <string name="native_driver_selection_mode_auto">自动</string>
     <string name="native_driver_selection_mode_always">每次询问</string>
     <string name="native_driver_selection_timeout">自动连接倒计时</string>
+    <string name="native_driver_selection_timeout_help">主控手机列表打开后会倒计时，然后连接最可能的手机。此项设置倒计时，范围为 3 到 30 秒。在结束前点按某部手机即可自行选择。</string>
     <string name="native_driver_preferred_device">首选手机</string>
+    <string name="native_driver_preferred_device_help">当有多部已配对手机都可能成为主控手机时，应用优先选择的手机。如果只有一部手机通过蓝牙连接，应用选择这部手机。选为“无”时，应用选择最近连接的手机。列表中只显示手机。</string>
     <string name="switch_driver">切换手机</string>
     <string name="driver_device_connected">车内 / 已连接</string>
     <string name="driver_device_paired">已配对</string>
@@ -1218,10 +1322,13 @@
     <string name="auto_disconnect_bt_label">蓝牙断开时自动结束</string>
     <string name="select_bt_disconnect_device">选择要监控的蓝牙设备</string>
     <string name="native_poke_bt_label">用于唤醒无线 Android Auto 的设备</string>
+    <string name="native_poke_bt_help">在 Native Android Auto 模式下，本机会唤醒手机上的 Android Auto。它会短暂连接手机的蓝牙免提配置文件，随后手机开始无线设置。请在此选择您的手机。列表中只显示手机。如果什么都不选，由下方一行决定是否唤醒所有已配对设备。</string>
     <string name="select_bt_poke_device">选择要唤醒的蓝牙设备</string>
     <string name="native_poke_all_paired_label">唤醒所有已配对的设备</string>
     <string name="native_poke_all_paired_description">未在上方选择设备时，短暂连接每个已配对的设备以启动 Android Auto。关闭此项后，在您选择设备之前不会唤醒任何设备。</string>
+    <string name="native_poke_all_paired_summary">未选择设备时，唤醒所有已配对的设备。</string>
     <string name="auto_disconnect_bt_delay_label">断开前等待时间</string>
+    <string name="auto_disconnect_bt_delay_help">设置受监视设备的蓝牙消失后，应用等待多久才结束会话。设备在此时间内回来，会话会继续。如果设备配置文件重新连接时连接会短暂中断，可设置几秒。0 表示立即结束会话。上限为 3600 秒。</string>
     <string name="auto_disconnect_bt_delay_value">%1$d 秒</string>
     <string name="auto_disconnect_bt_delay_immediate">立即</string>
     <string name="enter_auto_disconnect_bt_delay">结束会话前等待的秒数</string>
@@ -1229,24 +1336,33 @@
     <string name="auto_disconnect_bt_kill_hint">所选设备的蓝牙断开时（例如车辆熄火），以与“退出”按钮相同的方式结束会话。如果本机已与车辆配对，请选择车辆的蓝牙。若还要关闭应用并返回主屏幕，请在“自动化”下打开“断开连接时关闭应用”。</string>
     <string name="audio_stream_vendor_format">%1$s (%2$d)</string>
     <string name="debug_video_fault_injection">视频故障注入</string>
+    <string name="debug_video_fault_injection_help">仅用于测试。故意破坏收到的视频，以测试应用如何恢复。每种模式会移除或隐藏帧的不同部分。日志会记录每个故障。下次连接时生效。正常使用请保持“Off”，否则画面会破碎。</string>
     <string name="debug_video_fault_rate">故障率（每 N 次出现 1 次）</string>
+    <string name="debug_video_fault_rate_help">故障发生的频率。应用会破坏所选模式针对的视频片段中每 N 个里的一个。数字越小，画面被破坏得越多。</string>
     <string name="debug_video_fault_budget">故障次数上限</string>
+    <string name="debug_video_fault_budget_help">应用在一次会话中加入多少个故障后停止。“Whole session”则永不停止。设置上限后，一份日志即可显示损坏情况，以及画面之后是否恢复。</string>
     <string name="debug_force_memory_profile">强制使用内存配置文件</string>
+    <string name="debug_force_memory_profile_help">仅用于测试。让视频解码器按本机拥有所选内存量来确定缓冲区大小。“Measure”会读取本机的真实内存。“Constrained”使用最小的缓冲区，如同约 1 GB 内存的设备。下次连接时生效。正常使用请保持“Measure”。</string>
     <string name="five_ghz_channel">5 GHz 信道</string>
     <string name="five_ghz_channel_auto">自动</string>
     <string name="five_ghz_channel_option">信道 %1$d（%2$d MHz）</string>
     <string name="five_ghz_channel_hint">所选信道只是一个请求，不一定生效。许多车机只会在自身 WiFi 驱动选定的信道上创建网络，而应用只有在尝试之后才能知道结果。如果所有 5 GHz 信道都不可用，手机仍然看不到网络，请改用上方的频段设置。</string>
     <string name="wifi_direct_stable_identity">保持使用同一个 WiFi Direct 网络</string>
     <string name="wifi_direct_stable_identity_description">每次都使用相同的网络名称和密码，这样你的手机就会重新加入已知的网络。如需更新，请使用下方的选项。</string>
+    <string name="wifi_direct_stable_identity_summary">重复使用同一个网络名称和密码，让手机重新加入。</string>
     <string name="wifi_direct_new_identity">新的 WiFi Direct 网络标识</string>
+    <string name="wifi_direct_new_identity_help">在此 Android 版本上，Wi-Fi Direct 的名称和密码由系统选择。此操作会让系统忘记已保存的群组，从而选择新的名称和密码。随后手机会通过蓝牙把本机当作一台新车机重新设置。当手机一直尝试已无法加入的网络时使用。</string>
     <string name="wifi_direct_new_identity_none">下次连接时选定</string>
     <string name="wifi_direct_new_identity_confirm">为群组选择新的名称和密码，从下次连接起生效。系统会通过蓝牙为你的手机重新设置，就像连接一台新车机一样。如果手机一直尝试加入已无法加入的网络，请执行此操作。</string>
     <string name="wifi_direct_new_identity_done">下次连接时将使用新的网络标识。</string>
     <string name="wifi_direct_new_identity_applied">正在设置新的网络标识。下次连接时，系统会请求你的手机加入该网络。</string>
     <string name="wifi_direct_stable_identity_description_legacy">在此 Android 版本上，名称由系统选择，应用无法指定。请保持开启，这样只要系统保留了网络，你的手机就会重新加入已知的网络。如需更新，请使用下方的选项。</string>
+    <string name="wifi_direct_stable_identity_legacy_summary">网络名称由系统设定。请保持开启，让手机重新加入。</string>
     <string name="debug_video_low_latency">请求解码器低延迟模式</string>
     <string name="debug_video_low_latency_description">配置视频解码器时设置厂商的低延迟 MediaFormat 键。如果解码器拒绝，则自动回退。</string>
+    <string name="debug_video_low_latency_summary">请求视频解码器使用厂商的低延迟模式。</string>
     <string name="debug_video_feed_hold">模拟慢速解码器</string>
+    <string name="debug_video_feed_hold_help">仅用于测试。在每一帧送入视频解码器之前等待所选时间，让解码器显得很慢。可用来测试解码器落后时应用如何应对。下次连接时生效。正常使用请保持“Off”，否则画面会变慢。</string>
 
     <string name="category_more_features">更多功能</string>
     <string name="device_specific_settings">设备专用设置</string>
@@ -1254,21 +1370,30 @@
     <string name="device_specific_mcu_checking">正在检查 MCU 访问权限...</string>
     <string name="device_specific_mcu_unavailable">无法访问 MCU。此设备已禁用挂入倒挡时暂停投屏的功能。</string>
     <string name="device_specific_head_unit_model">车机型号</string>
+    <string name="device_specific_head_unit_model_help">如果本机型号在列表中，请选择它。应用随后会在下方显示该型号的修复项。每个修复项会先检查能否访问本机硬件，只有能访问时才可开启。如果您的型号不在列表中，请保持“未选择”。</string>
     <string name="device_specific_model_none">未选择</string>
     <string name="device_specific_model_adayo_haval">Adayo (Haval)</string>
     <string name="device_specific_pause_projection_reverse">挂入倒挡时暂停 Android Auto 投屏</string>
-    <string name="device_specific_pause_projection_reverse_description">后视摄像头启用时释放 Android Auto 的视频焦点，退出倒挡后恢复投屏。</string>
+    <string name="device_specific_pause_projection_reverse_summary">车辆处于倒车档时暂停 Android Auto。</string>
+    <string name="device_specific_pause_projection_reverse_help">车辆处于倒车档时，应用会释放 Android Auto 的视频焦点，以便显示倒车影像。倒车结束后，投屏画面会恢复。应用从本机的 MCU 读取档位，因此此修复仅在应用能访问 MCU 时有效。</string>
     <string name="pref_enable_floating_button_title">悬浮快捷按钮</string>
-    <string name="pref_enable_floating_button_summary">在原厂启动器及其他应用上方显示悬浮按钮，以便快速返回 Open Headunit。</string>
+    <string name="pref_enable_floating_button_summary">显示一个用于返回 Open Headunit 的按钮。</string>
+    <string name="pref_enable_floating_button_help">在原厂启动器及其他应用上方显示悬浮按钮，以便快速返回 Open Headunit。</string>
     <string name="pref_floating_button_connection_status_title">连接状态指示</string>
-    <string name="pref_floating_button_connection_status_summary">未连接手机时使用“未连接时不透明度”，手机连接后渐变为“悬浮按钮不透明度”。为0%时，按钮会隐藏并让触摸穿透。</string>
+    <string name="pref_floating_button_connection_status_summary">手机连接期间让按钮变淡。</string>
+    <string name="pref_floating_button_connection_status_help">未连接手机时使用“未连接时不透明度”，手机连接后渐变为“悬浮按钮不透明度”。为0%时，按钮会隐藏并让触摸穿透。</string>
     <string name="pref_floating_button_size_title">悬浮按钮大小</string>
+    <string name="pref_floating_button_size_help">悬浮按钮的大小，范围为 32 到 120 dp。按钮越大，驾驶时越容易点按。</string>
     <string name="pref_floating_button_opacity_title">悬浮按钮不透明度</string>
+    <string name="pref_floating_button_opacity_help">悬浮按钮的清晰程度，范围为 10% 到 100%。开启“连接状态指示”后，此值仅在手机已连接时生效。</string>
     <string name="pref_floating_button_disconnected_opacity_title">未连接时不透明度</string>
+    <string name="pref_floating_button_disconnected_opacity_help">未连接手机时悬浮按钮的清晰程度。设为 0% 时按钮隐藏，点按会穿过按钮作用于下方的屏幕。</string>
     <string name="pref_floating_button_x_title">水平位置 (X)</string>
     <string name="pref_floating_button_y_title">垂直位置 (Y)</string>
+    <string name="pref_floating_button_position_help">悬浮按钮在屏幕上的位置。对于 X，0% 为左边缘，100% 为右边缘。对于 Y，0% 为上边缘，100% 为下边缘。按钮始终完整显示在屏幕内。</string>
     <string name="pref_aa_exit_action_title">Android Auto 退出操作</string>
     <string name="pref_aa_exit_action_summary">在 Android Auto 应用抽屉中点按“退出”时执行的操作。</string>
+    <string name="pref_aa_exit_action_help">选择在 Android Auto 中点按“退出”时的行为。“返回原厂主屏幕”显示本机自己的主屏幕。“返回应用主页”显示本应用的主屏幕。这两项都会保持手机连接。“断开连接”会结束会话。当本应用是车辆启动器时，“返回原厂主屏幕”的效果与“返回应用主页”相同。</string>
     <string name="aa_exit_action_oem_launcher">返回原厂主屏幕（最小化）</string>
     <string name="aa_exit_action_app_home">返回应用主页</string>
     <string name="aa_exit_action_disconnect">断开连接</string>
@@ -1280,6 +1405,7 @@
     <string name="no_usb_host_support">此车机不支持 USB 主机模式，无法使用有线 Android Auto。请改用无线连接。</string>
 
     <string name="oem_app_management">OEM 应用冲突管理 (ADB)</string>
+    <string name="oem_app_management_help">查找本机上比本应用更早接管 USB 或蓝牙连接的出厂应用。您可以停用并停止其中每个应用，也可以稍后恢复。这需要 root，或通过网络连接本机 5555 端口的 ADB。有一个选项会在每次本应用启动时停用这些应用。</string>
     <string name="oem_app_management_desc">检测并停用冲突的应用（Zlink、AutoKit 等）。</string>
     <string name="oem_app_explanation">原厂车机随附的配套应用（如 Zlink、AutoKit、SpeedPlay）常会拦截 USB 和蓝牙连接，导致 Open Headunit 无法连接。您可以通过 Root 或 Self-ADB（端口 5555）将其停用。</string>
     <string name="oem_app_backend_root">执行方式：Root (su) 可用</string>
@@ -1328,6 +1454,7 @@
     <string name="static_p2p_bssid_title">静态 BSSID（Wi-Fi Direct）</string>
     <string name="static_p2p_bssid_desc">手动设置 Wi-Fi Direct 群组的 BSSID。它与接入点的 BSSID 相互独立，因为两者是不同的接口，一个不能代替另一个。</string>
     <string name="wifi_direct_last_network">提供给你手机的网络详情</string>
+    <string name="wifi_direct_last_network_help">显示本机最近一次向手机提供的 Wi-Fi Direct 网络的名称、密码和地址。您可以从这里复制密码。它还会告知地址是否无法读取，或系统是否使用了与应用请求不同的名称和密码。</string>
     <string name="wifi_direct_last_network_none">尚未获取到任何信息。请先连接一次，然后回到这里。</string>
     <string name="wifi_direct_last_network_title">提供给你手机的网络</string>
     <string name="wifi_direct_last_network_details">名称\n%1$s\n\n密码\n%2$s\n\n地址\n%3$s</string>
@@ -1336,6 +1463,7 @@
     <string name="wifi_direct_last_network_differs">这不是应用请求的名称和密码，系统已将其覆盖。请使用上方的“新的 WiFi Direct 网络标识”，让系统采用新的一组。</string>
     <string name="wifi_direct_last_network_hint">在手机上手动加入此网络不会启动 Android Auto，因为手机通过蓝牙完成设置后会自行加入。手动加入只能用来检查网络是否正常。</string>
     <string name="wifi_direct_group_identity">WiFi Direct 名称与密码</string>
+    <string name="wifi_direct_group_identity_help">手机加入本机时获得的 Wi-Fi Direct 名称和密码。可让应用选择，也可自行输入。“为我重新选择”会让应用选一组新的。如果您更改密码，应用也会更改名称，因为手机无法用相同名称和新密码重新加入网络。</string>
     <string name="wifi_direct_group_identity_auto">由应用选择。点按即可自行设置。</string>
     <string name="wifi_direct_group_identity_pick_new">为我重新选择</string>
     <string name="wifi_direct_group_identity_message">提供给你手机、用于加入这台车机的名称和密码。更改密码时名称也会一并更改，因为手机无法重新加入名称不变但密码已变的网络。</string>
@@ -1355,14 +1483,17 @@
     <string name="connection_issue_banner_home_wifi_rejoined">本机在使用 Android Auto 期间不断重新加入您的家用 WLAN，可能导致画面卡顿，在仅支持 2.4 GHz 的主机上尤其明显。点按可关闭该网络的自动重连，或等到您离开其覆盖范围。</string>
     <string name="connection_issue_banner_stale_usb_accessory">手机上的 Android Auto 已停止通过 USB 响应，应用无法将其重新启动。请拔下手机，等待五秒后再重新插入。</string>
     <string name="native_aa_wake_remeasure">重新测量蓝牙唤醒</string>
+    <string name="native_aa_wake_remeasure_help">为启动无线连接，应用可能会断开本机与手机之间的免提连接。应用会测试一次该连接能否恢复。如果不能，应用就不再这样做，并且该行显示“受限”。点按可清除结果，应用会在下次连接时重新测试。测试期间免提可能会短暂中断。</string>
     <string name="native_aa_wake_verdict_unmeasured">尚未测量</string>
     <string name="native_aa_wake_verdict_safe">在本机上安全</string>
     <string name="native_aa_wake_verdict_destructive">在本机上受限</string>
     <string name="native_aa_wake_remeasure_confirm">Android Auto 只有在发现蓝牙连接发生变化时才会启动无线连接。如果本机已占用免提链路，应用必须先断开它才能触发这一变化，因此会测量一次该链路能否恢复，若不能恢复则停止。如果无线连接不再自行启动，并且您愿意在应用重试期间暂时失去免提功能，请使用此项。</string>
     <string name="native_aa_wake_remeasure_done">下次连接时将重新测量蓝牙唤醒。</string>
     <string name="pref_enable_car_launcher_title">用作车载启动器</string>
-    <string name="pref_enable_car_launcher_summary">将 Open Headunit 注册为主屏幕应用，这样按下汽车或车机的 Home 键时就会打开它。</string>
+    <string name="pref_enable_car_launcher_summary">通过主屏幕按钮打开应用。</string>
+    <string name="pref_enable_car_launcher_help">将 Open Headunit 注册为主屏幕应用，这样按下汽车或车机的 Home 键时就会打开它。</string>
     <string name="pref_set_default_launcher_title">默认主屏幕应用</string>
+    <string name="pref_set_default_launcher_help">显示本应用是否为本机默认的主屏幕应用。点按可请求系统将本应用设为默认。只有本应用是默认应用时，主屏幕键才会打开它。</string>
     <string name="pref_default_launcher_status_active">已启用（点按以管理）</string>
     <string name="pref_default_launcher_status_inactive">未设置（点按以设为默认）</string>
     <string name="onb_audio_play_test">播放测试音</string>
@@ -1490,6 +1621,7 @@
     <string name="native_aa_candidate_android_radio_description">使用 Android 蓝牙，而不是自动选择车机的蓝牙模块。保持关闭以使用自动选择。如果已开启通过模块连接的选项，请先将其关闭。</string>
     <string name="external_bt_candidate_transport_description">强制通过车机的蓝牙模块连接，而不是自动选择。需要兼容的模块服务。保持关闭可在服务无响应时使用 Android 蓝牙；开启此选项将禁止这一备用连接方式。</string>
     <string name="audio_matching_mode">音乐时间校正</string>
+    <string name="audio_matching_mode_help">当音乐到达得略快或略慢时，应用会稍微加快或放慢播放，以保持声音队列平衡。此项用于选择方法。默认为 OHU。其他方法会增加少许延迟，且仅适用于 PCM 音乐。导航、语音、系统提示音和 AAC 始终使用 OHU。重新连接后生效。</string>
     <string name="audio_matching_ohu">OHU</string>
     <string name="audio_matching_wsola">WSOLA</string>
     <string name="audio_matching_phase_vocoder">Phase Vocoder</string>

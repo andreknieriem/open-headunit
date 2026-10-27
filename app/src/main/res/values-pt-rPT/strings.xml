@@ -17,6 +17,7 @@
 
     <!-- Connection mode selector -->
     <string name="connection_mode">Modo de ligação</string>
+    <string name="connection_mode_help">Escolhe como esta unidade se liga ao telemóvel: USB, Wi-Fi, Modo Próprio ou qualquer combinação. O ecrã inicial e as definições mostram só as opções dos modos escolhidos. Se o Wi-Fi não estiver escolhido, a aplicação não inicia a ligação sem fios em segundo plano.</string>
     <string name="connection_kind_usb_cable">Cabo USB (direto)</string>
     <string name="connection_kind_usb_wireless_adapter">Adaptador sem fios USB</string>
     <string name="connection_kind_wifi">Wi-Fi</string>
@@ -238,7 +239,9 @@
     <string name="wifi">Wi-Fi</string>
     <string name="dpi">Densidade de píxeis (DPI)</string>
     <string name="pixel_aspect_ratio">Proporção de píxeis</string>
+    <string name="pixel_aspect_ratio_help">Altere isto apenas se os círculos parecerem ovais neste ecrã. Isto acontece quando os píxeis do painel não são quadrados. 10000 significa píxeis quadrados.</string>
     <string name="mic_sample_rate">Taxa de captação do microfone</string>
+    <string name="mic_sample_rate_help">O Android Auto recebe sempre o microfone a 16000 Hz, e a aplicação abre primeiro o microfone a essa taxa. Se a unidade recusar 16000 Hz, a aplicação grava a 48000 Hz e converte o som para a taxa menor. Se o Android Auto estiver ligado, guardar uma alteração termina a sessão para a aplicar.</string>
     <string name="keymap">Mapeamento de teclas</string>
     <string name="gestures">Gestos</string>
     <string name="gestures_description">Configure deslizes com dois dedos e pressão longa.</string>
@@ -269,12 +272,15 @@
     <string name="night_overlay_traffic_delay">Atraso de trânsito: +%1$s</string>
     <string name="night_overlay_speed_value">%1$d km/h</string>
     <string name="night_mode">Modo escuro (Android Auto)</string>
+    <string name="night_mode_help">Escolhe quando o Android Auto mostra o aspeto escuro. A aplicação diz ao telemóvel se é dia ou noite, e o telemóvel muda os seus ecrãs. Auto segue o nascer e o pôr do sol. Car Headlight Signal lê o sinal ILL+ nas unidades que o indicam. Os outros modos funcionam como na definição da aplicação acima.</string>
     <string name="night_mode_threshold">Limite do modo noturno</string>
     <string name="enter_threshold_value">Introduzir valor limite</string>
     <string name="threshold_lux_desc">Valor Lux (0–10000). Abaixo disto = Noite.</string>
     <string name="threshold_brightness_desc">Valor de brilho (0–255). Abaixo disto = Noite.</string>
     <string name="threshold_light_title">Sensibilidade à luz</string>
+    <string name="threshold_light_help">O modo escuro liga quando o sensor de luz lê menos do que este nível, em lux. Só desliga de novo 10 lux acima do nível, para não piscar. Uma alteração tem de durar 2 segundos para se aplicar. A caixa de diálogo mostra a leitura atual para ajudar na escolha.</string>
     <string name="threshold_brightness_title">Nível de brilho</string>
+    <string name="threshold_brightness_help">O modo escuro liga quando o brilho do ecrã fica abaixo deste valor. O Android indica o brilho de 0 a 255, mas algumas unidades usam um intervalo menor. O modo escuro só desliga de novo 10 acima do valor, para não piscar. A caixa de diálogo mostra a leitura atual para ajudar na escolha.</string>
     <string name="threshold_light_hint">O modo escuro ativa-se quando a luz ambiente desce abaixo deste nível.</string>
     <string name="threshold_brightness_hint">O modo escuro ativa-se quando o brilho do ecrã está abaixo deste valor. O Android indica o brilho de 0 a 255, mas o intervalo real pode variar consoante o dispositivo. Poderá ter de experimentar para encontrar o limite certo para o seu dispositivo.</string>
     <string name="current_light_reading">Luz atual: %d Lux</string>
@@ -292,14 +298,17 @@
     <string name="car_signal_calibration_saved">Calibração ILL+ guardada e aplicada</string>
     <string name="night_mode_start">Hora de início do modo noturno</string>
     <string name="night_mode_end">Hora de fim do modo noturno</string>
+    <string name="night_mode_time_help">O modo escuro fica ligado todos os dias da hora de início até à hora de fim. O intervalo pode passar da meia-noite, por exemplo das 22:00 às 06:00. As horas seguem o relógio desta unidade.</string>
 
     <string name="app_theme">Modo escuro (Aplicação)</string>
     <string name="app_theme_description">Controlar o aspeto visual da aplicação.</string>
+    <string name="app_theme_help">Define quando os ecrãs desta aplicação ficam escuros. O Android Auto tem uma definição própria, mais abaixo. Clear, Dark e Extreme Dark não mudam. Automatic (System) segue o sistema. Os outros modos mudam com o nascer e o pôr do sol, um intervalo de horas, o sensor de luz, o brilho do ecrã, o sinal dos faróis do carro ou um local guardado.</string>
     <string name="change_app_theme">Alterar tema da aplicação</string>
     <string name="monochrome_icons">Ícones monocromáticos</string>
     <string name="monochrome_icons_description">Utilizar ícones em escala de cinzentos no ecrã inicial no modo Escuro ou Escuro Extremo.</string>
     <string name="use_extreme_dark">Utilizar Escuro Extremo</string>
     <string name="use_extreme_dark_description">Utilizar fundo preto puro quando o modo escuro estiver ativo.</string>
+    <string name="use_extreme_dark_help">Usa um fundo preto puro enquanto a aplicação está escura. Aplica-se só aos modos que mudam sozinhos, porque Extreme Dark é sempre preto. Não altera o Android Auto.</string>
     <string name="use_gradient_background">Utilizar fundo gradiente</string>
     <string name="use_gradient_background_description_on">A aplicação desenha o seu próprio fundo com o círculo de gradiente centrado</string>
     <string name="use_gradient_background_description_off">Está a ser utilizado o fundo clássico da aplicação</string>
@@ -348,6 +357,7 @@
     <string name="night_mode_short">Android Auto</string>
     <string name="aa_monochrome">Tornar o Android Auto monocromático</string>
     <string name="aa_monochrome_description">Reduz as cores do Android Auto para condução noturna. Requer o modo de visualização GLES. Só tem efeito quando o modo escuro está ativado.</string>
+    <string name="aa_monochrome_summary">Reduz as cores para conduzir à noite. Requer o modo de visualização GLES e o modo escuro.</string>
     <string name="aa_desaturation">Dessaturação</string>
     <string name="aa_desaturation_description">Controla a quantidade de cor que é removida. Só tem efeito quando o modo escuro está ativado.</string>
     <string name="gles_required_title">GLES necessário</string>
@@ -369,18 +379,22 @@
     <string name="reset_settings_description">Apaga todas as definições, os dados em cache e as preferências de ligação automática. A aplicação será reiniciada para aplicar as predefinições de fábrica.</string>
     <string name="gps_for_navigation">GPS para navegação</string>
     <string name="gps_for_navigation_description">Utilizar GPS para navegação.</string>
+    <string name="gps_for_navigation_help">Envia ao telemóvel a posição GPS desta unidade, e o Android Auto usa-a na navegação. A aplicação envia só um sinal real de GPS, nunca uma posição da rede. Se a unidade perder o sinal de GPS durante algum tempo, a aplicação deixa de enviar e o telemóvel usa a sua própria localização. Aplica-se na ligação seguinte.</string>
     <string name="enabled">Ativado</string>
     <string name="disabled">Desativado</string>
     <string name="resolution">Resolução</string>
+    <string name="resolution_help">Define o tamanho da imagem que o Android Auto envia. A lista marca como Recomendado a dimensão que melhor se ajusta ao ecrã desta unidade. Uma dimensão acima do ecrã só usa mais largura de banda, e a imagem não fica mais nítida. Dimensões grandes exigem uma ligação Wi-Fi de 5 GHz forte ou USB. Aplica-se na ligação seguinte.</string>
     <string name="change_resolution">Alterar resolução</string>
     <string name="change_dpi">Alterar DPI</string>
     <string name="change_view_mode">Alterar modo de visualização</string>
     <string name="view_mode">Modo de visualização</string>
+    <string name="view_mode_help">Define como a imagem é desenhada no ecrã desta unidade. O SurfaceView é o mais rápido e funciona na maioria das unidades. O TextureView é mais lento, mas permite espelhamento e dimensionamento. O GLES20 acrescenta efeitos, como o modo noturno monocromático. Altere se a imagem ficar preta, a piscar ou faltar um efeito.</string>
     <string name="surface_view">SurfaceView</string>
     <string name="texture_view">TextureView</string>
     <string name="gles_view">GLES20</string>
     <string name="auto">Automático</string>
     <string name="screen_orientation">Orientação do ecrã</string>
+    <string name="screen_orientation_help">Define como esta aplicação roda no ecrã. System Default segue a definição do sistema, e Auto segue o sensor. As outras opções bloqueiam uma direção. Uma opção em vertical também faz o Android Auto enviar uma imagem alta. O Android Auto recebe o formato só quando uma sessão começa, por isso volte a ligar depois de alterar.</string>
     <string name="change_screen_orientation">Alterar orientação do ecrã</string>
     <string name="orientation_system_default">Predefinição do sistema</string>
     <string name="orientation_auto_sensor">Automático (Sensor)</string>
@@ -401,6 +415,7 @@
 
     <string name="start_in_fullscreen_mode">Modo de ecrã</string>
     <string name="start_in_fullscreen_mode_description">Escolha como as barras do sistema (estado e navegação) devem ser geridas.</string>
+    <string name="start_in_fullscreen_mode_help">Escolhe como as barras do sistema aparecem sobre esta aplicação e a projeção. Normal mantém todas as barras. Imersivo oculta todas as barras, e a imagem pode ir por baixo do recorte. Ocultar apenas a barra de estado mantém a barra de navegação. Imersivo (Evitar recorte/notch) oculta todas as barras e mantém a imagem longe do recorte. O ecrã volta a carregar de imediato para aplicar.</string>
     <string name="fullscreen_none">Normal (Todas as barras visíveis)</string>
     <string name="fullscreen_immersive">Imersivo (Sobrepor recorte/notch)</string>
     <string name="fullscreen_status_only">Ocultar apenas a barra de estado</string>
@@ -422,16 +437,21 @@
     <string name="debug_mode_description">Ativar ou desativar o registo mais detalhado.</string>
     <string name="allow_external_configuration">Permitir configuração externa</string>
     <string name="allow_external_configuration_description">Permite que aplicações de automatização, como o Tasker ou o MacroDroid, alterem definições, definam o nível de registo e exportem registos. Ligar e desligar funciona sempre; esta opção só se aplica a comandos que alteram a configuração da unidade.</string>
+    <string name="allow_external_configuration_summary">Permite que aplicações como o Tasker alterem definições e exportem registos.</string>
     <string name="log_level">Nível de registo</string>
     <string name="log_level_description">Filtrar nível de registo ao exportar.</string>
+    <string name="log_level_help">Define quantos detalhes a aplicação grava no registo. Verbose grava o máximo e Error o mínimo. Silent não grava nada em segundo plano e interrompe uma captura. Para um relatório de erro, escolha Verbose.</string>
     <string name="log_source">Origem do registo</string>
     <string name="log_source_logcat">Logcat</string>
     <string name="log_source_applog_file">Direto para ficheiro</string>
+    <string name="log_source_help">O Logcat regista as linhas da app em conjunto com as do sistema. Ajuda mais num relatório de erro. Direto para ficheiro regista apenas as linhas da própria app, para dispositivos em que o Logcat não regista nada. A app muda sozinha para Direto para ficheiro quando o Logcat não regista nada.</string>
     <string name="log_location">Local dos registos</string>
+    <string name="log_location_help">Escolhe a pasta dos ficheiros de registo. Predefinição guarda-os no armazenamento da aplicação. Pasta de transferências coloca-os numa pasta OpenHeadunitLogs dentro de Transferências. No Android 10 ou posterior, é a pasta de transferências no armazenamento da aplicação. A aplicação pode pedir antes a permissão de armazenamento. A aplicação guarda no máximo 10 ficheiros de registo.</string>
     <string name="log_location_default">Predefinição (Armazenamento da app)</string>
     <string name="log_location_downloads">Pasta de transferências</string>
     <string name="start_log_capture">Iniciar captura de registos</string>
     <string name="start_log_capture_description">Começar a gravar registos completos para depuração.</string>
+    <string name="start_log_capture_help">Inicia ou pára uma gravação completa do registo num ficheiro, ao nível de registo definido acima. A gravação continua quando a aplicação reinicia, até a parar. Depois use Exportar registos para partilhar o ficheiro. Não pode iniciar com o nível de registo Silent.</string>
     <string name="start_log_capture_in_applog_file">As mensagens de registo são gravadas num ficheiro apenas enquanto a captura estiver ativa</string>
     <string name="start_log_capture_in_silent">Não é possível iniciar a gravação: está selecionado o nível de registo silencioso</string>
     <string name="stop_log_capture">Parar captura de registos</string>
@@ -480,6 +500,7 @@
     <string name="auto_start_bt_label">Arranque automático com Bluetooth</string>
     <string name="auto_start_overlay_missing_hint">A permissão para sobrepor a outras apps não foi concedida, por isso o arranque automático mostrará uma notificação em vez de abrir o ecrã. Toque para conceder.</string>
     <string name="auto_start_bt_description">Abre o Open Headunit automaticamente quando um dispositivo Bluetooth específico se liga.</string>
+    <string name="auto_start_bt_help">Abre a aplicação quando um dos dispositivos Bluetooth escolhidos se liga a esta unidade, por exemplo o telemóvel ou o Bluetooth do carro. Não acontece nada se o Android Auto já estiver ligado ou antes do primeiro desbloqueio da unidade. Sem a permissão Sobrepor a outras apps, a aplicação mostra uma notificação em vez do ecrã.</string>
     <!-- Asked once, after the first connection, when this unit is paired to exactly one phone. -->
     <string name="auto_start_offer_title">Iniciar automaticamente?</string>
     <string name="auto_start_offer_message">Pretende iniciar a aplicação automaticamente com este dispositivo (%1$s)?</string>
@@ -489,28 +510,36 @@
     <string name="auto_start_offer_countdown">Não (%1$ds)</string>
     <string name="listen_for_usb_devices_label">Detetar dispositivos USB</string>
     <string name="listen_for_usb_devices_description">Apresenta o aviso do sistema Android quando um dispositivo USB é ligado.</string>
+    <string name="listen_for_usb_devices_help">Faz o Android oferecer esta aplicação sempre que um dispositivo USB é ligado. Desative se o pedido também aparece para pens USB e outros dispositivos. Com isto desativado, ligar um telemóvel não abre a aplicação.</string>
     <string name="show_toast_messages">Mostrar mensagens breves</string>
     <string name="show_toast_messages_description">Apresenta mensagens breves de estado ao ligar, desligar e alternar de modo.</string>
+    <string name="show_toast_messages_help">Mostra mensagens curtas quando um telemóvel se liga ou desliga, e quando o modo de ligação muda. Desative para manter o ecrã livre. As mensagens sobre uma falha ou uma recusa continuam a aparecer.</string>
     <string name="auto_start_usb_label">Arranque automático com USB</string>
     <string name="auto_start_usb_description">Abre a aplicação e tenta a ligação automaticamente quando um dispositivo USB é ligado.</string>
+    <string name="auto_start_usb_summary">Abre a aplicação e liga quando um dispositivo USB é ligado.</string>
     <string name="auto_start_settings">Definições de arranque automático</string>
     <string name="auto_start_settings_description">Configurar quando a aplicação inicia automaticamente.</string>
     <string name="auto_start_oem_warning">Pode ser necessário ativar o arranque automático e remover a otimização da bateria ou as restrições em segundo plano para esta aplicação.\n\nEm unidades com Quick Boot (arranque rápido), o arranque automático pode não funcionar. Procure \"DuraSpeed\" nas definições do sistema e ative lá esta aplicação. Em algumas unidades, o DuraSpeed está oculto e pode ser necessária uma aplicação como \"Hidden Settings\" para o encontrar. Se não tiver o DuraSpeed, tente desativar o Quick Boot.</string>
     <string name="car_launcher_autostart_info">O Open Headunit está configurado como o launcher do seu carro. Inicia automaticamente com o sistema.</string>
     <string name="auto_start_on_boot_label">Iniciar no arranque</string>
     <string name="auto_start_on_boot_description">Abre a aplicação automaticamente quando o dispositivo arranca. Requer a permissão \"Sobrepor a outras apps\" no Android 10+.</string>
+    <string name="auto_start_on_boot_summary">Abre a aplicação quando o dispositivo arranca.</string>
     <string name="auto_start_screen_on_label">Iniciar ao ligar o ecrã</string>
     <string name="auto_start_screen_on_description">Abre a aplicação sempre que o ecrã se liga. Ideal para unidades que nunca desligam totalmente e utilizam modos de arranque rápido. Não recomendado para telemóveis ou tablets.</string>
+    <string name="auto_start_screen_on_summary">Abre a aplicação sempre que o ecrã se acende. Não serve para telemóveis nem tablets.</string>
     <string name="select_bt_device">Selecionar dispositivo Bluetooth</string>
     <string name="bt_device_not_set">Não definido</string>
     <string name="no_paired_bt_devices">Nenhum dispositivo Bluetooth emparelhado encontrado</string>
     <string name="auto_disconnect_bt_label">Desligar automaticamente com Bluetooth</string>
     <string name="select_bt_disconnect_device">Selecionar o dispositivo Bluetooth a monitorizar</string>
     <string name="native_poke_bt_label">Dispositivo a acordar para Android Auto sem fios</string>
+    <string name="native_poke_bt_help">No modo Android Auto Nativo, esta unidade acorda o Android Auto no telemóvel. Liga-se por instantes ao perfil mãos-livres Bluetooth do telemóvel, que então inicia a sua configuração sem fios. Escolha aqui o seu telemóvel. A lista mostra só telemóveis. Se não escolher nada, a linha abaixo decide se todos os dispositivos emparelhados são acordados.</string>
     <string name="select_bt_poke_device">Selecionar o dispositivo Bluetooth a acordar</string>
     <string name="native_poke_all_paired_label">Acordar todos os dispositivos emparelhados</string>
     <string name="native_poke_all_paired_description">Sem nenhum dispositivo escolhido acima, liga brevemente a cada dispositivo emparelhado para iniciar o Android Auto. Desative isto para não acordar nada até escolher um.</string>
+    <string name="native_poke_all_paired_summary">Sem dispositivo escolhido, ativa todos os dispositivos emparelhados.</string>
     <string name="auto_disconnect_bt_delay_label">Aguardar antes de desligar</string>
+    <string name="auto_disconnect_bt_delay_help">Define quanto tempo a aplicação espera, depois de o Bluetooth de um dispositivo vigiado desaparecer, antes de terminar a sessão. Se o dispositivo voltar nesse tempo, a sessão continua. Defina alguns segundos se a ligação cai por instantes enquanto os perfis voltam a ligar. Com 0, a sessão termina de imediato. O limite é 3600 segundos.</string>
     <string name="auto_disconnect_bt_delay_value">%1$d s</string>
     <string name="auto_disconnect_bt_delay_immediate">Imediatamente</string>
     <string name="enter_auto_disconnect_bt_delay">Segundos a aguardar antes de terminar a sessão</string>
@@ -518,8 +547,10 @@
     <string name="auto_disconnect_bt_kill_hint">Termina a sessão, como o botão Sair, quando o Bluetooth de um dispositivo escolhido deixa de estar disponível, por exemplo quando o carro é desligado. Escolha o Bluetooth do carro se esta unidade estiver emparelhada com ele. Para fechar também a aplicação e mostrar o ecrã inicial, ative \"Fechar aplicação ao desligar\" em Automatização.</string>
     <string name="auto_start_wifi_label">Arranque automático com Wi-Fi</string>
     <string name="auto_start_wifi_description">Abre o Open Headunit automaticamente quando ligado a um SSID Wi-Fi específico.</string>
+    <string name="auto_start_wifi_help">Abre a aplicação quando esta unidade se liga à rede Wi-Fi indicada na linha abaixo. Não acontece nada se o Android Auto já estiver ligado. A partir do Android 8, os limites em segundo plano podem impedir isto, por isso retire a aplicação da otimização da bateria.</string>
     <string name="auto_start_wifi_ssid_label">SSID Wi-Fi</string>
     <string name="auto_start_wifi_ssid_description">Iniciar apenas quando ligado a este SSID Wi-Fi.</string>
+    <string name="auto_start_wifi_ssid_help">O nome da rede Wi-Fi que abre a aplicação. Escreva-o como a rede o mostra. Maiúsculas e minúsculas não contam. Se estiver vazio, o arranque automático com Wi-Fi não faz nada.</string>
     <string name="auto_start_wifi_warning">Funcionalidade antiga: pode não funcionar de forma fiável no Android 8+ devido a restrições em segundo plano. Certifique-se de que a aplicação está excluída da otimização da bateria.</string>
     <string name="enter_wifi_ssid">Introduzir SSID Wi-Fi</string>
     <string name="wifi_ssid_not_set">Não definido</string>
@@ -531,16 +562,19 @@
     <string name="cannot_open_settings">Não foi possível abrir as definições do sistema</string>
     <string name="right_hand_drive">Volante à direita (RHD)</string>
     <string name="right_hand_drive_description">Posicionar a interface para um automóvel com volante à direita.</string>
+    <string name="right_hand_drive_help">Informa o Android Auto de que o condutor se senta à direita. O ecrã inicial desta aplicação também move o conteúdo principal para o lado direito. Uma alteração chega ao Android Auto na ligação seguinte.</string>
     <string name="wireless_connection_settings">Ligação sem fios</string>
     <string name="category_graphic">Gráficos</string>
 
     <string name="static_bssid_title">BSSID estático (Endereço MAC)</string>
+    <string name="static_bssid_help">O endereço Wi-Fi (BSSID) que o telemóvel recebe para a rede desta unidade. Deixe em branco e a aplicação lê o endereço sozinha. Escreva um só quando o registo disser que nenhuma fonte indicou um endereço. Com Wi-Fi Direct, a linha define o endereço do grupo. Com a zona Wi-Fi, define o endereço da zona Wi-Fi. Um endereço lido pela aplicação tem sempre prioridade sobre um escrito.</string>
     <string name="static_bssid_enter_value">Introduzir BSSID (XX:XX:XX:XX:XX:XX)</string>
     <string name="static_bssid_desc">Defina manualmente o BSSID do ponto de acesso. Só é necessário quando nada neste dispositivo o indica; o registo mostra todas as origens consultadas.</string>
     <string name="static_p2p_bssid_title">BSSID estático (Wi-Fi Direct)</string>
     <string name="static_p2p_bssid_desc">Defina manualmente o BSSID do grupo Wi-Fi Direct. É independente do BSSID do ponto de acesso, porque são interfaces diferentes e um nunca substitui o outro.</string>
 
     <string name="custom_insets">Margens personalizadas (Insets)</string>
+    <string name="custom_insets_help">Afasta a imagem das margens do ecrã por este número de píxeis: esquerda, topo, direita e fundo. Utilize quando uma moldura, uma margem curva ou uma barra do sistema tapar parte do Android Auto.</string>
     <string name="inset_top">Cima</string>
     <string name="inset_bottom">Baixo</string>
     <string name="inset_left">Esquerda</string>
@@ -550,12 +584,14 @@
     <!-- Video Settings -->
     <string name="category_video">Vídeo</string>
     <string name="force_software_decoding">Forçar descodificação por software</string>
-    <string name="force_software_decoding_description">Pode corrigir problemas em alguns dispositivos, mas tem menor desempenho.</string>
+    <string name="force_software_decoding_description">Pode resolver problemas em alguns dispositivos, mas é mais lento.</string>
+    <string name="force_software_decoding_help">Descodifica o vídeo no processador principal em vez do hardware de vídeo. Ative apenas se a imagem ficar preta, bloquear ou mostrar cores erradas com a opção desativada. Exige muito mais capacidade do processador, por isso a imagem pode ficar mais lenta. A linha abaixo escolhe o descodificador por software.</string>
     <string name="software_video_decoder">Origem do descodificador por software</string>
     <string name="software_video_decoder_bundled">FFmpeg integrado</string>
     <string name="software_video_decoder_device">MediaCodec do dispositivo</string>
+    <string name="software_video_decoder_help">Aplica-se apenas enquanto Forçar descodificação por software estiver ativado. FFmpeg integrado é o descodificador da própria app e descodifica apenas H.265. MediaCodec do dispositivo utiliza o descodificador por software do sistema. O vídeo H.264 utiliza sempre o descodificador do sistema.</string>
     <string name="wireless_mode">Modo sem fios</string>
-    <string name="wireless_mode_description">Selecione como a aplicação se liga sem fios (lista manual, pesquisa automática do telemóvel ou modo Wireless Launcher).</string>
+    <string name="wireless_mode_description">Define como esta unidade encontra o telemóvel sem cabo. O Wireless Helper usa a aplicação complementar no telemóvel. O modo Nativo funciona como uma unidade principal Android Auto sem fios e não precisa de aplicação, mas depende da versão do Android Auto. O Servidor da Unidade encontra o servidor que o Android Auto executa no telemóvel. Altere só se o modo atual não ligar. Uma alteração reinicia a configuração sem fios.</string>
     <string-array name="wireless_connection_modes">
         <item>Manual (Lista)</item>
         <item>Pesquisa automática (Servidor da Unidade)</item>
@@ -569,6 +605,11 @@
     <string name="auto_connect_settings">Definições de ligação automática</string>
     <string name="auto_connect_settings_description">Configurar métodos de ligação automática e a respetiva ordem de prioridade.</string>
     <string name="auto_connect_help">Estes métodos são executados automaticamente quando a aplicação abre. Ative os que pretende e arraste para definir a ordem. É utilizado o primeiro método ativado que tiver êxito.</string>
+    <string name="auto_connect_screen_help">Define como a aplicação se liga sozinha ao abrir. Ative os métodos pretendidos e arraste-os pela ordem em que serão tentados. É usado o primeiro que funcionar. O atraso dá tempo ao Wi-Fi para acordar numa unidade lenta. Nada aqui altera uma ligação que inicie por si. Guardar aplica as alterações.</string>
+    <string name="dpi_screen_help">Define a densidade de píxeis com que o Android Auto desenha. Um DPI mais alto aumenta ícones e texto, e cabe menos no ecrã. Um DPI mais baixo reduz-os, e cabe mais. Automático usa a densidade deste dispositivo. O novo valor aplica-se na próxima ligação.</string>
+    <string name="keymap_screen_help">Associa as teclas e os botões desta unidade a ações do Android Auto. Toque numa linha e prima a tecla a atribuir. Repor remove todas as suas atribuições e volta ao predefinido. Use quando uma tecla do volante ou do painel fizer a coisa errada.</string>
+    <string name="customization_screen_help">Altera o aspeto do ecrã inicial desta aplicação: a imagem de fundo, as cores e o tamanho dos quatro botões e o tamanho do texto. A definição noturna controla o fundo no modo escuro. Nada disto altera o que o Android Auto mostra na projeção.</string>
+    <string name="loading_screen_screen_help">Define a imagem ou o vídeo curto mostrado enquanto o Android Auto arranca. Escolha uma imagem ou um vídeo até 10 MB, ajuste ao ecrã e repita animações curtas em ciclo. Também pode ocultar o texto de arranque. Remover volta ao ecrã predefinido.</string>
     <string name="auto_connect_priority">Prioridade %d</string>
     <string name="auto_connect_all_disabled">Todos desativados</string>
     <string name="drag_to_reorder">Arrastar para reordenar</string>
@@ -576,13 +617,16 @@
     <string name="move_down">Mover para baixo</string>
     <string name="auto_connecting_single_usb">A ligar automaticamente ao dispositivo USB…</string>
     <string name="video_codec">Codec de vídeo</string>
+    <string name="video_codec_help">Escolhe o formato de vídeo que o telemóvel envia. Auto deixa a aplicação escolher entre o que esta unidade consegue descodificar. O H.265 dá uma imagem mais nítida com o mesmo débito. O H.264 funciona em qualquer descodificador. Altere se a imagem bloquear ou ficar preta. A escolha aplica-se a partir da próxima ligação.</string>
     <string name="fps_limit">Limite de FPS</string>
+    <string name="fps_limit_help">A taxa de imagens mais alta que esta unidade pede ao Android Auto. Com 60, o movimento é mais fluido, mas é preciso mais largura de banda e mais potência do descodificador. Escolha 30 se a imagem se atrasar ou engasgar. Aplica-se na ligação seguinte.</string>
     <string name="save">Guardar</string>
     <string name="save_and_restart">Guardar (é preciso voltar a ligar)</string>
     <string name="add_new">Adicionar novo</string>
     <string name="cancel">Cancelar</string>
     <string name="enable">Ativar</string>
     <string name="video_fit_mode">Ajuste de vídeo</string>
+    <string name="video_fit_mode_help">Escolhe como a imagem do Android Auto se ajusta ao ecrã desta unidade quando os formatos são diferentes. Stretch to fill usa o ecrã todo e pode distorcer a imagem. Fit with bars mostra a imagem inteira, com barras em dois lados. Fill by cropping usa o ecrã todo e corta parte das margens.</string>
     <string name="change_video_fit_mode">Alterar ajuste de vídeo</string>
     <string name="video_fit_mode_fill">Esticar para preencher (sem barras, pode distorcer)</string>
     <string name="video_fit_mode_contain">Ajustar com barras (sem corte, sem distorção)</string>
@@ -595,58 +639,70 @@
     <string name="device_specific_mcu_checking">A verificar o acesso à MCU…</string>
     <string name="device_specific_mcu_unavailable">O acesso à MCU não está disponível. A função de pausa da projeção ao engatar a marcha-atrás está desativada neste dispositivo.</string>
     <string name="device_specific_head_unit_model">Modelo da unidade multimédia</string>
+    <string name="device_specific_head_unit_model_help">Escolha o modelo desta unidade, se estiver na lista. A aplicação mostra então, abaixo, as correções desse modelo. Cada correção verifica primeiro se consegue aceder ao hardware da unidade, e só a pode ativar se conseguir. Deixe Não selecionado se o seu modelo não estiver na lista.</string>
     <string name="device_specific_model_none">Não selecionado</string>
     <string name="device_specific_model_adayo_haval">Adayo (Haval)</string>
     <string name="device_specific_pause_projection_reverse">Pausar a projeção do Android Auto em marcha-atrás</string>
-    <string name="device_specific_pause_projection_reverse_description">Libertar o foco de vídeo do Android Auto enquanto a câmara de marcha-atrás estiver ativa e restaurar a projeção ao desengatar a marcha-atrás.</string>
+    <string name="device_specific_pause_projection_reverse_summary">Pausa o Android Auto com o carro em marcha-atrás.</string>
+    <string name="device_specific_pause_projection_reverse_help">Enquanto o carro está em marcha-atrás, a aplicação liberta o foco de vídeo do Android Auto para a câmara traseira poder aparecer. Quando a marcha-atrás termina, a projeção volta. A aplicação lê a mudança na MCU da unidade, por isso a correção só funciona onde a aplicação acede à MCU.</string>
     <string name="pref_enable_car_launcher_title">Utilizar como Car Launcher</string>
-    <string name="pref_enable_car_launcher_summary">Regista o Open Headunit como aplicação do ecrã inicial, para que abra quando o botão Home do carro ou da unidade é premido.</string>
+    <string name="pref_enable_car_launcher_summary">Abre a aplicação pelo botão Início.</string>
+    <string name="pref_enable_car_launcher_help">Regista o Open Headunit como aplicação do ecrã inicial, para que abra quando o botão Home do carro ou da unidade é premido.</string>
     <string name="pref_set_default_launcher_title">Aplicação de ecrã inicial predefinida</string>
+    <string name="pref_set_default_launcher_help">Mostra se esta aplicação é a aplicação de ecrã inicial predefinida desta unidade. Toque para pedir ao sistema que a torne a predefinida. O botão Início abre esta aplicação só enquanto ela for a predefinida.</string>
     <string name="pref_default_launcher_status_active">Ativo (Toque para gerir)</string>
     <string name="pref_default_launcher_status_inactive">Não definido (Toque para definir como predefinição)</string>
     <string name="pref_enable_floating_button_title">Botão flutuante de abertura</string>
-    <string name="pref_enable_floating_button_summary">Apresenta um botão flutuante sobre o lançador de fábrica e outras aplicações para regressar rapidamente ao Open Headunit.</string>
+    <string name="pref_enable_floating_button_summary">Mostra um botão para voltar ao Open Headunit.</string>
+    <string name="pref_enable_floating_button_help">Apresenta um botão flutuante sobre o lançador de fábrica e outras aplicações para regressar rapidamente ao Open Headunit.</string>
     <string name="pref_floating_button_connection_status_title">Indicador de estado da ligação</string>
-    <string name="pref_floating_button_connection_status_summary">Usa a Opacidade sem ligação quando nenhum telemóvel está ligado e desvanece para a Opacidade do botão flutuante enquanto um telemóvel está ligado. A 0%, o botão fica oculto e deixa passar os toques.</string>
+    <string name="pref_floating_button_connection_status_summary">Esbate o botão enquanto um telemóvel está ligado.</string>
+    <string name="pref_floating_button_connection_status_help">Usa a Opacidade sem ligação quando nenhum telemóvel está ligado e desvanece para a Opacidade do botão flutuante enquanto um telemóvel está ligado. A 0%, o botão fica oculto e deixa passar os toques.</string>
     <string name="pref_floating_button_size_title">Tamanho do botão flutuante</string>
+    <string name="pref_floating_button_size_help">O tamanho do botão flutuante, de 32 a 120 dp. Um botão maior é mais fácil de tocar enquanto conduz.</string>
     <string name="pref_floating_button_opacity_title">Opacidade do botão flutuante</string>
+    <string name="pref_floating_button_opacity_help">Quão opaco o botão flutuante fica, de 10% a 100%. Com Indicador de estado da ligação ativado, este valor aplica-se só enquanto um telemóvel está ligado.</string>
     <string name="pref_floating_button_disconnected_opacity_title">Opacidade sem ligação</string>
+    <string name="pref_floating_button_disconnected_opacity_help">Quão opaco o botão flutuante fica enquanto nenhum telemóvel está ligado. Com 0%, o botão fica oculto e os toques passam para o ecrã por baixo dele.</string>
     <string name="pref_floating_button_x_title">Posição horizontal (X)</string>
     <string name="pref_floating_button_y_title">Posição vertical (Y)</string>
+    <string name="pref_floating_button_position_help">Onde o botão flutuante fica no ecrã. Em X, 0% é a margem esquerda e 100% é a margem direita. Em Y, 0% é a margem superior e 100% é a margem inferior. O botão fica sempre inteiro no ecrã.</string>
     <string name="pref_aa_exit_action_title">Ação ao sair do Android Auto</string>
     <string name="pref_aa_exit_action_summary">Ação ao tocar em Sair dentro da gaveta de aplicações do Android Auto.</string>
+    <string name="pref_aa_exit_action_help">Escolhe o que acontece ao tocar em Sair no Android Auto. Regressar ao lançador de fábrica mostra o ecrã inicial da própria unidade. Regressar ao ecrã inicial da aplicação mostra o ecrã inicial desta aplicação. Com estas duas, o telemóvel continua ligado. Desligar sessão termina a sessão. Quando esta aplicação é o lançador do carro, Regressar ao lançador de fábrica funciona como Regressar ao ecrã inicial da aplicação.</string>
     <string name="aa_exit_action_oem_launcher">Regressar ao lançador de fábrica (Minimizar)</string>
     <string name="aa_exit_action_app_home">Regressar ao ecrã inicial da aplicação</string>
     <string name="aa_exit_action_disconnect">Desligar sessão</string>
     <string name="forced_scale">Escala forçada (Correção legada)</string>
     <string name="forced_scale_description">Corrige problemas de escala em alguns dispositivos mais antigos que utilizam SurfaceView. Utilize apenas se a imagem parecer distorcida ou deslocada.</string>
+    <string name="forced_scale_summary">Corrige o dimensionamento em dispositivos antigos que usam SurfaceView.</string>
     <string name="hud_mirroring">Modo HUD (Espelhamento horizontal)</string>
     <string name="hud_mirroring_description">Inverte o ecrã horizontalmente para reflexão no para-brisas (Head-Up Display). Requer o modo de visualização TextureView ou GLES20 (não funciona com SurfaceView).</string>
+    <string name="hud_mirroring_summary">Inverte o ecrã para o reflexo no para-brisas (HUD).</string>
 
     <!-- Audio Settings -->
     <string name="category_audio">Áudio</string>
     <string name="enable_audio_sink">Recetor de áudio (Audio Sink)</string>
-    <string name="enable_audio_sink_description">Se desativado, a unidade não receberá áudio. O som será reproduzido a partir do telemóvel.</string>
+    <string name="enable_audio_sink_description">Reproduz o som do Android Auto nesta unidade. Desative para manter o som no telemóvel, por exemplo quando o telemóvel já alimenta as colunas do carro. A unidade mostra então só a imagem. As chamadas nunca usam este áudio: tocam no dispositivo de mãos livres Bluetooth ligado ao telemóvel (carro, intercomunicador ou auricular) ou no próprio telemóvel.</string>
+    <string name="enable_audio_sink_summary">Reproduz o som do Android Auto nesta unidade. Desativado: o telemóvel reproduz.</string>
     <string name="static_audio_focus">Foco de áudio estático</string>
-    <string name="static_audio_focus_description">Faz o telemóvel assumir que o foco de áudio está sempre ativo, evitando falhas de encaminhamento de áudio em unidades genéricas. Também reduz o volume do áudio durante as instruções de voz da navegação.</string>
+    <string name="static_audio_focus_description">Informa o telemóvel de que o foco de áudio está sempre retido. Isto evita quebras de som em unidades genéricas que comunicam mal o foco. Também baixa o volume da música por software durante as indicações de voz da navegação. Deixe desativado, a menos que o som falhe.</string>
+    <string name="static_audio_focus_summary">Informa o telemóvel de que o foco de áudio está sempre retido, para evitar perdas de áudio.</string>
     <string name="media_key_routing">Enviar botões multimédia para o Android Auto</string>
     <string name="media_key_routing_always">Sempre</string>
     <string name="media_key_routing_auto">Automático</string>
     <string name="media_key_routing_never">Nunca</string>
-    <string name="media_key_routing_always_hint">Seguinte, anterior e reproduzir/pausa são sempre enviados para o Android Auto. Utilize esta opção, a menos que um toque salte duas faixas.</string>
-    <string name="media_key_routing_auto_hint">Deixa de os enviar enquanto esta unidade tiver uma ligação multimédia Bluetooth ao telemóvel, pois essa ligação já executa a ação. Escolha esta opção se um toque saltar duas faixas e o telemóvel estiver emparelhado com esta unidade.</string>
-    <string name="media_key_routing_never_hint">Nunca os envia e deixa os botões a cargo do Bluetooth. Escolha esta opção se um toque saltar duas faixas e o telemóvel estiver emparelhado com o sistema do próprio carro e não com esta unidade, pois o modo Automático não deteta essa ligação.</string>
+    <string name="media_key_routing_help">Sempre: Seguinte, anterior e reproduzir/pausa são sempre enviados para o Android Auto. Utilize esta opção, a menos que um toque salte duas faixas.\n\nAutomático: Deixa de os enviar enquanto esta unidade tiver uma ligação multimédia Bluetooth ao telemóvel, pois essa ligação já executa a ação. Escolha esta opção se um toque saltar duas faixas e o telemóvel estiver emparelhado com esta unidade.\n\nNunca: Nunca os envia e deixa os botões a cargo do Bluetooth. Escolha esta opção se um toque saltar duas faixas e o telemóvel estiver emparelhado com o sistema do próprio carro e não com esta unidade, pois o modo Automático não deteta essa ligação.</string>
     <string name="media_key_routing_hint_common">Apenas os botões multimédia são afetados. Controladores rotativos, D-pad, Voltar e Enter chegam sempre ao Android Auto.</string>
     <string name="playback_focus_mode">Pausar outro áudio durante a reprodução</string>
     <string name="playback_focus_mode_auto">Automático</string>
     <string name="playback_focus_mode_always">Sempre</string>
     <string name="playback_focus_mode_never">Nunca</string>
-    <string name="playback_focus_mode_auto_hint">Pausa outro leitor na unidade (por exemplo, o rádio) enquanto o áudio do Android Auto é reproduzido. Se isso acabar por parar a reprodução do próprio telemóvel, o que acontece quando a unidade é a coluna Bluetooth do telemóvel, deixa de o fazer e memoriza-o. Escolha este modo novamente para tentar outra vez.</string>
-    <string name="playback_focus_mode_always_hint">Pausa sempre outro áudio enquanto o Android Auto é reproduzido. Se a música parar ao fim de um ou dois segundos quando o Bluetooth está ativo, volte ao modo Automático.</string>
-    <string name="playback_focus_mode_never_hint">Nunca mexe no foco de áudio do sistema. Outro áudio na unidade pode continuar a tocar por cima do Android Auto.</string>
+    <string name="playback_focus_mode_help">Automático: Pausa outro leitor na unidade (por exemplo, o rádio) enquanto o áudio do Android Auto é reproduzido. Se isso acabar por parar a reprodução do próprio telemóvel, o que acontece quando a unidade é a coluna Bluetooth do telemóvel, deixa de o fazer e memoriza-o. Escolha este modo novamente para tentar outra vez.\n\nSempre: Pausa sempre outro áudio enquanto o Android Auto é reproduzido. Se a música parar ao fim de um ou dois segundos quando o Bluetooth está ativo, volte ao modo Automático.\n\nNunca: Nunca mexe no foco de áudio do sistema. Outro áudio na unidade pode continuar a tocar por cima do Android Auto.</string>
     <string name="playback_focus_mode_static_hint">Com o Foco de áudio estático ativo, isto aplica-se a partir do momento em que o telemóvel se liga e dura toda a sessão.</string>
     <string name="separate_audio_streams">Separar fluxos de áudio</string>
     <string name="separate_audio_streams_description">Atribui aos canais Multimédia, Orientação e Sons do sistema os seus próprios fluxos de saída, em vez de um fluxo multimédia partilhado (pode não funcionar corretamente em alguns dispositivos).</string>
+    <string name="separate_audio_streams_summary">Multimédia, orientação e sons do sistema têm saídas próprias.</string>
 
     <!-- Audio stream settings screen -->
     <string name="audio_stream_settings">Fluxos de áudio</string>
@@ -654,14 +710,17 @@
     <string name="audio_stream_settings_info">O Android Auto envia áudio em três canais: Multimédia, Orientação e Sons do sistema. Cada um é entregue à unidade num fluxo do sistema. O fluxo escolhido determina a tecla de volume que o controla e, em muitas unidades, se o amplificador ativa o som para esse canal. Utilize o botão do altifalante para ouvir um tom de teste no fluxo antes de guardar.</string>
     <string name="audio_channel_media">Multimédia</string>
     <string name="audio_channel_media_description">Reprodução de aplicações: música, podcasts, rádio e audiolivros. O único canal enviado em estéreo (48 kHz).</string>
+    <string name="audio_channel_media_summary">Reprodução de aplicações: música, podcasts, rádio, audiolivros. Estéreo, 48 kHz.</string>
     <string name="audio_channel_guidance">Orientação / Navegação</string>
     <string name="audio_channel_guidance_description">Indicações passo a passo faladas e respostas do assistente de voz (16 kHz mono).</string>
     <string name="audio_channel_system">Sons do sistema / Notificação</string>
     <string name="audio_channel_all">Multimédia, Orientação, Navegação, Notificação e Sistema</string>
     <string name="audio_channel_all_short">todos os canais</string>
     <string name="audio_channel_all_description">Todos os canais de áudio do Android Auto (reprodução de aplicações, indicações faladas, alertas e sons de notificação) partilham este único fluxo de saída.</string>
+    <string name="audio_channel_all_summary">Todos os canais de áudio do Android Auto partilham esta única saída.</string>
     <string name="audio_channel_system_description">Alertas, toques e sons de notificação do Android Auto (16 kHz mono).</string>
     <string name="audio_stream_test">Reproduzir tom de teste neste fluxo</string>
+    <string name="setting_help_for">Ajuda sobre %1$s</string>
     <string name="audio_stream_muted_warning">%1$s está silenciado neste dispositivo. Aumente o volume para ouvir o tom de teste.</string>
     <string name="audio_stream_test_failed">Não foi possível reproduzir o tom de teste neste fluxo.</string>
     <string name="audio_stream_pick_title">Fluxo para %1$s</string>
@@ -699,18 +758,23 @@
     <string name="onb_audio_focus_title">Foco de áudio</string>
     <string name="onb_audio_more_hint">Pode alterar estas definições mais tarde em Definições → Fluxos de áudio.</string>
     <string name="use_aac_audio">Utilizar áudio AAC</string>
-    <string name="use_aac_audio_description">Utiliza o codec AAC para o áudio, para poupar largura de banda (experimental). Numa sessão sem fios a 2.4 GHz, é ativado automaticamente enquanto \"Reduzir qualidade de vídeo em ligações de 2.4 GHz\" estiver ativo.</string>
+    <string name="use_aac_audio_description">Utiliza o codec AAC para o áudio, para poupar largura de banda. Numa sessão sem fios a 2.4 GHz, é ativado automaticamente enquanto \"Reduzir qualidade de vídeo em ligações de 2.4 GHz\" estiver ativo.</string>
+    <string name="use_aac_audio_summary">Usa áudio AAC para poupar largura de banda.</string>
     <string name="attach_hw_dsp_equalizer">Ativação do equalizador DSP por hardware</string>
     <string name="attach_hw_dsp_equalizer_description">Anexa um efeito de equalizador fictício à sessão de áudio para forçar o encaminhamento DSP por hardware em unidades específicas. Mantenha desativado se utilizar ViPER4Android / ViperFX ou se o som ficar abafado em versões mais antigas do Android.</string>
+    <string name="attach_hw_dsp_equalizer_summary">Anexa um equalizador fictício para forçar o encaminhamento pelo DSP de hardware em algumas unidades.</string>
     <string name="audio_volume_offset">Compensação de volume de áudio</string>
+    <string name="audio_volume_offset_help">Define o volume de três fluxos de áudio do Android Auto nesta unidade: multimédia, indicações de navegação e sons do sistema. Cada um vai de 0% a 200%. Com 100%, o fluxo toca como o telemóvel o envia. Use para equilibrar a navegação e a música.</string>
     <string name="microphone_settings">Definições do microfone</string>
     <string name="use_head_unit_microphone">Microfone da unidade</string>
     <string name="use_head_unit_microphone_description">Ativado: o Android Auto ouve o microfone deste dispositivo. Desativado: este dispositivo nunca grava e o telemóvel utiliza o seu próprio microfone, ou um auricular ou intercomunicador emparelhado com o telemóvel, pelo que o assistente de voz continua a funcionar. Requer Android 11 ou posterior no telemóvel.</string>
+    <string name="use_head_unit_microphone_summary">O Android Auto usa o microfone deste dispositivo. Desativado: o do telemóvel.</string>
     <string name="head_unit_microphone_off_info">O microfone da unidade está desativado, pelo que nada abaixo se aplica. O Android Auto é informado de que este dispositivo não consegue gravar e é uma mota, o que leva o telemóvel a gravar por si. No Android 10 e anterior, o telemóvel esquece isto entre sessões e pode deixar de ligar.</string>
     <string name="microphone_settings_description">Configurar entrada de microfone e processamento de áudio.</string>
     <string name="mic_wire_format_info">O Android Auto recebe sempre o microfone a 16000 Hz, 16 bits, mono. Rejeita qualquer outro formato, pelo que estas definições alteram o que o hardware faz e não o que é enviado ao telemóvel.</string>
     <string name="mic_input_source">Origem da entrada do microfone</string>
     <string name="mic_input_source_description">Escolha a fonte de áudio para o microfone.</string>
+    <string name="mic_input_source_help">Escolhe a fonte de áudio do Android de onde a aplicação grava. Predefinição deixa o sistema decidir. Microfone integrado grava o som em bruto. Reconhecimento de voz e Comunicação de voz acrescentam os filtros de ruído e eco do sistema. Auscultadores Bluetooth grava através de uns auscultadores Bluetooth. Altere se o telemóvel não o ouvir. Se o Android Auto estiver ligado, guardar uma alteração termina a sessão.</string>
     <string-array name="mic_input_sources">
         <item>Predefinição (O sistema decide)</item>
         <item>Microfone integrado (Entrada direta)</item>
@@ -720,10 +784,13 @@
     </string-array>
     <string name="mic_echo_canceler">Cancelamento de eco (AEC)</string>
     <string name="mic_echo_canceler_description">Tenta remover o eco do microfone. Desative se notar silêncio ou distorção.</string>
+    <string name="mic_echo_canceler_summary">Remove o eco do microfone. Desative se houver silêncio ou distorção.</string>
     <string name="mic_noise_suppressor">Supressão de ruído (NS)</string>
     <string name="mic_noise_suppressor_description">Tenta reduzir o ruído de fundo. O Android Auto espera que esta opção esteja desativada num único microfone e faz o seu próprio processamento. Desative se a sua voz soar abafada.</string>
+    <string name="mic_noise_suppressor_summary">Reduz o ruído de fundo. O Android Auto espera que fique desativado.</string>
     <string name="mic_auto_gain_control">Controlo automático de ganho (AGC)</string>
     <string name="mic_auto_gain_control_description">Ajusta automaticamente o volume do microfone. O Android Auto espera que esta opção esteja desativada e aplica o seu próprio controlo de ganho. Os dois em conjunto costumam soar pior. Desative se o volume for instável.</string>
+    <string name="mic_auto_gain_control_summary">Ajusta o volume do microfone. O Android Auto espera que fique desativado.</string>
     <string name="mic_feature_unsupported">Esta funcionalidade não é suportada no seu dispositivo.</string>
 <!-- Info Settings -->
     <string name="category_info">Informação</string>
@@ -920,16 +987,20 @@
     <string name="setup_apply">Aplicar</string>
     <string name="setup_widescreen_detected">Ecrã panorâmico detetado.</string>
     <string name="auto_optimize">Otimizar definições automaticamente</string>
+    <string name="auto_optimize_help">Volta a abrir o assistente de configuração. Percorre os passos de ligação, vídeo, ecrã, áudio, arranque, lançador, GPS e veículo, e guarda cada passo quando sai dele. Depois da primeira configuração, o assistente mantém a sua resolução, codec, renderizador e orientação, a menos que aplique o resultado do teste de vídeo. Guarda sempre o tamanho do ecrã e o DPI que escolher.</string>
     <string name="auto_optimize_desc">Executar a verificação do sistema para encontrar as melhores definições para o seu dispositivo.</string>
 
     <!-- Navigation notifications (from any AA nav app) -->
     <string name="show_navigation_notifications">Notificações de navegação</string>
     <string name="show_navigation_notifications_description">Mostrar \"Em X metros faça Y\" e a rua atual nas notificações (para depuração).</string>
+    <string name="show_navigation_notifications_help">Mostra a próxima curva da navegação do Android Auto como notificação nesta unidade, com a distância e a rua. Use para verificar se os dados da curva chegam do telemóvel.</string>
     <string name="media_session_aa_status_placeholder">Ligado</string>
     <string name="sync_media_session_aa_metadata">Em reprodução do AA na sessão multimédia</string>
     <string name="sync_media_session_aa_metadata_description">Mostrar título da faixa, artista, duração e capa do álbum do telemóvel na sessão multimédia e notificação do sistema.</string>
+    <string name="sync_media_session_aa_metadata_summary">Mostra os dados da faixa do telemóvel na sessão multimédia do sistema.</string>
     <string name="auto_resume_playback_on_reconnect">Retomar a reprodução ao religar</string>
     <string name="auto_resume_playback_on_reconnect_description">Retoma automaticamente a música que estava a ser reproduzida antes de uma breve perda de ligação (até 60 segundos).</string>
+    <string name="auto_resume_playback_on_reconnect_summary">Retoma a música que tocava antes de uma quebra breve (60 s).</string>
     <string name="nav_notification_channel_name">Navegação</string>
     <string name="nav_notification_channel_description">Atualizações de navegação passo a passo do Android Auto.</string>
     <string name="nav_notification_title_format">Em %1$d m — %2$s</string>
@@ -954,27 +1025,37 @@
     <string name="performance_overlay_settings">Sobreposição de desempenho</string>
     <string name="overlay_field_fps">FPS</string>
     <string name="overlay_field_cpu">CPU</string>
+    <string name="overlay_field_cpu_summary">Carga do processador desta aplicação e de toda a unidade.</string>
     <string name="overlay_field_temperature">Temperatura</string>
+    <string name="overlay_field_temperature_summary">O sensor de temperatura mais quente desta unidade.</string>
     <string name="overlay_field_frame_age">Atraso de fotogramas</string>
+    <string name="overlay_field_frame_age_summary">Tempo desde a última imagem mostrada no ecrã.</string>
     <string name="overlay_field_battery">Bateria</string>
+    <string name="overlay_field_battery_summary">Nível da bateria. Um + indica que a unidade está ligada à corrente.</string>
     <string name="overlay_field_memory">Memória livre</string>
     <string name="overlay_field_wifi_signal">Sinal Wi-Fi</string>
+    <string name="overlay_field_wifi_signal_summary">Sinal da rede Wi-Fi a que esta unidade se ligou, em dBm.</string>
     <string name="performance_overlay_no_lines">Sem linhas</string>
     <string name="show_performance_overlay">Apresentar sobreposição de desempenho</string>
     <string name="overlay_position">Posição da sobreposição de desempenho</string>
+    <string name="overlay_position_help">Coloca a caixa de leituras no canto superior esquerdo ou superior direito da imagem. Mova-a se uma barra no ecrã desta unidade tapar esse canto.</string>
     <string name="five_ghz_channel">Canal de 5 GHz</string>
     <string name="five_ghz_channel_auto">Automático</string>
     <string name="five_ghz_channel_option">Canal %1$d (%2$d MHz)</string>
     <string name="five_ghz_channel_hint">Um canal é um pedido, não uma garantia. Muitas unidades só criam a rede no canal que o próprio controlador Wi-Fi escolhe, e a aplicação só o sabe depois de tentar. Se nenhum canal de 5 GHz funcionar e o telemóvel continuar sem ver a rede, a banda acima é a definição que o resolve.</string>
     <string name="wifi_direct_stable_identity">Manter a mesma rede Wi-Fi Direct</string>
     <string name="wifi_direct_stable_identity_description">Usa sempre o mesmo nome de rede e a mesma palavra-passe, para que o telemóvel volte a ligar-se a uma rede que já conhece. Use a linha abaixo para os renovar.</string>
+    <string name="wifi_direct_stable_identity_summary">Reutiliza um só nome de rede e palavra-passe para o telemóvel voltar a entrar nela.</string>
     <string name="wifi_direct_new_identity">Nova identidade de rede Wi-Fi Direct</string>
+    <string name="wifi_direct_new_identity_help">Nesta versão do Android, o sistema escolhe o nome e a palavra-passe do Wi-Fi Direct. Isto faz o sistema esquecer o grupo guardado, e ele escolhe um nome e uma palavra-passe novos. O telemóvel configura então esta unidade de novo por Bluetooth, como uma unidade nova. Use quando o telemóvel insiste numa rede a que já não consegue ligar-se.</string>
     <string name="wifi_direct_new_identity_none">Escolhida na próxima ligação</string>
     <string name="wifi_direct_new_identity_confirm">Escolhe um novo nome e uma nova palavra-passe para o grupo, usados a partir da próxima ligação. O telemóvel será configurado por Bluetooth como se esta fosse uma unidade nova. Faça isto se o telemóvel continuar a tentar uma rede à qual já não consegue ligar-se.</string>
     <string name="wifi_direct_new_identity_done">Será utilizada uma nova identidade de rede a partir da próxima ligação.</string>
     <string name="wifi_direct_new_identity_applied">Está a ser configurada uma nova identidade de rede. Na próxima ligação, o telemóvel será convidado a ligar-se a ela.</string>
     <string name="wifi_direct_stable_identity_description_legacy">Nesta versão do Android, o sistema escolhe o nome e a aplicação não pode pedir um. Deixe esta opção ativada para que o telemóvel volte a ligar-se a uma rede que já conhece, sempre que o sistema a mantenha, e use a linha abaixo para a renovar.</string>
+    <string name="wifi_direct_stable_identity_legacy_summary">O sistema define o nome da rede. Deixe ativado para o telemóvel voltar a entrar nela.</string>
     <string name="wifi_direct_last_network">Detalhes da rede oferecida ao seu telemóvel</string>
+    <string name="wifi_direct_last_network_help">Mostra o nome, a palavra-passe e o endereço da última rede Wi-Fi Direct que esta unidade ofereceu ao telemóvel. Pode copiar a palavra-passe daqui. Indica também se não foi possível ler o endereço, ou se o sistema usou outro nome e outra palavra-passe que não os pedidos pela aplicação.</string>
     <string name="wifi_direct_last_network_none">Nada visto ainda. Ligue-se uma vez e volte aqui.</string>
     <string name="wifi_direct_last_network_title">Rede oferecida ao seu telemóvel</string>
     <string name="wifi_direct_last_network_details">Nome\n%1$s\n\nPalavra-passe\n%2$s\n\nEndereço\n%3$s</string>
@@ -983,6 +1064,7 @@
     <string name="wifi_direct_last_network_differs">Este não é o nome e a palavra-passe que a aplicação pediu, por isso o sistema substituiu-os. Use \"Nova identidade de rede Wi-Fi Direct\" acima para obter um novo par.</string>
     <string name="wifi_direct_last_network_hint">Ligar-se a esta rede manualmente no telemóvel não inicia o Android Auto, porque o telemóvel liga-se sozinho depois de configurado por Bluetooth. Serve para verificar se a rede funciona.</string>
     <string name="wifi_direct_group_identity">Nome e palavra-passe do Wi-Fi Direct</string>
+    <string name="wifi_direct_group_identity_help">O nome e a palavra-passe do Wi-Fi Direct que o telemóvel recebe para se ligar a esta unidade. Deixe a aplicação escolhê-los ou escreva os seus. Escolher novos por mim faz a aplicação escolher um par novo. Se alterar a palavra-passe, a aplicação altera também o nome, porque um telemóvel não consegue voltar a ligar-se a uma rede com o mesmo nome e uma palavra-passe nova.</string>
     <string name="wifi_direct_group_identity_auto">Escolhido pela aplicação. Toque para definir manualmente.</string>
     <string name="wifi_direct_group_identity_pick_new">Escolher novos por mim</string>
     <string name="wifi_direct_group_identity_message">O nome e a palavra-passe que o telemóvel recebe para se ligar a esta unidade. Alterar a palavra-passe também altera o nome, porque um telemóvel não volta a ligar-se a uma rede com o mesmo nome e uma palavra-passe diferente.</string>
@@ -997,12 +1079,16 @@
     <string name="wifi_direct_credentials_copied">Nome de rede e palavra-passe copiados.</string>
     <string name="debug_video_low_latency">Pedir modo de baixa latência do descodificador</string>
     <string name="debug_video_low_latency_description">Define a chave MediaFormat de baixa latência do fabricante ao configurar o descodificador de vídeo. Volta ao modo normal se o descodificador a rejeitar.</string>
+    <string name="debug_video_low_latency_summary">Pede ao descodificador de vídeo o modo de baixa latência do fabricante.</string>
     <string name="debug_video_feed_hold">Simular um descodificador lento</string>
+    <string name="debug_video_feed_hold_help">Só para testes. Espera o tempo escolhido antes de cada imagem ir para o descodificador de vídeo, que assim parece lento. Use para testar como a aplicação lida com um descodificador atrasado. Aplica-se na ligação seguinte. Para uso normal, deixe Off, porque a imagem fica lenta.</string>
     <string name="show_performance_overlay_description">Apresentar FPS, carga da CPU, temperatura e atraso de fotogramas sobre a projeção.</string>
+    <string name="show_performance_overlay_help">Mostra uma caixa pequena de leituras em tempo real sobre a imagem do Android Auto, por exemplo taxa de imagens, carga do processador e temperatura. Use para descobrir porque a imagem está lenta. Escolha as leituras nas linhas abaixo. A caixa aparece só nesta unidade, não no telemóvel.</string>
 
     <!-- Auto-start permission strings -->
     <string name="reopen_on_reconnection_label">Reabrir ao religar</string>
     <string name="reopen_on_reconnection_description">Quando prime o botão Sair, a aplicação continua em execução em segundo plano e monitoriza as ligações USB. Se um dispositivo voltar a ligar-se, a aplicação abre novamente.</string>
+    <string name="reopen_on_reconnection_summary">Depois de Sair, continua a vigiar o USB e reabre quando um dispositivo volta a ligar.</string>
     <string name="overlay_permission_required">O arranque automático requer a permissão \"Sobrepor a outras apps\"</string>
     <string name="usb_permission_denied">Permissão USB recusada. Conceda acesso USB para ligar automaticamente.</string>
 
@@ -1011,11 +1097,14 @@
     <string name="category_input">Definições de entrada</string>
     <string name="enable_rotary">Ativar comando rotativo</string>
     <string name="enable_rotary_description">Anunciar suporte para comandos rotativos físicos. Desative se o ecrã tátil não estiver a funcionar corretamente.</string>
+    <string name="enable_rotary_summary">Anuncia o suporte do botão rotativo. Desative se o toque falhar.</string>
 
     <string name="kill_on_disconnect">Fechar aplicação ao desligar</string>
     <string name="kill_on_disconnect_description">Fechar a aplicação automaticamente quando o Android Auto se desliga.</string>
+    <string name="kill_on_disconnect_help">Fecha a app quando o Android Auto se desliga, para o dispositivo voltar aos seus próprios ecrãs. Ative se o dispositivo tiver de mostrar o seu próprio launcher depois de cada viagem. Não faz nada enquanto esta app for o launcher do automóvel. Se Reabrir ao religar, Iniciar no arranque ou Iniciar ao ligar o ecrã estiver ativado, a app avisa primeiro, porque essas opções precisam da app aberta.</string>
     <string name="raise_projection_during_call">Manter no Android Auto durante chamadas</string>
     <string name="raise_projection_during_call_description">Apenas no Modo Próprio. Traz a projeção de volta sobre o ecrã de chamada do telemóvel, para atender e terminar as chamadas na interface do Android Auto.</string>
+    <string name="raise_projection_during_call_summary">Só no Modo Próprio. Mostra a projeção sobre o ecrã de chamada do telemóvel.</string>
     <string name="kill_on_disconnect_warning_title">Aviso</string>
     <string name="kill_on_disconnect_warning">As seguintes definições de religação entram em conflito com o fecho da aplicação ao desligar:\n\n%1$s\n\nAs definições de ligação inicial (ligação automática, arranque automático) continuam a funcionar quando a unidade liga. No entanto, após a primeira desligação, a aplicação fecha de imediato em vez de tentar religar.\n\nNota: algumas unidades não originais nunca desligam por completo, entram em hibernação, como um telemóvel que bloqueia o ecrã mas nunca se desliga. Com esta opção ativada, a aplicação fecha após a primeira desligação e pode não reabrir automaticamente na próxima ignição.\n\nQuer desativar as definições de religação indicadas acima?</string>
     <string name="kill_on_disconnect_disable_and_enable">Desativar e ativar</string>
@@ -1041,31 +1130,39 @@
     <string name="category_head_unit">Unidade (Head Unit)</string>
     <string name="vehicle_display_name_label">Nome de apresentação</string>
     <string name="vehicle_display_name_description">Nome apresentado no seu telemóvel para este veículo.</string>
+    <string name="vehicle_display_name_help">O nome deste carro. A aplicação envia-o ao Android Auto em cada ligação, e o telemóvel mostra-o. Uma alteração aplica-se na ligação seguinte.</string>
     <string name="vehicle_make_label">Marca</string>
     <string name="vehicle_make_description">Fabricante do veículo (ex.: Honda, Toyota).</string>
+    <string name="vehicle_make_help">A marca do carro que a aplicação envia ao Android Auto. Uma marca real de automóvel mostra o logótipo dessa marca no botão de sair do Android Auto, mas o Android Auto deixa então de listar aplicações instaladas fora da Play Store. Volte a definir \"Google\" para as listar de novo. Uma alteração aplica-se na ligação seguinte.</string>
     <string name="vehicle_model_label">Modelo</string>
     <string name="vehicle_model_description">Modelo do veículo (ex.: Civic, Corolla).</string>
+    <string name="vehicle_model_help">O modelo e o ano do carro que a aplicação envia ao Android Auto. O telemóvel usa-os com a marca e o ID do veículo para encontrar o registo guardado deste carro. Por isso uma alteração pode fazer o telemóvel tratar esta unidade como um carro novo. O ano pode ser no máximo 2 anos à frente do atual.</string>
     <string name="vehicle_year_label">Ano</string>
     <string name="vehicle_year_description">Ano do veículo.</string>
     <string name="vehicle_id_label">ID do veículo</string>
     <string name="vehicle_type_label">Tipo de veículo</string>
+    <string name="vehicle_type_help">Diz ao Android Auto que tipo de veículo é este. Com Motociclo, o telemóvel grava com o seu próprio microfone, não com o desta unidade. Se Microfone da unidade estiver desativado, a aplicação envia sempre Motociclo. Cada tipo conta como um carro diferente no telemóvel.</string>
     <string name="vehicle_type_car">Carro</string>
     <string name="vehicle_type_truck">Camião</string>
     <string name="vehicle_type_motorcycle">Motociclo</string>
     <string name="vehicle_type_forced_by_microphone">O microfone da unidade está desligado, por isso o telemóvel usa o seu. O Android Auto vai ver uma mota.</string>
     <string name="vehicle_id_description">Apenas um identificador interno. Alterá-lo faz com que o telemóvel trate este veículo como um veículo diferente e repõe as preferências do Android Auto para este carro.</string>
+    <string name="vehicle_id_help">O Android Auto usa este ID, com a marca, o modelo e o ano, para voltar a reconhecer este carro. Um ID novo faz o telemóvel tratar esta unidade como um carro novo e repor as definições do Android Auto para ela. Camião e Motociclo acrescentam um final próprio ao ID, por isso cada tipo conta como um carro diferente.</string>
     <string name="head_unit_make_label">Fabricante</string>
     <string name="head_unit_make_description">Fabricante da unidade.</string>
+    <string name="head_unit_make_help">A marca desta unidade que a aplicação envia ao Android Auto. O telemóvel mostra este nome nas definições do Android Auto. Uma marca real de automóvel mostra o logótipo dessa marca no botão de sair do Android Auto, mas o Android Auto deixa então de listar aplicações instaladas fora da Play Store. Volte a definir \"Google\" para as listar de novo.</string>
     <string name="head_unit_make_hint">O telemóvel mostra este nome nas definições do Android Auto.\n\nUma marca de automóvel real mostra o logótipo dessa marca no botão de saída do Android Auto, mas o Android Auto deixa de listar as apps instaladas fora da Play Store. Volte a definir \"Google\" para essas apps voltarem a aparecer na lista.</string>
     <string name="vehicle_make_hint">Uma marca de automóvel real mostra o logótipo dessa marca no botão de saída do Android Auto, mas o Android Auto deixa de listar as apps instaladas fora da Play Store. Volte a definir \"Google\" para essas apps voltarem a aparecer na lista.</string>
     <string name="head_unit_model_label">Modelo</string>
     <string name="head_unit_model_description">Modelo da unidade.</string>
+    <string name="head_unit_model_help">O modelo desta unidade. A aplicação envia-o ao Android Auto em cada ligação, juntamente com a marca acima.</string>
     <string name="vehicle_year_error_invalid">Introduza um ano válido</string>
     <string name="vehicle_year_error_max">O ano não pode ser posterior a %1$d</string>
     <string name="vehicle_info_restart_note">Estes dados são enviados para o Android Auto sempre que se liga.</string>
 
     <string name="auto_enable_hotspot">Ativar zona Wi-Fi automaticamente</string>
     <string name="auto_enable_hotspot_description">Inicia automaticamente uma zona Wi-Fi neste dispositivo. (Pode não funcionar em todos os dispositivos.)</string>
+    <string name="auto_enable_hotspot_summary">Inicia um hotspot Wi-Fi neste dispositivo. Não existe em todos.</string>
     <string name="hotspot_warning_title">Funcionalidade experimental</string>
     <string name="hotspot_warning_message">Esta funcionalidade utiliza reflexão e pode não funcionar em todos os dispositivos. Pode também exigir que a permissão \"Modificar definições do sistema\" seja concedida manualmente.</string>
     <string name="hotspot_permission_title">Permissão necessária</string>
@@ -1083,7 +1180,9 @@
 
     <string name="wait_for_wifi">Aguardar pelo Wi-Fi antes do Wi-Fi Direct</string>
     <string name="wait_for_wifi_description">Ao arrancar, espera que o Wi-Fi se ligue antes de iniciar o Wi-Fi Direct. Ative esta opção se a unidade precisar de alguns segundos para se ligar ao Wi-Fi depois de ser ligada.</string>
+    <string name="wait_for_wifi_summary">No arranque, espera pelo Wi-Fi antes de iniciar o WiFi Direct.</string>
     <string name="wait_for_wifi_timeout">Tempo limite do Wi-Fi</string>
+    <string name="wait_for_wifi_timeout_help">Quanto tempo a aplicação espera que esta unidade se ligue ao Wi-Fi antes de iniciar o Wi-Fi Direct, de 5 a 30 segundos. A aplicação inicia o Wi-Fi Direct de imediato quando o Wi-Fi liga, ou quando este tempo termina. Aumente se a unidade demora a ligar ao Wi-Fi depois de ligar a corrente.</string>
     <string name="wireless_24ghz_warning">Nota: o Android Auto sem fios em dispositivos de 2,4 GHz pode causar atrasos, falhas de imagem e desligações. Se tiver problemas, teste por USB para confirmar se se trata de uma limitação da rede.</string>
     <string name="wireless_mode_helper">Wireless Helper</string>
     <string name="wireless_mode_native">Nativo (Native)</string>
@@ -1091,8 +1190,10 @@
     <string name="server_mode_label">Modo de Servidor</string>
     <string name="server_mode_manual">Manual</string>
     <string name="server_mode_auto">Automático</string>
+    <string name="server_mode_help">Automático procura na rede o servidor da unidade no telemóvel e liga-se sozinho. Manual não procura. Liga-se a partir da lista de redes ou com o endereço do telemóvel.</string>
 
     <string name="helper_strategy_label">Estratégia de ligação Helper</string>
+    <string name="helper_strategy_help">Define como o telemóvel e esta unidade partilham uma rede no modo Wireless Helper. Wi-Fi comum usa uma rede que ambos já partilham. WiFi Direct cria uma ligação privada. Google Nearby é beta. Hotspot do telemóvel entra no hotspot do telemóvel. Hotspot da unidade faz desta unidade o ponto de acesso. Altere se o telemóvel não encontrar esta unidade.</string>
     <string-array name="helper_strategies">
         <item>Wi-Fi comum (NSD)</item>
         <item>Wi-Fi Direct (P2P)</item>
@@ -1114,10 +1215,13 @@
     <string name="exit_dialog_settings">Definições rápidas</string>
     <string name="gesture_hint">Dica: deslize com 2 dedos a partir do limite esquerdo do ecrã para abrir o menu de saída.</string>
     <string name="audio_latency_multiplier">Multiplicador de latência de áudio</string>
-    <string name="aaudio_output">Saída AAudio (experimental)</string>
+    <string name="aaudio_output">Saída AAudio</string>
     <string name="aaudio_output_description">Tenta uma saída multimédia de baixa latência. Utiliza automaticamente AudioTrack se não estiver disponível.</string>
+    <string name="aaudio_output_help">Reproduz o conteúdo multimédia do Android Auto através do AAudio, uma saída de áudio de baixa latência. A app só a utiliza no Android 9 ou posterior. Ative se o som chegar depois da imagem. Se o AAudio não conseguir iniciar, a app utiliza a saída de áudio normal. Se o som estalar ou falhar com a opção ativada, desative-a.</string>
     <string name="audio_latency_multiplier_description">Ajustar tamanho do buffer de áudio (Menor = Menos atraso, Maior = Menos paragens).</string>
+    <string name="audio_latency_multiplier_help">Define quanto som a aplicação guarda de reserva, para que pequenas falhas na ligação não cortem o áudio. O valor predefinido, 16x, guarda cerca de 400 ms. Cada passo para baixo reduz para metade, até 25 ms em 1x. Uma reserva menor reduz o atraso, mas pode causar falhas numa ligação fraca. Aplica-se a todos os fluxos de áudio do Android Auto.</string>
     <string name="audio_queue_capacity">Capacidade da fila de áudio (Backpressure)</string>
+    <string name="audio_queue_capacity_help">Quanto áudio recebido pode aguardar antes de ser reproduzido. Uma fila pequena mantém o som próximo da imagem. Uma fila grande suporta falhas curtas na ligação, mas o som pode ficar atrasado. Quando a fila está cheia, o áudio mais antigo é descartado. Sem limite guarda tudo. A app permite sempre pelo menos um segundo de áudio.</string>
 
     <!-- Custom loading screen -->
     <string name="loading_screen">Ecrã de carregamento</string>
@@ -1172,13 +1276,16 @@
     <string name="stand_down_station_auto">Automático</string>
     <string name="stand_down_station_always">Sempre</string>
     <string name="stand_down_station_never">Nunca</string>
-    <string name="stand_down_station_hint">O modo automático sai da rede da própria unidade apenas quando o rádio tem banda de 5 GHz e essa rede está em 2,4 GHz, para que o grupo Wi-Fi Direct tenha um canal de 5 GHz só para si. Mantém-se ligado numa unidade só de 2,4 GHz, onde sair apenas leva a unidade a procurar redes, e sempre que a rede já esteja em 5 GHz. A rede é religada quando a sessão termina. Experimente Sempre ou Nunca se a imagem encravar.</string>
+    <string name="stand_down_station_hint">Decide se esta unidade sai da própria rede Wi-Fi enquanto o telemóvel liga, para o grupo WiFi Direct poder usar um canal de 5 GHz. Auto sai só quando o rádio tem banda de 5 GHz e a rede está em 2,4 GHz, ou quando o grupo é forçado a 2,4 GHz junto de uma rede de 5 GHz. Uma unidade só de 2,4 GHz continua ligada, porque sair só faz a unidade procurar redes. A rede é religada no fim da sessão. Experimente Sempre ou Nunca se a imagem bloquear.</string>
     <string name="stand_down_station_needs_overlay">Requer a permissão \"Sobrepor a outras apps\" nesta versão do Android.</string>
     <string name="hotspot_interface_override">Interface de rede da zona Wi-Fi</string>
+    <string name="hotspot_interface_override_help">A interface de rede por onde passa a zona Wi-Fi desta unidade. Deixe em branco e a aplicação encontra-a sozinha. Defina-a só se o registo disser que a aplicação escolheu a interface errada ou encontrou mais do que uma. A aplicação envia então os dados da zona Wi-Fi mesmo que o sistema não indique nenhuma, por isso confirme que a zona Wi-Fi está ligada.</string>
     <string name="hotspot_interface_override_message">Deixe em branco para detetar automaticamente. Defina-o se o registo indicar que mais do que uma interface pode ser o ponto de acesso, ou se escolher a errada. O nome é o que o registo indica depois de \"Providing credentials from\", ou a entrada com o endereço da sua zona Wi-Fi em \"ip -brief addr\" numa shell. Nomes comuns: ap0, wlan0, wlan1, wlan2, softap0, ra0.</string>
     <string name="hotspot_ssid_override">Nome da zona Wi-Fi (manual)</string>
+    <string name="hotspot_ssid_override_help">O nome da zona Wi-Fi desta unidade, que o telemóvel recebe para se ligar. Deixe em branco e a aplicação lê o nome da unidade. Escreva-o só quando a unidade não deixa as aplicações lê-lo. Se escrever um nome, escreva também a palavra-passe: a aplicação deixa então de a ler da unidade.</string>
     <string name="hotspot_ssid_override_message">Deixe em branco para ler automaticamente o nome nas definições da zona Wi-Fi deste dispositivo. Alguns dispositivos não permitem que as apps o leiam. Se o registo indicar que não foi possível ler o nome, escreva-o aqui exatamente como aparece nas definições da zona Wi-Fi.</string>
     <string name="hotspot_password_override">Palavra-passe da zona Wi-Fi (manual)</string>
+    <string name="hotspot_password_override_help">A palavra-passe da zona Wi-Fi desta unidade, que o telemóvel recebe para se ligar. Deixe em branco e a aplicação lê-a da unidade. Escreva-a quando a unidade não deixa as aplicações lê-la, ou quando escreveu o nome da zona Wi-Fi. Com nome escrito e sem palavra-passe, o telemóvel recebe uma rede aberta e recusa-a.</string>
     <string name="hotspot_password_override_message">Deixe em branco para ler automaticamente a palavra-passe. É necessário em dispositivos que não permitem que as apps leiam a configuração da zona Wi-Fi. O telemóvel receberá esta palavra-passe para se ligar.</string>
 
     <!-- Native AA credential pre-flight: what this unit can and cannot tell the phone about its own network -->
@@ -1187,12 +1294,15 @@
     <string name="connection_issue_banner_bssid">Não foi indicado ao telemóvel a que rede se ligar, porque esta unidade não partilhou o seu endereço Wi-Fi. Ative a Localização ou toque para introduzir o endereço manualmente.</string>
     <string name="connection_issue_banner_hotspot_off">A zona Wi-Fi desta unidade está desativada, por isso o telemóvel não tinha nenhuma rede a que se ligar. Ative-a ou toque para a app a ativar.</string>
     <string name="connection_issue_banner_hotspot_config">Esta unidade não partilha com a app o nome e a palavra-passe da zona Wi-Fi. Toque para os introduzir manualmente.</string>
+    <string name="auto_restart_wifi_summary">Reinicia o Wi-Fi sozinho se o WiFi Direct bloquear. Requer root ou ADB local.</string>
+    <string name="auto_restart_wifi_description">Desliga e liga o Wi-Fi sozinho se o WiFi Direct bloquear, o que pode acontecer depois de fechar a app a meio de uma sessão. Requer root ou ADB local. Nunca é executado durante uma sessão.</string>
     <string name="connection_issue_banner_wifi_direct_refused">Esta unidade não conseguiu criar a rede Wi-Fi Direct para o telemóvel. Experimente desligá-la de outras redes Wi-Fi ou toque para usar antes a zona Wi-Fi.</string>
     <string name="connection_issue_banner_wifi_direct_cycled">Outra app está sempre a desativar o Wi-Fi Direct, normalmente uma app de projeção pré-instalada, como ZLink ou CarLife. Desative-a ou toque para usar antes a zona Wi-Fi.</string>
     <string name="connection_issue_banner_wifi_radio_off">O Wi-Fi desta unidade está desativado e o Android não permite que a app o ative. Ative o Wi-Fi ou toque para usar antes a zona Wi-Fi desta unidade.</string>
     <string name="native_aa_requires_wifi">O Android Auto nativo precisa do Wi-Fi desta unidade. Ative-o.</string>
     <string name="narrow_band_profile_cap">Reduzir o vídeo numa ligação de 2,4 GHz</string>
-    <string name="narrow_band_profile_cap_description">Quando a sessão decorre em 2,4 GHz, seja porque o Wi-Fi da unidade não tem banda de 5 GHz, seja porque a rede ficou aí, pede ao telemóvel no máximo 720p e 30 fps, em vez das definições acima, e áudio AAC. Numa ligação destas, um fluxo a taxa total não mostrou imagem nenhuma, enquanto um mais baixo se manteve. Desative para receber o que pediu.</string>
+    <string name="narrow_band_profile_cap_description">Numa ligação de 2,4 GHz, pede ao telemóvel no máximo 720p, 30 fps e áudio AAC em vez das suas definições de vídeo. Nessa ligação, um fluxo a débito total não mostrou imagem nenhuma nas medições, enquanto um menor se manteve. Desative para obter exatamente o que definiu e espere uma imagem vazia se a ligação não aguentar.</string>
+    <string name="narrow_band_profile_cap_summary">Em 2,4 GHz, pede ao telemóvel 720p, 30 fps e áudio AAC.</string>
     <string name="connection_issue_banner_video_link_too_slow">A ligação Wi-Fi era demasiado lenta para vídeo, por isso a app reduziu-o para 720p a 30 FPS. Toque para definir a resolução manualmente. Uma rede de 5 GHz também ajuda.</string>
     <string name="connection_issue_banner_five_ghz_channel_refused">Esta unidade não usou o canal de 5 GHz que escolheu e selecionou um que alguns telemóveis não conseguem ver. Toque para mudar o Wi-Fi Direct para 2,4 GHz, que funciona em todo o lado.</string>
     <string name="connection_issue_banner_headunit_server_deaf">O servidor da unidade do Android Auto no telemóvel deixou de responder. No telemóvel, pare-o e inicie-o de novo nas definições de programador do Android Auto.</string>
@@ -1216,6 +1326,7 @@
     <string name="preflight_later">Mais tarde</string>
     <string name="preflight_invalid_bssid">Esse não é um endereço Wi-Fi válido. Introduza seis pares de dígitos hexadecimais, como 02:1A:11:FF:3C:4D.</string>
     <string name="native_aa_wake_remeasure">Medir novamente o despertar por Bluetooth</string>
+    <string name="native_aa_wake_remeasure_help">Para iniciar o modo sem fios, a aplicação pode cortar a ligação mãos-livres desta unidade ao telemóvel. A aplicação testa uma vez se a ligação volta. Se não voltar, a aplicação deixa de o fazer e a linha mostra Retido. Toque para limpar o resultado, e a aplicação testa de novo na ligação seguinte. O mãos-livres pode cair por instantes durante o teste.</string>
     <string name="native_aa_wake_verdict_unmeasured">Ainda não medido</string>
     <string name="native_aa_wake_verdict_safe">Seguro nesta unidade</string>
     <string name="native_aa_wake_verdict_destructive">Retido nesta unidade</string>
@@ -1223,9 +1334,11 @@
     <string name="native_aa_wake_remeasure_done">O despertar por Bluetooth será medido novamente na próxima ligação.</string>
     <string name="native_aa_ignore_external_bt">Ignorar verificação de compatibilidade Bluetooth</string>
     <string name="native_aa_ignore_external_bt_description">Esta unidade parece ter o Bluetooth num módulo separado a que o Android não consegue aceder, pelo que o Android Auto sem fios é desativado automaticamente. Desativado por predefinição. Ative apenas se achar que isso está errado: quando está certo, a ligação falha sem aviso e o registo parece normal.</string>
+    <string name="native_aa_ignore_external_bt_summary">Mantém o sem fios ativo mesmo que esta unidade pareça ocultar o módulo Bluetooth.</string>
 
     <!-- The external Bluetooth module probe (Advanced; only on units the detection flags). -->
     <string name="zbt_probe_title">Testar o módulo Bluetooth da unidade</string>
+    <string name="zbt_probe_help">Testa se o módulo Bluetooth próprio desta unidade consegue levar o handshake sem fios do Android Auto. O teste dura cerca de dois minutos e mostra cada fase nesta linha. Apenas observar só liga o módulo e monitoriza-o. Acordar e observar também pede ao módulo que se ligue ao telemóvel. O teste pode alterar o estado Bluetooth do módulo. Exporte o registo depois do teste.</string>
     <string name="zbt_probe_idle">Toque para executar</string>
     <string name="zbt_probe_running">A executar…</string>
     <string name="zbt_probe_message">Ambas as opções inicializam o módulo Bluetooth antes de observar o seu estado. Isto pode afetar o estado do Bluetooth. Acordar e observar também pede uma ligação ao telemóvel.\n\nO teste dá prioridade ao OHU enquanto este utiliza ou verifica o módulo. Exporte o registo após o teste.</string>
@@ -1234,18 +1347,22 @@
     <string name="external_bt_blink_transport">Ligar através do módulo Bluetooth externo FYT</string>
     <string name="external_bt_module_controls_hint">O emparelhamento do telemóvel, a prioridade da ligação e a seleção do controlador são geridos pelo módulo Bluetooth externo.</string>
     <string name="external_bt_module_last_phone">Último telemóvel ligado através do módulo</string>
-    <string name="external_bt_blink_transport_description">Experimental. Para unidades FYT cujo telemóvel emparelha para chamadas com um módulo Bluetooth separado, como \"DUDUAUTO\" no DUDUOS, a única ROM testada até agora. O módulo, e não o Bluetooth desta unidade, transporta o handshake do Android Auto sem fios, e a app Car Link de origem costuma respondê-lo. Com esta opção ativada, é esta app que responde, pelo que as chamadas ficam no módulo e nos altifalantes do carro.\n\nDesative primeiro a app Car Link de origem (pm disable-user com.syu.carlink), ou as duas apps lerão o mesmo canal. O canal é aberto sem root quando a unidade o permite e, caso contrário, através de root. Escolha Native, emparelhe o telemóvel apenas com o módulo e exporte o registo se não ligar.</string>
+    <string name="external_bt_blink_transport_description">Experimental, para unidades FYT cujo telemóvel emparelha para chamadas com um módulo Bluetooth separado, como DUDUAUTO no DUDUOS. O módulo trata do handshake sem fios do Android Auto, a que normalmente responde a aplicação Car Link original. Com isto ativado, esta aplicação responde no lugar, e as chamadas ficam no módulo e nas colunas do carro. Desative antes a aplicação Car Link original (pm disable-user com.syu.carlink), ou as duas leem o mesmo canal.</string>
+    <string name="external_bt_blink_transport_summary">Experimental. Responde ao handshake sem fios no módulo Bluetooth de uma unidade FYT.</string>
     <string name="external_bt_zj_socket_transport">Ligar através do socket Bluetooth ZJ</string>
     <string name="external_bt_zj_socket_transport_description">Para unidades cujo módulo Bluetooth ZJ transporta o handshake sem fios do Android Auto através de um socket local (/dev/socket/zj_bt_socket). A aplicação usa-o sozinha quando esse socket aceita uma ligação. Ative apenas se a sua unidade tiver o socket e a aplicação não o detetar.</string>
+    <string name="external_bt_zj_socket_transport_summary">Levar o handshake sem fios pelo socket local do módulo ZJ.</string>
     <string name="external_bt_blink_refused_stock_enabled">Módulo Bluetooth externo: a app Car Link de origem continua ativada. Desative-a (pm disable-user com.syu.carlink) ou desative este transporte.</string>
     <string name="external_bt_blink_refused_stock_running">Módulo Bluetooth externo: a app Car Link de origem está desativada, mas continua em execução. Reinicie a unidade.</string>
     <string name="external_bt_blink_refused_root">Módulo Bluetooth externo: abrir o canal do módulo exige root nesta unidade, e o acesso root foi negado ou não está disponível.</string>
     <string name="external_bt_blink_refused_unverified">Módulo Bluetooth externo: não foi possível verificar se a app Car Link de origem está parada, pelo que o canal do módulo permanece fechado. Exporte o registo.</string>
     <string name="external_bt_blink_refused_bridge">Módulo Bluetooth externo: não foi possível abrir o canal do módulo. Exporte o registo.</string>
     <string name="external_bt_transport">Ligar através do módulo Bluetooth da unidade</string>
-    <string name="external_bt_transport_description">Experimental e apenas para unidades com um serviço Bluetooth ZJ/ZLink. Envia o handshake do Android Auto sem fios através do chip Bluetooth próprio desta unidade, aquele com que o telemóvel está realmente emparelhado, em vez do Bluetooth que o Android disponibiliza às apps.\n\nExecute primeiro \"Testar o módulo Bluetooth da unidade\", com esta definição desativada. Se não encontrar nada a escutar, esta definição não pode fazer nada na sua unidade e o Native Wireless não funcionará aqui, qualquer que seja a configuração. Se responder, ative esta definição e escolha Native. Um teste executado com esta definição já ativada e ligada indica isso mesmo, o que não é uma falha. Exporte o registo em qualquer dos casos.</string>
+    <string name="external_bt_transport_description">Experimental, para unidades com serviço Bluetooth ZJ/ZLink. Envia o handshake sem fios do Android Auto pelo chip Bluetooth com que o telemóvel está emparelhado, não pelo que o Android mostra às aplicações. Execute antes o teste do módulo Bluetooth com isto desativado. Se nada estiver à escuta, isto não ajuda na sua unidade. Se responder, ative. Exporte o registo nos dois casos.</string>
+    <string name="external_bt_transport_summary">Experimental. Envia o handshake sem fios pelo Bluetooth próprio desta unidade.</string>
     <string name="native_aa_setup_qr_title">Configurar por QR</string>
     <string name="native_aa_setup_qr_description">Apresentar um código para o telemóvel ler.</string>
+    <string name="native_aa_setup_qr_help">Mostra um código QR que configura esta unidade no telemóvel sem o handshake Bluetooth. O código leva o nome, a palavra-passe e o endereço da zona Wi-Fi da unidade. Só funciona no transporte por zona Wi-Fi, enquanto a ligação está ativa. O Android Auto 18.0 ainda não usa este código, por isso o handshake Bluetooth continua a ser necessário.</string>
     <string name="native_aa_setup_qr_content_description">Código QR para configurar o Android Auto sem fios</string>
     <string name="native_aa_setup_qr_instruction">Leia isto com a câmara do telemóvel e confirme no telemóvel. Só precisa de ser feito uma vez: depois disso, o telemóvel liga-se autonomamente.</string>
     <string name="native_aa_setup_qr_not_drawn">Não foi possível gerar o código.</string>
@@ -1269,6 +1386,7 @@
     <string name="share_hotspot_qr_error">Não foi possível obter os dados da zona Wi-Fi ativa. Certifique-se de que a zona Wi-Fi e a localização estão ativadas.</string>
     <string name="use_libusb">Utilizar controlador USB nativo</string>
     <string name="use_libusb_description">Utilizar libusb para comunicação. Desative para utilizar a API USB padrão do Android.</string>
+    <string name="use_libusb_help">Utiliza a biblioteca USB da própria app em vez do sistema USB do Android na ligação por cabo ao telemóvel. Deixe desativado. Ative apenas se um telemóvel em USB for encontrado, mas o Android Auto não iniciar. Não altera nada numa ligação sem fios.</string>
     <string name="usb_keep_phone_media_audio">Manter o áudio multimédia do telemóvel por USB</string>
     <string name="usb_keep_phone_media_audio_description">O Android Auto pode desativar o áudio multimédia Bluetooth do telemóvel para esta unidade durante uma sessão USB. Esta opção impede isso. As chamadas podem ficar no telemóvel em vez de na unidade.</string>
 
@@ -1318,6 +1436,7 @@
     <string name="geofence_override_theme">Forçar um tema aqui</string>
     <string name="geofence_dark_inside">Escuro dentro desta área</string>
     <string name="geofence_scope_label">Aplica-se a</string>
+    <string name="geofence_scope_help">Escolhe o que os locais guardados controlam: os ecrãs desta aplicação, o Android Auto ou ambos. A sua escolha define o modo escuro dessa parte como Location (by area). Dentro de um local guardado, esse local define claro ou escuro. Fora de todos os locais, define a linha abaixo.</string>
     <string name="geofence_scope_app">App</string>
     <string name="geofence_scope_aa">Android Auto</string>
     <string name="geofence_scope_both">Ambos</string>
@@ -1334,6 +1453,7 @@
     <!-- Round 4: Location as a mode -->
     <string name="location_manage_places">Locais guardados</string>
     <string name="location_outside_label">Fora dos locais guardados</string>
+    <string name="location_outside_help">Define claro ou escuro quando esta unidade está fora de todos os locais guardados e enquanto ainda não tem localização. Dentro de um local guardado, vale a escolha desse local. Só funciona se um modo escuro estiver em Location (by area).</string>
     <string name="location_places_desc">Defina um aspeto claro ou escuro numa área enquanto estiver nela. Utiliza o GPS.</string>
     <string name="coordinates_enter">Introduzir coordenadas</string>
     <string name="coordinate_latitude">Latitude</string>
@@ -1352,8 +1472,12 @@
     <string name="aa174_notice_button_guide">Abrir Guia</string>
     <string name="category_ui">Interface</string>
     <string name="hide_phone_signal_label">Ocultar o sinal do telemóvel</string>
+    <string name="hide_phone_signal_help">Pede ao Android Auto que não mostre a intensidade do sinal do telemóvel no ecrã desta unidade. Algumas versões mais recentes do Android Auto ignoram o pedido. Aplica-se na ligação seguinte.</string>
     <string name="hide_battery_level_label">Ocultar o nível de bateria do telemóvel</string>
+    <string name="hide_battery_level_help">Pede ao Android Auto que não mostre o nível da bateria do telemóvel no ecrã desta unidade. Algumas versões mais recentes do Android Auto ignoram o pedido. Aplica-se na ligação seguinte.</string>
     <string name="hide_clock_label">Ocultar o relógio</string>
+    <string name="hide_clock_help">Pede ao Android Auto que não mostre o seu relógio no ecrã desta unidade. Use quando a unidade já mostra um relógio. Aplica-se na ligação seguinte.</string>
+    <string name="hide_clock_summary">Pede ao Android Auto que não mostre o seu relógio.</string>
     <string name="might_broken_on_newer_aa_versions">Esta funcionalidade pode não funcionar em versões mais recentes do Android Auto</string>
     <string name="auto_connect_delay">Atraso da ligação automática</string>
     <string name="auto_connect_delay_description">Aguardar antes de tentar ligar no arranque (útil se o Wi-Fi precisar de tempo para ativar).</string>
@@ -1369,7 +1493,9 @@
     <string name="native_driver_selection_mode_auto">Automático</string>
     <string name="native_driver_selection_mode_always">Perguntar sempre</string>
     <string name="native_driver_selection_timeout">Contagem decrescente</string>
+    <string name="native_driver_selection_timeout_help">Quando a lista de condutores abre, faz uma contagem decrescente e depois liga ao telemóvel mais provável. Aqui define a contagem, de 3 a 30 segundos. Toque num telemóvel antes do fim para escolher você mesmo.</string>
     <string name="native_driver_preferred_device">Telemóvel preferido</string>
+    <string name="native_driver_preferred_device_help">O telemóvel que a aplicação escolhe primeiro quando mais do que um telemóvel emparelhado pode ser o do condutor. Se só um telemóvel estiver ligado por Bluetooth, a aplicação escolhe esse. Com Nenhum, a aplicação escolhe o último telemóvel que se ligou. A lista mostra só telemóveis.</string>
     <string name="switch_driver">Mudar de telemóvel</string>
     <string name="driver_device_connected">No veículo / Ligado</string>
     <string name="driver_device_paired">Emparelhado</string>
@@ -1384,6 +1510,7 @@
     <string name="show_all_devices">Mostrar todos os dispositivos Bluetooth</string>
     <string name="show_only_phones">Mostrar apenas telemóveis</string>
     <string name="oem_app_management">Gestão de conflitos de apps OEM (ADB)</string>
+    <string name="oem_app_management_help">Encontra aplicações de fábrica nesta unidade que tomam as ligações USB ou Bluetooth antes desta aplicação. Pode desativar e parar cada uma, ou restaurá-la depois. Isto exige root, ou ADB pela rede na porta 5555 desta unidade. Uma opção desativa estas aplicações sempre que esta aplicação arranca.</string>
     <string name="oem_app_management_desc">Detetar e desativar apps em conflito (Zlink, AutoKit, etc.).</string>
     <string name="oem_app_explanation">As apps de fábrica da unidade (por exemplo, Zlink, AutoKit, SpeedPlay) intercetam muitas vezes as ligações USB e Bluetooth e impedem o Open Headunit de se ligar. Pode desativá-las através de Root ou Self-ADB (porta 5555).</string>
     <string name="oem_app_backend_root">Método de execução: Root (su) disponível</string>
@@ -1418,9 +1545,13 @@
     <string name="support_rules_english_title">All posts in English</string>
     <string name="support_rules_english_desc">Escreva sempre o seu problema em inglês. É a língua que o responsável pelo projeto e a maioria das pessoas que ajudam têm em comum, e uma conversa em várias línguas acaba numa torre de Babel em que ninguém consegue ajudar. Ninguém avalia o seu nível de inglês nem a forma como escreve, por isso não se preocupe com erros. Se ajudar, um tradutor como o Google Tradutor ou o DeepL, ou uma IA como o ChatGPT ou o Claude, pode escrever e melhorar a sua mensagem em inglês.</string>
     <string name="debug_video_fault_injection">Injeção de falhas de vídeo</string>
+    <string name="debug_video_fault_injection_help">Só para testes. Danifica de propósito o vídeo recebido, para testar como a aplicação recupera. Cada modo remove ou esconde uma parte diferente de uma imagem. O registo anota cada falha. Aplica-se na ligação seguinte. Para uso normal, deixe Off, porque a imagem parte-se.</string>
     <string name="debug_video_fault_rate">Taxa de falhas (1 em N)</string>
+    <string name="debug_video_fault_rate_help">Com que frequência ocorre uma falha. A aplicação danifica 1 em cada N pedaços de vídeo que o modo escolhido visa. Um número menor danifica mais da imagem.</string>
     <string name="debug_video_fault_budget">Limite de falhas</string>
+    <string name="debug_video_fault_budget_help">Quantas falhas a aplicação acrescenta numa sessão antes de parar. Whole session nunca para. Com um limite, um só registo mostra o dano e depois se a imagem recupera.</string>
     <string name="debug_force_memory_profile">Forçar perfil de memória</string>
+    <string name="debug_force_memory_profile_help">Só para testes. Faz o descodificador de vídeo dimensionar os buffers como se esta unidade tivesse a quantidade de memória escolhida. Measure lê a memória real da unidade. Constrained usa os menores buffers, como numa unidade com cerca de 1 GB. Aplica-se na ligação seguinte. Para uso normal, deixe em Measure.</string>
     <string name="onb_audio_play_test">Reproduzir som de teste</string>
     <string name="onb_audio_play_test_sub">Dura alguns segundos, como a música do Android Auto.</string>
     <string name="onb_audio_question">Como ficou o som?</string>
@@ -1546,6 +1677,7 @@
     <string name="native_aa_candidate_android_radio_description">Usar o Bluetooth do Android em vez de selecionar automaticamente o módulo Bluetooth da unidade. Deixe desativado para seleção automática. Se alguma opção de ligação pelo módulo estiver ativada, desative-a primeiro.</string>
     <string name="external_bt_candidate_transport_description">Forçar a ligação pelo módulo Bluetooth da unidade em vez da seleção automática. Requer um serviço de módulo compatível. Deixe desativado para permitir o Bluetooth do Android quando o serviço não responder; ativar impede esta alternativa.</string>
     <string name="audio_matching_mode">Correção temporal da música</string>
+    <string name="audio_matching_mode_help">Quando a música chega um pouco rápida ou lenta de mais, a aplicação reproduz um pouco mais depressa ou mais devagar para manter estável a fila de áudio. Aqui escolhe o método. OHU é o predefinido. Os outros métodos acrescentam algum atraso e aplicam-se só à música PCM. Navegação, voz, sons do sistema e AAC usam sempre OHU. Volte a ligar para aplicar.</string>
     <string name="audio_matching_ohu">OHU</string>
     <string name="audio_matching_wsola">WSOLA</string>
     <string name="audio_matching_phase_vocoder">Phase Vocoder</string>

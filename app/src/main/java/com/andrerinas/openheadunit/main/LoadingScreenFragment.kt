@@ -22,6 +22,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.R
+import com.andrerinas.openheadunit.main.settings.SettingHelpDialog
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.PickMediaContract
 import com.andrerinas.openheadunit.utils.Settings
@@ -126,8 +127,9 @@ class LoadingScreenFragment : Fragment() {
         } catch (_: Exception) {}
 
         // Toolbar
-        view.findViewById<MaterialToolbar>(R.id.toolbar)?.setNavigationOnClickListener {
-            navigateBack()
+        view.findViewById<MaterialToolbar>(R.id.toolbar)?.let { toolbar ->
+            toolbar.setNavigationOnClickListener { navigateBack() }
+            SettingHelpDialog.addToolbarHelp(toolbar, toolbar.title, R.string.loading_screen_screen_help, "loadingScreen")
         }
 
         // Back press

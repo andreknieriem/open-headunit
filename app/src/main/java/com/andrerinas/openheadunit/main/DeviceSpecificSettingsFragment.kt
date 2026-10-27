@@ -54,6 +54,7 @@ class DeviceSpecificSettingsFragment : Fragment() {
         items.add(SettingItem.SettingEntry(
             stableId = "deviceSpecificHeadUnitModel",
             nameResId = R.string.device_specific_head_unit_model,
+            helpResId = R.string.device_specific_head_unit_model_help,
             value = getString(currentProfile.titleResId),
             isEnabled = true,
             onClick = {
@@ -78,6 +79,7 @@ class DeviceSpecificSettingsFragment : Fragment() {
                 stableId = hack.id,
                 nameResId = hack.titleResId,
                 descriptionResId = hack.descriptionResId,
+                helpResId = hack.helpResId,
                 isChecked = deviceSettings.isEnabled(hack),
                 isEnabled = availability[hack.id] == true || deviceSettings.isEnabled(hack),
                 descriptionOverride = if (hack.id in checking) {

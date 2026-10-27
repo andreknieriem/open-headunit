@@ -8,6 +8,7 @@ import android.os.Build
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.SeekBar
 import android.widget.TextView
@@ -35,6 +36,10 @@ sealed class SettingItem {
         // names of the settings inside a sub-screen). Not shown in the UI.
         val searchKeywords: String? = null,
         val isEnabled: Boolean = true,
+        /** The summary: one line under the name, at most 80 characters. */
+        @StringRes val descriptionResId: Int? = null,
+        /** The text the (?) opens. */
+        @StringRes val helpResId: Int? = null,
         val onClick: (settingId: String) -> Unit // Callback when the setting is clicked
     ) : SettingItem()
 
@@ -47,7 +52,10 @@ sealed class SettingItem {
         override val stableId: String,
         @StringRes val nameResId: Int,
         var value: String,
+        /** The summary: one line under the name, at most 80 characters. */
         @StringRes val descriptionResId: Int? = null,
+        /** The text the (?) opens. */
+        @StringRes val helpResId: Int? = null,
         val searchKeywords: String? = null,
         val onClick: (settingId: String) -> Unit,
         val onTest: () -> Unit
@@ -56,6 +64,7 @@ sealed class SettingItem {
     data class ToggleSettingEntry(
         override val stableId: String,
         @StringRes val nameResId: Int,
+        /** The summary: one line under the name, at most 80 characters. */
         @StringRes val descriptionResId: Int?,
         var isChecked: Boolean,
         val isEnabled: Boolean = true,
@@ -63,6 +72,8 @@ sealed class SettingItem {
         /** Replaces [descriptionResId] when the subtitle depends on the device, not the string. */
         val descriptionOverride: String? = null,
         val searchKeywords: String? = null,
+        /** The text the (?) opens. */
+        @StringRes val helpResId: Int? = null,
         val onCheckedChanged: (Boolean) -> Unit
     ) : SettingItem()
 
@@ -74,6 +85,8 @@ sealed class SettingItem {
         val valueFrom: Float,
         val valueTo: Float,
         val stepSize: Float,
+        /** The text the (?) opens. */
+        @StringRes val helpResId: Int? = null,
         val onValueChanged: (Float) -> Unit
     ) : SettingItem()
 
@@ -97,6 +110,8 @@ sealed class SettingItem {
         @StringRes val nameResId: Int,
         val options: List<String>, // Exactly 3 options for now as per layout
         var selectedIndex: Int,
+        /** The text the (?) opens. */
+        @StringRes val helpResId: Int? = null,
         val onOptionSelected: (Int) -> Unit
     ) : SettingItem()
 
@@ -132,6 +147,20 @@ class SettingsAdapter : ListAdapter<SettingItem, RecyclerView.ViewHolder>(Settin
         /** Rebind payload that only refreshes a row's group corners. */
         private const val PAYLOAD_GROUP_SHAPE = "groupShape"
 
+        /** Shows the (?) when the row has help and hides it otherwise: holders are recycled. */
+        private fun bindHelp(button: ImageButton, item: SettingItem, name: CharSequence, colors: SettingsPalette) {
+            val helpResId = SettingHelpPolicy.helpResId(item)
+            if (!SettingHelpPolicy.showsHelp(item) || helpResId == null) {
+                button.visibility = View.GONE
+                button.setOnClickListener(null)
+                return
+            }
+            button.setImageResource(if (colors.filledIcons) R.drawable.ic_sym_help_fill else R.drawable.ic_sym_help)
+            button.setColorFilter(colors.onSurfaceVariant, PorterDuff.Mode.SRC_IN)
+            button.contentDescription = button.context.getString(R.string.setting_help_for, name)
+            button.setOnClickListener { SettingHelpDialog.show(button.context, name, helpResId, item.stableId) }
+            button.visibility = View.VISIBLE
+        }
     }
 
     // Resolved from the first parent's theme; every screen using this adapter shares one theme.
@@ -159,7 +188,7 @@ class SettingsAdapter : ListAdapter<SettingItem, RecyclerView.ViewHolder>(Settin
         val colors = palette(parent)
         return when (viewType) {
             VIEW_TYPE_HEADER -> HeaderViewHolder(inflater.inflate(R.layout.layout_category_header, parent, false))
-            VIEW_TYPE_SETTING -> SettingViewHolder(inflater.inflate(R.layout.layout_setting_item, parent, false))
+            VIEW_TYPE_SETTING -> SettingViewHolder(inflater.inflate(R.layout.layout_setting_item, parent, false), colors)
             VIEW_TYPE_TOGGLE -> ToggleSettingViewHolder(inflater.inflate(R.layout.layout_setting_item_toggle, parent, false), colors)
             VIEW_TYPE_SLIDER -> SliderSettingViewHolder(inflater.inflate(R.layout.layout_setting_item_slider, parent, false), colors)
             VIEW_TYPE_INFO_BANNER -> InfoBannerViewHolder(inflater.inflate(R.layout.layout_setting_info_banner, parent, false))
@@ -242,14 +271,24 @@ class SettingsAdapter : ListAdapter<SettingItem, RecyclerView.ViewHolder>(Settin
         }
     }
 
-    class SettingViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+    class SettingViewHolder(itemView: View, private val colors: SettingsPalette) : RecyclerView.ViewHolder(itemView) {
         private val settingName: TextView = itemView.findViewById(R.id.settingName)
+        private val settingHelp: ImageButton = itemView.findViewById(R.id.settingHelp)
+        private val settingDescription: TextView = itemView.findViewById(R.id.settingDescription)
         private val settingValue: TextView = itemView.findViewById(R.id.settingValue)
         private val settingValueInline: TextView = itemView.findViewById(R.id.settingValueInline)
 
         fun bind(setting: SettingItem.SettingEntry) {
             if (setting.nameOverride != null) settingName.text = setting.nameOverride
             else settingName.setText(setting.nameResId)
+            bindHelp(settingHelp, setting, settingName.text, colors)
+            // Both branches set the visibility, because the holder is recycled.
+            if (setting.descriptionResId != null) {
+                settingDescription.setText(setting.descriptionResId)
+                settingDescription.visibility = View.VISIBLE
+            } else {
+                settingDescription.visibility = View.GONE
+            }
             // Both views are set on every bind, because the holder is recycled.
             val inline = SettingsLayoutPolicy.showValueInline(setting.value)
             settingValueInline.text = if (inline) setting.value else ""
@@ -262,8 +301,9 @@ class SettingsAdapter : ListAdapter<SettingItem, RecyclerView.ViewHolder>(Settin
         }
     }
 
-    class StreamSettingViewHolder(itemView: View, colors: SettingsPalette) : RecyclerView.ViewHolder(itemView) {
+    class StreamSettingViewHolder(itemView: View, private val colors: SettingsPalette) : RecyclerView.ViewHolder(itemView) {
         private val settingName: TextView = itemView.findViewById(R.id.settingName)
+        private val settingHelp: ImageButton = itemView.findViewById(R.id.settingHelp)
         private val settingValue: TextView = itemView.findViewById(R.id.settingValue)
         private val settingDescription: TextView = itemView.findViewById(R.id.settingDescription)
         private val testButton: MaterialButton = itemView.findViewById(R.id.settingTestButton)
@@ -276,6 +316,7 @@ class SettingsAdapter : ListAdapter<SettingItem, RecyclerView.ViewHolder>(Settin
 
         fun bind(setting: SettingItem.StreamSettingEntry) {
             settingName.setText(setting.nameResId)
+            bindHelp(settingHelp, setting, settingName.text, colors)
             settingValue.text = setting.value
             // Both branches set the visibility, because the holder is recycled.
             if (setting.descriptionResId != null) {
@@ -289,8 +330,9 @@ class SettingsAdapter : ListAdapter<SettingItem, RecyclerView.ViewHolder>(Settin
         }
     }
 
-    class ToggleSettingViewHolder(itemView: View, colors: SettingsPalette) : RecyclerView.ViewHolder(itemView) {
+    class ToggleSettingViewHolder(itemView: View, private val colors: SettingsPalette) : RecyclerView.ViewHolder(itemView) {
         private val settingName: TextView = itemView.findViewById(R.id.settingName)
+        private val settingHelp: ImageButton = itemView.findViewById(R.id.settingHelp)
         private val settingDescription: TextView = itemView.findViewById(R.id.settingDescription)
         private val settingSwitch: SwitchCompat = itemView.findViewById(R.id.settingSwitch)
 
@@ -306,6 +348,7 @@ class SettingsAdapter : ListAdapter<SettingItem, RecyclerView.ViewHolder>(Settin
         fun bind(setting: SettingItem.ToggleSettingEntry) {
             if (setting.nameOverride != null) settingName.text = setting.nameOverride
             else settingName.setText(setting.nameResId)
+            bindHelp(settingHelp, setting, settingName.text, colors)
             // Both branches set the visibility, because the holder is recycled. Hiding the view
             // without ever showing it again meant that once a toggle with no description had been
             // bound here, every later toggle reusing this holder rendered without its subtitle.
@@ -374,8 +417,9 @@ class SettingsAdapter : ListAdapter<SettingItem, RecyclerView.ViewHolder>(Settin
         }
     }
 
-    class SliderSettingViewHolder(itemView: View, colors: SettingsPalette) : RecyclerView.ViewHolder(itemView) {
+    class SliderSettingViewHolder(itemView: View, private val colors: SettingsPalette) : RecyclerView.ViewHolder(itemView) {
         private val settingName: TextView = itemView.findViewById(R.id.settingName)
+        private val settingHelp: ImageButton = itemView.findViewById(R.id.settingHelp)
         private val settingValue: TextView = itemView.findViewById(R.id.settingValue)
         private val settingSlider: SeekBar = itemView.findViewById(R.id.settingSlider)
 
@@ -385,6 +429,7 @@ class SettingsAdapter : ListAdapter<SettingItem, RecyclerView.ViewHolder>(Settin
 
         fun bind(setting: SettingItem.SliderSettingEntry) {
             settingName.setText(setting.nameResId)
+            bindHelp(settingHelp, setting, settingName.text, colors)
             settingValue.text = setting.value
 
             // SeekBar works with integers 0 to max.
@@ -418,8 +463,9 @@ class SettingsAdapter : ListAdapter<SettingItem, RecyclerView.ViewHolder>(Settin
         }
     }
 
-    class SegmentedButtonViewHolder(itemView: View, colors: SettingsPalette) : RecyclerView.ViewHolder(itemView) {
+    class SegmentedButtonViewHolder(itemView: View, private val colors: SettingsPalette) : RecyclerView.ViewHolder(itemView) {
         private val settingName: TextView = itemView.findViewById(R.id.settingName)
+        private val settingHelp: ImageButton = itemView.findViewById(R.id.settingHelp)
         private val buttons: List<MaterialButton> = listOf(
             itemView.findViewById(R.id.btnOption1),
             itemView.findViewById(R.id.btnOption2),
@@ -440,6 +486,7 @@ class SettingsAdapter : ListAdapter<SettingItem, RecyclerView.ViewHolder>(Settin
 
         fun bind(setting: SettingItem.SegmentedButtonSettingEntry) {
             settingName.setText(setting.nameResId)
+            bindHelp(settingHelp, setting, settingName.text, colors)
 
             val visibleButtons = buttons.filterIndexed { index, _ -> index < setting.options.size }
             buttons.forEachIndexed { index, button ->
@@ -486,11 +533,13 @@ class SettingsAdapter : ListAdapter<SettingItem, RecyclerView.ViewHolder>(Settin
         override fun areContentsTheSame(oldItem: SettingItem, newItem: SettingItem): Boolean {
             return when {
                 oldItem is SettingItem.SettingEntry && newItem is SettingItem.SettingEntry ->
-                    oldItem.nameResId == newItem.nameResId && oldItem.value == newItem.value && oldItem.isEnabled == newItem.isEnabled
+                    oldItem.nameResId == newItem.nameResId && oldItem.value == newItem.value && oldItem.isEnabled == newItem.isEnabled &&
+                        oldItem.descriptionResId == newItem.descriptionResId && oldItem.helpResId == newItem.helpResId
                 oldItem is SettingItem.ToggleSettingEntry && newItem is SettingItem.ToggleSettingEntry ->
-                    oldItem.nameResId == newItem.nameResId && oldItem.descriptionResId == newItem.descriptionResId && oldItem.isChecked == newItem.isChecked && oldItem.isEnabled == newItem.isEnabled && oldItem.nameOverride == newItem.nameOverride && oldItem.descriptionOverride == newItem.descriptionOverride
+                    oldItem.nameResId == newItem.nameResId && oldItem.descriptionResId == newItem.descriptionResId && oldItem.isChecked == newItem.isChecked && oldItem.isEnabled == newItem.isEnabled && oldItem.nameOverride == newItem.nameOverride && oldItem.descriptionOverride == newItem.descriptionOverride && oldItem.helpResId == newItem.helpResId
                 oldItem is SettingItem.SliderSettingEntry && newItem is SettingItem.SliderSettingEntry ->
-                    oldItem.nameResId == newItem.nameResId && oldItem.value == newItem.value && oldItem.sliderValue == newItem.sliderValue
+                    oldItem.nameResId == newItem.nameResId && oldItem.value == newItem.value && oldItem.sliderValue == newItem.sliderValue &&
+                        oldItem.helpResId == newItem.helpResId
                 oldItem is SettingItem.CategoryHeader && newItem is SettingItem.CategoryHeader ->
                     oldItem.titleResId == newItem.titleResId
                 oldItem is SettingItem.InfoBanner && newItem is SettingItem.InfoBanner ->
@@ -499,9 +548,10 @@ class SettingsAdapter : ListAdapter<SettingItem, RecyclerView.ViewHolder>(Settin
                     oldItem.textResId == newItem.textResId && oldItem.isEnabled == newItem.isEnabled
                 oldItem is SettingItem.StreamSettingEntry && newItem is SettingItem.StreamSettingEntry ->
                     oldItem.nameResId == newItem.nameResId && oldItem.value == newItem.value &&
-                        oldItem.descriptionResId == newItem.descriptionResId
+                        oldItem.descriptionResId == newItem.descriptionResId && oldItem.helpResId == newItem.helpResId
                 oldItem is SettingItem.SegmentedButtonSettingEntry && newItem is SettingItem.SegmentedButtonSettingEntry ->
-                    oldItem.nameResId == newItem.nameResId && oldItem.options == newItem.options && oldItem.selectedIndex == newItem.selectedIndex
+                    oldItem.nameResId == newItem.nameResId && oldItem.options == newItem.options && oldItem.selectedIndex == newItem.selectedIndex &&
+                        oldItem.helpResId == newItem.helpResId
                 oldItem is SettingItem.ScopeNotice && newItem is SettingItem.ScopeNotice ->
                     oldItem.text == newItem.text && oldItem.iconResId == newItem.iconResId
                 else -> false

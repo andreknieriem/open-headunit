@@ -30,6 +30,7 @@ import com.andrerinas.openheadunit.aap.AapService
 import com.andrerinas.openheadunit.connection.usb.UsbAccessoryMode
 import com.andrerinas.openheadunit.connection.usb.UsbDeviceCompat
 import com.andrerinas.openheadunit.connection.usb.UsbDeviceDiagnostics
+import com.andrerinas.openheadunit.connection.usb.UsbPermissionAsks
 import com.andrerinas.openheadunit.connection.usb.UsbReceiver
 import com.andrerinas.openheadunit.utils.Settings
 import com.andrerinas.openheadunit.utils.ToastUtils
@@ -262,7 +263,7 @@ class UsbListFragment : Fragment() {
                         ContextCompat.startForegroundService(mContext, Intent(mContext, AapService::class.java))
                         usbManager.requestPermission(
                             device.wrappedDevice,
-                            UsbReceiver.createPermissionPendingIntent(mContext)
+                            UsbReceiver.createPermissionPendingIntent(mContext, UsbPermissionAsks.newToken())
                         )
                     }
                 }

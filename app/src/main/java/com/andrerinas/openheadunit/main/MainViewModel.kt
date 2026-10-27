@@ -41,6 +41,7 @@ class MainViewModel(application: Application): AndroidViewModel(application), Us
         // registration would deliver every USB event twice.
         if (!isRegistered) {
             ContextCompat.registerReceiver(app, usbReceiver, UsbReceiver.createFilter(), ContextCompat.RECEIVER_NOT_EXPORTED)
+            ContextCompat.registerReceiver(app, usbReceiver, UsbReceiver.createPermissionFilter(), ContextCompat.RECEIVER_NOT_EXPORTED)
             isRegistered = true
         }
         usbDevices.value = createDeviceList(settings.allowedDevices)

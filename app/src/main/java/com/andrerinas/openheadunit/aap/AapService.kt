@@ -3791,11 +3791,16 @@ class AapService : Service() {
      * visible. Uses the same overlay trampoline technique as boot auto-start to bypass OEM
      * background activity start restrictions.
      */
-    fun launchMainActivityIfNeeded(source: String) {
+    fun launchMainActivityIfNeeded(source: String, defersToAndroid: Boolean = false) {
         val settings = App.provide(this).settings
         if (!settings.autoStartOnUsb || !settings.reopenOnReconnection) return
         if (!AutoConnectHoldPolicy.raisesUi(SettingsActivity.isVisible, usbLauncherManager.cancelledByUser)) {
             AppLog.i("Reopen on reconnection: not raised over settings or after the status pill's X ($source)")
+            return
+        }
+        // The attach activity raises the app once the user answers Android's chooser.
+        if (defersToAndroid) {
+            AppLog.i("Reopen on reconnection: not raised, Android owns the USB ask (its chooser or another app's default) ($source)")
             return
         }
 

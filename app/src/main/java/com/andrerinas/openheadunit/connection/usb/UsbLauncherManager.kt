@@ -221,7 +221,7 @@ class UsbLauncherManager(val service: AapService) {
             UsbReceiver.createFilter(),
             ContextCompat.RECEIVER_NOT_EXPORTED
         )
-        ContextCompat.registerReceiver(service, receiver, UsbReceiver.createRecoveryPermissionFilter(),
+        ContextCompat.registerReceiver(service, receiver, UsbReceiver.createPermissionFilter(),
             ContextCompat.RECEIVER_NOT_EXPORTED)
     }
 
@@ -231,6 +231,7 @@ class UsbLauncherManager(val service: AapService) {
 
         isRegistered = false
 
+        // The record outlives the service: a dialog still on screen answers into UsbPermissionResultReceiver.
         try { service.unregisterReceiver(receiver) } catch (_: Exception) {}
     }
 
@@ -250,9 +251,52 @@ class UsbLauncherManager(val service: AapService) {
     internal fun takePermissionOwner(device: UsbDevice): CommManager.ConnectionState.Disconnected? =
         permissionOwners.remove(device.deviceName) ?: pendingSettingsRestart()
 
-    private fun requestPermission(device: UsbDevice, settingsRestart: CommManager.ConnectionState.Disconnected? = null) {
-        val usbManager = UsbDeviceCompat.usbManager(service) ?: return
-        val permissionIntent = UsbReceiver.createPermissionPendingIntent(service)
+    private fun sourceOf(tier: Tier, settingsRestart: CommManager.ConnectionState.Disconnected?) =
+        UsbPermissionAskPolicy.sourceFor(tier == Tier.USER, settingsRestart != null)
+
+    /**
+     * The only place the service decides whether to put up its own permission dialog. It returns
+     * ASK only when the path is now marked as asked; the caller then raises the request.
+     */
+    private fun decideAsk(
+        usbManager: UsbManager, device: UsbDevice, source: UsbPermissionAskPolicy.Source, token: String,
+    ): UsbPermissionAskPolicy.Action {
+        val present = usbManager.deviceList.values.map { it.deviceName }
+        val inputs = UsbDeviceCompat.permissionDecisionInputs(
+            service, App.provide(service).settings, device, source, present,
+        )
+        val decision = UsbPermissionAskPolicy.decide(inputs)
+        AppLog.i("UsbLauncher: permission for ${UsbDeviceCompat(device).uniqueName} at ${device.deviceName}: $decision")
+        if (decision.action != UsbPermissionAskPolicy.Action.ASK) return decision.action
+        if (UsbPermissionAsks.claim(device.deviceName, present, source, token)) return UsbPermissionAskPolicy.Action.ASK
+        AppLog.i("UsbLauncher: a dialog for ${device.deviceName} is already open; not opening a second")
+        return UsbPermissionAskPolicy.Action.ASKED
+    }
+
+    private fun askOrWait(
+        device: UsbDevice,
+        source: UsbPermissionAskPolicy.Source,
+        settingsRestart: CommManager.ConnectionState.Disconnected? = null,
+        onAsk: () -> Unit = {},
+    ): UsbPermissionAskPolicy.Action {
+        val usbManager = UsbDeviceCompat.usbManager(service) ?: return UsbPermissionAskPolicy.Action.HOLD
+        val token = UsbPermissionAsks.newToken()
+        val action = decideAsk(usbManager, device, source, token)
+        if (action == UsbPermissionAskPolicy.Action.ASK) {
+            onAsk()
+            requestPermission(device, token, settingsRestart)
+        }
+        return action
+    }
+
+    private fun requestPermission(
+        device: UsbDevice, token: String, settingsRestart: CommManager.ConnectionState.Disconnected? = null,
+    ) {
+        val usbManager = UsbDeviceCompat.usbManager(service) ?: run {
+            UsbPermissionAsks.complete(device.deviceName, token)
+            return
+        }
+        val permissionIntent = UsbReceiver.createPermissionPendingIntent(service, token)
         if (settingsRestart == null) permissionOwners.remove(device.deviceName)
         else permissionOwners[device.deviceName] = settingsRestart
 
@@ -263,6 +307,7 @@ class UsbLauncherManager(val service: AapService) {
             ToastUtils.showToast(service, service.getString(R.string.requesting_usb_permission), Toast.LENGTH_SHORT)
             usbManager.requestPermission(device, permissionIntent)
         } catch (e: Exception) {
+            UsbPermissionAsks.complete(device.deviceName, token)
             AppLog.e("Failed to request USB permission: ${e.message}. This device might not support USB permission dialogs.", e)
             ToastUtils.showToast(service, service.getString(R.string.error_usb_permission_failed), Toast.LENGTH_LONG)
         }
@@ -294,6 +339,8 @@ class UsbLauncherManager(val service: AapService) {
     private val recoveryObservation = AtomicReference<RecoveryObservation?>(null)
 
     internal fun noteRecoveryDeviceDetached(device: UsbDevice) {
+        // The process observer also clears this, but in no fixed order, and recovery reads it next.
+        UsbPermissionAsks.noteDetach(device.deviceName)
         val observation = recoveryObservation.get() ?: return
         observation.target?.let { target ->
             target.noteDetach(device.deviceName, device.vendorId, device.productId)
@@ -329,12 +376,18 @@ class UsbLauncherManager(val service: AapService) {
         if (manager.hasPermission(device)) return RecoveryPermissionResult.GRANTED
         val request = RecoveryPermission(java.util.UUID.randomUUID().toString(), device.deviceName)
         if (!ConnectionArbiter.runIfHeld(claim) { recoveryPermission.set(request) }) return RecoveryPermissionResult.LOST_CANDIDATE
-        var intent: android.app.PendingIntent? = null
         try {
             while (SettingsActivity.isVisible && recoveryNowMs() < deadline && stillOwned()) delay(100)
             if (SettingsActivity.isVisible || recoveryNowMs() >= deadline || !stillOwned()) return RecoveryPermissionResult.LOST_CANDIDATE
-            intent = recoveryPermissionIntent(request.token)
-            manager.requestPermission(device, intent)
+            val intent = recoveryPermissionIntent(request.token)
+            if (decideAsk(manager, device, UsbPermissionAskPolicy.Source.RECOVERY, request.token) == UsbPermissionAskPolicy.Action.ASK) {
+                try {
+                    manager.requestPermission(device, intent)
+                } catch (error: Exception) {
+                    UsbPermissionAsks.complete(device.deviceName, request.token)
+                    throw error
+                }
+            }
             while (recoveryNowMs() < deadline && stillOwned()) {
                 if (request.result.isCompleted) {
                     if (!request.result.await()) return RecoveryPermissionResult.REJECTED
@@ -353,8 +406,9 @@ class UsbLauncherManager(val service: AapService) {
             AppLog.w("UsbLauncher: recovery permission request failed: ${error.message}")
             return RecoveryPermissionResult.REJECTED
         } finally {
+            // The intent stays live: the dialog can outlive this recovery, and its answer must still end
+            // the entry. A late recovery answer is dropped here once the token no longer matches.
             recoveryPermission.compareAndSet(request, null)
-            intent?.cancel()
         }
     }
 
@@ -723,7 +777,7 @@ class UsbLauncherManager(val service: AapService) {
                 if (!beginAttempt(tier, "USB $deviceName", settingsRestart)) return
                 ConnectionStageTracker.beginAttempt(ConnectionStage.USB_ATTACHED)
                 launchAttempt(settingsRestart) {
-                    if (awaitAccessoryPermission(usbManager, device, deviceName, settingsRestart)) {
+                    if (awaitAccessoryPermission(usbManager, device, deviceName, settingsRestart, tier)) {
                         connectWithRetry(device, tier = tier, settingsRestart = settingsRestart)
                     }
                 }
@@ -757,8 +811,8 @@ class UsbLauncherManager(val service: AapService) {
                         }
                         return
                     } else {
-                        AppLog.i("Found known USB device but no permission: ${deviceCompat.uniqueName}, requesting...")
-                        requestPermission(device, settingsRestart)
+                        AppLog.i("Found known USB device but no permission: ${deviceCompat.uniqueName}")
+                        askOrWait(device, sourceOf(tier, settingsRestart), settingsRestart)
                         return
                     }
                 }
@@ -888,8 +942,8 @@ class UsbLauncherManager(val service: AapService) {
                 }
             }
         } else {
-            AppLog.i("Single USB auto-connect: device found but no permission, requesting...")
-            requestPermission(device, settingsRestart)
+            AppLog.i("Single USB auto-connect: device found but no permission")
+            askOrWait(device, sourceOf(tier, settingsRestart), settingsRestart)
         }
     }
 
@@ -904,6 +958,7 @@ class UsbLauncherManager(val service: AapService) {
         device: UsbDevice,
         deviceName: String,
         settingsRestart: CommManager.ConnectionState.Disconnected?,
+        tier: Tier = Tier.USB,
     ): Boolean {
         if (usbManager.hasPermission(device)) return true
 
@@ -917,8 +972,12 @@ class UsbLauncherManager(val service: AapService) {
             }
         }
 
-        AppLog.i("Accessory-mode device has no permission (re-enumerated); requesting permission: $deviceName")
-        requestPermission(device, settingsRestart)
+        val action = askOrWait(device, sourceOf(tier, settingsRestart), settingsRestart) {
+            AppLog.i("UsbLauncher: Accessory-mode device has no permission (re-enumerated); requesting permission: $deviceName")
+        }
+        if (action == UsbPermissionAskPolicy.Action.DEFER) {
+            AppLog.i("UsbLauncher: Accessory-mode device has no permission yet; the ask is deferred to Android (its chooser or another app's default): $deviceName")
+        }
         return false
     }
 
@@ -960,7 +1019,7 @@ class UsbLauncherManager(val service: AapService) {
                 }
                 val fresh = matches.firstOrNull { it.deviceName == device.deviceName }
                     ?: matches.singleOrNull() ?: return
-                if (!awaitAccessoryPermission(usbManager, fresh, UsbDeviceCompat.getUniqueName(fresh), settingsRestart)) return
+                if (!awaitAccessoryPermission(usbManager, fresh, UsbDeviceCompat.getUniqueName(fresh), settingsRestart, tier)) return
                 if (SystemClock.elapsedRealtime() >= settingsRestart.settingsRestartUntilMs ||
                     !settingsRestart.acceptsSettingsRestart(commManager.connectionState.value)) return
                 fresh

@@ -487,7 +487,7 @@ class UsbDeferredRecheckTest {
         switching(bus, issued = true, reenumerates = true).use {
             settled(f, endHandshake(f, bus))
             verify(f.usb).requestPermission(bus.fresh, intent)
-            verify(intent).cancel()
+            verify(intent, never()).cancel()
             runBlocking { verify(f.comm).reconnectUsb(eqValue(bus.fresh), anyValue(), anyValue(), anyValue()) }
             clearInvocations(f.comm)
             UsbLauncherListener(f.launcher).onUsbRecoveryPermission(token, true, bus.fresh)
@@ -510,7 +510,7 @@ class UsbDeferredRecheckTest {
         }.`when`(f.usb).requestPermission(eqValue(bus.fresh), eqValue(intent))
         switching(bus, issued = true, reenumerates = true).use {
             settled(f, endHandshake(f, bus))
-            verify(intent).cancel()
+            verify(intent, never()).cancel()
             runBlocking { verify(f.comm, never()).reconnectUsb(anyValue(), anyValue(), anyValue(), anyValue()) }
         }
     }
@@ -533,7 +533,7 @@ class UsbDeferredRecheckTest {
         switching(bus, issued = true, reenumerates = true).use {
             settled(f, endHandshake(f, bus))
             verify(f.usb).requestPermission(bus.fresh, intent)
-            verify(intent).cancel()
+            verify(intent, never()).cancel()
             runBlocking { verify(f.comm, never()).reconnectUsb(anyValue(), anyValue(), anyValue(), anyValue()) }
         }
     }
@@ -566,7 +566,7 @@ class UsbDeferredRecheckTest {
             settled(f, endHandshake(f, bus))
             assertEquals(2, tokens.size)
             assertNotEquals(tokens[0], tokens[1])
-            verify(intent, times(2)).cancel()
+            verify(intent, never()).cancel()
             runBlocking { verify(f.comm).reconnectUsb(eqValue(bus.fresh), anyValue(), anyValue(), anyValue()) }
         }
     }
@@ -615,10 +615,12 @@ class UsbDeferredRecheckTest {
         var token = ""
         var requests = 0
         doAnswer { token = it.getArgument(0); intent }.`when`(f.launcher).recoveryPermissionIntent(anyString())
-        doAnswer { betweenCandidates.set(true); null }.`when`(intent).cancel()
         doAnswer {
             requests++
-            if (requests == 1) f.launcher.noteRecoveryDeviceDetached(bus.fresh)
+            if (requests == 1) {
+                f.launcher.noteRecoveryDeviceDetached(bus.fresh)
+                betweenCandidates.set(true)
+            }
             else {
                 granted.set(true)
                 f.launcher.onRecoveryPermission(token, true, bus.fresh)
@@ -689,10 +691,21 @@ class UsbDeferredRecheckTest {
         }.`when`(f.usb).requestPermission(eqValue(bus.fresh), eqValue(intent))
         switching(bus, issued = true, reenumerates = true).use {
             settled(f, endHandshake(f, bus))
-            verify(intent).cancel()
+            verify(intent, never()).cancel()
             runBlocking { verify(f.comm, never()).reconnectUsb(anyValue(), anyValue(), anyValue(), anyValue()) }
             verify(f.launcher, never()).checkAlreadyConnected(anyBoolean(), anyBoolean(), any(), anyBoolean())
+            // The unanswered dialog may still be up, so the path stays asked after the recovery ends.
+            assertTrue(UsbPermissionAsks.isAsked(bus.fresh.deviceName, listOf(bus.fresh.deviceName)))
         }
+    }
+
+    @Test fun aServiceTeardownKeepsAnOpenPermissionEntry() = fixture { f ->
+        val path = "/dev/bus/usb/001/009"
+        assertTrue(UsbPermissionAsks.tryMark(path, listOf(path), "a"))
+        f.launcher.isRegistered = true
+        f.launcher.unregister()
+        // The dialog outlives the service, so the recreated service must still see it as asked.
+        assertTrue(UsbPermissionAsks.isAsked(path, listOf(path)))
     }
 
     @Test fun aRecoveryStepFreesTheSlotWhenItEnds() = fixture { f ->
@@ -954,6 +967,7 @@ class UsbDeferredRecheckTest {
             }
             ConnectionArbiter.reset()
             ConnectionArbiter.clock = { 1000L }
+            UsbPermissionAsks.resetForTest()
             val f = Fixture()
             clock.`when`<Long> { SystemClock.elapsedRealtime() }.thenAnswer { f.now }
             try { block(f) } finally {

@@ -20,6 +20,7 @@ import androidx.core.content.ContextCompat
 import androidx.multidex.MultiDex
 import com.andrerinas.openheadunit.main.BackgroundNotification
 import com.andrerinas.openheadunit.aap.AapNavigation
+import com.andrerinas.openheadunit.connection.usb.UsbPermissionAsks
 import com.andrerinas.openheadunit.ssl.ConscryptInitializer
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.AppThemeManager
@@ -65,6 +66,12 @@ class App : Application(), Application.ActivityLifecycleCallbacks {
         }
 
 
+
+        try {
+            UsbPermissionAsks.observeDetaches(this)
+        } catch (e: Exception) {
+            AppLog.w("App", "Failed to register the USB detach observer", e)
+        }
 
         // Enable vector drawable support on older Android versions
         AppCompatDelegate.setCompatVectorFromResourcesEnabled(true)

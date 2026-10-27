@@ -146,6 +146,8 @@ class SettingsFragment : Fragment() {
         "hotspotSsidOverride", "hotspotPasswordOverride",
         // "What is my head unit's WiFi password" is an everyday question, not an Advanced one.
         "wifiDirectLastNetwork", "wifiDirectGroupIdentity",
+        // Which phone Native AA wakes: the first thing to set when two phones share the car.
+        "nativePokeBt", "nativePokeAllPaired",
         "hotspotInterfaceOverride",
         // Dark mode
         "darkModeSettings",
@@ -229,6 +231,8 @@ class SettingsFragment : Fragment() {
     private var pendingNativeDriverSelectionMode by pending::nativeDriverSelectionMode
     private var pendingNativeDriverSelectionTimeout by pending::nativeDriverSelectionTimeout
     private var pendingNativePreferredDeviceMac by pending::nativePreferredDeviceMac
+    private var pendingNativePokeBtMacs by pending::nativePokeBtMacs
+    private var pendingNativePokeAllPaired by pending::nativePokeAllPaired
     private var pendingWifiDirectBand by pending::wifiDirectBand
     private var pendingWifiDirectStableIdentity by pending::wifiDirectStableIdentity
     // The pair and its provenance move together; null on the second means neither was edited,
@@ -288,6 +292,16 @@ class SettingsFragment : Fragment() {
         } else {
             ToastUtils.showToast(requireContext(), R.string.bt_permission_denied, Toast.LENGTH_LONG, force = true)
         }
+    }
+
+    // The wake list also lists paired devices, so it needs the same permission.
+    private val wakeDevicePermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+        if (isGranted) showWakeDevicePicker()
+        else ToastUtils.showToast(requireContext(), R.string.bt_permission_denied, Toast.LENGTH_LONG, force = true)
+    }
+
+    private val wakeBluetoothEnableLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) showWakeDevicePicker()
     }
 
     private val bluetoothPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
@@ -529,6 +543,33 @@ class SettingsFragment : Fragment() {
             .show()
     }
 
+    /** The Native AA wake list. Only a phone can answer the wake, so the list offers phones. */
+    private fun showWakeDevicePicker() {
+        if (!BluetoothHelper.canReadPairedDevices(requireContext())) {
+            wakeDevicePermissionLauncher.launch(android.Manifest.permission.BLUETOOTH_CONNECT)
+            return
+        }
+        val adapter = BluetoothHelper.getBluetoothAdapter(requireContext())
+        if (adapter == null || !adapter.isEnabled) {
+            if (adapter == null && BluetoothDevicePicker.showManufacturerDevices(requireContext())) return
+            // A unit whose phone pairs to an external module may have no adapter to turn on.
+            if (BluetoothHelper.externalBtEvidence != null) {
+                ToastUtils.showToast(requireContext(), getString(R.string.bt_external_module_no_picker), Toast.LENGTH_LONG, force = true)
+                return
+            }
+            wakeBluetoothEnableLauncher.launch(Intent(android.bluetooth.BluetoothAdapter.ACTION_REQUEST_ENABLE))
+            return
+        }
+        val selected = pendingNativePokeBtMacs ?: settings.nativePokeBtMacs
+        BluetoothDevicePicker.show(requireContext(), R.string.select_bt_poke_device, selected, { device ->
+            BluetoothHelper.isLikelyPhone(device, settings.nativePreferredDeviceMac, settings.lastConnectedNativeMac)
+        }) { chosen ->
+            pendingNativePokeBtMacs = chosen
+            checkChanges()
+            updateSettingsList()
+        }
+    }
+
     private fun handleBackPress() {
         if (header?.handleBack() == true) return
         if (hasChanges) {
@@ -665,6 +706,8 @@ class SettingsFragment : Fragment() {
         pendingNativeDriverSelectionMode?.let { if (it != settings.nativeDriverSelectionMode) settings.nativeDriverSelectionMode = it }
         pendingNativeDriverSelectionTimeout?.let { if (it != settings.nativeDriverSelectionTimeoutSec) settings.nativeDriverSelectionTimeoutSec = it }
         pendingNativePreferredDeviceMac?.let { if (it != settings.nativePreferredDeviceMac) settings.nativePreferredDeviceMac = it }
+        pendingNativePokeBtMacs?.let { if (it != settings.nativePokeBtMacs) settings.nativePokeBtMacs = it }
+        pendingNativePokeAllPaired?.let { if (it != settings.nativePokeAllPairedDevices) settings.nativePokeAllPairedDevices = it }
         pendingWifiDirectBand?.let { if (it != settings.wifiDirectBand) settings.wifiDirectBand = it }
         pendingWifiDirectStableIdentity?.let { if (it != settings.wifiDirectStableIdentity) settings.wifiDirectStableIdentity = it }
         // The pair is written whole, null included, so a Reset really does hand the choice back.
@@ -1227,6 +1270,32 @@ class SettingsFragment : Fragment() {
                         } else {
                             preferredDevicePermissionLauncher.launch(android.Manifest.permission.BLUETOOTH_CONNECT)
                         }
+                    }
+                ))
+            }
+
+            // Which phone the wake reaches. Beside driver selection, since both choose the phone.
+            val wakeMacs = pendingNativePokeBtMacs ?: settings.nativePokeBtMacs
+            items.add(SettingItem.SettingEntry(
+                stableId = "nativePokeBt",
+                nameResId = R.string.native_poke_bt_label,
+                helpResId = R.string.native_poke_bt_help,
+                value = BluetoothDevicePicker.summaryFor(requireContext(), wakeMacs)
+                    ?: getString(R.string.bt_device_not_set),
+                onClick = { _ -> showWakeDevicePicker() }
+            ))
+
+            // Only asked when nothing is chosen: a chosen device is never widened.
+            if (wakeMacs.isEmpty()) {
+                items.add(SettingItem.ToggleSettingEntry(
+                    stableId = "nativePokeAllPaired",
+                    nameResId = R.string.native_poke_all_paired_label,
+                    descriptionResId = R.string.native_poke_all_paired_summary,
+                    helpResId = R.string.native_poke_all_paired_description,
+                    isChecked = pendingNativePokeAllPaired ?: settings.nativePokeAllPairedDevices,
+                    onCheckedChanged = { isChecked ->
+                        pendingNativePokeAllPaired = isChecked
+                        checkChanges()
                     }
                 ))
             }

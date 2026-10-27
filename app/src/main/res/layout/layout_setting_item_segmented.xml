@@ -2,6 +2,7 @@
 <!-- A choice of up to three options as a Material 3 segmented button. Colors and corner shapes
      are set in code (SettingsAdapter.SegmentedButtonViewHolder). -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -14,14 +15,41 @@
     android:paddingRight="@dimen/settings_row_padding_start"
     android:paddingBottom="@dimen/settings_row_padding_vertical">
 
-    <TextView
-        android:id="@+id/settingName"
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:textColor="?attr/settingsOnSurface"
-        android:textSize="@dimen/settings_row_title_size"
-        tools:text="Wireless Mode" />
+        android:layout_marginTop="4dp">
+
+        <TextView
+            android:id="@+id/settingName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="?attr/settingsOnSurface"
+            android:textSize="@dimen/settings_row_title_size"
+            tools:text="Wireless Mode"
+            app:layout_constrainedWidth="true"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/settingHelp"
+            app:layout_constraintHorizontal_bias="0"
+            app:layout_constraintHorizontal_chainStyle="packed"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <ImageButton
+            android:id="@+id/settingHelp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:padding="14dp"
+            android:scaleType="fitCenter"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/settingName"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:ignore="ContentDescription" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
     <LinearLayout
         android:id="@+id/buttonContainer"

@@ -137,11 +137,11 @@ class SettingsFragment : Fragment() {
         // is picked, and on a device that will not let an app read its hotspot configuration the
         // manual name is the only way to finish setting the route up.
         "wifiConnectionMode",
-        "nativeApTransport", "nativeApTransportHint", "hotspotBand", "hotspotBandHint",
+        "nativeApTransport", "hotspotBand",
         // The WiFi Direct band, for the same reason as the hotspot one beside it: it is the first
         // thing to try when a wireless session connects and shows no picture, and a user sent to
         // Advanced to find it is a user who never finds it.
-        "wifiDirectBand", "wifiDirectBandHint",
+        "wifiDirectBand",
         // And the channel within the band, which is the same kind of first thing to try: a
         // network on a channel the phone's regulatory domain forbids is one it never lists.
         "fiveGhzChannel",
@@ -821,6 +821,7 @@ class SettingsFragment : Fragment() {
         items.add(SettingItem.SettingEntry(
             stableId = "autoOptimize",
             nameResId = R.string.auto_optimize,
+            helpResId = R.string.auto_optimize_help,
             value = getString(R.string.auto_optimize_desc),
             onClick = { _ ->
                 onboardingLauncher.launch(Intent(requireContext(), OnboardingActivity::class.java))
@@ -845,6 +846,7 @@ class SettingsFragment : Fragment() {
         items.add(SettingItem.SettingEntry(
             stableId = "connectionMode",
             nameResId = R.string.connection_mode,
+            helpResId = R.string.connection_mode_help,
             value = connectionModesLabel(),
             onClick = { showConnectionModeDialog() }
         ))
@@ -902,6 +904,7 @@ class SettingsFragment : Fragment() {
             stableId = "showToastMessages",
             nameResId = R.string.show_toast_messages,
             descriptionResId = R.string.show_toast_messages_description,
+            helpResId = R.string.show_toast_messages_help,
             isChecked = pendingShowToastMessages ?: true,
             onCheckedChanged = { isChecked ->
                 pendingShowToastMessages = isChecked
@@ -915,6 +918,7 @@ class SettingsFragment : Fragment() {
                 stableId = "useLibusb",
                 nameResId = R.string.use_libusb,
                 descriptionResId = R.string.use_libusb_description,
+                helpResId = R.string.use_libusb_help,
                 isChecked = pendingUseLibusb ?: false,
                 onCheckedChanged = { isChecked ->
                     pendingUseLibusb = isChecked
@@ -986,6 +990,7 @@ class SettingsFragment : Fragment() {
             nameResId = R.string.wireless_mode,
             options = wirelessModeOptions,
             selectedIndex = wirelessSelectedIndex,
+            helpResId = R.string.wireless_mode_description,
             onOptionSelected = { index ->
                 val newMode = when (index) {
                     0 -> WifiLauncherMode.HELPER // Helper
@@ -1037,6 +1042,7 @@ class SettingsFragment : Fragment() {
             items.add(SettingItem.SegmentedButtonSettingEntry(
                 stableId = "nativeApTransport",
                 nameResId = R.string.native_ap_transport,
+                helpResId = R.string.native_ap_transport_hint,
                 options = listOf(
                     getString(R.string.native_ap_transport_wifi_direct),
                     getString(R.string.native_ap_transport_hotspot)
@@ -1056,11 +1062,6 @@ class SettingsFragment : Fragment() {
             ))
 
             if (pendingNativeTransport() == NativeTransport.HOTSPOT) {
-                items.add(SettingItem.InfoBanner(
-                    stableId = "nativeApTransportHint",
-                    textResId = R.string.native_ap_transport_hint
-                ))
-
                 // This route reads autoEnableHotspot in two places - SoftApCredentialsProvider
                 // switches the access point on when none is found, and UserExitHotspotPolicy
                 // decides from it whether a user exit takes the network down - so the toggle
@@ -1083,6 +1084,7 @@ class SettingsFragment : Fragment() {
                 items.add(SettingItem.SettingEntry(
                     stableId = "hotspotSsidOverride",
                     nameResId = R.string.hotspot_ssid_override,
+                    helpResId = R.string.hotspot_ssid_override_help,
                     value = manualSsid.ifEmpty { getString(R.string.auto) },
                     searchKeywords = getString(R.string.connection_issue_remedy_hotspot_query),
                     onClick = { _ ->
@@ -1104,6 +1106,7 @@ class SettingsFragment : Fragment() {
                 items.add(SettingItem.SettingEntry(
                     stableId = "hotspotPasswordOverride",
                     nameResId = R.string.hotspot_password_override,
+                    helpResId = R.string.hotspot_password_override_help,
                     value = if (manualPassword.isEmpty()) getString(R.string.auto) else "\u2022".repeat(manualPassword.length),
                     searchKeywords = getString(R.string.connection_issue_remedy_hotspot_query),
                     onClick = { _ ->
@@ -1125,6 +1128,7 @@ class SettingsFragment : Fragment() {
                 items.add(SettingItem.SettingEntry(
                     stableId = "hotspotInterfaceOverride",
                     nameResId = R.string.hotspot_interface_override,
+                    helpResId = R.string.hotspot_interface_override_help,
                     value = manualInterface.ifEmpty { getString(R.string.auto) },
                     onClick = { _ ->
                         DialogUtils.showTextInputDialogWithMessage(
@@ -1148,6 +1152,7 @@ class SettingsFragment : Fragment() {
                 items.add(SettingItem.SettingEntry(
                     stableId = "projectionSetupQr",
                     nameResId = R.string.native_aa_setup_qr_title,
+                    helpResId = R.string.native_aa_setup_qr_help,
                     value = getString(R.string.native_aa_setup_qr_description),
                     onClick = { _ -> ProjectionSetupQrDialog.show(requireContext()) }
                 ))
@@ -1198,6 +1203,7 @@ class SettingsFragment : Fragment() {
             items.add(SettingItem.SegmentedButtonSettingEntry(
                 stableId = "nativeDriverSelectionMode",
                 nameResId = R.string.native_driver_selection_title,
+                helpResId = R.string.native_driver_selection_summary,
                 options = listOf(
                     getString(R.string.native_driver_selection_mode_off),
                     getString(R.string.native_driver_selection_mode_auto),
@@ -1216,6 +1222,7 @@ class SettingsFragment : Fragment() {
                 items.add(SettingItem.SliderSettingEntry(
                     stableId = "nativeDriverSelectionTimeout",
                     nameResId = R.string.native_driver_selection_timeout,
+                    helpResId = R.string.native_driver_selection_timeout_help,
                     value = "${currentTimeout}s",
                     sliderValue = currentTimeout.toFloat(),
                     valueFrom = NativeDriverSelectionPolicy.MIN_TIMEOUT_SEC.toFloat(),
@@ -1237,6 +1244,7 @@ class SettingsFragment : Fragment() {
                 items.add(SettingItem.SettingEntry(
                     stableId = "nativePreferredDevice",
                     nameResId = R.string.native_driver_preferred_device,
+                    helpResId = R.string.native_driver_preferred_device_help,
                     value = prefDeviceName,
                     onClick = { _ ->
                         if (BluetoothHelper.canReadPairedDevices(requireContext())) {
@@ -1252,6 +1260,7 @@ class SettingsFragment : Fragment() {
             items.add(SettingItem.SettingEntry(
                 stableId = "bluetoothAdapterServiceName",
                 nameResId = R.string.bluetooth_adapter_label,
+                helpResId = R.string.bluetooth_adapter_description,
                 value = BluetoothHelper.getAdapterDescription(requireContext(), currentServiceName),
                 onClick = { _ ->
                     val serviceNames = BluetoothHelper.listBluetoothServices()
@@ -1279,6 +1288,7 @@ class SettingsFragment : Fragment() {
             items.add(SettingItem.SettingEntry(
                 stableId = "nativeAaWakeRemeasure",
                 nameResId = R.string.native_aa_wake_remeasure,
+                helpResId = R.string.native_aa_wake_remeasure_help,
                 value = getString(
                     when (NativeAaWakeDamagePolicy.Verdict.of(settings.nativeAaWakeDamageVerdict)) {
                         NativeAaWakeDamagePolicy.Verdict.UNKNOWN -> R.string.native_aa_wake_verdict_unmeasured
@@ -1334,7 +1344,8 @@ class SettingsFragment : Fragment() {
                 items.add(SettingItem.ToggleSettingEntry(
                     stableId = "nativeAaIgnoreExternalBt",
                     nameResId = R.string.native_aa_ignore_external_bt,
-                    descriptionResId = if ((radioDiscovery.decision.requiresIdentity || hctService) && radioFytEvidence == null)
+                    descriptionResId = R.string.native_aa_ignore_external_bt_summary,
+                    helpResId = if ((radioDiscovery.decision.requiresIdentity || hctService) && radioFytEvidence == null)
                         R.string.native_aa_candidate_android_radio_description else R.string.native_aa_ignore_external_bt_description,
                     isChecked = ignoreChecked,
                     searchKeywords = "external bluetooth module rfcomm override compatibility anyway",
@@ -1358,6 +1369,7 @@ class SettingsFragment : Fragment() {
                     // resources so it is absent from the Play Store build entirely.
                     nameResId = VpnControl.toggleNameRes,
                     descriptionResId = VpnControl.toggleDescriptionRes,
+                    helpResId = VpnControl.toggleHelpRes.takeIf { it != 0 },
                     isChecked = pendingKeepDummyVpnDuringSession ?: settings.keepDummyVpnDuringSession,
                     searchKeywords = "vpn offline tun stutter dropout audio video 2.4 ghz network scan",
                     onCheckedChanged = { isChecked ->
@@ -1389,7 +1401,8 @@ class SettingsFragment : Fragment() {
             items.add(SettingItem.ToggleSettingEntry(
                 stableId = "externalBtBlinkTransport",
                 nameResId = R.string.external_bt_blink_transport,
-                descriptionResId = R.string.external_bt_blink_transport_description,
+                descriptionResId = R.string.external_bt_blink_transport_summary,
+                helpResId = R.string.external_bt_blink_transport_description,
                 isChecked = blinkEnabled,
                 searchKeywords = "fyt blink duduauto dudu carlink external bluetooth module transport auto_serial",
                 onCheckedChanged = { isChecked ->
@@ -1411,7 +1424,8 @@ class SettingsFragment : Fragment() {
             items.add(SettingItem.ToggleSettingEntry(
                 stableId = "externalBtZjSocketTransport",
                 nameResId = R.string.external_bt_zj_socket_transport,
-                descriptionResId = R.string.external_bt_zj_socket_transport_description,
+                descriptionResId = R.string.external_bt_zj_socket_transport_summary,
+                helpResId = R.string.external_bt_zj_socket_transport_description,
                 isChecked = zjChecked,
                 searchKeywords = "zj zlink gocsdk socket unix external bluetooth module transport handshake",
                 onCheckedChanged = { isChecked ->
@@ -1437,7 +1451,8 @@ class SettingsFragment : Fragment() {
             items.add(SettingItem.ToggleSettingEntry(
                 stableId = "externalBtZbtTransport",
                 nameResId = R.string.external_bt_transport,
-                descriptionResId = if (zbtDiscovery.decision.requiresIdentity)
+                descriptionResId = R.string.external_bt_transport_summary,
+                helpResId = if (zbtDiscovery.decision.requiresIdentity)
                     R.string.external_bt_candidate_transport_description else R.string.external_bt_transport_description,
                 isChecked = pendingExternalBtZbtTransport ?: settings.externalBtZbtTransport,
                 searchKeywords = "zbt zlink external bluetooth module transport handshake vendor daemon",
@@ -1451,6 +1466,7 @@ class SettingsFragment : Fragment() {
             items.add(SettingItem.SettingEntry(
                 stableId = "zbtProbe",
                 nameResId = R.string.zbt_probe_title,
+                helpResId = R.string.zbt_probe_help,
                 value = zbtProbeResult ?: getString(R.string.zbt_probe_idle),
                 searchKeywords = "zbt zlink external bluetooth module probe test vendor daemon rfcomm",
                 onClick = { _ -> confirmAndRunZbtProbe() }
@@ -1462,6 +1478,7 @@ class SettingsFragment : Fragment() {
             items.add(SettingItem.SegmentedButtonSettingEntry(
                 stableId = "serverModeSelection",
                 nameResId = R.string.server_mode_label,
+                helpResId = R.string.server_mode_help,
                 options = listOf(getString(R.string.server_mode_manual), getString(R.string.server_mode_auto)),
                 selectedIndex = if (pendingWifiConnectionMode == WifiLauncherMode.MANUAL) 0 else 1,
                 onOptionSelected = { index ->
@@ -1485,6 +1502,7 @@ class SettingsFragment : Fragment() {
                 stableId = "helperStrategy",
                 nameResId = R.string.helper_strategy_label,
                 value = helperStrategies.getOrElse(currentStrategyId) { "" },
+                helpResId = R.string.helper_strategy_help,
                 onClick = {
                     MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
                         .setTitle(R.string.helper_strategy_label)
@@ -1513,7 +1531,8 @@ class SettingsFragment : Fragment() {
                 items.add(SettingItem.ToggleSettingEntry(
                     stableId = "waitForWifi",
                     nameResId = R.string.wait_for_wifi,
-                    descriptionResId = R.string.wait_for_wifi_description,
+                    descriptionResId = R.string.wait_for_wifi_summary,
+                    helpResId = R.string.wait_for_wifi_description,
                     isChecked = pendingWaitForWifi ?: false,
                     onCheckedChanged = { isChecked ->
                         pendingWaitForWifi = isChecked
@@ -1526,6 +1545,7 @@ class SettingsFragment : Fragment() {
                     items.add(SettingItem.SliderSettingEntry(
                         stableId = "waitForWifiTimeout",
                         nameResId = R.string.wait_for_wifi_timeout,
+                        helpResId = R.string.wait_for_wifi_timeout_help,
                         value = "${pendingWaitForWifiTimeout}s",
                         sliderValue = (pendingWaitForWifiTimeout ?: 10).toFloat(),
                         valueFrom = 5f,
@@ -1565,6 +1585,7 @@ class SettingsFragment : Fragment() {
             items.add(SettingItem.SettingEntry(
                 stableId = "staticBSSID",
                 nameResId = R.string.static_bssid_title,
+                helpResId = R.string.static_bssid_help,
                 searchKeywords = "bssid mac address wifi direct group access point hotspot",
                 value = if (bssid == "0" || bssid == null) getString(R.string.auto) else bssid,
                 onClick = { _ ->
@@ -1686,6 +1707,7 @@ class SettingsFragment : Fragment() {
                 stableId = "killOnDisconnect",
                 nameResId = R.string.kill_on_disconnect,
                 descriptionResId = R.string.kill_on_disconnect_description,
+                helpResId = R.string.kill_on_disconnect_help,
                 isChecked = pendingKillOnDisconnect ?: settings.rawKillOnDisconnect,
                 onCheckedChanged = { isChecked ->
                     if (isChecked) {
@@ -1716,7 +1738,8 @@ class SettingsFragment : Fragment() {
             items.add(SettingItem.ToggleSettingEntry(
                 stableId = "raiseProjectionDuringCall",
                 nameResId = R.string.raise_projection_during_call,
-                descriptionResId = R.string.raise_projection_during_call_description,
+                descriptionResId = R.string.raise_projection_during_call_summary,
+                helpResId = R.string.raise_projection_during_call_description,
                 isChecked = pendingRaiseProjectionDuringCall ?: settings.raiseProjectionDuringCall,
                 onCheckedChanged = { isChecked ->
                     pendingRaiseProjectionDuringCall = isChecked
@@ -1745,6 +1768,7 @@ class SettingsFragment : Fragment() {
             stableId = "enableCarLauncher",
             nameResId = R.string.pref_enable_car_launcher_title,
             descriptionResId = R.string.pref_enable_car_launcher_summary,
+            helpResId = R.string.pref_enable_car_launcher_help,
             isChecked = isCarLauncherEnabled,
             onCheckedChanged = { isChecked ->
                 pendingEnableCarLauncher = isChecked
@@ -1762,6 +1786,7 @@ class SettingsFragment : Fragment() {
             items.add(SettingItem.SettingEntry(
                 stableId = "setDefaultLauncher",
                 nameResId = R.string.pref_set_default_launcher_title,
+                helpResId = R.string.pref_set_default_launcher_help,
                 value = getString(if (isDefault) R.string.pref_default_launcher_status_active else R.string.pref_default_launcher_status_inactive),
                 onClick = {
                     CarLauncherManager.promptSetDefaultLauncher(requireContext(), homeRoleLauncher)
@@ -1775,6 +1800,7 @@ class SettingsFragment : Fragment() {
             stableId = "enableFloatingButton",
             nameResId = R.string.pref_enable_floating_button_title,
             descriptionResId = R.string.pref_enable_floating_button_summary,
+            helpResId = R.string.pref_enable_floating_button_help,
             isChecked = isFloatingButtonEnabled,
             onCheckedChanged = { isChecked ->
                 pendingEnableFloatingButton = isChecked
@@ -1792,6 +1818,7 @@ class SettingsFragment : Fragment() {
                 stableId = "floatingButtonConnectionStatusMode",
                 nameResId = R.string.pref_floating_button_connection_status_title,
                 descriptionResId = R.string.pref_floating_button_connection_status_summary,
+                helpResId = R.string.pref_floating_button_connection_status_help,
                 isChecked = connectionStatusMode,
                 onCheckedChanged = { isChecked ->
                     pendingFloatingButtonConnectionStatusMode = isChecked
@@ -1802,6 +1829,7 @@ class SettingsFragment : Fragment() {
             items.add(SettingItem.SliderSettingEntry(
                 stableId = "floatingButtonSizeDp",
                 nameResId = R.string.pref_floating_button_size_title,
+                helpResId = R.string.pref_floating_button_size_help,
                 value = "${size}dp",
                 sliderValue = size.toFloat(),
                 valueFrom = 32f,
@@ -1817,6 +1845,7 @@ class SettingsFragment : Fragment() {
             items.add(SettingItem.SliderSettingEntry(
                 stableId = "floatingButtonOpacityPercent",
                 nameResId = R.string.pref_floating_button_opacity_title,
+                helpResId = R.string.pref_floating_button_opacity_help,
                 value = "${opacity}%",
                 sliderValue = opacity.toFloat(),
                 valueFrom = 10f,
@@ -1833,6 +1862,7 @@ class SettingsFragment : Fragment() {
                 items.add(SettingItem.SliderSettingEntry(
                     stableId = "floatingButtonDisconnectedOpacityPercent",
                     nameResId = R.string.pref_floating_button_disconnected_opacity_title,
+                    helpResId = R.string.pref_floating_button_disconnected_opacity_help,
                     value = "${disconnectedOpacity}%",
                     sliderValue = disconnectedOpacity.toFloat(),
                     valueFrom = 0f,
@@ -1849,6 +1879,7 @@ class SettingsFragment : Fragment() {
             items.add(SettingItem.SliderSettingEntry(
                 stableId = "floatingButtonXPercent",
                 nameResId = R.string.pref_floating_button_x_title,
+                helpResId = R.string.pref_floating_button_position_help,
                 value = "${xPos}%",
                 sliderValue = xPos.toFloat(),
                 valueFrom = 0f,
@@ -1864,6 +1895,7 @@ class SettingsFragment : Fragment() {
             items.add(SettingItem.SliderSettingEntry(
                 stableId = "floatingButtonYPercent",
                 nameResId = R.string.pref_floating_button_y_title,
+                helpResId = R.string.pref_floating_button_position_help,
                 value = "${yPos}%",
                 sliderValue = yPos.toFloat(),
                 valueFrom = 0f,
@@ -1886,8 +1918,9 @@ class SettingsFragment : Fragment() {
             items.add(SettingItem.SettingEntry(
                 stableId = "aaExitAction",
                 nameResId = R.string.pref_aa_exit_action_title,
+                descriptionResId = R.string.pref_aa_exit_action_summary,
+                helpResId = R.string.pref_aa_exit_action_help,
                 value = exitActions.getOrElse(currentExitActionIdx) { exitActions[0] },
-                searchKeywords = getString(R.string.pref_aa_exit_action_summary),
                 onClick = { _ ->
                     MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
                         .setTitle(R.string.pref_aa_exit_action_title)
@@ -1906,6 +1939,7 @@ class SettingsFragment : Fragment() {
                 items.add(SettingItem.SettingEntry(
             stableId = "oemAppManagement",
             nameResId = R.string.oem_app_management,
+            helpResId = R.string.oem_app_management_help,
             value = if (pendingAutoKillOemApps ?: settings.autoKillOemApps) getString(R.string.oem_app_autokill_enabled) else getString(R.string.oem_app_management_desc),
             searchKeywords = "zlink autokit speedplay tlink carplay adb root oem conflict kill stop disable",
             onClick = {
@@ -1922,6 +1956,7 @@ class SettingsFragment : Fragment() {
                 stableId = "gpsNavigation",
                 nameResId = R.string.gps_for_navigation,
                 descriptionResId = R.string.gps_for_navigation_description,
+                helpResId = R.string.gps_for_navigation_help,
                 isChecked = pendingUseGps ?: settings.useGpsForNavigation,
                 onCheckedChanged = { isChecked ->
                     pendingUseGps = isChecked
@@ -1935,6 +1970,7 @@ class SettingsFragment : Fragment() {
             stableId = "showNavigationNotifications",
             nameResId = R.string.show_navigation_notifications,
             descriptionResId = R.string.show_navigation_notifications_description,
+            helpResId = R.string.show_navigation_notifications_help,
             isChecked = pendingShowNavigationNotifications ?: settings.showNavigationNotifications,
             onCheckedChanged = { isChecked ->
                 pendingShowNavigationNotifications = isChecked
@@ -1949,6 +1985,7 @@ class SettingsFragment : Fragment() {
         items.add(SettingItem.SettingEntry(
             stableId = "resolution",
             nameResId = R.string.resolution,
+            helpResId = R.string.resolution_help,
             value = Settings.Resolution.fromId(pendingResolution ?: settings.resolutionId)?.resName ?: "",
             searchKeywords = Settings.Resolution.allRes.joinToString(" "),
             onClick = { showResolutionDialog() }
@@ -1972,6 +2009,7 @@ class SettingsFragment : Fragment() {
         items.add(SettingItem.SettingEntry(
             stableId = "pixelAspectRatioE4",
             nameResId = R.string.pixel_aspect_ratio,
+            helpResId = R.string.pixel_aspect_ratio_help,
             value = if ((pendingPixelAspectRatioE4 ?: 10000) <= 0) "10000" else pendingPixelAspectRatioE4.toString(),
             onClick = { _ ->
                 showNumericInputDialog(
@@ -1990,6 +2028,7 @@ class SettingsFragment : Fragment() {
         items.add(SettingItem.SettingEntry(
             stableId = "customInsets",
             nameResId = R.string.custom_insets,
+            helpResId = R.string.custom_insets_help,
             value = "${pendingInsetLeft ?: 0}, ${pendingInsetTop ?: 0}, ${pendingInsetRight ?: 0}, ${pendingInsetBottom ?: 0}",
             onClick = {
                 showCustomInsetsDialog()
@@ -1999,6 +2038,8 @@ class SettingsFragment : Fragment() {
         items.add(SettingItem.SettingEntry(
             stableId = "startInFullscreenMode",
             nameResId = R.string.start_in_fullscreen_mode,
+            descriptionResId = R.string.start_in_fullscreen_mode_description,
+            helpResId = R.string.start_in_fullscreen_mode_help,
             value = when (pendingFullscreenMode) {
                 Settings.FullscreenMode.NONE -> getString(R.string.fullscreen_none)
                 Settings.FullscreenMode.IMMERSIVE -> getString(R.string.fullscreen_immersive)
@@ -2038,6 +2079,7 @@ class SettingsFragment : Fragment() {
         items.add(SettingItem.SettingEntry(
             stableId = "viewMode",
             nameResId = R.string.view_mode,
+            helpResId = R.string.view_mode_help,
             searchKeywords = kw(R.string.surface_view, R.string.texture_view, R.string.gles_view),
             value = when (pendingViewMode) {
                 Settings.ViewMode.SURFACE -> getString(R.string.surface_view)
@@ -2065,6 +2107,7 @@ class SettingsFragment : Fragment() {
         items.add(SettingItem.SettingEntry(
             stableId = "screenOrientation",
             nameResId = R.string.screen_orientation,
+            helpResId = R.string.screen_orientation_help,
             value = orientationOptions.getOrElse(currentOrientationIdx) { "" },
             searchKeywords = orientationOptions.joinToString(" "),
             onClick = { _ ->
@@ -2096,6 +2139,7 @@ class SettingsFragment : Fragment() {
         items.add(SettingItem.SettingEntry(
             stableId = "videoFitMode",
             nameResId = R.string.video_fit_mode,
+            helpResId = R.string.video_fit_mode_help,
             value = resources.getStringArray(R.array.video_fit_mode)[(pendingVideoFitMode ?: settings.videoFitMode).value],
             searchKeywords = resources.getStringArray(R.array.video_fit_mode).joinToString(" "),
             onClick = { _ ->
@@ -2116,7 +2160,8 @@ class SettingsFragment : Fragment() {
         items.add(SettingItem.ToggleSettingEntry(
             stableId = "hudMirroring",
             nameResId = R.string.hud_mirroring,
-            descriptionResId = R.string.hud_mirroring_description,
+            descriptionResId = R.string.hud_mirroring_summary,
+            helpResId = R.string.hud_mirroring_description,
             isChecked = pendingHudMirroring ?: false,
             onCheckedChanged = { isChecked ->
                 pendingHudMirroring = isChecked
@@ -2129,7 +2174,8 @@ class SettingsFragment : Fragment() {
             items.add(SettingItem.ToggleSettingEntry(
                 stableId = "forcedScale",
                 nameResId = R.string.forced_scale,
-                descriptionResId = R.string.forced_scale_description,
+                descriptionResId = R.string.forced_scale_summary,
+                helpResId = R.string.forced_scale_description,
                 isChecked = pendingForcedScale ?: settings.forcedScale,
                 onCheckedChanged = { isChecked ->
                     pendingForcedScale = isChecked
@@ -2193,6 +2239,7 @@ class SettingsFragment : Fragment() {
             stableId = "forceSoftwareDecoding",
             nameResId = R.string.force_software_decoding,
             descriptionResId = R.string.force_software_decoding_description,
+            helpResId = R.string.force_software_decoding_help,
             isChecked = pendingForceSoftware ?: settings.forceSoftwareDecoding,
             onCheckedChanged = { isChecked ->
                 pendingForceSoftware = isChecked
@@ -2205,6 +2252,7 @@ class SettingsFragment : Fragment() {
             items.add(SettingItem.SettingEntry(
                 stableId = "softwareVideoDecoder",
                 nameResId = R.string.software_video_decoder,
+                helpResId = R.string.software_video_decoder_help,
                 value = when (pendingSoftwareVideoDecoder) {
                     Settings.SoftwareVideoDecoder.DEVICE_MEDIACODEC -> getString(R.string.software_video_decoder_device)
                     Settings.SoftwareVideoDecoder.BUNDLED_FFMPEG -> getString(R.string.software_video_decoder_bundled)
@@ -2236,6 +2284,7 @@ class SettingsFragment : Fragment() {
         items.add(SettingItem.SettingEntry(
             stableId = "videoCodec",
             nameResId = R.string.video_codec,
+            helpResId = R.string.video_codec_help,
             value = pendingVideoCodec ?: settings.videoCodec,
             searchKeywords = "Auto H.264 H.265",
             onClick = { _ ->
@@ -2256,6 +2305,7 @@ class SettingsFragment : Fragment() {
         items.add(SettingItem.SettingEntry(
             stableId = "fpsLimit",
             nameResId = R.string.fps_limit,
+            helpResId = R.string.fps_limit_help,
             value = "${pendingFpsLimit} FPS",
             onClick = { _ ->
                 val fpsOptions = arrayOf("30", "60")
@@ -2277,7 +2327,8 @@ class SettingsFragment : Fragment() {
         items.add(SettingItem.ToggleSettingEntry(
             stableId = "narrowBandProfileCap",
             nameResId = R.string.narrow_band_profile_cap,
-            descriptionResId = R.string.narrow_band_profile_cap_description,
+            descriptionResId = R.string.narrow_band_profile_cap_summary,
+            helpResId = R.string.narrow_band_profile_cap_description,
             isChecked = pendingNarrowBandProfileCap ?: settings.narrowBandProfileCap,
             searchKeywords = "2.4 GHz band resolution fps limit hotspot wifi direct video",
             onCheckedChanged = { isChecked ->
@@ -2291,7 +2342,8 @@ class SettingsFragment : Fragment() {
         items.add(SettingItem.ToggleSettingEntry(
             stableId = "debugVideoLowLatency",
             nameResId = R.string.debug_video_low_latency,
-            descriptionResId = R.string.debug_video_low_latency_description,
+            descriptionResId = R.string.debug_video_low_latency_summary,
+            helpResId = R.string.debug_video_low_latency_description,
             isChecked = pendingDebugVideoLowLatency ?: settings.debugVideoLowLatency,
             searchKeywords = "low latency vendor key decoder mediatek amlogic qualcomm exynos",
             onCheckedChanged = { isChecked ->
@@ -2329,7 +2381,8 @@ class SettingsFragment : Fragment() {
         items.add(SettingItem.ToggleSettingEntry(
             stableId = "enableRotary",
             nameResId = R.string.enable_rotary,
-            descriptionResId = R.string.enable_rotary_description,
+            descriptionResId = R.string.enable_rotary_summary,
+            helpResId = R.string.enable_rotary_description,
             isChecked = pendingEnableRotary ?: false,
             onCheckedChanged = { isChecked ->
                 pendingEnableRotary = isChecked
@@ -2350,6 +2403,7 @@ class SettingsFragment : Fragment() {
         items.add(SettingItem.SegmentedButtonSettingEntry(
             stableId = "mediaKeyRouting",
             nameResId = R.string.media_key_routing,
+            helpResId = R.string.media_key_routing_help,
             options = listOf(
                 getString(R.string.media_key_routing_always),
                 getString(R.string.media_key_routing_auto),
@@ -2360,15 +2414,6 @@ class SettingsFragment : Fragment() {
                 pendingMediaKeyRouting = mediaKeyModes.getOrElse(index) { MediaKeyRoutingPolicy.Mode.ALWAYS }
                 checkChanges()
                 updateSettingsList()
-            }
-        ))
-
-        items.add(SettingItem.InfoBanner(
-            stableId = "mediaKeyRoutingHint",
-            textResId = when (currentMediaKeyMode) {
-                MediaKeyRoutingPolicy.Mode.AUTO -> R.string.media_key_routing_auto_hint
-                MediaKeyRoutingPolicy.Mode.NEVER -> R.string.media_key_routing_never_hint
-                else -> R.string.media_key_routing_always_hint
             }
         ))
 
@@ -2387,7 +2432,8 @@ class SettingsFragment : Fragment() {
         items.add(SettingItem.ToggleSettingEntry(
             stableId = "enableAudioSink",
             nameResId = R.string.enable_audio_sink,
-            descriptionResId = R.string.enable_audio_sink_description,
+            descriptionResId = R.string.enable_audio_sink_summary,
+            helpResId = R.string.enable_audio_sink_description,
             isChecked = pendingEnableAudioSink ?: settings.enableAudioSink,
             onCheckedChanged = { isChecked ->
                 pendingEnableAudioSink = isChecked
@@ -2400,7 +2446,8 @@ class SettingsFragment : Fragment() {
             items.add(SettingItem.ToggleSettingEntry(
                 stableId = "staticAudioFocus",
                 nameResId = R.string.static_audio_focus,
-                descriptionResId = R.string.static_audio_focus_description,
+                descriptionResId = R.string.static_audio_focus_summary,
+                helpResId = R.string.static_audio_focus_description,
                 isChecked = pendingStaticAudioFocus ?: false,
                 onCheckedChanged = { isChecked ->
                     pendingStaticAudioFocus = isChecked
@@ -2420,6 +2467,7 @@ class SettingsFragment : Fragment() {
             items.add(SettingItem.SegmentedButtonSettingEntry(
                 stableId = "playbackFocusMode",
                 nameResId = R.string.playback_focus_mode,
+                helpResId = R.string.playback_focus_mode_help,
                 options = listOf(
                     getString(R.string.playback_focus_mode_auto),
                     getString(R.string.playback_focus_mode_always),
@@ -2433,16 +2481,7 @@ class SettingsFragment : Fragment() {
                 }
             ))
 
-            items.add(SettingItem.InfoBanner(
-                stableId = "playbackFocusModeHint",
-                textResId = when (currentMode) {
-                    PlaybackFocusPolicy.Mode.ALWAYS -> R.string.playback_focus_mode_always_hint
-                    PlaybackFocusPolicy.Mode.NEVER -> R.string.playback_focus_mode_never_hint
-                    else -> R.string.playback_focus_mode_auto_hint
-                }
-            ))
-
-            // The hints above are written for the dynamic path, which takes focus only while
+            // The help above is written for the dynamic path, which takes focus only while
             // audio plays. Static mode takes it for the whole session, so say so rather than
             // maintaining a second set of three.
             if (pendingStaticAudioFocus == true) {
@@ -2473,6 +2512,7 @@ class SettingsFragment : Fragment() {
                 stableId = "useAAudioOutput",
                 nameResId = R.string.aaudio_output,
                 descriptionResId = R.string.aaudio_output_description,
+                helpResId = R.string.aaudio_output_help,
                 isChecked = pendingUseAAudioOutput ?: settings.useAAudioOutput,
                 onCheckedChanged = { isChecked ->
                     pendingUseAAudioOutput = isChecked
@@ -2485,7 +2525,8 @@ class SettingsFragment : Fragment() {
         items.add(SettingItem.ToggleSettingEntry(
             stableId = "useAacAudio",
             nameResId = R.string.use_aac_audio,
-            descriptionResId = R.string.use_aac_audio_description,
+            descriptionResId = R.string.use_aac_audio_summary,
+            helpResId = R.string.use_aac_audio_description,
             isChecked = pendingUseAacAudio ?: settings.useAacAudio,
             onCheckedChanged = { isChecked ->
                 pendingUseAacAudio = isChecked
@@ -2497,7 +2538,8 @@ class SettingsFragment : Fragment() {
         items.add(SettingItem.ToggleSettingEntry(
             stableId = "attachHwDspEqualizer",
             nameResId = R.string.attach_hw_dsp_equalizer,
-            descriptionResId = R.string.attach_hw_dsp_equalizer_description,
+            descriptionResId = R.string.attach_hw_dsp_equalizer_summary,
+            helpResId = R.string.attach_hw_dsp_equalizer_description,
             isChecked = pendingAttachHwDspEqualizer ?: false,
             onCheckedChanged = { isChecked ->
                 pendingAttachHwDspEqualizer = isChecked
@@ -2510,7 +2552,8 @@ class SettingsFragment : Fragment() {
         items.add(SettingItem.ToggleSettingEntry(
             stableId = "syncMediaSessionAaMetadata",
             nameResId = R.string.sync_media_session_aa_metadata,
-            descriptionResId = R.string.sync_media_session_aa_metadata_description,
+            descriptionResId = R.string.sync_media_session_aa_metadata_summary,
+            helpResId = R.string.sync_media_session_aa_metadata_description,
             isChecked = pendingSyncMediaSessionAaMetadata ?: settings.syncMediaSessionWithAaMetadata,
             onCheckedChanged = { isChecked ->
                 pendingSyncMediaSessionAaMetadata = isChecked
@@ -2522,7 +2565,8 @@ class SettingsFragment : Fragment() {
         items.add(SettingItem.ToggleSettingEntry(
             stableId = "autoResumePlaybackOnReconnect",
             nameResId = R.string.auto_resume_playback_on_reconnect,
-            descriptionResId = R.string.auto_resume_playback_on_reconnect_description,
+            descriptionResId = R.string.auto_resume_playback_on_reconnect_summary,
+            helpResId = R.string.auto_resume_playback_on_reconnect_description,
             isChecked = pendingAutoResumePlaybackOnReconnect ?: settings.autoResumePlaybackOnReconnect,
             onCheckedChanged = { isChecked ->
                 pendingAutoResumePlaybackOnReconnect = isChecked
@@ -2544,6 +2588,7 @@ class SettingsFragment : Fragment() {
         items.add(SettingItem.SettingEntry(
             stableId = "audioVolumeOffsets",
             nameResId = R.string.audio_volume_offset,
+            helpResId = R.string.audio_volume_offset_help,
             value = "${(100 + (pendingMediaVolumeOffset ?: 0))}% / ${(100 + (pendingGuidanceVolumeOffset ?: 0))}% / ${(100 + (pendingSystemVolumeOffset ?: 0))}%",
             onClick = {
                 showAudioOffsetsDialog()
@@ -2558,6 +2603,7 @@ class SettingsFragment : Fragment() {
         items.add(SettingItem.SettingEntry(
             stableId = "audioMatchingMode",
             nameResId = R.string.audio_matching_mode,
+            helpResId = R.string.audio_matching_mode_help,
             value = matchingLabels[matchingIndex],
             searchKeywords = kw(R.string.audio_matching_ohu, R.string.audio_matching_wsola, R.string.audio_matching_phase_vocoder, R.string.audio_matching_phase_vocoder_short, R.string.audio_matching_phase_gradient),
             onClick = {
@@ -2588,6 +2634,8 @@ class SettingsFragment : Fragment() {
         items.add(SettingItem.SettingEntry(
             stableId = "audioLatencyMultiplier",
             nameResId = R.string.audio_latency_multiplier,
+            descriptionResId = R.string.audio_latency_multiplier_description,
+            helpResId = R.string.audio_latency_multiplier_help,
             value = "${pendingAudioLatencyMultiplier}x",
             onClick = { _ ->
                 val options = arrayOf(
@@ -2611,6 +2659,7 @@ class SettingsFragment : Fragment() {
         items.add(SettingItem.SettingEntry(
             stableId = "audioQueueCapacity",
             nameResId = R.string.audio_queue_capacity,
+            helpResId = R.string.audio_queue_capacity_help,
             value = if (pendingAudioQueueCapacity == 0) "Unbounded (Legacy)" else "${pendingAudioQueueCapacity} chunks",
             onClick = { _ ->
                 val options = arrayOf("10 chunks (Low Latency)", "20 chunks (Balanced)", "50 chunks (High Latency)", "Unbounded (Max Backlog)")
@@ -2634,7 +2683,8 @@ class SettingsFragment : Fragment() {
         items.add(SettingItem.ToggleSettingEntry(
             stableId = "hideClock",
             nameResId = R.string.hide_clock_label,
-            descriptionResId = null,
+            descriptionResId = R.string.hide_clock_summary,
+            helpResId = R.string.hide_clock_help,
             isChecked = pendingHideClock ?: settings.hideClock,
             onCheckedChanged = { isChecked ->
                 pendingHideClock = isChecked
@@ -2647,6 +2697,7 @@ class SettingsFragment : Fragment() {
             stableId = "hidePhoneSignal",
             nameResId = R.string.hide_phone_signal_label,
             descriptionResId = R.string.might_broken_on_newer_aa_versions,
+            helpResId = R.string.hide_phone_signal_help,
             isChecked = pendingHidePhoneSignal ?: settings.hidePhoneSignal,
             onCheckedChanged = { isChecked ->
                 pendingHidePhoneSignal = isChecked
@@ -2659,6 +2710,7 @@ class SettingsFragment : Fragment() {
             stableId = "hideBatteryLevel",
             nameResId = R.string.hide_battery_level_label,
             descriptionResId = R.string.might_broken_on_newer_aa_versions,
+            helpResId = R.string.hide_battery_level_help,
             isChecked = pendingHideBatteryLevel ?: settings.hideBatteryLevel,
             onCheckedChanged = { isChecked ->
                 pendingHideBatteryLevel = isChecked
@@ -2750,6 +2802,7 @@ class SettingsFragment : Fragment() {
         items.add(SettingItem.SettingEntry(
             stableId = "debugForceMemoryProfile",
             nameResId = R.string.debug_force_memory_profile,
+            helpResId = R.string.debug_force_memory_profile_help,
             value = memoryProfileNames[memoryProfileValues.indexOf(settings.debugForceMemoryProfile).coerceAtLeast(0)],
             searchKeywords = "memory profile low ram constrained buffers queue",
             onClick = {
@@ -2776,6 +2829,7 @@ class SettingsFragment : Fragment() {
         items.add(SettingItem.SettingEntry(
             stableId = "debugVideoFeedHold",
             nameResId = R.string.debug_video_feed_hold,
+            helpResId = R.string.debug_video_feed_hold_help,
             value = if (settings.debugVideoFeedHoldMs == 0) "Off" else "${settings.debugVideoFeedHoldMs}ms per frame",
             searchKeywords = "slow decoder feed hold backpressure pacing test",
             onClick = {
@@ -2802,6 +2856,7 @@ class SettingsFragment : Fragment() {
         items.add(SettingItem.SettingEntry(
             stableId = "debugVideoFaultInjection",
             nameResId = R.string.debug_video_fault_injection,
+            helpResId = R.string.debug_video_fault_injection_help,
             value = faultModeNames[faultModes.indexOf(settings.debugVideoFaultInjection).coerceAtLeast(0)],
             searchKeywords = "fault injection corrupt fragment reassembly test",
             onClick = {
@@ -2823,6 +2878,7 @@ class SettingsFragment : Fragment() {
             items.add(SettingItem.SettingEntry(
                 stableId = "debugVideoFaultRate",
                 nameResId = R.string.debug_video_fault_rate,
+                helpResId = R.string.debug_video_fault_rate_help,
                 value = "1 in " + settings.debugVideoFaultRate,
                 onClick = {
                     val currentIndex = faultRates.indexOf(settings.debugVideoFaultRate).coerceAtLeast(0)
@@ -2842,6 +2898,7 @@ class SettingsFragment : Fragment() {
             items.add(SettingItem.SettingEntry(
                 stableId = "debugVideoFaultBudget",
                 nameResId = R.string.debug_video_fault_budget,
+                helpResId = R.string.debug_video_fault_budget_help,
                 value = describeFaultBudget(settings.debugVideoFaultBudget),
                 onClick = {
                     val currentIndex = faultBudgets.indexOf(settings.debugVideoFaultBudget).coerceAtLeast(0)
@@ -2863,7 +2920,8 @@ class SettingsFragment : Fragment() {
         items.add(SettingItem.ToggleSettingEntry(
             stableId = "allowExternalConfiguration",
             nameResId = R.string.allow_external_configuration,
-            descriptionResId = R.string.allow_external_configuration_description,
+            descriptionResId = R.string.allow_external_configuration_summary,
+            helpResId = R.string.allow_external_configuration_description,
             isChecked = pendingAllowExternalConfiguration ?: settings.allowExternalConfiguration,
             onCheckedChanged = { isChecked ->
                 pendingAllowExternalConfiguration = isChecked
@@ -2877,6 +2935,8 @@ class SettingsFragment : Fragment() {
         items.add(SettingItem.SettingEntry(
             stableId = "logLevel",
             nameResId = R.string.log_level,
+            descriptionResId = R.string.log_level_description,
+            helpResId = R.string.log_level_help,
             value = settings.exporterLogLevel.name.lowercase().replaceFirstChar { it.uppercase() },
             onClick = {
                 val currentIndex = logLevels.indexOf(settings.exporterLogLevel)
@@ -2910,6 +2970,7 @@ class SettingsFragment : Fragment() {
         items.add(SettingItem.SettingEntry(
             stableId = "logSource",
             nameResId = R.string.log_source,
+            helpResId = R.string.log_source_help,
             value = when (settings.logSource) {
                 Settings.LogSource.LOGCAT -> getString(R.string.log_source_logcat)
                 Settings.LogSource.APPLOG_FILE -> getString(R.string.log_source_applog_file)
@@ -2945,6 +3006,7 @@ class SettingsFragment : Fragment() {
         items.add(SettingItem.SettingEntry(
             stableId = "logLocation",
             nameResId = R.string.log_location,
+            helpResId = R.string.log_location_help,
             value = when (settings.logLocation) {
                 Settings.LogLocation.DEFAULT -> getString(R.string.log_location_default)
                 Settings.LogLocation.DOWNLOADS -> getString(R.string.log_location_downloads)
@@ -2976,6 +3038,7 @@ class SettingsFragment : Fragment() {
         items.add(SettingItem.SettingEntry(
             stableId = "captureLog",
             nameResId = if (if (settings.logSource == Settings.LogSource.APPLOG_FILE) AppLog.isCapturing else LogExporter.isCapturing) R.string.stop_log_capture else R.string.start_log_capture,
+            helpResId = R.string.start_log_capture_help,
             value = when {
                 settings.exporterLogLevel == LogExporter.LogLevel.SILENT -> getString(R.string.start_log_capture_description)
                 LogExporter.isCapturing -> getString(R.string.stop_log_capture_description)
@@ -4322,6 +4385,7 @@ class SettingsFragment : Fragment() {
         items.add(SettingItem.SettingEntry(
             stableId = "fiveGhzChannel",
             nameResId = R.string.five_ghz_channel,
+            helpResId = R.string.five_ghz_channel_hint,
             value = labels[values.indexOf(current)],
             searchKeywords = "channel 36 40 44 48 149 unii 5ghz region country band",
             onClick = { _ ->
@@ -4335,10 +4399,6 @@ class SettingsFragment : Fragment() {
                     }
                     .show()
             }
-        ))
-        items.add(SettingItem.InfoBanner(
-            stableId = "fiveGhzChannelHint",
-            textResId = R.string.five_ghz_channel_hint
         ))
     }
 
@@ -4358,6 +4418,7 @@ class SettingsFragment : Fragment() {
                 getString(R.string.stand_down_station_never)
             ),
             selectedIndex = (pendingStationStandDownMode ?: 0).coerceIn(0, 2),
+            helpResId = R.string.stand_down_station_hint,
             onOptionSelected = { index ->
                 pendingStationStandDownMode = index
                 checkChanges()
@@ -4365,13 +4426,12 @@ class SettingsFragment : Fragment() {
             }
         ))
         val overlayGranted = AppPermissions.isOverlayGranted(requireContext())
-        val hint = getString(R.string.stand_down_station_hint)
-        items.add(SettingItem.InfoBanner(
-            stableId = "stationStandDownHint",
-            textResId = R.string.stand_down_station_hint,
-            text = if (StationStandDownPolicy.isAvailable(Build.VERSION.SDK_INT, overlayGranted)) hint
-                else getString(R.string.stand_down_station_needs_overlay) + " " + hint
-        ))
+        if (!StationStandDownPolicy.isAvailable(Build.VERSION.SDK_INT, overlayGranted)) {
+            items.add(SettingItem.InfoBanner(
+                stableId = "stationStandDownOverlay",
+                textResId = R.string.stand_down_station_needs_overlay
+            ))
+        }
     }
 
     /**
@@ -4388,7 +4448,9 @@ class SettingsFragment : Fragment() {
         items.add(SettingItem.ToggleSettingEntry(
             stableId = "wifiDirectStableIdentity",
             nameResId = R.string.wifi_direct_stable_identity,
-            descriptionResId = if (appNamesGroup) R.string.wifi_direct_stable_identity_description
+            descriptionResId = if (appNamesGroup) R.string.wifi_direct_stable_identity_summary
+                else R.string.wifi_direct_stable_identity_legacy_summary,
+            helpResId = if (appNamesGroup) R.string.wifi_direct_stable_identity_description
                 else R.string.wifi_direct_stable_identity_description_legacy,
             isChecked = pendingWifiDirectStableIdentity ?: settings.wifiDirectStableIdentity,
             searchKeywords = "persistent group ssid passphrase password same network reconnect faster",
@@ -4417,6 +4479,7 @@ class SettingsFragment : Fragment() {
         items.add(SettingItem.SettingEntry(
             stableId = "wifiDirectNewIdentity",
             nameResId = R.string.wifi_direct_new_identity,
+            helpResId = R.string.wifi_direct_new_identity_help,
             // The read-back record, not the stability yardstick: that one is only written on an
             // assessed create, so it can name a group older than the one on the air.
             value = settings.wifiDirectLastReadBack?.networkName
@@ -4475,6 +4538,7 @@ class SettingsFragment : Fragment() {
         items.add(SettingItem.SettingEntry(
             stableId = "wifiDirectLastNetwork",
             nameResId = R.string.wifi_direct_last_network,
+            helpResId = R.string.wifi_direct_last_network_help,
             value = onAir?.networkName ?: getString(R.string.wifi_direct_last_network_none),
             searchKeywords = "wifi direct ssid passphrase password bssid mac address show see what is my network",
             onClick = { _ -> showWifiDirectLastNetworkDialog(onAir) }
@@ -4531,6 +4595,7 @@ class SettingsFragment : Fragment() {
         items.add(SettingItem.SettingEntry(
             stableId = "wifiDirectGroupIdentity",
             nameResId = R.string.wifi_direct_group_identity,
+            helpResId = R.string.wifi_direct_group_identity_help,
             value = if (userSet && pair != null)
                 pair.networkName + "  ·  " + "•".repeat(pair.passphrase.length)
             else getString(R.string.wifi_direct_group_identity_auto),
@@ -4631,6 +4696,7 @@ class SettingsFragment : Fragment() {
         items.add(SettingItem.SegmentedButtonSettingEntry(
             stableId = "wifiDirectBand",
             nameResId = R.string.wifi_direct_band,
+            helpResId = R.string.wifi_direct_band_hint,
             options = listOf(
                 getString(R.string.wifi_direct_band_auto),
                 getString(R.string.wifi_direct_band_5ghz),
@@ -4645,14 +4711,11 @@ class SettingsFragment : Fragment() {
                 updateSettingsList()
             }
         ))
-        items.add(SettingItem.InfoBanner(
-            stableId = "wifiDirectBandHint",
-            textResId = R.string.wifi_direct_band_hint
-        ))
         items.add(SettingItem.ToggleSettingEntry(
             stableId = "autoRestartWifiWhenP2pStuck",
             nameResId = R.string.auto_restart_wifi_title,
-            descriptionResId = R.string.auto_restart_wifi_description,
+            descriptionResId = R.string.auto_restart_wifi_summary,
+            helpResId = R.string.auto_restart_wifi_description,
             isChecked = pendingAutoRestartWifi ?: settings.autoRestartWifiWhenP2pStuck,
             onCheckedChanged = { isChecked ->
                 pendingAutoRestartWifi = isChecked
@@ -4696,6 +4759,7 @@ class SettingsFragment : Fragment() {
         items.add(SettingItem.SegmentedButtonSettingEntry(
             stableId = "hotspotBand",
             nameResId = R.string.hotspot_band,
+            helpResId = R.string.hotspot_band_hint,
             options = listOf(
                 getString(R.string.hotspot_band_auto),
                 getString(R.string.hotspot_band_5ghz),
@@ -4710,17 +4774,14 @@ class SettingsFragment : Fragment() {
                 // changes what we ask the radio for, not what this unit can tell a phone.
             }
         ))
-        items.add(SettingItem.InfoBanner(
-            stableId = "hotspotBandHint",
-            textResId = R.string.hotspot_band_hint
-        ))
     }
 
     private fun addHotspotToggle(items: MutableList<SettingItem>) {
         items.add(SettingItem.ToggleSettingEntry(
             stableId = "autoEnableHotspot",
             nameResId = R.string.auto_enable_hotspot,
-            descriptionResId = R.string.auto_enable_hotspot_description,
+            descriptionResId = R.string.auto_enable_hotspot_summary,
+            helpResId = R.string.auto_enable_hotspot_description,
             isChecked = pendingAutoEnableHotspot ?: false,
             onCheckedChanged = { isChecked ->
                 if (isChecked) {

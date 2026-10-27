@@ -125,21 +125,24 @@ object SettingsFilterPolicy {
         return false
     }
 
-    /** The text a query is matched against: names, the value shown and the extra keywords. */
-    private fun searchableText(item: SettingItem, text: (Int) -> String): String = when (item) {
-        is SettingItem.SettingEntry ->
-            "${item.nameOverride ?: text(item.nameResId)} ${item.value} ${item.searchKeywords ?: ""}"
-        is SettingItem.ToggleSettingEntry ->
-            "${item.nameOverride ?: text(item.nameResId)} ${if (item.descriptionResId != null) text(item.descriptionResId) else ""} ${item.searchKeywords ?: ""}"
-        is SettingItem.StreamSettingEntry ->
-            "${text(item.nameResId)} ${item.value} ${if (item.descriptionResId != null) text(item.descriptionResId) else ""} ${item.searchKeywords ?: ""}"
-        is SettingItem.SliderSettingEntry ->
-            "${text(item.nameResId)} ${item.value}"
-        is SettingItem.SegmentedButtonSettingEntry ->
-            "${text(item.nameResId)} ${item.options.joinToString(" ")}"
-        is SettingItem.InfoBanner -> item.text ?: text(item.textResId)
-        is SettingItem.ActionButton -> text(item.textResId)
-        is SettingItem.CategoryHeader -> text(item.titleResId)
-        is SettingItem.ScopeNotice -> item.text
+    /** The text a query is matched against: names, the value shown, the summary, the help text and the extra keywords. */
+    private fun searchableText(item: SettingItem, text: (Int) -> String): String {
+        val help = SettingHelpPolicy.helpResId(item)?.let(text) ?: ""
+        return when (item) {
+            is SettingItem.SettingEntry ->
+                "${item.nameOverride ?: text(item.nameResId)} ${item.value} ${item.descriptionResId?.let(text) ?: ""} $help ${item.searchKeywords ?: ""}"
+            is SettingItem.ToggleSettingEntry ->
+                "${item.nameOverride ?: text(item.nameResId)} ${item.descriptionResId?.let(text) ?: ""} $help ${item.searchKeywords ?: ""}"
+            is SettingItem.StreamSettingEntry ->
+                "${text(item.nameResId)} ${item.value} ${item.descriptionResId?.let(text) ?: ""} $help ${item.searchKeywords ?: ""}"
+            is SettingItem.SliderSettingEntry ->
+                "${text(item.nameResId)} ${item.value} $help"
+            is SettingItem.SegmentedButtonSettingEntry ->
+                "${text(item.nameResId)} ${item.options.joinToString(" ")} $help"
+            is SettingItem.InfoBanner -> item.text ?: text(item.textResId)
+            is SettingItem.ActionButton -> text(item.textResId)
+            is SettingItem.CategoryHeader -> text(item.titleResId)
+            is SettingItem.ScopeNotice -> item.text
+        }
     }
 }

@@ -496,6 +496,7 @@
     <string name="reopen_on_reconnection_label">再接続時にアプリを開く</string>
     <string name="reopen_on_reconnection_description">終了ボタンを押しても、アプリはバックグラウンドで実行され続け、USB接続の監視を続けます。デバイスが再接続されると、アプリは自動的に再び開きます。</string>
     <string name="overlay_permission_required">自動起動には「他のアプリの上に重ねて表示」権限が必要です</string>
+    <string name="usb_access_needed">Open HeadunitはこのUSBデバイスにアクセスできません。許可するには、USBを押してください。別のアプリが開く場合は、Androidの設定でそのアプリのUSBのデフォルト設定を消去してください。</string>
     <string name="usb_permission_denied">USBの権限が拒否されました。自動接続するには、USBアクセスを許可してください。</string>
 
     <!-- Theme -->
@@ -1051,6 +1052,8 @@
 
     <!-- Auto-added missing translations -->
     <string name="blacklisted">ブラックリスト登録済み</string>
+    <string name="usb_blacklist_one_mode">このデバイスは名前を通知しないため、ブラックリストはUSB IDで照合されます。同じIDのすべてのデバイスが対象で、このUSBモードでのみ有効です。Android Autoモードでは接続できる場合があります。</string>
+    <string name="usb_blacklist_android_asks">このデバイスを接続すると、Androidが確認を表示することがあります。対象のアプリを選び、常に使用するにチェックを入れると、次回から確認されません。</string>
     <string name="usb_blacklist_title">USBデバイスのブラックリスト</string>
     <string name="usb_blacklist_description">ブラックリストに登録したデバイスは、接続時に無視されます（自動起動なし、確認なし）。デバイスは名前で照合されるため、ブラックリストに登録したスマートフォンは、どの USB モードでも登録されたままになります。一部のメーカーは全モデルに同じ名前を付けているため、それらは区別できません。</string>
     <string name="add_to_blacklist">ブラックリストに追加</string>

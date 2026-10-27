@@ -214,6 +214,8 @@
     <string name="allowed">अनुमति दी गई</string>
     <string name="ignored">अनदेखा किया गया</string>
     <string name="blacklisted">ब्लैकलिस्ट किया गया</string>
+    <string name="usb_blacklist_one_mode">यह डिवाइस अपना नाम नहीं बताता, इसलिए ब्लैकलिस्ट उसकी USB ID से मेल खाती है: उस ID वाले हर डिवाइस पर, और केवल इसी USB मोड में। Android Auto मोड में यह फिर भी कनेक्ट हो सकता है।</string>
+    <string name="usb_blacklist_android_asks">प्लग इन करने पर Android अब भी इस डिवाइस के बारे में पूछ सकता है। इसके लिए सही ऐप चुनें और उसे हमेशा इस्तेमाल करने के लिए बॉक्स पर टिक करें, फिर Android दोबारा नहीं पूछेगा।</string>
     <string name="usb_blacklist_title">यूएसबी डिवाइस ब्लैकलिस्ट</string>
     <string name="usb_blacklist_description">ब्लैकलिस्ट में शामिल डिवाइस कनेक्ट होने पर अनदेखे कर दिए जाते हैं: न ऑटो-स्टार्ट होता है, न कोई प्रॉम्प्ट दिखता है। डिवाइस को उसके नाम से पहचाना जाता है, इसलिए ब्लैकलिस्ट किया गया फ़ोन हर यूएसबी मोड में ब्लैकलिस्ट ही रहता है। कुछ निर्माता हर मॉडल को एक ही नाम देते हैं, और उन्हें अलग नहीं पहचाना जा सकता।</string>
     <string name="add_to_blacklist">ब्लैकलिस्ट में जोड़ें</string>
@@ -1004,6 +1006,7 @@
     <string name="reopen_on_reconnection_label">फिर से कनेक्ट होने पर दोबारा खोलें</string>
     <string name="reopen_on_reconnection_description">बाहर निकलें बटन दबाने पर ऐप बैकग्राउंड में चलता रहता है और USB कनेक्शन पर नज़र रखता है। अगर कोई डिवाइस दोबारा कनेक्ट होता है, तो ऐप अपने-आप फिर से खुल जाता है।</string>
     <string name="overlay_permission_required">अपने-आप शुरू होने के लिए \'अन्य ऐप्लिकेशन के ऊपर दिखाएं\' की अनुमति ज़रूरी है</string>
+    <string name="usb_access_needed">Open Headunit के पास इस USB डिवाइस का एक्सेस नहीं है। अनुमति देने के लिए USB दबाएँ। अगर इसके लिए कोई दूसरा ऐप खुलता है, तो Android सेटिंग में उस ऐप का USB डिफ़ॉल्ट हटा दें।</string>
     <string name="usb_permission_denied">USB की अनुमति नहीं मिली। अपने-आप कनेक्ट होने के लिए USB एक्सेस की अनुमति दें।</string>
 
     <!-- Theme -->

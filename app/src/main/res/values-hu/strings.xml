@@ -489,6 +489,7 @@
     <string name="show_performance_overlay">Teljesítményjelző megjelenítése</string>
     <string name="overlay_position">Teljesítményjelző helye</string>
     <string name="overlay_permission_required">Az automatikus indításhoz szükséges a „A több alkalmazás feletti megjelenítés” engedély</string>
+    <string name="usb_access_needed">Az Open Headunit nem fér hozzá ehhez az USB-eszközhöz. Az engedélyezéshez nyomja meg az USB gombot. Ha az eszközhöz egy másik alkalmazás nyílik meg, törölje annak alapértelmezett USB-beállítását az Android beállításaiban.</string>
     <string name="usb_permission_denied">USB-engedély megtagadva. Kérjük, engedélyezze az USB-hozzáférést az automatikus csatlakozáshoz.</string>
     <string name="use_white_background">Fehér háttér a főképernyőn</string>
     <string name="reopen_on_reconnection_label">Újranyitás újracsatlakozáskor</string>
@@ -1049,6 +1050,8 @@
 
     <!-- Auto-added missing translations -->
     <string name="blacklisted">Feketelistán</string>
+    <string name="usb_blacklist_one_mode">Ez az eszköz nem adja meg a nevét, ezért a feketelista az USB-azonosítója alapján működik: minden ilyen azonosítójú eszközre, és csak ebben az USB-módban. Android Auto módban továbbra is csatlakozhat.</string>
+    <string name="usb_blacklist_android_asks">Az Android csatlakoztatáskor még mindig rákérdezhet erre az eszközre. Válaszd ki az eszközhöz tartozó alkalmazást, és jelöld be a négyzetet az állandó használathoz, így az Android többé nem kérdez rá.</string>
     <string name="usb_blacklist_title">USB-eszközök feketelistája</string>
     <string name="usb_blacklist_description">A feketelistán lévő eszközöket csatlakozáskor figyelmen kívül hagyja az alkalmazás: nincs automatikus indítás, nincs felugró kérdés. Az eszközt a neve alapján azonosítja, ezért a feketelistára tett telefon minden USB-módban feketelistán marad. Egyes gyártók minden modellnek ugyanazt a nevet adják, ezeket nem lehet megkülönböztetni.</string>
     <string name="add_to_blacklist">Hozzáadás a feketelistához</string>

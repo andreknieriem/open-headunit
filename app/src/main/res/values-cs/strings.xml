@@ -491,6 +491,7 @@
     <string name="overlay_position">Umístění výkonnostního překryvu</string>
     <string name="show_performance_overlay_description">Zobrazí snímkovou frekvenci, zatížení procesoru, teplotu a stáří snímku přes projekci.</string>
     <string name="overlay_permission_required">Automatické spuštění vyžaduje oprávnění „Zobrazení přes ostatní aplikace“</string>
+    <string name="usb_access_needed">Open Headunit nemá přístup k tomuto zařízení USB. Povolíte ho stisknutím USB. Pokud se pro něj otevře jiná aplikace, vymažte její výchozí nastavení USB v nastavení Androidu.</string>
     <string name="usb_permission_denied">Oprávnění USB bylo zamítnuto. Povolte prosím přístup k USB pro automatické připojení.</string>
     <string name="use_white_background">Použít bílou tapetu domovské obrazovky</string>
     <string name="reopen_on_reconnection_label">Znovu otevřít při opětovném připojení</string>
@@ -1049,6 +1050,8 @@
 
     <!-- Auto-added missing translations -->
     <string name="blacklisted">Na černé listině</string>
+    <string name="usb_blacklist_one_mode">Toto zařízení neposkytuje název, proto černá listina porovnává jeho USB ID: platí pro všechna zařízení s tímto ID a jen v tomto režimu USB. V režimu Android Auto se může stále připojit.</string>
+    <string name="usb_blacklist_android_asks">Android se při připojení tohoto zařízení může stále ptát. Vyberte aplikaci, pro kterou je určeno, a zaškrtnutím políčka ji nastavte jako výchozí. Android se už nezeptá.</string>
     <string name="usb_blacklist_title">Černá listina USB zařízení</string>
     <string name="usb_blacklist_description">Zařízení na černé listině jsou při připojení ignorována: žádné automatické spuštění ani výzvy. Zařízení se rozpoznává podle názvu, takže blokovaný telefon zůstane blokován v každém režimu USB. Někteří výrobci dávají všem modelům stejný název, takže je nelze odlišit.</string>
     <string name="add_to_blacklist">Přidat na černou listinu</string>

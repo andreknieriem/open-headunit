@@ -108,4 +108,37 @@ class UsbBlacklistPolicyTest {
             UsbBlacklistPolicy.normalise(setOf("VIDPID:0B95:1790", "", "   ")),
         )
     }
+
+    @Test
+    fun `only a key without a name binds one USB mode`() {
+        assertTrue(UsbBlacklistPolicy.bindsOneMode(UsbBlacklistPolicy.key(null, null, 0x22b8, 0x2e82)))
+        assertFalse(UsbBlacklistPolicy.bindsOneMode(UsbBlacklistPolicy.key("motorola", "moto g", 0x22b8, 0x2e82)))
+    }
+
+    @Test
+    fun `a device the manifest filter misses gets no note about Android's dialog`() {
+        // The Carlinkit is the case that matters: telling its user to tick a default could take it from Autokit.
+        val ccpa = UsbDeviceFixtures.carlinkitCcpa
+        val key = UsbBlacklistPolicy.key("Magic Communication Tec.", "Auto Box", ccpa.vendorId, ccpa.productId)
+        assertEquals(emptyList<UsbBlacklistPolicy.Note>(), UsbBlacklistPolicy.notesOnAdd(key, UsbManifestFilter.matches(ccpa)))
+    }
+
+    @Test
+    fun `a device the manifest filter matches gets the note about Android's dialog`() {
+        val phone = UsbDeviceFixtures.phoneAccessoryPlain
+        val key = UsbBlacklistPolicy.key("Google", "Pixel", phone.vendorId, phone.productId)
+        assertEquals(
+            listOf(UsbBlacklistPolicy.Note.ANDROID_ASKS),
+            UsbBlacklistPolicy.notesOnAdd(key, UsbManifestFilter.matches(phone)),
+        )
+    }
+
+    @Test
+    fun `a nameless matched device gets both notes, the USB ID one first`() {
+        val key = UsbBlacklistPolicy.key(null, null, 0x1314, 0x1521)
+        assertEquals(
+            listOf(UsbBlacklistPolicy.Note.ONE_MODE, UsbBlacklistPolicy.Note.ANDROID_ASKS),
+            UsbBlacklistPolicy.notesOnAdd(key, filterMatches = true),
+        )
+    }
 }

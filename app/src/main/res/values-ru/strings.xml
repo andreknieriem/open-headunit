@@ -495,6 +495,7 @@ Open Headunit предоставляется «как есть» без каки
     <string name="overlay_position">Положение панели производительности</string>
     <string name="show_performance_overlay_description">Показывает FPS, загрузку процессора, температуру и возраст кадра поверх проекции.</string>
     <string name="overlay_permission_required">Для автозапуска нужно разрешение «Поверх других приложений»</string>
+    <string name="usb_access_needed">У Open Headunit нет доступа к этому USB-устройству. Нажмите USB, чтобы разрешить его. Если для него открывается другое приложение, сбросьте в настройках Android параметры USB по умолчанию для этого приложения.</string>
     <string name="usb_permission_denied">Разрешение USB отклонено. Разрешите доступ к USB для автоматического подключения.</string>
     <string name="use_white_background">Использовать белые обои главного экрана</string>
     <string name="reopen_on_reconnection_label">Открывать при повторном подключении</string>
@@ -1046,6 +1047,8 @@ Open Headunit предоставляется «как есть» без каки
 
     <!-- Auto-added missing translations -->
     <string name="blacklisted">В чёрном списке</string>
+    <string name="usb_blacklist_one_mode">Это устройство не сообщает имя, поэтому чёрный список сопоставляет его USB ID: все устройства с таким ID и только в этом режиме USB. В режиме Android Auto оно всё равно может подключиться.</string>
+    <string name="usb_blacklist_android_asks">Android всё равно может спросить об этом устройстве при подключении. Выберите нужное приложение и поставьте флажок, чтобы всегда использовать его. Android больше не будет спрашивать.</string>
     <string name="usb_blacklist_title">Чёрный список USB-устройств</string>
     <string name="usb_blacklist_description">Устройства из чёрного списка игнорируются при подключении: без автозапуска и запросов. Устройство определяется по имени, поэтому телефон из чёрного списка остаётся в нём в любом режиме USB. Некоторые производители дают всем моделям одинаковое имя, и такие устройства невозможно различить.</string>
     <string name="add_to_blacklist">Добавить в чёрный список</string>

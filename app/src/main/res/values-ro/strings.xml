@@ -488,6 +488,7 @@
     <string name="show_performance_overlay">Afișează suprapunerea de performanță</string>
     <string name="overlay_position">Poziția suprapunerii de performanță</string>
     <string name="overlay_permission_required">Pornirea automată necesită permisiunea „Afișare peste alte aplicații”</string>
+    <string name="usb_access_needed">Open Headunit nu are acces la acest dispozitiv USB. Apasă USB pentru a permite accesul. Dacă se deschide altă aplicație pentru el, șterge setarea implicită USB a acelei aplicații din setările Android.</string>
     <string name="usb_permission_denied">Permisiunea USB a fost refuzată. Permite accesul USB pentru a te conecta automat.</string>
     <string name="use_white_background">Folosește tapet alb pe ecranul principal</string>
     <string name="reopen_on_reconnection_label">Redeschide la reconectare</string>
@@ -1045,6 +1046,8 @@
 
     <!-- Auto-added missing translations -->
     <string name="blacklisted">Pe lista neagră</string>
+    <string name="usb_blacklist_one_mode">Acest dispozitiv nu oferă un nume, deci lista neagră folosește ID-ul USB: toate dispozitivele cu acel ID, și doar în acest mod USB. În modul Android Auto se poate conecta în continuare.</string>
+    <string name="usb_blacklist_android_asks">Android poate totuși să întrebe despre acest dispozitiv când este conectat. Alege aplicația potrivită și bifează caseta pentru a o folosi mereu, iar Android nu va mai întreba.</string>
     <string name="usb_blacklist_title">Lista neagră dispozitive USB</string>
     <string name="usb_blacklist_description">Dispozitivele din lista neagră sunt ignorate la conectare: fără pornire automată, fără solicitări. Dispozitivul este identificat după nume, astfel că un telefon blocat rămâne blocat în orice mod USB. Unii producători dau același nume tuturor modelelor, făcându-le imposibil de distins.</string>
     <string name="add_to_blacklist">Adaugă la lista neagră</string>

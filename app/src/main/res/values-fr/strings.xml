@@ -823,6 +823,7 @@
     <string name="reopen_on_reconnection_label">Rouvrir à la reconnexion</string>
     <string name="reopen_on_reconnection_description">Lorsque vous appuyez sur le bouton Quitter, l\'application reste active en arrière-plan et continue de surveiller les connexions USB. Si un appareil se reconnecte, l\'application se rouvre automatiquement.</string>
     <string name="overlay_permission_required">Le démarrage automatique nécessite l\'autorisation « Superposition sur d\'autres applis »</string>
+    <string name="usb_access_needed">Open Headunit n\'a pas accès à cet appareil USB. Appuyez sur USB pour l\'autoriser. Si une autre application s\'ouvre pour cet appareil, effacez sa valeur par défaut USB dans les réglages Android.</string>
     <string name="usb_permission_denied">Autorisation USB refusée. Autorisez l\'accès USB pour vous connecter automatiquement.</string>
 
     <!-- Theme -->
@@ -1094,6 +1095,8 @@
 
     <!-- Auto-added missing translations -->
     <string name="blacklisted">Bloqué</string>
+    <string name="usb_blacklist_one_mode">Cet appareil n\'indique pas son nom. La liste noire utilise donc son ID USB : tous les appareils ayant cet ID, et seulement dans ce mode USB. En mode Android Auto, il peut quand même se connecter.</string>
+    <string name="usb_blacklist_android_asks">Android peut encore poser une question sur cet appareil lorsqu\'il est branché. Choisissez l\'appli concernée et cochez la case pour toujours l\'utiliser : Android ne redemandera plus.</string>
     <string name="usb_blacklist_title">Liste noire des appareils USB</string>
     <string name="usb_blacklist_description">Les appareils sur la liste noire sont ignorés lors de la connexion : pas de démarrage automatique, pas d\'invites. Un appareil est identifié par son nom, ainsi un téléphone bloqué reste bloqué dans tous les modes USB. Certains fabricants donnent le même nom à tous leurs modèles, qui ne peuvent alors pas être distingués.</string>
     <string name="add_to_blacklist">Ajouter à la liste noire</string>

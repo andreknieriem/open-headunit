@@ -214,6 +214,8 @@
     <string name="allowed">Diizinkan</string>
     <string name="ignored">Diabaikan</string>
     <string name="blacklisted">Diblokir</string>
+    <string name="usb_blacklist_one_mode">Perangkat ini tidak memberikan nama, jadi daftar blokir mencocokkan ID USB-nya: semua perangkat dengan ID itu, dan hanya dalam mode USB ini. Dalam mode Android Auto, perangkat tetap bisa terhubung.</string>
+    <string name="usb_blacklist_android_asks">Android mungkin masih menanyakan perangkat ini saat dicolokkan. Pilih aplikasi yang sesuai dan centang kotak untuk selalu menggunakannya, maka Android tidak akan bertanya lagi.</string>
     <string name="usb_blacklist_title">Daftar Blokir Perangkat USB</string>
     <string name="usb_blacklist_description">Perangkat dalam daftar blokir diabaikan saat tersambung: tanpa mulai otomatis dan tanpa konfirmasi. Perangkat dicocokkan berdasarkan namanya, jadi ponsel yang diblokir tetap diblokir di setiap mode USB. Beberapa produsen memberi nama yang sama untuk setiap model, sehingga perangkat tersebut tidak dapat dibedakan.</string>
     <string name="add_to_blacklist">Tambahkan ke Daftar Blokir</string>
@@ -1004,6 +1006,7 @@
     <string name="reopen_on_reconnection_label">Buka kembali saat terhubung ulang</string>
     <string name="reopen_on_reconnection_description">Saat Anda menekan tombol Keluar, aplikasi tetap berjalan di latar belakang dan terus memantau koneksi USB. Jika perangkat tersambung kembali, aplikasi akan terbuka kembali secara otomatis.</string>
     <string name="overlay_permission_required">Mulai otomatis memerlukan izin \'Tampilkan di atas apl lain\'</string>
+    <string name="usb_access_needed">Open Headunit tidak punya akses ke perangkat USB ini. Tekan USB untuk mengizinkan. Jika aplikasi lain terbuka untuk perangkat ini, hapus pengaturan default USB aplikasi tersebut di pengaturan Android.</string>
     <string name="usb_permission_denied">Izin USB ditolak. Izinkan akses USB agar terhubung otomatis.</string>
 
     <!-- Theme -->

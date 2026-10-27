@@ -304,7 +304,9 @@
     <string name="reconnection_required_title">Reconnexion requise</string>
     <string name="reconnection_required_message">L\'appareil est en attente. Débranchez puis rebranchez le câble USB pour relancer Android Auto.</string>
 
-    <string name="bluetooth_address_s">Adresse Bluetooth</string>
+    <string name="bluetooth_address_s">Adresse Bluetooth de l\'autoradio</string>
+    <string name="bluetooth_address_summary">L\'adresse par laquelle le téléphone reconnaît cet autoradio.</string>
+    <string name="bluetooth_address_help">L\'adresse Bluetooth propre à cet autoradio. Le téléphone s\'en sert pour le reconnaître, dans tous les modes de connexion. Vous la trouverez dans Paramètres, À propos, État, ou sur le téléphone associé sous l\'engrenage à côté de cet appareil. Laissez vide pour la détecter automatiquement. L\'option « Garder le son multimédia du téléphone actif via USB » empêche Android Auto de couper le son multimédia Bluetooth du téléphone pendant une session USB. Les appels peuvent alors rester sur le téléphone.</string>
     <string name="enter_bluetooth_mac">Saisir l\'adresse MAC Bluetooth</string>
     <string name="bluetooth_address_message">L\'adresse propre à cet autoradio, celle qui permet au téléphone de le reconnaître. Vous la trouverez dans Paramètres, À propos, État, ou sur le téléphone associé sous l\'engrenage à côté de cet appareil. Laissez vide pour la détecter automatiquement.</string>
     <string name="invalid_bluetooth_address">Ce n\'est pas une adresse Bluetooth. Saisissez six paires de chiffres hexadécimaux, par exemple 0C:32:3A:2D:5D:4A.</string>
@@ -1052,7 +1054,7 @@
     <string name="native_ap_transport">Transport réseau</string>
     <string name="native_ap_transport_wifi_direct">Wi-Fi Direct</string>
     <string name="native_ap_transport_hotspot">Point d\'accès</string>
-    <string name="native_ap_transport_hint">Le téléphone rejoint le point d\'accès de cet appareil au lieu d\'un groupe Wi-Fi Direct. Activez-le avant de vous connecter.</string>
+    <string name="native_ap_transport_help">Choisit le réseau que le téléphone rejoint en mode natif d\'Android Auto. Wi-Fi Direct, par défaut : cet appareil crée son propre groupe et le téléphone le rejoint. Point d\'accès : le téléphone rejoint celui de cet appareil. À utiliser si Wi-Fi Direct ne se connecte pas. Le point d\'accès doit être activé avant la connexion, sauf si « Activer automatiquement le point d\'accès » est activé. Si les réglages du point d\'accès sont illisibles, saisissez son nom et son mot de passe ci-dessous.</string>
     <string name="hotspot_interface_override">Interface réseau du point d\'accès</string>
     <string name="hotspot_interface_override_help">L\'interface réseau qui porte le point d\'accès de cet appareil. Laissez vide et l\'application la trouve. Ne la saisissez que si le journal indique que l\'application a choisi la mauvaise interface ou en a trouvé plusieurs. L\'application envoie alors les détails du point d\'accès même si le système n\'en signale aucun : vérifiez donc qu\'il est activé.</string>
     <string name="hotspot_interface_override_message">Laissez vide pour une détection automatique. Renseignez ce champ si le journal indique que plusieurs interfaces peuvent être le point d\'accès, ou en choisit une mauvaise. Le nom est celui que le journal indique après « Providing credentials from », ou l\'entrée contenant l\'adresse de votre point d\'accès dans « ip -brief addr » depuis un shell. Noms courants : ap0, wlan0, wlan1, wlan2, softap0, ra0.</string>
@@ -1333,10 +1335,10 @@
     <string name="onb_audio_focus_title">Focus audio</string>
     <string name="onb_audio_more_hint">Vous pourrez modifier ces réglages plus tard dans Paramètres → Flux audio.</string>
     <string name="native_driver_selection_title">Sélection du conducteur</string>
-    <string name="native_driver_selection_summary">Choisir le téléphone à connecter lorsque plusieurs téléphones associés sont présents dans le véhicule.</string>
     <string name="native_driver_selection_mode_off">Désactivé</string>
     <string name="native_driver_selection_mode_auto">Auto</string>
     <string name="native_driver_selection_mode_always">Toujours demander</string>
+    <string name="native_driver_selection_help">Choisit quand l\'application demande quel téléphone utiliser. Désactivé : jamais à l\'ouverture, et le bouton WiFi connecte le téléphone le plus probable. Auto : seulement si elle ne reconnaît pas le conducteur. Avec un seul téléphone connecté en Bluetooth, elle prend celui-là. Toujours demander : à chaque ouverture si plusieurs téléphones sont associés. Le plus probable est le téléphone connecté, puis « Téléphone préféré », puis le dernier utilisé.</string>
     <string name="native_driver_selection_timeout">Compte à rebours de connexion auto</string>
     <string name="native_driver_selection_timeout_help">Quand la liste des conducteurs s\'ouvre, elle fait un compte à rebours puis se connecte au téléphone le plus probable. Ce réglage définit le compte à rebours, de 3 à 30 secondes. Touchez un téléphone avant la fin pour le choisir vous-même.</string>
     <string name="native_driver_preferred_device">Téléphone préféré</string>

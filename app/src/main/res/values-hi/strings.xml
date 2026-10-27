@@ -340,7 +340,9 @@
     <string name="reconnection_required_title">फिर से कनेक्ट करना ज़रूरी है</string>
     <string name="reconnection_required_message">डिवाइस इंतज़ार की स्थिति में है। Android Auto दोबारा शुरू करने के लिए USB केबल निकालें और फिर से लगाएँ।</string>
 
-    <string name="bluetooth_address_s">ब्लूटूथ पता</string>
+    <string name="bluetooth_address_s">यूनिट का ब्लूटूथ पता</string>
+    <string name="bluetooth_address_summary">वह पता, जिससे फ़ोन इस यूनिट को पहचानता है।</string>
+    <string name="bluetooth_address_help">इस यूनिट का अपना ब्लूटूथ पता। फ़ोन इससे हर कनेक्शन मोड में इस यूनिट को पहचानता है। इसे सेटिंग्स, अबाउट, स्टेटस में देखें, या जुड़े हुए फ़ोन पर इस डिवाइस के पास गियर आइकन के नीचे। अपने आप पता लगाने के लिए इसे खाली छोड़ें। «USB पर फ़ोन का मीडिया ऑडियो चालू रखें» विकल्प Android Auto को USB सत्र में फ़ोन का ब्लूटूथ मीडिया ऑडियो बंद करने से रोकता है। तब फ़ोन कॉल फ़ोन पर ही रह सकती हैं।</string>
     <string name="enter_bluetooth_mac">ब्लूटूथ MAC पता डालें</string>
     <string name="bluetooth_address_message">यह इस हेड यूनिट का अपना पता है, जिससे फ़ोन इसे पहचानता है। इसे सेटिंग्स &gt; अबाउट &gt; स्टेटस में देखें, या जुड़े हुए फ़ोन में इस डिवाइस के पास दिए गियर आइकन के अंदर देखें। अपने आप पता लगाने के लिए खाली छोड़ें।</string>
     <string name="invalid_bluetooth_address">यह ब्लूटूथ पता नहीं है। हेक्स अंकों के छह जोड़े डालें, जैसे 0C:32:3A:2D:5D:4A।</string>
@@ -1234,7 +1236,7 @@
     <string name="native_ap_transport">नेटवर्क ट्रांसपोर्ट</string>
     <string name="native_ap_transport_wifi_direct">वाई-फ़ाई डायरेक्ट</string>
     <string name="native_ap_transport_hotspot">हॉटस्पॉट</string>
-    <string name="native_ap_transport_hint">फ़ोन वाई-फ़ाई डायरेक्ट ग्रुप के बजाय इस डिवाइस के अपने हॉटस्पॉट से जुड़ता है। कनेक्ट करने से पहले इसे चालू करें।</string>
+    <string name="native_ap_transport_help">यह तय करता है कि नेटिव मोड में Android Auto के लिए फ़ोन किस नेटवर्क से जुड़े। वाई-फ़ाई डायरेक्ट, डिफ़ॉल्ट: यह यूनिट अपना वाई-फ़ाई डायरेक्ट ग्रुप बनाती है और फ़ोन उससे जुड़ता है। हॉटस्पॉट: फ़ोन इसके बजाय इस यूनिट के हॉटस्पॉट से जुड़ता है। वाई-फ़ाई डायरेक्ट न जुड़े, तब इसे चुनें। कनेक्ट करने से पहले हॉटस्पॉट चालू होना चाहिए, जब तक «हॉटस्पॉट अपने आप चालू करें» चालू न हो। अगर यूनिट अपने हॉटस्पॉट की सेटिंग नहीं पढ़ पाती, तो नीचे की पंक्तियों में हॉटस्पॉट का नाम और पासवर्ड भरें।</string>
     <string name="hotspot_band">हॉटस्पॉट बैंड</string>
     <string name="hotspot_band_auto">ऑटो</string>
     <string name="hotspot_band_5ghz">केवल 5 GHz</string>
@@ -1459,10 +1461,10 @@
     <string name="failed_aa_not_system">विफल: Android Auto सिस्टम ऐप के रूप में इंस्टॉल नहीं है!</string>
     <string name="failed_aa_not_installed">विफल: Android Auto इंस्टॉल नहीं है!</string>
     <string name="native_driver_selection_title">ड्राइवर का चयन</string>
-    <string name="native_driver_selection_summary">वाहन में जोड़े गए कई फ़ोन होने पर चुनें कि किस फ़ोन से कनेक्ट करना है।</string>
     <string name="native_driver_selection_mode_off">बंद है</string>
     <string name="native_driver_selection_mode_auto">ऑटो</string>
     <string name="native_driver_selection_mode_always">हमेशा पूछें</string>
+    <string name="native_driver_selection_help">यह तय करता है कि ऐप कब पूछे कि कौन सा फ़ोन इस्तेमाल करना है, जब एक से ज़्यादा पेयर किए फ़ोन ड्राइवर हो सकते हों। बंद है: ऐप खुलने पर कभी नहीं पूछता, और WiFi बटन सबसे संभावित फ़ोन से जुड़ता है। ऑटो: ऐप तभी पूछता है जब वह ड्राइवर का फ़ोन नहीं पहचान पाता। ब्लूटूथ से एक ही फ़ोन जुड़ा हो, तो वही इस्तेमाल होता है। हमेशा पूछें: एक से ज़्यादा फ़ोन पेयर होने पर ऐप हर बार खुलने पर पूछता है। सबसे संभावित फ़ोन जुड़ा हुआ फ़ोन है, फिर «पसंदीदा फ़ोन», फिर आख़िरी बार इस्तेमाल किया गया।</string>
     <string name="native_driver_selection_timeout">ऑटो-कनेक्ट उलटी गिनती</string>
     <string name="native_driver_selection_timeout_help">जब ड्राइवर सूची खुलती है, वह उलटी गिनती करती है और फिर सबसे संभावित फ़ोन से जुड़ जाती है। यह उलटी गिनती तय करता है, 3 से 30 सेकंड तक। खुद चुनने के लिए अंत से पहले किसी फ़ोन पर टैप करें।</string>
     <string name="native_driver_preferred_device">पसंदीदा फ़ोन</string>

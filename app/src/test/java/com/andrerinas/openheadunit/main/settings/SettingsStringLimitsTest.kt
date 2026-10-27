@@ -40,8 +40,8 @@ class SettingsStringLimitsTest {
         return keys
     }
 
-    // Not row summaries: a format string with placeholders, and a string a row uses as its help.
-    private val notRowSummaries = setOf("onb_ready_summary", "native_driver_selection_summary")
+    // Not a row summary: a format string with placeholders.
+    private val notRowSummaries = setOf("onb_ready_summary")
 
     private val rewrittenHelp = listOf(
         "enable_audio_sink_description", "wireless_mode_description", "helper_strategy_help",
@@ -53,7 +53,8 @@ class SettingsStringLimitsTest {
     private val auditHelp = listOf(
         "audio_queue_capacity_help", "software_video_decoder_help", "custom_insets_help",
         "server_mode_help", "pixel_aspect_ratio_help", "log_source_help", "use_libusb_help",
-        "force_software_decoding_help", "aaudio_output_help", "kill_on_disconnect_help"
+        "force_software_decoding_help", "aaudio_output_help", "kill_on_disconnect_help",
+        "bluetooth_address_help", "native_ap_transport_help", "native_driver_selection_help"
     )
 
     private val screenHelp = listOf(

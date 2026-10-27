@@ -365,7 +365,9 @@
     <string name="reconnection_required_title">Reconnection Required</string>
     <string name="reconnection_required_message">The device is in a waiting state. Please unplug and re-plug the USB cable to start Android Auto again.</string>
 
-    <string name="bluetooth_address_s">Bluetooth address</string>
+    <string name="bluetooth_address_s">Head unit Bluetooth address</string>
+    <string name="bluetooth_address_summary">The address the phone uses to recognise this head unit.</string>
+    <string name="bluetooth_address_help">This head unit\'s own Bluetooth address. The phone uses it to recognise this unit, in every connection mode. Find it under Settings, About, Status, or on the paired phone under the gear beside this device. Leave it empty to detect it automatically. The option \"Keep the phone\'s Media audio on over USB\" stops Android Auto from turning off the phone\'s Bluetooth Media audio in a USB session. Phone calls may then stay on the phone.</string>
     <string name="enter_bluetooth_mac">Enter Bluetooth MAC</string>
     <string name="bluetooth_address_message">This head unit\'s own address, which the phone uses to recognise it. Find it under Settings, About, Status, or on the paired phone under the gear beside this device. Leave empty to detect one automatically.</string>
     <string name="invalid_bluetooth_address">That is not a Bluetooth address. Enter six pairs of hex digits, like 0C:32:3A:2D:5D:4A.</string>
@@ -1142,7 +1144,7 @@
     <string name="wifi_direct_last_network_differs">This is not the name and password the app asked for, so the system overrode them. Use \"New WiFi Direct network identity\" above to make it take a fresh pair.</string>
     <string name="wifi_direct_last_network_hint">Joining this network by hand on your phone does not start Android Auto, because the phone joins it itself once it has been set up over Bluetooth. It is a way to check the network works at all.</string>
     <string name="wifi_direct_group_identity">WiFi Direct name and password</string>
-    <string name="wifi_direct_group_identity_help">The Wi-Fi Direct name and password that the phone gets to join this unit. Let the app choose them, or type your own. Pick new ones for me makes the app choose a new pair. If you change the password, the app also changes the name, because a phone cannot rejoin a network with the same name and a new password.</string>
+    <string name="wifi_direct_group_identity_help">The Wi-Fi Direct name and password that the phone gets to join this unit. Let the app choose them, or type your own. \"Pick new ones for me\" makes the app choose a new pair. If you change the password, the app also changes the name, because a phone cannot rejoin a network with the same name and a new password.</string>
     <string name="wifi_direct_group_identity_auto">Chosen by the app. Tap to set your own.</string>
     <string name="wifi_direct_group_identity_pick_new">Pick new ones for me</string>
     <string name="wifi_direct_group_identity_message">The name and password your phone is given to join this head unit. Changing the password also changes the name, because a phone cannot rejoin a network whose name stayed the same and whose password did not.</string>
@@ -1339,7 +1341,7 @@
     <string name="native_ap_transport">Network transport</string>
     <string name="native_ap_transport_wifi_direct">WiFi Direct</string>
     <string name="native_ap_transport_hotspot">Hotspot</string>
-    <string name="native_ap_transport_hint">The phone joins this device\'s own hotspot instead of a WiFi Direct group. Switch it on before connecting.</string>
+    <string name="native_ap_transport_help">Chooses the network the phone joins in Native Android Auto mode. WiFi Direct, the default: this unit creates its own WiFi Direct group, and the phone joins it. Hotspot: the phone joins this unit\'s own hotspot instead. Use it when WiFi Direct does not connect. The hotspot must be on before you connect, unless \"Auto-Enable Hotspot\" is on. If this unit cannot read its hotspot settings, type the hotspot name and password in the rows below.</string>
     <string name="hotspot_band">Hotspot band</string>
     <string name="hotspot_band_auto">Auto</string>
     <string name="hotspot_band_5ghz">5 GHz only</string>
@@ -1575,10 +1577,10 @@
     <string name="failed_aa_not_system">Failed: Android Auto isn\'t installed as a system app!</string>
     <string name="failed_aa_not_installed">Failed: Android Auto is not installed!</string>
     <string name="native_driver_selection_title">Driver Selection</string>
-    <string name="native_driver_selection_summary">Choose which phone to connect with when multiple paired drivers are in the vehicle.</string>
     <string name="native_driver_selection_mode_off">Disabled</string>
     <string name="native_driver_selection_mode_auto">Auto</string>
     <string name="native_driver_selection_mode_always">Always Ask</string>
+    <string name="native_driver_selection_help">Chooses when the app asks which phone to use, if more than one paired phone could be the driver. Disabled: the app never asks when it opens, and the WiFi button connects to the most likely phone. Auto: the app asks only when it cannot tell which phone is the driver. With one phone connected over Bluetooth, it uses that phone. Always Ask: the app asks each time it opens with more than one phone paired. The most likely phone is the connected one, then Preferred Phone, then the last phone used.</string>
     <string name="native_driver_selection_timeout">Auto-Connect Countdown</string>
     <string name="native_driver_selection_timeout_help">When the driver list opens, it counts down and then connects to the most likely phone. This sets the countdown, from 3 to 30 seconds. Tap a phone before the end to choose it yourself.</string>
     <string name="native_driver_preferred_device">Preferred Phone</string>

@@ -103,7 +103,9 @@
     <string name="reconnection_required_title">재연결 필요</string>
     <string name="reconnection_required_message">기기가 대기 중입니다. Android Auto를 다시 시작하려면 USB 케이블을 뽑았다가 다시 연결하세요.</string>
 
-    <string name="bluetooth_address_s">블루투스 주소</string>
+    <string name="bluetooth_address_s">헤드유닛 블루투스 주소</string>
+    <string name="bluetooth_address_summary">휴대전화가 이 헤드유닛을 인식하는 데 쓰는 주소입니다.</string>
+    <string name="bluetooth_address_help">이 헤드유닛 자체의 블루투스 주소입니다. 휴대전화는 모든 연결 모드에서 이 주소로 헤드유닛을 인식합니다. 설정의 기기 정보 및 상태 항목에서 확인하거나, 페어링된 휴대전화에서 이 기기 옆의 톱니바퀴 아이콘을 눌러 확인하세요. 비워 두면 자동으로 감지합니다. “USB 연결 중 휴대전화 미디어 오디오 유지” 옵션은 USB 연결 중 Android Auto가 휴대전화의 블루투스 미디어 오디오를 끄지 못하게 합니다. 이 경우 전화 통화는 휴대전화에 남을 수 있습니다.</string>
     <string name="enter_bluetooth_mac">블루투스 MAC 입력</string>
     <string name="bluetooth_address_message">휴대전화가 이 헤드유닛을 인식하는 데 사용하는 헤드유닛 자체의 주소입니다. 설정의 기기 정보 및 상태 항목에서 확인하거나, 페어링된 휴대전화에서 이 기기 옆의 톱니바퀴 아이콘을 눌러 확인하세요. 비워 두면 자동으로 감지합니다.</string>
     <string name="invalid_bluetooth_address">블루투스 주소가 아닙니다. 0C:32:3A:2D:5D:4A처럼 16진수 두 자리를 여섯 쌍 입력하세요.</string>
@@ -1093,6 +1095,7 @@
     <string name="native_ap_transport">네트워크 연결 방식</string>
     <string name="native_ap_transport_wifi_direct">Wi-Fi Direct</string>
     <string name="native_ap_transport_hotspot">핫스팟</string>
+    <string name="native_ap_transport_help">Native Android Auto 모드에서 휴대전화가 접속할 네트워크를 선택합니다. Wi-Fi Direct는 기본값이며, 이 헤드유닛이 자체 Wi-Fi Direct 그룹을 만들고 휴대전화가 여기에 접속합니다. 핫스팟을 선택하면 휴대전화가 대신 이 헤드유닛의 핫스팟에 접속합니다. Wi-Fi Direct로 연결되지 않을 때 사용하세요. “핫스팟 자동 켜기”를 사용 설정하지 않았다면 연결하기 전에 핫스팟을 켜 두어야 합니다. 헤드유닛이 핫스팟 설정을 읽지 못하면 아래 항목에 핫스팟 이름과 비밀번호를 입력하세요.</string>
     <string name="hotspot_interface_override">핫스팟 네트워크 인터페이스</string>
     <string name="hotspot_interface_override_help">이 기기의 핫스팟이 사용하는 네트워크 인터페이스입니다. 비워 두면 앱이 직접 찾습니다. 앱이 잘못된 인터페이스를 선택했거나 여러 개를 찾았다고 로그에 나올 때만 설정하세요. 설정하면 시스템이 핫스팟을 보고하지 않아도 앱이 핫스팟 정보를 보내므로, 핫스팟이 켜져 있는지 확인하세요.</string>
     <string name="hotspot_interface_override_message">비워 두면 자동으로 찾습니다. 로그에 액세스 포인트가 될 수 있는 인터페이스가 둘 이상이라고 나오거나 잘못된 인터페이스가 선택되면 이 값을 설정하세요. 로그의 \"Providing credentials from\" 뒤에 표시된 인터페이스 이름을 입력하세요. 또는 셸에서 \"ip -brief addr\"를 실행해 핫스팟 주소가 있는 인터페이스를 확인하세요. 일반적인 이름: ap0, wlan0, wlan1, wlan2, softap0, ra0.</string>
@@ -1138,7 +1141,6 @@
     <string name="home_bar_scale_description">사이드바 타일과 즐겨찾는 앱의 크기를 조정합니다. 높이가 낮은 화면에서는 모두 들어가도록 바가 타일을 줄입니다</string>
     <string name="home_button_scale_preview">홈 화면 실시간 미리보기</string>
     <string name="btn_reset_scale">버튼 크기 초기화</string>
-    <string name="native_ap_transport_hint">휴대전화가 Wi-Fi Direct 그룹 대신 이 기기의 핫스팟에 연결됩니다. 연결하기 전에 핫스팟을 켜세요.</string>
     <string name="hotspot_band">핫스팟 주파수 대역</string>
     <string name="hotspot_band_auto">자동</string>
     <string name="hotspot_band_5ghz">5 GHz 전용</string>
@@ -1270,10 +1272,10 @@
     <string name="onb_audio_focus_title">오디오 포커스</string>
     <string name="onb_audio_more_hint">설정 → 오디오 스트림에서 나중에 다시 변경할 수 있습니다.</string>
     <string name="native_driver_selection_title">운전자 휴대전화 선택</string>
-    <string name="native_driver_selection_summary">페어링된 휴대전화를 가진 운전자가 차량에 여러 명 있을 때 연결할 휴대전화를 선택합니다.</string>
     <string name="native_driver_selection_mode_off">사용 중지</string>
     <string name="native_driver_selection_mode_auto">자동</string>
     <string name="native_driver_selection_mode_always">항상 묻기</string>
+    <string name="native_driver_selection_help">페어링된 휴대전화가 여러 대일 때 앱이 어떤 휴대전화를 사용할지 묻는 시점을 선택합니다. 사용 중지: 앱을 열 때 묻지 않으며 WiFi 버튼이 가장 가능성이 높은 휴대전화에 연결합니다. 자동: 운전자 휴대전화를 알 수 없을 때만 묻습니다. 블루투스로 연결된 휴대전화가 한 대뿐이면 그 휴대전화를 사용합니다. 항상 묻기: 페어링된 휴대전화가 여러 대이면 앱을 열 때마다 묻습니다. 연결된 휴대전화, “우선 연결할 휴대전화”, 마지막으로 사용한 휴대전화 순으로 가능성이 높습니다.</string>
     <string name="native_driver_selection_timeout">자동 연결 카운트다운</string>
     <string name="native_driver_selection_timeout_help">운전자 목록이 열리면 카운트다운이 시작되고, 끝나면 가장 가능성이 높은 휴대전화에 연결합니다. 이 카운트다운을 3초에서 30초 사이로 설정합니다. 끝나기 전에 휴대전화를 탭하면 직접 선택할 수 있습니다.</string>
     <string name="native_driver_preferred_device">우선 연결할 휴대전화</string>
@@ -1433,7 +1435,7 @@
     <string name="wifi_direct_last_network_differs">시스템이 앱에서 요청한 이름과 비밀번호를 다른 값으로 바꿨습니다. \"Wi-Fi Direct 이름과 비밀번호\"에서 \"새 이름과 비밀번호 자동 생성\"을 선택해 새 값으로 다시 설정하세요.</string>
     <string name="wifi_direct_last_network_hint">휴대전화에서 이 네트워크에 직접 접속해도 Android Auto는 시작되지 않습니다. Android Auto를 연결할 때는 블루투스로 설정을 마친 휴대전화가 자동으로 이 네트워크에 접속합니다. 직접 접속은 네트워크 작동 여부를 확인하는 용도로 사용하세요.</string>
     <string name="wifi_direct_group_identity">Wi-Fi Direct 이름과 비밀번호</string>
-    <string name="wifi_direct_group_identity_help">휴대전화가 이 기기에 접속할 때 받는 Wi-Fi Direct 이름과 비밀번호입니다. 앱이 정하게 하거나 직접 입력할 수 있습니다. 새 이름과 비밀번호 자동 생성을 누르면 앱이 새 조합을 정합니다. 비밀번호를 바꾸면 앱이 이름도 함께 바꿉니다. 휴대전화는 이름이 같고 비밀번호만 새로운 네트워크에 다시 접속할 수 없기 때문입니다.</string>
+    <string name="wifi_direct_group_identity_help">휴대전화가 이 기기에 접속할 때 받는 Wi-Fi Direct 이름과 비밀번호입니다. 앱이 정하게 하거나 직접 입력할 수 있습니다. “새 이름과 비밀번호 자동 생성”을 누르면 앱이 새 조합을 정합니다. 비밀번호를 바꾸면 앱이 이름도 함께 바꿉니다. 휴대전화는 이름이 같고 비밀번호만 새로운 네트워크에 다시 접속할 수 없기 때문입니다.</string>
     <string name="wifi_direct_group_identity_auto">앱이 선택한 값입니다. 직접 설정하려면 탭하세요.</string>
     <string name="wifi_direct_group_identity_pick_new">새 이름과 비밀번호 자동 생성</string>
     <string name="wifi_direct_group_identity_message">이 헤드유닛에 접속하기 위해 휴대전화에 제공되는 이름과 비밀번호입니다. 이름은 그대로이고 비밀번호만 바뀐 네트워크에는 휴대전화가 다시 접속할 수 없으므로, 비밀번호를 바꾸면 이름도 함께 바뀝니다.</string>

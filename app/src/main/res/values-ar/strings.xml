@@ -93,7 +93,9 @@
     <string name="reconnection_required_title">يلزم إعادة الاتصال</string>
     <string name="reconnection_required_message">الجهاز في حالة انتظار. يرجى فصل كابل USB وإعادة توصيله لبدء Android Auto مجددا.</string>
 
-    <string name="bluetooth_address_s">عنوان البلوتوث</string>
+    <string name="bluetooth_address_s">عنوان البلوتوث للوحدة</string>
+    <string name="bluetooth_address_summary">العنوان الذي يتعرّف به الهاتف على هذه الوحدة.</string>
+    <string name="bluetooth_address_help">عنوان البلوتوث الخاص بهذه الوحدة. يتعرّف الهاتف بها على الوحدة في كل أوضاع الاتصال. تجده ضمن الإعدادات، حول الهاتف، الحالة، أو على الهاتف المقترن عبر رمز الترس بجوار هذه الوحدة. اتركه فارغًا ليُكتشف تلقائيًا. الخيار «إبقاء صوت الوسائط في الهاتف قيد التشغيل عبر USB» يمنع Android Auto من إيقاف صوت الوسائط عبر Bluetooth في الهاتف أثناء جلسة USB. وقد تبقى المكالمات على الهاتف.</string>
     <string name="enter_bluetooth_mac">أدخل عنوان MAC للبلوتوث</string>
     <string name="bluetooth_address_message">عنوان هذه الوحدة نفسها، وهو ما يتعرّف به الهاتف عليها. تجده ضمن الإعدادات، حول الهاتف، الحالة، أو على الهاتف المقترن عبر رمز الترس بجوار هذه الوحدة. اتركه فارغًا لاكتشافه تلقائيًا.</string>
     <string name="invalid_bluetooth_address">هذا ليس عنوان بلوتوث. أدخل ستة أزواج من الأرقام السداسية العشرية، مثل 0C:32:3A:2D:5D:4A.</string>
@@ -1098,6 +1100,7 @@
     <string name="native_ap_transport">نقل الشبكة</string>
     <string name="native_ap_transport_wifi_direct">Wi-Fi Direct</string>
     <string name="native_ap_transport_hotspot">نقطة الاتصال</string>
+    <string name="native_ap_transport_help">يحدد الشبكة التي ينضم إليها الهاتف في الوضع الأصلي (Native) لـ Android Auto. Wi-Fi Direct، وهو الافتراضي: تنشئ هذه الوحدة مجموعة Wi-Fi Direct خاصة بها وينضم إليها الهاتف. نقطة الاتصال: ينضم الهاتف بدلًا من ذلك إلى نقطة الاتصال الخاصة بهذه الوحدة. استخدمها إذا تعذّر اتصال Wi-Fi Direct. يجب تشغيل نقطة الاتصال قبل الاتصال، ما لم يكن «تفعيل نقطة الاتصال تلقائياً» قيد التشغيل. إذا تعذّر على الوحدة قراءة إعدادات نقطة الاتصال، اكتب اسمها وكلمة مرورها في الصفوف أدناه.</string>
     <string name="hotspot_interface_override">واجهة شبكة نقطة الاتصال</string>
     <string name="hotspot_interface_override_help">واجهة الشبكة التي تحمل نقطة الاتصال الخاصة بهذه الوحدة. اتركها فارغة ليجدها التطبيق. اكتبها فقط إذا ذكر السجل أن التطبيق اختار واجهة خاطئة أو وجد أكثر من واحدة. عندئذ يرسل التطبيق تفاصيل نقطة الاتصال حتى لو لم يبلّغ النظام عن نقطة اتصال، لذا تأكد من تشغيلها.</string>
     <string name="hotspot_interface_override_message">اتركه فارغًا ليحدده التطبيق تلقائيًا. اضبطه إذا ذكر السجل أن أكثر من واجهة قد تكون نقطة الوصول، أو إذا اختار واجهة خاطئة. الاسم هو ما يذكره السجل بعد \"Providing credentials from\"، أو الإدخال الذي يحمل عنوان نقطة الاتصال في ناتج الأمر \"ip -brief addr\" من الطرفية. أسماء شائعة: ap0 وwlan0 وwlan1 وwlan2 وsoftap0 وra0.</string>
@@ -1145,7 +1148,6 @@
     <string name="btn_reset_scale">إعادة ضبط حجم الأزرار</string>
     <string name="static_bssid_title">BSSID ثابت (عنوان MAC)</string>
     <string name="static_bssid_help">عنوان Wi-Fi (BSSID) الذي يحصل عليه الهاتف لشبكة هذه الوحدة. اتركه فارغًا ليقرأ التطبيق العنوان بنفسه. اكتب عنوانًا فقط إذا ذكر السجل أنه لم يبلّغ أي مصدر عن عنوان. مع Wi-Fi Direct، يحدد الصف عنوان المجموعة. ومع نقطة الاتصال، يحدد عنوان نقطة الاتصال. العنوان الذي يقرأه التطبيق له الأولوية دائمًا على العنوان المكتوب.</string>
-    <string name="native_ap_transport_hint">يتصل الهاتف بنقطة اتصال هذا الجهاز نفسه بدلاً من مجموعة Wi-Fi Direct. شغّلها قبل الاتصال.</string>
     <string name="hotspot_band">نطاق نقطة الاتصال</string>
     <string name="hotspot_band_auto">تلقائي</string>
     <string name="hotspot_band_5ghz">5 غيغاهرتز فقط</string>
@@ -1277,10 +1279,10 @@
     <string name="onb_audio_focus_title">تركيز الصوت</string>
     <string name="onb_audio_more_hint">يمكنك تغيير ذلك لاحقًا من الإعدادات ← تدفقات الصوت.</string>
     <string name="native_driver_selection_title">اختيار هاتف السائق</string>
-    <string name="native_driver_selection_summary">اختر الهاتف المراد الاتصال به عند وجود عدة هواتف مقترنة داخل السيارة.</string>
     <string name="native_driver_selection_mode_off">غير مفعَّل</string>
     <string name="native_driver_selection_mode_auto">تلقائي</string>
     <string name="native_driver_selection_mode_always">السؤال دائمًا</string>
+    <string name="native_driver_selection_help">يحدد متى يسأل التطبيق عن الهاتف المراد استخدامه، إذا كان أكثر من هاتف مقترن يمكن أن يكون هاتف السائق. غير مفعَّل: لا يسأل التطبيق عند فتحه، ويتصل زر WiFi بالهاتف الأرجح. تلقائي: يسأل التطبيق فقط إذا تعذّر عليه معرفة هاتف السائق. إذا كان هناك هاتف واحد متصل عبر Bluetooth، يستخدمه. السؤال دائمًا: يسأل التطبيق عند كل فتح مع اقتران أكثر من هاتف. الهاتف الأرجح هو المتصل، ثم «الهاتف المفضل»، ثم آخر هاتف استُخدم.</string>
     <string name="native_driver_selection_timeout">العد التنازلي للاتصال التلقائي</string>
     <string name="native_driver_selection_timeout_help">عندما تُفتح قائمة السائقين، تعد تنازليًا ثم تتصل بالهاتف الأرجح. هذا يحدد العد التنازلي، من 3 إلى 30 ثانية. المس هاتفًا قبل النهاية لتختاره بنفسك.</string>
     <string name="native_driver_preferred_device">الهاتف المفضل</string>

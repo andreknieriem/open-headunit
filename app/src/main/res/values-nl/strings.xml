@@ -92,7 +92,9 @@
     <string name="reconnection_required_title">Opnieuw verbinden vereist</string>
     <string name="reconnection_required_message">Het apparaat staat in de wachtstand. Koppel de USB-kabel los en sluit deze opnieuw aan om Android Auto opnieuw te starten.</string>
 
-    <string name="bluetooth_address_s">Bluetooth-adres</string>
+    <string name="bluetooth_address_s">Bluetooth-adres van de unit</string>
+    <string name="bluetooth_address_summary">Het adres waaraan de telefoon deze unit herkent.</string>
+    <string name="bluetooth_address_help">Het eigen Bluetooth-adres van deze unit. De telefoon herkent de unit eraan, in elke verbindingsmodus. Je vindt het onder Instellingen, Over, Status, of op de gekoppelde telefoon onder het tandwiel naast dit apparaat. Laat leeg om het automatisch te laten detecteren. De optie “Media-audio van de telefoon aanhouden via USB” voorkomt dat Android Auto de Bluetooth-media-audio van de telefoon uitzet tijdens een USB-sessie. Gesprekken kunnen dan op de telefoon blijven.</string>
     <string name="enter_bluetooth_mac">Bluetooth-MAC-adres invoeren</string>
     <string name="bluetooth_address_message">Het eigen adres van dit apparaat, waaraan de telefoon het herkent. Je vindt het onder Instellingen, Over, Status, of op de gekoppelde telefoon onder het tandwiel naast dit apparaat. Laat leeg om het automatisch te laten detecteren.</string>
     <string name="invalid_bluetooth_address">Dat is geen Bluetooth-adres. Voer zes paren hexadecimale tekens in, bijvoorbeeld 0C:32:3A:2D:5D:4A.</string>
@@ -1102,6 +1104,7 @@
     <string name="native_ap_transport">Netwerktransport</string>
     <string name="native_ap_transport_wifi_direct">Wi-Fi Direct</string>
     <string name="native_ap_transport_hotspot">Hotspot</string>
+    <string name="native_ap_transport_help">Bepaalt welk netwerk de telefoon gebruikt in de Native-modus van Android Auto. Wi-Fi Direct, de standaard: deze unit maakt een eigen groep en de telefoon sluit zich daarbij aan. Hotspot: de telefoon verbindt in plaats daarvan met de hotspot van deze unit. Gebruik dit als Wi-Fi Direct niet verbindt. De hotspot moet aan staan voordat je verbindt, tenzij “Hotspot automatisch inschakelen” aan staat. Kan de unit de hotspotinstellingen niet lezen, typ dan naam en wachtwoord in de rijen hieronder.</string>
     <string name="hotspot_interface_override">Netwerkinterface van hotspot</string>
     <string name="hotspot_interface_override_help">De netwerkinterface waarover de hotspot van deze unit loopt. Laat je dit leeg, dan vindt de app hem zelf. Stel dit alleen in als het log zegt dat de app de verkeerde interface koos of er meer dan één vond. De app stuurt dan de hotspotgegevens, ook als het systeem geen hotspot meldt. Zorg dus dat de hotspot aan staat.</string>
     <string name="hotspot_interface_override_message">Laat leeg om de interface automatisch te bepalen. Vul dit in als het logboek meldt dat meer dan één interface het toegangspunt kan zijn, of de verkeerde kiest. De naam staat in het logboek na \"Providing credentials from\", of in de regel met het adres van je hotspot in \"ip -brief addr\" in een shell. Veelgebruikte namen: ap0, wlan0, wlan1, wlan2, softap0, ra0.</string>
@@ -1149,7 +1152,6 @@
     <string name="btn_reset_scale">Knopgrootte resetten</string>
     <string name="static_bssid_title">Statische BSSID (MAC-adres)</string>
     <string name="static_bssid_help">Het wifi-adres (BSSID) dat de telefoon krijgt voor het netwerk van deze unit. Laat je dit leeg, dan leest de app het adres zelf. Typ een adres alleen als het log zegt dat geen enkele bron een adres meldde. Bij Wi-Fi Direct stelt de rij het adres van de groep in. Bij de hotspot stelt hij het adres van de hotspot in. Een adres dat de app leest gaat altijd voor op een getypt adres.</string>
-    <string name="native_ap_transport_hint">De telefoon maakt verbinding met de eigen hotspot van dit apparaat in plaats van met een Wi-Fi Direct-groep. Zet de hotspot aan voordat je verbinding maakt.</string>
     <string name="hotspot_band">Hotspotband</string>
     <string name="hotspot_band_auto">Automatisch</string>
     <string name="hotspot_band_5ghz">Alleen 5 GHz</string>
@@ -1281,10 +1283,10 @@
     <string name="onb_audio_focus_title">Audiofocus</string>
     <string name="onb_audio_more_hint">Je kunt dit later aanpassen bij Instellingen → Audiostreams.</string>
     <string name="native_driver_selection_title">Bestuurdersselectie</string>
-    <string name="native_driver_selection_summary">Kies welke telefoon verbinding maakt wanneer meerdere gekoppelde bestuurders in het voertuig zijn.</string>
     <string name="native_driver_selection_mode_off">Uitgezet</string>
     <string name="native_driver_selection_mode_auto">Auto</string>
     <string name="native_driver_selection_mode_always">Altijd vragen</string>
+    <string name="native_driver_selection_help">Bepaalt wanneer de app vraagt welke telefoon ze gebruikt. Uitgezet: de app vraagt bij het openen nooit, de WiFi-knop verbindt met de meest waarschijnlijke telefoon. Auto: de app vraagt alleen als ze de bestuurder niet herkent. Is één telefoon via Bluetooth verbonden, dan gebruikt ze die. Altijd vragen: de app vraagt bij elke start als er meer dan één telefoon gekoppeld is. Het meest waarschijnlijk is de verbonden telefoon, dan “Voorkeurstelefoon”, dan de laatst gebruikte.</string>
     <string name="native_driver_selection_timeout">Afteltimer voor automatische verbinding</string>
     <string name="native_driver_selection_timeout_help">Als de lijst met telefoons opent, telt hij af en maakt dan verbinding met de meest waarschijnlijke telefoon. Hier stel je de aftelling in, van 3 tot 30 seconden. Tik vóór het einde op een telefoon om zelf te kiezen.</string>
     <string name="native_driver_preferred_device">Voorkeurstelefoon</string>
@@ -1444,7 +1446,7 @@
     <string name="wifi_direct_last_network_differs">Dit is niet de naam en het wachtwoord die de app heeft aangevraagd, dus het systeem heeft ze overschreven. Gebruik hierboven \"Nieuwe Wi-Fi Direct-netwerkidentiteit\" om een nieuw paar te laten gebruiken.</string>
     <string name="wifi_direct_last_network_hint">Handmatig verbinding maken met dit netwerk op je telefoon start Android Auto niet, want de telefoon maakt zelf verbinding zodra dit via Bluetooth is ingesteld. Het is alleen een manier om te controleren of het netwerk werkt.</string>
     <string name="wifi_direct_group_identity">Wi-Fi Direct-naam en -wachtwoord</string>
-    <string name="wifi_direct_group_identity_help">De Wi-Fi Direct-naam en het wachtwoord die de telefoon krijgt om verbinding te maken met deze unit. Laat de app ze kiezen, of typ je eigen. Nieuwe laten kiezen laat de app een nieuw paar kiezen. Wijzig je het wachtwoord, dan wijzigt de app ook de naam, omdat een telefoon niet opnieuw kan verbinden met een netwerk met dezelfde naam en een nieuw wachtwoord.</string>
+    <string name="wifi_direct_group_identity_help">De Wi-Fi Direct-naam en het wachtwoord die de telefoon krijgt om verbinding te maken met deze unit. Laat de app ze kiezen, of typ je eigen. “Nieuwe laten kiezen” laat de app een nieuw paar kiezen. Wijzig je het wachtwoord, dan wijzigt de app ook de naam, omdat een telefoon niet opnieuw kan verbinden met een netwerk met dezelfde naam en een nieuw wachtwoord.</string>
     <string name="wifi_direct_group_identity_auto">Gekozen door de app. Tik om zelf te kiezen.</string>
     <string name="wifi_direct_group_identity_pick_new">Nieuwe laten kiezen</string>
     <string name="wifi_direct_group_identity_message">De naam en het wachtwoord die je telefoon krijgt om verbinding te maken met deze head-unit. Als je het wachtwoord wijzigt, verandert de naam ook, want een telefoon kan niet opnieuw verbinding maken met een netwerk waarvan de naam gelijk bleef maar het wachtwoord niet.</string>

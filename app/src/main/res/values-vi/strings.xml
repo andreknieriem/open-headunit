@@ -99,7 +99,9 @@
     <string name="reconnection_required_title">Cần kết nối lại</string>
     <string name="reconnection_required_message">Thiết bị đang ở trạng thái chờ. Hãy rút và cắm lại cáp USB để khởi động lại Android Auto.</string>
 
-    <string name="bluetooth_address_s">Địa chỉ Bluetooth</string>
+    <string name="bluetooth_address_s">Địa chỉ Bluetooth của thiết bị</string>
+    <string name="bluetooth_address_summary">Địa chỉ điện thoại dùng để nhận ra thiết bị này.</string>
+    <string name="bluetooth_address_help">Địa chỉ Bluetooth của chính thiết bị này. Điện thoại dùng nó để nhận ra thiết bị ở mọi chế độ kết nối. Bạn tìm thấy nó trong Cài đặt, Giới thiệu, Trạng thái, hoặc trên điện thoại đã ghép nối ở biểu tượng bánh răng cạnh thiết bị này. Để trống để tự động phát hiện. Tùy chọn “Giữ âm thanh đa phương tiện của điện thoại qua USB” ngăn Android Auto tắt âm thanh đa phương tiện Bluetooth của điện thoại trong phiên USB. Khi đó, cuộc gọi có thể vẫn ở trên điện thoại.</string>
     <string name="enter_bluetooth_mac">Nhập MAC Bluetooth</string>
     <string name="bluetooth_address_message">Địa chỉ của chính thiết bị này, điện thoại dùng nó để nhận ra thiết bị. Bạn tìm thấy nó trong Cài đặt, Giới thiệu, Trạng thái, hoặc trên điện thoại đã ghép nối ở biểu tượng bánh răng cạnh thiết bị này. Để trống để tự động phát hiện.</string>
     <string name="invalid_bluetooth_address">Đây không phải địa chỉ Bluetooth. Hãy nhập sáu cặp chữ số thập lục phân, ví dụ 0C:32:3A:2D:5D:4A.</string>
@@ -1098,6 +1100,7 @@
     <string name="native_ap_transport">Phương thức truyền mạng</string>
     <string name="native_ap_transport_wifi_direct">WiFi Direct</string>
     <string name="native_ap_transport_hotspot">Điểm phát sóng</string>
+    <string name="native_ap_transport_help">Chọn mạng mà điện thoại tham gia ở chế độ Native của Android Auto. WiFi Direct, mặc định: thiết bị này tạo nhóm WiFi Direct riêng và điện thoại tham gia nhóm đó. Điểm phát sóng: điện thoại tham gia điểm phát sóng của thiết bị này. Dùng khi WiFi Direct không kết nối được. Điểm phát sóng phải bật trước khi kết nối, trừ khi “Tự bật điểm phát sóng” đang bật. Nếu thiết bị không đọc được cài đặt điểm phát sóng, hãy nhập tên và mật khẩu điểm phát sóng ở các hàng bên dưới.</string>
     <string name="hotspot_interface_override">Giao diện mạng của điểm phát sóng</string>
     <string name="hotspot_interface_override_help">Giao diện mạng mang điểm phát sóng của thiết bị này. Để trống thì ứng dụng tự tìm. Chỉ nhập khi log cho biết ứng dụng chọn sai giao diện hoặc tìm thấy nhiều giao diện. Khi đó ứng dụng gửi thông tin điểm phát sóng dù hệ thống báo không có điểm phát sóng, nên hãy chắc chắn điểm phát sóng đang bật.</string>
     <string name="hotspot_interface_override_message">Để trống để tự xác định. Hãy đặt giá trị này nếu nhật ký cho biết có nhiều giao diện có thể là điểm truy cập, hoặc chọn sai giao diện. Tên là tên mà nhật ký báo sau \"Providing credentials from\", hoặc mục chứa địa chỉ điểm phát sóng của bạn trong \"ip -brief addr\" từ shell. Tên thường gặp: ap0, wlan0, wlan1, wlan2, softap0, ra0.</string>
@@ -1145,7 +1148,6 @@
     <string name="btn_reset_scale">Đặt lại kích thước nút</string>
     <string name="static_bssid_title">BSSID tĩnh (Địa chỉ MAC)</string>
     <string name="static_bssid_help">Địa chỉ Wi-Fi (BSSID) mà điện thoại nhận cho mạng của thiết bị này. Để trống thì ứng dụng tự đọc địa chỉ. Chỉ nhập khi log cho biết không có nguồn nào báo địa chỉ. Với Wi-Fi Direct, hàng này đặt địa chỉ của nhóm. Với điểm phát sóng, hàng này đặt địa chỉ của điểm phát sóng. Địa chỉ ứng dụng tự đọc luôn được ưu tiên hơn địa chỉ đã nhập.</string>
-    <string name="native_ap_transport_hint">Điện thoại kết nối với điểm phát sóng của thiết bị này thay vì nhóm WiFi Direct. Hãy bật nó trước khi kết nối.</string>
     <string name="hotspot_band">Băng tần điểm phát sóng</string>
     <string name="hotspot_band_auto">Tự động</string>
     <string name="hotspot_band_5ghz">Chỉ 5 GHz</string>
@@ -1277,10 +1279,10 @@
     <string name="onb_audio_focus_title">Tiêu điểm âm thanh</string>
     <string name="onb_audio_more_hint">Bạn có thể thay đổi lại sau trong Cài đặt → Luồng âm thanh.</string>
     <string name="native_driver_selection_title">Chọn người lái</string>
-    <string name="native_driver_selection_summary">Chọn điện thoại để kết nối khi có nhiều người lái đã ghép đôi trong xe.</string>
     <string name="native_driver_selection_mode_off">Đã tắt</string>
     <string name="native_driver_selection_mode_auto">Tự động</string>
     <string name="native_driver_selection_mode_always">Luôn hỏi</string>
+    <string name="native_driver_selection_help">Chọn lúc ứng dụng hỏi dùng điện thoại nào. Đã tắt: không bao giờ hỏi khi mở, và nút WiFi kết nối điện thoại có khả năng nhất. Tự động: chỉ hỏi khi không xác định được điện thoại của tài xế. Nếu chỉ một điện thoại kết nối qua Bluetooth thì dùng điện thoại đó. Luôn hỏi: hỏi mỗi lần mở khi có nhiều điện thoại đã ghép nối. Điện thoại có khả năng nhất là điện thoại đang kết nối, rồi “Điện thoại ưu tiên”, rồi điện thoại dùng gần nhất.</string>
     <string name="native_driver_selection_timeout">Đếm ngược tự động kết nối</string>
     <string name="native_driver_selection_timeout_help">Khi danh sách điện thoại điều khiển mở ra, nó đếm ngược rồi kết nối với điện thoại có khả năng nhất. Mục này đặt thời gian đếm ngược, từ 3 đến 30 giây. Chạm vào một điện thoại trước khi hết giờ để tự chọn.</string>
     <string name="native_driver_preferred_device">Điện thoại ưu tiên</string>
@@ -1440,7 +1442,7 @@
     <string name="wifi_direct_last_network_differs">Đây không phải tên và mật khẩu mà ứng dụng đã yêu cầu, nên hệ thống đã ghi đè chúng. Hãy dùng \"Nhận dạng mạng Wi-Fi Direct mới\" ở trên để hệ thống dùng cặp mới.</string>
     <string name="wifi_direct_last_network_hint">Tự tham gia mạng này bằng tay trên điện thoại không khởi động Android Auto, vì điện thoại sẽ tự tham gia ngay khi được thiết lập qua Bluetooth. Đây chỉ là cách để kiểm tra xem mạng có hoạt động hay không.</string>
     <string name="wifi_direct_group_identity">Tên và mật khẩu Wi-Fi Direct</string>
-    <string name="wifi_direct_group_identity_help">Tên và mật khẩu Wi-Fi Direct mà điện thoại nhận để tham gia thiết bị này. Để ứng dụng chọn, hoặc tự nhập. Chọn mới cho tôi khiến ứng dụng chọn một cặp mới. Nếu bạn đổi mật khẩu, ứng dụng cũng đổi tên, vì điện thoại không thể tham gia lại mạng có cùng tên nhưng mật khẩu mới.</string>
+    <string name="wifi_direct_group_identity_help">Tên và mật khẩu Wi-Fi Direct mà điện thoại nhận để tham gia thiết bị này. Để ứng dụng chọn, hoặc tự nhập. “Chọn mới cho tôi” khiến ứng dụng chọn một cặp mới. Nếu bạn đổi mật khẩu, ứng dụng cũng đổi tên, vì điện thoại không thể tham gia lại mạng có cùng tên nhưng mật khẩu mới.</string>
     <string name="wifi_direct_group_identity_auto">Do ứng dụng chọn. Chạm để tự đặt.</string>
     <string name="wifi_direct_group_identity_pick_new">Chọn mới cho tôi</string>
     <string name="wifi_direct_group_identity_message">Tên và mật khẩu mà điện thoại của bạn nhận được để tham gia đầu máy này. Đổi mật khẩu cũng đổi luôn tên, vì điện thoại không thể tham gia lại một mạng có tên giữ nguyên mà mật khẩu thì không.</string>

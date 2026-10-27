@@ -93,7 +93,9 @@
     <string name="reconnection_required_title">Reconexão necessária</string>
     <string name="reconnection_required_message">O dispositivo está em espera. Desconecte e reconecte o cabo USB para reiniciar o Android Auto.</string>
 
-    <string name="bluetooth_address_s">Endereço Bluetooth</string>
+    <string name="bluetooth_address_s">Endereço Bluetooth da unidade</string>
+    <string name="bluetooth_address_summary">O endereço pelo qual o celular reconhece esta unidade.</string>
+    <string name="bluetooth_address_help">O endereço Bluetooth da própria unidade. O celular o usa para reconhecer a unidade, em todos os modos de conexão. Você o encontra em Configurações, Sobre, Status, ou no celular pareado sob a engrenagem ao lado deste dispositivo. Deixe vazio para detectá-lo automaticamente. A opção “Manter o áudio de mídia do celular por USB” impede que o Android Auto desative o áudio de mídia Bluetooth do celular em uma sessão USB. As chamadas podem então ficar no celular.</string>
     <string name="enter_bluetooth_mac">Insira o MAC do Bluetooth</string>
     <string name="bluetooth_address_message">O endereço da própria unidade, pelo qual o telefone a reconhece. Você o encontra em Configurações, Sobre, Status, ou no telefone pareado sob a engrenagem ao lado deste dispositivo. Deixe vazio para detectá-lo automaticamente.</string>
     <string name="invalid_bluetooth_address">Isso não é um endereço Bluetooth. Insira seis pares de dígitos hexadecimais, como 0C:32:3A:2D:5D:4A.</string>
@@ -1098,6 +1100,7 @@
     <string name="native_ap_transport">Tipo de rede</string>
     <string name="native_ap_transport_wifi_direct">WiFi Direct</string>
     <string name="native_ap_transport_hotspot">Ponto de acesso</string>
+    <string name="native_ap_transport_help">Define a rede em que o celular entra no modo nativo do Android Auto. WiFi Direct, o padrão: esta unidade cria o próprio grupo WiFi Direct e o celular entra nele. Ponto de acesso: o celular entra no ponto de acesso desta unidade. Use quando o WiFi Direct não conectar. O ponto de acesso precisa estar ligado antes de conectar, a menos que “Ponto de acesso automático” esteja ativado. Se a unidade não conseguir ler as configurações do ponto de acesso, digite o nome e a senha dele nas linhas abaixo.</string>
     <string name="hotspot_interface_override">Interface de rede do ponto de acesso</string>
     <string name="hotspot_interface_override_help">A interface de rede por onde passa o ponto de acesso desta unidade. Deixe em branco e o app a encontra sozinho. Defina só se o log disser que o app escolheu a interface errada ou achou mais de uma. O app então envia os dados do ponto de acesso mesmo que o sistema não informe um, então confirme que o ponto de acesso está ligado.</string>
     <string name="hotspot_interface_override_message">Deixe em branco para detectar automaticamente. Preencha se o log indicar que mais de uma interface pode ser o ponto de acesso, ou se ele escolher a errada. Use o nome que o log mostra depois de \"Providing credentials from\", ou a entrada com o endereço do seu ponto de acesso em \"ip -brief addr\" em um shell. Nomes comuns: ap0, wlan0, wlan1, wlan2, softap0, ra0.</string>
@@ -1145,7 +1148,6 @@
     <string name="btn_reset_scale">Redefinir tamanho</string>
     <string name="static_bssid_title">BSSID estático (endereço MAC)</string>
     <string name="static_bssid_help">O endereço Wi-Fi (BSSID) que o smartphone recebe para a rede desta unidade. Deixe em branco e o app lê o endereço sozinho. Digite um só quando o log disser que nenhuma fonte informou um endereço. Com Wi-Fi Direct, a linha define o endereço do grupo. Com o ponto de acesso, define o endereço do ponto de acesso. Um endereço lido pelo app sempre vem antes de um digitado.</string>
-    <string name="native_ap_transport_hint">O celular conecta ao ponto de acesso deste aparelho em vez de um grupo WiFi Direct. Ligue-o antes de conectar.</string>
     <string name="hotspot_band">Banda do ponto de acesso</string>
     <string name="hotspot_band_auto">Automático</string>
     <string name="hotspot_band_5ghz">Apenas 5 GHz</string>
@@ -1277,10 +1279,10 @@
     <string name="onb_audio_focus_title">Foco de áudio</string>
     <string name="onb_audio_more_hint">Você pode alterar isso depois em Configurações → Fluxos de áudio.</string>
     <string name="native_driver_selection_title">Seleção de motorista</string>
-    <string name="native_driver_selection_summary">Escolha qual telefone conectar quando vários motoristas com telefones pareados estiverem no veículo.</string>
     <string name="native_driver_selection_mode_off">Desativado</string>
     <string name="native_driver_selection_mode_auto">Automático</string>
     <string name="native_driver_selection_mode_always">Sempre perguntar</string>
+    <string name="native_driver_selection_help">Define quando o app pergunta qual celular usar, se mais de um celular pareado puder ser o do motorista. Desativado: o app nunca pergunta ao abrir, e o botão WiFi conecta o celular mais provável. Automático: o app só pergunta se não souber qual é o do motorista. Com um celular conectado por Bluetooth, ele usa esse. Sempre perguntar: o app pergunta toda vez que abre com mais de um celular pareado. O mais provável é o celular conectado, depois “Telefone preferido”, depois o último usado.</string>
     <string name="native_driver_selection_timeout">Contagem regressiva</string>
     <string name="native_driver_selection_timeout_help">Quando a lista de motoristas abre, ela faz uma contagem regressiva e depois conecta ao smartphone mais provável. Aqui você define a contagem, de 3 a 30 segundos. Toque em um smartphone antes do fim para escolher você mesmo.</string>
     <string name="native_driver_preferred_device">Telefone preferido</string>
@@ -1440,7 +1442,7 @@
     <string name="wifi_direct_last_network_differs">Este não é o nome e a senha que o app pediu, então o sistema os substituiu. Use \"Nova identidade de rede Wi-Fi Direct\" acima para gerar um novo par.</string>
     <string name="wifi_direct_last_network_hint">Entrar nesta rede manualmente pelo celular não inicia o Android Auto, porque o celular entra nela sozinho assim que é configurado por Bluetooth. Serve apenas para verificar se a rede funciona.</string>
     <string name="wifi_direct_group_identity">Nome e senha do Wi-Fi Direct</string>
-    <string name="wifi_direct_group_identity_help">O nome e a senha do Wi-Fi Direct que o smartphone recebe para entrar nesta unidade. Deixe o app escolher ou digite os seus. Escolher novos automaticamente faz o app escolher um novo par. Se você mudar a senha, o app também muda o nome, porque um smartphone não consegue reentrar em uma rede com o mesmo nome e uma senha nova.</string>
+    <string name="wifi_direct_group_identity_help">O nome e a senha do Wi-Fi Direct que o smartphone recebe para entrar nesta unidade. Deixe o app escolher ou digite os seus. “Escolher novos automaticamente” faz o app escolher um novo par. Se você mudar a senha, o app também muda o nome, porque um smartphone não consegue reentrar em uma rede com o mesmo nome e uma senha nova.</string>
     <string name="wifi_direct_group_identity_auto">Escolhido pelo app. Toque para definir os seus.</string>
     <string name="wifi_direct_group_identity_pick_new">Escolher novos automaticamente</string>
     <string name="wifi_direct_group_identity_message">O nome e a senha que o celular recebe para entrar nesta central multimídia. Mudar a senha também muda o nome, porque o celular não consegue voltar a uma rede cujo nome continua igual e cuja senha mudou.</string>

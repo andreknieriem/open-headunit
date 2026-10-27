@@ -126,9 +126,9 @@
     <string name="bluetooth_address_message">Власна адреса цього пристрою, за якою його розпізнає телефон. Знайдіть її в розділі «Налаштування» &gt; «Про пристрій» &gt; «Стан» або на сполученому телефоні під значком шестерні поруч із цим пристроєм. Залиште поле порожнім для автоматичного визначення.</string>
     <string name="invalid_bluetooth_address">Це не адреса Bluetooth. Введіть шість пар шістнадцяткових цифр, наприклад 0C:32:3A:2D:5D:4A.</string>
     <string name="reset">Скинути</string>
-    <string name="gps_for_navigation">GPS для навігації</string>
-    <string name="gps_for_navigation_description">Використовувати GPS для навігації.</string>
-    <string name="gps_for_navigation_help">Надсилає на телефон GPS-позицію самого пристрою, і Android Auto використовує її для навігації. Додаток надсилає лише реальні GPS-дані, а не позицію за мережею. Якщо пристрій на якийсь час втрачає GPS, додаток припиняє надсилання, і телефон використовує власне місцезнаходження. Застосовується під час наступного підключення.</string>
+    <string name="gps_for_navigation">Використовувати GPS пристрою в Android Auto</string>
+    <string name="gps_for_navigation_description">Android Auto бере позицію авто з цього пристрою, а не з телефона.</string>
+    <string name="gps_for_navigation_help">Вибирає, звідки Android Auto бере позицію авто для карт і навігації. Увімк.: додаток надсилає на телефон GPS-позицію цього пристрою. Вимк.: телефон використовує власне місцезнаходження. Увімкніть, якщо GPS-антена пристрою краща, ніж у телефоні. Додаток надсилає лише реальні GPS-дані. Якщо пристрій на якийсь час втрачає GPS, телефон використовує власне місцезнаходження. Вимкнення не вимикає GPS пристрою. Застосовується під час наступного підключення.</string>
     <string name="enabled">Увімкнено</string>
     <string name="disabled">Вимкнено</string>
     <string name="resolution">Роздільна здатність</string>
@@ -737,7 +737,7 @@
     <string name="current_brightness_reading">Поточна яскравість: %d / 255</string>
     <string name="exit_dialog_settings">Швидкі налаштування</string>
     <string name="key_back">Назад</string>
-    <string name="category_backup">Резервна копія</string>
+    <string name="category_backup_reset">Резервна копія та скидання</string>
     <string name="export_settings">Експортувати налаштування</string>
     <string name="export_settings_description">Зберегти резервну копію налаштувань як файл JSON.</string>
     <string name="export_settings_app_folder">Зберегти у папку резервних копій застосунку</string>
@@ -1235,7 +1235,6 @@
     <string name="native_aa_setup_qr_no_address">Власна адреса цього пристрою в цій мережі поки невідома.</string>
     <string name="native_aa_setup_qr_no_bluetooth">Не вдалося прочитати Bluetooth-адресу цього пристрою, а телефону вона потрібна, щоб згодом упізнати цей головний пристрій. Введіть її в розділі «Бездротове підключення». Спарений телефон показує її під значком шестірні біля цього пристрою.</string>
     <string name="native_aa_setup_qr_dongle">Назва Bluetooth цього пристрою схожа на назву бездротового адаптера, який телефон вважає іншим типом пристрою. Змініть назву Bluetooth на цьому пристрої та повторіть спробу.</string>
-    <string name="category_ui">Інтерфейс користувача</string>
     <string name="hide_phone_signal_label">Приховати рівень сигналу телефону</string>
     <string name="hide_phone_signal_help">Просить Android Auto не показувати рівень сигналу телефону на екрані цього пристрою. Деякі новіші версії Android Auto ігнорують цей запит. Застосовується під час наступного підключення.</string>
     <string name="hide_battery_level_label">Приховати рівень заряду телефону</string>

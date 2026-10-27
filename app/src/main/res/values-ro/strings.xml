@@ -126,9 +126,9 @@
     <string name="bluetooth_address_message">Adresa proprie a acestei unități, după care o recunoaște telefonul. O găsești în Setări, Despre, Stare sau pe telefonul asociat, sub pictograma roată dințată de lângă acest dispozitiv. Lasă gol pentru detectare automată.</string>
     <string name="invalid_bluetooth_address">Aceasta nu este o adresă Bluetooth. Introdu șase perechi de cifre hexazecimale, de exemplu 0C:32:3A:2D:5D:4A.</string>
     <string name="reset">Resetează</string>
-    <string name="gps_for_navigation">GPS pentru navigație</string>
-    <string name="gps_for_navigation_description">Folosește GPS-ul pentru navigație.</string>
-    <string name="gps_for_navigation_help">Trimite poziția GPS proprie a unității către telefon, iar Android Auto o folosește pentru navigare. Aplicația trimite doar o poziție GPS reală, niciodată o poziție din rețea. Dacă unitatea pierde semnalul GPS pentru o vreme, aplicația oprește trimiterea, iar telefonul își folosește propria locație. Se aplică la următoarea conexiune.</string>
+    <string name="gps_for_navigation">Folosește GPS-ul acestei unități în Android Auto</string>
+    <string name="gps_for_navigation_description">Android Auto ia poziția mașinii de la această unitate, nu de la telefon.</string>
+    <string name="gps_for_navigation_help">Alege de unde ia Android Auto poziția mașinii pentru hărți și navigație. Activat: aplicația trimite telefonului poziția GPS a unității. Dezactivat: telefonul folosește propria locație. Activează dacă antena GPS a unității e mai bună decât cea a telefonului. Aplicația trimite doar o poziție GPS reală. Dacă unitatea pierde semnalul GPS o vreme, telefonul folosește propria locație. Dezactivarea nu oprește GPS-ul unității. Se aplică la următoarea conexiune.</string>
     <string name="enabled">Activat</string>
     <string name="disabled">Dezactivat</string>
     <string name="resolution">Rezoluție</string>
@@ -737,7 +737,7 @@
     <string name="current_brightness_reading">Luminozitate curentă: %d / 255</string>
     <string name="exit_dialog_settings">Setări rapide</string>
     <string name="key_back">Înapoi</string>
-    <string name="category_backup">Copie de rezervă</string>
+    <string name="category_backup_reset">Backup și resetare</string>
     <string name="export_settings">Exportă setările</string>
     <string name="export_settings_description">Salvează o copie de rezervă a setărilor ca fișier JSON.</string>
     <string name="export_settings_app_folder">Salvează în folderul de copii al aplicației</string>
@@ -1230,7 +1230,6 @@
     <string name="native_aa_setup_qr_no_address">Adresa acestei unități în rețeaua respectivă nu este încă cunoscută.</string>
     <string name="native_aa_setup_qr_no_bluetooth">Adresa Bluetooth a acestei unități nu a putut fi citită, iar telefonul are nevoie de ea pentru a recunoaște ulterior unitatea. Introdu-o la Conexiune wireless; telefonul asociat o afișează sub pictograma roată dințată de lângă acest dispozitiv.</string>
     <string name="native_aa_setup_qr_dongle">Numele Bluetooth al acestei unități seamănă cu cel al unui adaptor wireless, pe care telefonul îl tratează ca pe alt tip de dispozitiv. Redenumește Bluetooth pe această unitate și încearcă din nou.</string>
-    <string name="category_ui">Interfață utilizator</string>
     <string name="hide_phone_signal_label">Ascunde semnalul telefonului</string>
     <string name="hide_phone_signal_help">Cere Android Auto să nu afișeze intensitatea semnalului telefonului pe ecranul acestei unități. Unele versiuni mai noi de Android Auto ignoră această cerere. Se aplică la următoarea conexiune.</string>
     <string name="hide_battery_level_label">Ascunde nivelul bateriei telefonului</string>

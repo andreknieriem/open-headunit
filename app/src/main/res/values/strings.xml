@@ -401,9 +401,9 @@
     <string name="reset_settings">Reset to Defaults</string>
     <string name="reset_settings_confirm">Are you sure you want to reset all settings to their default values? This will restart the app.</string>
     <string name="reset_settings_description">Clears all configuration, cached data and auto-connect preferences. The app will restart to apply the factory defaults.</string>
-    <string name="gps_for_navigation">GPS for navigation</string>
-    <string name="gps_for_navigation_description">Use GPS for navigation.</string>
-    <string name="gps_for_navigation_help">Sends this unit\'s own GPS position to the phone, and Android Auto uses it for navigation. The app sends only a real GPS fix, never a network position. If this unit loses its GPS fix for a while, the app stops sending, and the phone uses its own location. Applies at the next connection.</string>
+    <string name="gps_for_navigation">Use this unit\'s GPS in Android Auto</string>
+    <string name="gps_for_navigation_description">Android Auto takes the car\'s position from this unit, not from the phone.</string>
+    <string name="gps_for_navigation_help">Chooses where Android Auto gets the car\'s position for maps and navigation. On: this app sends this unit\'s own GPS position to the phone. Off: the phone uses its own location. Turn it on when this unit has a GPS antenna with a better view of the sky than the phone. The app sends only a real GPS fix, never a network position. If this unit loses its GPS fix for a while, the phone uses its own location again. Turning this off does not turn off this unit\'s GPS. Applies at the next connection.</string>
     <string name="enabled">Enabled</string>
     <string name="disabled">Disabled</string>
     <string name="resolution">Resolution</string>
@@ -972,7 +972,7 @@
     <string name="discard">Discard</string>
     <string name="stopping_service">Stopping service to apply changes…</string>
     <string name="settings_saved">Settings saved</string>
-    <string name="category_backup">Backup</string>
+    <string name="category_backup_reset">Backup and reset</string>
     <string name="export_settings">Export settings</string>
     <string name="export_settings_description">Save a settings backup as a JSON file.</string>
     <string name="export_settings_choose_location">Choose save location</string>
@@ -1584,7 +1584,6 @@
     <string name="aa174_notice_message"><![CDATA[Starting with Android Auto 17.4, Google introduced breaking internal changes that disable the automated launch via Wireless Helper as well as classic Self-Mode.<br/><br/><b>Available solutions:</b><br/><br/><b>1. Headunit Server (Developer Mode):</b><br/>The only remaining working solution for Self-Mode! On your phone, open Android Auto developer settings and tap "Start headunit server".<br/><br/><b>2. Native Mode:</b><br/>Connects directly via Wi-Fi Direct or Headunit Hotspot.<br/><br/><b>3. USB Wireless Dongle:</b><br/>A hardware USB wireless adapter provides the most reliable plug-and-play experience.<br/><br/><b>4. Wireless Helper:</b><br/>Continues to work reliably for Android Auto up to version 17.3.]]></string>
     <string name="aa174_notice_button_confirm">Got it</string>
     <string name="aa174_notice_button_guide">Open Guide</string>
-    <string name="category_ui">UI</string>
     <string name="hide_phone_signal_label">Hide the Phone\'s Signal</string>
     <string name="hide_phone_signal_help">Asks Android Auto not to show the phone\'s signal strength on this unit\'s screen. Some newer Android Auto versions ignore this request. Applies at the next connection.</string>
     <string name="hide_battery_level_label">Hide the Phone\'s Battery Level</string>

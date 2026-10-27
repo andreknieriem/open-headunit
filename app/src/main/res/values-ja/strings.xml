@@ -131,9 +131,9 @@
     <string name="bluetooth_address_message">このユニット自身のアドレスで、スマートフォンはこれでユニットを識別します。設定、端末情報、ステータスの順に開くか、ペア設定済みのスマートフォンでこの機器の横にある歯車から確認できます。空欄にすると自動的に検出します。</string>
     <string name="invalid_bluetooth_address">Bluetoothアドレスではありません。0C:32:3A:2D:5D:4A のように16進数2桁を6組で入力してください。</string>
     <string name="reset">リセット</string>
-    <string name="gps_for_navigation">ナビゲーション用のGPS</string>
-    <string name="gps_for_navigation_description">ナビゲーションにGPSを利用する。</string>
-    <string name="gps_for_navigation_help">この機器自身の GPS 位置をスマートフォンに送り、Android Auto がナビに使います。アプリが送るのは実際の GPS 測位だけで、ネットワークによる位置は送りません。この機器が GPS 測位をしばらく失うと、アプリは送信を止め、スマートフォン自身の位置情報が使われます。次の接続から反映されます。</string>
+    <string name="gps_for_navigation">Android Auto でこの機器の GPS を使う</string>
+    <string name="gps_for_navigation_description">Android Auto は車の位置をスマートフォンではなくこの機器から取得します。</string>
+    <string name="gps_for_navigation_help">Android Auto が地図とナビで使う車の位置の取得元を選びます。オン：アプリがこの機器の GPS 位置をスマートフォンに送ります。オフ：スマートフォン自身の位置情報が使われます。この機器の GPS アンテナの受信状態がスマートフォンより良い場合にオンにします。アプリが送るのは実際の GPS 測位だけです。この機器が GPS 測位をしばらく失うと、スマートフォン自身の位置情報が使われます。オフにしても、この機器の GPS は止まりません。次の接続から反映されます。</string>
     <string name="enabled">有効</string>
     <string name="disabled">無効</string>
     <string name="resolution">解像度</string>
@@ -745,7 +745,7 @@
     <string name="current_brightness_reading">現在の明るさ: %d / 255</string>
     <string name="exit_dialog_settings">クイック設定</string>
     <string name="key_back">戻る</string>
-    <string name="category_backup">バックアップ</string>
+    <string name="category_backup_reset">バックアップとリセット</string>
     <string name="export_settings">設定をエクスポート</string>
     <string name="export_settings_description">設定のバックアップを JSON ファイルとして保存。</string>
     <string name="export_settings_app_folder">アプリのバックアップフォルダに保存</string>
@@ -1236,7 +1236,6 @@
     <string name="native_aa_setup_qr_no_address">そのネットワーク上でのこのユニット自身のアドレスがまだ分かりません。</string>
     <string name="native_aa_setup_qr_no_bluetooth">このユニットの Bluetooth アドレスを読み取れませんでした。スマートフォンが後でこのヘッドユニットを識別するために、このアドレスが必要です。「ワイヤレス接続」で入力してください。ペア設定済みのスマートフォンでは、このデバイスの横にある歯車アイコンから確認できます。</string>
     <string name="native_aa_setup_qr_dongle">このユニットの Bluetooth 名がワイヤレスドングルのように見えます。スマートフォンは、別の種類の機器として扱います。このユニットの Bluetooth 名を変更して、再試行してください。</string>
-    <string name="category_ui">UI</string>
     <string name="hide_phone_signal_label">スマートフォンの電波強度を非表示</string>
     <string name="hide_phone_signal_help">この機器の画面にスマートフォンの電波強度を表示しないよう、Android Auto に要求します。新しい Android Auto のバージョンでは、この要求が無視されることがあります。次の接続から反映されます。</string>
     <string name="hide_battery_level_label">スマートフォンのバッテリー残量を非表示</string>

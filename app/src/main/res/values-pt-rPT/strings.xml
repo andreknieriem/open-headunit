@@ -377,9 +377,9 @@
     <string name="reset_settings">Repor predefinições</string>
     <string name="reset_settings_confirm">Tem a certeza de que pretende repor todas as definições para os valores predefinidos? A aplicação será reiniciada.</string>
     <string name="reset_settings_description">Apaga todas as definições, os dados em cache e as preferências de ligação automática. A aplicação será reiniciada para aplicar as predefinições de fábrica.</string>
-    <string name="gps_for_navigation">GPS para navegação</string>
-    <string name="gps_for_navigation_description">Utilizar GPS para navegação.</string>
-    <string name="gps_for_navigation_help">Envia ao telemóvel a posição GPS desta unidade, e o Android Auto usa-a na navegação. A aplicação envia só um sinal real de GPS, nunca uma posição da rede. Se a unidade perder o sinal de GPS durante algum tempo, a aplicação deixa de enviar e o telemóvel usa a sua própria localização. Aplica-se na ligação seguinte.</string>
+    <string name="gps_for_navigation">Utilizar o GPS desta unidade no Android Auto</string>
+    <string name="gps_for_navigation_description">O Android Auto obtém a posição do carro desta unidade, não do telemóvel.</string>
+    <string name="gps_for_navigation_help">Define de onde o Android Auto obtém a posição do carro para mapas e navegação. Ativado: a aplicação envia ao telemóvel a posição GPS desta unidade. Desativado: o telemóvel usa a sua própria localização. Ative se a antena GPS da unidade for melhor do que a do telemóvel. A aplicação envia só um sinal real de GPS. Se a unidade perder o sinal durante algum tempo, o telemóvel usa a sua própria localização. Desativar não desliga o GPS da unidade. Aplica-se na ligação seguinte.</string>
     <string name="enabled">Ativado</string>
     <string name="disabled">Desativado</string>
     <string name="resolution">Resolução</string>
@@ -878,7 +878,7 @@
     <string name="discard">Rejeitar</string>
     <string name="stopping_service">A parar serviço para aplicar alterações…</string>
     <string name="settings_saved">Definições guardadas</string>
-    <string name="category_backup">Cópia de segurança</string>
+    <string name="category_backup_reset">Cópia de segurança e reposição</string>
     <string name="export_settings">Exportar definições</string>
     <string name="export_settings_description">Guardar cópia de segurança das definições em formato JSON.</string>
     <string name="export_settings_choose_location">Escolher local para guardar</string>
@@ -1470,7 +1470,6 @@
     <string name="aa174_notice_message"><![CDATA[A partir do Android Auto 17.4, a Google introduziu alterações internas que desativam o arranque automático através do Wireless Helper, bem como o Modo Próprio clássico.<br/><br/><b>Soluções disponíveis:</b><br/><br/><b>1. Servidor da unidade (Modo de programador):</b><br/>A única solução que ainda funciona para o Modo Próprio! No telemóvel, abra as definições de programador do Android Auto e toque em "Start headunit server".<br/><br/><b>2. Modo nativo:</b><br/>Liga-se diretamente por Wi-Fi Direct ou pela zona Wi-Fi da unidade.<br/><br/><b>3. Adaptador USB sem fios:</b><br/>Um adaptador USB sem fios proporciona a experiência plug-and-play mais fiável.<br/><br/><b>4. Wireless Helper:</b><br/>Continua a funcionar de forma fiável com o Android Auto até à versão 17.3.]]></string>
     <string name="aa174_notice_button_confirm">Entendi</string>
     <string name="aa174_notice_button_guide">Abrir Guia</string>
-    <string name="category_ui">Interface</string>
     <string name="hide_phone_signal_label">Ocultar o sinal do telemóvel</string>
     <string name="hide_phone_signal_help">Pede ao Android Auto que não mostre a intensidade do sinal do telemóvel no ecrã desta unidade. Algumas versões mais recentes do Android Auto ignoram o pedido. Aplica-se na ligação seguinte.</string>
     <string name="hide_battery_level_label">Ocultar o nível de bateria do telemóvel</string>

@@ -132,9 +132,9 @@
     <string name="bluetooth_address_message">Bu cihazın kendi adresi; telefon onu bu adresle tanır. Ayarlar, Hakkında, Durum bölümünde ya da eşleştirilmiş telefonda bu cihazın yanındaki dişli simgesinde bulabilirsiniz. Otomatik olarak algılanması için boş bırakın.</string>
     <string name="invalid_bluetooth_address">Bu bir Bluetooth adresi değil. Altı çift onaltılık rakam girin, örneğin 0C:32:3A:2D:5D:4A.</string>
     <string name="reset">Sıfırla</string>
-    <string name="gps_for_navigation">Navigasyon için GPS</string>
-    <string name="gps_for_navigation_description">Navigasyon için GPS kullan.</string>
-    <string name="gps_for_navigation_help">Ünitenin kendi GPS konumunu telefona gönderir ve Android Auto bunu navigasyon için kullanır. Uygulama yalnızca gerçek bir GPS konumu gönderir, asla ağ konumu göndermez. Ünite bir süre GPS konumunu kaybederse uygulama göndermeyi durdurur ve telefon kendi konumunu kullanır. Sonraki bağlantıda uygulanır.</string>
+    <string name="gps_for_navigation">Android Auto\'da bu ünitenin GPS\'ini kullan</string>
+    <string name="gps_for_navigation_description">Android Auto aracın konumunu telefondan değil, bu üniteden alır.</string>
+    <string name="gps_for_navigation_help">Android Auto\'nun harita ve navigasyon için aracın konumunu nereden alacağını seçer. Açık: uygulama bu ünitenin GPS konumunu telefona gönderir. Kapalı: telefon kendi konumunu kullanır. Ünitenin GPS anteni telefondan daha iyiyse açın. Uygulama yalnızca gerçek bir GPS konumu gönderir. Ünite bir süre GPS\'i kaybederse telefon kendi konumunu kullanır. Kapatmak ünitenin GPS\'ini kapatmaz. Sonraki bağlantıda uygulanır.</string>
     <string name="enabled">Etkin</string>
     <string name="disabled">Devre Dışı</string>
     <string name="resolution">Çözünürlük</string>
@@ -710,7 +710,7 @@
     <string name="current_brightness_reading">Geçerli parlaklık: %d / 255</string>
     <string name="exit_dialog_settings">Hızlı Ayarlar</string>
     <string name="key_back">Geri</string>
-    <string name="category_backup">Yedekleme</string>
+    <string name="category_backup_reset">Yedekleme ve sıfırlama</string>
     <string name="export_settings">Ayarları dışa aktar</string>
     <string name="export_settings_description">Ayarların yedeğini bir JSON dosyası olarak kaydet.</string>
     <string name="export_settings_app_folder">Uygulama yedek klasörüne kaydet</string>
@@ -1227,7 +1227,6 @@
     <string name="native_aa_setup_qr_no_address">Bu cihazın o ağdaki kendi adresi henüz bilinmiyor.</string>
     <string name="native_aa_setup_qr_no_bluetooth">Bu cihazın Bluetooth adresi okunamadı. Telefonun bu üniteyi daha sonra tanıması için bu adres gerekir. Adresi Kablosuz bağlantı bölümüne girin. Eşlenen telefonda adres, bu cihazın yanındaki dişli simgesinin altında görünür.</string>
     <string name="native_aa_setup_qr_dongle">Bu cihazın Bluetooth adı kablosuz bir adaptör gibi görünüyor ve telefon bunu farklı bir cihaz türü olarak ele alır. Bu cihazda Bluetooth adını değiştirip tekrar deneyin.</string>
-    <string name="category_ui">Arayüz</string>
     <string name="hide_phone_signal_label">Telefonun sinyal gücünü gizle</string>
     <string name="hide_phone_signal_help">Android Auto\'dan telefonun sinyal gücünü bu ünitenin ekranında göstermemesini ister. Bazı yeni Android Auto sürümleri bu isteği yok sayar. Sonraki bağlantıda uygulanır.</string>
     <string name="hide_battery_level_label">Telefonun pil seviyesini gizle</string>

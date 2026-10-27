@@ -125,9 +125,9 @@
     <string name="bluetooth_address_message">此车机自身的蓝牙地址，手机用它来识别本机。可在“设置”&gt;“关于”&gt;“状态”中找到，或在已配对的手机上，点按本设备旁的齿轮图标查看。留空则自动检测。</string>
     <string name="invalid_bluetooth_address">这不是有效的蓝牙地址。请输入六组十六进制数字，例如 0C:32:3A:2D:5D:4A。</string>
     <string name="reset">重置</string>
-    <string name="gps_for_navigation">用于导航的 GPS</string>
-    <string name="gps_for_navigation_description">使用 GPS 进行导航。</string>
-    <string name="gps_for_navigation_help">把本机自己的 GPS 位置发送给手机，Android Auto 将其用于导航。应用只发送真实的 GPS 定位，从不发送网络位置。如果本机一段时间丢失 GPS 定位，应用会停止发送，手机改用自己的位置。下次连接时生效。</string>
+    <string name="gps_for_navigation">在 Android Auto 中使用本机的 GPS</string>
+    <string name="gps_for_navigation_description">Android Auto 从本机而不是手机获取车辆位置。</string>
+    <string name="gps_for_navigation_help">选择 Android Auto 从哪里获取车辆位置，用于地图和导航。开启：应用把本机的 GPS 位置发送给手机。关闭：手机使用自己的位置。如果本机的 GPS 天线比手机更好，请开启。应用只发送真实的 GPS 定位。如果本机一段时间丢失 GPS 定位，手机会使用自己的位置。关闭此项不会关闭本机的 GPS。下次连接时生效。</string>
     <string name="enabled">已启用</string>
     <string name="disabled">已停用</string>
     <string name="resolution">分辨率</string>
@@ -736,7 +736,7 @@
     <string name="current_brightness_reading">当前亮度：%d / 255</string>
     <string name="exit_dialog_settings">快速设置</string>
     <string name="key_back">返回</string>
-    <string name="category_backup">备份</string>
+    <string name="category_backup_reset">备份和重置</string>
     <string name="export_settings">导出设置</string>
     <string name="export_settings_description">将设置备份保存为 JSON 文件。</string>
     <string name="export_settings_app_folder">保存到应用备份文件夹</string>
@@ -1230,7 +1230,6 @@
     <string name="native_aa_setup_qr_no_address">尚不知道此主机在该网络上的地址。</string>
     <string name="native_aa_setup_qr_no_bluetooth">无法读取此主机的蓝牙地址，而手机需要该地址，日后才能识别这台主机。请在“无线连接”下输入；已配对的手机会在此设备旁的齿轮图标下显示该地址。</string>
     <string name="native_aa_setup_qr_dongle">此主机的蓝牙名称看起来像无线适配器，手机会将其视为另一类设备。请重命名此主机的蓝牙后重试。</string>
-    <string name="category_ui">界面</string>
     <string name="hide_phone_signal_label">隐藏手机信号图标</string>
     <string name="hide_phone_signal_help">请求 Android Auto 不要在本机屏幕上显示手机的信号强度。部分较新版本的 Android Auto 会忽略此请求。下次连接时生效。</string>
     <string name="hide_battery_level_label">隐藏手机电量图示</string>

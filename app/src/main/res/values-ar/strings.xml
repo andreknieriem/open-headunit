@@ -126,9 +126,9 @@
     <string name="bluetooth_address_message">عنوان هذه الوحدة نفسها، وهو ما يتعرّف به الهاتف عليها. تجده ضمن الإعدادات، حول الهاتف، الحالة، أو على الهاتف المقترن عبر رمز الترس بجوار هذه الوحدة. اتركه فارغًا لاكتشافه تلقائيًا.</string>
     <string name="invalid_bluetooth_address">هذا ليس عنوان بلوتوث. أدخل ستة أزواج من الأرقام السداسية العشرية، مثل 0C:32:3A:2D:5D:4A.</string>
     <string name="reset">إعادة تعيين</string>
-    <string name="gps_for_navigation">GPS للملاحة</string>
-    <string name="gps_for_navigation_description">استخدام GPS للملاحة.</string>
-    <string name="gps_for_navigation_help">يرسل موقع GPS الخاص بهذه الوحدة إلى الهاتف، ويستخدمه Android Auto في الملاحة. يرسل التطبيق تحديد GPS حقيقيًا فقط، وليس موقع الشبكة أبدًا. إذا فقدت الوحدة تحديد GPS لبعض الوقت، يتوقف التطبيق عن الإرسال ويستخدم الهاتف موقعه الخاص. يسري عند الاتصال التالي.</string>
+    <string name="gps_for_navigation">استخدام GPS هذه الوحدة في Android Auto</string>
+    <string name="gps_for_navigation_description">يحصل Android Auto على موقع السيارة من هذه الوحدة، لا من الهاتف.</string>
+    <string name="gps_for_navigation_help">يحدد مصدر موقع السيارة الذي يستخدمه Android Auto للخرائط والملاحة. عند التفعيل: يرسل التطبيق موقع GPS الخاص بهذه الوحدة إلى الهاتف. عند الإيقاف: يستخدم الهاتف موقعه الخاص. فعّله إذا كان هوائي GPS في الوحدة أفضل من الهاتف. يرسل التطبيق تحديد GPS حقيقيًا فقط. إذا فقدت الوحدة GPS لبعض الوقت، يعود الهاتف إلى موقعه. إيقاف الخيار لا يوقف GPS في الوحدة. يسري عند الاتصال التالي.</string>
     <string name="enabled">مفعَّل</string>
     <string name="disabled">غير مفعَّل</string>
     <string name="resolution">الدقة</string>
@@ -736,7 +736,7 @@
     <string name="current_brightness_reading">السطوع الحالي: %d / 255</string>
     <string name="exit_dialog_settings">الإعدادات السريعة</string>
     <string name="key_back">رجوع</string>
-    <string name="category_backup">النسخ الاحتياطي</string>
+    <string name="category_backup_reset">النسخ الاحتياطي وإعادة التعيين</string>
     <string name="export_settings">تصدير الإعدادات</string>
     <string name="export_settings_description">حفظ نسخة احتياطية من الإعدادات كملف JSON.</string>
     <string name="export_settings_app_folder">حفظ في مجلد نسخ التطبيق</string>
@@ -1234,7 +1234,6 @@
     <string name="native_aa_setup_qr_no_address">عنوان هذا الجهاز على تلك الشبكة غير معروف بعد.</string>
     <string name="native_aa_setup_qr_no_bluetooth">تعذّرت قراءة عنوان البلوتوث لهذا الجهاز، والهاتف يحتاج إليه للتعرف على هذه الوحدة لاحقًا. أدخله ضمن «الاتصال اللاسلكي». يعرضه الهاتف المقترن تحت رمز الترس بجوار هذا الجهاز.</string>
     <string name="native_aa_setup_qr_dongle">يبدو اسم بلوتوث هذا الجهاز مثل محوّل لاسلكي، ويتعامل معه الهاتف كنوع آخر من الأجهزة. غيّر اسم البلوتوث على هذا الجهاز وحاول مرة أخرى.</string>
-    <string name="category_ui">واجهة المستخدم</string>
     <string name="hide_phone_signal_label">إخفاء إشارة الهاتف</string>
     <string name="hide_phone_signal_help">يطلب من Android Auto ألا يعرض قوة إشارة الهاتف على شاشة هذه الوحدة. تتجاهل بعض إصدارات Android Auto الأحدث هذا الطلب. يسري عند الاتصال التالي.</string>
     <string name="hide_battery_level_label">إخفاء مستوى بطارية الهاتف</string>

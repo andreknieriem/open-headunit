@@ -125,9 +125,9 @@
     <string name="bluetooth_address_message">這是本車機自己的位址，手機會用它來辨識車機。可在「設定」&gt;「關於」&gt;「狀態」中找到，或在已配對的手機上，點選此裝置旁的齒輪圖示查看。留空則自動偵測。</string>
     <string name="invalid_bluetooth_address">這不是有效的藍牙位址。請輸入六組十六進位數字，例如 0C:32:3A:2D:5D:4A。</string>
     <string name="reset">重設</string>
-    <string name="gps_for_navigation">導航用 GPS</string>
-    <string name="gps_for_navigation_description">使用 GPS 進行導航。</string>
-    <string name="gps_for_navigation_help">把本裝置自己的 GPS 位置傳送給手機，Android Auto 會用它來導航。應用程式只傳送真實的 GPS 定位，絕不傳送網路位置。如果本裝置一段時間失去 GPS 定位，應用程式會停止傳送，手機改用自己的位置。下次連線時生效。</string>
+    <string name="gps_for_navigation">在 Android Auto 中使用本裝置的 GPS</string>
+    <string name="gps_for_navigation_description">Android Auto 從本裝置而非手機取得車輛位置。</string>
+    <string name="gps_for_navigation_help">選擇 Android Auto 從哪裡取得車輛位置，用於地圖和導航。開啟：應用程式把本裝置的 GPS 位置傳送給手機。關閉：手機使用自己的位置。如果本裝置的 GPS 天線比手機更好，請開啟。應用程式只傳送真實的 GPS 定位。如果本裝置一段時間失去 GPS 定位，手機會使用自己的位置。關閉此項不會關閉本裝置的 GPS。下次連線時生效。</string>
     <string name="enabled">已啟用</string>
     <string name="disabled">已停用</string>
     <string name="resolution">解析度</string>
@@ -736,7 +736,7 @@
     <string name="current_brightness_reading">目前亮度：%d / 255</string>
     <string name="exit_dialog_settings">快速設定</string>
     <string name="key_back">返回</string>
-    <string name="category_backup">備份</string>
+    <string name="category_backup_reset">備份與重設</string>
     <string name="export_settings">匯出設定</string>
     <string name="export_settings_description">將設定備份儲存為 JSON 檔案。</string>
     <string name="export_settings_app_folder">儲存至應用程式備份資料夾</string>
@@ -1230,7 +1230,6 @@
     <string name="native_aa_setup_qr_no_address">尚不知道此主機在該網路上的位址。</string>
     <string name="native_aa_setup_qr_no_bluetooth">無法讀取此主機的藍牙位址，而手機需要此位址，日後才能認出這台主機。請在「無線連線」下手動輸入；已配對的手機會在此裝置旁的齒輪圖示下顯示該位址。</string>
     <string name="native_aa_setup_qr_dongle">此主機的藍牙名稱看起來像無線轉接器，手機會將其視為另一種裝置。請重新命名此主機的藍牙，然後再試一次。</string>
-    <string name="category_ui">使用者介面</string>
     <string name="hide_phone_signal_label">隱藏手機訊號圖示</string>
     <string name="hide_phone_signal_help">要求 Android Auto 不要在本裝置螢幕上顯示手機的訊號強度。部分較新版本的 Android Auto 會忽略這項要求。下次連線時生效。</string>
     <string name="hide_battery_level_label">隱藏手機電量圖示</string>

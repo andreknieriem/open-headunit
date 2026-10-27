@@ -136,9 +136,9 @@
     <string name="reset_settings">ნაგულისხმევზე დაბრუნება</string>
     <string name="reset_settings_confirm">დარწმუნებული ხართ, რომ ყველა პარამეტრის ნაგულისხმევ მნიშვნელობაზე დაბრუნება გსურთ? აპი გადაიტვირთება.</string>
     <string name="reset_settings_description">შლის ყველა კონფიგურაციას, ქეშირებულ მონაცემებსა და ავტომატური დაკავშირების პარამეტრებს. ქარხნული პარამეტრების გამოსაყენებლად აპი გადაიტვირთება.</string>
-    <string name="gps_for_navigation">GPS ნავიგაციისთვის</string>
-    <string name="gps_for_navigation_description">GPS-ის გამოყენება ნავიგაციისთვის.</string>
-    <string name="gps_for_navigation_help">ტელეფონს უგზავნის ამ მოწყობილობის საკუთარ GPS პოზიციას, Android Auto კი მას ნავიგაციისთვის იყენებს. აპი მხოლოდ რეალურ GPS პოზიციას აგზავნის, არასოდეს ქსელურს. თუ მოწყობილობა GPS სიგნალს გარკვეული დროით დაკარგავს, აპი გაგზავნას წყვეტს და ტელეფონი საკუთარ მდებარეობას იყენებს. მოქმედებს შემდეგი კავშირისას.</string>
+    <string name="gps_for_navigation">Android Auto-ში ამ მოწყობილობის GPS-ის გამოყენება</string>
+    <string name="gps_for_navigation_description">Android Auto მანქანის პოზიციას ტელეფონიდან კი არა, ამ მოწყობილობიდან იღებს.</string>
+    <string name="gps_for_navigation_help">ირჩევს, საიდან იღებს Android Auto მანქანის პოზიციას რუკებისა და ნავიგაციისთვის. ჩართულია: აპი ტელეფონს ამ მოწყობილობის GPS პოზიციას უგზავნის. გამორთულია: ტელეფონი საკუთარ მდებარეობას იყენებს. ჩართეთ, თუ მოწყობილობის GPS ანტენა ტელეფონისაზე უკეთესია. აპი მხოლოდ რეალურ GPS პოზიციას აგზავნის. თუ მოწყობილობა GPS სიგნალს გარკვეული დროით დაკარგავს, ტელეფონი საკუთარ მდებარეობას იყენებს. გამორთვა მოწყობილობის GPS-ს არ ითიშავს. მოქმედებს შემდეგი კავშირისას.</string>
     <string name="enabled">ჩართულია</string>
     <string name="disabled">გამორთულია</string>
     <string name="resolution">გარჩევადობა</string>
@@ -464,7 +464,7 @@
     <string name="discard">უარყოფა</string>
     <string name="stopping_service">სერვისი ჩერდება ცვლილებების გასააქტიურებლად…</string>
     <string name="settings_saved">პარამეტრები შენახულია</string>
-    <string name="category_backup">სარეზერვო ასლი</string>
+    <string name="category_backup_reset">სარეზერვო ასლი და გადაყენება</string>
     <string name="export_settings">პარამეტრების ექსპორტი</string>
     <string name="export_settings_description">პარამეტრების სარეზერვო ასლის შენახვა JSON ფაილად.</string>
     <string name="export_settings_choose_location">აირჩიეთ შენახვის ადგილი</string>
@@ -1219,7 +1219,6 @@
     <string name="native_aa_setup_qr_no_address">ამ მოწყობილობის საკუთარი მისამართი ამ ქსელში ჯერ უცნობია.</string>
     <string name="native_aa_setup_qr_no_bluetooth">ამ მოწყობილობის Bluetooth მისამართის წაკითხვა ვერ მოხერხდა, ტელეფონს კი ის სჭირდება, რომ მოგვიანებით ამოიცნოს ეს მოწყობილობა. შეიყვანეთ ის განყოფილებაში „უსადენო კავშირი“. დაწყვილებულ ტელეფონზე ის ამ მოწყობილობის გვერდით, ბორბლის ხატულას ქვეშ ჩანს.</string>
     <string name="native_aa_setup_qr_dongle">ამ მოწყობილობის Bluetooth სახელი უსადენო ადაპტერის სახელს ჰგავს და ტელეფონი მას სხვა ტიპის მოწყობილობად აღიქვამს. შეცვალეთ Bluetooth-ის სახელი ამ მოწყობილობაზე და ხელახლა სცადეთ.</string>
-    <string name="category_ui">ინტერფეისი</string>
     <string name="hide_phone_signal_label">ტელეფონის სიგნალის დამალვა</string>
     <string name="hide_phone_signal_help">სთხოვს Android Auto-ს, ამ მოწყობილობის ეკრანზე არ აჩვენოს ტელეფონის სიგნალის სიძლიერე. Android Auto-ს ზოგიერთი ახალი ვერსია ამ თხოვნას უგულებელყოფს. მოქმედებს შემდეგი კავშირისას.</string>
     <string name="hide_battery_level_label">ტელეფონის ბატარეის დონის დამალვა</string>

@@ -340,9 +340,9 @@
     <string name="reset_settings">Rétablir les valeurs par défaut</string>
     <string name="reset_settings_confirm">Voulez-vous vraiment rétablir tous les paramètres par défaut ? L\'application va redémarrer.</string>
     <string name="reset_settings_description">Efface toute la configuration, les données mises en cache et les préférences d\'auto-connexion. L\'application redémarrera pour appliquer les paramètres d\'usine.</string>
-    <string name="gps_for_navigation">GPS pour la navigation</string>
-    <string name="gps_for_navigation_description">Utiliser le GPS pour la navigation.</string>
-    <string name="gps_for_navigation_help">Envoie la position GPS de cet appareil au téléphone, et Android Auto l\'utilise pour la navigation. L\'application n\'envoie qu\'une vraie position GPS, jamais une position réseau. Si cet appareil perd sa position GPS un moment, l\'application cesse d\'envoyer et le téléphone utilise sa propre position. S\'applique à la prochaine connexion.</string>
+    <string name="gps_for_navigation">Utiliser le GPS de cet appareil dans Android Auto</string>
+    <string name="gps_for_navigation_description">La position envoyée à Android Auto vient de cet appareil, pas du téléphone.</string>
+    <string name="gps_for_navigation_help">Choisit la source de la position de la voiture pour Android Auto. Activé : l\'application envoie au téléphone la position GPS de cet appareil. Désactivé : le téléphone utilise sa propre position. Activez-le si l\'antenne GPS de cet appareil est meilleure que celle du téléphone. L\'application n\'envoie qu\'une vraie position GPS. Si cet appareil perd le GPS un moment, le téléphone utilise sa propre position. Désactiver l\'option n\'éteint pas le GPS de l\'appareil. S\'applique à la prochaine connexion.</string>
     <string name="enabled">Activé</string>
     <string name="disabled">Désactivé</string>
     <string name="resolution">Résolution</string>
@@ -732,7 +732,7 @@
     <string name="discard">Ignorer</string>
     <string name="stopping_service">Arrêt du service pour appliquer les modifications…</string>
     <string name="settings_saved">Paramètres enregistrés</string>
-    <string name="category_backup">Sauvegarde</string>
+    <string name="category_backup_reset">Sauvegarde et réinitialisation</string>
     <string name="export_settings">Exporter les paramètres</string>
     <string name="export_settings_description">Enregistrer une copie de vos paramètres dans un fichier JSON.</string>
     <string name="export_settings_choose_location">Choisir où enregistrer</string>
@@ -1290,7 +1290,6 @@
     <string name="native_aa_setup_qr_no_address">L\'adresse de cet appareil sur ce réseau n\'est pas encore connue.</string>
     <string name="native_aa_setup_qr_no_bluetooth">L\'adresse Bluetooth de cet appareil n\'a pas pu être lue, et le téléphone en a besoin pour reconnaître cet autoradio par la suite. Saisissez-la sous Connexion sans fil ; le téléphone associé l\'affiche sous l\'engrenage à côté de cet appareil.</string>
     <string name="native_aa_setup_qr_dongle">Le nom Bluetooth de cet appareil ressemble à celui d\'un dongle sans fil, que le téléphone traite comme un autre type d\'appareil. Renommez le Bluetooth de cet appareil et réessayez.</string>
-    <string name="category_ui">Interface utilisateur</string>
     <string name="hide_phone_signal_label">Masquer le signal réseau du téléphone</string>
     <string name="hide_phone_signal_help">Demande à Android Auto de ne pas afficher la force du signal du téléphone sur l\'écran de cet appareil. Certaines versions récentes d\'Android Auto ignorent cette demande. S\'applique à la prochaine connexion.</string>
     <string name="hide_battery_level_label">Masquer le niveau de batterie du téléphone</string>

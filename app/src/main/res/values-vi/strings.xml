@@ -132,9 +132,9 @@
     <string name="bluetooth_address_message">Địa chỉ của chính thiết bị này, điện thoại dùng nó để nhận ra thiết bị. Bạn tìm thấy nó trong Cài đặt, Giới thiệu, Trạng thái, hoặc trên điện thoại đã ghép nối ở biểu tượng bánh răng cạnh thiết bị này. Để trống để tự động phát hiện.</string>
     <string name="invalid_bluetooth_address">Đây không phải địa chỉ Bluetooth. Hãy nhập sáu cặp chữ số thập lục phân, ví dụ 0C:32:3A:2D:5D:4A.</string>
     <string name="reset">Đặt lại</string>
-    <string name="gps_for_navigation">GPS cho điều hướng</string>
-    <string name="gps_for_navigation_description">Dùng GPS cho điều hướng.</string>
-    <string name="gps_for_navigation_help">Gửi vị trí GPS của chính thiết bị này đến điện thoại, và Android Auto dùng nó để dẫn đường. Ứng dụng chỉ gửi vị trí GPS thật, không bao giờ gửi vị trí theo mạng. Nếu thiết bị mất GPS một lúc, ứng dụng ngừng gửi và điện thoại dùng vị trí của chính nó. Áp dụng ở lần kết nối tiếp theo.</string>
+    <string name="gps_for_navigation">Dùng GPS của thiết bị này trong Android Auto</string>
+    <string name="gps_for_navigation_description">Android Auto lấy vị trí xe từ thiết bị này, không lấy từ điện thoại.</string>
+    <string name="gps_for_navigation_help">Chọn nơi Android Auto lấy vị trí xe cho bản đồ và dẫn đường. Bật: ứng dụng gửi vị trí GPS của thiết bị này đến điện thoại. Tắt: điện thoại dùng vị trí của chính nó. Hãy bật nếu ăng-ten GPS của thiết bị tốt hơn điện thoại. Ứng dụng chỉ gửi vị trí GPS thật. Nếu thiết bị mất GPS một lúc, điện thoại dùng vị trí của chính nó. Tắt tùy chọn này không tắt GPS của thiết bị. Áp dụng ở lần kết nối tiếp theo.</string>
     <string name="enabled">Đã bật</string>
     <string name="disabled">Đã tắt</string>
     <string name="resolution">Độ phân giải</string>
@@ -709,7 +709,7 @@
     <!-- Brightness, quick settings, key back, backup, wireless helper QR -->
     <string name="exit_dialog_settings">Cài đặt nhanh</string>
     <string name="key_back">Quay lại</string>
-    <string name="category_backup">Sao lưu</string>
+    <string name="category_backup_reset">Sao lưu và đặt lại</string>
     <string name="export_settings">Xuất cài đặt</string>
     <string name="export_settings_description">Lưu bản sao lưu cài đặt dưới dạng tệp JSON.</string>
     <string name="export_settings_app_folder">Lưu vào thư mục sao lưu của ứng dụng</string>
@@ -1234,7 +1234,6 @@
     <string name="native_aa_setup_qr_no_address">Chưa biết địa chỉ của thiết bị này trên mạng đó.</string>
     <string name="native_aa_setup_qr_no_bluetooth">Không đọc được địa chỉ Bluetooth của thiết bị này, mà điện thoại cần địa chỉ đó để nhận ra head unit này về sau. Hãy nhập địa chỉ trong mục Kết nối không dây. Điện thoại đã ghép đôi hiển thị địa chỉ này dưới biểu tượng bánh răng cạnh thiết bị.</string>
     <string name="native_aa_setup_qr_dongle">Tên Bluetooth của thiết bị này giống một bộ chuyển đổi không dây, thứ mà điện thoại xem là loại thiết bị khác. Hãy đổi tên Bluetooth trên thiết bị này rồi thử lại.</string>
-    <string name="category_ui">Giao diện người dùng</string>
     <string name="hide_phone_signal_label">Ẩn cột sóng điện thoại</string>
     <string name="hide_phone_signal_help">Yêu cầu Android Auto không hiện cường độ sóng của điện thoại trên màn hình thiết bị này. Một số phiên bản Android Auto mới hơn bỏ qua yêu cầu này. Áp dụng ở lần kết nối tiếp theo.</string>
     <string name="hide_battery_level_label">Ẩn mức pin điện thoại</string>

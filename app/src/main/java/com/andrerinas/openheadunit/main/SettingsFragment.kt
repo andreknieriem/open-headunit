@@ -156,7 +156,7 @@ class SettingsFragment : Fragment() {
         // Graphic
         "resolution", "dpiPixelDensity", "viewMode", "screenOrientation", "startInFullscreenMode",
         // Theming
-        "theming", "loadingScreen", "customization",
+        "loadingScreen", "customization",
         // Video
         "videoCodec", "fpsLimit",
         // Input
@@ -890,18 +890,44 @@ class SettingsFragment : Fragment() {
             }
         ))
 
-
-
-        items.add(SettingItem.ToggleSettingEntry(
-            stableId = "showToastMessages",
-            nameResId = R.string.show_toast_messages,
-            descriptionResId = R.string.show_toast_messages_description,
-            helpResId = R.string.show_toast_messages_help,
-            isChecked = pendingShowToastMessages ?: true,
-            onCheckedChanged = { isChecked ->
-                pendingShowToastMessages = isChecked
-                checkChanges()
-                updateSettingsList()
+        // In General, not Wireless: this address is announced as carAddress in every connection
+        // mode, and the setup QR's refusal deep-links here by searching for this row's title.
+        // The checkbox trades hands-free calls for the phone's Media audio, on USB sessions only.
+        val btAddress = pendingBluetoothAddress.orEmpty()
+        val keepMediaAudio = pendingBluetoothAnnounceSkip ?: false
+        val btAddressValue = btAddress.ifEmpty { getString(R.string.not_set) }
+        items.add(SettingItem.SettingEntry(
+            stableId = "bluetoothAddress",
+            nameResId = R.string.bluetooth_address_s,
+            value = if (keepMediaAudio) "$btAddressValue · ${getString(R.string.usb_keep_phone_media_audio)}" else btAddressValue,
+            searchKeywords = "bluetooth mac address car identity hands-free calls qr usb media audio a2dp",
+            onClick = { _ ->
+                DialogUtils.showTextInputDialogWithMessage(
+                    requireContext(),
+                    R.string.enter_bluetooth_mac,
+                    R.string.bluetooth_address_message,
+                    btAddress,
+                    DialogUtils.Checkbox(
+                        R.string.usb_keep_phone_media_audio,
+                        R.string.usb_keep_phone_media_audio_description,
+                        keepMediaAudio
+                    ),
+                    { newVal, keep ->
+                        pendingBluetoothAnnounceSkip = keep
+                        // Validated at entry, for the reason the static BSSID row records: an
+                        // address that is not MAC-shaped is announced verbatim and fails much later.
+                        val trimmed = newVal.trim()
+                        when {
+                            trimmed.isEmpty() -> pendingBluetoothAddress = ""
+                            SoftApBssidPolicy.isUsable(trimmed) -> pendingBluetoothAddress = trimmed
+                            else -> ToastUtils.showToast(
+                                requireContext(), R.string.invalid_bluetooth_address, Toast.LENGTH_LONG, force = true
+                            )
+                        }
+                        checkChanges()
+                        updateSettingsList()
+                    }
+                )
             }
         ))
 
@@ -920,31 +946,21 @@ class SettingsFragment : Fragment() {
             ))
         }
 
+        items.add(SettingItem.ToggleSettingEntry(
+            stableId = "showToastMessages",
+            nameResId = R.string.show_toast_messages,
+            descriptionResId = R.string.show_toast_messages_description,
+            helpResId = R.string.show_toast_messages_help,
+            isChecked = pendingShowToastMessages ?: true,
+            onCheckedChanged = { isChecked ->
+                pendingShowToastMessages = isChecked
+                checkChanges()
+                updateSettingsList()
+            }
+        ))
+
         // --- Wireless Connection ---
         items.add(SettingItem.CategoryHeader("wirelessConnection", R.string.category_wireless))
-
-        if (Build.VERSION.SDK_INT >= 26) {
-            items.add(SettingItem.SettingEntry(
-                stableId = "wifiScanControl",
-                nameResId = R.string.wifi_scan_title,
-                value = wifiScanSummary(),
-                // The row title does not name Shizuku; let the settings search find it.
-                searchKeywords = "Shizuku",
-                onClick = { _ ->
-                    // The sub-screen applies immediately; do not silently lose unsaved controls
-                    // in this screen when navigation recreates its view on return.
-                    if (hasChanges) MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-                        .setTitle(R.string.unsaved_changes)
-                        .setMessage(R.string.unsaved_changes_message)
-                        .setPositiveButton(R.string.discard) { _, _ ->
-                            findNavController().navigate(R.id.wifiScanSettingsFragment)
-                        }
-                        .setNegativeButton(R.string.cancel, null)
-                        .show()
-                    else findNavController().navigate(R.id.wifiScanSettingsFragment)
-                }
-            ))
-        }
 
         // Add 2.4GHz Warning Banner
         items.add(SettingItem.InfoBanner(
@@ -1578,362 +1594,28 @@ class SettingsFragment : Fragment() {
             ))
         }
 
-
-        // Ungated, unlike the static BSSID above: this address is announced as carAddress in
-        // every connection mode, and the setup QR's own refusal deep-links here by searching for
-        // this row's title, which bypasses the Basic and Advanced tiers but not a construction gate.
-        // The checkbox trades hands-free calls for the phone's Media audio, on USB sessions only.
-        val btAddress = pendingBluetoothAddress.orEmpty()
-        val keepMediaAudio = pendingBluetoothAnnounceSkip ?: false
-        val btAddressValue = btAddress.ifEmpty { getString(R.string.not_set) }
-        items.add(SettingItem.SettingEntry(
-            stableId = "bluetoothAddress",
-            nameResId = R.string.bluetooth_address_s,
-            value = if (keepMediaAudio) "$btAddressValue · ${getString(R.string.usb_keep_phone_media_audio)}" else btAddressValue,
-            searchKeywords = "bluetooth mac address car identity hands-free calls qr usb media audio a2dp",
-            onClick = { _ ->
-                DialogUtils.showTextInputDialogWithMessage(
-                    requireContext(),
-                    R.string.enter_bluetooth_mac,
-                    R.string.bluetooth_address_message,
-                    btAddress,
-                    DialogUtils.Checkbox(
-                        R.string.usb_keep_phone_media_audio,
-                        R.string.usb_keep_phone_media_audio_description,
-                        keepMediaAudio
-                    ),
-                    { newVal, keep ->
-                        pendingBluetoothAnnounceSkip = keep
-                        // Validated at entry, for the reason the static BSSID row records: an
-                        // address that is not MAC-shaped is announced verbatim and fails much later.
-                        val trimmed = newVal.trim()
-                        when {
-                            trimmed.isEmpty() -> pendingBluetoothAddress = ""
-                            SoftApBssidPolicy.isUsable(trimmed) -> pendingBluetoothAddress = trimmed
-                            else -> ToastUtils.showToast(
-                                requireContext(), R.string.invalid_bluetooth_address, Toast.LENGTH_LONG, force = true
-                            )
-                        }
-                        checkChanges()
-                        updateSettingsList()
-                    }
-                )
-            }
-        ))
-
-        // --- Automation ---
-        items.add(SettingItem.CategoryHeader("automation", R.string.category_automation))
-
-        items.add(SettingItem.SettingEntry(
-            stableId = "autoStartSettings",
-            nameResId = R.string.auto_start_settings,
-            value = getString(R.string.auto_start_settings_description),
-            searchKeywords = kw(
-                R.string.auto_start_on_boot_label, R.string.auto_start_screen_on_label,
-                R.string.auto_start_usb_label, R.string.auto_start_bt_label, R.string.auto_start_wifi_label,
-                R.string.auto_disconnect_bt_label
-            ),
-            onClick = {
-                try {
-                    findNavController().navigate(R.id.action_settingsFragment_to_autoStartFragment)
-                } catch (e: Exception) { }
-            }
-        ))
-
-        items.add(SettingItem.SettingEntry(
-            stableId = "autoConnectSettings",
-            nameResId = R.string.auto_connect_settings,
-            value = getAutoConnectSummary(),
-            searchKeywords = kw(
-                R.string.auto_connect_last_session, R.string.auto_connect_single_usb,
-                R.string.auto_start_self_mode
-            ),
-            onClick = {
-                try {
-                    findNavController().navigate(R.id.action_settingsFragment_to_autoConnectFragment)
-                } catch (e: Exception) { }
-            }
-        ))
-
-        val isCarLauncherActive = (pendingEnableCarLauncher ?: settings.enableCarLauncher) ||
-            CarLauncherManager.isDefaultLauncher(requireContext())
-
-        if (!isCarLauncherActive) {
-            items.add(SettingItem.ToggleSettingEntry(
-                stableId = "killOnDisconnect",
-                nameResId = R.string.kill_on_disconnect,
-                descriptionResId = R.string.kill_on_disconnect_description,
-                helpResId = R.string.kill_on_disconnect_help,
-                isChecked = pendingKillOnDisconnect ?: settings.rawKillOnDisconnect,
-                onCheckedChanged = { isChecked ->
-                    if (isChecked) {
-                        val conflicts = getKillOnDisconnectConflicts()
-                        val hasAutoStartOnBoot = settings.autoStartOnBoot
-                        val hasAutoStartOnScreenOn = settings.autoStartOnScreenOn
-                        if (conflicts.isNotEmpty() || hasAutoStartOnBoot || hasAutoStartOnScreenOn) {
-                            pendingKillOnDisconnect = true
-                            updateSettingsList()
-                            showKillOnDisconnectWarning(conflicts, hasAutoStartOnBoot, hasAutoStartOnScreenOn)
-                        } else {
-                            pendingKillOnDisconnect = true
-                            checkChanges()
-                            updateSettingsList()
-                        }
-                    } else {
-                        pendingKillOnDisconnect = false
-                        checkChanges()
-                        updateSettingsList()
-                    }
-                }
-            ))
-        }
-
-        // Self Mode is the only mode where the phone's call screen and the projection share a
-        // screen, so it is the only mode this can do anything in.
-        if (settings.showsSelf()) {
-            items.add(SettingItem.ToggleSettingEntry(
-                stableId = "raiseProjectionDuringCall",
-                nameResId = R.string.raise_projection_during_call,
-                descriptionResId = R.string.raise_projection_during_call_summary,
-                helpResId = R.string.raise_projection_during_call_description,
-                isChecked = pendingRaiseProjectionDuringCall ?: settings.raiseProjectionDuringCall,
-                onCheckedChanged = { isChecked ->
-                    pendingRaiseProjectionDuringCall = isChecked
-                    checkChanges()
-                    updateSettingsList()
-                }
-            ))
-        }
-
-        // --- More Features Settings ---
-        items.add(SettingItem.CategoryHeader("moreFeatures", R.string.category_more_features))
-
-        items.add(SettingItem.SettingEntry(
-            stableId = "deviceSpecificSettings",
-            nameResId = R.string.device_specific_settings,
-            value = getString(R.string.device_specific_settings_description),
-            searchKeywords = "head unit model Adayo Haval reverse gear MCU",
-            onClick = {
-                findNavController().navigate(R.id.action_settingsFragment_to_deviceSpecificSettingsFragment)
-            }
-        ))
-
-        val isCarLauncherEnabled = pendingEnableCarLauncher ?: settings.enableCarLauncher
-
-        items.add(SettingItem.ToggleSettingEntry(
-            stableId = "enableCarLauncher",
-            nameResId = R.string.pref_enable_car_launcher_title,
-            descriptionResId = R.string.pref_enable_car_launcher_summary,
-            helpResId = R.string.pref_enable_car_launcher_help,
-            isChecked = isCarLauncherEnabled,
-            onCheckedChanged = { isChecked ->
-                pendingEnableCarLauncher = isChecked
-                CarLauncherManager.setLauncherEnabled(requireContext(), isChecked)
-                if (isChecked && !CarLauncherManager.isDefaultLauncher(requireContext())) {
-                    CarLauncherManager.promptSetDefaultLauncher(requireContext(), homeRoleLauncher)
-                }
-                checkChanges()
-                updateSettingsList()
-            }
-        ))
-
-        if (isCarLauncherEnabled) {
-            val isDefault = CarLauncherManager.isDefaultLauncher(requireContext())
+        if (Build.VERSION.SDK_INT >= 26) {
             items.add(SettingItem.SettingEntry(
-                stableId = "setDefaultLauncher",
-                nameResId = R.string.pref_set_default_launcher_title,
-                helpResId = R.string.pref_set_default_launcher_help,
-                value = getString(if (isDefault) R.string.pref_default_launcher_status_active else R.string.pref_default_launcher_status_inactive),
-                onClick = {
-                    CarLauncherManager.promptSetDefaultLauncher(requireContext(), homeRoleLauncher)
-                }
-            ))
-        }
-
-        val isFloatingButtonEnabled = pendingEnableFloatingButton ?: settings.enableFloatingButton
-
-        items.add(SettingItem.ToggleSettingEntry(
-            stableId = "enableFloatingButton",
-            nameResId = R.string.pref_enable_floating_button_title,
-            descriptionResId = R.string.pref_enable_floating_button_summary,
-            helpResId = R.string.pref_enable_floating_button_help,
-            isChecked = isFloatingButtonEnabled,
-            onCheckedChanged = { isChecked ->
-                pendingEnableFloatingButton = isChecked
-                if (isChecked) {
-                    FloatingButtonManager.requestOverlayPermission(requireContext())
-                }
-                checkChanges()
-                updateSettingsList()
-            }
-        ))
-
-        if (isFloatingButtonEnabled) {
-            val connectionStatusMode = pendingFloatingButtonConnectionStatusMode ?: settings.floatingButtonConnectionStatusMode
-            items.add(SettingItem.ToggleSettingEntry(
-                stableId = "floatingButtonConnectionStatusMode",
-                nameResId = R.string.pref_floating_button_connection_status_title,
-                descriptionResId = R.string.pref_floating_button_connection_status_summary,
-                helpResId = R.string.pref_floating_button_connection_status_help,
-                isChecked = connectionStatusMode,
-                onCheckedChanged = { isChecked ->
-                    pendingFloatingButtonConnectionStatusMode = isChecked
-                    checkChanges()
-                }
-            ))
-            val size = pendingFloatingButtonSizeDp ?: settings.floatingButtonSizeDp
-            items.add(SettingItem.SliderSettingEntry(
-                stableId = "floatingButtonSizeDp",
-                nameResId = R.string.pref_floating_button_size_title,
-                helpResId = R.string.pref_floating_button_size_help,
-                value = "${size}dp",
-                sliderValue = size.toFloat(),
-                valueFrom = 32f,
-                valueTo = 120f,
-                stepSize = 1f,
-                onValueChanged = { newVal ->
-                    pendingFloatingButtonSizeDp = newVal.toInt()
-                    checkChanges()
-                }
-            ))
-
-            val opacity = pendingFloatingButtonOpacityPercent ?: settings.floatingButtonOpacityPercent
-            items.add(SettingItem.SliderSettingEntry(
-                stableId = "floatingButtonOpacityPercent",
-                nameResId = R.string.pref_floating_button_opacity_title,
-                helpResId = R.string.pref_floating_button_opacity_help,
-                value = "${opacity}%",
-                sliderValue = opacity.toFloat(),
-                valueFrom = 10f,
-                valueTo = 100f,
-                stepSize = 5f,
-                onValueChanged = { newVal ->
-                    pendingFloatingButtonOpacityPercent = newVal.toInt()
-                    checkChanges()
-                }
-            ))
-
-            if (connectionStatusMode) {
-                val disconnectedOpacity = pendingFloatingButtonDisconnectedOpacityPercent ?: settings.floatingButtonDisconnectedOpacityPercent
-                items.add(SettingItem.SliderSettingEntry(
-                    stableId = "floatingButtonDisconnectedOpacityPercent",
-                    nameResId = R.string.pref_floating_button_disconnected_opacity_title,
-                    helpResId = R.string.pref_floating_button_disconnected_opacity_help,
-                    value = "${disconnectedOpacity}%",
-                    sliderValue = disconnectedOpacity.toFloat(),
-                    valueFrom = 0f,
-                    valueTo = 100f,
-                    stepSize = 5f,
-                    onValueChanged = { newVal ->
-                        pendingFloatingButtonDisconnectedOpacityPercent = newVal.toInt()
-                        checkChanges()
-                    }
-                ))
-            }
-
-            val xPos = pendingFloatingButtonXPercent ?: settings.floatingButtonXPercent
-            items.add(SettingItem.SliderSettingEntry(
-                stableId = "floatingButtonXPercent",
-                nameResId = R.string.pref_floating_button_x_title,
-                helpResId = R.string.pref_floating_button_position_help,
-                value = "${xPos}%",
-                sliderValue = xPos.toFloat(),
-                valueFrom = 0f,
-                valueTo = 100f,
-                stepSize = 1f,
-                onValueChanged = { newVal ->
-                    pendingFloatingButtonXPercent = newVal.toInt()
-                    checkChanges()
-                }
-            ))
-
-            val yPos = pendingFloatingButtonYPercent ?: settings.floatingButtonYPercent
-            items.add(SettingItem.SliderSettingEntry(
-                stableId = "floatingButtonYPercent",
-                nameResId = R.string.pref_floating_button_y_title,
-                helpResId = R.string.pref_floating_button_position_help,
-                value = "${yPos}%",
-                sliderValue = yPos.toFloat(),
-                valueFrom = 0f,
-                valueTo = 100f,
-                stepSize = 1f,
-                onValueChanged = { newVal ->
-                    pendingFloatingButtonYPercent = newVal.toInt()
-                    checkChanges()
-                }
-            ))
-        }
-
-        if (!isCarLauncherActive) {
-            val exitActions = arrayOf(
-                getString(R.string.aa_exit_action_oem_launcher),
-                getString(R.string.aa_exit_action_app_home),
-                getString(R.string.aa_exit_action_disconnect)
-            )
-            val currentExitActionIdx = (pendingAaExitAction ?: settings.rawAaExitAction).value
-            items.add(SettingItem.SettingEntry(
-                stableId = "aaExitAction",
-                nameResId = R.string.pref_aa_exit_action_title,
-                descriptionResId = R.string.pref_aa_exit_action_summary,
-                helpResId = R.string.pref_aa_exit_action_help,
-                value = exitActions.getOrElse(currentExitActionIdx) { exitActions[0] },
+                stableId = "wifiScanControl",
+                nameResId = R.string.wifi_scan_title,
+                value = wifiScanSummary(),
+                // The row title does not name Shizuku; let the settings search find it.
+                searchKeywords = "Shizuku",
                 onClick = { _ ->
-                    MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-                        .setTitle(R.string.pref_aa_exit_action_title)
-                        .setSingleChoiceItems(exitActions, currentExitActionIdx) { dialog, which ->
-                            Settings.ExitAction.fromInt(which)?.let { pendingAaExitAction = it }
-                            checkChanges()
-                            dialog.dismiss()
-                            updateSettingsList()
+                    // The sub-screen applies immediately; do not silently lose unsaved controls
+                    // in this screen when navigation recreates its view on return.
+                    if (hasChanges) MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
+                        .setTitle(R.string.unsaved_changes)
+                        .setMessage(R.string.unsaved_changes_message)
+                        .setPositiveButton(R.string.discard) { _, _ ->
+                            findNavController().navigate(R.id.wifiScanSettingsFragment)
                         }
+                        .setNegativeButton(R.string.cancel, null)
                         .show()
+                    else findNavController().navigate(R.id.wifiScanSettingsFragment)
                 }
             ))
         }
-
-        // --- Navigation Settings ---
-                items.add(SettingItem.SettingEntry(
-            stableId = "oemAppManagement",
-            nameResId = R.string.oem_app_management,
-            helpResId = R.string.oem_app_management_help,
-            value = if (pendingAutoKillOemApps ?: settings.autoKillOemApps) getString(R.string.oem_app_autokill_enabled) else getString(R.string.oem_app_management_desc),
-            searchKeywords = "zlink autokit speedplay tlink carplay adb root oem conflict kill stop disable",
-            onClick = {
-                showOemAppManagementDialog()
-            }
-        ))
-
-        items.add(SettingItem.CategoryHeader("navigation", R.string.category_navigation))
-
-        // The GPS source choice (this device vs the connected phone) only applies when a phone is
-        // connected. With Self Mode as the only connection there is no phone, so hide it.
-        if (settings.showsExternalGps()) {
-            items.add(SettingItem.ToggleSettingEntry(
-                stableId = "gpsNavigation",
-                nameResId = R.string.gps_for_navigation,
-                descriptionResId = R.string.gps_for_navigation_description,
-                helpResId = R.string.gps_for_navigation_help,
-                isChecked = pendingUseGps ?: settings.useGpsForNavigation,
-                onCheckedChanged = { isChecked ->
-                    pendingUseGps = isChecked
-                    checkChanges()
-                    updateSettingsList()
-                }
-            ))
-        }
-
-        items.add(SettingItem.ToggleSettingEntry(
-            stableId = "showNavigationNotifications",
-            nameResId = R.string.show_navigation_notifications,
-            descriptionResId = R.string.show_navigation_notifications_description,
-            helpResId = R.string.show_navigation_notifications_help,
-            isChecked = pendingShowNavigationNotifications ?: settings.showNavigationNotifications,
-            onCheckedChanged = { isChecked ->
-                pendingShowNavigationNotifications = isChecked
-                checkChanges()
-                updateSettingsList()
-            }
-        ))
 
         // --- Graphic Settings ---
         items.add(SettingItem.CategoryHeader("graphic", R.string.category_graphic))
@@ -1947,47 +1629,36 @@ class SettingsFragment : Fragment() {
             onClick = { showResolutionDialog() }
         ))
 
+        val orientationOptions = resources.getStringArray(R.array.screen_orientation)
+        val currentOrientationIdx = pendingScreenOrientation?.value ?: settings.screenOrientation.value
         items.add(SettingItem.SettingEntry(
-            stableId = "dpiPixelDensity",
-            nameResId = R.string.dpi,
-            value = dpiRowValue(),
-            onClick = {
-                try {
-                    findNavController().navigate(R.id.action_settingsFragment_to_dpiSettingsFragment)
-                } catch (e: Exception) {
-                    // Failover
-                }
-            }
-        ))
-
-
-
-        items.add(SettingItem.SettingEntry(
-            stableId = "pixelAspectRatioE4",
-            nameResId = R.string.pixel_aspect_ratio,
-            helpResId = R.string.pixel_aspect_ratio_help,
-            value = if ((pendingPixelAspectRatioE4 ?: 10000) <= 0) "10000" else pendingPixelAspectRatioE4.toString(),
+            stableId = "screenOrientation",
+            nameResId = R.string.screen_orientation,
+            helpResId = R.string.screen_orientation_help,
+            value = orientationOptions.getOrElse(currentOrientationIdx) { "" },
+            searchKeywords = orientationOptions.joinToString(" "),
             onClick = { _ ->
-                showNumericInputDialog(
-                    title = getString(R.string.enter_pixel_aspect_ratio_value),
-                    message = null,
-                    initialValue = if ((pendingPixelAspectRatioE4 ?: 10000) <= 0) 10000 else (pendingPixelAspectRatioE4 ?: 10000),
-                    onConfirm = { newVal ->
-                        pendingPixelAspectRatioE4 = if (newVal <= 0) 10000 else newVal
+                val currentIdx = pendingScreenOrientation?.value ?: settings.screenOrientation.value
+                MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
+                    .setTitle(R.string.change_screen_orientation)
+                    .setSingleChoiceItems(orientationOptions, currentIdx) { dialog, whiches ->
+                        val newOrientation = Settings.ScreenOrientation.fromInt(whiches) ?: Settings.ScreenOrientation.SYSTEM
+                        pendingScreenOrientation = newOrientation
+
+                        // Apply immediately
+                        settings.screenOrientation = newOrientation
+                        settings.commit()
+
+                        requireActivity().requestedOrientation = newOrientation.androidOrientation
+                        requireContext().sendBroadcast(Intent(AapService.ACTION_ORIENTATION_CHANGED).apply {
+                            setPackage(requireContext().packageName)
+                        })
+
                         checkChanges()
+                        dialog.dismiss()
                         updateSettingsList()
                     }
-                )
-            }
-        ))
-
-        items.add(SettingItem.SettingEntry(
-            stableId = "customInsets",
-            nameResId = R.string.custom_insets,
-            helpResId = R.string.custom_insets_help,
-            value = "${pendingInsetLeft ?: 0}, ${pendingInsetTop ?: 0}, ${pendingInsetRight ?: 0}, ${pendingInsetBottom ?: 0}",
-            onClick = {
-                showCustomInsetsDialog()
+                    .show()
             }
         ))
 
@@ -2032,6 +1703,70 @@ class SettingsFragment : Fragment() {
             }
         ))
 
+        // Video fit: how a mismatched-aspect video is fitted into the panel (object-fit style).
+        items.add(SettingItem.SettingEntry(
+            stableId = "videoFitMode",
+            nameResId = R.string.video_fit_mode,
+            helpResId = R.string.video_fit_mode_help,
+            value = resources.getStringArray(R.array.video_fit_mode)[(pendingVideoFitMode ?: settings.videoFitMode).value],
+            searchKeywords = resources.getStringArray(R.array.video_fit_mode).joinToString(" "),
+            onClick = { _ ->
+                val fitOptions = resources.getStringArray(R.array.video_fit_mode)
+                val currentIdx = (pendingVideoFitMode ?: settings.videoFitMode).value
+                MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
+                    .setTitle(R.string.change_video_fit_mode)
+                    .setSingleChoiceItems(fitOptions, currentIdx) { dialog, which ->
+                        pendingVideoFitMode = Settings.VideoFitMode.fromInt(which) ?: Settings.VideoFitMode.FILL
+                        checkChanges()
+                        dialog.dismiss()
+                        updateSettingsList()
+                    }
+                    .show()
+            }
+        ))
+
+        items.add(SettingItem.SettingEntry(
+            stableId = "dpiPixelDensity",
+            nameResId = R.string.dpi,
+            value = dpiRowValue(),
+            onClick = {
+                try {
+                    findNavController().navigate(R.id.action_settingsFragment_to_dpiSettingsFragment)
+                } catch (e: Exception) {
+                    // Failover
+                }
+            }
+        ))
+
+        items.add(SettingItem.SettingEntry(
+            stableId = "customInsets",
+            nameResId = R.string.custom_insets,
+            helpResId = R.string.custom_insets_help,
+            value = "${pendingInsetLeft ?: 0}, ${pendingInsetTop ?: 0}, ${pendingInsetRight ?: 0}, ${pendingInsetBottom ?: 0}",
+            onClick = {
+                showCustomInsetsDialog()
+            }
+        ))
+
+        items.add(SettingItem.SettingEntry(
+            stableId = "pixelAspectRatioE4",
+            nameResId = R.string.pixel_aspect_ratio,
+            helpResId = R.string.pixel_aspect_ratio_help,
+            value = if ((pendingPixelAspectRatioE4 ?: 10000) <= 0) "10000" else pendingPixelAspectRatioE4.toString(),
+            onClick = { _ ->
+                showNumericInputDialog(
+                    title = getString(R.string.enter_pixel_aspect_ratio_value),
+                    message = null,
+                    initialValue = if ((pendingPixelAspectRatioE4 ?: 10000) <= 0) 10000 else (pendingPixelAspectRatioE4 ?: 10000),
+                    onConfirm = { newVal ->
+                        pendingPixelAspectRatioE4 = if (newVal <= 0) 10000 else newVal
+                        checkChanges()
+                        updateSettingsList()
+                    }
+                )
+            }
+        ))
+
         items.add(SettingItem.SettingEntry(
             stableId = "viewMode",
             nameResId = R.string.view_mode,
@@ -2058,74 +1793,6 @@ class SettingsFragment : Fragment() {
             }
         ))
 
-        val orientationOptions = resources.getStringArray(R.array.screen_orientation)
-        val currentOrientationIdx = pendingScreenOrientation?.value ?: settings.screenOrientation.value
-        items.add(SettingItem.SettingEntry(
-            stableId = "screenOrientation",
-            nameResId = R.string.screen_orientation,
-            helpResId = R.string.screen_orientation_help,
-            value = orientationOptions.getOrElse(currentOrientationIdx) { "" },
-            searchKeywords = orientationOptions.joinToString(" "),
-            onClick = { _ ->
-                val currentIdx = pendingScreenOrientation?.value ?: settings.screenOrientation.value
-                MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-                    .setTitle(R.string.change_screen_orientation)
-                    .setSingleChoiceItems(orientationOptions, currentIdx) { dialog, whiches ->
-                        val newOrientation = Settings.ScreenOrientation.fromInt(whiches) ?: Settings.ScreenOrientation.SYSTEM
-                        pendingScreenOrientation = newOrientation
-
-                        // Apply immediately
-                        settings.screenOrientation = newOrientation
-                        settings.commit()
-
-                        requireActivity().requestedOrientation = newOrientation.androidOrientation
-                        requireContext().sendBroadcast(Intent(AapService.ACTION_ORIENTATION_CHANGED).apply {
-                            setPackage(requireContext().packageName)
-                        })
-
-                        checkChanges()
-                        dialog.dismiss()
-                        updateSettingsList()
-                    }
-                    .show()
-            }
-        ))
-
-        // Video fit: how a mismatched-aspect video is fitted into the panel (object-fit style).
-        items.add(SettingItem.SettingEntry(
-            stableId = "videoFitMode",
-            nameResId = R.string.video_fit_mode,
-            helpResId = R.string.video_fit_mode_help,
-            value = resources.getStringArray(R.array.video_fit_mode)[(pendingVideoFitMode ?: settings.videoFitMode).value],
-            searchKeywords = resources.getStringArray(R.array.video_fit_mode).joinToString(" "),
-            onClick = { _ ->
-                val fitOptions = resources.getStringArray(R.array.video_fit_mode)
-                val currentIdx = (pendingVideoFitMode ?: settings.videoFitMode).value
-                MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-                    .setTitle(R.string.change_video_fit_mode)
-                    .setSingleChoiceItems(fitOptions, currentIdx) { dialog, which ->
-                        pendingVideoFitMode = Settings.VideoFitMode.fromInt(which) ?: Settings.VideoFitMode.FILL
-                        checkChanges()
-                        dialog.dismiss()
-                        updateSettingsList()
-                    }
-                    .show()
-            }
-        ))
-
-        items.add(SettingItem.ToggleSettingEntry(
-            stableId = "hudMirroring",
-            nameResId = R.string.hud_mirroring,
-            descriptionResId = R.string.hud_mirroring_summary,
-            helpResId = R.string.hud_mirroring_description,
-            isChecked = pendingHudMirroring ?: false,
-            onCheckedChanged = { isChecked ->
-                pendingHudMirroring = isChecked
-                checkChanges()
-                updateSettingsList()
-            }
-        ))
-
         if (pendingViewMode == Settings.ViewMode.SURFACE) {
             items.add(SettingItem.ToggleSettingEntry(
                 stableId = "forcedScale",
@@ -2142,100 +1809,21 @@ class SettingsFragment : Fragment() {
             ))
         }
 
-        // --- Theming Settings ---
-        items.add(SettingItem.CategoryHeader("theming", R.string.category_theming))
-
-        items.add(SettingItem.SettingEntry(
-            stableId = "loadingScreen",
-            nameResId = R.string.loading_screen,
-            value = if (settings.loadingScreenMediaPath.isNullOrEmpty())
-                getString(R.string.loading_screen_default)
-            else getString(R.string.loading_screen_custom),
-            onClick = {
-                findNavController().navigate(R.id.action_settingsFragment_to_loadingScreenFragment)
-            }
-        ))
-
-        items.add(SettingItem.SettingEntry(
-            stableId = "customization",
-            nameResId = R.string.customization_title,
-            value = getString(R.string.customization_description),
-            onClick = {
-                findNavController().navigate(R.id.action_settingsFragment_to_customizationFragment)
-            }
-        ))
-
-        val appThemeTitles = resources.getStringArray(R.array.app_theme)
-        val nightModeTitles = resources.getStringArray(R.array.night_mode)
-        val darkModeValue = "${getString(R.string.app_theme_short)}: ${appThemeTitles[settings.appTheme.value]} · " +
-                "${getString(R.string.night_mode_short)}: ${nightModeTitles[settings.nightMode.value]}"
-        items.add(SettingItem.SettingEntry(
-            stableId = "darkModeSettings",
-            nameResId = R.string.dark_mode_settings,
-            value = darkModeValue,
-            searchKeywords = kw(
-                R.string.night_mode, R.string.app_theme, R.string.threshold_light_title,
-                R.string.threshold_brightness_title, R.string.monochrome_icons,
-                R.string.use_gradient_background, R.string.use_extreme_dark, R.string.aa_monochrome,
-                R.string.sunrise_location_title, R.string.location_section
-            ),
-            onClick = {
-                try {
-                    findNavController().navigate(R.id.action_settingsFragment_to_darkModeFragment)
-                } catch (e: Exception) {
-                    // Failover
-                }
-            }
-        ))
-
-        // --- Video Settings ---
-        items.add(SettingItem.CategoryHeader("video", R.string.category_video))
-
         items.add(SettingItem.ToggleSettingEntry(
-            stableId = "forceSoftwareDecoding",
-            nameResId = R.string.force_software_decoding,
-            descriptionResId = R.string.force_software_decoding_description,
-            helpResId = R.string.force_software_decoding_help,
-            isChecked = pendingForceSoftware ?: settings.forceSoftwareDecoding,
+            stableId = "hudMirroring",
+            nameResId = R.string.hud_mirroring,
+            descriptionResId = R.string.hud_mirroring_summary,
+            helpResId = R.string.hud_mirroring_description,
+            isChecked = pendingHudMirroring ?: false,
             onCheckedChanged = { isChecked ->
-                pendingForceSoftware = isChecked
+                pendingHudMirroring = isChecked
                 checkChanges()
                 updateSettingsList()
             }
         ))
 
-        if (pendingForceSoftware == true) {
-            items.add(SettingItem.SettingEntry(
-                stableId = "softwareVideoDecoder",
-                nameResId = R.string.software_video_decoder,
-                helpResId = R.string.software_video_decoder_help,
-                value = when (pendingSoftwareVideoDecoder) {
-                    Settings.SoftwareVideoDecoder.DEVICE_MEDIACODEC -> getString(R.string.software_video_decoder_device)
-                    Settings.SoftwareVideoDecoder.BUNDLED_FFMPEG -> getString(R.string.software_video_decoder_bundled)
-                    null -> ""
-                },
-                onClick = { _ ->
-                    val decoders = arrayOf(
-                        getString(R.string.software_video_decoder_bundled),
-                        getString(R.string.software_video_decoder_device)
-                    )
-                    val decoderValues = arrayOf(
-                        Settings.SoftwareVideoDecoder.BUNDLED_FFMPEG,
-                        Settings.SoftwareVideoDecoder.DEVICE_MEDIACODEC
-                    )
-                    val currentDecoderIndex = decoderValues.indexOf(pendingSoftwareVideoDecoder).coerceAtLeast(0)
-                    MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-                        .setTitle(R.string.software_video_decoder)
-                        .setSingleChoiceItems(decoders, currentDecoderIndex) { dialog, which ->
-                            pendingSoftwareVideoDecoder = decoderValues[which]
-                            checkChanges()
-                            dialog.dismiss()
-                            updateSettingsList()
-                        }
-                        .show()
-                }
-            ))
-        }
+        // --- Video Settings ---
+        items.add(SettingItem.CategoryHeader("video", R.string.category_video))
 
         items.add(SettingItem.SettingEntry(
             stableId = "videoCodec",
@@ -2294,6 +1882,52 @@ class SettingsFragment : Fragment() {
             }
         ))
 
+        items.add(SettingItem.ToggleSettingEntry(
+            stableId = "forceSoftwareDecoding",
+            nameResId = R.string.force_software_decoding,
+            descriptionResId = R.string.force_software_decoding_description,
+            helpResId = R.string.force_software_decoding_help,
+            isChecked = pendingForceSoftware ?: settings.forceSoftwareDecoding,
+            onCheckedChanged = { isChecked ->
+                pendingForceSoftware = isChecked
+                checkChanges()
+                updateSettingsList()
+            }
+        ))
+
+        if (pendingForceSoftware == true) {
+            items.add(SettingItem.SettingEntry(
+                stableId = "softwareVideoDecoder",
+                nameResId = R.string.software_video_decoder,
+                helpResId = R.string.software_video_decoder_help,
+                value = when (pendingSoftwareVideoDecoder) {
+                    Settings.SoftwareVideoDecoder.DEVICE_MEDIACODEC -> getString(R.string.software_video_decoder_device)
+                    Settings.SoftwareVideoDecoder.BUNDLED_FFMPEG -> getString(R.string.software_video_decoder_bundled)
+                    null -> ""
+                },
+                onClick = { _ ->
+                    val decoders = arrayOf(
+                        getString(R.string.software_video_decoder_bundled),
+                        getString(R.string.software_video_decoder_device)
+                    )
+                    val decoderValues = arrayOf(
+                        Settings.SoftwareVideoDecoder.BUNDLED_FFMPEG,
+                        Settings.SoftwareVideoDecoder.DEVICE_MEDIACODEC
+                    )
+                    val currentDecoderIndex = decoderValues.indexOf(pendingSoftwareVideoDecoder).coerceAtLeast(0)
+                    MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
+                        .setTitle(R.string.software_video_decoder)
+                        .setSingleChoiceItems(decoders, currentDecoderIndex) { dialog, which ->
+                            pendingSoftwareVideoDecoder = decoderValues[which]
+                            checkChanges()
+                            dialog.dismiss()
+                            updateSettingsList()
+                        }
+                        .show()
+                }
+            ))
+        }
+
         // Safe to try: the configure ladder falls back on its own if the decoder rejects the key.
         items.add(SettingItem.ToggleSettingEntry(
             stableId = "debugVideoLowLatency",
@@ -2308,79 +1942,6 @@ class SettingsFragment : Fragment() {
                 updateSettingsList()
             }
         ))
-
-        // --- Input Settings ---
-        items.add(SettingItem.CategoryHeader("input", R.string.category_input))
-
-        items.add(SettingItem.SettingEntry(
-            stableId = "keymap",
-            nameResId = R.string.keymap,
-            value = getString(R.string.keymap_description),
-            onClick = { _ ->
-                try {
-                    findNavController().navigate(R.id.action_settingsFragment_to_keymapFragment)
-                } catch (e: Exception) {
-                    // Failover
-                }
-            }
-        ))
-
-        items.add(SettingItem.SettingEntry(
-            stableId = "gestures",
-            nameResId = R.string.gestures,
-            value = getString(R.string.gestures_description),
-            onClick = { _ ->
-                findNavController().navigate(R.id.action_settingsFragment_to_gesturesFragment)
-            }
-        ))
-
-        items.add(SettingItem.ToggleSettingEntry(
-            stableId = "enableRotary",
-            nameResId = R.string.enable_rotary,
-            descriptionResId = R.string.enable_rotary_summary,
-            helpResId = R.string.enable_rotary_description,
-            isChecked = pendingEnableRotary ?: false,
-            onCheckedChanged = { isChecked ->
-                pendingEnableRotary = isChecked
-                checkChanges()
-                updateSettingsList()
-            }
-        ))
-
-        // Media buttons only. The rotary controller, D-pad and the rest are never affected by this,
-        // which is the point: the head unit's Bluetooth side competes for the transport controls
-        // and for nothing else.
-        val mediaKeyModes = listOf(
-            MediaKeyRoutingPolicy.Mode.ALWAYS,
-            MediaKeyRoutingPolicy.Mode.AUTO,
-            MediaKeyRoutingPolicy.Mode.NEVER
-        )
-        val currentMediaKeyMode = pendingMediaKeyRouting ?: MediaKeyRoutingPolicy.Mode.ALWAYS
-        items.add(SettingItem.SegmentedButtonSettingEntry(
-            stableId = "mediaKeyRouting",
-            nameResId = R.string.media_key_routing,
-            helpResId = R.string.media_key_routing_help,
-            options = listOf(
-                getString(R.string.media_key_routing_always),
-                getString(R.string.media_key_routing_auto),
-                getString(R.string.media_key_routing_never)
-            ),
-            selectedIndex = mediaKeyModes.indexOf(currentMediaKeyMode).coerceAtLeast(0),
-            onOptionSelected = { index ->
-                pendingMediaKeyRouting = mediaKeyModes.getOrElse(index) { MediaKeyRoutingPolicy.Mode.ALWAYS }
-                checkChanges()
-                updateSettingsList()
-            }
-        ))
-
-        // Only worth saying once the setting is actually holding something back: the reason to reach
-        // for this is a doubled track skip, and the fear it raises is losing the rotary with it.
-        if (currentMediaKeyMode != MediaKeyRoutingPolicy.Mode.ALWAYS) {
-            items.add(SettingItem.InfoBanner(
-                stableId = "mediaKeyRoutingScopeHint",
-                textResId = R.string.media_key_routing_hint_common
-            ))
-        }
 
         // --- Audio Settings ---
         items.add(SettingItem.CategoryHeader("audio", R.string.category_audio))
@@ -2633,8 +2194,284 @@ class SettingsFragment : Fragment() {
             }
         ))
 
-        // --- UI Settings ---
-        items.add(SettingItem.CategoryHeader("UI", R.string.category_ui))
+        // --- Automation ---
+        items.add(SettingItem.CategoryHeader("automation", R.string.category_automation))
+
+        items.add(SettingItem.SettingEntry(
+            stableId = "autoStartSettings",
+            nameResId = R.string.auto_start_settings,
+            value = getString(R.string.auto_start_settings_description),
+            searchKeywords = kw(
+                R.string.auto_start_on_boot_label, R.string.auto_start_screen_on_label,
+                R.string.auto_start_usb_label, R.string.auto_start_bt_label, R.string.auto_start_wifi_label,
+                R.string.auto_disconnect_bt_label
+            ),
+            onClick = {
+                try {
+                    findNavController().navigate(R.id.action_settingsFragment_to_autoStartFragment)
+                } catch (e: Exception) { }
+            }
+        ))
+
+        items.add(SettingItem.SettingEntry(
+            stableId = "autoConnectSettings",
+            nameResId = R.string.auto_connect_settings,
+            value = getAutoConnectSummary(),
+            searchKeywords = kw(
+                R.string.auto_connect_last_session, R.string.auto_connect_single_usb,
+                R.string.auto_start_self_mode
+            ),
+            onClick = {
+                try {
+                    findNavController().navigate(R.id.action_settingsFragment_to_autoConnectFragment)
+                } catch (e: Exception) { }
+            }
+        ))
+
+        val isCarLauncherActive = (pendingEnableCarLauncher ?: settings.enableCarLauncher) ||
+            CarLauncherManager.isDefaultLauncher(requireContext())
+
+        if (!isCarLauncherActive) {
+            items.add(SettingItem.ToggleSettingEntry(
+                stableId = "killOnDisconnect",
+                nameResId = R.string.kill_on_disconnect,
+                descriptionResId = R.string.kill_on_disconnect_description,
+                helpResId = R.string.kill_on_disconnect_help,
+                isChecked = pendingKillOnDisconnect ?: settings.rawKillOnDisconnect,
+                onCheckedChanged = { isChecked ->
+                    if (isChecked) {
+                        val conflicts = getKillOnDisconnectConflicts()
+                        val hasAutoStartOnBoot = settings.autoStartOnBoot
+                        val hasAutoStartOnScreenOn = settings.autoStartOnScreenOn
+                        if (conflicts.isNotEmpty() || hasAutoStartOnBoot || hasAutoStartOnScreenOn) {
+                            pendingKillOnDisconnect = true
+                            updateSettingsList()
+                            showKillOnDisconnectWarning(conflicts, hasAutoStartOnBoot, hasAutoStartOnScreenOn)
+                        } else {
+                            pendingKillOnDisconnect = true
+                            checkChanges()
+                            updateSettingsList()
+                        }
+                    } else {
+                        pendingKillOnDisconnect = false
+                        checkChanges()
+                        updateSettingsList()
+                    }
+                }
+            ))
+        }
+
+        // Self Mode is the only mode where the phone's call screen and the projection share a
+        // screen, so it is the only mode this can do anything in.
+        if (settings.showsSelf()) {
+            items.add(SettingItem.ToggleSettingEntry(
+                stableId = "raiseProjectionDuringCall",
+                nameResId = R.string.raise_projection_during_call,
+                descriptionResId = R.string.raise_projection_during_call_summary,
+                helpResId = R.string.raise_projection_during_call_description,
+                isChecked = pendingRaiseProjectionDuringCall ?: settings.raiseProjectionDuringCall,
+                onCheckedChanged = { isChecked ->
+                    pendingRaiseProjectionDuringCall = isChecked
+                    checkChanges()
+                    updateSettingsList()
+                }
+            ))
+        }
+
+        if (!isCarLauncherActive) {
+            val exitActions = arrayOf(
+                getString(R.string.aa_exit_action_oem_launcher),
+                getString(R.string.aa_exit_action_app_home),
+                getString(R.string.aa_exit_action_disconnect)
+            )
+            val currentExitActionIdx = (pendingAaExitAction ?: settings.rawAaExitAction).value
+            items.add(SettingItem.SettingEntry(
+                stableId = "aaExitAction",
+                nameResId = R.string.pref_aa_exit_action_title,
+                descriptionResId = R.string.pref_aa_exit_action_summary,
+                helpResId = R.string.pref_aa_exit_action_help,
+                value = exitActions.getOrElse(currentExitActionIdx) { exitActions[0] },
+                onClick = { _ ->
+                    MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
+                        .setTitle(R.string.pref_aa_exit_action_title)
+                        .setSingleChoiceItems(exitActions, currentExitActionIdx) { dialog, which ->
+                            Settings.ExitAction.fromInt(which)?.let { pendingAaExitAction = it }
+                            checkChanges()
+                            dialog.dismiss()
+                            updateSettingsList()
+                        }
+                        .show()
+                }
+            ))
+        }
+
+        // Lets automation apps such as Tasker rewrite this unit's setup and drive the log
+        // capture. Connecting and disconnecting work with this off.
+        items.add(SettingItem.ToggleSettingEntry(
+            stableId = "allowExternalConfiguration",
+            nameResId = R.string.allow_external_configuration,
+            descriptionResId = R.string.allow_external_configuration_summary,
+            helpResId = R.string.allow_external_configuration_description,
+            isChecked = pendingAllowExternalConfiguration ?: settings.allowExternalConfiguration,
+            onCheckedChanged = { isChecked ->
+                pendingAllowExternalConfiguration = isChecked
+                checkChanges()
+                updateSettingsList()
+            }
+        ))
+
+        // --- Input Settings ---
+        items.add(SettingItem.CategoryHeader("input", R.string.category_input))
+
+        items.add(SettingItem.SettingEntry(
+            stableId = "keymap",
+            nameResId = R.string.keymap,
+            value = getString(R.string.keymap_description),
+            onClick = { _ ->
+                try {
+                    findNavController().navigate(R.id.action_settingsFragment_to_keymapFragment)
+                } catch (e: Exception) {
+                    // Failover
+                }
+            }
+        ))
+
+        items.add(SettingItem.SettingEntry(
+            stableId = "gestures",
+            nameResId = R.string.gestures,
+            value = getString(R.string.gestures_description),
+            onClick = { _ ->
+                findNavController().navigate(R.id.action_settingsFragment_to_gesturesFragment)
+            }
+        ))
+
+        items.add(SettingItem.ToggleSettingEntry(
+            stableId = "enableRotary",
+            nameResId = R.string.enable_rotary,
+            descriptionResId = R.string.enable_rotary_summary,
+            helpResId = R.string.enable_rotary_description,
+            isChecked = pendingEnableRotary ?: false,
+            onCheckedChanged = { isChecked ->
+                pendingEnableRotary = isChecked
+                checkChanges()
+                updateSettingsList()
+            }
+        ))
+
+        // Media buttons only. The rotary controller, D-pad and the rest are never affected by this,
+        // which is the point: the head unit's Bluetooth side competes for the transport controls
+        // and for nothing else.
+        val mediaKeyModes = listOf(
+            MediaKeyRoutingPolicy.Mode.ALWAYS,
+            MediaKeyRoutingPolicy.Mode.AUTO,
+            MediaKeyRoutingPolicy.Mode.NEVER
+        )
+        val currentMediaKeyMode = pendingMediaKeyRouting ?: MediaKeyRoutingPolicy.Mode.ALWAYS
+        items.add(SettingItem.SegmentedButtonSettingEntry(
+            stableId = "mediaKeyRouting",
+            nameResId = R.string.media_key_routing,
+            helpResId = R.string.media_key_routing_help,
+            options = listOf(
+                getString(R.string.media_key_routing_always),
+                getString(R.string.media_key_routing_auto),
+                getString(R.string.media_key_routing_never)
+            ),
+            selectedIndex = mediaKeyModes.indexOf(currentMediaKeyMode).coerceAtLeast(0),
+            onOptionSelected = { index ->
+                pendingMediaKeyRouting = mediaKeyModes.getOrElse(index) { MediaKeyRoutingPolicy.Mode.ALWAYS }
+                checkChanges()
+                updateSettingsList()
+            }
+        ))
+
+        // Only worth saying once the setting is actually holding something back: the reason to reach
+        // for this is a doubled track skip, and the fear it raises is losing the rotary with it.
+        if (currentMediaKeyMode != MediaKeyRoutingPolicy.Mode.ALWAYS) {
+            items.add(SettingItem.InfoBanner(
+                stableId = "mediaKeyRoutingScopeHint",
+                textResId = R.string.media_key_routing_hint_common
+            ))
+        }
+
+        // --- Navigation Settings ---
+        items.add(SettingItem.CategoryHeader("navigation", R.string.category_navigation))
+
+        // The GPS source choice (this device vs the connected phone) only applies when a phone is
+        // connected. With Self Mode as the only connection there is no phone, so hide it.
+        if (settings.showsExternalGps()) {
+            items.add(SettingItem.ToggleSettingEntry(
+                stableId = "gpsNavigation",
+                nameResId = R.string.gps_for_navigation,
+                descriptionResId = R.string.gps_for_navigation_description,
+                helpResId = R.string.gps_for_navigation_help,
+                searchKeywords = "gps location position maps navigation phone",
+                isChecked = pendingUseGps ?: settings.useGpsForNavigation,
+                onCheckedChanged = { isChecked ->
+                    pendingUseGps = isChecked
+                    checkChanges()
+                    updateSettingsList()
+                }
+            ))
+        }
+
+        items.add(SettingItem.ToggleSettingEntry(
+            stableId = "showNavigationNotifications",
+            nameResId = R.string.show_navigation_notifications,
+            descriptionResId = R.string.show_navigation_notifications_description,
+            helpResId = R.string.show_navigation_notifications_help,
+            isChecked = pendingShowNavigationNotifications ?: settings.showNavigationNotifications,
+            onCheckedChanged = { isChecked ->
+                pendingShowNavigationNotifications = isChecked
+                checkChanges()
+                updateSettingsList()
+            }
+        ))
+
+        // --- Theming Settings ---
+        items.add(SettingItem.CategoryHeader("theming", R.string.category_theming))
+
+        items.add(SettingItem.SettingEntry(
+            stableId = "loadingScreen",
+            nameResId = R.string.loading_screen,
+            value = if (settings.loadingScreenMediaPath.isNullOrEmpty())
+                getString(R.string.loading_screen_default)
+            else getString(R.string.loading_screen_custom),
+            onClick = {
+                findNavController().navigate(R.id.action_settingsFragment_to_loadingScreenFragment)
+            }
+        ))
+
+        items.add(SettingItem.SettingEntry(
+            stableId = "customization",
+            nameResId = R.string.customization_title,
+            value = getString(R.string.customization_description),
+            onClick = {
+                findNavController().navigate(R.id.action_settingsFragment_to_customizationFragment)
+            }
+        ))
+
+        val appThemeTitles = resources.getStringArray(R.array.app_theme)
+        val nightModeTitles = resources.getStringArray(R.array.night_mode)
+        val darkModeValue = "${getString(R.string.app_theme_short)}: ${appThemeTitles[settings.appTheme.value]} · " +
+                "${getString(R.string.night_mode_short)}: ${nightModeTitles[settings.nightMode.value]}"
+        items.add(SettingItem.SettingEntry(
+            stableId = "darkModeSettings",
+            nameResId = R.string.dark_mode_settings,
+            value = darkModeValue,
+            searchKeywords = kw(
+                R.string.night_mode, R.string.app_theme, R.string.threshold_light_title,
+                R.string.threshold_brightness_title, R.string.monochrome_icons,
+                R.string.use_gradient_background, R.string.use_extreme_dark, R.string.aa_monochrome,
+                R.string.sunrise_location_title, R.string.location_section
+            ),
+            onClick = {
+                try {
+                    findNavController().navigate(R.id.action_settingsFragment_to_darkModeFragment)
+                } catch (e: Exception) {
+                    // Failover
+                }
+            }
+        ))
 
         items.add(SettingItem.ToggleSettingEntry(
             stableId = "hideClock",
@@ -2675,8 +2512,178 @@ class SettingsFragment : Fragment() {
             }
         ))
 
-        // --- Backup Settings ---
-        items.add(SettingItem.CategoryHeader("backup", R.string.category_backup))
+        // --- More Features Settings ---
+        items.add(SettingItem.CategoryHeader("moreFeatures", R.string.category_more_features))
+
+        val isCarLauncherEnabled = pendingEnableCarLauncher ?: settings.enableCarLauncher
+
+        items.add(SettingItem.ToggleSettingEntry(
+            stableId = "enableCarLauncher",
+            nameResId = R.string.pref_enable_car_launcher_title,
+            descriptionResId = R.string.pref_enable_car_launcher_summary,
+            helpResId = R.string.pref_enable_car_launcher_help,
+            isChecked = isCarLauncherEnabled,
+            onCheckedChanged = { isChecked ->
+                pendingEnableCarLauncher = isChecked
+                CarLauncherManager.setLauncherEnabled(requireContext(), isChecked)
+                if (isChecked && !CarLauncherManager.isDefaultLauncher(requireContext())) {
+                    CarLauncherManager.promptSetDefaultLauncher(requireContext(), homeRoleLauncher)
+                }
+                checkChanges()
+                updateSettingsList()
+            }
+        ))
+
+        if (isCarLauncherEnabled) {
+            val isDefault = CarLauncherManager.isDefaultLauncher(requireContext())
+            items.add(SettingItem.SettingEntry(
+                stableId = "setDefaultLauncher",
+                nameResId = R.string.pref_set_default_launcher_title,
+                helpResId = R.string.pref_set_default_launcher_help,
+                value = getString(if (isDefault) R.string.pref_default_launcher_status_active else R.string.pref_default_launcher_status_inactive),
+                onClick = {
+                    CarLauncherManager.promptSetDefaultLauncher(requireContext(), homeRoleLauncher)
+                }
+            ))
+        }
+
+        val isFloatingButtonEnabled = pendingEnableFloatingButton ?: settings.enableFloatingButton
+
+        items.add(SettingItem.ToggleSettingEntry(
+            stableId = "enableFloatingButton",
+            nameResId = R.string.pref_enable_floating_button_title,
+            descriptionResId = R.string.pref_enable_floating_button_summary,
+            helpResId = R.string.pref_enable_floating_button_help,
+            isChecked = isFloatingButtonEnabled,
+            onCheckedChanged = { isChecked ->
+                pendingEnableFloatingButton = isChecked
+                if (isChecked) {
+                    FloatingButtonManager.requestOverlayPermission(requireContext())
+                }
+                checkChanges()
+                updateSettingsList()
+            }
+        ))
+
+        if (isFloatingButtonEnabled) {
+            val connectionStatusMode = pendingFloatingButtonConnectionStatusMode ?: settings.floatingButtonConnectionStatusMode
+            items.add(SettingItem.ToggleSettingEntry(
+                stableId = "floatingButtonConnectionStatusMode",
+                nameResId = R.string.pref_floating_button_connection_status_title,
+                descriptionResId = R.string.pref_floating_button_connection_status_summary,
+                helpResId = R.string.pref_floating_button_connection_status_help,
+                isChecked = connectionStatusMode,
+                onCheckedChanged = { isChecked ->
+                    pendingFloatingButtonConnectionStatusMode = isChecked
+                    checkChanges()
+                }
+            ))
+            val size = pendingFloatingButtonSizeDp ?: settings.floatingButtonSizeDp
+            items.add(SettingItem.SliderSettingEntry(
+                stableId = "floatingButtonSizeDp",
+                nameResId = R.string.pref_floating_button_size_title,
+                helpResId = R.string.pref_floating_button_size_help,
+                value = "${size}dp",
+                sliderValue = size.toFloat(),
+                valueFrom = 32f,
+                valueTo = 120f,
+                stepSize = 1f,
+                onValueChanged = { newVal ->
+                    pendingFloatingButtonSizeDp = newVal.toInt()
+                    checkChanges()
+                }
+            ))
+
+            val opacity = pendingFloatingButtonOpacityPercent ?: settings.floatingButtonOpacityPercent
+            items.add(SettingItem.SliderSettingEntry(
+                stableId = "floatingButtonOpacityPercent",
+                nameResId = R.string.pref_floating_button_opacity_title,
+                helpResId = R.string.pref_floating_button_opacity_help,
+                value = "${opacity}%",
+                sliderValue = opacity.toFloat(),
+                valueFrom = 10f,
+                valueTo = 100f,
+                stepSize = 5f,
+                onValueChanged = { newVal ->
+                    pendingFloatingButtonOpacityPercent = newVal.toInt()
+                    checkChanges()
+                }
+            ))
+
+            if (connectionStatusMode) {
+                val disconnectedOpacity = pendingFloatingButtonDisconnectedOpacityPercent ?: settings.floatingButtonDisconnectedOpacityPercent
+                items.add(SettingItem.SliderSettingEntry(
+                    stableId = "floatingButtonDisconnectedOpacityPercent",
+                    nameResId = R.string.pref_floating_button_disconnected_opacity_title,
+                    helpResId = R.string.pref_floating_button_disconnected_opacity_help,
+                    value = "${disconnectedOpacity}%",
+                    sliderValue = disconnectedOpacity.toFloat(),
+                    valueFrom = 0f,
+                    valueTo = 100f,
+                    stepSize = 5f,
+                    onValueChanged = { newVal ->
+                        pendingFloatingButtonDisconnectedOpacityPercent = newVal.toInt()
+                        checkChanges()
+                    }
+                ))
+            }
+
+            val xPos = pendingFloatingButtonXPercent ?: settings.floatingButtonXPercent
+            items.add(SettingItem.SliderSettingEntry(
+                stableId = "floatingButtonXPercent",
+                nameResId = R.string.pref_floating_button_x_title,
+                helpResId = R.string.pref_floating_button_position_help,
+                value = "${xPos}%",
+                sliderValue = xPos.toFloat(),
+                valueFrom = 0f,
+                valueTo = 100f,
+                stepSize = 1f,
+                onValueChanged = { newVal ->
+                    pendingFloatingButtonXPercent = newVal.toInt()
+                    checkChanges()
+                }
+            ))
+
+            val yPos = pendingFloatingButtonYPercent ?: settings.floatingButtonYPercent
+            items.add(SettingItem.SliderSettingEntry(
+                stableId = "floatingButtonYPercent",
+                nameResId = R.string.pref_floating_button_y_title,
+                helpResId = R.string.pref_floating_button_position_help,
+                value = "${yPos}%",
+                sliderValue = yPos.toFloat(),
+                valueFrom = 0f,
+                valueTo = 100f,
+                stepSize = 1f,
+                onValueChanged = { newVal ->
+                    pendingFloatingButtonYPercent = newVal.toInt()
+                    checkChanges()
+                }
+            ))
+        }
+
+        items.add(SettingItem.SettingEntry(
+            stableId = "oemAppManagement",
+            nameResId = R.string.oem_app_management,
+            helpResId = R.string.oem_app_management_help,
+            value = if (pendingAutoKillOemApps ?: settings.autoKillOemApps) getString(R.string.oem_app_autokill_enabled) else getString(R.string.oem_app_management_desc),
+            searchKeywords = "zlink autokit speedplay tlink carplay adb root oem conflict kill stop disable",
+            onClick = {
+                showOemAppManagementDialog()
+            }
+        ))
+
+        items.add(SettingItem.SettingEntry(
+            stableId = "deviceSpecificSettings",
+            nameResId = R.string.device_specific_settings,
+            value = getString(R.string.device_specific_settings_description),
+            searchKeywords = "head unit model Adayo Haval reverse gear MCU",
+            onClick = {
+                findNavController().navigate(R.id.action_settingsFragment_to_deviceSpecificSettingsFragment)
+            }
+        ))
+
+        // --- Backup and reset ---
+        items.add(SettingItem.CategoryHeader("backup", R.string.category_backup_reset))
 
         items.add(SettingItem.SettingEntry(
             stableId = "exportSettings",
@@ -2692,8 +2699,6 @@ class SettingsFragment : Fragment() {
             onClick = { _ -> startImportSettings() }
         ))
 
-        // --- Reset Settings ---
-        items.add(SettingItem.CategoryHeader("resetSettingsCategory", R.string.reset))
         items.add(SettingItem.SettingEntry(
             stableId = "resetSettings",
             nameResId = R.string.reset_settings,
@@ -2869,22 +2874,6 @@ class SettingsFragment : Fragment() {
                 }
             ))
         }
-
-        // Sits beside the log settings because those are half of what it unlocks: with this off,
-        // another app can still connect and disconnect, but cannot rewrite this unit's setup or
-        // drive the capture.
-        items.add(SettingItem.ToggleSettingEntry(
-            stableId = "allowExternalConfiguration",
-            nameResId = R.string.allow_external_configuration,
-            descriptionResId = R.string.allow_external_configuration_summary,
-            helpResId = R.string.allow_external_configuration_description,
-            isChecked = pendingAllowExternalConfiguration ?: settings.allowExternalConfiguration,
-            onCheckedChanged = { isChecked ->
-                pendingAllowExternalConfiguration = isChecked
-                checkChanges()
-                updateSettingsList()
-            }
-        ))
 
         val logLevels = LogExporter.LogLevel.entries
         val logLevelNames = logLevels.map { it.name.lowercase().replaceFirstChar { c -> c.uppercase() } }.toTypedArray()

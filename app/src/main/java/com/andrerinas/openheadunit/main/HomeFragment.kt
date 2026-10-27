@@ -50,6 +50,7 @@ import com.andrerinas.openheadunit.aap.AapService
 import com.andrerinas.openheadunit.connection.wifi.modes.helper.NearbyManager
 import com.andrerinas.openheadunit.connection.usb.UsbDeviceCompat
 import com.andrerinas.openheadunit.connection.usb.UsbDeviceDiagnostics
+import com.andrerinas.openheadunit.connection.usb.UsbPermissionAsks
 import android.content.res.Configuration
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zbt.ZbtDaemonReachability
 import com.andrerinas.openheadunit.utils.ActivityState
@@ -1903,7 +1904,7 @@ class HomeFragment : Fragment() {
                     ContextCompat.startForegroundService(requireContext(), Intent(requireContext(), AapService::class.java))
                     usbManager.requestPermission(
                         device.wrappedDevice,
-                        UsbReceiver.createPermissionPendingIntent(requireContext())
+                        UsbReceiver.createPermissionPendingIntent(requireContext(), UsbPermissionAsks.newToken())
                     )
                 }
             }

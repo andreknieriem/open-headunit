@@ -23,7 +23,7 @@ import com.andrerinas.openheadunit.connection.usb.UsbAccessoryMode
 import com.andrerinas.openheadunit.connection.usb.UsbAttachPolicy
 import com.andrerinas.openheadunit.connection.usb.UsbDeviceCompat
 import com.andrerinas.openheadunit.connection.usb.UsbDeviceDiagnostics
-import com.andrerinas.openheadunit.connection.usb.UsbReceiver
+import com.andrerinas.openheadunit.connection.usb.UsbPermissionAsks
 import com.andrerinas.openheadunit.connection.usb.UsbSwitchClaim
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.DeviceIntent
@@ -98,6 +98,11 @@ class UsbAttachedActivity : Activity() {
 
         val settings = if (!isLocked) Settings(this) else null
 
+        // Android started us for an attach, so a later scan for this path knows the plug.
+        if (intent?.action == UsbManager.ACTION_USB_DEVICE_ATTACHED) {
+            UsbPermissionAsks.stampAttach(device.deviceName)
+        }
+
         if (Settings.isUsbDeviceBlacklisted(this, device)) {
             AppLog.i("UsbAttachedActivity: Ignored blacklisted USB device (${Settings.formatUsbVidPidDisplay(device.vendorId, device.productId)})")
             finish()
@@ -124,9 +129,9 @@ class UsbAttachedActivity : Activity() {
         if (UsbDeviceCompat.isInAccessoryMode(device)) {
             val usbManager = UsbDeviceCompat.usbManager(this) ?: run { finish(); return }
             if (!usbManager.hasPermission(device)) {
-                AppLog.i("Usb in accessory mode but no permission. Requesting...")
-                val permissionIntent = UsbReceiver.createPermissionPendingIntent(this)
-                usbManager.requestPermission(device, permissionIntent)
+                // Android grants before it starts us, so the device changed; the service decides.
+                AppLog.i("UsbAttachedActivity: accessory mode without permission, handing it to the service")
+                handOffToService()
                 finish()
                 return
             }

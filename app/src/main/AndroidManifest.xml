@@ -278,6 +278,18 @@
             android:name=".main.FloatingButtonService"
             android:exported="false" />
 
+        <!-- Ends the permission record's entry when Android answers, even while AapService is
+             down. Only our own PendingIntents reach it, so it is not exported. -->
+        <receiver
+            android:name=".connection.usb.UsbPermissionResultReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.andrerinas.openheadunit.ACTION_USB_DEVICE_PERMISSION" />
+                <data android:scheme="ohu-usb-ask" />
+                <data android:scheme="ohu-usb-recovery" />
+            </intent-filter>
+        </receiver>
+
         <!-- AndroidX MediaButtonReceiver: Routes MEDIA_BUTTON intents to AapService
              on Android 8+ where implicit broadcasts to manifest-registered receivers
              are restricted. This is the standard Android mechanism used by HUR. -->

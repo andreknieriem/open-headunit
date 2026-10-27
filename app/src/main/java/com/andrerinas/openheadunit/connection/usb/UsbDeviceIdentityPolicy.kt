@@ -32,6 +32,8 @@ object UsbDeviceIdentityPolicy {
         val productId: Int,
         val deviceClass: Int,
         val interfaces: List<Interface>,
+        val deviceSubclass: Int = 0,
+        val deviceProtocol: Int = 0,
     )
 
     data class Verdict(val accepted: Boolean, val reason: String) {
@@ -135,8 +137,8 @@ object UsbDeviceIdentityPolicy {
         iface.ifaceClass == 0xE0 && iface.subclass == 0x01 && iface.protocol == 0x03 -> "RNDIS"
         // PTP, the still-image class.
         iface.ifaceClass == 0x06 && iface.subclass == 0x01 && iface.protocol == 0x01 -> "PTP"
-        // Interface Association Descriptor.
-        iface.ifaceClass == 0xEF && iface.subclass == 0x04 && iface.protocol == 0x01 -> "IAD"
+        // RNDIS over Ethernet, the misc-class tethering triple. EF/02/01 is the IAD composite.
+        iface.ifaceClass == 0xEF && iface.subclass == 0x04 && iface.protocol == 0x01 -> "RNDIS over Ethernet"
         // Mass storage carrying MTP over CBI. Modern phones do not use this; kept because older
         // ones did. The name is what the rule has always claimed, so it stays.
         iface.ifaceClass == 0x08 && iface.subclass == 0x06 && iface.protocol == 0x01 -> "MTP"

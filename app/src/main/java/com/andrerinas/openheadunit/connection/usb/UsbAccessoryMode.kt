@@ -46,6 +46,8 @@ class UsbAccessoryMode(private val usbMgr: UsbManager) {
         }
         connection.close()
 
+        // The accessory identity that follows is ours to ask permission for, even with Listen off.
+        if (result) UsbPermissionAsks.stampOwnSwitch()
         AppLog.i("Result: $result")
         return result
     }

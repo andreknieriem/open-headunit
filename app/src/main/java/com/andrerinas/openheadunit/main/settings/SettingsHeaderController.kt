@@ -10,6 +10,8 @@ import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
+import android.widget.ImageButton
+import androidx.appcompat.widget.TooltipCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.andrerinas.openheadunit.R
@@ -27,11 +29,13 @@ import com.google.android.material.button.MaterialButtonToggleGroup
 class SettingsHeaderController(
     private val root: View,
     advanced: Boolean,
+    railCollapsed: Boolean,
     private val onBack: () -> Unit,
     private val onReset: () -> Unit,
     private val onSave: () -> Unit,
     private val onTierChanged: (advanced: Boolean) -> Unit,
-    private val onQueryChanged: (query: String) -> Unit
+    private val onQueryChanged: (query: String) -> Unit,
+    private val onRailCollapsedChanged: (collapsed: Boolean) -> Unit
 ) {
     private val context: Context = root.context
     private val palette = SettingsPalette.from(context)
@@ -50,12 +54,18 @@ class SettingsHeaderController(
     private val saveButton: MaterialButton = root.findViewById(R.id.settingsSave)
     private val categoryList: RecyclerView = root.findViewById(R.id.settingsCategories)
     private val contentList: RecyclerView = root.findViewById(R.id.settingsRecyclerView)
+    /** The landscape rail column (button and list); portrait has none. */
+    private val rail: View? = root.findViewById(R.id.settingsRail)
+    private val railToggle: ImageButton? = root.findViewById(R.id.settingsRailToggle)
+    private var railCollapsed = railCollapsed
 
     private val res = context.resources
     private val searchInline = res.getBoolean(R.bool.settings_search_inline)
     private val saveFullLabel = res.getBoolean(R.bool.settings_save_full_label)
     private val tabCheckIcon = res.getBoolean(R.bool.settings_tab_check_icon)
     private val showCategories = res.getBoolean(R.bool.settings_show_categories)
+    /** Below 560dp the names leave no room for the list, so the rail stays icons only. */
+    private val railFoldable = res.getBoolean(R.bool.settings_rail_foldable)
     private val categoriesAsRail = res.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
     /** In landscape the search field shares the header row; in portrait it is a row of its own. */
     private val searchInHeaderRow = searchBar.parent === header
@@ -180,7 +190,14 @@ class SettingsHeaderController(
     }
 
     private fun setUpCategories() {
-        categoryList.visibility = if (showCategories) View.VISIBLE else View.GONE
+        (rail ?: categoryList).visibility = if (showCategories) View.VISIBLE else View.GONE
+        railToggle?.visibility = if (railFoldable) View.VISIBLE else View.GONE
+        railToggle?.setOnClickListener {
+            railCollapsed = !railCollapsed
+            applyRailFold()
+            onRailCollapsedChanged(railCollapsed)
+        }
+        applyRailFold()
         categoryList.layoutManager = LinearLayoutManager(
             context,
             if (categoriesAsRail) LinearLayoutManager.VERTICAL else LinearLayoutManager.HORIZONTAL,
@@ -254,6 +271,23 @@ class SettingsHeaderController(
         categoryPinned = true
         categoryAdapter.setActive(category.id)
         (contentList.layoutManager as? LinearLayoutManager)?.scrollToPositionWithOffset(category.headerPosition, 0)
+    }
+
+    private fun applyRailFold() {
+        val rail = rail ?: return
+        val toggle = railToggle ?: return
+        val folded = railCollapsed || !railFoldable
+        rail.layoutParams = rail.layoutParams.apply {
+            width = res.getDimensionPixelSize(
+                if (folded) R.dimen.settings_rail_collapsed_width else R.dimen.settings_rail_width
+            )
+        }
+        categoryAdapter.collapsed = folded
+        // The chevron points the way the rail will move.
+        toggle.rotation = if (railCollapsed) 0f else 180f
+        val label = context.getString(if (railCollapsed) R.string.settings_rail_expand else R.string.settings_rail_collapse)
+        toggle.contentDescription = label
+        TooltipCompat.setTooltipText(toggle, label)
     }
 
     private fun syncActiveCategory() {

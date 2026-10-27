@@ -29,6 +29,8 @@
     <dimen name="settings_icon_button_padding">12dp</dimen>
     <dimen name="settings_row_icon_size">20dp</dimen>
     <dimen name="settings_rail_icon_size">22dp</dimen>
+    <!-- The folded rail: the icon with the row's start padding on both sides, so no icon moves. -->
+    <dimen name="settings_rail_collapsed_width">66dp</dimen>
     <dimen name="settings_row_value_size">14sp</dimen>
     <dimen name="settings_section_title_size">14sp</dimen>
     <dimen name="settings_control_text_size">14sp</dimen>

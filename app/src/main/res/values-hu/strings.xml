@@ -702,6 +702,8 @@
     <string name="exit_dialog_settings">Gyors beállítások</string>
     <string name="key_back">Vissza</string>
     <string name="category_backup_reset">Mentés és visszaállítás</string>
+    <string name="settings_rail_collapse">Szakasznevek elrejtése</string>
+    <string name="settings_rail_expand">Szakasznevek megjelenítése</string>
     <string name="export_settings">Beállítások exportálása</string>
     <string name="export_settings_description">Beállítások biztonsági mentése JSON-fájlként.</string>
     <string name="export_settings_app_folder">Mentés az alkalmazás mentési mappájába</string>

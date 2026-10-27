@@ -710,6 +710,8 @@
     <string name="exit_dialog_settings">Configurações rápidas</string>
     <string name="key_back">Voltar</string>
     <string name="category_backup_reset">Backup e redefinição</string>
+    <string name="settings_rail_collapse">Ocultar os nomes das seções</string>
+    <string name="settings_rail_expand">Mostrar os nomes das seções</string>
     <string name="export_settings">Exportar configurações</string>
     <string name="export_settings_description">Salvar um backup das configurações como arquivo JSON.</string>
     <string name="export_settings_app_folder">Salvar na pasta de backup do app</string>

@@ -850,6 +850,8 @@
     <string name="stopping_service">बदलाव लागू करने के लिए सेवा बंद की जा रही है…</string>
     <string name="settings_saved">सेटिंग्स सेव हो गईं</string>
     <string name="category_backup_reset">बैकअप और रीसेट</string>
+    <string name="settings_rail_collapse">अनुभागों के नाम छिपाएं</string>
+    <string name="settings_rail_expand">अनुभागों के नाम दिखाएं</string>
     <string name="export_settings">सेटिंग्स निर्यात करें</string>
     <string name="export_settings_description">सेटिंग का बैकअप JSON फ़ाइल के रूप में सेव करें।</string>
     <string name="export_settings_choose_location">सेव करने की जगह चुनें</string>

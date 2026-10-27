@@ -60,6 +60,11 @@ class Settings(private val context: Context) {
         get() = prefs.getBoolean("advanced-settings-active", false)
         set(value) { prefs.edit().putBoolean("advanced-settings-active", value).apply() }
 
+    /** The settings rail folded to its icons. A view choice, so it saves at once. */
+    var settingsRailCollapsed: Boolean
+        get() = prefs.getBoolean("settings-rail-collapsed", false)
+        set(value) { prefs.edit().putBoolean("settings-rail-collapsed", value).apply() }
+
     var allowedDevices: Set<String>
         @Synchronized get() = prefs.getStringSet("allow-devices", null)?.toSet() ?: emptySet()
         @Synchronized set(devices) {

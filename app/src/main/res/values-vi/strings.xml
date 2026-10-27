@@ -682,6 +682,8 @@
     <string name="exit_dialog_settings">Cài đặt nhanh</string>
     <string name="key_back">Quay lại</string>
     <string name="category_backup_reset">Sao lưu và đặt lại</string>
+    <string name="settings_rail_collapse">Ẩn tên các mục</string>
+    <string name="settings_rail_expand">Hiện tên các mục</string>
     <string name="export_settings">Xuất cài đặt</string>
     <string name="export_settings_description">Lưu bản sao lưu cài đặt dưới dạng tệp JSON.</string>
     <string name="export_settings_app_folder">Lưu vào thư mục sao lưu của ứng dụng</string>

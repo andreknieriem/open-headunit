@@ -851,6 +851,8 @@
     <string name="stopping_service">Menghentikan layanan untuk menerapkan perubahan…</string>
     <string name="settings_saved">Pengaturan disimpan</string>
     <string name="category_backup_reset">Cadangan dan atur ulang</string>
+    <string name="settings_rail_collapse">Sembunyikan nama bagian</string>
+    <string name="settings_rail_expand">Tampilkan nama bagian</string>
     <string name="export_settings">Ekspor setelan</string>
     <string name="export_settings_description">Simpan cadangan setelan sebagai file JSON.</string>
     <string name="export_settings_choose_location">Pilih lokasi penyimpanan</string>

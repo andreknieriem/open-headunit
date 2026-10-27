@@ -755,6 +755,8 @@
     <string name="exit_dialog_settings">Schnelleinstellungen</string>
     <string name="key_back">Zurück</string>
     <string name="category_backup_reset">Sicherung und Zurücksetzen</string>
+    <string name="settings_rail_collapse">Abschnittsnamen ausblenden</string>
+    <string name="settings_rail_expand">Abschnittsnamen einblenden</string>
     <string name="export_settings">Einstellungen exportieren</string>
     <string name="export_settings_description">Speichere eine Sicherung der Einstellungen als JSON-Datei.</string>
     <string name="export_settings_app_folder">In App-Sicherungsordner speichern</string>

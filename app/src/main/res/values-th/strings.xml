@@ -851,6 +851,8 @@
     <string name="stopping_service">กำลังหยุดบริการเพื่อใช้การเปลี่ยนแปลง…</string>
     <string name="settings_saved">บันทึกการตั้งค่าแล้ว</string>
     <string name="category_backup_reset">สำรองข้อมูลและรีเซ็ต</string>
+    <string name="settings_rail_collapse">ซ่อนชื่อหมวด</string>
+    <string name="settings_rail_expand">แสดงชื่อหมวด</string>
     <string name="export_settings">ส่งออกการตั้งค่า</string>
     <string name="export_settings_description">บันทึกข้อมูลสำรองการตั้งค่าเป็นไฟล์ JSON</string>
     <string name="export_settings_choose_location">เลือกตำแหน่งที่บันทึก</string>

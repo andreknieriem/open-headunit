@@ -705,6 +705,8 @@
     <string name="stopping_service">Arrêt du service pour appliquer les modifications…</string>
     <string name="settings_saved">Paramètres enregistrés</string>
     <string name="category_backup_reset">Sauvegarde et réinitialisation</string>
+    <string name="settings_rail_collapse">Masquer le nom des sections</string>
+    <string name="settings_rail_expand">Afficher le nom des sections</string>
     <string name="export_settings">Exporter les paramètres</string>
     <string name="export_settings_description">Enregistrer une copie de vos paramètres dans un fichier JSON.</string>
     <string name="export_settings_choose_location">Choisir où enregistrer</string>

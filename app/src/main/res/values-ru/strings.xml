@@ -711,6 +711,8 @@ Open Headunit предоставляется «как есть» без каки
     <string name="exit_dialog_settings">Быстрые настройки</string>
     <string name="key_back">Назад</string>
     <string name="category_backup_reset">Резервная копия и сброс</string>
+    <string name="settings_rail_collapse">Скрыть названия разделов</string>
+    <string name="settings_rail_expand">Показать названия разделов</string>
     <string name="export_settings">Экспорт настроек</string>
     <string name="export_settings_description">Сохранить резервную копию настроек как файл JSON.</string>
     <string name="export_settings_app_folder">Сохранить в папку резервных копий приложения</string>

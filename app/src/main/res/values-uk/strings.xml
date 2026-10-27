@@ -710,6 +710,8 @@
     <string name="exit_dialog_settings">Швидкі налаштування</string>
     <string name="key_back">Назад</string>
     <string name="category_backup_reset">Резервна копія та скидання</string>
+    <string name="settings_rail_collapse">Сховати назви розділів</string>
+    <string name="settings_rail_expand">Показати назви розділів</string>
     <string name="export_settings">Експортувати налаштування</string>
     <string name="export_settings_description">Зберегти резервну копію налаштувань як файл JSON.</string>
     <string name="export_settings_app_folder">Зберегти у папку резервних копій застосунку</string>

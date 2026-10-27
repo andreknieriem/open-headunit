@@ -102,13 +102,12 @@ class UsbDeviceCompat(val wrappedDevice: UsbDevice) {
          * [UsbBlacklistPolicy].
          */
         fun blacklistKey(device: UsbDevice): String {
-            val readable = Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
-            return UsbBlacklistPolicy.key(
-                manufacturer = if (readable) device.manufacturerName else null,
-                product = if (readable) device.productName else null,
-                vendorId = device.vendorId,
-                productId = device.productId,
-            )
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                return UsbBlacklistPolicy.key(device.manufacturerName, device.productName, device.vendorId, device.productId)
+            }
+            // The API has no names here, so read the same descriptor strings from sysfs.
+            val names = UsbSysfsNames.namesFor(device.deviceName)
+            return UsbBlacklistPolicy.key(names?.manufacturer, names?.product, device.vendorId, device.productId)
         }
 
         /**

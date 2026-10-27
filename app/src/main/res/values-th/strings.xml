@@ -16,6 +16,7 @@
 
     <!-- Connection mode selector -->
     <string name="connection_mode">โหมดการเชื่อมต่อ</string>
+    <string name="connection_mode_help">เลือกวิธีที่อุปกรณ์นี้เชื่อมต่อกับโทรศัพท์ ได้แก่ USB, Wi-Fi, โหมดตนเอง หรือผสมกัน หน้าจอหลักและการตั้งค่าจะแสดงเฉพาะตัวเลือกของวิธีที่คุณเลือก หากไม่ได้เลือก Wi-Fi แอปจะไม่เริ่มการเชื่อมต่อไร้สายในเบื้องหลัง</string>
     <string name="connection_kind_usb_cable">สาย USB (โดยตรง)</string>
     <string name="connection_kind_usb_wireless_adapter">อะแดปเตอร์ไร้สาย USB</string>
     <string name="connection_kind_wifi">Wi-Fi</string>
@@ -237,15 +238,20 @@
     <string name="wifi">Wi-Fi</string>
     <string name="dpi">ความหนาแน่นของพิกเซล (DPI)</string>
     <string name="pixel_aspect_ratio">อัตราส่วนพิกเซล</string>
+    <string name="pixel_aspect_ratio_help">เปลี่ยนค่านี้เมื่อวงกลมบนหน้าจอนี้ดูเป็นวงรีเท่านั้น ซึ่งเกิดขึ้นเมื่อพิกเซลของแผงจอไม่เป็นสี่เหลี่ยมจัตุรัส 10000 หมายถึงพิกเซลสี่เหลี่ยมจัตุรัส</string>
     <string name="mic_sample_rate">อัตราสุ่มไมโครโฟน</string>
+    <string name="mic_sample_rate_help">Android Auto ได้รับไมโครโฟนที่ 16000 Hz เสมอ และแอปจะเปิดไมโครโฟนที่อัตรานั้นก่อน หากอุปกรณ์ปฏิเสธ 16000 Hz แอปจะบันทึกที่ 48000 Hz แล้วแปลงเสียงลง หาก Android Auto เชื่อมต่ออยู่ การบันทึกการเปลี่ยนแปลงจะหยุดเซสชันเพื่อใช้ค่าใหม่</string>
     <string name="keymap">การแมปปุ่ม</string>
     <string name="night_mode">โหมดมืด (Android Auto)</string>
+    <string name="night_mode_help">เลือกว่า Android Auto จะแสดงหน้าตามืดเมื่อใด แอปบอกโทรศัพท์ว่าเป็นกลางวันหรือกลางคืน แล้วโทรศัพท์จะเปลี่ยนหน้าจอของตัวเอง Auto จะทำตามเวลาพระอาทิตย์ขึ้นและตก Car Headlight Signal อ่านสัญญาณ ILL+ ในอุปกรณ์ที่รายงานค่านี้ โหมดอื่นทำงานเหมือนการตั้งค่าของแอปด้านบน</string>
     <string name="night_mode_threshold">เกณฑ์โหมดกลางคืน</string>
     <string name="enter_threshold_value">ป้อนค่าเกณฑ์</string>
     <string name="threshold_lux_desc">ค่า Lux (0–10000) ต่ำกว่านี้ = กลางคืน</string>
     <string name="threshold_brightness_desc">ค่าความสว่าง (0–255) ต่ำกว่านี้ = กลางคืน</string>
     <string name="threshold_light_title">ความไวแสง</string>
+    <string name="threshold_light_help">โหมดมืดจะเปิดเมื่อเซนเซอร์แสงอ่านค่าต่ำกว่าระดับนี้ หน่วยลักซ์ โหมดมืดจะปิดอีกครั้งเมื่อสูงกว่าระดับนี้ 10 ลักซ์เท่านั้น เพื่อไม่ให้กะพริบ การเปลี่ยนแปลงต้องคงอยู่ 2 วินาทีจึงจะมีผล กล่องโต้ตอบแสดงค่าปัจจุบันเพื่อช่วยให้คุณเลือก</string>
     <string name="threshold_brightness_title">ระดับความสว่าง</string>
+    <string name="threshold_brightness_help">โหมดมืดจะเปิดเมื่อความสว่างหน้าจอต่ำกว่าค่านี้ Android รายงานความสว่างตั้งแต่ 0 ถึง 255 แต่อุปกรณ์บางรุ่นใช้ช่วงที่เล็กกว่า โหมดมืดจะปิดอีกครั้งเมื่อสูงกว่าค่านี้ 10 เท่านั้น เพื่อไม่ให้กะพริบ กล่องโต้ตอบแสดงค่าปัจจุบันเพื่อช่วยให้คุณเลือก</string>
     <string name="threshold_light_hint">โหมดมืดจะเปิดใช้งานเมื่อแสงรอบข้างลดลงต่ำกว่าระดับนี้</string>
     <string name="threshold_brightness_hint">โหมดมืดจะเปิดใช้งานเมื่อความสว่างหน้าจอต่ำกว่าค่านี้ Android รายงานความสว่างเป็น 0–255 แต่ช่วงจริงอาจแตกต่างกันไปตามอุปกรณ์ คุณอาจต้องทดลองเพื่อหาเกณฑ์ที่เหมาะสมสำหรับอุปกรณ์ของคุณ</string>
     <string name="current_light_reading">แสงปัจจุบัน: %d Lux</string>
@@ -263,14 +269,17 @@
     <string name="car_signal_calibration_saved">บันทึกและนำการปรับเทียบ ILL+ ไปใช้แล้ว</string>
     <string name="night_mode_start">เวลาเริ่มต้นโหมดกลางคืน</string>
     <string name="night_mode_end">เวลาสิ้นสุดโหมดกลางคืน</string>
+    <string name="night_mode_time_help">โหมดมืดเปิดทุกวันตั้งแต่เวลาเริ่มจนถึงเวลาสิ้นสุด ช่วงเวลาอาจข้ามเที่ยงคืนได้ เช่น 22:00 ถึง 06:00 เวลาใช้นาฬิกาของอุปกรณ์นี้</string>
 
     <string name="app_theme">โหมดมืด (แอปพลิเคชัน)</string>
     <string name="app_theme_description">ควบคุมรูปลักษณ์การแสดงผลของแอป</string>
+    <string name="app_theme_help">เลือกว่าหน้าจอของแอปเองจะเป็นโหมดมืดเมื่อใด Android Auto มีการตั้งค่าของตัวเองด้านล่าง โหมด Clear, Dark และ Extreme Dark จะไม่เปลี่ยน โหมด Automatic จะทำตามระบบ โหมดอื่นจะเปลี่ยนตามเวลาพระอาทิตย์ขึ้นและตก ช่วงเวลาที่กำหนด เซนเซอร์แสง ความสว่างหน้าจอ สัญญาณไฟหน้าของรถ หรือสถานที่ที่บันทึกไว้</string>
     <string name="change_app_theme">เปลี่ยนธีมของแอป</string>
     <string name="monochrome_icons">ไอคอนขาวดำ</string>
     <string name="monochrome_icons_description">ใช้ไอคอนระดับสีเทาบนหน้าจอหลักในโหมดมืดหรือโหมดมืดพิเศษ</string>
     <string name="use_extreme_dark">ใช้โหมดมืดพิเศษ</string>
     <string name="use_extreme_dark_description">ใช้พื้นหลังสีดำสนิทเมื่อเปิดใช้งานโหมดมืด</string>
+    <string name="use_extreme_dark_help">ใช้พื้นหลังสีดำสนิทขณะที่แอปเป็นโหมดมืด ใช้กับโหมดที่เปลี่ยนเองเท่านั้น เพราะ Extreme Dark เป็นสีดำเสมอ ไม่เปลี่ยน Android Auto</string>
     <string name="use_gradient_background">ใช้พื้นหลังแบบไล่ระดับสี</string>
     <string name="use_gradient_background_description_on">แอปวาดพื้นหลังของตัวเองโดยมีวงกลมไล่ระดับสีอยู่ตรงกลาง</string>
     <string name="use_gradient_background_description_off">กำลังใช้พื้นหลังคลาสสิกของแอป</string>
@@ -319,6 +328,7 @@
     <string name="night_mode_short">Android Auto</string>
     <string name="aa_monochrome">ทำให้ Android Auto เป็นขาวดำ</string>
     <string name="aa_monochrome_description">ลดสีของ Android Auto สำหรับการขับขี่ตอนกลางคืน ต้องใช้โหมดมุมมอง GLES จะมีผลเมื่อเปิดใช้งานโหมดมืดเท่านั้น</string>
+    <string name="aa_monochrome_summary">ลดสีสำหรับการขับรถตอนกลางคืน ต้องใช้โหมดมุมมอง GLES และโหมดมืด</string>
     <string name="aa_desaturation">การลดความอิ่มตัวของสี</string>
     <string name="aa_desaturation_description">ควบคุมปริมาณสีที่จะตัดออก มีผลเฉพาะเมื่อเปิดใช้โหมดมืด</string>
     <string name="gles_required_title">ต้องการ GLES</string>
@@ -340,18 +350,22 @@
     <string name="reset_settings_description">ล้างการกำหนดค่า ข้อมูลแคช และการตั้งค่าเชื่อมต่ออัตโนมัติทั้งหมด แอปจะรีสตาร์ทเพื่อใช้ค่าเริ่มต้นจากโรงงาน</string>
     <string name="gps_for_navigation">GPS สำหรับการนำทาง</string>
     <string name="gps_for_navigation_description">ใช้ GPS สำหรับการนำทาง</string>
+    <string name="gps_for_navigation_help">ส่งตำแหน่ง GPS ของอุปกรณ์นี้ไปยังโทรศัพท์ และ Android Auto ใช้เพื่อการนำทาง แอปจะส่งเฉพาะตำแหน่ง GPS จริง ไม่ส่งตำแหน่งจากเครือข่าย หากอุปกรณ์สูญเสียสัญญาณ GPS ไปสักพัก แอปจะหยุดส่ง และโทรศัพท์จะใช้ตำแหน่งของตัวเอง มีผลเมื่อเชื่อมต่อครั้งถัดไป</string>
     <string name="enabled">เปิดอยู่</string>
     <string name="disabled">ปิดอยู่</string>
     <string name="resolution">ความละเอียด</string>
+    <string name="resolution_help">กำหนดขนาดภาพที่ Android Auto ส่งมา รายการจะทำเครื่องหมายขนาดที่เหมาะกับหน้าจอของอุปกรณ์นี้ที่สุดว่าแนะนำ ขนาดที่ใหญ่กว่าหน้าจอใช้แบนด์วิดท์มากขึ้นเท่านั้น ภาพไม่ได้คมชัดขึ้น ขนาดใหญ่ต้องใช้ Wi-Fi 5 GHz ที่แรงหรือการเชื่อมต่อ USB มีผลเมื่อเชื่อมต่อครั้งถัดไป</string>
     <string name="change_resolution">เปลี่ยนความละเอียด</string>
     <string name="change_dpi">เปลี่ยน DPI</string>
     <string name="change_view_mode">เปลี่ยนโหมดมุมมอง</string>
     <string name="view_mode">โหมดมุมมอง</string>
+    <string name="view_mode_help">เลือกวิธีวาดภาพบนหน้าจอของเครื่องนี้ SurfaceView เร็วที่สุดและใช้ได้กับเครื่องส่วนใหญ่ TextureView ช้ากว่าแต่รองรับการสะท้อนภาพและการปรับขนาด GLES20 เพิ่มเอฟเฟกต์ เช่น โหมดกลางคืนแบบขาวดำ เปลี่ยนเมื่อภาพเป็นสีดำ กะพริบ หรือขาดเอฟเฟกต์</string>
     <string name="surface_view">SurfaceView</string>
     <string name="texture_view">TextureView</string>
     <string name="gles_view">GLES20</string>
     <string name="auto">อัตโนมัติ</string>
     <string name="screen_orientation">การวางแนวหน้าจอ</string>
+    <string name="screen_orientation_help">กำหนดทิศทางที่แอปนี้หมุนบนหน้าจอ System Default จะทำตามการตั้งค่าระบบ และ Auto จะทำตามเซนเซอร์ ตัวเลือกอื่นล็อกไว้ทิศทางเดียว ตัวเลือกแนวตั้งยังทำให้ Android Auto ส่งภาพแนวสูงด้วย Android Auto ได้รับรูปทรงเฉพาะตอนเริ่มเซสชัน จึงต้องเชื่อมต่อใหม่หลังเปลี่ยนค่า</string>
     <string name="change_screen_orientation">เปลี่ยนการวางแนวหน้าจอ</string>
     <string name="orientation_system_default">ค่าเริ่มต้นของระบบ</string>
     <string name="orientation_auto_sensor">อัตโนมัติ (เซ็นเซอร์)</string>
@@ -372,6 +386,7 @@
 
     <string name="start_in_fullscreen_mode">โหมดหน้าจอ</string>
     <string name="start_in_fullscreen_mode_description">เลือกวิธีการจัดการแถบระบบ (แถบสถานะและการนำทาง)</string>
+    <string name="start_in_fullscreen_mode_help">เลือกวิธีแสดงแถบระบบเหนือแอปนี้และภาพที่ฉาย ปกติจะคงแถบทั้งหมดไว้ เต็มหน้าจอซ่อนแถบทั้งหมด และภาพอาจทับใต้รอยบาก ซ่อนเฉพาะแถบสถานะจะคงแถบนำทางไว้ เต็มหน้าจอ (หลีกเลี่ยงรอยบาก) ซ่อนแถบทั้งหมดและกันภาพไม่ให้ทับรอยบาก หน้าจอจะโหลดใหม่ทันทีเพื่อใช้ค่านี้</string>
     <string name="fullscreen_none">ปกติ (มองเห็นแถบทั้งหมด)</string>
     <string name="fullscreen_immersive">เต็มหน้าจอ (ทับรอยบาก)</string>
     <string name="fullscreen_status_only">ซ่อนเฉพาะแถบสถานะ</string>
@@ -393,16 +408,21 @@
     <string name="debug_mode_description">เปิดหรือปิดการบันทึกล็อกแบบละเอียดขึ้น</string>
     <string name="allow_external_configuration">อนุญาตการกำหนดค่าภายนอก</string>
     <string name="allow_external_configuration_description">ให้แอปอัตโนมัติ เช่น Tasker หรือ MacroDroid เปลี่ยนการตั้งค่า ตั้งระดับล็อก และส่งออกล็อกได้ การเชื่อมต่อและตัดการเชื่อมต่อใช้ได้เสมอ ตัวเลือกนี้ใช้กับคำสั่งที่เปลี่ยนการตั้งค่าของเฮดยูนิตเท่านั้น</string>
+    <string name="allow_external_configuration_summary">อนุญาตให้แอปอย่าง Tasker เปลี่ยนการตั้งค่าและส่งออกบันทึก</string>
     <string name="log_level">ระดับล็อก</string>
     <string name="log_level_description">กรองระดับล็อกเมื่อส่งออก</string>
+    <string name="log_level_help">กำหนดว่าแอปบันทึกรายละเอียดลงบันทึกมากเพียงใด Verbose บันทึกมากที่สุด และ Error บันทึกน้อยที่สุด Silent จะไม่บันทึกอะไรในเบื้องหลังและหยุดการบันทึก สำหรับรายงานข้อบกพร่อง ให้เลือก Verbose</string>
     <string name="log_source">แหล่งที่มาของล็อก</string>
     <string name="log_source_logcat">Logcat</string>
     <string name="log_source_applog_file">ลงในไฟล์โดยตรง</string>
+    <string name="log_source_help">Logcat บันทึกบรรทัดของแอปรวมกับบรรทัดของระบบ ซึ่งช่วยได้มากที่สุดในรายงานข้อบกพร่อง ลงในไฟล์โดยตรงบันทึกเฉพาะบรรทัดของแอปเอง สำหรับอุปกรณ์ที่ Logcat ไม่บันทึกอะไรเลย แอปจะเปลี่ยนไปใช้ลงในไฟล์โดยตรงเองเมื่อ Logcat ไม่บันทึกอะไรเลย</string>
     <string name="log_location">ตำแหน่งจัดเก็บไฟล์ล็อก</string>
+    <string name="log_location_help">เลือกโฟลเดอร์สำหรับไฟล์บันทึก ค่าเริ่มต้นเก็บไว้ในพื้นที่เก็บข้อมูลของแอปเอง โฟลเดอร์ดาวน์โหลดจะวางไว้ในโฟลเดอร์ OpenHeadunitLogs ใต้ดาวน์โหลด ตั้งแต่ Android 10 จะเป็นโฟลเดอร์ดาวน์โหลดในพื้นที่เก็บข้อมูลของแอปเอง แอปอาจขอสิทธิ์พื้นที่เก็บข้อมูลก่อน แอปเก็บไฟล์บันทึกได้สูงสุด 10 ไฟล์</string>
     <string name="log_location_default">ค่าเริ่มต้น (พื้นที่เก็บข้อมูลของแอป)</string>
     <string name="log_location_downloads">โฟลเดอร์ดาวน์โหลด</string>
     <string name="start_log_capture">เริ่มบันทึกล็อก</string>
     <string name="start_log_capture_description">เริ่มบันทึกล็อกแบบเต็มเพื่อใช้แก้ไขข้อบกพร่อง</string>
+    <string name="start_log_capture_help">เริ่มหรือหยุดการบันทึกล็อกแบบเต็มลงไฟล์ ตามระดับล็อกที่ตั้งไว้ด้านบน การบันทึกจะดำเนินต่อเมื่อแอปเริ่มใหม่ จนกว่าคุณจะหยุด จากนั้นใช้ส่งออกล็อกเพื่อแชร์ไฟล์ จะเริ่มไม่ได้ขณะที่ระดับล็อกเป็น Silent</string>
     <string name="start_log_capture_in_applog_file">ข้อความล็อกจะถูกเขียนลงไฟล์เฉพาะขณะที่กำลังบันทึกอยู่</string>
     <string name="start_log_capture_in_silent">เริ่มบันทึกไม่ได้ เพราะเลือกระดับล็อกแบบเงียบ (Silent) ไว้</string>
     <string name="stop_log_capture">หยุดบันทึกล็อก</string>
@@ -451,6 +471,7 @@
     <string name="auto_start_bt_label">เริ่มอัตโนมัติเมื่อเชื่อมต่อบลูทูธ</string>
     <string name="auto_start_overlay_missing_hint">ยังไม่ได้รับสิทธิ์แสดงทับบนแอปอื่นๆ การเริ่มอัตโนมัติจะแสดงการแจ้งเตือนแทนการเปิดหน้าจอ แตะเพื่ออนุญาต</string>
     <string name="auto_start_bt_description">เปิด Open Headunit โดยอัตโนมัติเมื่ออุปกรณ์บลูทูธเฉพาะเชื่อมต่อ</string>
+    <string name="auto_start_bt_help">เปิดแอปเมื่ออุปกรณ์บลูทูธที่เลือกตัวใดตัวหนึ่งเชื่อมต่อกับอุปกรณ์นี้ เช่น โทรศัพท์หรือบลูทูธของรถ จะไม่มีอะไรเกิดขึ้นขณะที่ Android Auto เชื่อมต่ออยู่แล้ว หรือก่อนที่อุปกรณ์จะถูกปลดล็อกเป็นครั้งแรก หากไม่มีสิทธิ์แสดงทับบนแอปอื่นๆ แอปจะแสดงการแจ้งเตือนแทนหน้าจอ</string>
     <!-- Asked once, after the first connection, when this unit is paired to exactly one phone. -->
     <string name="auto_start_offer_title">เริ่มต้นโดยอัตโนมัติหรือไม่?</string>
     <string name="auto_start_offer_message">ต้องการให้แอปเริ่มอัตโนมัติเมื่อใช้กับอุปกรณ์นี้ (%1$s) หรือไม่</string>
@@ -460,28 +481,36 @@
     <string name="auto_start_offer_countdown">ไม่ ในอีก %1$d วินาที</string>
     <string name="listen_for_usb_devices_label">รอรับอุปกรณ์ USB</string>
     <string name="listen_for_usb_devices_description">แสดงข้อความแจ้งเตือนของระบบ Android เมื่อเสียบอุปกรณ์ USB</string>
+    <string name="listen_for_usb_devices_help">ให้ Android เสนอแอปนี้ทุกครั้งที่เสียบอุปกรณ์ USB ปิดไว้หากพรอมต์ปรากฏกับแฟลชไดรฟ์ USB และอุปกรณ์อื่นด้วย เมื่อปิด การเสียบโทรศัพท์จะไม่เปิดแอป</string>
     <string name="show_toast_messages">แสดงข้อความแจ้งเตือน Toast</string>
     <string name="show_toast_messages_description">แสดงป๊อปอัปสถานะเมื่อเชื่อมต่อ ตัดการเชื่อมต่อ และเปลี่ยนโหมด</string>
+    <string name="show_toast_messages_help">แสดงข้อความป๊อปอัปสั้นๆ เมื่อโทรศัพท์เชื่อมต่อหรือตัดการเชื่อมต่อ และเมื่อโหมดการเชื่อมต่อเปลี่ยน ปิดเพื่อให้หน้าจอไม่รก ข้อความเกี่ยวกับความล้มเหลวหรือการปฏิเสธยังคงแสดง</string>
     <string name="auto_start_usb_label">เริ่มอัตโนมัติเมื่อเสียบ USB</string>
     <string name="auto_start_usb_description">เปิดแอปโดยอัตโนมัติและพยายามเชื่อมต่อเมื่อเสียบอุปกรณ์ USB</string>
+    <string name="auto_start_usb_summary">เปิดแอปและเชื่อมต่อเมื่อเสียบอุปกรณ์ USB</string>
     <string name="auto_start_settings">การตั้งค่าการเริ่มอัตโนมัติ</string>
     <string name="auto_start_settings_description">กำหนดค่าเมื่อแอปเริ่มต้นโดยอัตโนมัติ</string>
     <string name="auto_start_oem_warning">อุปกรณ์นี้อาจต้องเปิดการเริ่มอัตโนมัติ และปิดการเพิ่มประสิทธิภาพแบตเตอรี่หรือข้อจำกัดการทำงานเบื้องหลังสำหรับแอปนี้\n\nในเฮดยูนิตที่มี Quick Boot (บูตเร็ว) การเริ่มอัตโนมัติอาจไม่ทำงาน ให้หา \"DuraSpeed\" ในการตั้งค่าระบบ แล้วเปิดใช้กับแอปนี้ เฮดยูนิตบางรุ่นซ่อน DuraSpeed ไว้ คุณอาจต้องใช้แอปอย่าง \"Hidden Settings\" เพื่อหาเจอ หากไม่มี DuraSpeed ให้ลองปิด Quick Boot</string>
     <string name="car_launcher_autostart_info">Open Headunit ถูกตั้งเป็นตัวเปิดแอปหลัก (Launcher) ของรถคุณ และจะเริ่มทำงานอัตโนมัติเมื่อระบบบูต</string>
     <string name="auto_start_on_boot_label">เริ่มเมื่อเปิดเครื่อง</string>
     <string name="auto_start_on_boot_description">เปิดแอปอัตโนมัติเมื่ออุปกรณ์เริ่มทำงาน ต้องใช้สิทธิ์ \"แสดงทับบนแอปอื่นๆ\" บน Android 10 ขึ้นไป</string>
+    <string name="auto_start_on_boot_summary">เปิดแอปเมื่ออุปกรณ์เริ่มทำงาน</string>
     <string name="auto_start_screen_on_label">เริ่มเมื่อเปิดหน้าจอ</string>
     <string name="auto_start_screen_on_description">เปิดแอปทุกครั้งที่หน้าจอติด เหมาะกับเฮดยูนิตที่ไม่ได้ปิดเครื่องสนิท หรือใช้โหมดบูตเร็วที่ตัวเลือกเริ่มอัตโนมัติอื่นใช้ไม่ได้ ไม่แนะนำให้ใช้กับโทรศัพท์หรือแท็บเล็ต</string>
+    <string name="auto_start_screen_on_summary">เปิดแอปทุกครั้งที่หน้าจอสว่างขึ้น ไม่ใช้กับโทรศัพท์หรือแท็บเล็ต</string>
     <string name="select_bt_device">เลือกอุปกรณ์บลูทูธ</string>
     <string name="bt_device_not_set">ไม่ได้ตั้งค่า</string>
     <string name="no_paired_bt_devices">ไม่พบอุปกรณ์บลูทูธที่จับคู่แล้ว</string>
     <string name="auto_disconnect_bt_label">ตัดการเชื่อมต่ออัตโนมัติเมื่อบลูทูธหลุด</string>
     <string name="select_bt_disconnect_device">เลือกอุปกรณ์บลูทูธที่จะเฝ้าดู</string>
     <string name="native_poke_bt_label">อุปกรณ์ที่จะปลุกสำหรับ Android Auto แบบไร้สาย</string>
+    <string name="native_poke_bt_help">ในโหมด Native Android Auto อุปกรณ์นี้จะปลุก Android Auto บนโทรศัพท์ โดยเชื่อมต่อสั้นๆ กับโปรไฟล์แฮนด์ฟรีบลูทูธของโทรศัพท์ แล้วโทรศัพท์จะเริ่มการตั้งค่าไร้สาย เลือกโทรศัพท์ของคุณที่นี่ รายการแสดงเฉพาะโทรศัพท์ หากไม่เลือกอะไร แถวด้านล่างจะกำหนดว่าจะปลุกอุปกรณ์ที่จับคู่ไว้ทั้งหมดหรือไม่</string>
     <string name="select_bt_poke_device">เลือกอุปกรณ์บลูทูธที่จะปลุก</string>
     <string name="native_poke_all_paired_label">ปลุกทุกอุปกรณ์ที่จับคู่</string>
     <string name="native_poke_all_paired_description">หากไม่ได้เลือกอุปกรณ์ด้านบน ให้เชื่อมต่อกับอุปกรณ์ที่จับคู่ทั้งหมดสั้นๆ เพื่อเริ่ม Android Auto ปิดตัวเลือกนี้เพื่อไม่ปลุกอะไรเลยจนกว่าคุณจะเลือก</string>
+    <string name="native_poke_all_paired_summary">เมื่อไม่ได้เลือกอุปกรณ์ จะปลุกอุปกรณ์ที่จับคู่ไว้ทั้งหมด</string>
     <string name="auto_disconnect_bt_delay_label">รอก่อนตัดการเชื่อมต่อ</string>
+    <string name="auto_disconnect_bt_delay_help">กำหนดเวลาที่แอปรอหลังบลูทูธของอุปกรณ์ที่เฝ้าดูหายไป ก่อนจะจบเซสชัน หากอุปกรณ์กลับมาในช่วงนั้น เซสชันจะดำเนินต่อ ตั้งไว้สองสามวินาทีหากการเชื่อมต่อหลุดชั่วครู่ระหว่างที่โปรไฟล์เชื่อมต่อใหม่ ค่า 0 จะจบเซสชันทันที ค่าสูงสุดคือ 3600 วินาที</string>
     <string name="auto_disconnect_bt_delay_value">%1$d วินาที</string>
     <string name="auto_disconnect_bt_delay_immediate">ทันที</string>
     <string name="enter_auto_disconnect_bt_delay">วินาทีที่ต้องรอก่อนสิ้นสุดเซสชัน</string>
@@ -489,8 +518,10 @@
     <string name="auto_disconnect_bt_kill_hint">จบเซสชันแบบเดียวกับปุ่มออก เมื่อบลูทูธของอุปกรณ์ที่เลือกหายไป เช่น เมื่อดับเครื่องยนต์ ให้เลือกบลูทูธของรถ หากเฮดยูนิตนี้จับคู่กับรถไว้ หากต้องการปิดแอปและกลับไปหน้าจอหลักด้วย ให้เปิด \"ปิดแอปเมื่อตัดการเชื่อมต่อ\" ใต้ระบบอัตโนมัติ</string>
     <string name="auto_start_wifi_label">เริ่มอัตโนมัติเมื่อเชื่อมต่อ Wi-Fi</string>
     <string name="auto_start_wifi_description">เปิด Open Headunit อัตโนมัติเมื่อเชื่อมต่อกับ Wi-Fi SSID ที่ระบุ</string>
+    <string name="auto_start_wifi_help">เปิดแอปเมื่ออุปกรณ์นี้เชื่อมต่อเครือข่าย Wi-Fi ที่ระบุชื่อไว้ในแถวด้านล่าง จะไม่มีอะไรเกิดขึ้นขณะที่ Android Auto เชื่อมต่ออยู่แล้ว ตั้งแต่ Android 8 ข้อจำกัดการทำงานเบื้องหลังอาจหยุดฟีเจอร์นี้ได้ จึงควรนำแอปออกจากการเพิ่มประสิทธิภาพแบตเตอรี่</string>
     <string name="auto_start_wifi_ssid_label">Wi-Fi SSID</string>
     <string name="auto_start_wifi_ssid_description">เริ่มทำงานเฉพาะเมื่อเชื่อมต่อกับ Wi-Fi SSID นี้</string>
+    <string name="auto_start_wifi_ssid_help">ชื่อเครือข่าย Wi-Fi ที่จะเปิดแอป พิมพ์ตามที่เครือข่ายแสดง ตัวพิมพ์ใหญ่หรือเล็กไม่สำคัญ หากเว้นว่างไว้ การเริ่มอัตโนมัติเมื่อเชื่อมต่อ Wi-Fi จะไม่ทำงาน</string>
     <string name="auto_start_wifi_warning">ฟีเจอร์รุ่นเก่า: อาจทำงานไม่เสถียรบน Android 8 ขึ้นไป เพราะข้อจำกัดการทำงานเบื้องหลัง ตรวจสอบว่าแอปไม่ถูกจำกัดด้วยการเพิ่มประสิทธิภาพแบตเตอรี่</string>
     <string name="enter_wifi_ssid">ป้อน Wi-Fi SSID</string>
     <string name="wifi_ssid_not_set">ไม่ได้ตั้งค่า</string>
@@ -502,16 +533,19 @@
     <string name="cannot_open_settings">ไม่สามารถเปิดการตั้งค่าระบบได้</string>
     <string name="right_hand_drive">พวงมาลัยขวา</string>
     <string name="right_hand_drive_description">จัดวางหน้าจอให้เหมาะกับรถพวงมาลัยขวา</string>
+    <string name="right_hand_drive_help">บอก Android Auto ว่าคนขับนั่งทางขวา หน้าจอหลักของแอปนี้จะย้ายเนื้อหาหลักไปทางขวาด้วย การเปลี่ยนแปลงจะถึง Android Auto เมื่อเชื่อมต่อครั้งถัดไป</string>
     <string name="wireless_connection_settings">การเชื่อมต่อไร้สาย</string>
     <string name="category_graphic">กราฟิก</string>
 
     <string name="static_bssid_title">BSSID คงที่ (MAC Address)</string>
+    <string name="static_bssid_help">ที่อยู่ Wi-Fi (BSSID) ที่โทรศัพท์ได้รับสำหรับเครือข่ายของอุปกรณ์นี้ เว้นว่างไว้แล้วแอปจะอ่านที่อยู่เอง กรอกเฉพาะเมื่อบันทึกระบุว่าไม่มีแหล่งใดรายงานที่อยู่ กับ Wi-Fi Direct แถวนี้กำหนดที่อยู่ของกลุ่ม กับฮอตสปอตกำหนดที่อยู่ของฮอตสปอต ที่อยู่ที่แอปอ่านได้จะมาก่อนที่อยู่ที่กรอกเสมอ</string>
     <string name="static_bssid_enter_value">ป้อน BSSID (XX:XX:XX:XX:XX:XX)</string>
     <string name="static_bssid_desc">ตั้งค่า BSSID ของจุดเชื่อมต่อไร้สายด้วยตนเอง ต้องใช้เฉพาะเมื่อไม่มีส่วนใดในอุปกรณ์นี้รายงานค่า ล็อกจะระบุทุกแหล่งที่ถูกสอบถาม</string>
     <string name="static_p2p_bssid_title">BSSID คงที่ (Wi-Fi Direct)</string>
     <string name="static_p2p_bssid_desc">ตั้งค่า BSSID ของกลุ่ม Wi-Fi Direct ด้วยตนเอง แยกจากของจุดเชื่อมต่อไร้สาย เพราะเป็นคนละอินเทอร์เฟซ และค่าหนึ่งใช้แทนอีกค่าหนึ่งไม่ได้</string>
 
     <string name="custom_insets">ระยะขอบที่กำหนดเอง (Insets)</string>
+    <string name="custom_insets_help">ขยับภาพให้ห่างจากขอบหน้าจอตามจำนวนพิกเซลนี้ ได้แก่ ซ้าย บน ขวา และล่าง ใช้เมื่อกรอบ ขอบโค้ง หรือแถบระบบบังส่วนหนึ่งของ Android Auto</string>
     <string name="inset_top">บน</string>
     <string name="inset_bottom">ล่าง</string>
     <string name="inset_left">ซ้าย</string>
@@ -521,12 +555,14 @@
     <!-- Video Settings -->
     <string name="category_video">วิดีโอ</string>
     <string name="force_software_decoding">บังคับถอดรหัสด้วยซอฟต์แวร์</string>
-    <string name="force_software_decoding_description">อาจแก้ไขปัญหาในอุปกรณ์บางรุ่น แต่ประสิทธิภาพจะต่ำลง</string>
+    <string name="force_software_decoding_description">อาจแก้ปัญหาในอุปกรณ์บางรุ่นได้ แต่ช้ากว่า</string>
+    <string name="force_software_decoding_help">ถอดรหัสวิดีโอด้วยโปรเซสเซอร์หลักแทนฮาร์ดแวร์วิดีโอ เปิดเฉพาะเมื่อภาพยังคงดำ ค้าง หรือสีผิดเพี้ยนขณะที่ปิดอยู่ ใช้กำลังโปรเซสเซอร์มากกว่ามาก ภาพจึงอาจช้าลง แถวด้านล่างใช้เลือกตัวถอดรหัสซอฟต์แวร์</string>
     <string name="software_video_decoder">แหล่งถอดรหัสซอฟต์แวร์</string>
     <string name="software_video_decoder_bundled">FFmpeg ในตัว</string>
     <string name="software_video_decoder_device">MediaCodec ของอุปกรณ์</string>
+    <string name="software_video_decoder_help">ใช้ได้เฉพาะเมื่อเปิดบังคับถอดรหัสด้วยซอฟต์แวร์ FFmpeg ในตัวเป็นตัวถอดรหัสของแอปเองและถอดรหัสได้เฉพาะ H.265 MediaCodec ของอุปกรณ์ใช้ตัวถอดรหัสซอฟต์แวร์ของระบบ วิดีโอ H.264 ใช้ตัวถอดรหัสของระบบเสมอ</string>
     <string name="wireless_mode">โหมดไร้สาย</string>
-    <string name="wireless_mode_description">เลือกวิธีที่แอปเชื่อมต่อแบบไร้สาย (รายการเอง, ค้นหาโทรศัพท์อัตโนมัติ หรือโหมด Wireless Launcher)</string>
+    <string name="wireless_mode_description">เลือกวิธีที่เครื่องนี้ค้นหาโทรศัพท์โดยไม่ใช้สาย Wireless Helper ใช้แอปคู่หูบนโทรศัพท์ เนทีฟทำงานเหมือนเฮดยูนิต Android Auto ไร้สาย ไม่ต้องใช้แอป แต่ขึ้นอยู่กับเวอร์ชันของ Android Auto เซิร์ฟเวอร์เฮดยูนิตจะค้นหาเซิร์ฟเวอร์ที่ Android Auto เรียกใช้บนโทรศัพท์ เปลี่ยนเฉพาะเมื่อโหมดปัจจุบันเชื่อมต่อไม่ได้ การเปลี่ยนจะเริ่มการตั้งค่าไร้สายใหม่</string>
     <string-array name="wireless_connection_modes">
         <item>กำหนดเอง (รายการ)</item>
         <item>ค้นหาอัตโนมัติ (เซิร์ฟเวอร์เฮดยูนิต)</item>
@@ -540,6 +576,11 @@
     <string name="auto_connect_settings">การตั้งค่าเชื่อมต่ออัตโนมัติ</string>
     <string name="auto_connect_settings_description">กำหนดค่าวิธีการเชื่อมต่ออัตโนมัติและลำดับความสำคัญ</string>
     <string name="auto_connect_help">วิธีเหล่านี้ทำงานอัตโนมัติเมื่อเปิดแอป เปิดวิธีที่ต้องการ แล้วลากเพื่อจัดลำดับ ระบบจะใช้วิธีแรกที่เปิดอยู่และเชื่อมต่อสำเร็จ</string>
+    <string name="auto_connect_screen_help">กำหนดวิธีที่แอปเชื่อมต่อเองเมื่อเปิด เปิดวิธีที่ต้องการแล้วลากเรียงตามลำดับที่จะลอง ระบบจะใช้วิธีแรกที่สำเร็จ การหน่วงเวลาให้ Wi-Fi มีเวลาตื่นบนเครื่องที่ช้า ไม่มีส่วนใดในนี้เปลี่ยนการเชื่อมต่อที่คุณเริ่มเอง แตะบันทึกเพื่อใช้การเปลี่ยนแปลง</string>
+    <string name="dpi_screen_help">กำหนดความหนาแน่นพิกเซลที่ Android Auto ใช้วาด DPI สูงทำให้ไอคอนและข้อความใหญ่ขึ้น จึงแสดงได้น้อยลง DPI ต่ำทำให้เล็กลง จึงแสดงได้มากขึ้น อัตโนมัติจะใช้ความหนาแน่นของอุปกรณ์นี้ ค่าใหม่จะมีผลในการเชื่อมต่อครั้งถัดไป</string>
+    <string name="keymap_screen_help">กำหนดปุ่มของเครื่องนี้ให้ทำงานใน Android Auto แตะแถวหนึ่ง แล้วกดปุ่มที่ต้องการกำหนด รีเซ็ตจะลบการกำหนดทั้งหมดของคุณและกลับเป็นค่าเริ่มต้น ใช้เมื่อปุ่มบนพวงมาลัยหรือแผงทำงานผิด</string>
+    <string name="customization_screen_help">เปลี่ยนรูปลักษณ์ของหน้าจอหลักของแอปนี้ ได้แก่ รูปพื้นหลัง สีและขนาดของปุ่มทั้งสี่ และขนาดข้อความ การตั้งค่ากลางคืนควบคุมพื้นหลังในโหมดมืด ทั้งหมดนี้ไม่เปลี่ยนสิ่งที่ Android Auto แสดงในการฉายภาพ</string>
+    <string name="loading_screen_screen_help">กำหนดรูปภาพหรือวิดีโอสั้นที่แสดงขณะ Android Auto เริ่มทำงาน เลือกรูปภาพหรือวิดีโอไม่เกิน 10 MB ปรับขนาดให้พอดีหน้าจอ และวนซ้ำภาพเคลื่อนไหวสั้น ๆ นอกจากนี้ยังซ่อนข้อความตอนเริ่มได้ ลบจะกลับไปที่หน้าจอเริ่มต้น</string>
     <string name="auto_connect_priority">ลำดับความสำคัญ %d</string>
     <string name="auto_connect_all_disabled">ปิดอยู่ทั้งหมด</string>
     <string name="drag_to_reorder">ลากเพื่อจัดลำดับใหม่</string>
@@ -547,13 +588,16 @@
     <string name="move_down">เลื่อนลง</string>
     <string name="auto_connecting_single_usb">กำลังเชื่อมต่อกับอุปกรณ์ USB อัตโนมัติ…</string>
     <string name="video_codec">ตัวแปลงสัญญาณวิดีโอ (Codec)</string>
+    <string name="video_codec_help">เลือกรูปแบบวิดีโอที่โทรศัพท์ส่งมา อัตโนมัติให้แอปเลือกจากรูปแบบที่เครื่องนี้ถอดรหัสได้ H.265 ให้ภาพคมชัดกว่าที่อัตราข้อมูลเท่ากัน H.264 ใช้ได้กับตัวถอดรหัสทุกตัว เปลี่ยนเมื่อภาพกระตุกหรือเป็นสีดำ ตัวเลือกจะมีผลตั้งแต่การเชื่อมต่อครั้งถัดไป</string>
     <string name="fps_limit">ขีดจำกัด FPS</string>
+    <string name="fps_limit_help">อัตราเฟรมสูงสุดที่อุปกรณ์นี้ขอจาก Android Auto ค่า 60 ให้การเคลื่อนไหวลื่นกว่า แต่ใช้แบนด์วิดท์และกำลังถอดรหัสมากกว่า เลือก 30 หากภาพหน่วงหรือกระตุก มีผลเมื่อเชื่อมต่อครั้งถัดไป</string>
     <string name="save">บันทึก</string>
     <string name="save_and_restart">บันทึก (ต้องเชื่อมต่อใหม่)</string>
     <string name="add_new">เพิ่มใหม่</string>
     <string name="cancel">ยกเลิก</string>
     <string name="enable">เปิดใช้งาน</string>
     <string name="video_fit_mode">การปรับขนาดวิดีโอ</string>
+    <string name="video_fit_mode_help">เลือกวิธีที่ภาพ Android Auto พอดีกับหน้าจอของอุปกรณ์นี้เมื่อรูปทรงต่างกัน Stretch to fill ใช้เต็มหน้าจอและอาจทำให้ภาพผิดสัดส่วน Fit with bars แสดงภาพทั้งหมด โดยมีแถบที่สองขอบ Fill by cropping ใช้เต็มหน้าจอและตัดบางส่วนของขอบออก</string>
     <string name="change_video_fit_mode">เปลี่ยนการปรับขนาดวิดีโอ</string>
     <string name="video_fit_mode_fill">ยืดให้เต็ม (ไม่มีแถบดำ แต่อาจผิดสัดส่วน)</string>
     <string name="video_fit_mode_contain">พอดีพร้อมแถบดำ (ไม่ครอบตัด ไม่ผิดสัดส่วน)</string>
@@ -566,58 +610,70 @@
     <string name="device_specific_mcu_checking">กำลังตรวจสอบการเข้าถึง MCU…</string>
     <string name="device_specific_mcu_unavailable">ไม่สามารถเข้าถึง MCU ได้ ฟังก์ชันหยุดการฉายภาพชั่วคราวเมื่อเข้าเกียร์ถอยหลังถูกปิดใช้งานบนอุปกรณ์นี้</string>
     <string name="device_specific_head_unit_model">รุ่นเครื่องเสียงรถยนต์</string>
+    <string name="device_specific_head_unit_model_help">เลือกรุ่นของอุปกรณ์นี้หากมีในรายการ จากนั้นแอปจะแสดงการแก้ไขสำหรับรุ่นนั้นด้านล่าง การแก้ไขแต่ละอย่างจะตรวจสอบก่อนว่าเข้าถึงฮาร์ดแวร์ของอุปกรณ์ได้หรือไม่ และเปิดใช้ได้ก็ต่อเมื่อเข้าถึงได้ หากรุ่นของคุณไม่อยู่ในรายการ ให้เลือกยังไม่ได้เลือกไว้</string>
     <string name="device_specific_model_none">ยังไม่ได้เลือก</string>
     <string name="device_specific_model_adayo_haval">Adayo (Haval)</string>
     <string name="device_specific_pause_projection_reverse">หยุดการฉายภาพ Android Auto ชั่วคราวเมื่อเข้าเกียร์ถอยหลัง</string>
-    <string name="device_specific_pause_projection_reverse_description">ปล่อยโฟกัสวิดีโอของ Android Auto ขณะกล้องมองหลังทำงาน แล้วกลับมาฉายภาพเมื่อออกจากเกียร์ถอยหลัง</string>
+    <string name="device_specific_pause_projection_reverse_summary">หยุด Android Auto ชั่วคราวขณะรถอยู่ในเกียร์ถอย</string>
+    <string name="device_specific_pause_projection_reverse_help">ขณะที่รถอยู่ในเกียร์ถอย แอปจะปล่อยโฟกัสวิดีโอของ Android Auto เพื่อให้แสดงภาพกล้องหลังได้ เมื่อเลิกถอย การฉายภาพจะกลับมา แอปอ่านเกียร์จาก MCU ของอุปกรณ์ จึงใช้การแก้ไขนี้ได้เฉพาะที่แอปเข้าถึง MCU ได้</string>
     <string name="pref_enable_car_launcher_title">ใช้เป็น Car Launcher</string>
-    <string name="pref_enable_car_launcher_summary">ลงทะเบียน Open Headunit เป็นแอปหน้าจอหลัก เพื่อให้เปิดขึ้นเมื่อกดปุ่ม Home ของรถหรือเฮดยูนิต</string>
+    <string name="pref_enable_car_launcher_summary">เปิดแอปด้วยปุ่มหน้าหลัก</string>
+    <string name="pref_enable_car_launcher_help">ลงทะเบียน Open Headunit เป็นแอปหน้าจอหลัก เพื่อให้เปิดขึ้นเมื่อกดปุ่ม Home ของรถหรือเฮดยูนิต</string>
     <string name="pref_set_default_launcher_title">แอปหน้าจอหลักเริ่มต้น</string>
+    <string name="pref_set_default_launcher_help">แสดงว่าแอปนี้เป็นแอปหน้าแรกเริ่มต้นของอุปกรณ์หรือไม่ แตะเพื่อขอให้ระบบตั้งแอปนี้เป็นค่าเริ่มต้น ปุ่มหน้าแรกจะเปิดแอปนี้เฉพาะเมื่อแอปนี้เป็นค่าเริ่มต้น</string>
     <string name="pref_default_launcher_status_active">ใช้งานอยู่ (แตะเพื่อจัดการ)</string>
     <string name="pref_default_launcher_status_inactive">ไม่ได้ตั้งค่า (แตะเพื่อตั้งเป็นค่าเริ่มต้น)</string>
     <string name="pref_enable_floating_button_title">ปุ่มลอยตัวเปิดแอป</string>
-    <string name="pref_enable_floating_button_summary">แสดงปุ่มลอยทับลอนเชอร์เดิมและแอปอื่นๆ เพื่อกลับสู่ Open Headunit ได้อย่างรวดเร็ว</string>
+    <string name="pref_enable_floating_button_summary">แสดงปุ่มสำหรับกลับไปที่ Open Headunit</string>
+    <string name="pref_enable_floating_button_help">แสดงปุ่มลอยทับลอนเชอร์เดิมและแอปอื่นๆ เพื่อกลับสู่ Open Headunit ได้อย่างรวดเร็ว</string>
     <string name="pref_floating_button_connection_status_title">ตัวบ่งชี้สถานะการเชื่อมต่อ</string>
-    <string name="pref_floating_button_connection_status_summary">ใช้ความทึบเมื่อไม่ได้เชื่อมต่อ เมื่อไม่มีโทรศัพท์เชื่อมต่อ และค่อยๆ จางเป็นความทึบของปุ่มลอยขณะที่มีโทรศัพท์เชื่อมต่อ ที่ 0% ปุ่มจะถูกซ่อนและปล่อยให้การแตะผ่านไป</string>
+    <string name="pref_floating_button_connection_status_summary">ทำให้ปุ่มจางลงขณะที่เชื่อมต่อโทรศัพท์</string>
+    <string name="pref_floating_button_connection_status_help">ใช้ความทึบเมื่อไม่ได้เชื่อมต่อ เมื่อไม่มีโทรศัพท์เชื่อมต่อ และค่อยๆ จางเป็นความทึบของปุ่มลอยขณะที่มีโทรศัพท์เชื่อมต่อ ที่ 0% ปุ่มจะถูกซ่อนและปล่อยให้การแตะผ่านไป</string>
     <string name="pref_floating_button_size_title">ขนาดปุ่มลอย</string>
+    <string name="pref_floating_button_size_help">ขนาดของปุ่มลอย ตั้งแต่ 32 ถึง 120 dp ปุ่มที่ใหญ่กว่าแตะได้ง่ายกว่าขณะขับรถ</string>
     <string name="pref_floating_button_opacity_title">ความทึบของปุ่มลอย</string>
+    <string name="pref_floating_button_opacity_help">ความชัดของปุ่มลอย ตั้งแต่ 10% ถึง 100% เมื่อเปิดตัวบ่งชี้สถานะการเชื่อมต่อ ค่านี้ใช้เฉพาะขณะที่มีโทรศัพท์เชื่อมต่ออยู่</string>
     <string name="pref_floating_button_disconnected_opacity_title">ความทึบเมื่อไม่ได้เชื่อมต่อ</string>
+    <string name="pref_floating_button_disconnected_opacity_help">ความชัดของปุ่มลอยขณะที่ไม่มีโทรศัพท์เชื่อมต่อ ที่ 0% ปุ่มจะถูกซ่อน และการแตะจะทะลุไปยังหน้าจอด้านล่าง</string>
     <string name="pref_floating_button_x_title">ตำแหน่งแนวนอน (X)</string>
     <string name="pref_floating_button_y_title">ตำแหน่งแนวตั้ง (Y)</string>
+    <string name="pref_floating_button_position_help">ตำแหน่งของปุ่มลอยบนหน้าจอ สำหรับ X ค่า 0% คือขอบซ้าย และ 100% คือขอบขวา สำหรับ Y ค่า 0% คือขอบบน และ 100% คือขอบล่าง ปุ่มจะอยู่ในหน้าจอทั้งปุ่มเสมอ</string>
     <string name="pref_aa_exit_action_title">การกระทำเมื่อออกจาก Android Auto</string>
     <string name="pref_aa_exit_action_summary">การกระทำเมื่อแตะ ออก ภายในหน้ารวมแอปของ Android Auto</string>
+    <string name="pref_aa_exit_action_help">เลือกสิ่งที่เกิดขึ้นเมื่อคุณแตะออกใน Android Auto กลับสู่ลอนเชอร์ติดรถ จะแสดงหน้าจอหลักของอุปกรณ์เอง กลับสู่หน้าแรกของแอปจะแสดงหน้าจอหลักของแอปนี้ ทั้งสองแบบโทรศัพท์ยังคงเชื่อมต่ออยู่ ยกเลิกการเชื่อมต่อเซสชันจะจบเซสชัน เมื่อแอปนี้เป็นตัวเปิดแอปของรถ กลับสู่ลอนเชอร์ติดรถ จะทำงานเหมือนกลับสู่หน้าแรกของแอป</string>
     <string name="aa_exit_action_oem_launcher">กลับสู่ลอนเชอร์ติดรถ (ย่อขนาด)</string>
     <string name="aa_exit_action_app_home">กลับสู่หน้าแรกของแอป</string>
     <string name="aa_exit_action_disconnect">ยกเลิกการเชื่อมต่อเซสชัน</string>
     <string name="forced_scale">บังคับปรับขนาด (แก้ปัญหารุ่นเก่า)</string>
     <string name="forced_scale_description">แก้ไขปัญหาการปรับขนาดบนอุปกรณ์รุ่นเก่าบางรุ่นที่ใช้ SurfaceView ใช้เฉพาะเมื่อภาพดูบิดเบี้ยวหรือเลื่อน</string>
+    <string name="forced_scale_summary">แก้การปรับขนาดบนอุปกรณ์รุ่นเก่าที่ใช้ SurfaceView</string>
     <string name="hud_mirroring">โหมด HUD (พลิกแนวนอน)</string>
     <string name="hud_mirroring_description">พลิกหน้าจอในแนวนอนเพื่อสะท้อนกระจกหน้ารถ (Head-Up Display) ต้องใช้โหมด TextureView หรือ GLES20</string>
+    <string name="hud_mirroring_summary">พลิกภาพสำหรับการสะท้อนบนกระจกหน้ารถ (HUD)</string>
 
     <!-- Audio Settings -->
     <string name="category_audio">เสียง</string>
     <string name="enable_audio_sink">ตัวรับสัญญาณเสียง (Audio Sink)</string>
-    <string name="enable_audio_sink_description">หากปิดใช้งาน เฮดยูนิตจะไม่ได้รับเสียง เสียงจะเล่นจากโทรศัพท์</string>
+    <string name="enable_audio_sink_description">เล่นเสียง Android Auto บนเครื่องนี้ ปิดเพื่อให้เสียงอยู่ที่โทรศัพท์ เช่น เมื่อโทรศัพท์ส่งเสียงไปยังลำโพงรถอยู่แล้ว เครื่องจะแสดงเฉพาะภาพ การโทรไม่เคยใช้เสียงนี้ แต่จะเล่นผ่านอุปกรณ์แฮนด์ฟรีบลูทูธที่เชื่อมต่อกับโทรศัพท์ (รถ อินเตอร์คอม หรือหูฟัง) หรือผ่านโทรศัพท์เอง</string>
+    <string name="enable_audio_sink_summary">เล่นเสียง Android Auto บนเครื่องนี้ ปิด: โทรศัพท์เป็นผู้เล่น</string>
     <string name="static_audio_focus">โฟกัสเสียงแบบคงที่</string>
-    <string name="static_audio_focus_description">บังคับให้โทรศัพท์เชื่อว่าโฟกัสเสียงยังคงอยู่เสมอ ป้องกันการสูญเสียการกำหนดเส้นทางเสียง และลดเสียงเพลงอัตโนมัติขณะมีเสียงนำทาง</string>
+    <string name="static_audio_focus_description">แจ้งโทรศัพท์ว่าโฟกัสเสียงถูกถือไว้ตลอด ช่วยป้องกันเสียงขาดหายบนเฮดยูนิตทั่วไปที่รายงานโฟกัสผิด และลดระดับเสียงเพลงด้วยซอฟต์แวร์ขณะมีเสียงนำทาง ปิดไว้หากเสียงไม่ขาดหาย</string>
+    <string name="static_audio_focus_summary">แจ้งโทรศัพท์ว่าโฟกัสเสียงถูกถือไว้ตลอด เพื่อป้องกันเสียงขาดหาย</string>
     <string name="media_key_routing">ส่งปุ่มสื่อไปยัง Android Auto</string>
     <string name="media_key_routing_always">เสมอ</string>
     <string name="media_key_routing_auto">อัตโนมัติ</string>
     <string name="media_key_routing_never">ไม่เคย</string>
-    <string name="media_key_routing_always_hint">ปุ่มถัดไป ก่อนหน้า และเล่น/หยุดชั่วคราวจะส่งไปยัง Android Auto เสมอ ใช้ตัวเลือกนี้ เว้นแต่การกดครั้งเดียวข้ามสองเพลง</string>
-    <string name="media_key_routing_auto_hint">จะหยุดส่งปุ่มเหล่านี้ขณะที่เฮดยูนิตนี้มีการเชื่อมต่อสื่อบลูทูธกับโทรศัพท์ เพราะการเชื่อมต่อนั้นทำงานตามปุ่มอยู่แล้ว เลือกตัวเลือกนี้หากกดครั้งเดียวแล้วข้ามสองเพลง และโทรศัพท์จับคู่กับเฮดยูนิตนี้</string>
-    <string name="media_key_routing_never_hint">ไม่ส่งปุ่มเหล่านี้เลย และปล่อยให้บลูทูธจัดการ เลือกตัวเลือกนี้หากกดครั้งเดียวแล้วข้ามสองเพลง และโทรศัพท์จับคู่กับระบบของรถเอง ไม่ใช่เฮดยูนิตนี้ เพราะโหมดอัตโนมัติตรวจไม่พบการเชื่อมต่อนั้น</string>
+    <string name="media_key_routing_help">เสมอ: ปุ่มถัดไป ก่อนหน้า และเล่น/หยุดชั่วคราวจะส่งไปยัง Android Auto เสมอ ใช้ตัวเลือกนี้ เว้นแต่การกดครั้งเดียวข้ามสองเพลง\n\nอัตโนมัติ: จะหยุดส่งปุ่มเหล่านี้ขณะที่เฮดยูนิตนี้มีการเชื่อมต่อสื่อบลูทูธกับโทรศัพท์ เพราะการเชื่อมต่อนั้นทำงานตามปุ่มอยู่แล้ว เลือกตัวเลือกนี้หากกดครั้งเดียวแล้วข้ามสองเพลง และโทรศัพท์จับคู่กับเฮดยูนิตนี้\n\nไม่เคย: ไม่ส่งปุ่มเหล่านี้เลย และปล่อยให้บลูทูธจัดการ เลือกตัวเลือกนี้หากกดครั้งเดียวแล้วข้ามสองเพลง และโทรศัพท์จับคู่กับระบบของรถเอง ไม่ใช่เฮดยูนิตนี้ เพราะโหมดอัตโนมัติตรวจไม่พบการเชื่อมต่อนั้น</string>
     <string name="media_key_routing_hint_common">มีผลเฉพาะปุ่มควบคุมสื่อ ปุ่มหมุน D-pad ปุ่มย้อนกลับ และปุ่ม Enter จะส่งไปยัง Android Auto เสมอ</string>
     <string name="playback_focus_mode">หยุดเสียงอื่นชั่วคราวขณะเล่น</string>
     <string name="playback_focus_mode_auto">อัตโนมัติ</string>
     <string name="playback_focus_mode_always">เสมอ</string>
     <string name="playback_focus_mode_never">ไม่เคย</string>
-    <string name="playback_focus_mode_auto_hint">หยุดเครื่องเล่นอื่นบนเฮดยูนิต (เช่น วิทยุ) ชั่วคราวขณะที่เสียงของ Android Auto เล่นอยู่ หากกลับกลายเป็นว่าไปหยุดการเล่นบนโทรศัพท์ ซึ่งเกิดขึ้นเมื่อเฮดยูนิตเป็นลำโพงบลูทูธของโทรศัพท์ ระบบจะเลิกทำและจำไว้ เลือกโหมดนี้อีกครั้งเพื่อให้ลองใหม่</string>
-    <string name="playback_focus_mode_always_hint">หยุดเสียงอื่นชั่วคราวเสมอขณะที่ Android Auto เล่น หากเพลงหยุดหลังผ่านไปหนึ่งหรือสองวินาทีทุกครั้งที่เปิดบลูทูธ ให้สลับกลับเป็นอัตโนมัติ</string>
-    <string name="playback_focus_mode_never_hint">ไม่ยุ่งกับโฟกัสเสียงของระบบ เสียงอื่นบนเฮดยูนิตอาจเล่นทับ Android Auto ต่อไป</string>
+    <string name="playback_focus_mode_help">อัตโนมัติ: หยุดเครื่องเล่นอื่นบนเฮดยูนิต (เช่น วิทยุ) ชั่วคราวขณะที่เสียงของ Android Auto เล่นอยู่ หากกลับกลายเป็นว่าไปหยุดการเล่นบนโทรศัพท์ ซึ่งเกิดขึ้นเมื่อเฮดยูนิตเป็นลำโพงบลูทูธของโทรศัพท์ ระบบจะเลิกทำและจำไว้ เลือกโหมดนี้อีกครั้งเพื่อให้ลองใหม่\n\nเสมอ: หยุดเสียงอื่นชั่วคราวเสมอขณะที่ Android Auto เล่น หากเพลงหยุดหลังผ่านไปหนึ่งหรือสองวินาทีทุกครั้งที่เปิดบลูทูธ ให้สลับกลับเป็นอัตโนมัติ\n\nไม่เคย: ไม่ยุ่งกับโฟกัสเสียงของระบบ เสียงอื่นบนเฮดยูนิตอาจเล่นทับ Android Auto ต่อไป</string>
     <string name="playback_focus_mode_static_hint">เมื่อเปิดโฟกัสเสียงแบบคงที่ ตัวเลือกนี้จะมีผลตั้งแต่โทรศัพท์เชื่อมต่อและตลอดเซสชัน ไม่ใช่เฉพาะขณะที่มีเสียงเล่น</string>
     <string name="separate_audio_streams">แยกสตรีมเสียง</string>
     <string name="separate_audio_streams_description">กำหนดสตรีมเอาต์พุตของตนเองให้กับช่องสื่อ การนำทาง และเสียงระบบ แทนที่จะใช้สตรีมมัลติมีเดียร่วมกัน</string>
+    <string name="separate_audio_streams_summary">สื่อ เสียงนำทาง และเสียงระบบ ใช้สตรีมเอาต์พุตของตนเอง</string>
 
     <!-- Audio stream settings screen -->
     <string name="audio_stream_settings">สตรีมเสียง</string>
@@ -625,14 +681,17 @@
     <string name="audio_stream_settings_info">Android Auto ส่งเสียงผ่านสามช่อง ได้แก่ สื่อ, การนำทาง และเสียงระบบ แต่ละช่องจะส่งมายังเฮดยูนิตผ่านสตรีมระบบ และสตรีมที่เลือกจะกำหนดว่าปุ่มปรับเสียงปุ่มใดควบคุม รวมถึงเฮดยูนิตหลายรุ่นจะเปิดเสียงแอมป์ให้ช่องนั้นหรือไม่ ใช้ปุ่มลำโพงเพื่อฟังเสียงทดสอบบนสตรีมก่อนบันทึก</string>
     <string name="audio_channel_media">สื่อ</string>
     <string name="audio_channel_media_description">การเล่นของแอป: เพลง พอดแคสต์ วิทยุ และหนังสือเสียง เป็นช่องเดียวที่ส่งแบบสเตอริโอ (48 kHz)</string>
+    <string name="audio_channel_media_summary">การเล่นของแอป: เพลง พอดแคสต์ วิทยุ หนังสือเสียง สเตอริโอ 48 kHz</string>
     <string name="audio_channel_guidance">เสียงนำทาง</string>
     <string name="audio_channel_guidance_description">เสียงบอกทิศทางแบบเลี้ยวต่อเลี้ยวและการตอบกลับของผู้ช่วยเสียง (16 kHz โมโน)</string>
     <string name="audio_channel_system">เสียงระบบ / การแจ้งเตือน</string>
     <string name="audio_channel_all">สื่อ, เสียงนำทาง, การแจ้งเตือน และเสียงระบบ</string>
     <string name="audio_channel_all_short">ทุกช่องสัญญาณ</string>
     <string name="audio_channel_all_description">ทุกช่องเสียงของ Android Auto ได้แก่ การเล่นของแอป เสียงนำทาง เสียงเตือน และเสียงแจ้งเตือน ใช้สตรีมเอาต์พุตนี้ร่วมกัน</string>
+    <string name="audio_channel_all_summary">ช่องเสียงทั้งหมดของ Android Auto ใช้สตรีมเอาต์พุตนี้ร่วมกัน</string>
     <string name="audio_channel_system_description">เสียงเตือน เสียงกระดิ่ง และเสียงแจ้งเตือนของ Android Auto (16 kHz โมโน)</string>
     <string name="audio_stream_test">เล่นเสียงทดสอบบนสตรีมนี้</string>
+    <string name="setting_help_for">ความช่วยเหลือ %1$s</string>
     <string name="audio_stream_muted_warning">%1$s ปิดเสียงอยู่บนอุปกรณ์นี้ เพิ่มระดับเสียงเพื่อฟังเสียงทดสอบ</string>
     <string name="audio_stream_test_failed">ไม่สามารถเล่นเสียงทดสอบบนสตรีมนี้ได้</string>
     <string name="audio_stream_pick_title">สตรีมสำหรับ %1$s</string>
@@ -670,18 +729,23 @@
     <string name="onb_audio_focus_title">โฟกัสเสียง</string>
     <string name="onb_audio_more_hint">คุณเปลี่ยนค่าเหล่านี้ได้ภายหลังที่ การตั้งค่า → สตรีมเสียง</string>
     <string name="use_aac_audio">ใช้เสียง AAC</string>
-    <string name="use_aac_audio_description">ใช้ตัวแปลงสัญญาณ AAC สำหรับเสียงเพื่อประหยัดแบนด์วิดท์ (ทดลอง) ในเซสชันไร้สายบนความถี่ 2.4 GHz ตัวเลือกนี้จะเปิดอัตโนมัติขณะที่เปิด \"ลดวิดีโอบนลิงก์ 2.4 GHz\" อยู่</string>
+    <string name="use_aac_audio_description">ใช้ตัวแปลงสัญญาณ AAC สำหรับเสียงเพื่อประหยัดแบนด์วิดท์ ในเซสชันไร้สายบนความถี่ 2.4 GHz ตัวเลือกนี้จะเปิดอัตโนมัติขณะที่เปิด \"ลดวิดีโอบนลิงก์ 2.4 GHz\" อยู่</string>
+    <string name="use_aac_audio_summary">ใช้เสียง AAC เพื่อประหยัดแบนด์วิดท์</string>
     <string name="attach_hw_dsp_equalizer">ตัวกระตุ้นอีควอไลเซอร์ DSP ฮาร์ดแวร์</string>
     <string name="attach_hw_dsp_equalizer_description">แนบเอฟเฟกต์อีควอไลเซอร์จำลองกับเซสชันเสียงเพื่อบังคับให้ส่งเสียงผ่าน DSP ฮาร์ดแวร์บนเฮดยูนิตบางรุ่น ควรปิดไว้หากใช้ ViPER4Android / ViperFX หรือเสียงอู้อี้บน Android รุ่นเก่า</string>
+    <string name="attach_hw_dsp_equalizer_summary">เชื่อมอีควอไลเซอร์ปลอมเพื่อบังคับการส่งผ่าน DSP ฮาร์ดแวร์บนบางเครื่อง</string>
     <string name="audio_volume_offset">การชดเชยระดับเสียง</string>
+    <string name="audio_volume_offset_help">กำหนดความดังของสตรีมเสียง Android Auto สามแบบบนอุปกรณ์นี้ ได้แก่ มีเดีย เสียงนำทาง และเสียงระบบ แต่ละแบบปรับได้ตั้งแต่ 0% ถึง 200% ที่ 100% จะเล่นสตรีมตามที่โทรศัพท์ส่งมา ใช้เพื่อปรับสมดุลระหว่างเสียงนำทางกับเพลง</string>
     <string name="microphone_settings">การตั้งค่าไมโครโฟน</string>
     <string name="use_head_unit_microphone">ไมโครโฟนของเฮดยูนิต</string>
     <string name="use_head_unit_microphone_description">เปิด: Android Auto ได้ยินเสียงจากไมโครโฟนของอุปกรณ์นี้ ปิด: อุปกรณ์นี้จะไม่บันทึกเสียงเลย และโทรศัพท์จะใช้ไมโครโฟนของตัวเอง หรือชุดหูฟังหรืออินเตอร์คอมที่จับคู่กับโทรศัพท์ ผู้ช่วยเสียงจึงยังใช้งานได้ ต้องใช้ Android 11 ขึ้นไปบนโทรศัพท์</string>
+    <string name="use_head_unit_microphone_summary">Android Auto ใช้ไมโครโฟนของอุปกรณ์นี้ ปิด: ใช้ไมโครโฟนของโทรศัพท์</string>
     <string name="head_unit_microphone_off_info">ไมโครโฟนของเฮดยูนิตปิดอยู่ ตัวเลือกด้านล่างจึงไม่มีผล Android Auto ได้รับแจ้งว่าอุปกรณ์นี้บันทึกเสียงไม่ได้และเป็นมอเตอร์ไซค์ ซึ่งทำให้โทรศัพท์บันทึกเสียงเอง บน Android 10 ขึ้นไปรุ่นเก่า โทรศัพท์จะลืมค่านี้ระหว่างเซสชัน และอาจเชื่อมต่อไม่ได้</string>
     <string name="microphone_settings_description">กำหนดค่าอินพุตไมโครโฟนและการประมวลผลเสียง</string>
     <string name="mic_wire_format_info">Android Auto รับเสียงไมโครโฟนที่ 16000 Hz, 16 บิต, โมโนเสมอ และปฏิเสธรูปแบบอื่น ดังนั้นการตั้งค่าเหล่านี้เปลี่ยนการทำงานของฮาร์ดแวร์ ไม่ได้เปลี่ยนสิ่งที่ส่งไปยังโทรศัพท์</string>
     <string name="mic_input_source">แหล่งอินพุตไมโครโฟน</string>
     <string name="mic_input_source_description">เลือกแหล่งกำเนิดเสียงสำหรับไมโครโฟน</string>
+    <string name="mic_input_source_help">เลือกแหล่งเสียง Android ที่แอปใช้บันทึก ค่าเริ่มต้นให้ระบบตัดสินใจ ไมโครโฟนในตัว บันทึกเสียงดิบ การจดจำเสียงและการสื่อสารด้วยเสียงเพิ่มตัวกรองเสียงรบกวนและเสียงสะท้อนของระบบ ชุดหูฟังบลูทูธบันทึกผ่านหูฟังบลูทูธ เปลี่ยนหากโทรศัพท์ไม่ได้ยินเสียงคุณ หาก Android Auto เชื่อมต่ออยู่ การบันทึกการเปลี่ยนแปลงจะหยุดเซสชัน</string>
     <string-array name="mic_input_sources">
         <item>ค่าเริ่มต้น (ระบบตัดสินใจ)</item>
         <item>ไมโครโฟนในตัว (อินพุตดิบ)</item>
@@ -691,10 +755,13 @@
     </string-array>
     <string name="mic_echo_canceler">การตัดเสียงสะท้อน (AEC)</string>
     <string name="mic_echo_canceler_description">พยายามตัดเสียงสะท้อนออกจากไมโครโฟน ปิดหากไม่มีเสียงหรือเสียงเพี้ยน</string>
+    <string name="mic_echo_canceler_summary">ลดเสียงสะท้อนจากไมโครโฟน ปิดเมื่อเงียบหรือเสียงเพี้ยน</string>
     <string name="mic_noise_suppressor">การระงับเสียงรบกวน (NS)</string>
     <string name="mic_noise_suppressor_description">พยายามลดเสียงรบกวนรอบข้าง Android Auto คาดว่าจะปิดตัวเลือกนี้เมื่อใช้ไมโครโฟนตัวเดียว และประมวลผลเอง ปิดหากเสียงของคุณฟังดูอู้อี้</string>
+    <string name="mic_noise_suppressor_summary">ลดเสียงรบกวนรอบข้าง Android Auto คาดหวังให้ปิดไว้</string>
     <string name="mic_auto_gain_control">การควบคุมอัตราขยายอัตโนมัติ (AGC)</string>
     <string name="mic_auto_gain_control_description">ปรับระดับเสียงไมโครโฟนอัตโนมัติ Android Auto คาดว่าจะปิดตัวเลือกนี้และใช้การควบคุมอัตราขยายของตัวเอง เมื่อใช้ทั้งสองอย่างพร้อมกัน เสียงมักแย่ลง ปิดหากระดับเสียงไม่คงที่</string>
+    <string name="mic_auto_gain_control_summary">ปรับระดับเสียงไมโครโฟน Android Auto คาดหวังให้ปิดไว้</string>
     <string name="mic_feature_unsupported">อุปกรณ์ของคุณไม่รองรับคุณสมบัตินี้</string>
 
     <!-- Info Settings -->
@@ -892,16 +959,20 @@
     <string name="setup_apply">นำไปใช้</string>
     <string name="setup_widescreen_detected">ตรวจพบการแสดงผลแบบจอกว้าง</string>
     <string name="auto_optimize">เพิ่มประสิทธิภาพการตั้งค่าอัตโนมัติ</string>
+    <string name="auto_optimize_help">เปิดวิซาร์ดการตั้งค่าอีกครั้ง วิซาร์ดจะพาไปตามขั้นตอนการเชื่อมต่อ วิดีโอ การแสดงผล เสียง การเริ่มต้น ตัวเปิดแอป GPS และยานพาหนะ และบันทึกแต่ละขั้นเมื่อคุณออกจากขั้นนั้น หลังการตั้งค่าครั้งแรก วิซาร์ดจะเก็บความละเอียด โคเดก ตัวเรนเดอร์ และการวางแนวไว้ เว้นแต่คุณใช้ผลการทดสอบวิดีโอ และจะบันทึกขนาดหน้าจอกับ DPI ที่คุณเลือกเสมอ</string>
     <string name="auto_optimize_desc">เรียกใช้การตรวจสอบระบบเพื่อค้นหาการตั้งค่าที่ดีที่สุดสำหรับอุปกรณ์ของคุณ</string>
 
     <!-- Navigation notifications (from any AA nav app) -->
     <string name="show_navigation_notifications">การแจ้งเตือนการนำทาง</string>
     <string name="show_navigation_notifications_description">แสดง \"ในอีก X เมตร ให้ทำ Y\" และชื่อถนนปัจจุบันในการแจ้งเตือน (สำหรับการดีบัก)</string>
+    <string name="show_navigation_notifications_help">แสดงทางเลี้ยวถัดไปจากการนำทางของ Android Auto เป็นการแจ้งเตือนบนอุปกรณ์นี้ พร้อมระยะทางและชื่อถนน ใช้ตรวจสอบว่าข้อมูลทางเลี้ยวมาจากโทรศัพท์</string>
     <string name="media_session_aa_status_placeholder">เชื่อมต่อแล้ว</string>
     <string name="sync_media_session_aa_metadata">ข้อมูลเพลง AA บนเซสชันสื่อระบบ</string>
     <string name="sync_media_session_aa_metadata_description">แสดงชื่อเพลง, ศิลปิน, ความยาว และภาพหน้าปกอัลบั้มจากโทรศัพท์ในเซสชันสื่อระบบและการแจ้งเตือนสื่อ</string>
+    <string name="sync_media_session_aa_metadata_summary">แสดงรายละเอียดเพลงจากโทรศัพท์ในเซสชันสื่อของระบบ</string>
     <string name="auto_resume_playback_on_reconnect">เล่นต่ออัตโนมัติเมื่อเชื่อมต่อใหม่</string>
     <string name="auto_resume_playback_on_reconnect_description">เล่นเพลงต่อโดยอัตโนมัติหากมีการเล่นอยู่ก่อนที่การเชื่อมต่อจะหลุดสั้นๆ (ภายใน 60 วินาที)</string>
+    <string name="auto_resume_playback_on_reconnect_summary">เล่นเพลงที่เล่นอยู่ต่อหลังการหลุดสั้น ๆ (60 วินาที)</string>
     <string name="nav_notification_channel_name">การนำทาง</string>
     <string name="nav_notification_channel_description">การอัปเดตการนำทางแบบเลี้ยวต่อเลี้ยวจาก Android Auto</string>
     <string name="nav_notification_title_format">ในอีก %1$d ม. — %2$s</string>
@@ -926,27 +997,37 @@
     <string name="performance_overlay_settings">ข้อมูลประสิทธิภาพ</string>
     <string name="overlay_field_fps">FPS</string>
     <string name="overlay_field_cpu">CPU</string>
+    <string name="overlay_field_cpu_summary">ภาระของตัวประมวลผลจากแอปนี้และจากทั้งอุปกรณ์</string>
     <string name="overlay_field_temperature">อุณหภูมิ</string>
+    <string name="overlay_field_temperature_summary">เซนเซอร์อุณหภูมิที่ร้อนที่สุดบนอุปกรณ์นี้</string>
     <string name="overlay_field_frame_age">อายุเฟรม</string>
+    <string name="overlay_field_frame_age_summary">เวลาตั้งแต่เฟรมล่าสุดแสดงบนหน้าจอ</string>
     <string name="overlay_field_battery">แบตเตอรี่</string>
+    <string name="overlay_field_battery_summary">ระดับแบตเตอรี่ เครื่องหมาย + แสดงว่าอุปกรณ์เสียบสายอยู่</string>
     <string name="overlay_field_memory">หน่วยความจำว่าง</string>
     <string name="overlay_field_wifi_signal">สัญญาณ Wi-Fi</string>
+    <string name="overlay_field_wifi_signal_summary">สัญญาณของเครือข่าย Wi-Fi ที่อุปกรณ์เชื่อมต่อ หน่วย dBm</string>
     <string name="performance_overlay_no_lines">ไม่มีบรรทัด</string>
     <string name="show_performance_overlay">แสดงข้อมูลประสิทธิภาพ</string>
     <string name="overlay_position">ตำแหน่งข้อมูลประสิทธิภาพ</string>
+    <string name="overlay_position_help">วางกล่องค่าที่วัดไว้ที่มุมซ้ายบนหรือมุมขวาบนของภาพ ย้ายหากมีแถบบนหน้าจอของอุปกรณ์บังมุมนั้น</string>
     <string name="five_ghz_channel">ช่องสัญญาณ 5 GHz</string>
     <string name="five_ghz_channel_auto">อัตโนมัติ</string>
     <string name="five_ghz_channel_option">ช่องสัญญาณ %1$d (%2$d MHz)</string>
     <string name="five_ghz_channel_hint">ช่องสัญญาณเป็นเพียงคำขอ ไม่ได้รับประกันว่าจะใช้ได้ อุปกรณ์หลายรุ่นสร้างเครือข่ายได้เฉพาะช่องที่ไดรเวอร์ Wi-Fi ของตัวเองเลือก และแอปจะทราบก็ต่อเมื่อลองแล้วเท่านั้น หากไม่มีช่องสัญญาณ 5 GHz ที่ใช้ได้และโทรศัพท์ยังมองไม่เห็นเครือข่าย ให้เปลี่ยนแถบความถี่ด้านบน</string>
     <string name="wifi_direct_stable_identity">รักษาเครือข่าย Wi-Fi Direct เดิม</string>
     <string name="wifi_direct_stable_identity_description">ใช้ชื่อเครือข่ายและรหัสผ่านเดิมทุกครั้ง เพื่อให้โทรศัพท์เชื่อมต่อกับเครือข่ายที่รู้จักอยู่แล้ว หากต้องการสร้างใหม่ ให้ใช้แถวด้านล่าง</string>
+    <string name="wifi_direct_stable_identity_summary">ใช้ชื่อเครือข่ายและรหัสผ่านชุดเดิมซ้ำ เพื่อให้โทรศัพท์เข้าร่วมอีกครั้ง</string>
     <string name="wifi_direct_new_identity">สร้างข้อมูลเครือข่าย Wi-Fi Direct ใหม่</string>
+    <string name="wifi_direct_new_identity_help">ใน Android เวอร์ชันนี้ ระบบเป็นผู้เลือกชื่อและรหัสผ่าน Wi-Fi Direct การดำเนินการนี้ทำให้ระบบลืมกลุ่มที่บันทึกไว้ จึงเลือกชื่อและรหัสผ่านใหม่ จากนั้นโทรศัพท์จะตั้งค่าอุปกรณ์นี้ใหม่ผ่านบลูทูธเหมือนเฮดยูนิตเครื่องใหม่ ใช้เมื่อโทรศัพท์พยายามเชื่อมต่อเครือข่ายที่เข้าร่วมไม่ได้อีกต่อไปซ้ำๆ</string>
     <string name="wifi_direct_new_identity_none">เลือกในการเชื่อมต่อครั้งถัดไป</string>
     <string name="wifi_direct_new_identity_confirm">ระบบจะเลือกชื่อและรหัสผ่านใหม่สำหรับกลุ่ม และใช้ตั้งแต่การเชื่อมต่อครั้งถัดไป ระบบจะตั้งค่าโทรศัพท์ผ่าน Bluetooth เหมือนเป็นเฮดยูนิตเครื่องใหม่ ใช้ตัวเลือกนี้หากโทรศัพท์ยังพยายามเชื่อมต่อเครือข่ายที่เข้าร่วมไม่ได้อีกแล้ว</string>
     <string name="wifi_direct_new_identity_done">จะใช้ข้อมูลเครือข่ายใหม่ตั้งแต่การเชื่อมต่อครั้งถัดไป</string>
     <string name="wifi_direct_new_identity_applied">กำลังตั้งค่าข้อมูลเครือข่ายใหม่ โทรศัพท์จะได้รับคำขอให้เข้าร่วมในการเชื่อมต่อครั้งถัดไป</string>
     <string name="wifi_direct_stable_identity_description_legacy">ใน Android เวอร์ชันนี้ ระบบเป็นผู้เลือกชื่อ และแอปร้องขอชื่อเองไม่ได้ ควรเปิดตัวเลือกนี้ไว้ เพื่อให้โทรศัพท์เข้าร่วมเครือข่ายที่รู้จักอยู่แล้วได้ในกรณีที่ระบบเก็บไว้ และใช้แถวด้านล่างเพื่อสร้างใหม่</string>
+    <string name="wifi_direct_stable_identity_legacy_summary">ระบบตั้งชื่อเครือข่าย เปิดไว้เพื่อให้โทรศัพท์เข้าร่วมอีกครั้ง</string>
     <string name="wifi_direct_last_network">รายละเอียดของเครือข่ายที่เสนอให้กับโทรศัพท์ของคุณ</string>
+    <string name="wifi_direct_last_network_help">แสดงชื่อ รหัสผ่าน และที่อยู่ของเครือข่าย Wi-Fi Direct ล่าสุดที่อุปกรณ์นี้เสนอให้โทรศัพท์ คุณคัดลอกรหัสผ่านจากตรงนั้นได้ และยังบอกด้วยว่าอ่านที่อยู่ไม่ได้หรือไม่ หรือระบบใช้ชื่อและรหัสผ่านต่างจากที่แอปขอหรือไม่</string>
     <string name="wifi_direct_last_network_none">ยังไม่พบข้อมูล เชื่อมต่อหนึ่งครั้งแล้วกลับมาที่นี่</string>
     <string name="wifi_direct_last_network_title">เครือข่ายที่เสนอให้กับโทรศัพท์ของคุณ</string>
     <string name="wifi_direct_last_network_details">ชื่อ\n%1$s\n\nรหัสผ่าน\n%2$s\n\nที่อยู่\n%3$s</string>
@@ -955,6 +1036,7 @@
     <string name="wifi_direct_last_network_differs">นี่ไม่ใช่ชื่อและรหัสผ่านที่แอปร้องขอ ระบบจึงเขียนทับค่าเหล่านั้น ใช้ \"สร้างข้อมูลเครือข่าย Wi-Fi Direct ใหม่\" ด้านบนเพื่อให้ระบบใช้คู่ใหม่</string>
     <string name="wifi_direct_last_network_hint">การเข้าร่วมเครือข่ายนี้ด้วยตนเองบนโทรศัพท์จะไม่เริ่ม Android Auto เพราะโทรศัพท์จะเข้าร่วมเครือข่ายเองหลังตั้งค่าผ่าน Bluetooth แล้ว วิธีนี้ใช้เพื่อตรวจสอบว่าเครือข่ายทำงานได้หรือไม่</string>
     <string name="wifi_direct_group_identity">ชื่อและรหัสผ่าน Wi-Fi Direct</string>
+    <string name="wifi_direct_group_identity_help">ชื่อและรหัสผ่าน Wi-Fi Direct ที่โทรศัพท์ได้รับเพื่อเข้าร่วมอุปกรณ์นี้ ให้แอปเลือกให้หรือกรอกเอง สร้างใหม่ให้อัตโนมัติจะให้แอปเลือกคู่ใหม่ หากคุณเปลี่ยนรหัสผ่าน แอปจะเปลี่ยนชื่อด้วย เพราะโทรศัพท์เข้าร่วมเครือข่ายที่ชื่อเดิมแต่รหัสผ่านใหม่อีกครั้งไม่ได้</string>
     <string name="wifi_direct_group_identity_auto">เลือกโดยแอป แตะเพื่อตั้งค่าด้วยตนเอง</string>
     <string name="wifi_direct_group_identity_pick_new">สร้างใหม่ให้อัตโนมัติ</string>
     <string name="wifi_direct_group_identity_message">ชื่อและรหัสผ่านที่โทรศัพท์ใช้เข้าร่วมเฮดยูนิตนี้ การเปลี่ยนรหัสผ่านจะเปลี่ยนชื่อด้วย เพราะโทรศัพท์เข้าร่วมเครือข่ายที่ชื่อเดิมแต่รหัสผ่านเปลี่ยนไม่ได้</string>
@@ -969,12 +1051,16 @@
     <string name="wifi_direct_credentials_copied">คัดลอกชื่อเครือข่ายและรหัสผ่านแล้ว</string>
     <string name="debug_video_low_latency">ขอโหมดความหน่วงต่ำของตัวถอดรหัส</string>
     <string name="debug_video_low_latency_description">ตั้งค่าคีย์ MediaFormat ความหน่วงต่ำของผู้ผลิตเมื่อกำหนดค่าตัวถอดรหัสวิดีโอ หากตัวถอดรหัสไม่รองรับ จะกลับไปใช้ค่าเดิมโดยอัตโนมัติ</string>
+    <string name="debug_video_low_latency_summary">ขอให้ตัวถอดรหัสวิดีโอใช้โหมดหน่วงต่ำของผู้ผลิต</string>
     <string name="debug_video_feed_hold">จำลองตัวถอดรหัสที่ทำงานช้า</string>
+    <string name="debug_video_feed_hold_help">สำหรับการทดสอบเท่านั้น รอตามเวลาที่เลือกก่อนส่งแต่ละเฟรมไปยังตัวถอดรหัสวิดีโอ เพื่อให้ตัวถอดรหัสดูช้า ใช้ทดสอบว่าแอปรับมืออย่างไรเมื่อตัวถอดรหัสตามไม่ทัน มีผลเมื่อเชื่อมต่อครั้งถัดไป ใช้งานปกติให้ตั้งเป็น Off เพราะภาพจะช้าลง</string>
     <string name="show_performance_overlay_description">แสดง FPS, การใช้งาน CPU, อุณหภูมิ และความล่าช้าของเฟรมบนภาพฉาย</string>
+    <string name="show_performance_overlay_help">แสดงกล่องเล็กๆ ที่มีค่าที่วัดแบบเรียลไทม์ทับบนภาพ Android Auto เช่น อัตราเฟรม ภาระของตัวประมวลผล และอุณหภูมิ ใช้เพื่อหาสาเหตุที่ภาพช้า เลือกค่าที่แสดงในแถวด้านล่าง กล่องนี้แสดงเฉพาะบนอุปกรณ์นี้ ไม่แสดงบนโทรศัพท์</string>
 
     <!-- Auto-start permission strings -->
     <string name="reopen_on_reconnection_label">เปิดใหม่เมื่อเชื่อมต่ออีกครั้ง</string>
     <string name="reopen_on_reconnection_description">เมื่อคุณกดปุ่มออก แอปจะยังคงทำงานในพื้นหลังและติดตามการเชื่อมต่อ USB ต่อไป หากอุปกรณ์เชื่อมต่อใหม่ แอปจะเปิดขึ้นมาใหม่โดยอัตโนมัติ</string>
+    <string name="reopen_on_reconnection_summary">หลังออก จะเฝ้าดู USB ต่อและเปิดใหม่เมื่ออุปกรณ์เชื่อมต่ออีกครั้ง</string>
     <string name="overlay_permission_required">การเริ่มอัตโนมัติต้องใช้สิทธิ์ \'แสดงทับบนแอปอื่นๆ\'</string>
     <string name="usb_permission_denied">สิทธิ์ USB ถูกปฏิเสธ โปรดอนุญาตการเข้าถึง USB เพื่อเชื่อมต่อโดยอัตโนมัติ</string>
 
@@ -983,11 +1069,14 @@
     <string name="category_input">การตั้งค่าอินพุต</string>
     <string name="enable_rotary">เปิดใช้งานปุ่มหมุน (Rotary Controller)</string>
     <string name="enable_rotary_description">แจ้งว่ารองรับปุ่มหมุนและวงล้อจริง ปิดตัวเลือกนี้หากหน้าจอสัมผัสทำงานไม่ถูกต้อง</string>
+    <string name="enable_rotary_summary">แจ้งว่ารองรับปุ่มหมุน ปิดหากการสัมผัสทำงานผิดปกติ</string>
 
     <string name="kill_on_disconnect">ปิดแอปเมื่อยกเลิกการเชื่อมต่อ</string>
     <string name="kill_on_disconnect_description">ปิดแอปโดยอัตโนมัติเมื่อ Android Auto ยกเลิกการเชื่อมต่อ</string>
+    <string name="kill_on_disconnect_help">ปิดแอปเมื่อ Android Auto ตัดการเชื่อมต่อ เพื่อให้เครื่องกลับไปที่หน้าจอของตัวเอง เปิดใช้เมื่อต้องการให้เครื่องแสดงตัวเรียกใช้งานของตัวเองหลังการเดินทางทุกครั้ง ไม่มีผลขณะที่แอปนี้เป็นตัวเรียกใช้งานของรถ หากเปิด “เปิดใหม่เมื่อเชื่อมต่ออีกครั้ง” “เริ่มเมื่อเปิดเครื่อง” หรือ “เริ่มเมื่อเปิดหน้าจอ” อยู่ แอปจะเตือนก่อน เพราะตัวเลือกเหล่านั้นต้องการให้แอปเปิดอยู่</string>
     <string name="raise_projection_during_call">อยู่ใน Android Auto ระหว่างการโทร</string>
     <string name="raise_projection_during_call_description">เฉพาะโหมดตนเองเท่านั้น นำภาพฉายกลับมาแสดงทับหน้าจอการโทรของโทรศัพท์ เพื่อให้รับสายและวางสายได้ในหน้าจอ Android Auto</string>
+    <string name="raise_projection_during_call_summary">เฉพาะโหมดตนเอง แสดงการฉายภาพทับหน้าจอสายเรียกเข้าของโทรศัพท์</string>
     <string name="kill_on_disconnect_warning_title">คำเตือน</string>
     <string name="kill_on_disconnect_warning">การตั้งค่าการเชื่อมต่อใหม่ต่อไปนี้ขัดแย้งกับการปิดแอปเมื่อยกเลิกการเชื่อมต่อ:\n\n%1$s\n\nการตั้งค่าการเชื่อมต่อครั้งแรก (เชื่อมต่ออัตโนมัติ, เริ่มอัตโนมัติ) ยังใช้งานได้เมื่อเฮดยูนิตเปิดขึ้น แต่หลังจากยกเลิกการเชื่อมต่อครั้งแรก แอปจะปิดทันทีแทนที่จะพยายามเชื่อมต่อใหม่\n\nหมายเหตุ: เฮดยูนิตหลังการขายบางรุ่นไม่เคยปิดเครื่องจริง แต่เข้าสู่โหมดไฮเบอร์เนตแทน คล้ายโทรศัพท์ที่ล็อกหน้าจอแต่ไม่เคยดับเครื่อง เมื่อเปิดใช้ตัวเลือกนี้ แอปจะปิดหลังยกเลิกการเชื่อมต่อครั้งแรก และอาจไม่เปิดเองในรอบสตาร์ทเครื่องถัดไป\n\nต้องการปิดการตั้งค่าการเชื่อมต่อใหม่ที่ระบุไว้ข้างต้นหรือไม่?</string>
     <string name="kill_on_disconnect_disable_and_enable">ปิดตัวเลือกที่ขัดแย้งและเปิดใช้งาน</string>
@@ -1013,31 +1102,39 @@
     <string name="category_head_unit">เฮดยูนิต</string>
     <string name="vehicle_display_name_label">ชื่อที่แสดง</string>
     <string name="vehicle_display_name_description">ชื่อที่แสดงบนโทรศัพท์ของคุณสำหรับรถคันนี้</string>
+    <string name="vehicle_display_name_help">ชื่อของรถคันนี้ แอปส่งชื่อนี้ให้ Android Auto ทุกครั้งที่เชื่อมต่อ และโทรศัพท์จะแสดงชื่อนี้ การเปลี่ยนแปลงมีผลเมื่อเชื่อมต่อครั้งถัดไป</string>
     <string name="vehicle_make_label">ยี่ห้อ</string>
     <string name="vehicle_make_description">ผู้ผลิตรถยนต์ (เช่น Honda, Toyota)</string>
+    <string name="vehicle_make_help">ผู้ผลิตรถที่แอปส่งให้ Android Auto ยี่ห้อรถจริงจะแสดงโลโก้ของยี่ห้อนั้นบนปุ่มออกของ Android Auto แต่ Android Auto จะเลิกแสดงรายการแอปที่ติดตั้งจากนอก Play Store ตั้งกลับเป็น \"Google\" เพื่อให้แอปเหล่านั้นกลับมาแสดงอีกครั้ง การเปลี่ยนแปลงมีผลเมื่อเชื่อมต่อครั้งถัดไป</string>
     <string name="vehicle_model_label">รุ่น</string>
     <string name="vehicle_model_description">รุ่นของรถยนต์ (เช่น Civic, Corolla)</string>
+    <string name="vehicle_model_help">รุ่นและปีของรถที่แอปส่งให้ Android Auto โทรศัพท์ใช้ข้อมูลนี้ร่วมกับยี่ห้อและรหัสยานพาหนะเพื่อค้นหาระเบียนที่บันทึกไว้ของรถคันนี้ ดังนั้นการเปลี่ยนแปลงอาจทำให้โทรศัพท์มองอุปกรณ์นี้เป็นรถคันใหม่ ปีต้องไม่เกิน 2 ปีนับจากปัจจุบัน</string>
     <string name="vehicle_year_label">ปี</string>
     <string name="vehicle_year_description">ปีของรถยนต์</string>
     <string name="vehicle_id_label">รหัสรถยนต์ (Vehicle ID)</string>
     <string name="vehicle_type_label">ประเภทยานพาหนะ</string>
+    <string name="vehicle_type_help">บอก Android Auto ว่านี่เป็นยานพาหนะประเภทใด เมื่อเลือกรถจักรยานยนต์ โทรศัพท์จะบันทึกเสียงด้วยไมโครโฟนของตัวเอง ไม่ใช่ของอุปกรณ์นี้ หากไมโครโฟนของเฮดยูนิตปิดอยู่ แอปจะส่งรถจักรยานยนต์เสมอ แต่ละประเภทนับเป็นรถคนละคันบนโทรศัพท์</string>
     <string name="vehicle_type_car">รถยนต์</string>
     <string name="vehicle_type_truck">รถบรรทุก</string>
     <string name="vehicle_type_motorcycle">รถจักรยานยนต์</string>
     <string name="vehicle_type_forced_by_microphone">ไมโครโฟนของเฮดยูนิตปิดอยู่ โทรศัพท์จึงใช้ไมโครโฟนของตัวเอง Android Auto จะเห็นเป็นมอเตอร์ไซค์</string>
     <string name="vehicle_id_description">ตัวระบุภายในเท่านั้น หากเปลี่ยนค่านี้ โทรศัพท์จะมองเป็นรถคนละคัน และการตั้งค่า Android Auto ของรถคันนี้จะถูกรีเซ็ต</string>
+    <string name="vehicle_id_help">Android Auto ใช้รหัสนี้ร่วมกับยี่ห้อ รุ่น และปี เพื่อจดจำรถคันนี้อีกครั้ง รหัสใหม่ทำให้โทรศัพท์มองอุปกรณ์นี้เป็นรถคันใหม่และรีเซ็ตการตั้งค่า Android Auto ของรถคันนั้น รถบรรทุกและรถจักรยานยนต์จะเติมส่วนท้ายของตัวเองในรหัส ดังนั้นแต่ละประเภทจึงนับเป็นรถคนละคัน</string>
     <string name="head_unit_make_label">ผู้ผลิตเฮดยูนิต</string>
     <string name="head_unit_make_description">ผู้ผลิตเฮดยูนิต</string>
+    <string name="head_unit_make_help">ผู้ผลิตเฮดยูนิตนี้ที่แอปส่งให้ Android Auto โทรศัพท์จะแสดงชื่อนี้ในการตั้งค่า Android Auto ยี่ห้อรถจริงจะแสดงโลโก้ของยี่ห้อนั้นบนปุ่มออกของ Android Auto แต่ Android Auto จะเลิกแสดงรายการแอปที่ติดตั้งจากนอก Play Store ตั้งกลับเป็น \"Google\" เพื่อให้แอปเหล่านั้นกลับมาแสดงอีกครั้ง</string>
     <string name="head_unit_make_hint">โทรศัพท์ของคุณจะแสดงชื่อนี้ในการตั้งค่า Android Auto\n\nหากใช้ยี่ห้อรถจริง ปุ่มออกของ Android Auto จะแสดงโลโก้ยี่ห้อนั้น แต่ Android Auto จะไม่แสดงแอปที่ติดตั้งจากนอก Play Store อีก หากต้องการให้แสดงแอปเหล่านั้นอีกครั้ง ให้ตั้งกลับเป็น \"Google\"</string>
     <string name="vehicle_make_hint">หากใช้ยี่ห้อรถจริง ปุ่มออกของ Android Auto จะแสดงโลโก้ยี่ห้อนั้น แต่ Android Auto จะไม่แสดงแอปที่ติดตั้งจากนอก Play Store อีก หากต้องการให้แสดงแอปเหล่านั้นอีกครั้ง ให้ตั้งกลับเป็น \"Google\"</string>
     <string name="head_unit_model_label">รุ่นเฮดยูนิต</string>
     <string name="head_unit_model_description">รุ่นของเฮดยูนิต</string>
+    <string name="head_unit_model_help">รุ่นของเฮดยูนิตนี้ แอปส่งให้ Android Auto พร้อมกับผู้ผลิตด้านบนทุกครั้งที่เชื่อมต่อ</string>
     <string name="vehicle_year_error_invalid">ป้อนปีที่ถูกต้อง</string>
     <string name="vehicle_year_error_max">ปีต้องไม่เกิน %1$d</string>
     <string name="vehicle_info_restart_note">ข้อมูลนี้จะถูกส่งไปยัง Android Auto ทุกครั้งที่คุณเชื่อมต่อ</string>
 
     <string name="auto_enable_hotspot">เปิดฮอตสปอตอัตโนมัติ</string>
     <string name="auto_enable_hotspot_description">เริ่มฮอตสปอต Wi-Fi บนอุปกรณ์นี้โดยอัตโนมัติ (อาจใช้งานไม่ได้ในทุกอุปกรณ์)</string>
+    <string name="auto_enable_hotspot_summary">เริ่มฮอตสปอต Wi-Fi บนอุปกรณ์นี้ ไม่มีในทุกอุปกรณ์</string>
     <string name="hotspot_warning_title">คุณลักษณะการทดลอง</string>
     <string name="hotspot_warning_message">คุณลักษณะนี้ใช้ Reflection และอาจใช้ไม่ได้กับบางอุปกรณ์ อาจต้องให้สิทธิ์ \"แก้ไขการตั้งค่าระบบ\" ด้วยตนเองเพิ่มเติม</string>
     <string name="hotspot_permission_title">จำเป็นต้องได้รับสิทธิ์</string>
@@ -1055,7 +1152,9 @@
 
     <string name="wait_for_wifi">รอ Wi-Fi ก่อนเริ่ม Wi-Fi Direct</string>
     <string name="wait_for_wifi_description">เมื่อเปิดเครื่อง ให้รอ Wi-Fi เชื่อมต่อก่อนเริ่ม Wi-Fi Direct เปิดตัวเลือกนี้หากเฮดยูนิตของคุณต้องใช้เวลาสักครู่ในการเชื่อมต่อ Wi-Fi หลังเปิดเครื่อง</string>
+    <string name="wait_for_wifi_summary">ตอนบูต จะรอ Wi-Fi ก่อนเริ่ม WiFi Direct</string>
     <string name="wait_for_wifi_timeout">ระยะเวลารอ Wi-Fi</string>
+    <string name="wait_for_wifi_timeout_help">เวลาที่แอปรอให้อุปกรณ์นี้เชื่อมต่อ Wi-Fi ก่อนจะเริ่ม Wi-Fi Direct ตั้งแต่ 5 ถึง 30 วินาที แอปเริ่ม Wi-Fi Direct ทันทีเมื่อ Wi-Fi เชื่อมต่อ หรือเมื่อหมดเวลานี้ เพิ่มค่าหากอุปกรณ์เชื่อมต่อ Wi-Fi ช้าหลังเปิดเครื่อง</string>
     <string name="wireless_24ghz_warning">หมายเหตุ: Android Auto แบบไร้สายบนอุปกรณ์ 2.4GHz อาจทำให้ภาพหน่วง กระตุก และหลุดการเชื่อมต่อ หากพบปัญหา โปรดลองใช้ผ่าน USB เพื่อตรวจสอบว่าเป็นข้อจำกัดของเครือข่ายหรือไม่</string>
     <string name="wireless_mode_helper">Wireless Helper</string>
     <string name="wireless_mode_native">เนทีฟ (Native)</string>
@@ -1063,8 +1162,10 @@
     <string name="server_mode_label">โหมดเซิร์ฟเวอร์</string>
     <string name="server_mode_manual">กำหนดเอง</string>
     <string name="server_mode_auto">อัตโนมัติ</string>
+    <string name="server_mode_help">อัตโนมัติจะค้นหาเซิร์ฟเวอร์เฮดยูนิตบนโทรศัพท์ในเครือข่ายและเชื่อมต่อเอง กำหนดเองจะไม่ค้นหา คุณเชื่อมต่อจากรายการเครือข่ายหรือด้วยที่อยู่ของโทรศัพท์</string>
 
     <string name="helper_strategy_label">วิธีเชื่อมต่อของ Helper</string>
+    <string name="helper_strategy_help">เลือกวิธีที่โทรศัพท์และเครื่องนี้ใช้เครือข่ายร่วมกันในโหมด Wireless Helper Wi-Fi ทั่วไปใช้เครือข่ายที่ทั้งสองเครื่องอยู่แล้ว WiFi Direct สร้างการเชื่อมต่อส่วนตัว Google Nearby เป็นรุ่นเบต้า ฮอตสปอตโทรศัพท์เข้าร่วมฮอตสปอตของโทรศัพท์ ฮอตสปอตเฮดยูนิตทำให้เครื่องนี้เป็นจุดเชื่อมต่อ เปลี่ยนเมื่อโทรศัพท์หาเครื่องนี้ไม่พบ</string>
     <string-array name="helper_strategies">
         <item>Wi-Fi ทั่วไป (NSD)</item>
         <item>Wi-Fi Direct (P2P)</item>
@@ -1086,10 +1187,13 @@
     <string name="exit_dialog_settings">การตั้งค่าด่วน</string>
     <string name="gesture_hint">เคล็ดลับ: ปัดจากขอบซ้ายด้วย 2 นิ้วเพื่อเปิดเมนูออก</string>
     <string name="audio_latency_multiplier">ตัวคูณความหน่วงเสียง</string>
-    <string name="aaudio_output">เอาต์พุต AAudio (ทดลอง)</string>
+    <string name="aaudio_output">เอาต์พุต AAudio</string>
     <string name="aaudio_output_description">ลองใช้เอาต์พุตสื่อแบบหน่วงต่ำ หากใช้ไม่ได้ จะใช้ AudioTrack โดยอัตโนมัติ</string>
+    <string name="aaudio_output_help">เล่นสื่อของ Android Auto ผ่าน AAudio ซึ่งเป็นเอาต์พุตเสียงที่หน่วงต่ำ แอปใช้เฉพาะบน Android 9 ขึ้นไป เปิดเมื่อเสียงมาช้ากว่าภาพ หาก AAudio เริ่มไม่ได้ แอปจะใช้เอาต์พุตเสียงปกติ หากเปิดแล้วเสียงแตกหรือขาดหาย ให้ปิด</string>
     <string name="audio_latency_multiplier_description">ปรับขนาดบัฟเฟอร์เสียง (ต่ำ = หน่วงน้อยลง, สูง = กระตุกน้อยลง)</string>
+    <string name="audio_latency_multiplier_help">กำหนดปริมาณเสียงที่แอปสำรองไว้ เพื่อให้การเชื่อมต่อสะดุดสั้นๆ ไม่ทำให้เสียงขาด ค่าเริ่มต้น 16x สำรองประมาณ 400 มิลลิวินาที ทุกขั้นที่ลดลงจะลดลงครึ่งหนึ่ง จนเหลือ 25 มิลลิวินาทีที่ 1x ค่าสำรองที่น้อยลงช่วยลดความหน่วง แต่เสียงอาจสะดุดเมื่อสัญญาณอ่อน มีผลกับสตรีมเสียงทั้งหมดของ Android Auto</string>
     <string name="audio_queue_capacity">ความจุคิวเสียง (Backpressure)</string>
+    <string name="audio_queue_capacity_help">กำหนดว่าเสียงที่ได้รับรอได้นานเท่าไรก่อนเล่น คิวเล็กทำให้เสียงตามภาพทัน คิวใหญ่ทนต่อช่วงที่การเชื่อมต่อสะดุดสั้น ๆ แต่เสียงอาจตามหลัง เมื่อคิวเต็ม เสียงเก่าที่สุดจะถูกทิ้ง ไม่จำกัดจะเก็บไว้ทั้งหมด แอปอนุญาตเสียงอย่างน้อยหนึ่งวินาทีเสมอ</string>
 
     <!-- Custom loading screen -->
     <string name="loading_screen">หน้าจอโหลด</string>
@@ -1144,13 +1248,16 @@
     <string name="stand_down_station_auto">อัตโนมัติ</string>
     <string name="stand_down_station_always">เสมอ</string>
     <string name="stand_down_station_never">ไม่เคย</string>
-    <string name="stand_down_station_hint">อัตโนมัติจะออกจากเครือข่ายของเครื่องนี้เฉพาะเมื่อวิทยุรองรับย่าน 5 GHz และเครือข่ายนั้นใช้ 2.4 GHz เพื่อให้กลุ่ม Wi-Fi Direct ใช้ช่องสัญญาณ 5 GHz ได้เต็มที่ แต่จะยังคงเชื่อมต่อไว้ในเครื่องที่รองรับเฉพาะ 2.4 GHz เพราะการออกจะทำให้เครื่องเพียงสแกนหาเครือข่าย และจะไม่ออกเมื่อเครือข่ายใช้ 5 GHz อยู่แล้ว เมื่อเซสชันสิ้นสุดลง เครือข่ายจะเชื่อมต่อใหม่ หากภาพกระตุก ให้ลองเลือก เสมอ หรือ ไม่เคย</string>
+    <string name="stand_down_station_hint">กำหนดว่าเครื่องนี้จะออกจากเครือข่าย Wi-Fi ของตัวเองขณะโทรศัพท์เชื่อมต่อหรือไม่ เพื่อให้กลุ่ม WiFi Direct ใช้ช่อง 5 GHz ได้ อัตโนมัติจะออกเฉพาะเมื่อวิทยุมีย่าน 5 GHz และเครือข่ายอยู่ที่ 2.4 GHz หรือเมื่อกลุ่มถูกบังคับเป็น 2.4 GHz ข้างเครือข่าย 5 GHz เครื่องที่มีเฉพาะ 2.4 GHz จะอยู่ในเครือข่ายต่อ เพราะการออกเป็นแค่การสแกนเครือข่าย ระบบจะเข้าร่วมเครือข่ายอีกครั้งเมื่อเซสชันสิ้นสุด ลองเสมอหรือไม่เคยหากภาพกระตุก</string>
     <string name="stand_down_station_needs_overlay">ต้องใช้สิทธิ์ \"แสดงทับบนแอปอื่นๆ\" ใน Android เวอร์ชันนี้</string>
     <string name="hotspot_interface_override">อินเทอร์เฟซเครือข่ายฮอตสปอต</string>
+    <string name="hotspot_interface_override_help">อินเทอร์เฟซเครือข่ายที่ใช้ส่งฮอตสปอตของอุปกรณ์นี้ เว้นว่างไว้แล้วแอปจะหาเอง กรอกเฉพาะเมื่อบันทึกระบุว่าแอปเลือกอินเทอร์เฟซผิดหรือพบมากกว่าหนึ่งรายการ แอปจะส่งรายละเอียดฮอตสปอตแม้ระบบรายงานว่าไม่มีฮอตสปอต ดังนั้นโปรดตรวจสอบว่าเปิดฮอตสปอตแล้ว</string>
     <string name="hotspot_interface_override_message">ปล่อยว่างไว้เพื่อให้ตรวจหาโดยอัตโนมัติ ตั้งค่านี้หากบันทึกระบุว่ามีอินเทอร์เฟซมากกว่าหนึ่งตัวที่อาจเป็นแอคเซสพอยต์ หรือเลือกผิดตัว ชื่อนี้คือชื่อที่บันทึกรายงานหลังข้อความ \"Providing credentials from\" หรือรายการที่มีที่อยู่ฮอตสปอตของคุณในผลลัพธ์ของ \"ip -brief addr\" จากเชลล์ ชื่อทั่วไป: ap0, wlan0, wlan1, wlan2, softap0, ra0</string>
     <string name="hotspot_ssid_override">ชื่อฮอตสปอต (กำหนดเอง)</string>
+    <string name="hotspot_ssid_override_help">ชื่อฮอตสปอตของอุปกรณ์นี้ที่โทรศัพท์ได้รับเพื่อเข้าร่วม เว้นว่างไว้แล้วแอปจะอ่านชื่อจากอุปกรณ์ กรอกเฉพาะเมื่ออุปกรณ์ไม่อนุญาตให้แอปอ่าน หากกรอกชื่อ ให้กรอกรหัสผ่านด้วย เพราะแอปจะไม่อ่านรหัสผ่านจากอุปกรณ์อีก</string>
     <string name="hotspot_ssid_override_message">ปล่อยว่างไว้เพื่ออ่านชื่อจากการตั้งค่าฮอตสปอตของอุปกรณ์นี้โดยอัตโนมัติ บางอุปกรณ์ไม่อนุญาตให้แอปอ่านชื่อนี้ หากบันทึกระบุว่าอ่านชื่อไม่ได้ ให้พิมพ์ชื่อที่นี่ตามที่ปรากฏในการตั้งค่าฮอตสปอตทุกประการ</string>
     <string name="hotspot_password_override">รหัสผ่านฮอตสปอต (กำหนดเอง)</string>
+    <string name="hotspot_password_override_help">รหัสผ่านฮอตสปอตของอุปกรณ์นี้ที่โทรศัพท์ได้รับเพื่อเข้าร่วม เว้นว่างไว้แล้วแอปจะอ่านจากอุปกรณ์ กรอกเมื่ออุปกรณ์ไม่อนุญาตให้แอปอ่าน หรือเมื่อคุณกรอกชื่อฮอตสปอตเอง หากกรอกชื่อแต่ไม่มีรหัสผ่าน โทรศัพท์จะได้รับเครือข่ายแบบเปิดและปฏิเสธ</string>
     <string name="hotspot_password_override_message">ปล่อยว่างไว้เพื่ออ่านรหัสผ่านโดยอัตโนมัติ ต้องกรอกในอุปกรณ์ที่ไม่อนุญาตให้แอปอ่านการกำหนดค่าฮอตสปอต โทรศัพท์จะได้รับรหัสผ่านนี้เพื่อเข้าร่วม</string>
 
     <!-- Native AA credential pre-flight: what this unit can and cannot tell the phone about its own network -->
@@ -1159,12 +1266,15 @@
     <string name="connection_issue_banner_bssid">โทรศัพท์ของคุณไม่ทราบว่าต้องเข้าร่วมเครือข่ายใด เพราะยูนิตนี้ไม่เปิดเผยที่อยู่ Wi-Fi ของตัวเอง เปิดตำแหน่งที่ตั้ง หรือแตะเพื่อป้อนที่อยู่ด้วยตนเอง</string>
     <string name="connection_issue_banner_hotspot_off">ฮอตสปอตของยูนิตนี้ปิดอยู่ โทรศัพท์จึงไม่มีเครือข่ายให้เข้าร่วม เปิดฮอตสปอต หรือแตะเพื่อให้แอปเปิดให้</string>
     <string name="connection_issue_banner_hotspot_config">ยูนิตนี้ไม่แจ้งชื่อและรหัสผ่านฮอตสปอตแก่แอป แตะเพื่อป้อนด้วยตนเอง</string>
+    <string name="auto_restart_wifi_summary">รีสตาร์ท Wi-Fi เองเมื่อ WiFi Direct ค้าง ต้องใช้รูทหรือ ADB ในเครื่อง</string>
+    <string name="auto_restart_wifi_description">ปิดแล้วเปิด Wi-Fi เองเมื่อ WiFi Direct ค้าง ซึ่งอาจเกิดขึ้นหลังจากปิดแอปกลางเซสชัน ต้องใช้รูทหรือ ADB ในเครื่อง ไม่ทำงานระหว่างเซสชัน</string>
     <string name="connection_issue_banner_wifi_direct_refused">ยูนิตนี้สร้างเครือข่าย Wi-Fi Direct ให้โทรศัพท์ของคุณไม่ได้ ลองยกเลิกการเชื่อมต่อกับ Wi-Fi อื่น หรือแตะเพื่อใช้ฮอตสปอตของยูนิตนี้แทน</string>
     <string name="connection_issue_banner_wifi_direct_cycled">มีแอปอื่นปิด Wi-Fi Direct ซ้ำๆ ซึ่งมักเป็นแอปฉายภาพหน้าจอที่ติดตั้งมาล่วงหน้า เช่น ZLink หรือ CarLife ให้ปิดใช้งานแอปนั้น หรือแตะเพื่อใช้ฮอตสปอตแทน</string>
     <string name="connection_issue_banner_wifi_radio_off">Wi-Fi ของยูนิตนี้ปิดอยู่ และ Android ไม่อนุญาตให้แอปเปิดให้ เปิด Wi-Fi หรือแตะเพื่อใช้ฮอตสปอตของยูนิตนี้แทน</string>
     <string name="native_aa_requires_wifi">Native Android Auto ต้องการ Wi-Fi ของเครื่องนี้ โปรดเปิดใช้งาน</string>
     <string name="narrow_band_profile_cap">ลดคุณภาพวิดีโอบนลิงก์ 2.4 GHz</string>
-    <string name="narrow_band_profile_cap_description">เมื่อเซสชันนี้ทำงานบน 2.4 GHz ไม่ว่าจะเพราะ Wi-Fi ของยูนิตนี้ไม่มีย่าน 5 GHz หรือเพราะเครือข่ายเริ่มทำงานบนย่านนั้น ให้ขอจากโทรศัพท์ไม่เกิน 720p และ 30 fps แทนค่าที่ตั้งไว้ด้านบน พร้อมเสียง AAC จากการวัดพบว่าบนลิงก์แบบนี้ สตรีมความเร็วเต็มไม่มีภาพเลย ขณะที่สตรีมที่ต่ำกว่ายังใช้งานได้ ปิดตัวเลือกนี้เพื่อให้ได้ตามที่ตั้งไว้</string>
+    <string name="narrow_band_profile_cap_description">บนลิงก์ 2.4 GHz จะขอจากโทรศัพท์สูงสุด 720p, 30 fps และเสียง AAC แทนการตั้งค่าวิดีโอของคุณ จากการวัด สตรีมอัตราเต็มบนลิงก์นี้ไม่แสดงภาพเลย ส่วนสตรีมที่ต่ำกว่ายังคงอยู่ได้ ปิดเพื่อให้ได้ตามที่ตั้งไว้ทุกประการ และคาดว่าจะได้ภาพว่างหากลิงก์รับไม่ไหว</string>
+    <string name="narrow_band_profile_cap_summary">บน 2.4 GHz จะขอ 720p, 30 fps และเสียง AAC จากโทรศัพท์</string>
     <string name="connection_issue_banner_video_link_too_slow">ลิงก์ Wi-Fi ช้าเกินไปสำหรับวิดีโอ แอปจึงลดเป็น 720p ที่ 30 FPS แตะเพื่อตั้งความละเอียดเอง เครือข่าย 5 GHz ก็ช่วยได้เช่นกัน</string>
     <string name="connection_issue_banner_five_ghz_channel_refused">ยูนิตนี้ไม่ใช้ช่องสัญญาณ 5 GHz ที่คุณเลือก และไปเลือกช่องที่โทรศัพท์บางรุ่นมองไม่เห็น แตะเพื่อเปลี่ยน Wi-Fi Direct เป็น 2.4 GHz ซึ่งใช้ได้กับทุกรุ่น</string>
     <string name="connection_issue_banner_headunit_server_deaf">เซิร์ฟเวอร์เฮดยูนิตของ Android Auto บนโทรศัพท์ของคุณหยุดตอบสนอง ให้หยุดแล้วเริ่มใหม่ในการตั้งค่านักพัฒนาซอฟต์แวร์ของ Android Auto บนโทรศัพท์</string>
@@ -1188,6 +1298,7 @@
     <string name="preflight_later">ภายหลัง</string>
     <string name="preflight_invalid_bssid">นี่ไม่ใช่ที่อยู่ Wi-Fi ป้อนเลขฐานสิบหก 6 คู่ เช่น 02:1A:11:FF:3C:4D</string>
     <string name="native_aa_wake_remeasure">วัดค่าการปลุกบลูทูธใหม่</string>
+    <string name="native_aa_wake_remeasure_help">เพื่อเริ่มการเชื่อมต่อไร้สาย แอปอาจตัดการเชื่อมต่อแฮนด์ฟรีระหว่างอุปกรณ์นี้กับโทรศัพท์ แอปจะทดสอบหนึ่งครั้งว่าการเชื่อมต่อกลับมาหรือไม่ หากไม่กลับมา แอปจะเลิกทำเช่นนี้ และแถวจะแสดงว่าถูกระงับไว้ แตะเพื่อล้างผล แอปจะทดสอบอีกครั้งเมื่อเชื่อมต่อครั้งถัดไป แฮนด์ฟรีอาจหลุดชั่วครู่ระหว่างทดสอบ</string>
     <string name="native_aa_wake_verdict_unmeasured">ยังไม่ได้วัดค่า</string>
     <string name="native_aa_wake_verdict_safe">ปลอดภัยสำหรับยูนิตนี้</string>
     <string name="native_aa_wake_verdict_destructive">ถูกระงับไว้ในยูนิตนี้</string>
@@ -1195,9 +1306,11 @@
     <string name="native_aa_wake_remeasure_done">การปลุกบลูทูธจะถูกวัดใหม่อีกครั้งในการเชื่อมต่อครั้งถัดไป</string>
     <string name="native_aa_ignore_external_bt">ละเว้นการตรวจสอบความเข้ากันได้ของบลูทูธ</string>
     <string name="native_aa_ignore_external_bt_description">ยูนิตนี้ดูเหมือนเก็บบลูทูธไว้ในโมดูลแยกที่ Android เข้าถึงไม่ได้ ระบบจึงปิด Android Auto แบบไร้สายโดยอัตโนมัติ ปิดไว้เป็นค่าเริ่มต้น เปิดเฉพาะเมื่อคุณคิดว่าผลตรวจนี้ผิด เพราะหากผลตรวจถูก การเชื่อมต่อจะล้มเหลวโดยไม่แจ้ง และบันทึกจะดูปกติ</string>
+    <string name="native_aa_ignore_external_bt_summary">เปิดไร้สายไว้ แม้เครื่องนี้ดูเหมือนซ่อนโมดูลบลูทูธของตัวเอง</string>
 
     <!-- The external Bluetooth module probe (Advanced; only on units the detection flags). -->
     <string name="zbt_probe_title">ทดสอบโมดูลบลูทูธของเฮดยูนิต</string>
+    <string name="zbt_probe_help">ทดสอบว่าโมดูลบลูทูธของอุปกรณ์นี้รองรับการจับมือ Android Auto แบบไร้สายหรือไม่ การทดสอบใช้เวลาประมาณสองนาทีและแสดงแต่ละขั้นในแถวนี้ ดูอย่างเดียวจะเริ่มโมดูลและเฝ้าดูเท่านั้น ปลุกและเฝ้าดูจะสั่งให้โมดูลเชื่อมต่อกับโทรศัพท์ด้วย การทดสอบอาจเปลี่ยนสถานะบลูทูธของโมดูล ส่งออกล็อกหลังทดสอบ</string>
     <string name="zbt_probe_idle">แตะเพื่อเริ่มทดสอบ</string>
     <string name="zbt_probe_running">กำลังทดสอบ…</string>
     <string name="zbt_probe_message">ทั้งสองตัวเลือกจะเริ่มต้นโมดูล Bluetooth ก่อนตรวจดูสถานะ ซึ่งอาจส่งผลต่อสถานะ Bluetooth ตัวเลือกปลุกและเฝ้าดูจะขอเชื่อมต่อกับโทรศัพท์ด้วย\n\nการทดสอบจะหลีกทางเมื่อ OHU กำลังใช้หรือตรวจสอบโมดูล โปรดส่งออกบันทึกหลังการทดสอบ</string>
@@ -1206,18 +1319,22 @@
     <string name="external_bt_blink_transport">เชื่อมต่อผ่านโมดูลบลูทูธภายนอกของ FYT</string>
     <string name="external_bt_module_controls_hint">โมดูลบลูทูธภายนอกเป็นผู้จัดการการจับคู่โทรศัพท์ ลำดับความสำคัญของการเชื่อมต่อ และการเลือกไดรเวอร์</string>
     <string name="external_bt_module_last_phone">โทรศัพท์เครื่องล่าสุดที่เชื่อมต่อผ่านโมดูล</string>
-    <string name="external_bt_blink_transport_description">เป็นการทดลอง สำหรับยูนิต FYT ที่โทรศัพท์จับคู่เพื่อโทรออกกับโมดูลบลูทูธแยก เช่น \"DUDUAUTO\" บน DUDUOS ซึ่งเป็น ROM เดียวที่ทดสอบแล้วจนถึงตอนนี้ โมดูลนี้ ไม่ใช่บลูทูธของยูนิต เป็นตัวส่งแฮนด์เชค Android Auto แบบไร้สาย และปกติแอป Car Link ดั้งเดิมจะเป็นผู้ตอบรับ เมื่อเปิดตัวเลือกนี้ แอปนี้จะตอบรับแทน การโทรจึงยังอยู่บนโมดูลและลำโพงของรถ\n\nปิดใช้งานแอป Car Link ดั้งเดิมก่อน (pm disable-user com.syu.carlink) ไม่เช่นนั้นทั้งสองแอปจะอ่านช่องเดียวกัน ระบบจะเปิดช่องโดยไม่ใช้รูทหากยูนิตอนุญาต และใช้รูทในกรณีอื่น เลือก Native จับคู่โทรศัพท์กับโมดูลเท่านั้น และส่งออกบันทึกหากเชื่อมต่อไม่ได้</string>
+    <string name="external_bt_blink_transport_description">ฟีเจอร์ทดลอง สำหรับเครื่อง FYT ที่โทรศัพท์จับคู่เพื่อการโทรกับโมดูลบลูทูธแยก เช่น DUDUAUTO บน DUDUOS โมดูลรับการจับมือ Android Auto ไร้สาย ซึ่งปกติแอป Car Link ดั้งเดิมจะตอบ เมื่อเปิด แอปนี้จะตอบแทน การโทรจึงอยู่ที่โมดูลและลำโพงรถ ปิดใช้งานแอป Car Link ดั้งเดิมก่อน (pm disable-user com.syu.carlink) ไม่เช่นนั้นทั้งสองแอปจะอ่านช่องเดียวกัน</string>
+    <string name="external_bt_blink_transport_summary">ฟีเจอร์ทดลอง ตอบการจับมือไร้สายที่โมดูลบลูทูธของเครื่อง FYT</string>
     <string name="external_bt_zj_socket_transport">เชื่อมต่อผ่านซ็อกเก็ต ZJ Bluetooth</string>
     <string name="external_bt_zj_socket_transport_description">สำหรับเครื่องที่โมดูล ZJ Bluetooth ส่งการแฮนด์เชคของ Android Auto แบบไร้สายผ่านซ็อกเก็ตในเครื่อง (/dev/socket/zj_bt_socket) แอปจะใช้ซ็อกเก็ตนี้เองเมื่อซ็อกเก็ตรับการเชื่อมต่อ เปิดตัวเลือกนี้เฉพาะเมื่อเครื่องของคุณมีซ็อกเก็ตแต่แอปตรวจไม่พบ</string>
+    <string name="external_bt_zj_socket_transport_summary">ส่งแฮนด์เชคไร้สายผ่านซ็อกเก็ตภายในของโมดูล ZJ</string>
     <string name="external_bt_blink_refused_stock_enabled">โมดูลบลูทูธภายนอก: แอป Car Link ดั้งเดิมยังเปิดใช้งานอยู่ ปิดใช้งานแอปนั้น (pm disable-user com.syu.carlink) หรือปิดการส่งผ่านนี้</string>
     <string name="external_bt_blink_refused_stock_running">โมดูลบลูทูธภายนอก: แอป Car Link ดั้งเดิมถูกปิดใช้งานแล้วแต่ยังทำงานอยู่ โปรดรีสตาร์ทยูนิต</string>
     <string name="external_bt_blink_refused_root">โมดูลบลูทูธภายนอก: การเปิดช่องของโมดูลต้องใช้สิทธิ์รูทบนยูนิตนี้ แต่ถูกปฏิเสธหรือไม่มีสิทธิ์รูท</string>
     <string name="external_bt_blink_refused_unverified">โมดูลบลูทูธภายนอก: ตรวจไม่ได้ว่าแอป Car Link ดั้งเดิมหยุดทำงานแล้วหรือไม่ ช่องของโมดูลจึงยังปิดอยู่ โปรดส่งออกบันทึก</string>
     <string name="external_bt_blink_refused_bridge">โมดูลบลูทูธภายนอก: เปิดช่องของโมดูลไม่ได้ โปรดส่งออกบันทึก</string>
     <string name="external_bt_transport">เชื่อมต่อผ่านโมดูลบลูทูธของเฮดยูนิต</string>
-    <string name="external_bt_transport_description">เป็นการทดลอง และสำหรับยูนิตที่มีบริการบลูทูธ ZJ/ZLink เท่านั้น ส่งแฮนด์เชค Android Auto แบบไร้สายผ่านชิปบลูทูธของยูนิตนี้เอง ซึ่งเป็นชิปที่โทรศัพท์ของคุณจับคู่อยู่จริง แทนบลูทูธที่ Android เปิดให้แอปใช้\n\nเรียกใช้ \"ทดสอบโมดูลบลูทูธของเฮดยูนิต\" ก่อน โดยปิดการตั้งค่านี้ไว้ หากไม่พบสิ่งที่รับฟังอยู่ การตั้งค่านี้จะไม่มีผลบนยูนิตของคุณ และ Native Wireless จะใช้ไม่ได้ที่นี่ ไม่ว่าจะตั้งค่าอย่างไร หากมีการตอบสนอง ให้เปิดการตั้งค่านี้และเลือก Native หากทดสอบขณะที่เปิดการตั้งค่านี้และเชื่อมต่ออยู่แล้ว ระบบจะรายงานสถานะนั้นแทน ซึ่งไม่ใช่ความล้มเหลว โปรดส่งออกบันทึกไม่ว่าผลจะเป็นอย่างไร</string>
+    <string name="external_bt_transport_description">ฟีเจอร์ทดลอง สำหรับเครื่องที่มีบริการบลูทูธ ZJ/ZLink ส่งการจับมือ Android Auto ไร้สายผ่านชิปบลูทูธที่จับคู่กับโทรศัพท์ ไม่ใช่ตัวที่ Android แสดงให้แอป ทดสอบโมดูลบลูทูธก่อนโดยปิดตัวเลือกนี้ หากไม่พบสิ่งที่รับฟังอยู่ ตัวเลือกนี้ช่วยอะไรไม่ได้ในเครื่องของคุณ หากตอบกลับ ให้เปิด ส่งออกบันทึกในทั้งสองกรณี</string>
+    <string name="external_bt_transport_summary">ฟีเจอร์ทดลอง ส่งการจับมือไร้สายผ่านบลูทูธของเครื่องนี้เอง</string>
     <string name="native_aa_setup_qr_title">ตั้งค่าผ่านรหัส QR</string>
     <string name="native_aa_setup_qr_description">แสดงรหัสที่โทรศัพท์สามารถสแกนได้</string>
+    <string name="native_aa_setup_qr_help">แสดงคิวอาร์โค้ดที่ตั้งค่าอุปกรณ์นี้บนโทรศัพท์โดยไม่ต้องจับมือผ่านบลูทูธ โค้ดมีชื่อ รหัสผ่าน และที่อยู่ฮอตสปอตของอุปกรณ์นี้ ใช้ได้เฉพาะกับการส่งผ่านฮอตสปอต ขณะที่การเชื่อมต่อทำงานอยู่ Android Auto 18.0 ยังไม่รองรับโค้ดนี้ จึงยังต้องจับมือผ่านบลูทูธ</string>
     <string name="native_aa_setup_qr_content_description">รหัส QR สำหรับการตั้งค่า Android Auto ไร้สาย</string>
     <string name="native_aa_setup_qr_instruction">สแกนรหัสนี้ด้วยกล้องของโทรศัพท์ แล้วยืนยันบนโทรศัพท์ ต้องทำเพียงครั้งเดียว หลังจากนั้นโทรศัพท์จะเชื่อมต่อเอง</string>
     <string name="native_aa_setup_qr_not_drawn">ไม่สามารถวาดรหัสได้</string>
@@ -1241,6 +1358,7 @@
     <string name="share_hotspot_qr_error">ไม่สามารถดึงข้อมูลประจำตัวฮอตสปอต Wi-Fi ที่ใช้งานอยู่ได้ ตรวจสอบว่าเปิดฮอตสปอตและตำแหน่งแล้ว</string>
     <string name="use_libusb">ใช้ไดรเวอร์ USB ดั้งเดิม (Native)</string>
     <string name="use_libusb_description">ใช้ libusb สำหรับการสื่อสาร ปิดใช้งานเพื่อใช้ Android USB API มาตรฐาน</string>
+    <string name="use_libusb_help">ใช้ไลบรารี USB ของแอปเองแทนระบบ USB ของ Android สำหรับการเชื่อมต่อสายกับโทรศัพท์ ควรปิดไว้ เปิดเฉพาะเมื่อพบโทรศัพท์ผ่าน USB แต่ Android Auto ไม่เริ่มทำงาน ไม่มีผลกับการเชื่อมต่อไร้สาย</string>
     <string name="usb_keep_phone_media_audio">คงเสียงสื่อของโทรศัพท์ไว้ผ่าน USB</string>
     <string name="usb_keep_phone_media_audio_description">Android Auto อาจปิดเสียงสื่อ Bluetooth ของโทรศัพท์สำหรับเฮดยูนิตนี้ระหว่างเซสชัน USB ตัวเลือกนี้ป้องกันไม่ให้เกิดขึ้น สายโทรเข้าอาจอยู่ที่โทรศัพท์แทนที่จะอยู่ที่เฮดยูนิต</string>
 
@@ -1288,6 +1406,7 @@
     <string name="geofence_override_theme">บังคับใช้ธีมที่นี่</string>
     <string name="geofence_dark_inside">มืดภายในบริเวณนี้</string>
     <string name="geofence_scope_label">นำไปใช้กับ</string>
+    <string name="geofence_scope_help">เลือกว่าสถานที่ที่บันทึกไว้ควบคุมอะไร ได้แก่ หน้าจอของแอปเอง Android Auto หรือทั้งสองอย่าง ตัวเลือกของคุณจะตั้งโหมดมืดของส่วนนั้นเป็นLocation (by area) ภายในสถานที่ที่บันทึกไว้ สถานที่นั้นจะกำหนดว่าสว่างหรือมืด นอกสถานที่ทั้งหมด แถวด้านล่างจะเป็นตัวกำหนด</string>
     <string name="geofence_scope_app">แอป</string>
     <string name="geofence_scope_aa">Android Auto</string>
     <string name="geofence_scope_both">ทั้งคู่</string>
@@ -1304,6 +1423,7 @@
     <!-- Round 4: Location as a mode -->
     <string name="location_manage_places">สถานที่ที่บันทึกไว้</string>
     <string name="location_outside_label">ภายนอกสถานที่ที่บันทึกไว้</string>
+    <string name="location_outside_help">กำหนดสว่างหรือมืดเมื่ออุปกรณ์อยู่นอกสถานที่ที่บันทึกไว้ทั้งหมด และเมื่อยังไม่มีตำแหน่ง ภายในสถานที่ที่บันทึกไว้ จะใช้ตัวเลือกของสถานที่นั้น ใช้งานได้เฉพาะเมื่อโหมดมืดตั้งเป็นLocation (by area)</string>
     <string name="location_places_desc">ตั้งค่ารูปลักษณ์สว่างหรือมืดในพื้นที่ขณะที่คุณอยู่ในพื้นที่นั้น ใช้ GPS</string>
     <string name="coordinates_enter">ป้อนพิกัด</string>
     <string name="coordinate_latitude">ละติจูด</string>
@@ -1322,8 +1442,12 @@
     <string name="aa174_notice_button_guide">เปิดคู่มือ</string>
     <string name="category_ui">อินเทอร์เฟซผู้ใช้</string>
     <string name="hide_phone_signal_label">ซ่อนสัญญาณของโทรศัพท์</string>
+    <string name="hide_phone_signal_help">ขอให้ Android Auto ไม่แสดงความแรงสัญญาณของโทรศัพท์บนหน้าจอของอุปกรณ์นี้ Android Auto เวอร์ชันใหม่บางรุ่นไม่สนใจคำขอนี้ มีผลเมื่อเชื่อมต่อครั้งถัดไป</string>
     <string name="hide_battery_level_label">ซ่อนระดับแบตเตอรี่ของโทรศัพท์</string>
+    <string name="hide_battery_level_help">ขอให้ Android Auto ไม่แสดงระดับแบตเตอรี่ของโทรศัพท์บนหน้าจอของอุปกรณ์นี้ Android Auto เวอร์ชันใหม่บางรุ่นไม่สนใจคำขอนี้ มีผลเมื่อเชื่อมต่อครั้งถัดไป</string>
     <string name="hide_clock_label">ซ่อนนาฬิกา</string>
+    <string name="hide_clock_help">ขอให้ Android Auto ไม่แสดงนาฬิกาของตัวเองบนหน้าจอของอุปกรณ์นี้ ใช้เมื่ออุปกรณ์นี้แสดงนาฬิกาอยู่แล้ว มีผลเมื่อเชื่อมต่อครั้งถัดไป</string>
+    <string name="hide_clock_summary">ขอให้ Android Auto ไม่แสดงนาฬิกาของตัวเอง</string>
     <string name="might_broken_on_newer_aa_versions">ฟังก์ชันนี้อาจไม่ทำงานใน Android Auto เวอร์ชันใหม่กว่า</string>
     <string name="auto_connect_delay">การหน่วงเวลาเชื่อมต่ออัตโนมัติ</string>
     <string name="auto_connect_delay_description">รอสักครู่ก่อนพยายามเชื่อมต่อเมื่อเริ่มต้น (มีประโยชน์เมื่อ Wi-Fi ต้องใช้เวลาเริ่มทำงาน)</string>
@@ -1339,7 +1463,9 @@
     <string name="native_driver_selection_mode_auto">อัตโนมัติ</string>
     <string name="native_driver_selection_mode_always">ถามเสมอ</string>
     <string name="native_driver_selection_timeout">นับถอยหลังเชื่อมต่ออัตโนมัติ</string>
+    <string name="native_driver_selection_timeout_help">เมื่อรายการโทรศัพท์หลักเปิดขึ้น จะนับถอยหลังแล้วเชื่อมต่อกับโทรศัพท์ที่น่าจะใช่ที่สุด ตัวเลือกนี้กำหนดเวลานับถอยหลัง ตั้งแต่ 3 ถึง 30 วินาที แตะโทรศัพท์ก่อนหมดเวลาเพื่อเลือกเอง</string>
     <string name="native_driver_preferred_device">โทรศัพท์ที่ต้องการ</string>
+    <string name="native_driver_preferred_device_help">โทรศัพท์ที่แอปเลือกก่อนเมื่อโทรศัพท์ที่จับคู่ไว้หลายเครื่องเป็นเครื่องหลักได้ หากเชื่อมต่อบลูทูธเพียงเครื่องเดียว แอปจะเลือกเครื่องนั้น หากเลือกไม่มี แอปจะเลือกเครื่องที่เชื่อมต่อล่าสุด รายการแสดงเฉพาะโทรศัพท์</string>
     <string name="switch_driver">สลับโทรศัพท์</string>
     <string name="driver_device_connected">อยู่ในรถ / เชื่อมต่อแล้ว</string>
     <string name="driver_device_paired">จับคู่แล้ว</string>
@@ -1354,6 +1480,7 @@
     <string name="show_all_devices">แสดงอุปกรณ์บลูทูธทั้งหมด</string>
     <string name="show_only_phones">แสดงเฉพาะโทรศัพท์</string>
     <string name="oem_app_management">การจัดการข้อขัดแย้งของแอป OEM (ADB)</string>
+    <string name="oem_app_management_help">ค้นหาแอปจากโรงงานบนอุปกรณ์นี้ที่ยึดการเชื่อมต่อ USB หรือบลูทูธก่อนแอปนี้ คุณปิดใช้งานและหยุดแต่ละแอปได้ หรือกู้คืนภายหลัง ต้องใช้รูท หรือ ADB ผ่านเครือข่ายที่พอร์ต 5555 ของอุปกรณ์นี้ ตัวเลือกหนึ่งจะปิดใช้งานแอปเหล่านี้ทุกครั้งที่แอปนี้เริ่มทำงาน</string>
     <string name="oem_app_management_desc">ตรวจหาและปิดใช้งานแอปที่ขัดแย้งกัน (Zlink, AutoKit ฯลฯ)</string>
     <string name="oem_app_explanation">แอปของเฮดยูนิตจากโรงงานมักจะดักจับการเชื่อมต่อ USB และบลูทูธ ทำให้ Open Headunit ไม่สามารถเชื่อมต่อได้ คุณสามารถปิดใช้งานผ่าน Root หรือ Self-ADB (พอร์ต 5555)</string>
     <string name="oem_app_backend_root">วิธีการดำเนินการ: รูท (su) พร้อมใช้งาน</string>
@@ -1388,9 +1515,13 @@
     <string name="support_rules_english_title">All posts in English</string>
     <string name="support_rules_english_desc">โปรดเขียนปัญหาเป็นภาษาอังกฤษเสมอ เพราะเป็นภาษาเดียวที่ผู้ดูแลและผู้ช่วยส่วนใหญ่ใช้ร่วมกัน หากเขียนหลายภาษาในกระทู้เดียว จะสับสนวุ่นวายและไม่มีใครช่วยใครได้ ไม่มีใครตัดสินระดับภาษาอังกฤษหรือวิธีเขียนของคุณ จึงไม่ต้องกังวลเรื่องข้อผิดพลาด หากจำเป็น คุณใช้เครื่องมือแปลอย่าง Google Translate หรือ DeepL หรือ AI อย่าง ChatGPT หรือ Claude ช่วยเขียนและเกลาข้อความเป็นภาษาอังกฤษได้</string>
     <string name="debug_video_fault_injection">การแทรกข้อผิดพลาดของวิดีโอ</string>
+    <string name="debug_video_fault_injection_help">สำหรับการทดสอบเท่านั้น ทำลายวิดีโอที่เข้ามาโดยตั้งใจ เพื่อทดสอบว่าแอปฟื้นตัวได้อย่างไร แต่ละโหมดจะเอาส่วนต่างๆ ของเฟรมออกหรือซ่อนไว้ บันทึกจะจดทุกข้อผิดพลาด มีผลเมื่อเชื่อมต่อครั้งถัดไป ใช้งานปกติให้ตั้งเป็น Off เพราะภาพจะแตก</string>
     <string name="debug_video_fault_rate">อัตราข้อผิดพลาด (1 ใน N)</string>
+    <string name="debug_video_fault_rate_help">ความถี่ที่เกิดข้อผิดพลาด แอปจะทำลายหนึ่งในทุก N ชิ้นของวิดีโอที่โหมดที่เลือกเล็งไว้ ตัวเลขน้อยลงจะทำให้ภาพเสียหายมากขึ้น</string>
     <string name="debug_video_fault_budget">จำนวนข้อผิดพลาดสูงสุด</string>
+    <string name="debug_video_fault_budget_help">จำนวนข้อผิดพลาดที่แอปเพิ่มในหนึ่งเซสชันก่อนจะหยุด Whole session คือไม่หยุดเลย เมื่อมีขีดจำกัด บันทึกเดียวจะแสดงความเสียหายและแสดงว่าภาพฟื้นตัวหรือไม่</string>
     <string name="debug_force_memory_profile">บังคับโปรไฟล์หน่วยความจำ</string>
+    <string name="debug_force_memory_profile_help">สำหรับการทดสอบเท่านั้น ทำให้ตัวถอดรหัสวิดีโอกำหนดขนาดบัฟเฟอร์เหมือนอุปกรณ์มีหน่วยความจำตามที่เลือก Measure จะอ่านหน่วยความจำจริงของอุปกรณ์ Constrained ใช้บัฟเฟอร์เล็กที่สุด เหมือนอุปกรณ์ที่มีประมาณ 1 GB มีผลเมื่อเชื่อมต่อครั้งถัดไป ใช้งานปกติให้เลือก Measure</string>
 
     <string name="onb_audio_play_test">เล่นเสียงทดสอบ</string>
     <string name="onb_audio_play_test_sub">เล่นไม่กี่วินาที เหมือนเพลงจาก Android Auto</string>
@@ -1517,6 +1648,7 @@
     <string name="native_aa_candidate_android_radio_description">ใช้ Bluetooth ของ Android แทนการเลือกโมดูล Bluetooth ของเครื่องโดยอัตโนมัติ ปิดไว้เพื่อใช้การเลือกอัตโนมัติ หากเปิดตัวเลือกการเชื่อมต่อผ่านโมดูลอยู่ ให้ปิดตัวเลือกนั้นก่อน</string>
     <string name="external_bt_candidate_transport_description">บังคับเชื่อมต่อผ่านโมดูล Bluetooth ของเครื่องแทนการเลือกอัตโนมัติ ต้องมีบริการโมดูลที่เข้ากันได้ ปิดไว้เพื่อให้ใช้ Bluetooth ของ Android ได้เมื่อบริการไม่ตอบสนอง การเปิดตัวเลือกนี้จะปิดทางเลือกสำรองดังกล่าว</string>
     <string name="audio_matching_mode">การแก้ไขจังหวะเวลาของเพลง</string>
+    <string name="audio_matching_mode_help">เมื่อเพลงมาเร็วหรือช้าเกินไปเล็กน้อย แอปจะเล่นให้เร็วขึ้นหรือช้าลงเล็กน้อยเพื่อรักษาคิวเสียงให้สมดุล ตัวเลือกนี้ใช้เลือกวิธีการ ค่าเริ่มต้นคือ OHU วิธีอื่นจะเพิ่มความหน่วงเล็กน้อยและใช้กับเพลง PCM เท่านั้น การนำทาง เสียงพูด เสียงระบบ และ AAC ใช้ OHU เสมอ เชื่อมต่อใหม่เพื่อใช้การเปลี่ยนแปลง</string>
     <string name="audio_matching_ohu">OHU</string>
     <string name="audio_matching_wsola">WSOLA</string>
     <string name="audio_matching_phase_vocoder">Phase Vocoder</string>

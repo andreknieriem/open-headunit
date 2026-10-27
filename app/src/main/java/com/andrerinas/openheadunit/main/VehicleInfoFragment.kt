@@ -170,6 +170,7 @@ class VehicleInfoFragment : Fragment() {
         items.add(SettingItem.SettingEntry(
             stableId = "vehicleDisplayName",
             nameResId = R.string.vehicle_display_name_label,
+            helpResId = R.string.vehicle_display_name_help,
             value = pendingVehicleDisplayName ?: "",
             onClick = {
                 showTextInputDialog(R.string.vehicle_display_name_label, pendingVehicleDisplayName ?: "") { value ->
@@ -183,6 +184,7 @@ class VehicleInfoFragment : Fragment() {
         items.add(SettingItem.SettingEntry(
             stableId = "vehicleMake",
             nameResId = R.string.vehicle_make_label,
+            helpResId = R.string.vehicle_make_help,
             value = pendingVehicleMake ?: "",
             onClick = {
                 showTextInputDialogWithMessage(
@@ -200,6 +202,7 @@ class VehicleInfoFragment : Fragment() {
         items.add(SettingItem.SettingEntry(
             stableId = "vehicleModel",
             nameResId = R.string.vehicle_model_label,
+            helpResId = R.string.vehicle_model_help,
             value = pendingVehicleModel ?: "",
             onClick = {
                 showTextInputDialog(R.string.vehicle_model_label, pendingVehicleModel ?: "") { value ->
@@ -213,6 +216,7 @@ class VehicleInfoFragment : Fragment() {
         items.add(SettingItem.SettingEntry(
             stableId = "vehicleYear",
             nameResId = R.string.vehicle_year_label,
+            helpResId = R.string.vehicle_model_help,
             value = pendingVehicleYear ?: "",
             onClick = {
                 showYearInputDialog(pendingVehicleYear ?: "") { value ->
@@ -226,6 +230,7 @@ class VehicleInfoFragment : Fragment() {
         items.add(SettingItem.SettingEntry(
             stableId = "vehicleId",
             nameResId = R.string.vehicle_id_label,
+            helpResId = R.string.vehicle_id_help,
             value = pendingVehicleId ?: "",
             onClick = {
                 showTextInputDialogWithMessage(
@@ -249,6 +254,7 @@ class VehicleInfoFragment : Fragment() {
         items.add(SettingItem.SegmentedButtonSettingEntry(
             stableId = "vehicleType",
             nameResId = R.string.vehicle_type_label,
+            helpResId = R.string.vehicle_type_help,
             options = vehicleTypeOptions,
             selectedIndex = VehicleTypePolicy.indexOf(pendingVehicleType ?: VehicleTypePolicy.CAR),
             onOptionSelected = { index ->
@@ -272,6 +278,7 @@ class VehicleInfoFragment : Fragment() {
             stableId = "rightHandDrive",
             nameResId = R.string.right_hand_drive,
             descriptionResId = R.string.right_hand_drive_description,
+            helpResId = R.string.right_hand_drive_help,
             isChecked = pendingRightHandDrive!!,
             onCheckedChanged = { isChecked ->
                 pendingRightHandDrive = isChecked
@@ -284,6 +291,7 @@ class VehicleInfoFragment : Fragment() {
         items.add(SettingItem.SettingEntry(
             stableId = "headUnitMake",
             nameResId = R.string.head_unit_make_label,
+            helpResId = R.string.head_unit_make_help,
             value = pendingHeadUnitMake ?: "",
             onClick = {
                 showTextInputDialogWithMessage(
@@ -301,6 +309,7 @@ class VehicleInfoFragment : Fragment() {
         items.add(SettingItem.SettingEntry(
             stableId = "headUnitModel",
             nameResId = R.string.head_unit_model_label,
+            helpResId = R.string.head_unit_model_help,
             value = pendingHeadUnitModel ?: "",
             onClick = {
                 showTextInputDialog(R.string.head_unit_model_label, pendingHeadUnitModel ?: "") { value ->

@@ -461,6 +461,7 @@
     <string name="overlay_position">Положення панелі продуктивності</string>
     <string name="show_performance_overlay_description">Показує FPS, завантаження процесора, температуру та вік кадру поверх проєкції.</string>
     <string name="overlay_permission_required">Для автозапуску потрібен дозвіл «Показувати поверх інших додатків»</string>
+    <string name="usb_access_needed">Open Headunit не має доступу до цього USB-пристрою. Натисніть USB, щоб дозволити. Якщо для нього відкривається інший застосунок, скиньте в налаштуваннях Android параметри USB за умовчанням для цього застосунку.</string>
     <string name="usb_permission_denied">Дозвіл USB відхилено. Щоб підключатися автоматично, дозвольте доступ до USB.</string>
     <string name="use_white_background">Використовувати білі шпалери головного екрана</string>
     <string name="reopen_on_reconnection_label">Відкривати при повторному підключенні</string>
@@ -1022,6 +1023,8 @@
 
     <!-- Auto-added missing translations -->
     <string name="blacklisted">У чорному списку</string>
+    <string name="usb_blacklist_one_mode">Цей пристрій не повідомляє назву, тому чорний список зіставляє його USB ID: усі пристрої з таким ID і лише в цьому режимі USB. У режимі Android Auto він усе одно може підключитися.</string>
+    <string name="usb_blacklist_android_asks">Android усе ще може запитувати про цей пристрій під час підключення. Виберіть відповідний додаток і позначте прапорець, щоб завжди його використовувати. Android більше не питатиме.</string>
     <string name="usb_blacklist_title">Чорний список USB-пристроїв</string>
     <string name="usb_blacklist_description">Пристрої з чорного списку ігноруються під час підключення: без автозапуску та запитів. Пристрій визначається за назвою, тому телефон із чорного списку лишається в ньому в будь-якому режимі USB. Деякі виробники дають усім моделям однакову назву, і такі пристрої неможливо розрізнити.</string>
     <string name="add_to_blacklist">Додати до чорного списку</string>

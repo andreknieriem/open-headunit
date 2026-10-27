@@ -459,6 +459,7 @@
     <string name="show_performance_overlay">Prestatie-overlay tonen</string>
     <string name="overlay_position">Positie van prestatie-overlay</string>
     <string name="overlay_permission_required">Automatisch starten vereist de machtiging \'Weergeven vóór andere apps\'</string>
+    <string name="usb_access_needed">Open Headunit heeft geen toegang tot dit USB-apparaat. Druk op USB om toegang toe te staan. Als er een andere app voor opent, wis dan de USB-standaard van die app in de Android-instellingen.</string>
     <string name="usb_permission_denied">USB-machtiging geweigerd. Sta USB-toegang toe om automatisch te verbinden.</string>
     <string name="use_white_background">Witte achtergrond voor startscherm gebruiken</string>
     <string name="reopen_on_reconnection_label">Heropenen bij herverbinding</string>
@@ -1025,6 +1026,8 @@
 
     <!-- Auto-added missing translations -->
     <string name="blacklisted">Op zwarte lijst</string>
+    <string name="usb_blacklist_one_mode">Dit apparaat geeft geen naam door, dus de zwarte lijst gebruikt het USB-ID: elk apparaat met dat ID, en alleen in deze USB-modus. In de Android Auto-modus kan het nog steeds verbinden.</string>
+    <string name="usb_blacklist_android_asks">Android kan bij het aansluiten nog steeds naar dit apparaat vragen. Kies de app waarvoor het bedoeld is en vink het vakje aan om die altijd te gebruiken. Android vraagt dan niet meer.</string>
     <string name="usb_blacklist_title">Zwarte lijst voor USB-apparaten</string>
     <string name="usb_blacklist_description">Apparaten op de zwarte lijst worden genegeerd bij het aansluiten: geen autostart, geen vragen. Een apparaat wordt herkend aan de naam, dus een telefoon op de zwarte lijst blijft in elke USB-modus geblokkeerd. Sommige fabrikanten geven elk model dezelfde naam. Die modellen zijn niet van elkaar te onderscheiden.</string>
     <string name="add_to_blacklist">Toevoegen aan zwarte lijst</string>

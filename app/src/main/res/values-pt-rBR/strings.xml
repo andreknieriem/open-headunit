@@ -461,6 +461,7 @@
     <string name="overlay_position">Posição da sobreposição de desempenho</string>
     <string name="show_performance_overlay_description">Exibe FPS, carga da CPU, temperatura e idade do quadro sobre a projeção.</string>
     <string name="overlay_permission_required">O início automático requer a permissão \'Sobrepor a outros apps\'</string>
+    <string name="usb_access_needed">O Open Headunit não tem acesso a este dispositivo USB. Toque em USB para permitir. Se outro app abrir para ele, limpe o padrão de USB desse app nas configurações do Android.</string>
     <string name="usb_permission_denied">Permissão USB negada. Permita o acesso USB para conectar automaticamente.</string>
     <string name="use_white_background">Usar papel de parede branco na tela inicial</string>
     <string name="reopen_on_reconnection_label">Reabrir ao reconectar</string>
@@ -1021,6 +1022,8 @@
 
     <!-- Auto-added missing translations -->
     <string name="blacklisted">Bloqueado</string>
+    <string name="usb_blacklist_one_mode">Este dispositivo não informa um nome, então o bloqueio usa o ID USB dele: todos os dispositivos com esse ID, e só neste modo USB. No modo Android Auto, ele ainda pode se conectar.</string>
+    <string name="usb_blacklist_android_asks">O Android ainda pode perguntar sobre este dispositivo quando ele é conectado. Escolha o app correspondente e marque a caixa para sempre usá-lo, e o Android não perguntará de novo.</string>
     <string name="usb_blacklist_title">Lista de bloqueio de dispositivos USB</string>
     <string name="usb_blacklist_description">Os dispositivos da lista de bloqueio são ignorados ao conectar: sem início automático nem avisos. O dispositivo é identificado pelo nome, então um celular bloqueado continua bloqueado em qualquer modo USB. Alguns fabricantes dão o mesmo nome a todos os modelos, e não é possível diferenciá-los.</string>
     <string name="add_to_blacklist">Adicionar à lista de bloqueio</string>

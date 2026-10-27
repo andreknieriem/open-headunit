@@ -459,6 +459,7 @@
     <string name="show_performance_overlay">显示性能浮层</string>
     <string name="overlay_position">性能浮层位置</string>
     <string name="overlay_permission_required">自动启动需要“显示在其他应用的上层”权限</string>
+    <string name="usb_access_needed">Open Headunit 无权访问此 USB 设备。请按 USB 以允许。如果因此打开了其他应用，请在 Android 设置中清除该应用的 USB 默认设置。</string>
     <string name="usb_permission_denied">USB 权限被拒绝。请允许 USB 访问，以便自动连接。</string>
     <string name="use_white_background">使用白色主屏幕壁纸</string>
     <string name="reopen_on_reconnection_label">重新连接时重新打开</string>
@@ -1017,6 +1018,8 @@
 
     <!-- Auto-added missing translations -->
     <string name="blacklisted">已列入黑名单</string>
+    <string name="usb_blacklist_one_mode">此设备不提供名称，因此黑名单会匹配其 USB ID：所有使用相同 ID 的设备，且仅限此 USB 模式。在 Android Auto 模式下，它仍可连接。</string>
+    <string name="usb_blacklist_android_asks">插入此设备时，Android 可能仍会询问。请选择该设备对应的应用，并勾选复选框以始终使用，Android 就不会再询问。</string>
     <string name="usb_blacklist_title">USB 设备黑名单</string>
     <string name="usb_blacklist_description">黑名单中的设备在连接时会被忽略：不自动启动，不显示提示。系统按名称匹配设备，因此被列入黑名单的手机在所有 USB 模式下都会保持在黑名单中。部分制造商给所有型号使用相同的名称，这类设备无法区分。</string>
     <string name="add_to_blacklist">加入黑名单</string>

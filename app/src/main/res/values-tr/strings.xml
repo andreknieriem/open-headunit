@@ -462,6 +462,7 @@
     <string name="reopen_on_reconnection_label">Yeniden bağlanınca tekrar aç</string>
     <string name="reopen_on_reconnection_description">Çıkış düğmesine bastığınızda, uygulama arka planda çalışmaya devam eder ve USB bağlantılarını izlemeyi sürdürür. Bir cihaz yeniden bağlandığında uygulama otomatik olarak tekrar açılır.</string>
     <string name="overlay_permission_required">Otomatik başlatma için \'Diğer uygulamaların üzerinde göster\' izni gerekir</string>
+    <string name="usb_access_needed">Open Headunit bu USB cihazına erişemiyor. İzin vermek için USB düğmesine basın. Cihaz için başka bir uygulama açılırsa Android ayarlarından o uygulamanın USB varsayılanını temizleyin.</string>
     <string name="usb_permission_denied">USB izni reddedildi. Otomatik bağlanmak için lütfen USB erişimine izin verin.</string>
 
     <string name="use_white_background">Beyaz ana ekran duvar kağıdı kullan</string>
@@ -1014,6 +1015,8 @@
 
     <!-- Auto-added missing translations -->
     <string name="blacklisted">Kara listede</string>
+    <string name="usb_blacklist_one_mode">Bu cihaz ad bildirmiyor, bu yüzden kara liste USB kimliğiyle eşleşir: bu kimliğe sahip her cihaz, yalnızca bu USB modunda. Android Auto modunda yine de bağlanabilir.</string>
+    <string name="usb_blacklist_android_asks">Android, takıldığında bu cihaz hakkında yine de soru sorabilir. Cihazın ait olduğu uygulamayı seçin ve her zaman kullanmak için kutuyu işaretleyin; Android bir daha sormaz.</string>
     <string name="usb_blacklist_title">USB Cihazı Kara Listesi</string>
     <string name="usb_blacklist_description">Kara listedeki cihazlar bağlandığında yoksayılır: otomatik başlatma ve istemler olmaz. Cihaz adı ile eşleştirilir, bu nedenle engellenen bir telefon her USB modunda engelli kalır. Bazı üreticiler her modele aynı adı verir ve bunlar ayırt edilemez.</string>
     <string name="add_to_blacklist">Kara Listeye Ekle</string>

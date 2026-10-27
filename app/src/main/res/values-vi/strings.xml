@@ -478,6 +478,7 @@
     <string name="reopen_on_reconnection_label">Mở lại khi kết nối lại</string>
     <string name="reopen_on_reconnection_description">Khi bạn nhấn nút Thoát, ứng dụng vẫn chạy ngầm và tiếp tục theo dõi kết nối USB. Nếu thiết bị kết nối lại, ứng dụng sẽ tự mở lại.</string>
     <string name="overlay_permission_required">Tự khởi động cần quyền \'Hiện trên các ứng dụng khác\'</string>
+    <string name="usb_access_needed">Open Headunit không có quyền truy cập thiết bị USB này. Hãy nhấn USB để cho phép. Nếu một ứng dụng khác mở ra cho thiết bị này, hãy xóa mặc định USB của ứng dụng đó trong cài đặt Android.</string>
     <string name="usb_permission_denied">Đã từ chối quyền USB. Hãy cho phép truy cập USB để tự kết nối.</string>
 
     <!-- Theme -->
@@ -1021,6 +1022,8 @@
 
     <!-- Auto-added missing translations -->
     <string name="blacklisted">Trong danh sách đen</string>
+    <string name="usb_blacklist_one_mode">Thiết bị này không cung cấp tên, nên danh sách đen so khớp theo ID USB: mọi thiết bị có ID đó, và chỉ ở chế độ USB này. Ở chế độ Android Auto, thiết bị vẫn có thể kết nối.</string>
+    <string name="usb_blacklist_android_asks">Android vẫn có thể hỏi về thiết bị này khi cắm vào. Hãy chọn ứng dụng phù hợp và đánh dấu ô để luôn dùng ứng dụng đó, Android sẽ không hỏi lại.</string>
     <string name="usb_blacklist_title">Danh sách đen thiết bị USB</string>
     <string name="usb_blacklist_description">Các thiết bị trong danh sách đen sẽ bị bỏ qua khi kết nối: không tự khởi động, không hiện lời nhắc. Thiết bị được so khớp theo tên, do đó điện thoại trong danh sách đen sẽ vẫn bị chặn ở mọi chế độ USB. Một số hãng đặt cùng tên cho mọi mẫu máy nên không thể phân biệt.</string>
     <string name="add_to_blacklist">Thêm vào danh sách đen</string>

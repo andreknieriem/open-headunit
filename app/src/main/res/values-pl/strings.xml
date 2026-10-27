@@ -460,6 +460,7 @@
     <string name="show_performance_overlay">Pokaż nakładkę wydajności</string>
     <string name="overlay_position">Pozycja nakładki wydajności</string>
     <string name="overlay_permission_required">Automatyczne uruchamianie wymaga uprawnienia „Wyświetlanie nad innymi aplikacjami”</string>
+    <string name="usb_access_needed">Open Headunit nie ma dostępu do tego urządzenia USB. Naciśnij USB, aby na to zezwolić. Jeśli dla urządzenia otwiera się inna aplikacja, wyczyść jej domyślne ustawienie USB w ustawieniach Androida.</string>
     <string name="usb_permission_denied">Odmówiono uprawnienia USB. Zezwól na dostęp USB, aby łączyć automatycznie.</string>
     <string name="use_white_background">Użyj białej tapety ekranu głównego</string>
     <string name="reopen_on_reconnection_label">Otwórz ponownie po ponownym połączeniu</string>
@@ -1026,6 +1027,8 @@
 
     <!-- Auto-added missing translations -->
     <string name="blacklisted">Na czarnej liście</string>
+    <string name="usb_blacklist_one_mode">To urządzenie nie podaje nazwy, więc czarna lista dopasowuje jego identyfikator USB: każde urządzenie z tym identyfikatorem i tylko w tym trybie USB. W trybie Android Auto nadal może się połączyć.</string>
+    <string name="usb_blacklist_android_asks">Android może nadal pytać o to urządzenie po podłączeniu. Wybierz aplikację, do której jest przeznaczone, i zaznacz pole, aby zawsze jej używać. Android nie zapyta ponownie.</string>
     <string name="usb_blacklist_title">Czarna lista urządzeń USB</string>
     <string name="usb_blacklist_description">Urządzenia z czarnej listy są ignorowane podczas podłączania: brak autostartu i powiadomień. Urządzenie jest dopasowywane po nazwie, więc zablokowany telefon pozostaje zablokowany w każdym trybie USB. Niektórzy producenci nadają wszystkim modelom tę samą nazwę, przez co nie da się ich rozróżnić.</string>
     <string name="add_to_blacklist">Dodaj do czarnej listy</string>

@@ -511,6 +511,7 @@
     <string name="reopen_on_reconnection_label">ხელახალი კავშირისას გახსნა</string>
     <string name="reopen_on_reconnection_description">\"გასვლა\" ღილაკზე დაჭერისას აპლიკაცია აგრძელებს მუშაობას ფონურ რეჟიმში და აკონტროლებს USB კავშირებს. მოწყობილობის ხელახალი შეერთებისას აპი ავტომატურად გაიხსნება.</string>
     <string name="overlay_permission_required">ავტოგაშვებისთვის საჭიროა ნებართვა „სხვა აპების ზემოდან გამოჩენა“</string>
+    <string name="usb_access_needed">Open Headunit-ს ამ USB მოწყობილობაზე წვდომა არ აქვს. დასაშვებად დააჭირეთ USB-ს. თუ ამ მოწყობილობისთვის სხვა აპი იხსნება, Android-ის პარამეტრებში გაასუფთავეთ ამ აპის USB-ის ნაგულისხმევი პარამეტრი.</string>
     <string name="usb_permission_denied">USB ნებართვა უარყოფილია. ავტომატური დაკავშირებისთვის დაუშვით USB წვდომა.</string>
 
     <string name="kill_on_disconnect">აპის დახურვა კავშირის გაწყვეტისას</string>
@@ -1006,6 +1007,8 @@
 
     <!-- Auto-added missing translations -->
     <string name="blacklisted">შავ სიაშია</string>
+    <string name="usb_blacklist_one_mode">ეს მოწყობილობა სახელს არ გადმოსცემს, ამიტომ შავი სია მის USB ID-ს ემთხვევა: ამ ID-ის მქონე ყველა მოწყობილობას და მხოლოდ ამ USB რეჟიმში. Android Auto რეჟიმში მაინც შეუძლია დაკავშირება.</string>
+    <string name="usb_blacklist_android_asks">Android-მა შეიძლება მაინც იკითხოს ამ მოწყობილობის შესახებ მიერთებისას. აირჩიეთ შესაბამისი აპი და მონიშნეთ ველი, რომ ყოველთვის გამოიყენოს; Android აღარ იკითხავს.</string>
     <string name="usb_blacklist_title">USB მოწყობილობების შავი სია</string>
     <string name="usb_blacklist_description">შავ სიაში მყოფი მოწყობილობები იგნორირებულია მიერთებისას: არც ავტო-გაშვება, არც მოთხოვნები. მოწყობილობა ამოიცნობა სახელით, ამიტომ დაბლოკილი ტელეფონი დაბლოკილი რჩება ნებისმიერ USB რეჟიმში. ზოგიერთი მწარმოებელი ყველა მოდელს ერთსა და იმავე სახელს არქმევს და მათი გარჩევა შეუძლებელია.</string>
     <string name="add_to_blacklist">შავ სიაში დამატება</string>

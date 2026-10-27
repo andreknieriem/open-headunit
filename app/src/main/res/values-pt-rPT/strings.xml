@@ -215,6 +215,8 @@
     <string name="allowed">Permitido</string>
     <string name="ignored">Ignorado</string>
     <string name="blacklisted">Na lista negra</string>
+    <string name="usb_blacklist_one_mode">Este dispositivo não indica o nome, por isso a lista negra usa o ID USB: todos os dispositivos com esse ID, e só neste modo USB. No modo Android Auto, ainda pode ligar-se.</string>
+    <string name="usb_blacklist_android_asks">O Android pode continuar a perguntar sobre este dispositivo quando é ligado. Escolha a app a que se destina e assinale a caixa para a usar sempre. O Android deixará de perguntar.</string>
     <string name="usb_blacklist_title">Lista negra de dispositivos USB</string>
     <string name="usb_blacklist_description">Os dispositivos na lista negra são ignorados ao ligar: sem arranque automático nem avisos. Um dispositivo é identificado pelo nome, pelo que um telemóvel na lista negra continua bloqueado em todos os modos USB. Alguns fabricantes dão o mesmo nome a todos os modelos, que por isso não se distinguem.</string>
     <string name="add_to_blacklist">Adicionar à lista negra</string>
@@ -976,6 +978,7 @@
     <string name="reopen_on_reconnection_label">Reabrir ao religar</string>
     <string name="reopen_on_reconnection_description">Quando prime o botão Sair, a aplicação continua em execução em segundo plano e monitoriza as ligações USB. Se um dispositivo voltar a ligar-se, a aplicação abre novamente.</string>
     <string name="overlay_permission_required">O arranque automático requer a permissão \"Sobrepor a outras apps\"</string>
+    <string name="usb_access_needed">O Open Headunit não tem acesso a este dispositivo USB. Toque em USB para permitir. Se outra app abrir para ele, limpe a predefinição de USB dessa app nas definições do Android.</string>
     <string name="usb_permission_denied">Permissão USB recusada. Conceda acesso USB para ligar automaticamente.</string>
 
     <!-- Theme -->

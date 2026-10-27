@@ -467,6 +467,7 @@
     <string name="reopen_on_reconnection_label">Riapri alla riconnessione</string>
     <string name="reopen_on_reconnection_description">Quando premi il pulsante Esci, l\'app rimane in esecuzione in background e continua a monitorare le connessioni USB. Se un dispositivo si riconnette, l\'app si riapre automaticamente.</string>
     <string name="overlay_permission_required">L\'avvio automatico richiede il permesso \'Mostra sopra altre app\'</string>
+    <string name="usb_access_needed">Open Headunit non ha accesso a questo dispositivo USB. Premi USB per consentirlo. Se si apre un\'altra app per questo dispositivo, cancella l\'impostazione predefinita USB di quell\'app nelle impostazioni di Android.</string>
     <string name="usb_permission_denied">Permesso USB negato. Consenti l\'accesso USB per connetterti automaticamente.</string>
 
     <!-- Theme -->
@@ -1023,6 +1024,8 @@
 
     <!-- Auto-added missing translations -->
     <string name="blacklisted">In lista nera</string>
+    <string name="usb_blacklist_one_mode">Questo dispositivo non fornisce un nome, quindi la lista nera usa il suo ID USB: tutti i dispositivi con lo stesso ID, e solo in questa modalità USB. In modalità Android Auto può comunque connettersi.</string>
+    <string name="usb_blacklist_android_asks">Android potrebbe comunque chiedere di questo dispositivo quando viene collegato. Scegli l\'app a cui è destinato e seleziona la casella per usarla sempre: Android non chiederà più.</string>
     <string name="usb_blacklist_title">Lista nera dispositivi USB</string>
     <string name="usb_blacklist_description">I dispositivi nella lista nera vengono ignorati alla connessione: nessun avvio automatico, nessun messaggio. Il dispositivo viene riconosciuto dal nome, quindi un telefono bloccato rimane bloccato in qualsiasi modalità USB. Alcuni produttori usano lo stesso nome per tutti i modelli, rendendoli indistinguibili.</string>
     <string name="add_to_blacklist">Aggiungi alla lista nera</string>

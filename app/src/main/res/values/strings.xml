@@ -239,6 +239,8 @@
     <string name="allowed">Allowed</string>
     <string name="ignored">Ignored</string>
     <string name="blacklisted">Blacklisted</string>
+    <string name="usb_blacklist_one_mode">This device gives no name, so the blacklist matches its USB ID: every device with that ID, and only in this USB mode. In Android Auto mode it can still connect.</string>
+    <string name="usb_blacklist_android_asks">Android may still ask about this device when it is plugged in. Choose the app it is for and tick the box to always use it, and Android will not ask again.</string>
     <string name="usb_blacklist_title">USB Device Blacklist</string>
     <string name="usb_blacklist_description">Devices in the blacklist are ignored on connection: no auto-start, no prompts. A device is matched by its name, so a blacklisted phone stays blacklisted in every USB mode. Some makers give every model the same name, and those cannot be told apart.</string>
     <string name="add_to_blacklist">Add to Blacklist</string>
@@ -1076,6 +1078,7 @@
     <string name="reopen_on_reconnection_label">Reopen on reconnection</string>
     <string name="reopen_on_reconnection_description">When you press the Exit button, the app stays running in the background and continues monitoring USB connections. If a device reconnects, the app reopens automatically.</string>
     <string name="overlay_permission_required">Auto-start requires \'Display over other apps\' permission</string>
+    <string name="usb_access_needed">Open Headunit has no access to this USB device. Press USB to allow it. If another app opens for it, clear that app\'s USB default in Android settings.</string>
     <string name="usb_permission_denied">USB permission denied. Please allow USB access to connect automatically.</string>
 
     <!-- Theme -->

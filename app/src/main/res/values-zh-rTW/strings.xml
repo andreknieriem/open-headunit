@@ -459,6 +459,7 @@
     <string name="show_performance_overlay">顯示效能浮層</string>
     <string name="overlay_position">效能浮層位置</string>
     <string name="overlay_permission_required">自動啟動需要「重疊顯示於其他應用程式上方」權限</string>
+    <string name="usb_access_needed">Open Headunit 無法存取此 USB 裝置。請按 USB 以允許。若因此開啟了其他應用程式，請在 Android 設定中清除該應用程式的 USB 預設值。</string>
     <string name="usb_permission_denied">USB 權限遭拒。請允許 USB 存取權，以便自動連線。</string>
     <string name="use_white_background">使用白色主畫面桌布</string>
     <string name="reopen_on_reconnection_label">重新連線時重新開啟</string>
@@ -1017,6 +1018,8 @@
 
     <!-- Auto-added missing translations -->
     <string name="blacklisted">已列入黑名單</string>
+    <string name="usb_blacklist_one_mode">此裝置不提供名稱，因此黑名單會比對其 USB ID：所有使用相同 ID 的裝置，且僅限此 USB 模式。在 Android Auto 模式下，它仍可連線。</string>
+    <string name="usb_blacklist_android_asks">插入此裝置時，Android 可能仍會詢問。請選擇該裝置對應的應用程式，並勾選核取方塊以一律使用，Android 就不會再詢問。</string>
     <string name="usb_blacklist_title">USB 裝置黑名單</string>
     <string name="usb_blacklist_description">黑名單中的裝置在連線時會被忽略：不自動啟動、不顯示提示。系統依名稱比對裝置，因此列入黑名單的手機在所有 USB 模式下都會維持在黑名單中。部分製造商會讓所有型號使用相同名稱，這類裝置無法區分。</string>
     <string name="add_to_blacklist">加入黑名單</string>

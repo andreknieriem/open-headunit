@@ -50,7 +50,6 @@ import com.andrerinas.openheadunit.aap.AapService
 import com.andrerinas.openheadunit.connection.wifi.modes.helper.NearbyManager
 import com.andrerinas.openheadunit.connection.usb.UsbDeviceCompat
 import com.andrerinas.openheadunit.connection.usb.UsbDeviceDiagnostics
-import com.andrerinas.openheadunit.connection.usb.UsbPermissionAsks
 import android.content.res.Configuration
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zbt.ZbtDaemonReachability
 import com.andrerinas.openheadunit.utils.AppLog
@@ -73,8 +72,9 @@ import com.andrerinas.openheadunit.connection.self.SelfLaunchRoutePolicy
 import com.andrerinas.openheadunit.connection.self.SelfLauncherManager
 import com.andrerinas.openheadunit.utils.BluetoothHelper
 import com.andrerinas.openheadunit.location.LocationHolder
-import com.andrerinas.openheadunit.connection.usb.UsbReceiver
 import com.andrerinas.openheadunit.connection.usb.UsbAccessoryMode
+import com.andrerinas.openheadunit.connection.usb.UsbPermissionAskPolicy
+import com.andrerinas.openheadunit.connection.usb.UsbPermissionAsks
 import com.andrerinas.openheadunit.connection.wifi.modes.helper.HelperStrategy
 import com.andrerinas.openheadunit.connection.wifi.WifiLauncherMode
 import com.andrerinas.openheadunit.connection.wifi.WirelessSelectionPolicy
@@ -1881,6 +1881,7 @@ class HomeFragment : Fragment() {
                 ContextCompat.startForegroundService(requireContext(),
                     Intent(requireContext(), AapService::class.java).apply {
                         action = AapService.ACTION_CHECK_USB
+                        putExtra(AapService.EXTRA_USER_REQUESTED, true)
                     })
             } else {
                 if (usbManager.hasPermission(device.wrappedDevice)) {
@@ -1901,10 +1902,7 @@ class HomeFragment : Fragment() {
                 } else {
                     ToastUtils.showToast(requireContext(), R.string.requesting_usb_permission, Toast.LENGTH_SHORT)
                     ContextCompat.startForegroundService(requireContext(), Intent(requireContext(), AapService::class.java))
-                    usbManager.requestPermission(
-                        device.wrappedDevice,
-                        UsbReceiver.createPermissionPendingIntent(requireContext(), UsbPermissionAsks.newToken())
-                    )
+                    UsbPermissionAsks.askFromUi(requireContext(), device.wrappedDevice)
                 }
             }
         } else {
@@ -2067,6 +2065,26 @@ class HomeFragment : Fragment() {
         }
     }
 
+    /** A resumed home covers no chooser, so a plug Android still owns gets one note per plug-in. */
+    private fun showUsbAccessHintIfNeeded() {
+        val ctx = context ?: return
+        if (commManager.isConnected) return
+        val usbManager = UsbDeviceCompat.usbManager(ctx) ?: return
+        val settings = App.provide(ctx).settings
+        val devices = usbManager.deviceList.values.toList()
+        val present = devices.map { it.deviceName }
+        val device = devices.firstOrNull { device ->
+            if (!UsbDeviceCompat.isConnectable(ctx, device)) return@firstOrNull false
+            val inputs = UsbDeviceCompat.permissionDecisionInputs(
+                ctx, settings, device, UsbPermissionAskPolicy.Source.AUTOMATIC, present,
+            )
+            UsbPermissionAskPolicy.hintsUserAsk(usbManager.hasPermission(device), UsbPermissionAskPolicy.decide(inputs).action)
+        } ?: return
+        if (!UsbPermissionAsks.tryHint(device.deviceName)) return
+        AppLog.i("HomeFragment: ${UsbDeviceCompat(device).uniqueName} has no USB access and Android owns its ask; showing the USB button note")
+        ToastUtils.showToast(ctx, R.string.usb_access_needed, Toast.LENGTH_LONG, force = true)
+    }
+
     override fun onResume() {
         super.onResume()
         AppLog.i("HomeFragment: onResume. isConnected=${commManager.isConnected}")
@@ -2076,6 +2094,7 @@ class HomeFragment : Fragment() {
         updateLauncherViews()
         renderHome()
         startHomeInfo()
+        showUsbAccessHintIfNeeded()
 
         val appSettings = App.provide(requireContext()).settings
         if (requestDriverSelection) {

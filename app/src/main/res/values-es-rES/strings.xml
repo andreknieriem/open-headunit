@@ -464,6 +464,7 @@
     <string name="overlay_position">Posición del panel de rendimiento</string>
     <string name="show_performance_overlay_description">Muestra los FPS, la carga de CPU, la temperatura y la antigüedad del fotograma sobre la proyección.</string>
     <string name="overlay_permission_required">El inicio automático requiere el permiso \'Mostrar sobre otras aplicaciones\'</string>
+    <string name="usb_access_needed">Open Headunit no tiene acceso a este dispositivo USB. Pulsa USB para permitirlo. Si se abre otra app para él, borra los valores predeterminados de USB de esa app en los ajustes de Android.</string>
     <string name="usb_permission_denied">Permiso USB denegado. Permite el acceso USB para conectar automáticamente.</string>
     <string name="use_white_background">Usar fondo de pantalla blanco en inicio</string>
     <string name="reopen_on_reconnection_label">Reabrir al reconectar</string>
@@ -1036,6 +1037,8 @@
 
     <!-- Auto-added missing translations -->
     <string name="blacklisted">En lista negra</string>
+    <string name="usb_blacklist_one_mode">Este dispositivo no proporciona un nombre, así que la lista negra usa su ID USB: todos los dispositivos con ese ID, y solo en este modo USB. En modo Android Auto aún puede conectarse.</string>
+    <string name="usb_blacklist_android_asks">Android aún puede preguntar por este dispositivo cuando se conecta. Elige la aplicación correspondiente y marca la casilla para usarla siempre; Android no volverá a preguntar.</string>
     <string name="usb_blacklist_title">Lista negra de dispositivos USB</string>
     <string name="usb_blacklist_description">Los dispositivos de la lista negra se ignoran al conectarse: sin inicio automático ni avisos. El dispositivo se identifica por su nombre, así que un móvil de la lista negra sigue en ella en cualquier modo USB. Algunos fabricantes dan el mismo nombre a todos sus modelos y no se pueden distinguir.</string>
     <string name="add_to_blacklist">Añadir a la lista negra</string>

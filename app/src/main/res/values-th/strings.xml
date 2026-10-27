@@ -368,7 +368,9 @@
     <string name="reconnection_required_title">จำเป็นต้องเชื่อมต่อใหม่</string>
     <string name="reconnection_required_message">อุปกรณ์อยู่ในสถานะรอ กรุณาถอดและเสียบสาย USB ใหม่อีกครั้งเพื่อเริ่ม Android Auto</string>
 
-    <string name="bluetooth_address_s">ที่อยู่บลูทูธ</string>
+    <string name="bluetooth_address_s">ที่อยู่บลูทูธของเฮดยูนิต</string>
+    <string name="bluetooth_address_summary">ที่อยู่ที่โทรศัพท์ใช้จดจำเฮดยูนิตเครื่องนี้</string>
+    <string name="bluetooth_address_help">ที่อยู่บลูทูธของเฮดยูนิตเครื่องนี้เอง โทรศัพท์ใช้ที่อยู่นี้จดจำเครื่องในทุกโหมดการเชื่อมต่อ ดูได้ที่ การตั้งค่า, เกี่ยวกับ, สถานะ หรือบนโทรศัพท์ที่จับคู่ไว้ที่ไอคอนฟันเฟืองข้างอุปกรณ์นี้ เว้นว่างไว้เพื่อให้ตรวจหาอัตโนมัติ ตัวเลือก “คงเสียงสื่อของโทรศัพท์ไว้ผ่าน USB” ป้องกันไม่ให้ Android Auto ปิดเสียงสื่อบลูทูธของโทรศัพท์ระหว่างเชื่อมต่อ USB ซึ่งอาจทำให้สายโทรเข้ายังอยู่ที่โทรศัพท์</string>
     <string name="enter_bluetooth_mac">ป้อนที่อยู่ MAC ของบลูทูธ</string>
     <string name="bluetooth_address_message">ที่อยู่ของเฮดยูนิตเครื่องนี้ ซึ่งโทรศัพท์ใช้ระบุเครื่อง ดูได้ที่ การตั้งค่า &gt; เกี่ยวกับ &gt; สถานะ หรือในโทรศัพท์ที่จับคู่ไว้ ใต้ไอคอนรูปเฟืองข้างอุปกรณ์นี้ ปล่อยว่างไว้เพื่อให้ตรวจหาอัตโนมัติ</string>
     <string name="invalid_bluetooth_address">ที่อยู่บลูทูธไม่ถูกต้อง ป้อนเลขฐานสิบหก 6 คู่ เช่น 0C:32:3A:2D:5D:4A</string>
@@ -1066,7 +1068,7 @@
     <string name="wifi_direct_last_network_differs">นี่ไม่ใช่ชื่อและรหัสผ่านที่แอปร้องขอ ระบบจึงเขียนทับค่าเหล่านั้น ใช้ \"สร้างข้อมูลเครือข่าย Wi-Fi Direct ใหม่\" ด้านบนเพื่อให้ระบบใช้คู่ใหม่</string>
     <string name="wifi_direct_last_network_hint">การเข้าร่วมเครือข่ายนี้ด้วยตนเองบนโทรศัพท์จะไม่เริ่ม Android Auto เพราะโทรศัพท์จะเข้าร่วมเครือข่ายเองหลังตั้งค่าผ่าน Bluetooth แล้ว วิธีนี้ใช้เพื่อตรวจสอบว่าเครือข่ายทำงานได้หรือไม่</string>
     <string name="wifi_direct_group_identity">ชื่อและรหัสผ่าน Wi-Fi Direct</string>
-    <string name="wifi_direct_group_identity_help">ชื่อและรหัสผ่าน Wi-Fi Direct ที่โทรศัพท์ได้รับเพื่อเข้าร่วมอุปกรณ์นี้ ให้แอปเลือกให้หรือกรอกเอง สร้างใหม่ให้อัตโนมัติจะให้แอปเลือกคู่ใหม่ หากคุณเปลี่ยนรหัสผ่าน แอปจะเปลี่ยนชื่อด้วย เพราะโทรศัพท์เข้าร่วมเครือข่ายที่ชื่อเดิมแต่รหัสผ่านใหม่อีกครั้งไม่ได้</string>
+    <string name="wifi_direct_group_identity_help">ชื่อและรหัสผ่าน Wi-Fi Direct ที่โทรศัพท์ได้รับเพื่อเข้าร่วมอุปกรณ์นี้ ให้แอปเลือกให้หรือกรอกเอง “สร้างใหม่ให้อัตโนมัติ”จะให้แอปเลือกคู่ใหม่ หากคุณเปลี่ยนรหัสผ่าน แอปจะเปลี่ยนชื่อด้วย เพราะโทรศัพท์เข้าร่วมเครือข่ายที่ชื่อเดิมแต่รหัสผ่านใหม่อีกครั้งไม่ได้</string>
     <string name="wifi_direct_group_identity_auto">เลือกโดยแอป แตะเพื่อตั้งค่าด้วยตนเอง</string>
     <string name="wifi_direct_group_identity_pick_new">สร้างใหม่ให้อัตโนมัติ</string>
     <string name="wifi_direct_group_identity_message">ชื่อและรหัสผ่านที่โทรศัพท์ใช้เข้าร่วมเฮดยูนิตนี้ การเปลี่ยนรหัสผ่านจะเปลี่ยนชื่อด้วย เพราะโทรศัพท์เข้าร่วมเครือข่ายที่ชื่อเดิมแต่รหัสผ่านเปลี่ยนไม่ได้</string>
@@ -1263,7 +1265,7 @@
     <string name="native_ap_transport">การส่งข้อมูลเครือข่าย</string>
     <string name="native_ap_transport_wifi_direct">Wi-Fi Direct</string>
     <string name="native_ap_transport_hotspot">ฮอตสปอต</string>
-    <string name="native_ap_transport_hint">โทรศัพท์จะเข้าร่วมฮอตสปอตของอุปกรณ์นี้แทนกลุ่ม Wi-Fi Direct เปิดก่อนเชื่อมต่อ</string>
+    <string name="native_ap_transport_help">เลือกเครือข่ายที่โทรศัพท์เข้าร่วมในโหมดเนทีฟ (Native) ของ Android Auto Wi-Fi Direct ซึ่งเป็นค่าเริ่มต้น: อุปกรณ์นี้สร้างกลุ่ม Wi-Fi Direct ของตัวเอง แล้วโทรศัพท์เข้าร่วม ฮอตสปอต: โทรศัพท์เข้าร่วมฮอตสปอตของอุปกรณ์นี้แทน ใช้เมื่อ Wi-Fi Direct เชื่อมต่อไม่ได้ ต้องเปิดฮอตสปอตก่อนเชื่อมต่อ เว้นแต่จะเปิด “เปิดฮอตสปอตอัตโนมัติ” อยู่ หากอุปกรณ์นี้อ่านการตั้งค่าฮอตสปอตไม่ได้ ให้กรอกชื่อและรหัสผ่านฮอตสปอตในแถวด้านล่าง</string>
     <string name="hotspot_band">ย่านความถี่ฮอตสปอต</string>
     <string name="hotspot_band_auto">อัตโนมัติ</string>
     <string name="hotspot_band_5ghz">5 GHz เท่านั้น</string>
@@ -1487,10 +1489,10 @@
     <string name="failed_aa_not_system">ล้มเหลว: Android Auto ไม่ได้ติดตั้งเป็นแอประบบ!</string>
     <string name="failed_aa_not_installed">ล้มเหลว: ไม่ได้ติดตั้ง Android Auto!</string>
     <string name="native_driver_selection_title">การเลือกคนขับ</string>
-    <string name="native_driver_selection_summary">เลือกโทรศัพท์ที่จะเชื่อมต่อเมื่อมีโทรศัพท์ที่จับคู่ไว้หลายเครื่องอยู่ในรถ</string>
     <string name="native_driver_selection_mode_off">ปิดอยู่</string>
     <string name="native_driver_selection_mode_auto">อัตโนมัติ</string>
     <string name="native_driver_selection_mode_always">ถามเสมอ</string>
+    <string name="native_driver_selection_help">เลือกว่าแอปจะถามเมื่อใดว่าจะใช้โทรศัพท์เครื่องไหน หากโทรศัพท์ที่จับคู่ไว้มากกว่าหนึ่งเครื่องอาจเป็นของผู้ขับ ปิดอยู่: แอปไม่ถามตอนเปิด และปุ่ม WiFi จะเชื่อมต่อโทรศัพท์ที่น่าจะใช่ที่สุด อัตโนมัติ: แอปถามเฉพาะเมื่อไม่รู้ว่าเครื่องไหนเป็นของผู้ขับ หากมีโทรศัพท์เชื่อมต่อบลูทูธเครื่องเดียว จะใช้เครื่องนั้น ถามเสมอ: แอปถามทุกครั้งที่เปิด เมื่อจับคู่โทรศัพท์ไว้มากกว่าหนึ่งเครื่อง เครื่องที่น่าจะใช่ที่สุดคือเครื่องที่เชื่อมต่ออยู่ ตามด้วย “โทรศัพท์ที่ต้องการ” แล้วเครื่องที่ใช้ล่าสุด</string>
     <string name="native_driver_selection_timeout">นับถอยหลังเชื่อมต่ออัตโนมัติ</string>
     <string name="native_driver_selection_timeout_help">เมื่อรายการโทรศัพท์หลักเปิดขึ้น จะนับถอยหลังแล้วเชื่อมต่อกับโทรศัพท์ที่น่าจะใช่ที่สุด ตัวเลือกนี้กำหนดเวลานับถอยหลัง ตั้งแต่ 3 ถึง 30 วินาที แตะโทรศัพท์ก่อนหมดเวลาเพื่อเลือกเอง</string>
     <string name="native_driver_preferred_device">โทรศัพท์ที่ต้องการ</string>

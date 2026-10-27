@@ -121,7 +121,9 @@
     <string name="reconnection_required_title">Потрібне перепідключення</string>
     <string name="reconnection_required_message">Пристрій у стані очікування. Відʼєднайте та знову підключіть USB-кабель, щоб перезапустити Android Auto.</string>
 
-    <string name="bluetooth_address_s">Bluetooth-адреса</string>
+    <string name="bluetooth_address_s">Bluetooth-адреса пристрою</string>
+    <string name="bluetooth_address_summary">Адреса, за якою телефон розпізнає цей пристрій.</string>
+    <string name="bluetooth_address_help">Власна Bluetooth-адреса цього пристрою. Телефон розпізнає за нею пристрій у будь-якому режимі підключення. Знайдіть її в розділі «Налаштування», «Про пристрій», «Стан» або на сполученому телефоні під значком шестірні поруч із цим пристроєм. Залиште поле порожнім для автоматичного визначення. Параметр «Залишати мультимедійний звук телефона через USB» не дає Android Auto вимкнути мультимедійний звук телефона через Bluetooth під час сеансу USB. Дзвінки тоді можуть залишитися на телефоні.</string>
     <string name="enter_bluetooth_mac">Ввести MAC-адресу Bluetooth</string>
     <string name="bluetooth_address_message">Власна адреса цього пристрою, за якою його розпізнає телефон. Знайдіть її в розділі «Налаштування» &gt; «Про пристрій» &gt; «Стан» або на сполученому телефоні під значком шестерні поруч із цим пристроєм. Залиште поле порожнім для автоматичного визначення.</string>
     <string name="invalid_bluetooth_address">Це не адреса Bluetooth. Введіть шість пар шістнадцяткових цифр, наприклад 0C:32:3A:2D:5D:4A.</string>
@@ -1127,6 +1129,7 @@
     <string name="native_ap_transport">Мережеве з\'єднання</string>
     <string name="native_ap_transport_wifi_direct">Wi-Fi Direct</string>
     <string name="native_ap_transport_hotspot">Точка доступу</string>
+    <string name="native_ap_transport_help">Вибирає мережу, до якої телефон підключається в нативному режимі Android Auto. Wi-Fi Direct, за замовчуванням: пристрій створює власну групу, і телефон приєднується до неї. Точка доступу: телефон підключається до точки доступу цього пристрою. Використовуйте її, якщо Wi-Fi Direct не підключається. Точка доступу має бути ввімкнена до підключення, якщо не ввімкнено «Автоматично вмикати точку доступу». Якщо пристрій не може прочитати налаштування точки доступу, введіть її назву й пароль нижче.</string>
     <string name="hotspot_interface_override">Мережевий інтерфейс точки доступу</string>
     <string name="hotspot_interface_override_help">Мережевий інтерфейс, через який працює точка доступу цього пристрою. Залиште поле порожнім, і додаток знайде його сам. Заповнюйте його, лише якщо журнал повідомляє, що додаток вибрав не той інтерфейс або знайшов кілька. Тоді додаток надсилає дані точки доступу, навіть якщо система повідомляє про її відсутність, тому переконайтеся, що точку доступу ввімкнено.</string>
     <string name="hotspot_interface_override_message">Залиште поле порожнім, щоб визначити інтерфейс автоматично. Вкажіть його, якщо в журналі сказано, що точкою доступу може бути кілька інтерфейсів, або вибрано не той. Назва вказана в журналі після «Providing credentials from», а також у записі з адресою вашої точки доступу в «ip -brief addr» в оболонці. Типові назви: ap0, wlan0, wlan1, wlan2, softap0, ra0.</string>
@@ -1174,7 +1177,6 @@
     <string name="btn_reset_scale">Скинути розмір кнопок</string>
     <string name="static_bssid_title">Статичний BSSID (MAC-адреса)</string>
     <string name="static_bssid_help">Адреса Wi-Fi (BSSID), яку телефон отримує для мережі цього пристрою. Залиште поле порожнім, і додаток визначить адресу сам. Вводьте адресу, лише якщо журнал повідомляє, що жодне джерело не повернуло адресу. З Wi-Fi Direct рядок задає адресу групи. З точкою доступу він задає адресу точки доступу. Адреса, прочитана додатком, завжди має пріоритет над введеною.</string>
-    <string name="native_ap_transport_hint">Телефон підключається до власної точки доступу пристрою, а не до групи Wi-Fi Direct. Увімкніть її перед підключенням.</string>
     <string name="hotspot_band">Діапазон точки доступу</string>
     <string name="hotspot_band_auto">Авто</string>
     <string name="hotspot_band_5ghz">Лише 5 ГГц</string>
@@ -1306,10 +1308,10 @@
     <string name="onb_audio_focus_title">Аудіофокус</string>
     <string name="onb_audio_more_hint">Це можна змінити пізніше в «Налаштування → Аудіопотоки».</string>
     <string name="native_driver_selection_title">Вибір водія</string>
-    <string name="native_driver_selection_summary">Виберіть, який телефон підключати, якщо в автомобілі є кілька спарених телефонів водіїв.</string>
     <string name="native_driver_selection_mode_off">Вимкнено</string>
     <string name="native_driver_selection_mode_auto">Авто</string>
     <string name="native_driver_selection_mode_always">Завжди запитувати</string>
+    <string name="native_driver_selection_help">Визначає, коли додаток запитує, який телефон використовувати. Вимкнено: під час запуску не запитує, а кнопка WiFi підключає найімовірніший телефон. Авто: запитує, лише якщо не може визначити ведучий телефон. Якщо через Bluetooth підключено один телефон, використовується він. Завжди запитувати: запитує під час кожного запуску, якщо сполучено кілька телефонів. Найімовірніший телефон: підключений, потім «Бажаний телефон», потім останній використаний.</string>
     <string name="native_driver_selection_timeout">Таймер автопідключення</string>
     <string name="native_driver_selection_timeout_help">Коли відкривається список ведучих пристроїв, іде зворотний відлік, після чого підключається найімовірніший телефон. Тут задають відлік від 3 до 30 секунд. Торкніться телефону до кінця відліку, щоб вибрати його самостійно.</string>
     <string name="native_driver_preferred_device">Бажаний телефон</string>

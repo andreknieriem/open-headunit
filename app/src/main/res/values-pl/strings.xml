@@ -121,7 +121,9 @@
     <string name="reconnection_required_title">Wymagane ponowne połączenie</string>
     <string name="reconnection_required_message">Urządzenie jest w stanie oczekiwania. Odłącz i podłącz ponownie kabel USB, aby zrestartować Android Auto.</string>
 
-    <string name="bluetooth_address_s">Adres Bluetooth</string>
+    <string name="bluetooth_address_s">Adres Bluetooth stacji</string>
+    <string name="bluetooth_address_summary">Adres, po którym telefon rozpoznaje tę stację.</string>
+    <string name="bluetooth_address_help">Własny adres Bluetooth tej stacji. Telefon rozpoznaje po nim stację w każdym trybie połączenia. Znajdziesz go w Ustawienia, Informacje, Stan lub na sparowanym telefonie pod ikoną koła zębatego obok tego urządzenia. Pozostaw puste, aby wykryć automatycznie. Opcja „Pozostaw dźwięk multimediów telefonu przez USB” nie pozwala, by Android Auto wyłączył dźwięk multimediów Bluetooth telefonu podczas sesji USB. Połączenia mogą wtedy zostać w telefonie.</string>
     <string name="enter_bluetooth_mac">Wprowadź adres MAC Bluetooth</string>
     <string name="bluetooth_address_message">Adres Bluetooth tej stacji, używany przez telefon do jej identyfikacji. Znajdziesz go w: Ustawienia > Informacje > Stan lub w telefonie, dotykając ikony koła zębatego obok sparowanego urządzenia. Pozostaw puste, aby wykryć automatycznie.</string>
     <string name="invalid_bluetooth_address">To nie jest adres Bluetooth. Wprowadź sześć par cyfr szesnastkowych, na przykład 0C:32:3A:2D:5D:4A.</string>
@@ -1131,6 +1133,7 @@
     <string name="native_ap_transport">Transport sieciowy</string>
     <string name="native_ap_transport_wifi_direct">WiFi Direct</string>
     <string name="native_ap_transport_hotspot">Hotspot</string>
+    <string name="native_ap_transport_help">Wybiera sieć, do której dołącza telefon w trybie Natywny Android Auto. WiFi Direct, domyślnie: stacja tworzy własną grupę WiFi Direct, a telefon do niej dołącza. Hotspot: telefon dołącza zamiast tego do hotspotu stacji. Użyj go, gdy WiFi Direct się nie łączy. Hotspot musi być włączony przed połączeniem, chyba że włączone jest „Automatycznie włącz hotspot”. Jeśli stacja nie odczyta ustawień hotspotu, wpisz nazwę i hasło hotspotu w wierszach poniżej.</string>
     <string name="hotspot_interface_override">Interfejs sieciowy hotspotu</string>
     <string name="hotspot_interface_override_help">Interfejs sieciowy, przez który działa hotspot tej stacji. Pozostaw puste, a aplikacja sama go znajdzie. Ustaw go tylko wtedy, gdy log mówi, że aplikacja wybrała zły interfejs albo znalazła więcej niż jeden. Aplikacja wysyła wtedy dane hotspotu, nawet jeśli system nie zgłasza hotspotu, więc upewnij się, że hotspot jest włączony.</string>
     <string name="hotspot_interface_override_message">Pozostaw puste, aby wykryć interfejs automatycznie. Wpisz nazwę, jeśli w logach widnieje kilka interfejsów hotspotu lub wybierany jest niewłaściwy. Nazwę znajdziesz w logach po komunikacie „Providing credentials from” albo w wierszu poleceń po wpisaniu „ip -brief addr”. Typowe nazwy: ap0, wlan0, wlan1, wlan2, softap0, ra0.</string>
@@ -1178,7 +1181,6 @@
     <string name="btn_reset_scale">Zresetuj rozmiar przycisków</string>
     <string name="static_bssid_title">Statyczny BSSID (adres MAC)</string>
     <string name="static_bssid_help">Adres Wi-Fi (BSSID), który telefon dostaje dla sieci tej stacji. Pozostaw puste, a aplikacja sama odczyta adres. Wpisz go tylko wtedy, gdy log mówi, że żadne źródło nie podało adresu. Przy Wi-Fi Direct wiersz ustawia adres grupy. Przy hotspocie ustawia adres hotspotu. Adres odczytany przez aplikację zawsze ma pierwszeństwo przed wpisanym.</string>
-    <string name="native_ap_transport_hint">Telefon łączy się z hotspotem tego urządzenia zamiast z grupą WiFi Direct. Włącz go przed połączeniem.</string>
     <string name="hotspot_band">Pasmo hotspotu</string>
     <string name="hotspot_band_auto">Automatycznie</string>
     <string name="hotspot_band_5ghz">Tylko 5 GHz</string>
@@ -1310,10 +1312,10 @@
     <string name="onb_audio_focus_title">Fokus audio</string>
     <string name="onb_audio_more_hint">Możesz to później zmienić w Ustawienia → Strumienie dźwięku.</string>
     <string name="native_driver_selection_title">Wybór kierowcy</string>
-    <string name="native_driver_selection_summary">Wybierz, który telefon ma się połączyć, gdy w pojeździe znajduje się kilku sparowanych kierowców.</string>
     <string name="native_driver_selection_mode_off">Wyłączone</string>
     <string name="native_driver_selection_mode_auto">Automatycznie</string>
     <string name="native_driver_selection_mode_always">Zawsze pytaj</string>
+    <string name="native_driver_selection_help">Wybiera, kiedy aplikacja pyta, którego telefonu użyć. Wyłączone: aplikacja nigdy nie pyta po otwarciu, a przycisk WiFi łączy z najbardziej prawdopodobnym telefonem. Automatycznie: pyta tylko wtedy, gdy nie wie, który telefon jest kierowcą. Jeśli przez Bluetooth jest połączony jeden telefon, używa go. Zawsze pytaj: pyta przy każdym otwarciu, gdy sparowano więcej telefonów. Najbardziej prawdopodobny jest połączony telefon, potem „Preferowany telefon”, potem ostatnio używany.</string>
     <string name="native_driver_selection_timeout">Odliczanie do automatycznego połączenia</string>
     <string name="native_driver_selection_timeout_help">Gdy otwiera się lista kierowcy, odlicza czas, a potem łączy się z najbardziej prawdopodobnym telefonem. Tu ustawiasz odliczanie, od 3 do 30 sekund. Dotknij telefonu przed końcem, aby wybrać go samodzielnie.</string>
     <string name="native_driver_preferred_device">Preferowany telefon</string>
@@ -1473,7 +1475,7 @@
     <string name="wifi_direct_last_network_differs">Nazwa lub hasło różnią się od żądanych przez aplikację, ponieważ zostały nadpisane przez system. Użyj powyższej opcji „Nowa tożsamość sieci Wi-Fi Direct”, aby wygenerować nową parę danych.</string>
     <string name="wifi_direct_last_network_hint">Ręczne dołączenie do tej sieci na telefonie nie uruchamia Android Auto, ponieważ telefon dołącza do niej sam, gdy tylko zostanie skonfigurowany przez Bluetooth. To tylko sposób, by sprawdzić, czy sieć w ogóle działa.</string>
     <string name="wifi_direct_group_identity">Nazwa i hasło Wi-Fi Direct</string>
-    <string name="wifi_direct_group_identity_help">Nazwa i hasło Wi-Fi Direct, które telefon dostaje, aby połączyć się z tą stacją. Pozwól aplikacji je wybrać albo wpisz własne. Wygeneruj nowe sprawia, że aplikacja wybiera nową parę. Jeśli zmienisz hasło, aplikacja zmieni też nazwę, bo telefon nie może ponownie połączyć się z siecią o tej samej nazwie i nowym haśle.</string>
+    <string name="wifi_direct_group_identity_help">Nazwa i hasło Wi-Fi Direct, które telefon dostaje, aby połączyć się z tą stacją. Pozwól aplikacji je wybrać albo wpisz własne. „Wygeneruj nowe” sprawia, że aplikacja wybiera nową parę. Jeśli zmienisz hasło, aplikacja zmieni też nazwę, bo telefon nie może ponownie połączyć się z siecią o tej samej nazwie i nowym haśle.</string>
     <string name="wifi_direct_group_identity_auto">Wybrane przez aplikację. Dotknij, aby ustawić własne.</string>
     <string name="wifi_direct_group_identity_pick_new">Wygeneruj nowe</string>
     <string name="wifi_direct_group_identity_message">Nazwa i hasło, które otrzymuje Twój telefon, aby połączyć się z tą jednostką główną. Zmiana hasła zmienia też nazwę, ponieważ telefon nie może ponownie dołączyć do sieci, której nazwa się nie zmieniła, a hasło tak.</string>

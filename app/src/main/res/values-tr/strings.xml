@@ -127,7 +127,9 @@
     <string name="reconnection_required_title">Yeniden Bağlantı Gerekli</string>
     <string name="reconnection_required_message">Cihaz bekleme durumunda. Android Auto\'yu tekrar başlatmak için lütfen USB kablosunu çıkarıp tekrar takın.</string>
 
-    <string name="bluetooth_address_s">Bluetooth adresi</string>
+    <string name="bluetooth_address_s">Ünitenin Bluetooth adresi</string>
+    <string name="bluetooth_address_summary">Telefonun bu üniteyi tanımak için kullandığı adres.</string>
+    <string name="bluetooth_address_help">Bu ünitenin kendi Bluetooth adresi. Telefon, her bağlantı modunda üniteyi bu adresle tanır. Ayarlar, Hakkında, Durum bölümünde ya da eşleştirilmiş telefonda bu cihazın yanındaki dişli simgesinde bulabilirsiniz. Otomatik algılanması için boş bırakın. “USB\'de telefonun medya sesini açık tut” seçeneği, USB oturumunda Android Auto\'nun telefonun Bluetooth medya sesini kapatmasını engeller. Aramalar bu durumda telefonda kalabilir.</string>
     <string name="enter_bluetooth_mac">Bluetooth MAC adresi girin</string>
     <string name="bluetooth_address_message">Bu cihazın kendi adresi; telefon onu bu adresle tanır. Ayarlar, Hakkında, Durum bölümünde ya da eşleştirilmiş telefonda bu cihazın yanındaki dişli simgesinde bulabilirsiniz. Otomatik olarak algılanması için boş bırakın.</string>
     <string name="invalid_bluetooth_address">Bu bir Bluetooth adresi değil. Altı çift onaltılık rakam girin, örneğin 0C:32:3A:2D:5D:4A.</string>
@@ -1119,6 +1121,7 @@
     <string name="native_ap_transport">Ağ aktarım yöntemi</string>
     <string name="native_ap_transport_wifi_direct">Wi-Fi Direct</string>
     <string name="native_ap_transport_hotspot">Erişim noktası</string>
+    <string name="native_ap_transport_help">Telefonun Android Auto\'nun Yerel (Native) modunda katılacağı ağı seçer. Wi-Fi Direct, varsayılan: bu ünite kendi Wi-Fi Direct grubunu oluşturur, telefon da ona katılır. Erişim noktası: telefon bunun yerine bu ünitenin erişim noktasına katılır. Wi-Fi Direct bağlanmazsa bunu kullanın. “Erişim Noktasını Otomatik Aç” açık değilse, bağlanmadan önce erişim noktası açık olmalıdır. Ünite erişim noktası ayarlarını okuyamazsa, erişim noktası adını ve parolasını aşağıdaki satırlara yazın.</string>
     <string name="hotspot_interface_override">Erişim noktası ağ arayüzü</string>
     <string name="hotspot_interface_override_help">Bu ünitenin hotspot\'unu taşıyan ağ arayüzü. Boş bırakırsanız uygulama kendisi bulur. Yalnızca günlük uygulamanın yanlış arayüzü seçtiğini veya birden fazla bulduğunu söylüyorsa doldurun. Uygulama bu durumda sistem hotspot yok dese bile hotspot bilgilerini gönderir; bu yüzden hotspot\'un açık olduğundan emin olun.</string>
     <string name="hotspot_interface_override_message">Otomatik belirlenmesi için boş bırakın. Günlükte erişim noktası olabilecek birden fazla arayüz görünüyorsa veya yanlış arayüz seçiliyorsa bunu ayarlayın. Ad, günlükte \"Providing credentials from\" ifadesinden sonra bildirilen addır. Ya da kabukta \"ip -brief addr\" çıktısında erişim noktanızın adresini içeren satırdaki addır. Yaygın adlar: ap0, wlan0, wlan1, wlan2, softap0, ra0.</string>
@@ -1166,7 +1169,6 @@
     <string name="btn_reset_scale">Düğme Boyutunu Sıfırla</string>
     <string name="static_bssid_title">Statik BSSID (MAC Adresi)</string>
     <string name="static_bssid_help">Telefonun bu ünitenin ağı için aldığı Wi-Fi adresi (BSSID). Boş bırakırsanız uygulama adresi kendisi okur. Yalnızca günlük hiçbir kaynağın adres bildirmediğini söylüyorsa bir adres yazın. Wi-Fi Direct ile bu satır grubun adresini, hotspot ile hotspot\'un adresini belirler. Uygulamanın okuduğu adres her zaman yazılandan önce gelir.</string>
-    <string name="native_ap_transport_hint">Telefon, Wi-Fi Direct grubu yerine bu cihazın kendi erişim noktasına katılır. Bağlanmadan önce erişim noktasını açın.</string>
     <string name="hotspot_band">Erişim noktası bandı</string>
     <string name="hotspot_band_auto">Otomatik</string>
     <string name="hotspot_band_5ghz">Yalnızca 5 GHz</string>
@@ -1298,10 +1300,10 @@
     <string name="onb_audio_focus_title">Ses odağı</string>
     <string name="onb_audio_more_hint">Bunları daha sonra Ayarlar → Ses akışları bölümünden değiştirebilirsiniz.</string>
     <string name="native_driver_selection_title">Sürücü Seçimi</string>
-    <string name="native_driver_selection_summary">Araçta birden fazla eşleşmiş sürücü olduğunda hangi telefonun bağlanacağını seçin.</string>
     <string name="native_driver_selection_mode_off">Devre Dışı</string>
     <string name="native_driver_selection_mode_auto">Otomatik</string>
     <string name="native_driver_selection_mode_always">Her Zaman Sor</string>
+    <string name="native_driver_selection_help">Birden fazla eşleşmiş telefon sürücü olabildiğinde uygulamanın hangi telefonun kullanılacağını ne zaman soracağını seçer. Devre Dışı: uygulama açılışta hiç sormaz, WiFi düğmesi en olası telefona bağlanır. Otomatik: uygulama yalnızca sürücünün hangi telefon olduğunu anlayamazsa sorar. Bluetooth ile tek telefon bağlıysa onu kullanır. Her Zaman Sor: birden fazla telefon eşleşmişse uygulama her açılışta sorar. En olası telefon bağlı olandır, sonra “Tercih Edilen Telefon”, sonra en son kullanılan.</string>
     <string name="native_driver_selection_timeout">Otomatik Bağlantı Geri Sayımı</string>
     <string name="native_driver_selection_timeout_help">Sürücü listesi açıldığında geri sayım yapar ve ardından en olası telefona bağlanır. Bu, 3 ile 30 saniye arasında geri sayımı ayarlar. Kendiniz seçmek için bitmeden önce bir telefona dokunun.</string>
     <string name="native_driver_preferred_device">Tercih Edilen Telefon</string>
@@ -1461,7 +1463,7 @@
     <string name="wifi_direct_last_network_differs">Bu, uygulamanın istediği ad ve şifre değil; sistem onları geçersiz kıldı. Sistemin yeni bir ad ve şifre kullanması için yukarıdaki \"Yeni Wi-Fi Direct ağ kimliği\" seçeneğini kullanın.</string>
     <string name="wifi_direct_last_network_hint">Bu ağa telefonunuzda elle katılmak Android Auto\'yu başlatmaz, çünkü telefon Bluetooth üzerinden ayarlandıktan sonra ağa kendisi katılır. Bu yalnızca ağın hiç çalışıp çalışmadığını denetlemenin bir yoludur.</string>
     <string name="wifi_direct_group_identity">Wi-Fi Direct adı ve şifresi</string>
-    <string name="wifi_direct_group_identity_help">Telefonun bu üniteye katılmak için aldığı Wi-Fi Direct adı ve parolası. Uygulamanın seçmesine izin verin veya kendiniz yazın. Benim için yenilerini seç, uygulamanın yeni bir çift seçmesini sağlar. Parolayı değiştirirseniz uygulama adı da değiştirir; çünkü telefon aynı adlı ve yeni parolalı bir ağa yeniden katılamaz.</string>
+    <string name="wifi_direct_group_identity_help">Telefonun bu üniteye katılmak için aldığı Wi-Fi Direct adı ve parolası. Uygulamanın seçmesine izin verin veya kendiniz yazın. “Benim için yenilerini seç”, uygulamanın yeni bir çift seçmesini sağlar. Parolayı değiştirirseniz uygulama adı da değiştirir; çünkü telefon aynı adlı ve yeni parolalı bir ağa yeniden katılamaz.</string>
     <string name="wifi_direct_group_identity_auto">Uygulama seçti. Kendi adınızı ve şifrenizi ayarlamak için dokunun.</string>
     <string name="wifi_direct_group_identity_pick_new">Benim için yenilerini seç</string>
     <string name="wifi_direct_group_identity_message">Telefonunuza bu ana üniteye katılması için verilen ad ve şifre. Şifreyi değiştirmek adı da değiştirir, çünkü telefon adı aynı kalıp şifresi değişen bir ağa yeniden katılamaz.</string>

@@ -368,7 +368,9 @@
     <string name="reconnection_required_title">Perlu Menghubungkan Ulang</string>
     <string name="reconnection_required_message">Perangkat sedang dalam status menunggu. Silakan cabut dan colokkan kembali kabel USB untuk memulai Android Auto lagi.</string>
 
-    <string name="bluetooth_address_s">Alamat Bluetooth</string>
+    <string name="bluetooth_address_s">Alamat Bluetooth head unit</string>
+    <string name="bluetooth_address_summary">Alamat yang dipakai ponsel untuk mengenali head unit ini.</string>
+    <string name="bluetooth_address_help">Alamat Bluetooth milik head unit ini. Ponsel memakainya untuk mengenali unit ini di setiap mode koneksi. Temukan di Pengaturan, Tentang, Status, atau pada ponsel yang dipasangkan di bawah ikon roda gigi di samping perangkat ini. Biarkan kosong untuk mendeteksi otomatis. Opsi “Pertahankan audio media ponsel lewat USB” mencegah Android Auto mematikan audio media Bluetooth ponsel saat sesi USB. Panggilan telepon mungkin tetap ada di ponsel.</string>
     <string name="enter_bluetooth_mac">Masukkan MAC Bluetooth</string>
     <string name="bluetooth_address_message">Alamat perangkat head unit ini yang digunakan ponsel untuk mengenalinya. Temukan di Pengaturan, Tentang, Status, atau pada ponsel yang dipasangkan di bawah ikon roda gigi di samping perangkat ini. Biarkan kosong untuk mendeteksi secara otomatis.</string>
     <string name="invalid_bluetooth_address">Itu bukan alamat Bluetooth yang valid. Masukkan enam pasang digit heksadesimal, seperti 0C:32:3A:2D:5D:4A.</string>
@@ -1066,7 +1068,7 @@
     <string name="wifi_direct_last_network_differs">Ini bukan nama dan kata sandi yang diminta aplikasi, sehingga sistem menggantinya. Gunakan \"Identitas jaringan Wi-Fi Direct baru\" di atas untuk membuat pasangan baru.</string>
     <string name="wifi_direct_last_network_hint">Bergabung ke jaringan ini secara manual di ponsel Anda tidak akan memulai Android Auto, karena ponsel akan bergabung sendiri setelah disiapkan melalui Bluetooth. Ini adalah cara untuk memeriksa apakah jaringan berfungsi sama sekali.</string>
     <string name="wifi_direct_group_identity">Nama dan kata sandi Wi-Fi Direct</string>
-    <string name="wifi_direct_group_identity_help">Nama dan kata sandi Wi-Fi Direct yang diterima ponsel untuk bergabung ke unit ini. Biarkan aplikasi memilihnya, atau ketik sendiri. Pilihkan yang baru untuk saya membuat aplikasi memilih pasangan baru. Jika Anda mengubah kata sandi, aplikasi juga mengubah nama, karena ponsel tidak bisa bergabung lagi ke jaringan dengan nama sama dan kata sandi baru.</string>
+    <string name="wifi_direct_group_identity_help">Nama dan kata sandi Wi-Fi Direct yang diterima ponsel untuk bergabung ke unit ini. Biarkan aplikasi memilihnya, atau ketik sendiri. “Pilihkan yang baru untuk saya” membuat aplikasi memilih pasangan baru. Jika Anda mengubah kata sandi, aplikasi juga mengubah nama, karena ponsel tidak bisa bergabung lagi ke jaringan dengan nama sama dan kata sandi baru.</string>
     <string name="wifi_direct_group_identity_auto">Dipilih oleh aplikasi. Ketuk untuk mengatur sendiri.</string>
     <string name="wifi_direct_group_identity_pick_new">Pilihkan yang baru untuk saya</string>
     <string name="wifi_direct_group_identity_message">Nama dan kata sandi yang diberikan kepada ponsel Anda untuk bergabung dengan head unit ini. Mengubah kata sandi juga mengubah nama, karena ponsel tidak dapat bergabung kembali ke jaringan yang namanya tetap sama namun kata sandinya berbeda.</string>
@@ -1263,7 +1265,7 @@
     <string name="native_ap_transport">Jalur jaringan</string>
     <string name="native_ap_transport_wifi_direct">Wi-Fi Direct</string>
     <string name="native_ap_transport_hotspot">Hotspot</string>
-    <string name="native_ap_transport_hint">Ponsel bergabung ke hotspot perangkat ini sendiri alih-alih grup Wi-Fi Direct. Aktifkan hotspot sebelum menghubungkan.</string>
+    <string name="native_ap_transport_help">Memilih jaringan tempat ponsel bergabung dalam mode Native Android Auto. Wi-Fi Direct, bawaan: unit ini membuat grup Wi-Fi Direct sendiri, lalu ponsel bergabung. Hotspot: ponsel bergabung ke hotspot unit ini. Gunakan jika Wi-Fi Direct tidak tersambung. Hotspot harus aktif sebelum Anda menyambung, kecuali “Aktifkan Hotspot Otomatis” aktif. Jika unit ini tidak bisa membaca pengaturan hotspot, ketik nama dan kata sandi hotspot di baris di bawah.</string>
     <string name="hotspot_band">Pita hotspot</string>
     <string name="hotspot_band_auto">Otomatis</string>
     <string name="hotspot_band_5ghz">Khusus 5 GHz</string>
@@ -1489,10 +1491,10 @@
     <string name="failed_aa_not_system">Gagal: Android Auto tidak terpasang sebagai aplikasi sistem!</string>
     <string name="failed_aa_not_installed">Gagal: Android Auto tidak terpasang!</string>
     <string name="native_driver_selection_title">Pemilihan Pengemudi</string>
-    <string name="native_driver_selection_summary">Pilih ponsel mana yang akan dihubungkan saat beberapa ponsel pengemudi yang disandingkan berada di dalam kendaraan.</string>
     <string name="native_driver_selection_mode_off">Dinonaktifkan</string>
     <string name="native_driver_selection_mode_auto">Otomatis</string>
     <string name="native_driver_selection_mode_always">Selalu Tanya</string>
+    <string name="native_driver_selection_help">Memilih kapan aplikasi bertanya ponsel mana yang dipakai. Dinonaktifkan: tidak pernah bertanya saat dibuka, dan tombol WiFi menyambung ke ponsel yang paling mungkin. Otomatis: bertanya hanya jika tidak tahu ponsel mana yang driver. Jika satu ponsel tersambung lewat Bluetooth, ponsel itu dipakai. Selalu Tanya: bertanya setiap kali dibuka jika ada lebih dari satu ponsel dipasangkan. Yang paling mungkin adalah ponsel yang tersambung, lalu “Ponsel Pilihan”, lalu yang terakhir dipakai.</string>
     <string name="native_driver_selection_timeout">Hitung Mundur Hubungkan Otomatis</string>
     <string name="native_driver_selection_timeout_help">Saat daftar driver terbuka, daftar menghitung mundur lalu tersambung ke ponsel yang paling mungkin. Ini mengatur hitungan mundurnya, dari 3 hingga 30 detik. Ketuk sebuah ponsel sebelum waktu habis untuk memilihnya sendiri.</string>
     <string name="native_driver_preferred_device">Ponsel Pilihan</string>

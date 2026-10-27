@@ -121,7 +121,9 @@
     <string name="reconnection_required_title">Reconectare necesară</string>
     <string name="reconnection_required_message">Dispozitivul este în așteptare. Deconectează și reconectează cablul USB pentru a reporni Android Auto.</string>
 
-    <string name="bluetooth_address_s">Adresă Bluetooth</string>
+    <string name="bluetooth_address_s">Adresa Bluetooth a unității</string>
+    <string name="bluetooth_address_summary">Adresa după care telefonul recunoaște această unitate.</string>
+    <string name="bluetooth_address_help">Adresa Bluetooth proprie a acestei unități. Telefonul o folosește ca s-o recunoască, în orice mod de conectare. O găsești în Setări, Despre, Stare sau pe telefonul asociat, sub pictograma roată dințată de lângă acest dispozitiv. Lasă gol pentru detectare automată. Opțiunea „Păstrează activ audio media al telefonului prin USB” împiedică Android Auto să oprească audio media Bluetooth al telefonului într-o sesiune USB. Apelurile pot rămâne atunci pe telefon.</string>
     <string name="enter_bluetooth_mac">Introdu adresa MAC Bluetooth</string>
     <string name="bluetooth_address_message">Adresa proprie a acestei unități, după care o recunoaște telefonul. O găsești în Setări, Despre, Stare sau pe telefonul asociat, sub pictograma roată dințată de lângă acest dispozitiv. Lasă gol pentru detectare automată.</string>
     <string name="invalid_bluetooth_address">Aceasta nu este o adresă Bluetooth. Introdu șase perechi de cifre hexazecimale, de exemplu 0C:32:3A:2D:5D:4A.</string>
@@ -1122,6 +1124,7 @@
     <string name="native_ap_transport">Transport în rețea</string>
     <string name="native_ap_transport_wifi_direct">WiFi Direct</string>
     <string name="native_ap_transport_hotspot">Hotspot</string>
+    <string name="native_ap_transport_help">Alege rețeaua la care se alătură telefonul în modul nativ Android Auto. WiFi Direct, implicit: această unitate creează propriul grup WiFi Direct, iar telefonul se alătură lui. Hotspot: telefonul se alătură hotspotului acestei unități. Folosește-l când WiFi Direct nu se conectează. Hotspotul trebuie să fie pornit înainte de conectare, dacă „Activare automată hotspot” nu este activ. Dacă unitatea nu poate citi setările hotspotului, scrie numele și parola hotspotului în rândurile de mai jos.</string>
     <string name="hotspot_interface_override">Interfața de rețea a hotspotului</string>
     <string name="hotspot_interface_override_help">Interfața de rețea care poartă hotspotul acestei unități. Lasă câmpul gol și aplicația o găsește singură. Completeaz-o doar când jurnalul spune că aplicația a ales interfața greșită sau a găsit mai multe. Aplicația trimite apoi datele hotspotului chiar dacă sistemul raportează că nu există hotspot, așa că verifică dacă hotspotul este pornit.</string>
     <string name="hotspot_interface_override_message">Lăsați gol pentru detectare automată. Completați dacă jurnalul indică mai multe interfețe posibile pentru punctul de acces sau o alege pe cea greșită. Numele este cel raportat în jurnal după „Providing credentials from” sau intrarea care conține adresa hotspotului în „ip -brief addr”, rulat dintr-un shell. Nume uzuale: ap0, wlan0, wlan1, wlan2, softap0, ra0.</string>
@@ -1169,7 +1172,6 @@
     <string name="btn_reset_scale">Resetează dimensiunea butoanelor</string>
     <string name="static_bssid_title">BSSID static (Adresă MAC)</string>
     <string name="static_bssid_help">Adresa Wi-Fi (BSSID) pe care o primește telefonul pentru rețeaua acestei unități. Lasă câmpul gol și aplicația citește singură adresa. Scrie una doar când jurnalul spune că nicio sursă nu a raportat o adresă. Cu Wi-Fi Direct, rândul setează adresa grupului. Cu hotspotul, setează adresa hotspotului. O adresă citită de aplicație are mereu prioritate față de una scrisă.</string>
-    <string name="native_ap_transport_hint">Telefonul se conectează la hotspotul acestui dispozitiv în loc de un grup WiFi Direct. Porniți-l înainte de conectare.</string>
     <string name="hotspot_band">Bandă hotspot</string>
     <string name="hotspot_band_auto">Automat</string>
     <string name="hotspot_band_5ghz">Doar 5 GHz</string>
@@ -1301,10 +1303,10 @@
     <string name="onb_audio_focus_title">Focalizare audio</string>
     <string name="onb_audio_more_hint">Poți schimba acestea mai târziu din Setări → Fluxuri audio.</string>
     <string name="native_driver_selection_title">Selectare șofer</string>
-    <string name="native_driver_selection_summary">Alege ce telefon se conectează atunci când în vehicul sunt mai mulți șoferi asociați.</string>
     <string name="native_driver_selection_mode_off">Dezactivat</string>
     <string name="native_driver_selection_mode_auto">Automat</string>
     <string name="native_driver_selection_mode_always">Întreabă mereu</string>
+    <string name="native_driver_selection_help">Alege când întreabă aplicația ce telefon să folosească. Dezactivat: nu întreabă niciodată la deschidere, iar butonul WiFi conectează telefonul cel mai probabil. Automat: întreabă doar dacă nu poate stabili care este telefonul șoferului. Cu un singur telefon conectat prin Bluetooth, îl folosește pe acela. Întreabă mereu: întreabă la fiecare deschidere dacă sunt asociate mai multe telefoane. Cel mai probabil este telefonul conectat, apoi „Telefon preferat”, apoi ultimul folosit.</string>
     <string name="native_driver_selection_timeout">Numărătoare inversă conectare automată</string>
     <string name="native_driver_selection_timeout_help">Când se deschide lista de telefoane, ea numără invers și apoi se conectează la cel mai probabil telefon. Aici stabilești numărătoarea inversă, de la 3 la 30 de secunde. Atinge un telefon înainte de final ca să-l alegi singur.</string>
     <string name="native_driver_preferred_device">Telefon preferat</string>
@@ -1464,7 +1466,7 @@
     <string name="wifi_direct_last_network_differs">Acesta nu este numele și parola cerute de aplicație, așa că sistemul le-a înlocuit. Folosește „Identitate nouă de rețea Wi-Fi Direct” de mai sus, ca sistemul să preia o pereche nouă.</string>
     <string name="wifi_direct_last_network_hint">Conectarea manuală la această rețea de pe telefon nu pornește Android Auto, pentru că telefonul se conectează singur după ce a fost configurat prin Bluetooth. Este doar o modalitate de a verifica dacă rețeaua funcționează.</string>
     <string name="wifi_direct_group_identity">Nume și parolă Wi-Fi Direct</string>
-    <string name="wifi_direct_group_identity_help">Numele și parola Wi-Fi Direct pe care le primește telefonul ca să se conecteze la această unitate. Lasă aplicația să le aleagă sau scrie-le tu. Alege altele noi face aplicația să aleagă o pereche nouă. Dacă schimbi parola, aplicația schimbă și numele, deoarece un telefon nu se poate reconecta la o rețea cu același nume și o parolă nouă.</string>
+    <string name="wifi_direct_group_identity_help">Numele și parola Wi-Fi Direct pe care le primește telefonul ca să se conecteze la această unitate. Lasă aplicația să le aleagă sau scrie-le tu. „Alege altele noi” face aplicația să aleagă o pereche nouă. Dacă schimbi parola, aplicația schimbă și numele, deoarece un telefon nu se poate reconecta la o rețea cu același nume și o parolă nouă.</string>
     <string name="wifi_direct_group_identity_auto">Alese de aplicație. Atinge pentru a le seta pe ale tale.</string>
     <string name="wifi_direct_group_identity_pick_new">Alege altele noi</string>
     <string name="wifi_direct_group_identity_message">Numele și parola pe care le primește telefonul pentru a se conecta la această unitate auto. Schimbarea parolei schimbă și numele, pentru că un telefon nu se poate reconecta la o rețea al cărei nume a rămas la fel, dar a cărei parolă s-a schimbat.</string>

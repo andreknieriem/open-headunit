@@ -121,7 +121,9 @@
     <string name="reconnection_required_title">Reconexión necesaria</string>
     <string name="reconnection_required_message">El dispositivo está en espera. Desconecta y vuelve a conectar el cable USB para reiniciar Android Auto.</string>
 
-    <string name="bluetooth_address_s">Dirección Bluetooth</string>
+    <string name="bluetooth_address_s">Dirección Bluetooth de la unidad</string>
+    <string name="bluetooth_address_summary">La dirección con la que el móvil reconoce esta unidad.</string>
+    <string name="bluetooth_address_help">La dirección Bluetooth propia de esta unidad. El móvil la usa para reconocerla, en todos los modos de conexión. La encontrarás en Ajustes, Información, Estado, o en el móvil emparejado bajo el engranaje junto a este dispositivo. Déjalo vacío para detectarla automáticamente. La opción «Mantener el audio multimedia del móvil por USB» evita que Android Auto desactive el audio multimedia Bluetooth del móvil en una sesión USB. Las llamadas pueden quedarse en el móvil.</string>
     <string name="enter_bluetooth_mac">Introduce la MAC de Bluetooth</string>
     <string name="bluetooth_address_message">La dirección propia de esta unidad, con la que el teléfono la reconoce. La encontrarás en Ajustes, Información, Estado, o en el teléfono emparejado bajo el engranaje junto a este dispositivo. Déjalo vacío para detectarla automáticamente.</string>
     <string name="invalid_bluetooth_address">Eso no es una dirección Bluetooth. Introduce seis pares de dígitos hexadecimales, como 0C:32:3A:2D:5D:4A.</string>
@@ -1141,6 +1143,7 @@
     <string name="native_ap_transport">Transporte de red</string>
     <string name="native_ap_transport_wifi_direct">Wi-Fi Direct</string>
     <string name="native_ap_transport_hotspot">Punto de acceso</string>
+    <string name="native_ap_transport_help">Elige la red a la que se une el móvil en el modo nativo de Android Auto. Wi-Fi Direct, el valor predeterminado: esta unidad crea su propio grupo y el móvil se une a él. Punto de acceso: el móvil se une al punto de acceso de esta unidad. Úsalo si Wi-Fi Direct no conecta. El punto de acceso debe estar activado antes de conectar, salvo que «Punto de acceso automático» esté activado. Si la unidad no puede leer sus ajustes, escribe el nombre y la contraseña en las filas de abajo.</string>
     <string name="hotspot_interface_override">Interfaz de red del punto de acceso</string>
     <string name="hotspot_interface_override_help">La interfaz de red que lleva el punto de acceso de esta unidad. Déjala vacía y la app la encuentra. Escríbela solo si el registro dice que la app eligió la interfaz equivocada o encontró más de una. Entonces la app envía los datos del punto de acceso aunque el sistema no informe ninguno, así que asegúrate de que esté activado.</string>
     <string name="hotspot_interface_override_message">Déjalo en blanco para detectarla automáticamente. Indícala si el registro dice que más de una interfaz podría ser el punto de acceso, o si elige la equivocada. El nombre es el que el registro muestra después de \"Providing credentials from\", o la entrada que contiene la dirección de tu punto de acceso en \"ip -brief addr\" desde una shell. Nombres habituales: ap0, wlan0, wlan1, wlan2, softap0, ra0.</string>
@@ -1188,7 +1191,6 @@
     <string name="btn_reset_scale">Restablecer tamaño</string>
     <string name="static_bssid_title">BSSID estático (dirección MAC)</string>
     <string name="static_bssid_help">La dirección Wi-Fi (BSSID) que recibe el móvil para la red de esta unidad. Déjala vacía y la app lee la dirección por sí misma. Escribe una solo si el registro dice que ninguna fuente informó una dirección. Con Wi-Fi Direct, la fila define la dirección del grupo. Con el punto de acceso, define la dirección del punto de acceso. Una dirección que lee la app siempre tiene prioridad sobre una escrita.</string>
-    <string name="native_ap_transport_hint">El teléfono se conecta al punto de acceso de este dispositivo en lugar de a un grupo Wi-Fi Direct. Actívalo antes de conectar.</string>
     <string name="hotspot_band">Banda del punto de acceso</string>
     <string name="hotspot_band_auto">Automático</string>
     <string name="hotspot_band_5ghz">Solo 5 GHz</string>
@@ -1320,10 +1322,10 @@
     <string name="onb_audio_focus_title">Enfoque de audio</string>
     <string name="onb_audio_more_hint">Puedes cambiar esto más adelante en Ajustes → Flujos de audio.</string>
     <string name="native_driver_selection_title">Selección de conductor</string>
-    <string name="native_driver_selection_summary">Elige qué teléfono conectar cuando varios conductores emparejados están en el vehículo.</string>
     <string name="native_driver_selection_mode_off">Desactivado</string>
     <string name="native_driver_selection_mode_auto">Automático</string>
     <string name="native_driver_selection_mode_always">Preguntar siempre</string>
+    <string name="native_driver_selection_help">Elige cuándo la app pregunta qué móvil usar, si más de un móvil emparejado puede ser el del conductor. Desactivado: la app nunca pregunta al abrirse, y el botón WiFi conecta el móvil más probable. Automático: la app pregunta solo si no sabe cuál es el del conductor. Si hay un móvil conectado por Bluetooth, usa ese. Preguntar siempre: la app pregunta cada vez que se abre con más de un móvil emparejado. El más probable es el conectado, luego «Teléfono preferido» y luego el último usado.</string>
     <string name="native_driver_selection_timeout">Cuenta atrás de conexión automática</string>
     <string name="native_driver_selection_timeout_help">Cuando se abre la lista de conductores, hace una cuenta regresiva y luego se conecta al móvil más probable. Esto define la cuenta regresiva, de 3 a 30 segundos. Pulsa un móvil antes del final para elegirlo tú.</string>
     <string name="native_driver_preferred_device">Teléfono preferido</string>

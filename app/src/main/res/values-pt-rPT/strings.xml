@@ -369,7 +369,9 @@
     <string name="reconnection_required_title">Nova ligação necessária</string>
     <string name="reconnection_required_message">O dispositivo está em estado de espera. Desligue e volte a ligar o cabo USB para iniciar o Android Auto novamente.</string>
 
-    <string name="bluetooth_address_s">Endereço Bluetooth</string>
+    <string name="bluetooth_address_s">Endereço Bluetooth da unidade</string>
+    <string name="bluetooth_address_summary">O endereço pelo qual o telemóvel reconhece esta unidade.</string>
+    <string name="bluetooth_address_help">O endereço Bluetooth da própria unidade. O telemóvel usa-o para reconhecer a unidade, em todos os modos de ligação. Encontre-o em Definições, Acerca de, Estado, ou no telemóvel emparelhado, junto à roda dentada ao lado deste dispositivo. Deixe em branco para detetar automaticamente. A opção “Manter o áudio multimédia do telemóvel por USB” impede o Android Auto de desativar o áudio multimédia Bluetooth do telemóvel numa sessão USB. As chamadas podem então ficar no telemóvel.</string>
     <string name="enter_bluetooth_mac">Introduzir MAC de Bluetooth</string>
     <string name="bluetooth_address_message">O endereço desta unidade, que o telemóvel utiliza para a reconhecer. Encontre-o em Definições, Acerca de, Estado, ou no telemóvel emparelhado, junto à roda dentada ao lado deste dispositivo. Deixe em branco para detetar automaticamente.</string>
     <string name="invalid_bluetooth_address">Esse não é um endereço Bluetooth válido. Introduza seis pares de dígitos hexadecimais, como 0C:32:3A:2D:5D:4A.</string>
@@ -1066,7 +1068,7 @@
     <string name="wifi_direct_last_network_differs">Este não é o nome e a palavra-passe que a aplicação pediu, por isso o sistema substituiu-os. Use \"Nova identidade de rede Wi-Fi Direct\" acima para obter um novo par.</string>
     <string name="wifi_direct_last_network_hint">Ligar-se a esta rede manualmente no telemóvel não inicia o Android Auto, porque o telemóvel liga-se sozinho depois de configurado por Bluetooth. Serve para verificar se a rede funciona.</string>
     <string name="wifi_direct_group_identity">Nome e palavra-passe do Wi-Fi Direct</string>
-    <string name="wifi_direct_group_identity_help">O nome e a palavra-passe do Wi-Fi Direct que o telemóvel recebe para se ligar a esta unidade. Deixe a aplicação escolhê-los ou escreva os seus. Escolher novos por mim faz a aplicação escolher um par novo. Se alterar a palavra-passe, a aplicação altera também o nome, porque um telemóvel não consegue voltar a ligar-se a uma rede com o mesmo nome e uma palavra-passe nova.</string>
+    <string name="wifi_direct_group_identity_help">O nome e a palavra-passe do Wi-Fi Direct que o telemóvel recebe para se ligar a esta unidade. Deixe a aplicação escolhê-los ou escreva os seus. “Escolher novos por mim” faz a aplicação escolher um par novo. Se alterar a palavra-passe, a aplicação altera também o nome, porque um telemóvel não consegue voltar a ligar-se a uma rede com o mesmo nome e uma palavra-passe nova.</string>
     <string name="wifi_direct_group_identity_auto">Escolhido pela aplicação. Toque para definir manualmente.</string>
     <string name="wifi_direct_group_identity_pick_new">Escolher novos por mim</string>
     <string name="wifi_direct_group_identity_message">O nome e a palavra-passe que o telemóvel recebe para se ligar a esta unidade. Alterar a palavra-passe também altera o nome, porque um telemóvel não volta a ligar-se a uma rede com o mesmo nome e uma palavra-passe diferente.</string>
@@ -1263,7 +1265,7 @@
     <string name="native_ap_transport">Transporte de rede</string>
     <string name="native_ap_transport_wifi_direct">Wi-Fi Direct</string>
     <string name="native_ap_transport_hotspot">Zona Wi-Fi</string>
-    <string name="native_ap_transport_hint">O telemóvel liga-se à zona Wi-Fi própria deste dispositivo em vez de um grupo Wi-Fi Direct. Ative-a antes de ligar.</string>
+    <string name="native_ap_transport_help">Define a rede a que o telemóvel se liga no modo nativo do Android Auto. Wi-Fi Direct, a predefinição: esta unidade cria o seu próprio grupo e o telemóvel junta-se a ele. Zona Wi-Fi: o telemóvel junta-se à zona Wi-Fi desta unidade. Use-a se o Wi-Fi Direct não se ligar. A zona Wi-Fi tem de estar ativa antes de ligar, a menos que “Ativar zona Wi-Fi automaticamente” esteja ativado. Se a unidade não conseguir ler as definições, escreva o nome e a palavra-passe da zona Wi-Fi nas linhas abaixo.</string>
     <string name="hotspot_band">Banda da zona Wi-Fi</string>
     <string name="hotspot_band_auto">Automático</string>
     <string name="hotspot_band_5ghz">Apenas 5 GHz</string>
@@ -1489,10 +1491,10 @@
     <string name="failed_aa_not_system">Falha: o Android Auto não está instalado como app do sistema!</string>
     <string name="failed_aa_not_installed">Falha: o Android Auto não está instalado!</string>
     <string name="native_driver_selection_title">Escolha do telemóvel do condutor</string>
-    <string name="native_driver_selection_summary">Escolha a que telemóvel ligar quando estiverem vários condutores emparelhados no veículo.</string>
     <string name="native_driver_selection_mode_off">Desativado</string>
     <string name="native_driver_selection_mode_auto">Automático</string>
     <string name="native_driver_selection_mode_always">Perguntar sempre</string>
+    <string name="native_driver_selection_help">Define quando a aplicação pergunta que telemóvel usar. Desativado: nunca pergunta ao abrir, e o botão WiFi liga ao telemóvel mais provável. Automático: só pergunta se não souber qual é o do condutor. Com um telemóvel ligado por Bluetooth, usa esse. Perguntar sempre: pergunta sempre que abre com mais de um telemóvel emparelhado. O mais provável é o telemóvel ligado, depois “Telemóvel preferido”, depois o último usado.</string>
     <string name="native_driver_selection_timeout">Contagem decrescente</string>
     <string name="native_driver_selection_timeout_help">Quando a lista de condutores abre, faz uma contagem decrescente e depois liga ao telemóvel mais provável. Aqui define a contagem, de 3 a 30 segundos. Toque num telemóvel antes do fim para escolher você mesmo.</string>
     <string name="native_driver_preferred_device">Telemóvel preferido</string>

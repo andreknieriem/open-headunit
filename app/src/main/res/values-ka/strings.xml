@@ -128,7 +128,9 @@
     <string name="reconnection_required_title">საჭიროა ხელახალი კავშირი</string>
     <string name="reconnection_required_message">მოწყობილობა მოლოდინის რეჟიმშია. Android Auto-ს ხელახლა გასაშვებად გამოაერთეთ და ისევ შეაერთეთ USB კაბელი.</string>
 
-    <string name="bluetooth_address_s">Bluetooth მისამართი</string>
+    <string name="bluetooth_address_s">ამ მოწყობილობის Bluetooth მისამართი</string>
+    <string name="bluetooth_address_summary">მისამართი, რომლითაც ტელეფონი ამ მოწყობილობას ცნობს.</string>
+    <string name="bluetooth_address_help">ამ მოწყობილობის საკუთარი Bluetooth მისამართი. ტელეფონი მას ამ მოწყობილობის ამოსაცნობად იყენებს ყველა კავშირის რეჟიმში. იპოვით აქ: პარამეტრები, შესახებ, სტატუსი, ან დაწყვილებულ ტელეფონზე, ამ მოწყობილობის გვერდით არსებულ კბილანას ხატულაში. ავტომატური აღმოჩენისთვის დატოვეთ ცარიელი. პარამეტრი „USB-ით ტელეფონის მედიის აუდიოს შენარჩუნება“ უშლის Android Auto-ს, USB სესიისას გამორთოს ტელეფონის Bluetooth მედიის აუდიო. ამ დროს ზარები შეიძლება ტელეფონზე დარჩეს.</string>
     <string name="enter_bluetooth_mac">შეიყვანეთ Bluetooth MAC</string>
     <string name="bluetooth_address_message">ამ მოწყობილობის საკუთარი მისამართი, რომლითაც ტელეფონი მას ცნობს. იპოვით აქ: პარამეტრები &gt; შესახებ &gt; სტატუსი, ან დაწყვილებულ ტელეფონზე ამ მოწყობილობის გვერდით არსებული გადაცემათა კოლოფის ხატულის ქვეშ. დატოვეთ ცარიელი ავტომატური აღმოჩენისთვის.</string>
     <string name="invalid_bluetooth_address">ეს არ არის Bluetooth-ის მისამართი. შეიყვანეთ თექვსმეტობითი ციფრების ექვსი წყვილი, მაგალითად 0C:32:3A:2D:5D:4A.</string>
@@ -1053,6 +1055,7 @@
     <string name="native_ap_transport">ქსელური ტრანსპორტი</string>
     <string name="native_ap_transport_wifi_direct">WiFi Direct</string>
     <string name="native_ap_transport_hotspot">ჰოტსპოტი</string>
+    <string name="native_ap_transport_help">ირჩევს ქსელს, რომელსაც ტელეფონი უერთდება Android Auto-ს Native რეჟიმში. WiFi Direct, ნაგულისხმევი: ეს მოწყობილობა თავად ქმნის WiFi Direct ჯგუფს და ტელეფონი მას უერთდება. ჰოტსპოტი: ტელეფონი ამის ნაცვლად ამ მოწყობილობის ჰოტსპოტს უერთდება. გამოიყენეთ, თუ WiFi Direct არ უერთდება. ჰოტსპოტი დაკავშირებამდე ჩართული უნდა იყოს, თუ „ჰოტსპოტის ავტომატური ჩართვა“ ჩართული არ არის. თუ მოწყობილობას ჰოტსპოტის პარამეტრების წაკითხვა არ შეუძლია, ქვემოთ მოცემულ სტრიქონებში შეიყვანეთ ჰოტსპოტის სახელი და პაროლი.</string>
     <string name="hotspot_interface_override">ჰოტსპოტის ქსელის ინტერფეისი</string>
     <string name="hotspot_interface_override_help">ქსელური ინტერფეისი, რომლითაც ამ მოწყობილობის ჰოთსპოტი მუშაობს. თუ ცარიელს დატოვებთ, აპი თავად იპოვის. მიუთითეთ მხოლოდ მაშინ, თუ ჟურნალი აჩვენებს, რომ აპმა არასწორი ინტერფეისი აირჩია ან რამდენიმე იპოვა. მაშინ აპი ჰოთსპოტის მონაცემებს გაგზავნის მაშინაც, თუ სისტემა ჰოთსპოტს არ აღრიცხავს, ამიტომ დარწმუნდით, რომ ჰოთსპოტი ჩართულია.</string>
     <string name="hotspot_interface_override_message">დატოვეთ ცარიელი, რომ ავტომატურად განისაზღვროს. მიუთითეთ, თუ ჟურნალის მიხედვით წვდომის წერტილი რამდენიმე ინტერფეისი შეიძლება იყოს ან არჩეულია არასწორი. სახელი არის ის, რასაც ჟურნალი ტექსტის „Providing credentials from“ შემდეგ აჩვენებს, ან ჩანაწერი, რომელშიც shell-ში ბრძანებით „ip -brief addr“ თქვენი ჰოტსპოტის მისამართი ჩანს. გავრცელებული სახელებია: ap0, wlan0, wlan1, wlan2, softap0, ra0.</string>
@@ -1158,7 +1161,6 @@
     <string name="btn_reset_scale">ზომის საწყისზე დაბრუნება</string>
     <string name="static_bssid_title">სტატიკური BSSID (MAC მისამართი)</string>
     <string name="static_bssid_help">Wi-Fi მისამართი (BSSID), რომელსაც ტელეფონი ამ მოწყობილობის ქსელისთვის იღებს. თუ ცარიელს დატოვებთ, აპი მისამართს თავად წაიკითხავს. აკრიფეთ მხოლოდ მაშინ, თუ ჟურნალი აჩვენებს, რომ არცერთმა წყარომ მისამართი არ მოგვცა. Wi-Fi Direct-თან ეს რიგი ადგენს ჯგუფის მისამართს. ჰოთსპოტთან ადგენს ჰოთსპოტის მისამართს. აპის წაკითხული მისამართი ყოველთვის აკრეფილზე წინ დგას.</string>
-    <string name="native_ap_transport_hint">ტელეფონი WiFi Direct ჯგუფის ნაცვლად ამ მოწყობილობის საკუთარ ჰოტსპოტს უერთდება. დაკავშირებამდე ჩართეთ იგი.</string>
     <string name="hotspot_band">ჰოტსპოტის დიაპაზონი</string>
     <string name="hotspot_band_auto">ავტომატური</string>
     <string name="hotspot_band_5ghz">მხოლოდ 5 GHz</string>
@@ -1290,10 +1292,10 @@
     <string name="onb_audio_focus_title">Აუდიო ფოკუსი</string>
     <string name="onb_audio_more_hint">Ამის შეცვლა მოგვიანებით შეგიძლიათ: პარამეტრები → აუდიონაკადები.</string>
     <string name="native_driver_selection_title">მძღოლის არჩევა</string>
-    <string name="native_driver_selection_summary">აირჩიეთ დასაკავშირებელი ტელეფონი, როდესაც ავტომობილში რამდენიმე დაწყვილებული მძღოლია.</string>
     <string name="native_driver_selection_mode_off">გამორთული</string>
     <string name="native_driver_selection_mode_auto">ავტო</string>
     <string name="native_driver_selection_mode_always">ყოველთვის კითხვა</string>
+    <string name="native_driver_selection_help">ირჩევს, როდის კითხულობს აპი, რომელი ტელეფონი გამოიყენოს. გამორთული: გახსნისას არასოდეს კითხულობს, WiFi ღილაკი კი ყველაზე სავარაუდო ტელეფონს უერთდება. ავტო: კითხულობს მხოლოდ მაშინ, როცა ვერ ხვდება, რომელია მძღოლის ტელეფონი. თუ Bluetooth-ით ერთი ტელეფონია დაკავშირებული, იყენებს მას. ყოველთვის კითხვა: ყოველ გახსნაზე კითხულობს, თუ რამდენიმე ტელეფონია დაწყვილებული. ყველაზე სავარაუდოა დაკავშირებული ტელეფონი, შემდეგ „რჩეული ტელეფონი“, შემდეგ ბოლოს გამოყენებული.</string>
     <string name="native_driver_selection_timeout">ავტო-დაკავშირების ათვლა</string>
     <string name="native_driver_selection_timeout_help">როცა მძღოლის სია იხსნება, ის უკუთვლას იწყებს და ბოლოს ყველაზე სავარაუდო ტელეფონს უკავშირდება. აქ ადგენთ უკუთვლას 3-დან 30 წამამდე. დასრულებამდე შეეხეთ ტელეფონს, რომ თავად აირჩიოთ.</string>
     <string name="native_driver_preferred_device">რჩეული ტელეფონი</string>

@@ -890,8 +890,7 @@ class SettingsFragment : Fragment() {
             }
         ))
 
-        // In General, not Wireless: this address is announced as carAddress in every connection
-        // mode, and the setup QR's refusal deep-links here by searching for this row's title.
+        // In General, not Wireless: this address is announced as carAddress in every connection mode.
         // The checkbox trades hands-free calls for the phone's Media audio, on USB sessions only.
         val btAddress = pendingBluetoothAddress.orEmpty()
         val keepMediaAudio = pendingBluetoothAnnounceSkip ?: false
@@ -899,6 +898,8 @@ class SettingsFragment : Fragment() {
         items.add(SettingItem.SettingEntry(
             stableId = "bluetoothAddress",
             nameResId = R.string.bluetooth_address_s,
+            descriptionResId = R.string.bluetooth_address_summary,
+            helpResId = R.string.bluetooth_address_help,
             value = if (keepMediaAudio) "$btAddressValue · ${getString(R.string.usb_keep_phone_media_audio)}" else btAddressValue,
             searchKeywords = "bluetooth mac address car identity hands-free calls qr usb media audio a2dp",
             onClick = { _ ->
@@ -1015,7 +1016,7 @@ class SettingsFragment : Fragment() {
             items.add(SettingItem.SegmentedButtonSettingEntry(
                 stableId = "nativeApTransport",
                 nameResId = R.string.native_ap_transport,
-                helpResId = R.string.native_ap_transport_hint,
+                helpResId = R.string.native_ap_transport_help,
                 options = listOf(
                     getString(R.string.native_ap_transport_wifi_direct),
                     getString(R.string.native_ap_transport_hotspot)
@@ -1152,6 +1153,7 @@ class SettingsFragment : Fragment() {
                 if (pendingP2pBandPreference() != P2pBandPreference.FORCE_2_4GHZ) {
                     addFiveGhzChannelSetting(items)
                 }
+                addAutoRestartWifiSetting(items)
 
                 addWifiDirectIdentitySettings(items)
                 addStationStandDownSetting(items)
@@ -1176,7 +1178,7 @@ class SettingsFragment : Fragment() {
             items.add(SettingItem.SegmentedButtonSettingEntry(
                 stableId = "nativeDriverSelectionMode",
                 nameResId = R.string.native_driver_selection_title,
-                helpResId = R.string.native_driver_selection_summary,
+                helpResId = R.string.native_driver_selection_help,
                 options = listOf(
                     getString(R.string.native_driver_selection_mode_off),
                     getString(R.string.native_driver_selection_mode_auto),
@@ -1728,6 +1730,7 @@ class SettingsFragment : Fragment() {
         items.add(SettingItem.SettingEntry(
             stableId = "dpiPixelDensity",
             nameResId = R.string.dpi,
+            helpResId = R.string.dpi_screen_help,
             value = dpiRowValue(),
             onClick = {
                 try {
@@ -2754,127 +2757,6 @@ class SettingsFragment : Fragment() {
             }
         ))
 
-        // Lets a well-provisioned rig run the constrained video pipeline, which is otherwise only
-        // reachable on 1GB hardware we do not have. Applies on the next connection; the configure
-        // line reports the profile and marks it FORCED.
-        val memoryProfileNames = listOf("Measure") +
-            DeviceMemoryProfile.entries.map { it.name.lowercase().replaceFirstChar { c -> c.uppercase() } }
-        val memoryProfileValues = listOf<DeviceMemoryProfile?>(null) + DeviceMemoryProfile.entries
-        items.add(SettingItem.SettingEntry(
-            stableId = "debugForceMemoryProfile",
-            nameResId = R.string.debug_force_memory_profile,
-            helpResId = R.string.debug_force_memory_profile_help,
-            value = memoryProfileNames[memoryProfileValues.indexOf(settings.debugForceMemoryProfile).coerceAtLeast(0)],
-            searchKeywords = "memory profile low ram constrained buffers queue",
-            onClick = {
-                val currentIndex = memoryProfileValues.indexOf(settings.debugForceMemoryProfile).coerceAtLeast(0)
-                MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-                    .setTitle(R.string.debug_force_memory_profile)
-                    .setSingleChoiceItems(memoryProfileNames.toTypedArray(), currentIndex) { dialog, which ->
-                        settings.debugForceMemoryProfile = memoryProfileValues[which]
-                        dialog.dismiss()
-                        updateSettingsList()
-                    }
-                    .show()
-            }
-        ))
-
-        // Slows the feed thread so the enqueue backpressure path can be exercised on a working
-        // unit - a codec that cannot drain the negotiated rate is otherwise only reachable on
-        // hardware we do not have. Applies on the next connection, and the feed thread announces
-        // the hold loudly at start. A tool, not a preference, so applied immediately.
-        val feedHolds = listOf(0, 10, 25, 40, 100)
-        val feedHoldNames = feedHolds
-            .map { if (it == 0) "Off" else "${it}ms per frame" }
-            .toTypedArray()
-        items.add(SettingItem.SettingEntry(
-            stableId = "debugVideoFeedHold",
-            nameResId = R.string.debug_video_feed_hold,
-            helpResId = R.string.debug_video_feed_hold_help,
-            value = if (settings.debugVideoFeedHoldMs == 0) "Off" else "${settings.debugVideoFeedHoldMs}ms per frame",
-            searchKeywords = "slow decoder feed hold backpressure pacing test",
-            onClick = {
-                val currentIndex = feedHolds.indexOf(settings.debugVideoFeedHoldMs).coerceAtLeast(0)
-                MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-                    .setTitle(R.string.debug_video_feed_hold)
-                    .setSingleChoiceItems(feedHoldNames, currentIndex) { dialog, which ->
-                        settings.debugVideoFeedHoldMs = feedHolds[which]
-                        dialog.dismiss()
-                        updateSettingsList()
-                    }
-                    .show()
-            }
-        ))
-
-        // Deliberately corrupts the video stream so the reassembler's failure paths can be
-        // exercised on a working unit. Applies on the next connection, and every injected fault is
-        // logged loudly - see VideoFaultInjector. Applied immediately rather than through the
-        // pending/save flow, like the log level below: this is a tool, not a preference.
-        val faultModes = VideoFaultInjector.Mode.entries
-        val faultModeNames = faultModes
-            .map { it.name.lowercase().replace('_', ' ').replaceFirstChar { c -> c.uppercase() } }
-            .toTypedArray()
-        items.add(SettingItem.SettingEntry(
-            stableId = "debugVideoFaultInjection",
-            nameResId = R.string.debug_video_fault_injection,
-            helpResId = R.string.debug_video_fault_injection_help,
-            value = faultModeNames[faultModes.indexOf(settings.debugVideoFaultInjection).coerceAtLeast(0)],
-            searchKeywords = "fault injection corrupt fragment reassembly test",
-            onClick = {
-                val currentIndex = faultModes.indexOf(settings.debugVideoFaultInjection).coerceAtLeast(0)
-                MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-                    .setTitle(R.string.debug_video_fault_injection)
-                    .setSingleChoiceItems(faultModeNames, currentIndex) { dialog, which ->
-                        settings.debugVideoFaultInjection = faultModes[which]
-                        dialog.dismiss()
-                        updateSettingsList()
-                    }
-                    .show()
-            }
-        ))
-
-        if (settings.debugVideoFaultInjection != VideoFaultInjector.Mode.OFF) {
-            val faultRates = listOf(10, 30, 100, 300, 1000, 3000)
-            val faultRateNames = faultRates.map { "1 in " + it }.toTypedArray()
-            items.add(SettingItem.SettingEntry(
-                stableId = "debugVideoFaultRate",
-                nameResId = R.string.debug_video_fault_rate,
-                helpResId = R.string.debug_video_fault_rate_help,
-                value = "1 in " + settings.debugVideoFaultRate,
-                onClick = {
-                    val currentIndex = faultRates.indexOf(settings.debugVideoFaultRate).coerceAtLeast(0)
-                    MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-                        .setTitle(R.string.debug_video_fault_rate)
-                        .setSingleChoiceItems(faultRateNames, currentIndex) { dialog, which ->
-                            settings.debugVideoFaultRate = faultRates[which]
-                            dialog.dismiss()
-                            updateSettingsList()
-                        }
-                        .show()
-                }
-            ))
-
-            val faultBudgets = listOf(VideoFaultInjector.UNLIMITED_BUDGET, 5, 10, 30, 100)
-            val faultBudgetNames = faultBudgets.map { describeFaultBudget(it) }.toTypedArray()
-            items.add(SettingItem.SettingEntry(
-                stableId = "debugVideoFaultBudget",
-                nameResId = R.string.debug_video_fault_budget,
-                helpResId = R.string.debug_video_fault_budget_help,
-                value = describeFaultBudget(settings.debugVideoFaultBudget),
-                onClick = {
-                    val currentIndex = faultBudgets.indexOf(settings.debugVideoFaultBudget).coerceAtLeast(0)
-                    MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-                        .setTitle(R.string.debug_video_fault_budget)
-                        .setSingleChoiceItems(faultBudgetNames, currentIndex) { dialog, which ->
-                            settings.debugVideoFaultBudget = faultBudgets[which]
-                            dialog.dismiss()
-                            updateSettingsList()
-                        }
-                        .show()
-                }
-            ))
-        }
-
         val logLevels = LogExporter.LogLevel.entries
         val logLevelNames = logLevels.map { it.name.lowercase().replaceFirstChar { c -> c.uppercase() } }.toTypedArray()
         items.add(SettingItem.SettingEntry(
@@ -3060,6 +2942,128 @@ class SettingsFragment : Fragment() {
                 }
             }
         ))
+
+        // Lets a well-provisioned rig run the constrained video pipeline, which is otherwise only
+        // reachable on 1GB hardware we do not have. Applies on the next connection; the configure
+        // line reports the profile and marks it FORCED.
+        val memoryProfileNames = listOf("Measure") +
+            DeviceMemoryProfile.entries.map { it.name.lowercase().replaceFirstChar { c -> c.uppercase() } }
+        val memoryProfileValues = listOf<DeviceMemoryProfile?>(null) + DeviceMemoryProfile.entries
+        items.add(SettingItem.SettingEntry(
+            stableId = "debugForceMemoryProfile",
+            nameResId = R.string.debug_force_memory_profile,
+            helpResId = R.string.debug_force_memory_profile_help,
+            value = memoryProfileNames[memoryProfileValues.indexOf(settings.debugForceMemoryProfile).coerceAtLeast(0)],
+            searchKeywords = "memory profile low ram constrained buffers queue",
+            onClick = {
+                val currentIndex = memoryProfileValues.indexOf(settings.debugForceMemoryProfile).coerceAtLeast(0)
+                MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
+                    .setTitle(R.string.debug_force_memory_profile)
+                    .setSingleChoiceItems(memoryProfileNames.toTypedArray(), currentIndex) { dialog, which ->
+                        settings.debugForceMemoryProfile = memoryProfileValues[which]
+                        dialog.dismiss()
+                        updateSettingsList()
+                    }
+                    .show()
+            }
+        ))
+
+        // Slows the feed thread so the enqueue backpressure path can be exercised on a working
+        // unit - a codec that cannot drain the negotiated rate is otherwise only reachable on
+        // hardware we do not have. Applies on the next connection, and the feed thread announces
+        // the hold loudly at start. A tool, not a preference, so applied immediately.
+        val feedHolds = listOf(0, 10, 25, 40, 100)
+        val feedHoldNames = feedHolds
+            .map { if (it == 0) "Off" else "${it}ms per frame" }
+            .toTypedArray()
+        items.add(SettingItem.SettingEntry(
+            stableId = "debugVideoFeedHold",
+            nameResId = R.string.debug_video_feed_hold,
+            helpResId = R.string.debug_video_feed_hold_help,
+            value = if (settings.debugVideoFeedHoldMs == 0) "Off" else "${settings.debugVideoFeedHoldMs}ms per frame",
+            searchKeywords = "slow decoder feed hold backpressure pacing test",
+            onClick = {
+                val currentIndex = feedHolds.indexOf(settings.debugVideoFeedHoldMs).coerceAtLeast(0)
+                MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
+                    .setTitle(R.string.debug_video_feed_hold)
+                    .setSingleChoiceItems(feedHoldNames, currentIndex) { dialog, which ->
+                        settings.debugVideoFeedHoldMs = feedHolds[which]
+                        dialog.dismiss()
+                        updateSettingsList()
+                    }
+                    .show()
+            }
+        ))
+
+        // Deliberately corrupts the video stream so the reassembler's failure paths can be
+        // exercised on a working unit. Applies on the next connection, and every injected fault is
+        // logged loudly - see VideoFaultInjector. Applied immediately rather than through the
+        // pending/save flow, like the log level above: this is a tool, not a preference.
+        val faultModes = VideoFaultInjector.Mode.entries
+        val faultModeNames = faultModes
+            .map { it.name.lowercase().replace('_', ' ').replaceFirstChar { c -> c.uppercase() } }
+            .toTypedArray()
+        items.add(SettingItem.SettingEntry(
+            stableId = "debugVideoFaultInjection",
+            nameResId = R.string.debug_video_fault_injection,
+            helpResId = R.string.debug_video_fault_injection_help,
+            value = faultModeNames[faultModes.indexOf(settings.debugVideoFaultInjection).coerceAtLeast(0)],
+            searchKeywords = "fault injection corrupt fragment reassembly test",
+            onClick = {
+                val currentIndex = faultModes.indexOf(settings.debugVideoFaultInjection).coerceAtLeast(0)
+                MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
+                    .setTitle(R.string.debug_video_fault_injection)
+                    .setSingleChoiceItems(faultModeNames, currentIndex) { dialog, which ->
+                        settings.debugVideoFaultInjection = faultModes[which]
+                        dialog.dismiss()
+                        updateSettingsList()
+                    }
+                    .show()
+            }
+        ))
+
+        if (settings.debugVideoFaultInjection != VideoFaultInjector.Mode.OFF) {
+            val faultRates = listOf(10, 30, 100, 300, 1000, 3000)
+            val faultRateNames = faultRates.map { "1 in " + it }.toTypedArray()
+            items.add(SettingItem.SettingEntry(
+                stableId = "debugVideoFaultRate",
+                nameResId = R.string.debug_video_fault_rate,
+                helpResId = R.string.debug_video_fault_rate_help,
+                value = "1 in " + settings.debugVideoFaultRate,
+                onClick = {
+                    val currentIndex = faultRates.indexOf(settings.debugVideoFaultRate).coerceAtLeast(0)
+                    MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
+                        .setTitle(R.string.debug_video_fault_rate)
+                        .setSingleChoiceItems(faultRateNames, currentIndex) { dialog, which ->
+                            settings.debugVideoFaultRate = faultRates[which]
+                            dialog.dismiss()
+                            updateSettingsList()
+                        }
+                        .show()
+                }
+            ))
+
+            val faultBudgets = listOf(VideoFaultInjector.UNLIMITED_BUDGET, 5, 10, 30, 100)
+            val faultBudgetNames = faultBudgets.map { describeFaultBudget(it) }.toTypedArray()
+            items.add(SettingItem.SettingEntry(
+                stableId = "debugVideoFaultBudget",
+                nameResId = R.string.debug_video_fault_budget,
+                helpResId = R.string.debug_video_fault_budget_help,
+                value = describeFaultBudget(settings.debugVideoFaultBudget),
+                onClick = {
+                    val currentIndex = faultBudgets.indexOf(settings.debugVideoFaultBudget).coerceAtLeast(0)
+                    MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
+                        .setTitle(R.string.debug_video_fault_budget)
+                        .setSingleChoiceItems(faultBudgetNames, currentIndex) { dialog, which ->
+                            settings.debugVideoFaultBudget = faultBudgets[which]
+                            dialog.dismiss()
+                            updateSettingsList()
+                        }
+                        .show()
+                }
+            ))
+        }
+
 
         // --- Info Settings ---
         items.add(SettingItem.CategoryHeader("info", R.string.category_info))
@@ -4653,11 +4657,15 @@ class SettingsFragment : Fragment() {
             onOptionSelected = { index ->
                 pendingWifiDirectBand = index
                 checkChanges()
-                // The upper-band toggle below appears and disappears with this choice, so the list
-                // is rebuilt rather than only the row redrawn.
+                // The channel row below appears and disappears with this choice, so the list is
+                // rebuilt rather than only the row redrawn.
                 updateSettingsList()
             }
         ))
+    }
+
+    /** A recovery for a stuck WiFi Direct stack, so it sits below the band and channel choices. */
+    private fun addAutoRestartWifiSetting(items: MutableList<SettingItem>) {
         items.add(SettingItem.ToggleSettingEntry(
             stableId = "autoRestartWifiWhenP2pStuck",
             nameResId = R.string.auto_restart_wifi_title,

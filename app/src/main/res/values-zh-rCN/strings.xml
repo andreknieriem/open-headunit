@@ -120,7 +120,9 @@
     <string name="reconnection_required_title">需要重新连接</string>
     <string name="reconnection_required_message">设备处于等待状态。请拔出 USB 线后重新插入，以再次启动 Android Auto。</string>
 
-    <string name="bluetooth_address_s">蓝牙地址</string>
+    <string name="bluetooth_address_s">车机蓝牙地址</string>
+    <string name="bluetooth_address_summary">手机用来识别本车机的地址。</string>
+    <string name="bluetooth_address_help">本车机自身的蓝牙地址。在任何连接模式下，手机都用它来识别本车机。可在“设置”“关于”“状态”中找到，或在已配对的手机上，点按本设备旁的齿轮图标查看。留空则自动检测。“通过 USB 保持手机媒体音频开启”选项可防止 Android Auto 在 USB 会话中关闭手机的蓝牙媒体音频。这样通话可能仍留在手机上。</string>
     <string name="enter_bluetooth_mac">输入蓝牙 MAC 地址</string>
     <string name="bluetooth_address_message">此车机自身的蓝牙地址，手机用它来识别本机。可在“设置”&gt;“关于”&gt;“状态”中找到，或在已配对的手机上，点按本设备旁的齿轮图标查看。留空则自动检测。</string>
     <string name="invalid_bluetooth_address">这不是有效的蓝牙地址。请输入六组十六进制数字，例如 0C:32:3A:2D:5D:4A。</string>
@@ -1122,6 +1124,7 @@
     <string name="native_ap_transport">网络传输方式</string>
     <string name="native_ap_transport_wifi_direct">Wi-Fi Direct</string>
     <string name="native_ap_transport_hotspot">热点</string>
+    <string name="native_ap_transport_help">选择手机在 Android Auto 原生 (Native) 模式下加入的网络。Wi-Fi Direct（默认）：本机创建自己的 Wi-Fi Direct 群组，手机加入该群组。热点：手机改为加入本机自己的热点。Wi-Fi Direct 无法连接时使用。除非已开启“自动启用热点”，否则连接前必须先开启热点。如果本机无法读取热点设置，请在下方各行中输入热点名称和密码。</string>
     <string name="hotspot_interface_override">热点网络接口</string>
     <string name="hotspot_interface_override_help">承载本机热点的网络接口。留空则由应用自行查找。仅当日志显示应用选错了接口或找到多个接口时才填写。此时即使系统报告没有热点，应用也会发送热点信息，因此请确认热点已开启。</string>
     <string name="hotspot_interface_override_message">留空则自动判断。如果日志显示有多个接口都可能是接入点，或选错了接口，请设置此项。名称取自日志中“Providing credentials from”之后显示的内容，或在 shell 中运行“ip -brief addr”时包含您热点地址的那一项。常见名称：ap0、wlan0、wlan1、wlan2、softap0、ra0。</string>
@@ -1169,7 +1172,6 @@
     <string name="btn_reset_scale">重置按钮大小</string>
     <string name="static_bssid_title">静态 BSSID（MAC 地址）</string>
     <string name="static_bssid_help">手机为本机网络获得的 Wi-Fi 地址（BSSID）。留空则由应用自行读取地址。仅当日志显示没有来源报告地址时才输入。使用 Wi-Fi Direct 时，此行设置群组的地址。使用热点时，设置热点的地址。应用读取到的地址始终优先于输入的地址。</string>
-    <string name="native_ap_transport_hint">手机将加入本设备自己的热点，而不是 Wi-Fi Direct 群组。连接前请先开启热点。</string>
     <string name="hotspot_band">热点频段</string>
     <string name="hotspot_band_auto">自动</string>
     <string name="hotspot_band_5ghz">仅 5 GHz</string>
@@ -1301,10 +1303,10 @@
     <string name="onb_audio_focus_title">音频焦点</string>
     <string name="onb_audio_more_hint">之后可在“设置 → 音频流”中再次修改。</string>
     <string name="native_driver_selection_title">驾驶员选择</string>
-    <string name="native_driver_selection_summary">车内有多部已配对的驾驶员手机时，选择要连接的手机。</string>
     <string name="native_driver_selection_mode_off">已停用</string>
     <string name="native_driver_selection_mode_auto">自动</string>
     <string name="native_driver_selection_mode_always">每次询问</string>
+    <string name="native_driver_selection_help">选择应用何时询问使用哪部手机，适用于多部已配对手机都可能成为主控手机的情况。已停用：应用启动时从不询问，WiFi 按钮会连接最可能的手机。自动：仅当应用无法判断主控手机时才询问。如果只有一部手机通过蓝牙连接，应用使用该手机。每次询问：有多部手机已配对时，应用每次启动都询问。最可能的手机依次为：已连接的手机、“首选手机”、上次使用的手机。</string>
     <string name="native_driver_selection_timeout">自动连接倒计时</string>
     <string name="native_driver_selection_timeout_help">主控手机列表打开后会倒计时，然后连接最可能的手机。此项设置倒计时，范围为 3 到 30 秒。在结束前点按某部手机即可自行选择。</string>
     <string name="native_driver_preferred_device">首选手机</string>

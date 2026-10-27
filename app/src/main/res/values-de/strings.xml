@@ -155,7 +155,9 @@
     <string name="reconnection_required_title">Neuverbindung erforderlich</string>
     <string name="reconnection_required_message">Das Gerät befindet sich in einem Wartezustand. Zieh das USB-Kabel ab und steck es wieder ein, um Android Auto neu zu starten.</string>
 
-    <string name="bluetooth_address_s">Bluetooth-Adresse</string>
+    <string name="bluetooth_address_s">Bluetooth-Adresse dieses Geräts</string>
+    <string name="bluetooth_address_summary">Mit dieser Adresse erkennt das Smartphone dieses Gerät.</string>
+    <string name="bluetooth_address_help">Die eigene Bluetooth-Adresse dieses Geräts, an der das Smartphone es in jedem Verbindungsmodus erkennt. Du findest sie unter Einstellungen, Über das Gerät, Status, oder auf dem gekoppelten Smartphone über das Zahnrad neben diesem Gerät. Leer lassen, um sie automatisch zu ermitteln. Die Option „Medien-Audio des Smartphones bei USB anlassen“ verhindert, dass Android Auto in einer USB-Sitzung das Bluetooth-Medien-Audio des Smartphones abschaltet. Anrufe bleiben dann eventuell auf dem Smartphone.</string>
     <string name="enter_bluetooth_mac">Bluetooth-MAC eingeben</string>
     <string name="bluetooth_address_message">Die eigene Adresse dieses Geräts, an der das Telefon es wiedererkennt. Du findest sie unter Einstellungen, Über das Gerät, Status, oder auf dem gekoppelten Telefon über das Zahnrad neben diesem Gerät. Leer lassen, um sie automatisch zu ermitteln.</string>
     <string name="invalid_bluetooth_address">Das ist keine Bluetooth-Adresse. Gib sechs hexadezimale Zahlenpaare ein, z. B. 0C:32:3A:2D:5D:4A.</string>
@@ -1139,7 +1141,7 @@
     <string name="native_ap_transport">Netzwerk-Transport</string>
     <string name="native_ap_transport_wifi_direct">WiFi Direct</string>
     <string name="native_ap_transport_hotspot">Hotspot</string>
-    <string name="native_ap_transport_hint">Das Smartphone verbindet sich mit dem eigenen Hotspot dieses Geräts statt mit einer WiFi-Direct-Gruppe. Schalte ihn vor dem Verbinden ein.</string>
+    <string name="native_ap_transport_help">Legt fest, welchem Netzwerk das Smartphone im Nativ-Modus von Android Auto beitritt. WiFi Direct (Vorgabe): Dieses Gerät erstellt eine eigene Gruppe, der das Smartphone beitritt. Hotspot: Das Smartphone nutzt stattdessen den Hotspot dieses Geräts. Nimm ihn, wenn WiFi Direct nicht klappt. Der Hotspot muss vor dem Verbinden an sein, außer „Hotspot automatisch aktivieren“ ist an. Kann das Gerät seine Hotspot-Einstellungen nicht lesen, gib Name und Passwort des Hotspots unten ein.</string>
     <string name="hotspot_interface_override">Hotspot-Netzwerkschnittstelle</string>
     <string name="hotspot_interface_override_help">Die Netzwerkschnittstelle, über die der Hotspot dieses Geräts läuft. Lässt du das Feld leer, findet die App sie selbst. Trage sie nur ein, wenn das Log zeigt, dass die App die falsche Schnittstelle gewählt oder mehrere gefunden hat. Die App sendet dann die Hotspot-Daten, auch wenn das System keinen Hotspot meldet. Der Hotspot muss also eingeschaltet sein.</string>
     <string name="hotspot_interface_override_message">Leer lassen für automatische Erkennung. Lege dies fest, wenn im Protokoll steht, dass mehrere Schnittstellen der Zugangspunkt sein könnten, oder wenn die falsche gewählt wird. Der Name steht im Protokoll nach \"Providing credentials from\", oder in der Zeile mit der Adresse deines Hotspots bei \"ip -brief addr\" in einer Shell. Übliche Namen: ap0, wlan0, wlan1, wlan2, softap0, ra0.</string>
@@ -1304,10 +1306,10 @@
     <string name="onb_audio_focus_title">Audiofokus</string>
     <string name="onb_audio_more_hint">Du kannst das später unter Einstellungen → Audio-Streams wieder ändern.</string>
     <string name="native_driver_selection_title">Fahrerauswahl</string>
-    <string name="native_driver_selection_summary">Wähle aus, welches Smartphone verbunden werden soll, wenn mehrere gekoppelte Fahrer-Smartphones im Auto sind.</string>
     <string name="native_driver_selection_mode_off">Deaktiviert</string>
     <string name="native_driver_selection_mode_auto">Automatisch</string>
     <string name="native_driver_selection_mode_always">Immer fragen</string>
+    <string name="native_driver_selection_help">Legt fest, wann die App fragt, welches Smartphone sie nutzt. Deaktiviert: Die App fragt beim Öffnen nie, die WiFi-Taste verbindet das wahrscheinlichste Smartphone. Automatisch: Die App fragt nur, wenn sie den Fahrer nicht erkennt. Ist ein Smartphone per Bluetooth verbunden, nutzt sie dieses. Immer fragen: Die App fragt bei jedem Öffnen, sobald mehrere Smartphones gekoppelt sind. Am wahrscheinlichsten ist das verbundene Smartphone, dann „Bevorzugtes Telefon“, dann das zuletzt genutzte.</string>
     <string name="native_driver_selection_timeout">Countdown für automatische Verbindung</string>
     <string name="native_driver_selection_timeout_help">Wenn die Fahrerliste sich öffnet, zählt sie herunter und verbindet dann mit dem wahrscheinlichsten Smartphone. Hier stellst du den Countdown ein, von 3 bis 30 Sekunden. Tippe vor dem Ende auf ein Smartphone, um es selbst zu wählen.</string>
     <string name="native_driver_preferred_device">Bevorzugtes Telefon</string>

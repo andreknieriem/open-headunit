@@ -126,7 +126,9 @@
     <string name="reconnection_required_title">再接続が必要です</string>
     <string name="reconnection_required_message">デバイスが待機状態です。Android Autoを再度起動するためにはUSBケーブルを抜き差ししてください。</string>
 
-    <string name="bluetooth_address_s">Bluetoothアドレス</string>
+    <string name="bluetooth_address_s">ユニットのBluetoothアドレス</string>
+    <string name="bluetooth_address_summary">スマートフォンがこのユニットを識別するためのアドレスです。</string>
+    <string name="bluetooth_address_help">このユニット自身のBluetoothアドレスです。スマートフォンはこれで、どの接続モードでもユニットを識別します。設定、端末情報、ステータスの順に開くか、ペア設定済みのスマートフォンでこの機器の横にある歯車から確認できます。空欄にすると自動で検出します。「USB接続中もスマートフォンのメディア音声を維持する」をオンにすると、USB接続中にAndroid AutoがスマートフォンのBluetoothメディア音声をオフにするのを防ぎます。その場合、通話はスマートフォンに残ることがあります。</string>
     <string name="enter_bluetooth_mac">Bluetooth MACアドレスを入力してください</string>
     <string name="bluetooth_address_message">このユニット自身のアドレスで、スマートフォンはこれでユニットを識別します。設定、端末情報、ステータスの順に開くか、ペア設定済みのスマートフォンでこの機器の横にある歯車から確認できます。空欄にすると自動的に検出します。</string>
     <string name="invalid_bluetooth_address">Bluetoothアドレスではありません。0C:32:3A:2D:5D:4A のように16進数2桁を6組で入力してください。</string>
@@ -1128,6 +1130,7 @@
     <string name="native_ap_transport">ネットワーク接続方式</string>
     <string name="native_ap_transport_wifi_direct">Wi-Fi Direct</string>
     <string name="native_ap_transport_hotspot">ホットスポット</string>
+    <string name="native_ap_transport_help">ネイティブモードのAndroid Autoで、スマートフォンが接続するネットワークを選びます。Wi-Fi Direct（初期設定）では、このユニットが独自のWi-Fi Directグループを作成し、スマートフォンがそこに参加します。ホットスポットでは、代わりにこのユニット自身のホットスポットに接続します。Wi-Fi Directで接続できないときに使います。「ホットスポットを自動有効化」がオフの場合、接続前にホットスポットをオンにしておく必要があります。ユニットがホットスポットの設定を読み取れない場合は、下の行でホットスポット名とパスワードを入力します。</string>
     <string name="hotspot_interface_override">ホットスポットのネットワークインターフェース</string>
     <string name="hotspot_interface_override_help">この機器のアクセスポイントが使うネットワークインターフェースです。空のままにすると、アプリが自動で見つけます。アプリが誤ったインターフェースを選んだ、または複数見つけたとログに出た場合のみ設定してください。設定すると、システムがアクセスポイントを報告しなくても、アプリはアクセスポイントの情報を送ります。アクセスポイントがオンであることを確認してください。</string>
     <string name="hotspot_interface_override_message">空欄の場合は自動的に判別します。ログに、アクセスポイントになり得るインターフェースが複数あると表示された場合や、誤ったものが選ばれる場合に設定してください。名前は、ログで「Providing credentials from」の後に表示されるものか、シェルで「ip -brief addr」を実行したときにホットスポットのアドレスを持つ項目のものです。一般的な名前：ap0、wlan0、wlan1、wlan2、softap0、ra0</string>
@@ -1175,7 +1178,6 @@
     <string name="btn_reset_scale">ボタンサイズをリセット</string>
     <string name="static_bssid_title">静的BSSID（MACアドレス）</string>
     <string name="static_bssid_help">スマートフォンに渡す、この機器のネットワークの Wi-Fi アドレス（BSSID）です。空のままにすると、アプリが自分でアドレスを読み取ります。どこからもアドレスが報告されなかったとログに出た場合のみ入力してください。Wi-Fi Direct ではグループのアドレス、アクセスポイントではアクセスポイントのアドレスを設定します。アプリが読み取ったアドレスは、入力したアドレスより常に優先されます。</string>
-    <string name="native_ap_transport_hint">スマートフォンはWiFi Directグループではなく、このデバイスのホットスポットに接続します。接続前にオンにしてください。</string>
     <string name="hotspot_band">ホットスポットの周波数帯</string>
     <string name="hotspot_band_auto">自動</string>
     <string name="hotspot_band_5ghz">5GHzのみ</string>
@@ -1307,10 +1309,10 @@
     <string name="onb_audio_focus_title">オーディオフォーカス</string>
     <string name="onb_audio_more_hint">この設定は後から「設定 → オーディオストリーム」で変更できます。</string>
     <string name="native_driver_selection_title">ドライバー選択</string>
-    <string name="native_driver_selection_summary">車内に複数のペアリング済みドライバーがいる場合に接続するスマートフォンを選択します。</string>
     <string name="native_driver_selection_mode_off">無効</string>
     <string name="native_driver_selection_mode_auto">自動</string>
     <string name="native_driver_selection_mode_always">常に確認</string>
+    <string name="native_driver_selection_help">ペアリング済みのスマートフォンが複数あり、運転者側になりうるとき、どのスマートフォンを使うかをアプリが確認するタイミングを選びます。無効: 起動時に確認せず、WiFiボタンは最も可能性の高いスマートフォンに接続します。自動: 運転者側のスマートフォンを判別できないときだけ確認します。Bluetoothで接続中のスマートフォンが1台なら、それを使います。常に確認: ペアリング済みが複数なら、起動のたびに確認します。可能性が高い順は、接続中のスマートフォン、「優先スマートフォン」、最後に使ったスマートフォンです。</string>
     <string name="native_driver_selection_timeout">自動接続カウントダウン</string>
     <string name="native_driver_selection_timeout_help">ドライバーの一覧が開くとカウントダウンが始まり、終わると最も可能性の高いスマートフォンに接続します。ここではそのカウントダウンを 3 秒から 30 秒で設定します。終わる前にスマートフォンをタップすると、自分で選べます。</string>
     <string name="native_driver_preferred_device">優先スマートフォン</string>

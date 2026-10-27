@@ -120,7 +120,9 @@
     <string name="reconnection_required_title">需要重新連線</string>
     <string name="reconnection_required_message">裝置目前處於等待狀態。請拔除 USB 傳輸線後重新插入，以再次啟動 Android Auto。</string>
 
-    <string name="bluetooth_address_s">藍牙位址</string>
+    <string name="bluetooth_address_s">車機藍牙位址</string>
+    <string name="bluetooth_address_summary">手機用來辨識本車機的位址。</string>
+    <string name="bluetooth_address_help">本車機自己的藍牙位址。在任何連線模式下，手機都用它來辨識本車機。可在「設定」「關於」「狀態」中找到，或在已配對的手機上，點選此裝置旁的齒輪圖示查看。留空則自動偵測。「透過 USB 保持手機媒體音訊開啟」選項可避免 Android Auto 在 USB 工作階段中關閉手機的藍牙媒體音訊。這樣通話可能仍留在手機上。</string>
     <string name="enter_bluetooth_mac">輸入藍牙 MAC 位址</string>
     <string name="bluetooth_address_message">這是本車機自己的位址，手機會用它來辨識車機。可在「設定」&gt;「關於」&gt;「狀態」中找到，或在已配對的手機上，點選此裝置旁的齒輪圖示查看。留空則自動偵測。</string>
     <string name="invalid_bluetooth_address">這不是有效的藍牙位址。請輸入六組十六進位數字，例如 0C:32:3A:2D:5D:4A。</string>
@@ -1122,6 +1124,7 @@
     <string name="native_ap_transport">網路傳輸方式</string>
     <string name="native_ap_transport_wifi_direct">Wi-Fi Direct</string>
     <string name="native_ap_transport_hotspot">無線基地台</string>
+    <string name="native_ap_transport_help">選擇手機在 Android Auto 原生模式下加入的網路。Wi-Fi Direct（預設）：本車機建立自己的 Wi-Fi Direct 群組，手機加入該群組。無線基地台：手機改為加入本車機自己的無線基地台。Wi-Fi Direct 無法連線時使用。除非已開啟「自動啟用無線基地台」，否則連線前必須先開啟無線基地台。如果本車機無法讀取無線基地台設定，請在下方各列中輸入無線基地台名稱與密碼。</string>
     <string name="hotspot_interface_override">無線基地台網路介面</string>
     <string name="hotspot_interface_override_help">承載本裝置無線基地台的網路介面。留空則由應用程式自行尋找。只有當記錄顯示應用程式選錯介面或找到多個介面時才填寫。此時即使系統回報沒有無線基地台，應用程式也會傳送無線基地台資訊，因此請確認無線基地台已開啟。</string>
     <string name="hotspot_interface_override_message">留空則自動判斷。若紀錄指出有多個介面都可能是存取點，或選錯了介面，請設定此項。名稱可見於紀錄中「Providing credentials from」之後，或在殼層執行「ip -brief addr」，找出含有您無線基地台位址的項目。常見名稱：ap0、wlan0、wlan1、wlan2、softap0、ra0。</string>
@@ -1169,7 +1172,6 @@
     <string name="btn_reset_scale">重設按鈕大小</string>
     <string name="static_bssid_title">靜態 BSSID（MAC 位址）</string>
     <string name="static_bssid_help">手機為本裝置網路取得的 Wi-Fi 位址（BSSID）。留空則由應用程式自行讀取位址。只有當記錄顯示沒有來源回報位址時才輸入。使用 Wi-Fi Direct 時，這一列設定群組的位址。使用無線基地台時，設定無線基地台的位址。應用程式讀取到的位址一律優先於輸入的位址。</string>
-    <string name="native_ap_transport_hint">手機會加入本裝置自己的無線基地台，而非 Wi-Fi Direct 群組。連線前請先開啟無線基地台。</string>
     <string name="hotspot_band">無線基地台頻段</string>
     <string name="hotspot_band_auto">自動</string>
     <string name="hotspot_band_5ghz">僅 5 GHz</string>
@@ -1301,10 +1303,10 @@
     <string name="onb_audio_focus_title">音訊焦點</string>
     <string name="onb_audio_more_hint">之後可以在「設定 → 音訊串流」中再修改。</string>
     <string name="native_driver_selection_title">駕駛選擇</string>
-    <string name="native_driver_selection_summary">當車內有多位已配對的駕駛時，選擇要連線的手機。</string>
     <string name="native_driver_selection_mode_off">已停用</string>
     <string name="native_driver_selection_mode_auto">自動</string>
     <string name="native_driver_selection_mode_always">每次詢問</string>
+    <string name="native_driver_selection_help">選擇應用程式何時詢問要使用哪支手機，適用於多支已配對手機都可能成為主控手機的情況。已停用：應用程式啟動時不會詢問，WiFi 按鈕會連線最可能的手機。自動：只有在應用程式無法判斷主控手機時才詢問。如果只有一支手機透過藍牙連線，應用程式會使用該手機。每次詢問：已配對多支手機時，應用程式每次啟動都會詢問。最可能的手機依序為：已連線的手機、「偏好手機」、上次使用的手機。</string>
     <string name="native_driver_selection_timeout">自動連線倒數</string>
     <string name="native_driver_selection_timeout_help">主控手機清單開啟後會倒數，然後連線到最可能的手機。此項設定倒數時間，範圍為 3 到 30 秒。在結束前輕觸某支手機即可自行選擇。</string>
     <string name="native_driver_preferred_device">偏好手機</string>

@@ -120,7 +120,9 @@
 
     <string name="reconnection_required_title">Újrakapcsolódás szükséges</string>
     <string name="reconnection_required_message">Az eszköz várakozó állapotban van. Kérjük, húzza ki, majd dugja vissza az USB-kábelt az Android Auto újraindításához.</string>
-    <string name="bluetooth_address_s">Bluetooth-cím</string>
+    <string name="bluetooth_address_s">Az egység Bluetooth-címe</string>
+    <string name="bluetooth_address_summary">Ezzel a címmel ismeri fel a telefon ezt az egységet.</string>
+    <string name="bluetooth_address_help">Ennek az egységnek a saját Bluetooth-címe. A telefon ezzel ismeri fel az egységet, minden csatlakozási módban. Megtalálható a Beállítások, Névjegy, Állapot alatt, vagy a párosított telefonon az eszköz melletti fogaskeréknél. Hagyja üresen az automatikus felismeréshez. Az „A telefon média hangjának megtartása USB-n” beállítás megakadályozza, hogy az Android Auto USB-munkamenetben kikapcsolja a telefon Bluetooth média hangját. A hívások ilyenkor a telefonon maradhatnak.</string>
     <string name="enter_bluetooth_mac">Adja meg a Bluetooth MAC-címet</string>
     <string name="bluetooth_address_message">Ennek az egységnek a saját címe, amelyről a telefon felismeri. Megtalálható a Beállítások, Névjegy, Állapot alatt, vagy a párosított telefonon az eszköz melletti fogaskeréknél. Hagyja üresen az automatikus felismeréshez.</string>
     <string name="invalid_bluetooth_address">Ez nem Bluetooth-cím. Adjon meg hat pár hexadecimális számjegyet, például 0C:32:3A:2D:5D:4A.</string>
@@ -1126,6 +1128,7 @@
     <string name="native_ap_transport">Hálózati átvitel</string>
     <string name="native_ap_transport_wifi_direct">Wi-Fi Direct</string>
     <string name="native_ap_transport_hotspot">Hotspot</string>
+    <string name="native_ap_transport_help">Kiválasztja, melyik hálózathoz csatlakozik a telefon natív Android Auto módban. Wi-Fi Direct, alapértelmezett: az egység saját csoportot hoz létre, a telefon ahhoz csatlakozik. Hotspot: a telefon az egység hotspotjához csatlakozik. Ha a Wi-Fi Direct nem megy, használja. A hotspotnak csatlakozás előtt be kell lennie kapcsolva, kivéve ha a „Hotspot automatikus bekapcsolása” be van kapcsolva. Ha az egység nem tudja beolvasni a hotspot beállításait, adja meg a nevét és jelszavát az alábbi sorokban.</string>
     <string name="hotspot_interface_override">Hotspot hálózati interfésze</string>
     <string name="hotspot_interface_override_help">A hálózati interfész, amely az egység hotspotját hordozza. Hagyja üresen, és az alkalmazás megtalálja. Csak akkor adja meg, ha a napló szerint az alkalmazás rossz interfészt választott, vagy többet talált. Az alkalmazás ekkor akkor is elküldi a hotspot adatait, ha a rendszer nem jelent hotspotot, ezért győződjön meg róla, hogy a hotspot be van kapcsolva.</string>
     <string name="hotspot_interface_override_message">Hagyja üresen, hogy automatikusan derüljön ki. Akkor adja meg, ha a napló szerint több interfész is lehet a hozzáférési pont, vagy rossz interfészt választ. A név az, amelyet a napló a „Providing credentials from” után jelez, vagy az a bejegyzés, amely a hotspot címét tartalmazza a parancssorban futtatott „ip -brief addr” kimenetében. Gyakori nevek: ap0, wlan0, wlan1, wlan2, softap0, ra0.</string>
@@ -1173,7 +1176,6 @@
     <string name="btn_reset_scale">Gombméret visszaállítása</string>
     <string name="static_bssid_title">Statikus BSSID (MAC-cím)</string>
     <string name="static_bssid_help">A Wi-Fi-cím (BSSID), amelyet a telefon az egység hálózatához kap. Hagyja üresen, és az alkalmazás magától kiolvassa a címet. Csak akkor adjon meg egyet, ha a napló szerint egy forrás sem jelentett címet. Wi-Fi Direct esetén a sor a csoport címét adja meg. Hotspot esetén a hotspot címét. Az alkalmazás által kiolvasott cím mindig előbbre való a megadottnál.</string>
-    <string name="native_ap_transport_hint">A telefon a Wi-Fi Direct csoport helyett az eszköz saját hotspotjához csatlakozik. Csatlakozás előtt kapcsolja be.</string>
     <string name="hotspot_band">Hotspot frekvenciasáv</string>
     <string name="hotspot_band_auto">Automatikus</string>
     <string name="hotspot_band_5ghz">Csak 5 GHz</string>
@@ -1305,10 +1307,10 @@
     <string name="onb_audio_focus_title">Hangfókusz</string>
     <string name="onb_audio_more_hint">Ezeket később a Beállítások → Hangfolyamok alatt módosíthatja.</string>
     <string name="native_driver_selection_title">Vezetőválasztás</string>
-    <string name="native_driver_selection_summary">Válassza ki, melyik telefonnal csatlakozzon, ha több párosított vezetői telefon is van a járműben.</string>
     <string name="native_driver_selection_mode_off">Kikapcsolva</string>
     <string name="native_driver_selection_mode_auto">Automatikus</string>
     <string name="native_driver_selection_mode_always">Mindig kérdezzen</string>
+    <string name="native_driver_selection_help">Azt állítja be, mikor kérdez rá az alkalmazás, melyik telefont használja. Kikapcsolva: megnyitáskor sosem kérdez, a WiFi gomb a legvalószínűbb telefonhoz csatlakozik. Automatikus: csak akkor kérdez, ha nem tudja, melyik a sofőr telefonja. Ha egy telefon csatlakozik Bluetoothon, azt használja. Mindig kérdezzen: minden megnyitáskor kérdez, ha több telefon van párosítva. A legvalószínűbb a csatlakoztatott telefon, utána az „Elsődleges telefon”, végül az utoljára használt.</string>
     <string name="native_driver_selection_timeout">Visszaszámlálás az automatikus csatlakozásig</string>
     <string name="native_driver_selection_timeout_help">Amikor a sofőrlista megnyílik, visszaszámol, majd a legvalószínűbb telefonhoz csatlakozik. Ez a visszaszámlálást adja meg, 3 és 30 másodperc között. Koppintson egy telefonra a vége előtt, hogy Ön válassza ki.</string>
     <string name="native_driver_preferred_device">Elsődleges telefon</string>

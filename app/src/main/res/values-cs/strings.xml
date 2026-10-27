@@ -121,7 +121,9 @@
     <string name="reconnection_required_title">Vyžadováno opětovné připojení</string>
     <string name="reconnection_required_message">Zařízení čeká. Odpojte a znovu připojte kabel USB pro restart Android Auto.</string>
 
-    <string name="bluetooth_address_s">Adresa Bluetooth</string>
+    <string name="bluetooth_address_s">Adresa Bluetooth autorádia</string>
+    <string name="bluetooth_address_summary">Adresa, podle které telefon autorádio pozná.</string>
+    <string name="bluetooth_address_help">Vlastní adresa Bluetooth tohoto autorádia. Telefon podle ní autorádio pozná v každém režimu připojení. Najdete ji v Nastavení, Informace, Stav nebo na spárovaném telefonu pod ozubeným kolečkem vedle tohoto zařízení. Pro automatické zjištění nechte prázdné. Volba „Ponechat zvuk médií telefonu zapnutý přes USB“ brání tomu, aby Android Auto během relace USB vypnul zvuk médií telefonu přes Bluetooth. Hovory pak mohou zůstat v telefonu.</string>
     <string name="enter_bluetooth_mac">Zadejte MAC adresu Bluetooth</string>
     <string name="bluetooth_address_message">Vlastní adresa této jednotky, podle které ji telefon pozná. Najdete ji v nabídce Nastavení &gt; Informace &gt; Stav nebo na spárovaném telefonu pod ozubeným kolečkem vedle této jednotky. Pro automatické zjištění pole nechte prázdné.</string>
     <string name="invalid_bluetooth_address">To není adresa Bluetooth. Zadejte šest dvojic šestnáctkových číslic, například 0C:32:3A:2D:5D:4A.</string>
@@ -1126,6 +1128,7 @@
     <string name="native_ap_transport">Síťový přenos</string>
     <string name="native_ap_transport_wifi_direct">Wi-Fi Direct</string>
     <string name="native_ap_transport_hotspot">Hotspot</string>
+    <string name="native_ap_transport_help">Určuje síť, ke které se telefon připojí v nativním režimu Android Auto. Wi-Fi Direct, výchozí: autorádio vytvoří vlastní skupinu Wi-Fi Direct a telefon se k ní připojí. Hotspot: telefon se místo toho připojí k hotspotu autorádia. Použijte jej, když se Wi-Fi Direct nepřipojí. Hotspot musí být před připojením zapnutý, pokud není zapnuto „Automaticky zapnout hotspot“. Pokud autorádio nemůže přečíst nastavení hotspotu, zadejte název a heslo hotspotu v řádcích níže.</string>
     <string name="hotspot_interface_override">Síťové rozhraní hotspotu</string>
     <string name="hotspot_interface_override_help">Síťové rozhraní, které nese hotspot této jednotky. Nechte prázdné a aplikace ho najde sama. Zadejte je jen tehdy, když protokol uvádí, že aplikace vybrala špatné rozhraní nebo jich našla více. Aplikace pak pošle údaje hotspotu, i když systém žádný hotspot nehlásí, takže hotspot musí být zapnutý.</string>
     <string name="hotspot_interface_override_message">Nechte prázdné pro automatické zjištění. Nastavte, pokud protokol uvádí, že přístupovým bodem může být více rozhraní, nebo vybere špatné. Název je ten, který protokol uvádí za „Providing credentials from“, nebo položka s adresou vašeho hotspotu ve výstupu „ip -brief addr“ v shellu. Běžné názvy: ap0, wlan0, wlan1, wlan2, softap0, ra0.</string>
@@ -1173,7 +1176,6 @@
     <string name="btn_reset_scale">Obnovit velikost tlačítek</string>
     <string name="static_bssid_title">Statický BSSID (adresa MAC)</string>
     <string name="static_bssid_help">Adresa Wi-Fi (BSSID), kterou telefon dostane pro síť této jednotky. Nechte prázdné a aplikace adresu přečte sama. Zadejte ji jen tehdy, když protokol uvádí, že žádný zdroj adresu nenahlásil. U Wi-Fi Direct řádek nastavuje adresu skupiny. U hotspotu nastavuje adresu hotspotu. Adresa, kterou aplikace přečte, má vždy přednost před zadanou.</string>
-    <string name="native_ap_transport_hint">Telefon se připojí k hotspotu tohoto zařízení místo skupiny Wi-Fi Direct. Zapněte ho před připojením.</string>
     <string name="hotspot_band">Pásmo hotspotu</string>
     <string name="hotspot_band_auto">Automaticky</string>
     <string name="hotspot_band_5ghz">Pouze 5 GHz</string>
@@ -1305,10 +1307,10 @@
     <string name="onb_audio_focus_title">Fokus audia</string>
     <string name="onb_audio_more_hint">Toto můžete později změnit v Nastavení → Zvukové streamy.</string>
     <string name="native_driver_selection_title">Výběr řidiče</string>
-    <string name="native_driver_selection_summary">Vyberte, který telefon se má připojit, když je ve vozidle více spárovaných telefonů.</string>
     <string name="native_driver_selection_mode_off">Vypnuto</string>
     <string name="native_driver_selection_mode_auto">Automaticky</string>
     <string name="native_driver_selection_mode_always">Vždy se ptát</string>
+    <string name="native_driver_selection_help">Určuje, kdy se aplikace zeptá, který telefon použít. Vypnuto: aplikace se po otevření nezeptá a tlačítko WiFi připojí nejpravděpodobnější telefon. Automaticky: aplikace se zeptá, jen když nepozná, který telefon je řidič. Pokud je přes Bluetooth připojen jeden telefon, použije ten. Vždy se ptát: aplikace se zeptá při každém otevření, když je spárováno více telefonů. Nejpravděpodobnější je připojený telefon, pak „Preferovaný telefon“, pak naposledy použitý.</string>
     <string name="native_driver_selection_timeout">Odpočet automatického připojení</string>
     <string name="native_driver_selection_timeout_help">Když se otevře seznam řidičů, odpočítává a poté se připojí k nejpravděpodobnějšímu telefonu. Zde nastavíte odpočet, od 3 do 30 sekund. Klepnutím na telefon před koncem ho vyberete sami.</string>
     <string name="native_driver_preferred_device">Preferovaný telefon</string>

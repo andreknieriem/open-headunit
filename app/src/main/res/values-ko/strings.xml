@@ -1687,4 +1687,20 @@
     <string name="audio_matching_phase_vocoder_short_hint">저지연</string>
     <string name="audio_matching_phase_gradient_hint">저속 재생</string>
     <string name="audio_matching_description">OHU가 기본값입니다. WSOLA는 겹치는 파형을 정렬하고 Phase Vocoder는 주파수 성분의 위상을 조정합니다. Short는 더 짧은 분석 창을 사용합니다. Phase Gradient는 위상 기울기를 적분하여 위상을 복원합니다. 독립 구현된 방식이며 처리 지연이 추가됩니다. 이름은 음질 순위를 뜻하지 않습니다.\n\n네이티브 방식: PCM 음악에 적용\n길 안내·음성 응답·시스템 소리·AAC: OHU 사용\n다시 연결하면 적용됩니다. 삭제된 엔진의 저장 설정은 OHU로 초기화됩니다.</string>
+    <string name="auto_restart_wifi_adb">로컬 ADB를 찾았습니다. Wi-Fi Direct가 멈추면 Wi-Fi를 자동으로 다시 시작합니다.</string>
+    <string name="auto_restart_wifi_root_granted">루트 권한이 허용되었습니다. Wi-Fi Direct가 멈추면 Wi-Fi를 자동으로 다시 시작합니다.</string>
+    <string name="auto_restart_wifi_title">Wi-Fi Direct가 멈추면 Wi-Fi 다시 시작</string>
+    <string name="auto_restart_wifi_unavailable">이 헤드유닛에는 루트 권한이나 로컬 ADB가 없으므로, 대신 배너에서 한 번 탭하면 Wi-Fi를 다시 시작할 수 있습니다.</string>
+    <string name="bt_manufacturer_devices_android_unavailable">헤드유닛이 자체 블루투스 목록에 저장한 기기입니다.\n\n%1$s\n\n현재 Android 블루투스 목록을 사용할 수 없습니다. 이 저장 목록만으로는 Android 블루투스 트리거나 휴대전화 깨우기에 사용할 수 없습니다. 이 기기들이 연결되어 있는지, Android Auto 연결이 가능한지도 알 수 없습니다.</string>
+    <string name="bt_manufacturer_devices_message">헤드유닛이 자체 블루투스 목록에 저장한 기기입니다.\n\n%1$s\n\nAndroid에는 페어링된 기기로 표시되지 않습니다. 여기서는 Android 블루투스 트리거나 휴대전화 깨우기용으로 선택할 수 없습니다. 이 저장 목록으로는 기기가 연결되어 있는지, Android Auto 연결이 가능한지 알 수 없습니다.</string>
+    <string name="bt_manufacturer_devices_title">헤드유닛을 통해 페어링된 기기</string>
+    <string name="connection_issue_banner_wifi_direct_stuck">이 헤드유닛의 Wi-Fi Direct가 멈췄으며 Wi-Fi를 다시 시작해야만 해제됩니다. Wi-Fi를 다시 시작하려면 탭하세요.</string>
+    <string name="hct_aa_bluetooth_busy">블루투스가 사용 중입니다. Android Auto는 진행 중인 통화나 연결을 다시 시작하지 않습니다.</string>
+    <string name="hct_aa_handoff_unavailable">헤드유닛이 Android Auto 연결을 제공하지 않았습니다. Open Headunit이 이번 시도를 중단했습니다.</string>
+    <string name="hct_aa_no_paired_phone">헤드유닛의 블루투스 목록에 저장된 휴대전화가 없습니다. 헤드유닛의 블루투스 앱에서 휴대전화를 페어링한 다음 여기서 선택하세요.</string>
+    <string name="hct_aa_selection_pending">이전 휴대전화 연결을 아직 처리하는 중입니다. 이번 선택은 이전 연결을 대체하지 않았습니다.</string>
+    <string name="hct_aa_waiting_existing_bluetooth">블루투스가 이미 연결되어 있습니다. 헤드유닛이 Android Auto를 열 때까지 기다리는 중이며, 기존 연결은 다시 시작하지 않습니다.</string>
+    <string name="hct_aa_wake_unconfirmed">헤드유닛이 Android Auto 연결을 완료하지 못했습니다. 휴대전화를 다시 선택해 재시도하거나, 휴대전화의 블루투스 설정에서 다시 연결하세요. Open Headunit은 계속 Android Auto를 기다리는 중입니다.</string>
+    <string name="wifi_restart_failed">Wi-Fi를 다시 시작하지 못했습니다. 여기서 Wi-Fi를 껐다가 켜세요.</string>
+    <string name="wifi_restart_running">Wi-Fi를 다시 시작하는 중…</string>
 </resources>

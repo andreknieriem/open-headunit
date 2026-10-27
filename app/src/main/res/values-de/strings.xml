@@ -132,9 +132,9 @@
     <string name="bluetooth_address_message">Die eigene Adresse dieses Geräts, an der das Telefon es wiedererkennt. Du findest sie unter Einstellungen, Über das Gerät, Status, oder auf dem gekoppelten Telefon über das Zahnrad neben diesem Gerät. Leer lassen, um sie automatisch zu ermitteln.</string>
     <string name="invalid_bluetooth_address">Das ist keine Bluetooth-Adresse. Gib sechs hexadezimale Zahlenpaare ein, z. B. 0C:32:3A:2D:5D:4A.</string>
     <string name="reset">Zurücksetzen</string>
-    <string name="gps_for_navigation">GPS für Navigation</string>
-    <string name="gps_for_navigation_description">GPS für die Navigation verwenden.</string>
-    <string name="gps_for_navigation_help">Sendet die GPS-Position dieses Geräts an das Smartphone, und Android Auto nutzt sie für die Navigation. Die App sendet nur eine echte GPS-Ortung, nie eine Netzwerkposition. Verliert dieses Gerät die GPS-Ortung für eine Weile, hört die App auf zu senden, und das Smartphone nutzt seinen eigenen Standort. Gilt ab der nächsten Verbindung.</string>
+    <string name="gps_for_navigation">GPS dieses Geräts in Android Auto nutzen</string>
+    <string name="gps_for_navigation_description">Android Auto nutzt die Position dieses Geräts, nicht die des Smartphones.</string>
+    <string name="gps_for_navigation_help">Legt fest, woher Android Auto die Fahrzeugposition für Karten und Navigation bekommt. An: Die App sendet die GPS-Position dieses Geräts an das Smartphone. Aus: Das Smartphone nutzt seinen eigenen Standort. Schalte es ein, wenn dieses Gerät die bessere GPS-Antenne hat. Die App sendet nur eine echte GPS-Ortung. Verliert das Gerät die Ortung für eine Weile, nutzt das Smartphone wieder seinen eigenen Standort. Ausschalten stoppt das GPS dieses Geräts nicht. Gilt ab der nächsten Verbindung.</string>
     <string name="enabled">Aktiviert</string>
     <string name="disabled">Deaktiviert</string>
     <string name="resolution">Auflösung</string>
@@ -754,7 +754,7 @@
     <string name="current_brightness_reading">Aktuelle Helligkeit: %d / 255</string>
     <string name="exit_dialog_settings">Schnelleinstellungen</string>
     <string name="key_back">Zurück</string>
-    <string name="category_backup">Sicherung</string>
+    <string name="category_backup_reset">Sicherung und Zurücksetzen</string>
     <string name="export_settings">Einstellungen exportieren</string>
     <string name="export_settings_description">Speichere eine Sicherung der Einstellungen als JSON-Datei.</string>
     <string name="export_settings_app_folder">In App-Sicherungsordner speichern</string>
@@ -1027,7 +1027,6 @@
     <string name="aa174_notice_message"><![CDATA[Mit dem Update auf Android Auto 17.4 hat Google tiefgreifende Änderungen eingeführt, die den automatischen Verbindungsaufbau über den Wireless Helper sowie den klassischen Self-Mode unbrauchbar machen.<br/><br/><b>Mögliche Lösungen:</b><br/><br/><b>1. Headunit Server (Entwicklermodus):</b><br/>Die einzige verbliebene Lösung für den Self-Mode! Öffne auf dem Smartphone die Android Auto Entwicklereinstellungen und starte den „Headunit Server“.<br/><br/><b>2. Nativer Modus:</b><br/>Verbindet sich direkt via Wi-Fi Direct oder Headunit-Hotspot.<br/><br/><b>3. Drahtloser USB-Dongle:</b><br/>Ein externer Wireless-USB-Adapter bietet die stabilste Plug-and-Play-Verbindung.<br/><br/><b>4. Wireless Helper:</b><br/>Funktioniert weiterhin zuverlässig für Android Auto bis einschließlich Version 17.3.]]></string>
     <string name="aa174_notice_button_confirm">Verstanden</string>
     <string name="aa174_notice_button_guide">Anleitung öffnen</string>
-    <string name="category_ui">Oberfläche</string>
     <string name="hide_phone_signal_label">Signalstärke des Telefons ausblenden</string>
     <string name="hide_phone_signal_help">Bittet Android Auto, die Signalstärke des Smartphones nicht auf dem Bildschirm dieses Geräts anzuzeigen. Einige neuere Android-Auto-Versionen ignorieren diese Bitte. Gilt ab der nächsten Verbindung.</string>
     <string name="hide_battery_level_label">Akkustand des Telefons ausblenden</string>

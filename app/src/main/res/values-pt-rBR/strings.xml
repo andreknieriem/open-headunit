@@ -98,9 +98,9 @@
     <string name="bluetooth_address_message">O endereço da própria unidade, pelo qual o telefone a reconhece. Você o encontra em Configurações, Sobre, Status, ou no telefone pareado sob a engrenagem ao lado deste dispositivo. Deixe vazio para detectá-lo automaticamente.</string>
     <string name="invalid_bluetooth_address">Isso não é um endereço Bluetooth. Insira seis pares de dígitos hexadecimais, como 0C:32:3A:2D:5D:4A.</string>
     <string name="reset">Redefinir</string>
-    <string name="gps_for_navigation">GPS para navegação</string>
-    <string name="gps_for_navigation_description">Usar GPS para navegação.</string>
-    <string name="gps_for_navigation_help">Envia ao smartphone a posição GPS desta unidade, e o Android Auto a usa na navegação. O app envia só um sinal real de GPS, nunca uma posição da rede. Se a unidade perder o sinal de GPS por um tempo, o app para de enviar e o smartphone usa a própria localização. Vale na próxima conexão.</string>
+    <string name="gps_for_navigation">Usar o GPS desta unidade no Android Auto</string>
+    <string name="gps_for_navigation_description">O Android Auto pega a posição do carro desta unidade, não do smartphone.</string>
+    <string name="gps_for_navigation_help">Define de onde o Android Auto pega a posição do carro para mapas e navegação. Ativado: o app envia ao smartphone a posição GPS desta unidade. Desativado: o smartphone usa a própria localização. Ative se a antena GPS da unidade for melhor que a do smartphone. O app envia só um sinal real de GPS. Se a unidade perder o sinal por um tempo, o smartphone usa a própria localização. Desativar não desliga o GPS da unidade. Vale na próxima conexão.</string>
     <string name="enabled">Ativado</string>
     <string name="disabled">Desativado</string>
     <string name="resolution">Resolução</string>
@@ -709,7 +709,7 @@
     <string name="current_brightness_reading">Brilho atual: %d / 255</string>
     <string name="exit_dialog_settings">Configurações rápidas</string>
     <string name="key_back">Voltar</string>
-    <string name="category_backup">Backup</string>
+    <string name="category_backup_reset">Backup e redefinição</string>
     <string name="export_settings">Exportar configurações</string>
     <string name="export_settings_description">Salvar um backup das configurações como arquivo JSON.</string>
     <string name="export_settings_app_folder">Salvar na pasta de backup do app</string>
@@ -1206,7 +1206,6 @@
     <string name="native_aa_setup_qr_no_address">O endereço desta unidade nessa rede ainda não é conhecido.</string>
     <string name="native_aa_setup_qr_no_bluetooth">Não foi possível ler o endereço Bluetooth desta unidade, e o telefone precisa dele para reconhecer esta central depois. Digite-o em Conexão sem fio. O telefone pareado mostra o endereço na engrenagem ao lado deste dispositivo.</string>
     <string name="native_aa_setup_qr_dongle">O nome Bluetooth desta unidade parece o de um adaptador sem fio, que o telefone trata como outro tipo de dispositivo. Renomeie o Bluetooth desta unidade e tente de novo.</string>
-    <string name="category_ui">Interface</string>
     <string name="hide_phone_signal_label">Ocultar sinal do telefone</string>
     <string name="hide_phone_signal_help">Pede ao Android Auto que não mostre a intensidade do sinal do smartphone na tela desta unidade. Algumas versões mais novas do Android Auto ignoram o pedido. Vale na próxima conexão.</string>
     <string name="hide_battery_level_label">Ocultar nível de bateria do telefone</string>

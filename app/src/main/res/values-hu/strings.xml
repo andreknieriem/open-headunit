@@ -97,9 +97,9 @@
     <string name="bluetooth_address_message">Ennek az egységnek a saját címe, amelyről a telefon felismeri. Megtalálható a Beállítások, Névjegy, Állapot alatt, vagy a párosított telefonon az eszköz melletti fogaskeréknél. Hagyja üresen az automatikus felismeréshez.</string>
     <string name="invalid_bluetooth_address">Ez nem Bluetooth-cím. Adjon meg hat pár hexadecimális számjegyet, például 0C:32:3A:2D:5D:4A.</string>
     <string name="reset">Visszaállítás</string>
-    <string name="gps_for_navigation">GPS a navigációhoz</string>
-    <string name="gps_for_navigation_description">GPS használata a navigációhoz.</string>
-    <string name="gps_for_navigation_help">Elküldi az egység saját GPS-pozícióját a telefonnak, és az Android Auto ezt használja a navigációhoz. Az alkalmazás csak valódi GPS-helyzetet küld, hálózati pozíciót soha. Ha az egység egy időre elveszíti a GPS-jelet, az alkalmazás leáll a küldéssel, és a telefon a saját helyzetét használja. A következő csatlakozáskor lép érvénybe.</string>
+    <string name="gps_for_navigation">Az egység GPS-ének használata az Android Autóban</string>
+    <string name="gps_for_navigation_description">Az Android Auto az autó helyzetét az egységtől kapja, nem a telefontól.</string>
+    <string name="gps_for_navigation_help">Megadja, honnan kapja az Android Auto az autó helyzetét a térképhez és a navigációhoz. Be: az alkalmazás az egység GPS-pozícióját küldi a telefonnak. Ki: a telefon a saját helyzetét használja. Kapcsold be, ha az egység GPS-antennája jobb a telefonénál. Az alkalmazás csak valódi GPS-helyzetet küld. Ha az egység egy időre elveszíti a GPS-jelet, a telefon a saját helyzetét használja. A kikapcsolás nem állítja le az egység GPS-ét. A következő csatlakozáskor lép érvénybe.</string>
     <string name="enabled">Bekapcsolva</string>
     <string name="disabled">Kikapcsolva</string>
     <string name="resolution">Felbontás</string>
@@ -701,7 +701,7 @@
     <string name="current_brightness_reading">Aktuális fényerő: %d / 255</string>
     <string name="exit_dialog_settings">Gyors beállítások</string>
     <string name="key_back">Vissza</string>
-    <string name="category_backup">Biztonsági mentés</string>
+    <string name="category_backup_reset">Mentés és visszaállítás</string>
     <string name="export_settings">Beállítások exportálása</string>
     <string name="export_settings_description">Beállítások biztonsági mentése JSON-fájlként.</string>
     <string name="export_settings_app_folder">Mentés az alkalmazás mentési mappájába</string>
@@ -1206,7 +1206,6 @@
     <string name="native_aa_setup_qr_no_address">Az egység saját címe ezen a hálózaton még nem ismert.</string>
     <string name="native_aa_setup_qr_no_bluetooth">Az egység Bluetooth-címét nem sikerült kiolvasni, pedig a telefonnak szüksége van rá, hogy később felismerje ezt a fejegységet. Adja meg a Vezeték nélküli kapcsolat menüben. A párosított telefonon az eszköz melletti fogaskerék alatt látható.</string>
     <string name="native_aa_setup_qr_dongle">Az egység Bluetooth-neve vezeték nélküli adapternek látszik, amit a telefon másfajta eszközként kezel. Nevezze át a Bluetootht ezen az egységen, és próbálja újra.</string>
-    <string name="category_ui">Felhasználói felület</string>
     <string name="hide_phone_signal_label">Telefon térerő elrejtése</string>
     <string name="hide_phone_signal_help">Megkéri az Android Autót, hogy ne jelenítse meg a telefon jelerősségét az egység képernyőjén. Néhány újabb Android Auto-verzió figyelmen kívül hagyja ezt a kérést. A következő csatlakozáskor lép érvénybe.</string>
     <string name="hide_battery_level_label">Telefon akkumulátorszint elrejtése</string>

@@ -348,9 +348,9 @@
     <string name="reset_settings">डिफ़ॉल्ट पर रीसेट करें</string>
     <string name="reset_settings_confirm">क्या आप सभी सेटिंग्स को डिफ़ॉल्ट पर रीसेट करना चाहते हैं? इससे ऐप रीस्टार्ट हो जाएगा।</string>
     <string name="reset_settings_description">सभी कॉन्फ़िगरेशन, कैश डेटा और ऑटो-कनेक्ट की पसंद मिटा देता है। फ़ैक्टरी डिफ़ॉल्ट लागू करने के लिए ऐप रीस्टार्ट होगा।</string>
-    <string name="gps_for_navigation">नेविगेशन के लिए GPS</string>
-    <string name="gps_for_navigation_description">नेविगेशन के लिए GPS का उपयोग करें।</string>
-    <string name="gps_for_navigation_help">इस यूनिट की अपनी GPS लोकेशन फ़ोन को भेजता है, और Android Auto उसे नेविगेशन के लिए इस्तेमाल करता है। ऐप केवल असली GPS फ़िक्स भेजता है, नेटवर्क लोकेशन कभी नहीं। अगर यूनिट कुछ देर के लिए GPS फ़िक्स खो दे, तो ऐप भेजना बंद कर देता है और फ़ोन अपनी लोकेशन इस्तेमाल करता है। अगले कनेक्शन पर लागू होता है।</string>
+    <string name="gps_for_navigation">Android Auto में इस यूनिट के GPS का उपयोग करें</string>
+    <string name="gps_for_navigation_description">Android Auto कार की लोकेशन फ़ोन से नहीं, इस यूनिट से लेता है।</string>
+    <string name="gps_for_navigation_help">चुनता है कि Android Auto मैप और नेविगेशन के लिए कार की लोकेशन कहाँ से ले। चालू: ऐप इस यूनिट की GPS लोकेशन फ़ोन को भेजता है। बंद: फ़ोन अपनी लोकेशन इस्तेमाल करता है। इसे तब चालू करें जब यूनिट का GPS एंटीना फ़ोन से बेहतर हो। ऐप केवल असली GPS फ़िक्स भेजता है। यूनिट कुछ देर GPS फ़िक्स खो दे, तो फ़ोन अपनी लोकेशन इस्तेमाल करता है। इसे बंद करने से यूनिट का GPS बंद नहीं होता। अगले कनेक्शन पर लागू होता है।</string>
     <string name="enabled">चालू</string>
     <string name="disabled">बंद</string>
     <string name="resolution">रिज़ॉल्यूशन</string>
@@ -849,7 +849,7 @@
     <string name="discard">छोड़ें</string>
     <string name="stopping_service">बदलाव लागू करने के लिए सेवा बंद की जा रही है…</string>
     <string name="settings_saved">सेटिंग्स सेव हो गईं</string>
-    <string name="category_backup">बैकअप</string>
+    <string name="category_backup_reset">बैकअप और रीसेट</string>
     <string name="export_settings">सेटिंग्स निर्यात करें</string>
     <string name="export_settings_description">सेटिंग का बैकअप JSON फ़ाइल के रूप में सेव करें।</string>
     <string name="export_settings_choose_location">सेव करने की जगह चुनें</string>
@@ -1440,7 +1440,6 @@
     <string name="aa174_notice_message"><![CDATA[Android Auto 17.4 से शुरू करते हुए, Google ने ऐसे आंतरिक बदलाव किए जो Wireless Helper और क्लासिक सेल्फ़-मोड के माध्यम से स्वचालित लॉन्च को बंद कर देते हैं।<br/><br/><b>उपलब्ध तरीके:</b><br/><br/><b>1. हेडयूनिट सर्वर (डेवलपर मोड):</b><br/>सेल्फ़-मोड के लिए अकेला बचा हुआ काम करने वाला तरीका! अपने फ़ोन पर, Android Auto डेवलपर सेटिंग्स खोलें और "Start headunit server" पर टैप करें।<br/><br/><b>2. नेटिव मोड:</b><br/>सीधे वाई-फ़ाई डायरेक्ट या हेडयूनिट हॉटस्पॉट के माध्यम से कनेक्ट होता है।<br/><br/><b>3. यूएसबी वायरलेस डोंगल:</b><br/>एक हार्डवेयर यूएसबी वायरलेस अडैप्टर सबसे विश्वसनीय प्लग-एंड-प्ले अनुभव प्रदान करता है।<br/><br/><b>4. Wireless Helper:</b><br/>संस्करण 17.3 तक Android Auto के लिए काम करना जारी रखता है।]]></string>
     <string name="aa174_notice_button_confirm">ठीक है</string>
     <string name="aa174_notice_button_guide">गाइड खोलें</string>
-    <string name="category_ui">यूज़र इंटरफ़ेस</string>
     <string name="hide_phone_signal_label">फ़ोन का सिग्नल छिपाएं</string>
     <string name="hide_phone_signal_help">Android Auto से कहता है कि वह फ़ोन के सिग्नल की ताकत इस यूनिट की स्क्रीन पर न दिखाए। Android Auto के कुछ नए वर्शन इस अनुरोध को अनदेखा करते हैं। अगले कनेक्शन पर लागू होता है।</string>
     <string name="hide_battery_level_label">फ़ोन का बैटरी स्तर छिपाएं</string>

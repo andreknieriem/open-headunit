@@ -98,9 +98,9 @@
     <string name="bluetooth_address_message">Adres Bluetooth tej stacji, używany przez telefon do jej identyfikacji. Znajdziesz go w: Ustawienia > Informacje > Stan lub w telefonie, dotykając ikony koła zębatego obok sparowanego urządzenia. Pozostaw puste, aby wykryć automatycznie.</string>
     <string name="invalid_bluetooth_address">To nie jest adres Bluetooth. Wprowadź sześć par cyfr szesnastkowych, na przykład 0C:32:3A:2D:5D:4A.</string>
     <string name="reset">Resetuj</string>
-    <string name="gps_for_navigation">GPS do nawigacji</string>
-    <string name="gps_for_navigation_description">Używaj GPS do nawigacji.</string>
-    <string name="gps_for_navigation_help">Wysyła do telefonu pozycję GPS tej stacji, a Android Auto używa jej do nawigacji. Aplikacja wysyła tylko prawdziwą pozycję GPS, nigdy pozycji z sieci. Jeśli stacja na jakiś czas straci sygnał GPS, aplikacja przestaje wysyłać, a telefon używa własnej lokalizacji. Działa od następnego połączenia.</string>
+    <string name="gps_for_navigation">Używaj GPS tej stacji w Android Auto</string>
+    <string name="gps_for_navigation_description">Android Auto bierze pozycję auta z tej stacji, a nie z telefonu.</string>
+    <string name="gps_for_navigation_help">Wybiera, skąd Android Auto bierze pozycję auta do map i nawigacji. Wł.: aplikacja wysyła do telefonu pozycję GPS tej stacji. Wył.: telefon używa własnej lokalizacji. Włącz, jeśli antena GPS stacji jest lepsza niż w telefonie. Aplikacja wysyła tylko prawdziwą pozycję GPS. Jeśli stacja na jakiś czas straci sygnał GPS, telefon używa własnej lokalizacji. Wyłączenie opcji nie wyłącza GPS stacji. Działa od następnego połączenia.</string>
     <string name="enabled">Włączone</string>
     <string name="disabled">Wyłączone</string>
     <string name="resolution">Rozdzielczość</string>
@@ -709,7 +709,7 @@
     <string name="current_brightness_reading">Aktualna jasność: %d / 255</string>
     <string name="exit_dialog_settings">Szybkie ustawienia</string>
     <string name="key_back">Wstecz</string>
-    <string name="category_backup">Kopia zapasowa</string>
+    <string name="category_backup_reset">Kopia zapasowa i reset</string>
     <string name="export_settings">Eksportuj ustawienia</string>
     <string name="export_settings_description">Zapisz kopię zapasową ustawień jako plik JSON.</string>
     <string name="export_settings_app_folder">Zapisz w folderze kopii zapasowych aplikacji</string>
@@ -1211,7 +1211,6 @@
     <string name="native_aa_setup_qr_no_address">Własny adres tego urządzenia w tej sieci nie jest jeszcze znany.</string>
     <string name="native_aa_setup_qr_no_bluetooth">Nie udało się odczytać adresu Bluetooth tego urządzenia, a telefon potrzebuje go, aby później rozpoznać tę jednostkę. Wpisz go w sekcji Połączenie bezprzewodowe. Sparowany telefon pokazuje go pod ikoną koła zębatego obok tego urządzenia.</string>
     <string name="native_aa_setup_qr_dongle">Nazwa Bluetooth tej stacji sugeruje, że jest ona zewnętrznym adapterem bezprzewodowym, który telefon traktuje jako inny typ urządzenia. Zmień nazwę Bluetooth stacji i spróbuj ponownie.</string>
-    <string name="category_ui">Interfejs użytkownika</string>
     <string name="hide_phone_signal_label">Ukryj sygnał telefonu</string>
     <string name="hide_phone_signal_help">Prosi Android Auto, aby nie pokazywał siły sygnału telefonu na ekranie tej stacji. Niektóre nowsze wersje Android Auto ignorują tę prośbę. Działa od następnego połączenia.</string>
     <string name="hide_battery_level_label">Ukryj poziom baterii telefonu</string>

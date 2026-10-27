@@ -32,9 +32,7 @@ object SettingsCategoryIcons {
         "video" to (R.drawable.ic_sym_videocam to R.drawable.ic_sym_videocam_fill),
         "input" to (R.drawable.ic_sym_keyboard to R.drawable.ic_sym_keyboard_fill),
         "audio" to (R.drawable.ic_sym_volume_up to R.drawable.ic_sym_volume_up_fill),
-        "UI" to (R.drawable.ic_sym_dashboard to R.drawable.ic_sym_dashboard_fill),
         "backup" to (R.drawable.ic_sym_settings_backup_restore to R.drawable.ic_sym_settings_backup_restore_fill),
-        "resetSettingsCategory" to (R.drawable.ic_sym_restart_alt to R.drawable.ic_sym_restart_alt_fill),
         "debug" to (R.drawable.ic_sym_bug_report to R.drawable.ic_sym_bug_report_fill),
         "info" to (R.drawable.ic_sym_info to R.drawable.ic_sym_info_fill)
     )

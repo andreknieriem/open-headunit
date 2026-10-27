@@ -97,9 +97,9 @@
     <string name="bluetooth_address_message">Het eigen adres van dit apparaat, waaraan de telefoon het herkent. Je vindt het onder Instellingen, Over, Status, of op de gekoppelde telefoon onder het tandwiel naast dit apparaat. Laat leeg om het automatisch te laten detecteren.</string>
     <string name="invalid_bluetooth_address">Dat is geen Bluetooth-adres. Voer zes paren hexadecimale tekens in, bijvoorbeeld 0C:32:3A:2D:5D:4A.</string>
     <string name="reset">Reset</string>
-    <string name="gps_for_navigation">GPS voor navigatie</string>
-    <string name="gps_for_navigation_description">GPS gebruiken voor navigatie.</string>
-    <string name="gps_for_navigation_help">Stuurt de eigen gps-positie van deze unit naar de telefoon, en Android Auto gebruikt die voor navigatie. De app stuurt alleen een echte gps-fix, nooit een netwerklocatie. Verliest de unit een tijdje de gps-fix, dan stopt de app met sturen en gebruikt de telefoon zijn eigen locatie. Geldt bij de volgende verbinding.</string>
+    <string name="gps_for_navigation">GPS van deze unit gebruiken in Android Auto</string>
+    <string name="gps_for_navigation_description">Android Auto haalt de positie van de auto van deze unit, niet van de telefoon.</string>
+    <string name="gps_for_navigation_help">Bepaalt waar Android Auto de positie van de auto voor kaarten en navigatie vandaan haalt. Aan: de app stuurt de gps-positie van deze unit naar de telefoon. Uit: de telefoon gebruikt zijn eigen locatie. Zet dit aan als de gps-antenne van de unit beter is dan die van de telefoon. De app stuurt alleen een echte gps-fix. Verliest de unit een tijdje de fix, dan gebruikt de telefoon zijn eigen locatie. Uitzetten schakelt de gps van de unit niet uit. Geldt bij de volgende verbinding.</string>
     <string name="enabled">Ingeschakeld</string>
     <string name="disabled">Uitgeschakeld</string>
     <string name="resolution">Resolutie</string>
@@ -708,7 +708,7 @@
     <string name="current_brightness_reading">Huidige helderheid: %d / 255</string>
     <string name="exit_dialog_settings">Snelle instellingen</string>
     <string name="key_back">Terug</string>
-    <string name="category_backup">Back-up</string>
+    <string name="category_backup_reset">Back-up en reset</string>
     <string name="export_settings">Instellingen exporteren</string>
     <string name="export_settings_description">Sla een back-up van je instellingen op als JSON-bestand.</string>
     <string name="export_settings_app_folder">Opslaan in back-upmap van app</string>
@@ -1210,7 +1210,6 @@
     <string name="native_aa_setup_qr_no_address">Het eigen adres van dit apparaat op dat netwerk is nog niet bekend.</string>
     <string name="native_aa_setup_qr_no_bluetooth">Het Bluetooth-adres van dit apparaat kon niet worden gelezen, en de telefoon heeft het nodig om deze headunit later te herkennen. Vul het in onder Draadloze verbinding. De gekoppelde telefoon toont het onder het tandwiel naast dit apparaat.</string>
     <string name="native_aa_setup_qr_dongle">De Bluetooth-naam van dit apparaat lijkt op die van een draadloze dongle, en de telefoon behandelt zo\'n dongle als een ander soort apparaat. Geef Bluetooth op dit apparaat een andere naam en probeer het opnieuw.</string>
-    <string name="category_ui">Gebruikersinterface</string>
     <string name="hide_phone_signal_label">Telefoonsignaal verbergen</string>
     <string name="hide_phone_signal_help">Vraagt Android Auto om de signaalsterkte van de telefoon niet op het scherm van deze unit te tonen. Sommige nieuwere versies van Android Auto negeren dit verzoek. Geldt bij de volgende verbinding.</string>
     <string name="hide_battery_level_label">Batterijniveau van telefoon verbergen</string>

@@ -348,9 +348,9 @@
     <string name="reset_settings">รีเซ็ตเป็นค่าเริ่มต้น</string>
     <string name="reset_settings_confirm">คุณแน่ใจหรือไม่ว่าต้องการรีเซ็ตการตั้งค่าทั้งหมดเป็นค่าเริ่มต้น? การดำเนินการนี้จะรีสตาร์ทแอป</string>
     <string name="reset_settings_description">ล้างการกำหนดค่า ข้อมูลแคช และการตั้งค่าเชื่อมต่ออัตโนมัติทั้งหมด แอปจะรีสตาร์ทเพื่อใช้ค่าเริ่มต้นจากโรงงาน</string>
-    <string name="gps_for_navigation">GPS สำหรับการนำทาง</string>
-    <string name="gps_for_navigation_description">ใช้ GPS สำหรับการนำทาง</string>
-    <string name="gps_for_navigation_help">ส่งตำแหน่ง GPS ของอุปกรณ์นี้ไปยังโทรศัพท์ และ Android Auto ใช้เพื่อการนำทาง แอปจะส่งเฉพาะตำแหน่ง GPS จริง ไม่ส่งตำแหน่งจากเครือข่าย หากอุปกรณ์สูญเสียสัญญาณ GPS ไปสักพัก แอปจะหยุดส่ง และโทรศัพท์จะใช้ตำแหน่งของตัวเอง มีผลเมื่อเชื่อมต่อครั้งถัดไป</string>
+    <string name="gps_for_navigation">ใช้ GPS ของอุปกรณ์นี้ใน Android Auto</string>
+    <string name="gps_for_navigation_description">Android Auto รับตำแหน่งรถจากอุปกรณ์นี้ ไม่ใช่จากโทรศัพท์</string>
+    <string name="gps_for_navigation_help">เลือกว่า Android Auto จะรับตำแหน่งรถสำหรับแผนที่และการนำทางจากที่ใด เปิด: แอปส่งตำแหน่ง GPS ของอุปกรณ์นี้ไปยังโทรศัพท์ ปิด: โทรศัพท์ใช้ตำแหน่งของตัวเอง เปิดไว้หากเสาอากาศ GPS ของอุปกรณ์รับสัญญาณได้ดีกว่าโทรศัพท์ แอปจะส่งเฉพาะตำแหน่ง GPS จริง หากอุปกรณ์สูญเสียสัญญาณ GPS ไปสักพัก โทรศัพท์จะใช้ตำแหน่งของตัวเอง การปิดตัวเลือกนี้ไม่ได้ปิด GPS ของอุปกรณ์ มีผลเมื่อเชื่อมต่อครั้งถัดไป</string>
     <string name="enabled">เปิดอยู่</string>
     <string name="disabled">ปิดอยู่</string>
     <string name="resolution">ความละเอียด</string>
@@ -850,7 +850,7 @@
     <string name="discard">ละทิ้ง</string>
     <string name="stopping_service">กำลังหยุดบริการเพื่อใช้การเปลี่ยนแปลง…</string>
     <string name="settings_saved">บันทึกการตั้งค่าแล้ว</string>
-    <string name="category_backup">การสำรองข้อมูล</string>
+    <string name="category_backup_reset">สำรองข้อมูลและรีเซ็ต</string>
     <string name="export_settings">ส่งออกการตั้งค่า</string>
     <string name="export_settings_description">บันทึกข้อมูลสำรองการตั้งค่าเป็นไฟล์ JSON</string>
     <string name="export_settings_choose_location">เลือกตำแหน่งที่บันทึก</string>
@@ -1440,7 +1440,6 @@
     <string name="aa174_notice_message"><![CDATA[ตั้งแต่ Android Auto 17.4 เป็นต้นไป Google ได้นำการเปลี่ยนแปลงภายในมาใช้ ซึ่งปิดใช้งานการเปิดอัตโนมัติผ่าน Wireless Helper และโหมดตนเองแบบคลาสสิก<br/><br/><b>วิธีแก้ปัญหาที่มีให้:</b><br/><br/><b>1. เซิร์ฟเวอร์เฮดยูนิต (โหมดนักพัฒนา):</b><br/>ทางออกเดียวที่เหลืออยู่สำหรับโหมดตนเอง! บนโทรศัพท์ ให้เปิดการตั้งค่านักพัฒนา Android Auto แล้วแตะ "Start headunit server"<br/><br/><b>2. โหมดเนทีฟ (Native):</b><br/>เชื่อมต่อโดยตรงผ่าน Wi-Fi Direct หรือฮอตสปอตเฮดยูนิต<br/><br/><b>3. ดองเกิลไร้สาย USB:</b><br/>อะแดปเตอร์ไร้สาย USB แบบฮาร์ดแวร์ให้ประสบการณ์เสียบแล้วใช้งานได้ทันทีที่เสถียรที่สุด<br/><br/><b>4. Wireless Helper:</b><br/>ยังคงใช้งานได้ดีสำหรับ Android Auto จนถึงเวอร์ชัน 17.3]]></string>
     <string name="aa174_notice_button_confirm">รับทราบ</string>
     <string name="aa174_notice_button_guide">เปิดคู่มือ</string>
-    <string name="category_ui">อินเทอร์เฟซผู้ใช้</string>
     <string name="hide_phone_signal_label">ซ่อนสัญญาณของโทรศัพท์</string>
     <string name="hide_phone_signal_help">ขอให้ Android Auto ไม่แสดงความแรงสัญญาณของโทรศัพท์บนหน้าจอของอุปกรณ์นี้ Android Auto เวอร์ชันใหม่บางรุ่นไม่สนใจคำขอนี้ มีผลเมื่อเชื่อมต่อครั้งถัดไป</string>
     <string name="hide_battery_level_label">ซ่อนระดับแบตเตอรี่ของโทรศัพท์</string>

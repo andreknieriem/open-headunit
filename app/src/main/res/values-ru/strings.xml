@@ -98,9 +98,9 @@
     <string name="bluetooth_address_message">Собственный адрес этого устройства, по которому телефон его узнаёт. Найдите его в разделе «Настройки» &gt; «О телефоне» &gt; «Состояние» или на сопряжённом телефоне под значком шестерёнки рядом с этим устройством. Оставьте поле пустым для автоматического определения.</string>
     <string name="invalid_bluetooth_address">Это не адрес Bluetooth. Введите шесть пар шестнадцатеричных цифр, например 0C:32:3A:2D:5D:4A.</string>
     <string name="reset">Сброс</string>
-    <string name="gps_for_navigation">GPS для навигации</string>
-    <string name="gps_for_navigation_description">Использовать GPS для навигации.</string>
-    <string name="gps_for_navigation_help">Отправляет на телефон GPS-позицию самого устройства, и Android Auto использует её для навигации. Приложение отправляет только реальные GPS-данные, но не положение по сети. Если устройство на время теряет GPS, приложение прекращает отправку, и телефон использует собственное местоположение. Применяется при следующем подключении.</string>
+    <string name="gps_for_navigation">Использовать GPS устройства в Android Auto</string>
+    <string name="gps_for_navigation_description">Android Auto берёт положение авто с этого устройства, а не с телефона.</string>
+    <string name="gps_for_navigation_help">Выбирает, откуда Android Auto берёт положение авто для карт и навигации. Вкл.: приложение отправляет на телефон GPS-позицию этого устройства. Выкл.: телефон использует собственное местоположение. Включите, если GPS-антенна устройства лучше, чем в телефоне. Приложение отправляет только реальные GPS-данные. Если устройство на время теряет GPS, телефон использует собственное местоположение. Выключение не отключает GPS устройства. Применяется при следующем подключении.</string>
     <string name="enabled">Включено</string>
     <string name="disabled">Выключено</string>
     <string name="resolution">Разрешение экрана</string>
@@ -710,7 +710,7 @@ Open Headunit предоставляется «как есть» без каки
     <string name="current_brightness_reading">Текущая яркость: %d / 255</string>
     <string name="exit_dialog_settings">Быстрые настройки</string>
     <string name="key_back">Назад</string>
-    <string name="category_backup">Резервная копия</string>
+    <string name="category_backup_reset">Резервная копия и сброс</string>
     <string name="export_settings">Экспорт настроек</string>
     <string name="export_settings_description">Сохранить резервную копию настроек как файл JSON.</string>
     <string name="export_settings_app_folder">Сохранить в папку резервных копий приложения</string>
@@ -1203,7 +1203,6 @@ Open Headunit предоставляется «как есть» без каки
     <string name="native_aa_setup_qr_no_address">Адрес этого устройства в этой сети пока неизвестен.</string>
     <string name="native_aa_setup_qr_no_bluetooth">Не удалось прочитать Bluetooth-адрес этого устройства, а он нужен телефону, чтобы потом узнать это головное устройство. Введите его в разделе «Беспроводное подключение». На сопряжённом телефоне он указан под значком шестерёнки рядом с этим устройством.</string>
     <string name="native_aa_setup_qr_dongle">Имя Bluetooth этого устройства выглядит как беспроводной адаптер, который телефон считает устройством другого типа. Переименуйте Bluetooth на этом устройстве и повторите попытку.</string>
-    <string name="category_ui">Интерфейс</string>
     <string name="hide_phone_signal_label">Скрыть уровень сигнала телефона</string>
     <string name="hide_phone_signal_help">Просит Android Auto не показывать уровень сигнала телефона на экране этого устройства. Некоторые новые версии Android Auto игнорируют этот запрос. Применяется при следующем подключении.</string>
     <string name="hide_battery_level_label">Скрыть уровень заряда телефона</string>

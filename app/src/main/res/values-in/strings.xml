@@ -348,9 +348,9 @@
     <string name="reset_settings">Atur Ulang ke Default</string>
     <string name="reset_settings_confirm">Apakah Anda yakin ingin mengatur ulang semua pengaturan ke nilai default? Ini akan memulai ulang aplikasi.</string>
     <string name="reset_settings_description">Menghapus semua konfigurasi, data cache, dan preferensi hubungkan otomatis. Aplikasi akan dimulai ulang untuk menerapkan default pabrik.</string>
-    <string name="gps_for_navigation">GPS untuk navigasi</string>
-    <string name="gps_for_navigation_description">Gunakan GPS untuk navigasi.</string>
-    <string name="gps_for_navigation_help">Mengirim posisi GPS unit ini ke ponsel, dan Android Auto memakainya untuk navigasi. Aplikasi hanya mengirim posisi GPS asli, tidak pernah posisi dari jaringan. Jika unit ini kehilangan sinyal GPS beberapa saat, aplikasi berhenti mengirim dan ponsel memakai lokasinya sendiri. Berlaku pada koneksi berikutnya.</string>
+    <string name="gps_for_navigation">Gunakan GPS unit ini di Android Auto</string>
+    <string name="gps_for_navigation_description">Android Auto mengambil posisi mobil dari unit ini, bukan dari ponsel.</string>
+    <string name="gps_for_navigation_help">Menentukan dari mana Android Auto mengambil posisi mobil untuk peta dan navigasi. Aktif: aplikasi mengirim posisi GPS unit ini ke ponsel. Nonaktif: ponsel memakai lokasinya sendiri. Aktifkan jika antena GPS unit ini lebih baik daripada ponsel. Aplikasi hanya mengirim posisi GPS asli. Jika unit kehilangan sinyal GPS beberapa saat, ponsel memakai lokasinya sendiri. Menonaktifkan opsi ini tidak mematikan GPS unit. Berlaku pada koneksi berikutnya.</string>
     <string name="enabled">Diaktifkan</string>
     <string name="disabled">Dinonaktifkan</string>
     <string name="resolution">Resolusi</string>
@@ -850,7 +850,7 @@
     <string name="discard">Buang</string>
     <string name="stopping_service">Menghentikan layanan untuk menerapkan perubahan…</string>
     <string name="settings_saved">Pengaturan disimpan</string>
-    <string name="category_backup">Cadangan</string>
+    <string name="category_backup_reset">Cadangan dan atur ulang</string>
     <string name="export_settings">Ekspor setelan</string>
     <string name="export_settings_description">Simpan cadangan setelan sebagai file JSON.</string>
     <string name="export_settings_choose_location">Pilih lokasi penyimpanan</string>
@@ -1442,7 +1442,6 @@
     <string name="aa174_notice_message"><![CDATA[Mulai dari Android Auto 17.4, Google memperkenalkan perubahan internal yang tidak kompatibel dan menonaktifkan peluncuran otomatis melalui Wireless Helper serta Mode Mandiri klasik.<br/><br/><b>Solusi yang tersedia:</b><br/><br/><b>1. Server Headunit (Mode Pengembang):</b><br/>Satu-satunya solusi yang tersisa untuk Mode Mandiri! Di ponsel Anda, buka pengaturan pengembang Android Auto dan ketuk "Mulai server head unit".<br/><br/><b>2. Mode Asli (Native):</b><br/>Terhubung langsung melalui Wi-Fi Direct atau Hotspot Headunit.<br/><br/><b>3. Dongle Nirkabel USB:</b><br/>Adaptor nirkabel USB perangkat keras memberikan pengalaman plug-and-play yang paling andal.<br/><br/><b>4. Wireless Helper:</b><br/>Terus berfungsi dengan andal untuk Android Auto hingga versi 17.3.]]></string>
     <string name="aa174_notice_button_confirm">Mengerti</string>
     <string name="aa174_notice_button_guide">Buka Panduan</string>
-    <string name="category_ui">UI</string>
     <string name="hide_phone_signal_label">Sembunyikan Sinyal Ponsel</string>
     <string name="hide_phone_signal_help">Meminta Android Auto tidak menampilkan kekuatan sinyal ponsel di layar unit ini. Beberapa versi Android Auto yang lebih baru mengabaikan permintaan ini. Berlaku pada koneksi berikutnya.</string>
     <string name="hide_battery_level_label">Sembunyikan Tingkat Baterai Ponsel</string>

@@ -98,9 +98,9 @@
     <string name="bluetooth_address_message">Vlastní adresa této jednotky, podle které ji telefon pozná. Najdete ji v nabídce Nastavení &gt; Informace &gt; Stav nebo na spárovaném telefonu pod ozubeným kolečkem vedle této jednotky. Pro automatické zjištění pole nechte prázdné.</string>
     <string name="invalid_bluetooth_address">To není adresa Bluetooth. Zadejte šest dvojic šestnáctkových číslic, například 0C:32:3A:2D:5D:4A.</string>
     <string name="reset">Resetovat</string>
-    <string name="gps_for_navigation">GPS pro navigaci</string>
-    <string name="gps_for_navigation_description">Použít GPS pro navigaci.</string>
-    <string name="gps_for_navigation_help">Posílá do telefonu vlastní polohu GPS této jednotky a Android Auto ji používá pro navigaci. Aplikace posílá jen skutečnou polohu GPS, nikdy polohu ze sítě. Pokud jednotka na delší dobu ztratí signál GPS, aplikace přestane posílat a telefon použije vlastní polohu. Platí od dalšího připojení.</string>
+    <string name="gps_for_navigation">Používat GPS této jednotky v Android Auto</string>
+    <string name="gps_for_navigation_description">Android Auto bere polohu auta z této jednotky, ne z telefonu.</string>
+    <string name="gps_for_navigation_help">Určuje, odkud Android Auto bere polohu auta pro mapy a navigaci. Zapnuto: aplikace posílá do telefonu polohu GPS této jednotky. Vypnuto: telefon používá vlastní polohu. Zapněte, pokud má jednotka lepší anténu GPS než telefon. Aplikace posílá jen skutečnou polohu GPS. Pokud jednotka na chvíli ztratí GPS, telefon použije vlastní polohu. Vypnutí nevypne GPS jednotky. Platí od dalšího připojení.</string>
     <string name="enabled">Zapnuto</string>
     <string name="disabled">Vypnuto</string>
     <string name="resolution">Rozlišení</string>
@@ -708,7 +708,7 @@
     <string name="current_brightness_reading">Aktuální jas: %d / 255</string>
     <string name="exit_dialog_settings">Rychlé nastavení</string>
     <string name="key_back">Zpět</string>
-    <string name="category_backup">Záloha</string>
+    <string name="category_backup_reset">Záloha a resetování</string>
     <string name="export_settings">Exportovat nastavení</string>
     <string name="export_settings_description">Uložit zálohu nastavení jako soubor JSON.</string>
     <string name="export_settings_app_folder">Uložit do složky záloh aplikace</string>
@@ -1206,7 +1206,6 @@
     <string name="native_aa_setup_qr_no_address">Vlastní adresa této jednotky v této síti zatím není známá.</string>
     <string name="native_aa_setup_qr_no_bluetooth">Adresu Bluetooth této jednotky se nepodařilo zjistit a telefon ji potřebuje, aby tuto jednotku později poznal. Zadejte ji v části Bezdrátové připojení. Spárovaný telefon ji zobrazuje pod ikonou ozubeného kola vedle tohoto zařízení.</string>
     <string name="native_aa_setup_qr_dongle">Název Bluetooth této jednotky vypadá jako bezdrátový adaptér, který telefon považuje za jiný typ zařízení. Přejmenujte Bluetooth na této jednotce a zkuste to znovu.</string>
-    <string name="category_ui">Uživatelské rozhraní</string>
     <string name="hide_phone_signal_label">Skrýt signál telefonu</string>
     <string name="hide_phone_signal_help">Požádá Android Auto, aby na obrazovce této jednotky nezobrazovalo sílu signálu telefonu. Některé novější verze Android Auto tuto žádost ignorují. Platí od dalšího připojení.</string>
     <string name="hide_battery_level_label">Skrýt stav baterie telefonu</string>

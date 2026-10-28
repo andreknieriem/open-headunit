@@ -30,7 +30,8 @@ class BootCompleteReceiver : BroadcastReceiver() {
         val settings = Settings(context)
         val bootEnabled = Settings.isAutoStartOnBootEnabled(context)
         val screenOnEnabled = Settings.isAutoStartOnScreenOnEnabled(context)
-        val usbEnabled = Settings.isAutoStartOnUsbEnabled(context)
+        // Listen is not read: the boot start must survive detection off.
+        val usbEnabled = Settings.isAutoStartOnUsbEnabled(context) && Settings.isUsbConnectOnPlugInEnabled(context)
         val wifiEnabled = Settings.isAutoStartOnWifiEnabled(context)
         val floatingButtonEnabled = settings.enableFloatingButton
 

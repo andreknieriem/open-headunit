@@ -20,6 +20,7 @@ import com.andrerinas.openheadunit.connection.ConnectionStage
 import com.andrerinas.openheadunit.connection.ConnectionStageTracker
 import com.andrerinas.openheadunit.main.SettingsActivity
 import com.andrerinas.openheadunit.utils.AppLog
+import com.andrerinas.openheadunit.utils.Settings
 import com.andrerinas.openheadunit.utils.ConnectionIssue
 import com.andrerinas.openheadunit.utils.ConnectionIssues
 import com.andrerinas.openheadunit.utils.ToastUtils
@@ -68,6 +69,7 @@ class UsbLauncherManager(val service: AapService) {
         val accessoryOnly: Boolean,
         // The Save came from the running attempt, not from this scan's own request.
         val inheritedSave: Boolean = false,
+        val trigger: UsbPlugInPolicy.Trigger = UsbPlugInPolicy.Trigger.APP_START,
     )
     private var pendingCheck: PendingCheck? = null
     private var accessorySwitchRequested = false
@@ -127,13 +129,13 @@ class UsbLauncherManager(val service: AapService) {
             // AOA changes UsbDevice identity and permission. Replay the scan, not the old
             // connect(device), so the current device list and permission path are used again.
             AppLog.i("UsbLauncher: replaying the USB scan queued during the attempt (accessoryOnly=$accessoryOnly)")
-            checkAlreadyConnected(request.force, request.userRequested, restart, accessoryOnly)
+            checkAlreadyConnected(request.force, request.userRequested, restart, accessoryOnly, request.trigger)
         }
     }
 
     private fun deferCheckWhileSwitching(force: Boolean, userRequested: Boolean,
         settingsRestart: CommManager.ConnectionState.Disconnected?, recoveryOwner: Any,
-        accessoryOnly: Boolean): Boolean =
+        accessoryOnly: Boolean, trigger: UsbPlugInPolicy.Trigger): Boolean =
         synchronized(attemptLock) {
             if (!isSwitchingToProjection.get()) {
                 pendingCheck = null // A fresh scan consumes any older queued completion scan.
@@ -145,7 +147,9 @@ class UsbLauncherManager(val service: AapService) {
                 userRequested || previous?.userRequested == true,
                 settingsRestart ?: attemptSettingsOwner ?: previous?.settingsRestart, recoveryOwner,
                 accessoryOnly && previous?.accessoryOnly != false,
-                inheritedSave = settingsRestart == null && attemptSettingsOwner != null && !earlierExplicit)
+                inheritedSave = settingsRestart == null && attemptSettingsOwner != null && !earlierExplicit,
+                // A merged scan stays a plug-in only if every scan in it was one.
+                trigger = if (previous == null || previous.trigger == UsbPlugInPolicy.Trigger.PLUG_IN) trigger else previous.trigger)
             true
         }
 
@@ -693,11 +697,13 @@ class UsbLauncherManager(val service: AapService) {
     }
 
     /** A scan sent to the service, such as the attach screen's hand-off. An open Save still owns it. */
-    fun checkOnRequest(userRequested: Boolean) = checkAlreadyConnected(
-        force = true,
-        userRequested = userRequested,
-        settingsRestart = if (userRequested) null else pendingSettingsRestart(),
-    )
+    fun checkOnRequest(userRequested: Boolean, trigger: UsbPlugInPolicy.Trigger = UsbPlugInPolicy.Trigger.APP_START) =
+        checkAlreadyConnected(
+            force = true,
+            userRequested = userRequested,
+            settingsRestart = if (userRequested) null else pendingSettingsRestart(),
+            trigger = if (userRequested) UsbPlugInPolicy.Trigger.USER else trigger,
+        )
 
     /**
      * Scans currently connected USB devices and connects to any that are already in
@@ -710,29 +716,34 @@ class UsbLauncherManager(val service: AapService) {
      * @param userRequested The user asked for this by hand, which lifts the status pill's X.
      * @param accessoryOnly A completed AOA switch already sent ACC_REQ_START. Its deferred scan
      *                      may connect the new accessory, but must not switch the old device again.
+     * @param trigger What started the scan. A plug-in switches a normal-mode phone only when
+     *                [UsbPlugInPolicy] allows it; an accessory identity is always connected.
      */
     fun checkAlreadyConnected(
         force: Boolean = false,
         userRequested: Boolean = false,
         settingsRestart: CommManager.ConnectionState.Disconnected? = null,
         accessoryOnly: Boolean = false,
+        trigger: UsbPlugInPolicy.Trigger = UsbPlugInPolicy.Trigger.APP_START,
     ) {
         val settings = App.provide(service).settings
         val commManager = App.provide(service).commManager
         if (settingsRestart != null && !settingsRestart.acceptsSettingsRestart(commManager.connectionState.value)) return
         val lastSession = settings.autoConnectLastSession
         val singleUsb = settings.autoConnectSingleUsbDevice
-        val usbAutoStart = settings.autoStartOnUsb
+        val usbAutoStart = settings.effectiveAutoStartOnUsb
 
         if (!force && !lastSession && !singleUsb && !usbAutoStart) return
         // A new button press may lift an earlier X even while cancelled work is unwinding.
         // A later X clears the pending request again before it can replay.
         if (userRequested) liftUserCancel("a USB connection was asked for")
+        // Refused before any deferral: a held plug-in would come back as an ungated check.
+        if (refusesPlugIn(trigger, settings)) return
         if (commManager.isConnected) {
             commManager.deferUsbCheckForConnectionAttempt()
             return
         }
-        if (deferCheckWhileSwitching(force, userRequested, settingsRestart, commManager.usbRecheckOwner(), accessoryOnly)) return
+        if (deferCheckWhileSwitching(force, userRequested, settingsRestart, commManager.usbRecheckOwner(), accessoryOnly, trigger)) return
         if (commManager.deferUsbCheckForConnectionAttempt()) return
 
         val tier = if (userRequested) Tier.USER else Tier.USB
@@ -748,7 +759,7 @@ class UsbLauncherManager(val service: AapService) {
             AutoConnectHoldPolicy.Verdict.HOLD_FOR_SETTINGS -> {
                 AppLog.i("UsbLauncher: USB auto-connect held while the settings screen is open; " +
                     "checking again when it closes.")
-                service.holdUsbCheckForSettings()
+                service.holdUsbCheckForSettings(trigger)
                 return
             }
             AutoConnectHoldPolicy.Verdict.CANCELLED_BY_USER -> {
@@ -867,7 +878,7 @@ class UsbLauncherManager(val service: AapService) {
                 )
                 UsbAttachPolicy.shouldAttemptAoaSwitch(
                     isGoogleVendor = isGoogleOrDongle,
-                    autoStartOnUsb = usbAutoStart,
+                    autoStartOnUsb = settings.autoStartOnUsb,
                     allowListConfigured = allowList.isNotEmpty(),
                     deviceAllowed = settings.isConnectingDevice(UsbDeviceCompat(it)),
                 )
@@ -879,6 +890,21 @@ class UsbLauncherManager(val service: AapService) {
                 AppLog.i("Fallback: force=true but ${candidates.size} candidate USB devices are attached; not guessing which is the phone")
             }
         }
+    }
+
+    /** A plug-in with Connect when plugged in off and no accessory identity present switches nothing. */
+    private fun refusesPlugIn(trigger: UsbPlugInPolicy.Trigger, settings: Settings): Boolean {
+        if (UsbPlugInPolicy.maySwitchNormal(trigger, settings.usbConnectOnPlugIn, settings.listenForUsbDevices,
+                service.uncleanSessionEndAgoMs())) return false
+        val devices = UsbDeviceCompat.usbManager(service)?.deviceList?.values
+            ?.filter { UsbDeviceCompat.isConnectable(service, it) } ?: return true
+        if (devices.any { UsbDeviceCompat.isInAccessoryMode(it) }) return false
+        val reason = if (settings.listenForUsbDevices) "Connect when plugged in is off"
+            else "Detect plugged-in phones/AA dongles is off"
+        for (device in devices) {
+            AppLog.i("UsbLauncher: not switching ${UsbDeviceCompat(device).uniqueName} on a plug-in: $reason")
+        }
+        return true
     }
 
     /** Bind before dispatch so revoking Save also cancels a queued permission wait or retry. */

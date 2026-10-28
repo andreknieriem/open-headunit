@@ -1808,7 +1808,7 @@ class HomeFragment : Fragment() {
         val appSettings = App.provide(requireContext()).settings
         val keepServiceAlive = appSettings.autoStartOnBoot ||
             appSettings.autoStartOnScreenOn ||
-            (appSettings.autoStartOnUsb && appSettings.reopenOnReconnection)
+            (appSettings.effectiveAutoStartOnUsb && appSettings.reopenOnReconnection)
         if (keepServiceAlive) {
             val disconnectIntent = Intent(requireContext(), AapService::class.java).apply {
                 action = AapService.ACTION_DISCONNECT

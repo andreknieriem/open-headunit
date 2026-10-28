@@ -152,6 +152,7 @@ class App : Application(), Application.ActivityLifecycleCallbacks {
         // can read them during locked boot (before user unlock)
         Settings.syncAutoStartOnBootToDeviceStorage(this, settings.autoStartOnBoot)
         Settings.syncAutoStartOnUsbToDeviceStorage(this, settings.autoStartOnUsb)
+        Settings.syncUsbConnectOnPlugInToDeviceStorage(this, settings.usbConnectOnPlugIn)
         Settings.syncAutoStartOnWifiToDeviceStorage(this, settings.autoStartOnWifi)
         Settings.syncAutoStartWifiSsidToDeviceStorage(this, settings.autoStartWifiSsid)
         Settings.syncAutoStartBtMacsToDeviceStorage(this, settings.autoStartBluetoothDeviceMacs)

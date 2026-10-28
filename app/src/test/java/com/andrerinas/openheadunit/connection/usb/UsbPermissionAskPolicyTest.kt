@@ -209,4 +209,17 @@ class UsbPermissionAskPolicyTest {
             ).toString(),
         )
     }
+
+    @Test
+    fun `user and recovery asks do not depend on how a plug-in is handled`() {
+        // Connect when plugged in gates the plug-in scan only; a press or a recovery must still ask.
+        for (listen in listOf(true, false)) for (attach in listOf<Long?>(null, 1_000L, 60_000L)) {
+            assertEquals(Action.ASK, decide(inputs(listenForUsb = listen, activityEnabled = listen,
+                attachAgeMs = attach, source = Source.USER)))
+            assertEquals(Action.ASK, decide(inputs(listenForUsb = false, activityEnabled = false,
+                attachAgeMs = attach, source = Source.RECOVERY)))
+        }
+        assertEquals(Action.ASK, decide(inputs(alreadyAsked = true, source = Source.USER)))
+        assertEquals(Action.ASKED, decide(inputs(alreadyAsked = true, source = Source.RECOVERY)))
+    }
 }

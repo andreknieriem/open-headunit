@@ -52,6 +52,8 @@ object HotspotManager { fun restart(s: Service) = true }
 class Settings {
     val wifiConnectionMode=WifiLauncherMode.NATIVE; val helperConnectionStrategy=0; val nativeApStrategy=0
     val autoEnableHotspot=false; var hotspotTeardownProvenUnsafe=false
+    var lastConnectionType=""
+    companion object { const val CONNECTION_TYPE_USB="usb" }
 }
 class WifiLauncherNative {
     val handshakeManager: WifiLauncherNative? = null
@@ -93,6 +95,7 @@ class Service {
     val videoDecoder=VideoDecoder()
     var sessionEndedByHand=false; var pendingBtStandDown: Any?=null; var wirelessQuiescedForWiredSession=false
     var exitTeardownDone: CompletableDeferred<Unit>?=null
+    var lastUncleanSessionEndAt=0L
     var exitTeardownState: CommManager.ConnectionState.Disconnected?=null
     var isDestroying=false; var userExitedAA=false; var userExitCooldownUntil=0L
     val USER_EXIT_COOLDOWN_MS=5000L

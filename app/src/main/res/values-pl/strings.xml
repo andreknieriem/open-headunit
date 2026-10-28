@@ -224,12 +224,15 @@
     <string name="enter_wifi_ssid">Wprowadź SSID Wi-Fi</string>
     <string name="wifi_ssid_not_set">Nie ustawiono</string>
 
-    <string name="listen_for_usb_devices_label">Reaguj na urządzenia USB</string>
-    <string name="listen_for_usb_devices_description">Pokazuj okno systemu Android po podłączeniu urządzenia USB.</string>
+    <string name="listen_for_usb_attach_label">Wykrywaj podłączone telefony/dongle AA</string>
+    <string name="listen_for_usb_attach_description">Android może zaproponować Open Headunit po podłączeniu telefonu lub dongla Android Auto i zapamiętać twój wybór. Gdy opcja jest wyłączona, Android go nie proponuje. Użyj przycisku USB i za każdym razem odpowiedz w oknie dialogowym.</string>
     <string name="show_toast_messages">Pokazuj krótkie komunikaty</string>
     <string name="show_toast_messages_description">Wyświetlaj krótkie komunikaty o stanie przy łączeniu, rozłączaniu i zmianie trybu.</string>
-    <string name="auto_start_usb_label">Autostart po podłączeniu USB</string>
-    <string name="auto_start_usb_description">Automatycznie otwórz aplikację i spróbuj połączyć po podłączeniu urządzenia USB.</string>
+    <string name="auto_start_usb_connect_label">Połącz po podłączeniu</string>
+    <string name="auto_start_usb_connect_description">Uruchamia Android Auto po podłączeniu wykrytego telefonu lub dongla. Gdy opcja jest wyłączona, podłączenie tylko otwiera aplikację, a łączy przycisk USB. Ustawienia automatycznego łączenia nadal obowiązują po otwarciu aplikacji.</string>
+    <string name="auto_start_usb_connect_needs_detect">Najpierw włącz \"%1$s\" w ustawieniach ogólnych.</string>
+    <string name="auto_start_usb_open_label">Otwórz aplikację po podłączeniu</string>
+    <string name="auto_start_usb_open_description">Otwiera Open Headunit po podłączeniu telefonu lub dongla. Uruchamia też aplikację po starcie lub wybudzeniu, aby szukać podłączonego telefonu, i pozostaje aktywna po wyjściu.</string>
     <string name="auto_start_settings">Ustawienia autostartu</string>
     <string name="auto_start_settings_description">Skonfiguruj, kiedy aplikacja uruchamia się automatycznie.</string>
     <string name="auto_start_oem_warning">To urządzenie może wymagać włączenia automatycznego uruchamiania i usunięcia optymalizacji baterii lub ograniczeń w tle dla tej aplikacji.\n\nNa radiach z Quick Boot (szybki start) automatyczne uruchamianie może nie działać. Poszukaj „DuraSpeed” w ustawieniach systemowych i włącz tam tę aplikację. Na niektórych radiach DuraSpeed jest ukryty i do jego znalezienia możesz potrzebować aplikacji takiej jak „Hidden Settings”. Jeśli nie masz DuraSpeed, spróbuj wyłączyć Quick Boot.</string>

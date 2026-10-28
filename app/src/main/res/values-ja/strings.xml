@@ -249,12 +249,15 @@
     <string name="enter_wifi_ssid">Wi-Fi SSIDを入力してください</string>
     <string name="wifi_ssid_not_set">未設定</string>
 
-    <string name="listen_for_usb_devices_label">USBデバイスの検出</string>
-    <string name="listen_for_usb_devices_description">USBデバイスが接続されたときに、Androidのシステムダイアログを表示します。</string>
+    <string name="listen_for_usb_attach_label">接続されたスマートフォン/AAドングルを検出</string>
+    <string name="listen_for_usb_attach_description">接続されたスマートフォンやAndroid Autoドングルに対して、AndroidがOpen Headunitを提案し、選択を記憶します。オフの場合、Androidは提案しません。USBボタンを使い、毎回ダイアログに応答します。</string>
     <string name="show_toast_messages">トースト通知を表示</string>
     <string name="show_toast_messages_description">接続・切断・モード切替時にステータスのトースト通知を表示します。</string>
-    <string name="auto_start_usb_label">USBから自動起動</string>
-    <string name="auto_start_usb_description">USBデバイスが接続されたら、アプリを自動的に起動して接続を試みます。</string>
+    <string name="auto_start_usb_connect_label">差し込んだら接続</string>
+    <string name="auto_start_usb_connect_description">検出されたスマートフォンまたはドングルを差し込むと、Android Autoを開始します。オフの場合、差し込んでもアプリが開くだけで、接続はUSBボタンで行います。アプリを開いたときも、自動接続の設定は引き続き適用されます。</string>
+    <string name="auto_start_usb_connect_needs_detect">先に全般設定で\"%1$s\"をオンにしてください。</string>
+    <string name="auto_start_usb_open_label">差し込んだらアプリを開く</string>
+    <string name="auto_start_usb_open_description">スマートフォンまたはドングルを差し込むと、Open Headunitを開きます。起動後やスリープ復帰後にもアプリを開始して差し込まれたスマートフォンを探し、終了後も監視を続けます。</string>
     <string name="auto_start_settings">自動起動設定</string>
     <string name="auto_start_settings_description">アプリが自動起動するタイミングを設定します。</string>
     <string name="auto_start_oem_warning">このデバイスでは、このアプリの自動起動を有効にし、バッテリーの最適化やバックグラウンド制限を解除する必要がある場合があります。\n\nクイックブート（高速起動）対応のヘッドユニットでは、自動起動が機能しない場合があります。システム設定で「DuraSpeed」を探し、そこでこのアプリを有効にしてください。一部のヘッドユニットでは、DuraSpeedが非表示になっているため、「Hidden Settings」などのアプリが必要になる場合があります。DuraSpeedがない場合は、クイックブートを無効にしてみてください。</string>

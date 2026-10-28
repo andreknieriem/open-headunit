@@ -55,7 +55,8 @@ class UsbLauncherListener(private val manager: UsbLauncherManager) : UsbReceiver
                 // An Activity-owned switch keeps its separate handoff guard.
                 if (!commManager.isConnected && !manager.isActivitySwitchInFlight()) {
                     AppLog.i("UsbAttachedActivity didn't handle $deviceName. Trying from service...")
-                    manager.checkAlreadyConnected(force = true, settingsRestart = manager.pendingSettingsRestart())
+                    manager.checkAlreadyConnected(force = true, settingsRestart = manager.pendingSettingsRestart(),
+                        trigger = UsbPlugInPolicy.Trigger.PLUG_IN)
                 }
             }
         }
@@ -97,7 +98,8 @@ class UsbLauncherListener(private val manager: UsbLauncherManager) : UsbReceiver
         service.serviceScope.launch {
             delay(1500) // Give the phone/system time to settle its USB state
             AppLog.i("Accessory detach cooldown finished. Checking for re-connection...")
-            manager.checkAlreadyConnected(force = true, settingsRestart = manager.pendingSettingsRestart())
+            manager.checkAlreadyConnected(force = true, settingsRestart = manager.pendingSettingsRestart(),
+                trigger = UsbPlugInPolicy.Trigger.RECONNECT)
         }
     }
 

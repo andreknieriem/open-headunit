@@ -129,7 +129,7 @@ class SettingsFragment : Fragment() {
     // Wireless items here only appear in Basic when the user connects wirelessly (see filterSettings).
     private val basicSettingIds = setOf(
         // General
-        "autoOptimize", "connectionMode", "appLanguage",
+        "autoOptimize", "connectionMode", "appLanguage", "listenForUsbDevices",
         // Wireless (shown in Basic only when WiFi is among the selected connection modes).
         // The hotspot entries come along with the transport choice: they only render once Hotspot
         // is picked, and on a device that will not let an app read its hotspot configuration the
@@ -198,6 +198,7 @@ class SettingsFragment : Fragment() {
     private var pendingAudioLatencyMultiplier by pending::audioLatencyMultiplier
     private var pendingAudioTimeCorrectionMode by pending::audioMatchingMode
     private var pendingUseLibusb by pending::useLibusb
+    private var pendingListenForUsbDevices by pending::listenForUsbDevices
     private var pendingAudioQueueCapacity by pending::audioQueueCapacity
     private var pendingShowToastMessages by pending::showToastMessages
     private var pendingScreenOrientation by pending::screenOrientation
@@ -646,6 +647,11 @@ class SettingsFragment : Fragment() {
         pendingAutoEnableHotspot?.let { if (it != settings.autoEnableHotspot) settings.autoEnableHotspot = it }
         pendingAutoRestartWifi?.let { if (it != settings.autoRestartWifiWhenP2pStuck) settings.autoRestartWifiWhenP2pStuck = it }
         pendingUseLibusb?.let { if (it != settings.useLibusb) settings.useLibusb = it }
+        pendingListenForUsbDevices?.let {
+            if (it != settings.listenForUsbDevices) settings.listenForUsbDevices = it
+            Settings.syncListenForUsbDevicesToDeviceStorage(requireContext(), it)
+            Settings.setUsbAttachedActivityEnabled(requireContext(), it)
+        }
         pendingNarrowBandProfileCap?.let { if (it != settings.narrowBandProfileCap) settings.narrowBandProfileCap = it }
         pendingDebugVideoLowLatency?.let { if (it != settings.debugVideoLowLatency) settings.debugVideoLowLatency = it }
         pendingAllowExternalConfiguration?.let { if (it != settings.allowExternalConfiguration) settings.allowExternalConfiguration = it }
@@ -915,6 +921,18 @@ class SettingsFragment : Fragment() {
                 }
             ))
         }
+
+        items.add(SettingItem.ToggleSettingEntry(
+            stableId = "listenForUsbDevices",
+            nameResId = R.string.listen_for_usb_attach_label,
+            descriptionResId = R.string.listen_for_usb_attach_description,
+            isChecked = pendingListenForUsbDevices ?: true,
+            onCheckedChanged = { isChecked ->
+                pendingListenForUsbDevices = isChecked
+                checkChanges()
+                updateSettingsList()
+            }
+        ))
 
         // --- Wireless Connection ---
         items.add(SettingItem.CategoryHeader("wirelessConnection", R.string.category_wireless))
@@ -1609,7 +1627,8 @@ class SettingsFragment : Fragment() {
             value = getString(R.string.auto_start_settings_description),
             searchKeywords = kw(
                 R.string.auto_start_on_boot_label, R.string.auto_start_screen_on_label,
-                R.string.auto_start_usb_label, R.string.auto_start_bt_label, R.string.auto_start_wifi_label,
+                R.string.auto_start_usb_connect_label, R.string.auto_start_usb_open_label,
+                R.string.auto_start_bt_label, R.string.auto_start_wifi_label,
                 R.string.auto_disconnect_bt_label
             ),
             onClick = {

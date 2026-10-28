@@ -196,12 +196,15 @@
     <string name="enter_wifi_ssid">Введите SSID Wi‑Fi</string>
     <string name="wifi_ssid_not_set">Не задано</string>
 
-    <string name="listen_for_usb_devices_label">Реагировать на USB-устройства</string>
-    <string name="listen_for_usb_devices_description">Показывать системный запрос Android при подключении USB-устройства.</string>
+    <string name="listen_for_usb_attach_label">Обнаруживать телефоны/адаптеры AA</string>
+    <string name="listen_for_usb_attach_description">Android может предложить Open Headunit для подключённого телефона или адаптера Android Auto и запомнить ваш выбор. Если параметр выключен, Android не предлагает приложение. Используйте кнопку USB и каждый раз отвечайте в диалоговом окне.</string>
     <string name="show_toast_messages">Показывать всплывающие сообщения</string>
     <string name="show_toast_messages_description">Отображать всплывающие сообщения о статусе при подключении, отключении и смене режима.</string>
-    <string name="auto_start_usb_label">Автозапуск по USB</string>
-    <string name="auto_start_usb_description">Автоматически открывать приложение и пытаться подключиться при подключении USB-устройства.</string>
+    <string name="auto_start_usb_connect_label">Запускать Android Auto при подключении</string>
+    <string name="auto_start_usb_connect_description">Запускает Android Auto, когда подключается обнаруженный телефон или адаптер. Если параметр выключен, подключение только открывает приложение, а соединение запускает кнопка USB. Настройки автоподключения по-прежнему действуют при открытии приложения.</string>
+    <string name="auto_start_usb_connect_needs_detect">Сначала включите \"%1$s\" в общих настройках.</string>
+    <string name="auto_start_usb_open_label">Открывать приложение при подключении</string>
+    <string name="auto_start_usb_open_description">Открывает Open Headunit при подключении телефона или адаптера. Также запускает приложение после загрузки или пробуждения, чтобы найти подключённый телефон, и продолжает следить после выхода.</string>
     <string name="auto_start_settings">Настройки автозапуска</string>
     <string name="auto_start_settings_description">Настройте, когда приложение запускается автоматически.</string>
     <string name="auto_start_oem_warning">Для этого приложения на устройстве может потребоваться включить автозапуск и отключить экономию заряда батареи и фоновые ограничения.\n\nНа головных устройствах с Quick Boot (быстрая загрузка) автозапуск может не работать. Найдите «DuraSpeed» в системных настройках и включите там это приложение. На некоторых устройствах DuraSpeed скрыт, и для его поиска может понадобиться приложение вроде «Hidden Settings». Если DuraSpeed нет, попробуйте отключить Quick Boot.</string>

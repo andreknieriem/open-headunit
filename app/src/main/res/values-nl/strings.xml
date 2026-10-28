@@ -195,12 +195,15 @@
     <string name="enter_wifi_ssid">Wi-Fi-SSID invoeren</string>
     <string name="wifi_ssid_not_set">Niet ingesteld</string>
 
-    <string name="listen_for_usb_devices_label">Luisteren naar USB-apparaten</string>
-    <string name="listen_for_usb_devices_description">Toon de Android-systeemmelding wanneer een USB-apparaat wordt aangesloten.</string>
+    <string name="listen_for_usb_attach_label">Aangesloten telefoons/AA-dongles detecteren</string>
+    <string name="listen_for_usb_attach_description">Android kan Open Headunit aanbieden voor een aangesloten telefoon of Android Auto-dongle en onthoudt je keuze. Als dit uit staat, biedt Android de app niet aan. Gebruik de USB-knop en beantwoord elke keer een dialoogvenster.</string>
     <string name="show_toast_messages">Toastberichten tonen</string>
     <string name="show_toast_messages_description">Statuspop-ups tonen bij verbinden, verbreken en moduswissel.</string>
-    <string name="auto_start_usb_label">Automatisch starten bij USB</string>
-    <string name="auto_start_usb_description">De app automatisch openen en verbinding proberen te maken wanneer een USB-apparaat wordt aangesloten.</string>
+    <string name="auto_start_usb_connect_label">Verbinden bij aansluiten</string>
+    <string name="auto_start_usb_connect_description">Start Android Auto zodra een gedetecteerde telefoon of dongle wordt aangesloten. Als dit uit staat, opent aansluiten alleen de app en verbindt de USB-knop. De instellingen voor automatisch verbinden blijven gelden wanneer de app opent.</string>
+    <string name="auto_start_usb_connect_needs_detect">Zet eerst \"%1$s\" aan in de algemene instellingen.</string>
+    <string name="auto_start_usb_open_label">App openen bij aansluiten</string>
+    <string name="auto_start_usb_open_description">Opent Open Headunit zodra een telefoon of dongle wordt aangesloten. Start de app ook na het opstarten of ontwaken om een aangesloten telefoon te zoeken en blijft kijken na Afsluiten.</string>
     <string name="auto_start_settings">Instellingen automatisch starten</string>
     <string name="auto_start_settings_description">Stel in wanneer de app automatisch start.</string>
     <string name="auto_start_oem_warning">Op dit apparaat moet je mogelijk automatisch starten inschakelen en batterijoptimalisatie of achtergrondbeperkingen voor deze app uitschakelen.\n\nOp headunits met Quick Boot (snel opstarten) werkt automatisch starten mogelijk niet. Zoek naar \"DuraSpeed\" in de systeeminstellingen en schakel deze app daar in. Op sommige headunits is DuraSpeed verborgen en heb je mogelijk een app zoals \"Hidden Settings\" nodig om het te vinden. Als je geen DuraSpeed hebt, probeer dan Quick Boot uit te schakelen.</string>

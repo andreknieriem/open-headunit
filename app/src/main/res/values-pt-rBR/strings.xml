@@ -196,12 +196,15 @@
     <string name="enter_wifi_ssid">Insira o SSID do Wi-Fi</string>
     <string name="wifi_ssid_not_set">Não definido</string>
 
-    <string name="listen_for_usb_devices_label">Detectar dispositivos USB</string>
-    <string name="listen_for_usb_devices_description">Mostrar o aviso do sistema Android quando um dispositivo USB for conectado.</string>
+    <string name="listen_for_usb_attach_label">Detectar celulares/dongles AA conectados</string>
+    <string name="listen_for_usb_attach_description">O Android pode oferecer o Open Headunit para um celular ou dongle Android Auto conectado e lembrar sua escolha. Desativada, o Android não oferece. Use o botão USB e responda a uma caixa de diálogo toda vez.</string>
     <string name="show_toast_messages">Mostrar mensagens Toast</string>
     <string name="show_toast_messages_description">Exibir pop-ups de status na conexão, desconexão e troca de modo.</string>
-    <string name="auto_start_usb_label">Início automático por USB</string>
-    <string name="auto_start_usb_description">Abrir o app automaticamente e tentar conectar quando um dispositivo USB for conectado.</string>
+    <string name="auto_start_usb_connect_label">Conectar ao plugar</string>
+    <string name="auto_start_usb_connect_description">Inicia o Android Auto quando um celular ou dongle detectado é plugado. Desativada, plugar só abre o app, e o botão USB conecta. As configurações de conexão automática continuam valendo quando o app abre.</string>
+    <string name="auto_start_usb_connect_needs_detect">Ative primeiro \"%1$s\" nas configurações gerais.</string>
+    <string name="auto_start_usb_open_label">Abrir o app ao plugar</string>
+    <string name="auto_start_usb_open_description">Abre o Open Headunit quando um celular ou dongle é plugado. Também inicia o app após a inicialização ou ao despertar, para procurar um celular plugado, e continua monitorando após Sair.</string>
     <string name="auto_start_settings">Configurações de início automático</string>
     <string name="auto_start_settings_description">Configure quando o aplicativo inicia automaticamente.</string>
     <string name="auto_start_oem_warning">Este dispositivo pode exigir a ativação do início automático e a remoção da otimização de bateria ou restrições em segundo plano para este aplicativo.\n\nEm centrais multimídia com Quick Boot (inicialização rápida), o início automático pode não funcionar. Procure \"DuraSpeed\" nas configurações do sistema e ative este aplicativo lá. Em algumas centrais, o DuraSpeed está oculto e você pode precisar de um aplicativo como \"Hidden Settings\" para encontrá-lo. Se você não tem DuraSpeed, tente desativar o Quick Boot.</string>

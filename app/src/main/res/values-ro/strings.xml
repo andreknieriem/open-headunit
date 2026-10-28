@@ -217,12 +217,15 @@
     <string name="enter_wifi_ssid">Introdu SSID Wi-Fi</string>
     <string name="wifi_ssid_not_set">Nesetat</string>
 
-    <string name="listen_for_usb_devices_label">Ascultă dispozitive USB</string>
-    <string name="listen_for_usb_devices_description">Afișează solicitarea sistemului Android când este conectat un dispozitiv USB.</string>
+    <string name="listen_for_usb_attach_label">Detectează telefoanele/dongle-urile AA conectate</string>
+    <string name="listen_for_usb_attach_description">Android poate oferi Open Headunit pentru un telefon sau un dongle Android Auto conectat și reține alegerea ta. Când este dezactivată, Android nu îl oferă. Folosește butonul USB și răspunde de fiecare dată la o casetă de dialog.</string>
     <string name="show_toast_messages">Afișează mesaje Toast</string>
     <string name="show_toast_messages_description">Afișează mesaje pop-up de stare la conectare, deconectare și schimbarea modului.</string>
-    <string name="auto_start_usb_label">Pornire automată prin USB</string>
-    <string name="auto_start_usb_description">Deschide aplicația automat și încearcă conectarea când un dispozitiv USB este conectat.</string>
+    <string name="auto_start_usb_connect_label">Conectează la branșare</string>
+    <string name="auto_start_usb_connect_description">Pornește Android Auto când este branșat un telefon sau un dongle detectat. Când este dezactivată, branșarea doar deschide aplicația, iar butonul USB conectează. Setările de conectare automată se aplică în continuare la deschiderea aplicației.</string>
+    <string name="auto_start_usb_connect_needs_detect">Activează mai întâi \"%1$s\" în setările generale.</string>
+    <string name="auto_start_usb_open_label">Deschide aplicația la branșare</string>
+    <string name="auto_start_usb_open_description">Deschide Open Headunit când este branșat un telefon sau un dongle. Pornește aplicația și după boot sau reactivare pentru a căuta un telefon branșat și continuă să urmărească după Ieșire.</string>
     <string name="auto_start_settings">Setări pornire automată</string>
     <string name="auto_start_settings_description">Configurează când aplicația pornește automat.</string>
     <string name="auto_start_oem_warning">Acest dispozitiv ar putea necesita activarea pornirii automate și eliminarea optimizării bateriei sau a restricțiilor de fundal pentru această aplicație.\n\nPe unitățile cu Quick Boot (pornire rapidă), pornirea automată ar putea să nu funcționeze. Caută \"DuraSpeed\" în setările sistemului și activează aplicația acolo. Pe unele unități, DuraSpeed este ascuns și poate fi nevoie de o aplicație precum \"Hidden Settings\" pentru a-l găsi. Dacă nu ai DuraSpeed, încearcă să dezactivezi Quick Boot.</string>

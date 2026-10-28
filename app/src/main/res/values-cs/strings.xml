@@ -196,12 +196,15 @@
     <string name="enter_wifi_ssid">Zadejte SSID Wi-Fi</string>
     <string name="wifi_ssid_not_set">Nenastaveno</string>
 
-    <string name="listen_for_usb_devices_label">Sledovat zařízení USB</string>
-    <string name="listen_for_usb_devices_description">Zobrazit výzvu systému Android při připojení zařízení USB.</string>
+    <string name="listen_for_usb_attach_label">Rozpoznávat připojené telefony/AA dongly</string>
+    <string name="listen_for_usb_attach_description">Android může nabídnout aplikaci Open Headunit pro zapojený telefon nebo dongl Android Auto a zapamatuje si vaši volbu. Když je vypnuto, Android ji nenabízí. Použijte tlačítko USB a pokaždé odpovězte v dialogu.</string>
     <string name="show_toast_messages">Zobrazovat krátká oznámení</string>
     <string name="show_toast_messages_description">Zobrazit vyskakovací zprávy o stavu při připojení, odpojení a změně režimu.</string>
-    <string name="auto_start_usb_label">Spuštění při připojení USB</string>
-    <string name="auto_start_usb_description">Automaticky otevřít aplikaci a pokusit se o připojení při zapojení USB zařízení.</string>
+    <string name="auto_start_usb_connect_label">Připojit po zapojení</string>
+    <string name="auto_start_usb_connect_description">Po zapojení rozpoznaného telefonu nebo donglu spustí Android Auto. Když je vypnuto, zapojení jen otevře aplikaci a připojuje tlačítko USB. Nastavení automatického připojení platí i po otevření aplikace.</string>
+    <string name="auto_start_usb_connect_needs_detect">Nejprve zapněte \"%1$s\" v obecném nastavení.</string>
+    <string name="auto_start_usb_open_label">Otevřít aplikaci po zapojení</string>
+    <string name="auto_start_usb_open_description">Po zapojení telefonu nebo donglu otevře Open Headunit. Také aplikaci spustí po startu nebo probuzení, aby hledala zapojený telefon, a hlídá dál i po ukončení.</string>
     <string name="auto_start_settings">Nastavení automatického spouštění</string>
     <string name="auto_start_settings_description">Nastavte, kdy se aplikace spouští automaticky.</string>
     <string name="auto_start_oem_warning">Toto zařízení může vyžadovat povolení automatického spuštění a odebrání optimalizace baterie nebo omezení na pozadí pro tuto aplikaci.\n\nNa autorádiích s Quick Boot (rychlé spuštění) nemusí automatické spuštění fungovat. Hledejte v nastavení systému \"DuraSpeed\" a povolte tam tuto aplikaci. Na některých autorádiích je DuraSpeed skrytý a k jeho nalezení můžete potřebovat aplikaci jako \"Hidden Settings\". Pokud DuraSpeed nemáte, zkuste vypnout Quick Boot.</string>

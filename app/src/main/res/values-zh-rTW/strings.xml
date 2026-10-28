@@ -195,12 +195,15 @@
     <string name="enter_wifi_ssid">輸入 Wi-Fi SSID</string>
     <string name="wifi_ssid_not_set">未設定</string>
 
-    <string name="listen_for_usb_devices_label">偵測 USB 裝置</string>
-    <string name="listen_for_usb_devices_description">插入 USB 裝置時顯示 Android 系統提示。</string>
+    <string name="listen_for_usb_attach_label">偵測插入的手機/AA 轉接器</string>
+    <string name="listen_for_usb_attach_description">Android 會為插入的手機或 Android Auto 轉接器推薦 Open Headunit，並記住你的選擇。關閉後，Android 不再推薦。請使用 USB 按鈕，每次都需要回應一個對話方塊。</string>
     <string name="show_toast_messages">顯示 Toast 提示</string>
     <string name="show_toast_messages_description">連線、中斷連線及切換模式時，顯示狀態提示。</string>
-    <string name="auto_start_usb_label">USB 連接時自動啟動</string>
-    <string name="auto_start_usb_description">插入 USB 裝置時，自動開啟應用程式並嘗試連線。</string>
+    <string name="auto_start_usb_connect_label">插入時連線</string>
+    <string name="auto_start_usb_connect_description">插入已偵測到的手機或轉接器時，啟動 Android Auto。關閉後，插入只會開啟應用程式，需用 USB 按鈕連線。應用程式開啟時，自動連線設定仍然有效。</string>
+    <string name="auto_start_usb_connect_needs_detect">請先在一般設定中開啟\"%1$s\"。</string>
+    <string name="auto_start_usb_open_label">插入時開啟應用程式</string>
+    <string name="auto_start_usb_open_description">插入手機或轉接器時，開啟 Open Headunit。開機或喚醒後，也會啟動應用程式以尋找已插入的手機，並在結束後繼續監看。</string>
     <string name="auto_start_settings">自動啟動設定</string>
     <string name="auto_start_settings_description">設定應用程式自動啟動的時機。</string>
     <string name="auto_start_oem_warning">此裝置可能需要為本應用程式啟用自動啟動，並移除電池效能最佳化或背景限制。\n\n在具備快速開機（Quick Boot）的車機上，自動啟動可能無法運作。請在系統設定中尋找「DuraSpeed」，並在其中啟用本應用程式。部分車機會隱藏 DuraSpeed，您可能需要使用「Hidden Settings」等應用程式才能找到。如果沒有 DuraSpeed，請嘗試停用快速開機。</string>

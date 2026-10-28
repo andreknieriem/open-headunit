@@ -196,12 +196,15 @@
     <string name="enter_wifi_ssid">أدخل SSID شبكة الواي فاي</string>
     <string name="wifi_ssid_not_set">غير محدد</string>
 
-    <string name="listen_for_usb_devices_label">رصد أجهزة USB</string>
-    <string name="listen_for_usb_devices_description">إظهار مطالبة نظام Android عند توصيل جهاز USB.</string>
+    <string name="listen_for_usb_attach_label">اكتشاف الهاتف أو دونغل AA عند توصيله</string>
+    <string name="listen_for_usb_attach_description">يتيح لنظام Android عرض Open Headunit عند توصيل هاتف أو دونغل Android Auto وتذكّر اختيارك. عند الإيقاف، لا يعرضه Android. استخدم زر USB وأجب عن مربع حوار في كل مرة.</string>
     <string name="show_toast_messages">إظهار الرسائل المنبثقة (Toast)</string>
     <string name="show_toast_messages_description">عرض الرسائل المنبثقة للحالة عند الاتصال والانفصال وتغيير الوضع.</string>
-    <string name="auto_start_usb_label">تشغيل تلقائي عند توصيل USB</string>
-    <string name="auto_start_usb_description">فتح التطبيق تلقائيًا ومحاولة الاتصال عند توصيل جهاز USB.</string>
+    <string name="auto_start_usb_connect_label">تشغيل Android Auto عند التوصيل</string>
+    <string name="auto_start_usb_connect_description">يبدأ Android Auto عند توصيل هاتف أو دونغل تم اكتشافه. عند الإيقاف، يفتح التوصيل التطبيق فقط، ويتصل زر USB. تظل إعدادات الاتصال التلقائي سارية عند فتح التطبيق.</string>
+    <string name="auto_start_usb_connect_needs_detect">فعّل \"%1$s\" في الإعدادات العامة أولًا.</string>
+    <string name="auto_start_usb_open_label">فتح التطبيق عند التوصيل</string>
+    <string name="auto_start_usb_open_description">يفتح Open Headunit عند توصيل هاتف أو دونغل. كما يشغّل التطبيق بعد التشغيل أو الإيقاظ للبحث عن هاتف موصول، ويواصل المراقبة بعد الخروج.</string>
     <string name="auto_start_settings">إعدادات التشغيل التلقائي</string>
     <string name="auto_start_settings_description">تهيئة متى يبدأ التطبيق تلقائياً.</string>
     <string name="auto_start_oem_warning">قد يتطلب هذا الجهاز تفعيل التشغيل التلقائي وإزالة تحسين البطارية أو قيود الخلفية لهذا التطبيق.\n\nفي أجهزة الوسائط المتعددة التي تحتوي على التشغيل السريع (Quick Boot)، قد لا يعمل التشغيل التلقائي. ابحث عن \"DuraSpeed\" في إعدادات النظام وقم بتفعيل هذا التطبيق هناك. في بعض الأجهزة، يكون DuraSpeed مخفياً وقد تحتاج إلى تطبيق مثل \"Hidden Settings\" للعثور عليه. إذا لم يكن لديك DuraSpeed، حاول تعطيل التشغيل السريع.</string>

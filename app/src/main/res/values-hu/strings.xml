@@ -195,12 +195,15 @@
     <string name="enter_wifi_ssid">Adja meg a Wi-Fi SSID-t</string>
     <string name="wifi_ssid_not_set">Nincs beállítva</string>
 
-    <string name="listen_for_usb_devices_label">USB-eszközök figyelése</string>
-    <string name="listen_for_usb_devices_description">Az Android rendszerüzenet megjelenítése USB-eszköz csatlakoztatásakor.</string>
+    <string name="listen_for_usb_attach_label">Csatlakoztatott telefonok/AA donglik felismerése</string>
+    <string name="listen_for_usb_attach_description">Az Android felkínálhatja az Open Headunit alkalmazást a csatlakoztatott telefonhoz vagy Android Auto donglihoz, és megjegyzi a választást. Kikapcsolt állapotban az Android nem kínálja fel. Használja az USB gombot, és minden alkalommal válaszoljon egy párbeszédablakban.</string>
     <string name="show_toast_messages">Felugró üzenetek megjelenítése</string>
     <string name="show_toast_messages_description">Állapotjelző felugró üzenetek megjelenítése csatlakozáskor, bontáskor és módváltáskor.</string>
-    <string name="auto_start_usb_label">Automatikus indítás USB-csatlakozáskor</string>
-    <string name="auto_start_usb_description">Az alkalmazás automatikus megnyitása és csatlakozási kísérlet USB-eszköz csatlakoztatásakor.</string>
+    <string name="auto_start_usb_connect_label">Kapcsolódás bedugáskor</string>
+    <string name="auto_start_usb_connect_description">Elindítja az Android Auto funkciót, ha felismert telefont vagy donglit dugnak be. Kikapcsolt állapotban a bedugás csak megnyitja az alkalmazást, az USB gomb pedig csatlakozik. Az automatikus csatlakozás beállításai az alkalmazás megnyitásakor is érvényesek.</string>
+    <string name="auto_start_usb_connect_needs_detect">Először kapcsolja be az Általános beállításokban a következőt: \"%1$s\".</string>
+    <string name="auto_start_usb_open_label">Alkalmazás megnyitása bedugáskor</string>
+    <string name="auto_start_usb_open_description">Megnyitja az Open Headunit alkalmazást, ha telefont vagy donglit dugnak be. Rendszerindítás vagy ébresztés után is elindítja az alkalmazást, hogy csatlakoztatott telefont keressen, és a Kilépés után is figyel.</string>
     <string name="auto_start_settings">Automatikus indítás beállításai</string>
     <string name="auto_start_settings_description">Adja meg, mikor induljon el az alkalmazás automatikusan.</string>
     <string name="auto_start_oem_warning">Ez az eszköz megkövetelheti az automatikus indítás engedélyezését, valamint az akkumulátoroptimalizálás és a háttérkorlátozások kikapcsolását ehhez az alkalmazáshoz.\n\nA Quick Boot (gyorsindítás) funkcióval rendelkező fejegységeken az automatikus indítás nem feltétlenül működik. Keresse a „DuraSpeed” opciót a rendszerbeállításokban, és engedélyezze ott ezt az alkalmazást. Egyes fejegységeken a DuraSpeed rejtett, és a megtalálásához szükség lehet egy olyan alkalmazásra, mint a „Hidden Settings”. Ha nincs DuraSpeed, próbálja meg kikapcsolni a Quick Boot funkciót.</string>

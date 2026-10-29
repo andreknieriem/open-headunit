@@ -14,6 +14,8 @@ import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.AppComponent
 import com.andrerinas.openheadunit.aap.AapTransport
 import com.andrerinas.openheadunit.aap.AudioSessionConfig
+import com.andrerinas.openheadunit.aap.GalProfile
+import com.andrerinas.openheadunit.aap.galTestContract
 import com.andrerinas.openheadunit.aap.protocol.Channel
 import com.andrerinas.openheadunit.aap.protocol.messages.ServiceDiscoveryResponse
 import com.andrerinas.openheadunit.aap.protocol.proto.Control
@@ -288,7 +290,10 @@ class SystemUIInsetsTest {
             else checkNotNull(lastTransport) { "No prior transport for a repeated response" }
         lastTransport = responseTransport
         val settings = App.provide(projectionContext).settings
-        val message = ServiceDiscoveryResponse(projectionContext, AudioSessionConfig.from(settings), responseTransport)
+        val message = ServiceDiscoveryResponse(
+            projectionContext, AudioSessionConfig.from(settings), responseTransport,
+            galTestContract(GalProfile.COMPATIBILITY),
+        )
         return message.parse(Control.ServiceDiscoveryResponse.newBuilder()).build()
     }
 
@@ -832,6 +837,26 @@ class SystemUIInsetsTest {
         assertTrue(HeadUnitScreenConfig.adoptFallback())
         assertEquals(1280, HeadUnitScreenConfig.getNegotiatedWidth())
         assertEquals(720, HeadUnitScreenConfig.getNegotiatedHeight())
+    }
+
+    @Test
+    fun `returning to primary recomputes fit for the canvas changed during fallback`() {
+        prepareProjection(2400, 1080, Settings.Resolution._1920x1080)
+        val primary = primary(announce())
+        assertTrue(HeadUnitScreenConfig.adoptFallback())
+        completeFrame(2200, 1080)
+        val canvasWidth = HeadUnitScreenConfig.getUsableWidth()
+        val canvasHeight = HeadUnitScreenConfig.getUsableHeight()
+        val fit = ProjectionGeometryPolicy.fit(canvasWidth, canvasHeight, 1920, 1080)
+        var adjustedWidthAtRedraw = 0
+        HeadUnitScreenConfig.onFallbackAdopted = { adjustedWidthAtRedraw = HeadUnitScreenConfig.getAdjustedWidth() }
+        try {
+            assertTrue(HeadUnitScreenConfig.selectAnnouncedVideo(0, primary))
+            assertEquals(ProjectionGeometryPolicy.adjustedWidth(1920, fit.scaleFactor), adjustedWidthAtRedraw)
+            assertEquals(ProjectionGeometryPolicy.adjustedHeight(1080, fit.scaleFactor), HeadUnitScreenConfig.getAdjustedHeight())
+        } finally {
+            HeadUnitScreenConfig.onFallbackAdopted = null
+        }
     }
 
     @Test

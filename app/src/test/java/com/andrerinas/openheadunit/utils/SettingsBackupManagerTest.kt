@@ -2,6 +2,8 @@ package com.andrerinas.openheadunit.utils
 
 import android.app.Application
 import android.content.Context
+import com.andrerinas.openheadunit.aap.GalLaboratoryOptions
+import com.andrerinas.openheadunit.aap.GalLaboratoryOptions.Mode
 import com.andrerinas.openheadunit.input.InputAction
 import com.andrerinas.openheadunit.input.LocalAction
 import com.andrerinas.openheadunit.main.SettingsPendingCopy
@@ -50,6 +52,31 @@ class SettingsBackupManagerTest {
         val parsed = SettingsBackupManager.parseImportJson(SettingsBackupManager.exportToJson(values, "test", 1))
         assertEquals(values, parsed.values)
         assertEquals(0, parsed.skippedKeys)
+    }
+
+    @Test fun `laboratory overrides survive backup and restore and request a restart on reset`() {
+        val settings = Settings(context)
+        val options = GalLaboratoryOptions(
+            guidance48Khz = false, modernDisplayConfig = false, audioUpdates = false, videoUpdates = false,
+            avSync = Mode.ON, videoTiming = Mode.ON, audioBuffer = Mode.ON, mediaStats = Mode.ON,
+            maxLagToleranceMs = 120, syncIntervalMs = 200, maxAudioDelayMs = 100, maxVideoDelayMs = 50,
+            averageLagWeight = 3, syncOffsetMs = -20, videoMinDelayMs = 5, videoMaxDelayMs = 25,
+            audioBufferLimitMs = 100, statisticsIntervalMs = 750
+        )
+        settings.galLaboratoryOptions = options
+        val backup = SettingsBackupManager.exportFromContext(context)
+        prefs.edit().clear().commit()
+
+        val restored = SettingsBackupManager.importFromJson(context, backup, applyTheme = false)
+        val keys = options.storedValues().keys
+        assertEquals(keys, restored.changedKeys)
+        assertEquals(options, settings.galLaboratoryOptions)
+        assertTrue(keys.all { SettingsBackupManager.requiresProjectionRestart(setOf(it)) })
+
+        val reset = SettingsBackupManager.resetFromContext(context, applyTheme = false)
+        assertTrue(reset.changedKeys.containsAll(keys))
+        assertEquals(GalLaboratoryOptions(), settings.galLaboratoryOptions)
+        assertTrue(keys.none(prefs::contains))
     }
 
     @Test fun `new user settings restore to their real preference stores`() {

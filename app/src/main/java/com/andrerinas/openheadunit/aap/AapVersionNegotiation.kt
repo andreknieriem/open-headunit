@@ -7,17 +7,10 @@ import com.andrerinas.openheadunit.aap.protocol.proto.Control
  * The version response the phone sends before the SSL handshake, which this app used to discard.
  *
  * Payload after the 6 byte AAP header is major, minor and status as big-endian shorts, then an
- * optional VersionResponseOptions proto carrying the connection parameters the phone wants us to
- * use. The phone selects the minor version, so it is the negotiated one, not the one we asked for.
+ * optional VersionResponseOptions proto carrying the connection parameters the phone requests.
+ * The reply can be the phone's fixed ceiling; it must never promote the version we requested.
  */
 object AapVersionNegotiation {
-
-    /** What Messages.versionRequest announces. */
-    const val ANNOUNCED_MAJOR = 1
-    const val ANNOUNCED_MINOR = 2
-
-    /** Messages added in 1.6 must not be sent to a phone that selected less. */
-    const val FEATURE_MINOR_1_6 = 6
 
     data class Result(
         val major: Int,
@@ -30,9 +23,6 @@ object AapVersionNegotiation {
          * statuses other than 0(STATUS_SUCCESS) on working sessions; TLS must still be tried.
          */
         val accepted: Boolean get() = status != Common.MessageStatus.STATUS_NO_COMPATIBLE_VERSION_VALUE
-
-        /** True once the negotiated version carries the 1.6 message set. */
-        val supports16: Boolean get() = major > 1 || (major == 1 && minor >= FEATURE_MINOR_1_6)
 
         val statusName: String
             get() = Common.MessageStatus.forNumber(status)?.name ?: "UNKNOWN($status)"

@@ -7,11 +7,13 @@ import android.os.SystemClock
 import android.util.AttributeSet
 import android.view.Surface
 import android.view.TextureView
+import com.andrerinas.openheadunit.decoder.video.VideoSurfaceKind
 import com.andrerinas.openheadunit.utils.AppLog
 
 class TextureProjectionView @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
 ) : TextureView(context, attrs, defStyleAttr), IProjectionView, TextureView.SurfaceTextureListener {
+    override val videoSurfaceKind: VideoSurfaceKind get() = VideoSurfaceKind.TEXTURE_CONSUMER
 
     private val callbacks = mutableListOf<IProjectionView.Callbacks>()
     private var surface: Surface? = null
@@ -94,7 +96,7 @@ class TextureProjectionView @JvmOverloads constructor(
             callbacks.forEach { cb -> cb.onSurfaceCreated(it) }
             // The width and height of the view are passed here, but the decoder should
             // use the actual video dimensions it parses from the SPS.
-            callbacks.forEach { cb -> cb.onSurfaceChanged(it, width, height) }
+            callbacks.forEach { cb -> cb.onSurfaceChanged(it, width, height, videoSurfaceKind) }
         }
         if (appliesProjectionScale) {
             ProjectionViewScaler.updateScale(this, videoWidth, videoHeight)
@@ -176,7 +178,7 @@ class TextureProjectionView @JvmOverloads constructor(
         // If surface is already available, notify immediately.
         surface?.let {
             callback.onSurfaceCreated(it)
-            callback.onSurfaceChanged(it, width, height)
+            callback.onSurfaceChanged(it, width, height, videoSurfaceKind)
         }
     }
 

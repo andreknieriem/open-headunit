@@ -49,8 +49,7 @@ class VideoOutputRetirementTest {
             decoder.stop("test replacement") // bounded join must return while the native call is stuck
             val replacement = mock(MediaCodec::class.java)
             set("codec", replacement)
-            set("mWidth", 1920)
-            set("mHeight", 1080)
+            set("outputSize", VideoSize(1920, 1080))
             set("decoderNeedsRestart", false)
             set("running", true)
             set("outputThread", Thread("replacement owner"))
@@ -77,6 +76,24 @@ class VideoOutputRetirementTest {
         fun await() = assertTrue("worker did not reach native pause", entered.await(3, TimeUnit.SECONDS))
     }
 
+    @Test fun `playback sample counts completed output and retires with its owner`() {
+        val f = Fixture()
+        var sample: com.andrerinas.openheadunit.aap.GalPlaybackSample? = null
+        `when`(f.codec.dequeueOutputBuffer(any(), anyLong())).thenReturn(7, MediaCodec.INFO_TRY_AGAIN_LATER)
+        f.decoder.onFirstFrameListener = {
+            sample = f.decoder.galPlaybackSample()
+            f.set("running", false)
+        }
+        f.start()
+        try {
+            f.join()
+            assertEquals(1L, sample?.videoFrames)
+            assertSame(f.worker, sample?.owner)
+            assertNull(sample?.audioQueueUs)
+            assertNull(f.decoder.galPlaybackSample())
+        } finally { f.decoder.stop("test cleanup") }
+    }
+
     @Test fun `late format cannot publish dimensions or scale a replacement codec`() {
         val f = Fixture()
         val pause = NativePause()
@@ -95,8 +112,7 @@ class VideoOutputRetirementTest {
             f.decoder.dimensionsListener = listener
             pause.resume.countDown()
             f.join()
-            assertEquals(1920, f.get("mWidth"))
-            assertEquals(1080, f.get("mHeight"))
+            assertEquals(VideoSize(1920, 1080), f.decoder.videoSize)
             verifyNoInteractions(listener, replacement)
             assertEquals(false, f.get("decoderNeedsRestart"))
         } finally { pause.resume.countDown(); f.decoder.stop("test cleanup") }
@@ -123,6 +139,7 @@ class VideoOutputRetirementTest {
             assertEquals(0, calls.get())
             assertEquals(0L, f.decoder.lastFrameRenderedMs)
             assertEquals(0L, f.get("framesRendered"))
+            assertEquals(0L, f.decoder.galPlaybackSample()?.videoFrames)
             assertEquals(false, f.get("renderedThisSession"))
             assertEquals(false, f.get("decoderNeedsRestart"))
             verifyNoInteractions(replacement)
@@ -271,9 +288,10 @@ class VideoOutputRetirementTest {
         `when`(f.codec.outputFormat).thenReturn(format)
         val calls = AtomicInteger()
         f.decoder.dimensionsListener = object : VideoDimensionsListener {
-            override fun onVideoDimensionsChanged(width: Int, height: Int) {
-                assertEquals(1280, width)
-                assertEquals(720, height)
+            override fun onVideoDimensionsChanged(dimensions: VideoDimensions) {
+                assertTrue(dimensions.isCurrent())
+                assertEquals(1280, dimensions.width)
+                assertEquals(720, dimensions.height)
                 calls.incrementAndGet()
                 f.decoder.stop("dimensions received")
             }
@@ -288,7 +306,7 @@ class VideoOutputRetirementTest {
         try {
             pause.await()
             f.decoder.stop(DecoderStopPolicy.REASON_ACTIVITY_STOPPED)
-            assertEquals(1280, f.get("mWidth"))
+            assertEquals(1280, f.decoder.videoSize.width)
             assertEquals(0, calls.get())
             AppLog.LOGGER = previousLogger
             val replacement = mock(MediaCodec::class.java)
@@ -494,6 +512,7 @@ class VideoOutputRetirementTest {
                 verify(f.codec, never()).releaseOutputBuffer(7, true)
                 assertEquals(!laterFails, tracker.keyframeDecoded)
                 assertEquals(if (laterFails) 0L else 1L, f.get("framesRendered"))
+                assertEquals(if (laterFails) 1L else 2L, f.get("galDecodedFrames"))
                 assertEquals(1L, f.get("framesConcealed"))
                 assertEquals(
                     if (laterFails) CorruptionConcealmentPolicy.State.CONCEALING else CorruptionConcealmentPolicy.State.ARMED,

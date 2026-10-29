@@ -65,6 +65,8 @@ class CommManager {
         videoFocus.add(event)
     }
     enum class DisconnectReason { CONNECTION_ENDED, SETTINGS_RESTART, PROJECTION_UNRAISED }
+    // END_CAUSE
+    class ProjectionConnection { enum class Type { USB, WIFI } }
     sealed class ConnectionState {
         // STATE
         object Connecting : ConnectionState()

@@ -8,6 +8,7 @@ import android.hardware.usb.UsbInterface
 import android.hardware.usb.UsbManager
 import android.content.pm.PackageManager
 import android.os.Build
+import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.Settings
 import com.andrerinas.openheadunit.utils.Utils
 import java.util.Locale
@@ -81,6 +82,14 @@ class UsbDeviceCompat(val wrappedDevice: UsbDevice) {
 
         fun isInAccessoryMode(device: UsbDevice): Boolean =
             UsbDeviceIdentityPolicy.isInAccessoryMode(device.vendorId, device.productId)
+
+        /** Whether any device on the bus is in accessory mode; a bus that cannot be read answers no. */
+        fun accessoryOnBus(context: Context): Boolean = try {
+            usbManager(context)?.deviceList?.values?.any { isInAccessoryMode(it) } ?: false
+        } catch (e: Exception) {
+            AppLog.w("UsbDeviceCompat: Could not read the USB bus: ${e.message}")
+            false
+        }
 
         fun isAndroidDevice(device: UsbDevice): Boolean = evaluate(device).accepted
 

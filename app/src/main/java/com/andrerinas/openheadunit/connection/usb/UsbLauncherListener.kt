@@ -7,6 +7,7 @@ import android.os.SystemClock
 import android.widget.Toast
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.R
+import com.andrerinas.openheadunit.connection.CommManager
 import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy.Tier
 import com.andrerinas.openheadunit.connection.usb.UsbLauncherManager.Companion.ATTACH_FALLBACK_DELAY_MS
 import com.andrerinas.openheadunit.utils.AppLog
@@ -80,7 +81,7 @@ class UsbLauncherListener(private val manager: UsbLauncherManager) : UsbReceiver
         if (commManager.isConnectedToUsbDevice(device)) {
             // Cable physically removed — the USB connection is already dead, so skip the
             // ByeByeRequest send (which would block ~1 s trying to write to a gone device).
-            commManager.disconnect(sendByeBye = false, isUserExit = false)
+            commManager.disconnect(sendByeBye = false, isUserExit = false, endedBy = CommManager.EndCause.DETACHED)
         }
     }
 
@@ -91,7 +92,7 @@ class UsbLauncherListener(private val manager: UsbLauncherManager) : UsbReceiver
 
         service.userExitedAA = false
         if (commManager.isConnected) {
-            commManager.disconnect(sendByeBye = false, isUserExit = false)
+            commManager.disconnect(sendByeBye = false, isUserExit = false, endedBy = CommManager.EndCause.DETACHED)
         }
 
         // Wait a bit and check if the device is still there in normal mode

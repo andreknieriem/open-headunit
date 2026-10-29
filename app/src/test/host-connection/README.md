@@ -20,7 +20,8 @@ A harness failure fails that job. The `host-connection-diagnostics` artifact ret
 extracted Kotlin sources and method/toolchain metadata, including on failure.
 
 For local lifecycle changes, run `./gradlew :app:testGithubDebugUnitTest` first to populate
-the Kotlin dependency cache, then `python3 app/src/test/host-connection/run.py`.
+the Kotlin dependency cache and compile the actual generated protocol classes used by the
+audio integration fixture, then `python3 app/src/test/host-connection/run.py`.
 The Gradle task alone does not run the harness. The full runner includes the Self launch
 suite, which can also be run separately with `python3 app/src/test/host-connection/self-launch.py`
 after the first full run.
@@ -39,3 +40,16 @@ double; it does not open firmware sockets or simulate vendor Bluetooth timing.
 The VPN command suite extracts the GitHub flavor's actual start/stop and service command
 handlers, then delivers a queued configuration after stop while the instance stays bound.
 It checks that the old request cannot recreate the tunnel or replace a newer configuration.
+
+## Socket keepalive
+
+Authenticated socket sessions send a channel-0 GAL ping every second, including during
+media traffic; USB sessions do not start this timer. Only actual incoming messages refresh
+link health. The existing socket-idle and partial-frame deadlines remain in force.
+Retiring or closing a transport cancels its timer, and a dequeued stale callback cannot rearm it.
+
+`IdlePingTest` covers the real timer body, protocol frames and reader-start admission with a
+deterministic clock. The host harness covers retirement and completion of old workers before
+reconnection; its delayed callback is a double. An end-to-end check should also leave the
+AA developer-server connection idle, then suspend the peer without closing its socket to
+verify that unanswered outbound pings cannot hide a dead connection.

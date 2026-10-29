@@ -16,7 +16,7 @@ import com.andrerinas.openheadunit.utils.Settings
  * The settings screen's only copy of the settings before Save. Load and compare live together
  * so the two lists cannot drift apart.
  */
-class SettingsPendingCopy {
+class SettingsPendingCopy : java.io.Serializable {
     var useGps: Boolean? = null
     var showNavigationNotifications: Boolean? = null
     var syncMediaSessionAaMetadata: Boolean? = null

@@ -114,6 +114,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.reflect.KMutableProperty1
+import kotlin.reflect.KProperty
 
 class SettingsFragment : Fragment() {
     private lateinit var settings: Settings
@@ -134,7 +136,7 @@ class SettingsFragment : Fragment() {
     // Wireless items here only appear in Basic when the user connects wirelessly (see filterSettings).
     private val basicSettingIds = setOf(
         // General
-        "autoOptimize", "connectionMode", "appLanguage", "listenForUsbDevices", "usbWirelessDongle",
+        "autoOptimize", "connectionMode", "appLanguage", "listenForUsbDevices", "usbWirelessDongle", "laboratory",
         // Wireless (shown in Basic only when WiFi is among the selected connection modes).
         // The hotspot entries come along with the transport choice: they only render once Hotspot
         // is picked, and on a device that will not let an app read its hotspot configuration the
@@ -180,65 +182,66 @@ class SettingsFragment : Fragment() {
     )
 
     // Local state to hold changes before saving
-    private val pending = SettingsPendingCopy()
+    private var pending = SettingsPendingCopy()
     /** The ESP32 relay keeps its own store, so its master switch is held here until Save. */
     private var pendingEsp32RelayEnabled: Boolean? = null
-    private var pendingUseGps by pending::useGps
-    private var pendingShowNavigationNotifications by pending::showNavigationNotifications
-    private var pendingSyncMediaSessionAaMetadata by pending::syncMediaSessionAaMetadata
-    private var pendingAutoResumePlaybackOnReconnect by pending::autoResumePlaybackOnReconnect
-    private var pendingResolution by pending::resolution
-    private var pendingDpi by pending::dpi
-    private var pendingPixelAspectRatioE4 by pending::pixelAspectRatioE4
-    private var pendingStaticBSSID by pending::staticBSSID
-    private var pendingStaticP2pBSSID by pending::staticP2pBSSID
-    private var pendingFullscreenMode by pending::fullscreenMode
-    private var pendingViewMode by pending::viewMode
-    private var pendingForceSoftware by pending::forceSoftware
-    private var pendingSoftwareVideoDecoder by pending::softwareVideoDecoder
-    private var pendingVideoCodec by pending::videoCodec
-    private var pendingFpsLimit by pending::fpsLimit
-    private var pendingBluetoothAddress by pending::bluetoothAddress
-    private var pendingBluetoothAnnounceSkip by pending::bluetoothAnnounceSkip
-    private var pendingEnableAudioSink by pending::enableAudioSink
-    private var pendingStaticAudioFocus by pending::staticAudioFocus
-    private var pendingPlaybackFocusMode by pending::playbackFocusMode
-    private var pendingUseAacAudio by pending::useAacAudio
-    private var pendingUseAAudioOutput by pending::useAAudioOutput
-    private var pendingAttachHwDspEqualizer by pending::attachHwDspEqualizer
-    private var pendingMicInputSource by pending::micInputSource
-    private var pendingEnableRotary by pending::enableRotary
-    private var pendingMediaKeyRouting by pending::mediaKeyRouting
-    private var pendingVolumeKeysToPhone by pending::volumeKeysToPhone
-    private var pendingSpeedVolumeMode by pending::speedVolumeMode
-    private var pendingAudioLatencyMultiplier by pending::audioLatencyMultiplier
-    private var pendingAudioTimeCorrectionMode by pending::audioMatchingMode
-    private var pendingUseLibusb by pending::useLibusb
-    private var pendingListenForUsbDevices by pending::listenForUsbDevices
-    private var pendingUsbWirelessDongle by pending::usbWirelessDongle
-    private var pendingAudioQueueCapacity by pending::audioQueueCapacity
-    private var pendingShowToastMessages by pending::showToastMessages
-    private var pendingScreenOrientation by pending::screenOrientation
-    private var pendingAppLanguage by pending::appLanguage
-    private var pendingAutoRestartWifi by pending::autoRestartWifi
-    private var pendingNarrowBandProfileCap by pending::narrowBandProfileCap
-    private var pendingDebugVideoLowLatency by pending::debugVideoLowLatency
-    private var pendingAllowExternalConfiguration by pending::allowExternalConfiguration
-    private var pendingKeepDummyVpnDuringSession by pending::keepDummyVpnDuringSession
+    private var preservePendingForLaboratory = false
+    private var pendingUseGps by SettingsPendingCopy::useGps
+    private var pendingShowNavigationNotifications by SettingsPendingCopy::showNavigationNotifications
+    private var pendingSyncMediaSessionAaMetadata by SettingsPendingCopy::syncMediaSessionAaMetadata
+    private var pendingAutoResumePlaybackOnReconnect by SettingsPendingCopy::autoResumePlaybackOnReconnect
+    private var pendingResolution by SettingsPendingCopy::resolution
+    private var pendingDpi by SettingsPendingCopy::dpi
+    private var pendingPixelAspectRatioE4 by SettingsPendingCopy::pixelAspectRatioE4
+    private var pendingStaticBSSID by SettingsPendingCopy::staticBSSID
+    private var pendingStaticP2pBSSID by SettingsPendingCopy::staticP2pBSSID
+    private var pendingFullscreenMode by SettingsPendingCopy::fullscreenMode
+    private var pendingViewMode by SettingsPendingCopy::viewMode
+    private var pendingForceSoftware by SettingsPendingCopy::forceSoftware
+    private var pendingSoftwareVideoDecoder by SettingsPendingCopy::softwareVideoDecoder
+    private var pendingVideoCodec by SettingsPendingCopy::videoCodec
+    private var pendingFpsLimit by SettingsPendingCopy::fpsLimit
+    private var pendingBluetoothAddress by SettingsPendingCopy::bluetoothAddress
+    private var pendingBluetoothAnnounceSkip by SettingsPendingCopy::bluetoothAnnounceSkip
+    private var pendingEnableAudioSink by SettingsPendingCopy::enableAudioSink
+    private var pendingStaticAudioFocus by SettingsPendingCopy::staticAudioFocus
+    private var pendingPlaybackFocusMode by SettingsPendingCopy::playbackFocusMode
+    private var pendingUseAacAudio by SettingsPendingCopy::useAacAudio
+    private var pendingUseAAudioOutput by SettingsPendingCopy::useAAudioOutput
+    private var pendingAttachHwDspEqualizer by SettingsPendingCopy::attachHwDspEqualizer
+    private var pendingMicInputSource by SettingsPendingCopy::micInputSource
+    private var pendingEnableRotary by SettingsPendingCopy::enableRotary
+    private var pendingMediaKeyRouting by SettingsPendingCopy::mediaKeyRouting
+    private var pendingVolumeKeysToPhone by SettingsPendingCopy::volumeKeysToPhone
+    private var pendingSpeedVolumeMode by SettingsPendingCopy::speedVolumeMode
+    private var pendingAudioLatencyMultiplier by SettingsPendingCopy::audioLatencyMultiplier
+    private var pendingAudioTimeCorrectionMode by SettingsPendingCopy::audioMatchingMode
+    private var pendingUseLibusb by SettingsPendingCopy::useLibusb
+    private var pendingListenForUsbDevices by SettingsPendingCopy::listenForUsbDevices
+    private var pendingUsbWirelessDongle by SettingsPendingCopy::usbWirelessDongle
+    private var pendingAudioQueueCapacity by SettingsPendingCopy::audioQueueCapacity
+    private var pendingShowToastMessages by SettingsPendingCopy::showToastMessages
+    private var pendingScreenOrientation by SettingsPendingCopy::screenOrientation
+    private var pendingAppLanguage by SettingsPendingCopy::appLanguage
+    private var pendingAutoRestartWifi by SettingsPendingCopy::autoRestartWifi
+    private var pendingNarrowBandProfileCap by SettingsPendingCopy::narrowBandProfileCap
+    private var pendingDebugVideoLowLatency by SettingsPendingCopy::debugVideoLowLatency
+    private var pendingAllowExternalConfiguration by SettingsPendingCopy::allowExternalConfiguration
+    private var pendingKeepDummyVpnDuringSession by SettingsPendingCopy::keepDummyVpnDuringSession
 
-    private var pendingWifiConnectionMode by pending::wifiConnectionMode
-    private var pendingHelperConnectionStrategy by pending::helperConnectionStrategy
-    private var pendingAutoEnableHotspot by pending::autoEnableHotspot
-    private var pendingHeadunitServerNetwork by pending::headunitServerNetwork
-    private var pendingHeadunitServerAutoWifiScan by pending::headunitServerAutoWifiScan
-    private var pendingWaitForWifi by pending::waitForWifi
-    private var pendingWaitForWifiTimeout by pending::waitForWifiTimeout
-    private var pendingBluetoothManagerServiceName by pending::bluetoothManagerServiceName
-    private var pendingNativeAaIgnoreExternalBt by pending::nativeAaIgnoreExternalBt
-    private var pendingNativeAaEnableBluetooth by pending::nativeAaEnableBluetooth
-    private var pendingExternalBtZbtTransport by pending::externalBtZbtTransport
-    private var pendingExternalBtBlinkTransport by pending::externalBtBlinkTransport
-    private var pendingExternalBtZjSocketTransport by pending::externalBtZjSocketTransport
+    private var pendingWifiConnectionMode by SettingsPendingCopy::wifiConnectionMode
+    private var pendingHelperConnectionStrategy by SettingsPendingCopy::helperConnectionStrategy
+    private var pendingAutoEnableHotspot by SettingsPendingCopy::autoEnableHotspot
+    private var pendingHeadunitServerNetwork by SettingsPendingCopy::headunitServerNetwork
+    private var pendingHeadunitServerAutoWifiScan by SettingsPendingCopy::headunitServerAutoWifiScan
+    private var pendingWaitForWifi by SettingsPendingCopy::waitForWifi
+    private var pendingWaitForWifiTimeout by SettingsPendingCopy::waitForWifiTimeout
+    private var pendingBluetoothManagerServiceName by SettingsPendingCopy::bluetoothManagerServiceName
+    private var pendingNativeAaIgnoreExternalBt by SettingsPendingCopy::nativeAaIgnoreExternalBt
+    private var pendingNativeAaEnableBluetooth by SettingsPendingCopy::nativeAaEnableBluetooth
+    private var pendingExternalBtZbtTransport by SettingsPendingCopy::externalBtZbtTransport
+    private var pendingExternalBtBlinkTransport by SettingsPendingCopy::externalBtBlinkTransport
+    private var pendingExternalBtZjSocketTransport by SettingsPendingCopy::externalBtZjSocketTransport
 
     // The probe's verdict is not a pending setting: it changes nothing and there is nothing to
     // save. It lives in the companion object with the job that produces it. This one is
@@ -246,58 +249,67 @@ class SettingsFragment : Fragment() {
     private var zbtProbeFollowJob: Job? = null
     /** Resolves which external-BT route the Native AA dialog should describe. Cancelled on exit. */
     private var externalBtRouteJob: Job? = null
-    private var pendingNativeApTransport by pending::nativeApTransport
-    private var pendingNativeDriverSelectionMode by pending::nativeDriverSelectionMode
-    private var pendingNativeDriverSelectionTimeout by pending::nativeDriverSelectionTimeout
-    private var pendingNativePreferredDeviceMac by pending::nativePreferredDeviceMac
-    private var pendingNativePokeBtMacs by pending::nativePokeBtMacs
-    private var pendingNativePokeAllPaired by pending::nativePokeAllPaired
-    private var pendingWifiDirectBand by pending::wifiDirectBand
-    private var pendingWifiDirectStableIdentity by pending::wifiDirectStableIdentity
+    private var pendingNativeApTransport by SettingsPendingCopy::nativeApTransport
+    private var pendingNativeDriverSelectionMode by SettingsPendingCopy::nativeDriverSelectionMode
+    private var pendingNativeDriverSelectionTimeout by SettingsPendingCopy::nativeDriverSelectionTimeout
+    private var pendingNativePreferredDeviceMac by SettingsPendingCopy::nativePreferredDeviceMac
+    private var pendingNativePokeBtMacs by SettingsPendingCopy::nativePokeBtMacs
+    private var pendingNativePokeAllPaired by SettingsPendingCopy::nativePokeAllPaired
+    private var pendingWifiDirectBand by SettingsPendingCopy::wifiDirectBand
+    private var pendingWifiDirectStableIdentity by SettingsPendingCopy::wifiDirectStableIdentity
     // The pair and its provenance move together; null on the second means neither was edited,
     // which is the only way null on the first can mean "back to a pair the app draws".
-    private var pendingWifiDirectGroupIdentity by pending::wifiDirectGroupIdentity
-    private var pendingWifiDirectIdentityUserSet by pending::wifiDirectIdentityUserSet
-    private var pendingStationStandDownMode by pending::stationStandDownMode
-    private var pendingHotspotBand by pending::hotspotBand
-    private var pendingFiveGhzChannel by pending::fiveGhzChannel
-    private var pendingHotspotSsid by pending::hotspotSsid
-    private var pendingHotspotPassword by pending::hotspotPassword
-    private var pendingHotspotInterface by pending::hotspotInterface
+    private var pendingWifiDirectGroupIdentity by SettingsPendingCopy::wifiDirectGroupIdentity
+    private var pendingWifiDirectIdentityUserSet by SettingsPendingCopy::wifiDirectIdentityUserSet
+    private var pendingStationStandDownMode by SettingsPendingCopy::stationStandDownMode
+    private var pendingHotspotBand by SettingsPendingCopy::hotspotBand
+    private var pendingFiveGhzChannel by SettingsPendingCopy::fiveGhzChannel
+    private var pendingHotspotSsid by SettingsPendingCopy::hotspotSsid
+    private var pendingHotspotPassword by SettingsPendingCopy::hotspotPassword
+    private var pendingHotspotInterface by SettingsPendingCopy::hotspotInterface
 
-    private var pendingEnableCarLauncher by pending::enableCarLauncher
-    private var pendingEnableFloatingButton by pending::enableFloatingButton
-    private var pendingFloatingButtonConnectionStatusMode by pending::floatingButtonConnectionStatusMode
-    private var pendingFloatingButtonDisconnectedOpacityPercent by pending::floatingButtonDisconnectedOpacityPercent
-    private var pendingFloatingButtonSizeDp by pending::floatingButtonSizeDp
-    private var pendingFloatingButtonOpacityPercent by pending::floatingButtonOpacityPercent
-    private var pendingFloatingButtonXPercent by pending::floatingButtonXPercent
-    private var pendingFloatingButtonYPercent by pending::floatingButtonYPercent
-    private var pendingAaExitAction by pending::aaExitAction
-    private var pendingVideoFitMode by pending::videoFitMode
-    private var pendingForcedScale by pending::forcedScale
-    private var pendingHudMirroring by pending::hudMirroring
+    private var pendingEnableCarLauncher by SettingsPendingCopy::enableCarLauncher
+    private var pendingEnableFloatingButton by SettingsPendingCopy::enableFloatingButton
+    private var pendingFloatingButtonConnectionStatusMode by SettingsPendingCopy::floatingButtonConnectionStatusMode
+    private var pendingFloatingButtonDisconnectedOpacityPercent by SettingsPendingCopy::floatingButtonDisconnectedOpacityPercent
+    private var pendingFloatingButtonSizeDp by SettingsPendingCopy::floatingButtonSizeDp
+    private var pendingFloatingButtonOpacityPercent by SettingsPendingCopy::floatingButtonOpacityPercent
+    private var pendingFloatingButtonXPercent by SettingsPendingCopy::floatingButtonXPercent
+    private var pendingFloatingButtonYPercent by SettingsPendingCopy::floatingButtonYPercent
+    private var pendingAaExitAction by SettingsPendingCopy::aaExitAction
+    private var pendingVideoFitMode by SettingsPendingCopy::videoFitMode
+    private var pendingForcedScale by SettingsPendingCopy::forcedScale
+    private var pendingHudMirroring by SettingsPendingCopy::hudMirroring
 
-    private var pendingKillOnDisconnect by pending::killOnDisconnect
-    private var pendingAutoKillOemApps by pending::autoKillOemApps
-    private var pendingRaiseProjectionDuringCall by pending::raiseProjectionDuringCall
-    private var pendingShowOverLockScreen by pending::showOverLockScreen
+    private var pendingKillOnDisconnect by SettingsPendingCopy::killOnDisconnect
+    private var pendingAutoKillOemApps by SettingsPendingCopy::autoKillOemApps
+    private var pendingRaiseProjectionDuringCall by SettingsPendingCopy::raiseProjectionDuringCall
+    private var pendingShowOverLockScreen by SettingsPendingCopy::showOverLockScreen
 
     // Custom Insets
-    private var pendingInsetLeft by pending::insetLeft
-    private var pendingInsetTop by pending::insetTop
-    private var pendingInsetRight by pending::insetRight
-    private var pendingInsetBottom by pending::insetBottom
+    private var pendingInsetLeft by SettingsPendingCopy::insetLeft
+    private var pendingInsetTop by SettingsPendingCopy::insetTop
+    private var pendingInsetRight by SettingsPendingCopy::insetRight
+    private var pendingInsetBottom by SettingsPendingCopy::insetBottom
 
 
 
-    private var pendingMediaVolumeOffset by pending::mediaVolumeOffset
-    private var pendingGuidanceVolumeOffset by pending::guidanceVolumeOffset
-    private var pendingSystemVolumeOffset by pending::systemVolumeOffset
+    private var pendingMediaVolumeOffset by SettingsPendingCopy::mediaVolumeOffset
+    private var pendingGuidanceVolumeOffset by SettingsPendingCopy::guidanceVolumeOffset
+    private var pendingSystemVolumeOffset by SettingsPendingCopy::systemVolumeOffset
 
-    private var pendingHideBatteryLevel by pending::hideBatteryLevel
-    private var pendingHidePhoneSignal by pending::hidePhoneSignal
-    private var pendingHideClock by pending::hideClock
+    private var pendingHideBatteryLevel by SettingsPendingCopy::hideBatteryLevel
+    private var pendingHidePhoneSignal by SettingsPendingCopy::hidePhoneSignal
+    private var pendingHideClock by SettingsPendingCopy::hideClock
+
+    // Resolve the draft at access time: restoring Laboratory may replace it in onCreate.
+    private operator fun <T> KMutableProperty1<SettingsPendingCopy, T>.getValue(
+        thisRef: SettingsFragment, property: KProperty<*>
+    ): T = get(thisRef.pending)
+
+    private operator fun <T> KMutableProperty1<SettingsPendingCopy, T>.setValue(
+        thisRef: SettingsFragment, property: KProperty<*>, value: T
+    ) = set(thisRef.pending, value)
 
     private var requiresRestart = false
     private var requiresServiceRestart = false
@@ -389,6 +401,18 @@ class SettingsFragment : Fragment() {
         }
     }
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        val state = savedInstanceState ?: return
+        @Suppress("DEPRECATION")
+        val restored = state.getSerializable("laboratory_parent_pending") as? SettingsPendingCopy ?: return
+        pending = restored
+        preservePendingForLaboratory = true
+        if (state.containsKey("laboratory_parent_esp32")) {
+            pendingEsp32RelayEnabled = state.getBoolean("laboratory_parent_esp32")
+        }
+    }
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         return inflater.inflate(R.layout.fragment_settings, container, false)
     }
@@ -404,8 +428,9 @@ class SettingsFragment : Fragment() {
             settings.enableCarLauncher = true
             AppLog.i("SettingsFragment: the app holds the home role, storing car launcher mode")
         }
-        // Initialize local state with current values
-        pending.loadFrom(settings)
+        // Laboratory owns disjoint settings, so returning from it must not discard parent edits.
+        // Other children retain their existing reload behavior for shared parent preferences.
+        if (!preservePendingForLaboratory) pending.loadFrom(settings)
 
         // Loading screen settings are handled in LoadingScreenFragment (saves directly)
 
@@ -422,6 +447,7 @@ class SettingsFragment : Fragment() {
         settingsRecyclerView.adapter = settingsAdapter
 
         setupHeader(view)
+        checkChanges()
 
         updateSettingsList()
         if (Build.VERSION.SDK_INT >= 26) viewLifecycleOwner.lifecycleScope.launch {
@@ -452,6 +478,10 @@ class SettingsFragment : Fragment() {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
+        if (preservePendingForLaboratory) {
+            outState.putSerializable("laboratory_parent_pending", pending)
+            pendingEsp32RelayEnabled?.let { outState.putBoolean("laboratory_parent_esp32", it) }
+        }
         if (::settingsRecyclerView.isInitialized) {
             settingsRecyclerView.layoutManager?.onSaveInstanceState()?.let {
                 outState.putParcelable("recycler_scroll", it)
@@ -922,6 +952,18 @@ class SettingsFragment : Fragment() {
             helpResId = R.string.connection_mode_help,
             value = connectionModesLabel(),
             onClick = { showConnectionModeDialog() }
+        ))
+
+        items.add(SettingItem.SettingEntry(
+            stableId = "laboratory",
+            nameResId = R.string.laboratory,
+            helpResId = R.string.laboratory_description,
+            value = getString(R.string.laboratory_summary, settings.galProtocolVersion),
+            searchKeywords = getString(R.string.laboratory_search_keywords),
+            onClick = {
+                preservePendingForLaboratory = true
+                findNavController().navigate(R.id.action_settingsFragment_to_laboratorySettingsFragment)
+            }
         ))
 
         // Language Selector
@@ -3987,6 +4029,7 @@ class SettingsFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
+        preservePendingForLaboratory = false
         // Refresh settings list when returning from sub-screens (e.g. AutoConnectFragment, DarkModeFragment)
         if (::settingsAdapter.isInitialized) {
             settings = App.provide(requireContext()).settings

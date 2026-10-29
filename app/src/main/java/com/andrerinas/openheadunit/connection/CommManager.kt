@@ -1463,16 +1463,20 @@ class CommManager(
     }
 
     fun sendUpdateUiConfigRequest(left: Int, top: Int, right: Int, bottom: Int) {
-        val request = com.andrerinas.openheadunit.aap.protocol.messages.UpdateUiConfigRequest(left, top, right, bottom)
+        val owner = _transport ?: return
+        if (_connectionState.value != ConnectionState.TransportStarted) return
+        val display = owner.galContract?.display ?: return
+        val request = com.andrerinas.openheadunit.aap.protocol.messages.UpdateUiConfigRequest(
+            display.margins(left, top, right, bottom))
         AppLog.i("[UI_DEBUG_FIX] TX UpdateUiConfigRequest: L=$left T=$top R=$right B=$bottom")
-        send(request)
+        owner.send(request)
         // The trailing gain-only notification does *not* bring a keyframe forward, whatever this
         // comment used to claim. Dropped-frame-keyframe round 4 fired sixteen of these config
         // requests on a live stream: the phone acknowledged every one and its keyframe cadence never
         // moved off its fixed ~69s period. Kept because it costs one message and nothing has measured
         // the surface-mismatch path this serves without it.
         if (!projectionVideoFocusSuppressed) {
-            send(com.andrerinas.openheadunit.aap.protocol.messages.VideoFocusEvent(gain = true, unsolicited = true))
+            owner.send(com.andrerinas.openheadunit.aap.protocol.messages.VideoFocusEvent(gain = true, unsolicited = true))
         }
     }
 

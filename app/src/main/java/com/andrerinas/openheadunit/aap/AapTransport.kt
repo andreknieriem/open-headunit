@@ -10,7 +10,6 @@ import android.os.Handler
 import android.os.HandlerThread
 import android.os.Process
 import android.os.SystemClock
-import android.util.SparseIntArray
 import android.view.KeyEvent
 import com.andrerinas.openheadunit.aap.protocol.Channel
 import com.andrerinas.openheadunit.aap.protocol.messages.KeyCodeEvent
@@ -140,8 +139,8 @@ class AapTransport(
     // Messages refused because the backlog was already at its ceiling. See VIDEO_BACKLOG_LIMIT.
     private val videoShedTotal = java.util.concurrent.atomic.AtomicLong(0)
     private val micRecorder: MicRecorder = MicRecorder(context)
-    private val sessionIds = SparseIntArray(4)
-    private val startedSensors = HashSet<Int>(4)
+    internal val bluetoothControl = AapControlBluetooth(context, send = ::sendIfCurrent)
+    internal val sensorSubscriptions = GalSensorSubscriptions<SensorEvent>()
     private val droppedSensorEvents = HashMap<Int, Int>(4)
     private var lastSensorDropLogMs = 0L
     private val keyCodes = mutableMapOf<Int, Int>()
@@ -193,9 +192,73 @@ class AapTransport(
     var onAudioFocusStateChanged: ((Boolean) -> Unit)? = null
     var onUpdateUiConfigReplyReceived: (() -> Unit)? = null
 
-    /** What the phone selected in the version handshake, or null before it has answered. */
-    var negotiatedVersion: AapVersionNegotiation.Result? = null
+    // Capture settings once. The phone's reply is a ceiling, not permission to enable a
+    // newer feature set than the explicit request sent on this connection.
+    private val selectedGalProfile = GalProfile.fromSetting(settings.galProtocolVersion)
+    private val laboratoryOptions = settings.galLaboratoryOptions
+    private val displaySettings = GalDisplaySettings(
+        settings.hideClock, settings.hideBatteryLevel, settings.hidePhoneSignal)
+    @Volatile internal var galContract: GalConnectionContract? = null
         private set
+    val negotiatedVersion: AapVersionNegotiation.Result?
+        get() = galContract?.negotiation?.finalResponse
+    internal val mediaSessions = GalMediaSessions()
+    private val presentationController = GalPresentationController()
+    private val mediaStatistics = GalMediaStatistics()
+    private val mediaStatisticsTick = object : Runnable {
+        override fun run() {
+            if (closing || !presentationSession.isActive) return
+            val active = mediaSessions.active().filterValues { it.runtime.statisticsIntervalMs != null }
+            mediaStatistics.retain(active.keys)
+            val now = SystemClock.elapsedRealtime()
+            for ((channel, session) in active) {
+                val sample = when {
+                    Channel.isAudio(channel) -> aapAudio.galPlaybackSample(channel)
+                    channel == Channel.ID_VID -> aapVideo.galPlaybackSample()
+                    else -> null
+                }
+                val report = mediaStatistics.observe(channel, session, sample, now) ?: continue
+                // This callback owns the writer. Stop, new options, or a repeated session ID
+                // must invalidate its snapshot before a prepared report starts its write.
+                if (closing || mediaSessions.current(channel) !== session) continue
+                val message = AapMessage(channel, Media.MsgType.MEDIA_MESSAGE_STATS_VALUE, report)
+                if (sendEncryptedMessage(message.data, message.size) < 0) return
+            }
+            if (!closing && active.isNotEmpty()) sendHandler?.postDelayed(this, GalRuntimeOptions.MIN_REPORT_MS)
+        }
+    }
+
+    internal fun startMediaRuntime(channel: Int, session: GalMediaSessions.Session) {
+        presentationController.start(channel, session.generation, session.runtime)
+        if (Channel.isAudio(channel)) aapAudio.setPresentationGeneration(channel, session.generation)
+        applyMediaResources(channel, session.runtime)
+    }
+
+    internal fun applyMediaRuntime(channel: Int) {
+        val session = mediaSessions.current(channel)
+        val runtime = session?.takeIf { it.active }?.runtime ?: GalRuntimeOptions()
+        if (session != null) {
+            if (session.active) presentationController.update(channel, session.generation, runtime)
+            else {
+                presentationController.stop(channel, session.generation)
+                if (Channel.isAudio(channel)) aapAudio.setPresentationGeneration(channel, null)
+            }
+        }
+        applyMediaResources(channel, runtime)
+    }
+
+    private fun applyMediaResources(channel: Int, runtime: GalRuntimeOptions) {
+        if (Channel.isAudio(channel)) aapAudio.applyGalBufferLimit(channel, runtime.audioBufferLimitMs)
+        if (runtime.invalidFields.isNotEmpty()) {
+            AppLog.w("GAL ignored invalid options: ${runtime.invalidFields.joinToString()}")
+        }
+        // Sampling and protobuf serialization stay off the receive/decode path. There is
+        // only one writer-owned timer, and no timer at all without an active stats request.
+        sendHandler?.post {
+            sendHandler?.removeCallbacks(mediaStatisticsTick)
+            if (!closing) mediaStatisticsTick.run()
+        }
+    }
     private var pollHandler: Handler? = null
     private val pollHandlerCallback = Handler.Callback {
         val readInstance = aapRead
@@ -396,6 +459,9 @@ class AapTransport(
         }
         if (firstSink) audioGapMonitor.skipExpectedGap(SystemClock.elapsedRealtime())
     }
+
+    internal fun isAudioSinkStarted(channel: Int): Boolean =
+        synchronized(startedAudioChannels) { channel in startedAudioChannels }
 
     /** The phone stopped an audio sink. Called from [AapControlMedia.mediaSinkStopRequest]. */
     internal fun noteAudioSinkStopped(channel: Int) {
@@ -736,6 +802,7 @@ class AapTransport(
                 wireCorruption = true,
             )
         }
+        aapAudio.bindPresentationController(presentationController)
 
         // A rebuilt codec resumes on a P-frame and can render nothing until an IDR arrives, which
         // the phone sends on its own ~69s cadence and which nothing in AAP can request. So this is
@@ -750,12 +817,6 @@ class AapTransport(
         }
     }
 
-    // Synchronized against noteDroppedSensorEvent, whose log line iterates startedSensors from the
-    // main thread while this adds from the poll thread.
-    @Synchronized
-    internal fun startSensor(type: Int) {
-        startedSensors.add(type)
-    }
 
     /**
      * Send one already-built, unfragmented message: preserve channel/flags in the cleartext
@@ -842,6 +903,10 @@ class AapTransport(
             AppLog.i("AapTransport quitting (clean=$cleanEnd)")
             // Notify promptly; CommManager keeps this owner until awaitTermination completes.
             cleanupStep("notify") { cb?.invoke(cleanEnd) }
+            cleanupStep("sensors") { sensorSubscriptions.stopAll() }
+            cleanupStep("Bluetooth") { bluetoothControl.shutdown() }
+            sendHandler?.removeCallbacks(mediaStatisticsTick)
+            cleanupStep("presentation timing") { presentationController.close() }
             cleanupStep("microphone") { retireMicrophone() }
             sendHandler?.removeCallbacks(focusCycleGainRunnable)
             sendHandler?.removeCallbacks(unrepairedCheckRunnable)
@@ -910,6 +975,35 @@ class AapTransport(
         aapVideo.recordAnnouncedCodec(codec)
     }
 
+    /** Validate and start runtime ownership before publishing work that can promote pre-Start
+     * output. Decoder reset and geometry changes stay ordered with DATA, off the receive thread. */
+    internal fun beginVideoSession(session: GalMediaSessions.Session): Boolean {
+        val format = (session.format as? GalMediaFormat.Video)?.value ?: return false
+        val dimensions = com.andrerinas.openheadunit.utils.VideoFallbackPolicy.sizeOf(format.codecResolution)
+        val fps = when (format.frameRate) {
+            Control.Service.MediaSinkService.VideoConfiguration.VideoFrameRateType._30 -> 30
+            Control.Service.MediaSinkService.VideoConfiguration.VideoFrameRateType._60 -> 60
+            else -> return false
+        }
+        val handler = videoHandler ?: return false
+        // The worker may run before post returns. Its captured pre-Start bridge must acquire
+        // an epoch from an already-active generation, not permanently adopt epoch zero.
+        startMediaRuntime(Channel.ID_VID, session)
+        return handler.post {
+            if (!closing && mediaSessions.current(Channel.ID_VID)?.generation == session.generation) {
+                try {
+                    com.andrerinas.openheadunit.utils.HeadUnitScreenConfig.selectAnnouncedVideo(
+                        session.configurationIndex, format)
+                    aapVideo.beginSession(session)
+                    if (!aapVideo.selectFormat(dimensions.first, dimensions.second, fps)) quit()
+                } catch (e: Exception) {
+                    AppLog.e("Unable to start selected GAL video format", e)
+                    quit()
+                }
+            }
+        }
+    }
+
     /**
      * Hands a video-channel message to the video thread, and answers whether it was picture.
      *
@@ -930,14 +1024,16 @@ class AapTransport(
      */
     internal fun dispatchVideo(message: AapMessage): Boolean {
         val isPayload = aapVideo.isPayload(message)
-        val acks = AapMessageFraming.completesMediaData(message.type, message.flags.toInt())
-        // Capture ownership at receipt. A later MediaStart can replace the channel's session
-        // while video is queued; its eventual ACK still belongs to this message's original one.
-        val ackSession = getSessionId(message.channel)
+        val arrivalNs = System.nanoTime()
+        // Decode ownership uses a local generation. Wire credits retain the receipt ID and
+        // ACK mode; whether same-ID Start resets the sender's credit epoch is not established.
+        val session = mediaSessions.current(message.channel)
+        val ackSession = if (AapMessageFraming.completesMediaData(message.type, message.flags.toInt()) &&
+            session?.ackless != true) session?.id ?: 0 else null
         val handler = videoHandler
         // Drop pre-discovery packets at receipt, not later after the worker observes a codec.
         if (handler == null || aapVideo.announcedCodec == null) {
-            if (acks) sendMediaAck(message.channel, ackSession)
+            if (ackSession != null) sendMediaAck(message.channel, ackSession)
             return isPayload
         }
         val channel = message.channel
@@ -951,7 +1047,7 @@ class AapTransport(
                     "shedding - see videoShed= on the transport dispatch line for how many")
             }
             if (isPayload) dispatchVideoRunHoled(true)
-            if (acks) sendMediaAck(channel, ackSession)
+            if (ackSession != null) sendMediaAck(channel, ackSession)
             return isPayload
         }
         val size = message.size
@@ -959,16 +1055,29 @@ class AapTransport(
         System.arraycopy(message.data, 0, copy, 0, size)
         val queued = AapMessage(channel, message.flags, message.type, message.dataOffset, size, copy)
         videoBacklog.incrementAndGet()
-        handler.post {
+        val posted = handler.post {
             try {
-                aapVideo.process(queued)
+                // Fresh pre-Start CSD and its Setup boundary stay ahead of the immediately
+                // following Start. DATA and active-owner CSD never cross that boundary.
+                val current = mediaSessions.current(channel)
+                val preparation = queued.type == Media.MsgType.MEDIA_MESSAGE_SETUP_VALUE ||
+                    queued.type == 1 && session?.active != true
+                if (current?.generation == session?.generation ||
+                    preparation && current?.previousGeneration == session?.generation) {
+                    aapVideo.process(queued, session, arrivalNs)
+                }
             } catch (e: Exception) {
                 AppLog.e("Error processing video message", e)
             } finally {
                 videoBacklog.decrementAndGet()
                 recycleVideoBuffer(copy)
-                if (acks) sendMediaAck(channel, ackSession)
+                if (ackSession != null) sendMediaAck(channel, ackSession)
             }
+        }
+        if (!posted) {
+            videoBacklog.decrementAndGet()
+            recycleVideoBuffer(copy)
+            if (ackSession != null) sendMediaAck(channel, ackSession)
         }
         return isPayload
     }
@@ -987,7 +1096,8 @@ class AapTransport(
      */
     internal fun dispatchVideoRunHoled(discardAssembledUnit: Boolean) {
         val handler = videoHandler ?: return
-        handler.post { aapVideo.onFragmentRunHoled(discardAssembledUnit) }
+        val session = mediaSessions.current(Channel.ID_VID)
+        handler.post { aapVideo.onFragmentRunHoled(discardAssembledUnit, session) }
     }
 
     private fun obtainVideoBuffer(size: Int): ByteArray {
@@ -1055,6 +1165,8 @@ class AapTransport(
     internal fun retirePresentation() = synchronized(lifecycleLock) {
         pendingVideoFocus = null
         presentationSession.retire()
+        presentationController.close()
+        sendHandler?.removeCallbacks(mediaStatisticsTick)
         aapRead?.retirePresentation()
     }
 
@@ -1094,7 +1206,8 @@ class AapTransport(
                 SystemClock.sleep(500)
             }
 
-            val version = Messages.versionRequest
+            val requested = selectedGalProfile.version
+            val version = Messages.versionRequest(requested.major, requested.minor)
             var ret = -1
             var attempt = 0
             var received = false
@@ -1212,18 +1325,20 @@ class AapTransport(
                     }
                     if (HandshakeMessagePolicy.isLateVersionResponse(frame)) {
                         val negotiated = AapVersionNegotiation.parse(frame, frame.size)
-                        if (negotiated == null || !negotiated.accepted) {
+                        if (negotiated == null || !negotiated.accepted || negotiated.version < requested) {
                             AppLog.e("Handshake: rejected VERSION_RESPONSE: " +
                                 (negotiated?.let { "${it.major}.${it.minor}, ${it.statusName}" } ?: "malformed body"))
                             return false
                         }
-                        negotiatedVersion = negotiated
-                        AppLog.i("Handshake: the phone selected ${negotiated.major}.${negotiated.minor} " +
-                            "(we asked for ${AapVersionNegotiation.ANNOUNCED_MAJOR}.${AapVersionNegotiation.ANNOUNCED_MINOR}), status ${negotiated.statusName}")
-                        negotiated.requestedConfig?.let {
-                            AppLog.i("Handshake: the phone asks for ping timeout " +
-                                "${it.pingConfiguration.timeoutMs}ms")
-                        }
+                        val contract = GalConnectionContract.resolve(
+                            GalSessionProfile(selectedGalProfile, negotiated), displaySettings, laboratoryOptions)
+                        galContract = contract
+                        // Legacy profiles cannot request timing controls later. Do not install
+                        // per-frame platform feedback callbacks for their ordinary video path.
+                        aapVideo.bindPresentationController(
+                            if (contract.media.optionsFor(Channel.ID_VID).embedded) presentationController else null)
+                        AppLog.i("Handshake: GAL request=$requested, peer=${negotiated.major}.${negotiated.minor}, " +
+                            "status=${negotiated.statusName}; active profile=$requested")
                         received = true
                         versionFrameSize = frame.size
                         break
@@ -1327,9 +1442,27 @@ class AapTransport(
     }
 
     fun send(sensor: SensorEvent): Boolean {
-        if (isAlive && startedSensors.contains(sensor.sensorType)) {
-            send(sensor as AapMessage)
-            return true
+        val handler = sendHandler
+        if (isAlive && tlsWriter.isReady && handler != null) {
+            val queued = sensorSubscriptions.enqueue(sensor.sensorType, sensor)
+            if (queued != null) {
+                if (!queued.schedule) return true
+                // Keep the newest value while paced, including a final GPS fix with no
+                // later callback to wake it. Unsubscribe invalidates the delivery ticket.
+                val posted = handler.post(object : Runnable {
+                    override fun run() {
+                        if (closing) return
+                        val delivery = sensorSubscriptions.take(queued.ticket, System.nanoTime())
+                        if (delivery.waitNs > 0) {
+                            if (!handler.postDelayed(this, 1 + (delivery.waitNs - 1) / 1_000_000)) {
+                                sensorSubscriptions.cancelQueued(queued.ticket)
+                            }
+                        } else delivery.value?.let { sendEncryptedMessage(it.data, it.size) }
+                    }
+                })
+                if (!posted) sensorSubscriptions.cancelQueued(queued.ticket)
+                return posted
+            }
         }
         noteDroppedSensorEvent(sensor.sensorType)
         return false
@@ -1351,7 +1484,17 @@ class AapTransport(
             return
         }
         lastSensorDropLogMs = now
-        AppLog.i("AapTransport: dropping sensor events, isAlive=$isAlive startedSensors=$startedSensors droppedByType=$droppedSensorEvents")
+        AppLog.i("AapTransport: dropping sensor events, isAlive=$isAlive startedSensors=${sensorSubscriptions.activeTypes()} droppedByType=$droppedSensorEvents")
+    }
+
+    /** Worker-produced replies must still belong to an open channel at the actual write. */
+    internal fun sendIfCurrent(message: AapMessage, current: () -> Boolean): Boolean {
+        if (!tlsWriter.isReady) return false
+        return sendHandler?.post {
+            if (!closing && presentationSession.isActive && current()) {
+                sendEncryptedMessage(message.data, message.size)
+            }
+        } == true
     }
 
     fun send(message: AapMessage) {
@@ -1420,20 +1563,12 @@ class AapTransport(
         context.sendBroadcast(ProjectionActivityRequest())
     }
 
-    internal fun sendMediaAck(channel: Int, sessionId: Int = getSessionId(channel)) {
+    internal fun captureMediaAck(channel: Int): Int? = mediaSessions.ackSession(channel)
+
+    /** Capture the wire ID at receipt; local decode generations do not establish wire credit epochs. */
+    internal fun sendMediaAck(channel: Int, sessionId: Int) {
         send(MediaAck(channel, sessionId))
     }
-
-    internal fun setSessionId(channel: Int, sessionId: Int) {
-        sessionIds.put(channel, sessionId)
-    }
-
-    /**
-     * The session id a MediaStart left for [channel], or 0 if the phone never sent one.
-     *
-     * MicrophoneRequest uses a capture-session identity, separate from this sink table.
-     */
-    internal fun getSessionId(channel: Int): Int = sessionIds.get(channel)
 
     /**
      * A monotonic microsecond clock, which is the unit every other AAP media producer stamps with.

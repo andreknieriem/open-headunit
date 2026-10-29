@@ -19,9 +19,7 @@ import com.andrerinas.openheadunit.decoder.video.VideoDecoderBackendPolicy
 import com.andrerinas.openheadunit.location.LocationHolder
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.utils.AppLog
-import com.andrerinas.openheadunit.utils.HeadUnitScreenConfig
 import com.andrerinas.openheadunit.utils.Settings
-import com.andrerinas.openheadunit.utils.VideoFallbackPolicy
 import com.andrerinas.openheadunit.utils.Utils
 
 interface AapControl {
@@ -44,10 +42,24 @@ internal class AapControlMedia(
                 return mediaSinkSetupRequest(setupRequest, message.channel)
             }
             Media.MsgType.MEDIA_MESSAGE_START_VALUE -> {
+                if (message.size > 16 * 1024) {
+                    aapTransport.quit()
+                    return -1
+                }
                 val startRequest = message.parse(Media.Start.newBuilder()).build()
                 return mediaStartRequest(startRequest, message.channel)
             }
             Media.MsgType.MEDIA_MESSAGE_STOP_VALUE -> return mediaSinkStopRequest(message.channel)
+            Media.MsgType.MEDIA_MESSAGE_OPTIONS_VALUE -> {
+                if (aapTransport.mediaSessions.acceptsUpdate(message.channel) && message.size <= 16 * 1024) {
+                    val options = message.parse(Media.MediaOptions.newBuilder()).build()
+                    if (aapTransport.mediaSessions.update(message.channel, options)) {
+                        noteMediaOptions(options)
+                        aapTransport.applyMediaRuntime(message.channel)
+                    }
+                }
+                return 0
+            }
             Media.MsgType.MEDIA_MESSAGE_VIDEO_FOCUS_REQUEST_VALUE -> {
                 val focusRequest = message.parse(Media.VideoFocusRequestNotification.newBuilder()).build()
                 AppLog.i("RX: Video Focus Request - mode: %s, reason: %s", focusRequest.mode, focusRequest.reason)
@@ -97,29 +109,86 @@ internal class AapControlMedia(
     private fun mediaStartRequest(request: Media.Start, channel: Int): Int {
         AppLog.i("Media Start Request %s: session=%d, config_index=%d", Channel.name(channel), request.sessionId, request.configurationIndex)
 
-        // The phone's pick must reach the geometry before the first frame is laid out.
-        if (channel == Channel.ID_VID &&
-            VideoFallbackPolicy.adopts(request.configurationIndex, HeadUnitScreenConfig.hasOfferedFallback())) {
-            HeadUnitScreenConfig.adoptFallback()
+        val session = aapTransport.mediaSessions.start(channel, request)
+        if (session == null) {
+            AppLog.e("Media Start rejected: unadvertised sink/configuration $channel/${request.configurationIndex}")
+            aapTransport.quit()
+            return -1
         }
-
-        aapTransport.setSessionId(channel, request.sessionId)
+        session.options?.let(::noteMediaOptions)
+        when (val format = session.format) {
+            is GalMediaFormat.Video -> if (!aapTransport.beginVideoSession(session)) {
+                aapTransport.quit()
+                return -1
+            }
+            is GalMediaFormat.Audio -> {
+                if (!aapAudio.selectFormat(channel, format.value)) {
+                    aapTransport.quit()
+                    return -1
+                }
+                aapTransport.startMediaRuntime(channel, session)
+            }
+        }
         aapTransport.noteAudioSinkStarted(channel)
         aapAudio.preparePlayback(channel)
         return 0
     }
 
+    private fun noteMediaOptions(options: Media.MediaOptions) {
+        AppLog.d("Media options received: %s", options)
+    }
+
     private fun mediaSinkSetupRequest(request: Media.MediaSetupRequest, channel: Int): Int {
 
         AppLog.i("Media Sink Setup Request: %d on channel %s", request.type, Channel.name(channel))
+        val advertisedCodec = aapTransport.mediaSessions.codec(channel)
+        val validCodec = advertisedCodec == request.type && when {
+            Channel.isAudio(channel) -> AudioSinkCodecPolicy.codecFor(request.type) != null
+            channel == Channel.ID_MIC -> request.type == Media.MediaCodecType.MEDIA_CODEC_AUDIO_PCM_VALUE
+            channel == Channel.ID_VID -> true
+            else -> false
+        }
+        // Config offers READY/WAIT, not a failure status. Do not promise to decode a codec
+        // this channel did not advertise; retire the connection without sending READY.
+        if (!validCodec) {
+            AppLog.e("Media Setup rejected: codec ${request.type} on channel $channel")
+            aapTransport.quit()
+            return -1
+        }
+        aapTransport.mediaSessions.stop(channel)
+        aapTransport.applyMediaRuntime(channel)
+        // Microphone credits belong to MicrophoneRequest, not the media sink table.
+        val indices = if (channel == Channel.ID_MIC) listOf(0)
+            else aapTransport.mediaSessions.configurationIndices(channel)
+        if (indices.isEmpty() || Channel.isAudio(channel) && indices.any {
+                val format = aapTransport.mediaSessions.format(channel, it) as? GalMediaFormat.Audio
+                format == null || !GalAudioFormat.supported(format.value)
+            }) {
+            AppLog.e("Media Setup rejected: unsupported advertised format on channel $channel")
+            aapTransport.quit()
+            return -1
+        }
+
+        // Acquire the selected audio format before READY; a failed output owner must
+        // not tell the sender it can accept media, even when the advertised format is valid.
+        if (Channel.isAudio(channel)) {
+            aapAudio.noteSinkCodec(channel, request.type)
+            // A repeated Setup does not silently reset a previously selected format.
+            val index = aapTransport.mediaSessions.current(channel)?.configurationIndex
+                ?.takeIf { it in indices } ?: indices.first()
+            val format = aapTransport.mediaSessions.format(channel, index) as? GalMediaFormat.Audio
+            if (format == null || !aapAudio.selectFormat(channel, format.value)) {
+                aapTransport.quit()
+                return -1
+            }
+        }
 
         val maxUnacked = maxUnackedFor(channel)
         val configResponse = Media.Config.newBuilder().apply {
             status = Media.Config.ConfigStatus.STATUS_READY
             this.maxUnacked = maxUnacked
 
-            val offered = channel == Channel.ID_VID && HeadUnitScreenConfig.hasOfferedFallback()
-            VideoFallbackPolicy.configurationIndices(offered).forEach { addConfigurationIndices(it) }
+            addAllConfigurationIndices(indices)
         }.build()
         AppLog.i("Config response: %s (maxUnacked=%d)", configResponse, maxUnacked)
         val msg = AapMessage(channel, Media.MsgType.MEDIA_MESSAGE_CONFIG_VALUE, configResponse)
@@ -131,8 +200,6 @@ internal class AapControlMedia(
 
         // Pushing AudioFocusNotification
         if (Channel.isAudio(channel)) {
-            aapAudio.noteSinkCodec(channel, request.type)
-            aapAudio.precreateAudioTrack(channel)
             val focusNotification = Control.AudioFocusNotification.newBuilder()
                 .setFocusState(Control.AudioFocusNotification.AudioFocusStateType.STATE_GAIN)
                 .setUnsolicited(true)
@@ -170,6 +237,10 @@ internal class AapControlMedia(
 
     private fun mediaSinkStopRequest(channel: Int): Int {
         AppLog.i("Media Sink Stop Request: " + Channel.name(channel))
+        // Even a focus-cycle Stop ends option updates. Its already received tail retains
+        // the same session ID and ACK mode until the next Start replaces ownership.
+        aapTransport.mediaSessions.stop(channel)
+        aapTransport.applyMediaRuntime(channel)
         if (Channel.isAudio(channel)) {
             // Before the sink goes: this silence is one the phone asked for.
             aapTransport.noteAudioSinkStopped(channel)
@@ -203,6 +274,9 @@ internal class AapControlMedia(
 
         if (!micRequest.open) {
             aapTransport.closeMicSession(reply = true)
+        } else if (aapTransport.mediaSessions.codec(Channel.ID_MIC) == null) {
+            AppLog.w("Mic request declined: microphone was not advertised on this connection")
+            aapTransport.rejectMicSession()
         } else if (MicrophonePolicy.declineReason(aapTransport.settings.useHeadUnitMicrophone,
                 micRecorder.isAvailable) != MicrophonePolicy.Decline.NONE) {
             // A disabled head-unit microphone leaves capture with the phone or Bluetooth
@@ -268,13 +342,17 @@ internal class AapControlSensor(
     private fun sensorStartRequest(request: Sensors.SensorRequest, channel: Int): Int {
         AppLog.i("Sensor Start Request sensor: %s, minUpdatePeriod: %d", request.type.name, request.minUpdatePeriod)
 
+        val accepted = aapTransport.sensorSubscriptions.request(request.type.number, request.minUpdatePeriod)
         val msg = AapMessage(channel, Sensors.SensorsMsgType.SENSOR_STARTRESPONSE_VALUE, Sensors.SensorResponse.newBuilder()
-                .setStatus(Common.MessageStatus.STATUS_SUCCESS)
+                .setStatus(if (accepted) Common.MessageStatus.STATUS_SUCCESS else Common.MessageStatus.STATUS_INVALID_SENSOR)
                 .build())
         AppLog.i(msg.toString())
 
         aapTransport.send(msg)
-        aapTransport.startSensor(request.type.number)
+        if (!accepted || request.minUpdatePeriod == -1L) return 0
+        if (request.type == Sensors.SensorType.DRIVING_STATUS) {
+            aapTransport.send(DrivingStatusEvent(Sensors.SensorBatch.DrivingStatusData.Status.UNRESTRICTED))
+        }
 
         if (request.type == Sensors.SensorType.NIGHT) {
             AppLog.i("Night sensor requested. Triggering immediate update.")
@@ -293,8 +371,8 @@ internal class AapControlSensor(
             // locks, and the broader accessor would hand it a network fix to send instead.
             val fix = LocationHolder.currentGpsFix(context)
             if (fix != null) {
-                val sentOnWire = aapTransport.send(LocationUpdateEvent(fix))
-                AppLog.i("LOCATION sensor requested. Sending current fix immediately. sentOnWire=$sentOnWire")
+                val queued = aapTransport.send(LocationUpdateEvent(fix))
+                AppLog.i("LOCATION sensor requested. Sending current fix immediately. queued=$queued")
             } else {
                 AppLog.i("LOCATION sensor requested. No recent GPS fix to prime with.")
             }
@@ -308,6 +386,10 @@ internal class AapControlService(
         private val aapAudio: AapAudio,
         private val settings: Settings,
         private val context: Context): AapControl {
+
+    // Configuration indices must keep their meaning throughout the connection, including
+    // repeated discovery requests after the settings screen has been opened.
+    private var discoveryResponse: ServiceDiscoveryResponse? = null
 
     override fun execute(message: AapMessage): Int {
 
@@ -342,6 +424,17 @@ internal class AapControlService(
             }
             Control.ControlMsgType.MESSAGE_CHANNEL_CLOSE_NOTIFICATION_VALUE -> {
                 AppLog.i("RX: Channel Close Notification on chan ${message.channel}")
+                if (message.channel == Channel.ID_SEN) aapTransport.sensorSubscriptions.stopAll()
+                if (message.channel == Channel.ID_BTH) aapTransport.bluetoothControl.closeChannel()
+                if (message.channel == Channel.ID_MIC) aapTransport.closeMicSession()
+                if (Channel.isAudio(message.channel) && aapTransport.isAudioSinkStarted(message.channel)) {
+                    aapTransport.noteAudioSinkStopped(message.channel)
+                    aapAudio.stopAudio(message.channel)
+                }
+                // Close may arrive without Stop. Retire runtime options without flushing
+                // the buffered tail or changing the credits it already owns.
+                aapTransport.mediaSessions.stop(message.channel)
+                aapTransport.applyMediaRuntime(message.channel)
                 return 0
             }
             else -> AppLog.e("Unsupported Control message type: ${message.type}")
@@ -353,7 +446,15 @@ internal class AapControlService(
     private fun serviceDiscoveryRequest(request: Control.ServiceDiscoveryRequest): Int {
         AppLog.i("Service Discovery Request: %s", request.phoneName)
 
-        val msg = ServiceDiscoveryResponse(context, aapAudio.sessionConfig, aapTransport)
+        val msg = discoveryResponse ?: run {
+            val contract = checkNotNull(aapTransport.galContract) { "Service discovery before GAL agreement" }
+            ServiceDiscoveryResponse(context, aapAudio.sessionConfig, aapTransport, contract).also {
+                aapTransport.mediaSessions.advertise(contract.media, it.mediaOffer)
+                aapTransport.sensorSubscriptions.advertise(it.sensorTypes)
+                aapTransport.bluetoothControl.advertise(it.bluetoothAddress)
+                discoveryResponse = it
+            }
+        }
         aapTransport.send(msg)
         return 0
     }
@@ -505,6 +606,7 @@ internal class AapControlGateway(
             Channel.ID_CTR -> return serviceControl.execute(message)
             Channel.ID_INP -> return touchControl.execute(message)
             Channel.ID_SEN -> return sensorControl.execute(message)
+            Channel.ID_BTH -> return aapTransport.bluetoothControl.execute(message)
             Channel.ID_VID, Channel.ID_AUD, Channel.ID_AU1, Channel.ID_AU2, Channel.ID_MIC -> return mediaControl.execute(message)
         }
         return 0
@@ -516,9 +618,6 @@ internal class AapControlGateway(
                 .build())
         aapTransport.send(msg)
 
-        if (channel == Channel.ID_SEN) {
-            aapTransport.send(DrivingStatusEvent(Sensors.SensorBatch.DrivingStatusData.Status.UNRESTRICTED))
-        }
         return 0
     }
 }

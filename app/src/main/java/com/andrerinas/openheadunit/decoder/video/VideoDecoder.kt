@@ -17,8 +17,24 @@ import java.util.Locale
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.TimeUnit
 
+/** One immutable size; readers retain a coherent pair without allocating or retiring notifications. */
+data class VideoSize(val width: Int, val height: Int)
+
+/**
+ * One dimension publication, bound to its original decoder worker, revision and listener.
+ * A listener posting work must check [isCurrent] on the UI thread immediately before applying
+ * it to its still-owned view. UI mutations are serialized there; no decoder lock covers UI work.
+ */
+class VideoDimensions internal constructor(
+    val width: Int,
+    val height: Int,
+    private val current: () -> Boolean,
+) {
+    fun isCurrent(): Boolean = current()
+}
+
 interface VideoDimensionsListener {
-    fun onVideoDimensionsChanged(width: Int, height: Int)
+    fun onVideoDimensionsChanged(dimensions: VideoDimensions)
 }
 
 /**
@@ -203,9 +219,11 @@ class VideoDecoder(
     }
 
     private var codec: MediaCodec? = null
-    private var softwareVideoDecoder: FfmpegVideoDecoder? = null
+    @Volatile private var softwareVideoDecoder: FfmpegVideoDecoder? = null
     private var codecBufferInfo: MediaCodec.BufferInfo? = null
     @Volatile private var mSurface: Surface? = null
+    @Volatile private var surfaceKind = VideoSurfaceKind.UNKNOWN
+    val currentSurfaceKind: VideoSurfaceKind get() = surfaceKind
     // The surface last detached, so a teardown callback arriving after the detach is not mistaken for a stale one.
     private var detachedSurface: Surface? = null
     // A native dequeue/release can outlive stop's bounded join. Without ownership fencing,
@@ -219,9 +237,76 @@ class VideoDecoder(
     @Volatile private var outputThread: Thread? = null
     @Volatile private var running = false
     private var startTime = 0L
+    private var presentationController: com.andrerinas.openheadunit.aap.GalPresentationController? = null
+    private var presentationGeneration = 0L
+    @Volatile private var outputTiming: GalVideoOutputTiming? = null
 
-    private var mWidth = 0
-    private var mHeight = 0
+    @Synchronized internal fun bindPresentationController(controller: com.andrerinas.openheadunit.aap.GalPresentationController?) {
+        presentationController = controller
+    }
+
+    @Synchronized internal fun beginPresentationSession(generation: Long) {
+        if (presentationGeneration == 0L) {
+            // A pre-Start CSD packet may have started the codec. Its workers/listener keep the
+            // same bridge; replacing/retiring it here would strand all later DATA output.
+            outputTiming?.beginSession(presentationController, generation)
+        } else outputTiming?.retire()
+        presentationGeneration = generation
+    }
+
+    @Synchronized internal fun endPresentationSession() {
+        outputTiming?.retire()
+        presentationGeneration = 0L
+    }
+
+    private fun newOutputTiming(allowRenderedFeedback: Boolean = surfaceKind.supportsRenderedFeedback(Build.VERSION.SDK_INT)): GalVideoOutputTiming {
+        outputTiming?.retire()
+        // Preflight/non-GAL decoding has no transport-owned presentation generation.
+        return GalVideoOutputTiming(if (presentationGeneration == 0L) null else presentationController,
+            presentationGeneration, surfaceKind, feedbackAllowed = allowRenderedFeedback).also { outputTiming = it }
+    }
+
+    // Visible dimensions (actual output once available, otherwise the configuration fallback).
+    // Every pair/revision update is serialized with output publication.
+    @Volatile private var outputSize = VideoSize(0, 0)
+    // Lifecycle-monitor state: selection/configuration must not compare against a moving
+    // output size. A multi-SPS stream can configure at one size and decode another.
+    private var configuredWidth = 0
+    private var configuredHeight = 0
+    private var selectedWidth = 0
+    private var selectedHeight = 0
+    @Volatile private var selectedFps = 0
+    private val streamFps: Int get() = if (selectedFps > 0) selectedFps else settings.fpsLimit
+    // Counts successful MediaCodec output releases, including recovery-withheld pictures.
+    // This is not a SurfaceFlinger presentation measurement; bundled output is not reported.
+    private var galDecodedFrames = 0L
+
+    internal fun galPlaybackSample(): com.andrerinas.openheadunit.aap.GalPlaybackSample? =
+        synchronized(outputPublicationLock) {
+            val owner = outputThread
+            if (!running || owner == null || softwareVideoDecoder != null) null
+            else com.andrerinas.openheadunit.aap.GalPlaybackSample(owner, videoFrames = galDecodedFrames)
+        }
+
+    /** Start-selected dimensions and rate reach codec configuration and pipeline sizing. */
+    @Synchronized fun selectFormat(width: Int, height: Int, fps: Int): Boolean {
+        if (width <= 0 || height <= 0 || fps <= 0) return false
+        if ((codec != null || softwareVideoDecoder != null) &&
+            ((if (selectedWidth > 0) selectedWidth else configuredWidth) != width ||
+                (if (selectedHeight > 0) selectedHeight else configuredHeight) != height ||
+                streamFps != fps)) {
+            // Selection changes the local codec configuration, not the phone's stream/CSD.
+            stop("restart: GAL selected video format changed")
+        }
+        selectedWidth = width
+        selectedHeight = height
+        selectedFps = fps
+        // A pre-Start CSD may have seeded the previous offer's fallback dimensions. Only
+        // an absent/retired codec accepts a new fallback; live output remains authoritative,
+        // including output published while the FPS lookup above was in flight.
+        if (codec == null && softwareVideoDecoder == null) updateDimensions(width, height)
+        return true
+    }
     private val parameterSets = ParameterSetCache()
     @Volatile private var currentCodecType = CodecType.H264
     private var currentCodecName: String? = null
@@ -324,7 +409,8 @@ class VideoDecoder(
     // state - so the phone's ack window throttles it instead of frames being shed. Frames are
     // copied on the way in because the transport reuses the buffer it hands us.
     private class PendingFrame(
-        var data: ByteArray, var size: Int, var arrivalNanos: Long, var generation: Long = 0L
+        var data: ByteArray, var size: Int, var arrivalNanos: Long, var generation: Long = 0L,
+        var sourceTimeUs: Long = Long.MIN_VALUE, var receiverArrivalNs: Long = 0L
     )
     private class FeedOwner(
         val thread: Thread,
@@ -334,13 +420,14 @@ class VideoDecoder(
         val type: CodecType,
         val queue: ArrayBlockingQueue<PendingFrame>,
         val generation: Long,
+        val timing: GalVideoOutputTiming?,
     )
     // Re-derived per session by refreshPipelineSizing(), not fixed here. This object is built once
     // in AppComponent and lives for the whole process, so a depth chosen in the constructor
     // outlasted every settings change: a unit switched to 30fps kept the 60fps queue, and a log
     // could report "queue holds 15 frames, 500ms at 60fps" - two numbers that cannot both be right.
     @Volatile private var memoryReading: DeviceMemoryReading = readMemory()
-    @Volatile private var frameQueueCapacity = VideoFeedQueuePolicy.capacityFor(settings.fpsLimit)
+    @Volatile private var frameQueueCapacity = VideoFeedQueuePolicy.capacityFor(streamFps)
     @Volatile private var frameQueue = ArrayBlockingQueue<PendingFrame>(frameQueueCapacity)
     @Volatile private var framePool = ArrayBlockingQueue<PendingFrame>(frameQueueCapacity + 2)
     @Volatile private var decoderGeneration = 0L
@@ -385,6 +472,12 @@ class VideoDecoder(
     private var inputBuffers: Array<ByteBuffer>? = null
 
     var dimensionsListener: VideoDimensionsListener? = null
+        get() = synchronized(outputPublicationLock) { field }
+        set(value) = synchronized(outputPublicationLock) {
+            field = value
+            dimensionsRevision++
+        }
+    private var dimensionsRevision = 0L
     var onFpsChanged: ((Int) -> Unit)? = null
     var softwareYuvFrameSink: SoftwareYuvFrameSink? = null
     private var frameCount = 0
@@ -601,8 +694,16 @@ class VideoDecoder(
     /** Config-scanner answers already reported this session, so each is said once. */
     private val loggedContentKinds = HashSet<CodecConfigScanner.Content>()
 
-    val videoWidth: Int get() = mWidth
-    val videoHeight: Int get() = mHeight
+    /** Read once before building UI/API arguments; a later publication cannot change this pair. */
+    val videoSize: VideoSize get() = outputSize
+
+    /** Also retire already-captured notifications when a fallback changes without a callback. */
+    private fun updateDimensions(width: Int, height: Int): Boolean = synchronized(outputPublicationLock) {
+        if (outputSize.width == width && outputSize.height == height) return@synchronized false
+        outputSize = VideoSize(width, height)
+        dimensionsRevision++
+        true
+    }
 
     /**
      * Whether any frame of the current session has rendered. Distinguishes a decoder rebuilt under a
@@ -649,8 +750,14 @@ class VideoDecoder(
         fun key(name: String): Int? =
             try { if (format.containsKey(name)) format.getInteger(name) else null } catch (e: Exception) { null }
 
-        val bufferWidth = key(MediaFormat.KEY_WIDTH) ?: mWidth
-        val bufferHeight = key(MediaFormat.KEY_HEIGHT) ?: mHeight
+        val formatWidth = key(MediaFormat.KEY_WIDTH)
+        val formatHeight = key(MediaFormat.KEY_HEIGHT)
+        val bufferWidth: Int
+        val bufferHeight: Int
+        synchronized(outputPublicationLock) {
+            bufferWidth = formatWidth ?: outputSize.width
+            bufferHeight = formatHeight ?: outputSize.height
+        }
 
         // Inclusive bounds, so the visible extent is right - left + 1.
         val cropLeft = key("crop-left")
@@ -713,26 +820,50 @@ class VideoDecoder(
         }
     }
 
+    /**
+     * Capture the listener with the source owner, not when the callback eventually dispatches.
+     * The second check belongs at the UI effect: dispatch itself can pause after its owner check.
+     * Snapshots/closures are allocated only for dimension notifications, never for each frame.
+     */
+    private fun captureDimensionsNotification(
+        width: Int, height: Int, owner: Thread? = null, software: Boolean = false,
+    ): (() -> Unit)? = synchronized(outputPublicationLock) {
+        if (width <= 0 || height <= 0) return@synchronized null
+        val listener = dimensionsListener ?: return@synchronized null
+        val generation = decoderGeneration
+        val revision = ++dimensionsRevision
+        val dimensions = VideoDimensions(width, height) {
+            synchronized(outputPublicationLock) {
+                decoderGeneration == generation && dimensionsRevision == revision &&
+                    dimensionsListener === listener &&
+                    (owner == null || (running && (if (software) feedThread else outputThread) === owner))
+            }
+        }
+        return@synchronized { listener.onVideoDimensionsChanged(dimensions) }
+    }
+
+    /** Reannounce retained stream dimensions for a newly attached view using the same UI fence. */
+    fun notifyVideoDimensions() {
+        val notification = synchronized(outputPublicationLock) {
+            captureDimensionsNotification(outputSize.width, outputSize.height, outputThread ?: feedThread, outputThread == null)
+        }
+        notification?.invoke()
+    }
+
     private fun handleOutputFormatChange(owner: MediaCodec, format: MediaFormat) {
         val self = Thread.currentThread()
         val (newWidth, newHeight) = displaySizeOf(format)
         val events = OutputEvents("VideoDecoder.handleOutputFormatChange")
         publishOutput(self) {
             events.info("Output Format Changed: $format")
-            if (mWidth != newWidth || mHeight != newHeight) {
-                mWidth = newWidth
-                mHeight = newHeight
+            if (updateDimensions(newWidth, newHeight)) {
                 events.info("Video dimensions changed via format: ${newWidth}x$newHeight")
             }
             // Every codec publishes its own output format, even when its size matches the
             // previous one. That previous worker may have retired after storing the size but
             // before dispatching its UI notification. Reannounce from the current owner so a
             // retained surface learns the size without allowing retired callbacks through.
-            if (newWidth > 0 && newHeight > 0) {
-                dimensionsListener?.let { listener ->
-                    events.callback { listener.onVideoDimensionsChanged(newWidth, newHeight) }
-                }
-            }
+            events.callback(captureDimensionsNotification(newWidth, newHeight, self))
         } ?: return
         events.dispatch { running && outputThread === self }
         if (!running || outputThread !== self) return
@@ -744,9 +875,9 @@ class VideoDecoder(
     /**
      * Sets the rendering surface and restarts the decoder if necessary.
      */
-    fun setSurface(surface: Surface?) {
+    fun setSurface(surface: Surface?, kind: VideoSurfaceKind = VideoSurfaceKind.UNKNOWN) {
         synchronized(this) {
-            if (mSurface === surface) return
+            if (mSurface === surface && surfaceKind == kind) return
 
             AppLog.i("New surface set: $surface")
             // Unconditional, not gated on a live codec: stop() is where the failure state
@@ -757,6 +888,7 @@ class VideoDecoder(
             // stop() is idempotent when nothing is running.
             stop(DecoderStopPolicy.REASON_NEW_SURFACE)
             mSurface = surface
+            surfaceKind = kind
             detachedSurface = null
             lastFrameRenderedMs = 0L
             keyframeRepair.reset()
@@ -842,7 +974,10 @@ class VideoDecoder(
             val retiredQueue = frameQueue
             val retiredOutput = synchronized(outputPublicationLock) {
                 running = false
+                outputTiming?.retire()
+                outputTiming = null
                 decoderGeneration++
+                galDecodedFrames = 0L
                 retiredFeed = feedThread
                 feedThread = null
                 // A retired poll can outlive the join too. Its captured queue must never receive
@@ -889,7 +1024,10 @@ class VideoDecoder(
                 AppLog.e("Error releasing decoder", e)
             }
             try {
-                softwareVideoDecoder?.stop()
+                // A started software worker owns native release, including when a GL borrow
+                // outlives the bounded join. Waiting on its decode monitor here would block
+                // reader/UI retirement; a replacement must not share that native instance.
+                if (retiredFeed == null) softwareVideoDecoder?.stop()
             } catch (e: Exception) {
                 AppLog.e("Error releasing software video decoder", e)
             }
@@ -920,8 +1058,12 @@ class VideoDecoder(
                 codecTypePinned = false
                 renderedThisSession = false
                 parameterSets.clear()
-                mWidth = 0
-                mHeight = 0
+                updateDimensions(0, 0)
+                configuredWidth = 0
+                configuredHeight = 0
+                selectedWidth = 0
+                selectedHeight = 0
+                selectedFps = 0
                 loggedParameterSet = false
                 // Session-scoped, like everything else in this block: a restart does not change what
                 // the phone is sending, so a change reported across one would be reporting the
@@ -984,8 +1126,8 @@ class VideoDecoder(
      * for a keyframe - see [recordFrameDropped] for the shape of that ask and why it stays silent
      * before the first rendered frame.
      */
-    fun decode(buffer: ByteArray, offset: Int, size: Int, forceSoftware: Boolean, announcedCodec: CodecType) {
-        var repairedKeyframeCallback: (() -> Unit)? = null
+    fun decode(buffer: ByteArray, offset: Int, size: Int, forceSoftware: Boolean, announcedCodec: CodecType,
+               sourceTimeUs: Long? = null, receiverArrivalNs: Long = System.nanoTime()) {
         val frame = synchronized(this) {
             // Input-side liveness: bytes are arriving from the phone right now.
             lastInputBytesReceivedMs = elapsedRealtime()
@@ -1032,8 +1174,7 @@ class VideoDecoder(
                         decoderPermanentlyFailed = false
                     }
                     parameterSets.clear()
-                    mWidth = 0
-                    mHeight = 0
+                    updateDimensions(0, 0)
                 }
                 currentCodecType = selected
                 codecTypePinned = detectedType != null
@@ -1052,62 +1193,44 @@ class VideoDecoder(
             if (decoderPermanentlyFailed) return
 
             if (codec == null && softwareVideoDecoder == null) {
-                if (mWidth == 0) {
-                    val negotiatedW = HeadUnitScreenConfig.getNegotiatedWidth()
-                    val negotiatedH = HeadUnitScreenConfig.getNegotiatedHeight()
+                if (outputSize.width == 0) {
+                    val negotiatedW = if (selectedWidth > 0) selectedWidth else HeadUnitScreenConfig.getNegotiatedWidth()
+                    val negotiatedH = if (selectedHeight > 0) selectedHeight else HeadUnitScreenConfig.getNegotiatedHeight()
                     if (negotiatedW > 0 && negotiatedH > 0) {
                         AppLog.i("Fallback to negotiated dimensions: ${negotiatedW}x${negotiatedH}")
-                        mWidth = negotiatedW
-                        mHeight = negotiatedH
-                        dimensionsListener?.onVideoDimensionsChanged(mWidth, mHeight)
+                        val notification = synchronized(outputPublicationLock) {
+                            updateDimensions(negotiatedW, negotiatedH)
+                            captureDimensionsNotification(negotiatedW, negotiatedH)
+                        }
+                        notification?.invoke()
                     }
                 }
 
                 if (mSurface == null || !mSurface!!.isValid) return
-                if (mWidth == 0 || mHeight == 0) return
+                val dimensions = videoSize
+                if (dimensions.width == 0 || dimensions.height == 0) return
 
                 if (VideoDecoderBackendPolicy.useBundled(currentCodecType, settings.forceSoftwareDecoding || forceSoftware, settings.softwareVideoDecoder)) {
-                    startBundledVideo(currentCodecType, mWidth, mHeight)
+                    startBundledVideo(currentCodecType, dimensions.width, dimensions.height)
                 } else {
-                    start(currentCodecType.mimeType, settings.forceSoftwareDecoding || forceSoftware, mWidth, mHeight)
+                    start(currentCodecType.mimeType, settings.forceSoftwareDecoding || forceSoftware, dimensions.width, dimensions.height)
                 }
             }
+            if (codec == null && softwareVideoDecoder == null) return
 
-            softwareVideoDecoder?.let { decoder ->
-                val renderedFrames = try {
-                    decoder.decode(buffer, offset, size)
-                } catch (e: Exception) {
-                    AppLog.e("Bundled ${currentCodecType.displayName} output failed", e)
-                    scheduleRestart("software_video_output_exception")
-                    return@synchronized null
-                }
-                if (renderedFrames > 0) {
-                    if (decoder.outputWidth > 0 && decoder.outputHeight > 0 &&
-                        (mWidth != decoder.outputWidth || mHeight != decoder.outputHeight)) {
-                        mWidth = decoder.outputWidth
-                        mHeight = decoder.outputHeight
-                        dimensionsListener?.onVideoDimensionsChanged(mWidth, mHeight)
-                    }
-                    onSoftwareFramesRendered(renderedFrames)
-                    if (decoder.keyframeRendered) repairedKeyframeCallback = onKeyframeObserved
-                } else if (renderedFrames < 0) {
-                    AppLog.e("Bundled ${currentCodecType.displayName} decoder failed with code $renderedFrames")
-                    scheduleRestart("software_video_error_$renderedFrames")
-                }
-                return@synchronized null
+
+            prepareFrame(buffer, offset, size)?.also {
+                it.sourceTimeUs = sourceTimeUs ?: Long.MIN_VALUE
+                it.receiverArrivalNs = receiverArrivalNs
             }
-
-            if (codec == null) return
-
-            prepareFrame(buffer, offset, size)
         }
-        // Notify other owners only after releasing the decoder's state monitor.
-        repairedKeyframeCallback?.invoke()
 
         // Outside the monitor on purpose: stop() synchronizes on this object, and a wait held
         // inside it would block the teardown for up to the whole budget. Out here stop() clears
         // running and the wait aborts within one slice.
-        frame?.let { offerWithBackpressure(it) }
+        frame?.let {
+            if (softwareVideoDecoder != null) offerSoftwareFrame(it) else offerWithBackpressure(it)
+        }
     }
 
     /**
@@ -1130,6 +1253,18 @@ class VideoDecoder(
         // values and flatten the cadence the codec sees.
         frame.arrivalNanos = System.nanoTime()
         return frame
+    }
+
+    /** Software output can wait for presentation; that wait must never retain wire credit. */
+    private fun offerSoftwareFrame(frame: PendingFrame) {
+        val generation = frame.generation
+        val events = synchronized(outputPublicationLock) {
+            if (!running || generation != decoderGeneration) return
+            if (frameQueue.offer(frame)) return
+            recycleFrame(frame)
+            OutputEvents("VideoDecoder.offerSoftwareFrame").also { recordFrameDropped(it) }
+        }
+        events.dispatch { running && generation == decoderGeneration }
     }
 
     /**
@@ -1284,11 +1419,11 @@ class VideoDecoder(
         val self = Thread.currentThread()
         val owner = synchronized(outputPublicationLock) {
             if (!running || feedThread !== self) return
-            FeedOwner(self, codec ?: return, inputBuffers, startTime, currentCodecType, frameQueue, decoderGeneration)
+            FeedOwner(self, codec ?: return, inputBuffers, startTime, currentCodecType, frameQueue, decoderGeneration, outputTiming)
         }
         AppLog.i(
             "Feed thread started (queue holds $frameQueueCapacity frames, " +
-                "${VideoFeedQueuePolicy.heldMsAt(settings.fpsLimit)}ms at ${settings.fpsLimit}fps)"
+                "${VideoFeedQueuePolicy.heldMsAt(streamFps)}ms at ${streamFps}fps)"
         )
         // Read once, not per frame: avoid SharedPreferences on the hot path and do not silently
         // change a running session's debug hold after its startup diagnostic has been emitted.
@@ -1309,7 +1444,8 @@ class VideoDecoder(
                 if (frame.generation != owner.generation || !FeedLoopPolicy.shouldFeed(
                         running, feedThread === owner.thread, codec === owner.codec, decoderNeedsRestart
                     )) continue
-                val result = feedInputBuffer(owner, events, ByteBuffer.wrap(frame.data, 0, frame.size), frame.arrivalNanos)
+                val result = feedInputBuffer(owner, events, ByteBuffer.wrap(frame.data, 0, frame.size), frame.arrivalNanos,
+                    frame.sourceTimeUs, frame.receiverArrivalNs)
                 publishFeed(owner) {
                     when (result) {
                         FeedResult.FED -> framesFed++
@@ -1361,7 +1497,7 @@ class VideoDecoder(
     }
 
     /**
-     * Re-reads what sizes the pipeline: the user's fps cap and the device's memory.
+     * Re-reads what sizes the pipeline: the selected stream rate and the device's memory.
      *
      * Called from both session-start paths, which run under this object's monitor with the feed
      * thread joined and the queue empty, so swapping the queue here cannot race a producer. A
@@ -1374,11 +1510,11 @@ class VideoDecoder(
         minPooledFrameBytes = if (constrained) MIN_POOLED_FRAME_BYTES_CONSTRAINED else MIN_POOLED_FRAME_BYTES
         pooledByteBudget = if (constrained) CONSTRAINED_POOL_BUDGET_BYTES else Int.MAX_VALUE
 
-        val capacity = VideoFeedQueuePolicy.capacityFor(settings.fpsLimit)
+        val capacity = VideoFeedQueuePolicy.capacityFor(streamFps)
         if (capacity == frameQueueCapacity) return
         AppLog.i(
             "VideoDecoder: feed queue resized $frameQueueCapacity -> $capacity frames " +
-                "(${VideoFeedQueuePolicy.heldMsAt(settings.fpsLimit)}ms at ${settings.fpsLimit}fps)"
+                "(${VideoFeedQueuePolicy.heldMsAt(streamFps)}ms at ${streamFps}fps)"
         )
         frameQueueCapacity = capacity
         frameQueue = ArrayBlockingQueue<PendingFrame>(capacity)
@@ -1400,12 +1536,21 @@ class VideoDecoder(
             refreshPipelineSizing()
             AppLog.i("Configuring bundled FFmpeg ${type.displayName} decoder for ${width}x$height")
             val yuvFrameSink = softwareYuvFrameSink
+            val timing = newOutputTiming(allowRenderedFeedback = false)
             val decoder = FfmpegVideoDecoder(
                 codecType = type,
                 surface = if (yuvFrameSink == null) surface else null,
                 yuvFrameSink = yuvFrameSink,
                 width = width,
-                height = height
+                height = height,
+                beforeRender = FfmpegVideoDecoder.PresentationGate { pts, cleanKeyframe ->
+                    val planned = timing.await(timing.deadline(pts))
+                    if (planned == Long.MIN_VALUE && cleanKeyframe) timing.repairDeadline(pts)
+                    val deadline = timing.admit(platformTiming = false)
+                    val render = deadline != Long.MIN_VALUE
+                    timing.releasing(pts, deadline, render)
+                    render
+                }
             )
             if (!decoder.start()) {
                 AppLog.e("Bundled FFmpeg ${type.displayName} decoder failed to initialize")
@@ -1420,9 +1565,17 @@ class VideoDecoder(
                 }
             }
             currentCodecName = if (type == CodecType.H264) "ffmpeg-h264" else "ffmpeg-hevc"
+            configuredWidth = width
+            configuredHeight = height
             running = true
             startTime = System.nanoTime()
             codecTypePinned = true
+            val generation = decoderGeneration
+            val queue = frameQueue
+            val worker = Thread { softwareFeedThreadLoop(decoder, timing, generation, queue) }
+                .apply { name = "VideoDecoder-Software" }
+            feedThread = worker
+            worker.start()
             AppLog.i("Bundled FFmpeg ${type.displayName} decoder initialized")
         } catch (e: Exception) {
             AppLog.e("Failed to start bundled FFmpeg ${type.displayName} decoder", e)
@@ -1434,20 +1587,78 @@ class VideoDecoder(
         }
     }
 
+    /**
+     * FFmpeg pacing and borrowed-plane lifetime belong to this worker, never the reader.
+     * Retirement detaches identity immediately; native cleanup follows the last callback,
+     * even when an uninterruptible GL upload outlives stop's bounded join.
+     */
+    private fun softwareFeedThreadLoop(decoder: FfmpegVideoDecoder, timing: GalVideoOutputTiming,
+                                       generation: Long, queue: ArrayBlockingQueue<PendingFrame>) {
+        val self = Thread.currentThread()
+        val events = OutputEvents("VideoDecoder.softwareFeedThreadLoop")
+        val isCurrent = { running && feedThread === self && decoderGeneration == generation }
+        var dimensionsAnnounced = false
+        try {
+            while (running && feedThread === self && decoderGeneration == generation) {
+                val frame = try { queue.poll(FEED_POLL_MS, TimeUnit.MILLISECONDS) }
+                    catch (_: InterruptedException) { break } ?: continue
+                try {
+                    if (frame.generation != generation || !running || feedThread !== self) continue
+                    val pts = frame.arrivalNanos / 1000L
+                    timing.register(pts, frame.sourceTimeUs, frame.receiverArrivalNs)
+                    val rendered = decoder.decode(frame.data, 0, frame.size, pts)
+                    synchronized(outputPublicationLock) {
+                        if (running && feedThread === self && decoderGeneration == generation) {
+                            framesFed++
+                            if (rendered > 0) {
+                                onSoftwareFramesRendered(rendered, events, self, generation)
+                                if (decoder.outputWidth > 0 && decoder.outputHeight > 0 &&
+                                    (!dimensionsAnnounced || outputSize.width != decoder.outputWidth || outputSize.height != decoder.outputHeight)) {
+                                    updateDimensions(decoder.outputWidth, decoder.outputHeight)
+                                    events.callback(captureDimensionsNotification(outputSize.width, outputSize.height, self, software = true))
+                                    // A replacement must reannounce even if Stop retained the same
+                                    // dimensions and the old worker's UI notification was retired.
+                                    dimensionsAnnounced = true
+                                }
+                                if (decoder.keyframeRendered) events.callback(onKeyframeObserved)
+                            } else if (rendered < 0) scheduleRestart("software_video_error_$rendered")
+                        }
+                    }
+                    events.dispatch(isCurrent)
+                } catch (e: Exception) {
+                    synchronized(outputPublicationLock) {
+                        if (running && feedThread === self) scheduleRestart("software_video_output_exception")
+                    }
+                    AppLog.e("Bundled video output failed", e)
+                } finally { recycleFrame(frame) }
+            }
+        } finally {
+            decoder.stop()
+        }
+    }
 
-    private fun onSoftwareFramesRendered(renderedFrames: Int) {
+
+    private fun onSoftwareFramesRendered(renderedFrames: Int, events: OutputEvents, owner: Thread, generation: Long) {
         lastFrameRenderedMs = elapsedRealtime()
         renderedThisSession = true
         framesRenderedThisSession += renderedFrames
         if (!loggedFirstSoftwareFrame) {
             loggedFirstSoftwareFrame = true
-            AppLog.i("First bundled software ${currentCodecType.displayName} frame rendered")
+            events.info("First bundled software ${currentCodecType.displayName} frame rendered")
         }
-        // Claim before invoking: a callback or the UI may register the next listener during delivery.
-        val firstFrameListener = synchronized(outputPublicationLock) {
-            onFirstFrameListener.also { onFirstFrameListener = null }
+        val expected = onFirstFrameListener
+        if (expected != null) events.callback {
+            // Like hardware output, claim only at guarded dispatch. Retirement between
+            // collection and dispatch must leave the listener for the replacement worker.
+            val claimed = synchronized(outputPublicationLock) {
+                if (running && feedThread === owner && decoderGeneration == generation &&
+                    onFirstFrameListener === expected) {
+                    onFirstFrameListener = null
+                    expected
+                } else null
+            }
+            claimed?.invoke()
         }
-        firstFrameListener?.invoke()
 
         frameCount += renderedFrames
         // The bundled decoder has no output thread, so drive the throughput tick from here. It
@@ -1455,13 +1666,13 @@ class VideoDecoder(
         // on this path.
         framesRendered += renderedFrames
         framesPresented += renderedFrames
-        logThroughput()
+        logThroughput(info = { events.info(it) }, warn = { events.warn(it) })
         val now = System.currentTimeMillis()
         val elapsed = now - lastFpsLogTime
         if (elapsed >= 1000) {
             if (lastFpsLogTime != 0L) {
                 val fps = (frameCount * 1000 / elapsed).toInt()
-                onFpsChanged?.invoke(fps)
+                events.callback { onFpsChanged?.invoke(fps) }
             }
             frameCount = 0
             lastFpsLogTime = now
@@ -1565,7 +1776,7 @@ class VideoDecoder(
     /**
      * Seeds initial configuration from an SPS; it does not identify the active picture's SPS.
      *
-     * H.265 had no parser at all, so `mWidth` stayed zero and every H.265 session configured its
+     * H.265 had no parser at all, so the width stayed zero and every H.265 session configured its
      * codec from `HeadUnitScreenConfig`'s negotiated size - which is what the phone was *asked* for,
      * not necessarily what it sent. That is what the "Fallback to negotiated dimensions" line reports,
      * and on an H.265 session it was reporting every time.
@@ -1584,12 +1795,13 @@ class VideoDecoder(
             AppLog.w("${type.settingsValue} SPS reported an implausible ${width}x$height - ignoring it")
             return
         }
-        if (mWidth == width && mHeight == height) return
+        val notification = synchronized(outputPublicationLock) {
+            if (!updateDimensions(width, height)) return
+            captureDimensionsNotification(width, height)
+        }
         val negotiated = "${HeadUnitScreenConfig.getNegotiatedWidth()}x${HeadUnitScreenConfig.getNegotiatedHeight()}"
         AppLog.i("${type.settingsValue} SPS parsed: ${width}x$height (negotiated $negotiated)")
-        mWidth = width
-        mHeight = height
-        dimensionsListener?.onVideoDimensionsChanged(mWidth, mHeight)
+        notification?.invoke()
     }
 
     /**
@@ -1614,12 +1826,9 @@ class VideoDecoder(
     private fun buildFormat(mimeType: String, width: Int, height: Int, bestCodec: String): MediaFormat {
         val format = MediaFormat.createVideoFormat(mimeType, width, height)
 
-        // Deliberately no KEY_FRAME_RATE / KEY_MAX_B_FRAMES here. The frame-rate keys are inert at
-        // best, because the only frame rate this class knows is settings.fpsLimit - the user's cap,
-        // not the rate the phone negotiated - and KEY_MAX_B_FRAMES is an encoder key.
-        //
-        // KEY_PRIORITY and KEY_OPERATING_RATE were removed from here for the same reason and it did
-        // not hold; they are on the ladder's optional rungs now. See DecoderConfigLadder.
+        // Frame pacing remains driven by local arrival PTS, not KEY_FRAME_RATE.
+        // KEY_MAX_B_FRAMES is an encoder key. Optional priority/operating-rate hints
+        // belong to DecoderConfigLadder, which uses the Start-selected stream rate.
 
         // Apply Codec Specific Data (CSD) from parsed SPS/PPS/VPS
         if (mimeType == CodecType.H265.mimeType) {
@@ -1708,7 +1917,7 @@ class VideoDecoder(
             // Held for the throughput line: when the codec turns out to be the bottleneck, what it
             // claimed beforehand is the other half of the finding.
             val capability = DecoderCapabilityReport.forCodec(
-                codecName, mimeType, width, height, settings.fpsLimit
+                codecName, mimeType, width, height, streamFps
             )
             decoderCapability = capability
             if (capability == null) {
@@ -1752,7 +1961,7 @@ class VideoDecoder(
                 lowLatencyRequested = settings.debugVideoLowLatency,
                 // The same rate the capability line was asked about, so a component that said it
                 // could sustain a rate is then asked to clock itself for it.
-                operatingRate = settings.fpsLimit,
+                operatingRate = streamFps,
             )
 
             var started = false
@@ -1816,8 +2025,13 @@ class VideoDecoder(
                 @Suppress("DEPRECATION") inputBuffers = codec?.inputBuffers
             }
 
+            configuredWidth = width
+            configuredHeight = height
             running = true
             clearFrameQueue()
+            val timing = newOutputTiming()
+            if (surfaceKind.supportsRenderedFeedback(Build.VERSION.SDK_INT) && presentationController != null)
+                VideoRenderedFeedbackApi23.install(codec!!, timing)
             val newOutputThread = Thread {
                 android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_DISPLAY)
                 LegacyOptimizer.setHighPriority()
@@ -1932,10 +2146,11 @@ class VideoDecoder(
             height = parsed.height
         }
         if (width <= 0 || height <= 0) return "size unparsed"
-        return if (width == mWidth && height == mHeight) {
+        val dimensions = videoSize
+        return if (width == dimensions.width && height == dimensions.height) {
             "size unchanged ${width}x$height"
         } else {
-            "size ${mWidth}x$mHeight -> ${width}x$height"
+            "size ${dimensions.width}x${dimensions.height} -> ${width}x$height"
         }
     }
 
@@ -1963,7 +2178,8 @@ class VideoDecoder(
      * trying to avoid - that is what the old truncate-and-feed path did.
      */
     private fun feedInputBuffer(
-        owner: FeedOwner, events: OutputEvents, buffer: ByteBuffer, arrivalNanos: Long
+        owner: FeedOwner, events: OutputEvents, buffer: ByteBuffer, arrivalNanos: Long,
+        sourceTimeUs: Long, receiverArrivalNs: Long
     ): FeedResult {
         // Capture the codec and its legacy input-buffer array together in FeedOwner. A late native
         // completion must never switch to the replacement codec's buffers or timestamp origin.
@@ -1972,6 +2188,7 @@ class VideoDecoder(
         var inputIndex = -1
         var queued = false
         var keyframeToken = 0L
+        var timingPts = Long.MIN_VALUE
         try {
             // ~300ms of patience. A much shorter budget used to report a full queue within a second
             // of startup on hardware that subsequently decoded at full rate; busy is not wedged.
@@ -2048,6 +2265,8 @@ class VideoDecoder(
             val pts = ((if (arrivalNanos > 0L) arrivalNanos else System.nanoTime()) - owner.startTime) / 1000
             publishFeed(owner) {
                 if (isKeyframe) keyframeToken = keyframeRepair.beginKeyframe(pts)
+                owner.timing?.register(pts, sourceTimeUs, receiverArrivalNs)
+                timingPts = pts
             } ?: return FeedResult.NO_INPUT_BUFFER
             // Output may already be released before this call returns. Reserve first, but do not
             // let provisional output acknowledge a keyframe whose input ultimately throws.
@@ -2069,6 +2288,7 @@ class VideoDecoder(
                 return FeedResult.FED
             }
             publishFeed(owner) { keyframeRepair.cancelKeyframe(keyframeToken) }
+            if (timingPts != Long.MIN_VALUE) owner.timing?.discardInput(timingPts)
             if (inputIndex >= 0 && isCurrentFeed(owner)) {
                 // A failed feed does not necessarily return its acquired slot. Return it empty;
                 // repeated forgotten slots would otherwise look like permanent input starvation.
@@ -2187,10 +2407,11 @@ class VideoDecoder(
         val claim = decoderCapability?.let {
             if (it.adequate) " It claimed it could: $it" else " It said it might not: $it"
         } ?: ""
+        val dimensions = videoSize
         warn(
             "VideoDecoder: the codec is the bottleneck - $backpressureWindows windows shed frames " +
                 "while waiting >=${VideoBackpressurePolicy.WAIT_PERCENT}% of the window for an input " +
-                "buffer (${mWidth}x$mHeight@${settings.fpsLimit} on $currentCodecName). The negotiated " +
+                "buffer (${dimensions.width}x${dimensions.height}@$streamFps on $currentCodecName). The negotiated " +
                 "size and rate are more than this decoder is keeping up with.$claim"
         )
     }
@@ -2223,6 +2444,8 @@ class VideoDecoder(
         val self = Thread.currentThread()
         val currentCodec = codec ?: return
         val bufferInfo = codecBufferInfo ?: return
+        val timing = outputTiming
+        val platformTiming = surfaceKind.usesPlatformTiming(Build.VERSION.SDK_INT)
         // Scratch belongs to this worker, not the decoder instance. A retired worker may
         // still return from a native call while its replacement is collecting output; sharing
         // indices would let one worker release the other's buffers against the wrong codec.
@@ -2262,8 +2485,8 @@ class VideoDecoder(
                             (System.nanoTime() - startTime) / 1000 - bufferInfo.presentationTimeUs
                         )
                     } ?: break
-                    // Catch up to the newest ready frame instead of replaying the backlog. A link
-                    // that goes quiet for a few hundred milliseconds delivers what it owed in one
+                    // Without explicit timing, catch up to the newest ready frame instead of
+                    // replaying backlog. A silent link can deliver what it owed in one
                     // burst; showing every frame of it walks the picture forward in slow motion and
                     // never closes the gap against audio, which does not queue the same way. These
                     // frames are already decoded, so discarding them costs no reference data and
@@ -2278,6 +2501,8 @@ class VideoDecoder(
                     // until a third frame is ready: at depth two both are rendered back to back
                     // and the display shows whichever it can, and only a genuine burst - the one
                     // that arrives after silence, dozens deep - reaches the discard path.
+                    // With presentation timing enabled, this only collects a bounded batch:
+                    // each deadline below decides whether to wait, submit, or drop the frame.
                     var passes = 0
                     while (readyCount <= MAX_CATCHUP_SKIPS && passes < MAX_CATCHUP_SKIPS * 2) {
                         passes++
@@ -2310,24 +2535,43 @@ class VideoDecoder(
                     var queuedFirstFrameListener: (() -> Unit)? = null
                     for (i in 0 until readyCount) {
                         val outputPts = readyTimestamps[i]
+                        var repairEligible = false
                         // A later repair picture must not authorize an earlier damaged one.
                         // Preview per slot; only a successful release supplies actual proof.
                         val outcome = publishOutput(self) {
+                            repairEligible = keyframeRepair.canRepair(
+                                repairToken, acceptedRepairToken, outputPts, countOutput = i == 0
+                            )
                             CorruptionConcealmentPolicy.next(
                                 elapsedRealtime(), concealState, concealWindowOpenedMs,
                                 corruptionReported = reportedStamp > consumedCorruptionMs,
-                                keyframeRepaired = keyframeRepair.canRepair(
-                                    repairToken, acceptedRepairToken, outputPts, countOutput = i == 0
-                                ),
+                                keyframeRepaired = repairEligible,
                                 sessionHasRendered = renderedThisSession,
                             )
                         } ?: break@outputLoop
-                        val render = outcome.renders && (readyCount <= 2 || i == readyCount - 1)
-                        currentCodec.releaseOutputBuffer(readyIndices[i], render)
+                        // Intentional timing buffers are not evidence of backlog. With timing
+                        // active, the controller's deadline/drop decision owns lateness.
+                        var render = outcome.renders &&
+                            (timing?.controlsPresentation() == true || readyCount <= 2 || i == readyCount - 1)
+                        var deadline = timing?.deadline(outputPts) ?: 0L
+                        // Texture/ImageReader targets do not promise to honor buffer timestamps.
+                        // Pace availability on this cancellable output worker on every API level.
+                        if (render && !platformTiming) deadline = timing?.await(deadline) ?: deadline
+                        if (render && deadline == Long.MIN_VALUE && repairEligible) {
+                            deadline = timing?.repairDeadline(repairToken) ?: deadline
+                        }
+                        if (!running || outputThread !== self) break@outputLoop
+                        if (render) deadline = timing?.admit(platformTiming) ?: deadline
+                        render = render && deadline != Long.MIN_VALUE
+                        timing?.releasing(outputPts, deadline, render)
+                        if (render && deadline != 0L && platformTiming) {
+                            VideoTimedReleaseApi21.release(currentCodec, readyIndices[i], deadline)
+                        } else currentCodec.releaseOutputBuffer(readyIndices[i], render)
                         releasedCount++
                         // Each native completion is independent. A later failure must not erase
                         // the picture, repair evidence or notification already delivered here.
                         publishOutput(self) {
+                            galDecodedFrames++
                             val now = if (i == 0 || render) elapsedRealtime() else 0L
                             if (i == 0 || render) {
                                 // Intermediate discarded slots neither advance this pass again

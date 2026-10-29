@@ -12,6 +12,7 @@ import android.os.Looper
 import android.os.SystemClock
 import android.view.Surface
 import com.andrerinas.openheadunit.decoder.video.SoftwareYuvFrameSink
+import com.andrerinas.openheadunit.decoder.video.VideoSurfaceKind
 import com.andrerinas.openheadunit.utils.AppLog
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -23,6 +24,7 @@ import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
 class GlProjectionView(context: Context) : GLSurfaceView(context), IProjectionView, SoftwareYuvFrameSink {
+    override val videoSurfaceKind: VideoSurfaceKind get() = VideoSurfaceKind.TEXTURE_CONSUMER
 
     private val renderer: VideoRenderer
     private val callbacks = mutableListOf<IProjectionView.Callbacks>()
@@ -43,7 +45,7 @@ class GlProjectionView(context: Context) : GLSurfaceView(context), IProjectionVi
         renderer.getSurface()?.let {
             if (it.isValid) {
                 callback.onSurfaceCreated(it)
-                callback.onSurfaceChanged(it, width, height)
+                callback.onSurfaceChanged(it, width, height, videoSurfaceKind)
             }
         }
     }
@@ -126,10 +128,15 @@ class GlProjectionView(context: Context) : GLSurfaceView(context), IProjectionVi
         vPlane: ByteBuffer,
         vStride: Int
     ): Boolean {
-        if (renderer.renderYuv420FrameDirect(width, height, yPlane, yStride, uPlane, uStride, vPlane, vStride)) {
+        val submissionSequence = renderer.reserveFrameSequence()
+        if (renderer.renderYuv420FrameDirect(
+                width, height, yPlane, yStride, uPlane, uStride, vPlane, vStride, submissionSequence
+            )) {
             return true
         }
-        return renderer.queueYuv420Frame(width, height, yPlane, yStride, uPlane, uStride, vPlane, vStride)
+        return renderer.queueYuv420Frame(
+            width, height, yPlane, yStride, uPlane, uStride, vPlane, vStride, submissionSequence
+        )
     }
 
     override fun onDetachedFromWindow() {
@@ -326,6 +333,10 @@ class GlProjectionView(context: Context) : GLSurfaceView(context), IProjectionVi
          * Comparing sequence numbers instead of latching a flag makes the choice self-healing: the
          * source that is actually producing frames wins, and a switch either way is corrected on the
          * next draw without anything having to tell the renderer it happened.
+         *
+         * Reserve YUV order before attempting direct upload, and keep it through staged fallback.
+         * A renderer can outlive a decoder worker: that worker's late upload or fallback must not
+         * replace a newer accepted frame from the next worker.
          */
         private var frameSequence = 0L
         private var lastOesFrameSeq = 0L
@@ -365,6 +376,8 @@ class GlProjectionView(context: Context) : GLSurfaceView(context), IProjectionVi
 
         fun getSurface(): Surface? = surface
 
+        fun reserveFrameSequence(): Long = synchronized(this) { ++frameSequence }
+
         fun queueYuv420Frame(
             width: Int,
             height: Int,
@@ -373,10 +386,12 @@ class GlProjectionView(context: Context) : GLSurfaceView(context), IProjectionVi
             uPlane: ByteBuffer,
             uStride: Int,
             vPlane: ByteBuffer,
-            vStride: Int
+            vStride: Int,
+            submissionSequence: Long
         ): Boolean {
             if (width <= 0 || height <= 0) return false
             synchronized(this) {
+                if (submissionSequence < lastYuvFrameSeq) return true
                 ensureYuvBuffers(width, height)
                 copyPlane(yPlane, yStride, yPlaneBuffer!!, width, height)
                 copyPlane(uPlane, uStride, uPlaneBuffer!!, width / 2, height / 2)
@@ -385,7 +400,7 @@ class GlProjectionView(context: Context) : GLSurfaceView(context), IProjectionVi
                 yuvHeight = height
                 hasYuvFrame = true
                 pendingYuvFrame = true
-                lastYuvFrameSeq = ++frameSequence
+                lastYuvFrameSeq = submissionSequence
                 if (!loggedFirstYuvFrame) {
                     loggedFirstYuvFrame = true
                     AppLog.i("GlProjectionView: first YUV420 frame queued ${width}x$height strides=$yStride/$uStride/$vStride")
@@ -403,7 +418,8 @@ class GlProjectionView(context: Context) : GLSurfaceView(context), IProjectionVi
             uPlane: ByteBuffer,
             uStride: Int,
             vPlane: ByteBuffer,
-            vStride: Int
+            vStride: Int,
+            submissionSequence: Long
         ): Boolean {
             if (width <= 0 || height <= 0) return false
             if (directUploadTimedOut) return false
@@ -423,7 +439,8 @@ class GlProjectionView(context: Context) : GLSurfaceView(context), IProjectionVi
             val uSource = uPlane.duplicate()
             val vSource = vPlane.duplicate()
 
-            return try {
+            var interrupted = false
+            try {
                 queueEvent {
                     if (!state.compareAndSet(directPending, directRunning)) {
                         completed.countDown()
@@ -438,7 +455,8 @@ class GlProjectionView(context: Context) : GLSurfaceView(context), IProjectionVi
                             uSource,
                             uStride,
                             vSource,
-                            vStride
+                            vStride,
+                            submissionSequence
                         )
                     } catch (e: Exception) {
                         AppLog.e("GlProjectionView: direct YUV upload failed", e)
@@ -459,13 +477,28 @@ class GlProjectionView(context: Context) : GLSurfaceView(context), IProjectionVi
                         )
                         return false
                     }
-                    completed.await()
                 }
-                accepted[0]
+            } catch (_: InterruptedException) {
+                interrupted = true
             } catch (e: Exception) {
                 AppLog.w("GlProjectionView: direct YUV upload unavailable: ${e.message}")
-                false
+            } finally {
+                // JNI owns these planes only until this call returns. Cancellation can revoke
+                // a pending runnable, but a running upload must release its borrow first, even
+                // when decoder teardown repeatedly interrupts the worker. No plane copy needed.
+                if (!state.compareAndSet(directPending, directCancelled) && state.get() != directCancelled) {
+                    while (true) {
+                        try {
+                            completed.await()
+                            break
+                        } catch (_: InterruptedException) {
+                            interrupted = true
+                        }
+                    }
+                }
+                if (interrupted) Thread.currentThread().interrupt()
             }
+            return accepted[0]
         }
 
         private fun ensureYuvBuffers(width: Int, height: Int) {
@@ -515,11 +548,17 @@ class GlProjectionView(context: Context) : GLSurfaceView(context), IProjectionVi
             uPlane: ByteBuffer,
             uStride: Int,
             vPlane: ByteBuffer,
-            vStride: Int
+            vStride: Int,
+            submissionSequence: Long
         ): Boolean {
             val chromaWidth = width / 2
             val chromaHeight = height / 2
             if (yuvProgram == 0 || yuvTextureIds.any { it == 0 }) return false
+            synchronized(this) {
+                // Queuing can be delayed by an old owner before a newer direct upload runs.
+                // Reject it before touching the textures, not just when publishing metadata.
+                if (submissionSequence < lastYuvFrameSeq) return true
+            }
 
             yPlane.position(0)
             yPlane.limit(yStride * height)
@@ -537,6 +576,9 @@ class GlProjectionView(context: Context) : GLSurfaceView(context), IProjectionVi
             // it, and this path wrote them all bare. The GL uploads above stay outside, so the
             // decoder thread is not held for the length of a texture upload.
             synchronized(this) {
+                // A replacement may have staged a frame while the native upload was running.
+                // Keep its pending planes, dimensions and order for the next draw.
+                if (submissionSequence < lastYuvFrameSeq) return true
                 yuvWidth = width
                 yuvHeight = height
                 yTextureScaleX = width.toFloat() / yStride.toFloat()
@@ -544,7 +586,7 @@ class GlProjectionView(context: Context) : GLSurfaceView(context), IProjectionVi
                 vTextureScaleX = chromaWidth.toFloat() / vStride.toFloat()
                 hasYuvFrame = true
                 pendingYuvFrame = false
-                lastYuvFrameSeq = ++frameSequence
+                lastYuvFrameSeq = submissionSequence
                 // The stall watchdog reads lastFrameDrawnMs, and this path clears pendingYuvFrame,
                 // so drawYuvFrame's stamp never runs for a directly uploaded frame. Left unstamped
                 // it stays 0 for the whole session and the watchdog rebuilds the view on a picture
@@ -679,7 +721,7 @@ class GlProjectionView(context: Context) : GLSurfaceView(context), IProjectionVi
             AppLog.i("GlProjectionView: onSurfaceChanged: ${width}x$height")
             GLES20.glViewport(0, 0, width, height)
             Handler(Looper.getMainLooper()).post {
-                callbacks.forEach { it.onSurfaceChanged(surface!!, width, height) }
+                callbacks.forEach { it.onSurfaceChanged(surface!!, width, height, videoSurfaceKind) }
             }
         }
 

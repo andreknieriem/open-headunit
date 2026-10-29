@@ -397,6 +397,7 @@
     <string name="connection_interrupted">فُقد الاتصال</string>
     <string name="connection_interrupted_detail">جارٍ إعادة المحاولة…</string>
     <string name="wifi_disconnect_toast">تم قطع اتصال Android Auto: إذا كنت تستخدم AA لاسلكيًا، فعطّل \"التبديل بين الشبكات\" أو \"تسريع الشبكة\" في إعدادات Wi-Fi في الهاتف</string>
+    <string name="usb_disconnect_toast">تم قطع اتصال Android Auto: فشل اتصال USB بالهاتف. إذا تكرر ذلك، جرّب كابلًا آخر أو منفذ USB آخر أو موزّع USB.</string>
     <string name="notification_service_running">Open Headunit قيد التشغيل</string>
     <string name="notification_projection_active">يجري عرض Android Auto</string>
     <string name="shortcut_connect_title">اتصال</string>

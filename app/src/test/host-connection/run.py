@@ -114,11 +114,13 @@ class CommManager {
 # Keep Save permission and deadline semantics from the same production state as the methods.
 old_state=manager_head[manager_head.index(' class Disconnected('):manager_head.index(' object Connecting:')]
 manager_head=manager_head.replace(old_state, extract(comm, 'class Disconnected(')+'\n')
+manager_head=manager_head.replace('\nsealed class ConnectionState', '\n'+extract(comm, 'enum class EndCause')+'\nsealed class ConnectionState', 1)
 for name in ['SettingsRestartRecovery.kt', 'SameEndpointConnectPolicy.kt', 'ConnectionAdmission.kt', 'UsbRecoveryAdmission.kt']:
     source=(base/'connection'/name).read_text().replace('package com.andrerinas.openheadunit.connection', 'package lifecycle')
     (OUT/name).write_text(source)
 (OUT/'UsbRecoveryDevice.kt').write_text((base/'connection/usb/UsbRecoveryDevice.kt').read_text().replace('package com.andrerinas.openheadunit.connection.usb', 'package lifecycle'))
 (OUT/'AaPresentationSession.kt').write_text((base/'aap/AaPresentationSession.kt').read_text().replace('package com.andrerinas.openheadunit.aap', 'package lifecycle'))
+(OUT/'EndCausePolicy.kt').write_text((base/'connection/EndCausePolicy.kt').read_text().replace('package com.andrerinas.openheadunit.connection', 'package lifecycle').replace('import com.andrerinas.openheadunit.connection.CommManager.EndCause\n', ''))
 (OUT/'FinalMessageDelivery.kt').write_text((base/'aap/FinalMessageDelivery.kt').read_text().replace('package com.andrerinas.openheadunit.aap', 'package lifecycle'))
 # These endpoint predicates must be the real ones when testing the terminal route snapshot.
 for declaration in ['val isWirelessSession:', 'val isLoopbackSession:']:
@@ -245,7 +247,7 @@ open class AapRead{@Volatile protected var isStopped=false;fun stop(){isStopped=
  fun create(connection:ProjectionConnection,transport:AapTransport,mic:Any,audio:AapAudio,video:AapVideo,
  settings:Settings,context:Context,metadata:((Any,Any)->Unit)?,playback:((Any,Any)->Unit)?,closed:((Any)->Unit)?,session:AaPresentationSession,nightOverlayState:Any?=null):AapRead{creations++;return AapRead()}
 }}
-open class ProjectionConnection{@Volatile var closed=false;open fun connect()=true;open fun disconnect(){closed=true}}
+open class ProjectionConnection{@Volatile var closed=false;open val type=Type.WIFI;open fun connect()=true;open fun disconnect(){closed=true};enum class Type{USB,WIFI}}
 class SocketProjectionConnection(private val ip:String,port:Int,context:Context):ProjectionConnection(){
  val isLoopbackPeer get()=ip=="127.0.0.1"
  init { created.add(this);constructionHook?.invoke() }
@@ -626,6 +628,7 @@ object UsbBridge{ @Volatile var afterConnect:(()->Unit)?=null;var forcedOpen:(()
 typealias AbstractUsbProjectionConnection=StandardUsbProjectionConnection
 open class StandardUsbProjectionConnection(m:UsbManager,private val d:UsbDevice):ProjectionConnection(){
  val accessoryDevice get()=d
+ override val type=Type.USB
  private val actual=com.andrerinas.openheadunit.connection.projection.StandardUsbProjectionConnection(m,d)
  override fun connect():Boolean {UsbBridge.forcedOpen?.let{return it()};val r=runBlocking{actual.connect()};UsbBridge.afterConnect?.invoke();return r}
  override fun disconnect(){super.disconnect();actual.disconnect()}

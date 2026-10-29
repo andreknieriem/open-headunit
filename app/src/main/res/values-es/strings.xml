@@ -398,6 +398,7 @@
     <string name="connection_interrupted">Conexión perdida</string>
     <string name="connection_interrupted_detail">Reintentando…</string>
     <string name="wifi_disconnect_toast">Android Auto desconectado: si usas AA inalámbrico, desactiva \"Cambiar entre redes\" o \"Aceleración de red\" en la configuración de Wi-Fi del teléfono</string>
+    <string name="usb_disconnect_toast">Android Auto desconectado: falló la conexión USB con el teléfono. Si ocurre con frecuencia, prueba con otro cable, otro puerto USB o un concentrador USB.</string>
     <string name="notification_service_running">Open Headunit está en ejecución</string>
     <string name="notification_projection_active">Proyectando Android Auto</string>
     <string name="shortcut_connect_title">Conectar</string>

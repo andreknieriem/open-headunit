@@ -478,6 +478,7 @@
     <string name="connection_interrupted">연결 끊김</string>
     <string name="connection_interrupted_detail">다시 시도 중…</string>
     <string name="wifi_disconnect_toast">Android Auto 연결이 끊어졌습니다. 무선 Android Auto를 사용한다면 휴대전화의 Wi-Fi 설정에서 \"네트워크 전환\" 또는 \"네트워크 가속\"을 사용 중지하세요.</string>
+    <string name="usb_disconnect_toast">Android Auto 연결이 끊어졌습니다. 휴대전화와의 USB 연결에 실패했습니다. 자주 발생하면 다른 케이블, 다른 USB 포트 또는 USB 허브를 사용해 보세요.</string>
     <string name="reset_usb_option">USB 연결 초기화</string>
     <string name="reset_usb_timeout">USB 기기를 찾을 수 없습니다. 연결을 확인하세요.</string>
     <string name="notification_service_running">Open Headunit 실행 중</string>

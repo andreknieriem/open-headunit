@@ -396,6 +396,7 @@
     <string name="connection_interrupted">A kapcsolat megszakadt</string>
     <string name="connection_interrupted_detail">Újrapróbálkozás…</string>
     <string name="wifi_disconnect_toast">Android Auto leválasztva: ha vezeték nélküli AA-t használ, tiltsa le a „Hálózatok közötti váltás” vagy a „Hálózatgyorsítás” opciót a telefon Wi-Fi-beállításaiban</string>
+    <string name="usb_disconnect_toast">Android Auto leválasztva: a telefonnal létesített USB-kapcsolat megszakadt. Ha ez gyakran előfordul, próbáljon másik kábelt, másik USB-portot vagy USB-elosztót.</string>
     <string name="notification_service_running">Open Headunit fut</string>
     <string name="notification_projection_active">Android Auto vetítése aktív</string>
     <string name="shortcut_connect_title">Csatlakozás</string>

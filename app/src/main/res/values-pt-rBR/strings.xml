@@ -397,6 +397,7 @@
     <string name="connection_interrupted">Conexão perdida</string>
     <string name="connection_interrupted_detail">Tentando novamente…</string>
     <string name="wifi_disconnect_toast">Android Auto desconectado. Se usar o AA sem fio, desative \"Alternar entre redes\" ou \"Aceleração de rede\" nas configurações de Wi-Fi do celular</string>
+    <string name="usb_disconnect_toast">Android Auto desconectado. A conexão USB com o celular falhou. Se isso acontecer com frequência, tente outro cabo, outra porta USB ou um hub USB.</string>
     <string name="reset_usb_option">Redefinir conexão USB</string>
     <string name="reset_usb_timeout">Dispositivo USB não encontrado. Verifique a conexão.</string>
     <string name="notification_service_running">Open Headunit está em execução</string>

@@ -397,6 +397,7 @@
     <string name="connection_interrupted">Spojení ztraceno</string>
     <string name="connection_interrupted_detail">Opětovné připojování…</string>
     <string name="wifi_disconnect_toast">Android Auto odpojeno: Pokud používáte bezdrátové AA, vypněte v nastavení Wi-Fi telefonu „Přepínání mezi sítěmi“ nebo „Zrychlení sítě“</string>
+    <string name="usb_disconnect_toast">Android Auto odpojeno: připojení telefonu přes USB selhalo. Pokud se to děje často, zkuste jiný kabel, jiný port USB nebo rozbočovač USB.</string>
     <string name="notification_service_running">Open Headunit běží</string>
     <string name="notification_projection_active">Projekce Android Auto je aktivní</string>
     <string name="shortcut_connect_title">Připojit</string>

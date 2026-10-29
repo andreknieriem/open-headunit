@@ -398,6 +398,7 @@ Open Headunit предоставляется «как есть» без каки
     <string name="connection_interrupted">Соединение потеряно</string>
     <string name="connection_interrupted_detail">Повторное подключение…</string>
     <string name="wifi_disconnect_toast">Android Auto отключён. При беспроводном подключении отключите «Переключение между сетями» или «Ускорение сети» в настройках Wi-Fi на телефоне</string>
+    <string name="usb_disconnect_toast">Android Auto отключён: сбой USB-подключения к телефону. Если это происходит часто, попробуйте другой кабель, другой USB-порт или USB-концентратор.</string>
     <string name="notification_service_running">Open Headunit запущен</string>
     <string name="notification_projection_active">Трансляция Android Auto активна</string>
     <string name="shortcut_connect_title">Подключить</string>

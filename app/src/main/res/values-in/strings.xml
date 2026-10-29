@@ -889,6 +889,7 @@
     <string name="connection_interrupted_detail">Mencoba lagi…</string>
     <string name="renderer_fallback_surface">Video terus membeku, jadi tampilan dialihkan ke SurfaceView untuk sesi ini. Jika sudah stabil, setel Mode tampilan ke SurfaceView di Setelan.</string>
     <string name="wifi_disconnect_toast">Android Auto terputus. Jika menggunakan AA nirkabel, nonaktifkan \"Beralih antar jaringan\" atau \"Akselerasi jaringan\" di setelan Wi-Fi ponsel Anda</string>
+    <string name="usb_disconnect_toast">Android Auto terputus. Koneksi USB ke ponsel gagal. Jika sering terjadi, coba kabel lain, port USB lain, atau hub USB.</string>
     <string name="reset_usb_option">Atur Ulang Koneksi USB</string>
     <string name="reset_usb_timeout">Perangkat USB tidak ditemukan. Periksa koneksi.</string>
     <string name="notification_service_running">Open Headunit sedang berjalan</string>

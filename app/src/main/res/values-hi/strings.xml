@@ -889,6 +889,7 @@
     <string name="connection_interrupted_detail">फिर से कोशिश की जा रही है…</string>
     <string name="renderer_fallback_surface">वीडियो बार-बार रुक रहा था, इसलिए इस सेशन के लिए डिसप्ले को SurfaceView पर स्विच कर दिया गया। अगर वीडियो ठीक चल रहा है, तो सेटिंग में व्यू मोड को SurfaceView पर सेट करें।</string>
     <string name="wifi_disconnect_toast">Android Auto डिसकनेक्ट हो गया। अगर वायरलेस AA इस्तेमाल कर रहे हैं, तो फ़ोन की वाई-फ़ाई सेटिंग में \"नेटवर्क के बीच स्विच करें\" या \"नेटवर्क एक्सेलरेशन\" बंद करें</string>
+    <string name="usb_disconnect_toast">Android Auto डिसकनेक्ट हो गया। फ़ोन से USB कनेक्शन विफल रहा। अगर ऐसा अक्सर होता है, तो दूसरा केबल, दूसरा USB पोर्ट या USB हब आज़माएँ।</string>
     <string name="reset_usb_option">USB कनेक्शन रीसेट करें</string>
     <string name="reset_usb_timeout">USB डिवाइस नहीं मिला। कृपया कनेक्शन जांचें।</string>
     <string name="notification_service_running">Open Headunit चल रहा है</string>

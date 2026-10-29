@@ -476,6 +476,7 @@
     <string name="connection_interrupted">Verbindung verloren</string>
     <string name="connection_interrupted_detail">Neuer Versuch…</string>
     <string name="wifi_disconnect_toast">Android Auto getrennt. Bei kabellosem AA „Zwischen Netzwerken wechseln“ oder „Netzwerkbeschleunigung“ in den WLAN-Einstellungen des Smartphones deaktivieren</string>
+    <string name="usb_disconnect_toast">Android Auto getrennt: Die USB-Verbindung zum Smartphone wurde unterbrochen. Bei häufigem Auftreten anderes Kabel, anderen USB-Anschluss oder USB-Hub verwenden.</string>
     <string name="reset_usb_option">USB-Verbindung zurücksetzen</string>
     <string name="reset_usb_timeout">USB-Gerät nicht gefunden. Bitte Verbindung prüfen.</string>
     <string name="notification_service_running">Open Headunit läuft</string>

@@ -733,6 +733,7 @@
     <string name="connection_interrupted_detail">Nouvelle tentative…</string>
     <string name="renderer_fallback_surface">La vidéo se figeait sans cesse, l\'affichage est donc passé à SurfaceView pour cette session. Si l\'image est stable, réglez le mode d\'affichage sur SurfaceView dans les paramètres.</string>
     <string name="wifi_disconnect_toast">Android Auto déconnecté : si vous utilisez Android Auto sans fil, désactivez « Basculer entre les réseaux » ou « Accélération réseau » dans les paramètres Wi-Fi du téléphone</string>
+    <string name="usb_disconnect_toast">Android Auto déconnecté : la connexion USB avec le téléphone a échoué. Si cela se produit souvent, essayez un autre câble, un autre port USB ou un hub USB.</string>
     <string name="reset_usb_option">Réinitialiser la connexion USB</string>
     <string name="reset_usb_timeout">Périphérique USB introuvable. Vérifiez la connexion.</string>
     <string name="notification_service_running">Open Headunit est en cours d\'exécution</string>

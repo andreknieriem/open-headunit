@@ -396,6 +396,7 @@
     <string name="connection_interrupted">連線中斷</string>
     <string name="connection_interrupted_detail">正在重試…</string>
     <string name="wifi_disconnect_toast">Android Auto 已中斷連線：如果使用無線 AA，請在手機的 Wi-Fi 設定中停用「切換網路」或「網路加速」</string>
+    <string name="usb_disconnect_toast">Android Auto 已中斷連線：與手機的 USB 連線失敗。如果經常發生，請嘗試更換傳輸線、USB 連接埠，或使用 USB 集線器。</string>
     <string name="reset_usb_option">重設 USB 連線</string>
     <string name="reset_usb_timeout">找不到 USB 裝置，請檢查連線。</string>
     <string name="notification_service_running">Open Headunit 執行中</string>

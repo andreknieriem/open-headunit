@@ -166,12 +166,14 @@ class AapTransport(
  private var aapRead:AapRead?=null
  private val quitLock=Any()
  private var peerRequestedClose=false
- private val tlsWriter=object { fun retire(){} }
+ private val tlsWriter=object { val isReady get()=ssl.generation>0;fun retire(){} }
  private val micSessions=MicSessions()
  private fun retireMicrophone(){micSessions.close(shutdown=true)}
  private fun resetMicrophone(){}
  private val focusCycleGainRunnable=Runnable{}
  private val unrepairedCheckRunnable=Runnable{}
+ // Delayed callback execution is doubled; IdlePingTest exercises its real body and frames.
+ private val keepaliveRunnable=Runnable{}
  private val mediaStatisticsTick=Runnable{}
  private val sensorSubscriptions=SensorSubscriptions()
  private val bluetoothControl=BluetoothControl()
@@ -209,7 +211,7 @@ class AapTransport(
  fun postPoll(task:()->Unit){check(checkNotNull(pollHandler).post(Runnable{task()}))}
  fun pollSnapshot()=checkNotNull(pollThread)
  fun liveWorkers()=listOfNotNull(sendThread,pollThread,videoThread).count{it.isAlive}
- companion object {const val MSG_POLL=1;@Volatile var handshakeHook:(()->Unit)?=null;var forcedFailure:HandshakeFailure?=null}
+ companion object {const val MSG_POLL=1;const val KEEPALIVE_INTERVAL_MS=1_000L;@Volatile var handshakeHook:(()->Unit)?=null;var forcedFailure:HandshakeFailure?=null}
 '''
 callback_start=transport.index("    private val decoderErrorCallback:")
 callback_end=transport.index("    init {",callback_start)

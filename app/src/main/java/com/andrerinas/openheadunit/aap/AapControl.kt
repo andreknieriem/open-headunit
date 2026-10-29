@@ -402,6 +402,12 @@ internal class AapControlService(
                 val pingRequest = message.parse(Control.PingRequest.newBuilder()).build()
                 return pingRequest(pingRequest, message.channel)
             }
+            Control.ControlMsgType.MESSAGE_PING_RESPONSE_VALUE -> {
+                // The reader already recorded receipt for link health. A response ends the
+                // exchange; replying here would turn an idle probe into a ping-pong loop.
+                message.parse(Control.PingResponse.newBuilder()).build()
+                return 0
+            }
             Control.ControlMsgType.MESSAGE_NAV_FOCUS_REQUEST_VALUE -> {
                 val navigationFocusRequest = message.parse(Control.NavFocusRequestNotification.newBuilder()).build()
                 return navigationFocusRequest(navigationFocusRequest, message.channel)

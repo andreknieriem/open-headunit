@@ -96,6 +96,7 @@ object SettingsBackupManager {
         "debug-video-fault-injection" to ValueType.INT,
         "debug-video-fault-rate" to ValueType.INT,
         "debug-video-fault-budget" to ValueType.INT,
+        "debug-usb-read-fault" to ValueType.BOOLEAN,
         "debug-video-low-latency" to ValueType.BOOLEAN,
         "debug-video-feed-hold-ms" to ValueType.INT,
         "debug-force-memory-profile" to ValueType.STRING,

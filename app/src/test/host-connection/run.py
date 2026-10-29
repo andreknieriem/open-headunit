@@ -227,7 +227,7 @@ object AppLog {
  fun i(s:String){hook?.invoke(s)};fun e(s:String){};fun e(s:String,e:Throwable){};fun w(s:String){}
 }
 class Settings{
- var useAacAudio=false;var killOnDisconnect=false;var useLibusb=false
+ var useAacAudio=false;var killOnDisconnect=false;var useLibusb=false;var debugUsbReadFault=false
  fun saveLastConnection(type:Int,ip:String="",usbDevice:String=""){}
  companion object{const val CONNECTION_TYPE_WIFI=1;const val CONNECTION_TYPE_USB=2}
 }
@@ -626,10 +626,10 @@ object ConnectionArbiter{class Claim;fun runIfHeld(claim:Claim, action:()->Unit)
 object UsbBridge{ @Volatile var afterConnect:(()->Unit)?=null;var forcedOpen:(()->Boolean)?=null }
 // The production USB check has to match the fixture's USB double.
 typealias AbstractUsbProjectionConnection=StandardUsbProjectionConnection
-open class StandardUsbProjectionConnection(m:UsbManager,private val d:UsbDevice):ProjectionConnection(){
+open class StandardUsbProjectionConnection(m:UsbManager,private val d:UsbDevice,readFaultArmed:()->Boolean={false},disarmReadFault:()->Unit={}):ProjectionConnection(){
  val accessoryDevice get()=d
  override val type=Type.USB
- private val actual=com.andrerinas.openheadunit.connection.projection.StandardUsbProjectionConnection(m,d)
+ private val actual=com.andrerinas.openheadunit.connection.projection.StandardUsbProjectionConnection(m,d,readFaultArmed=readFaultArmed,disarmReadFault=disarmReadFault)
  override fun connect():Boolean {UsbBridge.forcedOpen?.let{return it()};val r=runBlocking{actual.connect()};UsbBridge.afterConnect?.invoke();return r}
  override fun disconnect(){super.disconnect();actual.disconnect()}
 }
@@ -886,7 +886,7 @@ object Control{
 ''')
 # Full, byte-for-byte production connection files; Android APIs only are doubled.
 meta={}
-for name in ['ProjectionConnection.kt','AbstractUsbProjectionConnection.kt','StandardUsbProjectionConnection.kt']:
+for name in ['ProjectionConnection.kt','AbstractUsbProjectionConnection.kt','StandardUsbProjectionConnection.kt','UsbReadFaultPolicy.kt']:
  p=ROOT/'app/src/main/java/com/andrerinas/openheadunit/connection/projection'/name
  shutil.copy2(p,OUT/name);meta[str(p.relative_to(ROOT))]=hashlib.sha256(p.read_bytes()).hexdigest()
 (OUT/'Usb.kt').write_text('''package android.hardware.usb

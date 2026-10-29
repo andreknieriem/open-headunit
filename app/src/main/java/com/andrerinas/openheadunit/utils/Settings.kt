@@ -1040,6 +1040,11 @@ class Settings(private val context: Context) {
         get() = prefs.getInt("debug-video-feed-hold-ms", 0)
         set(value) { prefs.edit().putInt("debug-video-feed-hold-ms", value.coerceIn(0, 250)).apply() }
 
+    /** One-shot: the next USB bulk read is discarded as failed. Set only by the automation receiver. */
+    var debugUsbReadFault: Boolean
+        get() = prefs.getBoolean("debug-usb-read-fault", false)
+        set(value) { prefs.edit().putBoolean("debug-usb-read-fault", value).apply() }
+
     /** One in this many of the targeted messages is faulted. See [debugVideoFaultInjection]. */
     var debugVideoFaultRate: Int
         get() = prefs.getInt("debug-video-fault-rate", VideoFaultInjector.DEFAULT_RATE)

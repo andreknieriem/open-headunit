@@ -598,7 +598,9 @@ class CommManager(
             conn = if (settings.useLibusb) {
                 LibusbProjectionConnection(usbManager, currentDevice)
             } else {
-                StandardUsbProjectionConnection(usbManager, currentDevice)
+                StandardUsbProjectionConnection(usbManager, currentDevice,
+                    readFaultArmed = { settings.debugUsbReadFault },
+                    disarmReadFault = { settings.debugUsbReadFault = false })
             }
             val candidate = conn
             val registered = synchronized(transportLifecycleLock) {

@@ -172,6 +172,10 @@ class AapTransport(
  private fun resetMicrophone(){}
  private val focusCycleGainRunnable=Runnable{}
  private val unrepairedCheckRunnable=Runnable{}
+ private val mediaStatisticsTick=Runnable{}
+ private val sensorSubscriptions=SensorSubscriptions()
+ private val bluetoothControl=BluetoothControl()
+ private val presentationController=PresentationController()
  private val videoBufferPool=ConcurrentLinkedQueue<ByteArray>()
  private val videoBacklog=java.util.concurrent.atomic.AtomicInteger()
  private val videoShedTotal=java.util.concurrent.atomic.AtomicLong()
@@ -261,6 +265,9 @@ class Ssl{
 class Monitor{fun reset(){}}
 class BluetoothMonitor{fun onSessionStart(){}}
 class MicSessions{fun close(shutdown:Boolean){}}
+class SensorSubscriptions{fun stopAll(){}}
+class BluetoothControl{fun shutdown(){}}
+class PresentationController{fun close(){}}
 class AapMessage(val channel:Int,val type:Int,val data:Any){val size=0}
 object Channel{const val ID_CTR=0}
 object LegacyOptimizer{fun setHighPriority(){}}
@@ -330,7 +337,8 @@ fun oldQuitOutlivesCleanup(settingsSave:Boolean)=runBlocking{
  val c=CommManager();c.startHandshake();c.startReading();val old=c.owner()
  if(settingsSave){c.settings.useAacAudio=true;c.applyAudioSettings()}
  val atTail=CountDownLatch(1);val proceed=CountDownLatch(1)
- Handler.removeHook={if(Thread.currentThread().name=="old-quit"){Handler.removeHook=null;atTail.countDown();await(proceed)}}
+ // Retirement may cancel callbacks before publishing Disconnected; pause only in the tail.
+ Handler.removeHook={if(Thread.currentThread().name=="old-quit" && c.state is ConnectionState.Disconnected){Handler.removeHook=null;atTail.countDown();await(proceed)}}
  val oldQuit=Thread({old.quit(false)},"old-quit");oldQuit.start();await(atTail)
  check(c.state is ConnectionState.Disconnected)
  val cleanupStarted=CountDownLatch(1);val cleanupDone=CountDownLatch(1)
@@ -835,7 +843,7 @@ class Handler(val looper:Looper,val callback:Any?=null){
  fun post(task:Runnable)=looper.offer(task)
  fun postAtFrontOfQueue(task:Runnable)=looper.offerFirst(task)
  fun postDelayed(task:Runnable,ms:Long):Boolean{delayed.add(task);return true}
- fun removeCallbacks(task:Runnable){removeHook?.invoke();looper.remove(task)}
+ fun removeCallbacks(task:Runnable){removeHook?.invoke();looper.remove(task);delayed.removeAll{it===task}}
  // The provided fixture has no actual poll Handler.Callback; bulk dispatch is posted explicitly.
  fun sendEmptyMessage(what:Int)=true
 }

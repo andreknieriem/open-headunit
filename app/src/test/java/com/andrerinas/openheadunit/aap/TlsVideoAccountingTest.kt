@@ -51,9 +51,9 @@ class TlsVideoAccountingTest {
                     wire.copyInto(destination, 0, position, position + n); position += n; n
                 }
                 val engine = mock<SSLEngine>()
-                val session = mock<SSLSession>()
-                whenever(session.packetBufferSize).thenReturn(65536)
-                whenever(engine.session).thenReturn(session)
+                val tlsSession = mock<SSLSession>()
+                whenever(tlsSession.packetBufferSize).thenReturn(65536)
+                whenever(engine.session).thenReturn(tlsSession)
                 whenever(engine.handshakeStatus).thenReturn(NOT_HANDSHAKING)
                 whenever(engine.unwrap(any<ByteBuffer>(), any<ByteBuffer>())).thenAnswer { call ->
                     val src = call.getArgument<ByteBuffer>(0)
@@ -77,16 +77,20 @@ class TlsVideoAccountingTest {
                 val decoder = mock<VideoDecoder>()
                 val video = AapVideo(decoder, settings) {}
                 video.recordAnnouncedCodec(VideoDecoder.CodecType.H264)
+                val session = galTestSessions().start(com.andrerinas.openheadunit.aap.protocol.Channel.ID_VID,
+                    com.andrerinas.openheadunit.aap.protocol.proto.Media.Start.newBuilder()
+                        .setSessionId(1).setConfigurationIndex(0).build())!!
+                video.beginSession(session)
                 val repairs = mutableListOf<Boolean>()
-                val repair: (Boolean) -> Unit = { discard -> repairs += discard; video.onFragmentRunHoled(discard) }
+                val repair: (Boolean) -> Unit = { discard -> repairs += discard; video.onFragmentRunHoled(discard, session) }
                 val handler = object : AapMessageHandler {
-                    override fun handle(message: AapMessage) { video.process(message) }
+                    override fun handle(message: AapMessage) { video.process(message, session) }
                 }
                 val reader: AapRead = if (bulk) AapReadMultipleMessages(connection, ssl, handler, repair)
                     else AapReadSingleMessage(connection, ssl, handler, repair)
                 while (position < wire.size) assertEquals(0, reader.read())
                 assertEquals(listOf(true), repairs)
-                verify(decoder, times(4)).decode(any(), any(), eq(1014), any(), any())
+                verify(decoder, times(4)).decode(any(), any(), eq(1014), any(), any(), anyOrNull(), any())
             }
         }
 }

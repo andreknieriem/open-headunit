@@ -248,7 +248,12 @@ class AapReadPlaintextAuditTest {
         doNothing().whenever(transport).noteMessageReceived(any(), any())
         doReturn(0).whenever(transport).videoQueueDepth()
         doReturn(0L).whenever(transport).videoShedCount()
-        doReturn(23).whenever(transport).getSessionId(any())
+        val sessions = galTestSessions()
+        for (channel in listOf(Channel.ID_AUD, Channel.ID_AU1, Channel.ID_AU2, Channel.ID_VID)) {
+            sessions.start(channel, com.andrerinas.openheadunit.aap.protocol.proto.Media.Start.newBuilder()
+                .setSessionId(23).setConfigurationIndex(0).build())
+        }
+        field(transport, "mediaSessions", sessions)
         doNothing().whenever(transport).sendMediaAck(any(), any())
         val handler = mock<AapMessageHandlerType>(defaultAnswer = org.mockito.Mockito.CALLS_REAL_METHODS)
         field(handler, "transport", transport)

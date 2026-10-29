@@ -3,8 +3,12 @@ package com.andrerinas.openheadunit.connection.self
 /** The legacy launch needs a non-null `activeNetwork`, so it needs the tun; the 5277 route does not. */
 object SelfLaunchRoutePolicy {
 
-    /** An unreadable version stays [SelfLaunchPath.LEGACY], the route that keeps the VPN. */
-    fun pathFor(aaVersionName: String?): SelfLaunchPath {
+    /**
+     * Null when Android Auto is not installed: there is nothing to launch, so Self Mode refuses
+     * before any launcher. An unreadable version stays [SelfLaunchPath.LEGACY], which keeps the VPN.
+     */
+    fun pathFor(aaInstalled: Boolean, aaVersionName: String?): SelfLaunchPath? {
+        if (!aaInstalled) return null
         val parts = (aaVersionName ?: "").split(".")
         val major = parts.getOrNull(0)?.toIntOrNull() ?: 0
         val minor = parts.getOrNull(1)?.toIntOrNull() ?: 0
@@ -12,6 +16,6 @@ object SelfLaunchRoutePolicy {
         else SelfLaunchPath.LEGACY
     }
 
-    fun needsDummyVpn(path: SelfLaunchPath, offline: Boolean, vpnAvailable: Boolean): Boolean =
+    fun needsDummyVpn(path: SelfLaunchPath?, offline: Boolean, vpnAvailable: Boolean): Boolean =
         path == SelfLaunchPath.LEGACY && offline && vpnAvailable
 }

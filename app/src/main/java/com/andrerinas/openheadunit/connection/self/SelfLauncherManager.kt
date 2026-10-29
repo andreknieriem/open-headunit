@@ -3,7 +3,10 @@ package com.andrerinas.openheadunit.connection.self
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.widget.Toast
+import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.connection.CommManager
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.aap.AapService
@@ -14,6 +17,7 @@ import com.andrerinas.openheadunit.connection.self.launchers.SelfLauncherLegacy
 import com.andrerinas.openheadunit.connection.self.launchers.SelfLauncherV17_4
 import com.andrerinas.openheadunit.connection.wifi.WifiLauncherManager
 import com.andrerinas.openheadunit.utils.AppLog
+import com.andrerinas.openheadunit.utils.ToastUtils
 import com.andrerinas.openheadunit.utils.VpnControl
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -139,6 +143,16 @@ class SelfLauncherManager(
             val launchers: Array<SelfLauncher>
 
             val path = installedPath(service)
+            if (path == null) {
+                // No launcher can reach an app that is not there, and their failures named nothing.
+                if (launchJob === coroutineContext[Job]) launchInFlight = false
+                isActive = false
+                ToastUtils.showToast(service, service.getString(R.string.failed_aa_not_installed), Toast.LENGTH_LONG)
+                if (!commManager.isConnected) commManager.reportError("Android Auto is not installed", settingsRestart)
+                // start() adopted the dummy VPN before this job ran; no phone can come, so drop it now.
+                stopIfCurrent(coroutineContext[Job])
+                return@launch
+            }
 
             if (path == SelfLaunchPath.HEADUNIT_SERVER) {
                 AppLog.i("SelfMode: AA 17.4+ detected. Connecting directly to Headunit Server on 127.0.0.1:5277...")
@@ -419,17 +433,25 @@ class SelfLauncherManager(
 
         const val AA_PACKAGE = "com.google.android.projection.gearhead"
 
-        /** Which route the installed Android Auto takes; an unreadable version is LEGACY. */
-        fun installedPath(context: Context): SelfLaunchPath {
+        /**
+         * Which route the installed Android Auto takes; null when it is not installed.
+         * Home asks first with [log] false, so the launch logs the answer once.
+         */
+        fun installedPath(context: Context, log: Boolean = true): SelfLaunchPath? {
+            var installed = true
             val vName = try {
                 val name = context.packageManager.getPackageInfo(AA_PACKAGE, 0).versionName
-                AppLog.i("SelfMode: Installed AA version: $name")
+                if (log) AppLog.i("SelfMode: Installed AA version: $name")
                 name
+            } catch (e: PackageManager.NameNotFoundException) {
+                if (log) AppLog.w("SelfMode: Android Auto ($AA_PACKAGE) is not installed on this device. Self Mode runs it here, so there is nothing to launch.")
+                installed = false
+                null
             } catch (e: Exception) {
-                AppLog.w("SelfMode: Failed to query AA version: ${e.message}")
+                if (log) AppLog.w("SelfMode: Failed to query AA version: ${e.message}")
                 null
             }
-            return SelfLaunchRoutePolicy.pathFor(vName)
+            return SelfLaunchRoutePolicy.pathFor(installed, vName)
         }
     }
 }

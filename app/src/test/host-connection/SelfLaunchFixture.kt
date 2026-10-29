@@ -209,6 +209,9 @@ object SessionStateIntent {
 }
 object StationStandDown { fun onSessionLive(service: Any, held: Long?) {} }
 object Esp32RelaySession { fun shouldNotifyProjection(service: Any) = false; fun notifyProjection(up: Boolean) {} }
+object ToastUtils { fun showToast(context: Any, text: String, length: Int) {} }
+object Toast { const val LENGTH_LONG = 1 }
+object R { object string { const val failed_aa_not_installed = 1 } }
 object SystemClock { fun elapsedRealtime() = 0L }
 class Service(private var hasEverConnected: Boolean = true, val commManager: CommManager = CommManager()) : AutoCloseable {
     private class ReconnectTimer { fun onStateChanged() {} }
@@ -225,6 +228,7 @@ class Service(private var hasEverConnected: Boolean = true, val commManager: Com
     private var unprojectedEndsInARow = 0
     private var sessionEndedByHand = false
     private val packageName = "fixture"
+    fun getString(id: Int) = "fixture"
     private val ACTION_REQUEST_NIGHT_MODE_UPDATE = "night"
     var isDestroying = false
     var connectedCallbacks = 0

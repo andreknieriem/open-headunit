@@ -310,6 +310,27 @@ class AapTransport(
         return@Callback true
     }
 
+    private val keepaliveRunnable = Runnable { sendKeepalive() }
+
+    private fun sendKeepalive(): Unit = synchronized(lifecycleLock) {
+        val handler = sendHandler ?: return@synchronized
+        if (closing || !presentationSession.isActive || aapRead == null ||
+            !tlsWriter.isReady || connection !is SocketProjectionConnection) return@synchronized
+
+        // The developer head-unit server answers pings but need not initiate them. Native
+        // wireless peers also track HU pings independently of media, so keep the cadence
+        // even while video/audio flows. Sending never refreshes actual inbound link health.
+        val request = Control.PingRequest.newBuilder()
+            // GAL uses nanoseconds; elapsedRealtime also works on API 16.
+            .setTimestamp(SystemClock.elapsedRealtime() * 1_000_000L)
+            .build()
+        enqueueMessage(AapMessage(Channel.ID_CTR,
+            Control.ControlMsgType.MESSAGE_PING_REQUEST_VALUE, request))
+        // Queue publication and retirement share the lock. TLS I/O stays on the normal
+        // send callback outside this lock, and quit retains the existing read/write deadlines.
+        handler.postDelayed(keepaliveRunnable, KEEPALIVE_INTERVAL_MS)
+    }
+
     val isAlive: Boolean
         get() = pollThread?.isAlive ?: false
 
@@ -910,6 +931,7 @@ class AapTransport(
             cleanupStep("microphone") { retireMicrophone() }
             sendHandler?.removeCallbacks(focusCycleGainRunnable)
             sendHandler?.removeCallbacks(unrepairedCheckRunnable)
+            sendHandler?.removeCallbacks(keepaliveRunnable)
             pollThread?.quit()
             sendThread?.quit()
             videoThread?.quit()
@@ -1166,6 +1188,7 @@ class AapTransport(
         pendingVideoFocus = null
         presentationSession.retire()
         presentationController.close()
+        sendHandler?.removeCallbacks(keepaliveRunnable)
         sendHandler?.removeCallbacks(mediaStatisticsTick)
         aapRead?.retirePresentation()
     }
@@ -1195,6 +1218,9 @@ class AapTransport(
             presentationSession
         )
         pollHandler?.sendEmptyMessage(MSG_POLL)
+        if (tlsWriter.isReady && connection is SocketProjectionConnection) {
+            sendHandler?.postDelayed(keepaliveRunnable, KEEPALIVE_INTERVAL_MS)
+        }
     }
 
     private fun handshake(connection: ProjectionConnection): Boolean {
@@ -1591,6 +1617,7 @@ class AapTransport(
     companion object {
         private const val MSG_POLL = 1
         private const val MSG_SEND = 2
+        private const val KEEPALIVE_INTERVAL_MS = 1_000L
 
         /** Pooled video payload copies: enough for a fragment run and the one behind it. */
         /**

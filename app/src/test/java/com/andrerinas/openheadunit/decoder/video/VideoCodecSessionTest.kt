@@ -888,4 +888,262 @@ class VideoCodecSessionTest {
             }
         }
     }
+
+    @Test fun `same-ID CSD update during retirement invalidates an older retained keyframe`() {
+        val type = CodecType.H264
+        fun firstPicture(name: String): Pair<ByteArray, ByteArray> {
+            val clip = File("src/main/res/raw/$name").readBytes()
+            val unit = AnnexBAccessUnits.split(clip, type).first()
+            val prefix = AnnexBAccessUnits.parameterSetPrefix(clip, unit, type)
+            assertTrue(prefix > 0)
+            return clip.copyOfRange(unit.offset, unit.offset + unit.length) to
+                clip.copyOfRange(unit.offset, unit.offset + prefix)
+        }
+        val (oldPicture, _) = firstPicture("preflight_h264_480p.h264")
+        val (newPicture, newConfig) = firstPicture("preflight_h264_720p.h264")
+        Fixture(type, forceSoftware = true).use { f ->
+            val field = VideoDecoder::class.java.getDeclaredField("parameterSets").apply { isAccessible = true }
+            val cache = field.get(f.decoder) as ParameterSetCache
+            fun cachedWidth(): Int {
+                val sps = checkNotNull(cache.latest(7))
+                return checkNotNull(ParameterSetInspector.parseH264Sps(sps, 4, sps.size - 4)).width
+            }
+            f.beginPinnedSession(type, oldPicture)
+            assertEquals(800, cachedWidth())
+            val old = f.bundledOutput(0)
+            val pause = NativePause()
+            doAnswer { pause.block(); null }.`when`(old).stop()
+            val retirementThread = AtomicReference<Thread>()
+            val callbackEntered = CountDownLatch(1)
+            val construction = AtomicReference<org.mockito.MockedConstruction<FfmpegVideoDecoder>>()
+            val dropped = java.util.concurrent.atomic.AtomicInteger()
+            val repaired = java.util.concurrent.atomic.AtomicInteger()
+            f.decoder.onFrameDropped = { dropped.incrementAndGet() }
+            f.decoder.onKeyframeObserved = { repaired.incrementAndGet() }
+            try {
+                f.decoder.stop(DecoderStopPolicy.REASON_ACTIVITY_STOPPED)
+                pause.await()
+                `when`(f.surface.isValid).thenReturn(true)
+                f.decode(oldPicture, type)
+                f.decode(newConfig, type)
+                assertEquals("new same-ID configuration was received", 1280, cachedWidth())
+                f.decoder.whenRetired {
+                    retirementThread.set(Thread.currentThread())
+                    // The valid Surface remains attached. Replace only the JNI endpoint on the
+                    // retiring thread; actual retention, replay, initialization and cache run.
+                    construction.set(mockConstruction(FfmpegVideoDecoder::class.java) { owner, _ ->
+                        `when`(owner.start()).thenReturn(true)
+                        `when`(owner.decode(org.mockito.kotlin.any(), anyInt(), anyInt(), anyBoolean())).thenReturn(0)
+                    })
+                    callbackEntered.countDown()
+                }
+                pause.resume.countDown()
+                assertTrue(callbackEntered.await(3, TimeUnit.SECONDS))
+                checkNotNull(retirementThread.get()).join(3_000)
+                assertFalse(retirementThread.get().isAlive)
+                assertEquals("older replay must not overwrite newer same-ID SPS", 1280, cachedWidth())
+                assertEquals("configuration invalidation must request fresh input even on idle stream", 1, dropped.get())
+                assertEquals("stale input cannot acknowledge repair", 0, repaired.get())
+                assertFalse(f.decoder.hasCrediblePicture)
+                assertTrue("stale-config replay must not allocate a decoder", construction.get().constructed().isEmpty())
+                construction.getAndSet(null)?.close()
+                // A fresh keyframe is admitted normally and repairs only after output.
+                mockConstruction(FfmpegVideoDecoder::class.java) { owner, _ ->
+                    val keyframe = java.util.concurrent.atomic.AtomicBoolean()
+                    `when`(owner.start()).thenReturn(true)
+                    `when`(owner.keyframeRendered).thenAnswer { keyframe.get() }
+                    `when`(owner.decode(org.mockito.kotlin.any(), anyInt(), anyInt(), anyBoolean())).thenAnswer { call ->
+                        val data = call.getArgument<ByteArray>(0)
+                        val offset = call.getArgument<Int>(1)
+                        val size = call.getArgument<Int>(2)
+                        val isPicture = VideoKeyframeScanner.containsKeyframe(data, offset, size, false)
+                        keyframe.set(isPicture && call.getArgument<Boolean>(3))
+                        if (isPicture) 1 else 0
+                    }
+                }.use {
+                    f.decode(newPicture, type)
+                    assertEquals(1, repaired.get())
+                    assertTrue(f.decoder.hasCrediblePicture)
+                    assertEquals(1280, cachedWidth())
+                }
+            } finally {
+                pause.resume.countDown()
+                retirementThread.get()?.join(3_000)
+                construction.getAndSet(null)?.close()
+            }
+        }
+    }
+
+    private enum class RetainedConfigControl {
+        IDENTICAL, PPS_CHANGE, NEWER_KEYFRAME, DETACHED, INVALID_SURFACE, INVALID_BEFORE_CALLBACK,
+        RETIRED_GENERATION,
+    }
+
+    @Test fun `byte-identical CSD during retirement still replays the retained picture`() =
+        checkRetainedConfigControl(RetainedConfigControl.IDENTICAL)
+
+    @Test fun `same-ID PPS update keeps newest PPS and requests a fresh keyframe`() =
+        checkRetainedConfigControl(RetainedConfigControl.PPS_CHANGE)
+
+    @Test fun `newer keyframe replaces stale retained configuration without extra recovery`() =
+        checkRetainedConfigControl(RetainedConfigControl.NEWER_KEYFRAME)
+
+    @Test fun `detaching after a CSD update suppresses retained replay and recovery callbacks`() =
+        checkRetainedConfigControl(RetainedConfigControl.DETACHED)
+
+    @Test fun `invalidating the retained Surface after a CSD update suppresses replay and recovery callbacks`() =
+        checkRetainedConfigControl(RetainedConfigControl.INVALID_SURFACE)
+
+    @Test fun `Surface invalidated after replay validation cannot request repair`() =
+        checkRetainedConfigControl(RetainedConfigControl.INVALID_BEFORE_CALLBACK)
+
+    @Test fun `retiring the same Surface generation after a CSD update suppresses replay and recovery callbacks`() =
+        checkRetainedConfigControl(RetainedConfigControl.RETIRED_GENERATION)
+
+    private fun checkRetainedConfigControl(control: RetainedConfigControl) {
+        val type = CodecType.H264
+        fun firstPicture(name: String): Pair<ByteArray, ByteArray> {
+            val clip = File("src/main/res/raw/$name").readBytes()
+            val unit = AnnexBAccessUnits.split(clip, type).first()
+            val prefix = AnnexBAccessUnits.parameterSetPrefix(clip, unit, type)
+            assertTrue(prefix > 0)
+            return clip.copyOfRange(unit.offset, unit.offset + unit.length) to
+                clip.copyOfRange(unit.offset, unit.offset + prefix)
+        }
+        val (oldPicture, oldConfig) = firstPicture("preflight_h264_480p.h264")
+        val (newPicture, newConfig) = firstPicture("preflight_h264_720p.h264")
+        // Existing PPS id=0, SPS id=0, with constrained_intra_pred_flag changed from 0 to 1.
+        // The payload length and both syntax IDs are unchanged; no resolution change is needed.
+        val newPps = byteArrayOf(0, 0, 0, 1, 0x68, 0xce.toByte(), 0x0f, 0x2e, 0x80.toByte())
+        assertEquals(0, ParameterSetInspector.parameterSetId(newPps, 4, newPps.size - 4, false))
+        Fixture(type, forceSoftware = true).use { f ->
+            val cache = VideoDecoder::class.java.getDeclaredField("parameterSets")
+                .apply { isAccessible = true }.get(f.decoder) as ParameterSetCache
+            fun cachedWidth(): Int {
+                val sps = checkNotNull(cache.latest(7))
+                return checkNotNull(ParameterSetInspector.parseH264Sps(sps, 4, sps.size - 4)).width
+            }
+            fun scriptNative(owner: FfmpegVideoDecoder) {
+                val keyframe = java.util.concurrent.atomic.AtomicBoolean()
+                `when`(owner.start()).thenReturn(true)
+                `when`(owner.keyframeRendered).thenAnswer { keyframe.get() }
+                `when`(owner.decode(org.mockito.kotlin.any(), anyInt(), anyInt(), anyBoolean())).thenAnswer { call ->
+                    val bytes = call.getArgument<ByteArray>(0)
+                    val offset = call.getArgument<Int>(1)
+                    val size = call.getArgument<Int>(2)
+                    val key = VideoKeyframeScanner.containsKeyframe(bytes, offset, size, false)
+                    keyframe.set(key && call.getArgument<Boolean>(3))
+                    if (CodecConfigScanner.classify(bytes, offset, size, false) ==
+                        CodecConfigScanner.Content.PARAMETER_SETS_ONLY) 0 else 1
+                }
+            }
+            f.beginPinnedSession(type, oldPicture)
+            assertEquals(800, cachedWidth())
+            assertFalse(newPps.contentEquals(cache.latest(8)))
+            val old = f.bundledOutput(0)
+            val pause = NativePause()
+            doAnswer { pause.block(); null }.`when`(old).stop()
+            val callbackEntered = CountDownLatch(1)
+            val retirementThread = AtomicReference<Thread>()
+            val construction = AtomicReference<org.mockito.MockedConstruction<FfmpegVideoDecoder>>()
+            val dropped = java.util.concurrent.atomic.AtomicInteger()
+            val repaired = java.util.concurrent.atomic.AtomicInteger()
+            val rendered = java.util.concurrent.atomic.AtomicInteger()
+            f.decoder.onFrameDropped = { dropped.incrementAndGet() }
+            f.decoder.onKeyframeObserved = { repaired.incrementAndGet() }
+            f.decoder.onFirstFrameListener = { rendered.incrementAndGet() }
+            try {
+                f.decoder.stop(DecoderStopPolicy.REASON_ACTIVITY_STOPPED)
+                pause.await()
+                `when`(f.surface.isValid).thenReturn(true)
+                f.decode(oldPicture, type)
+                when (control) {
+                    RetainedConfigControl.IDENTICAL -> f.decode(oldConfig, type)
+                    RetainedConfigControl.PPS_CHANGE -> f.decode(newPps, type)
+                    RetainedConfigControl.NEWER_KEYFRAME -> {
+                        f.decode(newConfig, type)
+                        f.decode(newPicture, type)
+                    }
+                    RetainedConfigControl.DETACHED -> {
+                        f.decode(newConfig, type)
+                        f.decoder.setSurface(null)
+                    }
+                    RetainedConfigControl.INVALID_SURFACE -> {
+                        f.decode(newConfig, type)
+                        `when`(f.surface.isValid).thenReturn(false)
+                    }
+                    RetainedConfigControl.INVALID_BEFORE_CALLBACK -> {
+                        f.decode(newConfig, type)
+                        // The replay ownership check passes; callback-time validity must be
+                        // rechecked after configuration invalidation, not captured once.
+                        `when`(f.surface.isValid).thenReturn(true, false)
+                    }
+                    RetainedConfigControl.RETIRED_GENERATION -> {
+                        f.decode(newConfig, type)
+                        f.decoder.stop(DecoderStopPolicy.REASON_ACTIVITY_STOPPED)
+                        assertTrue(f.decoder.isCurrentSurface(f.surface))
+                    }
+                }
+                f.decoder.whenRetired {
+                    retirementThread.set(Thread.currentThread())
+                    try {
+                        construction.set(mockConstruction(FfmpegVideoDecoder::class.java) { owner, _ ->
+                            scriptNative(owner)
+                        })
+                    } finally { callbackEntered.countDown() }
+                }
+                pause.resume.countDown()
+                assertTrue(callbackEntered.await(3, TimeUnit.SECONDS))
+                checkNotNull(retirementThread.get()).join(3_000)
+                assertFalse(retirementThread.get().isAlive)
+                when (control) {
+                    RetainedConfigControl.IDENTICAL, RetainedConfigControl.NEWER_KEYFRAME -> {
+                        assertEquals(1, construction.get().constructed().size)
+                        assertEquals(1, rendered.get())
+                        assertEquals(1, repaired.get())
+                        assertEquals(0, dropped.get())
+                        assertTrue(f.decoder.hasCrediblePicture)
+                        assertEquals(if (control == RetainedConfigControl.IDENTICAL) 800 else 1280, cachedWidth())
+                    }
+                    RetainedConfigControl.PPS_CHANGE -> {
+                        assertArrayEquals("older IDR must not restore the old PPS", newPps, cache.latest(8))
+                        assertEquals("PPS-only changes do not need a resolution change", 800, cachedWidth())
+                        assertTrue(construction.get().constructed().isEmpty())
+                        assertEquals(0, rendered.get())
+                        assertEquals(0, repaired.get())
+                        assertEquals(1, dropped.get())
+                        assertFalse(f.decoder.hasCrediblePicture)
+                    }
+                    RetainedConfigControl.DETACHED, RetainedConfigControl.INVALID_SURFACE,
+                    RetainedConfigControl.INVALID_BEFORE_CALLBACK, RetainedConfigControl.RETIRED_GENERATION -> {
+                        assertTrue(construction.get().constructed().isEmpty())
+                        assertEquals(0, rendered.get())
+                        assertEquals(0, repaired.get())
+                        assertEquals(0, dropped.get())
+                        assertEquals(1280, cachedWidth())
+                        if (control == RetainedConfigControl.INVALID_BEFORE_CALLBACK) {
+                            assertEquals("configuration invalidation happened before callback suppression",
+                                1L, f.decoder.sessionHealth().framesDropped)
+                        }
+                    }
+                }
+                construction.getAndSet(null)?.close()
+                if (control == RetainedConfigControl.PPS_CHANGE) {
+                    val pictureOnly = oldPicture.copyOfRange(oldConfig.size, oldPicture.size)
+                    assertTrue(VideoKeyframeScanner.containsKeyframe(pictureOnly, 0, pictureOnly.size, false))
+                    mockConstruction(FfmpegVideoDecoder::class.java) { owner, _ -> scriptNative(owner) }.use {
+                        f.decode(pictureOnly, type)
+                        assertArrayEquals(newPps, cache.latest(8))
+                        assertEquals(1, rendered.get())
+                        assertEquals(1, repaired.get())
+                        assertTrue(f.decoder.hasCrediblePicture)
+                    }
+                }
+            } finally {
+                pause.resume.countDown()
+                retirementThread.get()?.join(3_000)
+                construction.getAndSet(null)?.close()
+            }
+        }
+    }
 }

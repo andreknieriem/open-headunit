@@ -224,6 +224,7 @@ class VideoDecoder(
         var keyframe: Boolean,
         var forceSoftware: Boolean,
         var announcedCodec: CodecType,
+        var configurationRevision: Long,
         var continuityLost: Boolean = false,
     )
     private var recoveryInput: RecoveryInput? = null
@@ -1227,7 +1228,7 @@ class VideoDecoder(
             return
         }
         val pending = previous ?: RecoveryInput(decoderGeneration, surface, ByteArray(size),
-            size, keyframe, forceSoftware, announcedCodec).also { recoveryInput = it }
+            size, keyframe, forceSoftware, announcedCodec, parameterSets.revision).also { recoveryInput = it }
         if (pending.bytes.size < size) pending.bytes = ByteArray(size)
         System.arraycopy(buffer, offset, pending.bytes, 0, size)
         pending.size = size
@@ -1235,21 +1236,43 @@ class VideoDecoder(
         pending.continuityLost = false
         pending.forceSoftware = forceSoftware
         pending.announcedCodec = announcedCodec
+        pending.configurationRevision = parameterSets.revision
     }
 
     private fun replayRecoveryInput() {
+        var configurationChanged = false
         val pending = synchronized(this) {
             if (pendingRetirements != 0) return
-            recoveryInput.also { recoveryInput = null }
-        } ?: return
-        decodeLocked(pending.bytes, 0, pending.size, pending.forceSoftware, pending.announcedCodec, pending)
+            val pending = recoveryInput.also { recoveryInput = null } ?: return
+            if (decoderGeneration != pending.generation || mSurface !== pending.surface ||
+                !pending.surface.isValid) return
+            if (pending.configurationRevision != parameterSets.revision) {
+                // A newer configuration can reuse an SPS/PPS ID. Replaying the older AU would
+                // overwrite that session cache (and the native decoder's in-band state). Keep
+                // the newest configuration and recover from a fresh keyframe instead. Even a
+                // new, independent ID invalidates conservatively; no slice dependency guess.
+                configurationChanged = true
+                pending.continuityLost = true
+                synchronized(outputPublicationLock) {
+                    recoveryContinuityLost = true
+                    framesDropped++
+                }
+            }
+            pending
+        }
+        if (!configurationChanged) {
+            decodeLocked(pending.bytes, 0, pending.size, pending.forceSoftware, pending.announcedCodec, pending)
+        }
         if (pending.continuityLost) {
             // An older IDR restores a still picture, not references discarded after it. It must
             // not acknowledge transport repair. Keep normal live admission and ask for a newer
             // keyframe through the existing lost-reference recovery path.
             val events = OutputEvents("VideoDecoder.retirementGap")
             events.callback(onFrameDropped)
-            events.dispatch { decoderGeneration == pending.generation && recoveryContinuityLost }
+            events.dispatch {
+                decoderGeneration == pending.generation && mSurface === pending.surface &&
+                    pending.surface.isValid && recoveryContinuityLost
+            }
         }
     }
 

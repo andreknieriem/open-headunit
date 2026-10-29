@@ -33,6 +33,7 @@ class NearbySessionPublicationTest {
             fun get(name: String) = CommManager::class.java.getDeclaredField(name)
                 .apply { isAccessible = true }.get(manager)
             set("transportLifecycleLock", Any())
+            set("appExitPolicy", AppExitPolicy())
             set("_connectionState", flow)
             set("context", mock(Context::class.java))
             set("settings", mock(Settings::class.java))

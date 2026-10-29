@@ -10,6 +10,7 @@ import android.hardware.usb.UsbEndpoint
 import android.hardware.usb.UsbConstants
 import com.andrerinas.openheadunit.utils.Settings
 import com.andrerinas.openheadunit.connection.CommManager
+import com.andrerinas.openheadunit.connection.AppExitPolicy
 import com.andrerinas.openheadunit.connection.ConnectionArbiter
 import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy.Tier
 import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy.Owner
@@ -53,6 +54,7 @@ class UsbRecoveryAdmissionTest {
         val states = MutableStateFlow<CommManager.ConnectionState>(CommManager.ConnectionState.Disconnected())
         init {
             set("transportLifecycleLock", Any())
+            set("appExitPolicy", AppExitPolicy())
             set("usbRecoveryOwner", owner)
             set("_connectionState", states)
             set("context", context)

@@ -1,6 +1,7 @@
 package com.andrerinas.openheadunit.aap
 
 import com.andrerinas.openheadunit.connection.CommManager
+import com.andrerinas.openheadunit.connection.AppExitPolicy
 import com.andrerinas.openheadunit.connection.CommManager.ConnectionState
 import com.andrerinas.openheadunit.connection.projection.SocketProjectionConnection
 import com.andrerinas.openheadunit.utils.Settings
@@ -30,6 +31,7 @@ class UsbReconnectOwnershipTest {
             fun set(name: String, value: Any?) = CommManager::class.java.getDeclaredField(name)
                 .apply { isAccessible = true }.set(manager, value)
             set("transportLifecycleLock", Any())
+            set("appExitPolicy", AppExitPolicy())
             set("_connectionState", states)
             set("usbRecoveryOwner", Any())
             set("context", mock(Context::class.java))

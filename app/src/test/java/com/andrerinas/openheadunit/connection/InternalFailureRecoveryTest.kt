@@ -33,6 +33,7 @@ class InternalFailureRecoveryTest {
         val owner = Any()
         init {
             field("transportLifecycleLock", Any())
+            field("appExitPolicy", AppExitPolicy())
             field("_connectionState", states)
             field("_scope", scope)
             field("usbRecoveryOwner", owner)
@@ -87,8 +88,9 @@ class InternalFailureRecoveryTest {
                     runBlocking { `when`(connection.connect()).thenAnswer { throw IOException("USB open failed") } }
                 }.use {
                     invoke(f.manager, "connectUsb", arrayOf(UsbDevice::class.java, ConnectionState.Disconnected::class.java,
-                        Any::class.java, ConnectionArbiter.Claim::class.java, ConnectionAdmission::class.java),
-                        device, null, null, null, ConnectionAdmission.UNRESTRICTED)
+                        Any::class.java, ConnectionArbiter.Claim::class.java, ConnectionAdmission::class.java,
+                        ConnectionArbiter.Claim::class.java),
+                        device, null, null, null, ConnectionAdmission.UNRESTRICTED, null)
                     f.assertRecoverable()
                 }
             }

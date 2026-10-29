@@ -39,6 +39,7 @@ import com.andrerinas.openheadunit.aap.ProjectionWatchdogPolicy
 import com.andrerinas.openheadunit.app.BaseActivity
 import com.andrerinas.openheadunit.app.BtAutoStartRearmPolicy
 import com.andrerinas.openheadunit.connection.CommManager
+import com.andrerinas.openheadunit.connection.AppExitPolicy
 import com.andrerinas.openheadunit.connection.ConnectionNetworkDetail
 import com.andrerinas.openheadunit.connection.ConnectionNetworkDetailPolicy
 import com.andrerinas.openheadunit.connection.ConnectionStage
@@ -101,7 +102,9 @@ class MainActivity : BaseActivity() {
 
     private val finishReceiver = object : android.content.BroadcastReceiver() {
         override fun onReceive(context: android.content.Context, intent: Intent) {
-            if (intent.action == "com.andrerinas.openheadunit.ACTION_FINISH_ACTIVITIES") {
+            if (intent.action == AppExitPolicy.ACTION_FINISH_ACTIVITIES &&
+                App.provide(this@MainActivity).commManager.ownsAppExit(
+                    intent.getLongExtra(AppExitPolicy.EXTRA_EXIT_OWNER, 0L))) {
                 AppLog.i("MainActivity: Received finish request. Closing.")
                 finishAffinity()
             }
@@ -151,6 +154,9 @@ class MainActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         requestedOrientation = Settings(this).screenOrientation.androidOrientation
         super.onCreate(savedInstanceState)
+        if (!AppExitPolicy.isExitCommand(intent?.action, intent?.data?.scheme, intent?.data?.host)) {
+            App.provide(this).commManager.onAppRelaunched()
+        }
 
         logLaunchSource()
         clearBootLoopGuardIfOpenedByHand()
@@ -291,7 +297,7 @@ class MainActivity : BaseActivity() {
 
         ContextCompat.registerReceiver(
             this, finishReceiver,
-            android.content.IntentFilter("com.andrerinas.openheadunit.ACTION_FINISH_ACTIVITIES"),
+            android.content.IntentFilter(AppExitPolicy.ACTION_FINISH_ACTIVITIES),
             ContextCompat.RECEIVER_NOT_EXPORTED
         )
         isFinishReceiverRegistered = true
@@ -1099,6 +1105,14 @@ class MainActivity : BaseActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        if (!AppExitPolicy.isExitCommand(intent.action, intent.data?.scheme, intent.data?.host)) {
+            App.provide(this).commManager.onAppRelaunched()
+            // The old service may already have completed Stop while its finish broadcast
+            // is still queued. A warm singleTask home must start its service too.
+            if (AapService.instance == null) {
+                ContextCompat.startForegroundService(this, Intent(this, AapService::class.java))
+            }
+        }
         if (intent.action == Intent.ACTION_MAIN && intent.hasCategory(Intent.CATEGORY_HOME)) {
             // Like any launcher, Home leaves whatever inner screen was open (USB list, network
             // list, app drawer) for the home itself. The home then shows its first page.

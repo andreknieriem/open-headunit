@@ -225,6 +225,111 @@ class CommManager(
     // Creation/publication, saved audio settings and the first disconnect decision share one
     // boundary. Network handshake and final connection teardown run outside this lock.
     private val transportLifecycleLock = Any()
+    private val appExitPolicy = AppExitPolicy()
+    private val appExitHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private var pendingAppExit: Runnable? = null
+    private var serviceExitFinished: CompletableDeferred<Boolean>? = null
+
+    /** A reopened idle home owns the app too; connection state alone cannot revoke an exit. */
+    internal fun onAppRelaunched(): Unit = synchronized(transportLifecycleLock) {
+        appExitPolicy.supersede()
+        cancelAppExitCallback()
+    }
+
+    private fun cancelAppExitCallback() {
+        pendingAppExit?.let { appExitHandler.removeCallbacks(it) }
+        pendingAppExit = null
+    }
+
+    private fun acceptAppConnection(): Boolean {
+        if (!appExitPolicy.acceptConnection()) return false
+        cancelAppExitCallback()
+        return true
+    }
+
+    // stopSelf cannot retract an onDestroy already queued by Android. Do not publish a new
+    // attempt into that service's cleanup; wait outside the lifecycle lock for its completion.
+    private suspend inline fun <T> publishConnectionAttempt(action: () -> T): T? {
+        while (true) {
+            val ending = synchronized(transportLifecycleLock) {
+                val ending = serviceExitFinished
+                if (ending == null) return action()
+                ending
+            }
+            if (!ending.await()) return null
+        }
+    }
+
+    internal fun ownsAppExit(id: Long): Boolean = synchronized(transportLifecycleLock) {
+        appExitPolicy.owns(id, settings.killOnDisconnect)
+    }
+
+    internal fun appExitIsUserStop(request: AppExitPolicy.Request): Boolean = synchronized(transportLifecycleLock) {
+        appExitPolicy.userStopAtDestroy(request)
+    }
+
+    internal fun requestExplicitAppExit(killProcess: Boolean): AppExitPolicy.Request? =
+        synchronized(transportLifecycleLock) {
+            cancelAppExitCallback()
+            appExitPolicy.request(killProcess, userStop = true, requiresKillOnDisconnect = false)
+        }
+
+    internal fun commitAppExit(request: AppExitPolicy.Request): Boolean = synchronized(transportLifecycleLock) {
+        if (!appExitPolicy.commit(request, settings.killOnDisconnect)) return@synchronized false
+        cancelAppExitCallback()
+        serviceExitFinished = CompletableDeferred()
+        true
+    }
+
+    internal fun completeAppExit(request: AppExitPolicy.Request, allowProcessExit: Boolean = true): AppExitPolicy.Completion {
+        val (completion, finished) = synchronized(transportLifecycleLock) {
+            val completion = appExitPolicy.destroyed(request, settings.killOnDisconnect && allowProcessExit)
+            val finished = when (completion) {
+                AppExitPolicy.Completion.STOPPED, AppExitPolicy.Completion.RESTART_SERVICE ->
+                    serviceExitFinished.also { serviceExitFinished = null }
+                else -> null
+            }
+            completion to finished
+        }
+        finished?.complete(completion == AppExitPolicy.Completion.RESTART_SERVICE)
+        return completion
+    }
+
+    internal fun broadcastAppExit(request: AppExitPolicy.Request) {
+        if (!ownsAppExit(request.id)) return
+        context.sendBroadcast(android.content.Intent(AppExitPolicy.ACTION_FINISH_ACTIVITIES).apply {
+            setPackage(context.packageName)
+            putExtra(AppExitPolicy.EXTRA_EXIT_OWNER, request.id)
+        })
+    }
+
+    internal fun finishAppExitTasks(request: AppExitPolicy.Request) {
+        if (!ownsAppExit(request.id)) return
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager
+            activityManager.appTasks.forEach { it.finishAndRemoveTask() }
+        }
+    }
+
+    private fun scheduleAppExit(userStop: Boolean) {
+        cancelAppExitCallback()
+        val request = appExitPolicy.request(killProcess = true, userStop = userStop) ?: return
+        val callback = object : Runnable {
+            override fun run() {
+                if (!commitAppExit(request)) return
+                // Finishing before commit would let an accepted Connecting attempt race a
+                // queued finish broadcast. Admission is closed before any Android effect.
+                broadcastAppExit(request)
+                val service = com.andrerinas.openheadunit.aap.AapService.instance
+                service?.stopForAppExit(request)
+                finishAppExitTasks(request)
+                if (service == null) completeAppExit(request, allowProcessExit = false)
+            }
+        }
+        pendingAppExit = callback
+        appExitHandler.postDelayed(callback, AppExitPolicy.DELAY_MS)
+    }
+
     // The first disconnect chooses app-exit policy until the next physical attempt. Error/UI
     // state changes must not reopen that decision while the same session is being retired.
     private var disconnectRequested = false
@@ -421,7 +526,7 @@ class CommManager(
         if (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value)) return@withContext
         val claim = claimUsb(tier, "USB ${UsbDeviceCompat.getUniqueName(device)}", expectedState)
             ?: return@withContext
-        try { connectUsb(device, expectedState) } finally { releaseClaim(claim) }
+        try { connectUsb(device, expectedState, appClaim = claim) } finally { releaseClaim(claim) }
     }
 
     /** A recovery retry cannot borrow the authority of a later Save, Exit or completed session. */
@@ -512,7 +617,8 @@ class CommManager(
 
     private suspend fun connectUsb(device: UsbDevice, expectedState: ConnectionState.Disconnected? = null,
         recoveryOwner: Any? = null, recoveryClaim: ConnectionArbiter.Claim? = null,
-        recoveryAdmission: ConnectionAdmission = ConnectionAdmission.UNRESTRICTED) {
+        recoveryAdmission: ConnectionAdmission = ConnectionAdmission.UNRESTRICTED,
+        appClaim: ConnectionArbiter.Claim? = null) {
         if (recoveryOwner != null && !ownsUsbRecheck(recoveryOwner)) return
         if (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value)) return
         // Another caller already started the connection — do nothing.
@@ -531,6 +637,9 @@ class CommManager(
             _connectionState.emit(ConnectionState.Error("USB permission not granted for device"))
             return
         }
+        // Permission rejection is not an accepted attempt. A valid held claim, however,
+        // already owns the app while the previous connection is still being torn down.
+        if (appClaim != null && !acceptAppConnectionClaim(appClaim, expectedState)) return
 
         // Wait for any in-progress cleanup to finish before opening the USB device.
         // Without this, openDevice() on the same hardware can return null because the previous
@@ -564,7 +673,7 @@ class CommManager(
         }
 
         var conn: ProjectionConnection? = null
-        val (attempt, previous) = synchronized(transportLifecycleLock) {
+        val (attempt, previous) = publishConnectionAttempt {
             // Retirement can suspend after admission. Recheck the same Save permission at
             // publication, before opening hardware or replacing another connection's state.
             if (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value)) return
@@ -573,6 +682,7 @@ class CommManager(
             val token = Any()
             var previous: ProjectionConnection? = null
             if (!publishIfOwned {
+                check(acceptAppConnection())
                 settingsUsbRestartInFlight = expectedState
                 usbSaveOwner = expectedState
                 outgoingEndpoint = null
@@ -584,7 +694,7 @@ class CommManager(
                 _connection = null
             }) return
             token to previous
-        }
+        } ?: return
         try {
             previous?.disconnect()
             conn = if (settings.useLibusb) {
@@ -678,8 +788,13 @@ class CommManager(
         noteClaimedEndpoint(ownedClaim, socketEndpoint(socket))
         HeldServerSocket.settle(socket)
         try {
-            if (admission === ConnectionAdmission.UNRESTRICTED) connectSocket(socket, restartEndpoint, expectedState)
-            else connectAdmittedSocket(socket, admission.withClaim(ownedClaim), restartEndpoint, expectedState)
+            if (admission === ConnectionAdmission.UNRESTRICTED) {
+                if (socket.isClosed || !acceptAppConnectionClaim(ownedClaim, expectedState)) {
+                    try { socket.close() } catch (_: Exception) {}
+                    return@withContext
+                }
+                connectSocket(socket, restartEndpoint, expectedState)
+            } else connectAdmittedSocket(socket, admission.withClaim(ownedClaim), restartEndpoint, expectedState)
         } finally { releaseClaim(ownedClaim) }
     }
 
@@ -712,10 +827,11 @@ class CommManager(
                     // resource owners remain unchanged throughout candidate preparation.
                     if (socket.isClosed || _connectionState.value !== terminal ||
                         (terminal !is ConnectionState.Disconnected && terminal !is ConnectionState.Error) ||
-                        _connection != null || _transport != null ||
+                        _connection != null || _transport != null || appExitPolicy.isStopping ||
                         (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value))) {
                         false
                     } else {
+                        check(acceptAppConnection())
                         lastAttemptedEndpoint = socketEndpoint(socket)
                         outgoingEndpoint = restartEndpoint
                         connectionAttempt = Any()
@@ -766,11 +882,11 @@ class CommManager(
         _disconnectJob?.join()
 
         var conn: ProjectionConnection? = null
-        val (attempt, previous) = synchronized(transportLifecycleLock) {
+        val (attempt, previous) = publishConnectionAttempt {
             if (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value)) {
-                try { socket.close() } catch (_: Exception) {}
-                return
+                return@publishConnectionAttempt null
             }
+            check(acceptAppConnection())
             lastAttemptedEndpoint = socketEndpoint(socket)
             outgoingEndpoint = restartEndpoint
             val token = Any()
@@ -782,6 +898,9 @@ class CommManager(
             val previous = _connection
             _connection = null
             token to previous
+        } ?: run {
+            try { socket.close() } catch (_: Exception) {}
+            return
         }
         try {
             previous?.disconnect()
@@ -856,7 +975,9 @@ class CommManager(
         }
         val claim = claimSocket(tier, endpoint, expectedState) ?: return@withContext
         noteClaimedEndpoint(claim, endpoint)
-        try { connectIp(ip, port, expectedState) } finally { releaseClaim(claim) }
+        try {
+            if (acceptAppConnectionClaim(claim, expectedState)) connectIp(ip, port, expectedState)
+        } finally { releaseClaim(claim) }
     }
 
     private suspend fun connectIp(ip: String, port: Int, expectedState: ConnectionState.Disconnected?) {
@@ -867,8 +988,9 @@ class CommManager(
         _disconnectJob?.join()
 
         var conn: ProjectionConnection? = null
-        val (attempt, previous) = synchronized(transportLifecycleLock) {
+        val (attempt, previous) = publishConnectionAttempt {
             if (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value)) return
+            check(acceptAppConnection())
             lastAttemptedEndpoint = SameEndpointConnectPolicy.endpoint(ip, port)
             outgoingEndpoint = ip to port
             val token = Any()
@@ -880,7 +1002,7 @@ class CommManager(
             val previous = _connection
             _connection = null
             token to previous
-        }
+        } ?: return
         try {
             previous?.disconnect()
             conn = SocketProjectionConnection(ip, port, context)
@@ -936,6 +1058,20 @@ class CommManager(
         val terminal = _connectionState.value as? ConnectionState.Disconnected
         (terminal?.settingsRetryOwner ?: terminal)?.cancelSettingsRestart()
         settingsUsbRestartInFlight?.cancelSettingsRestart()
+    }
+
+    // An unrestricted, held claim owns an attempt even while previous teardown still runs.
+    // Do not wait for Connecting to revoke its predecessor's exit. Restricted candidates
+    // transfer only at prepareAndPublish; a refused/preempted claim revokes nothing.
+    private fun acceptAppConnectionClaim(
+        claim: ConnectionArbiter.Claim,
+        expectedState: ConnectionState.Disconnected? = null,
+    ): Boolean = synchronized(transportLifecycleLock) {
+        if (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value)) return@synchronized false
+        ConnectionArbiter.runIfHeld(claim) {
+            appExitPolicy.supersede()
+            cancelAppExitCallback()
+        }
     }
 
     private fun claimSocket(
@@ -1271,25 +1407,7 @@ class CommManager(
         _disconnectJob = _scope.launch { doDisconnect(sendByeBye = false) }
         source.retirePresentation()
         _connectionState.value = ConnectionState.Disconnected(isClean, isUserExit = wasUserExit, wasLoopbackSession = isLoopbackSession, hadPhysicalConnection = physicalConnectionReached, settingsRetryOwner = save, endedAttempt = connectionAttempt)
-        if (settings.killOnDisconnect) {
-            context.sendBroadcast(android.content.Intent("com.andrerinas.openheadunit.ACTION_FINISH_ACTIVITIES").apply {
-                setPackage(context.packageName)
-            })
-            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                // Stop the foreground service first to remove the notification
-                val stopIntent = android.content.Intent(context, com.andrerinas.openheadunit.aap.AapService::class.java).apply {
-                    action = com.andrerinas.openheadunit.aap.AapService.ACTION_STOP_SERVICE
-                }
-                com.andrerinas.openheadunit.aap.AapService.killProcessOnDestroy = true
-                com.andrerinas.openheadunit.aap.AapService.destroyIsUserStop = wasUserExit
-                context.stopService(stopIntent)
-                // Finish all tasks (API 21+)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                    val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager
-                    activityManager.appTasks.forEach { it.finishAndRemoveTask() }
-                }
-            }, 500)
-        }
+        if (settings.killOnDisconnect) scheduleAppExit(wasUserExit)
     }
 
     // -----------------------------------------------------------------------------------------
@@ -1624,25 +1742,7 @@ class CommManager(
                 SystemClock.elapsedRealtime() + SettingsRestartRecovery.WINDOW_MS else 0L,
             endedAttempt = connectionAttempt,
         )
-        if (settings.killOnDisconnect && honorKillOnDisconnect) {
-            context.sendBroadcast(android.content.Intent("com.andrerinas.openheadunit.ACTION_FINISH_ACTIVITIES").apply {
-                setPackage(context.packageName)
-            })
-            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                // Stop the foreground service first to remove the notification
-                val stopIntent = android.content.Intent(context, com.andrerinas.openheadunit.aap.AapService::class.java).apply {
-                    action = com.andrerinas.openheadunit.aap.AapService.ACTION_STOP_SERVICE
-                }
-                com.andrerinas.openheadunit.aap.AapService.killProcessOnDestroy = true
-                com.andrerinas.openheadunit.aap.AapService.destroyIsUserStop = isUserExit
-                context.stopService(stopIntent)
-                // Finish all tasks (API 21+)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                    val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager
-                    activityManager.appTasks.forEach { it.finishAndRemoveTask() }
-                }
-            }, 500)
-        }
+        if (settings.killOnDisconnect && honorKillOnDisconnect) scheduleAppExit(isUserExit)
     }
 
     /**

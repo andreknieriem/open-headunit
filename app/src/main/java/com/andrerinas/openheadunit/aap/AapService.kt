@@ -63,6 +63,7 @@ import com.andrerinas.openheadunit.aap.protocol.messages.NightModeEvent
 import com.andrerinas.openheadunit.aap.protocol.proto.MediaPlayback
 import com.andrerinas.openheadunit.decoder.audio.MicRecorder
 import com.andrerinas.openheadunit.connection.AutoConnectHoldPolicy
+import com.andrerinas.openheadunit.connection.AppExitPolicy
 import com.andrerinas.openheadunit.connection.CommManager
 import com.andrerinas.openheadunit.connection.ConnectionArbiter
 import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy
@@ -305,6 +306,10 @@ class AapService : Service() {
     private var isDestroying = false
     internal val isStopping: Boolean get() = isDestroying
     private var hasEverConnected = false
+    // Exit permission belongs to this service, not to whichever instance next gets onDestroy.
+    // Kill-on-disconnect still waits for all cleanup (including Car Mode) before process exit;
+    // a user stop removes the Native group only while this request still owns the app.
+    private var appExitRequest: AppExitPolicy.Request? = null
 
     // Completed when the disconnect teardown has finished giving the network back. The exit path
     // creates it before it disconnects, so a teardown that has not started yet is still waited for.
@@ -3054,6 +3059,11 @@ class AapService : Service() {
     }
 
     override fun onTaskRemoved(rootIntent: Intent?) {
+        if (appExitRequest != null) {
+            // A reopened home is restarted once, after this instance has finished destruction.
+            super.onTaskRemoved(rootIntent)
+            return
+        }
         AppLog.i("AapService: onTaskRemoved — attempting restart")
         try {
             val restartIntent = Intent(this, AapService::class.java)
@@ -3062,6 +3072,13 @@ class AapService : Service() {
             AppLog.e("AapService: failed to restart after task removal: ${e.message}")
         }
         super.onTaskRemoved(rootIntent)
+    }
+
+    /** Called on Main after CommManager closes connection admission for this destruction. */
+    internal fun stopForAppExit(request: AppExitPolicy.Request) {
+        appExitRequest = request
+        isDestroying = true
+        stopSelf()
     }
 
     @SuppressLint("WrongConstant")
@@ -3096,7 +3113,7 @@ class AapService : Service() {
         // Read before the first stop below: a destroy nobody asked for leaves the group up for the
         // next service to read, while the user's own stop takes it down.
         val keepNativeGroup = NativeGroupKeepPolicy.keepsOnDestroy(
-            userStop = destroyIsUserStop,
+            userStop = appExitRequest?.let { commManager.appExitIsUserStop(it) } == true,
             nativeWifiDirect = wifiLauncherManager.activeMode == WifiLauncherMode.NATIVE &&
                 wifiLauncherManager.active?.hasWifiDirect() == true,
             stableIdentity = settings.wifiDirectStableIdentity,
@@ -3124,7 +3141,6 @@ class AapService : Service() {
         unregisterNetworkMonitor()
         stopForeground(true)
         wifiLauncherManager.stop(WifiLauncherStopSequence.LAST, keepNativeGroup)
-        destroyIsUserStop = false
         stopDummyVpn(DummyVpnPolicy.Reason.SERVICE_DESTROYED)
         try {
             mediaSession?.let {
@@ -3170,10 +3186,20 @@ class AapService : Service() {
         try { LogExporter.stopCapture() } catch (_: Exception) {}
         super.onDestroy()
         instance = null
-        if (killProcessOnDestroy) {
-            com.andrerinas.openheadunit.connection.bluetooth.xyauto.XyAutoMediaSession.beforeProcessExit()
-            AppLog.i("AapService: killProcessOnDestroy is true. Triggering System.exit(0).")
-            System.exit(0)
+        when (appExitRequest?.let { commManager.completeAppExit(it) }) {
+            AppExitPolicy.Completion.KILL_PROCESS -> {
+                com.andrerinas.openheadunit.connection.bluetooth.xyauto.XyAutoMediaSession.beforeProcessExit()
+                AppLog.i("AapService: owned app exit completed. Triggering System.exit(0).")
+                System.exit(0)
+            }
+            AppExitPolicy.Completion.RESTART_SERVICE -> {
+                try {
+                    ContextCompat.startForegroundService(this, Intent(this, AapService::class.java))
+                } catch (e: Exception) {
+                    AppLog.e("AapService: failed to restart for reopened app: ${e.message}")
+                }
+            }
+            else -> Unit
         }
     }
 
@@ -3226,11 +3252,13 @@ class AapService : Service() {
 
         // Handle stop before re-posting the notification to avoid a flash
         if (intent?.action == ACTION_STOP_SERVICE) {
-            AppLog.i("Stop action received. Broadcasting finish request to activities.")
-            destroyIsUserStop = true
-            sendBroadcast(Intent("com.andrerinas.openheadunit.ACTION_FINISH_ACTIVITIES").apply {
-                setPackage(packageName)
-            })
+            val request = commManager.requestExplicitAppExit(
+                killProcess = settings.killOnDisconnect && commManager.isConnected,
+            ) ?: return START_NOT_STICKY
+            if (!commManager.commitAppExit(request)) return START_NOT_STICKY
+            appExitRequest = request
+            AppLog.i("Stop action received. Broadcasting owned finish request to activities.")
+            commManager.broadcastAppExit(request)
             isDestroying = true
             // Asked before the disconnect, and the latch made before it too. The teardown that
             // gives the network back runs on serviceScope and suspends on the disconnect, and
@@ -3243,13 +3271,14 @@ class AapService : Service() {
                 )
             ) CompletableDeferred<Unit>() else null
             exitTeardownDone = teardownDone
-            if (commManager.isConnected) commManager.disconnect(sendByeBye = true)
+            if (commManager.isConnected) commManager.disconnect(sendByeBye = true, honorKillOnDisconnect = false)
             // Collection uses queued Main dispatch. Bind the waiter to the state just
             // published so an older queued terminal notification cannot finish this Stop.
             exitTeardownState = commManager.connectionState.value as? CommManager.ConnectionState.Disconnected
             selfLauncherManager.stop(wasConnected = false)
             stopForeground(true)
             if (teardownDone == null) {
+                if (request.killProcess) commManager.finishAppExitTasks(request)
                 stopSelf()
             } else {
                 serviceScope.launch {
@@ -3268,6 +3297,7 @@ class AapService : Service() {
                         exitTeardownDone = null
                         exitTeardownState = null
                     }
+                    if (request.killProcess) commManager.finishAppExitTasks(request)
                     stopSelf()
                 }
             }
@@ -4017,19 +4047,6 @@ class AapService : Service() {
             }
         }
 
-        /**
-         * If set to `true`, the service will call [System.exit] at the very end of [onDestroy].
-         * This is used by `killOnDisconnect` to ensure all cleanup (like Car Mode) completes
-         * before the process dies.
-         */
-        var killProcessOnDestroy: Boolean = false
-
-        /**
-         * Set by the user's stop, so onDestroy removes the Native group instead of keeping it. A
-         * kill-on-disconnect stops the service without onStartCommand, so CommManager sets it too.
-         */
-        @Volatile
-        var destroyIsUserStop: Boolean = false
 
         val wifiDirectName = MutableStateFlow<String?>(null)
 

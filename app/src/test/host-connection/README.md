@@ -39,3 +39,11 @@ double; it does not open firmware sockets or simulate vendor Bluetooth timing.
 The VPN command suite extracts the GitHub flavor's actual start/stop and service command
 handlers, then delivers a queued configuration after stop while the instance stays bound.
 It checks that the old request cannot recreate the tunnel or replace a newer configuration.
+
+The app-exit suite keeps the delayed exit, service destruction and finish broadcasts under
+one request owner. Reopening Main or accepting a replacement connection revokes the old
+request; rejected connection candidates and exit-only intents do not. An already committed
+service stop finishes before a replacement can publish, and Main reentry restores the service
+without allowing queued finish broadcasts to close the reopened task. The harness delivers
+the production Main and projection receivers, but Android's lifecycle scheduling still needs
+device coverage.

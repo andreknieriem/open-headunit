@@ -27,6 +27,18 @@ def member(source, name):
 methods={}
 def extract(source,name):
     s=member(source,name);methods[name]=hashlib.sha256(s.encode()).hexdigest();return s
+receivers='package lifecycle\nimport android.content.*\nimport com.andrerinas.openheadunit.connection.AppExitPolicy\n'
+for name,path,finish in [('MainActivity','main/MainActivity.kt','finishAffinity'),
+                         ('AapProjectionActivity','aap/AapProjectionActivity.kt','finish')]:
+    receiver=member((base/path).read_text(),'private val finishReceiver')
+    methods[name+' finish receiver']=hashlib.sha256(receiver.encode()).hexdigest()
+    receiver=receiver.replace('App.provide(this@MainActivity).commManager','commManager')
+    receivers += (f'class {name}(private val commManager:CommManager, private val context:Context) {{\n'
+                  'var finishes=0\n'
+                  f'fun {finish}() {{ finishes++ }}\n'
+                  'fun deliver(intent:Intent) { finishReceiver.onReceive(context,intent) }\n'
+                  + receiver + '\n}\n')
+(OUT/'ExitReceivers.kt').write_text(receivers)
 manager_head=r'''package lifecycle
 import android.hardware.usb.*
 import android.app.Application
@@ -34,6 +46,7 @@ import android.content.Context
 import android.media.AudioManager
 import android.os.*
 import com.andrerinas.openheadunit.aap.protocol.proto.Control
+import com.andrerinas.openheadunit.connection.AppExitPolicy
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import java.util.concurrent.*
@@ -103,11 +116,14 @@ class CommManager {
  fun cleanups(){queue.drain()}
  fun close(){disconnect(honorKillOnDisconnect=false);cleanups();_scope.cancel()}
  suspend fun connectNext(){connectIp("fixture",5277, null)}
+ suspend fun connectClaimedNext(claim:ConnectionArbiter.Claim){if(acceptAppConnectionClaim(claim))connectIp("fixture",5277,null)}
+ suspend fun connectClaimedUsb(d:UsbDevice,claim:ConnectionArbiter.Claim){connectUsb(d,appClaim=claim)}
  suspend fun connectSelf(){connectIp("127.0.0.1",5277,null)}
  suspend fun connectSaved(state:ConnectionState.Disconnected){connectIp("fixture",5277,state)}
  suspend fun awaitDisconnectComplete(){_disconnectJob?.join()}
  val isUsbSession=false
  suspend fun connectDevice(d:UsbDevice,saved:ConnectionState.Disconnected?=null){connectUsb(d,saved)}
+ suspend fun connectRecovery(d:UsbDevice,admission:ConnectionAdmission)=connectUsb(d,recoveryOwner=usbRecoveryOwner,recoveryClaim=ConnectionArbiter.Claim(),recoveryAdmission=admission)
  suspend fun awaitCleanup(){_disconnectJob?.join()}
  companion object { const val ERROR_HANDSHAKE_PEER_SILENT="Handshake failed: the peer never responded" }
 '''
@@ -120,6 +136,11 @@ for name in ['SettingsRestartRecovery.kt', 'SameEndpointConnectPolicy.kt', 'Conn
 (OUT/'UsbRecoveryDevice.kt').write_text((base/'connection/usb/UsbRecoveryDevice.kt').read_text().replace('package com.andrerinas.openheadunit.connection.usb', 'package lifecycle'))
 (OUT/'AaPresentationSession.kt').write_text((base/'aap/AaPresentationSession.kt').read_text().replace('package com.andrerinas.openheadunit.aap', 'package lifecycle'))
 (OUT/'FinalMessageDelivery.kt').write_text((base/'aap/FinalMessageDelivery.kt').read_text().replace('package com.andrerinas.openheadunit.aap', 'package lifecycle'))
+shutil.copy2(base/'connection/AppExitPolicy.kt',OUT/'AppExitPolicy.kt')
+shutil.copy2(ROOT/'app/src/test/host-connection/AppExitFixture.kt',OUT/'AppExitFixture.kt')
+exit_members=comm[comm.index('    private val appExitPolicy'):comm.index('    // The first disconnect chooses app-exit policy')]
+methods['app exit ownership']=hashlib.sha256(exit_members.encode()).hexdigest()
+manager_head += exit_members
 # These endpoint predicates must be the real ones when testing the terminal route snapshot.
 for declaration in ['val isWirelessSession:', 'val isLoopbackSession:']:
     start = comm.index(declaration)
@@ -128,7 +149,7 @@ manager=manager_head+'\n'.join(extract(comm,n) for n in [
  'suspend fun startHandshake()', 'private inline fun withLiveTransport(', 'suspend fun startReading()',
  'private fun reachedSsl()', 'private fun transportedQuited(', 'fun applyAudioSettings()', 'fun disconnect(', 'fun cancelPendingSettingsRestart()', 'internal fun rearmSnapshot()', 'private fun doDisconnect(',
  'private suspend fun connectIp(', 'private suspend fun connectUsb(', 'fun disconnectForLinkLoss(', 'fun destroy()',
- 'fun setProjectionVideoFocusSuppressed('
+ 'fun setProjectionVideoFocusSuppressed(', 'private fun acceptAppConnectionClaim('
 ])+'\n}\n'
 transport_head=r'''
 class AapTransport(
@@ -303,7 +324,7 @@ fun lateHandshakeEntry()=runBlocking{
  check(c.state is ConnectionState.Disconnected && c.failures.isEmpty())
  old.quit(false)
  check(c.context.broadcasts.isEmpty() && Handler.delayed.isEmpty())
- check(!com.andrerinas.openheadunit.aap.AapService.killProcessOnDestroy)
+ check(c.context.activityManager.appTasks.all { it.finishes == 0 })
  c.cleanups();c.close()
  println("PASS late handshake entry cannot reopen the no-kill disconnect decision")
 }
@@ -617,8 +638,8 @@ fun destroyDuringCandidateConstruction()=runBlocking {
 '''
 extra += r'''
 object UsbDeviceCompat{fun isInAccessoryMode(d:UsbDevice)=true;fun isConnectable(c:Context,d:UsbDevice)=true;fun getUniqueName(d:UsbDevice)="usb-fixture";fun usbManager(c:Context)=c.getSystemService(Context.USB_SERVICE) as UsbManager}
-// Recovery claim admission is covered by UsbRecoveryAdmissionTest; these fixtures use ordinary connects.
-object ConnectionArbiter{class Claim;fun runIfHeld(claim:Claim, action:()->Unit):Boolean{action();return true}}
+// The arbiter double exposes held/refused ownership; production admission/exit decisions are extracted above.
+object ConnectionArbiter{class Claim(val held:Boolean=true);fun runIfHeld(claim:Claim, action:()->Unit):Boolean{if(!claim.held)return false;action();return true}}
 object UsbBridge{ @Volatile var afterConnect:(()->Unit)?=null;var forcedOpen:(()->Boolean)?=null }
 // The production USB check has to match the fixture's USB double.
 typealias AbstractUsbProjectionConnection=StandardUsbProjectionConnection
@@ -812,7 +833,7 @@ fun failedAttemptDoesNotInheritPhysicalSuccess()=runBlocking {
  println("PASS new failed attempts do not inherit physical success from the previous connection")
 }
 """
-extra=extra.replace('fun main(){', 'fun main(){\n usbSaveOpenFailures();failedAttemptDoesNotInheritPhysicalSuccess();rearmSnapshotIdentifiesConnectingAttempt();terminalRouteSnapshots();settingsActionCancellation()')
+extra=extra.replace('fun main(){', 'fun main(){\n appExitOwnershipRaces();usbSaveOpenFailures();failedAttemptDoesNotInheritPhysicalSuccess();rearmSnapshotIdentifiesConnectingAttempt();terminalRouteSnapshots();settingsActionCancellation()')
 (OUT/'Probe.kt').write_text(manager+transport_fixture+support+extra)
 (OUT/'Os.kt').write_text(r'''package android.os
 import java.util.concurrent.*
@@ -825,7 +846,7 @@ class Looper{
  @Synchronized fun offer(task:Runnable):Boolean{if(closing)return false;queue.add(task);return true}
  @Synchronized fun offerFirst(task:Runnable):Boolean{if(closing)return false;queue.addFirst(task);return true}
  @Synchronized fun stop(){closing=true;queue.clear();queue.add(wake)}
- fun remove(task:Runnable){queue.remove(task)}
+ fun remove(task:Runnable){queue.removeIf { it === task }}
  fun loop(){while(true){val task=queue.take();if(closing)return;task.run()}}
  companion object{private val main=Looper();fun getMainLooper()=main}
 }
@@ -834,7 +855,7 @@ class Handler(val looper:Looper,val callback:Any?=null){
  fun post(task:Runnable)=looper.offer(task)
  fun postAtFrontOfQueue(task:Runnable)=looper.offerFirst(task)
  fun postDelayed(task:Runnable,ms:Long):Boolean{delayed.add(task);return true}
- fun removeCallbacks(task:Runnable){removeHook?.invoke();looper.remove(task)}
+ fun removeCallbacks(task:Runnable){removeHook?.invoke();looper.remove(task);delayed.removeIf { it === task }}
  // The provided fixture has no actual poll Handler.Callback; bulk dispatch is posted explicitly.
  fun sendEmptyMessage(what:Int)=true
 }
@@ -847,22 +868,27 @@ class HandlerThread(name:String,priority:Int):Thread(name){
 ''')
 (OUT/'Content.kt').write_text(r'''package android.content
 import android.media.AudioManager
+abstract class BroadcastReceiver{abstract fun onReceive(context:Context,intent:Intent)}
 class Intent{
  fun getBooleanExtra(name:String,default:Boolean)=default
  var action:String?=null
  constructor(a:String){action=a};constructor(c:Context,k:Class<*>){}
  fun setPackage(s:String)=this
+ private val extras=mutableMapOf<String,Long>()
+ fun putExtra(name:String,value:Long)=apply{extras[name]=value}
+ fun getLongExtra(name:String,default:Long)=extras[name]?:default
 }
 class Context{
- var usb=android.hardware.usb.UsbManager();val packageName="lifecycle";val broadcasts=mutableListOf<String?>();var stops=0
- fun sendBroadcast(i:Intent){broadcasts.add(i.action)};fun stopService(i:Intent):Boolean{stops++;return true}
- fun getSystemService(s:String):Any=when(s){"usb"->usb;"audio"->AudioManager();else->android.app.ActivityManager()}
+ var usb=android.hardware.usb.UsbManager();val packageName="lifecycle";val broadcasts=mutableListOf<String?>();val broadcastIntents=mutableListOf<Intent>();var stops=0
+ val activityManager=android.app.ActivityManager()
+ fun sendBroadcast(i:Intent){broadcasts.add(i.action);broadcastIntents.add(i)};fun stopService(i:Intent):Boolean{stops++;return true}
+ fun getSystemService(s:String):Any=when(s){"usb"->usb;"audio"->AudioManager();else->activityManager}
  companion object{const val ACTIVITY_SERVICE="activity";const val USB_SERVICE="usb"}
 }
 ''')
-(OUT/'App.kt').write_text('package android.app\nobject Application{const val AUDIO_SERVICE="audio"}\nclass ActivityManager{val appTasks=emptyList<AppTask>();class AppTask{fun finishAndRemoveTask(){}}}\n')
+(OUT/'App.kt').write_text('package android.app\nobject Application{const val AUDIO_SERVICE="audio"}\nclass ActivityManager{val appTasks=mutableListOf(AppTask());class AppTask{var finishes=0;fun finishAndRemoveTask(){finishes++}}}\n')
 (OUT/'Media.kt').write_text('package android.media\nclass AudioManager{fun interface OnAudioFocusChangeListener{fun onAudioFocusChange(i:Int)};companion object{const val STREAM_MUSIC=3;const val AUDIOFOCUS_GAIN=1}}\n')
-(OUT/'Service.kt').write_text('package com.andrerinas.openheadunit.aap\nclass AapService{companion object{const val ACTION_STOP_SERVICE="stop";var killProcessOnDestroy=false;var destroyIsUserStop=false}}\n')
+shutil.copy2(ROOT/'app/src/test/host-connection/audio-stubs/AapService.kt',OUT/'Service.kt')
 (OUT/'Proto.kt').write_text(r'''package com.andrerinas.openheadunit.aap.protocol.proto
 object Control{
  enum class ByeByeReason{USER_SELECTION}

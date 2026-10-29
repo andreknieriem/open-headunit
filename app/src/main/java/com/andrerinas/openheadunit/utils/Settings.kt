@@ -1147,12 +1147,12 @@ class Settings(private val context: Context) {
             } catch (_: ClassCastException) {
                 null
             }
-            return GalProfile.fromSetting(stored ?: "1.2").version.toString()
+            return GalProfile.normalizeSetting(stored ?: "1.2")
         }
         set(value) {
             prefs.edit().putString(
                 "gal-protocol-version",
-                GalProfile.fromSetting(value).version.toString()
+                GalProfile.normalizeSetting(value)
             ).apply()
         }
 

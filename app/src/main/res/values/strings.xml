@@ -604,6 +604,8 @@
     <string name="gal_protocol_version">GAL protocol version</string>
     <string name="gal_protocol_version_default">1.2 (Default)</string>
     <string name="gal_protocol_version_experimental">%1$s (Experimental)</string>
+    <string name="gal_protocol_version_auto">Auto (latest supported)</string>
+    <string name="gal_protocol_version_auto_description">Auto selects the highest implemented GAL profile supported by the phone, up to %1$s. Controls reflect this ceiling; a lower negotiated profile cannot enable unsupported features. Manual versions remain direct requests.</string>
     <string name="gal_protocol_version_description">Select the GAL protocol version requested from the phone. This is separate from the Android OS and Android Auto app (APK) versions. Save and reconnect to apply. Versions 5.x and 6.x are experimental. Audio/video synchronization is applied when the active output provides attributable playback positions.</string>
     <string name="laboratory">Laboratory</string>
     <string name="laboratory_summary">GAL %1$s · Receiver experiments</string>

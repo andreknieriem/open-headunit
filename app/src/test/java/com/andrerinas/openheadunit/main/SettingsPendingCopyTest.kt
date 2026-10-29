@@ -119,7 +119,7 @@ class SettingsPendingCopyTest {
         val store = HashMap<String, Any?>()
         val settings = newSettings(store)
         assertEquals("1.2", settings.galProtocolVersion)
-        for (version in listOf("1.2", "1.6", "5.0", "5.1", "6.0", "6.1")) {
+        for (version in listOf("1.2", "1.6", "5.0", "5.1", "6.0", "6.1", GalProfile.AUTO_SETTING)) {
             settings.galProtocolVersion = version
             assertEquals(version, store["gal-protocol-version"])
             assertEquals(version, newSettings(store).galProtocolVersion)
@@ -146,7 +146,7 @@ class SettingsPendingCopyTest {
         val parent = SettingsPendingCopy().apply { loadFrom(settings) }
         parent.fpsLimit = settings.fpsLimit + 1
         val child = LaboratoryPendingCopy.from(settings)
-        child.selectProfile(GalProfile.entries.lastIndex)
+        child.selectVersion("6.1")
         child.options = child.options.copy(avSync = Mode.ON, syncOffsetMs = -20)
         assertTrue(child.differsFrom(settings))
         assertEquals("1.2", settings.galProtocolVersion)
@@ -162,7 +162,7 @@ class SettingsPendingCopyTest {
         val settings = newSettings()
         val original = LaboratoryPendingCopy.from(settings)
         val discarded = LaboratoryPendingCopy.from(settings)
-        discarded.selectProfile(GalProfile.entries.lastIndex)
+        discarded.selectVersion("6.1")
         discarded.options = discarded.options.copy(audioBuffer = Mode.ON, audioBufferLimitMs = 200)
         assertTrue(discarded.differsFrom(settings))
         assertEquals(original, LaboratoryPendingCopy.from(settings))
@@ -171,7 +171,7 @@ class SettingsPendingCopyTest {
     @Test fun `serialized Laboratory pending state restores unsaved edits and can save`() {
         val settings = newSettings()
         val child = LaboratoryPendingCopy.from(settings)
-        child.selectProfile(GalProfile.entries.lastIndex)
+        child.selectVersion(GalProfile.AUTO_SETTING)
         child.options = child.options.copy(mediaStats = Mode.ON, statisticsIntervalMs = 750)
         val bytes = ByteArrayOutputStream().also { output ->
             ObjectOutputStream(output).use { it.writeObject(child) }
@@ -180,17 +180,18 @@ class SettingsPendingCopyTest {
         assertEquals(child, restored)
         assertTrue(restored.differsFrom(settings))
         restored.saveTo(settings)
+        assertEquals(GalProfile.AUTO_SETTING, settings.galProtocolVersion)
         assertEquals(restored, LaboratoryPendingCopy.from(settings))
     }
 
     @Test fun `profile picker downgrade preserves options and disables all dependent numbers`() {
         val child = LaboratoryPendingCopy("6.1", GalLaboratoryOptions(videoTiming = Mode.ON, videoMinDelayMs = 12, videoMaxDelayMs = 50))
         val original = child.options
-        child.selectProfile(GalProfile.entries.indexOf(GalProfile.COMPATIBILITY))
+        child.selectVersion("1.2")
         assertEquals(original, child.options)
         LaboratoryNumber.entries.forEach { assertFalse(child.numericEnabled(it)) }
         assertFalse(child.setNumber(LaboratoryNumber.VIDEO_MIN, "20"))
-        child.selectProfile(GalProfile.entries.lastIndex)
+        child.selectVersion("6.1")
         assertEquals(original, child.options)
         assertTrue(child.numericEnabled(LaboratoryNumber.VIDEO_MIN))
         assertTrue(child.setNumber(LaboratoryNumber.VIDEO_MIN, "20"))
@@ -243,6 +244,49 @@ class SettingsPendingCopyTest {
         child.resetOptions()
         child.saveTo(settings)
         assertEquals(GalLaboratoryOptions(), newSettings(store).galLaboratoryOptions)
+        assertFalse(store.containsKey("gal-laboratory-syncOffsetMs"))
+    }
+
+    @Test fun `Laboratory version choices preserve manual mapping and select auto by value`() {
+        assertEquals(listOf("1.2", "1.6", "5.0", "5.1", "6.0", "6.1", GalProfile.AUTO_SETTING),
+            LaboratoryPendingCopy.versionChoices)
+        val child = LaboratoryPendingCopy.from(newSettings())
+        for (version in LaboratoryPendingCopy.versionChoices) {
+            child.selectVersion(version)
+            assertEquals(version, child.version)
+            assertEquals(GalProfile.fromSetting(version), child.profile)
+        }
+        child.selectVersion("unsupported")
+        assertEquals("1.2", child.version)
+    }
+
+    @Test fun `auto uses highest UI capabilities without changing overrides or saved selection`() {
+        val store = HashMap<String, Any?>()
+        val settings = newSettings(store)
+        val child = LaboratoryPendingCopy("1.2", GalLaboratoryOptions(
+            guidance48Khz = false, modernDisplayConfig = false, audioUpdates = false, videoUpdates = false,
+            avSync = Mode.ON, videoTiming = Mode.ON, audioBuffer = Mode.ON, mediaStats = Mode.ON,
+            syncOffsetMs = -25, videoMinDelayMs = 10, videoMaxDelayMs = 40,
+            audioBufferLimitMs = 200, statisticsIntervalMs = 750))
+        val overrides = child.options
+        child.selectVersion(GalProfile.AUTO_SETTING)
+        assertEquals(overrides, child.options)
+        assertEquals(LaboratoryPendingCopy("6.1", overrides).capabilities, child.capabilities)
+        LaboratoryNumber.entries.forEach { assertTrue(child.numericEnabled(it)) }
+        child.saveTo(settings)
+        val restored = LaboratoryPendingCopy.from(newSettings(store))
+        assertEquals(child, restored)
+        assertEquals(GalProfile.AUTO_SETTING, store["gal-protocol-version"])
+        restored.selectVersion("1.2")
+        LaboratoryNumber.entries.forEach { assertFalse(restored.numericEnabled(it)) }
+        restored.selectVersion(GalProfile.AUTO_SETTING)
+        assertEquals(overrides, restored.options)
+        restored.resetOptions()
+        assertEquals(GalProfile.AUTO_SETTING, restored.version)
+        restored.saveTo(settings)
+        val reset = LaboratoryPendingCopy.from(newSettings(store))
+        assertEquals(GalProfile.AUTO_SETTING, reset.version)
+        assertEquals(GalLaboratoryOptions(), reset.options)
         assertFalse(store.containsKey("gal-laboratory-syncOffsetMs"))
     }
 

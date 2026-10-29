@@ -1483,6 +1483,35 @@
     <string name="copied_to_clipboard">Copied to clipboard</string>
     <string name="audio_settings_reconnect">Audio settings saved. Reconnect Android Auto to apply them.</string>
 
+    <!-- Bluetooth relay (ESP32 Classic BT broker) -->
+    <string name="broker_settings_title">Bluetooth relay (ESP32)</string>
+    <string name="broker_settings_summary">Bluetooth Relay settings for an ESP32 implementation.</string>
+    <string name="broker_settings_unsupported">Requires Android 6.0 (API 23)+</string>
+    <string name="broker_enabled">Use Bluetooth relay</string>
+    <string name="broker_enabled_description">Choose whether to use the Bluetooth relay.</string>
+    <string name="broker_settings_disabled">Off</string>
+    <string name="broker_saved_device">Saved Bluetooth relay</string>
+    <string name="broker_none">None</string>
+    <string name="broker_status">Link</string>
+    <string name="broker_scan">Scan</string>
+    <string name="broker_scan_action">Look for OpenHU-BT-Relay-Setup</string>
+    <string name="broker_scanning">Scanning…</string>
+    <string name="broker_found_device">Found device</string>
+    <string name="broker_forget">Remove Bluetooth relay</string>
+    <string name="broker_forget_value">Clear the saved device</string>
+    <string name="broker_pairing_header">Phone pairing</string>
+    <string name="broker_pairing_steps">1. Scan for OpenHU-BT-Relay-Setup.\n2. On the phone, forget any old OpenHU-BT-Relay entry, then leave Bluetooth settings open.\n3. Tap Pair phone (PIN 0000). Within 120 seconds, pair OpenHU-BT-Relay on the phone.\n4. If pairing mode ends right away, tap Pair phone once more.</string>
+    <string name="broker_phase_idle">Not connected</string>
+    <string name="broker_phase_connecting">Connecting…</string>
+    <string name="broker_phase_ready">Connected</string>
+    <string name="broker_phase_incomplete">Wi-Fi Direct group is not ready</string>
+    <string name="broker_phase_pairing">Phone: pair OpenHU-BT-Relay now — PIN 0000 (120 s)</string>
+    <string name="broker_pair">Pair phone</string>
+    <string name="broker_pair_value">After selecting the Bluetooth relay: clear its phone bonds, open discovery 120 s, PIN 0000</string>
+    <string name="broker_end_aa_on_disconnect">End Android Auto when the Bluetooth relay disconnects</string>
+    <string name="broker_end_aa_on_disconnect_description">While on, probes the Bluetooth relay every 2 seconds. If the BLE write fails twice in a row, the Android Auto session is closed</string>
+    <string name="broker_phase_failed">Failed: %1$s</string>
+
     <!-- Home screen -->
     <string name="home_kicker_active">Android Auto</string>
     <string name="home_kicker_last_connection">Your last connection</string>

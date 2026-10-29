@@ -94,6 +94,7 @@ import android.view.WindowManager
 import com.andrerinas.openheadunit.connection.self.SelfLauncherManager
 import com.andrerinas.openheadunit.connection.self.SelfModeDisconnectPolicy
 import com.andrerinas.openheadunit.connection.usb.UsbLauncherManager
+import com.andrerinas.openheadunit.connection.broker.NativeBTBrokerSession
 import com.andrerinas.openheadunit.connection.wifi.LinkLossTeardownPolicy
 import com.andrerinas.openheadunit.connection.wifi.LinkLossTrigger
 import com.andrerinas.openheadunit.connection.wifi.modes.helper.HelperStrategy
@@ -1151,6 +1152,17 @@ class AapService : Service() {
         }
         com.andrerinas.openheadunit.connection.bluetooth.xyauto.XyAutoMediaSession.open(this, this)
         observeConnectionState()
+        // Broker PROJECTION_UP must keep landing; 10s without a recorded write ends the session.
+        NativeBTBrokerSession.onProjectionRecordFailed = {
+            AppLog.w("AapService: PROJECTION_UP not recorded for 10s — ending projection")
+            if (commManager.isConnected) {
+                commManager.disconnect(
+                    sendByeBye = true,
+                    isUserExit = false,
+                    honorKillOnDisconnect = false,
+                )
+            }
+        }
         registerReceivers()
         carKeysManager.registerIdleReceivers(this)
 
@@ -1318,6 +1330,9 @@ class AapService : Service() {
                     }
                     is CommManager.ConnectionState.HandshakeComplete -> {
                         // At SSL, not at the transport open: until then the arbiter owns the window.
+                        if (NativeBTBrokerSession.hasSavedBroker(this@AapService)) {
+                            NativeBTBrokerSession.notifyProjection(true)
+                        }
                         quiesceWirelessForWiredSession()
                         StationStandDown.onSessionLive(this@AapService, wifiLockHeldForMs())
                         projectionRaisesThisSession = 0
@@ -1331,6 +1346,10 @@ class AapService : Service() {
                             commManager.send(com.andrerinas.openheadunit.aap.protocol.messages.VideoFocusEvent(
                                 gain = false, unsolicited = false
                             ))
+                        }
+                        // Conflated collector may skip Connected — still release broker HFP here.
+                        if (NativeBTBrokerSession.hasSavedBroker(this@AapService)) {
+                            NativeBTBrokerSession.notifyProjection(true)
                         }
                         quiesceWirelessForWiredSession() // The flow is conflated: HandshakeComplete can be skipped.
                         StationStandDown.onSessionLive(this@AapService, wifiLockHeldForMs())
@@ -1452,6 +1471,10 @@ class AapService : Service() {
     private fun onConnected() {
         usbLauncherManager.setSwitchingToProjection(false)
         updateNotification()
+        // apply_hfp: projection TCP is up — broker must release HFP and stop wake retries.
+        if (NativeBTBrokerSession.hasSavedBroker(this)) {
+            NativeBTBrokerSession.notifyProjection(true)
+        }
         // Whatever the transport, the wake-up loop has nothing left to do. Event driven rather
         // than left to the loop's own 15 s poll. A wireless session also marks the P2P group as
         // one that works, which is what keeps it up when the phone leaves later.
@@ -1712,6 +1735,11 @@ class AapService : Service() {
         // A failed USB open has no live AAP resources to retire. Its Save loop and fallback
         // still own recovery; an end after the open has run onConnected and needs the full cleanup.
         if (!state.hadPhysicalConnection && state.settingsRetryOwner?.acceptsSettingsRestart(state) == true) return
+        if (NativeBTBrokerSession.hasSavedBroker(this)) {
+            NativeBTBrokerSession.notifyProjection(false)
+        }
+        cancelProjectionRaiseDeadline()
+        // Consumed by every end, so a mark that no Native re-arm reads cannot mute a later wake.
         // Consume the ending session's bookkeeping even when a later explicit Start has
         // already superseded this notification. Attempt policy (cooldown, Self resources,
         // reconnect) is fenced separately from ended-session resources such as GPS and
@@ -3069,6 +3097,7 @@ class AapService : Service() {
         commManager.onAaMediaMetadata = null
         commManager.onAaPlaybackStatus = null
         commManager.onAaPresentationClosed = null
+        NativeBTBrokerSession.onProjectionRecordFailed = null
         settingsPrefs?.unregisterOnSharedPreferenceChangeListener(settingsPreferenceListener)
         settingsPrefs?.unregisterOnSharedPreferenceChangeListener(deviceHackPreferenceListener)
         settingsPrefs = null

@@ -39,6 +39,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.aap.AapService
+import com.andrerinas.openheadunit.connection.broker.NativeBTBrokerSession
+import com.andrerinas.openheadunit.connection.broker.NativeBTBrokerStore
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.CredentialField
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeAaWakeDamagePolicy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zbt.ZbtProbe
@@ -148,7 +150,7 @@ class SettingsFragment : Fragment() {
         // Dark mode
         "darkModeSettings",
         // Automation
-        "autoStartSettings", "autoConnectSettings", "enableCarLauncher",
+        "autoStartSettings", "autoConnectSettings", "NativeBTBroker", "enableCarLauncher",
         // Navigation
         "gpsNavigation",
         // Graphic
@@ -989,6 +991,33 @@ class SettingsFragment : Fragment() {
         ))
 
         if (pendingWifiConnectionMode == WifiLauncherMode.NATIVE) {
+            // BT Broker needs API 23 (Android 6.0) for the BLE client path used here.
+            // Below that, keep the row visible but disabled so the requirement is obvious.
+            val brokerSupported = Build.VERSION.SDK_INT >= NativeBTBrokerSession.MIN_SDK
+            val brokerLabel = if (!brokerSupported) {
+                getString(R.string.broker_settings_unsupported)
+            } else {
+                val brokerStore = NativeBTBrokerStore(requireContext())
+                when {
+                    !brokerStore.enabled -> getString(R.string.broker_settings_disabled)
+                    else -> brokerStore.deviceName
+                        ?: brokerStore.deviceAddress
+                        ?: getString(R.string.broker_settings_summary)
+                }
+            }
+            items.add(SettingItem.SettingEntry(
+                stableId = "NativeBTBroker",
+                nameResId = R.string.broker_settings_title,
+                value = brokerLabel,
+                searchKeywords = "bluetooth relay board esp32 pair disconnect ble openhu",
+                isEnabled = brokerSupported,
+                onClick = {
+                    try {
+                        findNavController().navigate(R.id.action_settingsFragment_to_brokerSettingsFragment)
+                    } catch (_: Exception) { }
+                }
+            ))
+
             items.add(SettingItem.SegmentedButtonSettingEntry(
                 stableId = "nativeApTransport",
                 nameResId = R.string.native_ap_transport,

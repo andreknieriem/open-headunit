@@ -1376,6 +1376,35 @@
     <string name="onb_audio_static_focus_help">자동차에서 Android Auto 소리가 끊기면 켜세요. 내비게이션 음성 안내 중에는 음악 소리를 낮춰 줍니다.</string>
     <string name="onb_audio_testing">테스트 소리 재생 중…</string>
     <string name="onb_audio_test_failed">테스트 소리를 재생할 수 없습니다: %1$s</string>
+
+    <!-- Bluetooth relay (ESP32 Classic BT broker) -->
+    <string name="broker_settings_title">블루투스 릴레이(ESP32)</string>
+    <string name="broker_settings_summary">ESP32로 구현된 Bluetooth Relay 설정.</string>
+    <string name="broker_settings_unsupported">Android 6.0(API 23) 이상 필요</string>
+    <string name="broker_enabled">블루투스 릴레이 사용</string>
+    <string name="broker_enabled_description">블루투스 릴레이를 사용할지 설정합니다.</string>
+    <string name="broker_settings_disabled">꺼짐</string>
+    <string name="broker_saved_device">저장된 블루투스 릴레이</string>
+    <string name="broker_none">없음</string>
+    <string name="broker_status">상태</string>
+    <string name="broker_scan">검색</string>
+    <string name="broker_scan_action">OpenHU-BT-Relay-Setup 찾기</string>
+    <string name="broker_scanning">검색 중…</string>
+    <string name="broker_found_device">발견한 장치</string>
+    <string name="broker_forget">블루투스 릴레이 삭제</string>
+    <string name="broker_forget_value">저장한 장치를 삭제합니다</string>
+    <string name="broker_pairing_header">폰 페어링</string>
+    <string name="broker_pairing_steps">1. 검색으로 OpenHU-BT-Relay-Setup을 검색하세요.\n2. 스마트폰 블루투스에서 예전 OpenHU-BT-Relay 항목을 삭제한 뒤 설정 화면을 연 채로 두세요.\n3. 폰 페어링을 누르세요(PIN 0000). 120초 안에 스마트폰에서 OpenHU-BT-Relay를 페어링하세요.\n4. 페어링 모드가 바로 끝나면 폰 페어링을 한 번 더 누르세요.</string>
+    <string name="broker_phase_idle">연결 안 됨</string>
+    <string name="broker_phase_connecting">연결 중…</string>
+    <string name="broker_phase_ready">연결됨</string>
+    <string name="broker_phase_incomplete">Wi-Fi Direct 그룹이 아직 없습니다</string>
+    <string name="broker_phase_pairing">폰에서 OpenHU-BT-Relay 페어링 — PIN 0000 (120초)</string>
+    <string name="broker_pair">폰 페어링</string>
+    <string name="broker_pair_value">블루투스 릴레이 선택 후: 블루투스 릴레이의 폰 본드 삭제, 120초 검색, PIN 0000</string>
+    <string name="broker_end_aa_on_disconnect">블루투스 릴레이가 끊기면 Android Auto 종료</string>
+    <string name="broker_end_aa_on_disconnect_description">켜 두면 2초마다 블루투스 릴레이에 프로브를 보냅니다. BLE 쓰기가 연속 2회 실패하면 Android Auto 세션을 닫습니다</string>
+    <string name="broker_phase_failed">실패: %1$s</string>
     <!-- Home screen -->
     <string name="home_kicker_active">Android Auto</string>
     <string name="home_kicker_last_connection">마지막 연결</string>

@@ -13,8 +13,12 @@ class FfmpegVideoDecoder(
     private val surface: Surface?,
     private val yuvFrameSink: SoftwareYuvFrameSink?,
     private val width: Int,
-    private val height: Int
+    private val height: Int,
+    private val isCurrent: () -> Boolean = { true },
 ) {
+    // VideoDecoder serializes create/decode on its native-work lock and retires only after that
+    // operation returns. JNI renders/callbacks synchronously inside nativeDecode; stop must never
+    // free its handle concurrently with that call.
     private var nativeHandle: Long = 0
 
     val isStarted: Boolean
@@ -53,11 +57,12 @@ class FfmpegVideoDecoder(
         return true
     }
 
-    fun decode(buffer: ByteArray, offset: Int, size: Int): Int {
+    fun decode(buffer: ByteArray, offset: Int, size: Int, repairEligible: Boolean = true): Int {
         keyframeRendered = false
         val handle = nativeHandle
         if (handle == 0L) return 0
-        val result = nativeDecode(handle, buffer, offset, size, SystemClock.elapsedRealtimeNanos() / 1000L)
+        val result = nativeDecode(handle, buffer, offset, size,
+            SystemClock.elapsedRealtimeNanos() / 1000L, repairEligible)
         if (result < 0) return result
         keyframeRendered = result and RENDERED_KEYFRAME != 0
         return result and RENDERED_KEYFRAME.inv()
@@ -82,6 +87,7 @@ class FfmpegVideoDecoder(
     @Keep
     @Suppress("unused")
     private fun onNativeOutputSize(width: Int, height: Int) {
+        if (!isCurrent()) return
         outputWidth = width
         outputHeight = height
     }
@@ -98,6 +104,7 @@ class FfmpegVideoDecoder(
         vPlane: ByteBuffer,
         vStride: Int
     ): Boolean {
+        if (!isCurrent()) return false
         return yuvFrameSink?.renderYuv420Frame(width, height, yPlane, yStride, uPlane, uStride, vPlane, vStride) == true
     }
 
@@ -120,7 +127,7 @@ class FfmpegVideoDecoder(
 
         private external fun nativeIsAvailable(codecId: Int): Boolean
         private external fun nativeCreate(codecId: Int, surface: Surface?, callback: FfmpegVideoDecoder, useYuvCallback: Boolean, width: Int, height: Int, threadCount: Int): Long
-        private external fun nativeDecode(handle: Long, buffer: ByteArray, offset: Int, size: Int, presentationTimeUs: Long): Int
+        private external fun nativeDecode(handle: Long, buffer: ByteArray, offset: Int, size: Int, presentationTimeUs: Long, repairEligible: Boolean): Int
         private external fun nativeRelease(handle: Long)
     }
 }

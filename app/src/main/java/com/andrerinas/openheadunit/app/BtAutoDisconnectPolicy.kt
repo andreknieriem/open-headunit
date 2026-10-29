@@ -26,6 +26,14 @@ object BtAutoDisconnectPolicy {
 
     fun graceDelayMs(delaySeconds: Int): Long = delaySeconds.coerceIn(0, MAX_DELAY_SECONDS) * 1000L
 
+    /**
+     * Whether closing our end of a link to the phone counts for [OWN_SOCKET_CLOSE_GRACE_MS]. Not
+     * when the phone closed it first: Native AA holds its channel for the whole session, and when
+     * the phone's Bluetooth goes that channel ends just before the OS reports the link gone.
+     * Counting that close would put every real loss inside the grace.
+     */
+    fun closeIsOurs(peerClosed: Boolean): Boolean = !peerClosed
+
     /** Asked once the grace delay has run out; [msSinceOwnSocketClose] is null if we never closed one. */
     fun shouldEndSession(sessionUp: Boolean, deviceCameBack: Boolean, msSinceOwnSocketClose: Long?): Boolean =
         sessionUp && !deviceCameBack &&

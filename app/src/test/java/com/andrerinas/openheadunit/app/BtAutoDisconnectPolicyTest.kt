@@ -61,6 +61,25 @@ class BtAutoDisconnectPolicyTest {
         assertTrue(BtAutoDisconnectPolicy.shouldEndSession(sessionUp = true, deviceCameBack = false, msSinceOwnSocketClose = null))
     }
 
+    /**
+     * Native AA holds its Bluetooth channel for the whole session. When the phone's Bluetooth goes,
+     * the phone closes that channel tens of milliseconds before the OS reports the link gone, and
+     * closing our end afterwards is not a close of ours: the loss has to end the session.
+     */
+    @Test
+    fun `closing a channel the phone already closed is not our own close`() {
+        assertTrue(BtAutoDisconnectPolicy.closeIsOurs(peerClosed = false))
+        assertFalse(BtAutoDisconnectPolicy.closeIsOurs(peerClosed = true))
+    }
+
+    @Test
+    fun `a loss right after the phone closed the held channel ends the session`() {
+        // Measured on a head unit: the phone closed the held channel 46 ms before the link loss,
+        // and with a 5 s delay the check ran 5046 ms after that close.
+        val stamped = if (BtAutoDisconnectPolicy.closeIsOurs(peerClosed = true)) 5_046L else null
+        assertTrue(BtAutoDisconnectPolicy.shouldEndSession(sessionUp = true, deviceCameBack = false, msSinceOwnSocketClose = stamped))
+    }
+
     @Test
     fun `a device that came back during the grace delay saves the session`() {
         assertFalse(BtAutoDisconnectPolicy.shouldEndSession(sessionUp = true, deviceCameBack = true, msSinceOwnSocketClose = null))

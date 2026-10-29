@@ -49,10 +49,11 @@ class VideoFeedRetirementTest {
                 }
             }.also { set(field, it); workers.add(it); it.start() }
         }
-        fun start(codec: MediaCodec, output: Boolean = false): Thread {
+        fun start(codec: MediaCodec, output: Boolean = false, beforeWorkers: () -> Unit = {}): Thread {
             val input = ByteBuffer.allocate(4096)
             `when`(codec.dequeueInputBuffer(anyLong())).thenReturn(0)
             `when`(codec.getInputBuffer(anyInt())).thenReturn(input)
+            beforeWorkers()
             set("codec", codec)
             set("inputBuffers", arrayOf(input)) // API16 and host-stub branch
             set("codecBufferInfo", MediaCodec.BufferInfo())
@@ -92,13 +93,14 @@ class VideoFeedRetirementTest {
             val codec = mock(MediaCodec::class.java)
             val pause = NativePause()
             val submitted = LinkedBlockingQueue<ByteArray>()
-            f.start(codec)
-            `when`(codec.dequeueInputBuffer(anyLong())).thenAnswer { pause.block(); 0 }
-            doAnswer { call ->
-                val input = (f.get("inputBuffers") as Array<*>)[0] as ByteBuffer
-                submitted.add(ByteArray(call.getArgument(2)).also { input.duplicate().get(it) })
-                null
-            }.`when`(codec).queueInputBuffer(anyInt(), anyInt(), anyInt(), anyLong(), anyInt())
+            f.start(codec) {
+                `when`(codec.dequeueInputBuffer(anyLong())).thenAnswer { pause.block(); 0 }
+                doAnswer { call ->
+                    val input = (f.get("inputBuffers") as Array<*>)[0] as ByteBuffer
+                    submitted.add(ByteArray(call.getArgument(2)).also { input.duplicate().get(it) })
+                    null
+                }.`when`(codec).queueInputBuffer(anyInt(), anyInt(), anyInt(), anyLong(), anyInt())
+            }
             val transport = ByteArray(64) { 0x7f }
             val next = byteArrayOf(0, 0, 0, 1, 0x41, 0x33, 0x44)
             try {
@@ -150,12 +152,12 @@ class VideoFeedRetirementTest {
             f.decoder.stop("test replacement")
             val replacement = mock(MediaCodec::class.java)
             val submitted = LinkedBlockingQueue<ByteArray>()
-            f.start(replacement)
             doAnswer { call ->
                 val input = (f.get("inputBuffers") as Array<*>)[0] as ByteBuffer
                 submitted.add(ByteArray(call.getArgument(2)).also { input.duplicate().get(it) })
                 null
             }.`when`(replacement).queueInputBuffer(anyInt(), anyInt(), anyInt(), anyLong(), anyInt())
+            f.start(replacement)
             f.offer(oldFrame)
             val current = byteArrayOf(0, 0, 1, 0x41, 0x55)
             f.offer(f.prepare(current))
@@ -293,7 +295,6 @@ class VideoFeedRetirementTest {
             val codec = mock(MediaCodec::class.java)
             val dropped = CountDownLatch(1)
             val restartAtDrop = AtomicReference<Any?>()
-            f.start(codec)
             f.set("lastFrameRenderedMs", 1L)
             f.decoder.onFrameDropped = {
                 restartAtDrop.set(f.get("decoderRestartReason"))
@@ -305,6 +306,7 @@ class VideoFeedRetirementTest {
                 }
                 null
             }.`when`(codec).queueInputBuffer(anyInt(), anyInt(), anyInt(), anyLong(), anyInt())
+            f.start(codec)
             f.offer(f.prepare(idr))
             assertTrue(dropped.await(3, TimeUnit.SECONDS))
             assertEquals(if (returnFails) "input_buffer_return_failed" else null, restartAtDrop.get())
@@ -371,12 +373,15 @@ class VideoFeedRetirementTest {
                 disposed.countDown()
                 null
             }.`when`(codec).release()
-            val worker = f.start(codec, output = true)
-            if (pauseQueue) {
-                doAnswer { input.block(); null }.`when`(codec)
-                    .queueInputBuffer(anyInt(), anyInt(), anyInt(), anyLong(), anyInt())
-            } else {
-                `when`(codec.dequeueInputBuffer(anyLong())).thenAnswer { input.block(); 0 }
+            // Complete all stubbing before either worker can invoke this same mock. Mockito's
+            // when(...).thenAnswer(...) can bind the answer to a concurrent output invocation.
+            val worker = f.start(codec, output = true) {
+                if (pauseQueue) {
+                    doAnswer { input.block(); null }.`when`(codec)
+                        .queueInputBuffer(anyInt(), anyInt(), anyInt(), anyLong(), anyInt())
+                } else {
+                    `when`(codec.dequeueInputBuffer(anyLong())).thenAnswer { input.block(); 0 }
+                }
             }
             try {
                 f.offer(f.prepare(idr))

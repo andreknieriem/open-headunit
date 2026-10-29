@@ -113,7 +113,8 @@ object SecondScreenHub {
             } else return null
             Output.RTP_PUSH -> {
                 val octets = RtpDestinationPolicy.parse(settings.auxRtpDestination) ?: return null
-                RtpStreamOutput(UdpRtpSocket(context, octets, settings.auxRtpPort), System::nanoTime, java.util.Random())
+                RtpStreamOutput(UdpRtpSocket(context, octets, settings.auxRtpPort), System::nanoTime, java.util.Random(),
+                    settings.auxRtpRefreshSeconds * 1000L)
             }
             Output.ANDROID_DISPLAY -> return null
         }

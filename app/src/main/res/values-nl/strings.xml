@@ -199,6 +199,8 @@
     <string name="aux_rtp_destination_unset">Niet ingesteld</string>
     <string name="aux_rtp_destination_invalid">Typ een IPv4-adres, zoals 192.168.1.50</string>
     <string name="aux_rtp_port">Poort van de ontvanger</string>
+    <string name="aux_rtp_refresh">Beeld vernieuwen elke</string>
+    <string name="aux_rtp_refresh_seconds">%1$d s</string>
     <string name="aux_rtp_hint">Sla dit op als stream.sdp op de ontvangende computer en voer dan %2$s uit\n\n%1$s</string>
     <string name="aux_network_size">Streamgrootte</string>
     <string name="aux_network_port">Streampoort</string>

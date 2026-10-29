@@ -205,6 +205,8 @@
     <string name="aux_rtp_destination_unset">未設定</string>
     <string name="aux_rtp_destination_invalid">192.168.1.50 のような IPv4 アドレスを入力してください</string>
     <string name="aux_rtp_port">受信側のポート</string>
+    <string name="aux_rtp_refresh">画像を更新する間隔</string>
+    <string name="aux_rtp_refresh_seconds">%1$d 秒</string>
     <string name="aux_rtp_hint">これを stream.sdp として受信側のパソコンに保存し、次を実行してください: %2$s\n\n%1$s</string>
     <string name="aux_network_size">ストリームのサイズ</string>
     <string name="aux_network_port">ストリームのポート</string>

@@ -200,6 +200,8 @@
     <string name="aux_rtp_destination_unset">Nesetat</string>
     <string name="aux_rtp_destination_invalid">Introdu o adresă IPv4, de exemplu 192.168.1.50</string>
     <string name="aux_rtp_port">Portul receptorului</string>
+    <string name="aux_rtp_refresh">Reîmprospătează imaginea la fiecare</string>
+    <string name="aux_rtp_refresh_seconds">%1$d s</string>
     <string name="aux_rtp_hint">Salvează acest text ca stream.sdp pe computerul receptor, apoi rulează %2$s\n\n%1$s</string>
     <string name="aux_network_size">Dimensiunea fluxului</string>
     <string name="aux_network_port">Portul fluxului</string>

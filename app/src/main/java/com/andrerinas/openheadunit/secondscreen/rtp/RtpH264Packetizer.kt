@@ -25,7 +25,8 @@ class RtpH264Packetizer(
         packets = 0; bytes = 0; keyframes = 0; keyframesWithOwnParameterSets = 0
     }
 
-    fun packetize(buf: ByteArray, off: Int, len: Int, timestamp: Int) {
+    /** Sends one access unit and returns whether it held an IDR. */
+    fun packetize(buf: ByteArray, off: Int, len: Int, timestamp: Int): Boolean {
         var count = 0
         var hasSps = false
         var hasPps = false
@@ -38,7 +39,7 @@ class RtpH264Packetizer(
                 NAL_IDR -> hasIdr = true
             }
         }
-        if (count == 0) return
+        if (count == 0) return false
         if (hasIdr) {
             keyframes++
             if (hasSps && hasPps) keyframesWithOwnParameterSets++
@@ -52,6 +53,7 @@ class RtpH264Packetizer(
             index++
             emit(buf, start, end, timestamp, index == count)
         }
+        return hasIdr
     }
 
     private fun emit(src: ByteArray, start: Int, end: Int, timestamp: Int, lastNal: Boolean) {
@@ -91,7 +93,7 @@ class RtpH264Packetizer(
         send(datagram, 0, length)
     }
 
-    private companion object {
+    internal companion object {
         const val NAL_IDR = 5
         const val FU_A = 28
         const val PAYLOAD_TYPE = 96

@@ -201,6 +201,8 @@
     <string name="aux_rtp_destination_unset">غير محدد</string>
     <string name="aux_rtp_destination_invalid">اكتب عنوان IPv4 مثل 192.168.1.50</string>
     <string name="aux_rtp_port">منفذ المستقبِل</string>
+    <string name="aux_rtp_refresh">تحديث الصورة كل</string>
+    <string name="aux_rtp_refresh_seconds">%1$d ث</string>
     <string name="aux_rtp_hint">احفظ هذا باسم stream.sdp على الكمبيوتر المستقبِل، ثم شغّل %2$s\n\n%1$s</string>
     <string name="aux_network_size">حجم البث</string>
     <string name="aux_network_port">منفذ البث</string>

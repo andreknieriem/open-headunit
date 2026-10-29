@@ -395,6 +395,7 @@
     <string name="connection_interrupted">切断されました</string>
     <string name="connection_interrupted_detail">再試行中…</string>
     <string name="wifi_disconnect_toast">Android Autoが切断されました：ワイヤレスAAを使用している場合は、スマートフォンのWi-Fi設定で「ネットワークを切り替える」または「ネットワークアクセラレーション」を無効にしてください。</string>
+    <string name="usb_disconnect_toast">Android Autoが切断されました：スマートフォンとのUSB接続に失敗しました。頻繁に発生する場合は、別のケーブル、別のUSBポート、またはUSBハブをお試しください。</string>
     <string name="reset_usb_option">USB接続をリセットする</string>
     <string name="reset_usb_timeout">USBデバイスが見つかりません。接続を確認してください。</string>
     <string name="notification_service_running">Open Headunitが起動中</string>

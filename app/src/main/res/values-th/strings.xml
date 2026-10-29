@@ -861,6 +861,7 @@
     <string name="connection_interrupted_detail">กำลังลองใหม่…</string>
     <string name="renderer_fallback_surface">วิดีโอค้างบ่อย จึงเปลี่ยนไปใช้ SurfaceView สำหรับเซสชันนี้ หากภาพเสถียรแล้ว ให้ตั้งโหมดมุมมองเป็น SurfaceView ในการตั้งค่า</string>
     <string name="wifi_disconnect_toast">Android Auto ยกเลิกการเชื่อมต่อ: หากใช้ Android Auto แบบไร้สาย ให้ปิด \"สลับระหว่างเครือข่าย\" หรือ \"การเร่งความเร็วเครือข่าย\" ในการตั้งค่า Wi-Fi ของโทรศัพท์</string>
+    <string name="usb_disconnect_toast">Android Auto ยกเลิกการเชื่อมต่อ: การเชื่อมต่อ USB กับโทรศัพท์ล้มเหลว หากเกิดขึ้นบ่อย ให้ลองใช้สายเคเบิลอื่น พอร์ต USB อื่น หรือฮับ USB</string>
     <string name="reset_usb_option">รีเซ็ตการเชื่อมต่อ USB</string>
     <string name="reset_usb_timeout">ไม่พบอุปกรณ์ USB โปรดตรวจสอบการเชื่อมต่อ</string>
     <string name="notification_service_running">Open Headunit กำลังทำงาน</string>

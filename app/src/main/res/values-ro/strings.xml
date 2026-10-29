@@ -390,6 +390,7 @@
     <string name="connection_interrupted">Conexiune pierdută</string>
     <string name="connection_interrupted_detail">Se reîncearcă…</string>
     <string name="wifi_disconnect_toast">Android Auto s-a deconectat: dacă folosești AA wireless, dezactivează „Comutare între rețele” sau „Accelerare rețea” în setările Wi-Fi ale telefonului</string>
+    <string name="usb_disconnect_toast">Android Auto s-a deconectat: conexiunea USB cu telefonul a eșuat. Dacă se întâmplă des, încearcă alt cablu, alt port USB sau un hub USB.</string>
     <string name="reset_usb_option">Resetează conexiunea USB</string>
     <string name="reset_usb_timeout">Dispozitivul USB nu a fost găsit. Verifică conexiunea.</string>
     <string name="notification_service_running">Open Headunit rulează</string>

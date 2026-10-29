@@ -386,6 +386,7 @@
     <string name="connection_interrupted">Bağlantı kesildi</string>
     <string name="connection_interrupted_detail">Yeniden deneniyor…</string>
     <string name="wifi_disconnect_toast">Android Auto bağlantısı kesildi: Kablosuz AA kullanıyorsanız telefonun Wi-Fi ayarlarında \"Ağlar arası geçiş yap\" veya \"Ağ hızlandırma\" seçeneğini kapatın</string>
+    <string name="usb_disconnect_toast">Android Auto bağlantısı kesildi: telefonla USB bağlantısı başarısız oldu. Sık oluyorsa başka bir kablo, başka bir USB bağlantı noktası veya USB hub deneyin.</string>
     <string name="reset_usb_option">USB bağlantısını sıfırla</string>
     <string name="reset_usb_timeout">USB cihazı bulunamadı. Lütfen bağlantıyı kontrol edin.</string>
     <string name="notification_service_running">Open Headunit çalışıyor</string>

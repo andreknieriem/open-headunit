@@ -368,6 +368,7 @@
     <string name="connection_interrupted">Verbinding verloren</string>
     <string name="connection_interrupted_detail">Opnieuw proberen…</string>
     <string name="wifi_disconnect_toast">Android Auto is losgekoppeld. Gebruik je draadloos Android Auto? Schakel dan \"Wisselen tussen netwerken\" of \"Netwerkversnelling\" uit in de Wi-Fi-instellingen van je telefoon.</string>
+    <string name="usb_disconnect_toast">Android Auto is losgekoppeld. De USB-verbinding met de telefoon is mislukt. Gebeurt dit vaak? Probeer dan een andere kabel, een andere USB-poort of een USB-hub.</string>
     <string name="reset_usb_option">USB-verbinding resetten</string>
     <string name="reset_usb_timeout">USB-apparaat niet gevonden. Controleer de verbinding.</string>
     <string name="notification_service_running">Open Headunit is actief</string>

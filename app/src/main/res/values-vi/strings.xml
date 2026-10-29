@@ -400,6 +400,7 @@
     <string name="connection_interrupted">Mất kết nối</string>
     <string name="connection_interrupted_detail">Đang thử lại…</string>
     <string name="wifi_disconnect_toast">Android Auto đã ngắt kết nối. Nếu dùng AA không dây, hãy tắt \"Chuyển mạng tự động\" hoặc \"Tăng tốc mạng\" trong cài đặt Wi-Fi của điện thoại</string>
+    <string name="usb_disconnect_toast">Android Auto đã ngắt kết nối. Kết nối USB với điện thoại không thành công. Nếu thường xuyên xảy ra, hãy thử cáp khác, cổng USB khác hoặc bộ chia USB.</string>
     <string name="reset_usb_option">Đặt lại kết nối USB</string>
     <string name="reset_usb_timeout">Không tìm thấy thiết bị USB. Hãy kiểm tra kết nối.</string>
     <string name="notification_service_running">Open Headunit đang chạy</string>

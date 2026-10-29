@@ -435,6 +435,7 @@
     <string name="connection_interrupted">კავშირი გაწყდა</string>
     <string name="connection_interrupted_detail">მიმდინარეობს ხელახალი ცდა…</string>
     <string name="wifi_disconnect_toast">Android Auto გაითიშა. უსადენო AA-ს გამოყენებისას ტელეფონის Wi-Fi პარამეტრებში გამორთეთ „Switch between networks“ ან „Network acceleration“</string>
+    <string name="usb_disconnect_toast">Android Auto გაითიშა. ტელეფონთან USB კავშირი ვერ შედგა. თუ ეს ხშირად ხდება, სცადეთ სხვა კაბელი, სხვა USB პორტი ან USB ჰაბი.</string>
     <string name="reset_usb_option">USB კავშირის გადატვირთვა</string>
     <string name="reset_usb_timeout">USB მოწყობილობა ვერ მოიძებნა. შეამოწმეთ კავშირი.</string>
     <string name="notification_service_running">Open Headunit გაშვებულია</string>

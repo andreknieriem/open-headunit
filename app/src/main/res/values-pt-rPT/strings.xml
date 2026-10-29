@@ -861,6 +861,7 @@
     <string name="connection_interrupted_detail">A tentar novamente…</string>
     <string name="renderer_fallback_surface">O vídeo bloqueava repetidamente, por isso o ecrã passou a SurfaceView nesta sessão. Se estiver estável, defina o modo de visualização para SurfaceView nas Definições.</string>
     <string name="wifi_disconnect_toast">Android Auto desligado: se usar o AA sem fios, desative \"Mudar entre redes\" ou \"Aceleração de rede\" nas definições de Wi-Fi do telemóvel</string>
+    <string name="usb_disconnect_toast">Android Auto desligado: a ligação USB ao telemóvel falhou. Se acontecer com frequência, experimente outro cabo, outra porta USB ou um hub USB.</string>
     <string name="reset_usb_option">Repor ligação USB</string>
     <string name="reset_usb_timeout">Dispositivo USB não encontrado. Verifique a ligação.</string>
     <string name="notification_service_running">O Open Headunit está em execução</string>

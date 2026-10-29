@@ -394,6 +394,7 @@
     <string name="connection_interrupted">Connessione persa</string>
     <string name="connection_interrupted_detail">Nuovo tentativo…</string>
     <string name="wifi_disconnect_toast">Android Auto disconnesso: se usi AA wireless, disattiva \"Passa tra reti\" o \"Accelerazione di rete\" nelle impostazioni Wi-Fi del telefono</string>
+    <string name="usb_disconnect_toast">Android Auto disconnesso: connessione USB al telefono non riuscita. Se succede spesso, prova un altro cavo, un\'altra porta USB o un hub USB.</string>
     <string name="reset_usb_option">Reimposta connessione USB</string>
     <string name="reset_usb_timeout">Dispositivo USB non trovato. Controlla la connessione.</string>
     <string name="notification_service_running">Open Headunit è in esecuzione</string>

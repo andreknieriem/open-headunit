@@ -75,6 +75,7 @@ import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import androidx.media.session.MediaButtonReceiver
 import com.andrerinas.openheadunit.connection.usb.UsbDeviceCompat
+import com.andrerinas.openheadunit.connection.usb.UsbLinkLossRecheckPolicy
 import com.andrerinas.openheadunit.connection.usb.UsbReceiver
 import com.andrerinas.openheadunit.location.GpsLocationService
 import com.andrerinas.openheadunit.utils.LocaleHelper
@@ -2169,8 +2170,17 @@ class AapService : Service() {
         // Skip if the user voluntarily exited AA — the dongle is likely still connected with
         // stale data, and reconnecting immediately just causes handshake failures. The next
         // USB attach event will re-trigger the flow cleanly.
-        if (lastType == Settings.CONNECTION_TYPE_USB &&
-            (settings.autoConnectLastSession || settings.autoConnectSingleUsbDevice)) {
+        val autoConnectUsb = settings.autoConnectLastSession || settings.autoConnectSingleUsbDevice
+        val lostWithPhoneAttached = lastType == Settings.CONNECTION_TYPE_USB && !autoConnectUsb &&
+            !state.isUserExit && state.endedBy == CommManager.EndCause.LINK_FAILED && state.reachedSsl
+        if (UsbLinkLossRecheckPolicy.shouldRecheck(
+                lastWasUsb = lastType == Settings.CONNECTION_TYPE_USB,
+                autoConnectSetting = autoConnectUsb,
+                isUserExit = state.isUserExit,
+                endedBy = state.endedBy,
+                reachedSsl = state.reachedSsl,
+                accessoryOnBus = lostWithPhoneAttached && UsbDeviceCompat.accessoryOnBus(this),
+            )) {
             if (state.isUserExit && !(settings.effectiveAutoStartOnUsb && settings.reopenOnReconnection)) {
                 AppLog.i("AapService: USB disconnect after user Exit. Skipping auto-reconnect (waiting for dongle re-enumeration).")
                 userExitedAA = true
@@ -2180,7 +2190,8 @@ class AapService : Service() {
                 AppLog.i("AapService: USB disconnect after user Exit with reopenOnReconnection enabled. Will reconnect on next USB attach.")
                 return
             }
-            AppLog.i("AapService: USB disconnect. Scheduling reconnect check in ${USB_RECONNECT_DELAY_MS}ms...")
+            if (autoConnectUsb) AppLog.i("AapService: USB disconnect. Scheduling reconnect check in ${USB_RECONNECT_DELAY_MS}ms...")
+            else AppLog.i("AapService: USB link lost with the phone still attached. Reconnecting in ${USB_RECONNECT_DELAY_MS}ms.")
             // Connecting is not success: the USB launcher can defer this check through the
             // arbiter. Keep it across failed attempts/errors until a session forms or the user
             // supersedes recovery, even if wireless discovery schedules its own retry meanwhile.
@@ -2532,13 +2543,7 @@ class AapService : Service() {
         // A plug-in that has failed for its whole budget no longer holds wireless off.
         if (ConnectionArbiter.usbEpisodeSpent()) return false
 
-        val accessoryOnBus = try {
-            UsbDeviceCompat.usbManager(this)?.deviceList?.values
-                ?.any { UsbDeviceCompat.isInAccessoryMode(it) } ?: false
-        } catch (e: Exception) {
-            AppLog.w("AapService: Could not read the USB bus before wireless bring-up: ${e.message}")
-            false
-        }
+        val accessoryOnBus = UsbDeviceCompat.accessoryOnBus(this)
 
         if (usbDeferralStartedMs == 0L) usbDeferralStartedMs = SystemClock.elapsedRealtime()
         val waitedMs = SystemClock.elapsedRealtime() - usbDeferralStartedMs

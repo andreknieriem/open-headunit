@@ -954,6 +954,7 @@
     <string name="connection_interrupted_detail">Retrying…</string>
     <string name="renderer_fallback_surface">The video kept freezing, so the display was switched to SurfaceView for this session. If it is stable, set View mode to SurfaceView in Settings.</string>
     <string name="wifi_disconnect_toast">Android Auto disconnected. If using wireless AA, disable \"Switch between networks\" or \"Network acceleration\" in your phone\'s WiFi settings</string>
+    <string name="usb_disconnect_toast">Android Auto disconnected: the USB connection to the phone failed. If it happens often, try another cable, another USB port or a USB hub.</string>
     <string name="reset_usb_option">Reset USB Connection</string>
     <string name="reset_usb_timeout">USB device not found. Please check the connection.</string>
     <string name="notification_service_running">Open Headunit is running</string>

@@ -369,6 +369,7 @@
     <string name="connection_interrupted">З\'єднання втрачено</string>
     <string name="connection_interrupted_detail">Повторна спроба…</string>
     <string name="wifi_disconnect_toast">Android Auto відключено: якщо ви користуєтеся бездротовим AA, вимкніть «Перемикання між мережами» або «Прискорення мережі» в налаштуваннях Wi-Fi телефона</string>
+    <string name="usb_disconnect_toast">Android Auto відключено: збій USB-з’єднання з телефоном. Якщо це трапляється часто, спробуйте інший кабель, інший USB-порт або USB-концентратор.</string>
     <string name="reset_usb_option">Скинути USB-підключення</string>
     <string name="reset_usb_timeout">USB-пристрій не знайдено. Перевірте підключення.</string>
     <string name="notification_service_running">Open Headunit запущено</string>

@@ -368,6 +368,7 @@
     <string name="connection_interrupted">连接已断开</string>
     <string name="connection_interrupted_detail">正在重试…</string>
     <string name="wifi_disconnect_toast">Android Auto 已断开连接：如果使用无线 AA，请在手机的 WiFi 设置中关闭“在网络之间切换”或“网络加速”</string>
+    <string name="usb_disconnect_toast">Android Auto 已断开连接：与手机的 USB 连接失败。如果经常发生，请尝试更换数据线、USB 端口或使用 USB 集线器。</string>
     <string name="reset_usb_option">重置 USB 连接</string>
     <string name="reset_usb_timeout">未找到 USB 设备，请检查连接。</string>
     <string name="notification_service_running">Open Headunit 正在运行</string>

@@ -369,6 +369,7 @@
     <string name="connection_interrupted">Utracono połączenie</string>
     <string name="connection_interrupted_detail">Ponawianie próby…</string>
     <string name="wifi_disconnect_toast">Rozłączono Android Auto. Jeśli korzystasz z połączenia bezprzewodowego, wyłącz w ustawieniach Wi-Fi telefonu opcję „Przełączanie między sieciami” lub „Przyspieszanie sieci”.</string>
+    <string name="usb_disconnect_toast">Rozłączono Android Auto. Połączenie USB z telefonem nie powiodło się. Jeśli zdarza się to często, spróbuj użyć innego kabla, innego portu USB lub koncentratora USB.</string>
     <string name="reset_usb_option">Zresetuj połączenie USB</string>
     <string name="reset_usb_timeout">Nie znaleziono urządzenia USB. Sprawdź połączenie.</string>
     <string name="notification_service_running">Open Headunit działa</string>

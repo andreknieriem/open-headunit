@@ -40,6 +40,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.aap.AapService
+import com.andrerinas.openheadunit.aap.GalProfile
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.esp32.Esp32RelaySession
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.esp32.Esp32RelayStore
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.CredentialField
@@ -958,7 +959,9 @@ class SettingsFragment : Fragment() {
             stableId = "laboratory",
             nameResId = R.string.laboratory,
             helpResId = R.string.laboratory_description,
-            value = getString(R.string.laboratory_summary, settings.galProtocolVersion),
+            value = getString(R.string.laboratory_summary,
+                if (settings.galProtocolVersion == GalProfile.AUTO_SETTING) getString(R.string.gal_protocol_version_auto)
+                else settings.galProtocolVersion),
             searchKeywords = getString(R.string.laboratory_search_keywords),
             onClick = {
                 preservePendingForLaboratory = true

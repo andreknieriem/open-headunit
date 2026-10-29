@@ -56,13 +56,14 @@ verify that unanswered outbound pings cannot hide a dead connection.
 
 ## GAL profiles and presentation ownership
 
-Settings → Advanced → General → Laboratory opens the GAL controls. The version picker
-selects 1.2 (default), 1.6, 5.0, 5.1, 6.0 or 6.1: a wire-protocol request, not an Android OS
-or APK version. Unsupported options stay visible but disabled, with their minimum GAL
-version in the label. Lowering the version preserves saved values without applying them.
-Save requires reconnection. The selected profile, laboratory overrides and advertised
-formats are captured for the transport; a higher peer response does not promote the
-selected profile, and a lower response is rejected before TLS.
+Settings → General → Laboratory opens the GAL controls. Manual choices are 1.2 (default),
+1.6, 5.0, 5.1, 6.0 and 6.1: a wire-protocol request, not an Android OS or APK version.
+Auto probes for the peer's ceiling and selects the highest implemented profile it supports.
+Unsupported options stay visible but disabled, with their minimum GAL version in the label.
+Lowering the version preserves saved values without applying them. Save requires reconnection.
+The selected profile, laboratory overrides and advertised formats are captured for the
+transport. On the final concrete request (manual or Auto), a higher peer response does not
+promote the selected profile, and a lower response is rejected before TLS.
 
 The laboratory controls the 48 kHz guidance offer, modern display configuration, standalone
 audio/video option updates, A/V synchronization, video timing, audio buffer limits and

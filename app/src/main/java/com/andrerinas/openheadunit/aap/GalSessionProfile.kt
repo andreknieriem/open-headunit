@@ -8,8 +8,9 @@ internal data class GalVersion(val major: Int, val minor: Int) : Comparable<GalV
 }
 
 /**
- * A selected profile is requested directly. A higher phone reply describes its ceiling, not
- * permission to promote the request. A/V correction still requires attributable playout samples.
+ * A manual profile is requested directly; Auto resolves a concrete profile before TLS.
+ * A higher reply describes a ceiling, not permission to promote the request already sent.
+ * A/V correction still requires attributable playout samples.
  * 6.1 retains its identity while sharing the currently supported 6.0 media contract.
  */
 internal enum class GalProfile(val version: GalVersion) {
@@ -21,12 +22,18 @@ internal enum class GalProfile(val version: GalVersion) {
     GAL_6_1(GalVersion(6, 1));
 
     companion object {
-        fun fromSetting(value: String): GalProfile = entries.firstOrNull { it.version.toString() == value }
-            ?: COMPATIBILITY
+        const val AUTO_SETTING = "auto"
+
+        /** Auto exposes this ceiling in settings, not an already negotiated runtime profile. */
+        fun fromSetting(value: String): GalProfile = if (value == AUTO_SETTING) entries.last()
+            else entries.firstOrNull { it.version.toString() == value } ?: COMPATIBILITY
+
+        fun normalizeSetting(value: String): String =
+            if (value == AUTO_SETTING) AUTO_SETTING else fromSetting(value).version.toString()
     }
 }
 
-/** Immutable after the one response is accepted; all service handlers share this snapshot. */
+/** Immutable after the final response is accepted; all service handlers share this snapshot. */
 internal data class GalSessionProfile(
     val profile: GalProfile,
     val finalResponse: AapVersionNegotiation.Result

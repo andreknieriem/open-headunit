@@ -16,8 +16,8 @@ internal data class LaboratoryPendingCopy(
     val profile: GalProfile get() = GalProfile.fromSetting(version)
     val capabilities: GalLaboratoryCapabilities get() = GalLaboratoryCapabilities.forProfile(profile)
 
-    fun selectProfile(index: Int) {
-        version = GalProfile.entries[index].version.toString()
+    fun selectVersion(value: String) {
+        version = GalProfile.normalizeSetting(value)
     }
 
     fun differsFrom(settings: Settings): Boolean =
@@ -46,6 +46,8 @@ internal data class LaboratoryPendingCopy(
     }
 
     companion object {
+        val versionChoices: List<String> = GalProfile.entries.map { it.version.toString() } + GalProfile.AUTO_SETTING
+
         fun from(settings: Settings) = LaboratoryPendingCopy(settings.galProtocolVersion, settings.galLaboratoryOptions)
     }
 }

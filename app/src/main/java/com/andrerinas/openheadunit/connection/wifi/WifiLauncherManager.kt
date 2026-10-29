@@ -209,6 +209,7 @@ open class WifiLauncherManager(val service: AapService) {
         // stop old launcher
         active?.stop(WifiLauncherStopSequence.ANY)
 
+        if (newLauncher.mode != WifiLauncherMode.NATIVE) service.closeRetainedHct()
         // replace it with new one
         active = newLauncher
         sharedServices.update(newLauncher)
@@ -241,6 +242,7 @@ open class WifiLauncherManager(val service: AapService) {
 
     /** The status pill's X: a full stop that no automatic re-arm undoes. */
     fun stopForUser() {
+        service.releaseParkedHct()
         cancelledByUser = true
         stop(WifiLauncherStopSequence.LAST)
     }

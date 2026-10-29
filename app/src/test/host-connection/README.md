@@ -32,6 +32,10 @@ The wireless cleanup suite extracts the complete service disconnect callback. It
 late notifications, rearm during teardown, session-resource release and Exit waiter ownership
 with a queued Main dispatcher; platform services are recording doubles.
 
+The HCT owner suite also checks selection before its IO runner starts, same-channel
+reuse, callback replacement and stale-client cleanup. The native carrier is a recording
+double; it does not open firmware sockets or simulate vendor Bluetooth timing.
+
 The VPN command suite extracts the GitHub flavor's actual start/stop and service command
 handlers, then delivers a queued configuration after stop while the instance stays bound.
 It checks that the old request cannot recreate the tunnel or replace a newer configuration.

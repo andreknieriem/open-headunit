@@ -394,11 +394,11 @@ class MainActivity : BaseActivity() {
     private fun cancelAutoConnect() {
         if (!autoConnectInProgress) return
         AppLog.i("Auto-connect: cancelled by user")
-        // disconnect() handles all states including the Connecting state where
-        // ACTION_DISCONNECT in AapService used to be a no-op. Setting state to
-        // Disconnected here also feeds the observer, but we end the UI
-        // immediately rather than waiting for the round-trip.
-        App.provide(this).commManager.disconnect()
+        // Keep Exit ordering in the service: revoke any retained WPP lease before
+        // publishing Disconnected. The overlay can finish without waiting for teardown.
+        ContextCompat.startForegroundService(this, Intent(this, AapService::class.java).apply {
+            action = AapService.ACTION_DISCONNECT
+        })
         endAutoConnect(success = false)
     }
 

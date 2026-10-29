@@ -253,6 +253,13 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     private var lastSurfaceSetMs = 0L
     private val relaunchRecovery = com.andrerinas.openheadunit.decoder.video.SurfaceRecoveryState()
 
+    /** The service revokes the retained WPP lease before publishing Disconnected. */
+    private fun requestProjectionExit() {
+        ContextCompat.startForegroundService(this, Intent(this, AapService::class.java).apply {
+            action = AapService.ACTION_DISCONNECT
+        })
+    }
+
     /**
      * A relaunch handed the decoder a fresh surface and no picture has followed it.
      *
@@ -1246,7 +1253,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         setupCustomLoadingScreen()
 
         findViewById<Button>(R.id.disconnect_button)?.setOnClickListener {
-            commManager.disconnect()
+            requestProjectionExit()
             finish()
         }
 
@@ -1784,7 +1791,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                 val selected = options[which]
                 when (selected.titleResId) {
                     R.string.exit_dialog_stop -> {
-                        commManager.disconnect(sendByeBye = true)
+                        requestProjectionExit()
                         finish()
                     }
                     R.string.exit_dialog_end_stay_armed -> {

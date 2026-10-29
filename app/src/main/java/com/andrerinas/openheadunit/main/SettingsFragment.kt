@@ -3293,9 +3293,16 @@ class SettingsFragment : Fragment() {
                 touched = true
             }
             .setPositiveButton(android.R.string.ok) { dialog, _ ->
-                // Left alone, "All" stays "All" instead of turning into the three modes spelled out.
+                // Left alone, "All" stays "All" instead of becoming three explicit modes.
                 if (!(all && !touched)) {
+                    // This dialog saves immediately, so the toolbar's later Save snapshot
+                    // cannot detect the change. Apply wireless routing when it changes here.
+                    val before = wirelessRearmConfig()
                     settings.connectionModes = order.filterIndexed { i, _ -> checked[i] }.toSet()
+                    if (WirelessRearmPolicy.requiresRearm(before, wirelessRearmConfig())) {
+                        AapService.applyWirelessSettings(requireContext(),
+                            startWireless = settings.wifiConnectionMode != WifiLauncherMode.MANUAL && settings.showsWifi())
+                    }
                 }
                 dialog.dismiss()
                 updateSettingsList()

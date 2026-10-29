@@ -149,6 +149,20 @@ class AapService : Service() {
     private var nightModeManager: NightModeManager? = null
     private var wifiAutoStartReceiver: WifiAutoStartReceiver? = null
     private var mediaSession: MediaSessionCompat? = null
+    private val hctWppOwnerDelegate = lazy {
+        com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.hct.HctWppOwner(this)
+    }
+    internal val hctWppOwner get() = hctWppOwnerDelegate.value
+    internal fun closeRetainedHct() {
+        if (hctWppOwnerDelegate.isInitialized()) hctWppOwner.close()
+    }
+    internal fun releaseParkedHct() {
+        if (hctWppOwnerDelegate.isInitialized()) hctWppOwner.releaseParked()
+    }
+    private fun parkRetainedHct(onlyCompleted: Boolean = false) {
+        if (hctWppOwnerDelegate.isInitialized()) hctWppOwner.park(onlyCompleted)
+    }
+
     private val wifiLauncherManager = WifiLauncherManager(this)
 
     /**
@@ -1748,6 +1762,8 @@ class AapService : Service() {
             wifiLauncherManager.stop(WifiLauncherStopSequence.LAST)
             userExitedAA = true
         }
+        // A late Exit cannot revoke a lease created by a newer explicit Start.
+        if (!superseded && cleanupTicket != null && state.isUserExit) parkRetainedHct(onlyCompleted = true)
 
         // Armed only by this collector's HandshakeComplete, so it is always the ended session's
         // deadline; left running it would end whichever connection is up when it fires.
@@ -2800,6 +2816,7 @@ class AapService : Service() {
 
         if (pause) {
             wirelessPausedForSettings = true
+            releaseParkedHct()
             // A recreate or a permission prompt can have scheduled one; it must not fire now.
             settingsRearmJob?.cancel()
             AppLog.i(
@@ -3048,6 +3065,7 @@ class AapService : Service() {
 
     @SuppressLint("WrongConstant")
     override fun onDestroy() {
+        closeRetainedHct()
         AppLog.i("AapService destroying... (wakeLock held=${bootWakeLock?.isHeld == true})")
         FloatingButtonManager.removeOverlay(this)
         isDestroying = true
@@ -3159,6 +3177,7 @@ class AapService : Service() {
     }
 
     private fun startWirelessForSettings() {
+        releaseParkedHct()
         // Asked for from the UI, so the user is present: release the boot-loop pause
         // rather than silently ignoring them.
         Settings.clearBootLoopState(this)
@@ -3174,6 +3193,7 @@ class AapService : Service() {
     }
 
     internal fun stopWirelessForCommand(fromSettings: Boolean) {
+        releaseParkedHct()
         // Configuration refresh and explicit cancellation have different owners: only the
         // latter revokes an audio settings retry that may still be waiting for retirement.
         if (!fromSettings) {
@@ -3639,6 +3659,7 @@ class AapService : Service() {
                 }
             }
             ACTION_DISCONNECT            -> {
+                parkRetainedHct()
                 AppLog.i("Disconnect action received.")
                 userExitedAA = true
                 (wifiLauncherManager.active as? WifiLauncherNative)?.handshakeManager?.noteSessionEnded(false)

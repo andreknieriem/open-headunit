@@ -13,11 +13,22 @@ import org.junit.Test
 import org.mockito.Mockito.*
 
 class WirelessSettingsCommandTest {
+    private fun serviceWithoutHctOwner(): AapService {
+        val service = mock(AapService::class.java, CALLS_REAL_METHODS)
+        // Mockito bypasses the Service constructor. Preserve the real lazy-owner state so
+        // settings cleanup exercises releaseParkedHct without creating an OEM connection.
+        AapService::class.java.getDeclaredField("hctWppOwnerDelegate").apply { isAccessible = true }
+            .set(service, lazy<com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.hct.HctWppOwner> {
+                error("Settings cleanup must not initialize an unused HCT owner")
+            })
+        return service
+    }
+
     @Test fun `queued wireless refresh preserves the same Save but explicit stop revokes it`() {
         mockStatic(SystemClock::class.java).use {
         mockStatic(AppCompatDelegate::class.java).use {
             for (fromSave in listOf(true, false)) {
-                val service = mock(AapService::class.java, CALLS_REAL_METHODS)
+                val service = serviceWithoutHctOwner()
                 val app = mock(App::class.java)
                 val component = mock(AppComponent::class.java)
                 doReturn(app).`when`(service).applicationContext
@@ -48,7 +59,7 @@ class WirelessSettingsCommandTest {
     @Test fun `wireless cleanup finishes before Save can publish a replacement Self listener`() {
         mockStatic(SystemClock::class.java).use {
         mockStatic(AppCompatDelegate::class.java).use {
-            val service = mock(AapService::class.java, CALLS_REAL_METHODS)
+            val service = serviceWithoutHctOwner()
             val app = mock(App::class.java)
             val component = mock(AppComponent::class.java)
             doReturn(app).`when`(service).applicationContext

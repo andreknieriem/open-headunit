@@ -67,8 +67,8 @@ class ZbtByteChannel(
 ) : Closeable {
 
     /**
-     * The daemon's port could not be opened. [verdict] separates failures classified
-     * as refused from other unconfirmed connection failures for the retry policy.
+     * The daemon's port could not be opened. [verdict] keeps a refusal, which is a
+     * failed opening classified for retry, apart from other unconfirmed connection failures.
      * Neither outcome establishes hardware absence or another application's ownership.
      */
     class NotConnected(

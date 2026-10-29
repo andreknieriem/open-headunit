@@ -128,6 +128,13 @@
             app:popEnterAnim="@anim/slide_in_left"
             app:popExitAnim="@anim/slide_out_right" />
         <action
+            android:id="@+id/action_settingsFragment_to_laboratorySettingsFragment"
+            app:destination="@id/laboratorySettingsFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
+        <action
             android:id="@+id/action_settingsFragment_to_micSettingsFragment"
             app:destination="@id/micSettingsFragment"
             app:enterAnim="@anim/slide_in_right"
@@ -291,6 +298,11 @@
         android:id="@+id/audioStreamSettingsFragment"
         android:name="com.andrerinas.openheadunit.main.AudioStreamSettingsFragment"
         android:label="@string/audio_stream_settings" />
+
+    <fragment
+        android:id="@+id/laboratorySettingsFragment"
+        android:name="com.andrerinas.openheadunit.main.LaboratorySettingsFragment"
+        android:label="@string/laboratory" />
 
     <fragment
         android:id="@+id/customizationFragment"

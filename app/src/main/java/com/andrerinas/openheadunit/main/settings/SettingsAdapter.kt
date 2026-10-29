@@ -257,8 +257,12 @@ class SettingsAdapter : ListAdapter<SettingItem, RecyclerView.ViewHolder>(Settin
             settingValue.text = if (inline) "" else setting.value
             settingValue.visibility = if (inline || setting.value.isBlank()) View.GONE else View.VISIBLE
             itemView.alpha = if (setting.isEnabled) 1.0f else 0.5f
-            itemView.isClickable = setting.isEnabled
             itemView.setOnClickListener { if (setting.isEnabled) setting.onClick(setting.stableId) }
+            itemView.isEnabled = setting.isEnabled
+            itemView.isClickable = setting.isEnabled
+            settingName.isEnabled = setting.isEnabled
+            settingValue.isEnabled = setting.isEnabled
+            settingValueInline.isEnabled = setting.isEnabled
         }
     }
 
@@ -322,13 +326,16 @@ class SettingsAdapter : ListAdapter<SettingItem, RecyclerView.ViewHolder>(Settin
             settingSwitch.isChecked = setting.isChecked
             settingSwitch.isEnabled = setting.isEnabled
             itemView.alpha = if (setting.isEnabled) 1.0f else 0.5f
-            itemView.isClickable = setting.isEnabled
             settingSwitch.setOnCheckedChangeListener { _, isChecked ->
-                setting.onCheckedChanged(isChecked)
+                if (setting.isEnabled) setting.onCheckedChanged(isChecked)
             }
             itemView.setOnClickListener {
                 if (setting.isEnabled) settingSwitch.toggle()
             }
+            itemView.isEnabled = setting.isEnabled
+            itemView.isClickable = setting.isEnabled
+            settingName.isEnabled = setting.isEnabled
+            settingDescription.isEnabled = setting.isEnabled
         }
     }
 

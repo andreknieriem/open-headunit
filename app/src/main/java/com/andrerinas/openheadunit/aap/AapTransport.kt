@@ -1224,8 +1224,7 @@ class AapTransport(
                             "(we asked for ${AapVersionNegotiation.ANNOUNCED_MAJOR}.${AapVersionNegotiation.ANNOUNCED_MINOR}), status ${negotiated.statusName}")
                         negotiated.requestedConfig?.let {
                             AppLog.i("Handshake: the phone asks for ping timeout " +
-                                "${it.pingConfiguration.timeoutMs}ms, read timeout " +
-                                "${it.wirelessTcpConfiguration.socketReadTimeoutMs}ms")
+                                "${it.pingConfiguration.timeoutMs}ms")
                         }
                         received = true
                         versionFrameSize = frame.size

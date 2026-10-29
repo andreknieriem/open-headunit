@@ -27,6 +27,10 @@ class ApplicationSendReadinessTest {
                 field(transport, "ssl", ssl)
                 field(transport, "tlsWriter", writer)
                 field(transport, "sendHandler", handler)
+                field(transport, "galCompatibilityMode", true)
+                field(transport, "displaySettings", GalDisplaySettings(false, false, false))
+                field(transport, "presentationSession", AaPresentationSession())
+                field(transport, "aapVideo", mock<AapVideo>())
                 whenever(connection.isSingleMessage).thenReturn(true)
                 whenever(connection.isConnected).thenReturn(true)
                 // A complete VersionResponse carries major, minor and status after its type.

@@ -23,6 +23,10 @@ class TlsEmptyTailReaderTest {
         var corruptions = 0
         val video = AapVideo(decoder, settings) { corruptions++ }
         video.recordAnnouncedCodec(VideoDecoder.CodecType.H264)
+        val session = galTestSessions().start(com.andrerinas.openheadunit.aap.protocol.Channel.ID_VID,
+            com.andrerinas.openheadunit.aap.protocol.proto.Media.Start.newBuilder()
+                .setSessionId(1).setConfigurationIndex(0).build())!!
+        video.beginSession(session)
         val decoded = mutableListOf<List<Byte>>()
         doAnswer {
             val data = it.getArgument<ByteArray>(0)
@@ -30,7 +34,7 @@ class TlsEmptyTailReaderTest {
             val size = it.getArgument<Int>(2)
             decoded.add(data.copyOfRange(offset, offset + size).toList())
             null
-        }.whenever(decoder).decode(any(), any(), any(), any(), any())
+        }.whenever(decoder).decode(any(), any(), any(), any(), any(), anyOrNull(), any())
         val payload = byteArrayOf(0, 1, 0, 0, 0, 1, 0x65)
         val ssl = mock<AapSsl>()
         whenever(ssl.decrypt(any(), any(), any())).thenAnswer {
@@ -51,7 +55,7 @@ class TlsEmptyTailReaderTest {
             count
         }
         val handler = object : AapMessageHandler {
-            override fun handle(message: AapMessage) { video.process(message) }
+            override fun handle(message: AapMessage) { video.process(message, session) }
         }
         val reader = if (bulk) AapReadMultipleMessages(connection, ssl, handler)
             else AapReadSingleMessage(connection, ssl, handler)

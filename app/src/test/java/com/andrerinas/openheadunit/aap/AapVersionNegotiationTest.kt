@@ -34,22 +34,6 @@ class AapVersionNegotiationTest {
     }
 
     @Test
-    fun `the one six feature set is gated on the negotiated minor`() {
-        assertFalse(AapVersionNegotiation.parse(frame(1, 2, 0), 12)!!.supports16)
-        assertFalse(AapVersionNegotiation.parse(frame(1, 5, 0), 12)!!.supports16)
-        assertTrue(AapVersionNegotiation.parse(frame(1, 6, 0), 12)!!.supports16)
-        assertTrue(AapVersionNegotiation.parse(frame(2, 0, 0), 12)!!.supports16)
-    }
-
-    @Test
-    fun `what we announce today does not reach the one six feature set`() {
-        val announced = AapVersionNegotiation.parse(
-            frame(AapVersionNegotiation.ANNOUNCED_MAJOR, AapVersionNegotiation.ANNOUNCED_MINOR, 0), 12
-        )!!
-        assertFalse(announced.supports16)
-    }
-
-    @Test
     fun `the connection parameters the phone asks for are read back`() {
         val opts = Control.VersionResponseOptions.newBuilder()
             .setConnectionConfiguration(

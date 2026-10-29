@@ -52,6 +52,18 @@ class SettingsBackupManagerTest {
         assertEquals(0, parsed.skippedKeys)
     }
 
+    @Test fun `GAL compatibility mode survives backup and restore and reconnects the projection`() {
+        val settings = Settings(context)
+        settings.galCompatibilityMode = true
+        val backup = SettingsBackupManager.exportFromContext(context)
+        prefs.edit().clear().commit()
+
+        val restored = SettingsBackupManager.importFromJson(context, backup, applyTheme = false)
+        assertEquals(setOf("gal-compatibility-mode"), restored.changedKeys)
+        assertTrue(settings.galCompatibilityMode)
+        assertTrue(SettingsBackupManager.requiresProjectionRestart(restored.changedKeys))
+    }
+
     @Test fun `new user settings restore to their real preference stores`() {
         val values = linkedMapOf<String, Any>(
             "connection-modes" to setOf("usb", "wifi"),

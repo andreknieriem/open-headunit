@@ -60,11 +60,29 @@ object HeadUnitScreenConfig {
             announcedWidthMargin = offered.widthMargin
             announcedHeightMargin = offered.heightMargin
             adoptedFallback = offered
+            updateActiveFit()
             offered
         }
         AppLog.i("HeadUnitScreenConfig: Video: the phone chose the ${adopted.type} fallback (index 1), margins ${adopted.widthMargin}x${adopted.heightMargin}")
         onFallbackAdopted?.invoke()
         return true
+    }
+
+    /** A later Start can return to primary; restore its margins and touch mapping together. */
+    internal fun selectAnnouncedVideo(index: Int, format: Control.Service.MediaSinkService.VideoConfiguration): Boolean {
+        if (index == VideoFallbackPolicy.FALLBACK_INDEX) return adoptFallback()
+        if (index != 0) return false
+        val changed = synchronized(this) {
+            if (adoptedFallback == null) return@synchronized false
+            adoptedFallback = null
+            negotiatedResolutionType = format.codecResolution
+            announcedWidthMargin = format.marginWidth
+            announcedHeightMargin = format.marginHeight
+            updateActiveFit()
+            true
+        }
+        if (changed) onFallbackAdopted?.invoke()
+        return changed
     }
 
     private lateinit var currentSettings: Settings // Store settings instance
@@ -630,13 +648,7 @@ object HeadUnitScreenConfig {
         // 2. Perform scaling calculations (now safe because negotiatedResolutionType is set)
         AppLog.i("[UI_DEBUG] CarScreen: usable area ${screenWidthPx}x${screenHeightPx}, using $negotiatedResolutionType")
 
-        val fit = ProjectionGeometryPolicy.fit(
-            screenWidthPx, screenHeightPx, getNegotiatedWidth(), getNegotiatedHeight()
-        )
-        isSmallScreen = fit.isSmallScreen
-        scaleFactor = fit.scaleFactor
-        // Null on a small screen, where the previous value deliberately stands.
-        fit.isPortraitScaled?.let { isPortraitScaled = it }
+        updateActiveFit()
 
         AppLog.i("[UI_DEBUG] CarScreen isSmallScreen: $isSmallScreen, scaleFactor: $scaleFactor, portraitScaled: $isPortraitScaled, shape=${marginStrategy()}, margins: w=${getWidthMargin()}, h=${getHeightMargin()}")
 
@@ -666,6 +678,15 @@ object HeadUnitScreenConfig {
                 )
             }
         }
+    }
+
+    private fun updateActiveFit() {
+        val (width, height) = activeSize()
+        val fit = ProjectionGeometryPolicy.fit(screenWidthPx, screenHeightPx, width, height)
+        isSmallScreen = fit.isSmallScreen
+        scaleFactor = fit.scaleFactor
+        // Null on a small screen, where the previous value deliberately stands.
+        fit.isPortraitScaled?.let { isPortraitScaled = it }
     }
 
     private fun notifyMarginsDiverged() {
@@ -806,13 +827,13 @@ object HeadUnitScreenConfig {
 
     // These are half the total margin, distributed symmetrically.
     @Synchronized
-    fun getLeftMargin(): Int = getWidthMargin() / 2
+    fun getLeftMargin(): Int = ProjectionMargins.left(getWidthMargin())
     @Synchronized
-    fun getRightMargin(): Int = getWidthMargin() - getLeftMargin()
+    fun getRightMargin(): Int = ProjectionMargins.right(getWidthMargin())
     @Synchronized
-    fun getTopMargin(): Int = getHeightMargin() / 2
+    fun getTopMargin(): Int = ProjectionMargins.top(getHeightMargin())
     @Synchronized
-    fun getBottomMargin(): Int = getHeightMargin() - getTopMargin()
+    fun getBottomMargin(): Int = ProjectionMargins.bottom(getHeightMargin())
 
     /**
      * Called when the actual rendering surface dimensions become known (from onSurfaceChanged).

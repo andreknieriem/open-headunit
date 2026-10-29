@@ -3,6 +3,7 @@ package com.andrerinas.openheadunit.aap
 import com.andrerinas.openheadunit.connection.CommManager
 import com.andrerinas.openheadunit.connection.AppExitPolicy
 import com.andrerinas.openheadunit.connection.CommManager.ConnectionState
+import com.andrerinas.openheadunit.connection.withAppExitDispatcherForTest
 import com.andrerinas.openheadunit.connection.projection.SocketProjectionConnection
 import com.andrerinas.openheadunit.utils.Settings
 import android.content.Context
@@ -25,7 +26,7 @@ class UsbReconnectOwnershipTest {
     @Test fun usbRecheckSurvivesItsConnectingStateButNotAnotherSession() = runBlocking {
         for (observed in listOf(false, true)) for (outcome in listOf(
             "connecting", "error", "wireless-retry", "new-session", "user-exit", "settings-save")) {
-            val manager = mock(CommManager::class.java, CALLS_REAL_METHODS)
+            val manager = mock(CommManager::class.java, CALLS_REAL_METHODS).withAppExitDispatcherForTest()
             val ended = ConnectionState.Disconnected()
             val states = MutableStateFlow<ConnectionState>(ended)
             fun set(name: String, value: Any?) = CommManager::class.java.getDeclaredField(name)

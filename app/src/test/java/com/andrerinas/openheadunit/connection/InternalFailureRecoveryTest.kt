@@ -22,7 +22,7 @@ import kotlin.coroutines.intrinsics.suspendCoroutineUninterceptedOrReturn
 
 class InternalFailureRecoveryTest {
     private class Fixture : AutoCloseable {
-        val manager = mock(CommManager::class.java, CALLS_REAL_METHODS)
+        val manager = mock(CommManager::class.java, CALLS_REAL_METHODS).withAppExitDispatcherForTest()
         val context = mock(Context::class.java)
         val settings = mock(Settings::class.java)
         val states = MutableStateFlow<ConnectionState>(ConnectionState.Disconnected())

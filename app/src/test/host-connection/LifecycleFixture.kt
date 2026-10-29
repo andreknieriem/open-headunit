@@ -35,6 +35,7 @@ private class QueuedCleanup : CoroutineDispatcher() {
     val tasks = java.util.concurrent.ConcurrentLinkedQueue<Runnable>()
     override fun dispatch(context: kotlin.coroutines.CoroutineContext, block: Runnable) { tasks.add(block) }
 }
+private class ProjectionConnection { fun disconnect() {} }
 private class AapTransport(
     decoder: AudioDecoder, video: Any, manager: AudioManager, settings: Settings, notification: Any,
     context: Context, externalSsl: Any, onAaMediaMetadata: (Any, Any) -> Unit, onAaPlaybackStatus: (Any, Any) -> Unit,

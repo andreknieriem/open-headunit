@@ -69,6 +69,9 @@ transport = (repo / "app/src/main/java/com/andrerinas/openheadunit/aap/AapTransp
 lifecycle_fixture = output / "LifecycleFixture.kt"
 lifecycle = (base / "LifecycleFixture.kt").read_text()
 exit_members = comm[comm.index("    private val appExitPolicy"):comm.index("    // The first disconnect chooses app-exit policy")]
+exit_members = exit_members.replace(
+    "private val appExitDispatcher: CoroutineDispatcher = Dispatchers.Main.immediate",
+    "private val appExitDispatcher: CoroutineDispatcher = Dispatchers.Unconfined")
 lifecycle = lifecycle.replace("// PRODUCTION APP_EXIT\n", exit_members)
 for marker, declaration, source in [
     ("PUBLICATION", "val transport = synchronized(transportLifecycleLock)", comm),

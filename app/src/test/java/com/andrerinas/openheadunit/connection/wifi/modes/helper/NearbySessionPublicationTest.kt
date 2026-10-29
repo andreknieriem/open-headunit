@@ -18,7 +18,7 @@ import kotlin.coroutines.intrinsics.suspendCoroutineUninterceptedOrReturn
 class NearbySessionPublicationTest {
     @Test fun preparedTunnelPublishesOnlyWhileBothOwnersRemainCurrent() = runBlocking {
         for (fromError in listOf(false, true)) for (outcome in listOf("connected", "replacement", "retired", "new-error", "owned", "transport-owned", "saved-request")) {
-            val manager = mock(CommManager::class.java, CALLS_REAL_METHODS)
+            val manager = mock(CommManager::class.java, CALLS_REAL_METHODS).withAppExitDispatcherForTest()
             val initial: CommManager.ConnectionState = if (fromError)
                 CommManager.ConnectionState.Error("USB permission not granted for device")
             else CommManager.ConnectionState.Disconnected()

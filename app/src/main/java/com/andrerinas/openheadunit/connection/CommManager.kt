@@ -226,6 +226,7 @@ class CommManager(
     // boundary. Network handshake and final connection teardown run outside this lock.
     private val transportLifecycleLock = Any()
     private val appExitPolicy = AppExitPolicy()
+    private val appExitDispatcher: CoroutineDispatcher = Dispatchers.Main.immediate
     private val appExitHandler = android.os.Handler(android.os.Looper.getMainLooper())
     private var pendingAppExit: Runnable? = null
     private var serviceExitFinished: CompletableDeferred<Boolean>? = null
@@ -249,14 +250,47 @@ class CommManager(
 
     // stopSelf cannot retract an onDestroy already queued by Android. Do not publish a new
     // attempt into that service's cleanup; wait outside the lifecycle lock for its completion.
-    private suspend inline fun <T> publishConnectionAttempt(action: () -> T): T? {
-        while (true) {
-            val ending = synchronized(transportLifecycleLock) {
-                val ending = serviceExitFinished
-                if (ending == null) return action()
-                ending
+    private suspend fun publishConnectionAttempt(
+        action: () -> Pair<Any, ProjectionConnection?>?,
+    ): Pair<Any, ProjectionConnection?>? {
+        // Finish receivers also run on Main, including broadcasts delivered after destruction.
+        // Keep ownership transfers on that dispatcher; native I/O remains on the caller.
+        var published: Pair<Any, ProjectionConnection?>? = null
+        try {
+            while (true) {
+                var ending: CompletableDeferred<Boolean>? = null
+                var retirement: Job? = null
+                val attempted = withContext(appExitDispatcher) {
+                    synchronized(transportLifecycleLock) {
+                        ending = serviceExitFinished
+                        retirement = _disconnectJob?.takeUnless { it.isCompleted }
+                        if (ending == null && retirement == null) {
+                            published = action()
+                            true
+                        } else false
+                    }
+                }
+                if (attempted) return published
+                // Cleanup can be queued after our initial join but before this Main turn.
+                // Await actual teardown before transferring resources into its capture window.
+                if (ending != null) {
+                    if (!checkNotNull(ending).await()) return null
+                } else checkNotNull(retirement).join()
             }
-            if (!ending.await()) return null
+        } catch (cancelled: kotlinx.coroutines.CancellationException) {
+            // Main may publish Connecting before cancellation wins the handback to IO.
+            // The publication loop keeps newer attempts behind this attempt's queued cleanup.
+            published?.let { (attempt, previous) ->
+                synchronized(transportLifecycleLock) {
+                    if (connectionAttempt === attempt && !disconnectRequested) {
+                        disconnect(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
+                    }
+                }
+                try { previous?.disconnect() } catch (failure: Exception) {
+                    AppLog.w("CommManager: displaced connection cleanup failed: ${failure.message}")
+                }
+            }
+            throw cancelled
         }
     }
 
@@ -676,9 +710,9 @@ class CommManager(
         val (attempt, previous) = publishConnectionAttempt {
             // Retirement can suspend after admission. Recheck the same Save permission at
             // publication, before opening hardware or replacing another connection's state.
-            if (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value)) return
+            if (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value)) return@publishConnectionAttempt null
             if (recoveryOwner != null && _connectionState.value !is ConnectionState.Disconnected &&
-                _connectionState.value !is ConnectionState.Error) return
+                _connectionState.value !is ConnectionState.Error) return@publishConnectionAttempt null
             val token = Any()
             var previous: ProjectionConnection? = null
             if (!publishIfOwned {
@@ -692,7 +726,7 @@ class CommManager(
                 _connectionState.value = ConnectionState.Connecting
                 previous = _connection
                 _connection = null
-            }) return
+            }) return@publishConnectionAttempt null
             token to previous
         } ?: return
         try {
@@ -787,15 +821,21 @@ class CommManager(
         }
         noteClaimedEndpoint(ownedClaim, socketEndpoint(socket))
         HeldServerSocket.settle(socket)
+        var delegated = false
         try {
             if (admission === ConnectionAdmission.UNRESTRICTED) {
-                if (socket.isClosed || !acceptAppConnectionClaim(ownedClaim, expectedState)) {
-                    try { socket.close() } catch (_: Exception) {}
-                    return@withContext
-                }
+                if (socket.isClosed || !acceptAppConnectionClaim(ownedClaim, expectedState)) return@withContext
+                delegated = true
                 connectSocket(socket, restartEndpoint, expectedState)
-            } else connectAdmittedSocket(socket, admission.withClaim(ownedClaim), restartEndpoint, expectedState)
-        } finally { releaseClaim(ownedClaim) }
+            } else {
+                delegated = true
+                connectAdmittedSocket(socket, admission.withClaim(ownedClaim), restartEndpoint, expectedState)
+            }
+        } finally {
+            // Acceptance dispatches to Main. Until delegation, this frame owns the raw socket.
+            if (!delegated) try { socket.close() } catch (_: Exception) {}
+            releaseClaim(ownedClaim)
+        }
     }
 
     private suspend fun connectAdmittedSocket(
@@ -825,9 +865,12 @@ class CommManager(
                     // Permission failures can leave Error without owning a connection. It is
                     // reusable like Disconnected, but only while that exact state and both
                     // resource owners remain unchanged throughout candidate preparation.
+                    // Cleanup can be queued between the initial join and terminal snapshot;
+                    // reject rather than transfer a candidate into that cleanup's capture.
                     if (socket.isClosed || _connectionState.value !== terminal ||
                         (terminal !is ConnectionState.Disconnected && terminal !is ConnectionState.Error) ||
                         _connection != null || _transport != null || appExitPolicy.isStopping ||
+                        _disconnectJob?.isCompleted == false ||
                         (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value))) {
                         false
                     } else {
@@ -839,10 +882,12 @@ class CommManager(
                         disconnectRequested = false
                         _connection = candidate
                         _connectionState.value = ConnectionState.Connected
+                        transferred = true
                         true
                     }
                 },
                 dispose = { it.disconnect() },
+                publicationContext = appExitDispatcher,
             )
             // Closing the candidate alone leaves Nearby's endpoint/pipe bookkeeping alive.
             // Signal rejection back through the awaited handoff so that producer can retire it.
@@ -879,26 +924,31 @@ class CommManager(
             return
         }
 
-        _disconnectJob?.join()
-
         var conn: ProjectionConnection? = null
-        val (attempt, previous) = publishConnectionAttempt {
-            if (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value)) {
-                return@publishConnectionAttempt null
+        val publication = try {
+            _disconnectJob?.join()
+            publishConnectionAttempt {
+                if (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value)) {
+                    return@publishConnectionAttempt null
+                }
+                check(acceptAppConnection())
+                lastAttemptedEndpoint = socketEndpoint(socket)
+                outgoingEndpoint = restartEndpoint
+                val token = Any()
+                connectionAttempt = token
+                physicalConnectionReached = false
+                usbSaveOwner = null
+                disconnectRequested = false
+                _connectionState.value = ConnectionState.Connecting
+                val previous = _connection
+                _connection = null
+                token to previous
             }
-            check(acceptAppConnection())
-            lastAttemptedEndpoint = socketEndpoint(socket)
-            outgoingEndpoint = restartEndpoint
-            val token = Any()
-            connectionAttempt = token
-            physicalConnectionReached = false
-            usbSaveOwner = null
-            disconnectRequested = false
-            _connectionState.value = ConnectionState.Connecting
-            val previous = _connection
-            _connection = null
-            token to previous
-        } ?: run {
+        } catch (failure: Throwable) {
+            try { socket.close() } catch (_: Exception) {}
+            throw failure
+        }
+        val (attempt, previous) = publication ?: run {
             try { socket.close() } catch (_: Exception) {}
             return
         }
@@ -989,7 +1039,7 @@ class CommManager(
 
         var conn: ProjectionConnection? = null
         val (attempt, previous) = publishConnectionAttempt {
-            if (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value)) return
+            if (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value)) return@publishConnectionAttempt null
             check(acceptAppConnection())
             lastAttemptedEndpoint = SameEndpointConnectPolicy.endpoint(ip, port)
             outgoingEndpoint = ip to port
@@ -1063,14 +1113,16 @@ class CommManager(
     // An unrestricted, held claim owns an attempt even while previous teardown still runs.
     // Do not wait for Connecting to revoke its predecessor's exit. Restricted candidates
     // transfer only at prepareAndPublish; a refused/preempted claim revokes nothing.
-    private fun acceptAppConnectionClaim(
+    private suspend fun acceptAppConnectionClaim(
         claim: ConnectionArbiter.Claim,
         expectedState: ConnectionState.Disconnected? = null,
-    ): Boolean = synchronized(transportLifecycleLock) {
-        if (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value)) return@synchronized false
-        ConnectionArbiter.runIfHeld(claim) {
-            appExitPolicy.supersede()
-            cancelAppExitCallback()
+    ): Boolean = withContext(appExitDispatcher) {
+        synchronized(transportLifecycleLock) {
+            if (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value)) return@synchronized false
+            ConnectionArbiter.runIfHeld(claim) {
+                appExitPolicy.supersede()
+                cancelAppExitCallback()
+            }
         }
     }
 

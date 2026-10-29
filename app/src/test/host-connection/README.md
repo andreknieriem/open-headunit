@@ -47,3 +47,12 @@ service stop finishes before a replacement can publish, and Main reentry restore
 without allowing queued finish broadcasts to close the reopened task. The harness delivers
 the production Main and projection receivers, but Android's lifecycle scheduling still needs
 device coverage.
+
+Connection acceptance and publication share Main ordering with activity finish and process
+exit effects. The scheduling suite holds task lookup and process-exit preparation while a
+replacement queues, and exercises cancellation before and after resource transfer. Ordinary
+publication rechecks the latest teardown job, not only the job seen before dispatching to Main.
+Restricted handoff rejects an unfinished teardown at final transfer. The regressions queue a
+new cleanup between an older join and publication/terminal capture, then verify old workers and
+audio/video resources retire without closing the replacement. Android effects and dispatchers
+are controlled doubles; native connection teardown stays outside publication locks.

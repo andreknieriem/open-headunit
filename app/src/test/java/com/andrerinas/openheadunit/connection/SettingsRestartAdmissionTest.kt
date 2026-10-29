@@ -15,7 +15,7 @@ class SettingsRestartAdmissionTest {
         CommManager::class.java.getDeclaredField(name).apply { isAccessible = true }.set(manager, value)
 
     @Test fun `obsolete Save cannot claim or consume a socket after dispatch to IO`() = runBlocking {
-        val manager = mock(CommManager::class.java, CALLS_REAL_METHODS)
+        val manager = mock(CommManager::class.java, CALLS_REAL_METHODS).withAppExitDispatcherForTest()
         val old = CommManager.ConnectionState.Disconnected(reason = CommManager.DisconnectReason.SETTINGS_RESTART)
         val flow = MutableStateFlow<CommManager.ConnectionState>(CommManager.ConnectionState.TransportStarted)
         set(manager, "_connectionState", flow)
@@ -36,7 +36,7 @@ class SettingsRestartAdmissionTest {
     }
 
     @Test fun `Save rechecks after teardown wait before replacing an established session`() = runBlocking {
-        val manager = mock(CommManager::class.java, CALLS_REAL_METHODS)
+        val manager = mock(CommManager::class.java, CALLS_REAL_METHODS).withAppExitDispatcherForTest()
         val old = CommManager.ConnectionState.Disconnected(reason = CommManager.DisconnectReason.SETTINGS_RESTART)
         val flow = MutableStateFlow<CommManager.ConnectionState>(old)
         val retirement = Job()
@@ -63,7 +63,7 @@ class SettingsRestartAdmissionTest {
     }
 
     @Test fun `IP adoption forwards the known server address for the next Save`() = runBlocking {
-        val manager = mock(CommManager::class.java, CALLS_REAL_METHODS)
+        val manager = mock(CommManager::class.java, CALLS_REAL_METHODS).withAppExitDispatcherForTest()
         val socket = Socket()
         val endpoint = "192.168.1.5" to 5277
         var forwarded: Pair<String, Int>? = null
@@ -84,7 +84,7 @@ class SettingsRestartAdmissionTest {
     }
     @Test fun `refused private IP and socket paths leave remote audio classification intact`() = runBlocking {
         for (socketPath in listOf(false, true)) {
-            val manager = mock(CommManager::class.java, CALLS_REAL_METHODS)
+            val manager = mock(CommManager::class.java, CALLS_REAL_METHODS).withAppExitDispatcherForTest()
             val saved = CommManager.ConnectionState.Disconnected(reason = CommManager.DisconnectReason.SETTINGS_RESTART)
             val flow = MutableStateFlow<CommManager.ConnectionState>(CommManager.ConnectionState.Connected)
             set(manager, "_connectionState", flow)
@@ -117,7 +117,7 @@ class SettingsRestartAdmissionTest {
 
     @Test fun `new Self request revokes Save before teardown or IO retry without changing AAP state`() = runBlocking {
         for (duringTeardown in listOf(false, true)) {
-            val manager = mock(CommManager::class.java, CALLS_REAL_METHODS)
+            val manager = mock(CommManager::class.java, CALLS_REAL_METHODS).withAppExitDispatcherForTest()
             val saved = CommManager.ConnectionState.Disconnected(reason = CommManager.DisconnectReason.SETTINGS_RESTART)
             val flow = MutableStateFlow<CommManager.ConnectionState>(saved)
             val retirement = Job()
@@ -149,7 +149,7 @@ class SettingsRestartAdmissionTest {
 
 
     @Test fun `revoked USB Save cannot claim or touch hardware even when terminal identity is unchanged`() = runBlocking {
-        val manager = mock(CommManager::class.java, CALLS_REAL_METHODS)
+        val manager = mock(CommManager::class.java, CALLS_REAL_METHODS).withAppExitDispatcherForTest()
         val saved = CommManager.ConnectionState.Disconnected(reason = CommManager.DisconnectReason.SETTINGS_RESTART)
         val flow = MutableStateFlow<CommManager.ConnectionState>(saved)
         set(manager, "_connectionState", flow)
@@ -165,7 +165,7 @@ class SettingsRestartAdmissionTest {
     }
 
     @Test fun `USB Save checks permission again after retirement before publishing Connecting`() = runBlocking {
-        val manager = mock(CommManager::class.java, CALLS_REAL_METHODS)
+        val manager = mock(CommManager::class.java, CALLS_REAL_METHODS).withAppExitDispatcherForTest()
         val saved = CommManager.ConnectionState.Disconnected(reason = CommManager.DisconnectReason.SETTINGS_RESTART)
         val flow = MutableStateFlow<CommManager.ConnectionState>(saved)
         val retirement = Job()

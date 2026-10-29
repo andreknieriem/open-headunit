@@ -39,6 +39,21 @@ for name,path,finish in [('MainActivity','main/MainActivity.kt','finishAffinity'
                   'fun deliver(intent:Intent) { finishReceiver.onReceive(context,intent) }\n'
                   + receiver + '\n}\n')
 (OUT/'ExitReceivers.kt').write_text(receivers)
+# Preserve the production final decision and branch ordering; replace only platform effects.
+service_source=(base/'aap/AapService.kt').read_text()
+tail_start=service_source.index('        when (appExitRequest?.let { commManager.completeAppExit(it) })')
+tail_end=service_source.index('\n    }\n\n    private fun startWirelessForSettings()',tail_start)
+exit_tail=service_source[tail_start:tail_end]
+methods['AapService exit completion tail']=hashlib.sha256(exit_tail.encode()).hexdigest()
+exit_tail=exit_tail.replace('com.andrerinas.openheadunit.connection.bluetooth.xyauto.XyAutoMediaSession.beforeProcessExit()', 'beforeProcessExit()')
+exit_tail=exit_tail.replace('System.exit(0)', 'recordProcessExit()')
+exit_tail=exit_tail.replace('ContextCompat.startForegroundService(this, Intent(this, AapService::class.java))', 'recordServiceRestart()')
+(OUT/'ExitServiceTail.kt').write_text('package lifecycle\nimport com.andrerinas.openheadunit.connection.AppExitPolicy\n'
+    'internal class ExitServiceTail(private val commManager:CommManager, private val appExitRequest:AppExitPolicy.Request) {\n'
+    'var beforeProcessExit:()->Unit = {}\nvar processExits=0\nvar serviceRestarts=0\nvar ownedAtProcessExit=false\n'
+    'fun recordProcessExit(){ownedAtProcessExit=commManager.ownsAppExit(appExitRequest.id);processExits++}\n'
+    'fun recordServiceRestart(){serviceRestarts++}\nfun finish(){\n' + exit_tail + '\n}\n}\n')
+
 manager_head=r'''package lifecycle
 import android.hardware.usb.*
 import android.app.Application
@@ -50,6 +65,7 @@ import com.andrerinas.openheadunit.connection.AppExitPolicy
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import java.util.concurrent.*
+import java.net.Socket
 
 enum class DisconnectReason { CONNECTION_ENDED, SETTINGS_RESTART, PROJECTION_UNRAISED }
 sealed class ConnectionState {
@@ -116,6 +132,8 @@ class CommManager {
  fun cleanups(){queue.drain()}
  fun close(){disconnect(honorKillOnDisconnect=false);cleanups();_scope.cancel()}
  suspend fun connectNext(){connectIp("fixture",5277, null)}
+ suspend fun connectPrepared(socket:Socket,admission:ConnectionAdmission=ConnectionAdmission.UNRESTRICTED){connectAdmittedSocket(socket,admission,null,null)}
+ suspend fun connectAccepted(socket:Socket){connectSocket(socket,null,null)}
  suspend fun connectClaimedNext(claim:ConnectionArbiter.Claim){if(acceptAppConnectionClaim(claim))connectIp("fixture",5277,null)}
  suspend fun connectClaimedUsb(d:UsbDevice,claim:ConnectionArbiter.Claim){connectUsb(d,appClaim=claim)}
  suspend fun connectSelf(){connectIp("127.0.0.1",5277,null)}
@@ -138,9 +156,14 @@ for name in ['SettingsRestartRecovery.kt', 'SameEndpointConnectPolicy.kt', 'Conn
 (OUT/'FinalMessageDelivery.kt').write_text((base/'aap/FinalMessageDelivery.kt').read_text().replace('package com.andrerinas.openheadunit.aap', 'package lifecycle'))
 shutil.copy2(base/'connection/AppExitPolicy.kt',OUT/'AppExitPolicy.kt')
 shutil.copy2(ROOT/'app/src/test/host-connection/AppExitFixture.kt',OUT/'AppExitFixture.kt')
+shutil.copy2(ROOT/'app/src/test/host-connection/AppExitSerializationFixture.kt',OUT/'AppExitSerializationFixture.kt')
 exit_members=comm[comm.index('    private val appExitPolicy'):comm.index('    // The first disconnect chooses app-exit policy')]
 methods['app exit ownership']=hashlib.sha256(exit_members.encode()).hexdigest()
-manager_head += exit_members
+# Tests control publication scheduling without a global Android Main dispatcher.
+# Extracted methods stay unchanged; only the dispatcher's platform initializer is doubled.
+manager_head += exit_members.replace(
+    "private val appExitDispatcher: CoroutineDispatcher = Dispatchers.Main.immediate",
+    "private val appExitDispatcher: CoroutineDispatcher = Dispatchers.Unconfined")
 # These endpoint predicates must be the real ones when testing the terminal route snapshot.
 for declaration in ['val isWirelessSession:', 'val isLoopbackSession:']:
     start = comm.index(declaration)
@@ -148,8 +171,8 @@ for declaration in ['val isWirelessSession:', 'val isLoopbackSession:']:
 manager=manager_head+'\n'.join(extract(comm,n) for n in [
  'suspend fun startHandshake()', 'private inline fun withLiveTransport(', 'suspend fun startReading()',
  'private fun reachedSsl()', 'private fun transportedQuited(', 'fun applyAudioSettings()', 'fun disconnect(', 'fun cancelPendingSettingsRestart()', 'internal fun rearmSnapshot()', 'private fun doDisconnect(',
- 'private suspend fun connectIp(', 'private suspend fun connectUsb(', 'fun disconnectForLinkLoss(', 'fun destroy()',
- 'fun setProjectionVideoFocusSuppressed(', 'private fun acceptAppConnectionClaim('
+ 'private suspend fun connectIp(', 'private suspend fun connectUsb(', 'private suspend fun connectSocket(', 'private suspend fun connectAdmittedSocket(', 'private fun socketEndpoint(', 'fun disconnectForLinkLoss(', 'fun destroy()',
+ 'fun setProjectionVideoFocusSuppressed(', 'private suspend fun acceptAppConnectionClaim('
 ])+'\n}\n'
 transport_head=r'''
 class AapTransport(
@@ -248,7 +271,7 @@ class Settings{
  fun saveLastConnection(type:Int,ip:String="",usbDevice:String=""){}
  companion object{const val CONNECTION_TYPE_WIFI=1;const val CONNECTION_TYPE_USB=2}
 }
-class AudioDecoder { var session=0; fun captureCleanup():()->Unit = {} }
+class AudioDecoder { var session=0;var cleanups=0;fun captureCleanup():()->Unit = {cleanups++} }
 class AapAudio(decoder:AudioDecoder,private val settings:Settings){
  val sessionConfig=AudioConfig();private val savedAac=settings.useAacAudio
  var closed=false
@@ -257,7 +280,7 @@ class AapAudio(decoder:AudioDecoder,private val settings:Settings){
  fun postProtocolFocusChange(stream:Int,request:Int,callback:AudioManager.OnAudioFocusChangeListener){}
 }
 class AudioConfig{val enabled=true;val staticFocus=false;val focusMode=0}
-class VideoDecoder{var framesRenderedThisSession=0L;fun beginSession(){framesRenderedThisSession=0L};var onDecoderError:((String)->Unit)?=null;var onKeyframeStarved:(()->Unit)?=null;var onFrameDropped:(()->Unit)?=null;var onKeyframeObserved:(()->Unit)?=null;fun stop(s:String){}}
+class VideoDecoder{var framesRenderedThisSession=0L;var stops=0;fun beginSession(){framesRenderedThisSession=0L};var onDecoderError:((String)->Unit)?=null;var onKeyframeStarved:(()->Unit)?=null;var onFrameDropped:(()->Unit)?=null;var onKeyframeObserved:(()->Unit)?=null;fun stop(s:String){stops++}}
 class AapVideo{fun release(){}}
 object ProjectionHealthRecorder{fun reset(){}}
 open class AapRead{@Volatile protected var isStopped=false;fun stop(){isStopped=true;retirePresentation()};var onRetirePresentation:(()->Unit)?=null;fun retirePresentation(){onRetirePresentation?.invoke()};companion object{var creations=0};object Factory{
@@ -265,7 +288,11 @@ open class AapRead{@Volatile protected var isStopped=false;fun stop(){isStopped=
  settings:Settings,context:Context,metadata:((Any,Any)->Unit)?,playback:((Any,Any)->Unit)?,closed:((Any)->Unit)?,session:AaPresentationSession):AapRead{creations++;return AapRead()}
 }}
 open class ProjectionConnection{@Volatile var closed=false;open fun connect()=true;open fun disconnect(){closed=true}}
+class NearbySocket:Socket()
 class SocketProjectionConnection(private val ip:String,port:Int,context:Context):ProjectionConnection(){
+ private var rawSocket:Socket?=null
+ constructor(socket:Socket,context:Context):this("fixture",5277,context){rawSocket=socket}
+ override fun disconnect(){super.disconnect();rawSocket?.close()}
  val isLoopbackPeer get()=ip=="127.0.0.1"
  init { created.add(this);constructionHook?.invoke() }
  override fun connect():Boolean = connectionHook?.invoke(this) ?: super.connect()
@@ -833,7 +860,7 @@ fun failedAttemptDoesNotInheritPhysicalSuccess()=runBlocking {
  println("PASS new failed attempts do not inherit physical success from the previous connection")
 }
 """
-extra=extra.replace('fun main(){', 'fun main(){\n appExitOwnershipRaces();usbSaveOpenFailures();failedAttemptDoesNotInheritPhysicalSuccess();rearmSnapshotIdentifiesConnectingAttempt();terminalRouteSnapshots();settingsActionCancellation()')
+extra=extra.replace('fun main(){', 'fun main(){\n appExitOwnershipRaces();appExitSerializedEffects();usbSaveOpenFailures();failedAttemptDoesNotInheritPhysicalSuccess();rearmSnapshotIdentifiesConnectingAttempt();terminalRouteSnapshots();settingsActionCancellation()')
 (OUT/'Probe.kt').write_text(manager+transport_fixture+support+extra)
 (OUT/'Os.kt').write_text(r'''package android.os
 import java.util.concurrent.*
@@ -886,7 +913,7 @@ class Context{
  companion object{const val ACTIVITY_SERVICE="activity";const val USB_SERVICE="usb"}
 }
 ''')
-(OUT/'App.kt').write_text('package android.app\nobject Application{const val AUDIO_SERVICE="audio"}\nclass ActivityManager{val appTasks=mutableListOf(AppTask());class AppTask{var finishes=0;fun finishAndRemoveTask(){finishes++}}}\n')
+(OUT/'App.kt').write_text('package android.app\nobject Application{const val AUDIO_SERVICE="audio"}\nclass ActivityManager{var beforeTasks:(()->Unit)?=null;private val tasks=mutableListOf(AppTask());val appTasks:MutableList<AppTask> get(){beforeTasks?.invoke();return tasks};class AppTask{var finishes=0;fun finishAndRemoveTask(){finishes++}}}\n')
 (OUT/'Media.kt').write_text('package android.media\nclass AudioManager{fun interface OnAudioFocusChangeListener{fun onAudioFocusChange(i:Int)};companion object{const val STREAM_MUSIC=3;const val AUDIOFOCUS_GAIN=1}}\n')
 shutil.copy2(ROOT/'app/src/test/host-connection/audio-stubs/AapService.kt',OUT/'Service.kt')
 (OUT/'Proto.kt').write_text(r'''package com.andrerinas.openheadunit.aap.protocol.proto

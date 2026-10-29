@@ -99,4 +99,15 @@ object AapReadRecoveryPolicy {
         bytesRead == END_OF_STREAM -> Outcome.DISCONNECT_EOF
         else -> Outcome.DISCONNECT_DESYNC
     }
+
+    /**
+     * A decoded header. Only the low four flag bits exist, so a higher bit means body bytes
+     * were read as a header after bytes were lost from the stream.
+     */
+    fun afterHeaderDecoded(flags: Int): Outcome =
+        if (flags and 0xF0 != 0) Outcome.DISCONNECT_DESYNC else Outcome.CONTINUE
+
+    fun headerDesyncMessage(channel: Int, flags: Int): String =
+        "AapRead: frame header on channel $channel carries flags 0x%02x, which AAP never sets. ".format(flags) +
+            "Bytes were lost from the stream, so it cannot be realigned; ending the session."
 }

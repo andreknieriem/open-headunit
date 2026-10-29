@@ -87,4 +87,12 @@ class AapReadRecoveryPolicyTest {
         )
         shortReads.forEach { assertEquals(Outcome.DISCONNECT_DESYNC, it) }
     }
+
+    @Test
+    fun `a header with any high flag bit is a desync`() {
+        for (flags in 0x00..0xFF) {
+            val expected = if (flags and 0xF0 != 0) Outcome.DISCONNECT_DESYNC else Outcome.CONTINUE
+            assertEquals("flags 0x%02x".format(flags), expected, AapReadRecoveryPolicy.afterHeaderDecoded(flags))
+        }
+    }
 }

@@ -52,6 +52,8 @@ internal class AudioTrackPcmOutput(stream: Int, attachHwDsp: Boolean) : PcmOutpu
     override val minimumBufferFrames: Int
     override val name = "AudioTrack"
     override val burstFrames = 480 // tuning step, not a measured HAL burst
+    override var outputEpoch = 0L
+        private set
 
     init {
         val minimum = AudioTrack.getMinBufferSize(48000, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT)
@@ -130,6 +132,7 @@ internal class AudioTrackPcmOutput(stream: Int, attachHwDsp: Boolean) : PcmOutpu
         if (Build.VERSION.SDK_INT >= 19) {
             track.flush()
             position.reset()
+            outputEpoch++
         }
     }
     override fun write(data: ShortArray, offset: Int, count: Int): Int {

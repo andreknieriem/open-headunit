@@ -107,30 +107,38 @@ class LaboratorySettingsFragment : Fragment() {
         ToastUtils.showToast(context, getString(R.string.settings_saved), Toast.LENGTH_SHORT, force = true)
     }
 
-    private fun profileLabel(profile: GalProfile): String = when (profile) {
-        GalProfile.COMPATIBILITY -> getString(R.string.gal_protocol_version_default)
-        GalProfile.GAL_1_6 -> profile.version.toString()
-        else -> getString(R.string.gal_protocol_version_experimental, profile.version.toString())
+    private fun versionLabel(value: String): String {
+        if (value == GalProfile.AUTO_SETTING) return getString(R.string.gal_protocol_version_auto)
+        val profile = GalProfile.fromSetting(value)
+        return when (profile) {
+            GalProfile.COMPATIBILITY -> getString(R.string.gal_protocol_version_default)
+            GalProfile.GAL_1_6 -> profile.version.toString()
+            else -> getString(R.string.gal_protocol_version_experimental, profile.version.toString())
+        }
     }
 
     private fun updateRows() {
         val scroll = recycler.layoutManager?.onSaveInstanceState()
         val caps = pending.capabilities
         val options = pending.options
+        val versions = LaboratoryPendingCopy.versionChoices
         val items = mutableListOf<SettingItem>(
             SettingItem.InfoBanner("labInfo", R.string.laboratory_description),
-            SettingItem.SettingEntry("galProtocolVersion", R.string.gal_protocol_version, profileLabel(pending.profile)) {
+            SettingItem.SettingEntry("galProtocolVersion", R.string.gal_protocol_version, versionLabel(pending.version)) {
                 MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
                     .setTitle(R.string.gal_protocol_version)
-                    .setSingleChoiceItems(GalProfile.entries.map(::profileLabel).toTypedArray(), GalProfile.entries.indexOf(pending.profile)) { dialog, which ->
-                        pending.selectProfile(which)
+                    .setSingleChoiceItems(versions.map(::versionLabel).toTypedArray(), versions.indexOf(pending.version)) { dialog, which ->
+                        pending.selectVersion(versions[which])
                         dialog.dismiss()
                         updateRows()
                     }
                     .setNegativeButton(R.string.cancel, null)
                     .show()
             },
-            SettingItem.InfoBanner("galInfo", R.string.gal_protocol_version_description)
+            SettingItem.InfoBanner("galInfo", R.string.gal_protocol_version_description),
+            SettingItem.InfoBanner("galAutoInfo", R.string.gal_protocol_version_auto_description,
+                getString(R.string.gal_protocol_version_auto_description,
+                    GalProfile.fromSetting(GalProfile.AUTO_SETTING).version.toString()))
         )
         fun toggle(id: String, title: Int, description: Int, checked: Boolean, enabled: Boolean,
                    change: (GalLaboratoryOptions, Boolean) -> GalLaboratoryOptions) {

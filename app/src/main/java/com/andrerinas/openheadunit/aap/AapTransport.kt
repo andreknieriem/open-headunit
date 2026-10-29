@@ -192,9 +192,10 @@ class AapTransport(
     var onAudioFocusStateChanged: ((Boolean) -> Unit)? = null
     var onUpdateUiConfigReplyReceived: (() -> Unit)? = null
 
-    // Capture settings once. The phone's reply is a ceiling, not permission to enable a
-    // newer feature set than the explicit request sent on this connection.
-    private val selectedGalProfile = GalProfile.fromSetting(settings.galProtocolVersion)
+    // Capture selection once. Auto resolves a concrete profile before TLS; a high phone reply
+    // alone never enables a feature set that was not explicitly requested on this connection.
+    private val galVersionSelection = settings.galProtocolVersion
+    private val selectedGalProfile = GalProfile.fromSetting(galVersionSelection)
     private val laboratoryOptions = settings.galLaboratoryOptions
     private val displaySettings = GalDisplaySettings(
         settings.hideClock, settings.hideBatteryLevel, settings.hidePhoneSignal)
@@ -1233,11 +1234,13 @@ class AapTransport(
             }
 
             val requested = selectedGalProfile.version
-            val version = Messages.versionRequest(requested.major, requested.minor)
+            val automatic = galVersionSelection == GalProfile.AUTO_SETTING
+            val version = if (automatic) null else Messages.versionRequest(requested.major, requested.minor)
             var ret = -1
             var attempt = 0
             var received = false
             var versionFrameSize = 0
+            var negotiatedSession: GalSessionProfile? = null
             // Separates "the peer is not answering" from "our own link broke". Only the first
             // is worth reporting upwards: it is the one the user can do something about.
             var peerSentBytes = false
@@ -1297,7 +1300,27 @@ class AapTransport(
             // budget. Partial frames retain bytes without extending this overall deadline.
             val versionDeadline = SystemClock.elapsedRealtime() + HANDSHAKE_TIMEOUT_MS
             val versionRequests = HandshakeMessagePolicy.versionRequests(isUsb)
-            while (attempt < versionRequests && connection.isConnected) {
+            if (automatic) {
+                val exchange = GalAutoVersionExchange(frames, SystemClock::elapsedRealtime,
+                    { bytes, timeout ->
+                        if (closing || !connection.isConnected) {
+                            throw java.io.IOException("GAL automatic exchange retired")
+                        }
+                        connection.sendBlocking(bytes, bytes.size, timeout).also { ret = it }
+                    }, { AppLog.i("Handshake: $it") })
+                try {
+                    negotiatedSession = exchange.negotiate(versionDeadline)
+                    received = true
+                    versionFrameSize = exchange.responseSize
+                } catch (e: java.io.IOException) {
+                    transportError = transportError || exchange.transportFailed
+                    AppLog.e("Handshake: GAL mode=auto phase=${exchange.phase} failed: ${e.message}")
+                }
+                attempt = exchange.requestCount
+            } else {
+                AppLog.i("Handshake: GAL mode=manual request=$requested")
+            }
+            while (version != null && attempt < versionRequests && connection.isConnected) {
                 if (SystemClock.elapsedRealtime() >= versionDeadline) {
                     AppLog.e("Handshake: Version exchange timed out after $attempt attempt(s).")
                     return false
@@ -1356,15 +1379,7 @@ class AapTransport(
                                 (negotiated?.let { "${it.major}.${it.minor}, ${it.statusName}" } ?: "malformed body"))
                             return false
                         }
-                        val contract = GalConnectionContract.resolve(
-                            GalSessionProfile(selectedGalProfile, negotiated), displaySettings, laboratoryOptions)
-                        galContract = contract
-                        // Legacy profiles cannot request timing controls later. Do not install
-                        // per-frame platform feedback callbacks for their ordinary video path.
-                        aapVideo.bindPresentationController(
-                            if (contract.media.optionsFor(Channel.ID_VID).embedded) presentationController else null)
-                        AppLog.i("Handshake: GAL request=$requested, peer=${negotiated.major}.${negotiated.minor}, " +
-                            "status=${negotiated.statusName}; active profile=$requested")
+                        negotiatedSession = GalSessionProfile(selectedGalProfile, negotiated)
                         received = true
                         versionFrameSize = frame.size
                         break
@@ -1401,6 +1416,19 @@ class AapTransport(
                 }
                 return false
             }
+            // A final reply can race retirement. Do not publish its contract or begin TLS for
+            // a connection that was already cancelled while the last response was arriving.
+            if (closing || !connection.isConnected) return false
+            val session = checkNotNull(negotiatedSession)
+            val contract = GalConnectionContract.resolve(session, displaySettings, laboratoryOptions)
+            galContract = contract
+            // Legacy profiles cannot request timing controls later. Do not install
+            // per-frame platform feedback callbacks for their ordinary video path.
+            aapVideo.bindPresentationController(
+                if (contract.media.optionsFor(Channel.ID_VID).embedded) presentationController else null)
+            AppLog.i("Handshake: GAL request=${session.requestedVersion}, peer=${session.finalResponse.version}, " +
+                "status=${session.finalResponse.statusName}; active profile=${session.requestedVersion}; " +
+                "mode=${if (automatic) "auto" else "manual"}")
             AppLog.i("Handshake: Version response recv ret: %d", versionFrameSize)
             lastHandshakeFailure = HandshakeFailure.SSL
 

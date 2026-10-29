@@ -454,6 +454,8 @@
     <string name="aux_rtp_destination_unset">Não definido</string>
     <string name="aux_rtp_destination_invalid">Introduza um endereço IPv4, como 192.168.1.50</string>
     <string name="aux_rtp_port">Porta do recetor</string>
+    <string name="aux_rtp_refresh">Atualizar a imagem a cada</string>
+    <string name="aux_rtp_refresh_seconds">%1$d s</string>
     <string name="aux_rtp_hint">Guarde isto como stream.sdp no computador recetor e depois execute %2$s\n\n%1$s</string>
     <string name="aux_network_size">Tamanho da transmissão</string>
     <string name="aux_network_port">Porta da transmissão</string>

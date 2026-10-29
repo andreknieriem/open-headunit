@@ -140,8 +140,90 @@ class RtpStreamOutputTest {
         val line = o.reportIfDue()
         assertNotNull(line)
         assertTrue(line!!, line.startsWith("RTP push sent 3 packets,"))
-        assertTrue(line, line.endsWith("in 10000ms, 1 keyframes carried their own SPS and PPS"))
+        assertTrue(line, line.endsWith("in 10000ms, 1 keyframes carried their own SPS and PPS, 0 refreshes asked, 0 pacing pauses"))
         assertNull(o.reportIfDue())
+    }
+
+    @Test
+    fun `with no keyframe the refresh asks once per interval`() {
+        var asked = 0
+        val o = RtpStreamOutput(socket, { now }, Random(1), 10_000).also { it.onKeyframeNeeded = { asked++ }; it.start() }
+        o.put(sps + pps + idr)
+        now = 9_999_000_000
+        o.put(delta)
+        assertEquals(0, asked)
+        now = 10_000_000_000
+        o.put(delta)
+        now = 15_000_000_000
+        o.put(delta)
+        assertEquals(1, asked)
+        now = 20_000_000_000
+        o.put(delta)
+        assertEquals(2, asked)
+    }
+
+    @Test
+    fun `a keyframe restarts the refresh interval`() {
+        var asked = 0
+        val o = RtpStreamOutput(socket, { now }, Random(1), 10_000).also { it.onKeyframeNeeded = { asked++ }; it.start() }
+        o.put(sps + pps + idr)
+        now = 8_000_000_000
+        o.put(idr)
+        now = 17_000_000_000
+        o.put(delta)
+        assertEquals(0, asked)
+        now = 18_000_000_000
+        o.put(delta)
+        assertEquals(1, asked)
+    }
+
+    @Test
+    fun `the first-unit request also holds the refresh back`() {
+        var asked = 0
+        val o = RtpStreamOutput(socket, { now }, Random(1), 10_000).also { it.onKeyframeNeeded = { asked++ }; it.start() }
+        now = 9_000_000_000
+        o.put(delta)
+        now = 10_000_000_000
+        o.put(delta)
+        assertEquals(1, asked)
+        now = 19_000_000_000
+        o.put(delta)
+        assertEquals(2, asked)
+    }
+
+    @Test
+    fun `a refresh of zero never asks after the first unit`() {
+        var asked = 0
+        val o = output().also { it.onKeyframeNeeded = { asked++ }; it.start() }
+        o.put(sps + pps + idr)
+        for (s in 1..120) { now = s * 1_000_000_000L; o.put(delta) }
+        assertEquals(0, asked)
+    }
+
+    @Test
+    fun `a large unit is sent in runs with a 1 ms pause between them`() {
+        val pauses = ArrayList<Long>()
+        val o = RtpStreamOutput(socket, { now }, Random(1), 0, { pauses.add(it) }).also { it.start() }
+        o.put(sps + pps + idr)
+        now = 100_000_000
+        val big = byteArrayOf(0, 0, 0, 1, 0x41) + ByteArray(100_000) { 0x11 }
+        o.put(big)
+        val packets = socket.sent.size - 3
+        assertEquals(73, packets)
+        // 73 packets over 20 ms is 4 a run, so 18 pauses.
+        assertEquals(18, pauses.size)
+        assertTrue(pauses.all { it == 1L })
+    }
+
+    @Test
+    fun `a large first unit is paced and a small unit goes out at once`() {
+        val pauses = ArrayList<Long>()
+        val o = RtpStreamOutput(socket, { now }, Random(1), 0, { pauses.add(it) }).also { it.start() }
+        o.put(byteArrayOf(0, 0, 0, 1, 0x65) + ByteArray(100_000) { 0x11 })
+        assertEquals(18, pauses.size)
+        now = 100_000_000
+        o.put(delta)
+        assertEquals(18, pauses.size)
     }
 
     @Test

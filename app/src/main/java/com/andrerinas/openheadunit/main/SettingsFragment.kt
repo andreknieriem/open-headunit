@@ -87,6 +87,7 @@ import com.andrerinas.openheadunit.secondscreen.ms912x.Ms912xWireFormat
 import com.andrerinas.openheadunit.utils.NetworkAddresses
 import com.andrerinas.openheadunit.secondscreen.network.NetworkStreamPolicy
 import com.andrerinas.openheadunit.secondscreen.rtp.RtpDestinationPolicy
+import com.andrerinas.openheadunit.secondscreen.rtp.RtpRefreshPolicy
 import com.andrerinas.openheadunit.utils.DisplayTargetPolicy
 import com.andrerinas.openheadunit.utils.DisplayTargets
 import com.andrerinas.openheadunit.utils.Settings
@@ -177,7 +178,7 @@ class SettingsFragment : Fragment() {
         "gpsNavigation",
         // Graphic
         "resolution", "dpiPixelDensity", "viewMode", "screenOrientation", "projectionDisplay",
-        "auxDisplay", "auxAndroidDisplay", "auxNetworkSize", "auxNetworkPort", "auxNetworkHint", "auxRtpDestination", "auxRtpPort", "auxRtpHint", "auxMs912xMode", "auxMs912xFormat",
+        "auxDisplay", "auxAndroidDisplay", "auxNetworkSize", "auxNetworkPort", "auxNetworkHint", "auxRtpDestination", "auxRtpPort", "auxRtpRefresh", "auxRtpHint", "auxMs912xMode", "auxMs912xFormat",
         "auxMs912xHint", "auxUsbDisplayStatus", "auxUsbDisplayCheck", "auxDisplayRole", "auxDisplayContent", "startInFullscreenMode",
         // Theming
         "loadingScreen", "customization",
@@ -4970,6 +4971,27 @@ class SettingsFragment : Fragment() {
                     settings.commit()
                     updateSettingsList()
                 }
+            }
+        ))
+        val refreshes = RtpRefreshPolicy.INTERVALS_S
+        val refreshLabels = refreshes.map {
+            if (it == 0) getString(R.string.aux_display_off) else getString(R.string.aux_rtp_refresh_seconds, it)
+        }
+        val refreshIndex = refreshes.indexOf(settings.auxRtpRefreshSeconds).coerceAtLeast(0)
+        items.add(SettingItem.SettingEntry(
+            stableId = "auxRtpRefresh",
+            nameResId = R.string.aux_rtp_refresh,
+            value = refreshLabels[refreshIndex],
+            onClick = { _ ->
+                MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
+                    .setTitle(R.string.aux_rtp_refresh)
+                    .setSingleChoiceItems(refreshLabels.toTypedArray(), refreshIndex) { dialog, which ->
+                        if (refreshes[which] != settings.auxRtpRefreshSeconds) settings.auxRtpRefreshSeconds = refreshes[which]
+                        settings.commit()
+                        dialog.dismiss()
+                        updateSettingsList()
+                    }
+                    .show()
             }
         ))
         items.add(SettingItem.InfoBanner(

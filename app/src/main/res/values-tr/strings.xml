@@ -206,6 +206,8 @@
     <string name="aux_rtp_destination_unset">Ayarlanmadı</string>
     <string name="aux_rtp_destination_invalid">192.168.1.50 gibi bir IPv4 adresi yazın</string>
     <string name="aux_rtp_port">Alıcı portu</string>
+    <string name="aux_rtp_refresh">Görüntüyü yenileme sıklığı</string>
+    <string name="aux_rtp_refresh_seconds">%1$d sn</string>
     <string name="aux_rtp_hint">Bunu alıcı bilgisayarda stream.sdp olarak kaydedin, sonra %2$s komutunu çalıştırın\n\n%1$s</string>
     <string name="aux_network_size">Yayın boyutu</string>
     <string name="aux_network_port">Yayın bağlantı noktası</string>

@@ -452,6 +452,8 @@
     <string name="aux_rtp_destination_unset">सेट नहीं है</string>
     <string name="aux_rtp_destination_invalid">192.168.1.50 जैसा IPv4 पता लिखें</string>
     <string name="aux_rtp_port">रिसीवर का पोर्ट</string>
+    <string name="aux_rtp_refresh">तस्वीर रीफ़्रेश करने का अंतराल</string>
+    <string name="aux_rtp_refresh_seconds">%1$d सेकंड</string>
     <string name="aux_rtp_hint">इसे प्राप्त करने वाले कंप्यूटर पर stream.sdp के रूप में सेव करें, फिर %2$s चलाएं\n\n%1$s</string>
     <string name="aux_network_size">स्ट्रीम का साइज़</string>
     <string name="aux_network_port">स्ट्रीम पोर्ट</string>

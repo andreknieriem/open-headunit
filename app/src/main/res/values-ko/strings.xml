@@ -213,6 +213,8 @@
     <string name="aux_rtp_destination_unset">설정 안 됨</string>
     <string name="aux_rtp_destination_invalid">192.168.1.50 같은 IPv4 주소를 입력하세요.</string>
     <string name="aux_rtp_port">수신기 포트</string>
+    <string name="aux_rtp_refresh">화면 새로고침 간격</string>
+    <string name="aux_rtp_refresh_seconds">%1$d초</string>
     <string name="aux_rtp_hint">이 내용을 수신 컴퓨터에 stream.sdp로 저장한 다음 다음을 실행하세요: %2$s\n\n%1$s</string>
     <string name="aux_network_size">스트림 크기</string>
     <string name="aux_network_port">스트림 포트</string>

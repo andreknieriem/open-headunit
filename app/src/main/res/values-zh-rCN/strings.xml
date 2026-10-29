@@ -199,6 +199,8 @@
     <string name="aux_rtp_destination_unset">未设置</string>
     <string name="aux_rtp_destination_invalid">请输入 IPv4 地址，例如 192.168.1.50</string>
     <string name="aux_rtp_port">接收端端口</string>
+    <string name="aux_rtp_refresh">画面刷新间隔</string>
+    <string name="aux_rtp_refresh_seconds">%1$d 秒</string>
     <string name="aux_rtp_hint">请在接收端电脑上将此内容保存为 stream.sdp，然后运行 %2$s\n\n%1$s</string>
     <string name="aux_network_size">串流大小</string>
     <string name="aux_network_port">串流端口</string>

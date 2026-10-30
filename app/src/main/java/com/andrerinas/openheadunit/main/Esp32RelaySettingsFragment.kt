@@ -15,11 +15,11 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.andrerinas.openheadunit.R
-import com.andrerinas.openheadunit.connection.broker.NativeBTBrokerClient
-import com.andrerinas.openheadunit.connection.broker.NativeBTBrokerProtocol
-import com.andrerinas.openheadunit.connection.broker.NativeBTBrokerSession
-import com.andrerinas.openheadunit.connection.broker.NativeBTBrokerStore
-import com.andrerinas.openheadunit.connection.broker.WifiDirectDisplayInfo
+import com.andrerinas.openheadunit.connection.esp32.Esp32RelayClient
+import com.andrerinas.openheadunit.connection.esp32.Esp32RelayProtocol
+import com.andrerinas.openheadunit.connection.esp32.Esp32RelaySession
+import com.andrerinas.openheadunit.connection.esp32.Esp32RelayStore
+import com.andrerinas.openheadunit.connection.esp32.WifiDirectDisplayInfo
 import com.andrerinas.openheadunit.main.settings.SettingItem
 import com.andrerinas.openheadunit.main.settings.SettingsAdapter
 import com.google.android.material.appbar.MaterialToolbar
@@ -27,9 +27,9 @@ import com.google.android.material.appbar.MaterialToolbar
 /**
  * Chooses the Bluetooth relay and pairs a phone through it.
  */
-class BrokerSettingsFragment : Fragment() {
-    private lateinit var store: NativeBTBrokerStore
-    private lateinit var scanner: NativeBTBrokerClient
+class Esp32RelaySettingsFragment : Fragment() {
+    private lateinit var store: Esp32RelayStore
+    private lateinit var scanner: Esp32RelayClient
     private val found = linkedMapOf<String, String>()
     private var scanning = false
 
@@ -40,17 +40,17 @@ class BrokerSettingsFragment : Fragment() {
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        return inflater.inflate(R.layout.fragment_broker, container, false)
+        return inflater.inflate(R.layout.fragment_esp32_relay, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        if (!NativeBTBrokerSession.isSupported()) {
+        if (!Esp32RelaySession.isSupported()) {
             leave()
             return
         }
-        store = NativeBTBrokerStore(requireContext())
-        scanner = NativeBTBrokerClient(requireContext())
+        store = Esp32RelayStore(requireContext())
+        scanner = Esp32RelayClient(requireContext())
         val recycler = view.findViewById<RecyclerView>(R.id.recycler_view)
         val adapter = SettingsAdapter()
         recycler.layoutManager = LinearLayoutManager(requireContext())
@@ -64,13 +64,13 @@ class BrokerSettingsFragment : Fragment() {
         fun render() {
             adapter.submitList(rows())
         }
-        NativeBTBrokerSession.setListener { render() }
+        Esp32RelaySession.setListener { render() }
         render()
     }
 
     override fun onDestroyView() {
         scanner.stopScan()
-        NativeBTBrokerSession.setListener(null)
+        Esp32RelaySession.setListener(null)
         super.onDestroyView()
     }
 
@@ -78,12 +78,12 @@ class BrokerSettingsFragment : Fragment() {
         val items = mutableListOf<SettingItem>()
         val enabled = store.enabled
         val saved = store.deviceName ?: store.deviceAddress
-        val brokerSaved = store.deviceAddress != null
+        val esp32RelaySaved = store.deviceAddress != null
 
         items.add(SettingItem.ToggleSettingEntry(
-            stableId = "brokerEnabled",
-            nameResId = R.string.broker_enabled,
-            descriptionResId = R.string.broker_enabled_description,
+            stableId = "esp32RelayEnabled",
+            nameResId = R.string.esp32_relay_enabled,
+            descriptionResId = R.string.esp32_relay_enabled_description,
             isChecked = enabled,
             onCheckedChanged = { checked ->
                 store.enabled = checked
@@ -91,76 +91,76 @@ class BrokerSettingsFragment : Fragment() {
                     scanner.stopScan()
                     scanning = false
                     found.clear()
-                    NativeBTBrokerSession.close()
+                    Esp32RelaySession.close()
                 }
-                NativeBTBrokerSession.syncWatchdog(requireContext())
+                Esp32RelaySession.syncWatchdog(requireContext())
                 refresh()
             },
         ))
         items.add(SettingItem.SettingEntry(
-            stableId = "brokerSaved",
-            nameResId = R.string.broker_saved_device,
-            value = saved ?: getString(R.string.broker_none),
+            stableId = "esp32RelaySaved",
+            nameResId = R.string.esp32_relay_saved_device,
+            value = saved ?: getString(R.string.esp32_relay_none),
             isEnabled = enabled,
             onClick = { _ -> },
         ))
         items.add(SettingItem.SettingEntry(
-            stableId = "brokerStatus",
-            nameResId = R.string.broker_status,
-            value = if (enabled) statusText() else getString(R.string.broker_phase_idle),
+            stableId = "esp32RelayStatus",
+            nameResId = R.string.esp32_relay_status,
+            value = if (enabled) statusText() else getString(R.string.esp32_relay_phase_idle),
             isEnabled = enabled,
             onClick = { _ -> },
         ))
         items.add(SettingItem.SettingEntry(
-            stableId = "brokerScan",
-            nameResId = R.string.broker_scan,
-            value = if (scanning) getString(R.string.broker_scanning) else getString(R.string.broker_scan_action),
+            stableId = "esp32RelayScan",
+            nameResId = R.string.esp32_relay_scan,
+            value = if (scanning) getString(R.string.esp32_relay_scanning) else getString(R.string.esp32_relay_scan_action),
             isEnabled = enabled,
             onClick = { requestScan() },
         ))
         if (enabled) {
             found.forEach { (address, name) ->
                 items.add(SettingItem.SettingEntry(
-                    stableId = "broker-$address",
-                    nameResId = R.string.broker_found_device,
+                    stableId = "esp32Relay-$address",
+                    nameResId = R.string.esp32_relay_found_device,
                     nameOverride = name,
                     value = address,
                     onClick = { select(address, name) },
                 ))
             }
         }
-        items.add(SettingItem.CategoryHeader("brokerPairing", R.string.broker_pairing_header))
-        items.add(SettingItem.InfoBanner("brokerPairingSteps", R.string.broker_pairing_steps))
+        items.add(SettingItem.CategoryHeader("esp32RelayPairing", R.string.esp32_relay_pairing_header))
+        items.add(SettingItem.InfoBanner("esp32RelayPairingSteps", R.string.esp32_relay_pairing_steps))
         items.add(SettingItem.SettingEntry(
-            stableId = "brokerPair",
-            nameResId = R.string.broker_pair,
-            value = getString(R.string.broker_pair_value),
-            isEnabled = enabled && brokerSaved,
+            stableId = "esp32RelayPair",
+            nameResId = R.string.esp32_relay_pair,
+            value = getString(R.string.esp32_relay_pair_value),
+            isEnabled = enabled && esp32RelaySaved,
             onClick = {
-                NativeBTBrokerSession.openPairing(requireContext())
+                Esp32RelaySession.openPairing(requireContext())
                 refresh()
             },
         ))
         items.add(SettingItem.ToggleSettingEntry(
-            stableId = "brokerEndAaOnDisconnect",
-            nameResId = R.string.broker_end_aa_on_disconnect,
-            descriptionResId = R.string.broker_end_aa_on_disconnect_description,
+            stableId = "esp32RelayEndAaOnDisconnect",
+            nameResId = R.string.esp32_relay_end_aa_on_disconnect,
+            descriptionResId = R.string.esp32_relay_end_aa_on_disconnect_description,
             isChecked = store.endAaOnDisconnect,
             isEnabled = enabled,
             onCheckedChanged = { checked ->
                 store.endAaOnDisconnect = checked
-                NativeBTBrokerSession.syncWatchdog(requireContext())
+                Esp32RelaySession.syncWatchdog(requireContext())
                 refresh()
             },
         ))
         items.add(SettingItem.SettingEntry(
-            stableId = "brokerForget",
-            nameResId = R.string.broker_forget,
-            value = getString(R.string.broker_forget_value),
-            isEnabled = enabled && brokerSaved,
+            stableId = "esp32RelayForget",
+            nameResId = R.string.esp32_relay_forget,
+            value = getString(R.string.esp32_relay_forget_value),
+            isEnabled = enabled && esp32RelaySaved,
             onClick = {
                 store.clear()
-                NativeBTBrokerSession.close()
+                Esp32RelaySession.close()
                 found.clear()
                 refresh()
             },
@@ -169,14 +169,14 @@ class BrokerSettingsFragment : Fragment() {
     }
 
     private fun statusText(): String {
-        val status = NativeBTBrokerSession.current()
+        val status = Esp32RelaySession.current()
         return when (status.phase) {
-            NativeBTBrokerSession.Phase.IDLE -> getString(R.string.broker_phase_idle)
-            NativeBTBrokerSession.Phase.CONNECTING -> getString(R.string.broker_phase_connecting)
-            NativeBTBrokerSession.Phase.READY -> getString(R.string.broker_phase_ready)
-            NativeBTBrokerSession.Phase.INCOMPLETE -> getString(R.string.broker_phase_incomplete)
-            NativeBTBrokerSession.Phase.PAIRING -> getString(R.string.broker_phase_pairing)
-            NativeBTBrokerSession.Phase.FAILED -> getString(R.string.broker_phase_failed, status.detail)
+            Esp32RelaySession.Phase.IDLE -> getString(R.string.esp32_relay_phase_idle)
+            Esp32RelaySession.Phase.CONNECTING -> getString(R.string.esp32_relay_phase_connecting)
+            Esp32RelaySession.Phase.READY -> getString(R.string.esp32_relay_phase_ready)
+            Esp32RelaySession.Phase.INCOMPLETE -> getString(R.string.esp32_relay_phase_incomplete)
+            Esp32RelaySession.Phase.PAIRING -> getString(R.string.esp32_relay_phase_pairing)
+            Esp32RelaySession.Phase.FAILED -> getString(R.string.esp32_relay_phase_failed, status.detail)
         }
     }
 
@@ -199,7 +199,7 @@ class BrokerSettingsFragment : Fragment() {
         scanner.scan(
             onDevice = { device, name ->
                 val label = name?.trim().orEmpty()
-                if (!NativeBTBrokerProtocol.isBrokerBleName(label)) return@scan
+                if (!Esp32RelayProtocol.isEsp32RelayBleName(label)) return@scan
                 found[device.address] = label
                 refresh()
             },
@@ -222,9 +222,9 @@ class BrokerSettingsFragment : Fragment() {
                 return@read
             }
             if (info.isComplete) {
-                NativeBTBrokerSession.offer(requireContext(), info)
+                Esp32RelaySession.offer(requireContext(), info)
             } else {
-                NativeBTBrokerSession.openPairing(requireContext())
+                Esp32RelaySession.openPairing(requireContext())
             }
             refresh()
         }

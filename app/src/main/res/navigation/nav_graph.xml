@@ -128,8 +128,8 @@
             app:popEnterAnim="@anim/slide_in_left"
             app:popExitAnim="@anim/slide_out_right" />
         <action
-            android:id="@+id/action_settingsFragment_to_brokerSettingsFragment"
-            app:destination="@id/brokerSettingsFragment"
+            android:id="@+id/action_settingsFragment_to_esp32RelaySettingsFragment"
+            app:destination="@id/esp32RelaySettingsFragment"
             app:enterAnim="@anim/slide_in_right"
             app:exitAnim="@anim/slide_out_left"
             app:popEnterAnim="@anim/slide_in_left"
@@ -271,9 +271,9 @@
         android:label="@string/microphone_settings" />
 
     <fragment
-        android:id="@+id/brokerSettingsFragment"
-        android:name="com.andrerinas.openheadunit.main.BrokerSettingsFragment"
-        android:label="@string/broker_settings_title" />
+        android:id="@+id/esp32RelaySettingsFragment"
+        android:name="com.andrerinas.openheadunit.main.Esp32RelaySettingsFragment"
+        android:label="@string/esp32_relay_settings_title" />
 
     <fragment
         android:id="@+id/audioStreamSettingsFragment"

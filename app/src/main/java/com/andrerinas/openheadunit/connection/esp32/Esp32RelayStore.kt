@@ -1,13 +1,13 @@
-package com.andrerinas.openheadunit.connection.broker
+package com.andrerinas.openheadunit.connection.esp32
 
 import android.content.Context
 
-class NativeBTBrokerStore(context: Context) {
+class Esp32RelayStore(context: Context) {
     private val prefs = context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
     /**
-     * Master switch for the BT Broker path. Defaults to off. Off keeps the saved device
-     * but blocks scan, pairing, BLE session, and Native AA broker transport.
+     * Master switch for the ESP32 relay path. Defaults to off. Off keeps the saved device
+     * but blocks scan, pairing, BLE session, and Native AA ESP32 relay transport.
      */
     var enabled: Boolean
         get() = prefs.getBoolean(KEY_ENABLED, false)
@@ -39,7 +39,7 @@ class NativeBTBrokerStore(context: Context) {
     }
 
     companion object {
-        private const val PREFS = "NativeBTBroker"
+        private const val PREFS = "Esp32Relay"
         private const val KEY_ENABLED = "enabled"
         private const val KEY_ADDRESS = "address"
         private const val KEY_NAME = "name"

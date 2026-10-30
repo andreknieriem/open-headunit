@@ -1,4 +1,4 @@
-package com.andrerinas.openheadunit.connection.broker
+package com.andrerinas.openheadunit.connection.esp32
 
 import android.content.Context
 import android.os.Build
@@ -9,11 +9,11 @@ import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.utils.AppLog
 
 /**
- * One BLE session from this head unit to the NativeBTBroker.
+ * One BLE session from this head unit to the Esp32Relay.
  * Wireless credentials are pushed only after a device has been chosen in settings.
  */
-object NativeBTBrokerSession {
-    /** BLE scanner / GATT path used by this broker requires Marshmallow. */
+object Esp32RelaySession {
+    /** BLE scanner / GATT path used by this ESP32 relay requires Marshmallow. */
     const val MIN_SDK = Build.VERSION_CODES.M
 
     enum class Phase { IDLE, CONNECTING, READY, FAILED, INCOMPLETE, PAIRING }
@@ -21,24 +21,24 @@ object NativeBTBrokerSession {
     data class Status(val phase: Phase, val detail: String = "")
 
     private val main = Handler(Looper.getMainLooper())
-    private var client: NativeBTBrokerClient? = null
+    private var client: Esp32RelayClient? = null
     private var appContext: Context? = null
     private var lastSnapshot: String? = null
-    private var lastInfo: NativeBTBrokerProtocol.DisplayInfo? = null
+    private var lastInfo: Esp32RelayProtocol.DisplayInfo? = null
     /** Last [WifiDirectDisplayInfo.read] for a non-force [offerLiveGroup]. */
     private var lastLiveGroupReadMs = 0L
     private var status = Status(Phase.IDLE)
     private var listener: ((Status) -> Unit)? = null
-    private var frameSink: ((NativeBTBrokerProtocol.Frame) -> Unit)? = null
+    private var frameSink: ((Esp32RelayProtocol.Frame) -> Unit)? = null
     private var transportErrorHandler: ((String) -> Unit)? = null
     private var retryUntilMs = 0L
     private var retryPosted = false
     private var fromRetry = false
     private var gaveUp = false
     private var projectionUp = false
-    /** Last time PROJECTION_UP was recorded on the broker. 0 while projection is down. */
+    /** Last time PROJECTION_UP was recorded on the ESP32 relay. 0 while projection is down. */
     private var lastProjectionOkAtMs = 0L
-    /** This down period already handed the broker one AA_ENABLE. */
+    /** This down period already handed the ESP32 relay one AA_ENABLE. */
     private var startSent = false
     /**
      * When false, [offer] must not send AA_ENABLE / wake HFP.
@@ -55,15 +55,15 @@ object NativeBTBrokerSession {
     private var lastWakeAtMs = 0L
     /** Last wake already had a complete Wi-Fi snapshot (SSID/IP/key/BSSID). */
     private var lastWakeHadNetwork = false
-    /** Phone Android Auto RFCOMM is up on the broker (EVT_RFCOMM_OPEN … CLOSE). */
+    /** Phone Android Auto RFCOMM is up on the ESP32 relay (EVT_RFCOMM_OPEN … CLOSE). */
     @Volatile private var phoneAaRfcommLive = false
     /** BLE is down and the retry window has not expired. The displayed phase stays as it was. */
-    private var awaitingBroker = false
-    /** 2 s CMD_GET_STATUS probe while [NativeBTBrokerStore.endAaOnDisconnect] is on. */
+    private var awaitingEsp32Relay = false
+    /** 2 s CMD_GET_STATUS probe while [Esp32RelayStore.endAaOnDisconnect] is on. */
     private var watchdogPosted = false
     private var watchdogFailures = 0
 
-    /** Runs once when the broker stays down for the whole retry window. */
+    /** Runs once when the ESP32 relay stays down for the whole retry window. */
     var onGiveUp: (() -> Unit)? = null
 
     /**
@@ -73,7 +73,7 @@ object NativeBTBrokerSession {
     var onProjectionRecordFailed: (() -> Unit)? = null
 
     /** Native AA carrier that consumes RFCOMM bytes relayed over BLE. */
-    fun setFrameSink(sink: ((NativeBTBrokerProtocol.Frame) -> Unit)?) {
+    fun setFrameSink(sink: ((Esp32RelayProtocol.Frame) -> Unit)?) {
         frameSink = sink
         // Keep the session dispatcher so pairing confirmation still updates phase.
         client?.onFrame = ::dispatchFrame
@@ -89,28 +89,28 @@ object NativeBTBrokerSession {
     }
 
     /**
-     * While [Phase.PAIRING], a phone bond / HFP link from the broker means pairing succeeded —
+     * While [Phase.PAIRING], a phone bond / HFP link from the ESP32 relay means pairing succeeded —
      * show Connected (READY). Always forward to the Native AA carrier sink when set.
      */
-    private fun dispatchFrame(frame: NativeBTBrokerProtocol.Frame) {
+    private fun dispatchFrame(frame: Esp32RelayProtocol.Frame) {
         when (frame.type) {
-            NativeBTBrokerProtocol.EVT_RFCOMM_OPEN -> phoneAaRfcommLive = true
-            NativeBTBrokerProtocol.EVT_RFCOMM_CLOSE -> phoneAaRfcommLive = false
+            Esp32RelayProtocol.EVT_RFCOMM_OPEN -> phoneAaRfcommLive = true
+            Esp32RelayProtocol.EVT_RFCOMM_CLOSE -> phoneAaRfcommLive = false
             else -> Unit
         }
         if (status.phase == Phase.PAIRING && isPhonePairConfirmed(frame)) {
-            val address = appContext?.let { activeBrokerAddress(it) } ?: status.detail
-            AppLog.i("Broker: phone pairing confirmed — link ready")
+            val address = appContext?.let { activeEsp32RelayAddress(it) } ?: status.detail
+            AppLog.i("ESP32 relay: phone pairing confirmed — link ready")
             publish(Status(Phase.READY, address))
         }
         frameSink?.invoke(frame)
     }
 
     /** EVT_PHONE_LINK, or EVT_STATUS with the paired flag set. */
-    private fun isPhonePairConfirmed(frame: NativeBTBrokerProtocol.Frame): Boolean {
+    private fun isPhonePairConfirmed(frame: Esp32RelayProtocol.Frame): Boolean {
         return when (frame.type) {
-            NativeBTBrokerProtocol.EVT_PHONE_LINK -> frame.payload.size >= 6
-            NativeBTBrokerProtocol.EVT_STATUS ->
+            Esp32RelayProtocol.EVT_PHONE_LINK -> frame.payload.size >= 6
+            Esp32RelayProtocol.EVT_STATUS ->
                 frame.payload.size >= 2 && (frame.payload[1].toInt() and 0x01) != 0
             else -> false
         }
@@ -119,19 +119,19 @@ object NativeBTBrokerSession {
     /** Phone-bound bytes for the BLINK-style handshake. */
     fun sendRfcomm(bytes: ByteArray): Boolean = client?.sendRfcomm(bytes) ?: false
 
-    /** Allow the broker to indicate more DATA_RFCOMM_RX pieces. */
+    /** Allow the ESP32 relay to indicate more DATA_RFCOMM_RX pieces. */
     fun grantCredit(extra: Int = 4) {
         client?.sendCredit(extra)
     }
 
     fun isSupported(): Boolean = Build.VERSION.SDK_INT >= MIN_SDK
 
-    fun hasSavedBroker(context: Context): Boolean =
-        isSupported() && activeBrokerAddress(context.applicationContext) != null
+    fun hasSavedEsp32Relay(context: Context): Boolean =
+        isSupported() && activeEsp32RelayAddress(context.applicationContext) != null
 
     /** Saved BLE address only when the master switch is on. */
-    private fun activeBrokerAddress(app: Context): String? {
-        val store = NativeBTBrokerStore(app)
+    private fun activeEsp32RelayAddress(app: Context): String? {
+        val store = Esp32RelayStore(app)
         if (!store.enabled) return null
         return store.deviceAddress
     }
@@ -144,7 +144,7 @@ object NativeBTBrokerSession {
      */
     fun armRelay(context: Context) {
         val app = context.applicationContext
-        val address = activeBrokerAddress(app) ?: return
+        val address = activeEsp32RelayAddress(app) ?: return
         appContext = app
         if (status.phase == Phase.CONNECTING || status.phase == Phase.READY || status.phase == Phase.PAIRING) {
             return
@@ -153,7 +153,7 @@ object NativeBTBrokerSession {
         startSent = false
         loggedStartInFlight = false
         publish(Status(Phase.CONNECTING))
-        pushAaEnable(app, address, lastInfo ?: NativeBTBrokerProtocol.emptyDisplayInfo())
+        pushAaEnable(app, address, lastInfo ?: Esp32RelayProtocol.emptyDisplayInfo())
     }
 
     /**
@@ -166,19 +166,19 @@ object NativeBTBrokerSession {
      */
     fun requestAaWake(context: Context? = null) {
         val app = context?.applicationContext ?: appContext ?: return
-        val address = activeBrokerAddress(app) ?: return
+        val address = activeEsp32RelayAddress(app) ?: return
         appContext = app
         if (projectionUp || syncProjectionFromComm(app)) return
-        val info = lastInfo ?: NativeBTBrokerProtocol.emptyDisplayInfo()
+        val info = lastInfo ?: Esp32RelayProtocol.emptyDisplayInfo()
         val complete = info.isComplete
         wakeBlockedReason(complete)?.let { reason ->
-            AppLog.d("Broker: AA wake skipped — $reason")
+            AppLog.d("ESP32 relay: AA wake skipped — $reason")
             return
         }
         allowAutoDial = true
         noteWakeAttempt(completeNetwork = complete, consumeStartBudget = complete)
         AppLog.i(
-            "Broker: intentional AA wake (HFP) to $address" +
+            "ESP32 relay: intentional AA wake (HFP) to $address" +
                 if (complete) "" else " (early, waiting for Wi-Fi snapshot)"
         )
         if (status.phase != Phase.READY && status.phase != Phase.CONNECTING) {
@@ -216,8 +216,8 @@ object NativeBTBrokerSession {
         }
     }
 
-    private fun markBrokerReady(address: String) {
-        awaitingBroker = false
+    private fun markEsp32RelayReady(address: String) {
+        awaitingEsp32Relay = false
         stopRetry()
         gaveUp = false
         publish(Status(Phase.READY, address))
@@ -226,16 +226,16 @@ object NativeBTBrokerSession {
     private fun pushAaEnable(
         app: Context,
         address: String,
-        info: NativeBTBrokerProtocol.DisplayInfo,
+        info: Esp32RelayProtocol.DisplayInfo,
     ) {
-        brokerClient(app).prepare(
+        esp32RelayClient(app).prepare(
             address,
             info.copy(generation = System.currentTimeMillis() / 1000L),
             restartProjection = true,
             confirmProjection = false,
         ) { result ->
             if (result.isSuccess) {
-                markBrokerReady(address)
+                markEsp32RelayReady(address)
             } else {
                 if (!noteLinkLost()) {
                     publish(Status(Phase.FAILED, result.exceptionOrNull()?.message ?: ""))
@@ -247,7 +247,7 @@ object NativeBTBrokerSession {
     private val retry = Runnable {
         retryPosted = false
         val app = appContext ?: return@Runnable
-        if (!awaitingBroker && (status.phase == Phase.READY || status.phase == Phase.PAIRING)) return@Runnable
+        if (!awaitingEsp32Relay && (status.phase == Phase.READY || status.phase == Phase.PAIRING)) return@Runnable
         if (SystemClock.elapsedRealtime() >= retryUntilMs) {
             giveUp()
             return@Runnable
@@ -274,9 +274,9 @@ object NativeBTBrokerSession {
         onStatus?.invoke(status)
     }
 
-    fun offer(context: Context, info: NativeBTBrokerProtocol.DisplayInfo, force: Boolean = false) {
+    fun offer(context: Context, info: Esp32RelayProtocol.DisplayInfo, force: Boolean = false) {
         val app = context.applicationContext
-        val address = activeBrokerAddress(app)
+        val address = activeEsp32RelayAddress(app)
         if (address == null) {
             publish(Status(Phase.IDLE))
             return
@@ -289,7 +289,7 @@ object NativeBTBrokerSession {
         }
         lastInfo = info
         appContext = app
-        // While AA is up, only the PROJECTION_UP heartbeat talks to the broker.
+        // While AA is up, only the PROJECTION_UP heartbeat talks to the ESP32 relay.
         // Re-running HELLO/SET_NETWORK/PROJECTION_UP every snapshot floods the link.
         if (projectionUp || syncProjectionFromComm(app)) {
             return
@@ -311,13 +311,13 @@ object NativeBTBrokerSession {
             main.postDelayed(sendDial, START_DELIVERY_MS)
         }
         val snapshot = listOf(address, info.ssid, info.bssid, info.ipAddress, info.port.toString()).joinToString("|")
-        if (!projectionUp && (startSent || dialArmed) && !awaitingBroker &&
+        if (!projectionUp && (startSent || dialArmed) && !awaitingEsp32Relay &&
             snapshot == lastSnapshot &&
             (status.phase == Phase.READY || status.phase == Phase.CONNECTING)
         ) {
             if (!loggedStartInFlight) {
                 loggedStartInFlight = true
-                AppLog.d("Broker: previous start is still on the way to the phone")
+                AppLog.d("ESP32 relay: previous start is still on the way to the phone")
             }
             return
         }
@@ -339,16 +339,16 @@ object NativeBTBrokerSession {
             return@Runnable
         }
         wakeBlockedReason(completeNetwork = true)?.let { reason ->
-            AppLog.d("Broker: snapshot dial skipped — $reason")
+            AppLog.d("ESP32 relay: snapshot dial skipped — $reason")
             return@Runnable
         }
         noteWakeAttempt(completeNetwork = true, consumeStartBudget = true)
-        AppLog.i("Broker: one start for ${info.ssid} ${info.ipAddress}:${info.port}")
+        AppLog.i("ESP32 relay: one start for ${info.ssid} ${info.ipAddress}:${info.port}")
         push(app, info, dial = true)
     }
 
     /**
-     * If Android Auto TCP is already up, mark projection and tell the broker so HFP stays off.
+     * If Android Auto TCP is already up, mark projection and tell the ESP32 relay so HFP stays off.
      * @return true when the session is live and no AA_ENABLE should be sent
      */
     private fun syncProjectionFromComm(app: Context): Boolean {
@@ -359,24 +359,24 @@ object NativeBTBrokerSession {
         }
         if (!live) return false
         if (!projectionUp) {
-            AppLog.i("Broker: projection already live — notifying broker and skipping AA_ENABLE/HFP wake")
+            AppLog.i("ESP32 relay: projection already live — notifying ESP32 relay and skipping AA_ENABLE/HFP wake")
             notifyProjection(true)
         }
         return true
     }
 
-    private fun push(app: Context, info: NativeBTBrokerProtocol.DisplayInfo, dial: Boolean) {
-        val address = activeBrokerAddress(app) ?: return
-        AppLog.i("Broker: sending Wi-Fi snapshot ${info.ssid} ${info.ipAddress}:${info.port} to $address" +
+    private fun push(app: Context, info: Esp32RelayProtocol.DisplayInfo, dial: Boolean) {
+        val address = activeEsp32RelayAddress(app) ?: return
+        AppLog.i("ESP32 relay: sending Wi-Fi snapshot ${info.ssid} ${info.ipAddress}:${info.port} to $address" +
             if (dial) "" else " without a new start")
-        brokerClient(app).prepare(
+        esp32RelayClient(app).prepare(
             address,
             info.copy(generation = System.currentTimeMillis() / 1000L),
             restartProjection = dial,
             confirmProjection = projectionUp && !dial,
         ) { result ->
             if (result.isSuccess) {
-                markBrokerReady(address)
+                markEsp32RelayReady(address)
             } else {
                 lastSnapshot = null
                 if (!noteLinkLost()) {
@@ -386,23 +386,23 @@ object NativeBTBrokerSession {
         }
     }
 
-    /** Ask the broker to drop phone bonds and answer a new phone's Classic inquiry for 120 seconds. */
+    /** Ask the ESP32 relay to drop phone bonds and answer a new phone's Classic inquiry for 120 seconds. */
     fun openPairing(context: Context) {
         val app = context.applicationContext
-        val address = activeBrokerAddress(app)
+        val address = activeEsp32RelayAddress(app)
         if (address == null) {
             publish(Status(Phase.IDLE))
             return
         }
         appContext = app
-        // Pairing needs inbound HFP. Drop PROJECTION_UP so the broker accepts CMD_HFP_ON.
+        // Pairing needs inbound HFP. Drop PROJECTION_UP so the ESP32 relay accepts CMD_HFP_ON.
         if (projectionUp) {
-            AppLog.i("Broker: standing down projection for new-phone pairing")
+            AppLog.i("ESP32 relay: standing down projection for new-phone pairing")
             notifyProjection(false)
         }
         publish(Status(Phase.CONNECTING))
-        AppLog.i("Broker: opening new-phone pairing window on $address")
-        brokerClient(app).allowPhonePairing(address) { result ->
+        AppLog.i("ESP32 relay: opening new-phone pairing window on $address")
+        esp32RelayClient(app).allowPhonePairing(address) { result ->
             if (result.isSuccess) {
                 publish(Status(Phase.PAIRING, address))
             } else {
@@ -413,11 +413,11 @@ object NativeBTBrokerSession {
 
     /**
      * The phone is being waited on or woken. Send the last complete display snapshot again so the
-     * broker can start Android Auto with the address and network that are on screen now.
+     * ESP32 relay can start Android Auto with the address and network that are on screen now.
      */
     fun offerStart(context: Context) {
         val app = context.applicationContext
-        if (activeBrokerAddress(app) == null) return
+        if (activeEsp32RelayAddress(app) == null) return
         allowAutoDial = true
         startSent = false
         loggedStartInFlight = false
@@ -426,11 +426,11 @@ object NativeBTBrokerSession {
             offer(app, known, force = true)
             return
         }
-        AppLog.i("Broker: phone wait/wake has no snapshot yet, reading the live group")
+        AppLog.i("ESP32 relay: phone wait/wake has no snapshot yet, reading the live group")
         offerLiveGroup(app, force = true)
     }
 
-    /** The phone opened or closed the projection socket. While it stays up, repeat the notice so the broker can drop the state when these stop. */
+    /** The phone opened or closed the projection socket. While it stays up, repeat the notice so the ESP32 relay can drop the state when these stop. */
     fun notifyProjection(up: Boolean) {
         val changed = projectionUp != up
         projectionUp = up
@@ -454,7 +454,7 @@ object NativeBTBrokerSession {
             client?.setHfp(false)
         }
         if (changed) {
-            AppLog.i("Broker: projection socket ${if (up) "up" else "down"}")
+            AppLog.i("ESP32 relay: projection socket ${if (up) "up" else "down"}")
         }
         sendProjection(up)
         if (changed && up) {
@@ -490,7 +490,7 @@ object NativeBTBrokerSession {
         }
         val silentMs = SystemClock.elapsedRealtime() - lastProjectionOkAtMs
         AppLog.w(
-            "Broker: PROJECTION_UP was not recorded " +
+            "ESP32 relay: PROJECTION_UP was not recorded " +
                 "(${silentMs}ms without success, limit ${PROJECTION_FAIL_TIMEOUT_MS}ms)"
         )
         if (silentMs >= PROJECTION_FAIL_TIMEOUT_MS) {
@@ -506,7 +506,7 @@ object NativeBTBrokerSession {
         val silentMs = SystemClock.elapsedRealtime() - lastProjectionOkAtMs
         if (silentMs >= PROJECTION_FAIL_TIMEOUT_MS) {
             AppLog.w(
-                "Broker: PROJECTION_UP silent for ${silentMs}ms " +
+                "ESP32 relay: PROJECTION_UP silent for ${silentMs}ms " +
                     "(limit ${PROJECTION_FAIL_TIMEOUT_MS}ms), stopping Android Auto"
             )
             stopProjectionDueToRecordFailure()
@@ -530,18 +530,18 @@ object NativeBTBrokerSession {
         lastProjectionOkAtMs = 0L
         main.removeCallbacks(projectionHeartbeat)
         main.removeCallbacks(projectionFailWatch)
-        AppLog.w("Broker: PROJECTION_UP failed for ${PROJECTION_FAIL_TIMEOUT_MS / 1000}s, stopping Android Auto")
+        AppLog.w("ESP32 relay: PROJECTION_UP failed for ${PROJECTION_FAIL_TIMEOUT_MS / 1000}s, stopping Android Auto")
         main.post { onProjectionRecordFailed?.invoke() }
     }
 
     /**
-     * Read the live Wi-Fi Direct group and send it when a broker is saved.
+     * Read the live Wi-Fi Direct group and send it when an ESP32 relay is saved.
      * Non-force calls are throttled — the carrier polls every 200ms for BLE keep-alive,
      * and re-reading P2P that often freezes the phone.
      */
     fun offerLiveGroup(context: Context, force: Boolean = false) {
         val app = context.applicationContext
-        if (activeBrokerAddress(app) == null) return
+        if (activeEsp32RelayAddress(app) == null) return
         val now = SystemClock.elapsedRealtime()
         if (!force && now - lastLiveGroupReadMs < LIVE_GROUP_READ_MIN_MS) {
             // Same cached snapshot — skip while a start is already armed or on the way.
@@ -565,7 +565,7 @@ object NativeBTBrokerSession {
         loggedStartInFlight = false
         main.removeCallbacks(sendDial)
         val link = client ?: return
-        AppLog.i("Broker: releasing HFP ($why)")
+        AppLog.i("ESP32 relay: releasing HFP ($why)")
         link.setHfp(false)
     }
 
@@ -573,7 +573,7 @@ object NativeBTBrokerSession {
         stopRetry()
         stopWatchdog()
         gaveUp = false
-        awaitingBroker = false
+        awaitingEsp32Relay = false
         client?.setHfp(false)
         client?.close()
         client = null
@@ -597,16 +597,16 @@ object NativeBTBrokerSession {
     }
 
     /**
-     * Re-reads [NativeBTBrokerStore.endAaOnDisconnect] and starts or stops the 2 s link probe.
-     * Call after the setting changes while a broker session may already be up.
+     * Re-reads [Esp32RelayStore.endAaOnDisconnect] and starts or stops the 2 s link probe.
+     * Call after the setting changes while an ESP32 relay session may already be up.
      */
     fun syncWatchdog(context: Context? = null) {
         if (context != null) appContext = context.applicationContext
         main.post { syncWatchdogLocked() }
     }
 
-    private fun brokerClient(app: Context): NativeBTBrokerClient {
-        val active = client ?: NativeBTBrokerClient(app).also { client = it }
+    private fun esp32RelayClient(app: Context): Esp32RelayClient {
+        val active = client ?: Esp32RelayClient(app).also { client = it }
         active.onLinkLost = { noteLinkLost() }
         active.onFrame = ::dispatchFrame
         active.onTransportError = transportErrorHandler
@@ -617,8 +617,8 @@ object NativeBTBrokerSession {
     private fun noteLinkLost(): Boolean {
         if (gaveUp) return false
         val app = appContext ?: return false
-        if (activeBrokerAddress(app) == null) return false
-        awaitingBroker = true
+        if (activeEsp32RelayAddress(app) == null) return false
+        awaitingEsp32Relay = true
         val now = SystemClock.elapsedRealtime()
         if (retryUntilMs != 0L && now >= retryUntilMs) {
             giveUp()
@@ -626,7 +626,7 @@ object NativeBTBrokerSession {
         }
         if (retryUntilMs == 0L) {
             retryUntilMs = now + RETRY_WINDOW_MS
-            AppLog.w("Broker: link lost, retrying for ${RETRY_WINDOW_MS / 1000}s")
+            AppLog.w("ESP32 relay: link lost, retrying for ${RETRY_WINDOW_MS / 1000}s")
         }
         scheduleRetry()
         return true
@@ -647,17 +647,17 @@ object NativeBTBrokerSession {
     private fun giveUp() {
         if (gaveUp) return
         gaveUp = true
-        awaitingBroker = false
+        awaitingEsp32Relay = false
         stopRetry()
         stopWatchdog()
-        AppLog.w("Broker: still down after ${RETRY_WINDOW_MS / 1000}s, stopping the phone session")
-        publish(Status(Phase.FAILED, "broker link lost"))
+        AppLog.w("ESP32 relay: still down after ${RETRY_WINDOW_MS / 1000}s, stopping the phone session")
+        publish(Status(Phase.FAILED, "ESP32 relay link lost"))
         main.post { onGiveUp?.invoke() }
     }
 
     private fun endAaOnDisconnectEnabled(): Boolean {
         val app = appContext ?: return false
-        val store = NativeBTBrokerStore(app)
+        val store = Esp32RelayStore(app)
         return store.enabled && store.endAaOnDisconnect
     }
 
@@ -675,7 +675,7 @@ object NativeBTBrokerSession {
         if (watchdogPosted) return
         watchdogPosted = true
         watchdogFailures = 0
-        AppLog.i("Broker: 2 s link probe on (endAaOnDisconnect)")
+        AppLog.i("ESP32 relay: 2 s link probe on (endAaOnDisconnect)")
         main.post(linkWatchdog)
     }
 
@@ -699,9 +699,9 @@ object NativeBTBrokerSession {
                 watchdogFailures = 0
             } else {
                 watchdogFailures += 1
-                AppLog.w("Broker: link probe failed ($watchdogFailures/$WATCHDOG_FAILURES)")
+                AppLog.w("ESP32 relay: link probe failed ($watchdogFailures/$WATCHDOG_FAILURES)")
                 if (watchdogFailures >= WATCHDOG_FAILURES) {
-                    AppLog.w("Broker: link probe lost, ending the phone session")
+                    AppLog.w("ESP32 relay: link probe lost, ending the phone session")
                     giveUp()
                     return@ping
                 }
@@ -715,7 +715,7 @@ object NativeBTBrokerSession {
 
     private const val RETRY_WINDOW_MS = 10_000L
     private const val RETRY_EVERY_MS = 2_000L
-    /** Shorter than the broker's 4s silence limit, so a missed write does not look like the socket closed. */
+    /** Shorter than the ESP32 relay's 4s silence limit, so a missed write does not look like the socket closed. */
     private const val PROJECTION_HEARTBEAT_MS = 2_000L
     /** No successful PROJECTION_UP write for this long ends the Android Auto session. */
     private const val PROJECTION_FAIL_TIMEOUT_MS = 10_000L

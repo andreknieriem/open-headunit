@@ -94,7 +94,7 @@ import android.view.WindowManager
 import com.andrerinas.openheadunit.connection.self.SelfLauncherManager
 import com.andrerinas.openheadunit.connection.self.SelfModeDisconnectPolicy
 import com.andrerinas.openheadunit.connection.usb.UsbLauncherManager
-import com.andrerinas.openheadunit.connection.broker.NativeBTBrokerSession
+import com.andrerinas.openheadunit.connection.esp32.Esp32RelaySession
 import com.andrerinas.openheadunit.connection.wifi.LinkLossTeardownPolicy
 import com.andrerinas.openheadunit.connection.wifi.LinkLossTrigger
 import com.andrerinas.openheadunit.connection.wifi.modes.helper.HelperStrategy
@@ -1151,8 +1151,8 @@ class AapService : Service() {
             serviceScope.launch(Dispatchers.Main) { usbLauncherManager.onUsbHandshakeEnded(f) }
         }
         observeConnectionState()
-        // Broker PROJECTION_UP must keep landing; 10s without a recorded write ends the session.
-        NativeBTBrokerSession.onProjectionRecordFailed = {
+        // ESP32 relay PROJECTION_UP must keep landing; 10s without a recorded write ends the session.
+        Esp32RelaySession.onProjectionRecordFailed = {
             AppLog.w("AapService: PROJECTION_UP not recorded for 10s — ending projection")
             if (commManager.isConnected) {
                 commManager.disconnect(
@@ -1328,8 +1328,8 @@ class AapService : Service() {
                     }
                     is CommManager.ConnectionState.HandshakeComplete -> {
                         // At SSL, not at the transport open: until then the arbiter owns the window.
-                        if (NativeBTBrokerSession.hasSavedBroker(this@AapService)) {
-                            NativeBTBrokerSession.notifyProjection(true)
+                        if (Esp32RelaySession.hasSavedEsp32Relay(this@AapService)) {
+                            Esp32RelaySession.notifyProjection(true)
                         }
                         quiesceWirelessForWiredSession()
                         StationStandDown.onSessionLive(this@AapService, wifiLockHeldForMs())
@@ -1345,9 +1345,9 @@ class AapService : Service() {
                                 gain = false, unsolicited = false
                             ))
                         }
-                        // Conflated collector may skip Connected — still release broker HFP here.
-                        if (NativeBTBrokerSession.hasSavedBroker(this@AapService)) {
-                            NativeBTBrokerSession.notifyProjection(true)
+                        // Conflated collector may skip Connected — still release ESP32 relay HFP here.
+                        if (Esp32RelaySession.hasSavedEsp32Relay(this@AapService)) {
+                            Esp32RelaySession.notifyProjection(true)
                         }
                         quiesceWirelessForWiredSession() // The flow is conflated: HandshakeComplete can be skipped.
                         StationStandDown.onSessionLive(this@AapService, wifiLockHeldForMs())
@@ -1458,9 +1458,9 @@ class AapService : Service() {
     private fun onConnected() {
         usbLauncherManager.setSwitchingToProjection(false)
         updateNotification()
-        // apply_hfp: projection TCP is up — broker must release HFP and stop wake retries.
-        if (NativeBTBrokerSession.hasSavedBroker(this)) {
-            NativeBTBrokerSession.notifyProjection(true)
+        // apply_hfp: projection TCP is up — ESP32 relay must release HFP and stop wake retries.
+        if (Esp32RelaySession.hasSavedEsp32Relay(this)) {
+            Esp32RelaySession.notifyProjection(true)
         }
         // Whatever the transport, the wake-up loop has nothing left to do. Event driven rather
         // than left to the loop's own 15 s poll. A wireless session also marks the P2P group as
@@ -1722,8 +1722,8 @@ class AapService : Service() {
         // A failed USB open has no live AAP resources to retire. Its Save loop and fallback
         // still own recovery; an end after the open has run onConnected and needs the full cleanup.
         if (!state.hadPhysicalConnection && state.settingsRetryOwner?.acceptsSettingsRestart(state) == true) return
-        if (NativeBTBrokerSession.hasSavedBroker(this)) {
-            NativeBTBrokerSession.notifyProjection(false)
+        if (Esp32RelaySession.hasSavedEsp32Relay(this)) {
+            Esp32RelaySession.notifyProjection(false)
         }
         cancelProjectionRaiseDeadline()
         // Consumed by every end, so a mark that no Native re-arm reads cannot mute a later wake.
@@ -3083,7 +3083,7 @@ class AapService : Service() {
         commManager.onAaMediaMetadata = null
         commManager.onAaPlaybackStatus = null
         commManager.onAaPresentationClosed = null
-        NativeBTBrokerSession.onProjectionRecordFailed = null
+        Esp32RelaySession.onProjectionRecordFailed = null
         settingsPrefs?.unregisterOnSharedPreferenceChangeListener(settingsPreferenceListener)
         settingsPrefs?.unregisterOnSharedPreferenceChangeListener(deviceHackPreferenceListener)
         settingsPrefs = null

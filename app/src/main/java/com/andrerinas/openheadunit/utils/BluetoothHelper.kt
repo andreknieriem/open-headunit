@@ -12,8 +12,8 @@ import android.os.Build
 import android.os.IBinder
 import androidx.core.content.ContextCompat
 import com.andrerinas.openheadunit.App
-import com.andrerinas.openheadunit.connection.broker.NativeBTBrokerProtocol
-import com.andrerinas.openheadunit.connection.broker.NativeBTBrokerStore
+import com.andrerinas.openheadunit.connection.esp32.Esp32RelayProtocol
+import com.andrerinas.openheadunit.connection.esp32.Esp32RelayStore
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.DriverCandidatePolicy
 import java.lang.reflect.Constructor
 import java.lang.reflect.Method
@@ -332,8 +332,8 @@ object BluetoothHelper {
         // wake targets. On HCT's legacy stack ordinary connect() uses goc_spp even for an AA UUID;
         // manufacturing a BluetoothDevice from a cached MAC does not select the AA carrier.
         // When the Bluetooth relay is off, hide OpenHU-BT-Relay bonds from the driver list.
-        val hideBrokerBonds = !NativeBTBrokerStore(context).enabled
-        val bonded = discovery.androidDevices.filterNot { hideBrokerBonds && isBrokerBond(it) }
+        val hideEsp32RelayBonds = !Esp32RelayStore(context).enabled
+        val bonded = discovery.androidDevices.filterNot { hideEsp32RelayBonds && isEsp32RelayBond(it) }
         var presenceReadable = false
         val all = bonded.map { device ->
             val state = deviceConnectionState(device)
@@ -399,9 +399,9 @@ object BluetoothHelper {
         try { device.bluetoothClass?.deviceClass ?: 0 } catch (e: Exception) { 0 }
 
     @SuppressLint("MissingPermission")
-    private fun isBrokerBond(device: BluetoothDevice): Boolean {
+    private fun isEsp32RelayBond(device: BluetoothDevice): Boolean {
         val name = try { device.name } catch (_: Exception) { null }
-        return NativeBTBrokerProtocol.isBrokerDeviceName(name)
+        return Esp32RelayProtocol.isEsp32RelayDeviceName(name)
     }
 
     /**
@@ -414,8 +414,8 @@ object BluetoothHelper {
         lastConnectedMac: String = "",
         context: Context? = null
     ): Boolean {
-        val hideBroker = context == null || !NativeBTBrokerStore(context).enabled
-        if (hideBroker && isBrokerBond(device)) return false
+        val hideEsp32Relay = context == null || !Esp32RelayStore(context).enabled
+        if (hideEsp32Relay && isEsp32RelayBond(device)) return false
         return classifyDevice(device, pinFor(device, preferredMac, lastConnectedMac)).verdict !=
             DriverCandidatePolicy.Verdict.NOT_A_PHONE
     }

@@ -10,6 +10,7 @@ import com.andrerinas.openheadunit.connection.wifi.scan.WifiScanControl
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
+import java.io.Reader
 import java.math.BigDecimal
 import java.math.BigInteger
 import java.text.SimpleDateFormat
@@ -445,21 +446,19 @@ object SettingsBackupManager {
         return ImportData(parsedValues, skippedKeys)
     }
 
-    fun importFromUri(context: Context, uri: Uri, applyTheme: Boolean = true): ImportResult {
-        val json = context.contentResolver.openInputStream(uri)?.bufferedReader(Charsets.UTF_8).use { reader ->
-            reader?.readText()
-        } ?: throw IllegalArgumentException("Unable to open settings backup")
+    /** Blocking IO and parsing only; safe to finish after its requesting UI operation is cancelled. */
+    fun prepareImportFromUri(context: Context, uri: Uri): ImportData =
+        context.contentResolver.openInputStream(uri)?.bufferedReader(Charsets.UTF_8)?.use(::prepareImport)
+            ?: throw IllegalArgumentException("Unable to open settings backup")
 
-        return importFromJson(context, json, applyTheme)
-    }
+    fun prepareImportFromFile(file: File): ImportData =
+        file.bufferedReader(Charsets.UTF_8).use(::prepareImport)
 
-    fun importFromFile(context: Context, file: File, applyTheme: Boolean = true): ImportResult {
-        return importFromJson(context, file.readText(Charsets.UTF_8), applyTheme)
-    }
+    fun prepareImport(reader: Reader): ImportData = parseImportJson(reader.readText())
 
-    fun importFromJson(context: Context, json: String, applyTheme: Boolean = true): ImportResult {
+    /** Call on Main, in the same non-suspending turn as the operation's ownership check. */
+    fun applyImport(context: Context, importData: ImportData, applyTheme: Boolean = true): ImportResult {
         val prefs = context.getSharedPreferences(Settings.PREFS_NAME, Context.MODE_PRIVATE)
-        val importData = parseImportJson(json)
         val existing = backupPreferences(context)
         val changedKeys = importData.values.filter { (key, value) -> existing[key] != value }.keys
 
@@ -479,6 +478,7 @@ object SettingsBackupManager {
         )
     }
 
+    /** Synchronous apply phase; UI callers must hold their current mutation on Main. */
     fun resetFromContext(context: Context, applyTheme: Boolean = true): ResetResult {
         val prefs = context.getSharedPreferences(Settings.PREFS_NAME, Context.MODE_PRIVATE)
         val result = resetPreferencesToDefaults(prefs)

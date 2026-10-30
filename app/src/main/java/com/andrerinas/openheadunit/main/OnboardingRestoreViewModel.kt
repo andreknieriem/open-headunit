@@ -38,11 +38,13 @@ class OnboardingRestoreViewModel : ViewModel() {
             mutableState.value = try {
                 val settings = Settings(appContext)
                 val before = SettingsRestoreHandler.capture(appContext, settings)
-                val result = withContext(Dispatchers.IO) {
-                    // The activity marks onboarding complete before applying the restored theme.
-                    if (uri != null) SettingsBackupManager.importFromUri(appContext, uri, applyTheme = false)
-                    else SettingsBackupManager.importFromFile(appContext, requireNotNull(file), applyTheme = false)
+                val prepared = withContext(Dispatchers.IO) {
+                    if (uri != null) SettingsBackupManager.prepareImportFromUri(appContext, uri)
+                    else SettingsBackupManager.prepareImportFromFile(requireNotNull(file))
                 }
+                // Apply on Main like the settings screen. The activity marks onboarding complete
+                // before applying the restored theme.
+                val result = SettingsBackupManager.applyImport(appContext, prepared, applyTheme = false)
                 require(result.importedKeys > 0) { "Backup contains no supported settings" }
                 State.Restored(result, before)
             } catch (e: Exception) {

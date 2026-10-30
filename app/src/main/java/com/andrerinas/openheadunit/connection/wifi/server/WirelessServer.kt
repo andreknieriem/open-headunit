@@ -128,24 +128,7 @@ class WirelessServer(
                     AppLog.d("WirelessServer: Waiting for TCP connection on port 5288...")
                     val clientSocket = serverSocket?.accept() ?: break
                     AppLog.i("WirelessServer: Incoming connection detected from ${clientSocket.inetAddress}")
-                    service.serviceScope.launch {
-                        if (commManager.isConnected) {
-                            AppLog.w("WirelessServer: Already connected, dropping client from ${clientSocket.inetAddress}")
-                            withContext(Dispatchers.IO) {
-                                try { clientSocket.close() } catch (e: Exception) { AppLog.d("WirelessServer: Error closing dropped client socket", e) }
-                            }
-                        } else if (SystemClock.elapsedRealtime() < service.userExitCooldownUntil) {
-                            // [FIX] User just exited AA — reject the instant reconnection.
-                            AppLog.w("WirelessServer: Rejecting connection from ${clientSocket.inetAddress} — user exit cooldown active (${service.userExitCooldownUntil - SystemClock.elapsedRealtime()}ms remaining)")
-                            withContext(Dispatchers.IO) {
-                                try { clientSocket.close() } catch (e: Exception) { AppLog.d("WirelessServer: Error closing cooldown client socket", e) }
-                            }
-                        } else {
-                            AppLog.i("WirelessServer: Accepted client connection from ${clientSocket.inetAddress}. Passing to CommManager...")
-                            service.userExitedAA = false // Clear flag on genuine new connection
-                            commManager.connect(clientSocket)
-                        }
-                    }
+                    handOffClient(clientSocket, commManager)
                 }
             } catch (e: Exception) {
                 // The cancelled branch used to be silent, which made a server that was torn
@@ -158,6 +141,38 @@ class WirelessServer(
                 try { serverSocket?.close() } catch (e: Exception) { AppLog.d("WirelessServer: Error closing server socket in finally", e) }
             }
         }
+    }
+
+    /** The accept loop owns this socket until the launched child actually invokes CommManager. */
+    internal fun handOffClient(clientSocket: java.net.Socket, commManager: CommManager): Job {
+        var delegated = false
+        val delivery = service.serviceScope.launch {
+            if (commManager.isConnected) {
+                AppLog.w("WirelessServer: Already connected, dropping client from ${clientSocket.inetAddress}")
+                withContext(Dispatchers.IO) {
+                    try { clientSocket.close() } catch (e: Exception) { AppLog.d("WirelessServer: Error closing dropped client socket", e) }
+                }
+            } else if (SystemClock.elapsedRealtime() < service.userExitCooldownUntil) {
+                AppLog.w("WirelessServer: Rejecting connection from ${clientSocket.inetAddress} — user exit cooldown active (${service.userExitCooldownUntil - SystemClock.elapsedRealtime()}ms remaining)")
+                withContext(Dispatchers.IO) {
+                    try { clientSocket.close() } catch (e: Exception) { AppLog.d("WirelessServer: Error closing cooldown client socket", e) }
+                }
+            } else {
+                AppLog.i("WirelessServer: Accepted client connection from ${clientSocket.inetAddress}. Passing to CommManager...")
+                service.userExitedAA = false
+                delegated = true
+                commManager.connect(clientSocket)
+            }
+        }
+        delivery.invokeOnCompletion {
+            // Includes a cancelled service scope whose child never started, and cancelled drops.
+            if (!delegated && !clientSocket.isClosed) {
+                try { clientSocket.close() } catch (failure: Exception) {
+                    AppLog.d("WirelessServer: Error closing undelegated client socket", failure)
+                }
+            }
+        }
+        return delivery
     }
 
     /** Logs all non-loopback IPv4 addresses; useful for debugging connectivity issues. */

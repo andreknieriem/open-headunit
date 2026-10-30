@@ -1,7 +1,9 @@
 package com.andrerinas.openheadunit.aap
 
 import com.andrerinas.openheadunit.connection.CommManager
+import com.andrerinas.openheadunit.connection.AppExitPolicy
 import com.andrerinas.openheadunit.connection.CommManager.ConnectionState
+import com.andrerinas.openheadunit.connection.withAppExitDispatcherForTest
 import com.andrerinas.openheadunit.connection.projection.SocketProjectionConnection
 import com.andrerinas.openheadunit.utils.Settings
 import android.content.Context
@@ -24,12 +26,13 @@ class UsbReconnectOwnershipTest {
     @Test fun usbRecheckSurvivesItsConnectingStateButNotAnotherSession() = runBlocking {
         for (observed in listOf(false, true)) for (outcome in listOf(
             "connecting", "error", "wireless-retry", "new-session", "user-exit", "settings-save")) {
-            val manager = mock(CommManager::class.java, CALLS_REAL_METHODS)
+            val manager = mock(CommManager::class.java, CALLS_REAL_METHODS).withAppExitDispatcherForTest()
             val ended = ConnectionState.Disconnected()
             val states = MutableStateFlow<ConnectionState>(ended)
             fun set(name: String, value: Any?) = CommManager::class.java.getDeclaredField(name)
                 .apply { isAccessible = true }.set(manager, value)
             set("transportLifecycleLock", Any())
+            set("appExitPolicy", AppExitPolicy())
             set("_connectionState", states)
             set("usbRecoveryOwner", Any())
             set("context", mock(Context::class.java))
@@ -45,7 +48,7 @@ class UsbReconnectOwnershipTest {
             main.drain()
             val connect = CommManager::class.java.getDeclaredMethod("connectIp",
                 String::class.java, Int::class.javaPrimitiveType,
-                ConnectionState.Disconnected::class.java, Continuation::class.java)
+                ConnectionState.Disconnected::class.java, Long::class.javaPrimitiveType, Continuation::class.java)
                 .apply { isAccessible = true }
             mockConstruction(SocketProjectionConnection::class.java) { candidate, _ ->
                 runBlocking {
@@ -86,7 +89,7 @@ class UsbReconnectOwnershipTest {
             }.use {
                 try {
                     suspendCoroutineUninterceptedOrReturn<Unit> { continuation ->
-                        connect.invoke(manager, "127.0.0.1", 5277, null, continuation)
+                        connect.invoke(manager, "127.0.0.1", 5277, null, 0L, continuation)
                     }
                 } finally { scope.cancel(); main.drain() }
             }

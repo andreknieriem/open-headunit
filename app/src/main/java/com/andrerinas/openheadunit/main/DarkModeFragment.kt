@@ -278,9 +278,7 @@ class DarkModeFragment : Fragment(), SensorEventListener {
         if (requiresRestart) {
             if (App.provide(requireContext()).commManager.isConnected) {
                 ToastUtils.showToast(context, getString(R.string.stopping_service), Toast.LENGTH_SHORT, force = true)
-                val stopServiceIntent = Intent(requireContext(), AapService::class.java).apply {
-                    action = AapService.ACTION_STOP_SERVICE
-                }
+                val stopServiceIntent = AapService.stopIntent(requireContext())
                 ContextCompat.startForegroundService(requireContext(), stopServiceIntent)
             }
         }

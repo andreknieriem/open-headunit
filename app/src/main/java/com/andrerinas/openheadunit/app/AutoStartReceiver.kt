@@ -74,7 +74,7 @@ class AutoStartReceiver : BroadcastReceiver() {
                     putExtra(MainActivity.EXTRA_LAUNCH_SOURCE, MainActivity.LAUNCH_SOURCE_BLUETOOTH)
                 }
                 try {
-                    context.startActivity(launchIntent)
+                    context.startActivity(AppUiEntry.continuation(launchIntent))
                 } catch (e: Exception) {
                     AppLog.w("Could not start UI from background (expected on Android 10+): ${e.message}")
                 }

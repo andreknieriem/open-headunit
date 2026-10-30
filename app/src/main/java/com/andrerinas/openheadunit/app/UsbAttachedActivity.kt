@@ -279,12 +279,13 @@ class UsbAttachedActivity : Activity() {
         openHome("USB auto-start")
     }
 
+    /** Both callers are attach-driven, so the launch is a continuation, not a user Open. */
     private fun openHome(source: String) {
         try {
-            startActivity(Intent(this, MainActivity::class.java).apply {
+            startActivity(AppUiEntry.continuation(Intent(this, MainActivity::class.java).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 putExtra(MainActivity.EXTRA_LAUNCH_SOURCE, source)
-            })
+            }))
         } catch (e: Exception) {
             AppLog.w("Could not start UI from $source: ${e.message}")
         }

@@ -21,6 +21,9 @@ class SettingsBackupManagerTest {
     private val prefs get() = context.getSharedPreferences(Settings.PREFS_NAME, Context.MODE_PRIVATE)
     private val scanPrefs get() = context.getSharedPreferences("wifi-scan-option", Context.MODE_PRIVATE)
 
+    private fun importJson(json: String) =
+        SettingsBackupManager.applyImport(context, SettingsBackupManager.parseImportJson(json), applyTheme = false)
+
     @Test fun `every preference read by the settings screen has a backup registration`() {
         val trackedPrefs = spy(prefs)
         val trackedContext = mock(Context::class.java)
@@ -86,7 +89,7 @@ class SettingsBackupManagerTest {
             "wifi-scan-fyt-auto-start" to true
         )
         val json = SettingsBackupManager.exportToJson(values, "test", 1)
-        val result = SettingsBackupManager.importFromJson(context, json, applyTheme = false)
+        val result = importJson(json)
         assertEquals(values.size, result.importedKeys)
         assertEquals(values.keys, result.changedKeys)
         values.filterKeys { !it.startsWith("wifi-scan-") }.forEach { (key, value) ->
@@ -113,7 +116,7 @@ class SettingsBackupManagerTest {
         val json = SettingsBackupManager.exportToJson(
             mapOf("key-codes" to setOf("87-131"), "left-two-finger-gesture" to 0), "test", 1
         )
-        SettingsBackupManager.importFromJson(context, json, applyTheme = false)
+        importJson(json)
         val settings = Settings(context)
         assertEquals(mapOf(131 to InputAction.AaKey(87)), settings.keyBindings)
         assertEquals(InputAction.None, settings.gestureAction(Settings.GestureSlot.LEFT))
@@ -131,7 +134,7 @@ class SettingsBackupManagerTest {
     @Test fun `legacy backup merges without resetting missing user preferences`() {
         prefs.edit().putInt("dim-opacity-percent", 80).putBoolean("show-home-clock", true).commit()
         val json = """{"format":"headunit-revived-settings","version":1,"settings":{"fps-limit":30}}"""
-        val result = SettingsBackupManager.importFromJson(context, json, applyTheme = false)
+        val result = importJson(json)
         assertEquals(setOf("fps-limit"), result.changedKeys)
         assertEquals(30, prefs.getInt("fps-limit", 0))
         assertEquals(80, prefs.getInt("dim-opacity-percent", 0))
@@ -186,8 +189,7 @@ class SettingsBackupManagerTest {
         prefs.edit().putInt("dim-opacity-percent", 80).commit()
         val before = prefs.all
         assertThrows(IllegalArgumentException::class.java) {
-            SettingsBackupManager.importFromJson(context,
-                """{"format":"unrelated","settings":{"dim-opacity-percent":50}}""", applyTheme = false)
+            importJson("""{"format":"unrelated","settings":{"dim-opacity-percent":50}}""")
         }
         assertEquals(before, prefs.all)
     }
@@ -214,8 +216,8 @@ class SettingsBackupManagerTest {
     @Test fun `unchanged import does not report changes and projection options request restart`() {
         val json = SettingsBackupManager.exportToJson(mapOf("hide-clock" to true), "test", 1)
         assertTrue(SettingsBackupManager.requiresProjectionRestart(
-            SettingsBackupManager.importFromJson(context, json, applyTheme = false).changedKeys))
-        assertTrue(SettingsBackupManager.importFromJson(context, json, applyTheme = false).changedKeys.isEmpty())
+            importJson(json).changedKeys))
+        assertTrue(importJson(json).changedKeys.isEmpty())
         assertFalse(SettingsBackupManager.requiresProjectionRestart(setOf("show-home-clock")))
         assertEquals(1, JSONObject(json).getJSONObject("settings").length())
     }

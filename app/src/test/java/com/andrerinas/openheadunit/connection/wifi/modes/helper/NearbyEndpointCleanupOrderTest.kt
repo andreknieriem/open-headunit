@@ -51,6 +51,7 @@ class NearbyEndpointCleanupOrderTest {
         init {
             whenever(client.requestConnection(anyOrNull<String>(), any(), any<ConnectionLifecycleCallback>()))
                 .thenAnswer {
+                    check(!Thread.holdsLock(NearbyEndpointCalls)) { "request under endpoint queue monitor" }
                     val endpoint = it.getArgument<String>(1)
                     calls += "request:$endpoint"
                     pending += endpoint to it.getArgument<ConnectionLifecycleCallback>(2)
@@ -61,6 +62,7 @@ class NearbyEndpointCleanupOrderTest {
                 task {}
             }
             doAnswer {
+                check(!Thread.holdsLock(NearbyEndpointCalls)) { "disconnect under endpoint queue monitor" }
                 val endpoint = it.getArgument<String>(0)
                 calls += "disconnect:$endpoint"
                 pending.filter { (id, _) -> id == endpoint }.forEach { (_, callback) -> killed += callback }
@@ -103,11 +105,13 @@ class NearbyEndpointCleanupOrderTest {
         val scope: CoroutineScope,
     )
 
-    private fun harness(): Harness {
-        val comm = mock<CommManager>(defaultAnswer = Mockito.CALLS_REAL_METHODS).withAppExitDispatcherForTest()
+    /** Managers sharing [sdk] model a launcher replacement: Nearby is one service per process. */
+    private fun harness(
+        comm: CommManager = mock<CommManager>(defaultAnswer = Mockito.CALLS_REAL_METHODS).withAppExitDispatcherForTest(),
+        sdk: FakeNearby = FakeNearby(),
+    ): Harness {
         val nearby = mock<NearbyManager>(defaultAnswer = Mockito.CALLS_REAL_METHODS)
         val guard = NearbyAttemptGuard()
-        val sdk = FakeNearby()
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
         field(nearby, "commManager", comm); field(nearby, "attempts", guard)
         field(nearby, "connectionsClient", sdk.client); field(nearby, "context", mock<Context>())
@@ -168,6 +172,57 @@ class NearbyEndpointCleanupOrderTest {
             assertTrue(oldSocket.isClosed)
         } finally {
             resume.countDown(); oldSocket.close(); h.scope.cancel()
+        }
+    }
+
+    @Test fun `replacement manager request is not cancelled by the previous manager's detached cleanup`() {
+        val previous = harness()
+        val replacementManager = harness(previous.comm, previous.sdk)
+        val oldTicket = previous.comm.appConnectionTicket()
+        val old = previous.guard.begin("E", oldTicket)
+        val oldSocket = NearbySocket()
+        val detached = CountDownLatch(1)
+        val resume = CountDownLatch(1)
+        val oldTunnel = Job().apply {
+            invokeOnCompletion { detached.countDown(); check(resume.await(5, TimeUnit.SECONDS)) }
+        }
+        field(previous.nearby, "activeEndpointId", "E"); field(previous.nearby, "activeNearbySocket", oldSocket)
+        field(previous.nearby, "tunnelJob", oldTunnel)
+        val errors = ConcurrentLinkedQueue<Throwable>()
+        val io = Thread({
+            try {
+                runBlocking {
+                    previous.nearby.handOverTunnel(old, oldSocket, previous.nearby.connectionAdmission(old), oldTicket)
+                }
+            } catch (failure: Throwable) { errors += failure }
+        }, "Nearby-previous-tunnel").apply { isDaemon = true }
+        try {
+            previous.stopThenOpen()
+            io.start()
+            assertTrue("old tunnel never reached its cleanup", detached.await(3, TimeUnit.SECONDS))
+            assertNull(previous.guard.current())
+
+            // The wireless scan command replaces the launcher: stop the old manager, then the new
+            // manager's discovery finds the same endpoint.
+            previous.nearby.stop()
+            replacementManager.nearby.connectToEndpoint("E", replacementManager.comm.appConnectionTicket())
+            val fresh = replacementManager.guard.current()
+            assertNotNull("fresh request was not admitted", fresh)
+
+            resume.countDown()
+            io.join(3000)
+            assertFalse("old tunnel cleanup did not finish", io.isAlive)
+            assertTrue(errors.toString(), errors.isEmpty())
+            assertEquals("SDK call order", listOf("disconnect:E", "request:E"), previous.sdk.calls.toList())
+
+            previous.sdk.deliverLiveRequests()
+            assertEquals(listOf("disconnect:E", "request:E", "accept:E"), previous.sdk.calls.toList())
+            assertEquals("replacement stuck connecting", false, get(replacementManager.nearby, "isConnecting"))
+            assertEquals("E", get(replacementManager.nearby, "activeEndpointId"))
+            assertSame(fresh, replacementManager.guard.current())
+            assertNull(get(previous.nearby, "activeEndpointId"))
+        } finally {
+            resume.countDown(); oldSocket.close(); previous.scope.cancel(); replacementManager.scope.cancel()
         }
     }
 

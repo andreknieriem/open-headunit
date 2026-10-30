@@ -218,7 +218,7 @@ class NearbyManager(
         val retiredEndpoint = endpoint
         // Reserved now, under the monitor, so any later request for this endpoint queues behind it.
         val drains = retiredEndpoint != null &&
-            attempts.reserve(retiredEndpoint) { connectionsClient.disconnectFromEndpoint(retiredEndpoint) }
+            NearbyEndpointCalls.reserve(retiredEndpoint) { connectionsClient.disconnectFromEndpoint(retiredEndpoint) }
         val retired = RetiredAttempt(retiredEndpoint, drains, activeNearbySocket, pendingInboundStream,
             activePipes, tunnelJob, upgradeTimeoutJob)
         isConnecting = false
@@ -237,7 +237,7 @@ class NearbyManager(
         retired.tunnel?.cancel()
         retired.upgrade?.cancel()
         try {
-            if (retired.drainsEndpoint) retired.endpoint?.let { attempts.drain(it) }
+            if (retired.drainsEndpoint) retired.endpoint?.let { NearbyEndpointCalls.drain(it) }
         } finally {
             retired.socket?.close()
             retired.stream?.let { try { it.close() } catch (_: Exception) {} }
@@ -297,14 +297,15 @@ class NearbyManager(
                 lastQuality.remove(endpointId)
                 isConnecting = true
                 val attempt = attempts.begin(endpointId, ticket)
-                // Behind any disconnect a retirement of this endpoint reserved before us.
-                drainsRequest = attempts.reserve(endpointId) { requestConnection(attempt, ticket) }
+                // Behind any disconnect a retirement of this endpoint reserved before us, in this
+                // manager or in the one this manager replaced.
+                drainsRequest = NearbyEndpointCalls.reserve(endpointId) { requestConnection(attempt, ticket) }
             }
         }
         try {
             retired?.let { releaseAttempt(it) }
         } finally {
-            if (drainsRequest) attempts.drain(endpointId)
+            if (drainsRequest) NearbyEndpointCalls.drain(endpointId)
         }
     }
 

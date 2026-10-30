@@ -45,6 +45,7 @@ for marker, file, declaration in [
     ('START', manager, 'fun start('),
     ('ADOPT_VPN', manager, 'private fun adoptDummyVpn('),
     ('STOP', manager, 'fun stop(wasConnected:'),
+    ('DETACH_LAUNCH', manager, 'private fun detachLaunch()'),
     ('ENDED', manager, 'internal fun onConnectionEnded('),
     ('ESTABLISHED', manager, 'internal fun onConnectionEstablished()'),
     ('STOP_CURRENT', manager, 'internal fun stopIfCurrent('),

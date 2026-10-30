@@ -133,6 +133,7 @@ class SelfLauncherManager(private val service: Service, private val wifiLauncher
     fun inFlight() = launchInFlight
     // START
     // STOP
+    // DETACH_LAUNCH
     // ENDED
     // ESTABLISHED
     // STOP_CURRENT
@@ -447,6 +448,28 @@ fun main() {
         s.manager.start(ticket = s.commManager.appConnectionTicket())
         s.main.drain(); s.io.drain(); s.main.drain()
         check(s.manager.isActive) { "fresh Self input cleared the established Self session (stop=$stop)" }
+        check(s.commManager.isConnected && s.commManager.socketConnects == 1)
+        check(s.vpnStops == 0 && s.wifiLauncherManager.stops == 0)
+    }
+    // The launch's IO has published Connected but its Main resume is still queued when Stop B ->
+    // Open C -> fresh Self input arrive. The obsolete launch then cancels itself on its old ticket;
+    // that late cleanup must not clear Self mode on the loopback session it already produced.
+    for (stop in listOf(false, true)) Service().use { s ->
+        s.modern = true
+        s.useRealDirect = true
+        s.manager.start()
+        val original = checkNotNull(s.manager.currentLaunch())
+        s.main.drain()
+        s.io.drain() // Connect publishes Connected; the launcher's Main resume stays queued.
+        check(s.commManager.isConnected && s.commManager.socketConnects == 1)
+        s.commManager.isLoopbackSession = true
+        s.manager.onConnectionEstablished()
+        if (stop) s.commManager.stopApp()
+        s.commManager.openApp()
+        s.manager.start(ticket = s.commManager.appConnectionTicket())
+        s.main.drain(); s.io.drain(); s.main.drain()
+        check(original.isCancelled == stop)
+        check(s.manager.isActive) { "late obsolete launch cleanup cleared live Self mode (stop=$stop)" }
         check(s.commManager.isConnected && s.commManager.socketConnects == 1)
         check(s.vpnStops == 0 && s.wifiLauncherManager.stops == 0)
     }

@@ -372,6 +372,14 @@ class SelfLauncherManager(
     internal fun stopIfCurrent(expected: Job?, preserveVpn: Boolean = false) {
         if (launchJob !== expected) return
         val commManager = App.provide(service).commManager
+        if (commManager.isConnected && commManager.isLoopbackSession) {
+            // The launch is obsolete, but the loopback session it produced is live. Its Self mode
+            // and VPN belong to that session and end with it (onConnectionEnded); retire only the
+            // launch's own job, deadline and gate.
+            detachLaunch()
+            launchInFlight = false
+            return
+        }
         val saved = settingsLaunchOwner
         val current = commManager.connectionState.value
         // Save cleanup can precede the terminal collector, or that terminal may be skipped
@@ -410,16 +418,7 @@ class SelfLauncherManager(
      *        arrived and the VPN is taken down via the Self-Mode-never-connected path.
      */
     fun stop(wasConnected: Boolean = false) {
-        // Detach before cancellation: even immediate completion cleanup must not own the
-        // launch fields while this stop, or a replacement admission, is updating them.
-        val job = launchJob
-        launchJob = null
-        launchTicket = null
-        job?.cancel()
-        launchTimeoutJob?.cancel()
-        launchTimeoutJob = null
-        settingsLaunchOwner = null
-        retiredSettingsTerminal = null
+        detachLaunch()
         if (!isActive && !launchInFlight && selfModeVpnWatchdog == null) return
 
         AppLog.i("SelfMode: stopping Self Mode (wasConnected=$wasConnected, wasActive=$isActive, launchInFlight=$launchInFlight)")
@@ -434,6 +433,18 @@ class SelfLauncherManager(
         if (!wasConnected) {
             service.stopDummyVpn(DummyVpnPolicy.Reason.SELF_MODE_NEVER_CONNECTED)
         }
+    }
+
+    /** Detach before cancellation, so even immediate completion cleanup cannot own these fields. */
+    private fun detachLaunch() {
+        val job = launchJob
+        launchJob = null
+        launchTicket = null
+        job?.cancel()
+        launchTimeoutJob?.cancel()
+        launchTimeoutJob = null
+        settingsLaunchOwner = null
+        retiredSettingsTerminal = null
     }
 
 

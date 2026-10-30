@@ -112,9 +112,10 @@ class InternalFailureRecoveryTest {
         }
     }
 
-    @Test fun reportedFailureRetainsRecoveryButExplicitExitRevokesIt() = runBlocking {
+    @Test fun internalFailureRetainsRecoveryButExplicitExitRevokesIt() = runBlocking {
         Fixture().use { f ->
-            f.manager.emitError("launch timeout")
+            // An actual internal failure: the IP open fails and disconnects without a user exit.
+            connectIp(f, opens = false)
             f.assertRecoverable()
             f.manager.disconnect(honorKillOnDisconnect = false)
             assertFalse("An explicit stop still cancels a queued recheck", f.manager.ownsUsbRecheck(f.owner))
@@ -124,7 +125,9 @@ class InternalFailureRecoveryTest {
     @Test fun timeoutAfterRetirementDoesNotRevokeThePendingUsbCheck() = runBlocking {
         Fixture().use { f ->
             f.field("disconnectRequested", true)
-            f.manager.emitError("launch timeout after retirement")
+            val mark = f.manager.launchMark(f.manager.appConnectionTicket())
+            val outcome = f.manager.reportLaunchFailure("launch timeout after retirement", mark)
+            assertSame(CommManager.LaunchOutcome.Failed, outcome)
             assertTrue(f.states.value is ConnectionState.Error)
             assertTrue(f.manager.ownsUsbRecheck(f.owner))
             f.manager.disconnect(honorKillOnDisconnect = false)

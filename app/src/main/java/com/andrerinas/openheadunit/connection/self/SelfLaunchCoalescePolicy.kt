@@ -7,8 +7,8 @@ package com.andrerinas.openheadunit.connection.self
  * the setting is guarded inside `HomeFragment`, the intent reaches `AapService` directly, and
  * nothing downstream stopped both firing. On the AA 17.4+ route that is destructive rather than
  * merely wasteful, because there is one launcher, it dials `127.0.0.1:5277`, and the first request
- * to run out of launchers calls `emitError`, which disconnects the session the second one just
- * established.
+ * to run out of launchers used to report an error that disconnected the session the second one
+ * had just established.
  *
  * Hence the two rules. One launch at a time, here, and a launch that failed is not a failure once
  * something has connected. The second is decided by `CommManager.reportLaunchFailure` from the

@@ -13,8 +13,8 @@ enum class SelfLaunchPath {
  * How long a Self Mode launch may take before the user is told it did not work, and what may be
  * torn down when that happens.
  *
- * The deadline used to be 2500 ms for both routes, and expiring it called `CommManager.emitError`,
- * which disconnects. On [SelfLaunchPath.LEGACY] that is self-defeating twice over: the disconnect
+ * The deadline used to be 2500 ms for both routes, and expiring it reported an error that also
+ * disconnected. On [SelfLaunchPath.LEGACY] that is self-defeating twice over: the disconnect
  * takes down the dummy VPN whose `Network` we just handed Gearhead as `PARAM_SERVICE_WIFI_NETWORK`,
  * and it closes the port 5288 server that is the only way the phone can arrive. Gearhead needs 15
  * to 20 s on that route, so the deadline expired every time and killed sessions that were working.

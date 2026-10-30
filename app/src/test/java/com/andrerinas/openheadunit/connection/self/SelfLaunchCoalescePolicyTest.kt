@@ -14,7 +14,7 @@ class SelfLaunchCoalescePolicyTest {
     @Test
     fun `a second request while one is in flight does not start another`() {
         // The defect: auto-start-self-mode and an explicit ACTION_START_SELF_MODE both fired, and on
-        // the 17.4+ route the loser's emitError disconnected the winner's session.
+        // the 17.4+ route the loser's failure report disconnected the winner's session.
         assertFalse(SelfLaunchCoalescePolicy.shouldStart(launchInFlight = true, isConnected = false))
     }
 

@@ -1716,14 +1716,6 @@ class CommManager(
         }
     }
 
-    /** Reports an internal failure without applying the user's explicit Exit policy. */
-    suspend fun emitError(msg: String) {
-        synchronized(transportLifecycleLock) {
-            _connectionState.value = ConnectionState.Error(msg)
-            disconnect(sendByeBye = false, isUserExit = false)
-        }
-    }
-
     // A user exit owes no held USB scan. A wireless stack that USB stood down still comes back.
     private fun dropOwedScans() = ConnectionArbiter.dropUsbDebt()
 

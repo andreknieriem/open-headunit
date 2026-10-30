@@ -1257,9 +1257,9 @@ class CommManager(
      * under this lock while the arm runs on Main; reading state and attempt separately
      * could pair an old terminal with a newer attempt, or miss the attempt between them.
      */
-    internal fun rearmSnapshot(): Pair<ConnectionState.Disconnected?, Any?> = synchronized(transportLifecycleLock) {
+    internal fun rearmSnapshot(): Triple<ConnectionState.Disconnected?, Any?, Any?> = synchronized(transportLifecycleLock) {
         val terminal = _connectionState.value as? ConnectionState.Disconnected
-        terminal to (if (terminal == null) connectionAttempt else null)
+        Triple(terminal, if (terminal == null) connectionAttempt else null, lastEndedAttempt)
     }
 
     /** The current state and the attempt whose terminal was published last, read together. */

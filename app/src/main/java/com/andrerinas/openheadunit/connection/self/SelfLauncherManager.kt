@@ -20,6 +20,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class SelfLauncherManager(
@@ -218,11 +219,10 @@ class SelfLauncherManager(
                     // the server we opened. Reporting hides the "connecting" overlay while leaving
                     // that server and its network available for the late arrival.
                     // The report is not a disconnect, so nothing else clears this - and the
-                    // watchdog below is only armed once a launcher has succeeded. A refused
-                    // report means a newer state owns the outcome, including a late arrival.
-                    if (commManager.reportError("No launch method succeeded", settingsRestart, expected = acceptedIn)) {
-                        isActive = false
-                    }
+                    // watchdog below is only armed once a launcher has succeeded. A connection
+                    // formed since acceptance may be a late arrival; its outcome decides.
+                    val stands = commManager.reportError("No launch method succeeded", settingsRestart, expected = acceptedIn)
+                    if (stands || failsAfterRefusedReport(coroutineContext[Job])) isActive = false
                 } else {
                     // emitError disconnects, and the session that is up is not this attempt's to
                     // end. Measured on the 17.4+ route, where a duplicate launch's failure killed
@@ -260,12 +260,11 @@ class SelfLauncherManager(
                     return@timeout
                 }
                 if (!commManager.isConnected && isActive) {
-                    val current = commManager.connectionState.value
-                    if (current !== acceptedIn && current is CommManager.ConnectionState.Disconnected &&
-                        current.wasLoopbackSession && current.hadPhysicalConnection) {
+                    if (endsSessionAfterLaunch(commManager.connectionState.value)) {
                         // A loopback session arrived after this launch and has already ended. Its
                         // terminal owns Self cleanup; "never connected" would be false, and
-                        // publishing it would overwrite that terminal.
+                        // publishing it would overwrite that terminal. A repeat of a session
+                        // that ended before this launch is not this launch's arrival.
                         return@timeout
                     }
                     AppLog.e("SelfMode: nothing connected within ${deadlineMs}ms of the launch")
@@ -274,9 +273,9 @@ class SelfLauncherManager(
                     } else {
                         commManager.reportError("No launch method succeeded (timeout)", settingsRestart, expected = acceptedIn)
                     }
-                    // The state moved on after the guard above, e.g. the launch's own connection
-                    // arrived. That transition owns Self state; this is no longer a failure.
-                    if (!failureStands) return@timeout
+                    // A connection formed after the guard above and may be this launch's own
+                    // arrival. Its outcome decides; a live session owns Self state.
+                    if (!failureStands && !failsAfterRefusedReport(owner)) return@timeout
 
                     // The report is deliberately not a disconnect, so no Disconnected transition
                     // arrives to clear this. Left true, it poisons the next session in this
@@ -396,6 +395,24 @@ class SelfLauncherManager(
         if (launchJob == null) return false
         val ended = terminal.endedAttempt
         return launchAcceptedIn === terminal || (ended != null && ended === launchAcceptedAfterAttempt)
+    }
+
+    /** [state] ends a loopback session that was not already over when this launch was accepted. */
+    private fun endsSessionAfterLaunch(state: CommManager.ConnectionState): Boolean {
+        return state is CommManager.ConnectionState.Disconnected && state.wasLoopbackSession &&
+            state.hadPhysicalConnection && !launchAcceptedAfter(state)
+    }
+
+    /**
+     * A failure report was refused: a connection formed after this launch's guard. Live, it owns
+     * Self state. Still Connecting, it may be this launch's own arrival, so wait for its outcome;
+     * an end before any loopback session arrived still fails this launch.
+     */
+    private suspend fun failsAfterRefusedReport(owner: Job?): Boolean {
+        val commManager = App.provide(service).commManager
+        val outcome = commManager.connectionState.first { it !is CommManager.ConnectionState.Connecting }
+        if (launchJob !== owner || commManager.isConnected) return false
+        return !endsSessionAfterLaunch(outcome)
     }
 
     internal fun stopIfCurrent(expected: Job?, preserveVpn: Boolean = false) {

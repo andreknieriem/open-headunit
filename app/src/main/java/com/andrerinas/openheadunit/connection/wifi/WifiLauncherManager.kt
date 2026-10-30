@@ -25,10 +25,11 @@ open class WifiLauncherManager(val service: AapService) {
         // A Start can run before the queued Disconnected observer. Record the terminal
         // object already published when this arm begins, not just the observer's later epoch.
         // Self Mode is also admitted while another attempt is still Connecting; that attempt's
-        // terminal does not exist yet, so record the attempt itself. Read both atomically:
-        // the attempt's IO thread can publish its terminal while this runs on Main.
-        val (terminal, attempt) = App.provide(service).commManager.rearmSnapshot()
-        cleanupGeneration.advance(terminal, attempt)
+        // terminal does not exist yet, so record the attempt itself. An Error can replace an
+        // ended attempt's terminal before teardown republishes it; record that attempt too.
+        // Read all atomically: the attempt's IO thread can publish its terminal while this runs.
+        val (terminal, attempt, ended) = App.provide(service).commManager.rearmSnapshot()
+        cleanupGeneration.advance(terminal, attempt, ended)
     }
 
     val sharedServices: WifiLauncherSharedServices = WifiLauncherSharedServices(service)

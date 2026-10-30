@@ -47,6 +47,8 @@ for marker, file, declaration in [
     ('STOP', manager, 'fun stop(wasConnected:'),
     ('DETACH_LAUNCH', manager, 'private fun detachLaunch()'),
     ('ACCEPTED_AFTER', manager, 'internal fun launchAcceptedAfter('),
+    ('ENDS_SESSION_AFTER', manager, 'private fun endsSessionAfterLaunch('),
+    ('REFUSED_REPORT', manager, 'private suspend fun failsAfterRefusedReport('),
     ('ENDED', manager, 'internal fun onConnectionEnded('),
     ('ESTABLISHED', manager, 'internal fun onConnectionEstablished()'),
     ('STOP_CURRENT', manager, 'internal fun stopIfCurrent('),

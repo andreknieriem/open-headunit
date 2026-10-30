@@ -20,13 +20,15 @@ class CommManager {
         }
         object Connecting : ConnectionState()
         object Connected : ConnectionState()
+        class Error(val message: String) : ConnectionState()
     }
     val connectionState = MutableStateFlow<ConnectionState>(ConnectionState.Disconnected())
     // Production reads both under transportLifecycleLock; run.py exercises that method itself.
     var attempt: Any? = null
-    fun rearmSnapshot(): Pair<ConnectionState.Disconnected?, Any?> {
+    var lastEndedAttempt: Any? = null
+    fun rearmSnapshot(): Triple<ConnectionState.Disconnected?, Any?, Any?> {
         val terminal = connectionState.value as? ConnectionState.Disconnected
-        return terminal to (if (terminal == null) attempt else null)
+        return Triple(terminal, if (terminal == null) attempt else null, lastEndedAttempt)
     }
     val isConnected get() = connectionState.value is ConnectionState.Connected
     var gate = CompletableDeferred<Unit>()
@@ -353,6 +355,29 @@ fun main() {
             check(vpnStops==if (newer) 0 else 1)
         } finally { serviceScope.cancel() }
     }
+    // B's Legacy arm can run in the Error before teardown republishes the ended attempt's
+    // terminal. That repeat had already ended at the arm: it must not run B's VPN, Self or
+    // reconnect policy, physical or not.
+    Service().apply {
+        try {
+            selfLauncherManager.isActive=true
+            val attempt=Any()
+            commManager.attempt=attempt; commManager.lastEndedAttempt=attempt
+            val error=CommManager.ConnectionState.Error("USB permission not granted for device")
+            commManager.connectionState.value=error
+            selfLauncherManager.launchJob=Any()
+            selfLauncherManager.launchAcceptedIn=error
+            selfLauncherManager.launchAcceptedAfterAttempt=attempt
+            wifiLauncherManager.noteRearm()
+            val repeated=CommManager.ConnectionState.Disconnected(isUserExit=false, wasLoopbackSession=true, endedAttempt=attempt)
+            commManager.attempt=null; commManager.connectionState.value=repeated
+            notifyEnd(repeated); commManager.gate.complete(Unit); main.drain()
+            check(selfLauncherManager.isActive && selfLauncherManager.launchJob != null && vpnStops==0 && reconnects==0) {
+                "repeated terminal ran the newer arm's policy (active=${selfLauncherManager.isActive} vpnStops=$vpnStops reconnects=$reconnects)"
+            }
+        } finally { serviceScope.cancel() }
+    }
+    println("PASS a Self arm in the Error over an ended attempt's terminal is not retired by that terminal's repeat")
     println("PASS loopback terminal after an ordinary wireless arm ends leftover Self state, including a completed launch; a launch accepted after it, or after its first publication, keeps it")
     println("PASS service Stop joins existing physical retirement before native removal; connected, completed and rearmed controls")
     println("PASS actual disconnect callback: stale policy vs session resources, rearm across await, separate terminal and captured Stop waiter")

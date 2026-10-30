@@ -25,6 +25,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import java.util.concurrent.ConcurrentLinkedQueue
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.resume
@@ -152,6 +153,8 @@ class SelfLauncherManager(private val service: Service, private val wifiLauncher
     // STOP
     // DETACH_LAUNCH
     // ACCEPTED_AFTER
+    // ENDS_SESSION_AFTER
+    // REFUSED_REPORT
     // ENDED
     // ESTABLISHED
     // STOP_CURRENT
@@ -597,24 +600,57 @@ fun main() {
             check(!s.manager.isActive)
         }
     }
-    // The launch's own connection can be published after the deadline's isConnected guard but
-    // before its report takes the lock. That refused report is not a failure of the session.
-    for (modern in listOf(true, false)) Service().use { s ->
+    // A connection can be published after the deadline's isConnected guard but before its report
+    // takes the lock. A live arrival is not a failure; one still Connecting decides by its outcome.
+    for (modern in listOf(true, false)) for (arrival in listOf("connected", "connecting-connected", "connecting-failed")) Service().use { s ->
         s.modern = modern
         s.network.activeNetwork = Any()
         s.manager.start()
         s.main.drain(); s.io.drain(); s.main.drain()
         s.commManager.beforeReport = {
-            s.commManager.isLoopbackSession = true
-            s.commManager.connectionState.value = CommManager.ConnectionState.Connected
+            s.commManager.isLoopbackSession = arrival != "connecting-failed"
+            s.commManager.connectionState.value = if (arrival == "connected") CommManager.ConnectionState.Connected
+                else CommManager.ConnectionState.Connecting
         }
         s.main.advanceBy(120_000L)
         s.main.drain()
-        check(s.manager.isActive && s.resolvePrompts == 0 && s.commManager.reports == 0) {
-            "late arrival after the deadline guard handled as a failed launch (modern=$modern active=${s.manager.isActive} prompts=${s.resolvePrompts})"
+        if (arrival != "connected") {
+            check(s.manager.isActive && s.resolvePrompts == 0) { "Self failed while its arrival was still Connecting (modern=$modern)" }
+            s.commManager.connectionState.value = if (arrival == "connecting-connected") CommManager.ConnectionState.Connected
+                else CommManager.ConnectionState.Disconnected(hadPhysicalConnection = false)
+            s.main.drain()
         }
-        s.manager.onConnectionEstablished()
-        check(s.manager.isActive && s.commManager.connectionState.value === CommManager.ConnectionState.Connected)
+        val failed = arrival == "connecting-failed"
+        check(s.manager.isActive != failed && s.resolvePrompts == (if (failed) 1 else 0) && s.commManager.reports == 0) {
+            "late connection after the deadline guard misjudged (modern=$modern arrival=$arrival active=${s.manager.isActive} prompts=${s.resolvePrompts})"
+        }
+        if (!failed) {
+            s.manager.onConnectionEstablished()
+            check(s.manager.isActive && s.commManager.connectionState.value === CommManager.ConnectionState.Connected)
+        }
+    }
+    // Teardown republished the old session's terminal after B was accepted in the Error that
+    // replaced it. B never connects: its deadline must still fail it, not mistake the repeat
+    // for B's own ended session.
+    for (modern in listOf(true, false)) Service().use { s ->
+        s.modern = modern
+        val attempt = Any()
+        s.commManager.lastEndedAttempt = attempt
+        s.commManager.connectionState.value = CommManager.ConnectionState.Disconnected(
+            wasLoopbackSession = true, hadPhysicalConnection = true, endedAttempt = attempt)
+        s.commManager.connectionState.value = CommManager.ConnectionState.Error("USB permission not granted for device")
+        s.network.activeNetwork = Any()
+        s.manager.start()
+        s.main.drain(); s.io.drain(); s.main.drain()
+        val repeated = CommManager.ConnectionState.Disconnected(
+            wasLoopbackSession = true, hadPhysicalConnection = true, endedAttempt = attempt)
+        s.commManager.connectionState.value = repeated
+        s.main.advanceBy(120_000L)
+        s.main.drain()
+        check(!s.manager.isActive && s.resolvePrompts == 1 && s.commManager.reports == 1) {
+            "old repeated terminal suppressed the new launch's deadline (modern=$modern active=${s.manager.isActive} prompts=${s.resolvePrompts})"
+        }
+        check(s.commManager.connectionState.value === repeated)
     }
     // Teardown republishes an attempt's terminal when an Error replaced it. A launch accepted in
     // that Error came after the session ended; the repeat must not date it as older.

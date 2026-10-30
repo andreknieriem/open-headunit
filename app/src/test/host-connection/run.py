@@ -924,17 +924,18 @@ fun rearmSnapshotIdentifiesConnectingAttempt()=runBlocking {
  for(outcome in listOf("false","throw")) {
   val c=CommManager();c.connectNext()
   c.disconnect(honorKillOnDisconnect=false);c.cleanups();c.awaitCleanup()
-  var armed:Pair<ConnectionState.Disconnected?,Any?>?=null
+  var armed:Triple<ConnectionState.Disconnected?,Any?,Any?>?=null
   SocketProjectionConnection.connectionHook={
    armed=c.rearmSnapshot()
    if(outcome=="throw")throw IllegalStateException("open failed") else false
   }
   try { c.connectNext() } finally { SocketProjectionConnection.connectionHook=null }
-  val (terminalAtArm,attempt)=checkNotNull(armed)
+  val (terminalAtArm,attempt,_)=checkNotNull(armed)
   check(terminalAtArm==null && attempt!=null){"arm during Connecting recorded no attempt"}
   val ended=c.state as ConnectionState.Disconnected
   check(ended.endedAttempt===attempt && !ended.hadPhysicalConnection){"failed open lost its attempt: $outcome"}
-  check(c.rearmSnapshot().let{it.first===ended && it.second==null})
+  // The published end is recorded for later arms, even after an Error replaces this state.
+  check(c.rearmSnapshot().let{it.first===ended && it.second==null && it.third===attempt})
   c.cleanups();c.awaitCleanup()
   c.connectNext()
   val live=c.rearmSnapshot().second

@@ -313,8 +313,7 @@ class HomeFragment : Fragment() {
         val appSettings = App.provide(requireContext()).settings
 
         if (appSettings.autoStartOnScreenOn || appSettings.autoStartOnBoot) {
-            ContextCompat.startForegroundService(requireContext(),
-                Intent(requireContext(), AapService::class.java))
+            commManager.restoreAppForEntry(commManager.appOwnershipRevision())
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
@@ -1620,7 +1619,7 @@ class HomeFragment : Fragment() {
     private fun openProjection() {
         val aapIntent = Intent(requireContext(), AapProjectionActivity::class.java)
         aapIntent.putExtra(AapProjectionActivity.EXTRA_FOCUS, true)
-        startActivity(aapIntent)
+        startActivity(com.andrerinas.openheadunit.app.AppUiEntry.continuation(aapIntent))
     }
 
     private fun startSelfModeInternal(needsDummyVpn: Boolean = false) {
@@ -1780,7 +1779,7 @@ class HomeFragment : Fragment() {
             true
         }
         settingsTile.setOnClickListener {
-            startActivity(Intent(requireContext(), SettingsActivity::class.java))
+            startActivity(com.andrerinas.openheadunit.app.AppUiEntry.continuation(Intent(requireContext(), SettingsActivity::class.java)))
         }
         primaryAction?.setOnClickListener { onPrimaryActionClicked() }
         primaryCancel?.setOnClickListener { onPrimaryCancelClicked() }
@@ -1815,9 +1814,7 @@ class HomeFragment : Fragment() {
             }
             ContextCompat.startForegroundService(requireContext(), disconnectIntent)
         } else {
-            val stopServiceIntent = Intent(requireContext(), AapService::class.java).apply {
-                action = AapService.ACTION_STOP_SERVICE
-            }
+            val stopServiceIntent = AapService.stopIntent(requireContext())
             ContextCompat.startForegroundService(requireContext(), stopServiceIntent)
         }
         requireActivity().finishAffinity()

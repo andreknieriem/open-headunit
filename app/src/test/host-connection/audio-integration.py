@@ -38,6 +38,7 @@ sources = [repo / line for line in (audio_base / "sources.txt").read_text().spli
 # strategy enum; only the Android launcher and Shizuku side effects are doubled below.
 sources += [repo / "app/src/main/java/com/andrerinas/openheadunit/connection/wifi/scan/ScanControlPolicy.kt",
             repo / "app/src/main/java/com/andrerinas/openheadunit/connection/wifi/modes/nativeaa/NativeStrategy.kt"]
+sources.append(repo / "app/src/main/java/com/andrerinas/openheadunit/connection/AppExitPolicy.kt")
 overrides = {p.name for p in (base / "audio-stubs").glob("*.kt")}
 sources += [p for p in sorted((audio_base / "stubs").glob("*.kt")) if p.name not in overrides]
 sources += sorted((base / "audio-stubs").glob("*.kt"))
@@ -67,6 +68,11 @@ transport = (repo / "app/src/main/java/com/andrerinas/openheadunit/aap/AapTransp
 
 lifecycle_fixture = output / "LifecycleFixture.kt"
 lifecycle = (base / "LifecycleFixture.kt").read_text()
+exit_members = comm[comm.index("    private val appExitPolicy"):comm.index("    // The first disconnect chooses app-exit policy")]
+exit_members = exit_members.replace(
+    "private val appExitDispatcher: CoroutineDispatcher = Dispatchers.Main.immediate",
+    "private val appExitDispatcher: CoroutineDispatcher = Dispatchers.Unconfined")
+lifecycle = lifecycle.replace("// PRODUCTION APP_EXIT\n", exit_members)
 for marker, declaration, source in [
     ("PUBLICATION", "val transport = synchronized(transportLifecycleLock)", comm),
     ("APPLY", "fun applyAudioSettings()", comm),

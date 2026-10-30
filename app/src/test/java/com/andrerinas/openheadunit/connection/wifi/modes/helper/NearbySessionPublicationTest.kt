@@ -18,7 +18,7 @@ import kotlin.coroutines.intrinsics.suspendCoroutineUninterceptedOrReturn
 class NearbySessionPublicationTest {
     @Test fun preparedTunnelPublishesOnlyWhileBothOwnersRemainCurrent() = runBlocking {
         for (fromError in listOf(false, true)) for (outcome in listOf("connected", "replacement", "retired", "new-error", "owned", "transport-owned", "saved-request")) {
-            val manager = mock(CommManager::class.java, CALLS_REAL_METHODS)
+            val manager = mock(CommManager::class.java, CALLS_REAL_METHODS).withAppExitDispatcherForTest()
             val initial: CommManager.ConnectionState = if (fromError)
                 CommManager.ConnectionState.Error("USB permission not granted for device")
             else CommManager.ConnectionState.Disconnected()
@@ -33,6 +33,7 @@ class NearbySessionPublicationTest {
             fun get(name: String) = CommManager::class.java.getDeclaredField(name)
                 .apply { isAccessible = true }.get(manager)
             set("transportLifecycleLock", Any())
+            set("appExitPolicy", AppExitPolicy())
             set("_connectionState", flow)
             set("context", mock(Context::class.java))
             set("settings", mock(Settings::class.java))
@@ -47,7 +48,7 @@ class NearbySessionPublicationTest {
             val replacementTransport = mock(com.andrerinas.openheadunit.aap.AapTransport::class.java)
             val method = CommManager::class.java.getDeclaredMethod("connectAdmittedSocket",
                 Socket::class.java, ConnectionAdmission::class.java, Pair::class.java,
-                CommManager.ConnectionState.Disconnected::class.java, Continuation::class.java)
+                CommManager.ConnectionState.Disconnected::class.java, Long::class.javaPrimitiveType, Continuation::class.java)
                 .apply { isAccessible = true }
             mockConstruction(SocketProjectionConnection::class.java) { candidate, _ ->
                 runBlocking {
@@ -71,7 +72,7 @@ class NearbySessionPublicationTest {
                         suspendCoroutineUninterceptedOrReturn<Unit> { continuation ->
                             method.invoke(manager, socket, admission, null,
                                 if (outcome == "saved-request") CommManager.ConnectionState.Disconnected(
-                                    reason = CommManager.DisconnectReason.SETTINGS_RESTART) else null, continuation)
+                                    reason = CommManager.DisconnectReason.SETTINGS_RESTART) else null, 0L, continuation)
                         }
                     } catch (e: java.lang.reflect.InvocationTargetException) {
                         if (e.cause !is ConnectionAdmissionRejectedException) throw e

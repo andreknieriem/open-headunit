@@ -225,6 +225,214 @@ class CommManager(
     // Creation/publication, saved audio settings and the first disconnect decision share one
     // boundary. Network handshake and final connection teardown run outside this lock.
     private val transportLifecycleLock = Any()
+    private val appExitPolicy = AppExitPolicy()
+    private val appExitDispatcher: CoroutineDispatcher = Dispatchers.Main.immediate
+    private val connectionIoDispatcher: CoroutineDispatcher = Dispatchers.IO
+    private val appExitHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private var pendingAppExit: Runnable? = null
+    private var serviceExitFinished: CompletableDeferred<Unit>? = null
+    private val appEntryScope = CoroutineScope(SupervisorJob() + appExitDispatcher)
+
+    internal fun appOwnershipRevision(): Long = synchronized(transportLifecycleLock) { appExitPolicy.revision }
+
+    /** A reopened idle home owns the app too; connection state alone cannot revoke an exit. */
+    internal fun onAppRelaunched(): Long = synchronized(transportLifecycleLock) {
+        appExitPolicy.supersede().also { cancelAppExitCallback() }
+    }
+
+    internal fun acceptAppResume(expectedRevision: Long): Long? = synchronized(transportLifecycleLock) {
+        appExitPolicy.acceptResume(expectedRevision)?.also { cancelAppExitCallback() }
+    }
+
+    internal fun isAppRunOwner(owner: Long): Boolean = synchronized(transportLifecycleLock) {
+        appExitPolicy.isRunOwner(owner)
+    }
+
+    /** The gate is physical only; every continuation rechecks its logical owner after waiting. */
+    internal fun restoreAppForEntry(owner: Long) {
+        appEntryScope.launch {
+            while (isAppRunOwner(owner)) {
+                val ending = synchronized(transportLifecycleLock) { serviceExitFinished }
+                if (ending != null) { ending.await(); continue }
+                if (!isAppRunOwner(owner)) return@launch
+                if (com.andrerinas.openheadunit.aap.AapService.instance == null) {
+                    try {
+                        androidx.core.content.ContextCompat.startForegroundService(context,
+                            com.andrerinas.openheadunit.aap.AapService.entryIntent(context, owner))
+                    } catch (failure: Exception) {
+                        AppLog.e("CommManager: failed to restore service for app entry: ${failure.message}", failure)
+                    }
+                }
+                return@launch
+            }
+        }
+    }
+
+    private fun appConnectionTicket(): Long = synchronized(transportLifecycleLock) { appExitPolicy.stopEpoch }
+
+    private fun cancelAppExitCallback() {
+        pendingAppExit?.let { appExitHandler.removeCallbacks(it) }
+        pendingAppExit = null
+    }
+
+    private fun acceptAppConnection(ticket: Long, acquireOwnership: Boolean = false): Boolean {
+        if (!appExitPolicy.acceptsConnection(ticket)) return false
+        if (acquireOwnership) appExitPolicy.supersede()
+        cancelAppExitCallback()
+        return true
+    }
+
+    /** Called under the lifecycle lock; retire only this cancelled attempt, never its replacement. */
+    private fun stoppedConnectionAttempt(ticket: Long, attempt: Any): Boolean {
+        if (appExitPolicy.stopEpoch == ticket) return false
+        if (connectionAttempt === attempt && !disconnectRequested) {
+            disconnect(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
+        }
+        return true
+    }
+
+    // stopSelf cannot retract an onDestroy already queued by Android. Do not publish a new
+    // attempt into that service's cleanup; wait outside the lifecycle lock for its completion.
+    private suspend fun publishConnectionAttempt(
+        ticket: Long,
+        action: () -> Pair<Any, ProjectionConnection?>?,
+    ): Pair<Any, ProjectionConnection?>? {
+        // Finish receivers also run on Main, including broadcasts delivered after destruction.
+        // Keep ownership transfers on that dispatcher; native I/O remains on the caller.
+        var published: Pair<Any, ProjectionConnection?>? = null
+        try {
+            while (true) {
+                var ending: CompletableDeferred<Unit>? = null
+                var retirement: Job? = null
+                val attempted = withContext(appExitDispatcher) {
+                    synchronized(transportLifecycleLock) {
+                        if (appExitPolicy.stopEpoch != ticket) return@withContext true
+                        ending = serviceExitFinished
+                        retirement = _disconnectJob?.takeUnless { it.isCompleted }
+                        if (ending == null && retirement == null) {
+                            published = action()
+                            true
+                        } else false
+                    }
+                }
+                if (attempted) return published
+                // Cleanup can be queued after our initial join but before this Main turn.
+                // Await actual teardown before transferring resources into its capture window.
+                if (ending != null) {
+                    checkNotNull(ending).await()
+                } else checkNotNull(retirement).join()
+            }
+        } catch (cancelled: kotlinx.coroutines.CancellationException) {
+            // Main may publish Connecting before cancellation wins the handback to IO.
+            // The publication loop keeps newer attempts behind this attempt's queued cleanup.
+            published?.let { (attempt, previous) ->
+                synchronized(transportLifecycleLock) {
+                    if (connectionAttempt === attempt && !disconnectRequested) {
+                        disconnect(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
+                    }
+                }
+                try { previous?.disconnect() } catch (failure: Exception) {
+                    AppLog.w("CommManager: displaced connection cleanup failed: ${failure.message}")
+                }
+            }
+            throw cancelled
+        }
+    }
+
+    internal fun ownsAppExit(id: Long): Boolean = synchronized(transportLifecycleLock) {
+        appExitPolicy.owns(id, settings.killOnDisconnect)
+    }
+
+    internal fun appExitIsUserStop(request: AppExitPolicy.Request): Boolean = synchronized(transportLifecycleLock) {
+        appExitPolicy.userStopAtDestroy(request)
+    }
+
+    internal fun requestExplicitAppExit(killProcess: Boolean): AppExitPolicy.Request {
+        val request = synchronized(transportLifecycleLock) {
+            appExitPolicy.request(killProcess, userStop = true, requiresKillOnDisconnect = false).also {
+                cancelAppExitCallback()
+                usbRecoveryOwner = Any()
+                cancelPendingSettingsRestart()
+                dropOwedScans()
+            }
+        }
+        // Retained OS ownership can outlive the service. Never call native/Binder under our lock.
+        com.andrerinas.openheadunit.connection.wifi.direct.RetainedNativeGroup.requestStop {
+            ownsAppExit(request.id)
+        }
+        return request
+    }
+
+    internal fun acceptedAppExit(id: Long): AppExitPolicy.Request? = synchronized(transportLifecycleLock) {
+        appExitPolicy.requestFor(id)
+    }
+
+    /** Returns the physical A, including when this fresh B joins its existing teardown. */
+    internal fun commitAppExit(request: AppExitPolicy.Request): AppExitPolicy.Request? = synchronized(transportLifecycleLock) {
+        val physical = appExitPolicy.commit(request, settings.killOnDisconnect) ?: return@synchronized null
+        cancelAppExitCallback()
+        if (serviceExitFinished == null) serviceExitFinished = CompletableDeferred()
+        physical
+    }
+
+    internal fun completeAppExit(request: AppExitPolicy.Request, allowProcessExit: Boolean = true): AppExitPolicy.Completion {
+        val (completion, finished) = synchronized(transportLifecycleLock) {
+            val completion = appExitPolicy.destroyed(request, settings.killOnDisconnect && allowProcessExit)
+            val finished = if (completion.effect != AppExitPolicy.Effect.NONE) {
+                serviceExitFinished.also { serviceExitFinished = null }
+            } else null
+            completion to finished
+        }
+        finished?.complete(Unit)
+        return completion
+    }
+
+    internal fun finishCurrentAppExitTasks() {
+        val request = synchronized(transportLifecycleLock) {
+            appExitPolicy.requestFor(appExitPolicy.revision)?.takeIf { it.killProcess }
+        } ?: return
+        finishAppExitTasks(request)
+    }
+
+    internal fun broadcastAppExit(request: AppExitPolicy.Request) {
+        if (!ownsAppExit(request.id)) return
+        context.sendBroadcast(android.content.Intent(AppExitPolicy.ACTION_FINISH_ACTIVITIES).apply {
+            setPackage(context.packageName)
+            putExtra(AppExitPolicy.EXTRA_EXIT_OWNER, request.id)
+        })
+    }
+
+    internal fun finishAppExitTasks(request: AppExitPolicy.Request) {
+        if (!ownsAppExit(request.id)) return
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager
+            activityManager.appTasks.forEach { it.finishAndRemoveTask() }
+        }
+    }
+
+    private fun scheduleAppExit(userStop: Boolean) {
+        // A terminal may be published on IO. Observe its revision there, but accept the
+        // logical decision on Main; a newer UI command must win over that queued terminal.
+        val observedRevision = appExitPolicy.revision
+        appEntryScope.launch {
+            synchronized(transportLifecycleLock) {
+                if (appExitPolicy.revision != observedRevision || !settings.killOnDisconnect) return@launch
+                val request = appExitPolicy.requestAutomatic(userStop) ?: return@launch
+                cancelAppExitCallback()
+                val callback = Runnable {
+                    val physical = commitAppExit(request) ?: return@Runnable
+                    broadcastAppExit(request)
+                    val service = com.andrerinas.openheadunit.aap.AapService.instance
+                    service?.stopForAppExit(physical)
+                    finishAppExitTasks(request)
+                    if (service == null && physical === request) completeAppExit(physical, allowProcessExit = false)
+                }
+                pendingAppExit = callback
+                appExitHandler.postDelayed(callback, AppExitPolicy.DELAY_MS)
+            }
+        }
+    }
+
     // The first disconnect chooses app-exit policy until the next physical attempt. Error/UI
     // state changes must not reopen that decision while the same session is being retired.
     private var disconnectRequested = false
@@ -417,32 +625,44 @@ class CommManager(
         device: UsbDevice,
         tier: ConnectionPriorityPolicy.Tier = ConnectionPriorityPolicy.Tier.USB,
         expectedState: ConnectionState.Disconnected? = null,
-    ) = withContext(Dispatchers.IO) {
-        if (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value)) return@withContext
-        val claim = claimUsb(tier, "USB ${UsbDeviceCompat.getUniqueName(device)}", expectedState)
-            ?: return@withContext
-        try { connectUsb(device, expectedState) } finally { releaseClaim(claim) }
+    ) {
+        val ticket = appConnectionTicket()
+        withContext(connectionIoDispatcher) {
+            synchronized(transportLifecycleLock) {
+                if (appExitPolicy.stopEpoch != ticket ||
+                    (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value))) return@withContext
+            }
+            val description = "USB ${UsbDeviceCompat.getUniqueName(device)}"
+            val claim = synchronized(transportLifecycleLock) {
+                if (appExitPolicy.stopEpoch != ticket) null else claimUsb(tier, description, expectedState)
+            } ?: return@withContext
+            try { connectUsb(device, ticket, expectedState, appClaim = claim) } finally { releaseClaim(claim) }
+        }
     }
 
     /** A recovery retry cannot borrow the authority of a later Save, Exit or completed session. */
     internal suspend fun reconnectUsb(device: UsbDevice, recoveryOwner: Any,
         recoveryClaim: ConnectionArbiter.Claim,
-        admission: ConnectionAdmission = ConnectionAdmission.UNRESTRICTED) = withContext(Dispatchers.IO) {
-        val job = kotlinx.coroutines.currentCoroutineContext()[kotlinx.coroutines.Job]
-        val claim = synchronized(transportLifecycleLock) {
-            job?.ensureActive()
-            if (usbRecoveryOwner !== recoveryOwner) return@withContext
-            if (_connectionState.value !is ConnectionState.Disconnected &&
-                _connectionState.value !is ConnectionState.Error) return@withContext
-            var next: ConnectionArbiter.Claim? = null
-            admission.run {
-                next = ConnectionArbiter.claim(ConnectionPriorityPolicy.Tier.USB, ConnectionPriorityPolicy.Owner.USB,
-                    "USB recovery of ${UsbDeviceCompat.getUniqueName(device)}", expectedHolder = recoveryClaim)
-            }
-            next
-        } ?: return@withContext
-        attemptUserRequested = false
-        try { connectUsb(device, recoveryOwner = recoveryOwner, recoveryClaim = claim, recoveryAdmission = admission) } finally { releaseClaim(claim) }
+        admission: ConnectionAdmission = ConnectionAdmission.UNRESTRICTED) {
+        val ticket = appConnectionTicket()
+        withContext(connectionIoDispatcher) {
+            val job = kotlinx.coroutines.currentCoroutineContext()[kotlinx.coroutines.Job]
+            val claim = synchronized(transportLifecycleLock) {
+                job?.ensureActive()
+                if (appExitPolicy.stopEpoch != ticket) return@withContext
+                if (usbRecoveryOwner !== recoveryOwner) return@withContext
+                if (_connectionState.value !is ConnectionState.Disconnected &&
+                    _connectionState.value !is ConnectionState.Error) return@withContext
+                var next: ConnectionArbiter.Claim? = null
+                admission.run {
+                    next = ConnectionArbiter.claim(ConnectionPriorityPolicy.Tier.USB, ConnectionPriorityPolicy.Owner.USB,
+                        "USB recovery of ${UsbDeviceCompat.getUniqueName(device)}", expectedHolder = recoveryClaim)
+                }
+                next
+            } ?: return@withContext
+            attemptUserRequested = false
+            try { connectUsb(device, ticket, recoveryOwner = recoveryOwner, recoveryClaim = claim, recoveryAdmission = admission) } finally { releaseClaim(claim) }
+        }
     }
 
     internal fun claimUsb(
@@ -510,9 +730,10 @@ class CommManager(
         }
     }
 
-    private suspend fun connectUsb(device: UsbDevice, expectedState: ConnectionState.Disconnected? = null,
+    private suspend fun connectUsb(device: UsbDevice, ticket: Long, expectedState: ConnectionState.Disconnected? = null,
         recoveryOwner: Any? = null, recoveryClaim: ConnectionArbiter.Claim? = null,
-        recoveryAdmission: ConnectionAdmission = ConnectionAdmission.UNRESTRICTED) {
+        recoveryAdmission: ConnectionAdmission = ConnectionAdmission.UNRESTRICTED,
+        appClaim: ConnectionArbiter.Claim? = null) {
         if (recoveryOwner != null && !ownsUsbRecheck(recoveryOwner)) return
         if (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value)) return
         // Another caller already started the connection — do nothing.
@@ -531,6 +752,9 @@ class CommManager(
             _connectionState.emit(ConnectionState.Error("USB permission not granted for device"))
             return
         }
+        // Permission rejection is not an accepted attempt. A valid held claim, however,
+        // already owns the app while the previous connection is still being torn down.
+        if (appClaim != null && !acceptAppConnectionClaim(appClaim, ticket, expectedState)) return
 
         // Wait for any in-progress cleanup to finish before opening the USB device.
         // Without this, openDevice() on the same hardware can return null because the previous
@@ -564,15 +788,17 @@ class CommManager(
         }
 
         var conn: ProjectionConnection? = null
-        val (attempt, previous) = synchronized(transportLifecycleLock) {
+        val (attempt, previous) = publishConnectionAttempt(ticket) {
             // Retirement can suspend after admission. Recheck the same Save permission at
             // publication, before opening hardware or replacing another connection's state.
-            if (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value)) return
+            if (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value)) return@publishConnectionAttempt null
             if (recoveryOwner != null && _connectionState.value !is ConnectionState.Disconnected &&
-                _connectionState.value !is ConnectionState.Error) return
+                _connectionState.value !is ConnectionState.Error) return@publishConnectionAttempt null
+            if (!appExitPolicy.acceptsConnection(ticket)) return@publishConnectionAttempt null
             val token = Any()
             var previous: ProjectionConnection? = null
             if (!publishIfOwned {
+                check(acceptAppConnection(ticket, acquireOwnership = appClaim == null))
                 settingsUsbRestartInFlight = expectedState
                 usbSaveOwner = expectedState
                 outgoingEndpoint = null
@@ -582,9 +808,9 @@ class CommManager(
                 _connectionState.value = ConnectionState.Connecting
                 previous = _connection
                 _connection = null
-            }) return
+            }) return@publishConnectionAttempt null
             token to previous
-        }
+        } ?: return
         try {
             previous?.disconnect()
             conn = if (settings.useLibusb) {
@@ -594,6 +820,7 @@ class CommManager(
             }
             val candidate = conn
             val registered = synchronized(transportLifecycleLock) {
+                if (stoppedConnectionAttempt(ticket, attempt)) return@synchronized false
                 if (connectionAttempt !== attempt || disconnectRequested) false
                 else {
                     val accepted = publishIfOwned { _connection = candidate }
@@ -608,6 +835,7 @@ class CommManager(
             // A targeted fallback may wait inside openDevice while the bus changes again.
             val targetStillCurrent = recoveryAdmission !is UsbRecoveryAdmission || recoveryAdmission.resolve(usbManager) != null
             synchronized(transportLifecycleLock) {
+                if (stoppedConnectionAttempt(ticket, attempt)) return@synchronized
                 if (connectionAttempt !== attempt || disconnectRequested || _connection !== candidate) {
                     // The cancelled candidate is closed below, outside the lifecycle monitor.
                     return@synchronized
@@ -625,6 +853,7 @@ class CommManager(
             }
         } catch (e: Exception) {
             synchronized(transportLifecycleLock) {
+                if (stoppedConnectionAttempt(ticket, attempt)) return
                 if (connectionAttempt !== attempt || disconnectRequested) return
                 val published = publishIfOwned {
                     _connectionState.value = ConnectionState.Error("Connection failed: ${e.message}")
@@ -656,31 +885,67 @@ class CommManager(
         restartEndpoint: Pair<String, Int>? = null,
         expectedState: ConnectionState.Disconnected? = null,
         admission: ConnectionAdmission = ConnectionAdmission.UNRESTRICTED,
-    ) = withContext(Dispatchers.IO) {
-        var claim: ConnectionArbiter.Claim? = null
-        // Match publication's lock order: lifecycle, producer, then arbiter. Save admission
-        // also takes the lifecycle lock before the arbiter; reversing it can deadlock.
-        synchronized(transportLifecycleLock) {
-            admission.run {
-                if (!socket.isClosed &&
-                    (expectedState == null || expectedState.acceptsSettingsRestart(_connectionState.value))) {
-                    claim = claimSocket(tier, "the socket from ${socket.inetAddress?.hostAddress}", expectedState)
+    ) {
+        val ticket = appConnectionTicket()
+        connectSocketWithTicket(socket, tier, restartEndpoint, expectedState, admission, ticket)
+    }
+
+    /** An IP-held-socket handoff is the same attempt, including its original cancellation ticket. */
+    private suspend fun connectSocketWithTicket(
+        socket: Socket,
+        tier: ConnectionPriorityPolicy.Tier,
+        restartEndpoint: Pair<String, Int>?,
+        expectedState: ConnectionState.Disconnected?,
+        admission: ConnectionAdmission,
+        ticket: Long,
+    ) {
+        var entered = false
+        try {
+            withContext(connectionIoDispatcher) {
+                entered = true
+                var claim: ConnectionArbiter.Claim? = null
+                // Match publication's lock order: lifecycle, producer, then arbiter.
+                synchronized(transportLifecycleLock) {
+                    if (appExitPolicy.stopEpoch != ticket) return@synchronized
+                    admission.run {
+                        if (!socket.isClosed &&
+                            (expectedState == null || expectedState.acceptsSettingsRestart(_connectionState.value))) {
+                            claim = claimSocket(tier, "the socket from ${socket.inetAddress?.hostAddress}", expectedState, ticket)
+                        }
+                    }
+                }
+                val ownedClaim = claim
+                if (ownedClaim == null) {
+                    HeldServerSocket.abandon(socket)
+                    try { socket.close() } catch (_: Exception) {}
+                    if (admission !== ConnectionAdmission.UNRESTRICTED) throw ConnectionAdmissionRejectedException()
+                    return@withContext
+                }
+                noteClaimedEndpoint(ownedClaim, socketEndpoint(socket))
+                HeldServerSocket.settle(socket)
+                var delegated = false
+                try {
+                    if (admission === ConnectionAdmission.UNRESTRICTED) {
+                        if (socket.isClosed || !acceptAppConnectionClaim(ownedClaim, ticket, expectedState)) return@withContext
+                        delegated = true
+                        connectSocket(socket, restartEndpoint, expectedState, ticket)
+                    } else {
+                        delegated = true
+                        connectAdmittedSocket(socket, admission.withClaim(ownedClaim), restartEndpoint, expectedState, ticket)
+                    }
+                } finally {
+                    if (!delegated) try { socket.close() } catch (_: Exception) {}
+                    releaseClaim(ownedClaim)
+                }
+            }
+        } finally {
+            // A cancelled IO dispatch never enters the inner ownership frame.
+            if (!entered) withContext(kotlinx.coroutines.NonCancellable + connectionIoDispatcher) {
+                try { socket.close() } catch (failure: Exception) {
+                    AppLog.w("CommManager: unentered socket cleanup failed: ${failure.message}")
                 }
             }
         }
-        val ownedClaim = claim
-        if (ownedClaim == null) {
-            HeldServerSocket.abandon(socket)
-            try { socket.close() } catch (_: Exception) {}
-            if (admission !== ConnectionAdmission.UNRESTRICTED) throw ConnectionAdmissionRejectedException()
-            return@withContext
-        }
-        noteClaimedEndpoint(ownedClaim, socketEndpoint(socket))
-        HeldServerSocket.settle(socket)
-        try {
-            if (admission === ConnectionAdmission.UNRESTRICTED) connectSocket(socket, restartEndpoint, expectedState)
-            else connectAdmittedSocket(socket, admission.withClaim(ownedClaim), restartEndpoint, expectedState)
-        } finally { releaseClaim(ownedClaim) }
     }
 
     private suspend fun connectAdmittedSocket(
@@ -688,6 +953,7 @@ class CommManager(
         admission: ConnectionAdmission,
         restartEndpoint: Pair<String, Int>?,
         expectedState: ConnectionState.Disconnected?,
+        ticket: Long,
     ) {
         var transferred = false
         var terminal: ConnectionState? = null
@@ -710,12 +976,16 @@ class CommManager(
                     // Permission failures can leave Error without owning a connection. It is
                     // reusable like Disconnected, but only while that exact state and both
                     // resource owners remain unchanged throughout candidate preparation.
+                    // Cleanup can be queued between the initial join and terminal snapshot;
+                    // reject rather than transfer a candidate into that cleanup's capture.
                     if (socket.isClosed || _connectionState.value !== terminal ||
                         (terminal !is ConnectionState.Disconnected && terminal !is ConnectionState.Error) ||
-                        _connection != null || _transport != null ||
+                        _connection != null || _transport != null || !appExitPolicy.acceptsConnection(ticket) ||
+                        _disconnectJob?.isCompleted == false ||
                         (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value))) {
                         false
                     } else {
+                        check(acceptAppConnection(ticket, acquireOwnership = true))
                         lastAttemptedEndpoint = socketEndpoint(socket)
                         outgoingEndpoint = restartEndpoint
                         connectionAttempt = Any()
@@ -723,10 +993,12 @@ class CommManager(
                         disconnectRequested = false
                         _connection = candidate
                         _connectionState.value = ConnectionState.Connected
+                        transferred = true
                         true
                     }
                 },
                 dispose = { it.disconnect() },
+                publicationContext = appExitDispatcher,
             )
             // Closing the candidate alone leaves Nearby's endpoint/pipe bookkeeping alive.
             // Signal rejection back through the awaited handoff so that producer can retire it.
@@ -744,6 +1016,7 @@ class CommManager(
         socket: Socket,
         restartEndpoint: Pair<String, Int>?,
         expectedState: ConnectionState.Disconnected?,
+        ticket: Long,
     ) {
         // Another caller already started the connection — do nothing.
         if (_connectionState.value is ConnectionState.Connecting) {
@@ -763,31 +1036,40 @@ class CommManager(
             return
         }
 
-        _disconnectJob?.join()
-
         var conn: ProjectionConnection? = null
-        val (attempt, previous) = synchronized(transportLifecycleLock) {
-            if (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value)) {
-                try { socket.close() } catch (_: Exception) {}
-                return
+        val publication = try {
+            _disconnectJob?.join()
+            publishConnectionAttempt(ticket) {
+                if (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value)) {
+                    return@publishConnectionAttempt null
+                }
+                if (!acceptAppConnection(ticket)) return@publishConnectionAttempt null
+                lastAttemptedEndpoint = socketEndpoint(socket)
+                outgoingEndpoint = restartEndpoint
+                val token = Any()
+                connectionAttempt = token
+                physicalConnectionReached = false
+                usbSaveOwner = null
+                disconnectRequested = false
+                _connectionState.value = ConnectionState.Connecting
+                val previous = _connection
+                _connection = null
+                token to previous
             }
-            lastAttemptedEndpoint = socketEndpoint(socket)
-            outgoingEndpoint = restartEndpoint
-            val token = Any()
-            connectionAttempt = token
-            physicalConnectionReached = false
-            usbSaveOwner = null
-            disconnectRequested = false
-            _connectionState.value = ConnectionState.Connecting
-            val previous = _connection
-            _connection = null
-            token to previous
+        } catch (failure: Throwable) {
+            try { socket.close() } catch (_: Exception) {}
+            throw failure
+        }
+        val (attempt, previous) = publication ?: run {
+            try { socket.close() } catch (_: Exception) {}
+            return
         }
         try {
             previous?.disconnect()
             conn = SocketProjectionConnection(socket, context)
             val candidate = conn
             val registered = synchronized(transportLifecycleLock) {
+                if (stoppedConnectionAttempt(ticket, attempt)) return@synchronized false
                 if (connectionAttempt !== attempt || disconnectRequested) false
                 else { _connection = candidate; true }
             }
@@ -795,6 +1077,7 @@ class CommManager(
 
             val opened = candidate.connect()
             synchronized(transportLifecycleLock) {
+                if (stoppedConnectionAttempt(ticket, attempt)) return@synchronized
                 if (connectionAttempt !== attempt || disconnectRequested || _connection !== candidate) {
                     // The cancelled candidate is closed below, outside the lifecycle monitor.
                     return@synchronized
@@ -812,6 +1095,7 @@ class CommManager(
             }
         } catch (e: Exception) {
             synchronized(transportLifecycleLock) {
+                if (stoppedConnectionAttempt(ticket, attempt)) return
                 if (connectionAttempt !== attempt || disconnectRequested) return
                 onSessionFailure?.invoke("connect_failed")
                 _connectionState.value = ConnectionState.Error("Connection failed: ${e.message}")
@@ -835,31 +1119,45 @@ class CommManager(
         port: Int,
         tier: ConnectionPriorityPolicy.Tier = ConnectionPriorityPolicy.Tier.WIRELESS_HANDSHAKE,
         expectedState: ConnectionState.Disconnected? = null,
-    ) = withContext(Dispatchers.IO) {
-        // Save may have waited in the IO queue while another session took over. Check before
-        // claiming the arbiter, then again under the publication lock after teardown waits.
-        if (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value)) return@withContext
-        val endpoint = SameEndpointConnectPolicy.endpoint(ip, port)
-        val held = if (HeldServerSocket.isHeld(endpoint)) endpoint else null
-        if (SameEndpointConnectPolicy.route(held, null, endpoint) == SameEndpointConnectPolicy.Route.ADOPT_HELD) {
-            HeldServerSocket.take(endpoint)?.let {
-                AppLog.i("CommManager: $endpoint adopting the socket discovery already opened")
-                try { connect(it, tier, restartEndpoint = ip to port, expectedState = expectedState) } catch (e: CancellationException) { HeldServerSocket.abandon(it); throw e }
+    ) {
+        val ticket = appConnectionTicket()
+        withContext(connectionIoDispatcher) {
+            // Save may have waited in the IO queue while another session took over. Check before
+            // claiming the arbiter, then again under the publication lock after teardown waits.
+            synchronized(transportLifecycleLock) {
+                if (appExitPolicy.stopEpoch != ticket ||
+                    (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value))) return@withContext
+            }
+            val endpoint = SameEndpointConnectPolicy.endpoint(ip, port)
+            val held = if (HeldServerSocket.isHeld(endpoint)) endpoint else null
+            if (SameEndpointConnectPolicy.route(held, null, endpoint) == SameEndpointConnectPolicy.Route.ADOPT_HELD) {
+                val adopted = synchronized(transportLifecycleLock) {
+                    if (appExitPolicy.stopEpoch != ticket) return@withContext
+                    HeldServerSocket.take(endpoint)
+                }
+                adopted?.let {
+                    AppLog.i("CommManager: $endpoint adopting the socket discovery already opened")
+                    try {
+                        connectSocketWithTicket(it, tier, ip to port, expectedState, ConnectionAdmission.UNRESTRICTED, ticket)
+                    } catch (e: CancellationException) { HeldServerSocket.abandon(it); throw e }
+                    return@withContext
+                }
+            }
+            // The taken mark is read before the claim: discovery records its claim before it settles the mark.
+            val inFlight = if (HeldServerSocket.isTaken(endpoint)) endpoint else claimedEndpoint
+            if (SameEndpointConnectPolicy.route(null, inFlight, endpoint) == SameEndpointConnectPolicy.Route.JOIN) {
+                AppLog.i("CommManager: $endpoint is already connecting; not preempting it")
                 return@withContext
             }
+            val claim = claimSocket(tier, endpoint, expectedState, ticket) ?: return@withContext
+            noteClaimedEndpoint(claim, endpoint)
+            try {
+                if (acceptAppConnectionClaim(claim, ticket, expectedState)) connectIp(ip, port, expectedState, ticket)
+            } finally { releaseClaim(claim) }
         }
-        // The taken mark is read before the claim: discovery records its claim before it settles the mark.
-        val inFlight = if (HeldServerSocket.isTaken(endpoint)) endpoint else claimedEndpoint
-        if (SameEndpointConnectPolicy.route(null, inFlight, endpoint) == SameEndpointConnectPolicy.Route.JOIN) {
-            AppLog.i("CommManager: $endpoint is already connecting; not preempting it")
-            return@withContext
-        }
-        val claim = claimSocket(tier, endpoint, expectedState) ?: return@withContext
-        noteClaimedEndpoint(claim, endpoint)
-        try { connectIp(ip, port, expectedState) } finally { releaseClaim(claim) }
     }
 
-    private suspend fun connectIp(ip: String, port: Int, expectedState: ConnectionState.Disconnected?) {
+    private suspend fun connectIp(ip: String, port: Int, expectedState: ConnectionState.Disconnected?, ticket: Long) {
         // Another caller already started the connection — do nothing.
         if (_connectionState.value is ConnectionState.Connecting)
             return
@@ -867,8 +1165,9 @@ class CommManager(
         _disconnectJob?.join()
 
         var conn: ProjectionConnection? = null
-        val (attempt, previous) = synchronized(transportLifecycleLock) {
-            if (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value)) return
+        val (attempt, previous) = publishConnectionAttempt(ticket) {
+            if (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value)) return@publishConnectionAttempt null
+            if (!acceptAppConnection(ticket)) return@publishConnectionAttempt null
             lastAttemptedEndpoint = SameEndpointConnectPolicy.endpoint(ip, port)
             outgoingEndpoint = ip to port
             val token = Any()
@@ -880,12 +1179,13 @@ class CommManager(
             val previous = _connection
             _connection = null
             token to previous
-        }
+        } ?: return
         try {
             previous?.disconnect()
             conn = SocketProjectionConnection(ip, port, context)
             val candidate = conn
             val registered = synchronized(transportLifecycleLock) {
+                if (stoppedConnectionAttempt(ticket, attempt)) return@synchronized false
                 if (connectionAttempt !== attempt || disconnectRequested) false
                 else { _connection = candidate; true }
             }
@@ -893,6 +1193,7 @@ class CommManager(
 
             val opened = candidate.connect()
             synchronized(transportLifecycleLock) {
+                if (stoppedConnectionAttempt(ticket, attempt)) return@synchronized
                 if (connectionAttempt !== attempt || disconnectRequested || _connection !== candidate) {
                     // The cancelled candidate is closed below, outside the lifecycle monitor.
                     return@synchronized
@@ -907,6 +1208,7 @@ class CommManager(
             }
         } catch (e: Exception) {
             synchronized(transportLifecycleLock) {
+                if (stoppedConnectionAttempt(ticket, attempt)) return
                 if (connectionAttempt !== attempt || disconnectRequested) return
                 onSessionFailure?.invoke("connect_failed")
                 _connectionState.value = ConnectionState.Error("Connection failed: ${e.message}")
@@ -938,16 +1240,33 @@ class CommManager(
         settingsUsbRestartInFlight?.cancelSettingsRestart()
     }
 
+    // An unrestricted, held claim owns an attempt even while previous teardown still runs.
+    // Do not wait for Connecting to revoke its predecessor's exit. Restricted candidates
+    // transfer only at prepareAndPublish; a refused/preempted claim revokes nothing.
+    private suspend fun acceptAppConnectionClaim(
+        claim: ConnectionArbiter.Claim,
+        ticket: Long,
+        expectedState: ConnectionState.Disconnected? = null,
+    ): Boolean = withContext(appExitDispatcher) {
+        synchronized(transportLifecycleLock) {
+            if (appExitPolicy.stopEpoch != ticket) return@synchronized false
+            if (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value)) return@synchronized false
+            ConnectionArbiter.runIfHeld(claim) {
+                appExitPolicy.supersede()
+                cancelAppExitCallback()
+            }
+        }
+    }
+
     private fun claimSocket(
         tier: ConnectionPriorityPolicy.Tier,
         description: String,
         expectedState: ConnectionState.Disconnected?,
+        ticket: Long,
     ): ConnectionArbiter.Claim? {
-        val claim = if (expectedState == null) ConnectionArbiter.claim(tier, socketOwner(tier), description)
-        // Publication of a newer connection and Save's admission cannot cross here. The
-        // ordinary connection routes keep their existing arbitration behavior.
-        else synchronized(transportLifecycleLock) {
-            if (!expectedState.acceptsSettingsRestart(_connectionState.value)) null
+        val claim = synchronized(transportLifecycleLock) {
+            if (appExitPolicy.stopEpoch != ticket ||
+                (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value))) null
             else ConnectionArbiter.claim(tier, socketOwner(tier), description)
         }
         if (claim != null) attemptUserRequested = tier == ConnectionPriorityPolicy.Tier.USER
@@ -1272,25 +1591,7 @@ class CommManager(
         _disconnectJob = _scope.launch { doDisconnect(sendByeBye = false) }
         source.retirePresentation()
         _connectionState.value = ConnectionState.Disconnected(isClean, isUserExit = wasUserExit, wasLoopbackSession = isLoopbackSession, hadPhysicalConnection = physicalConnectionReached, settingsRetryOwner = save, endedAttempt = connectionAttempt)
-        if (settings.killOnDisconnect) {
-            context.sendBroadcast(android.content.Intent("com.andrerinas.openheadunit.ACTION_FINISH_ACTIVITIES").apply {
-                setPackage(context.packageName)
-            })
-            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                // Stop the foreground service first to remove the notification
-                val stopIntent = android.content.Intent(context, com.andrerinas.openheadunit.aap.AapService::class.java).apply {
-                    action = com.andrerinas.openheadunit.aap.AapService.ACTION_STOP_SERVICE
-                }
-                com.andrerinas.openheadunit.aap.AapService.killProcessOnDestroy = true
-                com.andrerinas.openheadunit.aap.AapService.destroyIsUserStop = wasUserExit
-                context.stopService(stopIntent)
-                // Finish all tasks (API 21+)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                    val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager
-                    activityManager.appTasks.forEach { it.finishAndRemoveTask() }
-                }
-            }, 500)
-        }
+        if (settings.killOnDisconnect) scheduleAppExit(wasUserExit)
     }
 
     // -----------------------------------------------------------------------------------------
@@ -1625,25 +1926,7 @@ class CommManager(
                 SystemClock.elapsedRealtime() + SettingsRestartRecovery.WINDOW_MS else 0L,
             endedAttempt = connectionAttempt,
         )
-        if (settings.killOnDisconnect && honorKillOnDisconnect) {
-            context.sendBroadcast(android.content.Intent("com.andrerinas.openheadunit.ACTION_FINISH_ACTIVITIES").apply {
-                setPackage(context.packageName)
-            })
-            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                // Stop the foreground service first to remove the notification
-                val stopIntent = android.content.Intent(context, com.andrerinas.openheadunit.aap.AapService::class.java).apply {
-                    action = com.andrerinas.openheadunit.aap.AapService.ACTION_STOP_SERVICE
-                }
-                com.andrerinas.openheadunit.aap.AapService.killProcessOnDestroy = true
-                com.andrerinas.openheadunit.aap.AapService.destroyIsUserStop = isUserExit
-                context.stopService(stopIntent)
-                // Finish all tasks (API 21+)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                    val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager
-                    activityManager.appTasks.forEach { it.finishAndRemoveTask() }
-                }
-            }, 500)
-        }
+        if (settings.killOnDisconnect && honorKillOnDisconnect) scheduleAppExit(isUserExit)
     }
 
     /**

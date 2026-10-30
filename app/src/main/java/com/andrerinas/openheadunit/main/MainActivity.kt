@@ -38,7 +38,9 @@ import com.andrerinas.openheadunit.aap.NativeTransport
 import com.andrerinas.openheadunit.aap.ProjectionWatchdogPolicy
 import com.andrerinas.openheadunit.app.BaseActivity
 import com.andrerinas.openheadunit.app.BtAutoStartRearmPolicy
+import com.andrerinas.openheadunit.app.AppUiEntry
 import com.andrerinas.openheadunit.connection.CommManager
+import com.andrerinas.openheadunit.connection.AppExitPolicy
 import com.andrerinas.openheadunit.connection.ConnectionNetworkDetail
 import com.andrerinas.openheadunit.connection.ConnectionNetworkDetailPolicy
 import com.andrerinas.openheadunit.connection.ConnectionStage
@@ -101,7 +103,9 @@ class MainActivity : BaseActivity() {
 
     private val finishReceiver = object : android.content.BroadcastReceiver() {
         override fun onReceive(context: android.content.Context, intent: Intent) {
-            if (intent.action == "com.andrerinas.openheadunit.ACTION_FINISH_ACTIVITIES") {
+            if (intent.action == AppExitPolicy.ACTION_FINISH_ACTIVITIES &&
+                App.provide(this@MainActivity).commManager.ownsAppExit(
+                    intent.getLongExtra(AppExitPolicy.EXTRA_EXIT_OWNER, 0L))) {
                 AppLog.i("MainActivity: Received finish request. Closing.")
                 finishAffinity()
             }
@@ -151,6 +155,10 @@ class MainActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         requestedOrientation = Settings(this).screenOrientation.androidOrientation
         super.onCreate(savedInstanceState)
+        if (isExitAppUiDelivery) {
+            handleLaunchIntent(intent)
+            return
+        }
 
         logLaunchSource()
         clearBootLoopGuardIfOpenedByHand()
@@ -192,8 +200,8 @@ class MainActivity : BaseActivity() {
                                         findViewById(android.R.id.content), if (adbRecovery) R.string.wifi_scan_fyt_recovery else R.string.wifi_scan_recovery_notice,
                                         com.google.android.material.snackbar.Snackbar.LENGTH_INDEFINITE
                                     ).setAction(R.string.wifi_scan_restore_short) {
-                                        startActivity(Intent(this@MainActivity, SettingsActivity::class.java)
-                                            .putExtra(SettingsActivity.EXTRA_SEARCH_QUERY, getString(R.string.wifi_scan_title)))
+                                        startActivity(AppUiEntry.continuation(Intent(this@MainActivity, SettingsActivity::class.java)
+                                            .putExtra(SettingsActivity.EXTRA_SEARCH_QUERY, getString(R.string.wifi_scan_title))))
                                     }
                                     notice?.show()
                                 }
@@ -230,9 +238,6 @@ class MainActivity : BaseActivity() {
             }
         }
 
-        // Start main service immediately to handle connections and wireless server
-        val serviceIntent = Intent(this, AapService::class.java)
-        ContextCompat.startForegroundService(this, serviceIntent)
 
         setFullscreen()
 
@@ -286,12 +291,12 @@ class MainActivity : BaseActivity() {
         // Runtime permissions are requested by the setup wizard's permissions step on fresh
         // installs; for users who already finished onboarding we request them from checkSetupFlow().
         viewModel.register()
-        handleLaunchIntent(intent)
+        if (isNewAppUiDelivery) handleLaunchIntent(intent)
         setupWifiDirectInfo()
 
         ContextCompat.registerReceiver(
             this, finishReceiver,
-            android.content.IntentFilter("com.andrerinas.openheadunit.ACTION_FINISH_ACTIVITIES"),
+            android.content.IntentFilter(AppExitPolicy.ACTION_FINISH_ACTIVITIES),
             ContextCompat.RECEIVER_NOT_EXPORTED
         )
         isFinishReceiverRegistered = true
@@ -1189,9 +1194,7 @@ class MainActivity : BaseActivity() {
 
         if (intentAction == "com.andrerinas.openheadunit.ACTION_EXIT") {
             AppLog.i("MainActivity: Received exit action")
-            val exitIntent = Intent(this, AapService::class.java).apply {
-                this.action = AapService.ACTION_STOP_SERVICE
-            }
+            val exitIntent = AapService.stopIntent(this)
             ContextCompat.startForegroundService(this, exitIntent)
             finishAffinity()
             return
@@ -1254,9 +1257,7 @@ class MainActivity : BaseActivity() {
                 ContextCompat.startForegroundService(this, stopIntent)
             } else if (intentData?.scheme == "headunit" && intentData.host == "exit") {
                 AppLog.i("Received full exit intent via deep link")
-                val exitIntent = Intent(this, AapService::class.java).apply {
-                    action = AapService.ACTION_STOP_SERVICE
-                }
+                val exitIntent = AapService.stopIntent(this)
                 ContextCompat.startForegroundService(this, exitIntent)
                 finishAffinity()
             }
@@ -1529,8 +1530,8 @@ class MainActivity : BaseActivity() {
             ConnectionIssue.FIVE_GHZ_CHANNEL_REFUSED -> getString(R.string.wifi_direct_band)
         }
         startActivity(
-            Intent(this, SettingsActivity::class.java)
-                .putExtra(SettingsActivity.EXTRA_SEARCH_QUERY, query)
+            AppUiEntry.continuation(Intent(this, SettingsActivity::class.java)
+                .putExtra(SettingsActivity.EXTRA_SEARCH_QUERY, query))
         )
     }
 
@@ -1543,7 +1544,7 @@ class MainActivity : BaseActivity() {
      * gate exists for.
      */
     private fun bringProjectionToFront() {
-        val aapIntent = AapProjectionActivity.intent(this).apply {
+        val aapIntent = AppUiEntry.continuation(AapProjectionActivity.intent(this)).apply {
             putExtra(AapProjectionActivity.EXTRA_FOCUS, true)
             addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP)
         }

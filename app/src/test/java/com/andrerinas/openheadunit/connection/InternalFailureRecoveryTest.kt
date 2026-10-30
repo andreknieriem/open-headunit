@@ -22,7 +22,7 @@ import kotlin.coroutines.intrinsics.suspendCoroutineUninterceptedOrReturn
 
 class InternalFailureRecoveryTest {
     private class Fixture : AutoCloseable {
-        val manager = mock(CommManager::class.java, CALLS_REAL_METHODS)
+        val manager = mock(CommManager::class.java, CALLS_REAL_METHODS).withAppExitDispatcherForTest()
         val context = mock(Context::class.java)
         val settings = mock(Settings::class.java)
         val states = MutableStateFlow<ConnectionState>(ConnectionState.Disconnected())
@@ -33,6 +33,7 @@ class InternalFailureRecoveryTest {
         val owner = Any()
         init {
             field("transportLifecycleLock", Any())
+            field("appExitPolicy", AppExitPolicy())
             field("_connectionState", states)
             field("_scope", scope)
             field("usbRecoveryOwner", owner)
@@ -62,11 +63,11 @@ class InternalFailureRecoveryTest {
                     } }
                 }.use {
                     if (accepted) invoke(f.manager, "connectSocket",
-                        arrayOf(Socket::class.java, Pair::class.java, ConnectionState.Disconnected::class.java),
-                        mock(Socket::class.java), null, null)
+                        arrayOf(Socket::class.java, Pair::class.java, ConnectionState.Disconnected::class.java, Long::class.javaPrimitiveType!!),
+                        mock(Socket::class.java), null, null, 0L)
                     else invoke(f.manager, "connectIp",
-                        arrayOf(String::class.java, Int::class.javaPrimitiveType!!, ConnectionState.Disconnected::class.java),
-                        "127.0.0.1", 5277, null)
+                        arrayOf(String::class.java, Int::class.javaPrimitiveType!!, ConnectionState.Disconnected::class.java, Long::class.javaPrimitiveType!!),
+                        "127.0.0.1", 5277, null, 0L)
                     f.assertRecoverable()
                 }
             }
@@ -86,9 +87,10 @@ class InternalFailureRecoveryTest {
                 mockConstruction(driver) { connection, _ ->
                     runBlocking { `when`(connection.connect()).thenAnswer { throw IOException("USB open failed") } }
                 }.use {
-                    invoke(f.manager, "connectUsb", arrayOf(UsbDevice::class.java, ConnectionState.Disconnected::class.java,
-                        Any::class.java, ConnectionArbiter.Claim::class.java, ConnectionAdmission::class.java),
-                        device, null, null, null, ConnectionAdmission.UNRESTRICTED)
+                    invoke(f.manager, "connectUsb", arrayOf(UsbDevice::class.java, Long::class.javaPrimitiveType!!, ConnectionState.Disconnected::class.java,
+                        Any::class.java, ConnectionArbiter.Claim::class.java, ConnectionAdmission::class.java,
+                        ConnectionArbiter.Claim::class.java),
+                        device, 0L, null, null, null, ConnectionAdmission.UNRESTRICTED, null)
                     f.assertRecoverable()
                 }
             }

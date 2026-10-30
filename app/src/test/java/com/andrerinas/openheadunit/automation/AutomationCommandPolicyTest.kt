@@ -21,7 +21,7 @@ class AutomationCommandPolicyTest {
         action: String?,
         extras: Map<String, String> = emptyMap(),
         state: AutomationCommandPolicy.State = closed
-    ) = AutomationCommandPolicy.effectsFor(action, Extras(extras), state)
+    ) = AutomationCommandPolicy.effectsFor(action, Extras(extras), state) { 42L }
 
     private fun single(
         action: String?,
@@ -86,13 +86,27 @@ class AutomationCommandPolicyTest {
     @Test
     fun `both stop aliases reach the service's own stop action`() {
         assertEquals(
-            AutomationCommandPolicy.Effect.StartService(AapService.ACTION_STOP_SERVICE),
+            AutomationCommandPolicy.Effect.StopApp(42L),
             single(HeadUnitCommand.ACTION_STOP_SERVICE)
         )
         assertEquals(
-            AutomationCommandPolicy.Effect.StartService(AapService.ACTION_STOP_SERVICE),
+            AutomationCommandPolicy.Effect.StopApp(42L),
             single(HeadUnitCommand.ACTION_EXIT)
         )
+    }
+
+    @Test
+    fun `only Stop first ingress accepts a decision and its exact id survives the effect`() {
+        var accepts = 0
+        val stop = AutomationCommandPolicy.effectsFor(HeadUnitCommand.ACTION_EXIT, Extras(), closed) {
+            accepts++
+            123L
+        }.single()
+        assertEquals(AutomationCommandPolicy.Effect.StopApp(123L), stop)
+        AutomationCommandPolicy.effectsFor(HeadUnitCommand.ACTION_DISCONNECT, Extras(), closed) {
+            error("non-Stop must not accept Stop")
+        }
+        assertEquals(1, accepts)
     }
 
     @Test

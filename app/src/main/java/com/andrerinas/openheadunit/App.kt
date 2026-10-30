@@ -27,6 +27,7 @@ import com.andrerinas.openheadunit.utils.Settings
 import android.os.SystemClock
 import com.andrerinas.openheadunit.main.AppDrawerFragment
 import com.andrerinas.openheadunit.main.FloatingButtonManager
+import com.andrerinas.openheadunit.app.AppUiEntry
 import java.io.File
 
 class App : Application(), Application.ActivityLifecycleCallbacks {
@@ -190,6 +191,7 @@ class App : Application(), Application.ActivityLifecycleCallbacks {
         startedActivityCount++
         if (startedActivityCount == 1) {
             hasStartedActivity = true
+            AppUiEntry.foregroundStarted(activity)
             FloatingButtonManager.onAppForegroundChanged(this, isForeground = true)
         }
     }
@@ -200,6 +202,7 @@ class App : Application(), Application.ActivityLifecycleCallbacks {
         if (startedActivityCount <= 0) {
             startedActivityCount = 0
             hasStartedActivity = false
+            AppUiEntry.fullyStopped(activity)
             FloatingButtonManager.onAppForegroundChanged(this, isForeground = false)
         }
     }

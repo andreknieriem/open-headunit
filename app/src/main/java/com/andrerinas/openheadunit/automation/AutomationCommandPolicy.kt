@@ -29,6 +29,9 @@ object AutomationCommandPolicy {
             val flagExtras: Map<String, Boolean> = emptyMap()
         ) : Effect
 
+        /** Already accepted at the public command's first ingress; relay this exact owner. */
+        data class StopApp(val owner: Long) : Effect
+
         /** Open a TCP session to a head unit server. Paired with a [StartService] of the same name. */
         data class ConnectSocket(val ip: String, val port: Int) : Effect
 
@@ -97,7 +100,7 @@ object AutomationCommandPolicy {
     /** The service actions the plain relays start, for the test that each has a handler. */
     internal val relayTargets: Set<String> get() = PLAIN_RELAYS.values.toSet()
 
-    fun effectsFor(action: String?, extras: Extras, state: State): List<Effect> {
+    fun effectsFor(action: String?, extras: Extras, state: State, acceptStop: () -> Long): List<Effect> {
         if (action == null) return listOf(Effect.Refuse("no action"))
 
         if (action in CONFIGURING && !state.externalConfigAllowed) {
@@ -106,7 +109,9 @@ object AutomationCommandPolicy {
             )
         }
 
-        PLAIN_RELAYS[action]?.let { return listOf(Effect.StartService(it)) }
+        PLAIN_RELAYS[action]?.let {
+            return listOf(if (it == AapService.ACTION_STOP_SERVICE) Effect.StopApp(acceptStop()) else Effect.StartService(it))
+        }
 
         return when (action) {
             HeadUnitCommand.ACTION_CONNECT -> connect(extras)

@@ -7,6 +7,7 @@ import android.media.AudioManager
 import android.os.*
 import com.andrerinas.openheadunit.aap.AapAudio
 import com.andrerinas.openheadunit.connection.bluetooth.xyauto.XyAutoMediaSession
+import com.andrerinas.openheadunit.connection.AppExitPolicy
 import com.andrerinas.openheadunit.connection.wifi.scan.WifiScanControl
 import com.andrerinas.openheadunit.connection.wifi.modes.WifiLauncherNative
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeStrategy
@@ -34,6 +35,7 @@ private class QueuedCleanup : CoroutineDispatcher() {
     val tasks = java.util.concurrent.ConcurrentLinkedQueue<Runnable>()
     override fun dispatch(context: kotlin.coroutines.CoroutineContext, block: Runnable) { tasks.add(block) }
 }
+private class ProjectionConnection { fun disconnect() {} }
 private class AapTransport(
     decoder: AudioDecoder, video: Any, manager: AudioManager, settings: Settings, notification: Any,
     context: Context, externalSsl: Any, onAaMediaMetadata: (Any, Any) -> Unit, onAaPlaybackStatus: (Any, Any) -> Unit,
@@ -57,6 +59,7 @@ private class AapTransport(
 /** Only the network, UI side effects and scheduling are doubled; injected decisions are production. */
 private class ConnectionFixture(val settings: Settings = Settings()) {
     private val transportLifecycleLock = Any()
+    // PRODUCTION APP_EXIT
     private var connectionAttempt: Any? = Any()
     private var usbRecoveryOwner: Any = Any()
     private var settingsUsbRestartInFlight: ConnectionState.Disconnected? = null
@@ -111,6 +114,8 @@ private class ConnectionFixture(val settings: Settings = Settings()) {
         reason: DisconnectReason = DisconnectReason.CONNECTION_ENDED) {}
     fun nextConnection() {
         _transport?.aapAudio?.releaseAllFocus(); Handler.runAll()
+        check(acceptAppConnection(appConnectionTicket(), acquireOwnership = true))
+        connectionAttempt = Any()
         _transport = null; disconnectRequested = false; _connection = Any(); _connectionState.value = ConnectionState.Connected
     }
     fun close() { _transport?.aapAudio?.releaseAllFocus(); audioDecoder.stop(); Handler.runAll(); _scope.cancel() }
@@ -359,28 +364,33 @@ internal fun audioLifecycleBoundaryRegression() {
     println("PASS settings saved before construction are captured by the next transport")
 
     for (honor in listOf(false, true)) {
-        com.andrerinas.openheadunit.aap.AapService.killProcessOnDestroy = false
+        val service = com.andrerinas.openheadunit.aap.AapService()
+        com.andrerinas.openheadunit.aap.AapService.instance = service
         val closing = ConnectionFixture(Settings().apply { killOnDisconnect = true })
         try {
             closing.publish(); val oldQuit = closing.quitCallback()
             closing.disconnect(isUserExit = false, honorKillOnDisconnect = honor)
             check(closing.lateHandshake() == false)
             oldQuit(false); oldQuit(false)
-            check(closing.context.broadcasts.size == if (honor) 1 else 0)
+            check(closing.context.broadcasts.isEmpty())
             check(Handler.delayed.size == if (honor) 1 else 0)
             while (Handler.delayed.isNotEmpty()) Handler.delayed.poll().run()
-            check(com.andrerinas.openheadunit.aap.AapService.killProcessOnDestroy == honor)
+            check(service.stops == if (honor) 1 else 0)
+            if (honor) {
+                closing.onAppRelaunched()
+                check(closing.completeAppExit(checkNotNull(service.exitRequest)).effect == AppExitPolicy.Effect.RESTART_SERVICE)
+            }
             closing.nextConnection(); closing.publish(); val fresh = closing.audio
             oldQuit(false)
             check(!closing.disconnected && closing.audio === fresh)
             check(closing.context.broadcasts.size == if (honor) 1 else 0)
-        } finally { closing.close(); Handler.reset() }
+        } finally { closing.close(); Handler.reset(); com.andrerinas.openheadunit.aap.AapService.instance = null }
     }
     val natural = ConnectionFixture(Settings().apply { killOnDisconnect = true })
     try {
         natural.publish(); val quit = natural.quitCallback(); quit(false); quit(false)
-        check(natural.disconnected && natural.context.broadcasts.size == 1 && Handler.delayed.size == 1)
+        check(natural.disconnected && natural.context.broadcasts.isEmpty() && Handler.delayed.size == 1)
     } finally { natural.close(); Handler.reset() }
-    com.andrerinas.openheadunit.aap.AapService.killProcessOnDestroy = false
+    com.andrerinas.openheadunit.aap.AapService.instance = null
     println("PASS first disconnect owns app-exit policy; duplicate and retired quit callbacks cannot override it")
 }

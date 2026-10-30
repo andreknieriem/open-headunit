@@ -10,9 +10,11 @@ import android.hardware.usb.UsbEndpoint
 import android.hardware.usb.UsbConstants
 import com.andrerinas.openheadunit.utils.Settings
 import com.andrerinas.openheadunit.connection.CommManager
+import com.andrerinas.openheadunit.connection.AppExitPolicy
 import com.andrerinas.openheadunit.connection.ConnectionArbiter
 import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy.Tier
 import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy.Owner
+import com.andrerinas.openheadunit.connection.withAppExitDispatcherForTest
 import com.andrerinas.openheadunit.utils.AppLog
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -43,7 +45,7 @@ class UsbRecoveryAdmissionTest {
         AppLog.LOGGER = logger
     }
     private class Fixture {
-        val manager = mock(CommManager::class.java, CALLS_REAL_METHODS)
+        val manager = mock(CommManager::class.java, CALLS_REAL_METHODS).withAppExitDispatcherForTest()
         val context = mock(Context::class.java)
         val usb = mock(UsbManager::class.java)
         val device = mock(UsbDevice::class.java)
@@ -53,6 +55,7 @@ class UsbRecoveryAdmissionTest {
         val states = MutableStateFlow<CommManager.ConnectionState>(CommManager.ConnectionState.Disconnected())
         init {
             set("transportLifecycleLock", Any())
+            set("appExitPolicy", AppExitPolicy())
             set("usbRecoveryOwner", owner)
             set("_connectionState", states)
             set("context", context)

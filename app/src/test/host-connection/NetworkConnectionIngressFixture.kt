@@ -109,8 +109,8 @@ fun networkConnectionIngressOwnership() = runBlocking {
                     }
                 } else check(comm.state is ConnectionState.Connected && !old.isClosed)
             } finally {
-                HeldServerSocket.adopt(old); old.close()
-                HeldServerSocket.adopt(replacement); replacement.close()
+                HeldServerSocket.discardAll()
+                old.close(); replacement.close()
                 comm.close()
             }
         }
@@ -227,7 +227,7 @@ fun networkConnectionIngressOwnership() = runBlocking {
                 }
                 check(comm.state is ConnectionState.Connected && live?.closed == false && !held.isClosed)
             } finally {
-                HeldServerSocket.adopt(held); held.close()
+                HeldServerSocket.discardAll(); held.close()
                 comm.close()
             }
         }

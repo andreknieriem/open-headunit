@@ -489,13 +489,16 @@ fun appConnectionIngressOwnership() = runBlocking {
     }
 
     // Wake. A launch waits on the request its dial joined. Stop, or another route taking that
-    // request's claim, ends the wait at once, not when the request's producer finally runs.
+    // request's claim, ends the wait at once, not when the request's producer finally runs. USB
+    // outranks only an automatic request, so that cause waits on one; Stop revokes a user's too.
     for (cause in listOf("stop", "usb-claim")) {
         val c = CommManager()
         try {
             c.disconnect(honorKillOnDisconnect = false)
+            val tierA = if (cause == "usb-claim") ConnectionPriorityPolicy.Tier.WIRELESS_HANDSHAKE
+                else ConnectionPriorityPolicy.Tier.USER
             val requestA = launch(start = CoroutineStart.UNDISPATCHED) {
-                c.connect("192.0.2.85", 5277, ConnectionPriorityPolicy.Tier.USER)
+                c.connect("192.0.2.85", 5277, tierA)
             }
             val mark = c.launchMark(c.appConnectionTicket())
             c.connect("192.0.2.85", 5277) // The launch's own dial joins A.

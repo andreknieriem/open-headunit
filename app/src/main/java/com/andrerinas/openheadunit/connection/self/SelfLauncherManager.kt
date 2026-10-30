@@ -362,6 +362,10 @@ class SelfLauncherManager(
             // The requested Self session arrived. Retain Self mode for its later disconnect,
             // but neither a Save timeout nor its old token owns this established session.
             settingsLaunchOwner = null
+            // Self mode now belongs to this live session; an earlier session's hidden end
+            // must not retire it. Read with liveness, so this session's own end is not consumed.
+            val (live, ended) = commManager.liveLoopbackSnapshot()
+            if (live) selfSessionEndBaseline = ended
         } else {
             // An external route won. Retire manual Self launches as well as Save launches;
             // retaining isActive would make the winning session advertise Self-mode audio.
@@ -423,7 +427,7 @@ class SelfLauncherManager(
         val current = App.provide(service).commManager.connectionState.value
         if (endsSessionAfterLaunch(current)) return true
         if (!loopbackSessionEndedSinceLaunch()) return false
-        if (launchJob === owner) retireHiddenSessionEnd(current)
+        if (launchJob === owner) retireHiddenSessionEnd()
         return true
     }
 
@@ -431,23 +435,17 @@ class SelfLauncherManager(
      * Called by the service observer for every terminal and error before it picks an end policy,
      * and by the launch's own deadline. The flow is conflated: a later state can replace a
      * loopback session's terminal before any observer saw it, and nothing else would end Self
-     * mode for that session. A newer connection forming or live keeps its resources until its
-     * own outcome is observed.
+     * mode for that session. CommManager decides under its lifecycle lock, so its terminal still
+     * current, a connection forming or live, or a physical connection behind a later Error keeps
+     * Self mode; the baseline advances only once the session's Self mode is actually retired.
      */
-    internal fun retireHiddenSessionEnd(current: CommManager.ConnectionState) {
-        val commManager = App.provide(service).commManager
-        val ended = commManager.lastLoopbackSessionEnd()
-        if (ended === selfSessionEndBaseline) return
-        if (current is CommManager.ConnectionState.Disconnected && current.endedAttempt === ended) {
-            // That session's own terminal is being observed; its end policy owns Self state.
-            selfSessionEndBaseline = ended
-            return
-        }
-        if (commManager.isConnected || commManager.connectionState.value is CommManager.ConnectionState.Connecting) return
-        selfSessionEndBaseline = ended
+    internal fun retireHiddenSessionEnd() {
         if (!isActive && launchJob == null) return
-        stop(wasConnected = true)
-        service.stopDummyVpn(DummyVpnPolicy.Reason.SESSION_ENDED)
+        App.provide(service).commManager.retireEndedLoopbackSession(selfSessionEndBaseline) { ended ->
+            selfSessionEndBaseline = ended
+            stop(wasConnected = true)
+            service.stopDummyVpn(DummyVpnPolicy.Reason.SESSION_ENDED)
+        }
     }
 
     /**

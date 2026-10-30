@@ -179,6 +179,49 @@ class InternalFailureRecoveryTest {
         }
     }
 
+    @Test fun endedLoopbackSessionRetiresOnlyWhenNothingElseCanEndIt() = runBlocking {
+        val attempt = Any()
+        fun retire(f: Fixture, baseline: Any? = null): Any? {
+            var retired: Any? = null
+            f.manager.retireEndedLoopbackSession(baseline) { retired = it }
+            return retired
+        }
+        fun hiddenEnd(f: Fixture) {
+            f.field("lastLoopbackSessionAttempt", attempt)
+            f.states.value = ConnectionState.Error("USB permission not granted for device")
+        }
+        // Hidden behind an Error, its connection retiring: nothing else will end Self mode for it.
+        Fixture().use { f -> hiddenEnd(f); f.field("disconnectRequested", true); assertSame(attempt, retire(f)) }
+        // Already accounted for.
+        Fixture().use { f -> hiddenEnd(f); assertNull(retire(f, baseline = attempt)) }
+        // Its own terminal is current: that terminal's end policy owns Self state.
+        Fixture().use { f ->
+            f.field("lastLoopbackSessionAttempt", attempt)
+            f.states.value = ConnectionState.Disconnected(wasLoopbackSession = true, hadPhysicalConnection = true, endedAttempt = attempt)
+            assertNull(retire(f))
+        }
+        // A connection forming or live keeps Self mode until its own outcome.
+        for (forming in listOf(ConnectionState.Connecting, ConnectionState.Connected)) Fixture().use { f ->
+            f.field("lastLoopbackSessionAttempt", attempt)
+            f.states.value = forming
+            assertNull(retire(f))
+        }
+        // A physical connection that is not retiring still owns Self mode behind a later Error.
+        Fixture().use { f ->
+            val loopback = mock(SocketProjectionConnection::class.java)
+            `when`(loopback.isLoopbackPeer).thenReturn(true)
+            f.field("_connection", loopback)
+            f.field("disconnectRequested", false)
+            hiddenEnd(f)
+            assertNull(retire(f))
+            // The live snapshot pairs that liveness with the earlier end, under the same lock.
+            f.states.value = ConnectionState.Connected
+            assertEquals(true to attempt, f.manager.liveLoopbackSnapshot())
+            f.field("disconnectRequested", true)
+            assertEquals(false to attempt, f.manager.liveLoopbackSnapshot())
+        }
+    }
+
     private suspend fun invoke(manager: CommManager, name: String, types: Array<Class<*>>, vararg args: Any?) {
         val method = CommManager::class.java.getDeclaredMethod(name, *types, Continuation::class.java)
             .apply { isAccessible = true }

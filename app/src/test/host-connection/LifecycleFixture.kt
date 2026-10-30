@@ -167,7 +167,7 @@ private class ObserverFixture(
     private class Self {
         fun onConnectionEstablished() {}
         fun onConnectionEnded(state: ConnectionState.Disconnected) {}
-        fun retireHiddenSessionEnd(state: ConnectionState) {}
+        fun retireHiddenSessionEnd() {}
     }
     private val selfLauncherManager = Self()
     private class ReconnectTimer { fun onStateChanged() {} }

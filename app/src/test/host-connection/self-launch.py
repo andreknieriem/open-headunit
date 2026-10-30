@@ -42,6 +42,8 @@ for marker, file, declaration in [
     ('XYAUTO', 'aap/AapService.kt', 'private fun refreshXyAutoMediaPolicy('),
     ('STATE', comm, 'class Disconnected('),
     ('CANCEL', comm, 'fun cancelPendingSettingsRestart()'),
+    ('RETIRE_ENDED_LOOPBACK', comm, 'internal fun retireEndedLoopbackSession('),
+    ('LIVE_LOOPBACK_SNAPSHOT', comm, 'internal fun liveLoopbackSnapshot()'),
     ('START', manager, 'fun start('),
     ('ADOPT_VPN', manager, 'private fun adoptDummyVpn('),
     ('STOP', manager, 'fun stop(wasConnected:'),

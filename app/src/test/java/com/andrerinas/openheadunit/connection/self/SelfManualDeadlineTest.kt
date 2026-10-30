@@ -12,7 +12,8 @@ import org.mockito.Mockito.*
 
 class SelfManualDeadlineTest {
     @Test fun `manual launch deadline retires on live state or conflated Save terminal`() {
-        mockStatic(androidx.appcompat.app.AppCompatDelegate::class.java).use {
+        // App's companion reads both on first initialization; another test must not be relied on to do it.
+        mockStatic(android.os.SystemClock::class.java).use { _ -> mockStatic(androidx.appcompat.app.AppCompatDelegate::class.java).use {
             for (terminalOnly in listOf(false, true)) {
                 val service = mock(AapService::class.java)
                 val app = mock(App::class.java)
@@ -27,6 +28,7 @@ class SelfManualDeadlineTest {
                 `when`(comm.connectionState).thenReturn(MutableStateFlow(saved))
                 `when`(comm.isConnected).thenReturn(!terminalOnly)
                 `when`(comm.isLoopbackSession).thenReturn(!terminalOnly)
+                `when`(comm.liveLoopbackSnapshot()).thenReturn(!terminalOnly to null)
                 val manager = mock(SelfLauncherManager::class.java, CALLS_REAL_METHODS)
                 fun set(name: String, value: Any?) = SelfLauncherManager::class.java.getDeclaredField(name)
                     .apply { isAccessible = true }.set(manager, value)
@@ -39,6 +41,6 @@ class SelfManualDeadlineTest {
                 assertEquals(true, SelfLauncherManager::class.java.getDeclaredField("launchConnected")
                     .apply { isAccessible = true }.get(manager))
             }
-        }
+        } }
     }
 }

@@ -94,9 +94,15 @@ class CommManager {
     private var settingsUsbRestartInFlight: ConnectionState.Disconnected? = null
     private val _connectionState = MutableStateFlow<ConnectionState>(ConnectionState.Disconnected())
     val connectionState get() = _connectionState
-    val isConnected get() = _connectionState.value.let {
-        it === ConnectionState.Connected || it === ConnectionState.StartingTransport ||
-            it === ConnectionState.HandshakeComplete || it === ConnectionState.TransportStarted
+    // Runs on an isConnected read: IO may publish between two reads of the same caller.
+    var onIsConnectedRead: (() -> Unit)? = null
+    val isConnected: Boolean get() {
+        val live = _connectionState.value.let {
+            it === ConnectionState.Connected || it === ConnectionState.StartingTransport ||
+                it === ConnectionState.HandshakeComplete || it === ConnectionState.TransportStarted
+        }
+        onIsConnectedRead?.let { onIsConnectedRead = null; it() }
+        return live
     }
     val isUsbSession = false
     var isWirelessSession = false
@@ -110,6 +116,12 @@ class CommManager {
     var lastLoopbackSessionAttempt: Any? = null
     fun acceptanceSnapshot() = Triple(_connectionState.value, lastEndedAttempt, lastLoopbackSessionAttempt)
     fun lastLoopbackSessionEnd() = lastLoopbackSessionAttempt
+    // A physical connection that is not retiring keeps its Self owner even behind a later Error.
+    var _connection: Any? = null
+    var _transport: Any? = null
+    var disconnectRequested = true
+    // RETIRE_ENDED_LOOPBACK
+    // LIVE_LOOPBACK_SNAPSHOT
     // Runs as the report takes the lock: IO may publish between a caller's guard and its report.
     var beforeReport: (() -> Unit)? = null
     // CommManager's contract: a failure stands in its caller's own state or against a newer
@@ -268,7 +280,9 @@ object SessionStateIntent {
 object StationStandDown { fun onSessionLive(service: Any, held: Long?) {} }
 object SystemClock { fun elapsedRealtime() = 0L }
 class Service(private var hasEverConnected: Boolean = true, val commManager: CommManager = CommManager()) : AutoCloseable {
-    private class ReconnectTimer { fun onStateChanged() {} }
+    // Runs as the observer starts handling a state: IO may publish after the collector took it.
+    var beforeObserve: (() -> Unit)? = null
+    private inner class ReconnectTimer { fun onStateChanged() { beforeObserve?.let { beforeObserve = null; it() } } }
     private val automaticReconnect = ReconnectTimer()
     private val usbReconnect = ReconnectTimer()
     val main = QueuedMain()
@@ -727,6 +741,72 @@ fun main() {
         }
         s.main.advanceBy(130_000L); s.main.drain()
         check(!s.manager.isActive && s.resolvePrompts == 0)
+    }
+    // The observer can take the Self session's own terminal and then IO replaces it with an
+    // Error before that terminal's handling: neither may consume the end without retiring Self.
+    for (modern in listOf(true, false)) Service().use { s ->
+        s.modern = modern
+        s.network.activeNetwork = Any()
+        s.startObserver(); s.main.drain()
+        s.manager.start()
+        s.main.drain(); s.io.drain(); s.main.drain()
+        s.commManager.isLoopbackSession = true
+        s.commManager.connectionState.value = CommManager.ConnectionState.Connected
+        s.main.drain()
+        s.manager.onConnectionEstablished()
+        val attempt = Any()
+        s.commManager.lastLoopbackSessionAttempt = attempt
+        s.beforeObserve = {
+            s.commManager.isLoopbackSession = false
+            s.commManager.connectionState.value = CommManager.ConnectionState.Error("USB permission not granted for device")
+        }
+        s.commManager.connectionState.value = CommManager.ConnectionState.Disconnected(
+            wasLoopbackSession = true, hadPhysicalConnection = true, endedAttempt = attempt)
+        s.main.drain()
+        check(!s.manager.isActive && s.manager.currentLaunch() == null && s.resolvePrompts == 0) {
+            "terminal taken then hidden left Self state (modern=$modern active=${s.manager.isActive})"
+        }
+    }
+    // A newer loopback session owns Self mode: an earlier hidden end must not retire it while it
+    // is forming (even if it goes live between two reads), live, or live behind a later Error.
+    for (modern in listOf(true, false)) for (order in listOf("live-between-reads", "live-observed-error", "live-unobserved-error")) Service().use { s ->
+        s.modern = modern
+        s.network.activeNetwork = Any()
+        s.startObserver(); s.main.drain()
+        s.manager.start()
+        s.main.drain(); s.io.drain(); s.main.drain()
+        hide(s, observedLive = false) // Session A ends behind an Error; nothing consumed it yet.
+        s.commManager.isLoopbackSession = true
+        s.commManager._connection = Any(); s.commManager.disconnectRequested = false
+        s.commManager.connectionState.value = CommManager.ConnectionState.Connecting // Loopback B forms.
+        s.main.drain()
+        when (order) {
+            "live-between-reads" -> {
+                // The deadline's guard reads Connecting; B goes live right after the next read.
+                var reads = 0
+                fun armSecondRead() {
+                    s.commManager.onIsConnectedRead = {
+                        if (++reads == 2) s.commManager.connectionState.value = CommManager.ConnectionState.Connected
+                        else armSecondRead()
+                    }
+                }
+                armSecondRead()
+                s.main.advanceBy(120_000L); s.main.drain()
+                s.commManager.onIsConnectedRead = null
+                s.commManager.connectionState.value = CommManager.ConnectionState.Connected
+                s.main.drain()
+            }
+            else -> {
+                s.commManager.connectionState.value = CommManager.ConnectionState.Connected
+                if (order == "live-observed-error") { s.main.drain(); s.manager.onConnectionEstablished() }
+                // A late USB permission failure replaces B's live state; B's socket is untouched.
+                s.commManager.connectionState.value = CommManager.ConnectionState.Error("USB permission not granted for device")
+                s.main.drain()
+            }
+        }
+        check(s.manager.isActive && s.resolvePrompts == 0) {
+            "an earlier hidden end retired the newer loopback session's Self mode (modern=$modern order=$order)"
+        }
     }
     // Teardown republished the old session's terminal after B was accepted in the Error that
     // replaced it. B never connects: its deadline must still fail it, not mistake the repeat

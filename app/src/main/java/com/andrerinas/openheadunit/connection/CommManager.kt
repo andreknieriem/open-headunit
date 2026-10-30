@@ -1277,6 +1277,32 @@ class CommManager(
     /** The attempt of the last terminal that ended a physical loopback session. */
     internal fun lastLoopbackSessionEnd(): Any? = synchronized(transportLifecycleLock) { lastLoopbackSessionAttempt }
 
+    /**
+     * Runs [retire] with the ended session's attempt, under the lifecycle lock, when a physical
+     * loopback session ended after [baseline] and nothing else can still end Self mode for it:
+     * its terminal is no longer current, no connection is forming or live, and no unretired
+     * physical connection remains behind a later Error. Publication cannot interleave between
+     * this check and [retire]. Returns whether it ran.
+     */
+    internal fun retireEndedLoopbackSession(baseline: Any?, retire: (ended: Any) -> Unit): Boolean = synchronized(transportLifecycleLock) {
+        val ended = lastLoopbackSessionAttempt ?: return@synchronized false
+        val state = _connectionState.value
+        val ownTerminalCurrent = state is ConnectionState.Disconnected && state.endedAttempt === ended
+        val forming = state !is ConnectionState.Disconnected && state !is ConnectionState.Error
+        val liveOwner = (_connection != null || _transport != null) && !disconnectRequested
+        if (ended === baseline || ownTerminalCurrent || forming || liveOwner) return@synchronized false
+        retire(ended)
+        true
+    }
+
+    /** Whether a loopback session is live now, with the last ended loopback session, read together. */
+    internal fun liveLoopbackSnapshot(): Pair<Boolean, Any?> = synchronized(transportLifecycleLock) {
+        val state = _connectionState.value
+        val live = state !is ConnectionState.Disconnected && state !is ConnectionState.Error &&
+            state !is ConnectionState.Connecting
+        (live && isLoopbackSession && !disconnectRequested) to lastLoopbackSessionAttempt
+    }
+
     /** Called under transportLifecycleLock as each terminal carrying [endedAttempt] is published. */
     private fun recordTerminal(endedAttempt: Any?) {
         lastEndedAttempt = endedAttempt

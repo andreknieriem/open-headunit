@@ -66,7 +66,7 @@ class MainViewModel(application: Application): AndroidViewModel(application), Us
         usbDevices.value = createDeviceList(settings.allowedDevices)
     }
 
-    override fun onUsbPermission(granted: Boolean, connect: Boolean, device: UsbDevice) {
+    override fun onUsbPermission(granted: Boolean, connect: Boolean, device: UsbDevice, ticket: Long) {
         usbDevices.value = createDeviceList(settings.allowedDevices)
     }
 

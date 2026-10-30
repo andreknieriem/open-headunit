@@ -67,6 +67,7 @@ class UsbLauncherManager(val service: AapService) {
         val settingsRestart: CommManager.ConnectionState.Disconnected?,
         val recoveryOwner: Any,
         val accessoryOnly: Boolean,
+        val ticket: Long,
         // The Save came from the running attempt, not from this scan's own request.
         val inheritedSave: Boolean = false,
         val trigger: UsbPlugInPolicy.Trigger = UsbPlugInPolicy.Trigger.APP_START,
@@ -98,6 +99,7 @@ class UsbLauncherManager(val service: AapService) {
             isSwitchingToProjection.set(false)
             val claim = attemptClaim
             attemptClaim = null
+            attemptTicket = null
             claim to pendingCheck
         }
         releaseAttempt(ended.first, ended.second)
@@ -116,7 +118,8 @@ class UsbLauncherManager(val service: AapService) {
             val manager = App.provide(service).commManager
             // Exit, Save and a completed handshake revoke the old recovery interval even if
             // their StateFlow events were skipped. Never let a queued manual flag undo Exit.
-            if (cancelledByUser || !manager.ownsUsbRecheck(request.recoveryOwner)) return@launch
+            if (cancelledByUser || !manager.ownsUsbRecheck(request.recoveryOwner) ||
+                !manager.acceptsAppConnectionTicket(request.ticket)) return@launch
             var restart = request.settingsRestart
             if (restart != null && (!restart.acceptsSettingsRestart(manager.connectionState.value) ||
                     SystemClock.elapsedRealtime() >= restart.settingsRestartUntilMs)) {
@@ -129,13 +132,13 @@ class UsbLauncherManager(val service: AapService) {
             // AOA changes UsbDevice identity and permission. Replay the scan, not the old
             // connect(device), so the current device list and permission path are used again.
             AppLog.i("UsbLauncher: replaying the USB scan queued during the attempt (accessoryOnly=$accessoryOnly)")
-            checkAlreadyConnected(request.force, request.userRequested, restart, accessoryOnly, request.trigger)
+            checkAlreadyConnected(request.force, request.userRequested, restart, accessoryOnly, request.trigger, request.ticket)
         }
     }
 
     private fun deferCheckWhileSwitching(force: Boolean, userRequested: Boolean,
         settingsRestart: CommManager.ConnectionState.Disconnected?, recoveryOwner: Any,
-        accessoryOnly: Boolean, trigger: UsbPlugInPolicy.Trigger): Boolean =
+        accessoryOnly: Boolean, trigger: UsbPlugInPolicy.Trigger, ticket: Long): Boolean =
         synchronized(attemptLock) {
             if (!isSwitchingToProjection.get()) {
                 pendingCheck = null // A fresh scan consumes any older queued completion scan.
@@ -146,7 +149,7 @@ class UsbLauncherManager(val service: AapService) {
             pendingCheck = PendingCheck(force || previous?.force == true,
                 userRequested || previous?.userRequested == true,
                 settingsRestart ?: attemptSettingsOwner ?: previous?.settingsRestart, recoveryOwner,
-                accessoryOnly && previous?.accessoryOnly != false,
+                accessoryOnly && previous?.accessoryOnly != false, ticket,
                 inheritedSave = settingsRestart == null && attemptSettingsOwner != null && !earlierExplicit,
                 // A merged scan stays a plug-in only if every scan in it was one.
                 trigger = if (previous == null || previous.trigger == UsbPlugInPolicy.Trigger.PLUG_IN) trigger else previous.trigger)
@@ -154,21 +157,46 @@ class UsbLauncherManager(val service: AapService) {
         }
 
     @Volatile private var attemptClaim: ConnectionArbiter.Claim? = null
+    private var attemptTicket: Long? = null
 
-    /** Claims the arbiter and marks an attempt in flight; false means a higher attempt holds it. */
-    fun beginAttempt(tier: Tier, what: String, settingsRestart: CommManager.ConnectionState.Disconnected? = null): Boolean {
+    /** Claims and marks a USB attempt only while its original input still permits admission. */
+    fun beginAttempt(tier: Tier, what: String, settingsRestart: CommManager.ConnectionState.Disconnected? = null,
+        ticket: Long = App.provide(service).commManager.appConnectionTicket()): Boolean {
+        val manager = App.provide(service).commManager
+        discardCancelledAttempt(manager)
         if (settingsRestart != null && SystemClock.elapsedRealtime() >= settingsRestart.settingsRestartUntilMs) return false
-        val claim = if (settingsRestart == null) ConnectionArbiter.claim(tier, Owner.USB, what)
-            else App.provide(service).commManager.claimUsb(tier, what, settingsRestart)
+        val claim = manager.claimUsb(tier, what, settingsRestart, ticket)
         if (claim == null) return false
         synchronized(attemptLock) {
             attemptClaim = claim
+            attemptTicket = ticket
             attemptSettingsOwner = settingsRestart
             accessorySwitchRequested = false
             switchesAtBegin = UsbSwitchClaim.switches()
             isSwitchingToProjection.set(true)
         }
         return true
+    }
+
+    /** A revoked job may still be queued on IO. A fresh USB input need not wait for it. */
+    private fun discardCancelledAttempt(manager: CommManager) {
+        val ticket = synchronized(attemptLock) { attemptTicket } ?: return
+        if (manager.acceptsAppConnectionTicket(ticket)) return
+        val ended = synchronized(attemptLock) {
+            if (attemptTicket != ticket) return
+            val owned = attemptClaim to attemptJob
+            attemptClaim = null
+            attemptTicket = null
+            attemptJob = null
+            attemptSettingsOwner = null
+            attemptFinished = null
+            accessorySwitchRequested = false
+            pendingCheck = null
+            isSwitchingToProjection.set(false)
+            owned
+        }
+        ended.second?.cancel()
+        ConnectionArbiter.release(ended.first, sessionFormed = false)
     }
 
     /** ACC_REQ_START succeeded, but the old normal-mode device may remain on the bus briefly. */
@@ -248,12 +276,19 @@ class UsbLauncherManager(val service: AapService) {
         ConnectionStageTracker.clear()
     }
 
-    // Permission dialogs outlive their launch coroutine. Keep Save's original owner until
-    // the reply so a cancelled Save cannot return as an unrestricted automatic connection.
-    private val permissionOwners = java.util.concurrent.ConcurrentHashMap<String, CommManager.ConnectionState.Disconnected>()
+    // Dialogs outlive their coroutine. Retain both Save and the original Stop boundary.
+    internal data class PermissionAttempt(
+        val settingsRestart: CommManager.ConnectionState.Disconnected?,
+        val ticket: Long,
+    )
+    private val permissionOwners = java.util.concurrent.ConcurrentHashMap<String, PermissionAttempt>()
 
-    internal fun takePermissionOwner(device: UsbDevice): CommManager.ConnectionState.Disconnected? =
-        permissionOwners.remove(device.deviceName) ?: pendingSettingsRestart()
+    internal fun takePermissionAttempt(device: UsbDevice, ticket: Long): PermissionAttempt {
+        val owner = permissionOwners[device.deviceName]
+        return if (owner != null && owner.ticket == ticket &&
+            permissionOwners.remove(device.deviceName, owner)) owner
+        else PermissionAttempt(pendingSettingsRestart(), ticket)
+    }
 
     private fun sourceOf(tier: Tier, settingsRestart: CommManager.ConnectionState.Disconnected?) =
         UsbPermissionAskPolicy.sourceFor(tier == Tier.USER, settingsRestart != null)
@@ -280,29 +315,31 @@ class UsbLauncherManager(val service: AapService) {
     private fun askOrWait(
         device: UsbDevice,
         source: UsbPermissionAskPolicy.Source,
-        settingsRestart: CommManager.ConnectionState.Disconnected? = null,
+        settingsRestart: CommManager.ConnectionState.Disconnected?,
+        ticket: Long,
         onAsk: () -> Unit = {},
     ): UsbPermissionAskPolicy.Action {
+        // A revoked input neither raises a dialog nor marks the path as asked.
+        if (!App.provide(service).commManager.acceptsAppConnectionTicket(ticket)) return UsbPermissionAskPolicy.Action.HOLD
         val usbManager = UsbDeviceCompat.usbManager(service) ?: return UsbPermissionAskPolicy.Action.HOLD
         val token = UsbPermissionAsks.newToken()
         val action = decideAsk(usbManager, device, source, token)
         if (action == UsbPermissionAskPolicy.Action.ASK) {
             onAsk()
-            requestPermission(device, token, settingsRestart)
+            requestPermission(device, token, settingsRestart, ticket)
         }
         return action
     }
 
     private fun requestPermission(
-        device: UsbDevice, token: String, settingsRestart: CommManager.ConnectionState.Disconnected? = null,
+        device: UsbDevice, token: String, settingsRestart: CommManager.ConnectionState.Disconnected?, ticket: Long,
     ) {
         val usbManager = UsbDeviceCompat.usbManager(service) ?: run {
             UsbPermissionAsks.complete(device.deviceName, token)
             return
         }
-        val permissionIntent = UsbReceiver.createPermissionPendingIntent(service, token)
-        if (settingsRestart == null) permissionOwners.remove(device.deviceName)
-        else permissionOwners[device.deviceName] = settingsRestart
+        val permissionIntent = UsbReceiver.createPermissionPendingIntent(service, token, ticket)
+        permissionOwners[device.deviceName] = PermissionAttempt(settingsRestart, ticket)
 
         AppLog.i("Requesting USB permission for ${UsbDeviceCompat(device).uniqueName}")
         ConnectionStageTracker.report(ConnectionStage.USB_SWITCHING)
@@ -517,6 +554,7 @@ class UsbLauncherManager(val service: AapService) {
      */
     fun onUsbHandshakeEnded(outcome: CommManager.UsbHandshakeOutcome) {
         val commManager = App.provide(service).commManager
+        val ticket = commManager.appConnectionTicket()
         if (!commManager.ownsUsbRecheck(outcome.recoveryOwner)) return
         val failure = outcome.failure
         if (failure == AapTransport.HandshakeFailure.NONE) {
@@ -569,7 +607,7 @@ class UsbLauncherManager(val service: AapService) {
                     AppLog.i("UsbLauncher: stale accessory recovery for $name refused: the USB attempt slot is busy")
                     return
                 }
-                if (!beginAttempt(Tier.USB, "USB recovery of $name")) {
+                if (!beginAttempt(Tier.USB, "USB recovery of $name", ticket = ticket)) {
                     AppLog.i("UsbLauncher: stale accessory recovery for $name refused: another attempt holds the arbiter")
                     return
                 }
@@ -697,12 +735,14 @@ class UsbLauncherManager(val service: AapService) {
     }
 
     /** A scan sent to the service, such as the attach screen's hand-off. An open Save still owns it. */
-    fun checkOnRequest(userRequested: Boolean, trigger: UsbPlugInPolicy.Trigger = UsbPlugInPolicy.Trigger.APP_START) =
+    fun checkOnRequest(userRequested: Boolean, trigger: UsbPlugInPolicy.Trigger = UsbPlugInPolicy.Trigger.APP_START,
+        ticket: Long = App.provide(service).commManager.appConnectionTicket()) =
         checkAlreadyConnected(
             force = true,
             userRequested = userRequested,
             settingsRestart = if (userRequested) null else pendingSettingsRestart(),
             trigger = if (userRequested) UsbPlugInPolicy.Trigger.USER else trigger,
+            ticket = ticket,
         )
 
     /**
@@ -725,9 +765,12 @@ class UsbLauncherManager(val service: AapService) {
         settingsRestart: CommManager.ConnectionState.Disconnected? = null,
         accessoryOnly: Boolean = false,
         trigger: UsbPlugInPolicy.Trigger = UsbPlugInPolicy.Trigger.APP_START,
+        ticket: Long = App.provide(service).commManager.appConnectionTicket(),
     ) {
         val settings = App.provide(service).settings
         val commManager = App.provide(service).commManager
+        if (!commManager.acceptsAppConnectionTicket(ticket)) return
+        discardCancelledAttempt(commManager)
         if (settingsRestart != null && !settingsRestart.acceptsSettingsRestart(commManager.connectionState.value)) return
         val lastSession = settings.autoConnectLastSession
         val singleUsb = settings.autoConnectSingleUsbDevice
@@ -743,7 +786,7 @@ class UsbLauncherManager(val service: AapService) {
             commManager.deferUsbCheckForConnectionAttempt()
             return
         }
-        if (deferCheckWhileSwitching(force, userRequested, settingsRestart, commManager.usbRecheckOwner(), accessoryOnly, trigger)) return
+        if (deferCheckWhileSwitching(force, userRequested, settingsRestart, commManager.usbRecheckOwner(), accessoryOnly, trigger, ticket)) return
         if (commManager.deferUsbCheckForConnectionAttempt()) return
 
         val tier = if (userRequested) Tier.USER else Tier.USB
@@ -785,11 +828,11 @@ class UsbLauncherManager(val service: AapService) {
             if (UsbDeviceCompat.isInAccessoryMode(device)) {
                 val deviceName = UsbDeviceCompat(device).uniqueName
                 AppLog.i("Found device already in accessory mode: $deviceName")
-                if (!beginAttempt(tier, "USB $deviceName", settingsRestart)) return
+                if (!beginAttempt(tier, "USB $deviceName", settingsRestart, ticket)) return
                 ConnectionStageTracker.beginAttempt(ConnectionStage.USB_ATTACHED)
                 launchAttempt(settingsRestart) {
-                    if (awaitAccessoryPermission(usbManager, device, deviceName, settingsRestart, tier)) {
-                        connectWithRetry(device, tier = tier, settingsRestart = settingsRestart)
+                    if (awaitAccessoryPermission(usbManager, device, deviceName, settingsRestart, tier, ticket)) {
+                        connectWithRetry(device, tier = tier, settingsRestart = settingsRestart, ticket = ticket)
                     }
                 }
                 return
@@ -808,7 +851,7 @@ class UsbLauncherManager(val service: AapService) {
                 if (settings.isConnectingDevice(deviceCompat)) {
                     if (usbManager.hasPermission(device)) {
                         AppLog.i("Found known USB device with permission: ${deviceCompat.uniqueName}. Switching to accessory mode.")
-                        if (!beginAttempt(tier, "USB switch of ${deviceCompat.uniqueName}", settingsRestart)) return
+                        if (!beginAttempt(tier, "USB switch of ${deviceCompat.uniqueName}", settingsRestart, ticket)) return
                         ConnectionStageTracker.beginAttempt(ConnectionStage.USB_ATTACHED)
                         ConnectionStageTracker.report(ConnectionStage.USB_SWITCHING)
                         val usbMode = UsbAccessoryMode(usbManager)
@@ -823,7 +866,7 @@ class UsbLauncherManager(val service: AapService) {
                         return
                     } else {
                         AppLog.i("Found known USB device but no permission: ${deviceCompat.uniqueName}")
-                        askOrWait(device, sourceOf(tier, settingsRestart), settingsRestart)
+                        askOrWait(device, sourceOf(tier, settingsRestart), settingsRestart, ticket)
                         return
                     }
                 }
@@ -834,7 +877,7 @@ class UsbLauncherManager(val service: AapService) {
         if (usbAutoStart) {
             val nonAccessoryDevices = deviceList.filter { !UsbDeviceCompat.isInAccessoryMode(it) }
             if (nonAccessoryDevices.size == 1) {
-                performSingleConnect(nonAccessoryDevices[0], tier, settingsRestart)
+                performSingleConnect(nonAccessoryDevices[0], tier, settingsRestart, ticket)
                 return
             }
         }
@@ -856,7 +899,7 @@ class UsbLauncherManager(val service: AapService) {
                 AppLog.i("Single USB auto-connect: ${nonAccessoryDevices.size} USB device(s) present, ${candidates.size} allowed")
             }
             if (candidates.size == 1) {
-                performSingleConnect(candidates[0], tier, settingsRestart)
+                performSingleConnect(candidates[0], tier, settingsRestart, ticket)
                 return
             }
         }
@@ -885,7 +928,7 @@ class UsbLauncherManager(val service: AapService) {
             }
             if (candidates.size == 1) {
                 AppLog.i("Fallback: force=true and found single normal-mode Android device ${UsbDeviceCompat(candidates[0]).uniqueName}. Switching to accessory mode.")
-                performSingleConnect(candidates[0], tier, settingsRestart)
+                performSingleConnect(candidates[0], tier, settingsRestart, ticket)
             } else if (candidates.isNotEmpty()) {
                 AppLog.i("Fallback: force=true but ${candidates.size} candidate USB devices are attached; not guessing which is the phone")
             }
@@ -907,17 +950,18 @@ class UsbLauncherManager(val service: AapService) {
         return true
     }
 
-    /** Bind before dispatch so revoking Save also cancels a queued permission wait or retry. */
+    /** Bind Save and the Stop boundary before dispatching permission waits or physical work. */
     internal fun launchAttempt(
         settingsRestart: CommManager.ConnectionState.Disconnected?,
         context: CoroutineContext = EmptyCoroutineContext,
         block: suspend CoroutineScope.() -> Unit,
     ) {
-        val claim = attemptClaim
+        val (claim, ticket) = synchronized(attemptLock) { attemptClaim to checkNotNull(attemptTicket) }
         val job = service.serviceScope.launch(context, start = CoroutineStart.LAZY) {
             val manager = App.provide(service).commManager
-            if (settingsRestart == null || (settingsRestart.acceptsSettingsRestart(manager.connectionState.value) &&
-                SystemClock.elapsedRealtime() < settingsRestart.settingsRestartUntilMs)) block()
+            if (manager.acceptsAppConnectionTicket(ticket) &&
+                (settingsRestart == null || (settingsRestart.acceptsSettingsRestart(manager.connectionState.value) &&
+                    SystemClock.elapsedRealtime() < settingsRestart.settingsRestartUntilMs))) block()
         }
         val finished = CompletableDeferred<Unit>()
         synchronized(attemptLock) {
@@ -935,6 +979,7 @@ class UsbLauncherManager(val service: AapService) {
                     attemptSettingsOwner = null
                     attemptFinished = null
                     attemptClaim = null
+                    attemptTicket = null
                     isSwitchingToProjection.set(false)
                     if (accessorySwitchRequested || UsbSwitchClaim.switches() != switchesAtBegin) {
                         pendingCheck = pendingCheck?.copy(accessoryOnly = true)
@@ -950,14 +995,15 @@ class UsbLauncherManager(val service: AapService) {
         job.start()
     }
 
-    private fun performSingleConnect(device: UsbDevice, tier: Tier, settingsRestart: CommManager.ConnectionState.Disconnected? = null) {
+    private fun performSingleConnect(device: UsbDevice, tier: Tier, settingsRestart: CommManager.ConnectionState.Disconnected?,
+        ticket: Long) {
         val settings = App.provide(service).settings
         val usbManager = UsbDeviceCompat.usbManager(service) ?: return
 
         if (usbManager.hasPermission(device)) {
             val deviceName = UsbDeviceCompat(device).uniqueName
             AppLog.i("Single USB auto-connect: connecting to $deviceName")
-            if (!beginAttempt(tier, "USB switch of $deviceName", settingsRestart)) return
+            if (!beginAttempt(tier, "USB switch of $deviceName", settingsRestart, ticket)) return
             val usbMode = UsbAccessoryMode(usbManager)
             launchAttempt(settingsRestart, Dispatchers.IO) {
                 if (usbMode.connectAndSwitch(device, settings.useLibusb)) {
@@ -969,7 +1015,7 @@ class UsbLauncherManager(val service: AapService) {
             }
         } else {
             AppLog.i("Single USB auto-connect: device found but no permission")
-            askOrWait(device, sourceOf(tier, settingsRestart), settingsRestart)
+            askOrWait(device, sourceOf(tier, settingsRestart), settingsRestart, ticket)
         }
     }
 
@@ -984,13 +1030,17 @@ class UsbLauncherManager(val service: AapService) {
         device: UsbDevice,
         deviceName: String,
         settingsRestart: CommManager.ConnectionState.Disconnected?,
-        tier: Tier = Tier.USB,
+        tier: Tier,
+        ticket: Long,
     ): Boolean {
         if (usbManager.hasPermission(device)) return true
+        val commManager = App.provide(service).commManager
+        if (!commManager.acceptsAppConnectionTicket(ticket)) return false
 
         val startedAt = System.currentTimeMillis()
         while (UsbAccessoryHandoffPolicy.shouldKeepPollingForPermission(System.currentTimeMillis() - startedAt)) {
             delay(UsbAccessoryHandoffPolicy.PERMISSION_POLL_INTERVAL_MS)
+            if (!commManager.acceptsAppConnectionTicket(ticket)) return false
             if (usbManager.hasPermission(device)) {
                 AppLog.i("Accessory-mode permission arrived after ${System.currentTimeMillis() - startedAt}ms: $deviceName")
                 ConnectionStageTracker.report(ConnectionStage.PHONE_ANSWERED)
@@ -998,7 +1048,7 @@ class UsbLauncherManager(val service: AapService) {
             }
         }
 
-        val action = askOrWait(device, sourceOf(tier, settingsRestart), settingsRestart) {
+        val action = askOrWait(device, sourceOf(tier, settingsRestart), settingsRestart, ticket) {
             AppLog.i("UsbLauncher: Accessory-mode device has no permission (re-enumerated); requesting permission: $deviceName")
         }
         if (action == UsbPermissionAskPolicy.Action.DEFER) {
@@ -1012,21 +1062,25 @@ class UsbLauncherManager(val service: AapService) {
      *
      * USB accessories occasionally fail on the first attach (the device hasn't fully
      * enumerated yet), so retrying is necessary for reliability.
+     * The original attempt's ticket survives every delay and public connect invocation.
      */
     suspend fun connectWithRetry(
         device: UsbDevice,
         maxRetries: Int = 3,
         tier: Tier = Tier.USB,
         settingsRestart: CommManager.ConnectionState.Disconnected? = null,
+        ticket: Long = App.provide(service).commManager.appConnectionTicket(),
     ) {
         val commManager = App.provide(service).commManager
         var retryCount = 0
         var success = false
 
         while (retryCount <= maxRetries && !success) {
+            if (!commManager.acceptsAppConnectionTicket(ticket)) return
             if (retryCount > 0) {
                 AppLog.i("Retrying USB connection (attempt ${retryCount + 1}/$maxRetries)...")
                 delay(1500)
+                if (!commManager.acceptsAppConnectionTicket(ticket)) return
                 // A USB reattach during the delay could have already started a new connection;
                 // bail out to avoid two parallel retry loops competing on the same device.
                 if (commManager.isConnected ||
@@ -1045,12 +1099,12 @@ class UsbLauncherManager(val service: AapService) {
                 }
                 val fresh = matches.firstOrNull { it.deviceName == device.deviceName }
                     ?: matches.singleOrNull() ?: return
-                if (!awaitAccessoryPermission(usbManager, fresh, UsbDeviceCompat.getUniqueName(fresh), settingsRestart, tier)) return
+                if (!awaitAccessoryPermission(usbManager, fresh, UsbDeviceCompat.getUniqueName(fresh), settingsRestart, tier, ticket)) return
                 if (SystemClock.elapsedRealtime() >= settingsRestart.settingsRestartUntilMs ||
                     !settingsRestart.acceptsSettingsRestart(commManager.connectionState.value)) return
                 fresh
             }
-            commManager.connect(currentDevice, tier, expectedState = settingsRestart)
+            commManager.connect(currentDevice, tier, expectedState = settingsRestart, ticket = ticket)
             success = commManager.connectionState.value is CommManager.ConnectionState.Connected
             retryCount++
         }

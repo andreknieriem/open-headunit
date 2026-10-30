@@ -53,6 +53,24 @@ only final publication. A cancelled old attempt therefore cannot tear down a new
 The actual transport quit callback also cannot downgrade an accepted explicit Stop to a
 conditional kill-on-disconnect request.
 
+The ticket belongs to the logical input, not to one public call. UI, automation, server accept,
+discovery scan, Nearby request, Self launch, VPN consent and service relays capture it when the
+input is accepted and carry it through queued work, permission waits, countdowns and internal
+retries. The caller fixtures extract those producers and run them against the real manager,
+arbiter and service-ingress prefix: Stop B -> Open C rejects work begun before B, while a
+compatible Open without Stop and genuinely new input remain accepted. A held socket is taken
+only by the callback that owns that exact socket. The USB unit regressions drive the actual
+scan, permission poll, retry loop and StandardUsb open; physical opens are counted at
+`UsbManager.openDevice`.
+
+A revoked in-flight scan, Self launch or Nearby attempt never absorbs a valid newer input:
+the stale work is detached and the new input starts, while a same-ticket duplicate is still
+folded into the running work. The overlap regressions submit the fresh input while the stale
+work is still in flight. Nearby validates tickets and changes attempt state lifecycle-first
+(lifecycle lock, then attempt monitor), the same order publication admission uses; SDK calls
+and resource cleanup run outside both. The lock regression drives the actual bandwidth
+callback against a held admission and checks for a JVM-detected deadlock.
+
 Connection acceptance and publication share Main ordering with activity finish and process
 exit effects. The scheduling suite holds task lookup and process-exit preparation while a
 replacement queues, and exercises cancellation before and after resource transfer. Ordinary
@@ -68,19 +86,22 @@ cannot initialize that already-doomed instance; only the current Run is restored
 Foreground policy tests distinguish actual Intent delivery, retained configuration identity and
 one process-wide fully-stopped return episode across Main, Projection and Settings. They do not
 model every focus-only, PiP, multi-window or config/Home-overlap return.
-The extracted automatic Home producer uses current Run ownership rather than minting a new
-Open. Its controls cover enabled/disabled startup flags and config continuation after completed
-Stop; genuine owned Open can still restore the service. Real Android instrumentation separately
-exercises task return, config recreation with automatic startup enabled, and delayed finish delivery.
+Automatic Home work starts only from a current Run and keeps that Stop ticket across both
+auto blocks, the countdown, last-session IP/USB, single USB and Self/VPN consent. Completed
+Stop followed by configuration recreation with screen-on start and single-USB auto-connect
+enabled, with no USB attached, initializes no service; genuine owned Open still restores it.
+Real Android instrumentation separately exercises task return, that configuration case and
+delayed finish delivery.
 
 Native group coordinator tests retain cleanup responsibility beyond service destruction and
 hold new adoption/create work behind submitted removal callbacks. Actual active adoption clears
 only detached cleanup authority, leaving active transport shutdown on the normal service path.
 A late abandoned create records its framework removal boundary before submission, so failure
 preserves responsibility for the next fresh Stop. An absent callback leaves the barrier closed
-rather than asserting completion. These are recording framework boundaries, not proof of
-manufacturer radio behavior. Activity callback ordering and actual task/process effects still
-require Android coverage.
+rather than asserting completion. A service Stop that arrives after logical Disconnected but
+before the transport has closed waits on that actual retirement, so native removal cannot be
+submitted first. These are recording framework boundaries, not proof of manufacturer radio
+behavior. Activity callback ordering and actual task/process effects still require Android coverage.
 
 The JVM settings-import regressions use the actual backup parser, preferences and device-protected
 mirrors with a blocking Reader. Read/parse may outlive cancellation but has no write authority;

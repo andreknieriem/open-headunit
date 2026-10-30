@@ -97,10 +97,19 @@ class HomeFragment : Fragment() {
 
     private val commManager get() = App.provide(requireContext()).commManager
 
+    // Permission is a continuation of its original input, including a manual Self launch.
+    private var pendingSelfModeVpn = false
+    private var pendingSelfModeTicket: Long? = null
+
     private val vpnPermissionLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (!pendingSelfModeVpn) return@registerForActivityResult
+        val ticket = pendingSelfModeTicket
+        pendingSelfModeVpn = false
+        pendingSelfModeTicket = null
+        if (ticket == null) return@registerForActivityResult
         if (result.resultCode == android.app.Activity.RESULT_OK) {
             AppLog.i("VPN permission granted. Starting DummyVpnService and Self Mode.")
-            startSelfModeInternal(needsDummyVpn = true)
+            startSelfModeInternal(needsDummyVpn = true, ticket = ticket)
         } else {
             AppLog.w("VPN permission denied. Offline Self Mode might fail.")
             ToastUtils.showToast(requireContext(), getString(R.string.failed_start_android_auto), Toast.LENGTH_LONG, force = true)
@@ -208,6 +217,10 @@ class HomeFragment : Fragment() {
         savedInstanceState?.let { state ->
             pendingWidgetId = state.getInt(STATE_PENDING_WIDGET_ID, -1)
             pendingWidgetPage = state.getInt(STATE_PENDING_WIDGET_PAGE, -1).takeIf { it >= 0 }
+            pendingSelfModeVpn = state.getBoolean(STATE_PENDING_SELF_VPN, false)
+            pendingSelfModeTicket = if (state.containsKey(STATE_PENDING_SELF_TICKET)) {
+                state.getLong(STATE_PENDING_SELF_TICKET)
+            } else null
         }
     }
 
@@ -215,6 +228,8 @@ class HomeFragment : Fragment() {
         super.onSaveInstanceState(outState)
         outState.putInt(STATE_PENDING_WIDGET_ID, pendingWidgetId)
         outState.putInt(STATE_PENDING_WIDGET_PAGE, pendingWidgetPage ?: -1)
+        outState.putBoolean(STATE_PENDING_SELF_VPN, pendingSelfModeVpn)
+        pendingSelfModeTicket?.let { outState.putLong(STATE_PENDING_SELF_TICKET, it) }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View =
@@ -319,12 +334,16 @@ class HomeFragment : Fragment() {
         mainViewModel.homePressed.observe(viewLifecycleOwner) { showFirstPage(animate = isResumed) }
 
         val appSettings = App.provide(requireContext()).settings
+        // A retained/configuration Home is not a new Open. Automatic work must start from Run
+        // and carry its Stop boundary through countdowns, dispatch and permission continuations.
+        val autoConnectTicket = commManager.currentAppRunTicket()
 
-        if (appSettings.autoStartOnScreenOn || appSettings.autoStartOnBoot) {
+        if (autoConnectTicket != null &&
+            (appSettings.autoStartOnScreenOn || appSettings.autoStartOnBoot)) {
             commManager.restoreAppForEntry(commManager.appOwnershipRevision())
         }
 
-        viewLifecycleOwner.lifecycleScope.launch {
+        if (autoConnectTicket != null) viewLifecycleOwner.lifecycleScope.launch {
             val isAutoConnectEnabled = appSettings.autoStartSelfMode ||
                 appSettings.autoConnectLastSession ||
                 appSettings.autoConnectSingleUsbDevice
@@ -335,19 +354,20 @@ class HomeFragment : Fragment() {
                 countDownToAutoConnect(delaySec, autoConnectTarget(appSettings))
             }
 
-            if (!isAdded || commManager.isConnected) return@launch
+            if (!isAdded || commManager.isConnected ||
+                !commManager.acceptsAppRunTicket(autoConnectTicket)) return@launch
             if (autoConnectCancelled) {
                 AppLog.i("HomeFragment: auto-connect cancelled from the home screen countdown")
                 return@launch
             }
 
             for (methodId in appSettings.autoConnectPriorityOrder) {
-                if (commManager.isConnected) break
+                if (commManager.isConnected || !commManager.acceptsAppRunTicket(autoConnectTicket)) break
                 when (methodId) {
                     Settings.AUTO_CONNECT_LAST_SESSION -> {
                         if (appSettings.autoConnectLastSession && !hasAttemptedAutoConnect && !commManager.isConnected) {
                             hasAttemptedAutoConnect = true
-                            if (attemptAutoConnect()) {
+                            if (attemptAutoConnect(autoConnectTicket)) {
                                 (requireActivity() as? MainActivity)?.beginAutoConnect(
                                     "auto-connect last session",
                                     MainActivity.ConnectionUiMode.OVERLAY
@@ -363,13 +383,13 @@ class HomeFragment : Fragment() {
                                 "auto-start self mode",
                                 MainActivity.ConnectionUiMode.OVERLAY
                             )
-                            startSelfMode()
+                            startSelfMode(autoConnectTicket)
                         }
                     }
                     Settings.AUTO_CONNECT_SINGLE_USB -> {
                         if (appSettings.autoConnectSingleUsbDevice && !hasAttemptedSingleUsbAutoConnect && !commManager.isConnected) {
                             hasAttemptedSingleUsbAutoConnect = true
-                            if (attemptSingleUsbAutoConnect()) {
+                            if (attemptSingleUsbAutoConnect(autoConnectTicket)) {
                                 (requireActivity() as? MainActivity)?.beginAutoConnect(
                                     "auto-connect single USB",
                                     MainActivity.ConnectionUiMode.OVERLAY
@@ -1722,15 +1742,17 @@ class HomeFragment : Fragment() {
         startActivity(com.andrerinas.openheadunit.app.AppUiEntry.continuation(aapIntent))
     }
 
-    private fun startSelfModeInternal(needsDummyVpn: Boolean = false) {
-        val intent = Intent(requireContext(), AapService::class.java)
+    private fun startSelfModeInternal(needsDummyVpn: Boolean, ticket: Long) {
+        if (!commManager.acceptsAppConnectionTicket(ticket)) return
+        val intent = AapService.operationIntent(requireContext(), ticket)
         intent.action = AapService.ACTION_START_SELF_MODE
         intent.putExtra(AapService.EXTRA_SELF_MODE_VPN, needsDummyVpn)
         ContextCompat.startForegroundService(requireContext(), intent)
         AppLog.i("Auto start selfmode")
     }
 
-    private fun startSelfMode() {
+    private fun startSelfMode(ticket: Long = commManager.appConnectionTicket()) {
+        if (!commManager.acceptsAppConnectionTicket(ticket)) return
         val connectivityManager = requireContext().getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         val activeNetwork = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             connectivityManager.activeNetwork
@@ -1744,6 +1766,8 @@ class HomeFragment : Fragment() {
             AppLog.i("Device is offline. Preparing Dummy VPN for Self Mode.")
             val vpnIntent = VpnControl.consentIntent(requireContext())
             if (vpnIntent != null) {
+                pendingSelfModeVpn = true
+                pendingSelfModeTicket = ticket
                 vpnPermissionLauncher.launch(vpnIntent)
                 return
             } else {
@@ -1756,7 +1780,7 @@ class HomeFragment : Fragment() {
                 AppLog.i("Device is offline and VPN is not available in this build. Self Mode may fail.")
             }
         }
-        startSelfModeInternal(needsDummyVpn)
+        startSelfModeInternal(needsDummyVpn, ticket)
     }
 
     /**
@@ -1768,7 +1792,7 @@ class HomeFragment : Fragment() {
      *   Returning a flag prevents the pill from being shown for 30 s when no
      *   work was queued.
      */
-    private fun attemptAutoConnect(): Boolean {
+    private fun attemptAutoConnect(ticket: Long): Boolean {
         val ctx = context ?: return false
         val appSettings = App.provide(ctx).settings
 
@@ -1781,7 +1805,7 @@ class HomeFragment : Fragment() {
 
         if (!appSettings.autoConnectLastSession ||
             !appSettings.hasAcceptedDisclaimer ||
-            commManager.isConnected) {
+            commManager.isConnected || !commManager.acceptsAppRunTicket(ticket)) {
             return false
         }
 
@@ -1798,8 +1822,12 @@ class HomeFragment : Fragment() {
                     if (ip.isNotEmpty()) {
                         AppLog.i("Auto-connect: Attempting WiFi connection to $ip")
                         ToastUtils.showToast(ctx, getString(R.string.auto_connecting_to, ip), Toast.LENGTH_SHORT)
-                        lifecycleScope.launch(Dispatchers.IO) { App.provide(ctx).commManager.connect(ip, 5277) }
-                        ContextCompat.startForegroundService(ctx, Intent(ctx, AapService::class.java).apply {
+                        lifecycleScope.launch(Dispatchers.IO) {
+                            if (commManager.acceptsAppRunTicket(ticket)) {
+                                App.provide(ctx).commManager.connect(ip, 5277, ticket = ticket)
+                            }
+                        }
+                        ContextCompat.startForegroundService(ctx, AapService.operationIntent(ctx, ticket).apply {
                             action = AapService.ACTION_CONNECT_SOCKET
                         })
                         true
@@ -1819,7 +1847,7 @@ class HomeFragment : Fragment() {
                     if (usbManager != null && matchingDevice != null && usbManager.hasPermission(matchingDevice)) {
                         AppLog.i("Auto-connect: Attempting USB connection to $lastUsbDevice")
                         ToastUtils.showToast(requireContext(), getString(R.string.auto_connecting_usb), Toast.LENGTH_SHORT)
-                        ContextCompat.startForegroundService(requireContext(), Intent(requireContext(), AapService::class.java).apply {
+                        ContextCompat.startForegroundService(requireContext(), AapService.operationIntent(requireContext(), ticket).apply {
                             action = AapService.ACTION_CHECK_USB
                         })
                         true
@@ -1844,16 +1872,16 @@ class HomeFragment : Fragment() {
      *   blocked it or there is not exactly one device to connect to. Same intent as
      *   [attemptAutoConnect].
      */
-    private fun attemptSingleUsbAutoConnect(): Boolean {
+    private fun attemptSingleUsbAutoConnect(ticket: Long): Boolean {
         val ctx = context ?: return false
         val appSettings = App.provide(ctx).settings
         if (!appSettings.autoConnectSingleUsbDevice ||
             !appSettings.hasAcceptedDisclaimer ||
-            commManager.isConnected) return false
+            commManager.isConnected || !commManager.acceptsAppRunTicket(ticket)) return false
 
         AppLog.i("HomeFragment: Requesting single-USB auto-connect via AapService")
         ContextCompat.startForegroundService(ctx,
-            Intent(ctx, AapService::class.java).apply {
+            AapService.operationIntent(ctx, ticket).apply {
                 action = AapService.ACTION_CHECK_USB
             })
         // The check is cheap and the service decides, but the full-screen loading overlay is a
@@ -2000,7 +2028,7 @@ class HomeFragment : Fragment() {
                 } else {
                     ToastUtils.showToast(requireContext(), R.string.requesting_usb_permission, Toast.LENGTH_SHORT)
                     ContextCompat.startForegroundService(requireContext(), Intent(requireContext(), AapService::class.java))
-                    UsbPermissionAsks.askFromUi(requireContext(), device.wrappedDevice)
+                    UsbPermissionAsks.askFromUi(requireContext(), device.wrappedDevice, commManager.appConnectionTicket())
                 }
             }
         } else {
@@ -3180,6 +3208,8 @@ class HomeFragment : Fragment() {
     companion object {
         private const val STATE_PENDING_WIDGET_ID = "home_pending_widget_id"
         private const val STATE_PENDING_WIDGET_PAGE = "home_pending_widget_page"
+        private const val STATE_PENDING_SELF_VPN = "home_pending_self_vpn"
+        private const val STATE_PENDING_SELF_TICKET = "home_pending_self_ticket"
         private const val UNAVAILABLE_FAVORITE_ALPHA = 0.45f
         private var hasAutoStarted = false
         private var hasCheckedNativeDriverSelection = false

@@ -150,6 +150,7 @@ class UsbHandshakeRecheckTest {
                 fun field(name: String, value: Any) = CommManager::class.java.getDeclaredField(name)
                     .apply { isAccessible = true }.set(manager, value)
                 field("transportLifecycleLock", Any())
+                field("appExitPolicy", AppExitPolicy())
                 field("_connectionState", states)
                 field("connectionState", states)
                 field("usbRecoveryOwner", Any())

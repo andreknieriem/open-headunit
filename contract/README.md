@@ -77,6 +77,9 @@ Stop/Exit is accepted once at its first app ingress. Internal UI commands and au
 carry that same decision to the service; delayed delivery does not make an older accepted Stop
 new again. A new Stop selected after reopening is still honored while an earlier service teardown
 finishes. It reuses that teardown without reviving the older request's finish or process-kill flags.
+Connection work started before a Stop (a queued connect, retry, permission wait or delayed
+automatic connection) cannot resume after it, even if the app is reopened in between. Starting a
+connection again after the Stop is a new request and is accepted.
 
 Notification Exit is accepted when its action reaches the app, not when the notification was
 created. The existing public commands carry no sender-order token, so the app cannot distinguish

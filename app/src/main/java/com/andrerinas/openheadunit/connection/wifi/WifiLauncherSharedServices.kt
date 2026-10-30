@@ -183,8 +183,12 @@ class WifiLauncherSharedServices(val service: AapService) {
      * @param oneShot if `true`, does not reschedule after the scan finishes —
      *                used for the "auto WiFi" reconnect case.
      */
-    fun startLocalDiscovery(oneShot: Boolean = false) {
+    fun startLocalDiscovery(
+        oneShot: Boolean = false,
+        ticket: Long = App.provide(service).commManager.appConnectionTicket(),
+    ) {
         val commManager = App.provide(service).commManager
+        if (!commManager.acceptsAppConnectionTicket(ticket)) return
 
         // Logged rather than returned silently: this gate and the re-arm below are the only two
         // ways the discovery loop can end without saying so, and a loop that stops for no visible
@@ -209,8 +213,8 @@ class WifiLauncherSharedServices(val service: AapService) {
             localDiscovery = NetworkDiscovery(
                 service,
                 object : NetworkDiscovery.Listener {
-                    override fun onServiceFound(ip: String, port: Int, socket: Socket?) {
-                        if (commManager.isBusy) {
+                    override fun onServiceFound(ip: String, port: Int, socket: Socket?, ticket: Long) {
+                        if (!commManager.acceptsAppConnectionTicket(ticket) || commManager.isBusy) {
                             // Connected, or connecting, by the time this callback fired; discard the
                             // socket. isBusy rather than isConnected because handing it to connect()
                             // during a connect in flight only gets it closed one frame later.
@@ -225,16 +229,28 @@ class WifiLauncherSharedServices(val service: AapService) {
                                 // Headunit Server detected — reuse the pre-opened socket when possible
                                 AppLog.i("Auto-connecting to Headunit Server at $ip:$port (reusing socket)")
                                 ConnectionStageTracker.report(ConnectionStage.PHONE_ANSWERED)
-                                service.serviceScope.launch {
+                                val delivery = service.serviceScope.launch {
+                                    if (!commManager.acceptsAppConnectionTicket(ticket)) {
+                                        if (socket != null && HeldServerSocket.discard(socket)) {
+                                            try { socket.close() } catch (_: Exception) {}
+                                        }
+                                        return@launch
+                                    }
                                     val endpoint = SameEndpointConnectPolicy.endpoint(ip, 5277)
                                     if (socket == null) {
-                                        commManager.connect(ip, 5277)
-                                    } else if (HeldServerSocket.take(endpoint) !== socket) {
+                                        commManager.connect(ip, 5277, ticket = ticket)
+                                    } else if (HeldServerSocket.take(endpoint, socket) !== socket) {
                                         AppLog.i("WifiLauncherSharedServices: $endpoint is no longer held for discovery; not dialling it")
                                     } else {
-                                        try { commManager.connect(socket, restartEndpoint = ip to 5277) } catch (e: CancellationException) {
+                                        try { commManager.connect(socket, restartEndpoint = ip to 5277, ticket = ticket) } catch (e: CancellationException) {
                                             HeldServerSocket.abandon(socket); throw e
                                         }
+                                    }
+                                }
+                                delivery.invokeOnCompletion {
+                                    // The callback owns an untaken socket even if its child never enters.
+                                    if (socket != null && HeldServerSocket.discard(socket)) {
+                                        try { socket.close() } catch (_: Exception) {}
                                     }
                                 }
                             }
@@ -252,7 +268,8 @@ class WifiLauncherSharedServices(val service: AapService) {
                     // The flag comes from the scan that finished, not from the call that built this
                     // listener: the instance outlives any single request now, so capturing it here would
                     // pin every later scan to the first caller's choice.
-                    override fun onScanFinished(wasOneShot: Boolean) {
+                    override fun onScanFinished(wasOneShot: Boolean, ticket: Long) {
+                        if (!commManager.acceptsAppConnectionTicket(ticket)) return
                         scanningState.value = false
                         if (wasOneShot) {
                             AppLog.i("One-shot scan finished.")
@@ -284,7 +301,7 @@ class WifiLauncherSharedServices(val service: AapService) {
                             } else if (commManager.isBusy) {
                                 AppLog.i("AapService: Discovery loop ends — a connection is live or being set up")
                             } else {
-                                startLocalDiscovery()
+                                startLocalDiscovery(ticket = ticket)
                             }
                         }
                     }
@@ -295,7 +312,7 @@ class WifiLauncherSharedServices(val service: AapService) {
         // Forwarded, not dropped. Both one-shot callers - the Auto-mode retry after an unclean
         // disconnect, and the scan button - were asking for a single sweep and getting the
         // self-rescheduling loop instead.
-        localDiscovery?.startScan(oneShot)
+        localDiscovery?.startScan(oneShot, ticket)
     }
 
     private fun stopLocalDiscovery() {

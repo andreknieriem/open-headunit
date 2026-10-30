@@ -56,6 +56,9 @@ private class AapTransport(
     companion object { var constructionHook: (() -> Unit)? = null }
 }
 
+// The production Attempt names the claim it was published under; no claim is taken here.
+private object ConnectionArbiter { class Claim }
+
 /** Only the network, UI side effects and scheduling are doubled; injected decisions are production. */
 private class ConnectionFixture(val settings: Settings = Settings()) {
     private val transportLifecycleLock = Any()

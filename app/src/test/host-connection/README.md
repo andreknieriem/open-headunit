@@ -58,17 +58,22 @@ Save, adoption of a socket discovery holds, the JOIN decision against the valid 
 arbiter claim and the request's registration. One predicate decides validity (ticket current,
 claim held, Save owning the state until it publishes, then its own attempt in flight), and
 joining, a launch's wait, acceptance and publication all use it. Stop and Save revocation retire
-the request in their own lock section, and a claim's end wakes a launch waiting on it. The
-ingress fixtures pause real producers inside each former gap (claim before record, Stop or Save
-or another claim taking a waiting request's authority, a discovery hand-off queued behind IO).
+the request in their own lock section, and a claim's end wakes a launch waiting on it. A
+producer's end hands its claim to the SSL session only while the attempt that claim published
+is still the live one, never because another session is connected. The ingress fixtures pause
+real producers inside each former gap (claim before record, Stop or Save or another claim taking
+a waiting request's authority, a discovery hand-off queued behind IO, a cancelled request that
+published nothing while another session is connected).
 
 The ticket belongs to the logical input, not to one public call. UI, automation, server accept,
 discovery scan, Nearby request, Self launch, VPN consent and service relays capture it when the
 input is accepted and carry it through queued work, permission waits, countdowns and internal
 retries. The caller fixtures extract those producers and run them against the real manager,
 arbiter and service-ingress prefix: Stop B -> Open C rejects work begun before B, while a
-compatible Open without Stop and genuinely new input remain accepted. A held socket is adopted,
-in admission, only by one request; a hand-off whose socket a dial adopted first leaves it alone.
+compatible Open without Stop and genuinely new input remain accepted. A socket discovery holds
+is owned only by the caller that adopts it, decided before anything can refuse it; background
+discovery and the user's scan share one held hand-off, and a hand-off whose socket another
+request adopted leaves it open. Only an owner ever closes a handed-over socket.
 The USB unit regressions drive the actual scan, permission poll, retry loop and StandardUsb
 open; physical opens are counted at `UsbManager.openDevice`.
 

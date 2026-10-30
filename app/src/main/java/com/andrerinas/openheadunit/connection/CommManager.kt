@@ -467,9 +467,11 @@ class CommManager(
      * its end, including before its connection object is registered. [settled] completes, under
      * transportLifecycleLock, once the attempt reaches a physical connection, ends, or is replaced,
      * so a waiter learns the outcome without observing the conflated state flow. Await it only
-     * through [awaitSettled], which never resumes inside the completing frame.
+     * through [awaitSettled], which never resumes inside the completing frame. [claim] is the
+     * arbiter claim it was published under, if any: a producer's end hands that claim to the SSL
+     * session only while this exact attempt is still the live one. See [releaseClaim].
      */
-    internal class Attempt {
+    internal class Attempt(internal val claim: ConnectionArbiter.Claim? = null) {
         internal val settled = CompletableDeferred<Unit>()
     }
 
@@ -900,7 +902,7 @@ class CommManager(
             if (recoveryOwner != null && (attemptInFlight() || (_connectionState.value !is ConnectionState.Disconnected &&
                 _connectionState.value !is ConnectionState.Error))) return@publishConnectionAttempt null
             if (!appExitPolicy.acceptsConnection(ticket)) return@publishConnectionAttempt null
-            val token = Attempt()
+            val token = Attempt(appClaim ?: recoveryClaim)
             var previous: ProjectionConnection? = null
             if (!publishIfOwned {
                 check(acceptAppConnection(ticket, acquireOwnership = appClaim == null))
@@ -996,13 +998,19 @@ class CommManager(
     }
 
     /**
-     * Discovery's hand-off of the socket it holds for [restartEndpoint]. Admission adopts it from
-     * [HeldServerSocket] together with the request's claim; a socket a dial adopted first belongs
-     * to that dial's request and is left alone.
+     * The one hand-off of a socket discovery holds for [restartEndpoint], from the background
+     * discovery and from the user's scan alike. Admission adopts it from [HeldServerSocket] before
+     * anything else decides; a socket another caller adopted first belongs to that caller's
+     * request and is left alone, open. Not yet entered, the socket is still held, and the holder
+     * that handed it over retires it by adopting it.
      */
-    internal suspend fun connectHeld(socket: Socket, restartEndpoint: Pair<String, Int>, ticket: Long) {
-        connectSocketWithTicket(socket, ConnectionPriorityPolicy.Tier.WIRELESS_HANDSHAKE, restartEndpoint, null,
-            ConnectionAdmission.UNRESTRICTED, ticket, held = true)
+    internal suspend fun connectHeld(
+        socket: Socket,
+        restartEndpoint: Pair<String, Int>,
+        ticket: Long,
+        tier: ConnectionPriorityPolicy.Tier = ConnectionPriorityPolicy.Tier.WIRELESS_HANDSHAKE,
+    ) {
+        connectSocketWithTicket(socket, tier, restartEndpoint, null, ConnectionAdmission.UNRESTRICTED, ticket, held = true)
     }
 
     private suspend fun connectSocketWithTicket(
@@ -1023,14 +1031,14 @@ class CommManager(
                 when (val outcome = admitRequest(tier, "the socket from ${socket.inetAddress?.hostAddress}", ticket,
                     expectedState, endpoint, socket, held, admission)) {
                     is Admission.Admitted -> runSocketRequest(outcome.request, socket, restartEndpoint, admission)
-                    Admission.NotOwner -> {
+                    Admission.NotOwner ->
                         AppLog.i("CommManager: ${endpoint ?: "the socket"} belongs to another request; not handing it over")
+                    is Admission.Refused -> {
+                        // Only what this caller owns: never a socket another request adopted.
+                        outcome.owned?.let { try { it.close() } catch (_: Exception) {} }
                         if (admission !== ConnectionAdmission.UNRESTRICTED) throw ConnectionAdmissionRejectedException()
                     }
-                    else -> {
-                        try { socket.close() } catch (_: Exception) {}
-                        if (admission !== ConnectionAdmission.UNRESTRICTED) throw ConnectionAdmissionRejectedException()
-                    }
+                    Admission.Joined -> Unit // A handed-over socket is never joined.
                 }
             }
         } finally {
@@ -1107,7 +1115,7 @@ class CommManager(
                         check(acceptAppConnection(request.ticket, acquireOwnership = true))
                         lastAttemptedEndpoint = request.endpoint
                         outgoingEndpoint = restartEndpoint
-                        val token = Attempt()
+                        val token = Attempt(request.claim)
                         beginAttempt(token)
                         request.attempt = token
                         request.resolved.complete(Unit)
@@ -1243,8 +1251,8 @@ class CommManager(
                     }
                 }
                 Admission.Joined -> AppLog.i("CommManager: $endpoint is already connecting; not preempting it")
-                is Admission.Refused -> outcome.orphan?.let { try { it.close() } catch (_: Exception) {} }
-                Admission.NotOwner -> Unit
+                is Admission.Refused -> outcome.owned?.let { try { it.close() } catch (_: Exception) {} }
+                Admission.NotOwner -> Unit // A dial hands over no socket.
             }
         }
     }
@@ -1314,7 +1322,7 @@ class CommManager(
             if (!request.isValid() || !acceptAppConnection(request.ticket)) return@runIfHeld
             lastAttemptedEndpoint = request.endpoint
             outgoingEndpoint = restartEndpoint
-            val token = Attempt()
+            val token = Attempt(request.claim)
             beginAttempt(token)
             physicalConnectionReached = false
             usbSaveOwner = null
@@ -1334,26 +1342,31 @@ class CommManager(
         class Admitted(val request: ConnectionRequest) : Admission()
         /** A valid request already connects to this endpoint: the caller joins it and stands down. */
         object Joined : Admission()
-        /** Stop, Save, a closed socket or the arbiter refused it; [orphan] is an adopted socket nobody owns now. */
-        class Refused(val orphan: Socket? = null) : Admission()
-        /** The socket belongs to another request, or a dial adopted it from discovery first. */
+        /**
+         * Stop, Save, a closed socket or the arbiter refused it. [owned] is the socket this caller
+         * owns and must close: the one it handed over or adopted. Nothing else is ever closed.
+         */
+        class Refused(val owned: Socket? = null) : Admission()
+        /** A dial adopted the held socket first: it belongs to that request, so leave it alone. */
         object NotOwner : Admission()
     }
 
     /**
      * Admits one request in a single transportLifecycleLock section, in lock order lifecycle ->
-     * [admission] -> arbiter: Stop ticket and Save, held-socket adoption, the JOIN decision
-     * against the valid request, the arbiter claim and the request's registration. No instant
-     * exists in which a request holds a claim but cannot be joined or waited on, nor one in which
-     * a request can be joined without the authority to publish.
+     * [admission] -> arbiter: socket ownership, Stop ticket and Save, held-socket adoption by a
+     * dial, the JOIN decision against the valid request, the arbiter claim and the request's
+     * registration. No instant exists in which a request holds a claim but cannot be joined or
+     * waited on, nor one in which a request can be joined without the authority to publish.
      *
      * Never call it on Main: the arbiter's actions run inside it, and standing the wireless stack
      * down is synchronous on Main. Every caller runs it inside withContext(connectionIoDispatcher).
      *
-     * With no [socket] it admits a dial to [endpoint]: the socket discovery holds for that endpoint
-     * is adopted, or else the valid request for it is joined, before anything is claimed. A
-     * handed-over [socket] is never joined; it is adopted from [HeldServerSocket] when held there,
-     * and must be when [held].
+     * Ownership of a handed-over [socket] is decided first, before anything can refuse it: one
+     * discovery holds is owned only by the caller that adopts it from [HeldServerSocket], and with
+     * [held] a socket another caller adopted first ends here as [Admission.NotOwner]; a socket
+     * never held belongs to the caller handing it over. A handed-over socket is never joined. With
+     * no [socket] it admits a dial to [endpoint]: the socket discovery holds for that endpoint is
+     * adopted, or else the valid request for it is joined, before anything is claimed.
      */
     private fun admitRequest(
         tier: ConnectionPriorityPolicy.Tier,
@@ -1365,39 +1378,44 @@ class CommManager(
         held: Boolean = false,
         admission: ConnectionAdmission = ConnectionAdmission.UNRESTRICTED,
     ): Admission = synchronized(transportLifecycleLock) {
+        val owned: Socket? = when {
+            socket == null -> null
+            HeldServerSocket.adopt(socket) -> socket
+            held -> return@synchronized Admission.NotOwner
+            else -> socket
+        }
         if (appExitPolicy.stopEpoch != ticket ||
-            (save != null && !save.acceptsSettingsRestart(_connectionState.value))) return@synchronized Admission.Refused()
-        var outcome: Admission = Admission.Refused()
-        admission.run { outcome = admitHeld(tier, what, ticket, save, endpoint, socket, held) }
+            (save != null && !save.acceptsSettingsRestart(_connectionState.value))) return@synchronized Admission.Refused(owned)
+        var outcome: Admission = Admission.Refused(owned)
+        admission.run { outcome = admitHeld(tier, what, ticket, save, endpoint, owned) }
         outcome
     }
 
-    /** [admitRequest]'s decision, with transportLifecycleLock and the producer's admission held. */
+    /**
+     * [admitRequest]'s decision, with transportLifecycleLock and the producer's admission held.
+     * [owned] is the handed-over socket this caller owns, or null for a dial.
+     */
     private fun admitHeld(
         tier: ConnectionPriorityPolicy.Tier,
         what: String,
         ticket: Long,
         save: ConnectionState.Disconnected?,
         endpoint: String?,
-        socket: Socket?,
-        held: Boolean,
+        owned: Socket?,
     ): Admission {
-        val owned: Socket?
-        if (socket == null) {
-            owned = endpoint?.let { HeldServerSocket.adopt(it) }
-            if (owned == null && SameEndpointConnectPolicy.joins(validRequest()?.endpoint, endpoint)) return Admission.Joined
+        val socket = if (owned != null) {
+            if (owned.isClosed) return Admission.Refused(owned)
+            owned
         } else {
-            if (socket.isClosed) return Admission.Refused()
-            if (validRequest()?.socket === socket) return Admission.NotOwner
-            if (!HeldServerSocket.adopt(socket) && held) return Admission.NotOwner
-            owned = socket
+            val adopted = endpoint?.let { HeldServerSocket.adopt(it) }
+            if (adopted == null && SameEndpointConnectPolicy.joins(validRequest()?.endpoint, endpoint)) return Admission.Joined
+            adopted
         }
-        val claim = ConnectionArbiter.claim(tier, socketOwner(tier), what)
-            ?: return Admission.Refused(orphan = if (socket == null) owned else null)
+        val claim = ConnectionArbiter.claim(tier, socketOwner(tier), what) ?: return Admission.Refused(socket)
         attemptUserRequested = tier == ConnectionPriorityPolicy.Tier.USER
         // A request this one displaces lost its claim just now; its waiters ask again.
         connectionRequest?.resolved?.complete(Unit)
-        val admitted = ConnectionRequest(ticket, claim, endpoint, save, owned)
+        val admitted = ConnectionRequest(ticket, claim, endpoint, save, socket)
         connectionRequest = admitted
         return Admission.Admitted(admitted)
     }
@@ -1622,22 +1640,25 @@ class CommManager(
     }
 
     /**
-     * An opened transport keeps its claim through the handshake; anything else lets it go. By
-     * identity and idempotent: a claim Stop already released, or one a later claim replaced,
-     * releases nothing of its successor's.
+     * A producer's end of [claim]. Only the claim's own attempt decides: while the attempt it
+     * published is still the live one, an opened transport keeps the claim through the handshake.
+     * Another session's state never does: a claim that published nothing, or whose attempt ended
+     * or was replaced, clears its own record and goes. By identity and idempotent: a claim Stop
+     * already released, or one a later claim replaced, releases nothing of its successor's.
      */
     private fun releaseClaim(claim: ConnectionArbiter.Claim): Unit = synchronized(transportLifecycleLock) {
+        val own = connectionAttempt?.takeIf { it.claim === claim && !disconnectRequested }
         // The observer can start or finish SSL before connect() reaches its finally block.
         // Keep the claim through StartingTransport; releasing it there would lose USB checks
         // arriving during SSL. If SSL has already finished, settle it as a formed session.
-        val state = _connectionState.value
-        if ((state is ConnectionState.Connected || state is ConnectionState.StartingTransport) &&
+        val phase = if (own != null) _connectionState.value else null
+        if ((phase is ConnectionState.Connected || phase is ConnectionState.StartingTransport) &&
             ConnectionArbiter.holds(claim)) {
             sessionClaim = claim
         } else {
             clearRequest(claim)
             ConnectionArbiter.release(claim, sessionFormed =
-                state is ConnectionState.HandshakeComplete || state is ConnectionState.TransportStarted)
+                phase is ConnectionState.HandshakeComplete || phase is ConnectionState.TransportStarted)
         }
     }
 

@@ -232,5 +232,41 @@ fun networkConnectionIngressOwnership() = runBlocking {
             }
         }
     }
-    println("PASS network producer ingress: queued server accept, discovery hold/replacement/cancellation, overlapping scan replacement/promotion, held hand-off dial and fresh inputs")
+    // P2-B(a). Discovery's hand-off waits behind connection IO; Stop and Open revoke its ticket;
+    // a fresh request to the endpoint adopts the held socket and connects over it. The late
+    // hand-off does not own that socket any more: it ends without closing it, whatever else
+    // would refuse it, and the fresh connection stays up on its socket.
+    networkComm().let { comm ->
+        NetworkIngressService(comm).use { service ->
+            val io = QueuedDispatcher()
+            CommManager::class.java.getDeclaredField("connectionIoDispatcher")
+                .apply { isAccessible = true }.set(comm, io)
+            val endpoint = "192.0.2.74:5277"
+            val held = Socket()
+            HeldServerSocket.hold(endpoint, held)
+            try {
+                NetworkDiscoveryIngress(service).onServiceFound("192.0.2.74", 5277, held, comm.appConnectionTicket())
+                service.main.drain()
+                val handOff = checkNotNull(io.tasks.poll()) { "the hand-off did not reach connection IO" }
+                comm.requestExplicitAppExit(killProcess = false)
+                comm.onAppRelaunched()
+                val fresh = launch(start = CoroutineStart.UNDISPATCHED) {
+                    comm.connect("192.0.2.74", 5277, ticket = comm.appConnectionTicket())
+                }
+                io.drain(); fresh.join()
+                val live = comm.network()
+                handOff.run(); io.drain(); service.main.drain()
+                // Recorded after every production frame has returned.
+                println("late hand-off after Stop/Open: state=${comm.state} same=${comm.network() === live} heldClosed=${held.isClosed}")
+                check(live != null && comm.network() === live && live.closed == false && comm.state is ConnectionState.Connected) {
+                    "the fresh request did not keep its connection (state=${comm.state})"
+                }
+                check(!held.isClosed) { "a late discovery hand-off closed the socket a fresh request adopted (heldClosed=true)" }
+            } finally {
+                HeldServerSocket.discardAll(); held.close()
+                comm.close()
+            }
+        }
+    }
+    println("PASS network producer ingress: queued server accept, discovery hold/replacement/cancellation, overlapping scan replacement/promotion, held hand-off dial, late hand-off after Stop/Open and fresh inputs")
 }

@@ -53,7 +53,7 @@ for marker, file, declaration, braced in [
     ('STATE', comm, 'class Disconnected(', True),
     ('CANCEL', comm, 'fun cancelPendingSettingsRestart()', True),
     # CommManager's attempt authority and its terminal publisher, as production runs them.
-    ('ATTEMPT', comm, 'internal class Attempt {', True),
+    ('ATTEMPT', comm, 'internal class Attempt(', True),
     ('IN_FLIGHT', comm, 'private fun attemptInFlight()', True),
     ('BEGIN_ATTEMPT', comm, 'private fun beginAttempt(', True),
     ('REACH_PHYSICAL', comm, 'private fun reachPhysicalConnection()', True),

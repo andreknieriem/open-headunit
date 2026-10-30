@@ -519,5 +519,46 @@ fun appConnectionIngressOwnership() = runBlocking {
             check(wokeBeforeCleanup) { "the launch kept waiting on a request whose authority was gone ($cause)" }
         } finally { c.close() }
     }
-    println("PASS public connection ingress: explicit Stop survives EOF, USB/IP/socket pre-IO tickets, held adoption, stale-preempt rejection, preempted-publication, preempted-record, JOINed-request, claimed-unseen, lost-authority, wake and compatible-Open controls")
+
+    // P2-A. USER A is Connected, before SSL. USER B to another endpoint is admitted, the same
+    // owner replacing A's claim, and its scope is cancelled while it waits for its Main
+    // acceptance. B published nothing, so A's state is no reason for B to keep its claim or its
+    // record: a later USER request C to B's endpoint dials and connects. In the control B is
+    // accepted and connects, and C to its endpoint joins it.
+    for (cancelled in listOf(true, false)) {
+        val c = CommManager()
+        val main = QueuedDispatcher()
+        try {
+            c.disconnect(honorKillOnDisconnect = false)
+            c.cleanups()
+            c.connect("192.0.2.90", 5277, ConnectionPriorityPolicy.Tier.USER)
+            check(c.state is ConnectionState.Connected) { "A did not connect" }
+            c.ingressMain(main)
+            val requestB = launch(start = CoroutineStart.UNDISPATCHED) {
+                c.connect("192.0.2.91", 5277, ConnectionPriorityPolicy.Tier.USER)
+            }
+            check(!requestB.isCompleted && main.tasks.size == 1) { "B did not wait for its Main acceptance" }
+            if (cancelled) requestB.cancel()
+            main.drain()
+            requestB.join()
+            val createdBefore = SocketProjectionConnection.created.size
+            val requestC = launch(start = CoroutineStart.UNDISPATCHED) {
+                c.connect("192.0.2.91", 5277, ConnectionPriorityPolicy.Tier.USER)
+            }
+            main.drain()
+            requestC.join()
+            // Recorded after every production frame has returned.
+            val created = SocketProjectionConnection.created.size - createdBefore
+            val state = c.state
+            val endpoint = c.ingressEndpoint()
+            println("cancelled unpublished request cancelled=$cancelled: created=$created state=$state endpoint=$endpoint")
+            check(state is ConnectionState.Connected && endpoint == ("192.0.2.91" to 5277)) {
+                "a request to the cancelled request's endpoint did not connect (cancelled=$cancelled state=$state endpoint=$endpoint)"
+            }
+            check(created == if (cancelled) 1 else 0) {
+                "a request joined a cancelled request that published nothing (cancelled=$cancelled created=$created)"
+            }
+        } finally { c.close() }
+    }
+    println("PASS public connection ingress: explicit Stop survives EOF, USB/IP/socket pre-IO tickets, held adoption, stale-preempt rejection, preempted-publication, preempted-record, JOINed-request, claimed-unseen, lost-authority, wake, cancelled-unpublished and compatible-Open controls")
 }

@@ -108,7 +108,11 @@ fun networkConnectionIngressOwnership() = runBlocking {
                         check(comm.state is ConnectionState.Connected && !replacement.isClosed)
                     }
                 } else check(comm.state is ConnectionState.Connected && !old.isClosed)
-            } finally { HeldServerSocket.abandon(old); HeldServerSocket.abandon(replacement); comm.close() }
+            } finally {
+                HeldServerSocket.adopt(old); old.close()
+                HeldServerSocket.adopt(replacement); replacement.close()
+                comm.close()
+            }
         }
     }
     networkComm().let { comm ->
@@ -194,5 +198,39 @@ fun networkConnectionIngressOwnership() = runBlocking {
             comm.close()
         }
     }
-    println("PASS network producer ingress: queued server accept, discovery hold/replacement/cancellation, overlapping scan replacement/promotion and fresh inputs")
+    // Discovery's hand-off of its held socket is queued behind connection IO when a launch's dial
+    // to the same endpoint arrives. The hand-off holds no request yet, so it can be neither joined
+    // nor waited on: the dial must not join it and stand failed. It adopts the held socket itself,
+    // and the late hand-off leaves that request's socket alone.
+    networkComm().let { comm ->
+        NetworkIngressService(comm).use { service ->
+            val io = QueuedDispatcher()
+            CommManager::class.java.getDeclaredField("connectionIoDispatcher")
+                .apply { isAccessible = true }.set(comm, io)
+            val endpoint = "192.0.2.73:5277"
+            val held = Socket()
+            HeldServerSocket.hold(endpoint, held)
+            try {
+                NetworkDiscoveryIngress(service).onServiceFound("192.0.2.73", 5277, held, comm.appConnectionTicket())
+                service.main.drain()
+                val handOff = checkNotNull(io.tasks.poll()) { "the hand-off did not reach connection IO" }
+                val mark = comm.launchMark(comm.appConnectionTicket())
+                val dial = launch(start = CoroutineStart.UNDISPATCHED) { comm.connect("192.0.2.73", 5277) }
+                io.drain(); dial.join()
+                val decision = comm.reportLaunchFailure("timeout", mark)
+                handOff.run(); io.drain(); service.main.drain()
+                // Recorded after every production frame has returned.
+                val live = comm.network()
+                println("held hand-off dial: decision=$decision state=${comm.state} heldClosed=${held.isClosed}")
+                check(decision !== CommManager.LaunchOutcome.Failed) {
+                    "a launch whose dial met discovery's queued hand-off stood failed ($decision)"
+                }
+                check(comm.state is ConnectionState.Connected && live?.closed == false && !held.isClosed)
+            } finally {
+                HeldServerSocket.adopt(held); held.close()
+                comm.close()
+            }
+        }
+    }
+    println("PASS network producer ingress: queued server accept, discovery hold/replacement/cancellation, overlapping scan replacement/promotion, held hand-off dial and fresh inputs")
 }

@@ -67,6 +67,8 @@ private class ConnectionFixture(val settings: Settings = Settings()) {
     private var settingsUsbRestartInFlight: ConnectionState.Disconnected? = null
     private var usbSaveOwner: ConnectionState.Disconnected? = null
     private fun dropOwedScans() {}
+    // No connection request is ever admitted here, so Stop and Save have none to retire.
+    private fun retireInvalidRequest() {}
     private var disconnectRequested = false
     private var physicalConnectionReached = true
     private var outgoingEndpoint: Pair<String, Int>? = null

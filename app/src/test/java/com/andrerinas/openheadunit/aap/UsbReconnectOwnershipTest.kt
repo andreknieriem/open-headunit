@@ -2,7 +2,6 @@ package com.andrerinas.openheadunit.aap
 
 import com.andrerinas.openheadunit.connection.CommManager
 import com.andrerinas.openheadunit.connection.ConnectionArbiter
-import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy
 import com.andrerinas.openheadunit.connection.AppExitPolicy
 import com.andrerinas.openheadunit.connection.CommManager.ConnectionState
 import com.andrerinas.openheadunit.connection.withAppExitDispatcherForTest
@@ -16,9 +15,7 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.mockito.Mockito.*
-import kotlin.coroutines.Continuation
 import kotlin.coroutines.CoroutineContext
-import kotlin.coroutines.intrinsics.suspendCoroutineUninterceptedOrReturn
 
 class UsbReconnectOwnershipTest {
     // The arbiter's default clock is Android's SystemClock, which plain JVM tests do not provide.
@@ -55,15 +52,6 @@ class UsbReconnectOwnershipTest {
             retry.schedule(ended, 3000, ownsCheck = { manager.ownsUsbRecheck(owner) }) { checks++ }
             val wireless = AutomaticReconnect(scope, { states.value }, { false }, { deadline.await() })
             main.drain()
-            val connect = CommManager::class.java.getDeclaredMethod("connectIp",
-                String::class.java, Int::class.javaPrimitiveType,
-                ConnectionState.Disconnected::class.java, Long::class.javaPrimitiveType,
-                ConnectionArbiter.Claim::class.java, Continuation::class.java)
-                .apply { isAccessible = true }
-            // The private producer publishes only while the claim that admitted it holds the arbiter.
-            ConnectionArbiter.reset()
-            val claim = checkNotNull(ConnectionArbiter.claim(ConnectionPriorityPolicy.Tier.WIRELESS_HANDSHAKE,
-                ConnectionPriorityPolicy.Owner.WIRELESS_STACK, "recheck"))
             mockConstruction(SocketProjectionConnection::class.java) { candidate, _ ->
                 runBlocking {
                     `when`(candidate.connect()).thenAnswer {
@@ -101,11 +89,8 @@ class UsbReconnectOwnershipTest {
                     }
                 }
             }.use {
-                try {
-                    suspendCoroutineUninterceptedOrReturn<Unit> { continuation ->
-                        connect.invoke(manager, "127.0.0.1", 5277, null, 0L, claim, continuation)
-                    }
-                } finally { scope.cancel(); main.drain(); ConnectionArbiter.reset() }
+                // The actual public request: admission, acceptance and publication before the open.
+                try { manager.connect("127.0.0.1", 5277) } finally { scope.cancel(); main.drain() }
             }
         }
     }

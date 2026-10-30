@@ -464,7 +464,7 @@ class NetworkDiscovery(private val context: Context, private val listener: Liste
                 // behind.
                 // A cancelled scan closes the socket rather than delivering it: cancellation
                 // means stop working, and connecting is work.
-                if (!handedOver && HeldServerSocket.discard(serverSocket)) {
+                if (!handedOver && HeldServerSocket.adopt(serverSocket)) {
                     AppLog.w("NetworkDiscovery: Handover of $ip:5277 aborted; closing the probe socket")
                     try { serverSocket.close() } catch (e: Exception) {}
                 }

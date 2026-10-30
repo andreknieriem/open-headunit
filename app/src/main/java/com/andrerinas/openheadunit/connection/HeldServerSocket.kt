@@ -6,50 +6,36 @@ import java.util.concurrent.ConcurrentHashMap
 /**
  * Head unit server sockets discovery opened, which the phone's server has already accepted and bound
  * to. Exactly one connect may take each; any other dial to that endpoint would leave it abandoned.
+ *
+ * A socket is either held here, owned by nobody, or adopted: removed in one step by the request
+ * CommManager admits for it. There is no taken-but-unclaimed state; while a request owns the socket,
+ * that request is what a same-endpoint connect joins.
  */
 object HeldServerSocket {
-    private class Entry(val socket: Socket, val taken: Boolean)
-
-    private val entries = ConcurrentHashMap<String, Entry>()
+    private val entries = ConcurrentHashMap<String, Socket>()
 
     fun hold(endpoint: String, socket: Socket) {
-        entries.put(endpoint, Entry(socket, taken = false))?.let { if (!it.taken) closeQuietly(it.socket) }
+        entries.put(endpoint, socket)?.let { if (it !== socket) closeQuietly(it) }
     }
 
-    fun isHeld(endpoint: String): Boolean = entries[endpoint]?.taken == false
+    fun isHeld(endpoint: String): Boolean = entries.containsKey(endpoint)
 
-    /** Taken, and its connect has not yet recorded a claim. */
-    fun isTaken(endpoint: String): Boolean = entries[endpoint]?.taken == true
+    /** Takes the socket held for [endpoint]; only one caller ever gets it. */
+    fun adopt(endpoint: String): Socket? = entries.remove(endpoint)
 
-    fun take(endpoint: String, expected: Socket? = null): Socket? {
-        while (true) {
-            val e = entries[endpoint] ?: return null
-            if (e.taken || (expected != null && e.socket !== expected)) return null
-            if (entries.replace(endpoint, e, Entry(e.socket, taken = true))) return e.socket
-        }
-    }
-
+    /**
+     * Takes [socket] out of the held set. True when it was held, so the caller now owns it, to hand
+     * over or to close; false when it was never held or another caller already adopted it.
+     */
     // removeIf is API 24; minSdk is 16.
-    /** Ends the hand-off once the taker's claim is decided. */
-    fun settle(socket: Socket) {
-        for ((endpoint, e) in entries) if (e.socket === socket) entries.remove(endpoint, e)
-    }
-
-    /** Drops a socket nobody took; false when a connect already took it, so the caller must not close it. */
-    fun discard(socket: Socket): Boolean {
-        for ((endpoint, e) in entries) if (e.socket === socket && !e.taken && entries.remove(endpoint, e)) return true
+    fun adopt(socket: Socket): Boolean {
+        for ((endpoint, held) in entries) if (held === socket && entries.remove(endpoint, held)) return true
         return false
-    }
-
-    /** A taker cancelled before its claim gives the socket up, so the endpoint is not joined forever. */
-    fun abandon(socket: Socket) {
-        settle(socket)
-        closeQuietly(socket)
     }
 
     /** Discovery stopped: nothing will take what it still holds. */
     fun discardAll() {
-        entries.values.filter { !it.taken }.forEach { if (discard(it.socket)) closeQuietly(it.socket) }
+        entries.values.toList().forEach { if (adopt(it)) closeQuietly(it) }
     }
 
     private fun closeQuietly(socket: Socket) = try { socket.close() } catch (e: Exception) {}

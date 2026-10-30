@@ -21,13 +21,6 @@ class SettingsRestartAdmissionTest {
     private fun set(manager: CommManager, name: String, value: Any?) =
         CommManager::class.java.getDeclaredField(name).apply { isAccessible = true }.set(manager, value)
 
-    /** A claim still holding the arbiter, so only the Save check can refuse the private producer. */
-    private fun heldClaim(): ConnectionArbiter.Claim {
-        ConnectionArbiter.reset()
-        return checkNotNull(ConnectionArbiter.claim(ConnectionPriorityPolicy.Tier.WIRELESS_HANDSHAKE,
-            ConnectionPriorityPolicy.Owner.WIRELESS_STACK, "test"))
-    }
-
     @Test fun `obsolete Save cannot claim or consume a socket after dispatch to IO`() = runBlocking {
         val manager = mock(CommManager::class.java, CALLS_REAL_METHODS).withAppExitDispatcherForTest()
         val old = CommManager.ConnectionState.Disconnected(reason = CommManager.DisconnectReason.SETTINGS_RESTART)
@@ -45,7 +38,7 @@ class SettingsRestartAdmissionTest {
             assertSame(CommManager.ConnectionState.TransportStarted, flow.value)
             verifyNoInteractions(connection, transport)
         } finally {
-            HeldServerSocket.abandon(socket)
+            if (HeldServerSocket.adopt(socket)) socket.close()
         }
     }
 
@@ -57,16 +50,11 @@ class SettingsRestartAdmissionTest {
         set(manager, "_connectionState", flow)
         set(manager, "transportLifecycleLock", Any())
         set(manager, "_disconnectJob", retirement)
-        val method = CommManager::class.java.getDeclaredMethod("connectIp", String::class.java,
-            Int::class.javaPrimitiveType, CommManager.ConnectionState.Disconnected::class.java,
-            Long::class.javaPrimitiveType, ConnectionArbiter.Claim::class.java,
-            kotlin.coroutines.Continuation::class.java).apply { isAccessible = true }
-        val claim = heldClaim()
+        // Admitted with its Save, the request waits in the teardown join before it can publish.
         val retry = launch(start = CoroutineStart.UNDISPATCHED) {
-            suspendCoroutineUninterceptedOrReturn<Unit> { continuation ->
-                method.invoke(manager, "192.168.1.5", 5277, old, 0L, claim, continuation)
-            }
+            manager.connect("192.168.1.5", 5277, expectedState = old)
         }
+        assertFalse(retry.isCompleted)
         val connection = mock(ProjectionConnection::class.java)
         val transport = mock(AapTransport::class.java)
         set(manager, "_connection", connection)
@@ -74,12 +62,11 @@ class SettingsRestartAdmissionTest {
         flow.value = CommManager.ConnectionState.TransportStarted
         retirement.complete()
         retry.join()
-        ConnectionArbiter.reset()
         assertSame(CommManager.ConnectionState.TransportStarted, flow.value)
         verifyNoInteractions(connection, transport)
     }
 
-    @Test fun `refused private IP and socket paths leave remote audio classification intact`() = runBlocking {
+    @Test fun `refused IP and socket requests leave remote audio classification intact`() = runBlocking {
         for (socketPath in listOf(false, true)) {
             val manager = mock(CommManager::class.java, CALLS_REAL_METHODS).withAppExitDispatcherForTest()
             val saved = CommManager.ConnectionState.Disconnected(reason = CommManager.DisconnectReason.SETTINGS_RESTART)
@@ -92,21 +79,8 @@ class SettingsRestartAdmissionTest {
             val socket = mock(Socket::class.java)
             `when`(socket.inetAddress).thenReturn(java.net.InetAddress.getByName("127.0.0.1"))
             `when`(socket.port).thenReturn(5277)
-            val continuation = kotlin.coroutines.Continuation::class.java
-            val method = if (socketPath) CommManager::class.java.getDeclaredMethod("connectSocket",
-                Socket::class.java, Pair::class.java, CommManager.ConnectionState.Disconnected::class.java, Long::class.javaPrimitiveType,
-                ConnectionArbiter.Claim::class.java, continuation)
-            else CommManager::class.java.getDeclaredMethod("connectIp", String::class.java,
-                Int::class.javaPrimitiveType, CommManager.ConnectionState.Disconnected::class.java, Long::class.javaPrimitiveType,
-                ConnectionArbiter.Claim::class.java, continuation)
-            method.isAccessible = true
-            val claim = heldClaim()
-            try {
-                suspendCoroutineUninterceptedOrReturn<Unit> { completion ->
-                    if (socketPath) method.invoke(manager, socket, "127.0.0.1" to 5277, saved, 0L, claim, completion)
-                    else method.invoke(manager, "127.0.0.1", 5277, saved, 0L, claim, completion)
-                }
-            } finally { ConnectionArbiter.reset() }
+            if (socketPath) manager.connect(socket, restartEndpoint = "127.0.0.1" to 5277, expectedState = saved)
+            else manager.connect("127.0.0.1", 5277, expectedState = saved)
             assertEquals("192.168.1.8:5277", manager.lastAttemptedEndpoint)
             verifyNoInteractions(current)
             assertTrue(manager.isWirelessSession)
@@ -144,7 +118,7 @@ class SettingsRestartAdmissionTest {
                 assertSame(saved, flow.value)
             } finally {
                 retirement.cancel()
-                HeldServerSocket.abandon(socket)
+                if (HeldServerSocket.adopt(socket)) socket.close()
             }
         }
     }

@@ -38,8 +38,6 @@ class InternalFailureRecoveryTest {
             override fun dispatch(context: CoroutineContext, block: Runnable) { queued.addLast(block) }
         })
         val owner = Any()
-        // The private IP/socket producers publish only while the claim that admitted them holds.
-        val claim: ConnectionArbiter.Claim
         init {
             field("transportLifecycleLock", Any())
             field("appExitPolicy", AppExitPolicy())
@@ -49,8 +47,6 @@ class InternalFailureRecoveryTest {
             field("context", context)
             field("settings", settings)
             ConnectionArbiter.reset()
-            claim = checkNotNull(ConnectionArbiter.claim(ConnectionPriorityPolicy.Tier.WIRELESS_HANDSHAKE,
-                ConnectionPriorityPolicy.Owner.WIRELESS_STACK, "test"))
         }
         fun field(name: String, value: Any) = CommManager::class.java.getDeclaredField(name)
             .apply { isAccessible = true }.set(manager, value)
@@ -75,14 +71,8 @@ class InternalFailureRecoveryTest {
                         if (throws) throw IOException("open failed") else false
                     } }
                 }.use {
-                    if (accepted) invoke(f.manager, "connectSocket",
-                        arrayOf(Socket::class.java, Pair::class.java, ConnectionState.Disconnected::class.java, Long::class.javaPrimitiveType!!,
-                            ConnectionArbiter.Claim::class.java),
-                        mock(Socket::class.java), null, null, 0L, f.claim)
-                    else invoke(f.manager, "connectIp",
-                        arrayOf(String::class.java, Int::class.javaPrimitiveType!!, ConnectionState.Disconnected::class.java, Long::class.javaPrimitiveType!!,
-                            ConnectionArbiter.Claim::class.java),
-                        "127.0.0.1", 5277, null, 0L, f.claim)
+                    if (accepted) f.manager.connect(mock(Socket::class.java))
+                    else f.manager.connect("127.0.0.1", 5277)
                     f.assertRecoverable()
                 }
             }
@@ -149,7 +139,7 @@ class InternalFailureRecoveryTest {
         }
     }
 
-    /** The actual IP publication path, with the connection's open and construction under test control. */
+    /** The actual public IP request, with the connection's open and construction under test control. */
     private suspend fun connectIp(f: Fixture, opens: Boolean, loopback: Boolean = false, duringAttempt: () -> Unit = {}) {
         mockConstruction(SocketProjectionConnection::class.java) { connection, _ ->
             // Construction runs after the attempt is published and before its connection is registered.
@@ -157,10 +147,7 @@ class InternalFailureRecoveryTest {
             runBlocking { `when`(connection.connect()).thenReturn(opens) }
             `when`(connection.isLoopbackPeer).thenReturn(loopback)
         }.use {
-            invoke(f.manager, "connectIp",
-                arrayOf(String::class.java, Int::class.javaPrimitiveType!!, ConnectionState.Disconnected::class.java, Long::class.javaPrimitiveType!!,
-                    ConnectionArbiter.Claim::class.java),
-                "127.0.0.1", 5277, null, f.manager.appConnectionTicket(), f.claim)
+            f.manager.connect("127.0.0.1", 5277)
         }
     }
 

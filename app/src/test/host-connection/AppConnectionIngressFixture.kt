@@ -147,7 +147,7 @@ fun appConnectionIngressOwnership() = runBlocking {
                 }
             }
             c.connect("192.0.2.20", 5277, ConnectionPriorityPolicy.Tier.USER)
-            check(opened >= 0 && !HeldServerSocket.isTaken(endpoint))
+            check(opened >= 0 && !HeldServerSocket.isHeld(endpoint))
             if (cancelledByStop) {
                 check(socket.isClosed && c.network() == null && c.isAppRunOwner(opened))
             } else {
@@ -156,7 +156,8 @@ fun appConnectionIngressOwnership() = runBlocking {
             }
         } finally {
             AppLog.hook = null
-            HeldServerSocket.abandon(socket)
+            HeldServerSocket.discardAll()
+            socket.close()
             c.close()
         }
     }
@@ -280,10 +281,10 @@ fun appConnectionIngressOwnership() = runBlocking {
         } finally { socketA.close(); c.close() }
     }
 
-    // Automatic socket A holds its claim but has not yet recorded its endpoint (paused computing
-    // it) when USER B preempts it and connects, before SSL. A's late record must neither take B's
-    // JOIN target nor, as A stands down, clear it: a same-endpoint USER request then JOINs B
-    // instead of dialing and closing it. The unpreempted control's same-endpoint request JOINs A.
+    // Automatic socket A is paused computing its endpoint, after its claim on 725c52f63 and before
+    // its admission now, when USER B takes the arbiter and connects, before SSL. A late A must
+    // neither take B's JOIN target nor, as it stands down, clear it: a same-endpoint USER request
+    // then JOINs B instead of dialing and closing it. The unpreempted control's request JOINs A.
     for (preempted in listOf(true, false)) {
         val c = CommManager()
         val reachedRecord = CountDownLatch(1)
@@ -292,7 +293,7 @@ fun appConnectionIngressOwnership() = runBlocking {
         val socketA = object : Socket() {
             @Volatile private var paused = false
             override fun getInetAddress(): java.net.InetAddress = java.net.InetAddress.getByName("192.0.2.61")
-            // Only the endpoint read after the claim asks for the port first.
+            // Only the endpoint read before admission asks for the port first.
             override fun getPort(): Int {
                 if (!paused) { paused = true; reachedRecord.countDown(); resumeRecord.await(5, TimeUnit.SECONDS) }
                 return 5277
@@ -330,7 +331,7 @@ fun appConnectionIngressOwnership() = runBlocking {
                 "a same-endpoint request replaced the live connection (preempted=$preempted bClosed=${b?.closed} created=$created)"
             }
             check(created == 1) { "a same-endpoint request dialed instead of joining (preempted=$preempted created=$created)" }
-            if (preempted) check(after === b && socketA.isClosed && effects.preempts == 1)
+            if (preempted) check(after === b && socketA.isClosed)
             else check(!socketA.isClosed && effects.preempts == 0)
         } finally {
             resumeRecord.countDown()
@@ -386,5 +387,130 @@ fun appConnectionIngressOwnership() = runBlocking {
             check(created == 1) { "the launch's dial did not JOIN A ($outcome created=$created)" }
         } finally { SocketProjectionConnection.connectionHook = null; c.close() }
     }
-    println("PASS public connection ingress: explicit Stop survives EOF, USB/IP/socket pre-IO tickets, held adoption, stale-preempt rejection, preempted-publication, preempted-record, JOINed-request and compatible-Open controls")
+
+    // P2-1. A user's socket request to the Headunit Server is paused computing its endpoint:
+    // after its claim but before its JOIN record on 725c52f63, before its admission now. A launch's
+    // dial to that endpoint then neither joined nor waited, so the launch stood failed while that
+    // request went on to connect. Admission is now one step: nothing holds a claim unseen.
+    run {
+        val c = CommManager()
+        val reached = CountDownLatch(1)
+        val resume = CountDownLatch(1)
+        val errors = ConcurrentLinkedQueue<Throwable>()
+        val userSocket = object : Socket() {
+            @Volatile private var paused = false
+            override fun getInetAddress(): java.net.InetAddress = java.net.InetAddress.getByName("127.0.0.1")
+            override fun getPort(): Int {
+                if (!paused) { paused = true; reached.countDown(); resume.await(5, TimeUnit.SECONDS) }
+                return 5277
+            }
+        }
+        c.disconnect(honorKillOnDisconnect = false)
+        c.cleanups()
+        val user = Thread {
+            try { runBlocking { c.connect(userSocket, ConnectionPriorityPolicy.Tier.USER) } } catch (failure: Throwable) { errors.add(failure) }
+        }
+        try {
+            user.start()
+            check(reached.await(5, TimeUnit.SECONDS)) { "the user request never reached its endpoint" }
+            val mark = c.launchMark(c.appConnectionTicket())
+            c.connect("127.0.0.1", 5277) // The launch's own dial.
+            val decision = c.reportLaunchFailure("timeout", mark)
+            resume.countDown()
+            user.join(5000)
+            // Recorded after every production frame has returned.
+            println("claimed-unseen request: decision=$decision state=${c.state}")
+            check(!user.isAlive && errors.isEmpty()) { errors.toString() }
+            check(decision !== CommManager.LaunchOutcome.Failed) {
+                "a launch stood failed while a user request to its endpoint held the claim ($decision)"
+            }
+            check(c.state is ConnectionState.Connected)
+        } finally {
+            resume.countDown()
+            user.join(5000)
+            userSocket.close(); c.close()
+        }
+    }
+
+    // P2-2, W4, W6, W7. User request A waits in the previous session's cleanup join when its
+    // authority goes: Stop (then Open) revokes its ticket, a manual launch revokes its Save, or a
+    // USB attach takes its claim. A fresh request after that must not be absorbed by A as a JOIN
+    // target, nor refused by A's dead claim; it connects once the cleanup ends. The launch-side
+    // variant is a launch whose dial meets A after Stop and Open: it must not stand failed.
+    for (lost in listOf("stop", "stop-launch", "save", "stop-other-endpoint", "usb-claim")) {
+        val c = CommManager()
+        try {
+            val endpoint = "192.0.2.80"
+            if (lost == "save") {
+                c.disconnect(isUserExit = false, honorKillOnDisconnect = false, reason = DisconnectReason.SETTINGS_RESTART)
+            } else c.disconnect(honorKillOnDisconnect = false)
+            val saved = c.state as ConnectionState.Disconnected
+            val tierA = if (lost == "stop" || lost == "stop-launch" || lost == "stop-other-endpoint") ConnectionPriorityPolicy.Tier.USER
+                else ConnectionPriorityPolicy.Tier.WIRELESS_HANDSHAKE
+            val requestA = launch(start = CoroutineStart.UNDISPATCHED) {
+                c.connect(endpoint, 5277, tierA, expectedState = if (lost == "save") saved else null)
+            }
+            check(!requestA.isCompleted) { "A did not wait in the cleanup join ($lost)" }
+            when (lost) {
+                "save" -> c.cancelPendingSettingsRestart() // What a manual launch does first.
+                "usb-claim" -> checkNotNull(ConnectionArbiter.claim(ConnectionPriorityPolicy.Tier.USB,
+                    ConnectionPriorityPolicy.Owner.USB, "a USB attach"))
+                else -> { c.requestExplicitAppExit(killProcess = false); c.onAppRelaunched() }
+            }
+            val createdBefore = SocketProjectionConnection.created.size
+            val mark = if (lost == "stop-launch") c.launchMark(c.appConnectionTicket()) else null
+            val freshEndpoint = if (lost == "stop-other-endpoint") "192.0.2.83" else endpoint
+            val freshTier = when (lost) {
+                "stop-launch", "stop-other-endpoint" -> ConnectionPriorityPolicy.Tier.WIRELESS_HANDSHAKE
+                else -> ConnectionPriorityPolicy.Tier.USER
+            }
+            val fresh = launch(start = CoroutineStart.UNDISPATCHED) {
+                c.connect(freshEndpoint, 5277, freshTier, ticket = c.appConnectionTicket())
+            }
+            val decision = mark?.let { c.reportLaunchFailure("timeout", it) }
+            c.cleanups()
+            requestA.join(); fresh.join()
+            // Recorded after every production frame has returned.
+            val created = SocketProjectionConnection.created.size - createdBefore
+            val state = c.state
+            val endpointNow = c.ingressEndpoint()
+            println("lost authority $lost: created=$created state=$state endpoint=$endpointNow decision=$decision")
+            check(created == 1 && state is ConnectionState.Connected && endpointNow == (freshEndpoint to 5277)) {
+                "a fresh request was lost to a request whose authority was gone ($lost created=$created state=$state)"
+            }
+            if (mark != null) check(decision !== CommManager.LaunchOutcome.Failed) {
+                "a launch after Stop and Open stood failed on the stopped request ($decision)"
+            }
+        } finally { c.close() }
+    }
+
+    // Wake. A launch waits on the request its dial joined. Stop, or another route taking that
+    // request's claim, ends the wait at once, not when the request's producer finally runs.
+    for (cause in listOf("stop", "usb-claim")) {
+        val c = CommManager()
+        try {
+            c.disconnect(honorKillOnDisconnect = false)
+            val requestA = launch(start = CoroutineStart.UNDISPATCHED) {
+                c.connect("192.0.2.85", 5277, ConnectionPriorityPolicy.Tier.USER)
+            }
+            val mark = c.launchMark(c.appConnectionTicket())
+            c.connect("192.0.2.85", 5277) // The launch's own dial joins A.
+            val decision = c.reportLaunchFailure("timeout", mark)
+            val waiter = (decision as? CommManager.LaunchOutcome.Forming)?.let {
+                launch(start = CoroutineStart.UNDISPATCHED) { c.awaitSettled(it) }
+            }
+            val pendingBefore = waiter?.isCompleted == false
+            if (cause == "stop") c.requestExplicitAppExit(killProcess = false)
+            else checkNotNull(ConnectionArbiter.claim(ConnectionPriorityPolicy.Tier.USB, ConnectionPriorityPolicy.Owner.USB, "a USB attach"))
+            yield()
+            val wokeBeforeCleanup = waiter?.isCompleted == true
+            c.cleanups()
+            requestA.join(); waiter?.join()
+            // Recorded after every production frame has returned.
+            println("wake on $cause: decision=$decision pendingBefore=$pendingBefore woke=$wokeBeforeCleanup")
+            check(decision is CommManager.LaunchOutcome.Forming && pendingBefore) { "the launch did not wait on the joined request ($cause $decision)" }
+            check(wokeBeforeCleanup) { "the launch kept waiting on a request whose authority was gone ($cause)" }
+        } finally { c.close() }
+    }
+    println("PASS public connection ingress: explicit Stop survives EOF, USB/IP/socket pre-IO tickets, held adoption, stale-preempt rejection, preempted-publication, preempted-record, JOINed-request, claimed-unseen, lost-authority, wake and compatible-Open controls")
 }

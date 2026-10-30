@@ -16,11 +16,14 @@ class SelfLauncherV17_4(
     override val name = "v17.4+"
 
     override suspend fun run(): Boolean {
+        services.ensureLaunchAllowed()
         // Call withContext directly, not on 'service'
         val success = withContext(Dispatchers.IO) {
-            commManager.connect("127.0.0.1", 5277, expectedState = services.settingsRestart)
+            commManager.connect("127.0.0.1", 5277, expectedState = services.settingsRestart,
+                ticket = services.operationTicket)
             commManager.isConnected
         }
+        services.ensureLaunchAllowed()
 
         if (!success && !commManager.isConnected) {
             AppLog.w("SelfMode: Headunit Server (127.0.0.1:5277) is NOT running.")

@@ -21,10 +21,10 @@ object HeldServerSocket {
     /** Taken, and its connect has not yet recorded a claim. */
     fun isTaken(endpoint: String): Boolean = entries[endpoint]?.taken == true
 
-    fun take(endpoint: String): Socket? {
+    fun take(endpoint: String, expected: Socket? = null): Socket? {
         while (true) {
             val e = entries[endpoint] ?: return null
-            if (e.taken) return null
+            if (e.taken || (expected != null && e.socket !== expected)) return null
             if (entries.replace(endpoint, e, Entry(e.socket, taken = true))) return e.socket
         }
     }

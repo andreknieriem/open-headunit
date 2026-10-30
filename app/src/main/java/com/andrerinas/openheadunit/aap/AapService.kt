@@ -1195,7 +1195,7 @@ class AapService : Service() {
     }
 
     /** onCreate has no command yet: a stale relay must never arm USB/native wireless. */
-    private fun initializeForStart() {
+    private fun initializeForStart(ticket: Long) {
         if (initializedForStart) return
         initializedForStart = true
         fillBluetoothAddressIfUnset()
@@ -1273,7 +1273,7 @@ class AapService : Service() {
         // Before wireless, not after. A device the USB rules accept starts a switch here, and
         // initWifiModeWithOptionalWait() then stands back for it; one they reject stakes nothing
         // and wireless arms as it always did.
-        usbLauncherManager.checkAlreadyConnected()
+        usbLauncherManager.checkAlreadyConnected(ticket = ticket)
 
         if (applyBootLoopGuard()) {
             AppLog.w("AapService: Wireless bring-up paused by the boot-loop guard. USB and the rest of the app are unaffected.")
@@ -2089,6 +2089,7 @@ class AapService : Service() {
     /** Resume the saved route once, then leave further attempts to the ordinary policies. */
     private suspend fun restartForAudioSettings(
         state: CommManager.ConnectionState.Disconnected,
+        ticket: Long = commManager.appConnectionTicket(),
     ) =
         withContext(Dispatchers.Main) {
             val settings = App.provide(this@AapService).settings
@@ -2113,12 +2114,12 @@ class AapService : Service() {
                     when {
                         state.restartEndpoint != null -> withContext(Dispatchers.IO) {
                             val (ip, port) = state.restartEndpoint
-                            if (!isDestroying) commManager.connect(ip, port, expectedState = state)
+                            if (!isDestroying) commManager.connect(ip, port, expectedState = state, ticket = ticket)
                         }
                         // Before AA 17.4 the phone dials our 5288 listener. There is no
                         // outgoing endpoint to reuse: send the Self Mode launch intent again.
                         wasSelfMode -> {
-                            selfLauncherManager.start(settingsRestart = state)
+                            selfLauncherManager.start(settingsRestart = state, ticket = ticket)
                             selfLaunch = selfLauncherManager.currentLaunch()
                         }
                         settings.lastConnectionType == Settings.CONNECTION_TYPE_USB ->
@@ -3294,21 +3295,26 @@ class AapService : Service() {
 
     private fun stopForAcceptedAppExit() {
         stopForegroundForShutdown()
-        val teardownDone = if (ServiceStopWaitPolicy.waitsForWirelessTeardown(
-                sessionConnected = commManager.isConnected,
-                wirelessLauncherActive = wifiLauncherManager.isActive,
-            )) CompletableDeferred<Unit>() else null
+        val wasConnected = commManager.isConnected
+        val waitForTeardown = ServiceStopWaitPolicy.waitsForWirelessTeardown(
+            transportPending = wasConnected || commManager.hasPendingDisconnect(),
+            wirelessLauncherActive = wifiLauncherManager.isActive,
+        )
+        val teardownDone = if (waitForTeardown && wasConnected) CompletableDeferred<Unit>() else null
         exitTeardownDone = teardownDone
-        if (commManager.isConnected) commManager.disconnect(sendByeBye = true, honorKillOnDisconnect = false)
+        if (wasConnected) commManager.disconnect(sendByeBye = true, honorKillOnDisconnect = false)
         exitTeardownState = commManager.connectionState.value as? CommManager.ConnectionState.Disconnected
         selfLauncherManager.stop(wasConnected = false)
-        if (teardownDone == null) {
+        if (!waitForTeardown) {
             commManager.finishCurrentAppExitTasks()
             stopSelf()
         } else {
             serviceScope.launch {
                 val gaveItBack = withTimeoutOrNull(ServiceStopWaitPolicy.TEARDOWN_TIMEOUT_MS) {
-                    teardownDone.await()
+                    // An earlier observer may already have captured no exit waiter. Join the
+                    // actual retirement directly rather than waiting on a newly invented latch.
+                    commManager.awaitDisconnectComplete()
+                    teardownDone?.await()
                 } != null
                 if (!gaveItBack) AppLog.w("AapService: wireless teardown timed out; stopping service")
                 if (exitTeardownDone === teardownDone) {
@@ -3400,13 +3406,20 @@ class AapService : Service() {
             stopForAcceptedAppExit()
             return START_NOT_STICKY
         }
+        val operationTicket = if (intent?.hasExtra(EXTRA_OPERATION_TICKET) == true) {
+            intent.getLongExtra(EXTRA_OPERATION_TICKET, -1L)
+        } else commManager.appConnectionTicket()
+        if (!commManager.acceptsAppConnectionTicket(operationTicket)) {
+            retireRejectedBootstrap()
+            return START_NOT_STICKY
+        }
         if (intent?.hasExtra(EXTRA_RUN_OWNER) == true &&
             !commManager.isAppRunOwner(intent.getLongExtra(EXTRA_RUN_OWNER, -1L))) {
             retireRejectedBootstrap()
             return START_NOT_STICKY
         }
         if (isDestroying) return START_NOT_STICKY
-        initializeForStart()
+        initializeForStart(operationTicket)
 
         // An automation command may ask for the session without the screen; latch it before any
         // branch below can reach a raise.
@@ -3442,7 +3455,10 @@ class AapService : Service() {
 
         when (intent?.action) {
             ACTION_START_SELF_MODE       -> {
-                selfLauncherManager.start(needsDummyVpn = intent.getBooleanExtra(EXTRA_SELF_MODE_VPN, false))
+                selfLauncherManager.start(
+                    needsDummyVpn = intent.getBooleanExtra(EXTRA_SELF_MODE_VPN, false),
+                    ticket = operationTicket,
+                )
                 safeMediaSessionCall {
                     it.isActive = false
                     it.setMetadata(null)
@@ -3819,10 +3835,11 @@ class AapService : Service() {
             }
             ACTION_CHECK_USB             -> usbLauncherManager.checkOnRequest(
                 userRequested = intent?.getBooleanExtra(EXTRA_USER_REQUESTED, false) == true,
+                ticket = operationTicket,
             )
             else                         -> {
                 if (intent?.action == null || intent.action == Intent.ACTION_MAIN) {
-                    usbLauncherManager.checkAlreadyConnected()
+                    usbLauncherManager.checkAlreadyConnected(ticket = operationTicket)
                 }
             }
         }
@@ -4146,6 +4163,7 @@ class AapService : Service() {
 
         private const val EXTRA_STOP_OWNER = "accepted_stop_owner"
         private const val EXTRA_RUN_OWNER = "accepted_run_owner"
+        private const val EXTRA_OPERATION_TICKET = "accepted_operation_ticket"
 
         /** Accept once at the synchronous internal producer, never again at service delivery. */
         @androidx.annotation.MainThread
@@ -4167,6 +4185,10 @@ class AapService : Service() {
 
         internal fun entryIntent(context: Context, owner: Long): Intent =
             Intent(context, AapService::class.java).putExtra(EXTRA_RUN_OWNER, owner)
+
+        /** Preserve the original logical input through delivery, without recapturing after Stop. */
+        internal fun operationIntent(context: Context, ticket: Long): Intent =
+            Intent(context, AapService::class.java).putExtra(EXTRA_OPERATION_TICKET, ticket)
         /** Apply the wireless part of Save before its caller starts audio retirement/reconnect. */
         @androidx.annotation.MainThread
         internal fun applyWirelessSettings(context: Context, startWireless: Boolean) {

@@ -125,7 +125,10 @@ class UsbAttachedActivity : Activity() {
             val usbManager = UsbDeviceCompat.usbManager(this) ?: run { finish(); return }
             if (!usbManager.hasPermission(device)) {
                 AppLog.i("Usb in accessory mode but no permission. Requesting...")
-                val permissionIntent = UsbReceiver.createPermissionPendingIntent(this)
+                // Before first unlock the app component cannot read credential-protected
+                // settings. The grant still persists; the session waits for unlock below.
+                val ticket = if (isLocked) null else App.provide(this).commManager.appConnectionTicket()
+                val permissionIntent = UsbReceiver.createPermissionPendingIntent(this, ticket)
                 usbManager.requestPermission(device, permissionIntent)
                 finish()
                 return

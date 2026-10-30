@@ -21,6 +21,7 @@ class UsbSettingsRetryLoopTest {
                 val component = mock(AppComponent::class.java)
                 val comm = mock(CommManager::class.java)
                 `when`(service.applicationContext).thenReturn(app)
+                `when`(comm.acceptsAppConnectionTicket(anyLong())).thenReturn(true)
                 App::class.java.getDeclaredField("component\$delegate").apply { isAccessible = true }.set(app, lazyOf(component))
                 `when`(component.commManager).thenReturn(comm)
                 val saved = CommManager.ConnectionState.Disconnected(reason = CommManager.DisconnectReason.SETTINGS_RESTART, settingsRestartUntilMs = if (scenario == "expired") 0 else Long.MAX_VALUE)
@@ -57,7 +58,7 @@ class UsbSettingsRetryLoopTest {
                         states.value = CommManager.ConnectionState.Disconnected(
                             settingsRetryOwner = if (scenario == "unrelated") null else saved)
                         Unit
-                    }.`when`(comm).connect(candidate, ConnectionPriorityPolicy.Tier.USB, saved)
+                    }.`when`(comm).connect(candidate, ConnectionPriorityPolicy.Tier.USB, saved, 0L)
                 }
                 UsbLauncherManager(service).connectWithRetry(device, settingsRestart = saved)
                 val expected = when (scenario) { "expired" -> 0; "gone", "unrelated", "different-device", "normal-mode", "blacklisted" -> 1; else -> 4 }

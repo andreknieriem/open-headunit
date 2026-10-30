@@ -268,7 +268,30 @@ class CommManager(
         }
     }
 
-    private fun appConnectionTicket(): Long = synchronized(transportLifecycleLock) { appExitPolicy.stopEpoch }
+    /** Keep one cancellation boundary through permission waits, dispatch and every internal retry. */
+    internal fun appConnectionTicket(): Long = synchronized(transportLifecycleLock) { appExitPolicy.stopEpoch }
+
+    internal fun currentAppRunTicket(): Long? = synchronized(transportLifecycleLock) {
+        if (appExitPolicy.isRunOwner(appExitPolicy.revision)) appExitPolicy.stopEpoch else null
+    }
+
+    internal fun acceptsAppConnectionTicket(ticket: Long): Boolean =
+        synchronized(transportLifecycleLock) { appExitPolicy.acceptsConnection(ticket) }
+
+    internal fun acceptsAppRunTicket(ticket: Long): Boolean = synchronized(transportLifecycleLock) {
+        appExitPolicy.acceptsConnection(ticket) && appExitPolicy.isRunOwner(appExitPolicy.revision)
+    }
+
+    internal fun hasPendingDisconnect(): Boolean =
+        synchronized(transportLifecycleLock) { _disconnectJob?.isCompleted == false }
+
+    /**
+     * Producer state that publication admission also locks must be entered lifecycle-first, so a
+     * ticket check and the state change it authorizes stay atomic without inverting lock order.
+     * Keep [action] short and non-blocking.
+     */
+    internal fun <T> withAppConnectionLifecycleLock(action: () -> T): T =
+        synchronized(transportLifecycleLock) { action() }
 
     private fun cancelAppExitCallback() {
         pendingAppExit?.let { appExitHandler.removeCallbacks(it) }
@@ -625,8 +648,8 @@ class CommManager(
         device: UsbDevice,
         tier: ConnectionPriorityPolicy.Tier = ConnectionPriorityPolicy.Tier.USB,
         expectedState: ConnectionState.Disconnected? = null,
+        ticket: Long = appConnectionTicket(),
     ) {
-        val ticket = appConnectionTicket()
         withContext(connectionIoDispatcher) {
             synchronized(transportLifecycleLock) {
                 if (appExitPolicy.stopEpoch != ticket ||
@@ -634,7 +657,7 @@ class CommManager(
             }
             val description = "USB ${UsbDeviceCompat.getUniqueName(device)}"
             val claim = synchronized(transportLifecycleLock) {
-                if (appExitPolicy.stopEpoch != ticket) null else claimUsb(tier, description, expectedState)
+                if (appExitPolicy.stopEpoch != ticket) null else claimUsb(tier, description, expectedState, ticket)
             } ?: return@withContext
             try { connectUsb(device, ticket, expectedState, appClaim = claim) } finally { releaseClaim(claim) }
         }
@@ -669,10 +692,12 @@ class CommManager(
         tier: ConnectionPriorityPolicy.Tier,
         description: String,
         expectedState: ConnectionState.Disconnected?,
+        ticket: Long = appConnectionTicket(),
     ): ConnectionArbiter.Claim? = synchronized(transportLifecycleLock) {
         // A later manual launch can revoke Save without changing the Disconnected object.
         // Claim admission and cancellation must agree before USB can preempt that launch.
-        if (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value)) null
+        if (!appExitPolicy.acceptsConnection(ticket) ||
+            (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value))) null
         else ConnectionArbiter.claim(tier, ConnectionPriorityPolicy.Owner.USB, description)
     }?.also { attemptUserRequested = tier == ConnectionPriorityPolicy.Tier.USER }
 
@@ -885,8 +910,8 @@ class CommManager(
         restartEndpoint: Pair<String, Int>? = null,
         expectedState: ConnectionState.Disconnected? = null,
         admission: ConnectionAdmission = ConnectionAdmission.UNRESTRICTED,
+        ticket: Long = appConnectionTicket(),
     ) {
-        val ticket = appConnectionTicket()
         connectSocketWithTicket(socket, tier, restartEndpoint, expectedState, admission, ticket)
     }
 
@@ -1119,8 +1144,8 @@ class CommManager(
         port: Int,
         tier: ConnectionPriorityPolicy.Tier = ConnectionPriorityPolicy.Tier.WIRELESS_HANDSHAKE,
         expectedState: ConnectionState.Disconnected? = null,
+        ticket: Long = appConnectionTicket(),
     ) {
-        val ticket = appConnectionTicket()
         withContext(connectionIoDispatcher) {
             // Save may have waited in the IO queue while another session took over. Check before
             // claiming the arbiter, then again under the publication lock after teardown waits.

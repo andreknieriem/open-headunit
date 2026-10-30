@@ -22,6 +22,7 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.MutableStateFlow
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -59,6 +60,20 @@ class QueuedMain : MainCoroutineDispatcher(), Delay {
 }
 class CommManager {
     val attemptUserRequested = false
+    private var stopEpoch = 0L
+    private var accepting = true
+    fun appConnectionTicket() = stopEpoch
+    fun acceptsAppConnectionTicket(ticket: Long) = accepting && ticket == stopEpoch
+    fun acceptsAppRunTicket(ticket: Long) = acceptsAppConnectionTicket(ticket)
+    fun stopApp() { stopEpoch++; accepting = false }
+    fun openApp() { accepting = true }
+    var socketConnects = 0
+    suspend fun connect(ip: String, port: Int, expectedState: ConnectionState.Disconnected? = null,
+                        ticket: Long = appConnectionTicket()) {
+        if (!acceptsAppConnectionTicket(ticket)) return
+        socketConnects++
+        _connectionState.value = ConnectionState.Connected
+    }
     var isProjectionVideoFocusSuppressed = false
     val videoFocus = mutableListOf<com.andrerinas.openheadunit.aap.protocol.messages.VideoFocusEvent>()
     fun send(event: com.andrerinas.openheadunit.aap.protocol.messages.VideoFocusEvent) {
@@ -100,6 +115,7 @@ class SelfLauncherManager(private val service: Service, private val wifiLauncher
     var isActive = false
     private var launchInFlight = false
     private var launchJob: Job? = null
+    private var launchTicket: Long? = null
     private var launchTimeoutJob: Job? = null
     private var launchConnected = false
     private var settingsLaunchOwner: CommManager.ConnectionState.Disconnected? = null
@@ -113,6 +129,7 @@ class SelfLauncherManager(private val service: Service, private val wifiLauncher
     fun currentLaunch() = launchJob
     fun isLaunchInFlight() = launchInFlight
     fun clearLaunchInFlight() { launchInFlight = false }
+    fun openAaSettings() { service.settingsPrompts++ }
     fun inFlight() = launchInFlight
     // START
     // STOP
@@ -121,13 +138,15 @@ class SelfLauncherManager(private val service: Service, private val wifiLauncher
     // STOP_CURRENT
 }
 class SelfLauncherServices(val aap: Service, val wifiLauncherManager: WifiLauncherManager,
-                           val settingsRestart: CommManager.ConnectionState.Disconnected?) {
+                           val settingsRestart: CommManager.ConnectionState.Disconnected?,
+                           val operationTicket: Long = aap.commManager.appConnectionTicket()) {
     val connectivityManager get() = aap.network
     val fakeNetwork = Any()
     val fakeWifiInfo = Any()
     // ALLOW_LAUNCH
 }
 open class SelfLauncher(val manager: SelfLauncherManager, val services: SelfLauncherServices) {
+    val commManager get() = services.aap.commManager
     open val name = "fixture"
     open suspend fun run(): Boolean { services.aap.fallbacks++; return false }
 }
@@ -136,7 +155,15 @@ class SelfLauncherLegacy(manager: SelfLauncherManager, services: SelfLauncherSer
     // LEGACY_WAIT
 }
 class SelfLauncherV17_4(manager: SelfLauncherManager, services: SelfLauncherServices) : SelfLauncher(manager, services) {
-    override suspend fun run(): Boolean { services.aap.directConnects++; services.aap.directLaunchHook?.invoke(); return true }
+    override suspend fun run(): Boolean {
+        if (services.aap.useRealDirect) return ActualSelfLauncherV17_4(manager, services).run()
+        services.aap.directConnects++
+        services.aap.directLaunchHook?.invoke()
+        return true
+    }
+}
+class ActualSelfLauncherV17_4(manager: SelfLauncherManager, services: SelfLauncherServices) : SelfLauncher(manager, services) {
+    // MODERN_RUN
 }
 class SelfLauncherBroadcast(manager: SelfLauncherManager, services: SelfLauncherServices) : SelfLauncher(manager, services)
 class SelfLauncherBTDiscovery(manager: SelfLauncherManager, services: SelfLauncherServices) : SelfLauncher(manager, services)
@@ -162,21 +189,26 @@ class Intent(var action: String? = null) {
     fun setPackage(name: String) {}
     fun setClassName(pkg: String, name: String) {}
     fun addFlags(flags: Int) {}
-    fun putExtra(key: String, value: Any) { extras[key] = value }
+    fun putExtra(key: String, value: Any): Intent = apply { extras[key] = value }
     fun getBooleanExtra(key: String, default: Boolean) = extras[key] as? Boolean ?: default
+    fun getLongExtra(key: String, default: Long) = extras[key] as? Long ?: default
     companion object { const val FLAG_ACTIVITY_NEW_TASK = 1 }
 }
 object ContextCompat {
     fun startForegroundService(service: Service, intent: Intent) { service.homeCommands.add(intent) }
 }
+object Toast { const val LENGTH_LONG = 1 }
+object ToastUtils { fun showToast(service: Service, message: String, length: Int) { service.settingsPrompts++ } }
 object HomeFragment { var forceSelfModeLaunch = false }
 class Main(private val service: Service) {
     fun requestSelf() = forceSelfModeLaunch()
     // MAIN_COMMAND
 }
 class Home(private val service: Service) {
+    private val commManager get() = service.commManager
     private fun requireContext() = service
-    fun requestSelf(needsVpn: Boolean) = startSelfModeInternal(needsVpn)
+    // A manual Home launch captures its ticket at input, as startSelfMode's default does.
+    fun requestSelf(needsVpn: Boolean) = startSelfModeInternal(needsVpn, commManager.appConnectionTicket())
     // HOME_COMMAND
 }
 class FixtureMedia { var isActive = false; fun setMetadata(value: Any?) {} }
@@ -214,6 +246,7 @@ class Service(private var hasEverConnected: Boolean = true, val commManager: Com
     private val usbReconnect = ReconnectTimer()
     val main = QueuedMain()
     val serviceScope = CoroutineScope(SupervisorJob() + main)
+    val io = QueuedMain()
     val wifiLauncherManager = WifiLauncherManager()
     val usbLauncherManager = UsbLauncherManager()
     val manager = SelfLauncherManager(this, wifiLauncherManager)
@@ -248,6 +281,8 @@ class Service(private var hasEverConnected: Boolean = true, val commManager: Com
     var activities = 0
     var directConnects = 0
     var directLaunchHook: (suspend () -> Unit)? = null
+    var useRealDirect = false
+    var settingsPrompts = 0
     var fallbacks = 0
     val homeCommands = mutableListOf<Intent>()
     internal val vpnRequests = DummyVpnStartRequests()
@@ -258,6 +293,8 @@ class Service(private var hasEverConnected: Boolean = true, val commManager: Com
     private fun updateMediaSessionState(connected: Boolean) {}
     fun deliverHomeCommand() {
         val intent = homeCommands.removeAt(0)
+        val operationTicket = intent.getLongExtra(EXTRA_OPERATION_TICKET, commManager.appConnectionTicket())
+        if (!commManager.acceptsAppConnectionTicket(operationTicket)) return
         when (intent.action) {
             // START_ACTION
         }
@@ -298,6 +335,9 @@ class Service(private var hasEverConnected: Boolean = true, val commManager: Com
     }
     override fun close() { serviceScope.cancel(); main.drain() }
     companion object {
+        const val EXTRA_OPERATION_TICKET = "accepted_operation_ticket"
+        fun operationIntent(context: Service, ticket: Long) =
+            Intent(context, Service::class.java).putExtra(EXTRA_OPERATION_TICKET, ticket)
         const val ACTION_START_SELF_MODE = "start-self"
         const val EXTRA_SELF_MODE_VPN = "needs-vpn"
         const val ACTION_CANCEL_WIRELESS = "cancel"
@@ -307,6 +347,90 @@ class Service(private var hasEverConnected: Boolean = true, val commManager: Com
 }
 
 fun main() {
+    // Capture at Self admission, not when Main or IO eventually starts.
+    for (stop in listOf(false, true)) for (pause in listOf("MAIN", "IO", "NETWORK")) Service().use { s ->
+        s.modern = pause != "NETWORK"
+        s.useRealDirect = true
+        s.manager.start()
+        if (pause != "MAIN") s.main.drain()
+        if (stop) s.commManager.stopApp()
+        s.commManager.openApp()
+        if (pause == "NETWORK") {
+            s.network.activeNetwork = Any()
+            s.main.advanceBy(100)
+        }
+        s.main.drain(); s.io.drain(); s.main.drain()
+        check(s.commManager.socketConnects == if (s.modern && !stop) 1 else 0)
+        check(s.activities == if (!s.modern && !stop) 1 else 0)
+        check(s.settingsPrompts == 0 && s.commManager.reports == 0) { "obsolete Self launch showed failure UI" }
+        if (stop) {
+            // New explicit Self input still works after the rejected old launch completes.
+            s.modern = true
+            s.manager.start(); s.main.drain(); s.io.drain(); s.main.drain()
+            check(s.commManager.socketConnects == 1)
+        }
+    }
+    // Fresh input overlaps the obsolete owner, before Main/IO/network cancellation
+    // cleanup has run. An Open without Stop must still coalesce into that same owner.
+    for (stop in listOf(false, true)) for (pause in listOf("MAIN", "IO", "NETWORK")) Service().use { s ->
+        s.modern = pause != "NETWORK"
+        s.useRealDirect = true
+        val originalTicket = s.commManager.appConnectionTicket()
+        s.manager.start(needsDummyVpn = true, ticket = originalTicket)
+        val original = checkNotNull(s.manager.currentLaunch())
+        s.deliverVpn()
+        check(s.tunnel && s.dummyVpnOwner == DummyVpnPolicy.Owner.SELF_MODE)
+        if (pause != "MAIN") s.main.drain()
+        val delayedIo = if (pause == "IO") checkNotNull(s.io.tasks.poll()) else null
+        check(s.manager.inFlight() && original.isActive)
+        if (stop) s.commManager.stopApp()
+        s.commManager.openApp()
+        val freshTicket = s.commManager.appConnectionTicket()
+        if (stop) s.modern = true
+        s.manager.start(needsDummyVpn = true, ticket = freshTicket)
+        val replacement = checkNotNull(s.manager.currentLaunch())
+        check((replacement === original) == !stop) { "$pause fresh input coalesced into a revoked launch" }
+        check(original.isCancelled == stop)
+        check(s.manager.isActive && s.manager.inFlight() && replacement.isActive)
+        // Neither another same-ticket request nor a late obsolete input can replace t1.
+        s.manager.start(ticket = freshTicket)
+        if (stop) s.manager.start(ticket = originalTicket)
+        check(s.manager.currentLaunch() === replacement)
+        if (pause == "NETWORK") {
+            s.network.activeNetwork = Any()
+            s.main.advanceBy(100)
+        }
+        s.main.drain()
+        check(s.manager.currentLaunch() === replacement && s.manager.isActive)
+        if (s.modern) check(s.manager.inFlight()) { "old completion cleared the replacement's gate" }
+        if (!stop && delayedIo != null) s.io.tasks.add(delayedIo)
+        s.io.drain(); s.main.drain()
+        if (stop && delayedIo != null) {
+            // Let t1's real modern run connect before t0's queued IO and completion.
+            check(s.commManager.isConnected && s.commManager.socketConnects == 1)
+            delayedIo.run()
+            s.main.drain()
+        }
+        check(s.manager.currentLaunch() === replacement && !replacement.isCancelled)
+        check(s.commManager.socketConnects == if (s.modern) 1 else 0)
+        check(s.activities == if (s.modern) 0 else 1)
+        check(!s.manager.inFlight() && s.manager.isActive)
+        check(s.tunnel && s.dummyVpnOwner == DummyVpnPolicy.Owner.SELF_MODE)
+        check(s.vpnStops == 0 && s.wifiLauncherManager.stops == 0) { "obsolete owner stopped replacement resources" }
+        if (!s.modern) {
+            // The compatible legacy launch still owns its late-arriving phone.
+            s.commManager.isLoopbackSession = true
+            s.commManager.connectionState.value = CommManager.ConnectionState.Connected
+            s.manager.onConnectionEstablished()
+        }
+        s.main.advanceBy(SelfLaunchTimeoutPolicy.LEGACY_DEADLINE_MS)
+        s.main.drain(); s.io.drain(); s.main.drain()
+        check(s.manager.currentLaunch() === replacement && !replacement.isCancelled)
+        check(s.settingsPrompts == 0 && s.resolvePrompts == 0 && s.commManager.reports == 0) {
+            "obsolete Self launch showed failure UI"
+        }
+        check(s.commManager.socketConnects == if (s.modern) 1 else 0)
+    }
     Service().use { s ->
         Main(s).requestSelf(); s.deliverHomeCommand(); s.main.drain()
         val originalJob = s.manager.currentLaunch()

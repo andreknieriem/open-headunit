@@ -13,12 +13,12 @@ object ServiceStopWaitPolicy {
     const val TEARDOWN_TIMEOUT_MS = 5_000L
 
     /**
-     * Asked before the disconnect, so the answer cannot depend on work the disconnect starts.
+     * Includes retirement already running after logical Disconnected was published.
      *
-     * @param sessionConnected whether there is a session to tear down at all.
+     * @param transportPending whether a session is connected or its physical teardown is unfinished.
      * @param wirelessLauncherActive whether a launcher holds a network. Both the P2P and the hotspot
      *   branches of the teardown are behind this, so neither needs naming here.
      */
-    fun waitsForWirelessTeardown(sessionConnected: Boolean, wirelessLauncherActive: Boolean): Boolean =
-        sessionConnected && wirelessLauncherActive
+    fun waitsForWirelessTeardown(transportPending: Boolean, wirelessLauncherActive: Boolean): Boolean =
+        transportPending && wirelessLauncherActive
 }

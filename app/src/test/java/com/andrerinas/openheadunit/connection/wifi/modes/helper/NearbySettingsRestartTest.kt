@@ -2,6 +2,8 @@ package com.andrerinas.openheadunit.connection.wifi.modes.helper
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.andrerinas.openheadunit.connection.CommManager
+import com.andrerinas.openheadunit.connection.withAppExitDispatcherForTest
 import com.google.android.gms.nearby.Nearby
 import com.google.android.gms.nearby.connection.*
 import com.google.android.gms.tasks.Task
@@ -39,11 +41,13 @@ class NearbySettingsRestartTest {
         `when`(client.startDiscovery(anyString(), any(), any())).thenReturn(task)
         `when`(client.requestConnection(nullable(String::class.java), anyString(), any())).thenReturn(task)
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        val comm = mock(CommManager::class.java, CALLS_REAL_METHODS).withAppExitDispatcherForTest()
+        `when`(comm.acceptsAppConnectionTicket(anyLong())).thenReturn(true)
         mockStatic(androidx.core.content.ContextCompat::class.java).use {
         mockStatic(android.os.SystemClock::class.java).use {
         mockStatic(Nearby::class.java).use { nearby ->
             nearby.`when`<ConnectionsClient> { Nearby.getConnectionsClient(context) }.thenReturn(client)
-            val manager = NearbyManager(context, scope) { _, _ -> }
+            val manager = NearbyManager(context, scope, comm) { _, _, _ -> }
             fun set(name: String, value: Any?) = NearbyManager::class.java.getDeclaredField(name).apply { isAccessible = true }.set(manager, value)
             val old = NearbySocket()
             set("activeEndpointId", "old-id")
@@ -79,13 +83,15 @@ class NearbySettingsRestartTest {
         `when`(client.startDiscovery(anyString(), any(), any())).thenReturn(task)
         `when`(client.requestConnection(nullable(String::class.java), anyString(), any())).thenReturn(task)
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        val comm = mock(CommManager::class.java, CALLS_REAL_METHODS).withAppExitDispatcherForTest()
+        `when`(comm.acceptsAppConnectionTicket(anyLong())).thenReturn(true)
         mockStatic(androidx.core.content.ContextCompat::class.java).use {
         mockStatic(android.os.SystemClock::class.java).use { clock ->
             var now = 100L
             clock.`when`<Long> { android.os.SystemClock.elapsedRealtime() }.thenAnswer { now }
         mockStatic(Nearby::class.java).use { nearby ->
             nearby.`when`<ConnectionsClient> { Nearby.getConnectionsClient(context) }.thenReturn(client)
-            val manager = NearbyManager(context, scope) { _, _ -> }
+            val manager = NearbyManager(context, scope, comm) { _, _, _ -> }
             fun set(name: String, value: Any?) = NearbyManager::class.java.getDeclaredField(name).apply { isAccessible = true }.set(manager, value)
 
             manager.restartForSettings(untilMs = 200L)

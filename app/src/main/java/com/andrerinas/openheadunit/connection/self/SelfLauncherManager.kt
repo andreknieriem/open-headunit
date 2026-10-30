@@ -48,6 +48,7 @@ class SelfLauncherManager(
      */
     private var selfModeVpnWatchdog: Job? = null
     private var launchJob: Job? = null
+    private var launchTicket: Long? = null
     private var launchTimeoutJob: Job? = null
     private var launchConnected = false
     private var settingsLaunchOwner: CommManager.ConnectionState.Disconnected? = null
@@ -90,8 +91,20 @@ class SelfLauncherManager(
     }
 
     @SuppressLint("MissingPermission", "HardwareIds")
-    fun start(settingsRestart: CommManager.ConnectionState.Disconnected? = null, needsDummyVpn: Boolean = false) {
+    fun start(
+        settingsRestart: CommManager.ConnectionState.Disconnected? = null,
+        needsDummyVpn: Boolean = false,
+        ticket: Long = App.provide(service).commManager.appConnectionTicket(),
+    ) {
         val commManager = App.provide(service).commManager
+        if (!commManager.acceptsAppConnectionTicket(ticket)) return
+
+        // Stop can revoke the old launch before its service relay or cancellation cleanup
+        // reaches Main. Fresh input owns a new ticket and must not coalesce into that job.
+        // Retire only its bookkeeping; the retained VPN/network may already belong to this run.
+        if (launchTicket != null && launchTicket != ticket) {
+            stopIfCurrent(launchJob, preserveVpn = true)
+        }
 
         // auto-start-self-mode and an explicit ACTION_START_SELF_MODE both land here, and running
         // two launches at once costs a session rather than a retry. See SelfLaunchCoalescePolicy.
@@ -124,18 +137,23 @@ class SelfLauncherManager(
         retiredSettingsTerminal = null
         isActive = true
         launchInFlight = true
+        launchTicket = ticket
         // Own the retained VPN before queued work can be cancelled. Otherwise a cancel
         // between acceptance and Main dispatch would still see the old SESSION owner.
         adoptDummyVpn(needsDummyVpn)
         // Publish and bind the job before it can run. Revoking Save then cancels both a queued
         // launch and a launcher suspended while waiting for the network, without touching a new job.
         val job = service.serviceScope.launch(Dispatchers.Main, start = CoroutineStart.LAZY) {
+            if (!commManager.acceptsAppConnectionTicket(ticket)) {
+                stopIfCurrent(coroutineContext[Job], preserveVpn = true)
+                return@launch
+            }
             if (settingsRestart != null && !settingsRestart.acceptsSettingsRestart(commManager.connectionState.value)) {
                 stopIfCurrent(coroutineContext[Job], preserveVpn = commManager.connectionState.value !== settingsRestart)
                 return@launch
             }
             // prepare launchers
-            val services = SelfLauncherServices(service, wifiLauncherManager, settingsRestart)
+            val services = SelfLauncherServices(service, wifiLauncherManager, settingsRestart, ticket)
             val launchers: Array<SelfLauncher>
 
             val path = installedPath(service)
@@ -216,6 +234,10 @@ class SelfLauncherManager(
                 delay(deadlineMs)
 
                 if (launchJob !== owner) return@timeout
+                if (!commManager.acceptsAppConnectionTicket(ticket)) {
+                    stopIfCurrent(owner, preserveVpn = true)
+                    return@timeout
+                }
                 if (settingsRestart != null &&
                     !settingsRestart.acceptsSettingsRestart(commManager.connectionState.value)) {
                     // Save may already have connected, or another route may own the session.
@@ -386,8 +408,12 @@ class SelfLauncherManager(
      *        arrived and the VPN is taken down via the Self-Mode-never-connected path.
      */
     fun stop(wasConnected: Boolean = false) {
-        launchJob?.cancel()
+        // Detach before cancellation: even immediate completion cleanup must not own the
+        // launch fields while this stop, or a replacement admission, is updating them.
+        val job = launchJob
         launchJob = null
+        launchTicket = null
+        job?.cancel()
         launchTimeoutJob?.cancel()
         launchTimeoutJob = null
         settingsLaunchOwner = null

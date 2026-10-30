@@ -30,6 +30,7 @@ class UsbLauncherListener(private val manager: UsbLauncherManager) : UsbReceiver
         }
 
         val commManager = App.provide(service).commManager
+        val ticket = commManager.appConnectionTicket()
 
         service.userExitedAA = false
 
@@ -37,7 +38,7 @@ class UsbLauncherListener(private val manager: UsbLauncherManager) : UsbReceiver
             // Device already in AOA mode (re-enumerated after UsbAttachedActivity switched it).
             AppLog.i("USB accessory device attached, connecting.")
             service.launchMainActivityIfNeeded("USB accessory attach")
-            manager.checkAlreadyConnected(force = true, settingsRestart = manager.pendingSettingsRestart())
+            manager.checkAlreadyConnected(force = true, settingsRestart = manager.pendingSettingsRestart(), ticket = ticket)
         } else {
             // UsbAttachedActivity normally handles normal-mode devices via a manifest intent
             // filter. However, some headunits (especially Chinese MediaTek units) don't
@@ -54,7 +55,7 @@ class UsbLauncherListener(private val manager: UsbLauncherManager) : UsbReceiver
                 // An Activity-owned switch keeps its separate handoff guard.
                 if (!commManager.isConnected && !manager.isActivitySwitchInFlight()) {
                     AppLog.i("UsbAttachedActivity didn't handle $deviceName. Trying from service...")
-                    manager.checkAlreadyConnected(force = true, settingsRestart = manager.pendingSettingsRestart())
+                    manager.checkAlreadyConnected(force = true, settingsRestart = manager.pendingSettingsRestart(), ticket = ticket)
                 }
             }
         }
@@ -75,6 +76,7 @@ class UsbLauncherListener(private val manager: UsbLauncherManager) : UsbReceiver
 
     override fun onUsbAccessoryDetach() {
         val commManager = App.provide(service).commManager
+        val ticket = commManager.appConnectionTicket()
 
         AppLog.i("USB Accessory detached. This might be a transient state (e.g., 100% battery). Attempting to re-sync...")
 
@@ -87,7 +89,7 @@ class UsbLauncherListener(private val manager: UsbLauncherManager) : UsbReceiver
         service.serviceScope.launch {
             delay(1500) // Give the phone/system time to settle its USB state
             AppLog.i("Accessory detach cooldown finished. Checking for re-connection...")
-            manager.checkAlreadyConnected(force = true, settingsRestart = manager.pendingSettingsRestart())
+            manager.checkAlreadyConnected(force = true, settingsRestart = manager.pendingSettingsRestart(), ticket = ticket)
         }
     }
 
@@ -95,14 +97,17 @@ class UsbLauncherListener(private val manager: UsbLauncherManager) : UsbReceiver
         manager.onRecoveryPermission(token, granted, device)
     }
 
-    override fun onUsbPermission(granted: Boolean, connect: Boolean, device: UsbDevice) {
+    override fun onUsbPermission(granted: Boolean, connect: Boolean, device: UsbDevice, ticket: Long) {
         if (!UsbDeviceCompat.isConnectable(service, device)) {
             AppLog.i("Ignoring USB permission callback (VID: ${device.vendorId}): ${UsbDeviceCompat.matchReason(device)}")
             return
         }
         val usbManager = UsbDeviceCompat.usbManager(service) ?: return
         val deviceName = UsbDeviceCompat(device).uniqueName
-        val restart = manager.takePermissionOwner(device)
+        val permission = manager.takePermissionAttempt(device, ticket)
+        val commManager = App.provide(service).commManager
+        if (!commManager.acceptsAppConnectionTicket(permission.ticket)) return
+        val restart = permission.settingsRestart
         // Permission is not a new user request for projection. An explicit stop still wins.
         if (granted && manager.cancelledByUser) return
         if (granted) {
@@ -113,14 +118,14 @@ class UsbLauncherListener(private val manager: UsbLauncherManager) : UsbReceiver
                 // A grant may outlive Save or arrive after another connection has come and
                 // gone. Use ordinary admission (including the Settings hold), without
                 // renewing Save. Explicit cancellation above still rejects this old grant.
-                manager.checkAlreadyConnected(force = true)
+                manager.checkAlreadyConnected(force = true, ticket = permission.ticket)
                 return
             }
             AppLog.i("USB permission granted for $deviceName")
-            if (!manager.beginAttempt(Tier.USB, "USB $deviceName", restart)) return
+            if (!manager.beginAttempt(Tier.USB, "USB $deviceName", restart, permission.ticket)) return
             if (UsbDeviceCompat.isInAccessoryMode(device)) {
                 manager.launchAttempt(restart) {
-                    manager.connectWithRetry(device, settingsRestart = restart)
+                    manager.connectWithRetry(device, settingsRestart = restart, ticket = permission.ticket)
                 }
             } else {
                 val settings = App.provide(service).settings

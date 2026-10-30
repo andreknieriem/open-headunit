@@ -242,22 +242,35 @@ class InternalFailureRecoveryTest {
             val usbRequest = Thread { refuse() }.apply { start() }
             assertTrue(usbChecking.await(5, java.util.concurrent.TimeUnit.SECONDS))
             val mark = f.manager.launchMark(f.manager.appConnectionTicket())
-            var forming: CommManager.LaunchOutcome.Forming? = null
+            // Construction runs inside connectIp's own exception handling: record, check afterwards.
+            var published: ConnectionState? = null
+            var refusalDone = false
+            var afterRefusal: ConnectionState? = null
+            var failuresAfterRefusal = -1
+            var forming: CommManager.LaunchOutcome? = null
+            var settledAtDecision: Boolean? = null
+            var afterDecision: ConnectionState? = null
             connectIp(f, opens) {
                 // B is published; its connection object is not registered yet.
-                assertSame(ConnectionState.Connecting, f.states.value)
+                published = f.states.value
                 bPublished.countDown()
                 usbRequest.join(5_000)
-                assertFalse(usbRequest.isAlive)
-                assertSame("A refused request's diagnostic replaced an attempt in flight", ConnectionState.Connecting, f.states.value)
-                assertTrue(failures.isEmpty())
+                refusalDone = !usbRequest.isAlive
+                afterRefusal = f.states.value
+                failuresAfterRefusal = failures.size
                 // Nor can a launch failure stand: the attempt may be the launch's own late arrival.
-                forming = f.manager.reportLaunchFailure("launch timeout", mark) as CommManager.LaunchOutcome.Forming
-                assertSame(ConnectionState.Connecting, f.states.value)
-                assertFalse(checkNotNull(forming).attempt.settled.isCompleted)
+                forming = f.manager.reportLaunchFailure("launch timeout", mark)
+                settledAtDecision = (forming as? CommManager.LaunchOutcome.Forming)?.attempt?.settled?.isCompleted
+                afterDecision = f.states.value
             }
+            assertSame(ConnectionState.Connecting, published)
+            assertTrue(refusalDone)
+            assertSame("A refused request's diagnostic replaced an attempt in flight", ConnectionState.Connecting, afterRefusal)
+            assertEquals(0, failuresAfterRefusal)
+            assertEquals(false, settledAtDecision)
+            assertSame(ConnectionState.Connecting, afterDecision)
             // The attempt settled as it reached its connection or ended: the waiter decides again.
-            val waiting = checkNotNull(forming)
+            val waiting = forming as CommManager.LaunchOutcome.Forming
             assertTrue(waiting.attempt.settled.isCompleted)
             f.manager.awaitSettled(waiting)
             val outcome = f.manager.reportLaunchFailure("launch timeout", mark)

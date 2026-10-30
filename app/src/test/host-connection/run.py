@@ -952,20 +952,23 @@ fun rearmSnapshotIdentifiesConnectingAttempt()=runBlocking {
 }
 // A Self launch's failure is decided from the attempts CommManager published, never from a state
 // a conflated observer may have missed. Real publication, arrival, terminal, teardown and refused
-// USB paths run here; the launch side is only the decision call its deadline makes.
+// USB paths run here; the launch side is only the decision call its deadline makes. Hooks run
+// inside connectIp's own exception handling, so they record and the case checks afterwards.
 fun launchOutcomeFollowsAttempts()=runBlocking {
  fun ended():CommManager{val c=CommManager();c.disconnect(isUserExit=false,honorKillOnDisconnect=false);c.cleanups();runBlocking{c.awaitCleanup()};return c}
  // Connecting(A) -> Connected(A) -> ended(A) -> Connecting(B) is one equal Connecting to a StateFlow
  // waiter. A's own settlement and the arrival count still answer the launch.
  run {
   val c=ended();val mark=c.launchMark(c.appConnectionTicket())
-  var forming:CommManager.LaunchOutcome.Forming?=null
+  var forming:CommManager.LaunchOutcome?=null;var settledAtDecision:Boolean?=null;var stateAtDecision:ConnectionState?=null
   SocketProjectionConnection.connectionHook={
-   forming=c.reportLaunchFailure("timeout",mark) as CommManager.LaunchOutcome.Forming
-   check(!checkNotNull(forming).attempt.settled.isCompleted && c.state===ConnectionState.Connecting);true
+   forming=c.reportLaunchFailure("timeout",mark)
+   settledAtDecision=(forming as? CommManager.LaunchOutcome.Forming)?.attempt?.settled?.isCompleted
+   stateAtDecision=c.state;true
   }
   try{c.connectSelf()}finally{SocketProjectionConnection.connectionHook=null}
-  val waiting=checkNotNull(forming)
+  val waiting=forming as? CommManager.LaunchOutcome.Forming ?: error("A forming attempt did not hold the launch: $forming")
+  check(settledAtDecision==false && stateAtDecision===ConnectionState.Connecting){"waiter settled early or saw $stateAtDecision"}
   check(waiting.attempt.settled.isCompleted){"an arrival left its attempt's waiter unsettled"}
   c.disconnect(isUserExit=false,honorKillOnDisconnect=false);c.cleanups();c.awaitCleanup()
   var duringB:CommManager.LaunchOutcome?=null
@@ -980,10 +983,10 @@ fun launchOutcomeFollowsAttempts()=runBlocking {
  // Nothing arrives: the forming attempt's own end settles its waiter, and the failure then stands.
  run {
   val c=ended();val mark=c.launchMark(c.appConnectionTicket())
-  var forming:CommManager.LaunchOutcome.Forming?=null
-  SocketProjectionConnection.connectionHook={forming=c.reportLaunchFailure("timeout",mark) as CommManager.LaunchOutcome.Forming;false}
+  var forming:CommManager.LaunchOutcome?=null
+  SocketProjectionConnection.connectionHook={forming=c.reportLaunchFailure("timeout",mark);false}
   try{c.connectSelf()}finally{SocketProjectionConnection.connectionHook=null}
-  c.awaitSettled(checkNotNull(forming))
+  c.awaitSettled(forming as? CommManager.LaunchOutcome.Forming ?: error("A forming attempt did not hold the launch: $forming"))
   val failedOpen=c.state as ConnectionState.Disconnected
   // The failure stands; the failed open's own terminal, published since, stays for its observer.
   check(c.reportLaunchFailure("timeout",mark)===CommManager.LaunchOutcome.Failed && c.state===failedOpen && !failedOpen.hadPhysicalConnection)
@@ -1012,7 +1015,8 @@ fun launchOutcomeFollowsAttempts()=runBlocking {
  println("PASS launch failure follows real attempt settlement and arrivals across conflated Connecting, hidden ends and repeated terminals")
 }
 // A refused USB request passes its Connecting guard, then reports only after attempt B was
-// published and before B's connection is registered. B owns the state from publication.
+// published and before B's connection is registered. B owns the state from publication. The
+// construction hook runs inside connectIp's exception handling, so it only records.
 fun refusedUsbCannotTakeAnAttemptInFlight()=runBlocking {
  for(opens in listOf(true,false)) {
   val c=CommManager();c.disconnect(isUserExit=false,honorKillOnDisconnect=false);c.cleanups();c.awaitCleanup()
@@ -1022,14 +1026,18 @@ fun refusedUsbCannotTakeAnAttemptInFlight()=runBlocking {
   val usb=Thread{runBlocking{c.connectDevice(UsbDevice())}}.apply{start()}
   check(usbChecking.await(5,TimeUnit.SECONDS))
   c.context.usb.permissionHook=null
+  var published:ConnectionState?=null;var registered:Any?=Unit;var refusalDone=false
+  var afterRefusal:ConnectionState?=null;var failuresAfterRefusal=-1
   SocketProjectionConnection.constructionHook={
-   check(c.state===ConnectionState.Connecting && c.network()==null)
-   bPublished.countDown();usb.join(5000);check(!usb.isAlive)
-   check(c.state===ConnectionState.Connecting){"refused USB diagnostic replaced unregistered attempt B with ${c.state}"}
-   check(c.failures.isEmpty()){"refused USB counted a failure against attempt B"}
+   published=c.state;registered=c.network()
+   bPublished.countDown();usb.join(5000);refusalDone=!usb.isAlive
+   afterRefusal=c.state;failuresAfterRefusal=c.failures.size
   }
   SocketProjectionConnection.connectionHook={opens}
   try{c.connectSelf()}finally{SocketProjectionConnection.constructionHook=null;SocketProjectionConnection.connectionHook=null}
+  check(published===ConnectionState.Connecting && registered==null && refusalDone){"B was not published and unregistered while the refusal ran"}
+  check(afterRefusal===ConnectionState.Connecting){"refused USB diagnostic replaced unregistered attempt B with $afterRefusal"}
+  check(failuresAfterRefusal==0){"refused USB counted a failure against attempt B"}
   if(opens)check(c.state===ConnectionState.Connected && c.isLoopbackSession){"B did not keep its live state"}
   else check(c.state is ConnectionState.Disconnected)
   c.cleanups();c.close()

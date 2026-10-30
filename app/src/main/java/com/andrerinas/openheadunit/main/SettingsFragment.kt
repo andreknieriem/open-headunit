@@ -40,8 +40,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.aap.AapService
-import com.andrerinas.openheadunit.connection.broker.NativeBTBrokerSession
-import com.andrerinas.openheadunit.connection.broker.NativeBTBrokerStore
+import com.andrerinas.openheadunit.connection.esp32.Esp32RelaySession
+import com.andrerinas.openheadunit.connection.esp32.Esp32RelayStore
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.CredentialField
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeAaWakeDamagePolicy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zbt.ZbtProbe
@@ -152,7 +152,7 @@ class SettingsFragment : Fragment() {
         // Dark mode
         "darkModeSettings",
         // Automation
-        "autoStartSettings", "autoConnectSettings", "NativeBTBroker", "enableCarLauncher",
+        "autoStartSettings", "autoConnectSettings", "Esp32Relay", "enableCarLauncher",
         // Navigation
         "gpsNavigation",
         // Graphic
@@ -993,29 +993,29 @@ class SettingsFragment : Fragment() {
         ))
 
         if (pendingWifiConnectionMode == WifiLauncherMode.NATIVE) {
-            // BT Broker needs API 23 (Android 6.0) for the BLE client path used here.
+            // ESP32 relay needs API 23 (Android 6.0) for the BLE client path used here.
             // Below that, keep the row visible but disabled so the requirement is obvious.
-            val brokerSupported = Build.VERSION.SDK_INT >= NativeBTBrokerSession.MIN_SDK
-            val brokerLabel = if (!brokerSupported) {
-                getString(R.string.broker_settings_unsupported)
+            val esp32RelaySupported = Build.VERSION.SDK_INT >= Esp32RelaySession.MIN_SDK
+            val esp32RelayLabel = if (!esp32RelaySupported) {
+                getString(R.string.esp32_relay_settings_unsupported)
             } else {
-                val brokerStore = NativeBTBrokerStore(requireContext())
+                val esp32RelayStore = Esp32RelayStore(requireContext())
                 when {
-                    !brokerStore.enabled -> getString(R.string.broker_settings_disabled)
-                    else -> brokerStore.deviceName
-                        ?: brokerStore.deviceAddress
-                        ?: getString(R.string.broker_settings_summary)
+                    !esp32RelayStore.enabled -> getString(R.string.esp32_relay_settings_disabled)
+                    else -> esp32RelayStore.deviceName
+                        ?: esp32RelayStore.deviceAddress
+                        ?: getString(R.string.esp32_relay_settings_summary)
                 }
             }
             items.add(SettingItem.SettingEntry(
-                stableId = "NativeBTBroker",
-                nameResId = R.string.broker_settings_title,
-                value = brokerLabel,
+                stableId = "Esp32Relay",
+                nameResId = R.string.esp32_relay_settings_title,
+                value = esp32RelayLabel,
                 searchKeywords = "bluetooth relay board esp32 pair disconnect ble openhu",
-                isEnabled = brokerSupported,
+                isEnabled = esp32RelaySupported,
                 onClick = {
                     try {
-                        findNavController().navigate(R.id.action_settingsFragment_to_brokerSettingsFragment)
+                        findNavController().navigate(R.id.action_settingsFragment_to_esp32RelaySettingsFragment)
                     } catch (_: Exception) { }
                 }
             ))

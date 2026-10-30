@@ -1,4 +1,4 @@
-package com.andrerinas.openheadunit.connection.broker
+package com.andrerinas.openheadunit.connection.esp32
 
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -6,9 +6,9 @@ import java.util.UUID
 
 /**
  * BLE contract shared with the project 5 firmware.
- * NativeBTBroker relays RFCOMM bytes. This display owns Android Auto framing.
+ * Esp32Relay relays RFCOMM bytes. This display owns Android Auto framing.
  */
-object NativeBTBrokerProtocol {
+object Esp32RelayProtocol {
     val SERVICE_UUID: UUID = UUID.fromString("8e6d1000-3f45-4f1e-a000-6e2b8d012345")
     val COMMAND_UUID: UUID = UUID.fromString("8e6d1001-3f45-4f1e-a000-6e2b8d012345")
     val EVENT_UUID: UUID = UUID.fromString("8e6d1002-3f45-4f1e-a000-6e2b8d012345")
@@ -23,14 +23,14 @@ object NativeBTBrokerProtocol {
     const val VERSION: Int = 0x01
 
     /** True for BLE ads from this relay. */
-    fun isBrokerBleName(name: String?): Boolean {
+    fun isEsp32RelayBleName(name: String?): Boolean {
         val label = name?.trim().orEmpty()
         if (label.isEmpty()) return false
         return label.startsWith(BLE_NAME_PREFIX, ignoreCase = true)
     }
 
     /** True for the ESP32 relay — never a driver phone. Setup BLE names share the Classic prefix. */
-    fun isBrokerDeviceName(name: String?): Boolean {
+    fun isEsp32RelayDeviceName(name: String?): Boolean {
         val label = name?.trim().orEmpty()
         if (label.isEmpty()) return false
         return label.startsWith(CLASSIC_NAME, ignoreCase = true)

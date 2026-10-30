@@ -1,4 +1,4 @@
-package com.andrerinas.openheadunit.connection.broker
+package com.andrerinas.openheadunit.connection.esp32
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -21,7 +21,7 @@ object WifiDirectDisplayInfo {
     private var channel: WifiP2pManager.Channel? = null
 
     @SuppressLint("MissingPermission")
-    fun read(context: Context, onResult: (NativeBTBrokerProtocol.DisplayInfo) -> Unit) {
+    fun read(context: Context, onResult: (Esp32RelayProtocol.DisplayInfo) -> Unit) {
         val app = context.applicationContext
         val mgr = manager(app)
         val ch = channel(app)
@@ -63,7 +63,7 @@ object WifiDirectDisplayInfo {
         context: Context,
         group: WifiP2pGroup?,
         info: WifiP2pInfo?,
-    ): NativeBTBrokerProtocol.DisplayInfo {
+    ): Esp32RelayProtocol.DisplayInfo {
         val saved = App.provide(context).settings.wifiDirectAdvertisedEndpoint
         return display(
             ip = info?.groupOwnerAddress?.hostAddress?.takeIf { it.isNotBlank() && it != "0.0.0.0" }
@@ -74,7 +74,7 @@ object WifiDirectDisplayInfo {
         )
     }
 
-    private fun fallback(context: Context): NativeBTBrokerProtocol.DisplayInfo {
+    private fun fallback(context: Context): Esp32RelayProtocol.DisplayInfo {
         val saved = App.provide(context).settings.wifiDirectAdvertisedEndpoint
         return display(
             ip = saved?.ip.orEmpty(),
@@ -84,9 +84,9 @@ object WifiDirectDisplayInfo {
         )
     }
 
-    private fun display(ip: String, ssid: String, key: String, bssid: String) = NativeBTBrokerProtocol.DisplayInfo(
+    private fun display(ip: String, ssid: String, key: String, bssid: String) = Esp32RelayProtocol.DisplayInfo(
         ipAddress = ip,
-        port = NativeBTBrokerProtocol.PROJECTION_PORT,
+        port = Esp32RelayProtocol.PROJECTION_PORT,
         ssid = ssid,
         key = key,
         bssid = bssid,

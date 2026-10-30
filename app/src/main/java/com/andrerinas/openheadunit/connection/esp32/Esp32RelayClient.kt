@@ -1,4 +1,4 @@
-package com.andrerinas.openheadunit.connection.broker
+package com.andrerinas.openheadunit.connection.esp32
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
@@ -21,10 +21,10 @@ import java.util.ArrayDeque
 import java.util.UUID
 
 /**
- * BLE client for the NativeBTBroker. The session stays open after the display snapshot is sent
+ * BLE client for the Esp32Relay. The session stays open after the display snapshot is sent
  * so later RFCOMM bytes can cross the same link.
  */
-class NativeBTBrokerClient(context: Context) {
+class Esp32RelayClient(context: Context) {
     private val app = context.applicationContext
     private val main = Handler(Looper.getMainLooper())
     private val adapter: BluetoothAdapter? =
@@ -42,8 +42,8 @@ class NativeBTBrokerClient(context: Context) {
     private val controlAssembly = Assembly()
     private val dataAssembly = Assembly()
 
-    /** Reassembled frames from the broker, delivered on the main thread. */
-    var onFrame: ((NativeBTBrokerProtocol.Frame) -> Unit)? = null
+    /** Reassembled frames from the ESP32 relay, delivered on the main thread. */
+    var onFrame: ((Esp32RelayProtocol.Frame) -> Unit)? = null
 
     /** The link dropped on its own. Not called when this client closed the socket. */
     var onLinkLost: (() -> Unit)? = null
@@ -62,7 +62,7 @@ class NativeBTBrokerClient(context: Context) {
     fun isReady(): Boolean = adapter?.isEnabled == true
 
     /**
-     * Tells an already-open broker session that the phone's projection socket came up or went away.
+     * Tells an already-open ESP32 relay session that the phone's projection socket came up or went away.
      * [onRecorded] runs once, on the main thread, when that notice is written or cannot be written.
      */
     fun notifyProjection(up: Boolean, onRecorded: ((Boolean) -> Unit)? = null) {
@@ -72,8 +72,8 @@ class NativeBTBrokerClient(context: Context) {
             return
         }
         queueFrame(
-            NativeBTBrokerProtocol.CMD_PROJECTION_UP,
-            NativeBTBrokerProtocol.CH_CONTROL,
+            Esp32RelayProtocol.CMD_PROJECTION_UP,
+            Esp32RelayProtocol.CH_CONTROL,
             byteArrayOf(if (up) 1 else 0),
             onRecorded = onRecorded,
         )
@@ -88,8 +88,8 @@ class NativeBTBrokerClient(context: Context) {
             return
         }
         queueFrame(
-            if (on) NativeBTBrokerProtocol.CMD_HFP_ON else NativeBTBrokerProtocol.CMD_HFP_OFF,
-            NativeBTBrokerProtocol.CH_CONTROL,
+            if (on) Esp32RelayProtocol.CMD_HFP_ON else Esp32RelayProtocol.CMD_HFP_OFF,
+            Esp32RelayProtocol.CH_CONTROL,
             ByteArray(0),
             onRecorded = onRecorded,
         )
@@ -104,8 +104,8 @@ class NativeBTBrokerClient(context: Context) {
             return
         }
         queueFrame(
-            NativeBTBrokerProtocol.CMD_GET_STATUS,
-            NativeBTBrokerProtocol.CH_CONTROL,
+            Esp32RelayProtocol.CMD_GET_STATUS,
+            Esp32RelayProtocol.CH_CONTROL,
             ByteArray(0),
             onRecorded = onRecorded,
         )
@@ -179,13 +179,13 @@ class NativeBTBrokerClient(context: Context) {
         }
     }
 
-    /** Clear phone bonds on the broker and open Classic inquiry for 120 seconds. */
+    /** Clear phone bonds on the ESP32 relay and open Classic inquiry for 120 seconds. */
     fun allowPhonePairing(address: String, onResult: (Result<Unit>) -> Unit) {
         prepare(
             address,
-            NativeBTBrokerProtocol.emptyDisplayInfo(),
+            Esp32RelayProtocol.emptyDisplayInfo(),
             restartProjection = false,
-            bondMode = NativeBTBrokerProtocol.BOND_MODE_NEW_PHONE,
+            bondMode = Esp32RelayProtocol.BOND_MODE_NEW_PHONE,
             onResult = onResult,
         )
     }
@@ -193,7 +193,7 @@ class NativeBTBrokerClient(context: Context) {
     @SuppressLint("MissingPermission")
     fun prepare(
         address: String,
-        info: NativeBTBrokerProtocol.DisplayInfo,
+        info: Esp32RelayProtocol.DisplayInfo,
         restartProjection: Boolean = true,
         confirmProjection: Boolean = false,
         bondMode: Int? = null,
@@ -224,7 +224,7 @@ class NativeBTBrokerClient(context: Context) {
         }
         gatt = device.connectGatt(app, false, object : BluetoothGattCallback() {
             private fun live(callbackGatt: BluetoothGatt): Boolean =
-                generation == linkGeneration && callbackGatt === this@NativeBTBrokerClient.gatt
+                generation == linkGeneration && callbackGatt === this@Esp32RelayClient.gatt
 
             override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
                 if (newState == BluetoothProfile.STATE_CONNECTED && status == BluetoothGatt.GATT_SUCCESS) {
@@ -252,13 +252,13 @@ class NativeBTBrokerClient(context: Context) {
 
             override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
                 if (!live(gatt)) return
-                val service = gatt.getService(NativeBTBrokerProtocol.SERVICE_UUID)
-                val command = service?.getCharacteristic(NativeBTBrokerProtocol.COMMAND_UUID)
-                val event = service?.getCharacteristic(NativeBTBrokerProtocol.EVENT_UUID)
-                val dataRx = service?.getCharacteristic(NativeBTBrokerProtocol.DATA_RX_UUID)
-                val dataTx = service?.getCharacteristic(NativeBTBrokerProtocol.DATA_TX_UUID)
+                val service = gatt.getService(Esp32RelayProtocol.SERVICE_UUID)
+                val command = service?.getCharacteristic(Esp32RelayProtocol.COMMAND_UUID)
+                val event = service?.getCharacteristic(Esp32RelayProtocol.EVENT_UUID)
+                val dataRx = service?.getCharacteristic(Esp32RelayProtocol.DATA_RX_UUID)
+                val dataTx = service?.getCharacteristic(Esp32RelayProtocol.DATA_TX_UUID)
                 if (command == null || event == null || dataRx == null || dataTx == null) {
-                    fail(report, IllegalStateException("broker service missing"))
+                    fail(report, IllegalStateException("ESP32 relay service missing"))
                     return
                 }
                 linkUp = true
@@ -290,9 +290,9 @@ class NativeBTBrokerClient(context: Context) {
                     fail(report, IllegalStateException("notify subscribe $status"))
                     return
                 }
-                val service = gatt.getService(NativeBTBrokerProtocol.SERVICE_UUID)
-                val dataTx = service?.getCharacteristic(NativeBTBrokerProtocol.DATA_TX_UUID)
-                if (descriptor.characteristic.uuid == NativeBTBrokerProtocol.EVENT_UUID && dataTx != null) {
+                val service = gatt.getService(Esp32RelayProtocol.SERVICE_UUID)
+                val dataTx = service?.getCharacteristic(Esp32RelayProtocol.DATA_TX_UUID)
+                if (descriptor.characteristic.uuid == Esp32RelayProtocol.EVENT_UUID && dataTx != null) {
                     subscribe(gatt, dataTx)
                     return
                 }
@@ -332,14 +332,14 @@ class NativeBTBrokerClient(context: Context) {
     fun sendRfcomm(bytes: ByteArray): Boolean {
         val link = gatt ?: return false
         if (!linkUp) return false
-        queueFrame(NativeBTBrokerProtocol.DATA_RFCOMM_TX, NativeBTBrokerProtocol.CH_RFCOMM, bytes)
+        queueFrame(Esp32RelayProtocol.DATA_RFCOMM_TX, Esp32RelayProtocol.CH_RFCOMM, bytes)
         writeNext(link)
         return true
     }
 
     fun sendCredit(extra: Int) {
         val link = gatt ?: return
-        queueFrame(NativeBTBrokerProtocol.EVT_CREDIT, NativeBTBrokerProtocol.CH_CONTROL, NativeBTBrokerProtocol.creditPayload(extra))
+        queueFrame(Esp32RelayProtocol.EVT_CREDIT, Esp32RelayProtocol.CH_CONTROL, Esp32RelayProtocol.creditPayload(extra))
         writeNext(link)
     }
 
@@ -365,10 +365,10 @@ class NativeBTBrokerClient(context: Context) {
     }
 
     private fun inbound(characteristic: BluetoothGattCharacteristic, value: ByteArray) {
-        val assembly = if (characteristic.uuid == NativeBTBrokerProtocol.DATA_TX_UUID) dataAssembly else controlAssembly
+        val assembly = if (characteristic.uuid == Esp32RelayProtocol.DATA_TX_UUID) dataAssembly else controlAssembly
         val frame = assembly.push(value) ?: return
         val decoded = try {
-            NativeBTBrokerProtocol.decode(frame)
+            Esp32RelayProtocol.decode(frame)
         } catch (_: Exception) {
             return
         }
@@ -376,7 +376,7 @@ class NativeBTBrokerClient(context: Context) {
     }
 
     private fun reuse(
-        info: NativeBTBrokerProtocol.DisplayInfo,
+        info: Esp32RelayProtocol.DisplayInfo,
         restartProjection: Boolean,
         confirmProjection: Boolean,
         bondMode: Int?,
@@ -403,42 +403,42 @@ class NativeBTBrokerClient(context: Context) {
 
     /**
      * [restartProjection] sends HFP_ON then AA_ENABLE (apply_hfp). A main-firmware
-     * broker ignores HFP_ON and still starts HFP from AA_ENABLE.
+     * ESP32 relay ignores HFP_ON and still starts HFP from AA_ENABLE.
      * [confirmProjection] is PROJECTION_UP only — HFP_OFF is sent separately.
      * [bondMode] is only for the Pair action; ordinary connect must not open Classic inquiry.
      */
     private fun queueSetup(
-        info: NativeBTBrokerProtocol.DisplayInfo,
+        info: Esp32RelayProtocol.DisplayInfo,
         restartProjection: Boolean,
         confirmProjection: Boolean,
         bondMode: Int? = null,
     ) {
-        queueFrame(NativeBTBrokerProtocol.CMD_HELLO, NativeBTBrokerProtocol.CH_CONTROL, ByteArray(0))
+        queueFrame(Esp32RelayProtocol.CMD_HELLO, Esp32RelayProtocol.CH_CONTROL, ByteArray(0))
         if (info.ssid.isNotEmpty() || info.ipAddress.isNotEmpty()) {
             queueFrame(
-                NativeBTBrokerProtocol.CMD_SET_NETWORK,
-                NativeBTBrokerProtocol.CH_CONTROL,
-                NativeBTBrokerProtocol.networkPayload(info),
+                Esp32RelayProtocol.CMD_SET_NETWORK,
+                Esp32RelayProtocol.CH_CONTROL,
+                Esp32RelayProtocol.networkPayload(info),
             )
         }
         if (restartProjection) {
-            queueFrame(NativeBTBrokerProtocol.CMD_HFP_ON, NativeBTBrokerProtocol.CH_CONTROL, ByteArray(0))
-            queueFrame(NativeBTBrokerProtocol.CMD_AA_ENABLE, NativeBTBrokerProtocol.CH_CONTROL, ByteArray(0))
+            queueFrame(Esp32RelayProtocol.CMD_HFP_ON, Esp32RelayProtocol.CH_CONTROL, ByteArray(0))
+            queueFrame(Esp32RelayProtocol.CMD_AA_ENABLE, Esp32RelayProtocol.CH_CONTROL, ByteArray(0))
         } else if (confirmProjection) {
-            queueFrame(NativeBTBrokerProtocol.CMD_PROJECTION_UP, NativeBTBrokerProtocol.CH_CONTROL, byteArrayOf(1))
+            queueFrame(Esp32RelayProtocol.CMD_PROJECTION_UP, Esp32RelayProtocol.CH_CONTROL, byteArrayOf(1))
         }
         if (bondMode != null) {
             // Clear/open the pairing window first, then arm HFP (do not dial old bonds).
             queueFrame(
-                NativeBTBrokerProtocol.CMD_SET_BOND_MODE,
-                NativeBTBrokerProtocol.CH_CONTROL,
-                NativeBTBrokerProtocol.bondModePayload(bondMode),
+                Esp32RelayProtocol.CMD_SET_BOND_MODE,
+                Esp32RelayProtocol.CH_CONTROL,
+                Esp32RelayProtocol.bondModePayload(bondMode),
             )
-            if (bondMode != NativeBTBrokerProtocol.BOND_MODE_OFF) {
-                queueFrame(NativeBTBrokerProtocol.CMD_HFP_ON, NativeBTBrokerProtocol.CH_CONTROL, ByteArray(0))
+            if (bondMode != Esp32RelayProtocol.BOND_MODE_OFF) {
+                queueFrame(Esp32RelayProtocol.CMD_HFP_ON, Esp32RelayProtocol.CH_CONTROL, ByteArray(0))
             }
         }
-        queueFrame(NativeBTBrokerProtocol.CMD_GET_STATUS, NativeBTBrokerProtocol.CH_CONTROL, ByteArray(0))
+        queueFrame(Esp32RelayProtocol.CMD_GET_STATUS, Esp32RelayProtocol.CH_CONTROL, ByteArray(0))
     }
 
     private fun queueFrame(
@@ -447,18 +447,18 @@ class NativeBTBrokerClient(context: Context) {
         payload: ByteArray,
         onRecorded: ((Boolean) -> Unit)? = null,
     ) {
-        val frame = NativeBTBrokerProtocol.encode(type, channel, appSeq++, payload)
-        val uuid = if (channel == NativeBTBrokerProtocol.CH_RFCOMM) {
-            NativeBTBrokerProtocol.DATA_RX_UUID
+        val frame = Esp32RelayProtocol.encode(type, channel, appSeq++, payload)
+        val uuid = if (channel == Esp32RelayProtocol.CH_RFCOMM) {
+            Esp32RelayProtocol.DATA_RX_UUID
         } else {
-            NativeBTBrokerProtocol.COMMAND_UUID
+            Esp32RelayProtocol.COMMAND_UUID
         }
-        val writeType = if (channel == NativeBTBrokerProtocol.CH_RFCOMM) {
+        val writeType = if (channel == Esp32RelayProtocol.CH_RFCOMM) {
             BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
         } else {
             BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
         }
-        val parts = NativeBTBrokerProtocol.fragment(frame, attPayload, transportSeq++)
+        val parts = Esp32RelayProtocol.fragment(frame, attPayload, transportSeq++)
         parts.forEachIndexed { index, bytes ->
             pending.add(
                 PendingWrite(
@@ -478,7 +478,7 @@ class NativeBTBrokerClient(context: Context) {
         if (descriptor == null) {
             return
         }
-        // Broker indicates RFCOMM bytes; indication ACKs keep the BLINK-style relay ordered.
+        // ESP32 relay indicates RFCOMM bytes; indication ACKs keep the BLINK-style relay ordered.
         val enable = BluetoothGattDescriptor.ENABLE_INDICATION_VALUE
         if (Build.VERSION.SDK_INT >= 33) {
             gatt.writeDescriptor(descriptor, enable)
@@ -499,7 +499,7 @@ class NativeBTBrokerClient(context: Context) {
             if (done != null) main.post { done(Result.success(Unit)) }
             return
         }
-        val service = gatt.getService(NativeBTBrokerProtocol.SERVICE_UUID)
+        val service = gatt.getService(Esp32RelayProtocol.SERVICE_UUID)
         val characteristic = service?.getCharacteristic(next.uuid)
         if (characteristic == null) {
             writeBusy = false

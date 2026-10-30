@@ -69,7 +69,8 @@ class Esp32RelaySettingsFragment : Fragment() {
     }
 
     override fun onDestroyView() {
-        scanner.stopScan()
+        // API < 23 leaves() before scanner is assigned; still reachable via deep navigation.
+        if (::scanner.isInitialized) scanner.stopScan()
         Esp32RelaySession.setListener(null)
         super.onDestroyView()
     }

@@ -1379,7 +1379,6 @@
     <!-- Bluetooth relay (ESP32) -->
     <string name="esp32_relay_settings_title">블루투스 릴레이(ESP32)</string>
     <string name="esp32_relay_settings_summary">ESP32로 구현된 Bluetooth Relay 설정.</string>
-    <string name="esp32_relay_settings_unsupported">Android 6.0(API 23) 이상 필요</string>
     <string name="esp32_relay_enabled">블루투스 릴레이 사용</string>
     <string name="esp32_relay_enabled_description">블루투스 릴레이를 사용할지 설정합니다.</string>
     <string name="esp32_relay_settings_disabled">꺼짐</string>

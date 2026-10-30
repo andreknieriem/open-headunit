@@ -1794,6 +1794,13 @@ class AapService : Service() {
         cancelAllBtAutoDisconnects()
         usbLauncherManager.setSwitchingToProjection(false)
         releaseWifiLock()
+        // An obsolete launch retired over its live loopback session left Self mode to that
+        // session's terminal. An ordinary wireless arm can take the cleanup ticket before this
+        // observer runs; unless a newer Self launch owns the state, end it with the session.
+        if (!superseded && cleanupTicket == null && state.wasLoopbackSession &&
+            state.hadPhysicalConnection && selfLauncherManager.currentLaunch() == null) {
+            selfLauncherManager.stop(wasConnected = true)
+        }
         // The Self tun is released when projection becomes live (#1073). Its state at
         // teardown cannot tell whether a relaunch needs one. Save now relaunches without
         // restoring a tun; offline legacy Self remains subject to its launch deadline.

@@ -197,13 +197,14 @@ class NearbyManager(
             _discoveredEndpoints.value = emptyList()
             detachAttempt()
         }
-        connectionsClient.stopDiscovery()
-        releaseAttempt(retired)
+        try { connectionsClient.stopDiscovery() } finally { releaseAttempt(retired) }
     }
 
     /** Detached under the attempt monitor; cleanup never reads a replacement's fields. */
     private class RetiredAttempt(
         val endpoint: String?,
+        /** This retirement opened [endpoint]'s SDK call queue and must drain it. */
+        val drainsEndpoint: Boolean,
         val socket: NearbySocket?,
         val stream: java.io.InputStream?,
         val pipes: Array<ParcelFileDescriptor>?,
@@ -214,8 +215,12 @@ class NearbyManager(
     private fun detachAttempt(): RetiredAttempt {
         var endpoint = activeEndpointId
         attempts.retire { if (endpoint == null) endpoint = it?.endpoint }
-        val retired = RetiredAttempt(endpoint, activeNearbySocket, pendingInboundStream, activePipes,
-            tunnelJob, upgradeTimeoutJob)
+        val retiredEndpoint = endpoint
+        // Reserved now, under the monitor, so any later request for this endpoint queues behind it.
+        val drains = retiredEndpoint != null &&
+            NearbyEndpointCalls.reserve(retiredEndpoint) { connectionsClient.disconnectFromEndpoint(retiredEndpoint) }
+        val retired = RetiredAttempt(retiredEndpoint, drains, activeNearbySocket, pendingInboundStream,
+            activePipes, tunnelJob, upgradeTimeoutJob)
         isConnecting = false
         tunnelJob = null
         upgradeTimeoutJob = null
@@ -231,10 +236,13 @@ class NearbyManager(
     private fun releaseAttempt(retired: RetiredAttempt) {
         retired.tunnel?.cancel()
         retired.upgrade?.cancel()
-        retired.endpoint?.let { connectionsClient.disconnectFromEndpoint(it) }
-        retired.socket?.close()
-        retired.stream?.let { try { it.close() } catch (_: Exception) {} }
-        retired.pipes?.forEach { try { it.close() } catch (_: Exception) {} }
+        try {
+            if (retired.drainsEndpoint) retired.endpoint?.let { NearbyEndpointCalls.drain(it) }
+        } finally {
+            retired.socket?.close()
+            retired.stream?.let { try { it.close() } catch (_: Exception) {} }
+            retired.pipes?.forEach { try { it.close() } catch (_: Exception) {} }
+        }
     }
 
     /** Retire only this request; SDK callbacks and IO happen after releasing both monitors. */
@@ -270,29 +278,41 @@ class NearbyManager(
         ticket: Long = commManager.appConnectionTicket(),
     ) {
         var retired: RetiredAttempt? = null
-        val attempt = commManager.withAppConnectionLifecycleLock {
+        var drainsRequest = false
+        commManager.withAppConnectionLifecycleLock {
             attempts.locked {
-                if (!commManager.acceptsAppConnectionTicket(ticket)) return@locked null
+                if (!commManager.acceptsAppConnectionTicket(ticket)) return@locked
                 if (attempts.current()?.ticket?.let { it != ticket } == true) retired = detachAttempt()
                 if (isConnecting) {
                     AppLog.w("NearbyManager: Already connecting, ignoring request for $endpointId")
-                    return@locked null
+                    return@locked
                 }
                 if (activeEndpointId == endpointId) {
                     AppLog.i("NearbyManager: Already connected to $endpointId, ignoring duplicate request")
-                    return@locked null
+                    return@locked
                 }
                 settingsRestartPeer = null
                 if (activeEndpointId != null) retired = detachAttempt()
                 AppLog.i("NearbyManager: Requesting connection to endpoint: $endpointId")
                 lastQuality.remove(endpointId)
                 isConnecting = true
-                attempts.begin(endpointId, ticket)
+                val attempt = attempts.begin(endpointId, ticket)
+                // Behind any disconnect a retirement of this endpoint reserved before us, in this
+                // manager or in the one this manager replaced.
+                drainsRequest = NearbyEndpointCalls.reserve(endpointId) { requestConnection(attempt, ticket) }
             }
         }
-        retired?.let { releaseAttempt(it) }
-        if (attempt == null) return
-        connectionsClient.requestConnection(Build.MODEL, endpointId, connectionLifecycleCallback(attempt, ticket))
+        try {
+            retired?.let { releaseAttempt(it) }
+        } finally {
+            if (drainsRequest) NearbyEndpointCalls.drain(endpointId)
+        }
+    }
+
+    /** May run on the thread draining earlier cleanup; a request retired meanwhile is not sent. */
+    private fun requestConnection(attempt: NearbyAttemptGuard.Attempt, ticket: Long) {
+        if (attempts.current() !== attempt) return
+        connectionsClient.requestConnection(Build.MODEL, attempt.endpoint, connectionLifecycleCallback(attempt, ticket))
             .addOnFailureListener { e ->
                 failAttempt(attempt)
                 AppLog.e("NearbyManager: Failed to request connection: ${e.message}")

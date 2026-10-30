@@ -49,6 +49,9 @@ class SelfLauncherManager(
     private var selfModeVpnWatchdog: Job? = null
     private var launchJob: Job? = null
     private var launchTicket: Long? = null
+    // The connection state at acceptance. A launch accepted while terminal T is current was
+    // requested after T's session ended; any other launch belongs to an earlier session.
+    private var launchAcceptedIn: CommManager.ConnectionState? = null
     private var launchTimeoutJob: Job? = null
     private var launchConnected = false
     private var settingsLaunchOwner: CommManager.ConnectionState.Disconnected? = null
@@ -140,6 +143,7 @@ class SelfLauncherManager(
         isActive = true
         launchInFlight = true
         launchTicket = ticket
+        launchAcceptedIn = commManager.connectionState.value
         // Own the retained VPN before queued work can be cancelled. Otherwise a cancel
         // between acceptance and Main dispatch would still see the old SESSION owner.
         adoptDummyVpn(needsDummyVpn)
@@ -369,6 +373,11 @@ class SelfLauncherManager(
     /** Token used by a settings fallback so it cannot retire a newer manual launch. */
     internal fun currentLaunch(): Job? = launchJob
 
+    /** Whether the current launch was accepted after [terminal] ended its session. */
+    internal fun launchAcceptedAfter(terminal: CommManager.ConnectionState.Disconnected): Boolean {
+        return launchJob != null && launchAcceptedIn === terminal
+    }
+
     internal fun stopIfCurrent(expected: Job?, preserveVpn: Boolean = false) {
         if (launchJob !== expected) return
         val commManager = App.provide(service).commManager
@@ -440,6 +449,7 @@ class SelfLauncherManager(
         val job = launchJob
         launchJob = null
         launchTicket = null
+        launchAcceptedIn = null
         job?.cancel()
         launchTimeoutJob?.cancel()
         launchTimeoutJob = null

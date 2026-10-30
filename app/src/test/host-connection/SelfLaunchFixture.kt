@@ -116,6 +116,7 @@ class SelfLauncherManager(private val service: Service, private val wifiLauncher
     private var launchInFlight = false
     private var launchJob: Job? = null
     private var launchTicket: Long? = null
+    private var launchAcceptedIn: CommManager.ConnectionState? = null
     private var launchTimeoutJob: Job? = null
     private var launchConnected = false
     private var settingsLaunchOwner: CommManager.ConnectionState.Disconnected? = null
@@ -134,6 +135,7 @@ class SelfLauncherManager(private val service: Service, private val wifiLauncher
     // START
     // STOP
     // DETACH_LAUNCH
+    // ACCEPTED_AFTER
     // ENDED
     // ESTABLISHED
     // STOP_CURRENT
@@ -472,6 +474,23 @@ fun main() {
         check(s.manager.isActive) { "late obsolete launch cleanup cleared live Self mode (stop=$stop)" }
         check(s.commManager.isConnected && s.commManager.socketConnects == 1)
         check(s.vpnStops == 0 && s.wifiLauncherManager.stops == 0)
+    }
+    // A completed launch keeps its Job reference after its session ends; only a launch accepted
+    // while that session's terminal is current belongs to the next session.
+    Service().use { s ->
+        s.modern = true
+        s.useRealDirect = true
+        s.manager.start()
+        s.main.drain(); s.io.drain(); s.main.drain()
+        check(s.commManager.isConnected && s.manager.currentLaunch() != null && !s.manager.inFlight())
+        s.commManager.isLoopbackSession = true
+        s.manager.onConnectionEstablished()
+        val ended = CommManager.ConnectionState.Disconnected(wasLoopbackSession = true)
+        s.commManager.connectionState.value = ended
+        s.commManager.isLoopbackSession = false
+        check(!s.manager.launchAcceptedAfter(ended)) { "completed launch counted as accepted after its terminal" }
+        s.manager.start()
+        check(s.manager.launchAcceptedAfter(ended)) { "launch accepted after the terminal not recognised" }
     }
     Service().use { s ->
         Main(s).requestSelf(); s.deliverHomeCommand(); s.main.drain()

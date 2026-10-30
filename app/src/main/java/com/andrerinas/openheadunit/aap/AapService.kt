@@ -1203,9 +1203,10 @@ class AapService : Service() {
         com.andrerinas.openheadunit.connection.bluetooth.xyauto.XyAutoMediaSession.open(this, this)
         observeConnectionState()
         // ESP32 relay PROJECTION_UP must keep landing; 10s without a recorded write ends the session.
+        // Only when this session is on the relay transport (not USB / other modes with a saved board).
         Esp32RelaySession.onProjectionRecordFailed = {
-            AppLog.w("AapService: PROJECTION_UP not recorded for 10s — ending projection")
-            if (commManager.isConnected) {
+            if (Esp32RelaySession.isRelayTransportActive() && commManager.isConnected) {
+                AppLog.w("AapService: PROJECTION_UP not recorded for 10s — ending projection")
                 commManager.disconnect(
                     sendByeBye = true,
                     isUserExit = false,
@@ -1380,7 +1381,7 @@ class AapService : Service() {
                     }
                     is CommManager.ConnectionState.HandshakeComplete -> {
                         // At SSL, not at the transport open: until then the arbiter owns the window.
-                        if (Esp32RelaySession.hasSavedEsp32Relay(this@AapService)) {
+                        if (Esp32RelaySession.shouldNotifyProjection(this@AapService)) {
                             Esp32RelaySession.notifyProjection(true)
                         }
                         quiesceWirelessForWiredSession()
@@ -1398,7 +1399,7 @@ class AapService : Service() {
                             ))
                         }
                         // Conflated collector may skip Connected — still release ESP32 relay HFP here.
-                        if (Esp32RelaySession.hasSavedEsp32Relay(this@AapService)) {
+                        if (Esp32RelaySession.shouldNotifyProjection(this@AapService)) {
                             Esp32RelaySession.notifyProjection(true)
                         }
                         quiesceWirelessForWiredSession() // The flow is conflated: HandshakeComplete can be skipped.
@@ -1522,7 +1523,8 @@ class AapService : Service() {
         usbLauncherManager.setSwitchingToProjection(false)
         updateNotification()
         // apply_hfp: projection TCP is up — ESP32 relay must release HFP and stop wake retries.
-        if (Esp32RelaySession.hasSavedEsp32Relay(this)) {
+        // Only when AA came up over the board (not USB / Headunit Server with a saved board).
+        if (Esp32RelaySession.shouldNotifyProjection(this)) {
             Esp32RelaySession.notifyProjection(true)
         }
         // Whatever the transport, the wake-up loop has nothing left to do. Event driven rather
@@ -1785,6 +1787,7 @@ class AapService : Service() {
         // A failed USB open has no live AAP resources to retire. Its Save loop and fallback
         // still own recovery; an end after the open has run onConnected and needs the full cleanup.
         if (!state.hadPhysicalConnection && state.settingsRetryOwner?.acceptsSettingsRestart(state) == true) return
+        // Down notices clear an armed watch even after the carrier already dropped the sink.
         if (Esp32RelaySession.hasSavedEsp32Relay(this)) {
             Esp32RelaySession.notifyProjection(false)
         }

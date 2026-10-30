@@ -72,12 +72,31 @@ object Esp32RelaySession {
      */
     var onProjectionRecordFailed: (() -> Unit)? = null
 
+    /**
+     * True while Native AA is carrying the handshake over the ESP32 relay ([setFrameSink] non-null).
+     * USB / Headunit Server / other wireless paths must not arm PROJECTION_UP watch just because
+     * a board is saved.
+     */
+    @Volatile
+    private var relayTransportActive = false
+
     /** Native AA carrier that consumes RFCOMM bytes relayed over BLE. */
     fun setFrameSink(sink: ((Esp32RelayProtocol.Frame) -> Unit)?) {
         frameSink = sink
+        relayTransportActive = sink != null
         // Keep the session dispatcher so pairing confirmation still updates phase.
         client?.onFrame = ::dispatchFrame
     }
+
+    /** Whether this head-unit session is using the ESP32 relay as the BT/RFCOMM path. */
+    fun isRelayTransportActive(): Boolean = relayTransportActive
+
+    /**
+     * Projection TCP notices and the 10 s PROJECTION_UP fail watch apply only when a board is
+     * saved **and** the live session came up over that board.
+     */
+    fun shouldNotifyProjection(context: Context): Boolean =
+        hasSavedEsp32Relay(context) && relayTransportActive
 
     /**
      * GATT write path lost RFCOMM bytes. The carrier should end the handshake stream.
@@ -432,6 +451,11 @@ object Esp32RelaySession {
 
     /** The phone opened or closed the projection socket. While it stays up, repeat the notice so the ESP32 relay can drop the state when these stop. */
     fun notifyProjection(up: Boolean) {
+        // Saved board alone is not enough — ignore notices for USB / non-relay sessions.
+        if (up && !relayTransportActive) {
+            AppLog.d("ESP32 relay: projection-up ignored — session is not on the relay transport")
+            return
+        }
         val changed = projectionUp != up
         projectionUp = up
         main.removeCallbacks(projectionHeartbeat)
@@ -577,6 +601,9 @@ object Esp32RelaySession {
         client?.setHfp(false)
         client?.close()
         client = null
+        frameSink = null
+        transportErrorHandler = null
+        relayTransportActive = false
         projectionUp = false
         lastProjectionOkAtMs = 0L
         startSent = false

@@ -3529,7 +3529,7 @@ class NativeAaHandshakeManager(
                         lastHoldSummaryAt = holdingSince
                         // apply_hfp: tell the ESP32 relay projection is up so it releases HFP and stops
                         // re-arming wake on the next AA_ENABLE retry.
-                        if (Esp32RelaySession.hasSavedEsp32Relay(context)) {
+                        if (Esp32RelaySession.shouldNotifyProjection(context)) {
                             Esp32RelaySession.notifyProjection(true)
                         }
                         // The attempt is over even though the channel is not: nothing may read a

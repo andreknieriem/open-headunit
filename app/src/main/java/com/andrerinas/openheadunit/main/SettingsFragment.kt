@@ -68,6 +68,7 @@ import com.andrerinas.openheadunit.main.settings.SettingsCategory
 import com.andrerinas.openheadunit.main.settings.SettingsFilterPolicy
 import com.andrerinas.openheadunit.main.settings.SettingsHeaderController
 import com.andrerinas.openheadunit.main.settings.SettingsLayoutPolicy
+import com.andrerinas.openheadunit.main.settings.SettingsMutation
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.AppPermissions
 import com.andrerinas.openheadunit.utils.AppThemeManager
@@ -112,6 +113,7 @@ import kotlinx.coroutines.withContext
 
 class SettingsFragment : Fragment() {
     private lateinit var settings: Settings
+    private lateinit var settingsMutations: SettingsMutation
 
     /** The in-flight credentials pre-flight, so a second one replaces it rather than racing it. */
     private var preflightJob: Job? = null
@@ -361,6 +363,7 @@ class SettingsFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        settingsMutations = SettingsMutation(viewLifecycleOwner.lifecycleScope)
 
         settings = App.provide(requireContext()).settings
 
@@ -423,6 +426,11 @@ class SettingsFragment : Fragment() {
                 outState.putParcelable("recycler_scroll", it)
             }
         }
+    }
+
+    override fun onDestroyView() {
+        settingsMutations.cancel()
+        super.onDestroyView()
     }
 
     private fun reloadPendingStateFromSettings() {
@@ -561,6 +569,7 @@ class SettingsFragment : Fragment() {
     }
 
     private fun saveSettings() {
+        settingsMutations.cancel()
         checkChanges()
         var audioSessionEnded = false
         val languageChanged = pendingAppLanguage != settings.appLanguage
@@ -711,9 +720,7 @@ class SettingsFragment : Fragment() {
         if (requiresServiceRestart) {
             if (App.provide(requireContext()).commManager.isConnected) {
                 ToastUtils.showToast(context, getString(R.string.stopping_service), Toast.LENGTH_SHORT, force = true)
-                val stopServiceIntent = Intent(requireContext(), AapService::class.java).apply {
-                    action = AapService.ACTION_STOP_SERVICE
-                }
+                val stopServiceIntent = AapService.stopIntent(requireContext())
                 ContextCompat.startForegroundService(requireContext(), stopServiceIntent)
             }
         }
@@ -3518,17 +3525,16 @@ class SettingsFragment : Fragment() {
     private fun resetSettingsToDefaults() {
         val appContext = requireContext().applicationContext
         val snapshot = createImportSnapshot()
-        viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                val result = withContext(Dispatchers.IO) {
-                    SettingsBackupManager.resetFromContext(appContext)
-                }
+        settingsMutations.start(
+            prepare = { Unit },
+            apply = {
+                val result = SettingsBackupManager.resetFromContext(appContext)
                 handleResetSettings(snapshot, result)
-            } catch (e: Exception) {
-                if (e is CancellationException) throw e
-                ToastUtils.showToast(appContext, appContext.getString(R.string.settings_reset_failed, e.localizedMessage ?: ""), Toast.LENGTH_LONG, force = true)
-            }
-        }
+            },
+            onFailure = { error ->
+                ToastUtils.showToast(appContext, appContext.getString(R.string.settings_reset_failed, error.localizedMessage ?: ""), Toast.LENGTH_LONG, force = true)
+            },
+        )
     }
 
     private fun handleResetSettings(snapshot: ImportSnapshot, result: SettingsBackupManager.ResetResult) {
@@ -3547,9 +3553,7 @@ class SettingsFragment : Fragment() {
 
         if (SettingsBackupManager.requiresProjectionRestart(result.changedKeys) && App.provide(ctx).commManager.isConnected) {
             ToastUtils.showToast(ctx, ctx.getString(R.string.stopping_service), Toast.LENGTH_SHORT, force = true)
-            val stopServiceIntent = Intent(ctx, AapService::class.java).apply {
-                action = AapService.ACTION_STOP_SERVICE
-            }
+            val stopServiceIntent = AapService.stopIntent(ctx)
             ContextCompat.startForegroundService(ctx, stopServiceIntent)
         }
 
@@ -3696,33 +3700,39 @@ class SettingsFragment : Fragment() {
     private fun importSettingsFromUri(uri: Uri) {
         val appContext = requireContext().applicationContext
         val snapshot = createImportSnapshot()
-        viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                val result = withContext(Dispatchers.IO) {
-                    SettingsBackupManager.importFromUri(appContext, uri)
+        settingsMutations.start(
+            prepare = {
+                withContext(Dispatchers.IO) {
+                    SettingsBackupManager.prepareImportFromUri(appContext, uri)
                 }
+            },
+            apply = { prepared ->
+                val result = SettingsBackupManager.applyImport(appContext, prepared)
                 handleImportedSettings(snapshot, result)
-            } catch (e: Exception) {
-                if (e is CancellationException) throw e
-                ToastUtils.showToast(requireContext(), getString(R.string.settings_import_failed, e.localizedMessage ?: ""), Toast.LENGTH_LONG, force = true)
-            }
-        }
+            },
+            onFailure = { error ->
+                ToastUtils.showToast(appContext, appContext.getString(R.string.settings_import_failed, error.localizedMessage ?: ""), Toast.LENGTH_LONG, force = true)
+            },
+        )
     }
 
     private fun importSettingsFromFile(file: File) {
         val appContext = requireContext().applicationContext
         val snapshot = createImportSnapshot()
-        viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                val result = withContext(Dispatchers.IO) {
-                    SettingsBackupManager.importFromFile(appContext, file)
+        settingsMutations.start(
+            prepare = {
+                withContext(Dispatchers.IO) {
+                    SettingsBackupManager.prepareImportFromFile(file)
                 }
+            },
+            apply = { prepared ->
+                val result = SettingsBackupManager.applyImport(appContext, prepared)
                 handleImportedSettings(snapshot, result)
-            } catch (e: Exception) {
-                if (e is CancellationException) throw e
-                ToastUtils.showToast(requireContext(), getString(R.string.settings_import_failed, e.localizedMessage ?: ""), Toast.LENGTH_LONG, force = true)
-            }
-        }
+            },
+            onFailure = { error ->
+                ToastUtils.showToast(appContext, appContext.getString(R.string.settings_import_failed, error.localizedMessage ?: ""), Toast.LENGTH_LONG, force = true)
+            },
+        )
     }
 
     private fun createImportSnapshot(): ImportSnapshot {
@@ -3766,9 +3776,7 @@ class SettingsFragment : Fragment() {
 
         if (SettingsBackupManager.requiresProjectionRestart(result.changedKeys) && App.provide(ctx).commManager.isConnected) {
             ToastUtils.showToast(ctx, getString(R.string.stopping_service), Toast.LENGTH_SHORT, force = true)
-            val stopServiceIntent = Intent(ctx, AapService::class.java).apply {
-                action = AapService.ACTION_STOP_SERVICE
-            }
+            val stopServiceIntent = AapService.stopIntent(ctx)
             ContextCompat.startForegroundService(ctx, stopServiceIntent)
         }
 

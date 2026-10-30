@@ -310,6 +310,7 @@ class AapService : Service() {
     // Kill-on-disconnect still waits for all cleanup (including Car Mode) before process exit;
     // a user stop removes the Native group only while this request still owns the app.
     private var appExitRequest: AppExitPolicy.Request? = null
+    private var initializedForStart = false
 
     // Completed when the disconnect teardown has finished giving the network back. The exit path
     // creates it before it disconnects, so a teardown that has not started yet is still waited for.
@@ -1028,7 +1029,7 @@ class AapService : Service() {
                 val projectionIntent = AapProjectionActivity.intent(this).apply {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
                 }
-                startActivity(projectionIntent)
+                startActivity(com.andrerinas.openheadunit.app.AppUiEntry.continuation(projectionIntent))
             } catch (e: Exception) {
                 AppLog.e("WakeDetect: failed to launch projection: ${e.message}")
             }
@@ -1155,6 +1156,12 @@ class AapService : Service() {
             stopSelf()
             return
         }
+    }
+
+    /** onCreate has no command yet: a stale relay must never arm USB/native wireless. */
+    private fun initializeForStart() {
+        if (initializedForStart) return
+        initializedForStart = true
         fillBluetoothAddressIfUnset()
         // A force-stop or a crash runs no teardown, so a station stand-down can outlive the process
         // that made it. Putting the network back here is what keeps that from stranding the unit off
@@ -1556,13 +1563,13 @@ class AapService : Service() {
             "foreground=${App.hasStartedActivity})")
         when (strategy) {
             ActivityLaunchPolicy.LaunchStrategy.DIRECT -> {
-                try { startActivity(intent) }
+                try { startActivity(com.andrerinas.openheadunit.app.AppUiEntry.continuation(Intent(intent))) }
                 catch (e: Exception) { AppLog.e("Projection launch failed: ${e.message}") }
             }
             ActivityLaunchPolicy.LaunchStrategy.OVERLAY -> {
-                if (!launchViaOverlayTrampoline(intent)) {
+                if (!launchViaOverlayTrampoline(com.andrerinas.openheadunit.app.AppUiEntry.continuation(Intent(intent)))) {
                     AppLog.w("Projection overlay trampoline failed, trying direct")
-                    try { startActivity(intent) }
+                    try { startActivity(com.andrerinas.openheadunit.app.AppUiEntry.continuation(Intent(intent))) }
                     catch (e: Exception) { AppLog.e("Projection direct fallback failed: ${e.message}") }
                 }
             }
@@ -2905,10 +2912,10 @@ class AapService : Service() {
 
     private fun launchMainActivityForBluetooth() {
         try {
-            startActivity(Intent(this, MainActivity::class.java).apply {
+            startActivity(com.andrerinas.openheadunit.app.AppUiEntry.continuation(Intent(this, MainActivity::class.java).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 putExtra(MainActivity.EXTRA_LAUNCH_SOURCE, MainActivity.LAUNCH_SOURCE_BLUETOOTH)
-            })
+            }))
         } catch (e: Exception) {
             AppLog.w("AapService: could not raise the home screen for a held Bluetooth arrival: ${e.message}")
         }
@@ -3066,8 +3073,10 @@ class AapService : Service() {
         }
         AppLog.i("AapService: onTaskRemoved — attempting restart")
         try {
-            val restartIntent = Intent(this, AapService::class.java)
-            ContextCompat.startForegroundService(this, restartIntent)
+            val owner = commManager.appOwnershipRevision()
+            if (commManager.isAppRunOwner(owner)) {
+                ContextCompat.startForegroundService(this, entryIntent(this, owner))
+            }
         } catch (e: Exception) {
             AppLog.e("AapService: failed to restart after task removal: ${e.message}")
         }
@@ -3076,6 +3085,7 @@ class AapService : Service() {
 
     /** Called on Main after CommManager closes connection admission for this destruction. */
     internal fun stopForAppExit(request: AppExitPolicy.Request) {
+        if (appExitRequest != null) return
         appExitRequest = request
         isDestroying = true
         stopSelf()
@@ -3083,6 +3093,13 @@ class AapService : Service() {
 
     @SuppressLint("WrongConstant")
     override fun onDestroy() {
+        if (!initializedForStart) {
+            stopForeground(true)
+            super.onDestroy()
+            instance = null
+            completeOwnedDestruction()
+            return
+        }
         closeRetainedHct()
         AppLog.i("AapService destroying... (wakeLock held=${bootWakeLock?.isHeld == true})")
         FloatingButtonManager.removeOverlay(this)
@@ -3186,20 +3203,58 @@ class AapService : Service() {
         try { LogExporter.stopCapture() } catch (_: Exception) {}
         super.onDestroy()
         instance = null
-        when (appExitRequest?.let { commManager.completeAppExit(it) }) {
-            AppExitPolicy.Completion.KILL_PROCESS -> {
+        completeOwnedDestruction()
+    }
+
+    private fun completeOwnedDestruction() {
+        val physical = appExitRequest
+        if (physical == null) {
+            if (!initializedForStart) commManager.restoreAppForEntry(commManager.appOwnershipRevision())
+            return
+        }
+        val completion = commManager.completeAppExit(physical)
+        completion.request?.let { latest ->
+            commManager.broadcastAppExit(latest)
+            if (latest.killProcess) commManager.finishAppExitTasks(latest)
+        }
+        when (completion.effect) {
+            AppExitPolicy.Effect.KILL_PROCESS -> {
+                if (!commManager.ownsAppExit(completion.owner) || !settings.killOnDisconnect) return
                 com.andrerinas.openheadunit.connection.bluetooth.xyauto.XyAutoMediaSession.beforeProcessExit()
-                AppLog.i("AapService: owned app exit completed. Triggering System.exit(0).")
                 System.exit(0)
             }
-            AppExitPolicy.Completion.RESTART_SERVICE -> {
-                try {
-                    ContextCompat.startForegroundService(this, Intent(this, AapService::class.java))
-                } catch (e: Exception) {
-                    AppLog.e("AapService: failed to restart for reopened app: ${e.message}")
-                }
-            }
+            AppExitPolicy.Effect.RESTART_SERVICE -> commManager.restoreAppForEntry(completion.owner)
             else -> Unit
+        }
+    }
+
+    private fun stopForAcceptedAppExit() {
+        isDestroying = true
+        val teardownDone = if (ServiceStopWaitPolicy.waitsForWirelessTeardown(
+                sessionConnected = commManager.isConnected,
+                wirelessLauncherActive = wifiLauncherManager.isActive,
+            )) CompletableDeferred<Unit>() else null
+        exitTeardownDone = teardownDone
+        if (commManager.isConnected) commManager.disconnect(sendByeBye = true, honorKillOnDisconnect = false)
+        exitTeardownState = commManager.connectionState.value as? CommManager.ConnectionState.Disconnected
+        selfLauncherManager.stop(wasConnected = false)
+        stopForeground(true)
+        if (teardownDone == null) {
+            commManager.finishCurrentAppExitTasks()
+            stopSelf()
+        } else {
+            serviceScope.launch {
+                val gaveItBack = withTimeoutOrNull(ServiceStopWaitPolicy.TEARDOWN_TIMEOUT_MS) {
+                    teardownDone.await()
+                } != null
+                if (!gaveItBack) AppLog.w("AapService: wireless teardown timed out; stopping service")
+                if (exitTeardownDone === teardownDone) {
+                    exitTeardownDone = null
+                    exitTeardownState = null
+                }
+                commManager.finishCurrentAppExitTasks()
+                stopSelf()
+            }
         }
     }
 
@@ -3230,7 +3285,54 @@ class AapService : Service() {
         wifiLauncherManager.stop()
     }
 
+    private fun retireRejectedBootstrap() {
+        if (!initializedForStart && appExitRequest == null) {
+            // stopSelf cannot retract an onDestroy already queued by Android.
+            isDestroying = true
+            stopSelf()
+        }
+    }
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // Public/notification unversioned input is fresh at first app ingress. Internal
+        // relays preserve the decision accepted at the original UI/automation callback.
+        if (intent?.action == ACTION_STOP_SERVICE) {
+            val request = if (intent.hasExtra(EXTRA_STOP_OWNER)) {
+                commManager.acceptedAppExit(intent.getLongExtra(EXTRA_STOP_OWNER, -1L))
+            } else {
+                commManager.requestExplicitAppExit(settings.killOnDisconnect && commManager.isConnected)
+            }
+            if (request == null) {
+                retireRejectedBootstrap()
+                return START_NOT_STICKY
+            }
+            val physical = commManager.commitAppExit(request)
+            if (physical == null) {
+                retireRejectedBootstrap()
+                return START_NOT_STICKY
+            }
+            commManager.broadcastAppExit(request)
+            if (appExitRequest != null) {
+                // B joins A. Preserve A's latch, local identity and cleanup coroutine.
+                commManager.finishCurrentAppExitTasks()
+                return START_NOT_STICKY
+            }
+            appExitRequest = physical
+            if (!initializedForStart) {
+                isDestroying = true
+                stopSelf()
+                return START_NOT_STICKY
+            }
+            stopForAcceptedAppExit()
+            return START_NOT_STICKY
+        }
+        if (intent?.hasExtra(EXTRA_RUN_OWNER) == true &&
+            !commManager.isAppRunOwner(intent.getLongExtra(EXTRA_RUN_OWNER, -1L))) {
+            retireRejectedBootstrap()
+            return START_NOT_STICKY
+        }
+        if (isDestroying) return START_NOT_STICKY
+        initializeForStart()
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 startForeground(1, createNotification(),
@@ -3250,59 +3352,6 @@ class AapService : Service() {
             suppressNextProjectionRaise = true
         }
 
-        // Handle stop before re-posting the notification to avoid a flash
-        if (intent?.action == ACTION_STOP_SERVICE) {
-            val request = commManager.requestExplicitAppExit(
-                killProcess = settings.killOnDisconnect && commManager.isConnected,
-            ) ?: return START_NOT_STICKY
-            if (!commManager.commitAppExit(request)) return START_NOT_STICKY
-            appExitRequest = request
-            AppLog.i("Stop action received. Broadcasting owned finish request to activities.")
-            commManager.broadcastAppExit(request)
-            isDestroying = true
-            // Asked before the disconnect, and the latch made before it too. The teardown that
-            // gives the network back runs on serviceScope and suspends on the disconnect, and
-            // onDestroy cancels that scope: a stopSelf() taken here killed it at the await and left
-            // the group up for the next bring-up to meet as a busy create.
-            val teardownDone = if (
-                ServiceStopWaitPolicy.waitsForWirelessTeardown(
-                    sessionConnected = commManager.isConnected,
-                    wirelessLauncherActive = wifiLauncherManager.isActive,
-                )
-            ) CompletableDeferred<Unit>() else null
-            exitTeardownDone = teardownDone
-            if (commManager.isConnected) commManager.disconnect(sendByeBye = true, honorKillOnDisconnect = false)
-            // Collection uses queued Main dispatch. Bind the waiter to the state just
-            // published so an older queued terminal notification cannot finish this Stop.
-            exitTeardownState = commManager.connectionState.value as? CommManager.ConnectionState.Disconnected
-            selfLauncherManager.stop(wasConnected = false)
-            stopForeground(true)
-            if (teardownDone == null) {
-                if (request.killProcess) commManager.finishAppExitTasks(request)
-                stopSelf()
-            } else {
-                serviceScope.launch {
-                    val gaveItBack = withTimeoutOrNull(ServiceStopWaitPolicy.TEARDOWN_TIMEOUT_MS) {
-                        teardownDone.await()
-                    } != null
-                    if (!gaveItBack) {
-                        AppLog.w(
-                            "AapService: the wireless teardown did not finish in " +
-                                "${ServiceStopWaitPolicy.TEARDOWN_TIMEOUT_MS}ms, so the service stops " +
-                                "anyway. A network left up here is what the next bring-up meets as a " +
-                                "busy create."
-                        )
-                    }
-                    if (exitTeardownDone === teardownDone) {
-                        exitTeardownDone = null
-                        exitTeardownState = null
-                    }
-                    if (request.killProcess) commManager.finishAppExitTasks(request)
-                    stopSelf()
-                }
-            }
-            return START_NOT_STICKY
-        }
 
         // Route MEDIA_BUTTON intents to the active MediaSession.
         if (shouldActivateMediaSession()) {
@@ -3563,7 +3612,7 @@ class AapService : Service() {
                             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
                             putExtra(MainActivity.EXTRA_SHOW_DRIVER_SELECTOR, true)
                         }
-                        startActivity(mainIntent)
+                        startActivity(com.andrerinas.openheadunit.app.AppUiEntry.continuation(mainIntent))
                     }
                 }
             }
@@ -3858,7 +3907,7 @@ class AapService : Service() {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
                 putExtra(MainActivity.EXTRA_LAUNCH_SOURCE, "Boot auto-start")
             }
-            startActivity(launchIntent)
+            startActivity(com.andrerinas.openheadunit.app.AppUiEntry.continuation(launchIntent))
             AppLog.i("Boot auto-start: direct startActivity succeeded")
         } catch (e: Exception) {
             AppLog.e("Boot auto-start: direct startActivity failed: ${e.message}")
@@ -3871,7 +3920,7 @@ class AapService : Service() {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
             putExtra(MainActivity.EXTRA_LAUNCH_SOURCE, "Boot auto-start")
         }
-        return launchViaOverlayTrampoline(launchIntent)
+        return launchViaOverlayTrampoline(com.andrerinas.openheadunit.app.AppUiEntry.continuation(launchIntent))
     }
 
     private fun launchViaOverlayTrampoline(launchIntent: Intent): Boolean {
@@ -3910,7 +3959,10 @@ class AapService : Service() {
         }
         val piFlags = PendingIntent.FLAG_UPDATE_CURRENT or
             (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0)
-        val fullScreenPi = PendingIntent.getActivity(this, 200, launchIntent, piFlags)
+        val fullScreenPi = PendingIntent.getActivity(this, 200,
+            com.andrerinas.openheadunit.app.AppUiEntry.continuation(Intent(launchIntent)), piFlags)
+        // A human content tap is a new OPEN, unlike the automatic full-screen delivery.
+        val contentPi = PendingIntent.getActivity(this, 202, launchIntent, piFlags)
 
         val notification = NotificationCompat.Builder(this, App.bootStartChannel)
             .setSmallIcon(R.drawable.ic_stat_aa)
@@ -3919,7 +3971,7 @@ class AapService : Service() {
             .setContentTitle(getString(R.string.app_name))
             .setContentText(getString(R.string.notification_service_running))
             .setFullScreenIntent(fullScreenPi, true)
-            .setContentIntent(fullScreenPi)
+            .setContentIntent(contentPi)
             .setAutoCancel(true)
             .build()
 
@@ -4029,6 +4081,24 @@ class AapService : Service() {
         var instance: AapService? = null
             private set
 
+        private const val EXTRA_STOP_OWNER = "accepted_stop_owner"
+        private const val EXTRA_RUN_OWNER = "accepted_run_owner"
+
+        /** Accept once at the synchronous internal producer, never again at service delivery. */
+        @androidx.annotation.MainThread
+        fun stopIntent(context: Context): Intent {
+            val component = App.provide(context)
+            val request = component.commManager.requestExplicitAppExit(
+                component.settings.killOnDisconnect && component.commManager.isConnected)
+            return acceptedStopIntent(context, request.id)
+        }
+
+        internal fun acceptedStopIntent(context: Context, owner: Long): Intent =
+            Intent(context, AapService::class.java).setAction(ACTION_STOP_SERVICE)
+                .putExtra(EXTRA_STOP_OWNER, owner)
+
+        internal fun entryIntent(context: Context, owner: Long): Intent =
+            Intent(context, AapService::class.java).putExtra(EXTRA_RUN_OWNER, owner)
         /** Apply the wireless part of Save before its caller starts audio retirement/reconnect. */
         @androidx.annotation.MainThread
         internal fun applyWirelessSettings(context: Context, startWireless: Boolean) {

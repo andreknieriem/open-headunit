@@ -39,20 +39,59 @@ for name,path,finish in [('MainActivity','main/MainActivity.kt','finishAffinity'
                   'fun deliver(intent:Intent) { finishReceiver.onReceive(context,intent) }\n'
                   + receiver + '\n}\n')
 (OUT/'ExitReceivers.kt').write_text(receivers)
+# Use the real two-phase settings mutation helper, including its cancellation fence.
+settings_mutation = base/'main/settings/SettingsMutation.kt'
+(OUT/'SettingsMutation.kt').write_text(settings_mutation.read_text().replace(
+    'package com.andrerinas.openheadunit.main.settings', 'package lifecycle'))
+methods['SettingsMutation.kt']=hashlib.sha256(settings_mutation.read_bytes()).hexdigest()
 # Preserve the production final decision and branch ordering; replace only platform effects.
 service_source=(base/'aap/AapService.kt').read_text()
-tail_start=service_source.index('        when (appExitRequest?.let { commManager.completeAppExit(it) })')
-tail_end=service_source.index('\n    }\n\n    private fun startWirelessForSettings()',tail_start)
-exit_tail=service_source[tail_start:tail_end]
+exit_tail=member(service_source, '    private fun completeOwnedDestruction()')
 methods['AapService exit completion tail']=hashlib.sha256(exit_tail.encode()).hexdigest()
+exit_tail=exit_tail.replace('private fun completeOwnedDestruction()', 'fun finish()')
 exit_tail=exit_tail.replace('com.andrerinas.openheadunit.connection.bluetooth.xyauto.XyAutoMediaSession.beforeProcessExit()', 'beforeProcessExit()')
 exit_tail=exit_tail.replace('System.exit(0)', 'recordProcessExit()')
-exit_tail=exit_tail.replace('ContextCompat.startForegroundService(this, Intent(this, AapService::class.java))', 'recordServiceRestart()')
+exit_tail=exit_tail.replace('commManager.restoreAppForEntry(completion.owner)', 'recordServiceRestart()')
 (OUT/'ExitServiceTail.kt').write_text('package lifecycle\nimport com.andrerinas.openheadunit.connection.AppExitPolicy\n'
     'internal class ExitServiceTail(private val commManager:CommManager, private val appExitRequest:AppExitPolicy.Request) {\n'
+    'private val initializedForStart=true\nprivate val settings get()=commManager.settings\n'
     'var beforeProcessExit:()->Unit = {}\nvar processExits=0\nvar serviceRestarts=0\nvar ownedAtProcessExit=false\n'
     'fun recordProcessExit(){ownedAtProcessExit=commManager.ownsAppExit(appExitRequest.id);processExits++}\n'
-    'fun recordServiceRestart(){serviceRestarts++}\nfun finish(){\n' + exit_tail + '\n}\n}\n')
+    'fun recordServiceRestart(){serviceRestarts++}\n' + exit_tail + '\n}\n')
+
+# Keep the real command-validation prefix and rejection/destruction behavior; radio setup and
+# Android service lifetime are recording boundaries, not another model of the ownership guards.
+bootstrap_start = extract(service_source, 'override fun onStartCommand(')
+bootstrap_start = bootstrap_start[:bootstrap_start.index('        initializeForStart()')] + \
+    '        initializeForStart()\n        return START_STICKY\n    }'
+bootstrap_start = bootstrap_start.replace('override fun onStartCommand(', 'fun onStartCommand(')
+bootstrap_constants = '\n'.join(next(line.strip().replace('private ', '', 1)
+    for line in service_source.splitlines() if re.search(r'\bconst\s+val\s+' + re.escape(name) + r'\s*=', line))
+    for name in ['ACTION_STOP_SERVICE', 'EXTRA_STOP_OWNER', 'EXTRA_RUN_OWNER'])
+bootstrap_rejection = extract(service_source, 'private fun retireRejectedBootstrap()')
+(OUT/'ServiceBootstrap.kt').write_text(
+    'package lifecycle\nimport android.content.*\n'
+    'import com.andrerinas.openheadunit.connection.AppExitPolicy\n'
+    'class ServiceBootstrap(private val commManager:CommManager) {\n'
+    'private val settings get()=commManager.settings\n'
+    'var initializedForStart=false\nvar isDestroying=false\n'
+    'private var appExitRequest:AppExitPolicy.Request?=null\nvar stops=0\n'
+    'fun stopSelf(){stops++}\nfun initializeForStart(){initializedForStart=true}\n'
+    'fun stopForAcceptedAppExit(){isDestroying=true;stops++}\n'
+    'fun beforeProcessExit(){error("unexpected process exit")}\n'
+    'fun recordProcessExit(){error("unexpected process exit")}\n'
+    'fun recordServiceRestart(){error("unexpected physical restart")}\n'
+    'companion object {\nconst val START_NOT_STICKY=2\nconst val START_STICKY=1\n' +
+    bootstrap_constants + '\n}\n' + bootstrap_rejection + '\n' + bootstrap_start + '\n' +
+    exit_tail + '\n}\n')
+shutil.copy2(ROOT/'app/src/test/host-connection/AppBootstrapFixture.kt', OUT/'AppBootstrapFixture.kt')
+home_auto = extract((base/'main/HomeFragment.kt').read_text(),
+    'if (appSettings.autoStartOnScreenOn || appSettings.autoStartOnBoot)')
+(OUT/'HomeAutoStart.kt').write_text('package lifecycle\n'
+    'data class HomeAutoSettings(val autoStartOnScreenOn:Boolean,val autoStartOnBoot:Boolean)\n'
+    'class HomeAutoStart(private val commManager:CommManager,private val appSettings:HomeAutoSettings){\n'
+    'fun created(){\n' + home_auto + '\n}\n}\n')
+shutil.copy2(base/'app/AppForegroundPolicy.kt',OUT/'AppForegroundPolicy.kt')
 
 manager_head=r'''package lifecycle
 import android.hardware.usb.*
@@ -63,6 +102,7 @@ import android.os.*
 import com.andrerinas.openheadunit.aap.protocol.proto.Control
 import com.andrerinas.openheadunit.connection.AppExitPolicy
 import kotlinx.coroutines.*
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.*
 import java.util.concurrent.*
 import java.net.Socket
@@ -119,9 +159,12 @@ class CommManager {
  private val keyStates=mutableMapOf<Int,Int>()
  private var btMediaLinkCached:Boolean?=null
  private var btMediaLinkCheckedAt:Long?=null
- private fun dropOwedScans(){}
+ private fun dropOwedScans()=ConnectionArbiter.dropUsbDebt()
  private fun noteHandshakeOutcome(silent:Boolean){}
- private fun settleSessionClaim(formed:Boolean){}
+ @Volatile private var sessionClaim:ConnectionArbiter.Claim?=null
+ @Volatile private var claimedEndpointOwner:Pair<ConnectionArbiter.Claim,String>?=null
+ var attemptUserRequested=false
+ private val claimedEndpoint:String? get()=claimedEndpointOwner?.second
  private fun noteSessionEnded(renderedAnyFrame:Boolean, deliberateEnd:Boolean=false){}
  val connectionState get()=_connectionState
  val state get()=_connectionState.value
@@ -130,26 +173,34 @@ class CommManager {
  fun network()=_connection
  fun requested()=synchronized(transportLifecycleLock){disconnectRequested}
  fun cleanups(){queue.drain()}
- fun close(){disconnect(honorKillOnDisconnect=false);cleanups();_scope.cancel()}
- suspend fun connectNext(){connectIp("fixture",5277, null)}
- suspend fun connectPrepared(socket:Socket,admission:ConnectionAdmission=ConnectionAdmission.UNRESTRICTED){connectAdmittedSocket(socket,admission,null,null)}
- suspend fun connectAccepted(socket:Socket){connectSocket(socket,null,null)}
- suspend fun connectClaimedNext(claim:ConnectionArbiter.Claim){if(acceptAppConnectionClaim(claim))connectIp("fixture",5277,null)}
- suspend fun connectClaimedUsb(d:UsbDevice,claim:ConnectionArbiter.Claim){connectUsb(d,appClaim=claim)}
- suspend fun connectSelf(){connectIp("127.0.0.1",5277,null)}
- suspend fun connectSaved(state:ConnectionState.Disconnected){connectIp("fixture",5277,state)}
+ fun close(){disconnect(honorKillOnDisconnect=false);cleanups();_scope.cancel();ConnectionArbiter.actions=null;ConnectionArbiter.reset()}
+ // Private publication fixtures model an already-accepted unrestricted claim. The claimed
+ // variants below execute the actual production Main acceptance when that ordering is tested.
+ private fun acceptedTicket():Long = synchronized(transportLifecycleLock) {
+  appExitPolicy.supersede();cancelAppExitCallback();appExitPolicy.stopEpoch
+ }
+ suspend fun connectNext(){connectIp("fixture",5277,null,acceptedTicket())}
+ suspend fun connectPrepared(socket:Socket,admission:ConnectionAdmission=ConnectionAdmission.UNRESTRICTED){connectAdmittedSocket(socket,admission,null,null,appConnectionTicket())}
+ suspend fun connectAccepted(socket:Socket){connectSocket(socket,null,null,acceptedTicket())}
+ suspend fun connectClaimedNext(claim:ConnectionArbiter.Claim){val ticket=appConnectionTicket();if(acceptAppConnectionClaim(claim,ticket))connectIp("fixture",5277,null,ticket)}
+ suspend fun connectClaimedUsb(d:UsbDevice,claim:ConnectionArbiter.Claim){connectUsb(d,appConnectionTicket(),appClaim=claim)}
+ suspend fun connectSelf(){connectIp("127.0.0.1",5277,null,acceptedTicket())}
+ suspend fun connectSaved(state:ConnectionState.Disconnected){connectIp("fixture",5277,state,acceptedTicket())}
  suspend fun awaitDisconnectComplete(){_disconnectJob?.join()}
  val isUsbSession=false
- suspend fun connectDevice(d:UsbDevice,saved:ConnectionState.Disconnected?=null){connectUsb(d,saved)}
- suspend fun connectRecovery(d:UsbDevice,admission:ConnectionAdmission)=connectUsb(d,recoveryOwner=usbRecoveryOwner,recoveryClaim=ConnectionArbiter.Claim(),recoveryAdmission=admission)
+ suspend fun connectDevice(d:UsbDevice,saved:ConnectionState.Disconnected?=null){connectUsb(d,appConnectionTicket(),saved)}
+ suspend fun connectRecovery(d:UsbDevice,admission:ConnectionAdmission)=connectUsb(d,appConnectionTicket(),recoveryOwner=usbRecoveryOwner,recoveryClaim=fixtureClaim(),recoveryAdmission=admission)
  suspend fun awaitCleanup(){_disconnectJob?.join()}
  companion object { const val ERROR_HANDSHAKE_PEER_SILENT="Handshake failed: the peer never responded" }
 '''
 # Keep Save permission and deadline semantics from the same production state as the methods.
 old_state=manager_head[manager_head.index(' class Disconnected('):manager_head.index(' object Connecting:')]
 manager_head=manager_head.replace(old_state, extract(comm, 'class Disconnected(')+'\n')
-for name in ['SettingsRestartRecovery.kt', 'SameEndpointConnectPolicy.kt', 'ConnectionAdmission.kt', 'UsbRecoveryAdmission.kt']:
+for name in ['SettingsRestartRecovery.kt', 'SameEndpointConnectPolicy.kt', 'ConnectionAdmission.kt', 'UsbRecoveryAdmission.kt',
+             'ConnectionPriorityPolicy.kt', 'ConnectionArbiter.kt', 'HeldServerSocket.kt']:
     source=(base/'connection'/name).read_text().replace('package com.andrerinas.openheadunit.connection', 'package lifecycle')
+    source=source.replace('import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy.',
+                          'import lifecycle.ConnectionPriorityPolicy.')
     (OUT/name).write_text(source)
 (OUT/'UsbRecoveryDevice.kt').write_text((base/'connection/usb/UsbRecoveryDevice.kt').read_text().replace('package com.andrerinas.openheadunit.connection.usb', 'package lifecycle'))
 (OUT/'AaPresentationSession.kt').write_text((base/'aap/AaPresentationSession.kt').read_text().replace('package com.andrerinas.openheadunit.aap', 'package lifecycle'))
@@ -157,22 +208,32 @@ for name in ['SettingsRestartRecovery.kt', 'SameEndpointConnectPolicy.kt', 'Conn
 shutil.copy2(base/'connection/AppExitPolicy.kt',OUT/'AppExitPolicy.kt')
 shutil.copy2(ROOT/'app/src/test/host-connection/AppExitFixture.kt',OUT/'AppExitFixture.kt')
 shutil.copy2(ROOT/'app/src/test/host-connection/AppExitSerializationFixture.kt',OUT/'AppExitSerializationFixture.kt')
+shutil.copy2(ROOT/'app/src/test/host-connection/AppConnectionIngressFixture.kt',OUT/'AppConnectionIngressFixture.kt')
 exit_members=comm[comm.index('    private val appExitPolicy'):comm.index('    // The first disconnect chooses app-exit policy')]
 methods['app exit ownership']=hashlib.sha256(exit_members.encode()).hexdigest()
 # Tests control publication scheduling without a global Android Main dispatcher.
 # Extracted methods stay unchanged; only the dispatcher's platform initializer is doubled.
 manager_head += exit_members.replace(
     "private val appExitDispatcher: CoroutineDispatcher = Dispatchers.Main.immediate",
-    "private val appExitDispatcher: CoroutineDispatcher = Dispatchers.Unconfined")
-# These endpoint predicates must be the real ones when testing the terminal route snapshot.
-for declaration in ['val isWirelessSession:', 'val isLoopbackSession:']:
+    "private val appExitDispatcher: CoroutineDispatcher = Dispatchers.Unconfined").replace(
+    "private val connectionIoDispatcher: CoroutineDispatcher = Dispatchers.IO",
+    "private val connectionIoDispatcher: CoroutineDispatcher = Dispatchers.Unconfined")
+# Paragraph boundaries retain complete expression bodies, including claimUsb's trailing also.
+for declaration in ['val isConnected:', 'val isWirelessSession:', 'val isLoopbackSession:',
+                    'internal fun claimUsb(', 'private fun socketOwner(']:
     start = comm.index(declaration)
-    manager_head += comm[start:comm.index('\n\n', start)] + '\n'
+    definition = comm[start:comm.index('\n\n', start)]
+    methods[declaration] = hashlib.sha256(definition.encode()).hexdigest()
+    manager_head += definition + '\n'
 manager=manager_head+'\n'.join(extract(comm,n) for n in [
  'suspend fun startHandshake()', 'private inline fun withLiveTransport(', 'suspend fun startReading()',
  'private fun reachedSsl()', 'private fun transportedQuited(', 'fun applyAudioSettings()', 'fun disconnect(', 'fun cancelPendingSettingsRestart()', 'internal fun rearmSnapshot()', 'private fun doDisconnect(',
  'private suspend fun connectIp(', 'private suspend fun connectUsb(', 'private suspend fun connectSocket(', 'private suspend fun connectAdmittedSocket(', 'private fun socketEndpoint(', 'fun disconnectForLinkLoss(', 'fun destroy()',
- 'fun setProjectionVideoFocusSuppressed(', 'private suspend fun acceptAppConnectionClaim('
+ 'fun setProjectionVideoFocusSuppressed(', 'private suspend fun acceptAppConnectionClaim(',
+ 'suspend fun connect(\n        device:', 'suspend fun connect(\n        socket:', 'suspend fun connect(\n        ip:',
+ 'private suspend fun connectSocketWithTicket(', 'private fun claimSocket(',
+ 'private fun releaseClaim(', 'private fun noteClaimedEndpoint(',
+ 'private fun clearClaimedEndpoint(', 'private fun settleSessionClaim('
 ])+'\n}\n'
 transport_head=r'''
 class AapTransport(
@@ -573,6 +634,9 @@ fun interruptedTerminationControl()=runBlocking{
  c.close();println("PASS interrupt does not bypass handshake/termination barrier; interrupt status restored; no retired failure report")
 }
 fun main(){
+ bootstrapRejectionPreservesLatestRun()
+ homeConfigPreservesStoppedService()
+ appConnectionIngressOwnership()
  providedMain()
  failedHandshakeControls();partialStartupExceptionControl();interruptedTerminationControl()
  workerQuitNoTailControl()
@@ -665,8 +729,12 @@ fun destroyDuringCandidateConstruction()=runBlocking {
 '''
 extra += r'''
 object UsbDeviceCompat{fun isInAccessoryMode(d:UsbDevice)=true;fun isConnectable(c:Context,d:UsbDevice)=true;fun getUniqueName(d:UsbDevice)="usb-fixture";fun usbManager(c:Context)=c.getSystemService(Context.USB_SERVICE) as UsbManager}
-// The arbiter double exposes held/refused ownership; production admission/exit decisions are extracted above.
-object ConnectionArbiter{class Claim(val held:Boolean=true);fun runIfHeld(claim:Claim, action:()->Unit):Boolean{if(!claim.held)return false;action();return true}}
+// Legacy claim-admission controls use real arbiter claims, including explicit refused ownership.
+fun fixtureClaim(held:Boolean=true):ConnectionArbiter.Claim {
+ val claim=checkNotNull(ConnectionArbiter.claim(ConnectionPriorityPolicy.Tier.USER,ConnectionPriorityPolicy.Owner.MANUAL,"fixture"))
+ if(!held)ConnectionArbiter.release(claim,sessionFormed=false)
+ return claim
+}
 object UsbBridge{ @Volatile var afterConnect:(()->Unit)?=null;var forcedOpen:(()->Boolean)?=null }
 // The production USB check has to match the fixture's USB double.
 typealias AbstractUsbProjectionConnection=StandardUsbProjectionConnection
@@ -903,6 +971,7 @@ class Intent{
  fun setPackage(s:String)=this
  private val extras=mutableMapOf<String,Long>()
  fun putExtra(name:String,value:Long)=apply{extras[name]=value}
+ fun hasExtra(name:String)=extras.containsKey(name)
  fun getLongExtra(name:String,default:Long)=extras[name]?:default
 }
 class Context{
@@ -916,6 +985,8 @@ class Context{
 (OUT/'App.kt').write_text('package android.app\nobject Application{const val AUDIO_SERVICE="audio"}\nclass ActivityManager{var beforeTasks:(()->Unit)?=null;private val tasks=mutableListOf(AppTask());val appTasks:MutableList<AppTask> get(){beforeTasks?.invoke();return tasks};class AppTask{var finishes=0;fun finishAndRemoveTask(){finishes++}}}\n')
 (OUT/'Media.kt').write_text('package android.media\nclass AudioManager{fun interface OnAudioFocusChangeListener{fun onAudioFocusChange(i:Int)};companion object{const val STREAM_MUSIC=3;const val AUDIOFOCUS_GAIN=1}}\n')
 shutil.copy2(ROOT/'app/src/test/host-connection/audio-stubs/AapService.kt',OUT/'Service.kt')
+for stub in ['ContextCompat.kt', 'RetainedNativeGroup.kt']:
+    shutil.copy2(ROOT/'app/src/test/host-connection/audio-stubs'/stub,OUT/stub)
 (OUT/'Proto.kt').write_text(r'''package com.andrerinas.openheadunit.aap.protocol.proto
 object Control{
  enum class ByeByeReason{USER_SELECTION}

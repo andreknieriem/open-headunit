@@ -7,64 +7,72 @@ internal class AppExitPolicy {
         val killProcess: Boolean,
         val userStop: Boolean,
         val requiresKillOnDisconnect: Boolean,
-    )
-    enum class Completion { NONE, STOPPED, KILL_PROCESS, RESTART_SERVICE }
+    ) {
+        internal var committed = false
+    }
+    enum class Effect { NONE, STOPPED, KILL_PROCESS, RESTART_SERVICE }
+    data class Completion(val effect: Effect, val owner: Long, val request: Request? = null)
 
-    private var nextId = 0L
+    var revision = 0L
+        private set
+    var stopEpoch = 0L
+        private set
     private var current: Request? = null
     private var stopping: Request? = null
-    private var destructionCompleted = false
     val isStopping: Boolean get() = stopping != null
 
-    fun request(killProcess: Boolean, userStop: Boolean, requiresKillOnDisconnect: Boolean = true): Request? {
-        // Once destruction is committed, another queued Stop cannot adopt its request or
-        // restore permission revoked by a reopen. Its own request is explicitly rejected.
-        if (isStopping) return null
-        val request = Request(++nextId, killProcess, userStop, requiresKillOnDisconnect)
-        current = request
-        destructionCompleted = false
-        return request
+    fun request(killProcess: Boolean, userStop: Boolean, requiresKillOnDisconnect: Boolean = true): Request {
+        stopEpoch++
+        return Request(++revision, killProcess, userStop, requiresKillOnDisconnect).also { current = it }
     }
 
-    fun supersede() {
+    /** A transport terminal continues cleanup; it cannot weaken an accepted explicit Stop. */
+    fun requestAutomatic(userStop: Boolean): Request? {
+        if (current?.requiresKillOnDisconnect == false) return null
+        return request(killProcess = true, userStop = userStop)
+    }
+
+    fun supersede(): Long {
         current = null
+        return ++revision
     }
 
-    /** Call only at accepted attempt publication, never for an unaccepted candidate. */
-    fun acceptConnection(): Boolean {
-        if (isStopping) return false
-        supersede()
-        return true
-    }
+    fun acceptResume(expectedRevision: Long): Long? =
+        if (revision == expectedRevision) supersede() else null
+
+    fun isRunOwner(owner: Long): Boolean = current == null && revision == owner
+
+    fun requestFor(id: Long): Request? = current?.takeIf { it.id == id }
+
+    /** A Stop cancels a waiting attempt permanently; a compatible UI Open does not. */
+    fun acceptsConnection(ticket: Long): Boolean = ticket == stopEpoch && !isStopping
 
     fun owns(id: Long, killOnDisconnect: Boolean): Boolean =
         current?.let { it.id == id && (!it.requiresKillOnDisconnect || killOnDisconnect) } == true
 
     fun userStopAtDestroy(request: Request): Boolean =
-        stopping === request && current === request && request.userStop
+        stopping === request && current?.userStop == true
 
-    fun commit(request: Request, killOnDisconnect: Boolean): Boolean {
-        if (current !== request || isStopping || destructionCompleted) return false
+    /** New Stops join the existing physical destruction, never replace its identity. */
+    fun commit(request: Request, killOnDisconnect: Boolean): Request? {
+        if (current !== request || request.committed) return null
         if (request.requiresKillOnDisconnect && !killOnDisconnect) {
             supersede()
-            return false
+            return null
         }
-        stopping = request
-        return true
+        request.committed = true
+        return stopping ?: request.also { stopping = it }
     }
 
     fun destroyed(request: Request, killOnDisconnect: Boolean): Completion {
-        if (stopping !== request || destructionCompleted) return Completion.NONE
-        destructionCompleted = true
-        if (current !== request) {
-            stopping = null
-            return Completion.RESTART_SERVICE
-        }
-        // sendBroadcast is asynchronous: the old activities still owe their finish after
-        // service cleanup. Keep only that permission until a launch/attempt supersedes it.
-        if (request.killProcess && killOnDisconnect) return Completion.KILL_PROCESS
+        if (stopping !== request) return Completion(Effect.NONE, revision)
         stopping = null
-        return Completion.STOPPED
+        val latest = current
+        if (latest == null) return Completion(Effect.RESTART_SERVICE, revision)
+        latest.committed = true
+        // Only the latest Stop's own flags authorize effects, even when A did the cleanup.
+        val effect = if (latest.killProcess && killOnDisconnect) Effect.KILL_PROCESS else Effect.STOPPED
+        return Completion(effect, latest.id, latest)
     }
 
     companion object {

@@ -48,7 +48,7 @@ class NearbySessionPublicationTest {
             val replacementTransport = mock(com.andrerinas.openheadunit.aap.AapTransport::class.java)
             val method = CommManager::class.java.getDeclaredMethod("connectAdmittedSocket",
                 Socket::class.java, ConnectionAdmission::class.java, Pair::class.java,
-                CommManager.ConnectionState.Disconnected::class.java, Continuation::class.java)
+                CommManager.ConnectionState.Disconnected::class.java, Long::class.javaPrimitiveType, Continuation::class.java)
                 .apply { isAccessible = true }
             mockConstruction(SocketProjectionConnection::class.java) { candidate, _ ->
                 runBlocking {
@@ -72,7 +72,7 @@ class NearbySessionPublicationTest {
                         suspendCoroutineUninterceptedOrReturn<Unit> { continuation ->
                             method.invoke(manager, socket, admission, null,
                                 if (outcome == "saved-request") CommManager.ConnectionState.Disconnected(
-                                    reason = CommManager.DisconnectReason.SETTINGS_RESTART) else null, continuation)
+                                    reason = CommManager.DisconnectReason.SETTINGS_RESTART) else null, 0L, continuation)
                         }
                     } catch (e: java.lang.reflect.InvocationTargetException) {
                         if (e.cause !is ConnectionAdmissionRejectedException) throw e

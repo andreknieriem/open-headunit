@@ -38,6 +38,8 @@ object AutomationEffectRunner {
                     AppLog.w("Automation: refused - ${effect.reason}")
                 }
                 is AutomationCommandPolicy.Effect.StartService -> startService(context, effect)
+                is AutomationCommandPolicy.Effect.StopApp -> ContextCompat.startForegroundService(
+                    context, AapService.acceptedStopIntent(context, effect.owner))
                 is AutomationCommandPolicy.Effect.ConnectSocket ->
                     CoroutineScope(Dispatchers.IO).launch {
                         component.commManager.connect(effect.ip, effect.port, ConnectionPriorityPolicy.Tier.USER)
@@ -98,11 +100,12 @@ object AutomationEffectRunner {
         effect: AutomationCommandPolicy.Effect.ImportSettings,
         reply: JSONObject
     ) {
-        val result = if (!effect.json.isNullOrBlank()) {
-            SettingsBackupManager.importFromJson(context, effect.json)
+        val prepared = if (!effect.json.isNullOrBlank()) {
+            SettingsBackupManager.parseImportJson(effect.json)
         } else {
-            SettingsBackupManager.importFromFile(context, File(effect.path!!))
+            SettingsBackupManager.prepareImportFromFile(File(effect.path!!))
         }
+        val result = SettingsBackupManager.applyImport(context, prepared)
         reply.put("imported", result.importedKeys)
             .put("skipped", result.skippedKeys)
             .put("restartNeeded", SettingsBackupManager.requiresProjectionRestart(result.changedKeys))

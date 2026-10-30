@@ -54,7 +54,7 @@ fun appExitSerializedEffects() = runBlocking {
         c.disconnect(honorKillOnDisconnect = false)
         c.cleanups()
         val request = checkNotNull(c.requestExplicitAppExit(killProcess = true))
-        check(c.commitAppExit(request))
+        check(c.commitAppExit(request) === request)
         val insideEffect = CountDownLatch(1)
         val resumeEffect = CountDownLatch(1)
         val queuedClaim = CountDownLatch(1)
@@ -65,7 +65,7 @@ fun appExitSerializedEffects() = runBlocking {
             waitFor(insideEffect)
             main.dispatched = { queuedClaim.countDown() }
             val replacement = launch(start = CoroutineStart.UNDISPATCHED) {
-                c.connectClaimedNext(ConnectionArbiter.Claim())
+                c.connectClaimedNext(fixtureClaim())
             }
             waitFor(queuedClaim)
             check(c.ownsAppExit(request.id)) // Queued is not yet accepted.
@@ -76,7 +76,7 @@ fun appExitSerializedEffects() = runBlocking {
             check(!c.ownsAppExit(request.id))
             check(tasks.single().finishes == 1)
             c.destroy()
-            check(c.completeAppExit(request) == AppExitPolicy.Completion.RESTART_SERVICE)
+            check(c.completeAppExit(request).effect == AppExitPolicy.Effect.RESTART_SERVICE)
             replacement.join()
             check(c.state is ConnectionState.Connected && c.network()?.closed == false)
             withContext(main) { c.finishAppExitTasks(request) }
@@ -97,10 +97,10 @@ fun appExitSerializedEffects() = runBlocking {
         c.disconnect(honorKillOnDisconnect = false)
         c.cleanups()
         val request = checkNotNull(c.requestExplicitAppExit(killProcess = false))
-        check(c.commitAppExit(request))
+        check(c.commitAppExit(request) === request)
         c.broadcastAppExit(request)
         c.destroy()
-        check(c.completeAppExit(request) == AppExitPolicy.Completion.STOPPED)
+        check(c.completeAppExit(request).effect == AppExitPolicy.Effect.STOPPED)
         val intent = c.context.broadcastIntents.single()
         val mainReceiver = MainActivity(c, c.context)
         val projectionReceiver = AapProjectionActivity(c, c.context)
@@ -366,7 +366,7 @@ fun appExitSerializedEffects() = runBlocking {
         c.disconnect(honorKillOnDisconnect = false)
         c.cleanups()
         val request = checkNotNull(c.requestExplicitAppExit(killProcess = true))
-        check(c.commitAppExit(request))
+        check(c.commitAppExit(request) === request)
         c.destroy()
         val tail = ExitServiceTail(c, request)
         val beforeExit = CountDownLatch(1)
@@ -378,7 +378,7 @@ fun appExitSerializedEffects() = runBlocking {
             waitFor(beforeExit)
             main.dispatched = { queuedClaim.countDown() }
             val replacement = launch(start = CoroutineStart.UNDISPATCHED) {
-                c.connectClaimedNext(ConnectionArbiter.Claim())
+                c.connectClaimedNext(fixtureClaim())
             }
             waitFor(queuedClaim)
             check(c.ownsAppExit(request.id) && tail.processExits == 0)
@@ -391,6 +391,38 @@ fun appExitSerializedEffects() = runBlocking {
             resumeExit.countDown()
             c.close()
             Handler.delayed.clear()
+        }
+    }
+    // Restricted preparation grants no OPEN. A later Stop cancels its final Main transfer,
+    // and an intervening UI Open cannot revive the same prepared candidate.
+    for (openAfterStop in listOf(false, true)) {
+        val c = CommManager()
+        c.disconnect(honorKillOnDisconnect = false)
+        c.cleanups()
+        val main = QueuedDispatcher()
+        val caller = QueuedDispatcher()
+        c.exitDispatcher(main)
+        val socket = Socket()
+        val scope = CoroutineScope(SupervisorJob() + caller)
+        var rejected = false
+        try {
+            val u = scope.launch {
+                try { c.connectPrepared(socket) }
+                catch (_: ConnectionAdmissionRejectedException) { rejected = true }
+            }
+            caller.step()
+            val candidate = SocketProjectionConnection.created.last()
+            val b = c.requestExplicitAppExit(killProcess = false)
+            if (openAfterStop) c.onAppRelaunched()
+            main.step()
+            caller.drain()
+            check(u.isCompleted && rejected && candidate.closed && socket.isClosed)
+            check(c.network() == null && c.state is ConnectionState.Disconnected)
+            check(c.ownsAppExit(b.id) == !openAfterStop)
+        } finally {
+            scope.cancel()
+            socket.close()
+            c.close()
         }
     }
     println("PASS app-exit effect serialization: task enumeration, both post-STOPPED receivers, owned process-exit tail, cancellation before/after Connecting, latest retirement before queued publication and restricted terminal snapshot, old transport cleanup, newer owner preservation, raw socket ownership, and restricted transfer handback")

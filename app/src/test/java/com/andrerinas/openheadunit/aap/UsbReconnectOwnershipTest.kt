@@ -48,7 +48,7 @@ class UsbReconnectOwnershipTest {
             main.drain()
             val connect = CommManager::class.java.getDeclaredMethod("connectIp",
                 String::class.java, Int::class.javaPrimitiveType,
-                ConnectionState.Disconnected::class.java, Continuation::class.java)
+                ConnectionState.Disconnected::class.java, Long::class.javaPrimitiveType, Continuation::class.java)
                 .apply { isAccessible = true }
             mockConstruction(SocketProjectionConnection::class.java) { candidate, _ ->
                 runBlocking {
@@ -89,7 +89,7 @@ class UsbReconnectOwnershipTest {
             }.use {
                 try {
                     suspendCoroutineUninterceptedOrReturn<Unit> { continuation ->
-                        connect.invoke(manager, "127.0.0.1", 5277, null, continuation)
+                        connect.invoke(manager, "127.0.0.1", 5277, null, 0L, continuation)
                     }
                 } finally { scope.cancel(); main.drain() }
             }

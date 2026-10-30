@@ -114,7 +114,7 @@ private class ConnectionFixture(val settings: Settings = Settings()) {
         reason: DisconnectReason = DisconnectReason.CONNECTION_ENDED) {}
     fun nextConnection() {
         _transport?.aapAudio?.releaseAllFocus(); Handler.runAll()
-        check(acceptAppConnection())
+        check(acceptAppConnection(appConnectionTicket(), acquireOwnership = true))
         connectionAttempt = Any()
         _transport = null; disconnectRequested = false; _connection = Any(); _connectionState.value = ConnectionState.Connected
     }
@@ -377,7 +377,7 @@ internal fun audioLifecycleBoundaryRegression() {
             check(service.stops == if (honor) 1 else 0)
             if (honor) {
                 closing.onAppRelaunched()
-                check(closing.completeAppExit(checkNotNull(service.exitRequest)) == AppExitPolicy.Completion.RESTART_SERVICE)
+                check(closing.completeAppExit(checkNotNull(service.exitRequest)).effect == AppExitPolicy.Effect.RESTART_SERVICE)
             }
             closing.nextConnection(); closing.publish(); val fresh = closing.audio
             oldQuit(false)

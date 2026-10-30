@@ -153,10 +153,10 @@ class UsbAttachedActivity : Activity() {
         if (autoStartOnUsb && (isLocked || !App.provide(this).commManager.isConnected)) {
             AppLog.i("USB auto-start: launching app for ${deviceCompat.uniqueName}")
             try {
-                startActivity(Intent(this, MainActivity::class.java).apply {
+                startActivity(AppUiEntry.continuation(Intent(this, MainActivity::class.java).apply {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     putExtra(MainActivity.EXTRA_LAUNCH_SOURCE, "USB auto-start")
-                })
+                }))
             } catch (e: Exception) {
                 AppLog.w("Could not start UI from USB auto-start: ${e.message}")
             }

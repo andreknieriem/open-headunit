@@ -1377,8 +1377,12 @@ class AapService : Service() {
                     is CommManager.ConnectionState.Error -> {
                         // The flow is conflated and a synchronous disconnect() follows the emit, so
                         // count failures where they happen (CommManager.onUsbHandshakeEnded).
+                        // This Error can be the only trace of a loopback session whose terminal it hid.
+                        selfLauncherManager.retireHiddenSessionEnd(state)
                     }
                     is CommManager.ConnectionState.Disconnected -> {
+                        // Before any end policy: a hidden Self session end must not choose it.
+                        selfLauncherManager.retireHiddenSessionEnd(state)
                         selfLauncherManager.onConnectionEnded(state)
                         if (hasEverConnected || state.hadPhysicalConnection) {
                             hasEverConnected = true

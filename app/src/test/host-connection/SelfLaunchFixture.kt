@@ -136,7 +136,7 @@ class SelfLauncherManager(private val service: Service, private val wifiLauncher
     private var launchTicket: Long? = null
     private var launchAcceptedIn: CommManager.ConnectionState? = null
     private var launchAcceptedAfterAttempt: Any? = null
-    private var launchLoopbackEndAtAcceptance: Any? = null
+    private var selfSessionEndBaseline: Any? = null
     private var launchTimeoutJob: Job? = null
     private var launchConnected = false
     private var settingsLaunchOwner: CommManager.ConnectionState.Disconnected? = null
@@ -159,6 +159,7 @@ class SelfLauncherManager(private val service: Service, private val wifiLauncher
     // ENDS_SESSION_AFTER
     // LOOPBACK_ENDED_SINCE
     // SESSION_ENDED_AFTER
+    // RETIRE_HIDDEN
     // REFUSED_REPORT
     // ENDED
     // ESTABLISHED
@@ -680,6 +681,52 @@ fun main() {
         check(!s.manager.isActive && s.manager.currentLaunch() == null && s.vpnStops == vpnStopsBefore + 1) {
             "hidden loopback end left Self state for the next session's end policy (modern=$modern active=${s.manager.isActive} vpnStops=${s.vpnStops - vpnStopsBefore})"
         }
+    }
+    // The service observer consumes a hidden loopback end too: no deadline may remain, the
+    // deadline may have deferred to a forming connection, or it may have left the end to a
+    // terminal that the observer then never saw. Self state must not reach the next end policy.
+    fun hide(s: Service, observedLive: Boolean) {
+        if (observedLive) { s.commManager.isLoopbackSession = true; s.commManager.connectionState.value = CommManager.ConnectionState.Connected; s.main.drain() }
+        val attempt = Any()
+        s.commManager.lastLoopbackSessionAttempt = attempt
+        s.commManager.connectionState.value = CommManager.ConnectionState.Disconnected(
+            wasLoopbackSession = true, hadPhysicalConnection = true, endedAttempt = attempt)
+        s.commManager.isLoopbackSession = false
+        s.commManager.connectionState.value = CommManager.ConnectionState.Error("USB permission not granted for device")
+    }
+    for (modern in listOf(true, false)) for (order in listOf("live-observed", "deadline-deferred", "terminal-delegated")) Service().use { s ->
+        s.modern = modern
+        s.network.activeNetwork = Any()
+        if (order != "terminal-delegated") { s.startObserver(); s.main.drain() }
+        s.manager.start()
+        s.main.drain(); s.io.drain(); s.main.drain()
+        when (order) {
+            "live-observed" -> { hide(s, observedLive = true); s.main.drain() }
+            "deadline-deferred" -> {
+                hide(s, observedLive = false)
+                s.commManager.connectionState.value = CommManager.ConnectionState.Connecting // A non-Self attempt forms.
+                s.main.drain()
+                s.main.advanceBy(120_000L); s.main.drain()
+                check(s.resolvePrompts == 0 && s.commManager.reports == 0)
+                s.commManager.connectionState.value = CommManager.ConnectionState.Disconnected(hadPhysicalConnection = false)
+                s.main.drain()
+            }
+            "terminal-delegated" -> {
+                val attempt = Any()
+                s.commManager.lastLoopbackSessionAttempt = attempt
+                s.commManager.connectionState.value = CommManager.ConnectionState.Disconnected(
+                    wasLoopbackSession = true, hadPhysicalConnection = true, endedAttempt = attempt)
+                s.main.advanceBy(120_000L); s.main.drain()
+                check(s.manager.isActive && s.resolvePrompts == 0) // Left to that terminal's observer.
+                s.commManager.connectionState.value = CommManager.ConnectionState.Error("USB permission not granted for device")
+                s.startObserver(); s.main.drain() // The observer only ever sees the Error.
+            }
+        }
+        check(!s.manager.isActive && s.manager.currentLaunch() == null && s.resolvePrompts == 0) {
+            "hidden loopback end left Self state for the next end policy (modern=$modern order=$order active=${s.manager.isActive})"
+        }
+        s.main.advanceBy(130_000L); s.main.drain()
+        check(!s.manager.isActive && s.resolvePrompts == 0)
     }
     // Teardown republished the old session's terminal after B was accepted in the Error that
     // replaced it. B never connects: its deadline must still fail it, not mistake the repeat

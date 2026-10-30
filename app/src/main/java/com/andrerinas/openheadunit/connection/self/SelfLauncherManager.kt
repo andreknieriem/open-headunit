@@ -56,9 +56,11 @@ class SelfLauncherManager(
     // The attempt whose terminal was already published at acceptance. Teardown can republish
     // that terminal after an Error replaced it; the repeat still ended before this launch.
     private var launchAcceptedAfterAttempt: Any? = null
-    // CommManager's last ended loopback session at acceptance. A different one later means a
-    // loopback session ended after this launch, even if an Error then hid its terminal.
-    private var launchLoopbackEndAtAcceptance: Any? = null
+    // CommManager's last ended loopback session already accounted for: at acceptance, when its
+    // terminal was observed, or when its hidden end was consumed. A different record means a
+    // loopback session ended whose terminal no observer may see. Not tied to the launch Job:
+    // a live session's Self mode outlives its detached launch.
+    private var selfSessionEndBaseline: Any? = null
     private var launchTimeoutJob: Job? = null
     private var launchConnected = false
     private var settingsLaunchOwner: CommManager.ConnectionState.Disconnected? = null
@@ -153,7 +155,7 @@ class SelfLauncherManager(
         val (acceptedIn, endedBefore, loopbackEndBefore) = commManager.acceptanceSnapshot()
         launchAcceptedIn = acceptedIn
         launchAcceptedAfterAttempt = endedBefore
-        launchLoopbackEndAtAcceptance = loopbackEndBefore
+        selfSessionEndBaseline = loopbackEndBefore
         // Own the retained VPN before queued work can be cancelled. Otherwise a cancel
         // between acceptance and Main dispatch would still see the old SESSION owner.
         adoptDummyVpn(needsDummyVpn)
@@ -407,26 +409,45 @@ class SelfLauncherManager(
             state.hadPhysicalConnection && !launchAcceptedAfter(state)
     }
 
-    /** A physical loopback session ended after this launch, even if a later state hid its terminal. */
+    /** A physical loopback session ended after Self state was taken, even if a later state hid its terminal. */
     private fun loopbackSessionEndedSinceLaunch(): Boolean {
-        return App.provide(service).commManager.lastLoopbackSessionEnd() !== launchLoopbackEndAtAcceptance
+        return App.provide(service).commManager.lastLoopbackSessionEnd() !== selfSessionEndBaseline
     }
 
     /**
      * Whether a loopback session ended after this launch. While its terminal is current, the
-     * service's observer owns Self cleanup. Once a later state hid it, no observer will end Self
-     * mode for that session, so the launch ends here, unless a newer connection is forming or live.
+     * service's observer owns Self cleanup. Otherwise [retireHiddenSessionEnd] ends it now, or
+     * the observer does once a newer connection forming or live has its own outcome.
      */
     private fun sessionEndedAfterLaunch(owner: Job?): Boolean {
-        val commManager = App.provide(service).commManager
-        val current = commManager.connectionState.value
+        val current = App.provide(service).commManager.connectionState.value
         if (endsSessionAfterLaunch(current)) return true
         if (!loopbackSessionEndedSinceLaunch()) return false
-        if (launchJob === owner && !commManager.isConnected && current !is CommManager.ConnectionState.Connecting) {
-            stop(wasConnected = true)
-            service.stopDummyVpn(DummyVpnPolicy.Reason.SESSION_ENDED)
-        }
+        if (launchJob === owner) retireHiddenSessionEnd(current)
         return true
+    }
+
+    /**
+     * Called by the service observer for every terminal and error before it picks an end policy,
+     * and by the launch's own deadline. The flow is conflated: a later state can replace a
+     * loopback session's terminal before any observer saw it, and nothing else would end Self
+     * mode for that session. A newer connection forming or live keeps its resources until its
+     * own outcome is observed.
+     */
+    internal fun retireHiddenSessionEnd(current: CommManager.ConnectionState) {
+        val commManager = App.provide(service).commManager
+        val ended = commManager.lastLoopbackSessionEnd()
+        if (ended === selfSessionEndBaseline) return
+        if (current is CommManager.ConnectionState.Disconnected && current.endedAttempt === ended) {
+            // That session's own terminal is being observed; its end policy owns Self state.
+            selfSessionEndBaseline = ended
+            return
+        }
+        if (commManager.isConnected || commManager.connectionState.value is CommManager.ConnectionState.Connecting) return
+        selfSessionEndBaseline = ended
+        if (!isActive && launchJob == null) return
+        stop(wasConnected = true)
+        service.stopDummyVpn(DummyVpnPolicy.Reason.SESSION_ENDED)
     }
 
     /**
@@ -515,7 +536,6 @@ class SelfLauncherManager(
         launchTicket = null
         launchAcceptedIn = null
         launchAcceptedAfterAttempt = null
-        launchLoopbackEndAtAcceptance = null
         job?.cancel()
         launchTimeoutJob?.cancel()
         launchTimeoutJob = null

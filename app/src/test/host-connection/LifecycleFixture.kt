@@ -164,7 +164,11 @@ private class ObserverFixture(
     private val commManager = Connection(wireless, loopback, accepted, audioEnabled)
     private class Wifi(val active: Any?)
     private val wifiLauncherManager = Wifi(if (native) WifiLauncherNative(strategy) else Any())
-    private class Self { fun onConnectionEstablished() {}; fun onConnectionEnded(state: ConnectionState.Disconnected) {} }
+    private class Self {
+        fun onConnectionEstablished() {}
+        fun onConnectionEnded(state: ConnectionState.Disconnected) {}
+        fun retireHiddenSessionEnd(state: ConnectionState) {}
+    }
     private val selfLauncherManager = Self()
     private class ReconnectTimer { fun onStateChanged() {} }
     private val automaticReconnect = ReconnectTimer()

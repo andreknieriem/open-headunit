@@ -15,6 +15,7 @@ import org.mockito.Mockito
 import org.mockito.kotlin.*
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.ConscryptMode
 import java.net.Socket
 import java.util.concurrent.ConcurrentLinkedQueue
 import kotlin.coroutines.CoroutineContext
@@ -22,6 +23,8 @@ import kotlin.coroutines.CoroutineContext
 // App's static init reads SystemClock, which the plain JVM android.jar stub does not provide.
 @RunWith(RobolectricTestRunner::class)
 @Config(application = Application::class)
+// No TLS here. Robolectric's Conscrypt provider is process-wide and breaks later plain-JVM TLS tests.
+@ConscryptMode(ConscryptMode.Mode.OFF)
 class NetworkDiscoveryLifecycleTest {
     private fun field(target: Any, name: String, value: Any?) = target.javaClass.getDeclaredField(name)
         .apply { isAccessible = true }.set(target, value)

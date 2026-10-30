@@ -40,6 +40,7 @@ import org.mockito.kotlin.whenever
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.ConscryptMode
 import java.net.BindException
 import java.net.InetAddress
 import java.net.InetSocketAddress
@@ -60,6 +61,8 @@ import kotlin.random.Random
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(application = Application::class)
+// No TLS here. Robolectric's Conscrypt provider is process-wide and breaks later plain-JVM TLS tests.
+@ConscryptMode(ConscryptMode.Mode.OFF)
 class NetworkDiscoveryGenerationOrderTest {
     private val looper get() = shadowOf(Looper.getMainLooper())
     private lateinit var mainThread: Thread

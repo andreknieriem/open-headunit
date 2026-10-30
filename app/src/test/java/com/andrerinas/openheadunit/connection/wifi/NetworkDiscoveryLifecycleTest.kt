@@ -1,5 +1,6 @@
 package com.andrerinas.openheadunit.connection.wifi
 
+import android.app.Application
 import android.content.Context
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.AppComponent
@@ -9,12 +10,18 @@ import com.andrerinas.openheadunit.connection.withAppExitDispatcherForTest
 import kotlinx.coroutines.*
 import org.junit.Assert.*
 import org.junit.Test
+import org.junit.runner.RunWith
 import org.mockito.Mockito
 import org.mockito.kotlin.*
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 import java.net.Socket
 import java.util.concurrent.ConcurrentLinkedQueue
 import kotlin.coroutines.CoroutineContext
 
+// App's static init reads SystemClock, which the plain JVM android.jar stub does not provide.
+@RunWith(RobolectricTestRunner::class)
+@Config(application = Application::class)
 class NetworkDiscoveryLifecycleTest {
     private fun field(target: Any, name: String, value: Any?) = target.javaClass.getDeclaredField(name)
         .apply { isAccessible = true }.set(target, value)

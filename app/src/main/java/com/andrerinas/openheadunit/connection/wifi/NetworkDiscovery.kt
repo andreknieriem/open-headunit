@@ -20,6 +20,8 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlin.coroutines.coroutineContext
 import java.net.Inet4Address
@@ -46,6 +48,18 @@ class NetworkDiscovery(private val context: Context, private val listener: Liste
 
         /** Held across the read-modify-write of [inFlightScan]. Never held while blocking. */
         private val PROBE_LOCK = Any()
+
+        /**
+         * Held by a scan from its first probe through its last cleanup, in every instance.
+         *
+         * Joining the job a new scan replaces is not enough on its own. That join is cancellable,
+         * so when the replacement is itself replaced, its wait ends while the scan it was waiting
+         * for is still inside an uninterruptible dial; the newest scan then waits only for the
+         * replacement and probes alongside the old dial, whose late hold closes the fresh socket.
+         * A scan that never acquired this lock never probed, so cancellation before or during the
+         * wait cannot let a later scan overtake one that is still probing.
+         */
+        private val PROBE_MUTEX = Mutex()
     }
 
     /**
@@ -107,6 +121,13 @@ class NetworkDiscovery(private val context: Context, private val listener: Liste
         /** Written by a promotion on another thread, read by this scan's own `finally`. */
         @Volatile
         var oneShot: Boolean = initialOneShot
+
+        /**
+         * Set under [PROBE_LOCK] as this scan reports completion. Its listener may rearm at once,
+         * and that request reaches [startScan] before the scan's own IO return completes the job,
+         * so a still-active job is not proof the scan can serve another request.
+         */
+        var completionDelivered: Boolean = false
     }
 
     /** @Volatile: written under [PROBE_LOCK], read by [stop] and by the promotion check. */
@@ -142,7 +163,9 @@ class NetworkDiscovery(private val context: Context, private val listener: Liste
             // Stop epochs only advance; do not let that older request replace the newer owner.
             if (running != null && ticket < running.ticket) return false
             val previous = scanJob
-            if (previous != null && previous.isActive && !previous.isCancelled) {
+            if (previous != null && previous.isActive && !previous.isCancelled &&
+                running?.completionDelivered != true
+            ) {
                 if (running?.ticket == ticket) {
                     // Continuous wins, but only within the same Stop epoch. A compatible Open
                     // keeps that ticket, so it still folds into and can promote the running scan.
@@ -153,7 +176,7 @@ class NetworkDiscovery(private val context: Context, private val listener: Liste
                     return false
                 }
                 // Fresh input after Stop/Open must own a new generation. Cancellation alone does
-                // not release its sockets; newScanJob joins this exact job before any new probe.
+                // not release its sockets; newScanJob waits for its probing to end first.
                 previous.cancel()
             }
 
@@ -200,31 +223,35 @@ class NetworkDiscovery(private val context: Context, private val listener: Liste
             // Cancellation is cooperative, so a stopped scan still has probes in flight and
             // still holds a connected socket it has not handed over yet. Two scans probing
             // port 5277 at once is how the head unit server ends up bound to a connection
-            // nobody owns. Wait for the old one to unwind before opening any of our own.
+            // nobody owns. Wait for the old one to unwind before opening any of our own. These
+            // joins end early when this scan is itself replaced; PROBE_MUTEX covers that case.
             previous?.join()
             priorProbe?.join()
-            // Cleared here rather than at the call, so the set belongs to this generation and
-            // the outgoing scan keeps its own dedupe while it winds down.
-            reportedIps.clear()
-            probeHelperPort = readProbeHelperPort()
-            try {
-                // 1. Quick Scan: Check likely Gateways first
-                AppLog.i("NetworkDiscovery: Step 1 - Quick Gateway Scan")
-                val gatewayFound = scanGateways(generation.ticket)
-
-                if (gatewayFound) {
-                    AppLog.i("NetworkDiscovery: Gateway found service, skipping subnet scan.")
-                    return@launch
-                }
-
-                // 2. Deep Scan: Check entire Subnet
-                AppLog.i("NetworkDiscovery: Step 2 - Full Subnet Scan")
-                scanSubnet(generation.ticket)
-            } finally {
-                withContext(Dispatchers.Main) {
-                    // Read now rather than captured at the top: a continuous request that arrived
-                    // while this scan was running promotes it, and it has to hear about that.
-                    listener.onScanFinished(generation.oneShot, generation.ticket)
+            PROBE_MUTEX.withLock {
+                // Cleared here rather than at the call, so the set belongs to this generation and
+                // the outgoing scan keeps its own dedupe while it winds down.
+                reportedIps.clear()
+                probeHelperPort = readProbeHelperPort()
+                try {
+                    // 1. Quick Scan: Check likely Gateways first
+                    AppLog.i("NetworkDiscovery: Step 1 - Quick Gateway Scan")
+                    if (scanGateways(generation.ticket)) {
+                        AppLog.i("NetworkDiscovery: Gateway found service, skipping subnet scan.")
+                    } else {
+                        // 2. Deep Scan: Check entire Subnet
+                        AppLog.i("NetworkDiscovery: Step 2 - Full Subnet Scan")
+                        scanSubnet(generation.ticket)
+                    }
+                } finally {
+                    withContext(Dispatchers.Main) {
+                        // From here on a request needs a new generation; this one will not scan
+                        // again, and its listener may rearm before this job has completed.
+                        synchronized(PROBE_LOCK) { generation.completionDelivered = true }
+                        // Read now rather than captured at the top: a continuous request that
+                        // arrived while this scan was running promotes it, and it has to hear
+                        // about that.
+                        listener.onScanFinished(generation.oneShot, generation.ticket)
+                    }
                 }
             }
         }

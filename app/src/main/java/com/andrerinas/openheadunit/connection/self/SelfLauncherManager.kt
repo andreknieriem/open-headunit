@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.widget.Toast
 import com.andrerinas.openheadunit.connection.CommManager
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.aap.AapService
@@ -14,6 +15,7 @@ import com.andrerinas.openheadunit.connection.self.launchers.SelfLauncherLegacy
 import com.andrerinas.openheadunit.connection.self.launchers.SelfLauncherV17_4
 import com.andrerinas.openheadunit.connection.wifi.WifiLauncherManager
 import com.andrerinas.openheadunit.utils.AppLog
+import com.andrerinas.openheadunit.utils.ToastUtils
 import com.andrerinas.openheadunit.utils.VpnControl
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -240,15 +242,30 @@ class SelfLauncherManager(
                 // server and its network available for the late arrival. A connection that arrived
                 // since acceptance, or one still forming that may be this launch's own arrival,
                 // owns the outcome instead. Measured on the 17.4+ route, where a duplicate launch's
-                // failure killed the socket the other one had just connected.
+                // failure killed the socket the other one had just connected, and where connect
+                // returns at once when it joins an attempt already forming.
                 val outcome = launchOutcome("No launch method succeeded", mark, settingsRestart)
                 if (launchJob !== owner) return@launch
                 when (outcome) {
-                    is CommManager.LaunchOutcome.Failed -> launchPending = false
+                    is CommManager.LaunchOutcome.Failed -> {
+                        // Decided in this Main turn with the ticket and Save checks, after every
+                        // attempt that could answer it settled: the server really did not answer.
+                        launchPending = false
+                        if (path == SelfLaunchPath.HEADUNIT_SERVER) {
+                            AppLog.w("SelfMode: Headunit Server (127.0.0.1:5277) is NOT running.")
+                            ToastUtils.showToast(
+                                service,
+                                "Android Auto 17.4+ detected: Please start 'Headunit Server' in Android Auto Developer Settings!",
+                                Toast.LENGTH_LONG
+                            )
+                            openAaSettings()
+                        }
+                    }
                     is CommManager.LaunchOutcome.Answered -> {
                         AppLog.w("SelfMode: launchers failed but a connection arrived; leaving it alone")
                         settleAnswered()
                     }
+                    // Stop or a superseding state revoked it, possibly while it waited: no UI.
                     else -> stopIfCurrent(owner, preserveVpn = true)
                 }
                 return@launch

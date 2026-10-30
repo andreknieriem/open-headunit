@@ -78,12 +78,19 @@ class CommManager {
     // The extracted members ask the exit policy; the fixture's tickets answer for it.
     private val appExitPolicy = object { fun acceptsConnection(ticket: Long) = acceptsAppConnectionTicket(ticket) }
     var socketConnects = 0
-    // The direct launcher's dial publishes, registers and opens a real attempt.
+    var joins = 0
+    // The Headunit Server's answer to a dial: it accepts, or it refuses before any physical connection.
+    var serverRunning = true
+    // The direct launcher's dial publishes, registers and opens a real attempt. An attempt still
+    // forming is joined, not preempted: connect returns at once with nothing arrived, as
+    // production's SameEndpointConnectPolicy JOIN and connectIp's Connecting guard do.
     suspend fun connect(ip: String, port: Int, expectedState: ConnectionState.Disconnected? = null,
                         ticket: Long = appConnectionTicket()) {
         if (!acceptsAppConnectionTicket(ticket)) return
+        if (synchronized(transportLifecycleLock) { attemptInFlight() && !physicalConnectionReached }) { joins++; return }
         socketConnects++
-        arrive(loopback = ip == "127.0.0.1")
+        if (serverRunning) arrive(loopback = ip == "127.0.0.1")
+        else { publishAttempt(); register(loopback = ip == "127.0.0.1"); end() }
     }
     var isProjectionVideoFocusSuppressed = false
     val videoFocus = mutableListOf<com.andrerinas.openheadunit.aap.protocol.messages.VideoFocusEvent>()
@@ -303,7 +310,7 @@ object ContextCompat {
     fun startForegroundService(service: Service, intent: Intent) { service.homeCommands.add(intent) }
 }
 object Toast { const val LENGTH_LONG = 1 }
-object ToastUtils { fun showToast(service: Service, message: String, length: Int) { service.settingsPrompts++ } }
+object ToastUtils { fun showToast(service: Service, message: String, length: Int) { service.toasts++ } }
 object HomeFragment { var forceSelfModeLaunch = false }
 class Main(private val service: Service) {
     fun requestSelf() = forceSelfModeLaunch()
@@ -395,6 +402,7 @@ class Service(private var hasEverConnected: Boolean = true, val commManager: Com
     var directLaunchHook: (suspend () -> Unit)? = null
     var useRealDirect = false
     var settingsPrompts = 0
+    var toasts = 0
     var fallbacks = 0
     val homeCommands = mutableListOf<Intent>()
     internal val vpnRequests = DummyVpnStartRequests()
@@ -476,7 +484,7 @@ fun main() {
         s.main.drain(); s.io.drain(); s.main.drain()
         check(s.commManager.socketConnects == if (s.modern && !stop) 1 else 0)
         check(s.activities == if (!s.modern && !stop) 1 else 0)
-        check(s.settingsPrompts == 0 && s.commManager.reports == 0) { "obsolete Self launch showed failure UI" }
+        check(s.settingsPrompts == 0 && s.toasts == 0 && s.commManager.reports == 0) { "obsolete Self launch showed failure UI" }
         if (stop) {
             // New explicit Self input still works after the rejected old launch completes.
             s.modern = true
@@ -543,7 +551,7 @@ fun main() {
         s.main.advanceBy(legacyDeadline)
         s.main.drain(); s.io.drain(); s.main.drain()
         check(s.manager.currentLaunch() === replacement && !replacement.isCancelled)
-        check(s.settingsPrompts == 0 && s.resolvePrompts == 0 && s.commManager.reports == 0) {
+        check(s.settingsPrompts == 0 && s.toasts == 0 && s.resolvePrompts == 0 && s.commManager.reports == 0) {
             "obsolete Self launch showed failure UI"
         }
         check(s.commManager.socketConnects == if (s.modern) 1 else 0)
@@ -800,6 +808,59 @@ fun main() {
         if (outcome == "fails") check(s.commManager.socketConnects == 1 && s.manager.isActive) {
             "fresh input after Open did not launch (modern=$modern)"
         }
+    }
+    // The 17.4+ dial joins a loopback attempt already forming: connect returns at once with nothing
+    // arrived, and the launcher reports that. Only the manager's decision after that attempt settles
+    // may show the Headunit Server guidance: once if the failure stands, never if the attempt
+    // reached its server, another route answered, or Stop revoked the launch while it waited.
+    for (outcome in listOf("arrives", "other-arrives", "fails", "revoked")) Service().use { s ->
+        s.modern = true
+        s.useRealDirect = true
+        s.commManager.publishAttempt(); s.commManager.register(loopback = outcome != "other-arrives")
+        s.manager.start()
+        s.settle()
+        check(s.commManager.joins == 1 && s.commManager.socketConnects == 0) { "the dial did not join the forming attempt ($outcome)" }
+        check(s.toasts == 0 && s.settingsPrompts == 0 && s.commManager.reports == 0) {
+            "Headunit Server guidance before the joined attempt's outcome ($outcome toasts=${s.toasts} settings=${s.settingsPrompts})"
+        }
+        check(s.manager.isLaunchPending && !s.manager.inFlight()) { "the launch stopped waiting on the joined attempt ($outcome)" }
+        when (outcome) {
+            "arrives", "other-arrives" -> s.commManager.reachConnection()
+            "fails" -> s.commManager.end()
+            "revoked" -> { s.commManager.stopApp(); s.commManager.openApp(); s.commManager.end() }
+        }
+        s.settle()
+        s.main.advanceBy(legacyDeadline); s.settle()
+        val shown = if (outcome == "fails") 1 else 0
+        check(s.toasts == shown && s.settingsPrompts == shown && s.commManager.reports == shown) {
+            "Headunit Server guidance after the joined attempt's outcome ($outcome toasts=${s.toasts} settings=${s.settingsPrompts} reports=${s.commManager.reports})"
+        }
+        check(!s.manager.isLaunchPending && s.manager.isActive == (outcome == "arrives")) {
+            "Self mode after the joined attempt's outcome ($outcome active=${s.manager.isActive})"
+        }
+        if (outcome == "other-arrives" || outcome == "revoked") check(s.manager.currentLaunch() == null) {
+            "the settled launch kept its bookkeeping ($outcome)"
+        }
+    }
+    // The control: the Headunit Server refuses this launch's own dial. The failure stands and the
+    // guidance shows exactly once; a later launch that reaches the server shows none.
+    Service().use { s ->
+        s.modern = true
+        s.useRealDirect = true
+        s.commManager.serverRunning = false
+        s.manager.start()
+        s.settle()
+        s.main.advanceBy(legacyDeadline); s.settle()
+        check(s.commManager.socketConnects == 1 && s.commManager.joins == 0)
+        check(s.toasts == 1 && s.settingsPrompts == 1 && s.commManager.reports == 1) {
+            "a refused dial's guidance (toasts=${s.toasts} settings=${s.settingsPrompts} reports=${s.commManager.reports})"
+        }
+        check(!s.manager.isLaunchPending && !s.manager.isActive)
+        s.commManager.serverRunning = true
+        s.manager.start()
+        s.settle()
+        check(s.commManager.socketConnects == 2 && s.manager.isActive && s.commManager.isConnected)
+        check(s.toasts == 1 && s.settingsPrompts == 1 && s.commManager.reports == 1) { "a reached server showed guidance" }
     }
     // The launch's loopback session can end and an Error hide its terminal before the deadline
     // runs. The deadline must not report the launch as never connected, and it retires the launch

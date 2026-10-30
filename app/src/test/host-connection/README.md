@@ -71,6 +71,19 @@ work is still in flight. Nearby validates tickets and changes attempt state life
 and resource cleanup run outside both. The lock regression drives the actual bandwidth
 callback against a held admission and checks for a JVM-detected deadlock.
 
+Self Mode keeps no session-lifetime flag. CommManager owns each connection attempt from its
+publication, before its connection object is registered, and settles it under the lifecycle lock
+once it reaches its connection, ends or is replaced; a monotonic count dates every physical
+arrival. The first arrival after a Self launch's acceptance answers that launch whether or not
+any state was observed. While an attempt is forming the launch waits on that attempt, not on the
+conflated flow, and it fails only when nothing arrived and nothing is in flight. Self is active
+while a launch is unanswered or a loopback attempt is live, and a terminal's own route selects its
+end policy. A refused request's diagnostic may replace only an idle state. `run.py` drives the
+actual publishers through Connecting(A) -> ended(A) -> Connecting(B), ends hidden behind an Error,
+repeated terminals and a refused USB report during an unregistered attempt. The Self fixture runs
+the actual launch, deadline, observer and end branch against the extracted attempt primitives and
+terminal publisher; its publication lock sections mirror `connectIp`.
+
 Connection acceptance and publication share Main ordering with activity finish and process
 exit effects. The scheduling suite holds task lookup and process-exit preparation while a
 replacement queues, and exercises cancellation before and after resource transfer. Ordinary

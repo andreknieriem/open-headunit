@@ -82,7 +82,7 @@ class UsbReconnectOwnershipTest {
                         val allowed = outcome in listOf("connecting", "error", "wireless-retry")
                         assertEquals("$outcome observed=$observed", if (allowed) 1 else 0, checks)
                         // Retire locally without entering unrelated transport cleanup.
-                        set("connectionAttempt", Any())
+                        set("connectionAttempt", CommManager.Attempt())
                         false
                     }
                 }

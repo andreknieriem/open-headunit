@@ -285,6 +285,14 @@ class CommManager(
     internal fun hasPendingDisconnect(): Boolean =
         synchronized(transportLifecycleLock) { _disconnectJob?.isCompleted == false }
 
+    /**
+     * Producer state that publication admission also locks must be entered lifecycle-first, so a
+     * ticket check and the state change it authorizes stay atomic without inverting lock order.
+     * Keep [action] short and non-blocking.
+     */
+    internal fun <T> withAppConnectionLifecycleLock(action: () -> T): T =
+        synchronized(transportLifecycleLock) { action() }
+
     private fun cancelAppExitCallback() {
         pendingAppExit?.let { appExitHandler.removeCallbacks(it) }
         pendingAppExit = null

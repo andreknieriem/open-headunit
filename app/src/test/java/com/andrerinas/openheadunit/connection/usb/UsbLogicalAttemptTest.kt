@@ -124,13 +124,15 @@ class UsbLogicalAttemptTest {
             }
         }
         fun stopOpen(): Long { comm.requestExplicitAppExit(killProcess = false); return comm.onAppRelaunched() }
-        fun permissionReply(ticket: Long) {
+        fun permissionReply(ticket: Long?) {
             val intent = mock(android.content.Intent::class.java)
-            val data = mock(android.net.Uri::class.java)
             `when`(intent.action).thenReturn(UsbReceiver.ACTION_USB_DEVICE_PERMISSION)
-            `when`(intent.data).thenReturn(data)
-            `when`(data.scheme).thenReturn("ohu-usb-attempt")
-            `when`(data.schemeSpecificPart).thenReturn(ticket.toString())
+            if (ticket != null) {
+                val data = mock(android.net.Uri::class.java)
+                `when`(intent.data).thenReturn(data)
+                `when`(data.scheme).thenReturn("ohu-usb-attempt")
+                `when`(data.schemeSpecificPart).thenReturn(ticket.toString())
+            }
             @Suppress("DEPRECATION")
             `when`(intent.getParcelableExtra<UsbDevice>(UsbManager.EXTRA_DEVICE)).thenReturn(device)
             `when`(intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)).thenReturn(true)
@@ -253,6 +255,18 @@ class UsbLogicalAttemptTest {
         assertEquals(1, f.opens)
         assertTrue(f.states.value is CommManager.ConnectionState.Connected)
         f.assertIdle()
+    }
+
+    // A request made before first unlock carries no ticket: the grant persists, but its reply
+    // cannot start a session that needs credential-protected storage.
+    @Test fun aGrantOnlyPermissionReplyCannotOpenUsb() = fixture { f ->
+        f.permissionReply(null)
+        f.connect()
+        assertEquals(0, f.opens)
+        f.assertIdle()
+        f.scan(); f.connect()
+        assertEquals(1, f.opens)
+        assertTrue(f.states.value is CommManager.ConnectionState.Connected)
     }
 
     @Test fun cancelledSettingsRestartCannotBorrowTheTicketOfTheNextSave() = fixture { f ->

@@ -3,6 +3,7 @@ package com.andrerinas.openheadunit.connection.wifi.modes.helper
 import android.content.Context
 import android.content.SharedPreferences
 import com.andrerinas.openheadunit.connection.CommManager
+import com.andrerinas.openheadunit.connection.withAppExitDispatcherForTest
 import com.google.android.gms.nearby.Nearby
 import com.google.android.gms.nearby.connection.*
 import com.google.android.gms.tasks.Task
@@ -40,7 +41,7 @@ class NearbySettingsRestartTest {
         `when`(client.startDiscovery(anyString(), any(), any())).thenReturn(task)
         `when`(client.requestConnection(nullable(String::class.java), anyString(), any())).thenReturn(task)
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
-        val comm = mock(CommManager::class.java)
+        val comm = mock(CommManager::class.java, CALLS_REAL_METHODS).withAppExitDispatcherForTest()
         `when`(comm.acceptsAppConnectionTicket(anyLong())).thenReturn(true)
         mockStatic(androidx.core.content.ContextCompat::class.java).use {
         mockStatic(android.os.SystemClock::class.java).use {
@@ -82,7 +83,7 @@ class NearbySettingsRestartTest {
         `when`(client.startDiscovery(anyString(), any(), any())).thenReturn(task)
         `when`(client.requestConnection(nullable(String::class.java), anyString(), any())).thenReturn(task)
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
-        val comm = mock(CommManager::class.java)
+        val comm = mock(CommManager::class.java, CALLS_REAL_METHODS).withAppExitDispatcherForTest()
         `when`(comm.acceptsAppConnectionTicket(anyLong())).thenReturn(true)
         mockStatic(androidx.core.content.ContextCompat::class.java).use {
         mockStatic(android.os.SystemClock::class.java).use { clock ->

@@ -23,6 +23,71 @@ class NearbyDiscoveryFailureTest {
     }
     @org.junit.After fun restoreAndroid() { clock.close(); permissions.close() }
 
+    @Test fun freshRequestReplacesRevokedAttemptBeforeOldLifecycleCleanup() {
+        for (stop in listOf(false, true)) {
+            val context = mock<Context>()
+            val comm = mock<CommManager>(defaultAnswer = Mockito.CALLS_REAL_METHODS).withAppExitDispatcherForTest()
+            val policy = CommManager::class.java.getDeclaredField("appExitPolicy")
+                .apply { isAccessible = true }.get(comm) as AppExitPolicy
+            val lifecycle = CommManager::class.java.getDeclaredField("transportLifecycleLock")
+                .apply { isAccessible = true }.get(comm)
+            val client = mock<ConnectionsClient>()
+            val task = mock<Task<Void>>()
+            whenever(task.addOnFailureListener(any())).thenReturn(task)
+            whenever(client.requestConnection(anyOrNull<String>(), any(), any())).thenReturn(task)
+            whenever(client.acceptConnection(any(), any())).thenReturn(task)
+            val info = mock<ConnectionInfo>()
+            whenever(info.endpointName).thenReturn("phone")
+            val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+            Mockito.mockStatic(Nearby::class.java).use { nearby ->
+                nearby.`when`<ConnectionsClient> { Nearby.getConnectionsClient(context) }.thenReturn(client)
+                Mockito.mockConstruction(Settings::class.java).use {
+                    val manager = NearbyManager(context, scope, comm) { _, _, _ -> error("no tunnel yet") }
+                    val guard = NearbyManager::class.java.getDeclaredField("attempts")
+                        .apply { isAccessible = true }.get(manager) as NearbyAttemptGuard
+                    doAnswer {
+                        assert(!Thread.holdsLock(lifecycle) && !Thread.holdsLock(guard)) { "SDK request under ownership locks" }
+                        task
+                    }.whenever(client).requestConnection(anyOrNull<String>(), any(), any())
+                    val old = NearbySocket()
+                    val replacement = NearbySocket()
+                    val socketField = NearbyManager::class.java.getDeclaredField("activeNearbySocket")
+                        .apply { isAccessible = true }
+                    try {
+                        manager.connectToEndpoint("phone")
+                        val original = guard.current()
+                        socketField.set(manager, old)
+                        if (stop) policy.request(killProcess = false, userStop = true, requiresKillOnDisconnect = false)
+                        policy.supersede()
+                        // The old SDK callback has not run and isConnecting is still true.
+                        manager.connectToEndpoint("phone")
+                        val callbacks = argumentCaptor<ConnectionLifecycleCallback>()
+                        verify(client, times(if (stop) 2 else 1))
+                            .requestConnection(anyOrNull<String>(), eq("phone"), callbacks.capture())
+                        if (stop) {
+                            org.junit.Assert.assertTrue(old.isClosed)
+                            org.junit.Assert.assertNotSame(original, guard.current())
+                            socketField.set(manager, replacement)
+                            callbacks.lastValue.onConnectionInitiated("phone", info)
+                            callbacks.firstValue.onConnectionInitiated("phone", info)
+                            org.junit.Assert.assertSame(replacement, socketField.get(manager))
+                            org.junit.Assert.assertFalse(replacement.isClosed)
+                            verify(client).disconnectFromEndpoint("phone")
+                        } else {
+                            org.junit.Assert.assertSame(original, guard.current())
+                            org.junit.Assert.assertFalse(old.isClosed)
+                            callbacks.firstValue.onConnectionInitiated("phone", info)
+                        }
+                        verify(client).acceptConnection(eq("phone"), any())
+                        manager.connectToEndpoint("phone")
+                        verify(client, times(if (stop) 2 else 1))
+                            .requestConnection(anyOrNull<String>(), eq("phone"), any())
+                    } finally { manager.stop(); old.close(); replacement.close(); scope.cancel() }
+                }
+            }
+        }
+    }
+
     @Test fun delayedLifecycleKeepsRequestTicketAndNewEndpointInputGetsFreshAuthority() {
         for (stop in listOf(false, true)) {
             val context = mock<Context>()
@@ -64,7 +129,7 @@ class NearbyDiscoveryFailureTest {
 
     @Test fun failedRequestKeepsDiscoveryAndAcceptsAnotherEndpoint() {
         val context = mock<Context>()
-        val comm = mock<CommManager>()
+        val comm = mock<CommManager>(defaultAnswer = Mockito.CALLS_REAL_METHODS).withAppExitDispatcherForTest()
         whenever(comm.acceptsAppConnectionTicket(any())).thenReturn(true)
         val client = mock<ConnectionsClient>()
         val discoveryTask = mock<Task<Void>>()

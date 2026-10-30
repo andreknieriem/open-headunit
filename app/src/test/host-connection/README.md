@@ -63,6 +63,14 @@ only by the callback that owns that exact socket. The USB unit regressions drive
 scan, permission poll, retry loop and StandardUsb open; physical opens are counted at
 `UsbManager.openDevice`.
 
+A revoked in-flight scan, Self launch or Nearby attempt never absorbs a valid newer input:
+the stale work is detached and the new input starts, while a same-ticket duplicate is still
+folded into the running work. The overlap regressions submit the fresh input while the stale
+work is still in flight. Nearby validates tickets and changes attempt state lifecycle-first
+(lifecycle lock, then attempt monitor), the same order publication admission uses; SDK calls
+and resource cleanup run outside both. The lock regression drives the actual bandwidth
+callback against a held admission and checks for a JVM-detected deadlock.
+
 Connection acceptance and publication share Main ordering with activity finish and process
 exit effects. The scheduling suite holds task lookup and process-exit preparation while a
 replacement queues, and exercises cancellation before and after resource transfer. Ordinary

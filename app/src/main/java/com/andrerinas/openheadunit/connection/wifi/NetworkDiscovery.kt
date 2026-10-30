@@ -124,29 +124,37 @@ class NetworkDiscovery(private val context: Context, private val listener: Liste
      * [oneShot] belongs to the scan being started, not to the instance, because callers that want
      * a single sweep and callers that want the 10 s re-arm now share one instance.
      *
-     * @return `true` if a scan was started, `false` if one was already in flight and this request
-     *   was folded into it. A caller that kicked the scan because the *network changed* wants to
-     *   know the difference — see `AapService`'s network monitor.
+     * @return `true` if a scan was started, `false` if the ticket was rejected or the request was
+     *   folded into a scan from the same Stop epoch. A caller that kicked the scan because the
+     *   *network changed* wants to know the difference — see `AapService`'s network monitor.
      */
     fun startScan(
         oneShot: Boolean = false,
         ticket: Long = App.provide(context).commManager.appConnectionTicket(),
     ): Boolean {
+        // The lifecycle lock may call stop(), which takes PROBE_LOCK. Never acquire it in the
+        // reverse order, and never let a rejected old input cancel or promote a current scan.
+        if (!App.provide(context).commManager.acceptsAppConnectionTicket(ticket)) return false
         var started = false
         synchronized(PROBE_LOCK) {
+            val running = currentGeneration
+            // A validated request can wait here while Stop/Open and a newer start overtake it.
+            // Stop epochs only advance; do not let that older request replace the newer owner.
+            if (running != null && ticket < running.ticket) return false
             val previous = scanJob
-            // A healthy scan is already running: leave it alone. Callers that want a fresh
-            // sweep call stop() first, and a cancelled job falls through to the join below.
             if (previous != null && previous.isActive && !previous.isCancelled) {
-                // Continuous wins. Tying a one-shot scan to a caller that wanted the re-arm would
-                // otherwise end discovery altogether: the running scan would finish, decline to
-                // reschedule, and the request that asked for more was already dropped here.
-                val running = currentGeneration
-                if (!oneShot && running != null && running.oneShot) {
-                    AppLog.i("NetworkDiscovery: in-flight scan promoted to continuous")
-                    running.oneShot = false
+                if (running?.ticket == ticket) {
+                    // Continuous wins, but only within the same Stop epoch. A compatible Open
+                    // keeps that ticket, so it still folds into and can promote the running scan.
+                    if (!oneShot && running.oneShot) {
+                        AppLog.i("NetworkDiscovery: in-flight scan promoted to continuous")
+                        running.oneShot = false
+                    }
+                    return false
                 }
-                return false
+                // Fresh input after Stop/Open must own a new generation. Cancellation alone does
+                // not release its sockets; newScanJob joins this exact job before any new probe.
+                previous.cancel()
             }
 
             // [BUG_FIX] The per-instance guard above is not enough on its own. AapService used to

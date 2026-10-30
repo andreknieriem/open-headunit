@@ -51,7 +51,9 @@ class NetworkScanIngress(val commManager: CommManager, val listener: NetworkDisc
     private suspend fun scanSubnet(ticket: Long) { error("gateway should have ended this scan") }
     // NETWORK_SCAN_START
     // NETWORK_SCAN_JOB
-    fun drain() { io.drain(); main.drain(); io.drain(); main.drain() }
+    fun scanOwner() = scanJob to currentGeneration?.ticket
+    fun scanIsOneShot() = currentGeneration?.oneShot
+    fun drain() { io.drain(); main.drain(); io.drain(); main.drain(); io.drain() }
 }
 
 fun networkConnectionIngressOwnership() = runBlocking {
@@ -145,5 +147,50 @@ fun networkConnectionIngressOwnership() = runBlocking {
             comm.close()
         }
     }
-    println("PASS network producer ingress: queued server accept, discovery hold/replacement/cancellation, scan generation tickets and fresh inputs")
+    // Fresh input arrives before the old scan's queued IO or Main cleanup can run. Stop/Open
+    // replaces the old job immediately; a compatible Open still folds into and promotes it.
+    for (stop in listOf(false, true)) for (pauseAtCallback in listOf(false, true)) {
+        val comm = networkComm()
+        NetworkIngressService(comm).use { service ->
+            val ingress = NetworkDiscoveryIngress(service)
+            val finished = mutableListOf<Pair<Boolean, Long>>()
+            val listener = object : NetworkDiscoveryListener {
+                override fun onServiceFound(ip: String, port: Int, socket: Socket?, ticket: Long) {
+                    ingress.onServiceFound(ip, port, socket, ticket)
+                }
+                override fun onScanFinished(wasOneShot: Boolean, ticket: Long) {
+                    finished += wasOneShot to ticket
+                }
+            }
+            val scan = NetworkScanIngress(comm, listener)
+            val oldTicket = comm.appConnectionTicket()
+            check(scan.startScan(oneShot = true, ticket = oldTicket))
+            val oldJob = requireNotNull(scan.scanOwner().first)
+            if (pauseAtCallback) scan.io.drain()
+            if (stop) comm.requestExplicitAppExit(killProcess = false)
+            comm.onAppRelaunched()
+            val freshTicket = comm.appConnectionTicket()
+            check(scan.startScan(oneShot = stop, ticket = freshTicket) == stop)
+            val (ownerJob, currentTicket) = scan.scanOwner()
+            val currentJob = requireNotNull(ownerJob)
+            check(currentTicket == freshTicket && currentJob.isActive)
+            if (stop) {
+                check(currentJob !== oldJob && oldJob.isCancelled)
+                check(scan.scanIsOneShot() == true)
+                // A stale continuous request must neither cancel nor promote the fresh one-shot.
+                check(!scan.startScan(oneShot = false, ticket = oldTicket))
+                check(scan.scanOwner().first === currentJob && currentJob.isActive)
+                check(scan.scanIsOneShot() == true)
+            } else {
+                check(currentJob === oldJob && !oldJob.isCancelled)
+                check(scan.scanIsOneShot() == false)
+            }
+            scan.drain(); service.main.drain()
+            check(currentJob.isCompleted)
+            check(finished == listOf(stop to freshTicket))
+            check(comm.state is ConnectionState.Connected)
+            comm.close()
+        }
+    }
+    println("PASS network producer ingress: queued server accept, discovery hold/replacement/cancellation, overlapping scan replacement/promotion and fresh inputs")
 }

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Run actual Self launch and service-cancel paths with a queued Main dispatcher.
+"""Run actual Self launch and service-cancel paths with queued Main and IO dispatchers.
 
-Android listener, VPN and Activity effects are counters. Coroutine cancellation is real and the queued dispatcher controls delay deadlines; production method bodies are extracted on every run.
+Stop/Open overlap cases admit fresh input before obsolete Main/IO/network cleanup. Android listener, VPN and Activity effects are counters; the modern launch body and coroutine cancellation remain real. Queued dispatchers control entry, completion and delay deadlines, and production method bodies are extracted on every run.
 """
 from pathlib import Path
 import hashlib

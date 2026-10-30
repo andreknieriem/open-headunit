@@ -30,7 +30,7 @@ class NearbyHandoffLifecycleTest {
             val policy = get(comm, "appExitPolicy") as AppExitPolicy
             val nearby = mock<NearbyManager>(defaultAnswer = Mockito.CALLS_REAL_METHODS)
             val guard = NearbyAttemptGuard()
-            val attempt = guard.begin("phone")
+            val attempt = guard.begin("phone", comm.appConnectionTicket())
             val old = NearbySocket()
             val replacement = NearbySocket()
             val client = mock<ConnectionsClient>()
@@ -46,7 +46,7 @@ class NearbyHandoffLifecycleTest {
             val ticket = comm.appConnectionTicket()
             if (stop) policy.request(killProcess = false, userStop = true, requiresKillOnDisconnect = false)
             policy.supersede()
-            val current = if (replace) guard.begin("phone") else attempt
+            val current = if (replace) guard.begin("phone", comm.appConnectionTicket()) else attempt
             if (replace) field(nearby, "activeNearbySocket", replacement)
             try {
                 nearby.handOverTunnel(attempt, old, ConnectionAdmission { guard.run(attempt, action = it) }, ticket)
@@ -61,7 +61,7 @@ class NearbyHandoffLifecycleTest {
                         assertNull(get(nearby, "activeNearbySocket"))
                         verify(client).disconnectFromEndpoint("phone")
                     }
-                    val fresh = if (replace) current else guard.begin("phone")
+                    val fresh = if (replace) current else guard.begin("phone", comm.appConnectionTicket())
                     field(nearby, "activeNearbySocket", replacement)
                     nearby.handOverTunnel(fresh, replacement,
                         ConnectionAdmission { guard.run(fresh, action = it) }, comm.appConnectionTicket())
@@ -86,7 +86,7 @@ class NearbyHandoffLifecycleTest {
         field(comm, "_disconnectJob", retirement)
         val nearby = mock<NearbyManager>(defaultAnswer = Mockito.CALLS_REAL_METHODS)
         val guard = NearbyAttemptGuard()
-        val attempt = guard.begin("phone")
+        val attempt = guard.begin("phone", comm.appConnectionTicket())
         val old = NearbySocket().apply {
             inputStreamWrapper = ByteArrayInputStream(byteArrayOf())
             outputStreamWrapper = ByteArrayOutputStream()

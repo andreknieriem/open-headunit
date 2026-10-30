@@ -72,13 +72,13 @@ class UsbReceiver(private val mListener: Listener)          // USB Broadcast Rec
         const val ACTION_USB_DEVICE_PERMISSION = "com.andrerinas.openheadunit" + ".ACTION_USB_DEVICE_PERMISSION"
         const val EXTRA_CONNECT = "EXTRA_CONNECT"
 
-        fun createPermissionPendingIntent(context: Context,
-            ticket: Long = App.provide(context).commManager.appConnectionTicket()): PendingIntent {
+        /** A null ticket requests the grant only; its reply cannot start a connection. */
+        fun createPermissionPendingIntent(context: Context, ticket: Long?): PendingIntent {
             return PendingIntent.getBroadcast(
                 context, 0,
                 Intent(ACTION_USB_DEVICE_PERMISSION).apply {
                     setPackage(context.packageName)
-                    data = Uri.fromParts(PERMISSION_SCHEME, ticket.toString(), null)
+                    if (ticket != null) data = Uri.fromParts(PERMISSION_SCHEME, ticket.toString(), null)
                 },
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE

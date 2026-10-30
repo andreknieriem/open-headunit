@@ -115,6 +115,7 @@ class SelfLauncherManager(private val service: Service, private val wifiLauncher
     var isActive = false
     private var launchInFlight = false
     private var launchJob: Job? = null
+    private var launchTicket: Long? = null
     private var launchTimeoutJob: Job? = null
     private var launchConnected = false
     private var settingsLaunchOwner: CommManager.ConnectionState.Disconnected? = null
@@ -367,6 +368,67 @@ fun main() {
             s.manager.start(); s.main.drain(); s.io.drain(); s.main.drain()
             check(s.commManager.socketConnects == 1)
         }
+    }
+    // Fresh input overlaps the obsolete owner, before Main/IO/network cancellation
+    // cleanup has run. An Open without Stop must still coalesce into that same owner.
+    for (stop in listOf(false, true)) for (pause in listOf("MAIN", "IO", "NETWORK")) Service().use { s ->
+        s.modern = pause != "NETWORK"
+        s.useRealDirect = true
+        val originalTicket = s.commManager.appConnectionTicket()
+        s.manager.start(needsDummyVpn = true, ticket = originalTicket)
+        val original = checkNotNull(s.manager.currentLaunch())
+        s.deliverVpn()
+        check(s.tunnel && s.dummyVpnOwner == DummyVpnPolicy.Owner.SELF_MODE)
+        if (pause != "MAIN") s.main.drain()
+        val delayedIo = if (pause == "IO") checkNotNull(s.io.tasks.poll()) else null
+        check(s.manager.inFlight() && original.isActive)
+        if (stop) s.commManager.stopApp()
+        s.commManager.openApp()
+        val freshTicket = s.commManager.appConnectionTicket()
+        if (stop) s.modern = true
+        s.manager.start(needsDummyVpn = true, ticket = freshTicket)
+        val replacement = checkNotNull(s.manager.currentLaunch())
+        check((replacement === original) == !stop) { "$pause fresh input coalesced into a revoked launch" }
+        check(original.isCancelled == stop)
+        check(s.manager.isActive && s.manager.inFlight() && replacement.isActive)
+        // Neither another same-ticket request nor a late obsolete input can replace t1.
+        s.manager.start(ticket = freshTicket)
+        if (stop) s.manager.start(ticket = originalTicket)
+        check(s.manager.currentLaunch() === replacement)
+        if (pause == "NETWORK") {
+            s.network.activeNetwork = Any()
+            s.main.advanceBy(100)
+        }
+        s.main.drain()
+        check(s.manager.currentLaunch() === replacement && s.manager.isActive)
+        if (s.modern) check(s.manager.inFlight()) { "old completion cleared the replacement's gate" }
+        if (!stop && delayedIo != null) s.io.tasks.add(delayedIo)
+        s.io.drain(); s.main.drain()
+        if (stop && delayedIo != null) {
+            // Let t1's real modern run connect before t0's queued IO and completion.
+            check(s.commManager.isConnected && s.commManager.socketConnects == 1)
+            delayedIo.run()
+            s.main.drain()
+        }
+        check(s.manager.currentLaunch() === replacement && !replacement.isCancelled)
+        check(s.commManager.socketConnects == if (s.modern) 1 else 0)
+        check(s.activities == if (s.modern) 0 else 1)
+        check(!s.manager.inFlight() && s.manager.isActive)
+        check(s.tunnel && s.dummyVpnOwner == DummyVpnPolicy.Owner.SELF_MODE)
+        check(s.vpnStops == 0 && s.wifiLauncherManager.stops == 0) { "obsolete owner stopped replacement resources" }
+        if (!s.modern) {
+            // The compatible legacy launch still owns its late-arriving phone.
+            s.commManager.isLoopbackSession = true
+            s.commManager.connectionState.value = CommManager.ConnectionState.Connected
+            s.manager.onConnectionEstablished()
+        }
+        s.main.advanceBy(SelfLaunchTimeoutPolicy.LEGACY_DEADLINE_MS)
+        s.main.drain(); s.io.drain(); s.main.drain()
+        check(s.manager.currentLaunch() === replacement && !replacement.isCancelled)
+        check(s.settingsPrompts == 0 && s.resolvePrompts == 0 && s.commManager.reports == 0) {
+            "obsolete Self launch showed failure UI"
+        }
+        check(s.commManager.socketConnects == if (s.modern) 1 else 0)
     }
     Service().use { s ->
         Main(s).requestSelf(); s.deliverHomeCommand(); s.main.drain()

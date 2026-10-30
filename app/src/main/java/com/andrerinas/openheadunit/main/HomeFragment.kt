@@ -1927,7 +1927,7 @@ class HomeFragment : Fragment() {
                     ContextCompat.startForegroundService(requireContext(), Intent(requireContext(), AapService::class.java))
                     usbManager.requestPermission(
                         device.wrappedDevice,
-                        UsbReceiver.createPermissionPendingIntent(requireContext())
+                        UsbReceiver.createPermissionPendingIntent(requireContext(), commManager.appConnectionTicket())
                     )
                 }
             }

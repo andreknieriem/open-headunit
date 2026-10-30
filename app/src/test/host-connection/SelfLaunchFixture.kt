@@ -240,10 +240,10 @@ class SelfLauncherManager(private val service: Service, private val wifiLauncher
     // STOP
     // DETACH_LAUNCH
 }
-class SelfLauncherServices(val aap: Service, val wifiLauncherManager: WifiLauncherManager,
+class SelfLauncherServices internal constructor(val aap: Service, val wifiLauncherManager: WifiLauncherManager,
                            val settingsRestart: CommManager.ConnectionState.Disconnected?,
-                           val operationTicket: Long = aap.commManager.appConnectionTicket(),
-                           val arrivalMark: CommManager.LaunchMark = aap.commManager.launchMark(operationTicket)) {
+                           val operationTicket: Long,
+                           private val arrivalMark: CommManager.LaunchMark) {
     val connectivityManager get() = aap.network
     val fakeNetwork = Any()
     val fakeWifiInfo = Any()

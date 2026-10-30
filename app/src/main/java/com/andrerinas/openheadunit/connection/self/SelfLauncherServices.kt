@@ -14,13 +14,14 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 
-class SelfLauncherServices(
+// Built only by the launch it serves, which hands over its own acceptance mark.
+class SelfLauncherServices internal constructor(
     val aap: AapService,
     val wifiLauncherManager: WifiLauncherManager,
     val settingsRestart: CommManager.ConnectionState.Disconnected? = null,
-    val operationTicket: Long = App.provide(aap).commManager.appConnectionTicket(),
+    val operationTicket: Long,
     // The launch's arrival mark; see SelfLauncherManager.isLaunchPending.
-    val arrivalMark: CommManager.LaunchMark = App.provide(aap).commManager.launchMark(operationTicket),
+    private val arrivalMark: CommManager.LaunchMark,
 ) {
     val connectivityManager by lazy { aap.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager }
 

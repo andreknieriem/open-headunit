@@ -185,6 +185,7 @@ class CommManager {
  private val transportLifecycleLock=Any()
  private var disconnectRequested=false
  private var connectionAttempt:Any?=null
+ private var lastEndedAttempt:Any?=null
  private var usbRecoveryOwner:Any=Any()
  fun recoveryOwner()=usbRecoveryOwner
  // Projection health storage is not part of the lifecycle under test.

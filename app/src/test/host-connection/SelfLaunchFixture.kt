@@ -105,8 +105,23 @@ class CommManager {
     var reports = 0
     var metadata = "old"
     // CANCEL
-    fun reportError(message: String, state: ConnectionState.Disconnected? = null, expected: ConnectionState? = null) { reports++ }
-    fun emitError(message: String, expected: ConnectionState? = null) { reports++ }
+    var lastEndedAttempt: Any? = null
+    fun acceptanceSnapshot() = _connectionState.value to lastEndedAttempt
+    // Runs as the report takes the lock: IO may publish between a caller's guard and its report.
+    var beforeReport: (() -> Unit)? = null
+    // CommManager's contract: a failure stands in its caller's own state or against a newer
+    // terminal/error, not against a connection forming or live now.
+    private fun report(expected: ConnectionState?): Boolean {
+        beforeReport?.invoke(); beforeReport = null
+        val current = _connectionState.value
+        val stands = expected == null || current === expected ||
+            current is ConnectionState.Disconnected || current is ConnectionState.Error
+        if (stands) reports++
+        return stands
+    }
+    fun reportError(message: String, state: ConnectionState.Disconnected? = null, expected: ConnectionState? = null): Boolean =
+        if (state != null) { reports++; true } else report(expected)
+    fun emitError(message: String, expected: ConnectionState? = null): Boolean = report(expected)
     fun disconnect() { cancelPendingSettingsRestart() }
     var teardown: CompletableDeferred<Unit>? = null
     suspend fun awaitDisconnectComplete() { teardown?.await() }
@@ -117,6 +132,7 @@ class SelfLauncherManager(private val service: Service, private val wifiLauncher
     private var launchJob: Job? = null
     private var launchTicket: Long? = null
     private var launchAcceptedIn: CommManager.ConnectionState? = null
+    private var launchAcceptedAfterAttempt: Any? = null
     private var launchTimeoutJob: Job? = null
     private var launchConnected = false
     private var settingsLaunchOwner: CommManager.ConnectionState.Disconnected? = null
@@ -580,6 +596,45 @@ fun main() {
         } else {
             check(!s.manager.isActive)
         }
+    }
+    // The launch's own connection can be published after the deadline's isConnected guard but
+    // before its report takes the lock. That refused report is not a failure of the session.
+    for (modern in listOf(true, false)) Service().use { s ->
+        s.modern = modern
+        s.network.activeNetwork = Any()
+        s.manager.start()
+        s.main.drain(); s.io.drain(); s.main.drain()
+        s.commManager.beforeReport = {
+            s.commManager.isLoopbackSession = true
+            s.commManager.connectionState.value = CommManager.ConnectionState.Connected
+        }
+        s.main.advanceBy(120_000L)
+        s.main.drain()
+        check(s.manager.isActive && s.resolvePrompts == 0 && s.commManager.reports == 0) {
+            "late arrival after the deadline guard handled as a failed launch (modern=$modern active=${s.manager.isActive} prompts=${s.resolvePrompts})"
+        }
+        s.manager.onConnectionEstablished()
+        check(s.manager.isActive && s.commManager.connectionState.value === CommManager.ConnectionState.Connected)
+    }
+    // Teardown republishes an attempt's terminal when an Error replaced it. A launch accepted in
+    // that Error came after the session ended; the repeat must not date it as older.
+    Service().use { s ->
+        val attempt = Any()
+        s.commManager.lastEndedAttempt = attempt
+        s.commManager.connectionState.value = CommManager.ConnectionState.Disconnected(
+            wasLoopbackSession = true, hadPhysicalConnection = true, endedAttempt = attempt)
+        s.commManager.connectionState.value = CommManager.ConnectionState.Error("USB permission not granted for device")
+        s.network.activeNetwork = Any()
+        s.manager.start()
+        val repeated = CommManager.ConnectionState.Disconnected(
+            wasLoopbackSession = true, hadPhysicalConnection = true, endedAttempt = attempt)
+        s.commManager.connectionState.value = repeated
+        check(s.manager.launchAcceptedAfter(repeated)) { "repeated terminal dated a launch accepted after its session as older" }
+        // The launch's own later session ends under a new attempt and retires it as usual.
+        val own = CommManager.ConnectionState.Disconnected(
+            wasLoopbackSession = true, hadPhysicalConnection = true, endedAttempt = Any())
+        s.commManager.connectionState.value = own
+        check(!s.manager.launchAcceptedAfter(own))
     }
     Service().use { s ->
         s.modern = true

@@ -61,6 +61,7 @@ private class ConnectionFixture(val settings: Settings = Settings()) {
     private val transportLifecycleLock = Any()
     // PRODUCTION APP_EXIT
     private var connectionAttempt: Any? = Any()
+    private var lastEndedAttempt: Any? = null
     private var usbRecoveryOwner: Any = Any()
     private var settingsUsbRestartInFlight: ConnectionState.Disconnected? = null
     private var usbSaveOwner: ConnectionState.Disconnected? = null

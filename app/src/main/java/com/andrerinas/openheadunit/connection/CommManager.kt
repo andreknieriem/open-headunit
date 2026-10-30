@@ -460,6 +460,10 @@ class CommManager(
     // state changes must not reopen that decision while the same session is being retired.
     private var disconnectRequested = false
     private var connectionAttempt: Any? = null
+    // Attempt of the last terminal published with one. Teardown republishes an attempt's
+    // terminal when an Error replaced it; launches accepted in between date it by this attempt.
+    // Guarded by transportLifecycleLock.
+    private var lastEndedAttempt: Any? = null
     // Guarded by transportLifecycleLock and reset for each physical connection attempt.
     private var physicalConnectionReached = false
     /** @Volatile: written on IO thread, read on Main and IO threads. */
@@ -1258,6 +1262,11 @@ class CommManager(
         terminal to (if (terminal == null) connectionAttempt else null)
     }
 
+    /** The current state and the attempt whose terminal was published last, read together. */
+    internal fun acceptanceSnapshot(): Pair<ConnectionState, Any?> = synchronized(transportLifecycleLock) {
+        _connectionState.value to lastEndedAttempt
+    }
+
     /** A manual start or stop supersedes Save before it publishes an AAP connection. */
     fun cancelPendingSettingsRestart(): Unit = synchronized(transportLifecycleLock) {
         val terminal = _connectionState.value as? ConnectionState.Disconnected
@@ -1557,14 +1566,12 @@ class CommManager(
      * Reports an internal failure without applying the user's explicit Exit policy.
      * With [expected], a late failure cannot replace a state published after its caller started.
      */
-    suspend fun emitError(msg: String, expected: ConnectionState? = null) {
+    suspend fun emitError(msg: String, expected: ConnectionState? = null): Boolean {
         synchronized(transportLifecycleLock) {
-            if (expected != null && _connectionState.value !== expected) {
-                AppLog.w("CommManager: $msg (not published: state changed since it started)")
-                return
-            }
+            if (expected != null && _connectionState.value !== expected) return refuseLateFailure(msg)
             _connectionState.value = ConnectionState.Error(msg)
             disconnect(sendByeBye = false, isUserExit = false)
+            return true
         }
     }
 
@@ -1575,28 +1582,40 @@ class CommManager(
      * not reported in yet may still be in flight, and the server it will arrive on, plus the dummy
      * VPN it was handed, both have to stay up for that to happen. See
      * [com.andrerinas.openheadunit.connection.self.SelfLaunchTimeoutPolicy.mayDisconnect].
+     *
+     * Returns false only when a connection formed after [expected]: it owns the outcome, so the
+     * caller must not apply failure handling. A Save report returns true.
      */
     suspend fun reportError(
         msg: String,
         settingsRestart: ConnectionState.Disconnected? = null,
         expected: ConnectionState? = null,
-    ) {
+    ): Boolean {
         synchronized(transportLifecycleLock) {
             if (settingsRestart != null) {
                 // A failed launcher has not handed ownership to another connection. Preserve
                 // Save's Disconnected token so its bounded automatic fallback can still run.
                 // A late failure from a superseded/cancelled Save cannot change the new state.
                 if (settingsRestart.acceptsSettingsRestart(_connectionState.value)) AppLog.e(msg)
-                return
+                return true
             }
             // A late launcher failure cannot overwrite a terminal or connection published after
             // that launcher was accepted; a later observer would misattribute what replaced it.
-            if (expected != null && _connectionState.value !== expected) {
-                AppLog.w("CommManager: $msg (not published: state changed since it started)")
-                return
-            }
+            if (expected != null && _connectionState.value !== expected) return refuseLateFailure(msg)
             _connectionState.value = ConnectionState.Error(msg)
+            return true
         }
+    }
+
+    /**
+     * A failure whose caller started under an older state is not published. It still stands
+     * against a newer terminal or error, but not against a connection forming or live now:
+     * that may be the caller's own late arrival. Guarded by transportLifecycleLock.
+     */
+    private fun refuseLateFailure(msg: String): Boolean {
+        val current = _connectionState.value
+        AppLog.w("CommManager: $msg (not published over $current)")
+        return current is ConnectionState.Disconnected || current is ConnectionState.Error
     }
 
     // A user exit owes no held USB scan. A wireless stack that USB stood down still comes back.
@@ -1631,6 +1650,7 @@ class CommManager(
         // Publish cleanup before state: a reconnect observer must be able to await this job.
         _disconnectJob = _scope.launch { doDisconnect(sendByeBye = false) }
         source.retirePresentation()
+        lastEndedAttempt = connectionAttempt
         _connectionState.value = ConnectionState.Disconnected(isClean, isUserExit = wasUserExit, wasLoopbackSession = isLoopbackSession, hadPhysicalConnection = physicalConnectionReached, settingsRetryOwner = save, endedAttempt = connectionAttempt)
         if (settings.killOnDisconnect) scheduleAppExit(wasUserExit)
     }
@@ -1957,6 +1977,7 @@ class CommManager(
         }
         _disconnectJob = _scope.launch { doDisconnect(sendByeBye, byeByeReason, reason) }
         _transport?.retirePresentation()
+        lastEndedAttempt = connectionAttempt
         _connectionState.value = ConnectionState.Disconnected(
             isUserExit = isUserExit, reason = reason,
             settingsRetryOwner = save,
@@ -2008,6 +2029,7 @@ class CommManager(
             connectionAttempt = null
             if (_connectionState.value !is ConnectionState.Disconnected) {
                 _transport?.retirePresentation()
+                lastEndedAttempt = endedAttempt
                 _connectionState.value = ConnectionState.Disconnected(wasLoopbackSession = isLoopbackSession, hadPhysicalConnection = physicalConnectionReached, endedAttempt = endedAttempt)
             }
             val transport = _transport
@@ -2153,6 +2175,7 @@ class CommManager(
             val cleanup = _scope.launch { doDisconnect(sendByeBye = true) }
             _disconnectJob = cleanup
             _transport?.retirePresentation()
+            lastEndedAttempt = connectionAttempt
             _connectionState.value = ConnectionState.Disconnected(isClean = false, isUserExit = false, wasLoopbackSession = isLoopbackSession, hadPhysicalConnection = physicalConnectionReached, endedAttempt = connectionAttempt)
             cleanup
         }

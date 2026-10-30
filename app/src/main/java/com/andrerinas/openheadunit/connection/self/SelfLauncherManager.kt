@@ -52,6 +52,9 @@ class SelfLauncherManager(
     // The connection state at acceptance. A launch accepted while terminal T is current was
     // requested after T's session ended; any other launch belongs to an earlier session.
     private var launchAcceptedIn: CommManager.ConnectionState? = null
+    // The attempt whose terminal was already published at acceptance. Teardown can republish
+    // that terminal after an Error replaced it; the repeat still ended before this launch.
+    private var launchAcceptedAfterAttempt: Any? = null
     private var launchTimeoutJob: Job? = null
     private var launchConnected = false
     private var settingsLaunchOwner: CommManager.ConnectionState.Disconnected? = null
@@ -143,8 +146,9 @@ class SelfLauncherManager(
         isActive = true
         launchInFlight = true
         launchTicket = ticket
-        val acceptedIn = commManager.connectionState.value
+        val (acceptedIn, endedBefore) = commManager.acceptanceSnapshot()
         launchAcceptedIn = acceptedIn
+        launchAcceptedAfterAttempt = endedBefore
         // Own the retained VPN before queued work can be cancelled. Otherwise a cancel
         // between acceptance and Main dispatch would still see the old SESSION owner.
         adoptDummyVpn(needsDummyVpn)
@@ -213,10 +217,12 @@ class SelfLauncherManager(
                     // Report without disconnecting: another launch method may still connect to
                     // the server we opened. Reporting hides the "connecting" overlay while leaving
                     // that server and its network available for the late arrival.
-                    commManager.reportError("No launch method succeeded", settingsRestart, expected = acceptedIn)
                     // The report is not a disconnect, so nothing else clears this - and the
-                    // watchdog below is only armed once a launcher has succeeded.
-                    isActive = false
+                    // watchdog below is only armed once a launcher has succeeded. A refused
+                    // report means a newer state owns the outcome, including a late arrival.
+                    if (commManager.reportError("No launch method succeeded", settingsRestart, expected = acceptedIn)) {
+                        isActive = false
+                    }
                 } else {
                     // emitError disconnects, and the session that is up is not this attempt's to
                     // end. Measured on the 17.4+ route, where a duplicate launch's failure killed
@@ -263,11 +269,14 @@ class SelfLauncherManager(
                         return@timeout
                     }
                     AppLog.e("SelfMode: nothing connected within ${deadlineMs}ms of the launch")
-                    if (SelfLaunchTimeoutPolicy.mayDisconnect(path)) {
+                    val failureStands = if (SelfLaunchTimeoutPolicy.mayDisconnect(path)) {
                         commManager.emitError("No launch method succeeded (timeout)", expected = acceptedIn)
                     } else {
                         commManager.reportError("No launch method succeeded (timeout)", settingsRestart, expected = acceptedIn)
                     }
+                    // The state moved on after the guard above, e.g. the launch's own connection
+                    // arrived. That transition owns Self state; this is no longer a failure.
+                    if (!failureStands) return@timeout
 
                     // The report is deliberately not a disconnect, so no Disconnected transition
                     // arrives to clear this. Left true, it poisons the next session in this
@@ -384,7 +393,9 @@ class SelfLauncherManager(
 
     /** Whether the current launch was accepted after [terminal] ended its session. */
     internal fun launchAcceptedAfter(terminal: CommManager.ConnectionState.Disconnected): Boolean {
-        return launchJob != null && launchAcceptedIn === terminal
+        if (launchJob == null) return false
+        val ended = terminal.endedAttempt
+        return launchAcceptedIn === terminal || (ended != null && ended === launchAcceptedAfterAttempt)
     }
 
     internal fun stopIfCurrent(expected: Job?, preserveVpn: Boolean = false) {
@@ -459,6 +470,7 @@ class SelfLauncherManager(
         launchJob = null
         launchTicket = null
         launchAcceptedIn = null
+        launchAcceptedAfterAttempt = null
         job?.cancel()
         launchTimeoutJob?.cancel()
         launchTimeoutJob = null

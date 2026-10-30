@@ -111,8 +111,9 @@ class SelfManager {
     var isActive=false
     var launchJob: Any?=null
     var launchAcceptedIn: Any?=null
+    var launchAcceptedAfterAttempt: Any?=null
     fun currentLaunch()=launchJob
-    fun stop(wasConnected: Boolean) { isActive=false; launchJob=null; launchAcceptedIn=null }
+    fun stop(wasConnected: Boolean) { isActive=false; launchJob=null; launchAcceptedIn=null; launchAcceptedAfterAttempt=null }
     // SELF_ACCEPTED_AFTER
 }
 class Service {
@@ -329,26 +330,30 @@ fun main() {
     // A launch retired over its live loopback session, or one that simply completed, leaves
     // Self mode to that session's terminal. An ordinary wireless arm can take the cleanup
     // ticket before the terminal is observed; Self state must still end with the session
-    // unless a Self launch accepted after that terminal now owns it.
-    for (launch in listOf("none", "completed-earlier", "accepted-after-terminal")) Service().apply {
+    // unless a Self launch accepted after that terminal now owns it. Teardown republishes the
+    // terminal (same attempt) when an Error replaced it; a launch accepted in that Error is newer.
+    val repeated = "accepted-before-repeated-terminal"
+    for (launch in listOf("none", "completed-earlier", "accepted-after-terminal", repeated)) Service().apply {
         try {
             selfLauncherManager.isActive=true
-            val ended=CommManager.ConnectionState.Disconnected(isUserExit=false, wasLoopbackSession=true)
+            val attempt=Any()
+            val ended=CommManager.ConnectionState.Disconnected(isUserExit=false, wasLoopbackSession=true, endedAttempt=attempt)
             if (launch != "none") {
                 selfLauncherManager.launchJob=Any()
-                selfLauncherManager.launchAcceptedIn=if (launch == "completed-earlier") Any() else ended
+                selfLauncherManager.launchAcceptedIn=if (launch == "accepted-after-terminal") ended else Any()
+                if (launch == repeated) selfLauncherManager.launchAcceptedAfterAttempt=attempt
             }
             commManager.connectionState.value=ended
             wifiLauncherManager.noteRearm()
             notifyEnd(ended); commManager.gate.complete(Unit); main.drain()
-            val newer = launch == "accepted-after-terminal"
+            val newer = launch == "accepted-after-terminal" || launch == repeated
             check(selfLauncherManager.isActive==newer) {
                 "loopback terminal after a wireless arm left Self state (launch=$launch)"
             }
             check(vpnStops==if (newer) 0 else 1)
         } finally { serviceScope.cancel() }
     }
-    println("PASS loopback terminal after an ordinary wireless arm ends leftover Self state, including a completed launch; a launch accepted after it keeps it")
+    println("PASS loopback terminal after an ordinary wireless arm ends leftover Self state, including a completed launch; a launch accepted after it, or after its first publication, keeps it")
     println("PASS service Stop joins existing physical retirement before native removal; connected, completed and rearmed controls")
     println("PASS actual disconnect callback: stale policy vs session resources, rearm across await, separate terminal and captured Stop waiter")
     println("PASS actual disconnect callback: Connecting attempt older than Self arm, superseded resource release, Bluetooth stand-down ownership")

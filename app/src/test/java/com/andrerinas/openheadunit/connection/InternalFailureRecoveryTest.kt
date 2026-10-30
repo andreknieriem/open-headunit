@@ -132,21 +132,30 @@ class InternalFailureRecoveryTest {
     }
 
     @Test fun lateLaunchFailureCannotReplaceAStatePublishedAfterItsLaunch() = runBlocking {
-        for (disconnects in listOf(false, true)) Fixture().use { f ->
-            val acceptedIn = ConnectionState.Disconnected()
-            val ended = ConnectionState.Disconnected(wasLoopbackSession = true, hadPhysicalConnection = true)
-            f.states.value = ended
-            if (disconnects) f.manager.emitError("old launch timeout", expected = acceptedIn)
-            else f.manager.reportError("old launch timeout", expected = acceptedIn)
-            assertSame("A late failure replaced the terminal published after its launch", ended, f.states.value)
-            assertTrue(f.manager.ownsUsbRecheck(f.owner))
-            // A launch accepted in the current state still reports its own failure.
-            if (disconnects) {
-                f.manager.emitError("launch timeout", expected = ended)
-                f.assertRecoverable()
-            } else {
-                f.manager.reportError("launch timeout", expected = ended)
-                assertEquals(ConnectionState.Error("launch timeout"), f.states.value)
+        suspend fun report(f: Fixture, disconnects: Boolean, msg: String, expected: ConnectionState) =
+            if (disconnects) f.manager.emitError(msg, expected = expected)
+            else f.manager.reportError(msg, expected = expected)
+        for (disconnects in listOf(false, true)) {
+            // A newer terminal or error is kept; the late caller's failure still stands.
+            for (newer in listOf(ConnectionState.Disconnected(wasLoopbackSession = true, hadPhysicalConnection = true),
+                ConnectionState.Error("USB permission not granted for device"))) Fixture().use { f ->
+                f.states.value = newer
+                assertTrue(report(f, disconnects, "old launch timeout", ConnectionState.Disconnected()))
+                assertSame("A late failure replaced the state published after its launch", newer, f.states.value)
+                assertTrue(f.manager.ownsUsbRecheck(f.owner))
+            }
+            // A connection forming or live may be the caller's own arrival: it owns the outcome.
+            for (live in listOf(ConnectionState.Connecting, ConnectionState.Connected)) Fixture().use { f ->
+                f.states.value = live
+                assertFalse(report(f, disconnects, "old launch timeout", ConnectionState.Disconnected()))
+                assertSame(live, f.states.value)
+            }
+            // A launch accepted in the current state still publishes its own failure.
+            Fixture().use { f ->
+                val acceptedIn = f.states.value
+                assertTrue(report(f, disconnects, "launch timeout", acceptedIn))
+                if (disconnects) f.assertRecoverable()
+                else assertEquals(ConnectionState.Error("launch timeout"), f.states.value)
             }
         }
     }

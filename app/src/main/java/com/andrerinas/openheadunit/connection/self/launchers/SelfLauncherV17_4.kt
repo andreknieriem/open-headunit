@@ -21,11 +21,13 @@ class SelfLauncherV17_4(
         val success = withContext(Dispatchers.IO) {
             commManager.connect("127.0.0.1", 5277, expectedState = services.settingsRestart,
                 ticket = services.operationTicket)
-            commManager.isConnected
+            // An arrival, not the state now: a session that came and went, or one an Error
+            // already hid, still reached the server and must not send the user to settings.
+            services.arrivedSinceLaunch()
         }
         services.ensureLaunchAllowed()
 
-        if (!success && !commManager.isConnected) {
+        if (!success && !services.arrivedSinceLaunch()) {
             AppLog.w("SelfMode: Headunit Server (127.0.0.1:5277) is NOT running.")
             ToastUtils.showToast(
                 services.aap,

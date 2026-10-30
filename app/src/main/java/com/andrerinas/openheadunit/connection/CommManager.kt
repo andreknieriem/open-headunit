@@ -459,17 +459,29 @@ class CommManager(
     // The first disconnect chooses app-exit policy until the next physical attempt. Error/UI
     // state changes must not reopen that decision while the same session is being retired.
     private var disconnectRequested = false
-    private var connectionAttempt: Any? = null
+
+    /**
+     * One physical connection attempt: the owner of [connectionState] from its publication until
+     * its end, including before its connection object is registered. [settled] completes, under
+     * transportLifecycleLock, once the attempt reaches a physical connection, ends, or is replaced,
+     * so a waiter learns the outcome without observing the conflated state flow. Await it only
+     * through [awaitSettled], which never resumes inside the completing frame.
+     */
+    internal class Attempt {
+        internal val settled = CompletableDeferred<Unit>()
+    }
+
+    private var connectionAttempt: Attempt? = null
     // Attempt of the last terminal published with one. Teardown republishes an attempt's
-    // terminal when an Error replaced it; launches accepted in between date it by this attempt.
+    // terminal when an Error replaced it; launchers armed in between date it by this attempt.
     // Guarded by transportLifecycleLock.
     private var lastEndedAttempt: Any? = null
-    // Attempt of the last terminal that ended a physical loopback session. A later Error can
-    // replace that terminal before Main observes it; Self dates its arrival by this record.
-    // A repeat of the same attempt's terminal leaves it unchanged. Guarded by transportLifecycleLock.
-    private var lastLoopbackSessionAttempt: Any? = null
     // Guarded by transportLifecycleLock and reset for each physical connection attempt.
     private var physicalConnectionReached = false
+    // Attempts that ever reached a physical connection. Monotonic, so a launch dates any arrival
+    // after its acceptance by this count even if no observer saw that connection or its end.
+    // Guarded by transportLifecycleLock.
+    private var physicalArrivals = 0L
     /** @Volatile: written on IO thread, read on Main and IO threads. */
     @Volatile private var _transport: AapTransport? = null
     @Volatile private var projectionVideoFocusSuppressed = false
@@ -628,12 +640,22 @@ class CommManager(
     /**
      * `true` when this session's peer is this device itself — Self Mode, on either of its routes.
      *
-     * Asked instead of `SelfLauncherManager.isActive`, which is set before the launchers run and
-     * outlives a launch that never connected. A socket session alone cannot answer it: Self Mode
-     * is one too, and only the endpoint separates them.
+     * Asked instead of `SelfLauncherManager.isActive`, which also covers a launch still waiting
+     * for its phone. A socket session alone cannot answer it: Self Mode is one too, and only the
+     * endpoint separates them.
      */
     val isLoopbackSession: Boolean
         get() = (_connection as? SocketProjectionConnection)?.isLoopbackPeer == true
+
+    /**
+     * Whether a loopback session is physically live now: its attempt is current, reached its
+     * connection and is not retiring. Read from the attempt itself, never from [connectionState],
+     * which a diagnostic can replace while the socket is still up.
+     */
+    internal val isLiveLoopbackSession: Boolean
+        get() = synchronized(transportLifecycleLock) {
+            connectionAttempt != null && !disconnectRequested && physicalConnectionReached && isLoopbackSession
+        }
 
     /**
      * Returns `true` if the current USB connection is to [device].
@@ -781,8 +803,16 @@ class CommManager(
             // USB re-enumeration revokes the old UsbDevice's permission. Keep Save's
             // terminal token so a fresh attach/permission reply can continue this recovery.
             if (expectedState != null || recoveryOwner != null) return
-            onSessionFailure?.invoke("connect_failed")
-            _connectionState.emit(ConnectionState.Error("USB permission not granted for device"))
+            // A refused request owns no attempt. Its diagnostic may replace only an idle state, and
+            // only while this request still holds its ticket and claim: never an attempt forming
+            // or live (possibly before its connection is even registered), nor a state that Stop
+            // or a preempting request now owns.
+            synchronized(transportLifecycleLock) {
+                if (!appExitPolicy.acceptsConnection(ticket) || attemptInFlight() ||
+                    (appClaim != null && !ConnectionArbiter.holds(appClaim))) return
+                onSessionFailure?.invoke("connect_failed")
+                _connectionState.value = ConnectionState.Error("USB permission not granted for device")
+            }
             return
         }
         // Permission rejection is not an accepted attempt. A valid held claim, however,
@@ -825,17 +855,17 @@ class CommManager(
             // Retirement can suspend after admission. Recheck the same Save permission at
             // publication, before opening hardware or replacing another connection's state.
             if (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value)) return@publishConnectionAttempt null
-            if (recoveryOwner != null && _connectionState.value !is ConnectionState.Disconnected &&
-                _connectionState.value !is ConnectionState.Error) return@publishConnectionAttempt null
+            if (recoveryOwner != null && (attemptInFlight() || (_connectionState.value !is ConnectionState.Disconnected &&
+                _connectionState.value !is ConnectionState.Error))) return@publishConnectionAttempt null
             if (!appExitPolicy.acceptsConnection(ticket)) return@publishConnectionAttempt null
-            val token = Any()
+            val token = Attempt()
             var previous: ProjectionConnection? = null
             if (!publishIfOwned {
                 check(acceptAppConnection(ticket, acquireOwnership = appClaim == null))
                 settingsUsbRestartInFlight = expectedState
                 usbSaveOwner = expectedState
                 outgoingEndpoint = null
-                connectionAttempt = token
+                beginAttempt(token)
                 physicalConnectionReached = false
                 disconnectRequested = false
                 _connectionState.value = ConnectionState.Connecting
@@ -878,7 +908,7 @@ class CommManager(
                 if (opened && targetStillCurrent && expectedState?.isSettingsRestartCancelled != true) {
                     settings.saveLastConnection(type = Settings.CONNECTION_TYPE_USB, usbDevice = UsbDeviceCompat.getUniqueName(currentDevice))
                     if (publishIfOwned {
-                        physicalConnectionReached = true
+                        reachPhysicalConnection()
                         _connectionState.value = ConnectionState.Connected
                     }) return@synchronized
                 }
@@ -1011,8 +1041,10 @@ class CommManager(
                     // resource owners remain unchanged throughout candidate preparation.
                     // Cleanup can be queued between the initial join and terminal snapshot;
                     // reject rather than transfer a candidate into that cleanup's capture.
+                    // An attempt in flight owns the state even before its connection is registered.
                     if (socket.isClosed || _connectionState.value !== terminal ||
                         (terminal !is ConnectionState.Disconnected && terminal !is ConnectionState.Error) ||
+                        attemptInFlight() ||
                         _connection != null || _transport != null || !appExitPolicy.acceptsConnection(ticket) ||
                         _disconnectJob?.isCompleted == false ||
                         (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value))) {
@@ -1021,10 +1053,10 @@ class CommManager(
                         check(acceptAppConnection(ticket, acquireOwnership = true))
                         lastAttemptedEndpoint = socketEndpoint(socket)
                         outgoingEndpoint = restartEndpoint
-                        connectionAttempt = Any()
-                        physicalConnectionReached = true
+                        beginAttempt(Attempt())
                         disconnectRequested = false
                         _connection = candidate
+                        reachPhysicalConnection()
                         _connectionState.value = ConnectionState.Connected
                         transferred = true
                         true
@@ -1079,8 +1111,8 @@ class CommManager(
                 if (!acceptAppConnection(ticket)) return@publishConnectionAttempt null
                 lastAttemptedEndpoint = socketEndpoint(socket)
                 outgoingEndpoint = restartEndpoint
-                val token = Any()
-                connectionAttempt = token
+                val token = Attempt()
+                beginAttempt(token)
                 physicalConnectionReached = false
                 usbSaveOwner = null
                 disconnectRequested = false
@@ -1116,7 +1148,7 @@ class CommManager(
                     return@synchronized
                 }
                 if (opened) {
-                    physicalConnectionReached = true
+                    reachPhysicalConnection()
                     // [FIX] Don't overwrite NEARBY connection type with WIFI + localhost IP (::1)
                     if (socket !is NearbySocket) {
                         settings.saveLastConnection(type = Settings.CONNECTION_TYPE_WIFI, ip = socket.inetAddress?.hostAddress ?: "")
@@ -1203,8 +1235,8 @@ class CommManager(
             if (!acceptAppConnection(ticket)) return@publishConnectionAttempt null
             lastAttemptedEndpoint = SameEndpointConnectPolicy.endpoint(ip, port)
             outgoingEndpoint = ip to port
-            val token = Any()
-            connectionAttempt = token
+            val token = Attempt()
+            beginAttempt(token)
             physicalConnectionReached = false
             usbSaveOwner = null
             disconnectRequested = false
@@ -1232,7 +1264,7 @@ class CommManager(
                     return@synchronized
                 }
                 if (opened) {
-                    physicalConnectionReached = true
+                    reachPhysicalConnection()
                     settings.saveLastConnection(type = Settings.CONNECTION_TYPE_WIFI, ip = ip)
                     _connectionState.value = ConnectionState.Connected
                 } else {
@@ -1266,47 +1298,127 @@ class CommManager(
         Triple(terminal, if (terminal == null) connectionAttempt else null, lastEndedAttempt)
     }
 
-    /**
-     * The current state, the attempt whose terminal was published last, and the attempt of the
-     * last ended loopback session, read together.
-     */
-    internal fun acceptanceSnapshot(): Triple<ConnectionState, Any?, Any?> = synchronized(transportLifecycleLock) {
-        Triple(_connectionState.value, lastEndedAttempt, lastLoopbackSessionAttempt)
+    /** Whether an attempt owns the state now: published and not retiring. Guarded by transportLifecycleLock. */
+    private fun attemptInFlight(): Boolean {
+        return connectionAttempt != null && !disconnectRequested
     }
-
-    /** The attempt of the last terminal that ended a physical loopback session. */
-    internal fun lastLoopbackSessionEnd(): Any? = synchronized(transportLifecycleLock) { lastLoopbackSessionAttempt }
 
     /**
-     * Runs [retire] with the ended session's attempt, under the lifecycle lock, when a physical
-     * loopback session ended after [baseline] and nothing else can still end Self mode for it:
-     * its terminal is no longer current, no connection is forming or live, and no unretired
-     * physical connection remains behind a later Error. Publication cannot interleave between
-     * this check and [retire]. Returns whether it ran.
+     * Makes [next] the current attempt, under transportLifecycleLock. An attempt replaced without
+     * a terminal of its own settles here; one that already ended settled with that terminal, and
+     * settling twice is a no-op. Only the exact replaced object settles, never [next].
      */
-    internal fun retireEndedLoopbackSession(baseline: Any?, retire: (ended: Any) -> Unit): Boolean = synchronized(transportLifecycleLock) {
-        val ended = lastLoopbackSessionAttempt ?: return@synchronized false
-        val state = _connectionState.value
-        val ownTerminalCurrent = state is ConnectionState.Disconnected && state.endedAttempt === ended
-        val forming = state !is ConnectionState.Disconnected && state !is ConnectionState.Error
-        val liveOwner = (_connection != null || _transport != null) && !disconnectRequested
-        if (ended === baseline || ownTerminalCurrent || forming || liveOwner) return@synchronized false
-        retire(ended)
-        true
+    private fun beginAttempt(next: Attempt) {
+        val replaced = connectionAttempt
+        connectionAttempt = next
+        replaced?.settled?.complete(Unit)
     }
 
-    /** Whether a loopback session is live now, with the last ended loopback session, read together. */
-    internal fun liveLoopbackSnapshot(): Pair<Boolean, Any?> = synchronized(transportLifecycleLock) {
-        val state = _connectionState.value
-        val live = state !is ConnectionState.Disconnected && state !is ConnectionState.Error &&
-            state !is ConnectionState.Connecting
-        (live && isLoopbackSession && !disconnectRequested) to lastLoopbackSessionAttempt
+    /**
+     * The current attempt reached its physical connection, under transportLifecycleLock. The
+     * arrival is counted before the attempt settles, so its waiter decides against this arrival.
+     */
+    private fun reachPhysicalConnection() {
+        physicalConnectionReached = true
+        physicalArrivals++
+        connectionAttempt?.settled?.complete(Unit)
     }
 
-    /** Called under transportLifecycleLock as each terminal carrying [endedAttempt] is published. */
-    private fun recordTerminal(endedAttempt: Any?) {
+    /**
+     * Called under transportLifecycleLock as each terminal ending [endedAttempt] is published,
+     * after the flags that end it, so a launch waiting on that attempt decides against its end.
+     */
+    private fun recordTerminal(endedAttempt: Attempt?) {
         lastEndedAttempt = endedAttempt
-        if (endedAttempt != null && isLoopbackSession && physicalConnectionReached) lastLoopbackSessionAttempt = endedAttempt
+        endedAttempt?.settled?.complete(Unit)
+    }
+
+    /**
+     * How a Self launch's failure resolves. Decided under transportLifecycleLock from the attempt
+     * authority and the launch's arrival mark; presentation state plays no part, so neither a
+     * skipped Connected nor a diagnostic that replaced a state can change the answer.
+     */
+    internal sealed class LaunchOutcome {
+        /** Nothing arrived since the launch and nothing is forming: the failure stands, reported. */
+        object Failed : LaunchOutcome()
+
+        /** A physical connection arrived since the launch, or one is live: it owns the outcome. */
+        object Answered : LaunchOutcome()
+
+        /** An attempt is forming and may be the launch's own arrival; see [awaitSettled]. */
+        class Forming internal constructor(internal val attempt: Attempt) : LaunchOutcome()
+
+        /** Stop, or a state that superseded the launch's Save, took its authority: nothing to report. */
+        object Revoked : LaunchOutcome()
+    }
+
+    /**
+     * When a launch was accepted: the arrival count, which dates its answer, the state then
+     * current, which only bounds where its failure may be shown, and the launch's Stop ticket.
+     * Read together under the lock.
+     */
+    internal class LaunchMark internal constructor(
+        internal val arrivals: Long,
+        internal val acceptedIn: ConnectionState,
+        internal val ticket: Long,
+    )
+
+    /** The mark a launch accepted now with [ticket] is dated by; see [arrivedSince]. */
+    internal fun launchMark(ticket: Long): LaunchMark {
+        return synchronized(transportLifecycleLock) { LaunchMark(physicalArrivals, _connectionState.value, ticket) }
+    }
+
+    /** Whether any attempt reached a physical connection after [mark], whether or not it was observed. */
+    internal fun arrivedSince(mark: LaunchMark): Boolean {
+        return synchronized(transportLifecycleLock) { physicalArrivals != mark.arrivals }
+    }
+
+    /**
+     * Reports the failure of a launch accepted at [mark], only if it still stands, with the decision
+     * and the report under one lock. It does not touch the connection: the launch may still be in
+     * flight, and the server and dummy VPN it will arrive on must stay up for that. See
+     * [com.andrerinas.openheadunit.connection.self.SelfLaunchTimeoutPolicy].
+     *
+     * Stop owns all work accepted before it, whenever its cancellation reaches the launch: a
+     * revoked ticket, checked here with the decision, reports nothing even after a wait. A failure
+     * stands only while nothing owns the state: with an attempt in flight there is nothing a failure
+     * could replace without taking that attempt's authority. A standing failure is shown only over
+     * the state its launch was accepted in: a state published since, such as a teardown repeating
+     * an earlier session's terminal, belongs to its own observer. A Save report only logs,
+     * preserving Save's Disconnected token for its bounded fallback; a Save another state
+     * superseded no longer owns a failure.
+     */
+    internal fun reportLaunchFailure(
+        msg: String,
+        mark: LaunchMark,
+        settingsRestart: ConnectionState.Disconnected? = null,
+    ): LaunchOutcome {
+        synchronized(transportLifecycleLock) {
+            if (!appExitPolicy.acceptsConnection(mark.ticket)) return LaunchOutcome.Revoked
+            val attempt = connectionAttempt?.takeIf { !disconnectRequested }
+            if (physicalArrivals != mark.arrivals || (attempt != null && physicalConnectionReached)) return LaunchOutcome.Answered
+            if (attempt != null) return LaunchOutcome.Forming(attempt)
+            if (settingsRestart != null) {
+                if (!settingsRestart.acceptsSettingsRestart(_connectionState.value)) return LaunchOutcome.Revoked
+                AppLog.e(msg)
+            } else if (_connectionState.value === mark.acceptedIn) {
+                _connectionState.value = ConnectionState.Error(msg)
+            } else {
+                AppLog.w("CommManager: $msg (not published over ${_connectionState.value})")
+            }
+            return LaunchOutcome.Failed
+        }
+    }
+
+    /**
+     * Suspends until [forming]'s attempt reaches its connection or ends; decide again afterwards.
+     * Settlement completes under transportLifecycleLock, after the flags and arrival count it
+     * settles on, and no completion handler is registered on it. The wait itself runs on the
+     * connection IO dispatcher, [Dispatchers.IO] in production, which always dispatches its
+     * resumption: whatever the caller's own dispatcher, it never continues inside that frame.
+     */
+    internal suspend fun awaitSettled(forming: LaunchOutcome.Forming) {
+        withContext(connectionIoDispatcher) { forming.attempt.settled.await() }
     }
 
     /** A manual start or stop supersedes Save before it publishes an AAP connection. */
@@ -1604,60 +1716,12 @@ class CommManager(
         }
     }
 
-    /**
-     * Reports an internal failure without applying the user's explicit Exit policy.
-     * With [expected], a late failure cannot replace a state published after its caller started.
-     */
-    suspend fun emitError(msg: String, expected: ConnectionState? = null): Boolean {
+    /** Reports an internal failure without applying the user's explicit Exit policy. */
+    suspend fun emitError(msg: String) {
         synchronized(transportLifecycleLock) {
-            if (expected != null && _connectionState.value !== expected) return refuseLateFailure(msg)
             _connectionState.value = ConnectionState.Error(msg)
             disconnect(sendByeBye = false, isUserExit = false)
-            return true
         }
-    }
-
-    /**
-     * Reports a failure without touching the connection.
-     *
-     * For a caller that has run out of patience rather than out of hope: a Self Mode launch that has
-     * not reported in yet may still be in flight, and the server it will arrive on, plus the dummy
-     * VPN it was handed, both have to stay up for that to happen. See
-     * [com.andrerinas.openheadunit.connection.self.SelfLaunchTimeoutPolicy.mayDisconnect].
-     *
-     * Returns false only when a connection formed after [expected]: it owns the outcome, so the
-     * caller must not apply failure handling. A Save report returns true.
-     */
-    suspend fun reportError(
-        msg: String,
-        settingsRestart: ConnectionState.Disconnected? = null,
-        expected: ConnectionState? = null,
-    ): Boolean {
-        synchronized(transportLifecycleLock) {
-            if (settingsRestart != null) {
-                // A failed launcher has not handed ownership to another connection. Preserve
-                // Save's Disconnected token so its bounded automatic fallback can still run.
-                // A late failure from a superseded/cancelled Save cannot change the new state.
-                if (settingsRestart.acceptsSettingsRestart(_connectionState.value)) AppLog.e(msg)
-                return true
-            }
-            // A late launcher failure cannot overwrite a terminal or connection published after
-            // that launcher was accepted; a later observer would misattribute what replaced it.
-            if (expected != null && _connectionState.value !== expected) return refuseLateFailure(msg)
-            _connectionState.value = ConnectionState.Error(msg)
-            return true
-        }
-    }
-
-    /**
-     * A failure whose caller started under an older state is not published. It still stands
-     * against a newer terminal or error, but not against a connection forming or live now:
-     * that may be the caller's own late arrival. Guarded by transportLifecycleLock.
-     */
-    private fun refuseLateFailure(msg: String): Boolean {
-        val current = _connectionState.value
-        AppLog.w("CommManager: $msg (not published over $current)")
-        return current is ConnectionState.Disconnected || current is ConnectionState.Error
     }
 
     // A user exit owes no held USB scan. A wireless stack that USB stood down still comes back.
@@ -2074,6 +2138,8 @@ class CommManager(
                 recordTerminal(endedAttempt)
                 _connectionState.value = ConnectionState.Disconnected(wasLoopbackSession = isLoopbackSession, hadPhysicalConnection = physicalConnectionReached, endedAttempt = endedAttempt)
             }
+            // destroy() can retire an attempt no terminal ended; settling the same one twice is a no-op.
+            endedAttempt?.settled?.complete(Unit)
             val transport = _transport
             val connection = _connection
             if (transport == null && connection == null) return

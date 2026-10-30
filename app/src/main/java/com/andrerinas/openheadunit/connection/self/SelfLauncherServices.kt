@@ -19,12 +19,22 @@ class SelfLauncherServices(
     val wifiLauncherManager: WifiLauncherManager,
     val settingsRestart: CommManager.ConnectionState.Disconnected? = null,
     val operationTicket: Long = App.provide(aap).commManager.appConnectionTicket(),
+    // The launch's arrival mark; see SelfLauncherManager.isLaunchPending.
+    val arrivalMark: CommManager.LaunchMark = App.provide(aap).commManager.launchMark(operationTicket),
 ) {
     val connectivityManager by lazy { aap.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager }
 
     val fakeNetwork by lazy { createFakeNetwork(0) }
     val fakeWifiInfo by lazy { createFakeWifiInfo() }
 
+
+    /**
+     * Whether a physical connection arrived since this launch was accepted, even one that has
+     * already ended: unlike the current state, an Error published since cannot hide it.
+     */
+    internal fun arrivedSinceLaunch(): Boolean {
+        return App.provide(aap).commManager.arrivedSince(arrivalMark)
+    }
 
     /** A suspension may let USB or another socket replace the Save that requested this launch. */
     internal suspend fun ensureLaunchAllowed() {

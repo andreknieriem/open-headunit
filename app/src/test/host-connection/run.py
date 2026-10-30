@@ -184,9 +184,9 @@ class CommManager {
  val context=Context();val settings=Settings();val audioDecoder=AudioDecoder();val videoDecoder=VideoDecoder()
  private val transportLifecycleLock=Any()
  private var disconnectRequested=false
- private var connectionAttempt:Any?=null
+ private var connectionAttempt:Attempt?=null
  private var lastEndedAttempt:Any?=null
- private var lastLoopbackSessionAttempt:Any?=null
+ private var physicalArrivals=0L
  private var usbRecoveryOwner:Any=Any()
  fun recoveryOwner()=usbRecoveryOwner
  // Projection health storage is not part of the lifecycle under test.
@@ -283,7 +283,7 @@ manager_head += exit_members.replace(
     "private val connectionIoDispatcher: CoroutineDispatcher = Dispatchers.Unconfined")
 # Paragraph boundaries retain complete expression bodies, including claimUsb's trailing also.
 for declaration in ['val isConnected:', 'val isBusy:', 'val isWirelessSession:', 'val isLoopbackSession:',
-                    'internal fun claimUsb(', 'private fun socketOwner(']:
+                    'internal fun claimUsb(', 'private fun socketOwner(', 'internal class LaunchMark internal constructor(']:
     start = comm.index(declaration)
     definition = comm[start:comm.index('\n\n', start)]
     methods[declaration] = hashlib.sha256(definition.encode()).hexdigest()
@@ -291,6 +291,9 @@ for declaration in ['val isConnected:', 'val isBusy:', 'val isWirelessSession:',
 manager=manager_head+'\n'.join(extract(comm,n) for n in [
  'suspend fun startHandshake()', 'private inline fun withLiveTransport(', 'suspend fun startReading()',
  'private fun reachedSsl()', 'private fun transportedQuited(', 'fun applyAudioSettings()', 'fun disconnect(', 'fun cancelPendingSettingsRestart()', 'internal fun rearmSnapshot()', 'private fun doDisconnect(', 'private fun recordTerminal(',
+ 'internal class Attempt {', 'private fun attemptInFlight()', 'private fun beginAttempt(', 'private fun reachPhysicalConnection()',
+ 'internal sealed class LaunchOutcome {', 'internal fun launchMark(', 'internal fun arrivedSince(', 'internal fun reportLaunchFailure(',
+ 'internal suspend fun awaitSettled(', 'internal val isLiveLoopbackSession:',
  'private suspend fun connectIp(', 'private suspend fun connectUsb(', 'private suspend fun connectSocket(', 'private suspend fun connectAdmittedSocket(', 'private fun socketEndpoint(', 'fun disconnectForLinkLoss(', 'fun destroy()',
  'fun setProjectionVideoFocusSuppressed(', 'private suspend fun acceptAppConnectionClaim(',
  'suspend fun connect(\n        device:', 'suspend fun connect(\n        socket:', 'suspend fun connect(\n        ip:',
@@ -947,6 +950,99 @@ fun rearmSnapshotIdentifiesConnectingAttempt()=runBlocking {
  }
  println("PASS real Connecting attempt identity reaches its failed terminal and differs from the next attempt")
 }
+// A Self launch's failure is decided from the attempts CommManager published, never from a state
+// a conflated observer may have missed. Real publication, arrival, terminal, teardown and refused
+// USB paths run here; the launch side is only the decision call its deadline makes.
+fun launchOutcomeFollowsAttempts()=runBlocking {
+ fun ended():CommManager{val c=CommManager();c.disconnect(isUserExit=false,honorKillOnDisconnect=false);c.cleanups();runBlocking{c.awaitCleanup()};return c}
+ // Connecting(A) -> Connected(A) -> ended(A) -> Connecting(B) is one equal Connecting to a StateFlow
+ // waiter. A's own settlement and the arrival count still answer the launch.
+ run {
+  val c=ended();val mark=c.launchMark(c.appConnectionTicket())
+  var forming:CommManager.LaunchOutcome.Forming?=null
+  SocketProjectionConnection.connectionHook={
+   forming=c.reportLaunchFailure("timeout",mark) as CommManager.LaunchOutcome.Forming
+   check(!checkNotNull(forming).attempt.settled.isCompleted && c.state===ConnectionState.Connecting);true
+  }
+  try{c.connectSelf()}finally{SocketProjectionConnection.connectionHook=null}
+  val waiting=checkNotNull(forming)
+  check(waiting.attempt.settled.isCompleted){"an arrival left its attempt's waiter unsettled"}
+  c.disconnect(isUserExit=false,honorKillOnDisconnect=false);c.cleanups();c.awaitCleanup()
+  var duringB:CommManager.LaunchOutcome?=null
+  SocketProjectionConnection.connectionHook={duringB=c.reportLaunchFailure("timeout",mark);false}
+  try{c.connectNext()}finally{SocketProjectionConnection.connectionHook=null}
+  c.awaitSettled(waiting)
+  check(duringB===CommManager.LaunchOutcome.Answered){"B's Connecting hid A's arrival: $duringB"}
+  check(c.reportLaunchFailure("timeout",mark)===CommManager.LaunchOutcome.Answered && c.state is ConnectionState.Disconnected){
+   "an answered launch reported a failure over ${c.state}"}
+  c.cleanups();c.close()
+ }
+ // Nothing arrives: the forming attempt's own end settles its waiter, and the failure then stands.
+ run {
+  val c=ended();val mark=c.launchMark(c.appConnectionTicket())
+  var forming:CommManager.LaunchOutcome.Forming?=null
+  SocketProjectionConnection.connectionHook={forming=c.reportLaunchFailure("timeout",mark) as CommManager.LaunchOutcome.Forming;false}
+  try{c.connectSelf()}finally{SocketProjectionConnection.connectionHook=null}
+  c.awaitSettled(checkNotNull(forming))
+  val failedOpen=c.state as ConnectionState.Disconnected
+  // The failure stands; the failed open's own terminal, published since, stays for its observer.
+  check(c.reportLaunchFailure("timeout",mark)===CommManager.LaunchOutcome.Failed && c.state===failedOpen && !failedOpen.hadPhysicalConnection)
+  c.cleanups();c.close()
+ }
+ // A's loopback session ends and a refused USB request's Error hides its terminal before any
+ // observer: A's launch is answered. Launch B, accepted in that Error, is not answered by the
+ // terminal teardown republishes for A, and still fails on its own.
+ run {
+  val c=ended();val markA=c.launchMark(c.appConnectionTicket())
+  c.connectSelf();check(c.isLiveLoopbackSession)
+  c.disconnect(isUserExit=false,honorKillOnDisconnect=false)
+  check(!c.isLiveLoopbackSession)
+  c.context.usb.permitted=false
+  c.connectDevice(UsbDevice())
+  check(c.state==ConnectionState.Error("USB permission not granted for device")){"idle diagnostic not published: ${c.state}"}
+  check(c.reportLaunchFailure("timeout",markA)===CommManager.LaunchOutcome.Answered)
+  val markB=c.launchMark(c.appConnectionTicket())
+  c.cleanups();c.awaitCleanup()
+  val repeat=c.state as ConnectionState.Disconnected
+  check(repeat.wasLoopbackSession && repeat.hadPhysicalConnection){"teardown did not republish A's terminal"}
+  check(c.reportLaunchFailure("timeout",markB)===CommManager.LaunchOutcome.Failed){"A's repeated terminal answered B"}
+  check(c.state===repeat){"B's failure hid the repeated terminal from its observer"}
+  c.close()
+ }
+ println("PASS launch failure follows real attempt settlement and arrivals across conflated Connecting, hidden ends and repeated terminals")
+}
+// A refused USB request passes its Connecting guard, then reports only after attempt B was
+// published and before B's connection is registered. B owns the state from publication.
+fun refusedUsbCannotTakeAnAttemptInFlight()=runBlocking {
+ for(opens in listOf(true,false)) {
+  val c=CommManager();c.disconnect(isUserExit=false,honorKillOnDisconnect=false);c.cleanups();c.awaitCleanup()
+  val usbChecking=CountDownLatch(1);val bPublished=CountDownLatch(1)
+  c.context.usb.permitted=false
+  c.context.usb.permissionHook={usbChecking.countDown();check(bPublished.await(5,TimeUnit.SECONDS))}
+  val usb=Thread{runBlocking{c.connectDevice(UsbDevice())}}.apply{start()}
+  check(usbChecking.await(5,TimeUnit.SECONDS))
+  c.context.usb.permissionHook=null
+  SocketProjectionConnection.constructionHook={
+   check(c.state===ConnectionState.Connecting && c.network()==null)
+   bPublished.countDown();usb.join(5000);check(!usb.isAlive)
+   check(c.state===ConnectionState.Connecting){"refused USB diagnostic replaced unregistered attempt B with ${c.state}"}
+   check(c.failures.isEmpty()){"refused USB counted a failure against attempt B"}
+  }
+  SocketProjectionConnection.connectionHook={opens}
+  try{c.connectSelf()}finally{SocketProjectionConnection.constructionHook=null;SocketProjectionConnection.connectionHook=null}
+  if(opens)check(c.state===ConnectionState.Connected && c.isLoopbackSession){"B did not keep its live state"}
+  else check(c.state is ConnectionState.Disconnected)
+  c.cleanups();c.close()
+ }
+ // A live session: the same refused request cannot relabel it as failed either.
+ val c=CommManager();c.disconnect(isUserExit=false,honorKillOnDisconnect=false);c.cleanups();c.awaitCleanup()
+ c.connectSelf();check(c.state===ConnectionState.Connected)
+ c.context.usb.permitted=false
+ c.connectDevice(UsbDevice())
+ check(c.state===ConnectionState.Connected && c.failures.isEmpty()){"refused USB diagnostic replaced a live session with ${c.state}"}
+ c.cleanups();c.close()
+ println("PASS refused USB diagnostic cannot replace an attempt from publication through its live session")
+}
 fun usbSaveOpenFailures()=runBlocking {
  val permissionCase=CommManager()
  permissionCase.disconnect(sendByeBye=false,isUserExit=false,honorKillOnDisconnect=false,reason=DisconnectReason.SETTINGS_RESTART)
@@ -995,7 +1091,7 @@ fun failedAttemptDoesNotInheritPhysicalSuccess()=runBlocking {
  println("PASS new failed attempts do not inherit physical success from the previous connection")
 }
 """
-extra=extra.replace('fun main(){', 'fun main(){\n appExitOwnershipRaces();appExitSerializedEffects();usbSaveOpenFailures();failedAttemptDoesNotInheritPhysicalSuccess();rearmSnapshotIdentifiesConnectingAttempt();terminalRouteSnapshots();settingsActionCancellation()')
+extra=extra.replace('fun main(){', 'fun main(){\n appExitOwnershipRaces();appExitSerializedEffects();usbSaveOpenFailures();failedAttemptDoesNotInheritPhysicalSuccess();rearmSnapshotIdentifiesConnectingAttempt();terminalRouteSnapshots();settingsActionCancellation();launchOutcomeFollowsAttempts();refusedUsbCannotTakeAnAttemptInFlight()')
 (OUT/'Probe.kt').write_text(manager+transport_fixture+support+extra)
 (OUT/'Os.kt').write_text(r'''package android.os
 import java.util.concurrent.*
@@ -1072,7 +1168,7 @@ import java.util.concurrent.atomic.AtomicInteger
 class UsbDevice{val manufacturerName:String?="fixture";val productName:String?="fixture";val serialNumber:String?="fixture";val deviceName="fixture";val vendorId=0x18d1;val productId=0x2d00;val interfaceCount=1;fun getInterface(i:Int)=UsbInterface()}
 class UsbInterface
 class UsbEndpoint{val maxPacketSize=64}
-class UsbManager{val deviceList=hashMapOf<String,UsbDevice>();var openHook:((UsbDevice)->UsbDeviceConnection?)?=null;var permitted=true;fun hasPermission(d:UsbDevice)=permitted;fun openDevice(d:UsbDevice)=openHook?.invoke(d)?:UsbDeviceConnection()}
+class UsbManager{val deviceList=hashMapOf<String,UsbDevice>();var openHook:((UsbDevice)->UsbDeviceConnection?)?=null;var permitted=true;@Volatile var permissionHook:(()->Unit)?=null;fun hasPermission(d:UsbDevice):Boolean{permissionHook?.invoke();return permitted};fun openDevice(d:UsbDevice)=openHook?.invoke(d)?:UsbDeviceConnection()}
 class UsbDeviceConnection{
  val closes=AtomicInteger();val releases=AtomicInteger()
  fun close(){closes.incrementAndGet()}

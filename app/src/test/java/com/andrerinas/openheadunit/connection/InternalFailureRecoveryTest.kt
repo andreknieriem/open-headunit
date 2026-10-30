@@ -42,6 +42,7 @@ class InternalFailureRecoveryTest {
         }
         fun field(name: String, value: Any) = CommManager::class.java.getDeclaredField(name)
             .apply { isAccessible = true }.set(manager, value)
+        val queuedCleanups get() = queued.size
         fun assertRecoverable() {
             val ended = states.value as ConnectionState.Disconnected
             assertFalse("Internal failures must not latch user exit", ended.isUserExit)
@@ -131,94 +132,161 @@ class InternalFailureRecoveryTest {
         }
     }
 
-    @Test fun lateLaunchFailureCannotReplaceAStatePublishedAfterItsLaunch() = runBlocking {
-        suspend fun report(f: Fixture, disconnects: Boolean, msg: String, expected: ConnectionState) =
-            if (disconnects) f.manager.emitError(msg, expected = expected)
-            else f.manager.reportError(msg, expected = expected)
-        for (disconnects in listOf(false, true)) {
-            // A newer terminal or error is kept; the late caller's failure still stands.
-            for (newer in listOf(ConnectionState.Disconnected(wasLoopbackSession = true, hadPhysicalConnection = true),
-                ConnectionState.Error("USB permission not granted for device"))) Fixture().use { f ->
-                f.states.value = newer
-                assertTrue(report(f, disconnects, "old launch timeout", ConnectionState.Disconnected()))
-                assertSame("A late failure replaced the state published after its launch", newer, f.states.value)
-                assertTrue(f.manager.ownsUsbRecheck(f.owner))
-            }
-            // A connection forming or live may be the caller's own arrival: it owns the outcome.
-            for (live in listOf(ConnectionState.Connecting, ConnectionState.Connected)) Fixture().use { f ->
-                f.states.value = live
-                assertFalse(report(f, disconnects, "old launch timeout", ConnectionState.Disconnected()))
-                assertSame(live, f.states.value)
-            }
-            // A launch accepted in the current state still publishes its own failure.
-            Fixture().use { f ->
-                val acceptedIn = f.states.value
-                assertTrue(report(f, disconnects, "launch timeout", acceptedIn))
-                if (disconnects) f.assertRecoverable()
-                else assertEquals(ConnectionState.Error("launch timeout"), f.states.value)
+    /** The actual IP publication path, with the connection's open and construction under test control. */
+    private suspend fun connectIp(f: Fixture, opens: Boolean, loopback: Boolean = false, duringAttempt: () -> Unit = {}) {
+        mockConstruction(SocketProjectionConnection::class.java) { connection, _ ->
+            // Construction runs after the attempt is published and before its connection is registered.
+            duringAttempt()
+            runBlocking { `when`(connection.connect()).thenReturn(opens) }
+            `when`(connection.isLoopbackPeer).thenReturn(loopback)
+        }.use {
+            invoke(f.manager, "connectIp",
+                arrayOf(String::class.java, Int::class.javaPrimitiveType!!, ConnectionState.Disconnected::class.java, Long::class.javaPrimitiveType!!),
+                "127.0.0.1", 5277, null, f.manager.appConnectionTicket())
+        }
+    }
+
+    /**
+     * The actual refused-USB path: a request whose permission check failed reports a diagnostic.
+     * [permissionAnswer] runs inside the permission check, after the request passed its own
+     * Connecting guard; the request may run on another thread.
+     */
+    private fun refusedUsb(f: Fixture, permissionAnswer: () -> Unit = {}): () -> Unit {
+        val device = mock(UsbDevice::class.java)
+        val usb = mock(UsbManager::class.java)
+        `when`(f.context.getSystemService(Context.USB_SERVICE)).thenReturn(usb)
+        `when`(usb.hasPermission(device)).thenAnswer { permissionAnswer(); false }
+        return {
+            runBlocking {
+                invoke(f.manager, "connectUsb", arrayOf(UsbDevice::class.java, Long::class.javaPrimitiveType!!, ConnectionState.Disconnected::class.java,
+                    Any::class.java, ConnectionArbiter.Claim::class.java, ConnectionAdmission::class.java,
+                    ConnectionArbiter.Claim::class.java),
+                    device, f.manager.appConnectionTicket(), null, null, null, ConnectionAdmission.UNRESTRICTED, null)
             }
         }
     }
 
-    @Test fun endedLoopbackSessionStaysOnRecordBehindALaterError() = runBlocking {
+    @Test fun launchFailureStandsOnlyWhileNothingArrivedOrIsInFlight() = runBlocking {
+        // Nothing arrived and nothing owns the state: the failure stands, reported without a teardown.
         Fixture().use { f ->
-            val attempt = Any()
-            val loopback = mock(SocketProjectionConnection::class.java)
-            `when`(loopback.isLoopbackPeer).thenReturn(true)
-            f.field("_connection", loopback)
-            f.field("connectionAttempt", attempt)
-            f.field("physicalConnectionReached", true)
-            f.states.value = ConnectionState.Connected
-            f.manager.disconnect(honorKillOnDisconnect = false)
+            val outcome = f.manager.reportLaunchFailure("launch timeout", f.manager.launchMark(f.manager.appConnectionTicket()))
+            assertSame(CommManager.LaunchOutcome.Failed, outcome)
+            assertEquals(ConnectionState.Error("launch timeout"), f.states.value)
+            assertTrue("A report is not a disconnect", f.manager.ownsUsbRecheck(f.owner))
+            assertEquals("A report queues no cleanup", 0, f.queuedCleanups)
+        }
+        // A Save report only logs: Save's token must survive for its bounded fallback.
+        Fixture().use { f ->
+            val saved = ConnectionState.Disconnected(reason = CommManager.DisconnectReason.SETTINGS_RESTART)
+            f.states.value = saved
+            assertSame(CommManager.LaunchOutcome.Failed, f.manager.reportLaunchFailure("Save timeout", f.manager.launchMark(f.manager.appConnectionTicket()), saved))
+            assertSame(saved, f.states.value)
+        }
+        // Stop revokes a launch accepted before it, even while that launch waited: nothing is
+        // reported, whether its attempt then failed or arrived.
+        for (arrives in listOf(false, true)) Fixture().use { f ->
+            val mark = f.manager.launchMark(f.manager.appConnectionTicket())
+            val exitPolicy = CommManager::class.java.getDeclaredField("appExitPolicy").apply { isAccessible = true }
+                .get(f.manager) as AppExitPolicy
+            synchronized(CommManager::class.java.getDeclaredField("transportLifecycleLock").apply { isAccessible = true }.get(f.manager)) {
+                exitPolicy.request(killProcess = false, userStop = true, requiresKillOnDisconnect = false)
+            }
+            if (arrives) connectIp(f, opens = true)
+            val before = f.states.value
+            assertSame(CommManager.LaunchOutcome.Revoked, f.manager.reportLaunchFailure("launch timeout", mark))
+            assertSame("A revoked launch published its failure", before, f.states.value)
+        }
+        // A live connection from before the launch owns the outcome; nothing replaces its state.
+        Fixture().use { f ->
+            connectIp(f, opens = true)
+            assertSame(ConnectionState.Connected, f.states.value)
+            val outcome = f.manager.reportLaunchFailure("launch timeout", f.manager.launchMark(f.manager.appConnectionTicket()))
+            assertSame(CommManager.LaunchOutcome.Answered, outcome)
+            assertSame(ConnectionState.Connected, f.states.value)
+        }
+    }
+
+    @Test fun anArrivalAnswersALaunchEvenAfterAnErrorHidItsSession() = runBlocking {
+        Fixture().use { f ->
+            val refuse = refusedUsb(f)
+            val mark = f.manager.launchMark(f.manager.appConnectionTicket())
+            connectIp(f, opens = true, loopback = true)
+            f.manager.disconnect(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
             val ended = f.states.value as ConnectionState.Disconnected
             assertTrue(ended.wasLoopbackSession && ended.hadPhysicalConnection)
-            // A USB permission failure can replace that terminal before Main observes it.
-            f.manager.reportError("USB permission not granted for device")
-            assertTrue(f.states.value is ConnectionState.Error)
-            assertSame(attempt, f.manager.lastLoopbackSessionEnd())
+            // Nothing owns the state now, so the refused USB request's diagnostic may replace it.
+            refuse()
+            assertEquals(ConnectionState.Error("USB permission not granted for device"), f.states.value)
+            // The launch was answered all the same: no never-connected failure over that Error.
+            assertSame(CommManager.LaunchOutcome.Answered, f.manager.reportLaunchFailure("launch timeout", mark))
+            assertEquals(ConnectionState.Error("USB permission not granted for device"), f.states.value)
+            assertFalse(f.manager.isLiveLoopbackSession)
         }
     }
 
-    @Test fun endedLoopbackSessionRetiresOnlyWhenNothingElseCanEndIt() = runBlocking {
-        val attempt = Any()
-        fun retire(f: Fixture, baseline: Any? = null): Any? {
-            var retired: Any? = null
-            f.manager.retireEndedLoopbackSession(baseline) { retired = it }
-            return retired
+    @Test fun anAttemptOwnsTheStateBeforeItsConnectionIsRegistered() = runBlocking {
+        for (opens in listOf(true, false)) Fixture().use { f ->
+            // A USB request passes its Connecting guard while nothing is in flight, then its
+            // permission check returns false only after attempt B was published.
+            val usbChecking = java.util.concurrent.CountDownLatch(1)
+            val bPublished = java.util.concurrent.CountDownLatch(1)
+            val refuse = refusedUsb(f) {
+                usbChecking.countDown()
+                assertTrue(bPublished.await(5, java.util.concurrent.TimeUnit.SECONDS))
+            }
+            val failures = java.util.concurrent.CopyOnWriteArrayList<String>()
+            f.field("onSessionFailure", { reason: String -> failures.add(reason); Unit })
+            val usbRequest = Thread { refuse() }.apply { start() }
+            assertTrue(usbChecking.await(5, java.util.concurrent.TimeUnit.SECONDS))
+            val mark = f.manager.launchMark(f.manager.appConnectionTicket())
+            var forming: CommManager.LaunchOutcome.Forming? = null
+            connectIp(f, opens) {
+                // B is published; its connection object is not registered yet.
+                assertSame(ConnectionState.Connecting, f.states.value)
+                bPublished.countDown()
+                usbRequest.join(5_000)
+                assertFalse(usbRequest.isAlive)
+                assertSame("A refused request's diagnostic replaced an attempt in flight", ConnectionState.Connecting, f.states.value)
+                assertTrue(failures.isEmpty())
+                // Nor can a launch failure stand: the attempt may be the launch's own late arrival.
+                forming = f.manager.reportLaunchFailure("launch timeout", mark) as CommManager.LaunchOutcome.Forming
+                assertSame(ConnectionState.Connecting, f.states.value)
+                assertFalse(checkNotNull(forming).attempt.settled.isCompleted)
+            }
+            // The attempt settled as it reached its connection or ended: the waiter decides again.
+            val waiting = checkNotNull(forming)
+            assertTrue(waiting.attempt.settled.isCompleted)
+            f.manager.awaitSettled(waiting)
+            val outcome = f.manager.reportLaunchFailure("launch timeout", mark)
+            if (opens) {
+                assertSame(CommManager.LaunchOutcome.Answered, outcome)
+                assertSame(ConnectionState.Connected, f.states.value)
+            } else {
+                // The failure stands, but B's own terminal, published since the launch, stays
+                // for its observer instead of being hidden behind the launch's Error.
+                assertSame(CommManager.LaunchOutcome.Failed, outcome)
+                val ended = f.states.value as ConnectionState.Disconnected
+                assertFalse(ended.hadPhysicalConnection)
+            }
         }
-        fun hiddenEnd(f: Fixture) {
-            f.field("lastLoopbackSessionAttempt", attempt)
-            f.states.value = ConnectionState.Error("USB permission not granted for device")
-        }
-        // Hidden behind an Error, its connection retiring: nothing else will end Self mode for it.
-        Fixture().use { f -> hiddenEnd(f); f.field("disconnectRequested", true); assertSame(attempt, retire(f)) }
-        // Already accounted for.
-        Fixture().use { f -> hiddenEnd(f); assertNull(retire(f, baseline = attempt)) }
-        // Its own terminal is current: that terminal's end policy owns Self state.
+    }
+
+    @Test fun liveLoopbackSessionIsReadFromItsAttemptNotFromState() = runBlocking {
         Fixture().use { f ->
-            f.field("lastLoopbackSessionAttempt", attempt)
-            f.states.value = ConnectionState.Disconnected(wasLoopbackSession = true, hadPhysicalConnection = true, endedAttempt = attempt)
-            assertNull(retire(f))
+            val refuse = refusedUsb(f)
+            connectIp(f, opens = true, loopback = true)
+            assertTrue(f.manager.isLiveLoopbackSession)
+            // A refused request's diagnostic cannot relabel the live session as failed.
+            refuse()
+            assertSame(ConnectionState.Connected, f.states.value)
+            assertTrue(f.manager.isLiveLoopbackSession)
+            f.manager.disconnect(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
+            assertFalse("A retiring session is not live", f.manager.isLiveLoopbackSession)
         }
-        // A connection forming or live keeps Self mode until its own outcome.
-        for (forming in listOf(ConnectionState.Connecting, ConnectionState.Connected)) Fixture().use { f ->
-            f.field("lastLoopbackSessionAttempt", attempt)
-            f.states.value = forming
-            assertNull(retire(f))
-        }
-        // A physical connection that is not retiring still owns Self mode behind a later Error.
+        // An ordinary socket session is live but not Self.
         Fixture().use { f ->
-            val loopback = mock(SocketProjectionConnection::class.java)
-            `when`(loopback.isLoopbackPeer).thenReturn(true)
-            f.field("_connection", loopback)
-            f.field("disconnectRequested", false)
-            hiddenEnd(f)
-            assertNull(retire(f))
-            // The live snapshot pairs that liveness with the earlier end, under the same lock.
-            f.states.value = ConnectionState.Connected
-            assertEquals(true to attempt, f.manager.liveLoopbackSnapshot())
-            f.field("disconnectRequested", true)
-            assertEquals(false to attempt, f.manager.liveLoopbackSnapshot())
+            connectIp(f, opens = true, loopback = false)
+            assertFalse(f.manager.isLiveLoopbackSession)
         }
     }
 

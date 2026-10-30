@@ -227,9 +227,8 @@ class CommManager {
  private fun dropOwedScans()=ConnectionArbiter.dropUsbDebt()
  private fun noteHandshakeOutcome(silent:Boolean){}
  @Volatile private var sessionClaim:ConnectionArbiter.Claim?=null
- @Volatile private var claimedEndpointOwner:Pair<ConnectionArbiter.Claim,String>?=null
+ private var connectionRequest:ConnectionRequest?=null
  var attemptUserRequested=false
- private val claimedEndpoint:String? get()=claimedEndpointOwner?.second
  private fun noteSessionEnded(renderedAnyFrame:Boolean, deliberateEnd:Boolean=false){}
  val connectionState get()=_connectionState
  val state get()=_connectionState.value
@@ -239,18 +238,27 @@ class CommManager {
  fun requested()=synchronized(transportLifecycleLock){disconnectRequested}
  fun cleanups(){queue.drain()}
  fun close(){disconnect(honorKillOnDisconnect=false);cleanups();_scope.cancel();ConnectionArbiter.actions=null;ConnectionArbiter.reset()}
- // Private publication fixtures model an already-accepted unrestricted claim. The claimed
- // variants below execute the actual production Main acceptance when that ordering is tested.
+ // Private publication fixtures model an already-admitted, accepted unrestricted request. The
+ // claimed variant below runs the actual production Main acceptance when that ordering is tested.
  private fun acceptedTicket():Long = synchronized(transportLifecycleLock) {
   appExitPolicy.supersede();cancelAppExitCallback();appExitPolicy.stopEpoch
  }
- suspend fun connectNext(){connectIp("fixture",5277,null,acceptedTicket())}
- suspend fun connectPrepared(socket:Socket,admission:ConnectionAdmission=ConnectionAdmission.UNRESTRICTED){connectAdmittedSocket(socket,admission,null,null,appConnectionTicket())}
- suspend fun connectAccepted(socket:Socket){connectSocket(socket,null,null,acceptedTicket())}
- suspend fun connectClaimedNext(claim:ConnectionArbiter.Claim){val ticket=appConnectionTicket();if(acceptAppConnectionClaim(claim,ticket))connectIp("fixture",5277,null,ticket)}
+ // Producers publish only under the claim that admitted them. Accepted-attempt fixtures share
+ // one held claim, so their concurrent calls test publication, not arbitration between them.
+ private var sharedClaim:ConnectionArbiter.Claim?=null
+ private fun acceptedClaim()=sharedClaim?.takeIf{ConnectionArbiter.holds(it)}?:fixtureClaim().also{sharedClaim=it}
+ private fun accepted(endpoint:String?,save:ConnectionState.Disconnected?=null,socket:Socket?=null)=
+  ConnectionRequest(acceptedTicket(),acceptedClaim(),endpoint,save,socket)
+ suspend fun connectNext(){connectIp("fixture",5277,accepted("fixture:5277"))}
+ suspend fun connectPrepared(socket:Socket,admission:ConnectionAdmission=ConnectionAdmission.UNRESTRICTED){
+  connectAdmittedSocket(socket,admission,null,ConnectionRequest(appConnectionTicket(),acceptedClaim(),null,null,socket))}
+ suspend fun connectAccepted(socket:Socket){connectSocket(socket,null,accepted(null,socket=socket))}
+ suspend fun connectClaimedNext(claim:ConnectionArbiter.Claim){
+  val request=ConnectionRequest(appConnectionTicket(),claim,"fixture:5277",null,null)
+  if(acceptRequest(request))connectIp("fixture",5277,request)}
  suspend fun connectClaimedUsb(d:UsbDevice,claim:ConnectionArbiter.Claim){connectUsb(d,appConnectionTicket(),appClaim=claim)}
- suspend fun connectSelf(){connectIp("127.0.0.1",5277,null,acceptedTicket())}
- suspend fun connectSaved(state:ConnectionState.Disconnected){connectIp("fixture",5277,state,acceptedTicket())}
+ suspend fun connectSelf(){connectIp("127.0.0.1",5277,accepted("127.0.0.1:5277"))}
+ suspend fun connectSaved(state:ConnectionState.Disconnected){connectIp("fixture",5277,accepted("fixture:5277",save=state))}
  suspend fun awaitDisconnectComplete(){_disconnectJob?.join()}
  val isUsbSession=false
  suspend fun connectDevice(d:UsbDevice,saved:ConnectionState.Disconnected?=null){connectUsb(d,appConnectionTicket(),saved)}
@@ -285,7 +293,8 @@ manager_head += exit_members.replace(
     "private val connectionIoDispatcher: CoroutineDispatcher = Dispatchers.Unconfined")
 # Paragraph boundaries retain complete expression bodies, including claimUsb's trailing also.
 for declaration in ['val isConnected:', 'val isBusy:', 'val isWirelessSession:', 'val isLoopbackSession:',
-                    'internal fun claimUsb(', 'private fun socketOwner(', 'internal class LaunchMark internal constructor(']:
+                    'internal fun claimUsb(', 'private fun socketOwner(', 'internal class LaunchMark internal constructor(',
+                    'private fun ConnectionRequest.isValid()', 'private fun validRequest()']:
     start = comm.index(declaration)
     definition = comm[start:comm.index('\n\n', start)]
     methods[declaration] = hashlib.sha256(definition.encode()).hexdigest()
@@ -293,15 +302,16 @@ for declaration in ['val isConnected:', 'val isBusy:', 'val isWirelessSession:',
 manager=manager_head+'\n'.join(extract(comm,n) for n in [
  'suspend fun startHandshake()', 'private inline fun withLiveTransport(', 'suspend fun startReading()',
  'private fun reachedSsl()', 'private fun transportedQuited(', 'fun applyAudioSettings()', 'fun disconnect(', 'fun cancelPendingSettingsRestart()', 'internal fun rearmSnapshot()', 'private fun doDisconnect(', 'private fun recordTerminal(',
- 'internal class Attempt {', 'private fun attemptInFlight()', 'private fun beginAttempt(', 'private fun reachPhysicalConnection()',
+ 'internal class Attempt(', 'private fun attemptInFlight()', 'private fun beginAttempt(', 'private fun reachPhysicalConnection()',
  'internal sealed class LaunchOutcome {', 'internal fun launchMark(', 'internal fun arrivedSince(', 'internal fun reportLaunchFailure(',
  'internal suspend fun awaitSettled(', 'internal val isLiveLoopbackSession:',
- 'private suspend fun connectIp(', 'private suspend fun connectUsb(', 'private suspend fun connectSocket(', 'private suspend fun connectAdmittedSocket(', 'private fun socketEndpoint(', 'fun disconnectForLinkLoss(', 'fun destroy()',
- 'fun setProjectionVideoFocusSuppressed(', 'private suspend fun acceptAppConnectionClaim(',
+ 'private suspend fun connectIp(', 'private fun publishRequest(', 'private suspend fun connectUsb(', 'private suspend fun connectSocket(', 'private suspend fun connectAdmittedSocket(', 'private fun socketEndpoint(', 'fun disconnectForLinkLoss(', 'fun destroy()',
+ 'fun setProjectionVideoFocusSuppressed(', 'private suspend fun acceptAppConnectionClaim(', 'private suspend fun acceptRequest(',
  'suspend fun connect(\n        device:', 'suspend fun connect(\n        socket:', 'suspend fun connect(\n        ip:',
- 'private suspend fun connectSocketWithTicket(', 'private fun claimSocket(',
- 'private fun releaseClaim(', 'private fun noteClaimedEndpoint(',
- 'private fun clearClaimedEndpoint(', 'private fun settleSessionClaim('
+ 'internal suspend fun connectHeld(', 'private suspend fun connectSocketWithTicket(', 'private suspend fun runSocketRequest(',
+ 'private class ConnectionRequest(', 'private sealed class Admission {', 'private fun admitRequest(', 'private fun admitHeld(',
+ 'private fun retireInvalidRequest()', 'private fun endRequest(', 'private fun releaseClaim(', 'private fun clearRequest(',
+ 'private fun settleSessionClaim('
 ])+'\n}\n'
 transport_head=r'''
 class AapTransport(
@@ -966,13 +976,13 @@ fun launchOutcomeFollowsAttempts()=runBlocking {
   var forming:CommManager.LaunchOutcome?=null;var settledAtDecision:Boolean?=null;var stateAtDecision:ConnectionState?=null
   SocketProjectionConnection.connectionHook={
    forming=c.reportLaunchFailure("timeout",mark)
-   settledAtDecision=(forming as? CommManager.LaunchOutcome.Forming)?.attempt?.settled?.isCompleted
+   settledAtDecision=(forming as? CommManager.LaunchOutcome.Forming)?.settled?.isCompleted
    stateAtDecision=c.state;true
   }
   try{c.connectSelf()}finally{SocketProjectionConnection.connectionHook=null}
   val waiting=forming as? CommManager.LaunchOutcome.Forming ?: error("A forming attempt did not hold the launch: $forming")
   check(settledAtDecision==false && stateAtDecision===ConnectionState.Connecting){"waiter settled early or saw $stateAtDecision"}
-  check(waiting.attempt.settled.isCompleted){"an arrival left its attempt's waiter unsettled"}
+  check(waiting.settled.isCompleted){"an arrival left its attempt's waiter unsettled"}
   c.disconnect(isUserExit=false,honorKillOnDisconnect=false);c.cleanups();c.awaitCleanup()
   var duringB:CommManager.LaunchOutcome?=null
   SocketProjectionConnection.connectionHook={duringB=c.reportLaunchFailure("timeout",mark);false}

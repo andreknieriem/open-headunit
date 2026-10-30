@@ -7,19 +7,27 @@ import com.andrerinas.openheadunit.utils.Settings
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Assert.*
+import org.junit.After
+import org.junit.Before
 import org.junit.Test
 import org.mockito.Mockito.*
 import java.net.Socket
-import kotlin.coroutines.Continuation
 import kotlin.coroutines.CoroutineContext
-import kotlin.coroutines.intrinsics.suspendCoroutineUninterceptedOrReturn
 
 /** Exercise the actual Nearby transfer into the serialized session owner. */
 class NearbySessionPublicationTest {
+    // The arbiter's default clock is Android's SystemClock, which plain JVM tests do not provide.
+    private val clock = ConnectionArbiter.clock
+    @Before fun prepare() { ConnectionArbiter.reset(); ConnectionArbiter.clock = { 1000L } }
+    @After fun restore() { ConnectionArbiter.reset(); ConnectionArbiter.clock = clock }
+
     @Test fun preparedTunnelPublishesOnlyWhileBothOwnersRemainCurrent() = runBlocking {
         for (fromError in listOf(false, true)) for (outcome in listOf("connected", "replacement", "retired", "new-error", "owned", "transport-owned", "saved-request")) {
             val manager = mock(CommManager::class.java, CALLS_REAL_METHODS).withAppExitDispatcherForTest()
-            val initial: CommManager.ConnectionState = if (fromError)
+            // A Save the request was admitted with, revoked while its tunnel is being prepared.
+            val saved = if (outcome == "saved-request") CommManager.ConnectionState.Disconnected(
+                reason = CommManager.DisconnectReason.SETTINGS_RESTART) else null
+            val initial: CommManager.ConnectionState = saved ?: if (fromError)
                 CommManager.ConnectionState.Error("USB permission not granted for device")
             else CommManager.ConnectionState.Disconnected()
             val flow = MutableStateFlow(initial)
@@ -46,10 +54,7 @@ class NearbySessionPublicationTest {
             val socket = mock(Socket::class.java)
             val replacement = mock(SocketProjectionConnection::class.java)
             val replacementTransport = mock(com.andrerinas.openheadunit.aap.AapTransport::class.java)
-            val method = CommManager::class.java.getDeclaredMethod("connectAdmittedSocket",
-                Socket::class.java, ConnectionAdmission::class.java, Pair::class.java,
-                CommManager.ConnectionState.Disconnected::class.java, Long::class.javaPrimitiveType, Continuation::class.java)
-                .apply { isAccessible = true }
+            ConnectionArbiter.reset()
             mockConstruction(SocketProjectionConnection::class.java) { candidate, _ ->
                 runBlocking {
                     `when`(candidate.connect()).thenAnswer {
@@ -62,6 +67,7 @@ class NearbySessionPublicationTest {
                             flow.value = CommManager.ConnectionState.Error("Another connection failed")
                         } else if (outcome == "owned") set("_connection", replacement)
                         else if (outcome == "transport-owned") set("_transport", replacementTransport)
+                        else if (outcome == "saved-request") manager.cancelPendingSettingsRestart()
                         true
                     }
                 }
@@ -69,14 +75,8 @@ class NearbySessionPublicationTest {
                 try {
                     var rejected = false
                     try {
-                        suspendCoroutineUninterceptedOrReturn<Unit> { continuation ->
-                            method.invoke(manager, socket, admission, null,
-                                if (outcome == "saved-request") CommManager.ConnectionState.Disconnected(
-                                    reason = CommManager.DisconnectReason.SETTINGS_RESTART) else null, 0L, continuation)
-                        }
-                    } catch (e: java.lang.reflect.InvocationTargetException) {
-                        if (e.cause !is ConnectionAdmissionRejectedException) throw e
-                        rejected = true
+                        // The actual public restricted request: admission under the Nearby guard, then publication.
+                        manager.connect(socket, admission = admission, expectedState = saved)
                     } catch (_: ConnectionAdmissionRejectedException) { rejected = true }
                     val candidate = candidates.constructed().single()
                     assertEquals(outcome != "connected", rejected)

@@ -56,6 +56,9 @@ private class AapTransport(
     companion object { var constructionHook: (() -> Unit)? = null }
 }
 
+// The production Attempt names the claim it was published under; no claim is taken here.
+private object ConnectionArbiter { class Claim }
+
 /** Only the network, UI side effects and scheduling are doubled; injected decisions are production. */
 private class ConnectionFixture(val settings: Settings = Settings()) {
     private val transportLifecycleLock = Any()
@@ -67,6 +70,8 @@ private class ConnectionFixture(val settings: Settings = Settings()) {
     private var settingsUsbRestartInFlight: ConnectionState.Disconnected? = null
     private var usbSaveOwner: ConnectionState.Disconnected? = null
     private fun dropOwedScans() {}
+    // No connection request is ever admitted here, so Stop and Save have none to retire.
+    private fun retireInvalidRequest() {}
     private var disconnectRequested = false
     private var physicalConnectionReached = true
     private var outgoingEndpoint: Pair<String, Int>? = null

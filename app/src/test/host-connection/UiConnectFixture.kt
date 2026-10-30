@@ -6,6 +6,7 @@ import lifecycle.CommManager
 import lifecycle.ConnectionArbiter
 import lifecycle.ConnectionPriorityPolicy
 import lifecycle.ConnectionState
+import lifecycle.HeldServerSocket
 import lifecycle.QueuedDispatcher
 import lifecycle.ServiceBootstrap
 import kotlinx.coroutines.*
@@ -186,13 +187,14 @@ private class Input(val manager: CommManager) {
                 AutomationCommandPolicy.Effect.ConnectSocket("192.0.2.153", 5277)), JSONObject()))
             else -> {
                 scan.startScan()
-                if (route == "scan-socket") probe = ProbeSocket()
+                // NetworkDiscovery holds every 5277 probe before it reports it to the scan UI.
+                if (route == "scan-socket") probe = ProbeSocket().also { HeldServerSocket.hold("192.0.2.154:5277", it) }
                 scan.onServiceFound("192.0.2.154", 5277, probe, scan.networkDiscovery.ticket)
                 main.drainUi()
             }
         }
     }
-    fun close() { job.cancel(); Dispatchers.IO.drain(); probe?.close() }
+    fun close() { job.cancel(); Dispatchers.IO.drain(); probe?.close(); HeldServerSocket.discardAll() }
 }
 
 /** Real logical producers -> real public connect overloads/arbiter and real service ingress. */
@@ -250,6 +252,7 @@ fun uiConnectCallerOwnership() = runBlocking {
     try {
         input.scan.startScan()
         val oldTicket = input.scan.networkDiscovery.ticket
+        HeldServerSocket.hold("192.0.2.155:5277", stale)
         input.scan.onServiceFound("192.0.2.155", 5277, stale, oldTicket)
         manager.requestExplicitAppExit(killProcess = false)
         val opened = manager.onAppRelaunched()
@@ -297,6 +300,7 @@ fun uiConnectCallerOwnership() = runBlocking {
         val ticket = rejectedManager.appConnectionTicket()
         for (port in listOf(5289, 5277)) {
             val socket = ProbeSocket()
+            if (port == 5277) HeldServerSocket.hold("192.0.2.157:5277", socket)
             rejected.scan.onServiceFound("192.0.2.157", port, socket, ticket)
             rejected.main.drainUi(); Dispatchers.IO.drain()
             check(socket.isClosed && rejectedManager.ownsAppExit(stop.id))
@@ -336,5 +340,37 @@ fun uiConnectCallerOwnership() = runBlocking {
         service.onStartCommand(relay.platform(), 0, 1)
         check(!service.initializedForStart && service.stops == 1)
     } finally { stoppedManager.close() }
-    println("PASS UI connect producers: queued main/list/automation/scan inputs, live successor protection, compatible Open, fresh manual input, raw-socket cancellation and real relay rejection")
+
+    // P2-B(b). The user's scan reports its held socket and its hand-off waits for IO while a
+    // concurrent IP request to the same endpoint adopts that socket and connects, then completes
+    // SSL. The scan hand-off does not own the socket: it ends without taking the session over or
+    // closing either the connection or its raw socket. The control lets it run before SSL.
+    for (afterSsl in listOf(true, false)) {
+        Dispatchers.IO = QueuedDispatcher()
+        ContextCompat.starts.clear()
+        val scanManager = CommManager()
+        scanManager.disconnect(honorKillOnDisconnect = false)
+        scanManager.cleanups(); scanManager.inlineConnectionIo()
+        val scanInput = Input(scanManager)
+        val shared = ProbeSocket()
+        try {
+            HeldServerSocket.hold("192.0.2.158:5277", shared)
+            scanInput.scan.startScan()
+            scanInput.scan.onServiceFound("192.0.2.158", 5277, shared, scanInput.scan.networkDiscovery.ticket)
+            scanInput.main.drainUi()
+            check(Dispatchers.IO.tasks.isNotEmpty()) { "the scan hand-off did not wait for IO" }
+            scanManager.connect("192.0.2.158", 5277, ConnectionPriorityPolicy.Tier.USER)
+            val live = checkNotNull(scanManager.network()) { "the IP request did not connect" }
+            if (afterSsl) scanManager.startHandshake()
+            val stateBefore = scanManager.state
+            Dispatchers.IO.drain()
+            // Recorded after every production frame has returned.
+            val same = scanManager.network() === live
+            println("scan hand-off of an adopted socket afterSsl=$afterSsl: same=$same ownerClosed=${live.closed} rawClosed=${shared.isClosed}")
+            check(same && !live.closed && !shared.isClosed && scanManager.state === stateBefore) {
+                "the scan hand-off took over a socket another request adopted (afterSsl=$afterSsl same=$same ownerClosed=${live.closed} rawClosed=${shared.isClosed})"
+            }
+        } finally { shared.close(); scanInput.close(); scanManager.close() }
+    }
+    println("PASS UI connect producers: queued main/list/automation/scan inputs, live successor protection, compatible Open, fresh manual input, raw-socket cancellation, adopted scan socket and real relay rejection")
 }

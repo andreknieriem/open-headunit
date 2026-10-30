@@ -337,9 +337,11 @@ class SelfLauncherManager(
 
     /**
      * Reports this launch's failure if it stands, decided by CommManager from its attempts, its
-     * Stop ticket and its Save rather than from a state observed now. An attempt still forming
-     * may be this launch's own late arrival, so its outcome is awaited and the question asked
-     * again; every wait ends with that attempt settling, so the loop ends. Never Forming.
+     * Stop ticket and its Save rather than from a state observed now. An attempt still forming,
+     * or the valid request the dial may have joined that has yet to publish one, may be this
+     * launch's own late arrival, so its outcome is awaited and the question asked again; every
+     * wait ends with that attempt settling or that request resolving, being invalidated or losing
+     * its claim, so the loop ends. Never Forming.
      */
     private suspend fun launchOutcome(
         msg: String,

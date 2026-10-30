@@ -53,12 +53,17 @@ for marker, file, declaration, braced in [
     ('STATE', comm, 'class Disconnected(', True),
     ('CANCEL', comm, 'fun cancelPendingSettingsRestart()', True),
     # CommManager's attempt authority and its terminal publisher, as production runs them.
-    ('ATTEMPT', comm, 'internal class Attempt {', True),
+    ('ATTEMPT', comm, 'internal class Attempt(', True),
     ('IN_FLIGHT', comm, 'private fun attemptInFlight()', True),
     ('BEGIN_ATTEMPT', comm, 'private fun beginAttempt(', True),
     ('REACH_PHYSICAL', comm, 'private fun reachPhysicalConnection()', True),
     ('RECORD_TERMINAL', comm, 'private fun recordTerminal(', True),
     ('LAUNCH_OUTCOME', comm, 'internal sealed class LaunchOutcome {', True),
+    # The request authority a launch's wait and the dial's JOIN decide by.
+    ('CONNECTION_REQUEST', comm, 'private class ConnectionRequest(', True),
+    ('IS_VALID', comm, 'private fun ConnectionRequest.isValid()', False),
+    ('VALID_REQUEST', comm, 'private fun validRequest()', False),
+    ('RETIRE_REQUEST', comm, 'private fun retireInvalidRequest()', True),
     ('LAUNCH_MARK_CLASS', comm, 'internal class LaunchMark internal constructor(', False),
     ('LAUNCH_MARK', comm, 'internal fun launchMark(', True),
     ('ARRIVED_SINCE', comm, 'internal fun arrivedSince(', True),

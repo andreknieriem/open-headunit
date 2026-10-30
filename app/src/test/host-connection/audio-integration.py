@@ -79,7 +79,7 @@ for marker, declaration, source in [
     ("ADVANCE", "private inline fun withLiveTransport(", comm),
     ("DISCONNECT", "fun disconnect(", comm),
     ("RECORD_TERMINAL", "private fun recordTerminal(", comm),
-    ("ATTEMPT", "internal class Attempt {", comm),
+    ("ATTEMPT", "internal class Attempt(", comm),
     ("CANCEL_SETTINGS", "fun cancelPendingSettingsRestart()", comm),
     ("DISCONNECTED_STATE", "class Disconnected(", comm),
     ("REACHED_SSL", "private fun reachedSsl()", comm),

@@ -22,6 +22,7 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy
+import com.andrerinas.openheadunit.connection.HeldServerSocket
 import com.andrerinas.openheadunit.App
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -173,7 +174,8 @@ class NetworkListFragment : Fragment(), NetworkDiscovery.Listener {
                 val ctx = context ?: return@runOnUiThread
                 val commManager = App.provide(ctx).commManager
                 if (!commManager.acceptsAppConnectionTicket(ticket)) {
-                    try { socket?.close() } catch (_: Exception) {}
+                    // Discovery still holds the socket; close it only if it is still ours to adopt.
+                    if (socket != null && HeldServerSocket.adopt(socket)) try { socket.close() } catch (_: Exception) {}
                     return@runOnUiThread
                 }
                 ToastUtils.showToast(ctx, getString(R.string.found_connecting, ip), Toast.LENGTH_SHORT)
@@ -181,11 +183,10 @@ class NetworkListFragment : Fragment(), NetworkDiscovery.Listener {
                     "manual WiFi scan-found $ip",
                     MainActivity.ConnectionUiMode.OVERLAY
                 )
-                var socketHandedOff = false
                 lifecycleScope.launch(Dispatchers.IO) {
                     if (socket != null && socket.isConnected) {
-                        socketHandedOff = true
-                        commManager.connect(socket, ConnectionPriorityPolicy.Tier.USER, restartEndpoint = ip to port, ticket = ticket)
+                        // The same held hand-off as the background discovery, as the user's request.
+                        commManager.connectHeld(socket, ip to port, ticket, ConnectionPriorityPolicy.Tier.USER)
                     } else {
                         commManager.connect(ip, 5277, ConnectionPriorityPolicy.Tier.USER, ticket = ticket)
                     }
@@ -193,12 +194,13 @@ class NetworkListFragment : Fragment(), NetworkDiscovery.Listener {
                         action = AapService.ACTION_CONNECT_SOCKET
                     })
                 }.invokeOnCompletion {
-                    // A cancelled UI scope may never enter the queued coroutine.
-                    if (!socketHandedOff) try { socket?.close() } catch (_: Exception) {}
+                    // A cancelled UI scope may never enter the queued coroutine. A socket still held
+                    // is this callback's; one a request adopted is that request's, left open.
+                    if (socket != null && HeldServerSocket.adopt(socket)) try { socket.close() } catch (_: Exception) {}
                 }
             } else {
-                // If not in auto-connect dialog, close the probe socket
-                try { socket?.close() } catch (e: Exception) {}
+                // If not in auto-connect dialog, close the probe socket, unless a request adopted it.
+                if (socket != null && HeldServerSocket.adopt(socket)) try { socket.close() } catch (_: Exception) {}
             }
         }
     }

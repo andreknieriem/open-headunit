@@ -27,6 +27,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
+import java.net.Socket
 import java.util.concurrent.ConcurrentLinkedQueue
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.resume
@@ -66,6 +67,12 @@ class SocketProjectionConnection(val isLoopbackPeer: Boolean)
 object HeadUnitScreenConfig { fun unlockResolution() {} }
 class FixtureTransport { var wasUserExit = false; fun retirePresentation() {} }
 class FixtureSettings { val killOnDisconnect = false }
+// The arbiter as the extracted request authority reads it: a claim holds until it ends.
+object ConnectionArbiter {
+    class Claim { val ended = CompletableDeferred<Unit>() }
+    fun holds(claim: Claim) = !claim.ended.isCompleted
+    fun release(claim: Claim, sessionFormed: Boolean) { claim.ended.complete(Unit) }
+}
 class CommManager {
     val attemptUserRequested = false
     private var stopEpoch = 0L
@@ -73,25 +80,54 @@ class CommManager {
     fun appConnectionTicket() = stopEpoch
     fun acceptsAppConnectionTicket(ticket: Long) = accepting && ticket == stopEpoch
     fun acceptsAppRunTicket(ticket: Long) = acceptsAppConnectionTicket(ticket)
-    fun stopApp() { stopEpoch++; accepting = false }
+    // requestExplicitAppExit: the Stop revokes the ticket and retires the request it invalidated.
+    fun stopApp() = synchronized(transportLifecycleLock) { stopEpoch++; accepting = false; retireInvalidRequest() }
     fun openApp() { accepting = true }
     // The extracted members ask the exit policy; the fixture's tickets answer for it.
-    private val appExitPolicy = object { fun acceptsConnection(ticket: Long) = acceptsAppConnectionTicket(ticket) }
+    private val appExitPolicy = object {
+        val stopEpoch get() = this@CommManager.stopEpoch
+        fun acceptsConnection(ticket: Long) = acceptsAppConnectionTicket(ticket)
+    }
     var socketConnects = 0
     var joins = 0
     // The Headunit Server's answer to a dial: it accepts, or it refuses before any physical connection.
     var serverRunning = true
     // The direct launcher's dial publishes, registers and opens a real attempt. An attempt still
-    // forming is joined, not preempted: connect returns at once with nothing arrived, as
-    // production's SameEndpointConnectPolicy JOIN and connectIp's Connecting guard do.
+    // forming, or the valid request for the same endpoint, is joined, not preempted: connect
+    // returns at once with nothing arrived, as production's admission JOIN and connectIp's
+    // Connecting guard do. Validity is production's own predicate, extracted below.
     suspend fun connect(ip: String, port: Int, expectedState: ConnectionState.Disconnected? = null,
                         ticket: Long = appConnectionTicket()) {
         if (!acceptsAppConnectionTicket(ticket)) return
-        if (synchronized(transportLifecycleLock) { attemptInFlight() && !physicalConnectionReached }) { joins++; return }
+        if (synchronized(transportLifecycleLock) {
+                (attemptInFlight() && !physicalConnectionReached) || validRequest()?.endpoint == "$ip:$port"
+            }) { joins++; return }
         socketConnects++
         if (serverRunning) arrive(loopback = ip == "127.0.0.1")
         else { publishAttempt(); register(loopback = ip == "127.0.0.1"); end() }
     }
+    // Production's request authority: its record, its one validity predicate and its retirement.
+    // CONNECTION_REQUEST
+    private var connectionRequest: ConnectionRequest? = null
+    // IS_VALID
+    // VALID_REQUEST
+    // RETIRE_REQUEST
+    // admitRequest: a request admitted with its ticket, claim and Save, before it can publish
+    // (behind a previous session's cleanup). A request it displaces resolves.
+    fun claimRequest(endpoint: String, save: ConnectionState.Disconnected? = null) = synchronized(transportLifecycleLock) {
+        connectionRequest?.resolved?.complete(Unit)
+        connectionRequest = ConnectionRequest(stopEpoch, ConnectionArbiter.Claim(), endpoint, save, null)
+    }
+    // endRequest without an attempt (refused or cancelled): the record clears and its claim goes.
+    fun endRequest() = synchronized(transportLifecycleLock) {
+        connectionRequest?.let {
+            connectionRequest = null
+            it.resolved.complete(Unit)
+            ConnectionArbiter.release(it.claim, sessionFormed = false)
+        }
+    }
+    // Another route's claim replaced the request's, outside this manager's lock (a USB attach).
+    fun loseClaim() { connectionRequest?.claim?.let { ConnectionArbiter.release(it, sessionFormed = false) } }
     var isProjectionVideoFocusSuppressed = false
     val videoFocus = mutableListOf<com.andrerinas.openheadunit.aap.protocol.messages.VideoFocusEvent>()
     fun send(event: com.andrerinas.openheadunit.aap.protocol.messages.VideoFocusEvent) {
@@ -174,11 +210,16 @@ class CommManager {
         // publishConnectionAttempt joins an unfinished teardown before it publishes.
         finishTeardown()
         synchronized(transportLifecycleLock) {
-            beginAttempt(Attempt())
+            // publishRequest: the valid request becomes this attempt; its record stays.
+            val request = validRequest()
+            val token = Attempt()
+            beginAttempt(token)
             physicalConnectionReached = false
             disconnectRequested = false
+            request?.attempt = token
             _connectionState.value = ConnectionState.Connecting
             _connection = null
+            request?.resolved?.complete(Unit)
         }
     }
     fun register(loopback: Boolean) = synchronized(transportLifecycleLock) { _connection = SocketProjectionConnection(loopback) }
@@ -862,6 +903,84 @@ fun main() {
         s.settle()
         check(s.commManager.socketConnects == 2 && s.manager.isActive && s.commManager.isConnected)
         check(s.toasts == 1 && s.settingsPrompts == 1 && s.commManager.reports == 1) { "a reached server showed guidance" }
+    }
+    // A user request to the Headunit Server holds its claim and record but waits behind the
+    // previous session's cleanup, with no attempt yet. The 17.4+ dial JOINs it and returns at once.
+    // The guidance may follow only that request's outcome: none while it waits, none when it
+    // arrives, once when it fails after or without publishing. The control publishes it first.
+    for (outcome in listOf("arrives", "fails-open", "ends-unpublished", "published-first")) Service().use { s ->
+        s.modern = true
+        s.useRealDirect = true
+        val c = s.commManager
+        // The previous session ended; its physical cleanup is still queued behind its terminal.
+        c.arrive(loopback = false); c.end()
+        c.claimRequest("127.0.0.1:5277")
+        if (outcome == "published-first") c.publishAttempt()
+        s.manager.start()
+        s.settle()
+        check(c.joins == 1 && c.socketConnects == 0) { "the dial did not join the claimed request ($outcome)" }
+        check(s.toasts == 0 && s.settingsPrompts == 0 && c.reports == 0) {
+            "Headunit Server guidance while the JOINed request was still waiting to publish ($outcome toasts=${s.toasts} settings=${s.settingsPrompts})"
+        }
+        check(s.manager.isLaunchPending && !s.manager.inFlight()) { "the launch stopped waiting on the JOINed request ($outcome)" }
+        when (outcome) {
+            "arrives" -> { c.publishAttempt(); c.register(loopback = true); c.reachConnection() }
+            "published-first" -> { c.register(loopback = true); c.reachConnection() }
+            "fails-open" -> { c.publishAttempt(); c.register(loopback = true); c.end(); c.endRequest() }
+            "ends-unpublished" -> { c.finishTeardown(); c.endRequest() }
+        }
+        s.settle()
+        s.main.advanceBy(legacyDeadline); s.settle()
+        val shown = if (outcome == "fails-open" || outcome == "ends-unpublished") 1 else 0
+        check(s.toasts == shown && s.settingsPrompts == shown && c.reports == shown) {
+            "Headunit Server guidance after the JOINed request's outcome ($outcome toasts=${s.toasts} settings=${s.settingsPrompts} reports=${c.reports})"
+        }
+        check(!s.manager.isLaunchPending && s.manager.isActive == (shown == 0)) {
+            "Self mode after the JOINed request's outcome ($outcome active=${s.manager.isActive})"
+        }
+    }
+    // A request whose authority is gone is no JOIN target and no wait: one Stop revoked (then the
+    // app reopened), or one whose Save the manual launch itself revoked. The launch's own 17.4+
+    // dial reaches the server and that arrival answers it, with no guidance.
+    for (revoked in listOf("stop", "save")) Service().use { s ->
+        s.modern = true
+        s.useRealDirect = true
+        val c = s.commManager
+        c.arrive(loopback = false); c.end()
+        if (revoked == "stop") {
+            c.claimRequest("127.0.0.1:5277")
+            c.stopApp(); c.openApp()
+        } else {
+            c.claimRequest("127.0.0.1:5277", save = s.save())
+        }
+        s.manager.start()
+        s.settle()
+        s.main.advanceBy(legacyDeadline); s.settle()
+        check(c.joins == 0 && c.socketConnects == 1) {
+            "the launch joined a request whose authority was revoked ($revoked joins=${c.joins} dials=${c.socketConnects})"
+        }
+        check(s.toasts == 0 && s.settingsPrompts == 0 && c.reports == 0) {
+            "Headunit Server guidance for a launch a revoked request swallowed ($revoked toasts=${s.toasts} settings=${s.settingsPrompts})"
+        }
+        check(!s.manager.isLaunchPending && s.manager.isActive) { "Self mode after the launch's own arrival ($revoked active=${s.manager.isActive})" }
+    }
+    // The joined request loses its claim to another route without ending. The launch's wait ends
+    // with that loss, not with the request's producer: nothing of its own arrived, so the failure
+    // stands, once.
+    Service().use { s ->
+        s.modern = true
+        s.useRealDirect = true
+        val c = s.commManager
+        c.arrive(loopback = false); c.end()
+        c.claimRequest("127.0.0.1:5277")
+        s.manager.start()
+        s.settle()
+        check(c.joins == 1 && s.manager.isLaunchPending && s.toasts == 0) { "the dial did not wait on the joined request" }
+        c.loseClaim()
+        s.settle()
+        check(!s.manager.isLaunchPending && s.toasts == 1 && s.settingsPrompts == 1 && c.reports == 1) {
+            "the launch kept waiting on a request that lost its claim (pending=${s.manager.isLaunchPending} toasts=${s.toasts})"
+        }
     }
     // The launch's loopback session can end and an Error hide its terminal before the deadline
     // runs. The deadline must not report the launch as never connected, and it retires the launch

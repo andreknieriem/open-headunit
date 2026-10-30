@@ -6,6 +6,7 @@ import lifecycle.CommManager
 import lifecycle.ConnectionArbiter
 import lifecycle.ConnectionPriorityPolicy
 import lifecycle.ConnectionState
+import lifecycle.HeldServerSocket
 import lifecycle.QueuedDispatcher
 import lifecycle.ServiceBootstrap
 import kotlinx.coroutines.*

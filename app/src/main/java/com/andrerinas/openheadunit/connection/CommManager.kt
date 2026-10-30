@@ -551,10 +551,19 @@ class CommManager(
     // have completed one and then carried no video at all. See VideoStarvationPolicy.
     @Volatile private var sessionReachedHandshake = false
     @Volatile private var sessionClaim: ConnectionArbiter.Claim? = null
-    // The claim that set the endpoint travels with it, so a preempted loser cannot clear its successor's.
-    @Volatile private var claimedEndpointOwner: Pair<ConnectionArbiter.Claim, String>? = null
+    /**
+     * A claimed request's record, from its claim until SSL or the claim's end: the endpoint a
+     * same-endpoint request JOINs instead of preempting, and [resolved], which completes when the
+     * request publishes its attempt (that attempt's own settlement takes over) or ends without one.
+     * A launch that JOINs a request still waiting to publish waits on it; see [reportLaunchFailure].
+     */
+    private class ClaimedRequest(val claim: ConnectionArbiter.Claim, val endpoint: String?) {
+        val resolved = CompletableDeferred<Unit>()
+    }
+    // Written only while its claim holds and cleared only by that claim. Guarded by transportLifecycleLock.
+    private var claimedRequest: ClaimedRequest? = null
     /** The endpoint an attempt holds a claim for, until SSL; null outside that window. */
-    private val claimedEndpoint: String? get() = claimedEndpointOwner?.second
+    private val claimedEndpoint: String? get() = synchronized(transportLifecycleLock) { claimedRequest?.endpoint }
     @Volatile private var starvedSessionStreak = 0
 
     private val _backgroundNotification = BackgroundNotification(context)
@@ -978,13 +987,14 @@ class CommManager(
                     }
                 }
                 val ownedClaim = claim
-                if (ownedClaim == null) {
+                // The record is written only while the claim holds: a request preempted since
+                // its claim must not take its successor's JOIN target, nor clear it later.
+                if (ownedClaim == null || !registerClaimedRequest(ownedClaim, socketEndpoint(socket))) {
                     HeldServerSocket.abandon(socket)
                     try { socket.close() } catch (_: Exception) {}
                     if (admission !== ConnectionAdmission.UNRESTRICTED) throw ConnectionAdmissionRejectedException()
                     return@withContext
                 }
-                noteClaimedEndpoint(ownedClaim, socketEndpoint(socket))
                 HeldServerSocket.settle(socket)
                 var delegated = false
                 try {
@@ -1205,9 +1215,11 @@ class CommManager(
                 return@withContext
             }
             val claim = claimSocket(tier, endpoint, expectedState, ticket) ?: return@withContext
-            noteClaimedEndpoint(claim, endpoint)
             try {
-                if (acceptAppConnectionClaim(claim, ticket, expectedState)) connectIp(ip, port, expectedState, ticket, claim)
+                // A request preempted since its claim records nothing and does not dial.
+                if (registerClaimedRequest(claim, endpoint) && acceptAppConnectionClaim(claim, ticket, expectedState)) {
+                    connectIp(ip, port, expectedState, ticket, claim)
+                }
             } finally { releaseClaim(claim) }
         }
     }
@@ -1294,9 +1306,26 @@ class CommManager(
             _connectionState.value = ConnectionState.Connecting
             published = token to _connection
             _connection = null
+            // The attempt now answers for this request; its record stays the JOIN target until SSL.
+            claimedRequest?.takeIf { it.claim === claim }?.resolved?.complete(Unit)
         }
         return published
     }
+
+    /**
+     * Records [claim]'s request as the JOIN target for [endpoint], under transportLifecycleLock
+     * (lifecycle -> arbiter), only while [claim] still holds the arbiter. False means it was
+     * preempted since its claim: the caller stands down without recording or dialing anything.
+     * A record it displaces belongs to a claim that no longer holds; it resolves now, so a launch
+     * waiting on it asks again rather than waiting on a record nothing will clear.
+     */
+    private fun registerClaimedRequest(claim: ConnectionArbiter.Claim, endpoint: String?): Boolean =
+        synchronized(transportLifecycleLock) {
+            ConnectionArbiter.runIfHeld(claim) {
+                claimedRequest?.resolved?.complete(Unit)
+                claimedRequest = ClaimedRequest(claim, endpoint)
+            }
+        }
 
     /**
      * What a launcher arm supersedes: the terminal already published, or else the attempt
@@ -1356,8 +1385,11 @@ class CommManager(
         /** A physical connection arrived since the launch, or one is live: it owns the outcome. */
         object Answered : LaunchOutcome()
 
-        /** An attempt is forming and may be the launch's own arrival; see [awaitSettled]. */
-        class Forming internal constructor(internal val attempt: Attempt) : LaunchOutcome()
+        /**
+         * An attempt is forming and may be the launch's own arrival, or a claimed request a launch
+         * may have JOINed has yet to publish its attempt; see [awaitSettled].
+         */
+        class Forming internal constructor(internal val settled: kotlinx.coroutines.Deferred<Unit>) : LaunchOutcome()
 
         /** Stop, or a state that superseded the launch's Save, took its authority: nothing to report. */
         object Revoked : LaunchOutcome()
@@ -1393,9 +1425,11 @@ class CommManager(
      * Stop owns all work accepted before it, whenever its cancellation reaches the launch: a
      * revoked ticket, checked here with the decision, reports nothing even after a wait. A failure
      * stands only while nothing owns the state: with an attempt in flight there is nothing a failure
-     * could replace without taking that attempt's authority. A standing failure is shown only over
-     * the state its launch was accepted in: a state published since, such as a teardown repeating
-     * an earlier session's terminal, belongs to its own observer. A Save report only logs,
+     * could replace without taking that attempt's authority, and a claimed request still waiting to
+     * publish one (behind a previous session's cleanup, say) may be the request this launch JOINed.
+     * A standing failure is shown only over the state its launch was accepted in: a state published
+     * since, such as a teardown repeating an earlier session's terminal, belongs to its own
+     * observer. A Save report only logs,
      * preserving Save's Disconnected token for its bounded fallback; a Save another state
      * superseded no longer owns a failure.
      */
@@ -1408,7 +1442,9 @@ class CommManager(
             if (!appExitPolicy.acceptsConnection(mark.ticket)) return LaunchOutcome.Revoked
             val attempt = connectionAttempt?.takeIf { !disconnectRequested }
             if (physicalArrivals != mark.arrivals || (attempt != null && physicalConnectionReached)) return LaunchOutcome.Answered
-            if (attempt != null) return LaunchOutcome.Forming(attempt)
+            if (attempt != null) return LaunchOutcome.Forming(attempt.settled)
+            val request = claimedRequest?.resolved?.takeUnless { it.isCompleted }
+            if (request != null) return LaunchOutcome.Forming(request)
             if (settingsRestart != null) {
                 if (!settingsRestart.acceptsSettingsRestart(_connectionState.value)) return LaunchOutcome.Revoked
                 AppLog.e(msg)
@@ -1422,14 +1458,15 @@ class CommManager(
     }
 
     /**
-     * Suspends until [forming]'s attempt reaches its connection or ends; decide again afterwards.
-     * Settlement completes under transportLifecycleLock, after the flags and arrival count it
-     * settles on, and no completion handler is registered on it. The wait itself runs on the
-     * connection IO dispatcher, [Dispatchers.IO] in production, which always dispatches its
-     * resumption: whatever the caller's own dispatcher, it never continues inside that frame.
+     * Suspends until [forming]'s attempt reaches its connection or ends, or its claimed request
+     * publishes an attempt or ends without one; decide again afterwards. Both complete under
+     * transportLifecycleLock, after the state they settle on, and no completion handler is
+     * registered on them. The wait itself runs on the connection IO dispatcher, [Dispatchers.IO]
+     * in production, which always dispatches its resumption: whatever the caller's own
+     * dispatcher, it never continues inside that frame.
      */
     internal suspend fun awaitSettled(forming: LaunchOutcome.Forming) {
-        withContext(connectionIoDispatcher) { forming.attempt.settled.await() }
+        withContext(connectionIoDispatcher) { forming.settled.await() }
     }
 
     /** A manual start or stop supersedes Save before it publishes an AAP connection. */
@@ -1483,29 +1520,30 @@ class CommManager(
         // Keep the claim through StartingTransport; releasing it there would lose USB checks
         // arriving during SSL. If SSL has already finished, settle it as a formed session.
         val state = _connectionState.value
+        // The request ends here whatever it reached, so a launch waiting on its record asks again.
+        claimedRequest?.takeIf { it.claim === claim }?.resolved?.complete(Unit)
         if ((state is ConnectionState.Connected || state is ConnectionState.StartingTransport) &&
             ConnectionArbiter.holds(claim)) {
             sessionClaim = claim
         } else {
-            clearClaimedEndpoint(claim)
+            clearClaimedRequest(claim)
             ConnectionArbiter.release(claim, sessionFormed =
                 state is ConnectionState.HandshakeComplete || state is ConnectionState.TransportStarted)
         }
     }
 
-    private fun noteClaimedEndpoint(claim: ConnectionArbiter.Claim, endpoint: String?) {
-        claimedEndpointOwner = endpoint?.let { claim to it }
-    }
-
-    private fun clearClaimedEndpoint(claim: ConnectionArbiter.Claim) {
-        if (claimedEndpointOwner?.first === claim) claimedEndpointOwner = null
+    /** Removes [claim]'s own record, never a successor's, and resolves it. */
+    private fun clearClaimedRequest(claim: ConnectionArbiter.Claim): Unit = synchronized(transportLifecycleLock) {
+        val request = claimedRequest?.takeIf { it.claim === claim } ?: return@synchronized
+        claimedRequest = null
+        request.resolved.complete(Unit)
     }
 
     /** Ends the claim an opened transport carried into its handshake. */
     private fun settleSessionClaim(formed: Boolean) {
         val claim = sessionClaim ?: return
         sessionClaim = null
-        clearClaimedEndpoint(claim)
+        clearClaimedRequest(claim)
         ConnectionArbiter.release(claim, sessionFormed = formed)
     }
 

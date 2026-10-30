@@ -82,15 +82,31 @@ class CommManager {
     // The Headunit Server's answer to a dial: it accepts, or it refuses before any physical connection.
     var serverRunning = true
     // The direct launcher's dial publishes, registers and opens a real attempt. An attempt still
-    // forming is joined, not preempted: connect returns at once with nothing arrived, as
-    // production's SameEndpointConnectPolicy JOIN and connectIp's Connecting guard do.
+    // forming, or a claimed request still waiting to publish one for the same endpoint, is joined,
+    // not preempted: connect returns at once with nothing arrived, as production's
+    // SameEndpointConnectPolicy JOIN and connectIp's Connecting guard do.
     suspend fun connect(ip: String, port: Int, expectedState: ConnectionState.Disconnected? = null,
                         ticket: Long = appConnectionTicket()) {
         if (!acceptsAppConnectionTicket(ticket)) return
-        if (synchronized(transportLifecycleLock) { attemptInFlight() && !physicalConnectionReached }) { joins++; return }
+        if (synchronized(transportLifecycleLock) {
+                (attemptInFlight() && !physicalConnectionReached) || claimedRequest?.endpoint == "$ip:$port"
+            }) { joins++; return }
         socketConnects++
         if (serverRunning) arrive(loopback = ip == "127.0.0.1")
         else { publishAttempt(); register(loopback = ip == "127.0.0.1"); end() }
+    }
+    // Production's ClaimedRequest record, without the arbiter claim this fixture has no arbiter
+    // for: the JOIN target and the handle reportLaunchFailure waits on until it resolves.
+    private class ClaimedRequest(val endpoint: String?) { val resolved = CompletableDeferred<Unit>() }
+    private var claimedRequest: ClaimedRequest? = null
+    // A claimed request recorded before it can publish (behind a previous session's cleanup).
+    fun claimRequest(endpoint: String) = synchronized(transportLifecycleLock) {
+        claimedRequest?.resolved?.complete(Unit)
+        claimedRequest = ClaimedRequest(endpoint)
+    }
+    // The request ended without an attempt (refused, preempted or cancelled): releaseClaim's clear.
+    fun endRequest() = synchronized(transportLifecycleLock) {
+        claimedRequest?.let { claimedRequest = null; it.resolved.complete(Unit) }
     }
     var isProjectionVideoFocusSuppressed = false
     val videoFocus = mutableListOf<com.andrerinas.openheadunit.aap.protocol.messages.VideoFocusEvent>()
@@ -179,6 +195,8 @@ class CommManager {
             disconnectRequested = false
             _connectionState.value = ConnectionState.Connecting
             _connection = null
+            // publishClaimedAttempt: the attempt now answers for the request; its record stays.
+            claimedRequest?.resolved?.complete(Unit)
         }
     }
     fun register(loopback: Boolean) = synchronized(transportLifecycleLock) { _connection = SocketProjectionConnection(loopback) }
@@ -861,6 +879,41 @@ fun main() {
         s.settle()
         check(s.commManager.socketConnects == 2 && s.manager.isActive && s.commManager.isConnected)
         check(s.toasts == 1 && s.settingsPrompts == 1 && s.commManager.reports == 1) { "a reached server showed guidance" }
+    }
+    // A user request to the Headunit Server holds its claim and record but waits behind the
+    // previous session's cleanup, with no attempt yet. The 17.4+ dial JOINs it and returns at once.
+    // The guidance may follow only that request's outcome: none while it waits, none when it
+    // arrives, once when it fails after or without publishing. The control publishes it first.
+    for (outcome in listOf("arrives", "fails-open", "ends-unpublished", "published-first")) Service().use { s ->
+        s.modern = true
+        s.useRealDirect = true
+        val c = s.commManager
+        // The previous session ended; its physical cleanup is still queued behind its terminal.
+        c.arrive(loopback = false); c.end()
+        c.claimRequest("127.0.0.1:5277")
+        if (outcome == "published-first") c.publishAttempt()
+        s.manager.start()
+        s.settle()
+        check(c.joins == 1 && c.socketConnects == 0) { "the dial did not join the claimed request ($outcome)" }
+        check(s.toasts == 0 && s.settingsPrompts == 0 && c.reports == 0) {
+            "Headunit Server guidance while the JOINed request was still waiting to publish ($outcome toasts=${s.toasts} settings=${s.settingsPrompts})"
+        }
+        check(s.manager.isLaunchPending && !s.manager.inFlight()) { "the launch stopped waiting on the JOINed request ($outcome)" }
+        when (outcome) {
+            "arrives" -> { c.publishAttempt(); c.register(loopback = true); c.reachConnection() }
+            "published-first" -> { c.register(loopback = true); c.reachConnection() }
+            "fails-open" -> { c.publishAttempt(); c.register(loopback = true); c.end(); c.endRequest() }
+            "ends-unpublished" -> { c.finishTeardown(); c.endRequest() }
+        }
+        s.settle()
+        s.main.advanceBy(legacyDeadline); s.settle()
+        val shown = if (outcome == "fails-open" || outcome == "ends-unpublished") 1 else 0
+        check(s.toasts == shown && s.settingsPrompts == shown && c.reports == shown) {
+            "Headunit Server guidance after the JOINed request's outcome ($outcome toasts=${s.toasts} settings=${s.settingsPrompts} reports=${c.reports})"
+        }
+        check(!s.manager.isLaunchPending && s.manager.isActive == (shown == 0)) {
+            "Self mode after the JOINed request's outcome ($outcome active=${s.manager.isActive})"
+        }
     }
     // The launch's loopback session can end and an Error hide its terminal before the deadline
     // runs. The deadline must not report the launch as never connected, and it retires the launch

@@ -225,9 +225,9 @@ class CommManager {
  private fun dropOwedScans()=ConnectionArbiter.dropUsbDebt()
  private fun noteHandshakeOutcome(silent:Boolean){}
  @Volatile private var sessionClaim:ConnectionArbiter.Claim?=null
- @Volatile private var claimedEndpointOwner:Pair<ConnectionArbiter.Claim,String>?=null
+ private var claimedRequest:ClaimedRequest?=null
  var attemptUserRequested=false
- private val claimedEndpoint:String? get()=claimedEndpointOwner?.second
+ private val claimedEndpoint:String? get()=synchronized(transportLifecycleLock){claimedRequest?.endpoint}
  private fun noteSessionEnded(renderedAnyFrame:Boolean, deliberateEnd:Boolean=false){}
  val connectionState get()=_connectionState
  val state get()=_connectionState.value
@@ -302,8 +302,8 @@ manager=manager_head+'\n'.join(extract(comm,n) for n in [
  'fun setProjectionVideoFocusSuppressed(', 'private suspend fun acceptAppConnectionClaim(',
  'suspend fun connect(\n        device:', 'suspend fun connect(\n        socket:', 'suspend fun connect(\n        ip:',
  'private suspend fun connectSocketWithTicket(', 'private fun claimSocket(',
- 'private fun releaseClaim(', 'private fun noteClaimedEndpoint(',
- 'private fun clearClaimedEndpoint(', 'private fun settleSessionClaim('
+ 'private fun releaseClaim(', 'private class ClaimedRequest(', 'private fun registerClaimedRequest(',
+ 'private fun clearClaimedRequest(', 'private fun settleSessionClaim('
 ])+'\n}\n'
 transport_head=r'''
 class AapTransport(
@@ -967,13 +967,13 @@ fun launchOutcomeFollowsAttempts()=runBlocking {
   var forming:CommManager.LaunchOutcome?=null;var settledAtDecision:Boolean?=null;var stateAtDecision:ConnectionState?=null
   SocketProjectionConnection.connectionHook={
    forming=c.reportLaunchFailure("timeout",mark)
-   settledAtDecision=(forming as? CommManager.LaunchOutcome.Forming)?.attempt?.settled?.isCompleted
+   settledAtDecision=(forming as? CommManager.LaunchOutcome.Forming)?.settled?.isCompleted
    stateAtDecision=c.state;true
   }
   try{c.connectSelf()}finally{SocketProjectionConnection.connectionHook=null}
   val waiting=forming as? CommManager.LaunchOutcome.Forming ?: error("A forming attempt did not hold the launch: $forming")
   check(settledAtDecision==false && stateAtDecision===ConnectionState.Connecting){"waiter settled early or saw $stateAtDecision"}
-  check(waiting.attempt.settled.isCompleted){"an arrival left its attempt's waiter unsettled"}
+  check(waiting.settled.isCompleted){"an arrival left its attempt's waiter unsettled"}
   c.disconnect(isUserExit=false,honorKillOnDisconnect=false);c.cleanups();c.awaitCleanup()
   var duringB:CommManager.LaunchOutcome?=null
   SocketProjectionConnection.connectionHook={duringB=c.reportLaunchFailure("timeout",mark);false}

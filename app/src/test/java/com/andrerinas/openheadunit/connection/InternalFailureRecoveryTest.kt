@@ -275,7 +275,7 @@ class InternalFailureRecoveryTest {
                 failuresAfterRefusal = failures.size
                 // Nor can a launch failure stand: the attempt may be the launch's own late arrival.
                 forming = f.manager.reportLaunchFailure("launch timeout", mark)
-                settledAtDecision = (forming as? CommManager.LaunchOutcome.Forming)?.attempt?.settled?.isCompleted
+                settledAtDecision = (forming as? CommManager.LaunchOutcome.Forming)?.settled?.isCompleted
                 afterDecision = f.states.value
             }
             assertSame(ConnectionState.Connecting, published)
@@ -286,7 +286,7 @@ class InternalFailureRecoveryTest {
             assertSame(ConnectionState.Connecting, afterDecision)
             // The attempt settled as it reached its connection or ended: the waiter decides again.
             val waiting = forming as CommManager.LaunchOutcome.Forming
-            assertTrue(waiting.attempt.settled.isCompleted)
+            assertTrue(waiting.settled.isCompleted)
             f.manager.awaitSettled(waiting)
             val outcome = f.manager.reportLaunchFailure("launch timeout", mark)
             if (opens) {

@@ -279,5 +279,112 @@ fun appConnectionIngressOwnership() = runBlocking {
             }
         } finally { socketA.close(); c.close() }
     }
-    println("PASS public connection ingress: explicit Stop survives EOF, USB/IP/socket pre-IO tickets, held adoption, stale-preempt rejection, preempted-publication and compatible-Open controls")
+
+    // Automatic socket A holds its claim but has not yet recorded its endpoint (paused computing
+    // it) when USER B preempts it and connects, before SSL. A's late record must neither take B's
+    // JOIN target nor, as A stands down, clear it: a same-endpoint USER request then JOINs B
+    // instead of dialing and closing it. The unpreempted control's same-endpoint request JOINs A.
+    for (preempted in listOf(true, false)) {
+        val c = CommManager()
+        val reachedRecord = CountDownLatch(1)
+        val resumeRecord = CountDownLatch(1)
+        val errors = ConcurrentLinkedQueue<Throwable>()
+        val socketA = object : Socket() {
+            @Volatile private var paused = false
+            override fun getInetAddress(): java.net.InetAddress = java.net.InetAddress.getByName("192.0.2.61")
+            // Only the endpoint read after the claim asks for the port first.
+            override fun getPort(): Int {
+                if (!paused) { paused = true; reachedRecord.countDown(); resumeRecord.await(5, TimeUnit.SECONDS) }
+                return 5277
+            }
+        }
+        c.disconnect(honorKillOnDisconnect = false)
+        c.cleanups()
+        val effects = ServicePreempt(c)
+        ConnectionArbiter.actions = effects
+        val automaticA = Thread {
+            try { runBlocking { c.connect(socketA) } } catch (failure: Throwable) { errors.add(failure) }
+        }
+        try {
+            val createdBefore = SocketProjectionConnection.created.size
+            automaticA.start()
+            check(reachedRecord.await(5, TimeUnit.SECONDS)) { "A never reached its endpoint record" }
+            var b: ProjectionConnection? = null
+            if (preempted) {
+                c.connect("192.0.2.60", 5277, ConnectionPriorityPolicy.Tier.USER)
+                b = c.network()
+            }
+            resumeRecord.countDown()
+            automaticA.join(5000)
+            val target = if (preempted) "192.0.2.60" else "192.0.2.61"
+            val live = c.network()
+            c.connect(target, 5277, ConnectionPriorityPolicy.Tier.USER)
+            // Recorded after every production frame has returned.
+            val after = c.network()
+            val created = SocketProjectionConnection.created.size - createdBefore
+            val state = c.state
+            println("preempted record preempted=$preempted: bClosed=${b?.closed}, bReplaced=${b != null && after !== b}, " +
+                "created=$created, socketAClosed=${socketA.isClosed}")
+            check(!automaticA.isAlive && errors.isEmpty()) { errors.toString() }
+            check(after === live && after?.closed == false && state is ConnectionState.Connected) {
+                "a same-endpoint request replaced the live connection (preempted=$preempted bClosed=${b?.closed} created=$created)"
+            }
+            check(created == 1) { "a same-endpoint request dialed instead of joining (preempted=$preempted created=$created)" }
+            if (preempted) check(after === b && socketA.isClosed && effects.preempts == 1)
+            else check(!socketA.isClosed && effects.preempts == 0)
+        } finally {
+            resumeRecord.countDown()
+            automaticA.join(5000)
+            socketA.close(); c.close()
+        }
+    }
+
+    // User request A to the Headunit Server holds its claim and record but waits in the previous
+    // session's cleanup join, with no attempt yet. A launch accepted then whose dial JOINs A must
+    // wait on A instead of standing failed, and the wait ends however A resolves. The control
+    // runs that cleanup first, so A has arrived before the launch.
+    for (outcome in listOf("arrives", "fails", "cleanup-done")) {
+        val c = CommManager()
+        try {
+            c.disconnect(honorKillOnDisconnect = false) // The previous session's terminal; its cleanup is queued.
+            if (outcome == "cleanup-done") c.cleanups()
+            if (outcome == "fails") SocketProjectionConnection.connectionHook = { false }
+            val createdBefore = SocketProjectionConnection.created.size
+            val userA = launch(start = CoroutineStart.UNDISPATCHED) {
+                c.connect("127.0.0.1", 5277, ConnectionPriorityPolicy.Tier.USER)
+            }
+            val mark = c.launchMark(c.appConnectionTicket())
+            val acceptedIn = c.state
+            c.connect("127.0.0.1", 5277) // The launch's own dial.
+            val decision = c.reportLaunchFailure("timeout", mark)
+            val stateAtDecision = c.state
+            val waiter = (decision as? CommManager.LaunchOutcome.Forming)?.let {
+                launch(start = CoroutineStart.UNDISPATCHED) { c.awaitSettled(it) }
+            }
+            val waitingBeforeCleanup = waiter?.isCompleted == false
+            c.cleanups()
+            userA.join()
+            waiter?.join()
+            // Recorded after every production frame has returned.
+            val after = c.reportLaunchFailure("timeout", mark)
+            val created = SocketProjectionConnection.created.size - createdBefore
+            val state = c.state
+            println("joined request outcome=$outcome: decision=$decision waiting=$waitingBeforeCleanup after=$after created=$created")
+            if (outcome == "cleanup-done") {
+                check(decision === CommManager.LaunchOutcome.Answered) { "an arrived request did not answer the launch: $decision" }
+            } else {
+                check(decision is CommManager.LaunchOutcome.Forming && waitingBeforeCleanup && stateAtDecision === acceptedIn) {
+                    "a launch JOINing a request still behind cleanup stood failed ($outcome decision=$decision state=$stateAtDecision)"
+                }
+                check(waiter?.isCompleted == true) { "the JOINed request resolved but its waiter did not ($outcome)" }
+                if (outcome == "arrives") {
+                    check(after === CommManager.LaunchOutcome.Answered && state is ConnectionState.Connected) { "A's arrival did not answer: $after" }
+                } else {
+                    check(after === CommManager.LaunchOutcome.Failed) { "A's failure did not stand after the wait: $after" }
+                }
+            }
+            check(created == 1) { "the launch's dial did not JOIN A ($outcome created=$created)" }
+        } finally { SocketProjectionConnection.connectionHook = null; c.close() }
+    }
+    println("PASS public connection ingress: explicit Stop survives EOF, USB/IP/socket pre-IO tickets, held adoption, stale-preempt rejection, preempted-publication, preempted-record, JOINed-request and compatible-Open controls")
 }

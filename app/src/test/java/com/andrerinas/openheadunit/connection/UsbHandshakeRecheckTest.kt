@@ -169,9 +169,12 @@ class UsbHandshakeRecheckTest {
                 if (finishBeforeScan != null) {
                     launcher.checkAlreadyConnected(force = true)
                     states.value = finishBeforeScan
+                    // The handshake's own attempt, published under that claim, is the live one.
+                    field("connectionAttempt", CommManager.Attempt(claim))
                     release.invoke(manager, claim)
                 } else if (state is ConnectionState.Connected || state is ConnectionState.StartingTransport) {
                     // connect() can reach finally after the observer has advanced to SSL.
+                    field("connectionAttempt", CommManager.Attempt(claim))
                     release.invoke(manager, claim)
                     assertTrue("The pending handshake must still hold its claim", ConnectionArbiter.holds(claim))
                 }

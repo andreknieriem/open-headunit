@@ -10,7 +10,6 @@ import com.andrerinas.openheadunit.aap.AapService.Companion.scanningState
 import com.andrerinas.openheadunit.connection.ConnectionStage
 import com.andrerinas.openheadunit.connection.ConnectionStageTracker
 import com.andrerinas.openheadunit.connection.HeldServerSocket
-import com.andrerinas.openheadunit.connection.SameEndpointConnectPolicy
 import com.andrerinas.openheadunit.connection.UnresponsivePeerPolicy
 import com.andrerinas.openheadunit.connection.wifi.direct.WifiDirectManager
 import com.andrerinas.openheadunit.connection.wifi.direct.WifiRadioSwitchPolicy
@@ -20,7 +19,6 @@ import com.andrerinas.openheadunit.connection.wifi.server.WirelessServerRestartP
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.HotspotManager
 import java.net.Socket
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -219,7 +217,7 @@ class WifiLauncherSharedServices(val service: AapService) {
                             // socket. isBusy rather than isConnected because handing it to connect()
                             // during a connect in flight only gets it closed one frame later.
                             // Not when a user connect adopted it: that socket is the session now.
-                            if (socket != null && HeldServerSocket.discard(socket)) {
+                            if (socket != null && HeldServerSocket.adopt(socket)) {
                                 try { socket.close() } catch (e: Exception) {}
                             }
                             return
@@ -231,25 +229,22 @@ class WifiLauncherSharedServices(val service: AapService) {
                                 ConnectionStageTracker.report(ConnectionStage.PHONE_ANSWERED)
                                 val delivery = service.serviceScope.launch {
                                     if (!commManager.acceptsAppConnectionTicket(ticket)) {
-                                        if (socket != null && HeldServerSocket.discard(socket)) {
+                                        if (socket != null && HeldServerSocket.adopt(socket)) {
                                             try { socket.close() } catch (_: Exception) {}
                                         }
                                         return@launch
                                     }
-                                    val endpoint = SameEndpointConnectPolicy.endpoint(ip, 5277)
                                     if (socket == null) {
                                         commManager.connect(ip, 5277, ticket = ticket)
-                                    } else if (HeldServerSocket.take(endpoint, socket) !== socket) {
-                                        AppLog.i("WifiLauncherSharedServices: $endpoint is no longer held for discovery; not dialling it")
                                     } else {
-                                        try { commManager.connect(socket, restartEndpoint = ip to 5277, ticket = ticket) } catch (e: CancellationException) {
-                                            HeldServerSocket.abandon(socket); throw e
-                                        }
+                                        // Admission adopts the held socket with the request's claim, in one
+                                        // step; one a dial already adopted is that dial's, not ours.
+                                        commManager.connectHeld(socket, ip to 5277, ticket)
                                     }
                                 }
                                 delivery.invokeOnCompletion {
                                     // The callback owns an untaken socket even if its child never enters.
-                                    if (socket != null && HeldServerSocket.discard(socket)) {
+                                    if (socket != null && HeldServerSocket.adopt(socket)) {
                                         try { socket.close() } catch (_: Exception) {}
                                     }
                                 }

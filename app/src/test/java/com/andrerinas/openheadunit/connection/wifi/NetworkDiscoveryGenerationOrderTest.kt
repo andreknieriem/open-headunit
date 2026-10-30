@@ -110,8 +110,9 @@ class NetworkDiscoveryGenerationOrderTest {
             .whenever(service).rescanWithoutWaiting = any()
         doReturn(false).whenever(comm).isBusy
         runBlocking {
-            doAnswer { connected += it.arguments[0] as Socket; Unit }
-                .whenever(comm).connect(any<Socket>(), any(), anyOrNull(), anyOrNull(), any(), any())
+            // CommManager's admission adopts the held socket as it admits the request.
+            doAnswer { val socket = it.arguments[0] as Socket; if (HeldServerSocket.adopt(socket)) connected += socket; Unit }
+                .whenever(comm).connectHeld(any<Socket>(), any(), any(), any())
         }
         doAnswer {
             val ticket = it.arguments[0] as Long
@@ -137,7 +138,7 @@ class NetworkDiscoveryGenerationOrderTest {
         }
         serviceScope.cancel()
         HeldServerSocket.discardAll()
-        connected.forEach { HeldServerSocket.abandon(it) }
+        connected.forEach { HeldServerSocket.adopt(it); it.close() }
         servers.forEach { it.close() }
         accepted.forEach { it.close() }
         AapService.scanningState.value = false

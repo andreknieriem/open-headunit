@@ -12,6 +12,8 @@ import com.andrerinas.openheadunit.utils.Settings
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Assert.*
+import org.junit.After
+import org.junit.Before
 import org.junit.Test
 import org.mockito.Mockito.*
 import java.io.IOException
@@ -21,6 +23,11 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.intrinsics.suspendCoroutineUninterceptedOrReturn
 
 class InternalFailureRecoveryTest {
+    // The arbiter's default clock is Android's SystemClock, which plain JVM tests do not provide.
+    private val clock = ConnectionArbiter.clock
+    @Before fun prepare() { ConnectionArbiter.reset(); ConnectionArbiter.clock = { 1000L } }
+    @After fun restore() { ConnectionArbiter.reset(); ConnectionArbiter.clock = clock }
+
     private class Fixture : AutoCloseable {
         val manager = mock(CommManager::class.java, CALLS_REAL_METHODS).withAppExitDispatcherForTest()
         val context = mock(Context::class.java)
@@ -39,6 +46,7 @@ class InternalFailureRecoveryTest {
             field("usbRecoveryOwner", owner)
             field("context", context)
             field("settings", settings)
+            ConnectionArbiter.reset()
         }
         fun field(name: String, value: Any) = CommManager::class.java.getDeclaredField(name)
             .apply { isAccessible = true }.set(manager, value)
@@ -50,7 +58,7 @@ class InternalFailureRecoveryTest {
             assertEquals("Exactly one cleanup is queued", 1, queued.size)
             verify(context, never()).sendBroadcast(any(android.content.Intent::class.java))
         }
-        override fun close() { scope.cancel() }
+        override fun close() { scope.cancel(); ConnectionArbiter.reset() }
     }
 
     @Test fun thrownSocketOpenFailuresHaveTheSamePolicyAsFalseReturns() = runBlocking {
@@ -63,12 +71,8 @@ class InternalFailureRecoveryTest {
                         if (throws) throw IOException("open failed") else false
                     } }
                 }.use {
-                    if (accepted) invoke(f.manager, "connectSocket",
-                        arrayOf(Socket::class.java, Pair::class.java, ConnectionState.Disconnected::class.java, Long::class.javaPrimitiveType!!),
-                        mock(Socket::class.java), null, null, 0L)
-                    else invoke(f.manager, "connectIp",
-                        arrayOf(String::class.java, Int::class.javaPrimitiveType!!, ConnectionState.Disconnected::class.java, Long::class.javaPrimitiveType!!),
-                        "127.0.0.1", 5277, null, 0L)
+                    if (accepted) f.manager.connect(mock(Socket::class.java))
+                    else f.manager.connect("127.0.0.1", 5277)
                     f.assertRecoverable()
                 }
             }
@@ -135,7 +139,7 @@ class InternalFailureRecoveryTest {
         }
     }
 
-    /** The actual IP publication path, with the connection's open and construction under test control. */
+    /** The actual public IP request, with the connection's open and construction under test control. */
     private suspend fun connectIp(f: Fixture, opens: Boolean, loopback: Boolean = false, duringAttempt: () -> Unit = {}) {
         mockConstruction(SocketProjectionConnection::class.java) { connection, _ ->
             // Construction runs after the attempt is published and before its connection is registered.
@@ -143,9 +147,7 @@ class InternalFailureRecoveryTest {
             runBlocking { `when`(connection.connect()).thenReturn(opens) }
             `when`(connection.isLoopbackPeer).thenReturn(loopback)
         }.use {
-            invoke(f.manager, "connectIp",
-                arrayOf(String::class.java, Int::class.javaPrimitiveType!!, ConnectionState.Disconnected::class.java, Long::class.javaPrimitiveType!!),
-                "127.0.0.1", 5277, null, f.manager.appConnectionTicket())
+            f.manager.connect("127.0.0.1", 5277)
         }
     }
 
@@ -260,7 +262,7 @@ class InternalFailureRecoveryTest {
                 failuresAfterRefusal = failures.size
                 // Nor can a launch failure stand: the attempt may be the launch's own late arrival.
                 forming = f.manager.reportLaunchFailure("launch timeout", mark)
-                settledAtDecision = (forming as? CommManager.LaunchOutcome.Forming)?.attempt?.settled?.isCompleted
+                settledAtDecision = (forming as? CommManager.LaunchOutcome.Forming)?.settled?.isCompleted
                 afterDecision = f.states.value
             }
             assertSame(ConnectionState.Connecting, published)
@@ -271,7 +273,7 @@ class InternalFailureRecoveryTest {
             assertSame(ConnectionState.Connecting, afterDecision)
             // The attempt settled as it reached its connection or ended: the waiter decides again.
             val waiting = forming as CommManager.LaunchOutcome.Forming
-            assertTrue(waiting.attempt.settled.isCompleted)
+            assertTrue(waiting.settled.isCompleted)
             f.manager.awaitSettled(waiting)
             val outcome = f.manager.reportLaunchFailure("launch timeout", mark)
             if (opens) {

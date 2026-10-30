@@ -53,15 +53,24 @@ only final publication. A cancelled old attempt therefore cannot tear down a new
 The actual transport quit callback also cannot downgrade an accepted explicit Stop to a
 conditional kill-on-disconnect request.
 
+An IP or socket request is admitted in one lifecycle-locked step, never on Main: Stop ticket and
+Save, adoption of a socket discovery holds, the JOIN decision against the valid request, the
+arbiter claim and the request's registration. One predicate decides validity (ticket current,
+claim held, Save owning the state until it publishes, then its own attempt in flight), and
+joining, a launch's wait, acceptance and publication all use it. Stop and Save revocation retire
+the request in their own lock section, and a claim's end wakes a launch waiting on it. The
+ingress fixtures pause real producers inside each former gap (claim before record, Stop or Save
+or another claim taking a waiting request's authority, a discovery hand-off queued behind IO).
+
 The ticket belongs to the logical input, not to one public call. UI, automation, server accept,
 discovery scan, Nearby request, Self launch, VPN consent and service relays capture it when the
 input is accepted and carry it through queued work, permission waits, countdowns and internal
 retries. The caller fixtures extract those producers and run them against the real manager,
 arbiter and service-ingress prefix: Stop B -> Open C rejects work begun before B, while a
-compatible Open without Stop and genuinely new input remain accepted. A held socket is taken
-only by the callback that owns that exact socket. The USB unit regressions drive the actual
-scan, permission poll, retry loop and StandardUsb open; physical opens are counted at
-`UsbManager.openDevice`.
+compatible Open without Stop and genuinely new input remain accepted. A held socket is adopted,
+in admission, only by one request; a hand-off whose socket a dial adopted first leaves it alone.
+The USB unit regressions drive the actual scan, permission poll, retry loop and StandardUsb
+open; physical opens are counted at `UsbManager.openDevice`.
 
 A revoked in-flight scan, Self launch or Nearby attempt never absorbs a valid newer input:
 the stale work is detached and the new input starts, while a same-ticket duplicate is still
@@ -75,14 +84,15 @@ Self Mode keeps no session-lifetime flag. CommManager owns each connection attem
 publication, before its connection object is registered, and settles it under the lifecycle lock
 once it reaches its connection, ends or is replaced; a monotonic count dates every physical
 arrival. The first arrival after a Self launch's acceptance answers that launch whether or not
-any state was observed. While an attempt is forming the launch waits on that attempt, not on the
-conflated flow, and it fails only when nothing arrived and nothing is in flight. Self is active
+any state was observed. While an attempt is forming, or the valid request has yet to publish
+one, the launch waits on it, not on the conflated flow, and it fails only when nothing arrived
+and nothing is in flight. Self is active
 while a launch is unanswered or a loopback attempt is live, and a terminal's own route selects its
 end policy. A refused request's diagnostic may replace only an idle state. `run.py` drives the
 actual publishers through Connecting(A) -> ended(A) -> Connecting(B), ends hidden behind an Error,
 repeated terminals and a refused USB report during an unregistered attempt. The Self fixture runs
-the actual launch, deadline, observer and end branch against the extracted attempt primitives and
-terminal publisher; its publication lock sections mirror `connectIp`.
+the actual launch, deadline, observer and end branch against the extracted attempt primitives,
+request authority and terminal publisher; its publication lock sections mirror `connectIp`.
 
 Connection acceptance and publication share Main ordering with activity finish and process
 exit effects. The scheduling suite holds task lookup and process-exit preparation while a

@@ -281,61 +281,65 @@ fun appConnectionIngressOwnership() = runBlocking {
         } finally { socketA.close(); c.close() }
     }
 
-    // Automatic socket A is paused computing its endpoint, after its claim on 725c52f63 and before
-    // its admission now, when USER B takes the arbiter and connects, before SSL. A late A must
-    // neither take B's JOIN target nor, as it stands down, clear it: a same-endpoint USER request
-    // then JOINs B instead of dialing and closing it. The unpreempted control's request JOINs A.
+    // Automatic socket A is admitted, with its claim and JOIN record, and waits for its Main
+    // acceptance turn when USER B preempts it and connects, before SSL. Late A must neither take
+    // B's JOIN target nor, as it stands down, clear it, and must publish nothing: a same-endpoint
+    // USER request then JOINs B instead of dialing and closing it. The unpreempted control's
+    // request JOINs A.
     for (preempted in listOf(true, false)) {
         val c = CommManager()
-        val reachedRecord = CountDownLatch(1)
-        val resumeRecord = CountDownLatch(1)
-        val errors = ConcurrentLinkedQueue<Throwable>()
+        val main = QueuedDispatcher()
         val socketA = object : Socket() {
-            @Volatile private var paused = false
             override fun getInetAddress(): java.net.InetAddress = java.net.InetAddress.getByName("192.0.2.61")
-            // Only the endpoint read before admission asks for the port first.
-            override fun getPort(): Int {
-                if (!paused) { paused = true; reachedRecord.countDown(); resumeRecord.await(5, TimeUnit.SECONDS) }
-                return 5277
-            }
+            override fun getPort(): Int = 5277
         }
         c.disconnect(honorKillOnDisconnect = false)
         c.cleanups()
+        c.ingressMain(main)
         val effects = ServicePreempt(c)
         ConnectionArbiter.actions = effects
-        val automaticA = Thread {
-            try { runBlocking { c.connect(socketA) } } catch (failure: Throwable) { errors.add(failure) }
-        }
         try {
             val createdBefore = SocketProjectionConnection.created.size
-            automaticA.start()
-            check(reachedRecord.await(5, TimeUnit.SECONDS)) { "A never reached its endpoint record" }
+            val automaticA = launch(start = CoroutineStart.UNDISPATCHED) { c.connect(socketA) }
+            val acceptanceA = checkNotNull(main.tasks.poll()) { "A did not reach its Main acceptance" }
+            check(main.tasks.isEmpty() && !automaticA.isCompleted && c.state is ConnectionState.Disconnected)
             var b: ProjectionConnection? = null
             if (preempted) {
-                c.connect("192.0.2.60", 5277, ConnectionPriorityPolicy.Tier.USER)
+                val userB = launch(start = CoroutineStart.UNDISPATCHED) {
+                    c.connect("192.0.2.60", 5277, ConnectionPriorityPolicy.Tier.USER)
+                }
+                main.drain()
+                userB.join()
                 b = c.network()
             }
-            resumeRecord.countDown()
-            automaticA.join(5000)
-            val target = if (preempted) "192.0.2.60" else "192.0.2.61"
             val live = c.network()
-            c.connect(target, 5277, ConnectionPriorityPolicy.Tier.USER)
+            acceptanceA.run()
+            main.drain()
+            automaticA.join()
+            val afterA = c.network()
+            val target = if (preempted) "192.0.2.60" else "192.0.2.61"
+            val joining = launch(start = CoroutineStart.UNDISPATCHED) { c.connect(target, 5277, ConnectionPriorityPolicy.Tier.USER) }
+            main.drain()
+            joining.join()
             // Recorded after every production frame has returned.
             val after = c.network()
             val created = SocketProjectionConnection.created.size - createdBefore
             val state = c.state
-            println("preempted record preempted=$preempted: bClosed=${b?.closed}, bReplaced=${b != null && after !== b}, " +
-                "created=$created, socketAClosed=${socketA.isClosed}")
-            check(!automaticA.isAlive && errors.isEmpty()) { errors.toString() }
-            check(after === live && after?.closed == false && state is ConnectionState.Connected) {
+            println("preempted record preempted=$preempted: preempts=${effects.preempts}, bClosed=${b?.closed}, " +
+                "bReplaced=${b != null && after !== b}, created=$created, socketAClosed=${socketA.isClosed}")
+            if (preempted) {
+                check(effects.preempts == 1 && b != null && afterA === b && live === b) {
+                    "B did not preempt admitted A, or late A replaced B (preempts=${effects.preempts})"
+                }
+                check(socketA.isClosed) { "late A did not dispose of its own socket" }
+            } else {
+                check(effects.preempts == 0 && !socketA.isClosed && afterA != null)
+            }
+            check(after === afterA && after?.closed == false && state is ConnectionState.Connected) {
                 "a same-endpoint request replaced the live connection (preempted=$preempted bClosed=${b?.closed} created=$created)"
             }
             check(created == 1) { "a same-endpoint request dialed instead of joining (preempted=$preempted created=$created)" }
-            if (preempted) check(after === b && socketA.isClosed)
-            else check(!socketA.isClosed && effects.preempts == 0)
         } finally {
-            resumeRecord.countDown()
-            automaticA.join(5000)
             socketA.close(); c.close()
         }
     }

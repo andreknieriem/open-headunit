@@ -14,6 +14,13 @@ class SettingsRestartAdmissionTest {
     private fun set(manager: CommManager, name: String, value: Any?) =
         CommManager::class.java.getDeclaredField(name).apply { isAccessible = true }.set(manager, value)
 
+    /** A claim still holding the arbiter, so only the Save check can refuse the private producer. */
+    private fun heldClaim(): ConnectionArbiter.Claim {
+        ConnectionArbiter.reset()
+        return checkNotNull(ConnectionArbiter.claim(ConnectionPriorityPolicy.Tier.WIRELESS_HANDSHAKE,
+            ConnectionPriorityPolicy.Owner.WIRELESS_STACK, "test"))
+    }
+
     @Test fun `obsolete Save cannot claim or consume a socket after dispatch to IO`() = runBlocking {
         val manager = mock(CommManager::class.java, CALLS_REAL_METHODS).withAppExitDispatcherForTest()
         val old = CommManager.ConnectionState.Disconnected(reason = CommManager.DisconnectReason.SETTINGS_RESTART)
@@ -45,10 +52,12 @@ class SettingsRestartAdmissionTest {
         set(manager, "_disconnectJob", retirement)
         val method = CommManager::class.java.getDeclaredMethod("connectIp", String::class.java,
             Int::class.javaPrimitiveType, CommManager.ConnectionState.Disconnected::class.java,
-            Long::class.javaPrimitiveType, kotlin.coroutines.Continuation::class.java).apply { isAccessible = true }
+            Long::class.javaPrimitiveType, ConnectionArbiter.Claim::class.java,
+            kotlin.coroutines.Continuation::class.java).apply { isAccessible = true }
+        val claim = heldClaim()
         val retry = launch(start = CoroutineStart.UNDISPATCHED) {
             suspendCoroutineUninterceptedOrReturn<Unit> { continuation ->
-                method.invoke(manager, "192.168.1.5", 5277, old, 0L, continuation)
+                method.invoke(manager, "192.168.1.5", 5277, old, 0L, claim, continuation)
             }
         }
         val connection = mock(ProjectionConnection::class.java)
@@ -58,6 +67,7 @@ class SettingsRestartAdmissionTest {
         flow.value = CommManager.ConnectionState.TransportStarted
         retirement.complete()
         retry.join()
+        ConnectionArbiter.reset()
         assertSame(CommManager.ConnectionState.TransportStarted, flow.value)
         verifyNoInteractions(connection, transport)
     }
@@ -77,14 +87,19 @@ class SettingsRestartAdmissionTest {
             `when`(socket.port).thenReturn(5277)
             val continuation = kotlin.coroutines.Continuation::class.java
             val method = if (socketPath) CommManager::class.java.getDeclaredMethod("connectSocket",
-                Socket::class.java, Pair::class.java, CommManager.ConnectionState.Disconnected::class.java, Long::class.javaPrimitiveType, continuation)
+                Socket::class.java, Pair::class.java, CommManager.ConnectionState.Disconnected::class.java, Long::class.javaPrimitiveType,
+                ConnectionArbiter.Claim::class.java, continuation)
             else CommManager::class.java.getDeclaredMethod("connectIp", String::class.java,
-                Int::class.javaPrimitiveType, CommManager.ConnectionState.Disconnected::class.java, Long::class.javaPrimitiveType, continuation)
+                Int::class.javaPrimitiveType, CommManager.ConnectionState.Disconnected::class.java, Long::class.javaPrimitiveType,
+                ConnectionArbiter.Claim::class.java, continuation)
             method.isAccessible = true
-            suspendCoroutineUninterceptedOrReturn<Unit> { completion ->
-                if (socketPath) method.invoke(manager, socket, "127.0.0.1" to 5277, saved, 0L, completion)
-                else method.invoke(manager, "127.0.0.1", 5277, saved, 0L, completion)
-            }
+            val claim = heldClaim()
+            try {
+                suspendCoroutineUninterceptedOrReturn<Unit> { completion ->
+                    if (socketPath) method.invoke(manager, socket, "127.0.0.1" to 5277, saved, 0L, claim, completion)
+                    else method.invoke(manager, "127.0.0.1", 5277, saved, 0L, claim, completion)
+                }
+            } finally { ConnectionArbiter.reset() }
             assertEquals("192.168.1.8:5277", manager.lastAttemptedEndpoint)
             verifyNoInteractions(current)
             assertTrue(manager.isWirelessSession)

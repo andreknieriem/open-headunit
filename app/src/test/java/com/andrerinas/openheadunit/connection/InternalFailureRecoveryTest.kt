@@ -31,6 +31,8 @@ class InternalFailureRecoveryTest {
             override fun dispatch(context: CoroutineContext, block: Runnable) { queued.addLast(block) }
         })
         val owner = Any()
+        // The private IP/socket producers publish only while the claim that admitted them holds.
+        val claim: ConnectionArbiter.Claim
         init {
             field("transportLifecycleLock", Any())
             field("appExitPolicy", AppExitPolicy())
@@ -39,6 +41,9 @@ class InternalFailureRecoveryTest {
             field("usbRecoveryOwner", owner)
             field("context", context)
             field("settings", settings)
+            ConnectionArbiter.reset()
+            claim = checkNotNull(ConnectionArbiter.claim(ConnectionPriorityPolicy.Tier.WIRELESS_HANDSHAKE,
+                ConnectionPriorityPolicy.Owner.WIRELESS_STACK, "test"))
         }
         fun field(name: String, value: Any) = CommManager::class.java.getDeclaredField(name)
             .apply { isAccessible = true }.set(manager, value)
@@ -50,7 +55,7 @@ class InternalFailureRecoveryTest {
             assertEquals("Exactly one cleanup is queued", 1, queued.size)
             verify(context, never()).sendBroadcast(any(android.content.Intent::class.java))
         }
-        override fun close() { scope.cancel() }
+        override fun close() { scope.cancel(); ConnectionArbiter.reset() }
     }
 
     @Test fun thrownSocketOpenFailuresHaveTheSamePolicyAsFalseReturns() = runBlocking {
@@ -64,11 +69,13 @@ class InternalFailureRecoveryTest {
                     } }
                 }.use {
                     if (accepted) invoke(f.manager, "connectSocket",
-                        arrayOf(Socket::class.java, Pair::class.java, ConnectionState.Disconnected::class.java, Long::class.javaPrimitiveType!!),
-                        mock(Socket::class.java), null, null, 0L)
+                        arrayOf(Socket::class.java, Pair::class.java, ConnectionState.Disconnected::class.java, Long::class.javaPrimitiveType!!,
+                            ConnectionArbiter.Claim::class.java),
+                        mock(Socket::class.java), null, null, 0L, f.claim)
                     else invoke(f.manager, "connectIp",
-                        arrayOf(String::class.java, Int::class.javaPrimitiveType!!, ConnectionState.Disconnected::class.java, Long::class.javaPrimitiveType!!),
-                        "127.0.0.1", 5277, null, 0L)
+                        arrayOf(String::class.java, Int::class.javaPrimitiveType!!, ConnectionState.Disconnected::class.java, Long::class.javaPrimitiveType!!,
+                            ConnectionArbiter.Claim::class.java),
+                        "127.0.0.1", 5277, null, 0L, f.claim)
                     f.assertRecoverable()
                 }
             }
@@ -144,8 +151,9 @@ class InternalFailureRecoveryTest {
             `when`(connection.isLoopbackPeer).thenReturn(loopback)
         }.use {
             invoke(f.manager, "connectIp",
-                arrayOf(String::class.java, Int::class.javaPrimitiveType!!, ConnectionState.Disconnected::class.java, Long::class.javaPrimitiveType!!),
-                "127.0.0.1", 5277, null, f.manager.appConnectionTicket())
+                arrayOf(String::class.java, Int::class.javaPrimitiveType!!, ConnectionState.Disconnected::class.java, Long::class.javaPrimitiveType!!,
+                    ConnectionArbiter.Claim::class.java),
+                "127.0.0.1", 5277, null, f.manager.appConnectionTicket(), f.claim)
         }
     }
 

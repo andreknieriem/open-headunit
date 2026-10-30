@@ -1,6 +1,8 @@
 package com.andrerinas.openheadunit.aap
 
 import com.andrerinas.openheadunit.connection.CommManager
+import com.andrerinas.openheadunit.connection.ConnectionArbiter
+import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy
 import com.andrerinas.openheadunit.connection.AppExitPolicy
 import com.andrerinas.openheadunit.connection.CommManager.ConnectionState
 import com.andrerinas.openheadunit.connection.withAppExitDispatcherForTest
@@ -48,8 +50,13 @@ class UsbReconnectOwnershipTest {
             main.drain()
             val connect = CommManager::class.java.getDeclaredMethod("connectIp",
                 String::class.java, Int::class.javaPrimitiveType,
-                ConnectionState.Disconnected::class.java, Long::class.javaPrimitiveType, Continuation::class.java)
+                ConnectionState.Disconnected::class.java, Long::class.javaPrimitiveType,
+                ConnectionArbiter.Claim::class.java, Continuation::class.java)
                 .apply { isAccessible = true }
+            // The private producer publishes only while the claim that admitted it holds the arbiter.
+            ConnectionArbiter.reset()
+            val claim = checkNotNull(ConnectionArbiter.claim(ConnectionPriorityPolicy.Tier.WIRELESS_HANDSHAKE,
+                ConnectionPriorityPolicy.Owner.WIRELESS_STACK, "recheck"))
             mockConstruction(SocketProjectionConnection::class.java) { candidate, _ ->
                 runBlocking {
                     `when`(candidate.connect()).thenAnswer {
@@ -89,9 +96,9 @@ class UsbReconnectOwnershipTest {
             }.use {
                 try {
                     suspendCoroutineUninterceptedOrReturn<Unit> { continuation ->
-                        connect.invoke(manager, "127.0.0.1", 5277, null, 0L, continuation)
+                        connect.invoke(manager, "127.0.0.1", 5277, null, 0L, claim, continuation)
                     }
-                } finally { scope.cancel(); main.drain() }
+                } finally { scope.cancel(); main.drain(); ConnectionArbiter.reset() }
             }
         }
     }

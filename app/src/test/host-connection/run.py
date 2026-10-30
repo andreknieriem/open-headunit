@@ -242,13 +242,17 @@ class CommManager {
  private fun acceptedTicket():Long = synchronized(transportLifecycleLock) {
   appExitPolicy.supersede();cancelAppExitCallback();appExitPolicy.stopEpoch
  }
- suspend fun connectNext(){connectIp("fixture",5277,null,acceptedTicket())}
+ // Producers publish only under the claim that admitted them. Accepted-attempt fixtures share
+ // one held claim, so their concurrent calls test publication, not arbitration between them.
+ private var sharedClaim:ConnectionArbiter.Claim?=null
+ private fun acceptedClaim()=sharedClaim?.takeIf{ConnectionArbiter.holds(it)}?:fixtureClaim().also{sharedClaim=it}
+ suspend fun connectNext(){connectIp("fixture",5277,null,acceptedTicket(),acceptedClaim())}
  suspend fun connectPrepared(socket:Socket,admission:ConnectionAdmission=ConnectionAdmission.UNRESTRICTED){connectAdmittedSocket(socket,admission,null,null,appConnectionTicket())}
- suspend fun connectAccepted(socket:Socket){connectSocket(socket,null,null,acceptedTicket())}
- suspend fun connectClaimedNext(claim:ConnectionArbiter.Claim){val ticket=appConnectionTicket();if(acceptAppConnectionClaim(claim,ticket))connectIp("fixture",5277,null,ticket)}
+ suspend fun connectAccepted(socket:Socket){connectSocket(socket,null,null,acceptedTicket(),acceptedClaim())}
+ suspend fun connectClaimedNext(claim:ConnectionArbiter.Claim){val ticket=appConnectionTicket();if(acceptAppConnectionClaim(claim,ticket))connectIp("fixture",5277,null,ticket,claim)}
  suspend fun connectClaimedUsb(d:UsbDevice,claim:ConnectionArbiter.Claim){connectUsb(d,appConnectionTicket(),appClaim=claim)}
- suspend fun connectSelf(){connectIp("127.0.0.1",5277,null,acceptedTicket())}
- suspend fun connectSaved(state:ConnectionState.Disconnected){connectIp("fixture",5277,state,acceptedTicket())}
+ suspend fun connectSelf(){connectIp("127.0.0.1",5277,null,acceptedTicket(),acceptedClaim())}
+ suspend fun connectSaved(state:ConnectionState.Disconnected){connectIp("fixture",5277,state,acceptedTicket(),acceptedClaim())}
  suspend fun awaitDisconnectComplete(){_disconnectJob?.join()}
  val isUsbSession=false
  suspend fun connectDevice(d:UsbDevice,saved:ConnectionState.Disconnected?=null){connectUsb(d,appConnectionTicket(),saved)}
@@ -294,7 +298,7 @@ manager=manager_head+'\n'.join(extract(comm,n) for n in [
  'internal class Attempt {', 'private fun attemptInFlight()', 'private fun beginAttempt(', 'private fun reachPhysicalConnection()',
  'internal sealed class LaunchOutcome {', 'internal fun launchMark(', 'internal fun arrivedSince(', 'internal fun reportLaunchFailure(',
  'internal suspend fun awaitSettled(', 'internal val isLiveLoopbackSession:',
- 'private suspend fun connectIp(', 'private suspend fun connectUsb(', 'private suspend fun connectSocket(', 'private suspend fun connectAdmittedSocket(', 'private fun socketEndpoint(', 'fun disconnectForLinkLoss(', 'fun destroy()',
+ 'private suspend fun connectIp(', 'private fun publishClaimedAttempt(', 'private suspend fun connectUsb(', 'private suspend fun connectSocket(', 'private suspend fun connectAdmittedSocket(', 'private fun socketEndpoint(', 'fun disconnectForLinkLoss(', 'fun destroy()',
  'fun setProjectionVideoFocusSuppressed(', 'private suspend fun acceptAppConnectionClaim(',
  'suspend fun connect(\n        device:', 'suspend fun connect(\n        socket:', 'suspend fun connect(\n        ip:',
  'private suspend fun connectSocketWithTicket(', 'private fun claimSocket(',

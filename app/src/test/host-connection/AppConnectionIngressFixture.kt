@@ -15,6 +15,27 @@ private fun CommManager.ingressIo(dispatcher: CoroutineDispatcher) {
         .apply { isAccessible = true }.set(this, dispatcher)
 }
 
+private fun CommManager.ingressMain(dispatcher: CoroutineDispatcher) {
+    CommManager::class.java.getDeclaredField("appExitDispatcher")
+        .apply { isAccessible = true }.set(this, dispatcher)
+}
+
+/** AapService's preempt callback: it ends only a published attempt or an unformed open. */
+private class ServicePreempt(private val manager: CommManager) : ConnectionArbiter.Actions {
+    var preempts = 0
+    override fun preempt(loser: ConnectionArbiter.Claim) {
+        preempts++
+        // No session forms in this fixture, so an open connection is still unformed.
+        val state = manager.state
+        if (state is ConnectionState.Connecting || state is ConnectionState.Connected) {
+            manager.disconnect(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
+        }
+    }
+    override fun standDownWireless(by: ConnectionArbiter.Claim): Boolean = false
+    override fun giveBack(wireless: Boolean, usb: Boolean) {}
+    override fun schedule(delayMs: Long, block: () -> Unit) {}
+}
+
 private fun CommManager.ingressEndpoint(): Pair<String, Int>? =
     CommManager::class.java.getDeclaredField("outgoingEndpoint").apply { isAccessible = true }.get(this) as Pair<String, Int>?
 
@@ -205,5 +226,58 @@ fun appConnectionIngressOwnership() = runBlocking {
             oldSocket.close(); liveSocket.close(); c.close()
         }
     }
-    println("PASS public connection ingress: explicit Stop survives EOF, USB/IP/socket pre-IO tickets, held adoption, stale-preempt rejection and compatible-Open controls")
+
+    // Automatic A passed its real Main acceptance and waits for its Main publication turn, still
+    // Disconnected, so the service's preempt callback has nothing to end. USER B preempts it under
+    // the same Stop ticket and connects. A's late publication must not replace or close B; A may
+    // dispose only its own work. The unpreempted control proves the held turn is A's publication.
+    for (route in listOf("IP", "SOCKET")) for (preempted in listOf(true, false)) {
+        val c = CommManager()
+        val main = QueuedDispatcher()
+        val socketA = Socket()
+        c.disconnect(honorKillOnDisconnect = false)
+        c.cleanups()
+        c.ingressMain(main)
+        val effects = ServicePreempt(c)
+        ConnectionArbiter.actions = effects
+        try {
+            val a = launch(start = CoroutineStart.UNDISPATCHED) {
+                if (route == "IP") c.connect("192.0.2.40", 5277) else c.connect(socketA)
+            }
+            checkNotNull(main.tasks.poll()).run() // A's claim acceptance.
+            val publicationA = checkNotNull(main.tasks.poll())
+            check(main.tasks.isEmpty() && !a.isCompleted && c.state is ConnectionState.Disconnected)
+            var b: ProjectionConnection? = null
+            if (preempted) {
+                val userB = launch(start = CoroutineStart.UNDISPATCHED) {
+                    c.connect("192.0.2.50", 5277, ConnectionPriorityPolicy.Tier.USER)
+                }
+                main.drain()
+                userB.join()
+                b = checkNotNull(c.network())
+                check(effects.preempts == 1 && c.state is ConnectionState.Connected && !b.closed)
+            }
+            val createdBeforeA = SocketProjectionConnection.created.size
+            publicationA.run()
+            main.drain()
+            a.join()
+            // Recorded after every production frame has returned.
+            val live = c.network()
+            val endpoint = c.ingressEndpoint()
+            val createdByA = SocketProjectionConnection.created.size - createdBeforeA
+            val state = c.state
+            println("preempted publication $route preempted=$preempted: bClosed=${b?.closed}, " +
+                "bReplaced=${b != null && live !== b}, endpoint=$endpoint, createdByA=$createdByA, socketAClosed=${socketA.isClosed}")
+            check(state is ConnectionState.Connected && live?.closed == false)
+            if (preempted) {
+                check(live === b && endpoint == ("192.0.2.50" to 5277))
+                check(createdByA == 0 && effects.preempts == 1)
+                if (route == "SOCKET") check(socketA.isClosed)
+            } else {
+                check(createdByA == 1 && effects.preempts == 0)
+                if (route == "IP") check(endpoint == ("192.0.2.40" to 5277)) else check(!socketA.isClosed)
+            }
+        } finally { socketA.close(); c.close() }
+    }
+    println("PASS public connection ingress: explicit Stop survives EOF, USB/IP/socket pre-IO tickets, held adoption, stale-preempt rejection, preempted-publication and compatible-Open controls")
 }

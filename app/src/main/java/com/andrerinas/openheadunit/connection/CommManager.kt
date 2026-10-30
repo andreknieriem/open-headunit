@@ -991,7 +991,7 @@ class CommManager(
                     if (admission === ConnectionAdmission.UNRESTRICTED) {
                         if (socket.isClosed || !acceptAppConnectionClaim(ownedClaim, ticket, expectedState)) return@withContext
                         delegated = true
-                        connectSocket(socket, restartEndpoint, expectedState, ticket)
+                        connectSocket(socket, restartEndpoint, expectedState, ticket, ownedClaim)
                     } else {
                         delegated = true
                         connectAdmittedSocket(socket, admission.withClaim(ownedClaim), restartEndpoint, expectedState, ticket)
@@ -1082,6 +1082,7 @@ class CommManager(
         restartEndpoint: Pair<String, Int>?,
         expectedState: ConnectionState.Disconnected?,
         ticket: Long,
+        claim: ConnectionArbiter.Claim,
     ) {
         // Another caller already started the connection — do nothing.
         if (_connectionState.value is ConnectionState.Connecting) {
@@ -1108,18 +1109,7 @@ class CommManager(
                 if (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value)) {
                     return@publishConnectionAttempt null
                 }
-                if (!acceptAppConnection(ticket)) return@publishConnectionAttempt null
-                lastAttemptedEndpoint = socketEndpoint(socket)
-                outgoingEndpoint = restartEndpoint
-                val token = Attempt()
-                beginAttempt(token)
-                physicalConnectionReached = false
-                usbSaveOwner = null
-                disconnectRequested = false
-                _connectionState.value = ConnectionState.Connecting
-                val previous = _connection
-                _connection = null
-                token to previous
+                publishClaimedAttempt(claim, ticket, socketEndpoint(socket), restartEndpoint)
             }
         } catch (failure: Throwable) {
             try { socket.close() } catch (_: Exception) {}
@@ -1217,12 +1207,13 @@ class CommManager(
             val claim = claimSocket(tier, endpoint, expectedState, ticket) ?: return@withContext
             noteClaimedEndpoint(claim, endpoint)
             try {
-                if (acceptAppConnectionClaim(claim, ticket, expectedState)) connectIp(ip, port, expectedState, ticket)
+                if (acceptAppConnectionClaim(claim, ticket, expectedState)) connectIp(ip, port, expectedState, ticket, claim)
             } finally { releaseClaim(claim) }
         }
     }
 
-    private suspend fun connectIp(ip: String, port: Int, expectedState: ConnectionState.Disconnected?, ticket: Long) {
+    private suspend fun connectIp(ip: String, port: Int, expectedState: ConnectionState.Disconnected?, ticket: Long,
+        claim: ConnectionArbiter.Claim) {
         // Another caller already started the connection — do nothing.
         if (_connectionState.value is ConnectionState.Connecting)
             return
@@ -1232,18 +1223,7 @@ class CommManager(
         var conn: ProjectionConnection? = null
         val (attempt, previous) = publishConnectionAttempt(ticket) {
             if (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value)) return@publishConnectionAttempt null
-            if (!acceptAppConnection(ticket)) return@publishConnectionAttempt null
-            lastAttemptedEndpoint = SameEndpointConnectPolicy.endpoint(ip, port)
-            outgoingEndpoint = ip to port
-            val token = Attempt()
-            beginAttempt(token)
-            physicalConnectionReached = false
-            usbSaveOwner = null
-            disconnectRequested = false
-            _connectionState.value = ConnectionState.Connecting
-            val previous = _connection
-            _connection = null
-            token to previous
+            publishClaimedAttempt(claim, ticket, SameEndpointConnectPolicy.endpoint(ip, port), ip to port)
         } ?: return
         try {
             previous?.disconnect()
@@ -1285,6 +1265,37 @@ class CommManager(
             }
             if (retired) conn?.disconnect()
         }
+    }
+
+    /**
+     * Publishes an unrestricted claim's attempt, under transportLifecycleLock (lifecycle -> arbiter).
+     * The Stop ticket alone is not enough: a preempting request accepted under the same ticket
+     * would be replaced, and its connection closed, by work it already took over. Checking the
+     * original claim with acceptance, the new attempt and the capture of the displaced connection
+     * in one arbiter decision leaves a preempted caller nothing to dispose but its own resources.
+     * The displaced connection is returned for the caller to close outside both monitors.
+     */
+    private fun publishClaimedAttempt(
+        claim: ConnectionArbiter.Claim,
+        ticket: Long,
+        endpoint: String?,
+        restartEndpoint: Pair<String, Int>?,
+    ): Pair<Any, ProjectionConnection?>? {
+        var published: Pair<Any, ProjectionConnection?>? = null
+        ConnectionArbiter.runIfHeld(claim) {
+            if (!acceptAppConnection(ticket)) return@runIfHeld
+            lastAttemptedEndpoint = endpoint
+            outgoingEndpoint = restartEndpoint
+            val token = Attempt()
+            beginAttempt(token)
+            physicalConnectionReached = false
+            usbSaveOwner = null
+            disconnectRequested = false
+            _connectionState.value = ConnectionState.Connecting
+            published = token to _connection
+            _connection = null
+        }
+        return published
     }
 
     /**

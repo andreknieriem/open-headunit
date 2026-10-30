@@ -34,42 +34,86 @@ def member(file, declaration):
     raise ValueError(declaration)
 
 
+def paragraph(file, declaration):
+    """A declaration without braces of its own: through to the next blank line."""
+    source = (SRC / file).read_text()
+    start = source.index(declaration)
+    result = source[start:source.index('\n\n', start)]
+    methods[file + ':' + declaration] = hashlib.sha256(result.encode()).hexdigest()
+    return result
+
+
 fixture = (HERE / 'SelfLaunchFixture.kt').read_text()
 comm = 'connection/CommManager.kt'
 manager = 'connection/self/SelfLauncherManager.kt'
 legacy = 'connection/self/launchers/SelfLauncherLegacy.kt'
-for marker, file, declaration in [
-    ('XYAUTO', 'aap/AapService.kt', 'private fun refreshXyAutoMediaPolicy('),
-    ('STATE', comm, 'class Disconnected('),
-    ('CANCEL', comm, 'fun cancelPendingSettingsRestart()'),
-    ('START', manager, 'fun start('),
-    ('ADOPT_VPN', manager, 'private fun adoptDummyVpn('),
-    ('STOP', manager, 'fun stop(wasConnected:'),
-    ('ENDED', manager, 'internal fun onConnectionEnded('),
-    ('ESTABLISHED', manager, 'internal fun onConnectionEstablished()'),
-    ('STOP_CURRENT', manager, 'internal fun stopIfCurrent('),
-    ('ALLOW_LAUNCH', 'connection/self/SelfLauncherServices.kt', 'internal suspend fun ensureLaunchAllowed()'),
-    ('LEGACY_RUN', legacy, 'override suspend fun run()'),
-    ('LEGACY_WAIT', legacy, 'suspend fun runWifiLauncher()'),
-    ('MODERN_RUN', 'connection/self/launchers/SelfLauncherV17_4.kt', 'override suspend fun run()'),
-    ('OBSERVER', 'aap/AapService.kt', 'private fun observeConnectionState()'),
-    ('MAIN_COMMAND', 'main/MainActivity.kt', 'private fun forceSelfModeLaunch()'),
-    ('HOME_COMMAND', 'main/HomeFragment.kt', 'private fun startSelfModeInternal('),
-    ('START_ACTION', 'aap/AapService.kt', 'ACTION_START_SELF_MODE       ->'),
-    ('CANCEL_ACTION', 'aap/AapService.kt', 'ACTION_CANCEL_WIRELESS       ->'),
+service = 'aap/AapService.kt'
+for marker, file, declaration, braced in [
+    ('XYAUTO', service, 'private fun refreshXyAutoMediaPolicy(', True),
+    ('STATE', comm, 'class Disconnected(', True),
+    ('CANCEL', comm, 'fun cancelPendingSettingsRestart()', True),
+    # CommManager's attempt authority and its terminal publisher, as production runs them.
+    ('ATTEMPT', comm, 'internal class Attempt {', True),
+    ('IN_FLIGHT', comm, 'private fun attemptInFlight()', True),
+    ('BEGIN_ATTEMPT', comm, 'private fun beginAttempt(', True),
+    ('REACH_PHYSICAL', comm, 'private fun reachPhysicalConnection()', True),
+    ('RECORD_TERMINAL', comm, 'private fun recordTerminal(', True),
+    ('LAUNCH_OUTCOME', comm, 'internal sealed class LaunchOutcome {', True),
+    ('LAUNCH_MARK_CLASS', comm, 'internal class LaunchMark internal constructor(', False),
+    ('LAUNCH_MARK', comm, 'internal fun launchMark(', True),
+    ('ARRIVED_SINCE', comm, 'internal fun arrivedSince(', True),
+    ('REPORT_FAILURE', comm, 'internal fun reportLaunchFailure(', True),
+    ('AWAIT_SETTLED', comm, 'internal suspend fun awaitSettled(', True),
+    ('LIVE_LOOPBACK', comm, 'internal val isLiveLoopbackSession:', True),
+    ('LOOPBACK', comm, 'val isLoopbackSession:', False),
+    ('REACHED_SSL', comm, 'private fun reachedSsl()', True),
+    ('DISCONNECT', comm, 'fun disconnect(', True),
+    ('IS_ACTIVE', manager, 'val isActive: Boolean', False),
+    ('LAUNCH_PENDING', manager, 'val isLaunchPending: Boolean', True),
+    ('START', manager, 'fun start(', True),
+    ('LAUNCH_OUTCOME_WAIT', manager, 'private suspend fun launchOutcome(', True),
+    ('ADOPT_VPN', manager, 'private fun adoptDummyVpn(', True),
+    ('ESTABLISHED', manager, 'internal fun onConnectionEstablished()', True),
+    ('SETTLE_ANSWERED', manager, 'private fun settleAnswered()', True),
+    ('RETIRE_FULFILLED', manager, 'internal fun retireFulfilledLaunch()', True),
+    ('STOP_CURRENT', manager, 'internal fun stopIfCurrent(', True),
+    ('STOP', manager, 'fun stop(wasConnected:', True),
+    ('DETACH_LAUNCH', manager, 'private fun detachLaunch()', True),
+    ('ALLOW_LAUNCH', 'connection/self/SelfLauncherServices.kt', 'internal suspend fun ensureLaunchAllowed()', True),
+    ('ARRIVED_SINCE_LAUNCH', 'connection/self/SelfLauncherServices.kt', 'internal fun arrivedSinceLaunch()', True),
+    ('LEGACY_RUN', legacy, 'override suspend fun run()', True),
+    ('LEGACY_WAIT', legacy, 'suspend fun runWifiLauncher()', True),
+    ('MODERN_RUN', 'connection/self/launchers/SelfLauncherV17_4.kt', 'override suspend fun run()', True),
+    ('OBSERVER', service, 'private fun observeConnectionState()', True),
+    # The session-end VPN decision of onDisconnected; wireless-cleanup.py runs the whole callback.
+    ('VPN_RELEASE', service, 'if (!superseded && !selfLauncherManager.isLaunchPending) {', True),
+    ('MAIN_COMMAND', 'main/MainActivity.kt', 'private fun forceSelfModeLaunch()', True),
+    ('HOME_COMMAND', 'main/HomeFragment.kt', 'private fun startSelfModeInternal(', True),
+    ('START_ACTION', service, 'ACTION_START_SELF_MODE       ->', True),
+    ('CANCEL_ACTION', service, 'ACTION_CANCEL_WIRELESS       ->', True),
 ]:
-    code = member(file, declaration)
+    code = member(file, declaration) if braced else paragraph(file, declaration)
     # Main and its delay scheduler are controlled; production launch/delay calls and Jobs remain intact.
     code = code.replace('Dispatchers.Main', 'service.main').replace('this@AapService', 'this@Service').replace('AapService.', 'Service.').replace('AapService::class', 'Service::class')
+    code = code.replace('com.andrerinas.openheadunit.aap.protocol.proto.Control.ByeByeReason', 'ByeByeReason')
     if marker == 'MAIN_COMMAND':
         code = code.replace('Intent(this,', 'Intent(service,').replace('startForegroundService(this,', 'startForegroundService(service,')
         code = code.replace('App.provide(this)', 'App.provide(service)').replace('operationIntent(this,', 'operationIntent(service,')
     if marker == 'MODERN_RUN':
         code = code.replace('Dispatchers.IO', 'services.aap.io')
+    if marker == 'REPORT_FAILURE':
+        # Observation only: count standing failures, and let a case publish just before the
+        # decision takes the lock, as IO can after the deadline's own checks.
+        hooked = code.replace('            return LaunchOutcome.Failed', '            reports++\n            return LaunchOutcome.Failed')
+        hooked = hooked.replace('        synchronized(transportLifecycleLock) {\n            if (!appExitPolicy.acceptsConnection(mark.ticket))',
+                                '        beforeReport?.let { beforeReport = null; it() }\n        synchronized(transportLifecycleLock) {\n            if (!appExitPolicy.acceptsConnection(mark.ticket))')
+        assert hooked.count('reports++') == 1 and hooked.count('beforeReport') == 2, 'reportLaunchFailure hooks moved'
+        code = hooked
+    assert '// ' + marker + '\n' in fixture, 'fixture lost marker ' + marker
     fixture = fixture.replace('// ' + marker + '\n', code + '\n')
 # Extract the full Self branch of the actual service policy; remaining branches are unrelated
 # wireless/USB effects. Fail visibly if its boundary is renamed rather than testing a copy.
-policy = member('aap/AapService.kt', 'private fun scheduleReconnectIfNeeded(')
+policy = member(service, 'private fun scheduleReconnectIfNeeded(')
 policy = policy[:policy.index('        if (state.holdsRecovery)')] + '    }'
 policy = policy.replace('private fun scheduleReconnectIfNeeded(', 'fun applySelfEndPolicy(')
 fixture = fixture.replace('// SELF_END_POLICY\n', policy + '\n')
@@ -83,6 +127,9 @@ for name in ['SelfLaunchCoalescePolicy.kt', 'SelfLaunchTimeoutPolicy.kt']:
     (OUT / name).write_text(source.replace('package com.andrerinas.openheadunit.connection.self', 'package selflaunch'))
 (OUT / 'DummyVpnStartRequests.kt').write_text((SRC / 'utils/DummyVpnStartRequests.kt').read_text().replace('package com.andrerinas.openheadunit.utils', 'package selflaunch'))
 (OUT / 'DummyVpnPolicy.kt').write_text((SRC / 'utils/DummyVpnPolicy.kt').read_text().replace('package com.andrerinas.openheadunit.utils', 'package selflaunch'))
+(OUT / 'SettingsRestartRecovery.kt').write_text((SRC / 'connection/SettingsRestartRecovery.kt').read_text()
+    .replace('package com.andrerinas.openheadunit.connection', 'package selflaunch')
+    .replace('import com.andrerinas.openheadunit.utils.AppLog\n', ''))
 (OUT / 'extracted-method-sha256.json').write_text(json.dumps(methods, indent=2))
 (OUT / 'WirelessCleanupGeneration.kt').write_text((SRC / 'connection/wifi/WirelessCleanupGeneration.kt').read_text()
     .replace('package com.andrerinas.openheadunit.connection.wifi', 'package selflaunch'))

@@ -13,7 +13,9 @@ class SettingsRestartFailureTest {
                 "transportLifecycleLock" to Any())) {
                 CommManager::class.java.getDeclaredField(name).apply { isAccessible = true }.set(manager, value)
             }
-        }
+        }.withAppExitDispatcherForTest()
+
+    private fun CommManager.mark() = launchMark(appConnectionTicket())
 
     @Test fun `same Save launch failure preserves its automatic fallback`() = runBlocking {
         val saved = CommManager.ConnectionState.Disconnected(reason = CommManager.DisconnectReason.SETTINGS_RESTART)
@@ -21,7 +23,7 @@ class SettingsRestartFailureTest {
         val manager = manager(flow)
         var rearms = 0
         SettingsRestartRecovery.run(0, { saved.acceptsSettingsRestart(flow.value) },
-            { manager.reportError("No launch method succeeded", saved) }, { rearms++ })
+            { manager.reportLaunchFailure("No launch method succeeded", manager.mark(), saved) }, { rearms++ })
         assertSame(saved, flow.value)
         assertEquals(1, rearms)
     }
@@ -31,7 +33,7 @@ class SettingsRestartFailureTest {
             CommManager.ConnectionState.Disconnected(), CommManager.ConnectionState.Error("new failure"))) {
             val saved = CommManager.ConnectionState.Disconnected(reason = CommManager.DisconnectReason.SETTINGS_RESTART)
             val flow = MutableStateFlow<CommManager.ConnectionState>(replacement)
-            manager(flow).reportError("old Save failure", saved)
+            manager(flow).let { it.reportLaunchFailure("old Save failure", it.mark(), saved) }
             assertSame(replacement, flow.value)
             assertFalse(saved.acceptsSettingsRestart(flow.value))
         }
@@ -40,7 +42,7 @@ class SettingsRestartFailureTest {
         val flow = MutableStateFlow<CommManager.ConnectionState>(saved)
         val manager = manager(flow)
         manager.disconnect() // Already Disconnected: the real early-return path must still revoke Save.
-        manager.reportError("cancelled Save failure", saved)
+        manager.reportLaunchFailure("cancelled Save failure", manager.mark(), saved)
         assertSame(saved, flow.value)
         assertFalse(saved.acceptsSettingsRestart(flow.value))
         assertFalse(saved.holdsSettingsWake(0))

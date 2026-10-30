@@ -1322,9 +1322,9 @@ class AapService : Service() {
      * apps cannot hold an app-declared permission; it carries no credentials and never names the phone.
      */
     private fun emitSessionState(state: String, reason: String = SessionStateIntent.REASON_NONE) {
-        // isLoopbackSession, not selfLauncherManager.isActive: the launcher flag is set before the
-        // launchers run and outlives a launch that never connected, which is exactly the state this
-        // reports on. A loopback session is a socket session too, so it has to be asked first.
+        // isLoopbackSession, not selfLauncherManager.isActive: that also covers a launch still
+        // waiting for its phone, while this reports on the connection itself. A loopback session is
+        // a socket session too, so it has to be asked first.
         val transport = when {
             commManager.isLoopbackSession -> "self"
             commManager.isWirelessSession -> "wifi"
@@ -1374,7 +1374,8 @@ class AapService : Service() {
                 refreshXyAutoMediaPolicy(state)
                 if (state === initialTerminal) return@collect
                 // Activity can advance the handshake before this conflated collector sees
-                // Connected. Every observed live phase must retire obsolete Save launch work.
+                // Connected. Every observed live phase settles the launch its arrival answered;
+                // a skipped one is settled by that launch's own outcome check instead.
                 if (state is CommManager.ConnectionState.Connected ||
                     state is CommManager.ConnectionState.StartingTransport ||
                     state is CommManager.ConnectionState.HandshakeComplete ||
@@ -1434,7 +1435,6 @@ class AapService : Service() {
                         // count failures where they happen (CommManager.onUsbHandshakeEnded).
                     }
                     is CommManager.ConnectionState.Disconnected -> {
-                        selfLauncherManager.onConnectionEnded(state)
                         if (hasEverConnected || state.hadPhysicalConnection) {
                             hasEverConnected = true
                             emitSessionState(
@@ -1861,10 +1861,11 @@ class AapService : Service() {
         // The Self tun is released when projection becomes live (#1073). Its state at
         // teardown cannot tell whether a relaunch needs one. Save now relaunches without
         // restoring a tun; offline legacy Self remains subject to its launch deadline.
-        // A fresh Legacy Self launch may already own the VPN; an ordinary wireless arm
-        // does not. In the latter case the old session VPN still needs to be released.
+        // A Self launch still waiting for its phone owns the VPN, whichever arm took the
+        // cleanup ticket: this attempt's end never owned it, so it stays for that launch's
+        // deadline or watchdog. Any other owner is the ended session's and is released here.
         // A superseding attempt may be the one that owns it now; its own end releases it.
-        if (!superseded && (cleanupTicket != null || !selfLauncherManager.isActive)) {
+        if (!superseded && !selfLauncherManager.isLaunchPending) {
             stopDummyVpn(DummyVpnPolicy.Reason.SESSION_ENDED)
         }
 
@@ -2186,26 +2187,28 @@ class AapService : Service() {
      * disconnect) produce `isClean = false`.
      */
     private fun scheduleReconnectIfNeeded(state: CommManager.ConnectionState.Disconnected) {
-        if (selfLauncherManager.isActive) {
-            // A launcher's own failed dial is not a session ending, and stopping the wireless
-            // launcher there tore down a P2P group that was still coming up.
+        // The ended attempt's own route chooses its policy, never a global Self flag: no Self
+        // state outlives the session it describes, so another route's end cannot inherit it.
+        if (state.wasLoopbackSession) {
+            // A failed dial is not a session ending: the launch it belongs to still has its own
+            // fallback and feedback to run, and stopping the wireless launcher there tore down a
+            // P2P group that was still coming up. Decided before the retirement below, which
+            // clears the launch's in-flight gate.
             val stopsWireless = SelfModeDisconnectPolicy.stopsWirelessLauncher(
-                selfModeActive = true,
-                launchInFlight = selfLauncherManager.isLaunchInFlight()
+                selfModeActive = state.hadPhysicalConnection,
+                launchInFlight = selfLauncherManager.isLaunchInFlight() || selfLauncherManager.isLaunchPending
             )
+            // StateFlow can skip the live state entirely. Retire the launch this session
+            // answered before a later Self request can start another one; a launch still
+            // waiting for its phone is not this session's and keeps its deadline.
+            if (state.hadPhysicalConnection) selfLauncherManager.retireFulfilledLaunch()
             AppLog.i(
-                "AapService: Self Mode disconnected. Not restarting" +
-                    (if (stopsWireless) "" else "; the launch is still in flight, so the wireless launcher stays") + "."
+                "AapService: Self Mode disconnected. Not restarting" + when {
+                    stopsWireless -> ""
+                    state.hadPhysicalConnection -> "; a launch still needs it, so the wireless launcher stays"
+                    else -> "; the dial never connected, so the wireless launcher stays"
+                } + "."
             )
-            if (state.hadPhysicalConnection) {
-                // StateFlow can skip the live state entirely. Retire the pending launch job
-                // as well as its flags before a later Self request can start another one.
-                selfLauncherManager.stop(wasConnected = true)
-            } else {
-                // A launcher's failed dial can still have its own fallback/feedback to run.
-                selfLauncherManager.isActive = false
-                selfLauncherManager.clearLaunchInFlight()
-            }
             if (stopsWireless) wifiLauncherManager.stop()
             return
         }
@@ -3177,8 +3180,6 @@ class AapService : Service() {
         // The hold outlives this instance; the next one arms from its own onCreate.
         WirelessSleepHold.clear()
         sleepReplayJob?.cancel()
-        // Nothing else clears it here, and the manager outlives the service instance.
-        selfLauncherManager.isActive = false
         autoResumePlaybackJob?.cancel()
         autoResumePlaybackJob = null
         mediaMetadataDecodeJob?.cancel()

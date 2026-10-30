@@ -264,11 +264,11 @@ class SelfLauncherManager(
                     return@timeout
                 }
                 if (!commManager.isConnected && isActive) {
-                    if (endsSessionAfterLaunch(commManager.connectionState.value) || loopbackSessionEndedSinceLaunch()) {
-                        // A loopback session arrived after this launch and has already ended. Its
-                        // terminal owns Self cleanup; "never connected" would be false, and
-                        // publishing it would overwrite that terminal. A repeat of a session
-                        // that ended before this launch is not this launch's arrival.
+                    if (sessionEndedAfterLaunch(owner)) {
+                        // A loopback session arrived after this launch and has already ended;
+                        // "never connected" would be false, and publishing it would overwrite that
+                        // terminal. A repeat of a session that ended before this launch is not
+                        // this launch's arrival.
                         return@timeout
                     }
                     AppLog.e("SelfMode: nothing connected within ${deadlineMs}ms of the launch")
@@ -413,6 +413,23 @@ class SelfLauncherManager(
     }
 
     /**
+     * Whether a loopback session ended after this launch. While its terminal is current, the
+     * service's observer owns Self cleanup. Once a later state hid it, no observer will end Self
+     * mode for that session, so the launch ends here, unless a newer connection is forming or live.
+     */
+    private fun sessionEndedAfterLaunch(owner: Job?): Boolean {
+        val commManager = App.provide(service).commManager
+        val current = commManager.connectionState.value
+        if (endsSessionAfterLaunch(current)) return true
+        if (!loopbackSessionEndedSinceLaunch()) return false
+        if (launchJob === owner && !commManager.isConnected && current !is CommManager.ConnectionState.Connecting) {
+            stop(wasConnected = true)
+            service.stopDummyVpn(DummyVpnPolicy.Reason.SESSION_ENDED)
+        }
+        return true
+    }
+
+    /**
      * A failure report was refused: a connection formed after this launch's guard. Live, it owns
      * Self state. Still Connecting, it may be this launch's own arrival, so wait for its outcome;
      * an end before any loopback session arrived still fails this launch. The flow is conflated:
@@ -420,9 +437,9 @@ class SelfLauncherManager(
      */
     private suspend fun failsAfterRefusedReport(owner: Job?): Boolean {
         val commManager = App.provide(service).commManager
-        val outcome = commManager.connectionState.first { it !is CommManager.ConnectionState.Connecting }
+        commManager.connectionState.first { it !is CommManager.ConnectionState.Connecting }
         if (launchJob !== owner || commManager.isConnected) return false
-        return !endsSessionAfterLaunch(outcome) && !loopbackSessionEndedSinceLaunch()
+        return !sessionEndedAfterLaunch(owner)
     }
 
     internal fun stopIfCurrent(expected: Job?, preserveVpn: Boolean = false) {

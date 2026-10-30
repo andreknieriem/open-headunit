@@ -158,6 +158,7 @@ class SelfLauncherManager(private val service: Service, private val wifiLauncher
     // ACCEPTED_AFTER
     // ENDS_SESSION_AFTER
     // LOOPBACK_ENDED_SINCE
+    // SESSION_ENDED_AFTER
     // REFUSED_REPORT
     // ENDED
     // ESTABLISHED
@@ -620,6 +621,7 @@ fun main() {
         }
         s.main.advanceBy(120_000L)
         s.main.drain()
+        val vpnStopsBefore = s.vpnStops
         if (arrival != "connected") {
             check(s.manager.isActive && s.resolvePrompts == 0) { "Self failed while its arrival was still Connecting (modern=$modern)" }
             val states = s.commManager.connectionState
@@ -643,8 +645,13 @@ fun main() {
             s.main.drain()
         }
         val failed = arrival.startsWith("connecting-failed")
-        check(s.manager.isActive != failed && s.resolvePrompts == (if (failed) 1 else 0) && s.commManager.reports == 0) {
+        // A hidden end has no observer left to end Self mode; the launch ends it with its session.
+        val endedHidden = arrival == "connecting-ended-hidden"
+        check(s.manager.isActive == !(failed || endedHidden) && s.resolvePrompts == (if (failed) 1 else 0) && s.commManager.reports == 0) {
             "late connection after the deadline guard misjudged (modern=$modern arrival=$arrival active=${s.manager.isActive} prompts=${s.resolvePrompts})"
+        }
+        if (endedHidden) check(s.manager.currentLaunch() == null && s.vpnStops == vpnStopsBefore + 1) {
+            "hidden loopback end left its launch or VPN (modern=$modern vpnStops=${s.vpnStops - vpnStopsBefore})"
         }
         if (arrival == "connected" || arrival == "connecting-connected") {
             s.manager.onConnectionEstablished()
@@ -652,13 +659,15 @@ fun main() {
         }
     }
     // The launch's loopback session can end and an Error hide its terminal before the deadline
-    // runs. The deadline must not report the launch as never connected.
+    // runs. The deadline must not report the launch as never connected, and with no observer
+    // left for that terminal, it ends Self mode and the session's VPN itself.
     for (modern in listOf(true, false)) Service().use { s ->
         s.modern = modern
         s.network.activeNetwork = Any()
         s.manager.start()
         s.main.drain(); s.io.drain(); s.main.drain()
         val attempt = Any()
+        val vpnStopsBefore = s.vpnStops
         s.commManager.lastLoopbackSessionAttempt = attempt
         s.commManager.connectionState.value = CommManager.ConnectionState.Disconnected(
             wasLoopbackSession = true, hadPhysicalConnection = true, endedAttempt = attempt)
@@ -667,6 +676,9 @@ fun main() {
         s.main.drain()
         check(s.commManager.reports == 0 && s.resolvePrompts == 0) {
             "Self deadline reported a launch whose session ended behind an Error (modern=$modern prompts=${s.resolvePrompts})"
+        }
+        check(!s.manager.isActive && s.manager.currentLaunch() == null && s.vpnStops == vpnStopsBefore + 1) {
+            "hidden loopback end left Self state for the next session's end policy (modern=$modern active=${s.manager.isActive} vpnStops=${s.vpnStops - vpnStopsBefore})"
         }
     }
     // Teardown republished the old session's terminal after B was accepted in the Error that

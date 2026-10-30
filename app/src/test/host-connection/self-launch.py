@@ -49,6 +49,7 @@ for marker, file, declaration in [
     ('ACCEPTED_AFTER', manager, 'internal fun launchAcceptedAfter('),
     ('ENDS_SESSION_AFTER', manager, 'private fun endsSessionAfterLaunch('),
     ('LOOPBACK_ENDED_SINCE', manager, 'private fun loopbackSessionEndedSinceLaunch()'),
+    ('SESSION_ENDED_AFTER', manager, 'private fun sessionEndedAfterLaunch('),
     ('REFUSED_REPORT', manager, 'private suspend fun failsAfterRefusedReport('),
     ('ENDED', manager, 'internal fun onConnectionEnded('),
     ('ESTABLISHED', manager, 'internal fun onConnectionEstablished()'),

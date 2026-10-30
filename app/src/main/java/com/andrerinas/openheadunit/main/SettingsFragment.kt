@@ -993,32 +993,28 @@ class SettingsFragment : Fragment() {
         ))
 
         if (pendingWifiConnectionMode == WifiLauncherMode.NATIVE) {
-            // ESP32 relay needs API 23 (Android 6.0) for the BLE client path used here.
-            // Below that, keep the row visible but disabled so the requirement is obvious.
-            val esp32RelaySupported = Build.VERSION.SDK_INT >= Esp32RelaySession.MIN_SDK
-            val esp32RelayLabel = if (!esp32RelaySupported) {
-                getString(R.string.esp32_relay_settings_unsupported)
-            } else {
+            // ESP32 relay needs API 23 (Android 6.0) for BLE. Omit the row below that —
+            // a greyed-out "unsupported" entry looks like a missing setting.
+            if (Build.VERSION.SDK_INT >= Esp32RelaySession.MIN_SDK) {
                 val esp32RelayStore = Esp32RelayStore(requireContext())
-                when {
+                val esp32RelayLabel = when {
                     !esp32RelayStore.enabled -> getString(R.string.esp32_relay_settings_disabled)
                     else -> esp32RelayStore.deviceName
                         ?: esp32RelayStore.deviceAddress
                         ?: getString(R.string.esp32_relay_settings_summary)
                 }
+                items.add(SettingItem.SettingEntry(
+                    stableId = "Esp32Relay",
+                    nameResId = R.string.esp32_relay_settings_title,
+                    value = esp32RelayLabel,
+                    searchKeywords = "bluetooth relay board esp32 pair disconnect ble openhu",
+                    onClick = {
+                        try {
+                            findNavController().navigate(R.id.action_settingsFragment_to_esp32RelaySettingsFragment)
+                        } catch (_: Exception) { }
+                    }
+                ))
             }
-            items.add(SettingItem.SettingEntry(
-                stableId = "Esp32Relay",
-                nameResId = R.string.esp32_relay_settings_title,
-                value = esp32RelayLabel,
-                searchKeywords = "bluetooth relay board esp32 pair disconnect ble openhu",
-                isEnabled = esp32RelaySupported,
-                onClick = {
-                    try {
-                        findNavController().navigate(R.id.action_settingsFragment_to_esp32RelaySettingsFragment)
-                    } catch (_: Exception) { }
-                }
-            ))
 
             items.add(SettingItem.SegmentedButtonSettingEntry(
                 stableId = "nativeApTransport",

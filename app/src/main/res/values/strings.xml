@@ -1524,7 +1524,6 @@
     <!-- Bluetooth relay (ESP32) -->
     <string name="esp32_relay_settings_title">Bluetooth relay (ESP32)</string>
     <string name="esp32_relay_settings_summary">Bluetooth Relay settings for an ESP32 implementation.</string>
-    <string name="esp32_relay_settings_unsupported">Requires Android 6.0 (API 23)+</string>
     <string name="esp32_relay_enabled">Use Bluetooth relay</string>
     <string name="esp32_relay_enabled_description">Choose whether to use the Bluetooth relay.</string>
     <string name="esp32_relay_settings_disabled">Off</string>

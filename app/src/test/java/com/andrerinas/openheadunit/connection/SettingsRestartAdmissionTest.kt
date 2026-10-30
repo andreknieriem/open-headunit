@@ -5,12 +5,19 @@ import com.andrerinas.openheadunit.connection.projection.ProjectionConnection
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Assert.*
+import org.junit.After
+import org.junit.Before
 import org.junit.Test
 import org.mockito.Mockito.*
 import java.net.Socket
 import kotlin.coroutines.intrinsics.suspendCoroutineUninterceptedOrReturn
 
 class SettingsRestartAdmissionTest {
+    // The arbiter's default clock is Android's SystemClock, which plain JVM tests do not provide.
+    private val clock = ConnectionArbiter.clock
+    @Before fun prepare() { ConnectionArbiter.reset(); ConnectionArbiter.clock = { 1000L } }
+    @After fun restore() { ConnectionArbiter.reset(); ConnectionArbiter.clock = clock }
+
     private fun set(manager: CommManager, name: String, value: Any?) =
         CommManager::class.java.getDeclaredField(name).apply { isAccessible = true }.set(manager, value)
 

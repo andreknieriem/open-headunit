@@ -1174,7 +1174,8 @@ class MainActivity : BaseActivity() {
 
     private fun forceSelfModeLaunch() {
         HomeFragment.forceSelfModeLaunch = true
-        val selfModeIntent = Intent(this, AapService::class.java).apply {
+        val ticket = App.provide(this).commManager.appConnectionTicket()
+        val selfModeIntent = AapService.operationIntent(this, ticket).apply {
             this.action = AapService.ACTION_START_SELF_MODE
         }
         ContextCompat.startForegroundService(this, selfModeIntent)
@@ -1234,16 +1235,18 @@ class MainActivity : BaseActivity() {
 
         if (intent.action == Intent.ACTION_VIEW) {
             if (intentData?.scheme == "headunit" && intentData.host == "connect") {
+                val commManager = App.provide(this).commManager
+                val ticket = commManager.appConnectionTicket()
                 val ip = intentData.getQueryParameter("ip")
                 if (!ip.isNullOrEmpty()) {
                     AppLog.i("Received connect intent for IP: $ip")
-                    ContextCompat.startForegroundService(this, Intent(this, AapService::class.java).apply {
+                    ContextCompat.startForegroundService(this, AapService.operationIntent(this, ticket).apply {
                         action = AapService.ACTION_CONNECT_SOCKET
                     })
-                    lifecycleScope.launch(Dispatchers.IO) { App.provide(this@MainActivity).commManager.connect(ip, 5277, ConnectionPriorityPolicy.Tier.USER) }
+                    lifecycleScope.launch(Dispatchers.IO) { commManager.connect(ip, 5277, ConnectionPriorityPolicy.Tier.USER, ticket = ticket) }
                 } else {
                     AppLog.i("Received connect intent without IP -> triggering last session auto-connect")
-                    val autoIntent = Intent(this, AapService::class.java).apply {
+                    val autoIntent = AapService.operationIntent(this, ticket).apply {
                         action = AapService.ACTION_CHECK_USB
                         putExtra(AapService.EXTRA_USER_REQUESTED, true)
                     }

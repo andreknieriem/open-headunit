@@ -6,40 +6,51 @@ import org.junit.Test
 import org.mockito.Mockito.*
 
 class UsbSettingsRestartTest {
+    private fun launcher(): UsbLauncherManager {
+        val service = mock(com.andrerinas.openheadunit.aap.AapService::class.java)
+        val app = mock(com.andrerinas.openheadunit.App::class.java)
+        val component = mock(com.andrerinas.openheadunit.AppComponent::class.java)
+        `when`(service.applicationContext).thenReturn(app)
+        com.andrerinas.openheadunit.App::class.java.getDeclaredField("component\$delegate")
+            .apply { isAccessible = true }.set(app, lazyOf(component))
+        `when`(component.commManager).thenReturn(mock(CommManager::class.java))
+        return spy(UsbLauncherManager(service))
+    }
+
     @org.junit.After fun resetArbiter() {
         com.andrerinas.openheadunit.connection.ConnectionArbiter.reset()
     }
 
     @Test fun `Save waiting for retirement cannot lift a later USB cancellation`() {
-        val manager = mock(UsbLauncherManager::class.java, CALLS_REAL_METHODS)
+        val manager = launcher()
         UsbLauncherManager::class.java.getDeclaredField("cancelledByUser").apply { isAccessible = true }.set(manager, true)
         val saved = CommManager.ConnectionState.Disconnected(reason = CommManager.DisconnectReason.SETTINGS_RESTART, settingsRestartUntilMs = Long.MAX_VALUE)
         manager.restartForSettings(saved)
-        verify(manager, never()).checkAlreadyConnected(anyBoolean(), anyBoolean(), anyOrNull(), anyBoolean())
+        verify(manager, never()).checkAlreadyConnected(anyBoolean(), anyBoolean(), anyOrNull(), anyBoolean(), anyLong())
     }
 
     @Test fun `uncancelled Save still grants one explicit device check`() {
-        val manager = mock(UsbLauncherManager::class.java, CALLS_REAL_METHODS)
+        val manager = launcher()
         val saved = CommManager.ConnectionState.Disconnected(reason = CommManager.DisconnectReason.SETTINGS_RESTART, settingsRestartUntilMs = Long.MAX_VALUE)
-        doNothing().`when`(manager).checkAlreadyConnected(true, false, saved)
+        doNothing().`when`(manager).checkAlreadyConnected(anyBoolean(), anyBoolean(), anyOrNull(), anyBoolean(), anyLong())
         manager.restartForSettings(saved)
         verify(manager).checkAlreadyConnected(force = true, userRequested = false, settingsRestart = saved)
     }
 
     @Test fun `a hand-off to the service carries the open Save past the settings screen`() {
-        val manager = mock(UsbLauncherManager::class.java, CALLS_REAL_METHODS)
+        val manager = launcher()
         val saved = CommManager.ConnectionState.Disconnected(reason = CommManager.DisconnectReason.SETTINGS_RESTART, settingsRestartUntilMs = Long.MAX_VALUE)
         doReturn(saved).`when`(manager).pendingSettingsRestart()
-        doNothing().`when`(manager).checkAlreadyConnected(anyBoolean(), anyBoolean(), anyOrNull(), anyBoolean())
+        doNothing().`when`(manager).checkAlreadyConnected(anyBoolean(), anyBoolean(), anyOrNull(), anyBoolean(), anyLong())
         manager.checkOnRequest(userRequested = false)
         verify(manager).checkAlreadyConnected(force = true, userRequested = false, settingsRestart = saved, accessoryOnly = false)
     }
 
     @Test fun `a user's own USB request is not tied to a Save`() {
-        val manager = mock(UsbLauncherManager::class.java, CALLS_REAL_METHODS)
+        val manager = launcher()
         val saved = CommManager.ConnectionState.Disconnected(reason = CommManager.DisconnectReason.SETTINGS_RESTART, settingsRestartUntilMs = Long.MAX_VALUE)
         doReturn(saved).`when`(manager).pendingSettingsRestart()
-        doNothing().`when`(manager).checkAlreadyConnected(anyBoolean(), anyBoolean(), anyOrNull(), anyBoolean())
+        doNothing().`when`(manager).checkAlreadyConnected(anyBoolean(), anyBoolean(), anyOrNull(), anyBoolean(), anyLong())
         manager.checkOnRequest(userRequested = true)
         verify(manager).checkAlreadyConnected(force = true, userRequested = true, settingsRestart = null, accessoryOnly = false)
     }
@@ -68,6 +79,7 @@ class UsbSettingsRestartTest {
                 field("_connectionState", states)
                 field("connectionState", states)
                 field("transportLifecycleLock", Any())
+                field("appExitPolicy", com.andrerinas.openheadunit.connection.AppExitPolicy())
                 `when`(service.serviceScope).thenReturn(scope)
                 `when`(service.applicationContext).thenReturn(app)
                 com.andrerinas.openheadunit.App::class.java.getDeclaredField("component\$delegate")

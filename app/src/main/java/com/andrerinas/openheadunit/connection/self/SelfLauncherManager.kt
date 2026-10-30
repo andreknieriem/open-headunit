@@ -90,8 +90,13 @@ class SelfLauncherManager(
     }
 
     @SuppressLint("MissingPermission", "HardwareIds")
-    fun start(settingsRestart: CommManager.ConnectionState.Disconnected? = null, needsDummyVpn: Boolean = false) {
+    fun start(
+        settingsRestart: CommManager.ConnectionState.Disconnected? = null,
+        needsDummyVpn: Boolean = false,
+        ticket: Long = App.provide(service).commManager.appConnectionTicket(),
+    ) {
         val commManager = App.provide(service).commManager
+        if (!commManager.acceptsAppConnectionTicket(ticket)) return
 
         // auto-start-self-mode and an explicit ACTION_START_SELF_MODE both land here, and running
         // two launches at once costs a session rather than a retry. See SelfLaunchCoalescePolicy.
@@ -130,12 +135,16 @@ class SelfLauncherManager(
         // Publish and bind the job before it can run. Revoking Save then cancels both a queued
         // launch and a launcher suspended while waiting for the network, without touching a new job.
         val job = service.serviceScope.launch(Dispatchers.Main, start = CoroutineStart.LAZY) {
+            if (!commManager.acceptsAppConnectionTicket(ticket)) {
+                stopIfCurrent(coroutineContext[Job], preserveVpn = true)
+                return@launch
+            }
             if (settingsRestart != null && !settingsRestart.acceptsSettingsRestart(commManager.connectionState.value)) {
                 stopIfCurrent(coroutineContext[Job], preserveVpn = commManager.connectionState.value !== settingsRestart)
                 return@launch
             }
             // prepare launchers
-            val services = SelfLauncherServices(service, wifiLauncherManager, settingsRestart)
+            val services = SelfLauncherServices(service, wifiLauncherManager, settingsRestart, ticket)
             val launchers: Array<SelfLauncher>
 
             val path = installedPath(service)
@@ -216,6 +225,10 @@ class SelfLauncherManager(
                 delay(deadlineMs)
 
                 if (launchJob !== owner) return@timeout
+                if (!commManager.acceptsAppConnectionTicket(ticket)) {
+                    stopIfCurrent(owner, preserveVpn = true)
+                    return@timeout
+                }
                 if (settingsRestart != null &&
                     !settingsRestart.acceptsSettingsRestart(commManager.connectionState.value)) {
                     // Save may already have connected, or another route may own the session.

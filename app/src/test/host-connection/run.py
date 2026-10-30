@@ -25,8 +25,17 @@ def member(source, name):
             if depth==0:return source[start:end+1]
     raise ValueError(name)
 methods={}
-def extract(source,name):
-    s=member(source,name);methods[name]=hashlib.sha256(s.encode()).hexdigest();return s
+def extract(source,name,key=None):
+    s=member(source,name);methods[key or name]=hashlib.sha256(s.encode()).hexdigest();return s
+def expression(source,name,key):
+    start=source.rfind('\n',0,source.index(name))+1
+    lines=source[start:].splitlines()
+    indent=len(lines[0])-len(lines[0].lstrip())
+    end=1
+    while end<len(lines) and lines[end].strip() and len(lines[end])-len(lines[end].lstrip())>indent:
+        end+=1
+    value='\n'.join(lines[:end]);methods[key]=hashlib.sha256(value.encode()).hexdigest()
+    return value
 receivers='package lifecycle\nimport android.content.*\nimport com.andrerinas.openheadunit.connection.AppExitPolicy\n'
 for name,path,finish in [('MainActivity','main/MainActivity.kt','finishAffinity'),
                          ('AapProjectionActivity','aap/AapProjectionActivity.kt','finish')]:
@@ -62,12 +71,12 @@ exit_tail=exit_tail.replace('commManager.restoreAppForEntry(completion.owner)', 
 # Keep the real command-validation prefix and rejection/destruction behavior; radio setup and
 # Android service lifetime are recording boundaries, not another model of the ownership guards.
 bootstrap_start = extract(service_source, 'override fun onStartCommand(')
-bootstrap_start = bootstrap_start[:bootstrap_start.index('        initializeForStart()')] + \
-    '        initializeForStart()\n        return START_STICKY\n    }'
+bootstrap_start = bootstrap_start[:bootstrap_start.index('        initializeForStart(')] + \
+    '        initializeForStart(operationTicket)\n        return START_STICKY\n    }'
 bootstrap_start = bootstrap_start.replace('override fun onStartCommand(', 'fun onStartCommand(')
 bootstrap_constants = '\n'.join(next(line.strip().replace('private ', '', 1)
     for line in service_source.splitlines() if re.search(r'\bconst\s+val\s+' + re.escape(name) + r'\s*=', line))
-    for name in ['ACTION_STOP_SERVICE', 'EXTRA_STOP_OWNER', 'EXTRA_RUN_OWNER'])
+    for name in ['ACTION_STOP_SERVICE', 'EXTRA_STOP_OWNER', 'EXTRA_RUN_OWNER', 'EXTRA_OPERATION_TICKET'])
 bootstrap_rejection = extract(service_source, 'private fun retireRejectedBootstrap()')
 (OUT/'ServiceBootstrap.kt').write_text(
     'package lifecycle\nimport android.content.*\n'
@@ -76,7 +85,7 @@ bootstrap_rejection = extract(service_source, 'private fun retireRejectedBootstr
     'private val settings get()=commManager.settings\n'
     'var initializedForStart=false\nvar isDestroying=false\n'
     'private var appExitRequest:AppExitPolicy.Request?=null\nvar stops=0\n'
-    'fun stopSelf(){stops++}\nfun initializeForStart(){initializedForStart=true}\n'
+    'fun stopSelf(){stops++}\nfun initializeForStart(ticket:Long){initializedForStart=true}\n'
     'fun stopForAcceptedAppExit(){isDestroying=true;stops++}\n'
     'fun beforeProcessExit(){error("unexpected process exit")}\n'
     'fun recordProcessExit(){error("unexpected process exit")}\n'
@@ -85,12 +94,64 @@ bootstrap_rejection = extract(service_source, 'private fun retireRejectedBootstr
     bootstrap_constants + '\n}\n' + bootstrap_rejection + '\n' + bootstrap_start + '\n' +
     exit_tail + '\n}\n')
 shutil.copy2(ROOT/'app/src/test/host-connection/AppBootstrapFixture.kt', OUT/'AppBootstrapFixture.kt')
-home_auto = extract((base/'main/HomeFragment.kt').read_text(),
-    'if (appSettings.autoStartOnScreenOn || appSettings.autoStartOnBoot)')
-(OUT/'HomeAutoStart.kt').write_text('package lifecycle\n'
-    'data class HomeAutoSettings(val autoStartOnScreenOn:Boolean,val autoStartOnBoot:Boolean)\n'
-    'class HomeAutoStart(private val commManager:CommManager,private val appSettings:HomeAutoSettings){\n'
-    'fun created(){\n' + home_auto + '\n}\n}\n')
+home_source=(base/'main/HomeFragment.kt').read_text()
+home_fixture=(ROOT/'app/src/test/host-connection/HomeAutomaticFixture.kt').read_text()
+home_created=extract(home_source,'override fun onViewCreated(', 'Home onViewCreated')
+home_blocks=home_created[home_created.index('        val appSettings = App.provide(requireContext()).settings'):home_created.rfind('\n    }')]
+home_members={
+    'HOME_VPN_CALLBACK':extract(home_source,'private val vpnPermissionLauncher','Home VPN callback').replace('android.app.Activity.RESULT_OK','RESULT_OK'),
+    'HOME_CREATE_STATE':extract(home_source,'override fun onCreate(', 'Home create state'),
+    'HOME_SAVE_STATE':extract(home_source,'override fun onSaveInstanceState(', 'Home save state'),
+    'HOME_AUTO_BLOCKS':home_blocks,
+    'HOME_COUNTDOWN':extract(home_source,'private suspend fun countDownToAutoConnect(', 'Home countdown'),
+    'HOME_AUTO_TARGET':extract(home_source,'private fun autoConnectTarget(', 'Home auto target'),
+    'HOME_LAST_SESSION':extract(home_source,'private fun attemptAutoConnect(', 'Home last session').replace('Dispatchers.IO','ioDispatcher'),
+    'HOME_SINGLE_USB':extract(home_source,'private fun attemptSingleUsbAutoConnect(', 'Home single USB'),
+    'HOME_SELF_START':extract(home_source,'private fun startSelfMode(', 'Home Self start'),
+    'HOME_SELF_INTERNAL':extract(home_source,'private fun startSelfModeInternal(', 'Home Self dispatch'),
+    'SELF_ROUTE_POLICY':expression((base/'connection/self/SelfLaunchRoutePolicy.kt').read_text(),'fun needsDummyVpn(', 'Self VPN route'),
+    'SINGLE_USB_OVERLAY_POLICY':expression((base/'main/AutoConnectAttemptPolicy.kt').read_text(),'fun singleUsbShowsOverlay(', 'USB overlay policy'),
+    'OPERATION_CONSTANT':next(line.strip().replace('private ','',1) for line in service_source.splitlines() if 'const val EXTRA_OPERATION_TICKET =' in line),
+    'OPERATION_INTENT':expression(service_source,'internal fun operationIntent(', 'Operation intent'),
+}
+for marker,value in home_members.items(): home_fixture=home_fixture.replace('// '+marker,value)
+(OUT/'HomeAutomaticFixture.kt').write_text(home_fixture)
+
+ui_main=(base/'main/MainActivity.kt').read_text()
+ui_network=(base/'main/NetworkListFragment.kt').read_text()
+ui_automation=(base/'automation/AutomationEffectRunner.kt').read_text()
+ui_fixture=(ROOT/'app/src/test/host-connection/UiConnectFixture.kt').read_text()
+ui_members={
+    'UI_FORCE_SELF_MODE':extract(ui_main,'private fun forceSelfModeLaunch(', 'Main Self producer'),
+    'UI_HANDLE_LAUNCH_INTENT':extract(ui_main,'private fun handleLaunchIntent(', 'Main launch producer').replace('private fun handleLaunchIntent(','fun handleLaunchIntent(',1),
+    'UI_ADDRESS_ON_CLICK':extract(ui_network,'override fun onClick(', 'Address click producer').replace('override ','',1),
+    'UI_START_SCAN':extract(ui_network,'private fun startScan(', 'Network scan producer').replace('private fun startScan(','fun startScan(',1),
+    'UI_SERVICE_FOUND':extract(ui_network,'override fun onServiceFound(', 'Network UI callback').replace('override ','',1),
+    'UI_AUTOMATION_EFFECTS':extract((base/'automation/AutomationCommandPolicy.kt').read_text(),'sealed interface Effect', 'Automation effects'),
+    'UI_AUTOMATION_RUN':extract(ui_automation,'fun run(', 'Automation run'),
+    'UI_AUTOMATION_START_SERVICE':extract(ui_automation,'private fun startService(', 'Automation service producer'),
+    'UI_AUTOMATION_NIGHT_MODE':extract(ui_automation,'private fun setNightMode(', 'Automation night mode'),
+    'UI_SERVICE_CONSTANTS':'\n'.join(next(line.strip().replace('private ','',1) for line in service_source.splitlines() if 'const val '+name+' =' in line) for name in ['EXTRA_STOP_OWNER','EXTRA_OPERATION_TICKET']),
+    'UI_OPERATION_INTENT':expression(service_source,'internal fun operationIntent(', 'UI operation intent'),
+    'UI_ACCEPTED_STOP_INTENT':expression(service_source,'internal fun acceptedStopIntent(', 'UI accepted Stop intent'),
+    'UI_STOP_INTENT':extract(service_source,'fun stopIntent(', 'UI Stop producer'),
+}
+for marker,value in ui_members.items(): ui_fixture=ui_fixture.replace('// '+marker,value)
+(OUT/'UiConnectFixture.kt').write_text(ui_fixture)
+
+network_source=(base/'connection/wifi/NetworkDiscovery.kt').read_text()
+network_fixture=(ROOT/'app/src/test/host-connection/NetworkConnectionIngressFixture.kt').read_text()
+network_members={
+    'NETWORK_SERVER_HANDOFF':extract((base/'connection/wifi/server/WirelessServer.kt').read_text(),'internal fun handOffClient(', 'Server accepted socket'),
+    'NETWORK_DISCOVERY_HANDOFF':extract((base/'connection/wifi/WifiLauncherSharedServices.kt').read_text(),'override fun onServiceFound(', 'Discovery accepted socket').replace('override ','',1),
+    'NETWORK_SCAN_GENERATION':extract(network_source,'private class Generation(', 'Discovery generation'),
+    'NETWORK_SCAN_START':extract(network_source,'fun startScan(', 'Discovery start'),
+    'NETWORK_SCAN_JOB':extract(network_source,'private fun newScanJob(', 'Discovery scan job'),
+}
+for marker,value in network_members.items():
+    value=value.replace('App.provide(context).commManager','commManager').replace('Dispatchers.IO','io').replace('Dispatchers.Main','main')
+    network_fixture=network_fixture.replace('// '+marker,value)
+(OUT/'NetworkConnectionIngressFixture.kt').write_text(network_fixture)
 shutil.copy2(base/'app/AppForegroundPolicy.kt',OUT/'AppForegroundPolicy.kt')
 
 manager_head=r'''package lifecycle
@@ -219,7 +280,7 @@ manager_head += exit_members.replace(
     "private val connectionIoDispatcher: CoroutineDispatcher = Dispatchers.IO",
     "private val connectionIoDispatcher: CoroutineDispatcher = Dispatchers.Unconfined")
 # Paragraph boundaries retain complete expression bodies, including claimUsb's trailing also.
-for declaration in ['val isConnected:', 'val isWirelessSession:', 'val isLoopbackSession:',
+for declaration in ['val isConnected:', 'val isBusy:', 'val isWirelessSession:', 'val isLoopbackSession:',
                     'internal fun claimUsb(', 'private fun socketOwner(']:
     start = comm.index(declaration)
     definition = comm[start:comm.index('\n\n', start)]
@@ -326,6 +387,7 @@ support=r'''
 object AppLog {
  @Volatile var hook:((String)->Unit)?=null
  fun i(s:String){hook?.invoke(s)};fun e(s:String){};fun e(s:String,e:Throwable){};fun w(s:String){}
+ fun d(s:String){};fun d(s:String,e:Throwable){}
 }
 class Settings{
  var useAacAudio=false;var killOnDisconnect=false;var useLibusb=false
@@ -377,8 +439,8 @@ object BluetoothHelper{fun isA2dpMediaLinkActive(c:Context)=false}
 object PlaybackFocusPolicy{fun shouldAcquirePermanent(mode:Int,staticAudioFocus:Boolean,audioSinkEnabled:Boolean,btMediaLinkActive:Boolean)=false}
 object ConnectionIssue{const val HEADUNIT_SERVER_NOT_ANSWERING=0}
 object ConnectionIssues{fun clear(c:Context,issue:Int){}}
-object ConnectionStageTracker{fun endAttempt(){};fun clear(){};val stage=MutableStateFlow(ConnectionStage.NONE)}
-object ConnectionStage{const val NONE=0;const val USB_ATTACHED=1;const val USB_SWITCHING=2}
+object ConnectionStageTracker{fun endAttempt(){};fun clear(){};fun report(value:Int){stage.value=value};val stage=MutableStateFlow(ConnectionStage.NONE)}
+object ConnectionStage{const val NONE=0;const val USB_ATTACHED=1;const val USB_SWITCHING=2;const val PHONE_ANSWERED=3}
 object TeardownGuard{fun runThenClose(teardown:()->Unit,close:()->Unit,onError:(String,Exception)->Unit){try{teardown()}catch(e:Exception){onError("teardown",e)}finally{close()}}}
 fun await(latch:CountDownLatch){check(latch.await(5,TimeUnit.SECONDS)){"probe barrier timed out"}}
 
@@ -635,7 +697,9 @@ fun interruptedTerminationControl()=runBlocking{
 }
 fun main(){
  bootstrapRejectionPreservesLatestRun()
- homeConfigPreservesStoppedService()
+ homeautomatic.homeAutomaticOwnership()
+ uiconnect.uiConnectCallerOwnership()
+ networkConnectionIngressOwnership()
  appConnectionIngressOwnership()
  providedMain()
  failedHandshakeControls();partialStartupExceptionControl();interruptedTerminationControl()
@@ -965,14 +1029,15 @@ class HandlerThread(name:String,priority:Int):Thread(name){
 import android.media.AudioManager
 abstract class BroadcastReceiver{abstract fun onReceive(context:Context,intent:Intent)}
 class Intent{
- fun getBooleanExtra(name:String,default:Boolean)=default
+ fun getBooleanExtra(name:String,default:Boolean)=extras[name] as? Boolean ?: default
  var action:String?=null
  constructor(a:String){action=a};constructor(c:Context,k:Class<*>){}
  fun setPackage(s:String)=this
- private val extras=mutableMapOf<String,Long>()
+ private val extras=mutableMapOf<String,Any>()
  fun putExtra(name:String,value:Long)=apply{extras[name]=value}
+ fun putExtra(name:String,value:Boolean)=apply{extras[name]=value}
  fun hasExtra(name:String)=extras.containsKey(name)
- fun getLongExtra(name:String,default:Long)=extras[name]?:default
+ fun getLongExtra(name:String,default:Long)=extras[name] as? Long ?: default
 }
 class Context{
  var usb=android.hardware.usb.UsbManager();val packageName="lifecycle";val broadcasts=mutableListOf<String?>();val broadcastIntents=mutableListOf<Intent>();var stops=0

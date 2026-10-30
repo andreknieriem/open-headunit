@@ -18,6 +18,7 @@ class SelfLauncherServices(
     val aap: AapService,
     val wifiLauncherManager: WifiLauncherManager,
     val settingsRestart: CommManager.ConnectionState.Disconnected? = null,
+    val operationTicket: Long = App.provide(aap).commManager.appConnectionTicket(),
 ) {
     val connectivityManager by lazy { aap.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager }
 
@@ -28,6 +29,9 @@ class SelfLauncherServices(
     /** A suspension may let USB or another socket replace the Save that requested this launch. */
     internal suspend fun ensureLaunchAllowed() {
         currentCoroutineContext().ensureActive()
+        if (!App.provide(aap).commManager.acceptsAppConnectionTicket(operationTicket)) {
+            throw CancellationException("Self launch cancelled by Stop")
+        }
         if (settingsRestart != null &&
             !settingsRestart.acceptsSettingsRestart(App.provide(aap).commManager.connectionState.value)) {
             // Cancellation ends the whole launch chain; false would run the next fallback.

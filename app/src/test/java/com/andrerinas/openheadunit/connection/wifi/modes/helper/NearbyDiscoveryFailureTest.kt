@@ -1,6 +1,9 @@
 package com.andrerinas.openheadunit.connection.wifi.modes.helper
 
 import android.content.Context
+import com.andrerinas.openheadunit.connection.CommManager
+import com.andrerinas.openheadunit.connection.AppExitPolicy
+import com.andrerinas.openheadunit.connection.withAppExitDispatcherForTest
 import com.andrerinas.openheadunit.utils.Settings
 import com.google.android.gms.nearby.Nearby
 import com.google.android.gms.nearby.connection.*
@@ -20,8 +23,49 @@ class NearbyDiscoveryFailureTest {
     }
     @org.junit.After fun restoreAndroid() { clock.close(); permissions.close() }
 
+    @Test fun delayedLifecycleKeepsRequestTicketAndNewEndpointInputGetsFreshAuthority() {
+        for (stop in listOf(false, true)) {
+            val context = mock<Context>()
+            val comm = mock<CommManager>(defaultAnswer = Mockito.CALLS_REAL_METHODS).withAppExitDispatcherForTest()
+            val policy = CommManager::class.java.getDeclaredField("appExitPolicy")
+                .apply { isAccessible = true }.get(comm) as AppExitPolicy
+            val client = mock<ConnectionsClient>()
+            val task = mock<Task<Void>>()
+            whenever(task.addOnFailureListener(any())).thenReturn(task)
+            whenever(client.requestConnection(anyOrNull<String>(), any(), any())).thenReturn(task)
+            whenever(client.acceptConnection(any(), any())).thenReturn(task)
+            val info = mock<ConnectionInfo>()
+            whenever(info.endpointName).thenReturn("phone")
+            val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+            Mockito.mockStatic(Nearby::class.java).use { nearby ->
+                nearby.`when`<ConnectionsClient> { Nearby.getConnectionsClient(context) }.thenReturn(client)
+                Mockito.mockConstruction(Settings::class.java).use {
+                    val manager = NearbyManager(context, scope, comm) { _, _, _ -> error("no tunnel yet") }
+                    try {
+                        manager.connectToEndpoint("old")
+                        val callbacks = argumentCaptor<ConnectionLifecycleCallback>()
+                        verify(client).requestConnection(anyOrNull<String>(), eq("old"), callbacks.capture())
+                        if (stop) policy.request(killProcess = false, userStop = true, requiresKillOnDisconnect = false)
+                        policy.supersede()
+                        callbacks.firstValue.onConnectionInitiated("old", info)
+                        verify(client, times(if (stop) 0 else 1)).acceptConnection(eq("old"), any())
+                        if (stop) {
+                            verify(client).disconnectFromEndpoint("old")
+                            manager.connectToEndpoint("new")
+                            verify(client).requestConnection(anyOrNull<String>(), eq("new"), callbacks.capture())
+                            callbacks.lastValue.onConnectionInitiated("new", info)
+                            verify(client).acceptConnection(eq("new"), any())
+                        }
+                    } finally { manager.stop(); scope.cancel() }
+                }
+            }
+        }
+    }
+
     @Test fun failedRequestKeepsDiscoveryAndAcceptsAnotherEndpoint() {
         val context = mock<Context>()
+        val comm = mock<CommManager>()
+        whenever(comm.acceptsAppConnectionTicket(any())).thenReturn(true)
         val client = mock<ConnectionsClient>()
         val discoveryTask = mock<Task<Void>>()
         val requestTask = mock<Task<Void>>()
@@ -39,7 +83,7 @@ class NearbyDiscoveryFailureTest {
                 whenever(settings.autoConnectLastSession).thenReturn(true)
                 whenever(settings.lastNearbyDeviceName).thenReturn("phone")
             }.use {
-                val manager = NearbyManager(context, scope) { _, _ -> error("no tunnel yet") }
+                val manager = NearbyManager(context, scope, comm) { _, _, _ -> error("no tunnel yet") }
                 try {
                     manager.start()
                     val discoveries = argumentCaptor<EndpointDiscoveryCallback>()

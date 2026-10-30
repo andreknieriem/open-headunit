@@ -30,6 +30,15 @@ class CommManager {
     val isConnected get() = connectionState.value is ConnectionState.Connected
     var gate = CompletableDeferred<Unit>()
     suspend fun awaitDisconnectComplete() { gate.await() }
+    fun hasPendingDisconnect() = !gate.isCompleted
+    var onDisconnect: (ConnectionState.Disconnected) -> Unit = {}
+    var taskFinishAttempts = 0
+    fun disconnect(sendByeBye: Boolean, honorKillOnDisconnect: Boolean) {
+        val ended = ConnectionState.Disconnected(isUserExit = false)
+        connectionState.value = ended
+        onDisconnect(ended)
+    }
+    fun finishCurrentAppExitTasks() { taskFinishAttempts++ }
 }
 object SystemClock { fun elapsedRealtime() = 100L }
 object android { object os { val SystemClock = cleanup.SystemClock } }
@@ -66,12 +75,29 @@ class WifiManager(val service: Service) {
     val activeMode=WifiLauncherMode.NATIVE
     var cancelledByUser=false
     var stops=0
+    val isActive get() = active != null
+    private val nativeOwner = Any()
+    private val nativeGroup = NativeGroupCleanupCoordinator().apply {
+        check(!deferUntilReady(nativeOwner) {})
+        check(activate(nativeOwner))
+    }
     val sharedServices=this
     val wifiDirectManager: WifiManager?=null
     fun cleanupTicket()=cleanupGeneration.capture()
     fun isCleanupCurrent(ticket: Any)=cleanupGeneration.isCurrent(ticket)
     // LAUNCHER_ARM
-    fun stop(seq: WifiLauncherStopSequence?=null) { stops++; active=null }
+    fun stop(seq: WifiLauncherStopSequence?=null) {
+        stops++
+        if (active != null) {
+            val removal = NativeGroupCleanupCoordinator.Removal { completed ->
+                service.networkRemovals.add(service.commManager.gate.isCompleted)
+                completed(null)
+            }
+            nativeGroup.retain(nativeOwner, removal)
+            check(nativeGroup.remove(nativeOwner, removal) {})
+        }
+        active=null
+    }
     fun restartDiscovery() {}
 }
 class UnitManager { fun stop() {}; fun onSessionEnded() {}; fun setSwitchingToProjection(b: Boolean) {} }
@@ -80,7 +106,10 @@ class ReconnectPlayback { var records=0; fun onDisconnected(b: Boolean?, now: Lo
 class MediaNotification { fun cancel() {} }
 object App { fun provide(s: Service)=s }
 class VideoDecoder { var stops=0; fun stop(reason: String) { stops++ } }
-class SelfManager { var isActive=false }
+class SelfManager {
+    var isActive=false
+    fun stop(wasConnected: Boolean) { isActive=false }
+}
 class Service {
     var hctParks=0
     private fun parkRetainedHct(onlyCompleted: Boolean) { hctParks++ }
@@ -114,6 +143,19 @@ class Service {
     fun scheduleReconnectIfNeeded(state: CommManager.ConnectionState.Disconnected) { reconnects++ }
     suspend fun restartForAudioSettings(state: CommManager.ConnectionState.Disconnected) {}
     fun rearmWirelessAfterWiredSession(quiesced: Boolean)=false
+    var serviceStops=0
+    var foregroundStops=0
+    val networkRemovals=mutableListOf<Boolean>()
+    init { commManager.onDisconnect = { state -> serviceScope.launch { notifyEnd(state) } } }
+    fun stopForeground(remove: Boolean) { foregroundStops++ }
+    fun stopSelf() {
+        serviceStops++
+        // Android destruction reaches native launcher stop before CommManager.destroy.
+        wifiLauncherManager.stop(WifiLauncherStopSequence.LAST)
+        serviceScope.cancel()
+    }
+    fun requestStop() { stopForAcceptedAppExit() }
+    // SERVICE_STOP
     fun notifyEnd(state: CommManager.ConnectionState.Disconnected) { onDisconnected(state) }
     // CALLBACK
 }
@@ -246,6 +288,40 @@ fun main() {
         check(userExitedAA==!rearmed)
         serviceScope.cancel()
     }
+    // A terminal can be observed before a fresh service Stop creates any exit waiter.
+    // Closing the physical transport, not that logical terminal, must admit native removal.
+    for (rearmedWhileWaiting in listOf(false, true)) Service().apply {
+        try {
+            val ended=commManager.connectionState.value as CommManager.ConnectionState.Disconnected
+            notifyEnd(ended); main.drain()
+            check(exitTeardownDone==null)
+            requestStop(); main.drain()
+            println("STOP_RETIREMENT pending: stops=$serviceStops removeClosed=$networkRemovals")
+            check(serviceStops==0 && networkRemovals.isEmpty()) {
+                "native removal preceded actual transport close after Disconnected"
+            }
+            if (rearmedWhileWaiting) wifiLauncherManager.noteRearm()
+            commManager.gate.complete(Unit); main.drain()
+            check(serviceStops==1 && networkRemovals.isNotEmpty() && networkRemovals.all { it }) {
+                "Stop failed to join completed retirement without a new observer latch"
+            }
+        } finally { serviceScope.cancel() }
+    }
+    Service().apply {
+        try {
+            commManager.connectionState.value=CommManager.ConnectionState.Connected
+            requestStop(); main.drain()
+            check(serviceStops==0 && networkRemovals.isEmpty())
+            commManager.gate.complete(Unit); main.drain()
+            check(serviceStops==1 && networkRemovals.isNotEmpty() && networkRemovals.all { it })
+        } finally { serviceScope.cancel() }
+    }
+    Service().apply {
+        commManager.gate.complete(Unit)
+        requestStop()
+        check(serviceStops==1 && networkRemovals.isNotEmpty() && networkRemovals.all { it })
+    }
+    println("PASS service Stop joins existing physical retirement before native removal; connected, completed and rearmed controls")
     println("PASS actual disconnect callback: stale policy vs session resources, rearm across await, separate terminal and captured Stop waiter")
     println("PASS actual disconnect callback: Connecting attempt older than Self arm, superseded resource release, Bluetooth stand-down ownership")
 }

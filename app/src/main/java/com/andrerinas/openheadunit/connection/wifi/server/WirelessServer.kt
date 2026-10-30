@@ -127,8 +127,9 @@ class WirelessServer(
                 while (isActive) {
                     AppLog.d("WirelessServer: Waiting for TCP connection on port 5288...")
                     val clientSocket = serverSocket?.accept() ?: break
+                    val ticket = commManager.appConnectionTicket()
                     AppLog.i("WirelessServer: Incoming connection detected from ${clientSocket.inetAddress}")
-                    handOffClient(clientSocket, commManager)
+                    handOffClient(clientSocket, commManager, ticket)
                 }
             } catch (e: Exception) {
                 // The cancelled branch used to be silent, which made a server that was torn
@@ -144,9 +145,14 @@ class WirelessServer(
     }
 
     /** The accept loop owns this socket until the launched child actually invokes CommManager. */
-    internal fun handOffClient(clientSocket: java.net.Socket, commManager: CommManager): Job {
+    internal fun handOffClient(
+        clientSocket: java.net.Socket,
+        commManager: CommManager,
+        ticket: Long = commManager.appConnectionTicket(),
+    ): Job {
         var delegated = false
         val delivery = service.serviceScope.launch {
+            if (!commManager.acceptsAppConnectionTicket(ticket)) return@launch
             if (commManager.isConnected) {
                 AppLog.w("WirelessServer: Already connected, dropping client from ${clientSocket.inetAddress}")
                 withContext(Dispatchers.IO) {
@@ -161,7 +167,7 @@ class WirelessServer(
                 AppLog.i("WirelessServer: Accepted client connection from ${clientSocket.inetAddress}. Passing to CommManager...")
                 service.userExitedAA = false
                 delegated = true
-                commManager.connect(clientSocket)
+                commManager.connect(clientSocket, ticket = ticket)
             }
         }
         delivery.invokeOnCompletion {

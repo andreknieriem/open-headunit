@@ -19,7 +19,6 @@ import androidx.fragment.app.FragmentManager
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import android.content.Intent
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy
@@ -123,8 +122,9 @@ class NetworkListFragment : Fragment(), NetworkDiscovery.Listener {
     }
 
     private fun startScan() {
+        val ticket = App.provide(requireContext()).commManager.appConnectionTicket()
         showScanDialog()
-        networkDiscovery.startScan(oneShot = true)
+        networkDiscovery.startScan(oneShot = true, ticket = ticket)
     }
 
     private fun showScanDialog() {
@@ -150,7 +150,7 @@ class NetworkListFragment : Fragment(), NetworkDiscovery.Listener {
         }
     }
 
-    override fun onServiceFound(ip: String, port: Int, socket: java.net.Socket?) {
+    override fun onServiceFound(ip: String, port: Int, socket: java.net.Socket?, ticket: Long) {
         if (port != 5277) {
             // Only interested in Headunit Server (5277) for manual connection list
             // Ignore WifiLauncher (5289) here as that is for auto-triggering
@@ -169,21 +169,32 @@ class NetworkListFragment : Fragment(), NetworkDiscovery.Listener {
             // Auto-connect to the first found device during a manual scan
             if (scanDialog?.isShowing == true) {
                 scanDialog?.dismiss()
-                ToastUtils.showToast(context, getString(R.string.found_connecting, ip), Toast.LENGTH_SHORT)
 
                 val ctx = context ?: return@runOnUiThread
+                val commManager = App.provide(ctx).commManager
+                if (!commManager.acceptsAppConnectionTicket(ticket)) {
+                    try { socket?.close() } catch (_: Exception) {}
+                    return@runOnUiThread
+                }
+                ToastUtils.showToast(ctx, getString(R.string.found_connecting, ip), Toast.LENGTH_SHORT)
                 (activity as? MainActivity)?.beginAutoConnect(
                     "manual WiFi scan-found $ip",
                     MainActivity.ConnectionUiMode.OVERLAY
                 )
+                var socketHandedOff = false
                 lifecycleScope.launch(Dispatchers.IO) {
-                    if (socket != null && socket.isConnected)
-                        App.provide(ctx).commManager.connect(socket, ConnectionPriorityPolicy.Tier.USER, restartEndpoint = ip to port)
-                    else
-                        App.provide(ctx).commManager.connect(ip, 5277, ConnectionPriorityPolicy.Tier.USER)
-                    ContextCompat.startForegroundService(ctx, Intent(ctx, AapService::class.java).apply {
+                    if (socket != null && socket.isConnected) {
+                        socketHandedOff = true
+                        commManager.connect(socket, ConnectionPriorityPolicy.Tier.USER, restartEndpoint = ip to port, ticket = ticket)
+                    } else {
+                        commManager.connect(ip, 5277, ConnectionPriorityPolicy.Tier.USER, ticket = ticket)
+                    }
+                    ContextCompat.startForegroundService(ctx, AapService.operationIntent(ctx, ticket).apply {
                         action = AapService.ACTION_CONNECT_SOCKET
                     })
+                }.invokeOnCompletion {
+                    // A cancelled UI scope may never enter the queued coroutine.
+                    if (!socketHandedOff) try { socket?.close() } catch (_: Exception) {}
                 }
             } else {
                 // If not in auto-connect dialog, close the probe socket
@@ -194,7 +205,7 @@ class NetworkListFragment : Fragment(), NetworkDiscovery.Listener {
 
     // This scan is always one-shot, so the flag says nothing this fragment does not already know:
     // the dialog closing is the end of it, and nothing re-arms.
-    override fun onScanFinished(oneShot: Boolean) {
+    override fun onScanFinished(oneShot: Boolean, ticket: Long) {
         activity?.runOnUiThread {
             if (scanDialog?.isShowing == true) {
                 scanDialog?.dismiss()
@@ -325,14 +336,16 @@ class NetworkListFragment : Fragment(), NetworkDiscovery.Listener {
         override fun onClick(v: View) {
             if (v.id == android.R.id.button2) {
                 val ip = v.getTag(R.integer.key_data) as String
+                val commManager = App.provide(context).commManager
+                val ticket = commManager.appConnectionTicket()
                 (context as? MainActivity)?.beginAutoConnect(
                     "manual WiFi list click $ip",
                     MainActivity.ConnectionUiMode.OVERLAY
                 )
-                ContextCompat.startForegroundService(context, Intent(context, AapService::class.java).apply {
+                ContextCompat.startForegroundService(context, AapService.operationIntent(context, ticket).apply {
                     action = AapService.ACTION_CONNECT_SOCKET
                 })
-                scope.launch(Dispatchers.IO) { App.provide(context).commManager.connect(ip, 5277, ConnectionPriorityPolicy.Tier.USER) }
+                scope.launch(Dispatchers.IO) { commManager.connect(ip, 5277, ConnectionPriorityPolicy.Tier.USER, ticket = ticket) }
             } else {
                 this.removeAddress(v.getTag(R.integer.key_data) as String)
             }

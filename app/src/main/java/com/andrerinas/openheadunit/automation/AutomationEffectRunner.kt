@@ -28,6 +28,8 @@ object AutomationEffectRunner {
     /** Runs [effects], filling [reply] with anything worth reporting. Returns false if any refused. */
     fun run(context: Context, effects: List<AutomationCommandPolicy.Effect>, reply: JSONObject): Boolean {
         val component = App.provide(context)
+        // A command's relay and queued dial are one logical input, not fresh inputs at delivery.
+        val connectionTicket = component.commManager.appConnectionTicket()
         var ok = true
 
         for (effect in effects) {
@@ -37,12 +39,12 @@ object AutomationEffectRunner {
                     reply.put("error", effect.reason)
                     AppLog.w("Automation: refused - ${effect.reason}")
                 }
-                is AutomationCommandPolicy.Effect.StartService -> startService(context, effect)
+                is AutomationCommandPolicy.Effect.StartService -> startService(context, effect, connectionTicket)
                 is AutomationCommandPolicy.Effect.StopApp -> ContextCompat.startForegroundService(
                     context, AapService.acceptedStopIntent(context, effect.owner))
                 is AutomationCommandPolicy.Effect.ConnectSocket ->
                     CoroutineScope(Dispatchers.IO).launch {
-                        component.commManager.connect(effect.ip, effect.port, ConnectionPriorityPolicy.Tier.USER)
+                        component.commManager.connect(effect.ip, effect.port, ConnectionPriorityPolicy.Tier.USER, ticket = connectionTicket)
                     }
                 is AutomationCommandPolicy.Effect.SetNightMode ->
                     setNightMode(context, component.settings, effect.mode)
@@ -70,10 +72,10 @@ object AutomationEffectRunner {
         return ok
     }
 
-    private fun startService(context: Context, effect: AutomationCommandPolicy.Effect.StartService) {
+    private fun startService(context: Context, effect: AutomationCommandPolicy.Effect.StartService, ticket: Long) {
         ContextCompat.startForegroundService(
             context,
-            Intent(context, AapService::class.java).apply {
+            AapService.operationIntent(context, ticket).apply {
                 action = effect.action
                 effect.stringExtras.forEach { (k, v) -> putExtra(k, v) }
                 effect.flagExtras.forEach { (k, v) -> putExtra(k, v) }

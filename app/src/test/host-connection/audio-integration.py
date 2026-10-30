@@ -78,6 +78,7 @@ for marker, declaration, source in [
     ("APPLY", "fun applyAudioSettings()", comm),
     ("ADVANCE", "private inline fun withLiveTransport(", comm),
     ("DISCONNECT", "fun disconnect(", comm),
+    ("RECORD_TERMINAL", "private fun recordTerminal(", comm),
     ("CANCEL_SETTINGS", "fun cancelPendingSettingsRestart()", comm),
     ("DISCONNECTED_STATE", "class Disconnected(", comm),
     ("REACHED_SSL", "private fun reachedSsl()", comm),

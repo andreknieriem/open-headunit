@@ -62,6 +62,7 @@ private class ConnectionFixture(val settings: Settings = Settings()) {
     // PRODUCTION APP_EXIT
     private var connectionAttempt: Any? = Any()
     private var lastEndedAttempt: Any? = null
+    private var lastLoopbackSessionAttempt: Any? = null
     private var usbRecoveryOwner: Any = Any()
     private var settingsUsbRestartInFlight: ConnectionState.Disconnected? = null
     private var usbSaveOwner: ConnectionState.Disconnected? = null
@@ -105,6 +106,7 @@ private class ConnectionFixture(val settings: Settings = Settings()) {
     // PRODUCTION ADVANCE
     // PRODUCTION APPLY
     // PRODUCTION DISCONNECT
+    // PRODUCTION RECORD_TERMINAL
     // PRODUCTION CANCEL_SETTINGS
     // PRODUCTION REACHED_SSL
     // PRODUCTION QUIT

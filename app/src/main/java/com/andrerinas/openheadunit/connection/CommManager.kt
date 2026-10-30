@@ -464,6 +464,10 @@ class CommManager(
     // terminal when an Error replaced it; launches accepted in between date it by this attempt.
     // Guarded by transportLifecycleLock.
     private var lastEndedAttempt: Any? = null
+    // Attempt of the last terminal that ended a physical loopback session. A later Error can
+    // replace that terminal before Main observes it; Self dates its arrival by this record.
+    // A repeat of the same attempt's terminal leaves it unchanged. Guarded by transportLifecycleLock.
+    private var lastLoopbackSessionAttempt: Any? = null
     // Guarded by transportLifecycleLock and reset for each physical connection attempt.
     private var physicalConnectionReached = false
     /** @Volatile: written on IO thread, read on Main and IO threads. */
@@ -1262,9 +1266,21 @@ class CommManager(
         Triple(terminal, if (terminal == null) connectionAttempt else null, lastEndedAttempt)
     }
 
-    /** The current state and the attempt whose terminal was published last, read together. */
-    internal fun acceptanceSnapshot(): Pair<ConnectionState, Any?> = synchronized(transportLifecycleLock) {
-        _connectionState.value to lastEndedAttempt
+    /**
+     * The current state, the attempt whose terminal was published last, and the attempt of the
+     * last ended loopback session, read together.
+     */
+    internal fun acceptanceSnapshot(): Triple<ConnectionState, Any?, Any?> = synchronized(transportLifecycleLock) {
+        Triple(_connectionState.value, lastEndedAttempt, lastLoopbackSessionAttempt)
+    }
+
+    /** The attempt of the last terminal that ended a physical loopback session. */
+    internal fun lastLoopbackSessionEnd(): Any? = synchronized(transportLifecycleLock) { lastLoopbackSessionAttempt }
+
+    /** Called under transportLifecycleLock as each terminal carrying [endedAttempt] is published. */
+    private fun recordTerminal(endedAttempt: Any?) {
+        lastEndedAttempt = endedAttempt
+        if (endedAttempt != null && isLoopbackSession && physicalConnectionReached) lastLoopbackSessionAttempt = endedAttempt
     }
 
     /** A manual start or stop supersedes Save before it publishes an AAP connection. */
@@ -1650,7 +1666,7 @@ class CommManager(
         // Publish cleanup before state: a reconnect observer must be able to await this job.
         _disconnectJob = _scope.launch { doDisconnect(sendByeBye = false) }
         source.retirePresentation()
-        lastEndedAttempt = connectionAttempt
+        recordTerminal(connectionAttempt)
         _connectionState.value = ConnectionState.Disconnected(isClean, isUserExit = wasUserExit, wasLoopbackSession = isLoopbackSession, hadPhysicalConnection = physicalConnectionReached, settingsRetryOwner = save, endedAttempt = connectionAttempt)
         if (settings.killOnDisconnect) scheduleAppExit(wasUserExit)
     }
@@ -1977,7 +1993,7 @@ class CommManager(
         }
         _disconnectJob = _scope.launch { doDisconnect(sendByeBye, byeByeReason, reason) }
         _transport?.retirePresentation()
-        lastEndedAttempt = connectionAttempt
+        recordTerminal(connectionAttempt)
         _connectionState.value = ConnectionState.Disconnected(
             isUserExit = isUserExit, reason = reason,
             settingsRetryOwner = save,
@@ -2029,7 +2045,7 @@ class CommManager(
             connectionAttempt = null
             if (_connectionState.value !is ConnectionState.Disconnected) {
                 _transport?.retirePresentation()
-                lastEndedAttempt = endedAttempt
+                recordTerminal(endedAttempt)
                 _connectionState.value = ConnectionState.Disconnected(wasLoopbackSession = isLoopbackSession, hadPhysicalConnection = physicalConnectionReached, endedAttempt = endedAttempt)
             }
             val transport = _transport
@@ -2175,7 +2191,7 @@ class CommManager(
             val cleanup = _scope.launch { doDisconnect(sendByeBye = true) }
             _disconnectJob = cleanup
             _transport?.retirePresentation()
-            lastEndedAttempt = connectionAttempt
+            recordTerminal(connectionAttempt)
             _connectionState.value = ConnectionState.Disconnected(isClean = false, isUserExit = false, wasLoopbackSession = isLoopbackSession, hadPhysicalConnection = physicalConnectionReached, endedAttempt = connectionAttempt)
             cleanup
         }

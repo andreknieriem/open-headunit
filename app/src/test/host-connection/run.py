@@ -186,6 +186,7 @@ class CommManager {
  private var disconnectRequested=false
  private var connectionAttempt:Any?=null
  private var lastEndedAttempt:Any?=null
+ private var lastLoopbackSessionAttempt:Any?=null
  private var usbRecoveryOwner:Any=Any()
  fun recoveryOwner()=usbRecoveryOwner
  // Projection health storage is not part of the lifecycle under test.
@@ -289,7 +290,7 @@ for declaration in ['val isConnected:', 'val isBusy:', 'val isWirelessSession:',
     manager_head += definition + '\n'
 manager=manager_head+'\n'.join(extract(comm,n) for n in [
  'suspend fun startHandshake()', 'private inline fun withLiveTransport(', 'suspend fun startReading()',
- 'private fun reachedSsl()', 'private fun transportedQuited(', 'fun applyAudioSettings()', 'fun disconnect(', 'fun cancelPendingSettingsRestart()', 'internal fun rearmSnapshot()', 'private fun doDisconnect(',
+ 'private fun reachedSsl()', 'private fun transportedQuited(', 'fun applyAudioSettings()', 'fun disconnect(', 'fun cancelPendingSettingsRestart()', 'internal fun rearmSnapshot()', 'private fun doDisconnect(', 'private fun recordTerminal(',
  'private suspend fun connectIp(', 'private suspend fun connectUsb(', 'private suspend fun connectSocket(', 'private suspend fun connectAdmittedSocket(', 'private fun socketEndpoint(', 'fun disconnectForLinkLoss(', 'fun destroy()',
  'fun setProjectionVideoFocusSuppressed(', 'private suspend fun acceptAppConnectionClaim(',
  'suspend fun connect(\n        device:', 'suspend fun connect(\n        socket:', 'suspend fun connect(\n        ip:',

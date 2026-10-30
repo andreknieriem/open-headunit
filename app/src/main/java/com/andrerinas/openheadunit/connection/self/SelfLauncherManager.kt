@@ -56,6 +56,9 @@ class SelfLauncherManager(
     // The attempt whose terminal was already published at acceptance. Teardown can republish
     // that terminal after an Error replaced it; the repeat still ended before this launch.
     private var launchAcceptedAfterAttempt: Any? = null
+    // CommManager's last ended loopback session at acceptance. A different one later means a
+    // loopback session ended after this launch, even if an Error then hid its terminal.
+    private var launchLoopbackEndAtAcceptance: Any? = null
     private var launchTimeoutJob: Job? = null
     private var launchConnected = false
     private var settingsLaunchOwner: CommManager.ConnectionState.Disconnected? = null
@@ -147,9 +150,10 @@ class SelfLauncherManager(
         isActive = true
         launchInFlight = true
         launchTicket = ticket
-        val (acceptedIn, endedBefore) = commManager.acceptanceSnapshot()
+        val (acceptedIn, endedBefore, loopbackEndBefore) = commManager.acceptanceSnapshot()
         launchAcceptedIn = acceptedIn
         launchAcceptedAfterAttempt = endedBefore
+        launchLoopbackEndAtAcceptance = loopbackEndBefore
         // Own the retained VPN before queued work can be cancelled. Otherwise a cancel
         // between acceptance and Main dispatch would still see the old SESSION owner.
         adoptDummyVpn(needsDummyVpn)
@@ -260,7 +264,7 @@ class SelfLauncherManager(
                     return@timeout
                 }
                 if (!commManager.isConnected && isActive) {
-                    if (endsSessionAfterLaunch(commManager.connectionState.value)) {
+                    if (endsSessionAfterLaunch(commManager.connectionState.value) || loopbackSessionEndedSinceLaunch()) {
                         // A loopback session arrived after this launch and has already ended. Its
                         // terminal owns Self cleanup; "never connected" would be false, and
                         // publishing it would overwrite that terminal. A repeat of a session
@@ -403,16 +407,22 @@ class SelfLauncherManager(
             state.hadPhysicalConnection && !launchAcceptedAfter(state)
     }
 
+    /** A physical loopback session ended after this launch, even if a later state hid its terminal. */
+    private fun loopbackSessionEndedSinceLaunch(): Boolean {
+        return App.provide(service).commManager.lastLoopbackSessionEnd() !== launchLoopbackEndAtAcceptance
+    }
+
     /**
      * A failure report was refused: a connection formed after this launch's guard. Live, it owns
      * Self state. Still Connecting, it may be this launch's own arrival, so wait for its outcome;
-     * an end before any loopback session arrived still fails this launch.
+     * an end before any loopback session arrived still fails this launch. The flow is conflated:
+     * a later Error can hide that session's terminal, so CommManager's record decides too.
      */
     private suspend fun failsAfterRefusedReport(owner: Job?): Boolean {
         val commManager = App.provide(service).commManager
         val outcome = commManager.connectionState.first { it !is CommManager.ConnectionState.Connecting }
         if (launchJob !== owner || commManager.isConnected) return false
-        return !endsSessionAfterLaunch(outcome)
+        return !endsSessionAfterLaunch(outcome) && !loopbackSessionEndedSinceLaunch()
     }
 
     internal fun stopIfCurrent(expected: Job?, preserveVpn: Boolean = false) {
@@ -488,6 +498,7 @@ class SelfLauncherManager(
         launchTicket = null
         launchAcceptedIn = null
         launchAcceptedAfterAttempt = null
+        launchLoopbackEndAtAcceptance = null
         job?.cancel()
         launchTimeoutJob?.cancel()
         launchTimeoutJob = null

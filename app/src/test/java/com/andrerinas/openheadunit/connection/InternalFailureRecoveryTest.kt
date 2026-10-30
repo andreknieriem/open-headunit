@@ -160,6 +160,25 @@ class InternalFailureRecoveryTest {
         }
     }
 
+    @Test fun endedLoopbackSessionStaysOnRecordBehindALaterError() = runBlocking {
+        Fixture().use { f ->
+            val attempt = Any()
+            val loopback = mock(SocketProjectionConnection::class.java)
+            `when`(loopback.isLoopbackPeer).thenReturn(true)
+            f.field("_connection", loopback)
+            f.field("connectionAttempt", attempt)
+            f.field("physicalConnectionReached", true)
+            f.states.value = ConnectionState.Connected
+            f.manager.disconnect(honorKillOnDisconnect = false)
+            val ended = f.states.value as ConnectionState.Disconnected
+            assertTrue(ended.wasLoopbackSession && ended.hadPhysicalConnection)
+            // A USB permission failure can replace that terminal before Main observes it.
+            f.manager.reportError("USB permission not granted for device")
+            assertTrue(f.states.value is ConnectionState.Error)
+            assertSame(attempt, f.manager.lastLoopbackSessionEnd())
+        }
+    }
+
     private suspend fun invoke(manager: CommManager, name: String, types: Array<Class<*>>, vararg args: Any?) {
         val method = CommManager::class.java.getDeclaredMethod(name, *types, Continuation::class.java)
             .apply { isAccessible = true }

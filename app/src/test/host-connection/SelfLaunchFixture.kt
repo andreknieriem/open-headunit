@@ -107,7 +107,9 @@ class CommManager {
     var metadata = "old"
     // CANCEL
     var lastEndedAttempt: Any? = null
-    fun acceptanceSnapshot() = _connectionState.value to lastEndedAttempt
+    var lastLoopbackSessionAttempt: Any? = null
+    fun acceptanceSnapshot() = Triple(_connectionState.value, lastEndedAttempt, lastLoopbackSessionAttempt)
+    fun lastLoopbackSessionEnd() = lastLoopbackSessionAttempt
     // Runs as the report takes the lock: IO may publish between a caller's guard and its report.
     var beforeReport: (() -> Unit)? = null
     // CommManager's contract: a failure stands in its caller's own state or against a newer
@@ -134,6 +136,7 @@ class SelfLauncherManager(private val service: Service, private val wifiLauncher
     private var launchTicket: Long? = null
     private var launchAcceptedIn: CommManager.ConnectionState? = null
     private var launchAcceptedAfterAttempt: Any? = null
+    private var launchLoopbackEndAtAcceptance: Any? = null
     private var launchTimeoutJob: Job? = null
     private var launchConnected = false
     private var settingsLaunchOwner: CommManager.ConnectionState.Disconnected? = null
@@ -154,6 +157,7 @@ class SelfLauncherManager(private val service: Service, private val wifiLauncher
     // DETACH_LAUNCH
     // ACCEPTED_AFTER
     // ENDS_SESSION_AFTER
+    // LOOPBACK_ENDED_SINCE
     // REFUSED_REPORT
     // ENDED
     // ESTABLISHED
@@ -602,13 +606,15 @@ fun main() {
     }
     // A connection can be published after the deadline's isConnected guard but before its report
     // takes the lock. A live arrival is not a failure; one still Connecting decides by its outcome.
-    for (modern in listOf(true, false)) for (arrival in listOf("connected", "connecting-connected", "connecting-failed")) Service().use { s ->
+    // The flow is conflated: a USB permission Error can hide that outcome's terminal from Main.
+    val hiddenArrivals = listOf("connecting-ended-hidden", "connecting-failed-hidden")
+    for (modern in listOf(true, false)) for (arrival in listOf("connected", "connecting-connected", "connecting-failed") + hiddenArrivals) Service().use { s ->
         s.modern = modern
         s.network.activeNetwork = Any()
         s.manager.start()
         s.main.drain(); s.io.drain(); s.main.drain()
         s.commManager.beforeReport = {
-            s.commManager.isLoopbackSession = arrival != "connecting-failed"
+            s.commManager.isLoopbackSession = !arrival.startsWith("connecting-failed")
             s.commManager.connectionState.value = if (arrival == "connected") CommManager.ConnectionState.Connected
                 else CommManager.ConnectionState.Connecting
         }
@@ -616,17 +622,51 @@ fun main() {
         s.main.drain()
         if (arrival != "connected") {
             check(s.manager.isActive && s.resolvePrompts == 0) { "Self failed while its arrival was still Connecting (modern=$modern)" }
-            s.commManager.connectionState.value = if (arrival == "connecting-connected") CommManager.ConnectionState.Connected
-                else CommManager.ConnectionState.Disconnected(hadPhysicalConnection = false)
+            val states = s.commManager.connectionState
+            when (arrival) {
+                "connecting-connected" -> states.value = CommManager.ConnectionState.Connected
+                "connecting-failed" -> states.value = CommManager.ConnectionState.Disconnected(hadPhysicalConnection = false)
+                "connecting-ended-hidden" -> {
+                    // Arrival, its preemption terminal and a USB permission Error before Main resumes.
+                    states.value = CommManager.ConnectionState.Connected
+                    val attempt = Any()
+                    s.commManager.lastLoopbackSessionAttempt = attempt
+                    states.value = CommManager.ConnectionState.Disconnected(
+                        wasLoopbackSession = true, hadPhysicalConnection = true, endedAttempt = attempt)
+                    states.value = CommManager.ConnectionState.Error("USB permission not granted for device")
+                }
+                "connecting-failed-hidden" -> {
+                    states.value = CommManager.ConnectionState.Disconnected(hadPhysicalConnection = false)
+                    states.value = CommManager.ConnectionState.Error("USB permission not granted for device")
+                }
+            }
             s.main.drain()
         }
-        val failed = arrival == "connecting-failed"
+        val failed = arrival.startsWith("connecting-failed")
         check(s.manager.isActive != failed && s.resolvePrompts == (if (failed) 1 else 0) && s.commManager.reports == 0) {
             "late connection after the deadline guard misjudged (modern=$modern arrival=$arrival active=${s.manager.isActive} prompts=${s.resolvePrompts})"
         }
-        if (!failed) {
+        if (arrival == "connected" || arrival == "connecting-connected") {
             s.manager.onConnectionEstablished()
             check(s.manager.isActive && s.commManager.connectionState.value === CommManager.ConnectionState.Connected)
+        }
+    }
+    // The launch's loopback session can end and an Error hide its terminal before the deadline
+    // runs. The deadline must not report the launch as never connected.
+    for (modern in listOf(true, false)) Service().use { s ->
+        s.modern = modern
+        s.network.activeNetwork = Any()
+        s.manager.start()
+        s.main.drain(); s.io.drain(); s.main.drain()
+        val attempt = Any()
+        s.commManager.lastLoopbackSessionAttempt = attempt
+        s.commManager.connectionState.value = CommManager.ConnectionState.Disconnected(
+            wasLoopbackSession = true, hadPhysicalConnection = true, endedAttempt = attempt)
+        s.commManager.connectionState.value = CommManager.ConnectionState.Error("USB permission not granted for device")
+        s.main.advanceBy(120_000L)
+        s.main.drain()
+        check(s.commManager.reports == 0 && s.resolvePrompts == 0) {
+            "Self deadline reported a launch whose session ended behind an Error (modern=$modern prompts=${s.resolvePrompts})"
         }
     }
     // Teardown republished the old session's terminal after B was accepted in the Error that

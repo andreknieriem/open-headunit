@@ -5,8 +5,16 @@ import com.andrerinas.openheadunit.utils.Utils
 object Messages {
     const val DEF_BUFFER_LENGTH = 131080
 
-    val versionRequest: ByteArray
-        get() = createRawMessage(0, 3, 1, VERSION_REQUEST, VERSION_REQUEST.size)
+    fun versionRequest(major: Int, minor: Int): ByteArray {
+        require(major in 0..0xffff && minor in 0..0xffff)
+        return ByteArray(10).apply {
+            this[1] = 3
+            Utils.intToBytes(6, 2, this)
+            Utils.intToBytes(1, 4, this)
+            Utils.intToBytes(major, 6, this)
+            Utils.intToBytes(minor, 8, this)
+        }
+    }
 
     // byte ac_buf [] = {0, 3, 0, 4, 0, 4, 8, 0};
     val statusOk: ByteArray
@@ -14,8 +22,6 @@ object Messages {
 
     fun createRawMessage(chan: Int, flags: Int, type: Int, data: ByteArray): ByteArray =
             createRawMessage(chan, flags, type, data, data.size)
-
-    private var VERSION_REQUEST = byteArrayOf(0, 1, 0, 2)
 
     private fun createRawMessage(chan: Int, flags: Int, type: Int, data: ByteArray, size: Int): ByteArray {
 

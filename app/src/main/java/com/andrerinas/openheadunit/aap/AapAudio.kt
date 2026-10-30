@@ -10,6 +10,8 @@ import android.os.SystemClock
 import com.andrerinas.openheadunit.aap.protocol.AudioConfigs
 import com.andrerinas.openheadunit.aap.protocol.Channel
 import com.andrerinas.openheadunit.aap.protocol.proto.Control
+import com.andrerinas.openheadunit.aap.protocol.proto.Media
+import com.andrerinas.openheadunit.decoder.audio.AacCodecConfig
 import com.andrerinas.openheadunit.decoder.audio.AudioSinkCodec
 import com.andrerinas.openheadunit.decoder.audio.AudioDecoder
 import com.andrerinas.openheadunit.decoder.audio.AudioDiagnostics
@@ -42,6 +44,46 @@ internal class AapAudio(
     // The codec each sink actually carries, from the phone's Media Sink Setup. The setting alone
     // used to decide, and the band cap now announces AAC the setting knows nothing about.
     private val sinkCodecs = ConcurrentHashMap<Int, AudioSinkCodec>()
+    private val sinkFormats = ConcurrentHashMap<Int, Media.AudioConfiguration>()
+    private val builtFormats = ConcurrentHashMap<Int, Media.AudioConfiguration>()
+    private val pendingCsd = ConcurrentHashMap<Int, ByteArray>()
+    private val galBufferLimits = ConcurrentHashMap<Int, Long>()
+    // Wire PTS stays distinct from AAC decoder-local sample-count PTS through the PCM bank.
+    private val sourceTimesUs = LongArray(maxOf(Channel.ID_AUD, Channel.ID_AU1, Channel.ID_AU2) + 1)
+    private val hasSourceTime = BooleanArray(sourceTimesUs.size)
+    private var presentationController: GalPresentationController? = null
+    private val presentationGenerations = LongArray(sourceTimesUs.size) { Long.MIN_VALUE }
+    private val presentationNeedsFreshBatch = BooleanArray(sourceTimesUs.size)
+
+    internal fun bindPresentationController(controller: GalPresentationController) {
+        presentationController = controller
+    }
+
+    internal fun setPresentationGeneration(channel: Int, generation: Long?) {
+        if (!Channel.isAudio(channel)) return
+        val old = presentationGenerations[channel]
+        presentationController?.invalidateAudio(channel, old)
+        presentationGenerations[channel] = generation ?: Long.MIN_VALUE
+        presentationNeedsFreshBatch[channel] = false
+        audioDecoder.getTrack(channel, decoderSession)?.setPresentation(presentationController,
+            presentationGenerations[channel])
+    }
+
+    private fun revokePresentation() {
+        for (channel in Channel.ID_AU1..Channel.ID_AUD) setPresentationGeneration(channel, null)
+    }
+
+    /** A local rebuild/sleep does not end the protocol Start. Keep its identity so
+     * resumed DATA can bind a replacement output without waiting for another Start. */
+    private fun invalidatePresentation() {
+        for (channel in Channel.ID_AU1..Channel.ID_AUD) {
+            presentationController?.invalidateAudio(channel, presentationGenerations[channel])
+            presentationNeedsFreshBatch[channel] = true
+        }
+    }
+
+    internal fun sourceTimestampUs(channel: Int): Long? =
+        if (Channel.isAudio(channel) && hasSourceTime[channel]) sourceTimesUs[channel] else null
     private val defaultCodec = if (useAacAudio) AudioSinkCodec.AAC_LC else AudioSinkCodec.PCM
     private val pcmTiming = mapOf(
         Channel.ID_AUD to AudioTimestampMonitor(),
@@ -113,6 +155,7 @@ internal class AapAudio(
             canRender = { staticAudioFocus || !enableAudioSink ||
                 playbackLease.canRender(SystemClock.elapsedRealtime()) },
             onSessionClosed = {
+                revokePresentation()
                 playbackLease.close()
                 // Post before the shared output's bounded join; all resources belong to this AapAudio.
                 mainHandler.post { releaseAllFocusOnMain() }
@@ -376,18 +419,29 @@ internal class AapAudio(
      * Returns true if the packet was identified and processed as audio data, false otherwise.
      */
     fun process(message: AapMessage): Boolean {
-        if (!AudioMediaPayload.isMedia(message.type)) return false
+        if (!Channel.isAudio(message.channel) || !AudioMediaPayload.isMedia(message.type)) return false
         val offset = AudioMediaPayload.offset(message)
+        if (offset < 0 && !AudioMediaPayload.requiresAck(message.type)) pendingCsd.remove(message.channel)
         if (offset >= 0) {
             if (AudioMediaPayload.requiresAck(message.type)) {
+                sourceTimesUs[message.channel] = AudioMediaPayload.timestampUs(message)
+                hasSourceTime[message.channel] = true
                 notePcmTiming(message, message.size - offset)
                 decode(message.channel, offset, message.data, message.size - offset)
             } else {
+                val csdSize = message.size - offset
+                if (csdSize in 2..64) pendingCsd[message.channel] =
+                    message.data.copyOfRange(offset, message.size)
+                else pendingCsd.remove(message.channel)
                 // CSD is not playback: do not take focus, duck music or feed the jitter bank.
                 if (audioDecoder.getTrack(message.channel, decoderSession) == null) {
                     startAudioTrack(message.channel, announcePlayback = false)
                 }
-                audioDecoder.configure(message.channel, message.data, offset, message.size - offset, decoderSession)
+                val format = sinkFormats[message.channel] ?: AudioConfigs.get(message.channel)
+                if (AacCodecConfig.parse(message.data, offset, csdSize,
+                        format.sampleRate, format.numberOfChannels) != null) {
+                    audioDecoder.configure(message.channel, message.data, offset, csdSize, decoderSession)
+                }
             }
         }
         return true
@@ -397,7 +451,7 @@ internal class AapAudio(
         val monitor = pcmTiming[message.channel] ?: return
         // AAC timestamps can be repeated for several access units from the same capture batch.
         if ((audioDecoder.sinkCodecFor(message.channel, decoderSession) ?: sinkCodecs[message.channel] ?: defaultCodec).isAac) return
-        val format = AudioConfigs.get(message.channel)
+        val format = sinkFormats[message.channel] ?: AudioConfigs.get(message.channel)
         val bytesPerFrame = format.numberOfChannels * format.numberOfBits / 8
         if (bytesPerFrame <= 0 || format.sampleRate <= 0) return
         val durationUs = (size / bytesPerFrame).toLong() * 1_000_000L / format.sampleRate
@@ -406,7 +460,7 @@ internal class AapAudio(
         } else {
             SystemClock.elapsedRealtime() * 1000L
         }
-        val report = monitor.onPacket(AudioMediaPayload.timestampUs(message), arrivalUs, durationUs) ?: return
+        val report = monitor.onPacket(sourceTimesUs[message.channel], arrivalUs, durationUs) ?: return
         val line = "AapAudio: ${Channel.name(message.channel)} $report"
         AppLog.i(line)
         if (report.hasGap) AudioDiagnostics.record(arrivalUs / 1000L, line)
@@ -429,7 +483,7 @@ internal class AapAudio(
     private fun startAudioTrack(channel: Int, announcePlayback: Boolean = true) {
         if (audioDecoder.getTrack(channel, decoderSession) != null) return
 
-        val config = AudioConfigs.get(channel)
+        val config = sinkFormats[channel] ?: AudioConfigs.get(channel)
         val stream = streamFor(channel)
 
         val offset = when (channel) {
@@ -453,6 +507,21 @@ internal class AapAudio(
             codec.isAac, gain, effectiveMultiplier, audioQueueCapacity, staticAudioFocus, attachHwDspEqualizer,
             preferAAudio = settings.useAAudioOutput, isAdts = codec == AudioSinkCodec.AAC_LC_ADTS, session = decoderSession,
             matchingMode = sessionConfig.matchingMode)
+        audioDecoder.getTrack(channel, decoderSession)?.let { track ->
+            builtFormats[channel] = config
+            track.setGalBufferLimit(galBufferLimits[channel])
+            track.setPresentation(presentationController, presentationGenerations[channel])
+            if (presentationNeedsFreshBatch[channel]) {
+                track.invalidatePresentation()
+                presentationNeedsFreshBatch[channel] = false
+            }
+            pendingCsd[channel]?.let { csd ->
+                if (codec.isAac && AacCodecConfig.parse(csd, 0, csd.size,
+                        config.sampleRate, config.numberOfChannels) != null) {
+                    audioDecoder.configure(channel, csd, 0, csd.size, decoderSession)
+                }
+            }
+        }
         if (announcePlayback) audioDecoder.getTrack(channel, decoderSession)?.takeIf { it.canAcceptAudioInput() }?.let {
             onAudioPlaybackStarted(channel, it.playbackOwner)
         }
@@ -539,14 +608,31 @@ internal class AapAudio(
     fun noteSinkCodec(channel: Int, setupType: Int) {
         if (!Channel.isAudio(channel)) return
         finishPcmTiming(channel, "Setup")
-        val codec = AudioSinkCodecPolicy.codecFor(setupType)
-        if (codec == null) {
-            AppLog.w("AapAudio: sink setup type $setupType on ${Channel.name(channel)} is not an audio codec, keeping codec=$defaultCodec from the setting")
-            sinkCodecs.remove(channel)
-        } else {
-            sinkCodecs[channel] = codec
-        }
+        val codec = requireNotNull(AudioSinkCodecPolicy.codecFor(setupType))
+        // CSD belongs to Setup, not to a retained track from the preceding setup.
+        pendingCsd.remove(channel)
+        hasSourceTime[channel] = false
+        sinkCodecs[channel] = codec
     }
+
+    /** Select the exact advertised format before warming or accepting this Start's data. */
+    internal fun selectFormat(channel: Int, format: Media.AudioConfiguration): Boolean {
+        if (!Channel.isAudio(channel) || !GalAudioFormat.supported(format)) return false
+        if (sinkFormats.put(channel, format) != format) finishPcmTiming(channel, "Format")
+        precreateAudioTrack(channel)
+        return audioDecoder.getTrack(channel, decoderSession)?.canAcceptAudioInput() == true
+    }
+
+    internal fun applyGalBufferLimit(channel: Int, ms: Long?) {
+        if (ms == null) galBufferLimits.remove(channel) else {
+            require(ms >= 0)
+            galBufferLimits[channel] = ms
+        }
+        audioDecoder.getTrack(channel, decoderSession)?.setGalBufferLimit(ms)
+    }
+
+    internal fun galPlaybackSample(channel: Int): GalPlaybackSample? =
+        audioDecoder.galPlaybackSample(channel, decoderSession)
 
     /**
      * Build a sink when the phone sets it up, rather than on the first byte of audio.
@@ -562,7 +648,9 @@ internal class AapAudio(
     fun precreateAudioTrack(channel: Int) {
         if (!Channel.isAudio(channel)) return
         val hasLiveTrack = audioDecoder.getTrack(channel, decoderSession) != null
-        if (!AudioSinkSetupPolicy.rebuilds(hasLiveTrack, audioDecoder.sinkCodecFor(channel, decoderSession), sinkCodecs[channel])) {
+        val format = sinkFormats[channel] ?: AudioConfigs.get(channel)
+        if (builtFormats[channel] == format && !AudioSinkSetupPolicy.rebuilds(hasLiveTrack,
+                audioDecoder.sinkCodecFor(channel, decoderSession), sinkCodecs[channel])) {
             AppLog.i("AapAudio: ${Channel.name(channel)} is already set up, keeping the sink it has")
             return
         }
@@ -573,6 +661,7 @@ internal class AapAudio(
     /** The sink is ready at Setup; Start can warm its output before the first PCM arrives. */
     fun preparePlayback(channel: Int) {
         finishPcmTiming(channel, "Start")
+        if (Channel.isAudio(channel)) hasSourceTime[channel] = false
         if (!enableAudioSink || !Channel.isAudio(channel)) return
         audioDecoder.preparePlayback(channel, decoderSession)?.let { onAudioPlaybackStarted(channel, it) }
     }
@@ -593,7 +682,7 @@ internal class AapAudio(
             onAudioPlaybackStarted(channel, track.playbackOwner)
         }
 
-        audioDecoder.decode(channel, buf, start, length, decoderSession)
+        audioDecoder.decode(channel, buf, start, length, decoderSession, sourceTimestampUs(channel) ?: Long.MIN_VALUE)
     }
 
     fun updateGains() {
@@ -615,6 +704,7 @@ internal class AapAudio(
     fun restartAudio() {
         AppLog.i("AapAudio: Restarting all audio tracks")
         pcmTiming.keys.forEach { finishPcmTiming(it, "Restart") }
+        invalidatePresentation()
         // sinkCodecs is kept: the phone sets a sink up once per session, and a restarted track
         // still carries the codec that setup named.
         audioDecoder.stop(decoderSession)
@@ -622,6 +712,7 @@ internal class AapAudio(
 
     fun stopAudio(channel: Int) {
         finishPcmTiming(channel, "Stop")
+        setPresentationGeneration(channel, null)
         AppLog.i("Audio Stop: " + Channel.name(channel))
         // The mixer drains buffered speech and controls media ducking on its render clock.
         // Keep the decoder/output alive for the next prompt or media resume.
@@ -636,6 +727,7 @@ internal class AapAudio(
     fun pauseAllAudio() {
         AppLog.i("AapAudio: Pausing all audio tracks for sleep")
         pcmTiming.keys.forEach { finishPcmTiming(it, "Sleep") }
+        invalidatePresentation()
         audioDecoder.pauseAll(decoderSession)
         postPlaybackRelease(playbackLease.clear())
     }

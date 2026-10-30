@@ -39,6 +39,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.aap.AapService
+import com.andrerinas.openheadunit.aap.GalProfile
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.CredentialField
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeAaWakeDamagePolicy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zbt.ZbtProbe
@@ -127,7 +128,7 @@ class SettingsFragment : Fragment() {
     // Wireless items here only appear in Basic when the user connects wirelessly (see filterSettings).
     private val basicSettingIds = setOf(
         // General
-        "autoOptimize", "connectionMode", "appLanguage",
+        "autoOptimize", "connectionMode", "appLanguage", "laboratory",
         // Wireless (shown in Basic only when WiFi is among the selected connection modes).
         // The hotspot entries come along with the transport choice: they only render once Hotspot
         // is picked, and on a device that will not let an app read its hotspot configuration the
@@ -167,6 +168,7 @@ class SettingsFragment : Fragment() {
 
     // Local state to hold changes before saving
     private val pending = SettingsPendingCopy()
+    private var preservePendingForLaboratory = false
     private var pendingUseGps by pending::useGps
     private var pendingShowNavigationNotifications by pending::showNavigationNotifications
     private var pendingSyncMediaSessionAaMetadata by pending::syncMediaSessionAaMetadata
@@ -367,8 +369,9 @@ class SettingsFragment : Fragment() {
             settings.enableCarLauncher = true
             AppLog.i("SettingsFragment: the app holds the home role, storing car launcher mode")
         }
-        // Initialize local state with current values
-        pending.loadFrom(settings)
+        // Laboratory owns disjoint settings, so returning from it must not discard parent edits.
+        // Other children retain their existing reload behavior for shared parent preferences.
+        if (!preservePendingForLaboratory) pending.loadFrom(settings)
 
         // Loading screen settings are handled in LoadingScreenFragment (saves directly)
 
@@ -385,6 +388,7 @@ class SettingsFragment : Fragment() {
         settingsRecyclerView.adapter = settingsAdapter
 
         setupHeader(view)
+        checkChanges()
 
         updateSettingsList()
         if (Build.VERSION.SDK_INT >= 26) viewLifecycleOwner.lifecycleScope.launch {
@@ -835,6 +839,19 @@ class SettingsFragment : Fragment() {
             nameResId = R.string.connection_mode,
             value = connectionModesLabel(),
             onClick = { showConnectionModeDialog() }
+        ))
+
+        items.add(SettingItem.SettingEntry(
+            stableId = "laboratory",
+            nameResId = R.string.laboratory,
+            value = getString(R.string.laboratory_summary,
+                if (settings.galProtocolVersion == GalProfile.AUTO_SETTING) getString(R.string.gal_protocol_version_auto)
+                else settings.galProtocolVersion),
+            searchKeywords = getString(R.string.laboratory_search_keywords),
+            onClick = {
+                preservePendingForLaboratory = true
+                findNavController().navigate(R.id.action_settingsFragment_to_laboratorySettingsFragment)
+            }
         ))
 
         // Language Selector
@@ -4052,6 +4069,7 @@ class SettingsFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
+        preservePendingForLaboratory = false
         // Refresh settings list when returning from sub-screens (e.g. AutoConnectFragment, DarkModeFragment)
         if (::settingsAdapter.isInitialized) {
             settings = App.provide(requireContext()).settings

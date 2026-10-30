@@ -40,6 +40,7 @@ import com.andrerinas.openheadunit.decoder.audio.MicRecorder
 import com.andrerinas.openheadunit.decoder.video.DecoderStopPolicy
 import com.andrerinas.openheadunit.decoder.video.SoftwareYuvFrameSink
 import com.andrerinas.openheadunit.decoder.video.VideoDecoder
+import com.andrerinas.openheadunit.decoder.video.VideoDimensions
 import com.andrerinas.openheadunit.decoder.video.VideoDimensionsListener
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.BluetoothHelper
@@ -49,6 +50,7 @@ import com.andrerinas.openheadunit.connection.usb.UsbSwitchClaim
 import com.andrerinas.openheadunit.decoder.audio.CallState
 import com.andrerinas.openheadunit.utils.IntentFilters
 import com.andrerinas.openheadunit.view.IProjectionView
+import com.andrerinas.openheadunit.decoder.video.VideoSurfaceKind
 import com.andrerinas.openheadunit.view.GlProjectionView
 import com.andrerinas.openheadunit.view.ProjectionView
 import com.andrerinas.openheadunit.view.TextureProjectionView
@@ -559,7 +561,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             val tv = projectionView as TextureView
             if (tv.isAvailable) {
                 AppLog.w("Watchdog: TextureView IS available. Forcing onSurfaceChanged.")
-                onSurfaceChanged(android.view.Surface(tv.surfaceTexture), tv.width, tv.height)
+                onSurfaceChanged(android.view.Surface(tv.surfaceTexture), tv.width, tv.height, VideoSurfaceKind.TEXTURE_CONSUMER)
             } else {
                 AppLog.e("Watchdog: TextureView NOT available. Vis=${tv.visibility}, W=${tv.width}, H=${tv.height}")
             }
@@ -567,7 +569,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
              val gles = projectionView as GlProjectionView
              if (gles.isSurfaceValid()) {
                  AppLog.w("Watchdog: GlProjectionView IS valid. Forcing onSurfaceChanged.")
-                 onSurfaceChanged(gles.getSurface()!!, gles.width, gles.height)
+                 onSurfaceChanged(gles.getSurface()!!, gles.width, gles.height, gles.videoSurfaceKind)
              } else {
                  AppLog.e("Watchdog: GlProjectionView NOT valid.")
              }
@@ -575,7 +577,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
              val sv = projectionView as ProjectionView
              if (sv.holder.surface.isValid) {
                  AppLog.w("Watchdog: SurfaceView IS valid. Forcing onSurfaceChanged.")
-                 onSurfaceChanged(sv.holder.surface, sv.width, sv.height)
+                 onSurfaceChanged(sv.holder.surface, sv.width, sv.height, sv.videoSurfaceKind)
              } else {
                  AppLog.e("Watchdog: SurfaceView NOT valid.")
              }
@@ -1703,7 +1705,8 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
 
         SystemUI.apply(window, container, mode) {
             if (::projectionView.isInitialized) {
-                ProjectionViewScaler.updateScale(projectionView as View, videoDecoder.videoWidth, videoDecoder.videoHeight)
+                val dimensions = videoDecoder.videoSize
+                ProjectionViewScaler.updateScale(projectionView as View, dimensions.width, dimensions.height)
             }
         }
 
@@ -1717,7 +1720,8 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                         val effectiveMode = activityFullscreenOverride ?: settings.fullscreenMode
                         SystemUI.apply(window, container, effectiveMode) {
                             if (::projectionView.isInitialized) {
-                                ProjectionViewScaler.updateScale(projectionView as View, videoDecoder.videoWidth, videoDecoder.videoHeight)
+                                val dimensions = videoDecoder.videoSize
+                                ProjectionViewScaler.updateScale(projectionView as View, dimensions.width, dimensions.height)
                             }
                         }
                     }, 2000)
@@ -1867,8 +1871,9 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             try {
-                var width = videoDecoder.videoWidth.coerceAtLeast(1).toFloat()
-                var height = videoDecoder.videoHeight.coerceAtLeast(1).toFloat()
+                val dimensions = videoDecoder.videoSize
+                var width = dimensions.width.coerceAtLeast(1).toFloat()
+                var height = dimensions.height.coerceAtLeast(1).toFloat()
                 val ratio = width / height
 
                 // Android supports PiP aspect ratios between 1/2.39 (0.418) and 2.39.
@@ -2131,7 +2136,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         // Decoder configuration is now in onSurfaceChanged
     }
 
-    override fun onSurfaceChanged(surface: android.view.Surface, width: Int, height: Int) {
+    override fun onSurfaceChanged(surface: android.view.Surface, width: Int, height: Int, kind: VideoSurfaceKind) {
         AppLog.i("[UI_DEBUG] [AapProjectionActivity] onSurfaceChanged. Actual surface dimensions: width=$width, height=$height")
         val surfaceChanged = relaunchRecovery.onSurfaceChanged(
             ownedSurface !== surface || !videoDecoder.isCurrentSurface(surface),
@@ -2139,7 +2144,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         )
         isSurfaceSet = true
 
-        videoDecoder.setSurface(surface)
+        videoDecoder.setSurface(surface, kind)
         ownedSurface = surface
         if (surfaceChanged) {
             // A replacement target must not strand a pending gain. A resize of the same
@@ -2208,18 +2213,9 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             }
         }
 
-        // Explicitly check and set video dimensions if already known by the decoder
-        // This handles cases where the activity is recreated but the decoder already has dimensions
-        val currentVideoWidth = videoDecoder.videoWidth
-        val currentVideoHeight = videoDecoder.videoHeight
-
-        if (currentVideoWidth > 0 && currentVideoHeight > 0) {
-            AppLog.i("[AapProjectionActivity] Decoder already has dimensions: ${currentVideoWidth}x$currentVideoHeight. Applying to view.")
-            runOnUiThread {
-                projectionView.setVideoSize(currentVideoWidth, currentVideoHeight)
-                ProjectionViewScaler.updateScale(projectionView as View, currentVideoWidth, currentVideoHeight)
-            }
-        }
+        // A recreated activity can attach after dimensions are known. Reannounce through the
+        // same source-owned notification path instead of posting an unfenced width/height pair.
+        videoDecoder.notifyVideoDimensions()
     }
 
     override fun onSurfaceDestroyed(surface: android.view.Surface) {
@@ -2256,11 +2252,18 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     }
 
 
-    override fun onVideoDimensionsChanged(width: Int, height: Int) {
-        AppLog.i("[AapProjectionActivity] Received video dimensions: ${width}x$height")
+    override fun onVideoDimensionsChanged(dimensions: VideoDimensions) {
+        // Registration precedes view setup in onCreate; onSurfaceChanged reannounces anything
+        // received before the target exists. Capture it before logging/posting can yield.
+        if (!::projectionView.isInitialized) return
+        val target = projectionView
+        AppLog.i("[AapProjectionActivity] Received video dimensions: ${dimensions.width}x${dimensions.height}")
         runOnUiThread {
-            projectionView.setVideoSize(width, height)
-            ProjectionViewScaler.updateScale(projectionView as View, width, height)
+            // Main-thread serialization covers the two mutations, not a decoder lock. Validate
+            // the original notification here, never acquire replacement ownership for old work.
+            if (projectionView !== target || !dimensions.isCurrent()) return@runOnUiThread
+            target.setVideoSize(dimensions.width, dimensions.height)
+            ProjectionViewScaler.updateScale(target as View, dimensions.width, dimensions.height)
         }
     }
 
@@ -2295,7 +2298,8 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         val reannounced = reannounceMargins()
         runOnUiThread {
             val view = projectionView as? View ?: return@runOnUiThread
-            ProjectionViewScaler.updateScale(view, videoDecoder.videoWidth, videoDecoder.videoHeight)
+            val dimensions = videoDecoder.videoSize
+            ProjectionViewScaler.updateScale(view, dimensions.width, dimensions.height)
         }
         return reannounced
     }
@@ -2304,7 +2308,8 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     private fun onFallbackAdopted() {
         runOnUiThread {
             val view = projectionView as? View ?: return@runOnUiThread
-            ProjectionViewScaler.updateScale(view, videoDecoder.videoWidth, videoDecoder.videoHeight)
+            val dimensions = videoDecoder.videoSize
+            ProjectionViewScaler.updateScale(view, dimensions.width, dimensions.height)
         }
     }
 

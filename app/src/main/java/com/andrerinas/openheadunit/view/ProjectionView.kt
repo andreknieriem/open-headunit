@@ -13,6 +13,7 @@ import android.view.SurfaceView
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.decoder.video.DecoderStopPolicy
 import com.andrerinas.openheadunit.decoder.video.VideoDecoder
+import com.andrerinas.openheadunit.decoder.video.VideoSurfaceKind
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.HeadUnitScreenConfig
 import com.andrerinas.openheadunit.utils.Settings
@@ -22,6 +23,7 @@ import java.util.concurrent.TimeUnit
 class ProjectionView @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
 ) : SurfaceView(context, attrs, defStyleAttr), IProjectionView, SurfaceHolder.Callback {
+    override val videoSurfaceKind: VideoSurfaceKind get() = VideoSurfaceKind.DIRECT_DISPLAY
 
     private val callbacks = mutableListOf<IProjectionView.Callbacks>()
     private var videoDecoder: VideoDecoder? = null
@@ -64,7 +66,7 @@ class ProjectionView @JvmOverloads constructor(
 
     override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
         AppLog.i("holder $holder, format: $format, width: $width, height: $height")
-        callbacks.forEach { it.onSurfaceChanged(holder.surface, width, height) }
+        callbacks.forEach { it.onSurfaceChanged(holder.surface, width, height, videoSurfaceKind) }
         if (appliesProjectionScale) {
             ProjectionViewScaler.updateScale(this, videoWidth, videoHeight)
         }
@@ -82,7 +84,7 @@ class ProjectionView @JvmOverloads constructor(
         callbacks.add(callback)
         if (holder.surface.isValid) {
             callback.onSurfaceCreated(holder.surface)
-            callback.onSurfaceChanged(holder.surface, width, height)
+            callback.onSurfaceChanged(holder.surface, width, height, videoSurfaceKind)
         }
     }
 

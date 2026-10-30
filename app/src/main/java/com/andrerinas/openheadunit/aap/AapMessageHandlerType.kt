@@ -44,7 +44,7 @@ internal class AapMessageHandlerType(
         // Reassembly rejection is retired at LAST or a replacement FIRST, synchronously
         // on the reader before another session can be dispatched.
         // Return the credit without decoding or queuing the rejected payload.
-        transport.sendMediaAck(channel)
+        transport.captureMediaAck(channel)?.let { transport.sendMediaAck(channel, it) }
     }
 
     @Throws(AapMessageHandler.HandleException::class)
@@ -90,7 +90,7 @@ internal class AapMessageHandlerType(
 
         // 2. Try processing as Audio stream (Speech, System, Media)
         if (message.isAudio && AudioMediaPayload.isMedia(msgType)) {
-            val sessionId = transport.getSessionId(message.channel)
+            val ackSession = if (AudioMediaPayload.requiresAck(msgType)) transport.captureMediaAck(message.channel) else null
             try {
                 aapAudio.process(message)
             } finally {
@@ -101,8 +101,8 @@ internal class AapMessageHandlerType(
                 // recovery does not make a missing ACK harmless: it can delay later audio.
                 // Reassembly drops never reach this dispatch; they use onDroppedMediaData.
                 // ACK retires receipt, not speaker playback. Keep the receiving session id.
-                if (AudioMediaPayload.requiresAck(msgType)) {
-                    transport.sendMediaAck(message.channel, sessionId)
+                if (ackSession != null) {
+                    transport.sendMediaAck(message.channel, ackSession)
                 }
             }
             return

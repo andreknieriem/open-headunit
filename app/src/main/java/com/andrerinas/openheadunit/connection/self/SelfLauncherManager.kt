@@ -102,7 +102,9 @@ class SelfLauncherManager(
         // Stop can revoke the old launch before its service relay or cancellation cleanup
         // reaches Main. Fresh input owns a new ticket and must not coalesce into that job.
         // Retire only its bookkeeping; the retained VPN/network may already belong to this run.
-        if (launchTicket != null && launchTicket != ticket) {
+        // A connected session is not pending work: keep its Self mode and let the coalescing
+        // check below ignore this request as already connected.
+        if (launchTicket != null && launchTicket != ticket && !commManager.isConnected) {
             stopIfCurrent(launchJob, preserveVpn = true)
         }
 

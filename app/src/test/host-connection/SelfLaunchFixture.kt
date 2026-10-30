@@ -430,6 +430,26 @@ fun main() {
         }
         check(s.commManager.socketConnects == if (s.modern) 1 else 0)
     }
+    // A completed launch whose loopback session is still up is not stale work. Stop B ->
+    // Open C -> fresh Self input must coalesce into that session without clearing Self mode,
+    // which the call-screen raise policy consumes.
+    for (stop in listOf(false, true)) Service().use { s ->
+        s.modern = true
+        s.useRealDirect = true
+        s.manager.start()
+        s.main.drain(); s.io.drain(); s.main.drain()
+        check(s.commManager.isConnected && s.commManager.socketConnects == 1)
+        s.commManager.isLoopbackSession = true
+        s.manager.onConnectionEstablished()
+        check(s.manager.isActive && !s.manager.inFlight())
+        if (stop) s.commManager.stopApp()
+        s.commManager.openApp()
+        s.manager.start(ticket = s.commManager.appConnectionTicket())
+        s.main.drain(); s.io.drain(); s.main.drain()
+        check(s.manager.isActive) { "fresh Self input cleared the established Self session (stop=$stop)" }
+        check(s.commManager.isConnected && s.commManager.socketConnects == 1)
+        check(s.vpnStops == 0 && s.wifiLauncherManager.stops == 0)
+    }
     Service().use { s ->
         Main(s).requestSelf(); s.deliverHomeCommand(); s.main.drain()
         val originalJob = s.manager.currentLaunch()

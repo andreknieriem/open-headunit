@@ -143,7 +143,8 @@ class SelfLauncherManager(
         isActive = true
         launchInFlight = true
         launchTicket = ticket
-        launchAcceptedIn = commManager.connectionState.value
+        val acceptedIn = commManager.connectionState.value
+        launchAcceptedIn = acceptedIn
         // Own the retained VPN before queued work can be cancelled. Otherwise a cancel
         // between acceptance and Main dispatch would still see the old SESSION owner.
         adoptDummyVpn(needsDummyVpn)
@@ -212,7 +213,7 @@ class SelfLauncherManager(
                     // Report without disconnecting: another launch method may still connect to
                     // the server we opened. Reporting hides the "connecting" overlay while leaving
                     // that server and its network available for the late arrival.
-                    commManager.reportError("No launch method succeeded", settingsRestart)
+                    commManager.reportError("No launch method succeeded", settingsRestart, expected = acceptedIn)
                     // The report is not a disconnect, so nothing else clears this - and the
                     // watchdog below is only armed once a launcher has succeeded.
                     isActive = false
@@ -253,11 +254,19 @@ class SelfLauncherManager(
                     return@timeout
                 }
                 if (!commManager.isConnected && isActive) {
+                    val current = commManager.connectionState.value
+                    if (current !== acceptedIn && current is CommManager.ConnectionState.Disconnected &&
+                        current.wasLoopbackSession && current.hadPhysicalConnection) {
+                        // A loopback session arrived after this launch and has already ended. Its
+                        // terminal owns Self cleanup; "never connected" would be false, and
+                        // publishing it would overwrite that terminal.
+                        return@timeout
+                    }
                     AppLog.e("SelfMode: nothing connected within ${deadlineMs}ms of the launch")
                     if (SelfLaunchTimeoutPolicy.mayDisconnect(path)) {
-                        commManager.emitError("No launch method succeeded (timeout)")
+                        commManager.emitError("No launch method succeeded (timeout)", expected = acceptedIn)
                     } else {
-                        commManager.reportError("No launch method succeeded (timeout)", settingsRestart)
+                        commManager.reportError("No launch method succeeded (timeout)", settingsRestart, expected = acceptedIn)
                     }
 
                     // The report is deliberately not a disconnect, so no Disconnected transition

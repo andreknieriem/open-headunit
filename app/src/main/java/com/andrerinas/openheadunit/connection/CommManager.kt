@@ -1553,9 +1553,16 @@ class CommManager(
         }
     }
 
-    /** Reports an internal failure without applying the user's explicit Exit policy. */
-    suspend fun emitError(msg: String) {
+    /**
+     * Reports an internal failure without applying the user's explicit Exit policy.
+     * With [expected], a late failure cannot replace a state published after its caller started.
+     */
+    suspend fun emitError(msg: String, expected: ConnectionState? = null) {
         synchronized(transportLifecycleLock) {
+            if (expected != null && _connectionState.value !== expected) {
+                AppLog.w("CommManager: $msg (not published: state changed since it started)")
+                return
+            }
             _connectionState.value = ConnectionState.Error(msg)
             disconnect(sendByeBye = false, isUserExit = false)
         }
@@ -1569,13 +1576,23 @@ class CommManager(
      * VPN it was handed, both have to stay up for that to happen. See
      * [com.andrerinas.openheadunit.connection.self.SelfLaunchTimeoutPolicy.mayDisconnect].
      */
-    suspend fun reportError(msg: String, settingsRestart: ConnectionState.Disconnected? = null) {
+    suspend fun reportError(
+        msg: String,
+        settingsRestart: ConnectionState.Disconnected? = null,
+        expected: ConnectionState? = null,
+    ) {
         synchronized(transportLifecycleLock) {
             if (settingsRestart != null) {
                 // A failed launcher has not handed ownership to another connection. Preserve
                 // Save's Disconnected token so its bounded automatic fallback can still run.
                 // A late failure from a superseded/cancelled Save cannot change the new state.
                 if (settingsRestart.acceptsSettingsRestart(_connectionState.value)) AppLog.e(msg)
+                return
+            }
+            // A late launcher failure cannot overwrite a terminal or connection published after
+            // that launcher was accepted; a later observer would misattribute what replaced it.
+            if (expected != null && _connectionState.value !== expected) {
+                AppLog.w("CommManager: $msg (not published: state changed since it started)")
                 return
             }
             _connectionState.value = ConnectionState.Error(msg)

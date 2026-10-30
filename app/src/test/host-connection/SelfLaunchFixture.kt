@@ -105,8 +105,8 @@ class CommManager {
     var reports = 0
     var metadata = "old"
     // CANCEL
-    fun reportError(message: String, state: ConnectionState.Disconnected? = null) { reports++ }
-    fun emitError(message: String) { reports++ }
+    fun reportError(message: String, state: ConnectionState.Disconnected? = null, expected: ConnectionState? = null) { reports++ }
+    fun emitError(message: String, expected: ConnectionState? = null) { reports++ }
     fun disconnect() { cancelPendingSettingsRestart() }
     var teardown: CompletableDeferred<Unit>? = null
     suspend fun awaitDisconnectComplete() { teardown?.await() }
@@ -552,6 +552,34 @@ fun main() {
         s.main.advanceBy(120_000L)
         s.main.drain()
         check(s.dummyVpnOwner == null && s.vpnReleases == 1) { "Self timeout left old SESSION VPN alive" }
+    }
+    // The launch's loopback session can connect and end before Main observes it. Its deadline
+    // must not then report "never connected": the report would overwrite that terminal, and the
+    // late teardown would publish a second terminal that retires a launch accepted in between.
+    for (modern in listOf(true, false)) for (state in listOf("loopback-ended", "unchanged", "unconnected-terminal")) Service().use { s ->
+        s.modern = modern
+        s.network.activeNetwork = Any()
+        s.manager.start()
+        s.main.drain(); s.io.drain(); s.main.drain()
+        check(s.manager.isActive && !s.manager.inFlight() && s.commManager.reports == 0) {
+            "launch not waiting for its deadline (modern=$modern active=${s.manager.isActive} inFlight=${s.manager.inFlight()} reports=${s.commManager.reports})"
+        }
+        val ended = CommManager.ConnectionState.Disconnected(
+            wasLoopbackSession = state == "loopback-ended", hadPhysicalConnection = state == "loopback-ended")
+        if (state != "unchanged") s.commManager.connectionState.value = ended
+        s.main.advanceBy(120_000L)
+        s.main.drain()
+        val reportsExpected = if (state == "loopback-ended") 0 else 1
+        check(s.commManager.reports == reportsExpected) {
+            "Self deadline after its ended loopback session reported never-connected (modern=$modern state=$state reports=${s.commManager.reports})"
+        }
+        if (state == "loopback-ended") {
+            check(s.commManager.connectionState.value === ended && s.manager.isActive)
+            s.manager.start()
+            check(s.manager.launchAcceptedAfter(ended))
+        } else {
+            check(!s.manager.isActive)
+        }
     }
     Service().use { s ->
         s.modern = true

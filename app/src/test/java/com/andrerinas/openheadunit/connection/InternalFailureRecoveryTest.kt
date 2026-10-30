@@ -131,6 +131,26 @@ class InternalFailureRecoveryTest {
         }
     }
 
+    @Test fun lateLaunchFailureCannotReplaceAStatePublishedAfterItsLaunch() = runBlocking {
+        for (disconnects in listOf(false, true)) Fixture().use { f ->
+            val acceptedIn = ConnectionState.Disconnected()
+            val ended = ConnectionState.Disconnected(wasLoopbackSession = true, hadPhysicalConnection = true)
+            f.states.value = ended
+            if (disconnects) f.manager.emitError("old launch timeout", expected = acceptedIn)
+            else f.manager.reportError("old launch timeout", expected = acceptedIn)
+            assertSame("A late failure replaced the terminal published after its launch", ended, f.states.value)
+            assertTrue(f.manager.ownsUsbRecheck(f.owner))
+            // A launch accepted in the current state still reports its own failure.
+            if (disconnects) {
+                f.manager.emitError("launch timeout", expected = ended)
+                f.assertRecoverable()
+            } else {
+                f.manager.reportError("launch timeout", expected = ended)
+                assertEquals(ConnectionState.Error("launch timeout"), f.states.value)
+            }
+        }
+    }
+
     private suspend fun invoke(manager: CommManager, name: String, types: Array<Class<*>>, vararg args: Any?) {
         val method = CommManager::class.java.getDeclaredMethod(name, *types, Continuation::class.java)
             .apply { isAccessible = true }

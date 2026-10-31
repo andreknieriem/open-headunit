@@ -531,6 +531,12 @@
 
     <string name="supported_nativeaa">Supporto wireless avanzato</string>
     <string name="supported_nativeaa_desc">Ottime notizie! Il tuo dispositivo supporta la modalità \"Native Wireless\", che offre un\'esperienza Android Auto più fluida. \n\nPer attivarla bisogna aggiornare la cache Bluetooth. Procedi così: \n1. Rimuovi l\'associazione esistente sul telefono \n2. Tocca OK per riavviare il Bluetooth \n3. Associa di nuovo il telefono \n\nVuoi passare ora alla modalità Native AA?</string>
+    <string name="automation_connect_no_permission">Consenti a questa app di usare Bluetooth per connettersi tramite nome.</string>
+    <string name="automation_connect_not_found">Nessun telefono accoppiato ha questo nome.</string>
+    <string name="automation_connect_ambiguous">Più telefoni accoppiati hanno questo nome.</string>
+    <string name="automation_connect_not_a_phone">Il dispositivo accoppiato non è un telefono.</string>
+    <string name="automation_connect_not_paired">Questo indirizzo Bluetooth non è accoppiato.</string>
+    <string name="automation_connect_live_session">Un altro telefono è già connesso.</string>
     <string name="native_aa_poke_not_running">Il Bluetooth wireless non è attivo su questa unità. Controlla le impostazioni.</string>
     <string name="not_supported_nativeaa">Native Wireless potrebbe non essere supportato</string>
     <string name="not_supported_nativeaa_desc">Il tuo dispositivo potrebbe non supportare le funzioni Bluetooth o Wi-Fi necessarie per Native Wireless. Puoi provare comunque, ma se fallisce, utilizza la modalità \"Wireless Helper\" o \"Auto (Headunit Server)\".</string>
@@ -1205,6 +1211,22 @@
     <string name="enter_auto_disconnect_bt_delay">Secondi di attesa prima di terminare la sessione</string>
     <string name="auto_disconnect_bt_delay_hint">La connessione Bluetooth può interrompersi brevemente durante la riconnessione dei profili. La sessione termina solo se il dispositivo è ancora assente dopo questo tempo.</string>
     <string name="auto_disconnect_bt_kill_hint">Termina la sessione come fa il pulsante Esci quando il Bluetooth di un dispositivo scelto si disconnette, ad esempio quando l\'auto viene spenta. Scegli il Bluetooth dell\'auto se questa unità è associata. Per chiudere anche l\'app e mostrare la schermata iniziale, attiva «Chiudi app alla disconnessione» in Automazione.</string>
+    <string name="external_power_disconnect_label">Disconnetti quando il caricabatterie viene scollegato</string>
+    <string name="external_power_disconnect_description">Termina la sessione, come il pulsante Esci, quando manca l\'alimentazione esterna, ad esempio quando l\'auto viene spenta. Quando torna la corrente, la connessione viene riattivata.</string>
+    <string name="external_power_delay_label">Attesa (secondi)</string>
+    <string name="external_power_delay_value">%1$d s</string>
+    <string name="external_power_delay_hint">La sessione termina solo se la corrente è ancora assente dopo questo tempo. Da 5 a 3600 secondi.</string>
+    <string name="external_power_screen_off_label">Spegni anche lo schermo</string>
+    <string name="external_power_screen_off_description">Oscura lo schermo quando manca la corrente, dopo la fine della sessione o se non c\'è nulla di connesso, e lo riaccende quando torna la corrente.</string>
+    <string name="external_power_grant_label">Consenti a Open Headunit di spegnere lo schermo</string>
+    <string name="external_power_grant_allowed">Consentito</string>
+    <string name="external_power_grant_missing">Non consentito</string>
+    <string name="external_power_grant_uninstall_hint">Android blocca la disinstallazione finché questa autorizzazione è attiva. Rimuovila qui prima di disinstallare l\'app.</string>
+    <string name="external_power_grant_explanation">Open Headunit la usa solo per spegnere lo schermo. Non può sbloccare il dispositivo né leggere alcun dato.</string>
+    <string name="external_power_grant_remove_message">Rimuovere l\'autorizzazione a spegnere lo schermo?</string>
+    <string name="external_power_grant_remove">Rimuovi</string>
+    <string name="screen_off_admin_label">Spegni lo schermo</string>
+    <string name="screen_off_admin_description">Consente a Open Headunit di spegnere lo schermo quando manca l\'alimentazione esterna.</string>
     <string name="audio_stream_vendor_format">%1$s (%2$d)</string>
     <string name="debug_video_fault_injection">Iniezione guasti video</string>
     <string name="debug_video_fault_rate">Frequenza guasti (1 su N)</string>

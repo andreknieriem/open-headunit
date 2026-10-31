@@ -488,6 +488,22 @@
     <string name="enter_auto_disconnect_bt_delay">Segundos a aguardar antes de terminar a sessão</string>
     <string name="auto_disconnect_bt_delay_hint">Uma ligação Bluetooth pode cair por instantes enquanto os perfis voltam a ligar-se. A sessão só termina se o dispositivo continuar ausente após este período.</string>
     <string name="auto_disconnect_bt_kill_hint">Termina a sessão, como o botão Sair, quando o Bluetooth de um dispositivo escolhido deixa de estar disponível, por exemplo quando o carro é desligado. Escolha o Bluetooth do carro se esta unidade estiver emparelhada com ele. Para fechar também a aplicação e mostrar o ecrã inicial, ative \"Fechar aplicação ao desligar\" em Automatização.</string>
+    <string name="external_power_disconnect_label">Desligar ao remover o carregador</string>
+    <string name="external_power_disconnect_description">Termina a sessão, como o botão Sair, quando a alimentação externa é perdida, por exemplo ao desligar o carro. Quando a energia volta, a ligação é reativada.</string>
+    <string name="external_power_delay_label">Espera (segundos)</string>
+    <string name="external_power_delay_value">%1$d s</string>
+    <string name="external_power_delay_hint">A sessão só termina se ainda não houver energia após este tempo. De 5 a 3600 segundos.</string>
+    <string name="external_power_screen_off_label">Desligar também o ecrã</string>
+    <string name="external_power_screen_off_description">Escurece o ecrã quando não há energia, depois de a sessão terminar ou quando não há nada ligado, e volta a acendê-lo quando a energia regressa.</string>
+    <string name="external_power_grant_label">Permitir que o Open Headunit desligue o ecrã</string>
+    <string name="external_power_grant_allowed">Permitido</string>
+    <string name="external_power_grant_missing">Não permitido</string>
+    <string name="external_power_grant_uninstall_hint">O Android impede a desinstalação enquanto isto estiver permitido. Remova a permissão aqui antes de desinstalar a aplicação.</string>
+    <string name="external_power_grant_explanation">O Open Headunit usa isto apenas para desligar o ecrã. Não pode desbloquear o dispositivo nem ler nada.</string>
+    <string name="external_power_grant_remove_message">Remover a permissão para desligar o ecrã?</string>
+    <string name="external_power_grant_remove">Remover</string>
+    <string name="screen_off_admin_label">Desligar o ecrã</string>
+    <string name="screen_off_admin_description">Permite que o Open Headunit desligue o ecrã quando a alimentação externa é perdida.</string>
     <string name="auto_start_wifi_label">Arranque automático com Wi-Fi</string>
     <string name="auto_start_wifi_description">Abre o Open Headunit automaticamente quando ligado a um SSID Wi-Fi específico.</string>
     <string name="auto_start_wifi_ssid_label">SSID Wi-Fi</string>
@@ -1045,6 +1061,12 @@
 
     <string name="supported_nativeaa">Suporte sem fios melhorado</string>
     <string name="supported_nativeaa_desc">Boas notícias! O seu dispositivo suporta o modo \"Native Wireless\", que proporciona uma experiência Android Auto mais fluida.\n\nPara o ativar, é preciso atualizar a cache do Bluetooth. Por favor:\n1. Remova o emparelhamento existente no telemóvel\n2. Toque em OK para reiniciar o Bluetooth\n3. Volte a emparelhar o telemóvel\n\nDeseja mudar agora para o modo Native AA?</string>
+    <string name="automation_connect_no_permission">Permita o Bluetooth a esta app para ligar pelo nome.</string>
+    <string name="automation_connect_not_found">Nenhum telemóvel sincronizado tem esse nome.</string>
+    <string name="automation_connect_ambiguous">Mais de um telemóvel sincronizado tem esse nome.</string>
+    <string name="automation_connect_not_a_phone">Esse dispositivo sincronizado não é um telemóvel.</string>
+    <string name="automation_connect_not_paired">Esse endereço Bluetooth não está sincronizado.</string>
+    <string name="automation_connect_live_session">Já está ligado outro telemóvel.</string>
     <string name="native_aa_poke_not_running">O Bluetooth sem fios não está em execução nesta unidade. Verifique as Definições.</string>
     <string name="not_supported_nativeaa">O modo Native Wireless parece não ser suportado</string>
     <string name="not_supported_nativeaa_desc">O seu dispositivo pode não suportar as funcionalidades de Bluetooth ou Wi-Fi necessárias para o Native Wireless. Pode tentar na mesma, mas, se falhar, utilize antes o modo \"Wireless Helper\" ou \"Automático (Servidor da Unidade)\".</string>

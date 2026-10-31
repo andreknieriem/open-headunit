@@ -1,6 +1,7 @@
 package com.andrerinas.openheadunit.utils
 
 import android.annotation.SuppressLint
+import com.andrerinas.openheadunit.app.ExternalPowerDisconnectPolicy
 import android.content.ComponentName
 import android.content.Context
 import android.content.SharedPreferences
@@ -1554,6 +1555,20 @@ class Settings(private val context: Context) {
     var autoDisconnectBtDelaySeconds: Int
         get() = prefs.getInt("auto-disconnect-bt-delay-seconds", 5)
         set(value) { prefs.edit().putInt("auto-disconnect-bt-delay-seconds", value).apply() }
+
+    /** Ends the session when external power is lost; see ExternalPowerDisconnectPolicy. */
+    var externalPowerDisconnect: Boolean
+        get() = prefs.getBoolean("external-power-disconnect", false)
+        set(value) { prefs.edit().putBoolean("external-power-disconnect", value).apply() }
+
+    var externalPowerDisconnectDelaySeconds: Int
+        get() = prefs.getInt("external-power-disconnect-delay-seconds", ExternalPowerDisconnectPolicy.DEFAULT_DELAY_SECONDS)
+        set(value) { prefs.edit().putInt("external-power-disconnect-delay-seconds", value).apply() }
+
+    /** Also turns the screen off after the disconnect; needs the force-lock device admin grant. */
+    var externalPowerScreenOff: Boolean
+        get() = prefs.getBoolean("external-power-screen-off", false)
+        set(value) { prefs.edit().putBoolean("external-power-screen-off", value).apply() }
 
     var appLanguage: String
         get() = prefs.getString("app-language", "")!!

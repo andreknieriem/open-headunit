@@ -70,6 +70,34 @@ class AutomationCommandPolicyTest {
     }
 
     @Test
+    fun `screen off is refused while external configuration is off`() {
+        val e = single(HeadUnitCommand.ACTION_SCREEN_OFF, state = closed)
+        assertTrue(e is AutomationCommandPolicy.Effect.Refuse)
+        assertTrue((e as AutomationCommandPolicy.Effect.Refuse).reason.contains("Allow external configuration"))
+    }
+
+    @Test
+    fun `screen off is refused without the device admin grant`() {
+        val e = single(HeadUnitCommand.ACTION_SCREEN_OFF, state = open)
+        assertTrue(e is AutomationCommandPolicy.Effect.Refuse)
+        assertTrue((e as AutomationCommandPolicy.Effect.Refuse).reason.contains("device admin grant"))
+    }
+
+    @Test
+    fun `screen off runs with the gate open and the grant held`() {
+        val granted = AutomationCommandPolicy.State(externalConfigAllowed = true, screenOffGranted = true)
+        assertEquals(AutomationCommandPolicy.Effect.TurnScreenOff, single(HeadUnitCommand.ACTION_SCREEN_OFF, state = granted))
+    }
+
+    @Test
+    fun `screen on works with the gate off`() {
+        assertEquals(
+            AutomationCommandPolicy.Effect.StartService(AapService.ACTION_TURN_SCREEN_ON),
+            single(HeadUnitCommand.ACTION_SCREEN_ON, state = closed)
+        )
+    }
+
+    @Test
     fun `the gate opens the configuring verbs`() {
         assertEquals(
             AutomationCommandPolicy.Effect.ResetSettings,
@@ -185,6 +213,93 @@ class AutomationCommandPolicyTest {
         val selfMode = single(HeadUnitCommand.ACTION_START_SELF_MODE)
             as AutomationCommandPolicy.Effect.StartService
         assertEquals(false, selfMode.flagExtras[AapService.EXTRA_NO_UI])
+    }
+
+    // --- connect and poke by phone -------------------------------------------------------------
+
+    private fun wake(key: String, value: String, noUi: Boolean = false) =
+        AutomationCommandPolicy.Effect.StartService(
+            AapService.ACTION_NATIVE_AA_POKE,
+            stringExtras = mapOf(key to value),
+            flagExtras = mapOf(
+                AapService.EXTRA_EXPLICIT_PICK to true,
+                AapService.EXTRA_BY_COMMAND to true,
+                AapService.EXTRA_NO_UI to noUi
+            )
+        )
+
+    @Test
+    fun `connect with a device name wakes that phone and skips the USB check`() {
+        assertEquals(
+            listOf(wake(AapService.EXTRA_DEVICE_NAME, "Pixel 7")),
+            effects(HeadUnitCommand.ACTION_CONNECT, mapOf(HeadUnitCommand.EXTRA_DEVICE_NAME to "Pixel 7"))
+        )
+    }
+
+    @Test
+    fun `connect with a mac, either spelling, wakes that phone`() {
+        val want = listOf(wake(AapService.EXTRA_MAC, "AA:BB"))
+        assertEquals(want, effects(HeadUnitCommand.ACTION_CONNECT, mapOf(HeadUnitCommand.EXTRA_PHONE_MAC to "AA:BB")))
+        assertEquals(want, effects(HeadUnitCommand.ACTION_CONNECT, mapOf(HeadUnitCommand.EXTRA_MAC to "AA:BB")))
+    }
+
+    @Test
+    fun `ip outranks a phone target and a mac outranks a name`() {
+        val ip = mapOf(HeadUnitCommand.EXTRA_IP to "192.168.1.25")
+        val socket = effects(HeadUnitCommand.ACTION_CONNECT, ip)
+        assertEquals(socket, effects(HeadUnitCommand.ACTION_CONNECT, ip + (HeadUnitCommand.EXTRA_PHONE_MAC to "AA:BB")))
+        assertEquals(socket, effects(HeadUnitCommand.ACTION_CONNECT, ip + (HeadUnitCommand.EXTRA_DEVICE_NAME to "P")))
+        assertEquals(
+            listOf(wake(AapService.EXTRA_MAC, "AA:BB")),
+            effects(
+                HeadUnitCommand.ACTION_CONNECT,
+                mapOf(HeadUnitCommand.EXTRA_PHONE_MAC to "AA:BB", HeadUnitCommand.EXTRA_DEVICE_NAME to "P")
+            )
+        )
+    }
+
+    @Test
+    fun `blank phone targets fall back to the USB check`() {
+        assertEquals(
+            userUsbCheck,
+            single(
+                HeadUnitCommand.ACTION_CONNECT,
+                mapOf(HeadUnitCommand.EXTRA_PHONE_MAC to " ", HeadUnitCommand.EXTRA_DEVICE_NAME to " ")
+            )
+        )
+    }
+
+    @Test
+    fun `no_ui rides on the named wake`() {
+        assertEquals(
+            listOf(wake(AapService.EXTRA_DEVICE_NAME, "P", noUi = true)),
+            effects(
+                HeadUnitCommand.ACTION_CONNECT,
+                mapOf(HeadUnitCommand.EXTRA_DEVICE_NAME to "P", HeadUnitCommand.EXTRA_NO_UI to "true")
+            )
+        )
+    }
+
+    @Test
+    fun `the contract keys are the ones the deep link uses`() {
+        assertEquals("device_name", HeadUnitCommand.EXTRA_DEVICE_NAME)
+        assertEquals("mac", HeadUnitCommand.EXTRA_PHONE_MAC)
+    }
+
+    @Test
+    fun `a poke by name equals a connect by name and a poke by mac keeps its old effect`() {
+        val name = mapOf(HeadUnitCommand.EXTRA_DEVICE_NAME to "P")
+        assertEquals(
+            effects(HeadUnitCommand.ACTION_CONNECT, name),
+            effects(HeadUnitCommand.ACTION_NATIVE_AA_POKE, name)
+        )
+        assertEquals(
+            AutomationCommandPolicy.Effect.StartService(
+                AapService.ACTION_NATIVE_AA_POKE,
+                stringExtras = mapOf(AapService.EXTRA_MAC to "AA:BB")
+            ),
+            single(HeadUnitCommand.ACTION_NATIVE_AA_POKE, mapOf(HeadUnitCommand.EXTRA_PHONE_MAC to "AA:BB"))
+        )
     }
 
     // --- required extras ------------------------------------------------------------------------
@@ -349,6 +464,7 @@ class AutomationCommandPolicyTest {
     }
 
     private val ALL_COMMANDS = listOf(
+        HeadUnitCommand.ACTION_SCREEN_OFF, HeadUnitCommand.ACTION_SCREEN_ON,
         HeadUnitCommand.ACTION_CONNECT, HeadUnitCommand.ACTION_DISCONNECT,
         HeadUnitCommand.ACTION_START_SELF_MODE, HeadUnitCommand.ACTION_STOP_SERVICE,
         HeadUnitCommand.ACTION_EXIT, HeadUnitCommand.ACTION_SET_NIGHT_MODE,

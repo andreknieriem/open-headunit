@@ -487,6 +487,22 @@
     <string name="enter_auto_disconnect_bt_delay">วินาทีที่ต้องรอก่อนสิ้นสุดเซสชัน</string>
     <string name="auto_disconnect_bt_delay_hint">ลิงก์บลูทูธอาจหลุดไปชั่วขณะขณะเชื่อมต่อโปรไฟล์ใหม่ เซสชันจะสิ้นสุดลงก็ต่อเมื่ออุปกรณ์ยังคงหายไปหลังจากช่วงเวลานี้</string>
     <string name="auto_disconnect_bt_kill_hint">จบเซสชันแบบเดียวกับปุ่มออก เมื่อบลูทูธของอุปกรณ์ที่เลือกหายไป เช่น เมื่อดับเครื่องยนต์ ให้เลือกบลูทูธของรถ หากเฮดยูนิตนี้จับคู่กับรถไว้ หากต้องการปิดแอปและกลับไปหน้าจอหลักด้วย ให้เปิด \"ปิดแอปเมื่อตัดการเชื่อมต่อ\" ใต้ระบบอัตโนมัติ</string>
+    <string name="external_power_disconnect_label">ตัดการเชื่อมต่อเมื่อถอดที่ชาร์จ</string>
+    <string name="external_power_disconnect_description">สิ้นสุดเซสชันเหมือนปุ่มออกเมื่อไฟภายนอกขาด เช่น เมื่อดับเครื่องรถ เมื่อไฟกลับมา การเชื่อมต่อจะพร้อมทำงานอีกครั้ง</string>
+    <string name="external_power_delay_label">รอ (วินาที)</string>
+    <string name="external_power_delay_value">%1$d วิ</string>
+    <string name="external_power_delay_hint">เซสชันจะสิ้นสุดก็ต่อเมื่อไฟยังไม่กลับมาหลังพ้นเวลานี้ ตั้งได้ตั้งแต่ 5 ถึง 3600 วินาที</string>
+    <string name="external_power_screen_off_label">ปิดหน้าจอด้วย</string>
+    <string name="external_power_screen_off_description">หรี่หน้าจอเมื่อไฟยังไม่กลับมา หลังเซสชันสิ้นสุดหรือเมื่อไม่มีอุปกรณ์เชื่อมต่อ และเปิดหน้าจออีกครั้งเมื่อไฟกลับมา</string>
+    <string name="external_power_grant_label">อนุญาตให้ Open Headunit ปิดหน้าจอ</string>
+    <string name="external_power_grant_allowed">อนุญาตแล้ว</string>
+    <string name="external_power_grant_missing">ไม่ได้รับอนุญาต</string>
+    <string name="external_power_grant_uninstall_hint">Android จะไม่ให้ถอนการติดตั้งขณะที่ยังอนุญาตอยู่ โปรดลบสิทธิ์ที่นี่ก่อนถอนการติดตั้งแอป</string>
+    <string name="external_power_grant_explanation">Open Headunit ใช้สิทธิ์นี้เพื่อปิดหน้าจอเท่านั้น ไม่สามารถปลดล็อกอุปกรณ์หรืออ่านข้อมูลใดๆ ได้</string>
+    <string name="external_power_grant_remove_message">ลบสิทธิ์การปิดหน้าจอไหม</string>
+    <string name="external_power_grant_remove">ลบ</string>
+    <string name="screen_off_admin_label">ปิดหน้าจอ</string>
+    <string name="screen_off_admin_description">อนุญาตให้ Open Headunit ปิดหน้าจอเมื่อไฟภายนอกขาด</string>
     <string name="auto_start_wifi_label">เริ่มอัตโนมัติเมื่อเชื่อมต่อ Wi-Fi</string>
     <string name="auto_start_wifi_description">เปิด Open Headunit อัตโนมัติเมื่อเชื่อมต่อกับ Wi-Fi SSID ที่ระบุ</string>
     <string name="auto_start_wifi_ssid_label">Wi-Fi SSID</string>
@@ -1045,6 +1061,12 @@
 
     <string name="supported_nativeaa">การสนับสนุนระบบไร้สายขั้นสูง</string>
     <string name="supported_nativeaa_desc">ข่าวดี! อุปกรณ์ของคุณรองรับโหมด \"Native Wireless\" ซึ่งช่วยให้ใช้ Android Auto ได้ราบรื่นยิ่งขึ้น\n\nหากต้องการเปิดใช้ ต้องรีเฟรชแคชบลูทูธ โปรดทำดังนี้\n1. ลบการจับคู่เดิมบนโทรศัพท์\n2. แตะ ตกลง เพื่อรีสตาร์ทบลูทูธ\n3. จับคู่โทรศัพท์ใหม่\n\nต้องการเปลี่ยนเป็นโหมด Native AA ตอนนี้ไหม</string>
+    <string name="automation_connect_no_permission">อนุญาตบลูทูธให้แอปนี้เพื่อเชื่อมต่อด้วยชื่อ</string>
+    <string name="automation_connect_not_found">ไม่มีโทรศัพท์ที่จับคู่ไว้ที่ใช้ชื่อนี้</string>
+    <string name="automation_connect_ambiguous">มีโทรศัพท์ที่จับคู่ไว้หลายเครื่องใช้ชื่อนี้</string>
+    <string name="automation_connect_not_a_phone">อุปกรณ์ที่จับคู่ไว้นี้ไม่ใช่โทรศัพท์</string>
+    <string name="automation_connect_not_paired">ที่อยู่บลูทูธนี้ยังไม่ได้จับคู่</string>
+    <string name="automation_connect_live_session">มีโทรศัพท์เครื่องอื่นเชื่อมต่ออยู่แล้ว</string>
     <string name="native_aa_poke_not_running">บลูทูธไร้สายไม่ได้ทำงานบนเฮดยูนิตนี้ ตรวจสอบการตั้งค่า</string>
     <string name="not_supported_nativeaa">Native Wireless อาจไม่รองรับ</string>
     <string name="not_supported_nativeaa_desc">อุปกรณ์ของคุณอาจไม่รองรับคุณสมบัติบลูทูธหรือ Wi-Fi ที่ Native Wireless ต้องใช้ คุณยังลองใช้ได้ แต่หากไม่สำเร็จ ให้ใช้โหมด \"Wireless Helper\" หรือ \"Auto (Headunit Server)\" แทน</string>

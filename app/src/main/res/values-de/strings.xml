@@ -581,6 +581,12 @@
 
     <string name="supported_nativeaa">Verbesserte Unterstützung für kabellose Verbindungen</string>
     <string name="supported_nativeaa_desc">Gute Nachrichten! Dein Gerät unterstützt den Modus \"Natives Wireless\", der Android Auto reibungsloser macht.\n\nDafür müssen wir den Bluetooth-Cache aktualisieren. Bitte:\n1. Entferne die bestehende Kopplung auf deinem Smartphone\n2. Tippe auf OK, um Bluetooth neu zu starten\n3. Koppele dein Smartphone erneut\n\nMöchtest du jetzt in den Modus \"Native AA\" wechseln?</string>
+    <string name="automation_connect_no_permission">Erlaube Bluetooth für diese App, um per Name zu verbinden.</string>
+    <string name="automation_connect_not_found">Kein gekoppeltes Smartphone hat diesen Namen.</string>
+    <string name="automation_connect_ambiguous">Mehrere gekoppelte Smartphones haben diesen Namen.</string>
+    <string name="automation_connect_not_a_phone">Das gekoppelte Gerät ist kein Smartphone.</string>
+    <string name="automation_connect_not_paired">Diese Bluetooth-Adresse ist nicht gekoppelt.</string>
+    <string name="automation_connect_live_session">Ein anderes Smartphone ist bereits verbunden.</string>
     <string name="native_aa_poke_not_running">Drahtloses Bluetooth läuft auf dieser Headunit nicht. Prüfe die Einstellungen.</string>
     <string name="not_supported_nativeaa">Natives Wireless wird anscheinend nicht unterstützt</string>
     <string name="not_supported_nativeaa_desc">Dein Gerät unterstützt möglicherweise nicht die nötigen Bluetooth- oder WLAN-Funktionen für Natives Wireless. Du kannst es trotzdem versuchen. Wenn es nicht klappt, nutze stattdessen den Modus \"Wireless Helper\" oder \"Auto (Headunit Server)\".</string>
@@ -1202,6 +1208,22 @@
     <string name="enter_auto_disconnect_bt_delay">Wartezeit in Sekunden vor Sitzungsende</string>
     <string name="auto_disconnect_bt_delay_hint">Eine Bluetooth-Verbindung kann kurz abreißen, während die Profile neu verbunden werden. Die Sitzung endet nur, wenn das Gerät nach dieser Zeit weiterhin fehlt.</string>
     <string name="auto_disconnect_bt_kill_hint">Beendet die Sitzung wie die Schaltfläche „Beenden“, wenn die Bluetooth-Verbindung zu einem ausgewählten Gerät abreißt, z. B. beim Ausschalten der Zündung. Wähle das Bluetooth des Autos, falls diese Headunit damit gekoppelt ist. Um auch die App zu schließen und den Startbildschirm anzuzeigen, aktiviere unter Automatisierung „App beim Trennen schließen“.</string>
+    <string name="external_power_disconnect_label">Trennen, wenn das Ladegerät entfernt wird</string>
+    <string name="external_power_disconnect_description">Beendet die Sitzung wie die Beenden-Taste, wenn die externe Stromversorgung wegfällt, z. B. beim Ausschalten des Autos. Sobald wieder Strom anliegt, ist die Verbindung wieder aktiv.</string>
+    <string name="external_power_delay_label">Wartezeit (Sekunden)</string>
+    <string name="external_power_delay_value">%1$d s</string>
+    <string name="external_power_delay_hint">Die Sitzung endet nur, wenn nach dieser Zeit noch kein Strom anliegt. 5 bis 3600 Sekunden.</string>
+    <string name="external_power_screen_off_label">Bildschirm ebenfalls ausschalten</string>
+    <string name="external_power_screen_off_description">Dunkelt den Bildschirm ab, wenn kein Strom anliegt, nach dem Ende der Sitzung oder wenn nichts verbunden ist, und schaltet ihn wieder ein, sobald Strom anliegt.</string>
+    <string name="external_power_grant_label">Open Headunit erlauben, den Bildschirm auszuschalten</string>
+    <string name="external_power_grant_allowed">Erlaubt</string>
+    <string name="external_power_grant_missing">Nicht erlaubt</string>
+    <string name="external_power_grant_uninstall_hint">Android verhindert das Deinstallieren, solange dies erlaubt ist. Entferne die Berechtigung hier, bevor du die App deinstallierst.</string>
+    <string name="external_power_grant_explanation">Open Headunit nutzt dies nur zum Ausschalten des Bildschirms. Die App kann das Gerät weder entsperren noch etwas auslesen.</string>
+    <string name="external_power_grant_remove_message">Berechtigung zum Ausschalten des Bildschirms entfernen?</string>
+    <string name="external_power_grant_remove">Entfernen</string>
+    <string name="screen_off_admin_label">Bildschirm ausschalten</string>
+    <string name="screen_off_admin_description">Erlaubt Open Headunit, den Bildschirm auszuschalten, wenn die externe Stromversorgung wegfällt.</string>
     <string name="audio_stream_vendor_format">%1$s (%2$d)</string>
     <string name="debug_video_fault_injection">Video-Fehlerinjektion</string>
     <string name="debug_video_fault_rate">Fehlerrate (1 von N)</string>

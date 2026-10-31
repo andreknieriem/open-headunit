@@ -5,6 +5,7 @@ import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.AppComponent
 import com.andrerinas.openheadunit.aap.AapService
 import com.andrerinas.openheadunit.connection.CommManager
+import com.andrerinas.openheadunit.connection.withUsbInputPreferencesForTest
 import com.andrerinas.openheadunit.connection.ConnectionArbiter
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Assert.*
@@ -38,6 +39,7 @@ class UsbSettingsPermissionTest {
             `when`(service.getSystemService(android.content.Context.USB_SERVICE)).thenReturn(usb)
             `when`(service.getSharedPreferences(anyString(), anyInt()))
                 .thenReturn(mock(android.content.SharedPreferences::class.java))
+            service.withUsbInputPreferencesForTest()
             val device = mock(UsbDevice::class.java)
             `when`(device.deviceName).thenReturn("/dev/bus/usb/001/002")
             `when`(device.vendorId).thenReturn(0x18d1)

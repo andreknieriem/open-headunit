@@ -25,12 +25,19 @@ import kotlin.coroutines.intrinsics.suspendCoroutineUninterceptedOrReturn
 class InternalFailureRecoveryTest {
     // The arbiter's default clock is Android's SystemClock, which plain JVM tests do not provide.
     private val clock = ConnectionArbiter.clock
-    @Before fun prepare() { ConnectionArbiter.reset(); ConnectionArbiter.clock = { 1000L } }
-    @After fun restore() { ConnectionArbiter.reset(); ConnectionArbiter.clock = clock }
+    private lateinit var androidClock: org.mockito.MockedStatic<android.os.SystemClock>
+    @Before fun prepare() {
+        androidClock = mockStatic(android.os.SystemClock::class.java)
+        ConnectionArbiter.reset(); ConnectionArbiter.clock = { 1000L }
+    }
+    @After fun restore() {
+        androidClock.close()
+        ConnectionArbiter.reset(); ConnectionArbiter.clock = clock
+    }
 
     private class Fixture : AutoCloseable {
         val manager = mock(CommManager::class.java, CALLS_REAL_METHODS).withAppExitDispatcherForTest()
-        val context = mock(Context::class.java)
+        val context = mock(Context::class.java).withUsbInputPreferencesForTest()
         val settings = mock(Settings::class.java)
         val states = MutableStateFlow<ConnectionState>(ConnectionState.Disconnected())
         private val queued = ArrayDeque<Runnable>()

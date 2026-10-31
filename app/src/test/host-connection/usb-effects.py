@@ -89,7 +89,9 @@ if a.baseline:
         '// CAPTURE_READING': 'val authority = Unit',
         '// START_READING': 'c.startReading()',
         '// OUTCOME_RECHECK': 'val recheck = c.usbRecheckNow()',
-        '// USB_INITIAL_DISCONNECT': 'c.disconnect(sendByeBye=false, honorKillOnDisconnect=false)',
+        # Retire the fixture's initial connection before the USB handshake; the Exit-under-test
+        # is a separate USB_HOME_EXIT below and must retain user-exit semantics.
+        '// USB_INITIAL_DISCONNECT': 'c.disconnect(sendByeBye=false, isUserExit=false, honorKillOnDisconnect=false)',
         '/* USB_HOME_EXIT */': 'c.disconnect(sendByeBye=false, isUserExit=true, honorKillOnDisconnect=false)',
         '// SWITCH_ADAPTERS': '''private fun stake(owner:ConnectionArbiter.Claim) { UsbSwitchClaim.stake() }
     private fun release(owner:ConnectionArbiter.Claim) { UsbSwitchClaim.release() }
@@ -106,7 +108,7 @@ else:
         '// CAPTURE_READING': 'val authority = checkNotNull(c.captureReading())',
         '// START_READING': 'c.startReading(authority)',
         '// OUTCOME_RECHECK': 'val recheck = outcome.recheck',
-        '// USB_INITIAL_DISCONNECT': 'c.disconnect(ConnectionOperation(c.appConnectionTicket(),null),sendByeBye=false,honorKillOnDisconnect=false)',
+        '// USB_INITIAL_DISCONNECT': 'c.disconnect(ConnectionOperation(c.appConnectionTicket(),null),sendByeBye=false,isUserExit=false,honorKillOnDisconnect=false)',
         '/* USB_HOME_EXIT */': 'c.disconnect(ConnectionOperation(c.appConnectionTicket(),null),sendByeBye=false,isUserExit=true,honorKillOnDisconnect=false)',
         '// SWITCH_ADAPTERS': '''private fun stake(owner:ConnectionArbiter.Claim) { check(UsbSwitchClaim.stake(owner)) }
     private fun release(owner:ConnectionArbiter.Claim) { UsbSwitchClaim.release(owner) }

@@ -13,6 +13,7 @@ import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.Settings
 import com.andrerinas.openheadunit.main.FloatingButtonManager
 import com.andrerinas.openheadunit.connection.usb.UsbDeviceCompat
+import com.andrerinas.openheadunit.connection.usb.UsbReceiver
 
 class BootCompleteReceiver : BroadcastReceiver() {
 
@@ -82,7 +83,8 @@ class BootCompleteReceiver : BroadcastReceiver() {
             AppLog.i("Boot auto-start: screen-on auto-start enabled, starting AapService to register SCREEN_ON receiver (trigger=$action)")
             val serviceIntent = bootIntent(null)
             startupAccepted = startService(context, serviceIntent, action)
-        } else if (usbEnabled && (!pendingUsb || UsbDeviceCompat.usbManager(context)
+        } else if (usbEnabled && UsbReceiver.allowsAutomaticInput(context) &&
+            (!pendingUsb || UsbDeviceCompat.usbManager(context)
                 ?.deviceList?.values?.any {
                     UsbDeviceCompat.isConnectable(context, it)
                 } == true)) {

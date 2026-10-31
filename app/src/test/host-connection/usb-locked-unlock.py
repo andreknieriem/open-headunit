@@ -120,12 +120,15 @@ class SharedPreferences {
     val values=mutableMapOf<String,Any?>()
     fun contains(key:String)=values.containsKey(key)
     fun getInt(key:String,default:Int)=values[key] as? Int ?: default
+    fun getLong(key:String,default:Long)=values[key] as? Long ?: default
     fun getBoolean(key:String,default:Boolean)=values[key] as? Boolean ?: default
     fun getString(key:String,default:String?)=values[key] as? String ?: default
     fun getStringSet(key:String,default:Set<String>?)=values[key] as? Set<String> ?: default
     fun edit()=Editor(this)
     class Editor(val prefs:SharedPreferences) {
         fun putInt(key:String,value:Int)=apply {prefs.values[key]=value}
+        fun putLong(key:String,value:Long)=apply {prefs.values[key]=value}
+        fun clear()=apply {prefs.values.clear()}
         fun putBoolean(key:String,value:Boolean)=apply {prefs.values[key]=value}
         fun putString(key:String,value:String)=apply {prefs.values[key]=value}
         fun putStringSet(key:String,value:Set<String>)=apply {prefs.values[key]=value}
@@ -154,6 +157,7 @@ boot = boot.replace('        val action = intent.action',
 (out / 'BootCompleteReceiver.kt').write_text(boot)
 (out / 'Os.kt').write_text('''package android.os
 object Build { object VERSION { var SDK_INT=35 }; object VERSION_CODES { const val N=24 } }
+object SystemClock {var now=1000L;fun elapsedRealtime()=now}
 class Bundle
 ''')
 (out / 'AndroidSettings.kt').write_text('''package android.provider
@@ -200,9 +204,17 @@ class UsbManager(private val state:android.content.State) {
     fun requestPermission(device:UsbDevice,intent:Any){state.permissionRequests++}
 }
 ''')
+usb_receiver_source = (base / 'connection/usb/UsbReceiver.kt').read_text()
+hold_source = ''
+if 'internal fun allowsAutomaticInput(' in usb_receiver_source:
+    hold_source = usb_receiver_source.split('    companion object {', 1)[1].split('        const val ACTION_USB_DEVICE_PERMISSION', 1)[0]
+    hashes['USB hold companion'] = hashlib.sha256(hold_source.encode()).hexdigest()
 (out / 'UsbCompat.kt').write_text('''package com.andrerinas.openheadunit.connection.usb
 import android.content.Context
 import android.hardware.usb.*
+import android.content.SharedPreferences
+import android.os.Build
+import android.os.SystemClock
 class UsbDeviceCompat(device:UsbDevice) {
     companion object {
         fun usbManager(context:Context):UsbManager?=UsbManager(context.state)
@@ -211,8 +223,8 @@ class UsbDeviceCompat(device:UsbDevice) {
         fun isConnectable(context:Context,device:UsbDevice)=!context.state.blacklisted
     }
 }
-object UsbReceiver {fun createPermissionPendingIntent(context:Context,recheck:Any?)=Any()}
-''')
+object UsbReceiver {fun createPermissionPendingIntent(context:Context,recheck:Any?)=Any()
+''' + hold_source + '}\n')
 settings = (base / 'utils/Settings.kt').read_text()
 settings_members = '\n'.join(member(settings, name) for name in [
     'fun isAutoStartOnBootEnabled(', 'fun isAutoStartOnScreenOnEnabled(',
@@ -255,12 +267,13 @@ object AppThemeManager {fun reapply(context:Context,settings:Settings){} }
 object OemAppManager {fun runAutoKillIfEnabled(context:Context){} }
 ''')
 (out / 'BootLoopPolicy.kt').write_text((base / 'app/BootLoopPolicy.kt').read_text())
-(out / 'Probe.kt').write_text('''package lockedunlock
+probe = '''package lockedunlock
 import android.content.*
 import android.hardware.usb.*
 import com.andrerinas.openheadunit.*
 import com.andrerinas.openheadunit.app.*
 import com.andrerinas.openheadunit.utils.Settings
+import com.andrerinas.openheadunit.connection.usb.UsbReceiver
 
 private fun fixture(usb:Boolean=true,boot:Boolean=false):State = State().also { s ->
     val app=s.process(false)
@@ -345,10 +358,31 @@ fun main() {
         val s=fixture();s.attach();s.boot++;s.unlock(true);s.bootComplete()
         check(s.starts.isEmpty() && s.minted==0) { "earlier boot USB input was replayed" }
     }
+    // USB_HOLD_CONTROLS
     println("RESULT locked USB unlock: $passed passed, $failed failed")
     check(failed==0) { "$failed locked USB unlock regressions failed" }
 }
-''')
+'''
+if hold_source:
+    probe = probe.replace('// USB_HOLD_CONTROLS', '''test("pending unlock preserves persisted Stop in surviving and replacement processes") {
+        for(replaced in listOf(false,true)) {
+            val s=fixture();s.attach()
+            check(UsbReceiver.allowsAutomaticInput(s.app))
+            UsbReceiver.holdAfterUserStop(s.app,UsbReceiver.bootCount(s.app))
+            s.unlock(replaced);s.bootComplete()
+            check(s.starts.isEmpty() && s.minted==0) { "unlock bypassed the persisted USB Stop (replaced=$replaced)" }
+            check(UsbReceiver.isUserStopped(s.app)) { "unlock released the persisted USB Stop" }
+        }
+    }
+    test("held locked attach records no pending unlock input") {
+        val s=fixture();s.devices["phone"]=UsbDevice()
+        check(UsbReceiver.allowsAutomaticInput(s.app))
+        UsbReceiver.holdAfterUserStop(s.app,UsbReceiver.bootCount(s.app));s.attach()
+        check(s.prefs["dp:usb-unlock"]?.contains("pending-boot")!=true) { "held attach recorded a new unlock obligation" }
+        s.unlock();s.bootComplete()
+        check(s.starts.isEmpty() && s.minted==0) { "held attach resumed at unlock" }
+    }''')
+(out / 'Probe.kt').write_text(probe)
 (out / 'extracted-method-sha256.json').write_text(json.dumps(hashes, indent=2))
 cache = Path(os.environ.get('GRADLE_USER_HOME', str(Path.home() / '.gradle'))) / 'caches/modules-2/files-2.1'
 

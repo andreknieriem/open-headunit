@@ -8,6 +8,7 @@ import android.os.*
 import com.andrerinas.openheadunit.aap.AapAudio
 import com.andrerinas.openheadunit.connection.bluetooth.xyauto.XyAutoMediaSession
 import com.andrerinas.openheadunit.connection.AppExitPolicy
+import com.andrerinas.openheadunit.connection.usb.UsbReceiver
 import com.andrerinas.openheadunit.connection.wifi.scan.WifiScanControl
 import com.andrerinas.openheadunit.connection.wifi.modes.WifiLauncherNative
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeStrategy

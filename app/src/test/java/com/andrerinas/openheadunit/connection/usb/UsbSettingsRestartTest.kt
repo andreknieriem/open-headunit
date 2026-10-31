@@ -1,6 +1,7 @@
 package com.andrerinas.openheadunit.connection.usb
 
 import com.andrerinas.openheadunit.connection.CommManager
+import com.andrerinas.openheadunit.connection.withUsbInputPreferencesForTest
 import com.andrerinas.openheadunit.connection.UsbRecheck
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.any as anyValue
@@ -72,7 +73,7 @@ class UsbSettingsRestartTest {
                     override fun dispatch(context: kotlin.coroutines.CoroutineContext, block: Runnable) { tasks.add(block) }
                 }
                 val scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + queued)
-                val service = mock(com.andrerinas.openheadunit.aap.AapService::class.java)
+                val service = mock(com.andrerinas.openheadunit.aap.AapService::class.java).withUsbInputPreferencesForTest()
                 val app = mock(com.andrerinas.openheadunit.App::class.java)
                 val component = mock(com.andrerinas.openheadunit.AppComponent::class.java)
                 val comm = mock(CommManager::class.java, CALLS_REAL_METHODS)
@@ -81,6 +82,7 @@ class UsbSettingsRestartTest {
                 fun field(name: String, value: Any) {
                     CommManager::class.java.getDeclaredField(name).apply { isAccessible = true }.set(comm, value)
                 }
+                field("context", service)
                 field("_connectionState", states)
                 field("connectionState", states)
                 field("transportLifecycleLock", Any())

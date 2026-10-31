@@ -1,5 +1,6 @@
 package com.andrerinas.openheadunit.connection.usb
 
+import com.andrerinas.openheadunit.connection.UsbRecheck
 import com.andrerinas.openheadunit.connection.ConnectionAdmission
 import com.andrerinas.openheadunit.connection.CommManager
 import com.andrerinas.openheadunit.connection.ConnectionArbiter
@@ -70,12 +71,13 @@ internal object UsbAttachSwitch {
         scope: CoroutineScope,
         commManager: CommManager,
         what: String,
+        recheck: UsbRecheck,
         io: CoroutineDispatcher = Dispatchers.IO,
         switch: (ConnectionAdmission) -> Boolean,
         onOutcome: (Outcome) -> Unit,
     ): Job? {
         val request = commManager.admitUsbRequest(ConnectionPriorityPolicy.Tier.USER, "USB switch of $what",
-            save = null, recheck = commManager.usbRecheckNow()) ?: return null
+            save = null, recheck = recheck) ?: return null
         if (!UsbSwitchClaim.stake(request.claim)) {
             commManager.endRequest(request)
             return null

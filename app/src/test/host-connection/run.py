@@ -167,6 +167,7 @@ import android.media.AudioManager
 import android.os.*
 import com.andrerinas.openheadunit.aap.protocol.proto.Control
 import com.andrerinas.openheadunit.connection.AppExitPolicy
+import com.andrerinas.openheadunit.connection.usb.UsbReceiver
 import kotlinx.coroutines.*
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.*
@@ -1140,7 +1141,7 @@ extra=extra.replace('fun main(){', 'fun main(){\n effectEntryAuthority();appExit
 (OUT/'Probe.kt').write_text(manager+transport_fixture+support+extra)
 (OUT/'Os.kt').write_text(r'''package android.os
 import java.util.concurrent.*
-object Build{object VERSION{var SDK_INT=33};object VERSION_CODES{const val LOLLIPOP=21}}
+object Build{object VERSION{var SDK_INT=33};object VERSION_CODES{const val N=24;const val LOLLIPOP=21}}
 object Process{const val THREAD_PRIORITY_DISPLAY=-4;const val THREAD_PRIORITY_AUDIO=-16}
 object SystemClock{fun sleep(ms:Long){Thread.sleep(ms)};fun elapsedRealtime()=System.nanoTime()/1000000}
 class Looper{
@@ -1187,12 +1188,33 @@ class Intent{
  fun getStringExtra(name:String)=extras[name] as? String
  companion object{const val ACTION_MEDIA_BUTTON="android.intent.action.MEDIA_BUTTON";const val ACTION_MAIN="android.intent.action.MAIN"}
 }
+class SharedPreferences {
+ private val values=mutableMapOf<String,Any>()
+ fun getBoolean(k:String,d:Boolean)=values[k] as? Boolean ?: d
+ fun getLong(k:String,d:Long)=values[k] as? Long ?: d
+ fun getInt(k:String,d:Int)=values[k] as? Int ?: d
+ fun contains(k:String)=values.containsKey(k)
+ fun edit()=Editor()
+ inner class Editor {
+  private val pending=mutableMapOf<String,Any>();private val removed=mutableSetOf<String>();private var cleared=false
+  fun clear()=apply{cleared=true}
+  fun remove(k:String)=apply{pending.remove(k);removed.add(k)}
+  fun putBoolean(k:String,v:Boolean)=apply{removed.remove(k);pending[k]=v}
+  fun putLong(k:String,v:Long)=apply{removed.remove(k);pending[k]=v}
+  fun putInt(k:String,v:Int)=apply{removed.remove(k);pending[k]=v}
+  fun commit():Boolean{if(cleared)values.clear();removed.forEach{values.remove(it)};values.putAll(pending);return true}
+ }
+}
 class Context{
+ private val preferences=mutableMapOf<String,SharedPreferences>()
+ val contentResolver=Any()
+ fun createDeviceProtectedStorageContext()=this
+ fun getSharedPreferences(name:String,mode:Int)=preferences.getOrPut(name){SharedPreferences()}
  var usb=android.hardware.usb.UsbManager();val packageName="lifecycle";val broadcasts=mutableListOf<String?>();val broadcastIntents=mutableListOf<Intent>();var stops=0
  val activityManager=android.app.ActivityManager()
  fun sendBroadcast(i:Intent){broadcasts.add(i.action);broadcastIntents.add(i)};fun stopService(i:Intent):Boolean{stops++;return true}
  fun getSystemService(s:String):Any=when(s){"usb"->usb;"audio"->AudioManager();else->activityManager}
- companion object{const val ACTIVITY_SERVICE="activity";const val USB_SERVICE="usb"}
+ companion object{const val ACTIVITY_SERVICE="activity";const val USB_SERVICE="usb";const val MODE_PRIVATE=0}
 }
 ''')
 (OUT/'App.kt').write_text('package android.app\nobject Application{const val AUDIO_SERVICE="audio"}\nclass ActivityManager{var beforeTasks:(()->Unit)?=null;private val tasks=mutableListOf(AppTask());val appTasks:MutableList<AppTask> get(){beforeTasks?.invoke();return tasks};class AppTask{var finishes=0;fun finishAndRemoveTask(){finishes++}}}\n')
@@ -1238,8 +1260,16 @@ class UsbDeviceConnection{
 (OUT/'UsbAuthority.kt').write_text('package com.andrerinas.openheadunit.connection\ntypealias ConnectionAdmission = lifecycle.ConnectionAdmission\n')
 (OUT/'UsbCompat.kt').write_text('''package com.andrerinas.openheadunit.connection.usb
 import android.hardware.usb.*
-class UsbDeviceCompat(d:UsbDevice){companion object{fun usbManager(c:android.content.Context)=c.getSystemService(android.content.Context.USB_SERVICE) as UsbManager;fun getUniqueName(d:UsbDevice)="usb-fixture";fun selectEndpoints(i:UsbInterface)=UsbEndpoint() to UsbEndpoint()}}
+class UsbDeviceCompat(d:UsbDevice){companion object{fun usbManager(c:android.content.Context)=c.getSystemService(android.content.Context.USB_SERVICE) as UsbManager;fun getUniqueName(d:UsbDevice)="usb-fixture";fun isAndroidDevice(d:UsbDevice)=true;fun selectEndpoints(i:UsbInterface)=UsbEndpoint() to UsbEndpoint()}}
 ''')
+# The hold state is production code, not a replacement policy. Only Android prefs/USB are doubled.
+hold_source=(base/'connection/usb/UsbReceiver.kt').read_text()
+hold_body=hold_source[hold_source.index('        // AOA changes'):hold_source.index('        const val ACTION_USB_DEVICE_PERMISSION')]
+methods['UsbReceiver persistent input hold']=hashlib.sha256(hold_body.encode()).hexdigest()
+(OUT/'UsbInputHold.kt').write_text('package com.andrerinas.openheadunit.connection.usb\n'
+    'import android.content.Context\nimport android.content.SharedPreferences\nimport android.os.Build\nimport android.os.SystemClock\n'
+    'object UsbReceiver {\n'+hold_body+'\n}\n')
+(OUT/'Provider.kt').write_text('package android.provider\nobject Settings{object Global{fun getInt(resolver:Any,key:String,default:Int)=1}}\n')
 (OUT/'UsbLog.kt').write_text('''package com.andrerinas.openheadunit.utils
 object AppLog{fun i(s:String){};fun w(s:String){};fun e(s:String){};fun e(t:Throwable){}}
 ''')
@@ -1342,3 +1372,7 @@ subprocess.run(["python3", str(Path(__file__).with_name("sleep-replay-effects.py
 
 # First-unlock input: real locked attach, App initializer and boot receiver, including process replacement.
 subprocess.run(["python3", str(Path(__file__).with_name("usb-locked-unlock.py")), str(ROOT)], check=True)
+
+# User Exit/Stop persists through service/process teardown; only a current explicit input or
+# observed absence beyond the USB re-enumeration bound may release it.
+subprocess.run(["python3", str(Path(__file__).with_name("usb-exit-hold.py")), str(ROOT)], check=True)

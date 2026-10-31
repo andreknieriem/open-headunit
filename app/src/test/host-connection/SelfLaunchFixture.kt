@@ -1,6 +1,7 @@
 package selflaunch
 
 import com.andrerinas.openheadunit.connection.bluetooth.xyauto.XyAutoMediaSession
+import com.andrerinas.openheadunit.connection.usb.UsbReceiver
 
 import com.andrerinas.openheadunit.connection.wifi.scan.WifiScanControl
 import com.andrerinas.openheadunit.connection.wifi.modes.WifiLauncherNative
@@ -80,6 +81,8 @@ object ConnectionArbiter {
 class UsbRecheck
 class ConnectionOperation(val ticket: Long, val save: CommManager.ConnectionState.Disconnected?)
 class CommManager {
+    // The Android storage boundary comes from the main harness; Exit uses its real USB hold.
+    val context = android.content.Context()
     val attemptUserRequested = false
     private var stopEpoch = 0L
     private var accepting = true

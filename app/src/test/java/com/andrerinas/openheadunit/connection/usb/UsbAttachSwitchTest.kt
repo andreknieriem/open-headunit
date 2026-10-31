@@ -23,14 +23,17 @@ import org.mockito.Mockito.mock
 class UsbAttachSwitchTest {
     private val clock = ConnectionArbiter.clock
     private val logger = AppLog.LOGGER
+    private lateinit var androidClock: org.mockito.MockedStatic<android.os.SystemClock>
 
     @Before fun prepare() {
+        androidClock = org.mockito.Mockito.mockStatic(android.os.SystemClock::class.java)
         ConnectionArbiter.reset()
         ConnectionArbiter.clock = { 1000L }
         AppLog.LOGGER = object : AppLog.Logger { override fun println(priority: Int, tag: String, msg: String) = Unit }
     }
 
     @After fun restore() {
+        androidClock.close()
         ConnectionArbiter.reset()
         ConnectionArbiter.clock = clock
         AppLog.LOGGER = logger
@@ -133,7 +136,7 @@ class UsbAttachSwitchTest {
             val scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + main)
             var switches = 0
             var outcome: UsbAttachSwitch.Outcome? = null
-            val job = checkNotNull(UsbAttachSwitch.launchManual(scope, manager, "phone", io,
+            val job = checkNotNull(UsbAttachSwitch.launchManual(scope, manager, "phone", manager.usbRecheckNow(), io,
                 switch = { switches++; true }) { outcome = it }) { "the tap was refused" }
             main.drain() // The job reaches its IO hop; the worker itself is still queued.
             var newer: ConnectionArbiter.Claim? = null

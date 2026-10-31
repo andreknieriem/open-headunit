@@ -42,6 +42,7 @@ import com.andrerinas.openheadunit.connection.projection.LibusbProjectionConnect
 import com.andrerinas.openheadunit.connection.projection.SocketProjectionConnection
 import com.andrerinas.openheadunit.connection.projection.StandardUsbProjectionConnection
 import com.andrerinas.openheadunit.connection.usb.UsbRecoveryDevice
+import com.andrerinas.openheadunit.connection.usb.UsbReceiver
 import com.andrerinas.openheadunit.connection.usb.UsbDeviceCompat
 import com.andrerinas.openheadunit.connection.wifi.modes.helper.NearbySocket
 
@@ -253,16 +254,16 @@ class CommManager(
     }
 
     /** The gate is physical only; every continuation rechecks its logical owner after waiting. */
-    internal fun restoreAppForEntry(owner: Long) {
+    internal fun restoreAppForEntry(owner: Long, usbScan: UsbRecheck? = null) {
         appEntryScope.launch {
             while (isAppRunOwner(owner)) {
                 val ending = synchronized(transportLifecycleLock) { serviceExitFinished }
                 if (ending != null) { ending.await(); continue }
-                if (!isAppRunOwner(owner)) return@launch
-                if (com.andrerinas.openheadunit.aap.AapService.instance == null) {
+                if (!isAppRunOwner(owner) || (usbScan != null && !isCurrent(usbScan))) return@launch
+                if (com.andrerinas.openheadunit.aap.AapService.instance == null || usbScan != null) {
                     try {
                         androidx.core.content.ContextCompat.startForegroundService(context,
-                            com.andrerinas.openheadunit.aap.AapService.entryIntent(context, owner))
+                            com.andrerinas.openheadunit.aap.AapService.entryIntent(context, owner, usbScan))
                     } catch (failure: Exception) {
                         AppLog.e("CommManager: failed to restore service for app entry: ${failure.message}", failure)
                     }
@@ -422,11 +423,23 @@ class CommManager(
         appExitPolicy.userStopAtDestroy(request)
     }
 
-    internal fun requestExplicitAppExit(ticket: Long, killProcess: Boolean): AppExitPolicy.Request? {
+    /**
+     * Accepts Stop only for the input's still-current [ticket], immediately revoking older continuations.
+     * Returns the logical exit owner, or null for a stale ticket; physical teardown may still be pending.
+     * Relay that owner through acceptedStopIntent instead of accepting Stop again at delivery.
+     * [holdUsb] sets the user Stop hold; settings retirement passes false to preserve any existing hold.
+     */
+    internal fun requestExplicitAppExit(ticket: Long, killProcess: Boolean, holdUsb: Boolean = true): AppExitPolicy.Request? {
+        // Read the platform outside the lifecycle monitor; persist only after input acceptance.
+        if (holdUsb) UsbReceiver.allowsAutomaticInput(context)
+        val usbBoot = if (holdUsb) UsbReceiver.bootCount(context) else -1
         val request = synchronized(transportLifecycleLock) {
             // A fresh Stop may join a committed teardown. Only its original epoch, not Run state,
             // governs this acceptance; an import/dismiss continuation cannot issue a newer Stop.
             if (appExitPolicy.stopEpoch != ticket) return@synchronized null
+            // Settings also retires the service through this existing Stop owner. That is not
+            // a new user decision to hold USB; preserve any earlier hold without creating one.
+            if (holdUsb) UsbReceiver.holdAfterUserStop(context, usbBoot)
             appExitPolicy.request(killProcess, userStop = true, requiresKillOnDisconnect = false).also {
                 retireInvalidRequest()
                 cancelAppExitCallback()
@@ -834,6 +847,9 @@ class CommManager(
         // Admission and cancellation must agree before USB can preempt that launch.
         if (!recheckCurrent(recheck) ||
             (save != null && !save.acceptsSettingsRestart(_connectionState.value))) return@synchronized null
+        // An automatic attach can capture a fresh scan after a peer Exit on IO. The durable
+        // decision and admission must agree under the same lock as that accepted Exit/Stop.
+        if (UsbReceiver.isUserStopped(context)) return@synchronized null
         (admitHeld(tier, description, recheck.ticket, save, endpoint = null, owned = null,
             owner = ConnectionPriorityPolicy.Owner.USB, usbRecheck = recheck) as? Admission.Admitted)?.request
     }
@@ -2084,26 +2100,31 @@ class CommManager(
      * `false` immediately) then schedules cleanup. `sendByeBye` is `false` because the
      * connection is already dead — there is no point sending a `ByeByeRequest`.
      */
-    private fun transportedQuited(source: AapTransport, isClean: Boolean): Unit = synchronized(transportLifecycleLock) {
-        // An explicit disconnect has already chosen whether the app should stay open. The
-        // matching EOF must not choose again, and an old transport cannot retire a replacement.
-        if (_transport !== source || disconnectRequested) return@synchronized
-        disconnectRequested = true
-        val wasUserExit = source.wasUserExit
-        if (wasUserExit) {
-            usbRecoveryOwner = Any()
-            withdrawUsbRechecks()
+    private fun transportedQuited(source: AapTransport, isClean: Boolean): Unit {
+        if (source.wasUserExit) UsbReceiver.allowsAutomaticInput(context)
+        val usbBoot = if (source.wasUserExit) UsbReceiver.bootCount(context) else -1
+        synchronized(transportLifecycleLock) {
+            // An explicit disconnect has already chosen whether the app should stay open. The
+            // matching EOF must not choose again, and an old transport cannot retire a replacement.
+            if (_transport !== source || disconnectRequested) return@synchronized
+            disconnectRequested = true
+            val wasUserExit = source.wasUserExit
+            if (wasUserExit) {
+                UsbReceiver.holdAfterUserStop(context, usbBoot)
+                usbRecoveryOwner = Any()
+                withdrawUsbRechecks()
+            }
+            val save = SettingsRestartRecovery.ownerAtEnd(wasUserExit, reachedSsl(), null, usbSaveOwner)
+            usbSaveOwner = null
+            // Keep the retiring owner published until doDisconnect captures it. Its callback
+            // precedes final cleanup, so reconnect must await its actual termination as well.
+            // Publish cleanup before state: a reconnect observer must be able to await this job.
+            _disconnectJob = _scope.launch { doDisconnect(sendByeBye = false) }
+            source.retirePresentation()
+            recordTerminal(connectionAttempt)
+            _connectionState.value = ConnectionState.Disconnected(isClean, isUserExit = wasUserExit, wasLoopbackSession = isLoopbackSession, hadPhysicalConnection = physicalConnectionReached, settingsRetryOwner = save, endedAttempt = connectionAttempt, endRecheck = usbRecheckNow())
+            if (settings.killOnDisconnect) scheduleAppExit(wasUserExit)
         }
-        val save = SettingsRestartRecovery.ownerAtEnd(wasUserExit, reachedSsl(), null, usbSaveOwner)
-        usbSaveOwner = null
-        // Keep the retiring owner published until doDisconnect captures it. Its callback
-        // precedes final cleanup, so reconnect must await its actual termination as well.
-        // Publish cleanup before state: a reconnect observer must be able to await this job.
-        _disconnectJob = _scope.launch { doDisconnect(sendByeBye = false) }
-        source.retirePresentation()
-        recordTerminal(connectionAttempt)
-        _connectionState.value = ConnectionState.Disconnected(isClean, isUserExit = wasUserExit, wasLoopbackSession = isLoopbackSession, hadPhysicalConnection = physicalConnectionReached, settingsRetryOwner = save, endedAttempt = connectionAttempt, endRecheck = usbRecheckNow())
-        if (settings.killOnDisconnect) scheduleAppExit(wasUserExit)
     }
 
     // -----------------------------------------------------------------------------------------
@@ -2410,9 +2431,20 @@ class CommManager(
         honorKillOnDisconnect: Boolean = true,
         reason: DisconnectReason = DisconnectReason.CONNECTION_ENDED,
         settingsRetryOwner: ConnectionState.Disconnected? = null,
-    ): Unit = synchronized(transportLifecycleLock) {
-        if (!isCurrent(operation)) return@synchronized
-        disconnectCurrent(sendByeBye, isUserExit, byeByeReason, honorKillOnDisconnect, reason, settingsRetryOwner)
+    ): Unit {
+        val userStop = isUserExit && reason != DisconnectReason.SETTINGS_RESTART
+        if (userStop) UsbReceiver.allowsAutomaticInput(context)
+        val usbBoot = if (userStop) UsbReceiver.bootCount(context) else -1
+        synchronized(transportLifecycleLock) {
+            if (!isCurrent(operation)) return@synchronized
+            if (userStop) {
+                UsbReceiver.holdAfterUserStop(context, usbBoot)
+                usbRecoveryOwner = Any()
+                withdrawUsbRechecks()
+                cancelPendingSettingsRestart()
+            }
+            disconnectCurrent(sendByeBye, isUserExit, byeByeReason, honorKillOnDisconnect, reason, settingsRetryOwner)
+        }
     }
 
     /** Snapshot at the event that owns delayed session cleanup, before scheduling it. */
@@ -2429,6 +2461,11 @@ class CommManager(
         reason: DisconnectReason = DisconnectReason.CONNECTION_ENDED,
     ): Unit = synchronized(transportLifecycleLock) {
         if (connectionAttempt !== attempt) return@synchronized
+        if (isUserExit && reason != DisconnectReason.SETTINGS_RESTART) {
+            usbRecoveryOwner = Any()
+            withdrawUsbRechecks()
+            cancelPendingSettingsRestart()
+        }
         disconnectCurrent(sendByeBye = sendByeBye, isUserExit = isUserExit,
             honorKillOnDisconnect = honorKillOnDisconnect, reason = reason)
     }
@@ -2456,13 +2493,10 @@ class CommManager(
         reason: DisconnectReason = DisconnectReason.CONNECTION_ENDED,
         settingsRetryOwner: ConnectionState.Disconnected? = null,
     ): Unit = synchronized(transportLifecycleLock) {
-        if (isUserExit || reason == DisconnectReason.SETTINGS_RESTART || reason == DisconnectReason.PROJECTION_UNRAISED) usbRecoveryOwner = Any()
-        if (isUserExit && reason != DisconnectReason.SETTINGS_RESTART) {
-            // Withdraw first: a Save request the cancellation invalidates then retires seeing its
-            // final validity, and releases its claim by identity.
-            withdrawUsbRechecks()
-            cancelPendingSettingsRestart()
-        }
+        // User input was withdrawn at its accepted ingress (disconnect, disconnectOwned or
+        // requestExplicitAppExit). Physical Stop cleanup can run after a newer Open captured its
+        // USB scan, and must not revoke that input a second time.
+        if (reason == DisconnectReason.SETTINGS_RESTART || reason == DisconnectReason.PROJECTION_UNRAISED) usbRecoveryOwner = Any()
         // The end holds automatic reconnection until something asks for it: no owed scan may ask.
         if (reason == DisconnectReason.PROJECTION_UNRAISED) withdrawUsbRechecks()
         if (disconnectRequested || _connectionState.value is ConnectionState.Disconnected) return@synchronized

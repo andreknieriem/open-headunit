@@ -85,9 +85,12 @@ for entry,jar in zip(toolchain['jars'],jars):
     if hashlib.sha256(jar.read_bytes()).hexdigest()!=entry['sha256']:
         raise ValueError(f'Generated host toolchain digest mismatch: {jar}')
 cp=os.pathsep.join(map(str,jars))
+# The main harness owns the real persistent USB hold extraction and Android prefs/USB doubles.
+host_jar=HOST_BUILD/'probe.jar'
+runtime=str(host_jar)+os.pathsep+cp
 (OUT/'toolchain.json').write_text(json.dumps(toolchain,indent=2))
-compile_cmd=['java','-cp',cp,'org.jetbrains.kotlin.cli.jvm.K2JVMCompiler','-no-stdlib','-no-reflect','-nowarn','-classpath',cp,'-d',str(OUT/'cases.jar'),str(OUT/'AppExitPolicy.kt'),str(OUT/'Fixture.kt')]
-run_cmd=['java','-cp',str(OUT/'cases.jar')+os.pathsep+cp,'serviceeffects.FixtureKt',str(OUT/'results.json')]
+compile_cmd=['java','-cp',cp,'org.jetbrains.kotlin.cli.jvm.K2JVMCompiler','-no-stdlib','-no-reflect','-nowarn','-Xfriend-paths='+str(host_jar),'-classpath',runtime,'-d',str(OUT/'cases.jar'),str(OUT/'AppExitPolicy.kt'),str(OUT/'Fixture.kt')]
+run_cmd=['java','-cp',str(OUT/'cases.jar')+os.pathsep+runtime,'serviceeffects.FixtureKt',str(OUT/'results.json')]
 (OUT/'commands.json').write_text(json.dumps([compile_cmd,run_cmd],indent=2))
 subprocess.run(compile_cmd,check=True,timeout=60)
 subprocess.run(run_cmd,check=True,timeout=20)

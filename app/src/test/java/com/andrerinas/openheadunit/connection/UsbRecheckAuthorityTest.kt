@@ -115,6 +115,7 @@ class UsbRecheckAuthorityTest {
             `when`(service.packageManager).thenReturn(mock(android.content.pm.PackageManager::class.java))
             `when`(service.getSharedPreferences(anyString(), anyInt()))
                 .thenReturn(mock(android.content.SharedPreferences::class.java))
+            service.withUsbInputPreferencesForTest()
             `when`(service.getString(anyInt())).thenReturn("")
             // One attached phone: in accessory mode with permission, or in normal mode without.
             val path = "/dev/bus/usb/001/002"

@@ -93,6 +93,11 @@ class UsbAttachedActivity : Activity() {
             return
         }
 
+        if (!UsbReceiver.allowsAutomaticInput(this)) {
+            finish()
+            return
+        }
+
         val isLocked = !App.isUserUnlocked(this)
 
         val settings = if (!isLocked) Settings(this) else null
@@ -300,6 +305,11 @@ class UsbAttachedActivity : Activity() {
         }
 
         AppLog.i(UsbDeviceCompat.getUniqueName(device))
+
+        if (!UsbReceiver.allowsAutomaticInput(this)) {
+            finish()
+            return
+        }
 
         val isLocked = !App.isUserUnlocked(this)
 

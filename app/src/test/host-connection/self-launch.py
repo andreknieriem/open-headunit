@@ -147,6 +147,10 @@ for name in ['SelfLaunchCoalescePolicy.kt', 'SelfLaunchTimeoutPolicy.kt', 'SelfL
 toolchain = json.loads((OUT.parent / 'toolchain.json').read_text())
 jars = [item['path'] for item in toolchain['jars']]
 cp = os.pathsep.join(jars)
+# Share the main harness's extracted USB hold and Android storage, as the other effect
+# sub-harnesses do. Public Exit now writes that hold before Self's terminal publication.
+host_jar = OUT.parent / 'probe.jar'
+runtime = str(host_jar) + os.pathsep + cp
 # The extracted service observer also contains the wireless scan-control boundary.
 # Share its production policy and recording doubles with the audio lifecycle fixture.
 scan_sources = [SRC / 'connection/wifi/scan/ScanControlPolicy.kt',
@@ -156,8 +160,8 @@ scan_sources = [SRC / 'connection/wifi/scan/ScanControlPolicy.kt',
                 HERE / 'audio-stubs/VideoFocusEvent.kt',
                 HERE / 'audio-stubs/XyAutoMediaSession.kt']
 subprocess.run(['java', '-cp', cp, 'org.jetbrains.kotlin.cli.jvm.K2JVMCompiler',
-                '-no-stdlib', '-no-reflect', '-nowarn', '-classpath', cp,
+                '-no-stdlib', '-no-reflect', '-nowarn', '-Xfriend-paths=' + str(host_jar), '-classpath', runtime,
                 '-d', str(OUT / 'regression.jar'), *map(str, sorted(OUT.glob('*.kt')) + scan_sources)],
                check=True, timeout=45)
-subprocess.run(['java', '-cp', str(OUT / 'regression.jar') + os.pathsep + cp,
+subprocess.run(['java', '-cp', str(OUT / 'regression.jar') + os.pathsep + runtime,
                 'selflaunch.SelfLaunchFixtureKt'], check=True, timeout=15)

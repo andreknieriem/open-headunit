@@ -371,6 +371,18 @@
             </intent-filter>
         </receiver>
 
+        <!-- Bus observation outlives service teardown/process exit and never opens CE storage. -->
+        <receiver
+            android:name=".connection.usb.UsbReceiver"
+            android:directBootAware="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
+                <action android:name="android.hardware.usb.action.USB_DEVICE_DETACHED" />
+                <action android:name="android.hardware.usb.action.USB_ACCESSORY_DETACHED" />
+            </intent-filter>
+        </receiver>
+
         <receiver
             android:name=".app.BootCompleteReceiver"
             android:directBootAware="true"

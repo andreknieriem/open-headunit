@@ -20,6 +20,7 @@ import com.andrerinas.openheadunit.aap.AapService
 import com.andrerinas.openheadunit.connection.CommManager
 import com.andrerinas.openheadunit.connection.UsbRecheck
 import com.andrerinas.openheadunit.connection.usb.UsbDeviceCompat
+import com.andrerinas.openheadunit.connection.usb.UsbReceiver
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.Settings
 import org.junit.Assert.*
@@ -65,6 +66,7 @@ class LockedUsbUnlockTest {
             whenever(editor.putLong(any(), any())).thenAnswer { values[it.getArgument(0)] = it.getArgument<Long>(1); editor }
             whenever(editor.putString(any(), anyOrNull())).thenAnswer { values[it.getArgument(0)] = it.getArgument<String?>(1); editor }
             whenever(editor.putStringSet(any(), anyOrNull())).thenAnswer { values[it.getArgument(0)] = it.getArgument<Set<String>?>(1); editor }
+            whenever(editor.clear()).thenAnswer { values.clear(); editor }
             whenever(editor.remove(any())).thenAnswer { values.remove(it.getArgument<String>(0)); editor }
             whenever(editor.commit()).thenReturn(true)
         }
@@ -336,6 +338,19 @@ class LockedUsbUnlockTest {
             f.bootCompleted()
             assertTrue("no connectable pending phone must mean no startup", f.starts.isEmpty())
             assertTrue(f.scans.isEmpty())
+        }
+    }
+
+    @Test fun `pending unlock preserves a persisted Stop in surviving and replacement processes`() {
+        for (replaceProcess in listOf(false, true)) Fixture().use { f ->
+            f.armLockedAttach()
+            assertTrue(UsbReceiver.allowsAutomaticInput(f.app))
+            UsbReceiver.holdAfterUserStop(f.app, UsbReceiver.bootCount(f.app))
+            f.unlock(replaceProcess)
+            f.bootCompleted()
+            assertTrue("unlock must not bypass a persisted USB Stop", f.starts.isEmpty())
+            assertTrue(f.scans.isEmpty())
+            assertTrue("unlock must not release the user's USB Stop", UsbReceiver.isUserStopped(f.app))
         }
     }
 

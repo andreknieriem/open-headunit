@@ -18,4 +18,10 @@ internal fun CommManager.withAppExitDispatcherForTest(
             if (get(manager) == null) set(manager, initial)
         }
     }
+    // Real Exit now persists USB suppression before teardown, even without a live connection.
+    CommManager::class.java.getDeclaredField("context").apply {
+        isAccessible = true
+        if (get(manager) == null) set(manager,
+            org.mockito.Mockito.mock(android.content.Context::class.java).withUsbInputPreferencesForTest())
+    }
 }

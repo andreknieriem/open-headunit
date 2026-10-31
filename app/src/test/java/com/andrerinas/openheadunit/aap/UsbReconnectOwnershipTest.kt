@@ -1,6 +1,7 @@
 package com.andrerinas.openheadunit.aap
 
 import com.andrerinas.openheadunit.connection.CommManager
+import com.andrerinas.openheadunit.connection.withUsbInputPreferencesForTest
 import com.andrerinas.openheadunit.connection.ConnectionArbiter
 import com.andrerinas.openheadunit.connection.AppExitPolicy
 import com.andrerinas.openheadunit.connection.CommManager.ConnectionState
@@ -30,6 +31,7 @@ class UsbReconnectOwnershipTest {
     }
 
     @Test fun usbRecheckSurvivesItsConnectingStateButNotAnotherSession() = runBlocking {
+        mockStatic(android.os.SystemClock::class.java).use {
         for (observed in listOf(false, true)) for (outcome in listOf(
             "connecting", "error", "wireless-retry", "new-session", "user-exit", "settings-save")) {
             val manager = mock(CommManager::class.java, CALLS_REAL_METHODS).withAppExitDispatcherForTest()
@@ -41,7 +43,7 @@ class UsbReconnectOwnershipTest {
             set("appExitPolicy", AppExitPolicy())
             set("_connectionState", states)
             set("usbRecoveryOwner", Any())
-            set("context", mock(Context::class.java))
+            set("context", mock(Context::class.java).withUsbInputPreferencesForTest())
             set("settings", mock(Settings::class.java))
             val main = QueuedMain()
             val scope = CoroutineScope(SupervisorJob() + main)
@@ -92,6 +94,7 @@ class UsbReconnectOwnershipTest {
                 // The actual public request: admission, acceptance and publication before the open.
                 try { manager.connect("127.0.0.1", 5277, ticket = manager.appConnectionTicket()) } finally { scope.cancel(); main.drain() }
             }
+        }
         }
     }
 

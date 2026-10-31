@@ -729,7 +729,7 @@ class SettingsFragment : Fragment() {
         if (requiresServiceRestart) {
             if (App.provide(requireContext()).commManager.isConnected) {
                 ToastUtils.showToast(context, getString(R.string.stopping_service), Toast.LENGTH_SHORT, force = true)
-                val stopServiceIntent = AapService.stopIntent(requireContext(), connectionTicket)
+                val stopServiceIntent = AapService.stopIntent(requireContext(), connectionTicket, holdUsb = false)
                 stopServiceIntent?.let { ContextCompat.startForegroundService(requireContext(), it) }
             }
         }
@@ -3607,7 +3607,7 @@ class SettingsFragment : Fragment() {
         ctx.sendBroadcast(nightModeUpdateIntent)
 
         if (SettingsBackupManager.requiresProjectionRestart(result.changedKeys) && App.provide(ctx).commManager.isConnected) {
-            AapService.stopIntent(ctx, snapshot.connectionTicket)?.let { stopServiceIntent ->
+            AapService.stopIntent(ctx, snapshot.connectionTicket, holdUsb = false)?.let { stopServiceIntent ->
                 ToastUtils.showToast(ctx, ctx.getString(R.string.stopping_service), Toast.LENGTH_SHORT, force = true)
                 ContextCompat.startForegroundService(ctx, stopServiceIntent)
             }
@@ -3840,7 +3840,7 @@ class SettingsFragment : Fragment() {
         ctx.sendBroadcast(nightModeUpdateIntent)
 
         if (SettingsBackupManager.requiresProjectionRestart(result.changedKeys) && App.provide(ctx).commManager.isConnected) {
-            AapService.stopIntent(ctx, snapshot.connectionTicket)?.let { stopServiceIntent ->
+            AapService.stopIntent(ctx, snapshot.connectionTicket, holdUsb = false)?.let { stopServiceIntent ->
                 ToastUtils.showToast(ctx, getString(R.string.stopping_service), Toast.LENGTH_SHORT, force = true)
                 ContextCompat.startForegroundService(ctx, stopServiceIntent)
             }

@@ -6,6 +6,7 @@ import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.AppComponent
 import com.andrerinas.openheadunit.aap.AapService
 import com.andrerinas.openheadunit.connection.CommManager
+import com.andrerinas.openheadunit.connection.withUsbInputPreferencesForTest
 import com.andrerinas.openheadunit.connection.ConnectionArbiter
 import com.andrerinas.openheadunit.connection.withAppExitDispatcherForTest
 import com.andrerinas.openheadunit.utils.AppLog
@@ -70,6 +71,7 @@ class UsbLogicalAttemptTest {
             `when`(service.packageManager).thenReturn(mock(android.content.pm.PackageManager::class.java))
             `when`(service.getSharedPreferences(anyString(), anyInt()))
                 .thenReturn(mock(android.content.SharedPreferences::class.java))
+            service.withUsbInputPreferencesForTest()
             App::class.java.getDeclaredField("component\$delegate").apply { isAccessible = true }.set(app, lazyOf(component))
             `when`(component.commManager).thenReturn(comm)
             `when`(component.settings).thenReturn(settings)
@@ -114,7 +116,10 @@ class UsbLogicalAttemptTest {
         }
         fun set(name: String, value: Any?) = CommManager::class.java.getDeclaredField(name)
             .apply { isAccessible = true }.set(comm, value)
-        fun scan() { launcher.checkAlreadyConnected(force = true, recheck = comm.usbRecheckNow()); queue.drain() }
+        fun scan(manual: Boolean = false) {
+            launcher.checkAlreadyConnected(force = true, userRequested = manual, recheck = comm.usbRecheckNow())
+            queue.drain()
+        }
         fun connect(job: Job? = null) {
             val deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(5)
             while (true) {
@@ -208,7 +213,7 @@ class UsbLogicalAttemptTest {
         assertEquals(0, f.opens)
         assertTrue(f.comm.isAppRunOwner(c))
         f.assertIdle()
-        f.scan(); f.connect()
+        f.scan(manual = true); f.connect()
         assertEquals(1, f.opens)
         assertTrue(f.states.value is CommManager.ConnectionState.Connected)
     }
@@ -228,7 +233,7 @@ class UsbLogicalAttemptTest {
         f.scan()
         val oldJob = checkNotNull(f.launcher.attemptJob)
         f.stopOpen()
-        f.scan()
+        f.scan(manual = true)
         val freshJob = checkNotNull(f.launcher.attemptJob)
         assertNotSame(oldJob, freshJob)
         f.connect()
@@ -242,7 +247,7 @@ class UsbLogicalAttemptTest {
 
     @Test fun anOldPermissionReplyCannotReplaceOrReleaseTheFreshAttemptsClaim() = fixture { f ->
         f.stopOpen()
-        f.scan()
+        f.scan(manual = true)
         val fresh = checkNotNull(f.launcher.attemptJob)
         f.permissionReply(0L)
         assertSame(fresh, f.launcher.attemptJob)
@@ -256,6 +261,8 @@ class UsbLogicalAttemptTest {
 
     @Test fun permissionGrantedForANewInputAfterStopIsAccepted() = fixture { f ->
         f.stopOpen()
+        // The new dialog belongs to an explicit USB tap, which releases the prior Stop.
+        UsbReceiver.releaseForExplicitInput(f.service)
         f.permissionReply(1L)
         f.connect()
         assertEquals(1, f.opens)
@@ -291,6 +298,8 @@ class UsbLogicalAttemptTest {
         assertTrue(f.comm.isAppRunOwner(c))
         assertTrue(first.isSettingsRestartCancelled)
         f.assertIdle()
+        // Model the accepted USB input after Open before the next Save starts.
+        UsbReceiver.releaseForExplicitInput(f.service)
         val next = saved()
         f.states.value = next
         f.launcher.restartForSettings(next, f.comm.usbRecheckNow()); f.queue.drain(); f.connect()

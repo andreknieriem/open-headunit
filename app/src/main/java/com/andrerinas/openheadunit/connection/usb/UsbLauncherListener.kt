@@ -31,6 +31,7 @@ class UsbLauncherListener(private val manager: UsbLauncherManager) : UsbReceiver
             return
         }
 
+        if (!UsbReceiver.allowsAutomaticInput(service)) return
         val commManager = App.provide(service).commManager
         // The scan this attach asks for, minted as it is received, and the Save it may continue,
         // read then too. The 2 s fallback below carries both: a user exit or Stop before it fires
@@ -71,7 +72,7 @@ class UsbLauncherListener(private val manager: UsbLauncherManager) : UsbReceiver
         manager.noteRecoveryDeviceDetached(device)
         val commManager = App.provide(service).commManager
 
-        service.userExitedAA = false
+        if (!UsbReceiver.isUserStopped(service)) service.userExitedAA = false
 
         val attempt = commManager.currentConnectionAttempt()
         if (attempt != null && commManager.isConnectedToUsbDevice(device)) {
@@ -89,11 +90,14 @@ class UsbLauncherListener(private val manager: UsbLauncherManager) : UsbReceiver
 
         AppLog.i("USB Accessory detached. This might be a transient state (e.g., 100% battery). Attempting to re-sync...")
 
-        service.userExitedAA = false
+        val automaticAllowed = UsbReceiver.allowsAutomaticInput(service)
+        if (automaticAllowed) service.userExitedAA = false
         val attempt = commManager.currentConnectionAttempt()
         if (attempt != null && commManager.isConnected) {
             commManager.disconnectOwned(attempt, sendByeBye = false, isUserExit = false)
         }
+
+        if (!automaticAllowed) return
 
         // Wait a bit and check if the device is still there in normal mode
         service.serviceScope.launch {

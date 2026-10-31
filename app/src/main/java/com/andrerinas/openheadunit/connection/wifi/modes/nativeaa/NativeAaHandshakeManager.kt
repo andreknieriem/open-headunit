@@ -1,6 +1,7 @@
 package com.andrerinas.openheadunit.connection.wifi.modes.nativeaa
 
 import com.andrerinas.openheadunit.R
+import com.andrerinas.openheadunit.app.BtAutoDisconnectPolicy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.hct.HctWppOwner
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.hct.HctProjectionStage
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.hct.HctOpening
@@ -1666,9 +1667,9 @@ class NativeAaHandshakeManager(
         try { socket.close() } catch (_: Exception) {}
     }
 
-    /** Closes a handshake link to a phone and records that the close was ours. */
-    private fun closePhoneLink(link: HandshakeLink) {
-        link.peerAddress?.takeIf { it.isNotEmpty() }?.let { ownSocketCloseAt[it.uppercase()] = SystemClock.elapsedRealtime() }
+    /** Closes a handshake link to a phone and, unless [ours] is false, records that the close was ours. */
+    private fun closePhoneLink(link: HandshakeLink, ours: Boolean = true) {
+        if (ours) link.peerAddress?.takeIf { it.isNotEmpty() }?.let { ownSocketCloseAt[it.uppercase()] = SystemClock.elapsedRealtime() }
         try { link.close() } catch (_: Exception) {}
     }
 
@@ -3220,6 +3221,9 @@ class NativeAaHandshakeManager(
         // the phone is associating and there is nothing to gain by being busy.
         var retiredSilentRecord = false
         var abortedLocally = false
+        // Whether the phone closed the held channel itself; closing our end after that is not a
+        // close of ours. See BtAutoDisconnectPolicy.closeIsOurs.
+        var phoneClosedChannel = false
         // The launcher's, not the setting's: what we tell the phone has to be the network we are
         // actually hosting, and a saved transport does not reach the running launcher until it is
         // re-armed.
@@ -3462,6 +3466,7 @@ class NativeAaHandshakeManager(
                     }
                     is WppAction.Release -> {
                         val heldS = (SystemClock.elapsedRealtime() - holdingSince) / 1000
+                        phoneClosedChannel = action.peerClosed
                         if (action.peerClosed) {
                             AppLog.w("NativeAA: the phone closed the held Bluetooth channel after ${heldS}s and $pingsWhileHolding lease-handled pings; the Android Auto listeners reopen when this session ends.")
                         } else {
@@ -3870,7 +3875,7 @@ class NativeAaHandshakeManager(
             // point to cancel at — so its thread is stranded from here on.
             readerJob?.cancel()
             inbound.close()
-            closePhoneLink(link)
+            closePhoneLink(link, ours = BtAutoDisconnectPolicy.closeIsOurs(peerClosed = phoneClosedChannel))
             ConnectionArbiter.release(arbiterClaim, sessionFormed = commManager.isConnected)
             AppLog.i("NativeAA: BT Handshake link closed.")
         }

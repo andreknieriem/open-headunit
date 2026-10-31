@@ -358,7 +358,7 @@ class CommManager(
     // stopSelf cannot retract an onDestroy already queued by Android. Do not publish a new
     // attempt into that service's cleanup; wait outside the lifecycle lock for its completion.
     private suspend fun publishConnectionAttempt(
-        ticket: Long,
+        request: ConnectionRequest,
         action: () -> Pair<Any, ProjectionConnection?>?,
     ): Pair<Any, ProjectionConnection?>? {
         // Finish receivers also run on Main, including broadcasts delivered after destruction.
@@ -370,12 +370,23 @@ class CommManager(
                 var retirement: Job? = null
                 val attempted = withContext(appExitDispatcher) {
                     synchronized(transportLifecycleLock) {
-                        if (appExitPolicy.stopEpoch != ticket) return@withContext true
+                        if (!request.isValid()) return@withContext true
                         ending = serviceExitFinished
                         retirement = _disconnectJob?.takeUnless { it.isCompleted }
                         if (ending == null && retirement == null) {
-                            published = action()
-                            true
+                            // A same-owner claim can hand over without an arbiter preempt
+                            // callback. Its winning publication still has to retire the old
+                            // transport, SSL workers and decoders before creating a successor.
+                            // A claim merely admitted and then cancelled never reaches this cut.
+                            val previous = connectionAttempt
+                            if (previous != null && previous.request !== request && !disconnectRequested) {
+                                disconnectCurrent(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
+                                retirement = _disconnectJob?.takeUnless { it.isCompleted }
+                            }
+                            if (retirement != null) false else {
+                                published = action()
+                                true
+                            }
                         } else false
                     }
                 }
@@ -973,7 +984,7 @@ class CommManager(
 
         var conn: ProjectionConnection? = null
         var reached = false
-        val (attempt, previous) = publishConnectionAttempt(ticket) {
+        val (attempt, previous) = publishConnectionAttempt(request) {
             // Retirement can suspend after admission. The request's own validity rechecks Save at
             // publication, before opening hardware or replacing another connection's state.
             if (recoveryOwner != null && (attemptInFlight() || (_connectionState.value !is ConnectionState.Disconnected &&
@@ -1183,6 +1194,9 @@ class CommManager(
         val publication = ConnectionAdmission { action ->
             synchronized(transportLifecycleLock) { admission.run(action) }
         }
+        val opening = ConnectionAdmission { action ->
+            synchronized(transportLifecycleLock) { request.isValid() && admission.run(action) }
+        }
         try {
             // Keep preparation local. Only the final transfer joins CommManager's lifecycle;
             // cancellation closes this candidate without disconnecting a replacement session.
@@ -1191,7 +1205,7 @@ class CommManager(
                     _disconnectJob?.join()
                     synchronized(transportLifecycleLock) { terminal = _connectionState.value }
                 },
-                create = { SocketProjectionConnection(socket, context) },
+                create = { SocketProjectionConnection(socket, context, opening) },
                 open = { candidate ->
                     if (!candidate.connect()) throw java.io.IOException("Cannot open Nearby tunnel streams")
                 },
@@ -1245,28 +1259,13 @@ class CommManager(
         request: ConnectionRequest,
     ) {
         val ticket = request.ticket
-        // Another caller already started the connection — do nothing.
-        if (_connectionState.value is ConnectionState.Connecting) {
-            // [BUG_FIX] But close what we are refusing. A socket handed to connect() has no
-            // other owner: NetworkDiscovery gives ownership up at this call, and WirelessServer's
-            // accept loop closes the sockets it refuses itself, so returning without closing
-            // leaves the peer holding a session nobody will ever read from. This guard is the
-            // only one of the three that did not, and it is the reachable one — isConnected
-            // deliberately excludes Connecting, and WirelessServer checks it from a detached
-            // coroutine, so two connections arriving together both get past it.
-            //
-            // The cost is worst on the head unit server path, where the server binds to one
-            // connection for the life of its process and an abandoned one leaves it deaf until
-            // the user restarts it by hand.
-            AppLog.i("CommManager: Connect already in progress; closing the handed-over socket")
-            try { socket.close() } catch (e: Exception) {}
-            return
-        }
+        // Admission already decided JOIN/priority. A newer same-owner request may replace an
+        // older Connecting attempt; publishRequest checks that exact winning claim atomically.
 
         var conn: ProjectionConnection? = null
         val publication = try {
             _disconnectJob?.join()
-            publishConnectionAttempt(ticket) { publishRequest(request, restartEndpoint) }
+            publishConnectionAttempt(request) { publishRequest(request, restartEndpoint) }
         } catch (failure: Throwable) {
             try { socket.close() } catch (_: Exception) {}
             throw failure
@@ -1277,12 +1276,17 @@ class CommManager(
         }
         try {
             previous?.disconnect()
-            conn = SocketProjectionConnection(socket, context)
+            val opening = ConnectionAdmission { action -> runIfValid(request, action) }
+            conn = SocketProjectionConnection(socket, context, opening)
             val candidate = conn
             val registered = synchronized(transportLifecycleLock) {
                 if (stoppedConnectionAttempt(ticket, attempt)) return@synchronized false
                 if (connectionAttempt !== attempt || disconnectRequested) false
-                else { _connection = candidate; true }
+                else {
+                    val accepted = runIfValid(request) { _connection = candidate }
+                    if (!accepted) disconnectCurrent(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
+                    accepted
+                }
             }
             if (!registered) return
 
@@ -1293,14 +1297,17 @@ class CommManager(
                     // The cancelled candidate is closed below, outside the lifecycle monitor.
                     return@synchronized
                 }
-                if (opened) {
-                    reachPhysicalConnection()
+                if (opened && request.isValid()) {
                     // [FIX] Don't overwrite NEARBY connection type with WIFI + localhost IP (::1)
                     if (socket !is NearbySocket) {
                         settings.saveLastConnection(type = Settings.CONNECTION_TYPE_WIFI, ip = socket.inetAddress?.hostAddress ?: "")
                     }
-                    _connectionState.value = ConnectionState.Connected
-                } else {
+                    if (runIfValid(request) {
+                        reachPhysicalConnection()
+                        _connectionState.value = ConnectionState.Connected
+                    }) return@synchronized
+                }
+                if (connectionAttempt === attempt && !disconnectRequested && _connection === candidate) {
                     disconnectCurrent(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
                 }
             }
@@ -1308,9 +1315,13 @@ class CommManager(
             synchronized(transportLifecycleLock) {
                 if (stoppedConnectionAttempt(ticket, attempt)) return
                 if (connectionAttempt !== attempt || disconnectRequested) return
-                onSessionFailure?.invoke("connect_failed")
-                _connectionState.value = ConnectionState.Error("Connection failed: ${e.message}")
-                disconnectCurrent(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
+                val reported = runIfValid(request) {
+                    _connectionState.value = ConnectionState.Error("Connection failed: ${e.message}")
+                }
+                if (reported) onSessionFailure?.invoke("connect_failed")
+                if (connectionAttempt === attempt && !disconnectRequested) {
+                    disconnectCurrent(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
+                }
             }
         } finally {
             val retired = synchronized(transportLifecycleLock) {
@@ -1356,22 +1367,23 @@ class CommManager(
 
     private suspend fun connectIp(ip: String, port: Int, request: ConnectionRequest) {
         val ticket = request.ticket
-        // Another caller already started the connection — do nothing.
-        if (_connectionState.value is ConnectionState.Connecting)
-            return
-
         _disconnectJob?.join()
 
         var conn: ProjectionConnection? = null
-        val (attempt, previous) = publishConnectionAttempt(ticket) { publishRequest(request, ip to port) } ?: return
+        val (attempt, previous) = publishConnectionAttempt(request) { publishRequest(request, ip to port) } ?: return
         try {
             previous?.disconnect()
-            conn = SocketProjectionConnection(ip, port, context)
+            val opening = ConnectionAdmission { action -> runIfValid(request, action) }
+            conn = SocketProjectionConnection(ip, port, context, opening)
             val candidate = conn
             val registered = synchronized(transportLifecycleLock) {
                 if (stoppedConnectionAttempt(ticket, attempt)) return@synchronized false
                 if (connectionAttempt !== attempt || disconnectRequested) false
-                else { _connection = candidate; true }
+                else {
+                    val accepted = runIfValid(request) { _connection = candidate }
+                    if (!accepted) disconnectCurrent(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
+                    accepted
+                }
             }
             if (!registered) return
 
@@ -1382,11 +1394,14 @@ class CommManager(
                     // The cancelled candidate is closed below, outside the lifecycle monitor.
                     return@synchronized
                 }
-                if (opened) {
-                    reachPhysicalConnection()
+                if (opened && request.isValid()) {
                     settings.saveLastConnection(type = Settings.CONNECTION_TYPE_WIFI, ip = ip)
-                    _connectionState.value = ConnectionState.Connected
-                } else {
+                    if (runIfValid(request) {
+                        reachPhysicalConnection()
+                        _connectionState.value = ConnectionState.Connected
+                    }) return@synchronized
+                }
+                if (connectionAttempt === attempt && !disconnectRequested && _connection === candidate) {
                     disconnectCurrent(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
                 }
             }
@@ -1394,9 +1409,13 @@ class CommManager(
             synchronized(transportLifecycleLock) {
                 if (stoppedConnectionAttempt(ticket, attempt)) return
                 if (connectionAttempt !== attempt || disconnectRequested) return
-                onSessionFailure?.invoke("connect_failed")
-                _connectionState.value = ConnectionState.Error("Connection failed: ${e.message}")
-                disconnectCurrent(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
+                val reported = runIfValid(request) {
+                    _connectionState.value = ConnectionState.Error("Connection failed: ${e.message}")
+                }
+                if (reported) onSessionFailure?.invoke("connect_failed")
+                if (connectionAttempt === attempt && !disconnectRequested) {
+                    disconnectCurrent(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
+                }
             }
         } finally {
             val retired = synchronized(transportLifecycleLock) {

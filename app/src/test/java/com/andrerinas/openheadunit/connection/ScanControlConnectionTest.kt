@@ -16,7 +16,8 @@ class ScanControlConnectionTest {
 
     private fun manager(socket: Socket): CommManager = mock(CommManager::class.java, CALLS_REAL_METHODS).also {
         set(it, "transportLifecycleLock", Any())
-        set(it, "_connection", SocketProjectionConnection(socket, mock(Context::class.java)))
+        set(it, "_connection", SocketProjectionConnection(socket, mock(Context::class.java),
+            ConnectionAdmission { action -> action(); true }))
         set(it, "connectionAttempt", CommManager.Attempt(org.mockito.Mockito.mock(CommManager.ConnectionRequest::class.java)))
         set(it, "physicalConnectionReached", true)
     }

@@ -2277,7 +2277,7 @@ class WifiDirectManager(private val context: Context, private val operation: Con
             // A radio switched on while the unit sleeps is what the sleep hold keeps off; the wake rebuilds.
             val screen = ScreenPower.isInteractive(context)
             if (WirelessSleepHold.refusesRadioEnable(WirelessSleepHold.isAsleep(screen), WirelessSleepHold.startedByUser)) {
-                if (WirelessSleepHold.hold(force = true)) {
+                if (holdForSleep(operation) { startNativeAaQuietHost(operation) }) {
                     AppLog.i("WifiDirectManager: WiFi is off and the screen is off, so it is not switched on. " +
                         "The screen coming on re-arms the group.")
                 }
@@ -3263,7 +3263,7 @@ class WifiDirectManager(private val context: Context, private val operation: Con
         val screen = ScreenPower.isInteractive(context)
         // The watchdog asks again, so a recreate that the wake does not rebuild is not lost.
         if (WirelessSleepHold.refusesGroupRecreate(WirelessSleepHold.isAsleep(screen), WirelessSleepHold.startedByUser)) {
-            if (WirelessSleepHold.hold(force = true)) {
+            if (holdForSleep(operation) { recoverNativeGroup(reason, ignoreClientList, operation) }) {
                 AppLog.i("WifiDirectManager: Native AA recovery ($reason) held while the screen is off. " +
                     "The screen coming on re-arms the group.")
             }
@@ -3276,6 +3276,29 @@ class WifiDirectManager(private val context: Context, private val operation: Con
         // calls the no-band createGroup, so what actually happens is that the platform chooses.
         AppLog.w("WifiDirectManager: Native AA recovery ($reason): recreate attempt $nativeRecreateCount/$MAX_NATIVE_JOIN_RECREATES${if (forceStandard) ", dropping the band request and letting this unit choose" else ""}.")
         recreateNativeGroup(forceStandard, operation = operation)
+    }
+
+    /**
+     * A Save owns this group command, not the launcher's long-lived arm. Replaying it by
+     * rebuilding the launcher would either drop Save or bind every later session to it.
+     * Keep its exact Direct owner and generation; a retired manager cannot reclaim a group.
+     */
+    private fun holdForSleep(operation: ConnectionOperation, resume: () -> Unit): Boolean {
+        val gen = generation
+        val ownedResume: (() -> Unit)? = if (operation.save == null) null else {
+            {
+                val accepted = commManager.withAppConnectionLifecycleLock {
+                    generation == gen && !stopped && isCurrent(operation) &&
+                        RetainedNativeGroup.isOwner(groupOwnership)
+                }
+                if (accepted) resume()
+            }
+        }
+        return commManager.withAppConnectionLifecycleLock {
+            if (generation != gen || stopped || !isCurrent(operation) ||
+                !RetainedNativeGroup.isOwner(groupOwnership)) false
+            else WirelessSleepHold.hold(force = true, operation = operation, resume = ownedResume)
+        }
     }
 
     /** (Re)arm the native join watchdog; no-op unless we are a native-mode group owner with no

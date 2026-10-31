@@ -12,7 +12,8 @@ class AapService {
     var isStopping = false
     var wirelessPausedForSettings = false
     val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    var wirelessRearmPendingForSettings = false
+    var wirelessRearmRequest: Any? = null
+    val wirelessRearmPendingForSettings: Boolean get() = wirelessRearmRequest != null
     val commManager = object : CancelRestart {}
     val wifiLauncherManager = RecordingLauncher()
     var releaseParked: () -> Unit = {}

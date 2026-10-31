@@ -184,9 +184,12 @@ open class WifiLauncherManager(val service: AapService) {
         val screen = ScreenPower.isInteractive(service)
         val asleep = WirelessSleepHold.isAsleep(screen)
         if (WirelessSleepHold.refusesBringUp(asleep, userRequested, newLauncher.mode == WifiLauncherMode.MANUAL)) {
-            // The wake replays this bring-up under its own ticket, not the wake's.
-            service.noteSleepHeld(operation.ticket)
-            if (WirelessSleepHold.hold(force)) {
+            // The wake owns the complete command, including any Save that authorized it.
+            val firstHold = commManager.withAppConnectionLifecycleLock {
+                if (!commManager.isCurrent(operation)) false
+                else WirelessSleepHold.hold(force, operation)
+            }
+            if (firstHold) {
                 AppLog.i("WifiLauncher: wireless bring-up held while the screen is off. " +
                     "The screen coming on re-arms it.")
             }

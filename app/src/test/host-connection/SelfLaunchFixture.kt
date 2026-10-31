@@ -501,7 +501,7 @@ class Service(private var hasEverConnected: Boolean = true, val commManager: Com
     var resolvePrompts = 0
     var usbCheckPendingForSettings: UsbRecheck? = null
     var bluetoothLaunchPendingForSettings = false
-    var wirelessRearmPendingForSettings = false
+    var wirelessRearmRequest: Any? = null
     fun getSystemService(name: String): Any = network
     fun startActivity(intent: Intent) { activities++ }
     fun stopDummyVpn(reason: DummyVpnPolicy.Reason) {

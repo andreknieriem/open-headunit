@@ -2858,24 +2858,16 @@ class AapService : Service() {
     /** True while the setup QR dialog needs the running launcher to read a network off. */
     @Volatile private var settingsQrHold = false
 
-    /** A wireless Save or a Bluetooth auto-start arrived while the screen had the stack down; the close re-arms it. */
-    @Volatile private var wirelessRearmPendingForSettings = false
-    /** The Stop ticket of the latest request held behind the settings screen; the close re-arms under it. */
-    @Volatile private var wirelessRearmTicket = 0L
+    /** A settings hold keeps the exact command, including a sleeping Save's Direct continuation. */
+    private class WirelessRearm(val operation: ConnectionOperation, val resume: (() -> Unit)?)
+    @Volatile private var wirelessRearmRequest: WirelessRearm? = null
+    private val wirelessRearmPendingForSettings: Boolean get() = wirelessRearmRequest != null
 
-    private fun holdWirelessForSettings(ticket: Long) {
-        wirelessRearmPendingForSettings = true
-        wirelessRearmTicket = ticket
+    private fun holdWirelessForSettings(operation: ConnectionOperation, resume: (() -> Unit)? = null) {
+        commManager.withAppConnectionLifecycleLock {
+            if (commManager.isCurrent(operation)) wirelessRearmRequest = WirelessRearm(operation, resume)
+        }
     }
-
-    /**
-     * The Stop ticket of the bring-up [WirelessSleepHold] refused: noted by the refusal itself,
-     * or, for a hold the armed launcher's own network made, the ticket that launcher was armed
-     * under. The wake replays under it.
-     */
-    @Volatile private var sleepHeldTicket: Long? = null
-
-    internal fun noteSleepHeld(ticket: Long) { sleepHeldTicket = ticket }
 
     private var settingsRearmJob: Job? = null
 
@@ -2884,33 +2876,34 @@ class AapService : Service() {
     /** Re-arms a bring-up that [WirelessSleepHold] refused while the unit was asleep. */
     private fun replaySleepHold(trigger: String) {
         val held = WirelessSleepHold.take() ?: return
-        // The held input's ticket, not the wake's: a Stop since it was held refuses the replay.
-        val ticket = sleepHeldTicket.also { sleepHeldTicket = null } ?: wifiLauncherManager.armedOperation?.ticket ?: return
-        val startsAtTake = WirelessSleepHold.startsAtTake // A later take moves the global baseline.
-        if (sleepReplayForce(held) == null) {
+        val operation = held.operation
+        if (!commManager.isCurrent(operation)) return
+        if (sleepReplayForce(held.force) == null) {
             AppLog.i("WakeDetect: a session is up, so the wireless bring-up held while the unit was asleep is dropped (trigger=$trigger)")
             return
         }
         if (wirelessPausedForSettings) {
             AppLog.i("WakeDetect: the wireless bring-up held while the unit was asleep waits for the settings screen to close")
-            holdWirelessForSettings(ticket)
+            holdWirelessForSettings(operation, held.resume)
             return
         }
-        AppLog.i("WakeDetect: re-arming the wireless bring-up held while the unit was asleep (force=$held, trigger=$trigger)")
+        AppLog.i("WakeDetect: re-arming the wireless bring-up held while the unit was asleep (force=${held.force}, trigger=$trigger)")
         sleepReplayJob?.cancel()
         sleepReplayJob = serviceScope.launch {
             delay(1500) // Same settle the settings re-arm allows the P2P hardware.
-            while (WirelessSleepHold.waitsForAttempt(held, commManager.isConnected, sleepReplayConnecting())) {
+            if (!commManager.isCurrent(operation)) return@launch
+            while (WirelessSleepHold.waitsForAttempt(held.force, commManager.isConnected, sleepReplayConnecting())) {
                 AppLog.i("WakeDetect: a connection attempt is in flight, so the held forced wireless bring-up waits for it to end")
                 commManager.connectionState.first { it !is CommManager.ConnectionState.Connecting }
+                if (!commManager.isCurrent(operation)) return@launch
             }
-            val heldForce = sleepReplayForce(held) ?: run {
+            val heldForce = sleepReplayForce(held.force) ?: run {
                 AppLog.i("WakeDetect: a session came up during the settle, so the held wireless bring-up is dropped")
                 return@launch
             }
             // A bring-up that started after the take already rebuilt, so the replay does not force a second.
             val force = WirelessSleepHold.replayKeepsForce(
-                heldForce, startsAtTake, WirelessSleepHold.starts
+                heldForce, held.startsAtTake, WirelessSleepHold.starts
             )
             if (heldForce && !force) {
                 AppLog.i("WakeDetect: a wireless bring-up started after the hold was taken, so the held one replays unforced")
@@ -2924,7 +2917,14 @@ class AapService : Service() {
                 AppLog.i("WakeDetect: the held wireless bring-up is dropped, because $reason")
                 return@launch
             }
-            wifiLauncherManager.setActiveFromSettings(force = force, operation = ConnectionOperation(ticket, null))
+            if (!commManager.isCurrent(operation)) return@launch
+            if (wirelessPausedForSettings) {
+                holdWirelessForSettings(operation, held.resume)
+            } else {
+                val resume = held.resume
+                if (resume != null) resume()
+                else wifiLauncherManager.setActiveFromSettings(force = force, operation = operation)
+            }
         }
     }
 
@@ -2944,7 +2944,7 @@ class AapService : Service() {
         // Showing the setup QR is an explicit wireless action: the close after its dismiss must
         // still re-arm, or the phone that scanned it finds nothing listening.
         // The QR dialog is the input: it is held under the ticket read now.
-        if (qrHold == true) holdWirelessForSettings(commManager.appConnectionTicket())
+        if (qrHold == true) holdWirelessForSettings(ConnectionOperation(commManager.appConnectionTicket(), null))
         val foreground = inForeground ?: SettingsActivity.isForeground
 
         // Connecting counts as live: a phone already on its way in is not torn down for this, and
@@ -2986,14 +2986,22 @@ class AapService : Service() {
         val why = if (settingsQrHold) "the setup QR needs the running launcher"
             else "the settings screen closed with a wireless request held behind it"
         AppLog.i("AapService: $why, re-arming wireless mode $mode")
-        // The held request's own ticket: a Stop since it was held refuses the re-arm.
-        val ticket = wirelessRearmTicket
+        val request = wirelessRearmRequest ?: return
         settingsRearmJob = serviceScope.launch {
             delay(1500) // Same settle the Native AA reconnect path allows the P2P hardware.
             // Reopened inside the settle: leave the Save pending so the real close still applies it.
             if (wirelessPausedForSettings) return@launch
-            if (!settingsQrHold) wirelessRearmPendingForSettings = false
-            wifiLauncherManager.setActiveFromSettings(force = true, operation = ConnectionOperation(ticket, null))
+            val accepted = commManager.withAppConnectionLifecycleLock {
+                if (wirelessRearmRequest !== request) false else {
+                    val current = commManager.isCurrent(request.operation)
+                    if (!settingsQrHold || !current) wirelessRearmRequest = null
+                    current
+                }
+            }
+            if (!accepted) return@launch
+            val resume = request.resume
+            if (resume != null) resume()
+            else wifiLauncherManager.setActiveFromSettings(force = true, operation = request.operation)
         }
     }
 
@@ -3409,7 +3417,7 @@ class AapService : Service() {
             if (!commManager.acceptsAppConnectionTicket(ticket)) null
             else {
                 wifiLauncherManager.liftUserCancel("a wireless setting was saved")
-                if (wirelessPausedForSettings) holdWirelessForSettings(ticket)
+                if (wirelessPausedForSettings) holdWirelessForSettings(ConnectionOperation(ticket, null))
                 wirelessPausedForSettings
             }
         } ?: return
@@ -3433,7 +3441,7 @@ class AapService : Service() {
             // Configuration refresh and explicit cancellation have different owners: only the
             // latter revokes an audio settings retry that may still be waiting for retirement.
             if (!fromSettings) commManager.cancelPendingSettingsRestart()
-            wirelessRearmPendingForSettings = false
+            wirelessRearmRequest = null
             wifiLauncherManager.detachForOperation(ConnectionOperation(ticket, null))
         } ?: return
         releaseHct?.invoke()
@@ -3618,7 +3626,7 @@ class AapService : Service() {
                 }
                 AppLog.i("AapService: the status pill's X stopped the wireless bring-up. It stays " +
                     "down until the WiFi button or a wireless setting asks for it.")
-                wirelessRearmPendingForSettings = false
+                wirelessRearmRequest = null
                 if (commManager.connectionState.value is CommManager.ConnectionState.Connecting) {
                     // The pill's CONNECTING step: the socket goes before the interface, as on a
                     // user exit, or the teardown races a session still coming up.
@@ -3883,7 +3891,7 @@ class AapService : Service() {
                 }
                 if (wirelessPausedForSettings && (actions.forceRearmWireless || actions.armWirelessIfIdle)) {
                     // Held like a Save: nothing else asks again once the screen closes.
-                    holdWirelessForSettings(operationTicket)
+                    holdWirelessForSettings(ConnectionOperation(operationTicket, null))
                     AppLog.i("AapService: Bluetooth auto-start while the settings screen is open; " +
                         "re-arming when it closes.")
                 } else if (actions.forceRearmWireless) {

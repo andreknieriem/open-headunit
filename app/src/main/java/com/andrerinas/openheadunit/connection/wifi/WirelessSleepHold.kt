@@ -1,6 +1,7 @@
 package com.andrerinas.openheadunit.connection.wifi
 
 import com.andrerinas.openheadunit.app.BtAutoStartRearmPolicy
+import com.andrerinas.openheadunit.connection.ConnectionOperation
 
 /**
  * A relaunch while the unit sleeps armed the radios and the wake poke within seconds.
@@ -8,9 +9,17 @@ import com.andrerinas.openheadunit.app.BtAutoStartRearmPolicy
  */
 object WirelessSleepHold {
 
-    /** null means no hold; otherwise the OR of every held bring-up's force flag. */
+    /** The command and its optional resource-owned continuation survive the wake unchanged. */
+    class Held internal constructor(
+        val force: Boolean,
+        val operation: ConnectionOperation,
+        val startsAtTake: Int,
+        val resume: (() -> Unit)?,
+    )
+
+    /** Force is combined only for commands with the same ticket and Save owner. */
     @Volatile
-    private var heldForce: Boolean? = null
+    private var held: Held? = null
 
     /**
      * The screen alone decides: an ACC-off with no screen cycle after it would hold a lit unit with
@@ -64,13 +73,9 @@ object WirelessSleepHold {
     var startedByUser: Boolean = false
         private set
 
-    /** Bring-ups that actually started; the replay compares it with [startsAtTake]. */
+    /** Bring-ups that actually started; each taken hold retains its own comparison baseline. */
     @Volatile
     var starts: Int = 0
-        private set
-
-    @Volatile
-    var startsAtTake: Int = 0
         private set
 
     fun refusesRadioEnable(asleep: Boolean, startedByUser: Boolean): Boolean =
@@ -83,7 +88,7 @@ object WirelessSleepHold {
     /** The stack is starting, so a held bring-up has nothing left to replay. */
     @Synchronized
     fun started(userRequested: Boolean) {
-        heldForce = null
+        held = null
         startedByUser = userRequested
         starts++
     }
@@ -94,26 +99,28 @@ object WirelessSleepHold {
         startedByUser = false
     }
 
-    /** Returns true only for the first hold since the last [take], so callers log once. */
+    /** Callers validate [operation] under lifecycle before recording this owner's work. */
     @Synchronized
-    fun hold(force: Boolean): Boolean {
-        val first = heldForce == null
-        heldForce = (heldForce ?: false) || force
+    fun hold(force: Boolean, operation: ConnectionOperation, resume: (() -> Unit)? = null): Boolean {
+        val previous = held
+        val sameOwner = previous?.operation?.ticket == operation.ticket &&
+            previous.operation.save === operation.save
+        val first = !sameOwner
+        held = Held(force || (sameOwner && previous?.force == true), operation, starts, resume)
         return first
     }
 
-    /** The force flag of the held bring-up, or null when nothing is held; an empty take keeps the baseline. */
+    /** Take this command once; its start baseline cannot be changed by a later take. */
     @Synchronized
-    fun take(): Boolean? {
-        val v = heldForce ?: return null
-        heldForce = null
-        startsAtTake = starts
-        return v
+    fun take(): Held? {
+        val command = held ?: return null
+        held = null
+        return Held(command.force, command.operation, starts, command.resume)
     }
 
     @Synchronized
     fun clear() {
-        heldForce = null
+        held = null
         startedByUser = false
     }
 }

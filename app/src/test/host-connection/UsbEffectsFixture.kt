@@ -74,7 +74,14 @@ object UsbEffectsMain {
                 "stop" -> stop(c, false)
                 "stop-open" -> stop(c, true)
                 "home-exit" -> { /* USB_HOME_EXIT */ }
-                "replacement" -> { openUsb(c) }
+                "replacement" -> {
+                    // Publication waits for the old physical USB owner to retire. Pump that
+                    // fixture queue before awaiting B, keeping A's captured SSL work queued.
+                    val replacement = launch(start = CoroutineStart.UNDISPATCHED) { openUsb(c) }
+                    c.cleanups()
+                    replacement.join()
+                    check(c.state is ConnectionState.Connected)
+                }
             }
             complete(queue, work)
             val expected = if (mode == "accepted") 1 else 0

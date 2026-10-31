@@ -118,6 +118,7 @@ class AapService(manager:CommManager):Context(manager) {
     var isDestroying=false
     var wirelessPausedForSettings=false
     var wirelessRearmPendingForSettings=false
+    var wirelessRearmRequest:Any?=null
     var parkedReleases=0
     private var initializedForStart=false
     var bootstrapEffects=0
@@ -126,6 +127,7 @@ class AapService(manager:CommManager):Context(manager) {
     fun releaseParkedHct(){parkedReleases++}
     fun captureParkedHctRelease():(() -> Unit)? = { parkedReleases++ }
     fun holdWirelessForSettings(ticket:Long){wirelessRearmPendingForSettings=true}
+    fun holdWirelessForSettings(operation:ConnectionOperation){wirelessRearmPendingForSettings=true;wirelessRearmRequest=operation}
     fun deferWirelessForUsbHandoff(ticket:Long)=false
     fun waitForWifi(ticket:Long)=initWifiModeWithOptionalWait(ticket)
     fun close(){ serviceScope.cancel() }

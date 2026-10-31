@@ -440,7 +440,15 @@ fun appConnectionIngressOwnership() = runBlocking {
             val mark = c.launchMark(c.appConnectionTicket())
             c.connect("127.0.0.1", 5277, ticket = c.appConnectionTicket()) // The launch's own dial.
             val decision = c.reportLaunchFailure("timeout", mark)
+            val launchConnection = checkNotNull(c.network())
             resume.countDown()
+            // The later USER publication wins over the automatic dial, then waits for that
+            // physical predecessor's cleanup before installing its own accepted socket.
+            withTimeout(5_000) {
+                while (c.queue.tasks.isEmpty() && user.isAlive) delay(1)
+            }
+            check(user.isAlive && c.state is ConnectionState.Disconnected && !launchConnection.closed)
+            c.cleanups()
             user.join(5000)
             // Recorded after every production frame has returned.
             println("claimed-unseen request: decision=$decision state=${c.state}")
@@ -560,12 +568,22 @@ fun appConnectionIngressOwnership() = runBlocking {
             check(!requestB.isCompleted && main.tasks.size == 1) { "B did not wait for its Main acceptance" }
             if (cancelled) requestB.cancel()
             main.drain()
+            if (!cancelled) {
+                check(!requestB.isCompleted && c.state is ConnectionState.Disconnected)
+                c.cleanups()
+                main.drain()
+            }
             requestB.join()
             val createdBefore = SocketProjectionConnection.created.size
             val requestC = launch(start = CoroutineStart.UNDISPATCHED) {
                 c.connect("192.0.2.91", 5277, ConnectionPriorityPolicy.Tier.USER, ticket = c.appConnectionTicket())
             }
             main.drain()
+            if (cancelled) {
+                check(!requestC.isCompleted && c.state is ConnectionState.Disconnected)
+                c.cleanups()
+                main.drain()
+            }
             requestC.join()
             // Recorded after every production frame has returned.
             val created = SocketProjectionConnection.created.size - createdBefore

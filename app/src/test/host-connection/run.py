@@ -444,13 +444,13 @@ open class AapRead{@Volatile protected var isStopped=false;fun stop(){isStopped=
 }}
 open class ProjectionConnection{@Volatile var closed=false;open fun connect()=true;open fun disconnect(){closed=true}}
 class NearbySocket:Socket()
-class SocketProjectionConnection(private val ip:String,port:Int,context:Context):ProjectionConnection(){
+class SocketProjectionConnection(private val ip:String,port:Int,context:Context,private val admission:ConnectionAdmission):ProjectionConnection(){
  private var rawSocket:Socket?=null
- constructor(socket:Socket,context:Context):this("fixture",5277,context){rawSocket=socket}
+ constructor(socket:Socket,context:Context,admission:ConnectionAdmission):this("fixture",5277,context,admission){rawSocket=socket}
  override fun disconnect(){super.disconnect();rawSocket?.close()}
  val isLoopbackPeer get()=ip=="127.0.0.1"
  init { created.add(this);constructionHook?.invoke() }
- override fun connect():Boolean = connectionHook?.invoke(this) ?: super.connect()
+ override fun connect():Boolean = admission.run {} && (connectionHook?.invoke(this) ?: super.connect())
  companion object { @Volatile var constructionHook:(()->Unit)?=null;@Volatile var connectionHook:((ProjectionConnection)->Boolean)?=null;val created=ConcurrentLinkedQueue<ProjectionConnection>() }
 }
 class Ssl{
@@ -890,7 +890,7 @@ class SettingsActionFixture(val commManager:CommManager) {
  private fun parkRetainedHct(){}
  private val isDestroying=false
  private fun stopWirelessForCommand(settingsRearm:Boolean,ticket:Long){commManager.cancelPendingSettingsRestart()}
- private var wirelessRearmPendingForSettings=false
+ private var wirelessRearmRequest:Any?=null
  private var usbCheckPendingForSettings:UsbRecheck?=null;private var bluetoothLaunchPendingForSettings=false
  private class Wifi {
   private val ticket=Any()
@@ -930,7 +930,9 @@ extra += r"""
 fun terminalRouteSnapshots()=runBlocking {
  for(loopback in listOf(false,true)) for(route in listOf("disconnect","transport","link-loss","destroy")) {
   val c=CommManager()
-  if(loopback)c.connectSelf() else c.connectNext()
+  val opening=launch(start=CoroutineStart.UNDISPATCHED){if(loopback)c.connectSelf() else c.connectNext()}
+  check(!opening.isCompleted && c.state is ConnectionState.Disconnected)
+  c.cleanups();opening.join()
   check(c.state is ConnectionState.Connected && c.isLoopbackSession==loopback)
   when(route) {
    "disconnect" -> c.disconnect(ConnectionOperation(c.appConnectionTicket(), null), isUserExit=false,honorKillOnDisconnect=false)
@@ -954,7 +956,9 @@ extra += r"""
 // the same identity; a later attempt's end must not match it.
 fun rearmSnapshotIdentifiesConnectingAttempt()=runBlocking {
  for(outcome in listOf("false","throw")) {
-  val c=CommManager();c.connectNext()
+  val c=CommManager();val opening=launch(start=CoroutineStart.UNDISPATCHED){c.connectNext()}
+  check(!opening.isCompleted && c.state is ConnectionState.Disconnected)
+  c.cleanups();opening.join()
   c.disconnect(ConnectionOperation(c.appConnectionTicket(), null), honorKillOnDisconnect=false);c.cleanups();c.awaitCleanup()
   var armed:Triple<ConnectionState.Disconnected?,Any?,Any?>?=null
   SocketProjectionConnection.connectionHook={
@@ -1115,7 +1119,9 @@ fun usbSaveOpenFailures()=runBlocking {
 }
 fun failedAttemptDoesNotInheritPhysicalSuccess()=runBlocking {
  for(outcome in listOf("false","throw")) {
-  val c=CommManager();c.connectNext()
+  val c=CommManager();val opening=launch(start=CoroutineStart.UNDISPATCHED){c.connectNext()}
+  check(!opening.isCompleted && c.state is ConnectionState.Disconnected)
+  c.cleanups();opening.join()
   c.disconnect(ConnectionOperation(c.appConnectionTicket(), null), honorKillOnDisconnect=false);c.cleanups();c.awaitCleanup()
   check((c.state as ConnectionState.Disconnected).hadPhysicalConnection)
   SocketProjectionConnection.connectionHook={if(outcome=="throw")throw IllegalStateException("open failed") else false}
@@ -1311,3 +1317,10 @@ subprocess.run(["python3", str(Path(__file__).with_name("usb-effects.py")), str(
 # Full external-module carriers: original Native arm at reopen, init, shell and worker effects.
 subprocess.run(["python3", str(Path(__file__).with_name("native-carrier-effects.py")), str(ROOT)], check=True)
 subprocess.run(["python3", str(Path(__file__).with_name("usb-preemption.py")), str(ROOT)], check=True)
+
+# Exercise the full TCP driver and exact-owner transport replacement, including its internal
+# network wait. The lifecycle suite above deliberately doubles that driver for its other cases.
+subprocess.run(["python3", str(Path(__file__).with_name("socket-effects.py")), str(ROOT)], check=True)
+
+# A sleeping Native Save keeps its own Direct continuation through wake and settings holds.
+subprocess.run(["python3", str(Path(__file__).with_name("sleep-replay-effects.py")), str(ROOT)], check=True)

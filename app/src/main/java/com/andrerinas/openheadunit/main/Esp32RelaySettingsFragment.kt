@@ -19,7 +19,6 @@ import com.andrerinas.openheadunit.connection.esp32.Esp32RelayClient
 import com.andrerinas.openheadunit.connection.esp32.Esp32RelayProtocol
 import com.andrerinas.openheadunit.connection.esp32.Esp32RelaySession
 import com.andrerinas.openheadunit.connection.esp32.Esp32RelayStore
-import com.andrerinas.openheadunit.connection.esp32.WifiDirectDisplayInfo
 import com.andrerinas.openheadunit.main.settings.SettingItem
 import com.andrerinas.openheadunit.main.settings.SettingsAdapter
 import com.google.android.material.appbar.MaterialToolbar
@@ -98,19 +97,21 @@ class Esp32RelaySettingsFragment : Fragment() {
                 refresh()
             },
         ))
-        items.add(SettingItem.SettingEntry(
+        items.add(SettingItem.InfoBanner(
             stableId = "esp32RelaySaved",
-            nameResId = R.string.esp32_relay_saved_device,
-            value = saved ?: getString(R.string.esp32_relay_none),
-            isEnabled = enabled,
-            onClick = { _ -> },
+            textResId = R.string.esp32_relay_saved_device,
+            text = getString(
+                R.string.esp32_relay_saved_notice,
+                saved ?: getString(R.string.esp32_relay_none),
+            ),
         ))
-        items.add(SettingItem.SettingEntry(
+        items.add(SettingItem.InfoBanner(
             stableId = "esp32RelayStatus",
-            nameResId = R.string.esp32_relay_status,
-            value = if (enabled) statusText() else getString(R.string.esp32_relay_phase_idle),
-            isEnabled = enabled,
-            onClick = { _ -> },
+            textResId = R.string.esp32_relay_status,
+            text = getString(
+                R.string.esp32_relay_status_notice,
+                if (enabled) statusText() else getString(R.string.esp32_relay_phase_idle),
+            ),
         ))
         items.add(SettingItem.SettingEntry(
             stableId = "esp32RelayScan",
@@ -175,7 +176,8 @@ class Esp32RelaySettingsFragment : Fragment() {
             Esp32RelaySession.Phase.IDLE -> getString(R.string.esp32_relay_phase_idle)
             Esp32RelaySession.Phase.CONNECTING -> getString(R.string.esp32_relay_phase_connecting)
             Esp32RelaySession.Phase.READY -> getString(R.string.esp32_relay_phase_ready)
-            Esp32RelaySession.Phase.INCOMPLETE -> getString(R.string.esp32_relay_phase_incomplete)
+            // Incomplete Wi-Fi Direct is not shown; credentials are offered at AA start.
+            Esp32RelaySession.Phase.INCOMPLETE -> getString(R.string.esp32_relay_phase_idle)
             Esp32RelaySession.Phase.PAIRING -> getString(R.string.esp32_relay_phase_pairing)
             Esp32RelaySession.Phase.FAILED -> getString(R.string.esp32_relay_phase_failed, status.detail)
         }
@@ -215,20 +217,13 @@ class Esp32RelaySettingsFragment : Fragment() {
         if (!store.enabled) return
         store.deviceAddress = address
         store.deviceName = name
+        found.remove(address)
         scanner.stopScan()
         scanning = false
-        WifiDirectDisplayInfo.read(requireContext()) { info ->
-            if (!store.enabled) {
-                refresh()
-                return@read
-            }
-            if (info.isComplete) {
-                Esp32RelaySession.offer(requireContext(), info)
-            } else {
-                Esp32RelaySession.openPairing(requireContext())
-            }
-            refresh()
-        }
+        // Always open the Classic pairing window after the board is saved. Wi-Fi credentials
+        // are pushed later when Native AA starts; offering them here can arm an AA dial.
+        Esp32RelaySession.openPairing(requireContext())
+        refresh()
     }
 
     private fun refresh() {

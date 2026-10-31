@@ -26,9 +26,6 @@ import com.andrerinas.openheadunit.aap.AapService
 import com.andrerinas.openheadunit.app.BtAutoDisconnectPolicy
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.AppPermissions
-import com.andrerinas.openheadunit.connection.wifi.WifiLauncherMode
-import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.ExternalBtTransportPolicy
-import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeAaHandshakeManager
 import com.andrerinas.openheadunit.utils.Settings
 import com.andrerinas.openheadunit.utils.BluetoothHelper
 import com.andrerinas.openheadunit.utils.CarLauncherManager
@@ -50,13 +47,11 @@ class AutoStartFragment : Fragment() {
     private var pendingAutoStartOnUsb: Boolean? = null
     private val pendingAutoStartBtMacs = mutableSetOf<String>()
     private val pendingAutoDisconnectBtMacs = mutableSetOf<String>()
-    private val pendingNativePokeBtMacs = mutableSetOf<String>()
-    private var pendingNativePokeAllPaired: Boolean? = null
     private var pendingAutoDisconnectBtDelaySeconds: Int? = null
     private var pendingAutoStartOnWifi: Boolean? = null
 
     /** Which list the device picker edits; remembered across the permission and enable prompts. */
-    private enum class BtPickerTarget { AUTO_START, AUTO_DISCONNECT, NATIVE_POKE }
+    private enum class BtPickerTarget { AUTO_START, AUTO_DISCONNECT }
     private var btPickerTarget = BtPickerTarget.AUTO_START
     private var pendingAutoStartWifiSsid: String? = null
     private var pendingReopenOnReconnection: Boolean? = null
@@ -99,9 +94,6 @@ class AutoStartFragment : Fragment() {
         pendingAutoStartBtMacs.addAll(settings.autoStartBluetoothDeviceMacs)
         pendingAutoDisconnectBtMacs.clear()
         pendingAutoDisconnectBtMacs.addAll(settings.autoDisconnectBluetoothDeviceMacs)
-        pendingNativePokeBtMacs.clear()
-        pendingNativePokeBtMacs.addAll(settings.nativePokeBtMacs)
-        pendingNativePokeAllPaired = settings.nativePokeAllPairedDevices
         pendingAutoDisconnectBtDelaySeconds = settings.autoDisconnectBtDelaySeconds
         pendingAutoStartOnWifi = settings.autoStartOnWifi
         pendingAutoStartWifiSsid = settings.autoStartWifiSsid
@@ -191,8 +183,6 @@ class AutoStartFragment : Fragment() {
         }
         settings.autoStartBluetoothDeviceMacs = pendingAutoStartBtMacs.toSet()
         Settings.syncAutoStartBtMacsToDeviceStorage(requireContext(), pendingAutoStartBtMacs.toSet())
-        settings.nativePokeBtMacs = pendingNativePokeBtMacs.toSet()
-        pendingNativePokeAllPaired?.let { if (it != settings.nativePokeAllPairedDevices) settings.nativePokeAllPairedDevices = it }
         if (pendingAutoStartBtMacs.isNotEmpty()) {
             val firstMac = pendingAutoStartBtMacs.first()
             val adapter = BluetoothHelper.getBluetoothAdapter(requireContext())
@@ -268,7 +258,7 @@ class AutoStartFragment : Fragment() {
         }
 
         AppLog.i("AutoStartFragment: saved auto-start ${pendingAutoStartBtMacs.size} device(s), " +
-            "auto-disconnect ${pendingAutoDisconnectBtMacs.size}, wake ${pendingNativePokeBtMacs.size}")
+            "auto-disconnect ${pendingAutoDisconnectBtMacs.size}")
 
         hasChanges = false
         updateSaveButtonState()
@@ -283,8 +273,6 @@ class AutoStartFragment : Fragment() {
                 pendingAutoStartOnUsb != settings.autoStartOnUsb ||
                 pendingAutoStartBtMacs != settings.autoStartBluetoothDeviceMacs ||
                 pendingAutoDisconnectBtMacs != settings.autoDisconnectBluetoothDeviceMacs ||
-                pendingNativePokeBtMacs != settings.nativePokeBtMacs ||
-                pendingNativePokeAllPaired != settings.nativePokeAllPairedDevices ||
                 pendingAutoDisconnectBtDelaySeconds != settings.autoDisconnectBtDelaySeconds ||
                 pendingAutoStartOnWifi != settings.autoStartOnWifi ||
                 pendingAutoStartWifiSsid != settings.autoStartWifiSsid ||
@@ -316,7 +304,8 @@ class AutoStartFragment : Fragment() {
             items.add(SettingItem.ToggleSettingEntry(
                 stableId = "autoStartOnBoot",
                 nameResId = R.string.auto_start_on_boot_label,
-                descriptionResId = R.string.auto_start_on_boot_description,
+                descriptionResId = R.string.auto_start_on_boot_summary,
+                helpResId = R.string.auto_start_on_boot_description,
                 isChecked = pendingAutoStartOnBoot!!,
                 onCheckedChanged = { isChecked ->
                     pendingAutoStartOnBoot = isChecked
@@ -329,7 +318,8 @@ class AutoStartFragment : Fragment() {
         items.add(SettingItem.ToggleSettingEntry(
             stableId = "autoStartOnScreenOn",
             nameResId = R.string.auto_start_screen_on_label,
-            descriptionResId = R.string.auto_start_screen_on_description,
+            descriptionResId = R.string.auto_start_screen_on_summary,
+            helpResId = R.string.auto_start_screen_on_description,
             isChecked = pendingAutoStartOnScreenOn!!,
             onCheckedChanged = { isChecked ->
                 pendingAutoStartOnScreenOn = isChecked
@@ -342,6 +332,7 @@ class AutoStartFragment : Fragment() {
             stableId = "listenForUsbDevices",
             nameResId = R.string.listen_for_usb_devices_label,
             descriptionResId = R.string.listen_for_usb_devices_description,
+            helpResId = R.string.listen_for_usb_devices_help,
             isChecked = pendingListenForUsbDevices!!,
             onCheckedChanged = { isChecked ->
                 pendingListenForUsbDevices = isChecked
@@ -353,7 +344,8 @@ class AutoStartFragment : Fragment() {
         items.add(SettingItem.ToggleSettingEntry(
             stableId = "autoStartUsb",
             nameResId = R.string.auto_start_usb_label,
-            descriptionResId = R.string.auto_start_usb_description,
+            descriptionResId = R.string.auto_start_usb_summary,
+            helpResId = R.string.auto_start_usb_description,
             isChecked = pendingAutoStartOnUsb!!,
             onCheckedChanged = { isChecked ->
                 pendingAutoStartOnUsb = isChecked
@@ -366,7 +358,8 @@ class AutoStartFragment : Fragment() {
             items.add(SettingItem.ToggleSettingEntry(
                 stableId = "reopenOnReconnection",
                 nameResId = R.string.reopen_on_reconnection_label,
-                descriptionResId = R.string.reopen_on_reconnection_description,
+                descriptionResId = R.string.reopen_on_reconnection_summary,
+                helpResId = R.string.reopen_on_reconnection_description,
                 isChecked = pendingReopenOnReconnection ?: settings.rawReopenOnReconnection,
                 onCheckedChanged = { isChecked ->
                     pendingReopenOnReconnection = isChecked
@@ -378,6 +371,8 @@ class AutoStartFragment : Fragment() {
         items.add(SettingItem.SettingEntry(
             stableId = "autoStartBt",
             nameResId = R.string.auto_start_bt_label,
+            descriptionResId = R.string.auto_start_bt_description,
+            helpResId = R.string.auto_start_bt_help,
             value = getBluetoothSummaryText(),
             onClick = {
                 showBluetoothDeviceSelector(BtPickerTarget.AUTO_START)
@@ -397,36 +392,10 @@ class AutoStartFragment : Fragment() {
             ))
         }
 
-        if (settings.wifiConnectionMode == WifiLauncherMode.NATIVE &&
-            !ExternalBtTransportPolicy.usesExternalModule(NativeAaHandshakeManager.transportRoute(requireContext()))) {
-            items.add(SettingItem.SettingEntry(
-                stableId = "nativePokeBt",
-                nameResId = R.string.native_poke_bt_label,
-                value = BluetoothDevicePicker.summaryFor(requireContext(), pendingNativePokeBtMacs)
-                    ?: getString(R.string.bt_device_not_set),
-                onClick = {
-                    showBluetoothDeviceSelector(BtPickerTarget.NATIVE_POKE)
-                }
-            ))
-
-            // Only asked when nothing is chosen: a chosen device is never widened.
-            if (pendingNativePokeBtMacs.isEmpty()) {
-                items.add(SettingItem.ToggleSettingEntry(
-                    stableId = "nativePokeAllPaired",
-                    nameResId = R.string.native_poke_all_paired_label,
-                    descriptionResId = R.string.native_poke_all_paired_description,
-                    isChecked = pendingNativePokeAllPaired ?: true,
-                    onCheckedChanged = { isChecked ->
-                        pendingNativePokeAllPaired = isChecked
-                        checkChanges()
-                    }
-                ))
-            }
-        }
-
         items.add(SettingItem.SettingEntry(
             stableId = "autoDisconnectBt",
             nameResId = R.string.auto_disconnect_bt_label,
+            helpResId = R.string.auto_disconnect_bt_kill_hint,
             value = BluetoothDevicePicker.summaryFor(requireContext(), pendingAutoDisconnectBtMacs)
                 ?: getString(R.string.bt_device_not_set),
             onClick = {
@@ -439,16 +408,12 @@ class AutoStartFragment : Fragment() {
             items.add(SettingItem.SettingEntry(
                 stableId = "autoDisconnectBtDelay",
                 nameResId = R.string.auto_disconnect_bt_delay_label,
+                helpResId = R.string.auto_disconnect_bt_delay_help,
                 value = if (delaySeconds <= 0) getString(R.string.auto_disconnect_bt_delay_immediate)
                     else getString(R.string.auto_disconnect_bt_delay_value, delaySeconds),
                 onClick = {
                     showAutoDisconnectDelayDialog()
                 }
-            ))
-
-            items.add(SettingItem.InfoBanner(
-                stableId = "autoDisconnectBtKillHint",
-                textResId = R.string.auto_disconnect_bt_kill_hint
             ))
         }
 
@@ -462,6 +427,7 @@ class AutoStartFragment : Fragment() {
                 stableId = "autoStartWifi",
                 nameResId = R.string.auto_start_wifi_label,
                 descriptionResId = R.string.auto_start_wifi_description,
+                helpResId = R.string.auto_start_wifi_help,
                 isChecked = pendingAutoStartOnWifi!!,
                 onCheckedChanged = { isChecked ->
                     pendingAutoStartOnWifi = isChecked
@@ -474,6 +440,7 @@ class AutoStartFragment : Fragment() {
                 items.add(SettingItem.SettingEntry(
                     stableId = "autoStartWifiSsid",
                     nameResId = R.string.auto_start_wifi_ssid_label,
+                    helpResId = R.string.auto_start_wifi_ssid_help,
                     value = if (pendingAutoStartWifiSsid.isNullOrEmpty()) getString(R.string.wifi_ssid_not_set) else pendingAutoStartWifiSsid!!,
                     onClick = {
                         showSsidInputDialog()
@@ -486,13 +453,8 @@ class AutoStartFragment : Fragment() {
         // when a wireless or Self Mode session starts and stops; USB has its own attach and
         // detach, so a USB-only unit does not see them.
         val usbIds = setOf("listenForUsbDevices", "autoStartUsb", "reopenOnReconnection")
-        // The wake rows filter by isLikelyPhone, so on a Self-only unit they offer a picker that
-        // hides the car radio the other two rows are for.
-        val wifiIds = setOf(
-            "autoStartWifiWarning", "autoStartWifi", "autoStartWifiSsid",
-            "nativePokeBt", "nativePokeAllPaired",
-        )
-        val btIds = setOf("autoStartBt", "autoDisconnectBt", "autoDisconnectBtDelay", "autoDisconnectBtKillHint")
+        val wifiIds = setOf("autoStartWifiWarning", "autoStartWifi", "autoStartWifiSsid")
+        val btIds = setOf("autoStartBt", "autoDisconnectBt", "autoDisconnectBtDelay")
         val filtered = items.filterNot { item ->
             (item.stableId in usbIds && !settings.showsUsb()) ||
                 (item.stableId in wifiIds && !settings.showsWifi()) ||
@@ -568,25 +530,12 @@ class AutoStartFragment : Fragment() {
         val pending = when (target) {
             BtPickerTarget.AUTO_START -> pendingAutoStartBtMacs
             BtPickerTarget.AUTO_DISCONNECT -> pendingAutoDisconnectBtMacs
-            BtPickerTarget.NATIVE_POKE -> pendingNativePokeBtMacs
         }
         val titleResId = when (target) {
             BtPickerTarget.AUTO_START -> R.string.select_bt_device
             BtPickerTarget.AUTO_DISCONNECT -> R.string.select_bt_disconnect_device
-            BtPickerTarget.NATIVE_POKE -> R.string.select_bt_poke_device
         }
-        // Only a phone can answer Native AA, so its wake list offers phones. The other two lists
-        // are not Native-AA-only: a headset is a fair auto-start or auto-disconnect trigger.
-        val deviceFilter: ((android.bluetooth.BluetoothDevice) -> Boolean)? =
-            if (target == BtPickerTarget.NATIVE_POKE) {
-                { device ->
-                    BluetoothHelper.isLikelyPhone(
-                        device, settings.nativePreferredDeviceMac, settings.lastConnectedNativeMac
-                    )
-                }
-            } else null
-
-        BluetoothDevicePicker.show(requireContext(), titleResId, pending, deviceFilter) { chosen ->
+        BluetoothDevicePicker.show(requireContext(), titleResId, pending) { chosen ->
             pending.clear()
             pending.addAll(chosen)
             checkChanges()

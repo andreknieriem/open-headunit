@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Help (question mark in a ring), drawn after Material Symbols Rounded "help". Tinted in code. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="960"
+    android:viewportHeight="960">
+  <path
+      android:fillColor="@android:color/white"
+      android:fillType="evenOdd"
+      android:pathData="M480,880A400,400 0 1 1 480,80A400,400 0 1 1 480,880ZM480,800A320,320 0 1 0 480,160A320,320 0 1 0 480,800ZM390,400C390,340 430,310 480,310C540,310 580,345 580,400C580,450 550,475 520,500C495,520 490,535 490,570L430,570C430,520 445,490 480,462C505,442 520,430 520,405C520,380 505,370 480,370C455,370 440,385 440,405ZM435,690A45,45 0 1 0 525,690A45,45 0 1 0 435,690Z"/>
+</vector>

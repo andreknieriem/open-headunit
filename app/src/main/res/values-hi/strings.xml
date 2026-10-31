@@ -16,6 +16,7 @@
 
     <!-- Connection mode selector -->
     <string name="connection_mode">कनेक्शन मोड</string>
+    <string name="connection_mode_help">तय करता है कि यह यूनिट फ़ोन से कैसे जुड़े: यूएसबी, वाई-फ़ाई, सेल्फ़ मोड, या इनका मेल। होम स्क्रीन और सेटिंग केवल चुने गए तरीकों के विकल्प दिखाती हैं। अगर वाई-फ़ाई नहीं चुना गया है, तो ऐप बैकग्राउंड में वायरलेस शुरू नहीं करता।</string>
     <string name="connection_kind_usb_cable">यूएसबी केबल (सीधा)</string>
     <string name="connection_kind_usb_wireless_adapter">यूएसबी वायरलेस अडैप्टर</string>
     <string name="connection_kind_wifi">वाई-फ़ाई</string>
@@ -237,15 +238,20 @@
     <string name="wifi">वाई-फ़ाई</string>
     <string name="dpi">पिक्सेल घनत्व (DPI)</string>
     <string name="pixel_aspect_ratio">पिक्सेल आस्पेक्ट रेशियो</string>
+    <string name="pixel_aspect_ratio_help">इसे तभी बदलें जब इस स्क्रीन पर गोले अंडाकार दिखें। ऐसा तब होता है जब पैनल के पिक्सल चौकोर नहीं होते। 10000 का मतलब चौकोर पिक्सल है।</string>
     <string name="mic_sample_rate">माइक सैंपल रेट</string>
+    <string name="mic_sample_rate_help">Android Auto को माइक्रोफ़ोन हमेशा 16000 Hz पर मिलता है, और ऐप पहले उसी दर पर माइक्रोफ़ोन खोलता है। अगर यूनिट 16000 Hz ठुकरा दे, तो ऐप 48000 Hz पर रिकॉर्ड करता है और आवाज़ को नीचे बदल देता है। अगर Android Auto जुड़ा है, तो बदलाव लागू करने के लिए उसे सहेजने पर सत्र रुक जाता है।</string>
     <string name="keymap">कीमैप</string>
     <string name="night_mode">डार्क मोड (Android Auto)</string>
+    <string name="night_mode_help">तय करता है कि Android Auto अपना गहरा रूप कब दिखाए। ऐप फ़ोन को दिन या रात बताता है, और फ़ोन अपनी स्क्रीन बदलता है। «Auto» सूर्योदय और सूर्यास्त के अनुसार चलता है। «Car Headlight Signal» उन यूनिट पर ILL+ सिग्नल पढ़ता है जो इसे बताती हैं। बाकी मोड ऊपर की ऐप सेटिंग की तरह काम करते हैं।</string>
     <string name="night_mode_threshold">नाइट मोड थ्रेशोल्ड</string>
     <string name="enter_threshold_value">थ्रेशोल्ड मान दर्ज करें</string>
     <string name="threshold_lux_desc">लक्स मान (0–10000)। इससे कम = रात।</string>
     <string name="threshold_brightness_desc">स्क्रीन की रोशनी का मान (0–255)। इससे कम होने पर रात मानी जाएगी।</string>
     <string name="threshold_light_title">प्रकाश संवेदनशीलता</string>
+    <string name="threshold_light_help">लाइट सेंसर इस स्तर से कम लक्स पढ़े तो डार्क मोड चालू होता है। झिलमिलाहट से बचने के लिए यह स्तर से 10 लक्स ऊपर जाने पर ही फिर बंद होता है। बदलाव को लागू होने से पहले 2 सेकंड टिकना होता है। चुनने में मदद के लिए डायलॉग मौजूदा रीडिंग दिखाता है।</string>
     <string name="threshold_brightness_title">स्क्रीन की रोशनी का स्तर</string>
+    <string name="threshold_brightness_help">स्क्रीन की चमक इस मान से कम होने पर डार्क मोड चालू होता है। Android चमक 0 से 255 तक बताता है, पर कुछ यूनिट छोटा दायरा इस्तेमाल करती हैं। झिलमिलाहट से बचने के लिए डार्क मोड मान से 10 ऊपर जाने पर ही फिर बंद होता है। चुनने में मदद के लिए डायलॉग मौजूदा रीडिंग दिखाता है।</string>
     <string name="threshold_light_hint">आसपास की रोशनी इस स्तर से कम होने पर डार्क मोड चालू हो जाता है।</string>
     <string name="threshold_brightness_hint">स्क्रीन की रोशनी इस मान से कम होने पर डार्क मोड चालू हो जाता है। Android रोशनी को 0–255 के रूप में बताता है, लेकिन असली सीमा डिवाइस के अनुसार अलग हो सकती है। अपने डिवाइस के लिए सही थ्रेशोल्ड ढूंढने के लिए आपको कुछ बार आज़माना पड़ सकता है।</string>
     <string name="current_light_reading">मौजूदा रोशनी: %d Lux</string>
@@ -263,14 +269,17 @@
     <string name="car_signal_calibration_saved">ILL+ कैलिब्रेशन सहेजा गया और लागू किया गया</string>
     <string name="night_mode_start">नाइट मोड प्रारंभ समय</string>
     <string name="night_mode_end">नाइट मोड समाप्ति समय</string>
+    <string name="night_mode_time_help">डार्क मोड हर दिन शुरू होने के समय से खत्म होने के समय तक चालू रहता है। सीमा आधी रात पार कर सकती है, जैसे 22:00 से 06:00। समय इस यूनिट की घड़ी के अनुसार होते हैं।</string>
 
     <string name="app_theme">डार्क मोड (एप्लिकेशन)</string>
     <string name="app_theme_description">ऐप के दृश्य स्वरूप को नियंत्रित करें।</string>
+    <string name="app_theme_help">तय करता है कि इस ऐप की अपनी स्क्रीन कब गहरे रंग की हों। Android Auto की अपनी सेटिंग नीचे है। «Clear», «Dark» और «Extreme Dark» नहीं बदलते। «Automatic» सिस्टम के अनुसार चलता है। बाकी मोड सूर्योदय और सूर्यास्त, समय सीमा, लाइट सेंसर, स्क्रीन की चमक, कार की हेडलाइट के सिग्नल या सहेजी गई जगह के अनुसार बदलते हैं।</string>
     <string name="change_app_theme">ऐप थीम बदलें</string>
     <string name="monochrome_icons">मोनोक्रोम आइकन</string>
     <string name="monochrome_icons_description">डार्क या एक्सट्रीम डार्क मोड में होम स्क्रीन पर ग्रेस्केल आइकन का उपयोग करें।</string>
     <string name="use_extreme_dark">एक्सट्रीम डार्क</string>
     <string name="use_extreme_dark_description">डार्क मोड सक्रिय होने पर शुद्ध काले बैकग्राउंड का उपयोग करें।</string>
+    <string name="use_extreme_dark_help">ऐप के गहरे होने पर एकदम काली पृष्ठभूमि इस्तेमाल करता है। यह केवल उन मोड पर लागू होता है जो अपने आप बदलते हैं, क्योंकि «Extreme Dark» हमेशा काला होता है। इससे Android Auto नहीं बदलता।</string>
     <string name="use_gradient_background">ग्रेडिएंट बैकग्राउंड का उपयोग करें</string>
     <string name="use_gradient_background_description_on">ऐप केंद्र में ग्रेडिएंट सर्कल के साथ अपना बैकग्राउंड बनाता है</string>
     <string name="use_gradient_background_description_off">ऐप का क्लासिक बैकग्राउंड उपयोग किया जा रहा है</string>
@@ -319,6 +328,7 @@
     <string name="night_mode_short">Android Auto</string>
     <string name="aa_monochrome">Android Auto को मोनोक्रोम बनाएं</string>
     <string name="aa_monochrome_description">रात में ड्राइविंग के लिए Android Auto के रंगों को कम करता है। GLES व्यू मोड की आवश्यकता है। केवल तभी प्रभावी होता है जब डार्क मोड सक्षम हो।</string>
+    <string name="aa_monochrome_summary">रात में ड्राइविंग के लिए रंग कम करता है। इसके लिए GLES व्यू मोड और डार्क मोड चाहिए।</string>
     <string name="aa_desaturation">डिसेचुरेशन</string>
     <string name="aa_desaturation_description">नियंत्रित करता है कि कितना रंग हटाया जाए। केवल तभी प्रभावी होता है जब डार्क मोड सक्षम हो।</string>
     <string name="gles_required_title">GLES आवश्यक है</string>
@@ -330,7 +340,9 @@
     <string name="reconnection_required_title">फिर से कनेक्ट करना ज़रूरी है</string>
     <string name="reconnection_required_message">डिवाइस इंतज़ार की स्थिति में है। Android Auto दोबारा शुरू करने के लिए USB केबल निकालें और फिर से लगाएँ।</string>
 
-    <string name="bluetooth_address_s">ब्लूटूथ पता</string>
+    <string name="bluetooth_address_s">यूनिट का ब्लूटूथ पता</string>
+    <string name="bluetooth_address_summary">वह पता, जिससे फ़ोन इस यूनिट को पहचानता है।</string>
+    <string name="bluetooth_address_help">इस यूनिट का अपना ब्लूटूथ पता। फ़ोन इससे हर कनेक्शन मोड में इस यूनिट को पहचानता है। इसे सेटिंग्स, अबाउट, स्टेटस में देखें, या जुड़े हुए फ़ोन पर इस डिवाइस के पास गियर आइकन के नीचे। अपने आप पता लगाने के लिए इसे खाली छोड़ें। «USB पर फ़ोन का मीडिया ऑडियो चालू रखें» विकल्प Android Auto को USB सत्र में फ़ोन का ब्लूटूथ मीडिया ऑडियो बंद करने से रोकता है। तब फ़ोन कॉल फ़ोन पर ही रह सकती हैं।</string>
     <string name="enter_bluetooth_mac">ब्लूटूथ MAC पता डालें</string>
     <string name="bluetooth_address_message">यह इस हेड यूनिट का अपना पता है, जिससे फ़ोन इसे पहचानता है। इसे सेटिंग्स &gt; अबाउट &gt; स्टेटस में देखें, या जुड़े हुए फ़ोन में इस डिवाइस के पास दिए गियर आइकन के अंदर देखें। अपने आप पता लगाने के लिए खाली छोड़ें।</string>
     <string name="invalid_bluetooth_address">यह ब्लूटूथ पता नहीं है। हेक्स अंकों के छह जोड़े डालें, जैसे 0C:32:3A:2D:5D:4A।</string>
@@ -338,20 +350,24 @@
     <string name="reset_settings">डिफ़ॉल्ट पर रीसेट करें</string>
     <string name="reset_settings_confirm">क्या आप सभी सेटिंग्स को डिफ़ॉल्ट पर रीसेट करना चाहते हैं? इससे ऐप रीस्टार्ट हो जाएगा।</string>
     <string name="reset_settings_description">सभी कॉन्फ़िगरेशन, कैश डेटा और ऑटो-कनेक्ट की पसंद मिटा देता है। फ़ैक्टरी डिफ़ॉल्ट लागू करने के लिए ऐप रीस्टार्ट होगा।</string>
-    <string name="gps_for_navigation">नेविगेशन के लिए GPS</string>
-    <string name="gps_for_navigation_description">नेविगेशन के लिए GPS का उपयोग करें।</string>
+    <string name="gps_for_navigation">Android Auto में इस यूनिट के GPS का उपयोग करें</string>
+    <string name="gps_for_navigation_description">Android Auto कार की लोकेशन फ़ोन से नहीं, इस यूनिट से लेता है।</string>
+    <string name="gps_for_navigation_help">चुनता है कि Android Auto मैप और नेविगेशन के लिए कार की लोकेशन कहाँ से ले। चालू: ऐप इस यूनिट की GPS लोकेशन फ़ोन को भेजता है। बंद: फ़ोन अपनी लोकेशन इस्तेमाल करता है। इसे तब चालू करें जब यूनिट का GPS एंटीना फ़ोन से बेहतर हो। ऐप केवल असली GPS फ़िक्स भेजता है। यूनिट कुछ देर GPS फ़िक्स खो दे, तो फ़ोन अपनी लोकेशन इस्तेमाल करता है। इसे बंद करने से यूनिट का GPS बंद नहीं होता। अगले कनेक्शन पर लागू होता है।</string>
     <string name="enabled">चालू</string>
     <string name="disabled">बंद</string>
     <string name="resolution">रिज़ॉल्यूशन</string>
+    <string name="resolution_help">Android Auto जो तस्वीर भेजता है, उसका आकार तय करता है। सूची में इस यूनिट की स्क्रीन के लिए सबसे सही आकार पर «अनुशंसित» का निशान होता है। स्क्रीन से बड़ा आकार केवल ज़्यादा बैंडविड्थ लेता है, तस्वीर और साफ़ नहीं होती। बड़े आकारों के लिए मज़बूत 5 GHz Wi-Fi या USB कनेक्शन चाहिए। अगले कनेक्शन पर लागू होता है।</string>
     <string name="change_resolution">रिज़ॉल्यूशन बदलें</string>
     <string name="change_dpi">DPI बदलें</string>
     <string name="change_view_mode">व्यू मोड बदलें</string>
     <string name="view_mode">व्यू मोड</string>
+    <string name="view_mode_help">तय करता है कि इस यूनिट की स्क्रीन पर तस्वीर कैसे बनाई जाए। SurfaceView सबसे तेज़ है और ज़्यादातर यूनिट पर चलता है। TextureView धीमा है, लेकिन मिररिंग और स्केलिंग की सुविधा देता है। GLES20 मोनोक्रोम नाइट मोड जैसे इफ़ेक्ट जोड़ता है। तस्वीर काली हो, झिलमिलाए या कोई इफ़ेक्ट न दिखे, तो इसे बदलें।</string>
     <string name="surface_view">SurfaceView</string>
     <string name="texture_view">TextureView</string>
     <string name="gles_view">GLES20</string>
     <string name="auto">ऑटो</string>
     <string name="screen_orientation">स्क्रीन ओरिएंटेशन</string>
+    <string name="screen_orientation_help">तय करता है कि यह ऐप स्क्रीन पर कैसे घूमे। «System Default» सिस्टम की सेटिंग मानता है, और «Auto» सेंसर को मानता है। बाकी विकल्प एक दिशा में लॉक कर देते हैं। पोर्ट्रेट चुनने पर Android Auto लंबी तस्वीर भी भेजता है। Android Auto को आकार केवल सत्र शुरू होने पर मिलता है, इसलिए बदलाव के बाद फिर से कनेक्ट करें।</string>
     <string name="change_screen_orientation">स्क्रीन ओरिएंटेशन बदलें</string>
     <string name="orientation_system_default">सिस्टम डिफ़ॉल्ट</string>
     <string name="orientation_auto_sensor">ऑटो (सेंसर)</string>
@@ -372,6 +388,7 @@
 
     <string name="start_in_fullscreen_mode">स्क्रीन मोड</string>
     <string name="start_in_fullscreen_mode_description">चुनें कि सिस्टम बार (स्टेटस और नेविगेशन) कैसे दिखें।</string>
+    <string name="start_in_fullscreen_mode_help">तय करता है कि इस ऐप और प्रोजेक्शन के ऊपर सिस्टम बार कैसे दिखें। «सामान्य» सभी बार रखता है। «इमर्सिव» सभी बार छिपाता है, और तस्वीर नॉच के नीचे जा सकती है। «सिर्फ़ स्टेटस बार छिपाएँ» नेविगेशन बार रखता है। «इमर्सिव (नॉच से बचें)» सभी बार छिपाता है और तस्वीर को नॉच से दूर रखता है। इसे लागू करने के लिए स्क्रीन तुरंत फिर से लोड होती है।</string>
     <string name="fullscreen_none">सामान्य (सभी बार दिखें)</string>
     <string name="fullscreen_immersive">इमर्सिव (नॉच ओवरले)</string>
     <string name="fullscreen_status_only">सिर्फ़ स्टेटस बार छिपाएँ</string>
@@ -393,16 +410,21 @@
     <string name="debug_mode_description">ज़्यादा ब्योरे वाली लॉगिंग चालू या बंद करें।</string>
     <string name="allow_external_configuration">बाहरी कॉन्फ़िगरेशन की अनुमति दें</string>
     <string name="allow_external_configuration_description">Tasker या MacroDroid जैसे ऑटोमेशन ऐप को सेटिंग्स बदलने, लॉग लेवल सेट करने और लॉग एक्सपोर्ट करने दें। कनेक्ट और डिस्कनेक्ट हमेशा काम करते हैं। यह सिर्फ़ उन कमांड के लिए है जो हेड यूनिट की सेटिंग बदलते हैं।</string>
+    <string name="allow_external_configuration_summary">Tasker जैसे ऐप्लिकेशन को सेटिंग बदलने और लॉग एक्सपोर्ट करने देता है।</string>
     <string name="log_level">लॉग लेवल</string>
     <string name="log_level_description">एक्सपोर्ट करते समय लॉग लेवल फ़िल्टर करें।</string>
+    <string name="log_level_help">तय करता है कि ऐप अपने लॉग में कितना ब्योरा दर्ज करे। «Verbose» सबसे ज़्यादा और «Error» सबसे कम दर्ज करता है। «Silent» बैकग्राउंड में कुछ दर्ज नहीं करता और कैप्चर रोक देता है। बग रिपोर्ट के लिए «Verbose» चुनें।</string>
     <string name="log_source">लॉग का सोर्स</string>
     <string name="log_source_logcat">Logcat</string>
     <string name="log_source_applog_file">सीधे फ़ाइल में</string>
+    <string name="log_source_help">Logcat ऐप की लाइनों को सिस्टम की लाइनों के साथ रिकॉर्ड करता है। बग रिपोर्ट में यह सबसे ज़्यादा काम आता है। सीधे फ़ाइल में सिर्फ़ ऐप की अपनी लाइनें रिकॉर्ड करता है, उन डिवाइस के लिए जहाँ Logcat कुछ रिकॉर्ड नहीं करता। जब Logcat कुछ रिकॉर्ड नहीं करता, तो ऐप अपने आप सीधे फ़ाइल में पर बदल जाता है।</string>
     <string name="log_location">लॉग सेव करने की जगह</string>
+    <string name="log_location_help">लॉग फ़ाइलों का फ़ोल्डर चुनता है। «डिफ़ॉल्ट» उन्हें ऐप की अपनी स्टोरेज में रखता है। «डाउनलोड फ़ोल्डर» उन्हें डाउनलोड में OpenHeadunitLogs फ़ोल्डर में रखता है। Android 10 से यह ऐप की अपनी स्टोरेज का डाउनलोड फ़ोल्डर होता है। ऐप पहले स्टोरेज की अनुमति माँग सकता है। ऐप ज़्यादा से ज़्यादा 10 लॉग फ़ाइलें रखता है।</string>
     <string name="log_location_default">डिफ़ॉल्ट (ऐप स्टोरेज)</string>
     <string name="log_location_downloads">डाउनलोड फ़ोल्डर</string>
     <string name="start_log_capture">लॉग रिकॉर्ड करना शुरू करें</string>
     <string name="start_log_capture_description">डिबग करने के लिए पूरे लॉग रिकॉर्ड करना शुरू करें।</string>
+    <string name="start_log_capture_help">ऊपर तय किए लॉग स्तर पर किसी फ़ाइल में पूरी लॉग रिकॉर्डिंग शुरू या बंद करता है। ऐप के दोबारा शुरू होने पर भी रिकॉर्डिंग चलती रहती है, जब तक आप उसे न रोकें। फिर फ़ाइल साझा करने के लिए «लॉग निर्यात करें» इस्तेमाल करें। लॉग स्तर «Silent» होने पर इसे शुरू नहीं किया जा सकता।</string>
     <string name="start_log_capture_in_applog_file">लॉग संदेश फ़ाइल में तभी लिखे जाते हैं, जब कैप्चर चालू हो</string>
     <string name="start_log_capture_in_silent">रिकॉर्डिंग शुरू नहीं हो सकी: साइलेंट लॉग लेवल चुना गया है</string>
     <string name="stop_log_capture">लॉग रिकॉर्ड करना रोकें</string>
@@ -451,6 +473,7 @@
     <string name="auto_start_bt_label">ब्लूटूथ कनेक्ट होने पर ऑटो-स्टार्ट</string>
     <string name="auto_start_overlay_missing_hint">\"दूसरे ऐप्लिकेशन के ऊपर दिखाएं\" की अनुमति नहीं दी गई है, इसलिए ऑटो-स्टार्ट स्क्रीन खोलने के बजाय नोटिफ़िकेशन दिखाएगा। अनुमति देने के लिए टैप करें।</string>
     <string name="auto_start_bt_description">किसी खास ब्लूटूथ डिवाइस के कनेक्ट होने पर Open Headunit अपने आप खोलें।</string>
+    <string name="auto_start_bt_help">चुने गए ब्लूटूथ डिवाइसों में से कोई इस यूनिट से जुड़ने पर ऐप खोलता है, जैसे फ़ोन या कार का ब्लूटूथ। अगर Android Auto पहले से जुड़ा है, या यूनिट पहली बार अनलॉक होने से पहले, कुछ नहीं होता। «दूसरे ऐप्लिकेशन के ऊपर दिखाएं» के बिना ऐप स्क्रीन की जगह एक सूचना दिखाता है।</string>
     <!-- Asked once, after the first connection, when this unit is paired to exactly one phone. -->
     <string name="auto_start_offer_title">अपने आप शुरू करें?</string>
     <string name="auto_start_offer_message">क्या आप इस डिवाइस (%1$s) के साथ ऐप अपने आप शुरू करना चाहते हैं?</string>
@@ -460,28 +483,36 @@
     <string name="auto_start_offer_countdown">%1$d सेकंड में नहीं</string>
     <string name="listen_for_usb_devices_label">USB डिवाइस पर नज़र रखें</string>
     <string name="listen_for_usb_devices_description">USB डिवाइस प्लग इन करने पर Android सिस्टम प्रॉम्प्ट दिखाएं।</string>
+    <string name="listen_for_usb_devices_help">Android को हर बार USB डिवाइस लगाने पर यह ऐप सुझाने देता है। अगर यह पूछताछ USB स्टिक और दूसरे डिवाइसों पर भी दिखे, तो इसे बंद करें। बंद होने पर फ़ोन लगाने से ऐप नहीं खुलता।</string>
     <string name="show_toast_messages">टोस्ट संदेश दिखाएं</string>
     <string name="show_toast_messages_description">कनेक्ट, डिसकनेक्ट और मोड बदलने पर स्थिति वाले टोस्ट पॉपअप दिखाएं।</string>
+    <string name="show_toast_messages_help">फ़ोन के जुड़ने या कटने पर, और कनेक्शन मोड बदलने पर छोटे पॉप-अप संदेश दिखाता है। स्क्रीन साफ़ रखने के लिए इसे बंद करें। विफलता या इनकार के संदेश फिर भी दिखते हैं।</string>
     <string name="auto_start_usb_label">USB लगाने पर ऑटो-स्टार्ट</string>
     <string name="auto_start_usb_description">USB डिवाइस प्लग इन करने पर ऐप अपने आप खोलें और कनेक्ट करने की कोशिश करें।</string>
+    <string name="auto_start_usb_summary">USB डिवाइस लगाने पर ऐप्लिकेशन खोलता है और कनेक्ट करता है।</string>
     <string name="auto_start_settings">ऑटो-स्टार्ट सेटिंग्स</string>
     <string name="auto_start_settings_description">तय करें कि ऐप अपने आप कब शुरू हो।</string>
     <string name="auto_start_oem_warning">इस डिवाइस पर इस ऐप के लिए ऑटो-स्टार्ट चालू करना और बैटरी ऑप्टिमाइज़ेशन या बैकग्राउंड पाबंदियाँ हटाना ज़रूरी हो सकता है।\n\nक्विक बूट (फ़ास्ट बूट) वाले हेड यूनिट पर ऑटो-स्टार्ट काम नहीं कर सकता है। सिस्टम सेटिंग्स में \"DuraSpeed\" खोजें और वहाँ इस ऐप को चालू करें। कुछ हेड यूनिट में DuraSpeed छिपा होता है। उसे खोजने के लिए \"Hidden Settings\" जैसे ऐप की ज़रूरत पड़ सकती है। DuraSpeed न हो, तो क्विक बूट बंद करके देखें।</string>
     <string name="car_launcher_autostart_info">Open Headunit आपके कार लॉन्चर के रूप में सेट है। यह सिस्टम बूट होने पर अपने आप शुरू हो जाता है।</string>
     <string name="auto_start_on_boot_label">बूट पर शुरू करें</string>
     <string name="auto_start_on_boot_description">डिवाइस चालू होने पर ऐप अपने आप खोलें। Android 10+ पर \"दूसरे ऐप्लिकेशन के ऊपर दिखाएं\" की अनुमति ज़रूरी है।</string>
+    <string name="auto_start_on_boot_summary">डिवाइस चालू होने पर ऐप्लिकेशन खोलता है।</string>
     <string name="auto_start_screen_on_label">स्क्रीन ऑन होने पर शुरू करें</string>
     <string name="auto_start_screen_on_description">स्क्रीन चालू होने पर हर बार ऐप खोलें। यह उन हेड यूनिट के लिए सही है जो कभी पूरी तरह बंद नहीं होते या फ़ास्ट बूट मोड इस्तेमाल करते हैं, जहाँ ऑटो-स्टार्ट के दूसरे विकल्प काम नहीं करते। फ़ोन या टैबलेट के लिए सुझाया नहीं जाता।</string>
+    <string name="auto_start_screen_on_summary">हर बार स्क्रीन चालू होने पर ऐप्लिकेशन खोलता है। फ़ोन या टैबलेट के लिए नहीं है।</string>
     <string name="select_bt_device">ब्लूटूथ डिवाइस चुनें</string>
     <string name="bt_device_not_set">सेट नहीं है</string>
     <string name="no_paired_bt_devices">कोई जुड़ा हुआ ब्लूटूथ डिवाइस नहीं मिला</string>
     <string name="auto_disconnect_bt_label">ब्लूटूथ के आधार पर ऑटो-डिसकनेक्ट</string>
     <string name="select_bt_disconnect_device">जिस ब्लूटूथ डिवाइस पर नज़र रखनी है, उसे चुनें</string>
     <string name="native_poke_bt_label">वायरलेस Android Auto के लिए जगाया जाने वाला डिवाइस</string>
+    <string name="native_poke_bt_help">«मूल Android Auto» मोड में यह यूनिट फ़ोन पर Android Auto को जगाती है। यह कुछ पल के लिए फ़ोन के ब्लूटूथ हैंड्स-फ़्री प्रोफ़ाइल से जुड़ती है, और फिर फ़ोन अपना वायरलेस सेटअप शुरू करता है। यहाँ अपना फ़ोन चुनें। सूची में केवल फ़ोन दिखते हैं। अगर आप कुछ नहीं चुनते, तो नीचे की पंक्ति तय करती है कि सभी पेयर डिवाइस जगाए जाएँ या नहीं।</string>
     <string name="select_bt_poke_device">जगाने के लिए ब्लूटूथ डिवाइस चुनें</string>
     <string name="native_poke_all_paired_label">जुड़े हुए सभी डिवाइस जगाएँ</string>
     <string name="native_poke_all_paired_description">ऊपर कोई डिवाइस न चुना हो, तो Android Auto शुरू करने के लिए जुड़े हुए हर डिवाइस से कुछ पल के लिए कनेक्ट होता है। जब तक आप कोई डिवाइस नहीं चुनते, तब तक कुछ न जगाने के लिए इसे बंद करें।</string>
+    <string name="native_poke_all_paired_summary">कोई डिवाइस न चुना हो, तो सभी पेयर किए गए डिवाइस को जगाता है।</string>
     <string name="auto_disconnect_bt_delay_label">डिसकनेक्ट करने से पहले इंतज़ार करें</string>
+    <string name="auto_disconnect_bt_delay_help">तय करता है कि निगरानी वाले डिवाइस का ब्लूटूथ हटने के बाद ऐप सत्र खत्म करने से पहले कितनी देर रुके। अगर डिवाइस इस दौरान लौट आए, तो सत्र जारी रहता है। अगर प्रोफ़ाइल दोबारा जुड़ते समय कनेक्शन कुछ पल के लिए टूटता है, तो कुछ सेकंड सेट करें। 0 पर सत्र तुरंत खत्म हो जाता है। सीमा 3600 सेकंड है।</string>
     <string name="auto_disconnect_bt_delay_value">%1$d सेकंड</string>
     <string name="auto_disconnect_bt_delay_immediate">तुरंत</string>
     <string name="enter_auto_disconnect_bt_delay">सेशन खत्म करने से पहले कितने सेकंड इंतज़ार करना है</string>
@@ -489,8 +520,10 @@
     <string name="auto_disconnect_bt_kill_hint">चुने गए डिवाइस का ब्लूटूथ बंद होने पर, जैसे कार बंद होने पर, सेशन वैसे ही खत्म होता है जैसे \"बाहर निकलें\" बटन से होता है। अगर यह यूनिट कार के ब्लूटूथ से जुड़ी है, तो कार का ब्लूटूथ चुनें। ऐप बंद करने और होम स्क्रीन दिखाने के लिए, ऑटोमेशन में \"डिसकनेक्ट होने पर ऐप बंद करें\" चालू करें।</string>
     <string name="auto_start_wifi_label">वाई-फ़ाई पर ऑटो-स्टार्ट</string>
     <string name="auto_start_wifi_description">किसी खास वाई-फ़ाई SSID से कनेक्ट होने पर Open Headunit अपने आप खोलें।</string>
+    <string name="auto_start_wifi_help">यह यूनिट नीचे की पंक्ति में दिए Wi-Fi नेटवर्क से जुड़ने पर ऐप खोलता है। अगर Android Auto पहले से जुड़ा है, तो कुछ नहीं होता। Android 8 से बैकग्राउंड की पाबंदियाँ इसे रोक सकती हैं, इसलिए ऐप को बैटरी ऑप्‍टिमाइज़ेशन से हटा दें।</string>
     <string name="auto_start_wifi_ssid_label">वाई-फ़ाई SSID</string>
     <string name="auto_start_wifi_ssid_description">सिर्फ़ इस वाई-फ़ाई SSID से कनेक्ट होने पर ही शुरू करें।</string>
+    <string name="auto_start_wifi_ssid_help">उस Wi-Fi नेटवर्क का नाम जो ऐप खोलता है। इसे वैसे ही लिखें जैसे नेटवर्क दिखाता है। अक्षरों के बड़े-छोटे होने से फ़र्क नहीं पड़ता। अगर यह खाली है, तो Wi-Fi पर ऑटो-स्टार्ट कुछ नहीं करता।</string>
     <string name="auto_start_wifi_warning">पुरानी सुविधा: बैकग्राउंड पाबंदियों की वजह से यह Android 8+ पर भरोसेमंद तरीके से काम नहीं कर सकती। पक्का करें कि ऐप को बैटरी ऑप्टिमाइज़ेशन से बाहर रखा गया है।</string>
     <string name="enter_wifi_ssid">वाई-फ़ाई SSID डालें</string>
     <string name="wifi_ssid_not_set">सेट नहीं है</string>
@@ -502,16 +535,19 @@
     <string name="cannot_open_settings">सिस्टम सेटिंग्स नहीं खोली जा सकीं</string>
     <string name="right_hand_drive">राइट-हैंड ड्राइव</string>
     <string name="right_hand_drive_description">राइट-हैंड ड्राइव वाली कार के लिए UI की जगह तय करें।</string>
+    <string name="right_hand_drive_help">Android Auto को बताता है कि ड्राइवर दाईं ओर बैठा है। इस ऐप की होम स्क्रीन भी अपनी मुख्य सामग्री दाईं ओर ले जाती है। बदलाव अगले कनेक्शन पर Android Auto तक पहुँचता है।</string>
     <string name="wireless_connection_settings">वायरलेस कनेक्शन</string>
     <string name="category_graphic">ग्राफ़िक्स</string>
 
     <string name="static_bssid_title">स्टैटिक BSSID (MAC पता)</string>
+    <string name="static_bssid_help">वह Wi-Fi पता (BSSID) जो फ़ोन को इस यूनिट के नेटवर्क के लिए मिलता है। इसे खाली छोड़ें और ऐप पता खुद पढ़ लेता है। कोई पता तभी भरें जब लॉग बताए कि किसी स्रोत ने पता नहीं बताया। Wi-Fi Direct में यह पंक्ति ग्रुप का पता तय करती है। हॉटस्पॉट में यह हॉटस्पॉट का पता तय करती है। ऐप जो पता पढ़ता है, वह हमेशा भरे हुए पते से पहले आता है।</string>
     <string name="static_bssid_enter_value">BSSID डालें (XX:XX:XX:XX:XX:XX)</string>
     <string name="static_bssid_desc">एक्सेस पॉइंट का BSSID खुद सेट करें। इसकी ज़रूरत तभी है, जब इस डिवाइस पर कोई भी स्रोत इसे न बताए। लॉग में हर वह स्रोत दिखता है जिससे पूछा गया।</string>
     <string name="static_p2p_bssid_title">स्टैटिक BSSID (वाई-फ़ाई डायरेक्ट)</string>
     <string name="static_p2p_bssid_desc">वाई-फ़ाई डायरेक्ट ग्रुप का BSSID हाथ से सेट करें। यह एक्सेस पॉइंट के BSSID से अलग है, क्योंकि ये अलग इंटरफ़ेस हैं और एक की जगह दूसरा इस्तेमाल नहीं हो सकता।</string>
 
     <string name="custom_insets">कस्टम इनसेट (मार्जिन)</string>
+    <string name="custom_insets_help">तस्वीर को स्क्रीन के किनारों से इतने पिक्सल दूर करता है: बाएँ, ऊपर, दाएँ और नीचे। जब कोई फ़्रेम, घुमावदार किनारा या सिस्टम बार Android Auto का कुछ हिस्सा ढक दे, तब इसका इस्तेमाल करें।</string>
     <string name="inset_top">ऊपर</string>
     <string name="inset_bottom">नीचे</string>
     <string name="inset_left">बायाँ</string>
@@ -521,12 +557,14 @@
     <!-- Video Settings -->
     <string name="category_video">वीडियो</string>
     <string name="force_software_decoding">सॉफ़्टवेयर डिकोडिंग ज़बरदस्ती चालू करें</string>
-    <string name="force_software_decoding_description">कुछ डिवाइस पर समस्याएँ ठीक हो सकती हैं, लेकिन यह धीमा है।</string>
+    <string name="force_software_decoding_description">कुछ डिवाइस पर आने वाली समस्याएँ ठीक हो सकती हैं, लेकिन यह धीमा है।</string>
+    <string name="force_software_decoding_help">वीडियो को वीडियो हार्डवेयर के बजाय मुख्य प्रोसेसर से डिकोड करता है। इसे तभी चालू करें जब बंद रहने पर तस्वीर काली रहे, अटक जाए या रंग गलत दिखें। इसमें प्रोसेसर की बहुत ज़्यादा ताकत लगती है, इसलिए तस्वीर धीमी हो सकती है। नीचे की पंक्ति सॉफ़्टवेयर डिकोडर चुनती है।</string>
     <string name="software_video_decoder">सॉफ़्टवेयर डिकोडर स्रोत</string>
     <string name="software_video_decoder_bundled">ऐप में शामिल FFmpeg</string>
     <string name="software_video_decoder_device">डिवाइस MediaCodec</string>
+    <string name="software_video_decoder_help">यह तभी लागू होता है जब सॉफ़्टवेयर डिकोडिंग ज़बरदस्ती चालू करें चालू हो। ऐप में शामिल FFmpeg ऐप का अपना डिकोडर है और सिर्फ़ H.265 डिकोड करता है। डिवाइस MediaCodec सिस्टम के सॉफ़्टवेयर डिकोडर का इस्तेमाल करता है। H.264 वीडियो हमेशा सिस्टम डिकोडर का इस्तेमाल करता है।</string>
     <string name="wireless_mode">वायरलेस मोड</string>
-    <string name="wireless_mode_description">चुनें कि ऐप वायरलेस तरीके से कैसे कनेक्ट हो (मैन्युअल सूची, फ़ोन की ऑटो-खोज, या वायरलेस लॉन्चर मोड)।</string>
+    <string name="wireless_mode_description">तय करता है कि यह यूनिट बिना केबल के फ़ोन कैसे ढूँढे। वायरलेस हेल्पर फ़ोन पर मौजूद सहायक ऐप्लिकेशन का इस्तेमाल करता है। नेटिव वायरलेस Android Auto हेड यूनिट की तरह काम करता है और इसमें ऐप्लिकेशन नहीं चाहिए, लेकिन यह Android Auto के वर्शन पर निर्भर है। हेडयूनिट सर्वर वह सर्वर ढूँढता है जिसे Android Auto फ़ोन पर चलाता है। इसे तभी बदलें जब मौजूदा मोड कनेक्ट न हो। बदलाव से वायरलेस सेटअप फिर से शुरू होता है।</string>
     <string-array name="wireless_connection_modes">
         <item>मैन्युअल (सूची)</item>
         <item>ऑटो-सर्च (हेडयूनिट सर्वर)</item>
@@ -540,6 +578,11 @@
     <string name="auto_connect_settings">ऑटो-कनेक्ट सेटिंग्स</string>
     <string name="auto_connect_settings_description">ऑटो-कनेक्ट के तरीके और उनका प्राथमिकता क्रम सेट करें।</string>
     <string name="auto_connect_help">ये तरीके ऐप खुलते ही अपने-आप चलते हैं। जो चाहिए उन्हें चालू करें, फिर खींचकर क्रम तय करें। चालू तरीकों में से जो पहले सफल होगा, वही इस्तेमाल होगा।</string>
+    <string name="auto_connect_screen_help">तय करता है कि ऐप्लिकेशन खुलने पर अपने आप कैसे कनेक्ट हो। अपनी पसंद के तरीके चालू करें और उन्हें आज़माने के क्रम में खींचें। जो पहला तरीका सफल होगा, वही इस्तेमाल होगा। देरी से धीमी यूनिट पर Wi-Fi को जागने का समय मिलता है। यहाँ की कोई भी चीज़ आपके शुरू किए कनेक्शन को नहीं बदलती। सेव करें दबाने पर बदलाव लागू होते हैं।</string>
+    <string name="dpi_screen_help">तय करता है कि Android Auto किस पिक्सल डेंसिटी पर ड्रॉ करे। ज़्यादा DPI से आइकन और टेक्स्ट बड़े होते हैं, इसलिए स्क्रीन पर कम समाता है। कम DPI से वे छोटे होते हैं, इसलिए ज़्यादा समाता है। स्वचालित इस डिवाइस की डेंसिटी इस्तेमाल करता है। नई वैल्यू अगले कनेक्शन पर लागू होती है।</string>
+    <string name="keymap_screen_help">इस यूनिट की कुंजियों और बटनों को Android Auto की कार्रवाइयों से जोड़ता है। किसी पंक्ति पर टैप करें, फिर जिस कुंजी को असाइन करना है उसे दबाएँ। रीसेट आपके सभी असाइनमेंट हटाकर डिफ़ॉल्ट पर लौटाता है। स्टीयरिंग या पैनल की कुंजी गलत काम करे, तो इसका इस्तेमाल करें।</string>
+    <string name="customization_screen_help">इस ऐप्लिकेशन की होम स्क्रीन का रूप बदलता है: बैकग्राउंड इमेज, चारों बटनों के रंग और आकार, और टेक्स्ट का आकार। नाइट सेटिंग डार्क मोड में बैकग्राउंड तय करती है। इनमें से कोई भी चीज़ यह नहीं बदलती कि Android Auto प्रोजेक्शन में क्या दिखाता है।</string>
+    <string name="loading_screen_screen_help">Android Auto शुरू होते समय दिखने वाली तस्वीर या छोटा वीडियो तय करता है। 10 MB तक की इमेज या वीडियो चुनें, उसे स्क्रीन के हिसाब से स्केल करें और छोटे ऐनिमेशन को लूप में चलाएँ। शुरुआती टेक्स्ट छिपाया भी जा सकता है। हटाएं दबाने पर डिफ़ॉल्ट स्क्रीन लौट आती है।</string>
     <string name="auto_connect_priority">प्राथमिकता %d</string>
     <string name="auto_connect_all_disabled">सभी बंद हैं</string>
     <string name="drag_to_reorder">क्रम बदलने के लिए खींचें</string>
@@ -547,13 +590,16 @@
     <string name="move_down">नीचे ले जाएँ</string>
     <string name="auto_connecting_single_usb">USB डिवाइस से अपने-आप कनेक्ट हो रहा है…</string>
     <string name="video_codec">वीडियो कोडेक</string>
+    <string name="video_codec_help">तय करता है कि फ़ोन किस वीडियो फ़ॉर्मैट में भेजे। ऑटो में ऐप्लिकेशन वह फ़ॉर्मैट चुनता है जिसे यह यूनिट डिकोड कर सके। H.265 उसी डेटा रेट पर ज़्यादा साफ़ तस्वीर देता है। H.264 हर डिकोडर पर चलता है। तस्वीर अटके या काली रहे, तो इसे बदलें। यह चुनाव अगले कनेक्शन से लागू होता है।</string>
     <string name="fps_limit">FPS सीमा</string>
+    <string name="fps_limit_help">सबसे ज़्यादा फ़्रेम रेट जो यह यूनिट Android Auto से माँगती है। 60 से गति ज़्यादा सहज दिखती है, पर इसमें ज़्यादा बैंडविड्थ और डिकोडर क्षमता लगती है। अगर तस्वीर पिछड़ती या अटकती है, तो 30 चुनें। अगले कनेक्शन पर लागू होता है।</string>
     <string name="save">सेव करें</string>
     <string name="save_and_restart">सेव करें (दोबारा कनेक्ट करना ज़रूरी)</string>
     <string name="add_new">नया जोड़ें</string>
     <string name="cancel">रद्द करें</string>
     <string name="enable">चालू करें</string>
     <string name="video_fit_mode">वीडियो फ़िट</string>
+    <string name="video_fit_mode_help">तय करता है कि जब आकार अलग हों, तो Android Auto की तस्वीर इस यूनिट की स्क्रीन में कैसे बैठे। «Stretch to fill» पूरी स्क्रीन इस्तेमाल करता है और तस्वीर बिगाड़ सकता है। «Fit with bars» पूरी तस्वीर दिखाता है, दो किनारों पर पट्टियों के साथ। «Fill by cropping» पूरी स्क्रीन इस्तेमाल करता है और किनारों का कुछ हिस्सा काट देता है।</string>
     <string name="change_video_fit_mode">वीडियो फ़िट बदलें</string>
     <string name="video_fit_mode_fill">खींचकर भरें (बार नहीं, तस्वीर बिगड़ सकती है)</string>
     <string name="video_fit_mode_contain">बार के साथ फ़िट करें (क्रॉप नहीं, तस्वीर नहीं बिगड़ती)</string>
@@ -566,58 +612,69 @@
     <string name="device_specific_mcu_checking">MCU तक पहुँच की जाँच हो रही है...</string>
     <string name="device_specific_mcu_unavailable">MCU तक पहुँच उपलब्ध नहीं है। इस डिवाइस पर रिवर्स गियर में प्रोजेक्शन रोकने की सुविधा बंद है।</string>
     <string name="device_specific_head_unit_model">हेड यूनिट मॉडल</string>
+    <string name="device_specific_head_unit_model_help">अगर इस यूनिट का मॉडल सूची में है, तो उसे चुनें। ऐप तब नीचे उस मॉडल के फ़िक्स दिखाता है। हर फ़िक्स पहले जाँचता है कि वह यूनिट के हार्डवेयर तक पहुँच सकता है या नहीं, और आप उसे तभी चालू कर सकते हैं जब वह पहुँच सके। अगर आपका मॉडल सूची में नहीं है, तो «चुना नहीं गया» रहने दें।</string>
     <string name="device_specific_model_none">चुना नहीं गया</string>
     <string name="device_specific_model_adayo_haval">Adayo (Haval)</string>
     <string name="device_specific_pause_projection_reverse">रिवर्स गियर में Android Auto प्रोजेक्शन रोकें</string>
-    <string name="device_specific_pause_projection_reverse_description">रियर कैमरा सक्रिय होने पर Android Auto का वीडियो फ़ोकस छोड़ें और रिवर्स गियर हटाने पर प्रोजेक्शन फिर से शुरू करें।</string>
+    <string name="device_specific_pause_projection_reverse_summary">कार के रिवर्स में रहने पर Android Auto को रोकें।</string>
     <string name="pref_enable_car_launcher_title">कार लॉन्चर के रूप में उपयोग करें</string>
-    <string name="pref_enable_car_launcher_summary">Open Headunit को होम स्क्रीन ऐप के रूप में रजिस्टर करता है, ताकि कार या हेडयूनिट का होम बटन दबाने पर यह खुले।</string>
+    <string name="pref_enable_car_launcher_summary">होम बटन से ऐप्लिकेशन खोलता है।</string>
+    <string name="pref_enable_car_launcher_help">Open Headunit को होम स्क्रीन ऐप के रूप में रजिस्टर करता है, ताकि कार या हेडयूनिट का होम बटन दबाने पर यह खुले।</string>
     <string name="pref_set_default_launcher_title">डिफ़ॉल्ट होम ऐप</string>
+    <string name="pref_set_default_launcher_help">बताता है कि यह ऐप इस यूनिट का डिफ़ॉल्ट होम ऐप है या नहीं। सिस्टम से इसे डिफ़ॉल्ट बनाने को कहने के लिए इस पर टैप करें। होम बटन इस ऐप को तभी खोलता है जब यह डिफ़ॉल्ट हो।</string>
     <string name="pref_default_launcher_status_active">सक्रिय (प्रबंधित करने के लिए टैप करें)</string>
     <string name="pref_default_launcher_status_inactive">सेट नहीं है (डिफ़ॉल्ट बनाने के लिए टैप करें)</string>
     <string name="pref_enable_floating_button_title">फ़्लोटिंग लॉन्चर बटन</string>
-    <string name="pref_enable_floating_button_summary">Open Headunit पर त्वरित वापसी के लिए OEM लॉन्चर और अन्य ऐप्स के ऊपर एक फ़्लोटिंग बटन प्रदर्शित करता है।</string>
+    <string name="pref_enable_floating_button_summary">Open Headunit पर लौटने के लिए बटन दिखाता है।</string>
+    <string name="pref_enable_floating_button_help">Open Headunit पर त्वरित वापसी के लिए OEM लॉन्चर और अन्य ऐप्स के ऊपर एक फ़्लोटिंग बटन प्रदर्शित करता है।</string>
     <string name="pref_floating_button_connection_status_title">कनेक्शन स्थिति संकेतक</string>
-    <string name="pref_floating_button_connection_status_summary">जब कोई फ़ोन कनेक्ट नहीं होता, तब यह डिस्कनेक्ट होने पर अपारदर्शिता का उपयोग करता है, और फ़ोन कनेक्ट होने पर फ़्लोटिंग बटन की अपारदर्शिता तक फीका हो जाता है। 0% पर बटन छिपा रहता है और टैप को आर-पार जाने देता है।</string>
+    <string name="pref_floating_button_connection_status_summary">फ़ोन कनेक्ट रहने तक बटन को धुँधला करता है।</string>
+    <string name="pref_floating_button_connection_status_help">जब कोई फ़ोन कनेक्ट नहीं होता, तब यह डिस्कनेक्ट होने पर अपारदर्शिता का उपयोग करता है, और फ़ोन कनेक्ट होने पर फ़्लोटिंग बटन की अपारदर्शिता तक फीका हो जाता है। 0% पर बटन छिपा रहता है और टैप को आर-पार जाने देता है।</string>
     <string name="pref_floating_button_size_title">फ़्लोटिंग बटन का आकार</string>
+    <string name="pref_floating_button_size_help">फ़्लोटिंग बटन का आकार, 32 से 120 dp तक। गाड़ी चलाते समय बड़ा बटन दबाना आसान होता है।</string>
     <string name="pref_floating_button_opacity_title">फ़्लोटिंग बटन की अपारदर्शिता</string>
+    <string name="pref_floating_button_opacity_help">फ़्लोटिंग बटन कितना गाढ़ा दिखे, 10% से 100% तक। कनेक्शन स्थिति संकेतक चालू होने पर यह मान केवल तब लागू होता है जब फ़ोन जुड़ा हो।</string>
     <string name="pref_floating_button_disconnected_opacity_title">डिस्कनेक्ट होने पर अपारदर्शिता</string>
+    <string name="pref_floating_button_disconnected_opacity_help">कोई फ़ोन जुड़ा न होने पर फ़्लोटिंग बटन कितना गाढ़ा दिखे। 0% पर बटन छिप जाता है और टैप उसके नीचे की स्क्रीन तक पहुँच जाते हैं।</string>
     <string name="pref_floating_button_x_title">क्षैतिज स्थिति (X)</string>
     <string name="pref_floating_button_y_title">लंबवत स्थिति (Y)</string>
+    <string name="pref_floating_button_position_help">फ़्लोटिंग बटन स्क्रीन पर कहाँ रहे। X के लिए 0% बायाँ किनारा और 100% दायाँ किनारा है। Y के लिए 0% ऊपरी किनारा और 100% निचला किनारा है। बटन हमेशा पूरी तरह स्क्रीन पर रहता है।</string>
     <string name="pref_aa_exit_action_title">Android Auto से बाहर निकलने पर कार्रवाई</string>
     <string name="pref_aa_exit_action_summary">Android Auto ऐप ड्रॉअर में बाहर निकलें पर टैप करने पर क्या हो।</string>
+    <string name="pref_aa_exit_action_help">तय करता है कि Android Auto में बाहर निकलें पर टैप करने पर क्या हो। «OEM लॉन्चर पर लौटें» इस यूनिट की अपनी होम स्क्रीन दिखाता है। «ऐप होम पर लौटें» इस ऐप की होम स्क्रीन दिखाता है। इन दोनों में फ़ोन जुड़ा रहता है। «सत्र डिसकनेक्ट करें» सत्र खत्म करता है। जब यह ऐप कार का लॉन्चर हो, तब «OEM लॉन्चर पर लौटें» «ऐप होम पर लौटें» की तरह काम करता है।</string>
     <string name="aa_exit_action_oem_launcher">OEM लॉन्चर पर लौटें (छोटा करें)</string>
     <string name="aa_exit_action_app_home">ऐप होम पर लौटें</string>
     <string name="aa_exit_action_disconnect">सत्र डिसकनेक्ट करें</string>
     <string name="forced_scale">ज़बरदस्ती स्केल (पुराने डिवाइस के लिए सुधार)</string>
     <string name="forced_scale_description">SurfaceView इस्तेमाल करने वाले कुछ पुराने डिवाइसों में स्केलिंग की समस्या ठीक करता है। इसे तभी चालू करें जब तस्वीर बिगड़ी या खिसकी हुई दिखे।</string>
+    <string name="forced_scale_summary">SurfaceView इस्तेमाल करने वाले पुराने डिवाइस पर स्केलिंग ठीक करता है।</string>
     <string name="hud_mirroring">HUD मोड (क्षैतिज फ्लिप)</string>
     <string name="hud_mirroring_description">विंडशील्ड पर प्रतिबिंब (हेड-अप डिस्प्ले) के लिए डिस्प्ले को आड़े में पलट देता है। इसके लिए TextureView या GLES20 व्यू मोड चाहिए (SurfaceView के साथ काम नहीं करता)।</string>
+    <string name="hud_mirroring_summary">विंडशील्ड रिफ़्लेक्शन (HUD) के लिए डिसप्ले को पलटता है।</string>
 
     <!-- Audio Settings -->
     <string name="category_audio">ऑडियो</string>
     <string name="enable_audio_sink">ऑडियो सिंक</string>
-    <string name="enable_audio_sink_description">बंद होने पर हेडयूनिट को ऑडियो नहीं मिलेगा। आवाज़ फ़ोन से ही चलेगी।</string>
+    <string name="enable_audio_sink_description">Android Auto की आवाज़ इस यूनिट पर चलाता है। आवाज़ फ़ोन पर रखने के लिए इसे बंद करें, जैसे तब जब फ़ोन पहले से कार के स्पीकर चला रहा हो। तब यूनिट सिर्फ़ तस्वीर दिखाती है। कॉल कभी इस ऑडियो का इस्तेमाल नहीं करतीं: वे फ़ोन से जुड़े ब्लूटूथ हैंड्स-फ़्री डिवाइस (कार, इंटरकॉम या हेडसेट) पर या खुद फ़ोन पर चलती हैं।</string>
+    <string name="enable_audio_sink_summary">Android Auto की आवाज़ इस यूनिट पर चलाता है। बंद होने पर: फ़ोन चलाता है।</string>
     <string name="static_audio_focus">स्थिर ऑडियो फ़ोकस</string>
-    <string name="static_audio_focus_description">फ़ोन को यह विश्वास करने के लिए बाध्य करें कि ऑडियो फोकस हमेशा बना रहता है, जिससे सामान्य हेडयूनिट पर ऑडियो रूटिंग का नुकसान रोका जा सके। नेविगेशन वॉइस संकेतों के दौरान संगीत की आवाज़ भी धीमी करता है।</string>
+    <string name="static_audio_focus_description">फ़ोन को बताता है कि ऑडियो फ़ोकस हमेशा बना रहता है। इससे उन सामान्य यूनिट पर आवाज़ कटना रुकता है जो फ़ोकस गलत बताती हैं। यह नेविगेशन की बोलकर दी गई सूचनाओं के दौरान सॉफ़्टवेयर से म्यूज़िक की आवाज़ भी घटाता है। आवाज़ न कटे, तो इसे बंद रखें।</string>
+    <string name="static_audio_focus_summary">फ़ोन को बताता है कि ऑडियो फ़ोकस हमेशा बना रहता है, ताकि आवाज़ न कटे।</string>
     <string name="media_key_routing">मीडिया बटन Android Auto को भेजें</string>
     <string name="media_key_routing_always">हमेशा</string>
     <string name="media_key_routing_auto">स्वचालित</string>
     <string name="media_key_routing_never">कभी नहीं</string>
-    <string name="media_key_routing_always_hint">अगला, पिछला और चलाएँ/रोकें हमेशा Android Auto को भेजे जाते हैं। जब तक एक बार दबाने पर दो ट्रैक न छूट जाएँ, यही चुनें।</string>
-    <string name="media_key_routing_auto_hint">इस हेडयूनिट का फ़ोन से ब्लूटूथ मीडिया कनेक्शन होने पर इन्हें भेजना बंद कर देता है, क्योंकि वह कनेक्शन यह काम पहले ही कर देता है। एक बार दबाने पर दो ट्रैक छूटते हों और आपका फ़ोन इसी हेडयूनिट से पेयर हो, तो इसे चुनें।</string>
-    <string name="media_key_routing_never_hint">इन्हें कभी नहीं भेजता, बटन ब्लूटूथ के भरोसे छोड़ देता है। एक बार दबाने पर दो ट्रैक छूटते हों और आपका फ़ोन इस हेडयूनिट से नहीं, कार के अपने सिस्टम से पेयर हो, तो इसे चुनें। स्वचालित मोड उस कनेक्शन को पहचान नहीं पाता।</string>
+    <string name="media_key_routing_help">हमेशा: अगला, पिछला और चलाएँ/रोकें हमेशा Android Auto को भेजे जाते हैं। जब तक एक बार दबाने पर दो ट्रैक न छूट जाएँ, यही चुनें।\n\nस्वचालित: इस हेडयूनिट का फ़ोन से ब्लूटूथ मीडिया कनेक्शन होने पर इन्हें भेजना बंद कर देता है, क्योंकि वह कनेक्शन यह काम पहले ही कर देता है। एक बार दबाने पर दो ट्रैक छूटते हों और आपका फ़ोन इसी हेडयूनिट से पेयर हो, तो इसे चुनें।\n\nकभी नहीं: इन्हें कभी नहीं भेजता, बटन ब्लूटूथ के भरोसे छोड़ देता है। एक बार दबाने पर दो ट्रैक छूटते हों और आपका फ़ोन इस हेडयूनिट से नहीं, कार के अपने सिस्टम से पेयर हो, तो इसे चुनें। स्वचालित मोड उस कनेक्शन को पहचान नहीं पाता।</string>
     <string name="media_key_routing_hint_common">केवल मीडिया बटन प्रभावित होते हैं। रोटरी नियंत्रक, D-पैड, बैक और एंटर हमेशा Android Auto तक पहुँचते हैं।</string>
     <string name="playback_focus_mode">प्लेबैक के दौरान अन्य ऑडियो रोकें</string>
     <string name="playback_focus_mode_auto">स्वचालित</string>
     <string name="playback_focus_mode_always">हमेशा</string>
     <string name="playback_focus_mode_never">कभी नहीं</string>
-    <string name="playback_focus_mode_auto_hint">Android Auto का ऑडियो चलने के दौरान हेडयूनिट पर किसी दूसरे प्लेयर (जैसे रेडियो) को रोकता है। अगर इससे आपके फ़ोन का अपना प्लेबैक रुक जाए, जो हेडयूनिट के फ़ोन का ब्लूटूथ स्पीकर होने पर होता है, तो यह ऐसा करना बंद कर देता है और याद रखता है। दोबारा आज़माने के लिए यह मोड फिर से चुनें।</string>
-    <string name="playback_focus_mode_always_hint">Android Auto चलने के दौरान हमेशा दूसरा ऑडियो रोकता है। अगर ब्लूटूथ चालू होने पर आपका संगीत एक-दो सेकंड बाद रुक जाए, तो स्वचालित पर वापस जाएँ।</string>
-    <string name="playback_focus_mode_never_hint">सिस्टम ऑडियो फ़ोकस में कोई बदलाव नहीं करता। हेडयूनिट पर दूसरा ऑडियो Android Auto के ऊपर चलता रह सकता है।</string>
+    <string name="playback_focus_mode_help">स्वचालित: Android Auto का ऑडियो चलने के दौरान हेडयूनिट पर किसी दूसरे प्लेयर (जैसे रेडियो) को रोकता है। अगर इससे आपके फ़ोन का अपना प्लेबैक रुक जाए, जो हेडयूनिट के फ़ोन का ब्लूटूथ स्पीकर होने पर होता है, तो यह ऐसा करना बंद कर देता है और याद रखता है। दोबारा आज़माने के लिए यह मोड फिर से चुनें।\n\nहमेशा: Android Auto चलने के दौरान हमेशा दूसरा ऑडियो रोकता है। अगर ब्लूटूथ चालू होने पर आपका संगीत एक-दो सेकंड बाद रुक जाए, तो स्वचालित पर वापस जाएँ।\n\nकभी नहीं: सिस्टम ऑडियो फ़ोकस में कोई बदलाव नहीं करता। हेडयूनिट पर दूसरा ऑडियो Android Auto के ऊपर चलता रह सकता है।</string>
     <string name="playback_focus_mode_static_hint">स्थिर ऑडियो फ़ोकस चालू होने पर यह फ़ोन कनेक्ट होते ही लागू हो जाता है और पूरे सत्र में रहता है, सिर्फ़ ऑडियो चलने के दौरान नहीं।</string>
     <string name="separate_audio_streams">अलग ऑडियो स्ट्रीम</string>
     <string name="separate_audio_streams_description">मीडिया, मार्गदर्शन और सिस्टम साउंड चैनलों को एक साझा मल्टीमीडिया स्ट्रीम की जगह अपनी-अपनी आउटपुट स्ट्रीम दें (कुछ डिवाइसों पर ठीक से काम न करे)।</string>
+    <string name="separate_audio_streams_summary">मीडिया, मार्गदर्शन और सिस्टम साउंड को अपनी-अपनी आउटपुट स्ट्रीम मिलती है।</string>
 
     <!-- Audio stream settings screen -->
     <string name="audio_stream_settings">ऑडियो स्ट्रीम</string>
@@ -625,14 +682,17 @@
     <string name="audio_stream_settings_info">Android Auto तीन चैनलों पर ऑडियो भेजता है: मीडिया, मार्गदर्शन और सिस्टम साउंड। हर चैनल हेड यूनिट को एक सिस्टम स्ट्रीम पर मिलता है। आप जो स्ट्रीम चुनते हैं, उससे तय होता है कि कौन सी वॉल्यूम कुंजी उसे नियंत्रित करेगी और कई हेड यूनिट पर यह भी कि उसके लिए एम्प्लिफ़ायर म्यूट खुलेगा या नहीं। सेव करने से पहले स्पीकर बटन से स्ट्रीम पर टेस्ट टोन सुनें।</string>
     <string name="audio_channel_media">मीडिया</string>
     <string name="audio_channel_media_description">ऐप प्लेबैक: संगीत, पॉडकास्ट, रेडियो और ऑडियोबुक। स्टीरियो (48 kHz) में भेजा जाने वाला एकमात्र चैनल।</string>
+    <string name="audio_channel_media_summary">ऐप्लिकेशन प्लेबैक: संगीत, पॉडकास्ट, रेडियो, ऑडियोबुक। स्टीरियो, 48 kHz।</string>
     <string name="audio_channel_guidance">मार्गदर्शन / नेविगेशन</string>
     <string name="audio_channel_guidance_description">बोले जाने वाले दिशा-निर्देश और वॉइस असिस्टेंट के उत्तर (16 kHz मोनो)।</string>
     <string name="audio_channel_system">सिस्टम साउंड / नोटिफ़िकेशन</string>
     <string name="audio_channel_all">मीडिया, मार्गदर्शन, नेविगेशन, नोटिफ़िकेशन और सिस्टम</string>
     <string name="audio_channel_all_short">सभी चैनल</string>
     <string name="audio_channel_all_description">Android Auto के सभी ऑडियो चैनल (ऐप प्लेबैक, बोले गए निर्देश, अलर्ट और नोटिफ़िकेशन की आवाज़ें) इसी एक आउटपुट स्ट्रीम को साझा करते हैं।</string>
+    <string name="audio_channel_all_summary">Android Auto के सभी ऑडियो चैनल इसी एक आउटपुट स्ट्रीम को साझा करते हैं।</string>
     <string name="audio_channel_system_description">Android Auto के अपने अलर्ट, घंटियाँ और नोटिफ़िकेशन की आवाज़ें (16 kHz मोनो)।</string>
     <string name="audio_stream_test">इस स्ट्रीम पर टेस्ट टोन चलाएँ</string>
+    <string name="setting_help_for">%1$s के लिए सहायता</string>
     <string name="audio_stream_muted_warning">इस डिवाइस पर %1$s म्यूट है। टेस्ट टोन सुनने के लिए उसकी वॉल्यूम बढ़ाएँ।</string>
     <string name="audio_stream_test_failed">इस स्ट्रीम पर टेस्ट टोन नहीं चलाया जा सका।</string>
     <string name="audio_stream_pick_title">%1$s के लिए स्ट्रीम</string>
@@ -670,18 +730,23 @@
     <string name="onb_audio_focus_title">ऑडियो फ़ोकस</string>
     <string name="onb_audio_more_hint">इन्हें आप बाद में सेटिंग्स → ऑडियो स्ट्रीम में फिर से बदल सकते हैं।</string>
     <string name="use_aac_audio">AAC ऑडियो का उपयोग करें</string>
-    <string name="use_aac_audio_description">बैंडविड्थ बचाने के लिए ऑडियो में AAC कोडेक इस्तेमाल करें (प्रायोगिक)। 2.4 GHz पर चल रहे वायरलेस सत्र में, \"2.4 GHz लिंक पर वीडियो कम करें\" चालू होने पर यह अपने-आप चालू रहता है।</string>
+    <string name="use_aac_audio_description">बैंडविड्थ बचाने के लिए ऑडियो में AAC कोडेक इस्तेमाल करें। 2.4 GHz पर चल रहे वायरलेस सत्र में, \"2.4 GHz लिंक पर वीडियो कम करें\" चालू होने पर यह अपने-आप चालू रहता है।</string>
+    <string name="use_aac_audio_summary">बैंडविड्थ बचाने के लिए AAC ऑडियो का इस्तेमाल करता है।</string>
     <string name="attach_hw_dsp_equalizer">हार्डवेयर DSP इक्वलाइज़र ट्रिगर</string>
     <string name="attach_hw_dsp_equalizer_description">कुछ हेडयूनिट पर हार्डवेयर DSP रूटिंग ज़बरदस्ती चालू करने के लिए ऑडियो सत्र में एक नकली इक्वलाइज़र इफ़ेक्ट जोड़ता है। ViPER4Android / ViperFX इस्तेमाल करने पर, या पुराने Android वर्शन में आवाज़ दबी लगे तो इसे बंद रखें।</string>
+    <string name="attach_hw_dsp_equalizer_summary">कुछ यूनिट पर हार्डवेयर DSP रूटिंग के लिए नकली इक्वलाइज़र जोड़ता है।</string>
     <string name="audio_volume_offset">ऑडियो वॉल्यूम ऑफ़सेट</string>
+    <string name="audio_volume_offset_help">इस यूनिट पर Android Auto की तीन ऑडियो स्ट्रीम का वॉल्यूम तय करता है: मीडिया, नेविगेशन निर्देश और सिस्टम ध्वनियाँ। हर एक 0% से 200% तक जाती है। 100% पर स्ट्रीम वैसे ही चलती है जैसे फ़ोन भेजता है। नेविगेशन और संगीत का संतुलन बनाने के लिए इसका इस्तेमाल करें।</string>
     <string name="microphone_settings">माइक्रोफ़ोन सेटिंग्स</string>
     <string name="use_head_unit_microphone">हेड यूनिट माइक्रोफ़ोन</string>
     <string name="use_head_unit_microphone_description">चालू: Android Auto इस डिवाइस का माइक्रोफ़ोन इस्तेमाल करता है। बंद: यह डिवाइस कभी रिकॉर्ड नहीं करता, और फ़ोन अपना माइक्रोफ़ोन या फ़ोन से पेयर हेडसेट या इंटरकॉम इस्तेमाल करता है, इसलिए वॉइस असिस्टेंट चलता रहता है। फ़ोन पर Android 11 या उससे नया वर्शन चाहिए।</string>
+    <string name="use_head_unit_microphone_summary">Android Auto इस डिवाइस का माइक्रोफ़ोन इस्तेमाल करता है। बंद होने पर: फ़ोन का माइक्रोफ़ोन।</string>
     <string name="head_unit_microphone_off_info">हेड यूनिट माइक्रोफ़ोन बंद है, इसलिए नीचे की कोई सेटिंग लागू नहीं होती। Android Auto को बताया जाता है कि यह डिवाइस रिकॉर्ड नहीं कर सकता और एक मोटरसाइकिल है, जिससे फ़ोन खुद रिकॉर्ड करता है। Android 10 और उससे पुराने वर्शन में फ़ोन सत्रों के बीच यह भूल जाता है और कनेक्ट होना बंद कर सकता है।</string>
     <string name="microphone_settings_description">माइक्रोफ़ोन इनपुट और ऑडियो प्रोसेसिंग कॉन्फ़िगर करें।</string>
     <string name="mic_wire_format_info">Android Auto को माइक्रोफ़ोन हमेशा 16000 Hz, 16-बिट, मोनो में मिलता है। वह इसके अलावा कुछ भी स्वीकार नहीं करता, इसलिए ये सेटिंग्स हार्डवेयर का व्यवहार बदलती हैं, फ़ोन को भेजा जाने वाला फ़ॉर्मैट नहीं।</string>
     <string name="mic_input_source">माइक्रोफ़ोन इनपुट स्रोत</string>
     <string name="mic_input_source_description">माइक्रोफ़ोन के लिए ऑडियो स्रोत चुनें।</string>
+    <string name="mic_input_source_help">वह Android ऑडियो स्रोत चुनता है जिससे ऐप रिकॉर्ड करता है। «डिफ़ॉल्ट» फ़ैसला सिस्टम पर छोड़ता है। «अंतर्निहित माइक्रोफ़ोन» कच्ची आवाज़ रिकॉर्ड करता है। «आवाज़ पहचान» और «आवाज़ संचार» सिस्टम के अपने शोर और गूँज के फ़िल्टर जोड़ते हैं। «ब्लूटूथ हेडसेट» ब्लूटूथ हेडसेट से रिकॉर्ड करता है। अगर फ़ोन आपको सुन न पाए, तो इसे बदलें। अगर Android Auto जुड़ा है, तो बदलाव सहेजने पर सत्र रुक जाता है।</string>
     <string-array name="mic_input_sources">
         <item>डिफ़ॉल्ट (सिस्टम तय करता है)</item>
         <item>अंतर्निहित माइक्रोफ़ोन (कच्चा इनपुट)</item>
@@ -691,10 +756,13 @@
     </string-array>
     <string name="mic_echo_canceler">इको कैंसलेशन (AEC)</string>
     <string name="mic_echo_canceler_description">माइक्रोफ़ोन से इको हटाने की कोशिश करता है। आवाज़ न आए या बिगड़ी आए तो इसे बंद करें।</string>
+    <string name="mic_echo_canceler_summary">माइक्रोफ़ोन से गूँज हटाता है। आवाज़ बिल्कुल न आए या बिगड़ी आए, तो इसे बंद करें।</string>
     <string name="mic_noise_suppressor">नॉइज़ सप्रेशन (NS)</string>
     <string name="mic_noise_suppressor_description">आसपास का शोर कम करने की कोशिश करता है। Android Auto एक ही माइक्रोफ़ोन पर इसे बंद मानता है और अपनी प्रोसेसिंग खुद करता है। आवाज़ दबी लगे तो इसे बंद करें।</string>
+    <string name="mic_noise_suppressor_summary">पृष्ठभूमि का शोर घटाता है। Android Auto इसके बंद रहने की उम्मीद करता है।</string>
     <string name="mic_auto_gain_control">ऑटोमैटिक गेन कंट्रोल (AGC)</string>
     <string name="mic_auto_gain_control_description">माइक्रोफ़ोन की वॉल्यूम अपने-आप ठीक करता है। Android Auto इसे बंद मानता है और अपना गेन कंट्रोल लगाता है। दोनों साथ हों तो आवाज़ आमतौर पर बिगड़ती है। वॉल्यूम अस्थिर हो तो इसे बंद करें।</string>
+    <string name="mic_auto_gain_control_summary">माइक्रोफ़ोन की आवाज़ समायोजित करता है। Android Auto इसके बंद रहने की उम्मीद करता है।</string>
     <string name="mic_feature_unsupported">यह सुविधा आपके डिवाइस पर समर्थित नहीं है।</string>
 
     <!-- Info Settings -->
@@ -783,7 +851,9 @@
     <string name="discard">छोड़ें</string>
     <string name="stopping_service">बदलाव लागू करने के लिए सेवा बंद की जा रही है…</string>
     <string name="settings_saved">सेटिंग्स सेव हो गईं</string>
-    <string name="category_backup">बैकअप</string>
+    <string name="category_backup_reset">बैकअप और रीसेट</string>
+    <string name="settings_rail_collapse">अनुभागों के नाम छिपाएं</string>
+    <string name="settings_rail_expand">अनुभागों के नाम दिखाएं</string>
     <string name="export_settings">सेटिंग्स निर्यात करें</string>
     <string name="export_settings_description">सेटिंग का बैकअप JSON फ़ाइल के रूप में सेव करें।</string>
     <string name="export_settings_choose_location">सेव करने की जगह चुनें</string>
@@ -892,16 +962,20 @@
     <string name="setup_apply">लागू करें</string>
     <string name="setup_widescreen_detected">वाइडस्क्रीन डिसप्ले मिला।</string>
     <string name="auto_optimize">सेटिंग्स स्वतः अनुकूलित करें</string>
+    <string name="auto_optimize_help">सेटअप विज़ार्ड को फिर से खोलता है। यह कनेक्शन, वीडियो, डिस्प्ले, ऑडियो, स्टार्ट-अप, लॉन्चर, GPS और वाहन के चरणों से गुज़रता है, और हर चरण छोड़ते समय उसे सहेज लेता है। पहले सेटअप के बाद, जब तक आप इसके वीडियो टेस्ट का नतीजा लागू न करें, विज़ार्ड आपका रिज़ॉल्यूशन, कोडेक, रेंडरर और ओरिएंटेशन रखता है। आपकी चुनी स्क्रीन साइज़ और DPI यह हमेशा सहेजता है।</string>
     <string name="auto_optimize_desc">अपने डिवाइस के लिए सर्वश्रेष्ठ सेटिंग्स खोजने हेतु सिस्टम जाँच चलाएँ।</string>
 
     <!-- Navigation notifications (from any AA nav app) -->
     <string name="show_navigation_notifications">नेविगेशन सूचनाएं</string>
     <string name="show_navigation_notifications_description">सूचनाओं में \"X मीटर में Y करें\" और मौजूदा सड़क दिखाएं (डीबग करने के लिए)।</string>
+    <string name="show_navigation_notifications_help">Android Auto नेविगेशन का अगला मोड़ इस यूनिट पर सूचना के रूप में दिखाता है, दूरी और सड़क के साथ। इससे जाँचें कि मोड़ का डेटा फ़ोन से पहुँच रहा है।</string>
     <string name="media_session_aa_status_placeholder">कनेक्ट किया गया</string>
     <string name="sync_media_session_aa_metadata">मीडिया सेशन में AA की मौजूदा प्लेबैक जानकारी</string>
     <string name="sync_media_session_aa_metadata_description">सिस्टम के मीडिया सेशन और मीडिया सूचना में फ़ोन से ट्रैक का शीर्षक, कलाकार, अवधि और एल्बम आर्ट दिखाएं।</string>
+    <string name="sync_media_session_aa_metadata_summary">फ़ोन के ट्रैक की जानकारी सिस्टम मीडिया सेशन में दिखाता है।</string>
     <string name="auto_resume_playback_on_reconnect">फिर से कनेक्ट होने पर प्लेबैक अपने-आप शुरू करें</string>
     <string name="auto_resume_playback_on_reconnect_description">अगर कनेक्शन कुछ देर (60 सेकंड के अंदर) के लिए टूटने से पहले संगीत चल रहा था, तो उसे अपने-आप फिर से चलाएं।</string>
+    <string name="auto_resume_playback_on_reconnect_summary">थोड़ी देर कनेक्शन टूटने (60 सेकंड) से पहले चल रहा संगीत फिर से चलाता है।</string>
     <string name="nav_notification_channel_name">नेविगेशन</string>
     <string name="nav_notification_channel_description">Android Auto से मोड़-दर-मोड़ नेविगेशन अपडेट।</string>
     <string name="nav_notification_title_format">%1$d मीटर में — %2$s</string>
@@ -926,27 +1000,37 @@
     <string name="performance_overlay_settings">परफ़ॉर्मेंस ओवरले</string>
     <string name="overlay_field_fps">FPS</string>
     <string name="overlay_field_cpu">CPU</string>
+    <string name="overlay_field_cpu_summary">इस ऐप और पूरी यूनिट का प्रोसेसर लोड।</string>
     <string name="overlay_field_temperature">तापमान</string>
+    <string name="overlay_field_temperature_summary">इस यूनिट का सबसे गर्म तापमान सेंसर।</string>
     <string name="overlay_field_frame_age">फ्रेम की आयु</string>
+    <string name="overlay_field_frame_age_summary">स्क्रीन पर दिखे आख़िरी फ़्रेम के बाद का समय।</string>
     <string name="overlay_field_battery">बैटरी</string>
+    <string name="overlay_field_battery_summary">बैटरी का स्तर। + का मतलब है कि यूनिट चार्जर से जुड़ी है।</string>
     <string name="overlay_field_memory">खाली मेमोरी</string>
     <string name="overlay_field_wifi_signal">वाई-फ़ाई सिग्नल</string>
+    <string name="overlay_field_wifi_signal_summary">इस यूनिट के जुड़े Wi-Fi नेटवर्क का सिग्नल, dBm में।</string>
     <string name="performance_overlay_no_lines">कोई पंक्ति नहीं</string>
     <string name="show_performance_overlay">परफ़ॉर्मेंस ओवरले दिखाएं</string>
     <string name="overlay_position">परफ़ॉर्मेंस ओवरले की जगह</string>
+    <string name="overlay_position_help">रीडिंग का बॉक्स तस्वीर के ऊपर बाएँ या ऊपर दाएँ कोने में रखता है। अगर इस यूनिट की स्क्रीन पर कोई बार उस कोने को ढकता है, तो इसे हटाएँ।</string>
     <string name="five_ghz_channel">5 GHz चैनल</string>
     <string name="five_ghz_channel_auto">स्वचालित</string>
     <string name="five_ghz_channel_option">चैनल %1$d (%2$d MHz)</string>
     <string name="five_ghz_channel_hint">चैनल चुनना सिर्फ़ एक अनुरोध है, गारंटी नहीं। कई यूनिट सिर्फ़ उसी चैनल पर नेटवर्क बनाती हैं जो उनका अपना वाई-फ़ाई ड्राइवर चुनता है, और ऐप यह कोशिश करने के बाद ही बता पाता है। अगर कोई भी 5 GHz चैनल काम नहीं करता और फ़ोन को नेटवर्क अब भी नहीं दिखता, तो ऊपर दिया गया बैंड बदलें।</string>
     <string name="wifi_direct_stable_identity">वही वाई-फ़ाई डायरेक्ट नेटवर्क बनाए रखें</string>
     <string name="wifi_direct_stable_identity_description">हर बार वही नेटवर्क नाम और पासवर्ड इस्तेमाल करता है, ताकि आपका फ़ोन जाने-पहचाने नेटवर्क से फिर से जुड़ जाए। इन्हें बदलने के लिए नीचे दी गई पंक्ति इस्तेमाल करें।</string>
+    <string name="wifi_direct_stable_identity_summary">एक ही नेटवर्क नाम और पासवर्ड फिर से इस्तेमाल करता है, ताकि फ़ोन उससे दोबारा जुड़ सके।</string>
     <string name="wifi_direct_new_identity">वाई-फ़ाई डायरेक्ट नेटवर्क की नई पहचान</string>
+    <string name="wifi_direct_new_identity_help">इस Android वर्शन पर Wi-Fi Direct का नाम और पासवर्ड सिस्टम चुनता है। यह सिस्टम से उसका सहेजा ग्रुप भुलवाता है, ताकि वह नया नाम और पासवर्ड चुने। फ़ोन तब ब्लूटूथ से इस यूनिट को नई हेड यूनिट की तरह फिर से सेट करता है। इसका इस्तेमाल तब करें जब फ़ोन ऐसे नेटवर्क को बार-बार आज़माए जिससे वह अब जुड़ नहीं सकता।</string>
     <string name="wifi_direct_new_identity_none">अगले कनेक्शन पर चुना जाएगा</string>
     <string name="wifi_direct_new_identity_confirm">ग्रुप के लिए नया नाम और पासवर्ड चुनता है, जो अगले कनेक्शन से इस्तेमाल होगा। आपका फ़ोन ब्लूटूथ के ज़रिए इसके लिए ऐसे सेट होगा जैसे यह कोई नई हेड यूनिट हो। अगर फ़ोन ऐसे नेटवर्क से जुड़ने की कोशिश करता रहता है जिससे अब नहीं जुड़ सकता, तो ऐसा करें।</string>
     <string name="wifi_direct_new_identity_done">अगले कनेक्शन से एक नई नेटवर्क पहचान का उपयोग किया जाएगा।</string>
     <string name="wifi_direct_new_identity_applied">नेटवर्क की नई पहचान अभी सेट की जा रही है। अगले कनेक्शन पर आपके फ़ोन से इससे जुड़ने के लिए कहा जाएगा।</string>
     <string name="wifi_direct_stable_identity_description_legacy">इस Android वर्शन पर सिस्टम नाम चुनता है और ऐप कोई नाम नहीं मांग सकता। इसे चालू रखें, ताकि सिस्टम जहां भी नेटवर्क सेव रखता है, वहां आपका फ़ोन जाने-पहचाने नेटवर्क से फिर से जुड़ जाए। इसे बदलने के लिए नीचे दी गई पंक्ति इस्तेमाल करें।</string>
+    <string name="wifi_direct_stable_identity_legacy_summary">नेटवर्क का नाम सिस्टम तय करता है। इसे चालू रखें, ताकि फ़ोन उससे दोबारा जुड़ सके।</string>
     <string name="wifi_direct_last_network">आपके फ़ोन को दिए गए नेटवर्क का विवरण</string>
+    <string name="wifi_direct_last_network_help">इस यूनिट ने फ़ोन को जो आख़िरी Wi-Fi Direct नेटवर्क दिया, उसका नाम, पासवर्ड और पता दिखाता है। आप यहाँ से पासवर्ड कॉपी कर सकते हैं। यह भी बताता है कि पता पढ़ा नहीं जा सका, या सिस्टम ने ऐप के माँगे से अलग नाम और पासवर्ड इस्तेमाल किया।</string>
     <string name="wifi_direct_last_network_none">अभी तक कुछ नहीं दिखा। एक बार कनेक्ट करें, फिर यहां वापस आएं।</string>
     <string name="wifi_direct_last_network_title">आपके फ़ोन को दिया गया नेटवर्क</string>
     <string name="wifi_direct_last_network_details">नाम\n%1$s\n\nपासवर्ड\n%2$s\n\nपता\n%3$s</string>
@@ -955,6 +1039,7 @@
     <string name="wifi_direct_last_network_differs">यह वह नाम और पासवर्ड नहीं है जो ऐप ने मांगा था, यानी सिस्टम ने इन्हें बदल दिया है। नया जोड़ा चुनवाने के लिए ऊपर दिए गए \"वाई-फ़ाई डायरेक्ट नेटवर्क की नई पहचान\" का इस्तेमाल करें।</string>
     <string name="wifi_direct_last_network_hint">फ़ोन पर इस नेटवर्क से हाथ से जुड़ने पर Android Auto शुरू नहीं होता, क्योंकि ब्लूटूथ से सेट होने के बाद फ़ोन खुद इससे जुड़ता है। इससे बस यह जांचा जा सकता है कि नेटवर्क चल रहा है या नहीं।</string>
     <string name="wifi_direct_group_identity">वाई-फ़ाई डायरेक्ट नाम और पासवर्ड</string>
+    <string name="wifi_direct_group_identity_help">Wi-Fi Direct का नाम और पासवर्ड, जो फ़ोन को इस यूनिट से जुड़ने के लिए मिलते हैं। इन्हें ऐप को चुनने दें, या अपने खुद के भरें। «मेरे लिए नए चुनें» ऐप से नया जोड़ा चुनवाता है। अगर आप पासवर्ड बदलते हैं, तो ऐप नाम भी बदलता है, क्योंकि फ़ोन उसी नाम और नए पासवर्ड वाले नेटवर्क से दोबारा नहीं जुड़ सकता।</string>
     <string name="wifi_direct_group_identity_auto">ऐप ने चुना है। अपना नाम और पासवर्ड सेट करने के लिए टैप करें।</string>
     <string name="wifi_direct_group_identity_pick_new">मेरे लिए नए चुनें</string>
     <string name="wifi_direct_group_identity_message">इस हेड यूनिट से जुड़ने के लिए आपके फ़ोन को दिया गया नाम और पासवर्ड। पासवर्ड बदलने पर नाम भी बदल जाता है, क्योंकि जिस नेटवर्क का नाम वही रहे और पासवर्ड बदल जाए, उससे फ़ोन फिर से नहीं जुड़ सकता।</string>
@@ -969,12 +1054,16 @@
     <string name="wifi_direct_credentials_copied">नेटवर्क नाम और पासवर्ड कॉपी किया गया।</string>
     <string name="debug_video_low_latency">डिकोडर का कम-लेटेंसी मोड मांगें</string>
     <string name="debug_video_low_latency_description">वीडियो डिकोडर कॉन्फ़िगर करते समय वेंडर की कम-लेटेंसी MediaFormat कुंजी सेट करता है। डिकोडर के मना करने पर अपने-आप पहले जैसा हो जाता है।</string>
+    <string name="debug_video_low_latency_summary">वीडियो डिकोडर से निर्माता का कम लेटेंसी मोड माँगता है।</string>
     <string name="debug_video_feed_hold">धीमे डिकोडर का अनुकरण करें</string>
+    <string name="debug_video_feed_hold_help">केवल टेस्ट के लिए। हर फ़्रेम को वीडियो डिकोडर तक भेजने से पहले चुना गया समय रुकता है, ताकि डिकोडर धीमा लगे। इससे जाँचें कि डिकोडर पीछे रह जाने पर ऐप कैसे सँभलता है। अगले कनेक्शन पर लागू होता है। सामान्य इस्तेमाल के लिए इसे «Off» रखें, क्योंकि तस्वीर धीमी हो जाती है।</string>
     <string name="show_performance_overlay_description">प्रोजेक्शन पर FPS, CPU लोड, तापमान और फ़्रेम की आयु दिखाएं।</string>
+    <string name="show_performance_overlay_help">Android Auto की तस्वीर के ऊपर लाइव रीडिंग का एक छोटा बॉक्स दिखाता है, जैसे फ़्रेम रेट, प्रोसेसर लोड और तापमान। तस्वीर धीमी होने का कारण खोजने के लिए इसका इस्तेमाल करें। रीडिंग नीचे की पंक्तियों में चुनें। बॉक्स केवल इस यूनिट पर दिखता है, फ़ोन पर नहीं।</string>
 
     <!-- Auto-start permission strings -->
     <string name="reopen_on_reconnection_label">फिर से कनेक्ट होने पर दोबारा खोलें</string>
     <string name="reopen_on_reconnection_description">बाहर निकलें बटन दबाने पर ऐप बैकग्राउंड में चलता रहता है और USB कनेक्शन पर नज़र रखता है। अगर कोई डिवाइस दोबारा कनेक्ट होता है, तो ऐप अपने-आप फिर से खुल जाता है।</string>
+    <string name="reopen_on_reconnection_summary">बाहर निकलें के बाद भी USB पर नज़र रखता है और डिवाइस दोबारा कनेक्ट होने पर ऐप्लिकेशन फिर खोलता है।</string>
     <string name="overlay_permission_required">अपने-आप शुरू होने के लिए \'अन्य ऐप्लिकेशन के ऊपर दिखाएं\' की अनुमति ज़रूरी है</string>
     <string name="usb_permission_denied">USB की अनुमति नहीं मिली। अपने-आप कनेक्ट होने के लिए USB एक्सेस की अनुमति दें।</string>
 
@@ -983,11 +1072,14 @@
     <string name="category_input">इनपुट सेटिंग</string>
     <string name="enable_rotary">रोटरी कंट्रोलर चालू करें</string>
     <string name="enable_rotary_description">फ़िज़िकल रोटरी नॉब और व्हील के साथ काम करने की जानकारी दें। अगर आपकी टच स्क्रीन ठीक से काम नहीं कर रही है, तो इसे बंद करें।</string>
+    <string name="enable_rotary_summary">रोटरी नॉब के सपोर्ट की घोषणा करता है। टच ठीक से काम न करे, तो इसे बंद करें।</string>
 
     <string name="kill_on_disconnect">डिसकनेक्ट होने पर ऐप बंद करें</string>
     <string name="kill_on_disconnect_description">Android Auto डिसकनेक्ट होने पर ऐप अपने-आप बंद करें।</string>
+    <string name="kill_on_disconnect_help">Android Auto डिसकनेक्ट होने पर ऐप बंद कर देता है, ताकि यूनिट अपनी स्क्रीन पर लौट आए। इसे तब चालू करें जब हर यात्रा के बाद यूनिट को अपना लॉन्चर दिखाना हो। जब यह ऐप कार लॉन्चर हो, तब इसका कोई असर नहीं होता। अगर फिर से कनेक्ट होने पर दोबारा खोलें, बूट पर शुरू करें या स्क्रीन ऑन होने पर शुरू करें चालू हो, तो ऐप पहले चेतावनी देता है, क्योंकि इन्हें ऐप खुला चाहिए।</string>
     <string name="raise_projection_during_call">कॉल के दौरान Android Auto में रहें</string>
     <string name="raise_projection_during_call_description">सिर्फ़ सेल्फ़ मोड के लिए। प्रोजेक्शन को फ़ोन की कॉल स्क्रीन के ऊपर वापस लाता है, ताकि कॉल का जवाब देना और कॉल खत्म करना Android Auto इंटरफ़ेस में ही हो।</string>
+    <string name="raise_projection_during_call_summary">सिर्फ़ सेल्फ़ मोड के लिए। प्रोजेक्शन को फ़ोन की कॉल स्क्रीन के ऊपर दिखाता है।</string>
     <string name="kill_on_disconnect_warning_title">चेतावनी</string>
     <string name="kill_on_disconnect_warning">नीचे दी गई फिर से कनेक्ट होने की सेटिंग, डिसकनेक्ट होने पर ऐप बंद करने की सेटिंग से टकराएंगी:\n\n%1$s\n\nहेड यूनिट चालू होने पर शुरुआती कनेक्शन की आपकी सेटिंग (अपने-आप कनेक्ट होना, अपने-आप शुरू होना) अब भी काम करेंगी। लेकिन पहली बार डिसकनेक्ट होने के बाद ऐप फिर से कनेक्ट होने की कोशिश करने के बजाय तुरंत बंद हो जाएगा।\n\nध्यान दें: कुछ आफ़्टरमार्केट हेड यूनिट पूरी तरह बंद नहीं होतीं, बल्कि हाइबरनेट हो जाती हैं, जैसे फ़ोन की स्क्रीन लॉक हो जाती है पर फ़ोन बंद नहीं होता। यह विकल्प चालू होने पर ऐप पहली बार डिसकनेक्ट होने के बाद बंद हो जाएगा और अगली बार इग्निशन चालू करने पर अपने-आप दोबारा नहीं खुल सकता।\n\nक्या आप ऊपर दी गई फिर से कनेक्ट होने की सेटिंग बंद करना चाहते हैं?</string>
     <string name="kill_on_disconnect_disable_and_enable">बंद करें और चालू करें</string>
@@ -1013,31 +1105,39 @@
     <string name="category_head_unit">हेड यूनिट</string>
     <string name="vehicle_display_name_label">डिसप्ले नाम</string>
     <string name="vehicle_display_name_description">इस वाहन के लिए आपके फ़ोन पर दिखाया जाने वाला नाम।</string>
+    <string name="vehicle_display_name_help">इस कार का नाम। ऐप इसे हर कनेक्शन पर Android Auto को भेजता है, और फ़ोन इसे दिखाता है। बदलाव अगले कनेक्शन पर लागू होता है।</string>
     <string name="vehicle_make_label">निर्माता</string>
     <string name="vehicle_make_description">वाहन निर्माता (जैसे Honda, Toyota)।</string>
+    <string name="vehicle_make_help">कार का निर्माता, जिसे ऐप Android Auto को भेजता है। असली कार ब्रांड Android Auto के एग्ज़िट बटन पर अपना लोगो दिखाता है, पर तब Android Auto Play Store के बाहर से इंस्टॉल किए ऐप्स की सूची बनाना बंद कर देता है। उन ऐप्स को फिर से सूची में लाने के लिए इसे वापस «Google» कर दें। बदलाव अगले कनेक्शन पर लागू होता है।</string>
     <string name="vehicle_model_label">मॉडल</string>
     <string name="vehicle_model_description">वाहन मॉडल (जैसे Civic, Corolla)।</string>
+    <string name="vehicle_model_help">कार का मॉडल और वर्ष, जिसे ऐप Android Auto को भेजता है। फ़ोन इन्हें निर्माता और वाहन आईडी के साथ इस्तेमाल करके इस कार का अपना सहेजा रिकॉर्ड ढूँढता है। इसलिए बदलाव से फ़ोन इस यूनिट को नई कार मान सकता है। वर्ष आज से ज़्यादा से ज़्यादा 2 साल आगे का हो सकता है।</string>
     <string name="vehicle_year_label">वर्ष</string>
     <string name="vehicle_year_description">वाहन का वर्ष।</string>
     <string name="vehicle_id_label">वाहन ID</string>
     <string name="vehicle_type_label">वाहन का प्रकार</string>
+    <string name="vehicle_type_help">Android Auto को बताता है कि यह किस तरह का वाहन है। «मोटरसाइकिल» होने पर फ़ोन अपने माइक्रोफ़ोन से रिकॉर्ड करता है, इस यूनिट के माइक्रोफ़ोन से नहीं। अगर «हेड यूनिट माइक्रोफ़ोन» बंद है, तो ऐप हमेशा «मोटरसाइकिल» भेजता है। फ़ोन पर हर प्रकार अलग कार गिना जाता है।</string>
     <string name="vehicle_type_car">कार</string>
     <string name="vehicle_type_truck">ट्रक</string>
     <string name="vehicle_type_motorcycle">मोटरसाइकिल</string>
     <string name="vehicle_type_forced_by_microphone">हेड यूनिट का माइक्रोफ़ोन बंद है, इसलिए फ़ोन अपना माइक्रोफ़ोन इस्तेमाल करता है। Android Auto को मोटरसाइकिल दिखेगी।</string>
     <string name="vehicle_id_description">सिर्फ़ आंतरिक पहचान। इसे बदलने पर आपका फ़ोन इसे दूसरा वाहन मानेगा और इस कार के लिए Android Auto की पसंद रीसेट हो जाएगी।</string>
+    <string name="vehicle_id_help">Android Auto इस कार को दोबारा पहचानने के लिए इस आईडी को निर्माता, मॉडल और वर्ष के साथ इस्तेमाल करता है। नई आईडी से फ़ोन इस यूनिट को नई कार मानता है और इसके लिए अपनी Android Auto सेटिंग रीसेट कर देता है। «ट्रक» और «मोटरसाइकिल» आईडी में अपना अंत जोड़ते हैं, इसलिए हर प्रकार अलग कार गिना जाता है।</string>
     <string name="head_unit_make_label">निर्माता</string>
     <string name="head_unit_make_description">हेड यूनिट निर्माता।</string>
+    <string name="head_unit_make_help">इस हेड यूनिट का निर्माता, जिसे ऐप Android Auto को भेजता है। फ़ोन यह नाम Android Auto की सेटिंग में दिखाता है। असली कार ब्रांड Android Auto के एग्ज़िट बटन पर अपना लोगो दिखाता है, पर तब Android Auto Play Store के बाहर से इंस्टॉल किए ऐप्स की सूची बनाना बंद कर देता है। उन ऐप्स को फिर से सूची में लाने के लिए इसे वापस «Google» कर दें।</string>
     <string name="head_unit_make_hint">आपका फ़ोन यह नाम Android Auto की सेटिंग में दिखाता है।\n\nकिसी असली कार ब्रांड का नाम डालने पर Android Auto के बाहर निकलने वाले बटन पर उस ब्रांड का लोगो दिखता है, लेकिन तब Android Auto Play Store के बाहर से इंस्टॉल किए गए ऐप दिखाना बंद कर देता है। वे ऐप फिर से दिखाने के लिए इसे वापस \"Google\" कर दें।</string>
     <string name="vehicle_make_hint">किसी असली कार ब्रांड का नाम डालने पर Android Auto के बाहर निकलने वाले बटन पर उस ब्रांड का लोगो दिखता है, लेकिन तब Android Auto Play Store के बाहर से इंस्टॉल किए गए ऐप दिखाना बंद कर देता है। वे ऐप फिर से दिखाने के लिए इसे वापस \"Google\" कर दें।</string>
     <string name="head_unit_model_label">मॉडल</string>
     <string name="head_unit_model_description">हेड यूनिट मॉडल।</string>
+    <string name="head_unit_model_help">इस हेड यूनिट का मॉडल। ऐप हर कनेक्शन पर इसे ऊपर के निर्माता के साथ Android Auto को भेजता है।</string>
     <string name="vehicle_year_error_invalid">एक वैध वर्ष दर्ज करें</string>
     <string name="vehicle_year_error_max">वर्ष %1$d से बाद का नहीं हो सकता</string>
     <string name="vehicle_info_restart_note">यह डेटा हर बार कनेक्ट होने पर Android Auto को भेजा जाता है।</string>
 
     <string name="auto_enable_hotspot">हॉटस्पॉट अपने आप चालू करें</string>
     <string name="auto_enable_hotspot_description">इस डिवाइस पर स्वचालित रूप से एक वाई-फ़ाई हॉटस्पॉट शुरू करता है। (हर डिवाइस पर काम नहीं करेगा।)</string>
+    <string name="auto_enable_hotspot_summary">इस डिवाइस पर Wi-Fi हॉटस्पॉट शुरू करता है। हर डिवाइस पर उपलब्ध नहीं है।</string>
     <string name="hotspot_warning_title">प्रायोगिक सुविधा</string>
     <string name="hotspot_warning_message">यह सुविधा रिफ़्लेक्शन का इस्तेमाल करती है और हो सकता है सभी डिवाइस पर काम न करे। इसके लिए \"सिस्टम सेटिंग बदलें\" की अनुमति हाथ से देनी पड़ सकती है।</string>
     <string name="hotspot_permission_title">अनुमति आवश्यक है</string>
@@ -1055,7 +1155,9 @@
 
     <string name="wait_for_wifi">वाई-फ़ाई डायरेक्ट से पहले वाई-फ़ाई का इंतज़ार करें</string>
     <string name="wait_for_wifi_description">बूट होने पर वाई-फ़ाई डायरेक्ट शुरू करने से पहले वाई-फ़ाई कनेक्ट होने का इंतज़ार करता है। अगर पावर चालू होने के बाद आपकी हेड यूनिट को वाई-फ़ाई से जुड़ने में कुछ सेकंड लगते हैं, तो इसे चालू करें।</string>
+    <string name="wait_for_wifi_summary">बूट होने पर WiFi Direct शुरू करने से पहले Wi-Fi का इंतज़ार करता है।</string>
     <string name="wait_for_wifi_timeout">वाई-फ़ाई इंतज़ार की समय सीमा</string>
+    <string name="wait_for_wifi_timeout_help">Wi-Fi Direct शुरू करने से पहले ऐप कितनी देर इस यूनिट के Wi-Fi से जुड़ने का इंतज़ार करे, 5 से 30 सेकंड तक। Wi-Fi जुड़ते ही, या यह समय पूरा होने पर, ऐप तुरंत Wi-Fi Direct शुरू करता है। अगर पावर ऑन के बाद यूनिट धीरे Wi-Fi से जुड़ती है, तो इसे बढ़ाएँ।</string>
     <string name="wireless_24ghz_warning">नोट: 2.4GHz डिवाइस पर वायरलेस Android Auto में लैग, अटकना और डिसकनेक्ट होना हो सकता है। समस्या आए तो USB से जाँचें कि कहीं यह नेटवर्क की सीमा तो नहीं।</string>
     <string name="wireless_mode_helper">वायरलेस हेल्पर</string>
     <string name="wireless_mode_native">नेटिव</string>
@@ -1063,8 +1165,10 @@
     <string name="server_mode_label">सर्वर मोड</string>
     <string name="server_mode_manual">मैन्युअल</string>
     <string name="server_mode_auto">ऑटो</string>
+    <string name="server_mode_help">ऑटो नेटवर्क पर फ़ोन में मौजूद हेडयूनिट सर्वर को खोजता है और अपने आप कनेक्ट हो जाता है। मैन्युअल नहीं खोजता। आप नेटवर्क सूची से या फ़ोन के पते से कनेक्ट करते हैं।</string>
 
     <string name="helper_strategy_label">हेल्पर कनेक्शन का तरीका</string>
+    <string name="helper_strategy_help">तय करता है कि वायरलेस हेल्पर मोड में फ़ोन और यह यूनिट नेटवर्क कैसे साझा करें। सामान्य वाई-फ़ाई उस नेटवर्क का इस्तेमाल करता है जिस पर दोनों पहले से हैं। WiFi Direct निजी लिंक बनाता है। Google Nearby बीटा है। फ़ोन हॉटस्पॉट फ़ोन के हॉटस्पॉट से जुड़ता है। हेडयूनिट हॉटस्पॉट इस यूनिट को एक्सेस पॉइंट बनाता है। फ़ोन को यह यूनिट न मिले, तो इसे बदलें।</string>
     <string-array name="helper_strategies">
         <item>सामान्य वाई-फ़ाई (NSD)</item>
         <item>वाई-फ़ाई डायरेक्ट (P2P)</item>
@@ -1086,10 +1190,13 @@
     <string name="exit_dialog_settings">त्वरित सेटिंग्स</string>
     <string name="gesture_hint">सुझाव: निकास मेनू खोलने के लिए 2 उंगलियों से बाएं किनारे से स्वाइप करें।</string>
     <string name="audio_latency_multiplier">ऑडियो विलंबता गुणक</string>
-    <string name="aaudio_output">AAudio आउटपुट (प्रयोगात्मक)</string>
+    <string name="aaudio_output">AAudio आउटपुट</string>
     <string name="aaudio_output_description">कम विलंब वाला मीडिया आउटपुट आज़माएँ। उपलब्ध न होने पर अपने आप AudioTrack इस्तेमाल होता है।</string>
+    <string name="aaudio_output_help">Android Auto की मीडिया को AAudio से चलाता है, जो कम विलंब वाला ऑडियो आउटपुट है। ऐप इसे सिर्फ़ Android 9 और उसके बाद के वर्शन पर इस्तेमाल करता है। अगर आवाज़ तस्वीर से देर से आए, तो इसे चालू करें। AAudio शुरू न हो पाए, तो ऐप सामान्य ऑडियो आउटपुट इस्तेमाल करता है। चालू होने पर आवाज़ कड़कड़ाए या कटे, तो इसे बंद करें।</string>
     <string name="audio_latency_multiplier_description">ऑडियो बफ़र आकार समायोजित करें (कम = कम विलंब, अधिक = कम रुकावट)।</string>
+    <string name="audio_latency_multiplier_help">तय करता है कि ऐप कितनी आवाज़ रिज़र्व में रखे, ताकि कनेक्शन में छोटे अंतराल से आवाज़ न कटे। 16x, यानी डिफ़ॉल्ट, लगभग 400 ms रखता है। हर कदम नीचे जाने पर यह आधा होता है, और 1x पर 25 ms रह जाता है। छोटा रिज़र्व देरी घटाता है, पर कमज़ोर कनेक्शन पर आवाज़ अटक सकती है। यह Android Auto की सभी ऑडियो स्ट्रीम पर लागू होता है।</string>
     <string name="audio_queue_capacity">ऑडियो कतार की क्षमता (बैकप्रेशर)</string>
+    <string name="audio_queue_capacity_help">मिली हुई आवाज़ चलने से पहले कितनी देर रुक सकती है। छोटी कतार आवाज़ को तस्वीर के पास रखती है। बड़ी कतार कनेक्शन के छोटे व्यवधान झेल लेती है, लेकिन आवाज़ पिछड़ सकती है। कतार भर जाने पर सबसे पुरानी आवाज़ हटा दी जाती है। असीमित सब कुछ रखता है। ऐप हमेशा कम से कम एक सेकंड की आवाज़ की अनुमति देता है।</string>
 
     <!-- Custom loading screen -->
     <string name="loading_screen">लोडिंग स्क्रीन</string>
@@ -1129,7 +1236,7 @@
     <string name="native_ap_transport">नेटवर्क ट्रांसपोर्ट</string>
     <string name="native_ap_transport_wifi_direct">वाई-फ़ाई डायरेक्ट</string>
     <string name="native_ap_transport_hotspot">हॉटस्पॉट</string>
-    <string name="native_ap_transport_hint">फ़ोन वाई-फ़ाई डायरेक्ट ग्रुप के बजाय इस डिवाइस के अपने हॉटस्पॉट से जुड़ता है। कनेक्ट करने से पहले इसे चालू करें।</string>
+    <string name="native_ap_transport_help">यह तय करता है कि नेटिव मोड में Android Auto के लिए फ़ोन किस नेटवर्क से जुड़े। वाई-फ़ाई डायरेक्ट, डिफ़ॉल्ट: यह यूनिट अपना वाई-फ़ाई डायरेक्ट ग्रुप बनाती है और फ़ोन उससे जुड़ता है। हॉटस्पॉट: फ़ोन इसके बजाय इस यूनिट के हॉटस्पॉट से जुड़ता है। वाई-फ़ाई डायरेक्ट न जुड़े, तब इसे चुनें। कनेक्ट करने से पहले हॉटस्पॉट चालू होना चाहिए, जब तक «हॉटस्पॉट अपने आप चालू करें» चालू न हो। अगर यूनिट अपने हॉटस्पॉट की सेटिंग नहीं पढ़ पाती, तो नीचे की पंक्तियों में हॉटस्पॉट का नाम और पासवर्ड भरें।</string>
     <string name="hotspot_band">हॉटस्पॉट बैंड</string>
     <string name="hotspot_band_auto">ऑटो</string>
     <string name="hotspot_band_5ghz">केवल 5 GHz</string>
@@ -1144,13 +1251,16 @@
     <string name="stand_down_station_auto">ऑटो</string>
     <string name="stand_down_station_always">हमेशा</string>
     <string name="stand_down_station_never">कभी नहीं</string>
-    <string name="stand_down_station_hint">ऑटो में यूनिट अपना नेटवर्क तभी छोड़ती है जब उसके रेडियो में 5 GHz बैंड हो और वह नेटवर्क 2.4 GHz पर हो, ताकि वाई-फ़ाई डायरेक्ट ग्रुप को 5 GHz चैनल अकेले मिल सके। सिर्फ़ 2.4 GHz वाली यूनिट पर यह जुड़ी रहती है, क्योंकि छोड़ने से यूनिट केवल नेटवर्क स्कैन करती है। नेटवर्क पहले से 5 GHz पर हो, तब भी यह जुड़ी रहती है। सत्र खत्म होने पर नेटवर्क से फिर जुड़ जाती है। तस्वीर अटके तो हमेशा या कभी नहीं आज़माएँ।</string>
+    <string name="stand_down_station_hint">तय करता है कि फ़ोन के कनेक्ट होते समय यह यूनिट अपने Wi-Fi नेटवर्क को छोड़े या नहीं, ताकि WiFi Direct ग्रुप 5 GHz चैनल इस्तेमाल कर सके। ऑटो उसे तभी छोड़ता है जब रेडियो में 5 GHz बैंड हो और नेटवर्क 2.4 GHz पर हो, या जब ग्रुप को 5 GHz नेटवर्क के पास 2.4 GHz पर मजबूर किया जाए। सिर्फ़ 2.4 GHz वाली यूनिट जुड़ी रहती है, क्योंकि छोड़ने से बस नेटवर्क की खोज शुरू होती है। सेशन खत्म होने पर नेटवर्क से फिर जुड़ा जाता है। तस्वीर अटके, तो हमेशा या कभी नहीं आज़माएँ।</string>
     <string name="stand_down_station_needs_overlay">इस Android वर्शन पर \"दूसरे ऐप के ऊपर दिखाएं\" की अनुमति ज़रूरी है।</string>
     <string name="hotspot_interface_override">हॉटस्पॉट नेटवर्क इंटरफ़ेस</string>
+    <string name="hotspot_interface_override_help">वह नेटवर्क इंटरफ़ेस जिस पर इस यूनिट का हॉटस्पॉट चलता है। इसे खाली छोड़ें और ऐप इसे खुद ढूँढ लेता है। इसे तभी भरें जब लॉग बताए कि ऐप ने गलत इंटरफ़ेस चुना या एक से ज़्यादा पाए। तब ऐप हॉटस्पॉट का ब्योरा भेजता है, भले ही सिस्टम कोई हॉटस्पॉट न बताए, इसलिए पक्का करें कि हॉटस्पॉट चालू है।</string>
     <string name="hotspot_interface_override_message">अपने आप तय होने देने के लिए खाली छोड़ें। अगर लॉग में लिखा है कि एक से ज़्यादा इंटरफ़ेस एक्सेस पॉइंट हो सकते हैं, या गलत इंटरफ़ेस चुना गया है, तो इसे सेट करें। नाम वही है जो लॉग में \"Providing credentials from\" के बाद दिखता है, या शेल में \"ip -brief addr\" चलाने पर जिस एंट्री में आपके हॉटस्पॉट का पता हो। आम नाम: ap0, wlan0, wlan1, wlan2, softap0, ra0।</string>
     <string name="hotspot_ssid_override">हॉटस्पॉट नाम (मैन्युअल)</string>
+    <string name="hotspot_ssid_override_help">इस यूनिट के हॉटस्पॉट का नाम, जो फ़ोन को जुड़ने के लिए मिलता है। इसे खाली छोड़ें और ऐप नाम को यूनिट से पढ़ लेता है। इसे तभी भरें जब यूनिट ऐप्स को इसे पढ़ने न दे। अगर आप नाम भरते हैं, तो पासवर्ड भी भरें: तब ऐप पासवर्ड यूनिट से नहीं पढ़ता।</string>
     <string name="hotspot_ssid_override_message">इस डिवाइस की हॉटस्पॉट सेटिंग से नाम अपने आप पढ़ने के लिए खाली छोड़ें। कुछ डिवाइस ऐप को नाम पढ़ने नहीं देते। अगर लॉग में लिखा है कि नाम पढ़ा नहीं जा सका, तो उसे यहाँ ठीक वैसे ही लिखें जैसा आपकी हॉटस्पॉट सेटिंग में दिखता है।</string>
     <string name="hotspot_password_override">हॉटस्पॉट पासवर्ड (मैन्युअल)</string>
+    <string name="hotspot_password_override_help">इस यूनिट के हॉटस्पॉट का पासवर्ड, जो फ़ोन को जुड़ने के लिए मिलता है। इसे खाली छोड़ें और ऐप इसे यूनिट से पढ़ लेता है। इसे तब भरें जब यूनिट ऐप्स को इसे पढ़ने न दे, या जब आपने हॉटस्पॉट का नाम भरा हो। नाम भरा हो और पासवर्ड न हो, तो फ़ोन को खुला नेटवर्क मिलता है और वह उसे ठुकरा देता है।</string>
     <string name="hotspot_password_override_message">पासवर्ड अपने आप पढ़ने के लिए खाली छोड़ें। जिन डिवाइस पर ऐप हॉटस्पॉट कॉन्फ़िगरेशन नहीं पढ़ सकते, वहाँ यह ज़रूरी है। फ़ोन को जुड़ने के लिए यही पासवर्ड दिया जाएगा।</string>
 
     <!-- Native AA credential pre-flight: what this unit can and cannot tell the phone about its own network -->
@@ -1159,12 +1269,15 @@
     <string name="connection_issue_banner_bssid">आपके फ़ोन को नहीं बताया गया कि किस नेटवर्क से जुड़ना है, क्योंकि यह यूनिट अपना वाई-फ़ाई पता नहीं बता रही। लोकेशन चालू करें, या पता खुद डालने के लिए टैप करें।</string>
     <string name="connection_issue_banner_hotspot_off">इस यूनिट का हॉटस्पॉट बंद है, इसलिए आपके फ़ोन के जुड़ने के लिए कोई नेटवर्क नहीं था। इसे चालू करें, या ऐप से चालू कराने के लिए टैप करें।</string>
     <string name="connection_issue_banner_hotspot_config">यह यूनिट अपना हॉटस्पॉट नाम और पासवर्ड ऐप को नहीं बता रही। इन्हें खुद डालने के लिए टैप करें।</string>
+    <string name="auto_restart_wifi_summary">WiFi Direct अटक जाए, तो Wi-Fi को अपने आप रीस्टार्ट करता है। इसके लिए रूट या लोकल ADB चाहिए।</string>
+    <string name="auto_restart_wifi_description">WiFi Direct अटक जाए, तो Wi-Fi को अपने आप बंद करके फिर चालू करता है। ऐसा सेशन के बीच ऐप बंद करने के बाद हो सकता है। इसके लिए रूट या लोकल ADB चाहिए। सेशन के दौरान यह कभी नहीं चलता।</string>
     <string name="connection_issue_banner_wifi_direct_refused">यह यूनिट आपके फ़ोन के लिए वाई-फ़ाई डायरेक्ट नेटवर्क नहीं बना सकी। इसे दूसरे वाई-फ़ाई से डिसकनेक्ट करके देखें, या इसके बजाय यूनिट का हॉटस्पॉट इस्तेमाल करने के लिए टैप करें।</string>
     <string name="connection_issue_banner_wifi_direct_cycled">कोई दूसरा ऐप वाई-फ़ाई डायरेक्ट को बार-बार बंद कर रहा है, आमतौर पर ZLink या CarLife जैसा पहले से इंस्टॉल प्रोजेक्शन ऐप। उसे बंद करें, या इसके बजाय हॉटस्पॉट इस्तेमाल करने के लिए टैप करें।</string>
     <string name="connection_issue_banner_wifi_radio_off">इस यूनिट का वाई-फ़ाई बंद है, और Android ऐप को उसे चालू करने नहीं देता। वाई-फ़ाई चालू करें, या इसके बजाय यूनिट का हॉटस्पॉट इस्तेमाल करने के लिए टैप करें।</string>
     <string name="native_aa_requires_wifi">नेटिव Android Auto को इस यूनिट के वाई-फ़ाई की ज़रूरत है। कृपया उसे चालू करें।</string>
     <string name="narrow_band_profile_cap">2.4 GHz लिंक पर वीडियो क्वालिटी घटाएं</string>
-    <string name="narrow_band_profile_cap_description">जब यह सत्र 2.4 GHz पर चलता है, चाहे यूनिट के वाई-फ़ाई में 5 GHz बैंड न हो या नेटवर्क वहीं शुरू हुआ हो, तो ऊपर की सेटिंग की जगह फ़ोन से ज़्यादा से ज़्यादा 720p, 30 fps और AAC ऑडियो माँगा जाता है। ऐसे लिंक पर पूरी दर की स्ट्रीम में तस्वीर बिल्कुल नहीं आई, जबकि कम दर की स्ट्रीम टिकी रही। जो आपने चुना है वही पाने के लिए इसे बंद करें।</string>
+    <string name="narrow_band_profile_cap_description">2.4 GHz लिंक पर आपकी वीडियो सेटिंग की जगह फ़ोन से ज़्यादा से ज़्यादा 720p, 30 fps और AAC ऑडियो माँगता है। उस लिंक पर पूरे रेट की स्ट्रीम में मापने पर कोई तस्वीर नहीं दिखी, जबकि कम रेट वाली टिकी रही। जैसा आपने सेट किया वैसा पाने के लिए इसे बंद करें, और लिंक न संभाल पाए तो खाली तस्वीर की उम्मीद रखें।</string>
+    <string name="narrow_band_profile_cap_summary">2.4 GHz पर फ़ोन से 720p, 30 fps और AAC ऑडियो माँगता है।</string>
     <string name="connection_issue_banner_video_link_too_slow">वीडियो के लिए वाई-फ़ाई लिंक बहुत धीमा था, इसलिए ऐप ने इसे 30 FPS पर 720p कर दिया। रिज़ॉल्यूशन खुद चुनने के लिए टैप करें। 5 GHz नेटवर्क भी मदद करता है।</string>
     <string name="connection_issue_banner_five_ghz_channel_refused">यह यूनिट आपके चुने 5 GHz चैनल पर नहीं चली और उसने ऐसा चैनल चुना जो कुछ फ़ोन नहीं देख पाते। वाई-फ़ाई डायरेक्ट को 2.4 GHz पर करने के लिए टैप करें, जो हर जगह चलता है।</string>
     <string name="connection_issue_banner_headunit_server_deaf">आपके फ़ोन पर Android Auto का हेड यूनिट सर्वर जवाब देना बंद कर चुका है। फ़ोन पर Android Auto की डेवलपर सेटिंग में उसे रोकें और फिर शुरू करें।</string>
@@ -1188,6 +1301,7 @@
     <string name="preflight_later">बाद में</string>
     <string name="preflight_invalid_bssid">यह वाई-फ़ाई पता नहीं है। हेक्स अंकों के छह जोड़े डालें, जैसे 02:1A:11:FF:3C:4D।</string>
     <string name="native_aa_wake_remeasure">ब्लूटूथ वेक दोबारा मापें</string>
+    <string name="native_aa_wake_remeasure_help">वायरलेस शुरू करने के लिए ऐप इस यूनिट का फ़ोन से हैंड्स-फ़्री लिंक तोड़ सकता है। ऐप एक बार जाँचता है कि लिंक लौटता है या नहीं। अगर नहीं लौटता, तो ऐप यह करना बंद कर देता है और पंक्ति में «इस यूनिट पर रोका गया है» दिखता है। नतीजा मिटाने के लिए टैप करें, ताकि ऐप अगले कनेक्शन पर फिर जाँचे। टेस्ट के दौरान हैंड्स-फ़्री कुछ पल के लिए कट सकता है।</string>
     <string name="native_aa_wake_verdict_unmeasured">अभी तक नहीं मापा गया</string>
     <string name="native_aa_wake_verdict_safe">इस यूनिट पर सुरक्षित है</string>
     <string name="native_aa_wake_verdict_destructive">इस यूनिट पर रोका गया है</string>
@@ -1195,9 +1309,11 @@
     <string name="native_aa_wake_remeasure_done">अगले कनेक्शन पर ब्लूटूथ वेक दोबारा मापा जाएगा।</string>
     <string name="native_aa_ignore_external_bt">ब्लूटूथ संगतता जाँच को अनदेखा करें</string>
     <string name="native_aa_ignore_external_bt_description">लगता है यह यूनिट ब्लूटूथ को अलग मॉड्यूल पर रखती है जिस तक Android नहीं पहुँच सकता, इसलिए वायरलेस Android Auto अपने आप बंद कर दिया जाता है। यह डिफ़ॉल्ट रूप से बंद है। इसे तभी चालू करें जब आपको लगे कि यह गलत है। जहाँ यह सही है, वहाँ कनेक्शन चुपचाप फ़ेल होता है और लॉग सामान्य दिखता है।</string>
+    <string name="native_aa_ignore_external_bt_summary">यह यूनिट अपना ब्लूटूथ मॉड्यूल छिपाती दिखे, तब भी वायरलेस चालू रखता है।</string>
 
     <!-- The external Bluetooth module probe (Advanced; only on units the detection flags). -->
     <string name="zbt_probe_title">हेड यूनिट के ब्लूटूथ मॉड्यूल की जाँच करें</string>
+    <string name="zbt_probe_help">जाँचता है कि इस यूनिट का अपना ब्लूटूथ मॉड्यूल वायरलेस Android Auto हैंडशेक सँभाल सकता है या नहीं। टेस्ट लगभग दो मिनट चलता है और इस पंक्ति में हर चरण दिखाता है। «केवल देखें» मॉड्यूल को शुरू करके उसकी निगरानी करता है। «जगाएं और देखें» मॉड्यूल से फ़ोन से जुड़ने को भी कहता है। टेस्ट मॉड्यूल की ब्लूटूथ स्थिति बदल सकता है। टेस्ट के बाद लॉग निर्यात करें।</string>
     <string name="zbt_probe_idle">चलाने के लिए टैप करें</string>
     <string name="zbt_probe_running">चल रहा है…</string>
     <string name="zbt_probe_message">दोनों विकल्प निगरानी से पहले Bluetooth मॉड्यूल को आरंभ करते हैं। इससे उसकी Bluetooth स्थिति प्रभावित हो सकती है। जगाएँ और देखें विकल्प फ़ोन से कनेक्शन का अनुरोध भी करता है।\n\nजब OHU मॉड्यूल का उपयोग या जाँच करता है, तब परीक्षण उसे प्राथमिकता देता है। परीक्षण के बाद लॉग निर्यात करें।</string>
@@ -1206,18 +1322,22 @@
     <string name="external_bt_blink_transport">FYT के बाहरी ब्लूटूथ मॉड्यूल से कनेक्ट करें</string>
     <string name="external_bt_module_controls_hint">फ़ोन पेयरिंग, कनेक्शन की प्राथमिकता और ड्राइवर का चुनाव बाहरी ब्लूटूथ मॉड्यूल संभालता है।</string>
     <string name="external_bt_module_last_phone">मॉड्यूल से आखिरी बार जुड़ा फ़ोन</string>
-    <string name="external_bt_blink_transport_description">प्रयोगात्मक। उन FYT यूनिट के लिए जिनमें फ़ोन कॉल के लिए अलग ब्लूटूथ मॉड्यूल से पेयर होता है, जैसे DUDUOS पर \"DUDUAUTO\", जो अब तक जाँचा गया एकमात्र ROM है। वायरलेस Android Auto हैंडशेक यह मॉड्यूल ले जाता है, इस यूनिट का ब्लूटूथ नहीं, और इसका जवाब आम तौर पर स्टॉक Car Link ऐप देता है। इसे चालू करने पर जवाब यही ऐप देता है, इसलिए कॉल मॉड्यूल और कार के स्पीकर पर ही रहती हैं।\n\nपहले स्टॉक Car Link ऐप बंद करें (pm disable-user com.syu.carlink), वरना दोनों ऐप एक ही चैनल पढ़ेंगे। जहाँ यूनिट इजाज़त दे, चैनल बिना रूट के खुलता है, नहीं तो रूट से। नेटिव चुनें, फ़ोन को सिर्फ़ मॉड्यूल से पेयर करें, और कनेक्ट न हो तो लॉग एक्सपोर्ट करें।</string>
+    <string name="external_bt_blink_transport_description">प्रायोगिक। उन FYT यूनिट के लिए जिनमें फ़ोन कॉल के लिए अलग ब्लूटूथ मॉड्यूल से पेयर होता है, जैसे DUDUOS पर DUDUAUTO। मॉड्यूल वायरलेस Android Auto हैंडशेक संभालता है, जिसका जवाब आम तौर पर मूल Car Link ऐप्लिकेशन देता है। चालू करने पर यह ऐप्लिकेशन जवाब देता है, इसलिए कॉल मॉड्यूल और कार के स्पीकर पर रहती हैं। पहले मूल Car Link ऐप्लिकेशन बंद करें (pm disable-user com.syu.carlink), वरना दोनों एक ही चैनल पढ़ेंगे।</string>
+    <string name="external_bt_blink_transport_summary">प्रायोगिक। FYT यूनिट के ब्लूटूथ मॉड्यूल पर वायरलेस हैंडशेक का जवाब देता है।</string>
     <string name="external_bt_zj_socket_transport">ZJ Bluetooth सॉकेट से कनेक्ट करें</string>
     <string name="external_bt_zj_socket_transport_description">उन यूनिट के लिए, जिनमें ZJ Bluetooth मॉड्यूल वायरलेस Android Auto हैंडशेक को लोकल सॉकेट (/dev/socket/zj_bt_socket) से भेजता है। जब यह सॉकेट कनेक्शन स्वीकार करता है, तो ऐप इसे अपने आप इस्तेमाल करता है। इसे केवल तभी चालू करें, जब आपकी यूनिट में यह सॉकेट हो और ऐप उसे न पहचान पाए।</string>
+    <string name="external_bt_zj_socket_transport_summary">वायरलेस हैंडशेक को ZJ मॉड्यूल के लोकल सॉकेट से भेजें।</string>
     <string name="external_bt_blink_refused_stock_enabled">बाहरी ब्लूटूथ मॉड्यूल: स्टॉक Car Link ऐप अभी चालू है। उसे बंद करें (pm disable-user com.syu.carlink) या यह ट्रांसपोर्ट बंद करें।</string>
     <string name="external_bt_blink_refused_stock_running">बाहरी ब्लूटूथ मॉड्यूल: स्टॉक Car Link ऐप बंद है, पर अब भी चल रहा है। यूनिट रीस्टार्ट करें।</string>
     <string name="external_bt_blink_refused_root">बाहरी ब्लूटूथ मॉड्यूल: मॉड्यूल का चैनल खोलने के लिए इस यूनिट पर रूट चाहिए, और रूट एक्सेस नहीं मिला या उपलब्ध नहीं है।</string>
     <string name="external_bt_blink_refused_unverified">बाहरी ब्लूटूथ मॉड्यूल: यह नहीं जाँचा जा सका कि स्टॉक Car Link ऐप रुका है या नहीं, इसलिए मॉड्यूल का चैनल बंद रहता है। कृपया लॉग एक्सपोर्ट करें।</string>
     <string name="external_bt_blink_refused_bridge">बाहरी ब्लूटूथ मॉड्यूल: मॉड्यूल का चैनल खोला नहीं जा सका। कृपया लॉग एक्सपोर्ट करें।</string>
     <string name="external_bt_transport">हेड यूनिट के ब्लूटूथ मॉड्यूल से कनेक्ट करें</string>
-    <string name="external_bt_transport_description">प्रयोगात्मक, और केवल उन यूनिट के लिए जिनमें ZJ/ZLink ब्लूटूथ सेवा है। वायरलेस Android Auto हैंडशेक को Android ऐप को दिए जाने वाले ब्लूटूथ के बजाय इस यूनिट की अपनी ब्लूटूथ चिप से भेजता है, जिससे आपका फ़ोन असल में पेयर है।\n\nपहले इस सेटिंग को बंद रखकर \"हेड यूनिट के ब्लूटूथ मॉड्यूल की जाँच करें\" चलाएँ। अगर कुछ सुनता हुआ न मिले, तो यह सेटिंग आपकी यूनिट पर कुछ नहीं कर सकती और आप कुछ भी चुनें, नेटिव वायरलेस यहाँ नहीं चलेगा। अगर जवाब मिले, तो इसे चालू करके नेटिव चुनें। यह सेटिंग चालू होने और कनेक्ट होने पर जाँच चलाएँ, तो वही बताया जाता है, जो विफलता नहीं है। किसी भी हाल में कृपया लॉग एक्सपोर्ट करें।</string>
+    <string name="external_bt_transport_description">प्रायोगिक। उन यूनिट के लिए जिनमें ZJ/ZLink ब्लूटूथ सेवा है। वायरलेस Android Auto हैंडशेक उस ब्लूटूथ चिप से भेजता है जिससे फ़ोन पेयर है, उससे नहीं जो Android ऐप्लिकेशन को दिखाता है। पहले इसे बंद रखकर ब्लूटूथ मॉड्यूल टेस्ट चलाएँ। अगर कुछ सुनता न मिले, तो यह आपकी यूनिट पर कुछ नहीं कर सकता। जवाब मिले, तो इसे चालू करें। दोनों स्थितियों में लॉग एक्सपोर्ट करें।</string>
+    <string name="external_bt_transport_summary">प्रायोगिक। वायरलेस हैंडशेक इस यूनिट के अपने ब्लूटूथ से भेजता है।</string>
     <string name="native_aa_setup_qr_title">QR कोड द्वारा सेट अप करें</string>
     <string name="native_aa_setup_qr_description">ऐसा कोड दिखाएं जिसे फ़ोन स्कैन कर सके।</string>
+    <string name="native_aa_setup_qr_help">एक QR कोड दिखाता है जो ब्लूटूथ हैंडशेक के बिना इस यूनिट को फ़ोन पर सेट करता है। कोड में इस यूनिट के हॉटस्पॉट का नाम, पासवर्ड और पता होता है। यह केवल हॉटस्पॉट ट्रांसपोर्ट पर, कनेक्शन चलते समय काम करता है। Android Auto 18.0 इस कोड पर अभी कार्रवाई नहीं करता, इसलिए ब्लूटूथ हैंडशेक अब भी ज़रूरी है।</string>
     <string name="native_aa_setup_qr_content_description">वायरलेस Android Auto सेट करने के लिए QR कोड</string>
     <string name="native_aa_setup_qr_instruction">इसे फ़ोन के कैमरे से स्कैन करें और फ़ोन पर पुष्टि करें। यह सिर्फ़ एक बार करना होगा, फिर फ़ोन अपने आप कनेक्ट हो जाएगा।</string>
     <string name="native_aa_setup_qr_not_drawn">कोड नहीं बनाया जा सका।</string>
@@ -1241,6 +1361,7 @@
     <string name="share_hotspot_qr_error">चालू वाई-फ़ाई हॉटस्पॉट की जानकारी नहीं मिल सकी। पक्का करें कि हॉटस्पॉट और जगह की जानकारी चालू हैं।</string>
     <string name="use_libusb">नेटिव यूएसबी ड्राइवर इस्तेमाल करें</string>
     <string name="use_libusb_description">संचार के लिए libusb इस्तेमाल करें। Android का मानक यूएसबी API इस्तेमाल करने के लिए इसे बंद करें।</string>
+    <string name="use_libusb_help">फ़ोन से केबल कनेक्शन के लिए Android के USB सिस्टम की जगह ऐप की अपनी USB लाइब्रेरी इस्तेमाल करता है। इसे बंद रखें। इसे तभी चालू करें जब USB पर फ़ोन मिल जाए लेकिन Android Auto शुरू न हो। वायरलेस कनेक्शन पर इसका कोई असर नहीं होता।</string>
     <string name="usb_keep_phone_media_audio">USB पर फ़ोन का मीडिया ऑडियो चालू रखें</string>
     <string name="usb_keep_phone_media_audio_description">USB सेशन के दौरान Android Auto इस हेड यूनिट के लिए फ़ोन का Bluetooth मीडिया ऑडियो बंद कर सकता है। यह विकल्प ऐसा होने से रोकता है। इसके बाद फ़ोन कॉल, हेड यूनिट की जगह फ़ोन पर ही रह सकते हैं।</string>
 
@@ -1289,6 +1410,7 @@
     <string name="geofence_override_theme">यहाँ कोई थीम लागू करें</string>
     <string name="geofence_dark_inside">इस क्षेत्र में डार्क</string>
     <string name="geofence_scope_label">इन पर लागू</string>
+    <string name="geofence_scope_help">तय करता है कि सहेजी गई जगहें क्या नियंत्रित करें: ऐप की अपनी स्क्रीन, Android Auto, या दोनों। आपका चुनाव उस हिस्से का डार्क मोड «Location (by area)» पर सेट करता है। सहेजी गई जगह के अंदर वही जगह हल्का या गहरा तय करती है। सभी जगहों के बाहर नीचे की पंक्ति इसे तय करती है।</string>
     <string name="geofence_scope_app">ऐप</string>
     <string name="geofence_scope_aa">Android Auto</string>
     <string name="geofence_scope_both">दोनों</string>
@@ -1305,6 +1427,7 @@
     <!-- Round 4: Location as a mode -->
     <string name="location_manage_places">सहेजी गई जगहें</string>
     <string name="location_outside_label">सहेजी गई जगहों के बाहर</string>
+    <string name="location_outside_help">हल्का या गहरा तय करता है, जब यूनिट सभी सहेजी गई जगहों के बाहर हो और जब तक उसके पास लोकेशन न हो। सहेजी गई जगह के अंदर उस जगह का अपना चुनाव लागू होता है। यह तभी काम करता है जब कोई डार्क मोड «Location (by area)» पर सेट हो।</string>
     <string name="location_places_desc">किसी क्षेत्र के अंदर होने पर लाइट या डार्क लुक सेट करें। GPS इस्तेमाल करता है।</string>
     <string name="coordinates_enter">निर्देशांक दर्ज करें</string>
     <string name="coordinate_latitude">अक्षांश (Latitude)</string>
@@ -1321,10 +1444,13 @@
     <string name="aa174_notice_message"><![CDATA[Android Auto 17.4 से शुरू करते हुए, Google ने ऐसे आंतरिक बदलाव किए जो Wireless Helper और क्लासिक सेल्फ़-मोड के माध्यम से स्वचालित लॉन्च को बंद कर देते हैं।<br/><br/><b>उपलब्ध तरीके:</b><br/><br/><b>1. हेडयूनिट सर्वर (डेवलपर मोड):</b><br/>सेल्फ़-मोड के लिए अकेला बचा हुआ काम करने वाला तरीका! अपने फ़ोन पर, Android Auto डेवलपर सेटिंग्स खोलें और "Start headunit server" पर टैप करें।<br/><br/><b>2. नेटिव मोड:</b><br/>सीधे वाई-फ़ाई डायरेक्ट या हेडयूनिट हॉटस्पॉट के माध्यम से कनेक्ट होता है।<br/><br/><b>3. यूएसबी वायरलेस डोंगल:</b><br/>एक हार्डवेयर यूएसबी वायरलेस अडैप्टर सबसे विश्वसनीय प्लग-एंड-प्ले अनुभव प्रदान करता है।<br/><br/><b>4. Wireless Helper:</b><br/>संस्करण 17.3 तक Android Auto के लिए काम करना जारी रखता है।]]></string>
     <string name="aa174_notice_button_confirm">ठीक है</string>
     <string name="aa174_notice_button_guide">गाइड खोलें</string>
-    <string name="category_ui">यूज़र इंटरफ़ेस</string>
     <string name="hide_phone_signal_label">फ़ोन का सिग्नल छिपाएं</string>
+    <string name="hide_phone_signal_help">Android Auto से कहता है कि वह फ़ोन के सिग्नल की ताकत इस यूनिट की स्क्रीन पर न दिखाए। Android Auto के कुछ नए वर्शन इस अनुरोध को अनदेखा करते हैं। अगले कनेक्शन पर लागू होता है।</string>
     <string name="hide_battery_level_label">फ़ोन का बैटरी स्तर छिपाएं</string>
+    <string name="hide_battery_level_help">Android Auto से कहता है कि वह फ़ोन की बैटरी का स्तर इस यूनिट की स्क्रीन पर न दिखाए। Android Auto के कुछ नए वर्शन इस अनुरोध को अनदेखा करते हैं। अगले कनेक्शन पर लागू होता है।</string>
     <string name="hide_clock_label">घड़ी छिपाएं</string>
+    <string name="hide_clock_help">Android Auto से कहता है कि वह अपनी घड़ी इस यूनिट की स्क्रीन पर न दिखाए। जब यूनिट पहले से घड़ी दिखाती हो, तब इसका इस्तेमाल करें। अगले कनेक्शन पर लागू होता है।</string>
+    <string name="hide_clock_summary">Android Auto से अपनी घड़ी न दिखाने को कहें।</string>
     <string name="might_broken_on_newer_aa_versions">यह सुविधा Android Auto के नए वर्शन पर काम न करे, ऐसा हो सकता है</string>
     <string name="auto_connect_delay">ऑटो-कनेक्ट में देरी</string>
     <string name="auto_connect_delay_description">स्टार्टअप पर कनेक्ट करने की कोशिश से पहले इंतज़ार करें (तब काम आता है जब वाई-फ़ाई को चालू होने में समय लगता है)।</string>
@@ -1335,12 +1461,14 @@
     <string name="failed_aa_not_system">विफल: Android Auto सिस्टम ऐप के रूप में इंस्टॉल नहीं है!</string>
     <string name="failed_aa_not_installed">विफल: Android Auto इंस्टॉल नहीं है!</string>
     <string name="native_driver_selection_title">ड्राइवर का चयन</string>
-    <string name="native_driver_selection_summary">वाहन में जोड़े गए कई फ़ोन होने पर चुनें कि किस फ़ोन से कनेक्ट करना है।</string>
     <string name="native_driver_selection_mode_off">बंद है</string>
     <string name="native_driver_selection_mode_auto">ऑटो</string>
     <string name="native_driver_selection_mode_always">हमेशा पूछें</string>
+    <string name="native_driver_selection_help">यह तय करता है कि ऐप कब पूछे कि कौन सा फ़ोन इस्तेमाल करना है, जब एक से ज़्यादा पेयर किए फ़ोन ड्राइवर हो सकते हों। बंद है: ऐप खुलने पर कभी नहीं पूछता, और WiFi बटन सबसे संभावित फ़ोन से जुड़ता है। ऑटो: ऐप तभी पूछता है जब वह ड्राइवर का फ़ोन नहीं पहचान पाता। ब्लूटूथ से एक ही फ़ोन जुड़ा हो, तो वही इस्तेमाल होता है। हमेशा पूछें: एक से ज़्यादा फ़ोन पेयर होने पर ऐप हर बार खुलने पर पूछता है। सबसे संभावित फ़ोन जुड़ा हुआ फ़ोन है, फिर «पसंदीदा फ़ोन», फिर आख़िरी बार इस्तेमाल किया गया।</string>
     <string name="native_driver_selection_timeout">ऑटो-कनेक्ट उलटी गिनती</string>
+    <string name="native_driver_selection_timeout_help">जब ड्राइवर सूची खुलती है, वह उलटी गिनती करती है और फिर सबसे संभावित फ़ोन से जुड़ जाती है। यह उलटी गिनती तय करता है, 3 से 30 सेकंड तक। खुद चुनने के लिए अंत से पहले किसी फ़ोन पर टैप करें।</string>
     <string name="native_driver_preferred_device">पसंदीदा फ़ोन</string>
+    <string name="native_driver_preferred_device_help">वह फ़ोन जिसे ऐप सबसे पहले चुनता है, जब एक से ज़्यादा पेयर किए फ़ोन ड्राइवर हो सकते हों। अगर ब्लूटूथ से केवल एक फ़ोन जुड़ा है, तो ऐप वही चुनता है। «कोई नहीं» पर ऐप आख़िरी जुड़ा फ़ोन चुनता है। सूची में केवल फ़ोन दिखते हैं।</string>
     <string name="switch_driver">फ़ोन बदलें</string>
     <string name="driver_device_connected">वाहन में / कनेक्ट किया गया</string>
     <string name="driver_device_paired">जोड़ा गया</string>
@@ -1355,6 +1483,7 @@
     <string name="show_all_devices">सभी ब्लूटूथ डिवाइस दिखाएं</string>
     <string name="show_only_phones">केवल फ़ोन दिखाएं</string>
     <string name="oem_app_management">OEM ऐप टकराव प्रबंधन (ADB)</string>
+    <string name="oem_app_management_help">इस यूनिट पर ऐसे फ़ैक्टरी ऐप्स ढूँढता है जो इस ऐप से पहले USB या ब्लूटूथ कनेक्शन अपने हाथ में ले लेते हैं। आप हर एक को बंद करके रोक सकते हैं, या बाद में बहाल कर सकते हैं। इसके लिए रूट, या इस यूनिट के पोर्ट 5555 पर नेटवर्क से ADB चाहिए। एक विकल्प इस ऐप के हर बार शुरू होने पर इन ऐप्स को बंद कर देता है।</string>
     <string name="oem_app_management_desc">टकराव पैदा करने वाले ऐप (Zlink, AutoKit आदि) खोजें और बंद करें।</string>
     <string name="oem_app_explanation">हेडयूनिट के साथ आने वाले फ़ैक्टरी ऐप (जैसे Zlink, AutoKit, SpeedPlay) अक्सर यूएसबी और ब्लूटूथ कनेक्शन रोक लेते हैं, जिससे Open Headunit कनेक्ट नहीं हो पाता। आप इन्हें रूट या सेल्फ़-ADB (पोर्ट 5555) से बंद कर सकते हैं।</string>
     <string name="oem_app_backend_root">चलाने का तरीका: रूट (su) उपलब्ध है</string>
@@ -1383,9 +1512,13 @@
     <!-- Extra keys -->
     <string name="support_rules_english_desc">कृपया अपना इश्यू हमेशा अंग्रेज़ी में लिखें। यही एक भाषा है जो मेंटेनर और यहाँ मदद करने वाले ज़्यादातर लोग जानते हैं। कई भाषाओं वाली चर्चा में कोई किसी की मदद नहीं कर पाता। आपके अंग्रेज़ी स्तर या लिखने के तरीके पर कोई टिप्पणी नहीं करेगा, इसलिए गलतियों की चिंता न करें। चाहें तो Google Translate या DeepL जैसे अनुवादक, या ChatGPT या Claude जैसे AI की मदद से अपना संदेश अंग्रेज़ी में लिख और सुधार सकते हैं।</string>
     <string name="debug_video_fault_injection">वीडियो फ़ॉल्ट इंजेक्शन</string>
+    <string name="debug_video_fault_injection_help">केवल टेस्ट के लिए। आने वाले वीडियो को जानबूझकर बिगाड़ता है, ताकि देखा जा सके कि ऐप कैसे सँभलता है। हर मोड फ़्रेम का अलग हिस्सा हटाता या छिपाता है। लॉग हर गड़बड़ी दर्ज करता है। अगले कनेक्शन पर लागू होता है। सामान्य इस्तेमाल के लिए इसे «Off» रखें, क्योंकि तस्वीर बिखर जाती है।</string>
     <string name="debug_video_fault_rate">फ़ॉल्ट दर (N में से 1)</string>
+    <string name="debug_video_fault_rate_help">गड़बड़ी कितनी बार होती है। चुना गया मोड जिन वीडियो टुकड़ों को निशाना बनाता है, उनमें से ऐप हर N-वाँ टुकड़ा बिगाड़ता है। छोटी संख्या तस्वीर का ज़्यादा हिस्सा बिगाड़ती है।</string>
     <string name="debug_video_fault_budget">फ़ॉल्ट बजट</string>
+    <string name="debug_video_fault_budget_help">रुकने से पहले ऐप एक सत्र में कितनी गड़बड़ियाँ जोड़ता है। «Whole session» कभी नहीं रुकता। सीमा के साथ, एक लॉग नुकसान दिखाता है और फिर यह कि तस्वीर ठीक होती है या नहीं।</string>
     <string name="debug_force_memory_profile">मेमोरी प्रोफ़ाइल बाध्य करें</string>
+    <string name="debug_force_memory_profile_help">केवल टेस्ट के लिए। वीडियो डिकोडर अपने बफ़र का आकार ऐसे तय करता है जैसे इस यूनिट में चुनी गई मात्रा में मेमोरी हो। «Measure» यूनिट की असली मेमोरी पढ़ता है। «Constrained» सबसे छोटे बफ़र इस्तेमाल करता है, जैसे लगभग 1 GB वाली यूनिट पर। अगले कनेक्शन पर लागू होता है। सामान्य इस्तेमाल के लिए «Measure» रखें।</string>
 
     <string name="onb_audio_play_test">परीक्षण ध्वनि चलाएँ</string>
     <string name="onb_audio_play_test_sub">यह Android Auto के संगीत की तरह कुछ सेकंड तक बजती है।</string>
@@ -1512,6 +1645,7 @@
     <string name="native_aa_candidate_android_radio_description">हेड यूनिट का Bluetooth मॉड्यूल अपने आप चुनने के बजाय Android Bluetooth इस्तेमाल करें। अपने आप चुनने के लिए इसे बंद रखें। अगर मॉड्यूल से कनेक्शन का कोई विकल्प चालू है, तो पहले उसे बंद करें।</string>
     <string name="external_bt_candidate_transport_description">अपने आप चुनने के बजाय हेड यूनिट के Bluetooth मॉड्यूल से कनेक्शन अनिवार्य करें। इसके लिए संगत मॉड्यूल सेवा ज़रूरी है। सेवा जवाब न दे तो Android Bluetooth इस्तेमाल करने देने के लिए इसे बंद रखें; चालू करने पर यह विकल्प उपलब्ध नहीं होगा।</string>
     <string name="audio_matching_mode">संगीत समय सुधार</string>
+    <string name="audio_matching_mode_help">जब संगीत थोड़ा तेज़ या धीमा पहुँचता है, तो ऐप उसे थोड़ा तेज़ या धीमा चलाता है ताकि उसकी ध्वनि कतार संतुलित रहे। यहाँ आप तरीका चुनते हैं। OHU डिफ़ॉल्ट है। बाकी तरीके कुछ देरी जोड़ते हैं और केवल PCM संगीत पर लागू होते हैं। नेविगेशन, आवाज़, सिस्टम ध्वनियाँ और AAC हमेशा OHU इस्तेमाल करते हैं। लागू करने के लिए फिर से कनेक्ट करें।</string>
     <string name="audio_matching_ohu">OHU</string>
     <string name="audio_matching_wsola">WSOLA</string>
     <string name="audio_matching_phase_vocoder">Phase Vocoder</string>
@@ -1523,4 +1657,99 @@
     <string name="audio_matching_phase_vocoder_short_hint">कम विलंब</string>
     <string name="audio_matching_phase_gradient_hint">धीमा प्लेबैक</string>
     <string name="audio_matching_description">OHU डिफ़ॉल्ट बना रहता है। WSOLA ओवरलैप होती तरंगों को संरेखित करता है; Phase Vocoder स्पेक्ट्रम के फेज़ समायोजित करता है। Short छोटी विश्लेषण विंडो का उपयोग करता है। Phase Gradient फेज़ ग्रेडिएंट का समाकलन करके फेज़ पुनर्निर्मित करता है। ये स्वतंत्र कार्यान्वयन प्रोसेसिंग में देरी जोड़ते हैं; इनके नाम ध्वनि गुणवत्ता की रैंकिंग नहीं हैं।\n\nनेटिव तरीके: PCM संगीत। नेविगेशन, बोलकर दिए गए जवाब, सिस्टम ध्वनियाँ और AAC OHU का उपयोग करते हैं।\nलागू करने के लिए फिर से कनेक्ट करें। हटाए गए इंजन की सेटिंग OHU पर रीसेट होती है।</string>
+    <string name="auto_restart_wifi_adb">लोकल ADB मिला। वाई-फ़ाई डायरेक्ट अटकने पर वाई-फ़ाई अपने आप रीस्टार्ट हो जाएगा।</string>
+    <string name="auto_restart_wifi_root_granted">रूट एक्सेस मिल गया। वाई-फ़ाई डायरेक्ट अटकने पर वाई-फ़ाई अपने आप रीस्टार्ट हो जाएगा।</string>
+    <string name="auto_restart_wifi_title">वाई-फ़ाई डायरेक्ट अटकने पर वाई-फ़ाई रीस्टार्ट करें</string>
+    <string name="auto_restart_wifi_unavailable">इस यूनिट पर रूट या लोकल ADB नहीं है, इसलिए बैनर एक टैप में वाई-फ़ाई रीस्टार्ट करने का विकल्प देगा।</string>
+    <string name="bt_manufacturer_devices_android_unavailable">हेड यूनिट ने ये डिवाइस अपनी ब्लूटूथ सूची में सेव किए हैं:\n\n%1$s\n\nAndroid की ब्लूटूथ सूची अभी उपलब्ध नहीं है। सिर्फ़ यह सेव की गई सूची Android ब्लूटूथ ट्रिगर या फ़ोन को जगाने के लिए इस्तेमाल नहीं हो सकती। इससे यह पता नहीं चलता कि ये डिवाइस जुड़े हैं या Android Auto कनेक्शन उपलब्ध है।</string>
+    <string name="bt_manufacturer_devices_message">हेड यूनिट ने ये डिवाइस अपनी ब्लूटूथ सूची में सेव किए हैं:\n\n%1$s\n\nAndroid इन्हें पेयर किए हुए डिवाइस के रूप में नहीं दिखाता। यहाँ इन्हें Android ब्लूटूथ ट्रिगर या फ़ोन को जगाने के लिए नहीं चुना जा सकता। इस सेव की गई सूची से यह पता नहीं चलता कि ये डिवाइस जुड़े हैं या Android Auto कनेक्शन उपलब्ध है।</string>
+    <string name="bt_manufacturer_devices_title">हेड यूनिट से पेयर किए गए डिवाइस</string>
+    <string name="connection_issue_banner_wifi_direct_stuck">इस यूनिट पर वाई-फ़ाई डायरेक्ट अटका हुआ है और सिर्फ़ वाई-फ़ाई रीस्टार्ट करने से ही छूटेगा। वाई-फ़ाई रीस्टार्ट करने के लिए टैप करें।</string>
+    <string name="hct_aa_bluetooth_busy">ब्लूटूथ व्यस्त है। Android Auto चालू कॉल या कनेक्शन को रीस्टार्ट नहीं करेगा।</string>
+    <string name="hct_aa_handoff_unavailable">हेड यूनिट ने Android Auto कनेक्शन नहीं दिया। Open Headunit ने यह कोशिश रोक दी है।</string>
+    <string name="hct_aa_no_paired_phone">हेड यूनिट की ब्लूटूथ सूची में कोई सेव किया हुआ फ़ोन नहीं मिला। हेड यूनिट के ब्लूटूथ ऐप से अपना फ़ोन पेयर करें, फिर उसे यहाँ चुनें।</string>
+    <string name="hct_aa_selection_pending">फ़ोन का पिछला कनेक्शन अभी प्रोसेस हो रहा है। इस चयन ने उसकी जगह नहीं ली है।</string>
+    <string name="hct_aa_waiting_existing_bluetooth">ब्लूटूथ पहले से जुड़ा है। हेड यूनिट के Android Auto खोलने का इंतज़ार है। मौजूदा कनेक्शन रीस्टार्ट नहीं होगा।</string>
+    <string name="hct_aa_wake_unconfirmed">हेड यूनिट ने Android Auto कनेक्शन पूरा नहीं किया। दोबारा कोशिश करने के लिए फ़ोन फिर से चुनें, या उसकी ब्लूटूथ सेटिंग से दोबारा कनेक्ट करें। Open Headunit अब भी Android Auto का इंतज़ार कर रहा है।</string>
+    <string name="wifi_restart_failed">वाई-फ़ाई रीस्टार्ट नहीं हो सका। इसे यहाँ बंद करके फिर चालू करें।</string>
+    <string name="wifi_restart_running">वाई-फ़ाई रीस्टार्ट हो रहा है…</string>
+    <string name="hct_aa_wake_not_sent">कनेक्शन की स्थिति बदल गई, इसलिए फ़ोन का दोबारा कनेक्शन शुरू नहीं हुआ। मौजूदा कनेक्शन गतिविधि पूरी होने के बाद फिर कोशिश करें।</string>
+    <string name="wifi_scan_adb_usb">Android 8–10\n1. Shizuku में कंप्यूटर/USB से शुरू करने के निर्देशों का पालन करें।\n2. यहाँ लौटकर Open Headunit को अनुमति दें।\n\nसमर्थित FYT डिवाइस ऊपर दिए गए \"इस FYT डिवाइस पर Shizuku शुरू करें\" का भी इस्तेमाल कर सकते हैं।</string>
+    <string name="wifi_scan_adb_wireless">Android 11 या उससे नया\n1. Shizuku खोलें और उसके वायरलेस डिबगिंग पेयरिंग और स्टार्टअप के चरणों का पालन करें।\n2. यहाँ लौटकर Open Headunit को अनुमति दें।\n\nपेयरिंग के लिए वाई-फ़ाई कनेक्शन ज़रूरी हो सकता है। Android Auto कनेक्ट करने से पहले सेटअप पूरा करें। वायरलेस डिबगिंग उपलब्ध न हो, तो Shizuku में कंप्यूटर/USB के निर्देशों का पालन करें।</string>
+    <string name="wifi_scan_authorize">Open Headunit को अनुमति दें</string>
+    <string name="wifi_scan_common_help">1. Shizuku इंस्टॉल करें।\n2. नीचे दिए FYT या सामान्य डिवाइस वाले तरीके से इसकी सेवा शुरू करें।\n3. इस स्क्रीन पर Open Headunit को अनुमति दें।</string>
+    <string name="wifi_scan_continue">जारी रखें</string>
+    <string name="wifi_scan_detail_allowed">Open Headunit की पहुँच: अनुमति मिली है</string>
+    <string name="wifi_scan_detail_debugging_off">USB डिबगिंग: बंद</string>
+    <string name="wifi_scan_detail_debugging_on">USB डिबगिंग: चालू</string>
+    <string name="wifi_scan_detail_fyt_available">FYT स्टार्टअप: उपलब्ध</string>
+    <string name="wifi_scan_detail_fyt_busy">FYT स्टार्टअप: मौजूदा प्रक्रिया पूरी होने तक रुकें</string>
+    <string name="wifi_scan_detail_fyt_install">FYT स्टार्टअप: पहले Shizuku इंस्टॉल करें</string>
+    <string name="wifi_scan_detail_fyt_recovery">FYT स्टार्टअप: पहले ADB की सफ़ाई पूरी करें</string>
+    <string name="wifi_scan_detail_fyt_running">FYT स्टार्टअप: ज़रूरी नहीं, Shizuku पहले से चल रहा है</string>
+    <string name="wifi_scan_detail_fyt_unavailable">FYT स्टार्टअप: इस डिवाइस या Android वर्शन पर उपलब्ध नहीं</string>
+    <string name="wifi_scan_detail_installed">Shizuku ऐप: इंस्टॉल है</string>
+    <string name="wifi_scan_detail_not_allowed">Open Headunit की पहुँच: अनुमति नहीं मिली है</string>
+    <string name="wifi_scan_detail_not_installed">Shizuku ऐप: इंस्टॉल नहीं है</string>
+    <string name="wifi_scan_detail_permission_unknown">Open Headunit की पहुँच: Shizuku शुरू करने के बाद जाँचें</string>
+    <string name="wifi_scan_detail_running">Shizuku सेवा: चल रही है</string>
+    <string name="wifi_scan_detail_stopped">Shizuku सेवा: नहीं चल रही</string>
+    <string name="wifi_scan_developer_settings">डिबगिंग सेटिंग खोलें</string>
+    <string name="wifi_scan_done">हो गया</string>
+    <string name="wifi_scan_enable">वायरलेस कनेक्शन के दौरान रोकें</string>
+    <string name="wifi_scan_explanation">Native वायरलेस कनेक्शन के दौरान वाई-फ़ाई की अपने आप होने वाली खोज रोकें। कनेक्शन खत्म होने पर नियंत्रण छोड़ दिया जाता है।\n\nShizuku ज़रूरी है। सेटिंग में बदलाव तुरंत लागू होते हैं।</string>
+    <string name="wifi_scan_fyt_adb_owned">वायरलेस ADB: Open Headunit द्वारा प्रबंधित · नीचे दिए बटन से बंद करें</string>
+    <string name="wifi_scan_fyt_adb_unowned">वायरलेस ADB: Open Headunit द्वारा प्रबंधित कोई सेशन नहीं</string>
+    <string name="wifi_scan_fyt_authorize">शुरू हो रहा है… अगर इस डिवाइस पर डिबगिंग अनुमति का संदेश दिखे, तो उसे स्वीकार करें।</string>
+    <string name="wifi_scan_fyt_close_help">वायरलेस ADB बंद करना\n• सबसे पहले वाई-फ़ाई की खोज बहाल करता है। बहाली विफल होने पर ADB रिकवरी के लिए खुला रहता है।\n• Shizuku रुक सकता है या USB डिबगिंग डिसकनेक्ट हो सकती है।\n• कनेक्शन पर FYT का अपने आप शुरू होना बंद कर देता है। इसे फिर चालू करने के लिए FYT स्टार्ट बटन का इस्तेमाल करें।\n\nइस ऐप के पास बंद करने के लिए कोई ADB सेशन न होने पर बटन बंद रहता है।</string>
+    <string name="wifi_scan_fyt_confirm">इस FYT डिवाइस पर Shizuku शुरू करें।\n\n• \"वायरलेस ADB बंद करें\" पर टैप करने तक वायरलेस ADB खुला रहता है।\n• डिबगिंग अनुमति का संदेश दिखे, तो उसे स्वीकार करें।\n• यहाँ सिर्फ़ Open Headunit द्वारा खोला गया ADB बंद होता है। पहले से मौजूद ADB सेटिंग नहीं बदलतीं। भरोसेमंद नेटवर्क इस्तेमाल करें।\n\nसेटअप के बाद, यह विकल्प चालू हो और Shizuku बंद हो, तो हर Native वायरलेस कनेक्शन पर एक बार इसे शुरू करने की कोशिश होती है। Android डिबगिंग अनुमति फिर माँग सकता है।</string>
+    <string name="wifi_scan_fyt_failed">Shizuku शुरू नहीं हो सका। Shizuku में दिए स्टार्टअप निर्देशों का पालन करें।</string>
+    <string name="wifi_scan_fyt_failed_at">Shizuku सेटअप इस चरण पर विफल हुआ: %1$s</string>
+    <string name="wifi_scan_fyt_finished">Shizuku शुरू हो गया। जारी रखने के लिए पहुँच की अनुमति दें।</string>
+    <string name="wifi_scan_fyt_help">समर्थित FYT डिवाइस यहीं से सीधे Shizuku शुरू कर सकते हैं।\nइस्तेमाल के दौरान वायरलेस ADB खुला रखें और ज़रूरत पड़ने पर नीचे दिए बटन से बंद करें।</string>
+    <string name="wifi_scan_fyt_manual_setup">इस फ़र्मवेयर पर अस्थायी ADB या Shizuku स्टार्टअप पूरा नहीं हुआ। डेवलपर सेटिंग में USB डिबगिंग चालू करें और फिर कोशिश करें। डिबगिंग अनुमति का संदेश दिखे, तो उसे स्वीकार करें। फिर भी विफल हो, तो Shizuku ऐप में दिए स्टार्टअप निर्देशों का पालन करें।</string>
+    <string name="wifi_scan_fyt_recovery">ADB की सफ़ाई पूरी नहीं हुई। फिर कोशिश करने के लिए \"वायरलेस ADB बंद करें\" पर टैप करें। विफल हो, तो सिस्टम सेटिंग में डिबगिंग बंद करें या डिवाइस रीस्टार्ट करें।</string>
+    <string name="wifi_scan_fyt_restore">वायरलेस ADB बंद करें</string>
+    <string name="wifi_scan_fyt_restore_scans">वाई-फ़ाई खोज की सेटिंग बहाल नहीं हो सकीं, इसलिए वायरलेस ADB खुला छोड़ दिया गया। Shizuku को चलता रखें, Open Headunit को अनुमति दें और फिर कोशिश करें। आप ऊपर दिए वाई-फ़ाई रिकवरी विकल्प का भी इस्तेमाल कर सकते हैं।</string>
+    <string name="wifi_scan_fyt_restored">Open Headunit द्वारा खोला गया ADB अब सक्रिय नहीं है।</string>
+    <string name="wifi_scan_fyt_stage_connect">ADB कनेक्शन और डिबगिंग मंज़ूरी</string>
+    <string name="wifi_scan_fyt_stage_open">वायरलेस ADB खोला जा रहा है</string>
+    <string name="wifi_scan_fyt_stage_prepare">स्टार्टअप की ज़रूरी शर्तें जाँची जा रही हैं</string>
+    <string name="wifi_scan_fyt_stage_restore">ADB बंद करके उसकी सेटिंग बहाल की जा रही हैं</string>
+    <string name="wifi_scan_fyt_stage_start">Shizuku स्टार्टर चलाया जा रहा है</string>
+    <string name="wifi_scan_fyt_stage_vendor">FYT सेवा से जुड़ा जा रहा है</string>
+    <string name="wifi_scan_fyt_stage_wait">Shizuku सेवा का इंतज़ार है</string>
+    <string name="wifi_scan_fyt_start">इस FYT डिवाइस पर Shizuku शुरू करें</string>
+    <string name="wifi_scan_help">Shizuku सेटअप में मदद</string>
+    <string name="wifi_scan_install">Shizuku इंस्टॉल करें</string>
+    <string name="wifi_scan_legacy">Android 8–12L\n• वाई-फ़ाई डायरेक्ट: खोज की पिछली स्थिति पढ़ी नहीं जा सकती। डिसकनेक्ट करने या यह विकल्प बंद करने पर खोज चालू हो जाती है, भले ही वह पहले बंद रही हो।\n• हॉटस्पॉट: सामान्य वाई-फ़ाई बंद होना चाहिए। खोज की पिछली सेटिंग बाद में बहाल हो जाती है।\n\nकमांड स्वीकार होने का मतलब यह नहीं कि हर खोज रुक गई।</string>
+    <string name="wifi_scan_legacy_limit">Android 8–10 पर नवीनीकरण\n• कनेक्ट होने पर रोकने का अनुरोध भेजा जाता है, फिर कनेक्शन के दौरान हर पाँच मिनट पर।\n• Android अनुरोधों के बीच खोज चालू कर सकता है। यह अंतराल बार-बार होने वाली सफ़ाई को सीमित करता है, पर हर खोज को रोके नहीं रख सकता।\n\nखोज चालू करना विफल हो, तो Shizuku को चलता रखें और फिर कोशिश करें। रीबूट करने पर यह अस्थायी नियंत्रण रीसेट हो जाता है।</string>
+    <string name="wifi_scan_off">बंद</string>
+    <string name="wifi_scan_open_shizuku">Shizuku खोलें</string>
+    <string name="wifi_scan_other_help">FYT स्टार्टअप उपलब्ध न हो, तो Shizuku शुरू करने के लिए नीचे दिया तरीका अपनाएँ।</string>
+    <string name="wifi_scan_permission_explanation">Shizuku की मंज़ूरी से खोज को रोका और इस्तेमाल के बाद छोड़ा जा सकता है। यह Android की लोकेशन और आस-पास के डिवाइस की अनुमतियों से अलग है।\n\n\"Open Headunit को अनुमति दें\" पर टैप करें और Shizuku में मंज़ूरी दें।\nपहले अस्वीकार करने की वजह से संदेश न दिखे, तो Shizuku ऐप में पहुँच की अनुमति दें।</string>
+    <string name="wifi_scan_prepare">Shizuku सेट अप करें</string>
+    <string name="wifi_scan_recovery_notice">आपके पिछले कनेक्शन के लिए बदली गई वाई-फ़ाई सेटिंग बहाल करें।</string>
+    <string name="wifi_scan_restore_short">बहाल करें</string>
+    <string name="wifi_scan_restore_system">Android में वाई-फ़ाई स्कैनिंग बहाल करें</string>
+    <string name="wifi_scan_retry">फिर कोशिश करें</string>
+    <string name="wifi_scan_section_common">सामान्य सेटअप</string>
+    <string name="wifi_scan_section_fyt">FYT डिवाइस पर</string>
+    <string name="wifi_scan_section_other">अन्य डिवाइस पर</string>
+    <string name="wifi_scan_status_enabled">चालू</string>
+    <string name="wifi_scan_status_working">अपडेट हो रहा है…</string>
+    <string name="wifi_scan_summary_adb_recovery">ADB की सफ़ाई ज़रूरी है</string>
+    <string name="wifi_scan_summary_changed">लागू नहीं हुआ · वाई-फ़ाई सेटिंग कहीं और बदली गई</string>
+    <string name="wifi_scan_summary_failed">वाई-फ़ाई स्कैन सेटिंग नहीं बदली जा सकी</string>
+    <string name="wifi_scan_summary_install">Shizuku इंस्टॉल नहीं है</string>
+    <string name="wifi_scan_summary_native">Native कनेक्शन मोड ज़रूरी है</string>
+    <string name="wifi_scan_summary_permission">Shizuku में Open Headunit को अनुमति दें</string>
+    <string name="wifi_scan_summary_recovery">वाई-फ़ाई की पिछली सेटिंग बहाल करनी है</string>
+    <string name="wifi_scan_summary_start">Shizuku सेवा नहीं चल रही</string>
+    <string name="wifi_scan_summary_unsupported">इस Android वर्शन पर इस कनेक्शन तरीके के साथ समर्थित नहीं</string>
+    <string name="wifi_scan_summary_update">यह विकल्प इस्तेमाल करने के लिए Shizuku अपडेट करें</string>
+    <string name="wifi_scan_summary_wifi_off">हॉटस्पॉट इस्तेमाल करते समय सामान्य वाई-फ़ाई बंद होना चाहिए</string>
+    <string name="wifi_scan_title">वाई-फ़ाई की अपने आप होने वाली खोज रोकें (Shizuku)</string>
+    <string name="wifi_scan_wifi_settings">वाई-फ़ाई सेटिंग खोलें</string>
+    <string name="device_specific_pause_projection_reverse_help">जब कार रिवर्स गियर में होती है, ऐप Android Auto का वीडियो फ़ोकस छोड़ देता है ताकि रियर कैमरा दिख सके। रिवर्स खत्म होने पर प्रोजेक्शन लौट आता है। ऐप गियर की जानकारी यूनिट के MCU से पढ़ता है, इसलिए यह फ़िक्स केवल वहीं चलता है जहाँ ऐप MCU तक पहुँच सके।</string>
 </resources>

@@ -103,26 +103,45 @@
         android:layout_height="0dp"
         android:layout_weight="1">
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/settingsCategories"
+        <!-- The rail and the button that folds it to its icons. Its width is set in code. -->
+        <LinearLayout
+            android:id="@+id/settingsRail"
             android:layout_width="@dimen/settings_rail_width"
             android:layout_height="match_parent"
             android:layout_alignParentStart="true"
             android:layout_alignParentLeft="true"
-            android:clipToPadding="false"
-            android:paddingStart="8dp"
-            android:paddingLeft="8dp"
-            android:paddingTop="4dp"
-            android:paddingEnd="8dp"
-            android:paddingRight="8dp"
-            android:paddingBottom="16dp" />
+            android:orientation="vertical">
+
+            <ImageButton
+                android:id="@+id/settingsRailToggle"
+                style="@style/SettingsIconButton"
+                android:layout_marginStart="8dp"
+                android:layout_marginLeft="8dp"
+                android:contentDescription="@string/settings_rail_collapse"
+                app:srcCompat="@drawable/ic_sym_chevron_right"
+                app:tint="?attr/settingsOnSurfaceVariant" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/settingsCategories"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:clipToPadding="false"
+                android:paddingStart="8dp"
+                android:paddingLeft="8dp"
+                android:paddingTop="4dp"
+                android:paddingEnd="8dp"
+                android:paddingRight="8dp"
+                android:paddingBottom="16dp" />
+
+        </LinearLayout>
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/settingsRecyclerView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_toEndOf="@id/settingsCategories"
-            android:layout_toRightOf="@id/settingsCategories"
+            android:layout_toEndOf="@id/settingsRail"
+            android:layout_toRightOf="@id/settingsRail"
             android:layout_alignWithParentIfMissing="true"
             android:clipToPadding="false"
             android:paddingStart="@dimen/settings_content_padding_start"

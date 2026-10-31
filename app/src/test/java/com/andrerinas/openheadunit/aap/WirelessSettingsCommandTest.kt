@@ -4,6 +4,8 @@ import android.os.SystemClock
 import androidx.appcompat.app.AppCompatDelegate
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.AppComponent
+import com.andrerinas.openheadunit.connection.ConnectionOperation
+import com.andrerinas.openheadunit.connection.AppExitPolicy
 import com.andrerinas.openheadunit.connection.CommManager
 import com.andrerinas.openheadunit.connection.wifi.WifiLauncherManager
 import kotlinx.coroutines.Job
@@ -38,7 +40,7 @@ class WirelessSettingsCommandTest {
                 `when`(component.commManager).thenReturn(comm)
                 val saved = CommManager.ConnectionState.Disconnected(reason = CommManager.DisconnectReason.SETTINGS_RESTART)
                 val state = MutableStateFlow<CommManager.ConnectionState>(saved)
-                for ((name, value) in listOf("_connectionState" to state, "transportLifecycleLock" to Any())) {
+                for ((name, value) in listOf("_connectionState" to state, "transportLifecycleLock" to Any(), "appExitPolicy" to AppExitPolicy())) {
                     CommManager::class.java.getDeclaredField(name).apply { isAccessible = true }.set(comm, value)
                 }
                 val retry = Job()
@@ -46,11 +48,11 @@ class WirelessSettingsCommandTest {
                 val wireless = mock(WifiLauncherManager::class.java)
                 AapService::class.java.getDeclaredField("wifiLauncherManager").apply { isAccessible = true }
                     .set(service, wireless)
-                service.stopWirelessForCommand(fromSettings = fromSave)
+                service.stopWirelessForCommand(fromSettings = fromSave, ticket = comm.appConnectionTicket())
                 assertSame(saved, state.value)
                 assertEquals(fromSave, saved.acceptsSettingsRestart(state.value))
                 assertEquals(!fromSave, retry.isCancelled)
-                verify(wireless).stop()
+                verify(wireless).detachForOperation(org.mockito.kotlin.any())
                 retry.cancel()
             }
         }
@@ -69,10 +71,11 @@ class WirelessSettingsCommandTest {
             `when`(component.commManager).thenReturn(comm)
             val saved = CommManager.ConnectionState.Disconnected(reason = CommManager.DisconnectReason.SETTINGS_RESTART)
             val state = MutableStateFlow<CommManager.ConnectionState>(saved)
-            for ((name, value) in listOf("_connectionState" to state, "transportLifecycleLock" to Any())) {
+            for ((name, value) in listOf("_connectionState" to state, "transportLifecycleLock" to Any(), "appExitPolicy" to AppExitPolicy())) {
                 CommManager::class.java.getDeclaredField(name).apply { isAccessible = true }.set(comm, value)
             }
             val manager = mock(WifiLauncherManager::class.java, CALLS_REAL_METHODS)
+            WifiLauncherManager::class.java.getDeclaredField("service").apply { isAccessible = true }.set(manager, service)
             val shared = com.andrerinas.openheadunit.connection.wifi.WifiLauncherSharedServices(service)
             WifiLauncherManager::class.java.getDeclaredField("sharedServices").apply { isAccessible = true }.set(manager, shared)
             AapService::class.java.getDeclaredField("wifiLauncherManager").apply { isAccessible = true }.set(service, manager)
@@ -85,16 +88,16 @@ class WirelessSettingsCommandTest {
             val context = mock(android.content.Context::class.java)
             try {
                 instance.set(null, service)
-                AapService.applyWirelessSettings(context, startWireless = false)
+                AapService.applyWirelessSettings(service, startWireless = false, ticket = comm.appConnectionTicket())
                 verify(oldServer).stopServer()
                 assertNull(shared.wirelessServer)
-                verify(context, never()).startService(org.mockito.kotlin.any())
+                verify(service, never()).startService(org.mockito.kotlin.any())
                 // This is the listener publication performed by the later Self retry. There is
                 // no queued service command left to tear it down after this boundary.
                 serverField.set(shared, replacement)
                 assertTrue(saved.acceptsSettingsRestart(state.value))
                 verifyNoInteractions(replacement)
-                service.stopWirelessForCommand(fromSettings = false)
+                service.stopWirelessForCommand(fromSettings = false, ticket = comm.appConnectionTicket())
                 verify(replacement).stopServer()
                 assertNull(shared.wirelessServer)
                 assertFalse(saved.acceptsSettingsRestart(state.value))

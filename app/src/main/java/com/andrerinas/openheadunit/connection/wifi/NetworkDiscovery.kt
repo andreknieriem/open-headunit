@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.net.wifi.WifiManager
 import android.os.Build
+import com.andrerinas.openheadunit.connection.ConnectionOperation
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.connection.HeldServerSocket
 import com.andrerinas.openheadunit.connection.SameEndpointConnectPolicy
@@ -20,6 +21,8 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlin.coroutines.coroutineContext
 import java.net.Inet4Address
@@ -46,6 +49,18 @@ class NetworkDiscovery(private val context: Context, private val listener: Liste
 
         /** Held across the read-modify-write of [inFlightScan]. Never held while blocking. */
         private val PROBE_LOCK = Any()
+
+        /**
+         * Held by a scan from its first probe through its last cleanup, in every instance.
+         *
+         * Joining the job a new scan replaces is not enough on its own. That join is cancellable,
+         * so when the replacement is itself replaced, its wait ends while the scan it was waiting
+         * for is still inside an uninterruptible dial; the newest scan then waits only for the
+         * replacement and probes alongside the old dial, whose late hold closes the fresh socket.
+         * A scan that never acquired this lock never probed, so cancellation before or during the
+         * wait cannot let a later scan overtake one that is still probing.
+         */
+        private val PROBE_MUTEX = Mutex()
     }
 
     /**
@@ -88,13 +103,13 @@ class NetworkDiscovery(private val context: Context, private val listener: Liste
     }
 
     interface Listener {
-        fun onServiceFound(ip: String, port: Int, socket: Socket? = null)
+        fun onServiceFound(ip: String, port: Int, socket: Socket?, operation: ConnectionOperation)
         /**
          * [wasOneShot] is the disposition of the scan that just finished, not of the last request.
          * A one-shot request made while a continuous scan was already running is ignored, so the
          * running scan has to report its own kind or it would silently lose its re-arm.
          */
-        fun onScanFinished(wasOneShot: Boolean)
+        fun onScanFinished(wasOneShot: Boolean, operation: ConnectionOperation)
     }
 
     /**
@@ -103,10 +118,17 @@ class NetworkDiscovery(private val context: Context, private val listener: Liste
      * it is still unwinding, and a continuous sweep that reported itself as one-shot would decline
      * to re-arm and end discovery for good.
      */
-    private class Generation(initialOneShot: Boolean) {
+    private class Generation(initialOneShot: Boolean, val operation: ConnectionOperation) {
         /** Written by a promotion on another thread, read by this scan's own `finally`. */
         @Volatile
         var oneShot: Boolean = initialOneShot
+
+        /**
+         * Set under [PROBE_LOCK] as this scan reports completion. Its listener may rearm at once,
+         * and that request reaches [startScan] before the scan's own IO return completes the job,
+         * so a still-active job is not proof the scan can serve another request.
+         */
+        var completionDelivered: Boolean = false
     }
 
     /** @Volatile: written under [PROBE_LOCK], read by [stop] and by the promotion check. */
@@ -124,62 +146,79 @@ class NetworkDiscovery(private val context: Context, private val listener: Liste
      * [oneShot] belongs to the scan being started, not to the instance, because callers that want
      * a single sweep and callers that want the 10 s re-arm now share one instance.
      *
-     * @return `true` if a scan was started, `false` if one was already in flight and this request
-     *   was folded into it. A caller that kicked the scan because the *network changed* wants to
-     *   know the difference — see `AapService`'s network monitor.
+     * @return `true` if a scan was started, `false` if the ticket was rejected or the request was
+     *   folded into a scan from the same Stop epoch. A caller that kicked the scan because the
+     *   *network changed* wants to know the difference — see `AapService`'s network monitor.
      */
-    fun startScan(oneShot: Boolean = false): Boolean {
+    fun startScan(
+        oneShot: Boolean = false,
+        operation: ConnectionOperation,
+    ): Boolean {
+        // The lifecycle lock may call stop(), which takes PROBE_LOCK. Never acquire it in the
+        // reverse order, and never let a rejected old input cancel or promote a current scan.
+        val commManager = App.provide(context).commManager
+        if (!commManager.isCurrent(operation)) return false
         var started = false
-        synchronized(PROBE_LOCK) {
-            val previous = scanJob
-            // A healthy scan is already running: leave it alone. Callers that want a fresh
-            // sweep call stop() first, and a cancelled job falls through to the join below.
-            if (previous != null && previous.isActive && !previous.isCancelled) {
-                // Continuous wins. Tying a one-shot scan to a caller that wanted the re-arm would
-                // otherwise end discovery altogether: the running scan would finish, decline to
-                // reschedule, and the request that asked for more was already dropped here.
+        commManager.withAppConnectionLifecycleLock {
+            synchronized(PROBE_LOCK) {
+                if (!commManager.isCurrent(operation)) return@synchronized
                 val running = currentGeneration
-                if (!oneShot && running != null && running.oneShot) {
-                    AppLog.i("NetworkDiscovery: in-flight scan promoted to continuous")
-                    running.oneShot = false
+                // A validated request can wait here while Stop/Open and a newer start overtake it.
+                // Stop epochs only advance; do not let that older request replace the newer owner.
+                if (running != null && operation.ticket < running.operation.ticket) return@synchronized
+                val previous = scanJob
+                if (previous != null && previous.isActive && !previous.isCancelled &&
+                    running?.completionDelivered != true
+                ) {
+                    if (running?.operation?.ticket == operation.ticket && running.operation.save === operation.save) {
+                        // Continuous wins, but only within the same Stop epoch. A compatible Open
+                        // keeps that ticket, so it still folds into and can promote the running scan.
+                        if (!oneShot && running.oneShot) {
+                            AppLog.i("NetworkDiscovery: in-flight scan promoted to continuous")
+                            running.oneShot = false
+                        }
+                        return@synchronized
+                    }
+                    // Fresh input after Stop/Open must own a new generation. Cancellation alone does
+                    // not release its sockets; newScanJob waits for its probing to end first.
+                    previous.cancel()
                 }
-                return false
-            }
 
-            // [BUG_FIX] The per-instance guard above is not enough on its own. AapService used to
-            // answer a scan request by throwing this object away and building a new one, whose
-            // scanJob is null -- so the guard saw nothing to wait for and the new instance probed
-            // port 5277 while the discarded one still had a probe in flight. One button press did
-            // exactly that, twice, four milliseconds apart. The resource being protected is the
-            // phone's head unit server, which is process-wide: it binds one connection and never
-            // rebinds, so a connection nobody follows through leaves it deaf until the user
-            // restarts it by hand. Serialise on that resource rather than on whoever happens to
-            // own the instance.
-            //
-            // [BUG_FIX] The test is "not finished", not "still active". Every cross-instance case
-            // arises *because* the previous instance was stopped -- AapService cancels its scan and
-            // nulls the field together -- and a cancelled job is in Cancelling, where isActive is
-            // already false while its probes are still unwinding. Asking for isActive here skipped
-            // the one state this guard exists to catch, so it never engaged on the path it was
-            // written for.
-            val priorProbe = inFlightScan?.takeIf { it !== previous && !it.isCompleted }
+                // [BUG_FIX] The per-instance guard above is not enough on its own. AapService used to
+                // answer a scan request by throwing this object away and building a new one, whose
+                // scanJob is null -- so the guard saw nothing to wait for and the new instance probed
+                // port 5277 while the discarded one still had a probe in flight. One button press did
+                // exactly that, twice, four milliseconds apart. The resource being protected is the
+                // phone's head unit server, which is process-wide: it binds one connection and never
+                // rebinds, so a connection nobody follows through leaves it deaf until the user
+                // restarts it by hand. Serialise on that resource rather than on whoever happens to
+                // own the instance.
+                //
+                // [BUG_FIX] The test is "not finished", not "still active". Every cross-instance case
+                // arises *because* the previous instance was stopped -- AapService cancels its scan and
+                // nulls the field together -- and a cancelled job is in Cancelling, where isActive is
+                // already false while its probes are still unwinding. Asking for isActive here skipped
+                // the one state this guard exists to catch, so it never engaged on the path it was
+                // written for.
+                val priorProbe = inFlightScan?.takeIf { it !== previous && !it.isCompleted }
 
-            AppLog.i("NetworkDiscovery: Starting scan...")
-            if (priorProbe != null) {
-                AppLog.i("NetworkDiscovery: waiting for an in-flight probe before scanning")
-            }
+                AppLog.i("NetworkDiscovery: Starting scan...")
+                if (priorProbe != null) {
+                    AppLog.i("NetworkDiscovery: waiting for an in-flight probe before scanning")
+                }
 
-            val generation = Generation(oneShot)
-            val job = newScanJob(previous, priorProbe, generation)
-            currentGeneration = generation
-            scanJob = job
-            inFlightScan = job
-            // Do not hold on to a finished scan for the life of the process; the next instance
-            // only ever needs the one that might still be probing.
-            job.invokeOnCompletion {
-                synchronized(PROBE_LOCK) { if (inFlightScan === job) inFlightScan = null }
+                val generation = Generation(oneShot, operation)
+                val job = newScanJob(previous, priorProbe, generation)
+                currentGeneration = generation
+                scanJob = job
+                inFlightScan = job
+                // Do not hold on to a finished scan for the life of the process; the next instance
+                // only ever needs the one that might still be probing.
+                job.invokeOnCompletion {
+                    synchronized(PROBE_LOCK) { if (inFlightScan === job) inFlightScan = null }
+                }
+                started = true
             }
-            started = true
         }
         return started
     }
@@ -189,31 +228,42 @@ class NetworkDiscovery(private val context: Context, private val listener: Liste
             // Cancellation is cooperative, so a stopped scan still has probes in flight and
             // still holds a connected socket it has not handed over yet. Two scans probing
             // port 5277 at once is how the head unit server ends up bound to a connection
-            // nobody owns. Wait for the old one to unwind before opening any of our own.
+            // nobody owns. Wait for the old one to unwind before opening any of our own. These
+            // joins end early when this scan is itself replaced; PROBE_MUTEX covers that case.
             previous?.join()
             priorProbe?.join()
-            // Cleared here rather than at the call, so the set belongs to this generation and
-            // the outgoing scan keeps its own dedupe while it winds down.
-            reportedIps.clear()
-            probeHelperPort = readProbeHelperPort()
-            try {
-                // 1. Quick Scan: Check likely Gateways first
-                AppLog.i("NetworkDiscovery: Step 1 - Quick Gateway Scan")
-                val gatewayFound = scanGateways()
-
-                if (gatewayFound) {
-                    AppLog.i("NetworkDiscovery: Gateway found service, skipping subnet scan.")
-                    return@launch
-                }
-
-                // 2. Deep Scan: Check entire Subnet
-                AppLog.i("NetworkDiscovery: Step 2 - Full Subnet Scan")
-                scanSubnet()
-            } finally {
-                withContext(Dispatchers.Main) {
-                    // Read now rather than captured at the top: a continuous request that arrived
-                    // while this scan was running promotes it, and it has to hear about that.
-                    listener.onScanFinished(generation.oneShot)
+            PROBE_MUTEX.withLock {
+                // Cleared here rather than at the call, so the set belongs to this generation and
+                // the outgoing scan keeps its own dedupe while it winds down.
+                reportedIps.clear()
+                probeHelperPort = readProbeHelperPort()
+                try {
+                    // 1. Quick Scan: Check likely Gateways first
+                    AppLog.i("NetworkDiscovery: Step 1 - Quick Gateway Scan")
+                    if (scanGateways(generation.operation)) {
+                        AppLog.i("NetworkDiscovery: Gateway found service, skipping subnet scan.")
+                    } else {
+                        // 2. Deep Scan: Check entire Subnet
+                        AppLog.i("NetworkDiscovery: Step 2 - Full Subnet Scan")
+                        scanSubnet(generation.operation)
+                    }
+                } finally {
+                    withContext(Dispatchers.Main) {
+                        // From here on a request needs a new generation; this one will not scan
+                        // again, and its listener may rearm before this job has completed.
+                        val commManager = App.provide(context).commManager
+                        val ownsCompletion = commManager.withAppConnectionLifecycleLock {
+                            synchronized(PROBE_LOCK) {
+                                if (currentGeneration !== generation || !commManager.isCurrent(generation.operation)) false
+                                else { generation.completionDelivered = true; true }
+                            }
+                        }
+                        // Read now rather than captured at the top: a continuous request that
+                        // arrived while this scan was running promotes it, and it has to hear
+                        // about that.
+                        if (ownsCompletion)
+                            listener.onScanFinished(generation.oneShot, generation.operation)
+                    }
                 }
             }
         }
@@ -242,7 +292,7 @@ class NetworkDiscovery(private val context: Context, private val listener: Liste
         null
     }
 
-    private suspend fun scanGateways(): Boolean {
+    private suspend fun scanGateways(operation: ConnectionOperation): Boolean {
         var foundAny = false
         var probed = 0
         var responded = 0
@@ -279,7 +329,7 @@ class NetworkDiscovery(private val context: Context, private val listener: Liste
                 AppLog.i("NetworkDiscovery: Checking suspects: $suspects")
                 for (ip in suspects) {
                     probed++
-                    if (checkAndReport(ip)) {
+                    if (checkAndReport(ip, operation)) {
                         foundAny = true
                         responded++
                     }
@@ -299,7 +349,7 @@ class NetworkDiscovery(private val context: Context, private val listener: Liste
         return foundAny
     }
 
-    private suspend fun scanSubnet(): Unit = coroutineScope {
+    private suspend fun scanSubnet(operation: ConnectionOperation): Unit = coroutineScope {
         val stationIp = NetworkAddresses.stationIpv4(context)
         val myIp = DiscoverySubnetPolicy.address(stationIp, firstInterfaceIpv4())
         val subnet = DiscoverySubnetPolicy.subnetOf(myIp)
@@ -323,7 +373,7 @@ class NetworkDiscovery(private val context: Context, private val listener: Liste
             // reach these. Detached, they outlived the scan that started them and kept
             // probing a subnet the device had already left.
             tasks.add(async(Dispatchers.IO) {
-                checkAndReport(ip)
+                checkAndReport(ip, operation)
             })
         }
 
@@ -354,7 +404,7 @@ class NetworkDiscovery(private val context: Context, private val listener: Liste
         return null
     }
 
-    private suspend fun checkAndReport(ip: String): Boolean {
+    private suspend fun checkAndReport(ip: String, operation: ConnectionOperation): Boolean {
         if (reportedIps.contains(ip)) return true
 
         // [BUG_FIX] Check before connecting, not only after. Socket.connect() is not interruptible,
@@ -363,11 +413,14 @@ class NetworkDiscovery(private val context: Context, private val listener: Liste
         // follows through, whether or not we close it afterwards. Cancellation means stop working,
         // and connecting is work.
         coroutineContext.ensureActive()
+        if (!App.provide(context).commManager.isCurrent(operation)) {
+            throw CancellationException("Discovery scan cancelled by Stop")
+        }
 
         // Check Port 5289 (Wifi Launcher) - prioritizing this. Skipped where no helper can be
         // listening: the probe is held open 500 ms per address, and that is dead time in front of
         // the 5277 dial the sweep is actually for.
-        val launcherSocket = if (probeHelperPort) checkPort(ip, 5289, timeout = 300) else null
+        val launcherSocket = if (probeHelperPort) checkPort(ip, 5289, operation, timeout = 300) else null
         if (launcherSocket != null) {
             // The phone-side Wireless Helper watches for this inbound probe to auto-launch
             // itself. Hold the socket open briefly before closing so it has time to react;
@@ -383,7 +436,8 @@ class NetworkDiscovery(private val context: Context, private val listener: Liste
                     try { launcherSocket.close() } catch (e: Exception) {}
                     released = true
                     AppLog.i("NetworkDiscovery: Wifi Launcher probe released; awaiting inbound helper connection on 5288")
-                    listener.onServiceFound(ip, 5289)
+                    if (App.provide(context).commManager.isCurrent(operation))
+                        listener.onServiceFound(ip, 5289, null, operation)
                 }
             } finally {
                 // The hold is deliberate (it is what wakes the helper), so this socket is open
@@ -396,9 +450,12 @@ class NetworkDiscovery(private val context: Context, private val listener: Liste
         // Check Port 5277 (Standard Headunit). Re-checked because the 5289 probe above can have
         // spent 300 ms, or 500 ms more holding a launcher socket open, since the last check.
         coroutineContext.ensureActive()
+        if (!App.provide(context).commManager.isCurrent(operation)) {
+            throw CancellationException("Discovery scan cancelled by Stop")
+        }
 
         // Check Port 5277 (Standard Headunit)
-        val serverSocket = checkPort(ip, 5277, timeout = 300)
+        val serverSocket = checkPort(ip, 5277, operation, timeout = 300)
         if (serverSocket != null) {
             AppLog.i("NetworkDiscovery: Found Headunit Server on $ip:5277")
             reportedIps.add(ip)
@@ -407,7 +464,8 @@ class NetworkDiscovery(private val context: Context, private val listener: Liste
             try {
                 withContext(Dispatchers.Main) {
                     // Ownership passes to the listener, which is why this is not closed here.
-                    listener.onServiceFound(ip, 5277, serverSocket)
+                    if (!App.provide(context).commManager.isCurrent(operation)) return@withContext
+                    listener.onServiceFound(ip, 5277, serverSocket, operation)
                     handedOver = true
                 }
             } finally {
@@ -420,7 +478,7 @@ class NetworkDiscovery(private val context: Context, private val listener: Liste
                 // behind.
                 // A cancelled scan closes the socket rather than delivering it: cancellation
                 // means stop working, and connecting is work.
-                if (!handedOver && HeldServerSocket.discard(serverSocket)) {
+                if (!handedOver && HeldServerSocket.adopt(serverSocket)) {
                     AppLog.w("NetworkDiscovery: Handover of $ip:5277 aborted; closing the probe socket")
                     try { serverSocket.close() } catch (e: Exception) {}
                 }
@@ -431,7 +489,10 @@ class NetworkDiscovery(private val context: Context, private val listener: Liste
         return false
     }
 
-    private fun checkPort(ip: String, port: Int, timeout: Int = 500): Socket? {
+    private fun checkPort(ip: String, port: Int, operation: ConnectionOperation, timeout: Int = 500): Socket? {
+        // The last check before the blocking dial is also the Save cancellation boundary.
+        // An already-entered socket call cannot be retracted; no monitor covers the I/O.
+        if (!App.provide(context).commManager.isCurrent(operation)) return null
         val socket = Socket()
         return try {
             socket.connect(InetSocketAddress(ip, port), timeout)

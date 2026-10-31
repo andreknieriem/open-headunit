@@ -4,6 +4,9 @@ class Intent {
     constructor(a:String){action=a}
     constructor(c:Context,k:Class<*>){}
     fun setPackage(p:String)=this
+    private val extras=mutableMapOf<String,Long>()
+    fun putExtra(name:String,value:Long)=apply{extras[name]=value}
+    fun getLongExtra(name:String,default:Long)=extras[name]?:default
 }
 open class Context {
     companion object { const val AUDIO_SERVICE="audio";const val ACTIVITY_SERVICE="activity" }

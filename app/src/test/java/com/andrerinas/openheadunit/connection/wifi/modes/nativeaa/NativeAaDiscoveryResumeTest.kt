@@ -1,5 +1,7 @@
 package com.andrerinas.openheadunit.connection.wifi.modes.nativeaa
 
+import com.andrerinas.openheadunit.connection.CommManager
+import com.andrerinas.openheadunit.connection.ConnectionOperation
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zbt.ZbtDiscovery
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zbt.ZbtDiscoveryPolicy
@@ -34,8 +36,19 @@ class NativeAaDiscoveryResumeTest {
         NativeAaHandshakeManager::class.java.getDeclaredField(field).apply { isAccessible = true }.set(manager, value)
     }
 
-    @Test fun pickedPhoneSurvivesDiscoveryAndWakesAfterAndroidFallback() {
+    private fun managerWithAuthority(): NativeAaHandshakeManager {
         val manager = mock(NativeAaHandshakeManager::class.java, CALLS_REAL_METHODS)
+        val comm = mock(CommManager::class.java)
+        val operation = ConnectionOperation(0L, null)
+        set(manager, "commManager", comm); set(manager, "operation", operation)
+        whenever(comm.isCurrent(operation)).thenReturn(true)
+        doAnswer { (it.getArgument<() -> Any?>(0)).invoke() }
+            .whenever(comm).withAppConnectionLifecycleLock<Any?>(any())
+        return manager
+    }
+
+    @Test fun pickedPhoneSurvivesDiscoveryAndWakesAfterAndroidFallback() {
+        val manager = managerWithAuthority()
         set(manager, "measuringDaemon", true)
         set(manager, "measureGeneration", 4)
         val wakes = mutableListOf<String>()
@@ -45,7 +58,7 @@ class NativeAaDiscoveryResumeTest {
             if (manager.isMeasuringDaemon()) it.callRealMethod()
             else wakes.add(it.getArgument(0))
             Unit
-        }.whenever(manager).manualPoke(any())
+        }.whenever(manager).manualPoke(any(), any())
         manager.selectDriver("11:22:33:44:55:66", explicit = true)
         assertTrue(wakes.isEmpty())
         val decision = ZbtDiscoveryPolicy.Decision(ZbtDiscoveryPolicy.Mode.IDENTITY, "QF")
@@ -64,7 +77,7 @@ class NativeAaDiscoveryResumeTest {
     }
 
     @Test fun staleTimeoutCannotDeferOrResumeReplacementArming() {
-        val manager = mock(NativeAaHandshakeManager::class.java, CALLS_REAL_METHODS)
+        val manager = managerWithAuthority()
         set(manager, "measureGeneration", 5)
         set(manager, "measuringDaemon", true)
         val decision = ZbtDiscoveryPolicy.Decision(ZbtDiscoveryPolicy.Mode.IDENTITY, "QF")
@@ -76,16 +89,16 @@ class NativeAaDiscoveryResumeTest {
     }
 
     @Test fun stoppedGenerationCannotArmOrWakeItsOldPick() {
-        val manager = mock(NativeAaHandshakeManager::class.java, CALLS_REAL_METHODS)
+        val manager = managerWithAuthority()
         set(manager, "measureGeneration", 5)
         manager.resumeAfterDaemonMeasurement(4) { fail("stale completion armed listeners") }
         assertNull(manager.pendingSelectionTargetMac)
     }
     @Test fun busyLegacyRouteStopsWithoutFalseCacheFallbackOrImmediateRearm() {
-        val manager = mock(NativeAaHandshakeManager::class.java, CALLS_REAL_METHODS)
+        val manager = managerWithAuthority()
         set(manager, "measureGeneration", 4)
         set(manager, "measuringDaemon", true)
-        set(manager, "wakeAwaitingModule", true)
+        set(manager, "wakeAwaitingModule", NativeAaHandshakeManager::class.java.getDeclaredField("operation").apply { isAccessible = true }.get(manager))
         val decision = ZbtDiscoveryPolicy.Decision(ZbtDiscoveryPolicy.Mode.REACHABILITY, "external")
         manager.completeDaemonMeasurement(4, decision, ZbtDiscovery.Measurement.Completion.CARRIER_BUSY) {
             fail("busy legacy completion immediately rearmed")

@@ -1,6 +1,8 @@
 package com.andrerinas.openheadunit.connection.wifi.modes.nativeaa
 
+import com.andrerinas.openheadunit.connection.ConnectionOperation
 import com.andrerinas.openheadunit.connection.CommManager
+import com.andrerinas.openheadunit.connection.withAppExitDispatcherForTest
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Assert.*
 import org.junit.Test
@@ -72,23 +74,37 @@ class SettingsRestartWakeTest {
     }
 
     @Test fun `deadline refresh preserves an in-flight handshake and rereads credentials`() {
-        val launcher = mock(com.andrerinas.openheadunit.connection.wifi.modes.WifiLauncherNative::class.java, CALLS_REAL_METHODS)
+        mockStatic(android.os.SystemClock::class.java).use {
         val manager = mock(com.andrerinas.openheadunit.connection.wifi.WifiLauncherManager::class.java)
+        val launcher = spy(com.andrerinas.openheadunit.connection.wifi.modes.WifiLauncherNative(
+            manager, NativeStrategy.WIFI_DIRECT))
         val shared = mock(com.andrerinas.openheadunit.connection.wifi.WifiLauncherSharedServices::class.java)
-        doReturn(manager).`when`(launcher).manager
         `when`(manager.sharedServices).thenReturn(shared)
-        doNothing().`when`(launcher).triggerWifiDirectRefresh()
+        val comm = mock(CommManager::class.java, CALLS_REAL_METHODS).withAppExitDispatcherForTest()
+        val operation = ConnectionOperation(comm.appConnectionTicket(), null)
+        val component = mock(com.andrerinas.openheadunit.AppComponent::class.java)
+        `when`(component.commManager).thenReturn(comm)
+        val app = mock(com.andrerinas.openheadunit.App::class.java)
+        com.andrerinas.openheadunit.App::class.java.getDeclaredField("component\$delegate")
+            .apply { isAccessible = true }.set(app, lazyOf(component))
+        val service = mock(com.andrerinas.openheadunit.aap.AapService::class.java)
+        `when`(service.applicationContext).thenReturn(app)
+        `when`(manager.service).thenReturn(service)
+        `when`(manager.active).thenReturn(launcher)
+        doNothing().`when`(launcher).triggerWifiDirectRefresh(operation)
         val native = mock(NativeAaHandshakeManager::class.java, CALLS_REAL_METHODS)
         val handshake = kotlinx.coroutines.Job()
         NativeAaHandshakeManager::class.java.getDeclaredField("activeHandshakeJob")
             .apply { isAccessible = true }.set(native, handshake)
         com.andrerinas.openheadunit.connection.wifi.modes.WifiLauncherNative::class.java
             .getDeclaredField("handshakeManager").apply { isAccessible = true }.set(launcher, native)
-        launcher.refreshAfterWake()
+        launcher.refreshAfterWake(operation)
         assertTrue(handshake.isActive)
-        verify(native, never()).rearmForNextSession()
-        verify(launcher).triggerWifiDirectRefresh()
+        verify(native, never()).rearmForNextSession(org.mockito.kotlin.any())
+        verify(shared).startWirelessServer(launcher, operation)
+        verify(launcher).triggerWifiDirectRefresh(operation)
         handshake.cancel()
+        }
     }
 
 }

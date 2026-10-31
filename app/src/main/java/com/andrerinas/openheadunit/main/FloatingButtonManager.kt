@@ -33,6 +33,9 @@ object FloatingButtonManager {
     }
 
     fun update(context: Context) {
+        // Activity callbacks also run for the Direct-Boot-aware USB trampoline. Check when the
+        // queued update executes so a locked-started process can use the saved settings at unlock.
+        if (!App.isUserUnlocked(context)) return
         val settings = App.provide(context).settings
         val enabled = settings.enableFloatingButton
         val permissionGranted = hasOverlayPermission(context)

@@ -51,7 +51,9 @@ object BluetoothHelper {
 
     private fun getDefaultAdapter(context: Context): BluetoothAdapter? {
         return if (Build.VERSION.SDK_INT >= 18) {
-            (context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter
+            // The system manager is optional too, not just its adapter. Missing Bluetooth
+            // must leave the home screen and non-Bluetooth connection routes usable.
+            (context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager)?.adapter
         } else {
             @Suppress("DEPRECATION")
             BluetoothAdapter.getDefaultAdapter()

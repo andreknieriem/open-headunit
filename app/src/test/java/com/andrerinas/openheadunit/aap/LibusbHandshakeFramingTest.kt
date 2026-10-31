@@ -16,8 +16,8 @@ import java.nio.ByteBuffer
 class LibusbHandshakeFramingTest {
     @Test fun `USB packet size comes from the published OUT endpoint`() = mockStatic(SystemClock::class.java).use {
         val connections = listOf(
-            LibusbProjectionConnection(mock(UsbManager::class.java), mock(UsbDevice::class.java)),
-            StandardUsbProjectionConnection(mock(UsbManager::class.java), mock(UsbDevice::class.java)))
+            LibusbProjectionConnection(mock(UsbManager::class.java), mock(UsbDevice::class.java), com.andrerinas.openheadunit.connection.ConnectionAdmission.UNRESTRICTED),
+            StandardUsbProjectionConnection(mock(UsbManager::class.java), mock(UsbDevice::class.java), com.andrerinas.openheadunit.connection.ConnectionAdmission.UNRESTRICTED))
         for (connection in connections) {
             assertEquals(0, connection.outMaxPacketSize)
             val field = connection.javaClass.getDeclaredField("endpointOut").apply { isAccessible = true }
@@ -39,7 +39,7 @@ class LibusbHandshakeFramingTest {
             val stream = stale + version + tls
             for (split in 1 until stale.size + version.size) {
                 val native = mock(UsbNative::class.java)
-                val connection = LibusbProjectionConnection(mock(UsbManager::class.java), mock(UsbDevice::class.java))
+                val connection = LibusbProjectionConnection(mock(UsbManager::class.java), mock(UsbDevice::class.java), com.andrerinas.openheadunit.connection.ConnectionAdmission.UNRESTRICTED)
                 connection.isConnected = true
                 LibusbProjectionConnection::class.java.getDeclaredField("usbNative").apply {
                     isAccessible = true

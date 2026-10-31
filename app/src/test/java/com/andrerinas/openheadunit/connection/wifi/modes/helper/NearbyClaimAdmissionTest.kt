@@ -41,7 +41,7 @@ class NearbyClaimAdmissionTest {
 
     @Test fun preemptionRejectsCandidateBeforeNearbyStopRuns() = runBlocking {
         val guard = NearbyAttemptGuard()
-        val attempt = guard.begin("phone")
+        val attempt = guard.begin("phone", 0L)
         val claim = requireNotNull(ConnectionArbiter.claim(Tier.WIRELESS_HANDSHAKE, Owner.WIRELESS_STACK, "Nearby A"))
         val admission = ConnectionAdmission { action -> guard.run(attempt, action = action) }.withClaim(claim)
         val ready = CompletableDeferred<Unit>()

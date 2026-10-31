@@ -4,6 +4,7 @@ import android.hardware.usb.UsbConstants
 import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbDeviceConnection
 import android.hardware.usb.UsbManager
+import com.andrerinas.openheadunit.connection.ConnectionAdmission
 import com.andrerinas.openheadunit.connection.ConnectionStage
 import com.andrerinas.openheadunit.connection.ConnectionStageTracker
 import com.andrerinas.openheadunit.utils.Utils
@@ -11,69 +12,67 @@ import com.andrerinas.openheadunit.utils.AppLog
 
 class UsbAccessoryMode(private val usbMgr: UsbManager) {
 
-    fun connectAndSwitch(device: UsbDevice, useLibusb: Boolean = false): Boolean {
-        val connection: UsbDeviceConnection?
-        try {
-            connection = usbMgr.openDevice(device)                 // Open device for connection
-        } catch (e: Throwable) {
+    /** Every caller supplies the authority captured by its own request or locked-boot claim. */
+    fun connectAndSwitch(device: UsbDevice, useLibusb: Boolean, admission: ConnectionAdmission): Boolean {
+        if (!admission.run {}) return false
+        val connection = try { usbMgr.openDevice(device) } catch (e: Throwable) {
             AppLog.e(e)
             return false
-        }
-
-        if (connection == null) {
-            AppLog.e("Cannot open device")
-            return false
-        }
-
-        val result = if (useLibusb) {
-            AppLog.i("UsbAccessoryMode: Performing AOA switch via native libusb...")
-            val native = UsbNative()
-            if (native.wrap(connection, 0, 0)) {
-                val code = native.accModeSwitch()
-                native.close()
-                // The code only reaches raw logcat from the native side, and an APPLOG_FILE export
-                // carries none of it. Say what it means where the reporter's log will have it.
-                if (code != 0) AppLog.w(AoaSwitchFailurePolicy.failureLine(code))
-                code == 0
-            } else {
-                AppLog.e("UsbAccessoryMode: Failed to wrap device for native AOA switch")
-                native.close()
-                AppLog.w(AoaSwitchFailurePolicy.failureLine(AoaSwitchFailurePolicy.NO_HANDLE))
-                false
-            }
-        } else {
-            switch(connection)
-        }
-        connection.close()
-
-        AppLog.i("Result: $result")
-        return result
+        } ?: run { AppLog.e("Cannot open device"); return false }
+        return try {
+            if (!admission.run {}) return false
+            val result = if (useLibusb) {
+                AppLog.i("UsbAccessoryMode: Performing AOA switch via native libusb...")
+                val native = UsbNative()
+                try {
+                    if (!admission.run {}) return false
+                    if (native.wrap(connection, 0, 0)) {
+                        if (!admission.run {}) return false
+                        val code = native.accModeSwitch()
+                        if (code != 0) AppLog.w(AoaSwitchFailurePolicy.failureLine(code))
+                        code == 0
+                    } else {
+                        AppLog.e("UsbAccessoryMode: Failed to wrap device for native AOA switch")
+                        AppLog.w(AoaSwitchFailurePolicy.failureLine(AoaSwitchFailurePolicy.NO_HANDLE))
+                        false
+                    }
+                } finally { native.close() }
+            } else switch(connection, admission)
+            AppLog.i("Result: $result")
+            result
+        } finally { connection.close() }
     }
 
-    /** Resets the device on the bus through libusb; true when the reset was issued. */
-    fun resetDevice(device: UsbDevice): Boolean {
+    /** Resets only the device whose original recovery authority still holds. */
+    fun resetDevice(device: UsbDevice, admission: ConnectionAdmission): Boolean {
         val name = UsbDeviceCompat(device).uniqueName
+        if (!admission.run {}) return false
         val connection = try { usbMgr.openDevice(device) } catch (e: Throwable) {
             AppLog.e("UsbAccessoryMode: USB reset not issued to $name: cannot open", e)
             return false
+        } ?: run { AppLog.w("UsbAccessoryMode: USB reset not issued to $name: cannot open"); return false }
+        var native: UsbNative? = null
+        return try {
+            if (!admission.run {}) return false
+            val wrapper = UsbNative()
+            native = wrapper
+            if (!admission.run {}) return false
+            val wrapped = wrapper.wrap(connection, 0, 0)
+            if (wrapped) {
+                if (!admission.run {}) return false
+                wrapper.reset()
+                AppLog.i("UsbAccessoryMode: USB reset issued to $name")
+            } else AppLog.w("UsbAccessoryMode: USB reset not issued to $name: cannot wrap for libusb")
+            wrapped
+        } finally {
+            try { native?.close() } finally { connection.close() }
         }
-        if (connection == null) {
-            AppLog.w("UsbAccessoryMode: USB reset not issued to $name: cannot open")
-            return false
-        }
-        val native = UsbNative()
-        val wrapped = native.wrap(connection, 0, 0)
-        if (wrapped) native.reset()
-        native.close()
-        connection.close()
-        if (wrapped) AppLog.i("UsbAccessoryMode: USB reset issued to $name")
-        else AppLog.w("UsbAccessoryMode: USB reset not issued to $name: cannot wrap for libusb")
-        return wrapped
     }
 
-    private fun switch(connection: UsbDeviceConnection): Boolean {
+    private fun switch(connection: UsbDeviceConnection, admission: ConnectionAdmission): Boolean {
         // Do accessory negotiation and attempt to switch to accessory mode. Called only by usb_connect()
         val buffer = ByteArray(2)
+        if (!admission.run {}) return false
         var len = connection.controlTransfer(UsbConstants.USB_DIR_IN or UsbConstants.USB_TYPE_VENDOR, ACC_REQ_GET_PROTOCOL, 0, 0, buffer, 2, USB_TIMEOUT_IN_MS)
         if (len != 2) {
             AppLog.e("Error controlTransfer len: $len")
@@ -99,17 +98,18 @@ class UsbAccessoryMode(private val usbMgr: UsbManager) {
         // Send all accessory identification strings. Abort if any transfer fails — a partial
         // identification (e.g. manufacturer sent but model missing) can cause the phone to
         // ignore the ACC_REQ_START or fail to switch into accessory mode.
-        if (!initStringControlTransfer(connection, ACC_IDX_MAN, MANUFACTURER) ||
-            !initStringControlTransfer(connection, ACC_IDX_MOD, MODEL) ||
-            !initStringControlTransfer(connection, ACC_IDX_DES, DESCRIPTION) ||
-            !initStringControlTransfer(connection, ACC_IDX_VER, VERSION) ||
-            !initStringControlTransfer(connection, ACC_IDX_URI, URI) ||
-            !initStringControlTransfer(connection, ACC_IDX_SER, SERIAL)) {
+        if (!initStringControlTransfer(connection, admission, ACC_IDX_MAN, MANUFACTURER) ||
+            !initStringControlTransfer(connection, admission, ACC_IDX_MOD, MODEL) ||
+            !initStringControlTransfer(connection, admission, ACC_IDX_DES, DESCRIPTION) ||
+            !initStringControlTransfer(connection, admission, ACC_IDX_VER, VERSION) ||
+            !initStringControlTransfer(connection, admission, ACC_IDX_URI, URI) ||
+            !initStringControlTransfer(connection, admission, ACC_IDX_SER, SERIAL)) {
             return false
         }
 
         AppLog.i("Sending acc start")
         // Send accessory start request. Device should re-enumerate as an accessory.
+        if (!admission.run {}) return false
         len = connection.controlTransfer(UsbConstants.USB_TYPE_VENDOR, ACC_REQ_START, 0, 0, byteArrayOf(), 0, USB_TIMEOUT_IN_MS)
 
         // len == 0: clean ACK before re-enumeration (expected path).
@@ -121,7 +121,8 @@ class UsbAccessoryMode(private val usbMgr: UsbManager) {
         return true
     }
 
-    private fun initStringControlTransfer(conn: UsbDeviceConnection, index: Int, string: String): Boolean {
+    private fun initStringControlTransfer(conn: UsbDeviceConnection, admission: ConnectionAdmission, index: Int, string: String): Boolean {
+        if (!admission.run {}) return false
         val len = conn.controlTransfer(UsbConstants.USB_TYPE_VENDOR, ACC_REQ_SEND_STRING, 0, index, string.toByteArray(), string.length, USB_TIMEOUT_IN_MS)
         return if (len < 0) {
             // Negative means the USB transfer itself failed (e.g. device disconnected or

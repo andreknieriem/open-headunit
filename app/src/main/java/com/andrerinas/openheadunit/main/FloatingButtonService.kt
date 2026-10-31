@@ -39,6 +39,10 @@ class FloatingButtonService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        if (!App.isUserUnlocked(this)) {
+            stopSelf()
+            return
+        }
         val commManager = App.provide(this).commManager
         sessionJob = serviceScope.launch {
             commManager.connectionState.collect { _ ->
@@ -47,7 +51,7 @@ class FloatingButtonService : Service() {
         }
     }
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent?.action == ACTION_STOP) {
+        if (intent?.action == ACTION_STOP || !App.isUserUnlocked(this)) {
             removeOverlay()
             stopSelf()
             return START_NOT_STICKY
@@ -71,6 +75,11 @@ class FloatingButtonService : Service() {
 
     @SuppressLint("MissingPermission")
     private fun showOrUpdateOverlay() {
+        if (!App.isUserUnlocked(this)) {
+            removeOverlay()
+            stopSelf()
+            return
+        }
         val appContext = applicationContext
         val settings = App.provide(appContext).settings
         val enabled = settings.enableFloatingButton
@@ -239,6 +248,7 @@ class FloatingButtonService : Service() {
             }
         }
         fun start(context: Context) {
+            if (!App.isUserUnlocked(context)) return
             val intent = Intent(context, FloatingButtonService::class.java)
             try {
                 context.startService(intent)
@@ -251,11 +261,11 @@ class FloatingButtonService : Service() {
             val intent = Intent(context, FloatingButtonService::class.java).apply {
                 action = ACTION_STOP
             }
+            // Foreground refreshes must not create a service just to stop it. Stopping an
+            // absent service is a no-op; an existing service cleans up in onDestroy.
             try {
-                context.startService(intent)
-            } catch (_: Exception) {
-                try { context.stopService(intent) } catch (_: Exception) {}
-            }
+                context.stopService(intent)
+            } catch (_: Exception) {}
         }
     }
 }

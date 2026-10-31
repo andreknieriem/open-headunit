@@ -1,5 +1,6 @@
 package com.andrerinas.openheadunit.connection.wifi
 
+import com.andrerinas.openheadunit.connection.ConnectionOperation
 import com.andrerinas.openheadunit.App
 
 abstract class WifiLauncher(val manager: WifiLauncherManager) {
@@ -24,13 +25,16 @@ abstract class WifiLauncher(val manager: WifiLauncherManager) {
 
     abstract fun hasLocalDiscovery(): Boolean
 
-    abstract fun start(noInfoToasts: Boolean)
+    /** [operation] is the original input authority that armed this launcher. */
+    abstract fun start(noInfoToasts: Boolean, operation: ConnectionOperation)
 
     abstract fun stop(seq: WifiLauncherStopSequence)
 
-    open fun restartDiscovery() {
-        manager.startDiscovery()
+    /** A restart carries the original ticket and, when present, the exact Save it serves. */
+    open fun restartDiscovery(operation: ConnectionOperation) {
+        manager.startDiscovery(operation = operation)
     }
+
 
 
     protected val service get() = manager.service

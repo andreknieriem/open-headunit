@@ -13,6 +13,12 @@ import org.mockito.ArgumentMatchers.anyString
 import org.mockito.Mockito.`when`
 import org.mockito.Mockito.mock
 
+internal fun VideoDecoder.awaitRetirementForTest() {
+    val deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(3)
+    while (hasPendingRetirement && System.nanoTime() < deadline) Thread.sleep(5)
+    assertFalse("native retirement must eventually finish", hasPendingRetirement)
+}
+
 /** Exercise the real decoder's ownership operations while the platform Surface is still valid. */
 class VideoSurfaceRetirementTest {
     private fun decoder(): VideoDecoder {

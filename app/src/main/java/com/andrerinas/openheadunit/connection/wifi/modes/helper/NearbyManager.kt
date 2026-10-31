@@ -73,6 +73,8 @@ class NearbyManager(
     private var isConnecting = false
     private var settingsRestartPeer: String? = null
     private var settingsRestartUntilMs = 0L
+    // The Stop ticket captured when Save's end was received; Save's own connect carries it.
+    private var settingsRestartTicket = 0L
     private var settingsRestartTimeoutJob: Job? = null
 
     // Written on the Nearby callback thread, read from the upgrade-timeout and tunnel coroutines.
@@ -162,14 +164,19 @@ class NearbyManager(
         return true
     }
 
-    /** Save grants one retry of the same peer even when automatic connection is disabled. */
+    /**
+     * Save grants one retry of the same peer even when automatic connection is disabled. [ticket]
+     * is the Stop ticket captured when Save's end was received: the peer found later, and the
+     * deadline's fallback connect, both carry it rather than reading a newer one.
+     */
     fun restartForSettings(untilMs: Long = SystemClock.elapsedRealtime() +
-        SettingsRestartRecovery.WINDOW_MS) {
+        SettingsRestartRecovery.WINDOW_MS, ticket: Long) {
         val peer = settings.lastNearbyDeviceName.takeIf { it.isNotEmpty() } ?: return
         stop()
         attempts.locked {
             settingsRestartPeer = peer
             settingsRestartUntilMs = untilMs
+            settingsRestartTicket = ticket
         }
         start()
         val generation = attempts.locked { discoveryGeneration }
@@ -182,7 +189,7 @@ class NearbyManager(
                     _discoveredEndpoints.value.firstOrNull { it.name == settings.lastNearbyDeviceName }?.id
                 } else null
             }
-            if (endpoint != null) connectToEndpoint(endpoint)
+            if (endpoint != null) connectToEndpoint(endpoint, ticket)
         }
     }
 
@@ -340,6 +347,8 @@ class NearbyManager(
 
     private fun endpointDiscoveryCallback(generation: Any) = object : EndpointDiscoveryCallback() {
         override fun onEndpointFound(endpointId: String, info: DiscoveredEndpointInfo) {
+            // A peer Save asked for continues Save's input, under the ticket Save captured.
+            var saveTicket: Long? = null
             val connect = attempts.locked {
                 if (discoveryGeneration !== generation || !isRunning) return@locked false
                 AppLog.i("NearbyManager: Endpoint FOUND: ${info.endpointName} ($endpointId)")
@@ -352,13 +361,16 @@ class NearbyManager(
                 if (SystemClock.elapsedRealtime() >= settingsRestartUntilMs) settingsRestartPeer = null
                 val restartPeer = settingsRestartPeer
                 if (restartPeer != null) {
+                    saveTicket = settingsRestartTicket
                     restartPeer == info.endpointName && !isConnecting && activeEndpointId == null
                 } else {
                     settings.autoConnectLastSession && !isConnecting && activeEndpointId == null &&
                         settings.lastNearbyDeviceName.isNotEmpty() && settings.lastNearbyDeviceName == info.endpointName
                 }
             }
-            if (connect) connectToEndpoint(endpointId)
+            if (!connect) return
+            val ticket = saveTicket
+            if (ticket != null) connectToEndpoint(endpointId, ticket) else connectToEndpoint(endpointId)
         }
 
         override fun onEndpointLost(endpointId: String) = attempts.locked {

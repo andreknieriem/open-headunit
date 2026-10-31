@@ -52,7 +52,7 @@ class NearbySettingsRestartTest {
             val old = NearbySocket()
             set("activeEndpointId", "old-id")
             set("activeNearbySocket", old)
-            manager.restartForSettings()
+            manager.restartForSettings(ticket = comm.appConnectionTicket())
             assertTrue(old.isClosed)
             verify(client).disconnectFromEndpoint("old-id")
             val callback = org.mockito.ArgumentCaptor.forClass(EndpointDiscoveryCallback::class.java)
@@ -94,7 +94,7 @@ class NearbySettingsRestartTest {
             val manager = NearbyManager(context, scope, comm) { _, _, _ -> }
             fun set(name: String, value: Any?) = NearbyManager::class.java.getDeclaredField(name).apply { isAccessible = true }.set(manager, value)
 
-            manager.restartForSettings(untilMs = 200L)
+            manager.restartForSettings(untilMs = 200L, ticket = comm.appConnectionTicket())
             val callback = org.mockito.ArgumentCaptor.forClass(EndpointDiscoveryCallback::class.java)
             verify(client).startDiscovery(anyString(), callback.capture(), any())
             val peer = mock(DiscoveredEndpointInfo::class.java)
@@ -113,5 +113,54 @@ class NearbySettingsRestartTest {
         }
         }
         scope.cancel()
+    }
+
+    // Save asks Nearby to retry its peer, then Stop and Open land before the peer is found. The
+    // found peer continues Save's input, so it carries the ticket Save captured and connects to
+    // nothing; it must not read the post-Stop ticket. The control, with no Stop, connects once.
+    @Test fun `a Save peer found after Stop and Open does not connect`() {
+        for (stop in listOf(true, false)) {
+            val context = mock(Context::class.java)
+            val prefs = mock(SharedPreferences::class.java)
+            `when`(context.getSharedPreferences(anyString(), anyInt())).thenReturn(prefs)
+            `when`(prefs.getString(eq("last-nearby-device-name"), anyString())).thenReturn("Phone")
+            val client = mock(ConnectionsClient::class.java)
+            @Suppress("UNCHECKED_CAST")
+            val task = mock(Task::class.java, RETURNS_SELF) as Task<Void>
+            `when`(client.startDiscovery(anyString(), any(), any())).thenReturn(task)
+            `when`(client.requestConnection(nullable(String::class.java), anyString(), any())).thenReturn(task)
+            val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+            val comm = mock(CommManager::class.java, CALLS_REAL_METHODS).withAppExitDispatcherForTest()
+            val states = kotlinx.coroutines.flow.MutableStateFlow<CommManager.ConnectionState>(CommManager.ConnectionState.Disconnected())
+            for ((name, value) in listOf("_connectionState" to states, "connectionState" to states,
+                    "usbRecoveryOwner" to Any(), "settings" to mock(com.andrerinas.openheadunit.utils.Settings::class.java))) {
+                CommManager::class.java.getDeclaredField(name).apply { isAccessible = true }.set(comm, value)
+            }
+            mockStatic(androidx.core.content.ContextCompat::class.java).use {
+            mockStatic(android.os.SystemClock::class.java).use {
+            // Stop's retained-group hand-off asserts Main; with Looper mocked both loopers read the same.
+            mockStatic(android.os.Looper::class.java).use {
+            mockStatic(Nearby::class.java).use { nearby ->
+                nearby.`when`<ConnectionsClient> { Nearby.getConnectionsClient(context) }.thenReturn(client)
+                val manager = NearbyManager(context, scope, comm) { _, _, _ -> }
+                // Save's end was received: its ticket is read then.
+                manager.restartForSettings(ticket = comm.appConnectionTicket())
+                val callback = org.mockito.ArgumentCaptor.forClass(EndpointDiscoveryCallback::class.java)
+                verify(client).startDiscovery(anyString(), callback.capture(), any())
+                if (stop) { comm.requestExplicitAppExit(killProcess = false); comm.onAppRelaunched() }
+                val peer = mock(DiscoveredEndpointInfo::class.java)
+                `when`(peer.endpointName).thenReturn("Phone")
+                callback.value.onEndpointFound("peer-id", peer)
+                // Recorded after every production frame has returned.
+                val requests = mockingDetails(client).invocations.count { it.method.name == "requestConnection" }
+                if (stop) assertEquals("a Save peer found after Stop and Open still requested a connection (requests=$requests)", 0, requests)
+                else assertEquals("the Save peer was not connected (requests=$requests)", 1, requests)
+                manager.stop()
+            }
+            }
+            }
+            }
+            scope.cancel()
+        }
     }
 }

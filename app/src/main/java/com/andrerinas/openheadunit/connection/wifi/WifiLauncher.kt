@@ -28,8 +28,9 @@ abstract class WifiLauncher(val manager: WifiLauncherManager) {
 
     abstract fun stop(seq: WifiLauncherStopSequence)
 
-    open fun restartDiscovery() {
-        manager.startDiscovery()
+    /** [ticket]: the Stop ticket of the input this restart serves, captured at its receipt. */
+    open fun restartDiscovery(ticket: Long) {
+        manager.startDiscovery(ticket = ticket)
     }
 
 

@@ -89,17 +89,20 @@ class WifiLauncherHelper : WifiLauncher {
         }
     }
 
-    /** A settings retry may overlap association; refreshing must not rebuild its network. */
-    fun refreshAfterSettingsRestart() {
+    /**
+     * A settings retry may overlap association; refreshing must not rebuild its network. [ticket]
+     * is the Stop ticket captured when Save's end was received.
+     */
+    fun refreshAfterSettingsRestart(ticket: Long) {
         manager.sharedServices.startWirelessServer(this)
         when (strategy) {
             HelperStrategy.WIFI_DIRECT -> manager.sharedServices.wifiDirectManager?.refreshHelperGroup()
             HelperStrategy.NEARBY_DEVICES -> nearbyManager?.resumeDiscoveryIfIdle()
-            else -> restartDiscovery()
+            else -> restartDiscovery(ticket)
         }
     }
 
-    override fun restartDiscovery() {
+    override fun restartDiscovery(ticket: Long) {
         when (strategy) {
             HelperStrategy.NEARBY_DEVICES -> nearbyManager?.start()
             HelperStrategy.WIFI_DIRECT -> {
@@ -117,7 +120,7 @@ class WifiLauncherHelper : WifiLauncher {
                             "network comes back, rather than scanning the one that went away."
                     )
                 } else {
-                    super.restartDiscovery()
+                    super.restartDiscovery(ticket)
                 }
             }
         }

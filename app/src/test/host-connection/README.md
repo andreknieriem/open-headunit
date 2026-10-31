@@ -87,7 +87,13 @@ an admitted USB request.
 The ticket belongs to the logical input, not to one public call. UI, automation, server accept,
 discovery scan, Nearby request, Self launch, VPN consent and service relays capture it when the
 input is accepted and carry it through queued work, permission waits, countdowns and internal
-retries. The caller fixtures extract those producers and run them against the real manager,
+retries. The service's own deferred work does the same: a session end's teardown-wait work
+(Save's retry and fallback, the wired-session re-arm), the reconnect timers, the arbiter's
+wireless give-back, the USB hand-off hold and the WiFi wait, the sleep and settings re-arms, a
+Nearby Save peer and a held Bluetooth arrival each read the ticket when their input is received
+and hand that value to `setActive`/discovery/connect admission, never a newer one. The wireless
+cleanup fixture runs the real disconnect callback with Stop inside Save's teardown wait. The
+caller fixtures extract those producers and run them against the real manager,
 arbiter and service-ingress prefix: Stop B -> Open C rejects work begun before B, while a
 compatible Open without Stop and genuinely new input remain accepted. A socket discovery holds
 is owned only by the caller that adopts it, decided before anything can refuse it; background

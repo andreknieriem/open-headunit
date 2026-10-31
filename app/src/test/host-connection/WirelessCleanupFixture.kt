@@ -42,7 +42,13 @@ class CommManager {
         onDisconnect(ended)
     }
     fun finishCurrentAppExitTasks() { taskFinishAttempts++ }
+    // Stop followed by Open advances the ticket; only the current one is accepted.
+    var ticket = 0L
+    fun appConnectionTicket() = ticket
+    fun acceptsAppConnectionTicket(value: Long) = value == ticket
+    fun usbRecheck(value: Long) = UsbRecheck(value)
 }
+class UsbRecheck(val ticket: Long)
 object SystemClock { fun elapsedRealtime() = 100L }
 object android { object os { val SystemClock = cleanup.SystemClock } }
 object AppLog { fun i(s: String) {}; fun w(s: String) {} }
@@ -101,7 +107,7 @@ class WifiManager(val service: Service) {
         }
         active=null
     }
-    fun restartDiscovery() {}
+    fun restartDiscovery(ticket: Long) {}
 }
 class UnitManager { fun stop() {}; fun onSessionEnded() {}; fun setSwitchingToProjection(b: Boolean) {} }
 class MediaSession { var isActive=true }
@@ -146,8 +152,14 @@ class Service {
     fun safeMediaSessionCall(action: (MediaSession)->Unit) { action(MediaSession()) }
     fun updateMediaSessionState(active: Boolean) {}
     fun scheduleReconnectIfNeeded(state: CommManager.ConnectionState.Disconnected) { reconnects++ }
-    suspend fun restartForAudioSettings(state: CommManager.ConnectionState.Disconnected) {}
-    fun rearmWirelessAfterWiredSession(quiesced: Boolean)=false
+    // Save's retry hands [ticket] to the route's admission, which accepts only the current one
+    // (CommManager.connect, SelfLauncherManager.start, setActive, startLocalDiscovery).
+    var saveReconnects=0
+    suspend fun restartForAudioSettings(state: CommManager.ConnectionState.Disconnected, ticket: Long,
+        usbRetry: UsbRecheck, usbFallback: UsbRecheck) {
+        if (commManager.acceptsAppConnectionTicket(ticket)) saveReconnects++
+    }
+    fun rearmWirelessAfterWiredSession(quiesced: Boolean, ticket: Long)=false
     var serviceStops=0
     var foregroundStops=0
     val networkRemovals=mutableListOf<Boolean>()
@@ -370,6 +382,24 @@ fun main() {
         } finally { serviceScope.cancel() }
     }
     println("PASS a Self arm in the Error over an ended attempt's terminal is not retired by that terminal's repeat")
+    // Save's end is received, then Stop and Open land inside its teardown wait. The retry runs
+    // only after the wait and must carry the ticket read when the end was received, so the
+    // post-Stop ticket cannot stand in for it and nothing reconnects. The control, with no Stop,
+    // reconnects once.
+    for (stop in listOf(true, false)) Service().apply {
+        try {
+            wifiLauncherManager.noteRearm()
+            val saved=CommManager.ConnectionState.Disconnected(isUserExit=false, isSettingsRestart=true)
+            commManager.connectionState.value=saved
+            notifyEnd(saved); main.drain()
+            if (stop) commManager.ticket++
+            commManager.gate.complete(Unit); main.drain()
+            check(saveReconnects==(if (stop) 0 else 1)) {
+                "Save's retry after a Stop during its teardown wait reconnected (stop=$stop saveReconnects=$saveReconnects)"
+            }
+        } finally { serviceScope.cancel() }
+    }
+    println("PASS actual disconnect callback: Save's retry carries the ticket read when its end was received; Stop during teardown reconnects nothing, control once")
     println("PASS loopback terminal after an ordinary wireless arm releases the VPN unless a Self launch still waits for its phone, including a completed launch; a launch accepted after it, or after its first publication, keeps it")
     println("PASS service Stop joins existing physical retirement before native removal; connected, completed and rearmed controls")
     println("PASS actual disconnect callback: stale policy vs session resources, rearm across await, separate terminal and captured Stop waiter")

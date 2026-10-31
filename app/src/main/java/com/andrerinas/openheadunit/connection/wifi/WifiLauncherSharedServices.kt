@@ -47,10 +47,11 @@ class WifiLauncherSharedServices(val service: AapService) {
     var hotspotTeardown: Job? = null
         private set
 
-    fun update(active: WifiLauncher) {
+    /** [ticket] is the Stop ticket of the input that armed [active]; its discovery scans under it. */
+    fun update(active: WifiLauncher, ticket: Long) {
         if (active.hasWifiDirect()) startWifiDirect() else stopWifiDirect()
         if (active.hasWirelessServer()) startWirelessServer(active) else stopWirelessServer()
-        if (active.hasLocalDiscovery()) startLocalDiscovery(oneShot = false) else stopLocalDiscovery()
+        if (active.hasLocalDiscovery()) startLocalDiscovery(oneShot = false, ticket = ticket) else stopLocalDiscovery()
     }
 
     fun stopAll(keepGroup: Boolean = false) {
@@ -180,10 +181,12 @@ class WifiLauncherSharedServices(val service: AapService) {
      *
      * @param oneShot if `true`, does not reschedule after the scan finishes —
      *                used for the "auto WiFi" reconnect case.
+     * @param ticket the Stop ticket of the input this scan serves, captured when that input was
+     *               received; a scan run later for it never reads a newer one.
      */
     fun startLocalDiscovery(
         oneShot: Boolean = false,
-        ticket: Long = App.provide(service).commManager.appConnectionTicket(),
+        ticket: Long,
     ) {
         val commManager = App.provide(service).commManager
         if (!commManager.acceptsAppConnectionTicket(ticket)) return

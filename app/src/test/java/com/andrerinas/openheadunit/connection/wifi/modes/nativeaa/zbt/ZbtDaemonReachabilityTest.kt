@@ -33,6 +33,41 @@ class ZbtDaemonReachabilityTest {
     private fun dial(answer: Boolean): () -> Boolean = { dials++; answer }
 
     @Test
+    fun `carrier taking admission before identity entry leaves no negative cache`() {
+        var socketsCreated = 0
+        val result = ZbtDaemonReachability.resolve(
+            nowMs = { 200_000L }, requireIdentity = true, keepTrying = { true },
+            identityDial = {
+                val owner = ZbtDaemonReachability.claimCarrier()
+                try {
+                    ZbtIdentityProbe.probe(
+                        keepTrying = { !ZbtDaemonReachability.carrierLive() && !ZbtDaemonReachability.carrierWantsClient() },
+                        socketFactory = { socketsCreated++; error("carrier owns admission") }
+                    )
+                } finally { owner.close() }
+            }
+        )
+        assertFalse(result)
+        assertEquals(0, socketsCreated)
+        assertNull(ZbtDaemonReachability.cached(nowMs = 200_000L, requireIdentity = true))
+    }
+
+    @Test
+    fun `retired observation cannot overwrite a completed carrier measurement`() {
+        assertFalse(ZbtDaemonReachability.resolve(
+            nowMs = { 1_000L },
+            dial = {
+                ZbtDaemonReachability.claimCarrier().use {
+                    ZbtDaemonReachability.record(true, nowMs = 1_000L)
+                }
+                false
+            }
+        ))
+        assertFalse(ZbtDaemonReachability.carrierWantsClient())
+        assertEquals(true, ZbtDaemonReachability.cached(nowMs = 1_000L))
+    }
+
+    @Test
     fun `nothing is known before anything is asked`() {
         assertNull(ZbtDaemonReachability.cached(nowMs = 1_000L))
     }

@@ -1,5 +1,9 @@
 package com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zbt
 
+import java.io.ByteArrayInputStream
+import java.io.InputStream
+import java.net.Socket
+import java.net.SocketAddress
 import java.net.InetAddress
 import java.net.ServerSocket
 import java.util.concurrent.Executors
@@ -88,8 +92,111 @@ class ZbtIdentityProbeTest {
 
     @Test
     fun `cancelled probe does not connect`() {
-        ServerSocket(0).use { server ->
-            assertEquals(ZbtIdentityProbe.Outcome.UNCONFIRMED, ZbtIdentityProbe.probe(port = server.localPort, keepTrying = { false }))
+        try {
+            ZbtIdentityProbe.probe(keepTrying = { false }, socketFactory = {
+                error("cancelled probe created a socket")
+            })
+            fail("expected cancellation")
+        } catch (_: ZbtChannelOpening.Cancelled) { }
+    }
+    @Test fun `occupied observer propagates busy without creating or misidentifying a socket`() {
+        ZbtDaemonReachability.forget()
+        val old = ZbtDaemonReachability.observerOpening({ true }, diagnostic = true)!!
+        try {
+            assertThrows(ZbtChannelOpening.ObserverBusy::class.java) {
+                ZbtIdentityProbe.probe(socketFactory = { error("second observer socket") })
+            }
+            assertTrue(old.wasCancelled())
+            assertNull(ZbtDaemonReachability.cached(100L, requireIdentity = true))
+        } finally {
+            old.close()
+            ZbtDaemonReachability.releaseObserver(old)
+            ZbtDaemonReachability.forget()
         }
     }
+
+    private fun measuredSocket(
+        bytes: ByteArray,
+        preempt: Boolean,
+        denyRead: Boolean = false,
+        preemptOnClose: Boolean = false
+    ): Socket =
+        object : Socket() {
+            override fun connect(endpoint: SocketAddress, timeout: Int) {}
+            override fun setSoTimeout(timeout: Int) {}
+            private var closed = false
+            override fun close() {
+                if (closed) return
+                closed = true
+                if (preemptOnClose) ZbtDaemonReachability.claimCarrier().close()
+            }
+            override fun getInputStream(): InputStream {
+                if (denyRead) {
+                    if (preempt) ZbtDaemonReachability.claimCarrier().close()
+                    throw SecurityException("vendor access revoked")
+                }
+                return object : ByteArrayInputStream(bytes) {
+                    override fun read(target: ByteArray, offset: Int, length: Int): Int {
+                        val count = super.read(target, offset, length)
+                        // The bytes have already arrived, but parsing has not classified them.
+                        // Releasing the carrier immediately must not erase this preemption.
+                        if (available() == 0 && preempt) ZbtDaemonReachability.claimCarrier().close()
+                        return count
+                    }
+                }
+            }
+        }
+
+    @Test fun `every identity outcome preserves preemption even after carrier release`() {
+        val frames = listOf(
+            ByteArray(ZbtFraming.HEADER_SIZE),
+            ZbtFraming.encodeHeader(4097, ZbtMessages.INIT_INFO),
+            ByteArray(0).let { empty -> (1..16).fold(empty) { all, _ ->
+                all + ZbtFraming.encodeFrame(empty, ZbtMessages.HFP_LINK_INFO)
+            } },
+            ZbtFraming.encodeFrame(greeting(), ZbtMessages.INIT_INFO),
+        )
+        for (bytes in frames) {
+            ZbtDaemonReachability.forget()
+            assertThrows(ZbtChannelOpening.Cancelled::class.java) {
+                ZbtIdentityProbe.probe(socketFactory = { measuredSocket(bytes, true) })
+            }
+            assertFalse(ZbtDaemonReachability.resolve(nowMs = { 100L }, requireIdentity = true,
+                identityDial = { ZbtIdentityProbe.probe(socketFactory = { measuredSocket(bytes, true) }) }))
+            assertNull(ZbtDaemonReachability.cached(100L, requireIdentity = true))
+        }
+    }
+
+    @Test fun `access refusal after preemption is not cached as identity failure`() {
+        ZbtDaemonReachability.forget()
+        assertFalse(ZbtDaemonReachability.resolve(nowMs = { 100L }, requireIdentity = true,
+            identityDial = { ZbtIdentityProbe.probe(socketFactory = {
+                measuredSocket(byteArrayOf(), true, denyRead = true)
+            }) }))
+        assertNull(ZbtDaemonReachability.cached(100L, requireIdentity = true))
+    }
+
+    @Test fun `carrier preemption during identity socket close leaves no negative cache`() {
+        ZbtDaemonReachability.forget()
+        try {
+            assertFalse(ZbtDaemonReachability.resolve(nowMs = { 100L }, requireIdentity = true,
+                identityDial = { ZbtIdentityProbe.probe(socketFactory = {
+                    measuredSocket(ByteArray(ZbtFraming.HEADER_SIZE), false, preemptOnClose = true)
+                }) }))
+            assertFalse(ZbtDaemonReachability.carrierWantsClient())
+            assertNull(ZbtDaemonReachability.cached(100L, requireIdentity = true))
+        } finally { ZbtDaemonReachability.forget() }
+    }
+
+    @Test fun `ordinary malformed result still settles the identity decision`() {
+        ZbtDaemonReachability.forget()
+        try {
+            assertFalse(ZbtDaemonReachability.resolve(nowMs = { 100L }, requireIdentity = true,
+                identityDial = { ZbtIdentityProbe.probe(socketFactory = {
+                    measuredSocket(ByteArray(ZbtFraming.HEADER_SIZE), false)
+                }) }))
+            assertEquals(false, ZbtDaemonReachability.cached(100L, requireIdentity = true))
+        } finally { ZbtDaemonReachability.forget() }
+    }
+
 }

@@ -325,18 +325,27 @@ object HotspotManager {
         if (configured) {
             AppLog.i("HotspotManager: SoftAp configuration applied; now starting the hotspot.")
         }
-        // Newer API: TetheringManager (official) before ConnectivityManager fallback
+        // Candidate start methods tried in fallback order. Crucially, once a method successfully
+        // posts the request (returns true), subsequent methods must NOT be invoked: calling multiple
+        // mechanisms concurrently (e.g. TetheringManager and ConnectivityManager ~20-40ms apart)
+        // makes the OS abort or tear down the soft AP that was just starting up (#1230).
+        val hasWriteSettings = AppPermissions.isWriteSettingsGranted(context)
+        val candidateMethods = HotspotDispatchPolicy.candidateMethods(Build.VERSION.SDK_INT, hasWriteSettings)
         var attempted = false
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            attempted = tryTetheringManager(context, enabled) || attempted
+
+        for (method in candidateMethods) {
+            val posted = when (method) {
+                HotspotDispatchPolicy.Method.TETHERING_MANAGER -> tryTetheringManager(context, enabled)
+                HotspotDispatchPolicy.Method.CONNECTIVITY_MANAGER -> tryConnectivityManager(context, enabled)
+                HotspotDispatchPolicy.Method.LEGACY_WIFI_MANAGER -> tryLegacyWifiManager(context, enabled)
+            }
+            if (HotspotDispatchPolicy.shouldStopAfterAttempt(posted)) {
+                attempted = true
+                break
+            }
         }
-        // The remaining reflection paths (startTethering / setWifiApEnabled) require the special
-        // "Modify system settings" access (WRITE_SETTINGS). Without it the framework throws a
-        // SecurityException, so check first and surface a clear, actionable message instead.
-        if (AppPermissions.isWriteSettingsGranted(context)) {
-            attempted = tryConnectivityManager(context, enabled) || attempted
-            attempted = tryLegacyWifiManager(context, enabled) || attempted
-        } else {
+
+        if (!attempted && !hasWriteSettings) {
             val verb = if (enabled) "enable" else "turn off"
             AppLog.w("HotspotManager: Cannot $verb the hotspot without the \"Modify system settings\" permission (WRITE_SETTINGS). Grant it in the setup wizard or Settings > Permissions.")
         }

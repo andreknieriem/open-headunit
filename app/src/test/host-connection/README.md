@@ -60,10 +60,24 @@ claim held, Save owning the state until it publishes, then its own attempt in fl
 joining, a launch's wait, acceptance and publication all use it. Stop and Save revocation retire
 the request in their own lock section, and a claim's end wakes a launch waiting on it. A
 producer's end hands its claim to the SSL session only while the attempt that claim published
-is still the live one, never because another session is connected. The ingress fixtures pause
-real producers inside each former gap (claim before record, Stop or Save or another claim taking
-a waiting request's authority, a discovery hand-off queued behind IO, a cancelled request that
-published nothing while another session is connected).
+is still the live one, never because another session is connected. A logical USB request (a
+scan, a permission reply, a recovery step, the attach screen's switch) is the same kind of
+request: admitted once where its input runs, it carries its one claim through its first IO
+entry, every retry, recovery and publication, and never claims again, so a request a newer one
+displaced stops at its next step. Its retries stop on its own attempt's arrival, never on the
+shared state SSL may already have moved on. It is never a JOIN target and no launch waits on it.
+A USB scan that cannot run yet is one owed object (`UsbRecheck`) carried by whatever holds it (a
+live attempt, the arbiter, the give-back, the queued scan, the settings hold, a permission
+dialog by its reply token, the request admitted for it) and checked again before it scans and at
+USB admission; a user exit, Stop or an end that holds automatic reconnection withdraws it
+wherever it waits, retiring a request admitted for it. Before first unlock the attach screen's
+switch keeps a bare arbiter claim: no request authority can exist yet. The ingress fixtures
+pause real producers inside
+each former gap (claim before record, Stop or Save or another claim taking a waiting request's
+authority, a discovery hand-off queued behind IO, a cancelled request that published nothing
+while another session is connected, a late USB request, a handshake that fails after a
+cancelled request released its claim); the Self fixture pins that a refused dial never waits on
+an admitted USB request.
 
 The ticket belongs to the logical input, not to one public call. UI, automation, server accept,
 discovery scan, Nearby request, Self launch, VPN consent and service relays capture it when the

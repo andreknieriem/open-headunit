@@ -14,7 +14,12 @@ import com.andrerinas.openheadunit.utils.AppLog
  */
 object ConnectionArbiter {
 
-    class Claim internal constructor(val tier: Tier, val owner: Owner, val what: String, val sinceMs: Long) {
+    /**
+     * One attempt's hold on the arbiter. A USB claim carries the owed scan it runs for
+     * ([usbRecheck]): if a higher claim ends it, that same scan is what is owed back.
+     */
+    class Claim internal constructor(val tier: Tier, val owner: Owner, val what: String, val sinceMs: Long,
+        internal val usbRecheck: UsbRecheck? = null) {
         /**
          * Completes once this claim stops holding the arbiter: replaced by another claim, released,
          * yielded to the user or reset. Completed only after the arbiter's monitor is released, and
@@ -30,8 +35,11 @@ object ConnectionArbiter {
         fun preempt(loser: Claim)
         /** Stops the wireless stack; false when it was not running. */
         fun standDownWireless(by: Claim): Boolean
-        /** Re-arms wireless and, or, asks the USB bus again. */
-        fun giveBack(wireless: Boolean, usb: Boolean)
+        /**
+         * Re-arms wireless and, or, hands back the owed USB scan [usb]; its consumer asks the bus
+         * only while that scan is still current (see [UsbRecheck]).
+         */
+        fun giveBack(wireless: Boolean, usb: UsbRecheck?)
         /** Runs [block] after [delayMs]. */
         fun schedule(delayMs: Long, block: () -> Unit)
     }
@@ -41,7 +49,9 @@ object ConnectionArbiter {
 
     private var holder: Claim? = null
     private var wirelessOwed = false
-    private var usbOwed = false
+    // The USB scan refused or preempted here, owed back when the holder ends. Its own validity,
+    // not this record, decides whether it may still ask: a user exit or Stop withdraws it.
+    private var usbOwed: UsbRecheck? = null
     private var owedAfterSession = false
 
     /** Bumped by every claim, so a scheduled give-back can tell it was overtaken. */
@@ -51,8 +61,12 @@ object ConnectionArbiter {
     private var usbEpisode = 0L
     private var usbEpisodeSpent = false
 
-    /** Takes the arbiter for an attempt. Null means a higher attempt holds it: do not start. */
-    fun claim(tier: Tier, owner: Owner, what: String, expectedHolder: Claim? = null): Claim? {
+    /**
+     * Takes the arbiter for an attempt. Null means a higher attempt holds it: do not start. A USB
+     * claim names the owed scan [usbRecheck] it runs for, which is owed back if it is refused now
+     * or preempted later.
+     */
+    fun claim(tier: Tier, owner: Owner, what: String, usbRecheck: UsbRecheck? = null): Claim? {
         val now = clock()
         val loser: Claim?
         val replaced: Claim?
@@ -60,23 +74,20 @@ object ConnectionArbiter {
         val spent: Boolean
         var episodeToWatch = -1L
         synchronized(this) {
-            // Recovery transfers an existing attempt to a physical open. Checking and
-            // replacing the holder together prevents an old job from stealing a newer claim.
-            if (expectedHolder != null && holder !== expectedHolder) return null
             val held = holder
             val verdict = ConnectionPriorityPolicy.decide(
                 tier, owner, held?.tier, held?.owner, held?.let { now - it.sinceMs } ?: 0L
             )
             if (verdict == Verdict.REFUSE) {
-                if (owner == Owner.USB) usbOwed = true
+                if (owner == Owner.USB) usbOwed = usbRecheck ?: usbOwed
                 AppLog.i("ConnectionArbiter: $what ($tier) refused while $held is in flight")
                 return null
             }
             loser = if (verdict == Verdict.PREEMPT) held else null
             replaced = held
-            if (loser?.owner == Owner.USB) usbOwed = true
+            if (loser?.owner == Owner.USB) usbOwed = loser.usbRecheck ?: usbOwed
             if (owner == Owner.USB) {
-                usbOwed = false
+                usbOwed = null
                 if (usbEpisodeSinceMs == 0L) {
                     usbEpisodeSinceMs = now
                     episodeToWatch = ++usbEpisode
@@ -85,7 +96,7 @@ object ConnectionArbiter {
             generation++
             quietPending = false
             spent = usbEpisodeSpent
-            claim = Claim(tier, owner, what, now)
+            claim = Claim(tier, owner, what, now, usbRecheck)
             holder = claim
         }
         replaced?.ended?.complete(Unit)
@@ -115,11 +126,11 @@ object ConnectionArbiter {
                 holder = null
                 released = true
                 if (sessionFormed) {
-                    if (wirelessOwed || usbOwed) owedAfterSession = true
+                    if (wirelessOwed || usbOwed != null) owedAfterSession = true
                     endUsbEpisode()
                     return
                 }
-                if (!wirelessOwed && !usbOwed && usbEpisodeSinceMs == 0L) return
+                if (!wirelessOwed && usbOwed == null && usbEpisodeSinceMs == 0L) return
                 delayMs = ConnectionPriorityPolicy.giveBackDelayMs(claim.owner)
                 token = generation
                 quietPending = true
@@ -138,7 +149,7 @@ object ConnectionArbiter {
     /** Gives back what is owed unless another claim came along after [token]. */
     private fun settle(token: Long, ended: Claim) {
         val wireless: Boolean
-        val usb: Boolean
+        val usb: UsbRecheck?
         synchronized(this) {
             if (token != generation || holder != null) return
             quietPending = false
@@ -147,9 +158,9 @@ object ConnectionArbiter {
             clearDebts()
             endUsbEpisode()
         }
-        if (!wireless && !usb) return
+        if (!wireless && usb == null) return
         AppLog.i("ConnectionArbiter: $ended ended with no session; giving back " +
-            listOfNotNull("wireless".takeIf { wireless }, "USB".takeIf { usb }).joinToString(" and "))
+            listOfNotNull("wireless".takeIf { wireless }, "USB".takeIf { usb != null }).joinToString(" and "))
         actions?.giveBack(wireless, usb)
     }
 
@@ -165,13 +176,17 @@ object ConnectionArbiter {
         }
         AppLog.i("ConnectionArbiter: USB has tried for ${ConnectionPriorityPolicy.USB_EPISODE_BUDGET_MS / 1000} s " +
             "with no session; wireless comes back beside it")
-        if (wireless) actions?.giveBack(wireless = true, usb = false)
+        if (wireless) actions?.giveBack(wireless = true, usb = null)
     }
 
     /** Whether [claim] is still the attempt in flight. */
     fun holds(claim: Claim): Boolean = synchronized(this) { holder === claim }
 
-    /** Transfer a prepared resource only while its claim still owns the arbiter. */
+    /**
+     * Runs [action] synchronously under the arbiter monitor only while [claim] is held.
+     * Keep the action to a short ownership transfer; perform blocking work outside it.
+     * Callers needing the lifecycle lock must acquire it first, never from inside [action].
+     */
     internal fun runIfHeld(claim: Claim, action: () -> Unit): Boolean = synchronized(this) {
         if (holder !== claim) return@synchronized false
         // Claim replacement uses this same monitor, so it cannot split the check and transfer.
@@ -190,14 +205,14 @@ object ConnectionArbiter {
         // Keep the current WPP claim and any USB debt. sessionEnded cannot acknowledge
         // wireless while a claim is held, and would give it back a second time later.
         wirelessOwed = false
-        if (!usbOwed) owedAfterSession = false
+        if (usbOwed == null) owedAfterSession = false
         true
     }
 
     /** A session formed by a claim that took something has ended, so give it back now. */
     fun sessionEnded(wirelessAlreadyRearmed: Boolean, userExit: Boolean) {
         val wireless: Boolean
-        val usb: Boolean
+        val usb: UsbRecheck?
         synchronized(this) {
             if (!owedAfterSession || holder != null) return
             // The user ended it: reconnecting on their behalf is the one thing not to do.
@@ -206,7 +221,7 @@ object ConnectionArbiter {
             usb = usbOwed
             clearDebts()
         }
-        if (wireless || usb) actions?.giveBack(wireless, usb)
+        if (wireless || usb != null) actions?.giveBack(wireless, usb)
     }
 
     /**
@@ -233,18 +248,6 @@ object ConnectionArbiter {
         return true
     }
 
-    /** A USB check that met another owner's connect in flight; it is asked again when that ends. */
-    fun holdUsbCheck() {
-        val held: Claim
-        synchronized(this) {
-            val current = holder ?: return
-            if (current.owner == Owner.USB) return
-            usbOwed = true
-            held = current
-        }
-        AppLog.i("ConnectionArbiter: a USB check waits for $held")
-    }
-
     /** The user asked for wireless by hand: end any outside attempt and owe nothing back. */
     fun yieldToUser(what: String) {
         val loser: Claim?
@@ -269,15 +272,9 @@ object ConnectionArbiter {
         usbEpisode++
     }
 
-    /** The user ended the attempt: a held USB check does not come back. Wireless still does. */
-    fun dropUsbDebt() = synchronized(this) {
-        usbOwed = false
-        if (!wirelessOwed) owedAfterSession = false
-    }
-
     private fun clearDebts() {
         wirelessOwed = false
-        usbOwed = false
+        usbOwed = null
         owedAfterSession = false
     }
 

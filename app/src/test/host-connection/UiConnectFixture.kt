@@ -9,6 +9,7 @@ import lifecycle.ConnectionState
 import lifecycle.HeldServerSocket
 import lifecycle.QueuedDispatcher
 import lifecycle.ServiceBootstrap
+import lifecycle.UsbRecheck
 import kotlinx.coroutines.*
 import java.net.InetAddress
 import java.net.Socket
@@ -162,7 +163,7 @@ private class Claims(private val manager: CommManager) : ConnectionArbiter.Actio
         manager.cleanups()
     }
     override fun standDownWireless(by: ConnectionArbiter.Claim): Boolean { standDowns++; return false }
-    override fun giveBack(wireless: Boolean, usb: Boolean) {}
+    override fun giveBack(wireless: Boolean, usb: UsbRecheck?) {}
     override fun schedule(delayMs: Long, block: () -> Unit) {}
 }
 private fun CommManager.inlineConnectionIo() {

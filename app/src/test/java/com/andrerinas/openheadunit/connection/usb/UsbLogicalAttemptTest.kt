@@ -12,6 +12,7 @@ import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.Settings
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import org.junit.Assert.*
 import org.junit.Test
 import org.mockito.Mockito.*
@@ -33,6 +34,8 @@ class UsbLogicalAttemptTest {
             wake.release()
         }
         fun drain() { while (true) (ready.poll() ?: return).run() }
+        /** Holds back the oldest dispatched continuation; the caller decides when it runs. */
+        fun take(): Runnable? = ready.poll()
         fun hasTimer() = timers.isNotEmpty()
         fun advance(ms: Long) {
             now += ms
@@ -111,11 +114,11 @@ class UsbLogicalAttemptTest {
         fun set(name: String, value: Any?) = CommManager::class.java.getDeclaredField(name)
             .apply { isAccessible = true }.set(comm, value)
         fun scan() { launcher.checkAlreadyConnected(force = true); queue.drain() }
-        fun connect() {
+        fun connect(job: Job? = null) {
             val deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(5)
             while (true) {
                 io.drain(); queue.drain()
-                val attempt = launcher.attemptJob
+                val attempt = job ?: launcher.attemptJob
                 if (attempt == null || attempt.isCompleted || queue.hasTimer()) return
                 val remaining = deadline - System.nanoTime()
                 check(remaining > 0 && wake.tryAcquire(remaining, java.util.concurrent.TimeUnit.NANOSECONDS)) {
@@ -123,6 +126,7 @@ class UsbLogicalAttemptTest {
                 }
             }
         }
+        fun closes() = mockingDetails(handle).invocations.count { it.method.name == "close" }
         fun stopOpen(): Long { comm.requestExplicitAppExit(killProcess = false); return comm.onAppRelaunched() }
         fun permissionReply(ticket: Long?) {
             val intent = mock(android.content.Intent::class.java)
@@ -142,7 +146,6 @@ class UsbLogicalAttemptTest {
         fun assertIdle() {
             assertFalse(launcher.isSwitchingToProjection())
             assertNull(launcher.attemptJob)
-            assertNull(UsbLauncherManager::class.java.getDeclaredField("attemptClaim").apply { isAccessible = true }.get(launcher))
         }
     }
 
@@ -300,5 +303,115 @@ class UsbLogicalAttemptTest {
         assertEquals(1, f.opens)
         assertTrue(f.states.value is CommManager.ConnectionState.Connected)
         f.assertIdle()
+    }
+
+    // Two permission replies for the same accessory. A's job reaches its first IO entry and waits
+    // there; B, the newer request, connects first. A, resuming, must neither claim again nor
+    // replace B: one open, B's connection never closed. The control lets A connect alone.
+    @Test fun aReplacedUsbRequestNeverClaimsAgainAtItsFirstIoEntry() {
+        for (late in listOf(true, false)) fixture { f ->
+            val ticket = f.comm.appConnectionTicket()
+            f.permissionReply(ticket)
+            val jobA = checkNotNull(f.launcher.attemptJob)
+            val resumeA = checkNotNull(f.io.take()) { "A did not reach its first IO entry" }
+            if (late) {
+                f.permissionReply(ticket)
+                f.connect()
+                assertTrue("B did not connect", f.opens == 1 && f.states.value is CommManager.ConnectionState.Connected)
+            }
+            resumeA.run()
+            f.connect(jobA)
+            // Recorded after every production frame has returned.
+            val opens = f.opens
+            val closes = f.closes()
+            val state = f.states.value
+            if (late) {
+                assertTrue("a replaced USB request claimed again and replaced the newer connection (opens=$opens closes=$closes)",
+                    opens == 1 && closes == 0 && state is CommManager.ConnectionState.Connected)
+            } else {
+                assertTrue("A did not connect alone (opens=$opens state=$state)",
+                    opens == 1 && state is CommManager.ConnectionState.Connected)
+            }
+        }
+    }
+
+    // A's first open fails and its retry waits out the delay. B, a newer permission reply, is
+    // admitted meanwhile and held before its own IO entry. A's retry must not claim again and open
+    // over it: B alone opens after A's failed try. The control lets A's retry connect.
+    @Test fun aReplacedUsbRequestsRetryNeverOpensAgain() {
+        for (newer in listOf(true, false)) fixture { f ->
+            f.failFirst = true
+            val ticket = f.comm.appConnectionTicket()
+            f.permissionReply(ticket)
+            val jobA = checkNotNull(f.launcher.attemptJob)
+            f.connect(jobA)
+            assertEquals(1, f.opens)
+            assertTrue("A's retry is not waiting", f.queue.hasTimer())
+            var resumeB: Runnable? = null
+            var jobB: Job? = null
+            if (newer) {
+                f.permissionReply(ticket)
+                jobB = checkNotNull(f.launcher.attemptJob)
+                resumeB = checkNotNull(f.io.take()) { "B did not reach its first IO entry" }
+            }
+            f.queue.advance(1500)
+            f.connect(jobA)
+            resumeB?.run()
+            if (jobB != null) f.connect(jobB)
+            // Recorded after every production frame has returned.
+            val opens = f.opens
+            val state = f.states.value
+            assertTrue("a replaced USB request's retry opened the device again (opens=$opens)",
+                opens == 2 && state is CommManager.ConnectionState.Connected)
+        }
+    }
+
+    // The USB request's open succeeds and publishes Connected; before its producer returns, SSL
+    // has already moved the shared state on (the observer starts the handshake). The request
+    // reached its connection: it must not retry, reopen and close its own working connection.
+    // The control leaves the state at Connected.
+    @Test fun aConnectedUsbRequestDoesNotRetryWhenSslAdvancedTheState() {
+        for (advanced in listOf("ssl-started", "handshake-complete", "none")) fixture { f ->
+            val ssl = CoroutineScope(Dispatchers.Unconfined).launch {
+                f.states.first { it is CommManager.ConnectionState.Connected }
+                when (advanced) {
+                    "ssl-started" -> f.states.value = CommManager.ConnectionState.StartingTransport
+                    "handshake-complete" -> f.states.value = CommManager.ConnectionState.HandshakeComplete
+                }
+            }
+            try {
+                f.permissionReply(f.comm.appConnectionTicket())
+                f.connect()
+                f.queue.advance(1500)
+                f.connect()
+                // Recorded after every production frame has returned.
+                val opens = f.opens
+                val closes = f.closes()
+                assertTrue("a USB request reopened its own connection after SSL advanced the state (advanced=$advanced opens=$opens closes=$closes)",
+                    opens == 1 && closes == 0)
+            } finally { ssl.cancel() }
+        }
+    }
+
+    // A permission reply's USB request is admitted for its scan and waits for its first IO entry.
+    // A user Exit (the service stays) withdraws that scan meanwhile: the request must not open the
+    // device. The control, with no exit, connects.
+    @Test fun aUserExitWithdrawsAUsbRequestWaitingForItsFirstIoEntry() {
+        for (exit in listOf(true, false)) fixture { f ->
+            f.permissionReply(f.comm.appConnectionTicket())
+            val jobA = checkNotNull(f.launcher.attemptJob)
+            val resumeA = checkNotNull(f.io.take()) { "A did not reach its first IO entry" }
+            if (exit) {
+                // The real user-exit disconnect, as the home screen's Exit issues it.
+                doCallRealMethod().`when`(f.comm).disconnect(any(), any(), any(), any(), any(), anyOrNull())
+                f.comm.disconnect(sendByeBye = false, isUserExit = true, honorKillOnDisconnect = false)
+            }
+            resumeA.run()
+            f.connect(jobA)
+            // Recorded after every production frame has returned.
+            val opens = f.opens
+            if (exit) assertEquals("a USB request admitted before a user Exit still opened the device after it (opens=$opens)", 0, opens)
+            else assertTrue("the request did not connect (opens=$opens)", opens == 1 && f.states.value is CommManager.ConnectionState.Connected)
+        }
     }
 }

@@ -308,7 +308,7 @@ manager=manager_head+'\n'.join(extract(comm,n) for n in [
  'internal suspend fun connectHeld(', 'private suspend fun connectSocketWithTicket(', 'private suspend fun runSocketRequest(',
  'private class ConnectionRequest(', 'private sealed class Admission {', 'private fun admitRequest(', 'private fun admitHeld(',
  'private fun retireInvalidRequest()', 'private fun endRequest(', 'private fun releaseClaim(', 'private fun clearRequest(',
- 'private fun settleSessionClaim(', 'private fun dropOwedScans()'
+ 'private fun settleSessionClaim(', 'private fun dropOwedScans()', 'internal fun deferUsbCheckForConnectionAttempt('
 ])+'\n}\n'
 transport_head=r'''
 class AapTransport(

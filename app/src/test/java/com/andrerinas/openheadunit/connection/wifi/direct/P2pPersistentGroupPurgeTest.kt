@@ -14,9 +14,12 @@ import org.mockito.Mockito.mock
 import org.mockito.stubbing.Answer
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.ConscryptMode
 
 @RunWith(RobolectricTestRunner::class)
 @Config(application = Application::class, sdk = [28])
+// No TLS here. Robolectric's Conscrypt provider is process-wide and breaks later plain-JVM TLS tests.
+@ConscryptMode(ConscryptMode.Mode.OFF)
 class P2pPersistentGroupPurgeTest {
     @Test
     fun `timeout retires a request before late group information arrives`() {

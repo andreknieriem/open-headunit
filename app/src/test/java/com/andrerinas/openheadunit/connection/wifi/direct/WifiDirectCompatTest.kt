@@ -7,9 +7,12 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.ConscryptMode
 
 @RunWith(RobolectricTestRunner::class)
 @Config(application = Application::class, sdk = [28, 30])
+// No TLS here. Robolectric's Conscrypt provider is process-wide and breaks later plain-JVM TLS tests.
+@ConscryptMode(ConscryptMode.Mode.OFF)
 class WifiDirectCompatTest {
 
     @Test

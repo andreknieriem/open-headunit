@@ -162,7 +162,7 @@ private class Claims(private val manager: CommManager) : ConnectionArbiter.Actio
         manager.cleanups()
     }
     override fun standDownWireless(by: ConnectionArbiter.Claim): Boolean { standDowns++; return false }
-    override fun giveBack(wireless: Boolean, usb: Boolean) {}
+    override fun giveBack(wireless: Boolean, usb: UsbRecheck?) {}
     override fun schedule(delayMs: Long, block: () -> Unit) {}
 }
 private fun CommManager.inlineConnectionIo() {

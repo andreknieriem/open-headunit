@@ -153,7 +153,7 @@ class UsbHandshakeRecheckTest {
         ConnectionArbiter.actions = object : ConnectionArbiter.Actions {
             override fun preempt(loser: ConnectionArbiter.Claim) = Unit
             override fun standDownWireless(by: ConnectionArbiter.Claim) = standsDown
-            override fun giveBack(wireless: Boolean, usb: Boolean) { returned += wireless to usb }
+            override fun giveBack(wireless: Boolean, usb: UsbRecheck?) { returned += wireless to (usb != null) }
             override fun schedule(delayMs: Long, block: () -> Unit) { timers.addLast(block) }
         }
         try {

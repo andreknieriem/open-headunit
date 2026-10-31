@@ -253,13 +253,16 @@ class CommManager {
  suspend fun connectClaimedNext(claim:ConnectionArbiter.Claim){
   val request=ConnectionRequest(appConnectionTicket(),claim,"fixture:5277",null,null)
   if(acceptRequest(request))connectIp("fixture",5277,request)}
- suspend fun connectClaimedUsb(d:UsbDevice,claim:ConnectionArbiter.Claim){connectUsb(d,appConnectionTicket(),appClaim=claim)}
+ // A USB request carries one claim through every try; these fixtures name it directly.
+ private fun usbRequest(claim:ConnectionArbiter.Claim,save:ConnectionState.Disconnected?=null)=
+  ConnectionRequest(appConnectionTicket(),claim,null,save,null)
+ suspend fun connectClaimedUsb(d:UsbDevice,claim:ConnectionArbiter.Claim){connectUsb(d,usbRequest(claim))}
  suspend fun connectSelf(){connectIp("127.0.0.1",5277,accepted("127.0.0.1:5277"))}
  suspend fun connectSaved(state:ConnectionState.Disconnected){connectIp("fixture",5277,accepted("fixture:5277",save=state))}
  suspend fun awaitDisconnectComplete(){_disconnectJob?.join()}
  val isUsbSession=false
- suspend fun connectDevice(d:UsbDevice,saved:ConnectionState.Disconnected?=null){connectUsb(d,appConnectionTicket(),saved,appClaim=acceptedClaim())}
- suspend fun connectRecovery(d:UsbDevice,admission:ConnectionAdmission)=connectUsb(d,appConnectionTicket(),recoveryOwner=usbRecoveryOwner,recoveryClaim=fixtureClaim(),recoveryAdmission=admission)
+ suspend fun connectDevice(d:UsbDevice,saved:ConnectionState.Disconnected?=null){connectUsb(d,usbRequest(acceptedClaim(),saved))}
+ suspend fun connectRecovery(d:UsbDevice,admission:ConnectionAdmission)=connectUsb(d,usbRequest(fixtureClaim()),recoveryOwner=usbRecoveryOwner,recoveryAdmission=admission)
  suspend fun awaitCleanup(){_disconnectJob?.join()}
  companion object { const val ERROR_HANDSHAKE_PEER_SILENT="Handshake failed: the peer never responded" }
 '''
@@ -267,7 +270,7 @@ class CommManager {
 old_state=manager_head[manager_head.index(' class Disconnected('):manager_head.index(' object Connecting:')]
 manager_head=manager_head.replace(old_state, extract(comm, 'class Disconnected(')+'\n')
 for name in ['SettingsRestartRecovery.kt', 'SameEndpointConnectPolicy.kt', 'ConnectionAdmission.kt', 'UsbRecoveryAdmission.kt',
-             'ConnectionPriorityPolicy.kt', 'ConnectionArbiter.kt', 'HeldServerSocket.kt']:
+             'ConnectionPriorityPolicy.kt', 'ConnectionArbiter.kt', 'HeldServerSocket.kt', 'UsbRecheck.kt']:
     source=(base/'connection'/name).read_text().replace('package com.andrerinas.openheadunit.connection', 'package lifecycle')
     source=source.replace('import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy.',
                           'import lifecycle.ConnectionPriorityPolicy.')
@@ -288,9 +291,9 @@ manager_head += exit_members.replace(
     "private val appExitDispatcher: CoroutineDispatcher = Dispatchers.Unconfined").replace(
     "private val connectionIoDispatcher: CoroutineDispatcher = Dispatchers.IO",
     "private val connectionIoDispatcher: CoroutineDispatcher = Dispatchers.Unconfined")
-# Paragraph boundaries retain complete expression bodies, including claimUsb's trailing also.
+# Paragraph boundaries retain complete expression bodies.
 for declaration in ['val isConnected:', 'val isBusy:', 'val isWirelessSession:', 'val isLoopbackSession:',
-                    'internal fun claimUsb(', 'private fun socketOwner(', 'internal class LaunchMark internal constructor(',
+                    'private fun socketOwner(', 'internal class LaunchMark internal constructor(',
                     'private fun ConnectionRequest.isValid()', 'private fun validRequest()']:
     start = comm.index(declaration)
     definition = comm[start:comm.index('\n\n', start)]
@@ -303,12 +306,13 @@ manager=manager_head+'\n'.join(extract(comm,n) for n in [
  'internal sealed class LaunchOutcome {', 'internal fun launchMark(', 'internal fun arrivedSince(', 'internal fun reportLaunchFailure(',
  'internal suspend fun awaitSettled(', 'internal val isLiveLoopbackSession:',
  'private suspend fun connectIp(', 'private fun publishRequest(', 'private suspend fun connectUsb(', 'private suspend fun connectSocket(', 'private suspend fun connectAdmittedSocket(', 'private fun socketEndpoint(', 'fun disconnectForLinkLoss(', 'fun destroy()',
- 'fun setProjectionVideoFocusSuppressed(', 'private suspend fun acceptAppConnectionClaim(', 'private suspend fun acceptRequest(',
- 'suspend fun connect(\n        device:', 'suspend fun connect(\n        socket:', 'suspend fun connect(\n        ip:',
+ 'fun setProjectionVideoFocusSuppressed(', 'private suspend fun acceptRequest(',
+ 'internal suspend fun connect(device: UsbDevice, request: ConnectionRequest)', 'suspend fun connect(\n        socket:', 'suspend fun connect(\n        ip:',
  'internal suspend fun connectHeld(', 'private suspend fun connectSocketWithTicket(', 'private suspend fun runSocketRequest(',
- 'private class ConnectionRequest(', 'private sealed class Admission {', 'private fun admitRequest(', 'private fun admitHeld(',
- 'private fun retireInvalidRequest()', 'private fun endRequest(', 'private fun releaseClaim(', 'private fun clearRequest(',
- 'private fun settleSessionClaim(', 'private fun dropOwedScans()', 'internal fun deferUsbCheckForConnectionAttempt('
+ 'internal class ConnectionRequest(', 'private sealed class Admission {', 'private fun admitRequest(', 'private fun admitHeld(',
+ 'internal fun admitUsbRequest(', 'internal fun isValid(request: ConnectionRequest)',
+ 'private fun retireInvalidRequest()', 'internal fun endRequest(', 'private fun releaseClaim(', 'private fun clearRequest(',
+ 'private fun settleSessionClaim(', 'internal fun deferUsbCheckForConnectionAttempt('
 ])+'\n}\n'
 transport_head=r'''
 class AapTransport(

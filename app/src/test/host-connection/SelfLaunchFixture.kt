@@ -68,11 +68,16 @@ object HeadUnitScreenConfig { fun unlockResolution() {} }
 class FixtureTransport { var wasUserExit = false; fun retirePresentation() {} }
 class FixtureSettings { val killOnDisconnect = false }
 // The arbiter as the extracted request authority reads it: a claim holds until it ends.
+object ConnectionPriorityPolicy { enum class Owner { USB, WIRELESS_STACK, MANUAL } }
 object ConnectionArbiter {
-    class Claim { val ended = CompletableDeferred<Unit>() }
+    class Claim(val owner: ConnectionPriorityPolicy.Owner = ConnectionPriorityPolicy.Owner.MANUAL) {
+        val ended = CompletableDeferred<Unit>()
+    }
     fun holds(claim: Claim) = !claim.ended.isCompleted
     fun release(claim: Claim, sessionFormed: Boolean) { claim.ended.complete(Unit) }
 }
+// The extracted attempt can hold an owed USB scan; nothing here asks the bus.
+class UsbRecheck
 class CommManager {
     val attemptUserRequested = false
     private var stopEpoch = 0L
@@ -126,6 +131,11 @@ class CommManager {
             ConnectionArbiter.release(it.claim, sessionFormed = false)
         }
     }
+    // admitUsbRequest: a logical USB request holds its claim, unpublished, between its tries.
+    fun claimUsbRequest() = synchronized(transportLifecycleLock) {
+        connectionRequest?.resolved?.complete(Unit)
+        connectionRequest = ConnectionRequest(stopEpoch, ConnectionArbiter.Claim(ConnectionPriorityPolicy.Owner.USB), null, null, null)
+    }
     // Another route's claim replaced the request's, outside this manager's lock (a USB attach).
     fun loseClaim() { connectionRequest?.claim?.let { ConnectionArbiter.release(it, sessionFormed = false) } }
     var isProjectionVideoFocusSuppressed = false
@@ -178,7 +188,7 @@ class CommManager {
     // doDisconnect runs here, after the terminal it follows, until a case or a publication runs it.
     private val teardownQueue = QueuedMain()
     private val _scope = CoroutineScope(SupervisorJob() + teardownQueue)
-    private fun dropOwedScans() {}
+    private fun withdrawUsbRechecks() {}
     private fun scheduleAppExit(userStop: Boolean) {}
     // ATTEMPT
     // IN_FLIGHT
@@ -902,6 +912,26 @@ fun main() {
         s.settle()
         check(s.commManager.socketConnects == 2 && s.manager.isActive && s.commManager.isConnected)
         check(s.toasts == 1 && s.settingsPrompts == 1 && s.commManager.reports == 1) { "a reached server showed guidance" }
+    }
+    // Decision 1 with USB requests in the shared request slot: an admitted, unpublished USB
+    // request is no JOIN target and no wait. The Headunit Server refuses this launch's own dial
+    // meanwhile; that failure stands as it does with no request, not after the USB request's
+    // retries.
+    Service().use { s ->
+        s.modern = true
+        s.useRealDirect = true
+        val c = s.commManager
+        c.serverRunning = false
+        c.claimUsbRequest()
+        s.manager.start()
+        s.settle()
+        s.main.advanceBy(legacyDeadline); s.settle()
+        check(c.joins == 0 && c.socketConnects == 1) {
+            "the dial joined an admitted USB request (joins=${c.joins} dials=${c.socketConnects})"
+        }
+        check(!s.manager.isLaunchPending && s.toasts == 1 && s.settingsPrompts == 1 && c.reports == 1) {
+            "a refused dial waited on an admitted USB request (pending=${s.manager.isLaunchPending} toasts=${s.toasts} reports=${c.reports})"
+        }
     }
     // A user request to the Headunit Server holds its claim and record but waits behind the
     // previous session's cleanup, with no attempt yet. The 17.4+ dial JOINs it and returns at once.

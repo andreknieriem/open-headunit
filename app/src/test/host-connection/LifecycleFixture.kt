@@ -58,6 +58,8 @@ private class AapTransport(
 
 // The production Attempt names the claim it was published under; no claim is taken here.
 private object ConnectionArbiter { class Claim }
+// The production exit members mint and withdraw owed USB scans; nothing here asks the bus.
+private class UsbRecheck(val ticket: Long, val epoch: Long)
 
 /** Only the network, UI side effects and scheduling are doubled; injected decisions are production. */
 private class ConnectionFixture(val settings: Settings = Settings()) {
@@ -69,7 +71,6 @@ private class ConnectionFixture(val settings: Settings = Settings()) {
     private var usbRecoveryOwner: Any = Any()
     private var settingsUsbRestartInFlight: ConnectionState.Disconnected? = null
     private var usbSaveOwner: ConnectionState.Disconnected? = null
-    private fun dropOwedScans() {}
     // No connection request is ever admitted here, so Stop and Save have none to retire.
     private fun retireInvalidRequest() {}
     private var disconnectRequested = false

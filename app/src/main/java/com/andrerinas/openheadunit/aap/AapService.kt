@@ -69,6 +69,7 @@ import com.andrerinas.openheadunit.connection.ConnectionArbiter
 import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy
 import com.andrerinas.openheadunit.connection.ConnectionStage
 import com.andrerinas.openheadunit.connection.ConnectionStageTracker
+import com.andrerinas.openheadunit.connection.UsbRecheck
 import com.andrerinas.openheadunit.connection.carkey.CarKeysManager
 import com.andrerinas.openheadunit.connection.wifi.NetworkDiscovery
 import android.support.v4.media.session.MediaSessionCompat
@@ -2235,12 +2236,13 @@ class AapService : Service() {
             return true
         }
 
-        override fun giveBack(wireless: Boolean, usb: Boolean) {
+        override fun giveBack(wireless: Boolean, usb: UsbRecheck?) {
             serviceScope.launch {
                 delay(1500) // The same settle the wired-session re-arm gives the hardware.
                 if (isDestroying) return@launch
                 if (wireless) initWifiModeWithOptionalWait()
-                if (usb) usbLauncherManager.checkAlreadyConnected(force = true)
+                // The owed scan itself decides: a user exit, Stop or held end since withdrew it.
+                if (usb != null) usbLauncherManager.checkAlreadyConnected(force = true, recheck = usb)
             }
         }
 
@@ -2868,16 +2870,19 @@ class AapService : Service() {
         }
     }
 
-    /** A USB auto-connect arrived while the settings screen was on show; its close asks again. */
-    @Volatile private var usbCheckPendingForSettings = false
+    /**
+     * The USB scan an auto-connect owed while the settings screen was on show; its close asks
+     * again, only while that scan is still current (see [UsbRecheck]).
+     */
+    @Volatile private var usbCheckPendingForSettings: UsbRecheck? = null
 
     /** A Bluetooth arrival did not raise the home screen over settings; its close raises it. */
     @Volatile private var bluetoothLaunchPendingForSettings = false
 
     private var settingsReplayJob: Job? = null
 
-    fun holdUsbCheckForSettings() {
-        usbCheckPendingForSettings = true
+    fun holdUsbCheckForSettings(recheck: UsbRecheck) {
+        usbCheckPendingForSettings = recheck
     }
 
     /**
@@ -2890,7 +2895,7 @@ class AapService : Service() {
             return
         }
         if (!AutoConnectHoldPolicy.replaysOnRelease(
-                usbHeld = usbCheckPendingForSettings,
+                usbHeld = usbCheckPendingForSettings != null,
                 bluetoothLaunchHeld = bluetoothLaunchPendingForSettings,
             )) return
 
@@ -2905,11 +2910,12 @@ class AapService : Service() {
                     "behind it, raising the home screen now.")
                 launchMainActivityForBluetooth()
             }
-            if (usbCheckPendingForSettings) {
-                usbCheckPendingForSettings = false
+            val heldUsb = usbCheckPendingForSettings
+            if (heldUsb != null) {
+                usbCheckPendingForSettings = null
                 AppLog.i("AapService: the settings screen closed with a USB auto-connect held " +
                     "behind it, checking USB now.")
-                usbLauncherManager.checkAlreadyConnected(force = true)
+                usbLauncherManager.checkAlreadyConnected(force = true, recheck = heldUsb)
             }
         }
     }
@@ -3436,7 +3442,7 @@ class AapService : Service() {
             }
             ACTION_CANCEL_WIRELESS       -> {
                 commManager.cancelPendingSettingsRestart()
-                usbCheckPendingForSettings = false
+                usbCheckPendingForSettings = null
                 bluetoothLaunchPendingForSettings = false
                 val stage = ConnectionStageTracker.stage.value
                 if (intent?.getBooleanExtra(EXTRA_USB_ATTEMPT, false) == true ||

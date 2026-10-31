@@ -122,15 +122,16 @@ class UsbLauncherListener(private val manager: UsbLauncherManager) : UsbReceiver
                 return
             }
             AppLog.i("USB permission granted for $deviceName")
-            if (!manager.beginAttempt(Tier.USB, "USB $deviceName", restart, permission.ticket)) return
+            val recheck = commManager.usbRecheck(permission.ticket)
+            if (!manager.beginAttempt(Tier.USB, "USB $deviceName", restart, recheck)) return
             if (UsbDeviceCompat.isInAccessoryMode(device)) {
-                manager.launchAttempt(restart) {
-                    manager.connectWithRetry(device, settingsRestart = restart, ticket = permission.ticket)
+                manager.launchAttempt { request ->
+                    manager.connectWithRetry(device, request)
                 }
             } else {
                 val settings = App.provide(service).settings
                 val usbMode = UsbAccessoryMode(usbManager)
-                manager.launchAttempt(restart, Dispatchers.IO) {
+                manager.launchAttempt(Dispatchers.IO) {
                     if (usbMode.connectAndSwitch(device, settings.useLibusb)) {
                         manager.noteAccessorySwitchRequested()
                         AppLog.i("Successfully requested switch to accessory mode for $deviceName")

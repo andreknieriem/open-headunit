@@ -20,6 +20,15 @@ private fun CommManager.ingressMain(dispatcher: CoroutineDispatcher) {
         .apply { isAccessible = true }.set(this, dispatcher)
 }
 
+/**
+ * The launcher's shape for one logical USB request: admitted once at its input for the scan it
+ * runs for, its job's IO entry continuing that request, its producer ending it.
+ */
+private suspend fun CommManager.connectUsbRequest(tier: ConnectionPriorityPolicy.Tier) {
+    val request = admitUsbRequest(tier, "USB fixture", null, usbRecheck(appConnectionTicket())) ?: return
+    try { connect(UsbDevice(), request) } finally { endRequest(request) }
+}
+
 /** AapService's preempt callback: it ends only a published attempt or an unformed open. */
 private class ServicePreempt(private val manager: CommManager) : ConnectionArbiter.Actions {
     var preempts = 0
@@ -32,7 +41,7 @@ private class ServicePreempt(private val manager: CommManager) : ConnectionArbit
         }
     }
     override fun standDownWireless(by: ConnectionArbiter.Claim): Boolean = false
-    override fun giveBack(wireless: Boolean, usb: Boolean) {}
+    override fun giveBack(wireless: Boolean, usb: UsbRecheck?) {}
     override fun schedule(delayMs: Long, block: () -> Unit) {}
 }
 
@@ -47,7 +56,7 @@ private class RecordingClaims(private val manager: CommManager) : ConnectionArbi
         manager.disconnect(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
     }
     override fun standDownWireless(by: ConnectionArbiter.Claim): Boolean { standDowns++; return false }
-    override fun giveBack(wireless: Boolean, usb: Boolean) {}
+    override fun giveBack(wireless: Boolean, usb: UsbRecheck?) {}
     override fun schedule(delayMs: Long, block: () -> Unit) {} // No real clock advances in this fixture.
 }
 
@@ -94,7 +103,9 @@ fun appConnectionIngressOwnership() = runBlocking {
         } finally { c.close(); Handler.delayed.clear() }
     }
 
-    // The first public suspension is already U's continuation, not a second ingress.
+    // The first public suspension is already U's continuation, not a second ingress. A USB
+    // request is admitted at its input, as the launcher's beginAttempt always claimed, so its
+    // stand-down precedes the Stop; what the Stop prevents is any publication.
     for (route in listOf("USB", "IP", "SOCKET")) for (cancelledByStop in listOf(false, true)) {
         val c = CommManager()
         val io = QueuedDispatcher()
@@ -107,7 +118,7 @@ fun appConnectionIngressOwnership() = runBlocking {
         try {
             val u = launch(start = CoroutineStart.UNDISPATCHED) {
                 when (route) {
-                    "USB" -> c.connect(UsbDevice(), ConnectionPriorityPolicy.Tier.USER)
+                    "USB" -> c.connectUsbRequest(ConnectionPriorityPolicy.Tier.USER)
                     "IP" -> c.connect("192.0.2.10", 5277, ConnectionPriorityPolicy.Tier.USER)
                     else -> c.connect(socket, ConnectionPriorityPolicy.Tier.USER)
                 }
@@ -119,7 +130,7 @@ fun appConnectionIngressOwnership() = runBlocking {
             u.join()
             if (cancelledByStop) {
                 check(c.state is ConnectionState.Disconnected && c.network() == null)
-                check(c.isAppRunOwner(opened) && effects.preempts == 0 && effects.standDowns == 0)
+                check(c.isAppRunOwner(opened) && effects.preempts == 0 && effects.standDowns == if (route == "USB") 1 else 0)
                 if (route == "SOCKET") check(socket.isClosed)
             } else {
                 check(c.state is ConnectionState.Connected && c.network()?.closed == false)
@@ -163,8 +174,9 @@ fun appConnectionIngressOwnership() = runBlocking {
     }
 
     // Old high-tier U cannot preempt/stand down newer low-tier V before its eventual
-    // rejection. The no-Stop control must really preempt, proving the hook is effective.
-    for (route in listOf("USB", "IP", "SOCKET")) for (cancelledByStop in listOf(false, true)) {
+    // rejection. The no-Stop control must really preempt, proving the hook is effective. A USB
+    // request claims at its input, before any IO entry, so this pre-IO claim window is not its own.
+    for (route in listOf("IP", "SOCKET")) for (cancelledByStop in listOf(false, true)) {
         val c = CommManager()
         val oldIo = QueuedDispatcher()
         val oldSocket = Socket()
@@ -180,7 +192,6 @@ fun appConnectionIngressOwnership() = runBlocking {
         ConnectionArbiter.actions = effects
         val u = launch(start = CoroutineStart.UNDISPATCHED) {
             when (route) {
-                "USB" -> c.connect(UsbDevice(), ConnectionPriorityPolicy.Tier.USER)
                 "IP" -> c.connect("192.0.2.30", 5277, ConnectionPriorityPolicy.Tier.USER)
                 else -> c.connect(oldSocket, ConnectionPriorityPolicy.Tier.USER)
             }
@@ -562,23 +573,23 @@ fun appConnectionIngressOwnership() = runBlocking {
     }
 
     // USB P2-1. USB request A is accepted and waits in the previous session's cleanup join; its
-    // resumption is held on connection IO. A later USB request B from the same owner takes the
-    // claim, without cancelling A, and connects. A, resuming, must publish nothing: B's connection
-    // stays the live one, open. The control lets A connect alone.
+    // resumption is held on connection IO. A later USB request B from the same owner displaces it,
+    // without cancelling A, and connects. A, resuming, must publish nothing: B's connection stays
+    // the live one, open. The control lets A connect alone.
     for (late in listOf(true, false)) {
         val c = CommManager()
         val io = QueuedDispatcher()
         try {
             c.disconnect(honorKillOnDisconnect = false) // The previous session's cleanup is queued.
             c.ingressIo(io)
-            val requestA = launch(start = CoroutineStart.UNDISPATCHED) { c.connect(UsbDevice(), ConnectionPriorityPolicy.Tier.USB) }
+            val requestA = launch(start = CoroutineStart.UNDISPATCHED) { c.connectUsbRequest(ConnectionPriorityPolicy.Tier.USB) }
             io.drain()
             check(!requestA.isCompleted) { "A did not wait in the cleanup join" }
             c.cleanups()
             val resumeA = checkNotNull(io.tasks.poll()) { "A did not resume on connection IO" }
             var newer: ProjectionConnection? = null
             if (late) {
-                val requestB = launch(start = CoroutineStart.UNDISPATCHED) { c.connect(UsbDevice(), ConnectionPriorityPolicy.Tier.USB) }
+                val requestB = launch(start = CoroutineStart.UNDISPATCHED) { c.connectUsbRequest(ConnectionPriorityPolicy.Tier.USB) }
                 io.drain()
                 requestB.join()
                 newer = checkNotNull(c.network()) { "B did not connect" }
@@ -612,15 +623,17 @@ fun appConnectionIngressOwnership() = runBlocking {
         val errors = ConcurrentLinkedQueue<Throwable>()
         val rechecks = ConcurrentLinkedQueue<() -> Unit>()
         var usbChecks = 0
-        // What AapService's give-back runs: checkAlreadyConnected's live-session guards, then a scan.
-        fun usbCheck() {
-            if (c.isConnected) c.deferUsbCheckForConnectionAttempt()
-            else if (!c.deferUsbCheckForConnectionAttempt()) usbChecks++
+        // What AapService's give-back runs: checkAlreadyConnected's validity and live-session
+        // guards, then a scan.
+        fun usbCheck(recheck: UsbRecheck) {
+            if (!c.isCurrent(recheck)) return
+            if (c.isConnected) c.deferUsbCheckForConnectionAttempt(recheck)
+            else if (!c.deferUsbCheckForConnectionAttempt(recheck)) usbChecks++
         }
         ConnectionArbiter.actions = object : ConnectionArbiter.Actions {
             override fun preempt(loser: ConnectionArbiter.Claim) {}
             override fun standDownWireless(by: ConnectionArbiter.Claim): Boolean = false
-            override fun giveBack(wireless: Boolean, usb: Boolean) { if (usb) rechecks.add { usbCheck() } }
+            override fun giveBack(wireless: Boolean, usb: UsbRecheck?) { if (usb != null) rechecks.add { usbCheck(usb) } }
             override fun schedule(delayMs: Long, block: () -> Unit) { block() }
         }
         val handshake = Thread {
@@ -635,7 +648,9 @@ fun appConnectionIngressOwnership() = runBlocking {
             AapTransport.forcedFailure = AapTransport.HandshakeFailure.OTHER
             handshake.start()
             check(inSsl.await(5, TimeUnit.SECONDS) && c.state is ConnectionState.StartingTransport) { "A did not reach SSL" }
-            check(c.deferUsbCheckForConnectionAttempt()) { "the USB check was not deferred behind A's handshake" }
+            check(c.deferUsbCheckForConnectionAttempt(c.usbRecheck(c.appConnectionTicket()))) {
+                "the USB check was not deferred behind A's handshake"
+            }
             if (order != "none") {
                 c.ingressMain(main)
                 val requestB = launch(start = CoroutineStart.UNDISPATCHED) {

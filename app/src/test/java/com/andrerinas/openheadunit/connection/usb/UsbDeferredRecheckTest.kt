@@ -767,8 +767,9 @@ class UsbDeferredRecheckTest {
         stubRetry(f, bus)
         switching(bus, issued = false).use {
             settled(f, endHandshake(f, bus))
-            verify(f.launcher, times(1)).beginAttempt(eqValue(Tier.USB),
-                eqValue("USB recovery of ${UsbDeviceCompat(bus.stale).uniqueName}"), isNull(), anyValue())
+            // Read the mocked device before recording matchers: a mock call between matchers is invalid.
+            val description = "USB recovery of ${UsbDeviceCompat(bus.stale).uniqueName}"
+            verify(f.launcher, times(1)).beginAttempt(eqValue(Tier.USB), eqValue(description), isNull(), anyValue())
             runBlocking { verify(f.comm, times(1)).reconnectUsb(eqValue(bus.stale), anyValue(), anyValue(), anyValue()) }
         }
     }

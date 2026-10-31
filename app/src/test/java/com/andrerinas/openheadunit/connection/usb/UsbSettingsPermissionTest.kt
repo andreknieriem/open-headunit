@@ -33,7 +33,7 @@ class UsbSettingsPermissionTest {
             App::class.java.getDeclaredField("component\$delegate").apply { isAccessible = true }.set(app, lazyOf(component))
             `when`(component.commManager).thenReturn(comm)
             val manager = spy(UsbLauncherManager(service))
-            doNothing().`when`(manager).checkAlreadyConnected(anyBoolean(), anyBoolean(), isNull(), anyBoolean(), anyLong())
+            doNothing().`when`(manager).checkAlreadyConnected(anyBoolean(), anyBoolean(), isNull(), anyBoolean(), anyLong(), isNull())
             val usb = mock(android.hardware.usb.UsbManager::class.java)
             `when`(service.getSystemService(android.content.Context.USB_SERVICE)).thenReturn(usb)
             `when`(service.getSharedPreferences(anyString(), anyInt()))

@@ -499,7 +499,17 @@ class AutoStartFragment : Fragment() {
                 (item.stableId in btIds && !settings.showsWifi() && !settings.showsSelf())
         }
 
-        settingsAdapter.submitList(filtered) {
+        // Last, and for every connection type: it is where to look once the options above did not help.
+        val checkEntry = SettingItem.SettingEntry(
+            stableId = "autoStartCheck",
+            nameResId = R.string.auto_start_check_title,
+            value = getString(R.string.auto_start_check_entry_description),
+            onClick = {
+                findNavController().navigate(R.id.action_autoStartFragment_to_autoStartCheckFragment)
+            }
+        )
+
+        settingsAdapter.submitList(filtered + checkEntry) {
             scrollState?.let { recyclerView.layoutManager?.onRestoreInstanceState(it) }
         }
     }

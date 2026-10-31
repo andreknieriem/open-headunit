@@ -24,15 +24,7 @@ object WifiStackRecovery {
      * Ask for root once, so the prompt appears while the user is setting this up rather than on
      * the road. Returns true if root is now granted. Safe to call when it already is.
      */
-    suspend fun requestRoot(): Boolean = withContext(Dispatchers.IO) {
-        try {
-            Shell.getShell()
-            Shell.isAppGrantedRoot() == true
-        } catch (e: Exception) {
-            AppLog.w("WifiStackRecovery: root request failed: ${e.message}")
-            false
-        }
-    }
+    suspend fun requestRoot(): Boolean = OemAppManager.requestRoot()
 
     /**
      * Run one harmless command over local ADB, so an unpaired key raises "Allow USB debugging?" now,

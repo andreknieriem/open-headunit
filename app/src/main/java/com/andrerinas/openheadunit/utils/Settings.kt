@@ -1384,6 +1384,11 @@ class Settings(private val context: Context) {
         get() = prefs.getBoolean("auto-start-on-boot", false)
         set(value) { prefs.edit().putBoolean("auto-start-on-boot", value).apply() }
 
+    /** Phase two of #1122: turn MediaTek's DuraSpeed off on every boot, through root or ADB. */
+    var duraSpeedOffOnBoot: Boolean
+        get() = prefs.getBoolean("duraspeed-off-on-boot", false)
+        set(value) { prefs.edit().putBoolean("duraspeed-off-on-boot", value).apply() }
+
     var autoStartOnScreenOn: Boolean
         get() = prefs.getBoolean("auto-start-on-screen-on", false)
         set(value) { prefs.edit().putBoolean("auto-start-on-screen-on", value).apply() }

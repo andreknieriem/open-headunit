@@ -9,6 +9,7 @@ import lifecycle.ConnectionState
 import lifecycle.HeldServerSocket
 import lifecycle.QueuedDispatcher
 import lifecycle.ServiceBootstrap
+import lifecycle.UsbRecheck
 import kotlinx.coroutines.*
 import java.net.InetAddress
 import java.net.Socket

@@ -876,7 +876,7 @@ class SettingsActionFixture(val commManager:CommManager) {
  private val isDestroying=false
  private fun stopWirelessForCommand(settingsRearm:Boolean){commManager.cancelPendingSettingsRestart()}
  private var wirelessRearmPendingForSettings=false
- private var usbCheckPendingForSettings=false;private var bluetoothLaunchPendingForSettings=false
+ private var usbCheckPendingForSettings:UsbRecheck?=null;private var bluetoothLaunchPendingForSettings=false
  private class Wifi {
   private val ticket=Any()
   fun holdForUser(){}

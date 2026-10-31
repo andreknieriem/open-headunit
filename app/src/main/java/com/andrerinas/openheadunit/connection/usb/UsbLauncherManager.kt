@@ -991,7 +991,7 @@ class UsbLauncherManager(val service: AapService) {
      * Every try continues the one admitted [request]: a request a newer one displaced, or that
      * Stop or Save revoked, stops at its next step and never claims again.
      */
-    suspend fun connectWithRetry(
+    internal suspend fun connectWithRetry(
         device: UsbDevice,
         request: CommManager.ConnectionRequest,
         maxRetries: Int = 3,

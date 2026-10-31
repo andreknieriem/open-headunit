@@ -77,6 +77,10 @@ internal class ServiceDiscoveryResponse(context: Context, audioConfig: AudioSess
                     // The pixel shape goes out here and nowhere else, so this is the canvas the
                     // rest of the session is committed to.
                     HeadUnitScreenConfig.recordAnnouncedCanvas()
+                    // And the resolution with it. The projection locks it on HandshakeComplete, but
+                    // only while it is started; a reconnect behind the keyguard can miss that, and
+                    // an unlocked session re-chooses its size under a stream that cannot follow.
+                    HeadUnitScreenConfig.lockResolution()
 
                     val effectiveCodec = VideoCodecNegotiationPolicy.select(
                         preference = settings.videoCodec,

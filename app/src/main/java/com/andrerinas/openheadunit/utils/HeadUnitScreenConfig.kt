@@ -147,11 +147,30 @@ object HeadUnitScreenConfig {
     private var loggedCanvasDrift: Boolean = false
     private var canvasDriftLines: Int = 0
 
+    // The shape that canvas gave the stream, kept for the session rather than for the projection
+    // window: the window is recreated under a running session, and the old one's onDestroy clears
+    // the announced canvas after the new one has started.
+    @Volatile private var sessionShape: ScreenOrientationPolicy.Normalisation? = null
+
     fun recordAnnouncedCanvas() {
         announcedCanvasW = screenWidthPx
         announcedCanvasH = screenHeightPx
+        recordSessionShape(screenWidthPx, screenHeightPx)
         loggedCanvasDrift = false
         canvasDriftLines = 0
+    }
+
+    /**
+     * The shape the phone was told to stream in this session, or null between sessions.
+     *
+     * Not the negotiated resolution: a turn unlocks that and re-chooses it under a stream that
+     * cannot follow (measured 2026-10-23: _1080x1920 re-chosen as _1920x1080 mid-session). This
+     * changes only at service discovery and at the session's end.
+     */
+    fun announcedShape(): ScreenOrientationPolicy.Normalisation? = sessionShape
+
+    internal fun recordSessionShape(width: Int, height: Int) {
+        sessionShape = ScreenOrientationPolicy.shapeOf(width, height)
     }
 
     /** True when the live margins are already on the wire, so sending them again would only repeat it. */
@@ -211,7 +230,13 @@ object HeadUnitScreenConfig {
         val isConfigLandscape = configOrientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
         val isConfigPortrait = configOrientation == android.content.res.Configuration.ORIENTATION_PORTRAIT
 
-        normalisation = ScreenOrientationPolicy.normalisation(screenOrientation, isConfigLandscape, isConfigPortrait)
+        // A session can start behind the keyguard, which reads portrait, while the projection will
+        // come up landscape; then the shape it was last drawn in is the better guess.
+        val configIsOurWindow = readingDescribesProjection(context)
+        val remembered = ScreenOrientationPolicy.shapeOf(settings.cachedSurfaceWidth, settings.cachedSurfaceHeight)
+        normalisation = ScreenOrientationPolicy.normalisation(
+            screenOrientation, isConfigLandscape, isConfigPortrait, configIsOurWindow, remembered
+        )
         val real = ScreenOrientationPolicy.normalise(realW, realH, normalisation)
         val usable = ScreenOrientationPolicy.normalise(usableW, usableH, normalisation)
         val finalRealW = real.width
@@ -219,7 +244,7 @@ object HeadUnitScreenConfig {
         val finalUsableW = usable.width
         val finalUsableH = usable.height
 
-        AppLog.i("[UI_DEBUG] HeadUnitScreenConfig: Raw size: ${realW}x${realH}, usable: ${usableW}x${usableH}, orientation setting: $screenOrientation, configOrientation: $configOrientation")
+        AppLog.i("[UI_DEBUG] HeadUnitScreenConfig: Raw size: ${realW}x${realH}, usable: ${usableW}x${usableH}, orientation setting: $screenOrientation, configOrientation: $configOrientation, ourWindow: $configIsOurWindow, remembered: $remembered, normalisation: $normalisation")
         AppLog.i("[UI_DEBUG] HeadUnitScreenConfig: Final normalized size: ${finalRealW}x${finalRealH}, usable: ${finalUsableW}x${finalUsableH}")
 
         physicalWidthPx = finalRealW
@@ -252,7 +277,7 @@ object HeadUnitScreenConfig {
             usableH = finalUsableH,
             surface = surfaceCanvas,
             window = windowCanvas,
-            cached = cachedMeasurement(settings, screenOrientation, isConfigLandscape, isConfigPortrait),
+            cached = cachedMeasurement(settings),
             hash = currentHash,
         )
 
@@ -315,22 +340,26 @@ object HeadUnitScreenConfig {
         recalculate()
     }
 
+    /**
+     * Whether what [context] reads right now is the projection as it will be shown. The orientation
+     * a session is negotiated in and the canvas remembered for the next one both depend on it.
+     */
+    fun readingDescribesProjection(context: Context): Boolean = ScreenOrientationPolicy.describesProjection(
+        startedActivity = App.hasStartedActivity,
+        pictureInPicture = App.isPiPActive,
+        screenInteractive = ScreenPower.isInteractive(context),
+        keyguardLocked = ScreenPower.isKeyguardLocked(context),
+    )
+
     /** The canvas an earlier session measured, normalised to the orientation now in force. */
-    private fun cachedMeasurement(
-        settings: Settings,
-        screenOrientation: Settings.ScreenOrientation,
-        isConfigLandscape: Boolean,
-        isConfigPortrait: Boolean
-    ): ProjectionCanvasPolicy.Measurement? {
+    private fun cachedMeasurement(settings: Settings): ProjectionCanvasPolicy.Measurement? {
         val cachedW = settings.cachedSurfaceWidth
         val cachedH = settings.cachedSurfaceHeight
         if (cachedW <= 0 || cachedH <= 0) return null
 
-        val turned = ScreenOrientationPolicy.normalise(
-            cachedW,
-            cachedH,
-            ScreenOrientationPolicy.normalisation(screenOrientation, isConfigLandscape, isConfigPortrait),
-        )
+        // The orientation init() settled on, not one derived again from the configuration: the
+        // two used to agree by construction, and no longer have to.
+        val turned = ScreenOrientationPolicy.normalise(cachedW, cachedH, normalisation)
         // Another session wrote this, so it can describe another panel. The live readings above are
         // this process's own and outrank the panel, which is why only the cache is bounded by it.
         if (!ProjectionCanvasPolicy.fitsPanel(turned.width, turned.height, physicalWidthPx, physicalHeightPx)) {
@@ -806,6 +835,9 @@ object HeadUnitScreenConfig {
         if (!keepFallback) synchronized(this) {
             adoptedFallback = null
             offeredFallback = null
+            // The stream it described ends with the session, so a reconnect reads no shape until
+            // its own service discovery announces one.
+            sessionShape = null
         }
         if (isResolutionLocked) {
             AppLog.i("[UI_DEBUG] HeadUnitScreenConfig: Unlocking resolution (was $negotiatedResolutionType)")

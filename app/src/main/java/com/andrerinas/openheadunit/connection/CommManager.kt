@@ -148,6 +148,10 @@ class CommManager(
             val reachedSsl: Boolean = false,
             val endedBy: EndCause = EndCause.APP,
             val transport: ProjectionConnection.Type? = null,
+            // The Stop ticket and owed-scan epoch at this end's publication. Work the end starts
+            // after the service's collector hop (reconnects, Save's retry, re-arms) carries this,
+            // so a Stop or withdrawal between the end and the collector is not read past.
+            internal val endRecheck: UsbRecheck? = null,
         ) : ConnectionState() {
             override fun toString() = "Disconnected(isClean=$isClean, isUserExit=$isUserExit, " +
                 "reason=$reason, restartEndpoint=$restartEndpoint, settingsRestartUntilMs=$settingsRestartUntilMs, " +
@@ -308,6 +312,14 @@ class CommManager(
     /** An owed USB scan for the input admitted with [ticket]. See [UsbRecheck]. */
     internal fun usbRecheck(ticket: Long): UsbRecheck =
         synchronized(transportLifecycleLock) { UsbRecheck(ticket, usbRecheckEpoch) }
+
+    /**
+     * The owed USB scan of an input received now (an attach, a wake, a tap): the current Stop
+     * ticket and epoch, read together. Work deferred from that input carries this object; it never
+     * mints its own when it runs.
+     */
+    internal fun usbRecheckNow(): UsbRecheck =
+        synchronized(transportLifecycleLock) { UsbRecheck(appExitPolicy.stopEpoch, usbRecheckEpoch) }
 
     /** The one validity check of an owed USB scan; see [UsbRecheck]. */
     internal fun isCurrent(recheck: UsbRecheck): Boolean = synchronized(transportLifecycleLock) { recheckCurrent(recheck) }
@@ -1107,8 +1119,10 @@ class CommManager(
         restartEndpoint: Pair<String, Int>,
         ticket: Long,
         tier: ConnectionPriorityPolicy.Tier = ConnectionPriorityPolicy.Tier.WIRELESS_HANDSHAKE,
+        // The Save a discovery's find continues, when it was started for one.
+        expectedState: ConnectionState.Disconnected? = null,
     ) {
-        connectSocketWithTicket(socket, tier, restartEndpoint, null, ConnectionAdmission.UNRESTRICTED, ticket, held = true)
+        connectSocketWithTicket(socket, tier, restartEndpoint, expectedState, ConnectionAdmission.UNRESTRICTED, ticket, held = true)
     }
 
     private suspend fun connectSocketWithTicket(
@@ -2027,7 +2041,7 @@ class CommManager(
         source.retirePresentation()
         recordTerminal(connectionAttempt)
         _connectionState.value = ConnectionState.Disconnected(isClean, isUserExit = wasUserExit, wasLoopbackSession = isLoopbackSession, hadPhysicalConnection = physicalConnectionReached, settingsRetryOwner = save, endedAttempt = connectionAttempt,
-            reachedSsl = endedSsl, endedBy = EndCausePolicy.ofTransportQuit(isClean, wasUserExit), transport = endedType)
+            reachedSsl = endedSsl, endedBy = EndCausePolicy.ofTransportQuit(isClean, wasUserExit), transport = endedType, endRecheck = usbRecheckNow())
         if (settings.killOnDisconnect) scheduleAppExit(wasUserExit)
     }
 
@@ -2402,6 +2416,7 @@ class CommManager(
                 SystemClock.elapsedRealtime() + SettingsRestartRecovery.WINDOW_MS else 0L,
             endedAttempt = connectionAttempt,
             reachedSsl = endedSsl, endedBy = EndCausePolicy.ofDisconnect(isUserExit, endedBy), transport = endedType,
+            endRecheck = usbRecheckNow(),
         )
         if (settings.killOnDisconnect && honorKillOnDisconnect) scheduleAppExit(isUserExit)
     }
@@ -2448,7 +2463,7 @@ class CommManager(
                 _transport?.retirePresentation()
                 recordTerminal(endedAttempt)
                 _connectionState.value = ConnectionState.Disconnected(wasLoopbackSession = isLoopbackSession, hadPhysicalConnection = physicalConnectionReached, endedAttempt = endedAttempt,
-                    reachedSsl = reachedSsl(), transport = _connection?.type)
+                    reachedSsl = reachedSsl(), transport = _connection?.type, endRecheck = usbRecheckNow())
             }
             // destroy() can retire an attempt no terminal ended; settling the same one twice is a no-op.
             endedAttempt?.settled?.complete(Unit)
@@ -2606,7 +2621,7 @@ class CommManager(
             _transport?.retirePresentation()
             recordTerminal(connectionAttempt)
             _connectionState.value = ConnectionState.Disconnected(isClean = false, isUserExit = false, wasLoopbackSession = isLoopbackSession, hadPhysicalConnection = physicalConnectionReached, endedAttempt = connectionAttempt,
-                reachedSsl = reachedSsl(), endedBy = EndCause.LINK_GOING_DOWN, transport = _connection?.type)
+                reachedSsl = reachedSsl(), endedBy = EndCause.LINK_GOING_DOWN, transport = _connection?.type, endRecheck = usbRecheckNow())
             cleanup
         }
         runBlocking { withTimeoutOrNull(timeoutMs) { job.join() } }

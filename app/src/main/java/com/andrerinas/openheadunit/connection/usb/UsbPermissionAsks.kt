@@ -8,6 +8,7 @@ import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
 import androidx.core.content.ContextCompat
 import com.andrerinas.openheadunit.App
+import com.andrerinas.openheadunit.connection.UsbRecheck
 import com.andrerinas.openheadunit.utils.AppLog
 
 /**
@@ -132,9 +133,9 @@ object UsbPermissionAsks {
 
     /**
      * The USB button and the USB list: the user asked, so only a dialog already up stops it.
-     * [ticket] is the tap's Stop boundary; the grant connects only while it is still accepted.
+     * [recheck] is the scan the tap minted; a user exit or Stop before the answer withdraws it.
      */
-    fun askFromUi(context: Context, device: UsbDevice, ticket: Long) {
+    fun askFromUi(context: Context, device: UsbDevice, recheck: UsbRecheck) {
         val usbManager = UsbDeviceCompat.usbManager(context) ?: return
         val settings = App.provide(context).settings
         val present = usbManager.deviceList.values.map { it.deviceName }
@@ -152,7 +153,7 @@ object UsbPermissionAsks {
 
         AppLog.i("UsbPermissionAsks: Requesting USB permission for ${UsbDeviceCompat(device).uniqueName}")
         try {
-            usbManager.requestPermission(device, UsbReceiver.createPermissionPendingIntent(context, token, ticket))
+            usbManager.requestPermission(device, UsbReceiver.createPermissionPendingIntent(context, token, recheck))
         } catch (e: Exception) {
             complete(device.deviceName, token)
             AppLog.w("UsbPermissionAsks: the permission request failed: ${e.message}")

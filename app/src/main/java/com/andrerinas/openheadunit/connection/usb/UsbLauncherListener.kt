@@ -9,6 +9,7 @@ import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.connection.CommManager
 import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy.Tier
+import com.andrerinas.openheadunit.connection.UsbRecheck
 import com.andrerinas.openheadunit.connection.usb.UsbLauncherManager.Companion.ATTACH_FALLBACK_DELAY_MS
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.Settings
@@ -33,7 +34,11 @@ class UsbLauncherListener(private val manager: UsbLauncherManager) : UsbReceiver
         }
 
         val commManager = App.provide(service).commManager
-        val ticket = commManager.appConnectionTicket()
+        // The scan this attach asks for, minted as it is received, and the Save it may continue,
+        // read then too. The 2 s fallback below carries both: a user exit or Stop before it fires
+        // withdraws the scan, and a Save that is no longer pending is not adopted by it.
+        val recheck = commManager.usbRecheckNow()
+        val save = manager.pendingSettingsRestart()
 
         service.userExitedAA = false
 
@@ -41,7 +46,7 @@ class UsbLauncherListener(private val manager: UsbLauncherManager) : UsbReceiver
             // Device already in AOA mode (re-enumerated after UsbAttachedActivity switched it).
             AppLog.i("USB accessory device attached, connecting.")
             service.launchMainActivityIfNeeded("USB accessory attach", defersToAndroid(device))
-            manager.checkAlreadyConnected(force = true, settingsRestart = manager.pendingSettingsRestart(), ticket = ticket)
+            manager.checkAlreadyConnected(force = true, settingsRestart = save, recheck = recheck)
         } else {
             // UsbAttachedActivity normally handles normal-mode devices via the manifest filter.
             // If nothing has connected after a delay, the service checks too; the permission
@@ -57,8 +62,8 @@ class UsbLauncherListener(private val manager: UsbLauncherManager) : UsbReceiver
                 // An Activity-owned switch keeps its separate handoff guard.
                 if (!commManager.isConnected && !manager.isActivitySwitchInFlight()) {
                     AppLog.i("UsbAttachedActivity didn't handle $deviceName. Trying from service...")
-                    manager.checkAlreadyConnected(force = true, settingsRestart = manager.pendingSettingsRestart(),
-                        trigger = UsbPlugInPolicy.Trigger.PLUG_IN, ticket = ticket)
+                    manager.checkAlreadyConnected(force = true, settingsRestart = stillPending(save),
+                        trigger = UsbPlugInPolicy.Trigger.PLUG_IN, recheck = recheck)
                 }
             }
         }
@@ -88,7 +93,9 @@ class UsbLauncherListener(private val manager: UsbLauncherManager) : UsbReceiver
 
     override fun onUsbAccessoryDetach() {
         val commManager = App.provide(service).commManager
-        val ticket = commManager.appConnectionTicket()
+        // Minted as the detach is received, with the Save pending then; the re-sync carries both.
+        val recheck = commManager.usbRecheckNow()
+        val save = manager.pendingSettingsRestart()
 
         AppLog.i("USB Accessory detached. This might be a transient state (e.g., 100% battery). Attempting to re-sync...")
 
@@ -101,16 +108,20 @@ class UsbLauncherListener(private val manager: UsbLauncherManager) : UsbReceiver
         service.serviceScope.launch {
             delay(1500) // Give the phone/system time to settle its USB state
             AppLog.i("Accessory detach cooldown finished. Checking for re-connection...")
-            manager.checkAlreadyConnected(force = true, settingsRestart = manager.pendingSettingsRestart(),
-                trigger = UsbPlugInPolicy.Trigger.RECONNECT, ticket = ticket)
+            manager.checkAlreadyConnected(force = true, settingsRestart = stillPending(save),
+                trigger = UsbPlugInPolicy.Trigger.RECONNECT, recheck = recheck)
         }
     }
+
+    /** [save], captured at the input, only while it is still the pending Save; never a newer one. */
+    private fun stillPending(save: CommManager.ConnectionState.Disconnected?) =
+        save?.takeIf { it === manager.pendingSettingsRestart() }
 
     override fun onUsbRecoveryPermission(token: String, granted: Boolean, device: UsbDevice) {
         manager.onRecoveryPermission(token, granted, device)
     }
 
-    override fun onUsbPermission(granted: Boolean, connect: Boolean, device: UsbDevice, ticket: Long, token: String?) {
+    override fun onUsbPermission(granted: Boolean, connect: Boolean, device: UsbDevice, recheck: UsbRecheck, token: String?) {
         if (!UsbDeviceCompat.isConnectable(service, device)) {
             AppLog.i("Ignoring USB permission callback (VID: ${device.vendorId}): ${UsbDeviceCompat.matchReason(device)}")
             return
@@ -123,7 +134,7 @@ class UsbLauncherListener(private val manager: UsbLauncherManager) : UsbReceiver
             return
         }
         // The scan the dialog was raised for: a withdrawn one is not revived by a late grant.
-        val permission = manager.takePermissionAttempt(device, ticket, token) ?: return
+        val permission = manager.takePermissionAttempt(device, recheck, token, granted) ?: return
         val commManager = App.provide(service).commManager
         if (!commManager.isCurrent(permission.recheck)) return
         val restart = permission.settingsRestart

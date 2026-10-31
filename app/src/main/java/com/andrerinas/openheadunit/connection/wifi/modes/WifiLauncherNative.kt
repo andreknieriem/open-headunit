@@ -78,7 +78,9 @@ class WifiLauncherNative : WifiLauncher {
 
     override fun hasLocalDiscovery() = false
 
-    override fun start(noInfoToasts: Boolean) {
+    // [ticket] is not threaded into the Native machinery's own loops: they are this launcher's,
+    // admitted by setActive under that ticket and retired by stop() when Stop commits.
+    override fun start(noInfoToasts: Boolean, ticket: Long) {
         val wifiDirect = manager.sharedServices.wifiDirectManager
 
         handshakeManager = NativeAaHandshakeManager(service, this, service.serviceScope)

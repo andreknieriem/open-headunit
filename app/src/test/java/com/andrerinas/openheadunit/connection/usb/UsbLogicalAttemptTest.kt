@@ -113,7 +113,7 @@ class UsbLogicalAttemptTest {
         }
         fun set(name: String, value: Any?) = CommManager::class.java.getDeclaredField(name)
             .apply { isAccessible = true }.set(comm, value)
-        fun scan() { launcher.checkAlreadyConnected(force = true); queue.drain() }
+        fun scan() { launcher.checkAlreadyConnected(force = true, recheck = comm.usbRecheckNow()); queue.drain() }
         fun connect(job: Job? = null) {
             val deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(5)
             while (true) {
@@ -128,14 +128,16 @@ class UsbLogicalAttemptTest {
         }
         fun closes() = mockingDetails(handle).invocations.count { it.method.name == "close" }
         fun stopOpen(): Long { comm.requestExplicitAppExit(killProcess = false); return comm.onAppRelaunched() }
+        /** A dialog raised for [ticket]'s input now, answered with a grant; null asks for the grant only. */
         fun permissionReply(ticket: Long?) {
             val intent = mock(android.content.Intent::class.java)
             `when`(intent.action).thenReturn(UsbReceiver.ACTION_USB_DEVICE_PERMISSION)
             if (ticket != null) {
+                val part = UsbReceiver.encodeRecheck(comm.usbRecheck(ticket))
                 val data = mock(android.net.Uri::class.java)
                 `when`(intent.data).thenReturn(data)
                 `when`(data.scheme).thenReturn("ohu-usb-attempt")
-                `when`(data.schemeSpecificPart).thenReturn(ticket.toString())
+                `when`(data.schemeSpecificPart).thenReturn(part)
             }
             @Suppress("DEPRECATION")
             `when`(intent.getParcelableExtra<UsbDevice>(UsbManager.EXTRA_DEVICE)).thenReturn(device)
@@ -280,7 +282,7 @@ class UsbLogicalAttemptTest {
         val first = saved()
         f.states.value = first
         f.failFirst = true
-        f.launcher.restartForSettings(first); f.queue.drain(); f.connect()
+        f.launcher.restartForSettings(first, f.comm.usbRecheckNow()); f.queue.drain(); f.connect()
         assertEquals(1, f.opens)
         val c = f.stopOpen()
         f.queue.advance(1500); f.connect()
@@ -290,7 +292,7 @@ class UsbLogicalAttemptTest {
         f.assertIdle()
         val next = saved()
         f.states.value = next
-        f.launcher.restartForSettings(next); f.queue.drain(); f.connect()
+        f.launcher.restartForSettings(next, f.comm.usbRecheckNow()); f.queue.drain(); f.connect()
         assertEquals(2, f.opens)
         assertTrue(f.states.value is CommManager.ConnectionState.Connected)
         f.assertIdle()
@@ -298,7 +300,7 @@ class UsbLogicalAttemptTest {
 
     @Test fun aNewManualUsbInputAfterStopCanOriginateANewRun() = fixture { f ->
         f.comm.requestExplicitAppExit(killProcess = false)
-        f.launcher.checkOnRequest(userRequested = true)
+        f.launcher.checkOnRequest(userRequested = true, recheck = f.comm.usbRecheckNow())
         f.queue.drain(); f.connect()
         assertEquals(1, f.opens)
         assertTrue(f.states.value is CommManager.ConnectionState.Connected)

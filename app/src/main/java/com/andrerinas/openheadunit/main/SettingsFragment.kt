@@ -3725,7 +3725,8 @@ class SettingsFragment : Fragment() {
         )
     }
 
-    private fun createImportSnapshot() = SettingsRestoreHandler.capture(requireContext(), settings)
+    private fun createImportSnapshot() = SettingsRestoreHandler.capture(requireContext(), settings,
+        App.provide(requireContext()).commManager.appConnectionTicket())
 
     private fun handleImportedSettings(snapshot: SettingsRestoreHandler.Snapshot, result: SettingsBackupManager.ImportResult) {
         val ctx = context ?: return
@@ -4309,9 +4310,7 @@ class SettingsFragment : Fragment() {
      */
     private fun rotateWifiDirectIdentityNow() {
         requireContext().startService(
-            Intent(requireContext(), AapService::class.java).apply {
-                action = AapService.ACTION_ROTATE_WIFI_DIRECT_IDENTITY
-            }
+            AapService.commandIntent(requireContext(), AapService.ACTION_ROTATE_WIFI_DIRECT_IDENTITY)
         )
         val appliesNow = P2pIdentityRotationPolicy.applyNow(
             sessionLive = App.provide(requireContext()).commManager.isConnected,

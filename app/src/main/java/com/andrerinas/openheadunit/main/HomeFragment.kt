@@ -2525,6 +2525,9 @@ class HomeFragment : Fragment() {
     /** @return whether this put something on screen, or started connecting, so nothing else should. */
     private fun checkNativeDriverSelectionOnStartup(): Boolean {
         if (!isAdded) return false
+        // Automatic: it starts only from a current Run, and its countdown or direct connect keeps
+        // that Run's ticket. Unchecked while a Stop is pending, so the next Run checks again.
+        val runTicket = commManager.currentAppRunTicket() ?: return false
         hasCheckedNativeDriverSelection = true
         if (ExternalBtTransportPolicy.usesExternalModule(NativeAaHandshakeManager.transportRoute(requireContext()))) {
             return false
@@ -2575,23 +2578,24 @@ class HomeFragment : Fragment() {
         )
 
         if (shouldShow) {
-            showNativeAaDeviceSelector(autoCountdown = true)
+            showNativeAaDeviceSelector(autoCountdown = true, openedTicket = runTicket)
             return true
         } else if (appSettings.nativeDriverSelectionMode == NativeDriverSelectionPolicy.Mode.AUTO && autoTargetMac != null) {
             val targetDev = cands.deviceFor(autoTargetMac)
             val devName = targetDev?.name ?: autoTargetMac
             AppLog.i("HomeFragment: Unambiguous driver ($devName) - auto-connecting directly without prompt")
-            connectToNativeDevice(autoTargetMac, devName, connectedMacs, explicit = false, commManager.appConnectionTicket())
+            connectToNativeDevice(autoTargetMac, devName, connectedMacs, explicit = false, runTicket)
             return true
         }
         return false
     }
 
-    private fun showNativeAaDeviceSelector(autoCountdown: Boolean = false) {
+    /** [openedTicket]: the Stop ticket of the input that opened the selector, read on its turn. */
+    private fun showNativeAaDeviceSelector(autoCountdown: Boolean = false,
+        openedTicket: Long = commManager.appConnectionTicket()) {
         if (!isAdded) return
-        // The input that opened the selector. Its countdown and its shown notice run later and
-        // carry this ticket; a pick the user taps is an input of its own.
-        val openedTicket = commManager.appConnectionTicket()
+        // Its countdown and its shown notice run later and carry [openedTicket]; a pick the user
+        // taps is an input of its own.
         if (ExternalBtTransportPolicy.usesExternalModule(NativeAaHandshakeManager.transportRoute(requireContext()))) {
             AppLog.i("HomeFragment: Android Bluetooth driver selection does not apply to the external-module route")
             return

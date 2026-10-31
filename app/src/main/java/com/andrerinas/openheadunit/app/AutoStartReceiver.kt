@@ -4,13 +4,12 @@ import android.bluetooth.BluetoothDevice
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.aap.AapService
 import com.andrerinas.openheadunit.main.MainActivity
 import com.andrerinas.openheadunit.main.SettingsActivity
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.Settings
-import android.os.UserManager
-import android.os.Build
 
 class AutoStartReceiver : BroadcastReceiver() {
 
@@ -21,8 +20,7 @@ class AutoStartReceiver : BroadcastReceiver() {
 
         if (targetMacs.isEmpty()) return
         
-        val isLocked = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && 
-                      !(context.getSystemService(Context.USER_SERVICE) as UserManager).isUserUnlocked
+        val isLocked = !App.isUserUnlocked(context)
         
         // Before the first unlock there is no credential storage, which both the session and the
         // object graph read, so there is nothing to start yet. Nothing replays this event either,

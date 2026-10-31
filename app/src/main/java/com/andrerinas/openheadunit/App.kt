@@ -74,7 +74,7 @@ class App : Application(), Application.ActivityLifecycleCallbacks {
             ConscryptInitializer.initialize()
         }
 
-        if (isUserUnlocked()) {
+        if (isUserUnlocked(this)) {
             initUnlockedOnce()
         } else {
             AppLog.init(null, this) // Initialize with default logging if locked
@@ -130,7 +130,7 @@ class App : Application(), Application.ActivityLifecycleCallbacks {
      * first unlock throws and takes the whole process down. Runs once, at start or at unlock.
      */
     private fun initUnlockedOnce() {
-        if (unlockedInitDone) return
+        if (unlockedInitDone || !isUserUnlocked(this)) return
         unlockedInitDone = true
 
         // Root support
@@ -168,6 +168,7 @@ class App : Application(), Application.ActivityLifecycleCallbacks {
 
     private val userUnlockedReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
+            if (!isUserUnlocked(this@App)) return
             AppLog.i("App: user unlocked, credential storage is available, applying settings")
             initUnlockedOnce()
             try {
@@ -177,23 +178,16 @@ class App : Application(), Application.ActivityLifecycleCallbacks {
         }
     }
 
-    private fun isUserUnlocked(): Boolean {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            val userManager = getSystemService(Context.USER_SERVICE) as UserManager
-            userManager.isUserUnlocked
-        } else {
-            true
-        }
-    }
-
     override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {}
     override fun onActivityStarted(activity: Activity) {
         startedActivityCount++
         if (startedActivityCount == 1) {
             hasStartedActivity = true
             AppUiEntry.foregroundStarted(activity)
-            FloatingButtonManager.onAppForegroundChanged(this, isForeground = true)
         }
+        // A Direct Boot activity may still be started when the first unlocked activity starts.
+        // Refresh on every start, not only the 0 -> 1 transition; the manager gates CE access.
+        FloatingButtonManager.onAppForegroundChanged(this, isForeground = true)
     }
     override fun onActivityResumed(activity: Activity) {}
     override fun onActivityPaused(activity: Activity) {}
@@ -231,6 +225,14 @@ class App : Application(), Application.ActivityLifecycleCallbacks {
         @Volatile
         var instance: App? = null
             private set
+
+        /**
+         * Direct Boot entry points must check this before building the component or reading CE
+         * settings. Never cache it: the same process survives the first user unlock.
+         */
+        fun isUserUnlocked(context: Context): Boolean =
+            Build.VERSION.SDK_INT < Build.VERSION_CODES.N ||
+                (context.getSystemService(Context.USER_SERVICE) as? UserManager)?.isUserUnlocked == true
 
 
         fun get(context: Context): App {

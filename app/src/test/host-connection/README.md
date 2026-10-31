@@ -68,10 +68,15 @@ displaced stops at its next step. Its retries stop on its own attempt's arrival,
 shared state SSL may already have moved on. It is never a JOIN target and no launch waits on it.
 A USB scan that cannot run yet is one owed object (`UsbRecheck`) carried by whatever holds it (a
 live attempt, the arbiter, the give-back, the queued scan, the settings hold, a permission
-dialog by its reply token, the request admitted for it) and checked again before it scans and at
+dialog by its reply address, the request admitted for it) and checked again before it scans and at
 USB admission; a user exit, Stop or an end that holds automatic reconnection withdraws it
-wherever it waits, retiring a request admitted for it. Before first unlock the attach screen's
-switch keeps a bare arbiter claim: no request authority can exist yet. The ingress fixtures
+wherever it waits, retiring a request admitted for it. Deferred USB work (the attach fallback,
+the accessory-detach re-sync, the reconnect after an end, Save's retry and fallback, the
+handshake-end recovery, a permission reply) carries the object its input minted when it was
+received and never mints one when it runs; only an input happening now (attach, wake, screen-on,
+a tap, a service command) mints its own. Before first unlock the attach screen's switch keeps a
+bare arbiter claim: no request authority can exist yet, and its worker checks that claim still
+holds before its first USB call. The ingress fixtures
 pause real producers inside
 each former gap (claim before record, Stop or Save or another claim taking a waiting request's
 authority, a discovery hand-off queued behind IO, a cancelled request that published nothing

@@ -262,7 +262,7 @@ class UsbListFragment : Fragment() {
                         ContextCompat.startForegroundService(mContext, Intent(mContext, AapService::class.java))
                         usbManager.requestPermission(
                             device.wrappedDevice,
-                            UsbReceiver.createPermissionPendingIntent(mContext, App.provide(mContext).commManager.appConnectionTicket())
+                            UsbReceiver.createPermissionPendingIntent(mContext, App.provide(mContext).commManager.usbRecheckNow())
                         )
                     }
                 }

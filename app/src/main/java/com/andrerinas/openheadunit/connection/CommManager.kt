@@ -286,6 +286,14 @@ class CommManager(
     internal fun usbRecheck(ticket: Long): UsbRecheck =
         synchronized(transportLifecycleLock) { UsbRecheck(ticket, usbRecheckEpoch) }
 
+    /**
+     * The owed USB scan of an input received now (an attach, a wake, a tap): the current Stop
+     * ticket and epoch, read together. Work deferred from that input carries this object; it never
+     * mints its own when it runs.
+     */
+    internal fun usbRecheckNow(): UsbRecheck =
+        synchronized(transportLifecycleLock) { UsbRecheck(appExitPolicy.stopEpoch, usbRecheckEpoch) }
+
     /** The one validity check of an owed USB scan; see [UsbRecheck]. */
     internal fun isCurrent(recheck: UsbRecheck): Boolean = synchronized(transportLifecycleLock) { recheckCurrent(recheck) }
 

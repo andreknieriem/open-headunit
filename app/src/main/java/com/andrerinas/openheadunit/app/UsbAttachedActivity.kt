@@ -127,9 +127,10 @@ class UsbAttachedActivity : Activity() {
             if (!usbManager.hasPermission(device)) {
                 AppLog.i("Usb in accessory mode but no permission. Requesting...")
                 // Before first unlock the app component cannot read credential-protected
-                // settings. The grant still persists; the session waits for unlock below.
-                val ticket = if (isLocked) null else App.provide(this).commManager.appConnectionTicket()
-                val permissionIntent = UsbReceiver.createPermissionPendingIntent(this, ticket)
+                // settings. The grant still persists; the session waits for unlock below. Unlocked,
+                // the reply carries the scan minted now, so an exit before the answer withdraws it.
+                val recheck = if (isLocked) null else App.provide(this).commManager.usbRecheckNow()
+                val permissionIntent = UsbReceiver.createPermissionPendingIntent(this, recheck)
                 usbManager.requestPermission(device, permissionIntent)
                 finish()
                 return
@@ -222,7 +223,7 @@ class UsbAttachedActivity : Activity() {
         val commManager = if (isLocked) null else App.provide(this).commManager
         val usbRequest = commManager?.admitUsbRequest(
             ConnectionPriorityPolicy.Tier.USB, "USB switch of ${deviceCompat.uniqueName}", save = null,
-            recheck = commManager.usbRecheck(commManager.appConnectionTicket()),
+            recheck = commManager.usbRecheckNow(),
         )
         val lockedClaim = if (isLocked) ConnectionArbiter.claim(
             ConnectionPriorityPolicy.Tier.USB, ConnectionPriorityPolicy.Owner.USB,

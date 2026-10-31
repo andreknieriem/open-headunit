@@ -51,6 +51,31 @@ class UsbRecheckAuthorityTest {
     }
 
     /**
+     * The service scope: nothing it is handed runs until a test advances it, and its delays run on
+     * a virtual clock. [advance] runs only the work those delays resume; whatever that work starts
+     * in turn (an admitted attempt's body) stays queued, as the attempt never runs here.
+     */
+    @OptIn(kotlinx.coroutines.InternalCoroutinesApi::class)
+    private class Timed : CoroutineDispatcher(), kotlinx.coroutines.Delay {
+        private val tasks = ArrayDeque<Runnable>()
+        private val timers = mutableListOf<Pair<Long, kotlinx.coroutines.CancellableContinuation<Unit>>>()
+        private var now = 0L
+        override fun dispatch(context: CoroutineContext, block: Runnable) { tasks.addLast(block) }
+        override fun scheduleResumeAfterDelay(timeMillis: Long, continuation: kotlinx.coroutines.CancellableContinuation<Unit>) {
+            timers += (now + timeMillis) to continuation
+        }
+        private fun runQueued() = repeat(tasks.size) { tasks.removeFirst().run() }
+        fun advance(ms: Long) {
+            runQueued() // Start what was launched, up to its delay.
+            now += ms
+            val due = timers.filter { it.first <= now }
+            timers.removeAll(due)
+            due.forEach { (_, continuation) -> continuation.resumeWith(Result.success(Unit)) }
+            runQueued()
+        }
+    }
+
+    /**
      * [normalMode]: the attached phone is in normal mode (an ADB interface) and has no permission
      * yet, so an auto-start scan raises the launcher's permission dialog instead of switching.
      */
@@ -64,6 +89,7 @@ class UsbRecheckAuthorityTest {
         val device: UsbDevice = mock(UsbDevice::class.java)
         @Volatile var permitted = !normalMode
         val launcher: UsbLauncherManager
+        val serviceTasks = Timed()
 
         init {
             fun field(name: String, value: Any?) = CommManager::class.java.getDeclaredField(name)
@@ -84,7 +110,7 @@ class UsbRecheckAuthorityTest {
             `when`(component.settings).thenReturn(settings)
             `when`(service.applicationContext).thenReturn(app)
             // The attempt a scan starts never runs here; only whether one is admitted is observed.
-            `when`(service.serviceScope).thenReturn(CoroutineScope(SupervisorJob() + Queued()))
+            `when`(service.serviceScope).thenReturn(CoroutineScope(SupervisorJob() + serviceTasks))
             `when`(service.getSystemService(Context.USB_SERVICE)).thenReturn(usb)
             `when`(service.packageManager).thenReturn(mock(android.content.pm.PackageManager::class.java))
             `when`(service.getSharedPreferences(anyString(), anyInt()))
@@ -124,7 +150,7 @@ class UsbRecheckAuthorityTest {
         }
 
         /** The launcher's production scan entry, as an attach or wake asks for it. */
-        fun scan() = launcher.checkAlreadyConnected(force = true)
+        fun scan() = launcher.checkAlreadyConnected(force = true, recheck = manager.usbRecheckNow())
 
         /** Runs queued teardown, where retirement hands its owed scan on. */
         fun settle() { while (teardown.tasks.isNotEmpty()) teardown.tasks.removeFirst().run() }
@@ -141,6 +167,14 @@ class UsbRecheckAuthorityTest {
 
         /** Whether a USB attempt was admitted: the slot a scan's attempt marks busy. */
         fun usbAttemptStarted() = launcher.isSwitchingToProjection()
+
+        /** A user exit that keeps the service, or Stop followed by Open; anything else is neither. */
+        fun end(end: String) {
+            when (end) {
+                "exit" -> manager.disconnect(sendByeBye = false, isUserExit = true, honorKillOnDisconnect = false)
+                "stop" -> { manager.requestExplicitAppExit(killProcess = false); manager.onAppRelaunched() }
+            }
+        }
     }
 
     private fun scenario(state: ConnectionState, normalMode: Boolean = false, body: (Harness) -> Unit) {
@@ -339,6 +373,69 @@ class UsbRecheckAuthorityTest {
                 val switched = dialogs.switches()
                 if (exit) assertEquals("a withdrawn scan's older dialog started the switch (switches=$switched)", 0, switched)
                 else assertEquals("a grant on the older of two stacked permission dialogs started nothing (switches=$switched)", 1, switched)
+            }
+        }
+    }
+
+    // A normal-mode phone attaches and the service schedules its fallback check, in case the
+    // attach screen never runs. A user exit that keeps the service lands inside that delay and
+    // withdraws the scan the attach asked for: the fallback starts no switch. Controls: with no
+    // exit it starts exactly one; after Stop and Open (a new ticket) it starts none.
+    @Test fun aUserExitWithdrawsTheAttachFallbackScheduledBeforeIt() {
+        for (end in listOf("exit", "none", "stop")) scenario(ConnectionState.Disconnected(), normalMode = true) { h ->
+            h.permitted = true
+            mockConstruction(UsbAccessoryMode::class.java).use { switches ->
+                UsbLauncherListener(h.launcher).onUsbAttach(h.device)
+                h.end(end)
+                h.serviceTasks.advance(UsbLauncherManager.ATTACH_FALLBACK_DELAY_MS)
+                // Recorded after every production frame has returned.
+                val switched = switches.constructed().size
+                when (end) {
+                    "exit" -> assertEquals("an attach fallback scheduled before a user Exit still started a switch after it (switches=$switched)", 0, switched)
+                    "none" -> assertEquals("the attach fallback did not start the switch (switches=$switched)", 1, switched)
+                    else -> assertEquals("an attach fallback from before Stop started a switch (switches=$switched)", 0, switched)
+                }
+            }
+        }
+    }
+
+    // The accessory detaches and the service schedules its re-sync after a cooldown. A user exit
+    // that keeps the service lands inside it: the re-sync admits no USB attempt. Controls: with no
+    // exit it admits exactly one; after Stop and Open it admits none.
+    @Test fun aUserExitWithdrawsTheAccessoryDetachResyncScheduledBeforeIt() {
+        for (end in listOf("exit", "none", "stop")) scenario(ConnectionState.Disconnected()) { h ->
+            UsbLauncherListener(h.launcher).onUsbAccessoryDetach()
+            h.end(end)
+            h.serviceTasks.advance(1500)
+            // Recorded after every production frame has returned.
+            val started = h.usbAttemptStarted()
+            when (end) {
+                "exit" -> assertFalse("an accessory-detach re-sync scheduled before a user Exit still started a USB attempt after it", started)
+                "none" -> assertTrue("the accessory-detach re-sync started no USB attempt", started)
+                else -> assertFalse("an accessory-detach re-sync from before Stop started a USB attempt", started)
+            }
+        }
+    }
+
+    // The USB list and the home screen raise their own permission dialog for a tapped phone; its
+    // reply reaches the service's listener with no launcher token. A user exit before the answer
+    // withdraws the scan the tap minted: the grant starts no switch. Controls: with no exit the
+    // grant starts one; after Stop and Open it starts none.
+    @Test fun aDialogRaisedOutsideTheLauncherAnswersWithTheScanMintedWhenItWasRaised() {
+        for (end in listOf("exit", "none", "stop")) scenario(ConnectionState.Disconnected(), normalMode = true) { h ->
+            withPermissionDialogs(h) { dialogs ->
+                // What UsbListFragment and HomeFragment build when the user taps the phone.
+                UsbReceiver.createPermissionPendingIntent(h.service, h.manager.usbRecheckNow())
+                val dialog = checkNotNull(dialogs.raised().singleOrNull()) { "the tap raised no permission dialog" }
+                h.end(end)
+                dialogs.answer(dialog, granted = true)
+                // Recorded after every production frame has returned.
+                val switched = dialogs.switches()
+                when (end) {
+                    "exit" -> assertEquals("a dialog raised before a user Exit still started the switch when granted after it (switches=$switched)", 0, switched)
+                    "none" -> assertEquals("the granted dialog did not start the switch (switches=$switched)", 1, switched)
+                    else -> assertEquals("a dialog raised before Stop started the switch (switches=$switched)", 0, switched)
+                }
             }
         }
     }

@@ -884,7 +884,7 @@ class AapService : Service() {
 
         if (settings.autoStartOnUsb) {
             AppLog.i("WakeDetect: checking USB devices (trigger=$trigger)")
-            usbLauncherManager.checkAlreadyConnected(force = true)
+            usbLauncherManager.checkAlreadyConnected(force = true, recheck = commManager.usbRecheckNow())
         }
     }
 
@@ -915,7 +915,7 @@ class AapService : Service() {
         val settings = App.provide(this).settings
         if (settings.autoStartOnUsb) {
             AppLog.i("WakeDetect: possible wake, checking USB (trigger=$trigger)")
-            usbLauncherManager.checkAlreadyConnected(force = true)
+            usbLauncherManager.checkAlreadyConnected(force = true, recheck = commManager.usbRecheckNow())
         }
     }
 
@@ -1050,7 +1050,7 @@ class AapService : Service() {
         val settings = App.provide(this).settings
         if (settings.autoStartOnUsb) {
             AppLog.i("WakeDetect: checking USB devices on screen on")
-            usbLauncherManager.checkAlreadyConnected(force = true)
+            usbLauncherManager.checkAlreadyConnected(force = true, recheck = commManager.usbRecheckNow())
         }
     }
 
@@ -1175,7 +1175,9 @@ class AapService : Service() {
             projectingSinceMs = 0L
         }
         commManager.onUsbHandshakeEnded = { f ->
-            serviceScope.launch(Dispatchers.Main) { usbLauncherManager.onUsbHandshakeEnded(f) }
+            // The recovery's owed scan is minted as the end is received, not after the hop to Main.
+            val recheck = commManager.usbRecheckNow()
+            serviceScope.launch(Dispatchers.Main) { usbLauncherManager.onUsbHandshakeEnded(f, recheck) }
         }
         com.andrerinas.openheadunit.connection.bluetooth.xyauto.XyAutoMediaSession.open(this, this)
         observeConnectionState()
@@ -1226,7 +1228,7 @@ class AapService : Service() {
         // Before wireless, not after. A device the USB rules accept starts a switch here, and
         // initWifiModeWithOptionalWait() then stands back for it; one they reject stakes nothing
         // and wireless arms as it always did.
-        usbLauncherManager.checkAlreadyConnected(ticket = ticket)
+        usbLauncherManager.checkAlreadyConnected(recheck = commManager.usbRecheck(ticket))
 
         if (applyBootLoopGuard()) {
             AppLog.w("AapService: Wireless bring-up paused by the boot-loop guard. USB and the rest of the app are unaffected.")
@@ -1852,6 +1854,10 @@ class AapService : Service() {
             }
             return
         }
+        // Save's USB retry and its fallback scan run only after teardown, so both are minted as
+        // this end is received; an exit, Stop or held end during the wait withdraws them.
+        val saveUsbRetry = if (state.isSettingsRestart) commManager.usbRecheckNow() else null
+        val saveUsbFallback = if (state.isSettingsRestart) commManager.usbRecheckNow() else null
         serviceScope.launch {
             try {
                 // Waiting is necessary for ByeBye and socket shutdown, but it gives a new Start
@@ -1866,7 +1872,7 @@ class AapService : Service() {
                 }
                 if (state.isSettingsRestart) {
                     // Reuse the current route only after its workers have released shared resources.
-                    restartForAudioSettings(state)
+                    restartForAudioSettings(state, checkNotNull(saveUsbRetry), checkNotNull(saveUsbFallback))
                     return@launch
                 }
                 val rearmedAfterWiredSession = !isDestroying && !wifiLauncherManager.cancelledByUser && rearmWirelessAfterWiredSession(wasQuiescedForWiredSession)
@@ -2024,9 +2030,14 @@ class AapService : Service() {
         if (cleanupTicket != null && !state.isSettingsRestart) scheduleReconnectIfNeeded(state)
     }
 
-    /** Resume the saved route once, then leave further attempts to the ordinary policies. */
+    /**
+     * Resume the saved route once, then leave further attempts to the ordinary policies. [usbRetry]
+     * and [usbFallback] are the USB scans minted when Save's end was received.
+     */
     private suspend fun restartForAudioSettings(
         state: CommManager.ConnectionState.Disconnected,
+        usbRetry: UsbRecheck,
+        usbFallback: UsbRecheck,
         ticket: Long = commManager.appConnectionTicket(),
     ) =
         withContext(Dispatchers.Main) {
@@ -2061,7 +2072,7 @@ class AapService : Service() {
                             selfLaunch = selfLauncherManager.currentLaunch()
                         }
                         settings.lastConnectionType == Settings.CONNECTION_TYPE_USB ->
-                            usbLauncherManager.restartForSettings(state)
+                            usbLauncherManager.restartForSettings(state, usbRetry)
                         settings.lastConnectionType == Settings.CONNECTION_TYPE_NEARBY ->
                             (wifiLauncherManager.active as? WifiLauncherHelper)?.nearbyManager
                                 ?.restartForSettings(state.settingsRestartUntilMs)
@@ -2093,7 +2104,7 @@ class AapService : Service() {
                     // Ordinary admission holds behind Settings/the X and uses the USB episode
                     // budget; an attached but wedged device cannot block wireless indefinitely.
                     if (!userExitedAA && settings.lastConnectionType == Settings.CONNECTION_TYPE_USB) {
-                        usbLauncherManager.checkAlreadyConnected(force = true)
+                        usbLauncherManager.checkAlreadyConnected(force = true, recheck = usbFallback)
                     }
                     if (!userExitedAA && !wirelessPausedForSettings &&
                         !wifiLauncherManager.cancelledByUser && settings.showsWifi() &&
@@ -2195,10 +2206,13 @@ class AapService : Service() {
             // arbiter. Keep it across failed attempts/errors until a session forms or the user
             // supersedes recovery, even if wireless discovery schedules its own retry meanwhile.
             val owner = commManager.usbRecheckOwner(state) ?: return
+            // The owed scan of this end, minted as the end is received; the delayed check carries it.
+            val recheck = commManager.usbRecheckNow()
             usbReconnect.schedule(state, USB_RECONNECT_DELAY_MS,
                 ownsCheck = { commManager.ownsUsbRecheck(owner) }) {
                 // Read when it fires: a Save still owed by this end must not meet the open settings screen.
-                usbLauncherManager.checkAlreadyConnected(force = true, settingsRestart = usbLauncherManager.pendingSettingsRestart())
+                usbLauncherManager.checkAlreadyConnected(force = true,
+                    settingsRestart = usbLauncherManager.pendingSettingsRestart(), recheck = recheck)
             }
         }
 
@@ -3779,11 +3793,11 @@ class AapService : Service() {
             }
             ACTION_CHECK_USB             -> usbLauncherManager.checkOnRequest(
                 userRequested = intent?.getBooleanExtra(EXTRA_USER_REQUESTED, false) == true,
-                ticket = operationTicket,
+                recheck = commManager.usbRecheck(operationTicket),
             )
             else                         -> {
                 if (intent?.action == null || intent.action == Intent.ACTION_MAIN) {
-                    usbLauncherManager.checkAlreadyConnected(ticket = operationTicket)
+                    usbLauncherManager.checkAlreadyConnected(recheck = commManager.usbRecheck(operationTicket))
                 }
             }
         }

@@ -10,6 +10,7 @@ import lifecycle.CommManager
 import lifecycle.ConnectionState
 import lifecycle.ServiceBootstrap
 import lifecycle.SocketProjectionConnection
+import lifecycle.UsbRecheck
 import kotlinx.coroutines.*
 import java.util.concurrent.ConcurrentLinkedQueue
 import kotlin.coroutines.CoroutineContext
@@ -109,6 +110,10 @@ class AapService {
         // exercised in the real Home producer, while the service consumes the unchanged epoch.
         // OPERATION_CONSTANT
         // OPERATION_INTENT
+        // A USB relay carries the scan its input minted; the service consumes its ticket.
+        fun usbCheckIntent(context: Context, recheck: UsbRecheck, action: String? = ACTION_CHECK_USB,
+            userRequested: Boolean = false): Intent = operationIntent(context, recheck.ticket).setAction(action)
+            .putExtra("relayed_usb_recheck", "${recheck.ticket}.${recheck.epoch}")
     }
 }
 object UsbDeviceCompat {
@@ -181,7 +186,7 @@ class HomeAutomaticProducer(
     private var hasAttemptedAutoConnect = false
     private var hasAttemptedSingleUsbAutoConnect = false
     private var hasAutoStarted = false
-    private var forceSelfModeLaunch = false
+    private var forceSelfModeTicket: Long? = null
     private var pendingWidgetId = -1
     private var pendingWidgetPage: Int? = null
     private var pendingSelfModeVpn = false

@@ -1153,11 +1153,15 @@ class Intent{
  var action:String?=null
  constructor(a:String){action=a};constructor(c:Context,k:Class<*>){}
  fun setPackage(s:String)=this
+ fun setAction(a:String?)=apply{action=a}
  private val extras=mutableMapOf<String,Any>()
  fun putExtra(name:String,value:Long)=apply{extras[name]=value}
  fun putExtra(name:String,value:Boolean)=apply{extras[name]=value}
+ fun putExtra(name:String,value:String)=apply{extras[name]=value}
  fun hasExtra(name:String)=extras.containsKey(name)
  fun getLongExtra(name:String,default:Long)=extras[name] as? Long ?: default
+ fun getStringExtra(name:String)=extras[name] as? String
+ companion object{const val ACTION_MEDIA_BUTTON="android.intent.action.MEDIA_BUTTON";const val ACTION_MAIN="android.intent.action.MAIN"}
 }
 class Context{
  var usb=android.hardware.usb.UsbManager();val packageName="lifecycle";val broadcasts=mutableListOf<String?>();val broadcastIntents=mutableListOf<Intent>();var stops=0

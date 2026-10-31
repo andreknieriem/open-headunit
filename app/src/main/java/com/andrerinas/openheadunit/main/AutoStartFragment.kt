@@ -263,8 +263,9 @@ class AutoStartFragment : Fragment() {
         // Start the foreground service immediately when wake-detection settings
         // are enabled so it can register the dynamic SCREEN_ON receiver.
         if (settings.autoStartOnScreenOn || settings.autoStartOnBoot) {
-            ContextCompat.startForegroundService(requireContext(),
-                Intent(requireContext(), AapService::class.java))
+            // The Save is the input; the default start scans USB too, under the scan minted here.
+            ContextCompat.startForegroundService(requireContext(), AapService.usbCheckIntent(requireContext(),
+                com.andrerinas.openheadunit.App.provide(requireContext()).commManager.usbRecheckNow(), action = null))
         }
 
         AppLog.i("AutoStartFragment: saved auto-start ${pendingAutoStartBtMacs.size} device(s), " +

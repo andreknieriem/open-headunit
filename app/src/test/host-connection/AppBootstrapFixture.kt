@@ -59,6 +59,28 @@ fun bootstrapRejectionPreservesLatestRun() {
         } finally {
             stopped.close()
         }
+        // Internal relays carry the Stop ticket of their input; only external entries mint one at
+        // receipt. A relay sent before Stop and received after it, whether it carries that ticket
+        // or was sent untagged, initializes nothing. Control: the carried ticket with no Stop.
+        for (relay in listOf("untagged", "carried", "control")) {
+            val manager = CommManager()
+            manager.disconnect(honorKillOnDisconnect = false)
+            manager.cleanups()
+            ContextCompat.serviceStarts.clear()
+            try {
+                val input = manager.appConnectionTicket()
+                val intent = Intent("check-usb")
+                if (relay != "untagged") intent.putExtra(ServiceBootstrap.EXTRA_OPERATION_TICKET, input)
+                if (relay != "control") manager.requestExplicitAppExit(killProcess = false)
+                val bootstrap = ServiceBootstrap(manager)
+                bootstrap.onStartCommand(intent, 0, 1)
+                check(bootstrap.initializedForStart == (relay == "control")) {
+                    "a service relay sent before Stop initialized after it (relay=$relay)"
+                }
+            } finally {
+                manager.close()
+            }
+        }
     } finally {
         AapService.instance = previousService
         ContextCompat.serviceStarts.clear()

@@ -141,9 +141,9 @@ class UsbAttachedActivity : Activity() {
                 return
             }
             AppLog.i("Usb in accessory mode and has permission. Starting AapService.")
-            ContextCompat.startForegroundService(this, Intent(this, AapService::class.java).apply {
-                action = AapService.ACTION_CHECK_USB
-            })
+            // The attach is the input; the relay carries the scan it minted.
+            ContextCompat.startForegroundService(this,
+                AapService.usbCheckIntent(this, App.provide(this).commManager.usbRecheckNow()))
             finish()
             return
         }
@@ -274,9 +274,9 @@ class UsbAttachedActivity : Activity() {
      */
     private fun handOffToService() {
         try {
-            ContextCompat.startForegroundService(this, Intent(this, AapService::class.java).apply {
-                action = AapService.ACTION_CHECK_USB
-            })
+            // Only ever unlocked: the attach is the input, and the relay carries its scan.
+            ContextCompat.startForegroundService(this,
+                AapService.usbCheckIntent(this, App.provide(this).commManager.usbRecheckNow()))
         } catch (e: Exception) {
             AppLog.w("Could not hand the USB attach to the service: ${e.message}")
         }

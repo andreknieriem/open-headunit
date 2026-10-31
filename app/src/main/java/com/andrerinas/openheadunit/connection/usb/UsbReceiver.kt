@@ -99,7 +99,7 @@ class UsbReceiver(private val mListener: Listener)          // USB Broadcast Rec
         /** The reply address names the dialog's owed scan by its two fields: "ticket.epoch". */
         internal fun encodeRecheck(recheck: UsbRecheck): String = "${recheck.ticket}.${recheck.epoch}"
 
-        private fun decodeRecheck(part: String?): UsbRecheck? {
+        internal fun decodeRecheck(part: String?): UsbRecheck? {
             val ticket = part?.substringBefore('.', "")?.toLongOrNull() ?: return null
             val epoch = part.substringAfter('.', "").toLongOrNull() ?: return null
             return UsbRecheck(ticket, epoch)

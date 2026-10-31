@@ -39,7 +39,11 @@ class WifiAutoStartReceiver : BroadcastReceiver() {
     }
 
     companion object {
-        fun checkAndStart(context: Context) {
+        /**
+         * [carried] is the scan of the input that asked, when it is a relay (the service's own
+         * start); a broadcast is the input itself and mints its scan here, on its own turn.
+         */
+        fun checkAndStart(context: Context, carried: com.andrerinas.openheadunit.connection.UsbRecheck? = null) {
             // Read settings from device-protected storage for maximum reliability
             if (!Settings.isAutoStartOnWifiEnabled(context)) return
             val targetSsid = Settings.getAutoStartWifiSsid(context).removeSurrounding("\"")
@@ -76,8 +80,9 @@ class WifiAutoStartReceiver : BroadcastReceiver() {
                     return
                 }
 
-                // Start the service
-                val serviceIntent = Intent(context, AapService::class.java)
+                // Start the service: the default start scans USB, under this input's scan.
+                val recheck = carried ?: App.provide(context).commManager.usbRecheckNow()
+                val serviceIntent = AapService.usbCheckIntent(context, recheck, action = null)
                 try {
                     ContextCompat.startForegroundService(context, serviceIntent)
                 } catch (e: Exception) {

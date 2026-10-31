@@ -39,6 +39,10 @@ class BootCompleteReceiver : BroadcastReceiver() {
             FloatingButtonManager.update(context)
         }
 
+        // The boot is the input. Every start below scans USB (the default start does too), so
+        // each carries the owed scan minted here rather than one the service mints on delivery.
+        fun bootIntent(action: String?) = AapService.usbCheckIntent(context,
+            com.andrerinas.openheadunit.App.provide(context).commManager.usbRecheckNow(), action)
         if (bootEnabled) {
             // Take a strike before starting. The service clears it once this run has lasted long
             // enough to count as healthy; if the device dies first, the strike stands and the next
@@ -49,7 +53,7 @@ class BootCompleteReceiver : BroadcastReceiver() {
             val strikes = BootLoopPolicy.nextStrikes(previousStrikes)
             Settings.setBootLoopStrikes(context, strikes)
             AppLog.i("Boot auto-start: starting AapService with BOOT_START (trigger=$action, boot-start #$strikes since the last healthy run)")
-            val serviceIntent = Intent(context, AapService::class.java).apply {
+            val serviceIntent = bootIntent(null).apply {
                 putExtra(EXTRA_BOOT_START, true)
             }
             // A refused start never runs the service that clears the strike, so give it back.
@@ -59,21 +63,19 @@ class BootCompleteReceiver : BroadcastReceiver() {
             // SCREEN_ON receiver. On Quick Boot devices this is a real reboot, so
             // the service must be started after boot to listen for future SCREEN_ON.
             AppLog.i("Boot auto-start: screen-on auto-start enabled, starting AapService to register SCREEN_ON receiver (trigger=$action)")
-            val serviceIntent = Intent(context, AapService::class.java)
+            val serviceIntent = bootIntent(null)
             startService(context, serviceIntent, action)
         } else if (usbEnabled) {
             // On hibernating head units, USB_DEVICE_ATTACHED may not fire after wake.
             // Start the service in the background so it can register its UsbReceiver
             // and check for already-connected USB devices.
             AppLog.i("Boot auto-start: USB auto-start enabled, starting AapService to check USB (trigger=$action)")
-            val serviceIntent = Intent(context, AapService::class.java).apply {
-                this.action = AapService.ACTION_CHECK_USB
-            }
+            val serviceIntent = bootIntent(AapService.ACTION_CHECK_USB)
             startService(context, serviceIntent, action)
         } else if (wifiEnabled) {
             // Start the service to listen for WiFi connectivity changes dynamically.
             AppLog.i("Boot auto-start: WiFi auto-start enabled, starting AapService to listen for WiFi (trigger=$action)")
-            val serviceIntent = Intent(context, AapService::class.java)
+            val serviceIntent = bootIntent(null)
             startService(context, serviceIntent, action)
         } else if (!floatingButtonEnabled) {
             AppLog.i("Boot auto-start: disabled, skipping")

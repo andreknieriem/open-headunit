@@ -90,9 +90,16 @@ input is accepted and carry it through queued work, permission waits, countdowns
 retries. The service's own deferred work does the same: a session end's teardown-wait work
 (Save's retry and fallback, the wired-session re-arm), the reconnect timers, the arbiter's
 wireless give-back, the USB hand-off hold and the WiFi wait, the sleep and settings re-arms, a
-Nearby Save peer and a held Bluetooth arrival each read the ticket when their input is received
-and hand that value to `setActive`/discovery/connect admission, never a newer one. The wireless
-cleanup fixture runs the real disconnect callback with Stop inside Save's teardown wait. The
+Nearby Save peer, a discovery Save's find and a held Bluetooth arrival each use the ticket of
+their input and hand that value to `setActive`/discovery/connect admission, never a newer one.
+A session end carries the ticket and owed-scan epoch CommManager published it with; the service
+collector does not read them after its hop. The hop after a fresh input is not fresh: the
+service mints a ticket only for genuinely external starts (system restart, media button, a Run
+owner's restore). Every internal relay carries the ticket of its input, and a USB check relay
+carries its scan; one sent without them is refused, as is one whose ticket Stop has moved. The
+Bluetooth arrival reaches MainActivity with its ticket, and the home's automatic Self start
+keeps it. The wireless cleanup fixture runs the real disconnect callback with Stop inside
+Save's teardown wait and before the end is received. The
 caller fixtures extract those producers and run them against the real manager,
 arbiter and service-ingress prefix: Stop B -> Open C rejects work begun before B, while a
 compatible Open without Stop and genuinely new input remain accepted. A socket discovery holds

@@ -28,6 +28,9 @@ class NetworkServerIngress(val service: NetworkIngressService) {
 class NetworkDiscoveryIngress(val service: NetworkIngressService) {
     private val io = Dispatchers.Unconfined
     private val commManager get() = service.commManager
+    // What WifiLauncherSharedServices records when a Save starts the scan: that Save, by ticket.
+    var discoverySave: Pair<Long, ConnectionState.Disconnected>? = null
+    private fun discoverySaveFor(ticket: Long) = discoverySave?.takeIf { it.first == ticket }?.second
     // NETWORK_DISCOVERY_HANDOFF
 }
 interface NetworkDiscoveryListener {
@@ -123,6 +126,34 @@ fun networkConnectionIngressOwnership() = runBlocking {
             service.serviceScope.cancel(); service.main.drain()
             check(old.isClosed && !HeldServerSocket.isHeld("192.0.2.71:5277"))
             comm.close()
+        }
+    }
+    // Save's discovery route: the server it finds connects for that Save. A user exit the service
+    // survives cancels the Save without moving the ticket, so the find connects nothing. The
+    // control, with the Save still owning the state, connects once.
+    for (exit in listOf(true, false)) {
+        val comm = CommManager().apply {
+            CommManager::class.java.getDeclaredField("connectionIoDispatcher")
+                .apply { isAccessible = true }.set(this, Dispatchers.Unconfined)
+        }
+        NetworkIngressService(comm).use { service ->
+            try {
+                comm.disconnect(isUserExit = false, honorKillOnDisconnect = false, reason = DisconnectReason.SETTINGS_RESTART)
+                comm.cleanups()
+                val saved = comm.state as ConnectionState.Disconnected
+                check(saved.isSettingsRestart)
+                val ticket = comm.appConnectionTicket()
+                val ingress = NetworkDiscoveryIngress(service).apply { discoverySave = ticket to saved }
+                if (exit) comm.disconnect(isUserExit = true, honorKillOnDisconnect = false)
+                val before = SocketProjectionConnection.created.size
+                ingress.onServiceFound("192.0.2.95", 5277, null, ticket)
+                service.main.drain(); comm.cleanups()
+                // Recorded after every production frame has returned.
+                val created = SocketProjectionConnection.created.size - before
+                check(created == if (exit) 0 else 1) {
+                    "Save's discovery connected after a user exit cancelled the Save (exit=$exit created=$created)"
+                }
+            } finally { comm.close() }
         }
     }
     // A reusable scanner retains per-scan input through IO entry and Main callback dispatch;

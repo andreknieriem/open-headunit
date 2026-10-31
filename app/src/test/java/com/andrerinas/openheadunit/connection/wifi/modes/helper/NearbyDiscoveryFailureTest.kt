@@ -42,7 +42,7 @@ class NearbyDiscoveryFailureTest {
             Mockito.mockStatic(Nearby::class.java).use { nearby ->
                 nearby.`when`<ConnectionsClient> { Nearby.getConnectionsClient(context) }.thenReturn(client)
                 Mockito.mockConstruction(Settings::class.java).use {
-                    val manager = NearbyManager(context, scope, comm) { _, _, _ -> error("no tunnel yet") }
+                    val manager = NearbyManager(context, scope, comm) { _, _, _, _ -> error("no tunnel yet") }
                     val guard = NearbyManager::class.java.getDeclaredField("attempts")
                         .apply { isAccessible = true }.get(manager) as NearbyAttemptGuard
                     doAnswer {
@@ -54,13 +54,13 @@ class NearbyDiscoveryFailureTest {
                     val socketField = NearbyManager::class.java.getDeclaredField("activeNearbySocket")
                         .apply { isAccessible = true }
                     try {
-                        manager.connectToEndpoint("phone")
+                        manager.connectToEndpoint("phone", comm.appConnectionTicket())
                         val original = guard.current()
                         socketField.set(manager, old)
                         if (stop) policy.request(killProcess = false, userStop = true, requiresKillOnDisconnect = false)
                         policy.supersede()
                         // The old SDK callback has not run and isConnecting is still true.
-                        manager.connectToEndpoint("phone")
+                        manager.connectToEndpoint("phone", comm.appConnectionTicket())
                         val callbacks = argumentCaptor<ConnectionLifecycleCallback>()
                         verify(client, times(if (stop) 2 else 1))
                             .requestConnection(anyOrNull<String>(), eq("phone"), callbacks.capture())
@@ -79,7 +79,7 @@ class NearbyDiscoveryFailureTest {
                             callbacks.firstValue.onConnectionInitiated("phone", info)
                         }
                         verify(client).acceptConnection(eq("phone"), any())
-                        manager.connectToEndpoint("phone")
+                        manager.connectToEndpoint("phone", comm.appConnectionTicket())
                         verify(client, times(if (stop) 2 else 1))
                             .requestConnection(anyOrNull<String>(), eq("phone"), any())
                     } finally { manager.stop(); old.close(); replacement.close(); scope.cancel() }
@@ -105,9 +105,9 @@ class NearbyDiscoveryFailureTest {
             Mockito.mockStatic(Nearby::class.java).use { nearby ->
                 nearby.`when`<ConnectionsClient> { Nearby.getConnectionsClient(context) }.thenReturn(client)
                 Mockito.mockConstruction(Settings::class.java).use {
-                    val manager = NearbyManager(context, scope, comm) { _, _, _ -> error("no tunnel yet") }
+                    val manager = NearbyManager(context, scope, comm) { _, _, _, _ -> error("no tunnel yet") }
                     try {
-                        manager.connectToEndpoint("old")
+                        manager.connectToEndpoint("old", comm.appConnectionTicket())
                         val callbacks = argumentCaptor<ConnectionLifecycleCallback>()
                         verify(client).requestConnection(anyOrNull<String>(), eq("old"), callbacks.capture())
                         if (stop) policy.request(killProcess = false, userStop = true, requiresKillOnDisconnect = false)
@@ -116,7 +116,7 @@ class NearbyDiscoveryFailureTest {
                         verify(client, times(if (stop) 0 else 1)).acceptConnection(eq("old"), any())
                         if (stop) {
                             verify(client).disconnectFromEndpoint("old")
-                            manager.connectToEndpoint("new")
+                            manager.connectToEndpoint("new", comm.appConnectionTicket())
                             verify(client).requestConnection(anyOrNull<String>(), eq("new"), callbacks.capture())
                             callbacks.lastValue.onConnectionInitiated("new", info)
                             verify(client).acceptConnection(eq("new"), any())
@@ -148,9 +148,9 @@ class NearbyDiscoveryFailureTest {
                 whenever(settings.autoConnectLastSession).thenReturn(true)
                 whenever(settings.lastNearbyDeviceName).thenReturn("phone")
             }.use {
-                val manager = NearbyManager(context, scope, comm) { _, _, _ -> error("no tunnel yet") }
+                val manager = NearbyManager(context, scope, comm) { _, _, _, _ -> error("no tunnel yet") }
                 try {
-                    manager.start()
+                    manager.start(comm.appConnectionTicket())
                     val discoveries = argumentCaptor<EndpointDiscoveryCallback>()
                     verify(client).startDiscovery(any(), discoveries.capture(), any())
                     discoveries.firstValue.onEndpointFound("first", info)

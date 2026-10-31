@@ -92,7 +92,7 @@ for marker, file, declaration, braced in [
     ('OBSERVER', service, 'private fun observeConnectionState()', True),
     # The session-end VPN decision of onDisconnected; wireless-cleanup.py runs the whole callback.
     ('VPN_RELEASE', service, 'if (!superseded && !selfLauncherManager.isLaunchPending) {', True),
-    ('MAIN_COMMAND', 'main/MainActivity.kt', 'private fun forceSelfModeLaunch()', True),
+    ('MAIN_COMMAND', 'main/MainActivity.kt', 'private fun forceSelfModeLaunch(', True),
     ('HOME_COMMAND', 'main/HomeFragment.kt', 'private fun startSelfModeInternal(', True),
     ('START_ACTION', service, 'ACTION_START_SELF_MODE       ->', True),
     ('CANCEL_ACTION', service, 'ACTION_CANCEL_WIRELESS       ->', True),

@@ -14,7 +14,9 @@ class CommManager {
         class Disconnected(val isUserExit: Boolean = true, val isClean: Boolean = false,
             val isSettingsRestart: Boolean = false, val holdsRecovery: Boolean = false,
             val hadPhysicalConnection: Boolean = true, val endedAttempt: Any? = null,
-            val wasLoopbackSession: Boolean = false) : ConnectionState() {
+            val wasLoopbackSession: Boolean = false,
+            // The ticket/scan the end was published under; null for the initial state.
+            val endRecheck: UsbRecheck? = null) : ConnectionState() {
             val settingsRetryOwner: Disconnected? = null
             fun acceptsSettingsRestart(other: Disconnected) = false
         }
@@ -47,6 +49,7 @@ class CommManager {
     fun appConnectionTicket() = ticket
     fun acceptsAppConnectionTicket(value: Long) = value == ticket
     fun usbRecheck(value: Long) = UsbRecheck(value)
+    fun usbRecheckNow() = UsbRecheck(ticket)
 }
 class UsbRecheck(val ticket: Long)
 object SystemClock { fun elapsedRealtime() = 100L }
@@ -400,6 +403,24 @@ fun main() {
         } finally { serviceScope.cancel() }
     }
     println("PASS actual disconnect callback: Save's retry carries the ticket read when its end was received; Stop during teardown reconnects nothing, control once")
+    // Save's end is published under the Stop ticket of its moment; Stop lands before the
+    // collector receives the end. The collector must use the published ticket, not read one after
+    // its hop, so the retry reconnects nothing. The control, with no Stop, reconnects once.
+    for (stop in listOf(true, false)) Service().apply {
+        try {
+            wifiLauncherManager.noteRearm()
+            val saved=CommManager.ConnectionState.Disconnected(isUserExit=false, isSettingsRestart=true,
+                endRecheck=commManager.usbRecheckNow())
+            commManager.connectionState.value=saved
+            if (stop) commManager.ticket++
+            notifyEnd(saved); main.drain()
+            commManager.gate.complete(Unit); main.drain()
+            check(saveReconnects==(if (stop) 0 else 1)) {
+                "Save's end received after a Stop still retried (stop=$stop saveReconnects=$saveReconnects)"
+            }
+        } finally { serviceScope.cancel() }
+    }
+    println("PASS actual disconnect callback: a Save end received after Stop retries under its published ticket and reconnects nothing; control once")
     println("PASS loopback terminal after an ordinary wireless arm releases the VPN unless a Self launch still waits for its phone, including a completed launch; a launch accepted after it, or after its first publication, keeps it")
     println("PASS service Stop joins existing physical retirement before native removal; connected, completed and rearmed controls")
     println("PASS actual disconnect callback: stale policy vs session resources, rearm across await, separate terminal and captured Stop waiter")

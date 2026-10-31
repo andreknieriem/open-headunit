@@ -293,12 +293,12 @@ class UsbLauncherManager(val service: AapService) {
     /**
      * The scan a permission reply continues: always the [recheck] its dialog was raised for, never
      * one minted at the reply. A reply carrying a launcher [token] continues exactly that request's
-     * entry, or nothing once that entry is gone. A reply without one answers a dialog raised outside
-     * the launcher (the attach screen, the USB list, the home screen) with the scan its producer
-     * minted when it raised the dialog.
+     * entry (with its Save), or nothing once that entry is gone. A reply without one answers a
+     * dialog raised outside the launcher (the attach screen, the USB list, the home screen) with
+     * the scan its producer minted when it raised the dialog, and no Save: its input carried none.
      */
     internal fun takePermissionAttempt(device: UsbDevice, recheck: UsbRecheck, token: String?): PermissionAttempt? {
-        if (token == null) return PermissionAttempt(device.deviceName, pendingSettingsRestart(), recheck)
+        if (token == null) return PermissionAttempt(device.deviceName, null, recheck)
         val owner = permissionOwners.remove(token) ?: return null
         return owner.takeIf {
             it.deviceName == device.deviceName && it.recheck.ticket == recheck.ticket && it.recheck.epoch == recheck.epoch

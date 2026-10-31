@@ -257,9 +257,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
 
     /** The service revokes the retained WPP lease before publishing Disconnected. */
     private fun requestProjectionExit() {
-        ContextCompat.startForegroundService(this, Intent(this, AapService::class.java).apply {
-            action = AapService.ACTION_DISCONNECT
-        })
+        ContextCompat.startForegroundService(this, AapService.commandIntent(this, AapService.ACTION_DISCONNECT))
     }
 
     /**
@@ -1846,9 +1844,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
      */
     private fun endSessionStayArmed() {
         AppLog.i("AapProjectionActivity: User ended the session and asked to stay ready")
-        val intent = Intent(this, AapService::class.java).apply {
-            action = AapService.ACTION_END_SESSION_STAY_ARMED
-        }
+        val intent = AapService.commandIntent(this, AapService.ACTION_END_SESSION_STAY_ARMED)
         ContextCompat.startForegroundService(this, intent)
         ToastUtils.showToast(this, R.string.exit_dialog_end_stay_armed_note, Toast.LENGTH_LONG, force = true)
         finish()
@@ -1856,9 +1852,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
 
     private fun switchDriver() {
         AppLog.i("AapProjectionActivity: User requested switch driver")
-        val intent = Intent(this, AapService::class.java).apply {
-            action = AapService.ACTION_NATIVE_AA_SWITCH_DEVICE
-        }
+        val intent = AapService.commandIntent(this, AapService.ACTION_NATIVE_AA_SWITCH_DEVICE)
         ContextCompat.startForegroundService(this, intent)
         finish()
     }

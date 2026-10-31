@@ -46,7 +46,8 @@ class Intent {
     fun getBooleanExtra(name: String, fallback: Boolean) = extras[name] as? Boolean ?: fallback
     fun getLongExtra(name: String, fallback: Long) = extras[name] as? Long ?: fallback
     fun removeExtra(name: String) { extras.remove(name) }
-    fun setAction(action: String) = apply { this.action = action }
+    fun hasExtra(name: String) = extras.containsKey(name)
+    fun setAction(action: String?) = apply { this.action = action }
     fun platform() = PlatformIntent(action ?: "").also { output ->
         extras.forEach { (name, value) -> if (value is Long) output.putExtra(name, value) }
     }
@@ -72,17 +73,28 @@ class AapService {
         const val ACTION_STOP_SERVICE = ServiceBootstrap.ACTION_STOP_SERVICE
         const val ACTION_REQUEST_NIGHT_MODE_UPDATE = "night-update"
         const val EXTRA_USER_REQUESTED = "user-requested"
+        // In-app commands read the Stop ticket on their input's own turn; USB relays carry their scan.
+        fun commandIntent(context: Context, action: String?) =
+            operationIntent(context, context.commManager.appConnectionTicket()).setAction(action)
+        fun usbCheckIntent(context: Context, recheck: UsbRecheck, action: String? = ACTION_CHECK_USB,
+            userRequested: Boolean = false) = operationIntent(context, recheck.ticket).setAction(action)
+            .putExtra("relayed_usb_recheck", "${recheck.ticket}.${recheck.epoch}")
         // UI_SERVICE_CONSTANTS
         // UI_OPERATION_INTENT
         // UI_ACCEPTED_STOP_INTENT
         // UI_STOP_INTENT
     }
 }
-object HomeFragment { var forceSelfModeLaunch = false; var requestDriverSelection = false }
+/** The home's automatic start; [view] stands for whether a home view is up when MainActivity acts. */
+object HomeFragment { var forceSelfModeTicket: Long? = null; var requestDriverSelection = false; var view: Any? = null }
 object BtAutoStartRearmPolicy {
+    var selfMode = false
     fun launchesSelfMode(selfSelected: Boolean, wirelessSelected: Boolean, mode: Any,
-        sessionUp: Boolean, nativeAttemptInFlight: Boolean?) = false
+        sessionUp: Boolean, nativeAttemptInFlight: Boolean?) = selfMode
 }
+class Fragments { val fragments: List<Any> = listOf(HomeFragment) }
+class NavHost { val childFragmentManager = Fragments() }
+class SupportFragments { fun findFragmentById(id: Int): NavHost? = NavHost() }
 class MainActivity(manager: CommManager, val lifecycleScope: CoroutineScope) : Context(manager) {
     enum class ConnectionUiMode { OVERLAY, PILL }
     val events = ConcurrentLinkedQueue<() -> Unit>()
@@ -91,10 +103,12 @@ class MainActivity(manager: CommManager, val lifecycleScope: CoroutineScope) : C
     fun runOnUiThread(block: () -> Unit) { events.add(block) }
     fun drainUi() { while (true) (events.poll() ?: return).invoke() }
     fun finishAffinity() {}
+    val supportFragmentManager = SupportFragments()
     companion object {
         const val EXTRA_SHOW_DRIVER_SELECTOR = "show-selector"
         const val EXTRA_LAUNCH_SOURCE = "launch-source"
         const val LAUNCH_SOURCE_BLUETOOTH = "bluetooth"
+        const val EXTRA_CONNECTION_TICKET = "connection-ticket"
     }
     // UI_FORCE_SELF_MODE
     // UI_HANDLE_LAUNCH_INTENT
@@ -103,6 +117,7 @@ object android { object R { object id { const val button2 = 2 } } }
 object R {
     object integer { const val key_data = 1 }
     object string { const val found_connecting = 1 }
+    object id { const val main_content = 3 }
 }
 class View(val id: Int, val value: String) { fun getTag(key: Int): Any = value }
 class AddressAdapter(private val context: Context, private val scope: CoroutineScope) {
@@ -373,5 +388,45 @@ fun uiConnectCallerOwnership() = runBlocking {
             }
         } finally { shared.close(); scanInput.close(); scanManager.close() }
     }
+    // A Bluetooth arrival is relayed to MainActivity with the Stop ticket it was received under
+    // (AutoStartReceiver, or the service's held arrival). Stop is accepted before the activity gets
+    // it: no pill, no Self Mode command, no hand-off to the home. The control, with no Stop, does
+    // all three, and the real service prefix accepts its Self command.
+    for (stop in listOf(true, false)) {
+        Dispatchers.IO = QueuedDispatcher()
+        ContextCompat.starts.clear()
+        val manager = CommManager()
+        manager.disconnect(honorKillOnDisconnect = false)
+        manager.cleanups()
+        val input = Input(manager)
+        BtAutoStartRearmPolicy.selfMode = true
+        HomeFragment.forceSelfModeTicket = null
+        try {
+            val arrival = manager.appConnectionTicket()
+            val relay = Intent("bluetooth-arrival")
+                .putExtra(MainActivity.EXTRA_LAUNCH_SOURCE, MainActivity.LAUNCH_SOURCE_BLUETOOTH)
+                .putExtra(MainActivity.EXTRA_CONNECTION_TICKET, arrival)
+            if (stop) manager.requestExplicitAppExit(killProcess = false)
+            input.main.handleLaunchIntent(relay)
+            // Recorded after every production frame has returned.
+            val selfStarts = ContextCompat.starts.filter { it.action == AapService.ACTION_START_SELF_MODE }
+            if (stop) {
+                check(input.main.overlays == 0 && selfStarts.isEmpty() && HomeFragment.forceSelfModeTicket == null) {
+                    "a Bluetooth arrival relayed before Stop still acted (pill=${input.main.overlays} selfStarts=${selfStarts.size})"
+                }
+            } else {
+                check(input.main.overlays == 1 && selfStarts.size == 1 && HomeFragment.forceSelfModeTicket == arrival) {
+                    "the Bluetooth arrival did not start Self Mode"
+                }
+                val service = ServiceBootstrap(manager)
+                service.onStartCommand(selfStarts.single().platform(), 0, 1)
+                check(service.initializedForStart)
+            }
+        } finally {
+            BtAutoStartRearmPolicy.selfMode = false; HomeFragment.forceSelfModeTicket = null
+            input.close(); manager.close()
+        }
+    }
+    println("PASS Bluetooth arrival relayed to the home screen: Stop before delivery acts on nothing; control starts Self once")
     println("PASS UI connect producers: queued main/list/automation/scan inputs, live successor protection, compatible Open, fresh manual input, raw-socket cancellation, adopted scan socket and real relay rejection")
 }

@@ -36,6 +36,10 @@ open class WifiLauncherManager(val service: AapService) {
     var active: WifiLauncher? = null
         private set
 
+    /** The Stop ticket [active] was armed under; a hold its own network makes replays under it. */
+    var armedTicket: Long? = null
+        private set
+
     /**
      * Whether [active] is running. stop() leaves the launcher in place at every sequence but LAST,
      * so this is what separates "this mode is already up" from "stopped, and still here".
@@ -176,6 +180,8 @@ open class WifiLauncherManager(val service: AapService) {
         val screen = ScreenPower.isInteractive(service)
         val asleep = WirelessSleepHold.isAsleep(screen)
         if (WirelessSleepHold.refusesBringUp(asleep, userRequested, newLauncher.mode == WifiLauncherMode.MANUAL)) {
+            // The wake replays this bring-up under its own ticket, not the wake's.
+            service.noteSleepHeld(ticket)
             if (WirelessSleepHold.hold(force)) {
                 AppLog.i("WifiLauncher: wireless bring-up held while the screen is off. " +
                     "The screen coming on re-arms it.")
@@ -227,8 +233,9 @@ open class WifiLauncherManager(val service: AapService) {
         if (newLauncher.mode != WifiLauncherMode.NATIVE) service.closeRetainedHct()
         // replace it with new one
         active = newLauncher
+        armedTicket = ticket
         sharedServices.update(newLauncher, ticket)
-        active?.start(noInfoToasts)
+        active?.start(noInfoToasts, ticket)
         activeIsStarted = true
     }
 
@@ -291,17 +298,26 @@ open class WifiLauncherManager(val service: AapService) {
         return discovery.startScan(ticket = ticket)
     }
 
-    /** [ticket]: the Stop ticket of the input this discovery serves, captured at its receipt. */
-    fun startDiscovery(oneShot: Boolean = false, ticket: Long) {
+    /**
+     * [ticket]: the Stop ticket of the input this discovery serves, captured at its receipt.
+     * [save]: the Save this discovery retries for, when it does; its find connects for that Save.
+     */
+    fun startDiscovery(oneShot: Boolean = false, ticket: Long,
+        save: com.andrerinas.openheadunit.connection.CommManager.ConnectionState.Disconnected? = null) {
         // Allow discovery for Strategy 0 (NSD), 3 (Phone Hotspot) and 4 (Headunit Hotspot)
         if (active == null || active?.hasLocalDiscovery() == false)
             return
 
-        sharedServices.startLocalDiscovery(oneShot, ticket)
+        sharedServices.startLocalDiscovery(oneShot, ticket, save)
     }
 
-    /** [ticket]: the Stop ticket of the input this restart serves, captured at its receipt. */
-    fun restartDiscovery(ticket: Long) {
-        active?.restartDiscovery(ticket)
+    /**
+     * [ticket]: the Stop ticket of the input this restart serves, captured at its receipt, and
+     * checked here before any launcher's restart acts. [save]: as for [startDiscovery].
+     */
+    fun restartDiscovery(ticket: Long,
+        save: com.andrerinas.openheadunit.connection.CommManager.ConnectionState.Disconnected? = null) {
+        if (!App.provide(service).commManager.acceptsAppConnectionTicket(ticket)) return
+        active?.restartDiscovery(ticket, save)
     }
 }

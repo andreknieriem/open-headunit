@@ -20,6 +20,7 @@ import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy
 import com.andrerinas.openheadunit.connection.ConnectionStage
 import com.andrerinas.openheadunit.connection.ConnectionStageTracker
 import com.andrerinas.openheadunit.connection.usb.UsbAccessoryMode
+import com.andrerinas.openheadunit.connection.usb.UsbAttachSwitch
 import com.andrerinas.openheadunit.connection.usb.UsbAttachPolicy
 import com.andrerinas.openheadunit.connection.usb.UsbDeviceCompat
 import com.andrerinas.openheadunit.connection.usb.UsbDeviceDiagnostics
@@ -211,13 +212,23 @@ class UsbAttachedActivity : Activity() {
 
         val usbManager = UsbDeviceCompat.usbManager(this) ?: run { finish(); return }
 
-        // The switch starts the USB attempt, so it takes the connection arbiter here, before the
-        // stage is reported: standing the wireless stack down clears the status pill.
-        val arbiterClaim = ConnectionArbiter.claim(
+        // The switch starts the USB attempt, so it takes its authority here, before the stage is
+        // reported: standing the wireless stack down clears the status pill. Unlocked, it is a USB
+        // request, admitted on this activity's Main thread where the claim was always taken.
+        // Before first unlock it is a bare arbiter claim, as it always was: no app component, and so
+        // no CommManager, Stop ticket or other request, can exist then (building one reads
+        // credential-protected settings and throws), so there is nothing a request could be
+        // consistent with; the claim still holds off every other arbiter claimer.
+        val commManager = if (isLocked) null else App.provide(this).commManager
+        val usbRequest = commManager?.admitUsbRequest(
+            ConnectionPriorityPolicy.Tier.USB, "USB switch of ${deviceCompat.uniqueName}", save = null,
+            recheck = commManager.usbRecheck(commManager.appConnectionTicket()),
+        )
+        val lockedClaim = if (isLocked) ConnectionArbiter.claim(
             ConnectionPriorityPolicy.Tier.USB, ConnectionPriorityPolicy.Owner.USB,
             "USB switch of ${deviceCompat.uniqueName}"
-        )
-        if (arbiterClaim == null) {
+        ) else null
+        if (usbRequest == null && lockedClaim == null) {
             finish()
             return
         }
@@ -229,25 +240,27 @@ class UsbAttachedActivity : Activity() {
         ToastUtils.showToast(this, getString(R.string.switching_usb_accessory_mode, deviceCompat.uniqueName), Toast.LENGTH_SHORT)
         val useLibusb = settings?.useLibusb ?: false
         // The claim keeps the service's 2 s attach fallback off a device we are already switching.
-        // noHistory means this activity can be finished out from under the thread, so the release
-        // is in a finally and the claim expires on its own if even that is missed.
+        // noHistory means this activity can be finished out from under the thread, so the request
+        // ends in a finally and the claim expires on its own if even that is missed.
         UsbSwitchClaim.stake()
         Thread {
-            val result = try {
-                usbMode.connectAndSwitch(device, useLibusb).also { if (it) UsbSwitchClaim.noteSwitched() }
-            } catch (e: Exception) {
-                AppLog.e("AOA switch threw for ${deviceCompat.uniqueName}", e)
-                false
-            } finally {
-                UsbSwitchClaim.release()
-                ConnectionArbiter.release(arbiterClaim, sessionFormed = false)
+            val outcome = UsbAttachSwitch.run(commManager, usbRequest, lockedClaim, deviceCompat.uniqueName) {
+                usbMode.connectAndSwitch(device, useLibusb)
             }
             runOnUiThread {
-                if (result) {
-                    ToastUtils.showToast(this, getString(R.string.success), Toast.LENGTH_SHORT)
-                } else {
-                    ToastUtils.showToast(this, getString(R.string.failed), Toast.LENGTH_SHORT)
-                    if (!App.provide(this).commManager.isConnected) ConnectionStageTracker.clear()
+                when (outcome) {
+                    // Whatever revoked it owns the stage and its feedback now.
+                    UsbAttachSwitch.Outcome.REVOKED -> Unit
+                    UsbAttachSwitch.Outcome.SWITCHED ->
+                        ToastUtils.showToast(this, getString(R.string.success), Toast.LENGTH_SHORT)
+                    UsbAttachSwitch.Outcome.FAILED -> {
+                        ToastUtils.showToast(this, getString(R.string.failed), Toast.LENGTH_SHORT)
+                        // Asked now, not at onCreate: the user may have unlocked during the switch,
+                        // and only an unlocked process may build the app component.
+                        val lockedNow = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N &&
+                            !(getSystemService(Context.USER_SERVICE) as UserManager).isUserUnlocked
+                        if (lockedNow || !App.provide(this).commManager.isConnected) ConnectionStageTracker.clear()
+                    }
                 }
                 finish()
             }

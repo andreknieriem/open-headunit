@@ -124,20 +124,39 @@ class SettingsRestartAdmissionTest {
     }
 
 
-    @Test fun `revoked USB Save cannot claim or touch hardware even when terminal identity is unchanged`() = runBlocking {
+    @Test fun `revoked USB Save cannot be admitted or touch hardware even when terminal identity is unchanged`() = runBlocking {
         val manager = mock(CommManager::class.java, CALLS_REAL_METHODS).withAppExitDispatcherForTest()
         val saved = CommManager.ConnectionState.Disconnected(reason = CommManager.DisconnectReason.SETTINGS_RESTART)
         val flow = MutableStateFlow<CommManager.ConnectionState>(saved)
         set(manager, "_connectionState", flow)
         set(manager, "transportLifecycleLock", Any())
-        val device = mock(android.hardware.usb.UsbDevice::class.java)
         val context = mock(android.content.Context::class.java)
         set(manager, "context", context)
         manager.cancelPendingSettingsRestart() // same action as the accepted manual Self launch
-        manager.connect(device, expectedState = saved)
-        assertNull(manager.claimUsb(ConnectionPriorityPolicy.Tier.USB, "obsolete Save", saved))
+        assertNull(manager.admitUsbRequest(ConnectionPriorityPolicy.Tier.USB, "obsolete Save", saved,
+            manager.usbRecheck(manager.appConnectionTicket())))
         assertSame(saved, flow.value)
-        verifyNoInteractions(device, context)
+        verifyNoInteractions(context)
+    }
+
+    // A Save's USB request is admitted and waits to publish. The user exits (the service stays):
+    // the request leaves the slot and its claim is released at once, not when its producer
+    // notices a step later.
+    @Test fun `a user exit releases an unpublished USB Save request's claim at once`() = runBlocking {
+        val manager = mock(CommManager::class.java, CALLS_REAL_METHODS).withAppExitDispatcherForTest()
+        val saved = CommManager.ConnectionState.Disconnected(reason = CommManager.DisconnectReason.SETTINGS_RESTART,
+            settingsRestartUntilMs = Long.MAX_VALUE)
+        val flow = MutableStateFlow<CommManager.ConnectionState>(saved)
+        set(manager, "_connectionState", flow)
+        set(manager, "connectionState", flow)
+        set(manager, "usbRecoveryOwner", Any())
+        val request = checkNotNull(manager.admitUsbRequest(ConnectionPriorityPolicy.Tier.USB, "USB Save", saved,
+            manager.usbRecheck(manager.appConnectionTicket())))
+        assertTrue(ConnectionArbiter.holds(request.claim))
+        manager.disconnect(sendByeBye = false, isUserExit = true, honorKillOnDisconnect = false)
+        // Recorded after every production frame has returned.
+        val held = ConnectionArbiter.holds(request.claim)
+        assertFalse("a user exit left an unpublished USB Save request's claim held (held=$held)", held)
     }
 
     @Test fun `USB Save checks permission again after retirement before publishing Connecting`() = runBlocking {
@@ -155,12 +174,15 @@ class SettingsRestartAdmissionTest {
         `when`(usb.hasPermission(device)).thenReturn(true)
         set(manager, "context", context)
         val method = CommManager::class.java.getDeclaredMethod("connectUsb", android.hardware.usb.UsbDevice::class.java,
-            Long::class.javaPrimitiveType, CommManager.ConnectionState.Disconnected::class.java, Any::class.java,
-            ConnectionArbiter.Claim::class.java, ConnectionAdmission::class.java,
-            ConnectionArbiter.Claim::class.java, kotlin.coroutines.Continuation::class.java)
+            CommManager.ConnectionRequest::class.java, Any::class.java, ConnectionAdmission::class.java,
+            kotlin.coroutines.Continuation::class.java)
             .apply { isAccessible = true }
+        // The Save request is admitted and holds its claim, so only the revoked Save can refuse its
+        // publication.
+        val request = checkNotNull(manager.admitUsbRequest(ConnectionPriorityPolicy.Tier.USB, "USB Save", saved,
+            manager.usbRecheck(manager.appConnectionTicket())))
         val retry = launch(start = CoroutineStart.UNDISPATCHED) {
-            suspendCoroutineUninterceptedOrReturn<Unit> { method.invoke(manager, device, 0L, saved, null, null, ConnectionAdmission.UNRESTRICTED, null, it) }
+            suspendCoroutineUninterceptedOrReturn<Unit> { method.invoke(manager, device, request, null, ConnectionAdmission.UNRESTRICTED, it) }
         }
         assertFalse(retry.isCompleted)
         manager.cancelPendingSettingsRestart()

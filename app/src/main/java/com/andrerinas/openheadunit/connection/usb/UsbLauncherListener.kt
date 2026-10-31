@@ -97,16 +97,17 @@ class UsbLauncherListener(private val manager: UsbLauncherManager) : UsbReceiver
         manager.onRecoveryPermission(token, granted, device)
     }
 
-    override fun onUsbPermission(granted: Boolean, connect: Boolean, device: UsbDevice, ticket: Long) {
+    override fun onUsbPermission(granted: Boolean, connect: Boolean, device: UsbDevice, ticket: Long, token: String?) {
         if (!UsbDeviceCompat.isConnectable(service, device)) {
             AppLog.i("Ignoring USB permission callback (VID: ${device.vendorId}): ${UsbDeviceCompat.matchReason(device)}")
             return
         }
         val usbManager = UsbDeviceCompat.usbManager(service) ?: return
         val deviceName = UsbDeviceCompat(device).uniqueName
-        val permission = manager.takePermissionAttempt(device, ticket)
+        // The scan the dialog was raised for: a withdrawn one is not revived by a late grant.
+        val permission = manager.takePermissionAttempt(device, ticket, token) ?: return
         val commManager = App.provide(service).commManager
-        if (!commManager.acceptsAppConnectionTicket(permission.ticket)) return
+        if (!commManager.isCurrent(permission.recheck)) return
         val restart = permission.settingsRestart
         // Permission is not a new user request for projection. An explicit stop still wins.
         if (granted && manager.cancelledByUser) return
@@ -118,19 +119,19 @@ class UsbLauncherListener(private val manager: UsbLauncherManager) : UsbReceiver
                 // A grant may outlive Save or arrive after another connection has come and
                 // gone. Use ordinary admission (including the Settings hold), without
                 // renewing Save. Explicit cancellation above still rejects this old grant.
-                manager.checkAlreadyConnected(force = true, ticket = permission.ticket)
+                manager.checkAlreadyConnected(force = true, recheck = permission.recheck)
                 return
             }
             AppLog.i("USB permission granted for $deviceName")
-            if (!manager.beginAttempt(Tier.USB, "USB $deviceName", restart, permission.ticket)) return
+            if (!manager.beginAttempt(Tier.USB, "USB $deviceName", restart, permission.recheck)) return
             if (UsbDeviceCompat.isInAccessoryMode(device)) {
-                manager.launchAttempt(restart) {
-                    manager.connectWithRetry(device, settingsRestart = restart, ticket = permission.ticket)
+                manager.launchAttempt { request ->
+                    manager.connectWithRetry(device, request)
                 }
             } else {
                 val settings = App.provide(service).settings
                 val usbMode = UsbAccessoryMode(usbManager)
-                manager.launchAttempt(restart, Dispatchers.IO) {
+                manager.launchAttempt(Dispatchers.IO) {
                     if (usbMode.connectAndSwitch(device, settings.useLibusb)) {
                         manager.noteAccessorySwitchRequested()
                         AppLog.i("Successfully requested switch to accessory mode for $deviceName")

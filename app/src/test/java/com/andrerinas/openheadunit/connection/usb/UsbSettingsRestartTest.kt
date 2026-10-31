@@ -26,13 +26,13 @@ class UsbSettingsRestartTest {
         UsbLauncherManager::class.java.getDeclaredField("cancelledByUser").apply { isAccessible = true }.set(manager, true)
         val saved = CommManager.ConnectionState.Disconnected(reason = CommManager.DisconnectReason.SETTINGS_RESTART, settingsRestartUntilMs = Long.MAX_VALUE)
         manager.restartForSettings(saved)
-        verify(manager, never()).checkAlreadyConnected(anyBoolean(), anyBoolean(), anyOrNull(), anyBoolean(), anyLong())
+        verify(manager, never()).checkAlreadyConnected(anyBoolean(), anyBoolean(), anyOrNull(), anyBoolean(), anyLong(), anyOrNull())
     }
 
     @Test fun `uncancelled Save still grants one explicit device check`() {
         val manager = launcher()
         val saved = CommManager.ConnectionState.Disconnected(reason = CommManager.DisconnectReason.SETTINGS_RESTART, settingsRestartUntilMs = Long.MAX_VALUE)
-        doNothing().`when`(manager).checkAlreadyConnected(anyBoolean(), anyBoolean(), anyOrNull(), anyBoolean(), anyLong())
+        doNothing().`when`(manager).checkAlreadyConnected(anyBoolean(), anyBoolean(), anyOrNull(), anyBoolean(), anyLong(), anyOrNull())
         manager.restartForSettings(saved)
         verify(manager).checkAlreadyConnected(force = true, userRequested = false, settingsRestart = saved)
     }
@@ -41,7 +41,7 @@ class UsbSettingsRestartTest {
         val manager = launcher()
         val saved = CommManager.ConnectionState.Disconnected(reason = CommManager.DisconnectReason.SETTINGS_RESTART, settingsRestartUntilMs = Long.MAX_VALUE)
         doReturn(saved).`when`(manager).pendingSettingsRestart()
-        doNothing().`when`(manager).checkAlreadyConnected(anyBoolean(), anyBoolean(), anyOrNull(), anyBoolean(), anyLong())
+        doNothing().`when`(manager).checkAlreadyConnected(anyBoolean(), anyBoolean(), anyOrNull(), anyBoolean(), anyLong(), anyOrNull())
         manager.checkOnRequest(userRequested = false)
         verify(manager).checkAlreadyConnected(force = true, userRequested = false, settingsRestart = saved, accessoryOnly = false)
     }
@@ -50,7 +50,7 @@ class UsbSettingsRestartTest {
         val manager = launcher()
         val saved = CommManager.ConnectionState.Disconnected(reason = CommManager.DisconnectReason.SETTINGS_RESTART, settingsRestartUntilMs = Long.MAX_VALUE)
         doReturn(saved).`when`(manager).pendingSettingsRestart()
-        doNothing().`when`(manager).checkAlreadyConnected(anyBoolean(), anyBoolean(), anyOrNull(), anyBoolean(), anyLong())
+        doNothing().`when`(manager).checkAlreadyConnected(anyBoolean(), anyBoolean(), anyOrNull(), anyBoolean(), anyLong(), anyOrNull())
         manager.checkOnRequest(userRequested = true)
         verify(manager).checkAlreadyConnected(force = true, userRequested = true, settingsRestart = null, accessoryOnly = false)
     }
@@ -85,22 +85,26 @@ class UsbSettingsRestartTest {
                 com.andrerinas.openheadunit.App::class.java.getDeclaredField("component\$delegate")
                     .apply { isAccessible = true }.set(app, lazyOf(component))
                 `when`(component.commManager).thenReturn(comm)
+                // The requests the launcher admits, observed at CommManager's own admission.
+                val admitted = mutableListOf<CommManager.ConnectionRequest>()
+                doAnswer { call -> (call.callRealMethod() as CommManager.ConnectionRequest?)?.also { admitted += it } }
+                    .`when`(comm).admitUsbRequest(org.mockito.kotlin.any(), org.mockito.kotlin.any(), anyOrNull(), org.mockito.kotlin.any())
+                fun scan() = comm.usbRecheck(comm.appConnectionTicket())
                 val launcher = UsbLauncherManager(service)
                 org.junit.Assert.assertTrue(launcher.beginAttempt(
-                    com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy.Tier.USB, "Save retry", saved))
+                    com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy.Tier.USB, "Save retry", saved, scan()))
                 org.junit.Assert.assertTrue(launcher.isSwitchingToProjection())
-                val claimField = UsbLauncherManager::class.java.getDeclaredField("attemptClaim").apply { isAccessible = true }
-                val oldClaim = claimField.get(launcher) as com.andrerinas.openheadunit.connection.ConnectionArbiter.Claim
+                val oldClaim = admitted.single().claim
                 org.junit.Assert.assertTrue(com.andrerinas.openheadunit.connection.ConnectionArbiter.holds(oldClaim))
                 val permission = kotlinx.coroutines.CompletableDeferred<Unit>()
                 var entered = false
                 var opened = false
-                val block: suspend kotlinx.coroutines.CoroutineScope.() -> Unit = {
+                val block: suspend kotlinx.coroutines.CoroutineScope.(CommManager.ConnectionRequest) -> Unit = {
                     entered = true
                     permission.await()
                     opened = true
                 }
-                launcher.launchAttempt(saved, block = block)
+                launcher.launchAttempt(block = block)
                 if (enterPermissionWait) while (tasks.isNotEmpty()) tasks.removeFirst().run()
                 org.junit.Assert.assertEquals(enterPermissionWait, entered)
                 if (cancelPath == "expiry") {
@@ -113,10 +117,10 @@ class UsbSettingsRestartTest {
                 var replacementClaim: com.andrerinas.openheadunit.connection.ConnectionArbiter.Claim? = null
                 if (cancelPath == "replacement") {
                     org.junit.Assert.assertTrue(launcher.beginAttempt(
-                        com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy.Tier.USB, "new USB request"))
-                    replacementClaim = claimField.get(launcher) as com.andrerinas.openheadunit.connection.ConnectionArbiter.Claim
-                    val replacement: suspend kotlinx.coroutines.CoroutineScope.() -> Unit = { kotlinx.coroutines.awaitCancellation() }
-                    launcher.launchAttempt(null, block = replacement)
+                        com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy.Tier.USB, "new USB request", null, scan()))
+                    replacementClaim = admitted.last().claim
+                    val replacement: suspend kotlinx.coroutines.CoroutineScope.(CommManager.ConnectionRequest) -> Unit = { kotlinx.coroutines.awaitCancellation() }
+                    launcher.launchAttempt(block = replacement)
                 }
                 permission.complete(Unit)
                 while (tasks.isNotEmpty()) tasks.removeFirst().run()
@@ -128,10 +132,9 @@ class UsbSettingsRestartTest {
                     org.junit.Assert.assertTrue(com.andrerinas.openheadunit.connection.ConnectionArbiter.holds(replacementClaim))
                 } else {
                     org.junit.Assert.assertFalse(launcher.isSwitchingToProjection())
-                    org.junit.Assert.assertNull(claimField.get(launcher))
                     launcher.liftUserCancel("next explicit USB request")
                     org.junit.Assert.assertTrue(launcher.beginAttempt(
-                        com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy.Tier.USB, "next USB request"))
+                        com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy.Tier.USB, "next USB request", null, scan()))
                     launcher.setSwitchingToProjection(false)
                 }
                 scope.coroutineContext[kotlinx.coroutines.Job]?.cancel()

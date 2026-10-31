@@ -4,6 +4,7 @@ import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.AppComponent
 import com.andrerinas.openheadunit.aap.AapService
 import com.andrerinas.openheadunit.connection.CommManager
+import com.andrerinas.openheadunit.connection.ConnectionArbiter
 import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -44,6 +45,11 @@ class UsbSettingsRetryLoopTest {
                 `when`(fresh.productId).thenReturn(if (scenario == "normal-mode") 0x4ee7 else 0x2d00)
                 `when`(usb.hasPermission(fresh)).thenReturn(true)
                 val opened = mutableListOf<android.hardware.usb.UsbDevice>()
+                // The one admitted Save request: valid while its Save still owns the state (its
+                // ticket and claim are not under test here), exactly CommManager's own predicate.
+                val request = CommManager.ConnectionRequest(0L, ConnectionArbiter.Claim(ConnectionPriorityPolicy.Tier.USB,
+                    ConnectionPriorityPolicy.Owner.USB, "USB Save", 0L), null, saved, null)
+                doAnswer { saved.acceptsSettingsRestart(states.value) }.`when`(comm).isValid(request)
                 for (candidate in listOf(device, fresh)) {
                     doAnswer {
                         states.value = CommManager.ConnectionState.Connecting
@@ -57,10 +63,10 @@ class UsbSettingsRetryLoopTest {
                         }
                         states.value = CommManager.ConnectionState.Disconnected(
                             settingsRetryOwner = if (scenario == "unrelated") null else saved)
-                        Unit
-                    }.`when`(comm).connect(candidate, ConnectionPriorityPolicy.Tier.USB, saved, 0L)
+                        false // This try's own attempt never reached its connection.
+                    }.`when`(comm).connect(candidate, request)
                 }
-                UsbLauncherManager(service).connectWithRetry(device, settingsRestart = saved)
+                UsbLauncherManager(service).connectWithRetry(device, request)
                 val expected = when (scenario) { "expired" -> 0; "gone", "unrelated", "different-device", "normal-mode", "blacklisted" -> 1; else -> 4 }
                 assertEquals(scenario, expected, opened.size)
                 if (scenario == "reenumerated") assertTrue(opened.drop(1).all { it === fresh })

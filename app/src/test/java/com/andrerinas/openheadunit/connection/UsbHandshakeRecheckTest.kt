@@ -20,17 +20,26 @@ import org.mockito.Mockito.*
 import kotlin.coroutines.CoroutineContext
 
 class UsbHandshakeRecheckTest {
-    private object Never : CoroutineDispatcher() {
-        override fun dispatch(context: CoroutineContext, block: Runnable) = Unit
+    // The manager's cleanup scope: queued, so a retirement runs only when a case settles.
+    private class Queued : CoroutineDispatcher() {
+        val tasks = ArrayDeque<Runnable>()
+        override fun dispatch(context: CoroutineContext, block: Runnable) { tasks.addLast(block) }
     }
 
     private var manager: CommManager? = null
+
+    /** The live attempt ends without a session: its teardown runs on the next settle. */
+    private fun endAttempt(userExit: Boolean = false) {
+        checkNotNull(manager).disconnect(sendByeBye = false, isUserExit = userExit, honorKillOnDisconnect = false)
+    }
 
     @Test fun usbScanWaitsForEveryPreHandshakeStageAndReturnsAfterFailure() {
         for (stage in listOf(ConnectionState.Connecting, ConnectionState.Connected, ConnectionState.StartingTransport)) {
             scenario(stage) { scan, claim, returned, settle ->
                 scan()
+                settle()
                 assertTrue(returned.isEmpty())
+                endAttempt()
                 ConnectionArbiter.release(claim, sessionFormed = false)
                 settle()
                 assertEquals("stage=$stage", listOf(false to true), returned)
@@ -44,10 +53,13 @@ class UsbHandshakeRecheckTest {
         for (userExit in listOf(false, true)) {
             scenario(ConnectionState.StartingTransport) { scan, claim, returned, settle ->
                 scan()
+                val states = checkNotNull(manager).connectionState as MutableStateFlow<ConnectionState>
+                states.value = ConnectionState.HandshakeComplete
                 ConnectionArbiter.release(claim, sessionFormed = true)
                 settle()
                 assertTrue(returned.isEmpty())
-                ConnectionArbiter.sessionEnded(wirelessAlreadyRearmed = false, userExit = userExit)
+                endAttempt(userExit)
+                settle()
                 assertEquals(if (userExit) emptyList() else listOf(false to true), returned)
             }
         }
@@ -56,6 +68,7 @@ class UsbHandshakeRecheckTest {
     @Test fun disabledAutomaticUsbScanDoesNotBecomeAForcedRetry() {
         scenario(ConnectionState.Connected, force = false) { scan, claim, returned, settle ->
             scan()
+            endAttempt()
             ConnectionArbiter.release(claim, sessionFormed = false)
             settle()
             assertTrue(returned.isEmpty())
@@ -65,6 +78,7 @@ class UsbHandshakeRecheckTest {
     @Test fun usbAttemptDoesNotOweASecondScanToItself() {
         scenario(ConnectionState.StartingTransport, claimOwner = Owner.USB) { scan, claim, returned, settle ->
             scan()
+            endAttempt()
             ConnectionArbiter.release(claim, sessionFormed = false)
             settle()
             assertTrue(returned.isEmpty())
@@ -76,6 +90,7 @@ class UsbHandshakeRecheckTest {
             scenario(stage) { scan, claim, returned, settle ->
                 scan()
                 ConnectionArbiter.release(claim, sessionFormed = true)
+                endAttempt()
                 ConnectionArbiter.sessionEnded(wirelessAlreadyRearmed = false, userExit = false)
                 settle()
                 assertTrue("stage=$stage", returned.isEmpty())
@@ -88,7 +103,8 @@ class UsbHandshakeRecheckTest {
             scenario(ConnectionState.StartingTransport, finishBeforeScan = stage) { _, _, returned, settle ->
                 settle()
                 assertTrue("An already formed session must not trigger a competing scan", returned.isEmpty())
-                ConnectionArbiter.sessionEnded(wirelessAlreadyRearmed = false, userExit = false)
+                endAttempt()
+                settle()
                 assertEquals(listOf(false to true), returned)
             }
         }
@@ -97,7 +113,7 @@ class UsbHandshakeRecheckTest {
     @Test fun aUserExitDuringSslGivesNoUsbScanBack() {
         scenario(ConnectionState.StartingTransport) { scan, _, returned, settle ->
             scan()
-            checkNotNull(manager).disconnect(sendByeBye = false, isUserExit = true, honorKillOnDisconnect = false)
+            endAttempt(userExit = true)
             CommManager::class.java.getDeclaredMethod("settleSessionClaim", Boolean::class.javaPrimitiveType)
                 .apply { isAccessible = true }.invoke(manager, false)
             settle()
@@ -137,7 +153,7 @@ class UsbHandshakeRecheckTest {
         ConnectionArbiter.actions = object : ConnectionArbiter.Actions {
             override fun preempt(loser: ConnectionArbiter.Claim) = Unit
             override fun standDownWireless(by: ConnectionArbiter.Claim) = standsDown
-            override fun giveBack(wireless: Boolean, usb: Boolean) { returned += wireless to usb }
+            override fun giveBack(wireless: Boolean, usb: UsbRecheck?) { returned += wireless to (usb != null) }
             override fun schedule(delayMs: Long, block: () -> Unit) { timers.addLast(block) }
         }
         try {
@@ -154,7 +170,8 @@ class UsbHandshakeRecheckTest {
                 field("_connectionState", states)
                 field("connectionState", states)
                 field("usbRecoveryOwner", Any())
-                field("_scope", CoroutineScope(SupervisorJob() + Never))
+                val teardown = Queued()
+                field("_scope", CoroutineScope(SupervisorJob() + teardown))
                 field("settings", mock(Settings::class.java))
                 this@UsbHandshakeRecheckTest.manager = manager
                 App::class.java.getDeclaredField("component\$delegate")
@@ -164,23 +181,27 @@ class UsbHandshakeRecheckTest {
                 `when`(component.settings).thenReturn(mock(Settings::class.java))
                 val launcher = UsbLauncherManager(service)
                 val claim = checkNotNull(ConnectionArbiter.claim(if (claimOwner == Owner.USB) Tier.USB else Tier.WIRELESS_HANDSHAKE, claimOwner, "handshake"))
+                // Any non-terminal state is owned by the live attempt that claim published.
+                if (state !is ConnectionState.Disconnected && state !is ConnectionState.Error) {
+                    field("connectionAttempt", CommManager.Attempt(claim))
+                }
                 val release = CommManager::class.java.getDeclaredMethod("releaseClaim", ConnectionArbiter.Claim::class.java)
                     .apply { isAccessible = true }
                 if (finishBeforeScan != null) {
                     launcher.checkAlreadyConnected(force = true)
                     states.value = finishBeforeScan
-                    // The handshake's own attempt, published under that claim, is the live one.
-                    field("connectionAttempt", CommManager.Attempt(claim))
                     release.invoke(manager, claim)
                 } else if (state is ConnectionState.Connected || state is ConnectionState.StartingTransport) {
                     // connect() can reach finally after the observer has advanced to SSL.
-                    field("connectionAttempt", CommManager.Attempt(claim))
                     release.invoke(manager, claim)
                     assertTrue("The pending handshake must still hold its claim", ConnectionArbiter.holds(claim))
                 }
                 // Exercise the production scan entry point, including its isConnected guard.
-                body({ launcher.checkAlreadyConnected(force = force) }, claim, returned,
-                    { while (timers.isNotEmpty()) timers.removeFirst().invoke() })
+                body({ launcher.checkAlreadyConnected(force = force) }, claim, returned, {
+                    while (teardown.tasks.isNotEmpty() || timers.isNotEmpty()) {
+                        teardown.tasks.removeFirstOrNull()?.run() ?: timers.removeFirst().invoke()
+                    }
+                })
             }
         } finally {
             ConnectionArbiter.reset()

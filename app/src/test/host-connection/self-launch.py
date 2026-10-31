@@ -60,7 +60,7 @@ for marker, file, declaration, braced in [
     ('RECORD_TERMINAL', comm, 'private fun recordTerminal(', True),
     ('LAUNCH_OUTCOME', comm, 'internal sealed class LaunchOutcome {', True),
     # The request authority a launch's wait and the dial's JOIN decide by.
-    ('CONNECTION_REQUEST', comm, 'private class ConnectionRequest(', True),
+    ('CONNECTION_REQUEST', comm, 'internal class ConnectionRequest(', True),
     ('IS_VALID', comm, 'private fun ConnectionRequest.isValid()', False),
     ('VALID_REQUEST', comm, 'private fun validRequest()', False),
     ('RETIRE_REQUEST', comm, 'private fun retireInvalidRequest()', True),

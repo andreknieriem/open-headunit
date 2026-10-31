@@ -92,10 +92,12 @@ class InternalFailureRecoveryTest {
                 mockConstruction(driver) { connection, _ ->
                     runBlocking { `when`(connection.connect()).thenAnswer { throw IOException("USB open failed") } }
                 }.use {
-                    invoke(f.manager, "connectUsb", arrayOf(UsbDevice::class.java, Long::class.javaPrimitiveType!!, ConnectionState.Disconnected::class.java,
-                        Any::class.java, ConnectionArbiter.Claim::class.java, ConnectionAdmission::class.java,
-                        ConnectionArbiter.Claim::class.java),
-                        device, 0L, null, null, null, ConnectionAdmission.UNRESTRICTED, null)
+                    // USB publishes only while its own request is valid and its claim holds.
+                    val request = checkNotNull(f.manager.admitUsbRequest(ConnectionPriorityPolicy.Tier.USB, "USB test", null,
+                        f.manager.usbRecheck(f.manager.appConnectionTicket())))
+                    invoke(f.manager, "connectUsb", arrayOf(UsbDevice::class.java, CommManager.ConnectionRequest::class.java,
+                        Any::class.java, ConnectionAdmission::class.java),
+                        device, request, null, ConnectionAdmission.UNRESTRICTED)
                     f.assertRecoverable()
                 }
             }
@@ -140,21 +142,22 @@ class InternalFailureRecoveryTest {
     }
 
     /** The actual public IP request, with the connection's open and construction under test control. */
-    private suspend fun connectIp(f: Fixture, opens: Boolean, loopback: Boolean = false, duringAttempt: () -> Unit = {}) {
+    private suspend fun connectIp(f: Fixture, opens: Boolean, loopback: Boolean = false,
+        tier: ConnectionPriorityPolicy.Tier = ConnectionPriorityPolicy.Tier.WIRELESS_HANDSHAKE, duringAttempt: () -> Unit = {}) {
         mockConstruction(SocketProjectionConnection::class.java) { connection, _ ->
             // Construction runs after the attempt is published and before its connection is registered.
             duringAttempt()
             runBlocking { `when`(connection.connect()).thenReturn(opens) }
             `when`(connection.isLoopbackPeer).thenReturn(loopback)
         }.use {
-            f.manager.connect("127.0.0.1", 5277)
+            f.manager.connect("127.0.0.1", 5277, tier)
         }
     }
 
     /**
-     * The actual refused-USB path: a request whose permission check failed reports a diagnostic.
-     * [permissionAnswer] runs inside the permission check, after the request passed its own
-     * Connecting guard; the request may run on another thread.
+     * The actual refused-USB path: a USB request, admitted when it runs, whose permission check
+     * failed reports a diagnostic. [permissionAnswer] runs inside the permission check, after the
+     * request passed its own Connecting guard; the request may run on another thread.
      */
     private fun refusedUsb(f: Fixture, permissionAnswer: () -> Unit = {}): () -> Unit {
         val device = mock(UsbDevice::class.java)
@@ -163,10 +166,11 @@ class InternalFailureRecoveryTest {
         `when`(usb.hasPermission(device)).thenAnswer { permissionAnswer(); false }
         return {
             runBlocking {
-                invoke(f.manager, "connectUsb", arrayOf(UsbDevice::class.java, Long::class.javaPrimitiveType!!, ConnectionState.Disconnected::class.java,
-                    Any::class.java, ConnectionArbiter.Claim::class.java, ConnectionAdmission::class.java,
-                    ConnectionArbiter.Claim::class.java),
-                    device, f.manager.appConnectionTicket(), null, null, null, ConnectionAdmission.UNRESTRICTED, null)
+                val request = checkNotNull(f.manager.admitUsbRequest(ConnectionPriorityPolicy.Tier.USB, "USB test", null,
+                    f.manager.usbRecheck(f.manager.appConnectionTicket())))
+                invoke(f.manager, "connectUsb", arrayOf(UsbDevice::class.java, CommManager.ConnectionRequest::class.java,
+                    Any::class.java, ConnectionAdmission::class.java),
+                    device, request, null, ConnectionAdmission.UNRESTRICTED)
             }
         }
     }
@@ -232,7 +236,8 @@ class InternalFailureRecoveryTest {
     @Test fun anAttemptOwnsTheStateBeforeItsConnectionIsRegistered() = runBlocking {
         for (opens in listOf(true, false)) Fixture().use { f ->
             // A USB request passes its Connecting guard while nothing is in flight, then its
-            // permission check returns false only after attempt B was published.
+            // permission check returns false only after user attempt B took the claim and was
+            // published.
             val usbChecking = java.util.concurrent.CountDownLatch(1)
             val bPublished = java.util.concurrent.CountDownLatch(1)
             val refuse = refusedUsb(f) {
@@ -252,7 +257,7 @@ class InternalFailureRecoveryTest {
             var forming: CommManager.LaunchOutcome? = null
             var settledAtDecision: Boolean? = null
             var afterDecision: ConnectionState? = null
-            connectIp(f, opens) {
+            connectIp(f, opens, tier = ConnectionPriorityPolicy.Tier.USER) {
                 // B is published; its connection object is not registered yet.
                 published = f.states.value
                 bPublished.countDown()

@@ -278,6 +278,29 @@ class CommManager(
     internal fun acceptsAppConnectionTicket(ticket: Long): Boolean =
         synchronized(transportLifecycleLock) { appExitPolicy.acceptsConnection(ticket) }
 
+    // Advanced wherever an end withdraws every owed USB scan: a user exit, Stop, and an end that
+    // holds automatic reconnection (PROJECTION_UNRAISED). Guarded by transportLifecycleLock.
+    private var usbRecheckEpoch = 0L
+
+    /** An owed USB scan for the input admitted with [ticket]. See [UsbRecheck]. */
+    internal fun usbRecheck(ticket: Long): UsbRecheck =
+        synchronized(transportLifecycleLock) { UsbRecheck(ticket, usbRecheckEpoch) }
+
+    /** The one validity check of an owed USB scan; see [UsbRecheck]. */
+    internal fun isCurrent(recheck: UsbRecheck): Boolean = synchronized(transportLifecycleLock) { recheckCurrent(recheck) }
+
+    // Under transportLifecycleLock.
+    private fun recheckCurrent(recheck: UsbRecheck) =
+        appExitPolicy.acceptsConnection(recheck.ticket) && recheck.epoch == usbRecheckEpoch
+
+    // Under transportLifecycleLock. Every owed USB scan minted so far stops being current, wherever
+    // it waits, and so does a USB request admitted for one that has not published yet (see
+    // [retireInvalidRequest]). A wireless stack that USB stood down still comes back.
+    private fun withdrawUsbRechecks() {
+        usbRecheckEpoch++
+        retireInvalidRequest()
+    }
+
     internal fun acceptsAppRunTicket(ticket: Long): Boolean = synchronized(transportLifecycleLock) {
         appExitPolicy.acceptsConnection(ticket) && appExitPolicy.isRunOwner(appExitPolicy.revision)
     }
@@ -377,7 +400,7 @@ class CommManager(
                 cancelAppExitCallback()
                 usbRecoveryOwner = Any()
                 cancelPendingSettingsRestart()
-                dropOwedScans()
+                withdrawUsbRechecks()
             }
         }
         // Retained OS ownership can outlive the service. Never call native/Binder under our lock.
@@ -470,9 +493,13 @@ class CommManager(
      * through [awaitSettled], which never resumes inside the completing frame. [claim] is the
      * arbiter claim it was published under, if any: a producer's end hands that claim to the SSL
      * session only while this exact attempt is still the live one. See [releaseClaim].
+     * [usbRecheck] is the USB scan this attempt deferred while it was live, asked again once at
+     * its retirement. See [deferUsbCheckForConnectionAttempt].
      */
     internal class Attempt(internal val claim: ConnectionArbiter.Claim? = null) {
         internal val settled = CompletableDeferred<Unit>()
+        // Guarded by transportLifecycleLock.
+        internal var usbRecheck: UsbRecheck? = null
     }
 
     private var connectionAttempt: Attempt? = null
@@ -555,18 +582,22 @@ class CommManager(
     // have completed one and then carried no video at all. See VideoStarvationPolicy.
     @Volatile private var sessionReachedHandshake = false
     /**
-     * One logical IP or socket connection request, from its admission to its producer's end: the
-     * Stop ticket, arbiter claim, Save and socket it was admitted with, and the endpoint a
-     * same-endpoint connect joins instead of dialing. [resolved] completes once the request
-     * publishes its attempt (that attempt's own settlement takes over), ends, or is invalidated.
-     * USB attempts have no endpoint to join and are not requests.
+     * One logical connection request, from its admission to its producer's end: the Stop ticket,
+     * arbiter claim, Save and socket it was admitted with, and the endpoint a same-endpoint connect
+     * joins instead of dialing. [resolved] completes once the request publishes its attempt (that
+     * attempt's own settlement takes over), ends, or is invalidated. A logical USB request (see
+     * [admitUsbRequest]) is one too, carried through all its retries, with the owed scan it was
+     * admitted for ([recheck]): it has no endpoint, so nothing ever joins it, and each try that
+     * ends returns it to unpublished (see [connectUsb]). Producers outside this class hold it only
+     * as an opaque handle.
      */
-    private class ConnectionRequest(
+    internal class ConnectionRequest(
         val ticket: Long,
         val claim: ConnectionArbiter.Claim,
         val endpoint: String?,
         val save: ConnectionState.Disconnected?,
         val socket: Socket?,
+        val recheck: UsbRecheck? = null,
     ) {
         val resolved = CompletableDeferred<Unit>()
         // The attempt it published, if it has. Guarded by transportLifecycleLock.
@@ -585,12 +616,14 @@ class CommManager(
 
     /**
      * The one definition of a request's authority, under transportLifecycleLock: its Stop ticket is
-     * still current, its claim still holds the arbiter and, until it publishes, its Save still owns
-     * the state; once published, its own attempt is still the one in flight. Joining, a launch's
-     * wait, acceptance and publication all decide by it.
+     * still current, its claim still holds the arbiter, the owed USB scan it runs for (if any) has
+     * not been withdrawn and, until it publishes, its Save still owns the state; once published,
+     * its own attempt is still the one in flight. Joining, a launch's wait, acceptance and
+     * publication all decide by it.
      */
     private fun ConnectionRequest.isValid(): Boolean =
         appExitPolicy.stopEpoch == ticket && ConnectionArbiter.holds(claim) &&
+            (recheck == null || recheckCurrent(recheck)) &&
             attempt.let { published ->
                 if (published != null) published === connectionAttempt && !disconnectRequested
                 else save == null || save.acceptsSettingsRestart(_connectionState.value)
@@ -713,67 +746,75 @@ class CommManager(
     // -----------------------------------------------------------------------------------------
 
     /**
-     * Opens a USB accessory connection to [device].
+     * Opens a USB accessory connection to [device] for the admitted logical USB [request] (see
+     * [admitUsbRequest]). The first IO entry and every retry continue that one request and never
+     * claim anew: a request another admission has displaced stops here. The request's producer, not
+     * this call, ends it ([endRequest]). Returns whether this request's own attempt reached its
+     * physical connection, whatever the shared state has moved on to since.
      *
      * On success emits [ConnectionState.Connected] and persists the device as the last-used
      * connection so it can be auto-reconnected on the next launch.
      */
-    suspend fun connect(
-        device: UsbDevice,
-        tier: ConnectionPriorityPolicy.Tier = ConnectionPriorityPolicy.Tier.USB,
-        expectedState: ConnectionState.Disconnected? = null,
-        ticket: Long = appConnectionTicket(),
-    ) {
+    internal suspend fun connect(device: UsbDevice, request: ConnectionRequest): Boolean =
         withContext(connectionIoDispatcher) {
-            synchronized(transportLifecycleLock) {
-                if (appExitPolicy.stopEpoch != ticket ||
-                    (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value))) return@withContext
-            }
-            val description = "USB ${UsbDeviceCompat.getUniqueName(device)}"
-            val claim = synchronized(transportLifecycleLock) {
-                if (appExitPolicy.stopEpoch != ticket) null else claimUsb(tier, description, expectedState, ticket)
-            } ?: return@withContext
-            try { connectUsb(device, ticket, expectedState, appClaim = claim) } finally { releaseClaim(claim) }
+            isValid(request) && connectUsb(device, request)
         }
-    }
 
-    /** A recovery retry cannot borrow the authority of a later Save, Exit or completed session. */
-    internal suspend fun reconnectUsb(device: UsbDevice, recoveryOwner: Any,
-        recoveryClaim: ConnectionArbiter.Claim,
+    /**
+     * A recovery step of the admitted USB [request]. It cannot borrow the authority of a later
+     * Save, Exit or completed session ([recoveryOwner]), nor of a later request.
+     */
+    internal suspend fun reconnectUsb(device: UsbDevice, recoveryOwner: Any, request: ConnectionRequest,
         admission: ConnectionAdmission = ConnectionAdmission.UNRESTRICTED) {
-        val ticket = appConnectionTicket()
         withContext(connectionIoDispatcher) {
             val job = kotlinx.coroutines.currentCoroutineContext()[kotlinx.coroutines.Job]
-            val claim = synchronized(transportLifecycleLock) {
+            synchronized(transportLifecycleLock) {
                 job?.ensureActive()
-                if (appExitPolicy.stopEpoch != ticket) return@withContext
-                if (usbRecoveryOwner !== recoveryOwner) return@withContext
+                if (!request.isValid() || usbRecoveryOwner !== recoveryOwner) return@withContext
                 if (_connectionState.value !is ConnectionState.Disconnected &&
                     _connectionState.value !is ConnectionState.Error) return@withContext
-                var next: ConnectionArbiter.Claim? = null
-                admission.run {
-                    next = ConnectionArbiter.claim(ConnectionPriorityPolicy.Tier.USB, ConnectionPriorityPolicy.Owner.USB,
-                        "USB recovery of ${UsbDeviceCompat.getUniqueName(device)}", expectedHolder = recoveryClaim)
-                }
-                next
-            } ?: return@withContext
-            attemptUserRequested = false
-            try { connectUsb(device, ticket, recoveryOwner = recoveryOwner, recoveryClaim = claim, recoveryAdmission = admission) } finally { releaseClaim(claim) }
+                if (!admission.run {}) return@withContext
+            }
+            connectUsb(device, request, recoveryOwner = recoveryOwner, recoveryAdmission = admission)
         }
     }
 
-    internal fun claimUsb(
+    /**
+     * Admits one logical USB request, once, for the scan, permission reply, recovery step or AOA
+     * switch it belongs to: the owed scan [recheck] it runs for (its Stop ticket included) must
+     * still be current, and a Save it continues must still own the state. Called where those
+     * entries already ran (the service's Main thread, or the attach activity's), never moved. The
+     * request then carries the one claim through its first IO entry, every retry, recovery and
+     * publication; its producer ends it with [endRequest]. It shares the request slot, but nothing
+     * joins it (it has no endpoint) and a launch's failure never waits on it (see
+     * [reportLaunchFailure]).
+     */
+    internal fun admitUsbRequest(
         tier: ConnectionPriorityPolicy.Tier,
         description: String,
-        expectedState: ConnectionState.Disconnected?,
-        ticket: Long = appConnectionTicket(),
-    ): ConnectionArbiter.Claim? = synchronized(transportLifecycleLock) {
+        save: ConnectionState.Disconnected?,
+        recheck: UsbRecheck,
+    ): ConnectionRequest? = synchronized(transportLifecycleLock) {
         // A later manual launch can revoke Save without changing the Disconnected object.
-        // Claim admission and cancellation must agree before USB can preempt that launch.
-        if (!appExitPolicy.acceptsConnection(ticket) ||
-            (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value))) null
-        else ConnectionArbiter.claim(tier, ConnectionPriorityPolicy.Owner.USB, description)
-    }?.also { attemptUserRequested = tier == ConnectionPriorityPolicy.Tier.USER }
+        // Admission and cancellation must agree before USB can preempt that launch.
+        if (!recheckCurrent(recheck) ||
+            (save != null && !save.acceptsSettingsRestart(_connectionState.value))) return@synchronized null
+        (admitHeld(tier, description, recheck.ticket, save, endpoint = null, owned = null,
+            owner = ConnectionPriorityPolicy.Owner.USB, usbRecheck = recheck) as? Admission.Admitted)?.request
+    }
+
+    /** The one authority check of a request, for producers outside this class. See [isValid]. */
+    internal fun isValid(request: ConnectionRequest): Boolean = synchronized(transportLifecycleLock) { request.isValid() }
+
+    /**
+     * Runs [action] synchronously only while [request] is valid and its claim holds.
+     * Holds the lifecycle monitor, then the arbiter monitor, throughout the callback.
+     * Keep ownership/state transfers short and do blocking I/O outside both monitors.
+     * Queued work must recheck its original authority when it runs; this call does not authorize it.
+     */
+    internal fun runIfValid(request: ConnectionRequest, action: () -> Unit): Boolean = synchronized(transportLifecycleLock) {
+        request.isValid() && ConnectionArbiter.runIfHeld(request.claim, action)
+    }
 
     /** Whether the user asked for the attempt in flight; the raise deadline does not count those. */
     @Volatile var attemptUserRequested = false
@@ -797,16 +838,22 @@ class CommManager(
     internal fun ownsUsbRecheck(owner: Any): Boolean =
         synchronized(transportLifecycleLock) { usbRecoveryOwner === owner }
 
-    /** Returns true while a connection attempt owns the scan slot; another owner owes USB a retry. */
-    internal fun deferUsbCheckForConnectionAttempt(): Boolean = synchronized(transportLifecycleLock) {
+    /**
+     * Returns true while a connection attempt owns the scan slot. The deferred [recheck] is held by
+     * that live attempt, not by whoever holds the arbiter: the attempt hands it back once, when it
+     * is retired (see [doDisconnect]), whatever happens to its claim meanwhile, and a replacing
+     * attempt takes it over (see [beginAttempt]).
+     */
+    internal fun deferUsbCheckForConnectionAttempt(recheck: UsbRecheck): Boolean = synchronized(transportLifecycleLock) {
         when (_connectionState.value) {
             ConnectionState.Connecting, ConnectionState.Connected, ConnectionState.StartingTransport -> {
-                // An open socket is not a completed handshake. Register the debt under the same
-                // lock that settles the session claim, so handshake completion cannot pass between
-                // the state check and holdUsbCheck(). The arbiter returns it after a failed attempt;
-                // a successful session keeps it parked until that session ends. A USB-owned
-                // attempt already serves this scan and needs no second debt to itself.
-                ConnectionArbiter.holdUsbCheck()
+                // An open socket is not a completed handshake. Record the scan under the lock
+                // that retires the attempt, so its end cannot pass between the state check and
+                // the record. A USB-owned attempt already serves this scan and owes it nothing.
+                connectionAttempt?.takeIf {
+                    !disconnectRequested && it.claim?.owner != ConnectionPriorityPolicy.Owner.USB &&
+                        it.usbRecheck == null && recheckCurrent(recheck)
+                }?.usbRecheck = recheck
                 true
             }
             else -> false
@@ -829,15 +876,22 @@ class CommManager(
         }
     }
 
-    private suspend fun connectUsb(device: UsbDevice, ticket: Long, expectedState: ConnectionState.Disconnected? = null,
-        recoveryOwner: Any? = null, recoveryClaim: ConnectionArbiter.Claim? = null,
-        recoveryAdmission: ConnectionAdmission = ConnectionAdmission.UNRESTRICTED,
-        appClaim: ConnectionArbiter.Claim? = null) {
-        if (recoveryOwner != null && !ownsUsbRecheck(recoveryOwner)) return
-        if (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value)) return
+    /**
+     * One try of the admitted USB [request]; a recovery step also names its [recoveryOwner] and its
+     * bus [recoveryAdmission]. Every state transfer runs only while the request is valid and its
+     * claim holds, and a try that ends returns the request to unpublished, so its next retry may
+     * publish again. The request's claim is never released here: its producer ends it. Returns
+     * whether this try's own attempt reached its physical connection.
+     */
+    private suspend fun connectUsb(device: UsbDevice, request: ConnectionRequest, recoveryOwner: Any? = null,
+        recoveryAdmission: ConnectionAdmission = ConnectionAdmission.UNRESTRICTED): Boolean {
+        val ticket = request.ticket
+        val expectedState = request.save
+        if (recoveryOwner != null && !ownsUsbRecheck(recoveryOwner)) return false
+        if (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value)) return false
         // Another caller already started the connection — do nothing.
         if (_connectionState.value is ConnectionState.Connecting)
-            return
+            return false
 
 
         lastAttemptedEndpoint = null
@@ -846,22 +900,22 @@ class CommManager(
         if (usbManager == null || !usbManager.hasPermission(device)) {
             // USB re-enumeration revokes the old UsbDevice's permission. Keep Save's
             // terminal token so a fresh attach/permission reply can continue this recovery.
-            if (expectedState != null || recoveryOwner != null) return
+            if (expectedState != null || recoveryOwner != null) return false
             // A refused request owns no attempt. Its diagnostic may replace only an idle state, and
-            // only while this request still holds its ticket and claim: never an attempt forming
-            // or live (possibly before its connection is even registered), a valid request still
-            // waiting to publish one, nor a state that Stop or a preempting request now owns.
+            // only while this request is still valid: never an attempt forming or live (possibly
+            // before its connection is even registered), another valid request still waiting to
+            // publish one, nor a state that Stop or a preempting request now owns.
             synchronized(transportLifecycleLock) {
-                if (!appExitPolicy.acceptsConnection(ticket) || attemptInFlight() || validRequest() != null ||
-                    (appClaim != null && !ConnectionArbiter.holds(appClaim))) return
+                if (!request.isValid() || attemptInFlight() || validRequest()?.takeIf { it !== request } != null) return false
                 onSessionFailure?.invoke("connect_failed")
                 _connectionState.value = ConnectionState.Error("USB permission not granted for device")
             }
-            return
+            return false
         }
-        // Permission rejection is not an accepted attempt. A valid held claim, however,
-        // already owns the app while the previous connection is still being torn down.
-        if (appClaim != null && !acceptAppConnectionClaim(appClaim, ticket, expectedState)) return
+        // Permission rejection is not an accepted attempt. A valid request, however, already owns
+        // the app while the previous connection is still being torn down. A recovery step takes
+        // that ownership at publication instead.
+        if (recoveryOwner == null && !acceptRequest(request)) return false
 
         // Wait for any in-progress cleanup to finish before opening the USB device.
         // Without this, openDevice() on the same hardware can return null because the previous
@@ -870,54 +924,62 @@ class CommManager(
 
         // A same-path detach/re-attach can preserve every descriptor. Carry the producer's
         // detach evidence across dispatcher handoff and teardown, not only the device list.
-        if (recoveryOwner != null && !recoveryAdmission.run {}) return
+        if (recoveryOwner != null && !recoveryAdmission.run {}) return false
 
         // Teardown can suspend while USB re-enumerates. Recovery opens the latest matching
         // bus object, and never turns a lost permission into an error for a newer connection.
         val currentDevice = if (recoveryOwner == null) device else {
-            val current = if (recoveryAdmission is UsbRecoveryAdmission) recoveryAdmission.resolve(usbManager) ?: return
-                else usbManager.deviceList[device.deviceName] ?: return
+            val current = if (recoveryAdmission is UsbRecoveryAdmission) recoveryAdmission.resolve(usbManager) ?: return false
+                else usbManager.deviceList[device.deviceName] ?: return false
             if (current.vendorId != device.vendorId || current.productId != device.productId ||
                 !UsbDeviceCompat.isInAccessoryMode(current) || !UsbDeviceCompat.isConnectable(context, current) ||
-                !usbManager.hasPermission(current)) return
+                !usbManager.hasPermission(current)) return false
             current
         }
 
         // Call only under transportLifecycleLock (lifecycle -> recovery identity/detach admission -> arbiter).
-        // A same-owner USB claim can be replaced without a preempt callback. Keep its
-        // check and each state transfer together; a separate holds() check is not enough.
+        // Every step publishes only while this request is valid and its claim holds: a same-owner
+        // USB request can displace it without a preempt callback and without cancelling this job.
+        // Keep the check and each state transfer together; a separate holds() check is not enough.
         fun publishIfOwned(action: () -> Unit): Boolean {
-            if (recoveryOwner == null) { action(); return true }
-            if (usbRecoveryOwner !== recoveryOwner || recoveryClaim == null) return false
+            if (recoveryOwner != null && usbRecoveryOwner !== recoveryOwner) return false
             var published = false
-            recoveryAdmission.run { published = ConnectionArbiter.runIfHeld(recoveryClaim, action) }
+            recoveryAdmission.run {
+                ConnectionArbiter.runIfHeld(request.claim) {
+                    if (request.isValid()) { action(); published = true }
+                }
+            }
             return published
         }
 
         var conn: ProjectionConnection? = null
+        var reached = false
         val (attempt, previous) = publishConnectionAttempt(ticket) {
-            // Retirement can suspend after admission. Recheck the same Save permission at
+            // Retirement can suspend after admission. The request's own validity rechecks Save at
             // publication, before opening hardware or replacing another connection's state.
-            if (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value)) return@publishConnectionAttempt null
             if (recoveryOwner != null && (attemptInFlight() || (_connectionState.value !is ConnectionState.Disconnected &&
                 _connectionState.value !is ConnectionState.Error))) return@publishConnectionAttempt null
             if (!appExitPolicy.acceptsConnection(ticket)) return@publishConnectionAttempt null
-            val token = Attempt(appClaim ?: recoveryClaim)
+            // One attempt per request at a time: never publish over this request's own live attempt.
+            if (request.attempt != null) return@publishConnectionAttempt null
+            val token = Attempt(request.claim)
             var previous: ProjectionConnection? = null
             if (!publishIfOwned {
-                check(acceptAppConnection(ticket, acquireOwnership = appClaim == null))
+                check(acceptAppConnection(ticket, acquireOwnership = recoveryOwner != null))
                 settingsUsbRestartInFlight = expectedState
                 usbSaveOwner = expectedState
                 outgoingEndpoint = null
                 beginAttempt(token)
                 physicalConnectionReached = false
                 disconnectRequested = false
+                request.attempt = token
                 _connectionState.value = ConnectionState.Connecting
                 previous = _connection
                 _connection = null
+                request.resolved.complete(Unit)
             }) return@publishConnectionAttempt null
             token to previous
-        } ?: return
+        } ?: return false
         try {
             previous?.disconnect()
             conn = if (settings.useLibusb) {
@@ -936,7 +998,7 @@ class CommManager(
                     accepted
                 }
             }
-            if (!registered) return
+            if (!registered) return false
 
             val opened = candidate.connect()
             // A targeted fallback may wait inside openDevice while the bus changes again.
@@ -954,14 +1016,17 @@ class CommManager(
                     if (publishIfOwned {
                         reachPhysicalConnection()
                         _connectionState.value = ConnectionState.Connected
-                    }) return@synchronized
+                    }) {
+                        reached = true
+                        return@synchronized
+                    }
                 }
                 disconnect(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false, settingsRetryOwner = expectedState)
             }
         } catch (e: Exception) {
             synchronized(transportLifecycleLock) {
-                if (stoppedConnectionAttempt(ticket, attempt)) return
-                if (connectionAttempt !== attempt || disconnectRequested) return
+                if (stoppedConnectionAttempt(ticket, attempt)) return false
+                if (connectionAttempt !== attempt || disconnectRequested) return false
                 val published = publishIfOwned {
                     _connectionState.value = ConnectionState.Error("Connection failed: ${e.message}")
                 }
@@ -973,10 +1038,18 @@ class CommManager(
         } finally {
             val retired = synchronized(transportLifecycleLock) {
                 if (connectionAttempt === attempt && settingsUsbRestartInFlight === expectedState) settingsUsbRestartInFlight = null
-                connectionAttempt !== attempt || disconnectRequested || _connection !== conn
+                val ended = connectionAttempt !== attempt || disconnectRequested
+                // A try that ended returns its request to unpublished: the next retry may publish.
+                // Its now final validity decides at once whether the request leaves the slot.
+                if (ended && request.attempt === attempt) {
+                    request.attempt = null
+                    retireInvalidRequest()
+                }
+                ended || _connection !== conn
             }
             if (retired) conn?.disconnect()
         }
+        return reached
     }
 
     /**
@@ -1393,7 +1466,8 @@ class CommManager(
 
     /**
      * [admitRequest]'s decision, with transportLifecycleLock and the producer's admission held.
-     * [owned] is the handed-over socket this caller owns, or null for a dial.
+     * [owned] is the handed-over socket this caller owns, or null for a dial. A USB request names
+     * its [owner] and the owed scan [usbRecheck] it runs for (see [admitUsbRequest]).
      */
     private fun admitHeld(
         tier: ConnectionPriorityPolicy.Tier,
@@ -1402,6 +1476,8 @@ class CommManager(
         save: ConnectionState.Disconnected?,
         endpoint: String?,
         owned: Socket?,
+        owner: ConnectionPriorityPolicy.Owner = socketOwner(tier),
+        usbRecheck: UsbRecheck? = null,
     ): Admission {
         val socket = if (owned != null) {
             if (owned.isClosed) return Admission.Refused(owned)
@@ -1411,25 +1487,31 @@ class CommManager(
             if (adopted == null && SameEndpointConnectPolicy.joins(validRequest()?.endpoint, endpoint)) return Admission.Joined
             adopted
         }
-        val claim = ConnectionArbiter.claim(tier, socketOwner(tier), what) ?: return Admission.Refused(socket)
+        val claim = ConnectionArbiter.claim(tier, owner, what, usbRecheck) ?: return Admission.Refused(socket)
         attemptUserRequested = tier == ConnectionPriorityPolicy.Tier.USER
         // A request this one displaces lost its claim just now; its waiters ask again.
         connectionRequest?.resolved?.complete(Unit)
-        val admitted = ConnectionRequest(ticket, claim, endpoint, save, socket)
+        val admitted = ConnectionRequest(ticket, claim, endpoint, save, socket, usbRecheck)
         connectionRequest = admitted
         return Admission.Admitted(admitted)
     }
 
     /**
-     * Under transportLifecycleLock, where Stop revokes a ticket or a Save is revoked: an invalidated
-     * request stops being joinable and wakes its waiters now. A stopped request that never published
-     * also gives its claim back; its producer's [endRequest] later finds that claim already released.
+     * Under transportLifecycleLock, where Stop revokes a ticket, a Save is revoked, owed USB scans
+     * are withdrawn, or a USB try ends: an invalidated request stops being joinable and wakes its
+     * waiters now. A stopped or withdrawn request that never published also gives its claim back;
+     * its producer's [endRequest] later finds that claim already released. A USB request with an
+     * attempt published is left to that try's own end, which returns it to unpublished first (see
+     * [connectUsb]): retiring it there, briefly invalid, would only unslot it.
      */
     private fun retireInvalidRequest() {
-        val ended = connectionRequest?.takeUnless { it.isValid() } ?: return
+        val ended = connectionRequest?.takeUnless {
+            it.isValid() || (it.recheck != null && it.attempt != null)
+        } ?: return
         connectionRequest = null
         ended.resolved.complete(Unit)
-        if (ended.attempt == null && appExitPolicy.stopEpoch != ended.ticket) {
+        val withdrawn = ended.recheck?.let { !recheckCurrent(it) } == true
+        if (ended.attempt == null && (appExitPolicy.stopEpoch != ended.ticket || withdrawn)) {
             ConnectionArbiter.release(ended.claim, sessionFormed = false)
         }
     }
@@ -1453,11 +1535,14 @@ class CommManager(
     /**
      * Makes [next] the current attempt, under transportLifecycleLock. An attempt replaced without
      * a terminal of its own settles here; one that already ended settled with that terminal, and
-     * settling twice is a no-op. Only the exact replaced object settles, never [next].
+     * settling twice is a no-op. Only the exact replaced object settles, never [next]. A USB scan
+     * the replaced attempt deferred is still blocked, now by [next], which holds it from here.
      */
     private fun beginAttempt(next: Attempt) {
         val replaced = connectionAttempt
         connectionAttempt = next
+        if (next.usbRecheck == null) next.usbRecheck = replaced?.usbRecheck
+        replaced?.usbRecheck = null
         replaced?.settled?.complete(Unit)
     }
 
@@ -1555,7 +1640,11 @@ class CommManager(
             val attempt = connectionAttempt?.takeIf { !disconnectRequested }
             if (physicalArrivals != mark.arrivals || (attempt != null && physicalConnectionReached)) return LaunchOutcome.Answered
             if (attempt != null) return LaunchOutcome.Forming(attempt.settled)
-            val request = validRequest()?.takeUnless { it.resolved.isCompleted }
+            // A launch never waits on a USB request: its own outcome stays immediate, rather than
+            // waiting across the USB request's retries.
+            val request = validRequest()?.takeUnless {
+                it.resolved.isCompleted || it.claim.owner == ConnectionPriorityPolicy.Owner.USB
+            }
             if (request != null) return LaunchOutcome.Forming(request.resolved, request.claim.ended)
             if (settingsRestart != null) {
                 if (!settingsRestart.acceptsSettingsRestart(_connectionState.value)) return LaunchOutcome.Revoked
@@ -1611,29 +1700,13 @@ class CommManager(
         }
     }
 
-    /** A USB attempt's acceptance; USB has no request to join, only its claim. See [acceptRequest]. */
-    private suspend fun acceptAppConnectionClaim(
-        claim: ConnectionArbiter.Claim,
-        ticket: Long,
-        expectedState: ConnectionState.Disconnected? = null,
-    ): Boolean = withContext(appExitDispatcher) {
-        synchronized(transportLifecycleLock) {
-            if (appExitPolicy.stopEpoch != ticket) return@synchronized false
-            if (expectedState != null && !expectedState.acceptsSettingsRestart(_connectionState.value)) return@synchronized false
-            ConnectionArbiter.runIfHeld(claim) {
-                appExitPolicy.supersede()
-                cancelAppExitCallback()
-            }
-        }
-    }
-
     /** A socket the user asked for is theirs; any other belongs to the wireless stack. */
     private fun socketOwner(tier: ConnectionPriorityPolicy.Tier) =
         if (tier == ConnectionPriorityPolicy.Tier.USER) ConnectionPriorityPolicy.Owner.MANUAL
         else ConnectionPriorityPolicy.Owner.WIRELESS_STACK
 
-    /** The producer's end of [request]; see [releaseClaim]. */
-    private fun endRequest(request: ConnectionRequest): Unit = synchronized(transportLifecycleLock) {
+    /** The producer's end of [request]; see [releaseClaim]. By identity and idempotent. */
+    internal fun endRequest(request: ConnectionRequest): Unit = synchronized(transportLifecycleLock) {
         // The request ends here whatever it reached, so a launch waiting on it asks again.
         request.resolved.complete(Unit)
         releaseClaim(request.claim)
@@ -1896,9 +1969,6 @@ class CommManager(
         }
     }
 
-    // A user exit owes no held USB scan. A wireless stack that USB stood down still comes back.
-    private fun dropOwedScans() = ConnectionArbiter.dropUsbDebt()
-
     private fun reachedSsl() = _connectionState.value.let {
         it is ConnectionState.HandshakeComplete || it is ConnectionState.TransportStarted
     }
@@ -1919,7 +1989,7 @@ class CommManager(
         val wasUserExit = source.wasUserExit
         if (wasUserExit) {
             usbRecoveryOwner = Any()
-            dropOwedScans()
+            withdrawUsbRechecks()
         }
         val save = SettingsRestartRecovery.ownerAtEnd(wasUserExit, reachedSsl(), null, usbSaveOwner)
         usbSaveOwner = null
@@ -2239,9 +2309,13 @@ class CommManager(
     ): Unit = synchronized(transportLifecycleLock) {
         if (isUserExit || reason == DisconnectReason.SETTINGS_RESTART || reason == DisconnectReason.PROJECTION_UNRAISED) usbRecoveryOwner = Any()
         if (isUserExit && reason != DisconnectReason.SETTINGS_RESTART) {
+            // Withdraw first: a Save request the cancellation invalidates then retires seeing its
+            // final validity, and releases its claim by identity.
+            withdrawUsbRechecks()
             cancelPendingSettingsRestart()
-            dropOwedScans()
         }
+        // The end holds automatic reconnection until something asks for it: no owed scan may ask.
+        if (reason == DisconnectReason.PROJECTION_UNRAISED) withdrawUsbRechecks()
         if (disconnectRequested || _connectionState.value is ConnectionState.Disconnected) return@synchronized
         disconnectRequested = true
         val save = if (reason == DisconnectReason.SETTINGS_RESTART) null
@@ -2299,9 +2373,11 @@ class CommManager(
         byeByeReason: com.andrerinas.openheadunit.aap.protocol.proto.Control.ByeByeReason = com.andrerinas.openheadunit.aap.protocol.proto.Control.ByeByeReason.USER_SELECTION,
         reason: DisconnectReason = DisconnectReason.CONNECTION_ENDED,
     ) {
-        val (transport, connection, closeAudio) = synchronized(transportLifecycleLock) {
+        var usbRecheck: UsbRecheck? = null
+        val resources = synchronized(transportLifecycleLock) {
             // destroy() also reaches this path without a preceding disconnect(). Retire an
             // unpublished candidate before the owner-null fast path, just like an active owner.
+            // The one place an attempt is retired; a replaced one hands its debts on in beginAttempt.
             disconnectRequested = true
             val endedAttempt = connectionAttempt
             connectionAttempt = null
@@ -2312,14 +2388,22 @@ class CommManager(
             }
             // destroy() can retire an attempt no terminal ended; settling the same one twice is a no-op.
             endedAttempt?.settled?.complete(Unit)
+            // A scan a user exit, Stop or held end already withdrew is not handed on at all.
+            usbRecheck = endedAttempt?.usbRecheck?.takeIf { recheckCurrent(it) }
+            endedAttempt?.usbRecheck = null
             val transport = _transport
             val connection = _connection
-            if (transport == null && connection == null) return
-            val session = audioDecoder.captureCleanup()
-            _transport = null
-            _connection = null
-            Triple(transport, connection, session)
+            if (transport == null && connection == null) null else {
+                val session = audioDecoder.captureCleanup()
+                _transport = null
+                _connection = null
+                Triple(transport, connection, session)
+            }
         }
+        // The USB scan the retired attempt held back is handed on, once, outside every monitor; its
+        // consumer asks the bus only while it is still current (see [UsbRecheck]).
+        usbRecheck?.let { ConnectionArbiter.actions?.giveBack(wireless = false, usb = it) }
+        val (transport, connection, closeAudio) = resources ?: return
         settleSessionClaim(formed = false)
         keyStates.clear()
         btMediaLinkCached = null

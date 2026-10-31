@@ -28,6 +28,12 @@ object Esp32RelaySession {
     /** Last [WifiDirectDisplayInfo.read] for a non-force [offerLiveGroup]. */
     private var lastLiveGroupReadMs = 0L
     private var status = Status(Phase.IDLE)
+    /**
+     * True from [openPairing] until phone Classic pairing is confirmed or the attempt fails.
+     * Blocks [offer] / [offerLiveGroup] so a missing Wi-Fi Direct group cannot overwrite
+     * Connecting… / Pairing status on the relay settings screen.
+     */
+    private var pairingActive = false
     private var listener: ((Status) -> Unit)? = null
     private var frameSink: ((Esp32RelayProtocol.Frame) -> Unit)? = null
     private var transportErrorHandler: ((String) -> Unit)? = null
@@ -120,6 +126,7 @@ object Esp32RelaySession {
         if (status.phase == Phase.PAIRING && isPhonePairConfirmed(frame)) {
             val address = appContext?.let { activeEsp32RelayAddress(it) } ?: status.detail
             AppLog.i("ESP32 relay: phone pairing confirmed — link ready")
+            pairingActive = false
             publish(Status(Phase.READY, address))
         }
         frameSink?.invoke(frame)
@@ -266,7 +273,8 @@ object Esp32RelaySession {
     private val retry = Runnable {
         retryPosted = false
         val app = appContext ?: return@Runnable
-        if (!awaitingEsp32Relay && (status.phase == Phase.READY || status.phase == Phase.PAIRING)) return@Runnable
+        if (pairingActive || status.phase == Phase.PAIRING) return@Runnable
+        if (!awaitingEsp32Relay && status.phase == Phase.READY) return@Runnable
         if (SystemClock.elapsedRealtime() >= retryUntilMs) {
             giveUp()
             return@Runnable
@@ -300,10 +308,11 @@ object Esp32RelaySession {
             publish(Status(Phase.IDLE))
             return
         }
+        // Phone Classic pairing is independent of the Wi-Fi Direct group; do not interrupt it.
+        if (pairingActive || status.phase == Phase.PAIRING) return
         if (!info.isComplete) {
-            if (status.phase != Phase.READY && status.phase != Phase.CONNECTING) {
-                publish(Status(Phase.INCOMPLETE))
-            }
+            // Credentials are pushed at Native AA start. A missing group is not a relay fault —
+            // do not publish INCOMPLETE ("Wi-Fi Direct group is not ready").
             return
         }
         lastInfo = info
@@ -410,6 +419,7 @@ object Esp32RelaySession {
         val app = context.applicationContext
         val address = activeEsp32RelayAddress(app)
         if (address == null) {
+            pairingActive = false
             publish(Status(Phase.IDLE))
             return
         }
@@ -419,12 +429,14 @@ object Esp32RelaySession {
             AppLog.i("ESP32 relay: standing down projection for new-phone pairing")
             notifyProjection(false)
         }
+        pairingActive = true
         publish(Status(Phase.CONNECTING))
         AppLog.i("ESP32 relay: opening new-phone pairing window on $address")
         esp32RelayClient(app).allowPhonePairing(address) { result ->
             if (result.isSuccess) {
                 publish(Status(Phase.PAIRING, address))
             } else {
+                pairingActive = false
                 publish(Status(Phase.FAILED, result.exceptionOrNull()?.message ?: ""))
             }
         }
@@ -566,6 +578,7 @@ object Esp32RelaySession {
     fun offerLiveGroup(context: Context, force: Boolean = false) {
         val app = context.applicationContext
         if (activeEsp32RelayAddress(app) == null) return
+        if (pairingActive || status.phase == Phase.PAIRING) return
         val now = SystemClock.elapsedRealtime()
         if (!force && now - lastLiveGroupReadMs < LIVE_GROUP_READ_MIN_MS) {
             // Same cached snapshot — skip while a start is already armed or on the way.
@@ -620,6 +633,7 @@ object Esp32RelaySession {
         lastSnapshot = null
         lastInfo = null
         lastLiveGroupReadMs = 0L
+        pairingActive = false
         publish(Status(Phase.IDLE))
     }
 
@@ -678,7 +692,7 @@ object Esp32RelaySession {
         stopRetry()
         stopWatchdog()
         AppLog.w("ESP32 relay: still down after ${RETRY_WINDOW_MS / 1000}s, stopping the phone session")
-        publish(Status(Phase.FAILED, "ESP32 relay link lost"))
+        publish(Status(Phase.FAILED, "relay link lost"))
         main.post { onGiveUp?.invoke() }
     }
 

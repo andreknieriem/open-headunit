@@ -1422,8 +1422,10 @@
     <string name="esp32_relay_enabled_description">블루투스 릴레이를 사용할지 설정합니다.</string>
     <string name="esp32_relay_settings_disabled">꺼짐</string>
     <string name="esp32_relay_saved_device">저장된 블루투스 릴레이</string>
+    <string name="esp32_relay_saved_notice">저장된 블루투스 릴레이: %1$s</string>
     <string name="esp32_relay_none">없음</string>
     <string name="esp32_relay_status">상태</string>
+    <string name="esp32_relay_status_notice">상태: %1$s</string>
     <string name="esp32_relay_scan">검색</string>
     <string name="esp32_relay_scan_action">OpenHU-BT-Relay-Setup 찾기</string>
     <string name="esp32_relay_scanning">검색 중…</string>
@@ -1431,16 +1433,16 @@
     <string name="esp32_relay_forget">블루투스 릴레이 삭제</string>
     <string name="esp32_relay_forget_value">저장한 장치를 삭제합니다</string>
     <string name="esp32_relay_pairing_header">폰 페어링</string>
-    <string name="esp32_relay_pairing_steps">1. 검색으로 OpenHU-BT-Relay-Setup을 검색하세요.\n2. 스마트폰 블루투스에서 예전 OpenHU-BT-Relay 항목을 삭제한 뒤 설정 화면을 연 채로 두세요.\n3. 폰 페어링을 누르세요(PIN 0000). 120초 안에 스마트폰에서 OpenHU-BT-Relay를 페어링하세요.\n4. 페어링 모드가 바로 끝나면 폰 페어링을 한 번 더 누르세요.</string>
+    <string name="esp32_relay_pairing_steps">1. 스마트폰 블루투스에서 헤드유닛 본체와 예전 OpenHU-BT-Relay를 삭제하세요. \n2. 릴레이를 켬 → 검색 → OpenHU-BT-Relay-Setup을 선택 → 상태에 “OpenHU-BT-Relay 페어링”(120초)이 뜰 때까지 기다리세요.\n3. 스마트폰에서 OpenHU-BT-Relay를 페어링하세요(PIN 0000).\n4. 문제가 발생하면 폰 페어링을 누르세요</string>
     <string name="esp32_relay_phase_idle">연결 안 됨</string>
     <string name="esp32_relay_phase_connecting">연결 중…</string>
     <string name="esp32_relay_phase_ready">연결됨</string>
     <string name="esp32_relay_phase_incomplete">Wi-Fi Direct 그룹이 아직 없습니다</string>
     <string name="esp32_relay_phase_pairing">폰에서 OpenHU-BT-Relay 페어링 — PIN 0000 (120초)</string>
     <string name="esp32_relay_pair">폰 페어링</string>
-    <string name="esp32_relay_pair_value">블루투스 릴레이 선택 후: 블루투스 릴레이의 폰 본드 삭제, 120초 검색, PIN 0000</string>
+    <string name="esp32_relay_pair_value">폰페어링(120초)을 시작합니다.(PIN 0000)</string>
     <string name="esp32_relay_end_aa_on_disconnect">블루투스 릴레이가 끊기면 Android Auto 종료</string>
-    <string name="esp32_relay_end_aa_on_disconnect_description">켜 두면 2초마다 블루투스 릴레이에 프로브를 보냅니다. BLE 쓰기가 연속 2회 실패하면 Android Auto 세션을 닫습니다</string>
+    <string name="esp32_relay_end_aa_on_disconnect_description">2초마다 블루투스 릴레이에 정상 상태 보고를 보냅니다.보고가 연속 2회 실패하면 Android Auto 세션을 닫습니다</string>
     <string name="esp32_relay_phase_failed">실패: %1$s</string>
     <!-- Home screen -->
     <string name="home_kicker_active">Android Auto</string>

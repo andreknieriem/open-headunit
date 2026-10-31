@@ -6,17 +6,18 @@ import android.app.PendingIntent
 import android.content.Context
 import android.os.Build
 import android.os.SystemClock
-import android.util.Log
+import android.text.format.DateFormat
 import androidx.core.app.NotificationCompat
 import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.aap.protocol.proto.NavigationStatus
+import com.andrerinas.openheadunit.contract.NavigationUpdateIntent
+import java.util.Date
 import com.andrerinas.openheadunit.aap.protocol.proto.NavigationStatus.NextTurnDetail.NextEvent as LegacyNextEvent
 import com.andrerinas.openheadunit.aap.protocol.proto.NavigationStatus.NextTurnDetail.Side as LegacySide
-import com.andrerinas.openheadunit.contract.NavigationUpdateIntent
-import com.andrerinas.openheadunit.utils.AppLog
 
 class AapNavigationHelper(
-    private val context: Context
+    private val context: Context,
+    private val onNavigationUpdate: ((NightOverlayState.Navigation?) -> Unit)? = null
 ) {
     data class TimedMessage<T>(
         val payload: T,
@@ -60,7 +61,8 @@ class AapNavigationHelper(
         val nextManeuver: Int?,
         val totalDistanceMeters: Int?,
         val totalTimeSeconds: Long?,
-        val estimatedArrival: String?
+        val estimatedArrival: String?,
+        val laneGuidance: String?
     )
 
     fun nowElapsedRealtimeMs(): Long = SystemClock.elapsedRealtime()
@@ -68,6 +70,37 @@ class AapNavigationHelper(
     @Suppress("DEPRECATION") // Single bridge: legacy nextEventType/turnSide → NavigationUpdateIntent
     fun sendFullNavigationBroadcast(snapshot: NavigationSnapshot, navEventType: Int) {
         val prepared = prepareFullNavigationMessage(snapshot, navEventType)
+        onNavigationUpdate?.let { publish ->
+            val direction = when (prepared.turnSide) {
+                LegacySide.LEFT.number -> context.getString(R.string.night_overlay_left)
+                LegacySide.RIGHT.number -> context.getString(R.string.night_overlay_right)
+                else -> null
+            }
+            val maneuver = if (direction == null) prepared.actionText
+                else context.getString(R.string.night_overlay_direction, prepared.actionText, direction)
+            val overlayNavigation = if (prepared.nextEventType != LegacyNextEvent.UNKNOWN.number) {
+                NightOverlayState.Navigation(
+                    maneuver = maneuver,
+                    distanceMeters = prepared.distanceMeters?.takeIf { it >= 0 },
+                    timeToManeuverSeconds = prepared.timeSeconds?.takeIf { it >= 0 },
+                    road = prepared.road.takeIf { it.isNotBlank() },
+                    details = buildManeuverDetails(prepared.turnNumber, prepared.turnAngle),
+                    icon = toOverlayIcon(
+                        maneuverType = prepared.nextManeuver?.let {
+                            NavigationStatus.NavigationManeuver.NavigationType.forNumber(it)
+                        },
+                        nextEventType = prepared.nextEventType,
+                        turnSide = prepared.turnSide
+                    )
+                )
+            } else {
+                null
+            }
+
+            publish(
+                overlayNavigation
+            )
+        }
         val intent = NavigationUpdateIntent(
             distanceMeters = prepared.distanceMeters,
             timeSeconds = prepared.timeSeconds,
@@ -120,7 +153,7 @@ class AapNavigationHelper(
             ?.takeIf { it.hasDistance() && it.distance.hasMeters() }
             ?.distance
             ?.meters
-            ?: turnDistance?.distanceMeters?.takeIf { it >= 0 }
+            ?: turnDistance?.takeIf { it.hasDistanceMeters() }?.distanceMeters?.takeIf { it >= 0 }
         val timeSeconds = stepDistance
             ?.takeIf { it.hasTimeToStepSeconds() }
             ?.timeToStepSeconds
@@ -147,13 +180,20 @@ class AapNavigationHelper(
             ?.number
             ?: maneuverType?.let { maneuverTypeToLegacyTurnSide(it) }
         val nextManeuver = state?.stepsList?.firstOrNull()?.maneuver?.type?.number
-        val turnNumber = state?.stepsList?.firstOrNull()?.maneuver?.roundaboutExitNumber
-            ?: detail?.takeIf { it.hasTurnNumber() }?.turnNumber
-        val turnAngle = state?.stepsList?.firstOrNull()?.maneuver?.roundaboutExitAngle
-            ?: detail?.takeIf { it.hasTurnAngle() }?.turnAngle
-val actionText = state?.stepsList?.firstOrNull()?.maneuver?.type?.let { maneuverTypeToAction(it) }
-    ?: detail?.takeIf { it.hasNextTurn() }?.let { nextEventToAction(it.nextTurn) }
-    ?: context.getString(R.string.nav_action_unknown)
+        val isRoundaboutManeuver = maneuverType?.let(::isRoundaboutManeuverType)
+            ?: LegacyNextEvent.forNumber(nextEventType)?.let(::isRoundaboutLegacyEvent)
+            ?: false
+        val turnNumber = (
+            state?.stepsList?.firstOrNull()?.maneuver?.roundaboutExitNumber
+                ?: detail?.takeIf { it.hasTurnNumber() }?.turnNumber
+            ).takeIf { isRoundaboutManeuver }
+        val turnAngle = (
+            state?.stepsList?.firstOrNull()?.maneuver?.roundaboutExitAngle
+                ?: detail?.takeIf { it.hasTurnAngle() }?.turnAngle
+            ).takeIf { isRoundaboutManeuver }
+        val actionText = state?.stepsList?.firstOrNull()?.maneuver?.type?.let { maneuverTypeToAction(it) }
+            ?: detail?.takeIf { it.hasNextTurn() }?.let { nextEventToAction(it.nextTurn) }
+            ?: context.getString(R.string.nav_action_unknown)
 
         val destFirst = currentPosition?.destinationDistancesList?.firstOrNull()
         val totalDistanceMeters = destFirst
@@ -169,15 +209,7 @@ val actionText = state?.stepsList?.firstOrNull()?.maneuver?.type?.let { maneuver
             ?.takeIf { it.hasEstimatedTimeAtArrival() }
             ?.estimatedTimeAtArrival
             ?.takeIf { it.isNotBlank() }
-
-        AppLog.d(
-            "Nav: emit debounced eventType=$navEventType " +
-                "statusAt=${snapshot.clusterStatus?.updatedAtElapsedRealtimeMs} " +
-                "turnAt=${snapshot.nextTurnDetail?.updatedAtElapsedRealtimeMs} " +
-                "distanceAt=${snapshot.nextTurnDistance?.updatedAtElapsedRealtimeMs} " +
-                "stateAt=${snapshot.navigationState?.updatedAtElapsedRealtimeMs} " +
-                "positionAt=${snapshot.currentPosition?.updatedAtElapsedRealtimeMs}"
-        )
+        val laneGuidance = state?.stepsList?.firstOrNull()?.let(::buildLaneGuidance)
 
         return FullNavigationMessage(
             distanceMeters = distanceMeters,
@@ -192,8 +224,81 @@ val actionText = state?.stepsList?.firstOrNull()?.maneuver?.type?.let { maneuver
             nextManeuver = nextManeuver,
             totalDistanceMeters = totalDistanceMeters,
             totalTimeSeconds = totalTimeSeconds,
-            estimatedArrival = estimatedArrival
+            estimatedArrival = estimatedArrival,
+            laneGuidance = laneGuidance
         )
+    }
+
+    private fun buildEtaSummary(
+        estimatedArrival: String?,
+        totalTimeSeconds: Long?,
+        totalDistanceMeters: Int?
+    ): String? {
+        val eta = estimatedArrival?.takeIf { it.isNotBlank() } ?: totalTimeSeconds?.let {
+            val clock = DateFormat.getTimeFormat(context)
+            clock.format(Date(System.currentTimeMillis() + it * 1000L))
+        }
+        val duration = totalTimeSeconds?.let(::formatTripDuration)
+        val distance = totalDistanceMeters?.let(::formatDistance)
+        if (eta == null && duration == null && distance == null) return null
+        return context.getString(
+            R.string.night_overlay_eta_summary,
+            eta ?: "—",
+            duration ?: "—",
+            distance ?: "—"
+        )
+    }
+
+    private fun formatTripDuration(totalSeconds: Long): String {
+        val minutes = (totalSeconds / 60L).coerceAtLeast(0L)
+        val hours = minutes / 60L
+        val restMinutes = minutes % 60L
+        return if (hours > 0L) {
+            context.getString(R.string.night_overlay_duration_hours_minutes, hours, restMinutes)
+        } else {
+            context.getString(R.string.night_overlay_duration_minutes, restMinutes)
+        }
+    }
+
+    private fun formatDistance(meters: Int): String {
+        return if (meters < 1000) {
+            context.getString(R.string.night_overlay_meters, meters)
+        } else {
+            context.getString(R.string.night_overlay_kilometers, meters / 1000.0)
+        }
+    }
+
+    private fun extractRouteNumber(currentRoad: String, nextRoad: String): String? {
+        val roadText = listOf(currentRoad, nextRoad)
+            .filter { it.isNotBlank() }
+            .joinToString(" ")
+        val match = Regex("\\b([A-Za-zА-Яа-я]{1,3}[\\s-]?\\d{1,4}[A-Za-zА-Яа-я]?)\\b")
+            .find(roadText)
+            ?.groupValues
+            ?.getOrNull(1)
+        return match?.replace("\\s+".toRegex(), " ")
+    }
+
+    private fun buildLaneGuidance(step: NavigationStatus.NavigationStep): String? {
+        if (step.lanesCount == 0) return null
+        val lanes = step.lanesList.mapNotNull { lane ->
+            val direction = lane.laneDirectionsList.firstOrNull() ?: return@mapNotNull null
+            val token = when (direction.shape) {
+                NavigationStatus.NavigationLane.LaneDirection.Shape.STRAIGHT -> "S"
+                NavigationStatus.NavigationLane.LaneDirection.Shape.SLIGHT_LEFT -> "SL"
+                NavigationStatus.NavigationLane.LaneDirection.Shape.SLIGHT_RIGHT -> "SR"
+                NavigationStatus.NavigationLane.LaneDirection.Shape.NORMAL_LEFT -> "L"
+                NavigationStatus.NavigationLane.LaneDirection.Shape.NORMAL_RIGHT -> "R"
+                NavigationStatus.NavigationLane.LaneDirection.Shape.SHARP_LEFT -> "HL"
+                NavigationStatus.NavigationLane.LaneDirection.Shape.SHARP_RIGHT -> "HR"
+                NavigationStatus.NavigationLane.LaneDirection.Shape.U_TURN_LEFT -> "UL"
+                NavigationStatus.NavigationLane.LaneDirection.Shape.U_TURN_RIGHT -> "UR"
+                else -> "?"
+            }
+            if (direction.isHighlighted) "[$token]" else token
+        }
+        if (lanes.isEmpty()) return null
+        return context.getString(R.string.night_overlay_lanes, lanes.joinToString(" | "))
     }
 
     private fun showNotification(distanceMeters: Int?, action: String, street: String) {
@@ -244,6 +349,167 @@ val actionText = state?.stepsList?.firstOrNull()?.maneuver?.type?.let { maneuver
             NavigationStatus.NextTurnDetail.NextEvent.FERRY_BOAT -> context.getString(R.string.nav_action_ferry)
             NavigationStatus.NextTurnDetail.NextEvent.FERRY_TRAIN -> context.getString(R.string.nav_action_ferry_train)
             NavigationStatus.NextTurnDetail.NextEvent.DESTINATION -> context.getString(R.string.nav_action_destination)
+        }
+    }
+
+    private fun buildManeuverDetails(turnNumber: Int?, turnAngle: Int?): String? {
+        val parts = mutableListOf<String>()
+        turnNumber?.takeIf { it > 0 }?.let {
+            parts.add(context.getString(R.string.night_overlay_exit_number, it))
+        }
+        turnAngle?.takeIf { it > 0 }?.let {
+            parts.add(context.getString(R.string.night_overlay_exit_angle, it))
+        }
+        return parts.takeIf { it.isNotEmpty() }?.joinToString(" · ")
+    }
+
+    private fun isRoundaboutLegacyEvent(event: LegacyNextEvent): Boolean {
+        return when (event) {
+            LegacyNextEvent.ROUNDABOUT_ENTER,
+            LegacyNextEvent.ROUNDABOUT_EXIT,
+            LegacyNextEvent.ROUNDABOUT_ENTER_AND_EXIT -> true
+            else -> false
+        }
+    }
+
+    private fun isRoundaboutManeuverType(
+        type: NavigationStatus.NavigationManeuver.NavigationType
+    ): Boolean {
+        return when (type) {
+            NavigationStatus.NavigationManeuver.NavigationType.ROUNDABOUT_ENTER,
+            NavigationStatus.NavigationManeuver.NavigationType.ROUNDABOUT_EXIT,
+            NavigationStatus.NavigationManeuver.NavigationType.ROUNDABOUT_ENTER_AND_EXIT_CW,
+            NavigationStatus.NavigationManeuver.NavigationType.ROUNDABOUT_ENTER_AND_EXIT_CW_WITH_ANGLE,
+            NavigationStatus.NavigationManeuver.NavigationType.ROUNDABOUT_ENTER_AND_EXIT_CCW,
+            NavigationStatus.NavigationManeuver.NavigationType.ROUNDABOUT_ENTER_AND_EXIT_CCW_WITH_ANGLE -> true
+            else -> false
+        }
+    }
+
+    private fun toOverlayIcon(
+        maneuverType: NavigationStatus.NavigationManeuver.NavigationType?,
+        nextEventType: Int,
+        turnSide: Int?
+    ): NightOverlayState.NavigationIcon? {
+        return maneuverType?.let(::overlayIconForManeuverType)
+            ?: LegacyNextEvent.forNumber(nextEventType)?.let { overlayIconForLegacyEvent(it, turnSide) }
+    }
+
+    private fun overlayIconForManeuverType(
+        type: NavigationStatus.NavigationManeuver.NavigationType
+    ): NightOverlayState.NavigationIcon? {
+        return when (type) {
+            NavigationStatus.NavigationManeuver.NavigationType.UNKNOWN,
+            NavigationStatus.NavigationManeuver.NavigationType.NAME_CHANGE -> null
+            NavigationStatus.NavigationManeuver.NavigationType.DEPART -> NightOverlayState.NavigationIcon.DEPART
+            NavigationStatus.NavigationManeuver.NavigationType.KEEP_LEFT,
+            NavigationStatus.NavigationManeuver.NavigationType.TURN_SLIGHT_LEFT ->
+                NightOverlayState.NavigationIcon.TURN_SLIGHT_LEFT
+            NavigationStatus.NavigationManeuver.NavigationType.TURN_NORMAL_LEFT ->
+                NightOverlayState.NavigationIcon.TURN_LEFT
+            NavigationStatus.NavigationManeuver.NavigationType.TURN_SHARP_LEFT ->
+                NightOverlayState.NavigationIcon.TURN_SHARP_LEFT
+            NavigationStatus.NavigationManeuver.NavigationType.U_TURN_LEFT,
+            NavigationStatus.NavigationManeuver.NavigationType.ON_RAMP_U_TURN_LEFT ->
+                NightOverlayState.NavigationIcon.U_TURN_LEFT
+            NavigationStatus.NavigationManeuver.NavigationType.ON_RAMP_SLIGHT_LEFT,
+            NavigationStatus.NavigationManeuver.NavigationType.ON_RAMP_NORMAL_LEFT,
+            NavigationStatus.NavigationManeuver.NavigationType.ON_RAMP_SHARP_LEFT,
+            NavigationStatus.NavigationManeuver.NavigationType.OFF_RAMP_SLIGHT_LEFT,
+            NavigationStatus.NavigationManeuver.NavigationType.OFF_RAMP_NORMAL_LEFT ->
+                NightOverlayState.NavigationIcon.RAMP_LEFT
+            NavigationStatus.NavigationManeuver.NavigationType.FORK_LEFT ->
+                NightOverlayState.NavigationIcon.FORK_LEFT
+            NavigationStatus.NavigationManeuver.NavigationType.MERGE_LEFT,
+            NavigationStatus.NavigationManeuver.NavigationType.MERGE_RIGHT,
+            NavigationStatus.NavigationManeuver.NavigationType.MERGE_SIDE_UNSPECIFIED ->
+                NightOverlayState.NavigationIcon.MERGE
+            NavigationStatus.NavigationManeuver.NavigationType.ROUNDABOUT_ENTER,
+            NavigationStatus.NavigationManeuver.NavigationType.ROUNDABOUT_EXIT,
+            NavigationStatus.NavigationManeuver.NavigationType.ROUNDABOUT_ENTER_AND_EXIT_CW,
+            NavigationStatus.NavigationManeuver.NavigationType.ROUNDABOUT_ENTER_AND_EXIT_CW_WITH_ANGLE,
+            NavigationStatus.NavigationManeuver.NavigationType.ROUNDABOUT_ENTER_AND_EXIT_CCW,
+            NavigationStatus.NavigationManeuver.NavigationType.ROUNDABOUT_ENTER_AND_EXIT_CCW_WITH_ANGLE ->
+                NightOverlayState.NavigationIcon.ROUNDABOUT
+            NavigationStatus.NavigationManeuver.NavigationType.STRAIGHT ->
+                NightOverlayState.NavigationIcon.STRAIGHT
+            NavigationStatus.NavigationManeuver.NavigationType.KEEP_RIGHT,
+            NavigationStatus.NavigationManeuver.NavigationType.TURN_SLIGHT_RIGHT ->
+                NightOverlayState.NavigationIcon.TURN_SLIGHT_RIGHT
+            NavigationStatus.NavigationManeuver.NavigationType.TURN_NORMAL_RIGHT ->
+                NightOverlayState.NavigationIcon.TURN_RIGHT
+            NavigationStatus.NavigationManeuver.NavigationType.TURN_SHARP_RIGHT ->
+                NightOverlayState.NavigationIcon.TURN_SHARP_RIGHT
+            NavigationStatus.NavigationManeuver.NavigationType.U_TURN_RIGHT,
+            NavigationStatus.NavigationManeuver.NavigationType.ON_RAMP_U_TURN_RIGHT ->
+                NightOverlayState.NavigationIcon.U_TURN_RIGHT
+            NavigationStatus.NavigationManeuver.NavigationType.ON_RAMP_SLIGHT_RIGHT,
+            NavigationStatus.NavigationManeuver.NavigationType.ON_RAMP_NORMAL_RIGHT,
+            NavigationStatus.NavigationManeuver.NavigationType.ON_RAMP_SHARP_RIGHT,
+            NavigationStatus.NavigationManeuver.NavigationType.OFF_RAMP_SLIGHT_RIGHT,
+            NavigationStatus.NavigationManeuver.NavigationType.OFF_RAMP_NORMAL_RIGHT ->
+                NightOverlayState.NavigationIcon.RAMP_RIGHT
+            NavigationStatus.NavigationManeuver.NavigationType.FORK_RIGHT ->
+                NightOverlayState.NavigationIcon.FORK_RIGHT
+            NavigationStatus.NavigationManeuver.NavigationType.FERRY_BOAT ->
+                NightOverlayState.NavigationIcon.FERRY_BOAT
+            NavigationStatus.NavigationManeuver.NavigationType.FERRY_TRAIN ->
+                NightOverlayState.NavigationIcon.FERRY_TRAIN
+            NavigationStatus.NavigationManeuver.NavigationType.DESTINATION,
+            NavigationStatus.NavigationManeuver.NavigationType.DESTINATION_STRAIGHT,
+            NavigationStatus.NavigationManeuver.NavigationType.DESTINATION_LEFT,
+            NavigationStatus.NavigationManeuver.NavigationType.DESTINATION_RIGHT ->
+                NightOverlayState.NavigationIcon.DESTINATION
+        }
+    }
+
+    private fun overlayIconForLegacyEvent(
+        event: LegacyNextEvent,
+        turnSide: Int?
+    ): NightOverlayState.NavigationIcon? {
+        return when (event) {
+            LegacyNextEvent.UNKNOWN,
+            LegacyNextEvent.NAME_CHANGE -> null
+            LegacyNextEvent.DEPART -> NightOverlayState.NavigationIcon.DEPART
+            LegacyNextEvent.STRAIGHT -> NightOverlayState.NavigationIcon.STRAIGHT
+            LegacyNextEvent.ROUNDABOUT_ENTER,
+            LegacyNextEvent.ROUNDABOUT_EXIT,
+            LegacyNextEvent.ROUNDABOUT_ENTER_AND_EXIT -> NightOverlayState.NavigationIcon.ROUNDABOUT
+            LegacyNextEvent.FERRY_BOAT -> NightOverlayState.NavigationIcon.FERRY_BOAT
+            LegacyNextEvent.FERRY_TRAIN -> NightOverlayState.NavigationIcon.FERRY_TRAIN
+            LegacyNextEvent.DESTINATION -> NightOverlayState.NavigationIcon.DESTINATION
+            LegacyNextEvent.MERGE -> NightOverlayState.NavigationIcon.MERGE
+            LegacyNextEvent.SLIGHT_TURN -> when (turnSide) {
+                LegacySide.LEFT.number -> NightOverlayState.NavigationIcon.TURN_SLIGHT_LEFT
+                LegacySide.RIGHT.number -> NightOverlayState.NavigationIcon.TURN_SLIGHT_RIGHT
+                else -> null
+            }
+            LegacyNextEvent.TURN -> when (turnSide) {
+                LegacySide.LEFT.number -> NightOverlayState.NavigationIcon.TURN_LEFT
+                LegacySide.RIGHT.number -> NightOverlayState.NavigationIcon.TURN_RIGHT
+                else -> null
+            }
+            LegacyNextEvent.SHARP_TURN -> when (turnSide) {
+                LegacySide.LEFT.number -> NightOverlayState.NavigationIcon.TURN_SHARP_LEFT
+                LegacySide.RIGHT.number -> NightOverlayState.NavigationIcon.TURN_SHARP_RIGHT
+                else -> null
+            }
+            LegacyNextEvent.U_TURN -> when (turnSide) {
+                LegacySide.LEFT.number -> NightOverlayState.NavigationIcon.U_TURN_LEFT
+                LegacySide.RIGHT.number -> NightOverlayState.NavigationIcon.U_TURN_RIGHT
+                else -> null
+            }
+            LegacyNextEvent.ON_RAMP,
+            LegacyNextEvent.OFFRAMP -> when (turnSide) {
+                LegacySide.LEFT.number -> NightOverlayState.NavigationIcon.RAMP_LEFT
+                LegacySide.RIGHT.number -> NightOverlayState.NavigationIcon.RAMP_RIGHT
+                else -> null
+            }
+            LegacyNextEvent.FORK -> when (turnSide) {
+                LegacySide.LEFT.number -> NightOverlayState.NavigationIcon.FORK_LEFT
+                LegacySide.RIGHT.number -> NightOverlayState.NavigationIcon.FORK_RIGHT
+                else -> null
+            }
         }
     }
 
@@ -418,5 +684,6 @@ val actionText = state?.stepsList?.firstOrNull()?.maneuver?.type?.let { maneuver
                     .createNotificationChannel(channel)
             }
         }
+
     }
 }

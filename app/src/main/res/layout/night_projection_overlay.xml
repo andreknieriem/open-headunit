@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/black">
+
+    <LinearLayout
+        android:id="@+id/overlay_details"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:gravity="top|center_horizontal"
+        android:orientation="vertical">
+
+        <androidx.appcompat.widget.AppCompatTextView
+            android:id="@+id/overlay_clock"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textAlignment="center"
+            android:textColor="#9E9E9E"
+            tools:text="18:40"
+            tools:textSize="144sp" />
+
+        <LinearLayout
+            android:id="@+id/overlay_nav_row"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <LinearLayout
+                android:id="@+id/overlay_maneuver_block"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="start"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:id="@+id/overlay_top_row"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="start|top"
+                    android:orientation="horizontal">
+
+                    <androidx.appcompat.widget.AppCompatImageView
+                        android:id="@+id/overlay_maneuver_icon"
+                        android:layout_width="64dp"
+                        android:layout_height="64dp"
+                        android:tint="#9E9E9E"
+                        android:visibility="gone"
+                        tools:layout_height="144dp"
+                        tools:layout_width="144dp"
+                        tools:src="@drawable/ic_nav_turn_right"
+                        tools:visibility="visible" />
+
+                    <androidx.appcompat.widget.AppCompatTextView
+                        android:id="@+id/overlay_maneuver_text_fallback"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="#9E9E9E"
+                        android:visibility="gone"
+                        tools:text="Turn right"
+                        tools:textSize="65sp" />
+
+                    <LinearLayout
+                        android:id="@+id/overlay_top_info_column"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="start|top"
+                        android:orientation="vertical">
+
+                        <androidx.appcompat.widget.AppCompatTextView
+                            android:id="@+id/overlay_distance"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="#9E9E9E"
+                            tools:layout_marginBottom="4dp"
+                            tools:text="450 m (20 s)"
+                            tools:textSize="65sp" />
+
+                        <androidx.appcompat.widget.AppCompatTextView
+                            android:id="@+id/overlay_road"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="#9E9E9E"
+                            tools:layout_marginBottom="4dp"
+                            tools:text="Main St"
+                            tools:textSize="40sp" />
+
+                        <androidx.appcompat.widget.AppCompatTextView
+                            android:id="@+id/overlay_extra_info"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="#9E9E9E"
+                            tools:text="Exit 3"
+                            tools:textSize="40sp" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+
+        <androidx.appcompat.widget.AppCompatTextView
+            android:id="@+id/overlay_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textAlignment="center"
+            android:textColor="#9E9E9E"
+            tools:layout_marginTop="24dp"
+            tools:text="Track - Artist"
+            tools:textSize="32sp" />
+    </LinearLayout>
+</FrameLayout>

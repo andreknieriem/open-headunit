@@ -14,6 +14,7 @@ import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.TextureView
 import android.view.View
+import android.view.ViewConfiguration
 import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.LinearLayout
@@ -35,6 +36,7 @@ import com.andrerinas.openheadunit.contract.KeyIntent
 import com.andrerinas.openheadunit.decoder.video.WarmRelaunchKeyframePolicy
 import com.andrerinas.openheadunit.input.ProjectionKeyPolicy
 import com.andrerinas.openheadunit.input.TouchCoordinateMapper
+import com.andrerinas.openheadunit.input.TwoFingerGestureTracker
 import kotlinx.coroutines.launch
 import com.andrerinas.openheadunit.decoder.audio.MicRecorder
 import com.andrerinas.openheadunit.decoder.video.DecoderStopPolicy
@@ -56,6 +58,7 @@ import com.andrerinas.openheadunit.utils.Settings
 import com.andrerinas.openheadunit.utils.ToastUtils
 import com.andrerinas.openheadunit.view.OverlayTouchView
 import com.andrerinas.openheadunit.view.PerformanceOverlay
+import com.andrerinas.openheadunit.view.NightProjectionOverlay
 import com.andrerinas.openheadunit.utils.HeadUnitScreenConfig
 import com.andrerinas.openheadunit.utils.ProjectionHealthRecorder
 import com.andrerinas.openheadunit.utils.SystemUI
@@ -78,7 +81,6 @@ import com.andrerinas.openheadunit.main.MainActivity
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.ExternalBtTransportPolicy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeAaHandshakeManager
 import java.io.File
-import kotlin.math.abs
 
 class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, VideoDimensionsListener {
 
@@ -125,14 +127,22 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
      */
     private var kenBurnsAnimator: ObjectAnimator? = null
 
-    private var initialX = 0f
-    private var initialY = 0f
-    private var isPotentialGesture = false
+    private var twoFingerTracker: TwoFingerGestureTracker? = null
+    private var lastTwoFingerEvent: MotionEvent? = null
+    private var consumeGestureUntilUp = false
+    private val gestureHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private val twoFingerLongPress = Runnable {
+        if (twoFingerTracker?.canLongPress == true &&
+            settings.longPressTwoFingerGesture != Settings.GestureAction.DISABLED) {
+            lastTwoFingerEvent?.let { finishTwoFingerGesture(settings.longPressTwoFingerGesture, it) }
+        }
+    }
 
     // Activity-local override for fullscreen mode. If non-null, setFullscreen() will use this
     // instead of persisting to Settings. This keeps toggles local to the Activity lifecycle.
     private var activityFullscreenOverride: Settings.FullscreenMode? = null
     private var touchOverlayView: OverlayTouchView? = null
+    private var nightOverlay: NightProjectionOverlay? = null
     private val performanceOverlay by lazy {
         PerformanceOverlay(settings) { videoDecoder.lastFrameRenderedMs }
     }
@@ -642,6 +652,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             val mirror = if (settings.hudMirroring) -1.0f else 1.0f
             findViewById<View>(R.id.loading_overlay)?.scaleX = mirror
             performanceOverlay.setMirror(mirror)
+            nightOverlay?.scaleX = mirror
         }
     }
 
@@ -858,6 +869,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             container.addView(bar)
             rendererBanner = bar
             bar.bringToFront()
+            nightOverlay?.takeIf { it.visibility == View.VISIBLE }?.bringToFront()
             // One-shot: offering the escape once is enough. Clearing the flag here (not only on
             // "Yes") stops the banner from re-appearing on every future session if the user drives
             // off without tapping. A genuinely broken renderer still re-offers via the no-frame path.
@@ -970,6 +982,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             container.addView(bar)
             autoStartOfferBanner = bar
             bar.bringToFront()
+            nightOverlay?.takeIf { it.visibility == View.VISIBLE }?.bringToFront()
 
             autoStartOfferTimer?.cancel()
             autoStartOfferTimer = object : CountDownTimer(AutoStartOfferPolicy.OFFER_TIMEOUT_MS, 1000L) {
@@ -1230,6 +1243,17 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             }
 
         container.addView(overlayView)
+        nightOverlay = NightProjectionOverlay(this).also { night ->
+            container.addView(night, FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            ))
+            lifecycleScope.launch {
+                repeatOnLifecycle(Lifecycle.State.STARTED) {
+                    App.provide(this@AapProjectionActivity).nightOverlayState.content.collect(night::render)
+                }
+            }
+        }
         overlayView.requestFocus()
         setFullscreen() // Call setFullscreen here as well
 
@@ -1283,6 +1307,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     }
 
     override fun onPause() {
+        clearTwoFingerTracking()
         isForeground = false
         AppLog.i("AapProjectionActivity: onPause")
         super.onPause()
@@ -2083,39 +2108,57 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     private val commManager get() = App.provide(this).commManager
 
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
-        // 1. 2-finger swipe detection from the left or right edge (to open exit menu or toggle fullscreen)
-        if (ev.pointerCount == 2) {
-            when (ev.actionMasked) {
-                MotionEvent.ACTION_POINTER_DOWN -> {
-                    initialX = ev.getX(0)
-                    initialY = ev.getY(0)
-                    isPotentialGesture = initialX < 100 || initialX > HeadUnitScreenConfig.getUsableWidth() - 100
-                }
-                MotionEvent.ACTION_MOVE -> {
-                    if (isPotentialGesture) {
-                        val deltaX = ev.getX(0) - initialX
-                        val deltaY = abs(ev.getY(0) - initialY)
-                        if (deltaX > 200 && deltaY < 100) {
-                            isPotentialGesture = false
-                            showExitDialog()
-                            return true // Consume
-                        }
-
-                        if (deltaX < -200 && deltaY < 100) {
-                            isPotentialGesture = false
-                            val currentEffective = activityFullscreenOverride ?: settings.fullscreenMode
-                            if (currentEffective != Settings.FullscreenMode.NONE) {
-                                activityFullscreenOverride = Settings.FullscreenMode.NONE
-                                setFullscreen()
-                            } else {
-                                activityFullscreenOverride = null
-                                setFullscreen()
-                            }
-                            return true // Consume
-                        }
+        if (ev.actionMasked == MotionEvent.ACTION_DOWN) {
+            consumeGestureUntilUp = false
+            clearTwoFingerTracking()
+        }
+        if (consumeGestureUntilUp) {
+            if (ev.actionMasked == MotionEvent.ACTION_UP || ev.actionMasked == MotionEvent.ACTION_CANCEL) {
+                consumeGestureUntilUp = false
+            }
+            return true
+        }
+        nightOverlay?.takeIf { it.visibility == View.VISIBLE }?.let {
+            it.dispatchTouchEvent(ev)
+            return true
+        }
+        when (ev.actionMasked) {
+            MotionEvent.ACTION_POINTER_DOWN -> {
+                clearTwoFingerTracking()
+                if (ev.pointerCount == 2) {
+                    twoFingerTracker = TwoFingerGestureTracker(
+                        ev.getX(0), ev.getY(0), ev.getX(1), ev.getY(1),
+                        (touchOverlayView?.width?.takeIf { it > 0 }
+                            ?: HeadUnitScreenConfig.getUsableWidth()).toFloat(),
+                        ViewConfiguration.get(this).scaledTouchSlop.toFloat(),
+                        80f * resources.displayMetrics.density
+                    )
+                    lastTwoFingerEvent = MotionEvent.obtain(ev)
+                    if (settings.longPressTwoFingerGesture != Settings.GestureAction.DISABLED) {
+                        gestureHandler.postDelayed(twoFingerLongPress, ViewConfiguration.getLongPressTimeout().toLong())
                     }
                 }
             }
+            MotionEvent.ACTION_MOVE -> if (ev.pointerCount == 2) {
+                val tracker = twoFingerTracker
+                val swipe = tracker?.move(ev.getX(0), ev.getY(0), ev.getX(1), ev.getY(1))
+                if (tracker != null) {
+                    if (!tracker.canLongPress) gestureHandler.removeCallbacks(twoFingerLongPress)
+                    lastTwoFingerEvent?.recycle()
+                    lastTwoFingerEvent = MotionEvent.obtain(ev)
+                }
+                val action = when (swipe) {
+                    TwoFingerGestureTracker.Swipe.LEFT_EDGE -> settings.leftTwoFingerGesture
+                    TwoFingerGestureTracker.Swipe.RIGHT_EDGE -> settings.rightTwoFingerGesture
+                    TwoFingerGestureTracker.Swipe.DOWN -> settings.downTwoFingerGesture
+                    null -> Settings.GestureAction.DISABLED
+                }
+                if (action != Settings.GestureAction.DISABLED) {
+                    finishTwoFingerGesture(action, ev)
+                    return true
+                }
+            }
+            MotionEvent.ACTION_POINTER_UP, MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> clearTwoFingerTracking()
         }
 
         // 2. Legacy Touch handling for older devices (API < 19)
@@ -2124,6 +2167,51 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         }
 
         return super.dispatchTouchEvent(ev)
+    }
+
+    private fun clearTwoFingerTracking() {
+        gestureHandler.removeCallbacks(twoFingerLongPress)
+        twoFingerTracker = null
+        lastTwoFingerEvent?.recycle()
+        lastTwoFingerEvent = null
+    }
+
+    private fun finishTwoFingerGesture(action: Settings.GestureAction, event: MotionEvent) {
+        val cancel = MotionEvent.obtain(event)
+        cancel.action = MotionEvent.ACTION_CANCEL
+        consumeGestureUntilUp = true
+        clearTwoFingerTracking()
+        // End the stream already seen by Android Auto and by the local touch target.
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) sendTouchEvent(cancel)
+        super.dispatchTouchEvent(cancel)
+        cancel.recycle()
+        performTouchGesture(action)
+    }
+
+    private fun performTouchGesture(action: Settings.GestureAction): Boolean = when (action) {
+        Settings.GestureAction.DISABLED -> false
+        Settings.GestureAction.EXIT_DIALOG -> {
+            showExitDialog()
+            true
+        }
+        Settings.GestureAction.TOGGLE_FULLSCREEN -> {
+            val currentEffective = activityFullscreenOverride ?: settings.fullscreenMode
+            activityFullscreenOverride = if (currentEffective != Settings.FullscreenMode.NONE) {
+                Settings.FullscreenMode.NONE
+            } else {
+                null
+            }
+            setFullscreen()
+            true
+        }
+        Settings.GestureAction.NIGHT_OVERLAY -> {
+            nightOverlay?.apply {
+                render(App.provide(this@AapProjectionActivity).nightOverlayState.content.value)
+                scaleX = if (settings.hudMirroring) -1f else 1f
+                show()
+            }
+            true
+        }
     }
 
     override fun onSurfaceCreated(surface: android.view.Surface) {
@@ -2438,6 +2526,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     }
 
     override fun onDestroy() {
+        clearTwoFingerTracking()
         // TextureView/GLES destruction can arrive after this activity removes its callback.
         // Stop our target now, while it is still valid, without touching a replacement owner.
         ownedSurface?.let {
@@ -2532,6 +2621,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     }
     override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
         super.onConfigurationChanged(newConfig)
+        nightOverlay?.updateTextSizes()
         AppLog.i("[AapProjectionActivity] onConfigurationChanged: orientation=${newConfig.orientation}")
         if (!HeadUnitScreenConfig.isResolutionLocked) {
             HeadUnitScreenConfig.init(this, resources.displayMetrics, settings)
@@ -2604,11 +2694,13 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         // Baseline for the "no frame drawn while streaming" renderer check (issue #767).
         projectionStartMs = SystemClock.elapsedRealtime()
         performanceOverlay.bringToFront()
+        nightOverlay?.takeIf { it.visibility == View.VISIBLE }?.bringToFront()
     }
 
     private fun attachPerformanceOverlay() {
         performanceOverlay.attachTo(findViewById(R.id.container))
         videoDecoder.onFpsChanged = performanceOverlay.fpsListener
         performanceOverlay.start()
+        nightOverlay?.takeIf { it.visibility == View.VISIBLE }?.bringToFront()
     }
 }

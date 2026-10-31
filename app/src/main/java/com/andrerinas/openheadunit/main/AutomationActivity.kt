@@ -11,6 +11,8 @@ import com.andrerinas.openheadunit.automation.AutomationEffectRunner
 import com.andrerinas.openheadunit.automation.IntentExtras
 import com.andrerinas.openheadunit.contract.HeadUnitCommand
 import com.andrerinas.openheadunit.utils.AppLog
+import com.andrerinas.openheadunit.utils.DisplayTargets
+import com.andrerinas.openheadunit.utils.Settings
 import org.json.JSONObject
 
 /**
@@ -80,7 +82,8 @@ class AutomationActivity : AppCompatActivity() {
                     addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
                     // The session starts after this, so the screen must not take itself for stale.
                     putExtra(AapProjectionActivity.EXTRA_EXPECT_SESSION, true)
-                }
+                },
+                DisplayTargets.projectionLaunchOptions(this, Settings(this)),
             )
         } catch (e: Exception) {
             AppLog.w("AutomationActivity: Could not pre-launch AapProjectionActivity: ${e.message}")

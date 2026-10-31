@@ -23,6 +23,7 @@ object ConnectionIssueBannerPolicy {
         ConnectionIssue.VIDEO_LINK_TOO_SLOW,
         ConnectionIssue.HANDS_FREE_HELD_ELSEWHERE,
         ConnectionIssue.HANDS_FREE_RECORD_REFUSED,
+        ConnectionIssue.PHONE_REFUSED_HANDS_FREE,
         ConnectionIssue.PHONE_HOLDS_STALE_ENDPOINT
     )
 
@@ -55,6 +56,8 @@ object ConnectionIssueBannerPolicy {
      *   only runs in Native AA but runs on both of its transports, so it is keyed to both.
      * - `HANDS_FREE_RECORD_REFUSED` is raised where that manager opens its listeners, which is the
      *   same mode on the same two transports, so it is keyed the same way.
+     * - `PHONE_REFUSED_HANDS_FREE` is raised by the same wake poke, when the phone drops it whole,
+     *   so it is keyed like `HANDS_FREE_HELD_ELSEWHERE`.
      * - `HOME_WIFI_REJOINED_BESIDE_GROUP` is raised in `StationStandDown`, which only stands the
      *   station down for a Native AA WiFi Direct group.
      * - `STALE_USB_ACCESSORY` is raised in `UsbLauncherManager` once both recovery steps fail. USB
@@ -124,7 +127,9 @@ object ConnectionIssueBannerPolicy {
      * session that renders proves it was enough. `HEADUNIT_SERVER_NOT_ANSWERING` has no entry
      * either: its remedy is on the phone, and a handshake that completes disproves it.
      * `HANDS_FREE_HELD_ELSEWHERE` has none for the same shape of reason: the lever is the other
-     * device, and the next wake pass that reads the link free retires it.
+     * device, and the next wake pass that reads the link free retires it. `PHONE_REFUSED_HANDS_FREE`
+     * is its mirror: the lever is one of the phone's other audio devices, and a hands-free
+     * connection that completes retires it.
      * `PHONE_HOLDS_STALE_ENDPOINT` has none either: the record lives on the phone, no setting here
      * reaches it, and a dial this unit serves disproves it. `HANDS_FREE_RECORD_REFUSED` has none
      * because it is this unit's own Bluetooth stack refusing, and a registration that succeeds on a

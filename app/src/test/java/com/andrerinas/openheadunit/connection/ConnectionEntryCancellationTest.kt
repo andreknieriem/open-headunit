@@ -29,7 +29,7 @@ class ConnectionEntryCancellationTest {
             // UND starts the real public entry, but its IO context cannot execute cancelled work.
             val connecting = async(start = CoroutineStart.UNDISPATCHED) {
                 currentCoroutineContext().cancel()
-                manager.connect(socket)
+                manager.connect(socket, ticket = manager.appConnectionTicket())
             }
             try {
                 connecting.await()

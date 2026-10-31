@@ -13,12 +13,12 @@ fun bootstrapRejectionPreservesLatestRun() {
         AapService.instance = null
         for (staleStop in listOf(false, true)) {
             val manager = CommManager()
-            manager.disconnect(honorKillOnDisconnect = false)
+            manager.disconnect(ConnectionOperation(manager.appConnectionTicket(), null), honorKillOnDisconnect = false)
             manager.cleanups()
             ContextCompat.serviceStarts.clear()
             try {
                 val stale = if (staleStop) {
-                    val old = manager.requestExplicitAppExit(killProcess = false)
+                    val old = checkNotNull(manager.requestExplicitAppExit(ticket = manager.appConnectionTicket(), killProcess = false))
                     Intent(ServiceBootstrap.ACTION_STOP_SERVICE)
                         .putExtra(ServiceBootstrap.EXTRA_STOP_OWNER, old.id)
                 } else {
@@ -42,11 +42,11 @@ fun bootstrapRejectionPreservesLatestRun() {
             }
         }
         val stopped = CommManager()
-        stopped.disconnect(honorKillOnDisconnect = false)
+        stopped.disconnect(ConnectionOperation(stopped.appConnectionTicket(),null), honorKillOnDisconnect = false)
         stopped.cleanups()
         ContextCompat.serviceStarts.clear()
         try {
-            val exit = stopped.requestExplicitAppExit(killProcess = false)
+            val exit = checkNotNull(stopped.requestExplicitAppExit(ticket = stopped.appConnectionTicket(), killProcess = false))
             check(stopped.commitAppExit(exit) === exit)
             check(stopped.completeAppExit(exit).effect == AppExitPolicy.Effect.STOPPED)
             val duplicate = Intent(ServiceBootstrap.ACTION_STOP_SERVICE)
@@ -64,14 +64,14 @@ fun bootstrapRejectionPreservesLatestRun() {
         // or was sent untagged, initializes nothing. Control: the carried ticket with no Stop.
         for (relay in listOf("untagged", "carried", "control")) {
             val manager = CommManager()
-            manager.disconnect(honorKillOnDisconnect = false)
+            manager.disconnect(ConnectionOperation(manager.appConnectionTicket(), null), honorKillOnDisconnect = false)
             manager.cleanups()
             ContextCompat.serviceStarts.clear()
             try {
                 val input = manager.appConnectionTicket()
                 val intent = Intent("check-usb")
                 if (relay != "untagged") intent.putExtra(ServiceBootstrap.EXTRA_OPERATION_TICKET, input)
-                if (relay != "control") manager.requestExplicitAppExit(killProcess = false)
+                if (relay != "control") checkNotNull(manager.requestExplicitAppExit(ticket = manager.appConnectionTicket(), killProcess = false))
                 val bootstrap = ServiceBootstrap(manager)
                 bootstrap.onStartCommand(intent, 0, 1)
                 check(bootstrap.initializedForStart == (relay == "control")) {

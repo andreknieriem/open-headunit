@@ -6,7 +6,7 @@ Run the Gradle unit tests first to populate the existing Kotlin compiler depende
 from pathlib import Path
 import subprocess
 import os
-import re
+import json
 
 base = Path(__file__).resolve().parent
 repo = base.parents[3]
@@ -14,25 +14,10 @@ audio_base = base.parent / "host-audio"
 if not (audio_base / "sources.txt").exists():
     print("Audio/connection integration is available when the playback PR is also present.")
     raise SystemExit(0)
-cache = Path.home() / ".gradle/caches/modules-2/files-2.1"
-
-
-def jar(group, artifact, version="*"):
-    matches = sorted(path for path in (cache / group / artifact).glob(version + "/*/*.jar")
-                     if path.name == artifact + "-" + path.parent.parent.name + ".jar")
-    if not matches:
-        raise SystemExit("Missing cached compiler dependency; run :app:testGithubDebugUnitTest first")
-    return matches[0]
-
-
-# The build's Kotlin version, so the jars are the ones Gradle already cached.
-kotlin = re.search(r"kotlin-gradle-plugin:([0-9.]+)", (repo / "build.gradle.kts").read_text()).group(1)
-stdlib = jar("org.jetbrains.kotlin", "kotlin-stdlib", kotlin)
-annotations = jar("org.jetbrains", "annotations", "13.0")
-coroutines = jar("org.jetbrains.kotlinx", "kotlinx-coroutines-core-jvm", "1.8.0")
-compiler = [jar("org.jetbrains.kotlin", "kotlin-compiler-embeddable", kotlin), stdlib,
-            jar("org.jetbrains.kotlin", "kotlin-reflect", "1.6.10"),
-            jar("org.jetbrains.kotlin", "kotlin-script-runtime", kotlin), coroutines, annotations]
+# Share the exact runner-selected toolchain, including GRADLE_USER_HOME/offline caches.
+# Looking in ~/.gradle here made this sub-harness silently use another installation.
+toolchain = json.loads((repo / "build/host-connection/toolchain.json").read_text())
+compiler = [Path(entry["path"]) for entry in toolchain["jars"]]
 sources = [repo / line for line in (audio_base / "sources.txt").read_text().splitlines() if line]
 # observeConnectionState owns scan-control activation. Compile its real route policy and
 # strategy enum; only the Android launcher and Shizuku side effects are doubled below.
@@ -75,11 +60,15 @@ exit_members = exit_members.replace(
 lifecycle = lifecycle.replace("// PRODUCTION APP_EXIT\n", exit_members)
 for marker, declaration, source in [
     ("PUBLICATION", "val transport = synchronized(transportLifecycleLock)", comm),
-    ("APPLY", "fun applyAudioSettings()", comm),
-    ("ADVANCE", "private inline fun withLiveTransport(", comm),
-    ("DISCONNECT", "fun disconnect(", comm),
+    ("APPLY", "internal fun applyAudioSettings(", comm),
+    ("ADVANCE", "private inline fun withLiveHandshake(", comm),
+    ("DISCONNECT", "private fun disconnectCurrent(", comm),
+    ("DISCONNECT_EFFECT", "internal fun disconnect(", comm),
     ("RECORD_TERMINAL", "private fun recordTerminal(", comm),
     ("ATTEMPT", "internal class Attempt(", comm),
+    ("CONNECTION_REQUEST", "internal class ConnectionRequest(", comm),
+    ("REQUEST_VALID", "private fun ConnectionRequest.isValid()", comm),
+    ("CAPTURE_HANDSHAKE", "internal fun captureHandshake()", comm),
     ("CANCEL_SETTINGS", "fun cancelPendingSettingsRestart()", comm),
     ("DISCONNECTED_STATE", "class Disconnected(", comm),
     ("REACHED_SSL", "private fun reachedSsl()", comm),
@@ -92,6 +81,15 @@ for marker, declaration, source in [
 ]:
     lifecycle = lifecycle.replace("// PRODUCTION " + marker + "\n",
         member_block(declaration, source).replace("CommManager.ConnectionState", "ConnectionState").replace("this@AapService", "this@ObserverFixture") + "\n")
+for marker, declaration in [("TRANSPORT_START", "internal class TransportStart internal constructor("),
+                            ("HANDSHAKE_CURRENT", "private fun handshakeCurrent(")]:
+    start = comm.index(declaration)
+    lifecycle = lifecycle.replace("// PRODUCTION " + marker + "\n", comm[start:comm.index("\n\n", start)] + "\n")
+operation = (repo / "app/src/main/java/com/andrerinas/openheadunit/connection/ConnectionOperation.kt").read_text()
+operation = operation[operation.index("class ConnectionOperation internal constructor("):]
+operation = operation.replace("class ConnectionOperation internal constructor(", "private class ConnectionOperation(")
+operation = operation.replace("CommManager.ConnectionState", "ConnectionState")
+lifecycle = lifecycle.replace("// PRODUCTION OPERATION\n", operation + "\n")
 lifecycle_fixture.write_text(lifecycle)
 sources.append(lifecycle_fixture)
 recovery = output / "SettingsRestartRecovery.kt"
@@ -105,7 +103,7 @@ sources.append(raise_policy)
 entrypoint = output / "IntegrationMain.kt"
 entrypoint.write_text("package com.andrerinas.openheadunit.decoder.audio\nfun main() { audioLifecycleBoundaryRegression() }\n")
 sources.append(entrypoint)
-classpath = os.pathsep.join(map(str, [stdlib, annotations, coroutines]))
+classpath = os.pathsep.join(map(str, compiler))
 
 subprocess.run(["java", "-cp", os.pathsep.join(map(str, compiler)),
                 "org.jetbrains.kotlin.cli.jvm.K2JVMCompiler", "-no-stdlib", "-no-reflect", "-nowarn",

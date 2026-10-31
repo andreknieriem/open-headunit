@@ -33,9 +33,12 @@ object HeldServerSocket {
         return false
     }
 
+    /** Detach exact sockets at cleanup admission; a later close cannot take a successor's hold. */
+    internal fun takeAll(): List<Socket> = entries.values.toList().filter { adopt(it) }
+
     /** Discovery stopped: nothing will take what it still holds. */
     fun discardAll() {
-        entries.values.toList().forEach { if (adopt(it)) closeQuietly(it) }
+        takeAll().forEach { closeQuietly(it) }
     }
 
     private fun closeQuietly(socket: Socket) = try { socket.close() } catch (e: Exception) {}

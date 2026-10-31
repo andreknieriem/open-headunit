@@ -50,6 +50,8 @@ internal class AppExitPolicy {
     fun owns(id: Long, killOnDisconnect: Boolean): Boolean =
         current?.let { it.id == id && (!it.requiresKillOnDisconnect || killOnDisconnect) } == true
 
+    fun ownsPhysicalStop(request: Request): Boolean = stopping === request
+
     fun userStopAtDestroy(request: Request): Boolean =
         stopping === request && current?.userStop == true
 

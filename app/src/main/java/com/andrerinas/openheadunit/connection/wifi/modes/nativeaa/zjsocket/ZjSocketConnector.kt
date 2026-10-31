@@ -2,6 +2,7 @@ package com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zjsocket
 
 import android.net.LocalSocket
 import android.net.LocalSocketAddress
+import com.andrerinas.openheadunit.connection.ConnectionAdmission
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.hct.HctLocalSocket
 import java.io.IOException
 import java.util.concurrent.CountDownLatch
@@ -14,12 +15,17 @@ internal object ZjSocketConnector {
     /** [socket] is set only when [outcome] is CONNECTS; [detail] carries the failure text. */
     class Attempt(val outcome: ZjSocketPolicy.Outcome, val socket: LocalSocket?, val detail: String?)
 
-    fun connect(path: String, deadlineMs: Long = ZjSocketPolicy.CONNECT_DEADLINE_MS): Attempt {
+    fun connect(path: String, admission: ConnectionAdmission,
+                deadlineMs: Long = ZjSocketPolicy.CONNECT_DEADLINE_MS): Attempt {
+        if (!admission.run {}) return Attempt(ZjSocketPolicy.Outcome.REFUSED, null, "connection authority withdrawn")
         val socket = LocalSocket()
         val failure = AtomicReference<Exception?>(null)
         val done = CountDownLatch(1)
         val worker = Thread({
             try {
+                // This worker may begin after the old Native manager was stopped and replaced.
+                // Its caller's original authority is mandatory at the actual socket effect.
+                if (!admission.run {}) throw IOException("connection authority withdrawn")
                 socket.connect(LocalSocketAddress(path, LocalSocketAddress.Namespace.FILESYSTEM))
             } catch (e: Exception) {
                 failure.set(e)
@@ -41,8 +47,9 @@ internal object ZjSocketConnector {
             return Attempt(ZjSocketPolicy.Outcome.TIMED_OUT, null, "no answer in ${deadlineMs}ms")
         }
         val error = failure.get()
-        if (error != null) {
+        if (error != null || !admission.run {}) {
             HctLocalSocket.close(socket)
+            if (error == null) return Attempt(ZjSocketPolicy.Outcome.REFUSED, null, "connection authority withdrawn")
             val outcome = if (error is IOException) ZjSocketPolicy.failureOutcome(error.message)
             else ZjSocketPolicy.Outcome.REFUSED
             return Attempt(outcome, null, "${error.javaClass.simpleName}: ${error.message}")

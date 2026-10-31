@@ -245,21 +245,26 @@ object ConnectionArbiter {
     }
 
     /** The user asked for wireless by hand: end any outside attempt and owe nothing back. */
-    fun yieldToUser(what: String) {
-        val loser: Claim?
-        synchronized(this) {
-            loser = holder?.takeIf { ConnectionPriorityPolicy.standsDownWireless(it.owner) }
-            if (loser != null) holder = null
-            generation++
-            quietPending = false
-            clearDebts()
-            endUsbEpisode()
+    fun yieldToUser(what: String, admission: ConnectionAdmission): Boolean {
+        var loser: Claim? = null
+        if (!admission.run {
+            synchronized(this) {
+                loser = holder?.takeIf { ConnectionPriorityPolicy.standsDownWireless(it.owner) }
+                if (loser != null) holder = null
+                generation++
+                quietPending = false
+                clearDebts()
+                endUsbEpisode()
+            }
+        }) return false
+        // The original operation and arbiter state were decided lifecycle-first. Callbacks and
+        // completion run only after admission has released that lifecycle monitor as well.
+        loser?.let { ended ->
+            ended.ended.complete(Unit)
+            AppLog.i("ConnectionArbiter: $what preempts $ended")
+            actions?.preempt(ended)
         }
-        loser?.ended?.complete(Unit)
-        if (loser != null) {
-            AppLog.i("ConnectionArbiter: $what preempts $loser")
-            actions?.preempt(loser)
-        }
+        return true
     }
 
     private fun endUsbEpisode() {

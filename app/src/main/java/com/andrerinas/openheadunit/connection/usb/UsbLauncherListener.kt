@@ -73,10 +73,11 @@ class UsbLauncherListener(private val manager: UsbLauncherManager) : UsbReceiver
 
         service.userExitedAA = false
 
-        if (commManager.isConnectedToUsbDevice(device)) {
+        val attempt = commManager.currentConnectionAttempt()
+        if (attempt != null && commManager.isConnectedToUsbDevice(device)) {
             // Cable physically removed — the USB connection is already dead, so skip the
             // ByeByeRequest send (which would block ~1 s trying to write to a gone device).
-            commManager.disconnect(sendByeBye = false, isUserExit = false)
+            commManager.disconnectOwned(attempt, sendByeBye = false, isUserExit = false)
         }
     }
 
@@ -89,8 +90,9 @@ class UsbLauncherListener(private val manager: UsbLauncherManager) : UsbReceiver
         AppLog.i("USB Accessory detached. This might be a transient state (e.g., 100% battery). Attempting to re-sync...")
 
         service.userExitedAA = false
-        if (commManager.isConnected) {
-            commManager.disconnect(sendByeBye = false, isUserExit = false)
+        val attempt = commManager.currentConnectionAttempt()
+        if (attempt != null && commManager.isConnected) {
+            commManager.disconnectOwned(attempt, sendByeBye = false, isUserExit = false)
         }
 
         // Wait a bit and check if the device is still there in normal mode
@@ -143,8 +145,8 @@ class UsbLauncherListener(private val manager: UsbLauncherManager) : UsbReceiver
             } else {
                 val settings = App.provide(service).settings
                 val usbMode = UsbAccessoryMode(usbManager)
-                manager.launchAttempt(Dispatchers.IO) {
-                    if (usbMode.connectAndSwitch(device, settings.useLibusb)) {
+                manager.launchAttempt(Dispatchers.IO) { request ->
+                    if (usbMode.connectAndSwitch(device, settings.useLibusb, manager.switchAdmission(request))) {
                         manager.noteAccessorySwitchRequested()
                         AppLog.i("Successfully requested switch to accessory mode for $deviceName")
                     } else {

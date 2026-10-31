@@ -3,6 +3,7 @@ package uiconnect
 import android.content.Context as PlatformContext
 import android.content.Intent as PlatformIntent
 import lifecycle.CommManager
+import lifecycle.ConnectionOperation
 import lifecycle.ConnectionArbiter
 import lifecycle.ConnectionPriorityPolicy
 import lifecycle.ConnectionState
@@ -21,6 +22,9 @@ object Dispatchers { var IO = QueuedDispatcher() }
 open class Context(val commManager: CommManager) {
     val settings = Settings()
     val android = PlatformContext()
+    val connectivity = ConnectivityManager()
+    fun getSystemService(name: String): Any = connectivity
+    companion object { const val CONNECTIVITY_SERVICE = "connectivity" }
 }
 object App { fun provide(context: Context) = context }
 class Settings {
@@ -67,15 +71,14 @@ class AapService {
     companion object {
         var instance: AapService? = null
         const val ACTION_START_SELF_MODE = "start-self"
+        const val EXTRA_SELF_MODE_VPN = "self-vpn"
         const val ACTION_CONNECT_SOCKET = "connect-socket"
         const val ACTION_CHECK_USB = "check-usb"
         const val ACTION_DISCONNECT = "disconnect"
         const val ACTION_STOP_SERVICE = ServiceBootstrap.ACTION_STOP_SERVICE
         const val ACTION_REQUEST_NIGHT_MODE_UPDATE = "night-update"
         const val EXTRA_USER_REQUESTED = "user-requested"
-        // In-app commands read the Stop ticket on their input's own turn; USB relays carry their scan.
-        fun commandIntent(context: Context, action: String?) =
-            operationIntent(context, context.commManager.appConnectionTicket()).setAction(action)
+        // USB relays carry their original owed scan.
         fun usbCheckIntent(context: Context, recheck: UsbRecheck, action: String? = ACTION_CHECK_USB,
             userRequested: Boolean = false) = operationIntent(context, recheck.ticket).setAction(action)
             .putExtra("relayed_usb_recheck", "${recheck.ticket}.${recheck.epoch}")
@@ -86,7 +89,7 @@ class AapService {
     }
 }
 /** The home's automatic start; [view] stands for whether a home view is up when MainActivity acts. */
-object HomeFragment { var forceSelfModeTicket: Long? = null; var requestDriverSelection = false; var view: Any? = null }
+object HomeFragment { var pendingDriverSelectionTicket: Long? = null; var view: Any? = null }
 object BtAutoStartRearmPolicy {
     var selfMode = false
     fun launchesSelfMode(selfSelected: Boolean, wirelessSelected: Boolean, mode: Any,
@@ -95,7 +98,16 @@ object BtAutoStartRearmPolicy {
 class Fragments { val fragments: List<Any> = listOf(HomeFragment) }
 class NavHost { val childFragmentManager = Fragments() }
 class SupportFragments { fun findFragmentById(id: Int): NavHost? = NavHost() }
+class ConnectivityManager { val activeNetwork: Any? = Any() }
+object Build { object VERSION { const val SDK_INT = 35 }; object VERSION_CODES { const val M = 23 } }
+object SelfLauncherManager { fun installedPath(context: Context) = 1 }
+object SelfLaunchRoutePolicy { fun needsDummyVpn(path: Int, offline: Boolean, vpnAvailable: Boolean) = false }
+object VpnControl { fun isVpnAvailable() = false; fun consentIntent(context: Context): Intent? = null }
 class MainActivity(manager: CommManager, val lifecycleScope: CoroutineScope) : Context(manager) {
+    private class ForcedSelfConsent(val ticket: Long, var cancelled: Boolean = false)
+    private var pendingForcedSelf: ForcedSelfConsent? = null
+    private var queuedForcedSelfTicket: Long? = null
+    private val forcedSelfVpnPermission = object { fun launch(intent: Intent) {} }
     enum class ConnectionUiMode { OVERLAY, PILL }
     val events = ConcurrentLinkedQueue<() -> Unit>()
     var overlays = 0
@@ -111,6 +123,8 @@ class MainActivity(manager: CommManager, val lifecycleScope: CoroutineScope) : C
         const val EXTRA_CONNECTION_TICKET = "connection-ticket"
     }
     // UI_FORCE_SELF_MODE
+    // UI_FORCED_SELF_DISPATCH
+    // UI_CANCEL_PENDING_SELF
     // UI_HANDLE_LAUNCH_INTENT
 }
 object android { object R { object id { const val button2 = 2 } } }
@@ -128,18 +142,28 @@ class AddressAdapter(private val context: Context, private val scope: CoroutineS
 }
 class Dialog { var isShowing = true; fun dismiss() { isShowing = false } }
 class Discovery(private val manager: CommManager) {
-    var ticket = -1L
-    fun startScan(oneShot: Boolean, ticket: Long = manager.appConnectionTicket()) { this.ticket = ticket }
+    var operation: ConnectionOperation? = null
+    private var running = false
+    val ticket get() = operation?.ticket ?: -1L
+    fun startScan(oneShot: Boolean, operation: ConnectionOperation): Boolean {
+        if (running && this.operation?.ticket == operation.ticket) return false
+        this.operation = operation
+        running = true
+        return true
+    }
+    fun stop() { running = false }
 }
 class ScanFragment(val activity: MainActivity, val lifecycleScope: CoroutineScope) {
     val context: Context? get() = activity
     val adapter = AddressAdapter(activity, lifecycleScope)
     val networkDiscovery = Discovery(activity.commManager)
     var scanDialog: Dialog? = null
+    private var scanOperation: ConnectionOperation? = null
     fun showScanDialog() { scanDialog = Dialog() }
     fun requireContext(): Context = activity
     fun getString(id: Int, vararg args: Any): String = "$id"
     // UI_START_SCAN
+    // UI_CANCEL_SCAN
     // UI_SERVICE_FOUND
 }
 object AppLog { fun i(text: String) {}; fun w(text: String) {}; fun e(text: String, error: Throwable) {} }
@@ -174,7 +198,7 @@ private class Claims(private val manager: CommManager) : ConnectionArbiter.Actio
     var standDowns = 0
     override fun preempt(loser: ConnectionArbiter.Claim) {
         preempts++
-        manager.disconnect(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
+        manager.disconnectPreempted(loser)
         manager.cleanups()
     }
     override fun standDownWireless(by: ConnectionArbiter.Claim): Boolean { standDowns++; return false }
@@ -205,7 +229,7 @@ private class Input(val manager: CommManager) {
                 scan.startScan()
                 // NetworkDiscovery holds every 5277 probe before it reports it to the scan UI.
                 if (route == "scan-socket") probe = ProbeSocket().also { HeldServerSocket.hold("192.0.2.154:5277", it) }
-                scan.onServiceFound("192.0.2.154", 5277, probe, scan.networkDiscovery.ticket)
+                scan.onServiceFound("192.0.2.154", 5277, probe, checkNotNull(scan.networkDiscovery.operation))
                 main.drainUi()
             }
         }
@@ -220,7 +244,7 @@ fun uiConnectCallerOwnership() = runBlocking {
             Dispatchers.IO = QueuedDispatcher()
             ContextCompat.starts.clear()
             val manager = CommManager()
-            manager.disconnect(honorKillOnDisconnect = false)
+            manager.disconnect(ConnectionOperation(manager.appConnectionTicket(), null), honorKillOnDisconnect = false)
             manager.cleanups()
             manager.inlineConnectionIo()
             val claims = Claims(manager)
@@ -230,9 +254,9 @@ fun uiConnectCallerOwnership() = runBlocking {
             try {
                 input.accept(route)
                 check(Dispatchers.IO.tasks.isNotEmpty()) { "$route did not pause before public connect" }
-                if (stop) manager.requestExplicitAppExit(killProcess = false)
+                if (stop) checkNotNull(manager.requestExplicitAppExit(ticket = manager.appConnectionTicket(), killProcess = false))
                 val opened = manager.onAppRelaunched()
-                if (successor) manager.connect(liveSocket, ConnectionPriorityPolicy.Tier.WIRELESS_HANDSHAKE)
+                if (successor) manager.connect(liveSocket, ConnectionPriorityPolicy.Tier.WIRELESS_HANDSHAKE, ticket = manager.appConnectionTicket())
                 val live = manager.network()
                 val revision = manager.appOwnershipRevision()
                 Dispatchers.IO.drain()
@@ -262,21 +286,21 @@ fun uiConnectCallerOwnership() = runBlocking {
     // manual scan after Stop has a different ticket and remains allowed (no valid-Run ban).
     Dispatchers.IO = QueuedDispatcher()
     val manager = CommManager()
-    manager.disconnect(honorKillOnDisconnect = false); manager.cleanups(); manager.inlineConnectionIo()
+    manager.disconnect(ConnectionOperation(manager.appConnectionTicket(), null), honorKillOnDisconnect = false); manager.cleanups(); manager.inlineConnectionIo()
     val input = Input(manager)
     val stale = ProbeSocket()
     try {
         input.scan.startScan()
-        val oldTicket = input.scan.networkDiscovery.ticket
+        val oldScan = checkNotNull(input.scan.networkDiscovery.operation)
         HeldServerSocket.hold("192.0.2.155:5277", stale)
-        input.scan.onServiceFound("192.0.2.155", 5277, stale, oldTicket)
-        manager.requestExplicitAppExit(killProcess = false)
+        input.scan.onServiceFound("192.0.2.155", 5277, stale, oldScan)
+        checkNotNull(manager.requestExplicitAppExit(ticket = manager.appConnectionTicket(), killProcess = false))
         val opened = manager.onAppRelaunched()
         input.main.drainUi(); Dispatchers.IO.drain()
         check(stale.isClosed && manager.network() == null && manager.isAppRunOwner(opened))
         check(input.main.overlays == 0)
         input.scan.startScan()
-        input.scan.onServiceFound("192.0.2.156", 5277, null, input.scan.networkDiscovery.ticket)
+        input.scan.onServiceFound("192.0.2.156", 5277, null, checkNotNull(input.scan.networkDiscovery.operation))
         input.main.drainUi(); Dispatchers.IO.drain()
         check(manager.state is ConnectionState.Connected && input.main.overlays == 1)
     } finally { stale.close(); input.close(); manager.close() }
@@ -295,16 +319,43 @@ fun uiConnectCallerOwnership() = runBlocking {
     for (route in listOf("main", "list", "automation", "scan-ip", "scan-socket")) {
         Dispatchers.IO = QueuedDispatcher()
         val freshManager = CommManager()
-        freshManager.disconnect(honorKillOnDisconnect = false)
+        freshManager.disconnect(ConnectionOperation(freshManager.appConnectionTicket(), null), honorKillOnDisconnect = false)
         freshManager.cleanups(); freshManager.inlineConnectionIo()
         val fresh = Input(freshManager)
         try {
-            freshManager.requestExplicitAppExit(killProcess = false)
+            checkNotNull(freshManager.requestExplicitAppExit(ticket = freshManager.appConnectionTicket(), killProcess = false))
             fresh.accept(route)
             Dispatchers.IO.drain()
             check(freshManager.state is ConnectionState.Connected)
         } finally { fresh.close(); freshManager.close() }
     }
+
+    // A callback already posted to Main keeps its original scan object. A new manual scan
+    // in the same Stop epoch must keep its own dialog and must not connect the old candidate.
+    run {
+        Dispatchers.IO = QueuedDispatcher()
+        val manager = CommManager()
+        manager.disconnect(ConnectionOperation(manager.appConnectionTicket(), null), honorKillOnDisconnect = false)
+        manager.cleanups()
+        val input = Input(manager)
+        val socket = ProbeSocket()
+        try {
+            input.scan.startScan()
+            val oldScan = checkNotNull(input.scan.networkDiscovery.operation)
+            HeldServerSocket.hold("192.0.2.159:5277", socket)
+            input.scan.onServiceFound("192.0.2.159", 5277, socket, oldScan)
+            input.scan.cancelScan()
+            input.scan.startScan()
+            val replacementDialog = input.scan.scanDialog
+            val replacementScan = input.scan.networkDiscovery.operation
+            input.scan.startScan() // An active scan folds the request without losing its owner.
+            check(input.scan.networkDiscovery.operation === replacementScan && input.scan.scanDialog === replacementDialog)
+            input.main.drainUi()
+            check(input.scan.scanDialog === replacementDialog && replacementDialog?.isShowing == true)
+            check(socket.isClosed && Dispatchers.IO.tasks.isEmpty() && input.main.overlays == 0)
+        } finally { input.close(); manager.close(); socket.close() }
+    }
+    println("PASS manual scan callback keeps exact operation identity across same-ticket replacement")
 
     // Rejected discovery candidates close their probe without revoking the accepted Stop.
     Dispatchers.IO = QueuedDispatcher()
@@ -312,12 +363,13 @@ fun uiConnectCallerOwnership() = runBlocking {
     val rejectedManager = CommManager()
     val rejected = Input(rejectedManager)
     try {
-        val stop = rejectedManager.requestExplicitAppExit(killProcess = false)
-        val ticket = rejectedManager.appConnectionTicket()
+        rejected.scan.startScan()
+        val operation = checkNotNull(rejected.scan.networkDiscovery.operation)
+        val stop = checkNotNull(rejectedManager.requestExplicitAppExit(ticket = rejectedManager.appConnectionTicket(), killProcess = false))
         for (port in listOf(5289, 5277)) {
             val socket = ProbeSocket()
             if (port == 5277) HeldServerSocket.hold("192.0.2.157:5277", socket)
-            rejected.scan.onServiceFound("192.0.2.157", port, socket, ticket)
+            rejected.scan.onServiceFound("192.0.2.157", port, socket, operation)
             rejected.main.drainUi(); Dispatchers.IO.drain()
             check(socket.isClosed && rejectedManager.ownsAppExit(stop.id))
         }
@@ -329,12 +381,12 @@ fun uiConnectCallerOwnership() = runBlocking {
     for (stop in listOf(false, true)) {
         Dispatchers.IO = QueuedDispatcher()
         val effectManager = CommManager()
-        effectManager.disconnect(honorKillOnDisconnect = false)
+        effectManager.disconnect(ConnectionOperation(effectManager.appConnectionTicket(), null), honorKillOnDisconnect = false)
         effectManager.cleanups(); effectManager.inlineConnectionIo()
         val effectInput = Input(effectManager)
         try {
             ContextCompat.startHook = {
-                if (stop) effectManager.requestExplicitAppExit(killProcess = false)
+                if (stop) checkNotNull(effectManager.requestExplicitAppExit(ticket = effectManager.appConnectionTicket(), killProcess = false))
                 effectManager.onAppRelaunched()
             }
             effectInput.accept("automation")
@@ -348,7 +400,7 @@ fun uiConnectCallerOwnership() = runBlocking {
     val stoppedManager = CommManager()
     val context = Context(stoppedManager)
     try {
-        val stop = stoppedManager.requestExplicitAppExit(killProcess = false)
+        val stop = checkNotNull(stoppedManager.requestExplicitAppExit(ticket = stoppedManager.appConnectionTicket(), killProcess = false))
         check(AutomationEffectRunner.run(context, listOf(AutomationCommandPolicy.Effect.StopApp(stop.id)), JSONObject()))
         val relay = ContextCompat.starts.single()
         stoppedManager.onAppRelaunched()
@@ -365,19 +417,19 @@ fun uiConnectCallerOwnership() = runBlocking {
         Dispatchers.IO = QueuedDispatcher()
         ContextCompat.starts.clear()
         val scanManager = CommManager()
-        scanManager.disconnect(honorKillOnDisconnect = false)
+        scanManager.disconnect(ConnectionOperation(scanManager.appConnectionTicket(), null), honorKillOnDisconnect = false)
         scanManager.cleanups(); scanManager.inlineConnectionIo()
         val scanInput = Input(scanManager)
         val shared = ProbeSocket()
         try {
             HeldServerSocket.hold("192.0.2.158:5277", shared)
             scanInput.scan.startScan()
-            scanInput.scan.onServiceFound("192.0.2.158", 5277, shared, scanInput.scan.networkDiscovery.ticket)
+            scanInput.scan.onServiceFound("192.0.2.158", 5277, shared, checkNotNull(scanInput.scan.networkDiscovery.operation))
             scanInput.main.drainUi()
             check(Dispatchers.IO.tasks.isNotEmpty()) { "the scan hand-off did not wait for IO" }
-            scanManager.connect("192.0.2.158", 5277, ConnectionPriorityPolicy.Tier.USER)
+            scanManager.connect("192.0.2.158", 5277, ConnectionPriorityPolicy.Tier.USER, ticket = scanManager.appConnectionTicket())
             val live = checkNotNull(scanManager.network()) { "the IP request did not connect" }
-            if (afterSsl) scanManager.startHandshake()
+            if (afterSsl) scanManager.startHandshake(checkNotNull(scanManager.captureHandshake()))
             val stateBefore = scanManager.state
             Dispatchers.IO.drain()
             // Recorded after every production frame has returned.
@@ -390,32 +442,32 @@ fun uiConnectCallerOwnership() = runBlocking {
     }
     // A Bluetooth arrival is relayed to MainActivity with the Stop ticket it was received under
     // (AutoStartReceiver, or the service's held arrival). Stop is accepted before the activity gets
-    // it: no pill, no Self Mode command, no hand-off to the home. The control, with no Stop, does
-    // all three, and the real service prefix accepts its Self command.
+    // it: no pill or Self Mode command. The control raises the pill and one direct command;
+    // there is no home handoff to replay, and the real service prefix accepts its Self command.
     for (stop in listOf(true, false)) {
         Dispatchers.IO = QueuedDispatcher()
         ContextCompat.starts.clear()
         val manager = CommManager()
-        manager.disconnect(honorKillOnDisconnect = false)
+        manager.disconnect(ConnectionOperation(manager.appConnectionTicket(), null), honorKillOnDisconnect = false)
         manager.cleanups()
         val input = Input(manager)
         BtAutoStartRearmPolicy.selfMode = true
-        HomeFragment.forceSelfModeTicket = null
+        HomeFragment.pendingDriverSelectionTicket = null
         try {
             val arrival = manager.appConnectionTicket()
             val relay = Intent("bluetooth-arrival")
                 .putExtra(MainActivity.EXTRA_LAUNCH_SOURCE, MainActivity.LAUNCH_SOURCE_BLUETOOTH)
                 .putExtra(MainActivity.EXTRA_CONNECTION_TICKET, arrival)
-            if (stop) manager.requestExplicitAppExit(killProcess = false)
+            if (stop) checkNotNull(manager.requestExplicitAppExit(ticket = manager.appConnectionTicket(), killProcess = false))
             input.main.handleLaunchIntent(relay)
             // Recorded after every production frame has returned.
             val selfStarts = ContextCompat.starts.filter { it.action == AapService.ACTION_START_SELF_MODE }
             if (stop) {
-                check(input.main.overlays == 0 && selfStarts.isEmpty() && HomeFragment.forceSelfModeTicket == null) {
+                check(input.main.overlays == 0 && selfStarts.isEmpty() && HomeFragment.pendingDriverSelectionTicket == null) {
                     "a Bluetooth arrival relayed before Stop still acted (pill=${input.main.overlays} selfStarts=${selfStarts.size})"
                 }
             } else {
-                check(input.main.overlays == 1 && selfStarts.size == 1 && HomeFragment.forceSelfModeTicket == arrival) {
+                check(input.main.overlays == 1 && selfStarts.size == 1 && HomeFragment.pendingDriverSelectionTicket == null) {
                     "the Bluetooth arrival did not start Self Mode"
                 }
                 val service = ServiceBootstrap(manager)
@@ -423,7 +475,7 @@ fun uiConnectCallerOwnership() = runBlocking {
                 check(service.initializedForStart)
             }
         } finally {
-            BtAutoStartRearmPolicy.selfMode = false; HomeFragment.forceSelfModeTicket = null
+            BtAutoStartRearmPolicy.selfMode = false; HomeFragment.pendingDriverSelectionTicket = null
             input.close(); manager.close()
         }
     }

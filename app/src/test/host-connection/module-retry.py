@@ -67,19 +67,23 @@ object ZbtDiscovery {
  fun snapshot()=Snapshot();fun deferIdentityForArming(decision:ZbtDiscoveryPolicy.Decision){error("unexpected fallback")}
  object Measurement {enum class Completion {SETTLED,CARRIER_BUSY,CANCELLED}}
 }
+class ConnectionOperation(val ticket:Long,val save:Any?)
+fun interface ConnectionAdmission {fun run(action:()->Unit):Boolean}
 class ZbtAaCarrier(
+ val admission:ConnectionAdmission,
  val serve:suspend (Any)->Unit, val isRunning:()->Boolean, val isFinishedForSession:()->Boolean,
  val isSessionConnected:()->Boolean, val isSettling:()->Boolean, val isHandshakeInFlight:()->Boolean,
  val mayServeHandshake:()->Boolean, val onPhoneEvidence:()->Unit, val onModuleAddress:(String)->Unit,
  val retryDelayMs:()->Long
 ) {
  var wakes=0;var explicitWakes=0;val sendsWake=true
- fun requestWake(userAsked:Boolean=false){wakes++;if(userAsked)explicitWakes++}
+ fun requestWake(userAsked:Boolean=false,admission:ConnectionAdmission){if(admission.run {}){wakes++;if(userAsked)explicitWakes++}}
  suspend fun run(){}
+ fun close(){}
 }
 class Manager {
  val scope=CoroutineScope(SupervisorJob()+Dispatchers.Unconfined)
- var measuringDaemon=false;var measureGeneration=4;var wakeAwaitingModule=false
+ var measuringDaemon=false;var measureGeneration=4;var wakeAwaitingModule:ConnectionOperation?=null
  var moduleCarrier:ZbtAaCarrier?=null
  var reason:String?=null
  private var notStartedReason:String? get()=reason;set(value){reason=value}
@@ -89,7 +93,11 @@ class Manager {
  var isSelectionCanceled=false;var pendingSelectionTargetMac:String?=null
  var measurementRequired=true;var starts=0
  val commManager=Comm()
- class Comm {var isConnected=false}
+ val operation=ConnectionOperation(0L,null)
+ val effectAdmission=ConnectionAdmission { action -> if(commManager.isCurrent(operation)){action();true}else false }
+ class Comm {var isConnected=false;fun isCurrent(operation:ConnectionOperation)=true;fun <T> withAppConnectionLifecycleLock(body:()->T):T=body()}
+ fun isCurrent(command:ConnectionOperation)=commManager.isCurrent(operation)&&commManager.isCurrent(command)
+ fun admissionFor(command:ConnectionOperation)=ConnectionAdmission{action->if(isCurrent(command)){action();true}else false}
  fun isMeasuringDaemon()=measuringDaemon
  // Replace only route selection/measurement; all downstream production methods are below.
  fun start(){starts++;if(measurementRequired)measuringDaemon=true else startOverExternalModule()}
@@ -98,12 +106,13 @@ class Manager {
  fun resetHandshakeBackoff(){};fun resetJoinRefusals(){}
  fun seedBluetoothAddressFromModule(value:String){}
  suspend fun handleHandshake(link:Any){}
- fun manualPoke(mac:String){error("unexpected Android radio wake")}
- fun triggerPoke(){error("unexpected Android radio wake")}
+ fun manualPoke(mac:String, command:ConnectionOperation){error("unexpected Android radio wake")}
+ fun triggerPoke(command:ConnectionOperation){error("unexpected Android radio wake")}
 // MANAGER_METHODS
 }
 class Native(val handshakeManager:Manager)
 class Service(val native:Native?) {
+ val operationTicket=0L
  fun getString(id:Int)="not running"
  fun press(){when(ModuleRearmPolicy.action(true,false,native?.handshakeManager?.isRunning==true,
      native?.handshakeManager?.isMeasuringDaemon()==true)) {
@@ -114,34 +123,34 @@ class Service(val native:Native?) {
 fun main() {
  for(immediate in listOf(false,true)) {
   val manager=Manager()
-  manager.measuringDaemon=true;manager.wakeAwaitingModule=true
+  manager.measuringDaemon=true;manager.wakeAwaitingModule=manager.operation
   manager.completeDaemonMeasurement(4,ZbtDiscoveryPolicy.Decision(),ZbtDiscovery.Measurement.Completion.CARRIER_BUSY)
-  check(!manager.measuringDaemon && !manager.wakeAwaitingModule && manager.moduleCarrier==null)
+  check(!manager.measuringDaemon && manager.wakeAwaitingModule==null && manager.moduleCarrier==null)
   check(manager.starts==0)
   manager.measurementRequired=!immediate
   Service(Native(manager)).press() // Actual AapService branch, without a credential callback.
   check(manager.starts==1)
   if(!immediate) {
-   check(manager.measuringDaemon && manager.wakeAwaitingModule && manager.moduleCarrier==null)
+   check(manager.measuringDaemon && manager.wakeAwaitingModule!=null && manager.moduleCarrier==null)
    manager.measurementRequired=false
    manager.completeDaemonMeasurement(4,ZbtDiscoveryPolicy.Decision(),ZbtDiscovery.Measurement.Completion.SETTLED)
   }
   check(manager.moduleCarrier?.wakes==1){"first WiFi retry did not wake the module: immediate=$immediate"}
-  check(!manager.wakeAwaitingModule)
+  check(manager.wakeAwaitingModule==null)
   check(ToastUtils.shown==0)
   manager.scope.cancel()
  }
  val retry=Manager()
  Service(Native(retry)).press()
- check(retry.wakeAwaitingModule)
+ check(retry.wakeAwaitingModule!=null)
  retry.completeDaemonMeasurement(4,ZbtDiscoveryPolicy.Decision(),ZbtDiscovery.Measurement.Completion.CARRIER_BUSY)
- check(!retry.wakeAwaitingModule && !retry.measuringDaemon && retry.moduleCarrier==null)
+ check(retry.wakeAwaitingModule==null && !retry.measuringDaemon && retry.moduleCarrier==null)
  retry.scope.cancel()
  println("PASS actual service START_HANDSHAKE: first retry queues or sends exactly one module wake without credential events; repeated BUSY clears queued wake")
 }
 '''
 body = '\n'.join(member(manager, declaration) for declaration in [
-    'fun wakeOverModule(): Boolean',
+    'fun wakeOverModule(',
     'internal fun resumeAfterDaemonMeasurement(',
     'internal fun completeDaemonMeasurement(',
     'private fun startOverExternalModule()',

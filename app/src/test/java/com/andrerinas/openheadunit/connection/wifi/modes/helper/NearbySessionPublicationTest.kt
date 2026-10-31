@@ -76,7 +76,7 @@ class NearbySessionPublicationTest {
                     var rejected = false
                     try {
                         // The actual public restricted request: admission under the Nearby guard, then publication.
-                        manager.connect(socket, admission = admission, expectedState = saved)
+                        manager.connect(socket, admission = admission, ticket = manager.appConnectionTicket(), expectedState = saved)
                     } catch (_: ConnectionAdmissionRejectedException) { rejected = true }
                     val candidate = candidates.constructed().single()
                     assertEquals(outcome != "connected", rejected)
@@ -85,7 +85,7 @@ class NearbySessionPublicationTest {
                         assertSame(CommManager.ConnectionState.Connected, flow.value)
                         assertNotNull(get("connectionAttempt"))
                         verify(candidate, never()).disconnect()
-                        manager.disconnect(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
+                        manager.disconnect(ConnectionOperation(manager.appConnectionTicket(), null), sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
                         assertTrue((flow.value as CommManager.ConnectionState.Disconnected).hadPhysicalConnection)
                         assertEquals(1, queued.size)
                     } else {

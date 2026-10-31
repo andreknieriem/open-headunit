@@ -73,7 +73,7 @@ class UsbReconnectOwnershipTest {
                             "user-exit", "settings-save" -> {
                                 states.value = ended
                                 // Even an already-disconnected stop/Save must revoke old checks.
-                                manager.disconnect(isUserExit = outcome == "user-exit",
+                                manager.disconnect(com.andrerinas.openheadunit.connection.ConnectionOperation(manager.appConnectionTicket(), null), isUserExit = outcome == "user-exit",
                                     reason = if (outcome == "settings-save") CommManager.DisconnectReason.SETTINGS_RESTART
                                         else CommManager.DisconnectReason.CONNECTION_ENDED)
                             }
@@ -84,13 +84,13 @@ class UsbReconnectOwnershipTest {
                         val allowed = outcome in listOf("connecting", "error", "wireless-retry")
                         assertEquals("$outcome observed=$observed", if (allowed) 1 else 0, checks)
                         // Retire locally without entering unrelated transport cleanup.
-                        set("connectionAttempt", CommManager.Attempt())
+                        set("connectionAttempt", CommManager.Attempt(org.mockito.Mockito.mock(CommManager.ConnectionRequest::class.java)))
                         false
                     }
                 }
             }.use {
                 // The actual public request: admission, acceptance and publication before the open.
-                try { manager.connect("127.0.0.1", 5277) } finally { scope.cancel(); main.drain() }
+                try { manager.connect("127.0.0.1", 5277, ticket = manager.appConnectionTicket()) } finally { scope.cancel(); main.drain() }
             }
         }
     }

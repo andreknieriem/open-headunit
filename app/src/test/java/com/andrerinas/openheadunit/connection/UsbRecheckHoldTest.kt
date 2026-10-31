@@ -48,7 +48,7 @@ class UsbRecheckHoldTest {
     @Test fun aHeldDisconnectRotatesTheOwner() {
         val owner = Any()
         val (manager, states) = manager(ConnectionState.HandshakeComplete, owner)
-        manager.disconnect(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false,
+        manager.disconnect(com.andrerinas.openheadunit.connection.ConnectionOperation(manager.appConnectionTicket(), null), sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false,
             reason = CommManager.DisconnectReason.PROJECTION_UNRAISED)
         val ended = states.value as ConnectionState.Disconnected
         assertTrue(ended.holdsRecovery)

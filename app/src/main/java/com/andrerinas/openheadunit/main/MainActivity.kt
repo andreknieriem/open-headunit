@@ -14,6 +14,7 @@ import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.os.Build
 import android.os.Bundle
+import android.net.ConnectivityManager
 import android.view.KeyEvent
 import android.view.View
 import android.widget.FrameLayout
@@ -23,6 +24,7 @@ import android.widget.Toast
 import android.widget.VideoView
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -46,6 +48,9 @@ import com.andrerinas.openheadunit.connection.ConnectionNetworkDetailPolicy
 import com.andrerinas.openheadunit.connection.ConnectionStage
 import com.andrerinas.openheadunit.connection.ConnectionStageTracker
 import com.andrerinas.openheadunit.connection.PhoneExitQuietPolicy
+import com.andrerinas.openheadunit.connection.self.SelfLaunchRoutePolicy
+import com.andrerinas.openheadunit.connection.self.SelfLauncherManager
+import com.andrerinas.openheadunit.utils.VpnControl
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.AppPermissions
 import com.andrerinas.openheadunit.utils.CarLauncherManager
@@ -87,6 +92,24 @@ class MainActivity : BaseActivity() {
 
     /** Ends the hold after a clean phone-side exit; the flow itself emits nothing at that moment. */
     private var phoneExitQuietJob: Job? = null
+    // One forced launch belongs to this activity, including its VPN consent continuation. There
+    // is no Home handoff left behind by a direct command, even while an inner screen is visible.
+    private class ForcedSelfConsent(val ticket: Long, var cancelled: Boolean = false)
+    private var pendingForcedSelf: ForcedSelfConsent? = null
+    private var queuedForcedSelfTicket: Long? = null
+    private val forcedSelfVpnPermission = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val consent = pendingForcedSelf ?: return@registerForActivityResult
+        pendingForcedSelf = null
+        val ticket = consent.ticket
+        if (!consent.cancelled && result.resultCode == android.app.Activity.RESULT_OK) {
+            dispatchForcedSelf(ticket, needsDummyVpn = true)
+        } else if (!consent.cancelled && App.provide(this).commManager.acceptsAppConnectionTicket(ticket)) {
+            ToastUtils.showToast(this, getString(R.string.failed_start_android_auto), Toast.LENGTH_LONG, force = true)
+        }
+        val queued = queuedForcedSelfTicket
+        queuedForcedSelfTicket = null
+        queued?.let { forceSelfModeLaunch(it) }
+    }
     private var renderedNetwork: ConnectionNetworkDetail? = null
     private var autoConnectKenBurnsAnim: ObjectAnimator? = null
 
@@ -155,6 +178,10 @@ class MainActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         requestedOrientation = Settings(this).screenOrientation.androidOrientation
         super.onCreate(savedInstanceState)
+        pendingForcedSelf = savedInstanceState?.takeIf { it.containsKey(STATE_FORCED_SELF_TICKET) }
+            ?.let { ForcedSelfConsent(it.getLong(STATE_FORCED_SELF_TICKET), it.getBoolean(STATE_FORCED_SELF_CANCELLED, false)) }
+        queuedForcedSelfTicket = savedInstanceState?.takeIf { it.containsKey(STATE_QUEUED_SELF_TICKET) }
+            ?.getLong(STATE_QUEUED_SELF_TICKET)
         if (isExitAppUiDelivery) {
             handleLaunchIntent(intent)
             return
@@ -397,11 +424,12 @@ class MainActivity : BaseActivity() {
      * the overlay is up.
      */
     private fun cancelAutoConnect() {
+        cancelPendingSelfLaunch()
         if (!autoConnectInProgress) return
         AppLog.i("Auto-connect: cancelled by user")
         // Keep Exit ordering in the service: revoke any retained WPP lease before
         // publishing Disconnected. The overlay can finish without waiting for teardown.
-        ContextCompat.startForegroundService(this, AapService.commandIntent(this, AapService.ACTION_DISCONNECT))
+        ContextCompat.startForegroundService(this, AapService.operationIntent(this, App.provide(this).commManager.appConnectionTicket()).setAction(AapService.ACTION_DISCONNECT))
         endAutoConnect(success = false)
     }
 
@@ -412,6 +440,7 @@ class MainActivity : BaseActivity() {
      * spends most of its life showing.
      */
     fun cancelBringUp(source: String = "status pill X") {
+        cancelPendingSelfLaunch()
         AppLog.i("MainActivity: $source pressed, stopping the bring-up")
         // Read before the disconnect below, which drops the connection the service would ask.
         val stage = ConnectionStageTracker.stage.value
@@ -422,7 +451,7 @@ class MainActivity : BaseActivity() {
         supportFragmentManager.findFragmentById(R.id.main_content)?.childFragmentManager?.fragments
             ?.filterIsInstance<HomeFragment>()?.forEach { it.stopAutoConnectCountdown() }
         cancelAutoConnect()
-        ContextCompat.startForegroundService(this, AapService.commandIntent(this, AapService.ACTION_CANCEL_WIRELESS).apply {
+        ContextCompat.startForegroundService(this, AapService.operationIntent(this, App.provide(this).commManager.appConnectionTicket()).setAction(AapService.ACTION_CANCEL_WIRELESS).apply {
             putExtra(AapService.EXTRA_USB_ATTEMPT, usbAttempt)
         })
     }
@@ -1169,16 +1198,51 @@ class MainActivity : BaseActivity() {
         }
     }
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        pendingForcedSelf?.let {
+            outState.putLong(STATE_FORCED_SELF_TICKET, it.ticket)
+            outState.putBoolean(STATE_FORCED_SELF_CANCELLED, it.cancelled)
+        }
+        queuedForcedSelfTicket?.let { outState.putLong(STATE_QUEUED_SELF_TICKET, it) }
+        super.onSaveInstanceState(outState)
+    }
+
     /** [ticket]: the Stop ticket of the input that asked for this launch, captured at that input. */
     private fun forceSelfModeLaunch(ticket: Long) {
-        // A home view already up has run, or is running, its own automatic start, and the command
-        // below is this launch: it gets no hand-off to replay later. Only a home still to be
-        // created takes it, under this input's ticket, and consumes it once.
-        val homeViewUp = supportFragmentManager.findFragmentById(R.id.main_content)?.childFragmentManager?.fragments
-            ?.filterIsInstance<HomeFragment>()?.any { it.view != null } == true
-        if (!homeViewUp) HomeFragment.forceSelfModeTicket = ticket
+        if (!App.provide(this).commManager.acceptsAppConnectionTicket(ticket)) return
+        pendingForcedSelf?.let { waiting ->
+            // The result still belongs to the permission input already in flight. A post-Stop
+            // input waits separately, and will make its own route decision when that result ends.
+            if (waiting.cancelled || ticket != waiting.ticket) queuedForcedSelfTicket = ticket
+            return
+        }
+        val connectivity = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val offline = Build.VERSION.SDK_INT < Build.VERSION_CODES.M || connectivity.activeNetwork == null
+        val needsDummyVpn = SelfLaunchRoutePolicy.needsDummyVpn(
+            SelfLauncherManager.installedPath(this), offline, VpnControl.isVpnAvailable())
+        if (needsDummyVpn) {
+            val consent = VpnControl.consentIntent(this)
+            if (consent != null) {
+                pendingForcedSelf = ForcedSelfConsent(ticket)
+                forcedSelfVpnPermission.launch(consent)
+                return
+            }
+        }
+        pendingForcedSelf = null
+        dispatchForcedSelf(ticket, needsDummyVpn)
+    }
+
+    /** Home Exit and the bring-up cancel revoke pending consent without advancing Stop's epoch. */
+    internal fun cancelPendingSelfLaunch() {
+        pendingForcedSelf?.cancelled = true
+        queuedForcedSelfTicket = null
+    }
+
+    private fun dispatchForcedSelf(ticket: Long, needsDummyVpn: Boolean) {
+        if (!App.provide(this).commManager.acceptsAppConnectionTicket(ticket)) return
         val selfModeIntent = AapService.operationIntent(this, ticket).apply {
             this.action = AapService.ACTION_START_SELF_MODE
+            putExtra(AapService.EXTRA_SELF_MODE_VPN, needsDummyVpn)
         }
         ContextCompat.startForegroundService(this, selfModeIntent)
     }
@@ -1188,7 +1252,10 @@ class MainActivity : BaseActivity() {
 
         if (intent.getBooleanExtra(EXTRA_SHOW_DRIVER_SELECTOR, false)) {
             AppLog.i("MainActivity: EXTRA_SHOW_DRIVER_SELECTOR received")
-            HomeFragment.requestDriverSelection = true
+            val ticket = intent.getLongExtra(EXTRA_CONNECTION_TICKET, -1L)
+            if (intent.hasExtra(EXTRA_CONNECTION_TICKET) && App.provide(this).commManager.acceptsAppConnectionTicket(ticket)) {
+                HomeFragment.pendingDriverSelectionTicket = ticket
+            }
             intent.removeExtra(EXTRA_SHOW_DRIVER_SELECTOR)
         }
 
@@ -1196,9 +1263,10 @@ class MainActivity : BaseActivity() {
         val intentAction = intent.action
 
         if (intentAction == "com.andrerinas.openheadunit.ACTION_EXIT") {
+            cancelPendingSelfLaunch()
             AppLog.i("MainActivity: Received exit action")
-            val exitIntent = AapService.stopIntent(this)
-            ContextCompat.startForegroundService(this, exitIntent)
+            val exitIntent = AapService.stopIntent(this, App.provide(this).commManager.appConnectionTicket())
+            exitIntent?.let { ContextCompat.startForegroundService(this, it) }
             finishAffinity()
             return
         }
@@ -1213,7 +1281,7 @@ class MainActivity : BaseActivity() {
         if (intent.getStringExtra(EXTRA_LAUNCH_SOURCE) == LAUNCH_SOURCE_BLUETOOTH) {
             // The service has already been told to arm wireless; this is the non-blocking pill
             // while it does, and the Self Mode launch, which only an activity can start because
-            // HomeFragment owns the VPN consent and the projection needs a foreground window.
+            // This activity owns its VPN consent and the projection needs a foreground window.
             val commManager = App.provide(this).commManager
             val settings = App.provide(this).settings
             // A relay of the Bluetooth arrival, not a new input: it carries the arrival's ticket,
@@ -1260,12 +1328,14 @@ class MainActivity : BaseActivity() {
                         commManager.usbRecheck(ticket), userRequested = true))
                 }
             } else if (intentData?.scheme == "headunit" && intentData.host == "disconnect") {
+                cancelPendingSelfLaunch()
                 AppLog.i("Received disconnect intent")
-                ContextCompat.startForegroundService(this, AapService.commandIntent(this, AapService.ACTION_DISCONNECT))
+                ContextCompat.startForegroundService(this, AapService.operationIntent(this, App.provide(this).commManager.appConnectionTicket()).setAction(AapService.ACTION_DISCONNECT))
             } else if (intentData?.scheme == "headunit" && intentData.host == "exit") {
+                cancelPendingSelfLaunch()
                 AppLog.i("Received full exit intent via deep link")
-                val exitIntent = AapService.stopIntent(this)
-                ContextCompat.startForegroundService(this, exitIntent)
+                val exitIntent = AapService.stopIntent(this, App.provide(this).commManager.appConnectionTicket())
+                exitIntent?.let { ContextCompat.startForegroundService(this, it) }
                 finishAffinity()
             }
         }
@@ -1635,6 +1705,9 @@ class MainActivity : BaseActivity() {
     }
 
     companion object {
+        private const val STATE_FORCED_SELF_TICKET = "main_forced_self_ticket"
+        private const val STATE_FORCED_SELF_CANCELLED = "main_forced_self_cancelled"
+        private const val STATE_QUEUED_SELF_TICKET = "main_queued_self_ticket"
         private const val permissionRequestCode = 97
         @Volatile var hasRequestedPermissionsThisSession: Boolean = false
         const val EXTRA_LAUNCH_SOURCE = "launch_source"

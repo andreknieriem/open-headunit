@@ -10,6 +10,7 @@ class Queued : CoroutineDispatcher() {
     fun drain() { while (true) (queue.poll() ?: return).run() }
 }
 class CommManager {
+    fun <T> withAppConnectionLifecycleLock(action: () -> T): T = synchronized(this) { action() }
     sealed class ConnectionState {
         class Disconnected(val isUserExit: Boolean = true, val isClean: Boolean = false,
             val isSettingsRestart: Boolean = false, val holdsRecovery: Boolean = false,
@@ -38,7 +39,7 @@ class CommManager {
     fun hasPendingDisconnect() = !gate.isCompleted
     var onDisconnect: (ConnectionState.Disconnected) -> Unit = {}
     var taskFinishAttempts = 0
-    fun disconnect(sendByeBye: Boolean, honorKillOnDisconnect: Boolean) {
+    fun disconnectForAppExit(owner: Any) {
         val ended = ConnectionState.Disconnected(isUserExit = false)
         connectionState.value = ended
         onDisconnect(ended)
@@ -52,6 +53,7 @@ class CommManager {
     fun usbRecheckNow() = UsbRecheck(ticket)
 }
 class UsbRecheck(val ticket: Long)
+class ConnectionOperation(val ticket: Long, val save: CommManager.ConnectionState.Disconnected?)
 object SystemClock { fun elapsedRealtime() = 100L }
 object android { object os { val SystemClock = cleanup.SystemClock } }
 object AppLog { fun i(s: String) {}; fun w(s: String) {} }
@@ -79,8 +81,9 @@ class WifiLauncherNative {
     val strategy="Direct"
     fun hasWifiDirect() = true
     fun noteSessionEnded(b: Boolean) {}
-    fun rearmAfterSessionEnd(wakePhone: Boolean) {}
+    fun rearmAfterSessionEnd(wakePhone: Boolean, operation: ConnectionOperation) {}
 }
+class DirectManager { fun stop() {} }
 class WifiManager(val service: Service) {
     private val cleanupGeneration=WirelessCleanupGeneration()
     var active: WifiLauncherNative? = WifiLauncherNative()
@@ -94,11 +97,12 @@ class WifiManager(val service: Service) {
         check(activate(nativeOwner))
     }
     val sharedServices=this
-    val wifiDirectManager: WifiManager?=null
+    val wifiDirectManager: DirectManager?=null
     fun cleanupTicket()=cleanupGeneration.capture()
     fun isCleanupCurrent(ticket: Any)=cleanupGeneration.isCurrent(ticket)
     // LAUNCHER_ARM
-    fun stop(seq: WifiLauncherStopSequence?=null) {
+    fun stop(owner: Any, seq: WifiLauncherStopSequence?=null) {
+        if (!isCleanupCurrent(owner)) return
         stops++
         if (active != null) {
             val removal = NativeGroupCleanupCoordinator.Removal { completed ->
@@ -110,7 +114,7 @@ class WifiManager(val service: Service) {
         }
         active=null
     }
-    fun restartDiscovery(ticket: Long) {}
+    fun restartDiscovery(operation: ConnectionOperation) {}
 }
 class UnitManager { fun stop() {}; fun onSessionEnded() {}; fun setSwitchingToProjection(b: Boolean) {} }
 class MediaSession { var isActive=true }
@@ -125,6 +129,7 @@ class SelfManager {
     fun stop(wasConnected: Boolean) { isLaunchPending=false }
 }
 class Service {
+    private val appExitRequest: Any? = Any()
     var hctParks=0
     private fun parkRetainedHct(onlyCompleted: Boolean) { hctParks++ }
     val main=Queued()
@@ -154,7 +159,7 @@ class Service {
     fun applyPlaceholderMediaMetadata() {}
     fun safeMediaSessionCall(action: (MediaSession)->Unit) { action(MediaSession()) }
     fun updateMediaSessionState(active: Boolean) {}
-    fun scheduleReconnectIfNeeded(state: CommManager.ConnectionState.Disconnected) { reconnects++ }
+    fun scheduleReconnectIfNeeded(state: CommManager.ConnectionState.Disconnected, cleanupOwner: Any) { reconnects++ }
     // Save's retry hands [ticket] to the route's admission, which accepts only the current one
     // (CommManager.connect, SelfLauncherManager.start, setActive, startLocalDiscovery).
     var saveReconnects=0
@@ -171,7 +176,7 @@ class Service {
     fun stopSelf() {
         serviceStops++
         // Android destruction reaches native launcher stop before CommManager.destroy.
-        wifiLauncherManager.stop(WifiLauncherStopSequence.LAST)
+        wifiLauncherManager.stop(wifiLauncherManager.cleanupTicket(), WifiLauncherStopSequence.LAST)
         serviceScope.cancel()
     }
     fun requestStop() { stopForAcceptedAppExit() }

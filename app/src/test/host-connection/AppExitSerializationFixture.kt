@@ -51,9 +51,9 @@ fun appExitSerializedEffects() = runBlocking {
         val c = CommManager()
         c.exitDispatcher(main)
         c.settings.killOnDisconnect = true
-        c.disconnect(honorKillOnDisconnect = false)
+        c.disconnect(ConnectionOperation(c.appConnectionTicket(), null), honorKillOnDisconnect = false)
         c.cleanups()
-        val request = checkNotNull(c.requestExplicitAppExit(killProcess = true))
+        val request = checkNotNull(c.requestExplicitAppExit(ticket = c.appConnectionTicket(), killProcess = true))
         check(c.commitAppExit(request) === request)
         val insideEffect = CountDownLatch(1)
         val resumeEffect = CountDownLatch(1)
@@ -94,9 +94,9 @@ fun appExitSerializedEffects() = runBlocking {
     for (projection in listOf(false, true)) ExitMain().use { main ->
         val c = CommManager()
         c.exitDispatcher(main)
-        c.disconnect(honorKillOnDisconnect = false)
+        c.disconnect(ConnectionOperation(c.appConnectionTicket(), null), honorKillOnDisconnect = false)
         c.cleanups()
-        val request = checkNotNull(c.requestExplicitAppExit(killProcess = false))
+        val request = checkNotNull(c.requestExplicitAppExit(ticket = c.appConnectionTicket(), killProcess = false))
         check(c.commitAppExit(request) === request)
         c.broadcastAppExit(request)
         c.destroy()
@@ -183,7 +183,7 @@ fun appExitSerializedEffects() = runBlocking {
         main.step()
         check(c.state is ConnectionState.Connecting)
         if (newer) {
-            c.disconnect(honorKillOnDisconnect = false)
+            c.disconnect(ConnectionOperation(c.appConnectionTicket(), null), honorKillOnDisconnect = false)
             c.cleanups()
             val nextCaller = QueuedDispatcher()
             val nextScope = CoroutineScope(SupervisorJob() + nextCaller)
@@ -216,7 +216,7 @@ fun appExitSerializedEffects() = runBlocking {
     for (withTransport in listOf(false, true)) {
         val c = CommManager()
         val old = checkNotNull(c.network())
-        if (withTransport) { c.startHandshake(); c.startReading() }
+        if (withTransport) { c.captureHandshake()?.let { c.startHandshake(it) }; c.captureReading()?.let { c.startReading(it) } }
         val oldTransport = c.nullableOwner()
         val main = QueuedDispatcher()
         val callerA = QueuedDispatcher()
@@ -335,7 +335,7 @@ fun appExitSerializedEffects() = runBlocking {
     // close the now-published candidate or raw socket; pre-publication cancellation must.
     for (cancelBeforePublication in listOf(false, true)) {
         val c = CommManager()
-        c.disconnect(honorKillOnDisconnect = false)
+        c.disconnect(ConnectionOperation(c.appConnectionTicket(), null), honorKillOnDisconnect = false)
         c.cleanups()
         val main = QueuedDispatcher()
         val caller = QueuedDispatcher()
@@ -363,9 +363,9 @@ fun appExitSerializedEffects() = runBlocking {
         val c = CommManager()
         c.exitDispatcher(main)
         c.settings.killOnDisconnect = true
-        c.disconnect(honorKillOnDisconnect = false)
+        c.disconnect(ConnectionOperation(c.appConnectionTicket(), null), honorKillOnDisconnect = false)
         c.cleanups()
-        val request = checkNotNull(c.requestExplicitAppExit(killProcess = true))
+        val request = checkNotNull(c.requestExplicitAppExit(ticket = c.appConnectionTicket(), killProcess = true))
         check(c.commitAppExit(request) === request)
         c.destroy()
         val tail = ExitServiceTail(c, request)
@@ -397,7 +397,7 @@ fun appExitSerializedEffects() = runBlocking {
     // and an intervening UI Open cannot revive the same prepared candidate.
     for (openAfterStop in listOf(false, true)) {
         val c = CommManager()
-        c.disconnect(honorKillOnDisconnect = false)
+        c.disconnect(ConnectionOperation(c.appConnectionTicket(), null), honorKillOnDisconnect = false)
         c.cleanups()
         val main = QueuedDispatcher()
         val caller = QueuedDispatcher()
@@ -412,7 +412,7 @@ fun appExitSerializedEffects() = runBlocking {
             }
             caller.step()
             val candidate = SocketProjectionConnection.created.last()
-            val b = c.requestExplicitAppExit(killProcess = false)
+            val b = checkNotNull(c.requestExplicitAppExit(ticket = c.appConnectionTicket(), killProcess = false))
             if (openAfterStop) c.onAppRelaunched()
             main.step()
             caller.drain()

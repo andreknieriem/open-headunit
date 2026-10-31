@@ -1,10 +1,11 @@
 package com.andrerinas.openheadunit.connection.wifi
 
 /**
- * Main-thread ownership stamp for work which waits for transport teardown. A launcher may
+ * Ownership stamp for work which waits for transport teardown. The manager guards it with
+ * its connection lifecycle lock. A launcher may
  * be re-armed without changing its instance, so object identity alone is insufficient.
- * Capture before suspending; compare and mutate the launcher in one non-suspending main
- * thread action. A stale completion must not stop the new shared server or network.
+ * Capture before suspending; compare and detach the launcher in one lifecycle decision.
+ * A stale completion must not stop the new shared server or network.
  */
 internal class WirelessCleanupGeneration {
     private var current = Any()

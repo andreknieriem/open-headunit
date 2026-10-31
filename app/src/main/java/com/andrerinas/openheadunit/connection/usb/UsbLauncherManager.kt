@@ -12,6 +12,8 @@ import com.andrerinas.openheadunit.aap.AapService
 import com.andrerinas.openheadunit.aap.AapTransport
 import com.andrerinas.openheadunit.connection.AutoConnectHoldPolicy
 import com.andrerinas.openheadunit.connection.UsbRecoveryAdmission
+import com.andrerinas.openheadunit.connection.ConnectionAdmission
+import com.andrerinas.openheadunit.connection.ConnectionArbiter
 import com.andrerinas.openheadunit.connection.CommManager
 import com.andrerinas.openheadunit.connection.UsbRecheck
 import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy.Tier
@@ -201,6 +203,11 @@ class UsbLauncherManager(val service: AapService) {
         manager.endRequest(request)
     }
 
+    internal fun switchAdmission(request: CommManager.ConnectionRequest): ConnectionAdmission {
+        val commManager = App.provide(service).commManager
+        return ConnectionAdmission { effect -> commManager.runIfValid(request, effect) }
+    }
+
     /** ACC_REQ_START succeeded, but the old normal-mode device may remain on the bus briefly. */
     internal suspend fun noteAccessorySwitchRequested() {
         val job = kotlinx.coroutines.currentCoroutineContext()[Job]
@@ -210,10 +217,15 @@ class UsbLauncherManager(val service: AapService) {
     }
 
     /** A higher attempt took over: end this one without the status pill's X semantics. */
-    fun preemptAttempt() {
+    fun preemptAttempt(loser: ConnectionArbiter.Claim) {
         // Keep the owner until completion releases its busy flag and request. A suspended
         // job finishes cancellation later; replacing its identity here would skip cleanup.
-        val job = synchronized(attemptLock) { pendingCheck = null; attemptJob }
+        val job = synchronized(attemptLock) {
+            if (attemptRequest?.claim !== loser) null else {
+                pendingCheck = null
+                attemptJob
+            }
+        }
         job?.cancel()
     }
 
@@ -516,12 +528,13 @@ class UsbLauncherManager(val service: AapService) {
 
     /**
      * A USB handshake ended. A failure on a phone still in accessory mode starts the bounded
-     * recovery ladder; a success resets it. [recheck] is the owed scan minted when the service
-     * received the end, before its hop to Main; the recovery is admitted for that scan only.
+     * recovery ladder; a success resets it. The outcome carries the original request's owed scan,
+     * captured before the handshake was queued; no completion may mint a replacement scan.
      */
-    fun onUsbHandshakeEnded(outcome: CommManager.UsbHandshakeOutcome, recheck: UsbRecheck) {
+    fun onUsbHandshakeEnded(outcome: CommManager.UsbHandshakeOutcome) {
         val commManager = App.provide(service).commManager
-        if (!commManager.ownsUsbRecheck(outcome.recoveryOwner)) return
+        val recheck = outcome.recheck
+        if (!commManager.isCurrent(recheck) || !commManager.ownsUsbRecheck(outcome.recoveryOwner)) return
         val failure = outcome.failure
         if (failure == AapTransport.HandshakeFailure.NONE) {
             staleGaveUpOn = null
@@ -624,9 +637,9 @@ class UsbLauncherManager(val service: AapService) {
                     before.values.filter { UsbDeviceCompat.isConnectable(service, it) }.map { it.deviceName }.toSet())
                 observationOwner.target = target
                 val issued = if (step == StaleAccessoryRecoveryPolicy.Step.RESWITCH) {
-                    usbMode.connectAndSwitch(current, app.settings.useLibusb).also { if (it) noteAccessorySwitchRequested() }
+                    usbMode.connectAndSwitch(current, app.settings.useLibusb, switchAdmission(usbRequest)).also { if (it) noteAccessorySwitchRequested() }
                 } else {
-                    usbMode.resetDevice(current)
+                    usbMode.resetDevice(current, switchAdmission(usbRequest))
                 }
                 val startedAt = recoveryNowMs()
                 val deadline = startedAt + StaleAccessoryRecoveryPolicy.DETACH_WAIT_MS + StaleAccessoryRecoveryPolicy.REATTACH_WAIT_MS
@@ -820,8 +833,8 @@ class UsbLauncherManager(val service: AapService) {
                         ConnectionStageTracker.beginAttempt(ConnectionStage.USB_ATTACHED)
                         ConnectionStageTracker.report(ConnectionStage.USB_SWITCHING)
                         val usbMode = UsbAccessoryMode(usbManager)
-                        launchAttempt(Dispatchers.IO) {
-                            if (usbMode.connectAndSwitch(device, settings.useLibusb)) {
+                        launchAttempt(Dispatchers.IO) { request ->
+                            if (usbMode.connectAndSwitch(device, settings.useLibusb, switchAdmission(request))) {
                                 noteAccessorySwitchRequested()
                                 AppLog.i("Successfully requested switch to accessory mode for ${deviceCompat.uniqueName}")
                             } else {
@@ -957,8 +970,8 @@ class UsbLauncherManager(val service: AapService) {
             AppLog.i("Single USB auto-connect: connecting to $deviceName")
             if (!beginAttempt(tier, "USB switch of $deviceName", settingsRestart, recheck)) return
             val usbMode = UsbAccessoryMode(usbManager)
-            launchAttempt(Dispatchers.IO) {
-                if (usbMode.connectAndSwitch(device, settings.useLibusb)) {
+            launchAttempt(Dispatchers.IO) { request ->
+                if (usbMode.connectAndSwitch(device, settings.useLibusb, switchAdmission(request))) {
                     noteAccessorySwitchRequested()
                     AppLog.i("Successfully requested switch to accessory mode for single USB device. Waiting for re-enumeration...")
                 } else {

@@ -100,6 +100,7 @@ class HomeFragment : Fragment() {
     // Permission is a continuation of its original input, including a manual Self launch.
     private var pendingSelfModeVpn = false
     private var pendingSelfModeTicket: Long? = null
+    private var pendingBluetoothPickerTicket: Long? = null
 
     private val vpnPermissionLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (!pendingSelfModeVpn) return@registerForActivityResult
@@ -117,8 +118,11 @@ class HomeFragment : Fragment() {
     }
 
     private val bluetoothPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+        val ticket = pendingBluetoothPickerTicket
+        pendingBluetoothPickerTicket = null
+        if (ticket == null || !commManager.acceptsAppConnectionTicket(ticket)) return@registerForActivityResult
         if (isGranted) {
-            showNativeAaDeviceSelector()
+            showNativeAaDeviceSelector(openedTicket = ticket)
         } else {
             ToastUtils.showToast(requireContext(), R.string.bt_permission_denied, Toast.LENGTH_LONG, force = true)
         }
@@ -212,6 +216,7 @@ class HomeFragment : Fragment() {
         savedInstanceState?.let { state ->
             pendingWidgetId = state.getInt(STATE_PENDING_WIDGET_ID, -1)
             pendingWidgetPage = state.getInt(STATE_PENDING_WIDGET_PAGE, -1).takeIf { it >= 0 }
+            pendingBluetoothPickerTicket = if (state.containsKey(STATE_PENDING_BT_PICKER)) state.getLong(STATE_PENDING_BT_PICKER) else null
             pendingSelfModeVpn = state.getBoolean(STATE_PENDING_SELF_VPN, false)
             pendingSelfModeTicket = if (state.containsKey(STATE_PENDING_SELF_TICKET)) {
                 state.getLong(STATE_PENDING_SELF_TICKET)
@@ -225,6 +230,7 @@ class HomeFragment : Fragment() {
         outState.putInt(STATE_PENDING_WIDGET_PAGE, pendingWidgetPage ?: -1)
         outState.putBoolean(STATE_PENDING_SELF_VPN, pendingSelfModeVpn)
         pendingSelfModeTicket?.let { outState.putLong(STATE_PENDING_SELF_TICKET, it) }
+        pendingBluetoothPickerTicket?.let { outState.putLong(STATE_PENDING_BT_PICKER, it) }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View =
@@ -344,7 +350,7 @@ class HomeFragment : Fragment() {
                 appSettings.autoConnectSingleUsbDevice
 
             val delaySec = appSettings.autoConnectDelaySeconds
-            if (isAutoConnectEnabled && delaySec > 0 && forceSelfModeTicket == null && !commManager.isConnected) {
+            if (isAutoConnectEnabled && delaySec > 0 && !commManager.isConnected) {
                 AppLog.i("HomeFragment: Waiting ${delaySec}s before attempting auto-connect...")
                 countDownToAutoConnect(delaySec, autoConnectTarget(appSettings))
             }
@@ -371,16 +377,13 @@ class HomeFragment : Fragment() {
                         }
                     }
                     Settings.AUTO_CONNECT_SELF_MODE -> {
-                        // A forced launch is consumed once, by this loop, under its own ticket.
-                        val forced = forceSelfModeTicket?.also { forceSelfModeTicket = null }
-                            ?.takeIf { commManager.acceptsAppConnectionTicket(it) }
-                        if ((appSettings.autoStartSelfMode || forced != null) && !hasAutoStarted && !commManager.isConnected) {
+                        if (appSettings.autoStartSelfMode && !hasAutoStarted && !commManager.isConnected) {
                             hasAutoStarted = true
                             (requireActivity() as? MainActivity)?.beginAutoConnect(
                                 "auto-start self mode",
                                 MainActivity.ConnectionUiMode.OVERLAY
                             )
-                            startSelfMode(forced ?: autoConnectTicket)
+                            startSelfMode(autoConnectTicket)
                         }
                     }
                     Settings.AUTO_CONNECT_SINGLE_USB -> {
@@ -459,6 +462,8 @@ class HomeFragment : Fragment() {
      * is running, so a later bring-up is never blocked by an old cancel.
      */
     fun stopAutoConnectCountdown() {
+        pendingSelfModeVpn = false
+        pendingSelfModeTicket = null
         if (reconnectCountdown?.isActive != true) return
         AppLog.i("HomeFragment: auto-connect countdown stopped by the bring-up's cancel")
         cancelAutoConnectCountdown()
@@ -1656,7 +1661,7 @@ class HomeFragment : Fragment() {
         AppLog.i("Auto start selfmode")
     }
 
-    private fun startSelfMode(ticket: Long = commManager.appConnectionTicket()) {
+    private fun startSelfMode(ticket: Long) {
         if (!commManager.acceptsAppConnectionTicket(ticket)) return
         val connectivityManager = requireContext().getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         val activeNetwork = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -1832,16 +1837,19 @@ class HomeFragment : Fragment() {
     }
 
     private fun exitApp() {
+        pendingSelfModeVpn = false
+        pendingSelfModeTicket = null
+        (activity as? MainActivity)?.cancelPendingSelfLaunch()
         val appSettings = App.provide(requireContext()).settings
         val keepServiceAlive = appSettings.autoStartOnBoot ||
             appSettings.autoStartOnScreenOn ||
             (appSettings.autoStartOnUsb && appSettings.reopenOnReconnection)
         if (keepServiceAlive) {
             ContextCompat.startForegroundService(requireContext(),
-                AapService.commandIntent(requireContext(), AapService.ACTION_DISCONNECT))
+                AapService.operationIntent(requireContext(), App.provide(requireContext()).commManager.appConnectionTicket()).setAction(AapService.ACTION_DISCONNECT))
         } else {
-            val stopServiceIntent = AapService.stopIntent(requireContext())
-            ContextCompat.startForegroundService(requireContext(), stopServiceIntent)
+            val stopServiceIntent = AapService.stopIntent(requireContext(), App.provide(requireContext()).commManager.appConnectionTicket())
+            stopServiceIntent?.let { ContextCompat.startForegroundService(requireContext(), it) }
         }
         requireActivity().finishAffinity()
     }
@@ -1869,7 +1877,7 @@ class HomeFragment : Fragment() {
                     "manual self mode",
                     MainActivity.ConnectionUiMode.OVERLAY
                 )
-                startSelfMode()
+                startSelfMode(commManager.appConnectionTicket())
             }
         }
     }
@@ -1910,7 +1918,7 @@ class HomeFragment : Fragment() {
                     val usbMode = UsbAccessoryMode(usbManager)
                     val useLibusb = App.provide(requireContext()).settings.useLibusb
                     UsbAttachSwitch.launchManual(viewLifecycleOwner.lifecycleScope, commManager, device.uniqueName,
-                        switch = { usbMode.connectAndSwitch(device.wrappedDevice, useLibusb) }) { outcome ->
+                        switch = { admission -> usbMode.connectAndSwitch(device.wrappedDevice, useLibusb, admission) }) { outcome ->
                         context?.let { ctx ->
                             when (outcome) {
                                 // Whatever revoked it owns the stage and its feedback now.
@@ -1963,7 +1971,7 @@ class HomeFragment : Fragment() {
                         MainActivity.ConnectionUiMode.OVERLAY
                     )
                     ContextCompat.startForegroundService(requireContext(),
-                        AapService.commandIntent(requireContext(), AapService.ACTION_START_WIRELESS_SCAN))
+                        AapService.operationIntent(requireContext(), App.provide(requireContext()).commManager.appConnectionTicket()).setAction(AapService.ACTION_START_WIRELESS_SCAN))
                 }
             }
             WifiLauncherMode.HELPER -> { // Helper (Wireless Launcher)
@@ -1978,7 +1986,7 @@ class HomeFragment : Fragment() {
                                 MainActivity.ConnectionUiMode.OVERLAY
                             )
                             ContextCompat.startForegroundService(requireContext(),
-                                AapService.commandIntent(requireContext(), AapService.ACTION_START_WIRELESS_SCAN))
+                                AapService.operationIntent(requireContext(), App.provide(requireContext()).commManager.appConnectionTicket()).setAction(AapService.ACTION_START_WIRELESS_SCAN))
                         }
                         com.andrerinas.openheadunit.utils.ShareHotspotQrDialog.show(
                             requireContext()
@@ -1995,7 +2003,7 @@ class HomeFragment : Fragment() {
                             MainActivity.ConnectionUiMode.OVERLAY
                         )
                         ContextCompat.startForegroundService(requireContext(),
-                            AapService.commandIntent(requireContext(), AapService.ACTION_START_WIRELESS_SCAN))
+                            AapService.operationIntent(requireContext(), App.provide(requireContext()).commManager.appConnectionTicket()).setAction(AapService.ACTION_START_WIRELESS_SCAN))
                     }
                 }
             }
@@ -2008,7 +2016,7 @@ class HomeFragment : Fragment() {
                 } else if (route == ExternalBtTransportPolicy.WifiButton.MODULE) {
                     ToastUtils.showToast(requireContext(), getString(R.string.searching_phone), Toast.LENGTH_SHORT)
                     ContextCompat.startForegroundService(requireContext(),
-                        AapService.commandIntent(requireContext(), AapService.ACTION_NATIVE_AA_POKE))
+                        AapService.operationIntent(requireContext(), App.provide(requireContext()).commManager.appConnectionTicket()).setAction(AapService.ACTION_NATIVE_AA_POKE))
                 } else if (route == ExternalBtTransportPolicy.WifiButton.REFUSED) {
                     AppLog.i(
                         "HomeFragment: WiFi button refused: route=$route, daemon answer=" +
@@ -2017,6 +2025,7 @@ class HomeFragment : Fragment() {
                     ToastUtils.showToast(requireContext(), getString(R.string.native_aa_poke_not_running), Toast.LENGTH_LONG, force = true)
                 } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
                     ContextCompat.checkSelfPermission(requireContext(), android.Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+                    pendingBluetoothPickerTicket = commManager.appConnectionTicket()
                     bluetoothPermissionLauncher.launch(android.Manifest.permission.BLUETOOTH_CONNECT)
                 } else {
                     val appSettings = App.provide(requireContext()).settings
@@ -2057,14 +2066,14 @@ class HomeFragment : Fragment() {
                             // AapService drops a poke with no MAC, so this branch used to be a
                             // toast and nothing else. Ask which phone instead, which is what
                             // this button did before the selector existed.
-                            showNativeAaDeviceSelector(autoCountdown = false)
+                            showNativeAaDeviceSelector(autoCountdown = false, openedTicket = commManager.appConnectionTicket())
                         }
                     } else if (!shouldShow && autoTargetMac != null) {
                         val targetDev = cands.deviceFor(autoTargetMac)
                         val devName = targetDev?.name ?: autoTargetMac
                         connectToNativeDevice(autoTargetMac, devName, connectedMacs, explicit = false, commManager.appConnectionTicket())
                     } else {
-                        showNativeAaDeviceSelector(autoCountdown = false)
+                        showNativeAaDeviceSelector(autoCountdown = false, openedTicket = commManager.appConnectionTicket())
                     }
                 }
             }
@@ -2095,10 +2104,11 @@ class HomeFragment : Fragment() {
         startHomeInfo()
 
         val appSettings = App.provide(requireContext()).settings
-        if (requestDriverSelection) {
-            requestDriverSelection = false
-            if (!ExternalBtTransportPolicy.usesExternalModule(NativeAaHandshakeManager.transportRoute(requireContext()))) {
-                showNativeAaDeviceSelector(autoCountdown = false)
+        val selectorTicket = pendingDriverSelectionTicket.also { pendingDriverSelectionTicket = null }
+        if (selectorTicket != null) {
+            if (commManager.acceptsAppConnectionTicket(selectorTicket) &&
+                !ExternalBtTransportPolicy.usesExternalModule(NativeAaHandshakeManager.transportRoute(requireContext()))) {
+                showNativeAaDeviceSelector(autoCountdown = false, openedTicket = selectorTicket)
             }
         } else if (appSettings.wifiConnectionMode == WifiLauncherMode.NATIVE && !commManager.isConnected) {
             if (!hasCheckedNativeDriverSelection) checkNativeDriverSelectionOnStartup()
@@ -2590,10 +2600,16 @@ class HomeFragment : Fragment() {
         return false
     }
 
+    /** Prompt callbacks continue the input that opened this selector, including onPause dismiss. */
+    private fun notifyNativePrompt(action: String, ticket: Long) {
+        val ctx = context ?: return
+        if (!commManager.acceptsAppConnectionTicket(ticket)) return
+        ContextCompat.startForegroundService(ctx, AapService.operationIntent(ctx, ticket).setAction(action))
+    }
+
     /** [openedTicket]: the Stop ticket of the input that opened the selector, read on its turn. */
-    private fun showNativeAaDeviceSelector(autoCountdown: Boolean = false,
-        openedTicket: Long = commManager.appConnectionTicket()) {
-        if (!isAdded) return
+    private fun showNativeAaDeviceSelector(autoCountdown: Boolean = false, openedTicket: Long) {
+        if (!isAdded || !commManager.acceptsAppConnectionTicket(openedTicket)) return
         // Its countdown and its shown notice run later and carry [openedTicket]; a pick the user
         // taps is an input of its own.
         if (ExternalBtTransportPolicy.usesExternalModule(NativeAaHandshakeManager.transportRoute(requireContext()))) {
@@ -2764,8 +2780,7 @@ class HomeFragment : Fragment() {
             driverCountdownTimer?.cancel()
             driverCountdownTimer = null
             activeDialog = null
-            ContextCompat.startForegroundService(requireContext(),
-                AapService.commandIntent(requireContext(), AapService.ACTION_NATIVE_AA_CANCEL_POKE))
+            notifyNativePrompt(AapService.ACTION_NATIVE_AA_CANCEL_POKE, openedTicket)
         }
 
         val dialog = MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
@@ -2789,8 +2804,7 @@ class HomeFragment : Fragment() {
             if (!selectionResolved && ctx != null) {
                 // onPause dismisses the dialog, which reaches here and never onCancel. Without
                 // this the prompt flag stayed set and every phone was refused.
-                ContextCompat.startForegroundService(ctx,
-                    AapService.commandIntent(ctx, AapService.ACTION_NATIVE_AA_PROMPT_DISMISSED))
+                notifyNativePrompt(AapService.ACTION_NATIVE_AA_PROMPT_DISMISSED, openedTicket)
             }
         }
 
@@ -2855,8 +2869,7 @@ class HomeFragment : Fragment() {
             // destroyed fragment; the fragment that replaced this one opens its own selector.
             val ctx = context ?: return@setOnShowListener
             (activity as? MainActivity)?.dismissSplashImmediately()
-            ContextCompat.startForegroundService(ctx,
-                AapService.operationIntent(ctx, openedTicket).setAction(AapService.ACTION_NATIVE_AA_PROMPT_SHOWN))
+            notifyNativePrompt(AapService.ACTION_NATIVE_AA_PROMPT_SHOWN, openedTicket)
             if (autoCountdown && autoTargetMac != null) {
                 driverCountdownTimer?.start()
             }
@@ -2874,6 +2887,7 @@ class HomeFragment : Fragment() {
     /** [ticket]: the Stop ticket of the input that picked [mac] (a tap, or the countdown's opener). */
     private fun connectToNativeDevice(mac: String, name: String, connectedMacs: Collection<String>, explicit: Boolean,
         ticket: Long) {
+        if (!commManager.acceptsAppConnectionTicket(ticket)) return
         val reachable = NativeDriverSelectionPolicy.connectUiIsImmediate(mac, connectedMacs)
         AppLog.i("HomeFragment: Connecting to Native-AA device: $name ($mac), btConnected=$reachable")
         // Without a status text the indicator falls back to "Android Auto is starting", which is the
@@ -2969,7 +2983,7 @@ class HomeFragment : Fragment() {
     private fun showNearbyDeviceSelector() {
         // Ensure NearbyManager discovery is running via AapService
         ContextCompat.startForegroundService(requireContext(),
-            AapService.commandIntent(requireContext(), AapService.ACTION_START_WIRELESS_SCAN))
+            AapService.operationIntent(requireContext(), App.provide(requireContext()).commManager.appConnectionTicket()).setAction(AapService.ACTION_START_WIRELESS_SCAN))
 
         val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_nearby_selection, null)
         val deviceListView = dialogView.findViewById<ListView>(R.id.deviceList)
@@ -3040,7 +3054,7 @@ class HomeFragment : Fragment() {
                     statusText
                 )
 
-                val intent = AapService.commandIntent(requireContext(), AapService.ACTION_NEARBY_CONNECT).apply {
+                val intent = AapService.operationIntent(requireContext(), App.provide(requireContext()).commManager.appConnectionTicket()).setAction(AapService.ACTION_NEARBY_CONNECT).apply {
                     putExtra(AapService.EXTRA_ENDPOINT_ID, endpoint.id)
                 }
                 ContextCompat.startForegroundService(requireContext(), intent)
@@ -3073,12 +3087,11 @@ class HomeFragment : Fragment() {
         private const val STATE_PENDING_WIDGET_PAGE = "home_pending_widget_page"
         private const val STATE_PENDING_SELF_VPN = "home_pending_self_vpn"
         private const val STATE_PENDING_SELF_TICKET = "home_pending_self_ticket"
+        private const val STATE_PENDING_BT_PICKER = "home_pending_bt_picker"
         private const val UNAVAILABLE_FAVORITE_ALPHA = 0.45f
         private var hasAutoStarted = false
         private var hasCheckedNativeDriverSelection = false
-        /** A Self launch an input handed to the next home's automatic start: that input's ticket. */
-        @Volatile var forceSelfModeTicket: Long? = null
-        var requestDriverSelection = false
+        var pendingDriverSelectionTicket: Long? = null
         private const val MINUTE_MS = 60_000L
         private const val CLOCK_SLACK_MS = 250L
         private const val SPEED_INTERVAL_MS = 1_000L

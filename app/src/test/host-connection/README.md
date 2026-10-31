@@ -1,6 +1,8 @@
 # Connection lifecycle regressions
 
 Run `python3 app/src/test/host-connection/run.py` after populating Gradle's Kotlin dependencies.
+An offline cache is supported with `GRADLE_USER_HOME=/path/to/gradle-cache`; every
+sub-harness uses the compiler/runtime jars recorded in `build/host-connection/toolchain.json`.
 The runner extracts production lifecycle methods and uses JVM queues and latches to exercise
 cancellation, ownership publication, full worker termination and USB open/close races.
 Android framework and I/O endpoints are test doubles; no device is needed.
@@ -168,3 +170,77 @@ mirrors with a blocking Reader. Read/parse may outlive cancellation but has no w
 current-operation validation, apply, mirror synchronization and completion run in one Main turn.
 Save/reset and view destruction invalidate older UI operations without relying on cancellable
 join chains. Final preferences, mirror state and Stop effects are checked after blocked reads return.
+
+
+## Effect entry authority
+
+The authority belongs to the accepted input. `ConnectionOperation(ticket, save)` carries the
+original Stop epoch and, when applicable, the exact settings Save until admission. Its arguments
+are required. Wireless arming, discovery generations, native children, service relays, explicit
+Stop issuance and connection end effects must not read a newer epoch when their queued work runs.
+Native children retain the immutable operation supplied to their constructor. A genuine external
+socket accept captures its receipt ticket once; a delayed handoff preserves that receipt.
+Refreshing an already armed Native route carries a separate, required command operation through
+credential reads, radio callbacks, listener reopening and queued module wakes. That command keeps
+its original Save; it does not replace the arm's lifetime authority or borrow a later command.
+
+A published `Attempt` contains its original `ConnectionRequest`. Service and projection observers
+capture `TransportStart` before launching handshake/read work. The first effect validates the
+captured attempt, physical connection, request, ticket and USB recheck/recovery owner. Completion
+may settle only that same live transport. An entered handshake's failure still retires its own
+connection when a competing request took the claim but never published a replacement. Stop and
+replacement continue to reject stale work. A USB outcome carries its original recheck into recovery.
+
+Shared cleanup uses exact objects. USB switch guards stake, release and record a switch by claim
+identity; duplicate old cleanup cannot change a later guard. Each USB driver's open reserves a
+local owner, checks admission before open/interface/native effects, and publishes only while that
+owner is current. SDK calls and retirement waits run outside lifecycle/state monitors. Disconnect
+joins an already-entered open's local cleanup before the next connection can open; a revoked late
+handle is closed without claiming its interface. The locked attach path uses its existing bare
+claim and does not initialize `App`, `CommManager` or credential-protected settings.
+An old arbiter preempt cancels only the USB job whose request owns the losing claim. Wireless
+stops require the existing cleanup owner captured before a hop and compare it atomically with
+detaching the resources. Shared start reservations and native group owners prevent rejected or
+late candidates from closing a successor's server or clearing its radio metadata.
+
+Each WiFi wait owns its callback, timer and operation. Completion validates identity and authority
+atomically before changing the active wait, and disposes only the captured wait. Settings import
+validates connection authority before committing its prepared preferences; a commit that already
+happened still updates its view, while later wireless start/stop and Stop effects retain the original
+ticket. A forced Self decision is consumed directly once. It leaves no static Home handoff, and
+VPN consent retains the exact pending decision so cancellation or an older result cannot replay it.
+
+Authoritative shared-state decisions run under the lifecycle lock, then producer admission and
+arbiter locks in that order. Checks are effect admissions, not a promise to retract a blocking
+platform call that has already entered. SDK I/O and captured-resource cleanup run outside those
+monitors. A late completion may close its own resource but cannot clear a successor's owner.
+
+The full runner includes these behavioural suites:
+
+- `service-ui-effects.py`: all three picker dismiss paths, import completion, wireless command
+  and Stop effects, WiFi callback/timeout ownership, service bootstrap and one-shot Self/VPN consent.
+- `wireless-authority.py`: Native's hotspot-teardown wait and each TCP probe (5277 and 5289),
+  including cancellation before the first probe, between ports and before callback delivery.
+- `wireless-entries.py`: actual Native listener entries, WPP bind, shared resource publication
+  and cleanup ownership.
+- `native-commands.py`: retained Native listener/reopen and SoftAP refresh commands keep Save,
+  and a queued HFP worker checks its original arm before the initial protocol write.
+- `direct-command.py`: Direct refresh/create/read/watchdog continuations keep the original Save
+  command, and an old group's cleanup leaves its successor's metadata intact.
+- `usb-effects.py`: queued handshake/read work, replacement requests, USB switch guard cleanup,
+  StandardUsb permission/open boundaries and actual AOA switch/reset effect entries. Its
+  `--libusb` mode compiles the full Libusb driver against JNI doubles. Both drivers exercise
+  cancellation while the late local handle is still closing, before another open may begin.
+- `usb-preemption.py`: a delayed arbiter preempt cannot cancel a replacement request's job.
+- `native-carrier-effects.py`: full ZBT, BLINK and ZJ carrier/opening implementations, including
+  permission/process/socket boundaries, reopen and the original Save on a queued wake.
+- `EffectEntryFixture.kt`: stale end effects, same-epoch Save cancellation, exact session/claim
+  cleanup and physical Stop ownership, exercised against the extracted manager.
+
+The focused scripts accept a source-tree path. After running the existing host runner for
+both trees, the same focused script can test each tree; test-only baseline adapters supply changed
+parameter plumbing without adding the missing production guards. They record full compile/run
+commands, extracted-source hashes and machine-readable scenario results. A baseline scenario must
+fail from an observed unwanted effect, not from a compilation error. Normal and successor-owner
+controls stay enabled. Android/JVM Gradle, APK, native firmware and actual task/permission behaviour
+still require the SDK/NDK/device environment; these host checks do not substitute for those runs.

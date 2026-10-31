@@ -1,11 +1,13 @@
 package com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.blink
 
+import com.andrerinas.openheadunit.connection.ConnectionAdmission
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.ExternalModuleCarrier
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.HandshakeLink
 import com.andrerinas.openheadunit.utils.AppLog
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -35,14 +37,15 @@ class BlinkAaCarrier(
     private val isFinishedForSession: () -> Boolean,
     private val mayServeHandshake: () -> Boolean,
     private val onPhoneEvidence: () -> Unit,
+    private val admission: ConnectionAdmission,
     /** Called with the reason whenever it changes, and with null once the port is open again. */
     private val onRefusalChanged: (BlinkRefusal?) -> Unit = {},
     /** Whether the stock client is out of the way, read without root before every pass. */
     private val stockClient: () -> StockCarLink.State = { StockCarLink.State.UNKNOWN },
     private val openDirect: (onLine: (String) -> Unit, onEnded: (String) -> Unit) -> BlinkAutoSerialChannel =
-        { onLine, onEnded -> BlinkAutoSerialChannel.openDirect(onLine, onEnded) },
+        { onLine, onEnded -> BlinkAutoSerialChannel.openDirect(onLine, onEnded, admission) },
     private val openRoot: (onLine: (String) -> Unit, onEnded: (String) -> Unit) -> BlinkAutoSerialChannel =
-        { onLine, onEnded -> BlinkAutoSerialChannel.open(onLine, onEnded) },
+        { onLine, onEnded -> BlinkAutoSerialChannel.open(onLine, onEnded, admission) },
     private val now: () -> Long = { System.currentTimeMillis() },
 ) : ExternalModuleCarrier {
 
@@ -80,13 +83,14 @@ class BlinkAaCarrier(
 
     suspend fun run() {
         carrierJob = currentCoroutineContext()[Job]
-        while (keepRunning()) {
+        while (effectCurrent()) {
             val ended = AtomicReference<String?>(null)
             val opened = openChannel { why -> ended.set(why) } ?: continue
+            if (!effectCurrent()) { opened.close(); break }
             channel = opened
             var announced = false
             try {
-                while (keepRunning() && !opened.isFinished) {
+                while (effectCurrent() && !opened.isFinished) {
                     if (!announced && opened.portOpened) {
                         announced = true
                         markOpen()
@@ -107,7 +111,7 @@ class BlinkAaCarrier(
                 current?.close()
                 current = null
                 opened.close()
-                channel = null
+                if (channel === opened) channel = null
             }
             if (!keepRunning()) break
             if (opened.portOpened) {
@@ -132,6 +136,7 @@ class BlinkAaCarrier(
      * @return the channel, or null after waiting out a refusal
      */
     private suspend fun openChannel(onEnded: (String) -> Unit): BlinkAutoSerialChannel? {
+        if (!effectCurrent()) return null
         if (directStuck) {
             refuse(BlinkRefusal.BRIDGE_FAILED, "a no-root channel did not exit earlier")
             return null
@@ -153,6 +158,9 @@ class BlinkAaCarrier(
             AppLog.i("NativeAA: [BLINK] stock client state $stock; using the root bridge, which checks it.")
         }
         lastStockState = stock
+        // Package-manager observation and no-root open/retirement can both wait. Carry the
+        // constructor's original arm all the way to the next shell effect.
+        if (!effectCurrent()) return null
         return try {
             openRoot(::onLine, onEnded)
         } catch (e: Exception) {
@@ -173,6 +181,7 @@ class BlinkAaCarrier(
      * @return the open channel, or null to fall back to root
      */
     private suspend fun openDirectly(onEnded: (String) -> Unit): BlinkAutoSerialChannel? {
+        if (!effectCurrent()) return null
         val ended = AtomicReference<String?>(null)
         val direct = try {
             openDirect(::onLine) { why -> ended.set(why); onEnded(why) }
@@ -180,29 +189,42 @@ class BlinkAaCarrier(
             noteDirectFailure("could not run sh: ${e.message}")
             return null
         }
-        var waited = 0L
-        while (!direct.portOpened && !direct.isFinished && waited < DIRECT_OPEN_TIMEOUT_MS) {
-            delay(POLL_MS)
-            waited += POLL_MS
+        var transferred = false
+        var retired = false
+        try {
+            var waited = 0L
+            while (effectCurrent() && !direct.portOpened && !direct.isFinished && waited < DIRECT_OPEN_TIMEOUT_MS) {
+                delay(POLL_MS)
+                waited += POLL_MS
+            }
+            if (effectCurrent() && direct.portOpened && !direct.isFinished) {
+                AppLog.i("NativeAA: [BLINK] opened ${BlinkAutoSerialChannel.PORT} without root.")
+                directFailure = null
+                transferred = true
+                return direct
+            }
+            val why = if (direct.isFinished) "${ended.get() ?: "the channel ended"}, exit ${direct.exitCode}"
+                else "no answer within ${DIRECT_OPEN_TIMEOUT_MS} ms"
+            // Before root opens the port, this shell must be gone and its trap run: otherwise its
+            // reader could take the phone's lines, or its mode restore undo the root bridge's raw mode.
+            val exitedCleanly = withContext(NonCancellable + Dispatchers.IO) {
+                direct.closeAndAwait(DIRECT_CLOSE_TIMEOUT_MS)
+            }
+            retired = true
+            if (!exitedCleanly) {
+                // Its reader may still be on the port, where neither another try nor root can help.
+                directStuck = true
+                refuse(BlinkRefusal.BRIDGE_FAILED, "$why; the no-root channel did not exit when asked, restart the unit")
+                throw DirectChannelStuck()
+            }
+            noteDirectFailure(why)
+            return null
+        } finally {
+            // Cancellation while waiting for the first port acknowledgement still owns this shell.
+            if (!transferred && !retired) withContext(NonCancellable + Dispatchers.IO) {
+                direct.closeAndAwait(DIRECT_CLOSE_TIMEOUT_MS)
+            }
         }
-        if (direct.portOpened && !direct.isFinished) {
-            AppLog.i("NativeAA: [BLINK] opened ${BlinkAutoSerialChannel.PORT} without root.")
-            directFailure = null
-            return direct
-        }
-        val why = if (direct.isFinished) "${ended.get() ?: "the channel ended"}, exit ${direct.exitCode}"
-            else "no answer within ${DIRECT_OPEN_TIMEOUT_MS} ms"
-        // Before root opens the port, this shell must be gone and its trap run: otherwise its
-        // reader could take the phone's lines, or its mode restore undo the root bridge's raw mode.
-        val exitedCleanly = withContext(Dispatchers.IO) { direct.closeAndAwait(DIRECT_CLOSE_TIMEOUT_MS) }
-        if (!exitedCleanly) {
-            // Its reader may still be on the port, where neither another try nor root can help.
-            directStuck = true
-            refuse(BlinkRefusal.BRIDGE_FAILED, "$why; the no-root channel did not exit when asked, restart the unit")
-            throw DirectChannelStuck()
-        }
-        noteDirectFailure(why)
-        return null
     }
 
     /** The no-root shell would not exit, so root is not tried this pass. */
@@ -235,6 +257,7 @@ class BlinkAaCarrier(
     }
 
     private suspend fun serveOnce(open: BlinkAutoSerialChannel) {
+        if (!effectCurrent()) return
         attempts++
         val stream = BlinkAutoSerialChannel.FrameStream(open::sendFrame)
         current = stream
@@ -257,6 +280,7 @@ class BlinkAaCarrier(
 
     /** Reader thread. Routes a line; never blocks on the handshake. */
     private fun onLine(line: String) {
+        if (!admission.run {}) return
         when (val event = BlinkAutoLine.parse(line)) {
             is BlinkAutoLine.Event.PhoneLinked -> {
                 phoneAddress = event.address
@@ -298,7 +322,8 @@ class BlinkAaCarrier(
      * nothing is sent. Called on every credential delivery and resume, so the hint is logged once
      * per arming.
      */
-    override fun requestWake(userAsked: Boolean) {
+    override fun requestWake(userAsked: Boolean, admission: ConnectionAdmission) {
+        if (!this.admission.run {} || !admission.run {}) return
         if (wakeHintLogged) return
         wakeHintLogged = true
         AppLog.i(
@@ -316,6 +341,8 @@ class BlinkAaCarrier(
     /** Unlike the ZBT carrier, a finished session does not end this: the pings still need answers. */
     private fun keepRunning(): Boolean =
         !stopped && isRunning() && carrierJob?.isActive != false
+
+    private fun effectCurrent(): Boolean = keepRunning() && admission.run {}
 }
 
 /** One handshake over the BLINK bridge. */

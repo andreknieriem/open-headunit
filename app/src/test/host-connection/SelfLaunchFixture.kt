@@ -78,6 +78,7 @@ object ConnectionArbiter {
 }
 // The extracted attempt can hold an owed USB scan; nothing here asks the bus.
 class UsbRecheck
+class ConnectionOperation(val ticket: Long, val save: CommManager.ConnectionState.Disconnected?)
 class CommManager {
     val attemptUserRequested = false
     private var stopEpoch = 0L
@@ -211,6 +212,8 @@ class CommManager {
     // LIVE_LOOPBACK
     // REACHED_SSL
     // DISCONNECT
+    // DISCONNECT_OPERATION
+    // IS_CURRENT_OPERATION
     private fun doDisconnect(sendByeBye: Boolean = true, byeByeReason: ByeByeReason = ByeByeReason.USER_SELECTION,
                              reason: DisconnectReason = DisconnectReason.CONNECTION_ENDED) { teardown() }
     // The X action gates on teardown; production joins the disconnect job.
@@ -226,7 +229,7 @@ class CommManager {
         synchronized(transportLifecycleLock) {
             // publishRequest: the valid request becomes this attempt; its record stays.
             val request = validRequest()
-            val token = Attempt()
+            val token = Attempt(request ?: ConnectionRequest(stopEpoch, ConnectionArbiter.Claim(), null, null, null))
             beginAttempt(token)
             physicalConnectionReached = false
             disconnectRequested = false
@@ -247,10 +250,10 @@ class CommManager {
     // startHandshake's failure: its Error and the disconnect that follows, in one lock section.
     fun failHandshake() = synchronized(transportLifecycleLock) {
         _connectionState.value = ConnectionState.Error("Handshake failed")
-        disconnect(sendByeBye = false, isUserExit = false)
+        disconnectCurrent(sendByeBye = false, isUserExit = false)
     }
     fun end(reason: DisconnectReason = DisconnectReason.CONNECTION_ENDED): ConnectionState.Disconnected {
-        disconnect(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false, reason = reason)
+        disconnectCurrent(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false, reason = reason)
         return checkNotNull(_connectionState.value as? ConnectionState.Disconnected)
     }
     // connectUsb's refused-permission diagnostic, under its admission rule; run.py runs the real one.
@@ -284,7 +287,7 @@ class SelfLauncherManager(private val service: Service, private val wifiLauncher
     private var launchMark: CommManager.LaunchMark? = null
     private var launchTimeoutJob: Job? = null
     private var settingsLaunchOwner: CommManager.ConnectionState.Disconnected? = null
-    private fun installedPath(service: Service) = if (service.modern) SelfLaunchPath.HEADUNIT_SERVER else SelfLaunchPath.LEGACY
+    companion object { fun installedPath(service: Service) = if (service.modern) SelfLaunchPath.HEADUNIT_SERVER else SelfLaunchPath.LEGACY }
     private val VPN_TIMEOUT_MS = 120_000L
     // ADOPT_VPN
     fun stopDummyVpnWatchdog() { selfModeVpnWatchdog?.cancel(); selfModeVpnWatchdog = null }
@@ -340,6 +343,7 @@ object App { fun provide(service: Service) = service }
 object AppLog { fun i(s: String) {}; fun w(s: String) {}; fun w(s: String, e: Throwable) {}; fun w(tag: String, s: String) {}; fun e(s: String) {} }
 object VpnControl {
     fun isVpnAvailable() = true
+    fun consentIntent(service: Service): Intent? = null
     fun isPrepared(service: Service) = service.vpnPrepared
     fun startVpn(service: Service, excludeSelf: Boolean) {
         service.vpnExcludeSelfRequests.add(excludeSelf)
@@ -367,21 +371,28 @@ object ContextCompat {
 object Toast { const val LENGTH_LONG = 1 }
 object ToastUtils { fun showToast(service: Service, message: String, length: Int) { service.toasts++ } }
 /** The home's automatic start; [view] stands for whether a home view is up when MainActivity acts. */
-object HomeFragment { var forceSelfModeTicket: Long? = null; var view: Any? = null }
+object HomeFragment { var view: Any? = null }
 class Fragments { val fragments: List<Any> = listOf(HomeFragment) }
 class NavHost { val childFragmentManager = Fragments() }
 class SupportFragments { fun findFragmentById(id: Int): NavHost? = NavHost() }
 object R { object id { const val main_content = 3 } }
 class Main(private val service: Service) {
+    private class ForcedSelfConsent(val ticket: Long, var cancelled: Boolean = false)
+    private var pendingForcedSelf: ForcedSelfConsent? = null
+    private var queuedForcedSelfTicket: Long? = null
+    private val forcedSelfVpnPermission = object { fun launch(intent: Intent) {} }
+    private fun getSystemService(name: String): Any = service.network
     private val supportFragmentManager = SupportFragments()
     // The request is the input: its ticket is read here, as MainActivity's callers do.
     fun requestSelf() = forceSelfModeLaunch(service.commManager.appConnectionTicket())
     // MAIN_COMMAND
+    // MAIN_DISPATCH
+    // MAIN_CANCEL_PENDING_SELF
 }
 class Home(private val service: Service) {
     private val commManager get() = service.commManager
     private fun requireContext() = service
-    // A manual Home launch captures its ticket at input, as startSelfMode's default does.
+    // A manual Home launch captures its ticket at input, as the click handler does.
     fun requestSelf(needsVpn: Boolean) = startSelfModeInternal(needsVpn, commManager.appConnectionTicket())
     // HOME_COMMAND
 }
@@ -397,9 +408,9 @@ class WifiLauncherManager {
     var listenerStarts = 0
     var stops = 0
     val sharedServices get() = this
-    fun startWirelessServer(launcher: Any) { listenerStarts++ }
-    fun stopForUser() { stops++ }
-    fun stop() { stops++ }
+    fun startWirelessServer(launcher: Any, operation: ConnectionOperation) { listenerStarts++ }
+    fun stopForUser(owner: Any) { if (isCleanupCurrent(owner)) stops++ }
+    fun stop(owner: Any) { if (isCleanupCurrent(owner)) stops++ }
 }
 class UsbLauncherManager { var projectionHandshakeFailures = 0; fun onHandshakeFailed() {}; fun isSwitchingToProjection() = false; fun stopForUser() {} }
 enum class ConnectionStage { IDLE, USB_ATTACHED, USB_SWITCHING }
@@ -443,7 +454,7 @@ class Service(private var hasEverConnected: Boolean = true, val commManager: Com
         val superseded = commManager.connectionState.value !== state
         // VPN_RELEASE
         if (state.isSettingsRestart) return
-        applySelfEndPolicy(state)
+        applySelfEndPolicy(state, wifiLauncherManager.cleanupTicket())
         if (!state.wasLoopbackSession) ordinaryDisconnects++
     }
     private fun emitSessionState(state: Int, reason: Int = 0) {}
@@ -503,6 +514,7 @@ class Service(private var hasEverConnected: Boolean = true, val commManager: Com
         }
     }
     fun cancelAction(intent: Intent? = null): Int {
+        val operationTicket = commManager.appConnectionTicket()
         when (ACTION_CANCEL_WIRELESS) {
             // CANCEL_ACTION
         }
@@ -535,7 +547,7 @@ fun main() {
     for (stop in listOf(false, true)) for (pause in listOf("MAIN", "IO", "NETWORK")) Service().use { s ->
         s.modern = pause != "NETWORK"
         s.useRealDirect = true
-        s.manager.start()
+        s.manager.start(ticket = s.commManager.appConnectionTicket())
         if (pause != "MAIN") s.main.drain()
         if (stop) s.commManager.stopApp()
         s.commManager.openApp()
@@ -550,7 +562,7 @@ fun main() {
         if (stop) {
             // New explicit Self input still works after the rejected old launch completes.
             s.modern = true
-            s.manager.start(); s.main.drain(); s.io.drain(); s.main.drain()
+            s.manager.start(ticket = s.commManager.appConnectionTicket()); s.main.drain(); s.io.drain(); s.main.drain()
             check(s.commManager.socketConnects == 1)
         }
     }
@@ -625,7 +637,7 @@ fun main() {
     for (stop in listOf(false, true)) Service().use { s ->
         s.modern = true
         s.useRealDirect = true
-        s.manager.start()
+        s.manager.start(ticket = s.commManager.appConnectionTicket())
         s.main.drain(); s.io.drain(); s.main.drain()
         check(s.commManager.isConnected && s.commManager.socketConnects == 1)
         s.manager.onConnectionEstablished()
@@ -644,7 +656,7 @@ fun main() {
     for (stop in listOf(false, true)) Service().use { s ->
         s.modern = true
         s.useRealDirect = true
-        s.manager.start()
+        s.manager.start(ticket = s.commManager.appConnectionTicket())
         val original = checkNotNull(s.manager.currentLaunch())
         s.main.drain()
         s.io.drain() // Connect publishes Connected; the launcher's Main resume stays queued.
@@ -664,15 +676,15 @@ fun main() {
     for (newer in listOf(false, true)) Service().use { s ->
         s.modern = true
         s.useRealDirect = true
-        s.manager.start()
+        s.manager.start(ticket = s.commManager.appConnectionTicket())
         s.main.drain(); s.io.drain(); s.main.drain()
         val completed = checkNotNull(s.manager.currentLaunch())
         check(s.commManager.isConnected && !s.manager.inFlight() && s.manager.isActive)
         val ended = s.commManager.end()
         check(!s.manager.isActive) { "an ended loopback session left Self mode behind" }
-        if (newer) { s.modern = false; s.manager.start() }
+        if (newer) { s.modern = false; s.manager.start(ticket = s.commManager.appConnectionTicket()) }
         val current = s.manager.currentLaunch()
-        s.applySelfEndPolicy(ended)
+        s.applySelfEndPolicy(ended, s.wifiLauncherManager.cleanupTicket())
         if (newer) {
             check(s.manager.currentLaunch() === current && checkNotNull(current).isActive && s.manager.isLaunchPending) {
                 "the ended session's policy retired a launch accepted after it"
@@ -684,7 +696,11 @@ fun main() {
         }
     }
     Service().use { s ->
-        Main(s).requestSelf(); s.deliverHomeCommand(); s.main.drain()
+        // The forced input is online; it becomes offline before the service starts. The later
+        // Home requirement must still merge into this exact pending launch, without a new one.
+        s.network.activeNetwork = Any()
+        Main(s).requestSelf(); s.network.activeNetwork = null
+        s.deliverHomeCommand(); s.main.drain()
         val originalJob = s.manager.currentLaunch()
         check(s.manager.inFlight() && s.wifiLauncherManager.listenerStarts == 1)
         check(s.vpnCommands.isEmpty() && s.activities == 0)
@@ -722,7 +738,7 @@ fun main() {
     }
     Service().use { s ->
         s.dummyVpnOwner = DummyVpnPolicy.Owner.SESSION
-        s.manager.start()
+        s.manager.start(ticket = s.commManager.appConnectionTicket())
         // Old terminal cleanup may already have preserved this newly accepted Self launch.
         // Cancelling before its queued body runs must still release the transferred VPN.
         check(s.dummyVpnOwner == DummyVpnPolicy.Owner.SELF_MODE)
@@ -736,7 +752,7 @@ fun main() {
         s.modern = true
         s.vpnPrepared = prepared
         s.dummyVpnOwner = DummyVpnPolicy.Owner.SESSION
-        s.manager.start()
+        s.manager.start(ticket = s.commManager.appConnectionTicket())
         s.main.drain()
         check(s.dummyVpnOwner == DummyVpnPolicy.Owner.SELF_MODE)
         check(s.vpnExcludeSelfRequests == if (prepared) listOf(false) else emptyList<Boolean>())
@@ -750,7 +766,7 @@ fun main() {
     for (modern in listOf(true, false)) for (state in listOf("loopback-ended", "unchanged", "unconnected-terminal")) Service().use { s ->
         s.modern = modern
         s.network.activeNetwork = Any()
-        s.manager.start()
+        s.manager.start(ticket = s.commManager.appConnectionTicket())
         s.main.drain(); s.io.drain(); s.main.drain()
         check(s.manager.isActive && !s.manager.inFlight() && s.commManager.reports == 0) {
             "launch not waiting for its deadline (modern=$modern active=${s.manager.isActive} inFlight=${s.manager.inFlight()} reports=${s.commManager.reports})"
@@ -783,7 +799,7 @@ fun main() {
         s.modern = modern
         s.network.activeNetwork = Any()
         if (observer) { s.startObserver(); s.main.drain() }
-        s.manager.start()
+        s.manager.start(ticket = s.commManager.appConnectionTicket())
         s.main.drain(); s.io.drain(); s.main.drain()
         val failed = arrival.startsWith("connecting-failed")
         s.commManager.beforeReport = {
@@ -829,7 +845,7 @@ fun main() {
     for (modern in listOf(true, false)) Service().use { s ->
         s.modern = modern
         s.network.activeNetwork = Any()
-        s.manager.start()
+        s.manager.start(ticket = s.commManager.appConnectionTicket())
         s.main.drain(); s.io.drain(); s.main.drain()
         s.commManager.publishAttempt(); s.commManager.register(loopback = true) // A forms.
         s.main.advanceBy(legacyDeadline); s.main.drain() // The deadline now waits on A.
@@ -849,7 +865,7 @@ fun main() {
     for (modern in listOf(true, false)) for (outcome in listOf("fails", "arrives")) Service().use { s ->
         s.modern = modern
         s.network.activeNetwork = Any()
-        s.manager.start()
+        s.manager.start(ticket = s.commManager.appConnectionTicket())
         s.main.drain(); s.io.drain(); s.main.drain()
         s.commManager.publishAttempt(); s.commManager.register(loopback = true)
         s.main.advanceBy(legacyDeadline); s.main.drain() // The deadline now waits on that attempt.
@@ -879,7 +895,7 @@ fun main() {
         s.modern = true
         s.useRealDirect = true
         s.commManager.publishAttempt(); s.commManager.register(loopback = outcome != "other-arrives")
-        s.manager.start()
+        s.manager.start(ticket = s.commManager.appConnectionTicket())
         s.settle()
         check(s.commManager.joins == 1 && s.commManager.socketConnects == 0) { "the dial did not join the forming attempt ($outcome)" }
         check(s.toasts == 0 && s.settingsPrompts == 0 && s.commManager.reports == 0) {
@@ -910,7 +926,7 @@ fun main() {
         s.modern = true
         s.useRealDirect = true
         s.commManager.serverRunning = false
-        s.manager.start()
+        s.manager.start(ticket = s.commManager.appConnectionTicket())
         s.settle()
         s.main.advanceBy(legacyDeadline); s.settle()
         check(s.commManager.socketConnects == 1 && s.commManager.joins == 0)
@@ -919,7 +935,7 @@ fun main() {
         }
         check(!s.manager.isLaunchPending && !s.manager.isActive)
         s.commManager.serverRunning = true
-        s.manager.start()
+        s.manager.start(ticket = s.commManager.appConnectionTicket())
         s.settle()
         check(s.commManager.socketConnects == 2 && s.manager.isActive && s.commManager.isConnected)
         check(s.toasts == 1 && s.settingsPrompts == 1 && s.commManager.reports == 1) { "a reached server showed guidance" }
@@ -934,7 +950,7 @@ fun main() {
         val c = s.commManager
         c.serverRunning = false
         c.claimUsbRequest()
-        s.manager.start()
+        s.manager.start(ticket = s.commManager.appConnectionTicket())
         s.settle()
         s.main.advanceBy(legacyDeadline); s.settle()
         check(c.joins == 0 && c.socketConnects == 1) {
@@ -956,7 +972,7 @@ fun main() {
         c.arrive(loopback = false); c.end()
         c.claimRequest("127.0.0.1:5277")
         if (outcome == "published-first") c.publishAttempt()
-        s.manager.start()
+        s.manager.start(ticket = s.commManager.appConnectionTicket())
         s.settle()
         check(c.joins == 1 && c.socketConnects == 0) { "the dial did not join the claimed request ($outcome)" }
         check(s.toasts == 0 && s.settingsPrompts == 0 && c.reports == 0) {
@@ -993,7 +1009,7 @@ fun main() {
         } else {
             c.claimRequest("127.0.0.1:5277", save = s.save())
         }
-        s.manager.start()
+        s.manager.start(ticket = s.commManager.appConnectionTicket())
         s.settle()
         s.main.advanceBy(legacyDeadline); s.settle()
         check(c.joins == 0 && c.socketConnects == 1) {
@@ -1013,7 +1029,7 @@ fun main() {
         val c = s.commManager
         c.arrive(loopback = false); c.end()
         c.claimRequest("127.0.0.1:5277")
-        s.manager.start()
+        s.manager.start(ticket = s.commManager.appConnectionTicket())
         s.settle()
         check(c.joins == 1 && s.manager.isLaunchPending && s.toasts == 0) { "the dial did not wait on the joined request" }
         c.loseClaim()
@@ -1028,7 +1044,7 @@ fun main() {
     for (modern in listOf(true, false)) Service().use { s ->
         s.modern = modern
         s.network.activeNetwork = Any()
-        s.manager.start()
+        s.manager.start(ticket = s.commManager.appConnectionTicket())
         s.main.drain(); s.io.drain(); s.main.drain()
         check(s.dummyVpnOwner == DummyVpnPolicy.Owner.SELF_MODE)
         s.commManager.arrive(loopback = true); s.commManager.end(); s.commManager.refusedUsb()
@@ -1049,7 +1065,7 @@ fun main() {
         s.modern = modern
         s.network.activeNetwork = Any()
         if (order != "terminal-unobserved") { s.startObserver(); s.main.drain() }
-        s.manager.start()
+        s.manager.start(ticket = s.commManager.appConnectionTicket())
         s.main.drain(); s.io.drain(); s.main.drain()
         when (order) {
             "live-observed" -> {
@@ -1092,7 +1108,7 @@ fun main() {
         s.modern = modern
         s.network.activeNetwork = Any()
         s.startObserver(); s.main.drain()
-        s.manager.start()
+        s.manager.start(ticket = s.commManager.appConnectionTicket())
         s.main.drain(); s.io.drain(); s.main.drain()
         s.commManager.arrive(loopback = true)
         s.main.drain()
@@ -1119,7 +1135,7 @@ fun main() {
         s.modern = modern
         s.network.activeNetwork = Any()
         s.startObserver(); s.main.drain()
-        s.manager.start()
+        s.manager.start(ticket = s.commManager.appConnectionTicket())
         s.main.drain(); s.io.drain(); s.main.drain()
         s.commManager.arrive(loopback = true); s.commManager.end(); s.commManager.refusedUsb() // A ends hidden.
         s.commManager.finishTeardown() // ...and teardown repeats its terminal behind the Error.
@@ -1159,7 +1175,7 @@ fun main() {
         s.modern = modern
         s.commManager.arrive(loopback = true); s.commManager.end(); s.commManager.refusedUsb()
         s.network.activeNetwork = Any()
-        s.manager.start() // B, accepted in the Error.
+        s.manager.start(ticket = s.commManager.appConnectionTicket()) // B, accepted in the Error.
         s.main.drain(); s.io.drain(); s.main.drain()
         s.commManager.finishTeardown()
         val repeated = s.commManager.connectionState.value as CommManager.ConnectionState.Disconnected
@@ -1177,9 +1193,9 @@ fun main() {
         s.startObserver(); s.main.drain()
         s.commManager.arrive(loopback = true); s.main.drain()
         s.commManager.end(); s.commManager.refusedUsb(); s.main.drain()
-        if (beforeRepeat) s.manager.start(needsDummyVpn = true)
+        if (beforeRepeat) s.manager.start(needsDummyVpn = true, ticket = s.commManager.appConnectionTicket())
         s.commManager.finishTeardown(); s.main.drain() // A's repeated terminal reaches the observer.
-        if (!beforeRepeat) s.manager.start(needsDummyVpn = true)
+        if (!beforeRepeat) s.manager.start(needsDummyVpn = true, ticket = s.commManager.appConnectionTicket())
         val launch = checkNotNull(s.manager.currentLaunch())
         s.deliverVpn()
         s.main.drain()
@@ -1196,7 +1212,7 @@ fun main() {
     Service().use { s ->
         s.modern = true
         s.dummyVpnOwner = DummyVpnPolicy.Owner.SESSION
-        s.manager.start()
+        s.manager.start(ticket = s.commManager.appConnectionTicket())
         s.main.drain()
         s.stopDummyVpn(DummyVpnPolicy.Reason.SELF_MODE_SESSION_LIVE)
         check(s.dummyVpnOwner == null && s.vpnReleases == 1)
@@ -1241,7 +1257,7 @@ fun main() {
             saved = s.commManager.end(CommManager.DisconnectReason.SETTINGS_RESTART)
         }
         if (beforeReturn) s.directLaunchHook = { arriveAndSave() }
-        s.manager.start()
+        s.manager.start(ticket = s.commManager.appConnectionTicket())
         s.main.drain()
         if (!beforeReturn) {
             s.main.advanceBy(8_000); s.main.drain()
@@ -1260,7 +1276,7 @@ fun main() {
     // A different route winning a manual Self launch must retire Self's audio policy too.
     Service().use { s ->
         s.modern = true
-        s.manager.start(); s.main.drain()
+        s.manager.start(ticket = s.commManager.appConnectionTicket()); s.main.drain()
         s.commManager.arrive(loopback = false)
         s.manager.onConnectionEstablished(); s.main.drain()
         check(!s.manager.isActive && s.manager.currentLaunch() == null && s.vpnStops == 0)
@@ -1320,7 +1336,7 @@ fun main() {
     for (modern in listOf(false, true)) Service().use { s ->
         s.modern = modern
         val saved = s.save()
-        s.manager.start(saved)
+        s.manager.start(saved, ticket = s.commManager.appConnectionTicket())
         val job = checkNotNull(s.manager.currentLaunch())
         s.cancelAction()
         s.main.drain()
@@ -1331,7 +1347,7 @@ fun main() {
     }
     // Cancel while the actual legacy launcher is suspended in its network wait.
     Service().use { s ->
-        s.manager.start(s.save())
+        s.manager.start(s.save(), ticket = s.commManager.appConnectionTicket())
         s.main.drain()
         check(s.wifiLauncherManager.listenerStarts == 1 && s.activities == 0)
         val job = checkNotNull(s.manager.currentLaunch())
@@ -1343,7 +1359,7 @@ fun main() {
     // The actual legacy delay resumes after a different connection publishes its state.
     for (replacement in listOf("connecting", "connected")) {
         Service().use { s ->
-            s.manager.start(s.save())
+            s.manager.start(s.save(), ticket = s.commManager.appConnectionTicket())
             s.main.drain()
             check(s.wifiLauncherManager.listenerStarts == 1 && s.activities == 0)
             val old = checkNotNull(s.manager.currentLaunch())
@@ -1361,7 +1377,7 @@ fun main() {
     }
     // An old ownership-loss cleanup queued on Main must not clear a replacement Self launch.
     Service().use { s ->
-        s.manager.start(s.save())
+        s.manager.start(s.save(), ticket = s.commManager.appConnectionTicket())
         s.main.drain()
         s.commManager.publishAttempt()
         s.network.activeNetwork = Any()
@@ -1369,7 +1385,7 @@ fun main() {
         check(s.main.runOne()) // Legacy guard cancels old Job; its completion cleanup is still queued.
         s.manager.stop(wasConnected = true)
         s.commManager.end()
-        s.manager.start()
+        s.manager.start(ticket = s.commManager.appConnectionTicket())
         val replacement = checkNotNull(s.manager.currentLaunch())
         s.main.drain()
         check(s.manager.currentLaunch() === replacement && replacement.isActive && s.manager.isActive)
@@ -1378,7 +1394,7 @@ fun main() {
     // Permission can already be revoked when a queued start finally runs.
     Service().use { s ->
         val saved = s.save()
-        s.manager.start(saved)
+        s.manager.start(saved, ticket = s.commManager.appConnectionTicket())
         s.commManager.arrive(loopback = false)
         s.main.drain()
         check(s.activities == 0 && s.wifiLauncherManager.listenerStarts == 0)
@@ -1387,7 +1403,7 @@ fun main() {
     // A successfully sent legacy intent keeps its timeout bound to Save cancellation.
     Service().use { s ->
         s.network.activeNetwork = Any()
-        s.manager.start(s.save())
+        s.manager.start(s.save(), ticket = s.commManager.appConnectionTicket())
         s.main.drain()
         check(s.activities == 1 && !s.manager.inFlight())
         val job = checkNotNull(s.manager.currentLaunch())
@@ -1401,7 +1417,7 @@ fun main() {
     for (replacement in listOf("connecting", "connected")) {
         Service().use { s ->
             s.network.activeNetwork = Any()
-            s.manager.start(s.save())
+            s.manager.start(s.save(), ticket = s.commManager.appConnectionTicket())
             s.main.drain()
             check(s.activities == 1)
             val old = checkNotNull(s.manager.currentLaunch())
@@ -1420,7 +1436,7 @@ fun main() {
     // A successful loopback connection keeps Self session state when Save's deadline ends.
     Service().use { s ->
         s.network.activeNetwork = Any()
-        s.manager.start(s.save())
+        s.manager.start(s.save(), ticket = s.commManager.appConnectionTicket())
         s.main.drain()
         s.commManager.arrive(loopback = true)
         s.main.advanceBy(legacyDeadline)
@@ -1431,7 +1447,7 @@ fun main() {
     // The service's Connected callback retires the old Save before an early new disconnect.
     for (loopback in listOf(false, true)) Service().use { s ->
         s.network.activeNetwork = Any()
-        s.manager.start(s.save())
+        s.manager.start(s.save(), ticket = s.commManager.appConnectionTicket())
         s.main.drain()
         s.commManager.arrive(loopback)
         s.manager.onConnectionEstablished()
@@ -1453,7 +1469,7 @@ fun main() {
         CommManager.ConnectionState.HandshakeComplete, CommManager.ConnectionState.TransportStarted)) {
         for (loopback in listOf(false, true)) Service().use { s ->
             s.network.activeNetwork = Any()
-            s.manager.start(s.save())
+            s.manager.start(s.save(), ticket = s.commManager.appConnectionTicket())
             s.main.drain()
             s.startObserver()
             s.main.drain()
@@ -1477,7 +1493,7 @@ fun main() {
     // not an arrival, and Save's own check, not that notification, decides its launch.
     Service().use { s ->
         s.network.activeNetwork = Any()
-        s.manager.start(s.save())
+        s.manager.start(s.save(), ticket = s.commManager.appConnectionTicket())
         s.main.drain()
         val job = checkNotNull(s.manager.currentLaunch())
         s.commManager.publishAttempt()
@@ -1488,7 +1504,7 @@ fun main() {
     // must not change which session's end policy is selected after socket cleanup.
     for (deadlineFirst in listOf(false, true)) for (loopback in listOf(false, true)) Service().use { s ->
         s.network.activeNetwork = Any()
-        s.manager.start(s.save())
+        s.manager.start(s.save(), ticket = s.commManager.appConnectionTicket())
         s.main.drain()
         s.startObserver()
         s.main.drain()
@@ -1511,7 +1527,7 @@ fun main() {
     // the retired terminal. A manual IP connection does not create a new Self launch Job.
     for (liveObserved in listOf(false, true)) Service().use { s ->
         s.network.activeNetwork = Any()
-        s.manager.start(s.save())
+        s.manager.start(s.save(), ticket = s.commManager.appConnectionTicket())
         s.main.drain()
         s.startObserver()
         s.main.drain()
@@ -1533,13 +1549,13 @@ fun main() {
     // Explicit stop consumes pending launch; a new manual launch owns its own pending state.
     for (manual in listOf(false, true)) Service().use { s ->
         s.network.activeNetwork = Any()
-        s.manager.start(s.save())
+        s.manager.start(s.save(), ticket = s.commManager.appConnectionTicket())
         s.main.drain()
         s.main.advanceBy(legacyDeadline)
         s.commManager.publishAttempt(); s.commManager.register(loopback = !manual)
         s.commManager.end()
         check(s.main.runOne())
-        if (manual) s.manager.start() else s.manager.stop(wasConnected = true)
+        if (manual) s.manager.start(ticket = s.commManager.appConnectionTicket()) else s.manager.stop(wasConnected = true)
         val replacement = s.manager.currentLaunch()
         s.main.drain()
         check(s.manager.isActive == manual && s.manager.currentLaunch() === replacement)
@@ -1550,7 +1566,7 @@ fun main() {
     // retired route for its own end policy.
     for (cancelled in listOf(false, true)) for (loopback in listOf(false, true)) Service().use { s ->
         val saved = s.save()
-        s.manager.start(saved)
+        s.manager.start(saved, ticket = s.commManager.appConnectionTicket())
         s.commManager.publishAttempt(); s.commManager.register(loopback)
         val ended = s.commManager.end()
         if (cancelled) saved.cancelSettingsRestart()
@@ -1567,28 +1583,28 @@ fun main() {
         val old = s.commManager.end()
         s.commManager.finishTeardown()
         val current = s.save()
-        if (manual) s.manager.start() else s.manager.start(current)
+        if (manual) s.manager.start(ticket = s.commManager.appConnectionTicket()) else s.manager.start(current, ticket = s.commManager.appConnectionTicket())
         val job = checkNotNull(s.manager.currentLaunch())
-        s.applySelfEndPolicy(old)
+        s.applySelfEndPolicy(old, s.wifiLauncherManager.cleanupTicket())
         check(s.manager.currentLaunch() === job && job.isActive && s.manager.isActive && s.wifiLauncherManager.stops == 0)
     }
     // A second Save after an unobserved loopback session keeps the legacy relaunch route: Save's
     // terminal carries it, whatever any observer saw.
     Service().use { s ->
         s.network.activeNetwork = Any()
-        s.manager.start(s.save())
+        s.manager.start(s.save(), ticket = s.commManager.appConnectionTicket())
         s.main.drain()
         s.commManager.arrive(loopback = true)
         val next = s.commManager.end(CommManager.DisconnectReason.SETTINGS_RESTART)
         check(next.isSettingsRestart && next.wasLoopbackSession && next.acceptsSettingsRestart(s.commManager.connectionState.value))
-        s.manager.start(next)
+        s.manager.start(next, ticket = s.commManager.appConnectionTicket())
         s.main.drain()
         check(s.manager.isActive && s.manager.isLaunchPending && s.activities == 2)
     }
     // A genuinely unanswered current Save still runs the existing failure UI at its deadline.
     Service().use { s ->
         s.network.activeNetwork = Any()
-        s.manager.start(s.save())
+        s.manager.start(s.save(), ticket = s.commManager.appConnectionTicket())
         s.main.drain()
         s.main.advanceBy(legacyDeadline)
         s.main.drain()
@@ -1596,11 +1612,11 @@ fun main() {
     }
     // Completion of an old cancelled launch must not retire a new manual launch.
     Service().use { s ->
-        s.manager.start(s.save())
+        s.manager.start(s.save(), ticket = s.commManager.appConnectionTicket())
         val old = checkNotNull(s.manager.currentLaunch())
         s.manager.stop()
         s.network.activeNetwork = Any()
-        s.manager.start()
+        s.manager.start(ticket = s.commManager.appConnectionTicket())
         val replacement = checkNotNull(s.manager.currentLaunch())
         s.main.drain()
         check(old.isCancelled && replacement.isActive)
@@ -1617,13 +1633,13 @@ fun main() {
         job.start()
         s.main.drain()
         check(job.isCancelled && !entered)
-        s.manager.start(saved)
+        s.manager.start(saved, ticket = s.commManager.appConnectionTicket())
         check(s.manager.currentLaunch() == null && !s.manager.isActive)
     }
     // Actual Self start publishes its cleanup ownership before the queued launcher runs.
     Service().use { s ->
         val old = s.wifiLauncherManager.cleanupTicket()
-        s.manager.start()
+        s.manager.start(ticket = s.commManager.appConnectionTicket())
         check(!s.wifiLauncherManager.isCleanupCurrent(old))
     }
     // The actual service X action must not stop a same-instance re-arm after its await.
@@ -1653,15 +1669,15 @@ fun main() {
     // Execute the production service Self-end branch, not a flag-only test double.
     for (physical in listOf(false, true)) Service().use { s ->
         s.commManager.publishAttempt(); s.commManager.register(loopback = true)
-        s.manager.start(); s.main.drain()
+        s.manager.start(ticket = s.commManager.appConnectionTicket()); s.main.drain()
         val first = checkNotNull(s.manager.currentLaunch())
         if (physical) s.commManager.reachConnection()
         val ended = s.commManager.end()
-        s.applySelfEndPolicy(ended)
+        s.applySelfEndPolicy(ended, s.wifiLauncherManager.cleanupTicket())
         check(first.isCancelled == physical)
         check(s.wifiLauncherManager.stops == 0) { "in-flight wireless decision changed" }
         if (physical) {
-            s.manager.start(); s.main.drain()
+            s.manager.start(ticket = s.commManager.appConnectionTicket()); s.main.drain()
             s.network.activeNetwork = Any()
             s.main.advanceBy(100); s.main.drain()
             check(s.activities == 1) { "retired Self launch ran alongside its replacement" }

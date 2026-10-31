@@ -35,7 +35,7 @@ class ZbtChannelOpeningTest {
     }
 
     @Test fun `close before attach prevents connect and init`() {
-        val opening = ZbtChannelOpening()
+        val opening = ZbtChannelOpening { true }
         val socket = FakeSocket()
         opening.close()
         expectCancelled { ZbtByteChannel.open(opening = opening, socketFactory = { socket }) }
@@ -47,7 +47,7 @@ class ZbtChannelOpeningTest {
     @Test fun `close while connect is blocked reaches the unpublished socket`() {
         val entered = CountDownLatch(1)
         val release = CountDownLatch(1)
-        val opening = ZbtChannelOpening()
+        val opening = ZbtChannelOpening { true }
         val error = AtomicReference<Throwable>()
         val socket = FakeSocket(
             connected = { entered.countDown(); check(release.await(2, TimeUnit.SECONDS)) },
@@ -67,7 +67,7 @@ class ZbtChannelOpeningTest {
     }
 
     @Test fun `close after connect but before init leaves no initial frame`() {
-        val opening = ZbtChannelOpening()
+        val opening = ZbtChannelOpening { true }
         val socket = FakeSocket(beforeInit = { opening.close() })
         expectCancelled { ZbtByteChannel.open(opening = opening, socketFactory = { socket }) }
         assertEquals(1, socket.connects)
@@ -86,7 +86,7 @@ class ZbtChannelOpeningTest {
 
     @Test fun `normal open retains exactly one Android Auto init`() {
         val socket = FakeSocket()
-        val channel = ZbtByteChannel.open(socketFactory = { socket })
+        val channel = ZbtByteChannel.open(opening = ZbtChannelOpening { true }, socketFactory = { socket })
         try {
             val bytes = (socket.output as ByteArrayOutputStream).toByteArray()
             assertArrayEquals(
@@ -99,7 +99,7 @@ class ZbtChannelOpeningTest {
     }
 
     @Test fun `already admitted write may finish during cancellation`() {
-        val opening = ZbtChannelOpening()
+        val opening = ZbtChannelOpening { true }
         val bytes = ByteArrayOutputStream()
         val sink = object : OutputStream() {
             override fun write(b: Int) = bytes.write(b)
@@ -113,7 +113,7 @@ class ZbtChannelOpeningTest {
     }
 
     @Test fun `channel close and a cancelled opening both close the socket through the adapter`() {
-        val opening = ZbtChannelOpening()
+        val opening = ZbtChannelOpening { true }
         val socket = FakeSocket()
         val channel = ZbtByteChannel.open(opening = opening, socketFactory = { socket })
         channel.close()

@@ -276,26 +276,42 @@ class UsbLauncherManager(val service: AapService) {
         ConnectionStageTracker.clear()
     }
 
-    // Dialogs outlive their coroutine. Retain both Save and the original Stop boundary.
+    /**
+     * A permission dialog the launcher raised outlives its coroutine. It keeps its Save and the
+     * owed scan it asks for, under a token its PendingIntent carries back: the reply continues
+     * exactly that scan, and never mints a new one.
+     */
     internal data class PermissionAttempt(
+        val deviceName: String,
         val settingsRestart: CommManager.ConnectionState.Disconnected?,
-        val ticket: Long,
+        val recheck: UsbRecheck,
     )
     private val permissionOwners = java.util.concurrent.ConcurrentHashMap<String, PermissionAttempt>()
 
-    internal fun takePermissionAttempt(device: UsbDevice, ticket: Long): PermissionAttempt {
-        val owner = permissionOwners[device.deviceName]
-        return if (owner != null && owner.ticket == ticket &&
-            permissionOwners.remove(device.deviceName, owner)) owner
-        else PermissionAttempt(pendingSettingsRestart(), ticket)
+    /**
+     * The scan a permission reply continues. A reply carrying a launcher [token] continues exactly
+     * that request's scan, or nothing once that request is gone. A reply without one answers a
+     * request raised outside the launcher (the attach screen, the USB list, the home screen): that
+     * grant is a new input, so it is a new scan with its own ticket.
+     */
+    internal fun takePermissionAttempt(device: UsbDevice, ticket: Long, token: String?): PermissionAttempt? {
+        if (token == null) {
+            val commManager = App.provide(service).commManager
+            return PermissionAttempt(device.deviceName, pendingSettingsRestart(), commManager.usbRecheck(ticket))
+        }
+        val owner = permissionOwners.remove(token) ?: return null
+        return owner.takeIf { it.deviceName == device.deviceName && it.recheck.ticket == ticket }
     }
 
     private fun requestPermission(device: UsbDevice, settingsRestart: CommManager.ConnectionState.Disconnected?,
-        ticket: Long) {
-        if (!App.provide(service).commManager.acceptsAppConnectionTicket(ticket)) return
+        recheck: UsbRecheck) {
+        if (!App.provide(service).commManager.isCurrent(recheck)) return
         val usbManager = UsbDeviceCompat.usbManager(service) ?: return
-        val permissionIntent = UsbReceiver.createPermissionPendingIntent(service, ticket)
-        permissionOwners[device.deviceName] = PermissionAttempt(settingsRestart, ticket)
+        val token = java.util.UUID.randomUUID().toString()
+        // A newer request for this device supersedes one still waiting for its reply.
+        permissionOwners.entries.removeAll { it.value.deviceName == device.deviceName }
+        permissionOwners[token] = PermissionAttempt(device.deviceName, settingsRestart, recheck)
+        val permissionIntent = UsbReceiver.createPermissionPendingIntent(service, recheck.ticket, token)
 
         AppLog.i("Requesting USB permission for ${UsbDeviceCompat(device).uniqueName}")
         ConnectionStageTracker.report(ConnectionStage.USB_SWITCHING)
@@ -811,7 +827,7 @@ class UsbLauncherManager(val service: AapService) {
                         return
                     } else {
                         AppLog.i("Found known USB device but no permission: ${deviceCompat.uniqueName}, requesting...")
-                        requestPermission(device, settingsRestart, scan.ticket)
+                        requestPermission(device, settingsRestart, scan)
                         return
                     }
                 }
@@ -947,7 +963,7 @@ class UsbLauncherManager(val service: AapService) {
             }
         } else {
             AppLog.i("Single USB auto-connect: device found but no permission, requesting...")
-            requestPermission(device, settingsRestart, recheck.ticket)
+            requestPermission(device, settingsRestart, recheck)
         }
     }
 
@@ -979,7 +995,7 @@ class UsbLauncherManager(val service: AapService) {
         }
 
         AppLog.i("Accessory-mode device has no permission (re-enumerated); requesting permission: $deviceName")
-        requestPermission(device, request.save, request.ticket)
+        requestPermission(device, request.save, checkNotNull(request.recheck))
         return false
     }
 
@@ -1025,8 +1041,8 @@ class UsbLauncherManager(val service: AapService) {
                     !commManager.isValid(request)) return
                 fresh
             }
-            commManager.connect(currentDevice, request)
-            success = commManager.connectionState.value is CommManager.ConnectionState.Connected
+            // This request's own arrival, not the shared state: SSL may already have moved it on.
+            success = commManager.connect(currentDevice, request)
             retryCount++
         }
     }

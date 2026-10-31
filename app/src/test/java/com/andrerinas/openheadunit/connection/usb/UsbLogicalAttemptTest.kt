@@ -12,6 +12,7 @@ import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.Settings
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import org.junit.Assert.*
 import org.junit.Test
 import org.mockito.Mockito.*
@@ -362,6 +363,55 @@ class UsbLogicalAttemptTest {
             val state = f.states.value
             assertTrue("a replaced USB request's retry opened the device again (opens=$opens)",
                 opens == 2 && state is CommManager.ConnectionState.Connected)
+        }
+    }
+
+    // The USB request's open succeeds and publishes Connected; before its producer returns, SSL
+    // has already moved the shared state on (the observer starts the handshake). The request
+    // reached its connection: it must not retry, reopen and close its own working connection.
+    // The control leaves the state at Connected.
+    @Test fun aConnectedUsbRequestDoesNotRetryWhenSslAdvancedTheState() {
+        for (advanced in listOf("ssl-started", "handshake-complete", "none")) fixture { f ->
+            val ssl = CoroutineScope(Dispatchers.Unconfined).launch {
+                f.states.first { it is CommManager.ConnectionState.Connected }
+                when (advanced) {
+                    "ssl-started" -> f.states.value = CommManager.ConnectionState.StartingTransport
+                    "handshake-complete" -> f.states.value = CommManager.ConnectionState.HandshakeComplete
+                }
+            }
+            try {
+                f.permissionReply(f.comm.appConnectionTicket())
+                f.connect()
+                f.queue.advance(1500)
+                f.connect()
+                // Recorded after every production frame has returned.
+                val opens = f.opens
+                val closes = f.closes()
+                assertTrue("a USB request reopened its own connection after SSL advanced the state (advanced=$advanced opens=$opens closes=$closes)",
+                    opens == 1 && closes == 0)
+            } finally { ssl.cancel() }
+        }
+    }
+
+    // A permission reply's USB request is admitted for its scan and waits for its first IO entry.
+    // A user Exit (the service stays) withdraws that scan meanwhile: the request must not open the
+    // device. The control, with no exit, connects.
+    @Test fun aUserExitWithdrawsAUsbRequestWaitingForItsFirstIoEntry() {
+        for (exit in listOf(true, false)) fixture { f ->
+            f.permissionReply(f.comm.appConnectionTicket())
+            val jobA = checkNotNull(f.launcher.attemptJob)
+            val resumeA = checkNotNull(f.io.take()) { "A did not reach its first IO entry" }
+            if (exit) {
+                // The real user-exit disconnect, as the home screen's Exit issues it.
+                doCallRealMethod().`when`(f.comm).disconnect(any(), any(), any(), any(), any(), anyOrNull())
+                f.comm.disconnect(sendByeBye = false, isUserExit = true, honorKillOnDisconnect = false)
+            }
+            resumeA.run()
+            f.connect(jobA)
+            // Recorded after every production frame has returned.
+            val opens = f.opens
+            if (exit) assertEquals("a USB request admitted before a user Exit still opened the device after it (opens=$opens)", 0, opens)
+            else assertTrue("the request did not connect (opens=$opens)", opens == 1 && f.states.value is CommManager.ConnectionState.Connected)
         }
     }
 }

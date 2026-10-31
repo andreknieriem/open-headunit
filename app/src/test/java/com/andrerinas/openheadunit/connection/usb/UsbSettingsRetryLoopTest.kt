@@ -63,7 +63,7 @@ class UsbSettingsRetryLoopTest {
                         }
                         states.value = CommManager.ConnectionState.Disconnected(
                             settingsRetryOwner = if (scenario == "unrelated") null else saved)
-                        Unit
+                        false // This try's own attempt never reached its connection.
                     }.`when`(comm).connect(candidate, request)
                 }
                 UsbLauncherManager(service).connectWithRetry(device, request)

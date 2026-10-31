@@ -13,7 +13,10 @@ import com.andrerinas.openheadunit.aap.AapService
 import com.andrerinas.openheadunit.connection.CommManager.ConnectionState
 import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy.Owner
 import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy.Tier
+import com.andrerinas.openheadunit.connection.usb.UsbAccessoryMode
+import com.andrerinas.openheadunit.connection.usb.UsbLauncherListener
 import com.andrerinas.openheadunit.connection.usb.UsbLauncherManager
+import com.andrerinas.openheadunit.connection.usb.UsbReceiver
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.Settings
 import kotlinx.coroutines.CoroutineDispatcher
@@ -25,9 +28,11 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.mockito.Mockito.CALLS_REAL_METHODS
+import org.mockito.Mockito.any
 import org.mockito.Mockito.anyInt
 import org.mockito.Mockito.anyString
 import org.mockito.Mockito.mock
+import org.mockito.Mockito.mockConstruction
 import org.mockito.Mockito.mockStatic
 import org.mockito.Mockito.mockingDetails
 import org.mockito.Mockito.`when`
@@ -45,13 +50,19 @@ class UsbRecheckAuthorityTest {
         override fun dispatch(context: CoroutineContext, block: Runnable) { tasks.addLast(block) }
     }
 
-    private class Harness(state: ConnectionState) {
+    /**
+     * [normalMode]: the attached phone is in normal mode (an ADB interface) and has no permission
+     * yet, so an auto-start scan raises the launcher's permission dialog instead of switching.
+     */
+    private class Harness(state: ConnectionState, normalMode: Boolean = false) {
         val actions: ConnectionArbiter.Actions = mock(ConnectionArbiter.Actions::class.java)
         val manager: CommManager = mock(CommManager::class.java, CALLS_REAL_METHODS).withAppExitDispatcherForTest()
         val states = MutableStateFlow(state)
         private val teardown = Queued()
-        private val service = mock(AapService::class.java)
+        val service: AapService = mock(AapService::class.java)
         private val usb = mock(UsbManager::class.java)
+        val device: UsbDevice = mock(UsbDevice::class.java)
+        @Volatile var permitted = !normalMode
         val launcher: UsbLauncherManager
 
         init {
@@ -59,6 +70,8 @@ class UsbRecheckAuthorityTest {
                 .apply { isAccessible = true }.set(manager, value)
             val settings = mock(Settings::class.java)
             `when`(settings.allowedDevices).thenReturn(emptySet())
+            `when`(settings.autoStartOnUsb).thenReturn(true)
+            field("context", service)
             field("_connectionState", states)
             field("connectionState", states)
             field("usbRecoveryOwner", Any())
@@ -76,17 +89,22 @@ class UsbRecheckAuthorityTest {
             `when`(service.packageManager).thenReturn(mock(android.content.pm.PackageManager::class.java))
             `when`(service.getSharedPreferences(anyString(), anyInt()))
                 .thenReturn(mock(android.content.SharedPreferences::class.java))
-            // One attached phone already in accessory mode, with permission.
-            val device = mock(UsbDevice::class.java)
+            `when`(service.getString(anyInt())).thenReturn("")
+            // One attached phone: in accessory mode with permission, or in normal mode without.
             val path = "/dev/bus/usb/001/002"
             `when`(device.deviceName).thenReturn(path)
             `when`(device.vendorId).thenReturn(0x18d1)
-            `when`(device.productId).thenReturn(0x2d00)
+            `when`(device.productId).thenReturn(if (normalMode) 0x4ee7 else 0x2d00)
             val iface = mock(UsbInterface::class.java)
             val input = mock(UsbEndpoint::class.java)
             val output = mock(UsbEndpoint::class.java)
             `when`(device.interfaceCount).thenReturn(1)
             `when`(device.getInterface(0)).thenReturn(iface)
+            if (normalMode) {
+                `when`(iface.interfaceClass).thenReturn(0xFF)
+                `when`(iface.interfaceSubclass).thenReturn(0x42)
+                `when`(iface.interfaceProtocol).thenReturn(0x01)
+            }
             `when`(iface.endpointCount).thenReturn(2)
             `when`(iface.getEndpoint(0)).thenReturn(input)
             `when`(iface.getEndpoint(1)).thenReturn(output)
@@ -95,7 +113,7 @@ class UsbRecheckAuthorityTest {
             `when`(input.type).thenReturn(UsbConstants.USB_ENDPOINT_XFER_BULK)
             `when`(output.type).thenReturn(UsbConstants.USB_ENDPOINT_XFER_BULK)
             `when`(usb.deviceList).thenReturn(hashMapOf(path to device))
-            `when`(usb.hasPermission(device)).thenReturn(true)
+            `when`(usb.hasPermission(device)).thenAnswer { permitted }
             launcher = UsbLauncherManager(service)
         }
 
@@ -125,7 +143,7 @@ class UsbRecheckAuthorityTest {
         fun usbAttemptStarted() = launcher.isSwitchingToProjection()
     }
 
-    private fun scenario(state: ConnectionState, body: (Harness) -> Unit) {
+    private fun scenario(state: ConnectionState, normalMode: Boolean = false, body: (Harness) -> Unit) {
         val savedLogger = AppLog.LOGGER
         val savedClock = ConnectionArbiter.clock
         val savedActions = ConnectionArbiter.actions
@@ -138,7 +156,7 @@ class UsbRecheckAuthorityTest {
             mockStatic(SystemClock::class.java).use {
             mockStatic(android.os.Looper::class.java).use {
             mockStatic(androidx.appcompat.app.AppCompatDelegate::class.java).use {
-                val h = Harness(state)
+                val h = Harness(state, normalMode)
                 ConnectionArbiter.actions = h.actions
                 body(h)
             }
@@ -215,6 +233,63 @@ class UsbRecheckAuthorityTest {
             val started = h.usbAttemptStarted()
             if (exit) assertFalse("a refused USB scan given back before a user Exit still started a USB attempt after it", started)
             else assertTrue("the delivered USB scan started no USB attempt", started)
+        }
+    }
+
+    // A USB check deferred behind attempt A is handed on when A ends. Delivered, it finds the phone
+    // in normal mode without permission and raises the launcher's permission dialog. A user exit
+    // then withdraws that scan: the late grant must not start the switch. Controls: with no exit
+    // the grant starts it; after Stop and Open (a new ticket) it starts nothing.
+    @Test fun aLatePermissionGrantNeverRevivesAWithdrawnUsbScan() {
+        for (end in listOf("exit", "none", "stop")) scenario(ConnectionState.Connecting, normalMode = true) { h ->
+            val dialogs = mutableListOf<android.net.Uri>()
+            mockStatic(android.net.Uri::class.java).use { uri ->
+            mockStatic(android.app.PendingIntent::class.java).use {
+            mockConstruction(android.content.Intent::class.java).use {
+            mockConstruction(UsbAccessoryMode::class.java).use { switches ->
+                // The reply address the dialog's PendingIntent carries, as the platform keeps it.
+                uri.`when`<android.net.Uri> { android.net.Uri.fromParts(anyString(), anyString(), any()) }.thenAnswer { call ->
+                    val reply = mock(android.net.Uri::class.java)
+                    `when`(reply.scheme).thenReturn(call.getArgument<String>(0))
+                    `when`(reply.schemeSpecificPart).thenReturn(call.getArgument<String>(1))
+                    `when`(reply.fragment).thenReturn(call.getArgument<String?>(2))
+                    dialogs += reply
+                    reply
+                }
+                val claim = checkNotNull(ConnectionArbiter.claim(Tier.WIRELESS_HANDSHAKE, Owner.WIRELESS_STACK, "A"))
+                h.liveAttempt(claim)
+                h.scan()
+                h.manager.disconnect(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
+                h.settle()
+                ConnectionArbiter.release(claim, sessionFormed = false)
+                val handed = h.usbGiveBacks()
+                assertEquals("A's end did not hand its deferred USB check on", 1, handed.size)
+                h.deliver(handed.single())
+                val dialog = checkNotNull(dialogs.singleOrNull()) { "the delivered USB check raised no permission dialog" }
+                when (end) {
+                    "exit" -> h.manager.disconnect(sendByeBye = false, isUserExit = true, honorKillOnDisconnect = false)
+                    "stop" -> { h.manager.requestExplicitAppExit(killProcess = false); h.manager.onAppRelaunched() }
+                }
+                // The user grants the dialog late.
+                h.permitted = true
+                val grant = mock(android.content.Intent::class.java)
+                `when`(grant.action).thenReturn(UsbReceiver.ACTION_USB_DEVICE_PERMISSION)
+                `when`(grant.data).thenReturn(dialog)
+                @Suppress("DEPRECATION")
+                `when`(grant.getParcelableExtra<UsbDevice>(UsbManager.EXTRA_DEVICE)).thenReturn(h.device)
+                `when`(grant.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)).thenReturn(true)
+                UsbReceiver(UsbLauncherListener(h.launcher)).onReceive(h.service, grant)
+                // Recorded after every production frame has returned.
+                val switched = switches.constructed().size
+                when (end) {
+                    "exit" -> assertEquals("a withdrawn USB scan's late permission grant still started the switch (end=$end switches=$switched)", 0, switched)
+                    "none" -> assertEquals("the granted USB scan did not start the switch (switches=$switched)", 1, switched)
+                    else -> assertEquals("a grant from before Stop started the switch (switches=$switched)", 0, switched)
+                }
+            }
+            }
+            }
+            }
         }
     }
 }

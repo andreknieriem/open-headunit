@@ -189,6 +189,8 @@ class CommManager {
     private val teardownQueue = QueuedMain()
     private val _scope = CoroutineScope(SupervisorJob() + teardownQueue)
     private fun withdrawUsbRechecks() {}
+    // The extracted request validity asks about an owed USB scan; Self requests carry none.
+    private fun recheckCurrent(recheck: UsbRecheck) = true
     private fun scheduleAppExit(userStop: Boolean) {}
     // ATTEMPT
     // IN_FLIGHT

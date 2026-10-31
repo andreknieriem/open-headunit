@@ -25,7 +25,8 @@ class UsbReceiver(private val mListener: Listener)          // USB Broadcast Rec
         fun onUsbDetach(device: UsbDevice)
         fun onUsbAttach(device: UsbDevice)
         fun onUsbAccessoryDetach()
-        fun onUsbPermission(granted: Boolean, connect: Boolean, device: UsbDevice, ticket: Long)
+        /** [token] is the launcher's own permission request, or null for one raised elsewhere. */
+        fun onUsbPermission(granted: Boolean, connect: Boolean, device: UsbDevice, ticket: Long, token: String?)
         fun onUsbRecoveryPermission(token: String, granted: Boolean, device: UsbDevice) {}
     }
 
@@ -60,9 +61,9 @@ class UsbReceiver(private val mListener: Listener)          // USB Broadcast Rec
                     // A late recovery reply must never become an ordinary connect request.
                     mListener.onUsbRecoveryPermission(recovery.schemeSpecificPart, permissionGranted, device)
                 } else {
-                    val ticket = intent.data?.takeIf { it.scheme == PERMISSION_SCHEME }
-                        ?.schemeSpecificPart?.toLongOrNull() ?: return
-                    mListener.onUsbPermission(permissionGranted, connect, device, ticket)
+                    val reply = intent.data?.takeIf { it.scheme == PERMISSION_SCHEME } ?: return
+                    val ticket = reply.schemeSpecificPart?.toLongOrNull() ?: return
+                    mListener.onUsbPermission(permissionGranted, connect, device, ticket, reply.fragment)
                 }
             }
         }
@@ -72,13 +73,16 @@ class UsbReceiver(private val mListener: Listener)          // USB Broadcast Rec
         const val ACTION_USB_DEVICE_PERMISSION = "com.andrerinas.openheadunit" + ".ACTION_USB_DEVICE_PERMISSION"
         const val EXTRA_CONNECT = "EXTRA_CONNECT"
 
-        /** A null ticket requests the grant only; its reply cannot start a connection. */
-        fun createPermissionPendingIntent(context: Context, ticket: Long?): PendingIntent {
+        /**
+         * A null ticket requests the grant only; its reply cannot start a connection. [token] names
+         * the launcher's own request, so its reply continues exactly that request's owed scan.
+         */
+        fun createPermissionPendingIntent(context: Context, ticket: Long?, token: String? = null): PendingIntent {
             return PendingIntent.getBroadcast(
                 context, 0,
                 Intent(ACTION_USB_DEVICE_PERMISSION).apply {
                     setPackage(context.packageName)
-                    if (ticket != null) data = Uri.fromParts(PERMISSION_SCHEME, ticket.toString(), null)
+                    if (ticket != null) data = Uri.fromParts(PERMISSION_SCHEME, ticket.toString(), token)
                 },
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE

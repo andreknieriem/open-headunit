@@ -236,37 +236,64 @@ class UsbRecheckAuthorityTest {
         }
     }
 
+    /**
+     * The platform's side of the launcher's permission dialogs: each dialog's PendingIntent, with
+     * the reply address set on the Intent it was built from, and a reply delivered to it through
+     * the real receiver and listener. Switches are counted at [UsbAccessoryMode] construction.
+     */
+    private class Dialogs(private val h: Harness, private val broadcasts: List<android.content.Intent>,
+        private val switchModes: org.mockito.MockedConstruction<UsbAccessoryMode>) {
+        /** The reply addresses of every dialog raised so far, oldest first. */
+        fun raised(): List<android.net.Uri> = broadcasts.map { intent ->
+            mockingDetails(intent).invocations.last { it.method.name == "setData" }.arguments[0] as android.net.Uri
+        }
+        fun answer(dialog: android.net.Uri, granted: Boolean) {
+            if (granted) h.permitted = true
+            val reply = mock(android.content.Intent::class.java)
+            `when`(reply.action).thenReturn(UsbReceiver.ACTION_USB_DEVICE_PERMISSION)
+            `when`(reply.data).thenReturn(dialog)
+            @Suppress("DEPRECATION")
+            `when`(reply.getParcelableExtra<UsbDevice>(UsbManager.EXTRA_DEVICE)).thenReturn(h.device)
+            `when`(reply.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)).thenReturn(granted)
+            UsbReceiver(UsbLauncherListener(h.launcher)).onReceive(h.service, reply)
+        }
+        fun switches() = switchModes.constructed().size
+    }
+
+    private fun withPermissionDialogs(h: Harness, body: (Dialogs) -> Unit) {
+        val broadcasts = mutableListOf<android.content.Intent>()
+        mockStatic(android.net.Uri::class.java).use { uri ->
+        mockStatic(android.app.PendingIntent::class.java).use { pending ->
+        mockConstruction(android.content.Intent::class.java).use {
+        mockConstruction(UsbAccessoryMode::class.java).use { switches ->
+            // A reply address keeps whatever the producer put in it, as the platform does.
+            uri.`when`<android.net.Uri> { android.net.Uri.fromParts(anyString(), anyString(), any()) }.thenAnswer { call ->
+                val reply = mock(android.net.Uri::class.java)
+                `when`(reply.scheme).thenReturn(call.getArgument<String>(0))
+                `when`(reply.schemeSpecificPart).thenReturn(call.getArgument<String>(1))
+                `when`(reply.fragment).thenReturn(call.getArgument<String?>(2))
+                reply
+            }
+            pending.`when`<android.app.PendingIntent> {
+                android.app.PendingIntent.getBroadcast(any(), anyInt(), any(), anyInt())
+            }.thenAnswer { call ->
+                broadcasts += call.getArgument<android.content.Intent>(2)
+                mock(android.app.PendingIntent::class.java)
+            }
+            body(Dialogs(h, broadcasts, switches))
+        }
+        }
+        }
+        }
+    }
+
     // A USB check deferred behind attempt A is handed on when A ends. Delivered, it finds the phone
     // in normal mode without permission and raises the launcher's permission dialog. A user exit
     // then withdraws that scan: the late grant must not start the switch. Controls: with no exit
     // the grant starts it; after Stop and Open (a new ticket) it starts nothing.
     @Test fun aLatePermissionGrantNeverRevivesAWithdrawnUsbScan() {
         for (end in listOf("exit", "none", "stop")) scenario(ConnectionState.Connecting, normalMode = true) { h ->
-            // Every permission dialog's PendingIntent, with the Intent it was built from.
-            val broadcasts = mutableListOf<android.content.Intent>()
-            mockStatic(android.net.Uri::class.java).use { uri ->
-            mockStatic(android.app.PendingIntent::class.java).use { pending ->
-            mockConstruction(android.content.Intent::class.java).use {
-            mockConstruction(UsbAccessoryMode::class.java).use { switches ->
-                // A reply address keeps whatever the producer put in it, as the platform does.
-                uri.`when`<android.net.Uri> { android.net.Uri.fromParts(anyString(), anyString(), any()) }.thenAnswer { call ->
-                    val reply = mock(android.net.Uri::class.java)
-                    `when`(reply.scheme).thenReturn(call.getArgument<String>(0))
-                    `when`(reply.schemeSpecificPart).thenReturn(call.getArgument<String>(1))
-                    `when`(reply.fragment).thenReturn(call.getArgument<String?>(2))
-                    reply
-                }
-                pending.`when`<android.app.PendingIntent> {
-                    android.app.PendingIntent.getBroadcast(any(), anyInt(), any(), anyInt())
-                }.thenAnswer { call ->
-                    broadcasts += call.getArgument<android.content.Intent>(2)
-                    mock(android.app.PendingIntent::class.java)
-                }
-                // The address the system delivers the grant to: the data set on the dialog's Intent.
-                fun dialogReply(): android.net.Uri? = broadcasts.singleOrNull()?.let { intent ->
-                    mockingDetails(intent).invocations.lastOrNull { it.method.name == "setData" }
-                        ?.arguments?.get(0) as android.net.Uri?
-                }
+            withPermissionDialogs(h) { dialogs ->
                 val claim = checkNotNull(ConnectionArbiter.claim(Tier.WIRELESS_HANDSHAKE, Owner.WIRELESS_STACK, "A"))
                 h.liveAttempt(claim)
                 h.scan()
@@ -276,30 +303,42 @@ class UsbRecheckAuthorityTest {
                 val handed = h.usbGiveBacks()
                 assertEquals("A's end did not hand its deferred USB check on", 1, handed.size)
                 h.deliver(handed.single())
-                val dialog = checkNotNull(dialogReply()) { "the delivered USB check raised no permission dialog" }
+                val dialog = checkNotNull(dialogs.raised().singleOrNull()) { "the delivered USB check raised no permission dialog" }
                 when (end) {
                     "exit" -> h.manager.disconnect(sendByeBye = false, isUserExit = true, honorKillOnDisconnect = false)
                     "stop" -> { h.manager.requestExplicitAppExit(killProcess = false); h.manager.onAppRelaunched() }
                 }
                 // The user grants the dialog late.
-                h.permitted = true
-                val grant = mock(android.content.Intent::class.java)
-                `when`(grant.action).thenReturn(UsbReceiver.ACTION_USB_DEVICE_PERMISSION)
-                `when`(grant.data).thenReturn(dialog)
-                @Suppress("DEPRECATION")
-                `when`(grant.getParcelableExtra<UsbDevice>(UsbManager.EXTRA_DEVICE)).thenReturn(h.device)
-                `when`(grant.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)).thenReturn(true)
-                UsbReceiver(UsbLauncherListener(h.launcher)).onReceive(h.service, grant)
+                dialogs.answer(dialog, granted = true)
                 // Recorded after every production frame has returned.
-                val switched = switches.constructed().size
+                val switched = dialogs.switches()
                 when (end) {
                     "exit" -> assertEquals("a withdrawn USB scan's late permission grant still started the switch (end=$end switches=$switched)", 0, switched)
                     "none" -> assertEquals("the granted USB scan did not start the switch (switches=$switched)", 1, switched)
                     else -> assertEquals("a grant from before Stop started the switch (switches=$switched)", 0, switched)
                 }
             }
-            }
-            }
+        }
+    }
+
+    // Two scans raise two stacked permission dialogs for the same phone before the user answers.
+    // The user dismisses the newer one and grants the older one: the older dialog continues its
+    // own scan and starts the switch. The control withdraws both scans with a user exit before the
+    // grant: the older dialog then starts nothing.
+    @Test fun theOlderOfTwoStackedPermissionDialogsContinuesItsOwnScan() {
+        for (exit in listOf(false, true)) scenario(ConnectionState.Disconnected(), normalMode = true) { h ->
+            withPermissionDialogs(h) { dialogs ->
+                h.scan()
+                h.scan()
+                val raised = dialogs.raised()
+                assertEquals("two scans did not raise two stacked dialogs", 2, raised.size)
+                if (exit) h.manager.disconnect(sendByeBye = false, isUserExit = true, honorKillOnDisconnect = false)
+                dialogs.answer(raised[1], granted = false)
+                dialogs.answer(raised[0], granted = true)
+                // Recorded after every production frame has returned.
+                val switched = dialogs.switches()
+                if (exit) assertEquals("a withdrawn scan's older dialog started the switch (switches=$switched)", 0, switched)
+                else assertEquals("a grant on the older of two stacked permission dialogs started nothing (switches=$switched)", 1, switched)
             }
         }
     }

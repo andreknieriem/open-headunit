@@ -1035,7 +1035,11 @@ class CommManager(
                 if (connectionAttempt === attempt && settingsUsbRestartInFlight === expectedState) settingsUsbRestartInFlight = null
                 val ended = connectionAttempt !== attempt || disconnectRequested
                 // A try that ended returns its request to unpublished: the next retry may publish.
-                if (ended && request.attempt === attempt) request.attempt = null
+                // Its now final validity decides at once whether the request leaves the slot.
+                if (ended && request.attempt === attempt) {
+                    request.attempt = null
+                    retireInvalidRequest()
+                }
                 ended || _connection !== conn
             }
             if (retired) conn?.disconnect()
@@ -1488,13 +1492,17 @@ class CommManager(
     }
 
     /**
-     * Under transportLifecycleLock, where Stop revokes a ticket, a Save is revoked or owed USB scans
-     * are withdrawn: an invalidated request stops being joinable and wakes its waiters now. A
-     * stopped or withdrawn request that never published also gives its claim back; its producer's
-     * [endRequest] later finds that claim already released.
+     * Under transportLifecycleLock, where Stop revokes a ticket, a Save is revoked, owed USB scans
+     * are withdrawn, or a USB try ends: an invalidated request stops being joinable and wakes its
+     * waiters now. A stopped or withdrawn request that never published also gives its claim back;
+     * its producer's [endRequest] later finds that claim already released. A USB request with an
+     * attempt published is left to that try's own end, which returns it to unpublished first (see
+     * [connectUsb]): retiring it there, briefly invalid, would only unslot it.
      */
     private fun retireInvalidRequest() {
-        val ended = connectionRequest?.takeUnless { it.isValid() } ?: return
+        val ended = connectionRequest?.takeUnless {
+            it.isValid() || (it.recheck != null && it.attempt != null)
+        } ?: return
         connectionRequest = null
         ended.resolved.complete(Unit)
         val withdrawn = ended.recheck?.let { !recheckCurrent(it) } == true
@@ -2295,8 +2303,10 @@ class CommManager(
     ): Unit = synchronized(transportLifecycleLock) {
         if (isUserExit || reason == DisconnectReason.SETTINGS_RESTART || reason == DisconnectReason.PROJECTION_UNRAISED) usbRecoveryOwner = Any()
         if (isUserExit && reason != DisconnectReason.SETTINGS_RESTART) {
-            cancelPendingSettingsRestart()
+            // Withdraw first: a Save request the cancellation invalidates then retires seeing its
+            // final validity, and releases its claim by identity.
             withdrawUsbRechecks()
+            cancelPendingSettingsRestart()
         }
         // The end holds automatic reconnection until something asks for it: no owed scan may ask.
         if (reason == DisconnectReason.PROJECTION_UNRAISED) withdrawUsbRechecks()

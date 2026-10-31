@@ -139,6 +139,26 @@ class SettingsRestartAdmissionTest {
         verifyNoInteractions(context)
     }
 
+    // A Save's USB request is admitted and waits to publish. The user exits (the service stays):
+    // the request leaves the slot and its claim is released at once, not when its producer
+    // notices a step later.
+    @Test fun `a user exit releases an unpublished USB Save request's claim at once`() = runBlocking {
+        val manager = mock(CommManager::class.java, CALLS_REAL_METHODS).withAppExitDispatcherForTest()
+        val saved = CommManager.ConnectionState.Disconnected(reason = CommManager.DisconnectReason.SETTINGS_RESTART,
+            settingsRestartUntilMs = Long.MAX_VALUE)
+        val flow = MutableStateFlow<CommManager.ConnectionState>(saved)
+        set(manager, "_connectionState", flow)
+        set(manager, "connectionState", flow)
+        set(manager, "usbRecoveryOwner", Any())
+        val request = checkNotNull(manager.admitUsbRequest(ConnectionPriorityPolicy.Tier.USB, "USB Save", saved,
+            manager.usbRecheck(manager.appConnectionTicket())))
+        assertTrue(ConnectionArbiter.holds(request.claim))
+        manager.disconnect(sendByeBye = false, isUserExit = true, honorKillOnDisconnect = false)
+        // Recorded after every production frame has returned.
+        val held = ConnectionArbiter.holds(request.claim)
+        assertFalse("a user exit left an unpublished USB Save request's claim held (held=$held)", held)
+    }
+
     @Test fun `USB Save checks permission again after retirement before publishing Connecting`() = runBlocking {
         val manager = mock(CommManager::class.java, CALLS_REAL_METHODS).withAppExitDispatcherForTest()
         val saved = CommManager.ConnectionState.Disconnected(reason = CommManager.DisconnectReason.SETTINGS_RESTART)

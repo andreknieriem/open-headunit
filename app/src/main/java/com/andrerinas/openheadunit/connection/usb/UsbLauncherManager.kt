@@ -279,7 +279,9 @@ class UsbLauncherManager(val service: AapService) {
     /**
      * A permission dialog the launcher raised outlives its coroutine. It keeps its Save and the
      * owed scan it asks for, under a token its PendingIntent carries back: the reply continues
-     * exactly that scan, and never mints a new one.
+     * exactly that scan, and never mints a new one. Dialogs stack, so every dialog keeps its own
+     * entry until its own reply; an entry whose scan was withdrawn answers nothing and is dropped
+     * when the next dialog is raised, so the map holds only dialogs that can still act.
      */
     internal data class PermissionAttempt(
         val deviceName: String,
@@ -305,11 +307,11 @@ class UsbLauncherManager(val service: AapService) {
 
     private fun requestPermission(device: UsbDevice, settingsRestart: CommManager.ConnectionState.Disconnected?,
         recheck: UsbRecheck) {
-        if (!App.provide(service).commManager.isCurrent(recheck)) return
+        val commManager = App.provide(service).commManager
+        if (!commManager.isCurrent(recheck)) return
         val usbManager = UsbDeviceCompat.usbManager(service) ?: return
         val token = java.util.UUID.randomUUID().toString()
-        // A newer request for this device supersedes one still waiting for its reply.
-        permissionOwners.entries.removeAll { it.value.deviceName == device.deviceName }
+        permissionOwners.entries.removeAll { !commManager.isCurrent(it.value.recheck) }
         permissionOwners[token] = PermissionAttempt(device.deviceName, settingsRestart, recheck)
         val permissionIntent = UsbReceiver.createPermissionPendingIntent(service, recheck.ticket, token)
 

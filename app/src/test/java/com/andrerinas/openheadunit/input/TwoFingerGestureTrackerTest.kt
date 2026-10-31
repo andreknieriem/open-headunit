@@ -64,4 +64,20 @@ class TwoFingerGestureTrackerTest {
         assertNull(tracker().move(610f, 300f, 810f, 350f))
         assertNull(tracker().move(190f, 300f, 390f, 350f))
     }
+
+    @Test fun aTouchInTheMiddleCannotBecomeAnEdgeSwipe() {
+        assertFalse(tracker().mayBecome(leftEdge = true, rightEdge = true, anywhere = false))
+        assertTrue(tracker().mayBecome(leftEdge = true, rightEdge = true, anywhere = true))
+    }
+
+    @Test fun aTouchAtAnEdgeMayBecomeOnlyThatEdgesSwipe() {
+        assertTrue(tracker(x1 = 20f, x2 = 60f).mayBecome(leftEdge = true, rightEdge = false, anywhere = false))
+        assertFalse(tracker(x1 = 20f, x2 = 60f).mayBecome(leftEdge = false, rightEdge = true, anywhere = false))
+        assertTrue(tracker(x1 = 1180f, x2 = 1140f).mayBecome(leftEdge = false, rightEdge = true, anywhere = false))
+        assertFalse(tracker(x1 = 1180f, x2 = 1140f).mayBecome(leftEdge = true, rightEdge = false, anywhere = false))
+    }
+
+    @Test fun noEnabledGestureMeansNothingIsWithheld() {
+        assertFalse(tracker(x1 = 20f, x2 = 60f).mayBecome(leftEdge = false, rightEdge = false, anywhere = false))
+    }
 }

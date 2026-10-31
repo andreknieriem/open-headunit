@@ -16,6 +16,10 @@ internal class TwoFingerGestureTracker(
     var canLongPress = true
         private set
 
+    /** Whether this touch can still turn into one of the enabled gestures; edge swipes start at an edge. */
+    fun mayBecome(leftEdge: Boolean, rightEdge: Boolean, anywhere: Boolean): Boolean =
+        anywhere || (leftEdge && firstX < EDGE) || (rightEdge && firstX > width - EDGE)
+
     fun move(x1: Float, y1: Float, x2: Float, y2: Float): Swipe? {
         val dx1 = x1 - firstX
         val dy1 = y1 - firstY
@@ -28,9 +32,13 @@ internal class TwoFingerGestureTracker(
         return when {
             dy1 > downSwipeDistance && dy2 > downSwipeDistance &&
                 abs(dx1) < dy1 / 2 && abs(dx2) < dy2 / 2 -> Swipe.DOWN
-            firstX < 100 && dx1 > 200 && abs(dy1) < 100 -> Swipe.LEFT_EDGE
-            firstX > width - 100 && dx1 < -200 && abs(dy1) < 100 -> Swipe.RIGHT_EDGE
+            firstX < EDGE && dx1 > 200 && abs(dy1) < 100 -> Swipe.LEFT_EDGE
+            firstX > width - EDGE && dx1 < -200 && abs(dy1) < 100 -> Swipe.RIGHT_EDGE
             else -> null
         }
+    }
+
+    private companion object {
+        const val EDGE = 100f
     }
 }

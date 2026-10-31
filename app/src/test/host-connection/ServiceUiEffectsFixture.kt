@@ -1,5 +1,7 @@
 package serviceeffects
 
+import android.content.Context as UsbStorageContext
+import com.andrerinas.openheadunit.connection.usb.UsbReceiver
 import kotlinx.coroutines.*
 import java.io.File
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -13,6 +15,8 @@ class Queue : CoroutineDispatcher() {
     fun drain() { while(true) (tasks.poll()?:return).run() }
 }
 class CommManager {
+    // The Android storage boundary comes from the main harness; Stop uses its real USB hold.
+    val context=UsbStorageContext()
     val policy=AppExitPolicy()
     val appExitPolicy get()=policy
     private val lock=Any()

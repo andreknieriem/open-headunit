@@ -63,8 +63,9 @@ object SettingsRestoreHandler {
         }
         context.sendBroadcast(Intent(AapService.ACTION_REQUEST_NIGHT_MODE_UPDATE).setPackage(context.packageName))
         if (SettingsBackupManager.requiresProjectionRestart(changedKeys) && App.provide(context).commManager.isConnected) {
-            // Stop is accepted only while the user's choice still holds its Stop ticket.
-            AapService.stopIntent(context, before.connectionTicket)?.let { stopServiceIntent ->
+            // Stop is accepted only while the user's choice still holds its Stop ticket. A restore
+            // retires the session; it is not a user Stop, so it sets no USB hold.
+            AapService.stopIntent(context, before.connectionTicket, holdUsb = false)?.let { stopServiceIntent ->
                 ToastUtils.showToast(context, context.getString(R.string.stopping_service), Toast.LENGTH_SHORT, force = true)
                 ContextCompat.startForegroundService(context, stopServiceIntent)
             }

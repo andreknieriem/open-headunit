@@ -1,6 +1,7 @@
 package com.andrerinas.openheadunit.aap
 
 import com.andrerinas.openheadunit.connection.CommManager
+import com.andrerinas.openheadunit.connection.withUsbInputPreferencesForTest
 import com.andrerinas.openheadunit.connection.CommManager.ConnectionState
 import com.andrerinas.openheadunit.utils.Settings
 import kotlinx.coroutines.*
@@ -29,6 +30,7 @@ class DuplicateDisconnectTest {
         val states = MutableStateFlow<ConnectionState>(ConnectionState.TransportStarted)
         val io = QueuedIo()
         val cleanupScope = CoroutineScope(SupervisorJob() + io)
+        field(manager, "context", mock(android.content.Context::class.java).withUsbInputPreferencesForTest())
         field(manager, "_connectionState", states)
         field(manager, "transportLifecycleLock", Any())
         field(manager, "_scope", cleanupScope)
@@ -61,7 +63,9 @@ class DuplicateDisconnectTest {
             quit.invoke(manager, mock(AapTransport::class.java), false)
             yield()
             manager.disconnectForLinkLoss(attempt, 0)
-            manager.disconnect(com.andrerinas.openheadunit.connection.ConnectionOperation(manager.appConnectionTicket(), null), honorKillOnDisconnect = false)
+            mockStatic(android.os.SystemClock::class.java).use {
+                manager.disconnect(com.andrerinas.openheadunit.connection.ConnectionOperation(manager.appConnectionTicket(), null), honorKillOnDisconnect = false)
+            }
             yield()
             assertSame(ended, states.value)
             assertEquals(1, callbacks)
@@ -76,6 +80,7 @@ class DuplicateDisconnectTest {
     @Test fun concurrentTerminalPublishersChooseOneOwnerAndNextAttemptGetsANewEnd() {
         val manager = mock(CommManager::class.java, CALLS_REAL_METHODS)
         val states = MutableStateFlow<ConnectionState>(ConnectionState.TransportStarted)
+        field(manager, "context", mock(android.content.Context::class.java).withUsbInputPreferencesForTest())
         field(manager, "_connectionState", states)
         field(manager, "transportLifecycleLock", Any())
         val io = QueuedIo()

@@ -21,6 +21,7 @@ import com.andrerinas.openheadunit.connection.ConnectionStageTracker
 import com.andrerinas.openheadunit.connection.usb.UsbAccessoryMode
 import com.andrerinas.openheadunit.connection.usb.UsbAttachActivityPolicy
 import com.andrerinas.openheadunit.connection.usb.UsbAttachSwitch
+import com.andrerinas.openheadunit.connection.usb.UsbReceiver
 import com.andrerinas.openheadunit.connection.usb.UsbAttachPolicy
 import com.andrerinas.openheadunit.connection.usb.UsbDeviceCompat
 import com.andrerinas.openheadunit.connection.usb.UsbDeviceDiagnostics
@@ -91,6 +92,11 @@ class UsbAttachedActivity : Activity() {
             if (device != null) {
                 AppLog.i("Ignoring non-Android USB device in onCreate (VID: ${device.vendorId}): ${device.deviceName}")
             }
+            finish()
+            return
+        }
+
+        if (!UsbReceiver.allowsAutomaticInput(this)) {
             finish()
             return
         }
@@ -326,6 +332,11 @@ class UsbAttachedActivity : Activity() {
         }
 
         AppLog.i(UsbDeviceCompat.getUniqueName(device))
+
+        if (!UsbReceiver.allowsAutomaticInput(this)) {
+            finish()
+            return
+        }
 
         val isLocked = !App.isUserUnlocked(this)
 

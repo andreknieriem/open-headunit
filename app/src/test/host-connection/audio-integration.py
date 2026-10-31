@@ -7,6 +7,7 @@ from pathlib import Path
 import subprocess
 import os
 import json
+import hashlib
 
 base = Path(__file__).resolve().parent
 repo = base.parents[3]
@@ -30,6 +31,31 @@ sources += sorted((base / "audio-stubs").glob("*.kt"))
 output = repo / "build/host-connection/audio-integration"
 output.mkdir(parents=True, exist_ok=True)
 target = output / "regression.jar"
+# User exits now persist USB input suppression even in an audio-only fixture. Keep that
+# decision in the extracted production code; only Android storage and this empty bus are doubled.
+hold_source = (repo / "app/src/main/java/com/andrerinas/openheadunit/connection/usb/UsbReceiver.kt").read_text()
+hold_body = hold_source[hold_source.index("        // AOA changes"):
+                        hold_source.index("        const val ACTION_USB_DEVICE_PERMISSION")]
+hold = output / "UsbInputHold.kt"
+hold.write_text("package com.andrerinas.openheadunit.connection.usb\n"
+                "import android.content.Context\nimport android.content.SharedPreferences\n"
+                "import android.os.Build\nimport android.os.SystemClock\n"
+                "object UsbReceiver {\n" + hold_body + "\n}\n")
+usb = output / "Usb.kt"
+usb.write_text("package android.hardware.usb\n"
+               "class UsbDevice\nclass UsbManager { val deviceList=hashMapOf<String,UsbDevice>() }\n")
+usb_compat = output / "UsbDeviceCompat.kt"
+usb_compat.write_text("package com.andrerinas.openheadunit.connection.usb\n"
+                      "object UsbDeviceCompat {\n"
+                      "fun usbManager(context:android.content.Context)=context.usb\n"
+                      "fun isAndroidDevice(device:android.hardware.usb.UsbDevice)=true\n}\n")
+provider = output / "Provider.kt"
+provider.write_text("package android.provider\n"
+                    "object Settings { object Global { fun getInt(resolver:Any,key:String,fallback:Int)=1 } }\n")
+sources += [hold, usb, usb_compat, provider]
+(output / "usb-hold-sha256.json").write_text(json.dumps({
+    "UsbReceiver persistent input hold": hashlib.sha256(hold_body.encode()).hexdigest(),
+}, indent=2))
 # Extract lifecycle entrypoints without the unrelated Android service dependencies.
 service = (repo / "app/src/main/java/com/andrerinas/openheadunit/aap/AapService.kt").read_text()
 

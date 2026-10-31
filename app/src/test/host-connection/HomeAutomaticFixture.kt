@@ -87,7 +87,7 @@ object HomeUiHelper {
 }
 class ConnectivityManager { var activeNetwork: Any? = Any() }
 class Context(val commManager: CommManager, val settings: Settings) {
-    val android = PlatformContext()
+    val android = commManager.context
     val connectivity = ConnectivityManager()
     var path = SelfLaunchPath.HEADUNIT_SERVER
     var vpnConsent: Intent? = null
@@ -116,6 +116,10 @@ class AapService {
             userRequested: Boolean = false): Intent = operationIntent(context, recheck.ticket).setAction(action)
             .putExtra("relayed_usb_recheck", "${recheck.ticket}.${recheck.epoch}")
     }
+}
+object UsbReceiver {
+    fun allowsAutomaticInput(context: Context) =
+        com.andrerinas.openheadunit.connection.usb.UsbReceiver.allowsAutomaticInput(context.android)
 }
 object UsbDeviceCompat {
     fun usbManager(context: Context): UsbManager? = context.android.usb
@@ -229,7 +233,8 @@ private class HomeCase(configure: Settings.() -> Unit = {}) {
     val home = HomeAutomaticProducer(manager, settings, clock, io)
     var physicalOpens = 0
     init {
-        manager.disconnect(ConnectionOperation(manager.appConnectionTicket(), null), honorKillOnDisconnect = false)
+        // Prepare idle state through ordinary link loss, not a user USB Stop.
+        manager.disconnect(ConnectionOperation(manager.appConnectionTicket(), null), isUserExit = false, honorKillOnDisconnect = false)
         manager.cleanups()
         ContextCompat.serviceStarts.clear()
         manager.onAppRelaunched()

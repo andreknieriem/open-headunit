@@ -50,6 +50,7 @@ import com.andrerinas.openheadunit.aap.AapService
 import com.andrerinas.openheadunit.connection.wifi.modes.helper.NearbyManager
 import com.andrerinas.openheadunit.connection.usb.UsbDeviceCompat
 import com.andrerinas.openheadunit.connection.usb.UsbDeviceDiagnostics
+import com.andrerinas.openheadunit.connection.usb.UsbReceiver
 import android.content.res.Configuration
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zbt.ZbtDaemonReachability
 import com.andrerinas.openheadunit.utils.ActivityState
@@ -1851,6 +1852,7 @@ class HomeFragment : Fragment() {
                 }
             }
             Settings.CONNECTION_TYPE_USB -> {
+                if (!UsbReceiver.allowsAutomaticInput(ctx)) return false
                 val lastUsbDevice = appSettings.lastConnectionUsbDevice
                 if (lastUsbDevice.isNotEmpty()) {
                     val usbManager = UsbDeviceCompat.usbManager(requireContext())
@@ -1889,6 +1891,8 @@ class HomeFragment : Fragment() {
         if (!appSettings.autoConnectSingleUsbDevice ||
             !appSettings.hasAcceptedDisclaimer ||
             commManager.isConnected || !commManager.acceptsAppRunTicket(ticket)) return false
+
+        if (!UsbReceiver.allowsAutomaticInput(ctx)) return false
 
         AppLog.i("HomeFragment: Requesting single-USB auto-connect via AapService")
         ContextCompat.startForegroundService(ctx, AapService.usbCheckIntent(ctx, usbScan))
@@ -1994,6 +1998,10 @@ class HomeFragment : Fragment() {
             return
         }
 
+        val recheck = commManager.withAppConnectionLifecycleLock {
+            UsbReceiver.releaseForExplicitInput(requireContext())
+            commManager.usbRecheckNow()
+        }
         AapService.instance?.liftUsbCancel("the USB button was pressed")
 
         // Get list of Android USB devices
@@ -2012,8 +2020,7 @@ class HomeFragment : Fragment() {
                 MainActivity.ConnectionUiMode.OVERLAY
             )
 
-            // The tap is the input: its owed scan is minted here and carried by every relay.
-            val recheck = commManager.usbRecheckNow()
+            // The tap's scan, captured before device lookup, is carried by every relay.
             if (device.isInAccessoryMode) {
                 ContextCompat.startForegroundService(requireContext(),
                     AapService.usbCheckIntent(requireContext(), recheck, userRequested = true))
@@ -2021,7 +2028,7 @@ class HomeFragment : Fragment() {
                 if (usbManager.hasPermission(device.wrappedDevice)) {
                     val usbMode = UsbAccessoryMode(usbManager)
                     val useLibusb = App.provide(requireContext()).settings.useLibusb
-                    UsbAttachSwitch.launchManual(viewLifecycleOwner.lifecycleScope, commManager, device.uniqueName,
+                    UsbAttachSwitch.launchManual(viewLifecycleOwner.lifecycleScope, commManager, device.uniqueName, recheck,
                         switch = { admission -> usbMode.connectAndSwitch(device.wrappedDevice, useLibusb, admission) }) { outcome ->
                         context?.let { ctx ->
                             when (outcome) {

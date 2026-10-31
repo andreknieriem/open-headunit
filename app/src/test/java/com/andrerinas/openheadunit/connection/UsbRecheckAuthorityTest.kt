@@ -16,6 +16,7 @@ import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy.Tier
 import com.andrerinas.openheadunit.connection.usb.UsbAccessoryMode
 import com.andrerinas.openheadunit.connection.usb.UsbLauncherListener
 import com.andrerinas.openheadunit.connection.usb.UsbLauncherManager
+import com.andrerinas.openheadunit.connection.usb.UsbPermissionAsks
 import com.andrerinas.openheadunit.connection.usb.UsbReceiver
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.Settings
@@ -97,6 +98,7 @@ class UsbRecheckAuthorityTest {
             val settings = mock(Settings::class.java)
             `when`(settings.allowedDevices).thenReturn(emptySet())
             `when`(settings.autoStartOnUsb).thenReturn(true)
+            `when`(settings.listenForUsbDevices).thenReturn(true)
             field("context", service)
             field("_connectionState", states)
             field("connectionState", states)
@@ -115,6 +117,7 @@ class UsbRecheckAuthorityTest {
             `when`(service.packageManager).thenReturn(mock(android.content.pm.PackageManager::class.java))
             `when`(service.getSharedPreferences(anyString(), anyInt()))
                 .thenReturn(mock(android.content.SharedPreferences::class.java))
+            service.withUsbInputPreferencesForTest()
             `when`(service.getString(anyInt())).thenReturn("")
             // One attached phone: in accessory mode with permission, or in normal mode without.
             val path = "/dev/bus/usb/001/002"
@@ -185,6 +188,7 @@ class UsbRecheckAuthorityTest {
             override fun println(priority: Int, tag: String, msg: String) = Unit
         }
         ConnectionArbiter.reset()
+        UsbPermissionAsks.resetForTest()
         ConnectionArbiter.clock = { 1000L }
         try {
             mockStatic(SystemClock::class.java).use {
@@ -198,6 +202,7 @@ class UsbRecheckAuthorityTest {
             }
         } finally {
             ConnectionArbiter.reset()
+            UsbPermissionAsks.resetForTest()
             ConnectionArbiter.clock = savedClock
             ConnectionArbiter.actions = savedActions
             AppLog.LOGGER = savedLogger
@@ -363,6 +368,12 @@ class UsbRecheckAuthorityTest {
         for (exit in listOf(false, true)) scenario(ConnectionState.Disconnected(), normalMode = true) { h ->
             withPermissionDialogs(h) { dialogs ->
                 h.scan()
+                // A fresh automatic scan cannot open a second dialog while the bus ask is recorded.
+                h.scan()
+                assertEquals(1, dialogs.raised().size)
+                // Forget only the process-wide ask record, not the launcher's owed scans. The
+                // platform can keep the first dialog open even after the ask record is lost.
+                UsbPermissionAsks.resetForTest()
                 h.scan()
                 val raised = dialogs.raised()
                 assertEquals("two scans did not raise two stacked dialogs", 2, raised.size)

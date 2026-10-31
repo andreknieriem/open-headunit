@@ -160,11 +160,12 @@ class UsbHandshakeRecheckTest {
             mockStatic(SystemClock::class.java).use {
                 val app = mock(App::class.java)
                 val component = mock(AppComponent::class.java)
-                val service = mock(AapService::class.java)
+                val service = mock(AapService::class.java).withUsbInputPreferencesForTest()
                 val manager = mock(CommManager::class.java, CALLS_REAL_METHODS)
                 val states = MutableStateFlow(state)
                 fun field(name: String, value: Any) = CommManager::class.java.getDeclaredField(name)
                     .apply { isAccessible = true }.set(manager, value)
+                field("context", service)
                 field("transportLifecycleLock", Any())
                 field("appExitPolicy", AppExitPolicy())
                 field("_connectionState", states)

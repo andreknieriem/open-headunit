@@ -274,3 +274,34 @@ python3 app/src/test/host-connection/usb-locked-unlock.py /path/to/source
 
 The standalone runner reuses `build/host-connection/toolchain.json` when available, otherwise the
 Kotlin 2.4.20 / coroutines 1.8.0 jars in `GRADLE_USER_HOME`; it does not run Android Gradle or a device.
+
+`usb-exit-hold.py` exercises the persistent user Exit/Stop decision through the actual receiver,
+accepted Stop/Exit wrappers, app entry, attach/listener entry and complete launcher USB selection.
+It compiles the unchanged base too, so failures are behavioral: unwanted automatic admission or a
+missing explicit resume, not a missing new method. Its platform doubles record actual bus presence,
+clock/boot identity, committed device-protected preferences, and the first connection effect.
+No permission-dependent serial or re-enumerating device path is treated as identity.
+
+The 10,000 ms absence bound is an observed empty Android-phone bus interval, not a timer that lifts
+Stop while the phone remains present. It exceeds the supplied 1.3–2.7 s AOA measurements and leaves
+room for real phones taking a few seconds. The manifest receiver records absence with no live
+service; committed state survives process replacement. Reboot resets only the absence clock, not
+the user's decision. Run/Open and USB taps carry their original input authority to the release,
+and final USB admission checks the decision under the same lifecycle lock as Exit/Stop.
+
+Coverage includes ordinary normal/accessory re-enumeration, Stop after ACC START, process loss,
+continuous presence, 9,999 ms versus 10,000 ms absence, status-pill cancellation, explicit normal
+phone selection with all automatic settings off, stale relays, concurrent Exit, delayed physical
+Stop after newer Open, locked observation, Settings restart, link loss and duplicate/late detach.
+The locked-unlock runner additionally checks that neither pending unlock nor a locked attach
+bypasses a persisted Stop. Existing fixtures use the real hold implementation and platform storage
+doubles; no original ownership or refusal assertion is removed.
+The Save, reset/import, microphone and dark-mode service-stop producers are exercised directly as
+configuration retirement: they neither create a USB hold nor clear one from an earlier user Stop.
+
+```sh
+python3 app/src/test/host-connection/usb-exit-hold.py /path/to/source
+```
+
+These are deterministic Kotlin/JVM host checks. The new Android JVM test sources, Gradle build,
+APK, permission UI and USB/IP emulator scenarios still require the parent's Android environment.

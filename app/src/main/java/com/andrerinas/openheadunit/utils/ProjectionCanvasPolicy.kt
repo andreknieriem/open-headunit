@@ -54,6 +54,10 @@ object ProjectionCanvasPolicy {
         return canvasW <= panelW * PANEL_SLACK && canvasH <= panelH * PANEL_SLACK
     }
 
+    /** A layout/inset transition retires surfaces measured inside the previous window canvas. */
+    fun windowChanged(previous: Measurement?, current: Measurement): Boolean =
+        previous != null && previous != current
+
     private fun usable(m: Measurement?, hash: Int): Boolean =
         m != null && m.width > 0 && m.height > 0 && m.hash == hash
 

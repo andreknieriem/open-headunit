@@ -1,16 +1,19 @@
 package com.andrerinas.openheadunit.utils
 
+import android.content.Context
+import android.content.SharedPreferences
 import android.graphics.Color
 import android.os.Build
+import android.os.Looper
 import android.view.View
 import android.view.Window
-import android.view.WindowInsets
-import android.view.WindowInsetsController
 import android.view.WindowManager
+import android.view.ViewTreeObserver
+import androidx.core.graphics.Insets
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import com.andrerinas.openheadunit.utils.AppLog
+import java.lang.ref.WeakReference
 
 object SystemUI {
 
@@ -39,8 +42,8 @@ object SystemUI {
     }
 
     /**
-     * [notesCanvas] false for a window that is not the projection, so it cannot describe a canvas
-     * the video will never be drawn into.
+     * [notesCanvas] false for a window that is not the projection. Its own decor and keyboard
+     * must not replace either the projection's canvas or the insets used to measure that canvas.
      */
     fun apply(
         window: Window,
@@ -69,9 +72,10 @@ object SystemUI {
 
         // Modern Edge-to-Edge for Android 11+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            // Only force decor to NOT fit if we are in some kind of immersive mode.
-            // If mode is NONE, we want the system to fit the window naturally.
-            window.setDecorFitsSystemWindows(mode == Settings.FullscreenMode.NONE)
+            // Normally force decor to NOT fit only when we are in some kind of immersive mode.
+            // NONE fits naturally on older releases, but API 35+ targeting 35+ enforces
+            // edge-to-edge: its root must own fitting instead.
+            window.setDecorFitsSystemWindows(mode == Settings.FullscreenMode.NONE && !enforcesEdgeToEdge(window))
         }
 
         // Apply visibility using Compat API
@@ -149,6 +153,10 @@ object SystemUI {
         }
     }
 
+    // Both gates matter: adding system padding while the OS still fits NONE would count it twice.
+    private fun enforcesEdgeToEdge(window: Window): Boolean =
+        Build.VERSION.SDK_INT >= 35 && window.context.applicationInfo.targetSdkVersion >= 35
+
     private fun applyInsets(
         window: Window,
         root: View,
@@ -156,123 +164,290 @@ object SystemUI {
         notesCanvas: Boolean,
         onInsetsChanged: (() -> Unit)?,
     ) {
-        val settings = Settings(root.context)
+        val observer = observers[root]?.get() ?: InsetsObserver(window, root).also {
+            observers[root] = WeakReference(it)
+        }
+        observer.configure(mode, notesCanvas, onInsetsChanged)
+    }
 
-        // IMMEDIATE APPLICATION OF MANUAL INSETS
-        val manualL = settings.insetLeft
-        val manualT = settings.insetTop
-        val manualR = settings.insetRight
-        val manualB = settings.insetBottom
+    /** A one-shot surface callback may precede the root's completed layout. */
+    internal fun measureProjectionSurface(root: View, view: View, measure: () -> Unit) {
+        observers[root]?.get()?.measureSurface(view, measure)
+    }
 
-        // Read before the line below re-seeds the insets: until it runs, the content area and the
-        // insets in force describe the same layout, and afterwards one half of the pair is stale.
-        val canvasView = if (notesCanvas) (window.decorView.findViewById<View>(android.R.id.content) ?: root) else null
-        canvasView?.let { noteContentSize(it) }
+    private data class FitPolicy(
+        val mode: Settings.FullscreenMode,
+        val automatic: Boolean,
+        val manual: Insets,
+        val orientation: Int,
+        val settingsHash: Int,
+    )
 
-        root.setPadding(manualL, manualT, manualR, manualB)
-        HeadUnitScreenConfig.updateInsets(manualL, manualT, manualR, manualB)
+    private data class AppliedInsets(val policy: FitPolicy, val padding: Insets, val ime: Boolean)
+    private data class Layout(val width: Int, val height: Int, val insets: AppliedInsets)
+    private data class ViewFrame(val left: Int, val top: Int, val right: Int, val bottom: Int) {
+        constructor(view: View) : this(view.left, view.top, view.right, view.bottom)
+    }
+    private data class SurfaceMeasurement(
+        val view: View,
+        val frame: ViewFrame,
+        val rootWidth: Int,
+        val rootHeight: Int,
+        val policy: FitPolicy,
+        val padding: Insets,
+        val measure: () -> Unit,
+    )
 
-        // Android 4.x Legacy Fallback
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-            root.viewTreeObserver.addOnGlobalLayoutListener(object : android.view.ViewTreeObserver.OnGlobalLayoutListener {
-                override fun onGlobalLayout() {
-                    val rect = android.graphics.Rect()
-                    window.decorView.getWindowVisibleDisplayFrame(rect)
-
-                    @Suppress("DEPRECATION")
-                    val display = window.windowManager.defaultDisplay
-                    val size = android.graphics.Point()
-                    display.getSize(size)
-
-                    val insetT = rect.top
-                    val insetB = size.y - rect.bottom
-                    val insetL = rect.left
-                    val insetR = size.x - rect.right
-
-                    AppLog.d("[UI_DEBUG] Legacy SystemUI: Detected Insets L$insetL T$insetT R$insetR B$insetB")
-                    HeadUnitScreenConfig.updateInsets(manualL + insetL, manualT + insetT, manualR + insetR, manualB + insetB)
-                    onInsetsChanged?.invoke()
-                    root.viewTreeObserver.removeGlobalOnLayoutListener(this)
+    private class InsetsObserver(private val window: Window, private val root: View) :
+        ViewTreeObserver.OnPreDrawListener, View.OnAttachStateChangeListener {
+        private val owner = Any()
+        private val settings = Settings(root.context)
+        private var mode = Settings.FullscreenMode.NONE
+        private var notesCanvas = false
+        private var callback: (() -> Unit)? = null
+        private var applied: AppliedInsets? = null
+        private var delivered: Layout? = null
+        private var pendingSurface: SurfaceMeasurement? = null
+        private var notify = false
+        private var invalidationVersion = 0L
+        private var observer: ViewTreeObserver? = null
+        private var observedPreferences: SharedPreferences? = null
+        private val settingsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            when (key) {
+                null, "resolutionId", "dpi-pixel-density", "pixel-aspect-ratio-e4",
+                "inset-left", "inset-top", "inset-right", "inset-bottom",
+                "view-mode", Settings.KEY_SCREEN_ORIENTATION,
+                "fullscreen-mode", "start-in-fullscreen-mode",
+                "video-fit-mode", "stretch_to_fill", "forced_scale",
+                "dpi-floor-override", "display-size-preset" -> {
+                    if (Looper.myLooper() == Looper.getMainLooper()) {
+                        settingsChanged()
+                    } else {
+                        root.post { settingsChanged() }
+                    }
                 }
-            })
+            }
         }
 
-        // Set up listener for dynamic system bars (API 21+)
-        ViewCompat.setOnApplyWindowInsetsListener(root) { v, insetsCompat ->
-            if (mode == Settings.FullscreenMode.NONE) {
-                // In standard mode, let the system handle fitting and don't apply manual padding.
-                // We still update HeadUnitScreenConfig with 0 insets because the window is already resized.
-                HeadUnitScreenConfig.updateInsets(manualL, manualT, manualR, manualB)
-                onInsetsChanged?.invoke()
-                return@setOnApplyWindowInsetsListener insetsCompat
+        init {
+            root.addOnAttachStateChangeListener(this)
+            installPreDraw()
+            root.addOnLayoutChangeListener { _, l, t, r, b, oldL, oldT, oldR, oldB ->
+                if (l != oldL || t != oldT || r != oldR || b != oldB) invalidate()
             }
+            ViewCompat.setOnApplyWindowInsetsListener(root) { _, insets -> apply(insets) }
+            if (ViewCompat.isAttachedToWindow(root)) observeSettings()
+        }
 
-            var typeMask = 0
-            when (mode) {
-                Settings.FullscreenMode.IMMERSIVE -> {
-                    typeMask = 0 // Standard Immersive: Overlay everything (Notch included)
-                }
-                Settings.FullscreenMode.IMMERSIVE_WITH_NOTCH -> {
-                    if (Build.VERSION.SDK_INT >= 28) {
-                        typeMask = WindowInsetsCompat.Type.displayCutout()
-                    }
-                }
-                Settings.FullscreenMode.STATUS_ONLY -> {
-                    typeMask = WindowInsetsCompat.Type.navigationBars()
-                    if (Build.VERSION.SDK_INT >= 28) {
-                        typeMask = typeMask or WindowInsetsCompat.Type.displayCutout()
-                    }
-                }
-                else -> {
-                    typeMask = WindowInsetsCompat.Type.systemBars()
-                    if (Build.VERSION.SDK_INT >= 28) {
-                        typeMask = typeMask or WindowInsetsCompat.Type.displayCutout()
-                    }
-                }
-            }
+        private fun observeSettings() {
+            if (observedPreferences != null) return
+            val prefs = try {
+                root.context.getSharedPreferences(Settings.PREFS_NAME, Context.MODE_PRIVATE)
+            } catch (_: Exception) {
+                null
+            } ?: return
+            prefs.registerOnSharedPreferenceChangeListener(settingsListener)
+            observedPreferences = prefs
+        }
 
-            // Always pad for the soft keyboard so text fields are not covered and the
-            // content shrinks while the IME is up (0 when the keyboard is hidden).
-            typeMask = typeMask or WindowInsetsCompat.Type.ime()
+        private fun settingsChanged() {
+            pendingSurface = null
+            applied = null
+            invalidate()
+            ViewCompat.requestApplyInsets(root)
+            root.invalidate()
+        }
 
-            val bars = if (typeMask != 0) {
-                insetsCompat.getInsets(typeMask)
+        private fun policy(): FitPolicy = FitPolicy(
+            mode, mode == Settings.FullscreenMode.NONE && !enforcesEdgeToEdge(window),
+            Insets.of(settings.insetLeft, settings.insetTop, settings.insetRight, settings.insetBottom),
+            root.resources.configuration.orientation,
+            HeadUnitScreenConfig.computeSettingsHash(settings, root.resources.configuration.orientation),
+        )
+
+        fun configure(mode: Settings.FullscreenMode, notesCanvas: Boolean, callback: (() -> Unit)?) {
+            if (ViewCompat.isAttachedToWindow(root)) observeSettings()
+            this.mode = mode
+            this.notesCanvas = notesCanvas
+            this.callback = callback
+            if (notesCanvas) {
+                activeObserver = WeakReference(this)
+                HeadUnitScreenConfig.beginWindowMeasurement(owner, mode)
             } else {
-                androidx.core.graphics.Insets.NONE
+                HeadUnitScreenConfig.releaseWindowMeasurement(owner)
+                if (activeObserver?.get() === this) activeObserver = null
+                pendingSurface = null
             }
-
-            v.setPadding(bars.left + manualL, bars.top + manualT, bars.right + manualR, bars.bottom + manualB)
-            HeadUnitScreenConfig.updateInsets(bars.left + manualL, bars.top + manualT, bars.right + manualR, bars.bottom + manualB)
-
-            onInsetsChanged?.invoke()
-            WindowInsetsCompat.CONSUMED
+            // A focus reapply keeps the padding that was actually laid out. A changed policy
+            // waits for its own inset dispatch instead of pairing old bounds with manual-only bars.
+            if (applied?.policy != policy()) {
+                applied = null
+                pendingSurface = null
+            }
+            if (root.width == 0 && applied == null) {
+                val manual = policy().manual
+                root.setPadding(manual.left, manual.top, manual.right, manual.bottom)
+            }
+            invalidate()
+            installPreDraw()
+            ViewCompat.requestApplyInsets(root)
+            root.requestLayout()
         }
 
-        ViewCompat.requestApplyInsets(root)
-        root.requestLayout()
+        private fun invalidate() {
+            notify = true
+            invalidationVersion++
+            if (notesCanvas) HeadUnitScreenConfig.invalidateWindowMeasurement(owner)
+        }
 
-        canvasView?.let { watchCanvas(it) }
+        private fun apply(insets: WindowInsetsCompat): WindowInsetsCompat {
+            val policy = policy()
+            val cutout = if (Build.VERSION.SDK_INT >= 28) WindowInsetsCompat.Type.displayCutout() else 0
+            val mask = when (policy.mode) {
+                Settings.FullscreenMode.IMMERSIVE -> 0
+                Settings.FullscreenMode.IMMERSIVE_WITH_NOTCH -> cutout
+                Settings.FullscreenMode.STATUS_ONLY -> WindowInsetsCompat.Type.navigationBars() or cutout
+                Settings.FullscreenMode.NONE -> WindowInsetsCompat.Type.systemBars() or cutout
+            }
+            val bars = if (policy.automatic) Insets.NONE
+                else insets.getInsets(mask or WindowInsetsCompat.Type.ime())
+            val manual = policy.manual
+            val padding = Insets.of(
+                bars.left + manual.left, bars.top + manual.top,
+                bars.right + manual.right, bars.bottom + manual.bottom,
+            )
+            val ime = insets.getInsets(WindowInsetsCompat.Type.ime()) != Insets.NONE
+            applied = AppliedInsets(policy, padding, ime)
+            if (ime || pendingSurface?.let { it.policy != policy || it.padding != padding } == true) {
+                pendingSurface = null
+            }
+            invalidate()
+            root.setPadding(padding.left, padding.top, padding.right, padding.bottom)
+            return if (policy.automatic) insets else WindowInsetsCompat.CONSUMED
+        }
+
+        override fun onPreDraw(): Boolean {
+            if (root.isLayoutRequested || root.width <= 0 || root.height <= 0) return true
+            val previous = delivered
+            if (observedPreferences != null && !notify && pendingSurface == null && previous != null &&
+                previous.width == root.width && previous.height == root.height &&
+                previous.insets.padding.left == root.paddingLeft &&
+                previous.insets.padding.top == root.paddingTop &&
+                previous.insets.padding.right == root.paddingRight &&
+                previous.insets.padding.bottom == root.paddingBottom &&
+                previous.insets.policy.orientation == root.resources.configuration.orientation &&
+                (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP ||
+                    previous.insets.ime == (window.currentFocus?.onCheckIsTextEditor() == true))
+            ) return true
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+                // Legacy fitting belongs to the window; measure its laid-out root with the
+                // manual padding. There is no public per-source IME inset before API 21, so
+                // conservatively defer persistence while a local text editor owns input.
+                val policy = policy()
+                val editing = window.currentFocus?.onCheckIsTextEditor() == true
+                applied = AppliedInsets(policy, policy.manual, editing)
+                if (editing) pendingSurface = null
+                if (padding() != policy.manual) {
+                    root.setPadding(policy.manual.left, policy.manual.top, policy.manual.right, policy.manual.bottom)
+                    return false
+                }
+            }
+            val sample = applied ?: return true
+            if (sample.policy != policy() || sample.padding != padding()) {
+                invalidate()
+                applied = null
+                pendingSurface = null
+                ViewCompat.requestApplyInsets(root)
+                return true
+            }
+            val layout = Layout(root.width, root.height, sample)
+            val currentProjection = notesCanvas && activeObserver?.get() === this
+            val changed = notify || delivered != layout
+            val version = invalidationVersion
+            if (currentProjection && !sample.ime &&
+                (changed || !HeadUnitScreenConfig.isWindowMeasurementCurrent(owner))) {
+                HeadUnitScreenConfig.publishWindowGeometry(
+                    owner, root.context, root.resources.displayMetrics, settings,
+                    layout.width, layout.height,
+                    sample.padding.left, sample.padding.top, sample.padding.right, sample.padding.bottom,
+                    sample.policy.orientation, sample.policy.settingsHash,
+                )
+            }
+            delivered = layout
+            if (invalidationVersion == version) notify = false
+            if (changed && (!notesCanvas || currentProjection)) callback?.invoke()
+            // The scaler may have requested a second layout. Only a sample whose view still
+            // occupies the same frame after that layout belongs to the committed root.
+            drainSurface()
+            return !root.isLayoutRequested
+        }
+
+        private fun padding(): Insets = Insets.of(root.paddingLeft, root.paddingTop, root.paddingRight, root.paddingBottom)
+
+        private fun canMeasureSurface(): Boolean = notesCanvas && activeObserver?.get() === this &&
+            !root.isLayoutRequested && applied?.ime == false &&
+            delivered == applied?.let { Layout(root.width, root.height, it) } &&
+            applied?.policy == policy() && applied?.padding == padding() &&
+            HeadUnitScreenConfig.isWindowMeasurementCurrent(owner)
+
+        fun measureSurface(view: View, measure: () -> Unit) {
+            if (!notesCanvas || activeObserver?.get() !== this || applied?.ime == true ||
+                (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP &&
+                    window.currentFocus?.onCheckIsTextEditor() == true)) return
+            if (canMeasureSurface() && !view.isLayoutRequested) {
+                pendingSurface = null
+                measure()
+                return
+            }
+            pendingSurface = SurfaceMeasurement(
+                view, ViewFrame(view), root.width, root.height, policy(), padding(), measure,
+            )
+            root.invalidate()
+        }
+
+        private fun drainSurface() {
+            val pending = pendingSurface ?: return
+            if (!notesCanvas || activeObserver?.get() !== this || applied?.ime == true ||
+                pending.policy != policy() || pending.padding != padding() ||
+                pending.rootWidth != root.width || pending.rootHeight != root.height ||
+                pending.frame != ViewFrame(pending.view)) {
+                pendingSurface = null
+                return
+            }
+            if (!canMeasureSurface() || pending.view.isLayoutRequested) return
+            pendingSurface = null
+            pending.measure()
+            if (notesCanvas && activeObserver?.get() === this && applied?.policy == pending.policy) {
+                callback?.invoke()
+            }
+        }
+
+        private fun installPreDraw() {
+            val current = root.viewTreeObserver
+            if (observer === current) return
+            observer?.takeIf { it.isAlive }?.removeOnPreDrawListener(this)
+            current.addOnPreDrawListener(this)
+            observer = current
+        }
+
+        override fun onViewAttachedToWindow(v: View) {
+            observeSettings()
+            installPreDraw()
+            invalidate()
+            ViewCompat.requestApplyInsets(root)
+        }
+
+        override fun onViewDetachedFromWindow(v: View) {
+            observedPreferences?.unregisterOnSharedPreferenceChangeListener(settingsListener)
+            observedPreferences = null
+            pendingSurface = null
+            observer?.takeIf { it.isAlive }?.removeOnPreDrawListener(this)
+            observer = null
+            invalidate()
+        }
     }
 
-    /**
-     * Report this window's content area as the canvas for the current screen mode. Service
-     * discovery answers before any projection surface exists, so without this the first session in
-     * a mode announces a pixel shape measured from the display instead of the window.
-     */
-    private fun watchCanvas(content: View) {
-        // apply() runs again on every focus change, so the watch is installed once per view and
-        // left in place: a one-shot would latch whatever the insets happened to be that frame.
-        if (canvasWatched.put(content, true) != null) return
-        content.addOnLayoutChangeListener { v, _, _, _, _, _, _, _, _ -> noteContentSize(v) }
-    }
-
-    /** A window shrunk by the soft keyboard is not the canvas the projection will get. */
-    private fun noteContentSize(content: View) {
-        if (content.width <= 0 || content.height <= 0) return
-        val ime = ViewCompat.getRootWindowInsets(content)?.getInsets(WindowInsetsCompat.Type.ime())
-        if (ime != null && (ime.bottom > 0 || ime.top > 0)) return
-        HeadUnitScreenConfig.noteWindowContent(content.width, content.height)
-    }
-
-    private val canvasWatched = java.util.WeakHashMap<View, Boolean>()
+    // Weak values too: an observer owns its view, and a strong value would retain the weak key.
+    private val observers = java.util.WeakHashMap<View, WeakReference<InsetsObserver>>()
+    private var activeObserver: WeakReference<InsetsObserver>? = null
 }

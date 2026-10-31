@@ -2150,38 +2150,18 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             armWarmRelaunch()
         }
 
-        // --- Surface Mismatch Detection ---
-        // Compare actual surface dimensions with what HeadUnitScreenConfig negotiated.
-        // If they differ (e.g. system bars appeared/disappeared), update margins.
-        val prevUsableW = HeadUnitScreenConfig.getUsableWidth()
-        val prevUsableH = HeadUnitScreenConfig.getUsableHeight()
-
-        val anchorMoved = HeadUnitScreenConfig.updateSurfaceDimensions(width, height)
-
-        // What is cached is the usable area, which the screen config has already turned the right
-        // way up, so the orientation guard this used to carry could only reject a correct reading.
-        val shouldCache = !App.isPiPActive
-
-        // Cached whether or not the anchor moved: service discovery answers before any surface
-        // exists, so next session's announcement has only this to go on.
-        val canvasW = HeadUnitScreenConfig.getUsableWidth()
-        val canvasH = HeadUnitScreenConfig.getUsableHeight()
-        val canvasHash = HeadUnitScreenConfig.computeSettingsHash(settings)
-        if (shouldCache && (settings.cachedSurfaceWidth != canvasW ||
-                settings.cachedSurfaceHeight != canvasH ||
-                settings.cachedSurfaceSettingsHash != canvasHash)
-        ) {
-            settings.cachedSurfaceWidth = canvasW
-            settings.cachedSurfaceHeight = canvasH
-            settings.cachedSurfaceSettingsHash = canvasHash
-        } else if (!shouldCache) {
-            AppLog.i("[UI_DEBUG_FIX] Skipping surface dimension cache update due to transient orientation mismatch: ${width}x${height}")
-        }
-
-        if (anchorMoved) {
-            AppLog.i("[UI_DEBUG_FIX] Surface mismatch! Expected: ${prevUsableW}x${prevUsableH}, Actual: ${width}x${height}")
-            reannounceMargins()
-            // If transport not started yet, ServiceDiscoveryResponse will use the corrected values automatically.
+        val measuredView = projectionView as View
+        SystemUI.measureProjectionSurface(findViewById(R.id.container), measuredView) {
+            val dimensionsCurrent = if (measuredView is ProjectionView) {
+                val frame = measuredView.holder.surfaceFrame
+                frame.width() == width && frame.height() == height
+            } else {
+                measuredView.width == width && measuredView.height == height
+            }
+            if (projectionView === measuredView && ownedSurface === surface &&
+                videoDecoder.isCurrentSurface(surface) && dimensionsCurrent) {
+                updateSurfaceGeometry(width, height)
+            }
         }
 
         when (commManager.connectionState.value) {
@@ -2219,6 +2199,33 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                 projectionView.setVideoSize(currentVideoWidth, currentVideoHeight)
                 ProjectionViewScaler.updateScale(projectionView as View, currentVideoWidth, currentVideoHeight)
             }
+        }
+    }
+
+    /** Only a surface belonging to the completed root layout may change persistent geometry. */
+    private fun updateSurfaceGeometry(width: Int, height: Int) {
+        val prevUsableW = HeadUnitScreenConfig.getUsableWidth()
+        val prevUsableH = HeadUnitScreenConfig.getUsableHeight()
+        val anchorMoved = HeadUnitScreenConfig.updateSurfaceDimensions(width, height)
+        val shouldCache = !App.isPiPActive
+
+        // Cache the usable area, already normalised by the screen config, even when it matched.
+        val canvasW = HeadUnitScreenConfig.getUsableWidth()
+        val canvasH = HeadUnitScreenConfig.getUsableHeight()
+        val canvasHash = HeadUnitScreenConfig.computeSettingsHash(settings)
+        if (shouldCache && (settings.cachedSurfaceWidth != canvasW ||
+                settings.cachedSurfaceHeight != canvasH ||
+                settings.cachedSurfaceSettingsHash != canvasHash)
+        ) {
+            settings.cachedSurfaceWidth = canvasW
+            settings.cachedSurfaceHeight = canvasH
+            settings.cachedSurfaceSettingsHash = canvasHash
+        } else if (!shouldCache) {
+            AppLog.i("[UI_DEBUG_FIX] Skipping surface dimension cache update due to transient orientation mismatch: ${width}x${height}")
+        }
+        if (anchorMoved) {
+            AppLog.i("[UI_DEBUG_FIX] Surface mismatch! Expected: ${prevUsableW}x${prevUsableH}, Actual: ${width}x${height}")
+            reannounceMargins()
         }
     }
 

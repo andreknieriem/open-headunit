@@ -20,6 +20,7 @@ import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy
 import com.andrerinas.openheadunit.connection.ConnectionStage
 import com.andrerinas.openheadunit.connection.ConnectionStageTracker
 import com.andrerinas.openheadunit.connection.usb.UsbAccessoryMode
+import com.andrerinas.openheadunit.connection.usb.UsbAttachSwitch
 import com.andrerinas.openheadunit.connection.usb.UsbAttachPolicy
 import com.andrerinas.openheadunit.connection.usb.UsbDeviceCompat
 import com.andrerinas.openheadunit.connection.usb.UsbDeviceDiagnostics
@@ -243,26 +244,23 @@ class UsbAttachedActivity : Activity() {
         // ends in a finally and the claim expires on its own if even that is missed.
         UsbSwitchClaim.stake()
         Thread {
-            val result = try {
-                usbMode.connectAndSwitch(device, useLibusb).also { if (it) UsbSwitchClaim.noteSwitched() }
-            } catch (e: Exception) {
-                AppLog.e("AOA switch threw for ${deviceCompat.uniqueName}", e)
-                false
-            } finally {
-                UsbSwitchClaim.release()
-                if (usbRequest != null) commManager?.endRequest(usbRequest)
-                else ConnectionArbiter.release(lockedClaim, sessionFormed = false)
+            val outcome = UsbAttachSwitch.run(commManager, usbRequest, lockedClaim, deviceCompat.uniqueName) {
+                usbMode.connectAndSwitch(device, useLibusb)
             }
             runOnUiThread {
-                if (result) {
-                    ToastUtils.showToast(this, getString(R.string.success), Toast.LENGTH_SHORT)
-                } else {
-                    ToastUtils.showToast(this, getString(R.string.failed), Toast.LENGTH_SHORT)
-                    // Asked now, not at onCreate: the user may have unlocked during the switch,
-                    // and only an unlocked process may build the app component.
-                    val lockedNow = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N &&
-                        !(getSystemService(Context.USER_SERVICE) as UserManager).isUserUnlocked
-                    if (lockedNow || !App.provide(this).commManager.isConnected) ConnectionStageTracker.clear()
+                when (outcome) {
+                    // Whatever revoked it owns the stage and its feedback now.
+                    UsbAttachSwitch.Outcome.REVOKED -> Unit
+                    UsbAttachSwitch.Outcome.SWITCHED ->
+                        ToastUtils.showToast(this, getString(R.string.success), Toast.LENGTH_SHORT)
+                    UsbAttachSwitch.Outcome.FAILED -> {
+                        ToastUtils.showToast(this, getString(R.string.failed), Toast.LENGTH_SHORT)
+                        // Asked now, not at onCreate: the user may have unlocked during the switch,
+                        // and only an unlocked process may build the app component.
+                        val lockedNow = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N &&
+                            !(getSystemService(Context.USER_SERVICE) as UserManager).isUserUnlocked
+                        if (lockedNow || !App.provide(this).commManager.isConnected) ConnectionStageTracker.clear()
+                    }
                 }
                 finish()
             }

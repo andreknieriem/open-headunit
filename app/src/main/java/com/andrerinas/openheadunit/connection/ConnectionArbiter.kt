@@ -233,18 +233,6 @@ object ConnectionArbiter {
         return true
     }
 
-    /** A USB check that met another owner's connect in flight; it is asked again when that ends. */
-    fun holdUsbCheck() {
-        val held: Claim
-        synchronized(this) {
-            val current = holder ?: return
-            if (current.owner == Owner.USB) return
-            usbOwed = true
-            held = current
-        }
-        AppLog.i("ConnectionArbiter: a USB check waits for $held")
-    }
-
     /** The user asked for wireless by hand: end any outside attempt and owe nothing back. */
     fun yieldToUser(what: String) {
         val loser: Claim?

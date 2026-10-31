@@ -222,7 +222,6 @@ class CommManager {
  private val keyStates=mutableMapOf<Int,Int>()
  private var btMediaLinkCached:Boolean?=null
  private var btMediaLinkCheckedAt:Long?=null
- private fun dropOwedScans()=ConnectionArbiter.dropUsbDebt()
  private fun noteHandshakeOutcome(silent:Boolean){}
  @Volatile private var sessionClaim:ConnectionArbiter.Claim?=null
  private var connectionRequest:ConnectionRequest?=null
@@ -259,7 +258,7 @@ class CommManager {
  suspend fun connectSaved(state:ConnectionState.Disconnected){connectIp("fixture",5277,accepted("fixture:5277",save=state))}
  suspend fun awaitDisconnectComplete(){_disconnectJob?.join()}
  val isUsbSession=false
- suspend fun connectDevice(d:UsbDevice,saved:ConnectionState.Disconnected?=null){connectUsb(d,appConnectionTicket(),saved)}
+ suspend fun connectDevice(d:UsbDevice,saved:ConnectionState.Disconnected?=null){connectUsb(d,appConnectionTicket(),saved,appClaim=acceptedClaim())}
  suspend fun connectRecovery(d:UsbDevice,admission:ConnectionAdmission)=connectUsb(d,appConnectionTicket(),recoveryOwner=usbRecoveryOwner,recoveryClaim=fixtureClaim(),recoveryAdmission=admission)
  suspend fun awaitCleanup(){_disconnectJob?.join()}
  companion object { const val ERROR_HANDSHAKE_PEER_SILENT="Handshake failed: the peer never responded" }
@@ -309,7 +308,7 @@ manager=manager_head+'\n'.join(extract(comm,n) for n in [
  'internal suspend fun connectHeld(', 'private suspend fun connectSocketWithTicket(', 'private suspend fun runSocketRequest(',
  'private class ConnectionRequest(', 'private sealed class Admission {', 'private fun admitRequest(', 'private fun admitHeld(',
  'private fun retireInvalidRequest()', 'private fun endRequest(', 'private fun releaseClaim(', 'private fun clearRequest(',
- 'private fun settleSessionClaim('
+ 'private fun settleSessionClaim(', 'private fun dropOwedScans()'
 ])+'\n}\n'
 transport_head=r'''
 class AapTransport(

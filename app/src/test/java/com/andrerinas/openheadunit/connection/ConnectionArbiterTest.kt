@@ -7,6 +7,7 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -160,10 +161,11 @@ class ConnectionArbiterTest {
 
     @Test
     fun `a dropped debt gives nothing back`() {
-        val wireless = must(ConnectionArbiter.claim(Tier.WIRELESS_HANDSHAKE, Owner.WIRELESS_STACK, "wireless"))
-        ConnectionArbiter.holdUsbCheck()
+        wirelessUp = false
+        val user = must(ConnectionArbiter.claim(Tier.USER, Owner.MANUAL, "192.0.2.1:5277"))
+        assertNull(ConnectionArbiter.claim(Tier.USB, Owner.USB, "USB"))
         ConnectionArbiter.dropUsbDebt()
-        ConnectionArbiter.release(wireless, sessionFormed = false)
+        ConnectionArbiter.release(user, sessionFormed = false)
         advance(60_000)
         assertEquals(emptyList<Pair<Boolean, Boolean>>(), givenBack)
     }
@@ -179,10 +181,11 @@ class ConnectionArbiterTest {
 
     @Test
     fun `a debt after the drop is owed again`() {
-        val first = must(ConnectionArbiter.claim(Tier.WIRELESS_HANDSHAKE, Owner.WIRELESS_STACK, "wireless"))
+        wirelessUp = false
+        val user = must(ConnectionArbiter.claim(Tier.USER, Owner.MANUAL, "192.0.2.1:5277"))
         ConnectionArbiter.dropUsbDebt()
-        ConnectionArbiter.holdUsbCheck()
-        ConnectionArbiter.release(first, sessionFormed = false)
+        assertNull(ConnectionArbiter.claim(Tier.USB, Owner.USB, "USB"))
+        ConnectionArbiter.release(user, sessionFormed = false)
         advance(60_000)
         assertEquals(listOf(false to true), givenBack)
     }

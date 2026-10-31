@@ -159,8 +159,10 @@ class SettingsRestartAdmissionTest {
             ConnectionArbiter.Claim::class.java, ConnectionAdmission::class.java,
             ConnectionArbiter.Claim::class.java, kotlin.coroutines.Continuation::class.java)
             .apply { isAccessible = true }
+        // The Save attempt's own claim holds, so only the revoked Save can refuse its publication.
+        val claim = checkNotNull(ConnectionArbiter.claim(ConnectionPriorityPolicy.Tier.USB, ConnectionPriorityPolicy.Owner.USB, "USB Save"))
         val retry = launch(start = CoroutineStart.UNDISPATCHED) {
-            suspendCoroutineUninterceptedOrReturn<Unit> { method.invoke(manager, device, 0L, saved, null, null, ConnectionAdmission.UNRESTRICTED, null, it) }
+            suspendCoroutineUninterceptedOrReturn<Unit> { method.invoke(manager, device, 0L, saved, null, null, ConnectionAdmission.UNRESTRICTED, claim, it) }
         }
         assertFalse(retry.isCompleted)
         manager.cancelPendingSettingsRestart()

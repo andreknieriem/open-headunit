@@ -470,9 +470,13 @@ class CommManager(
      * through [awaitSettled], which never resumes inside the completing frame. [claim] is the
      * arbiter claim it was published under, if any: a producer's end hands that claim to the SSL
      * session only while this exact attempt is still the live one. See [releaseClaim].
+     * [usbCheckOwed] is a USB scan this attempt deferred while it was live, asked again once at
+     * its retirement. See [deferUsbCheckForConnectionAttempt].
      */
     internal class Attempt(internal val claim: ConnectionArbiter.Claim? = null) {
         internal val settled = CompletableDeferred<Unit>()
+        // Guarded by transportLifecycleLock.
+        internal var usbCheckOwed = false
     }
 
     private var connectionAttempt: Attempt? = null
@@ -797,16 +801,20 @@ class CommManager(
     internal fun ownsUsbRecheck(owner: Any): Boolean =
         synchronized(transportLifecycleLock) { usbRecoveryOwner === owner }
 
-    /** Returns true while a connection attempt owns the scan slot; another owner owes USB a retry. */
+    /**
+     * Returns true while a connection attempt owns the scan slot. The deferred scan is owed by
+     * that live attempt, not by whoever holds the arbiter: the attempt asks the bus again once,
+     * when it is retired (see [doDisconnect]), whatever happens to its claim meanwhile, and a
+     * replacing attempt inherits the debt (see [beginAttempt]).
+     */
     internal fun deferUsbCheckForConnectionAttempt(): Boolean = synchronized(transportLifecycleLock) {
         when (_connectionState.value) {
             ConnectionState.Connecting, ConnectionState.Connected, ConnectionState.StartingTransport -> {
-                // An open socket is not a completed handshake. Register the debt under the same
-                // lock that settles the session claim, so handshake completion cannot pass between
-                // the state check and holdUsbCheck(). The arbiter returns it after a failed attempt;
-                // a successful session keeps it parked until that session ends. A USB-owned
-                // attempt already serves this scan and needs no second debt to itself.
-                ConnectionArbiter.holdUsbCheck()
+                // An open socket is not a completed handshake. Record the debt under the lock
+                // that retires the attempt, so its end cannot pass between the state check and
+                // the record. A USB-owned attempt already serves this scan and owes it nothing.
+                connectionAttempt?.takeIf { !disconnectRequested && it.claim?.owner != ConnectionPriorityPolicy.Owner.USB }
+                    ?.usbCheckOwed = true
                 true
             }
             else -> false
@@ -884,10 +892,11 @@ class CommManager(
         }
 
         // Call only under transportLifecycleLock (lifecycle -> recovery identity/detach admission -> arbiter).
-        // A same-owner USB claim can be replaced without a preempt callback. Keep its
-        // check and each state transfer together; a separate holds() check is not enough.
+        // Every step publishes only while this attempt's own claim holds the arbiter: a same-owner
+        // USB claim can be replaced without a preempt callback and without cancelling this job.
+        // Keep the check and each state transfer together; a separate holds() check is not enough.
         fun publishIfOwned(action: () -> Unit): Boolean {
-            if (recoveryOwner == null) { action(); return true }
+            if (recoveryOwner == null) return appClaim != null && ConnectionArbiter.runIfHeld(appClaim, action)
             if (usbRecoveryOwner !== recoveryOwner || recoveryClaim == null) return false
             var published = false
             recoveryAdmission.run { published = ConnectionArbiter.runIfHeld(recoveryClaim, action) }
@@ -1453,11 +1462,16 @@ class CommManager(
     /**
      * Makes [next] the current attempt, under transportLifecycleLock. An attempt replaced without
      * a terminal of its own settles here; one that already ended settled with that terminal, and
-     * settling twice is a no-op. Only the exact replaced object settles, never [next].
+     * settling twice is a no-op. Only the exact replaced object settles, never [next]. A USB scan
+     * the replaced attempt deferred is still blocked, now by [next], which owes it from here.
      */
     private fun beginAttempt(next: Attempt) {
         val replaced = connectionAttempt
         connectionAttempt = next
+        if (replaced?.usbCheckOwed == true) {
+            replaced.usbCheckOwed = false
+            next.usbCheckOwed = true
+        }
         replaced?.settled?.complete(Unit)
     }
 
@@ -1895,8 +1909,12 @@ class CommManager(
         }
     }
 
-    // A user exit owes no held USB scan. A wireless stack that USB stood down still comes back.
-    private fun dropOwedScans() = ConnectionArbiter.dropUsbDebt()
+    // A user exit owes no held USB scan, the live attempt's or the arbiter's. Under
+    // transportLifecycleLock. A wireless stack that USB stood down still comes back.
+    private fun dropOwedScans() {
+        connectionAttempt?.usbCheckOwed = false
+        ConnectionArbiter.dropUsbDebt()
+    }
 
     private fun reachedSsl() = _connectionState.value.let {
         it is ConnectionState.HandshakeComplete || it is ConnectionState.TransportStarted
@@ -2298,9 +2316,11 @@ class CommManager(
         byeByeReason: com.andrerinas.openheadunit.aap.protocol.proto.Control.ByeByeReason = com.andrerinas.openheadunit.aap.protocol.proto.Control.ByeByeReason.USER_SELECTION,
         reason: DisconnectReason = DisconnectReason.CONNECTION_ENDED,
     ) {
-        val (transport, connection, closeAudio) = synchronized(transportLifecycleLock) {
+        var usbCheckOwed = false
+        val resources = synchronized(transportLifecycleLock) {
             // destroy() also reaches this path without a preceding disconnect(). Retire an
             // unpublished candidate before the owner-null fast path, just like an active owner.
+            // The one place an attempt is retired; a replaced one hands its debts on in beginAttempt.
             disconnectRequested = true
             val endedAttempt = connectionAttempt
             connectionAttempt = null
@@ -2311,14 +2331,22 @@ class CommManager(
             }
             // destroy() can retire an attempt no terminal ended; settling the same one twice is a no-op.
             endedAttempt?.settled?.complete(Unit)
+            if (endedAttempt != null && endedAttempt.usbCheckOwed) {
+                endedAttempt.usbCheckOwed = false
+                usbCheckOwed = true
+            }
             val transport = _transport
             val connection = _connection
-            if (transport == null && connection == null) return
-            val session = audioDecoder.captureCleanup()
-            _transport = null
-            _connection = null
-            Triple(transport, connection, session)
+            if (transport == null && connection == null) null else {
+                val session = audioDecoder.captureCleanup()
+                _transport = null
+                _connection = null
+                Triple(transport, connection, session)
+            }
         }
+        // The USB scan the retired attempt held back asks the bus again, once, outside every monitor.
+        if (usbCheckOwed) ConnectionArbiter.actions?.giveBack(wireless = false, usb = true)
+        val (transport, connection, closeAudio) = resources ?: return
         settleSessionClaim(formed = false)
         keyStates.clear()
         btMediaLinkCached = null

@@ -92,10 +92,13 @@ class InternalFailureRecoveryTest {
                 mockConstruction(driver) { connection, _ ->
                     runBlocking { `when`(connection.connect()).thenAnswer { throw IOException("USB open failed") } }
                 }.use {
+                    // USB publishes only while its own claim holds the arbiter.
+                    val claim = checkNotNull(ConnectionArbiter.claim(ConnectionPriorityPolicy.Tier.USB,
+                        ConnectionPriorityPolicy.Owner.USB, "USB test"))
                     invoke(f.manager, "connectUsb", arrayOf(UsbDevice::class.java, Long::class.javaPrimitiveType!!, ConnectionState.Disconnected::class.java,
                         Any::class.java, ConnectionArbiter.Claim::class.java, ConnectionAdmission::class.java,
                         ConnectionArbiter.Claim::class.java),
-                        device, 0L, null, null, null, ConnectionAdmission.UNRESTRICTED, null)
+                        device, 0L, null, null, null, ConnectionAdmission.UNRESTRICTED, claim)
                     f.assertRecoverable()
                 }
             }

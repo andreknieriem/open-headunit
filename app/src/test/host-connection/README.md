@@ -60,10 +60,13 @@ claim held, Save owning the state until it publishes, then its own attempt in fl
 joining, a launch's wait, acceptance and publication all use it. Stop and Save revocation retire
 the request in their own lock section, and a claim's end wakes a launch waiting on it. A
 producer's end hands its claim to the SSL session only while the attempt that claim published
-is still the live one, never because another session is connected. The ingress fixtures pause
+is still the live one, never because another session is connected. USB publishes only under its
+own claim too, and a USB scan deferred behind a live attempt is owed by that attempt and asked
+again once, when it is retired or by the attempt that replaces it. The ingress fixtures pause
 real producers inside each former gap (claim before record, Stop or Save or another claim taking
 a waiting request's authority, a discovery hand-off queued behind IO, a cancelled request that
-published nothing while another session is connected).
+published nothing while another session is connected, a late USB request, a handshake that fails
+after a cancelled request released its claim).
 
 The ticket belongs to the logical input, not to one public call. UI, automation, server accept,
 discovery scan, Nearby request, Self launch, VPN consent and service relays capture it when the

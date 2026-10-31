@@ -103,6 +103,8 @@ class UsbAttachedActivity : Activity() {
             return
         }
 
+        if (isLocked) BootCompleteReceiver.deferLockedUsb(this)
+
         if (!isLocked) {
             if (App.provide(this).commManager.connectionState.value is CommManager.ConnectionState.TransportStarted) {
                 AppLog.e("Thread already running")
@@ -306,6 +308,8 @@ class UsbAttachedActivity : Activity() {
             finish()
             return
         }
+
+        if (isLocked) BootCompleteReceiver.deferLockedUsb(this)
 
         if (!isLocked && App.provide(this).commManager.connectionState.value !is CommManager.ConnectionState.TransportStarted) {
             // A normal-mode re-attach used to be dropped here. noHistory means most re-attaches

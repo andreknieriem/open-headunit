@@ -252,3 +252,25 @@ production `P2pPersistentGroupPurge`. It checks command Save withdrawal and Stop
 profile reply or between deletions, including cross-thread Stop; valid cleanup, late/duplicate
 replies, timeout, group-generation replacement, endpoint retirement and named-create controls
 remain covered. Platform enumeration/deletion and the terminal create are recording boundaries.
+
+
+`usb-locked-unlock.py` compiles the actual locked-attach entry through its accessory/permission
+branches, the complete `App.initUnlockedOnce` and dynamic unlock callback, and the complete
+`BootCompleteReceiver`. Android storage, the live USB list and service startup are doubles. The
+startup boundary refuses foreground service starts from registered `USER_UNLOCKED` and permits
+them during the post-unlock `BOOT_COMPLETED` callback, matching the platform exemption.
+Its twelve deterministic cases cover a locked normal-to-accessory switch, direct accessory attach,
+unlock racing attach, permission granted before unlock, process replacement before and after unlock
+preparation, one shared boot/USB scan and boot strike, disabled USB auto-start, withdrawal before
+unlock, missing/blacklisted phones and stale pending input from an earlier boot. No locked input may
+build the component, read CE storage or mint app authority; the final input authority is captured
+when the exempt unlock-completion broadcast arrives and is carried through the service relay.
+The unchanged base fails seven positive cases (six missing scans and one duplicate boot scan) and
+passes all five negative controls. Run standalone against a source tree with:
+
+```sh
+python3 app/src/test/host-connection/usb-locked-unlock.py /path/to/source
+```
+
+The standalone runner reuses `build/host-connection/toolchain.json` when available, otherwise the
+Kotlin 2.4.20 / coroutines 1.8.0 jars in `GRADLE_USER_HOME`; it does not run Android Gradle or a device.

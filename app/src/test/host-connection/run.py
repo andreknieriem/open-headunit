@@ -1339,3 +1339,6 @@ subprocess.run(["python3", str(Path(__file__).with_name("socket-effects.py")), s
 
 # A sleeping Native Save keeps its own Direct continuation through wake and settings holds.
 subprocess.run(["python3", str(Path(__file__).with_name("sleep-replay-effects.py")), str(ROOT)], check=True)
+
+# First-unlock input: real locked attach, App initializer and boot receiver, including process replacement.
+subprocess.run(["python3", str(Path(__file__).with_name("usb-locked-unlock.py")), str(ROOT)], check=True)

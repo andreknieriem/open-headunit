@@ -28,6 +28,7 @@ import android.os.SystemClock
 import com.andrerinas.openheadunit.main.AppDrawerFragment
 import com.andrerinas.openheadunit.main.FloatingButtonManager
 import com.andrerinas.openheadunit.app.AppUiEntry
+import com.andrerinas.openheadunit.app.BootCompleteReceiver
 import java.io.File
 
 class App : Application(), Application.ActivityLifecycleCallbacks {
@@ -132,6 +133,11 @@ class App : Application(), Application.ActivityLifecycleCallbacks {
     private fun initUnlockedOnce() {
         if (unlockedInitDone || !isUserUnlocked(this)) return
         unlockedInitDone = true
+
+        // Preserve the pending locked USB input before CE mirrors replace the DP setting.
+        // BOOT_COMPLETED dispatches it once with Android's foreground-service exemption;
+        // USER_UNLOCKED only prepares it. This also runs if the locked process was replaced.
+        BootCompleteReceiver.prepareLockedUsbUnlock(this)
 
         // Root support
         component.suExecutor.register()

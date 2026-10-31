@@ -46,6 +46,8 @@ class UsbAttachSwitchTest {
             field("_connectionState", states)
             field("connectionState", states)
             field("usbRecoveryOwner", Any())
+            // Stop asks whether the app still owns its exit, which reads Settings.
+            field("settings", mock(com.andrerinas.openheadunit.utils.Settings::class.java))
             fun admit() = checkNotNull(manager.admitUsbRequest(Tier.USB, "USB switch of phone", null,
                 manager.usbRecheck(manager.appConnectionTicket())))
             val request = admit()

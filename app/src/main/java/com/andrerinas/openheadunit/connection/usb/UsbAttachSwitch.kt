@@ -1,5 +1,6 @@
 package com.andrerinas.openheadunit.connection.usb
 
+import com.andrerinas.openheadunit.connection.ConnectionAdmission
 import com.andrerinas.openheadunit.connection.CommManager
 import com.andrerinas.openheadunit.connection.ConnectionArbiter
 import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy
@@ -33,24 +34,28 @@ internal object UsbAttachSwitch {
         request: CommManager.ConnectionRequest?,
         lockedClaim: ConnectionArbiter.Claim?,
         what: String,
-        switch: () -> Boolean,
-    ): Outcome = try {
-        val current = if (request != null) commManager?.isValid(request) == true
-            else lockedClaim != null && ConnectionArbiter.holds(lockedClaim)
-        if (!current) {
-            AppLog.i("UsbAttachedActivity: the switch of $what was revoked before it started; leaving the device alone")
-            Outcome.REVOKED
-        } else if (switch()) {
-            UsbSwitchClaim.noteSwitched()
-            Outcome.SWITCHED
-        } else Outcome.FAILED
-    } catch (e: Exception) {
-        AppLog.e("AOA switch threw for $what", e)
-        Outcome.FAILED
-    } finally {
-        UsbSwitchClaim.release()
-        if (request != null) commManager?.endRequest(request)
-        else ConnectionArbiter.release(lockedClaim, sessionFormed = false)
+        switch: (ConnectionAdmission) -> Boolean,
+    ): Outcome {
+        val admission = ConnectionAdmission { effect ->
+            if (request != null) commManager?.runIfValid(request, effect) == true
+            else lockedClaim != null && ConnectionArbiter.runIfHeld(lockedClaim, effect)
+        }
+        return try {
+            if (!admission.run {}) {
+                AppLog.i("UsbAttachedActivity: the switch of $what was revoked before it started; leaving the device alone")
+                Outcome.REVOKED
+            } else if (switch(admission)) {
+                UsbSwitchClaim.noteSwitched(checkNotNull(request?.claim ?: lockedClaim))
+                Outcome.SWITCHED
+            } else if (admission.run {}) Outcome.FAILED else Outcome.REVOKED
+        } catch (e: Exception) {
+            AppLog.e("AOA switch threw for $what", e)
+            if (admission.run {}) Outcome.FAILED else Outcome.REVOKED
+        } finally {
+            (request?.claim ?: lockedClaim)?.let(UsbSwitchClaim::release)
+            if (request != null) commManager?.endRequest(request)
+            else ConnectionArbiter.release(lockedClaim, sessionFormed = false)
+        }
     }
 
     /**
@@ -66,18 +71,21 @@ internal object UsbAttachSwitch {
         commManager: CommManager,
         what: String,
         io: CoroutineDispatcher = Dispatchers.IO,
-        switch: () -> Boolean,
+        switch: (ConnectionAdmission) -> Boolean,
         onOutcome: (Outcome) -> Unit,
     ): Job? {
         val request = commManager.admitUsbRequest(ConnectionPriorityPolicy.Tier.USER, "USB switch of $what",
             save = null, recheck = commManager.usbRecheckNow()) ?: return null
-        UsbSwitchClaim.stake()
+        if (!UsbSwitchClaim.stake(request.claim)) {
+            commManager.endRequest(request)
+            return null
+        }
         val job = scope.launch {
             onOutcome(withContext(io) { run(commManager, request, null, what, switch) })
         }
         // A job cancelled before its body ran never reached run()'s finally.
         job.invokeOnCompletion {
-            UsbSwitchClaim.release()
+            UsbSwitchClaim.release(request.claim)
             commManager.endRequest(request)
         }
         return job

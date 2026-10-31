@@ -41,7 +41,7 @@ class SettingsRestartFailureTest {
             settingsRestartUntilMs = Long.MAX_VALUE)
         val flow = MutableStateFlow<CommManager.ConnectionState>(saved)
         val manager = manager(flow)
-        manager.disconnect() // Already Disconnected: the real early-return path must still revoke Save.
+        manager.disconnect(com.andrerinas.openheadunit.connection.ConnectionOperation(manager.appConnectionTicket(), null)) // Already Disconnected: the real early-return path must still revoke Save.
         manager.reportLaunchFailure("cancelled Save failure", manager.mark(), saved)
         assertSame(saved, flow.value)
         assertFalse(saved.acceptsSettingsRestart(flow.value))

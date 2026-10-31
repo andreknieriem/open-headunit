@@ -2,6 +2,7 @@ package com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.hct
 
 import com.andrerinas.openheadunit.aap.AapService
 import com.andrerinas.openheadunit.aap.protocol.proto.Wireless
+import com.andrerinas.openheadunit.connection.ConnectionAdmission
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.HandshakeLink
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.WppFraming
 import java.io.*
@@ -67,8 +68,8 @@ class HctWppOwnerEofTest {
         try {
             val first = owner.attach({ Wireless.WifiVersionRequest.getDefaultInstance() },
                 { lease -> leaseReady.complete(lease); awaitCancellation() },
-                { true }, { true }, {}, { notices.incrementAndGet() })
-            first.requestWakeFor(wire.peerAddress)
+                { true }, { true }, {}, { notices.incrementAndGet() }, admission = ConnectionAdmission.UNRESTRICTED)
+            first.requestWakeFor(wire.peerAddress, admission = ConnectionAdmission.UNRESTRICTED)
             val transport = scope.async {
                 // This is the acquisition callback boundary in HctAaCarrier. Any I/O failure
                 // escaping the real owner would be reported as initial handoff failure.
@@ -82,7 +83,7 @@ class HctWppOwnerEofTest {
             phone.close()
             assertTrue(eofReached.await(2, TimeUnit.SECONDS))
             owner.attach({ Wireless.WifiVersionRequest.getDefaultInstance() },
-                { awaitCancellation() }, { true }, { true }, {}, { notices.incrementAndGet() })
+                { awaitCancellation() }, { true }, { true }, {}, { notices.incrementAndGet() }, admission = ConnectionAdmission.UNRESTRICTED)
             assertEquals(1, construction.constructed().size) // Same physical carrier, new client.
             releaseEof.countDown()
             withTimeout(2_000) { transport.await() }

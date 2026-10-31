@@ -100,7 +100,7 @@ object AutomationCommandPolicy {
     /** The service actions the plain relays start, for the test that each has a handler. */
     internal val relayTargets: Set<String> get() = PLAIN_RELAYS.values.toSet()
 
-    fun effectsFor(action: String?, extras: Extras, state: State, acceptStop: () -> Long): List<Effect> {
+    fun effectsFor(action: String?, extras: Extras, state: State, acceptStop: () -> Long?): List<Effect> {
         if (action == null) return listOf(Effect.Refuse("no action"))
 
         if (action in CONFIGURING && !state.externalConfigAllowed) {
@@ -110,7 +110,9 @@ object AutomationCommandPolicy {
         }
 
         PLAIN_RELAYS[action]?.let {
-            return listOf(if (it == AapService.ACTION_STOP_SERVICE) Effect.StopApp(acceptStop()) else Effect.StartService(it))
+            return listOf(if (it == AapService.ACTION_STOP_SERVICE) {
+                acceptStop()?.let { owner -> Effect.StopApp(owner) } ?: Effect.Refuse("stop request superseded")
+            } else Effect.StartService(it))
         }
 
         return when (action) {

@@ -6,18 +6,20 @@ import android.hardware.usb.UsbEndpoint
 import android.hardware.usb.UsbInterface
 import android.hardware.usb.UsbManager
 import android.os.SystemClock
+import com.andrerinas.openheadunit.connection.ConnectionAdmission
 import com.andrerinas.openheadunit.connection.usb.UsbDeviceCompat
 import com.andrerinas.openheadunit.utils.AppLog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-class StandardUsbProjectionConnection(usbMgr: UsbManager, device: UsbDevice) :
+class StandardUsbProjectionConnection(usbMgr: UsbManager, device: UsbDevice,
+    private val admission: ConnectionAdmission) :
     AbstractUsbProjectionConnection(usbMgr, device) {
 
     // @Volatile so isConnected / isDeviceRunning see the latest value without a lock.
     @Volatile private var usbDeviceConnected: UsbDeviceCompat? = null
     private var usbInterface: UsbInterface? = null
-    // @Volatile so sendBlocking / recvBlocking see updates from connect() / resetInterface()
+    // @Volatile so sendBlocking / recvBlocking see connection publication and retirement
     // without holding sStateLock during the transfer.
     @Volatile private var endpointIn: UsbEndpoint? = null
     @Volatile private var endpointOut: UsbEndpoint? = null
@@ -39,155 +41,111 @@ class StandardUsbProjectionConnection(usbMgr: UsbManager, device: UsbDevice) :
         get() = false
 
     override suspend fun connect() = withContext(Dispatchers.IO) {
-        return@withContext try {
-            connect(device)
-        } catch (e: UsbOpenException) {
-            AppLog.e(e)
-            false
-        }
-    }
-
-    @Throws(UsbOpenException::class)
-    private fun connect(device: UsbDevice): Boolean {
-        if (usbDeviceConnection != null) {
-            disconnect()
-        }
-        synchronized(stateLock) {
-            try {
-                usbOpen(device)
-            } catch (e: UsbOpenException) {
-                disconnect()
-                throw e
+        val owner = OpenAttempt()
+        var reserved = false
+        admission.run {
+            synchronized(stateLock) {
+                if (opening == null && usbDeviceConnection == null) {
+                    opening = owner
+                    reserved = true
+                }
             }
-
-            val ret = initEndpoint()
-            if (ret < 0) {
-                disconnect()
-                return false
-            }
-
-            usbDeviceConnected = UsbDeviceCompat(device)
-            return true
         }
-    }
-
-    @Throws(UsbOpenException::class)
-    private fun usbOpen(device: UsbDevice) {
+        if (!reserved) return@withContext false
         var connection: UsbDeviceConnection? = null
-        var lastError: Throwable? = null
-
-        for (i in 0 until 3) {
-            try {
-                if (!usbMgr.hasPermission(device)) {
-                    AppLog.w("No permission for USB device ${UsbDeviceCompat.getUniqueName(device)}. Waiting for system popup...")
-                    // We can't request permission here easily because we need a BroadcastReceiver.
-                    // But we can wait and see if the user granted it via the system dialog.
-                } else {
-                    connection = usbMgr.openDevice(device)
-                    if (connection != null) break
-                }
-            } catch (t: Throwable) {
-                lastError = t
-                AppLog.w("Attempt ${i+1} to openDevice failed: ${t.message}")
-            }
-            if (i < 2) try { Thread.sleep(1000) } catch (_: Exception) {}
-        }
-
-        usbDeviceConnection = connection ?: throw UsbOpenException(lastError ?: Throwable("openDevice: connection is null (Permission missing?)"))
-
-        AppLog.i("Established connection: " + usbDeviceConnection!!)
-
+        var iface: UsbInterface? = null
+        var claimed = false
+        var published = false
         try {
-            val interfaceCount = device.interfaceCount
-            if (interfaceCount <= 0) {
-                AppLog.e("interfaceCount: $interfaceCount")
-                throw UsbOpenException("No usb interfaces")
-            }
-            AppLog.i("interfaceCount: $interfaceCount")
-            usbInterface = device.getInterface(0)
-
-            if (!usbDeviceConnection!!.claimInterface(usbInterface, true)) {
-                throw UsbOpenException("Error claiming interface")
-            }
-        } catch (e: Throwable) {
-            AppLog.e(e)
-            throw UsbOpenException(e)
-        }
-    }
-
-    private fun initEndpoint(): Int {
-        AppLog.i("Check accessory endpoints")
-        val (selectedIn, selectedOut) = UsbDeviceCompat.selectEndpoints(usbInterface!!)
-        endpointIn = selectedIn
-        endpointOut = selectedOut
-        if (endpointIn == null || endpointOut == null) {
-            AppLog.e("Unable to find an endpoint pair on the accessory interface")
-            return -1
-        }
-
-        AppLog.i("Connected have EPs")
-        return 0
-    }
-
-    private fun resetInterface() {
-        if (usbDeviceConnection == null) return
-        synchronized(stateLock) {
-            val connection = usbDeviceConnection ?: return
-            val iface = usbInterface ?: return
-            AppLog.w("Attempting USB interface soft-reset...")
-            try {
-                connection.releaseInterface(iface)
-                Thread.sleep(100)
-                if (connection.claimInterface(iface, true)) {
-                    AppLog.i("USB interface re-claimed successfully")
-                    internalBufferPos = 0
-                    internalBufferAvailable = 0
-                    initEndpoint()
-                } else {
-                    AppLog.e("Failed to re-claim USB interface — disconnecting")
-                    disconnect()
+            var lastError: Throwable? = null
+            for (i in 0 until 3) {
+                if (!mayOpen(owner)) return@withContext false
+                try {
+                    if (!usbMgr.hasPermission(device)) {
+                        AppLog.w("No permission for USB device ${UsbDeviceCompat.getUniqueName(device)}. Waiting for system popup...")
+                    } else {
+                        // hasPermission and the retry sleep are both external waits. The exact
+                        // request must still own this open immediately before each USB effect.
+                        if (!mayOpen(owner)) return@withContext false
+                        connection = usbMgr.openDevice(device)
+                        if (connection != null) break
+                    }
+                } catch (failure: Throwable) {
+                    lastError = failure
+                    AppLog.w("Attempt ${i + 1} to openDevice failed: ${failure.message}")
                 }
-            } catch (e: Exception) {
-                AppLog.e("Error during USB reset: ${e.message}")
+                if (i < 2) try { Thread.sleep(1000) } catch (_: Exception) {}
+            }
+            val candidate = connection ?: throw UsbOpenException(lastError ?: Throwable("openDevice: connection is null (Permission missing?)"))
+            if (!mayOpen(owner)) return@withContext false
+            if (device.interfaceCount <= 0) throw UsbOpenException("No usb interfaces")
+            iface = device.getInterface(0)
+            if (!mayOpen(owner)) return@withContext false
+            if (!candidate.claimInterface(iface, true)) throw UsbOpenException("Error claiming interface")
+            claimed = true
+            val (input, output) = UsbDeviceCompat.selectEndpoints(checkNotNull(iface))
+            if (input == null || output == null) throw UsbOpenException("Unable to find an endpoint pair on the accessory interface")
+            val connected = UsbDeviceCompat(device)
+            // Only publication holds stateLock. USB/Binder operations and all waits above run
+            // outside it; admission orders lifecycle -> arbiter -> driver state.
+            admission.run {
+                synchronized(stateLock) {
+                    if (opening === owner) {
+                        usbDeviceConnection = candidate
+                        usbInterface = iface
+                        endpointIn = input
+                        endpointOut = output
+                        usbDeviceConnected = connected
+                        opening = null
+                        published = true
+                    }
+                }
+            }
+            published
+        } catch (failure: Exception) {
+            AppLog.e(failure)
+            false
+        } finally {
+            try {
+                if (!published) {
+                    if (claimed) try { connection?.releaseInterface(iface) } catch (_: Exception) {}
+                    try { connection?.close() } catch (_: Exception) {}
+                }
+            } finally {
+                // Keep the retiring open reachable until its local handle has actually closed.
+                synchronized(stateLock) { if (opening === owner) opening = null }
+                owner.finished.countDown()
             }
         }
+    }
+
+    private fun mayOpen(owner: OpenAttempt): Boolean {
+        var current = false
+        admission.run { synchronized(stateLock) { current = opening === owner } }
+        return current
     }
 
     override fun disconnect() {
-        // close() is thread-safe and immediately aborts any in-flight bulkTransfer(),
-        // so both sendBlocking and recvBlocking unblock within milliseconds.
-        val earlyClosed = usbDeviceConnection
-        earlyClosed?.close()
-
-        synchronized(stateLock) {
-            // openDevice can publish a handle while we wait for this lock. The early close
-            // only interrupted the old handle; close a late one before dropping its reference.
-            val retiring = usbDeviceConnection
-            if (retiring !== earlyClosed) retiring?.close()
-            if (usbDeviceConnected != null) {
-                AppLog.i(usbDeviceConnected!!.toString())
-            }
-            endpointIn = null
-            endpointOut = null
-
-            if (usbDeviceConnection != null) {
-                var bret = false
-                if (usbInterface != null) {
-                    // releaseInterface() may fail since close() was already called; log and continue.
-                    bret = try { usbDeviceConnection!!.releaseInterface(usbInterface) } catch (_: Exception) { false }
-                }
-                if (bret) {
-                    AppLog.i("OK releaseInterface()")
-                } else {
-                    AppLog.e("Error releaseInterface()")
-                }
-            }
+        val retired = synchronized(stateLock) {
+            // A late open can close only its local handle; it can no longer publish here.
+            val retired = Triple(usbDeviceConnection, usbInterface, opening)
+            opening = null
             usbDeviceConnection = null
             usbInterface = null
             usbDeviceConnected = null
+            endpointIn = null
+            endpointOut = null
             internalBufferPos = 0
             internalBufferAvailable = 0
+            retired
         }
+        // close() aborts in-flight bulkTransfer without blocking any ownership monitor.
+        retired.first?.close()
+        if (retired.first != null && retired.second != null) {
+            try { retired.first?.releaseInterface(retired.second) } catch (_: Exception) {}
+        }
+        // A successor waits for actual retirement, including a handle returning late from open.
+        retired.third?.awaitFinished()
     }
 
     // Read error tracking — only accessed by the poll thread; no lock needed.

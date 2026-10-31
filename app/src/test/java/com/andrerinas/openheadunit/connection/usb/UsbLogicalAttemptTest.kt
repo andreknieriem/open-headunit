@@ -102,13 +102,14 @@ class UsbLogicalAttemptTest {
             // Fail one actual candidate after openDevice, rather than usbOpen's own
             // null-handle retry loop (which would sleep and retry inside the same connect).
             `when`(handle.claimInterface(iface, true)).thenAnswer { !(failFirst && opens == 1) }
-            // Only transport retirement is doubled. Admission, candidate construction, open,
-            // physical success/failure and publication remain the real production consumers.
-            doAnswer { call ->
-                set("disconnectRequested", true)
-                states.value = CommManager.ConnectionState.Disconnected(settingsRetryOwner = call.getArgument(5))
-                null
-            }.`when`(comm).disconnect(any(), any(), any(), any(), any(), anyOrNull())
+            // Exercise the real owner-aware retirement. Only codec resources are Android doubles;
+            // the same queued scope keeps teardown completion visible to retries.
+            set("_scope", scope)
+            val audio = mock(com.andrerinas.openheadunit.decoder.audio.AudioDecoder::class.java)
+            `when`(audio.captureCleanup()).thenReturn({})
+            set("audioDecoder", audio)
+            set("videoDecoder", mock(com.andrerinas.openheadunit.decoder.video.VideoDecoder::class.java))
+            set("keyStates", mutableMapOf<Int, Any>())
             launcher = UsbLauncherManager(service)
         }
         fun set(name: String, value: Any?) = CommManager::class.java.getDeclaredField(name)
@@ -127,7 +128,7 @@ class UsbLogicalAttemptTest {
             }
         }
         fun closes() = mockingDetails(handle).invocations.count { it.method.name == "close" }
-        fun stopOpen(): Long { comm.requestExplicitAppExit(killProcess = false); return comm.onAppRelaunched() }
+        fun stopOpen(): Long { comm.requestExplicitAppExit(comm.appConnectionTicket(), killProcess = false); return comm.onAppRelaunched() }
         /** A dialog raised for [ticket]'s input now, answered with a grant; null asks for the grant only. */
         fun permissionReply(ticket: Long?) {
             val intent = mock(android.content.Intent::class.java)
@@ -299,7 +300,7 @@ class UsbLogicalAttemptTest {
     }
 
     @Test fun aNewManualUsbInputAfterStopCanOriginateANewRun() = fixture { f ->
-        f.comm.requestExplicitAppExit(killProcess = false)
+        f.comm.requestExplicitAppExit(f.comm.appConnectionTicket(), killProcess = false)
         f.launcher.checkOnRequest(userRequested = true, recheck = f.comm.usbRecheckNow())
         f.queue.drain(); f.connect()
         assertEquals(1, f.opens)
@@ -405,8 +406,7 @@ class UsbLogicalAttemptTest {
             val resumeA = checkNotNull(f.io.take()) { "A did not reach its first IO entry" }
             if (exit) {
                 // The real user-exit disconnect, as the home screen's Exit issues it.
-                doCallRealMethod().`when`(f.comm).disconnect(any(), any(), any(), any(), any(), anyOrNull())
-                f.comm.disconnect(sendByeBye = false, isUserExit = true, honorKillOnDisconnect = false)
+                f.comm.disconnect(com.andrerinas.openheadunit.connection.ConnectionOperation(f.comm.appConnectionTicket(), null), sendByeBye = false, isUserExit = true, honorKillOnDisconnect = false)
             }
             resumeA.run()
             f.connect(jobA)

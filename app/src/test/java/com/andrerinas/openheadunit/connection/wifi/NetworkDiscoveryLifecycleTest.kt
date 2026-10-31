@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.Context
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.AppComponent
+import com.andrerinas.openheadunit.connection.ConnectionOperation
 import com.andrerinas.openheadunit.connection.AppExitPolicy
 import com.andrerinas.openheadunit.connection.CommManager
 import com.andrerinas.openheadunit.connection.withAppExitDispatcherForTest
@@ -89,9 +90,11 @@ class NetworkDiscoveryLifecycleTest {
             field(app, "component\$delegate", lazyOf(component))
             whenever(context.applicationContext).thenReturn(app)
             doAnswer {
-                assertFalse("ticket validation must precede PROBE_LOCK", Thread.holdsLock(probeLock))
+                val lifecycle = get(comm, "transportLifecycleLock")!!
+                assertTrue("PROBE_LOCK may validate only while lifecycle is already held",
+                    !Thread.holdsLock(probeLock) || Thread.holdsLock(lifecycle))
                 it.callRealMethod()
-            }.whenever(comm).acceptsAppConnectionTicket(any())
+            }.whenever(comm).isCurrent(any<ConnectionOperation>())
         }
         fun scanner() = NetworkDiscovery(context, mock())
         fun stopAndOpen() {
@@ -102,8 +105,8 @@ class NetworkDiscoveryLifecycleTest {
 
     private fun install(scanner: NetworkDiscovery, job: Job, oneShot: Boolean, ticket: Long) {
         val generation = Class.forName("${NetworkDiscovery::class.java.name}\$Generation")
-            .getDeclaredConstructor(Boolean::class.javaPrimitiveType!!, Long::class.javaPrimitiveType!!)
-            .apply { isAccessible = true }.newInstance(oneShot, ticket)
+            .getDeclaredConstructor(Boolean::class.javaPrimitiveType!!, ConnectionOperation::class.java)
+            .apply { isAccessible = true }.newInstance(oneShot, ConnectionOperation(ticket, null))
         field(scanner, "scanJob", job)
         field(scanner, "currentGeneration", generation)
         @Suppress("UNCHECKED_CAST")
@@ -122,13 +125,13 @@ class NetworkDiscoveryLifecycleTest {
             try {
                 fixture.stopAndOpen()
                 val freshTicket = fixture.comm.appConnectionTicket()
-                assertTrue(scanner.startScan(oneShot = true, ticket = freshTicket))
+                assertTrue(scanner.startScan(oneShot = true, operation = ConnectionOperation(freshTicket, null)))
                 val current = get(scanner, "scanJob") as Job
                 replacement = current
                 val generation = requireNotNull(get(scanner, "currentGeneration"))
                 assertNotSame(old.job, current)
                 assertTrue(old.job.isCancelled)
-                assertEquals(freshTicket, get(generation, "ticket"))
+                assertEquals(freshTicket, (get(generation, "operation") as ConnectionOperation).ticket)
                 withTimeout(5_000) { old.joinEntered.await() }
                 assertFalse(old.job.isCompleted)
                 assertTrue(current.isActive)
@@ -136,7 +139,7 @@ class NetworkDiscoveryLifecycleTest {
                 assertEquals(setOf("outgoing scan"), get(scanner, "reportedIps"))
                 synchronized(probeLock) { assertSame(current, inFlight) }
 
-                assertFalse(scanner.startScan(oneShot = false, ticket = oldTicket))
+                assertFalse(scanner.startScan(oneShot = false, operation = ConnectionOperation(oldTicket, null)))
                 assertSame(current, get(scanner, "scanJob"))
                 assertSame(generation, get(scanner, "currentGeneration"))
                 assertEquals(true, get(generation, "oneShot"))
@@ -164,11 +167,11 @@ class NetworkDiscoveryLifecycleTest {
             val generation = get(scanner, "currentGeneration")!!
             fixture.policy.supersede()
             assertEquals(ticket, fixture.comm.appConnectionTicket())
-            assertFalse(scanner.startScan(oneShot = false, ticket = fixture.comm.appConnectionTicket()))
+            assertFalse(scanner.startScan(oneShot = false, operation = ConnectionOperation(fixture.comm.appConnectionTicket(), null)))
             assertSame(old.job, get(scanner, "scanJob"))
             assertSame(generation, get(scanner, "currentGeneration"))
             assertEquals(false, get(generation, "oneShot"))
-            assertFalse(scanner.startScan(oneShot = true, ticket = ticket))
+            assertFalse(scanner.startScan(oneShot = true, operation = ConnectionOperation(ticket, null)))
             assertEquals(false, get(generation, "oneShot"))
             assertTrue(old.job.isActive)
             assertFalse(old.job.isCancelled)
@@ -192,7 +195,7 @@ class NetworkDiscoveryLifecycleTest {
         var replacement: Job? = null
         try {
             fixture.stopAndOpen()
-            assertTrue(scanner.startScan(oneShot = true, ticket = fixture.comm.appConnectionTicket()))
+            assertTrue(scanner.startScan(oneShot = true, operation = ConnectionOperation(fixture.comm.appConnectionTicket(), null)))
             val current = get(scanner, "scanJob") as Job
             replacement = current
             withTimeout(5_000) { previous.joinEntered.await() }

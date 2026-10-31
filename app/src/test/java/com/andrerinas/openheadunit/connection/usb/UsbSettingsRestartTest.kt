@@ -117,7 +117,7 @@ class UsbSettingsRestartTest {
                 } else comm.cancelPendingSettingsRestart()
                 when (cancelPath) {
                     "user" -> launcher.stopForUser()
-                    "preempt", "replacement" -> launcher.preemptAttempt()
+                    "preempt", "replacement" -> launcher.preemptAttempt(oldClaim)
                 }
                 var replacementClaim: com.andrerinas.openheadunit.connection.ConnectionArbiter.Claim? = null
                 if (cancelPath == "replacement") {

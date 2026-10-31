@@ -10,6 +10,7 @@ class LateHandshakeRetryTest {
   val manager=mock(CommManager::class.java, CALLS_REAL_METHODS)
   val ended=CommManager.ConnectionState.Disconnected()
   val flow=MutableStateFlow<CommManager.ConnectionState>(ended)
+  CommManager::class.java.getDeclaredField("transportLifecycleLock").apply{isAccessible=true}.set(manager,Any())
   CommManager::class.java.getDeclaredField("_connectionState").apply{isAccessible=true}.set(manager,flow)
   CommManager::class.java.getDeclaredField("connectionState").apply{isAccessible=true}.set(manager,flow)
   val resume=CompletableDeferred<Unit>()
@@ -17,7 +18,7 @@ class LateHandshakeRetryTest {
   val retry=AutomaticReconnect(this,{flow.value},{false},{resume.await()})
   retry.schedule(ended,2000){retried++}
   yield()
-  manager.startHandshake()
+  assertNull("A disconnected owner cannot authorize a handshake", manager.captureHandshake())
   assertSame(ended, flow.value)
   assertFalse(manager.isConnected)
   resume.complete(Unit)
@@ -48,6 +49,22 @@ class LateHandshakeRetryTest {
    field("_scope", cleanupScope)
    field("settings", mock(com.andrerinas.openheadunit.utils.Settings::class.java))
    field("appExitPolicy", com.andrerinas.openheadunit.connection.AppExitPolicy())
+   val recoveryOwner = Any()
+   field("usbRecoveryOwner", recoveryOwner)
+   val arbiter = com.andrerinas.openheadunit.connection.ConnectionArbiter
+   val oldClock = arbiter.clock
+   val oldLogger = com.andrerinas.openheadunit.utils.AppLog.LOGGER
+   com.andrerinas.openheadunit.utils.AppLog.LOGGER = object : com.andrerinas.openheadunit.utils.AppLog.Logger {
+    override fun println(priority: Int, tag: String, msg: String) = Unit
+   }
+   arbiter.clock = { 1000L }
+   arbiter.reset()
+   val claim = checkNotNull(arbiter.claim(com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy.Tier.USER,
+       com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy.Owner.MANUAL, "handshake"))
+   val request = CommManager.ConnectionRequest(manager.appConnectionTicket(), claim, null, null, null)
+   val attempt = CommManager.Attempt(request)
+   request.attempt = attempt
+   field("connectionAttempt", attempt)
    var terminal: CommManager.ConnectionState? = null
    val quit = CommManager::class.java.getDeclaredMethod("transportedQuited", AapTransport::class.java, Boolean::class.javaPrimitiveType)
     .apply { isAccessible = true }
@@ -58,11 +75,16 @@ class LateHandshakeRetryTest {
     false
    }
    try {
-    manager.startHandshake()
+    val authority = checkNotNull(manager.captureHandshake())
+    assertSame(attempt, authority.attempt)
+    assertSame(request, authority.attempt.request)
+    assertSame(connection, authority.connection)
+    assertSame(recoveryOwner, authority.recoveryOwner)
+    manager.startHandshake(authority)
     assertNotNull(terminal)
     assertSame("Handshake reporting must not replace the terminal owner", terminal, flow.value)
     assertEquals("Only the winning terminal queues cleanup", 1, tasks.size)
-   } finally { cleanupScope.cancel() }
+   } finally { cleanupScope.cancel(); arbiter.reset(); arbiter.clock = oldClock; com.andrerinas.openheadunit.utils.AppLog.LOGGER = oldLogger }
   }
  }
 }

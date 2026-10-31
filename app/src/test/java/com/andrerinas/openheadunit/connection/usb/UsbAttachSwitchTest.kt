@@ -53,12 +53,13 @@ class UsbAttachSwitchTest {
             fun admit() = checkNotNull(manager.admitUsbRequest(Tier.USB, "USB switch of phone", null,
                 manager.usbRecheck(manager.appConnectionTicket())))
             val request = admit()
+            UsbSwitchClaim.stake(request.claim)
             when (revoked) {
-                "exit" -> manager.disconnect(sendByeBye = false, isUserExit = true, honorKillOnDisconnect = false)
+                "exit" -> manager.disconnect(com.andrerinas.openheadunit.connection.ConnectionOperation(manager.appConnectionTicket(), null), sendByeBye = false, isUserExit = true, honorKillOnDisconnect = false)
                 // Stop's retained-group hand-off asserts Main; with Looper mocked, as the suite's
                 // other Stop cases run it, both loopers read the same.
                 "stop" -> org.mockito.Mockito.mockStatic(android.os.Looper::class.java).use {
-                    manager.requestExplicitAppExit(killProcess = false); manager.onAppRelaunched()
+                    manager.requestExplicitAppExit(manager.appConnectionTicket(), killProcess = false); manager.onAppRelaunched()
                 }
                 "newer" -> admit()
             }
@@ -84,8 +85,9 @@ class UsbAttachSwitchTest {
     @Test fun aLockedSwitchWhoseClaimWasLostMakesNoUsbCall() {
         for (lost in listOf("yield", "manual", "none")) {
             val claim = checkNotNull(ConnectionArbiter.claim(Tier.USB, ConnectionPriorityPolicy.Owner.USB, "USB switch of phone"))
+            UsbSwitchClaim.stake(claim)
             val newer = when (lost) {
-                "yield" -> { ConnectionArbiter.yieldToUser("Wi-Fi by hand"); null }
+                "yield" -> { ConnectionArbiter.yieldToUser("Wi-Fi by hand", com.andrerinas.openheadunit.connection.ConnectionAdmission.UNRESTRICTED); null }
                 "manual" -> checkNotNull(ConnectionArbiter.claim(Tier.USER, ConnectionPriorityPolicy.Owner.MANUAL, "192.0.2.1:5277"))
                 else -> null
             }
@@ -136,7 +138,7 @@ class UsbAttachSwitchTest {
             main.drain() // The job reaches its IO hop; the worker itself is still queued.
             var newer: ConnectionArbiter.Claim? = null
             when (revoked) {
-                "cancel" -> manager.disconnect(sendByeBye = false, isUserExit = true, honorKillOnDisconnect = false)
+                "cancel" -> manager.disconnect(com.andrerinas.openheadunit.connection.ConnectionOperation(manager.appConnectionTicket(), null), sendByeBye = false, isUserExit = true, honorKillOnDisconnect = false)
                 "manual" -> newer = checkNotNull(ConnectionArbiter.claim(Tier.USER, ConnectionPriorityPolicy.Owner.MANUAL, "192.0.2.1:5277"))
                 "view-gone" -> scope.coroutineContext[kotlinx.coroutines.Job]!!.cancel()
             }

@@ -72,6 +72,9 @@ class UsbDeferredRecheckTest {
             return done
         }
         fun recheck() = comm.usbRecheck(comm.appConnectionTicket())
+        fun request() = UsbLauncherManager::class.java.getDeclaredField("attemptRequest")
+            .apply { isAccessible = true }.get(launcher) as CommManager.ConnectionRequest
+        fun preempt(claim: ConnectionArbiter.Claim) = launcher.preemptAttempt(claim)
         /** Counts forced, non-manual, Save-less scans, whether a fresh input or a replayed owed scan. */
         fun verifyScans(mode: org.mockito.verification.VerificationMode, accessoryOnly: Boolean) =
             verify(launcher, mode).checkAlreadyConnected(eqValue(true), eqValue(false), isNull(),
@@ -157,7 +160,7 @@ class UsbDeferredRecheckTest {
                     .connectWithRetry(eqValue(accessory), anyValue(), eqValue(3))
             }
             mockConstruction(UsbAccessoryMode::class.java) { mode, _ ->
-                `when`(mode.connectAndSwitch(normal, false)).thenAnswer {
+                `when`(mode.connectAndSwitch(eqValue(normal), eqValue(false), anyValue())).thenAnswer {
                     entered.countDown()
                     check(finish.await(5, java.util.concurrent.TimeUnit.SECONDS))
                     outcome != "switch-failed"
@@ -215,14 +218,23 @@ class UsbDeferredRecheckTest {
     @Test fun stopReplacementSessionAndServiceShutdownInvalidateAQueuedManualRecheck() {
         for (ending in listOf("stop", "preempt", "exit", "session", "save", "destroy", "stopping")) fixture { f ->
             val done = f.begin()
+            val request = f.request()
             f.check(manual = true)
+            if (ending == "preempt") {
+                // Preemption belongs to the running attempt, before completion clears its slot.
+                // A delayed callback for an ended claim must not cancel a later queued input.
+                val job = checkNotNull(f.launcher.attemptJob)
+                assertTrue(f.comm.isValid(request))
+                assertTrue(job.isActive)
+                f.preempt(request.claim)
+                assertTrue(job.isCancelled)
+            }
             done.complete(Unit)
-            f.queue.step() // Complete the owner, leaving its rescan queued on the service dispatcher.
+            f.queue.step() // Other endings now have the completed owner's rescan queued on the service dispatcher.
             when (ending) {
                 "stop" -> f.launcher.stopForUser()
-                "preempt" -> f.launcher.preemptAttempt()
-                "exit" -> f.comm.disconnect(honorKillOnDisconnect = false)
-                "save" -> f.comm.disconnect(isUserExit = false, reason = CommManager.DisconnectReason.SETTINGS_RESTART)
+                "exit" -> f.comm.disconnect(com.andrerinas.openheadunit.connection.ConnectionOperation(f.comm.appConnectionTicket(), null), honorKillOnDisconnect = false)
+                "save" -> f.comm.disconnect(com.andrerinas.openheadunit.connection.ConnectionOperation(f.comm.appConnectionTicket(), null), isUserExit = false, reason = CommManager.DisconnectReason.SETTINGS_RESTART)
                 "session" -> f.field("usbRecoveryOwner", Any()) // producer rotates before successful handshake publication
                 "destroy" -> f.scope.cancel()
                 "stopping" -> `when`(f.service.isStopping).thenReturn(true)
@@ -235,8 +247,9 @@ class UsbDeferredRecheckTest {
 
     @Test fun staleCompletionCannotDrainOrReleaseANewerAttempt() = fixture { f ->
         val old = f.begin()
+        val claim = f.request().claim
         f.check()
-        f.launcher.preemptAttempt()
+        f.preempt(claim)
         val next = f.begin()
         f.check()
         old.complete(Unit)
@@ -244,6 +257,21 @@ class UsbDeferredRecheckTest {
         assertTrue(f.launcher.isSwitchingToProjection())
         f.assertScans(0)
         next.complete(Unit)
+        f.queue.drain()
+        f.assertScans(1)
+    }
+
+    @Test fun delayedPreemptionKeepsTheReplacementJobAndItsPendingScan() = fixture { f ->
+        f.begin()
+        val old = f.request()
+        f.preempt(old.claim)
+        f.queue.drain()
+        val done = f.begin()
+        val current = checkNotNull(f.launcher.attemptJob)
+        f.check()
+        f.launcher.preemptAttempt(old.claim)
+        assertTrue(current.isActive)
+        done.complete(Unit)
         f.queue.drain()
         f.assertScans(1)
     }
@@ -368,7 +396,12 @@ class UsbDeferredRecheckTest {
 
     @Test fun anActivitySwitchDuringAnAttemptLeavesTheReplayAccessoryOnly() = fixture { f ->
         val done = f.begin()
-        UsbSwitchClaim.noteSwitched() // UsbAttachedActivity sent ACC_REQ_START and released its claim.
+        val claim = checkNotNull(ConnectionArbiter.claim(Tier.USB,
+            com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy.Owner.USB, "attach activity switch"))
+        UsbSwitchClaim.stake(claim)
+        UsbSwitchClaim.noteSwitched(claim) // The distinct activity owner sent ACC_REQ_START.
+        UsbSwitchClaim.release(claim)
+        ConnectionArbiter.release(claim, sessionFormed = false)
         f.check()                    // The 2 s attach fallback queues behind the attempt.
         done.complete(Unit)
         f.queue.drain()
@@ -388,12 +421,17 @@ class UsbDeferredRecheckTest {
     @Test fun aReplayDuringALiveActivitySwitchIsAccessoryOnly() = fixture { f ->
         val done = f.begin()
         f.check()
-        UsbSwitchClaim.stake()
+        val claim = checkNotNull(ConnectionArbiter.claim(Tier.USB,
+            com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy.Owner.USB, "attach activity switch"))
+        UsbSwitchClaim.stake(claim)
         try {
             done.complete(Unit)
             f.queue.drain()
             f.verifyScans(times(1), accessoryOnly = true)
-        } finally { UsbSwitchClaim.release() }
+        } finally {
+            UsbSwitchClaim.release(claim)
+            ConnectionArbiter.release(claim, sessionFormed = false)
+        }
     }
 
     private class RecoveryBus(f: Fixture) {
@@ -417,7 +455,7 @@ class UsbDeferredRecheckTest {
     /** Ends a USB handshake and returns the deferred that completes after the step's slot release and replay. */
     private fun endHandshake(f: Fixture, bus: RecoveryBus): CompletableDeferred<Unit> {
         f.launcher.onUsbHandshakeEnded(CommManager.UsbHandshakeOutcome(
-            com.andrerinas.openheadunit.aap.AapTransport.HandshakeFailure.SSL, bus.stale, f.comm.usbRecheckOwner()), f.recheck())
+            com.andrerinas.openheadunit.aap.AapTransport.HandshakeFailure.SSL, bus.stale, f.comm.usbRecheckOwner(), f.recheck()))
         @Suppress("UNCHECKED_CAST")
         val finished = UsbLauncherManager::class.java.getDeclaredField("attemptFinished")
             .apply { isAccessible = true }.get(f.launcher) as CompletableDeferred<Unit>
@@ -438,7 +476,7 @@ class UsbDeferredRecheckTest {
 
     private fun switching(bus: RecoveryBus, issued: Boolean, entered: java.util.concurrent.CountDownLatch? = null,
         reenumerates: Boolean = false, duringRequest: () -> Unit = {}) = mockConstruction(UsbAccessoryMode::class.java) { mode, _ ->
-        `when`(mode.connectAndSwitch(bus.stale, false)).thenAnswer {
+        `when`(mode.connectAndSwitch(eqValue(bus.stale), eqValue(false), anyValue())).thenAnswer {
             check(bus.gate.await(5, java.util.concurrent.TimeUnit.SECONDS))
             entered?.countDown()
             duringRequest()
@@ -900,7 +938,7 @@ class UsbDeferredRecheckTest {
         f.begin()
         switching(bus, issued = false).use { steps ->
             f.launcher.onUsbHandshakeEnded(CommManager.UsbHandshakeOutcome(
-            com.andrerinas.openheadunit.aap.AapTransport.HandshakeFailure.SSL, bus.stale, f.comm.usbRecheckOwner()), f.recheck())
+            com.andrerinas.openheadunit.aap.AapTransport.HandshakeFailure.SSL, bus.stale, f.comm.usbRecheckOwner(), f.recheck()))
             assertEquals(0, steps.constructed().size)
             val count = UsbLauncherManager::class.java.getDeclaredField("staleSteps")
                 .apply { isAccessible = true }.getInt(f.launcher)
@@ -911,14 +949,14 @@ class UsbDeferredRecheckTest {
     @Test fun delayedFailureDoesNotResetAnotherAccessoryOrUseANewerOwner() = fixture { f ->
         val bus = RecoveryBus(f)
         val outcome = CommManager.UsbHandshakeOutcome(
-            com.andrerinas.openheadunit.aap.AapTransport.HandshakeFailure.SSL, bus.stale, f.comm.usbRecheckOwner())
+            com.andrerinas.openheadunit.aap.AapTransport.HandshakeFailure.SSL, bus.stale, f.comm.usbRecheckOwner(), f.recheck())
         switching(bus, issued = false).use { commands ->
             bus.reenumerate() // The reported enumeration has gone; another accessory is present.
-            f.launcher.onUsbHandshakeEnded(outcome, f.recheck())
+            f.launcher.onUsbHandshakeEnded(outcome)
             assertEquals(0, commands.constructed().size)
             bus.devices = mapOf(bus.stale.deviceName to bus.stale)
             f.field("usbRecoveryOwner", Any()) // Exit/Save before Main handles the callback.
-            f.launcher.onUsbHandshakeEnded(outcome, f.recheck())
+            f.launcher.onUsbHandshakeEnded(outcome)
             assertEquals(0, commands.constructed().size)
         }
     }
@@ -933,7 +971,7 @@ class UsbDeferredRecheckTest {
         mockConstruction(UsbAccessoryMode::class.java).use { commands ->
             f.launcher.onUsbHandshakeEnded(CommManager.UsbHandshakeOutcome(
                 com.andrerinas.openheadunit.aap.AapTransport.HandshakeFailure.SSL,
-                bus.stale, f.comm.usbRecheckOwner()), f.recheck())
+                bus.stale, f.comm.usbRecheckOwner(), f.recheck()))
             assertEquals(0, commands.constructed().size)
         }
     }
@@ -950,7 +988,7 @@ class UsbDeferredRecheckTest {
         mockConstruction(UsbAccessoryMode::class.java).use { commands ->
             f.launcher.onUsbHandshakeEnded(CommManager.UsbHandshakeOutcome(
                 com.andrerinas.openheadunit.aap.AapTransport.HandshakeFailure.SSL,
-                bus.stale, f.comm.usbRecheckOwner(), original), f.recheck())
+                bus.stale, f.comm.usbRecheckOwner(), f.recheck(), original))
             assertEquals(0, commands.constructed().size)
         }
     }

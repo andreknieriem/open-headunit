@@ -1,5 +1,6 @@
 package com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.esp32
 
+import com.andrerinas.openheadunit.connection.ConnectionAdmission
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.ExternalModuleCarrier
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.HandshakeLink
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.WppFraming
@@ -182,13 +183,16 @@ class Esp32RelayCarrier(
         }
     }
 
-    override fun requestWake(userAsked: Boolean) {
-        AppLog.i(
-            "NativeAA: [ESP32] intentional wake — HFP_ON then AA_ENABLE; " +
-                "the phone opens Android Auto, then HFP_OFF returns calls to the phone."
-        )
-        // ensureLink alone only refreshes BLE/credentials and must not wake HFP after projection.
-        Esp32RelaySession.requestAaWake()
+    override fun requestWake(userAsked: Boolean, admission: ConnectionAdmission) {
+        admission.run {
+            if (!keepRunning()) return@run
+            AppLog.i(
+                "NativeAA: [ESP32] intentional wake — HFP_ON then AA_ENABLE; " +
+                    "the phone opens Android Auto, then HFP_OFF returns calls to the phone."
+            )
+            // ensureLink alone only refreshes BLE/credentials and must not wake HFP after projection.
+            Esp32RelaySession.requestAaWake()
+        }
     }
 
     override fun close() {

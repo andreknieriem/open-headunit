@@ -33,7 +33,7 @@ fun appExitOwnershipRaces() {
 
     val (idle, idleService) = fixture()
     try {
-        idle.disconnect(isUserExit = false)
+        idle.disconnect(ConnectionOperation(idle.appConnectionTicket(),null), isUserExit = false)
         val old = checkNotNull(Handler.delayed.peek())
         idle.onAppRelaunched()
         check(Handler.delayed.isEmpty())
@@ -45,7 +45,7 @@ fun appExitOwnershipRaces() {
     for (held in listOf(false, true)) {
         val (waiting, service) = fixture()
         try {
-            waiting.disconnect(isUserExit = false)
+            waiting.disconnect(ConnectionOperation(waiting.appConnectionTicket(),null), isUserExit = false)
             val old = checkNotNull(Handler.delayed.peek())
             runBlocking {
                 val replacement = launch(start = CoroutineStart.UNDISPATCHED) {
@@ -73,7 +73,7 @@ fun appExitOwnershipRaces() {
 
     val (noPermission, noPermissionService) = fixture()
     try {
-        noPermission.disconnect(isUserExit = false)
+        noPermission.disconnect(ConnectionOperation(noPermission.appConnectionTicket(),null), isUserExit = false)
         noPermission.context.usb.permitted = false
         runBlocking { noPermission.connectClaimedUsb(UsbDevice(), fixtureClaim()) }
         check(Handler.delayed.size == 1)
@@ -91,7 +91,7 @@ fun appExitOwnershipRaces() {
         try { runBlocking { connecting.connectNext() } } catch (t: Throwable) { errors.add(t) }
     }
     try {
-        connecting.disconnect(isUserExit = false)
+        connecting.disconnect(ConnectionOperation(connecting.appConnectionTicket(),null), isUserExit = false)
         val old = checkNotNull(Handler.delayed.peek())
         connecting.cleanups()
         SocketProjectionConnection.connectionHook = {
@@ -118,7 +118,7 @@ fun appExitOwnershipRaces() {
 
     val (rejected, rejectedService) = fixture()
     try {
-        rejected.disconnect(isUserExit = false)
+        rejected.disconnect(ConnectionOperation(rejected.appConnectionTicket(),null), isUserExit = false)
         rejected.cleanups()
         val device = UsbDevice()
         rejected.context.usb.deviceList[device.deviceName] = device
@@ -141,7 +141,7 @@ fun appExitOwnershipRaces() {
     for (userStop in listOf(false, true)) {
         val (eligible, service) = fixture()
         try {
-            eligible.disconnect(isUserExit = userStop)
+            eligible.disconnect(ConnectionOperation(eligible.appConnectionTicket(),null), isUserExit = userStop)
             val old = checkNotNull(Handler.delayed.poll())
             repeat(3) { old.run() }
             check(eligible.context.broadcasts.size == 1 && service.stops == 1)
@@ -158,7 +158,7 @@ fun appExitOwnershipRaces() {
         val (optedOut, service) = fixture()
         try {
             if (disableBeforeDisconnect) optedOut.settings.killOnDisconnect = false
-            optedOut.disconnect(isUserExit = false)
+            optedOut.disconnect(ConnectionOperation(optedOut.appConnectionTicket(),null), isUserExit = false)
             optedOut.settings.killOnDisconnect = false
             while (Handler.delayed.isNotEmpty()) Handler.delayed.poll().run()
             noExit(optedOut, service)
@@ -167,7 +167,7 @@ fun appExitOwnershipRaces() {
 
     val (reopened, reopenedService) = fixture()
     try {
-        reopened.disconnect(isUserExit = false)
+        reopened.disconnect(ConnectionOperation(reopened.appConnectionTicket(),null), isUserExit = false)
         reopened.cleanups()
         val old = checkNotNull(Handler.delayed.poll())
         old.run()
@@ -203,7 +203,7 @@ fun appExitOwnershipRaces() {
 
     val (claimedAfterStop, claimedService) = fixture()
     try {
-        claimedAfterStop.disconnect(isUserExit = false)
+        claimedAfterStop.disconnect(ConnectionOperation(claimedAfterStop.appConnectionTicket(),null), isUserExit = false)
         claimedAfterStop.cleanups()
         Handler.delayed.poll().run()
         val request = checkNotNull(claimedService.exitRequest)
@@ -224,7 +224,7 @@ fun appExitOwnershipRaces() {
     val (idleStop, idleStopService) = fixture()
     try {
         idleStop.settings.killOnDisconnect = false
-        val request = checkNotNull(idleStop.requestExplicitAppExit(killProcess = false))
+        val request = checkNotNull(idleStop.requestExplicitAppExit(ticket = idleStop.appConnectionTicket(), killProcess = false))
         check(idleStop.commitAppExit(request) === request)
         idleStop.broadcastAppExit(request)
         idleStopService.stopForAppExit(request)
@@ -249,7 +249,7 @@ fun appExitOwnershipRaces() {
     for (openAfterStop in listOf(false, true)) {
         val (c, service) = fixture()
         try {
-            c.disconnect(isUserExit = false)
+            c.disconnect(ConnectionOperation(c.appConnectionTicket(), null), isUserExit = false)
             c.cleanups()
             Handler.delayed.poll().run()
             val a = checkNotNull(service.exitRequest)
@@ -259,7 +259,7 @@ fun appExitOwnershipRaces() {
                     c.connectClaimedNext(fixtureClaim())
                 }
                 check(!u.isCompleted)
-                val b = c.requestExplicitAppExit(killProcess = false)
+                val b = checkNotNull(c.requestExplicitAppExit(ticket = c.appConnectionTicket(), killProcess = false))
                 check(c.commitAppExit(b) === a)
                 check(c.appExitIsUserStop(a))
                 if (openAfterStop) c.onAppRelaunched()
@@ -286,7 +286,7 @@ fun appExitOwnershipRaces() {
             try { runBlocking { c.connectNext() } } catch (t: Throwable) { errors.add(t) }
         }
         try {
-            c.disconnect(honorKillOnDisconnect = false)
+            c.disconnect(ConnectionOperation(c.appConnectionTicket(), null), honorKillOnDisconnect = false)
             c.cleanups()
             SocketProjectionConnection.connectionHook = {
                 opened.countDown()
@@ -297,7 +297,7 @@ fun appExitOwnershipRaces() {
             check(opened.await(5, TimeUnit.SECONDS))
             val candidate = checkNotNull(c.network())
             check(c.state is ConnectionState.Connecting)
-            val b = c.requestExplicitAppExit(killProcess = false)
+            val b = checkNotNull(c.requestExplicitAppExit(ticket = c.appConnectionTicket(), killProcess = false))
             if (openAfterStop) c.onAppRelaunched()
             releaseOpen.countDown()
             caller.join(5000)
@@ -318,16 +318,16 @@ fun appExitOwnershipRaces() {
     runBlocking {
         val (c, _) = fixture()
         try {
-            c.disconnect(honorKillOnDisconnect = false)
+            c.disconnect(ConnectionOperation(c.appConnectionTicket(), null), honorKillOnDisconnect = false)
             c.cleanups()
-            val a = c.requestExplicitAppExit(killProcess = false)
+            val a = checkNotNull(c.requestExplicitAppExit(ticket = c.appConnectionTicket(), killProcess = false))
             check(c.commitAppExit(a) === a)
             AapService.instance = null
             val starts = androidx.core.content.ContextCompat.serviceStarts.size
             val r = c.onAppRelaunched()
             c.restoreAppForEntry(r)
             check(androidx.core.content.ContextCompat.serviceStarts.size == starts)
-            val b = c.requestExplicitAppExit(killProcess = false)
+            val b = checkNotNull(c.requestExplicitAppExit(ticket = c.appConnectionTicket(), killProcess = false))
             c.destroy()
             check(c.completeAppExit(a).owner == b.id)
             check(androidx.core.content.ContextCompat.serviceStarts.size == starts)
@@ -349,15 +349,15 @@ fun appExitOwnershipRaces() {
         val newResult = kotlinx.coroutines.CompletableDeferred<Unit>()
         var stops = 0
         try {
-            operations.start(prepare = { oldResult.await() }, apply = { c.requestExplicitAppExit(false); stops++ }, onFailure = { throw it })
-            operations.start(prepare = { newResult.await() }, apply = { c.requestExplicitAppExit(false); stops++ }, onFailure = { throw it })
+            operations.start(prepare = { oldResult.await() }, apply = { checkNotNull(c.requestExplicitAppExit(ticket = c.appConnectionTicket(), false)); stops++ }, onFailure = { throw it })
+            operations.start(prepare = { newResult.await() }, apply = { checkNotNull(c.requestExplicitAppExit(ticket = c.appConnectionTicket(), false)); stops++ }, onFailure = { throw it })
             oldResult.complete(Unit)
             check(stops == 0)
             c.onAppRelaunched() // A compatible UI return does not cancel a legitimate result.
             newResult.complete(Unit)
             check(stops == 1)
             val cancelledResult = kotlinx.coroutines.CompletableDeferred<Unit>()
-            operations.start(prepare = { cancelledResult.await() }, apply = { c.requestExplicitAppExit(false); stops++ }, onFailure = { throw it })
+            operations.start(prepare = { cancelledResult.await() }, apply = { checkNotNull(c.requestExplicitAppExit(ticket = c.appConnectionTicket(), false)); stops++ }, onFailure = { throw it })
             operations.cancel()
             cancelledResult.complete(Unit)
             check(stops == 1)

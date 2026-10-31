@@ -1,6 +1,8 @@
 package com.andrerinas.openheadunit.connection.wifi.modes.nativeaa
 
 import android.content.Context
+import com.andrerinas.openheadunit.connection.ConnectionOperation
+import com.andrerinas.openheadunit.connection.CommManager
 import com.andrerinas.openheadunit.aap.protocol.proto.Wireless
 import com.andrerinas.openheadunit.connection.wifi.direct.GroupIdentityStability
 import kotlinx.coroutines.CoroutineScope
@@ -40,6 +42,15 @@ import javax.net.ssl.SSLSocketFactory
  * end whole, freeing the phone's reservation for its next dial.
  */
 class WppTcpExchangeContractTest {
+    private val operation = ConnectionOperation(0L, null)
+    private val commManager = mock(CommManager::class.java).also {
+        `when`(it.isCurrent(operation)).thenReturn(true)
+        org.mockito.kotlin.doAnswer { invocation ->
+            @Suppress("UNCHECKED_CAST")
+            (invocation.arguments[0] as () -> Any?)()
+        }.`when`(it).withAppConnectionLifecycleLock<Any?>(org.mockito.kotlin.any())
+    }
+
 
     private val stable = NativeNetworkCredentials(
         "DIRECT-AA-OHU", "12345678", "192.168.49.1", "02:11:22:33:44:55", GroupIdentityStability.STABLE
@@ -66,7 +77,7 @@ class WppTcpExchangeContractTest {
     }
 
     private val server = WppTcpServer(
-        mock(Context::class.java), scope, callbacks,
+        mock(Context::class.java), scope, callbacks, operation, commManager,
         createServerSocket = { listener() },
         createTlsFactory = { tlsFactory },
         elapsedRealtime = { clock.get() + System.nanoTime() / 1_000_000 },
@@ -151,7 +162,7 @@ class WppTcpExchangeContractTest {
             // The first read is admission; the group is replaced right after it.
             override fun credentials() = if (reads.getAndIncrement() == 0) stable else replacement
         }
-        val raced = WppTcpServer(mock(Context::class.java), scope, swapping, { listener() }, { tlsFactory }, { clock.get() + System.nanoTime() / 1_000_000 })
+        val raced = WppTcpServer(mock(Context::class.java), scope, swapping, operation, commManager, { listener() }, { tlsFactory }, { clock.get() + System.nanoTime() / 1_000_000 })
         try {
             raced.start()
             dial().expectClosedWithout(WppMessageType.VERSION_REQUEST)

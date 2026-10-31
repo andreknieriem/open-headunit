@@ -16,8 +16,9 @@ class ScanControlConnectionTest {
 
     private fun manager(socket: Socket): CommManager = mock(CommManager::class.java, CALLS_REAL_METHODS).also {
         set(it, "transportLifecycleLock", Any())
-        set(it, "_connection", SocketProjectionConnection(socket, mock(Context::class.java)))
-        set(it, "connectionAttempt", CommManager.Attempt())
+        set(it, "_connection", SocketProjectionConnection(socket, mock(Context::class.java),
+            ConnectionAdmission { action -> action(); true }))
+        set(it, "connectionAttempt", CommManager.Attempt(org.mockito.Mockito.mock(CommManager.ConnectionRequest::class.java)))
         set(it, "physicalConnectionReached", true)
     }
 
@@ -58,7 +59,7 @@ class ScanControlConnectionTest {
             val old = gate.claim(true)!!
             gate.session(manager.acceptedWirelessSession!!)
             assertNull(gate.claim(true))
-            set(manager, "connectionAttempt", CommManager.Attempt())
+            set(manager, "connectionAttempt", CommManager.Attempt(org.mockito.Mockito.mock(CommManager.ConnectionRequest::class.java)))
             gate.session(manager.acceptedWirelessSession!!)
             assertFalse(old.valid)
             assertNotNull(gate.claim(true))

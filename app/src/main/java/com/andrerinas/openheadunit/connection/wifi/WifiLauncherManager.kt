@@ -1,6 +1,8 @@
 package com.andrerinas.openheadunit.connection.wifi
 
 import android.os.SystemClock
+import com.andrerinas.openheadunit.connection.ConnectionOperation
+import com.andrerinas.openheadunit.connection.ConnectionAdmission
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.aap.AapService
 import com.andrerinas.openheadunit.connection.CommManager
@@ -16,12 +18,18 @@ open class WifiLauncherManager(val service: AapService) {
 
     private val cleanupGeneration = WirelessCleanupGeneration()
 
-    /** These methods share the main thread with launcher start, stop and explicit re-arm. */
-    internal fun cleanupTicket(): Any = cleanupGeneration.capture()
-    internal fun isCleanupCurrent(ticket: Any): Boolean = cleanupGeneration.isCurrent(ticket)
+    /** Capture before a hop; cleanup admission compares this exact owner under lifecycle. */
+    internal fun cleanupTicket(): Any = App.provide(service).commManager.withAppConnectionLifecycleLock {
+        cleanupGeneration.capture()
+    }
+    internal fun isCleanupCurrent(ticket: Any): Boolean = App.provide(service).commManager.withAppConnectionLifecycleLock {
+        cleanupGeneration.isCurrent(ticket)
+    }
     internal fun cleanupTicketFor(state: CommManager.ConnectionState.Disconnected): Any? =
-        cleanupGeneration.captureFor(state, state.endedAttempt, state.hadPhysicalConnection)
-    internal fun noteRearm() {
+        App.provide(service).commManager.withAppConnectionLifecycleLock {
+            cleanupGeneration.captureFor(state, state.endedAttempt, state.hadPhysicalConnection)
+        }
+    internal fun noteRearm() = App.provide(service).commManager.withAppConnectionLifecycleLock {
         // A Start can run before the queued Disconnected observer. Record the terminal
         // object already published when this arm begins, not just the observer's later epoch.
         // Self Mode is also admitted while another attempt is still Connecting; that attempt's
@@ -36,9 +44,10 @@ open class WifiLauncherManager(val service: AapService) {
     var active: WifiLauncher? = null
         private set
 
-    /** The Stop ticket [active] was armed under; a hold its own network makes replays under it. */
-    var armedTicket: Long? = null
+    /** The immutable authority [active] was armed under, including its original Save. */
+    var armedOperation: ConnectionOperation? = null
         private set
+
 
     /**
      * Whether [active] is running. stop() leaves the launcher in place at every sequence but LAST,
@@ -71,19 +80,18 @@ open class WifiLauncherManager(val service: AapService) {
     /**
      * @param userRequested the user asked for a wireless connection by hand, which lifts the
      *   connection-mode refusal below. Not [force], which several automatic paths already pass.
-     * @param ticket the Stop ticket of the input that asked for this bring-up, captured when that
-     *   input was received. A bring-up run later for it (after a settle, a wait or a hold) carries
-     *   that value and is refused once Stop has superseded it; it never reads the ticket itself.
+     * @param operation the input's original ticket and Save. A later settle, wait or hold carries
+     *   this authority unchanged; Stop or Save cancellation prevents it from arming the stack.
      */
     fun setActiveFromSettings(
         force: Boolean = false,
         noInfoToasts: Boolean = true,
         userRequested: Boolean = false,
-        ticket: Long,
+        operation: ConnectionOperation,
     ) {
         val settings = App.provide(service).settings
 
-        setActive(settings.wifiConnectionMode, force, noInfoToasts, userRequested, ticket)
+        setActive(settings.wifiConnectionMode, force, noInfoToasts, userRequested, operation)
     }
 
     fun setActive(
@@ -91,9 +99,9 @@ open class WifiLauncherManager(val service: AapService) {
         force: Boolean = false,
         noInfoToasts: Boolean = true,
         userRequested: Boolean = false,
-        ticket: Long,
+        operation: ConnectionOperation,
     ) {
-        setActive(mode.factory(this), force, noInfoToasts, userRequested, ticket)
+        setActive(mode.factory(this), force, noInfoToasts, userRequested, operation)
     }
 
     fun setActive(
@@ -101,28 +109,24 @@ open class WifiLauncherManager(val service: AapService) {
         force: Boolean = false,
         noInfoToasts: Boolean = true,
         userRequested: Boolean = false,
-        ticket: Long,
+        operation: ConnectionOperation,
     ) {
         if (newLauncher.manager != this)
             throw IllegalArgumentException("newLauncher.manager is different instance")
         if (active == newLauncher)
             throw IllegalArgumentException("newLauncher is already active")
-        if (!App.provide(service).commManager.acceptsAppConnectionTicket(ticket)) {
+        if (!App.provide(service).commManager.isCurrent(operation)) {
             AppLog.i("WifiLauncher: a wireless bring-up asked for before Stop is not armed")
             return
         }
 
-        // Informational rather than debug: this refusal is why a documented re-arm could do
-        // nothing at all, and a reporter's log is at INFO.
+        // Fast no-op; admission repeats this decision atomically before publishing the arm.
         if (WifiLauncherRestartPolicy.refusesRestart(
-                activeIsStarted = activeIsStarted,
+                activeIsStarted = activeIsStarted && armedOperation?.let { App.provide(service).commManager.isCurrent(it) } == true,
                 sameConfiguration = active?.hasSameStartConfiguration(newLauncher) ?: false,
                 force = force,
             )
-        ) {
-            AppLog.i("WifiLauncher: WiFi Mode ${newLauncher.mode}.mode with same start-configuration is already initialized.")
-            return
-        }
+        ) return
 
         // Every automatic entry point lands here, including the Bluetooth auto-start that fires
         // when the phone comes into range — which on a looping unit would walk straight back into
@@ -180,9 +184,12 @@ open class WifiLauncherManager(val service: AapService) {
         val screen = ScreenPower.isInteractive(service)
         val asleep = WirelessSleepHold.isAsleep(screen)
         if (WirelessSleepHold.refusesBringUp(asleep, userRequested, newLauncher.mode == WifiLauncherMode.MANUAL)) {
-            // The wake replays this bring-up under its own ticket, not the wake's.
-            service.noteSleepHeld(ticket)
-            if (WirelessSleepHold.hold(force)) {
+            // The wake owns the complete command, including any Save that authorized it.
+            val firstHold = commManager.withAppConnectionLifecycleLock {
+                if (!commManager.isCurrent(operation)) false
+                else WirelessSleepHold.hold(force, operation)
+            }
+            if (firstHold) {
                 AppLog.i("WifiLauncher: wireless bring-up held while the screen is off. " +
                     "The screen coming on re-arms it.")
             }
@@ -192,51 +199,68 @@ open class WifiLauncherManager(val service: AapService) {
         // when that attempt ends, under this bring-up's own ticket. A bring-up the user asked for
         // ends that attempt instead.
         if (ConnectionArbiter.refusesBackground(userRequested)) {
-            service.noteWirelessOwed(ticket)
+            service.noteWirelessOwed(operation.ticket)
             return
         }
-        if (userRequested) ConnectionArbiter.yieldToUser("a wireless bring-up the user asked for")
-        if (userRequested) liftUserCancel("the user asked for a wireless connection")
+        if (userRequested && !ConnectionArbiter.yieldToUser(
+                "a wireless bring-up the user asked for",
+                ConnectionAdmission { action ->
+                    commManager.withAppConnectionLifecycleLock {
+                        if (!commManager.isCurrent(operation)) false else { action(); true }
+                    }
+                },
+            )) return
 
-        // A forced re-arm gets past the restart policy by design, and the teardown below then wipes
-        // the claim WifiDirectManager holds, so two of them raced and the loser's group replaced a
-        // group the phone was already joining. Only a same-configuration re-arm is refused; a
-        // setting the user just changed still restarts the mode.
-        val now = SystemClock.elapsedRealtime()
-        if (newLauncher.mode == WifiLauncherMode.NATIVE &&
-            active?.hasSameStartConfiguration(newLauncher) == true &&
-            NativeBringUpReentryPolicy.isDuplicate(now, lastNativeRearmAtMs)
-        ) {
-            AppLog.i(
-                "WifiLauncher: a Native AA bring-up was re-armed ${now - lastNativeRearmAtMs}ms ago, " +
-                    "so this one is not started on top of it."
-            )
-            return
-        }
-        if (newLauncher.mode == WifiLauncherMode.NATIVE) lastNativeRearmAtMs = now
+        // Admission and publication are one lifecycle decision. SDK teardown/start below can
+        // complete after Stop, but it cannot publish an old arm over a successor. In particular,
+        // a launcher left in place by Stop must not make a fresh Open look already started.
+        val previous = commManager.withAppConnectionLifecycleLock {
+            if (!commManager.isCurrent(operation)) return@withAppConnectionLifecycleLock null
+            val previousIsCurrent = armedOperation?.let { commManager.isCurrent(it) } == true
+            if (WifiLauncherRestartPolicy.refusesRestart(
+                    activeIsStarted = activeIsStarted && previousIsCurrent,
+                    sameConfiguration = active?.hasSameStartConfiguration(newLauncher) ?: false,
+                    force = force,
+                )
+            ) {
+                AppLog.i("WifiLauncher: WiFi Mode ${newLauncher.mode}.mode with same start-configuration is already initialized.")
+                return@withAppConnectionLifecycleLock null
+            }
+            val now = SystemClock.elapsedRealtime()
+            if (newLauncher.mode == WifiLauncherMode.NATIVE && previousIsCurrent &&
+                active?.hasSameStartConfiguration(newLauncher) == true &&
+                NativeBringUpReentryPolicy.isDuplicate(now, lastNativeRearmAtMs)
+            ) {
+                AppLog.i("WifiLauncher: the current Native AA bring-up was just re-armed; keeping its group.")
+                return@withAppConnectionLifecycleLock null
+            }
+            if (newLauncher.mode == WifiLauncherMode.NATIVE) lastNativeRearmAtMs = now
+            val outgoing = active
+            active = newLauncher
+            armedOperation = operation
+            activeIsStarted = false
+            if (userRequested) cancelledByUser = false
+            noteRearm()
+            // Pair distinguishes an admitted first arm (whose outgoing launcher is null)
+            // from a rejected admission.
+            Pair(outgoing, operation)
+        } ?: return
+
+        previous.first?.stop(WifiLauncherStopSequence.ANY)
+        if (active !== newLauncher || armedOperation !== operation || !commManager.isCurrent(operation)) return
+        if (newLauncher.mode != WifiLauncherMode.NATIVE) service.closeRetainedHct()
 
         AppLog.i("WifiLauncher: Initializing WiFi Mode: ${newLauncher.mode}")
-        // The stack is coming up, so the status pill appears here and is cleared in stop().
-        // Manual mode has no background discovery or server waiting for connections, so it must not arm the pill.
-        if (newLauncher.mode == WifiLauncherMode.MANUAL) {
-            ConnectionStageTracker.clear()
-        } else {
-            ConnectionStageTracker.beginAttempt(ConnectionStage.ARMED)
-        }
-
+        // Manual mode has no background discovery or server waiting for connections.
+        if (newLauncher.mode == WifiLauncherMode.MANUAL) ConnectionStageTracker.clear()
+        else ConnectionStageTracker.beginAttempt(ConnectionStage.ARMED)
         WirelessSleepHold.started(userRequested)
-
-        noteRearm()
-        // stop old launcher
-        active?.stop(WifiLauncherStopSequence.ANY)
-
-        if (newLauncher.mode != WifiLauncherMode.NATIVE) service.closeRetainedHct()
-        // replace it with new one
-        active = newLauncher
-        armedTicket = ticket
-        sharedServices.update(newLauncher, ticket)
-        active?.start(noInfoToasts, ticket)
-        activeIsStarted = true
+        sharedServices.update(newLauncher, operation)
+        newLauncher.start(noInfoToasts, operation)
+        commManager.withAppConnectionLifecycleLock {
+            if (active === newLauncher && armedOperation === operation && commManager.isCurrent(operation))
+                activeIsStarted = true
+        }
     }
 
     /**
@@ -247,35 +271,79 @@ open class WifiLauncherManager(val service: AapService) {
      * and after onDestroy. Each of the shared stops already handles being called with nothing
      * running.
      */
-    fun stop(seq: WifiLauncherStopSequence = WifiLauncherStopSequence.ANY, keepNativeGroup: Boolean = false) {
-        active?.stop(seq)
+    fun stop(owner: Any, seq: WifiLauncherStopSequence = WifiLauncherStopSequence.ANY, keepNativeGroup: Boolean = false) {
+        val cleanup = App.provide(service).commManager.withAppConnectionLifecycleLock {
+            if (!cleanupGeneration.isCurrent(owner)) null else detachCurrent(seq, keepNativeGroup)
+        } ?: return
+        cleanup()
+    }
+
+    /** Called under the lifecycle lock; external teardown uses only the objects detached here. */
+    private fun detachCurrent(seq: WifiLauncherStopSequence, keepNativeGroup: Boolean): () -> Unit {
+        val launcher = active
         activeIsStarted = false
         WirelessSleepHold.stopped()
-        // A stop asked for on its own ends the mode, so the re-arm that follows it is not a
-        // duplicate of anything. Only setActive()'s own internal teardown keeps the stamp.
         lastNativeRearmAtMs = 0L
-
-        if (seq.handledAt(WifiLauncherStopSequence.LAST)) {
-            sharedServices.stopAll(keepNativeGroup)
+        val sharedCleanup = if (seq.handledAt(WifiLauncherStopSequence.LAST)) {
             active = null
+            armedOperation = null
             ConnectionStageTracker.clear()
+            sharedServices.detachAll(keepNativeGroup)
+        } else null
+        return {
+            launcher?.stop(seq)
+            sharedCleanup?.invoke()
         }
     }
 
+    /** A deferred command retires its exact current owners in the same decision as validation. */
+    internal fun detachForOperation(operation: ConnectionOperation): (() -> Unit)? {
+        val comm = App.provide(service).commManager
+        return comm.withAppConnectionLifecycleLock {
+            if (!comm.isCurrent(operation)) null
+            else detachCurrent(WifiLauncherStopSequence.ANY, keepNativeGroup = false)
+        }
+    }
+
+    /** Claim callbacks may still hold the caller's lifecycle lock; return only captured cleanup. */
+    internal fun detachForClaim(owner: ConnectionArbiter.Claim): (() -> Unit)? =
+        App.provide(service).commManager.withAppConnectionLifecycleLock {
+            if (!activeIsStarted) return@withAppConnectionLifecycleLock null
+            var cleanup: (() -> Unit)? = null
+            ConnectionArbiter.runIfHeld(owner) {
+                cleanup = detachCurrent(WifiLauncherStopSequence.ANY, keepNativeGroup = false)
+            }
+            cleanup
+        }
+
+    fun stopForOperation(operation: ConnectionOperation): Boolean {
+        val cleanup = detachForOperation(operation) ?: return false
+        cleanup()
+        return true
+    }
+
     /** The status pill's X: a full stop that no automatic re-arm undoes. */
-    fun stopForUser() {
-        service.releaseParkedHct()
-        cancelledByUser = true
-        stop(WifiLauncherStopSequence.LAST)
+    fun stopForUser(owner: Any) {
+        val releaseHct = service.captureParkedHctRelease()
+        val cleanup = App.provide(service).commManager.withAppConnectionLifecycleLock {
+            if (!cleanupGeneration.isCurrent(owner)) null else {
+                cancelledByUser = true
+                detachCurrent(WifiLauncherStopSequence.LAST, keepNativeGroup = false)
+            }
+        } ?: return
+        releaseHct?.invoke()
+        cleanup()
     }
 
     /** An explicit ask retires old cleanup and lifts the status pill's X hold, if any. */
     fun liftUserCancel(reason: String) {
         // Even an already-running launcher can be explicitly chosen while old Exit awaits IO.
-        noteRearm()
-        if (!cancelledByUser) return
+        val lifted = App.provide(service).commManager.withAppConnectionLifecycleLock {
+            noteRearm()
+            cancelledByUser.also { cancelledByUser = false }
+        }
+        if (!lifted) return
         AppLog.i("WifiLauncher: $reason, so the stop from the status pill is lifted.")
-        cancelledByUser = false
     }
 
     /**
@@ -286,38 +354,28 @@ open class WifiLauncherManager(val service: AapService) {
      * is how it ends up bound to a connection nobody owns. startScan() is a no-op while a healthy
      * scan is in flight and says so in its return value.
      *
-     * @param ticket the Stop ticket of the input that asked for this sweep, captured when it was
-     *   received; a sweep for a superseded input does not start.
+     * @param operation the original authority for this sweep; withdrawn work does not start.
      * @return true if a sweep started, false if one was already in flight, and null if there is no
      *   discovery loop to kick at all. The last two are different situations and only one of them
      *   is worth reacting to, so they are not folded together.
      */
-    fun forceStartDiscoveryScan(ticket: Long): Boolean? {
+    fun forceStartDiscoveryScan(operation: ConnectionOperation): Boolean? {
         val discovery = sharedServices.localDiscovery ?: return null
 
-        return discovery.startScan(ticket = ticket)
+        return discovery.startScan(operation = operation)
     }
 
     /**
-     * [ticket]: the Stop ticket of the input this discovery serves, captured at its receipt.
-     * [save]: the Save this discovery retries for, when it does; its find connects for that Save.
+     * [operation] carries the original ticket and Save through scans and their handoffs.
      */
-    fun startDiscovery(oneShot: Boolean = false, ticket: Long,
-        save: com.andrerinas.openheadunit.connection.CommManager.ConnectionState.Disconnected? = null) {
-        // Allow discovery for Strategy 0 (NSD), 3 (Phone Hotspot) and 4 (Headunit Hotspot)
-        if (active == null || active?.hasLocalDiscovery() == false)
-            return
-
-        sharedServices.startLocalDiscovery(oneShot, ticket, save)
+    fun startDiscovery(oneShot: Boolean = false, operation: ConnectionOperation) {
+        if (!App.provide(service).commManager.isCurrent(operation)) return
+        if (active == null || active?.hasLocalDiscovery() == false) return
+        sharedServices.startLocalDiscovery(oneShot, operation)
     }
 
-    /**
-     * [ticket]: the Stop ticket of the input this restart serves, captured at its receipt, and
-     * checked here before any launcher's restart acts. [save]: as for [startDiscovery].
-     */
-    fun restartDiscovery(ticket: Long,
-        save: com.andrerinas.openheadunit.connection.CommManager.ConnectionState.Disconnected? = null) {
-        if (!App.provide(service).commManager.acceptsAppConnectionTicket(ticket)) return
-        active?.restartDiscovery(ticket, save)
+    fun restartDiscovery(operation: ConnectionOperation) {
+        if (!App.provide(service).commManager.isCurrent(operation)) return
+        active?.restartDiscovery(operation)
     }
 }

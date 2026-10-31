@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.wifi.WifiManager
 import android.os.Build
 import android.widget.Toast
+import com.andrerinas.openheadunit.connection.ConnectionOperation
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.connection.ConnectionStage
@@ -55,7 +56,8 @@ class WifiLauncherHelper : WifiLauncher {
     }
 
 
-    override fun start(noInfoToasts: Boolean, ticket: Long) {
+    override fun start(noInfoToasts: Boolean, operation: ConnectionOperation) {
+        if (!App.provide(service).commManager.isCurrent(operation)) return
         AppLog.i("WifiLauncher: Using strategy $strategy.")
         ConnectionStageTracker.report(ConnectionStage.SEARCHING)
 
@@ -67,14 +69,14 @@ class WifiLauncherHelper : WifiLauncher {
 
                 if (wifiManager.isWifiEnabled) {
                     ConnectionStageTracker.report(ConnectionStage.CREATING_NETWORK)
-                    wifiDirect.makeVisible()
+                    wifiDirect.makeVisible(operation)
                 } else if (!noInfoToasts) {
                     ToastUtils.showToast(service, service.getString(R.string.wifi_disabled_info), Toast.LENGTH_SHORT)
                 }
             }
             HelperStrategy.NEARBY_DEVICES -> { // Google Nearby
                 initNearbyManager()
-                nearbyManager?.start(ticket)
+                startNearby(operation)
             }
             HelperStrategy.PHONE_HOTSPOT, HelperStrategy.HEADUNIT_HOTSPOT -> { /* Host/Passive - just wait for connection on WirelessServer port */ }
         }
@@ -83,7 +85,7 @@ class WifiLauncherHelper : WifiLauncher {
         if (settings.autoEnableHotspot && strategy == HelperStrategy.HEADUNIT_HOTSPOT) {
             service.serviceScope.launch {
                 // The arming input's ticket: a Stop queued ahead of this block refuses the AP.
-                if (!App.provide(service).commManager.acceptsAppConnectionTicket(ticket)) return@launch
+                if (!App.provide(service).commManager.isCurrent(operation)) return@launch
                 AppLog.i("AapService: Auto-enabling hotspot for Helper mode...")
                 ConnectionStageTracker.report(ConnectionStage.PREPARING_NETWORK)
                 HotspotManager.setHotspotEnabled(service, true)
@@ -96,27 +98,26 @@ class WifiLauncherHelper : WifiLauncher {
      * is the Stop ticket captured when Save's end was received, and [save] that Save, which a
      * find it leads to connects for.
      */
-    fun refreshAfterSettingsRestart(ticket: Long,
-        save: com.andrerinas.openheadunit.connection.CommManager.ConnectionState.Disconnected? = null) {
-        if (!App.provide(service).commManager.acceptsAppConnectionTicket(ticket)) return
-        manager.sharedServices.startWirelessServer(this)
+    fun refreshAfterSettingsRestart(operation: ConnectionOperation) {
+        if (!App.provide(service).commManager.isCurrent(operation)) return
+        manager.sharedServices.startWirelessServer(this, operation)
         when (strategy) {
-            HelperStrategy.WIFI_DIRECT -> manager.sharedServices.wifiDirectManager?.refreshHelperGroup()
-            HelperStrategy.NEARBY_DEVICES -> nearbyManager?.resumeDiscoveryIfIdle(ticket)
-            else -> restartDiscovery(ticket, save)
+            HelperStrategy.WIFI_DIRECT -> manager.sharedServices.wifiDirectManager?.refreshHelperGroup(operation)
+            HelperStrategy.NEARBY_DEVICES -> nearbyManager?.resumeDiscoveryIfIdle(operation)
+            else -> restartDiscovery(operation)
         }
     }
 
-    override fun restartDiscovery(ticket: Long,
-        save: com.andrerinas.openheadunit.connection.CommManager.ConnectionState.Disconnected?) {
+    override fun restartDiscovery(operation: ConnectionOperation) {
+        if (!App.provide(service).commManager.isCurrent(operation)) return
         when (strategy) {
-            HelperStrategy.NEARBY_DEVICES -> nearbyManager?.start(ticket)
+            HelperStrategy.NEARBY_DEVICES -> startNearby(operation)
             HelperStrategy.WIFI_DIRECT -> {
                 val wifiManager = service.getSystemService(Context.WIFI_SERVICE) as WifiManager
                 val wifiDirect = manager.sharedServices.wifiDirectManager
 
                 if (wifiManager.isWifiEnabled) {
-                    wifiDirect?.makeVisible()
+                    wifiDirect?.makeVisible(operation)
                 }
             }
             else -> {
@@ -126,7 +127,7 @@ class WifiLauncherHelper : WifiLauncher {
                             "network comes back, rather than scanning the one that went away."
                     )
                 } else {
-                    super.restartDiscovery(ticket, save)
+                    super.restartDiscovery(operation)
                 }
             }
         }
@@ -137,6 +138,13 @@ class WifiLauncherHelper : WifiLauncher {
             return
 
         nearbyManager?.stop()
+    }
+
+    private fun startNearby(operation: ConnectionOperation) {
+        if (!App.provide(service).commManager.isCurrent(operation)) return
+        val save = operation.save
+        if (save == null) nearbyManager?.start(operation)
+        else nearbyManager?.restartForSettings(save, operation.ticket)
     }
 
     private fun initNearbyManager() {

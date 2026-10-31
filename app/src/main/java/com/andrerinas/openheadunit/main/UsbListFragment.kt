@@ -243,7 +243,7 @@ class UsbListFragment : Fragment() {
                         // an ANR against any device that stops answering rather than refusing. The
                         // tap's request goes with the worker; a Cancel or Stop before it starts wins.
                         UsbAttachSwitch.launchManual(scope, commManager, device.uniqueName,
-                            switch = { usbMode.connectAndSwitch(device.wrappedDevice, useLibusb) }) { outcome ->
+                            switch = { admission -> usbMode.connectAndSwitch(device.wrappedDevice, useLibusb, admission) }) { outcome ->
                             when (outcome) {
                                 // Whatever revoked it owns the stage and its feedback now.
                                 UsbAttachSwitch.Outcome.REVOKED -> Unit

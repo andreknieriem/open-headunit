@@ -248,7 +248,7 @@ class MicrophoneForegroundClaimTest {
                     doAnswer {
                         state.value = terminal
                         null
-                    }.whenever(commManager).disconnect(sendByeBye = true, honorKillOnDisconnect = false)
+                    }.whenever(commManager).disconnectForAppExit(any())
                     doCallRealMethod().whenever(service).onStartCommand(anyOrNull(), any(), any())
                     fun claim() = promote.invoke(service) as Boolean
                     assertTrue(claim())
@@ -275,7 +275,7 @@ class MicrophoneForegroundClaimTest {
                         assertSame(originalJob, scopeJob.children.single())
                         assertTrue(originalJob.isActive)
                         verify(service, never()).stopSelf()
-                        verify(commManager).disconnect(sendByeBye = true, honorKillOnDisconnect = false)
+                        verify(commManager).disconnectForAppExit(same(originalOwner))
                         verify(self).stop(wasConnected = false)
                     }
                     assertStopPending()

@@ -87,13 +87,13 @@ class UsbRecoveryAdmissionTest {
             `when`(output.direction).thenReturn(UsbConstants.USB_DIR_OUT)
             `when`(input.type).thenReturn(UsbConstants.USB_ENDPOINT_XFER_BULK)
             `when`(output.type).thenReturn(UsbConstants.USB_ENDPOINT_XFER_BULK)
-            // Leave close verification to connectUsb's real finally block. The unrelated
-            // decoder/service teardown is not part of this publication-boundary test.
-            doAnswer {
-                set("disconnectRequested", true)
-                states.value = CommManager.ConnectionState.Disconnected()
-                null
-            }.`when`(manager).disconnect(any(), any(), any(), any(), any(), anyOrNull())
+            // Retire through the real lifecycle; codec cleanup alone is a platform double.
+            set("_scope", CoroutineScope(SupervisorJob() + Dispatchers.Unconfined))
+            val audio = mock(com.andrerinas.openheadunit.decoder.audio.AudioDecoder::class.java)
+            `when`(audio.captureCleanup()).thenReturn({})
+            set("audioDecoder", audio)
+            set("videoDecoder", mock(com.andrerinas.openheadunit.decoder.video.VideoDecoder::class.java))
+            set("keyStates", mutableMapOf<Int, Any>())
             return handle
         }
         fun set(name: String, value: Any?) = CommManager::class.java.getDeclaredField(name)

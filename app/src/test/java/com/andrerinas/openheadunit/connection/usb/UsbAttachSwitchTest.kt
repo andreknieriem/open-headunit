@@ -51,7 +51,11 @@ class UsbAttachSwitchTest {
             val request = admit()
             when (revoked) {
                 "exit" -> manager.disconnect(sendByeBye = false, isUserExit = true, honorKillOnDisconnect = false)
-                "stop" -> { manager.requestExplicitAppExit(killProcess = false); manager.onAppRelaunched() }
+                // Stop's retained-group hand-off asserts Main; with Looper mocked, as the suite's
+                // other Stop cases run it, both loopers read the same.
+                "stop" -> org.mockito.Mockito.mockStatic(android.os.Looper::class.java).use {
+                    manager.requestExplicitAppExit(killProcess = false); manager.onAppRelaunched()
+                }
                 "newer" -> admit()
             }
             var switches = 0

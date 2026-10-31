@@ -242,19 +242,30 @@ class UsbRecheckAuthorityTest {
     // the grant starts it; after Stop and Open (a new ticket) it starts nothing.
     @Test fun aLatePermissionGrantNeverRevivesAWithdrawnUsbScan() {
         for (end in listOf("exit", "none", "stop")) scenario(ConnectionState.Connecting, normalMode = true) { h ->
-            val dialogs = mutableListOf<android.net.Uri>()
+            // Every permission dialog's PendingIntent, with the Intent it was built from.
+            val broadcasts = mutableListOf<android.content.Intent>()
             mockStatic(android.net.Uri::class.java).use { uri ->
-            mockStatic(android.app.PendingIntent::class.java).use {
+            mockStatic(android.app.PendingIntent::class.java).use { pending ->
             mockConstruction(android.content.Intent::class.java).use {
             mockConstruction(UsbAccessoryMode::class.java).use { switches ->
-                // The reply address the dialog's PendingIntent carries, as the platform keeps it.
+                // A reply address keeps whatever the producer put in it, as the platform does.
                 uri.`when`<android.net.Uri> { android.net.Uri.fromParts(anyString(), anyString(), any()) }.thenAnswer { call ->
                     val reply = mock(android.net.Uri::class.java)
                     `when`(reply.scheme).thenReturn(call.getArgument<String>(0))
                     `when`(reply.schemeSpecificPart).thenReturn(call.getArgument<String>(1))
                     `when`(reply.fragment).thenReturn(call.getArgument<String?>(2))
-                    dialogs += reply
                     reply
+                }
+                pending.`when`<android.app.PendingIntent> {
+                    android.app.PendingIntent.getBroadcast(any(), anyInt(), any(), anyInt())
+                }.thenAnswer { call ->
+                    broadcasts += call.getArgument<android.content.Intent>(2)
+                    mock(android.app.PendingIntent::class.java)
+                }
+                // The address the system delivers the grant to: the data set on the dialog's Intent.
+                fun dialogReply(): android.net.Uri? = broadcasts.singleOrNull()?.let { intent ->
+                    mockingDetails(intent).invocations.lastOrNull { it.method.name == "setData" }
+                        ?.arguments?.get(0) as android.net.Uri?
                 }
                 val claim = checkNotNull(ConnectionArbiter.claim(Tier.WIRELESS_HANDSHAKE, Owner.WIRELESS_STACK, "A"))
                 h.liveAttempt(claim)
@@ -265,7 +276,7 @@ class UsbRecheckAuthorityTest {
                 val handed = h.usbGiveBacks()
                 assertEquals("A's end did not hand its deferred USB check on", 1, handed.size)
                 h.deliver(handed.single())
-                val dialog = checkNotNull(dialogs.singleOrNull()) { "the delivered USB check raised no permission dialog" }
+                val dialog = checkNotNull(dialogReply()) { "the delivered USB check raised no permission dialog" }
                 when (end) {
                     "exit" -> h.manager.disconnect(sendByeBye = false, isUserExit = true, honorKillOnDisconnect = false)
                     "stop" -> { h.manager.requestExplicitAppExit(killProcess = false); h.manager.onAppRelaunched() }

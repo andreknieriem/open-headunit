@@ -227,6 +227,8 @@
     <string name="car_launcher_autostart_info">Open Headunit დაყენებულია თქვენი მანქანის ლანჩერად. ის სისტემის ჩატვირთვისას ავტომატურად იწყება.</string>
     <string name="auto_start_on_boot_label">გაშვება ჩატვირთვისას</string>
     <string name="auto_start_on_boot_description">აპის ავტომატური გახსნა მოწყობილობის ჩართვისას. Android 10+ ვერსიაზე საჭიროა „სხვა აპების ზემოდან გამოჩენის“ ნებართვა.</string>
+    <string name="auto_start_on_boot_background_label">ფონურ რეჟიმში ლოდინი</string>
+    <string name="auto_start_on_boot_background_description">ჩატვირთვისას გაეშვება მხოლოდ სერვისი, აპის გახსნის გარეშე. აპი გამოჩნდება, როცა ტელეფონი დაუკავშირდება.</string>
     <string name="auto_start_screen_on_label">გაშვება ეკრანის ჩართვისას</string>
     <string name="auto_start_screen_on_description">აპის გახსნა ეკრანის ყოველ ჩართვაზე. იდეალურია მაგნიტოლებისთვის, რომლებიც არასდროს ითიშება სრულად ან იყენებენ სწრაფი ჩატვირთვის რეჟიმებს, სადაც ავტომატური გაშვების სხვა ვარიანტები არ მუშაობს. ტელეფონებისა და ტაბლეტებისთვის რეკომენდებული არ არის.</string>
     <string name="select_bt_device">აირჩიეთ Bluetooth მოწყობილობა</string>

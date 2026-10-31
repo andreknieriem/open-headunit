@@ -207,6 +207,8 @@
     <string name="car_launcher_autostart_info">Open Headunit 已设为车机桌面，会在系统启动时自动启动。</string>
     <string name="auto_start_on_boot_label">开机时启动</string>
     <string name="auto_start_on_boot_description">设备启动时自动打开应用。Android 10 及以上版本需要“显示在其他应用的上层”权限。</string>
+    <string name="auto_start_on_boot_background_label">在后台等待</string>
+    <string name="auto_start_on_boot_background_description">开机时只启动服务，不打开应用。手机连接后应用才会出现。</string>
     <string name="auto_start_screen_on_label">亮屏时启动</string>
     <string name="auto_start_screen_on_description">每次屏幕亮起时打开应用。适用于从不完全关机，或使用快速启动模式导致其他自动启动选项无效的车机。不建议用于手机或平板电脑。</string>
     <string name="select_bt_device">选择蓝牙设备</string>

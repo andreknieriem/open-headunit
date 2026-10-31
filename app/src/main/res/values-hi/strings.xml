@@ -470,6 +470,8 @@
     <string name="car_launcher_autostart_info">Open Headunit आपके कार लॉन्चर के रूप में सेट है। यह सिस्टम बूट होने पर अपने आप शुरू हो जाता है।</string>
     <string name="auto_start_on_boot_label">बूट पर शुरू करें</string>
     <string name="auto_start_on_boot_description">डिवाइस चालू होने पर ऐप अपने आप खोलें। Android 10+ पर \"दूसरे ऐप्लिकेशन के ऊपर दिखाएं\" की अनुमति ज़रूरी है।</string>
+    <string name="auto_start_on_boot_background_label">बैकग्राउंड में इंतज़ार करें</string>
+    <string name="auto_start_on_boot_background_description">बूट पर ऐप खोले बिना सिर्फ़ सर्विस शुरू करें। फ़ोन कनेक्ट होने पर ऐप दिखाई देगा।</string>
     <string name="auto_start_screen_on_label">स्क्रीन ऑन होने पर शुरू करें</string>
     <string name="auto_start_screen_on_description">स्क्रीन चालू होने पर हर बार ऐप खोलें। यह उन हेड यूनिट के लिए सही है जो कभी पूरी तरह बंद नहीं होते या फ़ास्ट बूट मोड इस्तेमाल करते हैं, जहाँ ऑटो-स्टार्ट के दूसरे विकल्प काम नहीं करते। फ़ोन या टैबलेट के लिए सुझाया नहीं जाता।</string>
     <string name="select_bt_device">ब्लूटूथ डिवाइस चुनें</string>

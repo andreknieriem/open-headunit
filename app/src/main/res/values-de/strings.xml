@@ -268,6 +268,8 @@
     <string name="car_launcher_autostart_info">Open Headunit ist als Car-Launcher eingerichtet und startet beim Hochfahren des Geräts automatisch.</string>
     <string name="auto_start_on_boot_label">Start beim Hochfahren</string>
     <string name="auto_start_on_boot_description">Die App automatisch öffnen, wenn das Gerät startet. Erfordert ab Android 10 die Berechtigung „Über anderen Apps einblenden“.</string>
+    <string name="auto_start_on_boot_background_label">Im Hintergrund warten</string>
+    <string name="auto_start_on_boot_background_description">Beim Hochfahren nur den Dienst starten, ohne die App zu öffnen. Die App erscheint, sobald sich dein Handy verbindet.</string>
     <string name="auto_start_screen_on_label">Start beim Einschalten des Bildschirms</string>
     <string name="auto_start_screen_on_description">Die App jedes Mal öffnen, wenn der Bildschirm eingeschaltet wird. Ideal für Autoradios, die nie vollständig herunterfahren oder einen Schnellstart nutzen, bei dem die anderen Autostart-Optionen nicht funktionieren. Nicht empfohlen für Smartphones oder Tablets.</string>
     <string name="select_bt_device">Bluetooth-Gerät wählen</string>

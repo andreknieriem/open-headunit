@@ -207,6 +207,8 @@
     <string name="car_launcher_autostart_info">Open Headunit 已設為車用啟動器，系統開機時會自動啟動。</string>
     <string name="auto_start_on_boot_label">開機時啟動</string>
     <string name="auto_start_on_boot_description">裝置啟動時自動開啟應用程式。Android 10 以上需要「重疊顯示於其他應用程式上方」權限。</string>
+    <string name="auto_start_on_boot_background_label">在背景等待</string>
+    <string name="auto_start_on_boot_background_description">開機時只啟動服務，不開啟應用程式。手機連線後應用程式才會出現。</string>
     <string name="auto_start_screen_on_label">螢幕亮起時啟動</string>
     <string name="auto_start_screen_on_description">每次螢幕亮起時開啟應用程式。適合從未完全關機，或因使用快速開機模式而無法使用其他自動啟動選項的車機。不建議用於手機或平板電腦。</string>
     <string name="select_bt_device">選擇藍牙裝置</string>

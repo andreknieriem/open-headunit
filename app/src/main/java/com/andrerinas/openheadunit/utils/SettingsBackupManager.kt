@@ -158,6 +158,7 @@ object SettingsBackupManager {
         "auto-connect-delay-seconds" to ValueType.INT,
         "auto-start-on-usb" to ValueType.BOOLEAN,
         "auto-start-on-boot" to ValueType.BOOLEAN,
+        "auto-start-on-boot-in-background" to ValueType.BOOLEAN,
         "auto-start-on-screen-on" to ValueType.BOOLEAN,
         "auto-start-on-wifi" to ValueType.BOOLEAN,
         "auto-start-wifi-ssid" to ValueType.STRING,

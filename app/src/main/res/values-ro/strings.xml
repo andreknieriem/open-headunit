@@ -229,6 +229,8 @@
     <string name="car_launcher_autostart_info">Open Headunit este configurat ca lansator auto. Pornește automat la pornirea sistemului.</string>
     <string name="auto_start_on_boot_label">Pornire la boot</string>
     <string name="auto_start_on_boot_description">Deschide aplicația automat când dispozitivul pornește. Necesită permisiunea \'Afișare peste alte aplicații\' pe Android 10+.</string>
+    <string name="auto_start_on_boot_background_label">Așteaptă în fundal</string>
+    <string name="auto_start_on_boot_background_description">La pornire, pornește doar serviciul, fără a deschide aplicația. Aplicația apare când se conectează telefonul.</string>
     <string name="auto_start_screen_on_label">Pornire la aprinderea ecranului</string>
     <string name="auto_start_screen_on_description">Deschide aplicația de fiecare dată când ecranul se aprinde. Ideal pentru unitățile auto care nu se opresc niciodată complet sau folosesc moduri de pornire rapidă unde celelalte opțiuni de pornire automată nu funcționează. Nu este recomandat pentru telefoane sau tablete.</string>
     <string name="select_bt_device">Selectează dispozitivul Bluetooth</string>

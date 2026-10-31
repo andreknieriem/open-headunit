@@ -208,6 +208,8 @@
     <string name="car_launcher_autostart_info">O Open Headunit está configurado como o inicializador do carro. Ele inicia automaticamente na inicialização do sistema.</string>
     <string name="auto_start_on_boot_label">Iniciar com o sistema</string>
     <string name="auto_start_on_boot_description">Abre o app automaticamente quando o dispositivo é ligado. Requer a permissão \"Sobrepor a outros apps\" no Android 10 ou superior.</string>
+    <string name="auto_start_on_boot_background_label">Aguardar em segundo plano</string>
+    <string name="auto_start_on_boot_background_description">Ao iniciar, abre só o serviço, sem abrir o app. O app aparece quando o celular se conecta.</string>
     <string name="auto_start_screen_on_label">Iniciar ao ligar a tela</string>
     <string name="auto_start_screen_on_description">Abrir o app sempre que a tela ligar. Ideal para centrais multimídia que nunca desligam completamente ou usam modos de inicialização rápida onde as outras opções de início automático não funcionam. Não recomendado para celulares ou tablets.</string>
     <string name="select_bt_device">Selecionar dispositivo Bluetooth</string>

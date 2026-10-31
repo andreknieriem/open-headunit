@@ -207,6 +207,8 @@
     <string name="car_launcher_autostart_info">Az Open Headunit autós indítóként van beállítva. A rendszer indításakor automatikusan elindul.</string>
     <string name="auto_start_on_boot_label">Indítás rendszerindításkor</string>
     <string name="auto_start_on_boot_description">Az alkalmazás automatikus megnyitása az eszköz indításakor. Android 10 vagy újabb rendszeren a „Megjelenítés a többi alkalmazás fölött” engedély szükséges.</string>
+    <string name="auto_start_on_boot_background_label">Várakozás a háttérben</string>
+    <string name="auto_start_on_boot_background_description">Rendszerindításkor csak a szolgáltatás indul el, az alkalmazás nem nyílik meg. Az alkalmazás akkor jelenik meg, amikor a telefon csatlakozik.</string>
     <string name="auto_start_screen_on_label">Indítás képernyő bekapcsolásakor</string>
     <string name="auto_start_screen_on_description">Az alkalmazás megnyitása minden alkalommal, amikor a képernyő bekapcsol. Ideális olyan fejegységekhez, amelyek soha nem kapcsolnak ki teljesen, vagy gyorsindítási módot használnak, ahol a többi automatikus indítási lehetőség nem működik. Telefonokhoz és táblagépekhez nem ajánlott.</string>
     <string name="select_bt_device">Bluetooth-eszköz kiválasztása</string>

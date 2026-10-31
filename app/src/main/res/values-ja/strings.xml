@@ -233,6 +233,8 @@
     <string name="car_launcher_autostart_info">Open Headunitはカーランチャーとして設定されています。システムの起動時に自動的に開始されます。</string>
     <string name="auto_start_on_boot_label">起動時に開始</string>
     <string name="auto_start_on_boot_description">端末の起動時にアプリを自動的に開きます。Android 10以降では「他のアプリの上に重ねて表示」の権限が必要です。</string>
+    <string name="auto_start_on_boot_background_label">バックグラウンドで待機</string>
+    <string name="auto_start_on_boot_background_description">起動時はアプリを開かずにサービスだけを開始します。スマートフォンが接続されるとアプリが表示されます。</string>
     <string name="auto_start_screen_on_label">画面ON時に開始</string>
     <string name="auto_start_screen_on_description">画面がONになるたびにアプリを起動します。完全にシャットダウンしないヘッドユニットや、他の自動起動オプションが機能しない高速起動モードのヘッドユニットに最適です。スマートフォンやタブレットには推奨しません。</string>
     <string name="select_bt_device">Bluetoothデバイスの選択</string>

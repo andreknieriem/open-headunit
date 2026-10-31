@@ -208,6 +208,8 @@
     <string name="car_launcher_autostart_info">Open Headunit je nastaven jako spouštěč v autě. Spouští se automaticky při startu systému.</string>
     <string name="auto_start_on_boot_label">Spustit při startu systému</string>
     <string name="auto_start_on_boot_description">Automaticky otevřít aplikaci při spuštění zařízení. V Androidu 10 a novějším vyžaduje oprávnění \"Zobrazení přes ostatní aplikace\".</string>
+    <string name="auto_start_on_boot_background_label">Čekat na pozadí</string>
+    <string name="auto_start_on_boot_background_description">Při startu spustit jen službu, bez otevření aplikace. Aplikace se zobrazí, až se připojí telefon.</string>
     <string name="auto_start_screen_on_label">Spustit při zapnutí obrazovky</string>
     <string name="auto_start_screen_on_description">Otevřít aplikaci pokaždé, když se zapne obrazovka. Ideální pro autorádia, která se nikdy úplně nevypnou nebo používají rychlé spuštění, kde ostatní možnosti automatického spuštění nefungují. Nedoporučuje se pro telefony ani tablety.</string>
     <string name="select_bt_device">Vybrat zařízení Bluetooth</string>

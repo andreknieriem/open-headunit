@@ -2,6 +2,7 @@ package com.andrerinas.openheadunit.connection.usb
 
 import com.andrerinas.openheadunit.connection.CommManager
 import com.andrerinas.openheadunit.connection.ConnectionArbiter
+import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy
 import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy.Tier
 import com.andrerinas.openheadunit.connection.withAppExitDispatcherForTest
 import com.andrerinas.openheadunit.utils.AppLog
@@ -9,6 +10,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.mockito.Mockito.CALLS_REAL_METHODS
@@ -71,6 +73,34 @@ class UsbAttachSwitchTest {
                 assertEquals(UsbAttachSwitch.Outcome.REVOKED, outcome)
             }
             assertFalse("the switch's request kept its claim", ConnectionArbiter.holds(request.claim))
+            ConnectionArbiter.reset()
+        }
+    }
+
+    // Before first unlock the switch's authority is a bare arbiter claim taken on Main. The worker's
+    // first run is delayed past unlock, and meanwhile the user picks wireless or a newer manual
+    // connect takes the arbiter. The worker must not switch, and must leave the newer claim alone.
+    // The control, whose claim still holds, switches once and ends its claim.
+    @Test fun aLockedSwitchWhoseClaimWasLostMakesNoUsbCall() {
+        for (lost in listOf("yield", "manual", "none")) {
+            val claim = checkNotNull(ConnectionArbiter.claim(Tier.USB, ConnectionPriorityPolicy.Owner.USB, "USB switch of phone"))
+            val newer = when (lost) {
+                "yield" -> { ConnectionArbiter.yieldToUser("Wi-Fi by hand"); null }
+                "manual" -> checkNotNull(ConnectionArbiter.claim(Tier.USER, ConnectionPriorityPolicy.Owner.MANUAL, "192.0.2.1:5277"))
+                else -> null
+            }
+            var switches = 0
+            val outcome = UsbAttachSwitch.run(null, null, claim, "phone") { switches++; true }
+            // Recorded after every production frame has returned.
+            if (lost == "none") {
+                assertEquals("the held locked switch did not switch", 1, switches)
+                assertEquals(UsbAttachSwitch.Outcome.SWITCHED, outcome)
+            } else {
+                assertEquals("a locked switch whose claim was lost still made its USB call (lost=$lost switches=$switches)", 0, switches)
+                assertEquals(UsbAttachSwitch.Outcome.REVOKED, outcome)
+            }
+            assertFalse("the locked switch kept its claim", ConnectionArbiter.holds(claim))
+            if (newer != null) assertTrue("the old switch released the newer claim", ConnectionArbiter.holds(newer))
             ConnectionArbiter.reset()
         }
     }

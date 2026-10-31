@@ -22,10 +22,11 @@ private fun CommManager.ingressMain(dispatcher: CoroutineDispatcher) {
 
 /**
  * The launcher's shape for one logical USB request: admitted once at its input for the scan it
- * runs for, its job's IO entry continuing that request, its producer ending it.
+ * runs for, with that input's [ticket], its job's IO entry continuing that request, its producer
+ * ending it.
  */
-private suspend fun CommManager.connectUsbRequest(tier: ConnectionPriorityPolicy.Tier) {
-    val request = admitUsbRequest(tier, "USB fixture", null, usbRecheck(appConnectionTicket())) ?: return
+private suspend fun CommManager.connectUsbRequest(tier: ConnectionPriorityPolicy.Tier, ticket: Long = appConnectionTicket()) {
+    val request = admitUsbRequest(tier, "USB fixture", null, usbRecheck(ticket)) ?: return
     try { connect(UsbDevice(), request) } finally { endRequest(request) }
 }
 
@@ -175,8 +176,10 @@ fun appConnectionIngressOwnership() = runBlocking {
 
     // Old high-tier U cannot preempt/stand down newer low-tier V before its eventual
     // rejection. The no-Stop control must really preempt, proving the hook is effective. A USB
-    // request claims at its input, before any IO entry, so this pre-IO claim window is not its own.
-    for (route in listOf("IP", "SOCKET")) for (cancelledByStop in listOf(false, true)) {
+    // request claims at its input, so its U is the USB input still carrying U's ticket after
+    // Stop and Open, as a permission reply or a delayed attach scan delivers it, arriving while V
+    // is live: its admission is where it must neither claim, preempt nor stand V down.
+    for (route in listOf("USB", "IP", "SOCKET")) for (cancelledByStop in listOf(false, true)) {
         val c = CommManager()
         val oldIo = QueuedDispatcher()
         val oldSocket = Socket()
@@ -190,7 +193,8 @@ fun appConnectionIngressOwnership() = runBlocking {
         c.ingressIo(oldIo)
         val effects = RecordingClaims(c)
         ConnectionArbiter.actions = effects
-        val u = launch(start = CoroutineStart.UNDISPATCHED) {
+        val ticketU = c.appConnectionTicket()
+        var u: Job? = if (route == "USB") null else launch(start = CoroutineStart.UNDISPATCHED) {
             when (route) {
                 "IP" -> c.connect("192.0.2.30", 5277, ConnectionPriorityPolicy.Tier.USER)
                 else -> c.connect(oldSocket, ConnectionPriorityPolicy.Tier.USER)
@@ -216,16 +220,21 @@ fun appConnectionIngressOwnership() = runBlocking {
             check(openedV.await(5, TimeUnit.SECONDS))
             val live = checkNotNull(candidateV)
             check(c.state is ConnectionState.Connecting && c.network() === live)
+            if (route == "USB") u = launch(start = CoroutineStart.UNDISPATCHED) {
+                c.connectUsbRequest(ConnectionPriorityPolicy.Tier.USER, ticketU)
+            }
             oldIo.drain()
             if (cancelledByStop) {
-                u.join()
-                check(effects.preempts == 0 && effects.standDowns == 0)
+                checkNotNull(u).join()
+                check(effects.preempts == 0 && effects.standDowns == 0) {
+                    "an old $route input preempted or stood down the newer attempt (preempts=${effects.preempts} standDowns=${effects.standDowns})"
+                }
                 check(c.network() === live && !live.closed && c.state is ConnectionState.Connecting)
             } else {
                 check(effects.preempts == 1 && effects.standDowns == 1)
                 c.cleanups() // U waits for the actual retirement caused by its valid preemption.
                 oldIo.drain()
-                u.join()
+                checkNotNull(u).join()
                 check(live.closed && c.network() !== live && c.state is ConnectionState.Connected)
             }
             releaseV.countDown()

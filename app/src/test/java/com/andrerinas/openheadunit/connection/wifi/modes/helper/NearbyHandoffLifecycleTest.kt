@@ -7,12 +7,15 @@ import com.andrerinas.openheadunit.connection.*
 import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy.Tier
 import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy.Owner
 import com.andrerinas.openheadunit.connection.projection.ProjectionConnection
+import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.Settings
 import com.google.android.gms.nearby.connection.ConnectionsClient
 import com.google.android.gms.tasks.Task
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
+import org.junit.After
 import org.junit.Assert.*
+import org.junit.Before
 import org.junit.Test
 import org.mockito.Mockito
 import org.mockito.kotlin.*
@@ -21,6 +24,18 @@ import java.io.ByteArrayOutputStream
 import java.net.Socket
 
 class NearbyHandoffLifecycleTest {
+    private val logLevel = AppLog::class.java.getDeclaredField("cachedLogLevel")
+        .apply { isAccessible = true }
+    private var oldLogLevel: Int? = null
+
+    @Before fun silenceAndroidLog() {
+        oldLogLevel = logLevel.getInt(null)
+        // Gate errors before Android stack formatting, including on worker threads.
+        logLevel.setInt(null, Int.MAX_VALUE)
+    }
+
+    @After fun restoreLog() { oldLogLevel?.let { logLevel.setInt(null, it) } }
+
     private fun field(target: Any, name: String, value: Any?) = target.javaClass.getDeclaredField(name)
         .apply { isAccessible = true }.set(target, value)
     private fun get(target: Any, name: String): Any? = target.javaClass.getDeclaredField(name)

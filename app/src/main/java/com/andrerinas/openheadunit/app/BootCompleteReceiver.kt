@@ -4,11 +4,10 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import androidx.core.content.ContextCompat
+import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.aap.AapService
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.Settings
-import android.os.UserManager
-import android.os.Build
 import com.andrerinas.openheadunit.main.FloatingButtonManager
 
 class BootCompleteReceiver : BroadcastReceiver() {
@@ -19,8 +18,7 @@ class BootCompleteReceiver : BroadcastReceiver() {
 
         AppLog.i("Boot auto-start: received action=$action")
 
-        val isLocked = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N &&
-                      !(context.getSystemService(Context.USER_SERVICE) as UserManager).isUserUnlocked
+        val isLocked = !App.isUserUnlocked(context)
 
         if (isLocked) {
             AppLog.w("BootCompleteReceiver: Device is locked. Cannot start AapService yet. Waiting for user unlock.")

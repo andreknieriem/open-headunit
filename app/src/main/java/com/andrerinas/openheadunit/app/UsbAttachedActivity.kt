@@ -6,7 +6,6 @@ import android.content.Intent
 import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
 import android.os.Bundle
-import android.os.UserManager
 import android.os.Build
 import android.widget.Toast
 import androidx.core.content.ContextCompat
@@ -94,8 +93,7 @@ class UsbAttachedActivity : Activity() {
             return
         }
 
-        val isLocked = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N &&
-                      !(getSystemService(Context.USER_SERVICE) as UserManager).isUserUnlocked
+        val isLocked = !App.isUserUnlocked(this)
 
         val settings = if (!isLocked) Settings(this) else null
 
@@ -264,8 +262,7 @@ class UsbAttachedActivity : Activity() {
                         ToastUtils.showToast(this, getString(R.string.failed), Toast.LENGTH_SHORT)
                         // Asked now, not at onCreate: the user may have unlocked during the switch,
                         // and only an unlocked process may build the app component.
-                        val lockedNow = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N &&
-                            !(getSystemService(Context.USER_SERVICE) as UserManager).isUserUnlocked
+                        val lockedNow = !App.isUserUnlocked(this)
                         if (lockedNow || !App.provide(this).commManager.isConnected) ConnectionStageTracker.clear()
                     }
                 }
@@ -302,8 +299,7 @@ class UsbAttachedActivity : Activity() {
 
         AppLog.i(UsbDeviceCompat.getUniqueName(device))
 
-        val isLocked = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N &&
-                      !(getSystemService(Context.USER_SERVICE) as UserManager).isUserUnlocked
+        val isLocked = !App.isUserUnlocked(this)
 
         if (Settings.isUsbDeviceBlacklisted(this, device)) {
             AppLog.i("UsbAttachedActivity: Ignored blacklisted USB device in onNewIntent (${Settings.formatUsbVidPidDisplay(device.vendorId, device.productId)})")

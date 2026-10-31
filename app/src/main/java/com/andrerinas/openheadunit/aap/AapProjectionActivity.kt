@@ -2135,7 +2135,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                         80f * resources.displayMetrics.density
                     )
                     lastTwoFingerEvent = MotionEvent.obtain(ev)
-                    if (hasActiveTwoFingerGestureBindings()) {
+                    if (twoFingerGestureMayFire(twoFingerTracker)) {
                         releaseRemotePrimaryPointer(ev)
                         suspendRemoteTouchUntilAllUp = true
                     }
@@ -2192,11 +2192,14 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         performTouchGesture(action)
     }
 
-    private fun hasActiveTwoFingerGestureBindings(): Boolean {
-        return settings.leftTwoFingerGesture != Settings.GestureAction.DISABLED ||
-            settings.rightTwoFingerGesture != Settings.GestureAction.DISABLED ||
-            settings.downTwoFingerGesture != Settings.GestureAction.DISABLED ||
-            settings.longPressTwoFingerGesture != Settings.GestureAction.DISABLED
+    // A touch that can never become an enabled gesture, such as a pinch on the map, stays with Android Auto.
+    private fun twoFingerGestureMayFire(tracker: TwoFingerGestureTracker?): Boolean {
+        return tracker?.mayBecome(
+            leftEdge = settings.leftTwoFingerGesture != Settings.GestureAction.DISABLED,
+            rightEdge = settings.rightTwoFingerGesture != Settings.GestureAction.DISABLED,
+            anywhere = settings.downTwoFingerGesture != Settings.GestureAction.DISABLED ||
+                settings.longPressTwoFingerGesture != Settings.GestureAction.DISABLED
+        ) == true
     }
 
     private fun releaseRemotePrimaryPointer(event: MotionEvent) {

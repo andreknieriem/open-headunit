@@ -47,6 +47,7 @@ class LateHandshakeRetryTest {
    field("_connection", connection)
    field("_scope", cleanupScope)
    field("settings", mock(com.andrerinas.openheadunit.utils.Settings::class.java))
+   field("appExitPolicy", com.andrerinas.openheadunit.connection.AppExitPolicy())
    var terminal: CommManager.ConnectionState? = null
    val quit = CommManager::class.java.getDeclaredMethod("transportedQuited", AapTransport::class.java, Boolean::class.javaPrimitiveType)
     .apply { isAccessible = true }

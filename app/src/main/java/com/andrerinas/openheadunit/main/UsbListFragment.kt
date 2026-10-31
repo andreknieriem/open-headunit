@@ -28,6 +28,7 @@ import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.aap.AapProjectionActivity
 import com.andrerinas.openheadunit.aap.AapService
 import com.andrerinas.openheadunit.connection.usb.UsbAccessoryMode
+import com.andrerinas.openheadunit.connection.usb.UsbAttachSwitch
 import com.andrerinas.openheadunit.connection.usb.UsbDeviceCompat
 import com.andrerinas.openheadunit.connection.usb.UsbDeviceDiagnostics
 import com.andrerinas.openheadunit.connection.usb.UsbReceiver
@@ -35,9 +36,6 @@ import com.andrerinas.openheadunit.utils.Settings
 import com.andrerinas.openheadunit.utils.ToastUtils
 import com.google.android.material.appbar.MaterialToolbar
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class UsbListFragment : Fragment() {
     private lateinit var adapter: DeviceAdapter
@@ -230,39 +228,44 @@ class UsbListFragment : Fragment() {
                         "manual USB list (accessory mode)",
                         MainActivity.ConnectionUiMode.OVERLAY
                     )
-                    ContextCompat.startForegroundService(mContext, Intent(mContext, AapService::class.java).apply {
-                        action = AapService.ACTION_CHECK_USB
-                        putExtra(AapService.EXTRA_USER_REQUESTED, true)
-                    })
+                    // The tap is the input; the service relay carries the scan it minted.
+                    val recheck = App.provide(mContext).commManager.usbRecheckNow()
+                    ContextCompat.startForegroundService(mContext,
+                        AapService.usbCheckIntent(mContext, recheck, userRequested = true))
                 } else {
                     // Standard connection flow
                     val usbManager = UsbDeviceCompat.usbManager(mContext) ?: return
+                    val commManager = App.provide(mContext).commManager
                     if (usbManager.hasPermission(device.wrappedDevice)) {
                         val usbMode = UsbAccessoryMode(usbManager)
                         val useLibusb = mSettings.useLibusb
                         // Eight control transfers at a 1 s timeout each. On the main thread that is
-                        // an ANR against any device that stops answering rather than refusing.
-                        scope.launch(Dispatchers.IO) {
-                            val switched = usbMode.connectAndSwitch(device.wrappedDevice, useLibusb)
-                            withContext(Dispatchers.Main) {
-                                if (switched) {
+                        // an ANR against any device that stops answering rather than refusing. The
+                        // tap's request goes with the worker; a Cancel or Stop before it starts wins.
+                        UsbAttachSwitch.launchManual(scope, commManager, device.uniqueName,
+                            switch = { usbMode.connectAndSwitch(device.wrappedDevice, useLibusb) }) { outcome ->
+                            when (outcome) {
+                                // Whatever revoked it owns the stage and its feedback now.
+                                UsbAttachSwitch.Outcome.REVOKED -> Unit
+                                UsbAttachSwitch.Outcome.SWITCHED -> {
                                     ToastUtils.showToast(mContext, R.string.switching_to_android_auto, Toast.LENGTH_SHORT)
                                     (mContext as? MainActivity)?.beginAutoConnect(
                                         "manual USB list (AOA switch)",
                                         MainActivity.ConnectionUiMode.OVERLAY
                                     )
-                                } else {
-                                    ToastUtils.showToast(mContext, R.string.switch_failed, Toast.LENGTH_SHORT, force = true)
                                 }
-                                notifyDataSetChanged()
+                                UsbAttachSwitch.Outcome.FAILED ->
+                                    ToastUtils.showToast(mContext, R.string.switch_failed, Toast.LENGTH_SHORT, force = true)
                             }
-                        }
+                            notifyDataSetChanged()
+                        } ?: ToastUtils.showToast(mContext, R.string.switch_failed, Toast.LENGTH_SHORT, force = true)
                     } else {
                         ToastUtils.showToast(mContext, R.string.requesting_usb_permission, Toast.LENGTH_SHORT)
-                        ContextCompat.startForegroundService(mContext, Intent(mContext, AapService::class.java))
+                        val recheck = commManager.usbRecheckNow()
+                        ContextCompat.startForegroundService(mContext, AapService.usbCheckIntent(mContext, recheck, action = null))
                         usbManager.requestPermission(
                             device.wrappedDevice,
-                            UsbReceiver.createPermissionPendingIntent(mContext, App.provide(mContext).commManager.appConnectionTicket())
+                            UsbReceiver.createPermissionPendingIntent(mContext, recheck)
                         )
                     }
                 }

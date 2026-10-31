@@ -112,7 +112,7 @@ class NetworkDiscoveryGenerationOrderTest {
         runBlocking {
             // CommManager's admission adopts the held socket as it admits the request.
             doAnswer { val socket = it.arguments[0] as Socket; if (HeldServerSocket.adopt(socket)) connected += socket; Unit }
-                .whenever(comm).connectHeld(any<Socket>(), any(), any(), any())
+                .whenever(comm).connectHeld(any<Socket>(), any(), any(), any(), anyOrNull())
         }
         doAnswer {
             val ticket = it.arguments[0] as Long

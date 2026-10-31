@@ -58,7 +58,10 @@ class AutoStartReceiver : BroadcastReceiver() {
                 // decides what that means per mode. The Self Mode half is MainActivity's.
                 // singleTask: raising the home screen would close settings, so the service holds it.
                 val uiHeld = SettingsActivity.isVisible
-                val serviceIntent = Intent(context, AapService::class.java).setAction(AapService.ACTION_BT_AUTO_START)
+                // The arrival is the input: both of its relays, to the service and to the home
+                // screen, carry the one ticket read here.
+                val ticket = com.andrerinas.openheadunit.App.provide(context).commManager.appConnectionTicket()
+                val serviceIntent = AapService.operationIntent(context, ticket).setAction(AapService.ACTION_BT_AUTO_START)
                     .putExtra(AapService.EXTRA_UI_HELD, uiHeld)
                 try {
                     androidx.core.content.ContextCompat.startForegroundService(context, serviceIntent)
@@ -72,6 +75,7 @@ class AutoStartReceiver : BroadcastReceiver() {
                 val launchIntent = Intent(context, MainActivity::class.java).apply {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     putExtra(MainActivity.EXTRA_LAUNCH_SOURCE, MainActivity.LAUNCH_SOURCE_BLUETOOTH)
+                    putExtra(MainActivity.EXTRA_CONNECTION_TICKET, ticket)
                 }
                 try {
                     context.startActivity(AppUiEntry.continuation(launchIntent))

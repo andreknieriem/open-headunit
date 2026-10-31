@@ -3386,7 +3386,9 @@ class SettingsFragment : Fragment() {
         val useExtremeDarkMode: Boolean,
         val useGradientBackground: Boolean,
         val screenOrientation: Settings.ScreenOrientation,
-        val hudMirroring: Boolean
+        val hudMirroring: Boolean,
+        // The Stop ticket of the user's choice: the import applies after a file read.
+        val connectionTicket: Long,
     )
 
     private fun startExportSettings() {
@@ -3790,7 +3792,8 @@ class SettingsFragment : Fragment() {
             useExtremeDarkMode = settings.useExtremeDarkMode,
             useGradientBackground = settings.useGradientBackground,
             screenOrientation = settings.screenOrientation,
-            hudMirroring = settings.hudMirroring
+            hudMirroring = settings.hudMirroring,
+            connectionTicket = App.provide(requireContext()).commManager.appConnectionTicket(),
         )
     }
 
@@ -3868,7 +3871,8 @@ class SettingsFragment : Fragment() {
         )
         if (WirelessRearmPolicy.requiresRearm(before, wirelessRearmConfig())) {
             AapService.applyWirelessSettings(context,
-                startWireless = settings.wifiConnectionMode != WifiLauncherMode.MANUAL && settings.showsWifi())
+                startWireless = settings.wifiConnectionMode != WifiLauncherMode.MANUAL && settings.showsWifi(),
+                ticket = snapshot.connectionTicket)
         }
     }
 
@@ -4434,9 +4438,7 @@ class SettingsFragment : Fragment() {
      */
     private fun rotateWifiDirectIdentityNow() {
         requireContext().startService(
-            Intent(requireContext(), AapService::class.java).apply {
-                action = AapService.ACTION_ROTATE_WIFI_DIRECT_IDENTITY
-            }
+            AapService.commandIntent(requireContext(), AapService.ACTION_ROTATE_WIFI_DIRECT_IDENTITY)
         )
         val appliesNow = P2pIdentityRotationPolicy.applyNow(
             sessionLive = App.provide(requireContext()).commManager.isConnected,

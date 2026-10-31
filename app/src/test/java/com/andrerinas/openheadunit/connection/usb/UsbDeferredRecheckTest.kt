@@ -75,11 +75,11 @@ class UsbDeferredRecheckTest {
         /** Counts forced, non-manual, Save-less scans, whether a fresh input or a replayed owed scan. */
         fun verifyScans(mode: org.mockito.verification.VerificationMode, accessoryOnly: Boolean) =
             verify(launcher, mode).checkAlreadyConnected(eqValue(true), eqValue(false), isNull(),
-                eqValue(accessoryOnly), anyLong(), anyOrNull())
+                eqValue(accessoryOnly), anyValue())
         fun verifyNoScan() = verify(launcher, never()).checkAlreadyConnected(anyBoolean(), anyBoolean(),
-            any(), anyBoolean(), anyLong(), anyOrNull())
+            any(), anyBoolean(), anyValue())
         fun check(force: Boolean = true, manual: Boolean = false, saved: ConnectionState.Disconnected? = null) =
-            launcher.checkAlreadyConnected(force, manual, saved)
+            launcher.checkAlreadyConnected(force, manual, saved, recheck = recheck())
         fun assertScans(count: Int) {
             // The diagnostic and selection read the current bus. No cached UsbDevice is replayed.
             verify(service, times(count)).getSystemService(Context.USB_SERVICE)
@@ -417,7 +417,7 @@ class UsbDeferredRecheckTest {
     /** Ends a USB handshake and returns the deferred that completes after the step's slot release and replay. */
     private fun endHandshake(f: Fixture, bus: RecoveryBus): CompletableDeferred<Unit> {
         f.launcher.onUsbHandshakeEnded(CommManager.UsbHandshakeOutcome(
-            com.andrerinas.openheadunit.aap.AapTransport.HandshakeFailure.SSL, bus.stale, f.comm.usbRecheckOwner()))
+            com.andrerinas.openheadunit.aap.AapTransport.HandshakeFailure.SSL, bus.stale, f.comm.usbRecheckOwner()), f.recheck())
         @Suppress("UNCHECKED_CAST")
         val finished = UsbLauncherManager::class.java.getDeclaredField("attemptFinished")
             .apply { isAccessible = true }.get(f.launcher) as CompletableDeferred<Unit>
@@ -900,7 +900,7 @@ class UsbDeferredRecheckTest {
         f.begin()
         switching(bus, issued = false).use { steps ->
             f.launcher.onUsbHandshakeEnded(CommManager.UsbHandshakeOutcome(
-            com.andrerinas.openheadunit.aap.AapTransport.HandshakeFailure.SSL, bus.stale, f.comm.usbRecheckOwner()))
+            com.andrerinas.openheadunit.aap.AapTransport.HandshakeFailure.SSL, bus.stale, f.comm.usbRecheckOwner()), f.recheck())
             assertEquals(0, steps.constructed().size)
             val count = UsbLauncherManager::class.java.getDeclaredField("staleSteps")
                 .apply { isAccessible = true }.getInt(f.launcher)
@@ -914,11 +914,11 @@ class UsbDeferredRecheckTest {
             com.andrerinas.openheadunit.aap.AapTransport.HandshakeFailure.SSL, bus.stale, f.comm.usbRecheckOwner())
         switching(bus, issued = false).use { commands ->
             bus.reenumerate() // The reported enumeration has gone; another accessory is present.
-            f.launcher.onUsbHandshakeEnded(outcome)
+            f.launcher.onUsbHandshakeEnded(outcome, f.recheck())
             assertEquals(0, commands.constructed().size)
             bus.devices = mapOf(bus.stale.deviceName to bus.stale)
             f.field("usbRecoveryOwner", Any()) // Exit/Save before Main handles the callback.
-            f.launcher.onUsbHandshakeEnded(outcome)
+            f.launcher.onUsbHandshakeEnded(outcome, f.recheck())
             assertEquals(0, commands.constructed().size)
         }
     }
@@ -933,7 +933,7 @@ class UsbDeferredRecheckTest {
         mockConstruction(UsbAccessoryMode::class.java).use { commands ->
             f.launcher.onUsbHandshakeEnded(CommManager.UsbHandshakeOutcome(
                 com.andrerinas.openheadunit.aap.AapTransport.HandshakeFailure.SSL,
-                bus.stale, f.comm.usbRecheckOwner()))
+                bus.stale, f.comm.usbRecheckOwner()), f.recheck())
             assertEquals(0, commands.constructed().size)
         }
     }
@@ -950,7 +950,7 @@ class UsbDeferredRecheckTest {
         mockConstruction(UsbAccessoryMode::class.java).use { commands ->
             f.launcher.onUsbHandshakeEnded(CommManager.UsbHandshakeOutcome(
                 com.andrerinas.openheadunit.aap.AapTransport.HandshakeFailure.SSL,
-                bus.stale, f.comm.usbRecheckOwner(), original))
+                bus.stale, f.comm.usbRecheckOwner(), original), f.recheck())
             assertEquals(0, commands.constructed().size)
         }
     }

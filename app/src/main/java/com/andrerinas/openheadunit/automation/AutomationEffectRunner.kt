@@ -1,5 +1,6 @@
 package com.andrerinas.openheadunit.automation
 
+import com.andrerinas.openheadunit.connection.UsbRecheck
 import android.content.Context
 import android.content.Intent
 import android.os.Environment
@@ -30,6 +31,8 @@ object AutomationEffectRunner {
         val component = App.provide(context)
         // A command's relay and queued dial are one logical input, not fresh inputs at delivery.
         val connectionTicket = component.commManager.appConnectionTicket()
+        // A USB check is the same input's owed scan, minted with its ticket on this turn.
+        val usbScan = component.commManager.usbRecheck(connectionTicket)
         var ok = true
 
         for (effect in effects) {
@@ -39,7 +42,7 @@ object AutomationEffectRunner {
                     reply.put("error", effect.reason)
                     AppLog.w("Automation: refused - ${effect.reason}")
                 }
-                is AutomationCommandPolicy.Effect.StartService -> startService(context, effect, connectionTicket)
+                is AutomationCommandPolicy.Effect.StartService -> startService(context, effect, connectionTicket, usbScan)
                 is AutomationCommandPolicy.Effect.StopApp -> ContextCompat.startForegroundService(
                     context, AapService.acceptedStopIntent(context, effect.owner))
                 is AutomationCommandPolicy.Effect.ConnectSocket ->
@@ -47,7 +50,7 @@ object AutomationEffectRunner {
                         component.commManager.connect(effect.ip, effect.port, ConnectionPriorityPolicy.Tier.USER, ticket = connectionTicket)
                     }
                 is AutomationCommandPolicy.Effect.SetNightMode ->
-                    setNightMode(context, component.settings, effect.mode)
+                    setNightMode(context, component.settings, effect.mode, connectionTicket)
                 is AutomationCommandPolicy.Effect.ImportSettings -> importSettings(context, effect, reply)
                 is AutomationCommandPolicy.Effect.ExportSettings ->
                     if (!exportSettings(context, effect, reply)) ok = false
@@ -72,10 +75,13 @@ object AutomationEffectRunner {
         return ok
     }
 
-    private fun startService(context: Context, effect: AutomationCommandPolicy.Effect.StartService, ticket: Long) {
+    private fun startService(context: Context, effect: AutomationCommandPolicy.Effect.StartService, ticket: Long,
+        usbScan: UsbRecheck) {
         ContextCompat.startForegroundService(
             context,
-            AapService.operationIntent(context, ticket).apply {
+            // A USB check carries the command's owed scan, not just its ticket.
+            (if (effect.action == AapService.ACTION_CHECK_USB) AapService.usbCheckIntent(context, usbScan, effect.action)
+                else AapService.operationIntent(context, ticket)).apply {
                 action = effect.action
                 effect.stringExtras.forEach { (k, v) -> putExtra(k, v) }
                 effect.flagExtras.forEach { (k, v) -> putExtra(k, v) }
@@ -83,7 +89,7 @@ object AutomationEffectRunner {
         )
     }
 
-    private fun setNightMode(context: Context, settings: Settings, mode: String) {
+    private fun setNightMode(context: Context, settings: Settings, mode: String, ticket: Long) {
         settings.nightMode = when (mode) {
             "day" -> Settings.NightMode.DAY
             "night" -> Settings.NightMode.NIGHT
@@ -91,7 +97,7 @@ object AutomationEffectRunner {
         }
         ContextCompat.startForegroundService(
             context,
-            Intent(context, AapService::class.java).apply {
+            AapService.operationIntent(context, ticket).apply {
                 action = AapService.ACTION_REQUEST_NIGHT_MODE_UPDATE
             }
         )

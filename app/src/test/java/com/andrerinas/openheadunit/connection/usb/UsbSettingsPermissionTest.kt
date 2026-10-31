@@ -33,7 +33,7 @@ class UsbSettingsPermissionTest {
             App::class.java.getDeclaredField("component\$delegate").apply { isAccessible = true }.set(app, lazyOf(component))
             `when`(component.commManager).thenReturn(comm)
             val manager = spy(UsbLauncherManager(service))
-            doNothing().`when`(manager).checkAlreadyConnected(anyBoolean(), anyBoolean(), isNull(), anyBoolean(), anyLong(), any())
+            doNothing().`when`(manager).checkAlreadyConnected(anyBoolean(), anyBoolean(), isNull(), anyBoolean(), org.mockito.kotlin.any())
             val usb = mock(android.hardware.usb.UsbManager::class.java)
             `when`(service.getSystemService(android.content.Context.USB_SERVICE)).thenReturn(usb)
             `when`(service.getSharedPreferences(anyString(), anyInt()))
@@ -52,10 +52,10 @@ class UsbSettingsPermissionTest {
             if (outcome == "cancelled") comm.cancelPendingSettingsRestart()
             ConnectionArbiter.reset()
             try {
-                UsbLauncherListener(manager).onUsbPermission(true, true, device, comm.appConnectionTicket(), "launcher-request")
+                UsbLauncherListener(manager).onUsbPermission(true, true, device, scan, "launcher-request")
                 // Ordinary admission continues the dialog's own owed scan.
                 verify(manager, times(if (outcome == "cancelled") 0 else 1))
-                    .checkAlreadyConnected(eq(true), eq(false), isNull(), eq(false), anyLong(), same(scan))
+                    .checkAlreadyConnected(eq(true), eq(false), isNull(), eq(false), org.mockito.kotlin.same(scan))
                 assertFalse(manager.isSwitchingToProjection())
                 assertSame(current, states.value)
                 assertTrue(owners.isEmpty())

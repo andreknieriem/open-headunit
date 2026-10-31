@@ -127,9 +127,10 @@ class UsbAttachedActivity : Activity() {
             if (!usbManager.hasPermission(device)) {
                 AppLog.i("Usb in accessory mode but no permission. Requesting...")
                 // Before first unlock the app component cannot read credential-protected
-                // settings. The grant still persists; the session waits for unlock below.
-                val ticket = if (isLocked) null else App.provide(this).commManager.appConnectionTicket()
-                val permissionIntent = UsbReceiver.createPermissionPendingIntent(this, ticket)
+                // settings. The grant still persists; the session waits for unlock below. Unlocked,
+                // the reply carries the scan minted now, so an exit before the answer withdraws it.
+                val recheck = if (isLocked) null else App.provide(this).commManager.usbRecheckNow()
+                val permissionIntent = UsbReceiver.createPermissionPendingIntent(this, recheck)
                 usbManager.requestPermission(device, permissionIntent)
                 finish()
                 return
@@ -140,9 +141,9 @@ class UsbAttachedActivity : Activity() {
                 return
             }
             AppLog.i("Usb in accessory mode and has permission. Starting AapService.")
-            ContextCompat.startForegroundService(this, Intent(this, AapService::class.java).apply {
-                action = AapService.ACTION_CHECK_USB
-            })
+            // The attach is the input; the relay carries the scan it minted.
+            ContextCompat.startForegroundService(this,
+                AapService.usbCheckIntent(this, App.provide(this).commManager.usbRecheckNow()))
             finish()
             return
         }
@@ -222,7 +223,7 @@ class UsbAttachedActivity : Activity() {
         val commManager = if (isLocked) null else App.provide(this).commManager
         val usbRequest = commManager?.admitUsbRequest(
             ConnectionPriorityPolicy.Tier.USB, "USB switch of ${deviceCompat.uniqueName}", save = null,
-            recheck = commManager.usbRecheck(commManager.appConnectionTicket()),
+            recheck = commManager.usbRecheckNow(),
         )
         val lockedClaim = if (isLocked) ConnectionArbiter.claim(
             ConnectionPriorityPolicy.Tier.USB, ConnectionPriorityPolicy.Owner.USB,
@@ -273,9 +274,9 @@ class UsbAttachedActivity : Activity() {
      */
     private fun handOffToService() {
         try {
-            ContextCompat.startForegroundService(this, Intent(this, AapService::class.java).apply {
-                action = AapService.ACTION_CHECK_USB
-            })
+            // Only ever unlocked: the attach is the input, and the relay carries its scan.
+            ContextCompat.startForegroundService(this,
+                AapService.usbCheckIntent(this, App.provide(this).commManager.usbRecheckNow()))
         } catch (e: Exception) {
             AppLog.w("Could not hand the USB attach to the service: ${e.message}")
         }

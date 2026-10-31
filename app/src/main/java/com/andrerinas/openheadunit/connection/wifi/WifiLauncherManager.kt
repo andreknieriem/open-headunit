@@ -36,6 +36,10 @@ open class WifiLauncherManager(val service: AapService) {
     var active: WifiLauncher? = null
         private set
 
+    /** The Stop ticket [active] was armed under; a hold its own network makes replays under it. */
+    var armedTicket: Long? = null
+        private set
+
     /**
      * Whether [active] is running. stop() leaves the launcher in place at every sequence but LAST,
      * so this is what separates "this mode is already up" from "stopped, and still here".
@@ -67,15 +71,19 @@ open class WifiLauncherManager(val service: AapService) {
     /**
      * @param userRequested the user asked for a wireless connection by hand, which lifts the
      *   connection-mode refusal below. Not [force], which several automatic paths already pass.
+     * @param ticket the Stop ticket of the input that asked for this bring-up, captured when that
+     *   input was received. A bring-up run later for it (after a settle, a wait or a hold) carries
+     *   that value and is refused once Stop has superseded it; it never reads the ticket itself.
      */
     fun setActiveFromSettings(
         force: Boolean = false,
         noInfoToasts: Boolean = true,
         userRequested: Boolean = false,
+        ticket: Long,
     ) {
         val settings = App.provide(service).settings
 
-        setActive(settings.wifiConnectionMode, force, noInfoToasts, userRequested)
+        setActive(settings.wifiConnectionMode, force, noInfoToasts, userRequested, ticket)
     }
 
     fun setActive(
@@ -83,8 +91,9 @@ open class WifiLauncherManager(val service: AapService) {
         force: Boolean = false,
         noInfoToasts: Boolean = true,
         userRequested: Boolean = false,
+        ticket: Long,
     ) {
-        setActive(mode.factory(this), force, noInfoToasts, userRequested)
+        setActive(mode.factory(this), force, noInfoToasts, userRequested, ticket)
     }
 
     fun setActive(
@@ -92,11 +101,16 @@ open class WifiLauncherManager(val service: AapService) {
         force: Boolean = false,
         noInfoToasts: Boolean = true,
         userRequested: Boolean = false,
+        ticket: Long,
     ) {
         if (newLauncher.manager != this)
             throw IllegalArgumentException("newLauncher.manager is different instance")
         if (active == newLauncher)
             throw IllegalArgumentException("newLauncher is already active")
+        if (!App.provide(service).commManager.acceptsAppConnectionTicket(ticket)) {
+            AppLog.i("WifiLauncher: a wireless bring-up asked for before Stop is not armed")
+            return
+        }
 
         // Informational rather than debug: this refusal is why a documented re-arm could do
         // nothing at all, and a reporter's log is at INFO.
@@ -166,6 +180,8 @@ open class WifiLauncherManager(val service: AapService) {
         val screen = ScreenPower.isInteractive(service)
         val asleep = WirelessSleepHold.isAsleep(screen)
         if (WirelessSleepHold.refusesBringUp(asleep, userRequested, newLauncher.mode == WifiLauncherMode.MANUAL)) {
+            // The wake replays this bring-up under its own ticket, not the wake's.
+            service.noteSleepHeld(ticket)
             if (WirelessSleepHold.hold(force)) {
                 AppLog.i("WifiLauncher: wireless bring-up held while the screen is off. " +
                     "The screen coming on re-arms it.")
@@ -173,8 +189,12 @@ open class WifiLauncherManager(val service: AapService) {
             return
         }
         // A USB or user connection attempt in flight outranks the background stack; it is re-armed
-        // when that attempt ends. A bring-up the user asked for ends that attempt instead.
-        if (ConnectionArbiter.refusesBackground(userRequested)) return
+        // when that attempt ends, under this bring-up's own ticket. A bring-up the user asked for
+        // ends that attempt instead.
+        if (ConnectionArbiter.refusesBackground(userRequested)) {
+            service.noteWirelessOwed(ticket)
+            return
+        }
         if (userRequested) ConnectionArbiter.yieldToUser("a wireless bring-up the user asked for")
         if (userRequested) liftUserCancel("the user asked for a wireless connection")
 
@@ -213,8 +233,9 @@ open class WifiLauncherManager(val service: AapService) {
         if (newLauncher.mode != WifiLauncherMode.NATIVE) service.closeRetainedHct()
         // replace it with new one
         active = newLauncher
-        sharedServices.update(newLauncher)
-        active?.start(noInfoToasts)
+        armedTicket = ticket
+        sharedServices.update(newLauncher, ticket)
+        active?.start(noInfoToasts, ticket)
         activeIsStarted = true
     }
 
@@ -265,25 +286,38 @@ open class WifiLauncherManager(val service: AapService) {
      * is how it ends up bound to a connection nobody owns. startScan() is a no-op while a healthy
      * scan is in flight and says so in its return value.
      *
+     * @param ticket the Stop ticket of the input that asked for this sweep, captured when it was
+     *   received; a sweep for a superseded input does not start.
      * @return true if a sweep started, false if one was already in flight, and null if there is no
      *   discovery loop to kick at all. The last two are different situations and only one of them
      *   is worth reacting to, so they are not folded together.
      */
-    fun forceStartDiscoveryScan(): Boolean? {
+    fun forceStartDiscoveryScan(ticket: Long): Boolean? {
         val discovery = sharedServices.localDiscovery ?: return null
 
-        return discovery.startScan()
+        return discovery.startScan(ticket = ticket)
     }
 
-    fun startDiscovery(oneShot: Boolean = false) {
+    /**
+     * [ticket]: the Stop ticket of the input this discovery serves, captured at its receipt.
+     * [save]: the Save this discovery retries for, when it does; its find connects for that Save.
+     */
+    fun startDiscovery(oneShot: Boolean = false, ticket: Long,
+        save: com.andrerinas.openheadunit.connection.CommManager.ConnectionState.Disconnected? = null) {
         // Allow discovery for Strategy 0 (NSD), 3 (Phone Hotspot) and 4 (Headunit Hotspot)
         if (active == null || active?.hasLocalDiscovery() == false)
             return
 
-        sharedServices.startLocalDiscovery(oneShot)
+        sharedServices.startLocalDiscovery(oneShot, ticket, save)
     }
 
-    fun restartDiscovery() {
-        active?.restartDiscovery()
+    /**
+     * [ticket]: the Stop ticket of the input this restart serves, captured at its receipt, and
+     * checked here before any launcher's restart acts. [save]: as for [startDiscovery].
+     */
+    fun restartDiscovery(ticket: Long,
+        save: com.andrerinas.openheadunit.connection.CommManager.ConnectionState.Disconnected? = null) {
+        if (!App.provide(service).commManager.acceptsAppConnectionTicket(ticket)) return
+        active?.restartDiscovery(ticket, save)
     }
 }

@@ -24,12 +24,14 @@ abstract class WifiLauncher(val manager: WifiLauncherManager) {
 
     abstract fun hasLocalDiscovery(): Boolean
 
-    abstract fun start(noInfoToasts: Boolean)
+    /** [ticket]: the Stop ticket of the input that armed this launcher (see setActive). */
+    abstract fun start(noInfoToasts: Boolean, ticket: Long)
 
     abstract fun stop(seq: WifiLauncherStopSequence)
 
-    open fun restartDiscovery() {
-        manager.startDiscovery()
+    /** [ticket]: the Stop ticket of the input this restart serves; [save]: the Save it retries for. */
+    open fun restartDiscovery(ticket: Long, save: com.andrerinas.openheadunit.connection.CommManager.ConnectionState.Disconnected? = null) {
+        manager.startDiscovery(ticket = ticket, save = save)
     }
 
 

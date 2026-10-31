@@ -68,10 +68,15 @@ displaced stops at its next step. Its retries stop on its own attempt's arrival,
 shared state SSL may already have moved on. It is never a JOIN target and no launch waits on it.
 A USB scan that cannot run yet is one owed object (`UsbRecheck`) carried by whatever holds it (a
 live attempt, the arbiter, the give-back, the queued scan, the settings hold, a permission
-dialog by its reply token, the request admitted for it) and checked again before it scans and at
+dialog by its reply address, the request admitted for it) and checked again before it scans and at
 USB admission; a user exit, Stop or an end that holds automatic reconnection withdraws it
-wherever it waits, retiring a request admitted for it. Before first unlock the attach screen's
-switch keeps a bare arbiter claim: no request authority can exist yet. The ingress fixtures
+wherever it waits, retiring a request admitted for it. Deferred USB work (the attach fallback,
+the accessory-detach re-sync, the reconnect after an end, Save's retry and fallback, the
+handshake-end recovery, a permission reply) carries the object its input minted when it was
+received and never mints one when it runs; only an input happening now (attach, wake, screen-on,
+a tap, a service command) mints its own. Before first unlock the attach screen's switch keeps a
+bare arbiter claim: no request authority can exist yet, and its worker checks that claim still
+holds before its first USB call. The ingress fixtures
 pause real producers inside
 each former gap (claim before record, Stop or Save or another claim taking a waiting request's
 authority, a discovery hand-off queued behind IO, a cancelled request that published nothing
@@ -82,7 +87,20 @@ an admitted USB request.
 The ticket belongs to the logical input, not to one public call. UI, automation, server accept,
 discovery scan, Nearby request, Self launch, VPN consent and service relays capture it when the
 input is accepted and carry it through queued work, permission waits, countdowns and internal
-retries. The caller fixtures extract those producers and run them against the real manager,
+retries. The service's own deferred work does the same: a session end's teardown-wait work
+(Save's retry and fallback, the wired-session re-arm), the reconnect timers, the arbiter's
+wireless give-back, the USB hand-off hold and the WiFi wait, the sleep and settings re-arms, a
+Nearby Save peer, a discovery Save's find and a held Bluetooth arrival each use the ticket of
+their input and hand that value to `setActive`/discovery/connect admission, never a newer one.
+A session end carries the ticket and owed-scan epoch CommManager published it with; the service
+collector does not read them after its hop. The hop after a fresh input is not fresh: the
+service mints a ticket only for genuinely external starts (system restart, media button, a Run
+owner's restore). Every internal relay carries the ticket of its input, and a USB check relay
+carries its scan; one sent without them is refused, as is one whose ticket Stop has moved. The
+Bluetooth arrival reaches MainActivity with its ticket, and the home's automatic Self start
+keeps it. The wireless cleanup fixture runs the real disconnect callback with Stop inside
+Save's teardown wait and before the end is received. The
+caller fixtures extract those producers and run them against the real manager,
 arbiter and service-ingress prefix: Stop B -> Open C rejects work begun before B, while a
 compatible Open without Stop and genuinely new input remain accepted. A socket discovery holds
 is owned only by the caller that adopts it, decided before anything can refuse it; background

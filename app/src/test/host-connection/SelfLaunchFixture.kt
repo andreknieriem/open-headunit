@@ -189,6 +189,8 @@ class CommManager {
     private val teardownQueue = QueuedMain()
     private val _scope = CoroutineScope(SupervisorJob() + teardownQueue)
     private fun withdrawUsbRechecks() {}
+    // USB scans are outside Self: an end carries none.
+    private fun usbRecheckNow(): UsbRecheck? = null
     // The extracted request validity asks about an owed USB scan; Self requests carry none.
     private fun recheckCurrent(recheck: UsbRecheck) = true
     private fun scheduleAppExit(userStop: Boolean) {}
@@ -364,9 +366,16 @@ object ContextCompat {
 }
 object Toast { const val LENGTH_LONG = 1 }
 object ToastUtils { fun showToast(service: Service, message: String, length: Int) { service.toasts++ } }
-object HomeFragment { var forceSelfModeLaunch = false }
+/** The home's automatic start; [view] stands for whether a home view is up when MainActivity acts. */
+object HomeFragment { var forceSelfModeTicket: Long? = null; var view: Any? = null }
+class Fragments { val fragments: List<Any> = listOf(HomeFragment) }
+class NavHost { val childFragmentManager = Fragments() }
+class SupportFragments { fun findFragmentById(id: Int): NavHost? = NavHost() }
+object R { object id { const val main_content = 3 } }
 class Main(private val service: Service) {
-    fun requestSelf() = forceSelfModeLaunch()
+    private val supportFragmentManager = SupportFragments()
+    // The request is the input: its ticket is read here, as MainActivity's callers do.
+    fun requestSelf() = forceSelfModeLaunch(service.commManager.appConnectionTicket())
     // MAIN_COMMAND
 }
 class Home(private val service: Service) {

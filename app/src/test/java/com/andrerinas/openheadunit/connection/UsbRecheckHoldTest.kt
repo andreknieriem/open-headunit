@@ -28,6 +28,7 @@ class UsbRecheckHoldTest {
         set("_scope", CoroutineScope(SupervisorJob() + Never))
         set("context", mock(Context::class.java))
         set("settings", mock(Settings::class.java))
+        set("appExitPolicy", com.andrerinas.openheadunit.connection.AppExitPolicy())
         return manager to states
     }
 

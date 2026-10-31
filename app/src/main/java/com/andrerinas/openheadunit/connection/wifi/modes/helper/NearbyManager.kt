@@ -50,7 +50,8 @@ class NearbyManager(
     private val context: Context,
     private val scope: CoroutineScope,
     private val commManager: CommManager,
-    private val onSocketReady: suspend (Socket, ConnectionAdmission, Long) -> Unit
+    /** The tunnel's hand-over to AAP admission, with the ticket and, for Save's request, its Save. */
+    private val onSocketReady: suspend (Socket, ConnectionAdmission, Long, CommManager.ConnectionState.Disconnected?) -> Unit
 ) {
 
     data class DiscoveredEndpoint(val id: String, val name: String)
@@ -72,7 +73,12 @@ class NearbyManager(
     private var discoveryGeneration: Any? = null
     private var isConnecting = false
     private var settingsRestartPeer: String? = null
-    private var settingsRestartUntilMs = 0L
+    // The Save that reserved [settingsRestartPeer] and the Stop ticket read when its end was
+    // received. Save's own request to that peer carries both, and a cancelled Save sends nothing.
+    private var settingsRestartSave: CommManager.ConnectionState.Disconnected? = null
+    private var settingsRestartTicket = 0L
+    // The Stop ticket of the input the running discovery serves; its automatic connects carry it.
+    private var discoveryTicket = 0L
     private var settingsRestartTimeoutJob: Job? = null
 
     // Written on the Nearby callback thread, read from the upgrade-timeout and tunnel coroutines.
@@ -115,15 +121,22 @@ class NearbyManager(
     private var networkAtConnect: Long? = null
     private val settings = Settings(context)
 
-    fun resumeDiscoveryIfIdle() {
+    /** [ticket]: the Stop ticket of the input asking for discovery; see [start]. */
+    fun resumeDiscoveryIfIdle(ticket: Long) {
         // Do not hold the attempt monitor across SDK discovery calls: they may call back inline.
         val idle = attempts.locked {
             !isConnecting && activeEndpointId == null && activeNearbySocket == null
         }
-        if (idle) start()
+        if (idle) start(ticket)
     }
 
-    fun start() {
+    /**
+     * Starts discovery for the input that asked under [ticket]. A peer it finds later and connects
+     * to automatically continues that input, so it carries this ticket rather than reading one in
+     * the SDK's callback; a newer input asking while discovery runs takes it over.
+     */
+    fun start(ticket: Long) {
+        if (!commManager.acceptsAppConnectionTicket(ticket)) return
         val generation = attempts.locked {
             if (!hasRequiredPermissions()) {
                 AppLog.w("NearbyManager: Missing required location/bluetooth permissions. Skipping start.")
@@ -131,11 +144,13 @@ class NearbyManager(
             }
             if (isRunning) {
                 AppLog.i("NearbyManager: Already running discovery.")
+                discoveryTicket = ticket
                 return@locked null
             }
             AppLog.i("NearbyManager: Starting Nearby (Discoverer only)...")
             ConnectionStageTracker.report(ConnectionStage.SEARCHING)
             isRunning = true
+            discoveryTicket = ticket
             _discoveredEndpoints.value = emptyList()
             Any().also { discoveryGeneration = it }
         } ?: return
@@ -162,27 +177,35 @@ class NearbyManager(
         return true
     }
 
-    /** Save grants one retry of the same peer even when automatic connection is disabled. */
-    fun restartForSettings(untilMs: Long = SystemClock.elapsedRealtime() +
-        SettingsRestartRecovery.WINDOW_MS) {
+    /**
+     * [save] grants one retry of the same peer even when automatic connection is disabled. [ticket]
+     * is the Stop ticket captured when Save's end was received. The peer found later continues
+     * exactly that Save, carrying both, and a Save cancelled meanwhile (a user exit, Stop, a manual
+     * start) reserves nothing; the deadline's fallback, ordinary admission, carries the ticket.
+     */
+    fun restartForSettings(save: CommManager.ConnectionState.Disconnected, ticket: Long) {
         val peer = settings.lastNearbyDeviceName.takeIf { it.isNotEmpty() } ?: return
         stop()
         attempts.locked {
             settingsRestartPeer = peer
-            settingsRestartUntilMs = untilMs
+            settingsRestartSave = save
+            settingsRestartTicket = ticket
         }
-        start()
+        start(ticket)
         val generation = attempts.locked { discoveryGeneration }
         settingsRestartTimeoutJob = scope.launch {
-            delay((untilMs - SystemClock.elapsedRealtime()).coerceAtLeast(0L))
+            delay((save.settingsRestartUntilMs - SystemClock.elapsedRealtime()).coerceAtLeast(0L))
             val endpoint = attempts.locked {
-                if (discoveryGeneration !== generation || settingsRestartUntilMs != untilMs) return@locked null
+                if (discoveryGeneration !== generation || settingsRestartSave !== save) return@locked null
                 settingsRestartPeer = null
-                if (isRunning && settings.autoConnectLastSession && !isConnecting && activeEndpointId == null) {
+                settingsRestartSave = null
+                // Save's end of the wait resumes ordinary connection, unless Save was cancelled.
+                if (!save.isSettingsRestartCancelled && isRunning && settings.autoConnectLastSession &&
+                    !isConnecting && activeEndpointId == null) {
                     _discoveredEndpoints.value.firstOrNull { it.name == settings.lastNearbyDeviceName }?.id
                 } else null
             }
-            if (endpoint != null) connectToEndpoint(endpoint)
+            if (endpoint != null) connectToEndpoint(endpoint, ticket)
         }
     }
 
@@ -191,6 +214,7 @@ class NearbyManager(
             settingsRestartTimeoutJob?.cancel()
             settingsRestartTimeoutJob = null
             settingsRestartPeer = null
+            settingsRestartSave = null
             AppLog.i("NearbyManager: Stopping discovery and disconnecting from any active endpoint...")
             isRunning = false
             discoveryGeneration = null
@@ -256,13 +280,18 @@ class NearbyManager(
     /**
      * The same order as CommManager's admission: lifecycle first, then attempt publication.
      * Actions only publish owned state; SDK calls and resource cleanup follow outside both locks.
+     * With [requireSave], a Save's request also needs that Save to still own the connection state:
+     * the Nearby-side steps before the tunnel is handed over (sending the request, accepting the
+     * phone, publishing the tunnel). From the hand-over on, CommManager checks the Save itself.
      */
     private fun runAcceptedAttempt(
         attempt: NearbyAttemptGuard.Attempt,
         endpoint: String = attempt.endpoint,
+        requireSave: Boolean = false,
         action: () -> Unit,
     ): Boolean = commManager.withAppConnectionLifecycleLock {
         if (!commManager.acceptsAppConnectionTicket(attempt.ticket)) false
+        else if (requireSave && attempt.save?.acceptsSettingsRestart(commManager.connectionState.value) == false) false
         else attempts.run(attempt, endpoint, action)
     }
 
@@ -271,17 +300,20 @@ class NearbyManager(
 
     /**
      * Manually initiate a connection to a specific discovered endpoint.
-     * Called from HomeFragment when user taps a device in the list.
+     * Called from HomeFragment when user taps a device in the list. [save] names the Save this
+     * request continues, when it does; it is carried through to the final AAP admission.
      */
     fun connectToEndpoint(
         endpointId: String,
-        ticket: Long = commManager.appConnectionTicket(),
+        ticket: Long,
+        save: CommManager.ConnectionState.Disconnected? = null,
     ) {
         var retired: RetiredAttempt? = null
         var drainsRequest = false
         commManager.withAppConnectionLifecycleLock {
             attempts.locked {
                 if (!commManager.acceptsAppConnectionTicket(ticket)) return@locked
+                if (save != null && !save.acceptsSettingsRestart(commManager.connectionState.value)) return@locked
                 if (attempts.current()?.ticket?.let { it != ticket } == true) retired = detachAttempt()
                 if (isConnecting) {
                     AppLog.w("NearbyManager: Already connecting, ignoring request for $endpointId")
@@ -292,14 +324,15 @@ class NearbyManager(
                     return@locked
                 }
                 settingsRestartPeer = null
+                settingsRestartSave = null
                 if (activeEndpointId != null) retired = detachAttempt()
                 AppLog.i("NearbyManager: Requesting connection to endpoint: $endpointId")
                 lastQuality.remove(endpointId)
                 isConnecting = true
-                val attempt = attempts.begin(endpointId, ticket)
+                val attempt = attempts.begin(endpointId, ticket, save)
                 // Behind any disconnect a retirement of this endpoint reserved before us, in this
                 // manager or in the one this manager replaced.
-                drainsRequest = NearbyEndpointCalls.reserve(endpointId) { requestConnection(attempt, ticket) }
+                drainsRequest = NearbyEndpointCalls.reserve(endpointId) { requestConnection(attempt) }
             }
         }
         try {
@@ -309,10 +342,17 @@ class NearbyManager(
         }
     }
 
-    /** May run on the thread draining earlier cleanup; a request retired meanwhile is not sent. */
-    private fun requestConnection(attempt: NearbyAttemptGuard.Attempt, ticket: Long) {
-        if (attempts.current() !== attempt) return
-        connectionsClient.requestConnection(Build.MODEL, attempt.endpoint, connectionLifecycleCallback(attempt, ticket))
+    /**
+     * May run on the thread draining earlier cleanup, after Stop, an exit or a newer request: the
+     * queued request is sent only while its own ticket, identity and Save still hold, checked
+     * together. A revoked one retires only itself. The SDK call itself runs outside both monitors.
+     */
+    private fun requestConnection(attempt: NearbyAttemptGuard.Attempt) {
+        if (!runAcceptedAttempt(attempt, requireSave = true) {}) {
+            failAttempt(attempt)
+            return
+        }
+        connectionsClient.requestConnection(Build.MODEL, attempt.endpoint, connectionLifecycleCallback(attempt, attempt.ticket))
             .addOnFailureListener { e ->
                 failAttempt(attempt)
                 AppLog.e("NearbyManager: Failed to request connection: ${e.message}")
@@ -340,6 +380,10 @@ class NearbyManager(
 
     private fun endpointDiscoveryCallback(generation: Any) = object : EndpointDiscoveryCallback() {
         override fun onEndpointFound(endpointId: String, info: DiscoveredEndpointInfo) {
+            // A peer Save asked for continues that Save, under the Save and ticket it captured;
+            // any other automatic connect continues the discovery's own input, under its ticket.
+            var restart: Pair<CommManager.ConnectionState.Disconnected, Long>? = null
+            var autoTicket = 0L
             val connect = attempts.locked {
                 if (discoveryGeneration !== generation || !isRunning) return@locked false
                 AppLog.i("NearbyManager: Endpoint FOUND: ${info.endpointName} ($endpointId)")
@@ -349,16 +393,27 @@ class NearbyManager(
                     current.add(DiscoveredEndpoint(endpointId, info.endpointName))
                     _discoveredEndpoints.value = current
                 }
-                if (SystemClock.elapsedRealtime() >= settingsRestartUntilMs) settingsRestartPeer = null
+                val save = settingsRestartSave
+                // An expired or cancelled Save holds no reservation any more.
+                if (save == null || SystemClock.elapsedRealtime() >= save.settingsRestartUntilMs ||
+                    !save.acceptsSettingsRestart(commManager.connectionState.value)) {
+                    settingsRestartPeer = null
+                    settingsRestartSave = null
+                }
                 val restartPeer = settingsRestartPeer
-                if (restartPeer != null) {
+                if (restartPeer != null && save != null) {
+                    restart = save to settingsRestartTicket
                     restartPeer == info.endpointName && !isConnecting && activeEndpointId == null
                 } else {
+                    autoTicket = discoveryTicket
                     settings.autoConnectLastSession && !isConnecting && activeEndpointId == null &&
                         settings.lastNearbyDeviceName.isNotEmpty() && settings.lastNearbyDeviceName == info.endpointName
                 }
             }
-            if (connect) connectToEndpoint(endpointId)
+            if (!connect) return
+            val saved = restart
+            if (saved != null) connectToEndpoint(endpointId, saved.second, saved.first)
+            else connectToEndpoint(endpointId, autoTicket)
         }
 
         override fun onEndpointLost(endpointId: String) = attempts.locked {
@@ -372,7 +427,7 @@ class NearbyManager(
 
     private fun connectionLifecycleCallback(attempt: NearbyAttemptGuard.Attempt, ticket: Long) = object : ConnectionLifecycleCallback() {
         override fun onConnectionInitiated(endpointId: String, info: ConnectionInfo) {
-            val accepted = runAcceptedAttempt(attempt, endpointId) {
+            val accepted = runAcceptedAttempt(attempt, endpointId, requireSave = true) {
                 AppLog.i("NearbyManager: Connection INITIATED with $endpointId (${info.endpointName}). Token: ${info.authenticationToken}")
                 AppLog.i("NearbyManager: Automatically ACCEPTING connection...")
                 isRunning = false
@@ -485,7 +540,7 @@ class NearbyManager(
                 val pipes = android.os.ParcelFileDescriptor.createPipe()
                 val outputStream = android.os.ParcelFileDescriptor.AutoCloseOutputStream(pipes[1])
                 var published = false
-                runAcceptedAttempt(attempt, endpointId) {
+                runAcceptedAttempt(attempt, endpointId, requireSave = true) {
                     if (activeNearbySocket === sock && !sock.isClosed) {
                         activePipes = pipes
                         published = true
@@ -530,7 +585,7 @@ class NearbyManager(
             return
         }
         try {
-            onSocketReady(sock, admission, ticket)
+            onSocketReady(sock, admission, ticket, attempt.save)
         } catch (e: ConnectionAdmissionRejectedException) {
             failAttempt(attempt)
             AppLog.i("NearbyManager: tunnel handoff superseded; retired its attempt")

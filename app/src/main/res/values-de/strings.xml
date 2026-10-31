@@ -250,9 +250,11 @@
     <string name="enter_wifi_ssid">WLAN-SSID eingeben</string>
     <string name="wifi_ssid_not_set">Nicht festgelegt</string>
 
-    <string name="listen_for_usb_devices_label">Auf USB-Geräte reagieren</string>
-    <string name="listen_for_usb_devices_description">Android-Systemabfrage anzeigen, wenn ein USB-Gerät angeschlossen wird.</string>
+    <string name="listen_for_usb_attach_label">Angeschlossene Smartphones/AA-Dongles erkennen</string>
+    <string name="listen_for_usb_attach_description">Android kann Open Headunit für ein angeschlossenes Smartphone oder einen Android-Auto-Dongle anbieten und merkt sich deine Wahl. Ist die Option aus, bietet Android die App nicht an. Nutze die USB-Taste und beantworte jedes Mal eine Abfrage.</string>
     <string name="blacklisted">Blockiert (Blacklist)</string>
+    <string name="usb_blacklist_one_mode">Dieses Gerät übermittelt keinen Namen. Die Blacklist gilt deshalb für seine USB-ID: für jedes Gerät mit dieser ID und nur in diesem USB-Modus. Im Android-Auto-Modus kann es sich weiterhin verbinden.</string>
+    <string name="usb_blacklist_android_asks">Android fragt beim Anschließen dieses Geräts möglicherweise trotzdem nach. Wähle die passende App und aktiviere das Kontrollkästchen, um sie immer zu verwenden. Dann fragt Android nicht mehr nach.</string>
     <string name="usb_blacklist_title">Blacklist für USB-Geräte</string>
     <string name="usb_blacklist_description">Geräte auf der Blacklist werden beim Anschließen ignoriert: kein Autostart, keine Abfragen. Ein Gerät wird anhand seines Namens erkannt, ein gesperrtes Telefon bleibt also in jedem USB-Modus gesperrt. Manche Hersteller vergeben für alle Modelle denselben Namen; diese lassen sich nicht unterscheiden.</string>
     <string name="add_to_blacklist">Zur Blacklist hinzufügen</string>
@@ -260,8 +262,11 @@
     <string name="usb_device_action_title">Aktion für USB-Gerät</string>
     <string name="show_toast_messages">Toast-Meldungen anzeigen</string>
     <string name="show_toast_messages_description">Status-Meldungen bei Verbindung, Trennung und Moduswechsel einblenden.</string>
-    <string name="auto_start_usb_label">Autostart bei USB</string>
-    <string name="auto_start_usb_description">Die App automatisch öffnen und eine Verbindung versuchen, wenn ein USB-Gerät angeschlossen wird.</string>
+    <string name="auto_start_usb_connect_label">Beim Anschließen verbinden</string>
+    <string name="auto_start_usb_connect_description">Startet Android Auto, sobald ein erkanntes Smartphone oder ein erkannter Dongle angeschlossen wird. Ist die Option aus, öffnet das Anschließen nur die App, und die USB-Taste verbindet. Die Einstellungen für die automatische Verbindung gelten weiterhin, wenn die App geöffnet wird.</string>
+    <string name="auto_start_usb_connect_needs_detect">Aktiviere zuerst \"%1$s\" in den allgemeinen Einstellungen.</string>
+    <string name="auto_start_usb_open_label">App beim Anschließen öffnen</string>
+    <string name="auto_start_usb_open_description">Öffnet Open Headunit, sobald ein Smartphone oder Dongle angeschlossen wird. Startet die App auch nach dem Hochfahren oder Aufwecken, um nach einem angeschlossenen Smartphone zu suchen, und bleibt auch nach Beenden aktiv.</string>
     <string name="auto_start_settings">Autostart-Einstellungen</string>
     <string name="auto_start_settings_description">Konfigurieren, wann die App automatisch startet.</string>
     <string name="auto_start_oem_warning">Auf diesem Gerät musst du eventuell den Autostart aktivieren und die Akkuoptimierung oder Hintergrundbeschränkungen für diese App aufheben.\n\nBei Autoradios mit Quick Boot (Schnellstart) funktioniert der Autostart möglicherweise nicht. Suche in den Systemeinstellungen nach „DuraSpeed“ und aktiviere die App dort. Bei manchen Autoradios ist DuraSpeed ausgeblendet. Mit einer App wie „Hidden Settings“ kannst du es finden. Wenn es kein DuraSpeed gibt, deaktiviere Quick Boot.</string>
@@ -443,6 +448,7 @@
     <string name="connection_interrupted">Verbindung verloren</string>
     <string name="connection_interrupted_detail">Neuer Versuch…</string>
     <string name="wifi_disconnect_toast">Android Auto getrennt. Bei kabellosem AA „Zwischen Netzwerken wechseln“ oder „Netzwerkbeschleunigung“ in den WLAN-Einstellungen des Smartphones deaktivieren</string>
+    <string name="usb_disconnect_toast">Android Auto getrennt: Die USB-Verbindung zum Smartphone wurde unterbrochen. Bei häufigem Auftreten anderes Kabel, anderen USB-Anschluss oder USB-Hub verwenden.</string>
     <string name="reset_usb_option">USB-Verbindung zurücksetzen</string>
     <string name="reset_usb_timeout">USB-Gerät nicht gefunden. Bitte Verbindung prüfen.</string>
     <string name="notification_service_running">Open Headunit läuft</string>
@@ -518,6 +524,7 @@
     <string name="reopen_on_reconnection_label">Bei Neuverbindung erneut öffnen</string>
     <string name="reopen_on_reconnection_description">Wenn du auf „Beenden“ tippst, läuft die App im Hintergrund weiter und überwacht USB-Verbindungen. Wird ein Gerät erneut verbunden, öffnet sich die App automatisch.</string>
     <string name="overlay_permission_required">Autostart erfordert die Berechtigung „Über anderen Apps einblenden“</string>
+    <string name="usb_access_needed">Open Headunit hat keinen Zugriff auf dieses USB-Gerät. Drücke USB, um den Zugriff zu erlauben. Falls dafür eine andere App geöffnet wird, lösche deren USB-Standard in den Android-Einstellungen.</string>
     <string name="usb_permission_denied">USB-Berechtigung verweigert. Erlaube den USB-Zugriff, damit die Verbindung automatisch hergestellt werden kann.</string>
 
     <string name="use_white_background">Weißes Hintergrundbild für den Startbildschirm verwenden</string>

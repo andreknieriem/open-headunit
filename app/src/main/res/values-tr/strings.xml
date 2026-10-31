@@ -218,12 +218,15 @@
     <string name="enter_wifi_ssid">Wi-Fi SSID girin</string>
     <string name="wifi_ssid_not_set">Ayarlanmadı</string>
 
-    <string name="listen_for_usb_devices_label">USB Cihazlarını Dinle</string>
-    <string name="listen_for_usb_devices_description">Bir USB cihazı takıldığında Android sistem istemini göster.</string>
+    <string name="listen_for_usb_attach_label">Takılan telefonları/AA dongle\'larını algıla</string>
+    <string name="listen_for_usb_attach_description">Android, takılan telefon veya Android Auto dongle\'ı için Open Headunit\'i önerebilir ve seçiminizi hatırlar. Kapalıyken Android önermez. USB düğmesini kullanın ve her seferinde bir iletişim kutusunu yanıtlayın.</string>
     <string name="show_toast_messages">Geçici Mesajları Göster</string>
     <string name="show_toast_messages_description">Bağlantı, bağlantı kesilmesi ve mod değiştirme sırasında kısa durum mesajları göster.</string>
-    <string name="auto_start_usb_label">USB ile otomatik başlat</string>
-    <string name="auto_start_usb_description">Bir USB cihazı takıldığında uygulamayı otomatik olarak aç ve bağlanmayı dene.</string>
+    <string name="auto_start_usb_connect_label">Takılınca bağlan</string>
+    <string name="auto_start_usb_connect_description">Algılanan bir telefon veya dongle takıldığında Android Auto\'yu başlatır. Kapalıyken takmak yalnızca uygulamayı açar, USB düğmesi ise bağlanır. Otomatik bağlanma ayarları, uygulama açıldığında da geçerlidir.</string>
+    <string name="auto_start_usb_connect_needs_detect">Önce Genel ayarlarda \"%1$s\" seçeneğini açın.</string>
+    <string name="auto_start_usb_open_label">Takılınca uygulamayı aç</string>
+    <string name="auto_start_usb_open_description">Bir telefon veya dongle takıldığında Open Headunit\'i açar. Ayrıca açılıştan veya uyandırmadan sonra takılı telefonu aramak için uygulamayı başlatır ve Çıkış\'tan sonra da izlemeyi sürdürür.</string>
     <string name="auto_start_settings">Otomatik başlatma ayarları</string>
     <string name="auto_start_settings_description">Uygulamanın ne zaman otomatik başlayacağını yapılandırın.</string>
     <string name="auto_start_oem_warning">Bu cihaz, otomatik başlatmanın etkinleştirilmesini ve bu uygulama için pil optimizasyonunun veya arka plan kısıtlamalarının kaldırılmasını gerektirebilir.\n\nQuick Boot (hızlı önyükleme) özelliğine sahip multimedya sistemlerinde otomatik başlatma çalışmayabilir. Sistem ayarlarınızda \"DuraSpeed\" seçeneğini arayın ve bu uygulamayı orada etkinleştirin. Bazı sistemlerde DuraSpeed gizlidir; bulmak için \"Hidden Settings\" gibi bir uygulamaya ihtiyacınız olabilir. DuraSpeed yoksa, Quick Boot\'u devre dışı bırakmayı deneyin.</string>
@@ -383,6 +386,7 @@
     <string name="connection_interrupted">Bağlantı kesildi</string>
     <string name="connection_interrupted_detail">Yeniden deneniyor…</string>
     <string name="wifi_disconnect_toast">Android Auto bağlantısı kesildi: Kablosuz AA kullanıyorsanız telefonun Wi-Fi ayarlarında \"Ağlar arası geçiş yap\" veya \"Ağ hızlandırma\" seçeneğini kapatın</string>
+    <string name="usb_disconnect_toast">Android Auto bağlantısı kesildi: telefonla USB bağlantısı başarısız oldu. Sık oluyorsa başka bir kablo, başka bir USB bağlantı noktası veya USB hub deneyin.</string>
     <string name="reset_usb_option">USB bağlantısını sıfırla</string>
     <string name="reset_usb_timeout">USB cihazı bulunamadı. Lütfen bağlantıyı kontrol edin.</string>
     <string name="notification_service_running">Open Headunit çalışıyor</string>
@@ -462,6 +466,7 @@
     <string name="reopen_on_reconnection_label">Yeniden bağlanınca tekrar aç</string>
     <string name="reopen_on_reconnection_description">Çıkış düğmesine bastığınızda, uygulama arka planda çalışmaya devam eder ve USB bağlantılarını izlemeyi sürdürür. Bir cihaz yeniden bağlandığında uygulama otomatik olarak tekrar açılır.</string>
     <string name="overlay_permission_required">Otomatik başlatma için \'Diğer uygulamaların üzerinde göster\' izni gerekir</string>
+    <string name="usb_access_needed">Open Headunit bu USB cihazına erişemiyor. İzin vermek için USB düğmesine basın. Cihaz için başka bir uygulama açılırsa Android ayarlarından o uygulamanın USB varsayılanını temizleyin.</string>
     <string name="usb_permission_denied">USB izni reddedildi. Otomatik bağlanmak için lütfen USB erişimine izin verin.</string>
 
     <string name="use_white_background">Beyaz ana ekran duvar kağıdı kullan</string>
@@ -1014,6 +1019,8 @@
 
     <!-- Auto-added missing translations -->
     <string name="blacklisted">Kara listede</string>
+    <string name="usb_blacklist_one_mode">Bu cihaz ad bildirmiyor, bu yüzden kara liste USB kimliğiyle eşleşir: bu kimliğe sahip her cihaz, yalnızca bu USB modunda. Android Auto modunda yine de bağlanabilir.</string>
+    <string name="usb_blacklist_android_asks">Android, takıldığında bu cihaz hakkında yine de soru sorabilir. Cihazın ait olduğu uygulamayı seçin ve her zaman kullanmak için kutuyu işaretleyin; Android bir daha sormaz.</string>
     <string name="usb_blacklist_title">USB Cihazı Kara Listesi</string>
     <string name="usb_blacklist_description">Kara listedeki cihazlar bağlandığında yoksayılır: otomatik başlatma ve istemler olmaz. Cihaz adı ile eşleştirilir, bu nedenle engellenen bir telefon her USB modunda engelli kalır. Bazı üreticiler her modele aynı adı verir ve bunlar ayırt edilemez.</string>
     <string name="add_to_blacklist">Kara Listeye Ekle</string>

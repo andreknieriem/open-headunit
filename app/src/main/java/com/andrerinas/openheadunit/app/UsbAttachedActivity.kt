@@ -20,10 +20,12 @@ import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy
 import com.andrerinas.openheadunit.connection.ConnectionStage
 import com.andrerinas.openheadunit.connection.ConnectionStageTracker
 import com.andrerinas.openheadunit.connection.usb.UsbAccessoryMode
+import com.andrerinas.openheadunit.connection.usb.UsbAttachActivityPolicy
 import com.andrerinas.openheadunit.connection.usb.UsbAttachPolicy
 import com.andrerinas.openheadunit.connection.usb.UsbDeviceCompat
 import com.andrerinas.openheadunit.connection.usb.UsbDeviceDiagnostics
-import com.andrerinas.openheadunit.connection.usb.UsbReceiver
+import com.andrerinas.openheadunit.connection.usb.UsbPermissionAsks
+import com.andrerinas.openheadunit.connection.usb.UsbPlugInPolicy
 import com.andrerinas.openheadunit.connection.usb.UsbSwitchClaim
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.DeviceIntent
@@ -98,6 +100,11 @@ class UsbAttachedActivity : Activity() {
 
         val settings = if (!isLocked) Settings(this) else null
 
+        // Android started us for an attach, so a later scan for this path knows the plug.
+        if (intent?.action == UsbManager.ACTION_USB_DEVICE_ATTACHED) {
+            UsbPermissionAsks.stampAttach(device.deviceName)
+        }
+
         if (Settings.isUsbDeviceBlacklisted(this, device)) {
             AppLog.i("UsbAttachedActivity: Ignored blacklisted USB device (${Settings.formatUsbVidPidDisplay(device.vendorId, device.productId)})")
             finish()
@@ -112,55 +119,14 @@ class UsbAttachedActivity : Activity() {
             }
         }
 
-        // No switch, prompt or home screen here: the service holds or refuses it and says why.
-        if (!isLocked && !AutoConnectHoldPolicy.raisesUi(
-                SettingsActivity.isVisible, AapService.instance?.usbCancelledByUser() == true)) {
-            AppLog.i("UsbAttachedActivity: settings on show or the status pill's X holding; handing ${device.deviceName} to the service")
-            handOffToService()
-            finish()
-            return
-        }
-
-        if (UsbDeviceCompat.isInAccessoryMode(device)) {
-            val usbManager = UsbDeviceCompat.usbManager(this) ?: run { finish(); return }
-            if (!usbManager.hasPermission(device)) {
-                AppLog.i("Usb in accessory mode but no permission. Requesting...")
-                val permissionIntent = UsbReceiver.createPermissionPendingIntent(this)
-                usbManager.requestPermission(device, permissionIntent)
-                finish()
-                return
-            }
-            if (isLocked) {
-                AppLog.w("Usb in accessory mode, but the user has not unlocked yet and a session needs credential storage. Waiting for unlock.")
-                finish()
-                return
-            }
-            AppLog.i("Usb in accessory mode and has permission. Starting AapService.")
-            ContextCompat.startForegroundService(this, Intent(this, AapService::class.java).apply {
-                action = AapService.ACTION_CHECK_USB
-            })
-            finish()
-            return
-        }
-
+        val accessory = UsbDeviceCompat.isInAccessoryMode(device)
         val deviceCompat = UsbDeviceCompat(device)
-
-        // Launch app UI if USB auto-start is enabled (for any device — a non-AA
-        // device simply won't complete the AOA handshake, no harm done)
-        // Use device-protected storage for the auto-start check so it works
-        // during locked boot (before credential storage is available)
-        val autoStartOnUsb = Settings.isAutoStartOnUsbEnabled(this)
-        if (autoStartOnUsb && (isLocked || !App.provide(this).commManager.isConnected)) {
-            AppLog.i("USB auto-start: launching app for ${deviceCompat.uniqueName}")
-            try {
-                startActivity(Intent(this, MainActivity::class.java).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    putExtra(MainActivity.EXTRA_LAUNCH_SOURCE, "USB auto-start")
-                })
-            } catch (e: Exception) {
-                AppLog.w("Could not start UI from USB auto-start: ${e.message}")
-            }
-        }
+        // Read from device storage so both work during locked boot, before credential storage.
+        val storedConnect = settings?.usbConnectOnPlugIn ?: Settings.isUsbConnectOnPlugInEnabled(this)
+        val autoStartOnUsb = Settings.isAutoStartOnUsbEnabled(this) && storedConnect
+        // Android started us, so detection is on; a re-attach after a glitch switches at once.
+        val connectOnPlugIn = UsbPlugInPolicy.maySwitchNormal(UsbPlugInPolicy.Trigger.PLUG_IN, storedConnect,
+            listen = true, uncleanEndAgoMs = AapService.instance?.uncleanSessionEndAgoMs())
 
         // Google VID (0x18D1) devices or known AA dongles (e.g. AAWireless, smartBox, Carlinkit)
         // are almost certainly Android Auto devices. Always attempt the AOA switch for these — skipping
@@ -182,28 +148,67 @@ class UsbAttachedActivity : Activity() {
             allowListConfigured = allowList.isNotEmpty(),
             deviceAllowed = settings.isConnectingDevice(deviceCompat),
         )
-        if (!mayAttempt) {
-            // Hand the attach to the service rather than swallowing it. This activity is what the
-            // system launches once it is the default handler, so a bare finish() here is the end
-            // of the road for that plug-in: no chooser is shown and nothing else is told.
-            AppLog.i("Not switching ${deviceCompat.uniqueName} here (not on the allow list); letting the service decide")
-            handOffToService()
-            finish()
-            return
-        }
+        // No switch, prompt or home screen while held: the service holds or refuses it and says why.
+        val held = !isLocked && !AutoConnectHoldPolicy.raisesUi(
+            SettingsActivity.isVisible, AapService.instance?.usbCancelledByUser() == true)
+        val decision = UsbAttachActivityPolicy.decide(
+            accessory = accessory,
+            hasPermission = !accessory || UsbDeviceCompat.usbManager(this)?.hasPermission(device) == true,
+            locked = isLocked,
+            held = held,
+            connectOnPlugIn = connectOnPlugIn,
+            autoStart = autoStartOnUsb,
+            mayAttempt = mayAttempt,
+            switchLive = UsbSwitchClaim.isLive(),
+        )
 
-        if (isLocked && !autoStartOnUsb) {
-            AppLog.w("Device is locked and USB auto-start is disabled. Cannot check allowed devices. Finishing.")
-            finish()
-            return
-        }
-
-        if (UsbSwitchClaim.isLive()) {
-            // Each attach lands in a fresh instance (noHistory, no task affinity), so without this
-            // the 0x2D00 re-enumeration would start a second switch on the same device.
-            AppLog.i("A USB accessory switch is already in flight; leaving ${deviceCompat.uniqueName} to it")
-            finish()
-            return
+        when (decision) {
+            UsbAttachActivityPolicy.Action.START_SERVICE -> {
+                AppLog.i("Usb in accessory mode and has permission. Starting AapService.")
+                ContextCompat.startForegroundService(this, Intent(this, AapService::class.java).apply {
+                    action = AapService.ACTION_CHECK_USB
+                })
+                finish()
+                return
+            }
+            UsbAttachActivityPolicy.Action.OPEN_HOME -> {
+                AppLog.i("UsbAttachedActivity: Connect when plugged in is off; opening the app, not switching ${deviceCompat.uniqueName}")
+                openHome("USB plug-in")
+                finish()
+                return
+            }
+            UsbAttachActivityPolicy.Action.HAND_OFF -> {
+                when {
+                    held -> AppLog.i("UsbAttachedActivity: settings on show or the status pill's X holding; handing ${device.deviceName} to the service")
+                    // Android grants before it starts us, so the device changed; the service decides.
+                    accessory -> AppLog.i("UsbAttachedActivity: accessory mode without permission, handing it to the service")
+                    else -> {
+                        launchForAutoStart(isLocked, autoStartOnUsb, deviceCompat)
+                        // This activity is what the system launches once it is the default
+                        // handler, so a bare finish() here would drop the plug-in.
+                        AppLog.i("Not switching ${deviceCompat.uniqueName} here (not on the allow list); letting the service decide")
+                    }
+                }
+                handOffToService()
+                finish()
+                return
+            }
+            UsbAttachActivityPolicy.Action.FINISH -> {
+                when {
+                    accessory -> AppLog.w("Usb in accessory mode, but the user has not unlocked yet and a session needs credential storage. Waiting for unlock.")
+                    !connectOnPlugIn -> AppLog.i("UsbAttachedActivity: Connect when plugged in is off and the device is locked; leaving ${deviceCompat.uniqueName}")
+                    isLocked && !autoStartOnUsb -> AppLog.w("Device is locked and USB auto-start is disabled. Cannot check allowed devices. Finishing.")
+                    else -> {
+                        launchForAutoStart(isLocked, autoStartOnUsb, deviceCompat)
+                        // Each attach lands in a fresh instance (noHistory, no task affinity), so without this
+                        // the 0x2D00 re-enumeration would start a second switch on the same device.
+                        AppLog.i("A USB accessory switch is already in flight; leaving ${deviceCompat.uniqueName} to it")
+                    }
+                }
+                finish()
+                return
+            }
+            UsbAttachActivityPolicy.Action.SWITCH -> launchForAutoStart(isLocked, autoStartOnUsb, deviceCompat)
         }
 
         val usbManager = UsbDeviceCompat.usbManager(this) ?: run { finish(); return }
@@ -254,14 +259,34 @@ class UsbAttachedActivity : Activity() {
     /**
      * Ask [AapService] to look at what is plugged in. Used wherever this activity declines to act
      * itself: the system delivered the attach to us and nobody else will hear about it otherwise.
+     * It is a plug-in, so "Connect when plugged in" still decides whether the phone is switched.
      */
     private fun handOffToService() {
         try {
             ContextCompat.startForegroundService(this, Intent(this, AapService::class.java).apply {
                 action = AapService.ACTION_CHECK_USB
+                putExtra(AapService.EXTRA_USB_TRIGGER, AapService.USB_TRIGGER_PLUG_IN)
             })
         } catch (e: Exception) {
             AppLog.w("Could not hand the USB attach to the service: ${e.message}")
+        }
+    }
+
+    /** "Open the app when plugged in": raise the home screen beside the switch. */
+    private fun launchForAutoStart(isLocked: Boolean, autoStartOnUsb: Boolean, deviceCompat: UsbDeviceCompat) {
+        if (!autoStartOnUsb || !(isLocked || !App.provide(this).commManager.isConnected)) return
+        AppLog.i("USB auto-start: launching app for ${deviceCompat.uniqueName}")
+        openHome("USB auto-start")
+    }
+
+    private fun openHome(source: String) {
+        try {
+            startActivity(Intent(this, MainActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                putExtra(MainActivity.EXTRA_LAUNCH_SOURCE, source)
+            })
+        } catch (e: Exception) {
+            AppLog.w("Could not start UI from $source: ${e.message}")
         }
     }
 

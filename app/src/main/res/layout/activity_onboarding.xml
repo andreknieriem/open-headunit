@@ -582,10 +582,30 @@
                         android:layout_width="0dp"
                         android:layout_weight="1"
                         android:layout_height="wrap_content"
-                        android:text="@string/auto_start_usb_label"
+                        android:text="@string/auto_start_usb_connect_label"
                         android:textAppearance="?attr/textAppearanceBody1" />
                     <com.google.android.material.switchmaterial.SwitchMaterial
                         android:id="@+id/onb_autostart_usb_switch"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+
+                <!-- USB-only: open the app when plugged in -->
+                <LinearLayout
+                    android:id="@+id/onb_as_usb_open_row"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginTop="8dp">
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="wrap_content"
+                        android:text="@string/auto_start_usb_open_label"
+                        android:textAppearance="?attr/textAppearanceBody1" />
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/onb_autostart_usb_open_switch"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content" />
                 </LinearLayout>

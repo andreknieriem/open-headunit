@@ -26,6 +26,7 @@ import com.andrerinas.openheadunit.aap.AapService
 import com.andrerinas.openheadunit.app.BtAutoDisconnectPolicy
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.AppPermissions
+import com.andrerinas.openheadunit.connection.usb.UsbAutoStartPolicy
 import com.andrerinas.openheadunit.connection.wifi.WifiLauncherMode
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.ExternalBtTransportPolicy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeAaHandshakeManager
@@ -46,7 +47,7 @@ class AutoStartFragment : Fragment() {
 
     private var pendingAutoStartOnBoot: Boolean? = null
     private var pendingAutoStartOnScreenOn: Boolean? = null
-    private var pendingListenForUsbDevices: Boolean? = null
+    private var pendingUsbConnectOnPlugIn: Boolean? = null
     private var pendingAutoStartOnUsb: Boolean? = null
     private val pendingAutoStartBtMacs = mutableSetOf<String>()
     private val pendingAutoDisconnectBtMacs = mutableSetOf<String>()
@@ -93,7 +94,7 @@ class AutoStartFragment : Fragment() {
 
         pendingAutoStartOnBoot = settings.autoStartOnBoot
         pendingAutoStartOnScreenOn = settings.autoStartOnScreenOn
-        pendingListenForUsbDevices = settings.listenForUsbDevices
+        pendingUsbConnectOnPlugIn = settings.usbConnectOnPlugIn
         pendingAutoStartOnUsb = settings.autoStartOnUsb
         pendingAutoStartBtMacs.clear()
         pendingAutoStartBtMacs.addAll(settings.autoStartBluetoothDeviceMacs)
@@ -180,10 +181,9 @@ class AutoStartFragment : Fragment() {
             if (it != settings.autoStartOnScreenOn) settings.autoStartOnScreenOn = it
             Settings.syncAutoStartOnScreenOnToDeviceStorage(requireContext(), it)
         }
-        pendingListenForUsbDevices?.let {
-            if (it != settings.listenForUsbDevices) settings.listenForUsbDevices = it
-            Settings.syncListenForUsbDevicesToDeviceStorage(requireContext(), it)
-            Settings.setUsbAttachedActivityEnabled(requireContext(), it)
+        pendingUsbConnectOnPlugIn?.let {
+            if (it != settings.usbConnectOnPlugIn) settings.usbConnectOnPlugIn = it
+            Settings.syncUsbConnectOnPlugInToDeviceStorage(requireContext(), it)
         }
         pendingAutoStartOnUsb?.let {
             if (it != settings.autoStartOnUsb) settings.autoStartOnUsb = it
@@ -279,7 +279,7 @@ class AutoStartFragment : Fragment() {
     private fun checkChanges() {
         hasChanges = pendingAutoStartOnBoot != settings.autoStartOnBoot ||
                 pendingAutoStartOnScreenOn != settings.autoStartOnScreenOn ||
-                pendingListenForUsbDevices != settings.listenForUsbDevices ||
+                pendingUsbConnectOnPlugIn != settings.usbConnectOnPlugIn ||
                 pendingAutoStartOnUsb != settings.autoStartOnUsb ||
                 pendingAutoStartBtMacs != settings.autoStartBluetoothDeviceMacs ||
                 pendingAutoDisconnectBtMacs != settings.autoDisconnectBluetoothDeviceMacs ||
@@ -338,31 +338,47 @@ class AutoStartFragment : Fragment() {
             }
         ))
 
-        items.add(SettingItem.ToggleSettingEntry(
-            stableId = "listenForUsbDevices",
-            nameResId = R.string.listen_for_usb_devices_label,
-            descriptionResId = R.string.listen_for_usb_devices_description,
-            isChecked = pendingListenForUsbDevices!!,
-            onCheckedChanged = { isChecked ->
-                pendingListenForUsbDevices = isChecked
-                checkChanges()
-                updateSettingsList()
-            }
-        ))
+        // Detection lives in General; this screen reads the stored value.
+        val listen = settings.listenForUsbDevices
+        val usbRows = UsbAutoStartRowsPolicy.rows(
+            showsUsb = settings.showsUsb(),
+            listen = listen,
+            connect = pendingUsbConnectOnPlugIn == true,
+            autoStart = pendingAutoStartOnUsb == true,
+            carLauncher = isCarLauncherActive,
+        )
+        if (usbRows.connect) {
+            items.add(SettingItem.ToggleSettingEntry(
+                stableId = "usbConnectOnPlugIn",
+                nameResId = R.string.auto_start_usb_connect_label,
+                descriptionResId = R.string.auto_start_usb_connect_description,
+                isChecked = pendingUsbConnectOnPlugIn!!,
+                isEnabled = usbRows.connectEnabled,
+                descriptionOverride = if (usbRows.connectEnabled) null else getString(
+                    R.string.auto_start_usb_connect_needs_detect, getString(R.string.listen_for_usb_attach_label)),
+                onCheckedChanged = { isChecked ->
+                    pendingUsbConnectOnPlugIn = isChecked
+                    checkChanges()
+                    updateSettingsList()
+                }
+            ))
+        }
 
-        items.add(SettingItem.ToggleSettingEntry(
-            stableId = "autoStartUsb",
-            nameResId = R.string.auto_start_usb_label,
-            descriptionResId = R.string.auto_start_usb_description,
-            isChecked = pendingAutoStartOnUsb!!,
-            onCheckedChanged = { isChecked ->
-                pendingAutoStartOnUsb = isChecked
-                checkChanges()
-                updateSettingsList()
-            }
-        ))
+        if (usbRows.open) {
+            items.add(SettingItem.ToggleSettingEntry(
+                stableId = "autoStartUsb",
+                nameResId = R.string.auto_start_usb_open_label,
+                descriptionResId = R.string.auto_start_usb_open_description,
+                isChecked = pendingAutoStartOnUsb!!,
+                onCheckedChanged = { isChecked ->
+                    pendingAutoStartOnUsb = isChecked
+                    checkChanges()
+                    updateSettingsList()
+                }
+            ))
+        }
 
-        if (!isCarLauncherActive && pendingAutoStartOnUsb == true) {
+        if (usbRows.reopen) {
             items.add(SettingItem.ToggleSettingEntry(
                 stableId = "reopenOnReconnection",
                 nameResId = R.string.reopen_on_reconnection_label,
@@ -485,7 +501,7 @@ class AutoStartFragment : Fragment() {
         // Hide options that do not apply to the chosen connection types. The Bluetooth rows decide
         // when a wireless or Self Mode session starts and stops; USB has its own attach and
         // detach, so a USB-only unit does not see them.
-        val usbIds = setOf("listenForUsbDevices", "autoStartUsb", "reopenOnReconnection")
+        val usbIds = setOf("usbConnectOnPlugIn", "autoStartUsb", "reopenOnReconnection")
         // The wake rows filter by isLikelyPhone, so on a Self-only unit they offer a picker that
         // hides the car radio the other two rows are for.
         val wifiIds = setOf(
@@ -517,7 +533,8 @@ class AutoStartFragment : Fragment() {
     private fun launchesOnItsOwn(): Boolean = AutoStartOverlayPolicy.launches(
         onBoot = pendingAutoStartOnBoot == true,
         onScreenOn = pendingAutoStartOnScreenOn == true,
-        onUsb = pendingAutoStartOnUsb == true,
+        onUsb = UsbAutoStartPolicy.effective(pendingAutoStartOnUsb == true, pendingUsbConnectOnPlugIn == true,
+            settings.listenForUsbDevices),
         onWifi = pendingAutoStartOnWifi == true,
         btTriggerCount = pendingAutoStartBtMacs.size,
     )

@@ -44,6 +44,7 @@ class SettingsPendingCopy {
     var audioLatencyMultiplier: Int? = null
     var audioMatchingMode: com.andrerinas.openheadunit.decoder.audio.AudioTimeCorrectionMode? = null
     var useLibusb: Boolean? = null
+    var listenForUsbDevices: Boolean? = null
     var audioQueueCapacity: Int? = null
     var showToastMessages: Boolean? = null
     var screenOrientation: Settings.ScreenOrientation? = null
@@ -133,6 +134,7 @@ class SettingsPendingCopy {
         audioLatencyMultiplier = settings.audioLatencyMultiplier
         audioMatchingMode = settings.audioMatchingMode
         useLibusb = settings.useLibusb
+        listenForUsbDevices = settings.listenForUsbDevices
         audioQueueCapacity = settings.audioQueueCapacity
         showToastMessages = settings.showToastMessages
         screenOrientation = settings.screenOrientation
@@ -223,6 +225,7 @@ class SettingsPendingCopy {
         audioLatencyMultiplier != settings.audioLatencyMultiplier ||
         audioMatchingMode != settings.audioMatchingMode ||
         useLibusb != settings.useLibusb ||
+        listenForUsbDevices != settings.listenForUsbDevices ||
         audioQueueCapacity != settings.audioQueueCapacity ||
         showToastMessages != settings.showToastMessages ||
         screenOrientation != settings.screenOrientation ||

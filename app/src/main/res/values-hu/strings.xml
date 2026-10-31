@@ -195,12 +195,15 @@
     <string name="enter_wifi_ssid">Adja meg a Wi-Fi SSID-t</string>
     <string name="wifi_ssid_not_set">Nincs beállítva</string>
 
-    <string name="listen_for_usb_devices_label">USB-eszközök figyelése</string>
-    <string name="listen_for_usb_devices_description">Az Android rendszerüzenet megjelenítése USB-eszköz csatlakoztatásakor.</string>
+    <string name="listen_for_usb_attach_label">Csatlakoztatott telefonok/AA donglik felismerése</string>
+    <string name="listen_for_usb_attach_description">Az Android felkínálhatja az Open Headunit alkalmazást a csatlakoztatott telefonhoz vagy Android Auto donglihoz, és megjegyzi a választást. Kikapcsolt állapotban az Android nem kínálja fel. Használja az USB gombot, és minden alkalommal válaszoljon egy párbeszédablakban.</string>
     <string name="show_toast_messages">Felugró üzenetek megjelenítése</string>
     <string name="show_toast_messages_description">Állapotjelző felugró üzenetek megjelenítése csatlakozáskor, bontáskor és módváltáskor.</string>
-    <string name="auto_start_usb_label">Automatikus indítás USB-csatlakozáskor</string>
-    <string name="auto_start_usb_description">Az alkalmazás automatikus megnyitása és csatlakozási kísérlet USB-eszköz csatlakoztatásakor.</string>
+    <string name="auto_start_usb_connect_label">Kapcsolódás bedugáskor</string>
+    <string name="auto_start_usb_connect_description">Elindítja az Android Auto funkciót, ha felismert telefont vagy donglit dugnak be. Kikapcsolt állapotban a bedugás csak megnyitja az alkalmazást, az USB gomb pedig csatlakozik. Az automatikus csatlakozás beállításai az alkalmazás megnyitásakor is érvényesek.</string>
+    <string name="auto_start_usb_connect_needs_detect">Először kapcsolja be az Általános beállításokban a következőt: \"%1$s\".</string>
+    <string name="auto_start_usb_open_label">Alkalmazás megnyitása bedugáskor</string>
+    <string name="auto_start_usb_open_description">Megnyitja az Open Headunit alkalmazást, ha telefont vagy donglit dugnak be. Rendszerindítás vagy ébresztés után is elindítja az alkalmazást, hogy csatlakoztatott telefont keressen, és a Kilépés után is figyel.</string>
     <string name="auto_start_settings">Automatikus indítás beállításai</string>
     <string name="auto_start_settings_description">Adja meg, mikor induljon el az alkalmazás automatikusan.</string>
     <string name="auto_start_oem_warning">Ez az eszköz megkövetelheti az automatikus indítás engedélyezését, valamint az akkumulátoroptimalizálás és a háttérkorlátozások kikapcsolását ehhez az alkalmazáshoz.\n\nA Quick Boot (gyorsindítás) funkcióval rendelkező fejegységeken az automatikus indítás nem feltétlenül működik. Keresse a „DuraSpeed” opciót a rendszerbeállításokban, és engedélyezze ott ezt az alkalmazást. Egyes fejegységeken a DuraSpeed rejtett, és a megtalálásához szükség lehet egy olyan alkalmazásra, mint a „Hidden Settings”. Ha nincs DuraSpeed, próbálja meg kikapcsolni a Quick Boot funkciót.</string>
@@ -365,6 +368,7 @@
     <string name="connection_interrupted">A kapcsolat megszakadt</string>
     <string name="connection_interrupted_detail">Újrapróbálkozás…</string>
     <string name="wifi_disconnect_toast">Android Auto leválasztva: ha vezeték nélküli AA-t használ, tiltsa le a „Hálózatok közötti váltás” vagy a „Hálózatgyorsítás” opciót a telefon Wi-Fi-beállításaiban</string>
+    <string name="usb_disconnect_toast">Android Auto leválasztva: a telefonnal létesített USB-kapcsolat megszakadt. Ha ez gyakran előfordul, próbáljon másik kábelt, másik USB-portot vagy USB-elosztót.</string>
     <string name="notification_service_running">Open Headunit fut</string>
     <string name="notification_projection_active">Android Auto vetítése aktív</string>
     <string name="shortcut_connect_title">Csatlakozás</string>
@@ -461,6 +465,7 @@
     <string name="show_performance_overlay">Teljesítményjelző megjelenítése</string>
     <string name="overlay_position">Teljesítményjelző helye</string>
     <string name="overlay_permission_required">Az automatikus indításhoz szükséges a „A több alkalmazás feletti megjelenítés” engedély</string>
+    <string name="usb_access_needed">Az Open Headunit nem fér hozzá ehhez az USB-eszközhöz. Az engedélyezéshez nyomja meg az USB gombot. Ha az eszközhöz egy másik alkalmazás nyílik meg, törölje annak alapértelmezett USB-beállítását az Android beállításaiban.</string>
     <string name="usb_permission_denied">USB-engedély megtagadva. Kérjük, engedélyezze az USB-hozzáférést az automatikus csatlakozáshoz.</string>
     <string name="use_white_background">Fehér háttér a főképernyőn</string>
     <string name="reopen_on_reconnection_label">Újranyitás újracsatlakozáskor</string>
@@ -1021,6 +1026,8 @@
 
     <!-- Auto-added missing translations -->
     <string name="blacklisted">Feketelistán</string>
+    <string name="usb_blacklist_one_mode">Ez az eszköz nem adja meg a nevét, ezért a feketelista az USB-azonosítója alapján működik: minden ilyen azonosítójú eszközre, és csak ebben az USB-módban. Android Auto módban továbbra is csatlakozhat.</string>
+    <string name="usb_blacklist_android_asks">Az Android csatlakoztatáskor még mindig rákérdezhet erre az eszközre. Válaszd ki az eszközhöz tartozó alkalmazást, és jelöld be a négyzetet az állandó használathoz, így az Android többé nem kérdez rá.</string>
     <string name="usb_blacklist_title">USB-eszközök feketelistája</string>
     <string name="usb_blacklist_description">A feketelistán lévő eszközöket csatlakozáskor figyelmen kívül hagyja az alkalmazás: nincs automatikus indítás, nincs felugró kérdés. Az eszközt a neve alapján azonosítja, ezért a feketelistára tett telefon minden USB-módban feketelistán marad. Egyes gyártók minden modellnek ugyanazt a nevet adják, ezeket nem lehet megkülönböztetni.</string>
     <string name="add_to_blacklist">Hozzáadás a feketelistához</string>

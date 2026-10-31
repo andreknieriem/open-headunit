@@ -420,12 +420,15 @@
     <string name="auto_start_offer_yes">Oui</string>
     <string name="auto_start_offer_no">Non</string>
     <string name="auto_start_offer_countdown">Non dans %1$d s</string>
-    <string name="listen_for_usb_devices_label">Écouter les appareils USB</string>
-    <string name="listen_for_usb_devices_description">Afficher l\'invite du système Android lorsqu\'un appareil USB est branché.</string>
+    <string name="listen_for_usb_attach_label">Détecter téléphones/dongles AA branchés</string>
+    <string name="listen_for_usb_attach_description">Android peut proposer Open Headunit pour un téléphone ou un dongle Android Auto branché et mémoriser votre choix. Si l\'option est désactivée, Android ne le propose pas. Utilisez le bouton USB et répondez à une boîte de dialogue à chaque fois.</string>
     <string name="show_toast_messages">Afficher les messages toast</string>
     <string name="show_toast_messages_description">Afficher des messages d\'état lors de la connexion, de la déconnexion et du changement de mode.</string>
-    <string name="auto_start_usb_label">Démarrage auto via USB</string>
-    <string name="auto_start_usb_description">Ouvrir automatiquement l\'app et tenter la connexion lorsqu\'un appareil USB est branché.</string>
+    <string name="auto_start_usb_connect_label">Connecter au branchement</string>
+    <string name="auto_start_usb_connect_description">Lance Android Auto lorsqu\'un téléphone ou un dongle détecté est branché. Si l\'option est désactivée, le branchement ouvre seulement l\'application, et le bouton USB connecte. Les réglages de connexion automatique s\'appliquent toujours à l\'ouverture de l\'application.</string>
+    <string name="auto_start_usb_connect_needs_detect">Activez d\'abord \"%1$s\" dans les réglages généraux.</string>
+    <string name="auto_start_usb_open_label">Ouvrir l\'application au branchement</string>
+    <string name="auto_start_usb_open_description">Ouvre Open Headunit lorsqu\'un téléphone ou un dongle est branché. Lance aussi l\'application après un démarrage ou une sortie de veille pour chercher un téléphone branché, et continue de surveiller après Quitter.</string>
     <string name="auto_start_settings">Démarrage automatique</string>
     <string name="auto_start_settings_description">Configurer quand l\'application démarre automatiquement.</string>
     <string name="auto_start_oem_warning">Cet appareil peut exiger d\'activer le démarrage automatique et de désactiver l\'optimisation de la batterie ou les restrictions en arrière-plan pour cette application.\n\nSur les autoradios dotés de Quick Boot (démarrage rapide), le démarrage automatique peut ne pas fonctionner. Cherchez « DuraSpeed » dans les paramètres système et activez-y cette application. Sur certains autoradios, DuraSpeed est masqué : une application comme « Hidden Settings » peut être nécessaire pour le trouver. Si DuraSpeed n\'est pas disponible, essayez de désactiver Quick Boot.</string>
@@ -702,6 +705,7 @@
     <string name="connection_interrupted_detail">Nouvelle tentative…</string>
     <string name="renderer_fallback_surface">La vidéo se figeait sans cesse, l\'affichage est donc passé à SurfaceView pour cette session. Si l\'image est stable, réglez le mode d\'affichage sur SurfaceView dans les paramètres.</string>
     <string name="wifi_disconnect_toast">Android Auto déconnecté : si vous utilisez Android Auto sans fil, désactivez « Basculer entre les réseaux » ou « Accélération réseau » dans les paramètres Wi-Fi du téléphone</string>
+    <string name="usb_disconnect_toast">Android Auto déconnecté : la connexion USB avec le téléphone a échoué. Si cela se produit souvent, essayez un autre câble, un autre port USB ou un hub USB.</string>
     <string name="reset_usb_option">Réinitialiser la connexion USB</string>
     <string name="reset_usb_timeout">Périphérique USB introuvable. Vérifiez la connexion.</string>
     <string name="notification_service_running">Open Headunit est en cours d\'exécution</string>
@@ -795,6 +799,7 @@
     <string name="reopen_on_reconnection_label">Rouvrir à la reconnexion</string>
     <string name="reopen_on_reconnection_description">Lorsque vous appuyez sur le bouton Quitter, l\'application reste active en arrière-plan et continue de surveiller les connexions USB. Si un appareil se reconnecte, l\'application se rouvre automatiquement.</string>
     <string name="overlay_permission_required">Le démarrage automatique nécessite l\'autorisation « Superposition sur d\'autres applis »</string>
+    <string name="usb_access_needed">Open Headunit n\'a pas accès à cet appareil USB. Appuyez sur USB pour l\'autoriser. Si une autre application s\'ouvre pour cet appareil, effacez sa valeur par défaut USB dans les réglages Android.</string>
     <string name="usb_permission_denied">Autorisation USB refusée. Autorisez l\'accès USB pour vous connecter automatiquement.</string>
 
     <!-- Theme -->
@@ -1066,6 +1071,8 @@
 
     <!-- Auto-added missing translations -->
     <string name="blacklisted">Bloqué</string>
+    <string name="usb_blacklist_one_mode">Cet appareil n\'indique pas son nom. La liste noire utilise donc son ID USB : tous les appareils ayant cet ID, et seulement dans ce mode USB. En mode Android Auto, il peut quand même se connecter.</string>
+    <string name="usb_blacklist_android_asks">Android peut encore poser une question sur cet appareil lorsqu\'il est branché. Choisissez l\'appli concernée et cochez la case pour toujours l\'utiliser : Android ne redemandera plus.</string>
     <string name="usb_blacklist_title">Liste noire des appareils USB</string>
     <string name="usb_blacklist_description">Les appareils sur la liste noire sont ignorés lors de la connexion : pas de démarrage automatique, pas d\'invites. Un appareil est identifié par son nom, ainsi un téléphone bloqué reste bloqué dans tous les modes USB. Certains fabricants donnent le même nom à tous leurs modèles, qui ne peuvent alors pas être distingués.</string>
     <string name="add_to_blacklist">Ajouter à la liste noire</string>

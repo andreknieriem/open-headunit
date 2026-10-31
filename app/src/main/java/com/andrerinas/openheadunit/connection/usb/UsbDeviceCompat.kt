@@ -6,7 +6,9 @@ import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbEndpoint
 import android.hardware.usb.UsbInterface
 import android.hardware.usb.UsbManager
+import android.content.pm.PackageManager
 import android.os.Build
+import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.Settings
 import com.andrerinas.openheadunit.utils.Utils
 import java.util.Locale
@@ -81,6 +83,14 @@ class UsbDeviceCompat(val wrappedDevice: UsbDevice) {
         fun isInAccessoryMode(device: UsbDevice): Boolean =
             UsbDeviceIdentityPolicy.isInAccessoryMode(device.vendorId, device.productId)
 
+        /** Whether any device on the bus is in accessory mode; a bus that cannot be read answers no. */
+        fun accessoryOnBus(context: Context): Boolean = try {
+            usbManager(context)?.deviceList?.values?.any { isInAccessoryMode(it) } ?: false
+        } catch (e: Exception) {
+            AppLog.w("UsbDeviceCompat: Could not read the USB bus: ${e.message}")
+            false
+        }
+
         fun isAndroidDevice(device: UsbDevice): Boolean = evaluate(device).accepted
 
         /**
@@ -101,13 +111,12 @@ class UsbDeviceCompat(val wrappedDevice: UsbDevice) {
          * [UsbBlacklistPolicy].
          */
         fun blacklistKey(device: UsbDevice): String {
-            val readable = Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
-            return UsbBlacklistPolicy.key(
-                manufacturer = if (readable) device.manufacturerName else null,
-                product = if (readable) device.productName else null,
-                vendorId = device.vendorId,
-                productId = device.productId,
-            )
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                return UsbBlacklistPolicy.key(device.manufacturerName, device.productName, device.vendorId, device.productId)
+            }
+            // The API has no names here, so read the same descriptor strings from sysfs.
+            val names = UsbSysfsNames.namesFor(device.deviceName)
+            return UsbBlacklistPolicy.key(names?.manufacturer, names?.product, device.vendorId, device.productId)
         }
 
         /**
@@ -136,8 +145,44 @@ class UsbDeviceCompat(val wrappedDevice: UsbDevice) {
         private fun evaluate(device: UsbDevice): UsbDeviceIdentityPolicy.Verdict =
             UsbDeviceIdentityPolicy.evaluate(describe(device))
 
+        /** Reads the Android-side facts [UsbPermissionAskPolicy] decides on. Unreadable means ask. */
+        internal fun permissionDecisionInputs(
+            context: Context, settings: Settings, device: UsbDevice, source: UsbPermissionAskPolicy.Source,
+            presentPaths: Collection<String>,
+        ): UsbPermissionAskPolicy.Inputs {
+            val described = describe(device)
+            val activityEnabled = try {
+                val state = context.packageManager.getComponentEnabledSetting(
+                    android.content.ComponentName(context, com.andrerinas.openheadunit.app.UsbAttachedActivity::class.java)
+                )
+                state == PackageManager.COMPONENT_ENABLED_STATE_ENABLED ||
+                    state == PackageManager.COMPONENT_ENABLED_STATE_DEFAULT
+            } catch (e: Exception) {
+                false
+            }
+            val automotive = try {
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP &&
+                    context.packageManager.hasSystemFeature("android.hardware.type.automotive")
+            } catch (e: Exception) {
+                false
+            }
+            return UsbPermissionAskPolicy.Inputs(
+                accessory = isInAccessoryMode(device),
+                mtp = UsbPermissionAskPolicy.isMtp(described),
+                filterMatches = UsbManifestFilter.matches(described),
+                activityEnabled = activityEnabled,
+                automotive = automotive,
+                sdkInt = Build.VERSION.SDK_INT,
+                listenForUsb = settings.listenForUsbDevices,
+                attachAgeMs = UsbPermissionAsks.attachAgeMs(device.deviceName, UsbPermissionAsks.nowMs()),
+                ownSwitchAgeMs = UsbPermissionAsks.ownSwitchAgeMs(UsbPermissionAsks.nowMs()),
+                alreadyAsked = UsbPermissionAsks.isAsked(device.deviceName, presentPaths),
+                source = source,
+            )
+        }
+
         /** Maps the Android object onto the plain descriptors the policy decides on. */
-        private fun describe(device: UsbDevice): UsbDeviceIdentityPolicy.Device {
+        internal fun describe(device: UsbDevice): UsbDeviceIdentityPolicy.Device {
             val interfaces = ArrayList<UsbDeviceIdentityPolicy.Interface>(device.interfaceCount)
             for (i in 0 until device.interfaceCount) {
                 interfaces.add(describe(device.getInterface(i)))
@@ -147,6 +192,8 @@ class UsbDeviceCompat(val wrappedDevice: UsbDevice) {
                 productId = device.productId,
                 deviceClass = device.deviceClass,
                 interfaces = interfaces,
+                deviceSubclass = device.deviceSubclass,
+                deviceProtocol = device.deviceProtocol,
             )
         }
 

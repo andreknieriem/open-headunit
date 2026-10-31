@@ -46,6 +46,8 @@ import com.andrerinas.openheadunit.utils.BluetoothHelper
 import com.andrerinas.openheadunit.utils.CarLauncherManager
 import com.andrerinas.openheadunit.connection.self.SelfModeCallRaisePolicy
 import com.andrerinas.openheadunit.connection.usb.UsbSwitchClaim
+import com.andrerinas.openheadunit.connection.usb.UsbDeviceCompat
+import com.andrerinas.openheadunit.connection.projection.ProjectionConnection
 import com.andrerinas.openheadunit.decoder.audio.CallState
 import com.andrerinas.openheadunit.utils.IntentFilters
 import com.andrerinas.openheadunit.view.IProjectionView
@@ -1140,7 +1142,11 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                             dismissRendererConfirmBanner()
                             if (!state.isClean && !state.isUserExit && !state.isSettingsRestart) {
                                 AppLog.w("AapProjectionActivity: Disconnected unexpectedly.")
-                                ToastUtils.showToast(this@AapProjectionActivity, getString(R.string.wifi_disconnect_toast), Toast.LENGTH_LONG)
+                            }
+                            if (state.transport == ProjectionConnection.Type.USB) {
+                                watchdogHandler.postDelayed({ showDisconnectNotice(state) }, DisconnectNoticePolicy.USB_SETTLE_MS)
+                            } else {
+                                showDisconnectNotice(state)
                             }
                             // Only finish immediately if the user explicitly exited, it was a clean close, or killOnDisconnect is enabled.
                             if (!state.isSettingsRestart && (state.isUserExit || state.isClean || settings.killOnDisconnect)) {
@@ -1410,6 +1416,23 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         }
     }
 
+    // One notice per lost session; a recovery loop of failed attempts must not repeat it.
+    private var disconnectNoticeShown = false
+
+    private fun showDisconnectNotice(state: CommManager.ConnectionState.Disconnected) {
+        if (isFinishing || lifecycle.currentState == Lifecycle.State.DESTROYED) return
+        val notice = DisconnectNoticePolicy.notice(
+            state.endedBy, state.transport, state.reachedSsl, state.wasLoopbackSession,
+            disconnectNoticeShown, UsbDeviceCompat.accessoryOnBus(this),
+        )
+        if (notice == DisconnectNoticePolicy.Notice.NONE) return
+        disconnectNoticeShown = true
+        AppLog.i("AapProjectionActivity: showing the $notice notice for a session lost on ${state.transport}")
+        val text = if (notice == DisconnectNoticePolicy.Notice.USB_LOST) R.string.usb_disconnect_toast
+            else R.string.wifi_disconnect_toast
+        ToastUtils.showToast(this, getString(text), Toast.LENGTH_LONG)
+    }
+
     private fun showReconnectingOverlay() {
         AppLog.i("Showing reconnecting overlay")
         overlayState = OverlayState.RECONNECTING
@@ -1443,6 +1466,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
      */
     private fun hideReconnectingOverlay(reason: String) {
         AppLog.i("Hiding reconnecting overlay - $reason")
+        if (reason == "frames resumed") disconnectNoticeShown = false
         overlayState = OverlayState.HIDDEN
         val overlay = findViewById<View>(R.id.loading_overlay) ?: return
         val detail = findViewById<TextView>(R.id.overlay_detail)

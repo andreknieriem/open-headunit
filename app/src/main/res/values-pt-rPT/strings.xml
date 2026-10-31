@@ -215,6 +215,8 @@
     <string name="allowed">Permitido</string>
     <string name="ignored">Ignorado</string>
     <string name="blacklisted">Na lista negra</string>
+    <string name="usb_blacklist_one_mode">Este dispositivo não indica o nome, por isso a lista negra usa o ID USB: todos os dispositivos com esse ID, e só neste modo USB. No modo Android Auto, ainda pode ligar-se.</string>
+    <string name="usb_blacklist_android_asks">O Android pode continuar a perguntar sobre este dispositivo quando é ligado. Escolha a app a que se destina e assinale a caixa para a usar sempre. O Android deixará de perguntar.</string>
     <string name="usb_blacklist_title">Lista negra de dispositivos USB</string>
     <string name="usb_blacklist_description">Os dispositivos na lista negra são ignorados ao ligar: sem arranque automático nem avisos. Um dispositivo é identificado pelo nome, pelo que um telemóvel na lista negra continua bloqueado em todos os modos USB. Alguns fabricantes dão o mesmo nome a todos os modelos, que por isso não se distinguem.</string>
     <string name="add_to_blacklist">Adicionar à lista negra</string>
@@ -459,12 +461,15 @@
     <string name="auto_start_offer_yes">Sim</string>
     <string name="auto_start_offer_no">Não</string>
     <string name="auto_start_offer_countdown">Não (%1$ds)</string>
-    <string name="listen_for_usb_devices_label">Detetar dispositivos USB</string>
-    <string name="listen_for_usb_devices_description">Apresenta o aviso do sistema Android quando um dispositivo USB é ligado.</string>
+    <string name="listen_for_usb_attach_label">Detetar telemóveis/dongles AA ligados</string>
+    <string name="listen_for_usb_attach_description">O Android pode oferecer o Open Headunit para um telemóvel ou dongle Android Auto ligado e memorizar a sua escolha. Se estiver desativada, o Android não o oferece. Use o botão USB e responda a uma caixa de diálogo todas as vezes.</string>
     <string name="show_toast_messages">Mostrar mensagens breves</string>
     <string name="show_toast_messages_description">Apresenta mensagens breves de estado ao ligar, desligar e alternar de modo.</string>
-    <string name="auto_start_usb_label">Arranque automático com USB</string>
-    <string name="auto_start_usb_description">Abre a aplicação e tenta a ligação automaticamente quando um dispositivo USB é ligado.</string>
+    <string name="auto_start_usb_connect_label">Ligar ao inserir</string>
+    <string name="auto_start_usb_connect_description">Inicia o Android Auto quando um telemóvel ou dongle detetado é inserido. Se estiver desativada, inserir só abre a app, e o botão USB liga. As definições de ligação automática continuam a aplicar-se quando a app abre.</string>
+    <string name="auto_start_usb_connect_needs_detect">Ative primeiro \"%1$s\" nas definições gerais.</string>
+    <string name="auto_start_usb_open_label">Abrir a app ao inserir</string>
+    <string name="auto_start_usb_open_description">Abre o Open Headunit quando um telemóvel ou dongle é inserido. Também inicia a app após o arranque ou a reativação para procurar um telemóvel inserido e continua a vigiar depois de Sair.</string>
     <string name="auto_start_settings">Definições de arranque automático</string>
     <string name="auto_start_settings_description">Configurar quando a aplicação inicia automaticamente.</string>
     <string name="auto_start_oem_warning">Pode ser necessário ativar o arranque automático e remover a otimização da bateria ou as restrições em segundo plano para esta aplicação.\n\nEm unidades com Quick Boot (arranque rápido), o arranque automático pode não funcionar. Procure \"DuraSpeed\" nas definições do sistema e ative lá esta aplicação. Em algumas unidades, o DuraSpeed está oculto e pode ser necessária uma aplicação como \"Hidden Settings\" para o encontrar. Se não tiver o DuraSpeed, tente desativar o Quick Boot.</string>
@@ -856,6 +861,7 @@
     <string name="connection_interrupted_detail">A tentar novamente…</string>
     <string name="renderer_fallback_surface">O vídeo bloqueava repetidamente, por isso o ecrã passou a SurfaceView nesta sessão. Se estiver estável, defina o modo de visualização para SurfaceView nas Definições.</string>
     <string name="wifi_disconnect_toast">Android Auto desligado: se usar o AA sem fios, desative \"Mudar entre redes\" ou \"Aceleração de rede\" nas definições de Wi-Fi do telemóvel</string>
+    <string name="usb_disconnect_toast">Android Auto desligado: a ligação USB ao telemóvel falhou. Se acontecer com frequência, experimente outro cabo, outra porta USB ou um hub USB.</string>
     <string name="reset_usb_option">Repor ligação USB</string>
     <string name="reset_usb_timeout">Dispositivo USB não encontrado. Verifique a ligação.</string>
     <string name="notification_service_running">O Open Headunit está em execução</string>
@@ -976,6 +982,7 @@
     <string name="reopen_on_reconnection_label">Reabrir ao religar</string>
     <string name="reopen_on_reconnection_description">Quando prime o botão Sair, a aplicação continua em execução em segundo plano e monitoriza as ligações USB. Se um dispositivo voltar a ligar-se, a aplicação abre novamente.</string>
     <string name="overlay_permission_required">O arranque automático requer a permissão \"Sobrepor a outras apps\"</string>
+    <string name="usb_access_needed">O Open Headunit não tem acesso a este dispositivo USB. Toque em USB para permitir. Se outra app abrir para ele, limpe a predefinição de USB dessa app nas definições do Android.</string>
     <string name="usb_permission_denied">Permissão USB recusada. Conceda acesso USB para ligar automaticamente.</string>
 
     <!-- Theme -->

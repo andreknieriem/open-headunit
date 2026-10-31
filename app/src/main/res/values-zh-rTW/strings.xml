@@ -195,12 +195,15 @@
     <string name="enter_wifi_ssid">輸入 Wi-Fi SSID</string>
     <string name="wifi_ssid_not_set">未設定</string>
 
-    <string name="listen_for_usb_devices_label">偵測 USB 裝置</string>
-    <string name="listen_for_usb_devices_description">插入 USB 裝置時顯示 Android 系統提示。</string>
+    <string name="listen_for_usb_attach_label">偵測插入的手機/AA 轉接器</string>
+    <string name="listen_for_usb_attach_description">Android 會為插入的手機或 Android Auto 轉接器推薦 Open Headunit，並記住你的選擇。關閉後，Android 不再推薦。請使用 USB 按鈕，每次都需要回應一個對話方塊。</string>
     <string name="show_toast_messages">顯示 Toast 提示</string>
     <string name="show_toast_messages_description">連線、中斷連線及切換模式時，顯示狀態提示。</string>
-    <string name="auto_start_usb_label">USB 連接時自動啟動</string>
-    <string name="auto_start_usb_description">插入 USB 裝置時，自動開啟應用程式並嘗試連線。</string>
+    <string name="auto_start_usb_connect_label">插入時連線</string>
+    <string name="auto_start_usb_connect_description">插入已偵測到的手機或轉接器時，啟動 Android Auto。關閉後，插入只會開啟應用程式，需用 USB 按鈕連線。應用程式開啟時，自動連線設定仍然有效。</string>
+    <string name="auto_start_usb_connect_needs_detect">請先在一般設定中開啟\"%1$s\"。</string>
+    <string name="auto_start_usb_open_label">插入時開啟應用程式</string>
+    <string name="auto_start_usb_open_description">插入手機或轉接器時，開啟 Open Headunit。開機或喚醒後，也會啟動應用程式以尋找已插入的手機，並在結束後繼續監看。</string>
     <string name="auto_start_settings">自動啟動設定</string>
     <string name="auto_start_settings_description">設定應用程式自動啟動的時機。</string>
     <string name="auto_start_oem_warning">此裝置可能需要為本應用程式啟用自動啟動，並移除電池效能最佳化或背景限制。\n\n在具備快速開機（Quick Boot）的車機上，自動啟動可能無法運作。請在系統設定中尋找「DuraSpeed」，並在其中啟用本應用程式。部分車機會隱藏 DuraSpeed，您可能需要使用「Hidden Settings」等應用程式才能找到。如果沒有 DuraSpeed，請嘗試停用快速開機。</string>
@@ -365,6 +368,7 @@
     <string name="connection_interrupted">連線中斷</string>
     <string name="connection_interrupted_detail">正在重試…</string>
     <string name="wifi_disconnect_toast">Android Auto 已中斷連線：如果使用無線 AA，請在手機的 Wi-Fi 設定中停用「切換網路」或「網路加速」</string>
+    <string name="usb_disconnect_toast">Android Auto 已中斷連線：與手機的 USB 連線失敗。如果經常發生，請嘗試更換傳輸線、USB 連接埠，或使用 USB 集線器。</string>
     <string name="reset_usb_option">重設 USB 連線</string>
     <string name="reset_usb_timeout">找不到 USB 裝置，請檢查連線。</string>
     <string name="notification_service_running">Open Headunit 執行中</string>
@@ -459,6 +463,7 @@
     <string name="show_performance_overlay">顯示效能浮層</string>
     <string name="overlay_position">效能浮層位置</string>
     <string name="overlay_permission_required">自動啟動需要「重疊顯示於其他應用程式上方」權限</string>
+    <string name="usb_access_needed">Open Headunit 無法存取此 USB 裝置。請按 USB 以允許。若因此開啟了其他應用程式，請在 Android 設定中清除該應用程式的 USB 預設值。</string>
     <string name="usb_permission_denied">USB 權限遭拒。請允許 USB 存取權，以便自動連線。</string>
     <string name="use_white_background">使用白色主畫面桌布</string>
     <string name="reopen_on_reconnection_label">重新連線時重新開啟</string>
@@ -1017,6 +1022,8 @@
 
     <!-- Auto-added missing translations -->
     <string name="blacklisted">已列入黑名單</string>
+    <string name="usb_blacklist_one_mode">此裝置不提供名稱，因此黑名單會比對其 USB ID：所有使用相同 ID 的裝置，且僅限此 USB 模式。在 Android Auto 模式下，它仍可連線。</string>
+    <string name="usb_blacklist_android_asks">插入此裝置時，Android 可能仍會詢問。請選擇該裝置對應的應用程式，並勾選核取方塊以一律使用，Android 就不會再詢問。</string>
     <string name="usb_blacklist_title">USB 裝置黑名單</string>
     <string name="usb_blacklist_description">黑名單中的裝置在連線時會被忽略：不自動啟動、不顯示提示。系統依名稱比對裝置，因此列入黑名單的手機在所有 USB 模式下都會維持在黑名單中。部分製造商會讓所有型號使用相同名稱，這類裝置無法區分。</string>
     <string name="add_to_blacklist">加入黑名單</string>

@@ -9,13 +9,13 @@ import android.graphics.PorterDuffColorFilter
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
-import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.andrerinas.openheadunit.R
+import com.andrerinas.openheadunit.utils.ActivityState
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.AppThemeManager
 import com.andrerinas.openheadunit.utils.LocaleHelper
@@ -39,6 +39,7 @@ open class BaseActivity : AppCompatActivity() {
     private var currentUseExtremeDarkMode: Boolean = false
     private var currentHudMirroring: Boolean = false
     private var currentHomeBackgroundImagePath: String? = null
+    private var backgroundTarget: CustomTarget<Bitmap>? = null
 
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(LocaleHelper.wrapContext(newBase))
@@ -113,6 +114,12 @@ open class BaseActivity : AppCompatActivity() {
         findViewById<View>(android.R.id.content)?.scaleX = if (settings.hudMirroring) -1.0f else 1.0f
     }
 
+    override fun onDestroy() {
+        backgroundTarget?.let { Glide.with(applicationContext).clear(it) }
+        backgroundTarget = null
+        super.onDestroy()
+    }
+
     fun applyWindowBackground() {
         val settings = Settings(this)
         currentHomeBackgroundImagePath = settings.homeBackgroundImagePath
@@ -128,15 +135,14 @@ open class BaseActivity : AppCompatActivity() {
             }
 
             try {
-                Glide.with(this)
+                backgroundTarget = ActivityState.glide(this)
                     .asBitmap()
                     .load(file)
                     .signature(ObjectKey(file.lastModified()))
                     .centerCrop()
                     .into(object : CustomTarget<Bitmap>() {
                         override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
-                            val isDestroyedCompat = Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && isDestroyed
-                            if (!isFinishing && !isDestroyedCompat) {
+                            if (!ActivityState.isGone(this@BaseActivity)) {
                                 val drawable = BitmapDrawable(resources, resource)
                                 if (isNightActive && settings.homeBackgroundNightMode == Settings.BackgroundNightMode.DIM) {
                                     drawable.colorFilter = PorterDuffColorFilter(Color.argb(135, 0, 0, 0), PorterDuff.Mode.SRC_ATOP)

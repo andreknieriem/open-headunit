@@ -52,6 +52,7 @@ import com.andrerinas.openheadunit.connection.usb.UsbDeviceCompat
 import com.andrerinas.openheadunit.connection.usb.UsbDeviceDiagnostics
 import android.content.res.Configuration
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zbt.ZbtDaemonReachability
+import com.andrerinas.openheadunit.utils.ActivityState
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.AppPermissions
 import com.andrerinas.openheadunit.utils.CarLauncherManager
@@ -2087,12 +2088,7 @@ class HomeFragment : Fragment() {
         }
 
         activity?.let { act ->
-            val isDestroyed = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1)
-                act.isDestroyed
-            else
-                false
-
-            if (!act.isFinishing && !isDestroyed) {
+            if (!ActivityState.isGone(act)) {
                 RenameNotice.maybeShow(act, App.provide(requireContext()).settings)
                 Aa174Notice.maybeShow(act, App.provide(requireContext()).settings)
             }

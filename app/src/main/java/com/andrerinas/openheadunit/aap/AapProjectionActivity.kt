@@ -35,6 +35,7 @@ import com.andrerinas.openheadunit.contract.KeyIntent
 import com.andrerinas.openheadunit.decoder.video.WarmRelaunchKeyframePolicy
 import com.andrerinas.openheadunit.input.ProjectionKeyPolicy
 import com.andrerinas.openheadunit.input.TouchCoordinateMapper
+import com.andrerinas.openheadunit.utils.ActivityState
 import kotlinx.coroutines.launch
 import com.andrerinas.openheadunit.decoder.audio.MicRecorder
 import com.andrerinas.openheadunit.decoder.video.DecoderStopPolicy
@@ -67,7 +68,6 @@ import android.animation.PropertyValuesHolder
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.VideoView
-import com.bumptech.glide.Glide
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.andrerinas.openheadunit.main.QuickSettingsFragment
 import com.andrerinas.openheadunit.main.RenameNotice
@@ -1524,7 +1524,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             when (mediaType) {
                 "image" -> {
                     customImage?.visibility = View.VISIBLE
-                    customImage?.let { Glide.with(this).load(file).into(it) }
+                    customImage?.let { ActivityState.glide(this).load(file).into(it) }
                     if (keepRatio) {
                         customImage?.let { imageView ->
                             kenBurnsAnimator?.cancel()
@@ -1543,7 +1543,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                 }
                 "gif" -> {
                     customImage?.visibility = View.VISIBLE
-                    customImage?.let { Glide.with(this).asGif().load(file).into(it) }
+                    customImage?.let { ActivityState.glide(this).asGif().load(file).into(it) }
                 }
                 "video" -> {
                     customVideo?.visibility = View.VISIBLE
@@ -1626,8 +1626,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
 
         lifecycleScope.launch {
             kotlinx.coroutines.delay(1000)
-            val isDestroyedCompat = Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && isDestroyed
-            if (!isFinishing && !isDestroyedCompat) {
+            if (!ActivityState.isGone(this@AapProjectionActivity)) {
                 recreate()
             }
         }
@@ -2446,6 +2445,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         ownedSurface = null
         isSurfaceSet = false
         super.onDestroy()
+        ActivityState.release(this, findViewById(R.id.loading_custom_image))
         autoStartOfferTimer?.cancel()
         autoStartOfferTimer = null
         HeadUnitScreenConfig.onMarginsDiverged = null

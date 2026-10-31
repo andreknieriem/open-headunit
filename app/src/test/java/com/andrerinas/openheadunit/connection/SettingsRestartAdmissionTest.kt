@@ -33,7 +33,7 @@ class SettingsRestartAdmissionTest {
         val socket = Socket()
         HeldServerSocket.hold("192.168.1.5:5277", socket)
         try {
-            manager.connect("192.168.1.5", 5277, expectedState = old)
+            manager.connect("192.168.1.5", 5277, expectedState = old, ticket = manager.appConnectionTicket())
             assertTrue(HeldServerSocket.isHeld("192.168.1.5:5277"))
             assertSame(CommManager.ConnectionState.TransportStarted, flow.value)
             verifyNoInteractions(connection, transport)
@@ -52,7 +52,7 @@ class SettingsRestartAdmissionTest {
         set(manager, "_disconnectJob", retirement)
         // Admitted with its Save, the request waits in the teardown join before it can publish.
         val retry = launch(start = CoroutineStart.UNDISPATCHED) {
-            manager.connect("192.168.1.5", 5277, expectedState = old)
+            manager.connect("192.168.1.5", 5277, expectedState = old, ticket = manager.appConnectionTicket())
         }
         assertFalse(retry.isCompleted)
         val connection = mock(ProjectionConnection::class.java)
@@ -79,8 +79,8 @@ class SettingsRestartAdmissionTest {
             val socket = mock(Socket::class.java)
             `when`(socket.inetAddress).thenReturn(java.net.InetAddress.getByName("127.0.0.1"))
             `when`(socket.port).thenReturn(5277)
-            if (socketPath) manager.connect(socket, restartEndpoint = "127.0.0.1" to 5277, expectedState = saved)
-            else manager.connect("127.0.0.1", 5277, expectedState = saved)
+            if (socketPath) manager.connect(socket, restartEndpoint = "127.0.0.1" to 5277, expectedState = saved, ticket = manager.appConnectionTicket())
+            else manager.connect("127.0.0.1", 5277, expectedState = saved, ticket = manager.appConnectionTicket())
             assertEquals("192.168.1.8:5277", manager.lastAttemptedEndpoint)
             verifyNoInteractions(current)
             assertTrue(manager.isWirelessSession)
@@ -106,14 +106,14 @@ class SettingsRestartAdmissionTest {
                 // This is the same revocation called when a manual Self request is accepted.
                 val retry = if (duringTeardown) launch(start = CoroutineStart.UNDISPATCHED) {
                     retirement.join()
-                    manager.connect("192.168.1.5", 5277, expectedState = saved)
+                    manager.connect("192.168.1.5", 5277, expectedState = saved, ticket = manager.appConnectionTicket())
                 } else null
                 manager.cancelPendingSettingsRestart()
                 assertSame(saved, flow.value)
                 assertFalse(saved.acceptsSettingsRestart(flow.value))
                 retirement.complete()
                 if (retry != null) retry.join()
-                else manager.connect("192.168.1.5", 5277, expectedState = saved)
+                else manager.connect("192.168.1.5", 5277, expectedState = saved, ticket = manager.appConnectionTicket())
                 assertTrue(HeldServerSocket.isHeld("192.168.1.5:5277"))
                 assertSame(saved, flow.value)
             } finally {
@@ -153,7 +153,7 @@ class SettingsRestartAdmissionTest {
         val request = checkNotNull(manager.admitUsbRequest(ConnectionPriorityPolicy.Tier.USB, "USB Save", saved,
             manager.usbRecheck(manager.appConnectionTicket())))
         assertTrue(ConnectionArbiter.holds(request.claim))
-        manager.disconnect(sendByeBye = false, isUserExit = true, honorKillOnDisconnect = false)
+        manager.disconnect(com.andrerinas.openheadunit.connection.ConnectionOperation(manager.appConnectionTicket(), null), sendByeBye = false, isUserExit = true, honorKillOnDisconnect = false)
         // Recorded after every production frame has returned.
         val held = ConnectionArbiter.holds(request.claim)
         assertFalse("a user exit left an unpublished USB Save request's claim held (held=$held)", held)

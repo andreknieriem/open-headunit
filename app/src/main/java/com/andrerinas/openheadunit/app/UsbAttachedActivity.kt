@@ -246,10 +246,19 @@ class UsbAttachedActivity : Activity() {
         // The claim keeps the service's 2 s attach fallback off a device we are already switching.
         // noHistory means this activity can be finished out from under the thread, so the request
         // ends in a finally and the claim expires on its own if even that is missed.
-        UsbSwitchClaim.stake()
+        val switchOwner = usbRequest?.claim ?: checkNotNull(lockedClaim)
+        if (!UsbSwitchClaim.stake(switchOwner)) {
+            if (usbRequest != null) commManager?.endRequest(usbRequest)
+            else ConnectionArbiter.release(lockedClaim, sessionFormed = false)
+            finish()
+            return
+        }
+        // Entry passed allowsAutomaticInput, so a durable Stop seen later was committed after it.
+        val stopStorage = applicationContext
         Thread {
-            val outcome = UsbAttachSwitch.run(commManager, usbRequest, lockedClaim, deviceCompat.uniqueName) {
-                usbMode.connectAndSwitch(device, useLibusb)
+            val outcome = UsbAttachSwitch.run(commManager, usbRequest, lockedClaim, deviceCompat.uniqueName,
+                stopCommitted = { UsbReceiver.isUserStopped(stopStorage) }) { admission ->
+                usbMode.connectAndSwitch(device, useLibusb, admission)
             }
             runOnUiThread {
                 when (outcome) {

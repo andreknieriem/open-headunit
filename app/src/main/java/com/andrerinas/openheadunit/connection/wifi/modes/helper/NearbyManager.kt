@@ -10,6 +10,7 @@ import android.os.ParcelFileDescriptor
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import com.andrerinas.openheadunit.connection.ConnectionAdmissionRejectedException
+import com.andrerinas.openheadunit.connection.ConnectionOperation
 import com.andrerinas.openheadunit.connection.CommManager
 import com.andrerinas.openheadunit.connection.ConnectionAdmission
 import com.andrerinas.openheadunit.connection.ConnectionStage
@@ -78,7 +79,7 @@ class NearbyManager(
     private var settingsRestartSave: CommManager.ConnectionState.Disconnected? = null
     private var settingsRestartTicket = 0L
     // The Stop ticket of the input the running discovery serves; its automatic connects carry it.
-    private var discoveryTicket = 0L
+    private var discoveryOperation: ConnectionOperation? = null
     private var settingsRestartTimeoutJob: Job? = null
 
     // Written on the Nearby callback thread, read from the upgrade-timeout and tunnel coroutines.
@@ -122,39 +123,44 @@ class NearbyManager(
     private val settings = Settings(context)
 
     /** [ticket]: the Stop ticket of the input asking for discovery; see [start]. */
-    fun resumeDiscoveryIfIdle(ticket: Long) {
+    fun resumeDiscoveryIfIdle(operation: ConnectionOperation) {
         // Do not hold the attempt monitor across SDK discovery calls: they may call back inline.
         val idle = attempts.locked {
             !isConnecting && activeEndpointId == null && activeNearbySocket == null
         }
-        if (idle) start(ticket)
+        if (idle) start(operation)
     }
 
     /**
-     * Starts discovery for the input that asked under [ticket]. A peer it finds later and connects
-     * to automatically continues that input, so it carries this ticket rather than reading one in
+     * Starts discovery for [operation]. A peer it finds later and connects
+     * to automatically continues that input, carrying its original ticket and Save rather than reading one in
      * the SDK's callback; a newer input asking while discovery runs takes it over.
      */
-    fun start(ticket: Long) {
-        if (!commManager.acceptsAppConnectionTicket(ticket)) return
-        val generation = attempts.locked {
-            if (!hasRequiredPermissions()) {
-                AppLog.w("NearbyManager: Missing required location/bluetooth permissions. Skipping start.")
-                return@locked null
+    fun start(operation: ConnectionOperation) {
+        if (!hasRequiredPermissions()) {
+            AppLog.w("NearbyManager: Missing required location/bluetooth permissions. Skipping start.")
+            return
+        }
+        var replaceDiscovery = false
+        val generation = commManager.withAppConnectionLifecycleLock {
+            if (!commManager.isCurrent(operation)) return@withAppConnectionLifecycleLock null
+            attempts.locked {
+                val running = discoveryOperation
+                if (isRunning && running?.ticket == operation.ticket && running.save === operation.save) {
+                    AppLog.i("NearbyManager: Already running discovery.")
+                    return@locked null
+                }
+                replaceDiscovery = isRunning
+                AppLog.i("NearbyManager: Starting Nearby (Discoverer only)...")
+                ConnectionStageTracker.report(ConnectionStage.SEARCHING)
+                isRunning = true
+                discoveryOperation = operation
+                _discoveredEndpoints.value = emptyList()
+                Any().also { discoveryGeneration = it }
             }
-            if (isRunning) {
-                AppLog.i("NearbyManager: Already running discovery.")
-                discoveryTicket = ticket
-                return@locked null
-            }
-            AppLog.i("NearbyManager: Starting Nearby (Discoverer only)...")
-            ConnectionStageTracker.report(ConnectionStage.SEARCHING)
-            isRunning = true
-            discoveryTicket = ticket
-            _discoveredEndpoints.value = emptyList()
-            Any().also { discoveryGeneration = it }
         } ?: return
-        startDiscovery(generation)
+        if (replaceDiscovery) connectionsClient.stopDiscovery()
+        startDiscovery(generation, operation)
     }
 
     private fun hasRequiredPermissions(): Boolean {
@@ -184,14 +190,26 @@ class NearbyManager(
      * start) reserves nothing; the deadline's fallback, ordinary admission, carries the ticket.
      */
     fun restartForSettings(save: CommManager.ConnectionState.Disconnected, ticket: Long) {
+        val operation = ConnectionOperation(ticket, save)
+        if (!commManager.isCurrent(operation)) return
         val peer = settings.lastNearbyDeviceName.takeIf { it.isNotEmpty() } ?: return
-        stop()
-        attempts.locked {
-            settingsRestartPeer = peer
-            settingsRestartSave = save
-            settingsRestartTicket = ticket
-        }
-        start(ticket)
+        val retired = commManager.withAppConnectionLifecycleLock {
+            if (!commManager.isCurrent(operation)) null else attempts.locked {
+                settingsRestartTimeoutJob?.cancel()
+                settingsRestartTimeoutJob = null
+                isRunning = false
+                discoveryGeneration = null
+                discoveryOperation = null
+                _discoveredEndpoints.value = emptyList()
+                val previous = detachAttempt()
+                settingsRestartPeer = peer
+                settingsRestartSave = save
+                settingsRestartTicket = ticket
+                previous
+            }
+        } ?: return
+        try { connectionsClient.stopDiscovery() } finally { releaseAttempt(retired) }
+        start(operation)
         val generation = attempts.locked { discoveryGeneration }
         settingsRestartTimeoutJob = scope.launch {
             delay((save.settingsRestartUntilMs - SystemClock.elapsedRealtime()).coerceAtLeast(0L))
@@ -205,7 +223,7 @@ class NearbyManager(
                     _discoveredEndpoints.value.firstOrNull { it.name == settings.lastNearbyDeviceName }?.id
                 } else null
             }
-            if (endpoint != null) connectToEndpoint(endpoint, ticket)
+            if (endpoint != null) connectToEndpoint(endpoint, operation)
         }
     }
 
@@ -218,6 +236,7 @@ class NearbyManager(
             AppLog.i("NearbyManager: Stopping discovery and disconnecting from any active endpoint...")
             isRunning = false
             discoveryGeneration = null
+            discoveryOperation = null
             _discoveredEndpoints.value = emptyList()
             detachAttempt()
         }
@@ -305,9 +324,10 @@ class NearbyManager(
      */
     fun connectToEndpoint(
         endpointId: String,
-        ticket: Long,
-        save: CommManager.ConnectionState.Disconnected? = null,
+        operation: ConnectionOperation,
     ) {
+        val ticket = operation.ticket
+        val save = operation.save
         var retired: RetiredAttempt? = null
         var drainsRequest = false
         commManager.withAppConnectionLifecycleLock {
@@ -359,13 +379,18 @@ class NearbyManager(
             }
     }
 
-    private fun startDiscovery(generation: Any) {
+    private fun startDiscovery(generation: Any, operation: ConnectionOperation) {
+        val accepted = commManager.withAppConnectionLifecycleLock {
+            if (!commManager.isCurrent(operation)) false
+            else attempts.locked { isRunning && discoveryGeneration === generation && discoveryOperation === operation }
+        }
+        if (!accepted) return
         val discoveryOptions = DiscoveryOptions.Builder()
             .setStrategy(STRATEGY)
             .build()
 
         AppLog.i("NearbyManager: Requesting Discovery with SERVICE_ID: $SERVICE_ID (Strategy: P2P_POINT_TO_POINT)")
-        connectionsClient.startDiscovery(SERVICE_ID, endpointDiscoveryCallback(generation), discoveryOptions)
+        connectionsClient.startDiscovery(SERVICE_ID, endpointDiscoveryCallback(generation, operation), discoveryOptions)
             .addOnSuccessListener { AppLog.d("NearbyManager: [OK] Discovery started.") }
             .addOnFailureListener { e ->
                 AppLog.e("NearbyManager: [ERROR] Discovery failed: ${e.message}")
@@ -378,50 +403,54 @@ class NearbyManager(
             }
     }
 
-    private fun endpointDiscoveryCallback(generation: Any) = object : EndpointDiscoveryCallback() {
+    private fun endpointDiscoveryCallback(generation: Any, operation: ConnectionOperation) = object : EndpointDiscoveryCallback() {
         override fun onEndpointFound(endpointId: String, info: DiscoveredEndpointInfo) {
             // A peer Save asked for continues that Save, under the Save and ticket it captured;
             // any other automatic connect continues the discovery's own input, under its ticket.
             var restart: Pair<CommManager.ConnectionState.Disconnected, Long>? = null
-            var autoTicket = 0L
-            val connect = attempts.locked {
-                if (discoveryGeneration !== generation || !isRunning) return@locked false
-                AppLog.i("NearbyManager: Endpoint FOUND: ${info.endpointName} ($endpointId)")
-                ConnectionStageTracker.report(ConnectionStage.PHONE_ANSWERED)
-                val current = _discoveredEndpoints.value.toMutableList()
-                if (current.none { it.id == endpointId }) {
-                    current.add(DiscoveredEndpoint(endpointId, info.endpointName))
-                    _discoveredEndpoints.value = current
-                }
-                val save = settingsRestartSave
-                // An expired or cancelled Save holds no reservation any more.
-                if (save == null || SystemClock.elapsedRealtime() >= save.settingsRestartUntilMs ||
-                    !save.acceptsSettingsRestart(commManager.connectionState.value)) {
-                    settingsRestartPeer = null
-                    settingsRestartSave = null
-                }
-                val restartPeer = settingsRestartPeer
-                if (restartPeer != null && save != null) {
-                    restart = save to settingsRestartTicket
-                    restartPeer == info.endpointName && !isConnecting && activeEndpointId == null
-                } else {
-                    autoTicket = discoveryTicket
-                    settings.autoConnectLastSession && !isConnecting && activeEndpointId == null &&
-                        settings.lastNearbyDeviceName.isNotEmpty() && settings.lastNearbyDeviceName == info.endpointName
+            val connect = commManager.withAppConnectionLifecycleLock {
+                if (!commManager.isCurrent(operation)) return@withAppConnectionLifecycleLock false
+                attempts.locked {
+                    if (discoveryGeneration !== generation || !isRunning) return@locked false
+                    AppLog.i("NearbyManager: Endpoint FOUND: ${info.endpointName} ($endpointId)")
+                    ConnectionStageTracker.report(ConnectionStage.PHONE_ANSWERED)
+                    val current = _discoveredEndpoints.value.toMutableList()
+                    if (current.none { it.id == endpointId }) {
+                        current.add(DiscoveredEndpoint(endpointId, info.endpointName))
+                        _discoveredEndpoints.value = current
+                    }
+                    val save = settingsRestartSave
+                    // An expired or cancelled Save holds no reservation any more.
+                    if (save == null || SystemClock.elapsedRealtime() >= save.settingsRestartUntilMs ||
+                        !save.acceptsSettingsRestart(commManager.connectionState.value)) {
+                        settingsRestartPeer = null
+                        settingsRestartSave = null
+                    }
+                    val restartPeer = settingsRestartPeer
+                    if (restartPeer != null && save != null) {
+                        restart = save to settingsRestartTicket
+                        restartPeer == info.endpointName && !isConnecting && activeEndpointId == null
+                    } else {
+                        settings.autoConnectLastSession && !isConnecting && activeEndpointId == null &&
+                            settings.lastNearbyDeviceName.isNotEmpty() && settings.lastNearbyDeviceName == info.endpointName
+                    }
                 }
             }
             if (!connect) return
             val saved = restart
-            if (saved != null) connectToEndpoint(endpointId, saved.second, saved.first)
-            else connectToEndpoint(endpointId, autoTicket)
+            if (saved != null) connectToEndpoint(endpointId, ConnectionOperation(saved.second, saved.first))
+            else connectToEndpoint(endpointId, operation)
         }
 
-        override fun onEndpointLost(endpointId: String) = attempts.locked {
-            if (discoveryGeneration !== generation || !isRunning) return@locked
-            AppLog.i("NearbyManager: Endpoint LOST: $endpointId")
-            val current = _discoveredEndpoints.value.toMutableList()
-            current.removeAll { it.id == endpointId }
-            _discoveredEndpoints.value = current
+        override fun onEndpointLost(endpointId: String) = commManager.withAppConnectionLifecycleLock {
+            if (!commManager.isCurrent(operation)) return@withAppConnectionLifecycleLock
+            attempts.locked {
+                if (discoveryGeneration !== generation || !isRunning) return@locked
+                AppLog.i("NearbyManager: Endpoint LOST: $endpointId")
+                val current = _discoveredEndpoints.value.toMutableList()
+                current.removeAll { it.id == endpointId }
+                _discoveredEndpoints.value = current
+            }
         }
     }
 

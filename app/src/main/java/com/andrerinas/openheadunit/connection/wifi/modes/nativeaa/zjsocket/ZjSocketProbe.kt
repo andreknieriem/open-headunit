@@ -1,6 +1,7 @@
 package com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zjsocket
 
 import android.os.SystemClock
+import com.andrerinas.openheadunit.connection.ConnectionAdmission
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.hct.HctLocalSocket
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.ExternalBtPolicy
@@ -29,16 +30,20 @@ object ZjSocketProbe {
         ?: ExternalBtPolicy.ZJ_SOCKET_PATHS.first()
 
     /** Connects once per path, closes at once, keeps the answer and logs one line. */
-    fun measure(): ZjSocketPolicy.Probe {
+    fun measure(admission: ConnectionAdmission): ZjSocketPolicy.Probe {
+        if (!admission.run {}) return ZjSocketPolicy.Probe(null, ZjSocketPolicy.Outcome.REFUSED)
         var detail: String? = null
         val result = ZjSocketPolicy.probe(ExternalBtPolicy.ZJ_SOCKET_PATHS, ::exists) { path ->
-            val attempt = ZjSocketConnector.connect(path)
+            val attempt = ZjSocketConnector.connect(path, admission)
             detail = attempt.detail
             attempt.socket?.let { HctLocalSocket.close(it) }
             attempt.outcome
         }
-        verdict = ZjSocketPolicy.Verdict(ZjSocketPolicy.connects(result.outcome), SystemClock.elapsedRealtime())
-        connectedPath = result.path.takeIf { ZjSocketPolicy.connects(result.outcome) }
+        // A cancelled measurement never overwrites the successor arm's cached route.
+        admission.run {
+            verdict = ZjSocketPolicy.Verdict(ZjSocketPolicy.connects(result.outcome), SystemClock.elapsedRealtime())
+            connectedPath = result.path.takeIf { ZjSocketPolicy.connects(result.outcome) }
+        }
         val shown = result.path ?: ExternalBtPolicy.ZJ_SOCKET_PATHS.first()
         AppLog.i("NativeAA: [ZJ] probe $shown: ${result.outcome}" + (detail?.let { " ($it)" } ?: ""))
         return result

@@ -1,15 +1,21 @@
 package com.andrerinas.openheadunit.connection.wifi
 
 import com.andrerinas.openheadunit.app.BtAutoStartRearmPolicy
+import com.andrerinas.openheadunit.connection.CommManager
+import com.andrerinas.openheadunit.connection.ConnectionOperation
+import com.andrerinas.openheadunit.connection.CommManager.DisconnectReason
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
 class WirelessSleepHoldTest {
+
+    private val operation = ConnectionOperation(1L, null)
 
     @Before
     fun setUp() = WirelessSleepHold.clear()
@@ -87,29 +93,29 @@ class WirelessSleepHoldTest {
 
     @Test
     fun `a hold is taken once`() {
-        WirelessSleepHold.hold(false)
-        assertEquals(false, WirelessSleepHold.take())
+        WirelessSleepHold.hold(false, operation)
+        assertEquals(false, WirelessSleepHold.take()?.force)
         assertNull(WirelessSleepHold.take())
     }
 
     @Test
     fun `force is sticky across holds`() {
-        WirelessSleepHold.hold(false)
-        WirelessSleepHold.hold(true)
-        assertEquals(true, WirelessSleepHold.take())
+        WirelessSleepHold.hold(false, operation)
+        WirelessSleepHold.hold(true, operation)
+        assertEquals(true, WirelessSleepHold.take()?.force)
     }
 
     @Test
     fun `only the first hold since a take reports new`() {
-        assertTrue(WirelessSleepHold.hold(false))
-        assertFalse(WirelessSleepHold.hold(true))
+        assertTrue(WirelessSleepHold.hold(false, operation))
+        assertFalse(WirelessSleepHold.hold(true, operation))
         WirelessSleepHold.take()
-        assertTrue(WirelessSleepHold.hold(false))
+        assertTrue(WirelessSleepHold.hold(false, operation))
     }
 
     @Test
     fun `clear drops a hold`() {
-        WirelessSleepHold.hold(true)
+        WirelessSleepHold.hold(true, operation)
         WirelessSleepHold.clear()
         assertNull(WirelessSleepHold.take())
     }
@@ -140,7 +146,7 @@ class WirelessSleepHoldTest {
 
     @Test
     fun `a start records who asked and drops the hold`() {
-        WirelessSleepHold.hold(true)
+        WirelessSleepHold.hold(true, operation)
         WirelessSleepHold.started(userRequested = true)
         assertTrue(WirelessSleepHold.startedByUser)
         assertNull(WirelessSleepHold.take())
@@ -157,9 +163,9 @@ class WirelessSleepHoldTest {
 
     @Test
     fun `a radio hold forces the replay`() {
-        WirelessSleepHold.hold(false)
-        WirelessSleepHold.hold(true)
-        assertEquals(true, WirelessSleepHold.take())
+        WirelessSleepHold.hold(false, operation)
+        WirelessSleepHold.hold(true, operation)
+        assertEquals(true, WirelessSleepHold.take()?.force)
     }
 
     @Test
@@ -216,31 +222,31 @@ class WirelessSleepHoldTest {
     @Test
     fun `take records the starts so far`() {
         WirelessSleepHold.started(false)
-        WirelessSleepHold.hold(true)
-        WirelessSleepHold.take()
-        assertEquals(WirelessSleepHold.starts, WirelessSleepHold.startsAtTake)
+        WirelessSleepHold.hold(true, operation)
+        val held = checkNotNull(WirelessSleepHold.take())
+        assertEquals(WirelessSleepHold.starts, held.startsAtTake)
     }
 
     @Test
     fun `a take with nothing held keeps the baseline`() {
-        WirelessSleepHold.hold(true)
-        WirelessSleepHold.take()
-        val baseline = WirelessSleepHold.startsAtTake
+        WirelessSleepHold.hold(true, operation)
+        val held = checkNotNull(WirelessSleepHold.take())
+        val baseline = held.startsAtTake
         WirelessSleepHold.started(false)
         assertNull(WirelessSleepHold.take())
-        assertEquals(baseline, WirelessSleepHold.startsAtTake)
+        assertEquals(baseline, held.startsAtTake)
         assertFalse(
-            WirelessSleepHold.replayKeepsForce(true, WirelessSleepHold.startsAtTake, WirelessSleepHold.starts)
+            WirelessSleepHold.replayKeepsForce(true, held.startsAtTake, WirelessSleepHold.starts)
         )
     }
 
     @Test
     fun `a start after the take is seen by the replay`() {
-        WirelessSleepHold.hold(true)
-        WirelessSleepHold.take()
+        WirelessSleepHold.hold(true, operation)
+        val held = checkNotNull(WirelessSleepHold.take())
         WirelessSleepHold.started(false)
         assertFalse(
-            WirelessSleepHold.replayKeepsForce(true, WirelessSleepHold.startsAtTake, WirelessSleepHold.starts)
+            WirelessSleepHold.replayKeepsForce(true, held.startsAtTake, WirelessSleepHold.starts)
         )
     }
 
@@ -253,8 +259,61 @@ class WirelessSleepHoldTest {
 
     @Test
     fun `a stop keeps a held bring-up`() {
-        WirelessSleepHold.hold(true)
+        WirelessSleepHold.hold(true, operation)
         WirelessSleepHold.stopped()
-        assertEquals(true, WirelessSleepHold.take())
+        assertEquals(true, WirelessSleepHold.take()?.force)
+    }
+
+    @Test
+    fun `a taken hold retains the exact input operation`() {
+        val save = CommManager.ConnectionState.Disconnected(reason = DisconnectReason.SETTINGS_RESTART)
+        val input = ConnectionOperation(1L, save)
+        WirelessSleepHold.hold(true, input)
+        val held = checkNotNull(WirelessSleepHold.take())
+        assertTrue(held.force)
+        assertSame(input, held.operation)
+        assertSame(save, held.operation.save)
+        assertEquals(WirelessSleepHold.starts, held.startsAtTake)
+        assertNull(WirelessSleepHold.take())
+    }
+
+    @Test
+    fun `a different Save replaces the held authority without borrowing force`() {
+        val oldSave = CommManager.ConnectionState.Disconnected(reason = DisconnectReason.SETTINGS_RESTART)
+        val newSave = CommManager.ConnectionState.Disconnected(reason = DisconnectReason.SETTINGS_RESTART)
+        val oldInput = ConnectionOperation(1L, oldSave)
+        val newInput = ConnectionOperation(1L, newSave)
+        WirelessSleepHold.hold(true, oldInput)
+        WirelessSleepHold.hold(false, newInput)
+        val held = checkNotNull(WirelessSleepHold.take())
+        assertFalse(held.force)
+        assertSame(newInput, held.operation)
+        assertSame(newSave, held.operation.save)
+    }
+
+    @Test
+    fun `a later take cannot change a queued hold baseline`() {
+        WirelessSleepHold.hold(true, operation)
+        val first = checkNotNull(WirelessSleepHold.take())
+        val firstStarts = first.startsAtTake
+        WirelessSleepHold.started(false)
+        WirelessSleepHold.hold(true, operation)
+        val second = checkNotNull(WirelessSleepHold.take())
+        assertEquals(firstStarts, first.startsAtTake)
+        assertEquals(firstStarts + 1, second.startsAtTake)
+        assertFalse(WirelessSleepHold.replayKeepsForce(first.force, first.startsAtTake, WirelessSleepHold.starts))
+    }
+
+    @Test
+    fun `a held Direct continuation is delivered once with its owner`() {
+        var calls = 0
+        val resume: () -> Unit = { calls++ }
+        WirelessSleepHold.hold(true, operation, resume)
+        val held = checkNotNull(WirelessSleepHold.take())
+        assertSame(operation, held.operation)
+        assertSame(resume, held.resume)
+        checkNotNull(held.resume).invoke()
+        assertEquals(1, calls)
+        assertNull(WirelessSleepHold.take())
     }
 }

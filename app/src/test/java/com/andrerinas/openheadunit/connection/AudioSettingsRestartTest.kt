@@ -23,7 +23,7 @@ class AudioSettingsRestartTest {
         manager.restartAudio()
         verify(audio).restartAudio()
         verify(audio, never()).needsSessionRestart()
-        verify(manager, never()).applyAudioSettings()
+        verify(manager, never()).applyAudioSettings(org.mockito.kotlin.any())
     }
 
     @Test fun `intentional restart consumes session accounting without advancing starvation streak`() {

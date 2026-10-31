@@ -21,6 +21,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import com.andrerinas.openheadunit.connection.ConnectionOperation
 import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy
 import com.andrerinas.openheadunit.connection.HeldServerSocket
 import com.andrerinas.openheadunit.App
@@ -49,6 +50,7 @@ class NetworkListFragment : Fragment(), NetworkDiscovery.Listener {
     private val ADD_ITEM_ID = 1002
     private val SCAN_ITEM_ID = 1003
     private var scanDialog: androidx.appcompat.app.AlertDialog? = null
+    private var scanOperation: ConnectionOperation? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -124,8 +126,20 @@ class NetworkListFragment : Fragment(), NetworkDiscovery.Listener {
 
     private fun startScan() {
         val ticket = App.provide(requireContext()).commManager.appConnectionTicket()
+        val operation = ConnectionOperation(ticket, null)
+        val previous = scanOperation
+        scanOperation = operation
+        if (!networkDiscovery.startScan(oneShot = true, operation = operation)) {
+            scanOperation = previous
+            return
+        }
         showScanDialog()
-        networkDiscovery.startScan(oneShot = true, ticket = ticket)
+    }
+
+    private fun cancelScan() {
+        scanOperation = null
+        networkDiscovery.stop()
+        scanDialog?.dismiss()
     }
 
     private fun showScanDialog() {
@@ -135,7 +149,7 @@ class NetworkListFragment : Fragment(), NetworkDiscovery.Listener {
         builder.setView(progressBar)
         builder.setTitle(R.string.scanning_network)
         builder.setNegativeButton(R.string.cancel) { _, _ ->
-             networkDiscovery.stop()
+             cancelScan()
         }
         builder.setCancelable(false)
         scanDialog = builder.show()
@@ -151,7 +165,7 @@ class NetworkListFragment : Fragment(), NetworkDiscovery.Listener {
         }
     }
 
-    override fun onServiceFound(ip: String, port: Int, socket: java.net.Socket?, ticket: Long) {
+    override fun onServiceFound(ip: String, port: Int, socket: java.net.Socket?, operation: ConnectionOperation) {
         if (port != 5277) {
             // Only interested in Headunit Server (5277) for manual connection list
             // Ignore WifiLauncher (5289) here as that is for auto-triggering
@@ -159,6 +173,12 @@ class NetworkListFragment : Fragment(), NetworkDiscovery.Listener {
             return
         }
         activity?.runOnUiThread {
+            val currentContext = context
+            if (scanOperation !== operation || currentContext == null ||
+                !App.provide(currentContext).commManager.isCurrent(operation)) {
+                if (socket != null && HeldServerSocket.adopt(socket)) try { socket.close() } catch (_: Exception) {}
+                return@runOnUiThread
+            }
             // Save immediately so it stays in the list permanently
             try {
                 AppLog.i("Found Infotainment Device. Try to connect to $ip:$port")
@@ -169,11 +189,12 @@ class NetworkListFragment : Fragment(), NetworkDiscovery.Listener {
 
             // Auto-connect to the first found device during a manual scan
             if (scanDialog?.isShowing == true) {
+                scanOperation = null
                 scanDialog?.dismiss()
 
                 val ctx = context ?: return@runOnUiThread
                 val commManager = App.provide(ctx).commManager
-                if (!commManager.acceptsAppConnectionTicket(ticket)) {
+                if (!commManager.isCurrent(operation)) {
                     // Discovery still holds the socket; close it only if it is still ours to adopt.
                     if (socket != null && HeldServerSocket.adopt(socket)) try { socket.close() } catch (_: Exception) {}
                     return@runOnUiThread
@@ -186,11 +207,11 @@ class NetworkListFragment : Fragment(), NetworkDiscovery.Listener {
                 lifecycleScope.launch(Dispatchers.IO) {
                     if (socket != null && socket.isConnected) {
                         // The same held hand-off as the background discovery, as the user's request.
-                        commManager.connectHeld(socket, ip to port, ticket, ConnectionPriorityPolicy.Tier.USER)
+                        commManager.connectHeld(socket, ip to port, operation.ticket, ConnectionPriorityPolicy.Tier.USER, expectedState = operation.save)
                     } else {
-                        commManager.connect(ip, 5277, ConnectionPriorityPolicy.Tier.USER, ticket = ticket)
+                        commManager.connect(ip, 5277, ConnectionPriorityPolicy.Tier.USER, ticket = operation.ticket, expectedState = operation.save)
                     }
-                    ContextCompat.startForegroundService(ctx, AapService.operationIntent(ctx, ticket).apply {
+                    ContextCompat.startForegroundService(ctx, AapService.operationIntent(ctx, operation.ticket).apply {
                         action = AapService.ACTION_CONNECT_SOCKET
                     })
                 }.invokeOnCompletion {
@@ -207,8 +228,11 @@ class NetworkListFragment : Fragment(), NetworkDiscovery.Listener {
 
     // This scan is always one-shot, so the flag says nothing this fragment does not already know:
     // the dialog closing is the end of it, and nothing re-arms.
-    override fun onScanFinished(oneShot: Boolean, ticket: Long) {
+    override fun onScanFinished(oneShot: Boolean, operation: ConnectionOperation) {
         activity?.runOnUiThread {
+            val ctx = context ?: return@runOnUiThread
+            if (scanOperation !== operation || !App.provide(ctx).commManager.isCurrent(operation)) return@runOnUiThread
+            scanOperation = null
             if (scanDialog?.isShowing == true) {
                 scanDialog?.dismiss()
                 if (adapter.addressList.size <= 2) { // Only localhost and current IP

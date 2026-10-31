@@ -2,6 +2,7 @@ package com.andrerinas.openheadunit.connection.wifi.modes.helper
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.andrerinas.openheadunit.connection.ConnectionOperation
 import com.andrerinas.openheadunit.connection.CommManager
 import com.andrerinas.openheadunit.connection.withAppExitDispatcherForTest
 import com.google.android.gms.nearby.Nearby
@@ -15,20 +16,21 @@ import org.mockito.Mockito.*
 
 class NearbySettingsRestartTest {
     @Test fun `fallback preserves a pending endpoint and its bandwidth upgrade`() {
+        val operation = ConnectionOperation(7L, null)
         for (connecting in listOf(false, true)) {
             val manager = mock(NearbyManager::class.java, CALLS_REAL_METHODS)
             NearbyManager::class.java.getDeclaredField("attempts").apply { isAccessible = true }.set(manager, NearbyAttemptGuard())
             NearbyManager::class.java.getDeclaredField("isConnecting").apply { isAccessible = true }.set(manager, connecting)
             NearbyManager::class.java.getDeclaredField("activeEndpointId").apply { isAccessible = true }
                 .set(manager, if (connecting) null else "joining-phone")
-            manager.resumeDiscoveryIfIdle(7L)
-            verify(manager, never()).start(anyLong())
+            manager.resumeDiscoveryIfIdle(operation)
+            verify(manager, never()).start(org.mockito.kotlin.any())
         }
         val idle = mock(NearbyManager::class.java, CALLS_REAL_METHODS)
         NearbyManager::class.java.getDeclaredField("attempts").apply { isAccessible = true }.set(idle, NearbyAttemptGuard())
-        doNothing().`when`(idle).start(anyLong())
-        idle.resumeDiscoveryIfIdle(7L)
-        verify(idle).start(7L)
+        doNothing().`when`(idle).start(org.mockito.kotlin.any())
+        idle.resumeDiscoveryIfIdle(operation)
+        verify(idle).start(operation)
     }
     @Test fun `explicit save cleans the old tunnel and retries only the rediscovered peer with auto connect off`() {
         val context = mock(Context::class.java)
@@ -163,8 +165,8 @@ class NearbySettingsRestartTest {
                 verify(client).startDiscovery(anyString(), callback.capture(), any())
                 when (end) {
                     // The Home Exit the service survives: already Disconnected, it cancels Save.
-                    "exit" -> comm.disconnect(isUserExit = true, honorKillOnDisconnect = false)
-                    "stop" -> { comm.requestExplicitAppExit(killProcess = false); comm.onAppRelaunched() }
+                    "exit" -> comm.disconnect(ConnectionOperation(comm.appConnectionTicket(), null), isUserExit = true, honorKillOnDisconnect = false)
+                    "stop" -> { comm.requestExplicitAppExit(ticket = comm.appConnectionTicket(), killProcess = false); comm.onAppRelaunched() }
                 }
                 val peer = mock(DiscoveredEndpointInfo::class.java)
                 `when`(peer.endpointName).thenReturn("Phone")
@@ -209,8 +211,8 @@ class NearbySettingsRestartTest {
                 // The earlier cleanup opened the endpoint's queue and is still running.
                 check(NearbyEndpointCalls.reserve("queued-phone") {})
                 // A tap: its ticket is read now, and its request queues behind the cleanup.
-                manager.connectToEndpoint("queued-phone", comm.appConnectionTicket())
-                if (stop) { comm.requestExplicitAppExit(killProcess = false); comm.onAppRelaunched() }
+                manager.connectToEndpoint("queued-phone", ConnectionOperation(comm.appConnectionTicket(), null))
+                if (stop) { comm.requestExplicitAppExit(ticket = comm.appConnectionTicket(), killProcess = false); comm.onAppRelaunched() }
                 NearbyEndpointCalls.drain("queued-phone")
                 // Recorded after every production frame has returned.
                 val requests = mockingDetails(client).invocations.count { it.method.name == "requestConnection" }

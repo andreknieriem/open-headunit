@@ -30,7 +30,7 @@ class UsbHandshakeRecheckTest {
 
     /** The live attempt ends without a session: its teardown runs on the next settle. */
     private fun endAttempt(userExit: Boolean = false) {
-        checkNotNull(manager).disconnect(sendByeBye = false, isUserExit = userExit, honorKillOnDisconnect = false)
+        checkNotNull(manager).disconnect(com.andrerinas.openheadunit.connection.ConnectionOperation(checkNotNull(manager).appConnectionTicket(), null), sendByeBye = false, isUserExit = userExit, honorKillOnDisconnect = false)
     }
 
     @Test fun usbScanWaitsForEveryPreHandshakeStageAndReturnsAfterFailure() {
@@ -124,7 +124,7 @@ class UsbHandshakeRecheckTest {
     @Test fun theXOnAUsbAttemptStillGivesTheStoodDownWirelessBack() {
         for (stage in listOf(ConnectionState.Disconnected(), ConnectionState.Connecting)) {
             scenario(stage, claimOwner = Owner.USB, standsDown = true) { _, claim, returned, settle ->
-                checkNotNull(manager).disconnect()
+                checkNotNull(manager).disconnect(com.andrerinas.openheadunit.connection.ConnectionOperation(checkNotNull(manager).appConnectionTicket(), null))
                 ConnectionArbiter.release(claim, sessionFormed = false)
                 settle()
                 assertEquals("stage=$stage", listOf(true to false), returned)
@@ -183,7 +183,7 @@ class UsbHandshakeRecheckTest {
                 val claim = checkNotNull(ConnectionArbiter.claim(if (claimOwner == Owner.USB) Tier.USB else Tier.WIRELESS_HANDSHAKE, claimOwner, "handshake"))
                 // Any non-terminal state is owned by the live attempt that claim published.
                 if (state !is ConnectionState.Disconnected && state !is ConnectionState.Error) {
-                    field("connectionAttempt", CommManager.Attempt(claim))
+                    field("connectionAttempt", CommManager.Attempt(CommManager.ConnectionRequest(manager.appConnectionTicket(), claim, null, null, null)))
                 }
                 val release = CommManager::class.java.getDeclaredMethod("releaseClaim", ConnectionArbiter.Claim::class.java)
                     .apply { isAccessible = true }

@@ -2,6 +2,7 @@ package com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zjsocket
 
 import android.net.LocalSocket
 import android.os.SystemClock
+import com.andrerinas.openheadunit.connection.ConnectionAdmission
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.ExternalModuleCarrier
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.HandshakeLink
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.hct.HctLocalSocket
@@ -28,7 +29,8 @@ class ZjSocketCarrier(
     private val isSettling: () -> Boolean,
     private val mayServeHandshake: () -> Boolean,
     private val onPhoneEvidence: () -> Unit,
-    private val servedRefusals: () -> Int
+    private val servedRefusals: () -> Int,
+    private val admission: ConnectionAdmission,
 ) : ExternalModuleCarrier {
 
     companion object {
@@ -48,7 +50,8 @@ class ZjSocketCarrier(
     /** The daemon wakes the phone on its own; nothing is sent. */
     override val sendsWake: Boolean get() = false
 
-    override fun requestWake(userAsked: Boolean) {
+    override fun requestWake(userAsked: Boolean, admission: ConnectionAdmission) {
+        if (!this.admission.run {} || !admission.run {}) return
         if (!wakeNoteLogged) {
             wakeNoteLogged = true
             AppLog.i("NativeAA: [ZJ] this route sends no wake; the module brings the phone's link up by itself.")
@@ -85,8 +88,12 @@ class ZjSocketCarrier(
             }
             socketMissingLogged = false
 
-            val attempt = ZjSocketConnector.connect(socketPath)
+            val attempt = ZjSocketConnector.connect(socketPath, admission)
             val socket = attempt.socket
+            if (!running()) {
+                socket?.let { HctLocalSocket.close(it) }
+                break
+            }
             if (socket == null) {
                 refusedConnects++
                 val gap = ZjSocketPolicy.retryDelayMs(afterServed = false, count = refusedConnects)
@@ -110,7 +117,7 @@ class ZjSocketCarrier(
                 AppLog.w("NativeAA: [ZJ] handshake ended with ${e.javaClass.simpleName}: ${e.message}")
             } finally {
                 HctLocalSocket.close(socket)
-                activeSocket = null
+                if (activeSocket === socket) activeSocket = null
             }
             pause(ZjSocketPolicy.retryDelayMs(afterServed = true, count = servedRefusals()))
         }
@@ -121,7 +128,8 @@ class ZjSocketCarrier(
         activeSocket?.let { HctLocalSocket.close(it) }
     }
 
-    private fun running(): Boolean = !stopped && isRunning() && carrierJob?.isActive != false
+    private fun running(): Boolean =
+        !stopped && isRunning() && carrierJob?.isActive != false && admission.run {}
 
     /** Waits [ms], or less when the WiFi button asked for a dial now or the carrier stopped. */
     private suspend fun pause(ms: Long) {

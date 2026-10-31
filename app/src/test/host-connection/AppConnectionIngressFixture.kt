@@ -38,7 +38,7 @@ private class ServicePreempt(private val manager: CommManager) : ConnectionArbit
         // No session forms in this fixture, so an open connection is still unformed.
         val state = manager.state
         if (state is ConnectionState.Connecting || state is ConnectionState.Connected) {
-            manager.disconnect(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
+            manager.disconnect(ConnectionOperation(manager.appConnectionTicket(), null), sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
         }
     }
     override fun standDownWireless(by: ConnectionArbiter.Claim): Boolean = false
@@ -54,7 +54,7 @@ private class RecordingClaims(private val manager: CommManager) : ConnectionArbi
     var standDowns = 0
     override fun preempt(loser: ConnectionArbiter.Claim) {
         preempts++
-        manager.disconnect(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
+        manager.disconnect(ConnectionOperation(manager.appConnectionTicket(), null), sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
     }
     override fun standDownWireless(by: ConnectionArbiter.Claim): Boolean { standDowns++; return false }
     override fun giveBack(wireless: Boolean, usb: UsbRecheck?) {}
@@ -70,19 +70,19 @@ fun appConnectionIngressOwnership() = runBlocking {
         val service = ServiceBootstrap(c).apply { initializedForStart = true }
         try {
             c.settings.killOnDisconnect = true
-            c.startHandshake()
+            c.captureHandshake()?.let { c.startHandshake(it) }
             val transport = c.owner()
             val a: AppExitPolicy.Request
             val oldAutomatic: Runnable?
             if (explicitFirst) {
-                a = c.requestExplicitAppExit(killProcess = true)
+                a = checkNotNull(c.requestExplicitAppExit(ticket = c.appConnectionTicket(), killProcess = true))
                 transport.quit(false)
                 check(Handler.delayed.isEmpty())
                 oldAutomatic = null
             } else {
                 transport.quit(false)
                 oldAutomatic = checkNotNull(Handler.delayed.peek())
-                a = c.requestExplicitAppExit(killProcess = true)
+                a = checkNotNull(c.requestExplicitAppExit(ticket = c.appConnectionTicket(), killProcess = true))
                 check(Handler.delayed.isEmpty())
             }
             check(c.acceptedAppExit(a.id) === a && a.userStop && !a.requiresKillOnDisconnect)
@@ -111,7 +111,7 @@ fun appConnectionIngressOwnership() = runBlocking {
         val c = CommManager()
         val io = QueuedDispatcher()
         val socket = Socket()
-        c.disconnect(honorKillOnDisconnect = false)
+        c.disconnect(ConnectionOperation(c.appConnectionTicket(), null), honorKillOnDisconnect = false)
         c.cleanups()
         c.ingressIo(io)
         val effects = RecordingClaims(c)
@@ -120,12 +120,12 @@ fun appConnectionIngressOwnership() = runBlocking {
             val u = launch(start = CoroutineStart.UNDISPATCHED) {
                 when (route) {
                     "USB" -> c.connectUsbRequest(ConnectionPriorityPolicy.Tier.USER)
-                    "IP" -> c.connect("192.0.2.10", 5277, ConnectionPriorityPolicy.Tier.USER)
-                    else -> c.connect(socket, ConnectionPriorityPolicy.Tier.USER)
+                    "IP" -> c.connect("192.0.2.10", 5277, ConnectionPriorityPolicy.Tier.USER, ticket = c.appConnectionTicket())
+                    else -> c.connect(socket, ConnectionPriorityPolicy.Tier.USER, ticket = c.appConnectionTicket())
                 }
             }
             check(!u.isCompleted && io.tasks.isNotEmpty())
-            if (cancelledByStop) c.requestExplicitAppExit(killProcess = false)
+            if (cancelledByStop) checkNotNull(c.requestExplicitAppExit(ticket = c.appConnectionTicket(), killProcess = false))
             val opened = c.onAppRelaunched()
             io.drain()
             u.join()
@@ -147,18 +147,18 @@ fun appConnectionIngressOwnership() = runBlocking {
         val socket = Socket()
         val endpoint = "192.0.2.20:5277"
         var opened = -1L
-        c.disconnect(honorKillOnDisconnect = false)
+        c.disconnect(ConnectionOperation(c.appConnectionTicket(), null), honorKillOnDisconnect = false)
         c.cleanups()
         HeldServerSocket.hold(endpoint, socket)
         try {
             AppLog.hook = { text ->
                 if (text.contains("adopting the socket discovery already opened")) {
                     AppLog.hook = null
-                    if (cancelledByStop) c.requestExplicitAppExit(killProcess = false)
+                    if (cancelledByStop) checkNotNull(c.requestExplicitAppExit(ticket = c.appConnectionTicket(), killProcess = false))
                     opened = c.onAppRelaunched()
                 }
             }
-            c.connect("192.0.2.20", 5277, ConnectionPriorityPolicy.Tier.USER)
+            c.connect("192.0.2.20", 5277, ConnectionPriorityPolicy.Tier.USER, ticket = c.appConnectionTicket())
             check(opened >= 0 && !HeldServerSocket.isHeld(endpoint))
             if (cancelledByStop) {
                 check(socket.isClosed && c.network() == null && c.isAppRunOwner(opened))
@@ -188,7 +188,7 @@ fun appConnectionIngressOwnership() = runBlocking {
         val releaseV = CountDownLatch(1)
         val errors = ConcurrentLinkedQueue<Throwable>()
         var candidateV: ProjectionConnection? = null
-        c.disconnect(honorKillOnDisconnect = false)
+        c.disconnect(ConnectionOperation(c.appConnectionTicket(), null), honorKillOnDisconnect = false)
         c.cleanups()
         c.ingressIo(oldIo)
         val effects = RecordingClaims(c)
@@ -196,11 +196,11 @@ fun appConnectionIngressOwnership() = runBlocking {
         val ticketU = c.appConnectionTicket()
         var u: Job? = if (route == "USB") null else launch(start = CoroutineStart.UNDISPATCHED) {
             when (route) {
-                "IP" -> c.connect("192.0.2.30", 5277, ConnectionPriorityPolicy.Tier.USER)
-                else -> c.connect(oldSocket, ConnectionPriorityPolicy.Tier.USER)
+                "IP" -> c.connect("192.0.2.30", 5277, ConnectionPriorityPolicy.Tier.USER, ticket = c.appConnectionTicket())
+                else -> c.connect(oldSocket, ConnectionPriorityPolicy.Tier.USER, ticket = c.appConnectionTicket())
             }
         }
-        if (cancelledByStop) c.requestExplicitAppExit(killProcess = false)
+        if (cancelledByStop) checkNotNull(c.requestExplicitAppExit(ticket = c.appConnectionTicket(), killProcess = false))
         c.onAppRelaunched()
         c.ingressIo(Dispatchers.IO)
         SocketProjectionConnection.connectionHook = { candidate ->
@@ -212,7 +212,7 @@ fun appConnectionIngressOwnership() = runBlocking {
             true
         }
         val v = Thread {
-            try { runBlocking { c.connect(liveSocket, ConnectionPriorityPolicy.Tier.WIRELESS_HANDSHAKE) } }
+            try { runBlocking { c.connect(liveSocket, ConnectionPriorityPolicy.Tier.WIRELESS_HANDSHAKE, ticket = c.appConnectionTicket()) } }
             catch (failure: Throwable) { errors.add(failure) }
         }
         try {
@@ -256,14 +256,14 @@ fun appConnectionIngressOwnership() = runBlocking {
         val c = CommManager()
         val main = QueuedDispatcher()
         val socketA = Socket()
-        c.disconnect(honorKillOnDisconnect = false)
+        c.disconnect(ConnectionOperation(c.appConnectionTicket(), null), honorKillOnDisconnect = false)
         c.cleanups()
         c.ingressMain(main)
         val effects = ServicePreempt(c)
         ConnectionArbiter.actions = effects
         try {
             val a = launch(start = CoroutineStart.UNDISPATCHED) {
-                if (route == "IP") c.connect("192.0.2.40", 5277) else c.connect(socketA)
+                if (route == "IP") c.connect("192.0.2.40", 5277, ticket = c.appConnectionTicket()) else c.connect(socketA, ticket = c.appConnectionTicket())
             }
             checkNotNull(main.tasks.poll()).run() // A's claim acceptance.
             val publicationA = checkNotNull(main.tasks.poll())
@@ -271,7 +271,7 @@ fun appConnectionIngressOwnership() = runBlocking {
             var b: ProjectionConnection? = null
             if (preempted) {
                 val userB = launch(start = CoroutineStart.UNDISPATCHED) {
-                    c.connect("192.0.2.50", 5277, ConnectionPriorityPolicy.Tier.USER)
+                    c.connect("192.0.2.50", 5277, ConnectionPriorityPolicy.Tier.USER, ticket = c.appConnectionTicket())
                 }
                 main.drain()
                 userB.join()
@@ -313,20 +313,20 @@ fun appConnectionIngressOwnership() = runBlocking {
             override fun getInetAddress(): java.net.InetAddress = java.net.InetAddress.getByName("192.0.2.61")
             override fun getPort(): Int = 5277
         }
-        c.disconnect(honorKillOnDisconnect = false)
+        c.disconnect(ConnectionOperation(c.appConnectionTicket(), null), honorKillOnDisconnect = false)
         c.cleanups()
         c.ingressMain(main)
         val effects = ServicePreempt(c)
         ConnectionArbiter.actions = effects
         try {
             val createdBefore = SocketProjectionConnection.created.size
-            val automaticA = launch(start = CoroutineStart.UNDISPATCHED) { c.connect(socketA) }
+            val automaticA = launch(start = CoroutineStart.UNDISPATCHED) { c.connect(socketA, ticket = c.appConnectionTicket()) }
             val acceptanceA = checkNotNull(main.tasks.poll()) { "A did not reach its Main acceptance" }
             check(main.tasks.isEmpty() && !automaticA.isCompleted && c.state is ConnectionState.Disconnected)
             var b: ProjectionConnection? = null
             if (preempted) {
                 val userB = launch(start = CoroutineStart.UNDISPATCHED) {
-                    c.connect("192.0.2.60", 5277, ConnectionPriorityPolicy.Tier.USER)
+                    c.connect("192.0.2.60", 5277, ConnectionPriorityPolicy.Tier.USER, ticket = c.appConnectionTicket())
                 }
                 main.drain()
                 userB.join()
@@ -338,7 +338,7 @@ fun appConnectionIngressOwnership() = runBlocking {
             automaticA.join()
             val afterA = c.network()
             val target = if (preempted) "192.0.2.60" else "192.0.2.61"
-            val joining = launch(start = CoroutineStart.UNDISPATCHED) { c.connect(target, 5277, ConnectionPriorityPolicy.Tier.USER) }
+            val joining = launch(start = CoroutineStart.UNDISPATCHED) { c.connect(target, 5277, ConnectionPriorityPolicy.Tier.USER, ticket = c.appConnectionTicket()) }
             main.drain()
             joining.join()
             // Recorded after every production frame has returned.
@@ -371,16 +371,16 @@ fun appConnectionIngressOwnership() = runBlocking {
     for (outcome in listOf("arrives", "fails", "cleanup-done")) {
         val c = CommManager()
         try {
-            c.disconnect(honorKillOnDisconnect = false) // The previous session's terminal; its cleanup is queued.
+            c.disconnect(ConnectionOperation(c.appConnectionTicket(), null), honorKillOnDisconnect = false) // The previous session's terminal; its cleanup is queued.
             if (outcome == "cleanup-done") c.cleanups()
             if (outcome == "fails") SocketProjectionConnection.connectionHook = { false }
             val createdBefore = SocketProjectionConnection.created.size
             val userA = launch(start = CoroutineStart.UNDISPATCHED) {
-                c.connect("127.0.0.1", 5277, ConnectionPriorityPolicy.Tier.USER)
+                c.connect("127.0.0.1", 5277, ConnectionPriorityPolicy.Tier.USER, ticket = c.appConnectionTicket())
             }
             val mark = c.launchMark(c.appConnectionTicket())
             val acceptedIn = c.state
-            c.connect("127.0.0.1", 5277) // The launch's own dial.
+            c.connect("127.0.0.1", 5277, ticket = c.appConnectionTicket()) // The launch's own dial.
             val decision = c.reportLaunchFailure("timeout", mark)
             val stateAtDecision = c.state
             val waiter = (decision as? CommManager.LaunchOutcome.Forming)?.let {
@@ -429,18 +429,26 @@ fun appConnectionIngressOwnership() = runBlocking {
                 return 5277
             }
         }
-        c.disconnect(honorKillOnDisconnect = false)
+        c.disconnect(ConnectionOperation(c.appConnectionTicket(), null), honorKillOnDisconnect = false)
         c.cleanups()
         val user = Thread {
-            try { runBlocking { c.connect(userSocket, ConnectionPriorityPolicy.Tier.USER) } } catch (failure: Throwable) { errors.add(failure) }
+            try { runBlocking { c.connect(userSocket, ConnectionPriorityPolicy.Tier.USER, ticket = c.appConnectionTicket()) } } catch (failure: Throwable) { errors.add(failure) }
         }
         try {
             user.start()
             check(reached.await(5, TimeUnit.SECONDS)) { "the user request never reached its endpoint" }
             val mark = c.launchMark(c.appConnectionTicket())
-            c.connect("127.0.0.1", 5277) // The launch's own dial.
+            c.connect("127.0.0.1", 5277, ticket = c.appConnectionTicket()) // The launch's own dial.
             val decision = c.reportLaunchFailure("timeout", mark)
+            val launchConnection = checkNotNull(c.network())
             resume.countDown()
+            // The later USER publication wins over the automatic dial, then waits for that
+            // physical predecessor's cleanup before installing its own accepted socket.
+            withTimeout(5_000) {
+                while (c.queue.tasks.isEmpty() && user.isAlive) delay(1)
+            }
+            check(user.isAlive && c.state is ConnectionState.Disconnected && !launchConnection.closed)
+            c.cleanups()
             user.join(5000)
             // Recorded after every production frame has returned.
             println("claimed-unseen request: decision=$decision state=${c.state}")
@@ -466,20 +474,20 @@ fun appConnectionIngressOwnership() = runBlocking {
         try {
             val endpoint = "192.0.2.80"
             if (lost == "save") {
-                c.disconnect(isUserExit = false, honorKillOnDisconnect = false, reason = DisconnectReason.SETTINGS_RESTART)
-            } else c.disconnect(honorKillOnDisconnect = false)
+                c.disconnect(ConnectionOperation(c.appConnectionTicket(), null), isUserExit = false, honorKillOnDisconnect = false, reason = DisconnectReason.SETTINGS_RESTART)
+            } else c.disconnect(ConnectionOperation(c.appConnectionTicket(), null), honorKillOnDisconnect = false)
             val saved = c.state as ConnectionState.Disconnected
             val tierA = if (lost == "stop" || lost == "stop-launch" || lost == "stop-other-endpoint") ConnectionPriorityPolicy.Tier.USER
                 else ConnectionPriorityPolicy.Tier.WIRELESS_HANDSHAKE
             val requestA = launch(start = CoroutineStart.UNDISPATCHED) {
-                c.connect(endpoint, 5277, tierA, expectedState = if (lost == "save") saved else null)
+                c.connect(endpoint, 5277, tierA, expectedState = if (lost == "save") saved else null, ticket = c.appConnectionTicket())
             }
             check(!requestA.isCompleted) { "A did not wait in the cleanup join ($lost)" }
             when (lost) {
                 "save" -> c.cancelPendingSettingsRestart() // What a manual launch does first.
                 "usb-claim" -> checkNotNull(ConnectionArbiter.claim(ConnectionPriorityPolicy.Tier.USB,
                     ConnectionPriorityPolicy.Owner.USB, "a USB attach"))
-                else -> { c.requestExplicitAppExit(killProcess = false); c.onAppRelaunched() }
+                else -> { checkNotNull(c.requestExplicitAppExit(ticket = c.appConnectionTicket(), killProcess = false)); c.onAppRelaunched() }
             }
             val createdBefore = SocketProjectionConnection.created.size
             val mark = if (lost == "stop-launch") c.launchMark(c.appConnectionTicket()) else null
@@ -514,20 +522,20 @@ fun appConnectionIngressOwnership() = runBlocking {
     for (cause in listOf("stop", "usb-claim")) {
         val c = CommManager()
         try {
-            c.disconnect(honorKillOnDisconnect = false)
+            c.disconnect(ConnectionOperation(c.appConnectionTicket(), null), honorKillOnDisconnect = false)
             val tierA = if (cause == "usb-claim") ConnectionPriorityPolicy.Tier.WIRELESS_HANDSHAKE
                 else ConnectionPriorityPolicy.Tier.USER
             val requestA = launch(start = CoroutineStart.UNDISPATCHED) {
-                c.connect("192.0.2.85", 5277, tierA)
+                c.connect("192.0.2.85", 5277, tierA, ticket = c.appConnectionTicket())
             }
             val mark = c.launchMark(c.appConnectionTicket())
-            c.connect("192.0.2.85", 5277) // The launch's own dial joins A.
+            c.connect("192.0.2.85", 5277, ticket = c.appConnectionTicket()) // The launch's own dial joins A.
             val decision = c.reportLaunchFailure("timeout", mark)
             val waiter = (decision as? CommManager.LaunchOutcome.Forming)?.let {
                 launch(start = CoroutineStart.UNDISPATCHED) { c.awaitSettled(it) }
             }
             val pendingBefore = waiter?.isCompleted == false
-            if (cause == "stop") c.requestExplicitAppExit(killProcess = false)
+            if (cause == "stop") checkNotNull(c.requestExplicitAppExit(ticket = c.appConnectionTicket(), killProcess = false))
             else checkNotNull(ConnectionArbiter.claim(ConnectionPriorityPolicy.Tier.USB, ConnectionPriorityPolicy.Owner.USB, "a USB attach"))
             yield()
             val wokeBeforeCleanup = waiter?.isCompleted == true
@@ -549,23 +557,33 @@ fun appConnectionIngressOwnership() = runBlocking {
         val c = CommManager()
         val main = QueuedDispatcher()
         try {
-            c.disconnect(honorKillOnDisconnect = false)
+            c.disconnect(ConnectionOperation(c.appConnectionTicket(), null), honorKillOnDisconnect = false)
             c.cleanups()
-            c.connect("192.0.2.90", 5277, ConnectionPriorityPolicy.Tier.USER)
+            c.connect("192.0.2.90", 5277, ConnectionPriorityPolicy.Tier.USER, ticket = c.appConnectionTicket())
             check(c.state is ConnectionState.Connected) { "A did not connect" }
             c.ingressMain(main)
             val requestB = launch(start = CoroutineStart.UNDISPATCHED) {
-                c.connect("192.0.2.91", 5277, ConnectionPriorityPolicy.Tier.USER)
+                c.connect("192.0.2.91", 5277, ConnectionPriorityPolicy.Tier.USER, ticket = c.appConnectionTicket())
             }
             check(!requestB.isCompleted && main.tasks.size == 1) { "B did not wait for its Main acceptance" }
             if (cancelled) requestB.cancel()
             main.drain()
+            if (!cancelled) {
+                check(!requestB.isCompleted && c.state is ConnectionState.Disconnected)
+                c.cleanups()
+                main.drain()
+            }
             requestB.join()
             val createdBefore = SocketProjectionConnection.created.size
             val requestC = launch(start = CoroutineStart.UNDISPATCHED) {
-                c.connect("192.0.2.91", 5277, ConnectionPriorityPolicy.Tier.USER)
+                c.connect("192.0.2.91", 5277, ConnectionPriorityPolicy.Tier.USER, ticket = c.appConnectionTicket())
             }
             main.drain()
+            if (cancelled) {
+                check(!requestC.isCompleted && c.state is ConnectionState.Disconnected)
+                c.cleanups()
+                main.drain()
+            }
             requestC.join()
             // Recorded after every production frame has returned.
             val created = SocketProjectionConnection.created.size - createdBefore
@@ -589,7 +607,7 @@ fun appConnectionIngressOwnership() = runBlocking {
         val c = CommManager()
         val io = QueuedDispatcher()
         try {
-            c.disconnect(honorKillOnDisconnect = false) // The previous session's cleanup is queued.
+            c.disconnect(ConnectionOperation(c.appConnectionTicket(), null), honorKillOnDisconnect = false) // The previous session's cleanup is queued.
             c.ingressIo(io)
             val requestA = launch(start = CoroutineStart.UNDISPATCHED) { c.connectUsbRequest(ConnectionPriorityPolicy.Tier.USB) }
             io.drain()
@@ -646,12 +664,12 @@ fun appConnectionIngressOwnership() = runBlocking {
             override fun schedule(delayMs: Long, block: () -> Unit) { block() }
         }
         val handshake = Thread {
-            try { runBlocking { c.startHandshake() } } catch (failure: Throwable) { errors.add(failure) }
+            try { runBlocking { c.captureHandshake()?.let { c.startHandshake(it) } } } catch (failure: Throwable) { errors.add(failure) }
         }
         try {
-            c.disconnect(honorKillOnDisconnect = false)
+            c.disconnect(ConnectionOperation(c.appConnectionTicket(), null), honorKillOnDisconnect = false)
             c.cleanups()
-            c.connect("192.0.2.95", 5277, ConnectionPriorityPolicy.Tier.USER)
+            c.connect("192.0.2.95", 5277, ConnectionPriorityPolicy.Tier.USER, ticket = c.appConnectionTicket())
             check(c.state is ConnectionState.Connected) { "A did not connect" }
             AapTransport.handshakeHook = { inSsl.countDown(); failSsl.await(5, TimeUnit.SECONDS) }
             AapTransport.forcedFailure = AapTransport.HandshakeFailure.OTHER
@@ -663,7 +681,7 @@ fun appConnectionIngressOwnership() = runBlocking {
             if (order != "none") {
                 c.ingressMain(main)
                 val requestB = launch(start = CoroutineStart.UNDISPATCHED) {
-                    c.connect("192.0.2.96", 5277, ConnectionPriorityPolicy.Tier.USER)
+                    c.connect("192.0.2.96", 5277, ConnectionPriorityPolicy.Tier.USER, ticket = c.appConnectionTicket())
                 }
                 requestB.cancel()
                 main.drain()

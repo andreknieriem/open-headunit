@@ -1,5 +1,6 @@
 package com.andrerinas.openheadunit.connection.wifi.modes
 
+import com.andrerinas.openheadunit.connection.ConnectionOperation
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.hct.HctServiceObserver
 import android.os.Build
 import android.os.Handler
@@ -47,6 +48,7 @@ class WifiLauncherNative : WifiLauncher {
     var handshakeManager: NativeAaHandshakeManager? = null
         private set
     private var softApCredentialsProvider: SoftApCredentialsProvider? = null
+    private var armOperation: ConnectionOperation? = null
 
     /** Set when start() skipped the network on a measured refusal; the WiFi button rebuilds then. */
     var refusedModuleAtStart = false
@@ -78,19 +80,20 @@ class WifiLauncherNative : WifiLauncher {
 
     override fun hasLocalDiscovery() = false
 
-    // [ticket] is not threaded into the Native machinery's own loops: they are this launcher's,
-    // admitted by setActive under that ticket and retired by stop() when Stop commits.
-    override fun start(noInfoToasts: Boolean, ticket: Long) {
+    // Every child captures this arm. Stop acceptance revokes it even if Stop commit is superseded.
+    override fun start(noInfoToasts: Boolean, operation: ConnectionOperation) {
+        if (!isCurrent(operation)) return
+        armOperation = operation
         val wifiDirect = manager.sharedServices.wifiDirectManager
 
-        handshakeManager = NativeAaHandshakeManager(service, this, service.serviceScope)
+        handshakeManager = NativeAaHandshakeManager(service, this, service.serviceScope, operation)
         // The wake poke wakes the phone, and a phone that answers takes over the screen. Doing that
         // to somebody who is in the middle of changing settings loses whatever they were reading.
         handshakeManager?.userConfiguringProvider = { SettingsActivity.isForeground }
-        softApCredentialsProvider = SoftApCredentialsProvider(service, service.serviceScope, settings)
+        softApCredentialsProvider = SoftApCredentialsProvider(service, service.serviceScope, settings, operation)
         // Above the strategy branch, not inside it: the provider resolves on IO the instant it is
         // started, and on a unit whose access point is already up that is tens of milliseconds.
-        setupSoftAp()
+        setupSoftAp(operation)
 
         // Skip the route when this unit's Bluetooth cannot carry the handshake: with no channel
         // there is nobody to hand credentials to. A *measured* refusal only, never one merely not
@@ -121,24 +124,24 @@ class WifiLauncherNative : WifiLauncher {
                 // Before the group, not after: wpa_supplicant only honours a channel while no group
                 // exists, and an associated station is what leaves it none to give. A no-op on a
                 // unit that is not joined to anything.
-                val stoodDown = StationStandDown.standDown(service)
+                val stoodDown = StationStandDown.standDown(service, operation)
 
                 // Start WiFi Direct as a "quiet host" (P2P Group for phone to join)
                 // We let WifiDirectManager handle the WiFi state (enabling if needed)
-                setupWifiDirect(wifiDirect)
+                setupWifiDirect(wifiDirect, operation)
                 if (stoodDown) {
                     // Claimed before the wait, not inside startNativeAaQuietHost: the poke's
                     // pre-flight refresh lands well inside this window, and with nothing marked
                     // in flight it remade a group underneath the one about to be asked for, and
                     // skipped the stand-down doing it.
-                    wifiDirect.claimNativeCreateWindow("waiting for this unit to leave its own network")
+                    wifiDirect.claimNativeCreateWindow("waiting for this unit to leave its own network", operation)
                     // A group asked for while the station is still tearing down forms on the
                     // channel the stand-down was meant to free, and stays there. Ask whether it
                     // has left rather than assuming the whole window is needed; the claim above
                     // is held across every poll, so nothing else starts a create in the gap.
-                    awaitStandDownThenCreate(wifiDirect, waitedMs = 0L)
+                    awaitStandDownThenCreate(wifiDirect, waitedMs = 0L, operation)
                 } else {
-                    createWhenRadioIsFree(wifiDirect)
+                    createWhenRadioIsFree(wifiDirect, operation)
                 }
             }
 
@@ -147,7 +150,7 @@ class WifiLauncherNative : WifiLauncher {
 
             // The listeners are open now, so the phone can be woken while the group forms rather
             // than after it. Refused unless there is genuinely nothing else to wait for.
-            handshakeManager?.triggerEarlyWake(service.userExitedAA)
+            handshakeManager?.triggerEarlyWake(service.userExitedAA, operation)
         }
     }
 
@@ -155,19 +158,22 @@ class WifiLauncherNative : WifiLauncher {
      * Creates the group as soon as the station has actually left, or at the ceiling, whichever
      * comes first. The create window stays claimed for every poll.
      */
-    private fun awaitStandDownThenCreate(wifiDirect: WifiDirectManager, waitedMs: Long) {
-        if (manager.active !== this || manager.sharedServices.wifiDirectManager !== wifiDirect) return
+    private fun awaitStandDownThenCreate(wifiDirect: WifiDirectManager, waitedMs: Long, operation: ConnectionOperation) {
+        if (!isCurrent(operation) || manager.sharedServices.wifiDirectManager !== wifiDirect) {
+            wifiDirect.releaseNativeCreateWindow("the arm was withdrawn", operation)
+            return
+        }
 
         val stillAssociated = StationStandDown.isStillAssociated(service)
         when (StationStandDownSettlePolicy.step(stillAssociated, waitedMs)) {
             StationStandDownSettlePolicy.Step.WAIT ->
                 Handler(Looper.getMainLooper()).postDelayed(
-                    { awaitStandDownThenCreate(wifiDirect, waitedMs + StationStandDownSettlePolicy.POLL_MS) },
+                    { awaitStandDownThenCreate(wifiDirect, waitedMs + StationStandDownSettlePolicy.POLL_MS, operation) },
                     StationStandDownSettlePolicy.POLL_MS
                 )
             StationStandDownSettlePolicy.Step.CREATE -> {
                 AppLog.i("WifiLauncherNative: creating the group ${waitedMs}ms after the stand-down (still joined=$stillAssociated).")
-                createWhenRadioIsFree(wifiDirect)
+                createWhenRadioIsFree(wifiDirect, operation)
             }
         }
     }
@@ -178,23 +184,27 @@ class WifiLauncherNative : WifiLauncher {
      * A single-radio chip cannot host a group, or even be asked to switch WiFi on, while its own
      * access point still holds it — and that teardown is started moments earlier on another thread.
      */
-    private fun createWhenRadioIsFree(wifiDirect: WifiDirectManager) {
+    private fun createWhenRadioIsFree(wifiDirect: WifiDirectManager, operation: ConnectionOperation) {
+        if (!isCurrent(operation)) {
+            wifiDirect.releaseNativeCreateWindow("the arm was withdrawn", operation)
+            return
+        }
         val teardown = manager.sharedServices.hotspotTeardown
         if (teardown == null || teardown.isCompleted) {
-            wifiDirect.startNativeAaQuietHost()
+            wifiDirect.startNativeAaQuietHost(operation)
             return
         }
         AppLog.i("WifiLauncherNative: waiting for this unit's hotspot to go down before creating the group.")
         // Claimed before the wait, exactly as the stand-down branch does: tearing the hotspot down
         // cycles the P2P interface, and the ENABLED that follows lands in this gap and starts a
         // second bring-up whose BUSY removes the group this one is about to make.
-        wifiDirect.claimNativeCreateWindow("waiting for this unit's hotspot to go down")
+        wifiDirect.claimNativeCreateWindow("waiting for this unit's hotspot to go down", operation)
         service.serviceScope.launch {
             val freed = withTimeoutOrNull(HOTSPOT_TEARDOWN_CEILING_MS) { teardown.join() } != null
-            if (manager.active !== this@WifiLauncherNative ||
+            if (!isCurrent(operation) ||
                 manager.sharedServices.wifiDirectManager !== wifiDirect
             ) {
-                wifiDirect.releaseNativeCreateWindow("the launcher was replaced while its hotspot went down")
+                wifiDirect.releaseNativeCreateWindow("the arm was withdrawn while its hotspot went down", operation)
                 return@launch
             }
             if (!freed) {
@@ -203,9 +213,12 @@ class WifiLauncherNative : WifiLauncher {
                         "${HOTSPOT_TEARDOWN_CEILING_MS / 1000}s; creating the group anyway."
                 )
             }
-            wifiDirect.startNativeAaQuietHost()
+            wifiDirect.startNativeAaQuietHost(operation)
         }
     }
+
+    private fun isCurrent(operation: ConnectionOperation): Boolean =
+        manager.active === this && App.provide(service).commManager.isCurrent(operation)
 
     override fun stop(seq: WifiLauncherStopSequence) {
         // Before the hotspot goes, not after: SoftApCredentialsProvider watches
@@ -221,7 +234,8 @@ class WifiLauncherNative : WifiLauncher {
             refusedModuleAtStart = false
             // Whatever the mode is switching to, this unit gets its own network back. AapService
             // restores as well, because a force-stop never reaches here at all.
-            StationStandDown.restore(service)
+            armOperation?.let { StationStandDown.restore(service, it) }
+            armOperation = null
         }
     }
 
@@ -314,20 +328,23 @@ class WifiLauncherNative : WifiLauncher {
         }
     }
 
-    private fun setupSoftAp() {
+    private fun setupSoftAp(operation: ConnectionOperation) {
         softApIdentityAssessedKey = null
-        softApCredentialsProvider?.setCredentialsListener { ssid, psk, ip, bssid ->
-            onNativeCredentials(ssid, psk, ip, bssid, softApIdentity(ssid, psk, ip, bssid))
+        softApCredentialsProvider?.setCredentialsListener { ssid, psk, ip, bssid, command ->
+            if (isCurrent(operation) && isCurrent(command))
+                onNativeCredentials(ssid, psk, ip, bssid, softApIdentity(ssid, psk, ip, bssid), command)
         }
-        softApCredentialsProvider?.setInvalidatedListener { handshakeManager?.invalidateCredentials() }
+        softApCredentialsProvider?.setInvalidatedListener { command -> handshakeManager?.invalidateCredentials(command) }
     }
 
-    private fun setupWifiDirect(wifiDirectManager: WifiDirectManager) {
+    private fun setupWifiDirect(wifiDirectManager: WifiDirectManager, operation: ConnectionOperation) {
         val commManager = App.provide(service).commManager
 
-        wifiDirectManager.setCredentialsListener { ssid, psk, ip, bssid, identity ->
-            noteAdvertisedGroupAddressMoved(ssid, psk, ip)
-            onNativeCredentials(ssid, psk, ip, bssid, identity)
+        wifiDirectManager.setCredentialsListener { ssid, psk, ip, bssid, identity, command ->
+            if (isCurrent(operation) && isCurrent(command)) {
+                noteAdvertisedGroupAddressMoved(ssid, psk, ip)
+                onNativeCredentials(ssid, psk, ip, bssid, identity, command)
+            }
         }
 
         // Settling counts as in-flight here: isHandshakeInFlight() goes false the instant Type 3
@@ -349,7 +366,7 @@ class WifiLauncherNative : WifiLauncher {
         wifiDirectManager.setUnansweredPokeCountProvider {
             handshakeManager?.unansweredPokeCount() ?: 0
         }
-        wifiDirectManager.setNativeGroupInvalidatedListener { handshakeManager?.invalidateCredentials() }
+        wifiDirectManager.setNativeGroupInvalidatedListener { command -> handshakeManager?.invalidateCredentials(command) }
     }
 
     /**
@@ -386,9 +403,10 @@ class WifiLauncherNative : WifiLauncher {
      * [wakePhone] is false when the phone ended the session itself, which is the one case where
      * waking it pulls it back against its own choice.
      */
-    fun rearmAfterSessionEnd(wakePhone: Boolean) {
+    fun rearmAfterSessionEnd(wakePhone: Boolean, operation: ConnectionOperation) {
+        if (!isCurrent(operation)) return
         handshakeManager?.noteSessionEnded(wakePhone)
-        reopenListeners()
+        reopenListeners(operation)
     }
 
     /**
@@ -400,40 +418,43 @@ class WifiLauncherNative : WifiLauncher {
      * TCP port is checked first: it is what the phone dials, and nothing else looks at it between
      * sessions.
      */
-    fun reopenListeners() {
+    fun reopenListeners(operation: ConnectionOperation) {
+        if (!isCurrent(operation)) return
         manager.noteRearm()
-        manager.sharedServices.startWirelessServer(this)
-        handshakeManager?.rearmForNextSession()
-        triggerWifiDirectRefresh()
+        manager.sharedServices.startWirelessServer(this, operation)
+        handshakeManager?.rearmForNextSession(operation)
+        triggerWifiDirectRefresh(operation)
     }
 
     /**
      * After a sleep: checks the TCP port and re-reads the network, and nothing else. Unlike
      * [reopenListeners] it keeps the driver-selection and handshake state a user may have set.
      */
-    fun refreshAfterWake() {
-        manager.sharedServices.startWirelessServer(this)
-        triggerWifiDirectRefresh()
+    fun refreshAfterWake(operation: ConnectionOperation) {
+        if (!isCurrent(operation)) return
+        manager.sharedServices.startWirelessServer(this, operation)
+        triggerWifiDirectRefresh(operation)
     }
 
     /**
      * Triggers a refresh of the WiFi Direct "quiet host" state.
      * Called by NativeAaHandshakeManager if it's waiting for credentials that haven't arrived yet.
      */
-    fun triggerWifiDirectRefresh() {
+    fun triggerWifiDirectRefresh(operation: ConnectionOperation) {
+        if (!isCurrent(operation)) return
         if (Looper.myLooper() !== Looper.getMainLooper()) {
-            service.serviceScope.launch(Dispatchers.Main.immediate) { triggerWifiDirectRefresh() }
+            service.serviceScope.launch(Dispatchers.Main.immediate) { triggerWifiDirectRefresh(operation) }
             return
         }
         if (manager.active !== this) return
         if (this.strategy == NativeStrategy.HOTSPOT) {
             AppLog.i("AapService: Access point refresh requested.")
-            softApCredentialsProvider?.refresh()
+            softApCredentialsProvider?.refresh(operation)
 
         } else {
             // Read again, not remade: see WifiDirectManager.refreshNativeCredentials.
             AppLog.i("AapService: WiFi Direct credential refresh requested.")
-            manager.sharedServices.wifiDirectManager?.refreshNativeCredentials()
+            manager.sharedServices.wifiDirectManager?.refreshNativeCredentials(operation)
         }
     }
 
@@ -447,7 +468,9 @@ class WifiLauncherNative : WifiLauncher {
         ip: String,
         bssid: String,
         identity: GroupIdentityStability,
+        operation: ConnectionOperation,
     ) {
+        if (!isCurrent(operation)) return
         val commManager = App.provide(service).commManager
 
         if (settings.wifiConnectionMode != WifiLauncherMode.NATIVE) {
@@ -456,7 +479,7 @@ class WifiLauncherNative : WifiLauncher {
         }
 
         AppLog.i("AapService: Received WiFi credentials from manager (SSID=$ssid, IP=$ip). Updating and Triggering Poke.")
-        handshakeManager?.updateWifiCredentials(ssid, psk, ip, bssid, identity)
+        handshakeManager?.updateWifiCredentials(ssid, psk, ip, bssid, identity, operation)
 
         if (commManager.isConnected ||
             commManager.connectionState.value is CommManager.ConnectionState.Connecting) {
@@ -472,7 +495,7 @@ class WifiLauncherNative : WifiLauncher {
         } else if (!service.userExitedAA) {
             if (handshakeManager?.reportsWake() != false) ConnectionStageTracker.report(ConnectionStage.WAKING_PHONE)
             handshakeManager?.reportHctNetworkReady()
-            handshakeManager?.triggerPoke()
+            handshakeManager?.triggerPoke(operation)
         } else {
             AppLog.i("AapService: userExitedAA is true. Skipping auto-poke.")
         }

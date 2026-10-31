@@ -124,7 +124,7 @@ class SelfLauncherManager(
     fun start(
         settingsRestart: CommManager.ConnectionState.Disconnected? = null,
         needsDummyVpn: Boolean = false,
-        ticket: Long = App.provide(service).commManager.appConnectionTicket(),
+        ticket: Long,
     ) {
         val commManager = App.provide(service).commManager
         if (!commManager.acceptsAppConnectionTicket(ticket)) return

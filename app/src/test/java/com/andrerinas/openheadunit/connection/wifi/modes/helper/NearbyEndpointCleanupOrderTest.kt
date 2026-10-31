@@ -1,5 +1,7 @@
 package com.andrerinas.openheadunit.connection.wifi.modes.helper
 
+import com.andrerinas.openheadunit.connection.ConnectionOperation
+
 import android.content.Context
 import com.andrerinas.openheadunit.connection.AppExitPolicy
 import com.andrerinas.openheadunit.connection.CommManager
@@ -152,8 +154,8 @@ class NearbyEndpointCleanupOrderTest {
             assertNull("old attempt was not detached before cleanup", h.guard.current())
 
             val fresh = h.comm.appConnectionTicket()
-            h.nearby.connectToEndpoint("E", fresh)
-            h.nearby.connectToEndpoint("E", fresh) // Same-epoch duplicate stays coalesced.
+            h.nearby.connectToEndpoint("E", ConnectionOperation(fresh, null))
+            h.nearby.connectToEndpoint("E", ConnectionOperation(fresh, null)) // Same-epoch duplicate stays coalesced.
             val replacement = h.guard.current()
             assertNotNull("fresh request was not admitted", replacement)
             assertNotSame(old, replacement)
@@ -205,7 +207,7 @@ class NearbyEndpointCleanupOrderTest {
             // The wireless scan command replaces the launcher: stop the old manager, then the new
             // manager's discovery finds the same endpoint.
             previous.nearby.stop()
-            replacementManager.nearby.connectToEndpoint("E", replacementManager.comm.appConnectionTicket())
+            replacementManager.nearby.connectToEndpoint("E", ConnectionOperation(replacementManager.comm.appConnectionTicket(), null))
             val fresh = replacementManager.guard.current()
             assertNotNull("fresh request was not admitted", fresh)
 
@@ -229,7 +231,7 @@ class NearbyEndpointCleanupOrderTest {
     @Test fun `ordinary request failure still disconnects its endpoint`() {
         val h = harness()
         try {
-            h.nearby.connectToEndpoint("E", h.comm.appConnectionTicket())
+            h.nearby.connectToEndpoint("E", ConnectionOperation(h.comm.appConnectionTicket(), null))
             assertEquals(true, get(h.nearby, "isConnecting"))
             h.sdk.requestFailures.single().onFailure(Exception("rejected"))
             assertEquals(listOf("request:E", "disconnect:E"), h.sdk.calls.toList())
@@ -257,9 +259,9 @@ class NearbyEndpointCleanupOrderTest {
         val h = harness()
         try {
             val ticket = h.comm.appConnectionTicket()
-            h.nearby.connectToEndpoint("E", ticket)
+            h.nearby.connectToEndpoint("E", ConnectionOperation(ticket, null))
             val attempt = h.guard.current()
-            h.nearby.connectToEndpoint("E", ticket)
+            h.nearby.connectToEndpoint("E", ConnectionOperation(ticket, null))
             assertEquals(listOf("request:E"), h.sdk.calls.toList())
             assertSame(attempt, h.guard.current())
         } finally { h.scope.cancel() }

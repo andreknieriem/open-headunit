@@ -146,7 +146,7 @@ class UsbRecheckAuthorityTest {
         /** Publishes [claim]'s live attempt in the given non-terminal state, as connect() does. */
         fun liveAttempt(claim: ConnectionArbiter.Claim) {
             CommManager::class.java.getDeclaredField("connectionAttempt").apply { isAccessible = true }
-                .set(manager, CommManager.Attempt(claim))
+                .set(manager, CommManager.Attempt(CommManager.ConnectionRequest(manager.appConnectionTicket(), claim, null, null, null)))
         }
 
         /** The launcher's production scan entry, as an attach or wake asks for it. */
@@ -171,8 +171,8 @@ class UsbRecheckAuthorityTest {
         /** A user exit that keeps the service, or Stop followed by Open; anything else is neither. */
         fun end(end: String) {
             when (end) {
-                "exit" -> manager.disconnect(sendByeBye = false, isUserExit = true, honorKillOnDisconnect = false)
-                "stop" -> { manager.requestExplicitAppExit(killProcess = false); manager.onAppRelaunched() }
+                "exit" -> manager.disconnect(com.andrerinas.openheadunit.connection.ConnectionOperation(manager.appConnectionTicket(), null), sendByeBye = false, isUserExit = true, honorKillOnDisconnect = false)
+                "stop" -> { manager.requestExplicitAppExit(manager.appConnectionTicket(), killProcess = false); manager.onAppRelaunched() }
             }
         }
     }
@@ -213,12 +213,12 @@ class UsbRecheckAuthorityTest {
             h.liveAttempt(claim)
             h.scan()
             assertFalse(h.usbAttemptStarted())
-            h.manager.disconnect(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
+            h.manager.disconnect(com.andrerinas.openheadunit.connection.ConnectionOperation(h.manager.appConnectionTicket(), null), sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
             h.settle()
             ConnectionArbiter.release(claim, sessionFormed = false)
             val handed = h.usbGiveBacks()
             assertEquals("A's end did not hand its deferred USB check on", 1, handed.size)
-            if (exit) h.manager.disconnect(sendByeBye = false, isUserExit = true, honorKillOnDisconnect = false)
+            if (exit) h.manager.disconnect(com.andrerinas.openheadunit.connection.ConnectionOperation(h.manager.appConnectionTicket(), null), sendByeBye = false, isUserExit = true, honorKillOnDisconnect = false)
             h.deliver(handed.single())
             // Recorded after every production frame has returned.
             val started = h.usbAttemptStarted()
@@ -236,7 +236,7 @@ class UsbRecheckAuthorityTest {
                 h.liveAttempt(checkNotNull(ConnectionArbiter.claim(Tier.WIRELESS_HANDSHAKE, Owner.WIRELESS_STACK, "A")))
                 h.scan()
                 h.states.value = ConnectionState.HandshakeComplete
-                h.manager.disconnect(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false, reason = end)
+                h.manager.disconnect(com.andrerinas.openheadunit.connection.ConnectionOperation(h.manager.appConnectionTicket(), null), sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false, reason = end)
                 h.settle()
                 // Recorded after every production frame has returned.
                 val usbGiveBacks = h.usbGiveBacks().size
@@ -261,7 +261,7 @@ class UsbRecheckAuthorityTest {
             ConnectionArbiter.release(user, sessionFormed = false)
             val handed = h.usbGiveBacks()
             assertEquals("the refused USB scan was not given back", 1, handed.size)
-            if (exit) h.manager.disconnect(sendByeBye = false, isUserExit = true, honorKillOnDisconnect = false)
+            if (exit) h.manager.disconnect(com.andrerinas.openheadunit.connection.ConnectionOperation(h.manager.appConnectionTicket(), null), sendByeBye = false, isUserExit = true, honorKillOnDisconnect = false)
             h.deliver(handed.single())
             // Recorded after every production frame has returned.
             val started = h.usbAttemptStarted()
@@ -331,7 +331,7 @@ class UsbRecheckAuthorityTest {
                 val claim = checkNotNull(ConnectionArbiter.claim(Tier.WIRELESS_HANDSHAKE, Owner.WIRELESS_STACK, "A"))
                 h.liveAttempt(claim)
                 h.scan()
-                h.manager.disconnect(sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
+                h.manager.disconnect(com.andrerinas.openheadunit.connection.ConnectionOperation(h.manager.appConnectionTicket(), null), sendByeBye = false, isUserExit = false, honorKillOnDisconnect = false)
                 h.settle()
                 ConnectionArbiter.release(claim, sessionFormed = false)
                 val handed = h.usbGiveBacks()
@@ -339,8 +339,8 @@ class UsbRecheckAuthorityTest {
                 h.deliver(handed.single())
                 val dialog = checkNotNull(dialogs.raised().singleOrNull()) { "the delivered USB check raised no permission dialog" }
                 when (end) {
-                    "exit" -> h.manager.disconnect(sendByeBye = false, isUserExit = true, honorKillOnDisconnect = false)
-                    "stop" -> { h.manager.requestExplicitAppExit(killProcess = false); h.manager.onAppRelaunched() }
+                    "exit" -> h.manager.disconnect(com.andrerinas.openheadunit.connection.ConnectionOperation(h.manager.appConnectionTicket(), null), sendByeBye = false, isUserExit = true, honorKillOnDisconnect = false)
+                    "stop" -> { h.manager.requestExplicitAppExit(h.manager.appConnectionTicket(), killProcess = false); h.manager.onAppRelaunched() }
                 }
                 // The user grants the dialog late.
                 dialogs.answer(dialog, granted = true)
@@ -366,7 +366,7 @@ class UsbRecheckAuthorityTest {
                 h.scan()
                 val raised = dialogs.raised()
                 assertEquals("two scans did not raise two stacked dialogs", 2, raised.size)
-                if (exit) h.manager.disconnect(sendByeBye = false, isUserExit = true, honorKillOnDisconnect = false)
+                if (exit) h.manager.disconnect(com.andrerinas.openheadunit.connection.ConnectionOperation(h.manager.appConnectionTicket(), null), sendByeBye = false, isUserExit = true, honorKillOnDisconnect = false)
                 dialogs.answer(raised[1], granted = false)
                 dialogs.answer(raised[0], granted = true)
                 // Recorded after every production frame has returned.

@@ -56,6 +56,8 @@ class AutomationActivity : AppCompatActivity() {
         }.toMap()
 
     private fun runCommand(action: String, overrides: Map<String, String>) {
+        val component = App.provide(this)
+        val ticket = component.commManager.appConnectionTicket()
         val effects = AutomationCommandPolicy.effectsFor(
             action,
             IntentExtras(intent, overrides),
@@ -64,9 +66,8 @@ class AutomationActivity : AppCompatActivity() {
                 screenOffGranted = ScreenPower.hasLockGrant(this)
             ),
             acceptStop = {
-                val component = App.provide(this)
                 component.commManager.requestExplicitAppExit(
-                    component.settings.killOnDisconnect && component.commManager.isConnected).id
+                    ticket, component.settings.killOnDisconnect && component.commManager.isConnected)?.id
             }
         )
         AutomationEffectRunner.run(this, effects, JSONObject())

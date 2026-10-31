@@ -6,6 +6,7 @@ import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import android.os.Build
+import com.andrerinas.openheadunit.connection.ConnectionAdmission
 import com.andrerinas.openheadunit.connection.wifi.modes.helper.NearbySocket
 import com.andrerinas.openheadunit.utils.AppLog
 import kotlinx.coroutines.Dispatchers
@@ -24,15 +25,18 @@ import java.util.concurrent.TimeUnit
 class SocketProjectionConnection(
     private val ip: String,
     private val port: Int,
-    private val context: Context) :
+    private val context: Context,
+    private val admission: ConnectionAdmission) :
     ProjectionConnection {
 
-    private var output: OutputStream? = null
-    private var input: DataInputStream? = null
+    private val stateLock = Any()
+    @Volatile private var retired = false
+    @Volatile private var output: OutputStream? = null
+    @Volatile private var input: DataInputStream? = null
     private var transport: Socket
     // Socket#isConnected might return true, even if server has closed the connection
     // Only way to capture it is to check for exceptions, E.g. "SocketException: Broken pipe"
-    private var transportBroken: Boolean = false
+    @Volatile private var transportBroken: Boolean = false
     // Only true for genuine Nearby tunnels, where the handshake's AA-16.4+ settle delay
     // and stale-byte drain must be skipped because every byte from the start matters.
     // Regular WirelessServer-accepted sockets (Hotspot/WiFi Direct/Headunit Server) and
@@ -43,25 +47,18 @@ class SocketProjectionConnection(
         transport = Socket()
     }
 
-    constructor(socket: Socket, context: Context) : this(socket.inetAddress.hostAddress ?: "", socket.port, context) {
+    constructor(socket: Socket, context: Context, admission: ConnectionAdmission) :
+        this(socket.inetAddress.hostAddress ?: "", socket.port, context, admission) {
         this.transport = socket
         this.singleMessage = socket is NearbySocket
-        // Pre-connected sockets (like NearbySocket) need their streams initialized immediately
-        // because connect() might not be called or might be bypassed.
-        if (socket.isConnected) {
-            try {
-                this.input = DataInputStream(socket.getInputStream())
-                this.output = socket.getOutputStream()
-            } catch (e: IOException) {
-                AppLog.e("Failed to get streams from pre-connected socket", e)
-            }
-        }
+        // Even an already-connected socket publishes its streams only through connect(),
+        // while the original request and this local candidate still own that effect.
     }
 
     override val type = ProjectionConnection.Type.WIFI
 
     override val isConnected: Boolean
-        get() = transport.isConnected && !transportBroken
+        get() = transport.isConnected && !transportBroken && !retired
 
     // Nearby exposes a synthetic loopback address for a remote phone. Retain the route on
     // this connection object so a later attempted endpoint cannot change session ownership.
@@ -72,8 +69,11 @@ class SocketProjectionConnection(
         get() = singleMessage
 
     override suspend fun connect(): Boolean = withContext(Dispatchers.IO) {
+        val candidate = transport
+        var published = false
         try {
-            if (!transport.isConnected) {
+            if (!mayOpen(candidate)) return@withContext false
+            if (!candidate.isConnected) {
                 // Loopback never leaves the device, so there is no interface to choose for it,
                 // and the search below is not free: with no WiFi present it waits out its full
                 // timeout on every attempt. See LoopbackBindPolicy.
@@ -110,6 +110,7 @@ class SocketProjectionConnection(
                                     }
                                 }
                                 try {
+                                    if (!mayOpen(candidate)) return@withContext false
                                     cm.registerNetworkCallback(request, callback)
                                     latch.await(1500, TimeUnit.MILLISECONDS)
                                 } finally {
@@ -143,7 +144,8 @@ class SocketProjectionConnection(
 
                         if (netToBind != null) {
                             try {
-                                netToBind.bindSocket(transport)
+                                if (!mayOpen(candidate)) return@withContext false
+                                netToBind.bindSocket(candidate)
                                 AppLog.i("Bound socket to network: $netToBind")
                             } catch (e: Exception) {
                                 AppLog.w("Failed to bind socket to network $netToBind", e)
@@ -167,6 +169,7 @@ class SocketProjectionConnection(
                                     Int::class.javaPrimitiveType,
                                     Int::class.javaPrimitiveType
                                 )
+                                if (!mayOpen(candidate)) return@withContext false
                                 m.invoke(cm, ConnectivityManager.TYPE_WIFI, ipInt)
                                 AppLog.i("Legacy: Requested route to host $ip")
                             } catch (e: Exception) {
@@ -176,10 +179,15 @@ class SocketProjectionConnection(
                     }
                 }
 
-                applyLowLatencySocketOptions(beforeConnect = true)
+                if (!mayOpen(candidate)) return@withContext false
+                applyLowLatencySocketOptions(candidate, beforeConnect = true)
                 // Chinese Headunit Mediatek Correction
                 try {
-                    transport.connect(InetSocketAddress(ip, port), 5000)
+                    // Network discovery, DNS and binding can all block before the first dial.
+                    // None grants a revoked request permission to start a later TCP connection.
+                    val endpoint = InetSocketAddress(ip, port)
+                    if (!mayOpen(candidate)) return@withContext false
+                    candidate.connect(endpoint, 5000)
                 } catch (e: Throwable) {
                     val errorMessage = e.message ?: e.toString()
                     if (errorMessage.contains("com.mediatek.cta.CtaHttp") || errorMessage.contains("CtaHttp")) {
@@ -193,31 +201,57 @@ class SocketProjectionConnection(
             // WiFi needs tolerance for retransmissions,
             // power-save wakes, and bufferbloat. 1s was causing readFully to timeout
             // mid-header, desynchronizing the stream ("Failed to read full header").
-            transport.soTimeout = 10000
-            applyLowLatencySocketOptions(beforeConnect = false)
+            if (!mayOpen(candidate)) return@withContext false
+            candidate.soTimeout = 10000
+            applyLowLatencySocketOptions(candidate, beforeConnect = false)
             // Raw DataInputStream — no BufferedInputStream wrapper.
             // BufferedInputStream + readFully + timeout = internal buffer state corruption.
-            input = DataInputStream(transport.getInputStream())
-            output = transport.getOutputStream()
-            return@withContext true
+            val openedInput = DataInputStream(candidate.getInputStream())
+            val openedOutput = candidate.getOutputStream()
+            admission.run {
+                synchronized(stateLock) {
+                    if (!retired && transport === candidate) {
+                        input = openedInput
+                        output = openedOutput
+                        published = true
+                    }
+                }
+            }
+            return@withContext published
         } catch (e: IOException) {
             AppLog.e(e)
             return@withContext false
+        } finally {
+            if (!published) retire(candidate)
         }
     }
 
-    override fun disconnect() {
-        if (transport.isConnected) {
-            try {
-                transport.close()
-            } catch (e: IOException) {
-                AppLog.e(e)
+    /** Lifecycle -> producer/arbiter -> this candidate; external socket calls stay outside. */
+    private fun mayOpen(candidate: Socket): Boolean {
+        var current = false
+        admission.run { synchronized(stateLock) { current = !retired && transport === candidate } }
+        return current
+    }
+
+    private fun retire(candidate: Socket) {
+        val close = synchronized(stateLock) {
+            if (retired || transport !== candidate) false else {
+                retired = true
+                input = null
+                output = null
+                true
             }
-
         }
-        input = null
-        output = null
+        // An unconnected socket may be waiting for a network or inside connect(). Closing it
+        // also retires those paths; a late result can never republish this candidate's streams.
+        if (close) try {
+            candidate.close()
+        } catch (e: IOException) {
+            AppLog.e(e)
+        }
     }
+
+    override fun disconnect() = retire(transport)
 
     override fun sendBlocking(buf: ByteArray, length: Int, timeout: Int): Int {
         val out = output ?: return -1
@@ -275,24 +309,24 @@ class SocketProjectionConnection(
         }
     }
 
-    private fun applyLowLatencySocketOptions(beforeConnect: Boolean) {
-        try { transport.tcpNoDelay = true } catch (_: Exception) {}
-        try { transport.keepAlive = true } catch (_: Exception) {}
-        try { transport.reuseAddress = true } catch (_: Exception) {}
-        try { transport.trafficClass = 0x10 } catch (_: Exception) {} // IPTOS_LOWDELAY
-        try { transport.setPerformancePreferences(0, 2, 1) } catch (_: Exception) {}
+    private fun applyLowLatencySocketOptions(candidate: Socket, beforeConnect: Boolean) {
+        try { candidate.tcpNoDelay = true } catch (_: Exception) {}
+        try { candidate.keepAlive = true } catch (_: Exception) {}
+        try { candidate.reuseAddress = true } catch (_: Exception) {}
+        try { candidate.trafficClass = 0x10 } catch (_: Exception) {} // IPTOS_LOWDELAY
+        try { candidate.setPerformancePreferences(0, 2, 1) } catch (_: Exception) {}
 
         // Keep TCP queues bounded for projection. Large default buffers can hide Wi-Fi
         // jitter but also allow old video data to accumulate before the decoder.
-        try { transport.receiveBufferSize = LOW_LATENCY_SOCKET_BUFFER_BYTES } catch (_: Exception) {}
-        try { transport.sendBufferSize = LOW_LATENCY_SOCKET_BUFFER_BYTES } catch (_: Exception) {}
+        try { candidate.receiveBufferSize = LOW_LATENCY_SOCKET_BUFFER_BYTES } catch (_: Exception) {}
+        try { candidate.sendBufferSize = LOW_LATENCY_SOCKET_BUFFER_BYTES } catch (_: Exception) {}
 
         if (!beforeConnect) {
             AppLog.i(
                 "Socket low-latency options: tcpNoDelay=%s, recvBuf=%d, sendBuf=%d",
-                transport.tcpNoDelay,
-                transport.receiveBufferSize,
-                transport.sendBufferSize
+                candidate.tcpNoDelay,
+                candidate.receiveBufferSize,
+                candidate.sendBufferSize
             )
         }
     }

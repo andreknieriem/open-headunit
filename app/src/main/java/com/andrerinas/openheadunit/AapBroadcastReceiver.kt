@@ -13,8 +13,6 @@ import com.andrerinas.openheadunit.contract.KeyIntent
 import com.andrerinas.openheadunit.contract.LocationUpdateIntent
 import com.andrerinas.openheadunit.contract.MediaKeyIntent
 import com.andrerinas.openheadunit.contract.ProjectionActivityRequest
-import android.os.UserManager
-import android.os.Build
 
 class AapBroadcastReceiver : BroadcastReceiver() {
 
@@ -29,8 +27,7 @@ class AapBroadcastReceiver : BroadcastReceiver() {
     }
 
     override fun onReceive(context: Context, intent: Intent) {
-        val isLocked = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && 
-                      !(context.getSystemService(Context.USER_SERVICE) as UserManager).isUserUnlocked
+        val isLocked = !App.isUserUnlocked(context)
         
         if (isLocked) return
 

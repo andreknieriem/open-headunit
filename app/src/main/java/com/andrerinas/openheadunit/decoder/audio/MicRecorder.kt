@@ -134,8 +134,8 @@ class MicRecorder(
          * grant at service start.
          *
          * Held here rather than passed in because the service is a singleton and a [MicRecorder]
-         * is not: transports come and go within one service. Null outside a running service, where
-         * there is nothing to claim and capture proceeds as it always did.
+         * is not: transports come and go within one service. Null outside a running service, when
+         * queued capture must decline even if transport teardown has not retired its Open yet.
          */
         @Volatile
         @JvmStatic
@@ -305,8 +305,8 @@ class MicRecorder(
         // Android 14 refuses the microphone foreground-service type to a service started in the
         // background, so it is claimed here instead, where the projection is on screen. Declining
         // the phone's request is the right answer to a refusal; capturing without the type is not.
-        val claim = foregroundClaim
-        if (claim != null && !claim.claim()) return ERROR_NO_FOREGROUND_TYPE
+        val claim = foregroundClaim ?: return ERROR_NO_FOREGROUND_TYPE
+        if (!claim.claim()) return ERROR_NO_FOREGROUND_TYPE
         claimedForeground = claim
 
         val configuredSource = getAudioSource(settings.micInputSource)

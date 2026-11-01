@@ -15,10 +15,10 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.andrerinas.openheadunit.R
-import com.andrerinas.openheadunit.connection.esp32.Esp32RelayClient
-import com.andrerinas.openheadunit.connection.esp32.Esp32RelayProtocol
-import com.andrerinas.openheadunit.connection.esp32.Esp32RelaySession
-import com.andrerinas.openheadunit.connection.esp32.Esp32RelayStore
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.esp32.Esp32RelayClient
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.esp32.Esp32RelayProtocol
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.esp32.Esp32RelaySession
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.esp32.Esp32RelayStore
 import com.andrerinas.openheadunit.main.settings.SettingItem
 import com.andrerinas.openheadunit.main.settings.SettingsAdapter
 import com.google.android.material.appbar.MaterialToolbar

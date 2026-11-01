@@ -12,8 +12,8 @@ import android.os.Build
 import android.os.IBinder
 import androidx.core.content.ContextCompat
 import com.andrerinas.openheadunit.App
-import com.andrerinas.openheadunit.connection.esp32.Esp32RelayProtocol
-import com.andrerinas.openheadunit.connection.esp32.Esp32RelayStore
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.esp32.Esp32RelayProtocol
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.esp32.Esp32RelayStore
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.DriverCandidatePolicy
 import java.lang.reflect.Constructor
 import java.lang.reflect.Method

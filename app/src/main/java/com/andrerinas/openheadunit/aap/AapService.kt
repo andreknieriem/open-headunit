@@ -95,7 +95,7 @@ import android.view.WindowManager
 import com.andrerinas.openheadunit.connection.self.SelfLauncherManager
 import com.andrerinas.openheadunit.connection.self.SelfModeDisconnectPolicy
 import com.andrerinas.openheadunit.connection.usb.UsbLauncherManager
-import com.andrerinas.openheadunit.connection.esp32.Esp32RelaySession
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.esp32.Esp32RelaySession
 import com.andrerinas.openheadunit.connection.wifi.LinkLossTeardownPolicy
 import com.andrerinas.openheadunit.connection.wifi.LinkLossTrigger
 import com.andrerinas.openheadunit.connection.wifi.modes.helper.HelperStrategy

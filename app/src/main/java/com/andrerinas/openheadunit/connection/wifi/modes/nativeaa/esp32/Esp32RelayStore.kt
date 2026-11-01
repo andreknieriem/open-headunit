@@ -1,4 +1,4 @@
-package com.andrerinas.openheadunit.connection.esp32
+package com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.esp32
 
 import android.content.Context
 

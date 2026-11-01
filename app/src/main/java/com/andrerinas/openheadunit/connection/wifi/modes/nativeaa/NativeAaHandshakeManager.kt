@@ -32,9 +32,9 @@ import com.andrerinas.openheadunit.utils.BluetoothAddressSeedPolicy
 import com.andrerinas.openheadunit.utils.BluetoothHelper
 import com.andrerinas.openheadunit.utils.bluetooth.BluetoothPeerDiscovery
 import com.andrerinas.openheadunit.aap.protocol.proto.Wireless
-import com.andrerinas.openheadunit.connection.esp32.Esp32RelaySession
-import com.andrerinas.openheadunit.connection.esp32.Esp32RelayStore
-import com.andrerinas.openheadunit.connection.esp32.Esp32RelayCarrier
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.esp32.Esp32RelaySession
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.esp32.Esp32RelayStore
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.esp32.Esp32RelayCarrier
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.blink.BlinkAaCarrier
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.blink.BlinkAutoSerialChannel
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.blink.BlinkRefusal

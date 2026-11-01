@@ -9,6 +9,7 @@ import android.hardware.usb.UsbDevice
 import android.location.Location
 import android.media.AudioManager
 import android.os.Build
+import com.andrerinas.openheadunit.aap.DimPolicy
 import com.andrerinas.openheadunit.input.KeyCode
 import com.andrerinas.openheadunit.main.FavoriteAppsPolicy
 import com.andrerinas.openheadunit.main.FavoriteTarget
@@ -550,15 +551,59 @@ class Settings(private val context: Context) {
             ?: GestureAction.TOGGLE_FULLSCREEN
         set(value) { prefs.edit().putInt("right-two-finger-gesture", value.value).apply() }
 
-    var downTwoFingerGesture: GestureAction
-        get() = GestureAction.fromInt(prefs.getInt("down-two-finger-gesture", GestureAction.DISABLED.value))
-            ?: GestureAction.DISABLED
-        set(value) { prefs.edit().putInt("down-two-finger-gesture", value.value).apply() }
-
     var longPressTwoFingerGesture: GestureAction
         get() = GestureAction.fromInt(prefs.getInt("long-press-two-finger-gesture", GestureAction.DISABLED.value))
             ?: GestureAction.DISABLED
         set(value) { prefs.edit().putInt("long-press-two-finger-gesture", value.value).apply() }
+
+    var leftTapTwoFingerGesture: GestureAction
+        get() = GestureAction.fromInt(prefs.getInt("left-tap-two-finger-gesture", GestureAction.DIM_SCREEN.value))
+            ?: GestureAction.DIM_SCREEN
+        set(value) { prefs.edit().putInt("left-tap-two-finger-gesture", value.value).apply() }
+
+    var rightTapTwoFingerGesture: GestureAction
+        get() = GestureAction.fromInt(prefs.getInt("right-tap-two-finger-gesture", GestureAction.NIGHT_OVERLAY.value))
+            ?: GestureAction.NIGHT_OVERLAY
+        set(value) { prefs.edit().putInt("right-tap-two-finger-gesture", value.value).apply() }
+
+    var gestureEdgeZone: GestureEdgeZone
+        get() = GestureEdgeZone.fromInt(prefs.getInt("gesture-edge-zone", GestureEdgeZone.NORMAL.value))
+            ?: GestureEdgeZone.NORMAL
+        set(value) { prefs.edit().putInt("gesture-edge-zone", value.value).apply() }
+
+    /** Removes the stored values so the defaults stay live. */
+    fun resetGestureSettings() {
+        prefs.edit().apply {
+            for (key in GESTURE_KEYS) remove(key)
+        }.apply()
+    }
+
+    var dimOpacityPercent: Int
+        get() = prefs.getInt("dim-opacity-percent", DimPolicy.DEFAULT_PERCENT)
+            .takeIf { it in DimPolicy.MIN_PERCENT..DimPolicy.MAX_PERCENT } ?: DimPolicy.DEFAULT_PERCENT
+        set(value) { prefs.edit().putInt("dim-opacity-percent", value).apply() }
+
+    var nightOverlayTextSize: NightOverlayTextSize
+        get() = NightOverlayTextSize.fromInt(prefs.getInt("night-overlay-text-size", NightOverlayTextSize.NORMAL.value))
+            ?: NightOverlayTextSize.NORMAL
+        set(value) { prefs.edit().putInt("night-overlay-text-size", value.value).apply() }
+
+    var nightOverlayShowClock: Boolean
+        get() = prefs.getBoolean("night-overlay-show-clock", true)
+        set(value) { prefs.edit().putBoolean("night-overlay-show-clock", value).apply() }
+
+    var nightOverlayShowNavigation: Boolean
+        get() = prefs.getBoolean("night-overlay-show-navigation", true)
+        set(value) { prefs.edit().putBoolean("night-overlay-show-navigation", value).apply() }
+
+    var nightOverlayShowTrack: Boolean
+        get() = prefs.getBoolean("night-overlay-show-track", true)
+        set(value) { prefs.edit().putBoolean("night-overlay-show-track", value).apply() }
+
+    var nightOverlayBackground: NightOverlayBackground
+        get() = NightOverlayBackground.fromInt(prefs.getInt("night-overlay-background", NightOverlayBackground.BLACK.value))
+            ?: NightOverlayBackground.BLACK
+        set(value) { prefs.edit().putInt("night-overlay-background", value.value).apply() }
 
     @Deprecated("Use fullscreenMode instead")
     var startInFullscreenMode: Boolean
@@ -1908,6 +1953,14 @@ class Settings(private val context: Context) {
     companion object {
         const val PREFS_NAME = "settings"
 
+        private val GESTURE_KEYS = listOf(
+            "left-two-finger-gesture", "right-two-finger-gesture", "long-press-two-finger-gesture",
+            "left-tap-two-finger-gesture", "right-tap-two-finger-gesture", "gesture-edge-zone",
+            "dim-opacity-percent", "night-overlay-text-size",
+            "night-overlay-show-clock", "night-overlay-show-navigation", "night-overlay-show-track",
+            "night-overlay-background"
+        )
+
         const val CONNECTION_TYPE_WIFI = "wifi"
         const val CONNECTION_TYPE_USB = "usb"
         const val CONNECTION_TYPE_NEARBY = "nearby"
@@ -2324,10 +2377,44 @@ class Settings(private val context: Context) {
         DISABLED(0),
         EXIT_DIALOG(1),
         TOGGLE_FULLSCREEN(2),
-        NIGHT_OVERLAY(3);
+        NIGHT_OVERLAY(3),
+        DIM_SCREEN(4);
 
         companion object {
             private val map = values().associateBy(GestureAction::value)
+            fun fromInt(value: Int) = map[value]
+        }
+    }
+
+    /** Width of the zone at each side where a two-finger gesture may start. */
+    enum class GestureEdgeZone(val value: Int, val dp: Float) {
+        NARROW(0, 48f),
+        NORMAL(1, 64f),
+        WIDE(2, 96f);
+
+        companion object {
+            private val map = values().associateBy(GestureEdgeZone::value)
+            fun fromInt(value: Int) = map[value]
+        }
+    }
+
+    enum class NightOverlayTextSize(val value: Int) {
+        SMALL(0),
+        NORMAL(1),
+        LARGE(2);
+
+        companion object {
+            private val map = values().associateBy(NightOverlayTextSize::value)
+            fun fromInt(value: Int) = map[value]
+        }
+    }
+
+    enum class NightOverlayBackground(val value: Int) {
+        BLACK(0),
+        DARK_GRAY(1);
+
+        companion object {
+            private val map = values().associateBy(NightOverlayBackground::value)
             fun fromInt(value: Int) = map[value]
         }
     }

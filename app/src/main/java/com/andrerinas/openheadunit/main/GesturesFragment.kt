@@ -48,10 +48,7 @@ class GesturesFragment : Fragment() {
         resetItem.setShowAsAction(android.view.MenuItem.SHOW_AS_ACTION_ALWAYS)
         resetItem.setActionView(R.layout.layout_reset_button)
         resetItem.actionView?.findViewById<MaterialButton>(R.id.reset_button_widget)?.setOnClickListener {
-            settings.leftTwoFingerGesture = Settings.GestureAction.EXIT_DIALOG
-            settings.rightTwoFingerGesture = Settings.GestureAction.TOGGLE_FULLSCREEN
-            settings.downTwoFingerGesture = Settings.GestureAction.DISABLED
-            settings.longPressTwoFingerGesture = Settings.GestureAction.DISABLED
+            settings.resetGestureSettings()
             updateItems()
             ToastUtils.showToast(requireContext(), getString(R.string.gestures_reset), Toast.LENGTH_SHORT, force = true)
         }
@@ -71,14 +68,97 @@ class GesturesFragment : Fragment() {
                     action = settings.rightTwoFingerGesture
                 ),
                 gestureSetting(
-                    id = "down",
-                    titleResId = R.string.gesture_two_finger_down,
-                    action = settings.downTwoFingerGesture
+                    id = "leftTap",
+                    titleResId = R.string.gesture_two_finger_tap_left,
+                    action = settings.leftTapTwoFingerGesture
+                ),
+                gestureSetting(
+                    id = "rightTap",
+                    titleResId = R.string.gesture_two_finger_tap_right,
+                    action = settings.rightTapTwoFingerGesture
                 ),
                 gestureSetting(
                     id = "longPress",
                     titleResId = R.string.gesture_two_finger_long_press,
                     action = settings.longPressTwoFingerGesture
+                ),
+                SettingItem.SegmentedButtonSettingEntry(
+                    stableId = "edgeZone",
+                    nameResId = R.string.gesture_edge_zone,
+                    options = listOf(
+                        getString(R.string.gesture_edge_zone_narrow),
+                        getString(R.string.gesture_edge_zone_normal),
+                        getString(R.string.gesture_edge_zone_wide)
+                    ),
+                    selectedIndex = settings.gestureEdgeZone.value,
+                    onOptionSelected = { index ->
+                        val zone = Settings.GestureEdgeZone.fromInt(index) ?: return@SegmentedButtonSettingEntry
+                        if (settings.gestureEdgeZone != zone) settings.gestureEdgeZone = zone
+                    }
+                ),
+                SettingItem.InfoBanner("gesturesHelp", R.string.gestures_help),
+                SettingItem.CategoryHeader("nightDimmerGroup", R.string.gestures_night_dimmer_group),
+                SettingItem.SliderSettingEntry(
+                    stableId = "dimOpacity",
+                    nameResId = R.string.dim_opacity,
+                    value = "${settings.dimOpacityPercent}%",
+                    sliderValue = settings.dimOpacityPercent.toFloat(),
+                    valueFrom = 10f,
+                    valueTo = 90f,
+                    stepSize = 10f,
+                    onValueChanged = { v ->
+                        val percent = v.toInt()
+                        if (settings.dimOpacityPercent != percent) settings.dimOpacityPercent = percent
+                        updateItems()
+                    }
+                ),
+                SettingItem.SegmentedButtonSettingEntry(
+                    stableId = "nightTextSize",
+                    nameResId = R.string.night_overlay_text_size,
+                    options = listOf(
+                        getString(R.string.night_overlay_text_small),
+                        getString(R.string.night_overlay_text_normal),
+                        getString(R.string.night_overlay_text_large)
+                    ),
+                    selectedIndex = settings.nightOverlayTextSize.value,
+                    onOptionSelected = { index ->
+                        val size = Settings.NightOverlayTextSize.fromInt(index) ?: return@SegmentedButtonSettingEntry
+                        if (settings.nightOverlayTextSize != size) settings.nightOverlayTextSize = size
+                    }
+                ),
+                SettingItem.SegmentedButtonSettingEntry(
+                    stableId = "nightBackground",
+                    nameResId = R.string.night_overlay_background,
+                    options = listOf(
+                        getString(R.string.night_overlay_background_black),
+                        getString(R.string.night_overlay_background_dark_gray)
+                    ),
+                    selectedIndex = settings.nightOverlayBackground.value,
+                    onOptionSelected = { index ->
+                        val bg = Settings.NightOverlayBackground.fromInt(index) ?: return@SegmentedButtonSettingEntry
+                        if (settings.nightOverlayBackground != bg) settings.nightOverlayBackground = bg
+                    }
+                ),
+                SettingItem.ToggleSettingEntry(
+                    stableId = "nightShowClock",
+                    nameResId = R.string.night_overlay_show_clock,
+                    descriptionResId = null,
+                    isChecked = settings.nightOverlayShowClock,
+                    onCheckedChanged = { if (settings.nightOverlayShowClock != it) settings.nightOverlayShowClock = it }
+                ),
+                SettingItem.ToggleSettingEntry(
+                    stableId = "nightShowNavigation",
+                    nameResId = R.string.night_overlay_show_navigation,
+                    descriptionResId = null,
+                    isChecked = settings.nightOverlayShowNavigation,
+                    onCheckedChanged = { if (settings.nightOverlayShowNavigation != it) settings.nightOverlayShowNavigation = it }
+                ),
+                SettingItem.ToggleSettingEntry(
+                    stableId = "nightShowTrack",
+                    nameResId = R.string.night_overlay_show_track,
+                    descriptionResId = null,
+                    isChecked = settings.nightOverlayShowTrack,
+                    onCheckedChanged = { if (settings.nightOverlayShowTrack != it) settings.nightOverlayShowTrack = it }
                 )
             )
         )
@@ -102,10 +182,12 @@ class GesturesFragment : Fragment() {
             .setTitle(titleResId)
             .setSingleChoiceItems(options, selected.value) { dialog, which ->
                 val action = actions.firstOrNull { it.value == which } ?: return@setSingleChoiceItems
-                when (id) {
+                // Write only a change, so an untouched slot keeps following its default.
+                if (action != selected) when (id) {
                     "left" -> settings.leftTwoFingerGesture = action
                     "right" -> settings.rightTwoFingerGesture = action
-                    "down" -> settings.downTwoFingerGesture = action
+                    "leftTap" -> settings.leftTapTwoFingerGesture = action
+                    "rightTap" -> settings.rightTapTwoFingerGesture = action
                     "longPress" -> settings.longPressTwoFingerGesture = action
                 }
                 updateItems()
@@ -121,5 +203,6 @@ class GesturesFragment : Fragment() {
             Settings.GestureAction.EXIT_DIALOG -> R.string.gesture_action_exit_dialog
             Settings.GestureAction.TOGGLE_FULLSCREEN -> R.string.gesture_action_toggle_fullscreen
             Settings.GestureAction.NIGHT_OVERLAY -> R.string.gesture_action_night_overlay
+            Settings.GestureAction.DIM_SCREEN -> R.string.gesture_action_dim_screen
         }
 }

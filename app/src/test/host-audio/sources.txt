@@ -64,3 +64,15 @@ app/src/main/java/com/andrerinas/openheadunit/decoder/audio/TimeStretchWorker.kt
 app/src/test/host-audio/TimeStretchWorkerRegression.kt
 app/src/test/host-audio/NativeMusicIntegration.kt
 app/src/test/host-audio/NativeFailureOwnershipRegression.kt
+app/src/main/java/com/andrerinas/openheadunit/aap/GalAudioFormat.kt
+app/src/main/java/com/andrerinas/openheadunit/aap/GalPlaybackSample.kt
+app/src/main/java/com/andrerinas/openheadunit/aap/GalPresentationController.kt
+app/src/main/java/com/andrerinas/openheadunit/aap/GalRuntimeOptions.kt
+app/src/main/java/com/andrerinas/openheadunit/aap/GalLaboratoryOptions.kt
+app/src/main/java/com/andrerinas/openheadunit/aap/GalConnectionContract.kt
+app/src/main/java/com/andrerinas/openheadunit/aap/GalDisplayContract.kt
+app/src/main/java/com/andrerinas/openheadunit/aap/GalSessionProfile.kt
+app/src/main/java/com/andrerinas/openheadunit/aap/AapVersionNegotiation.kt
+app/src/main/java/com/andrerinas/openheadunit/decoder/audio/PcmSourceTimeline.kt
+app/src/main/java/com/andrerinas/openheadunit/utils/CheckedLong.kt
+app/src/main/java/com/andrerinas/openheadunit/utils/ProjectionMargins.kt

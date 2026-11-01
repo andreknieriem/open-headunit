@@ -22,6 +22,8 @@ import com.andrerinas.openheadunit.decoder.video.VideoFaultInjector
 import com.andrerinas.openheadunit.decoder.video.DeviceMemoryProfile
 import com.andrerinas.openheadunit.decoder.audio.PlaybackFocusPolicy
 import com.andrerinas.openheadunit.aap.VehicleTypePolicy
+import com.andrerinas.openheadunit.aap.GalProfile
+import com.andrerinas.openheadunit.aap.GalLaboratoryOptions
 import com.andrerinas.openheadunit.aap.protocol.proto.Control
 import com.andrerinas.openheadunit.app.UsbAttachedActivity
 import com.andrerinas.openheadunit.connection.usb.UsbBlacklistPolicy
@@ -1136,6 +1138,38 @@ class Settings(private val context: Context) {
     var videoCodec: String
         get() = prefs.getString("video-codec", "Auto")!!
         set(value) { prefs.edit().putString("video-codec", value).apply() }
+
+    /** Protocol requested for the next connection, independent of Android and the phone app version. */
+    var galProtocolVersion: String
+        get() {
+            val stored = try {
+                prefs.getString("gal-protocol-version", "1.2")
+            } catch (_: ClassCastException) {
+                null
+            }
+            return GalProfile.normalizeSetting(stored ?: "1.2")
+        }
+        set(value) {
+            prefs.edit().putString(
+                "gal-protocol-version",
+                GalProfile.normalizeSetting(value)
+            ).apply()
+        }
+
+    internal var galLaboratoryOptions: GalLaboratoryOptions
+        get() = GalLaboratoryOptions.fromStored(prefs.all)
+        set(value) {
+            val editor = prefs.edit()
+            for ((key, stored) in value.storedValues()) {
+                when (stored) {
+                    null -> editor.remove(key)
+                    is Boolean -> editor.putBoolean(key, stored)
+                    is Int -> editor.putInt(key, stored)
+                    is String -> editor.putString(key, stored)
+                }
+            }
+            editor.apply()
+        }
 
     var fpsLimit: Int
         get() = prefs.getInt("fps-limit", 60)

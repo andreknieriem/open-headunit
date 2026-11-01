@@ -18,6 +18,7 @@ import com.andrerinas.openheadunit.utils.Settings
 import com.andrerinas.openheadunit.utils.SystemOptimizer
 import com.andrerinas.openheadunit.view.GlProjectionView
 import com.andrerinas.openheadunit.view.IProjectionView
+import com.andrerinas.openheadunit.decoder.video.VideoSurfaceKind
 import com.andrerinas.openheadunit.view.ProjectionView
 import com.andrerinas.openheadunit.view.TextureProjectionView
 import kotlinx.coroutines.CompletableDeferred
@@ -195,7 +196,7 @@ class VideoPreflightRunner(
         decoder.onDecoderError = { reason -> decoderError.set(reason) }
         // The preview renderer, not the saved renderer preference, owns this clip's output.
         decoder.softwareYuvFrameSink = preview.view as? SoftwareYuvFrameSink
-        decoder.setSurface(surface)
+        decoder.setSurface(surface, (preview.view as IProjectionView).videoSurfaceKind)
         var fed = 0
         val samples = mutableListOf<Int>()
         var badSamples = 0
@@ -472,7 +473,7 @@ class VideoPreflightRunner(
                 if (!surface.isCompleted) surface.complete(null)
             }
 
-            override fun onSurfaceChanged(surface_: Surface, width: Int, height: Int) = Unit
+            override fun onSurfaceChanged(surface_: Surface, width: Int, height: Int, kind: VideoSurfaceKind) = Unit
         }
         projection.addCallback(callbacks)
         return PreflightPreview(

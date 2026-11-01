@@ -20,6 +20,8 @@ import androidx.core.graphics.toColorInt
 import androidx.core.view.isVisible
 import androidx.core.widget.TextViewCompat
 import com.andrerinas.openheadunit.R
+import com.andrerinas.openheadunit.aap.NightOverlayOptions
+import com.andrerinas.openheadunit.aap.NightOverlayRows
 import com.andrerinas.openheadunit.aap.NightOverlayState
 import java.util.Date
 
@@ -27,7 +29,7 @@ import java.util.Date
 class NightProjectionOverlay(context: Context) : FrameLayout(context) {
     private val debugNavLayoutColors = false
 
-    // Per-text scale knobs. Keep them code-driven for now; later they can be loaded from Settings.
+    // Per-text scale knobs, all set from the text size option.
     private var scaleClock = 1.0f
     private var scaleDistance = 1.0f
     private var scaleManeuverTextFallback = 1.0f
@@ -35,6 +37,7 @@ class NightProjectionOverlay(context: Context) : FrameLayout(context) {
     private var scaleExtraInfo = 1.0f
     private var scaleTrackTitle = 1.0f
 
+    private var options = NightOverlayOptions()
     private val handler = Handler(Looper.getMainLooper())
     private lateinit var clock: AppCompatTextView
     private lateinit var maneuverIcon: AppCompatImageView
@@ -152,7 +155,22 @@ class NightProjectionOverlay(context: Context) : FrameLayout(context) {
         onHidden?.invoke()
     }
 
+    fun applyOptions(newOptions: NightOverlayOptions) {
+        options = newOptions
+        val scale = newOptions.textScale
+        scaleClock = scale
+        scaleDistance = scale
+        scaleManeuverTextFallback = scale
+        scaleRoad = scale
+        scaleExtraInfo = scale
+        scaleTrackTitle = scale
+        setBackgroundColor(newOptions.backgroundColor)
+        updateTextSizes()
+    }
+
     fun render(content: NightOverlayState.Content) {
+        val rows = NightOverlayRows.select(content, options)
+        clock.isVisible = NightOverlayRows.Row.CLOCK in rows
         val navigation = content.navigation
         val iconRes = navigation?.icon?.let(::iconFor)
         maneuverIcon.isVisible = iconRes != null
@@ -185,12 +203,11 @@ class NightProjectionOverlay(context: Context) : FrameLayout(context) {
         topRow.isVisible = maneuverIcon.isVisible || maneuverTextFallback.isVisible ||
             distance.isVisible || road.isVisible || extraInfo.isVisible
         maneuverBlock.isVisible = topRow.isVisible || road.isVisible || extraInfo.isVisible
-        navRow.isVisible = maneuverBlock.isVisible
+        navRow.isVisible = maneuverBlock.isVisible && NightOverlayRows.Row.NAVIGATION in rows
 
-        val showTrack = content.isPlaying != false
         title.text =
             listOf(content.title, content.artist).filter { it.isNotBlank() }.joinToString(" - ")
-        title.isVisible = showTrack && title.text.isNotBlank()
+        title.isVisible = NightOverlayRows.Row.TRACK in rows && title.text.isNotBlank()
     }
 
     fun updateTextSizes() {

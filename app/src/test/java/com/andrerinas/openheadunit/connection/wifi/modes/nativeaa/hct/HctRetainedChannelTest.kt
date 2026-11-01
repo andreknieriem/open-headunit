@@ -162,7 +162,10 @@ class HctRetainedChannelTest {
         try {
             // The real bridge is running but the FSM is deliberately not consuming. Even
             // after it drains the first inbox, total retention must remain bounded.
-            repeat(100) { wire.send(WppMessageType.INFO_REQUEST) }
+            // The overflow closes the wire, so a send after it may throw; stop sending then.
+            for (i in 0 until 100) {
+                try { wire.send(WppMessageType.INFO_REQUEST) } catch (_: IOException) { break }
+            }
             withTimeout(2_000) { physical.join() }
             assertFalse(owner.isOpen)
         } finally { owner.close(); read.cancelAndJoin(); scope.cancel() }

@@ -243,12 +243,15 @@
     <string name="auto_start_offer_yes">დიახ</string>
     <string name="auto_start_offer_no">არა</string>
     <string name="auto_start_offer_countdown">არა %1$d წმ-ში</string>
-    <string name="listen_for_usb_devices_label">USB მოწყობილობების მონიტორინგი</string>
-    <string name="listen_for_usb_devices_description">USB მოწყობილობის შეერთებისას Android სისტემური მოთხოვნის ჩვენება.</string>
+    <string name="listen_for_usb_attach_label">მიერთებული ტელეფონების/AA დონგლების აღმოჩენა</string>
+    <string name="listen_for_usb_attach_description">Android-ს შეუძლია შემოგთავაზოთ Open Headunit მიერთებული ტელეფონისთვის ან Android Auto დონგლისთვის და დაიმახსოვროს თქვენი არჩევანი. გამორთვისას Android ამას არ შემოგთავაზებს. გამოიყენეთ USB ღილაკი და ყოველ ჯერზე უპასუხეთ დიალოგს.</string>
     <string name="show_toast_messages">მოკლე შეტყობინებების ჩვენება</string>
     <string name="show_toast_messages_description">სტატუსის შეტყობინებების ჩვენება დაკავშირების, გათიშვის და რეჟიმის შეცვლისას.</string>
-    <string name="auto_start_usb_label">ავტო-გაშვება USB-ით</string>
-    <string name="auto_start_usb_description">აპის ავტომატური გახსნა და დაკავშირების მცდელობა USB მოწყობილობის შეერთებისას.</string>
+    <string name="auto_start_usb_connect_label">დაკავშირება მიერთებისას</string>
+    <string name="auto_start_usb_connect_description">უშვებს Android Auto-ს, როცა აღმოჩენილი ტელეფონი ან დონგლი მიერთდება. გამორთვისას მიერთება მხოლოდ ხსნის აპს, ხოლო USB ღილაკი აკავშირებს. აპის გახსნისას ავტომატური დაკავშირების პარამეტრები მაინც მოქმედებს.</string>
+    <string name="auto_start_usb_connect_needs_detect">ჯერ ჩართეთ \"%1$s\" ზოგად პარამეტრებში.</string>
+    <string name="auto_start_usb_open_label">აპის გახსნა მიერთებისას</string>
+    <string name="auto_start_usb_open_description">ხსნის Open Headunit-ს, როცა ტელეფონი ან დონგლი მიერთდება. ასევე უშვებს აპს ჩატვირთვის ან გაღვიძების შემდეგ მიერთებული ტელეფონის საძიებლად და გამოსვლის შემდეგაც აკვირდება.</string>
     <string name="auto_start_settings">ავტო-გაშვების პარამეტრები</string>
     <string name="auto_start_settings_description">აირჩიეთ, როდის გაიშვას აპი ავტომატურად.</string>
     <string name="auto_start_oem_warning">ამ მოწყობილობაზე შესაძლოა საჭირო გახდეს ავტომატური გაშვების ჩართვა და ამ აპისთვის ბატარეის ოპტიმიზაციის ან ფონური შეზღუდვების გამორთვა.\n\nსწრაფი ჩატვირთვის (Quick Boot) მქონე მაგნიტოლებზე ავტომატური გაშვება შეიძლება არ იმუშაოს. მოძებნეთ „DuraSpeed“ სისტემის პარამეტრებში და იქ ჩართეთ ეს აპი. ზოგ მაგნიტოლაზე DuraSpeed დამალულია და მის საპოვნელად შესაძლოა დაგჭირდეთ აპი „Hidden Settings“. თუ DuraSpeed არ გაქვთ, სცადეთ Quick Boot-ის გამორთვა.</string>
@@ -460,6 +463,7 @@
     <string name="connection_interrupted">კავშირი გაწყდა</string>
     <string name="connection_interrupted_detail">მიმდინარეობს ხელახალი ცდა…</string>
     <string name="wifi_disconnect_toast">Android Auto გაითიშა. უსადენო AA-ს გამოყენებისას ტელეფონის Wi-Fi პარამეტრებში გამორთეთ „Switch between networks“ ან „Network acceleration“</string>
+    <string name="usb_disconnect_toast">Android Auto გაითიშა. ტელეფონთან USB კავშირი ვერ შედგა. თუ ეს ხშირად ხდება, სცადეთ სხვა კაბელი, სხვა USB პორტი ან USB ჰაბი.</string>
     <string name="reset_usb_option">USB კავშირის გადატვირთვა</string>
     <string name="reset_usb_timeout">USB მოწყობილობა ვერ მოიძებნა. შეამოწმეთ კავშირი.</string>
     <string name="notification_service_running">Open Headunit გაშვებულია</string>
@@ -539,6 +543,7 @@
     <string name="reopen_on_reconnection_label">ხელახალი კავშირისას გახსნა</string>
     <string name="reopen_on_reconnection_description">\"გასვლა\" ღილაკზე დაჭერისას აპლიკაცია აგრძელებს მუშაობას ფონურ რეჟიმში და აკონტროლებს USB კავშირებს. მოწყობილობის ხელახალი შეერთებისას აპი ავტომატურად გაიხსნება.</string>
     <string name="overlay_permission_required">ავტოგაშვებისთვის საჭიროა ნებართვა „სხვა აპების ზემოდან გამოჩენა“</string>
+    <string name="usb_access_needed">Open Headunit-ს ამ USB მოწყობილობაზე წვდომა არ აქვს. დასაშვებად დააჭირეთ USB-ს. თუ ამ მოწყობილობისთვის სხვა აპი იხსნება, Android-ის პარამეტრებში გაასუფთავეთ ამ აპის USB-ის ნაგულისხმევი პარამეტრი.</string>
     <string name="usb_permission_denied">USB ნებართვა უარყოფილია. ავტომატური დაკავშირებისთვის დაუშვით USB წვდომა.</string>
 
     <string name="kill_on_disconnect">აპის დახურვა კავშირის გაწყვეტისას</string>
@@ -1034,6 +1039,8 @@
 
     <!-- Auto-added missing translations -->
     <string name="blacklisted">შავ სიაშია</string>
+    <string name="usb_blacklist_one_mode">ეს მოწყობილობა სახელს არ გადმოსცემს, ამიტომ შავი სია მის USB ID-ს ემთხვევა: ამ ID-ის მქონე ყველა მოწყობილობას და მხოლოდ ამ USB რეჟიმში. Android Auto რეჟიმში მაინც შეუძლია დაკავშირება.</string>
+    <string name="usb_blacklist_android_asks">Android-მა შეიძლება მაინც იკითხოს ამ მოწყობილობის შესახებ მიერთებისას. აირჩიეთ შესაბამისი აპი და მონიშნეთ ველი, რომ ყოველთვის გამოიყენოს; Android აღარ იკითხავს.</string>
     <string name="usb_blacklist_title">USB მოწყობილობების შავი სია</string>
     <string name="usb_blacklist_description">შავ სიაში მყოფი მოწყობილობები იგნორირებულია მიერთებისას: არც ავტო-გაშვება, არც მოთხოვნები. მოწყობილობა ამოიცნობა სახელით, ამიტომ დაბლოკილი ტელეფონი დაბლოკილი რჩება ნებისმიერ USB რეჟიმში. ზოგიერთი მწარმოებელი ყველა მოდელს ერთსა და იმავე სახელს არქმევს და მათი გარჩევა შეუძლებელია.</string>
     <string name="add_to_blacklist">შავ სიაში დამატება</string>

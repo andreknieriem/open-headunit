@@ -224,12 +224,15 @@
     <string name="enter_wifi_ssid">أدخل SSID شبكة الواي فاي</string>
     <string name="wifi_ssid_not_set">غير محدد</string>
 
-    <string name="listen_for_usb_devices_label">رصد أجهزة USB</string>
-    <string name="listen_for_usb_devices_description">إظهار مطالبة نظام Android عند توصيل جهاز USB.</string>
+    <string name="listen_for_usb_attach_label">اكتشاف الهاتف أو دونغل AA عند توصيله</string>
+    <string name="listen_for_usb_attach_description">يتيح لنظام Android عرض Open Headunit عند توصيل هاتف أو دونغل Android Auto وتذكّر اختيارك. عند الإيقاف، لا يعرضه Android. استخدم زر USB وأجب عن مربع حوار في كل مرة.</string>
     <string name="show_toast_messages">إظهار الرسائل المنبثقة (Toast)</string>
     <string name="show_toast_messages_description">عرض الرسائل المنبثقة للحالة عند الاتصال والانفصال وتغيير الوضع.</string>
-    <string name="auto_start_usb_label">تشغيل تلقائي عند توصيل USB</string>
-    <string name="auto_start_usb_description">فتح التطبيق تلقائيًا ومحاولة الاتصال عند توصيل جهاز USB.</string>
+    <string name="auto_start_usb_connect_label">تشغيل Android Auto عند التوصيل</string>
+    <string name="auto_start_usb_connect_description">يبدأ Android Auto عند توصيل هاتف أو دونغل تم اكتشافه. عند الإيقاف، يفتح التوصيل التطبيق فقط، ويتصل زر USB. تظل إعدادات الاتصال التلقائي سارية عند فتح التطبيق.</string>
+    <string name="auto_start_usb_connect_needs_detect">فعّل \"%1$s\" في الإعدادات العامة أولًا.</string>
+    <string name="auto_start_usb_open_label">فتح التطبيق عند التوصيل</string>
+    <string name="auto_start_usb_open_description">يفتح Open Headunit عند توصيل هاتف أو دونغل. كما يشغّل التطبيق بعد التشغيل أو الإيقاظ للبحث عن هاتف موصول، ويواصل المراقبة بعد الخروج.</string>
     <string name="auto_start_settings">إعدادات التشغيل التلقائي</string>
     <string name="auto_start_settings_description">تهيئة متى يبدأ التطبيق تلقائياً.</string>
     <string name="auto_start_oem_warning">قد يتطلب هذا الجهاز تفعيل التشغيل التلقائي وإزالة تحسين البطارية أو قيود الخلفية لهذا التطبيق.\n\nفي أجهزة الوسائط المتعددة التي تحتوي على التشغيل السريع (Quick Boot)، قد لا يعمل التشغيل التلقائي. ابحث عن \"DuraSpeed\" في إعدادات النظام وقم بتفعيل هذا التطبيق هناك. في بعض الأجهزة، يكون DuraSpeed مخفياً وقد تحتاج إلى تطبيق مثل \"Hidden Settings\" للعثور عليه. إذا لم يكن لديك DuraSpeed، حاول تعطيل التشغيل السريع.</string>
@@ -394,6 +397,7 @@
     <string name="connection_interrupted">فُقد الاتصال</string>
     <string name="connection_interrupted_detail">جارٍ إعادة المحاولة…</string>
     <string name="wifi_disconnect_toast">تم قطع اتصال Android Auto: إذا كنت تستخدم AA لاسلكيًا، فعطّل \"التبديل بين الشبكات\" أو \"تسريع الشبكة\" في إعدادات Wi-Fi في الهاتف</string>
+    <string name="usb_disconnect_toast">تم قطع اتصال Android Auto: فشل اتصال USB بالهاتف. إذا تكرر ذلك، جرّب كابلًا آخر أو منفذ USB آخر أو موزّع USB.</string>
     <string name="notification_service_running">Open Headunit قيد التشغيل</string>
     <string name="notification_projection_active">يجري عرض Android Auto</string>
     <string name="shortcut_connect_title">اتصال</string>
@@ -491,6 +495,7 @@
     <string name="overlay_position">موضع لوحة الأداء</string>
     <string name="show_performance_overlay_description">عرض معدل الإطارات واستخدام المعالج ودرجة الحرارة وعمر الإطار فوق العرض.</string>
     <string name="overlay_permission_required">يتطلب التشغيل التلقائي إذن \'إظهار فوق التطبيقات الأخرى\'</string>
+    <string name="usb_access_needed">لا يملك Open Headunit إذنًا للوصول إلى جهاز USB هذا. اضغط USB للسماح بذلك. إذا فتح تطبيق آخر لهذا الجهاز، فامسح إعداد USB الافتراضي لذلك التطبيق من إعدادات Android.</string>
     <string name="usb_permission_denied">تم رفض إذن USB. اسمح بالوصول إلى USB للاتصال تلقائيًا.</string>
     <string name="use_white_background">استخدام خلفية بيضاء للشاشة الرئيسية</string>
     <string name="reopen_on_reconnection_label">إعادة الفتح عند إعادة الاتصال</string>
@@ -1049,6 +1054,8 @@
 
     <!-- Auto-added missing translations -->
     <string name="blacklisted">في القائمة السوداء</string>
+    <string name="usb_blacklist_one_mode">لا يوفّر هذا الجهاز اسمًا، لذلك تطابق القائمة السوداء معرّف USB الخاص به: كل جهاز يحمل هذا المعرّف، وفي وضع USB هذا فقط. في وضع Android Auto يمكنه الاتصال.</string>
+    <string name="usb_blacklist_android_asks">قد يسأل Android عن هذا الجهاز عند توصيله. اختر التطبيق المخصص له وحدد المربع لاستخدامه دائمًا، ولن يسأل Android مرة أخرى.</string>
     <string name="usb_blacklist_title">قائمة أجهزة USB المحظورة</string>
     <string name="usb_blacklist_description">يتم تجاهل الأجهزة المدرجة في القائمة السوداء عند الاتصال: لا تشغيل تلقائي ولا مطالبات. تتم مطابقة الجهاز باسمه، وبالتالي يظل الهاتف المحظور محظورًا في كل أوضاع USB. بعض الشركات تعطي جميع طرازاتها الاسم نفسه ولا يمكن التمييز بينها.</string>
     <string name="add_to_blacklist">إضافة إلى القائمة السوداء</string>

@@ -28,9 +28,11 @@ import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.aap.AapProjectionActivity
 import com.andrerinas.openheadunit.aap.AapService
 import com.andrerinas.openheadunit.connection.usb.UsbAccessoryMode
+import com.andrerinas.openheadunit.connection.usb.UsbBlacklistPolicy
+import com.andrerinas.openheadunit.connection.usb.UsbPermissionAsks
 import com.andrerinas.openheadunit.connection.usb.UsbDeviceCompat
 import com.andrerinas.openheadunit.connection.usb.UsbDeviceDiagnostics
-import com.andrerinas.openheadunit.connection.usb.UsbReceiver
+import com.andrerinas.openheadunit.connection.usb.UsbManifestFilter
 import com.andrerinas.openheadunit.utils.Settings
 import com.andrerinas.openheadunit.utils.ToastUtils
 import com.google.android.material.appbar.MaterialToolbar
@@ -145,16 +147,17 @@ class UsbListFragment : Fragment() {
 
             val isBlacklisted = mSettings.isUsbDeviceBlacklisted(device.wrappedDevice)
 
-            if (device.isInAccessoryMode) {
-                holder.allowButton.setText(R.string.allowed)
-                holder.allowButton.setTextColor(ContextCompat.getColor(mContext, R.color.material_green_700))
-                holder.allowButton.isEnabled = false
-            } else if (isBlacklisted) {
+            // Blacklisted first: an accessory-mode device can carry a key, and the row must show it.
+            if (isBlacklisted) {
                 holder.allowButton.setText(R.string.blacklisted)
                 holder.allowButton.setTextColor(ContextCompat.getColor(mContext, R.color.material_red_700))
                 holder.allowButton.tag = position
                 holder.allowButton.isEnabled = true
                 holder.allowButton.setOnClickListener(this)
+            } else if (device.isInAccessoryMode) {
+                holder.allowButton.setText(R.string.allowed)
+                holder.allowButton.setTextColor(ContextCompat.getColor(mContext, R.color.material_green_700))
+                holder.allowButton.isEnabled = false
             } else {
                 if (allowedDevices.contains(device.uniqueName)) {
                     holder.allowButton.setText(R.string.allowed)
@@ -199,6 +202,17 @@ class UsbListFragment : Fragment() {
                         allowedDevices.remove(device.uniqueName)
                         mSettings.allowedDevices = allowedDevices
                         mSettings.addUsbDeviceToBlacklist(device.wrappedDevice)
+                        val notes = UsbBlacklistPolicy.notesOnAdd(
+                            UsbDeviceCompat.blacklistKey(device.wrappedDevice),
+                            UsbManifestFilter.matches(UsbDeviceCompat.describe(device.wrappedDevice)),
+                        )
+                        for (note in notes) {
+                            val text = when (note) {
+                                UsbBlacklistPolicy.Note.ONE_MODE -> R.string.usb_blacklist_one_mode
+                                UsbBlacklistPolicy.Note.ANDROID_ASKS -> R.string.usb_blacklist_android_asks
+                            }
+                            ToastUtils.showToast(mContext, text, Toast.LENGTH_LONG, force = true)
+                        }
                     }
                     else -> {
                         // Ignored -> Allowed
@@ -260,10 +274,7 @@ class UsbListFragment : Fragment() {
                     } else {
                         ToastUtils.showToast(mContext, R.string.requesting_usb_permission, Toast.LENGTH_SHORT)
                         ContextCompat.startForegroundService(mContext, Intent(mContext, AapService::class.java))
-                        usbManager.requestPermission(
-                            device.wrappedDevice,
-                            UsbReceiver.createPermissionPendingIntent(mContext)
-                        )
+                        UsbPermissionAsks.askFromUi(mContext, device.wrappedDevice)
                     }
                 }
             }

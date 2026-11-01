@@ -239,6 +239,8 @@
     <string name="allowed">Allowed</string>
     <string name="ignored">Ignored</string>
     <string name="blacklisted">Blacklisted</string>
+    <string name="usb_blacklist_one_mode">This device gives no name, so the blacklist matches its USB ID: every device with that ID, and only in this USB mode. In Android Auto mode it can still connect.</string>
+    <string name="usb_blacklist_android_asks">Android may still ask about this device when it is plugged in. Choose the app it is for and tick the box to always use it, and Android will not ask again.</string>
     <string name="usb_blacklist_title">USB Device Blacklist</string>
     <string name="usb_blacklist_description">Devices in the blacklist are ignored on connection: no auto-start, no prompts. A device is matched by its name, so a blacklisted phone stays blacklisted in every USB mode. Some makers give every model the same name, and those cannot be told apart.</string>
     <string name="add_to_blacklist">Add to Blacklist</string>
@@ -512,12 +514,15 @@
     <string name="auto_start_offer_yes">Yes</string>
     <string name="auto_start_offer_no">No</string>
     <string name="auto_start_offer_countdown">No in %1$ds</string>
-    <string name="listen_for_usb_devices_label">Listen for USB Devices</string>
-    <string name="listen_for_usb_devices_description">Show the Android system prompt when a USB device is plugged in.</string>
+    <string name="listen_for_usb_attach_label">Detect plugged-in phones/AA dongles</string>
+    <string name="listen_for_usb_attach_description">Lets Android offer Open Headunit for a plugged-in phone or Android Auto dongle and remember your choice. When off, Android does not offer it. Use the USB button and answer a dialog each time.</string>
     <string name="show_toast_messages">Show Toast Messages</string>
     <string name="show_toast_messages_description">Display status toast popups on connection, disconnect, and mode switching.</string>
-    <string name="auto_start_usb_label">Auto-start on USB</string>
-    <string name="auto_start_usb_description">Automatically open the app and attempt connection when a USB device is plugged in.</string>
+    <string name="auto_start_usb_connect_label">Connect when plugged in</string>
+    <string name="auto_start_usb_connect_description">Starts Android Auto when a detected phone or dongle is plugged in. When off, plugging in opens the app, and the USB button connects. Auto-connect settings still apply when the app opens.</string>
+    <string name="auto_start_usb_connect_needs_detect">Turn on \"%1$s\" in General settings first.</string>
+    <string name="auto_start_usb_open_label">Open the app when plugged in</string>
+    <string name="auto_start_usb_open_description">Opens Open Headunit when a phone or dongle is plugged in. It also starts the app after a boot or a wake to look for a plugged-in phone, and keeps it watching after Exit.</string>
     <string name="auto_start_settings">Auto-start settings</string>
     <string name="auto_start_settings_description">Configure when the app starts automatically.</string>
     <string name="auto_start_oem_warning">This device may require enabling auto-start and removing battery optimization or background restrictions for this app.\n\nOn head units with Quick Boot (fast boot), auto-start may not work. Look for \"DuraSpeed\" in your system settings and enable this app there. On some head units, DuraSpeed is hidden and you may need an app like \"Hidden Settings\" to find it. If you don\'t have DuraSpeed, try disabling Quick Boot.</string>
@@ -977,6 +982,7 @@
     <string name="connection_interrupted_detail">Retrying…</string>
     <string name="renderer_fallback_surface">The video kept freezing, so the display was switched to SurfaceView for this session. If it is stable, set View mode to SurfaceView in Settings.</string>
     <string name="wifi_disconnect_toast">Android Auto disconnected. If using wireless AA, disable \"Switch between networks\" or \"Network acceleration\" in your phone\'s WiFi settings</string>
+    <string name="usb_disconnect_toast">Android Auto disconnected: the USB connection to the phone failed. If it happens often, try another cable, another USB port or a USB hub.</string>
     <string name="reset_usb_option">Reset USB Connection</string>
     <string name="reset_usb_timeout">USB device not found. Please check the connection.</string>
     <string name="notification_service_running">Open Headunit is running</string>
@@ -1104,6 +1110,7 @@
     <string name="reopen_on_reconnection_label">Reopen on reconnection</string>
     <string name="reopen_on_reconnection_description">When you press the Exit button, the app stays running in the background and continues monitoring USB connections. If a device reconnects, the app reopens automatically.</string>
     <string name="overlay_permission_required">Auto-start requires \'Display over other apps\' permission</string>
+    <string name="usb_access_needed">Open Headunit has no access to this USB device. Press USB to allow it. If another app opens for it, clear that app\'s USB default in Android settings.</string>
     <string name="usb_permission_denied">USB permission denied. Please allow USB access to connect automatically.</string>
 
     <!-- Theme -->

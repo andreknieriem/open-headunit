@@ -96,6 +96,7 @@ object SettingsBackupManager {
         "debug-video-fault-injection" to ValueType.INT,
         "debug-video-fault-rate" to ValueType.INT,
         "debug-video-fault-budget" to ValueType.INT,
+        "debug-usb-read-fault" to ValueType.BOOLEAN,
         "debug-video-low-latency" to ValueType.BOOLEAN,
         "debug-video-feed-hold-ms" to ValueType.INT,
         "debug-force-memory-profile" to ValueType.STRING,
@@ -157,6 +158,7 @@ object SettingsBackupManager {
         "auto-start-self-mode" to ValueType.BOOLEAN,
         "auto-connect-delay-seconds" to ValueType.INT,
         "auto-start-on-usb" to ValueType.BOOLEAN,
+        "usb-connect-on-plug-in" to ValueType.BOOLEAN,
         "auto-start-on-boot" to ValueType.BOOLEAN,
         "auto-start-on-screen-on" to ValueType.BOOLEAN,
         "auto-start-on-wifi" to ValueType.BOOLEAN,
@@ -528,6 +530,7 @@ object SettingsBackupManager {
         Settings.syncAutoStartOnBootToDeviceStorage(context, settings.autoStartOnBoot)
         Settings.syncAutoStartOnScreenOnToDeviceStorage(context, settings.autoStartOnScreenOn)
         Settings.syncAutoStartOnUsbToDeviceStorage(context, settings.autoStartOnUsb)
+        Settings.syncUsbConnectOnPlugInToDeviceStorage(context, settings.usbConnectOnPlugIn)
         Settings.syncAutoStartOnWifiToDeviceStorage(context, settings.autoStartOnWifi)
         Settings.syncAutoStartWifiSsidToDeviceStorage(context, settings.autoStartWifiSsid)
         Settings.syncListenForUsbDevicesToDeviceStorage(context, settings.listenForUsbDevices)

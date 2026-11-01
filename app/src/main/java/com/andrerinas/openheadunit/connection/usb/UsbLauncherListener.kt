@@ -7,6 +7,7 @@ import android.os.SystemClock
 import android.widget.Toast
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.R
+import com.andrerinas.openheadunit.connection.CommManager
 import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy.Tier
 import com.andrerinas.openheadunit.connection.usb.UsbLauncherManager.Companion.ATTACH_FALLBACK_DELAY_MS
 import com.andrerinas.openheadunit.utils.AppLog
@@ -24,6 +25,8 @@ class UsbLauncherListener(private val manager: UsbLauncherManager) : UsbReceiver
     private val service = manager.service
 
     override fun onUsbAttach(device: UsbDevice) {
+        // Android raises its own dialog only now, so a later scan for this path knows it may be up.
+        UsbPermissionAsks.stampAttach(device.deviceName)
         if (!UsbDeviceCompat.isConnectable(service, device)) {
             AppLog.i("Ignoring USB device attached in service (${Settings.formatUsbVidPidDisplay(device.vendorId, device.productId)}): ${UsbDeviceCompat.connectableReason(service, device)}")
             return
@@ -36,28 +39,37 @@ class UsbLauncherListener(private val manager: UsbLauncherManager) : UsbReceiver
         if (UsbDeviceCompat.isInAccessoryMode(device)) {
             // Device already in AOA mode (re-enumerated after UsbAttachedActivity switched it).
             AppLog.i("USB accessory device attached, connecting.")
-            service.launchMainActivityIfNeeded("USB accessory attach")
+            service.launchMainActivityIfNeeded("USB accessory attach", defersToAndroid(device))
             manager.checkAlreadyConnected(force = true, settingsRestart = manager.pendingSettingsRestart())
         } else {
-            // UsbAttachedActivity normally handles normal-mode devices via a manifest intent
-            // filter. However, some headunits (especially Chinese MediaTek units) don't
-            // deliver USB_DEVICE_ATTACHED to activities on cold start. As a fallback,
-            // check after a delay to give UsbAttachedActivity a chance to handle it first.
+            // UsbAttachedActivity normally handles normal-mode devices via the manifest filter.
+            // If nothing has connected after a delay, the service checks too; the permission
+            // policy still defers a device to Android when Android owns its ask.
             val deviceName = UsbDeviceCompat(device).uniqueName
 
             AppLog.i("Normal USB device attached: $deviceName. Will check auto-connect in ${ATTACH_FALLBACK_DELAY_MS}ms...")
 
-            service.launchMainActivityIfNeeded("USB normal attach ($deviceName)")
+            service.launchMainActivityIfNeeded("USB normal attach ($deviceName)", defersToAndroid(device))
             service.serviceScope.launch {
                 delay(ATTACH_FALLBACK_DELAY_MS)
                 // The manager retains this scan if its own AOA switch is still running.
                 // An Activity-owned switch keeps its separate handoff guard.
                 if (!commManager.isConnected && !manager.isActivitySwitchInFlight()) {
                     AppLog.i("UsbAttachedActivity didn't handle $deviceName. Trying from service...")
-                    manager.checkAlreadyConnected(force = true, settingsRestart = manager.pendingSettingsRestart())
+                    manager.checkAlreadyConnected(force = true, settingsRestart = manager.pendingSettingsRestart(),
+                        trigger = UsbPlugInPolicy.Trigger.PLUG_IN)
                 }
             }
         }
+    }
+
+    private fun defersToAndroid(device: UsbDevice): Boolean {
+        val usbManager = UsbDeviceCompat.usbManager(service) ?: return false
+        val inputs = UsbDeviceCompat.permissionDecisionInputs(
+            service, App.provide(service).settings, device, UsbPermissionAskPolicy.Source.AUTOMATIC,
+            usbManager.deviceList.values.map { it.deviceName },
+        )
+        return UsbPermissionAskPolicy.raiseDefersToAndroid(usbManager.hasPermission(device), inputs)
     }
 
     override fun onUsbDetach(device: UsbDevice) {
@@ -69,7 +81,7 @@ class UsbLauncherListener(private val manager: UsbLauncherManager) : UsbReceiver
         if (commManager.isConnectedToUsbDevice(device)) {
             // Cable physically removed — the USB connection is already dead, so skip the
             // ByeByeRequest send (which would block ~1 s trying to write to a gone device).
-            commManager.disconnect(sendByeBye = false, isUserExit = false)
+            commManager.disconnect(sendByeBye = false, isUserExit = false, endedBy = CommManager.EndCause.DETACHED)
         }
     }
 
@@ -80,14 +92,15 @@ class UsbLauncherListener(private val manager: UsbLauncherManager) : UsbReceiver
 
         service.userExitedAA = false
         if (commManager.isConnected) {
-            commManager.disconnect(sendByeBye = false, isUserExit = false)
+            commManager.disconnect(sendByeBye = false, isUserExit = false, endedBy = CommManager.EndCause.DETACHED)
         }
 
         // Wait a bit and check if the device is still there in normal mode
         service.serviceScope.launch {
             delay(1500) // Give the phone/system time to settle its USB state
             AppLog.i("Accessory detach cooldown finished. Checking for re-connection...")
-            manager.checkAlreadyConnected(force = true, settingsRestart = manager.pendingSettingsRestart())
+            manager.checkAlreadyConnected(force = true, settingsRestart = manager.pendingSettingsRestart(),
+                trigger = UsbPlugInPolicy.Trigger.RECONNECT)
         }
     }
 
@@ -102,6 +115,11 @@ class UsbLauncherListener(private val manager: UsbLauncherManager) : UsbReceiver
         }
         val usbManager = UsbDeviceCompat.usbManager(service) ?: return
         val deviceName = UsbDeviceCompat(device).uniqueName
+        if (!granted && usbManager.hasPermission(device)) {
+            // An older or rebuilt dialog answered after a grant; the permission stands.
+            AppLog.i("USB permission: a denial for $deviceName arrived while permission is held; ignoring it")
+            return
+        }
         val restart = manager.takePermissionOwner(device)
         // Permission is not a new user request for projection. An explicit stop still wins.
         if (granted && manager.cancelledByUser) return

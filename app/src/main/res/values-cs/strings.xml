@@ -224,12 +224,15 @@
     <string name="enter_wifi_ssid">Zadejte SSID Wi-Fi</string>
     <string name="wifi_ssid_not_set">Nenastaveno</string>
 
-    <string name="listen_for_usb_devices_label">Sledovat zařízení USB</string>
-    <string name="listen_for_usb_devices_description">Zobrazit výzvu systému Android při připojení zařízení USB.</string>
+    <string name="listen_for_usb_attach_label">Rozpoznávat připojené telefony/AA dongly</string>
+    <string name="listen_for_usb_attach_description">Android může nabídnout aplikaci Open Headunit pro zapojený telefon nebo dongl Android Auto a zapamatuje si vaši volbu. Když je vypnuto, Android ji nenabízí. Použijte tlačítko USB a pokaždé odpovězte v dialogu.</string>
     <string name="show_toast_messages">Zobrazovat krátká oznámení</string>
     <string name="show_toast_messages_description">Zobrazit vyskakovací zprávy o stavu při připojení, odpojení a změně režimu.</string>
-    <string name="auto_start_usb_label">Spuštění při připojení USB</string>
-    <string name="auto_start_usb_description">Automaticky otevřít aplikaci a pokusit se o připojení při zapojení USB zařízení.</string>
+    <string name="auto_start_usb_connect_label">Připojit po zapojení</string>
+    <string name="auto_start_usb_connect_description">Po zapojení rozpoznaného telefonu nebo donglu spustí Android Auto. Když je vypnuto, zapojení jen otevře aplikaci a připojuje tlačítko USB. Nastavení automatického připojení platí i po otevření aplikace.</string>
+    <string name="auto_start_usb_connect_needs_detect">Nejprve zapněte \"%1$s\" v obecném nastavení.</string>
+    <string name="auto_start_usb_open_label">Otevřít aplikaci po zapojení</string>
+    <string name="auto_start_usb_open_description">Po zapojení telefonu nebo donglu otevře Open Headunit. Také aplikaci spustí po startu nebo probuzení, aby hledala zapojený telefon, a hlídá dál i po ukončení.</string>
     <string name="auto_start_settings">Nastavení automatického spouštění</string>
     <string name="auto_start_settings_description">Nastavte, kdy se aplikace spouští automaticky.</string>
     <string name="auto_start_oem_warning">Toto zařízení může vyžadovat povolení automatického spuštění a odebrání optimalizace baterie nebo omezení na pozadí pro tuto aplikaci.\n\nNa autorádiích s Quick Boot (rychlé spuštění) nemusí automatické spuštění fungovat. Hledejte v nastavení systému \"DuraSpeed\" a povolte tam tuto aplikaci. Na některých autorádiích je DuraSpeed skrytý a k jeho nalezení můžete potřebovat aplikaci jako \"Hidden Settings\". Pokud DuraSpeed nemáte, zkuste vypnout Quick Boot.</string>
@@ -394,6 +397,7 @@
     <string name="connection_interrupted">Spojení ztraceno</string>
     <string name="connection_interrupted_detail">Opětovné připojování…</string>
     <string name="wifi_disconnect_toast">Android Auto odpojeno: Pokud používáte bezdrátové AA, vypněte v nastavení Wi-Fi telefonu „Přepínání mezi sítěmi“ nebo „Zrychlení sítě“</string>
+    <string name="usb_disconnect_toast">Android Auto odpojeno: připojení telefonu přes USB selhalo. Pokud se to děje často, zkuste jiný kabel, jiný port USB nebo rozbočovač USB.</string>
     <string name="notification_service_running">Open Headunit běží</string>
     <string name="notification_projection_active">Projekce Android Auto je aktivní</string>
     <string name="shortcut_connect_title">Připojit</string>
@@ -491,6 +495,7 @@
     <string name="overlay_position">Umístění výkonnostního překryvu</string>
     <string name="show_performance_overlay_description">Zobrazí snímkovou frekvenci, zatížení procesoru, teplotu a stáří snímku přes projekci.</string>
     <string name="overlay_permission_required">Automatické spuštění vyžaduje oprávnění „Zobrazení přes ostatní aplikace“</string>
+    <string name="usb_access_needed">Open Headunit nemá přístup k tomuto zařízení USB. Povolíte ho stisknutím USB. Pokud se pro něj otevře jiná aplikace, vymažte její výchozí nastavení USB v nastavení Androidu.</string>
     <string name="usb_permission_denied">Oprávnění USB bylo zamítnuto. Povolte prosím přístup k USB pro automatické připojení.</string>
     <string name="use_white_background">Použít bílou tapetu domovské obrazovky</string>
     <string name="reopen_on_reconnection_label">Znovu otevřít při opětovném připojení</string>
@@ -1049,6 +1054,8 @@
 
     <!-- Auto-added missing translations -->
     <string name="blacklisted">Na černé listině</string>
+    <string name="usb_blacklist_one_mode">Toto zařízení neposkytuje název, proto černá listina porovnává jeho USB ID: platí pro všechna zařízení s tímto ID a jen v tomto režimu USB. V režimu Android Auto se může stále připojit.</string>
+    <string name="usb_blacklist_android_asks">Android se při připojení tohoto zařízení může stále ptát. Vyberte aplikaci, pro kterou je určeno, a zaškrtnutím políčka ji nastavte jako výchozí. Android se už nezeptá.</string>
     <string name="usb_blacklist_title">Černá listina USB zařízení</string>
     <string name="usb_blacklist_description">Zařízení na černé listině jsou při připojení ignorována: žádné automatické spuštění ani výzvy. Zařízení se rozpoznává podle názvu, takže blokovaný telefon zůstane blokován v každém režimu USB. Někteří výrobci dávají všem modelům stejný název, takže je nelze odlišit.</string>
     <string name="add_to_blacklist">Přidat na černou listinu</string>

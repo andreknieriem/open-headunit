@@ -214,6 +214,8 @@
     <string name="allowed">อนุญาตแล้ว</string>
     <string name="ignored">ละเว้นแล้ว</string>
     <string name="blacklisted">อยู่ในบัญชีดำ</string>
+    <string name="usb_blacklist_one_mode">อุปกรณ์นี้ไม่แสดงชื่อ บัญชีดำจึงจับคู่ตาม USB ID: อุปกรณ์ทุกเครื่องที่มี ID นี้ และเฉพาะในโหมด USB นี้เท่านั้น ในโหมด Android Auto อุปกรณ์ยังเชื่อมต่อได้</string>
+    <string name="usb_blacklist_android_asks">Android อาจยังถามเกี่ยวกับอุปกรณ์นี้เมื่อเสียบ เลือกแอปที่ตรงกับอุปกรณ์และทำเครื่องหมายที่ช่องเพื่อใช้เสมอ Android จะไม่ถามอีก</string>
     <string name="usb_blacklist_title">บัญชีดำอุปกรณ์ USB</string>
     <string name="usb_blacklist_description">อุปกรณ์ในบัญชีดำจะถูกละเว้นเมื่อเชื่อมต่อ: ไม่เริ่มอัตโนมัติ ไม่มีการถาม อุปกรณ์จะจับคู่ตามชื่อ ดังนั้นโทรศัพท์ที่ติดบัญชีดำจะยังคงติดบัญชีดำในทุกโหมด USB ผู้ผลิตบางรายตั้งชื่อรุ่นเดียวกันทั้งหมดซึ่งไม่สามารถแยกแยะได้</string>
     <string name="add_to_blacklist">เพิ่มลงในบัญชีดำ</string>
@@ -486,12 +488,15 @@
     <string name="auto_start_offer_yes">ใช่</string>
     <string name="auto_start_offer_no">ไม่</string>
     <string name="auto_start_offer_countdown">ไม่ ในอีก %1$d วินาที</string>
-    <string name="listen_for_usb_devices_label">รอรับอุปกรณ์ USB</string>
-    <string name="listen_for_usb_devices_description">แสดงข้อความแจ้งเตือนของระบบ Android เมื่อเสียบอุปกรณ์ USB</string>
+    <string name="listen_for_usb_attach_label">ตรวจหาโทรศัพท์หรือดองเกิล AA ที่เสียบอยู่</string>
+    <string name="listen_for_usb_attach_description">Android เสนอ Open Headunit สำหรับโทรศัพท์หรือดองเกิล Android Auto ที่เสียบอยู่ และจดจำตัวเลือกของคุณ เมื่อปิดอยู่ Android จะไม่เสนอ ใช้ปุ่ม USB และตอบกล่องโต้ตอบทุกครั้ง</string>
     <string name="show_toast_messages">แสดงข้อความแจ้งเตือน Toast</string>
     <string name="show_toast_messages_description">แสดงป๊อปอัปสถานะเมื่อเชื่อมต่อ ตัดการเชื่อมต่อ และเปลี่ยนโหมด</string>
-    <string name="auto_start_usb_label">เริ่มอัตโนมัติเมื่อเสียบ USB</string>
-    <string name="auto_start_usb_description">เปิดแอปโดยอัตโนมัติและพยายามเชื่อมต่อเมื่อเสียบอุปกรณ์ USB</string>
+    <string name="auto_start_usb_connect_label">เชื่อมต่อเมื่อเสียบ</string>
+    <string name="auto_start_usb_connect_description">เริ่ม Android Auto เมื่อเสียบโทรศัพท์หรือดองเกิลที่ตรวจพบ เมื่อปิดอยู่ การเสียบจะเปิดแอปเท่านั้น และปุ่ม USB จะเชื่อมต่อ การตั้งค่าเชื่อมต่ออัตโนมัติยังใช้งานเมื่อเปิดแอป</string>
+    <string name="auto_start_usb_connect_needs_detect">เปิด \"%1$s\" ในการตั้งค่าทั่วไปก่อน</string>
+    <string name="auto_start_usb_open_label">เปิดแอปเมื่อเสียบ</string>
+    <string name="auto_start_usb_open_description">เปิด Open Headunit เมื่อเสียบโทรศัพท์หรือดองเกิล และยังเริ่มแอปหลังบูตหรือหลังปลุกเครื่องเพื่อหาโทรศัพท์ที่เสียบอยู่ รวมถึงเฝ้าดูต่อหลังออก</string>
     <string name="auto_start_settings">การตั้งค่าการเริ่มอัตโนมัติ</string>
     <string name="auto_start_settings_description">กำหนดค่าเมื่อแอปเริ่มต้นโดยอัตโนมัติ</string>
     <string name="auto_start_oem_warning">อุปกรณ์นี้อาจต้องเปิดการเริ่มอัตโนมัติ และปิดการเพิ่มประสิทธิภาพแบตเตอรี่หรือข้อจำกัดการทำงานเบื้องหลังสำหรับแอปนี้\n\nในเฮดยูนิตที่มี Quick Boot (บูตเร็ว) การเริ่มอัตโนมัติอาจไม่ทำงาน ให้หา \"DuraSpeed\" ในการตั้งค่าระบบ แล้วเปิดใช้กับแอปนี้ เฮดยูนิตบางรุ่นซ่อน DuraSpeed ไว้ คุณอาจต้องใช้แอปอย่าง \"Hidden Settings\" เพื่อหาเจอ หากไม่มี DuraSpeed ให้ลองปิด Quick Boot</string>
@@ -884,6 +889,7 @@
     <string name="connection_interrupted_detail">กำลังลองใหม่…</string>
     <string name="renderer_fallback_surface">วิดีโอค้างบ่อย จึงเปลี่ยนไปใช้ SurfaceView สำหรับเซสชันนี้ หากภาพเสถียรแล้ว ให้ตั้งโหมดมุมมองเป็น SurfaceView ในการตั้งค่า</string>
     <string name="wifi_disconnect_toast">Android Auto ยกเลิกการเชื่อมต่อ: หากใช้ Android Auto แบบไร้สาย ให้ปิด \"สลับระหว่างเครือข่าย\" หรือ \"การเร่งความเร็วเครือข่าย\" ในการตั้งค่า Wi-Fi ของโทรศัพท์</string>
+    <string name="usb_disconnect_toast">Android Auto ยกเลิกการเชื่อมต่อ: การเชื่อมต่อ USB กับโทรศัพท์ล้มเหลว หากเกิดขึ้นบ่อย ให้ลองใช้สายเคเบิลอื่น พอร์ต USB อื่น หรือฮับ USB</string>
     <string name="reset_usb_option">รีเซ็ตการเชื่อมต่อ USB</string>
     <string name="reset_usb_timeout">ไม่พบอุปกรณ์ USB โปรดตรวจสอบการเชื่อมต่อ</string>
     <string name="notification_service_running">Open Headunit กำลังทำงาน</string>
@@ -1004,6 +1010,7 @@
     <string name="reopen_on_reconnection_label">เปิดใหม่เมื่อเชื่อมต่ออีกครั้ง</string>
     <string name="reopen_on_reconnection_description">เมื่อคุณกดปุ่มออก แอปจะยังคงทำงานในพื้นหลังและติดตามการเชื่อมต่อ USB ต่อไป หากอุปกรณ์เชื่อมต่อใหม่ แอปจะเปิดขึ้นมาใหม่โดยอัตโนมัติ</string>
     <string name="overlay_permission_required">การเริ่มอัตโนมัติต้องใช้สิทธิ์ \'แสดงทับบนแอปอื่นๆ\'</string>
+    <string name="usb_access_needed">Open Headunit ไม่มีสิทธิ์เข้าถึงอุปกรณ์ USB นี้ กด USB เพื่ออนุญาต หากมีแอปอื่นเปิดขึ้นมาสำหรับอุปกรณ์นี้ ให้ล้างค่าเริ่มต้น USB ของแอปนั้นในการตั้งค่า Android</string>
     <string name="usb_permission_denied">สิทธิ์ USB ถูกปฏิเสธ โปรดอนุญาตการเข้าถึง USB เพื่อเชื่อมต่อโดยอัตโนมัติ</string>
 
     <!-- Theme -->

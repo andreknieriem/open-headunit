@@ -88,7 +88,7 @@ class UsbRecoveryAdmissionTest {
                 set("disconnectRequested", true)
                 states.value = CommManager.ConnectionState.Disconnected()
                 null
-            }.`when`(manager).disconnect(any(), any(), any(), any(), any(), anyOrNull())
+            }.`when`(manager).disconnect(any(), any(), any(), any(), any(), anyOrNull(), anyOrNull())
             return handle
         }
         fun set(name: String, value: Any?) = CommManager::class.java.getDeclaredField(name)

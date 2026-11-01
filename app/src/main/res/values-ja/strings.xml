@@ -249,12 +249,15 @@
     <string name="enter_wifi_ssid">Wi-Fi SSIDを入力してください</string>
     <string name="wifi_ssid_not_set">未設定</string>
 
-    <string name="listen_for_usb_devices_label">USBデバイスの検出</string>
-    <string name="listen_for_usb_devices_description">USBデバイスが接続されたときに、Androidのシステムダイアログを表示します。</string>
+    <string name="listen_for_usb_attach_label">接続されたスマートフォン/AAドングルを検出</string>
+    <string name="listen_for_usb_attach_description">接続されたスマートフォンやAndroid Autoドングルに対して、AndroidがOpen Headunitを提案し、選択を記憶します。オフの場合、Androidは提案しません。USBボタンを使い、毎回ダイアログに応答します。</string>
     <string name="show_toast_messages">トースト通知を表示</string>
     <string name="show_toast_messages_description">接続・切断・モード切替時にステータスのトースト通知を表示します。</string>
-    <string name="auto_start_usb_label">USBから自動起動</string>
-    <string name="auto_start_usb_description">USBデバイスが接続されたら、アプリを自動的に起動して接続を試みます。</string>
+    <string name="auto_start_usb_connect_label">差し込んだら接続</string>
+    <string name="auto_start_usb_connect_description">検出されたスマートフォンまたはドングルを差し込むと、Android Autoを開始します。オフの場合、差し込んでもアプリが開くだけで、接続はUSBボタンで行います。アプリを開いたときも、自動接続の設定は引き続き適用されます。</string>
+    <string name="auto_start_usb_connect_needs_detect">先に全般設定で\"%1$s\"をオンにしてください。</string>
+    <string name="auto_start_usb_open_label">差し込んだらアプリを開く</string>
+    <string name="auto_start_usb_open_description">スマートフォンまたはドングルを差し込むと、Open Headunitを開きます。起動後やスリープ復帰後にもアプリを開始して差し込まれたスマートフォンを探し、終了後も監視を続けます。</string>
     <string name="auto_start_settings">自動起動設定</string>
     <string name="auto_start_settings_description">アプリが自動起動するタイミングを設定します。</string>
     <string name="auto_start_oem_warning">このデバイスでは、このアプリの自動起動を有効にし、バッテリーの最適化やバックグラウンド制限を解除する必要がある場合があります。\n\nクイックブート（高速起動）対応のヘッドユニットでは、自動起動が機能しない場合があります。システム設定で「DuraSpeed」を探し、そこでこのアプリを有効にしてください。一部のヘッドユニットでは、DuraSpeedが非表示になっているため、「Hidden Settings」などのアプリが必要になる場合があります。DuraSpeedがない場合は、クイックブートを無効にしてみてください。</string>
@@ -420,6 +423,7 @@
     <string name="connection_interrupted">切断されました</string>
     <string name="connection_interrupted_detail">再試行中…</string>
     <string name="wifi_disconnect_toast">Android Autoが切断されました：ワイヤレスAAを使用している場合は、スマートフォンのWi-Fi設定で「ネットワークを切り替える」または「ネットワークアクセラレーション」を無効にしてください。</string>
+    <string name="usb_disconnect_toast">Android Autoが切断されました：スマートフォンとのUSB接続に失敗しました。頻繁に発生する場合は、別のケーブル、別のUSBポート、またはUSBハブをお試しください。</string>
     <string name="reset_usb_option">USB接続をリセットする</string>
     <string name="reset_usb_timeout">USBデバイスが見つかりません。接続を確認してください。</string>
     <string name="notification_service_running">Open Headunitが起動中</string>
@@ -496,6 +500,7 @@
     <string name="reopen_on_reconnection_label">再接続時にアプリを開く</string>
     <string name="reopen_on_reconnection_description">終了ボタンを押しても、アプリはバックグラウンドで実行され続け、USB接続の監視を続けます。デバイスが再接続されると、アプリは自動的に再び開きます。</string>
     <string name="overlay_permission_required">自動起動には「他のアプリの上に重ねて表示」権限が必要です</string>
+    <string name="usb_access_needed">Open HeadunitはこのUSBデバイスにアクセスできません。許可するには、USBを押してください。別のアプリが開く場合は、Androidの設定でそのアプリのUSBのデフォルト設定を消去してください。</string>
     <string name="usb_permission_denied">USBの権限が拒否されました。自動接続するには、USBアクセスを許可してください。</string>
 
     <!-- Theme -->
@@ -1051,6 +1056,8 @@
 
     <!-- Auto-added missing translations -->
     <string name="blacklisted">ブラックリスト登録済み</string>
+    <string name="usb_blacklist_one_mode">このデバイスは名前を通知しないため、ブラックリストはUSB IDで照合されます。同じIDのすべてのデバイスが対象で、このUSBモードでのみ有効です。Android Autoモードでは接続できる場合があります。</string>
+    <string name="usb_blacklist_android_asks">このデバイスを接続すると、Androidが確認を表示することがあります。対象のアプリを選び、常に使用するにチェックを入れると、次回から確認されません。</string>
     <string name="usb_blacklist_title">USBデバイスのブラックリスト</string>
     <string name="usb_blacklist_description">ブラックリストに登録したデバイスは、接続時に無視されます（自動起動なし、確認なし）。デバイスは名前で照合されるため、ブラックリストに登録したスマートフォンは、どの USB モードでも登録されたままになります。一部のメーカーは全モデルに同じ名前を付けているため、それらは区別できません。</string>
     <string name="add_to_blacklist">ブラックリストに追加</string>

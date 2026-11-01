@@ -133,6 +133,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     private var kenBurnsAnimator: ObjectAnimator? = null
 
     private var twoFingerTracker: TwoFingerGestureTracker? = null
+    private var twoFingerFirstId = -1
     private var lastTwoFingerEvent: MotionEvent? = null
     private var consumeGestureUntilUp = false
     private val remoteTouch = RemoteTouchPolicy()
@@ -142,10 +143,15 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     private val overlayOrigin = IntArray(2)
     private val gestureHandler = android.os.Handler(android.os.Looper.getMainLooper())
     private val twoFingerLongPress = Runnable {
-        if (twoFingerTracker?.canLongPress == true &&
+        if (twoFingerTracker?.still == true &&
             settings.longPressTwoFingerGesture != Settings.GestureAction.DISABLED) {
             lastTwoFingerEvent?.let { finishTwoFingerGesture(settings.longPressTwoFingerGesture, it, "LONG_PRESS") }
         }
+    }
+    // A pending tap whose last finger stays down past the window: the phone gets that finger.
+    private val twoFingerTapExpired = Runnable {
+        clearTwoFingerTracking()
+        remoteGeometry()?.let { sendRemote(remoteTouch.giveUp(emptyList()), it, SystemClock.elapsedRealtime()) }
     }
     private val remoteHoldExpired = Runnable {
         remoteGeometry()?.let { sendRemote(remoteTouch.holdExpired(), it, SystemClock.elapsedRealtime()) }
@@ -2168,13 +2174,18 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                 clearTwoFingerTracking()
                 // Only a first finger the phone has not seen yet can start a gesture.
                 if (ev.pointerCount == 2 && remoteTouch.mayStartGesture) {
-                    twoFingerTracker = TwoFingerGestureTracker(
+                    val tracker = TwoFingerGestureTracker(
                         localX(ev, 0), localY(ev, 0), localX(ev, 1), localY(ev, 1),
                         gestureWidth(),
                         ViewConfiguration.get(this).scaledTouchSlop.toFloat(),
-                        resources.displayMetrics.density
+                        resources.displayMetrics.density,
+                        settings.gestureEdgeZone.dp,
+                        ev.eventTime
                     )
-                    if (twoFingerGestureMayFire(twoFingerTracker)) {
+                    twoFingerTracker = tracker
+                    twoFingerFirstId = ev.getPointerId(0)
+                    // A touch that can never become an enabled gesture, such as a pinch on the map, stays with Android Auto.
+                    if (tracker.mayBecome(enabledGestures())) {
                         lastTwoFingerEvent = MotionEvent.obtain(ev)
                         if (settings.longPressTwoFingerGesture != Settings.GestureAction.DISABLED) {
                             gestureHandler.postDelayed(twoFingerLongPress, ViewConfiguration.getLongPressTimeout().toLong())
@@ -2184,36 +2195,70 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                     }
                 }
             }
-            MotionEvent.ACTION_MOVE -> if (ev.pointerCount == 2) {
+            MotionEvent.ACTION_MOVE -> if (ev.pointerCount == 1) {
+                // One finger of a pending tap already lifted: only the tap can still fire.
+                twoFingerTracker?.let { tracker ->
+                    tracker.moveOne(ev.getPointerId(0) == twoFingerFirstId, localX(ev, 0), localY(ev, 0))
+                    if (!tracker.mayTap(enabledGestures(), ev.eventTime)) {
+                        clearTwoFingerTracking()
+                        remoteGiveUpPending = true
+                    }
+                }
+            } else if (ev.pointerCount == 2) {
                 val tracker = twoFingerTracker
                 val swipe = tracker?.move(localX(ev, 0), localY(ev, 0), localX(ev, 1), localY(ev, 1))
                 if (tracker != null) {
-                    if (!tracker.canLongPress) gestureHandler.removeCallbacks(twoFingerLongPress)
+                    if (!tracker.still) gestureHandler.removeCallbacks(twoFingerLongPress)
                     lastTwoFingerEvent?.recycle()
                     lastTwoFingerEvent = MotionEvent.obtain(ev)
                 }
                 val action = when (swipe) {
                     TwoFingerGestureTracker.Swipe.LEFT_EDGE -> settings.leftTwoFingerGesture
                     TwoFingerGestureTracker.Swipe.RIGHT_EDGE -> settings.rightTwoFingerGesture
-                    TwoFingerGestureTracker.Swipe.DOWN -> settings.downTwoFingerGesture
                     null -> Settings.GestureAction.DISABLED
                 }
                 if (action != Settings.GestureAction.DISABLED) {
                     finishTwoFingerGesture(action, ev, swipe?.name.orEmpty())
                     return true
                 }
-                if (tracker != null && !tracker.canStillFire(
-                        left = settings.leftTwoFingerGesture != Settings.GestureAction.DISABLED,
-                        right = settings.rightTwoFingerGesture != Settings.GestureAction.DISABLED,
-                        down = settings.downTwoFingerGesture != Settings.GestureAction.DISABLED,
-                        longPress = settings.longPressTwoFingerGesture != Settings.GestureAction.DISABLED
-                    )) {
-                    // A pinch or a wrong direction: the withheld finger joins the phone's touch.
+                if (tracker != null && !tracker.canStillFire(enabledGestures(), ev.eventTime)) {
+                    // A pinch, a wrong direction or a slow tap: the withheld fingers join the phone's touch.
                     clearTwoFingerTracking()
                     remoteGiveUpPending = true
                 }
             }
-            MotionEvent.ACTION_POINTER_UP, MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> clearTwoFingerTracking()
+            MotionEvent.ACTION_POINTER_UP -> {
+                val tracker = twoFingerTracker
+                when {
+                    tracker == null || ev.pointerCount != 2 -> clearTwoFingerTracking()
+                    // Keep the tracker for the last finger up; the phone gets nothing meanwhile.
+                    tracker.mayTap(enabledGestures(), ev.eventTime) -> {
+                        gestureHandler.removeCallbacks(twoFingerLongPress)
+                        gestureHandler.postDelayed(twoFingerTapExpired, tracker.tapEndsInMs(ev.eventTime) + 1)
+                    }
+                    // Still fingers that are not our tap: the phone gets both, where they landed.
+                    tracker.still -> {
+                        clearTwoFingerTracking()
+                        remoteGiveUpPending = true
+                    }
+                    else -> clearTwoFingerTracking()
+                }
+            }
+            MotionEvent.ACTION_UP -> {
+                val tracker = twoFingerTracker
+                tracker?.moveOne(ev.getPointerId(0) == twoFingerFirstId, localX(ev, 0), localY(ev, 0))
+                val tap = tracker?.tap(enabledGestures(), ev.eventTime)
+                if (tap != null) {
+                    val action = when (tap) {
+                        TwoFingerGestureTracker.Tap.LEFT_TAP -> settings.leftTapTwoFingerGesture
+                        TwoFingerGestureTracker.Tap.RIGHT_TAP -> settings.rightTapTwoFingerGesture
+                    }
+                    finishTwoFingerGesture(action, ev, tap.name)
+                    return true
+                }
+                clearTwoFingerTracking()
+            }
+            MotionEvent.ACTION_CANCEL -> clearTwoFingerTracking()
         }
 
         // 2. Legacy Touch handling for older devices (API < 19), moved into the overlay's frame for mapRemote.
@@ -2233,8 +2278,10 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
 
     private fun clearTwoFingerTracking() {
         gestureHandler.removeCallbacks(twoFingerLongPress)
+        gestureHandler.removeCallbacks(twoFingerTapExpired)
         gestureHandler.removeCallbacks(remoteHoldExpired)
         twoFingerTracker = null
+        twoFingerFirstId = -1
         lastTwoFingerEvent?.recycle()
         lastTwoFingerEvent = null
     }
@@ -2258,15 +2305,13 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     private fun gestureWidth(): Float =
         (touchOverlayView?.width?.takeIf { it > 0 } ?: HeadUnitScreenConfig.getUsableWidth()).toFloat()
 
-    // A touch that can never become an enabled gesture, such as a pinch on the map, stays with Android Auto.
-    private fun twoFingerGestureMayFire(tracker: TwoFingerGestureTracker?): Boolean {
-        return tracker?.mayBecome(
-            left = settings.leftTwoFingerGesture != Settings.GestureAction.DISABLED,
-            right = settings.rightTwoFingerGesture != Settings.GestureAction.DISABLED,
-            down = settings.downTwoFingerGesture != Settings.GestureAction.DISABLED,
-            longPress = settings.longPressTwoFingerGesture != Settings.GestureAction.DISABLED
-        ) == true
-    }
+    private fun enabledGestures() = TwoFingerGestureTracker.Enabled(
+        left = settings.leftTwoFingerGesture != Settings.GestureAction.DISABLED,
+        right = settings.rightTwoFingerGesture != Settings.GestureAction.DISABLED,
+        longPress = settings.longPressTwoFingerGesture != Settings.GestureAction.DISABLED,
+        leftTap = settings.leftTapTwoFingerGesture != Settings.GestureAction.DISABLED,
+        rightTap = settings.rightTapTwoFingerGesture != Settings.GestureAction.DISABLED
+    )
 
     /** Runs on every start too, so a strength changed in settings while the dimmer is on takes effect. */
     private fun renderDimmer(dimmer: ProjectionDimmerView, on: Boolean) {
@@ -2606,11 +2651,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         }
 
         val mayStart = local == RemoteTouchPolicy.Local.DOWN && TwoFingerGestureTracker.mayStartAt(
-            event.getX(0), gestureWidth(), resources.displayMetrics.density,
-            left = settings.leftTwoFingerGesture != Settings.GestureAction.DISABLED,
-            right = settings.rightTwoFingerGesture != Settings.GestureAction.DISABLED,
-            down = settings.downTwoFingerGesture != Settings.GestureAction.DISABLED,
-            longPress = settings.longPressTwoFingerGesture != Settings.GestureAction.DISABLED
+            event.getX(0), gestureWidth(), resources.displayMetrics.density, settings.gestureEdgeZone.dp, enabledGestures()
         )
         if (remoteGiveUpPending) {
             remoteGiveUpPending = false

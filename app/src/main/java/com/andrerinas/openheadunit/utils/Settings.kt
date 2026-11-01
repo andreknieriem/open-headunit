@@ -9,6 +9,7 @@ import android.hardware.usb.UsbDevice
 import android.location.Location
 import android.media.AudioManager
 import android.os.Build
+import com.andrerinas.openheadunit.aap.DimPolicy
 import com.andrerinas.openheadunit.input.KeyCode
 import com.andrerinas.openheadunit.main.FavoriteAppsPolicy
 import com.andrerinas.openheadunit.main.FavoriteTarget
@@ -559,6 +560,11 @@ class Settings(private val context: Context) {
         get() = GestureAction.fromInt(prefs.getInt("long-press-two-finger-gesture", GestureAction.DISABLED.value))
             ?: GestureAction.DISABLED
         set(value) { prefs.edit().putInt("long-press-two-finger-gesture", value.value).apply() }
+
+    var dimOpacityPercent: Int
+        get() = prefs.getInt("dim-opacity-percent", DimPolicy.DEFAULT_PERCENT)
+            .takeIf { it in DimPolicy.MIN_PERCENT..DimPolicy.MAX_PERCENT } ?: DimPolicy.DEFAULT_PERCENT
+        set(value) { prefs.edit().putInt("dim-opacity-percent", value).apply() }
 
     @Deprecated("Use fullscreenMode instead")
     var startInFullscreenMode: Boolean
@@ -2324,7 +2330,8 @@ class Settings(private val context: Context) {
         DISABLED(0),
         EXIT_DIALOG(1),
         TOGGLE_FULLSCREEN(2),
-        NIGHT_OVERLAY(3);
+        NIGHT_OVERLAY(3),
+        DIM_SCREEN(4);
 
         companion object {
             private val map = values().associateBy(GestureAction::value)

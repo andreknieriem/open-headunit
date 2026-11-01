@@ -37,6 +37,7 @@
     <string name="gesture_action_exit_dialog">مربع حوار الخروج</string>
     <string name="gesture_action_toggle_fullscreen">تبديل ملء الشاشة</string>
     <string name="gesture_action_night_overlay">تراكب الليل</string>
+    <string name="gesture_action_dim_screen">تعتيم الشاشة</string>
     <string name="gestures_reset">تمت إعادة تعيين إعدادات الإيماءات</string>
     <string name="night_overlay_dismiss">اضغط للعودة إلى العرض</string>
     <string name="night_overlay_meters">%1$d م</string>

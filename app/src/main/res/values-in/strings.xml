@@ -249,6 +249,7 @@
     <string name="gesture_action_exit_dialog">Dialog keluar</string>
     <string name="gesture_action_toggle_fullscreen">Alihkan layar penuh</string>
     <string name="gesture_action_night_overlay">Hamparan malam</string>
+    <string name="gesture_action_dim_screen">Redupkan layar</string>
     <string name="gestures_reset">Setelan gestur direset</string>
     <string name="night_overlay_dismiss">Ketuk untuk kembali ke proyeksi</string>
     <string name="night_overlay_meters">%1$d m</string>

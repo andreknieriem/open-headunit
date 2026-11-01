@@ -37,6 +37,7 @@
     <string name="gesture_action_exit_dialog">Okno wyjścia</string>
     <string name="gesture_action_toggle_fullscreen">Przełącz pełny ekran</string>
     <string name="gesture_action_night_overlay">Nakładka nocna</string>
+    <string name="gesture_action_dim_screen">Przyciemnij ekran</string>
     <string name="gestures_reset">Ustawienia gestów zresetowane</string>
     <string name="night_overlay_dismiss">Dotknij, aby wrócić do projekcji</string>
     <string name="night_overlay_meters">%1$d m</string>

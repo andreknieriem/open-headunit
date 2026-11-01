@@ -38,6 +38,7 @@
     <string name="gesture_action_exit_dialog">Beenden-Dialog</string>
     <string name="gesture_action_toggle_fullscreen">Vollbild umschalten</string>
     <string name="gesture_action_night_overlay">Nacht-Overlay</string>
+    <string name="gesture_action_dim_screen">Display abdunkeln</string>
     <string name="gestures_reset">Gesteneinstellungen zurückgesetzt</string>
     <string name="night_overlay_dismiss">Tippen, um zur Projektion zurückzukehren</string>
     <string name="night_overlay_meters">%1$d m</string>

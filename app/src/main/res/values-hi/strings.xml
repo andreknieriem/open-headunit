@@ -249,6 +249,7 @@
     <string name="gesture_action_exit_dialog">निकास संवाद</string>
     <string name="gesture_action_toggle_fullscreen">पूर्ण स्क्रीन टॉगल करें</string>
     <string name="gesture_action_night_overlay">नाइट ओवरले</string>
+    <string name="gesture_action_dim_screen">स्क्रीन मंद करें</string>
     <string name="gestures_reset">जेस्चर सेटिंग्स रीसेट हो गईं</string>
     <string name="night_overlay_dismiss">प्रोजेक्शन पर लौटने के लिए टैप करें</string>
     <string name="night_overlay_meters">%1$d मी</string>

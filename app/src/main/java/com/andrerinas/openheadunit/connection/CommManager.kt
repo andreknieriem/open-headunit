@@ -5,6 +5,7 @@ import android.content.Context
 import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
 import com.andrerinas.openheadunit.aap.AapSslContext
+import com.andrerinas.openheadunit.aap.DimState
 import com.andrerinas.openheadunit.aap.AaPresentationSession
 import com.andrerinas.openheadunit.aap.AapTransport
 import com.andrerinas.openheadunit.aap.NarrowBandProfilePolicy
@@ -92,6 +93,9 @@ class CommManager(
     private val aapSslContext: AapSslContext = AapSslContext(SingleKeyKeyManager(context))
 
     enum class DisconnectReason { CONNECTION_ENDED, SETTINGS_RESTART, PROJECTION_UNRAISED }
+
+    /** The dimmer outlives the projection activity and clears when a session ends. */
+    val dimState = DimState()
 
     /**
      * Represents the lifecycle state of the Android Auto connection.
@@ -1705,6 +1709,7 @@ class CommManager(
         // here, so the second pass sees a session that never reached the handshake and counts
         // nothing.
         recordProjectionHealth()
+        dimState.resetForNewSession()
         noteSessionEnded(renderedAnyFrame = videoDecoder.framesRenderedThisSession > 0L, deliberateEnd = reason != DisconnectReason.CONNECTION_ENDED)
         // The close is in its own phase because it is the one that must happen: a throw from the
         // ByeBye send or either decoder stop used to skip it, leaving the phone's head unit server

@@ -37,6 +37,7 @@
     <string name="gesture_action_exit_dialog">Hộp thoại thoát</string>
     <string name="gesture_action_toggle_fullscreen">Chuyển đổi toàn màn hình</string>
     <string name="gesture_action_night_overlay">Lớp phủ ban đêm</string>
+    <string name="gesture_action_dim_screen">Làm tối màn hình</string>
     <string name="gestures_reset">Đã đặt lại cài đặt cử chỉ</string>
     <string name="night_overlay_dismiss">Chạm để quay lại chế độ chiếu</string>
     <string name="night_overlay_meters">%1$d m</string>

@@ -274,6 +274,7 @@
     <string name="gesture_action_exit_dialog">Exit dialog</string>
     <string name="gesture_action_toggle_fullscreen">Toggle full screen</string>
     <string name="gesture_action_night_overlay">Night overlay</string>
+    <string name="gesture_action_dim_screen">Dim screen</string>
     <string name="gestures_reset">Gesture settings reset</string>
     <string name="night_overlay_dismiss">Tap to return to projection</string>
     <string name="night_overlay_meters">%1$d m</string>

@@ -40,6 +40,7 @@
     <string name="gesture_action_exit_dialog">종료 대화상자</string>
     <string name="gesture_action_toggle_fullscreen">전체 화면 전환</string>
     <string name="gesture_action_night_overlay">야간 오버레이</string>
+    <string name="gesture_action_dim_screen">화면 어둡게 하기</string>
     <string name="gestures_reset">제스처 설정이 초기화되었습니다</string>
     <string name="night_overlay_dismiss">탭하여 프로젝션으로 돌아가기</string>
     <string name="night_overlay_meters">%1$d m</string>

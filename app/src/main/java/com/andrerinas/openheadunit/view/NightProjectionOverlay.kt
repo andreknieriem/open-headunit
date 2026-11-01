@@ -143,9 +143,13 @@ class NightProjectionOverlay(context: Context) : FrameLayout(context) {
         clockTick.run()
     }
 
+    /** Called after the overlay hides, so a paused dimmer can come back. */
+    var onHidden: (() -> Unit)? = null
+
     fun hide() {
         visibility = GONE
         handler.removeCallbacks(clockTick)
+        onHidden?.invoke()
     }
 
     fun render(content: NightOverlayState.Content) {

@@ -121,5 +121,6 @@ class GesturesFragment : Fragment() {
             Settings.GestureAction.EXIT_DIALOG -> R.string.gesture_action_exit_dialog
             Settings.GestureAction.TOGGLE_FULLSCREEN -> R.string.gesture_action_toggle_fullscreen
             Settings.GestureAction.NIGHT_OVERLAY -> R.string.gesture_action_night_overlay
+            Settings.GestureAction.DIM_SCREEN -> R.string.gesture_action_dim_screen
         }
 }

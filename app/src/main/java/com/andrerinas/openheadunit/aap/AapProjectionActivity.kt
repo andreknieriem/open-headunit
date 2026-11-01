@@ -34,6 +34,7 @@ import com.andrerinas.openheadunit.app.SurfaceActivity
 import com.andrerinas.openheadunit.connection.CommManager
 import com.andrerinas.openheadunit.contract.KeyIntent
 import com.andrerinas.openheadunit.decoder.video.WarmRelaunchKeyframePolicy
+import com.andrerinas.openheadunit.input.GestureOutcomePolicy
 import com.andrerinas.openheadunit.input.ProjectionKeyPolicy
 import com.andrerinas.openheadunit.input.RemoteTouchPolicy
 import com.andrerinas.openheadunit.input.TouchCoordinateMapper
@@ -66,6 +67,8 @@ import com.andrerinas.openheadunit.utils.ProjectionHealthRecorder
 import com.andrerinas.openheadunit.utils.SystemUI
 import com.andrerinas.openheadunit.aap.AapService
 import android.content.IntentFilter
+import com.andrerinas.openheadunit.view.DimmerLayerPolicy
+import com.andrerinas.openheadunit.view.ProjectionDimmerView
 import com.andrerinas.openheadunit.view.ProjectionViewScaler
 import android.animation.ObjectAnimator
 import android.animation.PropertyValuesHolder
@@ -150,6 +153,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     private var activityFullscreenOverride: Settings.FullscreenMode? = null
     private var touchOverlayView: OverlayTouchView? = null
     private var nightOverlay: NightProjectionOverlay? = null
+    private var dimmerView: ProjectionDimmerView? = null
     private val performanceOverlay by lazy {
         PerformanceOverlay(settings) { videoDecoder.lastFrameRenderedMs }
     }
@@ -1260,7 +1264,22 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                     App.provide(this@AapProjectionActivity).nightOverlayState.content.collect(night::render)
                 }
             }
+            night.onHidden = { commManager.dimState.resumeAfterOverlay() }
         }
+        dimmerView = ProjectionDimmerView(this).also { dimmer ->
+            container.addView(dimmer, FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            ))
+            lifecycleScope.launch {
+                repeatOnLifecycle(Lifecycle.State.STARTED) {
+                    commManager.dimState.on.collect { on -> renderDimmer(dimmer, on) }
+                }
+            }
+        }
+        placeDimmer()
+        // The overlay is built hidden, so one lost to a recreation counts as closed.
+        commManager.dimState.resumeAfterOverlay()
         overlayView.requestFocus()
         setFullscreen() // Call setFullscreen here as well
 
@@ -2227,13 +2246,42 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         ) == true
     }
 
-    private fun performTouchGesture(action: Settings.GestureAction): Boolean = when (action) {
-        Settings.GestureAction.DISABLED -> false
-        Settings.GestureAction.EXIT_DIALOG -> {
+    /** Runs on every start too, so a strength changed in settings while the dimmer is on takes effect. */
+    private fun renderDimmer(dimmer: ProjectionDimmerView, on: Boolean) {
+        val alpha = DimPolicy.alphaFor(settings.dimOpacityPercent)
+        if (on == (dimmer.visibility == View.VISIBLE) && (!on || dimmer.shownAlpha == alpha)) return
+        if (on) {
+            dimmer.show(alpha)
+            AppLog.i("AapProjectionActivity: dimmer on, alpha=$alpha")
+        } else {
+            dimmer.hide()
+            AppLog.i("AapProjectionActivity: dimmer off")
+        }
+    }
+
+    /** A rebuilt projection view lands at the end of the container, so the dimmer is re-seated above it. */
+    private fun placeDimmer() {
+        val container = findViewById<FrameLayout>(R.id.container)
+        val dimmer = dimmerView ?: return
+        container.removeView(dimmer)
+        val kinds = List(container.childCount) {
+            if (container.getChildAt(it) === projectionView) DimmerLayerPolicy.Kind.PROJECTION
+            else DimmerLayerPolicy.Kind.OTHER
+        }
+        container.addView(dimmer, DimmerLayerPolicy.index(kinds))
+    }
+
+    private fun performTouchGesture(action: Settings.GestureAction): Boolean = when (GestureOutcomePolicy.decide(action)) {
+        GestureOutcomePolicy.Outcome.None -> false
+        GestureOutcomePolicy.Outcome.ShowExitDialog -> {
             showExitDialog()
             true
         }
-        Settings.GestureAction.TOGGLE_FULLSCREEN -> {
+        GestureOutcomePolicy.Outcome.ToggleDimmer -> {
+            commManager.dimState.toggle()
+            true
+        }
+        GestureOutcomePolicy.Outcome.ToggleFullscreen -> {
             val currentEffective = activityFullscreenOverride ?: settings.fullscreenMode
             activityFullscreenOverride = if (currentEffective != Settings.FullscreenMode.NONE) {
                 Settings.FullscreenMode.NONE
@@ -2243,7 +2291,8 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             setFullscreen()
             true
         }
-        Settings.GestureAction.NIGHT_OVERLAY -> {
+        GestureOutcomePolicy.Outcome.ShowOverlay -> {
+            commManager.dimState.suspendForOverlay()
             nightOverlay?.apply {
                 render(App.provide(this@AapProjectionActivity).nightOverlayState.content.value)
                 scaleX = if (settings.hudMirroring) -1f else 1f
@@ -2788,6 +2837,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         projectionView.addCallback(this)
         // Baseline for the "no frame drawn while streaming" renderer check (issue #767).
         projectionStartMs = SystemClock.elapsedRealtime()
+        placeDimmer()
         performanceOverlay.bringToFront()
         nightOverlay?.takeIf { it.visibility == View.VISIBLE }?.bringToFront()
     }
@@ -2796,6 +2846,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         performanceOverlay.attachTo(findViewById(R.id.container))
         videoDecoder.onFpsChanged = performanceOverlay.fpsListener
         performanceOverlay.start()
+        placeDimmer()
         nightOverlay?.takeIf { it.visibility == View.VISIBLE }?.bringToFront()
     }
 }

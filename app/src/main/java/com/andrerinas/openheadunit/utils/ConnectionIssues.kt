@@ -2,6 +2,10 @@ package com.andrerinas.openheadunit.utils
 
 import android.content.Context
 import com.andrerinas.openheadunit.App
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 
 /**
  * A reason the last connection attempt failed, in terms a user can act on.
@@ -120,6 +124,18 @@ enum class ConnectionIssue {
     HANDS_FREE_RECORD_REFUSED,
 
     /**
+     * The phone took this unit's hands-free connection and dropped it at once, with its whole link.
+     *
+     * The other side of [HANDS_FREE_HELD_ELSEWHERE]: here the phone has no place left. It holds two
+     * Bluetooth audio devices at a time, and measured on a Z Fold3 the car's own Bluetooth and a
+     * pair of earbuds filled them, so every wake ended in Android Auto opening on the phone for 5 s
+     * and closing. Certain only when the walk got no answer and the link went too
+     * ([com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.HandsFreeRefusalPolicy]). The
+     * lever is one of the other devices; a hands-free connection that completes disproves it.
+     */
+    PHONE_REFUSED_HANDS_FREE,
+
+    /**
      * The phone is dialling a TCP endpoint this unit no longer honours, and cannot be told to stop.
      *
      * Android Auto stores that endpoint beside the network it was given and prefers it over the
@@ -182,6 +198,14 @@ interface ConnectionIssueStore {
  */
 object ConnectionIssues {
 
+    private val _changes = MutableStateFlow(0L)
+
+    /**
+     * Counts the writes that changed the record. The main screen reads it on resume, but some
+     * reasons are found while that screen is already up and retrying, so it collects this too.
+     */
+    val changes: StateFlow<Long> = _changes.asStateFlow()
+
     fun raise(context: Context, issue: ConnectionIssue) {
         storeFor(context)?.let { raise(it, issue, System.currentTimeMillis()) }
     }
@@ -206,6 +230,7 @@ object ConnectionIssues {
      */
     fun raise(store: ConnectionIssueStore, issue: ConnectionIssue, nowMs: Long) {
         store.write(issue, nowMs)
+        _changes.update { it + 1 }
     }
 
     /**
@@ -215,12 +240,16 @@ object ConnectionIssues {
      * past the user's dismissal on every pass, so the banner could never be dismissed at all.
      */
     fun raiseOnce(store: ConnectionIssueStore, issue: ConnectionIssue, nowMs: Long) {
-        if (store.read(issue) == 0L) store.write(issue, nowMs)
+        if (store.read(issue) != 0L) return
+        store.write(issue, nowMs)
+        _changes.update { it + 1 }
     }
 
     /** Safe to call when the issue was never raised. */
     fun clear(store: ConnectionIssueStore, issue: ConnectionIssue) {
-        if (store.read(issue) != 0L) store.write(issue, 0L)
+        if (store.read(issue) == 0L) return
+        store.write(issue, 0L)
+        _changes.update { it + 1 }
     }
 
     /** Everything currently true, most recently raised first. */
@@ -260,6 +289,7 @@ object ConnectionIssues {
                 ConnectionIssue.HEADUNIT_SERVER_NOT_ANSWERING -> settings.connectionIssueHeadUnitServerDeafAtEpochMs
                 ConnectionIssue.HANDS_FREE_HELD_ELSEWHERE -> settings.connectionIssueHandsFreeHeldAtEpochMs
                 ConnectionIssue.HANDS_FREE_RECORD_REFUSED -> settings.connectionIssueHandsFreeRecordRefusedAtEpochMs
+                ConnectionIssue.PHONE_REFUSED_HANDS_FREE -> settings.connectionIssuePhoneRefusedHandsFreeAtEpochMs
                 ConnectionIssue.PHONE_HOLDS_STALE_ENDPOINT -> settings.connectionIssueStaleEndpointAtEpochMs
                 ConnectionIssue.HOME_WIFI_REJOINED_BESIDE_GROUP -> settings.connectionIssueHomeWifiRejoinedAtEpochMs
                 ConnectionIssue.STALE_USB_ACCESSORY -> settings.connectionIssueStaleUsbAccessoryAtEpochMs
@@ -284,6 +314,7 @@ object ConnectionIssues {
                     ConnectionIssue.HEADUNIT_SERVER_NOT_ANSWERING -> settings.connectionIssueHeadUnitServerDeafAtEpochMs = atEpochMs
                     ConnectionIssue.HANDS_FREE_HELD_ELSEWHERE -> settings.connectionIssueHandsFreeHeldAtEpochMs = atEpochMs
                     ConnectionIssue.HANDS_FREE_RECORD_REFUSED -> settings.connectionIssueHandsFreeRecordRefusedAtEpochMs = atEpochMs
+                    ConnectionIssue.PHONE_REFUSED_HANDS_FREE -> settings.connectionIssuePhoneRefusedHandsFreeAtEpochMs = atEpochMs
                     ConnectionIssue.PHONE_HOLDS_STALE_ENDPOINT -> settings.connectionIssueStaleEndpointAtEpochMs = atEpochMs
                     ConnectionIssue.HOME_WIFI_REJOINED_BESIDE_GROUP -> settings.connectionIssueHomeWifiRejoinedAtEpochMs = atEpochMs
                     ConnectionIssue.STALE_USB_ACCESSORY -> settings.connectionIssueStaleUsbAccessoryAtEpochMs = atEpochMs

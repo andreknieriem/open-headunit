@@ -35,6 +35,7 @@ import com.andrerinas.openheadunit.connection.CommManager
 import com.andrerinas.openheadunit.contract.KeyIntent
 import com.andrerinas.openheadunit.decoder.video.WarmRelaunchKeyframePolicy
 import com.andrerinas.openheadunit.input.ProjectionKeyPolicy
+import com.andrerinas.openheadunit.input.RemoteTouchPolicy
 import com.andrerinas.openheadunit.input.TouchCoordinateMapper
 import com.andrerinas.openheadunit.input.TwoFingerGestureTracker
 import com.andrerinas.openheadunit.utils.ActivityState
@@ -131,13 +132,20 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     private var twoFingerTracker: TwoFingerGestureTracker? = null
     private var lastTwoFingerEvent: MotionEvent? = null
     private var consumeGestureUntilUp = false
-    private var suspendRemoteTouchUntilAllUp = false
+    private val remoteTouch = RemoteTouchPolicy()
+    // Set by dispatchTouchEvent, sent by the next sendTouchEvent, which always gets a point in the overlay's frame.
+    private var remoteGiveUpPending = false
+    // The overlay's offset in the window, so the tracker reads the same frame as mayStartAt.
+    private val overlayOrigin = IntArray(2)
     private val gestureHandler = android.os.Handler(android.os.Looper.getMainLooper())
     private val twoFingerLongPress = Runnable {
         if (twoFingerTracker?.canLongPress == true &&
             settings.longPressTwoFingerGesture != Settings.GestureAction.DISABLED) {
-            lastTwoFingerEvent?.let { finishTwoFingerGesture(settings.longPressTwoFingerGesture, it) }
+            lastTwoFingerEvent?.let { finishTwoFingerGesture(settings.longPressTwoFingerGesture, it, "LONG_PRESS") }
         }
+    }
+    private val remoteHoldExpired = Runnable {
+        remoteGeometry()?.let { sendRemote(remoteTouch.holdExpired(), it, SystemClock.elapsedRealtime()) }
     }
 
     // Activity-local override for fullscreen mode. If non-null, setFullscreen() will use this
@@ -1241,7 +1249,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                 if (event.action == MotionEvent.ACTION_DOWN) {
                     overlayView.requestFocus()
                 }
-                sendTouchEvent(event)
+                if (!RemoteTouchPolicy.sentFromDispatch(Build.VERSION.SDK_INT)) sendTouchEvent(event)
                 true
             }
 
@@ -2123,7 +2131,6 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
         if (ev.actionMasked == MotionEvent.ACTION_DOWN) {
             consumeGestureUntilUp = false
-            suspendRemoteTouchUntilAllUp = false
             clearTwoFingerTracking()
         }
         if (consumeGestureUntilUp) {
@@ -2136,21 +2143,20 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             it.dispatchTouchEvent(ev)
             return true
         }
+        touchOverlayView?.getLocationInWindow(overlayOrigin) ?: overlayOrigin.fill(0)
         when (ev.actionMasked) {
             MotionEvent.ACTION_POINTER_DOWN -> {
                 clearTwoFingerTracking()
-                if (ev.pointerCount == 2) {
+                // Only a first finger the phone has not seen yet can start a gesture.
+                if (ev.pointerCount == 2 && remoteTouch.mayStartGesture) {
                     twoFingerTracker = TwoFingerGestureTracker(
-                        ev.getX(0), ev.getY(0), ev.getX(1), ev.getY(1),
-                        (touchOverlayView?.width?.takeIf { it > 0 }
-                            ?: HeadUnitScreenConfig.getUsableWidth()).toFloat(),
+                        localX(ev, 0), localY(ev, 0), localX(ev, 1), localY(ev, 1),
+                        gestureWidth(),
                         ViewConfiguration.get(this).scaledTouchSlop.toFloat(),
                         resources.displayMetrics.density
                     )
                     if (twoFingerGestureMayFire(twoFingerTracker)) {
                         lastTwoFingerEvent = MotionEvent.obtain(ev)
-                        releaseRemotePrimaryPointer(ev)
-                        suspendRemoteTouchUntilAllUp = true
                         if (settings.longPressTwoFingerGesture != Settings.GestureAction.DISABLED) {
                             gestureHandler.postDelayed(twoFingerLongPress, ViewConfiguration.getLongPressTimeout().toLong())
                         }
@@ -2161,7 +2167,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             }
             MotionEvent.ACTION_MOVE -> if (ev.pointerCount == 2) {
                 val tracker = twoFingerTracker
-                val swipe = tracker?.move(ev.getX(0), ev.getY(0), ev.getX(1), ev.getY(1))
+                val swipe = tracker?.move(localX(ev, 0), localY(ev, 0), localX(ev, 1), localY(ev, 1))
                 if (tracker != null) {
                     if (!tracker.canLongPress) gestureHandler.removeCallbacks(twoFingerLongPress)
                     lastTwoFingerEvent?.recycle()
@@ -2174,29 +2180,49 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                     null -> Settings.GestureAction.DISABLED
                 }
                 if (action != Settings.GestureAction.DISABLED) {
-                    finishTwoFingerGesture(action, ev)
+                    finishTwoFingerGesture(action, ev, swipe?.name.orEmpty())
                     return true
+                }
+                if (tracker != null && !tracker.canStillFire(
+                        left = settings.leftTwoFingerGesture != Settings.GestureAction.DISABLED,
+                        right = settings.rightTwoFingerGesture != Settings.GestureAction.DISABLED,
+                        down = settings.downTwoFingerGesture != Settings.GestureAction.DISABLED,
+                        longPress = settings.longPressTwoFingerGesture != Settings.GestureAction.DISABLED
+                    )) {
+                    // A pinch or a wrong direction: the withheld finger joins the phone's touch.
+                    clearTwoFingerTracking()
+                    remoteGiveUpPending = true
                 }
             }
             MotionEvent.ACTION_POINTER_UP, MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> clearTwoFingerTracking()
         }
 
-        // 2. Legacy Touch handling for older devices (API < 19)
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
-            sendTouchEvent(ev)
+        // 2. Legacy Touch handling for older devices (API < 19), moved into the overlay's frame for mapRemote.
+        if (RemoteTouchPolicy.sentFromDispatch(Build.VERSION.SDK_INT)) {
+            val local = MotionEvent.obtain(ev)
+            local.offsetLocation(-overlayOrigin[0].toFloat(), -overlayOrigin[1].toFloat())
+            sendTouchEvent(local)
+            local.recycle()
         }
 
-        return super.dispatchTouchEvent(ev)
+        try {
+            return super.dispatchTouchEvent(ev)
+        } finally {
+            remoteGiveUpPending = false
+        }
     }
 
     private fun clearTwoFingerTracking() {
         gestureHandler.removeCallbacks(twoFingerLongPress)
+        gestureHandler.removeCallbacks(remoteHoldExpired)
         twoFingerTracker = null
         lastTwoFingerEvent?.recycle()
         lastTwoFingerEvent = null
     }
 
-    private fun finishTwoFingerGesture(action: Settings.GestureAction, event: MotionEvent) {
+    private fun finishTwoFingerGesture(action: Settings.GestureAction, event: MotionEvent, source: String) {
+        remoteTouch.recognise()
+        AppLog.i("AapProjectionActivity: two-finger gesture $source -> $action, withheld from Android Auto")
         val cancel = MotionEvent.obtain(event)
         cancel.action = MotionEvent.ACTION_CANCEL
         consumeGestureUntilUp = true
@@ -2207,6 +2233,12 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         performTouchGesture(action)
     }
 
+    private fun localX(ev: MotionEvent, i: Int) = ev.getX(i) - overlayOrigin[0]
+    private fun localY(ev: MotionEvent, i: Int) = ev.getY(i) - overlayOrigin[1]
+
+    private fun gestureWidth(): Float =
+        (touchOverlayView?.width?.takeIf { it > 0 } ?: HeadUnitScreenConfig.getUsableWidth()).toFloat()
+
     // A touch that can never become an enabled gesture, such as a pinch on the map, stays with Android Auto.
     private fun twoFingerGestureMayFire(tracker: TwoFingerGestureTracker?): Boolean {
         return tracker?.mayBecome(
@@ -2215,19 +2247,6 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             down = settings.downTwoFingerGesture != Settings.GestureAction.DISABLED,
             longPress = settings.longPressTwoFingerGesture != Settings.GestureAction.DISABLED
         ) == true
-    }
-
-    private fun releaseRemotePrimaryPointer(event: MotionEvent) {
-        val up = MotionEvent.obtain(
-            event.downTime,
-            event.eventTime,
-            MotionEvent.ACTION_UP,
-            event.getX(0),
-            event.getY(0),
-            event.metaState
-        )
-        sendTouchEvent(up)
-        up.recycle()
     }
 
     private fun performTouchGesture(action: Settings.GestureAction): Boolean = when (action) {
@@ -2445,27 +2464,18 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         }
     }
 
-    private fun sendTouchEvent(event: MotionEvent) {
-        if (suspendRemoteTouchUntilAllUp) {
-            if (event.actionMasked == MotionEvent.ACTION_UP || event.actionMasked == MotionEvent.ACTION_CANCEL) {
-                suspendRemoteTouchUntilAllUp = false
-            }
-            return
-        }
+    private class RemoteGeometry(
+        val videoW: Int, val videoH: Int, val viewW: Float, val viewH: Float,
+        val marginW: Float, val marginH: Float
+    )
 
-        if (event.actionMasked == MotionEvent.ACTION_CANCEL) {
-            return
-        }
-
-        val action = TouchEvent.motionEventToAction(event) ?: return
-        val ts = SystemClock.elapsedRealtime()
-
+    private fun remoteGeometry(): RemoteGeometry? {
         val videoW = HeadUnitScreenConfig.getNegotiatedWidth()
         val videoH = HeadUnitScreenConfig.getNegotiatedHeight()
 
         if (videoW <= 0 || videoH <= 0 || projectionView !is View) {
             AppLog.w("sendTouchEvent: Ignoring touch, screen config or view not ready.")
-            return
+            return null
         }
 
         val view = projectionView as View
@@ -2480,41 +2490,87 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             ?: view.height.takeIf { it > 0 }?.toFloat()
             ?: HeadUnitScreenConfig.getUsableHeight().toFloat()
 
-        if (viewW <= 0 || viewH <= 0) return
+        if (viewW <= 0 || viewH <= 0) return null
 
-        val marginW = HeadUnitScreenConfig.getWidthMargin().toFloat()
-        val marginH = HeadUnitScreenConfig.getHeightMargin().toFloat()
+        return RemoteGeometry(
+            videoW, videoH, viewW, viewH,
+            HeadUnitScreenConfig.getWidthMargin().toFloat(), HeadUnitScreenConfig.getHeightMargin().toFloat()
+        )
+    }
 
-        val pointerData = mutableListOf<Triple<Int, Int, Int>>()
-        repeat(event.pointerCount) { pointerIndex ->
-            val pointerId = event.getPointerId(pointerIndex)
-            val corrected = TouchCoordinateMapper.map(
-                rawX = event.getX(pointerIndex),
-                rawY = event.getY(pointerIndex),
-                inputSurfaceWidth = viewW,
-                inputSurfaceHeight = viewH,
-                negotiatedWidth = videoW,
-                negotiatedHeight = videoH,
-                marginWidth = marginW,
-                marginHeight = marginH,
-                fitMode = settings.videoFitMode,
-                hudMirroring = settings.hudMirroring
-            )
-            pointerData.add(Triple(pointerId, corrected.x, corrected.y))
+    private fun pointersOf(event: MotionEvent): List<RemoteTouchPolicy.Pointer> =
+        List(event.pointerCount) { RemoteTouchPolicy.Pointer(event.getPointerId(it), event.getX(it), event.getY(it)) }
+
+    private fun mapRemote(g: RemoteGeometry, x: Float, y: Float) = TouchCoordinateMapper.map(
+        rawX = x,
+        rawY = y,
+        inputSurfaceWidth = g.viewW,
+        inputSurfaceHeight = g.viewH,
+        negotiatedWidth = g.videoW,
+        negotiatedHeight = g.videoH,
+        marginWidth = g.marginW,
+        marginHeight = g.marginH,
+        fitMode = settings.videoFitMode,
+        hudMirroring = settings.hudMirroring
+    )
+
+    private fun sendRemote(sends: List<RemoteTouchPolicy.Send>, g: RemoteGeometry, ts: Long) {
+        for (send in sends) {
+            val pointerData = send.pointers.map { p ->
+                val corrected = mapRemote(g, p.x, p.y)
+                Triple(p.id, corrected.x, corrected.y)
+            }
+            if (AppLog.LOG_VERBOSE) AppLog.v("[UI_DEBUG] ${RemoteTouchPolicy.describe(send)}")
+            commManager.send(TouchEvent(ts, TouchEvent.pointerAction(send.action), send.actionIndex, pointerData))
         }
+    }
+
+    private fun sendTouchEvent(event: MotionEvent) {
+        val local = when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN -> RemoteTouchPolicy.Local.DOWN
+            MotionEvent.ACTION_POINTER_DOWN -> RemoteTouchPolicy.Local.POINTER_DOWN
+            MotionEvent.ACTION_MOVE -> RemoteTouchPolicy.Local.MOVE
+            MotionEvent.ACTION_POINTER_UP -> RemoteTouchPolicy.Local.POINTER_UP
+            MotionEvent.ACTION_UP -> RemoteTouchPolicy.Local.UP
+            MotionEvent.ACTION_CANCEL -> RemoteTouchPolicy.Local.CANCEL
+            else -> return
+        }
+        val g = remoteGeometry() ?: return
+        val ts = SystemClock.elapsedRealtime()
 
         // The only instrument that says whether a tap reached the pixel it looked like it hit.
-        // Verbose because it is one line per pointer per motion event.
+        // Verbose because it is one line per motion event.
         if (AppLog.LOG_VERBOSE) {
-            val first = pointerData.firstOrNull()
+            val first = mapRemote(g, event.getX(0), event.getY(0))
             AppLog.v(
                 "[UI_DEBUG] Touch map: raw=${event.getX(0).toInt()},${event.getY(0).toInt()} " +
-                    "-> video=${first?.second},${first?.third} view=${viewW.toInt()}x${viewH.toInt()} " +
-                    "video=${videoW}x${videoH} margin=${marginW.toInt()}x${marginH.toInt()} fit=${settings.videoFitMode}"
+                    "-> video=${first.x},${first.y} view=${g.viewW.toInt()}x${g.viewH.toInt()} " +
+                    "video=${g.videoW}x${g.videoH} margin=${g.marginW.toInt()}x${g.marginH.toInt()} fit=${settings.videoFitMode}"
             )
         }
 
-        commManager.send(TouchEvent(ts, action, event.actionIndex, pointerData))
+        val mayStart = local == RemoteTouchPolicy.Local.DOWN && TwoFingerGestureTracker.mayStartAt(
+            event.getX(0), gestureWidth(), resources.displayMetrics.density,
+            left = settings.leftTwoFingerGesture != Settings.GestureAction.DISABLED,
+            right = settings.rightTwoFingerGesture != Settings.GestureAction.DISABLED,
+            down = settings.downTwoFingerGesture != Settings.GestureAction.DISABLED,
+            longPress = settings.longPressTwoFingerGesture != Settings.GestureAction.DISABLED
+        )
+        if (remoteGiveUpPending) {
+            remoteGiveUpPending = false
+            sendRemote(remoteTouch.giveUp(pointersOf(event)), g, ts)
+        }
+        val sends = remoteTouch.onEvent(
+            local, event.actionIndex, pointersOf(event), mayStart, twoFingerTracker != null,
+            ViewConfiguration.get(this).scaledTouchSlop.toFloat()
+        )
+        sendRemote(sends, g, ts)
+        if (!remoteTouch.mayStartGesture) {
+            gestureHandler.removeCallbacks(remoteHoldExpired)
+        } else if (local == RemoteTouchPolicy.Local.DOWN) {
+            gestureHandler.removeCallbacks(remoteHoldExpired)
+            gestureHandler.postDelayed(remoteHoldExpired, RemoteTouchPolicy.HOLD_MS)
+        }
         // ACTION_UP only: a swipe-up-home or edge-back gesture ends in ACTION_CANCEL, and neither
         // must look like the text-field tap that opens Android Auto's phone keyboard.
         if (event.actionMasked == MotionEvent.ACTION_UP) {

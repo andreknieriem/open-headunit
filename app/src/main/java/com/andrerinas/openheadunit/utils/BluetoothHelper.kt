@@ -23,6 +23,12 @@ import com.andrerinas.openheadunit.utils.bluetooth.BluetoothPeerInventory
 
 object BluetoothHelper {
 
+    /**
+     * Reads app settings, requiring an initialized app component and an unlocked caller.
+     * A configured custom service may fall back to [getDefaultAdapter] when lookup fails.
+     * Null means no exposed manager/radio, not a generic permission-error result;
+     * settings access and default lookup exceptions can still propagate.
+     */
     fun getBluetoothAdapter(context: Context): BluetoothAdapter? {
         val settings = App.provide(context).settings
         val serviceName = settings.bluetoothManagerServiceName
@@ -51,9 +57,14 @@ object BluetoothHelper {
         return getDefaultAdapter(context)
     }
 
+    /**
+     * Uses the optional system BluetoothManager on API 18+, or the legacy lookup on older platforms.
+     * Absence returns null so callers can keep the home screen and non-Bluetooth routes usable.
+     * Lookup exceptions propagate to the caller.
+     */
     private fun getDefaultAdapter(context: Context): BluetoothAdapter? {
         return if (Build.VERSION.SDK_INT >= 18) {
-            (context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter
+            (context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager)?.adapter
         } else {
             @Suppress("DEPRECATION")
             BluetoothAdapter.getDefaultAdapter()

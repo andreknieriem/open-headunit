@@ -566,6 +566,28 @@ class Settings(private val context: Context) {
             .takeIf { it in DimPolicy.MIN_PERCENT..DimPolicy.MAX_PERCENT } ?: DimPolicy.DEFAULT_PERCENT
         set(value) { prefs.edit().putInt("dim-opacity-percent", value).apply() }
 
+    var nightOverlayTextSize: NightOverlayTextSize
+        get() = NightOverlayTextSize.fromInt(prefs.getInt("night-overlay-text-size", NightOverlayTextSize.NORMAL.value))
+            ?: NightOverlayTextSize.NORMAL
+        set(value) { prefs.edit().putInt("night-overlay-text-size", value.value).apply() }
+
+    var nightOverlayShowClock: Boolean
+        get() = prefs.getBoolean("night-overlay-show-clock", true)
+        set(value) { prefs.edit().putBoolean("night-overlay-show-clock", value).apply() }
+
+    var nightOverlayShowNavigation: Boolean
+        get() = prefs.getBoolean("night-overlay-show-navigation", true)
+        set(value) { prefs.edit().putBoolean("night-overlay-show-navigation", value).apply() }
+
+    var nightOverlayShowTrack: Boolean
+        get() = prefs.getBoolean("night-overlay-show-track", true)
+        set(value) { prefs.edit().putBoolean("night-overlay-show-track", value).apply() }
+
+    var nightOverlayBackground: NightOverlayBackground
+        get() = NightOverlayBackground.fromInt(prefs.getInt("night-overlay-background", NightOverlayBackground.BLACK.value))
+            ?: NightOverlayBackground.BLACK
+        set(value) { prefs.edit().putInt("night-overlay-background", value.value).apply() }
+
     @Deprecated("Use fullscreenMode instead")
     var startInFullscreenMode: Boolean
         get() = fullscreenMode != FullscreenMode.NONE
@@ -2335,6 +2357,27 @@ class Settings(private val context: Context) {
 
         companion object {
             private val map = values().associateBy(GestureAction::value)
+            fun fromInt(value: Int) = map[value]
+        }
+    }
+
+    enum class NightOverlayTextSize(val value: Int) {
+        SMALL(0),
+        NORMAL(1),
+        LARGE(2);
+
+        companion object {
+            private val map = values().associateBy(NightOverlayTextSize::value)
+            fun fromInt(value: Int) = map[value]
+        }
+    }
+
+    enum class NightOverlayBackground(val value: Int) {
+        BLACK(0),
+        DARK_GRAY(1);
+
+        companion object {
+            private val map = values().associateBy(NightOverlayBackground::value)
             fun fromInt(value: Int) = map[value]
         }
     }

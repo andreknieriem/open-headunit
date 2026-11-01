@@ -42,4 +42,22 @@ class GestureSettingsTest {
         Settings(context).dimOpacityPercent = 70
         assertEquals(70, Settings(context).dimOpacityPercent)
     }
+
+    @Test fun nightOverlayOptionsDefaultAndWriteNothing() {
+        raw.edit().clear().commit()
+        val settings = Settings(context)
+        assertEquals(Settings.NightOverlayTextSize.NORMAL, settings.nightOverlayTextSize)
+        assertEquals(true, settings.nightOverlayShowClock)
+        assertEquals(true, settings.nightOverlayShowNavigation)
+        assertEquals(true, settings.nightOverlayShowTrack)
+        assertEquals(Settings.NightOverlayBackground.BLACK, settings.nightOverlayBackground)
+        assertEquals(0, raw.all.size)
+    }
+
+    @Test fun aBadStoredEnumReadsBackAsTheDefault() {
+        raw.edit().clear().putInt("night-overlay-text-size", 9).putInt("night-overlay-background", 9).commit()
+        val settings = Settings(context)
+        assertEquals(Settings.NightOverlayTextSize.NORMAL, settings.nightOverlayTextSize)
+        assertEquals(Settings.NightOverlayBackground.BLACK, settings.nightOverlayBackground)
+    }
 }

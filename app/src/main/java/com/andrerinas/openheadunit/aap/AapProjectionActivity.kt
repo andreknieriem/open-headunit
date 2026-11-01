@@ -2294,6 +2294,13 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         GestureOutcomePolicy.Outcome.ShowOverlay -> {
             commManager.dimState.suspendForOverlay()
             nightOverlay?.apply {
+                applyOptions(NightOverlayOptions(
+                    textSize = settings.nightOverlayTextSize,
+                    background = settings.nightOverlayBackground,
+                    showClock = settings.nightOverlayShowClock,
+                    showNavigation = settings.nightOverlayShowNavigation,
+                    showTrack = settings.nightOverlayShowTrack
+                ))
                 render(App.provide(this@AapProjectionActivity).nightOverlayState.content.value)
                 scaleX = if (settings.hudMirroring) -1f else 1f
                 show()

@@ -49,6 +49,7 @@ enum class WifiLauncherStopSequence { LAST, BEFORE_HOTSPOT_DISABLE }
 enum class HotspotExitAction { NONE, DISABLE, WARN_LEFT_UP }
 object UserExitHotspotPolicy { fun onUserExit(a: Any,b: Any,c: Any,d: Any,e: Any) = HotspotExitAction.NONE }
 object HotspotManager { fun restart(s: Service) = true }
+object Esp32RelaySession { fun hasSavedEsp32Relay(context: Any) = false; fun notifyProjection(up: Boolean) {} }
 class Settings {
     val wifiConnectionMode=WifiLauncherMode.NATIVE; val helperConnectionStrategy=0; val nativeApStrategy=0
     val autoEnableHotspot=false; var hotspotTeardownProvenUnsafe=false

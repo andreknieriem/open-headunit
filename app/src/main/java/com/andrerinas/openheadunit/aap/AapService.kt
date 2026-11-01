@@ -1791,8 +1791,6 @@ class AapService : Service() {
         if (Esp32RelaySession.hasSavedEsp32Relay(this)) {
             Esp32RelaySession.notifyProjection(false)
         }
-        cancelProjectionRaiseDeadline()
-        // Consumed by every end, so a mark that no Native re-arm reads cannot mute a later wake.
         // Consume the ending session's bookkeeping even when a later explicit Start has
         // already superseded this notification. Attempt policy (cooldown, Self resources,
         // reconnect) is fenced separately from ended-session resources such as GPS and

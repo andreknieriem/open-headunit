@@ -3,10 +3,9 @@ package com.andrerinas.openheadunit.input
 import kotlin.math.hypot
 
 /**
- * Decides what the phone sees of a local touch. A first finger that may start a gesture is withheld
- * until it lifts, moves, outlasts [HOLD_MS] or a second finger lands. A recognised or undecided
- * two-finger touch sends nothing, because a release over a large control reads as a tap.
- * No CANCEL: type 3 reads as DOWN.
+ * Decides what the phone sees of a local touch. A first finger that may start a gesture waits until it
+ * lifts, moves, outlasts [HOLD_MS] or a second finger lands. A recognised gesture sends nothing; no CANCEL,
+ * because type 3 reads as DOWN.
  */
 class RemoteTouchPolicy {
     enum class Action { DOWN, MOVE, UP, POINTER_DOWN, POINTER_UP }
@@ -19,13 +18,15 @@ class RemoteTouchPolicy {
 
     private var phase = Phase.IDLE
     private var down = Pointer(-1, 0f, 0f)
+    // A finger of a pending two-finger tap lifted: the one left down can no longer start a gesture.
+    private var lifted = false
 
     // Fingers the phone has not seen, and fingers it has, each in landing order at their last point.
     private val withheld = LinkedHashMap<Int, Pointer>()
     private val held = LinkedHashMap<Int, Pointer>()
 
     /** True while only a withheld first finger is down: the one state a gesture can start from. */
-    val mayStartGesture get() = phase == Phase.HOLDING && withheld.size == 1
+    val mayStartGesture get() = phase == Phase.HOLDING && withheld.size == 1 && !lifted
 
     fun onEvent(
         local: Local,
@@ -97,8 +98,13 @@ class RemoteTouchPolicy {
                 if (undecided) emptyList() else forwardWithheld()
             }
             Local.POINTER_UP -> {
-                // Undecided fingers have moved, so forwarding the one left down would tap where it is now.
-                recognise()
+                // Moved fingers would tap where they are now; a pending tap keeps the last finger for giveUp or recognise.
+                if (!undecided) {
+                    recognise()
+                } else {
+                    acting?.let { withheld.remove(it.id) }
+                    lifted = true
+                }
                 emptyList()
             }
             Local.UP -> {
@@ -160,6 +166,7 @@ class RemoteTouchPolicy {
     }
 
     private fun reset() {
+        lifted = false
         withheld.clear()
         held.clear()
         phase = Phase.IDLE
@@ -174,6 +181,9 @@ class RemoteTouchPolicy {
     companion object {
         /** Well below the long-press timeout, so a one-finger long press on the rail still works. */
         const val HOLD_MS = 150L
+
+        /** This policy is stateful, so one caller feeds it: below API 19 the activity's dispatch, else the overlay. */
+        fun sentFromDispatch(sdkInt: Int): Boolean = sdkInt < 19
 
         fun describe(send: Send): String =
             "Remote touch: action=${send.action} count=${send.pointers.size} ids=${send.pointers.joinToString(",") { it.id.toString() }}"

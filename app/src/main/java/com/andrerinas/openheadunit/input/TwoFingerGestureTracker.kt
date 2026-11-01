@@ -10,14 +10,25 @@ internal class TwoFingerGestureTracker(
     private val secondY: Float,
     private val width: Float,
     private val touchSlop: Float,
-    density: Float
+    density: Float,
+    edgeZoneDp: Float,
+    private val secondDownMs: Long
 ) {
-    enum class Swipe { LEFT_EDGE, RIGHT_EDGE, DOWN }
+    enum class Swipe { LEFT_EDGE, RIGHT_EDGE }
+    enum class Tap { LEFT_TAP, RIGHT_TAP }
 
-    private val edge = GestureDistances.edgeZonePx(density)
+    /** Which gesture slots have an action. */
+    data class Enabled(
+        val left: Boolean,
+        val right: Boolean,
+        val longPress: Boolean,
+        val leftTap: Boolean,
+        val rightTap: Boolean
+    )
+
+    private val edge = GestureDistances.edgeZonePx(density, edgeZoneDp)
     private val travel = GestureDistances.travelPx(density)
     private val sideways = GestureDistances.sidewaysLimitPx(density)
-    private val downDistance = GestureDistances.downSwipePx(density)
     private val pinchSpread = GestureDistances.pinchSpreadPx(density)
     private val startSpread = hypot(secondX - firstX, secondY - firstY)
     private var lastX1 = firstX
@@ -25,7 +36,8 @@ internal class TwoFingerGestureTracker(
     private var lastX2 = secondX
     private var lastY2 = secondY
 
-    var canLongPress = true
+    /** True while no finger has moved past touch slop: a long press or a tap needs it. */
+    var still = true
         private set
 
     private val inLeftZone get() = firstX < edge
@@ -35,18 +47,32 @@ internal class TwoFingerGestureTracker(
     val inEdgeZone get() = inLeftZone || inRightZone
 
     /** Whether this touch can still turn into one of the enabled gestures. */
-    fun mayBecome(left: Boolean, right: Boolean, down: Boolean, longPress: Boolean): Boolean =
-        startsAt(firstX, width, edge, left, right, down, longPress)
+    fun mayBecome(enabled: Enabled): Boolean = startsAt(firstX, width, edge, enabled)
 
-    /** False once the last move shows no enabled gesture can fire, such as a pinch. */
-    fun canStillFire(left: Boolean, right: Boolean, down: Boolean, longPress: Boolean): Boolean {
+    /** False once no enabled gesture can fire, such as after a pinch or a tap that took too long. */
+    fun canStillFire(enabled: Enabled, nowMs: Long): Boolean {
         if (abs(hypot(lastX2 - lastX1, lastY2 - lastY1) - startSpread) > pinchSpread) return false
         val dx1 = lastX1 - firstX
         val dy1 = lastY1 - firstY
-        return (left && inLeftZone && abs(dy1) <= sideways && dx1 >= -touchSlop) ||
-            (right && inRightZone && abs(dy1) <= sideways && dx1 <= touchSlop) ||
-            (down && inEdgeZone && dy1 >= -touchSlop) ||
-            (longPress && inEdgeZone && canLongPress)
+        return (enabled.left && inLeftZone && abs(dy1) <= sideways && dx1 >= -touchSlop) ||
+            (enabled.right && inRightZone && abs(dy1) <= sideways && dx1 <= touchSlop) ||
+            (enabled.longPress && inEdgeZone && still) ||
+            mayTap(enabled, nowMs)
+    }
+
+    /** A tap needs every finger still and every finger up within [TAP_MS] of the second finger's down. */
+    fun mayTap(enabled: Enabled, nowMs: Long): Boolean =
+        still && nowMs - secondDownMs <= TAP_MS &&
+            ((enabled.leftTap && inLeftZone) || (enabled.rightTap && inRightZone))
+
+    /** How long a tap may still take at [nowMs]. */
+    fun tapEndsInMs(nowMs: Long): Long = (secondDownMs + TAP_MS - nowMs).coerceAtLeast(0L)
+
+    /** The tap that fires when the last finger lifts at [nowMs], or null. */
+    fun tap(enabled: Enabled, nowMs: Long): Tap? = when {
+        !mayTap(enabled, nowMs) -> null
+        enabled.leftTap && inLeftZone -> Tap.LEFT_TAP
+        else -> Tap.RIGHT_TAP
     }
 
     fun move(x1: Float, y1: Float, x2: Float, y2: Float): Swipe? {
@@ -56,30 +82,39 @@ internal class TwoFingerGestureTracker(
         lastY2 = y2
         val dx1 = x1 - firstX
         val dy1 = y1 - firstY
-        val dx2 = x2 - secondX
-        val dy2 = y2 - secondY
-        if (dx1 * dx1 + dy1 * dy1 > touchSlop * touchSlop ||
-            dx2 * dx2 + dy2 * dy2 > touchSlop * touchSlop) {
-            canLongPress = false
-        }
+        if (dx1 * dx1 + dy1 * dy1 > touchSlop * touchSlop || moved(x2, y2, secondX, secondY)) still = false
         return when {
-            inEdgeZone && dy1 > downDistance && dy2 > downDistance &&
-                abs(dx1) < dy1 / 2 && abs(dx2) < dy2 / 2 -> Swipe.DOWN
             inLeftZone && dx1 > travel && abs(dy1) < sideways -> Swipe.LEFT_EDGE
             inRightZone && dx1 < -travel && abs(dy1) < sideways -> Swipe.RIGHT_EDGE
             else -> null
         }
     }
 
-    companion object {
-        /** The same edge test as [mayBecome], for a first finger before a second one lands. */
-        fun mayStartAt(x: Float, width: Float, density: Float, left: Boolean, right: Boolean, down: Boolean, longPress: Boolean) =
-            startsAt(x, width, GestureDistances.edgeZonePx(density), left, right, down, longPress)
+    /** The finger left down after the other lifted; only its stillness still matters. */
+    fun moveOne(isFirst: Boolean, x: Float, y: Float) {
+        if (if (isFirst) moved(x, y, firstX, firstY) else moved(x, y, secondX, secondY)) still = false
+    }
 
-        private fun startsAt(x: Float, width: Float, edge: Float, left: Boolean, right: Boolean, down: Boolean, longPress: Boolean): Boolean {
+    private fun moved(x: Float, y: Float, fromX: Float, fromY: Float): Boolean {
+        val dx = x - fromX
+        val dy = y - fromY
+        return dx * dx + dy * dy > touchSlop * touchSlop
+    }
+
+    companion object {
+        /** Short enough that a deliberate two-finger press on Android Auto still reaches it. */
+        const val TAP_MS = 300L
+
+        /** The same edge test as [mayBecome], for a first finger before a second one lands. */
+        fun mayStartAt(x: Float, width: Float, density: Float, edgeZoneDp: Float, enabled: Enabled) =
+            startsAt(x, width, GestureDistances.edgeZonePx(density, edgeZoneDp), enabled)
+
+        private fun startsAt(x: Float, width: Float, edge: Float, enabled: Enabled): Boolean {
             val inLeft = x < edge
             val inRight = x > width - edge
-            return (left && inLeft) || (right && inRight) || ((down || longPress) && (inLeft || inRight))
+            return ((enabled.left || enabled.leftTap) && inLeft) ||
+                ((enabled.right || enabled.rightTap) && inRight) ||
+                (enabled.longPress && (inLeft || inRight))
         }
     }
 }

@@ -144,6 +144,53 @@ class RemoteTouchPolicyTest {
         assertEquals(listOf(Send(Action.DOWN, 0, listOf(p(0, 400f, 300f)))), out)
     }
 
+    @Test fun aRecognisedTwoFingerTapSendsNothing() {
+        // The first finger up drops the stream; the activity recognises the tap on the last up.
+        startUndecided()
+        feed(Local.POINTER_UP, 1, true, p(0, 60f, 452f), p(1, 260f, 502f))
+        policy.recognise()
+        feed(Local.CANCEL, 0, false, p(0, 60f, 452f))
+        assertTrue(out.isEmpty())
+    }
+
+    @Test fun aStaggeredTapWhoseLastFingerOutlastsTheWindowForwardsThatFinger() {
+        // The first finger lifts inside the tap window; the second stays down past it.
+        for (lifted in 0..1) {
+            out.clear()
+            startUndecided()
+            feed(Local.POINTER_UP, lifted, true, p(0, 60f, 452f), p(1, 260f, 502f))
+            val left = if (lifted == 0) p(1, 262f, 503f) else p(0, 61f, 453f)
+            feed(Local.MOVE, 0, true, left)
+            assertTrue(out.isEmpty())
+            assertFalse(policy.mayStartGesture)
+            assertTrue(policy.holdExpired().isEmpty())
+            out += policy.giveUp(emptyList())
+            feed(Local.UP, 0, false, left)
+            assertEquals(listOf(Send(Action.DOWN, 0, listOf(left)), Send(Action.UP, 0, listOf(left))), out)
+        }
+    }
+
+    @Test fun aSlowTwoFingerTapGivesUpAndForwardsBothFingersWhereTheyLanded() {
+        startUndecided()
+        out += policy.giveUp(listOf(p(0, 62f, 453f), p(1, 261f, 502f)))
+        feed(Local.POINTER_UP, 1, false, p(0, 62f, 453f), p(1, 261f, 502f))
+        feed(Local.UP, 0, false, p(0, 62f, 453f))
+        assertEquals(listOf(
+            Send(Action.DOWN, 0, listOf(p(0, 62f, 453f))),
+            Send(Action.POINTER_DOWN, 1, listOf(p(0, 62f, 453f), p(1, 261f, 502f))),
+            Send(Action.POINTER_UP, 1, listOf(p(0, 62f, 453f), p(1, 261f, 502f))),
+            Send(Action.UP, 0, listOf(p(0, 62f, 453f)))
+        ), out)
+    }
+
+    @Test fun aTapWithItsSlotDisabledIsForwardedAtOnce() {
+        val off = TwoFingerGestureTracker.Enabled(left = false, right = true, longPress = false, leftTap = false, rightTap = true)
+        val mayStart = TwoFingerGestureTracker.mayStartAt(60f, 1200f, 1.5f, 64f, off)
+        feed(Local.DOWN, 0, false, p(0, 60f, 452f), mayStart = mayStart)
+        feed(Local.POINTER_DOWN, 1, false, p(0, 60f, 452f), p(1, 260f, 502f))
+        assertEquals(listOf(Action.DOWN, Action.POINTER_DOWN), out.map { it.action })
+    }
+
     @Test fun aCancelSendsNothingInAnyPhase() {
         holdFirst()
         feed(Local.CANCEL, 0, false, p(0, 60f, 452f))
@@ -179,5 +226,22 @@ class RemoteTouchPolicyTest {
         assertTrue(src.contains("withheld from Android Auto\""))
         assertTrue(src.contains("ev.pointerCount == 2 && remoteTouch.mayStartGesture"))
         assertFalse(src.contains("clearance"))
+    }
+
+    @Test fun theActivityTrackerReadsTheOverlayFrameThatMayStartAtReads() {
+        val src = File("src/main/java/com/andrerinas/openheadunit/aap/AapProjectionActivity.kt").readText()
+        val reads = Regex("""ev\.get[XY]\([^)]*\)""").findAll(src).map { it.value }.toSet()
+        assertEquals(setOf("ev.getX(i)", "ev.getY(i)"), reads)
+        assertTrue(src.contains("getLocationInWindow(overlayOrigin)"))
+    }
+
+    @Test fun onlyOneCallerFeedsThePolicyOnEveryApiLevel() {
+        assertTrue((16..18).all { RemoteTouchPolicy.sentFromDispatch(it) })
+        assertFalse((19..36).any { RemoteTouchPolicy.sentFromDispatch(it) })
+        val src = File("src/main/java/com/andrerinas/openheadunit/aap/AapProjectionActivity.kt").readText()
+        assertTrue(src.contains("if (!RemoteTouchPolicy.sentFromDispatch(Build.VERSION.SDK_INT)) sendTouchEvent(event)"))
+        assertTrue(src.contains("if (RemoteTouchPolicy.sentFromDispatch(Build.VERSION.SDK_INT)) {"))
+        assertEquals(2, Regex("""sendTouchEvent\((event|local)\)""").findAll(src).count())
+        assertTrue(src.contains("local.offsetLocation(-overlayOrigin[0].toFloat(), -overlayOrigin[1].toFloat())"))
     }
 }

@@ -551,15 +551,32 @@ class Settings(private val context: Context) {
             ?: GestureAction.TOGGLE_FULLSCREEN
         set(value) { prefs.edit().putInt("right-two-finger-gesture", value.value).apply() }
 
-    var downTwoFingerGesture: GestureAction
-        get() = GestureAction.fromInt(prefs.getInt("down-two-finger-gesture", GestureAction.DISABLED.value))
-            ?: GestureAction.DISABLED
-        set(value) { prefs.edit().putInt("down-two-finger-gesture", value.value).apply() }
-
     var longPressTwoFingerGesture: GestureAction
         get() = GestureAction.fromInt(prefs.getInt("long-press-two-finger-gesture", GestureAction.DISABLED.value))
             ?: GestureAction.DISABLED
         set(value) { prefs.edit().putInt("long-press-two-finger-gesture", value.value).apply() }
+
+    var leftTapTwoFingerGesture: GestureAction
+        get() = GestureAction.fromInt(prefs.getInt("left-tap-two-finger-gesture", GestureAction.DIM_SCREEN.value))
+            ?: GestureAction.DIM_SCREEN
+        set(value) { prefs.edit().putInt("left-tap-two-finger-gesture", value.value).apply() }
+
+    var rightTapTwoFingerGesture: GestureAction
+        get() = GestureAction.fromInt(prefs.getInt("right-tap-two-finger-gesture", GestureAction.NIGHT_OVERLAY.value))
+            ?: GestureAction.NIGHT_OVERLAY
+        set(value) { prefs.edit().putInt("right-tap-two-finger-gesture", value.value).apply() }
+
+    var gestureEdgeZone: GestureEdgeZone
+        get() = GestureEdgeZone.fromInt(prefs.getInt("gesture-edge-zone", GestureEdgeZone.NORMAL.value))
+            ?: GestureEdgeZone.NORMAL
+        set(value) { prefs.edit().putInt("gesture-edge-zone", value.value).apply() }
+
+    /** Removes the stored values so the defaults stay live. */
+    fun resetGestureSettings() {
+        prefs.edit().apply {
+            for (key in GESTURE_KEYS) remove(key)
+        }.apply()
+    }
 
     var dimOpacityPercent: Int
         get() = prefs.getInt("dim-opacity-percent", DimPolicy.DEFAULT_PERCENT)
@@ -1936,6 +1953,14 @@ class Settings(private val context: Context) {
     companion object {
         const val PREFS_NAME = "settings"
 
+        private val GESTURE_KEYS = listOf(
+            "left-two-finger-gesture", "right-two-finger-gesture", "long-press-two-finger-gesture",
+            "left-tap-two-finger-gesture", "right-tap-two-finger-gesture", "gesture-edge-zone",
+            "dim-opacity-percent", "night-overlay-text-size",
+            "night-overlay-show-clock", "night-overlay-show-navigation", "night-overlay-show-track",
+            "night-overlay-background"
+        )
+
         const val CONNECTION_TYPE_WIFI = "wifi"
         const val CONNECTION_TYPE_USB = "usb"
         const val CONNECTION_TYPE_NEARBY = "nearby"
@@ -2357,6 +2382,18 @@ class Settings(private val context: Context) {
 
         companion object {
             private val map = values().associateBy(GestureAction::value)
+            fun fromInt(value: Int) = map[value]
+        }
+    }
+
+    /** Width of the zone at each side where a two-finger gesture may start. */
+    enum class GestureEdgeZone(val value: Int, val dp: Float) {
+        NARROW(0, 48f),
+        NORMAL(1, 64f),
+        WIDE(2, 96f);
+
+        companion object {
+            private val map = values().associateBy(GestureEdgeZone::value)
             fun fromInt(value: Int) = map[value]
         }
     }

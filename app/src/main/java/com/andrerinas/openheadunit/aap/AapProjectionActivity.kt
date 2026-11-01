@@ -2132,15 +2132,17 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                         (touchOverlayView?.width?.takeIf { it > 0 }
                             ?: HeadUnitScreenConfig.getUsableWidth()).toFloat(),
                         ViewConfiguration.get(this).scaledTouchSlop.toFloat(),
-                        80f * resources.displayMetrics.density
+                        resources.displayMetrics.density
                     )
-                    lastTwoFingerEvent = MotionEvent.obtain(ev)
                     if (twoFingerGestureMayFire(twoFingerTracker)) {
+                        lastTwoFingerEvent = MotionEvent.obtain(ev)
                         releaseRemotePrimaryPointer(ev)
                         suspendRemoteTouchUntilAllUp = true
-                    }
-                    if (settings.longPressTwoFingerGesture != Settings.GestureAction.DISABLED) {
-                        gestureHandler.postDelayed(twoFingerLongPress, ViewConfiguration.getLongPressTimeout().toLong())
+                        if (settings.longPressTwoFingerGesture != Settings.GestureAction.DISABLED) {
+                            gestureHandler.postDelayed(twoFingerLongPress, ViewConfiguration.getLongPressTimeout().toLong())
+                        }
+                    } else {
+                        clearTwoFingerTracking()
                     }
                 }
             }
@@ -2195,10 +2197,10 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     // A touch that can never become an enabled gesture, such as a pinch on the map, stays with Android Auto.
     private fun twoFingerGestureMayFire(tracker: TwoFingerGestureTracker?): Boolean {
         return tracker?.mayBecome(
-            leftEdge = settings.leftTwoFingerGesture != Settings.GestureAction.DISABLED,
-            rightEdge = settings.rightTwoFingerGesture != Settings.GestureAction.DISABLED,
-            anywhere = settings.downTwoFingerGesture != Settings.GestureAction.DISABLED ||
-                settings.longPressTwoFingerGesture != Settings.GestureAction.DISABLED
+            left = settings.leftTwoFingerGesture != Settings.GestureAction.DISABLED,
+            right = settings.rightTwoFingerGesture != Settings.GestureAction.DISABLED,
+            down = settings.downTwoFingerGesture != Settings.GestureAction.DISABLED,
+            longPress = settings.longPressTwoFingerGesture != Settings.GestureAction.DISABLED
         ) == true
     }
 

@@ -498,6 +498,8 @@
     <string name="car_launcher_autostart_info">Open Headunit ถูกตั้งเป็นตัวเปิดแอปหลัก (Launcher) ของรถคุณ และจะเริ่มทำงานอัตโนมัติเมื่อระบบบูต</string>
     <string name="auto_start_on_boot_label">เริ่มเมื่อเปิดเครื่อง</string>
     <string name="auto_start_on_boot_description">เปิดแอปอัตโนมัติเมื่ออุปกรณ์เริ่มทำงาน ต้องใช้สิทธิ์ \"แสดงทับบนแอปอื่นๆ\" บน Android 10 ขึ้นไป</string>
+    <string name="auto_start_on_boot_background_label">รอในเบื้องหลัง</string>
+    <string name="auto_start_on_boot_background_description">เมื่อเปิดเครื่อง ให้เริ่มเฉพาะบริการโดยไม่เปิดแอป แอปจะแสดงขึ้นเมื่อโทรศัพท์เชื่อมต่อ</string>
     <string name="auto_start_screen_on_label">เริ่มเมื่อเปิดหน้าจอ</string>
     <string name="auto_start_screen_on_description">เปิดแอปทุกครั้งที่หน้าจอติด เหมาะกับเฮดยูนิตที่ไม่ได้ปิดเครื่องสนิท หรือใช้โหมดบูตเร็วที่ตัวเลือกเริ่มอัตโนมัติอื่นใช้ไม่ได้ ไม่แนะนำให้ใช้กับโทรศัพท์หรือแท็บเล็ต</string>
     <string name="select_bt_device">เลือกอุปกรณ์บลูทูธ</string>

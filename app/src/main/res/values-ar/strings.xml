@@ -236,6 +236,8 @@
     <string name="car_launcher_autostart_info">تم تكوين Open Headunit كمشغل للسيارة. يبدأ تلقائيًا عند تشغيل النظام.</string>
     <string name="auto_start_on_boot_label">التشغيل عند الإقلاع</string>
     <string name="auto_start_on_boot_description">فتح التطبيق تلقائيًا عند بدء تشغيل الجهاز. يتطلب إذن \"الإظهار فوق التطبيقات الأخرى\" على Android 10+.</string>
+    <string name="auto_start_on_boot_background_label">الانتظار في الخلفية</string>
+    <string name="auto_start_on_boot_background_description">عند الإقلاع، شغّل الخدمة فقط دون فتح التطبيق. يظهر التطبيق عند اتصال هاتفك.</string>
     <string name="auto_start_screen_on_label">التشغيل عند تشغيل الشاشة</string>
     <string name="auto_start_screen_on_description">فتح التطبيق في كل مرة تُشغَّل فيها الشاشة. مثالي لوحدات السيارة التي لا تنطفئ تمامًا أو تستخدم أوضاع التشغيل السريع حيث لا تعمل خيارات التشغيل التلقائي الأخرى. غير موصى به للهواتف أو الأجهزة اللوحية.</string>
     <string name="select_bt_device">اختر جهاز البلوتوث</string>

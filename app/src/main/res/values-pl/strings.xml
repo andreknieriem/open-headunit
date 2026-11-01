@@ -236,6 +236,8 @@
     <string name="car_launcher_autostart_info">Open Headunit jest skonfigurowany jako launcher samochodowy. Uruchamia się automatycznie po starcie systemu.</string>
     <string name="auto_start_on_boot_label">Uruchom po starcie systemu</string>
     <string name="auto_start_on_boot_description">Automatycznie otwórz aplikację po uruchomieniu urządzenia. Wymaga uprawnienia „Wyświetlanie nad innymi aplikacjami” na Androidzie 10+.</string>
+    <string name="auto_start_on_boot_background_label">Czekaj w tle</string>
+    <string name="auto_start_on_boot_background_description">Po starcie uruchom tylko usługę, bez otwierania aplikacji. Aplikacja pojawi się, gdy telefon się połączy.</string>
     <string name="auto_start_screen_on_label">Uruchom po włączeniu ekranu</string>
     <string name="auto_start_screen_on_description">Otwieraj aplikację za każdym razem, gdy ekran się włącza. Przydatne w radiach samochodowych, które nigdy nie wyłączają się całkowicie lub używają trybów szybkiego uruchamiania, w których inne opcje autostartu nie działają. Niezalecane w telefonach i tabletach.</string>
     <string name="select_bt_device">Wybierz urządzenie Bluetooth</string>

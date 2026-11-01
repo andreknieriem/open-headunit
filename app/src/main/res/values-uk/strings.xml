@@ -236,6 +236,8 @@
     <string name="car_launcher_autostart_info">Open Headunit налаштовано як лаунчер автомобіля. Він запускається автоматично під час завантаження системи.</string>
     <string name="auto_start_on_boot_label">Запуск під час завантаження</string>
     <string name="auto_start_on_boot_description">Автоматично відкривати застосунок під час запуску пристрою. Для Android 10+ потрібен дозвіл «Показувати поверх інших застосунків».</string>
+    <string name="auto_start_on_boot_background_label">Чекати у фоні</string>
+    <string name="auto_start_on_boot_background_description">Під час завантаження запускати лише службу, не відкриваючи застосунок. Застосунок з\'явиться, коли підключиться телефон.</string>
     <string name="auto_start_screen_on_label">Запуск після ввімкнення екрана</string>
     <string name="auto_start_screen_on_description">Відкривати застосунок щоразу, коли вмикається екран. Підходить для автомагнітол, які ніколи не вимикаються повністю або використовують режими швидкого запуску, де інші параметри автозапуску не працюють. Не рекомендовано для телефонів і планшетів.</string>
     <string name="select_bt_device">Вибрати Bluetooth-пристрій</string>

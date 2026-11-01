@@ -258,6 +258,8 @@
     <string name="car_launcher_autostart_info">Open Headunit araç başlatıcısı olarak yapılandırıldı. Sistem açılışında otomatik olarak başlar.</string>
     <string name="auto_start_on_boot_label">Açılışta başlat</string>
     <string name="auto_start_on_boot_description">Cihaz açıldığında uygulamayı otomatik olarak açar. Android 10+ sürümlerinde \'Diğer uygulamaların üzerinde göster\' izni gerektirir.</string>
+    <string name="auto_start_on_boot_background_label">Arka planda bekle</string>
+    <string name="auto_start_on_boot_background_description">Açılışta uygulamayı açmadan yalnızca hizmeti başlat. Telefonunuz bağlandığında uygulama görünür.</string>
     <string name="auto_start_screen_on_label">Ekran açıldığında başlat</string>
     <string name="auto_start_screen_on_description">Ekran her açıldığında uygulamayı açar. Tamamen kapanmayan veya diğer otomatik başlatma seçeneklerinin çalışmadığı hızlı önyükleme modlarını kullanan sistemler için idealdir. Telefonlar veya tabletler için önerilmez.</string>
     <string name="select_bt_device">Bluetooth Cihazı Seç</string>

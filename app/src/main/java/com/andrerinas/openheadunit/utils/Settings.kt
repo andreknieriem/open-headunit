@@ -1404,6 +1404,11 @@ class Settings(private val context: Context) {
         get() = prefs.getBoolean("auto-start-on-boot", false)
         set(value) { prefs.edit().putBoolean("auto-start-on-boot", value).apply() }
 
+    /** With [autoStartOnBoot], start only the service and leave the screen to the phone connecting. */
+    var autoStartOnBootInBackground: Boolean
+        get() = prefs.getBoolean("auto-start-on-boot-in-background", false)
+        set(value) { prefs.edit().putBoolean("auto-start-on-boot-in-background", value).apply() }
+
     var autoStartOnScreenOn: Boolean
         get() = prefs.getBoolean("auto-start-on-screen-on", false)
         set(value) { prefs.edit().putBoolean("auto-start-on-screen-on", value).apply() }

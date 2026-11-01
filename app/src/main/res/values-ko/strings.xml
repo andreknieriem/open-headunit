@@ -266,6 +266,8 @@
     <string name="car_launcher_autostart_info">Open Headunit이 차량용 런처로 설정되어 있습니다. 시스템 부팅 시 자동으로 시작됩니다.</string>
     <string name="auto_start_on_boot_label">부팅 시 자동 시작</string>
     <string name="auto_start_on_boot_description">기기가 부팅될 때 앱을 자동으로 실행합니다. Android 10 이상에서는 \'다른 앱 위에 표시\' 권한이 필요합니다.</string>
+    <string name="auto_start_on_boot_background_label">백그라운드에서 대기</string>
+    <string name="auto_start_on_boot_background_description">부팅 시 앱을 열지 않고 서비스만 시작합니다. 휴대폰이 연결되면 앱이 나타납니다.</string>
     <string name="auto_start_screen_on_label">화면 켜짐 시 자동 시작</string>
     <string name="auto_start_screen_on_description">화면이 켜질 때마다 앱을 실행합니다. 완전히 종료되지 않거나 빠른 부팅 모드를 사용해 다른 자동 시작 옵션이 작동하지 않는 헤드유닛에 적합합니다. 휴대전화나 태블릿에서는 권장하지 않습니다.</string>
     <string name="select_bt_device">블루투스 기기 선택</string>

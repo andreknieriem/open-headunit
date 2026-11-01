@@ -498,6 +498,8 @@
     <string name="car_launcher_autostart_info">Open Headunit diatur sebagai peluncur mobil Anda. Aplikasi ini dimulai otomatis saat sistem menyala.</string>
     <string name="auto_start_on_boot_label">Mulai saat boot</string>
     <string name="auto_start_on_boot_description">Buka aplikasi secara otomatis saat perangkat menyala. Memerlukan izin \'Tampilkan di atas aplikasi lain\' di Android 10+.</string>
+    <string name="auto_start_on_boot_background_label">Tunggu di latar belakang</string>
+    <string name="auto_start_on_boot_background_description">Saat boot, jalankan layanan saja tanpa membuka aplikasi. Aplikasi muncul saat ponsel Anda terhubung.</string>
     <string name="auto_start_screen_on_label">Mulai saat layar menyala</string>
     <string name="auto_start_screen_on_description">Buka aplikasi setiap kali layar menyala. Ideal untuk head unit yang tidak pernah mati sepenuhnya atau menggunakan mode boot cepat di mana opsi mulai otomatis lainnya tidak berfungsi. Tidak disarankan untuk ponsel atau tablet.</string>
     <string name="select_bt_device">Pilih Perangkat Bluetooth</string>

@@ -244,6 +244,8 @@
     <string name="car_launcher_autostart_info">Open Headunit được định cấu hình làm trình khởi chạy trên xe. Ứng dụng sẽ tự động khởi động khi hệ thống khởi động.</string>
     <string name="auto_start_on_boot_label">Khởi động khi mở máy</string>
     <string name="auto_start_on_boot_description">Tự động mở ứng dụng khi thiết bị khởi động. Cần quyền \"Hiện trên các ứng dụng khác\" trên Android 10 trở lên.</string>
+    <string name="auto_start_on_boot_background_label">Chờ ở chế độ nền</string>
+    <string name="auto_start_on_boot_background_description">Khi mở máy, chỉ khởi động dịch vụ mà không mở ứng dụng. Ứng dụng sẽ hiện ra khi điện thoại kết nối.</string>
     <string name="auto_start_screen_on_label">Khởi động khi bật màn hình</string>
     <string name="auto_start_screen_on_description">Mở ứng dụng mỗi lần màn hình bật. Phù hợp với headunit không bao giờ tắt hẳn hoặc dùng khởi động nhanh khi các tuỳ chọn tự khởi động khác không hoạt động. Không khuyến nghị cho điện thoại hay máy tính bảng.</string>
     <string name="select_bt_device">Chọn thiết bị Bluetooth</string>

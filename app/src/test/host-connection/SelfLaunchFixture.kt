@@ -206,6 +206,7 @@ object SessionStateIntent {
     const val REASON_SETTINGS_RESTART = 4; const val REASON_USER_EXIT = 1; const val REASON_LINK_LOST = 2; const val REASON_PHONE_LEFT = 3
 }
 object StationStandDown { fun onSessionLive(service: Any, held: Long?) {} }
+object Esp32RelaySession { fun shouldNotifyProjection(service: Any) = false; fun notifyProjection(up: Boolean) {} }
 object SystemClock { fun elapsedRealtime() = 0L }
 class Service(private var hasEverConnected: Boolean = true, val commManager: CommManager = CommManager()) : AutoCloseable {
     private class ReconnectTimer { fun onStateChanged() {} }

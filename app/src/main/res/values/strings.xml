@@ -1521,6 +1521,36 @@
     <string name="copied_to_clipboard">Copied to clipboard</string>
     <string name="audio_settings_reconnect">Audio settings saved. Reconnect Android Auto to apply them.</string>
 
+    <!-- Bluetooth relay (ESP32) -->
+    <string name="esp32_relay_settings_title">Bluetooth relay (ESP32)</string>
+    <string name="esp32_relay_settings_summary">Bluetooth Relay settings for an ESP32 implementation.</string>
+    <string name="esp32_relay_enabled">Use Bluetooth relay</string>
+    <string name="esp32_relay_enabled_description">Choose whether to use the Bluetooth relay.</string>
+    <string name="esp32_relay_settings_disabled">Off</string>
+    <string name="esp32_relay_saved_device">Saved Bluetooth relay</string>
+    <string name="esp32_relay_saved_notice">Saved Bluetooth relay: %1$s</string>
+    <string name="esp32_relay_none">None</string>
+    <string name="esp32_relay_status">Status</string>
+    <string name="esp32_relay_status_notice">Status: %1$s</string>
+    <string name="esp32_relay_scan">Scan</string>
+    <string name="esp32_relay_scan_action">Look for OpenHU-BT-Relay-Setup</string>
+    <string name="esp32_relay_scanning">Scanning…</string>
+    <string name="esp32_relay_found_device">Found device</string>
+    <string name="esp32_relay_forget">Remove Bluetooth relay</string>
+    <string name="esp32_relay_forget_value">Clear the saved device</string>
+    <string name="esp32_relay_pairing_header">Phone pairing</string>
+    <string name="esp32_relay_pairing_steps">1. On the phone, remove the head unit itself and any old OpenHU-BT-Relay from Bluetooth.\n2. Turn the relay on → Scan → select OpenHU-BT-Relay-Setup → wait until status shows “pair OpenHU-BT-Relay” (120 s).\n3. On the phone, pair OpenHU-BT-Relay (PIN 0000).\n4. If something goes wrong, tap Pair phone.</string>
+    <string name="esp32_relay_phase_idle">Not connected</string>
+    <string name="esp32_relay_phase_connecting">Connecting…</string>
+    <string name="esp32_relay_phase_ready">Connected</string>
+    <string name="esp32_relay_phase_incomplete">Wi-Fi Direct group is not ready</string>
+    <string name="esp32_relay_phase_pairing">Phone: pair OpenHU-BT-Relay now — PIN 0000 (120 s)</string>
+    <string name="esp32_relay_pair">Pair phone</string>
+    <string name="esp32_relay_pair_value">Start phone pairing for 120 s (PIN 0000)</string>
+    <string name="esp32_relay_end_aa_on_disconnect">End Android Auto when the Bluetooth relay disconnects</string>
+    <string name="esp32_relay_end_aa_on_disconnect_description">Sends a health report to the Bluetooth relay every 2 seconds. If two reports fail in a row, the Android Auto session is closed</string>
+    <string name="esp32_relay_phase_failed">Failed: %1$s</string>
+
     <!-- Home screen -->
     <string name="home_kicker_active">Android Auto</string>
     <string name="home_kicker_last_connection">Your last connection</string>

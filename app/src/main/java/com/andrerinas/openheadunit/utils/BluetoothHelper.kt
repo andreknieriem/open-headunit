@@ -12,6 +12,8 @@ import android.os.Build
 import android.os.IBinder
 import androidx.core.content.ContextCompat
 import com.andrerinas.openheadunit.App
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.esp32.Esp32RelayProtocol
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.esp32.Esp32RelayStore
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.DriverCandidatePolicy
 import java.lang.reflect.Constructor
 import java.lang.reflect.Method
@@ -329,7 +331,9 @@ object BluetoothHelper {
         // Manufacturer-only entries remain in the inventory for explanation, not in the Android
         // wake targets. On HCT's legacy stack ordinary connect() uses goc_spp even for an AA UUID;
         // manufacturing a BluetoothDevice from a cached MAC does not select the AA carrier.
-        val bonded = discovery.androidDevices
+        // When the Bluetooth relay is off, hide OpenHU-BT-Relay bonds from the driver list.
+        val hideEsp32RelayBonds = !Esp32RelayStore(context).enabled
+        val bonded = discovery.androidDevices.filterNot { hideEsp32RelayBonds && isEsp32RelayBond(it) }
         var presenceReadable = false
         val all = bonded.map { device ->
             val state = deviceConnectionState(device)
@@ -394,6 +398,12 @@ object BluetoothHelper {
     private fun deviceClassOf(device: BluetoothDevice): Int =
         try { device.bluetoothClass?.deviceClass ?: 0 } catch (e: Exception) { 0 }
 
+    @SuppressLint("MissingPermission")
+    private fun isEsp32RelayBond(device: BluetoothDevice): Boolean {
+        val name = try { device.name } catch (_: Exception) { null }
+        return Esp32RelayProtocol.isEsp32RelayDeviceName(name)
+    }
+
     /**
      * Whether one device may stand as a phone, meaning it was not ruled out. Lists go through
      * [driverCandidates]; this serves the pickers that ask about one device at a time.
@@ -401,9 +411,14 @@ object BluetoothHelper {
     fun isLikelyPhone(
         device: BluetoothDevice,
         preferredMac: String = "",
-        lastConnectedMac: String = ""
-    ): Boolean = classifyDevice(device, pinFor(device, preferredMac, lastConnectedMac)).verdict !=
-        DriverCandidatePolicy.Verdict.NOT_A_PHONE
+        lastConnectedMac: String = "",
+        context: Context? = null
+    ): Boolean {
+        val hideEsp32Relay = context == null || !Esp32RelayStore(context).enabled
+        if (hideEsp32Relay && isEsp32RelayBond(device)) return false
+        return classifyDevice(device, pinFor(device, preferredMac, lastConnectedMac)).verdict !=
+            DriverCandidatePolicy.Verdict.NOT_A_PHONE
+    }
 
 
     /**

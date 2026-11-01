@@ -32,6 +32,9 @@ import com.andrerinas.openheadunit.utils.BluetoothAddressSeedPolicy
 import com.andrerinas.openheadunit.utils.BluetoothHelper
 import com.andrerinas.openheadunit.utils.bluetooth.BluetoothPeerDiscovery
 import com.andrerinas.openheadunit.aap.protocol.proto.Wireless
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.esp32.Esp32RelaySession
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.esp32.Esp32RelayStore
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.esp32.Esp32RelayCarrier
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.blink.BlinkAaCarrier
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.blink.BlinkAutoSerialChannel
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.blink.BlinkRefusal
@@ -191,6 +194,10 @@ class NativeAaHandshakeManager(
         }
 
         fun checkCompatibility(context: Context): Boolean {
+            if (Esp32RelaySession.hasSavedEsp32Relay(context)) {
+                AppLog.i("NativeAA: Bluetooth runs over the Bluetooth relay, so the RFCOMM compatibility check does not apply.")
+                return true
+            }
             val discovery = ZbtDiscovery.snapshot()
             when (transportRoute(context, discovery)) {
                 // The raw Unix domain socket (/dev/socket/zj_bt_socket) directly carries RFCOMM frames.
@@ -968,6 +975,11 @@ class NativeAaHandshakeManager(
         // Leave isRunning false, like the "adapter disabled" case below: isActive() callers must
         // see this as genuinely stopped. Nothing here is retryable, but a listener that was never
         // opened must not be reported as up.
+        // A saved Bluetooth relay wins like BLINK: the ESP32 owns Classic RFCOMM and BLE relays bytes.
+        if (Esp32RelaySession.hasSavedEsp32Relay(context)) {
+            startOverEsp32RelayModule()
+            return
+        }
         val selectedRoute = transportRoute(context, discovery)
         if (selectedRoute != ExternalBtTransportPolicy.Route.HCT) context.closeRetainedHct()
         when (selectedRoute) {
@@ -1334,7 +1346,9 @@ class NativeAaHandshakeManager(
         resetHandshakeBackoff()
 
         val route = transportRoute(context)
-        if (ExternalBtTransportPolicy.rearmsWithoutAndroidRadio(route)) {
+        if (moduleCarrier?.rearmsWithoutAndroidRadio == true ||
+            ExternalBtTransportPolicy.rearmsWithoutAndroidRadio(route)
+        ) {
             aaListenersClosedForSession = false
             aaListenerLost = false
             aaReopenAttempts = 0
@@ -2969,6 +2983,74 @@ class NativeAaHandshakeManager(
         }
     }
 
+    private fun startOverEsp32RelayModule() {
+        isRunning = true
+        notStartedReason = null
+        aaListenersClosedForSession = false
+        localRadioName = "Bluetooth relay"
+        AppLog.i(
+            "NativeAA: Bluetooth relay transport is on — the handshake goes over Classic RFCOMM on the " +
+                "original ESP32, relayed to this unit by BLE GATT write/indicate (BLINK-style)."
+        )
+        val carrier = Esp32RelayCarrier(
+            serve = { link ->
+                ConnectionStageTracker.report(ConnectionStage.PHONE_ANSWERED)
+                handleHandshake(link)
+            },
+            isRunning = { isRunning },
+            isFinishedForSession = { aaListenersClosedForSession },
+            mayServeHandshake = { NativeHandoffPolicy.shouldServeHandshake(consecutiveHandshakeFailures) },
+            onPhoneEvidence = { resetHandshakeBackoff() },
+            ensureLink = {
+                // Keep-alive only — must not re-arm HFP every poll tick.
+                // offerLiveGroup is throttled; armRelay alone keeps BLE without P2P thrash.
+                Esp32RelaySession.armRelay(context)
+                Esp32RelaySession.offerLiveGroup(context, force = false)
+            },
+            sendToPhone = { bytes -> Esp32RelaySession.sendRfcomm(bytes) },
+            grantCredit = { extra -> Esp32RelaySession.grantCredit(extra) },
+        )
+        Esp32RelaySession.setFrameSink { frame -> carrier.onFrame(frame) }
+        Esp32RelaySession.setTransportErrorHandler { reason -> carrier.onTransportError(reason) }
+        Esp32RelaySession.onGiveUp = { endAndroidAutoIfEsp32RelaySetting("link stayed down") }
+        moduleCarrier = carrier
+        // Always HFP_ON + AA_ENABLE for a Wi-Fi AA bring-up, even if BLE is already READY
+        // after a cancel (armRelay is a no-op then and would leave HFP off).
+        Esp32RelaySession.requestAaWake(context)
+        Esp32RelaySession.offerLiveGroup(context, force = true)
+        scope.launch(Dispatchers.IO + CoroutineName("NativeAa-Esp32RelayCarrier")) {
+            try {
+                carrier.run()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                AppLog.e("NativeAA: [ESP32] carrier stopped unexpectedly: ${e.message}", e)
+            } finally {
+                Esp32RelaySession.setFrameSink(null)
+                Esp32RelaySession.setTransportErrorHandler(null)
+                Esp32RelaySession.onGiveUp = null
+            }
+        }
+    }
+
+    /** Ends the Android Auto session when the ESP32 relay setting asks for it. */
+    private fun endAndroidAutoIfEsp32RelaySetting(reason: String) {
+        if (!Esp32RelayStore(context).endAaOnDisconnect) return
+        if (!commManager.isConnected &&
+            commManager.connectionState.value !is CommManager.ConnectionState.Connecting
+        ) {
+            return
+        }
+        AppLog.w("NativeAA: [ESP32] $reason — ending Android Auto (endAaOnDisconnect)")
+        scope.launch(Dispatchers.Main.immediate) {
+            commManager.disconnect(
+                sendByeBye = true,
+                isUserExit = false,
+                honorKillOnDisconnect = false,
+            )
+        }
+    }
+
     private fun startOverBlinkModule() {
         isRunning = true
         notStartedReason = null
@@ -3445,6 +3527,11 @@ class NativeAaHandshakeManager(
                         AppLog.i("NativeAA: WiFi session landed. Holding the Bluetooth channel for the session and answering the phone's pings, as a head unit does.")
                         holdingSince = SystemClock.elapsedRealtime()
                         lastHoldSummaryAt = holdingSince
+                        // apply_hfp: tell the ESP32 relay projection is up so it releases HFP and stops
+                        // re-arming wake on the next AA_ENABLE retry.
+                        if (Esp32RelaySession.shouldNotifyProjection(context)) {
+                            Esp32RelaySession.notifyProjection(true)
+                        }
                         // The attempt is over even though the channel is not: nothing may read a
                         // held channel as a handshake in flight, and the claim goes back now.
                         ConnectionArbiter.release(arbiterClaim, sessionFormed = commManager.isConnected)
@@ -3466,6 +3553,9 @@ class NativeAaHandshakeManager(
                             AppLog.w("NativeAA: the phone closed the held Bluetooth channel after ${heldS}s and $pingsWhileHolding lease-handled pings; the Android Auto listeners reopen when this session ends.")
                         } else {
                             AppLog.i("NativeAA: the session ended; releasing the held Bluetooth channel after ${heldS}s and $pingsWhileHolding lease-handled pings.")
+                        }
+                        if (Esp32RelaySession.hasSavedEsp32Relay(context)) {
+                            Esp32RelaySession.notifyProjection(false)
                         }
                     }
                     is WppAction.Fail -> {
@@ -4221,6 +4311,13 @@ class NativeAaHandshakeManager(
         // wake requests to a dead channel.
         moduleCarrier?.close()
         moduleCarrier = null
+        // Cancel / mode stop: HFP may still be up from HFP_ON before projection ever landed.
+        if (Esp32RelaySession.hasSavedEsp32Relay(context)) {
+            Esp32RelaySession.releaseHfp("native AA stop")
+        }
+        Esp32RelaySession.setFrameSink(null)
+        Esp32RelaySession.setTransportErrorHandler(null)
+        Esp32RelaySession.onGiveUp = null
         wppTcpServer?.stop()
         wppTcpServer = null
         try { aaServerSocket?.close() } catch (e: Exception) {}

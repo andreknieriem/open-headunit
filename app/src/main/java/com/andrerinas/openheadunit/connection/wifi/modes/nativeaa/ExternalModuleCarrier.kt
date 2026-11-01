@@ -21,4 +21,10 @@ interface ExternalModuleCarrier {
 
     /** End the carrier and unblock whatever is reading. Safe from any thread. */
     fun close()
+
+    /**
+     * Whether a finished session should leave this carrier up without reopening Android RFCOMM
+     * listeners. BLINK and the ESP32 relay keep their module bridge open across sessions.
+     */
+    val rearmsWithoutAndroidRadio: Boolean get() = false
 }

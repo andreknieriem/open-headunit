@@ -121,6 +121,7 @@ private object SessionStateIntent {
     const val REASON_SETTINGS_RESTART=4; const val REASON_USER_EXIT=1; const val REASON_LINK_LOST=2; const val REASON_PHONE_LEFT=3
 }
 private object StationStandDown { fun onSessionLive(context: Any, held: Long?) {} }
+private object Esp32RelaySession { fun shouldNotifyProjection(context: Any) = false; fun notifyProjection(up: Boolean) {} }
 private class ObserverFixture(
     wireless: Boolean = false,
     loopback: Boolean = false,

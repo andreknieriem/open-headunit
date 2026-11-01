@@ -95,6 +95,7 @@ import android.view.WindowManager
 import com.andrerinas.openheadunit.connection.self.SelfLauncherManager
 import com.andrerinas.openheadunit.connection.self.SelfModeDisconnectPolicy
 import com.andrerinas.openheadunit.connection.usb.UsbLauncherManager
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.esp32.Esp32RelaySession
 import com.andrerinas.openheadunit.connection.wifi.LinkLossTeardownPolicy
 import com.andrerinas.openheadunit.connection.wifi.LinkLossTrigger
 import com.andrerinas.openheadunit.connection.wifi.modes.helper.HelperStrategy
@@ -1201,6 +1202,18 @@ class AapService : Service() {
         }
         com.andrerinas.openheadunit.connection.bluetooth.xyauto.XyAutoMediaSession.open(this, this)
         observeConnectionState()
+        // ESP32 relay PROJECTION_UP must keep landing; 10s without a recorded write ends the session.
+        // Only when this session is on the relay transport (not USB / other modes with a saved board).
+        Esp32RelaySession.onProjectionRecordFailed = {
+            if (Esp32RelaySession.isRelayTransportActive() && commManager.isConnected) {
+                AppLog.w("AapService: PROJECTION_UP not recorded for 10s — ending projection")
+                commManager.disconnect(
+                    sendByeBye = true,
+                    isUserExit = false,
+                    honorKillOnDisconnect = false,
+                )
+            }
+        }
         registerReceivers()
         carKeysManager.registerIdleReceivers(this)
 
@@ -1368,6 +1381,9 @@ class AapService : Service() {
                     }
                     is CommManager.ConnectionState.HandshakeComplete -> {
                         // At SSL, not at the transport open: until then the arbiter owns the window.
+                        if (Esp32RelaySession.shouldNotifyProjection(this@AapService)) {
+                            Esp32RelaySession.notifyProjection(true)
+                        }
                         quiesceWirelessForWiredSession()
                         StationStandDown.onSessionLive(this@AapService, wifiLockHeldForMs())
                         projectionRaisesThisSession = 0
@@ -1381,6 +1397,10 @@ class AapService : Service() {
                             commManager.send(com.andrerinas.openheadunit.aap.protocol.messages.VideoFocusEvent(
                                 gain = false, unsolicited = false
                             ))
+                        }
+                        // Conflated collector may skip Connected — still release ESP32 relay HFP here.
+                        if (Esp32RelaySession.shouldNotifyProjection(this@AapService)) {
+                            Esp32RelaySession.notifyProjection(true)
                         }
                         quiesceWirelessForWiredSession() // The flow is conflated: HandshakeComplete can be skipped.
                         StationStandDown.onSessionLive(this@AapService, wifiLockHeldForMs())
@@ -1502,6 +1522,11 @@ class AapService : Service() {
     private fun onConnected() {
         usbLauncherManager.setSwitchingToProjection(false)
         updateNotification()
+        // apply_hfp: projection TCP is up — ESP32 relay must release HFP and stop wake retries.
+        // Only when AA came up over the board (not USB / Headunit Server with a saved board).
+        if (Esp32RelaySession.shouldNotifyProjection(this)) {
+            Esp32RelaySession.notifyProjection(true)
+        }
         // Whatever the transport, the wake-up loop has nothing left to do. Event driven rather
         // than left to the loop's own 15 s poll. A wireless session also marks the P2P group as
         // one that works, which is what keeps it up when the phone leaves later.
@@ -1762,6 +1787,10 @@ class AapService : Service() {
         // A failed USB open has no live AAP resources to retire. Its Save loop and fallback
         // still own recovery; an end after the open has run onConnected and needs the full cleanup.
         if (!state.hadPhysicalConnection && state.settingsRetryOwner?.acceptsSettingsRestart(state) == true) return
+        // Down notices clear an armed watch even after the carrier already dropped the sink.
+        if (Esp32RelaySession.hasSavedEsp32Relay(this)) {
+            Esp32RelaySession.notifyProjection(false)
+        }
         // Consume the ending session's bookkeeping even when a later explicit Start has
         // already superseded this notification. Attempt policy (cooldown, Self resources,
         // reconnect) is fenced separately from ended-session resources such as GPS and
@@ -3123,6 +3152,7 @@ class AapService : Service() {
         commManager.onAaMediaMetadata = null
         commManager.onAaPlaybackStatus = null
         commManager.onAaPresentationClosed = null
+        Esp32RelaySession.onProjectionRecordFailed = null
         settingsPrefs?.unregisterOnSharedPreferenceChangeListener(settingsPreferenceListener)
         settingsPrefs?.unregisterOnSharedPreferenceChangeListener(deviceHackPreferenceListener)
         settingsPrefs = null

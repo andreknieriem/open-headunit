@@ -249,6 +249,7 @@
     <string name="gesture_action_exit_dialog">Boîte de dialogue de sortie</string>
     <string name="gesture_action_toggle_fullscreen">Basculer en plein écran</string>
     <string name="gesture_action_night_overlay">Superposition nocturne</string>
+    <string name="gesture_action_dim_screen">Atténuer l\'écran</string>
     <string name="gestures_reset">Paramètres de gestes réinitialisés</string>
     <string name="night_overlay_dismiss">Touchez pour revenir à la projection</string>
     <string name="night_overlay_meters">%1$d m</string>

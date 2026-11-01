@@ -36,6 +36,7 @@
     <string name="gesture_action_exit_dialog">退出对话框</string>
     <string name="gesture_action_toggle_fullscreen">切换全屏</string>
     <string name="gesture_action_night_overlay">夜间叠加层</string>
+    <string name="gesture_action_dim_screen">调暗屏幕</string>
     <string name="gestures_reset">手势设置已重置</string>
     <string name="night_overlay_dismiss">点按返回投屏</string>
     <string name="night_overlay_meters">%1$d 米</string>

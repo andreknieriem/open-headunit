@@ -37,6 +37,7 @@
     <string name="gesture_action_exit_dialog">Dialog de ieșire</string>
     <string name="gesture_action_toggle_fullscreen">Comută ecran complet</string>
     <string name="gesture_action_night_overlay">Suprapunere de noapte</string>
+    <string name="gesture_action_dim_screen">Estompare ecran</string>
     <string name="gestures_reset">Setările gesturilor au fost resetate</string>
     <string name="night_overlay_dismiss">Atinge pentru a reveni la proiecție</string>
     <string name="night_overlay_meters">%1$d m</string>

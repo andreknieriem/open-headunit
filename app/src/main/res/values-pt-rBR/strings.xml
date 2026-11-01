@@ -37,6 +37,7 @@
     <string name="gesture_action_exit_dialog">Diálogo de saída</string>
     <string name="gesture_action_toggle_fullscreen">Alternar tela cheia</string>
     <string name="gesture_action_night_overlay">Sobreposição noturna</string>
+    <string name="gesture_action_dim_screen">Escurecer tela</string>
     <string name="gestures_reset">Configurações de gestos redefinidas</string>
     <string name="night_overlay_dismiss">Toque para voltar à projeção</string>
     <string name="night_overlay_meters">%1$d m</string>

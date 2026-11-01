@@ -37,6 +37,7 @@
     <string name="gesture_action_exit_dialog">Діалог виходу</string>
     <string name="gesture_action_toggle_fullscreen">Перемкнути повноекранний режим</string>
     <string name="gesture_action_night_overlay">Нічний оверлей</string>
+    <string name="gesture_action_dim_screen">Затемнити екран</string>
     <string name="gestures_reset">Налаштування жестів скинуто</string>
     <string name="night_overlay_dismiss">Торкніться, щоб повернутися до проєкції</string>
     <string name="night_overlay_meters">%1$d м</string>

@@ -37,6 +37,7 @@
     <string name="gesture_action_exit_dialog">Kilépési párbeszédablak</string>
     <string name="gesture_action_toggle_fullscreen">Teljes képernyő váltása</string>
     <string name="gesture_action_night_overlay">Éjszakai fedvény</string>
+    <string name="gesture_action_dim_screen">Képernyő elsötétítése</string>
     <string name="gestures_reset">A gesztusbeállítások visszaállítva</string>
     <string name="night_overlay_dismiss">Koppints a vetítéshez való visszatéréshez</string>
     <string name="night_overlay_meters">%1$d m</string>

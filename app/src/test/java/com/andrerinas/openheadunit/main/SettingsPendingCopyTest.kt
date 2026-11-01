@@ -27,12 +27,15 @@ class SettingsPendingCopyTest {
         whenever(prefs.getBoolean(any(), any())).thenAnswer { (store[it.arguments[0]] as Boolean?) ?: it.arguments[1] }
         whenever(prefs.getLong(any(), any())).thenAnswer { (store[it.arguments[0]] as Long?) ?: it.arguments[1] }
         whenever(prefs.getFloat(any(), any())).thenAnswer { (store[it.arguments[0]] as Float?) ?: it.arguments[1] }
+        @Suppress("UNCHECKED_CAST")
+        whenever(prefs.getStringSet(any(), anyOrNull())).thenAnswer { (store[it.arguments[0]] as Set<String>?) ?: it.arguments[1] }
         whenever(prefs.contains(any())).thenAnswer { store.containsKey(it.arguments[0]) }
         whenever(editor.putString(any(), anyOrNull())).thenAnswer { store[it.arguments[0] as String] = it.arguments[1]; editor }
         whenever(editor.putInt(any(), any())).thenAnswer { store[it.arguments[0] as String] = it.arguments[1]; editor }
         whenever(editor.putBoolean(any(), any())).thenAnswer { store[it.arguments[0] as String] = it.arguments[1]; editor }
         whenever(editor.putLong(any(), any())).thenAnswer { store[it.arguments[0] as String] = it.arguments[1]; editor }
         whenever(editor.putFloat(any(), any())).thenAnswer { store[it.arguments[0] as String] = it.arguments[1]; editor }
+        whenever(editor.putStringSet(any(), anyOrNull())).thenAnswer { store[it.arguments[0] as String] = it.arguments[1]; editor }
         val context = mock<Context>()
         whenever(context.getSharedPreferences(any(), any())).thenReturn(prefs)
         return Settings(context)
@@ -85,6 +88,7 @@ class SettingsPendingCopyTest {
                 now is Boolean -> !now
                 now is Int -> now + 1
                 now is String -> now + "x"
+                now is Set<*> -> now + "x"
                 now is Enum<*> -> now.javaClass.enumConstants!!.first { it != now }
                 f.type == StoredP2pIdentity::class.java ->
                     if (now == null) StoredP2pIdentity("a", "b") else StoredP2pIdentity("changed", "changed")

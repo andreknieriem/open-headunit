@@ -598,6 +598,12 @@
 
     <string name="supported_nativeaa">გაუმჯობესებული უსადენო მხარდაჭერა</string>
     <string name="supported_nativeaa_desc">კარგი ამბავია! თქვენი მოწყობილობა მხარს უჭერს „Native Wireless“ რეჟიმს, რომელიც Android Auto-ს უფრო სტაბილურ მუშაობას უზრუნველყოფს.\n\nამის გასააქტიურებლად Bluetooth-ის ქეში უნდა განახლდეს. გთხოვთ:\n1. ტელეფონზე წაშალეთ არსებული დაწყვილება\n2. დააჭირეთ OK-ს Bluetooth-ის გადასატვირთად\n3. ტელეფონი ხელახლა დააწყვილეთ\n\nგსურთ ახლა გადახვიდეთ Native AA რეჟიმზე?</string>
+    <string name="automation_connect_no_permission">მიეცით ამ აპს Bluetooth-ის გამოყენების ნებართვა სახელით დასაკავშირებლად.</string>
+    <string name="automation_connect_not_found">ამ სახელით დაწყვილებული ტელეფონი არ არის.</string>
+    <string name="automation_connect_ambiguous">ამ სახელით ერთზე მეტი დაწყვილებული ტელეფონია.</string>
+    <string name="automation_connect_not_a_phone">ეს დაწყვილებული მოწყობილობა ტელეფონი არ არის.</string>
+    <string name="automation_connect_not_paired">ეს Bluetooth-მისამართი დაწყვილებული არ არის.</string>
+    <string name="automation_connect_live_session">სხვა ტელეფონი უკვე დაკავშირებულია.</string>
     <string name="native_aa_poke_not_running">უსადენო Bluetooth ამ მოწყობილობაზე არ მუშაობს. შეამოწმეთ პარამეტრები.</string>
     <string name="not_supported_nativeaa">Native Wireless სავარაუდოდ მხარდაჭერილი არ არის</string>
     <string name="not_supported_nativeaa_desc">თქვენს მოწყობილობას შესაძლოა არ ჰქონდეს Native Wireless-ისთვის საჭირო Bluetooth ან Wi-Fi ფუნქციების მხარდაჭერა. შეგიძლიათ მაინც სცადოთ, მაგრამ თუ არ იმუშავებს, გამოიყენეთ რეჟიმი \"Wireless Helper\" ან \"Auto (Headunit Server)\".</string>
@@ -1216,6 +1222,22 @@
     <string name="enter_auto_disconnect_bt_delay">ლოდინის წამები სესიის დასრულებამდე</string>
     <string name="auto_disconnect_bt_delay_hint">Bluetooth კავშირი შეიძლება მცირე ხნით გაწყდეს პროფილების ხელახალი დაკავშირებისას. სესია მხოლოდ მაშინ სრულდება, თუ მოწყობილობა ამ დროის შემდეგაც მიუწვდომელია.</string>
     <string name="auto_disconnect_bt_kill_hint">ასრულებს სესიას ისე, როგორც ღილაკი „გასვლა“, როცა არჩეული მოწყობილობის Bluetooth გაითიშება, მაგალითად, მანქანის გამორთვისას. თუ ეს მოწყობილობა მანქანის Bluetooth-თან არის დაწყვილებული, აირჩიეთ ის. აპის დასახურად და მთავარი ეკრანის საჩვენებლად ჩართეთ „აპის დახურვა გათიშვისას“ განყოფილებაში „ავტომატიზაცია“.</string>
+    <string name="external_power_disconnect_label">გათიშვა დამტენის მოხსნისას</string>
+    <string name="external_power_disconnect_description">სესიას ასრულებს გამოსვლის ღილაკის მსგავსად, როცა გარე კვება იკარგება, მაგალითად, მანქანის გამორთვისას. კვების დაბრუნებისას კავშირი ხელახლა აქტიურდება.</string>
+    <string name="external_power_delay_label">მოცდა (წამი)</string>
+    <string name="external_power_delay_value">%1$d წმ</string>
+    <string name="external_power_delay_hint">სესია მთავრდება მხოლოდ იმ შემთხვევაში, თუ ამ დროის შემდეგაც კვება არ დაბრუნებულა. 5-დან 3600 წამამდე.</string>
+    <string name="external_power_screen_off_label">ეკრანის გამორთვაც</string>
+    <string name="external_power_screen_off_description">კვების არარსებობისას, სესიის დასრულების შემდეგ ან როცა არაფერია დაკავშირებული, ეკრანს ბნელს ხდის და კვების დაბრუნებისას ისევ ანათებს.</string>
+    <string name="external_power_grant_label">Open Headunit-ისთვის ეკრანის გამორთვის დაშვება</string>
+    <string name="external_power_grant_allowed">დაშვებულია</string>
+    <string name="external_power_grant_missing">დაშვებული არ არის</string>
+    <string name="external_power_grant_uninstall_hint">სანამ ეს დაშვებულია, Android არ გაძლევთ აპის წაშლის საშუალებას. აპის წაშლამდე მოხსენით ნებართვა აქ.</string>
+    <string name="external_power_grant_explanation">Open Headunit ამას მხოლოდ ეკრანის გამოსართავად იყენებს. ის ვერ ხსნის მოწყობილობის დაბლოკვას და ვერაფერს კითხულობს.</string>
+    <string name="external_power_grant_remove_message">მოვხსნათ ეკრანის გამორთვის ნებართვა?</string>
+    <string name="external_power_grant_remove">მოხსნა</string>
+    <string name="screen_off_admin_label">ეკრანის გამორთვა</string>
+    <string name="screen_off_admin_description">აძლევს Open Headunit-ს ეკრანის გამორთვის საშუალებას გარე კვების დაკარგვისას.</string>
     <string name="audio_stream_vendor_format">%1$s (%2$d)</string>
     <string name="debug_video_fault_injection">ვიდეო შეცდომების სიმულაცია</string>
     <string name="debug_video_fault_rate">შეცდომის სიხშირე (ერთი N-დან)</string>

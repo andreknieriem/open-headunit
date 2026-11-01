@@ -765,6 +765,10 @@ class NativeAaHandshakeManager(
     fun isHandshakeInFlight(): Boolean =
         NativeHandoffPolicy.isHandshaking(handshakeStartedAt, SystemClock.elapsedRealtime())
 
+    /** The phone whose handshake or join is under way, or null when none is. */
+    fun handoffPeerAddress(): String? =
+        if (isHandshakeInFlight() || isHandoffSettling()) activeHandshakeLink?.peerAddress?.takeIf { it.isNotEmpty() } else null
+
     /**
      * True between delivering the WiFi credentials (Type 3) and the phone's TCP session actually
      * landing — the window in which it is still associating, doing WPS and getting a DHCP lease.

@@ -11,6 +11,7 @@ import com.andrerinas.openheadunit.automation.AutomationEffectRunner
 import com.andrerinas.openheadunit.automation.IntentExtras
 import com.andrerinas.openheadunit.contract.HeadUnitCommand
 import com.andrerinas.openheadunit.utils.AppLog
+import com.andrerinas.openheadunit.utils.ScreenPower
 import org.json.JSONObject
 
 /**
@@ -59,7 +60,8 @@ class AutomationActivity : AppCompatActivity() {
             action,
             IntentExtras(intent, overrides),
             AutomationCommandPolicy.State(
-                externalConfigAllowed = App.provide(this).settings.allowExternalConfiguration
+                externalConfigAllowed = App.provide(this).settings.allowExternalConfiguration,
+                screenOffGranted = ScreenPower.hasLockGrant(this)
             )
         )
         AutomationEffectRunner.run(this, effects, JSONObject())

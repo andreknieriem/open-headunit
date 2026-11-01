@@ -18,7 +18,9 @@ object AutomationCommandPolicy {
     /** The parts of the app's state that change what a command does. */
     data class State(
         /** "Allow external configuration" — off by default, and gates every configuring verb. */
-        val externalConfigAllowed: Boolean
+        val externalConfigAllowed: Boolean,
+        /** The force-lock device admin grant is held, which `ACTION_SCREEN_OFF` needs. */
+        val screenOffGranted: Boolean = false
     )
 
     sealed interface Effect {
@@ -37,6 +39,7 @@ object AutomationCommandPolicy {
         data class ImportSettings(val json: String?, val path: String?) : Effect
         data class ExportSettings(val path: String?) : Effect
         object ResetSettings : Effect
+        object TurnScreenOff : Effect
 
         data class SetLogLevel(val level: String) : Effect
         object StartLogCapture : Effect
@@ -69,7 +72,8 @@ object AutomationCommandPolicy {
         HeadUnitCommand.ACTION_SET_LOG_LEVEL,
         HeadUnitCommand.ACTION_START_LOG_CAPTURE,
         HeadUnitCommand.ACTION_STOP_LOG_CAPTURE,
-        HeadUnitCommand.ACTION_EXPORT_LOG
+        HeadUnitCommand.ACTION_EXPORT_LOG,
+        HeadUnitCommand.ACTION_SCREEN_OFF
     )
 
     /** Commands that need no extras and map straight onto a service action. */
@@ -84,6 +88,7 @@ object AutomationCommandPolicy {
         HeadUnitCommand.ACTION_REFRESH_SENSORS to AapService.ACTION_REFRESH_SENSORS,
         HeadUnitCommand.ACTION_RESTART_AUDIO to AapService.ACTION_RESTART_AUDIO,
         HeadUnitCommand.ACTION_RAISE_PROJECTION to AapService.ACTION_RAISE_PROJECTION,
+        HeadUnitCommand.ACTION_SCREEN_ON to AapService.ACTION_TURN_SCREEN_ON,
         // Relayed by its own name rather than an AapService constant: the handler ships with the
         // driver-selection feature, and the two strings are the same either way.
         HeadUnitCommand.ACTION_NATIVE_AA_CANCEL_POKE to HeadUnitCommand.ACTION_NATIVE_AA_CANCEL_POKE,
@@ -134,6 +139,9 @@ object AutomationCommandPolicy {
                 )
             }
             HeadUnitCommand.ACTION_QUERY_STATE -> listOf(Effect.QueryState)
+            HeadUnitCommand.ACTION_SCREEN_OFF ->
+                if (state.screenOffGranted) listOf(Effect.TurnScreenOff)
+                else listOf(Effect.Refuse("no device admin grant; allow it under Settings > Auto-start"))
 
             HeadUnitCommand.ACTION_SET_SETTINGS -> settingsImport(extras)
             HeadUnitCommand.ACTION_GET_SETTINGS ->
@@ -153,12 +161,15 @@ object AutomationCommandPolicy {
     }
 
     /**
-     * With an address this opens a TCP session to Android Auto's head unit server; without one it
-     * means "connect to whatever is there", which is the USB check.
+     * With `ip` this opens a TCP session to Android Auto's head unit server; with a phone MAC or
+     * name it wakes that phone; with none it is the USB check.
      */
     private fun connect(extras: Extras): List<Effect> {
         val ip = extras.string(HeadUnitCommand.EXTRA_IP)?.trim()
-        if (ip.isNullOrEmpty()) return listOf(checkUsb())
+        if (ip.isNullOrEmpty()) {
+            val target = phoneTarget(extras) ?: return listOf(checkUsb())
+            return listOf(namedWake(target, extras.flag(HeadUnitCommand.EXTRA_NO_UI)))
+        }
         return listOf(
             Effect.StartService(
                 AapService.ACTION_CONNECT_SOCKET,
@@ -201,12 +212,32 @@ object AutomationCommandPolicy {
 
     /** Without a MAC this is the main screen's WiFi button on an external-module unit, sent as it sends it. */
     private fun nativePoke(extras: Extras): List<Effect> {
-        val mac = extras.string(HeadUnitCommand.EXTRA_MAC)?.trim()
-        if (mac.isNullOrEmpty()) return listOf(Effect.StartService(AapService.ACTION_NATIVE_AA_POKE))
-        return listOf(
-            Effect.StartService(AapService.ACTION_NATIVE_AA_POKE, stringExtras = mapOf(AapService.EXTRA_MAC to mac))
-        )
+        val target = phoneTarget(extras) ?: return listOf(Effect.StartService(AapService.ACTION_NATIVE_AA_POKE))
+        // A MAC on the poke keeps its exact earlier effect; only the name form is new.
+        if (target.first == AapService.EXTRA_MAC) {
+            return listOf(Effect.StartService(AapService.ACTION_NATIVE_AA_POKE, stringExtras = mapOf(target)))
+        }
+        return listOf(namedWake(target, extras.flag(HeadUnitCommand.EXTRA_NO_UI)))
     }
+
+    /** The phone a command names: `mac`, then `extra_mac`, then `device_name`; blanks count as absent. */
+    private fun phoneTarget(extras: Extras): Pair<String, String>? {
+        fun value(key: String) = extras.string(key)?.trim()?.takeIf { it.isNotEmpty() }
+        value(HeadUnitCommand.EXTRA_PHONE_MAC)?.let { return AapService.EXTRA_MAC to it }
+        value(HeadUnitCommand.EXTRA_MAC)?.let { return AapService.EXTRA_MAC to it }
+        value(HeadUnitCommand.EXTRA_DEVICE_NAME)?.let { return AapService.EXTRA_DEVICE_NAME to it }
+        return null
+    }
+
+    private fun namedWake(target: Pair<String, String>, noUi: Boolean) = Effect.StartService(
+        AapService.ACTION_NATIVE_AA_POKE,
+        stringExtras = mapOf(target),
+        flagExtras = mapOf(
+            AapService.EXTRA_EXPLICIT_PICK to true,
+            AapService.EXTRA_BY_COMMAND to true,
+            AapService.EXTRA_NO_UI to noUi
+        )
+    )
 
     private fun requiring(extras: Extras, key: String, build: (String) -> Effect): List<Effect> {
         val value = extras.string(key)?.trim()

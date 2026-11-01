@@ -21,6 +21,8 @@ import android.net.Network
 import android.net.NetworkInfo
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
+import android.os.BatteryManager
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.IBinder
 import android.os.Looper
@@ -39,6 +41,13 @@ import com.andrerinas.openheadunit.app.BootCompleteReceiver
 import com.andrerinas.openheadunit.app.BootLoopPolicy
 import com.andrerinas.openheadunit.app.BtAutoDisconnectArm
 import com.andrerinas.openheadunit.app.BtAutoDisconnectPolicy
+import com.andrerinas.openheadunit.app.ExternalPowerArm
+import com.andrerinas.openheadunit.app.ExternalPowerDisconnectPolicy
+import com.andrerinas.openheadunit.app.ExternalPowerStep
+import com.andrerinas.openheadunit.app.ScreenOnlyOutcome
+import com.andrerinas.openheadunit.app.WiredRearm
+import com.andrerinas.openheadunit.app.ScreenOnRaise
+import com.andrerinas.openheadunit.app.ScreenOnRaisePolicy
 import com.andrerinas.openheadunit.app.BtAutoStartRearmPolicy
 import com.andrerinas.openheadunit.app.ForegroundServiceTypePolicy
 import com.andrerinas.openheadunit.app.WifiAutoStartReceiver
@@ -98,6 +107,8 @@ import com.andrerinas.openheadunit.connection.usb.UsbLauncherManager
 import com.andrerinas.openheadunit.connection.wifi.LinkLossTeardownPolicy
 import com.andrerinas.openheadunit.connection.wifi.LinkLossTrigger
 import com.andrerinas.openheadunit.connection.wifi.modes.helper.HelperStrategy
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.ConnectByNameGate
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NamedPhonePolicy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.ExternalBtTransportPolicy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.ModuleRearmPolicy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeAaHandshakeManager
@@ -399,11 +410,30 @@ class AapService : Service() {
     private val btAutoDisconnectJobs = mutableMapOf<String, kotlinx.coroutines.Job>()
 
     /**
-     * Set just before a Bluetooth auto-disconnect ends the session: the stack must stay down
-     * afterwards, which for Helper and Auto means undoing their user-exit discovery restart.
+     * Set just before an auto-disconnect ends the session, to its log label: the stack must stay
+     * down afterwards, which for Helper and Auto means undoing their user-exit discovery restart.
      */
     @Volatile
-    private var pendingBtStandDown: Any? = null
+    private var pendingStandDown: Any? = null
+    /** The log label of [pendingStandDown]'s auto-disconnect; read with it. */
+    @Volatile
+    private var pendingStandDownLabel: String? = null
+
+    /** The pending external-power timer; main thread only. */
+    private var externalPowerJob: kotlinx.coroutines.Job? = null
+    @Volatile private var screenOffAfterStandDown = false
+    @Volatile private var externalPowerTurnedScreenOff = false
+    @Volatile private var externalPowerReturnOwed = false
+    private var externalPowerEndedWireless = false
+    // The session end runs on IO and power back on main; the lock hands the return over between them.
+    private val externalPowerLock = Any()
+    private var externalPowerEnding = false
+    private var externalPowerBackWhileEnding = false
+    private var externalPowerEndReached = false
+    private var externalPowerEndGeneration = 0
+    // A wired session's wireless re-arm, held by a pending stand-down and then owed to power back.
+    @Volatile private var wiredRearmHeldForStandDown = false
+    @Volatile private var wiredRearmOwedToPowerBack = false
 
     private val commManager get() = App.provide(this).commManager
 
@@ -801,11 +831,13 @@ class AapService : Service() {
                     // Only check USB (don't launch UI) since this could also be a
                     // charger being plugged in on a phone/tablet.
                     onPossibleWake("POWER_CONNECTED")
+                    onExternalPowerBack()
                 }
                 Intent.ACTION_POWER_DISCONNECTED -> {
                     AppLog.i("WakeDetect: POWER_DISCONNECTED")
                     powerDisconnectedTimestamp = SystemClock.elapsedRealtime()
                     maybeInferredAccPowerLoss { goAsync() }
+                    armExternalPowerDisconnect()
                 }
                 Intent.ACTION_SHUTDOWN -> {
                     AppLog.i("WakeDetect: SHUTDOWN (system shutting down, not hibernating)")
@@ -1770,8 +1802,15 @@ class AapService : Service() {
         sessionEndedByHand = false
         // Capture ownership when Bluetooth requests the stop, not when its terminal is
         // eventually observed: a skipped terminal must not lend this intent to a new arm.
-        val bluetoothStandDown = pendingBtStandDown?.let(wifiLauncherManager::isCleanupCurrent) == true
-        pendingBtStandDown = null
+        val standDownOwned = pendingStandDown?.let(wifiLauncherManager::isCleanupCurrent) == true
+        pendingStandDown = null
+        val standDownLabel = synchronized(externalPowerLock) {
+            pendingStandDownLabel.also {
+                pendingStandDownLabel = null
+                if (it == EXTERNAL_POWER_STAND_DOWN) externalPowerEndReached = true
+            }
+        }
+        val endedByPower = standDownLabel == EXTERNAL_POWER_STAND_DOWN
         val wasQuiescedForWiredSession = wirelessQuiescedForWiredSession
         wirelessQuiescedForWiredSession = false
         var cleanupTicket = wifiLauncherManager.cleanupTicketFor(state)
@@ -1788,15 +1827,48 @@ class AapService : Service() {
         // because the arm advanced the generation on Main and owns the launcher now.
         fun standDownIfStillOwned() {
             val ticket = cleanupTicket ?: return
+            val label = standDownLabel ?: return
             // Save hands the route to its own restart, which never applied a stand-down.
-            if (!bluetoothStandDown || state.isSettingsRestart || !wifiLauncherManager.isCleanupCurrent(ticket)) return
+            if (!standDownOwned || state.isSettingsRestart || !wifiLauncherManager.isCleanupCurrent(ticket)) return
+            val wiredRearmHeld = wiredRearmHeldForStandDown.also { wiredRearmHeldForStandDown = false }
+            val powerBack = endedByPower && synchronized(externalPowerLock) { externalPowerBackWhileEnding }
+            // A return seen during the end may have been unplugged again; the plug decides, not the event.
+            val pluggedNow = powerBack && isExternalPowerPresent()
+            val holds = ExternalPowerDisconnectPolicy.standDownHolds(powerBack, pluggedNow)
+            if (wiredRearmHeld) when (ExternalPowerDisconnectPolicy.wiredRearm(holds, endedByPower)) {
+                WiredRearm.NOW -> launchWiredSessionRearm()
+                WiredRearm.ON_POWER_BACK -> wiredRearmOwedToPowerBack = true
+                WiredRearm.DROP -> AppLog.i("AapService: $label: the wired session's wireless re-arm is dropped with the stand-down.")
+            }
+            if (!holds) {
+                AppLog.i("AapService: $label: power came back while the session was ending; not standing down.")
+                return
+            }
+            if (powerBack) {
+                synchronized(externalPowerLock) { externalPowerBackWhileEnding = false }
+                AppLog.i("AapService: $label: power came back and went again while the session was ending; standing down.")
+            }
             // Every mode, not only Native: Helper's user-exit branch restarts discovery
-            // and Auto's loop keeps running, which would re-advertise to the phone right after
-            // its Bluetooth ended the session. Something has to ask for the stack back: the
-            // Bluetooth auto-start, the Home screen, or a service restart.
-            AppLog.i("AapService: Bluetooth auto-disconnect: keeping the wireless bring-up down until something re-arms it.")
+            // and Auto's loop keeps running, which would re-advertise right after the session
+            // ended. Something has to ask for the stack back: the Bluetooth auto-start, the
+            // Home screen, external power coming back, or a service restart.
+            AppLog.i("AapService: $label: keeping the wireless bring-up down until something re-arms it.")
             wifiLauncherManager.stop(WifiLauncherStopSequence.LAST)
             userExitedAA = true
+            if (screenOffAfterStandDown) {
+                externalPowerTurnedScreenOff = ScreenPower.turnOff(this@AapService)
+                AppLog.i("AapService: $label: screen off " +
+                    if (externalPowerTurnedScreenOff) "done." else "refused by the system.")
+            }
+        }
+
+        // Every path below ends here, so an external-power end can never stay open.
+        fun settleStandDown() {
+            // An arm since this terminal owns the launcher, so a re-arm held for it is dropped.
+            wiredRearmHeldForStandDown = false
+            if (standDownLabel == null) return
+            screenOffAfterStandDown = false
+            if (endedByPower) finishExternalPowerEnd()
         }
         // A late Exit cannot revoke a lease created by a newer explicit Start.
         if (!superseded && cleanupTicket != null && state.isUserExit) parkRetainedHct(onlyCompleted = true)
@@ -1869,7 +1941,10 @@ class AapService : Service() {
                     // CommManager has finished writing ByeBye and closing its transport.
                     commManager.awaitDisconnectComplete()
                     standDownIfStillOwned()
-                } finally { teardownCompletion?.complete(Unit) }
+                } finally {
+                    settleStandDown()
+                    teardownCompletion?.complete(Unit)
+                }
             }
             return
         }
@@ -1890,7 +1965,8 @@ class AapService : Service() {
                     restartForAudioSettings(state)
                     return@launch
                 }
-                val rearmedAfterWiredSession = !isDestroying && !wifiLauncherManager.cancelledByUser && rearmWirelessAfterWiredSession(wasQuiescedForWiredSession)
+                val rearmedAfterWiredSession = !isDestroying && !wifiLauncherManager.cancelledByUser &&
+                    rearmWirelessAfterWiredSession(wasQuiescedForWiredSession, standDownPending = standDownLabel != null && standDownOwned)
                 ConnectionArbiter.sessionEnded(wirelessAlreadyRearmed = rearmedAfterWiredSession, userExit = state.isUserExit || state.holdsRecovery)
 
                 // Read before anything stops the launcher, and remembered. WifiLauncherManager.stop()
@@ -2029,6 +2105,7 @@ class AapService : Service() {
                 // The network is back with whoever owns it now, so an exit waiting on this can stop
                 // the service. Last, because everything above it is what it is waiting for.
             } finally {
+                settleStandDown()
                 // Complete this Exit's waiter, not a newer stop-service request's waiter.
                 teardownCompletion?.complete(Unit)
             }
@@ -2448,8 +2525,239 @@ class AapService : Service() {
             return
         }
         AppLog.i("AapService: Bluetooth auto-disconnect: $mac stayed away; ending the session the way the Exit button does.")
-        pendingBtStandDown = wifiLauncherManager.cleanupTicket()
+        pendingStandDown = wifiLauncherManager.cleanupTicket()
+        pendingStandDownLabel = "Bluetooth auto-disconnect"
         commManager.disconnect(sendByeBye = true, isUserExit = true)
+    }
+
+    private fun armExternalPowerDisconnect() {
+        val settings = App.provide(this).settings
+        val sessionUp = isSessionUp()
+        when (ExternalPowerDisconnectPolicy.onPowerEvent(settings.externalPowerDisconnect, connected = false, sessionUp,
+            settings.externalPowerScreenOff)) {
+            ExternalPowerArm.IGNORE, ExternalPowerArm.CANCEL -> {}
+            ExternalPowerArm.NOTHING_PROJECTING -> {
+                // Not a stand-down, for the reason armBtAutoDisconnect gives.
+                AppLog.i("AapService: external-power disconnect: power lost, but nothing is projecting; leaving the connection stack alone.")
+            }
+            ExternalPowerArm.ARM -> {
+                val delayMs = ExternalPowerDisconnectPolicy.delayMs(settings.externalPowerDisconnectDelaySeconds)
+                AppLog.i("AapService: external-power disconnect: power lost; ending the session in ${delayMs}ms unless it comes back.")
+                startExternalPowerTimer(delayMs, screenOnly = false)
+            }
+            ExternalPowerArm.ARM_SCREEN_ONLY -> {
+                val delayMs = ExternalPowerDisconnectPolicy.delayMs(settings.externalPowerDisconnectDelaySeconds)
+                AppLog.i("AapService: external-power disconnect: power lost with nothing projecting; turning the screen off in ${delayMs}ms unless it comes back.")
+                startExternalPowerTimer(delayMs, screenOnly = true)
+            }
+        }
+    }
+
+    private fun startExternalPowerTimer(delayMs: Long, screenOnly: Boolean) {
+        externalPowerJob?.cancel()
+        externalPowerJob = serviceScope.launch {
+            // A delay counts uptime, which stops while the SoC sleeps on battery: hold the CPU
+            // for the wait, and step against elapsedRealtime so a missed sleep fires on waking.
+            val hold = holdCpuFor(delayMs + EXTERNAL_POWER_HOLD_MARGIN_MS)
+            try {
+                val deadline = SystemClock.elapsedRealtime() + delayMs
+                while (App.provide(this@AapService).settings.externalPowerDisconnect) {
+                    val left = deadline - SystemClock.elapsedRealtime()
+                    if (left <= 0) break
+                    delay(minOf(left, EXTERNAL_POWER_STEP_MS))
+                }
+                externalPowerJob = null
+                if (screenOnly) fireExternalPowerScreenOnly() else fireExternalPowerDisconnect()
+            } finally {
+                if (hold?.isHeld == true) hold.release()
+            }
+        }
+    }
+
+    /** A session up, or a Native AA handshake in flight or settling, which a dark screen would strand. */
+    private fun isSessionUpOrForming(): Boolean {
+        val handshake = (wifiLauncherManager.active as? WifiLauncherNative)?.handshakeManager
+        return isSessionUp() || handshake?.isHandshakeInFlight() == true || handshake?.isHandoffSettling() == true
+    }
+
+    private fun fireExternalPowerScreenOnly() {
+        val settings = App.provide(this).settings
+        val grantHeld = ScreenPower.hasLockGrant(this)
+        val outcome = ExternalPowerDisconnectPolicy.screenOnlyOutcome(
+            settings.externalPowerDisconnect, settings.externalPowerScreenOff, grantHeld,
+            isSessionUpOrForming(), chargerBack = isExternalPowerPresent()
+        )
+        when (outcome) {
+            ScreenOnlyOutcome.SKIP_POWER_BACK, ScreenOnlyOutcome.SKIP_DISABLED -> {}
+            ScreenOnlyOutcome.SKIP_SESSION ->
+                AppLog.i("AapService: external-power disconnect: a session is up or forming; leaving the screen on.")
+            ScreenOnlyOutcome.NO_GRANT ->
+                AppLog.w("AapService: external-power disconnect: screen not turned off, no device admin grant")
+            ScreenOnlyOutcome.SCREEN_OFF -> {
+                AppLog.i("AapService: external-power disconnect: power stayed away with nothing projecting; turning the screen off.")
+                externalPowerTurnedScreenOff = ScreenPower.turnOff(this)
+                AppLog.i("AapService: external-power disconnect: screen off " +
+                    if (externalPowerTurnedScreenOff) "done." else "refused by the system.")
+            }
+        }
+    }
+
+    private fun fireExternalPowerDisconnect() {
+        val settings = App.provide(this).settings
+        val sessionUp = isSessionUp()
+        val enabled = settings.externalPowerDisconnect
+        // A missed POWER_CONNECTED would leave the timer running; the plug state is the backstop.
+        val chargerBack = isExternalPowerPresent()
+        if (!ExternalPowerDisconnectPolicy.shouldEndSession(enabled, sessionUp, chargerBack)) {
+            AppLog.i("AapService: external-power disconnect: not ending the session (enabled=$enabled, up=$sessionUp, powerBack=$chargerBack).")
+            // The session is gone inside the wait: the screen still follows the charger.
+            if (enabled && !sessionUp && !chargerBack) fireExternalPowerScreenOnly()
+            return
+        }
+        val grantHeld = ScreenPower.hasLockGrant(this)
+        val plan = ExternalPowerDisconnectPolicy.planAfterEnd(settings.externalPowerScreenOff, grantHeld)
+        if (settings.externalPowerScreenOff && ExternalPowerStep.SCREEN_OFF !in plan) {
+            AppLog.w("AapService: external-power disconnect: screen not turned off, no device admin grant")
+        }
+        externalPowerEndedWireless = commManager.isWirelessSession
+        screenOffAfterStandDown = ExternalPowerStep.SCREEN_OFF in plan
+        pendingStandDown = wifiLauncherManager.cleanupTicket()
+        pendingStandDownLabel = EXTERNAL_POWER_STAND_DOWN
+        externalPowerReturnOwed = true
+        val generation = synchronized(externalPowerLock) {
+            externalPowerEnding = true
+            externalPowerBackWhileEnding = false
+            externalPowerEndReached = false
+            ++externalPowerEndGeneration
+        }
+        AppLog.i("AapService: external-power disconnect: power stayed away; ending the session the way the Exit button does.")
+        commManager.disconnect(sendByeBye = true, isUserExit = true)
+        // A conflated state flow can skip this end's onDisconnected; without a bound the flags outlive it.
+        serviceScope.launch {
+            delay(ExternalPowerDisconnectPolicy.END_REACH_BOUND_MS)
+            dropExternalPowerEndIfUnreached(generation)
+        }
+    }
+
+    private fun dropExternalPowerEndIfUnreached(generation: Int) {
+        val dropped = synchronized(externalPowerLock) {
+            ExternalPowerDisconnectPolicy.dropsUnreachedEnd(
+                externalPowerEnding, externalPowerEndReached, generation == externalPowerEndGeneration
+            ).also { if (it && pendingStandDownLabel == EXTERNAL_POWER_STAND_DOWN) {
+                pendingStandDownLabel = null
+                pendingStandDown = null
+            } }
+        }
+        if (!dropped) return
+        AppLog.w("AapService: external-power disconnect: the session end never reached the stand-down in " +
+            "${ExternalPowerDisconnectPolicy.END_REACH_BOUND_MS}ms; dropping it.")
+        screenOffAfterStandDown = false
+        externalPowerReturnOwed = false
+        finishExternalPowerEnd()
+    }
+
+    /** A partial wake lock with a timeout, or null when the system refuses one. */
+    private fun holdCpuFor(ms: Long): PowerManager.WakeLock? = try {
+        (getSystemService(Context.POWER_SERVICE) as PowerManager)
+            .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "OpenHeadunit::ExternalPowerDisconnect")
+            .apply { setReferenceCounted(false); acquire(ms) }
+    } catch (e: Exception) {
+        AppLog.w("AapService: external-power disconnect: could not hold the CPU awake for the timer: ${e.message}")
+        null
+    }
+
+    private fun onExternalPowerBack() {
+        val enabled = App.provide(this).settings.externalPowerDisconnect
+        if (ExternalPowerDisconnectPolicy.onPowerEvent(enabled, connected = true, sessionUp = isSessionUp(),
+                screenRow = false) ==
+            ExternalPowerArm.CANCEL && externalPowerJob?.also { it.cancel() } != null) {
+            externalPowerJob = null
+            AppLog.i("AapService: external-power disconnect: power is back; the pending disconnect is cancelled.")
+        }
+        val waits = synchronized(externalPowerLock) {
+            ExternalPowerDisconnectPolicy.returnWaitsForEnd(externalPowerReturnOwed, externalPowerEnding)
+                .also { if (it) externalPowerBackWhileEnding = true }
+        }
+        if (waits) {
+            AppLog.i("AapService: external-power disconnect: power is back while the session is still ending; the return runs once it has ended.")
+            return
+        }
+        val plan = ExternalPowerDisconnectPolicy.planOnReturn(externalPowerReturnOwed, externalPowerTurnedScreenOff)
+        externalPowerReturnOwed = false
+        externalPowerTurnedScreenOff = false
+        for (step in plan) when (step) {
+            ExternalPowerStep.SCREEN_ON -> turnScreenOn("external power back")
+            ExternalPowerStep.REARM -> {
+                userExitedAA = false
+                userExitCooldownUntil = 0L
+                if (externalPowerEndedWireless) {
+                    AppLog.i("AapService: external-power disconnect: power is back; re-arming the wireless bring-up.")
+                    startWirelessForSettings()
+                } else {
+                    AppLog.i("AapService: external-power disconnect: power is back; checking USB again.")
+                    usbLauncherManager.checkOnRequest(userRequested = true)
+                    if (wiredRearmOwedToPowerBack) launchWiredSessionRearm()
+                }
+                wiredRearmOwedToPowerBack = false
+            }
+            else -> {}
+        }
+    }
+
+    /** True when the sticky battery broadcast says a charger is plugged in; false when unreadable. */
+    private fun isExternalPowerPresent(): Boolean = try {
+        val battery = registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+        (battery?.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0) ?: 0) != 0
+    } catch (e: Exception) {
+        AppLog.w("AapService: external-power disconnect: could not read the plug state: ${e.message}")
+        false
+    }
+
+    /** Ends the external-power stand-down, and runs a power return that arrived while it ran. */
+    private fun finishExternalPowerEnd() {
+        val back = synchronized(externalPowerLock) {
+            externalPowerEnding = false
+            externalPowerBackWhileEnding.also { externalPowerBackWhileEnding = false }
+        }
+        if (back) serviceScope.launch(Dispatchers.Main) { onExternalPowerBack() }
+    }
+
+    /** Lights the panel by a wake lock and raises a screen where the panel or a keyguard needs one. */
+    internal fun turnScreenOn(source: String) {
+        // Read the panel before the wake lock lights it, or every request reads lit and raises nothing.
+        val keyguard = ScreenPower.isKeyguardLocked(this)
+        val raise = ScreenOnRaisePolicy.decide(
+            Build.VERSION.SDK_INT, ScreenPower.isInteractive(this), keyguard, commManager.isConnected
+        )
+        ScreenPower.wakeBriefly(this)
+        val intent = when (raise) {
+            ScreenOnRaise.NONE -> {
+                AppLog.i("AapService: turning the screen on ($source) by wake lock")
+                return
+            }
+            ScreenOnRaise.HOME -> Intent(this, MainActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                putExtra(MainActivity.EXTRA_TURN_SCREEN_ON, true)
+            }
+            ScreenOnRaise.PROJECTION -> AapProjectionActivity.intent(this).apply {
+                addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+                putExtra(AapProjectionActivity.EXTRA_TURN_SCREEN_ON, true)
+            }
+        }
+        val strategy = ActivityLaunchPolicy.chooseLaunchStrategy(
+            Build.VERSION.SDK_INT, AppPermissions.isOverlayGranted(this), App.hasStartedActivity
+        )
+        val screen = if (raise == ScreenOnRaise.PROJECTION) "the projection" else "the home screen"
+        AppLog.i("AapService: turning the screen on ($source) by wake lock and $screen by $strategy (keyguard=$keyguard)")
+        when (strategy) {
+            ActivityLaunchPolicy.LaunchStrategy.DIRECT ->
+                try { startActivity(intent) } catch (e: Exception) { AppLog.e("AapService: screen-on launch failed: ${e.message}") }
+            ActivityLaunchPolicy.LaunchStrategy.OVERLAY ->
+                if (!launchViaOverlayTrampoline(intent)) {
+                    try { startActivity(intent) } catch (e: Exception) { AppLog.e("AapService: screen-on launch failed: ${e.message}") }
+                }
+            ActivityLaunchPolicy.LaunchStrategy.NOTIFICATION -> launchProjectionViaNotification(intent)
+        }
     }
 
     private fun cancelAllBtAutoDisconnects() {
@@ -2737,17 +3045,27 @@ class AapService : Service() {
      * Put back whatever [quiesceWirelessForWiredSession] took down. Runs on any end to the wired
      * session, user exit included: unplugging has to return the unit to its configured mode.
      */
-    private fun rearmWirelessAfterWiredSession(quiesced: Boolean): Boolean {
+    private fun rearmWirelessAfterWiredSession(quiesced: Boolean, standDownPending: Boolean = false): Boolean {
         val mode = App.provide(this).settings.wifiConnectionMode
         if (!UsbSessionQuiescePolicy.shouldRearmWireless(quiesced, mode != WifiLauncherMode.MANUAL)) return false
 
-        AppLog.i("AapService: wired session ended — re-arming wireless mode $mode")
+        // The stand-down stops the launcher after this returns; it decides when the re-arm runs.
+        if (standDownPending) {
+            wiredRearmHeldForStandDown = true
+            AppLog.i("AapService: wired session ended by an auto-disconnect; the stand-down decides the re-arm of wireless mode $mode")
+            return true
+        }
+        launchWiredSessionRearm()
+        return true
+    }
+
+    private fun launchWiredSessionRearm() {
+        AppLog.i("AapService: wired session ended — re-arming wireless mode ${App.provide(this).settings.wifiConnectionMode}")
         serviceScope.launch {
             delay(1500) // Same settle the Native AA reconnect path allows the P2P hardware.
             // Through the USB deferral: after a failed handshake the retry is 1.5 s away too.
             initWifiModeWithOptionalWait()
         }
-        return true
     }
 
     /**
@@ -3188,7 +3506,21 @@ class AapService : Service() {
         }
         try { unregisterReceiver(btAutoDisconnectReceiver) } catch (_: Exception) {}
         cancelAllBtAutoDisconnects()
-        pendingBtStandDown = null
+        pendingStandDown = null
+        pendingStandDownLabel = null
+        externalPowerJob?.cancel()
+        externalPowerJob = null
+        screenOffAfterStandDown = false
+        externalPowerTurnedScreenOff = false
+        externalPowerReturnOwed = false
+        externalPowerEndedWireless = false
+        wiredRearmHeldForStandDown = false
+        wiredRearmOwedToPowerBack = false
+        synchronized(externalPowerLock) {
+            externalPowerEnding = false
+            externalPowerBackWhileEnding = false
+            externalPowerEndReached = false
+        }
         stationScanMonitor.stop(this)
         try { carKeysManager.unregisterAll() } catch (e: Exception) { AppLog.w("AapService: Error unregistering carKeysManager: ${e.message}") }
         try { wifiAutoStartReceiver?.let { unregisterReceiver(it) } } catch (_: Exception) {}
@@ -3236,6 +3568,69 @@ class AapService : Service() {
         }
         wirelessRearmPendingForSettings = false
         wifiLauncherManager.stop()
+    }
+
+    /**
+     * Resolves the phone an automation command names to the MAC to wake, or null after a refusal.
+     * A refusal drops the no_ui latch only when this command set it, so another command's stays.
+     */
+    private fun commandPokeTarget(intent: Intent?): String? {
+        val name = intent?.getStringExtra(EXTRA_DEVICE_NAME)?.takeIf { it.isNotBlank() }
+        val given = intent?.getStringExtra(EXTRA_MAC)?.takeIf { it.isNotBlank() }
+        val label = if (given != null) "MAC $given" else "name \"$name\""
+        val settings = App.provide(this).settings
+        val readable = Build.VERSION.SDK_INT < 31 || ContextCompat.checkSelfPermission(
+            this, Manifest.permission.BLUETOOTH_CONNECT
+        ) == PackageManager.PERMISSION_GRANTED
+        val handoffPeer = (wifiLauncherManager.active as? WifiLauncherNative)?.handshakeManager?.handoffPeerAddress()
+        val live = ConnectByNameGate.live(
+            connected = commManager.isConnected,
+            busy = commManager.isBusy,
+            wirelessSession = commManager.isWirelessSession,
+            lastNativeMac = settings.lastConnectedNativeMac,
+            handoffPeer = handoffPeer
+        )
+        val decision = ConnectByNameGate.decide(
+            nativeMode = settings.wifiConnectionMode == WifiLauncherMode.NATIVE,
+            bluetoothReadable = readable,
+            resolve = {
+                val paired = BluetoothHelper.pairedForNaming(
+                    BluetoothHelper.driverCandidates(this, settings.nativePreferredDeviceMac, settings.lastConnectedNativeMac)
+                )
+                if (given != null) NamedPhonePolicy.resolveMac(given, paired)
+                else NamedPhonePolicy.resolve(name ?: "", paired)
+            },
+            sessionLive = live.live,
+            projectingMac = live.mac
+        )
+        when (decision) {
+            is ConnectByNameGate.Decision.Wake -> {
+                AppLog.i("AapService: connect by ${if (given != null) "MAC" else "name"} " +
+                    "${if (given != null) given else "\"$name\""} resolved to ${decision.mac}")
+                return decision.mac
+            }
+            ConnectByNameGate.Decision.AlreadyConnected ->
+                AppLog.i("AapService: connect by $label: that phone is already connected or connecting.")
+            ConnectByNameGate.Decision.RefuseLiveSession -> {
+                AppLog.w("AapService: connect by $label refused: another session is live.")
+                ToastUtils.showToast(this, getString(R.string.automation_connect_live_session))
+            }
+            is ConnectByNameGate.Decision.Refuse -> {
+                AppLog.w("AapService: connect by $label refused: ${decision.reason.logText}.")
+                ToastUtils.showToast(this, refusalToast(decision.reason))
+            }
+        }
+        if (intent?.getBooleanExtra(EXTRA_NO_UI, false) == true) suppressNextProjectionRaise = false
+        return null
+    }
+
+    private fun refusalToast(reason: ConnectByNameGate.Refusal): String = when (reason) {
+        ConnectByNameGate.Refusal.NOT_NATIVE -> "Native AA mode not active."
+        ConnectByNameGate.Refusal.NO_PERMISSION -> getString(R.string.automation_connect_no_permission)
+        ConnectByNameGate.Refusal.NOT_FOUND -> getString(R.string.automation_connect_not_found)
+        ConnectByNameGate.Refusal.AMBIGUOUS -> getString(R.string.automation_connect_ambiguous)
+        ConnectByNameGate.Refusal.NOT_A_PHONE -> getString(R.string.automation_connect_not_a_phone)
+        ConnectByNameGate.Refusal.NOT_PAIRED -> getString(R.string.automation_connect_not_paired)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -3403,7 +3798,9 @@ class AapService : Service() {
             }
             ACTION_ROTATE_WIFI_DIRECT_IDENTITY -> rotateWifiDirectIdentity()
             ACTION_NATIVE_AA_POKE        -> {
-                val mac = intent?.getStringExtra(EXTRA_MAC)
+                val byCommand = intent?.getBooleanExtra(EXTRA_BY_COMMAND, false) == true
+                val mac = if (byCommand) commandPokeTarget(intent) else intent?.getStringExtra(EXTRA_MAC)
+                if (byCommand && mac == null) return START_STICKY
                 if (mac != null) {
                     AppLog.i("AapService: Received manual Native-AA poke request for $mac")
                     // [FIX] Reset exit flags so the subsequent connection is accepted
@@ -3565,6 +3962,7 @@ class AapService : Service() {
                     }
                 }
             }
+            ACTION_TURN_SCREEN_ON        -> turnScreenOn("automation")
             ACTION_RESTART_AUDIO         -> restartAudio()
             ACTION_REFRESH_SENSORS       -> refreshSensors()
             ACTION_RAISE_PROJECTION      -> {
@@ -4097,12 +4495,17 @@ class AapService : Service() {
         const val ACTION_REFRESH_SENSORS         = "com.andrerinas.openheadunit.aap.action.REFRESH_SENSORS"
         const val ACTION_RESTART_AUDIO           = "com.andrerinas.openheadunit.aap.action.RESTART_AUDIO"
         const val ACTION_RAISE_PROJECTION        = "com.andrerinas.openheadunit.aap.action.RAISE_PROJECTION"
+        const val ACTION_TURN_SCREEN_ON          = "com.andrerinas.openheadunit.aap.action.TURN_SCREEN_ON"
+        private const val EXTERNAL_POWER_STAND_DOWN = "external-power disconnect"
+        private const val EXTERNAL_POWER_HOLD_MARGIN_MS = 30_000L
+        private const val EXTERNAL_POWER_STEP_MS = 5_000L
 
         /** Every action [onStartCommand] has a branch for; an automation relay outside it is dropped silently. */
         val HANDLED_START_ACTIONS: Set<String> = setOf(
             ACTION_STOP_SERVICE, ACTION_DISCONNECT, ACTION_STOP_WIRELESS, ACTION_CANCEL_WIRELESS,
             ACTION_START_WIRELESS_SCAN, ACTION_END_SESSION_STAY_ARMED, ACTION_NATIVE_AA_CANCEL_POKE,
             ACTION_RESTART_AUDIO, ACTION_REFRESH_SENSORS, ACTION_RAISE_PROJECTION,
+            ACTION_TURN_SCREEN_ON,
         )
         /**
          * Sent after the caller has already invoked [CommManager.connect(socket)].
@@ -4124,7 +4527,7 @@ class AapService : Service() {
         private const val NETWORK_AVAILABLE_DEBOUNCE_MS = 1000L
 
         /** How close a power loss and a screen-off must be to read as one car being switched off. */
-        private const val ACC_POWER_LOSS_CORROBORATION_WINDOW_MS = 5_000L
+        internal const val ACC_POWER_LOSS_CORROBORATION_WINDOW_MS = 5_000L
 
         /** The ACC-off counterparts of the ACC-on intents this service already listens for. */
         private val ACC_OFF_ACTIONS = setOf(
@@ -4172,6 +4575,8 @@ class AapService : Service() {
         const val EXTRA_UI_HELD = "ui_held"
         const val EXTRA_MAC = "extra_mac"
         const val EXTRA_EXPLICIT_PICK = "extra_explicit_pick"
+        const val EXTRA_DEVICE_NAME = "extra_device_name"
+        const val EXTRA_BY_COMMAND = "extra_by_command"
         const val EXTRA_ENDPOINT_ID = "extra_endpoint_id"
     }
 }

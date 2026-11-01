@@ -13,6 +13,7 @@ import android.os.IBinder
 import androidx.core.content.ContextCompat
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.DriverCandidatePolicy
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NamedPhonePolicy
 import java.lang.reflect.Constructor
 import java.lang.reflect.Method
 import com.andrerinas.openheadunit.connection.wifi.MacAddressPolicy
@@ -287,6 +288,18 @@ object BluetoothHelper {
         fun deviceFor(mac: String?): BluetoothDevice? =
             mac?.let { m -> all.firstOrNull { it.device.address.equals(m, ignoreCase = true) }?.device }
     }
+
+    /** The bonded devices as the name resolver reads them: the remote name and, from API 30, the alias. */
+    @SuppressLint("MissingPermission")
+    fun pairedForNaming(candidates: DriverCandidates): List<NamedPhonePolicy.Paired> =
+        candidates.all.map { c ->
+            val names = ArrayList<String>(2)
+            try { c.device.name?.let { names.add(it) } } catch (_: Exception) { }
+            if (Build.VERSION.SDK_INT >= 30) {
+                try { c.device.alias?.let { names.add(it) } } catch (_: Exception) { }
+            }
+            NamedPhonePolicy.Paired(c.device.address, names, c.verdict)
+        }
 
     @Volatile
     private var lastCandidateSummary: String? = null

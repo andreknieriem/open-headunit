@@ -622,6 +622,12 @@
 
     <string name="supported_nativeaa">향상된 무선 연결 지원</string>
     <string name="supported_nativeaa_desc">이 기기는 더 원활하게 Android Auto를 사용할 수 있는 \"Native Wireless\" 모드를 지원합니다.\n\n이 기능을 사용 설정하려면 블루투스 캐시를 새로 고쳐야 합니다. 아래 순서대로 진행하세요:\n1. 휴대전화의 블루투스 설정에서 이 기기를 삭제하세요.\n2. 확인을 눌러 블루투스를 다시 시작하세요.\n3. 휴대전화와 이 기기를 다시 페어링하세요.\n\n지금 Native AA 모드로 전환하시겠습니까?</string>
+    <string name="automation_connect_no_permission">이름으로 연결하려면 이 앱에 블루투스를 허용하세요.</string>
+    <string name="automation_connect_not_found">해당 이름의 페어링된 휴대전화가 없습니다.</string>
+    <string name="automation_connect_ambiguous">해당 이름의 페어링된 휴대전화가 둘 이상 있습니다.</string>
+    <string name="automation_connect_not_a_phone">페어링된 해당 기기는 휴대전화가 아닙니다.</string>
+    <string name="automation_connect_not_paired">해당 블루투스 주소는 페어링되지 않았습니다.</string>
+    <string name="automation_connect_live_session">다른 휴대전화가 이미 연결되어 있습니다.</string>
     <string name="native_aa_poke_not_running">Android Auto 무선 연결이 준비되지 않았습니다. 무선 연결 설정을 확인하세요.</string>
     <string name="not_supported_nativeaa">Native Wireless를 지원하지 않을 수 있습니다</string>
     <string name="not_supported_nativeaa_desc">이 기기는 Native Wireless에 필요한 블루투스 또는 Wi-Fi 기능을 지원하지 않을 수 있습니다. 그래도 시도할 수는 있지만, 실패하면 \"Wireless Helper\"를 사용하거나 \"헤드유닛 서버\"를 선택하고 서버 모드를 \"자동\"으로 설정하세요.</string>
@@ -1224,6 +1230,22 @@
     <string name="enter_auto_disconnect_bt_delay">Android Auto 자동 종료 대기 시간(초)</string>
     <string name="auto_disconnect_bt_delay_hint">블루투스 프로필을 다시 연결하는 동안 연결이 잠시 끊어질 수 있습니다. 선택한 기기의 블루투스 연결이 끊기면 설정한 시간 동안 다시 연결되기를 기다립니다. 그동안 다시 연결되지 않으면 Android Auto를 종료합니다.</string>
     <string name="auto_disconnect_bt_kill_hint">선택한 기기의 블루투스 연결이 끊어지면(예: 차량 시동 꺼짐) 종료 버튼을 누른 것처럼 Android Auto 연결을 종료합니다. 이 기기가 차량 블루투스와 페어링되어 있다면 차량 블루투스를 선택하세요. 앱도 닫고 홈 화면을 표시하려면 자동화에서 \"연결이 끊기면 앱 닫기\"를 사용 설정하세요.</string>
+    <string name="external_power_disconnect_label">충전기를 분리하면 연결 해제</string>
+    <string name="external_power_disconnect_description">차량 시동이 꺼지는 등 외부 전원이 끊기면 종료 버튼처럼 세션을 종료합니다. 전원이 다시 들어오면 연결이 다시 활성화됩니다.</string>
+    <string name="external_power_delay_label">대기 시간(초)</string>
+    <string name="external_power_delay_value">%1$d초</string>
+    <string name="external_power_delay_hint">이 시간이 지나도 전원이 돌아오지 않은 경우에만 세션을 종료합니다. 5~3600초 사이로 설정하세요.</string>
+    <string name="external_power_screen_off_label">화면도 끄기</string>
+    <string name="external_power_screen_off_description">전원이 들어오지 않을 때, 세션이 종료된 후나 연결된 기기가 없을 때 화면을 어둡게 하고, 전원이 다시 들어오면 화면을 켭니다.</string>
+    <string name="external_power_grant_label">Open Headunit의 화면 끄기 허용</string>
+    <string name="external_power_grant_allowed">허용됨</string>
+    <string name="external_power_grant_missing">허용되지 않음</string>
+    <string name="external_power_grant_uninstall_hint">이 권한이 허용된 동안에는 Android에서 앱 삭제를 차단합니다. 앱을 삭제하기 전에 여기에서 권한을 제거하세요.</string>
+    <string name="external_power_grant_explanation">Open Headunit은 화면을 끄는 용도로만 이 권한을 사용합니다. 기기 잠금을 해제하거나 정보를 읽을 수 없습니다.</string>
+    <string name="external_power_grant_remove_message">화면 끄기 권한을 제거하시겠습니까?</string>
+    <string name="external_power_grant_remove">제거</string>
+    <string name="screen_off_admin_label">화면 끄기</string>
+    <string name="screen_off_admin_description">외부 전원이 끊기면 Open Headunit이 화면을 끌 수 있도록 허용합니다.</string>
     <string name="audio_stream_vendor_format">%1$s(%2$d)</string>
     <string name="debug_video_fault_injection">영상 오류 주입</string>
     <string name="debug_video_fault_rate">오류 주입 빈도(N개마다 1회)</string>

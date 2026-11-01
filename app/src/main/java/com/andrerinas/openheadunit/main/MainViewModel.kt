@@ -7,6 +7,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
 import com.andrerinas.openheadunit.App
+import com.andrerinas.openheadunit.connection.UsbRecheck
 import com.andrerinas.openheadunit.connection.usb.UsbDeviceCompat
 import com.andrerinas.openheadunit.connection.usb.UsbDeviceDiagnostics
 import com.andrerinas.openheadunit.connection.usb.UsbReceiver
@@ -41,6 +42,7 @@ class MainViewModel(application: Application): AndroidViewModel(application), Us
         // registration would deliver every USB event twice.
         if (!isRegistered) {
             ContextCompat.registerReceiver(app, usbReceiver, UsbReceiver.createFilter(), ContextCompat.RECEIVER_NOT_EXPORTED)
+            ContextCompat.registerReceiver(app, usbReceiver, UsbReceiver.createPermissionResultFilter(), ContextCompat.RECEIVER_NOT_EXPORTED)
             isRegistered = true
         }
         usbDevices.value = createDeviceList(settings.allowedDevices)
@@ -65,7 +67,7 @@ class MainViewModel(application: Application): AndroidViewModel(application), Us
         usbDevices.value = createDeviceList(settings.allowedDevices)
     }
 
-    override fun onUsbPermission(granted: Boolean, connect: Boolean, device: UsbDevice) {
+    override fun onUsbPermission(granted: Boolean, connect: Boolean, device: UsbDevice, recheck: UsbRecheck, token: String?) {
         usbDevices.value = createDeviceList(settings.allowedDevices)
     }
 

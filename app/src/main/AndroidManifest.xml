@@ -371,6 +371,18 @@
             </intent-filter>
         </receiver>
 
+        <!-- Bus observation outlives service teardown/process exit and never opens CE storage. -->
+        <receiver
+            android:name=".connection.usb.UsbReceiver"
+            android:directBootAware="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
+                <action android:name="android.hardware.usb.action.USB_DEVICE_DETACHED" />
+                <action android:name="android.hardware.usb.action.USB_ACCESSORY_DETACHED" />
+            </intent-filter>
+        </receiver>
+
         <receiver
             android:name=".app.BootCompleteReceiver"
             android:directBootAware="true"
@@ -379,7 +391,6 @@
                 <!-- Standard Android boot -->
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
-                <action android:name="android.intent.action.USER_UNLOCKED" />
                 <!-- Generic / OEM quick boot -->
                 <action android:name="android.intent.action.QUICKBOOT_POWERON" />
                 <action android:name="com.htc.intent.action.QUICKBOOT_POWERON" />

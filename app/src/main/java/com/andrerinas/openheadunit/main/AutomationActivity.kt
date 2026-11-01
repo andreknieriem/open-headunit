@@ -55,12 +55,18 @@ class AutomationActivity : AppCompatActivity() {
         }.toMap()
 
     private fun runCommand(action: String, overrides: Map<String, String>) {
+        val component = App.provide(this)
+        val ticket = component.commManager.appConnectionTicket()
         val effects = AutomationCommandPolicy.effectsFor(
             action,
             IntentExtras(intent, overrides),
             AutomationCommandPolicy.State(
                 externalConfigAllowed = App.provide(this).settings.allowExternalConfiguration
-            )
+            ),
+            acceptStop = {
+                component.commManager.requestExplicitAppExit(
+                    ticket, component.settings.killOnDisconnect && component.commManager.isConnected)?.id
+            }
         )
         AutomationEffectRunner.run(this, effects, JSONObject())
 
@@ -76,11 +82,11 @@ class AutomationActivity : AppCompatActivity() {
     private fun preLaunchProjection() {
         try {
             startActivity(
-                AapProjectionActivity.intent(this).apply {
+                com.andrerinas.openheadunit.app.AppUiEntry.continuation(AapProjectionActivity.intent(this).apply {
                     addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
                     // The session starts after this, so the screen must not take itself for stale.
                     putExtra(AapProjectionActivity.EXTRA_EXPECT_SESSION, true)
-                }
+                })
             )
         } catch (e: Exception) {
             AppLog.w("AutomationActivity: Could not pre-launch AapProjectionActivity: ${e.message}")

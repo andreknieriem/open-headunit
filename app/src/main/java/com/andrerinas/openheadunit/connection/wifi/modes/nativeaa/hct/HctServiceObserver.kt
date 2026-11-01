@@ -17,6 +17,7 @@ import android.os.Looper
 import android.os.Parcel
 import android.os.SystemClock
 import androidx.core.content.ContextCompat
+import com.andrerinas.openheadunit.connection.ConnectionAdmission
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.bluetooth.BluetoothPeerDiscovery
 import com.andrerinas.openheadunit.utils.bluetooth.BluetoothPeerInventory
@@ -41,6 +42,7 @@ internal class HctServiceObserver(
     context: Context,
     private val onAaReport: () -> Unit,
     private val onInvalidated: () -> Unit,
+    private val effectAdmission: ConnectionAdmission,
     private val interfaceAvailable: (Context) -> Boolean = Companion::available
 ) : Closeable {
     private val context = context.applicationContext
@@ -190,6 +192,7 @@ internal class HctServiceObserver(
     /** Registration and binding share main-thread ownership; no BIND_AUTO_CREATE side effects. */
     fun start() {
         check(Looper.myLooper() == Looper.getMainLooper()) { "HCT observer must start on main" }
+        if (!effectAdmission.run {}) throw CancellationException("HCT connection authority withdrawn before binding")
         synchronized(lifecycle) {
             // A stop can win after the carrier's main-dispatch check but before this lock.
             // Report cancellation rather than a manufacturer-interface failure in that race.
@@ -234,6 +237,7 @@ internal class HctServiceObserver(
         gate: HctCallGate, remote: IBinder, code: Int, minimumBytes: Int = 4, decode: (Parcel) -> T
     ): T {
         requireWorker()
+        if (!effectAdmission.run {}) throw IOException("HCT connection authority withdrawn before status read")
         gate.checkActive()
         if (closed || binder !== remote) throw IOException("HCT: Bluetooth status service changed")
         val data = Parcel.obtain()
@@ -256,6 +260,7 @@ internal class HctServiceObserver(
     }
 
     private fun remote(gate: HctCallGate): IBinder {
+        if (!effectAdmission.run {}) throw IOException("HCT connection authority withdrawn before Binder access")
         gate.checkActive()
         if (closed) throw IOException("HCT: observer is closed")
         val remote = binder ?: throw IOException("HCT: Bluetooth status service is not connected")
@@ -337,8 +342,10 @@ internal class HctServiceObserver(
     suspend fun requestWake(
         targetMac: String?,
         allowReconnect: Boolean = false,
+        commandAdmission: ConnectionAdmission,
         mayWake: () -> HctWakePolicy.Result = { HctWakePolicy.Result.REQUESTED }
     ): HctWakePolicy.Result {
+        if (!effectAdmission.run {} || !commandAdmission.run {}) return HctWakePolicy.Result.STATE_CHANGED
         if (closed) return HctWakePolicy.Result.CLOSED
         val target = targetMac?.let { BluetoothPeerInventory.normalizeAddress(it) }
             ?: return HctWakePolicy.Result.NO_TARGET
@@ -357,6 +364,7 @@ internal class HctServiceObserver(
                         "peerStable=${before.peer == after.peer}, targetIsPeer=${HctAdmission.address(after.peer) == target}, " +
                         "decision=$result")
                     if (result != HctWakePolicy.Result.REQUESTED) return@call result
+                    if (!effectAdmission.run {} || !commandAdmission.run {}) return@call HctWakePolicy.Result.STATE_CHANGED
                     synchronized(lifecycle) {
                         if (closed) return@call HctWakePolicy.Result.CLOSED
                         if (epoch != admission.epoch() || binder !== remote) return@call HctWakePolicy.Result.STATE_CHANGED
@@ -370,6 +378,7 @@ internal class HctServiceObserver(
                     }
                     // Close/cancel before admission prevents this request. Once admitted, IPC
                     // cannot be recalled; keep it outside lifecycle so close never waits on it.
+                    if (!effectAdmission.run {} || !commandAdmission.run {}) return@call HctWakePolicy.Result.STATE_CHANGED
                     AppLog.i("NativeAA: [HCT] submitting one settingsaccess=5 HFP reconnect")
                     context.sendBroadcast(Intent(SETTINGS_ACCESS).setPackage(PACKAGE)
                         .putExtra("accesstype", 5).putExtra("accesscommand", target.replace(":", "")))

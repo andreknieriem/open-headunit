@@ -28,6 +28,8 @@ object ToastUtils {
     }
 
     private fun isToastEnabled(context: Context): Boolean {
+        // Locked USB switching still reports status, but cannot read the user's CE preference.
+        if (!App.isUserUnlocked(context)) return true
         return try {
             App.provide(context).settings.showToastMessages
         } catch (_: Exception) {

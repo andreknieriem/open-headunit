@@ -1,7 +1,9 @@
 package com.andrerinas.openheadunit.app
 
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.utils.LocaleHelper
@@ -12,6 +14,7 @@ import com.andrerinas.openheadunit.utils.LocaleHelper
  * which would destroy the video surface mid-session.
  */
 abstract class SurfaceActivity : AppCompatActivity() {
+    private val appUiEntryIdentity: AppUiEntryIdentity by viewModels()
 
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(LocaleHelper.wrapContext(newBase))
@@ -19,5 +22,17 @@ abstract class SurfaceActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (AppUiEntry.isEntryActivity(this)) AppUiEntry.created(this, appUiEntryIdentity)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (AppUiEntry.isEntryActivity(this)) AppUiEntry.delivered(this, intent)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (AppUiEntry.isEntryActivity(this)) AppUiEntry.resumed(this)
     }
 }

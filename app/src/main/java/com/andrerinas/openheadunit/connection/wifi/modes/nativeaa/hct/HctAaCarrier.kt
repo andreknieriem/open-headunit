@@ -9,6 +9,7 @@ import android.system.Os
 import android.system.OsConstants
 import androidx.annotation.RequiresApi
 import com.andrerinas.openheadunit.aap.protocol.proto.Wireless
+import com.andrerinas.openheadunit.connection.ConnectionAdmission
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.ExternalModuleCarrier
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.HandshakeLink
 import com.andrerinas.openheadunit.utils.AppLog
@@ -39,26 +40,29 @@ internal class HctAaCarrier(
     private val mayServe: () -> Boolean,
     private val acceptPeer: (String) -> Boolean,
     private val onPhoneEvidence: () -> Unit,
-    private val onUnavailable: (HctWakePolicy.Result?, () -> Boolean) -> Unit
+    private val onUnavailable: (HctWakePolicy.Result?, () -> Boolean) -> Unit,
+    private val admission: ConnectionAdmission,
 ) : ExternalModuleCarrier {
     @Volatile private var stopped = false
     private val active = AtomicReference<LocalSocket?>()
-    private val wakes = Channel<HctWakeAttempts.Ticket>(Channel.CONFLATED)
+    private val wakes = Channel<Pair<HctWakeAttempts.Ticket, ConnectionAdmission>>(Channel.CONFLATED)
     private val attempts = HctWakeAttempts(HctPendingReconnect.process)
     @Volatile private var observer: HctServiceObserver? = null
 
     // Automatic credential refresh must not repeatedly reconnect a manufacturer's HFP profile.
     override val sendsWake = false
-    override fun requestWake(userAsked: Boolean) {
+    override fun requestWake(userAsked: Boolean, admission: ConnectionAdmission) {
+            if (!this.admission.run {} || !admission.run {}) return
         AppLog.i("NativeAA: [HCT] waiting for a fresh manufacturer AA connection")
     }
 
     /** Explicit phone selection authorizes one OEM disconnect/reconnect, including this phone. */
-    fun requestWakeFor(mac: String, allowReplacePending: Boolean = false, selected: () -> Unit = {}): Boolean {
+    fun requestWakeFor(mac: String, allowReplacePending: Boolean = false, admission: ConnectionAdmission, selected: () -> Unit = {}): Boolean {
+        if (stopped || !this.admission.run {} || !admission.run {}) return false
         val target = BluetoothPeerInventory.normalizeAddress(mac) ?: return false
         val now = SystemClock.elapsedRealtime()
         var committed = false
-        val held = attempts.selectAndEnqueue(target, now, { selected(); committed = true }, allowReplacePending) { wakes.trySend(it).isSuccess }
+        val held = attempts.selectAndEnqueue(target, now, { selected(); committed = true }, allowReplacePending) { wakes.trySend(it to admission).isSuccess }
         if (held != null) {
             AppLog.i("NativeAA: [HCT] selected-phone wake held: $held")
         }
@@ -71,9 +75,10 @@ internal class HctAaCarrier(
     }
 
     suspend fun run() = coroutineScope {
+        if (stopped || !admission.run {}) return@coroutineScope
         val status = HctServiceObserver(context,
             onAaReport = { attempts.reported(SystemClock.elapsedRealtime()) },
-            onInvalidated = { closeSocket() })
+            onInvalidated = { closeSocket() }, effectAdmission = admission)
         observer = status
         try {
             withContext(Dispatchers.Main.immediate) { if (!stopped) status.start() }
@@ -82,9 +87,9 @@ internal class HctAaCarrier(
             withTimeoutOrNull(3_000L) { status.awaitService() }
                 ?: throw IOException("Bluetooth status service did not connect within 3 s")
             val wakeJob = launch(Dispatchers.IO) {
-                for (ticket in wakes) {
-                    if (stopped) continue
+                for ((ticket, commandAdmission) in wakes) {
                     try {
+                        if (stopped || !admission.run {} || !commandAdmission.run {}) continue
                         when (attempts.prepare(ticket, mayServe)) {
                             HctWakeAttempts.Preparation.SUPERSEDED -> continue
                             HctWakeAttempts.Preparation.NOT_READY -> {
@@ -94,11 +99,12 @@ internal class HctAaCarrier(
                             }
                             HctWakeAttempts.Preparation.READY -> Unit
                         }
-                        val result = status.requestWake(ticket.target, allowReconnect = true) {
+                        val result = status.requestWake(ticket.target, allowReconnect = true, commandAdmission = commandAdmission) {
                             attempts.claim(ticket, SystemClock.elapsedRealtime(), mayServe)
                         }
                         currentCoroutineContext().ensureActive()
                         if (stopped) break
+                        if (!commandAdmission.run {}) continue
                         AppLog.i("NativeAA: [HCT] selected-phone wake #${ticket.id}: $result; " +
                             "submitted=${attempts.outstanding(ticket)}; ${status.observationSummary()}")
                         // A fresh AA arrival may have superseded the unsent wake; that handoff
@@ -112,7 +118,7 @@ internal class HctAaCarrier(
                             result != HctWakePolicy.Result.SUBMISSION_UNCONFIRMED) reportUnavailable(result, ticket)
                         if (attempts.outstanding(ticket)) launch {
                             delay(WAKE_OBSERVATION_MS)
-                            if (attempts.outstanding(ticket)) {
+                            if (commandAdmission.run {} && attempts.outstanding(ticket)) {
                                 AppLog.w("NativeAA: [HCT] wake #${ticket.id} has no matching WPP after 30 s; " +
                                     "no reconnect repeated; ${status.observationSummary()}")
                                 if (attempts.waitingForResult(ticket) && mayServe())
@@ -127,12 +133,12 @@ internal class HctAaCarrier(
             try {
                 AppLog.i("NativeAA: [HCT] observing AA reports; no local socket opened yet")
                 for (ticket in status.arrivals) {
-                    if (stopped || !isActive) break
+                    if (stopped || !isActive || !admission.run {}) break
                     // A selection dialog can briefly hold the handoff. Retain the live event
                     // within its original deadline instead of losing it on the first poll.
-                    while (!stopped && isActive && !mayServe() &&
+                    while (!stopped && isActive && admission.run {} && !mayServe() &&
                         status.admission.fresh(ticket, SystemClock.elapsedRealtime())) delay(50)
-                    if (stopped || !mayServe() || !status.admission.fresh(ticket, SystemClock.elapsedRealtime())) {
+                    if (stopped || !admission.run {} || !mayServe() || !status.admission.fresh(ticket, SystemClock.elapsedRealtime())) {
                         status.admission.retireUnused(ticket)
                         continue
                     }
@@ -196,6 +202,7 @@ internal class HctAaCarrier(
                 // unix_stream_connect uses sock_sndtimeo while the listen backlog is full.
                 // A coroutine timeout or close alone cannot bound a blocked native connect.
                 socket.soTimeout = CONNECT_TIMEOUT_MS
+                if (!admission.run {}) throw IOException("HCT: connection authority withdrawn before socket attach")
                 onSocketAttempt()
                 socket.connect(address)
             }
@@ -264,6 +271,7 @@ internal class HctAaCarrier(
         address: LocalSocketAddress,
         onSocketAttempt: () -> Unit,
     ) {
+        if (!admission.run {}) throw IOException("HCT: connection authority withdrawn before socket attach")
         val fd = socket.fileDescriptor
         val flags = Os.fcntlInt(fd, OsConstants.F_GETFL, 0)
         Os.fcntlInt(fd, OsConstants.F_SETFL, flags or OsConstants.O_NONBLOCK)
@@ -274,7 +282,7 @@ internal class HctAaCarrier(
     }
 
     private fun checkCurrent(status: HctServiceObserver, ticket: HctAdmission.Ticket, mac: String) {
-        if (stopped || !mayServe() || !status.admission.current(ticket) ||
+        if (stopped || !admission.run {} || !mayServe() || !status.admission.current(ticket) ||
             !acceptPeer(mac)) {
             throw IOException("HCT: AA handoff is no longer current")
         }

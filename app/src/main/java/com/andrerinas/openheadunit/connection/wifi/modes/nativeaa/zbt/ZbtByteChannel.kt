@@ -168,7 +168,7 @@ class ZbtByteChannel(
             onControlFrame: (msgId: Int, body: ByteArray) -> Unit = { _, _ -> },
             onRfcommData: (ByteArray) -> Unit = {},
             bufferRfcommData: Boolean = true,
-            opening: ZbtChannelOpening = ZbtChannelOpening(),
+            opening: ZbtChannelOpening,
             socketFactory: () -> Socket = { Socket() },
             initialize: Boolean = true
         ): ZbtByteChannel {

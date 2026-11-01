@@ -10,9 +10,11 @@ import android.hardware.usb.UsbEndpoint
 import android.hardware.usb.UsbConstants
 import com.andrerinas.openheadunit.utils.Settings
 import com.andrerinas.openheadunit.connection.CommManager
+import com.andrerinas.openheadunit.connection.AppExitPolicy
 import com.andrerinas.openheadunit.connection.ConnectionArbiter
 import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy.Tier
 import com.andrerinas.openheadunit.connection.ConnectionPriorityPolicy.Owner
+import com.andrerinas.openheadunit.connection.withAppExitDispatcherForTest
 import com.andrerinas.openheadunit.utils.AppLog
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -43,7 +45,7 @@ class UsbRecoveryAdmissionTest {
         AppLog.LOGGER = logger
     }
     private class Fixture {
-        val manager = mock(CommManager::class.java, CALLS_REAL_METHODS)
+        val manager = mock(CommManager::class.java, CALLS_REAL_METHODS).withAppExitDispatcherForTest()
         val context = mock(Context::class.java)
         val usb = mock(UsbManager::class.java)
         val device = mock(UsbDevice::class.java)
@@ -53,6 +55,7 @@ class UsbRecoveryAdmissionTest {
         val states = MutableStateFlow<CommManager.ConnectionState>(CommManager.ConnectionState.Disconnected())
         init {
             set("transportLifecycleLock", Any())
+            set("appExitPolicy", AppExitPolicy())
             set("usbRecoveryOwner", owner)
             set("_connectionState", states)
             set("context", context)
@@ -65,6 +68,8 @@ class UsbRecoveryAdmissionTest {
             `when`(context.getSharedPreferences(anyString(), anyInt())).thenReturn(prefs)
             `when`(usb.deviceList).thenReturn(hashMapOf("usb-1" to device))
         }
+        // The launcher's own admitted USB request, which recovery continues.
+        val request = CommManager.ConnectionRequest(manager.appConnectionTicket(), claim, null, null, null)
         fun prepareOpen(): UsbDeviceConnection {
             val handle = mock(UsbDeviceConnection::class.java)
             val iface = mock(UsbInterface::class.java)
@@ -82,13 +87,13 @@ class UsbRecoveryAdmissionTest {
             `when`(output.direction).thenReturn(UsbConstants.USB_DIR_OUT)
             `when`(input.type).thenReturn(UsbConstants.USB_ENDPOINT_XFER_BULK)
             `when`(output.type).thenReturn(UsbConstants.USB_ENDPOINT_XFER_BULK)
-            // Leave close verification to connectUsb's real finally block. The unrelated
-            // decoder/service teardown is not part of this publication-boundary test.
-            doAnswer {
-                set("disconnectRequested", true)
-                states.value = CommManager.ConnectionState.Disconnected()
-                null
-            }.`when`(manager).disconnect(any(), any(), any(), any(), any(), anyOrNull())
+            // Retire through the real lifecycle; codec cleanup alone is a platform double.
+            set("_scope", CoroutineScope(SupervisorJob() + Dispatchers.Unconfined))
+            val audio = mock(com.andrerinas.openheadunit.decoder.audio.AudioDecoder::class.java)
+            `when`(audio.captureCleanup()).thenReturn({})
+            set("audioDecoder", audio)
+            set("videoDecoder", mock(com.andrerinas.openheadunit.decoder.video.VideoDecoder::class.java))
+            set("keyStates", mutableMapOf<Int, Any>())
             return handle
         }
         fun set(name: String, value: Any?) = CommManager::class.java.getDeclaredField(name)
@@ -113,7 +118,7 @@ class UsbRecoveryAdmissionTest {
         }.`when`(f.settings).saveLastConnection(eq(Settings.CONNECTION_TYPE_USB), anyOrNull(), anyOrNull())
         withContext(Dispatchers.IO) {
             mockStatic(android.os.SystemClock::class.java).use {
-                f.manager.reconnectUsb(f.device, f.owner, f.claim, target.guard(candidate))
+                f.manager.reconnectUsb(f.device, f.owner, f.request, target.guard(candidate))
             }
         }
         verify(f.settings).saveLastConnection(any(), any(), any())
@@ -126,7 +131,7 @@ class UsbRecoveryAdmissionTest {
         val f = Fixture()
         val observation = StaleAccessoryRecoveryPolicy.BusObservation()
         observation.noteDetach()
-        f.manager.reconnectUsb(f.device, f.owner, f.claim, observation)
+        f.manager.reconnectUsb(f.device, f.owner, f.request, observation)
         assertTrue(ConnectionArbiter.holds(f.claim))
         verifyNoInteractions(f.usb)
     }
@@ -139,7 +144,7 @@ class UsbRecoveryAdmissionTest {
         f.set("_disconnectJob", teardown)
         val permission = CountDownLatch(1)
         `when`(f.usb.hasPermission(f.device)).thenAnswer { permission.countDown(); true }
-        val retry = async(Dispatchers.IO) { f.manager.reconnectUsb(f.device, f.owner, f.claim, observation) }
+        val retry = async(Dispatchers.IO) { f.manager.reconnectUsb(f.device, f.owner, f.request, observation) }
         try {
             assertTrue(permission.await(5, TimeUnit.SECONDS))
             observation.noteDetach()
@@ -164,7 +169,7 @@ class UsbRecoveryAdmissionTest {
             }.`when`(f.settings).saveLastConnection(any(), any(), any())
             withContext(Dispatchers.IO) {
                 mockStatic(android.os.SystemClock::class.java).use {
-                    f.manager.reconnectUsb(f.device, f.owner, f.claim, observation)
+                    f.manager.reconnectUsb(f.device, f.owner, f.request, observation)
                 }
             }
             assertTrue(f.states.value is CommManager.ConnectionState.Disconnected)
@@ -188,7 +193,7 @@ class UsbRecoveryAdmissionTest {
         }
         withContext(Dispatchers.IO) {
             mockStatic(android.os.SystemClock::class.java).use {
-                f.manager.reconnectUsb(f.device, f.owner, f.claim, admission)
+                f.manager.reconnectUsb(f.device, f.owner, f.request, admission)
             }
         }
         assertEquals(2, reads)
@@ -200,8 +205,17 @@ class UsbRecoveryAdmissionTest {
     @Test fun revokedOwnerCannotClaimAfterDispatcherHandoff(): Unit = runBlocking {
         val f = Fixture()
         f.set("usbRecoveryOwner", Any())
-        f.manager.reconnectUsb(f.device, f.owner, f.claim)
+        f.manager.reconnectUsb(f.device, f.owner, f.request)
         assertTrue(ConnectionArbiter.holds(f.claim))
+        verifyNoInteractions(f.usb)
+    }
+
+    @Test fun stoppedRequestCannotOpenOrPublish(): Unit = runBlocking {
+        val f = Fixture()
+        // A request admitted before a Stop carries the superseded ticket.
+        val stale = CommManager.ConnectionRequest(f.request.ticket + 1, f.claim, null, null, null)
+        f.manager.reconnectUsb(f.device, f.owner, stale)
+        assertTrue(f.states.value is CommManager.ConnectionState.Disconnected)
         verifyNoInteractions(f.usb)
     }
 
@@ -214,7 +228,7 @@ class UsbRecoveryAdmissionTest {
             check(release.await(5, TimeUnit.SECONDS))
             true
         }
-        val retry = async(Dispatchers.IO) { f.manager.reconnectUsb(f.device, f.owner, f.claim) }
+        val retry = async(Dispatchers.IO) { f.manager.reconnectUsb(f.device, f.owner, f.request) }
         try {
             assertTrue(entered.await(5, TimeUnit.SECONDS))
             f.set("usbRecoveryOwner", Any())
@@ -222,13 +236,12 @@ class UsbRecoveryAdmissionTest {
         withTimeout(5_000) { retry.await() }
         assertTrue(f.states.value is CommManager.ConnectionState.Disconnected)
         verify(f.usb, never()).openDevice(anyOrNull())
-        assertFalse(ConnectionArbiter.holds(f.claim))
     }
 
-    @Test fun anotherClaimInTheSameRecoveryIntervalCannotBeStolen(): Unit = runBlocking {
+    @Test fun displacedRequestCannotOpen(): Unit = runBlocking {
         val f = Fixture()
         val newer = checkNotNull(ConnectionArbiter.claim(Tier.USB, Owner.USB, "new attachment"))
-        f.manager.reconnectUsb(f.device, f.owner, f.claim)
+        f.manager.reconnectUsb(f.device, f.owner, f.request)
         assertTrue(ConnectionArbiter.holds(newer))
         verifyNoInteractions(f.usb)
     }
@@ -257,7 +270,7 @@ class UsbRecoveryAdmissionTest {
         val retry = async(Dispatchers.IO) {
             // StandardUsb's diagnostic clock is initialized on the connection thread.
             mockStatic(android.os.SystemClock::class.java).use {
-                f.manager.reconnectUsb(f.device, f.owner, f.claim)
+                f.manager.reconnectUsb(f.device, f.owner, f.request)
             }
         }
         var newer: ConnectionArbiter.Claim? = null

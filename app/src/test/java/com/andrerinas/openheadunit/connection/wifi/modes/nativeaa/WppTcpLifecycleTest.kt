@@ -1,6 +1,8 @@
 package com.andrerinas.openheadunit.connection.wifi.modes.nativeaa
 
 import android.content.Context
+import com.andrerinas.openheadunit.connection.ConnectionOperation
+import com.andrerinas.openheadunit.connection.CommManager
 import com.andrerinas.openheadunit.connection.wifi.direct.GroupIdentityStability
 import kotlinx.coroutines.*
 import org.junit.Assert.*
@@ -22,6 +24,15 @@ import kotlin.coroutines.intrinsics.suspendCoroutineUninterceptedOrReturn
 
 /** Drives the production TLS-to-hold path, with only the socket and Android context doubled. */
 class WppTcpLifecycleTest {
+    private val operation = ConnectionOperation(0L, null)
+    private val commManager = mock(CommManager::class.java).also {
+        `when`(it.isCurrent(operation)).thenReturn(true)
+        org.mockito.kotlin.doAnswer { invocation ->
+            @Suppress("UNCHECKED_CAST")
+            (invocation.arguments[0] as () -> Any?)()
+        }.`when`(it).withAppConnectionLifecycleLock<Any?>(org.mockito.kotlin.any())
+    }
+
     @Test fun `stop while bind is blocked closes the unpublished listener`() = runBlocking {
         val owner = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         val listener = mock(ServerSocket::class.java)
@@ -35,7 +46,7 @@ class WppTcpLifecycleTest {
         }.`when`(listener).bind(any())
         doAnswer { closed.countDown(); null }.`when`(listener).close()
         val server = WppTcpServer(
-            mock(Context::class.java), owner, mock(WppTcpServer.Callbacks::class.java),
+            mock(Context::class.java), owner, mock(WppTcpServer.Callbacks::class.java), operation, commManager,
             createServerSocket = { listener }, createTlsFactory = { mock(SSLSocketFactory::class.java) }
         )
         try {
@@ -52,7 +63,7 @@ class WppTcpLifecycleTest {
 
     @Test fun `an accepted job from a retired server cannot begin TLS on the next run`() = runBlocking {
         val owner = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-        val server = WppTcpServer(mock(Context::class.java), owner, mock(WppTcpServer.Callbacks::class.java))
+        val server = WppTcpServer(mock(Context::class.java), owner, mock(WppTcpServer.Callbacks::class.java), operation, commManager)
         val raw = mock(Socket::class.java)
         val factory = mock(SSLSocketFactory::class.java)
         server.stop() // invalidates generation zero before its accepted coroutine starts
@@ -77,7 +88,7 @@ class WppTcpLifecycleTest {
         `when`(callbacks.credentials()).thenReturn(NativeNetworkCredentials("DIRECT-AA", "12345678", "192.168.49.1", "02:11:22:33:44:55", GroupIdentityStability.RENAMED))
         `when`(callbacks.projectionSessionUp()).thenAnswer { projecting.get() }
         val owner = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-        val server = WppTcpServer(mock(Context::class.java), owner, callbacks)
+        val server = WppTcpServer(mock(Context::class.java), owner, callbacks, operation, commManager)
         WppTcpServer::class.java.getDeclaredField("running").apply {
             isAccessible = true
             setBoolean(server, true)
@@ -137,7 +148,7 @@ class WppTcpLifecycleTest {
         }
         `when`(callbacks.carInfo()).thenReturn(WppMessages.carInfo("OHU", "HU", "2026", "1", "OHU", "HU"))
         val scope = CoroutineScope(SupervisorJob())
-        val server = WppTcpServer(mock(Context::class.java), scope, callbacks)
+        val server = WppTcpServer(mock(Context::class.java), scope, callbacks, operation, commManager)
         val running = WppTcpServer::class.java.getDeclaredField("running").apply { isAccessible = true }
         val listener = mock(ServerSocket::class.java)
         `when`(listener.localPort).thenReturn(5289)

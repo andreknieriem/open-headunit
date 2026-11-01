@@ -1,20 +1,29 @@
 package com.andrerinas.openheadunit.aap
 
 import com.andrerinas.openheadunit.connection.CommManager
+import com.andrerinas.openheadunit.connection.withUsbInputPreferencesForTest
+import com.andrerinas.openheadunit.connection.ConnectionArbiter
+import com.andrerinas.openheadunit.connection.AppExitPolicy
 import com.andrerinas.openheadunit.connection.CommManager.ConnectionState
+import com.andrerinas.openheadunit.connection.withAppExitDispatcherForTest
 import com.andrerinas.openheadunit.connection.projection.SocketProjectionConnection
 import com.andrerinas.openheadunit.utils.Settings
 import android.content.Context
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Assert.*
+import org.junit.After
+import org.junit.Before
 import org.junit.Test
 import org.mockito.Mockito.*
-import kotlin.coroutines.Continuation
 import kotlin.coroutines.CoroutineContext
-import kotlin.coroutines.intrinsics.suspendCoroutineUninterceptedOrReturn
 
 class UsbReconnectOwnershipTest {
+    // The arbiter's default clock is Android's SystemClock, which plain JVM tests do not provide.
+    private val clock = ConnectionArbiter.clock
+    @Before fun prepare() { ConnectionArbiter.reset(); ConnectionArbiter.clock = { 1000L } }
+    @After fun restore() { ConnectionArbiter.reset(); ConnectionArbiter.clock = clock }
+
     private class QueuedMain : CoroutineDispatcher() {
         private val tasks = ArrayDeque<Runnable>()
         override fun dispatch(context: CoroutineContext, block: Runnable) { tasks.addLast(block) }
@@ -22,17 +31,19 @@ class UsbReconnectOwnershipTest {
     }
 
     @Test fun usbRecheckSurvivesItsConnectingStateButNotAnotherSession() = runBlocking {
+        mockStatic(android.os.SystemClock::class.java).use {
         for (observed in listOf(false, true)) for (outcome in listOf(
             "connecting", "error", "wireless-retry", "new-session", "user-exit", "settings-save")) {
-            val manager = mock(CommManager::class.java, CALLS_REAL_METHODS)
+            val manager = mock(CommManager::class.java, CALLS_REAL_METHODS).withAppExitDispatcherForTest()
             val ended = ConnectionState.Disconnected()
             val states = MutableStateFlow<ConnectionState>(ended)
             fun set(name: String, value: Any?) = CommManager::class.java.getDeclaredField(name)
                 .apply { isAccessible = true }.set(manager, value)
             set("transportLifecycleLock", Any())
+            set("appExitPolicy", AppExitPolicy())
             set("_connectionState", states)
             set("usbRecoveryOwner", Any())
-            set("context", mock(Context::class.java))
+            set("context", mock(Context::class.java).withUsbInputPreferencesForTest())
             set("settings", mock(Settings::class.java))
             val main = QueuedMain()
             val scope = CoroutineScope(SupervisorJob() + main)
@@ -43,10 +54,6 @@ class UsbReconnectOwnershipTest {
             retry.schedule(ended, 3000, ownsCheck = { manager.ownsUsbRecheck(owner) }) { checks++ }
             val wireless = AutomaticReconnect(scope, { states.value }, { false }, { deadline.await() })
             main.drain()
-            val connect = CommManager::class.java.getDeclaredMethod("connectIp",
-                String::class.java, Int::class.javaPrimitiveType,
-                ConnectionState.Disconnected::class.java, Continuation::class.java)
-                .apply { isAccessible = true }
             mockConstruction(SocketProjectionConnection::class.java) { candidate, _ ->
                 runBlocking {
                     `when`(candidate.connect()).thenAnswer {
@@ -68,7 +75,7 @@ class UsbReconnectOwnershipTest {
                             "user-exit", "settings-save" -> {
                                 states.value = ended
                                 // Even an already-disconnected stop/Save must revoke old checks.
-                                manager.disconnect(isUserExit = outcome == "user-exit",
+                                manager.disconnect(com.andrerinas.openheadunit.connection.ConnectionOperation(manager.appConnectionTicket(), null), isUserExit = outcome == "user-exit",
                                     reason = if (outcome == "settings-save") CommManager.DisconnectReason.SETTINGS_RESTART
                                         else CommManager.DisconnectReason.CONNECTION_ENDED)
                             }
@@ -79,17 +86,15 @@ class UsbReconnectOwnershipTest {
                         val allowed = outcome in listOf("connecting", "error", "wireless-retry")
                         assertEquals("$outcome observed=$observed", if (allowed) 1 else 0, checks)
                         // Retire locally without entering unrelated transport cleanup.
-                        set("connectionAttempt", Any())
+                        set("connectionAttempt", CommManager.Attempt(org.mockito.Mockito.mock(CommManager.ConnectionRequest::class.java)))
                         false
                     }
                 }
             }.use {
-                try {
-                    suspendCoroutineUninterceptedOrReturn<Unit> { continuation ->
-                        connect.invoke(manager, "127.0.0.1", 5277, null, continuation)
-                    }
-                } finally { scope.cancel(); main.drain() }
+                // The actual public request: admission, acceptance and publication before the open.
+                try { manager.connect("127.0.0.1", 5277, ticket = manager.appConnectionTicket()) } finally { scope.cancel(); main.drain() }
             }
+        }
         }
     }
 

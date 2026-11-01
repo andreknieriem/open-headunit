@@ -7,6 +7,8 @@ import android.media.AudioManager
 import android.os.*
 import com.andrerinas.openheadunit.aap.AapAudio
 import com.andrerinas.openheadunit.connection.bluetooth.xyauto.XyAutoMediaSession
+import com.andrerinas.openheadunit.connection.AppExitPolicy
+import com.andrerinas.openheadunit.connection.usb.UsbReceiver
 import com.andrerinas.openheadunit.connection.wifi.scan.WifiScanControl
 import com.andrerinas.openheadunit.connection.wifi.modes.WifiLauncherNative
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeStrategy
@@ -14,6 +16,7 @@ import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.Settings
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import java.net.Socket
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
@@ -34,6 +37,8 @@ private class QueuedCleanup : CoroutineDispatcher() {
     val tasks = java.util.concurrent.ConcurrentLinkedQueue<Runnable>()
     override fun dispatch(context: kotlin.coroutines.CoroutineContext, block: Runnable) { tasks.add(block) }
 }
+private open class ProjectionConnection { fun disconnect() {} }
+private class AbstractUsbProjectionConnection : ProjectionConnection()
 private class AapTransport(
     decoder: AudioDecoder, video: Any, manager: AudioManager, settings: Settings, notification: Any,
     context: Context, externalSsl: Any, onAaMediaMetadata: (Any, Any) -> Unit, onAaPlaybackStatus: (Any, Any) -> Unit,
@@ -54,14 +59,30 @@ private class AapTransport(
     companion object { var constructionHook: (() -> Unit)? = null }
 }
 
+// The production Attempt names the claim it was published under; no claim is taken here.
+private object ConnectionArbiter { class Claim; fun holds(claim:Claim)=true }
+// PRODUCTION OPERATION
+
+// The production exit members mint and withdraw owed USB scans; nothing here asks the bus.
+private class UsbRecheck(val ticket: Long, val epoch: Long)
+
 /** Only the network, UI side effects and scheduling are doubled; injected decisions are production. */
 private class ConnectionFixture(val settings: Settings = Settings()) {
     private val transportLifecycleLock = Any()
-    private var connectionAttempt: Any? = Any()
+    // PRODUCTION APP_EXIT
+    // PRODUCTION ATTEMPT
+    // PRODUCTION CONNECTION_REQUEST
+    // PRODUCTION REQUEST_VALID
+    // PRODUCTION TRANSPORT_START
+    // PRODUCTION HANDSHAKE_CURRENT
+    // PRODUCTION CAPTURE_HANDSHAKE
+    private var connectionAttempt: Attempt? = Attempt(ConnectionRequest(appConnectionTicket(), ConnectionArbiter.Claim(), null, null, null)).also { it.request.attempt = it }
+    private var lastEndedAttempt: Any? = null
     private var usbRecoveryOwner: Any = Any()
     private var settingsUsbRestartInFlight: ConnectionState.Disconnected? = null
     private var usbSaveOwner: ConnectionState.Disconnected? = null
-    private fun dropOwedScans() {}
+    // No connection request is ever admitted here, so Stop and Save have none to retire.
+    private fun retireInvalidRequest() {}
     private var disconnectRequested = false
     private var physicalConnectionReached = true
     private var outgoingEndpoint: Pair<String, Int>? = null
@@ -74,7 +95,7 @@ private class ConnectionFixture(val settings: Settings = Settings()) {
     private val queue = QueuedCleanup()
     private val _scope = CoroutineScope(SupervisorJob() + queue)
     private val _connectionState = MutableStateFlow<ConnectionState>(ConnectionState.Connected)
-    private var _connection: Any? = Any()
+    private var _connection: ProjectionConnection? = ProjectionConnection()
     private var _transport: AapTransport? = null
     @Volatile private var projectionVideoFocusSuppressed = false
     private var _disconnectJob: Job? = null
@@ -87,20 +108,26 @@ private class ConnectionFixture(val settings: Settings = Settings()) {
     val audio get() = checkNotNull(_transport).aapAudio
     val isProjectionVideoFocusSuppressed get() = checkNotNull(_transport).isProjectionVideoFocusSuppressed
     fun quitCallback() = checkNotNull(_transport?.onQuit)
+    private var publicationAuthority: TransportStart? = null
     fun publish() = runBlocking {
+        val authority = captureHandshake() ?: return@runBlocking
+        publicationAuthority = authority
         withContext(Dispatchers.Default) {
-            val conn = _connection ?: return@withContext
+            val conn = authority.connection
             // PRODUCTION PUBLICATION
         }
     }
     fun lateHandshake() = _transport?.let { source ->
-        withLiveTransport(source, ConnectionState.StartingTransport) {
+        val authority = publicationAuthority ?: return@let false
+        withLiveHandshake(authority, source) {
             _connectionState.value = ConnectionState.HandshakeComplete
         }
     }
     // PRODUCTION ADVANCE
     // PRODUCTION APPLY
     // PRODUCTION DISCONNECT
+    // PRODUCTION DISCONNECT_EFFECT
+    // PRODUCTION RECORD_TERMINAL
     // PRODUCTION CANCEL_SETTINGS
     // PRODUCTION REACHED_SSL
     // PRODUCTION QUIT
@@ -111,7 +138,9 @@ private class ConnectionFixture(val settings: Settings = Settings()) {
         reason: DisconnectReason = DisconnectReason.CONNECTION_ENDED) {}
     fun nextConnection() {
         _transport?.aapAudio?.releaseAllFocus(); Handler.runAll()
-        _transport = null; disconnectRequested = false; _connection = Any(); _connectionState.value = ConnectionState.Connected
+        check(acceptAppConnection(appConnectionTicket(), acquireOwnership = true))
+        connectionAttempt = Attempt(ConnectionRequest(appConnectionTicket(), ConnectionArbiter.Claim(), null, null, null)).also { it.request.attempt = it }
+        _transport = null; disconnectRequested = false; _connection = ProjectionConnection(); _connectionState.value = ConnectionState.Connected
     }
     fun close() { _transport?.aapAudio?.releaseAllFocus(); audioDecoder.stop(); Handler.runAll(); _scope.cancel() }
 }
@@ -157,7 +186,9 @@ private class ObserverFixture(
     private val commManager = Connection(wireless, loopback, accepted, audioEnabled)
     private class Wifi(val active: Any?)
     private val wifiLauncherManager = Wifi(if (native) WifiLauncherNative(strategy) else Any())
-    private class Self { fun onConnectionEstablished() {}; fun onConnectionEnded(state: ConnectionState.Disconnected) {} }
+    private class Self {
+        fun onConnectionEstablished() {}
+    }
     private val selfLauncherManager = Self()
     private class ReconnectTimer { fun onStateChanged() {} }
     private val automaticReconnect = ReconnectTimer()
@@ -334,7 +365,7 @@ internal fun audioLifecycleBoundaryRegression() {
     val errors = java.util.concurrent.ConcurrentLinkedQueue<Throwable>()
     AapTransport.constructionHook = { captured.countDown(); check(publish.await(3, TimeUnit.SECONDS)) }
     val creator = Thread { try { fixture.publish() } catch (t: Throwable) { errors.add(t) } }
-    val applying = Thread { try { fixture.applyAudioSettings() } catch (t: Throwable) { errors.add(t) } }
+    val applying = Thread { try { fixture.applyAudioSettings(ConnectionOperation(fixture.appConnectionTicket(),null)) } catch (t: Throwable) { errors.add(t) } }
     try {
         creator.start(); check(captured.await(2, TimeUnit.SECONDS))
         fixture.settings.useAacAudio = true
@@ -353,34 +384,39 @@ internal fun audioLifecycleBoundaryRegression() {
 
     val before = ConnectionFixture()
     try {
-        before.settings.useAacAudio = true; before.applyAudioSettings(); before.publish()
+        before.settings.useAacAudio = true; before.applyAudioSettings(ConnectionOperation(before.appConnectionTicket(),null)); before.publish()
         check(!before.disconnected && !before.audio.needsSessionRestart())
     } finally { before.close(); Handler.reset() }
     println("PASS settings saved before construction are captured by the next transport")
 
     for (honor in listOf(false, true)) {
-        com.andrerinas.openheadunit.aap.AapService.killProcessOnDestroy = false
+        val service = com.andrerinas.openheadunit.aap.AapService()
+        com.andrerinas.openheadunit.aap.AapService.instance = service
         val closing = ConnectionFixture(Settings().apply { killOnDisconnect = true })
         try {
             closing.publish(); val oldQuit = closing.quitCallback()
-            closing.disconnect(isUserExit = false, honorKillOnDisconnect = honor)
+            closing.disconnect(ConnectionOperation(closing.appConnectionTicket(), null), isUserExit = false, honorKillOnDisconnect = honor)
             check(closing.lateHandshake() == false)
             oldQuit(false); oldQuit(false)
-            check(closing.context.broadcasts.size == if (honor) 1 else 0)
+            check(closing.context.broadcasts.isEmpty())
             check(Handler.delayed.size == if (honor) 1 else 0)
             while (Handler.delayed.isNotEmpty()) Handler.delayed.poll().run()
-            check(com.andrerinas.openheadunit.aap.AapService.killProcessOnDestroy == honor)
+            check(service.stops == if (honor) 1 else 0)
+            if (honor) {
+                closing.onAppRelaunched()
+                check(closing.completeAppExit(checkNotNull(service.exitRequest)).effect == AppExitPolicy.Effect.RESTART_SERVICE)
+            }
             closing.nextConnection(); closing.publish(); val fresh = closing.audio
             oldQuit(false)
             check(!closing.disconnected && closing.audio === fresh)
             check(closing.context.broadcasts.size == if (honor) 1 else 0)
-        } finally { closing.close(); Handler.reset() }
+        } finally { closing.close(); Handler.reset(); com.andrerinas.openheadunit.aap.AapService.instance = null }
     }
     val natural = ConnectionFixture(Settings().apply { killOnDisconnect = true })
     try {
         natural.publish(); val quit = natural.quitCallback(); quit(false); quit(false)
-        check(natural.disconnected && natural.context.broadcasts.size == 1 && Handler.delayed.size == 1)
+        check(natural.disconnected && natural.context.broadcasts.isEmpty() && Handler.delayed.size == 1)
     } finally { natural.close(); Handler.reset() }
-    com.andrerinas.openheadunit.aap.AapService.killProcessOnDestroy = false
+    com.andrerinas.openheadunit.aap.AapService.instance = null
     println("PASS first disconnect owns app-exit policy; duplicate and retired quit callbacks cannot override it")
 }

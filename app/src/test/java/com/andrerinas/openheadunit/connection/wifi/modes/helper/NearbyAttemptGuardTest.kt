@@ -9,15 +9,15 @@ import kotlin.concurrent.thread
 class NearbyAttemptGuardTest {
     @Test fun delayedPublicationCannotRunAfterStop() {
         val guard = NearbyAttemptGuard()
-        val attempt = guard.begin("phone")
+        val attempt = guard.begin("phone", 0L)
         guard.retire {}
         assertFalse(guard.run(attempt) { fail("retired tunnel published") })
     }
 
     @Test fun reusedEndpointDoesNotReviveOldCallbacks() {
         val guard = NearbyAttemptGuard()
-        val old = guard.begin("phone")
-        val current = guard.begin("phone")
+        val old = guard.begin("phone", 0L)
+        val current = guard.begin("phone", 0L)
         assertFalse(guard.run(old) { fail("old callback accepted") })
         assertTrue(guard.run(current) {})
         assertFalse(guard.run(current, "other phone") { fail("foreign stream accepted") })
@@ -25,22 +25,22 @@ class NearbyAttemptGuardTest {
 
     @Test fun staleFailureCannotRetireReplacement() {
         val guard = NearbyAttemptGuard()
-        val old = guard.begin("old")
-        val current = guard.begin("current")
+        val old = guard.begin("old", 0L)
+        val current = guard.begin("current", 0L)
         guard.run(old) { guard.retire {} }
         assertTrue(guard.run(current) {})
     }
 
     @Test fun synchronousFailureMayRetireItsOwnAttempt() {
         val guard = NearbyAttemptGuard()
-        val attempt = guard.begin("phone")
+        val attempt = guard.begin("phone", 0L)
         guard.run(attempt) { guard.retire { assertSame(attempt, it) } }
         assertFalse(guard.run(attempt) { fail() })
     }
 
     @Test fun stopCannotSplitResourcePublication() {
         val guard = NearbyAttemptGuard()
-        val attempt = guard.begin("phone")
+        val attempt = guard.begin("phone", 0L)
         val entered = CountDownLatch(1)
         val finish = CountDownLatch(1)
         val stopped = CountDownLatch(1)

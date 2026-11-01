@@ -16,6 +16,28 @@ import org.mockito.Mockito.mockConstruction
 import org.mockito.kotlin.*
 
 class AapPresentationTest {
+    @Test fun nightOverlayReceivesMediaIndependentlyOfServiceCallbacksAndClearsAtRetirement() {
+        mockStatic(SystemClock::class.java).use {
+            mockConstruction(AapNavigationHelper::class.java).use {
+                val scheduler = PresentationScheduler()
+                val state = NightOverlayState()
+                val handler = AapMessageHandlerType(
+                    mock(), mock(), mock(), mock(), mock(), mock(),
+                    presentation = scheduler.queue(), nightOverlayState = state
+                )
+                handler.handle(AapMessage(Channel.ID_MPB, 32771, MediaPlayback.MediaMetaData.newBuilder()
+                    .setSong("Song").setArtist("Artist").build()))
+                handler.handle(AapMessage(Channel.ID_MPB, 32769, MediaPlayback.MediaPlaybackStatus.newBuilder()
+                    .setState(MediaPlayback.MediaPlaybackStatus.State.PLAYING).build()))
+                scheduler.drain()
+                assertEquals(NightOverlayState.Content(title = "Song", artist = "Artist", isPlaying = true), state.content.value)
+                handler.close()
+                scheduler.drain()
+                assertEquals(NightOverlayState.Content(), state.content.value)
+            }
+        }
+    }
+
     private fun presentationService(): AapService = mockStatic(SystemClock::class.java).use {
         // Placeholder metadata now checks whether the connection is Self Mode. Supply a
         // normal connection so session-retirement tests exercise the same policy as the app.

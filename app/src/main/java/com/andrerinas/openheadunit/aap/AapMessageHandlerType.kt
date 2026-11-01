@@ -20,21 +20,41 @@ internal class AapMessageHandlerType(
         onAaPlaybackStatus: ((MediaPlayback.MediaPlaybackStatus, AaPresentationSession) -> Unit)? = null,
         private val onAaPresentationClosed: ((AaPresentationSession) -> Unit)? = null,
         private val presentationSession: AaPresentationSession = AaPresentationSession(),
-        private val presentation: PresentationQueue = mainPresentationQueue()) : AapMessageHandler {
+        private val presentation: PresentationQueue = mainPresentationQueue(),
+        private val nightOverlayState: NightOverlayState? = null) : AapMessageHandler {
+
+    init {
+        nightOverlayState?.begin(presentationSession)
+    }
 
     private val aapControl: AapControl = AapControlGateway(transport, recorder, aapAudio, settings, context)
     private val mediaPlayback = AapMediaPlayback(
-        { meta -> if (presentationSession.isActive) onAaMediaMetadata?.invoke(meta, presentationSession) },
-        { status -> if (presentationSession.isActive) onAaPlaybackStatus?.invoke(status, presentationSession) },
+        { meta ->
+            if (presentationSession.isActive) {
+                nightOverlayState?.metadata(presentationSession, meta)
+                onAaMediaMetadata?.invoke(meta, presentationSession)
+            }
+        },
+        { status ->
+            if (presentationSession.isActive) {
+                nightOverlayState?.playback(presentationSession, status)
+                onAaPlaybackStatus?.invoke(status, presentationSession)
+            }
+        },
         presentation,
     )
-    private val aapNavigation = AapNavigation(context, settings, presentation)
+    private val aapNavigation = AapNavigation(context, settings, presentation) { navigation ->
+        nightOverlayState?.navigation(presentationSession, navigation)
+    }
 
     override fun close() {
         presentationSession.retire()
         presentation.close {
             try { aapNavigation.close() }
-            finally { onAaPresentationClosed?.invoke(presentationSession) }
+            finally {
+                nightOverlayState?.close(presentationSession)
+                onAaPresentationClosed?.invoke(presentationSession)
+            }
         }
     }
 

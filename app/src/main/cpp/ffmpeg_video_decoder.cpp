@@ -109,7 +109,7 @@ public:
         return true;
     }
 
-    int decode(JNIEnv* env, jbyteArray input, jint offset, jint size, jlong ptsUs) {
+    int decode(JNIEnv* env, jbyteArray input, jint offset, jint size, jlong ptsUs, bool repairEligible) {
         if (codecContext == nullptr || packet == nullptr || frame == nullptr || size <= 0) {
             return -1;
         }
@@ -125,6 +125,10 @@ public:
         }
         packet->pts = ptsUs;
         packet->dts = ptsUs;
+        // A replayed picture can precede references discarded during retirement. Preserve its
+        // display, but never acknowledge repair from that picture, even if FFmpeg delays output
+        // until a later decode call. Missing output timestamps cannot prove a newer repair.
+        if (!repairEligible) repairAfterPts = ptsUs;
 
         int result = avcodec_send_packet(codecContext, packet);
         av_packet_unref(packet);
@@ -212,7 +216,8 @@ private:
                 reportedHeight = height;
             }
             renderedKeyframe |= (frame->flags & AV_FRAME_FLAG_KEY) != 0 &&
-                (frame->flags & AV_FRAME_FLAG_CORRUPT) == 0 && frame->decode_error_flags == 0;
+                (frame->flags & AV_FRAME_FLAG_CORRUPT) == 0 && frame->decode_error_flags == 0 &&
+                (repairAfterPts == AV_NOPTS_VALUE || frame->pts > repairAfterPts);
             rendered++;
             av_frame_unref(frame);
         }
@@ -447,6 +452,7 @@ private:
     jmethodID onOutputSizeMethod = nullptr;
     int reportedWidth = 0;
     int reportedHeight = 0;
+    int64_t repairAfterPts = AV_NOPTS_VALUE;
     AVCodecContext* codecContext = nullptr;
     AVPacket* packet = nullptr;
     AVFrame* frame = nullptr;
@@ -527,11 +533,12 @@ Java_com_andrerinas_openheadunit_decoder_video_FfmpegVideoDecoder_00024Companion
 
 extern "C" JNIEXPORT jint JNICALL
 Java_com_andrerinas_openheadunit_decoder_video_FfmpegVideoDecoder_00024Companion_nativeDecode(
-    JNIEnv* env, jobject, jlong handle, jbyteArray buffer, jint offset, jint size, jlong presentationTimeUs) {
+    JNIEnv* env, jobject, jlong handle, jbyteArray buffer, jint offset, jint size,
+    jlong presentationTimeUs, jboolean repairEligible) {
 #if HUR_HAVE_FFMPEG
     auto* decoder = reinterpret_cast<FfmpegDecoder*>(handle);
     if (decoder == nullptr) return -1;
-    return decoder->decode(env, buffer, offset, size, presentationTimeUs);
+    return decoder->decode(env, buffer, offset, size, presentationTimeUs, repairEligible == JNI_TRUE);
 #else
     (void)env;
     (void)handle;
@@ -539,6 +546,7 @@ Java_com_andrerinas_openheadunit_decoder_video_FfmpegVideoDecoder_00024Companion
     (void)offset;
     (void)size;
     (void)presentationTimeUs;
+    (void)repairEligible;
     return -1;
 #endif
 }

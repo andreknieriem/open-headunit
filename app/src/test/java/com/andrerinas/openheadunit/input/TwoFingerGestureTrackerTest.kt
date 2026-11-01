@@ -91,6 +91,22 @@ class TwoFingerGestureTrackerTest {
         assertFalse(t.mayBecome(left = true, right = false, down = false, longPress = false))
     }
 
+    @Test fun mayStartAtGivesTheSameAnswerAsTheTrackerForEveryFirstFinger() {
+        for (density in listOf(1f, 2f, 3f)) {
+            for (x in listOf(0f, 20f, 99f, 101f, 150f, 600f, 1050f, 1099f, 1101f, 1199f)) {
+                for (mask in 0..15) {
+                    val flags = BooleanArray(4) { mask and (1 shl it) != 0 }
+                    assertEquals(
+                        tracker(x1 = x, x2 = 600f, density = density).mayBecome(flags[0], flags[1], flags[2], flags[3]),
+                        TwoFingerGestureTracker.mayStartAt(x, 1200f, density, flags[0], flags[1], flags[2], flags[3])
+                    )
+                }
+            }
+        }
+        assertTrue(TwoFingerGestureTracker.mayStartAt(20f, 1200f, 1f, left = true, right = false, down = false, longPress = false))
+        assertFalse(TwoFingerGestureTracker.mayStartAt(600f, 1200f, 1f, left = true, right = true, down = true, longPress = true))
+    }
+
     @Test fun inEdgeZoneIsTrueOnlyNearAnEdge() {
         assertFalse(centre().inEdgeZone)
         assertTrue(tracker(x1 = 20f).inEdgeZone)

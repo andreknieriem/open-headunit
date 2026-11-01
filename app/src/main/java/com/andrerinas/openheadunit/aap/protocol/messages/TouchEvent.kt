@@ -4,6 +4,7 @@ import android.view.MotionEvent
 import com.andrerinas.openheadunit.aap.AapMessage
 import com.andrerinas.openheadunit.aap.protocol.Channel
 import com.andrerinas.openheadunit.aap.protocol.proto.Input
+import com.andrerinas.openheadunit.input.RemoteTouchPolicy
 import com.google.protobuf.Message
 
 class TouchEvent(timeStamp: Long, action: Input.TouchEvent.PointerAction, actionIndex: Int, pointerData: Iterable<Triple<Int, Int, Int>>)
@@ -16,6 +17,15 @@ class TouchEvent(timeStamp: Long, action: Input.TouchEvent.PointerAction, action
         : this(timeStamp, action, 0, listOf(Triple(0, x, y)))
 
     companion object {
+        fun pointerAction(action: RemoteTouchPolicy.Action): Input.TouchEvent.PointerAction =
+            when (action) {
+                RemoteTouchPolicy.Action.DOWN -> Input.TouchEvent.PointerAction.TOUCH_ACTION_DOWN
+                RemoteTouchPolicy.Action.MOVE -> Input.TouchEvent.PointerAction.TOUCH_ACTION_MOVE
+                RemoteTouchPolicy.Action.UP -> Input.TouchEvent.PointerAction.TOUCH_ACTION_UP
+                RemoteTouchPolicy.Action.POINTER_DOWN -> Input.TouchEvent.PointerAction.TOUCH_ACTION_POINTER_DOWN
+                RemoteTouchPolicy.Action.POINTER_UP -> Input.TouchEvent.PointerAction.TOUCH_ACTION_POINTER_UP
+            }
+
         fun motionEventToAction(event: MotionEvent): Input.TouchEvent.PointerAction? {
             return when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> Input.TouchEvent.PointerAction.TOUCH_ACTION_DOWN

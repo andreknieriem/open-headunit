@@ -36,7 +36,7 @@ internal class TwoFingerGestureTracker(
 
     /** Whether this touch can still turn into one of the enabled gestures. */
     fun mayBecome(left: Boolean, right: Boolean, down: Boolean, longPress: Boolean): Boolean =
-        (left && inLeftZone) || (right && inRightZone) || ((down || longPress) && inEdgeZone)
+        startsAt(firstX, width, edge, left, right, down, longPress)
 
     /** False once the last move shows no enabled gesture can fire, such as a pinch. */
     fun canStillFire(left: Boolean, right: Boolean, down: Boolean, longPress: Boolean): Boolean {
@@ -68,6 +68,18 @@ internal class TwoFingerGestureTracker(
             inLeftZone && dx1 > travel && abs(dy1) < sideways -> Swipe.LEFT_EDGE
             inRightZone && dx1 < -travel && abs(dy1) < sideways -> Swipe.RIGHT_EDGE
             else -> null
+        }
+    }
+
+    companion object {
+        /** The same edge test as [mayBecome], for a first finger before a second one lands. */
+        fun mayStartAt(x: Float, width: Float, density: Float, left: Boolean, right: Boolean, down: Boolean, longPress: Boolean) =
+            startsAt(x, width, GestureDistances.edgeZonePx(density), left, right, down, longPress)
+
+        private fun startsAt(x: Float, width: Float, edge: Float, left: Boolean, right: Boolean, down: Boolean, longPress: Boolean): Boolean {
+            val inLeft = x < edge
+            val inRight = x > width - edge
+            return (left && inLeft) || (right && inRight) || ((down || longPress) && (inLeft || inRight))
         }
     }
 }

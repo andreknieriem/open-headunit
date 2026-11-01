@@ -5188,6 +5188,8 @@ class SettingsFragment : Fragment() {
         val loadStatus: () -> Unit = {
             progressLoading.visibility = View.VISIBLE
             viewLifecycleOwner.lifecycleScope.launch {
+                // Opens the root shell first: without it a rooted unit reads as "no root" here.
+                OemAppManager.requestRoot()
                 val backend = OemAppManager.checkAvailableBackend()
                 val statuses = OemAppManager.detectApps(context, checkDaemons = true)
                 progressLoading.visibility = View.GONE

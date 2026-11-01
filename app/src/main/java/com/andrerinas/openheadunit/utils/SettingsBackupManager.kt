@@ -159,6 +159,7 @@ object SettingsBackupManager {
         "auto-start-on-usb" to ValueType.BOOLEAN,
         "auto-start-on-boot" to ValueType.BOOLEAN,
         "auto-start-on-screen-on" to ValueType.BOOLEAN,
+        "duraspeed-off-on-boot" to ValueType.BOOLEAN,
         "auto-start-on-wifi" to ValueType.BOOLEAN,
         "auto-start-wifi-ssid" to ValueType.STRING,
         "listen-for-usb-devices" to ValueType.BOOLEAN,

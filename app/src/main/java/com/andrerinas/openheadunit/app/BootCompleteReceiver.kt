@@ -10,6 +10,11 @@ import com.andrerinas.openheadunit.utils.Settings
 import android.os.UserManager
 import android.os.Build
 import com.andrerinas.openheadunit.main.FloatingButtonManager
+import com.andrerinas.openheadunit.utils.AutoStartFixes
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 class BootCompleteReceiver : BroadcastReceiver() {
 
@@ -33,6 +38,22 @@ class BootCompleteReceiver : BroadcastReceiver() {
         val usbEnabled = Settings.isAutoStartOnUsbEnabled(context)
         val wifiEnabled = Settings.isAutoStartOnWifiEnabled(context)
         val floatingButtonEnabled = settings.enableFloatingButton
+
+        if (settings.duraSpeedOffOnBoot) {
+            // Runs whatever else is on: DuraSpeed comes back after every restart, and it is what
+            // kills the app once the ignition goes off.
+            val pending = goAsync()
+            val appContext = context.applicationContext
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    withTimeoutOrNull(DURASPEED_TIMEOUT_MS) {
+                        AutoStartFixes.turnDuraSpeedOff(appContext, action ?: "boot")
+                    } ?: AppLog.w("Boot auto-start: turning DuraSpeed off timed out")
+                } finally {
+                    pending.finish()
+                }
+            }
+        }
 
         if (floatingButtonEnabled) {
             AppLog.i("Boot auto-start: starting floating button overlay (trigger=$action)")
@@ -92,6 +113,9 @@ class BootCompleteReceiver : BroadcastReceiver() {
 
     companion object {
         const val EXTRA_BOOT_START = "com.andrerinas.openheadunit.EXTRA_BOOT_START"
+
+        // Inside the ten seconds a receiver gets, with room for the root shell to open.
+        private const val DURASPEED_TIMEOUT_MS = 8_000L
 
         private val BOOT_ACTIONS = setOf(
             // Standard Android boot

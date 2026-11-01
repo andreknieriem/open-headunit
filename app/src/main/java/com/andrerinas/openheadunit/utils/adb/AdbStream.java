@@ -55,7 +55,9 @@ public class AdbStream implements Closeable {
     public byte[] read() throws IOException, InterruptedException {
         byte[] payload = null;
         synchronized (this.readQueue) {
-            while (!this.isClosed && (payload = this.readQueue.poll()) == null) {
+            // Poll before looking at isClosed: the last payload and the close can arrive together,
+            // and checking isClosed first threw that payload away.
+            while ((payload = this.readQueue.poll()) == null && !this.isClosed) {
                 this.readQueue.wait();
             }
             if (payload != null) {

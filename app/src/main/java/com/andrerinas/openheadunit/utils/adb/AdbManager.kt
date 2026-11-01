@@ -80,7 +80,9 @@ object AdbManager {
             // freezing whatever UI is waiting on the result. Bound the read to a hard timeout.
             val maxReadMs = 15_000L
             val readStart = System.currentTimeMillis()
-            while (!activeStream.isClosed) {
+            // Read until read() reports the stream closed and drained, not until isClosed flips:
+            // output that arrived together with the close is still queued at that point.
+            while (true) {
                 if (System.currentTimeMillis() - readStart > maxReadMs) {
                     AppLog.w("AdbManager: read timed out after ${maxReadMs}ms for '$command' — closing stream.")
                     break

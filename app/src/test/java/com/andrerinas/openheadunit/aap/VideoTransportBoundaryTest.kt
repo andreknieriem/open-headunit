@@ -2,16 +2,13 @@ package com.andrerinas.openheadunit.aap
 
 import android.content.Context
 import android.content.SharedPreferences
-import android.os.Handler
 import com.andrerinas.openheadunit.aap.protocol.Channel
 import com.andrerinas.openheadunit.decoder.video.VideoDecoder
 import com.andrerinas.openheadunit.utils.Settings
 import org.junit.Assert.*
 import org.junit.Test
 import org.mockito.kotlin.*
-import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.atomic.AtomicLong
 
 class VideoTransportBoundaryTest {
     @Test fun `whole and every split preserve PPS first CSD and ignore start codes in DATA timestamps`() =
@@ -63,45 +60,30 @@ class VideoTransportBoundaryTest {
     }
 
     @Test fun `delayed video completion acknowledges the session captured on the poll thread`() {
-        val transport = mock<AapTransport>(defaultAnswer = org.mockito.Mockito.CALLS_REAL_METHODS)
         val video = mock<AapVideo>()
-        val handler = mock<Handler>()
-        val jobs = mutableListOf<Runnable>()
-        whenever(handler.post(any())).thenAnswer { jobs.add(it.arguments[0] as Runnable); true }
-        fun field(name: String, value: Any) = AapTransport::class.java.getDeclaredField(name)
-            .apply { isAccessible = true }.set(transport, value)
-        field("aapVideo", video)
-        field("videoHandler", handler)
-        field("videoBacklog", AtomicInteger())
-        field("videoBufferPool", LinkedBlockingQueue<ByteArray>())
+        val worker = FakeLaneWorker()
+        var session = 101
+        val acks = mutableListOf<Pair<Int, Int>>()
+        val lane = VideoLane(Channel.ID_VID, video, "test", { session }, { ch, s -> acks.add(ch to s) }, { worker })
+        lane.start()
         whenever(video.isPayload(any())).thenReturn(true)
         whenever(video.announcedCodec).thenReturn(VideoDecoder.CodecType.H264)
-        doReturn(101).whenever(transport).getSessionId(Channel.ID_VID)
-        doNothing().whenever(transport).sendMediaAck(any(), any())
         val data = ByteArray(16)
-        transport.dispatchVideo(AapMessage(Channel.ID_VID, 11, 0, 2, data.size, data))
-        doReturn(202).whenever(transport).getSessionId(Channel.ID_VID)
-        jobs.single().run()
-        verify(transport).sendMediaAck(Channel.ID_VID, 101)
-        verify(transport, never()).sendMediaAck(Channel.ID_VID, 202)
+        lane.dispatch(AapMessage(Channel.ID_VID, 11, 0, 2, data.size, data))
+        session = 202
+        worker.jobs.single().run()
+        assertEquals(listOf(Channel.ID_VID to 101), acks)
     }
     @Test fun `timestamp false positives and channel controls never decode but DATA still returns its session credit`() =
         org.mockito.Mockito.mockStatic(android.os.SystemClock::class.java).use {
         val decoder = mock<VideoDecoder>()
         val video = AapVideo(decoder, settings()) { fail("complete rejected packets need no recovery") }
         video.recordAnnouncedCodec(VideoDecoder.CodecType.H264)
-        val transport = mock<AapTransport>(defaultAnswer = org.mockito.Mockito.CALLS_REAL_METHODS)
-        val handler = mock<Handler>()
-        val jobs = mutableListOf<Runnable>()
-        whenever(handler.post(any())).thenAnswer { jobs.add(it.arguments[0] as Runnable); true }
-        fun field(name: String, value: Any) = AapTransport::class.java.getDeclaredField(name)
-            .apply { isAccessible = true }.set(transport, value)
-        field("aapVideo", video)
-        field("videoHandler", handler)
-        field("videoBacklog", AtomicInteger())
-        field("videoBufferPool", LinkedBlockingQueue<ByteArray>())
-        doReturn(101).whenever(transport).getSessionId(Channel.ID_VID)
-        doNothing().whenever(transport).sendMediaAck(any(), any())
+        val worker = FakeLaneWorker()
+        var session = 101
+        val acks = mutableListOf<Pair<Int, Int>>()
+        val lane = VideoLane(Channel.ID_VID, video, "test", { session }, { ch, sid -> acks.add(ch to sid) }, { worker })
+        lane.start()
         // DATA has a start code only in its timestamp. It is not CSD, but owns one credit.
         val invalidData = byteArrayOf(0, 0, 0, 0, 0, 1, 0x65, 0x12, 0, 7, 0x12, 0x34)
         // Service setup with Annex B-looking bytes must still fall through to the control handler.
@@ -111,13 +93,12 @@ class VideoTransportBoundaryTest {
             val type = ((bytes[0].toInt() and 255) shl 8) or (bytes[1].toInt() and 255)
             val message = reassembler.accept(AapMessage(Channel.ID_VID, 11, type, 2, bytes.size, bytes), 0)!!
             assertFalse(video.isPayload(message))
-            assertFalse(transport.dispatchVideo(message))
+            assertFalse(lane.dispatch(message))
         }
-        verify(transport, never()).sendMediaAck(any(), any())
-        doReturn(202).whenever(transport).getSessionId(Channel.ID_VID)
-        jobs.forEach { it.run() }
-        verify(transport, times(1)).sendMediaAck(Channel.ID_VID, 101)
-        verify(transport, never()).sendMediaAck(Channel.ID_VID, 202)
+        assertTrue(acks.isEmpty())
+        session = 202
+        worker.jobs.forEach { it.run() }
+        assertEquals(listOf(Channel.ID_VID to 101), acks)
         verify(decoder, never()).decode(any<ByteArray>(), any(), any(), any(), any())
         verify(decoder, never()).noteStreamCorrupted(any())
     }
@@ -162,11 +143,11 @@ class VideoTransportBoundaryTest {
         boundary.accept(8, boundary.data.copyOfRange(18, 19))
         boundary.accept(8, boundary.data.copyOfRange(19, 20))
         boundary.accept(10, boundary.data.copyOfRange(20, boundary.data.size))
-        doReturn(202).whenever(boundary.transport).getSessionId(Channel.ID_VID)
+        boundary.session = 202
         boundary.drain()
         assertTrue(boundary.decoded.isEmpty())
-        verify(boundary.transport, times(1)).sendMediaAck(Channel.ID_VID, 101)
-        verify(boundary.transport, never()).sendMediaAck(Channel.ID_VID, 202)
+        assertEquals(1, boundary.acks.count { it == Channel.ID_VID to 101 })
+        assertEquals(0, boundary.acks.count { it == Channel.ID_VID to 202 })
         verify(boundary.decoder, times(1)).noteStreamCorrupted(any())
 
         boundary.accept(11, boundary.data)
@@ -174,8 +155,8 @@ class VideoTransportBoundaryTest {
         boundary.drain()
         assertEquals(2, boundary.decoded.size)
         boundary.decoded.forEach { assertArrayEquals(boundary.nal, it) }
-        verify(boundary.transport, times(2)).sendMediaAck(Channel.ID_VID, 202)
-        verify(boundary.transport, times(3)).sendMediaAck(eq(Channel.ID_VID), any())
+        assertEquals(2, boundary.acks.count { it == Channel.ID_VID to 202 })
+        assertEquals(3, boundary.acks.count { it.first == Channel.ID_VID })
     }
 
     @Test fun `reader audit at LAST drops only the short run and still acknowledges DATA`() =
@@ -187,14 +168,14 @@ class VideoTransportBoundaryTest {
         boundary.accept(10, boundary.data.copyOfRange(20, boundary.data.size))
         boundary.drain()
         assertTrue(boundary.decoded.isEmpty())
-        verify(boundary.transport, times(1)).sendMediaAck(Channel.ID_VID, 101)
+        assertEquals(1, boundary.acks.count { it == Channel.ID_VID to 101 })
         verify(boundary.decoder, times(1)).noteStreamCorrupted(any())
 
         boundary.healthyFragmentedRun()
         boundary.drain()
         assertEquals(1, boundary.decoded.size)
         assertArrayEquals(boundary.nal, boundary.decoded.single())
-        verify(boundary.transport, times(2)).sendMediaAck(Channel.ID_VID, 101)
+        assertEquals(2, boundary.acks.count { it == Channel.ID_VID to 101 })
     }
 
     @Test fun `replacement FIRST whole and release cannot transfer a lost run verdict to healthy video`() =
@@ -206,7 +187,7 @@ class VideoTransportBoundaryTest {
             boundary.shedMiddle()
             boundary.drain()
             // A repair-only finding must not erase a previous worker-loss verdict.
-            boundary.transport.dispatchVideoRunHoled(false)
+            boundary.lane.runHoled(false)
             boundary.drain()
             when (replacement) {
                 "whole" -> boundary.accept(11, boundary.data)
@@ -228,14 +209,17 @@ class VideoTransportBoundaryTest {
         val decoder = mock<VideoDecoder>()
         val decoded = mutableListOf<ByteArray>()
         val video = AapVideo(decoder, settings()) {}
-        val transport = mock<AapTransport>(defaultAnswer = org.mockito.Mockito.CALLS_REAL_METHODS)
+        var session = 101
+        val acks = mutableListOf<Pair<Int, Int>>()
+        private val worker = FakeLaneWorker()
+        val lane = VideoLane(Channel.ID_VID, video, "test", { session }, { ch, sid -> acks.add(ch to sid) }, { worker })
         val nal = byteArrayOf(0, 0, 0, 1, 0x65, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66)
         val data = ByteArray(10) + nal
-        private val jobs = mutableListOf<Runnable>()
-        private val backlog = AtomicInteger()
+        private val backlog = VideoLane::class.java.getDeclaredField("backlog")
+            .apply { isAccessible = true }.get(lane) as AtomicInteger
         private val audit = FragmentedMessageAudit()
         private val reassembler = AapMessageReassembler(onDroppedMediaData = { channel ->
-            transport.sendMediaAck(channel, transport.getSessionId(channel))
+            acks.add(channel to session)
         })
 
         init {
@@ -246,17 +230,7 @@ class VideoTransportBoundaryTest {
                 null
             }.whenever(decoder).decode(any<ByteArray>(), any(), any(), any(), any())
             video.recordAnnouncedCodec(VideoDecoder.CodecType.H264)
-            val handler = mock<Handler>()
-            whenever(handler.post(any())).thenAnswer { jobs.add(it.arguments[0] as Runnable); true }
-            fun field(name: String, value: Any) = AapTransport::class.java.getDeclaredField(name)
-                .apply { isAccessible = true }.set(transport, value)
-            field("aapVideo", video)
-            field("videoHandler", handler)
-            field("videoBacklog", backlog)
-            field("videoShedTotal", AtomicLong())
-            field("videoBufferPool", LinkedBlockingQueue<ByteArray>())
-            doReturn(101).whenever(transport).getSessionId(Channel.ID_VID)
-            doNothing().whenever(transport).sendMediaAck(any(), any())
+            lane.start()
         }
 
         fun accept(flags: Int, bytes: ByteArray, total: Int = 0) {
@@ -267,15 +241,15 @@ class VideoTransportBoundaryTest {
             if (auditReader) {
                 val result = audit.onMessage(Channel.ID_VID, flags, bytes.size, total)
                 if (result != null && AuditRecoveryPolicy.shouldRequestKeyframe(result.outcome, result.channel)) {
-                    transport.dispatchVideoRunHoled(message != null &&
+                    lane.runHoled(message != null &&
                         AuditRecoveryPolicy.shouldDiscardAssembledUnit(result))
                 }
             }
-            if (message != null) assertTrue(transport.dispatchVideo(message))
+            if (message != null) assertTrue(lane.dispatch(message))
         }
 
         fun shedMiddle() {
-            // Force the actual transport shedding branch without manufacturing queued frames.
+            // Force the actual lane shedding branch without manufacturing queued frames.
             // Call only after draining, so restoring the depth cannot mask pending worker work.
             backlog.set(Int.MAX_VALUE)
             accept(8, data.copyOfRange(16, 18))
@@ -289,7 +263,7 @@ class VideoTransportBoundaryTest {
         }
 
         fun drain() {
-            while (jobs.isNotEmpty()) jobs.removeAt(0).run()
+            while (worker.jobs.isNotEmpty()) worker.jobs.removeAt(0).run()
         }
     }
 

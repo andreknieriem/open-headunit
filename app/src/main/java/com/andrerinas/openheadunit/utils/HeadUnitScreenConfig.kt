@@ -72,6 +72,10 @@ object HeadUnitScreenConfig {
     /** Application context, so [recalculate] can ask the radio what band it has. Never an Activity. */
     private var appContext: Context? = null
 
+    /** The display the live measurement was taken from, so a cached one cannot cross displays. */
+    var measuredDisplayId: Int = DisplayTargetPolicy.DEFAULT_DISPLAY_ID
+        private set
+
     // System Insets (Bars/Cutouts)
     var systemInsetLeft: Int = 0
         private set
@@ -309,6 +313,7 @@ object HeadUnitScreenConfig {
         currentSettings = settings
         geometrySettings = capturedSettings
         appContext = context.applicationContext
+        measuredDisplayId = DisplayTargets.displayIdOf(context)
         density = displayMetrics.density
         videoFitMode = settings.videoFitMode
         forcedScale = settings.forcedScale && settings.viewMode == Settings.ViewMode.SURFACE
@@ -844,6 +849,7 @@ object HeadUnitScreenConfig {
         // axis moves the panel reading mid-connect, which discarded a good window measurement and
         // then fell back to that same reading; rotation is what has to invalidate, and this is it.
         normalisation = normalisation,
+        displayId = measuredDisplayId,
     )
 
     @Synchronized

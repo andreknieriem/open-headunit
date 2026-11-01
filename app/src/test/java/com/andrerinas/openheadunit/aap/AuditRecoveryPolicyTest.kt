@@ -25,7 +25,7 @@ class AuditRecoveryPolicyTest {
     @Test fun `all audit faults ask for video recovery but no other channel does`() {
         for (outcome in FragmentedMessageAudit.Outcome.entries) {
             for (channel in 0..255) {
-                assertEquals("$outcome on channel $channel", channel == Channel.ID_VID,
+                assertEquals("$outcome on channel $channel", Channel.isVideo(channel),
                     AuditRecoveryPolicy.shouldRequestKeyframe(outcome, channel))
             }
         }
@@ -36,9 +36,18 @@ class AuditRecoveryPolicyTest {
             for (channel in 0..255) {
                 val finding = FragmentedMessageAudit.Result(channel, outcome, 1000, 1, 2)
                 assertEquals("$outcome on channel $channel",
-                    channel == Channel.ID_VID && outcome == FragmentedMessageAudit.Outcome.DELTA_CHANGED,
+                    Channel.isVideo(channel) && outcome == FragmentedMessageAudit.Outcome.DELTA_CHANGED,
                     AuditRecoveryPolicy.shouldDiscardAssembledUnit(finding))
             }
+        }
+    }
+
+    @Test fun `every outcome on the auxiliary video channel asks for recovery and only a mismatch discards`() {
+        for (outcome in FragmentedMessageAudit.Outcome.entries) {
+            val finding = FragmentedMessageAudit.Result(Channel.ID_VID2, outcome, 1000, 1, 2)
+            assertTrue(AuditRecoveryPolicy.shouldRequestKeyframe(outcome, Channel.ID_VID2))
+            assertEquals(outcome == FragmentedMessageAudit.Outcome.DELTA_CHANGED,
+                AuditRecoveryPolicy.shouldDiscardAssembledUnit(finding))
         }
     }
 

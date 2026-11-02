@@ -32,6 +32,7 @@
     <string name="gesture_two_finger_long_press">Pressione prolungata con due dita</string>
     <string name="gesture_two_finger_left">Gesto a due dita da sinistra</string>
     <string name="gesture_two_finger_right">Gesto a due dita da destra</string>
+    <string name="gesture_two_finger_down">Scorrimento a due dita verso il basso</string>
     <string name="gesture_two_finger_tap_left">Tocco a due dita sul bordo sinistro</string>
     <string name="gesture_two_finger_tap_right">Tocco a due dita sul bordo destro</string>
     <string name="gesture_edge_zone">Larghezza della zona del bordo</string>

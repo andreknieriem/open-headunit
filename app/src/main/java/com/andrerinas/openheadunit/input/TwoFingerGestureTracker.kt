@@ -14,7 +14,7 @@ internal class TwoFingerGestureTracker(
     edgeZoneDp: Float,
     private val secondDownMs: Long
 ) {
-    enum class Swipe { LEFT_EDGE, RIGHT_EDGE }
+    enum class Swipe { LEFT_EDGE, RIGHT_EDGE, DOWN }
     enum class Tap { LEFT_TAP, RIGHT_TAP }
 
     /** Which gesture slots have an action. */
@@ -23,7 +23,8 @@ internal class TwoFingerGestureTracker(
         val right: Boolean,
         val longPress: Boolean,
         val leftTap: Boolean,
-        val rightTap: Boolean
+        val rightTap: Boolean,
+        val down: Boolean = false
     )
 
     private val edge = GestureDistances.edgeZonePx(density, edgeZoneDp)
@@ -43,7 +44,7 @@ internal class TwoFingerGestureTracker(
     private val inLeftZone get() = firstX < edge
     private val inRightZone get() = firstX > width - edge
 
-    /** Every gesture starts with the first finger in an edge zone. */
+    /** True when the first finger starts in one of the horizontal edge zones. */
     val inEdgeZone get() = inLeftZone || inRightZone
 
     /** Whether this touch can still turn into one of the enabled gestures. */
@@ -54,8 +55,12 @@ internal class TwoFingerGestureTracker(
         if (abs(hypot(lastX2 - lastX1, lastY2 - lastY1) - startSpread) > pinchSpread) return false
         val dx1 = lastX1 - firstX
         val dy1 = lastY1 - firstY
+        val dx2 = lastX2 - secondX
+        val dy2 = lastY2 - secondY
         return (enabled.left && inLeftZone && abs(dy1) <= sideways && dx1 >= -touchSlop) ||
             (enabled.right && inRightZone && abs(dy1) <= sideways && dx1 <= touchSlop) ||
+            (enabled.down && abs(dx1) <= sideways && abs(dx2) <= sideways &&
+                dy1 >= -touchSlop && dy2 >= -touchSlop && abs(dy1 - dy2) <= sideways) ||
             (enabled.longPress && inEdgeZone && still) ||
             mayTap(enabled, nowMs)
     }
@@ -82,8 +87,11 @@ internal class TwoFingerGestureTracker(
         lastY2 = y2
         val dx1 = x1 - firstX
         val dy1 = y1 - firstY
+        val dx2 = x2 - secondX
+        val dy2 = y2 - secondY
         if (dx1 * dx1 + dy1 * dy1 > touchSlop * touchSlop || moved(x2, y2, secondX, secondY)) still = false
         return when {
+            dy1 > travel && dy2 > travel && abs(dx1) < sideways && abs(dx2) < sideways && abs(dy1 - dy2) < sideways -> Swipe.DOWN
             inLeftZone && dx1 > travel && abs(dy1) < sideways -> Swipe.LEFT_EDGE
             inRightZone && dx1 < -travel && abs(dy1) < sideways -> Swipe.RIGHT_EDGE
             else -> null
@@ -114,7 +122,8 @@ internal class TwoFingerGestureTracker(
             val inRight = x > width - edge
             return ((enabled.left || enabled.leftTap) && inLeft) ||
                 ((enabled.right || enabled.rightTap) && inRight) ||
-                (enabled.longPress && (inLeft || inRight))
+                (enabled.longPress && (inLeft || inRight)) ||
+                enabled.down
         }
     }
 }

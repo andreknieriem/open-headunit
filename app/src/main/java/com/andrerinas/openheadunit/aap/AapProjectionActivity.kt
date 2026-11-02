@@ -2215,6 +2215,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                 val action = when (swipe) {
                     TwoFingerGestureTracker.Swipe.LEFT_EDGE -> settings.leftTwoFingerGesture
                     TwoFingerGestureTracker.Swipe.RIGHT_EDGE -> settings.rightTwoFingerGesture
+                    TwoFingerGestureTracker.Swipe.DOWN -> settings.downTwoFingerGesture
                     null -> Settings.GestureAction.DISABLED
                 }
                 if (action != Settings.GestureAction.DISABLED) {
@@ -2310,7 +2311,8 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         right = settings.rightTwoFingerGesture != Settings.GestureAction.DISABLED,
         longPress = settings.longPressTwoFingerGesture != Settings.GestureAction.DISABLED,
         leftTap = settings.leftTapTwoFingerGesture != Settings.GestureAction.DISABLED,
-        rightTap = settings.rightTapTwoFingerGesture != Settings.GestureAction.DISABLED
+        rightTap = settings.rightTapTwoFingerGesture != Settings.GestureAction.DISABLED,
+        down = settings.downTwoFingerGesture != Settings.GestureAction.DISABLED
     )
 
     /** Runs on every start too, so a strength changed in settings while the dimmer is on takes effect. */

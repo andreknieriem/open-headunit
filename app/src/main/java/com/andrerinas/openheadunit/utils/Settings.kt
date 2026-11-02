@@ -567,6 +567,11 @@ class Settings(private val context: Context) {
             ?: GestureAction.NIGHT_OVERLAY
         set(value) { prefs.edit().putInt("right-tap-two-finger-gesture", value.value).apply() }
 
+    var downTwoFingerGesture: GestureAction
+        get() = GestureAction.fromInt(prefs.getInt("down-two-finger-gesture", GestureAction.DISABLED.value))
+            ?: GestureAction.DISABLED
+        set(value) { prefs.edit().putInt("down-two-finger-gesture", value.value).apply() }
+
     var gestureEdgeZone: GestureEdgeZone
         get() = GestureEdgeZone.fromInt(prefs.getInt("gesture-edge-zone", GestureEdgeZone.NORMAL.value))
             ?: GestureEdgeZone.NORMAL
@@ -1970,7 +1975,8 @@ class Settings(private val context: Context) {
 
         private val GESTURE_KEYS = listOf(
             "left-two-finger-gesture", "right-two-finger-gesture", "long-press-two-finger-gesture",
-            "left-tap-two-finger-gesture", "right-tap-two-finger-gesture", "gesture-edge-zone",
+            "left-tap-two-finger-gesture", "right-tap-two-finger-gesture", "down-two-finger-gesture",
+            "gesture-edge-zone",
             "dim-opacity-percent", "night-overlay-text-size",
             "night-overlay-show-clock", "night-overlay-show-navigation", "night-overlay-show-track",
             "night-overlay-background"

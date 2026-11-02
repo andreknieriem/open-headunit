@@ -32,6 +32,7 @@
     <string name="gesture_two_finger_long_press">ضغط مطوّل بإصبعين</string>
     <string name="gesture_two_finger_left">إيماءة بإصبعين من اليسار</string>
     <string name="gesture_two_finger_right">إيماءة بإصبعين من اليمين</string>
+    <string name="gesture_two_finger_down">السحب لأسفل بإصبعين</string>
     <string name="gesture_two_finger_tap_left">نقرة بإصبعين على الحافة اليسرى</string>
     <string name="gesture_two_finger_tap_right">نقرة بإصبعين على الحافة اليمنى</string>
     <string name="gesture_edge_zone">عرض منطقة الحافة</string>

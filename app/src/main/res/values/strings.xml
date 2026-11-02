@@ -269,6 +269,7 @@
     <string name="gesture_two_finger_long_press">Two-finger long press</string>
     <string name="gesture_two_finger_left">Two-finger gesture from the left</string>
     <string name="gesture_two_finger_right">Two-finger gesture from the right</string>
+    <string name="gesture_two_finger_down">Two-finger swipe down</string>
     <string name="gesture_two_finger_tap_left">Two-finger tap on the left edge</string>
     <string name="gesture_two_finger_tap_right">Two-finger tap on the right edge</string>
     <string name="gesture_edge_zone">Edge zone width</string>

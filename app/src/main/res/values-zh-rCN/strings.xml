@@ -30,7 +30,8 @@
     <string name="gestures_description">配置双指滑动、点按和长按。</string>
     <string name="gesture_two_finger_long_press">双指长按</string>
     <string name="gesture_two_finger_left">从左侧的双指手势</string>
-    <string name="gesture_two_finger_right">从右侧的双指手势</string>
+    <string name="gesture_two_finger_right">双指右滑手势</string>
+    <string name="gesture_two_finger_down">双指下滑</string>
     <string name="gesture_two_finger_tap_left">在左边缘双指点按</string>
     <string name="gesture_two_finger_tap_right">在右边缘双指点按</string>
     <string name="gesture_edge_zone">边缘区域宽度</string>

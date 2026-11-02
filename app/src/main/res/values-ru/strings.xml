@@ -32,6 +32,7 @@
     <string name="gesture_two_finger_long_press">Долгое нажатие двумя пальцами</string>
     <string name="gesture_two_finger_left">Жест двумя пальцами слева</string>
     <string name="gesture_two_finger_right">Жест двумя пальцами справа</string>
+    <string name="gesture_two_finger_down">Свайп двумя пальцами вниз</string>
     <string name="gesture_two_finger_tap_left">Касание двумя пальцами у левого края</string>
     <string name="gesture_two_finger_tap_right">Касание двумя пальцами у правого края</string>
     <string name="gesture_edge_zone">Ширина зоны у края</string>

@@ -244,6 +244,7 @@
     <string name="gesture_two_finger_long_press">Appui long à deux doigts</string>
     <string name="gesture_two_finger_left">Geste à deux doigts depuis la gauche</string>
     <string name="gesture_two_finger_right">Geste à deux doigts depuis la droite</string>
+    <string name="gesture_two_finger_down">Balayage à deux doigts vers le bas</string>
     <string name="gesture_two_finger_tap_left">Appui à deux doigts sur le bord gauche</string>
     <string name="gesture_two_finger_tap_right">Appui à deux doigts sur le bord droit</string>
     <string name="gesture_edge_zone">Largeur de la zone de bord</string>

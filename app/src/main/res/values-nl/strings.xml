@@ -30,8 +30,9 @@
     <string name="gestures_description">Stel vegen en tikken met twee vingers en lang indrukken in.</string>
     <string name="gesture_two_finger_long_press">Lang indrukken met twee vingers</string>
     <string name="gesture_two_finger_left">Tweevingergebaar van links</string>
-    <string name="gesture_two_finger_right">Tweevingergebaar van rechts</string>
-    <string name="gesture_two_finger_tap_left">Tikken met twee vingers aan de linkerrand</string>
+    <string name="gesture_two_finger_right">Tweevingergebaar vanaf rechts</string>
+    <string name="gesture_two_finger_down">Met twee vingers omlaag vegen</string>
+    <string name="gesture_two_finger_tap_left">Met twee vingers tikken op de linkerrand</string>
     <string name="gesture_two_finger_tap_right">Tikken met twee vingers aan de rechterrand</string>
     <string name="gesture_edge_zone">Breedte van de randzone</string>
     <string name="gesture_edge_zone_narrow">Smal</string>

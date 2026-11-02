@@ -35,6 +35,7 @@
     <string name="gesture_two_finger_long_press">두 손가락 길게 누르기</string>
     <string name="gesture_two_finger_left">왼쪽에서 두 손가락 제스처</string>
     <string name="gesture_two_finger_right">오른쪽에서 두 손가락 제스처</string>
+    <string name="gesture_two_finger_down">두 손가락 아래로 밀기</string>
     <string name="gesture_two_finger_tap_left">왼쪽 가장자리 두 손가락 탭</string>
     <string name="gesture_two_finger_tap_right">오른쪽 가장자리 두 손가락 탭</string>
     <string name="gesture_edge_zone">가장자리 영역 너비</string>

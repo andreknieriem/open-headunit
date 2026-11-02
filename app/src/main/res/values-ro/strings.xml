@@ -32,7 +32,8 @@
     <string name="gesture_two_finger_long_press">Apăsare lungă cu două degete</string>
     <string name="gesture_two_finger_left">Gest cu două degete din stânga</string>
     <string name="gesture_two_finger_right">Gest cu două degete din dreapta</string>
-    <string name="gesture_two_finger_tap_left">Atingere cu două degete la marginea stângă</string>
+    <string name="gesture_two_finger_down">Glisare cu două degete în jos</string>
+    <string name="gesture_two_finger_tap_left">Atingere cu două degete pe marginea stângă</string>
     <string name="gesture_two_finger_tap_right">Atingere cu două degete la marginea dreaptă</string>
     <string name="gesture_edge_zone">Lățimea zonei de margine</string>
     <string name="gesture_edge_zone_narrow">Îngustă</string>

@@ -32,6 +32,7 @@
     <string name="gesture_two_finger_long_press">Toque longo com dois dedos</string>
     <string name="gesture_two_finger_left">Gesto com dois dedos da esquerda</string>
     <string name="gesture_two_finger_right">Gesto com dois dedos da direita</string>
+    <string name="gesture_two_finger_down">Deslizar dois dedos para baixo</string>
     <string name="gesture_two_finger_tap_left">Toque com dois dedos na borda esquerda</string>
     <string name="gesture_two_finger_tap_right">Toque com dois dedos na borda direita</string>
     <string name="gesture_edge_zone">Largura da zona da borda</string>

@@ -33,6 +33,7 @@
     <string name="gesture_two_finger_long_press">İki parmakla uzun basma</string>
     <string name="gesture_two_finger_left">Soldan iki parmak hareketi</string>
     <string name="gesture_two_finger_right">Sağdan iki parmak hareketi</string>
+    <string name="gesture_two_finger_down">İki parmak aşağı kaydırma</string>
     <string name="gesture_two_finger_tap_left">Sol kenarda iki parmakla dokunma</string>
     <string name="gesture_two_finger_tap_right">Sağ kenarda iki parmakla dokunma</string>
     <string name="gesture_edge_zone">Kenar bölgesi genişliği</string>

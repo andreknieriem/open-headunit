@@ -32,7 +32,8 @@
     <string name="gesture_two_finger_long_press">Довге натискання двома пальцями</string>
     <string name="gesture_two_finger_left">Жест двома пальцями зліва</string>
     <string name="gesture_two_finger_right">Жест двома пальцями справа</string>
-    <string name="gesture_two_finger_tap_left">Дотик двома пальцями біля лівого краю</string>
+    <string name="gesture_two_finger_down">Проведення двома пальцями вниз</string>
+    <string name="gesture_two_finger_tap_left">Торкання двома пальцями на лівому краї</string>
     <string name="gesture_two_finger_tap_right">Дотик двома пальцями біля правого краю</string>
     <string name="gesture_edge_zone">Ширина зони біля краю</string>
     <string name="gesture_edge_zone_narrow">Вузька</string>

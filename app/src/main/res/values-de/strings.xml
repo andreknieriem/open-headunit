@@ -33,6 +33,7 @@
     <string name="gesture_two_finger_long_press">Langes Drücken mit zwei Fingern</string>
     <string name="gesture_two_finger_left">Zwei-Finger-Geste von links</string>
     <string name="gesture_two_finger_right">Zwei-Finger-Geste von rechts</string>
+    <string name="gesture_two_finger_down">Zwei-Finger-Wischen nach unten</string>
     <string name="gesture_two_finger_tap_left">Zwei-Finger-Tippen am linken Rand</string>
     <string name="gesture_two_finger_tap_right">Zwei-Finger-Tippen am rechten Rand</string>
     <string name="gesture_edge_zone">Breite der Randzone</string>

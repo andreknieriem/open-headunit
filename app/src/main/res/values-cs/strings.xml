@@ -32,8 +32,9 @@
     <string name="gesture_two_finger_long_press">Dlouhé stisknutí dvěma prsty</string>
     <string name="gesture_two_finger_left">Gesto dvěma prsty zleva</string>
     <string name="gesture_two_finger_right">Gesto dvěma prsty zprava</string>
-    <string name="gesture_two_finger_tap_left">Klepnutí dvěma prsty u levého okraje</string>
-    <string name="gesture_two_finger_tap_right">Klepnutí dvěma prsty u pravého okraje</string>
+    <string name="gesture_two_finger_down">Přejetí dvěma prsty dolů</string>
+    <string name="gesture_two_finger_tap_left">Klepnutí dvěma prsty na levém okraji</string>
+    <string name="gesture_two_finger_tap_right">Klepnutí dvěma prsty na pravém okraji</string>
     <string name="gesture_edge_zone">Šířka okrajové zóny</string>
     <string name="gesture_edge_zone_narrow">Úzká</string>
     <string name="gesture_edge_zone_normal">Normální</string>

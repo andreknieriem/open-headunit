@@ -31,8 +31,9 @@
     <string name="gestures_description">2本指スワイプ、タップ、長押しを設定します。</string>
     <string name="gesture_two_finger_long_press">2本指で長押し</string>
     <string name="gesture_two_finger_left">左側から2本指ジェスチャー</string>
-    <string name="gesture_two_finger_right">右側から2本指ジェスチャー</string>
-    <string name="gesture_two_finger_tap_left">左端で2本指タップ</string>
+    <string name="gesture_two_finger_right">右からの2本指ジェスチャー</string>
+    <string name="gesture_two_finger_down">2本指の下スワイプ</string>
+    <string name="gesture_two_finger_tap_left">左端での2本指タップ</string>
     <string name="gesture_two_finger_tap_right">右端で2本指タップ</string>
     <string name="gesture_edge_zone">端のゾーンの幅</string>
     <string name="gesture_edge_zone_narrow">狭い</string>

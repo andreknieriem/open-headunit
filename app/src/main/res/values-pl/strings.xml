@@ -32,6 +32,7 @@
     <string name="gesture_two_finger_long_press">Długie przytrzymanie dwoma palcami</string>
     <string name="gesture_two_finger_left">Gest dwoma palcami z lewej</string>
     <string name="gesture_two_finger_right">Gest dwoma palcami z prawej</string>
+    <string name="gesture_two_finger_down">Przesunięcie dwoma palcami w dół</string>
     <string name="gesture_two_finger_tap_left">Stuknięcie dwoma palcami przy lewej krawędzi</string>
     <string name="gesture_two_finger_tap_right">Stuknięcie dwoma palcami przy prawej krawędzi</string>
     <string name="gesture_edge_zone">Szerokość strefy krawędzi</string>

@@ -1,0 +1,19 @@
+syntax = "proto2";
+package com.andrerinas.openheadunit.aap.protocol.proto;
+import "common.proto";
+import "control.proto";
+
+// Service-local message IDs: 0x8001 phone request, 0x8002 head-unit response,
+// 0x8003 head-unit authentication data, 0x8004 phone authentication result.
+// The AA18 sender's descriptors require both request fields and both response fields.
+message BluetoothPairingRequest {
+    required string phone_address = 1;
+    required BluetoothPairingMethod pairing_method = 2;
+}
+message BluetoothPairingResponse {
+    required MessageStatus status = 1;
+    required bool already_paired = 2;
+}
+message BluetoothAuthenticationResult {
+    required MessageStatus status = 1;
+}

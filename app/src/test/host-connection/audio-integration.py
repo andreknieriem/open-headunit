@@ -30,6 +30,11 @@ kotlin = re.search(r"kotlin-gradle-plugin:([0-9.]+)", (repo / "build.gradle.kts"
 stdlib = jar("org.jetbrains.kotlin", "kotlin-stdlib", kotlin)
 annotations = jar("org.jetbrains", "annotations", "13.0")
 coroutines = jar("org.jetbrains.kotlinx", "kotlinx-coroutines-core-jvm", "1.8.0")
+protobuf_version = re.search(r"protobuf-java:([0-9.]+)", (repo / "app/build.gradle.kts").read_text()).group(1)
+protobuf = jar("com.google.protobuf", "protobuf-java", protobuf_version)
+protocol_classes = repo / "app/build/intermediates/javac/githubDebug/compileGithubDebugJavaWithJavac/classes"
+if not (protocol_classes / "com/andrerinas/openheadunit/aap/protocol/proto/Media.class").is_file():
+    raise SystemExit("Missing compiled protocol classes; run :app:testGithubDebugUnitTest first")
 compiler = [jar("org.jetbrains.kotlin", "kotlin-compiler-embeddable", kotlin), stdlib,
             jar("org.jetbrains.kotlin", "kotlin-reflect", "1.6.10"),
             jar("org.jetbrains.kotlin", "kotlin-script-runtime", kotlin), coroutines, annotations]
@@ -97,7 +102,7 @@ sources.append(raise_policy)
 entrypoint = output / "IntegrationMain.kt"
 entrypoint.write_text("package com.andrerinas.openheadunit.decoder.audio\nfun main() { audioLifecycleBoundaryRegression() }\n")
 sources.append(entrypoint)
-classpath = os.pathsep.join(map(str, [stdlib, annotations, coroutines]))
+classpath = os.pathsep.join(map(str, [stdlib, annotations, coroutines, protobuf, protocol_classes]))
 
 subprocess.run(["java", "-cp", os.pathsep.join(map(str, compiler)),
                 "org.jetbrains.kotlin.cli.jvm.K2JVMCompiler", "-no-stdlib", "-no-reflect", "-nowarn",

@@ -32,9 +32,23 @@ internal class AdaptivePcmBuffer(
     private var startupFramesPlayed = 0L
     private var head = 0
     private var count = 0
+    private var overflowEvents = 0L
     private var inputFrames = 0L
     private var offeredFrames = 0L
     private var resetDiscardedFrames = 0L
+    private val sourceTimeline = PcmSourceTimeline(sampleRate = sampleRate)
+    @Volatile var sourceMappingEnabled = false
+    var lastRenderSourceUs = Long.MIN_VALUE
+        private set
+    var lastRenderGeneration = Long.MIN_VALUE
+        private set
+    @Synchronized fun firstSourceUs(): Long =
+        if (count > 0) sourceTimeline.sourceAt(offeredFrames - count / channels) else Long.MIN_VALUE
+    @Synchronized fun clearSourceMapping() {
+        sourceTimeline.clear()
+        lastRenderSourceUs = Long.MIN_VALUE
+        lastRenderGeneration = Long.MIN_VALUE
+    }
     private var started = false
     private var rebanking = false
     private var firstDataMs = -1L
@@ -173,6 +187,15 @@ internal class AdaptivePcmBuffer(
     @Synchronized fun depthFrames(): Int = count / channels
     @Synchronized fun takeOverflow(): Overflow? = pendingOverflow.also { pendingOverflow = null }
     @Synchronized fun takeStarvation(): Starvation? = pendingStarvation.also { pendingStarvation = null }
+
+    /** Atomic PCM-bank observations; intentionally excludes codec and hardware delay. */
+    @Synchronized fun telemetry(): Triple<Long, Long, Long> =
+        Triple(count.toLong() / channels * 1_000_000L / sampleRate, overflowEvents, rebanks)
+
+    @Synchronized fun setRequestedLimit(ms: Long?) {
+        require(ms == null || ms >= 0)
+        policy.requestedLimitMs = ms
+    }
     // An empty network rebank is still a live stream. Parking the device here adds a
     // pause/flush/play cycle to every late packet burst.
     @Synchronized fun isIdle(): Boolean =
@@ -187,8 +210,10 @@ internal class AdaptivePcmBuffer(
         return true
     }
 
-    @Synchronized fun write(data: ShortArray, length: Int, nowMs: Long) {
+    @Synchronized fun write(data: ShortArray, length: Int, nowMs: Long,
+                            sourceUs: Long = Long.MIN_VALUE, generation: Long = Long.MIN_VALUE) {
         val aligned = length.coerceAtMost(data.size) / channels * channels
+        if (sourceUs != Long.MIN_VALUE) sourceTimeline.append(offeredFrames, aligned / channels, sourceUs, generation)
         writeFrom(aligned, nowMs) { sourceOffset, destinationOffset, samples ->
             System.arraycopy(data, sourceOffset, ring, destinationOffset, samples)
         }
@@ -214,6 +239,7 @@ internal class AdaptivePcmBuffer(
         val keep = minOf(aligned, ring.size)
         val skip = aligned - keep
         val oldDrop = (count + keep - ring.size).coerceAtLeast(0)
+        if (oldDrop > 0 || skip > 0) overflowEvents++
         if ((oldDrop > 0 || skip > 0) && pendingOverflow == null) {
             pendingOverflow = Overflow(nowMs, aligned / channels, count / channels, capacityFrames,
                 oldDrop / channels, skip / channels, offeredFrames, startupFramesPlayed,
@@ -256,6 +282,8 @@ internal class AdaptivePcmBuffer(
     /** Renders one 10ms block. Returns true when there is real or concealed audio. */
     @Synchronized fun render(out: ShortArray, nowMs: Long, outputBurstFrames: Int = cycleFrames): Boolean {
         lastRenderRealFrames = 0
+        lastRenderSourceUs = Long.MIN_VALUE
+        lastRenderGeneration = Long.MIN_VALUE
         require(out.size >= cycleSamples)
         java.util.Arrays.fill(out, 0, cycleSamples, 0.toShort())
         val target = playbackTargetFrames()
@@ -312,6 +340,12 @@ internal class AdaptivePcmBuffer(
         val skipped = catchUp * channels
         val real = minOf(count, cycleSamples, if (drainingPrefix) closedPrefixSamples else count)
         lastRenderRealFrames = real / channels
+        // An overlap/fade/PLC sample has no unique source position. Suppress this block's
+        // correlation; absolute offered/count accounting recovers the following intact span.
+        if (sourceMappingEnabled && real == cycleSamples && catchUp == 0 && !needsFade && gapFrames == 0) {
+            lastRenderSourceUs = sourceTimeline.sourceAt(offeredFrames - count / channels, real / channels)
+            lastRenderGeneration = sourceTimeline.generation
+        }
         val closesPrefix = drainingPrefix && real == closedPrefixSamples
         val readHead = (head + skipped) % ring.size
         val first = minOf(real, ring.size - readHead)
@@ -480,6 +514,7 @@ internal class AdaptivePcmBuffer(
     }
 
     @Synchronized fun reset() {
+        clearSourceMapping()
         clearReserveWindow()
         pendingStoppedReserve = null
         skippedReserveWindows = 0

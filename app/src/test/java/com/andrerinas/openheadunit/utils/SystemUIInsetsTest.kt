@@ -13,6 +13,8 @@ import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.AppComponent
 import com.andrerinas.openheadunit.aap.AapTransport
 import com.andrerinas.openheadunit.aap.AudioSessionConfig
+import com.andrerinas.openheadunit.aap.GalProfile
+import com.andrerinas.openheadunit.aap.galTestContract
 import com.andrerinas.openheadunit.aap.protocol.Channel
 import com.andrerinas.openheadunit.aap.protocol.messages.ServiceDiscoveryResponse
 import com.andrerinas.openheadunit.aap.protocol.proto.Control
@@ -286,7 +288,10 @@ class SystemUIInsetsTest {
             else checkNotNull(lastTransport) { "No prior transport for a repeated response" }
         lastTransport = responseTransport
         val settings = App.provide(projectionContext).settings
-        val message = ServiceDiscoveryResponse(projectionContext, AudioSessionConfig.from(settings), responseTransport)
+        val message = ServiceDiscoveryResponse(
+            projectionContext, AudioSessionConfig.from(settings), responseTransport,
+            galTestContract(GalProfile.COMPATIBILITY),
+        )
         return message.parse(Control.ServiceDiscoveryResponse.newBuilder()).build()
     }
 

@@ -77,7 +77,18 @@ class AudioMixer(
         var reportedRebankEntries = 0L
         var reportedDropped = 0L
         var reportedConcealed = 0L
+        @Volatile var presentationController: com.andrerinas.openheadunit.aap.GalPresentationController? = null
+        var presentationChannel = -1
+        @Volatile var presentationGeneration = Long.MIN_VALUE
+        val playoutSources = PcmSourceTimeline()
+        var sourceOutputEpoch = Long.MIN_VALUE
+        var observedOutputFrame = -1L
+        var renderedSourceUs = Long.MIN_VALUE
+        var renderedGeneration = Long.MIN_VALUE
+        var sourceMappingWasEnabled = false
+        @Volatile var initialAudioRendered = false
     }
+
     private val channels = ConcurrentHashMap<Int, Channel>()
     @Volatile private var channelSnapshot = emptyArray<Channel>()
     private val diagnosticId = nextDiagnosticId.incrementAndGet()
@@ -169,6 +180,31 @@ class AudioMixer(
     internal fun resetConverter(state: Channel) {
         synchronized(state) { state.converter.reset() }
     }
+    internal fun setPresentation(state: Channel,
+                                 controller: com.andrerinas.openheadunit.aap.GalPresentationController?,
+                                 channel: Int, generation: Long) {
+        synchronized(state) {
+            state.presentationController?.invalidateAudio(state.presentationChannel, state.presentationGeneration)
+            state.presentationController = controller
+            state.presentationChannel = channel
+            state.presentationGeneration = generation
+            state.playoutSources.clear()
+            state.observedOutputFrame = -1
+            state.initialAudioRendered = false
+        }
+    }
+    /** Local suspension loses correlation, not the protocol session. Pending PCM still drains. */
+    internal fun invalidatePresentation(state: Channel) {
+        synchronized(state) {
+            state.presentationController?.invalidateAudio(state.presentationChannel, state.presentationGeneration)
+            state.buffer.clearSourceMapping()
+            state.playoutSources.clear()
+            state.observedOutputFrame = -1
+            state.renderedSourceUs = Long.MIN_VALUE
+            state.renderedGeneration = Long.MIN_VALUE
+            state.initialAudioRendered = true
+        }
+    }
     internal fun prepareChannel(state: Channel) {
         outputUnavailableSinceMs = -1L
         output?.preparePlayback()
@@ -240,16 +276,26 @@ class AudioMixer(
 
     /** PCM16 little endian -> 48kHz stereo, using reusable per-producer storage. */
     internal fun feed(state: Channel, data: ByteArray, offset: Int, length: Int,
-                      format: PcmInputFormat = state.format) {
+                      format: PcmInputFormat = state.format, sourceUs: Long = Long.MIN_VALUE,
+                      generation: Long = Long.MIN_VALUE) {
         // A wrapper retains its exact registration. A retired codec can neither feed nor
         // unregister a replacement channel that happens to reuse the same protocol id.
         synchronized(state) {
+            state.buffer.sourceMappingEnabled = state.presentationController
+                ?.isAudioSyncEnabled(state.presentationChannel, state.presentationGeneration) == true
             val shorts = state.converter.convert(data, offset, length, format)
             if (shorts == 0) return
             val now = SystemClock.elapsedRealtime()
             if (state.firstPcmMs < 0) state.firstPcmMs = now
             if (state.timeStretch != null) state.timeStretch.offer(state.converter.samples, shorts, now)
-            else state.buffer.write(state.converter.samples, shorts, now)
+            else {
+                // Mono duplication/PCM format conversion preserve frame identity. Resampling
+                // carries interpolation history; until it exports source phases this segment
+                // is explicitly uncorrelated, rather than inventing an audible source cursor.
+                val mappedSource = if (state.buffer.sourceMappingEnabled &&
+                    format.sampleRate == OUTPUT_SAMPLE_RATE && generation == state.presentationGeneration) sourceUs else Long.MIN_VALUE
+                state.buffer.write(state.converter.samples, shorts, now, mappedSource, generation)
+            }
             state.warmupUntilMs = 0
             hasReceivedAudio.set(true)
             if (feedSignal.availablePermits() == 0) feedSignal.release()
@@ -263,7 +309,8 @@ class AudioMixer(
     }
 
     /** Render-clock DSP, independent of Android scheduling and device I/O. Output storage is reused. */
-    internal fun renderCycle(nowMs: Long, outputBurstFrames: Int, cycleChannels: Array<Channel> = channelSnapshot): ShortArray {
+    internal fun renderCycle(nowMs: Long, outputBurstFrames: Int, cycleChannels: Array<Channel> = channelSnapshot,
+                             nowNs: Long = Long.MIN_VALUE): ShortArray {
         mixBuffer.fill(0)
         if (duckMediaForSpeech) mediaBuffer.fill(0)
         var activeChannels = 0
@@ -271,7 +318,27 @@ class AudioMixer(
         var boosted = false
         for (state in cycleChannels) {
             state.timeStretch?.let { state.buffer.observeTimeCorrection(it.policy, nowMs, outputBurstFrames) }
-            val active = state.buffer.render(channelBuffer, nowMs, outputBurstFrames)
+            val mapping = state.presentationController
+                ?.isAudioSyncEnabled(state.presentationChannel, state.presentationGeneration) == true
+            state.buffer.sourceMappingEnabled = mapping
+            if (!mapping && state.sourceMappingWasEnabled) synchronized(state) {
+                state.playoutSources.clear()
+                state.presentationController?.invalidateAudio(state.presentationChannel, state.presentationGeneration)
+            }
+            state.sourceMappingWasEnabled = mapping
+            val active = if (!mapping) state.buffer.render(channelBuffer, nowMs, outputBurstFrames) else synchronized(state) {
+                state.renderedSourceUs = Long.MIN_VALUE
+                state.renderedGeneration = Long.MIN_VALUE
+                val waiting = !state.initialAudioRendered && state.buffer.depthFrames() > 0 &&
+                    (state.presentationController?.audioStartDelayNs(state.presentationChannel,
+                        state.presentationGeneration, state.buffer.firstSourceUs(),
+                        if (nowNs == Long.MIN_VALUE) System.nanoTime() else nowNs) ?: 0) > 0
+                if (waiting) false else state.buffer.render(channelBuffer, nowMs, outputBurstFrames).also {
+                    state.renderedSourceUs = state.buffer.lastRenderSourceUs
+                    state.renderedGeneration = state.buffer.lastRenderGeneration
+                }
+            }
+            if (active) state.initialAudioRendered = true
             state.timeStretch?.spaceAvailable()
             state.activeThisCycle = active
             val gain = state.gain
@@ -344,12 +411,61 @@ class AudioMixer(
         val known = !recovered && epochBefore == device.outputEpoch && writtenBefore >= 0 &&
             written - writtenBefore == SAMPLES_PER_CYCLE.toLong()
         for (state in cycleChannels) {
+            if (state.sourceMappingWasEnabled) synchronized(state) {
+                if (!known || state.sourceOutputEpoch != epochBefore) {
+                    state.playoutSources.clear()
+                    state.observedOutputFrame = -1L
+                    state.presentationController?.invalidateAudio(state.presentationChannel, state.presentationGeneration)
+                }
+                state.sourceOutputEpoch = device.outputEpoch
+                if (known) state.playoutSources.append(writtenBefore, SAMPLES_PER_CYCLE,
+                    if (state.activeThisCycle && state.gain > 0f &&
+                        state.renderedGeneration == state.presentationGeneration) state.renderedSourceUs else Long.MIN_VALUE,
+                    state.renderedGeneration)
+            }
             if (!known) {
                 state.lastRealEndFrame = -1
                 state.lastRealEpoch = -1
-            } else if (state.buffer.lastRenderRealFrames > 0) {
+            } else if (state.activeThisCycle && state.buffer.lastRenderRealFrames > 0) {
                 state.lastRealEndFrame = writtenBefore + state.buffer.lastRenderRealFrames
                 state.lastRealEpoch = epochBefore
+            }
+        }
+    }
+
+    /** Playback-head sampled on the output owner, not write-time or an estimated queue delay.
+     * AudioTrack head granularity remains platform-dependent; unavailable AAudio counters,
+     * recovery staging, transformed spans and epoch changes revoke correlation. */
+    internal fun publishPlayout(device: PcmOutput, played: Long, nowNs: Long,
+                                states: Array<Channel> = channelSnapshot) {
+        for (state in states) {
+            val controller = state.presentationController ?: continue
+            if (!controller.isAudioSyncEnabled(state.presentationChannel, state.presentationGeneration)) continue
+            synchronized(state) {
+                if (played < 0 || state.sourceOutputEpoch != device.outputEpoch ||
+                    played < state.observedOutputFrame) {
+                    state.playoutSources.clear()
+                    state.observedOutputFrame = -1
+                    controller.invalidateAudio(state.presentationChannel, state.presentationGeneration)
+                } else if (played > 0 && played != state.observedOutputFrame) {
+                    val previous = state.observedOutputFrame
+                    if (previous > 0) {
+                        val crossed = played - previous
+                        // A coarse head can jump over an entire unknown block or source
+                        // discontinuity. Validate the path, not just its known endpoint,
+                        // before retaining the controller's smoothed clock anchor.
+                        if (crossed >= Int.MAX_VALUE ||
+                            state.playoutSources.sourceAt(previous - 1, crossed.toInt() + 1) == Long.MIN_VALUE ||
+                            state.playoutSources.generation != state.presentationGeneration) {
+                            controller.invalidateAudio(state.presentationChannel, state.presentationGeneration)
+                        }
+                    }
+                    state.observedOutputFrame = played
+                    val source = state.playoutSources.sourceAt(played - 1)
+                    if (source != Long.MIN_VALUE && state.playoutSources.generation == state.presentationGeneration)
+                        controller.observeAudio(state.presentationChannel, state.presentationGeneration, source, nowNs)
+                    else controller.invalidateAudio(state.presentationChannel, state.presentationGeneration)
+                }
             }
         }
     }
@@ -440,6 +556,7 @@ class AudioMixer(
             // Playback-head reads belong to the output owner. Focus polling reads only this
             // snapshot, never the device while it may be replaced or released.
             val played = device.playedFrames()
+            publishPlayout(device, played, System.nanoTime())
             channels.values.forEach {
                 if (it.lastOutputFrame >= 0) {
                     // Reopening during start or buffer tuning also changes the frame clock.

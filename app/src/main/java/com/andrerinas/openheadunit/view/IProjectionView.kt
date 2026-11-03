@@ -1,12 +1,16 @@
 package com.andrerinas.openheadunit.view
 
 import android.view.Surface
+import com.andrerinas.openheadunit.decoder.video.VideoSurfaceKind
 
 interface IProjectionView {
+    /** Explicit consumer semantics; texture draw callbacks are not display clock measurements. */
+    val videoSurfaceKind: VideoSurfaceKind
+
     interface Callbacks {
         fun onSurfaceCreated(surface: Surface)
         fun onSurfaceDestroyed(surface: Surface)
-        fun onSurfaceChanged(surface: Surface, width: Int, height: Int)
+        fun onSurfaceChanged(surface: Surface, width: Int, height: Int, kind: VideoSurfaceKind)
     }
 
     fun addCallback(callback: Callbacks)

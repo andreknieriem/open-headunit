@@ -30,7 +30,7 @@ class AudioDecoder {
         val onSessionClosed: () -> Unit = {}
     )
     class PlaybackSession internal constructor(internal val callbacks: PlaybackCallbacks) {
-        internal var closed = false // Accessed only under the decoder lock.
+        @Volatile internal var closed = false // Mutated under the lock; telemetry only observes it.
     }
     @Volatile private var activeSession = PlaybackSession(PlaybackCallbacks())
     internal var playbackCallbacks: PlaybackCallbacks
@@ -66,9 +66,19 @@ class AudioDecoder {
     fun sinkCodecFor(channel: Int, session: PlaybackSession = activeSession): AudioSinkCodec? =
         synchronized(this) { if (accepts(session)) audioTracks[channel]?.builtCodec() else null }
 
-    fun decode(channel: Int, buffer: ByteArray, offset: Int, size: Int, session: PlaybackSession = activeSession) {
+    /** Sampling must not block the transport writer on codec construction or worker joins. */
+    internal fun galPlaybackSample(channel: Int, session: PlaybackSession):
+        com.andrerinas.openheadunit.aap.GalPlaybackSample? {
+        if (!accepts(session)) return null
+        val track = audioTracks[channel] ?: return null
+        val sample = track.galPlaybackSample()
+        return sample.takeIf { accepts(session) && audioTracks[channel] === track }
+    }
+
+    fun decode(channel: Int, buffer: ByteArray, offset: Int, size: Int, session: PlaybackSession = activeSession,
+               sourceTimeUs: Long = Long.MIN_VALUE) {
         val audioTrack = synchronized(this) { if (accepts(session)) audioTracks[channel] else null }
-        audioTrack?.write(buffer, offset, size)
+        audioTrack?.write(buffer, offset, size, sourceTimeUs)
     }
 
     fun configure(channel: Int, buffer: ByteArray, offset: Int, size: Int, session: PlaybackSession = activeSession) {
@@ -100,7 +110,7 @@ class AudioDecoder {
     /** Park all channels (e.g. on device sleep/screen-off) so AudioTrack does not block in ALSA. */
     fun pauseAll(session: PlaybackSession = activeSession) {
         val tracks = synchronized(this) { if (accepts(session)) audioTracks.values.toList() else emptyList() }
-        tracks.forEach { it.pauseForIdle() }
+        tracks.forEach { it.pauseForIdle(retainPresentation = true) }
     }
 
     @Synchronized fun stop(chan: Int, session: PlaybackSession = activeSession) {

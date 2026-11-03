@@ -108,6 +108,7 @@ message Service
             optional uint32 pixel_aspect_ratio_e4 = 8;
             optional uint32 real_density = 9;
             optional MediaCodecType video_codec_type = 10;
+            optional UiConfig ui_config = 11;
         }
 
         required MediaCodecType available_type = 1;
@@ -256,46 +257,32 @@ message ServiceDiscoveryResponse
     // measured to work; if that ever stops, this is where it moved.
 }
 
-// How this head unit wants the link run. Defaults in the comments are Android Auto's own.
+// AA18 xzm has four optional uint32 fields. Receiver timer policy is separate from parsing.
 message PingConfiguration
 {
-    // Before the head unit must close the connection on ping timeout. Default 3000.
+    // Requested ping timeout.
     optional uint32 timeout_ms = 1;
-    // Between ping messages. Default 1000.
+    // Requested interval between ping messages.
     optional uint32 interval_ms = 2;
-    // Latency above which the user is told the connection is poor. Default 200.
+    // Requested high-latency threshold.
     optional uint32 high_latency_threshold_ms = 3;
-    // Pings above or below the threshold before the verdict flips. Default 5.
+    // Requested count of tracked pings.
     optional uint32 tracked_ping_count = 4;
-}
-
-message WirelessTcpConfiguration
-{
-    optional uint32 socket_receive_buffer_size_kb = 1 [deprecated = true];
-    optional uint32 socket_send_buffer_size_kb = 2 [deprecated = true];
-    // Read timeout before the connection should be closed. Default 5000.
-    optional uint32 socket_read_timeout_ms = 3;
-    // Default 16384, maximum 65536.
-    optional uint32 socket_receive_buffer_size = 4;
-    // Default 16384.
-    optional uint32 socket_send_buffer_size = 5;
 }
 
 message ConnectionConfiguration
 {
     optional PingConfiguration ping_configuration = 1;
-    optional WirelessTcpConfiguration wireless_tcp_configuration = 2;
+    // AA18 xwc has no field 2; preserve unknown fields without inventing TCP settings.
 }
 
-// Appended to the raw VersionRequest frame after major and minor. We send none.
+// AA18 yck is empty. We append no options to the raw major/minor request.
 message VersionRequestOptions
 {
-    optional int64 snapshot_version = 1;
 }
 
-// Appended to the raw VersionResponse frame after major, minor and status. The phone uses it to
-// ask this head unit to change connection parameters; the agreed set goes back out in
-// ServiceDiscoveryResponse field 16.
+// Optional tail after the raw response major/minor/status. AA18 ycl contains only field 1.
+// Retaining the request does not mean the receiver has applied the phone's requested timers.
 message VersionResponseOptions
 {
     optional ConnectionConfiguration connection_configuration = 1;

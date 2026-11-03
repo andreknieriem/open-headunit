@@ -26,13 +26,33 @@ class MakerWhitelistPolicyTest {
         assertEquals(Status.APPLIED, MakerWhitelistPolicy.status(REGLINK, REGLINK.files))
     }
 
+    private val dmSystem = "/dev/block/dm-0 /system ext4 ro,seclabel,relatime 0 0\n"
+
+    // Taken from a Reglink CMZX65-U1 (Android 8.1), whose verity mode reads "enforcing".
+    private val reglinkMounts = """
+        rootfs / rootfs ro,seclabel 0 0
+        /dev/block/mmcblk0p31 /vendor ext4 ro,seclabel,relatime,data=ordered 0 0
+        /dev/block/mmcblk0p32 /system ext4 ro,seclabel,relatime,data=ordered 0 0
+    """.trimIndent()
+
     @Test
     fun `only enforcing verity blocks the write`() {
-        assertTrue(MakerWhitelistPolicy.verityBlocksWrites("enforcing\n"))
-        assertTrue(MakerWhitelistPolicy.verityBlocksWrites("EIO"))
-        assertFalse(MakerWhitelistPolicy.verityBlocksWrites(""))
-        assertFalse(MakerWhitelistPolicy.verityBlocksWrites("disabled"))
-        assertFalse(MakerWhitelistPolicy.verityBlocksWrites("logging"))
+        assertTrue(MakerWhitelistPolicy.verityBlocksWrites("enforcing\n", dmSystem))
+        assertTrue(MakerWhitelistPolicy.verityBlocksWrites("EIO", dmSystem))
+        assertFalse(MakerWhitelistPolicy.verityBlocksWrites("", dmSystem))
+        assertFalse(MakerWhitelistPolicy.verityBlocksWrites("disabled", dmSystem))
+        assertFalse(MakerWhitelistPolicy.verityBlocksWrites("logging", dmSystem))
+    }
+
+    @Test
+    fun `verity only blocks when it really sits under system`() {
+        assertEquals("/dev/block/mmcblk0p32", MakerWhitelistPolicy.systemMountSource(reglinkMounts))
+        assertFalse(MakerWhitelistPolicy.verityBlocksWrites("enforcing", reglinkMounts))
+        // System-as-root through verity.
+        assertTrue(MakerWhitelistPolicy.verityBlocksWrites("enforcing", "/dev/block/dm-3 / ext4 ro 0 0"))
+        // /dev/root hides what is behind it, and an unreadable mount table proves nothing.
+        assertTrue(MakerWhitelistPolicy.verityBlocksWrites("enforcing", "/dev/root / ext4 ro 0 0"))
+        assertTrue(MakerWhitelistPolicy.verityBlocksWrites("enforcing", ""))
     }
 
     @Test

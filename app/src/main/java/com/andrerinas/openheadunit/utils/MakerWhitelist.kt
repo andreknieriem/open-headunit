@@ -48,8 +48,10 @@ object MakerWhitelist {
             return@withContext Result.NO_ROUTE
         }
         val verity = read(context, "getprop ro.boot.veritymode")
-        if (MakerWhitelistPolicy.verityBlocksWrites(verity)) {
-            AppLog.w("MakerWhitelist: $what refused, verity mode is '$verity'")
+        val mounts = read(context, "cat /proc/mounts")
+        if (MakerWhitelistPolicy.verityBlocksWrites(verity, mounts)) {
+            AppLog.w("MakerWhitelist: $what refused, verity mode is '$verity', " +
+                "system from ${MakerWhitelistPolicy.systemMountSource(mounts)}")
             return@withContext Result.VERITY
         }
 

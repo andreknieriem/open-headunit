@@ -59,7 +59,32 @@ object MakerWhitelistPolicy {
         return if (body.isEmpty()) "" else "$body\n"
     }
 
-    fun verityBlocksWrites(verityMode: String): Boolean = verityMode.trim().lowercase() in BLOCKING_VERITY
+    /**
+     * Whether verity guards the partition the lists live on. The property alone is not enough:
+     * Reglink units report "enforcing" and still mount /system straight from its partition, and a
+     * partition verity guards is always mounted through a device-mapper node. [mounts] is what
+     * `cat /proc/mounts` printed; when it does not show the mount point, the property decides.
+     */
+    fun verityBlocksWrites(verityMode: String, mounts: String): Boolean {
+        if (verityMode.trim().lowercase() !in BLOCKING_VERITY) return false
+        val source = systemMountSource(mounts) ?: return true
+        return !isPlainPartition(source)
+    }
+
+    /** The device behind the first of [MOUNT_POINTS] that is mounted. The last entry is the live one. */
+    fun systemMountSource(mounts: String): String? {
+        val entries = mounts.lineSequence()
+            .map { it.trim().split(WHITESPACE) }
+            .filter { it.size >= 2 }
+            .toList()
+        return MOUNT_POINTS.firstNotNullOfOrNull { point -> entries.lastOrNull { it[1] == point }?.get(0) }
+    }
+
+    // /dev/root and rootfs say nothing about verity, so only a named block partition counts.
+    private fun isPlainPartition(source: String): Boolean =
+        source.startsWith("/dev/block/") && !source.substringAfterLast('/').startsWith("dm-")
+
+    private val WHITESPACE = Regex("\\s+")
 
     fun hasApp(content: String, packageName: String): Boolean =
         content.lineSequence().any { it.trim() == packageName }

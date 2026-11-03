@@ -4,9 +4,11 @@ import com.andrerinas.openheadunit.input.RemoteTouchPolicy.Action
 import com.andrerinas.openheadunit.input.RemoteTouchPolicy.Local
 import com.andrerinas.openheadunit.input.RemoteTouchPolicy.Pointer
 import com.andrerinas.openheadunit.input.RemoteTouchPolicy.Send
+import com.andrerinas.openheadunit.input.TwoFingerGestureTracker.Enabled
 import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -127,6 +129,46 @@ class RemoteTouchPolicyTest {
         assertEquals(listOf(0, 1), ids(out[2]))
     }
 
+    @Test fun aPinchWithVerticalDriftFallsBackToForwardingAndEndsWithCleanUps() {
+        val gestures = Enabled(left = true, right = false, longPress = false, leftTap = false, rightTap = false, down = true)
+        val tracker = TwoFingerGestureTracker(
+            firstX = 60f,
+            firstY = 300f,
+            secondX = 260f,
+            secondY = 300f,
+            width = 1200f,
+            touchSlop = 10f,
+            density = 1f,
+            edgeZoneDp = 64f,
+            secondDownMs = 1000L
+        )
+
+        holdFirst(60f, 300f)
+        feed(Local.POINTER_DOWN, 1, true, p(0, 60f, 300f), p(1, 260f, 300f))
+
+        // Fingers both move down, but spread also changes enough to classify as pinch, not swipe down.
+        val x1 = 25f
+        val y1 = 390f
+        val x2 = 315f
+        val y2 = 440f
+        assertNull(tracker.move(x1, y1, x2, y2))
+        assertFalse(tracker.canStillFire(gestures, nowMs = 1050L))
+
+        feed(Local.MOVE, 0, true, p(0, x1, y1), p(1, x2, y2))
+        out += policy.giveUp(listOf(p(0, x1, y1), p(1, x2, y2)))
+        feed(Local.POINTER_UP, 1, false, p(0, x1, y1), p(1, x2, y2))
+        feed(Local.UP, 0, false, p(0, x1, y1))
+
+        assertEquals(
+            listOf(Action.DOWN, Action.POINTER_DOWN, Action.POINTER_UP, Action.UP),
+            out.map { it.action }
+        )
+        assertEquals(Send(Action.DOWN, 0, listOf(p(0, x1, y1))), out[0])
+        assertEquals(Send(Action.POINTER_DOWN, 1, listOf(p(0, x1, y1), p(1, x2, y2))), out[1])
+        assertEquals(Send(Action.POINTER_UP, 1, listOf(p(0, x1, y1), p(1, x2, y2))), out[2])
+        assertEquals(Send(Action.UP, 0, listOf(p(0, x1, y1))), out[3])
+    }
+
     @Test fun anUndecidedTwoFingerTouchThatLiftsOneFingerSendsNothing() {
         // Short of travel, so the gesture can still fire, then either finger lifts first.
         for (lifted in 0..1) {
@@ -184,7 +226,7 @@ class RemoteTouchPolicyTest {
     }
 
     @Test fun aTapWithItsSlotDisabledIsForwardedAtOnce() {
-        val off = TwoFingerGestureTracker.Enabled(left = false, right = true, longPress = false, leftTap = false, rightTap = true)
+        val off = TwoFingerGestureTracker.Enabled(left = false, right = true, longPress = false, leftTap = false, rightTap = true, down = false)
         val mayStart = TwoFingerGestureTracker.mayStartAt(60f, 1200f, 1.5f, 64f, off)
         feed(Local.DOWN, 0, false, p(0, 60f, 452f), mayStart = mayStart)
         feed(Local.POINTER_DOWN, 1, false, p(0, 60f, 452f), p(1, 260f, 502f))
@@ -203,6 +245,15 @@ class RemoteTouchPolicyTest {
         feed(Local.MOVE, 0, false, p(0, 410f, 300f))
         feed(Local.UP, 0, false, p(0, 410f, 300f))
         assertTrue(out.isEmpty())
+    }
+
+    @Test fun finishTwoFingerGestureKeepsCancelLocalAndNeverForwardsItRemotely() {
+        val src = File("src/main/java/com/andrerinas/openheadunit/aap/AapProjectionActivity.kt").readText()
+        val finish = Regex("""private fun finishTwoFingerGesture[\s\S]*?performTouchGesture\(action\)""")
+            .find(src)?.value.orEmpty()
+        assertTrue(finish.contains("super.dispatchTouchEvent(cancel)"))
+        assertFalse(finish.contains("sendTouchEvent(cancel)"))
+        assertTrue(src.contains("MotionEvent.ACTION_CANCEL -> RemoteTouchPolicy.Local.CANCEL"))
     }
 
     @Test fun theHoldEndsWellBeforeAOneFingerLongPress() {

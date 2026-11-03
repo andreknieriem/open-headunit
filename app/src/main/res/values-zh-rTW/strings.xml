@@ -31,6 +31,7 @@
     <string name="gesture_two_finger_long_press">雙指長按</string>
     <string name="gesture_two_finger_left">由左側的雙指手勢</string>
     <string name="gesture_two_finger_right">由右側的雙指手勢</string>
+    <string name="gesture_two_finger_down">雙指向下滑動</string>
     <string name="gesture_two_finger_tap_left">在左邊緣雙指輕觸</string>
     <string name="gesture_two_finger_tap_right">在右邊緣雙指輕觸</string>
     <string name="gesture_edge_zone">邊緣區域寬度</string>
@@ -54,7 +55,7 @@
     <string name="night_overlay_background">夜間覆蓋層背景</string>
     <string name="night_overlay_background_black">黑色</string>
     <string name="night_overlay_background_dark_gray">深灰色</string>
-    <string name="gestures_help">在左邊緣或右邊緣以雙指滑動或輕觸。其他位置的雙指操作會傳送給 Android Auto。如果邊緣滑動無效，請將系統設定為三按鈕導覽。</string>
+    <string name="gestures_help">在左邊緣或右邊緣以雙指滑動或輕觸。其他位置的雙指操作會傳送給 Android Auto。如果設定了雙指向下滑動，它在螢幕任何位置都有效，整個螢幕上的觸控可能會延遲。如果邊緣滑動無效，請將系統設定為三按鈕導覽。</string>
     <string name="gestures_reset">手勢設定已重設</string>
     <string name="night_overlay_dismiss">點一下返回投影</string>
     <string name="night_overlay_meters">%1$d 公尺</string>

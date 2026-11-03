@@ -32,6 +32,7 @@
     <string name="gesture_two_finger_long_press">2本指で長押し</string>
     <string name="gesture_two_finger_left">左側から2本指ジェスチャー</string>
     <string name="gesture_two_finger_right">右側から2本指ジェスチャー</string>
+    <string name="gesture_two_finger_down">2本指の下スワイプ</string>
     <string name="gesture_two_finger_tap_left">左端で2本指タップ</string>
     <string name="gesture_two_finger_tap_right">右端で2本指タップ</string>
     <string name="gesture_edge_zone">端のゾーンの幅</string>
@@ -55,7 +56,7 @@
     <string name="night_overlay_background">ナイトオーバーレイの背景</string>
     <string name="night_overlay_background_black">ブラック</string>
     <string name="night_overlay_background_dark_gray">ダークグレー</string>
-    <string name="gestures_help">左右の端で2本指でスワイプまたはタップします。それ以外の場所での2本指操作は Android Auto に送信されます。端からのスワイプが動作しない場合は、システムを3ボタンナビゲーションに設定してください。</string>
+    <string name="gestures_help">左右の端で2本指でスワイプまたはタップします。それ以外の場所での2本指操作は Android Auto に送信されます。2本指の下スワイプを設定すると、画面のどこでも動作し、画面全体でタッチが遅れることがあります。端からのスワイプが動作しない場合は、システムを3ボタンナビゲーションに設定してください。</string>
     <string name="gestures_reset">ジェスチャー設定をリセットしました</string>
     <string name="night_overlay_dismiss">タップして投影に戻る</string>
     <string name="night_overlay_meters">%1$d m</string>

@@ -22,10 +22,17 @@ class TwoFingerGestureTrackerTest {
 
     private fun enabled(
         left: Boolean = false, right: Boolean = false, longPress: Boolean = false,
-        leftTap: Boolean = false, rightTap: Boolean = false
-    ) = Enabled(left, right, longPress, leftTap, rightTap)
+        leftTap: Boolean = false, rightTap: Boolean = false, down: Boolean = false
+    ) = Enabled(left, right, longPress, leftTap, rightTap, down)
 
-    private fun mask(m: Int) = Enabled(m and 1 != 0, m and 2 != 0, m and 4 != 0, m and 8 != 0, m and 16 != 0)
+    private fun mask(m: Int) = Enabled(
+        m and 1 != 0,
+        m and 2 != 0,
+        m and 4 != 0,
+        m and 8 != 0,
+        m and 16 != 0,
+        m and 32 != 0
+    )
 
     private val taps = enabled(leftTap = true, rightTap = true)
 
@@ -55,23 +62,26 @@ class TwoFingerGestureTrackerTest {
         assertNull(centre().move(190f, 300f, 390f, 350f))
     }
 
-    @Test fun twoFingersMovingDownAreNoGesture() {
-        assertNull(tracker().move(30f, 400f, 230f, 450f))
-        assertNull(tracker(x1 = 1180f, x2 = 1000f).move(1180f, 400f, 1000f, 450f))
-        assertEquals(setOf("LEFT_EDGE", "RIGHT_EDGE"), TwoFingerGestureTracker.Swipe.values().map { it.name }.toSet())
+    @Test fun twoFingersMovingDownFireTheDownSwipeWhenEnabled() {
+        assertEquals(TwoFingerGestureTracker.Swipe.DOWN, centre().move(400f, 560f, 600f, 610f))
+        assertEquals(TwoFingerGestureTracker.Swipe.DOWN, tracker().move(20f, 520f, 220f, 570f))
+        assertEquals(setOf("LEFT_EDGE", "RIGHT_EDGE", "DOWN"), TwoFingerGestureTracker.Swipe.values().map { it.name }.toSet())
     }
 
-    @Test fun noMainSourceReadsTheDownSwipe() {
+    @Test fun mainSourceReadsTheDownSwipe() {
         val main = File("src/main")
         val hits = main.walkTopDown().filter { it.isFile && (it.extension == "kt" || it.extension == "xml") }
             .filter { f -> f.readText().let { "down-two-finger" in it || "downTwoFinger" in it || "gesture_two_finger_down" in it } }
             .map { it.path }.toList()
         assertTrue(main.isDirectory)
-        assertEquals(emptyList<String>(), hits)
+        assertTrue(hits.any { it.endsWith("Settings.kt") })
+        assertTrue(hits.any { it.endsWith("AapProjectionActivity.kt") })
+        assertTrue(hits.any { it.endsWith("GesturesFragment.kt") })
     }
 
-    @Test fun aTouchInTheMiddleCanNeverBecomeAGesture() {
+    @Test fun aTouchInTheMiddleNeedsDownEnabledToBecomeAGesture() {
         for (m in 0..31) assertFalse(centre().mayBecome(mask(m)))
+        for (m in 32..63) assertTrue(centre().mayBecome(mask(m)))
     }
 
     @Test fun theLeftZoneStartsAnyEnabledActionThatCanStartThere() {
@@ -97,7 +107,7 @@ class TwoFingerGestureTrackerTest {
         for (zone in listOf(48f, 64f, 96f)) {
             for (density in listOf(1f, 1.5f, 2f, 3f)) {
                 for (x in listOf(0f, 20f, 99f, 101f, 150f, 600f, 1050f, 1099f, 1101f, 1199f)) {
-                    for (m in 0..31) {
+                    for (m in 0..63) {
                         assertEquals(
                             tracker(x1 = x, x2 = 600f, density = density, zoneDp = zone).mayBecome(mask(m)),
                             TwoFingerGestureTracker.mayStartAt(x, 1200f, density, zone, mask(m))
@@ -108,6 +118,7 @@ class TwoFingerGestureTrackerTest {
         }
         assertTrue(TwoFingerGestureTracker.mayStartAt(20f, 1200f, 1f, normalDp, enabled(left = true)))
         assertFalse(TwoFingerGestureTracker.mayStartAt(600f, 1200f, 1f, normalDp, mask(31)))
+        assertTrue(TwoFingerGestureTracker.mayStartAt(600f, 1200f, 1f, normalDp, mask(32)))
     }
 
     @Test fun theZoneWidthMovesWhereAGestureMayStart() {
@@ -135,6 +146,7 @@ class TwoFingerGestureTrackerTest {
         val t = trackerAtRight()
         t.move(1150f, 300f, 950f, 300f)
         assertFalse(t.canStillFire(mask(31), 1000L))
+        assertFalse(t.canStillFire(enabled(down = true), 1000L))
     }
 
     @Test fun twoFingersMovingTogetherKeepTheSwipeAlive() {

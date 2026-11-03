@@ -245,6 +245,7 @@
     <string name="gesture_two_finger_long_press">Pressão longa com dois dedos</string>
     <string name="gesture_two_finger_left">Gesto com dois dedos da esquerda</string>
     <string name="gesture_two_finger_right">Gesto com dois dedos da direita</string>
+    <string name="gesture_two_finger_down">Deslizar com dois dedos para baixo</string>
     <string name="gesture_two_finger_tap_left">Toque com dois dedos na extremidade esquerda</string>
     <string name="gesture_two_finger_tap_right">Toque com dois dedos na extremidade direita</string>
     <string name="gesture_edge_zone">Largura da zona da extremidade</string>
@@ -268,7 +269,7 @@
     <string name="night_overlay_background">Fundo da sobreposição noturna</string>
     <string name="night_overlay_background_black">Preto</string>
     <string name="night_overlay_background_dark_gray">Cinzento-escuro</string>
-    <string name="gestures_help">Deslize ou toque com dois dedos na extremidade esquerda ou direita. Dois dedos noutro local seguem para o Android Auto. Se os deslizamentos a partir da extremidade não funcionarem, defina o sistema para a navegação com 3 botões.</string>
+    <string name="gestures_help">Deslize ou toque com dois dedos na extremidade esquerda ou direita. Dois dedos noutro local seguem para o Android Auto. Se definir o deslizar com dois dedos para baixo, funciona em qualquer parte do ecrã e os toques em todo o ecrã podem sofrer atraso. Se os deslizamentos a partir da extremidade não funcionarem, defina o sistema para a navegação com 3 botões.</string>
     <string name="gestures_reset">Definições de gestos repostas</string>
     <string name="night_overlay_dismiss">Toque para voltar à projeção</string>
     <string name="night_overlay_meters">%1$d m</string>

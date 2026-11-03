@@ -244,6 +244,7 @@
     <string name="gesture_two_finger_long_press">Tekan lama dua jari</string>
     <string name="gesture_two_finger_left">Gestur dua jari dari kiri</string>
     <string name="gesture_two_finger_right">Gestur dua jari dari kanan</string>
+    <string name="gesture_two_finger_down">Usap dua jari ke bawah</string>
     <string name="gesture_two_finger_tap_left">Ketuk dua jari di tepi kiri</string>
     <string name="gesture_two_finger_tap_right">Ketuk dua jari di tepi kanan</string>
     <string name="gesture_edge_zone">Lebar zona tepi</string>
@@ -267,7 +268,7 @@
     <string name="night_overlay_background">Latar belakang hamparan malam</string>
     <string name="night_overlay_background_black">Hitam</string>
     <string name="night_overlay_background_dark_gray">Abu-abu tua</string>
-    <string name="gestures_help">Usap atau ketuk dengan dua jari di tepi kiri atau kanan. Dua jari di area lain diteruskan ke Android Auto. Jika geser dari tepi tidak berfungsi, setel sistem ke navigasi 3 tombol.</string>
+    <string name="gestures_help">Usap atau ketuk dengan dua jari di tepi kiri atau kanan. Dua jari di area lain diteruskan ke Android Auto. Jika mengatur usap dua jari ke bawah, gestur ini berfungsi di mana saja pada layar, dan sentuhan di seluruh layar mungkin tertunda. Jika geser dari tepi tidak berfungsi, setel sistem ke navigasi 3 tombol.</string>
     <string name="gestures_reset">Setelan gestur direset</string>
     <string name="night_overlay_dismiss">Ketuk untuk kembali ke proyeksi</string>
     <string name="night_overlay_meters">%1$d m</string>

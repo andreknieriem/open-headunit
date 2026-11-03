@@ -32,6 +32,7 @@
     <string name="gesture_two_finger_long_press">Apăsare lungă cu două degete</string>
     <string name="gesture_two_finger_left">Gest cu două degete din stânga</string>
     <string name="gesture_two_finger_right">Gest cu două degete din dreapta</string>
+    <string name="gesture_two_finger_down">Glisare cu două degete în jos</string>
     <string name="gesture_two_finger_tap_left">Atingere cu două degete la marginea stângă</string>
     <string name="gesture_two_finger_tap_right">Atingere cu două degete la marginea dreaptă</string>
     <string name="gesture_edge_zone">Lățimea zonei de margine</string>
@@ -55,7 +56,7 @@
     <string name="night_overlay_background">Fundalul suprapunerii de noapte</string>
     <string name="night_overlay_background_black">Negru</string>
     <string name="night_overlay_background_dark_gray">Gri închis</string>
-    <string name="gestures_help">Glisați sau atingeți cu două degete la marginea stângă sau dreaptă. Două degete în orice alt loc sunt trimise către Android Auto. Dacă glisările de la margine nu funcționează, setați sistemul pe navigarea cu 3 butoane.</string>
+    <string name="gestures_help">Glisați sau atingeți cu două degete la marginea stângă sau dreaptă. Două degete în orice alt loc sunt trimise către Android Auto. Dacă setați glisarea cu două degete în jos, aceasta funcționează oriunde pe ecran, iar atingerile de pe tot ecranul pot fi întârziate. Dacă glisările de la margine nu funcționează, setați sistemul pe navigarea cu 3 butoane.</string>
     <string name="gestures_reset">Setările gesturilor au fost resetate</string>
     <string name="night_overlay_dismiss">Atinge pentru a reveni la proiecție</string>
     <string name="night_overlay_meters">%1$d m</string>

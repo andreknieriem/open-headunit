@@ -32,6 +32,7 @@
     <string name="gesture_two_finger_long_press">Довге натискання двома пальцями</string>
     <string name="gesture_two_finger_left">Жест двома пальцями зліва</string>
     <string name="gesture_two_finger_right">Жест двома пальцями справа</string>
+    <string name="gesture_two_finger_down">Проведення двома пальцями вниз</string>
     <string name="gesture_two_finger_tap_left">Дотик двома пальцями біля лівого краю</string>
     <string name="gesture_two_finger_tap_right">Дотик двома пальцями біля правого краю</string>
     <string name="gesture_edge_zone">Ширина зони біля краю</string>
@@ -55,7 +56,7 @@
     <string name="night_overlay_background">Тло нічного оверлея</string>
     <string name="night_overlay_background_black">Чорний</string>
     <string name="night_overlay_background_dark_gray">Темно-сірий</string>
-    <string name="gestures_help">Проведіть або торкніться двома пальцями біля лівого чи правого краю. Дотик двома пальцями в інших місцях передається в Android Auto. Якщо свайпи від краю не працюють, увімкніть у системі навігацію трьома кнопками.</string>
+    <string name="gestures_help">Проведіть або торкніться двома пальцями біля лівого чи правого краю. Дотик двома пальцями в інших місцях передається в Android Auto. Якщо ввімкнути проведення двома пальцями вниз, воно працює в будь-якому місці екрана, а дотики на всьому екрані можуть оброблятися із затримкою. Якщо свайпи від краю не працюють, увімкніть у системі навігацію трьома кнопками.</string>
     <string name="gestures_reset">Налаштування жестів скинуто</string>
     <string name="night_overlay_dismiss">Торкніться, щоб повернутися до проєкції</string>
     <string name="night_overlay_meters">%1$d м</string>

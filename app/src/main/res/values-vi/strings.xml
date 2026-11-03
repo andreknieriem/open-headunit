@@ -32,6 +32,7 @@
     <string name="gesture_two_finger_long_press">Nhấn giữ hai ngón</string>
     <string name="gesture_two_finger_left">Cử chỉ hai ngón từ bên trái</string>
     <string name="gesture_two_finger_right">Cử chỉ hai ngón từ bên phải</string>
+    <string name="gesture_two_finger_down">Vuốt hai ngón tay xuống dưới</string>
     <string name="gesture_two_finger_tap_left">Chạm hai ngón ở mép trái</string>
     <string name="gesture_two_finger_tap_right">Chạm hai ngón ở mép phải</string>
     <string name="gesture_edge_zone">Độ rộng vùng mép</string>
@@ -55,7 +56,7 @@
     <string name="night_overlay_background">Nền lớp phủ ban đêm</string>
     <string name="night_overlay_background_black">Đen</string>
     <string name="night_overlay_background_dark_gray">Xám đậm</string>
-    <string name="gestures_help">Vuốt hoặc chạm bằng hai ngón ở mép trái hoặc mép phải. Hai ngón tay ở vị trí khác sẽ được chuyển đến Android Auto. Nếu thao tác vuốt từ mép không hoạt động, hãy đặt hệ thống sang điều hướng bằng 3 nút.</string>
+    <string name="gestures_help">Vuốt hoặc chạm bằng hai ngón ở mép trái hoặc mép phải. Hai ngón tay ở vị trí khác sẽ được chuyển đến Android Auto. Nếu đặt thao tác vuốt hai ngón tay xuống dưới, thao tác này sẽ hoạt động ở mọi vị trí trên màn hình và các lần chạm trên toàn màn hình có thể bị trễ. Nếu thao tác vuốt từ mép không hoạt động, hãy đặt hệ thống sang điều hướng bằng 3 nút.</string>
     <string name="gestures_reset">Đã đặt lại cài đặt cử chỉ</string>
     <string name="night_overlay_dismiss">Chạm để quay lại chế độ chiếu</string>
     <string name="night_overlay_meters">%1$d m</string>

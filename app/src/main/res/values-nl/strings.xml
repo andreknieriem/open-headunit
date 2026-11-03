@@ -31,6 +31,7 @@
     <string name="gesture_two_finger_long_press">Lang indrukken met twee vingers</string>
     <string name="gesture_two_finger_left">Tweevingergebaar van links</string>
     <string name="gesture_two_finger_right">Tweevingergebaar van rechts</string>
+    <string name="gesture_two_finger_down">Met twee vingers omlaag vegen</string>
     <string name="gesture_two_finger_tap_left">Tikken met twee vingers aan de linkerrand</string>
     <string name="gesture_two_finger_tap_right">Tikken met twee vingers aan de rechterrand</string>
     <string name="gesture_edge_zone">Breedte van de randzone</string>
@@ -54,7 +55,7 @@
     <string name="night_overlay_background">Achtergrond van nacht-overlay</string>
     <string name="night_overlay_background_black">Zwart</string>
     <string name="night_overlay_background_dark_gray">Donkergrijs</string>
-    <string name="gestures_help">Veeg of tik met twee vingers aan de linker- of rechterrand. Twee vingers op een andere plek gaan naar Android Auto. Werken veegbewegingen vanaf de rand niet, stel dan het systeem in op navigatie met 3 knoppen.</string>
+    <string name="gestures_help">Veeg of tik met twee vingers aan de linker- of rechterrand. Twee vingers op een andere plek gaan naar Android Auto. Als je het omlaag vegen met twee vingers instelt, werkt het overal op het scherm en kunnen aanrakingen op het hele scherm vertraagd worden. Werken veegbewegingen vanaf de rand niet, stel dan het systeem in op navigatie met 3 knoppen.</string>
     <string name="gestures_reset">Gebareninstellingen gereset</string>
     <string name="night_overlay_dismiss">Tik om terug te keren naar projectie</string>
     <string name="night_overlay_meters">%1$d m</string>

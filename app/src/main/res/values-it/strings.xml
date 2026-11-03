@@ -32,6 +32,7 @@
     <string name="gesture_two_finger_long_press">Pressione prolungata con due dita</string>
     <string name="gesture_two_finger_left">Gesto a due dita da sinistra</string>
     <string name="gesture_two_finger_right">Gesto a due dita da destra</string>
+    <string name="gesture_two_finger_down">Scorrimento a due dita verso il basso</string>
     <string name="gesture_two_finger_tap_left">Tocco a due dita sul bordo sinistro</string>
     <string name="gesture_two_finger_tap_right">Tocco a due dita sul bordo destro</string>
     <string name="gesture_edge_zone">Larghezza della zona del bordo</string>
@@ -55,7 +56,7 @@
     <string name="night_overlay_background">Sfondo dell\'overlay notturno</string>
     <string name="night_overlay_background_black">Nero</string>
     <string name="night_overlay_background_dark_gray">Grigio scuro</string>
-    <string name="gestures_help">Scorri o tocca con due dita sul bordo sinistro o destro. Due dita in qualsiasi altro punto vengono inviate ad Android Auto. Se i gesti dal bordo non funzionano, imposta il sistema sulla navigazione a 3 pulsanti.</string>
+    <string name="gestures_help">Scorri o tocca con due dita sul bordo sinistro o destro. Due dita in qualsiasi altro punto vengono inviate ad Android Auto. Se imposti lo scorrimento a due dita verso il basso, funziona in qualsiasi punto dello schermo e i tocchi su tutto lo schermo possono subire ritardi. Se i gesti dal bordo non funzionano, imposta il sistema sulla navigazione a 3 pulsanti.</string>
     <string name="gestures_reset">Impostazioni gesti reimpostate</string>
     <string name="night_overlay_dismiss">Tocca per tornare alla proiezione</string>
     <string name="night_overlay_meters">%1$d m</string>

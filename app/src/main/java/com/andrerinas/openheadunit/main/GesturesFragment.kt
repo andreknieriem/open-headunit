@@ -69,6 +69,11 @@ class GesturesFragment : Fragment() {
                     action = settings.rightTwoFingerGesture
                 ),
                 gestureSetting(
+                    id = "down",
+                    titleResId = R.string.gesture_two_finger_down,
+                    action = settings.downTwoFingerGesture
+                ),
+                gestureSetting(
                     id = "leftTap",
                     titleResId = R.string.gesture_two_finger_tap_left,
                     action = settings.leftTapTwoFingerGesture
@@ -187,6 +192,7 @@ class GesturesFragment : Fragment() {
                 if (action != selected) when (id) {
                     "left" -> settings.leftTwoFingerGesture = action
                     "right" -> settings.rightTwoFingerGesture = action
+                    "down" -> settings.downTwoFingerGesture = action
                     "leftTap" -> settings.leftTapTwoFingerGesture = action
                     "rightTap" -> settings.rightTapTwoFingerGesture = action
                     "longPress" -> settings.longPressTwoFingerGesture = action

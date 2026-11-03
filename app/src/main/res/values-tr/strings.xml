@@ -33,6 +33,7 @@
     <string name="gesture_two_finger_long_press">İki parmakla uzun basma</string>
     <string name="gesture_two_finger_left">Soldan iki parmak hareketi</string>
     <string name="gesture_two_finger_right">Sağdan iki parmak hareketi</string>
+    <string name="gesture_two_finger_down">İki parmak aşağı kaydırma</string>
     <string name="gesture_two_finger_tap_left">Sol kenarda iki parmakla dokunma</string>
     <string name="gesture_two_finger_tap_right">Sağ kenarda iki parmakla dokunma</string>
     <string name="gesture_edge_zone">Kenar bölgesi genişliği</string>
@@ -56,7 +57,7 @@
     <string name="night_overlay_background">Gece katmanı arka planı</string>
     <string name="night_overlay_background_black">Siyah</string>
     <string name="night_overlay_background_dark_gray">Koyu gri</string>
-    <string name="gestures_help">Sol veya sağ kenarda iki parmakla kaydırın ya da dokunun. Başka bir yerdeki iki parmak Android Auto\'ya iletilir. Kenardan kaydırmalar çalışmazsa sistemi 3 düğmeli gezinmeye ayarlayın.</string>
+    <string name="gestures_help">Sol veya sağ kenarda iki parmakla kaydırın ya da dokunun. Başka bir yerdeki iki parmak Android Auto\'ya iletilir. İki parmakla aşağı kaydırmayı ayarlarsanız ekranın her yerinde çalışır ve tüm ekrandaki dokunuşlar gecikebilir. Kenardan kaydırmalar çalışmazsa sistemi 3 düğmeli gezinmeye ayarlayın.</string>
     <string name="gestures_reset">Hareket ayarları sıfırlandı</string>
     <string name="night_overlay_dismiss">Projeksiyona dönmek için dokunun</string>
     <string name="night_overlay_meters">%1$d m</string>

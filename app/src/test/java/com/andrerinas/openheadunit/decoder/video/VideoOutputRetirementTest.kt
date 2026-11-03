@@ -46,7 +46,7 @@ class VideoOutputRetirementTest {
             worker.start()
         }
         fun replace(): MediaCodec {
-            decoder.stop("test replacement") // bounded join must return while the native call is stuck
+            decoder.stop("test replacement") // logical retirement must not wait for the native call
             val replacement = mock(MediaCodec::class.java)
             set("codec", replacement)
             set("mWidth", 1920)
@@ -218,8 +218,8 @@ class VideoOutputRetirementTest {
         try {
             pause.await() // clock read inside the publication, after the ownership check
             stopper.start()
-            // Longer than stop's 500ms join budget: a naked check followed by state writes
-            // would let retirement finish, then this old publication overwrite the reset.
+            // A naked ownership check followed by state writes would let retirement finish,
+            // then this old publication overwrite the reset.
             assertFalse("retirement must wait for an in-flight publication", retired.await(700, TimeUnit.MILLISECONDS))
             pause.resume.countDown()
             assertTrue(retired.await(3, TimeUnit.SECONDS))

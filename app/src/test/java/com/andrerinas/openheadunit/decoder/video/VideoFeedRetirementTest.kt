@@ -49,10 +49,11 @@ class VideoFeedRetirementTest {
                 }
             }.also { set(field, it); workers.add(it); it.start() }
         }
-        fun start(codec: MediaCodec, output: Boolean = false): Thread {
+        fun start(codec: MediaCodec, output: Boolean = false, beforeWorkers: () -> Unit = {}): Thread {
             val input = ByteBuffer.allocate(4096)
             `when`(codec.dequeueInputBuffer(anyLong())).thenReturn(0)
             `when`(codec.getInputBuffer(anyInt())).thenReturn(input)
+            beforeWorkers()
             set("codec", codec)
             set("inputBuffers", arrayOf(input)) // API16 and host-stub branch
             set("codecBufferInfo", MediaCodec.BufferInfo())
@@ -69,6 +70,7 @@ class VideoFeedRetirementTest {
         override fun close() {
             decoder.stop("test cleanup")
             for (worker in workers) join(worker)
+            decoder.awaitRetirementForTest()
         }
     }
     private class NativePause {
@@ -91,13 +93,14 @@ class VideoFeedRetirementTest {
             val codec = mock(MediaCodec::class.java)
             val pause = NativePause()
             val submitted = LinkedBlockingQueue<ByteArray>()
-            f.start(codec)
-            `when`(codec.dequeueInputBuffer(anyLong())).thenAnswer { pause.block(); 0 }
-            doAnswer { call ->
-                val input = (f.get("inputBuffers") as Array<*>)[0] as ByteBuffer
-                submitted.add(ByteArray(call.getArgument(2)).also { input.duplicate().get(it) })
-                null
-            }.`when`(codec).queueInputBuffer(anyInt(), anyInt(), anyInt(), anyLong(), anyInt())
+            f.start(codec) {
+                `when`(codec.dequeueInputBuffer(anyLong())).thenAnswer { pause.block(); 0 }
+                doAnswer { call ->
+                    val input = (f.get("inputBuffers") as Array<*>)[0] as ByteBuffer
+                    submitted.add(ByteArray(call.getArgument(2)).also { input.duplicate().get(it) })
+                    null
+                }.`when`(codec).queueInputBuffer(anyInt(), anyInt(), anyInt(), anyLong(), anyInt())
+            }
             val transport = ByteArray(64) { 0x7f }
             val next = byteArrayOf(0, 0, 0, 1, 0x41, 0x33, 0x44)
             try {
@@ -149,12 +152,12 @@ class VideoFeedRetirementTest {
             f.decoder.stop("test replacement")
             val replacement = mock(MediaCodec::class.java)
             val submitted = LinkedBlockingQueue<ByteArray>()
-            f.start(replacement)
             doAnswer { call ->
                 val input = (f.get("inputBuffers") as Array<*>)[0] as ByteBuffer
                 submitted.add(ByteArray(call.getArgument(2)).also { input.duplicate().get(it) })
                 null
             }.`when`(replacement).queueInputBuffer(anyInt(), anyInt(), anyInt(), anyLong(), anyInt())
+            f.start(replacement)
             f.offer(oldFrame)
             val current = byteArrayOf(0, 0, 1, 0x41, 0x55)
             f.offer(f.prepare(current))
@@ -292,7 +295,6 @@ class VideoFeedRetirementTest {
             val codec = mock(MediaCodec::class.java)
             val dropped = CountDownLatch(1)
             val restartAtDrop = AtomicReference<Any?>()
-            f.start(codec)
             f.set("lastFrameRenderedMs", 1L)
             f.decoder.onFrameDropped = {
                 restartAtDrop.set(f.get("decoderRestartReason"))
@@ -304,6 +306,7 @@ class VideoFeedRetirementTest {
                 }
                 null
             }.`when`(codec).queueInputBuffer(anyInt(), anyInt(), anyInt(), anyLong(), anyInt())
+            f.start(codec)
             f.offer(f.prepare(idr))
             assertTrue(dropped.await(3, TimeUnit.SECONDS))
             assertEquals(if (returnFails) "input_buffer_return_failed" else null, restartAtDrop.get())
@@ -315,6 +318,7 @@ class VideoFeedRetirementTest {
                 f.decoder.decode(byteArrayOf(), 0, 0, false, VideoDecoder.CodecType.H264)
                 assertEquals(listOf("input_buffer_return_failed"), errors)
                 assertEquals(false, f.get("decoderNeedsRestart"))
+                f.decoder.awaitRetirementForTest()
                 verify(codec).stop()
                 verify(codec).release()
             }
@@ -341,6 +345,83 @@ class VideoFeedRetirementTest {
                 assertNull(f.get("decoderRestartReason"))
                 assertEquals(0L, f.get("framesFed"))
             } finally { returning.resume.countDown() }
+        }
+    }
+    @Test fun `retirement waits for both native workers without blocking surface callers or allocating replacements`() {
+        for (pauseQueue in listOf(false, true)) Fixture().use { f ->
+            val codec = mock(MediaCodec::class.java)
+            val input = NativePause()
+            val output = NativePause()
+            val disposed = CountDownLatch(1)
+            val caller = Thread.currentThread()
+            val surface = mock(android.view.Surface::class.java)
+            `when`(surface.isValid).thenReturn(true)
+            f.decoder.setSurface(surface)
+            f.set("mWidth", 800)
+            f.set("mHeight", 480)
+            `when`(codec.dequeueOutputBuffer(any(), anyLong())).thenAnswer {
+                output.block()
+                MediaCodec.INFO_TRY_AGAIN_LATER
+            }
+            doAnswer {
+                assertNotSame("native disposal must not run on the surface caller", caller, Thread.currentThread())
+                assertFalse(Thread.holdsLock(f.decoder))
+                assertFalse(Thread.holdsLock(f.get("outputPublicationLock")))
+                assertEquals(0L, input.resume.count)
+                assertTrue("both actual loops must have exited before release", f.workers.none { it.isAlive })
+                assertEquals(0L, output.resume.count)
+                disposed.countDown()
+                null
+            }.`when`(codec).release()
+            // Complete all stubbing before either worker can invoke this same mock. Mockito's
+            // when(...).thenAnswer(...) can bind the answer to a concurrent output invocation.
+            val worker = f.start(codec, output = true) {
+                if (pauseQueue) {
+                    doAnswer { input.block(); null }.`when`(codec)
+                        .queueInputBuffer(anyInt(), anyInt(), anyInt(), anyLong(), anyInt())
+                } else {
+                    `when`(codec.dequeueInputBuffer(anyLong())).thenAnswer { input.block(); 0 }
+                }
+            }
+            try {
+                f.offer(f.prepare(idr))
+                input.await()
+                output.await()
+                val stopped = CountDownLatch(1)
+                val stopper = Thread {
+                    f.decoder.detachSurfaceIfCurrent(surface, DecoderStopPolicy.REASON_SURFACE_DESTROYED)
+                    stopped.countDown()
+                }
+                stopper.start()
+                assertTrue("surface retirement must not join native workers", stopped.await(250, TimeUnit.MILLISECONDS))
+                stopper.join(3000)
+                mockStatic(MediaCodec::class.java).use { factories ->
+                    repeat(20) {
+                        val replacement = mock(android.view.Surface::class.java)
+                        `when`(replacement.isValid).thenReturn(true)
+                        f.decoder.setSurface(replacement)
+                        f.decoder.decode(idr, 0, idr.size, false, VideoDecoder.CodecType.H264)
+                        f.decoder.stop("repeated replacement")
+                    }
+                    factories.verifyNoInteractions()
+                }
+                // Exceed the old pair of 500ms joins while both native calls ignore interruption.
+                assertFalse(disposed.await(1100, TimeUnit.MILLISECONDS))
+                verify(codec, never()).stop()
+                verify(codec, never()).release()
+                input.resume.countDown()
+                f.join(worker)
+                assertFalse("output still owns the component", disposed.await(100, TimeUnit.MILLISECONDS))
+                output.resume.countDown()
+                f.decoder.awaitRetirementForTest()
+                assertEquals(0L, disposed.count)
+                verify(codec).stop()
+                verify(codec).release()
+                assertEquals(false, f.get("decoderPermanentlyFailed"))
+            } finally {
+                input.resume.countDown()
+                output.resume.countDown()
+            }
         }
     }
 }

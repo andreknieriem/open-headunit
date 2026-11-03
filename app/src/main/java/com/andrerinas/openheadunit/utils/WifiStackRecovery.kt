@@ -52,7 +52,8 @@ object WifiStackRecovery {
         // ask when the user already granted it from the settings switch; the superuser app then
         // answers from its saved policy without showing anything.
         val rootGrantedBefore = try { App.provide(context).settings.wifiRestartRootGranted } catch (e: Exception) { false }
-        if (route != OemAppManager.ExecutionBackend.ROOT && rootGrantedBefore && Shell.isAppGrantedRoot() == null) {
+        if (route != OemAppManager.ExecutionBackend.ROOT && rootGrantedBefore &&
+            LibsuAvailability.usable() && Shell.isAppGrantedRoot() == null) {
             if (requestRoot()) {
                 route = OemAppManager.ExecutionBackend.ROOT
             } else if (automatic) {

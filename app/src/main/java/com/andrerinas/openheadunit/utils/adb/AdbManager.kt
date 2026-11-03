@@ -1,5 +1,6 @@
 package com.andrerinas.openheadunit.utils.adb
 
+import com.andrerinas.openheadunit.utils.useSocket
 import android.content.Context
 import android.net.TrafficStats
 import com.andrerinas.openheadunit.utils.AppLog
@@ -33,7 +34,7 @@ object AdbManager {
 
     suspend fun isAdbPortOpen(port: Int = 5555, timeoutMs: Int = 1000): Boolean = withContext(Dispatchers.IO) {
         try {
-            Socket().use { s ->
+            Socket().useSocket { s ->
                 s.connect(InetSocketAddress("127.0.0.1", port), timeoutMs)
                 true
             }

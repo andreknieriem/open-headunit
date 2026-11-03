@@ -28,6 +28,11 @@ class TouchEventTest {
         whenever(event.actionMasked).thenReturn(action)
         assertEquals(expected, TouchEvent.motionEventToAction(event))
     }
+
+    @Test
+    fun `policy actions map to wire actions and none is a cancel`() {
+        val wire = com.andrerinas.openheadunit.input.RemoteTouchPolicy.Action.values()
+            .map { TouchEvent.pointerAction(it).number }
+        assertEquals(setOf(0, 1, 2, 5, 6), wire.toSet())
+    }
 }
-
-

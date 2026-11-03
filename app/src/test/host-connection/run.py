@@ -52,6 +52,7 @@ class QueuedDispatcher:CoroutineDispatcher(){
 }
 class CommManager {
  val context=Context();val settings=Settings();val audioDecoder=AudioDecoder();val videoDecoder=VideoDecoder()
+  val dimState=DimState()
  private val transportLifecycleLock=Any()
  private var disconnectRequested=false
  private var connectionAttempt:Any?=null
@@ -237,6 +238,7 @@ class AapAudio(decoder:AudioDecoder,private val settings:Settings){
  fun postProtocolFocusChange(stream:Int,request:Int,callback:AudioManager.OnAudioFocusChangeListener){}
 }
 class AudioConfig{val enabled=true;val staticFocus=false;val focusMode=0}
+class DimState{ fun resetForNewSession(){} }
 class VideoDecoder{var framesRenderedThisSession=0L;fun beginSession(){framesRenderedThisSession=0L};var onDecoderError:((String)->Unit)?=null;var onKeyframeStarved:(()->Unit)?=null;var onFrameDropped:(()->Unit)?=null;var onKeyframeObserved:(()->Unit)?=null;fun stop(s:String){}}
 class AapVideo{fun release(){}}
 object ProjectionHealthRecorder{fun reset(){}}

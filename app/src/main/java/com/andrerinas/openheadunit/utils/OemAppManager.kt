@@ -138,7 +138,8 @@ object OemAppManager {
         }
     }
 
-    // libsu needs API 21. Older units answer a plain `su`, so their grant is remembered here.
+    // libsu cannot load below LibsuAvailability.MIN_SDK. Those units answer a plain `su`, so
+    // their grant is remembered here.
     @Volatile
     private var legacyRootGranted = false
 
@@ -149,7 +150,7 @@ object OemAppManager {
      */
     suspend fun requestRoot(): Boolean = withContext(Dispatchers.IO) {
         try {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+            if (!LibsuAvailability.usable()) {
                 legacyRootGranted = runLegacySu("id").first == 0
                 legacyRootGranted
             } else {
@@ -163,7 +164,7 @@ object OemAppManager {
     }
 
     private fun isRootGranted(): Boolean =
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) legacyRootGranted
+        if (!LibsuAvailability.usable()) legacyRootGranted
         else Shell.isAppGrantedRoot() == true
 
     private fun runLegacySu(command: String): Pair<Int, String> {
@@ -185,7 +186,7 @@ object OemAppManager {
     suspend fun executeCommand(context: Context, command: String): Pair<Int, String> = withContext(Dispatchers.IO) {
         if (isRootGranted()) {
             try {
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) return@withContext runLegacySu(command)
+                if (!LibsuAvailability.usable()) return@withContext runLegacySu(command)
                 val result = Shell.cmd(command).exec()
                 val out = (result.out + result.err).joinToString("\n").trim()
                 return@withContext Pair(result.code, out)

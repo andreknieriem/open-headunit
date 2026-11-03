@@ -1754,9 +1754,15 @@
     <string name="wifi_scan_open_shizuku">Apri Shizuku</string>
     <string name="wifi_scan_other_help">Se l\'avvio FYT non è disponibile, usa il metodo qui sotto per avviare Shizuku.</string>
     <string name="wifi_scan_permission_explanation">L\'approvazione di Shizuku permette di mettere in pausa le ricerche e rilasciarle dopo l\'uso. È separata dai permessi di posizione e dispositivi nelle vicinanze di Android.\n\nTocca Consenti Open Headunit e approva in Shizuku.\nSe un rifiuto precedente impedisce la richiesta, consenti l\'accesso nell\'app Shizuku.</string>
+    <string name="wifi_scan_step">%1$d. %2$s</string>
+    <string name="wifi_scan_step_done">%1$d. %2$s · Fine</string>
+    <string name="wifi_scan_step_install">Installa Shizuku</string>
+    <string name="wifi_scan_step_start">Avvia il servizio Shizuku</string>
+    <string name="wifi_scan_step_allow">Consenti Open Headunit in Shizuku</string>
     <string name="wifi_scan_prepare">Configura Shizuku</string>
     <string name="wifi_scan_recovery_notice">Ripristina l\'impostazione Wi-Fi modificata per l\'ultima connessione.</string>
     <string name="wifi_scan_restore_short">Ripristina</string>
+    <string name="wifi_scan_enable_debugging">Attiva prima il debug USB nelle opzioni sviluppatore, poi torna qui. Accetta la richiesta di autorizzazione del debug all\'avvio di Shizuku.</string>
     <string name="wifi_scan_restore_system">Ripristina la scansione Wi-Fi in Android</string>
     <string name="wifi_scan_retry">Riprova</string>
     <string name="wifi_scan_section_common">Configurazione comune</string>
@@ -1808,7 +1814,7 @@
     <string name="esp32_relay_forget">Rimuovi relay Bluetooth</string>
     <string name="esp32_relay_forget_value">Cancella il dispositivo salvato</string>
     <string name="esp32_relay_pairing_header">Abbinamento dello smartphone</string>
-    <string name="esp32_relay_pairing_steps">1. Sullo smartphone, rimuovi dal Bluetooth l\'unità stessa e ogni vecchio OpenHU-BT-Relay.\n2. Accendi il relay → Cerca → seleziona OpenHU-BT-Relay-Setup → attendi che lo stato mostri "abbina OpenHU-BT-Relay" (120 s).\n3. Sullo smartphone, abbina OpenHU-BT-Relay (PIN 0000).\n4. Se qualcosa va storto, tocca Abbina smartphone.</string>
+    <string name="esp32_relay_pairing_steps">1. Sullo smartphone, rimuovi dal Bluetooth l\'unità stessa e ogni vecchio OpenHU-BT-Relay.\n2. Accendi il relay → Cerca → seleziona OpenHU-BT-Relay-Setup → attendi che lo stato mostri \"abbina OpenHU-BT-Relay\" (120 s).\n3. Sullo smartphone, abbina OpenHU-BT-Relay (PIN 0000).\n4. Se qualcosa va storto, tocca Abbina smartphone.</string>
     <string name="esp32_relay_phase_idle">Non connesso</string>
     <string name="esp32_relay_phase_connecting">Connessione in corso…</string>
     <string name="esp32_relay_phase_ready">Connesso</string>

@@ -1728,6 +1728,7 @@
     <string name="wifi_scan_help">Trợ giúp thiết lập Shizuku</string>
     <string name="wifi_scan_recovery_notice">Khôi phục cài đặt Wi-Fi đã đổi ở lần kết nối gần nhất.</string>
     <string name="wifi_scan_restore_short">Khôi phục</string>
+    <string name="wifi_scan_enable_debugging">Trước tiên, hãy bật gỡ lỗi USB trong cài đặt nhà phát triển, rồi quay lại đây. Hãy chấp nhận lời nhắc cấp quyền gỡ lỗi khi khởi chạy Shizuku.</string>
     <string name="wifi_scan_summary_recovery">Cần khôi phục cài đặt Wi-Fi trước đó</string>
     <string name="wifi_scan_summary_adb_recovery">Cần dọn dẹp ADB</string>
     <string name="wifi_scan_summary_changed">Chưa áp dụng · cài đặt Wi-Fi đã đổi ở nơi khác</string>
@@ -1742,6 +1743,11 @@
     <string name="wifi_scan_summary_install">Chưa cài đặt Shizuku</string>
     <string name="wifi_scan_status_enabled">Đã bật</string>
     <string name="wifi_scan_permission_explanation">Phê duyệt Shizuku cho phép tạm dừng quét và trả lại quyền kiểm soát sau khi dùng. Việc này tách biệt với quyền vị trí và thiết bị ở gần của Android.\n\nNhấn Cho phép Open Headunit và phê duyệt trong Shizuku.\nNếu lần từ chối trước khiến lời nhắc không hiện, hãy cho phép truy cập trong ứng dụng Shizuku.</string>
+    <string name="wifi_scan_step">%1$d. %2$s</string>
+    <string name="wifi_scan_step_done">%1$d. %2$s · Xong</string>
+    <string name="wifi_scan_step_install">Cài đặt Shizuku</string>
+    <string name="wifi_scan_step_start">Khởi chạy dịch vụ Shizuku</string>
+    <string name="wifi_scan_step_allow">Cho phép Open Headunit trong Shizuku</string>
     <string name="wifi_scan_detail_installed">Ứng dụng Shizuku: đã cài đặt</string>
     <string name="wifi_scan_detail_not_installed">Ứng dụng Shizuku: chưa cài đặt</string>
     <string name="wifi_scan_detail_running">Dịch vụ Shizuku: đang chạy</string>
@@ -1808,7 +1814,7 @@
     <string name="esp32_relay_forget">Xóa rơ-le Bluetooth</string>
     <string name="esp32_relay_forget_value">Xóa thiết bị đã lưu</string>
     <string name="esp32_relay_pairing_header">Ghép đôi điện thoại</string>
-    <string name="esp32_relay_pairing_steps">1. Trên điện thoại, xóa chính thiết bị này và mọi OpenHU-BT-Relay cũ khỏi Bluetooth.\n2. Bật rơ-le → Quét → chọn OpenHU-BT-Relay-Setup → chờ đến khi trạng thái hiện "ghép đôi OpenHU-BT-Relay" (120 giây).\n3. Trên điện thoại, ghép đôi OpenHU-BT-Relay (PIN 0000).\n4. Nếu có lỗi, hãy nhấn Ghép đôi điện thoại.</string>
+    <string name="esp32_relay_pairing_steps">1. Trên điện thoại, xóa chính thiết bị này và mọi OpenHU-BT-Relay cũ khỏi Bluetooth.\n2. Bật rơ-le → Quét → chọn OpenHU-BT-Relay-Setup → chờ đến khi trạng thái hiện \"ghép đôi OpenHU-BT-Relay\" (120 giây).\n3. Trên điện thoại, ghép đôi OpenHU-BT-Relay (PIN 0000).\n4. Nếu có lỗi, hãy nhấn Ghép đôi điện thoại.</string>
     <string name="esp32_relay_phase_idle">Chưa kết nối</string>
     <string name="esp32_relay_phase_connecting">Đang kết nối…</string>
     <string name="esp32_relay_phase_ready">Đã kết nối</string>

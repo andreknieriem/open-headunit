@@ -1721,6 +1721,7 @@
     <string name="wifi_scan_help">Shizuku kurulum yardımı</string>
     <string name="wifi_scan_recovery_notice">Son bağlantınızda değiştirilen Wi-Fi ayarını geri yükleyin.</string>
     <string name="wifi_scan_restore_short">Geri yükle</string>
+    <string name="wifi_scan_enable_debugging">Önce geliştirici ayarlarında USB hata ayıklamayı açın, ardından buraya dönün. Shizuku başlatılırken hata ayıklama yetkilendirme istemini kabul edin.</string>
     <string name="wifi_scan_summary_recovery">Önceki Wi-Fi ayarının geri yüklenmesi gerekiyor</string>
     <string name="wifi_scan_summary_adb_recovery">ADB temizliği gerekiyor</string>
     <string name="wifi_scan_summary_changed">Uygulanmadı · Wi-Fi ayarı başka yerde değiştirildi</string>
@@ -1735,6 +1736,11 @@
     <string name="wifi_scan_summary_install">Shizuku yüklü değil</string>
     <string name="wifi_scan_status_enabled">Açık</string>
     <string name="wifi_scan_permission_explanation">Shizuku onayı, taramaların duraklatılıp kullanımdan sonra serbest bırakılmasını sağlar. Android konum ve yakındaki cihazlar izinlerinden ayrıdır.\n\nOpen Headunit\'e izin ver\'e dokunun ve Shizuku\'da onaylayın.\nÖnceki bir ret istemin çıkmasını engelliyorsa erişime Shizuku uygulamasından izin verin.</string>
+    <string name="wifi_scan_step">%1$d. %2$s</string>
+    <string name="wifi_scan_step_done">%1$d. %2$s · Bitti</string>
+    <string name="wifi_scan_step_install">Shizuku\'yu yükle</string>
+    <string name="wifi_scan_step_start">Shizuku hizmetini başlat</string>
+    <string name="wifi_scan_step_allow">Shizuku\'da Open Headunit\'e izin ver</string>
     <string name="wifi_scan_detail_installed">Shizuku uygulaması: yüklü</string>
     <string name="wifi_scan_detail_not_installed">Shizuku uygulaması: yüklü değil</string>
     <string name="wifi_scan_detail_running">Shizuku hizmeti: çalışıyor</string>
@@ -1801,7 +1807,7 @@
     <string name="esp32_relay_forget">Bluetooth rölesini kaldır</string>
     <string name="esp32_relay_forget_value">Kayıtlı cihazı temizle</string>
     <string name="esp32_relay_pairing_header">Telefon eşleştirme</string>
-    <string name="esp32_relay_pairing_steps">1. Telefonda Bluetooth\'tan ünitenin kendisini ve eski OpenHU-BT-Relay kayıtlarını kaldırın.\n2. Röleyi açın → Tara → OpenHU-BT-Relay-Setup\'ı seçin → durum "OpenHU-BT-Relay eşleştir" gösterene kadar bekleyin (120 sn).\n3. Telefonda OpenHU-BT-Relay ile eşleşin (PIN 0000).\n4. Bir sorun olursa Telefonu eşleştir\'e dokunun.</string>
+    <string name="esp32_relay_pairing_steps">1. Telefonda Bluetooth\'tan ünitenin kendisini ve eski OpenHU-BT-Relay kayıtlarını kaldırın.\n2. Röleyi açın → Tara → OpenHU-BT-Relay-Setup\'ı seçin → durum \"OpenHU-BT-Relay eşleştir\" gösterene kadar bekleyin (120 sn).\n3. Telefonda OpenHU-BT-Relay ile eşleşin (PIN 0000).\n4. Bir sorun olursa Telefonu eşleştir\'e dokunun.</string>
     <string name="esp32_relay_phase_idle">Bağlı değil</string>
     <string name="esp32_relay_phase_connecting">Bağlanıyor…</string>
     <string name="esp32_relay_phase_ready">Bağlandı</string>

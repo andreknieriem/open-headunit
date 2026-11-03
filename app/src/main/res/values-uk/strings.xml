@@ -1729,6 +1729,7 @@
     <string name="wifi_scan_help">Довідка з налаштування Shizuku</string>
     <string name="wifi_scan_recovery_notice">Відновіть налаштування Wi-Fi, змінене під час останнього підключення.</string>
     <string name="wifi_scan_restore_short">Відновити</string>
+    <string name="wifi_scan_enable_debugging">Спершу ввімкніть налагодження через USB у налаштуваннях розробника, потім поверніться сюди. Під час запуску Shizuku підтвердьте запит на дозвіл налагодження.</string>
     <string name="wifi_scan_summary_recovery">Потрібно відновити попереднє налаштування Wi-Fi</string>
     <string name="wifi_scan_summary_adb_recovery">Потрібне очищення ADB</string>
     <string name="wifi_scan_summary_changed">Не застосовано · налаштування Wi-Fi змінено деінде</string>
@@ -1743,6 +1744,11 @@
     <string name="wifi_scan_summary_install">Shizuku не установлено</string>
     <string name="wifi_scan_status_enabled">Увімкнено</string>
     <string name="wifi_scan_permission_explanation">Дозвіл Shizuku дає змогу призупиняти пошук і повертати керування після використання. Він не пов’язаний з дозволами Android на геодані та пристрої поблизу.\n\nТоркніться «Дозволити Open Headunit» і підтвердьте в Shizuku.\nЯкщо запит не з’являється через попередню відмову, дозвольте доступ у додатку Shizuku.</string>
+    <string name="wifi_scan_step">%1$d. %2$s</string>
+    <string name="wifi_scan_step_done">%1$d. %2$s · Готово</string>
+    <string name="wifi_scan_step_install">Установити Shizuku</string>
+    <string name="wifi_scan_step_start">Запустити службу Shizuku</string>
+    <string name="wifi_scan_step_allow">Дозволити Open Headunit у Shizuku</string>
     <string name="wifi_scan_detail_installed">Додаток Shizuku: установлено</string>
     <string name="wifi_scan_detail_not_installed">Додаток Shizuku: не установлено</string>
     <string name="wifi_scan_detail_running">Служба Shizuku: працює</string>

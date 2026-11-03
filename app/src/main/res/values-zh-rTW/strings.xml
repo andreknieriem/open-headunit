@@ -1724,6 +1724,7 @@
     <string name="wifi_scan_help">Shizuku 設定說明</string>
     <string name="wifi_scan_recovery_notice">還原上次連線時變更的 Wi-Fi 設定。</string>
     <string name="wifi_scan_restore_short">還原</string>
+    <string name="wifi_scan_enable_debugging">請先在開發人員設定中開啟 USB 偵錯，再回到此處。啟動 Shizuku 時，若出現偵錯授權提示，請接受。</string>
     <string name="wifi_scan_summary_recovery">需要還原先前的 Wi-Fi 設定</string>
     <string name="wifi_scan_summary_adb_recovery">需要清理 ADB</string>
     <string name="wifi_scan_summary_changed">未套用 · Wi-Fi 設定已在別處變更</string>
@@ -1738,6 +1739,11 @@
     <string name="wifi_scan_summary_install">未安裝 Shizuku</string>
     <string name="wifi_scan_status_enabled">已開啟</string>
     <string name="wifi_scan_permission_explanation">Shizuku 核准後，才能暫停掃描並在使用後釋放。這與 Android 的位置和鄰近裝置權限無關。\n\n輕觸「允許 Open Headunit」，然後在 Shizuku 中核准。\n若先前的拒絕導致不再跳出提示，請在 Shizuku 應用程式中允許存取。</string>
+    <string name="wifi_scan_step">%1$d. %2$s</string>
+    <string name="wifi_scan_step_done">%1$d. %2$s · 完成</string>
+    <string name="wifi_scan_step_install">安裝 Shizuku</string>
+    <string name="wifi_scan_step_start">啟動 Shizuku 服務</string>
+    <string name="wifi_scan_step_allow">在 Shizuku 中允許 Open Headunit</string>
     <string name="wifi_scan_detail_installed">Shizuku 應用程式：已安裝</string>
     <string name="wifi_scan_detail_not_installed">Shizuku 應用程式：未安裝</string>
     <string name="wifi_scan_detail_running">Shizuku 服務：執行中</string>

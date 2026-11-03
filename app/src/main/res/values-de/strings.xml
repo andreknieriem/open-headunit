@@ -1754,9 +1754,15 @@
     <string name="wifi_scan_open_shizuku">Shizuku öffnen</string>
     <string name="wifi_scan_other_help">Ist der FYT-Start nicht verfügbar, starte Shizuku mit der Methode weiter unten.</string>
     <string name="wifi_scan_permission_explanation">Mit der Shizuku-Freigabe können Suchen pausiert und nach der Nutzung wieder freigegeben werden. Sie ist unabhängig von den Android-Berechtigungen für Standort und Geräte in der Nähe.\n\nTippe auf „Open Headunit erlauben“ und bestätige in Shizuku.\nVerhindert eine frühere Ablehnung die Abfrage, erlaube den Zugriff in der Shizuku-App.</string>
+    <string name="wifi_scan_step">%1$d. %2$s</string>
+    <string name="wifi_scan_step_done">%1$d. %2$s · Fertig</string>
+    <string name="wifi_scan_step_install">Shizuku installieren</string>
+    <string name="wifi_scan_step_start">Shizuku-Dienst starten</string>
+    <string name="wifi_scan_step_allow">Open Headunit in Shizuku erlauben</string>
     <string name="wifi_scan_prepare">Shizuku einrichten</string>
     <string name="wifi_scan_recovery_notice">Stelle die WLAN-Einstellung wieder her, die für deine letzte Verbindung geändert wurde.</string>
     <string name="wifi_scan_restore_short">Wiederherstellen</string>
+    <string name="wifi_scan_enable_debugging">Aktiviere zuerst USB-Debugging in den Entwickleroptionen und kehre dann hierher zurück. Bestätige beim Start von Shizuku die Debugging-Autorisierung.</string>
     <string name="wifi_scan_restore_system">WLAN-Suche in Android wiederherstellen</string>
     <string name="wifi_scan_retry">Erneut versuchen</string>
     <string name="wifi_scan_section_common">Allgemeine Einrichtung</string>

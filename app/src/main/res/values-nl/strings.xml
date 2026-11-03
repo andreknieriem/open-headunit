@@ -1756,9 +1756,15 @@
     <string name="wifi_scan_open_shizuku">Shizuku openen</string>
     <string name="wifi_scan_other_help">Is de FYT-start niet beschikbaar, gebruik dan de methode hieronder om Shizuku te starten.</string>
     <string name="wifi_scan_permission_explanation">Met goedkeuring in Shizuku kan zoeken worden gepauzeerd en na gebruik worden vrijgegeven. Dit staat los van de Android-rechten voor locatie en apparaten in de buurt.\n\nTik op Open Headunit toestaan en keur goed in Shizuku.\nBlokkeert een eerdere weigering het verzoek, sta toegang dan toe in de Shizuku-app.</string>
+    <string name="wifi_scan_step">%1$d. %2$s</string>
+    <string name="wifi_scan_step_done">%1$d. %2$s · Klaar</string>
+    <string name="wifi_scan_step_install">Shizuku installeren</string>
+    <string name="wifi_scan_step_start">Shizuku-service starten</string>
+    <string name="wifi_scan_step_allow">Open Headunit toestaan in Shizuku</string>
     <string name="wifi_scan_prepare">Shizuku instellen</string>
     <string name="wifi_scan_recovery_notice">Herstel de wifi-instelling die voor je laatste verbinding is gewijzigd.</string>
     <string name="wifi_scan_restore_short">Herstellen</string>
+    <string name="wifi_scan_enable_debugging">Zet eerst USB-foutopsporing aan in de ontwikkelaarsinstellingen en kom dan hier terug. Accepteer het autorisatieverzoek voor foutopsporing bij het starten van Shizuku.</string>
     <string name="wifi_scan_restore_system">Wifi-scannen in Android herstellen</string>
     <string name="wifi_scan_retry">Opnieuw proberen</string>
     <string name="wifi_scan_section_common">Algemene installatie</string>
@@ -1810,7 +1816,7 @@
     <string name="esp32_relay_forget">Bluetooth-relay verwijderen</string>
     <string name="esp32_relay_forget_value">Het opgeslagen apparaat wissen</string>
     <string name="esp32_relay_pairing_header">Telefoon koppelen</string>
-    <string name="esp32_relay_pairing_steps">1. Verwijder op de telefoon de headunit zelf en oude OpenHU-BT-Relay-items uit Bluetooth.\n2. Zet de relay aan → Scannen → kies OpenHU-BT-Relay-Setup → wacht tot de status "koppel OpenHU-BT-Relay" toont (120 s).\n3. Koppel op de telefoon OpenHU-BT-Relay (pincode 0000).\n4. Gaat er iets mis, tik dan op Telefoon koppelen.</string>
+    <string name="esp32_relay_pairing_steps">1. Verwijder op de telefoon de headunit zelf en oude OpenHU-BT-Relay-items uit Bluetooth.\n2. Zet de relay aan → Scannen → kies OpenHU-BT-Relay-Setup → wacht tot de status \"koppel OpenHU-BT-Relay\" toont (120 s).\n3. Koppel op de telefoon OpenHU-BT-Relay (pincode 0000).\n4. Gaat er iets mis, tik dan op Telefoon koppelen.</string>
     <string name="esp32_relay_phase_idle">Niet verbonden</string>
     <string name="esp32_relay_phase_connecting">Verbinden…</string>
     <string name="esp32_relay_phase_ready">Verbonden</string>

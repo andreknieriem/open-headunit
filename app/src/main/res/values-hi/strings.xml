@@ -1797,9 +1797,15 @@
     <string name="wifi_scan_open_shizuku">Shizuku खोलें</string>
     <string name="wifi_scan_other_help">FYT स्टार्टअप उपलब्ध न हो, तो Shizuku शुरू करने के लिए नीचे दिया तरीका अपनाएँ।</string>
     <string name="wifi_scan_permission_explanation">Shizuku की मंज़ूरी से खोज को रोका और इस्तेमाल के बाद छोड़ा जा सकता है। यह Android की लोकेशन और आस-पास के डिवाइस की अनुमतियों से अलग है।\n\n\"Open Headunit को अनुमति दें\" पर टैप करें और Shizuku में मंज़ूरी दें।\nपहले अस्वीकार करने की वजह से संदेश न दिखे, तो Shizuku ऐप में पहुँच की अनुमति दें।</string>
+    <string name="wifi_scan_step">%1$d. %2$s</string>
+    <string name="wifi_scan_step_done">%1$d. %2$s · हो गया</string>
+    <string name="wifi_scan_step_install">Shizuku इंस्टॉल करें</string>
+    <string name="wifi_scan_step_start">Shizuku सेवा शुरू करें</string>
+    <string name="wifi_scan_step_allow">Shizuku में Open Headunit को अनुमति दें</string>
     <string name="wifi_scan_prepare">Shizuku सेट अप करें</string>
     <string name="wifi_scan_recovery_notice">आपके पिछले कनेक्शन के लिए बदली गई वाई-फ़ाई सेटिंग बहाल करें।</string>
     <string name="wifi_scan_restore_short">बहाल करें</string>
+    <string name="wifi_scan_enable_debugging">पहले डेवलपर सेटिंग में USB डिबगिंग चालू करें, फिर यहाँ लौटें। Shizuku शुरू करते समय डिबगिंग अनुमति का संदेश स्वीकार करें।</string>
     <string name="wifi_scan_restore_system">Android में वाई-फ़ाई स्कैनिंग बहाल करें</string>
     <string name="wifi_scan_retry">फिर कोशिश करें</string>
     <string name="wifi_scan_section_common">सामान्य सेटअप</string>
@@ -1852,7 +1858,7 @@
     <string name="esp32_relay_forget">ब्लूटूथ रिले हटाएँ</string>
     <string name="esp32_relay_forget_value">सहेजा गया डिवाइस साफ़ करें</string>
     <string name="esp32_relay_pairing_header">फ़ोन पेयरिंग</string>
-    <string name="esp32_relay_pairing_steps">1. फ़ोन पर ब्लूटूथ से हेड यूनिट को और पुराने OpenHU-BT-Relay को हटाएँ।\n2. रिले चालू करें → स्कैन करें → OpenHU-BT-Relay-Setup चुनें → स्थिति में "OpenHU-BT-Relay पेयर करें" दिखने तक रुकें (120 सेकंड)।\n3. फ़ोन पर OpenHU-BT-Relay पेयर करें (PIN 0000)।\n4. कुछ गड़बड़ हो तो फ़ोन पेयर करें पर टैप करें।</string>
+    <string name="esp32_relay_pairing_steps">1. फ़ोन पर ब्लूटूथ से हेड यूनिट को और पुराने OpenHU-BT-Relay को हटाएँ।\n2. रिले चालू करें → स्कैन करें → OpenHU-BT-Relay-Setup चुनें → स्थिति में \"OpenHU-BT-Relay पेयर करें\" दिखने तक रुकें (120 सेकंड)।\n3. फ़ोन पर OpenHU-BT-Relay पेयर करें (PIN 0000)।\n4. कुछ गड़बड़ हो तो फ़ोन पेयर करें पर टैप करें।</string>
     <string name="esp32_relay_phase_idle">कनेक्ट नहीं है</string>
     <string name="esp32_relay_phase_connecting">कनेक्ट हो रहा है…</string>
     <string name="esp32_relay_phase_ready">कनेक्ट हो गया</string>

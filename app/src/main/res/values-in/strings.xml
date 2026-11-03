@@ -1799,9 +1799,15 @@
     <string name="wifi_scan_open_shizuku">Buka Shizuku</string>
     <string name="wifi_scan_other_help">Jika pemulaian FYT tidak tersedia, gunakan metode di bawah untuk memulai Shizuku.</string>
     <string name="wifi_scan_permission_explanation">Persetujuan Shizuku memungkinkan pencarian dijeda dan dilepas setelah dipakai. Ini terpisah dari izin lokasi dan perangkat di sekitar Android.\n\nKetuk Izinkan Open Headunit dan setujui di Shizuku.\nJika penolakan sebelumnya mencegah permintaan muncul, izinkan akses di aplikasi Shizuku.</string>
+    <string name="wifi_scan_step">%1$d. %2$s</string>
+    <string name="wifi_scan_step_done">%1$d. %2$s · Selesai</string>
+    <string name="wifi_scan_step_install">Instal Shizuku</string>
+    <string name="wifi_scan_step_start">Mulai layanan Shizuku</string>
+    <string name="wifi_scan_step_allow">Izinkan Open Headunit di Shizuku</string>
     <string name="wifi_scan_prepare">Siapkan Shizuku</string>
     <string name="wifi_scan_recovery_notice">Pulihkan pengaturan Wi-Fi yang diubah untuk koneksi terakhir Anda.</string>
     <string name="wifi_scan_restore_short">Pulihkan</string>
+    <string name="wifi_scan_enable_debugging">Aktifkan debugging USB di pengaturan pengembang terlebih dahulu, lalu kembali ke sini. Setujui permintaan otorisasi debugging saat memulai Shizuku.</string>
     <string name="wifi_scan_restore_system">Pulihkan pemindaian Wi-Fi di Android</string>
     <string name="wifi_scan_retry">Coba lagi</string>
     <string name="wifi_scan_section_common">Penyiapan umum</string>
@@ -1853,7 +1859,7 @@
     <string name="esp32_relay_forget">Hapus relay Bluetooth</string>
     <string name="esp32_relay_forget_value">Hapus perangkat tersimpan</string>
     <string name="esp32_relay_pairing_header">Pemasangan ponsel</string>
-    <string name="esp32_relay_pairing_steps">1. Di ponsel, hapus unit ini sendiri dan OpenHU-BT-Relay lama dari Bluetooth.\n2. Nyalakan relay → Pindai → pilih OpenHU-BT-Relay-Setup → tunggu hingga status menampilkan "pasangkan OpenHU-BT-Relay" (120 dtk).\n3. Di ponsel, pasangkan OpenHU-BT-Relay (PIN 0000).\n4. Jika ada masalah, ketuk Pasangkan ponsel.</string>
+    <string name="esp32_relay_pairing_steps">1. Di ponsel, hapus unit ini sendiri dan OpenHU-BT-Relay lama dari Bluetooth.\n2. Nyalakan relay → Pindai → pilih OpenHU-BT-Relay-Setup → tunggu hingga status menampilkan \"pasangkan OpenHU-BT-Relay\" (120 dtk).\n3. Di ponsel, pasangkan OpenHU-BT-Relay (PIN 0000).\n4. Jika ada masalah, ketuk Pasangkan ponsel.</string>
     <string name="esp32_relay_phase_idle">Tidak terhubung</string>
     <string name="esp32_relay_phase_connecting">Menghubungkan…</string>
     <string name="esp32_relay_phase_ready">Terhubung</string>

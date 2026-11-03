@@ -1751,9 +1751,15 @@
     <string name="wifi_scan_open_shizuku">Shizuku megnyitása</string>
     <string name="wifi_scan_other_help">Ha az FYT-indítás nem érhető el, az alábbi módszerrel indítsa el a Shizukut.</string>
     <string name="wifi_scan_permission_explanation">A Shizuku jóváhagyása lehetővé teszi a keresések szüneteltetését, majd használat után felszabadítását. Ez független az Android helyadat- és közeli eszközökre vonatkozó engedélyeitől.\n\nKoppintson az „Open Headunit engedélyezése” gombra, és hagyja jóvá a Shizukuban.\nHa egy korábbi elutasítás miatt nem jelenik meg a kérés, engedélyezze a hozzáférést a Shizuku alkalmazásban.</string>
+    <string name="wifi_scan_step">%1$d. %2$s</string>
+    <string name="wifi_scan_step_done">%1$d. %2$s · Kész</string>
+    <string name="wifi_scan_step_install">Shizuku telepítése</string>
+    <string name="wifi_scan_step_start">A Shizuku szolgáltatás indítása</string>
+    <string name="wifi_scan_step_allow">Open Headunit engedélyezése a Shizukuban</string>
     <string name="wifi_scan_prepare">Shizuku beállítása</string>
     <string name="wifi_scan_recovery_notice">Állítsa vissza az utolsó kapcsolathoz módosított Wi-Fi-beállítást.</string>
     <string name="wifi_scan_restore_short">Visszaállítás</string>
+    <string name="wifi_scan_enable_debugging">Először kapcsolja be az USB-hibakeresést a fejlesztői beállításokban, majd térjen vissza ide. A Shizuku indításakor fogadja el a hibakeresési engedélykérést.</string>
     <string name="wifi_scan_restore_system">Wi-Fi-keresés visszaállítása az Androidban</string>
     <string name="wifi_scan_retry">Újra</string>
     <string name="wifi_scan_section_common">Általános beállítás</string>

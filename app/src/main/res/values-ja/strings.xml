@@ -1754,9 +1754,15 @@
     <string name="wifi_scan_open_shizuku">Shizukuを開く</string>
     <string name="wifi_scan_other_help">FYT起動を利用できない場合は、下の方法でShizukuを起動してください。</string>
     <string name="wifi_scan_permission_explanation">Shizukuで承認すると、検索を一時停止し、使用後に解除できるようになります。これは、Androidの位置情報や付近のデバイスの権限とは別です。\n\n「Open Headunitを許可」をタップし、Shizukuで承認してください。\n以前に拒否したために確認が表示されない場合は、Shizukuアプリでアクセスを許可してください。</string>
+    <string name="wifi_scan_step">%1$d. %2$s</string>
+    <string name="wifi_scan_step_done">%1$d. %2$s · 完了</string>
+    <string name="wifi_scan_step_install">Shizukuをインストール</string>
+    <string name="wifi_scan_step_start">Shizukuサービスを起動</string>
+    <string name="wifi_scan_step_allow">ShizukuでOpen Headunitを許可</string>
     <string name="wifi_scan_prepare">Shizukuのセットアップ</string>
     <string name="wifi_scan_recovery_notice">前回の接続で変更したWi-Fi設定を元に戻します。</string>
     <string name="wifi_scan_restore_short">元に戻す</string>
+    <string name="wifi_scan_enable_debugging">先に開発者向けオプションでUSBデバッグを有効にしてから、ここに戻ってください。Shizukuの起動時にデバッグ許可の確認が表示されたら許可してください。</string>
     <string name="wifi_scan_restore_system">AndroidのWi-Fiスキャンを元に戻す</string>
     <string name="wifi_scan_retry">再試行</string>
     <string name="wifi_scan_section_common">共通のセットアップ</string>

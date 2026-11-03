@@ -1752,9 +1752,15 @@
     <string name="wifi_scan_open_shizuku">فتح Shizuku</string>
     <string name="wifi_scan_other_help">إذا لم يتوفر تشغيل FYT، فاستخدم الطريقة أدناه لتشغيل Shizuku.</string>
     <string name="wifi_scan_permission_explanation">تتيح موافقة Shizuku إيقاف عمليات البحث مؤقتًا وتحريرها بعد الاستخدام. وهي منفصلة عن أذونات الموقع والأجهزة القريبة في Android.\n\nانقر على «السماح لـ Open Headunit» ووافق في Shizuku.\nإذا منع رفض سابق ظهور المطالبة، فاسمح بالوصول في تطبيق Shizuku.</string>
+    <string name="wifi_scan_step">%1$d. %2$s</string>
+    <string name="wifi_scan_step_done">%1$d. %2$s · تم</string>
+    <string name="wifi_scan_step_install">تثبيت Shizuku</string>
+    <string name="wifi_scan_step_start">تشغيل خدمة Shizuku</string>
+    <string name="wifi_scan_step_allow">السماح لـ Open Headunit في Shizuku</string>
     <string name="wifi_scan_prepare">إعداد Shizuku</string>
     <string name="wifi_scan_recovery_notice">استعد إعداد Wi-Fi الذي تغيّر لآخر اتصال لك.</string>
     <string name="wifi_scan_restore_short">استعادة</string>
+    <string name="wifi_scan_enable_debugging">فعّل تصحيح USB في إعدادات المطوّر أولًا، ثم عد إلى هنا. اقبل مطالبة تفويض التصحيح عند بدء Shizuku.</string>
     <string name="wifi_scan_restore_system">استعادة البحث عن Wi-Fi في Android</string>
     <string name="wifi_scan_retry">إعادة المحاولة</string>
     <string name="wifi_scan_section_common">الإعداد المشترك</string>
@@ -1807,7 +1813,7 @@
     <string name="esp32_relay_forget">إزالة مرحّل البلوتوث</string>
     <string name="esp32_relay_forget_value">مسح الجهاز المحفوظ</string>
     <string name="esp32_relay_pairing_header">إقران الهاتف</string>
-    <string name="esp32_relay_pairing_steps">1. على الهاتف، أزل الجهاز نفسه وأي OpenHU-BT-Relay قديم من البلوتوث.\n2. شغّل المرحّل ← بحث ← اختر OpenHU-BT-Relay-Setup ← انتظر حتى تعرض الحالة "إقران OpenHU-BT-Relay" (120 ثانية).\n3. على الهاتف، أقرن OpenHU-BT-Relay (PIN 0000).\n4. إذا حدث خطأ، المس إقران الهاتف.</string>
+    <string name="esp32_relay_pairing_steps">1. على الهاتف، أزل الجهاز نفسه وأي OpenHU-BT-Relay قديم من البلوتوث.\n2. شغّل المرحّل ← بحث ← اختر OpenHU-BT-Relay-Setup ← انتظر حتى تعرض الحالة \"إقران OpenHU-BT-Relay\" (120 ثانية).\n3. على الهاتف، أقرن OpenHU-BT-Relay (PIN 0000).\n4. إذا حدث خطأ، المس إقران الهاتف.</string>
     <string name="esp32_relay_phase_idle">غير متصل</string>
     <string name="esp32_relay_phase_connecting">جارٍ الاتصال…</string>
     <string name="esp32_relay_phase_ready">متصل</string>

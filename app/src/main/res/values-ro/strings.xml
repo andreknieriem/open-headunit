@@ -1724,6 +1724,7 @@
     <string name="wifi_scan_help">Ajutor pentru configurarea Shizuku</string>
     <string name="wifi_scan_recovery_notice">Restabiliți setarea Wi-Fi modificată la ultima conexiune.</string>
     <string name="wifi_scan_restore_short">Restabilește</string>
+    <string name="wifi_scan_enable_debugging">Activați mai întâi depanarea USB în setările pentru dezvoltatori, apoi reveniți aici. Acceptați solicitarea de autorizare a depanării la pornirea Shizuku.</string>
     <string name="wifi_scan_summary_recovery">Setarea Wi-Fi anterioară trebuie restabilită</string>
     <string name="wifi_scan_summary_adb_recovery">Este necesară curățarea ADB</string>
     <string name="wifi_scan_summary_changed">Neaplicat · setarea Wi-Fi a fost modificată în altă parte</string>
@@ -1738,6 +1739,11 @@
     <string name="wifi_scan_summary_install">Shizuku nu este instalat</string>
     <string name="wifi_scan_status_enabled">Activat</string>
     <string name="wifi_scan_permission_explanation">Aprobarea Shizuku permite întreruperea și eliberarea căutărilor după utilizare. Este separată de permisiunile Android pentru locație și dispozitive din apropiere.\n\nAtingeți Permiteți Open Headunit și aprobați în Shizuku.\nDacă o refuzare anterioară împiedică apariția solicitării, permiteți accesul în aplicația Shizuku.</string>
+    <string name="wifi_scan_step">%1$d. %2$s</string>
+    <string name="wifi_scan_step_done">%1$d. %2$s · Gata</string>
+    <string name="wifi_scan_step_install">Instalați Shizuku</string>
+    <string name="wifi_scan_step_start">Porniți serviciul Shizuku</string>
+    <string name="wifi_scan_step_allow">Permiteți Open Headunit în Shizuku</string>
     <string name="wifi_scan_detail_installed">Aplicația Shizuku: instalată</string>
     <string name="wifi_scan_detail_not_installed">Aplicația Shizuku: neinstalată</string>
     <string name="wifi_scan_detail_running">Serviciul Shizuku: pornit</string>

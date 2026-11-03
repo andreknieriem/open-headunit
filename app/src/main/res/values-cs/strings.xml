@@ -1751,9 +1751,15 @@
     <string name="wifi_scan_open_shizuku">Otevřít Shizuku</string>
     <string name="wifi_scan_other_help">Pokud spuštění FYT není dostupné, spusťte Shizuku metodou níže.</string>
     <string name="wifi_scan_permission_explanation">Schválení v Shizuku umožňuje vyhledávání pozastavit a po použití uvolnit. Je nezávislé na oprávněních Androidu k poloze a zařízením v okolí.\n\nKlepněte na Povolit Open Headunit a schvalte v Shizuku.\nPokud výzvu blokuje dřívější zamítnutí, povolte přístup v aplikaci Shizuku.</string>
+    <string name="wifi_scan_step">%1$d. %2$s</string>
+    <string name="wifi_scan_step_done">%1$d. %2$s · Hotovo</string>
+    <string name="wifi_scan_step_install">Nainstalovat Shizuku</string>
+    <string name="wifi_scan_step_start">Spustit službu Shizuku</string>
+    <string name="wifi_scan_step_allow">Povolit Open Headunit v Shizuku</string>
     <string name="wifi_scan_prepare">Nastavit Shizuku</string>
     <string name="wifi_scan_recovery_notice">Obnovte nastavení Wi-Fi změněné pro vaše poslední připojení.</string>
     <string name="wifi_scan_restore_short">Obnovit</string>
+    <string name="wifi_scan_enable_debugging">Nejprve zapněte ladění přes USB v nastavení pro vývojáře a vraťte se sem. Při spouštění Shizuku potvrďte výzvu k autorizaci ladění.</string>
     <string name="wifi_scan_restore_system">Obnovit vyhledávání Wi-Fi v Androidu</string>
     <string name="wifi_scan_retry">Zkusit znovu</string>
     <string name="wifi_scan_section_common">Společné nastavení</string>

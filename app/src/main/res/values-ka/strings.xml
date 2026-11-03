@@ -1737,9 +1737,15 @@
     <string name="wifi_scan_open_shizuku">Shizuku-ს გახსნა</string>
     <string name="wifi_scan_other_help">თუ FYT-ის გაშვება მიუწვდომელია, Shizuku-ს გასაშვებად გამოიყენეთ ქვემოთ მოცემული მეთოდი.</string>
     <string name="wifi_scan_permission_explanation">Shizuku-ში დადასტურება საშუალებას იძლევა ძიება შეჩერდეს და გამოყენების შემდეგ გათავისუფლდეს. ეს Android-ის მდებარეობისა და ახლომდებარე მოწყობილობების ნებართვებისგან განცალკევებულია.\n\nშეეხეთ „Open Headunit-ის დაშვება“ და დაადასტურეთ Shizuku-ში.\nთუ ადრინდელი უარის გამო მოთხოვნა არ ჩნდება, წვდომა Shizuku აპში დაუშვით.</string>
+    <string name="wifi_scan_step">%1$d. %2$s</string>
+    <string name="wifi_scan_step_done">%1$d. %2$s · მზადაა</string>
+    <string name="wifi_scan_step_install">Shizuku-ს დაყენება</string>
+    <string name="wifi_scan_step_start">Shizuku სერვისის გაშვება</string>
+    <string name="wifi_scan_step_allow">Open Headunit-ის დაშვება Shizuku-ში</string>
     <string name="wifi_scan_prepare">Shizuku-ს მომზადება</string>
     <string name="wifi_scan_recovery_notice">აღადგინეთ Wi-Fi-ის პარამეტრი, რომელიც ბოლო კავშირისთვის შეიცვალა.</string>
     <string name="wifi_scan_restore_short">აღდგენა</string>
+    <string name="wifi_scan_enable_debugging">ჯერ დეველოპერის პარამეტრებში ჩართეთ USB გამართვა, შემდეგ დაბრუნდით აქ. Shizuku-ს გაშვებისას დაადასტურეთ გამართვის ავტორიზაციის მოთხოვნა.</string>
     <string name="wifi_scan_restore_system">Wi-Fi სკანირების აღდგენა Android-ში</string>
     <string name="wifi_scan_retry">ხელახლა ცდა</string>
     <string name="wifi_scan_section_common">საერთო დაყენება</string>

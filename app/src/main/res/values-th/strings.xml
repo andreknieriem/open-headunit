@@ -1779,6 +1779,7 @@
     <string name="wifi_scan_help">วิธีใช้การตั้งค่า Shizuku</string>
     <string name="wifi_scan_recovery_notice">คืนค่าการตั้งค่า Wi-Fi ที่เปลี่ยนไปในการเชื่อมต่อครั้งล่าสุด</string>
     <string name="wifi_scan_restore_short">คืนค่า</string>
+    <string name="wifi_scan_enable_debugging">เปิดการแก้ไขข้อบกพร่อง USB ในการตั้งค่าสำหรับนักพัฒนาซอฟต์แวร์ก่อน แล้วกลับมาที่นี่ ยอมรับข้อความขออนุญาตแก้ไขข้อบกพร่องเมื่อเริ่ม Shizuku</string>
     <string name="wifi_scan_summary_recovery">ต้องคืนค่าการตั้งค่า Wi-Fi ก่อนหน้า</string>
     <string name="wifi_scan_summary_adb_recovery">ต้องล้าง ADB</string>
     <string name="wifi_scan_summary_changed">ยังไม่ได้ใช้ · การตั้งค่า Wi-Fi ถูกเปลี่ยนที่อื่น</string>
@@ -1793,6 +1794,11 @@
     <string name="wifi_scan_summary_install">ยังไม่ได้ติดตั้ง Shizuku</string>
     <string name="wifi_scan_status_enabled">เปิดอยู่</string>
     <string name="wifi_scan_permission_explanation">การอนุมัติใน Shizuku ทำให้หยุดการสแกนชั่วคราวและคืนการควบคุมหลังใช้งานได้ แยกจากสิทธิ์ตำแหน่งและอุปกรณ์ใกล้เคียงของ Android\n\nแตะอนุญาต Open Headunit แล้วอนุมัติใน Shizuku\nหากเคยปฏิเสธไว้จนข้อความไม่แสดง ให้อนุญาตการเข้าถึงในแอป Shizuku</string>
+    <string name="wifi_scan_step">%1$d. %2$s</string>
+    <string name="wifi_scan_step_done">%1$d. %2$s · เสร็จสิ้น</string>
+    <string name="wifi_scan_step_install">ติดตั้ง Shizuku</string>
+    <string name="wifi_scan_step_start">เริ่มบริการ Shizuku</string>
+    <string name="wifi_scan_step_allow">อนุญาต Open Headunit ใน Shizuku</string>
     <string name="wifi_scan_detail_installed">แอป Shizuku: ติดตั้งแล้ว</string>
     <string name="wifi_scan_detail_not_installed">แอป Shizuku: ยังไม่ได้ติดตั้ง</string>
     <string name="wifi_scan_detail_running">บริการ Shizuku: ทำงานอยู่</string>
@@ -1859,7 +1865,7 @@
     <string name="esp32_relay_forget">ลบรีเลย์บลูทูธ</string>
     <string name="esp32_relay_forget_value">ล้างอุปกรณ์ที่บันทึกไว้</string>
     <string name="esp32_relay_pairing_header">การจับคู่โทรศัพท์</string>
-    <string name="esp32_relay_pairing_steps">1. บนโทรศัพท์ ให้ลบตัวเครื่องนี้และ OpenHU-BT-Relay เก่าออกจากบลูทูธ\n2. เปิดรีเลย์ → สแกน → เลือก OpenHU-BT-Relay-Setup → รอจนสถานะแสดง "จับคู่ OpenHU-BT-Relay" (120 วินาที)\n3. บนโทรศัพท์ ให้จับคู่ OpenHU-BT-Relay (PIN 0000)\n4. หากมีปัญหา ให้แตะจับคู่โทรศัพท์</string>
+    <string name="esp32_relay_pairing_steps">1. บนโทรศัพท์ ให้ลบตัวเครื่องนี้และ OpenHU-BT-Relay เก่าออกจากบลูทูธ\n2. เปิดรีเลย์ → สแกน → เลือก OpenHU-BT-Relay-Setup → รอจนสถานะแสดง \"จับคู่ OpenHU-BT-Relay\" (120 วินาที)\n3. บนโทรศัพท์ ให้จับคู่ OpenHU-BT-Relay (PIN 0000)\n4. หากมีปัญหา ให้แตะจับคู่โทรศัพท์</string>
     <string name="esp32_relay_phase_idle">ไม่ได้เชื่อมต่อ</string>
     <string name="esp32_relay_phase_connecting">กำลังเชื่อมต่อ…</string>
     <string name="esp32_relay_phase_ready">เชื่อมต่อแล้ว</string>

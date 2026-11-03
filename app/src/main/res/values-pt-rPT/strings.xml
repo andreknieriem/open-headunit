@@ -1804,9 +1804,15 @@
     <string name="wifi_scan_open_shizuku">Abrir o Shizuku</string>
     <string name="wifi_scan_other_help">Se o arranque FYT não estiver disponível, use o método abaixo para iniciar o Shizuku.</string>
     <string name="wifi_scan_permission_explanation">A aprovação do Shizuku permite pausar as pesquisas e libertá-las após a utilização. É independente das permissões de localização e de dispositivos próximos do Android.\n\nToque em Permitir o Open Headunit e aprove no Shizuku.\nSe uma recusa anterior impedir o pedido, permita o acesso na aplicação Shizuku.</string>
+    <string name="wifi_scan_step">%1$d. %2$s</string>
+    <string name="wifi_scan_step_done">%1$d. %2$s · Concluído</string>
+    <string name="wifi_scan_step_install">Instalar o Shizuku</string>
+    <string name="wifi_scan_step_start">Iniciar o serviço do Shizuku</string>
+    <string name="wifi_scan_step_allow">Permitir o Open Headunit no Shizuku</string>
     <string name="wifi_scan_prepare">Configurar o Shizuku</string>
     <string name="wifi_scan_recovery_notice">Reponha a definição de Wi-Fi alterada na sua última ligação.</string>
     <string name="wifi_scan_restore_short">Repor</string>
+    <string name="wifi_scan_enable_debugging">Primeiro, ative a depuração USB nas opções de programador e depois volte aqui. Aceite o pedido de autorização de depuração ao iniciar o Shizuku.</string>
     <string name="wifi_scan_restore_system">Repor a pesquisa de Wi-Fi no Android</string>
     <string name="wifi_scan_retry">Tentar novamente</string>
     <string name="wifi_scan_section_common">Configuração comum</string>
@@ -1858,7 +1864,7 @@
     <string name="esp32_relay_forget">Remover relé Bluetooth</string>
     <string name="esp32_relay_forget_value">Limpar o dispositivo guardado</string>
     <string name="esp32_relay_pairing_header">Emparelhamento do telemóvel</string>
-    <string name="esp32_relay_pairing_steps">1. No telemóvel, remova do Bluetooth a própria unidade e qualquer OpenHU-BT-Relay antigo.\n2. Ligue o relé → Procurar → selecione OpenHU-BT-Relay-Setup → aguarde que o estado mostre "emparelhar OpenHU-BT-Relay" (120 s).\n3. No telemóvel, emparelhe o OpenHU-BT-Relay (PIN 0000).\n4. Se algo correr mal, toque em Emparelhar telemóvel.</string>
+    <string name="esp32_relay_pairing_steps">1. No telemóvel, remova do Bluetooth a própria unidade e qualquer OpenHU-BT-Relay antigo.\n2. Ligue o relé → Procurar → selecione OpenHU-BT-Relay-Setup → aguarde que o estado mostre \"emparelhar OpenHU-BT-Relay\" (120 s).\n3. No telemóvel, emparelhe o OpenHU-BT-Relay (PIN 0000).\n4. Se algo correr mal, toque em Emparelhar telemóvel.</string>
     <string name="esp32_relay_phase_idle">Sem ligação</string>
     <string name="esp32_relay_phase_connecting">A ligar…</string>
     <string name="esp32_relay_phase_ready">Ligado</string>

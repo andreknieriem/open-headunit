@@ -274,6 +274,8 @@
     <string name="auto_start_check_access_root">Root</string>
     <string name="auto_start_check_access_adb">この端末のADB</string>
     <string name="auto_start_check_access_none">なし、一部のチェックを省略しました</string>
+    <string name="auto_start_check_access_adb_root">Root（この端末のADB経由）</string>
+    <string name="auto_start_check_no_access_hint">rootもADBも見つかりませんでした。多くのカーナビでは、Wi-Fi経由のADBがメーカーの隠し開発者メニューや工場メニューにあります。有効にしてからもう一度チェックしてください。一部の端末では確認なしで完全なアクセスができるため、信頼できないWi-Fiに接続する場合は有効のままにしないでください。</string>
     <string name="auto_start_check_device">デバイス</string>
     <string name="auto_start_check_platform">プラットフォーム</string>
     <string name="auto_start_check_home_app">ホームアプリ</string>

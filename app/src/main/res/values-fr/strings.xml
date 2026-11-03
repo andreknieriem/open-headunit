@@ -473,6 +473,8 @@
     <string name="auto_start_check_access_root">Root</string>
     <string name="auto_start_check_access_adb">ADB de cet appareil</string>
     <string name="auto_start_check_access_none">Aucun, certaines vérifications ont été ignorées</string>
+    <string name="auto_start_check_access_adb_root">Root, via l\'ADB de cet appareil</string>
+    <string name="auto_start_check_no_access_hint">Ni root ni ADB trouvé. Beaucoup d\'autoradios ont l\'ADB par Wi-Fi dans le menu caché développeur ou usine du fabricant : activez-le et relancez la vérification. Sur certains appareils, il donne un accès complet sans rien demander, ne le laissez donc pas activé si l\'autoradio se connecte à des réseaux Wi-Fi dont vous n\'êtes pas sûr.</string>
     <string name="auto_start_check_device">Appareil</string>
     <string name="auto_start_check_platform">Plateforme</string>
     <string name="auto_start_check_home_app">Application d\'accueil</string>

@@ -511,6 +511,8 @@
     <string name="auto_start_check_access_root">Root</string>
     <string name="auto_start_check_access_adb">इस यूनिट का ADB</string>
     <string name="auto_start_check_access_none">कोई नहीं, कुछ जाँचें छोड़ दी गईं</string>
+    <string name="auto_start_check_access_adb_root">Root, इस यूनिट के ADB से</string>
+    <string name="auto_start_check_no_access_hint">Root या ADB नहीं मिला। कई कार यूनिट में Wi-Fi पर ADB निर्माता के छिपे डेवलपर या फ़ैक्टरी मेनू में होता है: उसे चालू करें और फिर से जाँचें। कुछ यूनिट पर यह बिना पूछे पूरी पहुँच देता है, इसलिए अगर यूनिट ऐसे Wi-Fi नेटवर्क से जुड़ती है जिन पर आपको भरोसा नहीं, तो इसे चालू न छोड़ें।</string>
     <string name="auto_start_check_device">डिवाइस</string>
     <string name="auto_start_check_platform">प्लेटफ़ॉर्म</string>
     <string name="auto_start_check_home_app">होम ऐप</string>

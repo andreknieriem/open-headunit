@@ -45,6 +45,9 @@ object AutoStartCheckPolicy {
     const val MAX_LIST_FILES = 20
     const val MAX_LOG_LINES = 5
 
+    /** [Findings.route] when the unit's own ADB already runs as root, as many head units ship. */
+    const val ROUTE_ADB_ROOT = "adb root"
+
     /** How a force stop is named in [Findings.recentExits]. */
     const val FORCE_STOP_EXIT = "force-stop"
 
@@ -107,6 +110,12 @@ object AutoStartCheckPolicy {
         val end = lines.subList(begin + 1, lines.size).indexOfFirst { it.trim() == END }
         val body = if (end < 0) lines.subList(begin + 1, lines.size) else lines.subList(begin + 1, begin + 1 + end)
         return body.joinToString("\n").trimEnd()
+    }
+
+    /** What `id -u` printed means root. Toolbox before Android 6 ignores -u and prints "uid=0(root) ...". */
+    fun isRootUid(idOutput: String): Boolean {
+        val out = idOutput.trim()
+        return out == "0" || out.startsWith("uid=0(")
     }
 
     /** `/proc/<pid>/cmdline` separates arguments with NUL; the first one is the process name. */

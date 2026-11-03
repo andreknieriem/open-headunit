@@ -249,6 +249,8 @@
     <string name="auto_start_check_access_root">Root</string>
     <string name="auto_start_check_access_adb">ADB deste aparelho</string>
     <string name="auto_start_check_access_none">Nenhum, algumas verificações foram puladas</string>
+    <string name="auto_start_check_access_adb_root">Root, pelo ADB deste aparelho</string>
+    <string name="auto_start_check_no_access_hint">Nenhum root ou ADB encontrado. Muitas centrais multimídia têm o ADB por Wi-Fi no menu oculto de desenvolvedor ou de fábrica: ative e verifique de novo. Em alguns aparelhos ele dá acesso total sem perguntar, então não deixe ativo se a central se conecta a redes Wi-Fi em que você não confia.</string>
     <string name="auto_start_check_device">Dispositivo</string>
     <string name="auto_start_check_platform">Plataforma</string>
     <string name="auto_start_check_home_app">App de início</string>

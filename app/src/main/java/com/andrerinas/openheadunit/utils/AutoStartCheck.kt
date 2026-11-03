@@ -38,6 +38,13 @@ object AutoStartCheck {
             else runPlain(command)
         )
 
+        // Through ADB the shell is usually uid 2000, but many units run it as root.
+        val route = if (backend == OemAppManager.ExecutionBackend.ADB && AutoStartCheckPolicy.isRootUid(read("id -u"))) {
+            AutoStartCheckPolicy.ROUTE_ADB_ROOT
+        } else {
+            backend.name.lowercase()
+        }
+
         // Filtering stays in Kotlin: toolbox on Android 4.x has no sed, and grep only from 4.4 on some.
         val listing = AutoStartCheckPolicy.LIST_DIRS.map { dir ->
             read(AutoStartCheckPolicy.listCommand(dir)).lineSequence().map { it.trim() }.filter { it.isNotEmpty() }
@@ -59,7 +66,7 @@ object AutoStartCheck {
 
         val findings = AutoStartCheckPolicy.Findings(
             appVersion = BuildConfig.VERSION_NAME,
-            route = backend.name.lowercase(),
+            route = route,
             device = "${Build.MANUFACTURER} ${Build.MODEL}",
             android = "${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})",
             platform = read("getprop ro.board.platform").trim().ifEmpty { Build.HARDWARE },

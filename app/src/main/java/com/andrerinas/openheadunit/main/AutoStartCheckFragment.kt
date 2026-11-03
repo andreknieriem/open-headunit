@@ -95,8 +95,12 @@ class AutoStartCheckFragment : Fragment() {
         items.add(row("checkAccess", R.string.auto_start_check_access, getString(when (f.route) {
             OemAppManager.ExecutionBackend.ROOT.name.lowercase() -> R.string.auto_start_check_access_root
             OemAppManager.ExecutionBackend.ADB.name.lowercase() -> R.string.auto_start_check_access_adb
+            AutoStartCheckPolicy.ROUTE_ADB_ROOT -> R.string.auto_start_check_access_adb_root
             else -> R.string.auto_start_check_access_none
         })))
+        if (f.route == OemAppManager.ExecutionBackend.NONE.name.lowercase()) {
+            items.add(SettingItem.InfoBanner("checkNoAccess", R.string.auto_start_check_no_access_hint))
+        }
         items.add(row("checkDevice", R.string.auto_start_check_device, "${f.device} · Android ${f.android}"))
         items.add(row("checkPlatform", R.string.auto_start_check_platform, "${f.platform} · ${f.firmware}"))
         items.add(row("checkHome", R.string.auto_start_check_home_app, yesNo(f.isHomeApp)))

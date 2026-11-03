@@ -248,6 +248,8 @@
     <string name="auto_start_check_access_root">Root</string>
     <string name="auto_start_check_access_adb">本机 ADB</string>
     <string name="auto_start_check_access_none">无，已跳过部分检查</string>
+    <string name="auto_start_check_access_adb_root">Root（通过本机 ADB）</string>
+    <string name="auto_start_check_no_access_hint">未找到 root 或 ADB。很多车机把 Wi-Fi ADB 放在厂商隐藏的开发者菜单或工厂菜单里：打开后再检查一次。有些车机的 ADB 不经询问就有完全权限，如果车机会连接你不信任的 Wi-Fi，请不要一直开着。</string>
     <string name="auto_start_check_device">设备</string>
     <string name="auto_start_check_platform">平台</string>
     <string name="auto_start_check_home_app">主屏幕应用</string>

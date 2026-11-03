@@ -511,6 +511,8 @@
     <string name="auto_start_check_access_root">Root</string>
     <string name="auto_start_check_access_adb">ADB di unit ini</string>
     <string name="auto_start_check_access_none">Tidak ada, beberapa pemeriksaan dilewati</string>
+    <string name="auto_start_check_access_adb_root">Root, lewat ADB di unit ini</string>
+    <string name="auto_start_check_no_access_hint">Root atau ADB tidak ditemukan. Banyak head unit punya ADB lewat Wi-Fi di menu tersembunyi developer atau pabrik: nyalakan lalu periksa lagi. Di beberapa unit ADB ini memberi akses penuh tanpa bertanya, jadi jangan biarkan menyala jika unit tersambung ke jaringan Wi-Fi yang tidak Anda percaya.</string>
     <string name="auto_start_check_device">Perangkat</string>
     <string name="auto_start_check_platform">Platform</string>
     <string name="auto_start_check_home_app">Aplikasi beranda</string>

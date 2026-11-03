@@ -3,6 +3,7 @@ package com.andrerinas.openheadunit.app
 import com.andrerinas.openheadunit.app.AutoStartCheckPolicy.ListFile
 import com.andrerinas.openheadunit.app.AutoStartCheckPolicy.Verdict
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -135,5 +136,14 @@ class AutoStartCheckPolicyTest {
         assertTrue(report.contains("  com.reglink.services (pid 1501)"))
         assertTrue(report.contains("  [no app] /system/etc/white_list.xml"))
         assertTrue(report.contains("Recent exits:\n  none"))
+    }
+
+    @Test
+    fun `root over adb is told by the uid`() {
+        assertTrue(AutoStartCheckPolicy.isRootUid("0\n"))
+        assertTrue(AutoStartCheckPolicy.isRootUid("uid=0(root) gid=0(root) groups=0(root)"))
+        assertFalse(AutoStartCheckPolicy.isRootUid("2000"))
+        assertFalse(AutoStartCheckPolicy.isRootUid("uid=2000(shell) gid=2000(shell)"))
+        assertFalse(AutoStartCheckPolicy.isRootUid(""))
     }
 }

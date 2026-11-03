@@ -249,6 +249,8 @@
     <string name="auto_start_check_access_root">روت</string>
     <string name="auto_start_check_access_adb">ADB في هذا الجهاز</string>
     <string name="auto_start_check_access_none">لا شيء، تم تخطي بعض الفحوصات</string>
+    <string name="auto_start_check_access_adb_root">Root، عبر ADB في هذا الجهاز</string>
+    <string name="auto_start_check_no_access_hint">لم يتم العثور على Root أو ADB. كثير من أجهزة السيارة تضع ADB عبر Wi-Fi في قائمة المطور أو المصنع المخفية: فعّله وأعد الفحص. في بعض الأجهزة يمنح وصولاً كاملاً دون سؤال، فلا تتركه مفعّلاً إذا كان الجهاز يتصل بشبكات Wi-Fi لا تثق بها.</string>
     <string name="auto_start_check_device">الجهاز</string>
     <string name="auto_start_check_platform">المنصة</string>
     <string name="auto_start_check_home_app">تطبيق الشاشة الرئيسية</string>

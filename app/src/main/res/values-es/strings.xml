@@ -250,6 +250,8 @@
     <string name="auto_start_check_access_root">Root</string>
     <string name="auto_start_check_access_adb">ADB de esta radio</string>
     <string name="auto_start_check_access_none">Ninguno, se omitieron algunas revisiones</string>
+    <string name="auto_start_check_access_adb_root">Root, por el ADB de esta radio</string>
+    <string name="auto_start_check_no_access_hint">No se encontró root ni ADB. Muchas radios tienen el ADB por Wi-Fi en el menú oculto de desarrollador o de fábrica: actívalo y vuelve a revisar. En algunas radios da acceso total sin preguntar, así que no lo dejes activo si la radio se conecta a redes Wi-Fi en las que no confías.</string>
     <string name="auto_start_check_device">Dispositivo</string>
     <string name="auto_start_check_platform">Plataforma</string>
     <string name="auto_start_check_home_app">App de inicio</string>

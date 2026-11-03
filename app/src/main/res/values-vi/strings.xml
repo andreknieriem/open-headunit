@@ -257,6 +257,8 @@
     <string name="auto_start_check_access_root">Root</string>
     <string name="auto_start_check_access_adb">ADB trên thiết bị này</string>
     <string name="auto_start_check_access_none">Không có, một số kiểm tra đã bị bỏ qua</string>
+    <string name="auto_start_check_access_adb_root">Root, qua ADB trên thiết bị này</string>
+    <string name="auto_start_check_no_access_hint">Không tìm thấy root hoặc ADB. Nhiều màn hình ô tô có ADB qua Wi-Fi trong menu nhà phát triển hoặc menu nhà máy ẩn của hãng: hãy bật lên rồi kiểm tra lại. Trên một số thiết bị nó cho toàn quyền mà không hỏi, nên đừng để bật nếu thiết bị kết nối với mạng Wi-Fi bạn không tin tưởng.</string>
     <string name="auto_start_check_device">Thiết bị</string>
     <string name="auto_start_check_platform">Nền tảng</string>
     <string name="auto_start_check_home_app">Ứng dụng màn hình chính</string>

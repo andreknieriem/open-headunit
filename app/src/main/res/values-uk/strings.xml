@@ -249,6 +249,8 @@
     <string name="auto_start_check_access_root">Root</string>
     <string name="auto_start_check_access_adb">ADB цього пристрою</string>
     <string name="auto_start_check_access_none">Немає, частину перевірок пропущено</string>
+    <string name="auto_start_check_access_adb_root">Root, через ADB цього пристрою</string>
+    <string name="auto_start_check_no_access_hint">Root і ADB не знайдено. У багатьох магнітолах ADB через Wi-Fi є в прихованому меню розробника або заводському меню виробника: увімкніть його й перевірте знову. На деяких пристроях він дає повний доступ без запиту, тому не залишайте його увімкненим, якщо магнітола підключається до мереж Wi-Fi, яким ви не довіряєте.</string>
     <string name="auto_start_check_device">Пристрій</string>
     <string name="auto_start_check_platform">Платформа</string>
     <string name="auto_start_check_home_app">Домашній застосунок</string>

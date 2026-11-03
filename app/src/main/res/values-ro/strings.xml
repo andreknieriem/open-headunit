@@ -270,6 +270,8 @@
     <string name="auto_start_check_access_root">Root</string>
     <string name="auto_start_check_access_adb">ADB pe această unitate</string>
     <string name="auto_start_check_access_none">Niciunul, unele verificări au fost sărite</string>
+    <string name="auto_start_check_access_adb_root">Root, prin ADB pe această unitate</string>
+    <string name="auto_start_check_no_access_hint">Nu s-a găsit root sau ADB. Multe unități auto au ADB prin Wi-Fi în meniul ascuns de dezvoltator sau de fabrică al producătorului: activează-l și verifică din nou. Pe unele unități oferă acces complet fără să întrebe, așa că nu îl lăsa activ dacă unitatea se conectează la rețele Wi-Fi în care nu ai încredere.</string>
     <string name="auto_start_check_device">Dispozitiv</string>
     <string name="auto_start_check_platform">Platformă</string>
     <string name="auto_start_check_home_app">Aplicație de pornire</string>

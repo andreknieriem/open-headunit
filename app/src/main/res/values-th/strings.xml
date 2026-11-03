@@ -511,6 +511,8 @@
     <string name="auto_start_check_access_root">Root</string>
     <string name="auto_start_check_access_adb">ADB ของเครื่องนี้</string>
     <string name="auto_start_check_access_none">ไม่มี ข้ามการตรวจบางอย่าง</string>
+    <string name="auto_start_check_access_adb_root">Root ผ่าน ADB ของเครื่องนี้</string>
+    <string name="auto_start_check_no_access_hint">ไม่พบ root หรือ ADB วิทยุติดรถหลายรุ่นมี ADB ผ่าน Wi-Fi อยู่ในเมนูนักพัฒนาหรือเมนูโรงงานที่ซ่อนไว้ของผู้ผลิต ให้เปิดแล้วตรวจอีกครั้ง บางเครื่องให้สิทธิ์เต็มโดยไม่ถาม ดังนั้นอย่าเปิดทิ้งไว้ถ้าเครื่องเชื่อมต่อ Wi-Fi ที่คุณไม่ไว้ใจ</string>
     <string name="auto_start_check_device">อุปกรณ์</string>
     <string name="auto_start_check_platform">แพลตฟอร์ม</string>
     <string name="auto_start_check_home_app">แอปหน้าหลัก</string>

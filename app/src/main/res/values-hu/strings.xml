@@ -248,6 +248,8 @@
     <string name="auto_start_check_access_root">Root</string>
     <string name="auto_start_check_access_adb">Az eszköz ADB-je</string>
     <string name="auto_start_check_access_none">Nincs, néhány ellenőrzés kimaradt</string>
+    <string name="auto_start_check_access_adb_root">Root, az eszköz ADB-jén keresztül</string>
+    <string name="auto_start_check_no_access_hint">Nem található root vagy ADB. Sok autórádióban a Wi-Fi-s ADB a gyártó rejtett fejlesztői vagy gyári menüjében van: kapcsold be, és ellenőrizd újra. Egyes eszközökön kérdés nélkül teljes hozzáférést ad, ezért ne hagyd bekapcsolva, ha a rádió olyan Wi-Fi hálózatokra csatlakozik, amelyekben nem bízol.</string>
     <string name="auto_start_check_device">Eszköz</string>
     <string name="auto_start_check_platform">Platform</string>
     <string name="auto_start_check_home_app">Kezdőképernyő-alkalmazás</string>

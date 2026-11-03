@@ -248,6 +248,8 @@
     <string name="auto_start_check_access_root">Root</string>
     <string name="auto_start_check_access_adb">ADB op dit apparaat</string>
     <string name="auto_start_check_access_none">Geen, sommige controles zijn overgeslagen</string>
+    <string name="auto_start_check_access_adb_root">Root, via ADB op dit apparaat</string>
+    <string name="auto_start_check_no_access_hint">Geen root of ADB gevonden. Veel autoradio\'s hebben ADB via wifi in het verborgen ontwikkelaars- of fabrieksmenu van de fabrikant: zet het aan en controleer opnieuw. Op sommige apparaten geeft het volledige toegang zonder te vragen, dus laat het niet aan staan als de autoradio verbinding maakt met wifinetwerken die je niet vertrouwt.</string>
     <string name="auto_start_check_device">Apparaat</string>
     <string name="auto_start_check_platform">Platform</string>
     <string name="auto_start_check_home_app">Startapp</string>

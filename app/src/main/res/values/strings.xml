@@ -537,6 +537,8 @@
     <string name="auto_start_check_access_root">Root</string>
     <string name="auto_start_check_access_adb">ADB on this unit</string>
     <string name="auto_start_check_access_none">None, some checks were skipped</string>
+    <string name="auto_start_check_access_adb_root">Root, through ADB on this unit</string>
+    <string name="auto_start_check_no_access_hint">No root or ADB was found. Many head units have ADB over Wi-Fi in the maker\'s hidden developer or factory menu: turn it on and check again. On some units it gives full access without asking, so do not leave it on if the unit joins Wi-Fi networks you do not trust.</string>
     <string name="auto_start_check_device">Device</string>
     <string name="auto_start_check_platform">Platform</string>
     <string name="auto_start_check_home_app">Home app</string>

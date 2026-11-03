@@ -512,6 +512,8 @@
     <string name="auto_start_check_access_root">Root</string>
     <string name="auto_start_check_access_adb">ADB deste aparelho</string>
     <string name="auto_start_check_access_none">Nenhum, algumas verificações foram ignoradas</string>
+    <string name="auto_start_check_access_adb_root">Root, através do ADB deste aparelho</string>
+    <string name="auto_start_check_no_access_hint">Não foi encontrado root nem ADB. Muitos auto-rádios têm o ADB por Wi-Fi no menu oculto de programador ou de fábrica: ative-o e verifique novamente. Em alguns aparelhos dá acesso total sem perguntar, por isso não o deixe ativo se o auto-rádio se ligar a redes Wi-Fi em que não confia.</string>
     <string name="auto_start_check_device">Dispositivo</string>
     <string name="auto_start_check_platform">Plataforma</string>
     <string name="auto_start_check_home_app">Aplicação inicial</string>

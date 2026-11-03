@@ -249,6 +249,8 @@
     <string name="auto_start_check_access_root">Root</string>
     <string name="auto_start_check_access_adb">ADB tego urządzenia</string>
     <string name="auto_start_check_access_none">Brak, pominięto część sprawdzeń</string>
+    <string name="auto_start_check_access_adb_root">Root, przez ADB tego urządzenia</string>
+    <string name="auto_start_check_no_access_hint">Nie znaleziono roota ani ADB. Wiele radioodtwarzaczy ma ADB przez Wi-Fi w ukrytym menu dewelopera lub fabrycznym producenta: włącz je i sprawdź ponownie. Na niektórych urządzeniach daje pełny dostęp bez pytania, więc nie zostawiaj go włączonego, jeśli radio łączy się z sieciami Wi-Fi, którym nie ufasz.</string>
     <string name="auto_start_check_device">Urządzenie</string>
     <string name="auto_start_check_platform">Platforma</string>
     <string name="auto_start_check_home_app">Ekran główny</string>

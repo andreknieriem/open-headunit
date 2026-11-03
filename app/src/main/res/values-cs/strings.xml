@@ -249,6 +249,8 @@
     <string name="auto_start_check_access_root">Root</string>
     <string name="auto_start_check_access_adb">ADB tohoto zařízení</string>
     <string name="auto_start_check_access_none">Žádný, některé kontroly byly vynechány</string>
+    <string name="auto_start_check_access_adb_root">Root, přes ADB tohoto zařízení</string>
+    <string name="auto_start_check_no_access_hint">Root ani ADB nebyly nalezeny. Mnoho autorádií má ADB přes Wi-Fi ve skryté vývojářské nebo tovární nabídce výrobce: zapněte ho a spusťte kontrolu znovu. Na některých zařízeních dává plný přístup bez ptaní, proto ho nenechávejte zapnuté, pokud se autorádio připojuje k sítím Wi-Fi, kterým nevěříte.</string>
     <string name="auto_start_check_device">Zařízení</string>
     <string name="auto_start_check_platform">Platforma</string>
     <string name="auto_start_check_home_app">Domovská aplikace</string>

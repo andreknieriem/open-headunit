@@ -271,6 +271,8 @@
     <string name="auto_start_check_access_root">Root</string>
     <string name="auto_start_check_access_adb">Bu cihazın ADB\'si</string>
     <string name="auto_start_check_access_none">Yok, bazı kontroller atlandı</string>
+    <string name="auto_start_check_access_adb_root">Root, bu cihazın ADB\'si üzerinden</string>
+    <string name="auto_start_check_no_access_hint">Root veya ADB bulunamadı. Birçok teyp, Wi-Fi üzerinden ADB\'yi üreticinin gizli geliştirici veya fabrika menüsünde tutar: açın ve yeniden kontrol edin. Bazı cihazlarda sormadan tam erişim verir, bu yüzden teyp güvenmediğiniz Wi-Fi ağlarına bağlanıyorsa açık bırakmayın.</string>
     <string name="auto_start_check_device">Cihaz</string>
     <string name="auto_start_check_platform">Platform</string>
     <string name="auto_start_check_home_app">Ana ekran uygulaması</string>

@@ -249,6 +249,8 @@
     <string name="auto_start_check_access_root">Root</string>
     <string name="auto_start_check_access_adb">ADB этого устройства</string>
     <string name="auto_start_check_access_none">Нет, часть проверок пропущена</string>
+    <string name="auto_start_check_access_adb_root">Root, через ADB этого устройства</string>
+    <string name="auto_start_check_no_access_hint">Root и ADB не найдены. Во многих магнитолах ADB по Wi-Fi есть в скрытом меню разработчика или заводском меню производителя: включите его и проверьте снова. На некоторых устройствах он даёт полный доступ без запроса, поэтому не оставляйте его включённым, если магнитола подключается к сетям Wi-Fi, которым вы не доверяете.</string>
     <string name="auto_start_check_device">Устройство</string>
     <string name="auto_start_check_platform">Платформа</string>
     <string name="auto_start_check_home_app">Домашнее приложение</string>

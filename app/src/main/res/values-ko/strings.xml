@@ -279,6 +279,8 @@
     <string name="auto_start_check_access_root">Root</string>
     <string name="auto_start_check_access_adb">이 기기의 ADB</string>
     <string name="auto_start_check_access_none">없음, 일부 점검을 건너뜀</string>
+    <string name="auto_start_check_access_adb_root">Root, 이 기기의 ADB를 통해</string>
+    <string name="auto_start_check_no_access_hint">root나 ADB를 찾지 못했습니다. 많은 헤드유닛은 Wi-Fi ADB가 제조사의 숨겨진 개발자 메뉴나 공장 메뉴에 있습니다. 켠 다음 다시 점검하세요. 일부 기기에서는 묻지 않고 전체 권한을 주므로, 믿을 수 없는 Wi-Fi에 연결된다면 켜 두지 마세요.</string>
     <string name="auto_start_check_device">기기</string>
     <string name="auto_start_check_platform">플랫폼</string>
     <string name="auto_start_check_home_app">홈 앱</string>

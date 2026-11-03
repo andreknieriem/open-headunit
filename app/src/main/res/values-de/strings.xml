@@ -309,6 +309,8 @@
     <string name="auto_start_check_access_root">Root</string>
     <string name="auto_start_check_access_adb">ADB auf diesem Gerät</string>
     <string name="auto_start_check_access_none">Keiner, einige Prüfungen wurden übersprungen</string>
+    <string name="auto_start_check_access_adb_root">Root, über ADB auf diesem Gerät</string>
+    <string name="auto_start_check_no_access_hint">Weder Root noch ADB gefunden. Viele Autoradios haben ADB über WLAN im versteckten Entwickler- oder Werksmenü des Herstellers: einschalten und erneut prüfen. Auf manchen Geräten gibt es vollen Zugriff ohne Nachfrage, also nicht eingeschaltet lassen, wenn das Autoradio sich mit WLANs verbindet, denen du nicht vertraust.</string>
     <string name="auto_start_check_device">Gerät</string>
     <string name="auto_start_check_platform">Plattform</string>
     <string name="auto_start_check_home_app">Start-App</string>

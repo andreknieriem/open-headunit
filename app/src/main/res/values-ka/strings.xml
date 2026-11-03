@@ -293,7 +293,7 @@
     <string name="auto_start_check_exemptions">ბატარეისა და ფონური მუშაობის გამონაკლისები</string>
     <string name="auto_start_check_exemptions_description">აპს გამორიცხავს ბატარეის დაზოგვიდან და ფონურ რეჟიმში მუშაობის საშუალებას აძლევს. გამორთვისას გადაწყვეტილება ისევ სისტემას უბრუნდება.</string>
     <string name="auto_start_check_duraspeed_off">DuraSpeed-ის გამორთვა ყოველ ჩატვირთვაზე</string>
-    <string name="auto_start_check_duraspeed_off_description">MediaTek მოწყობილობები. DuraSpeed ყოველი გადატვირთვის შემდეგ ისევ ირთვება, ამიტომ აპი მას თიშავს ყოველ ჯერზე, როცა მაგნიტოლა ირთვება.</string>
+    <string name="auto_start_check_duraspeed_off_description">MediaTek მოწყობილობები. ბევრ მათგანზე DuraSpeed გადატვირთვის შემდეგ ისევ ირთვება, ამიტომ აპი მას თიშავს ყოველ ჯერზე, როცა მაგნიტოლა ირთვება.</string>
     <string name="auto_start_check_needs_access">ამ მოწყობილობაზე საჭიროა root ან ADB.</string>
     <string name="auto_start_check_fix_failed">ვერ გამოიყენა. დეტალები ჟურნალშია.</string>
     <string name="auto_start_check_system_changes">ცვლის სისტემურ ფაილებს (შექცევადი)</string>

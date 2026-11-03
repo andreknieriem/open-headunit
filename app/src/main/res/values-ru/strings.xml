@@ -274,7 +274,7 @@
     <string name="auto_start_check_exemptions">Исключения для батареи и фона</string>
     <string name="auto_start_check_exemptions_description">Исключает приложение из экономии батареи и разрешает работу в фоне. При выключении решение снова за системой.</string>
     <string name="auto_start_check_duraspeed_off">Отключать DuraSpeed при каждой загрузке</string>
-    <string name="auto_start_check_duraspeed_off_description">Магнитолы MediaTek. DuraSpeed включается снова после каждой перезагрузки, поэтому приложение отключает его при каждом запуске магнитолы.</string>
+    <string name="auto_start_check_duraspeed_off_description">Магнитолы MediaTek. На многих из них DuraSpeed включается снова после перезагрузки, поэтому приложение отключает его при каждом запуске магнитолы.</string>
     <string name="auto_start_check_needs_access">Нужен root или ADB на этой магнитоле.</string>
     <string name="auto_start_check_fix_failed">Не удалось применить. Подробности в журнале.</string>
     <string name="auto_start_check_system_changes">Изменяет системные файлы (обратимо)</string>

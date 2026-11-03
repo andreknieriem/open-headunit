@@ -273,7 +273,7 @@
     <string name="auto_start_check_exemptions">电池和后台豁免</string>
     <string name="auto_start_check_exemptions_description">让应用不受省电限制并允许在后台运行。关闭后由系统重新决定。</string>
     <string name="auto_start_check_duraspeed_off">每次开机时关闭 DuraSpeed</string>
-    <string name="auto_start_check_duraspeed_off_description">适用于 MediaTek 车机。DuraSpeed 每次重启后都会自动重新开启，所以车机每次启动时应用都会把它关闭。</string>
+    <string name="auto_start_check_duraspeed_off_description">适用于 MediaTek 车机。很多车机重启后 DuraSpeed 会自动重新开启，所以车机每次启动时应用都会把它关闭。</string>
     <string name="auto_start_check_needs_access">此车机需要 root 或 ADB。</string>
     <string name="auto_start_check_fix_failed">无法应用。详情请查看日志。</string>
     <string name="auto_start_check_system_changes">修改系统文件（可撤销）</string>

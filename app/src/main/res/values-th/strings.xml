@@ -536,7 +536,7 @@
     <string name="auto_start_check_exemptions">ข้อยกเว้นแบตเตอรี่และการทำงานเบื้องหลัง</string>
     <string name="auto_start_check_exemptions_description">นำแอปออกจากการประหยัดแบตเตอรี่และให้ทำงานเบื้องหลังได้ เมื่อปิด ระบบจะเป็นผู้ตัดสินอีกครั้ง</string>
     <string name="auto_start_check_duraspeed_off">ปิด DuraSpeed ทุกครั้งที่บูต</string>
-    <string name="auto_start_check_duraspeed_off_description">เครื่อง MediaTek DuraSpeed จะเปิดกลับมาเองหลังรีสตาร์ททุกครั้ง แอปจึงปิดมันทุกครั้งที่เครื่องเสียงเริ่มทำงาน</string>
+    <string name="auto_start_check_duraspeed_off_description">เครื่อง MediaTek หลายเครื่อง DuraSpeed จะเปิดกลับมาเองหลังรีสตาร์ท แอปจึงปิดมันทุกครั้งที่เครื่องเสียงเริ่มทำงาน</string>
     <string name="auto_start_check_needs_access">ต้องใช้ root หรือ ADB ในเครื่องนี้</string>
     <string name="auto_start_check_fix_failed">ใช้ไม่ได้ ดูรายละเอียดในบันทึก</string>
     <string name="auto_start_check_system_changes">เปลี่ยนไฟล์ระบบ (ย้อนกลับได้)</string>

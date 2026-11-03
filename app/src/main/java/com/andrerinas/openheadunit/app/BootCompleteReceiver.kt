@@ -40,7 +40,7 @@ class BootCompleteReceiver : BroadcastReceiver() {
         val floatingButtonEnabled = settings.enableFloatingButton
 
         if (settings.duraSpeedOffOnBoot) {
-            // Runs whatever else is on: DuraSpeed comes back after every restart, and it is what
+            // Runs whatever else is on: on many units DuraSpeed comes back after a restart, and it is what
             // kills the app once the ignition goes off.
             val pending = goAsync()
             val appContext = context.applicationContext

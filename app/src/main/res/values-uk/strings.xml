@@ -274,7 +274,7 @@
     <string name="auto_start_check_exemptions">Винятки для батареї та фону</string>
     <string name="auto_start_check_exemptions_description">Виключає застосунок з економії батареї та дозволяє працювати у фоні. Після вимкнення рішення знову за системою.</string>
     <string name="auto_start_check_duraspeed_off">Вимикати DuraSpeed під час кожного запуску</string>
-    <string name="auto_start_check_duraspeed_off_description">Магнітоли MediaTek. DuraSpeed вмикається знову після кожного перезапуску, тому застосунок вимикає його щоразу під час запуску магнітоли.</string>
+    <string name="auto_start_check_duraspeed_off_description">Магнітоли MediaTek. На багатьох із них DuraSpeed вмикається знову після перезапуску, тому застосунок вимикає його щоразу під час запуску магнітоли.</string>
     <string name="auto_start_check_needs_access">Потрібен root або ADB на цій магнітолі.</string>
     <string name="auto_start_check_fix_failed">Не вдалося застосувати. Подробиці в журналі.</string>
     <string name="auto_start_check_system_changes">Змінює системні файли (оборотно)</string>

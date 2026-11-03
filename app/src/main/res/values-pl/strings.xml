@@ -274,7 +274,7 @@
     <string name="auto_start_check_exemptions">Wyjątki dla baterii i pracy w tle</string>
     <string name="auto_start_check_exemptions_description">Wyłącza aplikację z oszczędzania baterii i pozwala jej działać w tle. Po wyłączeniu decyzja wraca do systemu.</string>
     <string name="auto_start_check_duraspeed_off">Wyłączaj DuraSpeed przy każdym starcie</string>
-    <string name="auto_start_check_duraspeed_off_description">Radia MediaTek. DuraSpeed włącza się ponownie po każdym restarcie, więc aplikacja wyłącza go przy każdym starcie radia.</string>
+    <string name="auto_start_check_duraspeed_off_description">Radia MediaTek. W wielu z nich DuraSpeed włącza się ponownie po restarcie, więc aplikacja wyłącza go przy każdym starcie radia.</string>
     <string name="auto_start_check_needs_access">Wymaga roota lub ADB na tym urządzeniu.</string>
     <string name="auto_start_check_fix_failed">Nie udało się zastosować. Szczegóły są w logu.</string>
     <string name="auto_start_check_system_changes">Zmienia pliki systemowe (odwracalnie)</string>

@@ -273,7 +273,7 @@
     <string name="auto_start_check_exemptions">電池與背景豁免</string>
     <string name="auto_start_check_exemptions_description">讓應用程式不受省電限制並允許在背景執行。關閉後由系統重新決定。</string>
     <string name="auto_start_check_duraspeed_off">每次開機時關閉 DuraSpeed</string>
-    <string name="auto_start_check_duraspeed_off_description">適用於 MediaTek 主機。DuraSpeed 每次重新啟動後都會自動開啟，所以主機每次啟動時應用程式都會將它關閉。</string>
+    <string name="auto_start_check_duraspeed_off_description">適用於 MediaTek 主機。很多主機重新啟動後 DuraSpeed 會自動開啟，所以主機每次啟動時應用程式都會將它關閉。</string>
     <string name="auto_start_check_needs_access">此主機需要 root 或 ADB。</string>
     <string name="auto_start_check_fix_failed">無法套用。詳細資訊請查看記錄。</string>
     <string name="auto_start_check_system_changes">變更系統檔案（可復原）</string>

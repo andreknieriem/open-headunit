@@ -295,7 +295,7 @@
     <string name="auto_start_check_exemptions">Excepții pentru baterie și fundal</string>
     <string name="auto_start_check_exemptions_description">Scoate aplicația din economisirea bateriei și o lasă să ruleze în fundal. Dezactivat, decide din nou sistemul.</string>
     <string name="auto_start_check_duraspeed_off">Oprește DuraSpeed la fiecare pornire</string>
-    <string name="auto_start_check_duraspeed_off_description">Unități MediaTek. DuraSpeed repornește după fiecare restart, așa că aplicația îl oprește de fiecare dată când pornește unitatea.</string>
+    <string name="auto_start_check_duraspeed_off_description">Unități MediaTek. Pe multe dintre ele DuraSpeed repornește după un restart, așa că aplicația îl oprește de fiecare dată când pornește unitatea.</string>
     <string name="auto_start_check_needs_access">Necesită root sau ADB pe această unitate.</string>
     <string name="auto_start_check_fix_failed">Nu s-a putut aplica. Detaliile sunt în jurnal.</string>
     <string name="auto_start_check_system_changes">Modifică fișiere de sistem (reversibil)</string>

@@ -19,7 +19,7 @@ object AutoStartFixPolicy {
 
     /**
      * Writes 1 and then 0 to the setting in both tables. DuraSpeed only acts when the value
-     * changes, and it comes back on after every restart, so this runs on each boot.
+     * changes, and on many units it comes back on after a restart, so this runs on each boot.
      */
     fun duraSpeedOffCommand(): String = listOf("global", "system").joinToString("; ") { table ->
         "settings put $table $DURASPEED_SETTING 1; sleep 1; settings put $table $DURASPEED_SETTING 0"

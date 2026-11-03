@@ -274,7 +274,7 @@
     <string name="auto_start_check_exemptions">استثناءات البطارية والخلفية</string>
     <string name="auto_start_check_exemptions_description">يُخرج التطبيق من توفير البطارية ويتركه يعمل في الخلفية. عند إيقافه يعود القرار إلى النظام.</string>
     <string name="auto_start_check_duraspeed_off">إيقاف DuraSpeed عند كل إقلاع</string>
-    <string name="auto_start_check_duraspeed_off_description">شاشات MediaTek. يعود DuraSpeed للعمل بعد كل إعادة تشغيل، لذلك يوقفه التطبيق في كل مرة تبدأ فيها الشاشة.</string>
+    <string name="auto_start_check_duraspeed_off_description">شاشات MediaTek. في كثير منها يعود DuraSpeed للعمل بعد إعادة التشغيل، لذلك يوقفه التطبيق في كل مرة تبدأ فيها الشاشة.</string>
     <string name="auto_start_check_needs_access">يتطلب روت أو ADB على هذا الجهاز.</string>
     <string name="auto_start_check_fix_failed">تعذّر التطبيق. التفاصيل في السجل.</string>
     <string name="auto_start_check_system_changes">يغيّر ملفات النظام (قابل للتراجع)</string>

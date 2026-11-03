@@ -1,5 +1,6 @@
 package com.andrerinas.openheadunit.connection.wifi.scan
 
+import com.andrerinas.openheadunit.utils.useSocket
 import android.content.*
 import android.os.*
 import com.andrerinas.openheadunit.connection.carkey.fyt.RemoteToolkit
@@ -157,7 +158,7 @@ internal object FytShizukuStarter {
                 ?: 5555.takeIf { daemon == "running" && listenerOpen(it) }
             // A distinct port lets recovery distinguish our listener from a later user
             // enabling the conventional 5555 endpoint. Reserve an unused port briefly.
-            val port = existingPort ?: java.net.ServerSocket(0).use { it.localPort }
+            val port = existingPort ?: java.net.ServerSocket(0).useSocket { it.localPort }
             val journal = FytAdbPortJournal(app)
 
             if (existingPort == null) {
@@ -271,7 +272,7 @@ internal object FytShizukuStarter {
         withTimeout(3_000) { while (SystemProperties.get(key) != value) delay(100) }
     }
     private fun listenerOpen(port: Int) = runCatching {
-        Socket().use { it.connect(InetSocketAddress("127.0.0.1", port), 200) }; true
+        Socket().useSocket { it.connect(InetSocketAddress("127.0.0.1", port), 200) }; true
     }.getOrDefault(false)
 
     private suspend fun awaitListener(port: Int, enabled: Boolean) {

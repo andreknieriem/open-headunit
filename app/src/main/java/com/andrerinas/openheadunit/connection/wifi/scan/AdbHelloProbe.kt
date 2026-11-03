@@ -1,5 +1,6 @@
 package com.andrerinas.openheadunit.connection.wifi.scan
 
+import com.andrerinas.openheadunit.utils.useSocket
 import com.andrerinas.openheadunit.utils.adb.AdbProtocol
 import java.net.ConnectException
 import java.net.InetSocketAddress
@@ -29,7 +30,7 @@ internal object AdbHelloProbe {
 
     /** null means unknown/busy: retain rollback but do not touch the daemon. */
     fun isAdb(port: Int): Boolean? = try {
-        Socket().use { socket ->
+        Socket().useSocket { socket ->
             socket.connect(InetSocketAddress("127.0.0.1", port), 200)
             socket.getOutputStream().write(AdbProtocol.generateConnect())
             val deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(500)

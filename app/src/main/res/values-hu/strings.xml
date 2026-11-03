@@ -56,7 +56,7 @@
     <string name="night_overlay_background">Az éjszakai fedvény háttere</string>
     <string name="night_overlay_background_black">Fekete</string>
     <string name="night_overlay_background_dark_gray">Sötétszürke</string>
-    <string name="gestures_help">Húzzon vagy koppintson két ujjal a bal vagy a jobb szélen. Két ujj bárhol máshol az Android Auto alkalmazáshoz kerül. Ha a szélről indított csúsztatások nem működnek, állítsa a rendszert 3 gombos navigációra.</string>
+    <string name="gestures_help">Húzzon vagy koppintson két ujjal a bal vagy a jobb szélen. Két ujj bárhol máshol az Android Auto alkalmazáshoz kerül. Ha beállítja a kétujjas lefelé húzást, az a képernyő bármely pontján működik, és az egész képernyőn késhetnek az érintések. Ha a szélről indított csúsztatások nem működnek, állítsa a rendszert 3 gombos navigációra.</string>
     <string name="gestures_reset">A gesztusbeállítások visszaállítva</string>
     <string name="night_overlay_dismiss">Koppints a vetítéshez való visszatéréshez</string>
     <string name="night_overlay_meters">%1$d m</string>

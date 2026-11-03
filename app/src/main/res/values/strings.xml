@@ -293,7 +293,7 @@
     <string name="night_overlay_background">Night overlay background</string>
     <string name="night_overlay_background_black">Black</string>
     <string name="night_overlay_background_dark_gray">Dark gray</string>
-    <string name="gestures_help">Swipe or tap with two fingers at the left or right edge. Two fingers anywhere else go to Android Auto. If edge swipes do not work, set the system to 3-button navigation.</string>
+    <string name="gestures_help">Swipe or tap with two fingers at the left or right edge. Two fingers anywhere else go to Android Auto. If you set the swipe down, it works anywhere on the screen, and touches on the whole screen may be delayed. If edge swipes do not work, set the system to 3-button navigation.</string>
     <string name="gestures_reset">Gesture settings reset</string>
     <string name="night_overlay_dismiss">Tap to return to projection</string>
     <string name="night_overlay_meters">%1$d m</string>

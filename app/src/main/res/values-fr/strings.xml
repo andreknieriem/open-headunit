@@ -268,7 +268,7 @@
     <string name="night_overlay_background">Arrière-plan de la superposition nocturne</string>
     <string name="night_overlay_background_black">Noir</string>
     <string name="night_overlay_background_dark_gray">Gris foncé</string>
-    <string name="gestures_help">Balayez ou appuyez avec deux doigts près du bord gauche ou droit. Deux doigts ailleurs sont transmis à Android Auto. Si les balayages depuis le bord ne fonctionnent pas, passez le système en navigation à 3 boutons.</string>
+    <string name="gestures_help">Balayez ou appuyez avec deux doigts près du bord gauche ou droit. Deux doigts ailleurs sont transmis à Android Auto. Si vous réglez le balayage à deux doigts vers le bas, il fonctionne partout sur l\'écran, et les appuis sur tout l\'écran peuvent être retardés. Si les balayages depuis le bord ne fonctionnent pas, passez le système en navigation à 3 boutons.</string>
     <string name="gestures_reset">Paramètres de gestes réinitialisés</string>
     <string name="night_overlay_dismiss">Touchez pour revenir à la projection</string>
     <string name="night_overlay_meters">%1$d m</string>

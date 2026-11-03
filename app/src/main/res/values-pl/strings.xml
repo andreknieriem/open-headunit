@@ -56,7 +56,7 @@
     <string name="night_overlay_background">Tło nakładki nocnej</string>
     <string name="night_overlay_background_black">Czarne</string>
     <string name="night_overlay_background_dark_gray">Ciemnoszare</string>
-    <string name="gestures_help">Przesuń lub stuknij dwoma palcami przy lewej lub prawej krawędzi. Dwa palce w innym miejscu trafiają do Android Auto. Jeśli przesunięcia od krawędzi nie działają, ustaw w systemie nawigację trzema przyciskami.</string>
+    <string name="gestures_help">Przesuń lub stuknij dwoma palcami przy lewej lub prawej krawędzi. Dwa palce w innym miejscu trafiają do Android Auto. Jeśli ustawisz przesunięcie dwoma palcami w dół, działa ono w dowolnym miejscu ekranu, a dotyk na całym ekranie może być opóźniony. Jeśli przesunięcia od krawędzi nie działają, ustaw w systemie nawigację trzema przyciskami.</string>
     <string name="gestures_reset">Ustawienia gestów zresetowane</string>
     <string name="night_overlay_dismiss">Dotknij, aby wrócić do projekcji</string>
     <string name="night_overlay_meters">%1$d m</string>

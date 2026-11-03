@@ -57,7 +57,7 @@
     <string name="night_overlay_background">Gece katmanı arka planı</string>
     <string name="night_overlay_background_black">Siyah</string>
     <string name="night_overlay_background_dark_gray">Koyu gri</string>
-    <string name="gestures_help">Sol veya sağ kenarda iki parmakla kaydırın ya da dokunun. Başka bir yerdeki iki parmak Android Auto\'ya iletilir. Kenardan kaydırmalar çalışmazsa sistemi 3 düğmeli gezinmeye ayarlayın.</string>
+    <string name="gestures_help">Sol veya sağ kenarda iki parmakla kaydırın ya da dokunun. Başka bir yerdeki iki parmak Android Auto\'ya iletilir. İki parmakla aşağı kaydırmayı ayarlarsanız ekranın her yerinde çalışır ve tüm ekrandaki dokunuşlar gecikebilir. Kenardan kaydırmalar çalışmazsa sistemi 3 düğmeli gezinmeye ayarlayın.</string>
     <string name="gestures_reset">Hareket ayarları sıfırlandı</string>
     <string name="night_overlay_dismiss">Projeksiyona dönmek için dokunun</string>
     <string name="night_overlay_meters">%1$d m</string>

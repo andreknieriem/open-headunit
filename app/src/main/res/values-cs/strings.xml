@@ -33,8 +33,8 @@
     <string name="gesture_two_finger_left">Gesto dvěma prsty zleva</string>
     <string name="gesture_two_finger_right">Gesto dvěma prsty zprava</string>
     <string name="gesture_two_finger_down">Přejetí dvěma prsty dolů</string>
-    <string name="gesture_two_finger_tap_left">Klepnutí dvěma prsty na levém okraji</string>
-    <string name="gesture_two_finger_tap_right">Klepnutí dvěma prsty na pravém okraji</string>
+    <string name="gesture_two_finger_tap_left">Klepnutí dvěma prsty u levého okraje</string>
+    <string name="gesture_two_finger_tap_right">Klepnutí dvěma prsty u pravého okraje</string>
     <string name="gesture_edge_zone">Šířka okrajové zóny</string>
     <string name="gesture_edge_zone_narrow">Úzká</string>
     <string name="gesture_edge_zone_normal">Normální</string>
@@ -56,7 +56,7 @@
     <string name="night_overlay_background">Pozadí nočního překrytí</string>
     <string name="night_overlay_background_black">Černé</string>
     <string name="night_overlay_background_dark_gray">Tmavě šedé</string>
-    <string name="gestures_help">Přejeďte nebo klepněte dvěma prsty u levého nebo pravého okraje. Dva prsty kdekoli jinde se předají aplikaci Android Auto. Pokud tahy od okraje nefungují, nastavte v systému navigaci třemi tlačítky.</string>
+    <string name="gestures_help">Přejeďte nebo klepněte dvěma prsty u levého nebo pravého okraje. Dva prsty kdekoli jinde se předají aplikaci Android Auto. Pokud nastavíte přejetí dvěma prsty dolů, funguje kdekoli na obrazovce a dotyky na celé obrazovce mohou být zpožděné. Pokud tahy od okraje nefungují, nastavte v systému navigaci třemi tlačítky.</string>
     <string name="gestures_reset">Nastavení gest bylo resetováno</string>
     <string name="night_overlay_dismiss">Klepnutím se vraťte do projekce</string>
     <string name="night_overlay_meters">%1$d m</string>

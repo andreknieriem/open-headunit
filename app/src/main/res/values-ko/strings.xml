@@ -59,7 +59,7 @@
     <string name="night_overlay_background">야간 오버레이 배경</string>
     <string name="night_overlay_background_black">검은색</string>
     <string name="night_overlay_background_dark_gray">짙은 회색</string>
-    <string name="gestures_help">왼쪽 또는 오른쪽 가장자리에서 두 손가락으로 스와이프하거나 탭하세요. 그 밖의 위치에서 두 손가락으로 하는 조작은 Android Auto로 전달됩니다. 가장자리 스와이프가 작동하지 않으면 시스템을 3버튼 탐색으로 설정하세요.</string>
+    <string name="gestures_help">왼쪽 또는 오른쪽 가장자리에서 두 손가락으로 스와이프하거나 탭하세요. 그 밖의 위치에서 두 손가락으로 하는 조작은 Android Auto로 전달됩니다. 두 손가락 아래로 밀기를 설정하면 화면 어디에서나 작동하며, 화면 전체에서 터치가 지연될 수 있습니다. 가장자리 스와이프가 작동하지 않으면 시스템을 3버튼 탐색으로 설정하세요.</string>
     <string name="gestures_reset">제스처 설정이 초기화되었습니다</string>
     <string name="night_overlay_dismiss">탭하여 프로젝션으로 돌아가기</string>
     <string name="night_overlay_meters">%1$d m</string>

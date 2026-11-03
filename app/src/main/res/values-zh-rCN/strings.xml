@@ -30,7 +30,7 @@
     <string name="gestures_description">配置双指滑动、点按和长按。</string>
     <string name="gesture_two_finger_long_press">双指长按</string>
     <string name="gesture_two_finger_left">从左侧的双指手势</string>
-    <string name="gesture_two_finger_right">双指右滑手势</string>
+    <string name="gesture_two_finger_right">从右侧的双指手势</string>
     <string name="gesture_two_finger_down">双指下滑</string>
     <string name="gesture_two_finger_tap_left">在左边缘双指点按</string>
     <string name="gesture_two_finger_tap_right">在右边缘双指点按</string>
@@ -55,7 +55,7 @@
     <string name="night_overlay_background">夜间叠加层背景</string>
     <string name="night_overlay_background_black">黑色</string>
     <string name="night_overlay_background_dark_gray">深灰色</string>
-    <string name="gestures_help">在左边缘或右边缘用双指滑动或点按。其他位置的双指操作会传给 Android Auto。如果边缘滑动无效，请将系统设置为三按钮导航。</string>
+    <string name="gestures_help">在左边缘或右边缘用双指滑动或点按。其他位置的双指操作会传给 Android Auto。如果设置了双指下滑，它在屏幕任意位置都有效，整个屏幕上的触控可能会有延迟。如果边缘滑动无效，请将系统设置为三按钮导航。</string>
     <string name="gestures_reset">手势设置已重置</string>
     <string name="night_overlay_dismiss">点按返回投屏</string>
     <string name="night_overlay_meters">%1$d 米</string>

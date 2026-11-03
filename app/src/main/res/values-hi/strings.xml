@@ -243,9 +243,9 @@
     <string name="gestures_description">दो उंगलियों से स्वाइप, टैप और लंबा प्रेस कॉन्फ़िगर करें।</string>
     <string name="gesture_two_finger_long_press">दो उंगलियों से लंबा प्रेस</string>
     <string name="gesture_two_finger_left">बाईं ओर से दो-उंगली जेस्चर</string>
-    <string name="gesture_two_finger_right">दाईं तरफ से दो-उंगली का इशारा</string>
+    <string name="gesture_two_finger_right">दाईं ओर से दो-उंगली जेस्चर</string>
     <string name="gesture_two_finger_down">दो-उंगली नीचे स्वाइप</string>
-    <string name="gesture_two_finger_tap_left">बाएं किनारे पर दो-उंगली टैप</string>
+    <string name="gesture_two_finger_tap_left">बाएं किनारे पर दो उंगलियों से टैप</string>
     <string name="gesture_two_finger_tap_right">दाएं किनारे पर दो उंगलियों से टैप</string>
     <string name="gesture_edge_zone">किनारे के क्षेत्र की चौड़ाई</string>
     <string name="gesture_edge_zone_narrow">संकरा</string>
@@ -268,7 +268,7 @@
     <string name="night_overlay_background">नाइट ओवरले की पृष्ठभूमि</string>
     <string name="night_overlay_background_black">काला</string>
     <string name="night_overlay_background_dark_gray">गहरा स्लेटी</string>
-    <string name="gestures_help">बाएं या दाएं किनारे पर दो उंगलियों से स्वाइप या टैप करें। किसी और जगह दो उंगलियां Android Auto को भेजी जाती हैं। अगर किनारे से स्वाइप काम न करें, तो सिस्टम को 3-बटन नेविगेशन पर सेट करें।</string>
+    <string name="gestures_help">बाएं या दाएं किनारे पर दो उंगलियों से स्वाइप या टैप करें। किसी और जगह दो उंगलियां Android Auto को भेजी जाती हैं। अगर आप दो-उंगली नीचे स्वाइप सेट करते हैं, तो वह स्क्रीन पर कहीं भी काम करता है, और पूरी स्क्रीन पर स्पर्श में देरी हो सकती है। अगर किनारे से स्वाइप काम न करें, तो सिस्टम को 3-बटन नेविगेशन पर सेट करें।</string>
     <string name="gestures_reset">जेस्चर सेटिंग्स रीसेट हो गईं</string>
     <string name="night_overlay_dismiss">प्रोजेक्शन पर लौटने के लिए टैप करें</string>
     <string name="night_overlay_meters">%1$d मी</string>

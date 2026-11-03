@@ -33,8 +33,8 @@
     <string name="gesture_two_finger_left">ორი თითის ჟესტი მარცხნიდან</string>
     <string name="gesture_two_finger_right">ორი თითის ჟესტი მარჯვნიდან</string>
     <string name="gesture_two_finger_down">ორი თითით ქვემოთ გასმა</string>
-    <string name="gesture_two_finger_tap_left">ორი თითით შეხება მარცხენა კიდეზე</string>
-    <string name="gesture_two_finger_tap_right">ორი თითით შეხება მარჯვენა კიდეზე</string>
+    <string name="gesture_two_finger_tap_left">ორი თითით შეხება მარცხენა კიდესთან</string>
+    <string name="gesture_two_finger_tap_right">ორი თითით შეხება მარჯვენა კიდესთან</string>
     <string name="gesture_edge_zone">კიდის ზონის სიგანე</string>
     <string name="gesture_edge_zone_narrow">ვიწრო</string>
     <string name="gesture_edge_zone_normal">ჩვეულებრივი</string>
@@ -56,7 +56,7 @@
     <string name="night_overlay_background">ღამის ოვერლეის ფონი</string>
     <string name="night_overlay_background_black">შავი</string>
     <string name="night_overlay_background_dark_gray">მუქი ნაცრისფერი</string>
-    <string name="gestures_help">გადაფურცლეთ ან შეეხეთ ორი თითით მარცხენა ან მარჯვენა კიდესთან. ორი თითი ნებისმიერ სხვა ადგილას გადაეცემა Android Auto-ს. თუ კიდიდან გადაფურცვლა არ მუშაობს, დააყენეთ სისტემა 3-ღილაკიან ნავიგაციაზე.</string>
+    <string name="gestures_help">გადაფურცლეთ ან შეეხეთ ორი თითით მარცხენა ან მარჯვენა კიდესთან. ორი თითი ნებისმიერ სხვა ადგილას გადაეცემა Android Auto-ს. თუ დააყენებთ ორი თითით ქვემოთ გასმას, ის მუშაობს ეკრანზე ნებისმიერ ადგილას, ხოლო შეხება მთელ ეკრანზე შეიძლება დაგვიანდეს. თუ კიდიდან გადაფურცვლა არ მუშაობს, დააყენეთ სისტემა 3-ღილაკიან ნავიგაციაზე.</string>
     <string name="gestures_reset">ჟესტების პარამეტრები განულდა</string>
     <string name="night_overlay_dismiss">დააჭირეთ პროექციაში დასაბრუნებლად</string>
     <string name="night_overlay_meters">%1$d მ</string>

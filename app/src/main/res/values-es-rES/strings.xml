@@ -56,7 +56,7 @@
     <string name="night_overlay_background">Fondo de la superposición nocturna</string>
     <string name="night_overlay_background_black">Negro</string>
     <string name="night_overlay_background_dark_gray">Gris oscuro</string>
-    <string name="gestures_help">Desliza o toca con dos dedos en el borde izquierdo o derecho. Dos dedos en cualquier otro sitio se envían a Android Auto. Si los deslizamientos desde el borde no funcionan, cambia el sistema a la navegación con 3 botones.</string>
+    <string name="gestures_help">Desliza o toca con dos dedos en el borde izquierdo o derecho. Dos dedos en cualquier otro sitio se envían a Android Auto. Si configuras deslizar dos dedos hacia abajo, funciona en cualquier parte de la pantalla y los toques en toda la pantalla pueden retrasarse. Si los deslizamientos desde el borde no funcionan, cambia el sistema a la navegación con 3 botones.</string>
     <string name="gestures_reset">Configuración de gestos restablecida</string>
     <string name="night_overlay_dismiss">Toca para volver a la proyección</string>
     <string name="night_overlay_meters">%1$d m</string>

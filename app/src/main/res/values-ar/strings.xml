@@ -56,7 +56,7 @@
     <string name="night_overlay_background">خلفية تراكب الليل</string>
     <string name="night_overlay_background_black">أسود</string>
     <string name="night_overlay_background_dark_gray">رمادي داكن</string>
-    <string name="gestures_help">اسحب أو انقر بإصبعين عند الحافة اليسرى أو اليمنى. يُرسل الإصبعان في أي مكان آخر إلى Android Auto. إذا لم تعمل السحبات من الحافة، فاضبط النظام على التنقل بثلاثة أزرار.</string>
+    <string name="gestures_help">اسحب أو انقر بإصبعين عند الحافة اليسرى أو اليمنى. يُرسل الإصبعان في أي مكان آخر إلى Android Auto. إذا ضبطت السحب لأسفل بإصبعين، فسيعمل في أي مكان على الشاشة، وقد تتأخر اللمسات على الشاشة بأكملها. إذا لم تعمل السحبات من الحافة، فاضبط النظام على التنقل بثلاثة أزرار.</string>
     <string name="gestures_reset">تمت إعادة تعيين إعدادات الإيماءات</string>
     <string name="night_overlay_dismiss">اضغط للعودة إلى العرض</string>
     <string name="night_overlay_meters">%1$d م</string>

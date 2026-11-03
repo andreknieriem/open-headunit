@@ -57,7 +57,7 @@
     <string name="night_overlay_background">Hintergrund des Nacht-Overlays</string>
     <string name="night_overlay_background_black">Schwarz</string>
     <string name="night_overlay_background_dark_gray">Dunkelgrau</string>
-    <string name="gestures_help">Wische oder tippe mit zwei Fingern am linken oder rechten Rand. Zwei Finger an anderer Stelle gehen an Android Auto. Falls Wischen vom Rand nicht funktioniert, stelle das System auf Drei-Tasten-Navigation um.</string>
+    <string name="gestures_help">Wische oder tippe mit zwei Fingern am linken oder rechten Rand. Zwei Finger an anderer Stelle gehen an Android Auto. Wenn du das Wischen nach unten mit zwei Fingern einstellst, funktioniert es überall auf dem Bildschirm, und Berührungen auf dem gesamten Bildschirm können verzögert werden. Falls Wischen vom Rand nicht funktioniert, stelle das System auf Drei-Tasten-Navigation um.</string>
     <string name="gestures_reset">Gesteneinstellungen zurückgesetzt</string>
     <string name="night_overlay_dismiss">Tippen, um zur Projektion zurückzukehren</string>
     <string name="night_overlay_meters">%1$d m</string>

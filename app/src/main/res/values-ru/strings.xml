@@ -56,7 +56,7 @@
     <string name="night_overlay_background">Фон ночного оверлея</string>
     <string name="night_overlay_background_black">Чёрный</string>
     <string name="night_overlay_background_dark_gray">Тёмно-серый</string>
-    <string name="gestures_help">Проведите или коснитесь двумя пальцами у левого или правого края. Касание двумя пальцами в других местах передаётся в Android Auto. Если смахивания от края не работают, включите в системе навигацию тремя кнопками.</string>
+    <string name="gestures_help">Проведите или коснитесь двумя пальцами у левого или правого края. Касание двумя пальцами в других местах передаётся в Android Auto. Если включить свайп двумя пальцами вниз, он работает в любом месте экрана, а касания по всему экрану могут обрабатываться с задержкой. Если смахивания от края не работают, включите в системе навигацию тремя кнопками.</string>
     <string name="gestures_reset">Настройки жестов сброшены</string>
     <string name="night_overlay_dismiss">Нажмите, чтобы вернуться к проекции</string>
     <string name="night_overlay_meters">%1$d м</string>

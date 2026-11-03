@@ -268,7 +268,7 @@
     <string name="night_overlay_background">พื้นหลังโอเวอร์เลย์กลางคืน</string>
     <string name="night_overlay_background_black">สีดำ</string>
     <string name="night_overlay_background_dark_gray">สีเทาเข้ม</string>
-    <string name="gestures_help">ปัดหรือแตะด้วยสองนิ้วที่ขอบซ้ายหรือขวา การใช้สองนิ้วที่อื่นจะส่งไปยัง Android Auto หากการปัดจากขอบไม่ทำงาน ให้ตั้งค่าระบบเป็นการนำทางแบบ 3 ปุ่ม</string>
+    <string name="gestures_help">ปัดหรือแตะด้วยสองนิ้วที่ขอบซ้ายหรือขวา การใช้สองนิ้วที่อื่นจะส่งไปยัง Android Auto หากตั้งค่าการปัดสองนิ้วลงด้านล่าง จะใช้งานได้ทุกที่บนหน้าจอ และการสัมผัสทั่วทั้งหน้าจออาจล่าช้า หากการปัดจากขอบไม่ทำงาน ให้ตั้งค่าระบบเป็นการนำทางแบบ 3 ปุ่ม</string>
     <string name="gestures_reset">รีเซ็ตการตั้งค่าท่าทางแล้ว</string>
     <string name="night_overlay_dismiss">แตะเพื่อกลับไปยังการฉาย</string>
     <string name="night_overlay_meters">%1$d ม.</string>

@@ -1788,6 +1788,7 @@
     <string name="wifi_scan_legacy_limit">Оновлення на Android 8–10\n• Пауза запитується під час підключення, а потім кожні п’ять хвилин, поки воно активне.\n• Між запитами Android може вмикати пошук. Інтервал обмежує повторне очищення, але не може тримати всі сканування зупиненими.\n\nЯкщо ввімкнути пошук не вдається, не закривайте Shizuku і повторіть спробу. Перезавантаження скидає це тимчасове керування.</string>
 
     <!-- Bluetooth relay (ESP32) -->
+    <string name="settings_bluetooth_route">Маршрут Bluetooth</string>
     <string name="esp32_relay_settings_title">Bluetooth-ретранслятор (ESP32)</string>
     <string name="esp32_relay_settings_summary">Налаштування Bluetooth-ретранслятора для реалізації на ESP32.</string>
     <string name="esp32_relay_enabled">Використовувати Bluetooth-ретранслятор</string>

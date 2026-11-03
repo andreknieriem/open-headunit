@@ -1785,6 +1785,7 @@
     <string name="wifi_scan_wifi_settings">Abrir configurações de Wi-Fi</string>
 
     <!-- Bluetooth relay (ESP32) -->
+    <string name="settings_bluetooth_route">Rota do Bluetooth</string>
     <string name="esp32_relay_settings_title">Relé Bluetooth (ESP32)</string>
     <string name="esp32_relay_settings_summary">Configurações do relé Bluetooth para uma implementação com ESP32.</string>
     <string name="esp32_relay_enabled">Usar relé Bluetooth</string>

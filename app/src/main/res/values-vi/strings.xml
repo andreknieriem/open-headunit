@@ -1787,6 +1787,7 @@
     <string name="wifi_scan_legacy_limit">Gia hạn trên Android 8–10\n• Yêu cầu tạm dừng khi kết nối, rồi cứ năm phút một lần khi đang kết nối.\n• Android có thể bật quét giữa các yêu cầu. Khoảng thời gian này giới hạn việc dọn dẹp lặp lại; nó không thể giữ mọi lượt quét luôn dừng.\n\nNếu không bật được quét, hãy để Shizuku chạy và thử lại. Khởi động lại sẽ đặt lại cơ chế tạm thời này.</string>
 
     <!-- Bluetooth relay (ESP32) -->
+    <string name="settings_bluetooth_route">Đường Bluetooth</string>
     <string name="esp32_relay_settings_title">Rơ-le Bluetooth (ESP32)</string>
     <string name="esp32_relay_settings_summary">Cài đặt rơ-le Bluetooth cho bản triển khai dùng ESP32.</string>
     <string name="esp32_relay_enabled">Dùng rơ-le Bluetooth</string>

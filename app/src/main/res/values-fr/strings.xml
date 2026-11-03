@@ -1830,6 +1830,7 @@
     <string name="device_specific_pause_projection_reverse_help">Tant que le véhicule est en marche arrière, l\'application libère le focus vidéo d\'Android Auto pour que la caméra de recul puisse s\'afficher. Quand la marche arrière se termine, la projection revient. L\'application lit le rapport engagé depuis le MCU de l\'appareil, donc le correctif ne marche que là où elle accède au MCU.</string>
 
     <!-- Bluetooth relay (ESP32) -->
+    <string name="settings_bluetooth_route">Chemin Bluetooth</string>
     <string name="esp32_relay_settings_title">Relais Bluetooth (ESP32)</string>
     <string name="esp32_relay_settings_summary">Réglages du relais Bluetooth pour une implémentation ESP32.</string>
     <string name="esp32_relay_enabled">Utiliser le relais Bluetooth</string>

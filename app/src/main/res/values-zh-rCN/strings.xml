@@ -1783,6 +1783,7 @@
     <string name="wifi_scan_legacy_limit">Android 8–10 上的续期\n• 连接时请求暂停，连接期间每五分钟请求一次。\n• Android 可能在两次请求之间开启扫描。该间隔只限制重复清理，无法让所有扫描始终保持停止。\n\n如果开启扫描失败，请保持 Shizuku 运行并重试。重启会重置此临时控制。</string>
 
     <!-- Bluetooth relay (ESP32) -->
+    <string name="settings_bluetooth_route">蓝牙路径</string>
     <string name="esp32_relay_settings_title">蓝牙中继器(ESP32)</string>
     <string name="esp32_relay_settings_summary">基于 ESP32 实现的蓝牙中继器设置。</string>
     <string name="esp32_relay_enabled">使用蓝牙中继器</string>

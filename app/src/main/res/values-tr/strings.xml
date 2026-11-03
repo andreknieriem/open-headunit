@@ -1780,6 +1780,7 @@
     <string name="wifi_scan_legacy_limit">Android 8–10\'da yenileme\n• Bağlanırken duraklatma istenir, bağlıyken de her beş dakikada bir istenir.\n• Android, istekler arasında taramaları açabilir. Aralık, tekrarlanan temizleme işini sınırlar; her taramayı durdurulmuş tutamaz.\n\nTaramaları açma başarısız olursa Shizuku\'yu çalışır durumda tutup tekrar deneyin. Yeniden başlatma bu geçici denetimi sıfırlar.</string>
 
     <!-- Bluetooth relay (ESP32) -->
+    <string name="settings_bluetooth_route">Bluetooth yolu</string>
     <string name="esp32_relay_settings_title">Bluetooth rölesi (ESP32)</string>
     <string name="esp32_relay_settings_summary">ESP32 tabanlı bir uygulama için Bluetooth rölesi ayarları.</string>
     <string name="esp32_relay_enabled">Bluetooth rölesini kullan</string>

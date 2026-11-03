@@ -1789,6 +1789,7 @@
     <string name="wifi_scan_wifi_settings">Wifi-instellingen openen</string>
 
     <!-- Bluetooth relay (ESP32) -->
+    <string name="settings_bluetooth_route">Bluetooth-route</string>
     <string name="esp32_relay_settings_title">Bluetooth-relay (ESP32)</string>
     <string name="esp32_relay_settings_summary">Instellingen voor een Bluetooth-relay op basis van een ESP32.</string>
     <string name="esp32_relay_enabled">Bluetooth-relay gebruiken</string>

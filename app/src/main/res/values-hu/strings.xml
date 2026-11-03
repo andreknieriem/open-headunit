@@ -1785,6 +1785,7 @@
     <string name="device_specific_pause_projection_reverse_help">Amíg a jármű hátramenetben van, az alkalmazás felszabadítja az Android Auto videófókuszát, hogy a tolatókamera megjelenhessen. Amikor a hátramenet véget ér, a vetítés visszatér. Az alkalmazás az egység MCU-jából olvassa a sebességfokozatot, ezért a javítás csak ott működik, ahol az alkalmazás eléri az MCU-t.</string>
 
     <!-- Bluetooth relay (ESP32) -->
+    <string name="settings_bluetooth_route">Bluetooth-útvonal</string>
     <string name="esp32_relay_settings_title">Bluetooth-relé (ESP32)</string>
     <string name="esp32_relay_settings_summary">Bluetooth-relé beállításai ESP32-alapú megvalósításhoz.</string>
     <string name="esp32_relay_enabled">Bluetooth-relé használata</string>

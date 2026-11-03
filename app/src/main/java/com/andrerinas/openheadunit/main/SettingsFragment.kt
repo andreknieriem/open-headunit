@@ -1226,125 +1226,6 @@ class SettingsFragment : Fragment() {
                 addStationStandDownSetting(items)
             }
 
-            // ESP32 relay needs API 23 (Android 6.0) for BLE. Omit the row below that —
-            // a greyed-out "unsupported" entry looks like a missing setting.
-            if (Build.VERSION.SDK_INT >= Esp32RelaySession.MIN_SDK) {
-                val esp32RelayStore = Esp32RelayStore(requireContext())
-                val esp32RelayLabel = when {
-                    !esp32RelayStore.enabled -> getString(R.string.esp32_relay_settings_disabled)
-                    else -> esp32RelayStore.deviceName
-                        ?: esp32RelayStore.deviceAddress
-                        ?: getString(R.string.esp32_relay_settings_summary)
-                }
-                items.add(SettingItem.SettingEntry(
-                    stableId = "Esp32Relay",
-                    nameResId = R.string.esp32_relay_settings_title,
-                    value = esp32RelayLabel,
-                    searchKeywords = "bluetooth relay board esp32 pair disconnect ble openhu",
-                    onClick = {
-                        try {
-                            findNavController().navigate(R.id.action_settingsFragment_to_esp32RelaySettingsFragment)
-                        } catch (_: Exception) { }
-                    }
-                ))
-            }
-
-            // Only where FYT's blink daemon relays the BLINK module's Android Auto channel. Needs root.
-            val blinkEnabled = pendingExternalBtBlinkTransport ?: settings.externalBtBlinkTransport
-            if (ExternalBtTransportPolicy.showBlinkToggle(BluetoothHelper.fytModuleEvidence, blinkEnabled)) {
-                items.add(SettingItem.ToggleSettingEntry(
-                    stableId = "externalBtBlinkTransport",
-                    nameResId = R.string.external_bt_blink_transport,
-                    descriptionResId = R.string.external_bt_blink_transport_summary,
-                    helpResId = R.string.external_bt_blink_transport_description,
-                    isChecked = blinkEnabled,
-                    searchKeywords = "fyt blink duduauto dudu carlink external bluetooth module transport auto_serial",
-                    onCheckedChanged = { isChecked -> setRouteSwitch(ExternalBtTransportPolicy.RouteSwitch.BLINK, isChecked) }
-                ))
-            }
-
-            // The ZJ socket switch; the route is also taken unasked when the socket accepts a connect.
-            val zjChecked = pendingExternalBtZjSocketTransport ?: settings.externalBtZjSocketTransport
-            if (ExternalBtTransportPolicy.showZjSocketToggle(
-                    ZbtDiscovery.snapshot(),
-                    BluetoothHelper.fytModuleEvidence,
-                    ExternalBtPolicy.ZJ_SOCKET_PATHS.any { File(it).exists() },
-                    zjChecked
-                )) {
-                items.add(SettingItem.ToggleSettingEntry(
-                    stableId = "externalBtZjSocketTransport",
-                    nameResId = R.string.external_bt_zj_socket_transport,
-                    descriptionResId = R.string.external_bt_zj_socket_transport_summary,
-                    helpResId = R.string.external_bt_zj_socket_transport_description,
-                    isChecked = zjChecked,
-                    searchKeywords = "zj zlink gocsdk socket unix external bluetooth module transport handshake",
-                    onCheckedChanged = { isChecked -> setRouteSwitch(ExternalBtTransportPolicy.RouteSwitch.ZJ_SOCKET, isChecked) }
-                ))
-            }
-
-            // Offer the existing ZBT override for known external modules and firmware candidates.
-            // A candidate may have a usable Android adapter; failed discovery alone does not refuse it.
-            // Not on FYT module units, which have no ZLink daemon; the route refuses ZBT there anyway.
-            // Still shown while on, so a toggle left over from before can be turned off.
-            val zbtChecked = pendingExternalBtZbtTransport ?: settings.externalBtZbtTransport
-            val zbtDiscovery = ZbtDiscovery.snapshot()
-            if (zbtDiscovery.decision.available &&
-                (BluetoothHelper.fytModuleEvidence == null || zbtChecked)) {
-                items.add(SettingItem.ToggleSettingEntry(
-                    stableId = "externalBtZbtTransport",
-                    nameResId = R.string.external_bt_transport,
-                    descriptionResId = R.string.external_bt_transport_summary,
-                    helpResId = if (zbtDiscovery.decision.requiresIdentity)
-                        R.string.external_bt_candidate_transport_description else R.string.external_bt_transport_description,
-                    isChecked = pendingExternalBtZbtTransport ?: settings.externalBtZbtTransport,
-                    searchKeywords = "zbt zlink external bluetooth module transport handshake vendor daemon",
-                    onCheckedChanged = { isChecked -> setRouteSwitch(ExternalBtTransportPolicy.RouteSwitch.ZBT, isChecked) }
-                ))
-
-                items.add(SettingItem.SettingEntry(
-                    stableId = "zbtProbe",
-                    nameResId = R.string.zbt_probe_title,
-                    helpResId = R.string.zbt_probe_help,
-                    value = zbtProbeResult ?: getString(R.string.zbt_probe_idle),
-                    searchKeywords = "zbt zlink external bluetooth module probe test vendor daemon rfcomm",
-                    onClick = { _ -> confirmAndRunZbtProbe() }
-                ))
-            }
-
-            // Moved out of the Android-radio-only settings block so this existing override is
-            // also available on the module route. Keep its setting key and callback unchanged;
-            // firmware candidates need the same way to explicitly choose Android Bluetooth.
-            // ZbtDiscovery reuses the established detector and reads its selected cache here,
-            // never a socket. A negative detection can read metadata again on a later rebuild.
-            // Preserve the original no-op-control rule: explicit ZBT or BLINK toggles win over
-            // this switch. Keep an already checked switch visible so it can still be cleared.
-            // FYT retains this override for a phone actually paired with the Android radio.
-            val radioDiscovery = ZbtDiscovery.snapshot()
-            val radioFytEvidence = BluetoothHelper.fytModuleEvidence
-            val ignoreChecked = pendingNativeAaIgnoreExternalBt ?: settings.nativeAaIgnoreExternalBt
-            val hctService = HctServiceObserver.available(requireContext())
-            if (ExternalBtTransportPolicy.showsAndroidRadioOverride(
-                    radioDiscovery,
-                    pendingExternalBtZbtTransport ?: settings.externalBtZbtTransport,
-                    ignoreChecked,
-                    pendingExternalBtBlinkTransport ?: settings.externalBtBlinkTransport,
-                    radioFytEvidence,
-                    hctService,
-                    pendingExternalBtZjSocketTransport ?: settings.externalBtZjSocketTransport,
-                    ZjSocketProbe.answer()
-                )) {
-                items.add(SettingItem.ToggleSettingEntry(
-                    stableId = "nativeAaIgnoreExternalBt",
-                    nameResId = R.string.native_aa_ignore_external_bt,
-                    descriptionResId = R.string.native_aa_ignore_external_bt_summary,
-                    helpResId = if ((radioDiscovery.decision.requiresIdentity || hctService) && radioFytEvidence == null)
-                        R.string.native_aa_candidate_android_radio_description else R.string.native_aa_ignore_external_bt_description,
-                    isChecked = ignoreChecked,
-                    searchKeywords = "external bluetooth module rfcomm override compatibility anyway",
-                    onCheckedChanged = { isChecked -> setRouteSwitch(ExternalBtTransportPolicy.RouteSwitch.ANDROID_RADIO, isChecked) }
-                ))
-            }
-
             if (ExternalBtTransportPolicy.usesExternalModule(pendingExternalBtRoute())) {
                 items.add(SettingItem.InfoBanner(
                     stableId = "externalBtModuleControlsHint",
@@ -1714,6 +1595,9 @@ class SettingsFragment : Fragment() {
                 }
             ))
         }
+
+        // Last in the section, so the sub-header's group runs to the section's end.
+        if (pendingWifiConnectionMode == WifiLauncherMode.NATIVE) addBluetoothRouteRows(items)
 
         // --- Graphic Settings ---
         items.add(SettingItem.CategoryHeader("graphic", R.string.category_graphic))
@@ -4759,6 +4643,130 @@ class SettingsFragment : Fragment() {
      * Basic rather than Advanced, like the hotspot band beside it: this is the first thing to try
      * when a wireless session connects and shows no picture.
      */
+    /** Who carries the Bluetooth half of Native AA: the relay, a module, or this unit's radio. */
+    private fun addBluetoothRouteRows(items: MutableList<SettingItem>) {
+        items.add(SettingItem.SubHeader("bluetoothRoute", R.string.settings_bluetooth_route))
+
+        // ESP32 relay needs API 23 (Android 6.0) for BLE. Omit the row below that —
+        // a greyed-out "unsupported" entry looks like a missing setting.
+        if (Build.VERSION.SDK_INT >= Esp32RelaySession.MIN_SDK) {
+            val esp32RelayStore = Esp32RelayStore(requireContext())
+            val esp32RelayLabel = when {
+                !esp32RelayStore.enabled -> getString(R.string.esp32_relay_settings_disabled)
+                else -> esp32RelayStore.deviceName
+                    ?: esp32RelayStore.deviceAddress
+                    ?: getString(R.string.esp32_relay_settings_summary)
+            }
+            items.add(SettingItem.SettingEntry(
+                stableId = "Esp32Relay",
+                nameResId = R.string.esp32_relay_settings_title,
+                value = esp32RelayLabel,
+                searchKeywords = "bluetooth relay board esp32 pair disconnect ble openhu",
+                onClick = {
+                    try {
+                        findNavController().navigate(R.id.action_settingsFragment_to_esp32RelaySettingsFragment)
+                    } catch (_: Exception) { }
+                }
+            ))
+        }
+
+        // Only where FYT's blink daemon relays the BLINK module's Android Auto channel. Needs root.
+        val blinkEnabled = pendingExternalBtBlinkTransport ?: settings.externalBtBlinkTransport
+        if (ExternalBtTransportPolicy.showBlinkToggle(BluetoothHelper.fytModuleEvidence, blinkEnabled)) {
+            items.add(SettingItem.ToggleSettingEntry(
+                stableId = "externalBtBlinkTransport",
+                nameResId = R.string.external_bt_blink_transport,
+                descriptionResId = R.string.external_bt_blink_transport_summary,
+                helpResId = R.string.external_bt_blink_transport_description,
+                isChecked = blinkEnabled,
+                searchKeywords = "fyt blink duduauto dudu carlink external bluetooth module transport auto_serial",
+                onCheckedChanged = { isChecked -> setRouteSwitch(ExternalBtTransportPolicy.RouteSwitch.BLINK, isChecked) }
+            ))
+        }
+
+        // The ZJ socket switch; the route is also taken unasked when the socket accepts a connect.
+        val zjChecked = pendingExternalBtZjSocketTransport ?: settings.externalBtZjSocketTransport
+        if (ExternalBtTransportPolicy.showZjSocketToggle(
+                ZbtDiscovery.snapshot(),
+                BluetoothHelper.fytModuleEvidence,
+                ExternalBtPolicy.ZJ_SOCKET_PATHS.any { File(it).exists() },
+                zjChecked
+            )) {
+            items.add(SettingItem.ToggleSettingEntry(
+                stableId = "externalBtZjSocketTransport",
+                nameResId = R.string.external_bt_zj_socket_transport,
+                descriptionResId = R.string.external_bt_zj_socket_transport_summary,
+                helpResId = R.string.external_bt_zj_socket_transport_description,
+                isChecked = zjChecked,
+                searchKeywords = "zj zlink gocsdk socket unix external bluetooth module transport handshake",
+                onCheckedChanged = { isChecked -> setRouteSwitch(ExternalBtTransportPolicy.RouteSwitch.ZJ_SOCKET, isChecked) }
+            ))
+        }
+
+        // Offer the existing ZBT override for known external modules and firmware candidates.
+        // A candidate may have a usable Android adapter; failed discovery alone does not refuse it.
+        // Not on FYT module units, which have no ZLink daemon; the route refuses ZBT there anyway.
+        // Still shown while on, so a toggle left over from before can be turned off.
+        val zbtChecked = pendingExternalBtZbtTransport ?: settings.externalBtZbtTransport
+        val zbtDiscovery = ZbtDiscovery.snapshot()
+        if (zbtDiscovery.decision.available &&
+            (BluetoothHelper.fytModuleEvidence == null || zbtChecked)) {
+            items.add(SettingItem.ToggleSettingEntry(
+                stableId = "externalBtZbtTransport",
+                nameResId = R.string.external_bt_transport,
+                descriptionResId = R.string.external_bt_transport_summary,
+                helpResId = if (zbtDiscovery.decision.requiresIdentity)
+                    R.string.external_bt_candidate_transport_description else R.string.external_bt_transport_description,
+                isChecked = pendingExternalBtZbtTransport ?: settings.externalBtZbtTransport,
+                searchKeywords = "zbt zlink external bluetooth module transport handshake vendor daemon",
+                onCheckedChanged = { isChecked -> setRouteSwitch(ExternalBtTransportPolicy.RouteSwitch.ZBT, isChecked) }
+            ))
+
+            items.add(SettingItem.SettingEntry(
+                stableId = "zbtProbe",
+                nameResId = R.string.zbt_probe_title,
+                helpResId = R.string.zbt_probe_help,
+                value = zbtProbeResult ?: getString(R.string.zbt_probe_idle),
+                searchKeywords = "zbt zlink external bluetooth module probe test vendor daemon rfcomm",
+                onClick = { _ -> confirmAndRunZbtProbe() }
+            ))
+        }
+
+        // Moved out of the Android-radio-only settings block so this existing override is
+        // also available on the module route. Keep its setting key and callback unchanged;
+        // firmware candidates need the same way to explicitly choose Android Bluetooth.
+        // ZbtDiscovery reuses the established detector and reads its selected cache here,
+        // never a socket. A negative detection can read metadata again on a later rebuild.
+        // Preserve the original no-op-control rule: explicit ZBT or BLINK toggles win over
+        // this switch. Keep an already checked switch visible so it can still be cleared.
+        // FYT retains this override for a phone actually paired with the Android radio.
+        val radioDiscovery = ZbtDiscovery.snapshot()
+        val radioFytEvidence = BluetoothHelper.fytModuleEvidence
+        val ignoreChecked = pendingNativeAaIgnoreExternalBt ?: settings.nativeAaIgnoreExternalBt
+        val hctService = HctServiceObserver.available(requireContext())
+        if (ExternalBtTransportPolicy.showsAndroidRadioOverride(
+                radioDiscovery,
+                pendingExternalBtZbtTransport ?: settings.externalBtZbtTransport,
+                ignoreChecked,
+                pendingExternalBtBlinkTransport ?: settings.externalBtBlinkTransport,
+                radioFytEvidence,
+                hctService,
+                pendingExternalBtZjSocketTransport ?: settings.externalBtZjSocketTransport,
+                ZjSocketProbe.answer()
+            )) {
+            items.add(SettingItem.ToggleSettingEntry(
+                stableId = "nativeAaIgnoreExternalBt",
+                nameResId = R.string.native_aa_ignore_external_bt,
+                descriptionResId = R.string.native_aa_ignore_external_bt_summary,
+                helpResId = if ((radioDiscovery.decision.requiresIdentity || hctService) && radioFytEvidence == null)
+                    R.string.native_aa_candidate_android_radio_description else R.string.native_aa_ignore_external_bt_description,
+                isChecked = ignoreChecked,
+                searchKeywords = "external bluetooth module rfcomm override compatibility anyway",
+                onCheckedChanged = { isChecked -> setRouteSwitch(ExternalBtTransportPolicy.RouteSwitch.ANDROID_RADIO, isChecked) }
+            ))
+        }
+    }
+
     private fun addWifiDirectBandSetting(items: MutableList<SettingItem>) {
         items.add(SettingItem.SegmentedButtonSettingEntry(
             stableId = "wifiDirectBand",

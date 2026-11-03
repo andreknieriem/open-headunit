@@ -1786,6 +1786,7 @@
     <string name="device_specific_pause_projection_reverse_help">عندما تكون السيارة في وضع الرجوع للخلف، يحرر التطبيق تركيز الفيديو في Android Auto لتظهر كاميرا الرجوع. وعند انتهاء الرجوع تعود الشاشة المعروضة. يقرأ التطبيق ناقل الحركة من MCU الوحدة، لذا لا يعمل الإصلاح إلا حيث يصل التطبيق إلى MCU.</string>
 
     <!-- Bluetooth relay (ESP32) -->
+    <string name="settings_bluetooth_route">مسار البلوتوث</string>
     <string name="esp32_relay_settings_title">مرحّل البلوتوث (ESP32)</string>
     <string name="esp32_relay_settings_summary">إعدادات مرحّل البلوتوث لتنفيذ يعتمد على ESP32.</string>
     <string name="esp32_relay_enabled">استخدام مرحّل البلوتوث</string>

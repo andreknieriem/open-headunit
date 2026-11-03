@@ -1599,6 +1599,7 @@
     <string name="onb_audio_test_failed">테스트 소리를 재생할 수 없습니다: %1$s</string>
 
     <!-- Bluetooth relay (ESP32) -->
+    <string name="settings_bluetooth_route">블루투스 경로</string>
     <string name="esp32_relay_settings_title">블루투스 릴레이(ESP32)</string>
     <string name="esp32_relay_settings_summary">ESP32로 구현된 Bluetooth Relay 설정.</string>
     <string name="esp32_relay_enabled">블루투스 릴레이 사용</string>

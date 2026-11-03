@@ -23,7 +23,7 @@ object SettingsFilterPolicy {
     /**
      * [items] is the complete list built for the screen, headers included. [text] resolves a
      * string resource, so the caller keeps the fragment's `getString` and the rules stay pure.
-     * A section header survives only when at least one of its rows does.
+     * A section header, and a sub-header inside it, survives only when at least one of its rows does.
      */
     fun filter(
         items: List<SettingItem>,
@@ -39,6 +39,8 @@ object SettingsFilterPolicy {
         var pendingHeader: SettingItem.CategoryHeader? = null
         var categoryId: String? = null
         var headerMatches = false
+        var pendingSubHeader: SettingItem.SubHeader? = null
+        var subHeaderMatches = false
 
         for (item in items) {
             if (item is SettingItem.CategoryHeader) {
@@ -46,14 +48,24 @@ object SettingsFilterPolicy {
                 categoryId = item.stableId
                 headerMatches = search.isNotEmpty() &&
                     text(item.titleResId).contains(search, ignoreCase = true)
+                pendingSubHeader = null
+                subHeaderMatches = false
                 continue
             }
-            if (!shows(item, search, headerMatches, advanced, showsUsb, showsWifi, basicIds, categoryId, text)) {
+            if (item is SettingItem.SubHeader) {
+                pendingSubHeader = item
+                subHeaderMatches = search.isNotEmpty() &&
+                    text(item.titleResId).contains(search, ignoreCase = true)
+                continue
+            }
+            if (!shows(item, search, headerMatches || subHeaderMatches, advanced, showsUsb, showsWifi, basicIds, categoryId, text)) {
                 continue
             }
             if (!standsAlone(item)) {
                 pendingHeader?.let { result.add(it) }
                 pendingHeader = null
+                pendingSubHeader?.let { result.add(it) }
+                pendingSubHeader = null
             }
             result.add(item)
         }
@@ -142,6 +154,7 @@ object SettingsFilterPolicy {
             is SettingItem.InfoBanner -> item.text ?: text(item.textResId)
             is SettingItem.ActionButton -> text(item.textResId)
             is SettingItem.CategoryHeader -> text(item.titleResId)
+            is SettingItem.SubHeader -> text(item.titleResId)
             is SettingItem.ScopeNotice -> item.text
         }
     }

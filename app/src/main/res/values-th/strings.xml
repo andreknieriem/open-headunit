@@ -1838,6 +1838,7 @@
     <string name="wifi_scan_legacy_limit">การต่ออายุบน Android 8–10\n• ขอหยุดชั่วคราวเมื่อเชื่อมต่อ แล้วขอทุกห้านาทีขณะเชื่อมต่ออยู่\n• Android อาจเปิดการสแกนระหว่างคำขอ ช่วงเวลานี้จำกัดงานล้างซ้ำ แต่ไม่สามารถให้ทุกการสแกนหยุดตลอดได้\n\nหากเปิดการสแกนไม่สำเร็จ ให้เปิด Shizuku ค้างไว้แล้วลองอีกครั้ง การรีบูตจะรีเซ็ตการควบคุมชั่วคราวนี้</string>
 
     <!-- Bluetooth relay (ESP32) -->
+    <string name="settings_bluetooth_route">เส้นทางบลูทูธ</string>
     <string name="esp32_relay_settings_title">รีเลย์บลูทูธ (ESP32)</string>
     <string name="esp32_relay_settings_summary">การตั้งค่ารีเลย์บลูทูธสำหรับการใช้งานด้วย ESP32</string>
     <string name="esp32_relay_enabled">ใช้รีเลย์บลูทูธ</string>

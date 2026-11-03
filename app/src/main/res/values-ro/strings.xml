@@ -1783,6 +1783,7 @@
     <string name="wifi_scan_legacy_limit">Reînnoire pe Android 8–10\n• Se cere o pauză la conectare, apoi la fiecare cinci minute cât timp este conectat.\n• Android poate activa căutările între cereri. Intervalul limitează curățarea repetată, dar nu poate ține toate scanările oprite.\n\nDacă activarea căutărilor eșuează, lăsați Shizuku pornit și reîncercați. Repornirea resetează acest control temporar.</string>
 
     <!-- Bluetooth relay (ESP32) -->
+    <string name="settings_bluetooth_route">Ruta Bluetooth</string>
     <string name="esp32_relay_settings_title">Releu Bluetooth (ESP32)</string>
     <string name="esp32_relay_settings_summary">Setări pentru releul Bluetooth într-o implementare ESP32.</string>
     <string name="esp32_relay_enabled">Folosește releul Bluetooth</string>

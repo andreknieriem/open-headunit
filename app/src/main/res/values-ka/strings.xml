@@ -1770,6 +1770,7 @@
     <string name="wifi_scan_wifi_settings">Wi-Fi პარამეტრების გახსნა</string>
 
     <!-- Bluetooth relay (ESP32) -->
+    <string name="settings_bluetooth_route">Bluetooth-ის მარშრუტი</string>
     <string name="esp32_relay_settings_title">Bluetooth რელე (ESP32)</string>
     <string name="esp32_relay_settings_summary">Bluetooth რელეს პარამეტრები ESP32-ზე დაფუძნებული რეალიზაციისთვის.</string>
     <string name="esp32_relay_enabled">Bluetooth რელეს გამოყენება</string>

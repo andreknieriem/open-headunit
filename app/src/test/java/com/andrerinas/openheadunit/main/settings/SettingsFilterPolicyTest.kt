@@ -20,7 +20,9 @@ class SettingsFilterPolicyTest {
         AUDIO_SUMMARY to "Plays phone audio through this unit.",
         AUDIO_HELP to "Audio from apps. Calls never use it.",
         PICKER_SUMMARY to "Chooses the codec.",
-        PICKER_HELP to "Pick the video codec the phone sends."
+        PICKER_HELP to "Pick the video codec the phone sends.",
+        ROUTE to "Bluetooth route",
+        RELAY to "Bluetooth relay (ESP32)"
     )
 
     private fun text(id: Int): String = titles[id] ?: ""
@@ -321,6 +323,57 @@ class SettingsFilterPolicyTest {
         assertEquals(listOf("general", "mode"), helpFilter(segmented, query = "video codec"))
     }
 
+    private val relay = SettingItem.SettingEntry(stableId = "relay", nameResId = RELAY, value = "Off", onClick = {})
+
+    /** A sub-header at the end of the wireless section, the way the Bluetooth route group sits. */
+    private val withRoute = listOf(
+        SettingItem.CategoryHeader(stableId = "general", titleResId = GENERAL),
+        language,
+        SettingItem.CategoryHeader(stableId = "wirelessConnection", titleResId = WIRELESS),
+        wifiMode,
+        SettingItem.SubHeader(stableId = "bluetoothRoute", titleResId = ROUTE),
+        relay,
+        SettingItem.CategoryHeader(stableId = "input", titleResId = INPUT),
+        libusb
+    )
+
+    private fun routeFilter(query: String = "", basics: Set<String> = basicIds + "relay") =
+        SettingsFilterPolicy.filter(
+            items = withRoute, query = query, advanced = false, showsUsb = true, showsWifi = true,
+            basicIds = basics, text = ::text
+        ).map { it.stableId }
+
+    @Test
+    fun `a sub-header shows above its surviving row`() {
+        assertEquals(
+            listOf("general", "language", "wirelessConnection", "wifiMode", "bluetoothRoute", "relay", "input", "useLibusb"),
+            routeFilter()
+        )
+    }
+
+    @Test
+    fun `a sub-header whose rows are all filtered out goes with them`() {
+        assertEquals(
+            listOf("general", "language", "wirelessConnection", "wifiMode", "input", "useLibusb"),
+            routeFilter(basics = basicIds)
+        )
+    }
+
+    @Test
+    fun `searching a sub-header's title brings its rows and its section header`() {
+        assertEquals(listOf("wirelessConnection", "bluetoothRoute", "relay"), routeFilter(query = "bluetooth route"))
+    }
+
+    @Test
+    fun `a row found by search keeps its sub-header`() {
+        assertEquals(listOf("wirelessConnection", "bluetoothRoute", "relay"), routeFilter(query = "esp32"))
+    }
+
+    @Test
+    fun `the next section header ends a sub-header's group`() {
+        assertEquals(listOf("input", "useLibusb"), routeFilter(query = "libusb"))
+    }
+
     private companion object {
         const val GENERAL = 1
         const val LANGUAGE = 2
@@ -337,5 +390,7 @@ class SettingsFilterPolicyTest {
         const val PICKER_SUMMARY = 13
         const val PICKER_HELP = 14
         const val DEVICE_SPECIFIC = 15
+        const val ROUTE = 16
+        const val RELAY = 17
     }
 }

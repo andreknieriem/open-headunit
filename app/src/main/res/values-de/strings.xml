@@ -1788,6 +1788,7 @@
     <string name="device_specific_pause_projection_reverse_help">Solange das Fahrzeug im Rückwärtsgang ist, gibt die App den Videofokus von Android Auto frei, damit die Rückfahrkamera erscheinen kann. Endet der Rückwärtsgang, kommt die Projektion zurück. Die App liest den Gang aus der MCU des Geräts. Die Korrektur funktioniert daher nur, wo die App die MCU erreicht.</string>
 
     <!-- Bluetooth relay (ESP32) -->
+    <string name="settings_bluetooth_route">Bluetooth-Route</string>
     <string name="esp32_relay_settings_title">Bluetooth-Relay (ESP32)</string>
     <string name="esp32_relay_settings_summary">Einstellungen für ein Bluetooth-Relay auf ESP32-Basis.</string>
     <string name="esp32_relay_enabled">Bluetooth-Relay verwenden</string>

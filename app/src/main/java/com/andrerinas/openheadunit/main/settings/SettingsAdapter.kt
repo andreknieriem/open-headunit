@@ -92,6 +92,9 @@ sealed class SettingItem {
 
     data class CategoryHeader(override val stableId: String, @StringRes val titleResId: Int) : SettingItem()
 
+    /** A smaller title for a group inside a section. It is not a section, so the rail never lists it. */
+    data class SubHeader(override val stableId: String, @StringRes val titleResId: Int) : SettingItem()
+
     data class InfoBanner(
         override val stableId: String,
         @StringRes val textResId: Int,
@@ -143,6 +146,7 @@ class SettingsAdapter : ListAdapter<SettingItem, RecyclerView.ViewHolder>(Settin
         private const val VIEW_TYPE_SEGMENTED = 7
         private const val VIEW_TYPE_STREAM = 8
         private const val VIEW_TYPE_SCOPE_NOTICE = 9
+        private const val VIEW_TYPE_SUBHEADER = 10
 
         /** Rebind payload that only refreshes a row's group corners. */
         private const val PAYLOAD_GROUP_SHAPE = "groupShape"
@@ -172,6 +176,7 @@ class SettingsAdapter : ListAdapter<SettingItem, RecyclerView.ViewHolder>(Settin
     override fun getItemViewType(position: Int): Int {
         return when (getItem(position)) {
             is SettingItem.CategoryHeader -> VIEW_TYPE_HEADER
+            is SettingItem.SubHeader -> VIEW_TYPE_SUBHEADER
             is SettingItem.SettingEntry -> VIEW_TYPE_SETTING
             is SettingItem.ToggleSettingEntry -> VIEW_TYPE_TOGGLE
             is SettingItem.SliderSettingEntry -> VIEW_TYPE_SLIDER
@@ -188,6 +193,7 @@ class SettingsAdapter : ListAdapter<SettingItem, RecyclerView.ViewHolder>(Settin
         val colors = palette(parent)
         return when (viewType) {
             VIEW_TYPE_HEADER -> HeaderViewHolder(inflater.inflate(R.layout.layout_category_header, parent, false))
+            VIEW_TYPE_SUBHEADER -> SubHeaderViewHolder(inflater.inflate(R.layout.layout_setting_subheader, parent, false))
             VIEW_TYPE_SETTING -> SettingViewHolder(inflater.inflate(R.layout.layout_setting_item, parent, false), colors)
             VIEW_TYPE_TOGGLE -> ToggleSettingViewHolder(inflater.inflate(R.layout.layout_setting_item_toggle, parent, false), colors)
             VIEW_TYPE_SLIDER -> SliderSettingViewHolder(inflater.inflate(R.layout.layout_setting_item_slider, parent, false), colors)
@@ -206,6 +212,7 @@ class SettingsAdapter : ListAdapter<SettingItem, RecyclerView.ViewHolder>(Settin
 
         when (item) {
             is SettingItem.CategoryHeader -> (holder as HeaderViewHolder).bind(item)
+            is SettingItem.SubHeader -> (holder as SubHeaderViewHolder).bind(item)
             is SettingItem.SettingEntry -> (holder as SettingViewHolder).bind(item)
             is SettingItem.ToggleSettingEntry -> (holder as ToggleSettingViewHolder).bind(item)
             is SettingItem.SliderSettingEntry -> (holder as SliderSettingViewHolder).bind(item)
@@ -267,6 +274,13 @@ class SettingsAdapter : ListAdapter<SettingItem, RecyclerView.ViewHolder>(Settin
     class HeaderViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val title: TextView = itemView.findViewById(R.id.categoryTitle)
         fun bind(header: SettingItem.CategoryHeader) {
+            title.setText(header.titleResId)
+        }
+    }
+
+    class SubHeaderViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private val title: TextView = itemView.findViewById(R.id.subHeaderTitle)
+        fun bind(header: SettingItem.SubHeader) {
             title.setText(header.titleResId)
         }
     }
@@ -541,6 +555,8 @@ class SettingsAdapter : ListAdapter<SettingItem, RecyclerView.ViewHolder>(Settin
                     oldItem.nameResId == newItem.nameResId && oldItem.value == newItem.value && oldItem.sliderValue == newItem.sliderValue &&
                         oldItem.helpResId == newItem.helpResId
                 oldItem is SettingItem.CategoryHeader && newItem is SettingItem.CategoryHeader ->
+                    oldItem.titleResId == newItem.titleResId
+                oldItem is SettingItem.SubHeader && newItem is SettingItem.SubHeader ->
                     oldItem.titleResId == newItem.titleResId
                 oldItem is SettingItem.InfoBanner && newItem is SettingItem.InfoBanner ->
                     oldItem.textResId == newItem.textResId && oldItem.text == newItem.text

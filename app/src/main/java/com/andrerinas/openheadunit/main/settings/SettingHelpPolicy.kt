@@ -10,6 +10,7 @@ object SettingHelpPolicy {
         is SettingItem.SliderSettingEntry -> item.helpResId
         is SettingItem.SegmentedButtonSettingEntry -> item.helpResId
         is SettingItem.CategoryHeader,
+        is SettingItem.SubHeader,
         is SettingItem.InfoBanner,
         is SettingItem.ActionButton,
         is SettingItem.ScopeNotice -> null

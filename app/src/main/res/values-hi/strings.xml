@@ -1831,6 +1831,7 @@
     <string name="device_specific_pause_projection_reverse_help">जब कार रिवर्स गियर में होती है, ऐप Android Auto का वीडियो फ़ोकस छोड़ देता है ताकि रियर कैमरा दिख सके। रिवर्स खत्म होने पर प्रोजेक्शन लौट आता है। ऐप गियर की जानकारी यूनिट के MCU से पढ़ता है, इसलिए यह फ़िक्स केवल वहीं चलता है जहाँ ऐप MCU तक पहुँच सके।</string>
 
     <!-- Bluetooth relay (ESP32) -->
+    <string name="settings_bluetooth_route">ब्लूटूथ मार्ग</string>
     <string name="esp32_relay_settings_title">ब्लूटूथ रिले (ESP32)</string>
     <string name="esp32_relay_settings_summary">ESP32 आधारित ब्लूटूथ रिले की सेटिंग।</string>
     <string name="esp32_relay_enabled">ब्लूटूथ रिले इस्तेमाल करें</string>

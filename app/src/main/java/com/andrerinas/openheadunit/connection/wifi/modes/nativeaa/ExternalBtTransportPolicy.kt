@@ -181,26 +181,53 @@ object ExternalBtTransportPolicy {
     fun rearmsWithoutAndroidRadio(route: Route): Boolean =
         route == Route.BLINK || route == Route.HCT || route == Route.ZJ_SOCKET
 
-    /** The four switches [route] reads, as the settings screen holds them. */
-    data class RouteSwitches(val blink: Boolean, val zjSocket: Boolean, val zbt: Boolean, val androidRadio: Boolean)
+    /** The switches [route] reads, plus the ESP32 relay's, which overrides them all. */
+    data class RouteSwitches(
+        val blink: Boolean, val zjSocket: Boolean, val zbt: Boolean, val androidRadio: Boolean,
+        val esp32: Boolean = false,
+    )
 
-    enum class RouteSwitch { BLINK, ZJ_SOCKET, ZBT, ANDROID_RADIO }
+    /** The Bluetooth the phone pairs with. One choice, because only one route runs. */
+    enum class RouteChoice { AUTOMATIC, ANDROID_RADIO, ZBT, ZJ_SOCKET, BLINK, ESP32 }
 
-    /** [route] runs one route, so the switches are one choice: turning one on turns the rest off. */
-    fun switchesAfter(current: RouteSwitches, which: RouteSwitch, on: Boolean): RouteSwitches =
-        if (on) {
-            RouteSwitches(
-                blink = which == RouteSwitch.BLINK,
-                zjSocket = which == RouteSwitch.ZJ_SOCKET,
-                zbt = which == RouteSwitch.ZBT,
-                androidRadio = which == RouteSwitch.ANDROID_RADIO
-            )
-        } else when (which) {
-            RouteSwitch.BLINK -> current.copy(blink = false)
-            RouteSwitch.ZJ_SOCKET -> current.copy(zjSocket = false)
-            RouteSwitch.ZBT -> current.copy(zbt = false)
-            RouteSwitch.ANDROID_RADIO -> current.copy(androidRadio = false)
+    /** What the switches run, in [route]'s order; a saved ESP32 relay comes before all of it. */
+    fun choiceOf(s: RouteSwitches): RouteChoice = when {
+        s.esp32 -> RouteChoice.ESP32
+        s.blink -> RouteChoice.BLINK
+        s.zbt -> RouteChoice.ZBT
+        s.zjSocket -> RouteChoice.ZJ_SOCKET
+        s.androidRadio -> RouteChoice.ANDROID_RADIO
+        else -> RouteChoice.AUTOMATIC
+    }
+
+    /** A choice turns its own switch on and every other one off. */
+    fun switchesFor(choice: RouteChoice) = RouteSwitches(
+        blink = choice == RouteChoice.BLINK,
+        zjSocket = choice == RouteChoice.ZJ_SOCKET,
+        zbt = choice == RouteChoice.ZBT,
+        androidRadio = choice == RouteChoice.ANDROID_RADIO,
+        esp32 = choice == RouteChoice.ESP32,
+    )
+
+    /** The choices this unit can use, Automatic first. The one in force is always offered. */
+    fun routeChoices(
+        current: RouteChoice,
+        moduleDetected: Boolean,
+        zbtOffered: Boolean,
+        zjOffered: Boolean,
+        blinkOffered: Boolean,
+        esp32Supported: Boolean,
+    ): List<RouteChoice> = RouteChoice.values().filter {
+        it == current || when (it) {
+            RouteChoice.AUTOMATIC -> true
+            // Without a module, Automatic already is this unit's own Bluetooth.
+            RouteChoice.ANDROID_RADIO -> moduleDetected
+            RouteChoice.ZBT -> zbtOffered
+            RouteChoice.ZJ_SOCKET -> zjOffered
+            RouteChoice.BLINK -> blinkOffered
+            RouteChoice.ESP32 -> esp32Supported
         }
+    }
 
     /**
      * Offered wherever the FYT module is detected, and kept while enabled even if detection stops
@@ -220,25 +247,14 @@ object ExternalBtTransportPolicy {
         enabled: Boolean
     ): Boolean = enabled || (fytModuleEvidence == null && (discovery.decision.available || socketFilePresent))
 
-    /** Keep the radio escape visible only where it can affect routing, or is already checked. */
-    fun showsAndroidRadioOverride(
+    /** Any sign of a Bluetooth module beside Android's radio. */
+    fun externalModuleDetected(
         discovery: ZbtDiscoveryPolicy.Snapshot,
-        zbtTransportEnabled: Boolean,
-        ignoreExternalBt: Boolean,
-        blinkTransportEnabled: Boolean = false,
-        fytModuleEvidence: String? = null,
-        hctServiceAvailable: Boolean = false,
-        zjSocketEnabled: Boolean = false,
-        zjSocketConnects: Boolean? = false
-    ): Boolean {
-        val detected = discovery.decision.available || fytModuleEvidence != null || hctServiceAvailable ||
-            zjSocketConnects == true
-        // A stale ZBT toggle without matching evidence cannot select ZBT and must not hide
-        // the escape on an HCT-only unit. BLINK remains an explicit override even without evidence.
-        val explicitModule = blinkTransportEnabled || zjSocketEnabled ||
-            (fytModuleEvidence == null && discovery.decision.available && zbtTransportEnabled)
-        return detected && (ignoreExternalBt || !explicitModule)
-    }
+        fytModuleEvidence: String?,
+        hctServiceAvailable: Boolean,
+        zjSocketConnects: Boolean?,
+    ): Boolean = discovery.decision.available || fytModuleEvidence != null || hctServiceAvailable ||
+        zjSocketConnects == true
 
     /**
      * What the main screen's WiFi button arms. A daemon not measured yet, or one whose refusal

@@ -1131,9 +1131,7 @@
     <string name="external_bt_nativeaa_desc">يقترن هاتفك بوحدة البلوتوث الخاصة بهذه الوحدة (%1$s)، لا بالبلوتوث الذي يوفّره أندرويد للتطبيقات، لذا فإن مصافحة الاتصال اللاسلكي لن تصل إليه أبداً.\n\nلا يمكن لهذا التطبيق الوصول إلى تلك الوحدة إلا عبر خدمة ZJ/ZLink، وهذه الوحدة لا تُشغّل هذه الخدمة. استخدم USB أو أحد أوضاع WiFi بدلاً من ذلك.</string>
     <string name="external_bt_module_nativeaa">لاسلكي أصلي عبر وحدة ZJ/ZLink</string>
     <string name="external_bt_module_nativeaa_desc">يقترن هاتفك بوحدة البلوتوث الخاصة بهذه الوحدة (%1$s)، لا بالبلوتوث الذي يوفّره أندرويد للتطبيقات، لذا سترسَل المصافحة عبر خدمة ZJ/ZLink التابعة للوحدة.\n\nهذه ميزة تجريبية، وتلك الخدمة هي الطريق الوحيد إليها. إذا لم يبدأ هاتفك Android Auto إطلاقاً، فاستخدم USB أو أحد أوضاع WiFi.</string>
-    <string name="external_bt_transport">الاتصال عبر وحدة البلوتوث في الجهاز</string>
-    <string name="external_bt_transport_description">تجريبي، للوحدات التي تحتوي على خدمة بلوتوث ZJ/ZLink. يرسل مصافحة Android Auto اللاسلكية عبر شريحة البلوتوث المقترن بها الهاتف، لا التي يعرضها Android للتطبيقات. شغّل أولًا اختبار وحدة البلوتوث والخيار متوقف. إذا لم يجد شيئًا يستمع، فلن يفيد هذا الخيار على وحدتك. إذا ردّت، فعّله. صدّر السجل في الحالتين.</string>
-    <string name="external_bt_transport_summary">تجريبي. يرسل المصافحة اللاسلكية عبر بلوتوث هذه الوحدة نفسها.</string>
+    <string name="external_bt_transport_description">تجريبي، للأجهزة التي فيها خدمة بلوتوث ZJ/ZLink. يرسل مصافحة Android Auto اللاسلكي عبر شريحة البلوتوث المقترن بها هاتفك، لا التي يعرضها Android للتطبيقات. شغّل اختبار وحدة البلوتوث أولاً. إذا لم يجد شيئًا يصغي، فلن يفيد هذا الخيار جهازك. إذا ردّت الوحدة، فاختر هذا الخيار. صدّر السجل في الحالتين.</string>
     <string name="zbt_probe_title">اختبار وحدة البلوتوث في الجهاز</string>
     <string name="zbt_probe_help">يختبر هل تستطيع وحدة Bluetooth الخاصة بهذه الوحدة حمل مصافحة Android Auto اللاسلكية. يستمر الاختبار نحو دقيقتين ويعرض كل مرحلة في هذا الصف. «المراقبة فقط» يشغّل الوحدة ويراقبها. «الإيقاظ والمراقبة» يطلب أيضًا من الوحدة الاتصال بالهاتف. قد يغيّر الاختبار حالة Bluetooth للوحدة. صدّر السجل بعد الاختبار.</string>
     <string name="zbt_probe_idle">انقر للتشغيل</string>
@@ -1141,15 +1139,11 @@
     <string name="zbt_probe_message">يهيئ كلا الخيارين وحدة Bluetooth قبل مراقبتها، وقد يؤثر ذلك في حالتها. يطلب خيار الإيقاظ والمراقبة أيضًا الاتصال بالهاتف.\n\nيُفسح الاختبار المجال عندما يستخدم OHU الوحدة أو يفحصها. صدّر السجل بعد الاختبار.</string>
     <string name="zbt_probe_watch_only">المراقبة فقط</string>
     <string name="zbt_probe_wake_and_watch">الإيقاظ والمراقبة</string>
-    <string name="external_bt_blink_transport">الاتصال عبر وحدة البلوتوث الخارجية في FYT</string>
     <string name="external_bt_module_controls_hint">تتولى وحدة البلوتوث الخارجية إدارة اقتران الهاتف وأولوية الاتصال واختيار برنامج التشغيل.</string>
     <string name="external_bt_module_last_phone">آخر هاتف اتصل عبر الوحدة</string>
-    <string name="external_bt_blink_transport_description">تجريبي، لوحدات FYT التي يقترن هاتفها للمكالمات بوحدة بلوتوث منفصلة، مثل DUDUAUTO على DUDUOS. تحمل الوحدة مصافحة Android Auto اللاسلكية، ويردّ عليها عادةً تطبيق Car Link الأصلي. عند التفعيل يردّ هذا التطبيق بدلًا منه، فتبقى المكالمات على الوحدة ومكبرات السيارة. عطّل تطبيق Car Link الأصلي أولًا (pm disable-user com.syu.carlink)، وإلا قرأ التطبيقان القناة نفسها.</string>
-    <string name="external_bt_blink_transport_summary">تجريبي. يردّ على المصافحة اللاسلكية في وحدة البلوتوث لوحدة FYT.</string>
-    <string name="external_bt_zj_socket_transport">الاتصال عبر مقبس Bluetooth الخاص بـ ZJ</string>
-    <string name="external_bt_zj_socket_transport_description">للوحدات التي تنقل فيها وحدة ZJ Bluetooth عملية المصافحة اللاسلكية لـ Android Auto عبر مقبس محلي (/dev/socket/zj_bt_socket). يستخدمه التطبيق تلقائيًا عندما يقبل هذا المقبس اتصالًا. فعّل هذا الخيار فقط إذا كانت وحدتك تحتوي على المقبس ولا يكتشفه التطبيق.</string>
-    <string name="external_bt_zj_socket_transport_summary">تمرير المصافحة اللاسلكية عبر المقبس المحلي لوحدة ZJ.</string>
-    <string name="external_bt_blink_refused_stock_enabled">وحدة البلوتوث الخارجية: تطبيق Car Link الأصلي ما زال مفعّلاً. عطّله (pm disable-user com.syu.carlink) أو أوقف هذا النقل.</string>
+    <string name="external_bt_blink_transport_description">تجريبي، لأجهزة FYT التي يقترن هاتفها للمكالمات بوحدة بلوتوث منفصلة، مثل DUDUAUTO على DUDUOS. تنقل الوحدة مصافحة Android Auto اللاسلكي، وعادةً يردّ عليها تطبيق Car Link الأصلي. عند اختيار هذا الخيار يردّ هذا التطبيق بدلاً منه، فتبقى المكالمات على الوحدة وسماعات السيارة. عطّل تطبيق Car Link الأصلي أولاً (pm disable-user com.syu.carlink)، وإلا قرأ التطبيقان القناة نفسها.</string>
+    <string name="external_bt_zj_socket_transport_description">للأجهزة التي تنقل فيها وحدة بلوتوث ZJ مصافحة Android Auto اللاسلكي عبر مقبس محلي (/dev/socket/zj_bt_socket). يستخدمه التطبيق تلقائيًا عندما يقبل المقبس اتصالاً. اختر هذا الخيار فقط إذا كان في جهازك المقبس ولم يرصده التطبيق.</string>
+    <string name="external_bt_blink_refused_stock_enabled">وحدة البلوتوث الخارجية: تطبيق Car Link الأصلي ما زال مفعّلاً. عطّله (pm disable-user com.syu.carlink) أو اختر وصلة بلوتوث أخرى.</string>
     <string name="external_bt_blink_refused_stock_running">وحدة البلوتوث الخارجية: تطبيق Car Link الأصلي معطّل لكنه ما زال يعمل. أعِد تشغيل الوحدة.</string>
     <string name="external_bt_blink_refused_root">وحدة البلوتوث الخارجية: يتطلب فتح قناة الوحدة صلاحيات الجذر على هذه الوحدة، وقد رُفض الوصول إليها أو هو غير متاح.</string>
     <string name="external_bt_blink_refused_unverified">وحدة البلوتوث الخارجية: تعذر التحقق مما إذا كان تطبيق Car Link الأصلي متوقفًا، لذا تبقى قناة الوحدة مغلقة. يرجى تصدير السجل.</string>
@@ -1251,9 +1245,7 @@
     <string name="preflight_open_location">الموقع الجغرافي</string>
     <string name="preflight_later">لاحقاً</string>
     <string name="preflight_invalid_bssid">عنوان WiFi غير صالح. أدخل 6 أزواج سداسية عشرية مثل 02:1A:11:FF:3C:4D.</string>
-    <string name="native_aa_ignore_external_bt">تجاهل فحص توافق البلوتوث</string>
-    <string name="native_aa_ignore_external_bt_description">يبدو أن هذه الوحدة تُبقي البلوتوث على وحدة منفصلة لا يستطيع Android الوصول إليها، لذا يتم إيقاف Android Auto اللاسلكي تلقائياً. معطّل افتراضياً. فعّله فقط إذا كنت تعتقد أن ذلك خطأ: فعندما يكون الاكتشاف صحيحاً، يفشل الاتصال بصمت ويبدو السجل سليماً.</string>
-    <string name="native_aa_ignore_external_bt_summary">يُبقي الاتصال اللاسلكي مفعّلًا رغم أن هذه الوحدة تبدو وكأنها تخفي وحدة البلوتوث الخاصة بها.</string>
+    <string name="native_aa_ignore_external_bt_description">يبدو أن هذا الجهاز يحتفظ بالبلوتوث على وحدة منفصلة لا يستطيع Android الوصول إليها، لذا يُعطَّل Android Auto اللاسلكي تلقائيًا. اختر هذا الخيار فقط إذا كنت ترى أن ذلك خطأ: عندما يكون الاكتشاف صحيحًا يفشل الاتصال بصمت ويبدو السجل سليمًا.</string>
     <string name="native_aa_setup_qr_title">الإعداد عبر رمز QR</string>
     <string name="native_aa_setup_qr_description">عرض رمز يمكن للهاتف مسحه ضوئيًا.</string>
     <string name="native_aa_setup_qr_help">يعرض رمز QR يُعدّ هذه الوحدة على الهاتف بدون مصافحة Bluetooth. يحمل الرمز اسم نقطة الاتصال الخاصة بالوحدة وكلمة مرورها وعنوانها. يعمل فقط عبر نقل نقطة الاتصال، أثناء عمل الاتصال. لا يعمل Android Auto 18.0 بهذا الرمز بعد، لذا لا تزال مصافحة Bluetooth مطلوبة.</string>
@@ -1674,8 +1666,8 @@
     <string name="home_pages_hint_got_it">حسنًا</string>
     <string name="home_pages_hint_body_anywhere">أي جزء فارغ من الشاشة الرئيسية يفي بالغرض. بهذه الطريقة تضيف صفحة لأدواتك، أو تزيل واحدة.</string>
     <string name="audio_settings_reconnect">تم حفظ إعدادات الصوت. أعد توصيل Android Auto لتطبيقها.</string>
-    <string name="native_aa_candidate_android_radio_description">استخدم Bluetooth في Android بدلاً من اختيار وحدة Bluetooth في الجهاز تلقائياً. اترك الخيار معطلاً للاختيار التلقائي. إذا كان أي خيار للاتصال عبر الوحدة مفعلاً، فعطّله أولاً.</string>
-    <string name="external_bt_candidate_transport_description">افرض الاتصال عبر وحدة Bluetooth في الجهاز بدلاً من الاختيار التلقائي. يتطلب ذلك خدمة وحدة متوافقة. اترك الخيار معطلاً للسماح باستخدام Bluetooth في Android عند عدم استجابة الخدمة؛ تفعيله يمنع هذا البديل.</string>
+    <string name="native_aa_candidate_android_radio_description">استخدم بلوتوث Android بدلاً من اختيار وحدة بلوتوث الجهاز الرئيسي تلقائيًا.</string>
+    <string name="external_bt_candidate_transport_description">فرض الاتصال عبر وحدة بلوتوث الجهاز الرئيسي بدلاً من الاختيار التلقائي. يتطلب خدمة وحدة متوافقة. يسمح الاكتشاف التلقائي ببلوتوث Android عندما لا تستجيب الخدمة؛ ويمنع هذا الخيار ذلك البديل.</string>
     <string name="audio_matching_mode">تصحيح توقيت الموسيقى</string>
     <string name="audio_matching_mode_help">عندما تصل الموسيقى أسرع أو أبطأ قليلًا من اللازم، يشغّلها التطبيق أسرع أو أبطأ قليلًا ليبقى طابور الصوت متوازنًا. من هنا تختار الطريقة. الافتراضية هي OHU. تضيف الطرق الأخرى بعض التأخير وتسري على موسيقى PCM فقط. الملاحة والصوت وأصوات النظام وAAC تستخدم OHU دائمًا. أعد الاتصال لتطبيق ذلك.</string>
     <string name="audio_matching_ohu">OHU</string>
@@ -1786,12 +1778,22 @@
     <string name="device_specific_pause_projection_reverse_help">عندما تكون السيارة في وضع الرجوع للخلف، يحرر التطبيق تركيز الفيديو في Android Auto لتظهر كاميرا الرجوع. وعند انتهاء الرجوع تعود الشاشة المعروضة. يقرأ التطبيق ناقل الحركة من MCU الوحدة، لذا لا يعمل الإصلاح إلا حيث يصل التطبيق إلى MCU.</string>
 
     <!-- Bluetooth relay (ESP32) -->
-    <string name="settings_bluetooth_route">مسار البلوتوث</string>
+    <string name="settings_bluetooth">بلوتوث</string>
+    <string name="bt_link_title">البلوتوث الذي يقترن به الهاتف</string>
+    <string name="bt_link_summary">يبدأ Android Auto عبر وصلة البلوتوث هذه.</string>
+    <string name="bt_link_help">يصل Android Auto اللاسلكي إلى هذا الجهاز أولاً عبر البلوتوث، ثم ينتقل إلى Wi-Fi. اختر البلوتوث المقترن به هاتفك. تحتفظ بعض الأجهزة به على وحدة منفصلة لا يستطيع Android الوصول إليها. يناسب الاكتشاف التلقائي معظم الأجهزة.</string>
+    <string name="bt_link_automatic">اكتشاف تلقائي</string>
+    <string name="bt_link_this_unit">بلوتوث هذا الجهاز نفسه</string>
+    <string name="bt_link_zlink">وحدة بلوتوث السيارة (ZLink)</string>
+    <string name="bt_link_zj">وحدة بلوتوث السيارة (ZJ)</string>
+    <string name="bt_link_blink">وحدة بلوتوث السيارة (FYT BLINK)</string>
+    <string name="bt_link_esp32">لوحة مرحّل ESP32</string>
+    <string name="bt_link_esp32_unpaired">لوحة مرحّل ESP32، لم تقترن بعد</string>
     <string name="esp32_relay_settings_title">مرحّل البلوتوث (ESP32)</string>
     <string name="esp32_relay_settings_summary">إعدادات مرحّل البلوتوث لتنفيذ يعتمد على ESP32.</string>
     <string name="esp32_relay_enabled">استخدام مرحّل البلوتوث</string>
     <string name="esp32_relay_enabled_summary">تمرير مصافحة بلوتوث Native AA عبر لوحة ESP32</string>
-    <string name="esp32_relay_enabled_help">المرحّل هو لوحة ESP32 أصلية تدعم البلوتوث الكلاسيكي، محمّل عليها برنامج ثابت للمرحّل مصمم لهذا التطبيق. يقترن الهاتف باللوحة بدلاً من هذا الجهاز، ويتواصل هذا الجهاز مع اللوحة عبر BLE. لا يتغير جزء Wi-Fi في Native AA. أوقف الخيار للعودة إلى بلوتوث هذا الجهاز. يبقى المرحّل المحفوظ. يتطلب وضع Native وAndroid 6.0 أو أحدث.</string>
+    <string name="esp32_relay_enabled_help">المرحّل هو لوحة ESP32 أصلية تدعم البلوتوث الكلاسيكي، محمّل عليها برنامج ثابت للمرحّل مصمم لهذا التطبيق. يقترن الهاتف باللوحة بدلاً من هذا الجهاز، ويتواصل هذا الجهاز مع اللوحة عبر BLE. لا يتغير جزء Wi-Fi في Native AA. أوقف الخيار أو اختر وصلة بلوتوث أخرى للعودة. يبقى المرحّل المحفوظ. يتطلب وضع Native وAndroid 6.0 أو أحدث.</string>
     <string name="esp32_relay_settings_disabled">متوقف</string>
     <string name="esp32_relay_saved_device">مرحّل البلوتوث المحفوظ</string>
     <string name="esp32_relay_saved_notice">مرحّل البلوتوث المحفوظ: %1$s</string>

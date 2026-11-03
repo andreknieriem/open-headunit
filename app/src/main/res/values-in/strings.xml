@@ -1385,9 +1385,7 @@
     <string name="native_aa_wake_verdict_destructive">Ditahan di unit ini</string>
     <string name="native_aa_wake_remeasure_confirm">Android Auto memulai koneksi nirkabel hanya saat melihat koneksi Bluetooth berubah. Jika unit ini sudah memegang tautan hands-free, aplikasi harus memutusnya agar perubahan itu terjadi. Karena itu aplikasi mengukur sekali apakah tautan tersambung kembali, dan berhenti jika tidak. Gunakan ini jika koneksi nirkabel tidak lagi mulai sendiri dan Anda bersedia kehilangan hands-free sesaat selama aplikasi mencoba lagi.</string>
     <string name="native_aa_wake_remeasure_done">Aktivasi Bluetooth akan diukur lagi pada koneksi berikutnya.</string>
-    <string name="native_aa_ignore_external_bt">Abaikan pemeriksaan kompatibilitas Bluetooth</string>
-    <string name="native_aa_ignore_external_bt_description">Unit ini tampaknya menyimpan Bluetooth pada modul terpisah yang tidak dapat dijangkau Android, jadi Android Auto nirkabel dimatikan otomatis. Nonaktif secara default. Aktifkan hanya jika Anda menilai hal itu keliru: jika benar, koneksi gagal tanpa pesan dan log tampak normal.</string>
-    <string name="native_aa_ignore_external_bt_summary">Menjaga nirkabel tetap aktif meski unit ini tampak menyembunyikan modul Bluetooth-nya.</string>
+    <string name="native_aa_ignore_external_bt_description">Unit ini tampaknya menyimpan Bluetooth di modul terpisah yang tidak bisa dijangkau Android, sehingga Android Auto nirkabel dinonaktifkan otomatis. Pilih ini hanya jika Anda yakin itu keliru: jika deteksinya benar, koneksi gagal tanpa pemberitahuan dan log tampak normal.</string>
 
     <!-- The external Bluetooth module probe (Advanced; only on units the detection flags). -->
     <string name="zbt_probe_title">Uji modul Bluetooth head unit</string>
@@ -1397,22 +1395,16 @@
     <string name="zbt_probe_message">Kedua opsi menginisialisasi modul Bluetooth sebelum memantaunya. Ini dapat memengaruhi status Bluetooth. Bangunkan dan amati juga meminta koneksi ke ponsel.\n\nPengujian memberi prioritas saat OHU menggunakan atau memeriksa modul. Ekspor log setelah pengujian.</string>
     <string name="zbt_probe_watch_only">Amati saja</string>
     <string name="zbt_probe_wake_and_watch">Bangunkan dan amati</string>
-    <string name="external_bt_blink_transport">Hubungkan melalui modul Bluetooth eksternal FYT</string>
     <string name="external_bt_module_controls_hint">Penyandingan ponsel, prioritas koneksi, dan pemilihan driver dikelola oleh modul Bluetooth eksternal.</string>
     <string name="external_bt_module_last_phone">Ponsel terakhir yang terhubung melalui modul</string>
-    <string name="external_bt_blink_transport_description">Eksperimental, untuk unit FYT yang ponselnya dipasangkan untuk panggilan dengan modul Bluetooth terpisah, seperti DUDUAUTO di DUDUOS. Modul membawa handshake Android Auto nirkabel, yang biasanya dijawab aplikasi Car Link bawaan. Jika aktif, aplikasi ini yang menjawab, sehingga panggilan tetap di modul dan speaker mobil. Nonaktifkan dulu aplikasi Car Link bawaan (pm disable-user com.syu.carlink), atau keduanya membaca kanal yang sama.</string>
-    <string name="external_bt_blink_transport_summary">Eksperimental. Menjawab handshake nirkabel di modul Bluetooth unit FYT.</string>
-    <string name="external_bt_zj_socket_transport">Hubungkan melalui soket Bluetooth ZJ</string>
-    <string name="external_bt_zj_socket_transport_description">Untuk unit yang modul Bluetooth ZJ-nya membawa handshake Android Auto nirkabel lewat soket lokal (/dev/socket/zj_bt_socket). Aplikasi memakainya sendiri saat soket itu menerima koneksi. Aktifkan hanya jika unit Anda punya soket tersebut dan aplikasi tidak mendeteksinya.</string>
-    <string name="external_bt_zj_socket_transport_summary">Jalankan handshake nirkabel lewat soket lokal modul ZJ.</string>
-    <string name="external_bt_blink_refused_stock_enabled">Modul Bluetooth eksternal: aplikasi Car Link bawaan masih aktif. Nonaktifkan (pm disable-user com.syu.carlink) atau matikan jalur ini.</string>
+    <string name="external_bt_blink_transport_description">Eksperimental, untuk unit FYT yang ponselnya dipasangkan untuk panggilan dengan modul Bluetooth terpisah, seperti DUDUAUTO di DUDUOS. Modul membawa handshake Android Auto nirkabel, yang biasanya dijawab oleh aplikasi Car Link bawaan. Jika ini dipilih, aplikasi ini yang menjawab, sehingga panggilan tetap di modul dan speaker mobil. Nonaktifkan dulu aplikasi Car Link bawaan (pm disable-user com.syu.carlink), atau keduanya membaca satu saluran.</string>
+    <string name="external_bt_zj_socket_transport_description">Untuk unit yang modul Bluetooth ZJ-nya membawa handshake Android Auto nirkabel lewat socket lokal (/dev/socket/zj_bt_socket). Aplikasi memakainya sendiri saat socket menerima koneksi. Pilih ini hanya jika unit Anda punya socket tersebut dan aplikasi tidak melihatnya.</string>
+    <string name="external_bt_blink_refused_stock_enabled">Modul Bluetooth eksternal: aplikasi Car Link bawaan masih aktif. Nonaktifkan (pm disable-user com.syu.carlink) atau pilih tautan Bluetooth lain.</string>
     <string name="external_bt_blink_refused_stock_running">Modul Bluetooth eksternal: aplikasi Car Link bawaan sudah dinonaktifkan tetapi masih berjalan. Mulai ulang unit.</string>
     <string name="external_bt_blink_refused_root">Modul Bluetooth eksternal: membuka saluran modul memerlukan root di unit ini, dan akses root ditolak atau tidak tersedia.</string>
     <string name="external_bt_blink_refused_unverified">Modul Bluetooth eksternal: tidak dapat memeriksa apakah aplikasi Car Link bawaan sudah berhenti, jadi saluran modul tetap tertutup. Ekspor log.</string>
     <string name="external_bt_blink_refused_bridge">Modul Bluetooth eksternal: saluran modul tidak dapat dibuka. Ekspor log.</string>
-    <string name="external_bt_transport">Hubungkan melalui modul Bluetooth head unit</string>
-    <string name="external_bt_transport_description">Eksperimental, untuk unit dengan layanan Bluetooth ZJ/ZLink. Mengirim handshake Android Auto nirkabel lewat chip Bluetooth tempat ponsel dipasangkan, bukan yang ditampilkan Android ke aplikasi. Jalankan dulu tes modul Bluetooth saat ini nonaktif. Jika tidak ada yang mendengarkan, ini tidak membantu di unit Anda. Jika menjawab, aktifkan. Ekspor log dalam kedua kasus.</string>
-    <string name="external_bt_transport_summary">Eksperimental. Mengirim handshake nirkabel lewat Bluetooth milik unit ini sendiri.</string>
+    <string name="external_bt_transport_description">Eksperimental, untuk unit dengan layanan Bluetooth ZJ/ZLink. Mengirim handshake Android Auto nirkabel lewat chip Bluetooth yang dipasangkan dengan ponsel Anda, bukan chip yang ditampilkan Android ke aplikasi. Jalankan dulu tes modul Bluetooth. Jika tidak menemukan apa pun yang mendengarkan, opsi ini tidak membantu di unit Anda. Jika menjawab, pilih ini. Ekspor log dalam kedua kasus.</string>
     <string name="native_aa_setup_qr_title">Siapkan dengan kode QR</string>
     <string name="native_aa_setup_qr_description">Tampilkan kode yang dapat dipindai oleh ponsel.</string>
     <string name="native_aa_setup_qr_help">Menampilkan kode QR yang menyiapkan unit ini di ponsel tanpa handshake Bluetooth. Kode ini membawa nama, kata sandi, dan alamat hotspot unit ini. Hanya bekerja pada transport hotspot, saat koneksi berjalan. Android Auto 18.0 belum memproses kode ini, jadi handshake Bluetooth masih diperlukan.</string>
@@ -1721,8 +1713,8 @@
     <string name="home_pages_hint_got_it">Mengerti</string>
     <string name="home_pages_hint_body_anywhere">Bagian kosong mana pun di beranda bisa dipakai. Begitulah cara menambahkan halaman untuk widget, atau menghapusnya.</string>
     <string name="audio_settings_reconnect">Pengaturan audio disimpan. Hubungkan ulang Android Auto untuk menerapkannya.</string>
-    <string name="native_aa_candidate_android_radio_description">Gunakan Bluetooth Android alih-alih memilih modul Bluetooth head unit secara otomatis. Biarkan nonaktif untuk pemilihan otomatis. Jika opsi koneksi melalui modul aktif, nonaktifkan terlebih dahulu.</string>
-    <string name="external_bt_candidate_transport_description">Paksa koneksi melalui modul Bluetooth head unit alih-alih pemilihan otomatis. Memerlukan layanan modul yang kompatibel. Biarkan nonaktif agar Bluetooth Android dapat digunakan saat layanan tidak merespons; mengaktifkannya mencegah jalur cadangan ini.</string>
+    <string name="native_aa_candidate_android_radio_description">Gunakan Bluetooth Android, bukan memilih modul Bluetooth head unit secara otomatis.</string>
+    <string name="external_bt_candidate_transport_description">Paksa koneksi lewat modul Bluetooth head unit, bukan pemilihan otomatis. Memerlukan layanan modul yang kompatibel. Deteksi otomatis mengizinkan Bluetooth Android saat layanan itu tidak menjawab; pilihan ini mencegah cadangan tersebut.</string>
     <string name="audio_matching_mode">Koreksi waktu musik</string>
     <string name="audio_matching_mode_help">Jika musik datang sedikit terlalu cepat atau lambat, aplikasi memutarnya sedikit lebih cepat atau lambat agar antrean suara tetap stabil. Di sini Anda memilih metodenya. OHU adalah default. Metode lain menambah sedikit tundaan dan hanya berlaku untuk musik PCM. Navigasi, suara, bunyi sistem, dan AAC selalu memakai OHU. Sambungkan ulang untuk menerapkan.</string>
     <string name="audio_matching_ohu">OHU</string>
@@ -1832,12 +1824,22 @@
     <string name="wifi_scan_wifi_settings">Buka pengaturan Wi-Fi</string>
 
     <!-- Bluetooth relay (ESP32) -->
-    <string name="settings_bluetooth_route">Jalur Bluetooth</string>
+    <string name="settings_bluetooth">Bluetooth</string>
+    <string name="bt_link_title">Bluetooth tempat ponsel dipasangkan</string>
+    <string name="bt_link_summary">Android Auto dimulai lewat tautan Bluetooth ini.</string>
+    <string name="bt_link_help">Android Auto nirkabel lebih dulu menjangkau unit ini lewat Bluetooth, lalu beralih ke Wi-Fi. Pilih Bluetooth yang dipasangkan dengan ponsel Anda. Beberapa unit menyimpannya di modul terpisah yang tidak bisa dijangkau Android. Deteksi otomatis cocok untuk sebagian besar unit.</string>
+    <string name="bt_link_automatic">Deteksi otomatis</string>
+    <string name="bt_link_this_unit">Bluetooth bawaan unit ini</string>
+    <string name="bt_link_zlink">Modul Bluetooth mobil (ZLink)</string>
+    <string name="bt_link_zj">Modul Bluetooth mobil (ZJ)</string>
+    <string name="bt_link_blink">Modul Bluetooth mobil (FYT BLINK)</string>
+    <string name="bt_link_esp32">Papan relay ESP32</string>
+    <string name="bt_link_esp32_unpaired">Papan relay ESP32, belum dipasangkan</string>
     <string name="esp32_relay_settings_title">Relay Bluetooth (ESP32)</string>
     <string name="esp32_relay_settings_summary">Setelan relay Bluetooth untuk implementasi ESP32.</string>
     <string name="esp32_relay_enabled">Gunakan relay Bluetooth</string>
     <string name="esp32_relay_enabled_summary">Alirkan handshake Bluetooth Native AA lewat papan ESP32</string>
-    <string name="esp32_relay_enabled_help">Relay adalah ESP32 asli dengan Classic Bluetooth, yang diflash dengan firmware relay buatan untuk aplikasi ini. Ponsel dipasangkan dengan papan, bukan dengan unit ini, dan unit ini berkomunikasi dengan papan lewat BLE. Bagian Wi-Fi dari Native AA tidak berubah. Matikan untuk kembali memakai Bluetooth unit ini. Relay yang tersimpan tetap ada. Perlu mode Native dan Android 6.0 atau lebih baru.</string>
+    <string name="esp32_relay_enabled_help">Relay adalah ESP32 asli dengan Classic Bluetooth, yang diflash dengan firmware relay buatan untuk aplikasi ini. Ponsel dipasangkan dengan papan, bukan dengan unit ini, dan unit ini berkomunikasi dengan papan lewat BLE. Bagian Wi-Fi dari Native AA tidak berubah. Matikan, atau pilih tautan Bluetooth lain, untuk kembali. Relay yang tersimpan tetap ada. Perlu mode Native dan Android 6.0 atau lebih baru.</string>
     <string name="esp32_relay_settings_disabled">Mati</string>
     <string name="esp32_relay_saved_device">Relay Bluetooth tersimpan</string>
     <string name="esp32_relay_saved_notice">Relay Bluetooth tersimpan: %1$s</string>

@@ -1131,9 +1131,7 @@
     <string name="external_bt_nativeaa_desc">A telefonja a fejegység saját Bluetooth-moduljával (%1$s) párosul, nem azzal a Bluetooth-tal, amelyet az Android az alkalmazásoknak biztosít, ezért a vezeték nélküli kézfogás sosem érné el.\n\nEz az alkalmazás csak egy ZJ/ZLink-szolgáltatáson keresztül éri el ezt a modult, de ez az egység nem futtat ilyet. Használjon inkább USB-t vagy valamelyik Wi-Fi módot.</string>
     <string name="external_bt_module_nativeaa">Native Wireless a ZJ/ZLink modulon át</string>
     <string name="external_bt_module_nativeaa_desc">A telefonja a fejegység saját Bluetooth-moduljával (%1$s) párosul, nem azzal a Bluetooth-tal, amelyet az Android az alkalmazásoknak biztosít, ezért a kézfogás a modul ZJ/ZLink-szolgáltatásán keresztül megy majd.\n\nKísérleti funkció, és csak ezen az egy szolgáltatáson keresztül lehet elérni. Ha a telefon soha nem indítja el az Android Autót, használjon USB-t vagy valamelyik Wi-Fi módot.</string>
-    <string name="external_bt_transport">Csatlakozás a fejegység Bluetooth-modulján át</string>
-    <string name="external_bt_transport_description">Kísérleti, ZJ/ZLink Bluetooth-szolgáltatással rendelkező fejegységekhez. A vezeték nélküli Android Auto kézfogást azon a Bluetooth-csipen küldi, amellyel a telefon párosítva van, nem azon, amelyet az Android az alkalmazásoknak mutat. Előbb futtassa a Bluetooth-modul tesztjét kikapcsolt beállítással. Ha nem talál semmit, ami figyel, a beállítás nem segít az Ön fejegységén. Ha válaszol, kapcsolja be. Mindkét esetben exportálja a naplót.</string>
-    <string name="external_bt_transport_summary">Kísérleti. A vezeték nélküli kézfogást a fejegység saját Bluetooth-ján küldi.</string>
+    <string name="external_bt_transport_description">Kísérleti, ZJ/ZLink Bluetooth-szolgáltatással rendelkező fejegységekhez. A vezeték nélküli Android Auto kézfogást azon a Bluetooth-chipen küldi, amellyel a telefon párosítva van, nem azon, amelyet az Android az alkalmazásoknak mutat. Előbb futtassa a Bluetooth-modul tesztjét. Ha semmit sem talál, ez nem segít az Ön fejegységén. Ha válaszol, válassza ezt. Mindkét esetben exportálja a naplót.</string>
     <string name="zbt_probe_title">Fejegység Bluetooth-moduljának tesztelése</string>
     <string name="zbt_probe_help">Teszteli, hogy az egység saját Bluetooth-modulja képes-e vinni az Android Auto vezeték nélküli kézfogását. A teszt körülbelül két percig fut, és minden szakaszt megmutat ebben a sorban. A „Csak figyelés” elindítja a modult, és figyeli. Az „Ébresztés és figyelés” azt is kéri a modultól, hogy csatlakozzon a telefonhoz. A teszt megváltoztathatja a modul Bluetooth-állapotát. A teszt után exportálja a naplót.</string>
     <string name="zbt_probe_idle">Koppintson a futtatáshoz</string>
@@ -1141,15 +1139,11 @@
     <string name="zbt_probe_message">Mindkét lehetőség inicializálja a Bluetooth-modult a megfigyelés előtt. Ez befolyásolhatja a Bluetooth állapotát. Az ébresztés és megfigyelés telefonkapcsolatot is kér.\n\nA teszt átadja a hozzáférést, amíg az OHU használja vagy ellenőrzi a modult. A teszt után exportálja a naplót.</string>
     <string name="zbt_probe_watch_only">Csak figyelés</string>
     <string name="zbt_probe_wake_and_watch">Ébresztés és figyelés</string>
-    <string name="external_bt_blink_transport">Csatlakozás az FYT külső Bluetooth-modulján át</string>
     <string name="external_bt_module_controls_hint">A telefon párosítását, a csatlakozási prioritást és az illesztőprogram kiválasztását a külső Bluetooth-modul kezeli.</string>
     <string name="external_bt_module_last_phone">Utoljára a modulon át csatlakozott telefon</string>
-    <string name="external_bt_blink_transport_description">Kísérleti, olyan FYT fejegységekhez, amelyeknél a telefon hívásokhoz külön Bluetooth-modullal párosít, például DUDUAUTO a DUDUOS-on. A modul viszi a vezeték nélküli Android Auto kézfogást, amelyre általában az eredeti Car Link alkalmazás válaszol. Bekapcsolva ez az alkalmazás válaszol, így a hívások a modulon és az autó hangszóróin maradnak. Előbb tiltsa le az eredeti Car Link alkalmazást (pm disable-user com.syu.carlink), különben mindkettő ugyanazt a csatornát olvassa.</string>
-    <string name="external_bt_blink_transport_summary">Kísérleti. Válaszol a vezeték nélküli kézfogásra egy FYT fejegység Bluetooth-moduljánál.</string>
-    <string name="external_bt_zj_socket_transport">Csatlakozás a ZJ Bluetooth-sockettel</string>
-    <string name="external_bt_zj_socket_transport_description">Olyan fejegységekhez, ahol a ZJ Bluetooth-modul egy helyi socketen (/dev/socket/zj_bt_socket) keresztül viszi a vezeték nélküli Android Auto kézfogást. Az alkalmazás magától használja, ha a socket fogad kapcsolatot. Csak akkor kapcsold be, ha a készülékeden van ilyen socket, de az alkalmazás nem észleli.</string>
-    <string name="external_bt_zj_socket_transport_summary">A vezeték nélküli kézfogás a ZJ modul helyi socketjén megy át.</string>
-    <string name="external_bt_blink_refused_stock_enabled">Külső Bluetooth-modul: a gyári Car Link alkalmazás még engedélyezve van. Tiltsa le (pm disable-user com.syu.carlink), vagy kapcsolja ki ezt az átvitelt.</string>
+    <string name="external_bt_blink_transport_description">Kísérleti, olyan FYT fejegységekhez, amelyeknél a telefon hívásokhoz külön Bluetooth-modullal párosít, például DUDUAUTO DUDUOS-on. A modul viszi a vezeték nélküli Android Auto kézfogást, amelyre általában a gyári Car Link alkalmazás válaszol. Ha ezt választja, helyette ez az alkalmazás válaszol, így a hívások a modulon és az autó hangszóróin maradnak. Előbb tiltsa le a gyári Car Link alkalmazást (pm disable-user com.syu.carlink), különben mindkettő ugyanazt a csatornát olvassa.</string>
+    <string name="external_bt_zj_socket_transport_description">Olyan fejegységekhez, amelyeknél a ZJ Bluetooth-modul a vezeték nélküli Android Auto kézfogást helyi socketen (/dev/socket/zj_bt_socket) viszi. Az alkalmazás magától használja, ha a socket kapcsolatot fogad. Csak akkor válassza ezt, ha a fejegységen van socket, de az alkalmazás nem látja.</string>
+    <string name="external_bt_blink_refused_stock_enabled">Külső Bluetooth-modul: a gyári Car Link alkalmazás még engedélyezve van. Tiltsa le (pm disable-user com.syu.carlink), vagy válasszon másik Bluetooth-kapcsolatot.</string>
     <string name="external_bt_blink_refused_stock_running">Külső Bluetooth-modul: a gyári Car Link alkalmazás le van tiltva, de még fut. Indítsa újra az egységet.</string>
     <string name="external_bt_blink_refused_root">Külső Bluetooth-modul: a modul csatornájának megnyitásához root szükséges ezen az egységen, a rootozáshoz való hozzáférést pedig megtagadták, vagy nem érhető el.</string>
     <string name="external_bt_blink_refused_unverified">Külső Bluetooth-modul: nem sikerült ellenőrizni, hogy a gyári Car Link alkalmazás le van-e állítva, ezért a modul csatornája zárva marad. Kérjük, exportálja a naplót.</string>
@@ -1251,9 +1245,7 @@
     <string name="preflight_open_location">Tartózkodási hely</string>
     <string name="preflight_later">Később</string>
     <string name="preflight_invalid_bssid">Ez nem Wi-Fi-cím. Adjon meg hat hexadecimális számpárt, például 02:1A:11:FF:3C:4D.</string>
-    <string name="native_aa_ignore_external_bt">A Bluetooth-kompatibilitási ellenőrzés mellőzése</string>
-    <string name="native_aa_ignore_external_bt_description">Úgy tűnik, ez az egység külön modulon kezeli a Bluetoothot, amelyet az Android nem ér el, ezért a vezeték nélküli Android Auto automatikusan ki van kapcsolva. Alapértelmezés szerint ki van kapcsolva. Csak akkor kapcsolja be, ha szerinte ez téves: ahol a felismerés helyes, a kapcsolat csendben meghiúsul, a napló pedig hibátlannak tűnik.</string>
-    <string name="native_aa_ignore_external_bt_summary">Bekapcsolva tartja a vezeték nélküli módot akkor is, ha úgy tűnik, hogy a fejegység elrejti a Bluetooth-modulját.</string>
+    <string name="native_aa_ignore_external_bt_description">Úgy tűnik, ez a fejegység a Bluetoothot egy különálló modulon tartja, amelyet az Android nem ér el, ezért a vezeték nélküli Android Auto automatikusan ki van kapcsolva. Csak akkor válassza ezt, ha úgy gondolja, hogy ez hiba: ha helyes, a kapcsolat hibaüzenet nélkül meghiúsul, és a napló rendben lévőnek tűnik.</string>
     <string name="native_aa_setup_qr_title">Beállítás QR-kóddal</string>
     <string name="native_aa_setup_qr_description">Kód megjelenítése, amelyet a telefon beolvashat.</string>
     <string name="native_aa_setup_qr_help">QR-kódot mutat, amely a Bluetooth-kézfogás nélkül beállítja ezt az egységet a telefonon. A kód az egység hotspotjának nevét, jelszavát és címét tartalmazza. Csak a hotspot-átvitelnél működik, amíg a kapcsolat fut. Az Android Auto 18.0 még nem használja ezt a kódot, ezért a Bluetooth-kézfogásra továbbra is szükség van.</string>
@@ -1673,8 +1665,8 @@
     <string name="home_pages_hint_got_it">Értem</string>
     <string name="home_pages_hint_body_anywhere">A kezdőképernyő bármely üres része megfelel. Így adhatsz hozzá oldalt a widgeteidnek, vagy távolíthatsz el egyet.</string>
     <string name="audio_settings_reconnect">Hangbeállítások elmentve. Az alkalmazásukhoz csatlakoztassa újra az Android Auto-t.</string>
-    <string name="native_aa_candidate_android_radio_description">Az Android Bluetooth használata a fejegység Bluetooth-moduljának automatikus kiválasztása helyett. Az automatikus választáshoz hagyja kikapcsolva. Ha valamelyik modulkapcsolati lehetőség be van kapcsolva, előbb kapcsolja ki.</string>
-    <string name="external_bt_candidate_transport_description">Kapcsolódás kényszerítése a fejegység Bluetooth-modulján keresztül az automatikus választás helyett. Kompatibilis modulszolgáltatás szükséges. Hagyja kikapcsolva, hogy az Android Bluetooth használható maradjon, ha a szolgáltatás nem válaszol; bekapcsolva ez a tartalék út nem használható.</string>
+    <string name="native_aa_candidate_android_radio_description">Az Android saját Bluetooth-ját használja a fejegység Bluetooth-moduljának automatikus kiválasztása helyett.</string>
+    <string name="external_bt_candidate_transport_description">A fejegység Bluetooth-moduljával való kapcsolódás kényszerítése az automatikus kiválasztás helyett. Kompatibilis modulszolgáltatás szükséges. Az automatikus felismerés engedi az Android Bluetooth használatát, ha a szolgáltatás nem válaszol; ez a választás megakadályozza a visszalépést.</string>
     <string name="audio_matching_mode">Zene időkorrekciója</string>
     <string name="audio_matching_mode_help">Ha a zene kicsit túl gyorsan vagy lassan érkezik, az alkalmazás kissé gyorsabban vagy lassabban játssza le, hogy a hangsor kiegyensúlyozott maradjon. Itt választhatja ki a módszert. Az alapértelmezett az OHU. A többi módszer némi késleltetést ad, és csak a PCM-zenére vonatkozik. A navigáció, a hang, a rendszerhangok és az AAC mindig OHU-t használ. Az érvénybe lépéshez csatlakozzon újra.</string>
     <string name="audio_matching_ohu">OHU</string>
@@ -1785,12 +1777,22 @@
     <string name="device_specific_pause_projection_reverse_help">Amíg a jármű hátramenetben van, az alkalmazás felszabadítja az Android Auto videófókuszát, hogy a tolatókamera megjelenhessen. Amikor a hátramenet véget ér, a vetítés visszatér. Az alkalmazás az egység MCU-jából olvassa a sebességfokozatot, ezért a javítás csak ott működik, ahol az alkalmazás eléri az MCU-t.</string>
 
     <!-- Bluetooth relay (ESP32) -->
-    <string name="settings_bluetooth_route">Bluetooth-útvonal</string>
+    <string name="settings_bluetooth">Bluetooth</string>
+    <string name="bt_link_title">Bluetooth, amellyel a telefon párosít</string>
+    <string name="bt_link_summary">Az Android Auto ezen a Bluetooth-kapcsolaton indul.</string>
+    <string name="bt_link_help">A vezeték nélküli Android Auto először Bluetooth-on éri el ezt a fejegységet, majd átvált Wi-Fi-re. Válassza ki azt a Bluetooth-kapcsolatot, amellyel a telefon párosítva van. Egyes fejegységeken ez egy különálló modulon van, amelyet az Android nem ér el. Az automatikus felismerés a legtöbb fejegységhez megfelel.</string>
+    <string name="bt_link_automatic">Automatikus felismerés</string>
+    <string name="bt_link_this_unit">A fejegység saját Bluetooth-ja</string>
+    <string name="bt_link_zlink">Autós Bluetooth-modul (ZLink)</string>
+    <string name="bt_link_zj">Autós Bluetooth-modul (ZJ)</string>
+    <string name="bt_link_blink">Autós Bluetooth-modul (FYT BLINK)</string>
+    <string name="bt_link_esp32">ESP32 relépanel</string>
+    <string name="bt_link_esp32_unpaired">ESP32 relépanel, még nincs párosítva</string>
     <string name="esp32_relay_settings_title">Bluetooth-relé (ESP32)</string>
     <string name="esp32_relay_settings_summary">Bluetooth-relé beállításai ESP32-alapú megvalósításhoz.</string>
     <string name="esp32_relay_enabled">Bluetooth-relé használata</string>
     <string name="esp32_relay_enabled_summary">A Native AA Bluetooth-kézfogása ESP32 panelen keresztül</string>
-    <string name="esp32_relay_enabled_help">A relé egy eredeti, Classic Bluetooth-os ESP32, amelyre az ehhez az alkalmazáshoz készült relé-firmware van telepítve. A telefon ezzel a panellel párosít e fejegység helyett, a fejegység pedig BLE-n beszél a panellel. A Native AA Wi-Fi része nem változik. Kapcsolja ki, hogy újra a fejegység saját Bluetooth-át használja. A mentett relé megmarad. Native módot és Android 6.0 vagy újabb rendszert igényel.</string>
+    <string name="esp32_relay_enabled_help">A relé egy eredeti, Classic Bluetooth-os ESP32, amelyre az ehhez az alkalmazáshoz készült relé-firmware van telepítve. A telefon ezzel a panellel párosít e fejegység helyett, a fejegység pedig BLE-n beszél a panellel. A Native AA Wi-Fi része nem változik. Kapcsolja ki, vagy válasszon másik Bluetooth-kapcsolatot, hogy visszatérjen. A mentett relé megmarad. Native módot és Android 6.0 vagy újabb rendszert igényel.</string>
     <string name="esp32_relay_settings_disabled">Ki</string>
     <string name="esp32_relay_saved_device">Mentett Bluetooth-relé</string>
     <string name="esp32_relay_saved_notice">Mentett Bluetooth-relé: %1$s</string>

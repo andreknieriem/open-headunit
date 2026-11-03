@@ -1128,9 +1128,7 @@ Open Headunit предоставляется «как есть» без каки
     <string name="external_bt_nativeaa_desc">Телефон сопрягается с собственным модулем Bluetooth этого устройства (%1$s), а не с тем Bluetooth, который Android предоставляет приложениям, поэтому беспроводное подключение до него не дойдёт.\n\nПриложение может обратиться к этому модулю только через службу ZJ/ZLink, а на этом устройстве она не запущена. Используйте USB или один из режимов Wi-Fi.</string>
     <string name="external_bt_module_nativeaa">Native Wireless через модуль ZJ/ZLink</string>
     <string name="external_bt_module_nativeaa_desc">Телефон сопрягается с собственным модулем Bluetooth этого устройства (%1$s), а не с тем Bluetooth, который Android предоставляет приложениям, поэтому данные для запуска беспроводного подключения будут отправлены через службу ZJ/ZLink этого модуля.\n\nФункция экспериментальная, и другого пути нет. Если телефон так и не запускает Android Auto, используйте USB или один из режимов Wi-Fi.</string>
-    <string name="external_bt_transport">Подключаться через модуль Bluetooth устройства</string>
-    <string name="external_bt_transport_description">Экспериментально, для устройств со службой Bluetooth ZJ/ZLink. Отправляет беспроводное рукопожатие Android Auto через чип Bluetooth, с которым сопряжён телефон, а не через тот, что Android показывает приложениям. Сначала запустите тест модуля Bluetooth при выключенной функции. Если он ничего не находит, функция на вашем устройстве бесполезна. Если модуль отвечает, включите её. В обоих случаях экспортируйте журнал.</string>
-    <string name="external_bt_transport_summary">Экспериментально. Отправляет беспроводное рукопожатие через собственный Bluetooth этого устройства.</string>
+    <string name="external_bt_transport_description">Экспериментально, для устройств со службой Bluetooth ZJ/ZLink. Отправляет рукопожатие беспроводного Android Auto через чип Bluetooth, с которым соединён ваш телефон, а не через тот, что Android показывает приложениям. Сначала запустите тест Bluetooth-модуля. Если он ничего не находит, это не поможет на вашем устройстве. Если модуль отвечает, выберите этот вариант. В любом случае экспортируйте журнал.</string>
     <string name="zbt_probe_title">Проверить модуль Bluetooth устройства</string>
     <string name="zbt_probe_help">Проверяет, может ли собственный Bluetooth-модуль устройства выполнить обмен данными для беспроводного Android Auto. Проверка длится около двух минут, и каждый этап показан в этой строке. «Только наблюдать» лишь запускает модуль и следит за ним. «Разбудить и наблюдать» ещё и просит модуль подключиться к телефону. Проверка может изменить состояние Bluetooth модуля. После проверки экспортируйте журнал.</string>
     <string name="zbt_probe_idle">Нажмите, чтобы запустить</string>
@@ -1138,15 +1136,11 @@ Open Headunit предоставляется «как есть» без каки
     <string name="zbt_probe_message">Оба варианта инициализируют модуль Bluetooth перед наблюдением. Это может повлиять на его состояние. «Разбудить и наблюдать» также запрашивает подключение к телефону.\n\nТест уступает доступ, пока OHU использует или проверяет модуль. После теста экспортируйте журнал.</string>
     <string name="zbt_probe_watch_only">Только наблюдать</string>
     <string name="zbt_probe_wake_and_watch">Разбудить и наблюдать</string>
-    <string name="external_bt_blink_transport">Подключаться через внешний модуль Bluetooth FYT</string>
     <string name="external_bt_module_controls_hint">Сопряжение телефона, приоритет подключения и выбор драйвера управляются внешним модулем Bluetooth.</string>
     <string name="external_bt_module_last_phone">Последний телефон, подключённый через модуль</string>
-    <string name="external_bt_blink_transport_description">Экспериментально, для устройств FYT, у которых телефон для звонков сопрягается с отдельным модулем Bluetooth, например DUDUAUTO в DUDUOS. Модуль несёт беспроводное рукопожатие Android Auto, на которое обычно отвечает штатное приложение Car Link. Когда функция включена, отвечает это приложение, поэтому звонки остаются на модуле и динамиках автомобиля. Сначала отключите штатное приложение Car Link (pm disable-user com.syu.carlink), иначе оба будут читать один канал.</string>
-    <string name="external_bt_blink_transport_summary">Экспериментально. Отвечает на беспроводное рукопожатие на модуле Bluetooth устройства FYT.</string>
-    <string name="external_bt_zj_socket_transport">Подключаться через сокет ZJ Bluetooth</string>
-    <string name="external_bt_zj_socket_transport_description">Для магнитол, у которых модуль ZJ Bluetooth передаёт беспроводное рукопожатие Android Auto через локальный сокет (/dev/socket/zj_bt_socket). Приложение использует его само, когда сокет принимает подключение. Включайте, только если в вашей магнитоле есть этот сокет, а приложение его не видит.</string>
-    <string name="external_bt_zj_socket_transport_summary">Передавать беспроводное рукопожатие через локальный сокет модуля ZJ.</string>
-    <string name="external_bt_blink_refused_stock_enabled">Внешний модуль Bluetooth: штатное приложение Car Link всё ещё включено. Отключите его (pm disable-user com.syu.carlink) или выключите этот транспорт.</string>
+    <string name="external_bt_blink_transport_description">Экспериментально, для устройств FYT, в которых телефон соединяется для звонков с отдельным Bluetooth-модулем, например DUDUAUTO на DUDUOS. Модуль передаёт рукопожатие беспроводного Android Auto, на которое обычно отвечает штатное приложение Car Link. Если выбран этот вариант, отвечает это приложение, поэтому звонки остаются на модуле и динамиках автомобиля. Сначала отключите штатное приложение Car Link (pm disable-user com.syu.carlink), иначе оба будут читать один канал.</string>
+    <string name="external_bt_zj_socket_transport_description">Для устройств, у которых Bluetooth-модуль ZJ передаёт рукопожатие беспроводного Android Auto через локальный сокет (/dev/socket/zj_bt_socket). Приложение использует его само, когда сокет принимает соединение. Выбирайте этот вариант, только если сокет есть, а приложение его не видит.</string>
+    <string name="external_bt_blink_refused_stock_enabled">Внешний Bluetooth-модуль: штатное приложение Car Link всё ещё включено. Отключите его (pm disable-user com.syu.carlink) или выберите другой канал Bluetooth.</string>
     <string name="external_bt_blink_refused_stock_running">Внешний модуль Bluetooth: штатное приложение Car Link отключено, но всё ещё работает. Перезагрузите устройство.</string>
     <string name="external_bt_blink_refused_root">Внешний модуль Bluetooth: для открытия канала модуля нужен root, но доступ root отклонён или недоступен.</string>
     <string name="external_bt_blink_refused_unverified">Внешний модуль Bluetooth: не удалось проверить, остановлено ли штатное приложение Car Link, поэтому канал модуля остаётся закрытым. Экспортируйте журнал.</string>
@@ -1248,9 +1242,7 @@ Open Headunit предоставляется «как есть» без каки
     <string name="preflight_open_location">Геолокация</string>
     <string name="preflight_later">Позже</string>
     <string name="preflight_invalid_bssid">Неверный адрес WiFi. Введите 6 пар шестнадцатеричных цифр (например, 02:1A:11:FF:3C:4D).</string>
-    <string name="native_aa_ignore_external_bt">Игнорировать проверку совместимости Bluetooth</string>
-    <string name="native_aa_ignore_external_bt_description">Похоже, что это устройство держит Bluetooth на отдельном модуле, недоступном для Android, поэтому беспроводной Android Auto отключается автоматически. По умолчанию выключено. Включайте, только если считаете это ошибкой: если определение верное, подключение молча не удастся, а журнал будет выглядеть нормально.</string>
-    <string name="native_aa_ignore_external_bt_summary">Оставляет беспроводной режим включённым, даже если устройство, похоже, скрывает свой модуль Bluetooth.</string>
+    <string name="native_aa_ignore_external_bt_description">Похоже, в этом устройстве Bluetooth находится на отдельном модуле, недоступном для Android, поэтому беспроводной Android Auto отключается автоматически. Выбирайте этот вариант, только если считаете это ошибкой: если определение верное, соединение молча не устанавливается, а журнал выглядит нормально.</string>
     <string name="native_aa_setup_qr_title">Настройка по QR-коду</string>
     <string name="native_aa_setup_qr_description">Показать код, который может считать телефон.</string>
     <string name="native_aa_setup_qr_help">Показывает QR-код, который настраивает это устройство на телефоне без обмена данными по Bluetooth. Код содержит имя, пароль и адрес точки доступа этого устройства. Работает только при передаче через точку доступа, пока идёт подключение. Android Auto 18.0 пока не обрабатывает этот код, поэтому обмен данными по Bluetooth всё ещё нужен.</string>
@@ -1671,8 +1663,8 @@ Open Headunit предоставляется «как есть» без каки
     <string name="home_pages_hint_got_it">Понятно</string>
     <string name="home_pages_hint_body_anywhere">Подойдёт любая пустая часть главного экрана. Так можно добавить страницу для виджетов или удалить её.</string>
     <string name="audio_settings_reconnect">Настройки звука сохранены. Чтобы применить их, переподключите Android Auto.</string>
-    <string name="native_aa_candidate_android_radio_description">Использовать Bluetooth Android вместо автоматического выбора Bluetooth-модуля головного устройства. Для автоматического выбора оставьте выключенным. Если включена опция подключения через модуль, сначала выключите её.</string>
-    <string name="external_bt_candidate_transport_description">Принудительно подключаться через Bluetooth-модуль головного устройства вместо автоматического выбора. Нужна совместимая служба модуля. Оставьте выключенным, чтобы использовать Bluetooth Android, если служба не отвечает; включение блокирует этот запасной путь.</string>
+    <string name="native_aa_candidate_android_radio_description">Использовать Bluetooth Android вместо автоматического выбора Bluetooth-модуля головного устройства.</string>
+    <string name="external_bt_candidate_transport_description">Принудительно подключаться через Bluetooth-модуль головного устройства вместо автоматического выбора. Нужна совместимая служба модуля. При автоопределении можно использовать Bluetooth Android, если служба не отвечает; этот вариант такой возврат запрещает.</string>
     <string name="audio_matching_mode">Временная коррекция музыки</string>
     <string name="audio_matching_mode_help">Если музыка приходит чуть быстрее или медленнее нужного, приложение воспроизводит её немного быстрее или медленнее, чтобы очередь звука не росла и не пустела. Здесь выбирается способ. По умолчанию используется OHU. Другие способы добавляют небольшую задержку и работают только с музыкой PCM. Навигация, голос, системные звуки и AAC всегда используют OHU. Чтобы применить, подключитесь заново.</string>
     <string name="audio_matching_ohu">OHU</string>
@@ -1784,12 +1776,22 @@ Open Headunit предоставляется «как есть» без каки
     <string name="wifi_scan_legacy_limit">Обновление на Android 8–10\n• Пауза запрашивается при подключении, затем каждые пять минут, пока оно активно.\n• Между запросами Android может включать поиск. Интервал ограничивает повторную очистку, но не может держать все сканирования остановленными.\n\nЕсли включить поиск не удаётся, не закрывайте Shizuku и повторите попытку. Перезагрузка сбрасывает это временное управление.</string>
 
     <!-- Bluetooth relay (ESP32) -->
-    <string name="settings_bluetooth_route">Маршрут Bluetooth</string>
+    <string name="settings_bluetooth">Bluetooth</string>
+    <string name="bt_link_title">Bluetooth, с которым соединяется телефон</string>
+    <string name="bt_link_summary">Android Auto запускается по этому каналу Bluetooth.</string>
+    <string name="bt_link_help">Беспроводной Android Auto сначала связывается с этим устройством по Bluetooth, затем переходит на Wi-Fi. Выберите Bluetooth, с которым соединён ваш телефон. У некоторых устройств он находится на отдельном модуле, недоступном для Android. Автоопределение подходит для большинства устройств.</string>
+    <string name="bt_link_automatic">Определять автоматически</string>
+    <string name="bt_link_this_unit">Собственный Bluetooth устройства</string>
+    <string name="bt_link_zlink">Bluetooth-модуль автомобиля (ZLink)</string>
+    <string name="bt_link_zj">Bluetooth-модуль автомобиля (ZJ)</string>
+    <string name="bt_link_blink">Bluetooth-модуль автомобиля (FYT BLINK)</string>
+    <string name="bt_link_esp32">Плата-ретранслятор ESP32</string>
+    <string name="bt_link_esp32_unpaired">Плата-ретранслятор ESP32, ещё не соединена</string>
     <string name="esp32_relay_settings_title">Bluetooth-ретранслятор (ESP32)</string>
     <string name="esp32_relay_settings_summary">Настройки Bluetooth-ретранслятора для реализации на ESP32.</string>
     <string name="esp32_relay_enabled">Использовать Bluetooth-ретранслятор</string>
     <string name="esp32_relay_enabled_summary">Передавать Bluetooth-обмен Native AA через плату ESP32</string>
-    <string name="esp32_relay_enabled_help">Ретранслятор: оригинальная плата ESP32 с Classic Bluetooth и прошивкой, созданной для этого приложения. Телефон соединяется с платой, а не с этим устройством, и устройство общается с платой по BLE. Часть Native AA по Wi-Fi не меняется. Выключите, чтобы вернуться к собственному Bluetooth устройства. Сохранённый ретранслятор остаётся. Нужны режим Native и Android 6.0 или новее.</string>
+    <string name="esp32_relay_enabled_help">Ретранслятор: оригинальная плата ESP32 с Classic Bluetooth и прошивкой, созданной для этого приложения. Телефон соединяется с платой, а не с этим устройством, и устройство общается с платой по BLE. Часть Native AA по Wi-Fi не меняется. Выключите или выберите другой канал Bluetooth, чтобы вернуться. Сохранённый ретранслятор остаётся. Нужны режим Native и Android 6.0 или новее.</string>
     <string name="esp32_relay_settings_disabled">Выкл.</string>
     <string name="esp32_relay_saved_device">Сохранённый Bluetooth-ретранслятор</string>
     <string name="esp32_relay_saved_notice">Сохранённый Bluetooth-ретранслятор: %1$s</string>

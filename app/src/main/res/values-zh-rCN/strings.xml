@@ -1127,9 +1127,7 @@
     <string name="external_bt_nativeaa_desc">您的手机与这台主机自带的蓝牙模块 (%1$s) 配对，而不是与 Android 提供给应用的蓝牙配对，因此无线握手信号永远无法到达那里。\n\n本应用只能通过 ZJ/ZLink 服务访问该模块，而这台主机没有运行该服务。请改用 USB 或 Wi-Fi 模式。</string>
     <string name="external_bt_module_nativeaa">通过 ZJ/ZLink 模块的原生无线</string>
     <string name="external_bt_module_nativeaa_desc">您的手机与这台主机自带的蓝牙模块 (%1$s) 配对，而不是与 Android 提供给应用的蓝牙配对，因此握手信号将通过该模块的 ZJ/ZLink 服务发送。\n\n这是实验性功能，而且该服务是唯一的通道。如果手机始终没有启动 Android Auto，请使用 USB 或 Wi-Fi 模式。</string>
-    <string name="external_bt_transport">通过主机的蓝牙模块连接</string>
-    <string name="external_bt_transport_description">实验性功能，适用于带有 ZJ/ZLink 蓝牙服务的车机。通过手机已配对的蓝牙芯片发送无线 Android Auto 握手，而不是 Android 向应用展示的那一个。请先在此项关闭时运行蓝牙模块测试。如果没有发现监听方，此项在你的车机上无效。如果有响应，请开启。无论哪种情况，都请导出日志。</string>
-    <string name="external_bt_transport_summary">实验性功能。通过本车机自己的蓝牙发送无线握手。</string>
+    <string name="external_bt_transport_description">实验性功能，适用于带有 ZJ/ZLink 蓝牙服务的主机。通过手机所配对的蓝牙芯片(而不是 Android 向应用显示的那个)发送无线 Android Auto 握手。请先运行蓝牙模块测试。如果没有发现任何监听，此项对你的主机无效。如果有响应，请选择此项。无论哪种情况，都请导出日志。</string>
     <string name="zbt_probe_title">测试主机的蓝牙模块</string>
     <string name="zbt_probe_help">测试本机自带的蓝牙模块能否承载无线 Android Auto 握手。测试约需两分钟，并在此行显示每个阶段。“仅观察”只启动模块并监视它。“唤醒并观察”还会让模块连接手机。测试可能改变模块的蓝牙状态。测试后请导出日志。</string>
     <string name="zbt_probe_idle">点按运行</string>
@@ -1137,15 +1135,11 @@
     <string name="zbt_probe_message">两个选项都会先初始化蓝牙模块，再观察其状态，因此可能影响蓝牙状态。“唤醒并观察”还会请求连接手机。\n\nOHU正在使用或检查模块时，测试会让出模块。测试后请导出日志。</string>
     <string name="zbt_probe_watch_only">仅观察</string>
     <string name="zbt_probe_wake_and_watch">唤醒并观察</string>
-    <string name="external_bt_blink_transport">通过 FYT 外接蓝牙模块连接</string>
     <string name="external_bt_module_controls_hint">手机配对、连接优先级和驱动选择均由外接蓝牙模块管理。</string>
     <string name="external_bt_module_last_phone">最近通过该模块连接的手机</string>
-    <string name="external_bt_blink_transport_description">实验性功能，适用于手机为通话与独立蓝牙模块配对的 FYT 车机，例如 DUDUOS 上的 DUDUAUTO。该模块负责无线 Android Auto 握手，通常由原厂 Car Link 应用响应。开启后改由本应用响应，因此通话保留在该模块和车载扬声器上。请先停用原厂 Car Link 应用 (pm disable-user com.syu.carlink)，否则两者会读取同一通道。</string>
-    <string name="external_bt_blink_transport_summary">实验性功能。在 FYT 车机的蓝牙模块上响应无线握手。</string>
-    <string name="external_bt_zj_socket_transport">通过 ZJ 蓝牙套接字连接</string>
-    <string name="external_bt_zj_socket_transport_description">适用于 ZJ 蓝牙模块通过本地套接字（/dev/socket/zj_bt_socket）传输无线 Android Auto 握手的设备。当该套接字接受连接时，应用会自动使用。仅当你的设备有此套接字而应用未检测到时，才需开启。</string>
-    <string name="external_bt_zj_socket_transport_summary">通过 ZJ 模块的本地套接字进行无线握手。</string>
-    <string name="external_bt_blink_refused_stock_enabled">外接蓝牙模块：原厂 Car Link 应用仍处于启用状态。请将其停用 (pm disable-user com.syu.carlink)，或关闭此传输方式。</string>
+    <string name="external_bt_blink_transport_description">实验性功能，适用于手机通话时与独立蓝牙模块配对的 FYT 主机，例如 DUDUOS 上的 DUDUAUTO。该模块负责无线 Android Auto 握手，通常由原厂 Car Link 应用响应。选择此项后改由本应用响应，通话因此保留在该模块和车载扬声器上。请先停用原厂 Car Link 应用(pm disable-user com.syu.carlink)，否则两者会读取同一通道。</string>
+    <string name="external_bt_zj_socket_transport_description">适用于 ZJ 蓝牙模块通过本地套接字(/dev/socket/zj_bt_socket)传递无线 Android Auto 握手的主机。当该套接字接受连接时，应用会自动使用。仅当你的主机有该套接字而应用未检测到时才选择此项。</string>
+    <string name="external_bt_blink_refused_stock_enabled">外部蓝牙模块：原厂 Car Link 应用仍处于启用状态。请停用它(pm disable-user com.syu.carlink)，或选择其他蓝牙连接。</string>
     <string name="external_bt_blink_refused_stock_running">外接蓝牙模块：原厂 Car Link 应用已停用，但仍在运行。请重启本机。</string>
     <string name="external_bt_blink_refused_root">外接蓝牙模块：打开该模块的通道需要本机具有 root 权限，但 root 访问被拒绝或不可用。</string>
     <string name="external_bt_blink_refused_unverified">外接蓝牙模块：无法确认原厂 Car Link 应用是否已停止，因此该模块的通道保持关闭。请导出日志。</string>
@@ -1247,9 +1241,7 @@
     <string name="preflight_open_location">位置信息</string>
     <string name="preflight_later">稍后</string>
     <string name="preflight_invalid_bssid">这不是有效的 WLAN 地址。请输入六组十六进制数字，例如 02:1A:11:FF:3C:4D。</string>
-    <string name="native_aa_ignore_external_bt">忽略蓝牙兼容性检查</string>
-    <string name="native_aa_ignore_external_bt_description">本机似乎把蓝牙放在 Android 无法访问的独立模块上，因此会自动关闭无线 Android Auto。默认关闭。仅当您认为判断有误时才开启：如果判断正确，连接会静默失败，而日志看起来一切正常。</string>
-    <string name="native_aa_ignore_external_bt_summary">即使本车机似乎隐藏了蓝牙模块，也保持无线连接开启。</string>
+    <string name="native_aa_ignore_external_bt_description">本主机似乎把蓝牙放在 Android 无法访问的独立模块上，因此无线 Android Auto 会自动关闭。仅当你认为这是误判时才选择此项：如果检测无误，连接会无提示地失败，而日志看起来一切正常。</string>
     <string name="native_aa_setup_qr_title">通过二维码设置</string>
     <string name="native_aa_setup_qr_description">显示手机可扫描的二维码。</string>
     <string name="native_aa_setup_qr_help">显示一个二维码，无需蓝牙握手即可在手机上设置本机。该二维码包含本机热点的名称、密码和地址。仅在热点传输方式下、连接运行期间有效。Android Auto 18.0 尚不处理此二维码，因此仍需要蓝牙握手。</string>
@@ -1670,8 +1662,8 @@
     <string name="home_pages_hint_got_it">知道了</string>
     <string name="home_pages_hint_body_anywhere">主画面的任何空白处都可以。这样就能为小部件添加页面，或移除页面。</string>
     <string name="audio_settings_reconnect">音频设置已保存。重新连接 Android Auto 后生效。</string>
-    <string name="native_aa_candidate_android_radio_description">使用 Android 蓝牙，而不是自动选择车机的蓝牙模块。保持关闭以使用自动选择。如果已开启通过模块连接的选项，请先将其关闭。</string>
-    <string name="external_bt_candidate_transport_description">强制通过车机的蓝牙模块连接，而不是自动选择。需要兼容的模块服务。保持关闭可在服务无响应时使用 Android 蓝牙；开启此选项将禁止这一备用连接方式。</string>
+    <string name="native_aa_candidate_android_radio_description">使用 Android 蓝牙，而不是自动选择主机的蓝牙模块。</string>
+    <string name="external_bt_candidate_transport_description">强制通过主机的蓝牙模块连接，而不是自动选择。需要兼容的模块服务。选择“自动检测”时，若该服务无响应，可改用 Android 蓝牙；选择此项则不会回退。</string>
     <string name="audio_matching_mode">音乐时间校正</string>
     <string name="audio_matching_mode_help">当音乐到达得略快或略慢时，应用会稍微加快或放慢播放，以保持声音队列平衡。此项用于选择方法。默认为 OHU。其他方法会增加少许延迟，且仅适用于 PCM 音乐。导航、语音、系统提示音和 AAC 始终使用 OHU。重新连接后生效。</string>
     <string name="audio_matching_ohu">OHU</string>
@@ -1783,12 +1775,22 @@
     <string name="wifi_scan_legacy_limit">Android 8–10 上的续期\n• 连接时请求暂停，连接期间每五分钟请求一次。\n• Android 可能在两次请求之间开启扫描。该间隔只限制重复清理，无法让所有扫描始终保持停止。\n\n如果开启扫描失败，请保持 Shizuku 运行并重试。重启会重置此临时控制。</string>
 
     <!-- Bluetooth relay (ESP32) -->
-    <string name="settings_bluetooth_route">蓝牙路径</string>
+    <string name="settings_bluetooth">蓝牙</string>
+    <string name="bt_link_title">手机配对的蓝牙</string>
+    <string name="bt_link_summary">Android Auto 通过此蓝牙连接启动。</string>
+    <string name="bt_link_help">无线 Android Auto 先通过蓝牙连接本主机，再切换到 Wi-Fi。请选择手机所配对的蓝牙。部分主机的蓝牙位于 Android 无法访问的独立模块上。自动检测适合大多数主机。</string>
+    <string name="bt_link_automatic">自动检测</string>
+    <string name="bt_link_this_unit">本主机自带的蓝牙</string>
+    <string name="bt_link_zlink">车载蓝牙模块(ZLink)</string>
+    <string name="bt_link_zj">车载蓝牙模块(ZJ)</string>
+    <string name="bt_link_blink">车载蓝牙模块(FYT BLINK)</string>
+    <string name="bt_link_esp32">ESP32 中继板</string>
+    <string name="bt_link_esp32_unpaired">ESP32 中继板，尚未配对</string>
     <string name="esp32_relay_settings_title">蓝牙中继器(ESP32)</string>
     <string name="esp32_relay_settings_summary">基于 ESP32 实现的蓝牙中继器设置。</string>
     <string name="esp32_relay_enabled">使用蓝牙中继器</string>
     <string name="esp32_relay_enabled_summary">通过 ESP32 开发板传递 Native AA 的蓝牙握手</string>
-    <string name="esp32_relay_enabled_help">中继器是一块原装 ESP32,支持经典蓝牙,并已刷入为本应用制作的中继器固件。手机与该开发板配对,而不是与本主机配对,本主机通过 BLE 与开发板通信。Native AA 的 Wi-Fi 部分不变。关闭后将恢复使用本主机自带的蓝牙。已保存的中继器会保留。需要 Native 模式和 Android 6.0 或更高版本。</string>
+    <string name="esp32_relay_enabled_help">中继器是一块原装 ESP32,支持经典蓝牙,并已刷入为本应用制作的中继器固件。手机与该开发板配对,而不是与本主机配对,本主机通过 BLE 与开发板通信。Native AA 的 Wi-Fi 部分不变。关闭此项或选择其他蓝牙连接，即可恢复。已保存的中继器会保留。需要 Native 模式和 Android 6.0 或更高版本。</string>
     <string name="esp32_relay_settings_disabled">关闭</string>
     <string name="esp32_relay_saved_device">已保存的蓝牙中继器</string>
     <string name="esp32_relay_saved_notice">已保存的蓝牙中继器:%1$s</string>

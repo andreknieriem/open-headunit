@@ -1058,9 +1058,7 @@
     <string name="external_bt_nativeaa_desc">თქვენი ტელეფონი ამ მოწყობილობის საკუთარ Bluetooth მოდულთან (%1$s) წყვილდება და არა იმ Bluetooth-თან, რომელსაც Android აპებს აძლევს, ამიტომ უსადენო ხელის ჩამორთმევა მას ვერ მიაღწევდა.\n\nეს აპი მოდულს მხოლოდ ZJ/ZLink სერვისით წვდება, რომელიც ამ მოწყობილობაზე არ მუშაობს. გამოიყენეთ USB ან რომელიმე WiFi რეჟიმი.</string>
     <string name="external_bt_module_nativeaa">Native Wireless ZJ/ZLink მოდულით</string>
     <string name="external_bt_module_nativeaa_desc">თქვენი ტელეფონი ამ მოწყობილობის საკუთარ Bluetooth მოდულთან (%1$s) წყვილდება და არა იმ Bluetooth-თან, რომელსაც Android აპებს აძლევს, ამიტომ ხელის ჩამორთმევა მოდულის ZJ/ZLink სერვისით გაიგზავნება.\n\nექსპერიმენტულია და ამ სერვისის გარდა სხვა გზა არ არსებობს. თუ ტელეფონი Android Auto-ს არ ხსნის, გამოიყენეთ USB ან რომელიმე WiFi რეჟიმი.</string>
-    <string name="external_bt_transport">მაგნიტოლის Bluetooth მოდულით დაკავშირება</string>
-    <string name="external_bt_transport_description">ექსპერიმენტული, მოწყობილობებისთვის, რომლებსაც ZJ/ZLink Bluetooth სერვისი აქვთ. უსადენო Android Auto-ს ხელის ჩამორთმევას აგზავნის Bluetooth ჩიპით, რომელთანაც ტელეფონია დაწყვილებული, და არა იმით, რასაც Android აპებს აჩვენებს. ჯერ გაუშვით Bluetooth მოდულის ტესტი ამ პარამეტრის გამორთვით. თუ არაფერი უსმენს, ეს პარამეტრი თქვენს მოწყობილობას ვერ დაეხმარება. თუ პასუხობს, ჩართეთ. ორივე შემთხვევაში გააექსპორტეთ ჟურნალი.</string>
-    <string name="external_bt_transport_summary">ექსპერიმენტული. აგზავნის უსადენო ხელის ჩამორთმევას ამ მოწყობილობის საკუთარი Bluetooth-ით.</string>
+    <string name="external_bt_transport_description">ექსპერიმენტული, მოწყობილობებისთვის ZJ/ZLink Bluetooth სერვისით. უსადენო Android Auto-ის ჰენდშეიკს აგზავნის იმ Bluetooth ჩიპით, რომელთანაც ტელეფონია დაწყვილებული, და არა იმით, რომელსაც Android აპებს აჩვენებს. ჯერ გაუშვით Bluetooth მოდულის ტესტი. თუ არაფერი მოისმენს, ეს თქვენს მოწყობილობას ვერ დაეხმარება. თუ პასუხობს, აირჩიეთ ეს. ორივე შემთხვევაში გააექსპორტეთ ჟურნალი.</string>
     <string name="zbt_probe_title">მაგნიტოლის Bluetooth მოდულის შემოწმება</string>
     <string name="zbt_probe_help">ამოწმებს, შეუძლია თუ არა ამ მოწყობილობის საკუთარ Bluetooth მოდულს უსადენო Android Auto-ს ხელის-ჩამორთმევის გატარება. ტესტი დაახლოებით ორ წუთს გრძელდება და ამ რიგში თითოეულ ეტაპს აჩვენებს. „მხოლოდ დაკვირვება“ მოდულს უშვებს და აკვირდება. „გაღვიძება და დაკვირვება“ მოდულს ტელეფონთან დაკავშირებასაც სთხოვს. ტესტმა შეიძლება მოდულის Bluetooth მდგომარეობა შეცვალოს. ტესტის შემდეგ ჟურნალი გაიტანეთ.</string>
     <string name="zbt_probe_idle">გასაშვებად შეეხეთ</string>
@@ -1068,15 +1066,11 @@
     <string name="zbt_probe_message">ორივე ვარიანტი დაკვირვებამდე Bluetooth მოდულს ინიციალიზაციას უკეთებს. ამან შეიძლება Bluetooth-ის მდგომარეობაზე იმოქმედოს. გაღვიძება და დაკვირვება ასევე ითხოვს ტელეფონთან დაკავშირებას.\n\nტესტი წვდომას უთმობს OHU-ს, როცა ის მოდულს იყენებს ან ამოწმებს. ტესტის შემდეგ ჟურნალი გააექსპორტეთ.</string>
     <string name="zbt_probe_watch_only">მხოლოდ დაკვირვება</string>
     <string name="zbt_probe_wake_and_watch">გაღვიძება და დაკვირვება</string>
-    <string name="external_bt_blink_transport">FYT-ის გარე Bluetooth მოდულით დაკავშირება</string>
     <string name="external_bt_module_controls_hint">ტელეფონის დაწყვილებას, კავშირის პრიორიტეტს და დრაივერის არჩევას გარე Bluetooth მოდული მართავს.</string>
     <string name="external_bt_module_last_phone">მოდულით ბოლოს დაკავშირებული ტელეფონი</string>
-    <string name="external_bt_blink_transport_description">ექსპერიმენტული, FYT მოწყობილობებისთვის, რომლებშიც ტელეფონი ზარებისთვის ცალკე Bluetooth მოდულთან წყვილდება, მაგალითად, DUDUAUTO DUDUOS-ზე. მოდული ატარებს უსადენო Android Auto-ს ხელის ჩამორთმევას, რომელსაც ჩვეულებრივ ორიგინალური Car Link აპი პასუხობს. ჩართვისას მის ნაცვლად ეს აპი პასუხობს, ამიტომ ზარები მოდულსა და მანქანის დინამიკებზე რჩება. ჯერ გამორთეთ ორიგინალური Car Link აპი (pm disable-user com.syu.carlink), თორემ ორივე ერთსა და იმავე არხს წაიკითხავს.</string>
-    <string name="external_bt_blink_transport_summary">ექსპერიმენტული. პასუხობს უსადენო ხელის ჩამორთმევას FYT მოწყობილობის Bluetooth მოდულზე.</string>
-    <string name="external_bt_zj_socket_transport">დაკავშირება ZJ Bluetooth სოკეტით</string>
-    <string name="external_bt_zj_socket_transport_description">ერთეულებისთვის, რომლებშიც ZJ Bluetooth მოდული უსადენო Android Auto-ს ჩამორთმევას ლოკალური სოკეტით (/dev/socket/zj_bt_socket) ატარებს. აპი მას თავად იყენებს, როცა ეს სოკეტი კავშირს იღებს. ჩართეთ მხოლოდ მაშინ, თუ თქვენს ერთეულს სოკეტი აქვს და აპი მას ვერ ხედავს.</string>
-    <string name="external_bt_zj_socket_transport_summary">უსადენო ხელის ჩამორთმევა ZJ მოდულის ლოკალური სოკეტით.</string>
-    <string name="external_bt_blink_refused_stock_enabled">გარე Bluetooth მოდული: სტანდარტული Car Link აპი ჯერ კიდევ ჩართულია. გამორთეთ (pm disable-user com.syu.carlink) ან გამორთეთ ეს ტრანსპორტი.</string>
+    <string name="external_bt_blink_transport_description">ექსპერიმენტული, FYT მოწყობილობებისთვის, რომლებზეც ტელეფონი ზარებისთვის ცალკე Bluetooth მოდულთან წყვილდება, მაგალითად DUDUAUTO DUDUOS-ზე. მოდული ატარებს უსადენო Android Auto-ის ჰენდშეიკს, რომელსაც ჩვეულებრივ ორიგინალი Car Link აპი პასუხობს. ამის არჩევისას ამის ნაცვლად ეს აპი პასუხობს, ამიტომ ზარები მოდულსა და მანქანის დინამიკებზე რჩება. ჯერ გამორთეთ ორიგინალი Car Link აპი (pm disable-user com.syu.carlink), თორემ ორივე ერთსა და იმავე არხს წაიკითხავს.</string>
+    <string name="external_bt_zj_socket_transport_description">მოწყობილობებისთვის, რომლებზეც ZJ Bluetooth მოდული უსადენო Android Auto-ის ჰენდშეიკს ლოკალური სოკეტით (/dev/socket/zj_bt_socket) ატარებს. აპი მას თავად იყენებს, როცა სოკეტი კავშირს იღებს. აირჩიეთ ეს მხოლოდ მაშინ, თუ თქვენს მოწყობილობას სოკეტი აქვს და აპი მას ვერ ხედავს.</string>
+    <string name="external_bt_blink_refused_stock_enabled">გარე Bluetooth მოდული: ორიგინალი Car Link აპი ჯერ კიდევ ჩართულია. გამორთეთ (pm disable-user com.syu.carlink) ან აირჩიეთ სხვა Bluetooth კავშირი.</string>
     <string name="external_bt_blink_refused_stock_running">გარე Bluetooth მოდული: სტანდარტული Car Link აპი გამორთულია, მაგრამ ჯერ კიდევ მუშაობს. გადატვირთეთ მოწყობილობა.</string>
     <string name="external_bt_blink_refused_root">გარე Bluetooth მოდული: მოდულის არხის გასახსნელად ამ მოწყობილობაზე root არის საჭირო, root წვდომა კი უარყოფილია ან მიუწვდომელია.</string>
     <string name="external_bt_blink_refused_unverified">გარე Bluetooth მოდული: ვერ შემოწმდა, გაჩერებულია თუ არა სტანდარტული Car Link აპი, ამიტომ მოდულის არხი დახურული რჩება. გთხოვთ, გააექსპორტოთ ჟურნალი.</string>
@@ -1236,9 +1230,7 @@
     <string name="preflight_open_location">მდებარეობა</string>
     <string name="preflight_later">მოგვიანებით</string>
     <string name="preflight_invalid_bssid">ეს არ არის WiFi მისამართი. შეიყვანეთ ექვსი წყვილი თექვსმეტობითი ციფრი, მაგალითად 02:1A:11:FF:3C:4D.</string>
-    <string name="native_aa_ignore_external_bt">Bluetooth-თავსებადობის შემოწმების გამოტოვება</string>
-    <string name="native_aa_ignore_external_bt_description">როგორც ჩანს, ამ მოწყობილობაზე Bluetooth ცალკე მოდულშია, რომელსაც Android ვერ წვდება, ამიტომ უსადენო Android Auto ავტომატურად გათიშულია. ეს პარამეტრი ნაგულისხმევად გამორთულია. ჩართეთ მხოლოდ მაშინ, თუ ფიქრობთ, რომ ეს შეფასება არასწორია: თუ ის სწორია, კავშირი უჩუმრად ჩაიშლება, ჟურნალი კი ჯანსაღად გამოიყურება.</string>
-    <string name="native_aa_ignore_external_bt_summary">უსადენო რეჟიმს ჩართულს ტოვებს, თუნდაც ეს მოწყობილობა თავის Bluetooth მოდულს მალავდეს.</string>
+    <string name="native_aa_ignore_external_bt_description">როგორც ჩანს, ამ მოწყობილობაზე Bluetooth ცალკე მოდულზეა, რომელსაც Android ვერ წვდება, ამიტომ უსადენო Android Auto ავტომატურად გამოირთვება. აირჩიეთ ეს მხოლოდ მაშინ, თუ ფიქრობთ, რომ ეს შეცდომაა: თუ ამოცნობა სწორია, კავშირი უხმოდ ვერ ხერხდება და ჟურნალი ჯანსაღად გამოიყურება.</string>
     <string name="native_aa_setup_qr_title">დაყენება QR კოდით</string>
     <string name="native_aa_setup_qr_description">კოდის ჩვენება, რომელსაც ტელეფონი დაასკანერებს.</string>
     <string name="native_aa_setup_qr_help">აჩვენებს QR კოდს, რომელიც ამ მოწყობილობას ტელეფონზე Bluetooth-ის ხელის-ჩამორთმევის გარეშე აყენებს. კოდი შეიცავს მოწყობილობის ჰოთსპოტის სახელს, პაროლსა და მისამართს. მუშაობს მხოლოდ ჰოთსპოტის ტრანსპორტზე, სანამ კავშირი გრძელდება. Android Auto 18.0 ამ კოდს ჯერ არ იყენებს, ამიტომ Bluetooth-ის ხელის-ჩამორთმევა ჯერ კიდევ საჭიროა.</string>
@@ -1659,8 +1651,8 @@
     <string name="home_pages_hint_got_it">გასაგებია</string>
     <string name="home_pages_hint_body_anywhere">მთავარი ეკრანის ნებისმიერი ცარიელი ნაწილი გამოდგება. ასე დაამატებ გვერდს ვიჯეტებისთვის, ან წაშლი მას.</string>
     <string name="audio_settings_reconnect">აუდიოს პარამეტრები შენახულია. გასააქტიურებლად Android Auto-ს ხელახლა დაუკავშირდით.</string>
-    <string name="native_aa_candidate_android_radio_description">მოწყობილობის Bluetooth მოდულის ავტომატური არჩევის ნაცვლად გამოიყენეთ Android-ის Bluetooth. ავტომატური არჩევისთვის დატოვეთ გამორთული. თუ მოდულით დაკავშირების რომელიმე ვარიანტი ჩართულია, ჯერ ის გამორთეთ.</string>
-    <string name="external_bt_candidate_transport_description">ავტომატური არჩევის ნაცვლად იძულებით გამოიყენეთ მოწყობილობის Bluetooth მოდულით კავშირი. საჭიროა მოდულის თავსებადი სერვისი. დატოვეთ გამორთული, რათა სერვისის უპასუხოდ დარჩენისას Android-ის Bluetooth გამოიყენოთ; ჩართვა ამ სათადარიგო გზას გამორიცხავს.</string>
+    <string name="native_aa_candidate_android_radio_description">გამოიყენეთ Android-ის Bluetooth ძირითადი მოწყობილობის Bluetooth მოდულის ავტომატური არჩევის ნაცვლად.</string>
+    <string name="external_bt_candidate_transport_description">აიძულეთ კავშირი ძირითადი მოწყობილობის Bluetooth მოდულით ავტომატური არჩევის ნაცვლად. საჭიროა თავსებადი მოდულის სერვისი. ავტომატური ამოცნობა Android-ის Bluetooth-ს უშვებს, როცა სერვისი არ პასუხობს; ეს არჩევანი ამ ალტერნატივას კრძალავს.</string>
     <string name="audio_matching_mode">მუსიკის დროითი კორექცია</string>
     <string name="audio_matching_mode_help">როცა მუსიკა ოდნავ სწრაფად ან ნელა მოდის, აპი მას ოდნავ სწრაფად ან ნელა უკრავს, რათა ხმის რიგი სტაბილური დარჩეს. აქ ირჩევთ მეთოდს. ნაგულისხმევია OHU. სხვა მეთოდები ცოტა დაგვიანებას ამატებს და მხოლოდ PCM მუსიკას ეხება. ნავიგაცია, ხმა, სისტემური ხმები და AAC ყოველთვის OHU-ს იყენებს. გამოსაყენებლად თავიდან დაუკავშირდით.</string>
     <string name="audio_matching_ohu">OHU</string>
@@ -1770,12 +1762,22 @@
     <string name="wifi_scan_wifi_settings">Wi-Fi პარამეტრების გახსნა</string>
 
     <!-- Bluetooth relay (ESP32) -->
-    <string name="settings_bluetooth_route">Bluetooth-ის მარშრუტი</string>
+    <string name="settings_bluetooth">Bluetooth</string>
+    <string name="bt_link_title">Bluetooth, რომელთანაც ტელეფონი წყვილდება</string>
+    <string name="bt_link_summary">Android Auto ამ Bluetooth კავშირით იწყება.</string>
+    <string name="bt_link_help">უსადენო Android Auto ჯერ ამ მოწყობილობას Bluetooth-ით უკავშირდება, შემდეგ კი Wi-Fi-ზე გადადის. აირჩიეთ Bluetooth, რომელთანაც თქვენი ტელეფონია დაწყვილებული. ზოგ მოწყობილობაზე ის ცალკე მოდულზეა, რომელსაც Android ვერ წვდება. ავტომატური ამოცნობა უმეტეს მოწყობილობას ერგება.</string>
+    <string name="bt_link_automatic">ავტომატური ამოცნობა</string>
+    <string name="bt_link_this_unit">ამ მოწყობილობის საკუთარი Bluetooth</string>
+    <string name="bt_link_zlink">მანქანის Bluetooth მოდული (ZLink)</string>
+    <string name="bt_link_zj">მანქანის Bluetooth მოდული (ZJ)</string>
+    <string name="bt_link_blink">მანქანის Bluetooth მოდული (FYT BLINK)</string>
+    <string name="bt_link_esp32">ESP32 რელეს დაფა</string>
+    <string name="bt_link_esp32_unpaired">ESP32 რელეს დაფა, ჯერ არ არის დაწყვილებული</string>
     <string name="esp32_relay_settings_title">Bluetooth რელე (ESP32)</string>
     <string name="esp32_relay_settings_summary">Bluetooth რელეს პარამეტრები ESP32-ზე დაფუძნებული რეალიზაციისთვის.</string>
     <string name="esp32_relay_enabled">Bluetooth რელეს გამოყენება</string>
     <string name="esp32_relay_enabled_summary">Native AA-ის Bluetooth-ჰენდშეიკის გატარება ESP32 დაფაზე</string>
-    <string name="esp32_relay_enabled_help">რელე არის ორიგინალი ESP32 Classic Bluetooth-ით, რომელშიც ჩაწერილია ამ აპისთვის შექმნილი რელეს პროგრამული უზრუნველყოფა. ტელეფონი ამ მოწყობილობის ნაცვლად დაფასთან ხდება დაწყვილებული, ხოლო მოწყობილობა დაფასთან BLE-ით ურთიერთობს. Native AA-ის Wi-Fi ნაწილი არ იცვლება. გამორთეთ, რომ მოწყობილობის საკუთარ Bluetooth-ზე დაბრუნდეთ. შენახული რელე რჩება. საჭიროა Native რეჟიმი და Android 6.0 ან უფრო ახალი.</string>
+    <string name="esp32_relay_enabled_help">რელე არის ორიგინალი ESP32 Classic Bluetooth-ით, რომელშიც ჩაწერილია ამ აპისთვის შექმნილი რელეს პროგრამული უზრუნველყოფა. ტელეფონი ამ მოწყობილობის ნაცვლად დაფასთან ხდება დაწყვილებული, ხოლო მოწყობილობა დაფასთან BLE-ით ურთიერთობს. Native AA-ის Wi-Fi ნაწილი არ იცვლება. გამორთეთ ან აირჩიეთ სხვა Bluetooth კავშირი, რომ დაბრუნდეთ. შენახული რელე რჩება. საჭიროა Native რეჟიმი და Android 6.0 ან უფრო ახალი.</string>
     <string name="esp32_relay_settings_disabled">გამორთულია</string>
     <string name="esp32_relay_saved_device">შენახული Bluetooth რელე</string>
     <string name="esp32_relay_saved_notice">შენახული Bluetooth რელე: %1$s</string>

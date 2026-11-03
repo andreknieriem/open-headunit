@@ -175,6 +175,8 @@ class SettingsFragment : Fragment() {
 
     // Local state to hold changes before saving
     private val pending = SettingsPendingCopy()
+    /** The ESP32 relay keeps its own store, so its master switch is held here until Save. */
+    private var pendingEsp32RelayEnabled: Boolean? = null
     private var pendingUseGps by pending::useGps
     private var pendingShowNavigationNotifications by pending::showNavigationNotifications
     private var pendingSyncMediaSessionAaMetadata by pending::syncMediaSessionAaMetadata
@@ -714,6 +716,7 @@ class SettingsFragment : Fragment() {
         pendingExternalBtZbtTransport?.let { if (it != settings.externalBtZbtTransport) settings.externalBtZbtTransport = it }
         pendingExternalBtBlinkTransport?.let { if (it != settings.externalBtBlinkTransport) settings.externalBtBlinkTransport = it }
         pendingExternalBtZjSocketTransport?.let { if (it != settings.externalBtZjSocketTransport) settings.externalBtZjSocketTransport = it }
+        applyPendingEsp32Relay()
         pendingNativeApTransport?.let { if (it != settings.nativeApStrategy) settings.nativeApStrategy = it }
         pendingNativeDriverSelectionMode?.let { if (it != settings.nativeDriverSelectionMode) settings.nativeDriverSelectionMode = it }
         pendingNativeDriverSelectionTimeout?.let { if (it != settings.nativeDriverSelectionTimeoutSec) settings.nativeDriverSelectionTimeoutSec = it }
@@ -798,7 +801,7 @@ class SettingsFragment : Fragment() {
 
     private fun checkChanges() {
         // Check for any changes
-        hasChanges = pending.differsFrom(settings)
+        hasChanges = pending.differsFrom(settings) || esp32RelayChangePending()
 
         // Check for restart requirement
         requiresRestart = pendingResolution != settings.resolutionId ||
@@ -1226,167 +1229,6 @@ class SettingsFragment : Fragment() {
                 addStationStandDownSetting(items)
             }
 
-            if (ExternalBtTransportPolicy.usesExternalModule(pendingExternalBtRoute())) {
-                items.add(SettingItem.InfoBanner(
-                    stableId = "externalBtModuleControlsHint",
-                    textResId = R.string.external_bt_module_controls_hint
-                ))
-                settings.lastExternalModulePhoneMac.takeIf { it.isNotBlank() }?.let { phoneMac ->
-                    items.add(SettingItem.SettingEntry(
-                        stableId = "externalBtModuleLastPhone",
-                        nameResId = R.string.external_bt_module_last_phone,
-                        value = phoneMac,
-                        onClick = { }
-                    ))
-                }
-            } else {
-            // Multi-Driver Selection settings for Native AA
-            val currentDriverMode = pendingNativeDriverSelectionMode ?: NativeDriverSelectionPolicy.Mode.AUTO
-            items.add(SettingItem.SegmentedButtonSettingEntry(
-                stableId = "nativeDriverSelectionMode",
-                nameResId = R.string.native_driver_selection_title,
-                helpResId = R.string.native_driver_selection_help,
-                options = listOf(
-                    getString(R.string.native_driver_selection_mode_off),
-                    getString(R.string.native_driver_selection_mode_auto),
-                    getString(R.string.native_driver_selection_mode_always)
-                ),
-                selectedIndex = currentDriverMode.id,
-                onOptionSelected = { index ->
-                    pendingNativeDriverSelectionMode = NativeDriverSelectionPolicy.Mode.fromId(index)
-                    checkChanges()
-                    updateSettingsList()
-                }
-            ))
-
-            if (currentDriverMode != NativeDriverSelectionPolicy.Mode.DISABLED) {
-                val currentTimeout = pendingNativeDriverSelectionTimeout ?: NativeDriverSelectionPolicy.DEFAULT_TIMEOUT_SEC
-                items.add(SettingItem.SliderSettingEntry(
-                    stableId = "nativeDriverSelectionTimeout",
-                    nameResId = R.string.native_driver_selection_timeout,
-                    helpResId = R.string.native_driver_selection_timeout_help,
-                    value = "${currentTimeout}s",
-                    sliderValue = currentTimeout.toFloat(),
-                    valueFrom = NativeDriverSelectionPolicy.MIN_TIMEOUT_SEC.toFloat(),
-                    valueTo = NativeDriverSelectionPolicy.MAX_TIMEOUT_SEC.toFloat(),
-                    stepSize = 1f,
-                    onValueChanged = { newVal ->
-                        pendingNativeDriverSelectionTimeout = newVal.toInt()
-                        checkChanges()
-                    }
-                ))
-
-                val currentPrefMac = pendingNativePreferredDeviceMac.orEmpty()
-                // Empty without BLUETOOTH_CONNECT: the row then shows the stored address, and
-                // tapping it asks for the permission instead of crashing the screen on open.
-                val bonded = BluetoothHelper.pairedDevicesOrEmpty(requireContext())
-                val prefDeviceName = bonded.firstOrNull { it.address.equals(currentPrefMac, ignoreCase = true) }?.name
-                    ?: if (currentPrefMac.isNotEmpty()) currentPrefMac else getString(R.string.driver_none)
-
-                items.add(SettingItem.SettingEntry(
-                    stableId = "nativePreferredDevice",
-                    nameResId = R.string.native_driver_preferred_device,
-                    helpResId = R.string.native_driver_preferred_device_help,
-                    value = prefDeviceName,
-                    onClick = { _ ->
-                        if (BluetoothHelper.canReadPairedDevices(requireContext())) {
-                            showPreferredDevicePicker()
-                        } else {
-                            preferredDevicePermissionLauncher.launch(android.Manifest.permission.BLUETOOTH_CONNECT)
-                        }
-                    }
-                ))
-            }
-
-            // Which phone the wake reaches. Beside driver selection, since both choose the phone.
-            val wakeMacs = pendingNativePokeBtMacs ?: settings.nativePokeBtMacs
-            items.add(SettingItem.SettingEntry(
-                stableId = "nativePokeBt",
-                nameResId = R.string.native_poke_bt_label,
-                helpResId = R.string.native_poke_bt_help,
-                value = BluetoothDevicePicker.summaryFor(requireContext(), wakeMacs)
-                    ?: getString(R.string.bt_device_not_set),
-                onClick = { _ -> showWakeDevicePicker() }
-            ))
-
-            // Only asked when nothing is chosen: a chosen device is never widened.
-            if (wakeMacs.isEmpty()) {
-                items.add(SettingItem.ToggleSettingEntry(
-                    stableId = "nativePokeAllPaired",
-                    nameResId = R.string.native_poke_all_paired_label,
-                    descriptionResId = R.string.native_poke_all_paired_summary,
-                    helpResId = R.string.native_poke_all_paired_description,
-                    isChecked = pendingNativePokeAllPaired ?: settings.nativePokeAllPairedDevices,
-                    onCheckedChanged = { isChecked ->
-                        pendingNativePokeAllPaired = isChecked
-                        checkChanges()
-                    }
-                ))
-            }
-
-            val currentServiceName = pendingBluetoothManagerServiceName ?: "bluetooth_manager"
-            items.add(SettingItem.SettingEntry(
-                stableId = "bluetoothAdapterServiceName",
-                nameResId = R.string.bluetooth_adapter_label,
-                helpResId = R.string.bluetooth_adapter_description,
-                value = BluetoothHelper.getAdapterDescription(requireContext(), currentServiceName),
-                onClick = { _ ->
-                    val serviceNames = BluetoothHelper.listBluetoothServices()
-                    val displayNames = serviceNames.map { name ->
-                        BluetoothHelper.getAdapterDescription(requireContext(), name)
-                    }.toTypedArray()
-
-                    val selectedIndex = serviceNames.indexOf(currentServiceName).coerceAtLeast(0)
-
-                    MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-                        .setTitle(R.string.select_bt_adapter)
-                        .setSingleChoiceItems(displayNames, selectedIndex) { dialog, which ->
-                            dialog.dismiss()
-                            pendingBluetoothManagerServiceName = serviceNames[which]
-                            checkChanges()
-                            updateSettingsList()
-                        }
-                        .show()
-                }
-            ))
-
-            // An action, not a switch: the wake's cost is a property of this unit's own Bluetooth
-            // stack, which is measured rather than asked. What a user can do is ask for the
-            // measurement again, which is the only way back for a unit condemned by one reading.
-            items.add(SettingItem.SettingEntry(
-                stableId = "nativeAaWakeRemeasure",
-                nameResId = R.string.native_aa_wake_remeasure,
-                helpResId = R.string.native_aa_wake_remeasure_help,
-                value = getString(
-                    when (NativeAaWakeDamagePolicy.Verdict.of(settings.nativeAaWakeDamageVerdict)) {
-                        NativeAaWakeDamagePolicy.Verdict.UNKNOWN -> R.string.native_aa_wake_verdict_unmeasured
-                        NativeAaWakeDamagePolicy.Verdict.SAFE -> R.string.native_aa_wake_verdict_safe
-                        NativeAaWakeDamagePolicy.Verdict.DESTRUCTIVE -> R.string.native_aa_wake_verdict_destructive
-                    }
-                ),
-                searchKeywords = "bluetooth wake poke hands-free handsfree link reset measure again",
-                onClick = { _ ->
-                    MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-                        .setTitle(R.string.native_aa_wake_remeasure)
-                        .setMessage(R.string.native_aa_wake_remeasure_confirm)
-                        .setPositiveButton(android.R.string.ok) { _, _ ->
-                            settings.nativeAaWakeDamageVerdict = 0
-                            settings.nativeAaRadioCycleVerdict = 0
-                            settings.nativeAaWakeArmingsWithoutSession = 0
-                            ToastUtils.showToast(
-                                requireContext(),
-                                R.string.native_aa_wake_remeasure_done,
-                                Toast.LENGTH_LONG,
-                                force = true
-                            )
-                            updateSettingsList()
-                        }
-                        .setNegativeButton(android.R.string.cancel, null)
-                        .show()
-                }
-            ))
-            }
-
             // Rendering it here is half the gate: AapService re-tests the connection mode before
             // acting on it, because a preference turned on under Native AA and then hidden by a
             // mode change would otherwise put a blackholing tun on a USB session. The other half
@@ -1597,7 +1439,10 @@ class SettingsFragment : Fragment() {
         }
 
         // Last in the section, so the sub-header's group runs to the section's end.
-        if (pendingWifiConnectionMode == WifiLauncherMode.NATIVE) addBluetoothRouteRows(items)
+        if (pendingWifiConnectionMode == WifiLauncherMode.NATIVE) {
+            addNativeBluetoothRows(items)
+            addBluetoothRouteRows(items)
+        }
 
         // --- Graphic Settings ---
         items.add(SettingItem.CategoryHeader("graphic", R.string.category_graphic))
@@ -3840,7 +3685,7 @@ class SettingsFragment : Fragment() {
     }
 
     /** What a launcher reads once at construction, for [WirelessRearmPolicy]. */
-    private fun wirelessRearmConfig() = WirelessRearmPolicy.Config(
+    private fun wirelessRearmConfig(context: Context = requireContext()) = WirelessRearmPolicy.Config(
         wifiConnectionMode = settings.wifiConnectionMode,
         helperConnectionStrategy = settings.helperConnectionStrategy,
         nativeApStrategy = settings.nativeApStrategy,
@@ -3852,6 +3697,7 @@ class SettingsFragment : Fragment() {
         externalBtBlinkTransport = settings.externalBtBlinkTransport,
         externalBtZjSocketTransport = settings.externalBtZjSocketTransport,
         nativeAaIgnoreExternalBt = settings.nativeAaIgnoreExternalBt,
+        esp32Relay = Esp32RelaySession.hasSavedEsp32Relay(context),
         autoEnableHotspot = settings.autoEnableHotspot,
         insecureAaRfcommListener = settings.insecureAaRfcommListener,
     )
@@ -3869,10 +3715,12 @@ class SettingsFragment : Fragment() {
             externalBtBlinkTransport = snapshot.externalBtBlinkTransport,
             externalBtZjSocketTransport = snapshot.externalBtZjSocketTransport,
             nativeAaIgnoreExternalBt = snapshot.nativeAaIgnoreExternalBt,
+            // An import leaves the relay's own store alone.
+            esp32Relay = Esp32RelaySession.hasSavedEsp32Relay(context),
             autoEnableHotspot = snapshot.autoEnableHotspot,
             insecureAaRfcommListener = snapshot.insecureAaRfcommListener,
         )
-        if (WirelessRearmPolicy.requiresRearm(before, wirelessRearmConfig())) {
+        if (WirelessRearmPolicy.requiresRearm(before, wirelessRearmConfig(context))) {
             AapService.applyWirelessSettings(context,
                 startWireless = settings.wifiConnectionMode != WifiLauncherMode.MANUAL && settings.showsWifi())
         }
@@ -4273,24 +4121,6 @@ class SettingsFragment : Fragment() {
 
     /** The Bluetooth route represented by the unsaved controls currently on screen. */
     /** One route switch changed; the others follow, because only one route runs. */
-    private fun setRouteSwitch(which: ExternalBtTransportPolicy.RouteSwitch, on: Boolean) {
-        val next = ExternalBtTransportPolicy.switchesAfter(
-            ExternalBtTransportPolicy.RouteSwitches(
-                blink = pendingExternalBtBlinkTransport ?: settings.externalBtBlinkTransport,
-                zjSocket = pendingExternalBtZjSocketTransport ?: settings.externalBtZjSocketTransport,
-                zbt = pendingExternalBtZbtTransport ?: settings.externalBtZbtTransport,
-                androidRadio = pendingNativeAaIgnoreExternalBt ?: settings.nativeAaIgnoreExternalBt
-            ),
-            which, on
-        )
-        pendingExternalBtBlinkTransport = next.blink
-        pendingExternalBtZjSocketTransport = next.zjSocket
-        pendingExternalBtZbtTransport = next.zbt
-        pendingNativeAaIgnoreExternalBt = next.androidRadio
-        checkChanges()
-        updateSettingsList()
-    }
-
     private fun pendingExternalBtRoute(): ExternalBtTransportPolicy.Route =
         ExternalBtTransportPolicy.route(
             ZbtDiscovery.snapshot(),
@@ -4644,25 +4474,209 @@ class SettingsFragment : Fragment() {
      * when a wireless session connects and shows no picture.
      */
     /** Who carries the Bluetooth half of Native AA: the relay, a module, or this unit's radio. */
-    private fun addBluetoothRouteRows(items: MutableList<SettingItem>) {
-        items.add(SettingItem.SubHeader("bluetoothRoute", R.string.settings_bluetooth_route))
+    /** Which phone, and how it is woken: the Native rows that read this unit's own Bluetooth. */
+    private fun addNativeBluetoothRows(items: MutableList<SettingItem>) {
+        items.add(SettingItem.SubHeader("bluetooth", R.string.settings_bluetooth))
 
-        // ESP32 relay needs API 23 (Android 6.0) for BLE. Omit the row below that —
-        // a greyed-out "unsupported" entry looks like a missing setting.
-        if (Build.VERSION.SDK_INT >= Esp32RelaySession.MIN_SDK) {
-            val esp32RelayStore = Esp32RelayStore(requireContext())
-            val esp32RelayLabel = when {
-                !esp32RelayStore.enabled -> getString(R.string.esp32_relay_settings_disabled)
-                else -> esp32RelayStore.deviceName
-                    ?: esp32RelayStore.deviceAddress
-                    ?: getString(R.string.esp32_relay_settings_summary)
+        if (ExternalBtTransportPolicy.usesExternalModule(pendingExternalBtRoute())) {
+            items.add(SettingItem.InfoBanner(
+                stableId = "externalBtModuleControlsHint",
+                textResId = R.string.external_bt_module_controls_hint
+            ))
+            settings.lastExternalModulePhoneMac.takeIf { it.isNotBlank() }?.let { phoneMac ->
+                items.add(SettingItem.SettingEntry(
+                    stableId = "externalBtModuleLastPhone",
+                    nameResId = R.string.external_bt_module_last_phone,
+                    value = phoneMac,
+                    onClick = { }
+                ))
             }
+        } else {
+            // Multi-Driver Selection settings for Native AA
+            val currentDriverMode = pendingNativeDriverSelectionMode ?: NativeDriverSelectionPolicy.Mode.AUTO
+            items.add(SettingItem.SegmentedButtonSettingEntry(
+                stableId = "nativeDriverSelectionMode",
+                nameResId = R.string.native_driver_selection_title,
+                helpResId = R.string.native_driver_selection_help,
+                options = listOf(
+                    getString(R.string.native_driver_selection_mode_off),
+                    getString(R.string.native_driver_selection_mode_auto),
+                    getString(R.string.native_driver_selection_mode_always)
+                ),
+                selectedIndex = currentDriverMode.id,
+                onOptionSelected = { index ->
+                    pendingNativeDriverSelectionMode = NativeDriverSelectionPolicy.Mode.fromId(index)
+                    checkChanges()
+                    updateSettingsList()
+                }
+            ))
+
+            if (currentDriverMode != NativeDriverSelectionPolicy.Mode.DISABLED) {
+                val currentTimeout = pendingNativeDriverSelectionTimeout ?: NativeDriverSelectionPolicy.DEFAULT_TIMEOUT_SEC
+                items.add(SettingItem.SliderSettingEntry(
+                    stableId = "nativeDriverSelectionTimeout",
+                    nameResId = R.string.native_driver_selection_timeout,
+                    helpResId = R.string.native_driver_selection_timeout_help,
+                    value = "${currentTimeout}s",
+                    sliderValue = currentTimeout.toFloat(),
+                    valueFrom = NativeDriverSelectionPolicy.MIN_TIMEOUT_SEC.toFloat(),
+                    valueTo = NativeDriverSelectionPolicy.MAX_TIMEOUT_SEC.toFloat(),
+                    stepSize = 1f,
+                    onValueChanged = { newVal ->
+                        pendingNativeDriverSelectionTimeout = newVal.toInt()
+                        checkChanges()
+                    }
+                ))
+
+                val currentPrefMac = pendingNativePreferredDeviceMac.orEmpty()
+                // Empty without BLUETOOTH_CONNECT: the row then shows the stored address, and
+                // tapping it asks for the permission instead of crashing the screen on open.
+                val bonded = BluetoothHelper.pairedDevicesOrEmpty(requireContext())
+                val prefDeviceName = bonded.firstOrNull { it.address.equals(currentPrefMac, ignoreCase = true) }?.name
+                    ?: if (currentPrefMac.isNotEmpty()) currentPrefMac else getString(R.string.driver_none)
+
+                items.add(SettingItem.SettingEntry(
+                    stableId = "nativePreferredDevice",
+                    nameResId = R.string.native_driver_preferred_device,
+                    helpResId = R.string.native_driver_preferred_device_help,
+                    value = prefDeviceName,
+                    onClick = { _ ->
+                        if (BluetoothHelper.canReadPairedDevices(requireContext())) {
+                            showPreferredDevicePicker()
+                        } else {
+                            preferredDevicePermissionLauncher.launch(android.Manifest.permission.BLUETOOTH_CONNECT)
+                        }
+                    }
+                ))
+            }
+
+            // Which phone the wake reaches. Beside driver selection, since both choose the phone.
+            val wakeMacs = pendingNativePokeBtMacs ?: settings.nativePokeBtMacs
+            items.add(SettingItem.SettingEntry(
+                stableId = "nativePokeBt",
+                nameResId = R.string.native_poke_bt_label,
+                helpResId = R.string.native_poke_bt_help,
+                value = BluetoothDevicePicker.summaryFor(requireContext(), wakeMacs)
+                    ?: getString(R.string.bt_device_not_set),
+                onClick = { _ -> showWakeDevicePicker() }
+            ))
+
+            // Only asked when nothing is chosen: a chosen device is never widened.
+            if (wakeMacs.isEmpty()) {
+                items.add(SettingItem.ToggleSettingEntry(
+                    stableId = "nativePokeAllPaired",
+                    nameResId = R.string.native_poke_all_paired_label,
+                    descriptionResId = R.string.native_poke_all_paired_summary,
+                    helpResId = R.string.native_poke_all_paired_description,
+                    isChecked = pendingNativePokeAllPaired ?: settings.nativePokeAllPairedDevices,
+                    onCheckedChanged = { isChecked ->
+                        pendingNativePokeAllPaired = isChecked
+                        checkChanges()
+                    }
+                ))
+            }
+
+            val currentServiceName = pendingBluetoothManagerServiceName ?: "bluetooth_manager"
+            items.add(SettingItem.SettingEntry(
+                stableId = "bluetoothAdapterServiceName",
+                nameResId = R.string.bluetooth_adapter_label,
+                helpResId = R.string.bluetooth_adapter_description,
+                value = BluetoothHelper.getAdapterDescription(requireContext(), currentServiceName),
+                onClick = { _ ->
+                    val serviceNames = BluetoothHelper.listBluetoothServices()
+                    val displayNames = serviceNames.map { name ->
+                        BluetoothHelper.getAdapterDescription(requireContext(), name)
+                    }.toTypedArray()
+
+                    val selectedIndex = serviceNames.indexOf(currentServiceName).coerceAtLeast(0)
+
+                    MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
+                        .setTitle(R.string.select_bt_adapter)
+                        .setSingleChoiceItems(displayNames, selectedIndex) { dialog, which ->
+                            dialog.dismiss()
+                            pendingBluetoothManagerServiceName = serviceNames[which]
+                            checkChanges()
+                            updateSettingsList()
+                        }
+                        .show()
+                }
+            ))
+
+            // An action, not a switch: the wake's cost is a property of this unit's own Bluetooth
+            // stack, which is measured rather than asked. What a user can do is ask for the
+            // measurement again, which is the only way back for a unit condemned by one reading.
+            items.add(SettingItem.SettingEntry(
+                stableId = "nativeAaWakeRemeasure",
+                nameResId = R.string.native_aa_wake_remeasure,
+                helpResId = R.string.native_aa_wake_remeasure_help,
+                value = getString(
+                    when (NativeAaWakeDamagePolicy.Verdict.of(settings.nativeAaWakeDamageVerdict)) {
+                        NativeAaWakeDamagePolicy.Verdict.UNKNOWN -> R.string.native_aa_wake_verdict_unmeasured
+                        NativeAaWakeDamagePolicy.Verdict.SAFE -> R.string.native_aa_wake_verdict_safe
+                        NativeAaWakeDamagePolicy.Verdict.DESTRUCTIVE -> R.string.native_aa_wake_verdict_destructive
+                    }
+                ),
+                searchKeywords = "bluetooth wake poke hands-free handsfree link reset measure again",
+                onClick = { _ ->
+                    MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
+                        .setTitle(R.string.native_aa_wake_remeasure)
+                        .setMessage(R.string.native_aa_wake_remeasure_confirm)
+                        .setPositiveButton(android.R.string.ok) { _, _ ->
+                            settings.nativeAaWakeDamageVerdict = 0
+                            settings.nativeAaRadioCycleVerdict = 0
+                            settings.nativeAaWakeArmingsWithoutSession = 0
+                            ToastUtils.showToast(
+                                requireContext(),
+                                R.string.native_aa_wake_remeasure_done,
+                                Toast.LENGTH_LONG,
+                                force = true
+                            )
+                            updateSettingsList()
+                        }
+                        .setNegativeButton(android.R.string.cancel, null)
+                        .show()
+                }
+            ))
+        }
+    }
+
+    private fun addBluetoothRouteRows(items: MutableList<SettingItem>) {
+        val discovery = ZbtDiscovery.snapshot()
+        val fyt = BluetoothHelper.fytModuleEvidence
+        val hct = HctServiceObserver.available(requireContext())
+        val current = ExternalBtTransportPolicy.choiceOf(pendingRouteSwitches())
+        // Not on FYT module units, which have no ZLink daemon; the route refuses ZBT there.
+        val zbtOffered = discovery.decision.available && fyt == null
+        val choices = ExternalBtTransportPolicy.routeChoices(
+            current,
+            moduleDetected = ExternalBtTransportPolicy.externalModuleDetected(discovery, fyt, hct, ZjSocketProbe.answer()),
+            zbtOffered = zbtOffered,
+            zjOffered = ExternalBtTransportPolicy.showZjSocketToggle(
+                discovery, fyt, ExternalBtPolicy.ZJ_SOCKET_PATHS.any { File(it).exists() }, false),
+            blinkOffered = ExternalBtTransportPolicy.showBlinkToggle(fyt, false),
+            esp32Supported = Esp32RelaySession.isSupported(),
+        )
+        // One option is no choice: below API 23 with no module there is only Automatic.
+        if (choices.size > 1) items.add(SettingItem.SettingEntry(
+            stableId = "bluetoothLink",
+            nameResId = R.string.bt_link_title,
+            value = routeChoiceLabel(current),
+            descriptionResId = R.string.bt_link_summary,
+            helpResId = routeChoiceHelp(current, discovery.decision.requiresIdentity || hct, fyt),
+            searchKeywords = "route external bluetooth module zlink zbt zj socket fyt blink duduauto esp32 relay board android radio",
+            onClick = { showRouteChoiceDialog(choices, current) }
+        ))
+
+        if (current == ExternalBtTransportPolicy.RouteChoice.ESP32) {
+            val store = Esp32RelayStore(requireContext())
             items.add(SettingItem.SettingEntry(
                 stableId = "Esp32Relay",
                 nameResId = R.string.esp32_relay_settings_title,
-                value = esp32RelayLabel,
+                value = store.deviceName ?: store.deviceAddress ?: getString(R.string.esp32_relay_settings_summary),
                 searchKeywords = "bluetooth relay board esp32 pair disconnect ble openhu",
                 onClick = {
+                    // That page saves at once, so it must open on the relay this row chose.
+                    applyPendingEsp32Relay()
                     try {
                         findNavController().navigate(R.id.action_settingsFragment_to_esp32RelaySettingsFragment)
                     } catch (_: Exception) { }
@@ -4670,58 +4684,8 @@ class SettingsFragment : Fragment() {
             ))
         }
 
-        // Only where FYT's blink daemon relays the BLINK module's Android Auto channel. Needs root.
-        val blinkEnabled = pendingExternalBtBlinkTransport ?: settings.externalBtBlinkTransport
-        if (ExternalBtTransportPolicy.showBlinkToggle(BluetoothHelper.fytModuleEvidence, blinkEnabled)) {
-            items.add(SettingItem.ToggleSettingEntry(
-                stableId = "externalBtBlinkTransport",
-                nameResId = R.string.external_bt_blink_transport,
-                descriptionResId = R.string.external_bt_blink_transport_summary,
-                helpResId = R.string.external_bt_blink_transport_description,
-                isChecked = blinkEnabled,
-                searchKeywords = "fyt blink duduauto dudu carlink external bluetooth module transport auto_serial",
-                onCheckedChanged = { isChecked -> setRouteSwitch(ExternalBtTransportPolicy.RouteSwitch.BLINK, isChecked) }
-            ))
-        }
-
-        // The ZJ socket switch; the route is also taken unasked when the socket accepts a connect.
-        val zjChecked = pendingExternalBtZjSocketTransport ?: settings.externalBtZjSocketTransport
-        if (ExternalBtTransportPolicy.showZjSocketToggle(
-                ZbtDiscovery.snapshot(),
-                BluetoothHelper.fytModuleEvidence,
-                ExternalBtPolicy.ZJ_SOCKET_PATHS.any { File(it).exists() },
-                zjChecked
-            )) {
-            items.add(SettingItem.ToggleSettingEntry(
-                stableId = "externalBtZjSocketTransport",
-                nameResId = R.string.external_bt_zj_socket_transport,
-                descriptionResId = R.string.external_bt_zj_socket_transport_summary,
-                helpResId = R.string.external_bt_zj_socket_transport_description,
-                isChecked = zjChecked,
-                searchKeywords = "zj zlink gocsdk socket unix external bluetooth module transport handshake",
-                onCheckedChanged = { isChecked -> setRouteSwitch(ExternalBtTransportPolicy.RouteSwitch.ZJ_SOCKET, isChecked) }
-            ))
-        }
-
-        // Offer the existing ZBT override for known external modules and firmware candidates.
-        // A candidate may have a usable Android adapter; failed discovery alone does not refuse it.
-        // Not on FYT module units, which have no ZLink daemon; the route refuses ZBT there anyway.
-        // Still shown while on, so a toggle left over from before can be turned off.
-        val zbtChecked = pendingExternalBtZbtTransport ?: settings.externalBtZbtTransport
-        val zbtDiscovery = ZbtDiscovery.snapshot()
-        if (zbtDiscovery.decision.available &&
-            (BluetoothHelper.fytModuleEvidence == null || zbtChecked)) {
-            items.add(SettingItem.ToggleSettingEntry(
-                stableId = "externalBtZbtTransport",
-                nameResId = R.string.external_bt_transport,
-                descriptionResId = R.string.external_bt_transport_summary,
-                helpResId = if (zbtDiscovery.decision.requiresIdentity)
-                    R.string.external_bt_candidate_transport_description else R.string.external_bt_transport_description,
-                isChecked = pendingExternalBtZbtTransport ?: settings.externalBtZbtTransport,
-                searchKeywords = "zbt zlink external bluetooth module transport handshake vendor daemon",
-                onCheckedChanged = { isChecked -> setRouteSwitch(ExternalBtTransportPolicy.RouteSwitch.ZBT, isChecked) }
-            ))
-
+        // Beside the choice, since its help says to run the test before choosing the module.
+        if (zbtOffered || current == ExternalBtTransportPolicy.RouteChoice.ZBT) {
             items.add(SettingItem.SettingEntry(
                 stableId = "zbtProbe",
                 nameResId = R.string.zbt_probe_title,
@@ -4731,40 +4695,84 @@ class SettingsFragment : Fragment() {
                 onClick = { _ -> confirmAndRunZbtProbe() }
             ))
         }
+    }
 
-        // Moved out of the Android-radio-only settings block so this existing override is
-        // also available on the module route. Keep its setting key and callback unchanged;
-        // firmware candidates need the same way to explicitly choose Android Bluetooth.
-        // ZbtDiscovery reuses the established detector and reads its selected cache here,
-        // never a socket. A negative detection can read metadata again on a later rebuild.
-        // Preserve the original no-op-control rule: explicit ZBT or BLINK toggles win over
-        // this switch. Keep an already checked switch visible so it can still be cleared.
-        // FYT retains this override for a phone actually paired with the Android radio.
-        val radioDiscovery = ZbtDiscovery.snapshot()
-        val radioFytEvidence = BluetoothHelper.fytModuleEvidence
-        val ignoreChecked = pendingNativeAaIgnoreExternalBt ?: settings.nativeAaIgnoreExternalBt
-        val hctService = HctServiceObserver.available(requireContext())
-        if (ExternalBtTransportPolicy.showsAndroidRadioOverride(
-                radioDiscovery,
-                pendingExternalBtZbtTransport ?: settings.externalBtZbtTransport,
-                ignoreChecked,
-                pendingExternalBtBlinkTransport ?: settings.externalBtBlinkTransport,
-                radioFytEvidence,
-                hctService,
-                pendingExternalBtZjSocketTransport ?: settings.externalBtZjSocketTransport,
-                ZjSocketProbe.answer()
-            )) {
-            items.add(SettingItem.ToggleSettingEntry(
-                stableId = "nativeAaIgnoreExternalBt",
-                nameResId = R.string.native_aa_ignore_external_bt,
-                descriptionResId = R.string.native_aa_ignore_external_bt_summary,
-                helpResId = if ((radioDiscovery.decision.requiresIdentity || hctService) && radioFytEvidence == null)
-                    R.string.native_aa_candidate_android_radio_description else R.string.native_aa_ignore_external_bt_description,
-                isChecked = ignoreChecked,
-                searchKeywords = "external bluetooth module rfcomm override compatibility anyway",
-                onCheckedChanged = { isChecked -> setRouteSwitch(ExternalBtTransportPolicy.RouteSwitch.ANDROID_RADIO, isChecked) }
-            ))
-        }
+    /** The route switches as this screen holds them, the relay's included. */
+    private fun pendingRouteSwitches() = ExternalBtTransportPolicy.RouteSwitches(
+        blink = pendingExternalBtBlinkTransport ?: settings.externalBtBlinkTransport,
+        zjSocket = pendingExternalBtZjSocketTransport ?: settings.externalBtZjSocketTransport,
+        zbt = pendingExternalBtZbtTransport ?: settings.externalBtZbtTransport,
+        androidRadio = pendingNativeAaIgnoreExternalBt ?: settings.nativeAaIgnoreExternalBt,
+        esp32 = Esp32RelaySession.isSupported() &&
+            (pendingEsp32RelayEnabled ?: Esp32RelayStore(requireContext()).enabled),
+    )
+
+    private fun routeChoiceLabel(choice: ExternalBtTransportPolicy.RouteChoice): String = getString(when (choice) {
+        ExternalBtTransportPolicy.RouteChoice.AUTOMATIC -> R.string.bt_link_automatic
+        ExternalBtTransportPolicy.RouteChoice.ANDROID_RADIO -> R.string.bt_link_this_unit
+        ExternalBtTransportPolicy.RouteChoice.ZBT -> R.string.bt_link_zlink
+        ExternalBtTransportPolicy.RouteChoice.ZJ_SOCKET -> R.string.bt_link_zj
+        ExternalBtTransportPolicy.RouteChoice.BLINK -> R.string.bt_link_blink
+        ExternalBtTransportPolicy.RouteChoice.ESP32 ->
+            if (Esp32RelayStore(requireContext()).deviceAddress == null) R.string.bt_link_esp32_unpaired
+            else R.string.bt_link_esp32
+    })
+
+    /** The (?) explains the choice in force, so each choice keeps its own warning. */
+    private fun routeChoiceHelp(choice: ExternalBtTransportPolicy.RouteChoice, candidate: Boolean, fyt: String?): Int = when (choice) {
+        ExternalBtTransportPolicy.RouteChoice.AUTOMATIC -> R.string.bt_link_help
+        ExternalBtTransportPolicy.RouteChoice.ANDROID_RADIO ->
+            if (candidate && fyt == null) R.string.native_aa_candidate_android_radio_description
+            else R.string.native_aa_ignore_external_bt_description
+        ExternalBtTransportPolicy.RouteChoice.ZBT ->
+            if (ZbtDiscovery.snapshot().decision.requiresIdentity) R.string.external_bt_candidate_transport_description
+            else R.string.external_bt_transport_description
+        ExternalBtTransportPolicy.RouteChoice.ZJ_SOCKET -> R.string.external_bt_zj_socket_transport_description
+        ExternalBtTransportPolicy.RouteChoice.BLINK -> R.string.external_bt_blink_transport_description
+        ExternalBtTransportPolicy.RouteChoice.ESP32 -> R.string.esp32_relay_enabled_help
+    }
+
+    private fun showRouteChoiceDialog(
+        choices: List<ExternalBtTransportPolicy.RouteChoice>,
+        current: ExternalBtTransportPolicy.RouteChoice,
+    ) {
+        val labels = choices.map { routeChoiceLabel(it) }.toTypedArray()
+        MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
+            .setTitle(R.string.bt_link_title)
+            .setSingleChoiceItems(labels, choices.indexOf(current).coerceAtLeast(0)) { dialog, which ->
+                dialog.dismiss()
+                setRouteChoice(choices[which])
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    /** One choice, because only one route runs: every other switch goes off with it. */
+    private fun setRouteChoice(choice: ExternalBtTransportPolicy.RouteChoice) {
+        val next = ExternalBtTransportPolicy.switchesFor(choice)
+        pendingExternalBtBlinkTransport = next.blink
+        pendingExternalBtZjSocketTransport = next.zjSocket
+        pendingExternalBtZbtTransport = next.zbt
+        pendingNativeAaIgnoreExternalBt = next.androidRadio
+        if (Esp32RelaySession.isSupported()) pendingEsp32RelayEnabled = next.esp32
+        checkChanges()
+        updateSettingsList()
+    }
+
+    /** Writes the relay's master switch the way its own page does. */
+    private fun applyPendingEsp32Relay() {
+        val on = pendingEsp32RelayEnabled ?: return
+        pendingEsp32RelayEnabled = null
+        val store = Esp32RelayStore(requireContext())
+        if (on == store.enabled) return
+        store.enabled = on
+        if (!on) Esp32RelaySession.close()
+        Esp32RelaySession.syncWatchdog(requireContext())
+    }
+
+    private fun esp32RelayChangePending(): Boolean {
+        val on = pendingEsp32RelayEnabled ?: return false
+        return on != Esp32RelayStore(context ?: return false).enabled
     }
 
     private fun addWifiDirectBandSetting(items: MutableList<SettingItem>) {

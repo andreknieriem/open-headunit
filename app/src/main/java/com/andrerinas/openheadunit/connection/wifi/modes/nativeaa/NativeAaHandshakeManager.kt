@@ -220,7 +220,7 @@ class NativeAaHandshakeManager(
                 // Ordinary hardware, an unconfirmed candidate, or an explicit Android-radio override.
                 ExternalBtTransportPolicy.Route.NORMAL -> externalBtDiagnostic(discovery)?.let {
                     AppLog.w(it)
-                    AppLog.w("NativeAA: continuing anyway, because the Bluetooth compatibility check is switched off in Settings.")
+                    AppLog.w("NativeAA: continuing anyway, because Settings chooses this unit's own Bluetooth for the phone.")
                 }
             }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -1010,20 +1010,20 @@ class NativeAaHandshakeManager(
             ExternalBtTransportPolicy.Route.BLOCKED -> {
                 val fyt = BluetoothHelper.fytModuleEvidence
                 if (fyt != null) {
-                    notStartedReason = "this FYT unit's Bluetooth is an external module ($fyt). Turn on " +
-                        "\"Connect through the FYT external Bluetooth module\", or use USB or a WiFi mode."
+                    notStartedReason = "this FYT unit's Bluetooth is an external module ($fyt). Choose " +
+                        "\"Car Bluetooth module (FYT BLINK)\" under Bluetooth your phone pairs with, or use USB or a WiFi mode."
                     AppLog.e("NativeAA: $notStartedReason")
                     return
                 }
                 externalBtDiagnostic(discovery)?.let { AppLog.e(it) }
                 notStartedReason = "this unit's Bluetooth is an external module with no route through it " +
-                    "(${discovery.decision.evidence}). Turn on \"Connect through the head unit's " +
-                    "Bluetooth module\", or use USB or a WiFi mode."
+                    "(${discovery.decision.evidence}). Choose \"Car Bluetooth " +
+                    "module (ZLink)\" under Bluetooth your phone pairs with, or use USB or a WiFi mode."
                 return
             }
             // Ordinary hardware, an unconfirmed candidate, or an explicit Android-radio override.
             ExternalBtTransportPolicy.Route.NORMAL -> externalBtDiagnostic(discovery)?.let {
-                AppLog.w("$it\nNativeAA: starting anyway, because the Bluetooth compatibility check is switched off in Settings.")
+                AppLog.w("$it\nNativeAA: starting anyway, because Settings chooses this unit's own Bluetooth for the phone.")
             }
         }
 

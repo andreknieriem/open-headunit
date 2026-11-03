@@ -1135,9 +1135,7 @@
     <string name="external_bt_nativeaa_desc">Je telefoon koppelt met de eigen Bluetooth-module van deze headunit (%1$s) en niet met de Bluetooth die Android aan apps aanbiedt. De draadloze handshake komt daar dus nooit aan.\n\nDeze app bereikt die module alleen via een ZJ/ZLink-dienst, en die draait niet op deze headunit. Gebruik in plaats daarvan USB of een wifi-modus.</string>
     <string name="external_bt_module_nativeaa">Native Wireless via de ZJ/ZLink-module</string>
     <string name="external_bt_module_nativeaa_desc">Je telefoon koppelt met de eigen Bluetooth-module van deze headunit (%1$s) en niet met de Bluetooth die Android aan apps aanbiedt. Daarom wordt de handshake via de ZJ/ZLink-dienst van de module verstuurd.\n\nExperimenteel: die ene dienst is de enige toegang. Start je telefoon Android Auto nooit, gebruik dan USB of een wifi-modus.</string>
-    <string name="external_bt_transport">Verbinden via de Bluetooth-module van de headunit</string>
-    <string name="external_bt_transport_description">Experimenteel, voor apparaten met een ZJ/ZLink-Bluetoothservice. Stuurt de draadloze Android Auto-handshake via de Bluetooth-chip waaraan je telefoon is gekoppeld, niet via die Android aan apps toont. Voer eerst de test van de Bluetooth-module uit met dit uit. Vindt de test niets dat luistert, dan kan dit op jouw apparaat niets doen. Antwoordt hij, zet dit dan aan. Exporteer in beide gevallen het log.</string>
-    <string name="external_bt_transport_summary">Experimenteel. Stuurt de draadloze handshake via de eigen Bluetooth van dit apparaat.</string>
+    <string name="external_bt_transport_description">Experimenteel, voor units met een ZJ/ZLink-Bluetoothservice. Stuurt de draadloze Android Auto-handshake via de Bluetooth-chip waarmee je telefoon is gekoppeld, niet via die Android aan apps toont. Voer eerst de test van de Bluetooth-module uit. Vindt die niets, dan helpt dit niet op jouw unit. Antwoordt de module, kies dit dan. Exporteer in beide gevallen het log.</string>
     <string name="zbt_probe_title">Bluetooth-module van de headunit testen</string>
     <string name="zbt_probe_help">Test of de eigen Bluetooth-module van deze unit de draadloze Android Auto-handshake kan dragen. De test duurt ongeveer twee minuten en toont elke fase in deze rij. Alleen meekijken start de module en bewaakt hem. Wekken en meekijken vraagt de module ook om verbinding te maken met de telefoon. De test kan de Bluetooth-status van de module wijzigen. Exporteer het log na de test.</string>
     <string name="zbt_probe_idle">Tik om te starten</string>
@@ -1145,15 +1143,11 @@
     <string name="zbt_probe_message">Beide opties initialiseren de Bluetooth-module voordat deze wordt gevolgd. Dit kan de Bluetooth-status beïnvloeden. Wekken en meekijken vraagt ook om een verbinding met de telefoon.\n\nDe test geeft voorrang als OHU de module gebruikt of controleert. Exporteer na de test het logboek.</string>
     <string name="zbt_probe_watch_only">Alleen meekijken</string>
     <string name="zbt_probe_wake_and_watch">Wekken en meekijken</string>
-    <string name="external_bt_blink_transport">Verbinden via de externe FYT-Bluetooth-module</string>
     <string name="external_bt_module_controls_hint">Telefoonkoppeling, verbindingsprioriteit en stuurprogrammakeuze worden beheerd door de externe Bluetooth-module.</string>
     <string name="external_bt_module_last_phone">Laatste telefoon die via de module is verbonden</string>
-    <string name="external_bt_blink_transport_description">Experimenteel, voor FYT-apparaten waarvan de telefoon voor gesprekken is gekoppeld met een aparte Bluetooth-module, zoals DUDUAUTO op DUDUOS. De module verzorgt de draadloze Android Auto-handshake, die normaal de originele Car Link-app beantwoordt. Als dit aan staat, beantwoordt deze app hem, zodat gesprekken op de module en de speakers van de auto blijven. Schakel eerst de originele Car Link-app uit (pm disable-user com.syu.carlink), anders lezen beide hetzelfde kanaal.</string>
-    <string name="external_bt_blink_transport_summary">Experimenteel. Beantwoordt de draadloze handshake op de Bluetooth-module van een FYT-apparaat.</string>
-    <string name="external_bt_zj_socket_transport">Verbinden via de ZJ-Bluetooth-socket</string>
-    <string name="external_bt_zj_socket_transport_description">Voor units waarvan de ZJ-Bluetooth-module de draadloze Android Auto-handshake via een lokale socket (/dev/socket/zj_bt_socket) afhandelt. De app gebruikt de socket vanzelf zodra die een verbinding accepteert. Zet dit alleen aan als je unit de socket heeft en de app die niet ziet.</string>
-    <string name="external_bt_zj_socket_transport_summary">De draadloze handshake via de lokale socket van de ZJ-module laten lopen.</string>
-    <string name="external_bt_blink_refused_stock_enabled">Externe Bluetooth-module: de standaard Car Link-app is nog ingeschakeld. Schakel hem uit (pm disable-user com.syu.carlink) of zet dit transport uit.</string>
+    <string name="external_bt_blink_transport_description">Experimenteel, voor FYT-units waarvan de telefoon voor gesprekken koppelt met een aparte Bluetooth-module, zoals DUDUAUTO op DUDUOS. De module verzorgt de draadloze Android Auto-handshake, die normaal de standaard Car Link-app beantwoordt. Als dit is gekozen, antwoordt deze app in plaats daarvan, zodat gesprekken op de module en de autoluidsprekers blijven. Schakel eerst de standaard Car Link-app uit (pm disable-user com.syu.carlink), anders lezen beide hetzelfde kanaal.</string>
+    <string name="external_bt_zj_socket_transport_description">Voor units waarvan de ZJ-Bluetooth-module de draadloze Android Auto-handshake via een lokale socket (/dev/socket/zj_bt_socket) verzorgt. De app gebruikt die zelf zodra de socket een verbinding accepteert. Kies dit alleen als je unit de socket heeft en de app die niet ziet.</string>
+    <string name="external_bt_blink_refused_stock_enabled">Externe Bluetooth-module: de standaard Car Link-app is nog ingeschakeld. Schakel die uit (pm disable-user com.syu.carlink) of kies een andere Bluetooth-verbinding.</string>
     <string name="external_bt_blink_refused_stock_running">Externe Bluetooth-module: de standaard Car Link-app is uitgeschakeld maar draait nog. Start het apparaat opnieuw op.</string>
     <string name="external_bt_blink_refused_root">Externe Bluetooth-module: voor het openen van het kanaal van de module is root nodig op dit apparaat, en roottoegang is geweigerd of niet beschikbaar.</string>
     <string name="external_bt_blink_refused_unverified">Externe Bluetooth-module: er kon niet worden gecontroleerd of de standaard Car Link-app is gestopt, dus het kanaal van de module blijft gesloten. Exporteer het logboek.</string>
@@ -1255,9 +1249,7 @@
     <string name="preflight_open_location">Locatie</string>
     <string name="preflight_later">Later</string>
     <string name="preflight_invalid_bssid">Dat is geen wifi-adres. Voer zes paren hexadecimale cijfers in, zoals 02:1A:11:FF:3C:4D.</string>
-    <string name="native_aa_ignore_external_bt">Bluetooth-compatibiliteitscontrole negeren</string>
-    <string name="native_aa_ignore_external_bt_description">Dit apparaat lijkt Bluetooth op een aparte module te hebben die Android niet kan bereiken, daarom wordt draadloos Android Auto automatisch uitgeschakeld. Standaard uit. Schakel het alleen in als je denkt dat dat niet klopt: als de detectie klopt, mislukt de verbinding geruisloos en ziet het logboek er gezond uit.</string>
-    <string name="native_aa_ignore_external_bt_summary">Houdt draadloos aan, ook al lijkt dit apparaat zijn Bluetooth-module te verbergen.</string>
+    <string name="native_aa_ignore_external_bt_description">Deze headunit lijkt Bluetooth op een aparte module te hebben die Android niet kan bereiken, dus draadloos Android Auto wordt automatisch uitgeschakeld. Kies dit alleen als je denkt dat dit niet klopt: als het wel klopt, mislukt de verbinding zonder melding en ziet het log er gezond uit.</string>
     <string name="native_aa_setup_qr_title">Instellen met QR-code</string>
     <string name="native_aa_setup_qr_description">Een code tonen die de telefoon kan scannen.</string>
     <string name="native_aa_setup_qr_help">Toont een QR-code waarmee je deze unit op de telefoon instelt zonder de Bluetooth-handshake. De code bevat de hotspotnaam, het wachtwoord en het adres van deze unit. Dit werkt alleen via het hotspottransport, terwijl de verbinding actief is. Android Auto 18.0 doet nog niets met deze code, dus de Bluetooth-handshake is nog nodig.</string>
@@ -1678,8 +1670,8 @@
     <string name="home_pages_hint_got_it">Begrepen</string>
     <string name="home_pages_hint_body_anywhere">Elk leeg deel van het startscherm werkt. Zo voeg je een pagina voor je widgets toe, of verwijder je er een.</string>
     <string name="audio_settings_reconnect">Audio-instellingen opgeslagen. Verbind Android Auto opnieuw om ze toe te passen.</string>
-    <string name="native_aa_candidate_android_radio_description">Gebruik Android-Bluetooth in plaats van automatisch de Bluetooth-module van de headunit te kiezen. Laat uitgeschakeld voor automatische selectie. Schakel een ingeschakelde optie voor verbinding via de module eerst uit.</string>
-    <string name="external_bt_candidate_transport_description">Forceer verbinding via de Bluetooth-module van de headunit in plaats van automatische selectie. Vereist een compatibele moduleservice. Laat uitgeschakeld om Android-Bluetooth te kunnen gebruiken als de service niet reageert; inschakelen voorkomt deze terugval.</string>
+    <string name="native_aa_candidate_android_radio_description">Gebruik Android-Bluetooth in plaats van automatisch de Bluetooth-module van de headunit te kiezen.</string>
+    <string name="external_bt_candidate_transport_description">Forceer de verbinding via de Bluetooth-module van de headunit in plaats van automatische keuze. Hiervoor is een compatibele moduleservice nodig. Automatisch detecteren staat Android-Bluetooth toe als die service niet reageert; deze keuze voorkomt die terugval.</string>
     <string name="audio_matching_mode">Tijdcorrectie voor muziek</string>
     <string name="audio_matching_mode_help">Komt muziek iets te snel of te langzaam binnen, dan speelt de app die iets sneller of langzamer af om de geluidswachtrij op peil te houden. Hier kies je de methode. OHU is de standaard. De andere methoden voegen wat vertraging toe en gelden alleen voor PCM-muziek. Navigatie, spraak, systeemgeluiden en AAC gebruiken altijd OHU. Maak opnieuw verbinding om dit toe te passen.</string>
     <string name="audio_matching_ohu">OHU</string>
@@ -1789,12 +1781,22 @@
     <string name="wifi_scan_wifi_settings">Wifi-instellingen openen</string>
 
     <!-- Bluetooth relay (ESP32) -->
-    <string name="settings_bluetooth_route">Bluetooth-route</string>
+    <string name="settings_bluetooth">Bluetooth</string>
+    <string name="bt_link_title">Bluetooth waarmee je telefoon koppelt</string>
+    <string name="bt_link_summary">Android Auto start via deze Bluetooth-verbinding.</string>
+    <string name="bt_link_help">Draadloos Android Auto bereikt deze headunit eerst via Bluetooth en schakelt dan over op Wi-Fi. Kies de Bluetooth waarmee je telefoon is gekoppeld. Sommige units hebben die op een aparte module die Android niet kan bereiken. Automatisch detecteren past bij de meeste units.</string>
+    <string name="bt_link_automatic">Automatisch detecteren</string>
+    <string name="bt_link_this_unit">Eigen Bluetooth van deze headunit</string>
+    <string name="bt_link_zlink">Bluetooth-module van de auto (ZLink)</string>
+    <string name="bt_link_zj">Bluetooth-module van de auto (ZJ)</string>
+    <string name="bt_link_blink">Bluetooth-module van de auto (FYT BLINK)</string>
+    <string name="bt_link_esp32">ESP32-relaybord</string>
+    <string name="bt_link_esp32_unpaired">ESP32-relaybord, nog niet gekoppeld</string>
     <string name="esp32_relay_settings_title">Bluetooth-relay (ESP32)</string>
     <string name="esp32_relay_settings_summary">Instellingen voor een Bluetooth-relay op basis van een ESP32.</string>
     <string name="esp32_relay_enabled">Bluetooth-relay gebruiken</string>
     <string name="esp32_relay_enabled_summary">De Bluetooth-handshake van Native AA via een ESP32-bord laten lopen</string>
-    <string name="esp32_relay_enabled_help">De relay is een originele ESP32 met Classic Bluetooth, geflasht met de relayfirmware voor deze app. De telefoon koppelt met het bord in plaats van met deze headunit, en de headunit praat via BLE met het bord. Het Wi-Fi-deel van Native AA verandert niet. Zet dit uit om weer de eigen Bluetooth van deze headunit te gebruiken. De opgeslagen relay blijft bewaard. Vereist de Native-modus en Android 6.0 of hoger.</string>
+    <string name="esp32_relay_enabled_help">De relay is een originele ESP32 met Classic Bluetooth, geflasht met de relayfirmware voor deze app. De telefoon koppelt met het bord in plaats van met deze headunit, en de headunit praat via BLE met het bord. Het Wi-Fi-deel van Native AA verandert niet. Zet dit uit, of kies een andere Bluetooth-verbinding, om terug te gaan. De opgeslagen relay blijft bewaard. Vereist de Native-modus en Android 6.0 of hoger.</string>
     <string name="esp32_relay_settings_disabled">Uit</string>
     <string name="esp32_relay_saved_device">Opgeslagen Bluetooth-relay</string>
     <string name="esp32_relay_saved_notice">Opgeslagen Bluetooth-relay: %1$s</string>

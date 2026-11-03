@@ -1499,9 +1499,7 @@
     <string name="native_aa_wake_verdict_destructive">Held back on this unit</string>
     <string name="native_aa_wake_remeasure_confirm">Android Auto only starts wireless when it sees the Bluetooth connection change. Where this unit already holds the hands-free link, the app has to break it to make that happen, so it measures once whether the link comes back and stops if it does not. Use this if wireless stopped starting on its own and you are willing to lose hands-free for a moment while it tries again.</string>
     <string name="native_aa_wake_remeasure_done">The Bluetooth wake will be measured again on the next connection.</string>
-    <string name="native_aa_ignore_external_bt">Ignore the Bluetooth compatibility check</string>
-    <string name="native_aa_ignore_external_bt_description">This unit looks like it keeps Bluetooth on a separate module that Android cannot reach, so wireless Android Auto is switched off automatically. Off by default. Turn it on only if you think that is wrong: where it is right, the connection fails silently and the log looks healthy.</string>
-    <string name="native_aa_ignore_external_bt_summary">Keep wireless on although this unit seems to hide its Bluetooth module.</string>
+    <string name="native_aa_ignore_external_bt_description">This unit looks like it keeps Bluetooth on a separate module that Android cannot reach, so wireless Android Auto is switched off automatically. Choose this only if you think that is wrong: where it is right, the connection fails silently and the log looks healthy.</string>
 
     <!-- The external Bluetooth module probe (Advanced; only on units the detection flags). -->
     <string name="zbt_probe_title">Test the head unit\'s Bluetooth module</string>
@@ -1511,22 +1509,16 @@
     <string name="zbt_probe_message">Both options initialize the Bluetooth module before monitoring it. This may affect its Bluetooth state. Wake and watch also requests a connection to your phone.\n\nThe test yields while OHU is using or checking the module. Export the log after the test.</string>
     <string name="zbt_probe_watch_only">Watch only</string>
     <string name="zbt_probe_wake_and_watch">Wake and watch</string>
-    <string name="external_bt_blink_transport">Connect through the FYT external Bluetooth module</string>
     <string name="external_bt_module_controls_hint">Phone pairing, connection priority, and driver selection are managed by the external Bluetooth module.</string>
     <string name="external_bt_module_last_phone">Last phone connected through the module</string>
-    <string name="external_bt_blink_transport_description">Experimental, for FYT units whose phone pairs for calls with a separate Bluetooth module, such as DUDUAUTO on DUDUOS. The module carries the wireless Android Auto handshake, and the stock Car Link app normally answers it. With this on, this app answers instead, so calls stay on the module and the car speakers. Disable the stock Car Link app first (pm disable-user com.syu.carlink), or both read one channel.</string>
-    <string name="external_bt_blink_transport_summary">Experimental. Answer the wireless handshake on an FYT unit\'s Bluetooth module.</string>
-    <string name="external_bt_zj_socket_transport">Connect through the ZJ Bluetooth socket</string>
-    <string name="external_bt_zj_socket_transport_description">For units whose ZJ Bluetooth module carries the wireless Android Auto handshake over a local socket (/dev/socket/zj_bt_socket). The app uses it by itself when that socket accepts a connection. Turn this on only if your unit has the socket and the app does not see it.</string>
-    <string name="external_bt_zj_socket_transport_summary">Carry the wireless handshake over the ZJ module\'s local socket.</string>
-    <string name="external_bt_blink_refused_stock_enabled">External Bluetooth module: the stock Car Link app is still enabled. Disable it (pm disable-user com.syu.carlink) or turn this transport off.</string>
+    <string name="external_bt_blink_transport_description">Experimental, for FYT units whose phone pairs for calls with a separate Bluetooth module, such as DUDUAUTO on DUDUOS. The module carries the wireless Android Auto handshake, and the stock Car Link app normally answers it. With this chosen, this app answers instead, so calls stay on the module and the car speakers. Disable the stock Car Link app first (pm disable-user com.syu.carlink), or both read one channel.</string>
+    <string name="external_bt_zj_socket_transport_description">For units whose ZJ Bluetooth module carries the wireless Android Auto handshake over a local socket (/dev/socket/zj_bt_socket). The app uses it by itself when that socket accepts a connection. Choose this only if your unit has the socket and the app does not see it.</string>
+    <string name="external_bt_blink_refused_stock_enabled">External Bluetooth module: the stock Car Link app is still enabled. Disable it (pm disable-user com.syu.carlink) or choose another Bluetooth link.</string>
     <string name="external_bt_blink_refused_stock_running">External Bluetooth module: the stock Car Link app is disabled but still running. Restart the unit.</string>
     <string name="external_bt_blink_refused_root">External Bluetooth module: opening the module\'s channel needs root on this unit, and root access was denied or is not available.</string>
     <string name="external_bt_blink_refused_unverified">External Bluetooth module: could not check whether the stock Car Link app is stopped, so the module\'s channel stays closed. Please export the log.</string>
     <string name="external_bt_blink_refused_bridge">External Bluetooth module: the module\'s channel could not be opened. Please export the log.</string>
-    <string name="external_bt_transport">Connect through the head unit\'s Bluetooth module</string>
-    <string name="external_bt_transport_description">Experimental, for units with a ZJ/ZLink Bluetooth service. Sends the wireless Android Auto handshake through the Bluetooth chip your phone is paired with, not the one Android shows to apps. Run the Bluetooth module test with this off first. If it finds nothing listening, this cannot help on your unit. If it answers, turn this on. Export the log either way.</string>
-    <string name="external_bt_transport_summary">Experimental. Send the wireless handshake through this unit\'s own Bluetooth.</string>
+    <string name="external_bt_transport_description">Experimental, for units with a ZJ/ZLink Bluetooth service. Sends the wireless Android Auto handshake through the Bluetooth chip your phone is paired with, not the one Android shows to apps. Run the Bluetooth module test first. If it finds nothing listening, this cannot help on your unit. If it answers, choose this. Export the log either way.</string>
     <string name="native_aa_setup_qr_title">Set up by QR code</string>
     <string name="native_aa_setup_qr_description">Show a code the phone can scan.</string>
     <string name="native_aa_setup_qr_help">Shows a QR code that sets up this unit on the phone without the Bluetooth handshake. The code carries this unit\'s hotspot name, password and address. It works only on the hotspot transport, while the connection runs. Android Auto 18.0 does not act on this code yet, so the Bluetooth handshake is still needed.</string>
@@ -1704,12 +1696,22 @@
     <string name="audio_settings_reconnect">Audio settings saved. Reconnect Android Auto to apply them.</string>
 
     <!-- Bluetooth relay (ESP32) -->
-    <string name="settings_bluetooth_route">Bluetooth route</string>
+    <string name="settings_bluetooth">Bluetooth</string>
+    <string name="bt_link_title">Bluetooth your phone pairs with</string>
+    <string name="bt_link_summary">Android Auto starts over this Bluetooth link.</string>
+    <string name="bt_link_help">Wireless Android Auto first reaches this unit over Bluetooth, then moves to WiFi. Choose the Bluetooth your phone is paired with. Some units keep it on a separate module that Android cannot reach. Detect automatically fits most units.</string>
+    <string name="bt_link_automatic">Detect automatically</string>
+    <string name="bt_link_this_unit">This unit\'s own Bluetooth</string>
+    <string name="bt_link_zlink">Car Bluetooth module (ZLink)</string>
+    <string name="bt_link_zj">Car Bluetooth module (ZJ)</string>
+    <string name="bt_link_blink">Car Bluetooth module (FYT BLINK)</string>
+    <string name="bt_link_esp32">ESP32 relay board</string>
+    <string name="bt_link_esp32_unpaired">ESP32 relay board, not paired yet</string>
     <string name="esp32_relay_settings_title">Bluetooth relay (ESP32)</string>
     <string name="esp32_relay_settings_summary">Bluetooth Relay settings for an ESP32 implementation.</string>
     <string name="esp32_relay_enabled">Use Bluetooth relay</string>
     <string name="esp32_relay_enabled_summary">Carry the Native AA Bluetooth handshake through an ESP32 board</string>
-    <string name="esp32_relay_enabled_help">The relay is an original ESP32 with Classic Bluetooth, flashed with the relay firmware made for this app. The phone pairs with the board instead of this unit, and this unit talks to the board over BLE. The Wi-Fi half of Native AA does not change. Turn it off to go back to this unit\'s own Bluetooth. The saved relay is kept. Needs Native mode and Android 6.0 or later.</string>
+    <string name="esp32_relay_enabled_help">The relay is an original ESP32 with Classic Bluetooth, flashed with the relay firmware made for this app. The phone pairs with the board instead of this unit, and this unit talks to the board over BLE. The Wi-Fi half of Native AA does not change. Turn it off, or choose another Bluetooth link, to go back. The saved relay is kept. Needs Native mode and Android 6.0 or later.</string>
     <string name="esp32_relay_settings_disabled">Off</string>
     <string name="esp32_relay_saved_device">Saved Bluetooth relay</string>
     <string name="esp32_relay_saved_notice">Saved Bluetooth relay: %1$s</string>
@@ -1881,8 +1883,8 @@
     <string name="wifi_scan_other_help">If FYT startup is unavailable, use the method below to start Shizuku.</string>
     <string name="wifi_scan_fyt_restore_scans">Wi-Fi search settings could not be restored, so wireless ADB was left open. Keep Shizuku running and allow Open Headunit, then try again. You can also use the Wi-Fi recovery action above.</string>
     <string name="wifi_scan_legacy_limit">Renewal on Android 8–10\n• Request a pause on connection, then every five minutes while connected.\n• Android may enable searches between requests. The interval limits repeated cleanup work; it cannot keep every scan stopped.\n\nIf enabling searches fails, keep Shizuku running and retry. Rebooting resets this temporary control.</string>
-    <string name="native_aa_candidate_android_radio_description">Use Android Bluetooth instead of automatically selecting the head unit Bluetooth module. Leave off for automatic selection. If a module connection option is enabled, turn it off first.</string>
-    <string name="external_bt_candidate_transport_description">Force connection through the head unit Bluetooth module instead of automatic selection. This requires a compatible module service. Leave off to allow Android Bluetooth when that service does not respond; forcing this option prevents that fallback.</string>
+    <string name="native_aa_candidate_android_radio_description">Use Android Bluetooth instead of automatically selecting the head unit Bluetooth module.</string>
+    <string name="external_bt_candidate_transport_description">Force connection through the head unit Bluetooth module instead of automatic selection. This requires a compatible module service. Detect automatically allows Android Bluetooth when that service does not respond; this choice prevents that fallback.</string>
 
     <string name="audio_matching_mode">Music time correction</string>
     <string name="audio_matching_mode_help">When music arrives a little too fast or too slow, the app plays it slightly faster or slower to keep its sound queue level. This chooses the method. OHU is the default. The other methods add some delay and apply only to PCM music. Navigation, voice, system sounds and AAC always use OHU. Reconnect to apply.</string>

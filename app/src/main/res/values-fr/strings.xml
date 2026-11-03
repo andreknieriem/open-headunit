@@ -1006,9 +1006,7 @@
     <string name="external_bt_nativeaa_desc">Votre téléphone est associé au module Bluetooth propre à cet autoradio (%1$s), et non au Bluetooth qu\'Android met à la disposition des applications. La négociation sans fil ne l\'atteindrait donc jamais.\n\nCette application ne peut joindre ce module que par un service ZJ/ZLink, qui n\'est pas actif sur cet autoradio. Utilisez l\'USB ou un mode Wi-Fi à la place.</string>
     <string name="external_bt_module_nativeaa">Sans fil natif via le module ZJ/ZLink</string>
     <string name="external_bt_module_nativeaa_desc">Votre téléphone est associé au module Bluetooth propre à cet autoradio (%1$s), et non au Bluetooth qu\'Android met à la disposition des applications. La négociation sera donc envoyée par le service ZJ/ZLink du module.\n\nFonction expérimentale : ce service est le seul accès possible. Si votre téléphone ne lance jamais Android Auto, utilisez l\'USB ou un mode Wi-Fi.</string>
-    <string name="external_bt_transport">Se connecter via le module Bluetooth de l\'autoradio</string>
-    <string name="external_bt_transport_description">Expérimental, pour les appareils dotés d\'un service Bluetooth ZJ/ZLink. Envoie l\'échange initial sans fil d\'Android Auto par la puce Bluetooth à laquelle votre téléphone est associé, et non par celle qu\'Android montre aux applications. Lancez d\'abord le test du module Bluetooth avec cette option désactivée. S\'il ne trouve rien à l\'écoute, elle ne peut rien sur votre appareil. S\'il répond, activez-la. Exportez le journal dans les deux cas.</string>
-    <string name="external_bt_transport_summary">Expérimental. Envoie l\'échange initial sans fil par le Bluetooth propre à cet appareil.</string>
+    <string name="external_bt_transport_description">Expérimental, pour les appareils dotés d’un service Bluetooth ZJ/ZLink. Envoie la négociation Android Auto sans fil par la puce Bluetooth à laquelle votre téléphone est associé, et non par celle qu’Android montre aux applications. Lancez d’abord le test du module Bluetooth. S’il ne trouve rien à l’écoute, cette option ne peut rien pour votre appareil. S’il répond, choisissez-la. Exportez le journal dans les deux cas.</string>
     <string name="zbt_probe_title">Tester le module Bluetooth de l\'autoradio</string>
     <string name="zbt_probe_help">Teste si le module Bluetooth propre à cet appareil peut porter la négociation sans fil d\'Android Auto. Le test dure environ deux minutes et affiche chaque étape sur cette ligne. « Observer seulement » démarre le module et le surveille. « Réveiller et observer » demande aussi au module de se connecter au téléphone. Le test peut changer l\'état Bluetooth du module. Exportez le journal après le test.</string>
     <string name="zbt_probe_idle">Appuyer pour lancer</string>
@@ -1016,15 +1014,11 @@
     <string name="zbt_probe_message">Les deux options initialisent le module Bluetooth avant de le surveiller. Cela peut modifier son état Bluetooth. Réveiller et observer demande aussi une connexion au téléphone.\n\nLe test cède la place lorsque OHU utilise ou vérifie le module. Exportez le journal après le test.</string>
     <string name="zbt_probe_watch_only">Observer seulement</string>
     <string name="zbt_probe_wake_and_watch">Réveiller et observer</string>
-    <string name="external_bt_blink_transport">Se connecter via le module Bluetooth externe FYT</string>
     <string name="external_bt_module_controls_hint">L\'association du téléphone, la priorité de connexion et le choix du pilote sont gérés par le module Bluetooth externe.</string>
     <string name="external_bt_module_last_phone">Dernier téléphone connecté via le module</string>
-    <string name="external_bt_blink_transport_description">Expérimental, pour les appareils FYT dont le téléphone s\'associe pour les appels à un module Bluetooth séparé, comme DUDUAUTO sous DUDUOS. Le module porte l\'échange initial sans fil d\'Android Auto, auquel répond normalement l\'application Car Link d\'origine. Si cette option est activée, cette application y répond à la place, et les appels restent sur le module et les haut-parleurs de la voiture. Désactivez d\'abord l\'application Car Link d\'origine (pm disable-user com.syu.carlink), sinon les deux liront le même canal.</string>
-    <string name="external_bt_blink_transport_summary">Expérimental. Répond à l\'échange initial sans fil sur le module Bluetooth d\'un appareil FYT.</string>
-    <string name="external_bt_zj_socket_transport">Se connecter via le socket Bluetooth ZJ</string>
-    <string name="external_bt_zj_socket_transport_description">Pour les autoradios dont le module Bluetooth ZJ transmet la négociation sans fil d\'Android Auto par un socket local (/dev/socket/zj_bt_socket). L\'appli l\'utilise d\'elle-même quand ce socket accepte une connexion. Activez cette option seulement si votre appareil a ce socket et que l\'appli ne le détecte pas.</string>
-    <string name="external_bt_zj_socket_transport_summary">Faire passer la négociation sans fil par le socket local du module ZJ.</string>
-    <string name="external_bt_blink_refused_stock_enabled">Module Bluetooth externe : l\'application Car Link d\'origine est toujours activée. Désactivez-la (pm disable-user com.syu.carlink) ou désactivez ce transport.</string>
+    <string name="external_bt_blink_transport_description">Expérimental, pour les appareils FYT dont le téléphone s’associe pour les appels à un module Bluetooth séparé, comme DUDUAUTO sur DUDUOS. Le module gère la négociation Android Auto sans fil, à laquelle répond normalement l’application Car Link d’origine. Avec cette option choisie, c’est cette application qui répond : les appels restent sur le module et les haut-parleurs du véhicule. Désactivez d’abord l’application Car Link d’origine (pm disable-user com.syu.carlink), sinon les deux lisent le même canal.</string>
+    <string name="external_bt_zj_socket_transport_description">Pour les appareils dont le module Bluetooth ZJ transmet la négociation Android Auto sans fil par un socket local (/dev/socket/zj_bt_socket). L’application l’utilise d’elle-même quand ce socket accepte une connexion. Ne choisissez cette option que si votre appareil a ce socket et que l’application ne le voit pas.</string>
+    <string name="external_bt_blink_refused_stock_enabled">Module Bluetooth externe : l’application Car Link d’origine est encore activée. Désactivez-la (pm disable-user com.syu.carlink) ou choisissez une autre liaison Bluetooth.</string>
     <string name="external_bt_blink_refused_stock_running">Module Bluetooth externe : l\'application Car Link d\'origine est désactivée mais toujours en cours d\'exécution. Redémarrez l\'appareil.</string>
     <string name="external_bt_blink_refused_root">Module Bluetooth externe : l\'ouverture du canal du module nécessite l\'accès root sur cet appareil, qui a été refusé ou n\'est pas disponible.</string>
     <string name="external_bt_blink_refused_unverified">Module Bluetooth externe : impossible de vérifier si l\'application Car Link d\'origine est arrêtée ; le canal du module reste donc fermé. Exportez le journal.</string>
@@ -1307,9 +1301,7 @@
     <string name="preflight_open_location">Localisation</string>
     <string name="preflight_later">Plus tard</string>
     <string name="preflight_invalid_bssid">Adresse Wi-Fi non valide. Entrez 6 paires de caractères hexadécimaux (ex. 02:1A:11:FF:3C:4D).</string>
-    <string name="native_aa_ignore_external_bt">Ignorer la vérification de compatibilité Bluetooth</string>
-    <string name="native_aa_ignore_external_bt_description">Le Bluetooth de cet appareil semble passer par un module séparé qu\'Android ne peut pas atteindre ; Android Auto sans fil est donc désactivé automatiquement. Option désactivée par défaut. Ne l\'activez que si vous pensez que la détection est erronée : si elle est juste, la connexion échoue sans rien signaler et le journal paraît normal.</string>
-    <string name="native_aa_ignore_external_bt_summary">Garde le sans-fil actif même si cet appareil semble masquer son module Bluetooth.</string>
+    <string name="native_aa_ignore_external_bt_description">Cet appareil semble garder le Bluetooth sur un module séparé qu’Android ne peut pas atteindre ; Android Auto sans fil est donc désactivé automatiquement. Ne choisissez cette option que si vous pensez que c’est une erreur : si la détection est juste, la connexion échoue sans message et le journal paraît normal.</string>
     <string name="native_aa_setup_qr_title">Configurer par QR code</string>
     <string name="native_aa_setup_qr_description">Afficher un code que le téléphone peut scanner.</string>
     <string name="native_aa_setup_qr_help">Affiche un code QR qui configure cet appareil sur le téléphone sans la négociation Bluetooth. Le code contient le nom, le mot de passe et l\'adresse du point d\'accès de cet appareil. Il ne marche que sur le transport par point d\'accès, pendant que la connexion est active. Android Auto 18.0 ne prend pas encore ce code en charge : la négociation Bluetooth reste donc nécessaire.</string>
@@ -1718,8 +1710,8 @@
     <string name="home_pages_hint_got_it">J\'ai compris</string>
     <string name="home_pages_hint_body_anywhere">N\'importe quelle partie vide de l\'accueil convient. C\'est ainsi que vous ajoutez une page pour vos widgets, ou en supprimez une.</string>
     <string name="audio_settings_reconnect">Paramètres audio enregistrés. Reconnectez Android Auto pour les appliquer.</string>
-    <string name="native_aa_candidate_android_radio_description">Utiliser le Bluetooth Android au lieu de sélectionner automatiquement le module Bluetooth de l’autoradio. Laisser désactivé pour la sélection automatique. Si une option de connexion via le module est activée, la désactiver d’abord.</string>
-    <string name="external_bt_candidate_transport_description">Forcer la connexion via le module Bluetooth de l’autoradio au lieu de la sélection automatique. Nécessite un service de module compatible. Laisser désactivé pour permettre le Bluetooth Android si le service ne répond pas ; forcer cette option empêche ce recours.</string>
+    <string name="native_aa_candidate_android_radio_description">Utilise le Bluetooth d’Android au lieu de la sélection automatique du module Bluetooth de l’autoradio.</string>
+    <string name="external_bt_candidate_transport_description">Force la connexion par le module Bluetooth de l’autoradio au lieu de la sélection automatique. Un service de module compatible est nécessaire. La détection automatique autorise le Bluetooth d’Android quand ce service ne répond pas ; ce choix empêche ce repli.</string>
     <string name="audio_matching_mode">Correction temporelle de la musique</string>
     <string name="audio_matching_mode_help">Quand la musique arrive un peu trop vite ou trop lentement, l\'application la lit un peu plus vite ou plus lentement pour garder sa file audio stable. Ce réglage choisit la méthode. OHU est la valeur par défaut. Les autres méthodes ajoutent un peu de décalage et ne s\'appliquent qu\'à la musique PCM. La navigation, la voix, les sons système et l\'AAC utilisent toujours OHU. Reconnectez-vous pour appliquer.</string>
     <string name="audio_matching_ohu">OHU</string>
@@ -1830,12 +1822,22 @@
     <string name="device_specific_pause_projection_reverse_help">Tant que le véhicule est en marche arrière, l\'application libère le focus vidéo d\'Android Auto pour que la caméra de recul puisse s\'afficher. Quand la marche arrière se termine, la projection revient. L\'application lit le rapport engagé depuis le MCU de l\'appareil, donc le correctif ne marche que là où elle accède au MCU.</string>
 
     <!-- Bluetooth relay (ESP32) -->
-    <string name="settings_bluetooth_route">Chemin Bluetooth</string>
+    <string name="settings_bluetooth">Bluetooth</string>
+    <string name="bt_link_title">Bluetooth auquel votre téléphone s’associe</string>
+    <string name="bt_link_summary">Android Auto démarre via cette liaison Bluetooth.</string>
+    <string name="bt_link_help">Android Auto sans fil joint d’abord cet appareil par Bluetooth, puis passe en Wi-Fi. Choisissez le Bluetooth auquel votre téléphone est associé. Sur certains appareils, il se trouve sur un module séparé qu’Android ne peut pas atteindre. La détection automatique convient à la plupart des appareils.</string>
+    <string name="bt_link_automatic">Détection automatique</string>
+    <string name="bt_link_this_unit">Bluetooth propre à cet appareil</string>
+    <string name="bt_link_zlink">Module Bluetooth du véhicule (ZLink)</string>
+    <string name="bt_link_zj">Module Bluetooth du véhicule (ZJ)</string>
+    <string name="bt_link_blink">Module Bluetooth du véhicule (FYT BLINK)</string>
+    <string name="bt_link_esp32">Carte relais ESP32</string>
+    <string name="bt_link_esp32_unpaired">Carte relais ESP32, pas encore associée</string>
     <string name="esp32_relay_settings_title">Relais Bluetooth (ESP32)</string>
     <string name="esp32_relay_settings_summary">Réglages du relais Bluetooth pour une implémentation ESP32.</string>
     <string name="esp32_relay_enabled">Utiliser le relais Bluetooth</string>
     <string name="esp32_relay_enabled_summary">Passer la connexion Bluetooth de Native AA par une carte ESP32</string>
-    <string name="esp32_relay_enabled_help">Le relais est un ESP32 d’origine avec Bluetooth Classic, flashé avec le firmware de relais conçu pour cette application. Le téléphone s’associe à la carte au lieu de cet appareil, et cet appareil communique avec la carte en BLE. La partie Wi-Fi de Native AA ne change pas. Désactivez l’option pour revenir au Bluetooth de cet appareil. Le relais enregistré est conservé. Nécessite le mode Native et Android 6.0 ou version ultérieure.</string>
+    <string name="esp32_relay_enabled_help">Le relais est un ESP32 d’origine avec Bluetooth Classic, flashé avec le firmware de relais conçu pour cette application. Le téléphone s’associe à la carte au lieu de cet appareil, et cet appareil communique avec la carte en BLE. La partie Wi-Fi de Native AA ne change pas. Désactivez l’option, ou choisissez une autre liaison Bluetooth, pour revenir en arrière. Le relais enregistré est conservé. Nécessite le mode Native et Android 6.0 ou version ultérieure.</string>
     <string name="esp32_relay_settings_disabled">Désactivé</string>
     <string name="esp32_relay_saved_device">Relais Bluetooth enregistré</string>
     <string name="esp32_relay_saved_notice">Relais Bluetooth enregistré : %1$s</string>

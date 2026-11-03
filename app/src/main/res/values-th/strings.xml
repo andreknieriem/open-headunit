@@ -1385,9 +1385,7 @@
     <string name="native_aa_wake_verdict_destructive">ถูกระงับไว้ในยูนิตนี้</string>
     <string name="native_aa_wake_remeasure_confirm">Android Auto จะเริ่มระบบไร้สายก็ต่อเมื่อเห็นการเชื่อมต่อบลูทูธเปลี่ยนแปลงเท่านั้น หากยูนิตนี้ถือการเชื่อมต่อแฮนด์ฟรีอยู่แล้ว แอปต้องตัดการเชื่อมต่อนั้นเพื่อให้เกิดการเปลี่ยนแปลง จึงวัดครั้งเดียวว่าการเชื่อมต่อกลับมาหรือไม่ และจะหยุดหากไม่กลับมา ใช้ตัวเลือกนี้เมื่อระบบไร้สายไม่เริ่มเองอีก และคุณยอมให้แฮนด์ฟรีใช้ไม่ได้ชั่วครู่ระหว่างที่แอปลองอีกครั้ง</string>
     <string name="native_aa_wake_remeasure_done">การปลุกบลูทูธจะถูกวัดใหม่อีกครั้งในการเชื่อมต่อครั้งถัดไป</string>
-    <string name="native_aa_ignore_external_bt">ละเว้นการตรวจสอบความเข้ากันได้ของบลูทูธ</string>
-    <string name="native_aa_ignore_external_bt_description">ยูนิตนี้ดูเหมือนเก็บบลูทูธไว้ในโมดูลแยกที่ Android เข้าถึงไม่ได้ ระบบจึงปิด Android Auto แบบไร้สายโดยอัตโนมัติ ปิดไว้เป็นค่าเริ่มต้น เปิดเฉพาะเมื่อคุณคิดว่าผลตรวจนี้ผิด เพราะหากผลตรวจถูก การเชื่อมต่อจะล้มเหลวโดยไม่แจ้ง และบันทึกจะดูปกติ</string>
-    <string name="native_aa_ignore_external_bt_summary">เปิดไร้สายไว้ แม้เครื่องนี้ดูเหมือนซ่อนโมดูลบลูทูธของตัวเอง</string>
+    <string name="native_aa_ignore_external_bt_description">เครื่องนี้ดูเหมือนเก็บบลูทูธไว้ในโมดูลแยกที่ Android เข้าถึงไม่ได้ จึงปิด Android Auto ไร้สายโดยอัตโนมัติ เลือกตัวเลือกนี้เฉพาะเมื่อคุณคิดว่าไม่ถูกต้อง หากการตรวจพบถูกต้อง การเชื่อมต่อจะล้มเหลวโดยไม่แจ้งเตือน และบันทึกจะดูปกติ</string>
 
     <!-- The external Bluetooth module probe (Advanced; only on units the detection flags). -->
     <string name="zbt_probe_title">ทดสอบโมดูลบลูทูธของเฮดยูนิต</string>
@@ -1397,22 +1395,16 @@
     <string name="zbt_probe_message">ทั้งสองตัวเลือกจะเริ่มต้นโมดูล Bluetooth ก่อนตรวจดูสถานะ ซึ่งอาจส่งผลต่อสถานะ Bluetooth ตัวเลือกปลุกและเฝ้าดูจะขอเชื่อมต่อกับโทรศัพท์ด้วย\n\nการทดสอบจะหลีกทางเมื่อ OHU กำลังใช้หรือตรวจสอบโมดูล โปรดส่งออกบันทึกหลังการทดสอบ</string>
     <string name="zbt_probe_watch_only">ดูอย่างเดียว</string>
     <string name="zbt_probe_wake_and_watch">ปลุกและเฝ้าดู</string>
-    <string name="external_bt_blink_transport">เชื่อมต่อผ่านโมดูลบลูทูธภายนอกของ FYT</string>
     <string name="external_bt_module_controls_hint">โมดูลบลูทูธภายนอกเป็นผู้จัดการการจับคู่โทรศัพท์ ลำดับความสำคัญของการเชื่อมต่อ และการเลือกไดรเวอร์</string>
     <string name="external_bt_module_last_phone">โทรศัพท์เครื่องล่าสุดที่เชื่อมต่อผ่านโมดูล</string>
-    <string name="external_bt_blink_transport_description">ฟีเจอร์ทดลอง สำหรับเครื่อง FYT ที่โทรศัพท์จับคู่เพื่อการโทรกับโมดูลบลูทูธแยก เช่น DUDUAUTO บน DUDUOS โมดูลรับการจับมือ Android Auto ไร้สาย ซึ่งปกติแอป Car Link ดั้งเดิมจะตอบ เมื่อเปิด แอปนี้จะตอบแทน การโทรจึงอยู่ที่โมดูลและลำโพงรถ ปิดใช้งานแอป Car Link ดั้งเดิมก่อน (pm disable-user com.syu.carlink) ไม่เช่นนั้นทั้งสองแอปจะอ่านช่องเดียวกัน</string>
-    <string name="external_bt_blink_transport_summary">ฟีเจอร์ทดลอง ตอบการจับมือไร้สายที่โมดูลบลูทูธของเครื่อง FYT</string>
-    <string name="external_bt_zj_socket_transport">เชื่อมต่อผ่านซ็อกเก็ต ZJ Bluetooth</string>
-    <string name="external_bt_zj_socket_transport_description">สำหรับเครื่องที่โมดูล ZJ Bluetooth ส่งการแฮนด์เชคของ Android Auto แบบไร้สายผ่านซ็อกเก็ตในเครื่อง (/dev/socket/zj_bt_socket) แอปจะใช้ซ็อกเก็ตนี้เองเมื่อซ็อกเก็ตรับการเชื่อมต่อ เปิดตัวเลือกนี้เฉพาะเมื่อเครื่องของคุณมีซ็อกเก็ตแต่แอปตรวจไม่พบ</string>
-    <string name="external_bt_zj_socket_transport_summary">ส่งแฮนด์เชคไร้สายผ่านซ็อกเก็ตภายในของโมดูล ZJ</string>
-    <string name="external_bt_blink_refused_stock_enabled">โมดูลบลูทูธภายนอก: แอป Car Link ดั้งเดิมยังเปิดใช้งานอยู่ ปิดใช้งานแอปนั้น (pm disable-user com.syu.carlink) หรือปิดการส่งผ่านนี้</string>
+    <string name="external_bt_blink_transport_description">ฟีเจอร์ทดลอง สำหรับเครื่อง FYT ที่โทรศัพท์จับคู่เพื่อโทรออกกับโมดูลบลูทูธแยก เช่น DUDUAUTO บน DUDUOS โมดูลจะรับส่งการเชื่อมต่อเริ่มต้นของ Android Auto ไร้สาย ซึ่งปกติแอป Car Link ดั้งเดิมเป็นผู้ตอบ เมื่อเลือกตัวเลือกนี้ แอปนี้จะตอบแทน สายโทรเข้าออกจึงอยู่บนโมดูลและลำโพงรถ ปิดใช้งานแอป Car Link ดั้งเดิมก่อน (pm disable-user com.syu.carlink) ไม่เช่นนั้นทั้งสองแอปจะอ่านช่องทางเดียวกัน</string>
+    <string name="external_bt_zj_socket_transport_description">สำหรับเครื่องที่โมดูลบลูทูธ ZJ ส่งการเชื่อมต่อเริ่มต้นของ Android Auto ไร้สายผ่านซ็อกเก็ตในเครื่อง (/dev/socket/zj_bt_socket) แอปจะใช้เองเมื่อซ็อกเก็ตรับการเชื่อมต่อ เลือกตัวเลือกนี้เฉพาะเมื่อเครื่องมีซ็อกเก็ตแต่แอปมองไม่เห็น</string>
+    <string name="external_bt_blink_refused_stock_enabled">โมดูลบลูทูธภายนอก: แอป Car Link ดั้งเดิมยังเปิดใช้งานอยู่ ปิดใช้งานแอปนั้น (pm disable-user com.syu.carlink) หรือเลือกการเชื่อมต่อบลูทูธอื่น</string>
     <string name="external_bt_blink_refused_stock_running">โมดูลบลูทูธภายนอก: แอป Car Link ดั้งเดิมถูกปิดใช้งานแล้วแต่ยังทำงานอยู่ โปรดรีสตาร์ทยูนิต</string>
     <string name="external_bt_blink_refused_root">โมดูลบลูทูธภายนอก: การเปิดช่องของโมดูลต้องใช้สิทธิ์รูทบนยูนิตนี้ แต่ถูกปฏิเสธหรือไม่มีสิทธิ์รูท</string>
     <string name="external_bt_blink_refused_unverified">โมดูลบลูทูธภายนอก: ตรวจไม่ได้ว่าแอป Car Link ดั้งเดิมหยุดทำงานแล้วหรือไม่ ช่องของโมดูลจึงยังปิดอยู่ โปรดส่งออกบันทึก</string>
     <string name="external_bt_blink_refused_bridge">โมดูลบลูทูธภายนอก: เปิดช่องของโมดูลไม่ได้ โปรดส่งออกบันทึก</string>
-    <string name="external_bt_transport">เชื่อมต่อผ่านโมดูลบลูทูธของเฮดยูนิต</string>
-    <string name="external_bt_transport_description">ฟีเจอร์ทดลอง สำหรับเครื่องที่มีบริการบลูทูธ ZJ/ZLink ส่งการจับมือ Android Auto ไร้สายผ่านชิปบลูทูธที่จับคู่กับโทรศัพท์ ไม่ใช่ตัวที่ Android แสดงให้แอป ทดสอบโมดูลบลูทูธก่อนโดยปิดตัวเลือกนี้ หากไม่พบสิ่งที่รับฟังอยู่ ตัวเลือกนี้ช่วยอะไรไม่ได้ในเครื่องของคุณ หากตอบกลับ ให้เปิด ส่งออกบันทึกในทั้งสองกรณี</string>
-    <string name="external_bt_transport_summary">ฟีเจอร์ทดลอง ส่งการจับมือไร้สายผ่านบลูทูธของเครื่องนี้เอง</string>
+    <string name="external_bt_transport_description">ฟีเจอร์ทดลอง สำหรับเครื่องที่มีบริการบลูทูธ ZJ/ZLink ส่งการเชื่อมต่อเริ่มต้นของ Android Auto ไร้สายผ่านชิปบลูทูธที่จับคู่กับโทรศัพท์ ไม่ใช่ชิปที่ Android แสดงให้แอป ให้เรียกใช้การทดสอบโมดูลบลูทูธก่อน หากไม่พบสิ่งที่รับฟังอยู่ ตัวเลือกนี้ช่วยอะไรเครื่องของคุณไม่ได้ หากมีการตอบกลับ ให้เลือกตัวเลือกนี้ ส่งออกบันทึกในทั้งสองกรณี</string>
     <string name="native_aa_setup_qr_title">ตั้งค่าผ่านรหัส QR</string>
     <string name="native_aa_setup_qr_description">แสดงรหัสที่โทรศัพท์สามารถสแกนได้</string>
     <string name="native_aa_setup_qr_help">แสดงคิวอาร์โค้ดที่ตั้งค่าอุปกรณ์นี้บนโทรศัพท์โดยไม่ต้องจับมือผ่านบลูทูธ โค้ดมีชื่อ รหัสผ่าน และที่อยู่ฮอตสปอตของอุปกรณ์นี้ ใช้ได้เฉพาะกับการส่งผ่านฮอตสปอต ขณะที่การเชื่อมต่อทำงานอยู่ Android Auto 18.0 ยังไม่รองรับโค้ดนี้ จึงยังต้องจับมือผ่านบลูทูธ</string>
@@ -1725,8 +1717,8 @@
     <string name="home_pages_hint_got_it">เข้าใจแล้ว</string>
     <string name="home_pages_hint_body_anywhere">ส่วนว่างใดก็ได้บนหน้าจอหลัก นี่คือวิธีเพิ่มหน้าสำหรับวิดเจ็ตของคุณ หรือลบหน้าออก</string>
     <string name="audio_settings_reconnect">บันทึกการตั้งค่าเสียงแล้ว เชื่อมต่อ Android Auto ใหม่เพื่อใช้การตั้งค่า</string>
-    <string name="native_aa_candidate_android_radio_description">ใช้ Bluetooth ของ Android แทนการเลือกโมดูล Bluetooth ของเครื่องโดยอัตโนมัติ ปิดไว้เพื่อใช้การเลือกอัตโนมัติ หากเปิดตัวเลือกการเชื่อมต่อผ่านโมดูลอยู่ ให้ปิดตัวเลือกนั้นก่อน</string>
-    <string name="external_bt_candidate_transport_description">บังคับเชื่อมต่อผ่านโมดูล Bluetooth ของเครื่องแทนการเลือกอัตโนมัติ ต้องมีบริการโมดูลที่เข้ากันได้ ปิดไว้เพื่อให้ใช้ Bluetooth ของ Android ได้เมื่อบริการไม่ตอบสนอง การเปิดตัวเลือกนี้จะปิดทางเลือกสำรองดังกล่าว</string>
+    <string name="native_aa_candidate_android_radio_description">ใช้บลูทูธของ Android แทนการเลือกโมดูลบลูทูธของหัวเครื่องอัตโนมัติ</string>
+    <string name="external_bt_candidate_transport_description">บังคับเชื่อมต่อผ่านโมดูลบลูทูธของหัวเครื่องแทนการเลือกอัตโนมัติ ต้องมีบริการโมดูลที่รองรับ การตรวจหาอัตโนมัติอนุญาตให้ใช้บลูทูธของ Android เมื่อบริการนั้นไม่ตอบสนอง ตัวเลือกนี้ป้องกันการสำรองดังกล่าว</string>
     <string name="audio_matching_mode">การแก้ไขจังหวะเวลาของเพลง</string>
     <string name="audio_matching_mode_help">เมื่อเพลงมาเร็วหรือช้าเกินไปเล็กน้อย แอปจะเล่นให้เร็วขึ้นหรือช้าลงเล็กน้อยเพื่อรักษาคิวเสียงให้สมดุล ตัวเลือกนี้ใช้เลือกวิธีการ ค่าเริ่มต้นคือ OHU วิธีอื่นจะเพิ่มความหน่วงเล็กน้อยและใช้กับเพลง PCM เท่านั้น การนำทาง เสียงพูด เสียงระบบ และ AAC ใช้ OHU เสมอ เชื่อมต่อใหม่เพื่อใช้การเปลี่ยนแปลง</string>
     <string name="audio_matching_ohu">OHU</string>
@@ -1838,12 +1830,22 @@
     <string name="wifi_scan_legacy_limit">การต่ออายุบน Android 8–10\n• ขอหยุดชั่วคราวเมื่อเชื่อมต่อ แล้วขอทุกห้านาทีขณะเชื่อมต่ออยู่\n• Android อาจเปิดการสแกนระหว่างคำขอ ช่วงเวลานี้จำกัดงานล้างซ้ำ แต่ไม่สามารถให้ทุกการสแกนหยุดตลอดได้\n\nหากเปิดการสแกนไม่สำเร็จ ให้เปิด Shizuku ค้างไว้แล้วลองอีกครั้ง การรีบูตจะรีเซ็ตการควบคุมชั่วคราวนี้</string>
 
     <!-- Bluetooth relay (ESP32) -->
-    <string name="settings_bluetooth_route">เส้นทางบลูทูธ</string>
+    <string name="settings_bluetooth">บลูทูธ</string>
+    <string name="bt_link_title">บลูทูธที่โทรศัพท์จับคู่</string>
+    <string name="bt_link_summary">Android Auto เริ่มทำงานผ่านการเชื่อมต่อบลูทูธนี้</string>
+    <string name="bt_link_help">Android Auto ไร้สายจะเชื่อมต่อกับเครื่องนี้ผ่านบลูทูธก่อน แล้วจึงเปลี่ยนไปใช้ Wi-Fi เลือกบลูทูธที่จับคู่กับโทรศัพท์ของคุณ บางเครื่องเก็บบลูทูธไว้ในโมดูลแยกที่ Android เข้าถึงไม่ได้ การตรวจหาอัตโนมัติเหมาะกับเครื่องส่วนใหญ่</string>
+    <string name="bt_link_automatic">ตรวจหาอัตโนมัติ</string>
+    <string name="bt_link_this_unit">บลูทูธของเครื่องนี้เอง</string>
+    <string name="bt_link_zlink">โมดูลบลูทูธของรถ (ZLink)</string>
+    <string name="bt_link_zj">โมดูลบลูทูธของรถ (ZJ)</string>
+    <string name="bt_link_blink">โมดูลบลูทูธของรถ (FYT BLINK)</string>
+    <string name="bt_link_esp32">บอร์ดรีเลย์ ESP32</string>
+    <string name="bt_link_esp32_unpaired">บอร์ดรีเลย์ ESP32 ยังไม่ได้จับคู่</string>
     <string name="esp32_relay_settings_title">รีเลย์บลูทูธ (ESP32)</string>
     <string name="esp32_relay_settings_summary">การตั้งค่ารีเลย์บลูทูธสำหรับการใช้งานด้วย ESP32</string>
     <string name="esp32_relay_enabled">ใช้รีเลย์บลูทูธ</string>
     <string name="esp32_relay_enabled_summary">ส่งการแฮนด์เชคบลูทูธของ Native AA ผ่านบอร์ด ESP32</string>
-    <string name="esp32_relay_enabled_help">รีเลย์คือ ESP32 แท้ที่รองรับ Classic Bluetooth และแฟลชเฟิร์มแวร์รีเลย์ที่สร้างสำหรับแอปนี้ โทรศัพท์จะจับคู่กับบอร์ดแทนเครื่องนี้ และเครื่องนี้สื่อสารกับบอร์ดผ่าน BLE ส่วน Wi-Fi ของ Native AA ไม่เปลี่ยนแปลง ปิดเพื่อกลับไปใช้บลูทูธของเครื่องนี้เอง รีเลย์ที่บันทึกไว้จะยังอยู่ ต้องใช้โหมด Native และ Android 6.0 ขึ้นไป</string>
+    <string name="esp32_relay_enabled_help">รีเลย์คือ ESP32 แท้ที่รองรับ Classic Bluetooth และแฟลชเฟิร์มแวร์รีเลย์ที่สร้างสำหรับแอปนี้ โทรศัพท์จะจับคู่กับบอร์ดแทนเครื่องนี้ และเครื่องนี้สื่อสารกับบอร์ดผ่าน BLE ส่วน Wi-Fi ของ Native AA ไม่เปลี่ยนแปลง ปิด หรือเลือกการเชื่อมต่อบลูทูธอื่น เพื่อกลับไป รีเลย์ที่บันทึกไว้จะยังอยู่ ต้องใช้โหมด Native และ Android 6.0 ขึ้นไป</string>
     <string name="esp32_relay_settings_disabled">ปิด</string>
     <string name="esp32_relay_saved_device">รีเลย์บลูทูธที่บันทึกไว้</string>
     <string name="esp32_relay_saved_notice">รีเลย์บลูทูธที่บันทึกไว้: %1$s</string>

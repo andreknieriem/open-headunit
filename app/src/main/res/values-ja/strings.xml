@@ -1133,9 +1133,7 @@
     <string name="external_bt_nativeaa_desc">スマートフォンは、Android がアプリに提供する Bluetooth ではなく、このヘッドユニット独自の Bluetooth モジュール (%1$s) とペアリングするため、ワイヤレスのハンドシェイクはそこに届きません。\n\nこのアプリがそのモジュールに到達できるのは ZJ/ZLink サービス経由だけですが、このヘッドユニットはそのサービスを実行していません。代わりに USB か WiFi モードをご利用ください。</string>
     <string name="external_bt_module_nativeaa">ZJ/ZLink モジュール経由のネイティブワイヤレス</string>
     <string name="external_bt_module_nativeaa_desc">スマートフォンは、Androidがアプリに提供するBluetoothではなく、この機器独自のBluetoothモジュール（%1$s）とペアリングするため、ハンドシェイクはそのモジュールのZJ/ZLinkサービス経由で送信されます。\n\n実験的な機能です。このサービスが唯一の経路です。スマートフォンでAndroid Autoが開始しない場合は、USBかWi-Fiモードを使用してください。</string>
-    <string name="external_bt_transport">ヘッドユニットの Bluetooth モジュール経由で接続</string>
-    <string name="external_bt_transport_description">試験的機能です。ZJ/ZLink の Bluetooth サービスがある機器向けです。Android がアプリに見せるものではなく、スマートフォンがペア設定されている Bluetooth チップ経由で、ワイヤレス Android Auto のハンドシェイクを送ります。まず、この設定をオフにして Bluetooth モジュールのテストを実行してください。応答待ちのものが見つからなければ、この機器ではこの設定は役立ちません。応答があればオンにします。どちらの場合もログをエクスポートしてください。</string>
-    <string name="external_bt_transport_summary">試験的機能です。この機器自身の Bluetooth 経由で、ワイヤレスのハンドシェイクを送ります。</string>
+    <string name="external_bt_transport_description">試験的な機能です。ZJ/ZLink Bluetoothサービスを持つユニット向けです。Androidがアプリに見せるチップではなく、スマートフォンがペア設定されているBluetoothチップ経由で、ワイヤレス Android Auto のハンドシェイクを送ります。まずBluetoothモジュールテストを実行してください。待ち受けるものが見つからない場合、このユニットでは役に立ちません。応答がある場合は、これを選んでください。どちらの場合もログをエクスポートしてください。</string>
     <string name="zbt_probe_title">ヘッドユニットの Bluetooth モジュールをテスト</string>
     <string name="zbt_probe_help">この機器自身の Bluetooth モジュールが、ワイヤレス Android Auto のハンドシェイクを通せるかをテストします。テストは約 2 分かかり、各段階がこの行に表示されます。「監視のみ」はモジュールを起動して監視するだけです。「起こして監視」は、モジュールにスマートフォンへの接続も要求します。テストでモジュールの Bluetooth の状態が変わることがあります。テスト後にログをエクスポートしてください。</string>
     <string name="zbt_probe_idle">タップして実行</string>
@@ -1143,15 +1141,11 @@
     <string name="zbt_probe_message">どちらの操作もBluetoothモジュールを初期化してから状態を監視するため、Bluetoothの状態に影響する場合があります。「起こして監視」は、スマートフォンへの接続も要求します。\n\nOHUがモジュールを使用中または確認中の場合、テストは処理を譲ります。テスト後にログを書き出してください。</string>
     <string name="zbt_probe_watch_only">監視のみ</string>
     <string name="zbt_probe_wake_and_watch">起こして監視</string>
-    <string name="external_bt_blink_transport">FYTの外部Bluetoothモジュール経由で接続</string>
     <string name="external_bt_module_controls_hint">スマートフォンのペアリング、接続の優先順位、ドライバーの選択は、外部Bluetoothモジュールが管理します。</string>
     <string name="external_bt_module_last_phone">モジュール経由で最後に接続したスマートフォン</string>
-    <string name="external_bt_blink_transport_description">試験的機能です。通話用に別の Bluetooth モジュールとスマートフォンをペア設定する FYT 機器向けです (DUDUOS の DUDUAUTO など)。モジュールがワイヤレス Android Auto のハンドシェイクを担い、通常は純正の Car Link アプリが応答します。オンにすると、このアプリが代わりに応答するため、通話はモジュールと車のスピーカーに残ります。先に純正の Car Link アプリを無効にしてください (pm disable-user com.syu.carlink)。無効にしないと、両方が同じチャンネルを読みます。</string>
-    <string name="external_bt_blink_transport_summary">試験的機能です。FYT 機器の Bluetooth モジュールで、ワイヤレスのハンドシェイクに応答します。</string>
-    <string name="external_bt_zj_socket_transport">ZJ Bluetoothソケット経由で接続</string>
-    <string name="external_bt_zj_socket_transport_description">ZJ Bluetoothモジュールがワイヤレス Android Autoのハンドシェイクをローカルソケット（/dev/socket/zj_bt_socket）で処理するユニット向けです。このソケットが接続を受け付ける場合、アプリは自動的に使用します。ユニットにソケットがあるのにアプリが検出しない場合のみ、オンにしてください。</string>
-    <string name="external_bt_zj_socket_transport_summary">ワイヤレスのハンドシェイクを ZJ モジュールのローカルソケット経由で行います。</string>
-    <string name="external_bt_blink_refused_stock_enabled">外部Bluetoothモジュール：標準のCar Linkアプリがまだ有効です。無効にする（pm disable-user com.syu.carlink）か、この接続方式をオフにしてください。</string>
+    <string name="external_bt_blink_transport_description">試験的な機能です。通話用にスマートフォンを別のBluetoothモジュールとペア設定するFYTユニット向けです(例: DUDUOS上のDUDUAUTO)。モジュールがワイヤレス Android Auto のハンドシェイクを担当し、通常は純正のCar Linkアプリが応答します。これを選ぶと代わりにこのアプリが応答するため、通話はモジュールと車のスピーカーに残ります。先に純正のCar Linkアプリを無効にしてください(pm disable-user com.syu.carlink)。そうしないと両方が同じチャンネルを読み取ります。</string>
+    <string name="external_bt_zj_socket_transport_description">ZJ Bluetoothモジュールがワイヤレス Android Auto のハンドシェイクをローカルソケット(/dev/socket/zj_bt_socket)で伝えるユニット向けです。このソケットが接続を受け付けると、アプリは自動的に使用します。ユニットにソケットがあるのにアプリが認識しない場合のみ、これを選んでください。</string>
+    <string name="external_bt_blink_refused_stock_enabled">外部Bluetoothモジュール: 純正のCar Linkアプリがまだ有効です。無効にする(pm disable-user com.syu.carlink)か、別のBluetooth接続を選んでください。</string>
     <string name="external_bt_blink_refused_stock_running">外部Bluetoothモジュール：標準のCar Linkアプリは無効ですが、まだ動作しています。機器を再起動してください。</string>
     <string name="external_bt_blink_refused_root">外部Bluetoothモジュール：モジュールのチャンネルを開くには、この機器でroot権限が必要ですが、root権限が拒否されたか、利用できません。</string>
     <string name="external_bt_blink_refused_unverified">外部Bluetoothモジュール：標準のCar Linkアプリが停止しているか確認できなかったため、モジュールのチャンネルは閉じたままです。ログを書き出してください。</string>
@@ -1253,9 +1247,7 @@
     <string name="preflight_open_location">位置情報</string>
     <string name="preflight_later">後で</string>
     <string name="preflight_invalid_bssid">無効なWiFiアドレスです。6組の16進数を入力してください（例：02:1A:11:FF:3C:4D）。</string>
-    <string name="native_aa_ignore_external_bt">Bluetooth互換性チェックを無視する</string>
-    <string name="native_aa_ignore_external_bt_description">この機器はAndroidから到達できない別モジュールでBluetoothを扱っているようなので、ワイヤレスAndroid Autoは自動的に無効化されます。既定でオフ。判定が誤っていると思う場合のみオンにしてください。判定が正しい場合、接続は何も告げずに失敗し、ログは正常に見えます。</string>
-    <string name="native_aa_ignore_external_bt_summary">この機器が Bluetooth モジュールを隠しているように見えても、ワイヤレスを有効のままにします。</string>
+    <string name="native_aa_ignore_external_bt_description">このユニットはBluetoothをAndroidから到達できない別モジュールに置いているようなので、ワイヤレス Android Auto は自動的にオフになります。これは誤りだと思う場合のみ選んでください。検出が正しい場合、接続は何も表示されず失敗し、ログは正常に見えます。</string>
     <string name="native_aa_setup_qr_title">QRコードで設定</string>
     <string name="native_aa_setup_qr_description">スマートフォンで読み取れるコードを表示。</string>
     <string name="native_aa_setup_qr_help">Bluetooth のハンドシェイクなしで、この機器をスマートフォンに設定する QR コードを表示します。コードには、この機器のアクセスポイント名、パスワード、アドレスが含まれます。接続中のアクセスポイント経由でのみ機能します。Android Auto 18.0 はまだこのコードに対応していないため、Bluetooth のハンドシェイクが引き続き必要です。</string>
@@ -1676,8 +1668,8 @@
     <string name="home_pages_hint_got_it">OK</string>
     <string name="home_pages_hint_body_anywhere">ホームの空いている部分ならどこでも使えます。ウィジェット用のページを追加したり、削除したりできます。</string>
     <string name="audio_settings_reconnect">オーディオ設定を保存しました。適用するにはAndroid Autoを再接続してください。</string>
-    <string name="native_aa_candidate_android_radio_description">ヘッドユニットの Bluetooth モジュールを自動選択する代わりに、Android の Bluetooth を使用します。自動選択する場合はオフにしてください。モジュール経由の接続オプションがオンの場合は、先にオフにしてください。</string>
-    <string name="external_bt_candidate_transport_description">自動選択の代わりに、ヘッドユニットの Bluetooth モジュール経由の接続を強制します。対応するモジュールサービスが必要です。サービスが応答しないときに Android の Bluetooth を使用できるようにするには、オフにしてください。オンにすると、この代替経路は使えなくなります。</string>
+    <string name="native_aa_candidate_android_radio_description">ヘッドユニットのBluetoothモジュールを自動選択せず、AndroidのBluetoothを使用します。</string>
+    <string name="external_bt_candidate_transport_description">自動選択の代わりに、ヘッドユニットのBluetoothモジュール経由の接続を強制します。対応するモジュールサービスが必要です。自動検出では、そのサービスが応答しない場合にAndroidのBluetoothを使えますが、この選択ではその代替が使えません。</string>
     <string name="audio_matching_mode">音楽の時間補正</string>
     <string name="audio_matching_mode_help">音楽の到着が少し速すぎる、または遅すぎるとき、アプリは再生をわずかに速めたり遅くしたりして、音声キューの量を一定に保ちます。ここでその方法を選びます。初期値は OHU です。ほかの方法は少し遅延が増え、PCM の音楽にのみ適用されます。ナビ、音声、システム音、AAC は常に OHU を使います。反映するには再接続してください。</string>
     <string name="audio_matching_ohu">OHU</string>
@@ -1787,12 +1779,22 @@
     <string name="wifi_scan_wifi_settings">Wi-Fi設定を開く</string>
 
     <!-- Bluetooth relay (ESP32) -->
-    <string name="settings_bluetooth_route">Bluetooth の経路</string>
+    <string name="settings_bluetooth">Bluetooth</string>
+    <string name="bt_link_title">スマートフォンがペア設定するBluetooth</string>
+    <string name="bt_link_summary">このBluetooth接続でAndroid Autoが起動します。</string>
+    <string name="bt_link_help">ワイヤレス Android Auto はまずBluetoothでこのユニットに接続し、その後Wi-Fiに切り替わります。スマートフォンがペア設定されているBluetoothを選んでください。ユニットによっては、Androidからアクセスできない別モジュールにBluetoothがあります。ほとんどのユニットでは自動検出が適しています。</string>
+    <string name="bt_link_automatic">自動検出</string>
+    <string name="bt_link_this_unit">このユニット自身のBluetooth</string>
+    <string name="bt_link_zlink">車載Bluetoothモジュール(ZLink)</string>
+    <string name="bt_link_zj">車載Bluetoothモジュール(ZJ)</string>
+    <string name="bt_link_blink">車載Bluetoothモジュール(FYT BLINK)</string>
+    <string name="bt_link_esp32">ESP32リレーボード</string>
+    <string name="bt_link_esp32_unpaired">ESP32リレーボード(未ペア設定)</string>
     <string name="esp32_relay_settings_title">Bluetoothリレー(ESP32)</string>
     <string name="esp32_relay_settings_summary">ESP32で実装したBluetoothリレーの設定です。</string>
     <string name="esp32_relay_enabled">Bluetoothリレーを使用</string>
     <string name="esp32_relay_enabled_summary">Native AAのBluetoothハンドシェイクをESP32ボード経由にします</string>
-    <string name="esp32_relay_enabled_help">リレーは、Classic Bluetooth対応のESP32純正品に、このアプリ用のリレーファームウェアを書き込んだものです。スマートフォンはこのユニットではなくボードとペア設定され、このユニットはBLEでボードと通信します。Native AAのWi-Fi部分は変わりません。オフにすると、このユニット自身のBluetoothに戻ります。保存済みのリレーは残ります。Nativeモードと Android 6.0以降が必要です。</string>
+    <string name="esp32_relay_enabled_help">リレーは、Classic Bluetooth対応のESP32純正品に、このアプリ用のリレーファームウェアを書き込んだものです。スマートフォンはこのユニットではなくボードとペア設定され、このユニットはBLEでボードと通信します。Native AAのWi-Fi部分は変わりません。オフにするか、別のBluetooth接続を選ぶと元に戻ります。保存済みのリレーは残ります。Nativeモードと Android 6.0以降が必要です。</string>
     <string name="esp32_relay_settings_disabled">オフ</string>
     <string name="esp32_relay_saved_device">保存済みのBluetoothリレー</string>
     <string name="esp32_relay_saved_notice">保存済みのBluetoothリレー: %1$s</string>

@@ -1127,9 +1127,7 @@
     <string name="external_bt_nativeaa_desc">Telefonul dvs. se asociază cu modulul Bluetooth propriu al acestei unități (%1$s), nu cu Bluetooth-ul pe care Android îl pune la dispoziția aplicațiilor, așa că negocierea wireless nu l-ar ajunge niciodată.\n\nAceastă aplicație poate accesa modulul doar printr-un serviciu ZJ/ZLink, care nu rulează pe această unitate. Folosiți în schimb USB sau un mod WiFi.</string>
     <string name="external_bt_module_nativeaa">Wireless nativ prin modulul ZJ/ZLink</string>
     <string name="external_bt_module_nativeaa_desc">Telefonul dvs. se asociază cu modulul Bluetooth propriu al acestei unități (%1$s), nu cu Bluetooth-ul pe care Android îl pune la dispoziția aplicațiilor, așa că negocierea va fi trimisă prin serviciul ZJ/ZLink al modulului.\n\nFuncție experimentală, iar acest serviciu este singura cale. Dacă telefonul nu pornește niciodată Android Auto, folosiți USB sau un mod WiFi.</string>
-    <string name="external_bt_transport">Conectează prin modulul Bluetooth al unității</string>
-    <string name="external_bt_transport_description">Experimental, pentru unități cu serviciu Bluetooth ZJ/ZLink. Trimite handshake-ul fără fir Android Auto prin cipul Bluetooth cu care este asociat telefonul, nu prin cel pe care Android îl arată aplicațiilor. Rulează întâi testul modulului Bluetooth cu opțiunea dezactivată. Dacă nu găsește nimic care ascultă, nu poate ajuta pe unitatea ta. Dacă răspunde, activează-o. Exportă jurnalul în ambele cazuri.</string>
-    <string name="external_bt_transport_summary">Experimental. Trimite handshake-ul fără fir prin Bluetooth-ul propriu al acestei unități.</string>
+    <string name="external_bt_transport_description">Experimental, pentru unitățile cu serviciu Bluetooth ZJ/ZLink. Trimite handshake-ul Android Auto wireless prin cipul Bluetooth cu care este asociat telefonul, nu prin cel pe care Android îl arată aplicațiilor. Rulați mai întâi testul modulului Bluetooth. Dacă nu găsește nimic care să asculte, opțiunea nu vă ajută pe această unitate. Dacă răspunde, alegeți această opțiune. Exportați jurnalul în ambele cazuri.</string>
     <string name="zbt_probe_title">Testează modulul Bluetooth al unității</string>
     <string name="zbt_probe_help">Testează dacă modulul Bluetooth propriu al unității poate purta negocierea Android Auto wireless. Testul durează cam două minute și arată fiecare etapă pe acest rând. Doar urmărește pornește doar modulul și îl monitorizează. Trezește și urmărește cere modulului și să se conecteze la telefon. Testul poate schimba starea Bluetooth a modulului. Exportă jurnalul după test.</string>
     <string name="zbt_probe_idle">Atingeți pentru a rula</string>
@@ -1137,15 +1135,11 @@
     <string name="zbt_probe_message">Ambele opțiuni inițializează modulul Bluetooth înainte de monitorizare. Acest lucru îi poate afecta starea. Trezirea și monitorizarea solicită și conectarea la telefon.\n\nTestul cedează accesul când OHU utilizează sau verifică modulul. Exportați jurnalul după test.</string>
     <string name="zbt_probe_watch_only">Doar urmărește</string>
     <string name="zbt_probe_wake_and_watch">Trezește și urmărește</string>
-    <string name="external_bt_blink_transport">Conectare prin modulul Bluetooth extern FYT</string>
     <string name="external_bt_module_controls_hint">Asocierea telefonului, prioritatea conexiunii și selecția driverului sunt gestionate de modulul Bluetooth extern.</string>
     <string name="external_bt_module_last_phone">Ultimul telefon conectat prin modul</string>
-    <string name="external_bt_blink_transport_description">Experimental, pentru unitățile FYT al căror telefon se asociază pentru apeluri cu un modul Bluetooth separat, cum este DUDUAUTO pe DUDUOS. Modulul duce handshake-ul fără fir Android Auto, la care răspunde de obicei aplicația Car Link originală. Cu opțiunea activată, răspunde această aplicație, deci apelurile rămân pe modul și pe boxele mașinii. Dezactivează întâi aplicația Car Link originală (pm disable-user com.syu.carlink), altfel ambele citesc același canal.</string>
-    <string name="external_bt_blink_transport_summary">Experimental. Răspunde la handshake-ul fără fir pe modulul Bluetooth al unei unități FYT.</string>
-    <string name="external_bt_zj_socket_transport">Conectează prin socketul Bluetooth ZJ</string>
-    <string name="external_bt_zj_socket_transport_description">Pentru unitățile al căror modul Bluetooth ZJ transportă handshake-ul wireless Android Auto printr-un socket local (/dev/socket/zj_bt_socket). Aplicația îl folosește singură când socketul acceptă o conexiune. Activează opțiunea doar dacă unitatea are socketul și aplicația nu îl detectează.</string>
-    <string name="external_bt_zj_socket_transport_summary">Transmite handshake-ul wireless prin socketul local al modulului ZJ.</string>
-    <string name="external_bt_blink_refused_stock_enabled">Modul Bluetooth extern: aplicația Car Link originală este încă activată. Dezactivați-o (pm disable-user com.syu.carlink) sau opriți acest transport.</string>
+    <string name="external_bt_blink_transport_description">Experimental, pentru unitățile FYT al căror telefon se asociază pentru apeluri cu un modul Bluetooth separat, precum DUDUAUTO pe DUDUOS. Modulul transportă handshake-ul Android Auto wireless, la care de obicei răspunde aplicația Car Link originală. Cu această opțiune aleasă, răspunde această aplicație, deci apelurile rămân pe modul și pe difuzoarele mașinii. Dezactivați mai întâi aplicația Car Link originală (pm disable-user com.syu.carlink), altfel ambele citesc același canal.</string>
+    <string name="external_bt_zj_socket_transport_description">Pentru unitățile al căror modul Bluetooth ZJ transportă handshake-ul Android Auto wireless printr-un socket local (/dev/socket/zj_bt_socket). Aplicația îl folosește singură atunci când socketul acceptă o conexiune. Alegeți această opțiune doar dacă unitatea are socketul, iar aplicația nu îl vede.</string>
+    <string name="external_bt_blink_refused_stock_enabled">Modul Bluetooth extern: aplicația Car Link originală este încă activată. Dezactivați-o (pm disable-user com.syu.carlink) sau alegeți altă legătură Bluetooth.</string>
     <string name="external_bt_blink_refused_stock_running">Modul Bluetooth extern: aplicația Car Link originală este dezactivată, dar încă rulează. Reporniți unitatea.</string>
     <string name="external_bt_blink_refused_root">Modul Bluetooth extern: deschiderea canalului modulului necesită root pe această unitate, iar accesul root a fost refuzat sau nu este disponibil.</string>
     <string name="external_bt_blink_refused_unverified">Modul Bluetooth extern: nu s-a putut verifica dacă aplicația Car Link originală este oprită, așa că canalul modulului rămâne închis. Exportați jurnalul.</string>
@@ -1247,9 +1241,7 @@
     <string name="preflight_open_location">Locație</string>
     <string name="preflight_later">Mai târziu</string>
     <string name="preflight_invalid_bssid">Aceasta nu este o adresă WiFi. Introduceți șase perechi de cifre hexazecimale, de exemplu 02:1A:11:FF:3C:4D.</string>
-    <string name="native_aa_ignore_external_bt">Ignoră verificarea de compatibilitate Bluetooth</string>
-    <string name="native_aa_ignore_external_bt_description">Această unitate pare să țină Bluetooth-ul pe un modul separat la care Android nu ajunge, așa că Android Auto wireless este dezactivat automat. Dezactivat implicit. Activați-l doar dacă credeți că este greșit: când detectarea este corectă, conexiunea eșuează fără niciun semn, iar jurnalul pare în regulă.</string>
-    <string name="native_aa_ignore_external_bt_summary">Păstrează conexiunea fără fir activă chiar dacă această unitate pare să-și ascundă modulul Bluetooth.</string>
+    <string name="native_aa_ignore_external_bt_description">Această unitate pare să păstreze Bluetooth-ul pe un modul separat, pe care Android nu îl poate accesa, așa că Android Auto wireless este dezactivat automat. Alegeți această opțiune doar dacă credeți că este o greșeală: unde detectarea este corectă, conexiunea eșuează fără mesaj, iar jurnalul pare în regulă.</string>
     <string name="native_aa_setup_qr_title">Configurare prin cod QR</string>
     <string name="native_aa_setup_qr_description">Afișează un cod pe care telefonul îl poate scana.</string>
     <string name="native_aa_setup_qr_help">Afișează un cod QR care configurează această unitate pe telefon fără negocierea prin Bluetooth. Codul conține numele, parola și adresa hotspotului acestei unități. Funcționează doar pe transportul prin hotspot, cât timp conexiunea este activă. Android Auto 18.0 nu folosește încă acest cod, așa că negocierea prin Bluetooth rămâne necesară.</string>
@@ -1670,8 +1662,8 @@
     <string name="home_pages_hint_got_it">Am înțeles</string>
     <string name="home_pages_hint_body_anywhere">Merge orice parte goală a ecranului principal. Așa adaugi o pagină pentru widgeturi sau elimini una.</string>
     <string name="audio_settings_reconnect">Setările audio au fost salvate. Reconectează Android Auto pentru a le aplica.</string>
-    <string name="native_aa_candidate_android_radio_description">Folosește Bluetooth din Android în loc să selectezi automat modulul Bluetooth al unității. Lasă dezactivat pentru selecție automată. Dacă este activată o opțiune de conectare prin modul, dezactiveaz-o mai întâi.</string>
-    <string name="external_bt_candidate_transport_description">Forțează conectarea prin modulul Bluetooth al unității în locul selecției automate. Necesită un serviciu de modul compatibil. Lasă dezactivat pentru a permite Bluetooth din Android când serviciul nu răspunde; activarea împiedică această alternativă.</string>
+    <string name="native_aa_candidate_android_radio_description">Folosește Bluetooth-ul Android în loc să selecteze automat modulul Bluetooth al unității principale.</string>
+    <string name="external_bt_candidate_transport_description">Forțează conexiunea prin modulul Bluetooth al unității principale în loc de selecția automată. Necesită un serviciu de modul compatibil. Detectarea automată permite Bluetooth-ul Android când serviciul nu răspunde; această alegere împiedică revenirea.</string>
     <string name="audio_matching_mode">Corecție temporală a muzicii</string>
     <string name="audio_matching_mode_help">Când muzica sosește puțin prea repede sau prea încet, aplicația o redă ceva mai rapid sau mai lent, ca să țină coada de sunet la nivel. Aici alegi metoda. OHU este cea implicită. Celelalte metode adaugă o mică întârziere și se aplică doar muzicii PCM. Navigarea, vocea, sunetele de sistem și AAC folosesc mereu OHU. Reconectează pentru a aplica.</string>
     <string name="audio_matching_ohu">OHU</string>
@@ -1783,12 +1775,22 @@
     <string name="wifi_scan_legacy_limit">Reînnoire pe Android 8–10\n• Se cere o pauză la conectare, apoi la fiecare cinci minute cât timp este conectat.\n• Android poate activa căutările între cereri. Intervalul limitează curățarea repetată, dar nu poate ține toate scanările oprite.\n\nDacă activarea căutărilor eșuează, lăsați Shizuku pornit și reîncercați. Repornirea resetează acest control temporar.</string>
 
     <!-- Bluetooth relay (ESP32) -->
-    <string name="settings_bluetooth_route">Ruta Bluetooth</string>
+    <string name="settings_bluetooth">Bluetooth</string>
+    <string name="bt_link_title">Bluetooth-ul cu care se asociază telefonul</string>
+    <string name="bt_link_summary">Android Auto pornește prin această legătură Bluetooth.</string>
+    <string name="bt_link_help">Android Auto wireless ajunge mai întâi la această unitate prin Bluetooth, apoi trece pe Wi-Fi. Alegeți Bluetooth-ul cu care este asociat telefonul. Unele unități îl au pe un modul separat, pe care Android nu îl poate accesa. Detectarea automată se potrivește majorității unităților.</string>
+    <string name="bt_link_automatic">Detectare automată</string>
+    <string name="bt_link_this_unit">Bluetooth-ul propriu al acestei unități</string>
+    <string name="bt_link_zlink">Modul Bluetooth al mașinii (ZLink)</string>
+    <string name="bt_link_zj">Modul Bluetooth al mașinii (ZJ)</string>
+    <string name="bt_link_blink">Modul Bluetooth al mașinii (FYT BLINK)</string>
+    <string name="bt_link_esp32">Placă releu ESP32</string>
+    <string name="bt_link_esp32_unpaired">Placă releu ESP32, încă neasociată</string>
     <string name="esp32_relay_settings_title">Releu Bluetooth (ESP32)</string>
     <string name="esp32_relay_settings_summary">Setări pentru releul Bluetooth într-o implementare ESP32.</string>
     <string name="esp32_relay_enabled">Folosește releul Bluetooth</string>
     <string name="esp32_relay_enabled_summary">Trece handshake-ul Bluetooth Native AA printr-o placă ESP32</string>
-    <string name="esp32_relay_enabled_help">Releul este un ESP32 original cu Bluetooth Classic, încărcat cu firmware-ul de releu creat pentru această aplicație. Telefonul se asociază cu placa, nu cu această unitate, iar unitatea comunică cu placa prin BLE. Partea Wi-Fi din Native AA nu se schimbă. Dezactivați pentru a reveni la Bluetooth-ul propriu al unității. Releul salvat se păstrează. Necesită modul Native și Android 6.0 sau mai nou.</string>
+    <string name="esp32_relay_enabled_help">Releul este un ESP32 original cu Bluetooth Classic, încărcat cu firmware-ul de releu creat pentru această aplicație. Telefonul se asociază cu placa, nu cu această unitate, iar unitatea comunică cu placa prin BLE. Partea Wi-Fi din Native AA nu se schimbă. Dezactivați sau alegeți altă legătură Bluetooth pentru a reveni. Releul salvat se păstrează. Necesită modul Native și Android 6.0 sau mai nou.</string>
     <string name="esp32_relay_settings_disabled">Dezactivat</string>
     <string name="esp32_relay_saved_device">Releu Bluetooth salvat</string>
     <string name="esp32_relay_saved_notice">Releu Bluetooth salvat: %1$s</string>

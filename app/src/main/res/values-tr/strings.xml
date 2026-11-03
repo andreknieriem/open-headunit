@@ -1124,9 +1124,7 @@
     <string name="external_bt_nativeaa_desc">Telefonunuz, Android\'in uygulamalara sunduğu Bluetooth ile değil, bu ünitenin kendi Bluetooth modülüyle (%1$s) eşleşir. Bu yüzden kablosuz bağlantı kurulum adımı o modüle hiçbir zaman ulaşmaz.\n\nBu uygulama o modüle yalnızca ZJ/ZLink hizmeti üzerinden ulaşabilir, ancak bu ünitede o hizmet çalışmıyor. Bunun yerine USB\'yi veya bir Wi-Fi modunu kullanın.</string>
     <string name="external_bt_module_nativeaa">ZJ/ZLink modülü üzerinden Yerel Kablosuz</string>
     <string name="external_bt_module_nativeaa_desc">Telefonunuz, Android\'in uygulamalara sunduğu Bluetooth ile değil, bu ünitenin kendi Bluetooth modülüyle (%1$s) eşleşir. Bu yüzden kablosuz bağlantı kurulum adımı modülün ZJ/ZLink hizmeti üzerinden gönderilir.\n\nBu yöntem deneyseldir ve tek giriş yolu o hizmettir. Telefonunuz Android Auto\'yu hiç başlatmazsa USB\'yi veya bir Wi-Fi modunu kullanın.</string>
-    <string name="external_bt_transport">Ana ünitenin Bluetooth modülü üzerinden bağlan</string>
-    <string name="external_bt_transport_description">Deneysel; ZJ/ZLink Bluetooth hizmeti olan üniteler içindir. Kablosuz Android Auto el sıkışmasını, Android\'in uygulamalara gösterdiği yonga yerine telefonunuzun eşleştiği Bluetooth yongası üzerinden gönderir. Önce Bluetooth modülü testini bu seçenek kapalıyken çalıştırın. Dinleyen bir şey bulamazsa bu seçenek ünitenizde işe yaramaz. Yanıt verirse açın. Her iki durumda da günlüğü dışa aktarın.</string>
-    <string name="external_bt_transport_summary">Deneysel. Kablosuz el sıkışmasını bu ünitenin kendi Bluetooth\'u üzerinden gönderir.</string>
+    <string name="external_bt_transport_description">Deneysel, ZJ/ZLink Bluetooth hizmeti olan üniteler içindir. Kablosuz Android Auto el sıkışmasını, Android\'in uygulamalara gösterdiği çipten değil, telefonunuzun eşleştiği Bluetooth çipinden gönderir. Önce Bluetooth modülü testini çalıştırın. Dinleyen bir şey bulamazsa bu seçenek ünitenizde işe yaramaz. Yanıt verirse bunu seçin. Her iki durumda da günlüğü dışa aktarın.</string>
     <string name="zbt_probe_title">Ana ünitenin Bluetooth modülünü test et</string>
     <string name="zbt_probe_help">Ünitenin kendi Bluetooth modülünün kablosuz Android Auto el sıkışmasını taşıyıp taşıyamayacağını sınar. Test yaklaşık iki dakika sürer ve her aşamayı bu satırda gösterir. Sadece izle yalnızca modülü başlatır ve izler. Uyandır ve izle ayrıca modülden telefona bağlanmasını ister. Test, modülün Bluetooth durumunu değiştirebilir. Testten sonra günlüğü dışa aktarın.</string>
     <string name="zbt_probe_idle">Çalıştırmak için dokunun</string>
@@ -1134,15 +1132,11 @@
     <string name="zbt_probe_message">Her iki seçenek de izlemeden önce Bluetooth modülünü başlatır. Bu, Bluetooth durumunu etkileyebilir. Uyandır ve izle ayrıca telefona bağlantı ister.\n\nOHU modülü kullanırken veya kontrol ederken test önceliği ona verir. Testten sonra günlüğü dışa aktarın.</string>
     <string name="zbt_probe_watch_only">Yalnızca izle</string>
     <string name="zbt_probe_wake_and_watch">Uyandır ve izle</string>
-    <string name="external_bt_blink_transport">FYT harici Bluetooth modülü üzerinden bağlan</string>
     <string name="external_bt_module_controls_hint">Telefon eşleştirme, bağlantı önceliği ve sürücü seçimi harici Bluetooth modülü tarafından yönetilir.</string>
     <string name="external_bt_module_last_phone">Modül üzerinden bağlanan son telefon</string>
-    <string name="external_bt_blink_transport_description">Deneysel; telefonu aramalar için ayrı bir Bluetooth modülüyle eşleşen FYT üniteleri içindir, örneğin DUDUOS üzerindeki DUDUAUTO. Modül, kablosuz Android Auto el sıkışmasını taşır ve buna normalde orijinal Car Link uygulaması yanıt verir. Açıkken bu uygulama yanıt verir, böylece aramalar modülde ve araç hoparlörlerinde kalır. Önce orijinal Car Link uygulamasını devre dışı bırakın (pm disable-user com.syu.carlink), yoksa ikisi de aynı kanalı okur.</string>
-    <string name="external_bt_blink_transport_summary">Deneysel. Bir FYT ünitesinin Bluetooth modülündeki kablosuz el sıkışmasına yanıt verir.</string>
-    <string name="external_bt_zj_socket_transport">ZJ Bluetooth soketi üzerinden bağlan</string>
-    <string name="external_bt_zj_socket_transport_description">ZJ Bluetooth modülünün kablosuz Android Auto el sıkışmasını yerel bir soket (/dev/socket/zj_bt_socket) üzerinden taşıdığı üniteler içindir. Bu soket bağlantı kabul ettiğinde uygulama onu kendiliğinden kullanır. Bunu yalnızca ünitenizde soket varsa ve uygulama onu görmüyorsa açın.</string>
-    <string name="external_bt_zj_socket_transport_summary">Kablosuz el sıkışmayı ZJ modülünün yerel soketi üzerinden taşı.</string>
-    <string name="external_bt_blink_refused_stock_enabled">Harici Bluetooth modülü: yerleşik Car Link uygulaması hâlâ etkin. Uygulamayı devre dışı bırakın (pm disable-user com.syu.carlink) veya bu aktarım yöntemini kapatın.</string>
+    <string name="external_bt_blink_transport_description">Deneysel, telefonu aramalar için ayrı bir Bluetooth modülüyle eşleşen FYT üniteleri içindir; örneğin DUDUOS üzerindeki DUDUAUTO. Modül kablosuz Android Auto el sıkışmasını taşır ve buna normalde orijinal Car Link uygulaması yanıt verir. Bu seçenek seçildiğinde yanıtı bu uygulama verir, böylece aramalar modülde ve araç hoparlörlerinde kalır. Önce orijinal Car Link uygulamasını devre dışı bırakın (pm disable-user com.syu.carlink), yoksa ikisi de aynı kanalı okur.</string>
+    <string name="external_bt_zj_socket_transport_description">ZJ Bluetooth modülü kablosuz Android Auto el sıkışmasını yerel bir soketle (/dev/socket/zj_bt_socket) taşıyan üniteler içindir. Soket bağlantı kabul ettiğinde uygulama bunu kendisi kullanır. Bunu yalnızca ünitenizde soket varsa ve uygulama görmüyorsa seçin.</string>
+    <string name="external_bt_blink_refused_stock_enabled">Harici Bluetooth modülü: orijinal Car Link uygulaması hâlâ etkin. Devre dışı bırakın (pm disable-user com.syu.carlink) veya başka bir Bluetooth bağlantısı seçin.</string>
     <string name="external_bt_blink_refused_stock_running">Harici Bluetooth modülü: yerleşik Car Link uygulaması devre dışı ama hâlâ çalışıyor. Üniteyi yeniden başlatın.</string>
     <string name="external_bt_blink_refused_root">Harici Bluetooth modülü: modülün kanalını açmak için bu ünitede root gerekir ve root erişimi reddedildi veya kullanılamıyor.</string>
     <string name="external_bt_blink_refused_unverified">Harici Bluetooth modülü: yerleşik Car Link uygulamasının durdurulup durdurulmadığı denetlenemedi, bu yüzden modülün kanalı kapalı kalıyor. Lütfen günlüğü dışa aktarın.</string>
@@ -1244,9 +1238,7 @@
     <string name="preflight_open_location">Konum</string>
     <string name="preflight_later">Daha sonra</string>
     <string name="preflight_invalid_bssid">Bu bir Wi-Fi adresi değil. 02:1A:11:FF:3C:4D gibi altı çift onaltılık basamak girin.</string>
-    <string name="native_aa_ignore_external_bt">Bluetooth uyumluluk denetimini yoksay</string>
-    <string name="native_aa_ignore_external_bt_description">Bu cihaz, Bluetooth\'u Android\'in erişemediği ayrı bir modülde tutuyor gibi görünüyor, bu nedenle kablosuz Android Auto otomatik olarak kapatılır. Varsayılan olarak kapalı. Yalnızca bunun yanlış olduğunu düşünüyorsanız açın: tespit doğruysa bağlantı sessizce başarısız olur ve günlük sorunsuz görünür.</string>
-    <string name="native_aa_ignore_external_bt_summary">Bu ünite Bluetooth modülünü gizliyor gibi görünse de kablosuzu açık tutar.</string>
+    <string name="native_aa_ignore_external_bt_description">Bu ünite Bluetooth\'u Android\'in erişemediği ayrı bir modülde tutuyor gibi görünüyor, bu yüzden kablosuz Android Auto otomatik olarak kapatılır. Bunu yalnızca yanlış olduğunu düşünüyorsanız seçin: algılama doğruysa bağlantı sessizce başarısız olur ve günlük sağlıklı görünür.</string>
     <string name="native_aa_setup_qr_title">QR kod ile kurulum</string>
     <string name="native_aa_setup_qr_description">Telefonun tarayabileceği bir kod göster.</string>
     <string name="native_aa_setup_qr_help">Bluetooth el sıkışması olmadan bu üniteyi telefonda kuran bir QR kodu gösterir. Kod, bu ünitenin hotspot adını, parolasını ve adresini taşır. Yalnızca bağlantı sürerken hotspot aktarımında çalışır. Android Auto 18.0 bu kodu henüz işlemiyor, bu yüzden Bluetooth el sıkışması hâlâ gereklidir.</string>
@@ -1667,8 +1659,8 @@
     <string name="home_pages_hint_got_it">Anladım</string>
     <string name="home_pages_hint_body_anywhere">Ana ekranın herhangi bir boş yeri olur. Widget\'larınız için sayfa eklemek ya da kaldırmak böyle yapılır.</string>
     <string name="audio_settings_reconnect">Ses ayarları kaydedildi. Uygulamak için Android Auto\'yu yeniden bağlayın.</string>
-    <string name="native_aa_candidate_android_radio_description">Ünitenin Bluetooth modülünü otomatik seçmek yerine Android Bluetooth kullanın. Otomatik seçim için kapalı bırakın. Modül üzerinden bağlantı seçeneği açıksa önce onu kapatın.</string>
-    <string name="external_bt_candidate_transport_description">Otomatik seçim yerine ünitenin Bluetooth modülü üzerinden bağlantıyı zorlayın. Uyumlu bir modül hizmeti gerektirir. Hizmet yanıt vermediğinde Android Bluetooth kullanılabilmesi için kapalı bırakın; açılması bu yedek yolu engeller.</string>
+    <string name="native_aa_candidate_android_radio_description">Ana ünitenin Bluetooth modülünü otomatik seçmek yerine Android Bluetooth\'unu kullanın.</string>
+    <string name="external_bt_candidate_transport_description">Otomatik seçim yerine ana ünitenin Bluetooth modülü üzerinden bağlanmaya zorlayın. Uyumlu bir modül hizmeti gerekir. Otomatik algıla, hizmet yanıt vermediğinde Android Bluetooth\'una izin verir; bu seçim o geri dönüşü engeller.</string>
     <string name="audio_matching_mode">Müzik zaman düzeltmesi</string>
     <string name="audio_matching_mode_help">Müzik biraz fazla hızlı veya yavaş geldiğinde uygulama, ses kuyruğunu dengede tutmak için müziği biraz daha hızlı veya yavaş çalar. Bu ayar yöntemi seçer. Varsayılan OHU\'dur. Diğer yöntemler biraz gecikme ekler ve yalnızca PCM müziğe uygulanır. Navigasyon, ses, sistem sesleri ve AAC her zaman OHU kullanır. Uygulamak için yeniden bağlanın.</string>
     <string name="audio_matching_ohu">OHU</string>
@@ -1780,12 +1772,22 @@
     <string name="wifi_scan_legacy_limit">Android 8–10\'da yenileme\n• Bağlanırken duraklatma istenir, bağlıyken de her beş dakikada bir istenir.\n• Android, istekler arasında taramaları açabilir. Aralık, tekrarlanan temizleme işini sınırlar; her taramayı durdurulmuş tutamaz.\n\nTaramaları açma başarısız olursa Shizuku\'yu çalışır durumda tutup tekrar deneyin. Yeniden başlatma bu geçici denetimi sıfırlar.</string>
 
     <!-- Bluetooth relay (ESP32) -->
-    <string name="settings_bluetooth_route">Bluetooth yolu</string>
+    <string name="settings_bluetooth">Bluetooth</string>
+    <string name="bt_link_title">Telefonunuzun eşleştiği Bluetooth</string>
+    <string name="bt_link_summary">Android Auto bu Bluetooth bağlantısıyla başlar.</string>
+    <string name="bt_link_help">Kablosuz Android Auto bu üniteye önce Bluetooth ile ulaşır, sonra Wi-Fi\'ye geçer. Telefonunuzun eşleştiği Bluetooth\'u seçin. Bazı ünitelerde Bluetooth, Android\'in erişemediği ayrı bir modüldedir. Otomatik algıla çoğu ünite için uygundur.</string>
+    <string name="bt_link_automatic">Otomatik algıla</string>
+    <string name="bt_link_this_unit">Bu ünitenin kendi Bluetooth\'u</string>
+    <string name="bt_link_zlink">Araç Bluetooth modülü (ZLink)</string>
+    <string name="bt_link_zj">Araç Bluetooth modülü (ZJ)</string>
+    <string name="bt_link_blink">Araç Bluetooth modülü (FYT BLINK)</string>
+    <string name="bt_link_esp32">ESP32 röle kartı</string>
+    <string name="bt_link_esp32_unpaired">ESP32 röle kartı, henüz eşleşmedi</string>
     <string name="esp32_relay_settings_title">Bluetooth rölesi (ESP32)</string>
     <string name="esp32_relay_settings_summary">ESP32 tabanlı bir uygulama için Bluetooth rölesi ayarları.</string>
     <string name="esp32_relay_enabled">Bluetooth rölesini kullan</string>
     <string name="esp32_relay_enabled_summary">Native AA Bluetooth el sıkışmasını bir ESP32 kartı üzerinden ilet</string>
-    <string name="esp32_relay_enabled_help">Röle, bu uygulama için hazırlanan röle yazılımıyla yüklenmiş, Classic Bluetooth destekli orijinal bir ESP32\'dir. Telefon bu ünite yerine karta eşleşir ve ünite karta BLE ile bağlanır. Native AA\'nın Wi-Fi kısmı değişmez. Ünitenin kendi Bluetooth\'una dönmek için kapatın. Kayıtlı röle korunur. Native modu ve Android 6.0 veya üstü gerekir.</string>
+    <string name="esp32_relay_enabled_help">Röle, bu uygulama için hazırlanan röle yazılımıyla yüklenmiş, Classic Bluetooth destekli orijinal bir ESP32\'dir. Telefon bu ünite yerine karta eşleşir ve ünite karta BLE ile bağlanır. Native AA\'nın Wi-Fi kısmı değişmez. Geri dönmek için kapatın veya başka bir Bluetooth bağlantısı seçin. Kayıtlı röle korunur. Native modu ve Android 6.0 veya üstü gerekir.</string>
     <string name="esp32_relay_settings_disabled">Kapalı</string>
     <string name="esp32_relay_saved_device">Kayıtlı Bluetooth rölesi</string>
     <string name="esp32_relay_saved_notice">Kayıtlı Bluetooth rölesi: %1$s</string>

@@ -1131,9 +1131,7 @@
     <string name="external_bt_nativeaa_desc">Điện thoại của bạn ghép nối với mô-đun Bluetooth riêng của đầu phát này (%1$s), không phải Bluetooth mà Android cung cấp cho ứng dụng, nên quá trình bắt tay không dây sẽ không bao giờ đến được đó.\n\nỨng dụng này chỉ có thể tiếp cận mô-đun đó qua một dịch vụ ZJ/ZLink, mà đầu phát này không chạy dịch vụ đó. Hãy dùng USB hoặc một chế độ WiFi thay vào đó.</string>
     <string name="external_bt_module_nativeaa">Native Wireless qua mô-đun ZJ/ZLink</string>
     <string name="external_bt_module_nativeaa_desc">Điện thoại của bạn ghép nối với mô-đun Bluetooth riêng của đầu phát này (%1$s), không phải Bluetooth mà Android cung cấp cho ứng dụng, nên quá trình bắt tay sẽ được gửi qua dịch vụ ZJ/ZLink của mô-đun.\n\nĐây là tính năng thử nghiệm và dịch vụ đó là cách duy nhất. Nếu điện thoại không khởi động Android Auto, hãy dùng USB hoặc một chế độ WiFi.</string>
-    <string name="external_bt_transport">Kết nối qua mô-đun Bluetooth của đầu phát</string>
-    <string name="external_bt_transport_description">Thử nghiệm, dành cho thiết bị có dịch vụ Bluetooth ZJ/ZLink. Gửi bước bắt tay Android Auto không dây qua chip Bluetooth mà điện thoại đã ghép nối, không qua chip Android hiện cho ứng dụng. Hãy chạy kiểm tra mô-đun Bluetooth trước, khi mục này đang tắt. Nếu không thấy gì lắng nghe, mục này không giúp được trên thiết bị của bạn. Nếu có phản hồi, hãy bật. Xuất nhật ký trong cả hai trường hợp.</string>
-    <string name="external_bt_transport_summary">Thử nghiệm. Gửi bước bắt tay không dây qua Bluetooth riêng của thiết bị này.</string>
+    <string name="external_bt_transport_description">Thử nghiệm, dành cho thiết bị có dịch vụ Bluetooth ZJ/ZLink. Gửi bắt tay Android Auto không dây qua chip Bluetooth mà điện thoại của bạn đã ghép đôi, không phải chip Android hiển thị cho ứng dụng. Hãy chạy kiểm tra mô-đun Bluetooth trước. Nếu không thấy gì đang lắng nghe, mục này không giúp được trên thiết bị của bạn. Nếu có phản hồi, hãy chọn mục này. Dù thế nào cũng hãy xuất nhật ký.</string>
     <string name="zbt_probe_title">Kiểm tra mô-đun Bluetooth của đầu phát</string>
     <string name="zbt_probe_help">Kiểm tra xem mô-đun Bluetooth của chính thiết bị này có mang được màn bắt tay Android Auto không dây không. Bài kiểm tra chạy khoảng hai phút và hiện từng giai đoạn trên hàng này. Chỉ theo dõi chỉ khởi động mô-đun và giám sát nó. Đánh thức và theo dõi còn yêu cầu mô-đun kết nối với điện thoại. Bài kiểm tra có thể thay đổi trạng thái Bluetooth của mô-đun. Hãy xuất log sau khi kiểm tra.</string>
     <string name="zbt_probe_idle">Chạm để chạy</string>
@@ -1141,15 +1139,11 @@
     <string name="zbt_probe_message">Cả hai tùy chọn đều khởi tạo mô-đun Bluetooth trước khi theo dõi. Việc này có thể ảnh hưởng đến trạng thái Bluetooth. Đánh thức và theo dõi còn yêu cầu kết nối với điện thoại.\n\nPhép thử nhường quyền khi OHU đang sử dụng hoặc kiểm tra mô-đun. Hãy xuất nhật ký sau khi thử.</string>
     <string name="zbt_probe_watch_only">Chỉ theo dõi</string>
     <string name="zbt_probe_wake_and_watch">Đánh thức và theo dõi</string>
-    <string name="external_bt_blink_transport">Kết nối qua mô-đun Bluetooth ngoài FYT</string>
     <string name="external_bt_module_controls_hint">Mô-đun Bluetooth ngoài quản lý việc ghép nối điện thoại, mức ưu tiên kết nối và lựa chọn trình điều khiển.</string>
     <string name="external_bt_module_last_phone">Điện thoại kết nối gần nhất qua mô-đun</string>
-    <string name="external_bt_blink_transport_description">Thử nghiệm, dành cho thiết bị FYT có điện thoại ghép nối cuộc gọi với một mô-đun Bluetooth riêng, như DUDUAUTO trên DUDUOS. Mô-đun mang bước bắt tay Android Auto không dây, thường do ứng dụng Car Link gốc phản hồi. Khi bật, ứng dụng này phản hồi thay, nên cuộc gọi vẫn ở mô-đun và loa xe. Hãy tắt ứng dụng Car Link gốc trước (pm disable-user com.syu.carlink), nếu không cả hai sẽ đọc cùng một kênh.</string>
-    <string name="external_bt_blink_transport_summary">Thử nghiệm. Phản hồi bước bắt tay không dây trên mô-đun Bluetooth của thiết bị FYT.</string>
-    <string name="external_bt_zj_socket_transport">Kết nối qua socket Bluetooth ZJ</string>
-    <string name="external_bt_zj_socket_transport_description">Dành cho các thiết bị có mô-đun Bluetooth ZJ truyền bắt tay Android Auto không dây qua một socket cục bộ (/dev/socket/zj_bt_socket). Ứng dụng tự dùng socket này khi nó chấp nhận kết nối. Chỉ bật khi thiết bị của bạn có socket mà ứng dụng không nhận ra.</string>
-    <string name="external_bt_zj_socket_transport_summary">Truyền bắt tay không dây qua socket cục bộ của mô-đun ZJ.</string>
-    <string name="external_bt_blink_refused_stock_enabled">Mô-đun Bluetooth ngoài: ứng dụng Car Link gốc vẫn đang bật. Hãy tắt nó (pm disable-user com.syu.carlink) hoặc tắt phương thức truyền này.</string>
+    <string name="external_bt_blink_transport_description">Thử nghiệm, dành cho thiết bị FYT có điện thoại ghép đôi để gọi với một mô-đun Bluetooth riêng, như DUDUAUTO trên DUDUOS. Mô-đun mang bắt tay Android Auto không dây, thường do ứng dụng Car Link gốc phản hồi. Khi chọn mục này, ứng dụng này sẽ phản hồi thay, nên cuộc gọi vẫn ở trên mô-đun và loa xe. Hãy vô hiệu hóa ứng dụng Car Link gốc trước (pm disable-user com.syu.carlink), nếu không cả hai sẽ đọc cùng một kênh.</string>
+    <string name="external_bt_zj_socket_transport_description">Dành cho thiết bị có mô-đun Bluetooth ZJ mang bắt tay Android Auto không dây qua một socket cục bộ (/dev/socket/zj_bt_socket). Ứng dụng tự dùng khi socket nhận kết nối. Chỉ chọn mục này nếu thiết bị có socket mà ứng dụng không thấy.</string>
+    <string name="external_bt_blink_refused_stock_enabled">Mô-đun Bluetooth ngoài: ứng dụng Car Link gốc vẫn đang bật. Hãy vô hiệu hóa (pm disable-user com.syu.carlink) hoặc chọn kết nối Bluetooth khác.</string>
     <string name="external_bt_blink_refused_stock_running">Mô-đun Bluetooth ngoài: ứng dụng Car Link gốc đã tắt nhưng vẫn đang chạy. Hãy khởi động lại thiết bị.</string>
     <string name="external_bt_blink_refused_root">Mô-đun Bluetooth ngoài: mở kênh của mô-đun cần quyền root trên thiết bị này, nhưng quyền root bị từ chối hoặc không có.</string>
     <string name="external_bt_blink_refused_unverified">Mô-đun Bluetooth ngoài: không kiểm tra được ứng dụng Car Link gốc đã dừng chưa, nên kênh của mô-đun vẫn đóng. Vui lòng xuất nhật ký.</string>
@@ -1251,9 +1245,7 @@
     <string name="preflight_open_location">Vị trí</string>
     <string name="preflight_later">Để sau</string>
     <string name="preflight_invalid_bssid">Địa chỉ WiFi không hợp lệ. Nhập 6 cặp ký tự thập lục phân (vd: 02:1A:11:FF:3C:4D).</string>
-    <string name="native_aa_ignore_external_bt">Bỏ qua kiểm tra tương thích Bluetooth</string>
-    <string name="native_aa_ignore_external_bt_description">Thiết bị này có vẻ giữ Bluetooth trên một mô-đun riêng mà Android không tiếp cận được, nên Android Auto không dây bị tắt tự động. Tắt theo mặc định. Chỉ bật nếu bạn cho rằng điều đó là sai: nếu phát hiện đúng, kết nối sẽ thất bại trong im lặng và nhật ký trông vẫn bình thường.</string>
-    <string name="native_aa_ignore_external_bt_summary">Giữ chế độ không dây bật dù thiết bị này có vẻ ẩn mô-đun Bluetooth của nó.</string>
+    <string name="native_aa_ignore_external_bt_description">Thiết bị này có vẻ đặt Bluetooth trên một mô-đun riêng mà Android không truy cập được, nên Android Auto không dây bị tắt tự động. Chỉ chọn mục này nếu bạn cho rằng điều đó sai: khi phát hiện đúng, kết nối sẽ thất bại âm thầm và nhật ký trông vẫn bình thường.</string>
     <string name="native_aa_setup_qr_title">Thiết lập bằng mã QR</string>
     <string name="native_aa_setup_qr_description">Hiển thị mã để điện thoại quét.</string>
     <string name="native_aa_setup_qr_help">Hiện mã QR để thiết lập thiết bị này trên điện thoại mà không cần bắt tay qua Bluetooth. Mã chứa tên, mật khẩu và địa chỉ điểm phát sóng của thiết bị này. Chỉ hoạt động trên đường truyền điểm phát sóng, khi kết nối đang chạy. Android Auto 18.0 chưa xử lý mã này, nên vẫn cần bắt tay qua Bluetooth.</string>
@@ -1674,8 +1666,8 @@
     <string name="home_pages_hint_got_it">Đã hiểu</string>
     <string name="home_pages_hint_body_anywhere">Phần trống nào của màn hình chính cũng được. Đó là cách thêm trang cho tiện ích, hoặc xóa một trang.</string>
     <string name="audio_settings_reconnect">Đã lưu cài đặt âm thanh. Hãy kết nối lại Android Auto để áp dụng.</string>
-    <string name="native_aa_candidate_android_radio_description">Dùng Bluetooth của Android thay vì tự động chọn mô-đun Bluetooth của đầu màn hình. Để tắt nếu muốn chọn tự động. Nếu tùy chọn kết nối qua mô-đun đang bật, hãy tắt tùy chọn đó trước.</string>
-    <string name="external_bt_candidate_transport_description">Buộc kết nối qua mô-đun Bluetooth của đầu màn hình thay vì chọn tự động. Cần dịch vụ mô-đun tương thích. Để tắt để cho phép dùng Bluetooth của Android khi dịch vụ không phản hồi; bật tùy chọn này sẽ chặn đường kết nối dự phòng đó.</string>
+    <string name="native_aa_candidate_android_radio_description">Dùng Bluetooth của Android thay vì tự động chọn mô-đun Bluetooth của đầu máy.</string>
+    <string name="external_bt_candidate_transport_description">Buộc kết nối qua mô-đun Bluetooth của đầu máy thay vì tự động chọn. Cần có dịch vụ mô-đun tương thích. Tự động phát hiện cho phép dùng Bluetooth của Android khi dịch vụ đó không phản hồi; lựa chọn này chặn phương án dự phòng đó.</string>
     <string name="audio_matching_mode">Hiệu chỉnh thời gian nhạc</string>
     <string name="audio_matching_mode_help">Khi nhạc đến hơi nhanh hoặc hơi chậm, ứng dụng phát nhanh hơn hoặc chậm hơn một chút để giữ hàng đợi âm thanh ổn định. Mục này chọn phương pháp. OHU là mặc định. Các phương pháp khác thêm chút độ trễ và chỉ áp dụng cho nhạc PCM. Dẫn đường, giọng nói, âm thanh hệ thống và AAC luôn dùng OHU. Kết nối lại để áp dụng.</string>
     <string name="audio_matching_ohu">OHU</string>
@@ -1787,12 +1779,22 @@
     <string name="wifi_scan_legacy_limit">Gia hạn trên Android 8–10\n• Yêu cầu tạm dừng khi kết nối, rồi cứ năm phút một lần khi đang kết nối.\n• Android có thể bật quét giữa các yêu cầu. Khoảng thời gian này giới hạn việc dọn dẹp lặp lại; nó không thể giữ mọi lượt quét luôn dừng.\n\nNếu không bật được quét, hãy để Shizuku chạy và thử lại. Khởi động lại sẽ đặt lại cơ chế tạm thời này.</string>
 
     <!-- Bluetooth relay (ESP32) -->
-    <string name="settings_bluetooth_route">Đường Bluetooth</string>
+    <string name="settings_bluetooth">Bluetooth</string>
+    <string name="bt_link_title">Bluetooth mà điện thoại ghép đôi</string>
+    <string name="bt_link_summary">Android Auto khởi động qua kết nối Bluetooth này.</string>
+    <string name="bt_link_help">Android Auto không dây trước tiên kết nối với thiết bị này qua Bluetooth, rồi chuyển sang Wi-Fi. Hãy chọn Bluetooth mà điện thoại của bạn đã ghép đôi. Một số thiết bị đặt Bluetooth trên mô-đun riêng mà Android không truy cập được. Tự động phát hiện phù hợp với hầu hết thiết bị.</string>
+    <string name="bt_link_automatic">Tự động phát hiện</string>
+    <string name="bt_link_this_unit">Bluetooth riêng của thiết bị này</string>
+    <string name="bt_link_zlink">Mô-đun Bluetooth của xe (ZLink)</string>
+    <string name="bt_link_zj">Mô-đun Bluetooth của xe (ZJ)</string>
+    <string name="bt_link_blink">Mô-đun Bluetooth của xe (FYT BLINK)</string>
+    <string name="bt_link_esp32">Bo mạch rơ-le ESP32</string>
+    <string name="bt_link_esp32_unpaired">Bo mạch rơ-le ESP32, chưa ghép đôi</string>
     <string name="esp32_relay_settings_title">Rơ-le Bluetooth (ESP32)</string>
     <string name="esp32_relay_settings_summary">Cài đặt rơ-le Bluetooth cho bản triển khai dùng ESP32.</string>
     <string name="esp32_relay_enabled">Dùng rơ-le Bluetooth</string>
     <string name="esp32_relay_enabled_summary">Chuyển bắt tay Bluetooth của Native AA qua bo mạch ESP32</string>
-    <string name="esp32_relay_enabled_help">Rơ-le là một ESP32 gốc có Classic Bluetooth, được nạp firmware rơ-le làm riêng cho ứng dụng này. Điện thoại ghép đôi với bo mạch thay vì thiết bị này, và thiết bị này giao tiếp với bo mạch qua BLE. Phần Wi-Fi của Native AA không đổi. Tắt để quay lại dùng Bluetooth của chính thiết bị. Rơ-le đã lưu vẫn được giữ lại. Cần chế độ Native và Android 6.0 trở lên.</string>
+    <string name="esp32_relay_enabled_help">Rơ-le là một ESP32 gốc có Classic Bluetooth, được nạp firmware rơ-le làm riêng cho ứng dụng này. Điện thoại ghép đôi với bo mạch thay vì thiết bị này, và thiết bị này giao tiếp với bo mạch qua BLE. Phần Wi-Fi của Native AA không đổi. Tắt, hoặc chọn kết nối Bluetooth khác, để quay lại. Rơ-le đã lưu vẫn được giữ lại. Cần chế độ Native và Android 6.0 trở lên.</string>
     <string name="esp32_relay_settings_disabled">Tắt</string>
     <string name="esp32_relay_saved_device">Rơ-le Bluetooth đã lưu</string>
     <string name="esp32_relay_saved_notice">Rơ-le Bluetooth đã lưu: %1$s</string>

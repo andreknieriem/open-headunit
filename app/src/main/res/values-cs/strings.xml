@@ -1131,9 +1131,7 @@
     <string name="external_bt_nativeaa_desc">Telefon se páruje s vlastním modulem Bluetooth této jednotky (%1$s), ne s Bluetooth, který Android poskytuje aplikacím, takže by bezdrátový handshake k němu nikdy nedorazil.\n\nTato aplikace se k modulu dostane jen přes službu ZJ/ZLink, která na této jednotce neběží. Použijte místo toho USB nebo některý režim Wi-Fi.</string>
     <string name="external_bt_module_nativeaa">Native Wireless přes modul ZJ/ZLink</string>
     <string name="external_bt_module_nativeaa_desc">Telefon se páruje s vlastním modulem Bluetooth této jednotky (%1$s), ne s Bluetooth, který Android poskytuje aplikacím, takže handshake bude odeslán přes službu ZJ/ZLink tohoto modulu.\n\nJde o experimentální funkci a tato služba je jediná možná cesta. Pokud telefon nikdy nespustí Android Auto, použijte USB nebo některý režim Wi-Fi.</string>
-    <string name="external_bt_transport">Připojit přes modul Bluetooth jednotky</string>
-    <string name="external_bt_transport_description">Experimentální, pro autorádia se službou Bluetooth ZJ/ZLink. Posílá bezdrátové navázání spojení Android Auto přes čip Bluetooth, se kterým je telefon spárován, ne přes ten, který Android ukazuje aplikacím. Nejdřív spusťte test modulu Bluetooth s vypnutou volbou. Pokud nic nenaslouchá, volba na vašem autorádiu nic nezmůže. Pokud odpoví, zapněte ji. Exportujte protokol v obou případech.</string>
-    <string name="external_bt_transport_summary">Experimentální. Posílá bezdrátové navázání spojení přes vlastní Bluetooth tohoto autorádia.</string>
+    <string name="external_bt_transport_description">Experimentální, pro jednotky se službou Bluetooth ZJ/ZLink. Posílá handshake bezdrátového Android Auto přes čip Bluetooth, se kterým je telefon spárovaný, ne přes ten, který Android ukazuje aplikacím. Nejdřív spusťte test modulu Bluetooth. Pokud nenajde nic, co by naslouchalo, na vaší jednotce to nepomůže. Pokud odpoví, vyberte tuto volbu. V obou případech exportujte protokol.</string>
     <string name="zbt_probe_title">Otestovat modul Bluetooth jednotky</string>
     <string name="zbt_probe_help">Testuje, zda vlastní modul Bluetooth této jednotky zvládne bezdrátový handshake Android Auto. Test trvá asi dvě minuty a každou fázi ukazuje v tomto řádku. „Jen sledovat“ spustí modul a sleduje ho. „Probudit a sledovat“ navíc požádá modul o připojení k telefonu. Test může změnit stav Bluetooth modulu. Po testu exportujte protokol.</string>
     <string name="zbt_probe_idle">Klepnutím spustíte</string>
@@ -1141,15 +1139,11 @@
     <string name="zbt_probe_message">Obě možnosti inicializují modul Bluetooth před sledováním. To může ovlivnit jeho stav. Probudit a sledovat navíc požádá o připojení k telefonu.\n\nTest ustoupí, pokud OHU modul používá nebo kontroluje. Po testu exportujte protokol.</string>
     <string name="zbt_probe_watch_only">Jen sledovat</string>
     <string name="zbt_probe_wake_and_watch">Probudit a sledovat</string>
-    <string name="external_bt_blink_transport">Připojit přes externí modul Bluetooth FYT</string>
     <string name="external_bt_module_controls_hint">Párování telefonu, priorita připojení a výběr ovladače spravuje externí modul Bluetooth.</string>
     <string name="external_bt_module_last_phone">Poslední telefon připojený přes modul</string>
-    <string name="external_bt_blink_transport_description">Experimentální, pro autorádia FYT, jejichž telefon se pro hovory páruje s oddělným modulem Bluetooth, například DUDUAUTO na DUDUOS. Modul nese bezdrátové navázání spojení Android Auto, na které běžně odpovídá původní aplikace Car Link. Při zapnutí odpovídá tato aplikace, takže hovory zůstanou na modulu a reproduktorech auta. Nejdřív vypněte původní aplikaci Car Link (pm disable-user com.syu.carlink), jinak budou obě číst stejný kanál.</string>
-    <string name="external_bt_blink_transport_summary">Experimentální. Odpovídá na bezdrátové navázání spojení na modulu Bluetooth autorádia FYT.</string>
-    <string name="external_bt_zj_socket_transport">Připojit přes soket ZJ Bluetooth</string>
-    <string name="external_bt_zj_socket_transport_description">Pro autorádia, u kterých modul ZJ Bluetooth předává bezdrátové navázání spojení Android Auto přes místní soket (/dev/socket/zj_bt_socket). Aplikace ho použije sama, když soket přijme připojení. Zapněte to jen tehdy, když vaše autorádio soket má a aplikace ho nevidí.</string>
-    <string name="external_bt_zj_socket_transport_summary">Přenášet bezdrátový handshake přes místní soket modulu ZJ.</string>
-    <string name="external_bt_blink_refused_stock_enabled">Externí modul Bluetooth: původní aplikace Car Link je stále povolená. Zakažte ji (pm disable-user com.syu.carlink) nebo tento přenos vypněte.</string>
+    <string name="external_bt_blink_transport_description">Experimentální, pro jednotky FYT, jejichž telefon se pro hovory páruje se samostatným modulem Bluetooth, například DUDUAUTO na DUDUOS. Modul zajišťuje handshake bezdrátového Android Auto, na který obvykle odpovídá původní aplikace Car Link. Je-li tato volba vybraná, odpovídá tato aplikace, takže hovory zůstanou na modulu a v reproduktorech auta. Nejdřív zakažte původní aplikaci Car Link (pm disable-user com.syu.carlink), jinak oba čtou jeden kanál.</string>
+    <string name="external_bt_zj_socket_transport_description">Pro jednotky, jejichž modul Bluetooth ZJ přenáší handshake bezdrátového Android Auto přes lokální socket (/dev/socket/zj_bt_socket). Aplikace jej použije sama, když socket přijme připojení. Tuto volbu vyberte, jen pokud jednotka socket má a aplikace jej nevidí.</string>
+    <string name="external_bt_blink_refused_stock_enabled">Externí modul Bluetooth: původní aplikace Car Link je stále povolená. Zakažte ji (pm disable-user com.syu.carlink) nebo vyberte jiné spojení Bluetooth.</string>
     <string name="external_bt_blink_refused_stock_running">Externí modul Bluetooth: původní aplikace Car Link je zakázaná, ale stále běží. Restartujte jednotku.</string>
     <string name="external_bt_blink_refused_root">Externí modul Bluetooth: otevření kanálu modulu vyžaduje na této jednotce root a přístup root byl odepřen nebo není k dispozici.</string>
     <string name="external_bt_blink_refused_unverified">Externí modul Bluetooth: nelze ověřit, zda původní aplikace Car Link neběží, proto zůstává kanál modulu zavřený. Exportujte prosím protokol.</string>
@@ -1251,9 +1245,7 @@
     <string name="preflight_open_location">Poloha</string>
     <string name="preflight_later">Později</string>
     <string name="preflight_invalid_bssid">Neplatná adresa Wi-Fi. Zadejte šest dvojic hexadecimálních číslic, například 02:1A:11:FF:3C:4D.</string>
-    <string name="native_aa_ignore_external_bt">Ignorovat kontrolu kompatibility Bluetooth</string>
-    <string name="native_aa_ignore_external_bt_description">Tato jednotka podle všeho používá Bluetooth na samostatném modulu, ke kterému se Android nedostane, proto se bezdrátové Android Auto automaticky vypíná. Ve výchozím nastavení vypnuto. Zapněte jen tehdy, pokud si myslíte, že je to špatně: pokud je detekce správná, připojení tiše selže a protokol vypadá v pořádku.</string>
-    <string name="native_aa_ignore_external_bt_summary">Ponechá bezdrátový režim zapnutý, i když toto autorádio zřejmě skrývá svůj modul Bluetooth.</string>
+    <string name="native_aa_ignore_external_bt_description">Tato jednotka zřejmě drží Bluetooth na samostatném modulu, ke kterému Android nemá přístup, proto se bezdrátové Android Auto automaticky vypíná. Tuto volbu vyberte, jen pokud si myslíte, že je to chyba: když je detekce správná, připojení selže bez upozornění a protokol vypadá v pořádku.</string>
     <string name="native_aa_setup_qr_title">Nastavení pomocí QR kódu</string>
     <string name="native_aa_setup_qr_description">Zobrazit kód, který může telefon naskenovat.</string>
     <string name="native_aa_setup_qr_help">Zobrazí QR kód, který nastaví tuto jednotku v telefonu bez handshaku Bluetooth. Kód obsahuje název, heslo a adresu hotspotu této jednotky. Funguje jen u přenosu přes hotspot, dokud běží připojení. Android Auto 18.0 tento kód zatím nepoužívá, takže handshake Bluetooth je stále potřeba.</string>
@@ -1673,8 +1665,8 @@
     <string name="home_pages_hint_got_it">Rozumím</string>
     <string name="home_pages_hint_body_anywhere">Funguje jakákoli prázdná část domovské obrazovky. Takto přidáte stránku pro widgety, nebo ji odeberete.</string>
     <string name="audio_settings_reconnect">Nastavení zvuku uloženo. Pro jeho použití znovu připojte Android Auto.</string>
-    <string name="native_aa_candidate_android_radio_description">Použít Bluetooth Androidu místo automatického výběru modulu Bluetooth jednotky. Pro automatický výběr ponechte vypnuté. Pokud je zapnutá některá možnost připojení přes modul, nejprve ji vypněte.</string>
-    <string name="external_bt_candidate_transport_description">Vynutit připojení přes modul Bluetooth jednotky místo automatického výběru. Vyžaduje kompatibilní službu modulu. Ponechte vypnuté, aby se při neodpovídající službě mohlo použít Bluetooth Androidu; zapnutí tuto náhradní cestu zakáže.</string>
+    <string name="native_aa_candidate_android_radio_description">Použít Bluetooth Androidu místo automatického výběru modulu Bluetooth autorádia.</string>
+    <string name="external_bt_candidate_transport_description">Vynutit připojení přes modul Bluetooth autorádia místo automatického výběru. Vyžaduje kompatibilní službu modulu. Automatická detekce povolí Bluetooth Androidu, když služba neodpovídá; tato volba takový návrat zablokuje.</string>
     <string name="audio_matching_mode">Časová korekce hudby</string>
     <string name="audio_matching_mode_help">Když hudba přichází o trochu rychleji nebo pomaleji, aplikace ji přehrává mírně rychleji nebo pomaleji, aby udržela frontu zvuku vyrovnanou. Zde vyberete metodu. Výchozí je OHU. Ostatní metody přidávají určité zpoždění a platí jen pro hudbu PCM. Navigace, hlas, systémové zvuky a AAC vždy používají OHU. Použijte znovu připojením.</string>
     <string name="audio_matching_ohu">OHU</string>
@@ -1785,12 +1777,22 @@
     <string name="device_specific_pause_projection_reverse_help">Dokud vozidlo couvá, aplikace uvolní video fokus Android Auto, aby se mohla zobrazit zadní kamera. Po skončení couvání se projekce vrátí. Aplikace čte zařazený rychlostní stupeň z MCU jednotky, takže oprava funguje jen tam, kde se aplikace k MCU dostane.</string>
 
     <!-- Bluetooth relay (ESP32) -->
-    <string name="settings_bluetooth_route">Trasa Bluetooth</string>
+    <string name="settings_bluetooth">Bluetooth</string>
+    <string name="bt_link_title">Bluetooth, se kterým se spáruje telefon</string>
+    <string name="bt_link_summary">Android Auto se spouští přes toto spojení Bluetooth.</string>
+    <string name="bt_link_help">Bezdrátové Android Auto se k této jednotce nejdřív připojí přes Bluetooth a potom přejde na Wi-Fi. Vyberte Bluetooth, se kterým je telefon spárovaný. U některých jednotek je na samostatném modulu, ke kterému Android nemá přístup. Automatická detekce vyhovuje většině jednotek.</string>
+    <string name="bt_link_automatic">Zjistit automaticky</string>
+    <string name="bt_link_this_unit">Vlastní Bluetooth této jednotky</string>
+    <string name="bt_link_zlink">Bluetooth modul auta (ZLink)</string>
+    <string name="bt_link_zj">Bluetooth modul auta (ZJ)</string>
+    <string name="bt_link_blink">Bluetooth modul auta (FYT BLINK)</string>
+    <string name="bt_link_esp32">Deska relé ESP32</string>
+    <string name="bt_link_esp32_unpaired">Deska relé ESP32, zatím nespárovaná</string>
     <string name="esp32_relay_settings_title">Bluetooth relé (ESP32)</string>
     <string name="esp32_relay_settings_summary">Nastavení Bluetooth relé pro implementaci na ESP32.</string>
     <string name="esp32_relay_enabled">Použít Bluetooth relé</string>
     <string name="esp32_relay_enabled_summary">Vést Bluetooth handshake Native AA přes desku ESP32</string>
-    <string name="esp32_relay_enabled_help">Relé je originální ESP32 s Classic Bluetooth, s nahraným firmwarem relé vytvořeným pro tuto aplikaci. Telefon se spáruje s deskou místo s touto jednotkou a jednotka komunikuje s deskou přes BLE. Část Wi-Fi v Native AA se nemění. Vypnutím se vrátíte k vlastnímu Bluetooth jednotky. Uložené relé zůstane zachováno. Vyžaduje režim Native a Android 6.0 nebo novější.</string>
+    <string name="esp32_relay_enabled_help">Relé je originální ESP32 s Classic Bluetooth, s nahraným firmwarem relé vytvořeným pro tuto aplikaci. Telefon se spáruje s deskou místo s touto jednotkou a jednotka komunikuje s deskou přes BLE. Část Wi-Fi v Native AA se nemění. Vypnutím nebo výběrem jiného spojení Bluetooth se vrátíte zpět. Uložené relé zůstane zachováno. Vyžaduje režim Native a Android 6.0 nebo novější.</string>
     <string name="esp32_relay_settings_disabled">Vypnuto</string>
     <string name="esp32_relay_saved_device">Uložené Bluetooth relé</string>
     <string name="esp32_relay_saved_notice">Uložené Bluetooth relé: %1$s</string>

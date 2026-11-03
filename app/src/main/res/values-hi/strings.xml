@@ -1384,9 +1384,7 @@
     <string name="native_aa_wake_verdict_destructive">इस यूनिट पर रोका गया है</string>
     <string name="native_aa_wake_remeasure_confirm">Android Auto वायरलेस तभी शुरू करता है जब उसे ब्लूटूथ कनेक्शन बदलता दिखे। जहाँ यूनिट ने हैंड्स-फ़्री लिंक पहले से थाम रखा है, वहाँ ऐप को उसे तोड़ना पड़ता है। इसलिए वह एक बार मापता है कि लिंक वापस आता है या नहीं, और न आए तो रुक जाता है। इसे तब इस्तेमाल करें जब वायरलेस अपने आप शुरू होना बंद हो गया हो और आप कुछ देर के लिए हैंड्स-फ़्री खोने को तैयार हों, जब तक वह फिर कोशिश करता है।</string>
     <string name="native_aa_wake_remeasure_done">अगले कनेक्शन पर ब्लूटूथ वेक दोबारा मापा जाएगा।</string>
-    <string name="native_aa_ignore_external_bt">ब्लूटूथ संगतता जाँच को अनदेखा करें</string>
-    <string name="native_aa_ignore_external_bt_description">लगता है यह यूनिट ब्लूटूथ को अलग मॉड्यूल पर रखती है जिस तक Android नहीं पहुँच सकता, इसलिए वायरलेस Android Auto अपने आप बंद कर दिया जाता है। यह डिफ़ॉल्ट रूप से बंद है। इसे तभी चालू करें जब आपको लगे कि यह गलत है। जहाँ यह सही है, वहाँ कनेक्शन चुपचाप फ़ेल होता है और लॉग सामान्य दिखता है।</string>
-    <string name="native_aa_ignore_external_bt_summary">यह यूनिट अपना ब्लूटूथ मॉड्यूल छिपाती दिखे, तब भी वायरलेस चालू रखता है।</string>
+    <string name="native_aa_ignore_external_bt_description">लगता है कि इस यूनिट में ब्लूटूथ एक अलग मॉड्यूल पर है, जिस तक Android नहीं पहुँच सकता, इसलिए वायरलेस Android Auto अपने-आप बंद हो जाता है। इसे तभी चुनें जब आपको लगे कि यह गलत है: अगर पहचान सही है, तो कनेक्शन बिना किसी संकेत के विफल होता है और लॉग सामान्य दिखता है।</string>
 
     <!-- The external Bluetooth module probe (Advanced; only on units the detection flags). -->
     <string name="zbt_probe_title">हेड यूनिट के ब्लूटूथ मॉड्यूल की जाँच करें</string>
@@ -1396,22 +1394,16 @@
     <string name="zbt_probe_message">दोनों विकल्प निगरानी से पहले Bluetooth मॉड्यूल को आरंभ करते हैं। इससे उसकी Bluetooth स्थिति प्रभावित हो सकती है। जगाएँ और देखें विकल्प फ़ोन से कनेक्शन का अनुरोध भी करता है।\n\nजब OHU मॉड्यूल का उपयोग या जाँच करता है, तब परीक्षण उसे प्राथमिकता देता है। परीक्षण के बाद लॉग निर्यात करें।</string>
     <string name="zbt_probe_watch_only">केवल देखें</string>
     <string name="zbt_probe_wake_and_watch">जगाएं और देखें</string>
-    <string name="external_bt_blink_transport">FYT के बाहरी ब्लूटूथ मॉड्यूल से कनेक्ट करें</string>
     <string name="external_bt_module_controls_hint">फ़ोन पेयरिंग, कनेक्शन की प्राथमिकता और ड्राइवर का चुनाव बाहरी ब्लूटूथ मॉड्यूल संभालता है।</string>
     <string name="external_bt_module_last_phone">मॉड्यूल से आखिरी बार जुड़ा फ़ोन</string>
-    <string name="external_bt_blink_transport_description">प्रायोगिक। उन FYT यूनिट के लिए जिनमें फ़ोन कॉल के लिए अलग ब्लूटूथ मॉड्यूल से पेयर होता है, जैसे DUDUOS पर DUDUAUTO। मॉड्यूल वायरलेस Android Auto हैंडशेक संभालता है, जिसका जवाब आम तौर पर मूल Car Link ऐप्लिकेशन देता है। चालू करने पर यह ऐप्लिकेशन जवाब देता है, इसलिए कॉल मॉड्यूल और कार के स्पीकर पर रहती हैं। पहले मूल Car Link ऐप्लिकेशन बंद करें (pm disable-user com.syu.carlink), वरना दोनों एक ही चैनल पढ़ेंगे।</string>
-    <string name="external_bt_blink_transport_summary">प्रायोगिक। FYT यूनिट के ब्लूटूथ मॉड्यूल पर वायरलेस हैंडशेक का जवाब देता है।</string>
-    <string name="external_bt_zj_socket_transport">ZJ Bluetooth सॉकेट से कनेक्ट करें</string>
-    <string name="external_bt_zj_socket_transport_description">उन यूनिट के लिए, जिनमें ZJ Bluetooth मॉड्यूल वायरलेस Android Auto हैंडशेक को लोकल सॉकेट (/dev/socket/zj_bt_socket) से भेजता है। जब यह सॉकेट कनेक्शन स्वीकार करता है, तो ऐप इसे अपने आप इस्तेमाल करता है। इसे केवल तभी चालू करें, जब आपकी यूनिट में यह सॉकेट हो और ऐप उसे न पहचान पाए।</string>
-    <string name="external_bt_zj_socket_transport_summary">वायरलेस हैंडशेक को ZJ मॉड्यूल के लोकल सॉकेट से भेजें।</string>
-    <string name="external_bt_blink_refused_stock_enabled">बाहरी ब्लूटूथ मॉड्यूल: स्टॉक Car Link ऐप अभी चालू है। उसे बंद करें (pm disable-user com.syu.carlink) या यह ट्रांसपोर्ट बंद करें।</string>
+    <string name="external_bt_blink_transport_description">प्रायोगिक, उन FYT यूनिट के लिए जिनमें फ़ोन कॉल के लिए अलग ब्लूटूथ मॉड्यूल से पेयर होता है, जैसे DUDUOS पर DUDUAUTO। मॉड्यूल वायरलेस Android Auto हैंडशेक ले जाता है, जिसका जवाब आम तौर पर स्टॉक Car Link ऐप देता है। इसे चुनने पर जवाब यह ऐप देता है, इसलिए कॉल मॉड्यूल और कार के स्पीकर पर ही रहती हैं। पहले स्टॉक Car Link ऐप को अक्षम करें (pm disable-user com.syu.carlink), वरना दोनों एक ही चैनल पढ़ेंगे।</string>
+    <string name="external_bt_zj_socket_transport_description">उन यूनिट के लिए जिनमें ZJ ब्लूटूथ मॉड्यूल वायरलेस Android Auto हैंडशेक को लोकल सॉकेट (/dev/socket/zj_bt_socket) से ले जाता है। सॉकेट कनेक्शन स्वीकार करे तो ऐप इसे खुद इस्तेमाल करता है। इसे तभी चुनें जब आपकी यूनिट में सॉकेट हो और ऐप उसे न देखे।</string>
+    <string name="external_bt_blink_refused_stock_enabled">बाहरी ब्लूटूथ मॉड्यूल: स्टॉक Car Link ऐप अब भी चालू है। उसे अक्षम करें (pm disable-user com.syu.carlink) या कोई दूसरा ब्लूटूथ लिंक चुनें।</string>
     <string name="external_bt_blink_refused_stock_running">बाहरी ब्लूटूथ मॉड्यूल: स्टॉक Car Link ऐप बंद है, पर अब भी चल रहा है। यूनिट रीस्टार्ट करें।</string>
     <string name="external_bt_blink_refused_root">बाहरी ब्लूटूथ मॉड्यूल: मॉड्यूल का चैनल खोलने के लिए इस यूनिट पर रूट चाहिए, और रूट एक्सेस नहीं मिला या उपलब्ध नहीं है।</string>
     <string name="external_bt_blink_refused_unverified">बाहरी ब्लूटूथ मॉड्यूल: यह नहीं जाँचा जा सका कि स्टॉक Car Link ऐप रुका है या नहीं, इसलिए मॉड्यूल का चैनल बंद रहता है। कृपया लॉग एक्सपोर्ट करें।</string>
     <string name="external_bt_blink_refused_bridge">बाहरी ब्लूटूथ मॉड्यूल: मॉड्यूल का चैनल खोला नहीं जा सका। कृपया लॉग एक्सपोर्ट करें।</string>
-    <string name="external_bt_transport">हेड यूनिट के ब्लूटूथ मॉड्यूल से कनेक्ट करें</string>
-    <string name="external_bt_transport_description">प्रायोगिक। उन यूनिट के लिए जिनमें ZJ/ZLink ब्लूटूथ सेवा है। वायरलेस Android Auto हैंडशेक उस ब्लूटूथ चिप से भेजता है जिससे फ़ोन पेयर है, उससे नहीं जो Android ऐप्लिकेशन को दिखाता है। पहले इसे बंद रखकर ब्लूटूथ मॉड्यूल टेस्ट चलाएँ। अगर कुछ सुनता न मिले, तो यह आपकी यूनिट पर कुछ नहीं कर सकता। जवाब मिले, तो इसे चालू करें। दोनों स्थितियों में लॉग एक्सपोर्ट करें।</string>
-    <string name="external_bt_transport_summary">प्रायोगिक। वायरलेस हैंडशेक इस यूनिट के अपने ब्लूटूथ से भेजता है।</string>
+    <string name="external_bt_transport_description">प्रायोगिक, उन यूनिट के लिए जिनमें ZJ/ZLink ब्लूटूथ सेवा है। वायरलेस Android Auto हैंडशेक को उस ब्लूटूथ चिप से भेजता है जिससे आपका फ़ोन पेयर है, उससे नहीं जो Android ऐप्स को दिखाता है। पहले ब्लूटूथ मॉड्यूल टेस्ट चलाएँ। अगर कुछ सुनता हुआ नहीं मिलता, तो यह आपकी यूनिट में मदद नहीं करेगा। अगर जवाब मिलता है, तो इसे चुनें। दोनों स्थितियों में लॉग निर्यात करें।</string>
     <string name="native_aa_setup_qr_title">QR कोड द्वारा सेट अप करें</string>
     <string name="native_aa_setup_qr_description">ऐसा कोड दिखाएं जिसे फ़ोन स्कैन कर सके।</string>
     <string name="native_aa_setup_qr_help">एक QR कोड दिखाता है जो ब्लूटूथ हैंडशेक के बिना इस यूनिट को फ़ोन पर सेट करता है। कोड में इस यूनिट के हॉटस्पॉट का नाम, पासवर्ड और पता होता है। यह केवल हॉटस्पॉट ट्रांसपोर्ट पर, कनेक्शन चलते समय काम करता है। Android Auto 18.0 इस कोड पर अभी कार्रवाई नहीं करता, इसलिए ब्लूटूथ हैंडशेक अब भी ज़रूरी है।</string>
@@ -1719,8 +1711,8 @@
     <string name="home_pages_hint_got_it">समझ गया</string>
     <string name="home_pages_hint_body_anywhere">होम का कोई भी खाली हिस्सा चलेगा। इसी तरह आप अपने विजेट के लिए पेज जोड़ते या हटाते हैं।</string>
     <string name="audio_settings_reconnect">ऑडियो सेटिंग्स सेव हो गईं। इन्हें लागू करने के लिए Android Auto को दोबारा कनेक्ट करें।</string>
-    <string name="native_aa_candidate_android_radio_description">हेड यूनिट का Bluetooth मॉड्यूल अपने आप चुनने के बजाय Android Bluetooth इस्तेमाल करें। अपने आप चुनने के लिए इसे बंद रखें। अगर मॉड्यूल से कनेक्शन का कोई विकल्प चालू है, तो पहले उसे बंद करें।</string>
-    <string name="external_bt_candidate_transport_description">अपने आप चुनने के बजाय हेड यूनिट के Bluetooth मॉड्यूल से कनेक्शन अनिवार्य करें। इसके लिए संगत मॉड्यूल सेवा ज़रूरी है। सेवा जवाब न दे तो Android Bluetooth इस्तेमाल करने देने के लिए इसे बंद रखें; चालू करने पर यह विकल्प उपलब्ध नहीं होगा।</string>
+    <string name="native_aa_candidate_android_radio_description">हेड यूनिट का ब्लूटूथ मॉड्यूल अपने-आप चुनने के बजाय Android ब्लूटूथ इस्तेमाल करें।</string>
+    <string name="external_bt_candidate_transport_description">अपने-आप चुनने के बजाय हेड यूनिट के ब्लूटूथ मॉड्यूल से कनेक्शन के लिए बाध्य करें। इसके लिए संगत मॉड्यूल सेवा चाहिए। सेवा जवाब न दे तो अपने-आप पहचानें Android ब्लूटूथ की अनुमति देता है; यह विकल्प उस विकल्प को रोकता है।</string>
     <string name="audio_matching_mode">संगीत समय सुधार</string>
     <string name="audio_matching_mode_help">जब संगीत थोड़ा तेज़ या धीमा पहुँचता है, तो ऐप उसे थोड़ा तेज़ या धीमा चलाता है ताकि उसकी ध्वनि कतार संतुलित रहे। यहाँ आप तरीका चुनते हैं। OHU डिफ़ॉल्ट है। बाकी तरीके कुछ देरी जोड़ते हैं और केवल PCM संगीत पर लागू होते हैं। नेविगेशन, आवाज़, सिस्टम ध्वनियाँ और AAC हमेशा OHU इस्तेमाल करते हैं। लागू करने के लिए फिर से कनेक्ट करें।</string>
     <string name="audio_matching_ohu">OHU</string>
@@ -1831,12 +1823,22 @@
     <string name="device_specific_pause_projection_reverse_help">जब कार रिवर्स गियर में होती है, ऐप Android Auto का वीडियो फ़ोकस छोड़ देता है ताकि रियर कैमरा दिख सके। रिवर्स खत्म होने पर प्रोजेक्शन लौट आता है। ऐप गियर की जानकारी यूनिट के MCU से पढ़ता है, इसलिए यह फ़िक्स केवल वहीं चलता है जहाँ ऐप MCU तक पहुँच सके।</string>
 
     <!-- Bluetooth relay (ESP32) -->
-    <string name="settings_bluetooth_route">ब्लूटूथ मार्ग</string>
+    <string name="settings_bluetooth">ब्लूटूथ</string>
+    <string name="bt_link_title">वह ब्लूटूथ जिससे फ़ोन पेयर होता है</string>
+    <string name="bt_link_summary">Android Auto इस ब्लूटूथ लिंक से शुरू होता है।</string>
+    <string name="bt_link_help">वायरलेस Android Auto पहले ब्लूटूथ से इस यूनिट तक पहुँचता है, फिर Wi-Fi पर चला जाता है। वह ब्लूटूथ चुनें जिससे आपका फ़ोन पेयर है। कुछ यूनिट में यह अलग मॉड्यूल पर होता है, जिस तक Android नहीं पहुँच सकता। ज़्यादातर यूनिट के लिए अपने-आप पहचानें सही रहता है।</string>
+    <string name="bt_link_automatic">अपने-आप पहचानें</string>
+    <string name="bt_link_this_unit">इस यूनिट का अपना ब्लूटूथ</string>
+    <string name="bt_link_zlink">कार ब्लूटूथ मॉड्यूल (ZLink)</string>
+    <string name="bt_link_zj">कार ब्लूटूथ मॉड्यूल (ZJ)</string>
+    <string name="bt_link_blink">कार ब्लूटूथ मॉड्यूल (FYT BLINK)</string>
+    <string name="bt_link_esp32">ESP32 रिले बोर्ड</string>
+    <string name="bt_link_esp32_unpaired">ESP32 रिले बोर्ड, अभी पेयर नहीं हुआ</string>
     <string name="esp32_relay_settings_title">ब्लूटूथ रिले (ESP32)</string>
     <string name="esp32_relay_settings_summary">ESP32 आधारित ब्लूटूथ रिले की सेटिंग।</string>
     <string name="esp32_relay_enabled">ब्लूटूथ रिले इस्तेमाल करें</string>
     <string name="esp32_relay_enabled_summary">Native AA का ब्लूटूथ हैंडशेक ESP32 बोर्ड से गुज़ारें</string>
-    <string name="esp32_relay_enabled_help">रिले एक असली ESP32 है जिसमें क्लासिक ब्लूटूथ है और इस ऐप के लिए बना रिले फ़र्मवेयर फ़्लैश किया गया है। फ़ोन इस यूनिट की जगह बोर्ड से पेयर होता है, और यह यूनिट BLE से बोर्ड से बात करती है। Native AA का Wi-Fi वाला हिस्सा नहीं बदलता। इस यूनिट के अपने ब्लूटूथ पर लौटने के लिए इसे बंद करें। सहेजा गया रिले बना रहता है। इसके लिए Native मोड और Android 6.0 या उससे नया संस्करण चाहिए।</string>
+    <string name="esp32_relay_enabled_help">रिले एक असली ESP32 है जिसमें क्लासिक ब्लूटूथ है और इस ऐप के लिए बना रिले फ़र्मवेयर फ़्लैश किया गया है। फ़ोन इस यूनिट की जगह बोर्ड से पेयर होता है, और यह यूनिट BLE से बोर्ड से बात करती है। Native AA का Wi-Fi वाला हिस्सा नहीं बदलता। वापस लौटने के लिए इसे बंद करें या कोई दूसरा ब्लूटूथ लिंक चुनें। सहेजा गया रिले बना रहता है। इसके लिए Native मोड और Android 6.0 या उससे नया संस्करण चाहिए।</string>
     <string name="esp32_relay_settings_disabled">बंद</string>
     <string name="esp32_relay_saved_device">सहेजा गया ब्लूटूथ रिले</string>
     <string name="esp32_relay_saved_notice">सहेजा गया ब्लूटूथ रिले: %1$s</string>

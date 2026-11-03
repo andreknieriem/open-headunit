@@ -1133,9 +1133,7 @@
     <string name="external_bt_nativeaa_desc">Il telefono si accoppia con il modulo Bluetooth proprio di questa unità (%1$s), non con quello che Android espone alle app, quindi l\'handshake wireless non lo raggiungerebbe mai.\n\nQuesta app può raggiungere quel modulo solo tramite un servizio ZJ/ZLink, che questa unità non esegue. Usa invece USB o una modalità WiFi.</string>
     <string name="external_bt_module_nativeaa">Wireless nativo tramite il modulo ZJ/ZLink</string>
     <string name="external_bt_module_nativeaa_desc">Il telefono si accoppia con il modulo Bluetooth proprio di questa unità (%1$s), non con quello che Android espone alle app, quindi l\'handshake verrà inviato tramite il servizio ZJ/ZLink del modulo.\n\nSperimentale, e quel servizio è l\'unica via d\'ingresso. Se il telefono non avvia mai Android Auto, usa USB o una modalità WiFi.</string>
-    <string name="external_bt_transport">Connetti tramite il modulo Bluetooth dell\'unità</string>
-    <string name="external_bt_transport_description">Sperimentale, per unità con un servizio Bluetooth ZJ/ZLink. Invia l\'handshake wireless di Android Auto tramite il chip Bluetooth a cui è associato il telefono, non quello che Android mostra alle app. Esegui prima il test del modulo Bluetooth con questa opzione disattivata. Se non trova nulla in ascolto, qui non può aiutare. Se risponde, attivala. Esporta il log in ogni caso.</string>
-    <string name="external_bt_transport_summary">Sperimentale. Invia l\'handshake wireless tramite il Bluetooth di questa unità.</string>
+    <string name="external_bt_transport_description">Sperimentale, per le unità con servizio Bluetooth ZJ/ZLink. Invia l\'handshake di Android Auto wireless tramite il chip Bluetooth a cui è abbinato il tuo smartphone, non quello che Android mostra alle app. Esegui prima il test del modulo Bluetooth. Se non trova nulla in ascolto, l\'opzione non può aiutare sulla tua unità. Se risponde, scegli questa opzione. Esporta il log in ogni caso.</string>
     <string name="zbt_probe_title">Prova il modulo Bluetooth dell\'unità</string>
     <string name="zbt_probe_help">Verifica se il modulo Bluetooth di questa unità può gestire l\'handshake wireless di Android Auto. Il test dura circa due minuti e mostra ogni fase su questa riga. Solo osservazione avvia il modulo e lo monitora. Sveglia e osserva chiede anche al modulo di connettersi al telefono. Il test può cambiare lo stato Bluetooth del modulo. Esporta il log dopo il test.</string>
     <string name="zbt_probe_idle">Tocca per eseguire</string>
@@ -1143,15 +1141,11 @@
     <string name="zbt_probe_message">Entrambe le opzioni inizializzano il modulo Bluetooth prima di osservarlo. Questo può modificarne lo stato Bluetooth. Sveglia e osserva richiede anche una connessione al telefono.\n\nIl test cede il passo mentre OHU usa o controlla il modulo. Esporta il registro al termine.</string>
     <string name="zbt_probe_watch_only">Solo osservazione</string>
     <string name="zbt_probe_wake_and_watch">Sveglia e osserva</string>
-    <string name="external_bt_blink_transport">Connetti tramite il modulo Bluetooth esterno FYT</string>
     <string name="external_bt_module_controls_hint">Associazione del telefono, priorità di connessione e scelta del driver sono gestite dal modulo Bluetooth esterno.</string>
     <string name="external_bt_module_last_phone">Ultimo telefono connesso tramite il modulo</string>
-    <string name="external_bt_blink_transport_description">Sperimentale, per le unità FYT il cui telefono si associa per le chiamate a un modulo Bluetooth separato, come DUDUAUTO su DUDUOS. Il modulo gestisce l\'handshake wireless di Android Auto, a cui di norma risponde l\'app Car Link originale. Se è attivo, risponde questa app, così le chiamate restano sul modulo e sugli altoparlanti dell\'auto. Disattiva prima l\'app Car Link originale (pm disable-user com.syu.carlink), altrimenti entrambe leggono lo stesso canale.</string>
-    <string name="external_bt_blink_transport_summary">Sperimentale. Risponde all\'handshake wireless sul modulo Bluetooth di un\'unità FYT.</string>
-    <string name="external_bt_zj_socket_transport">Connetti tramite il socket Bluetooth ZJ</string>
-    <string name="external_bt_zj_socket_transport_description">Per le unità il cui modulo Bluetooth ZJ gestisce l\'handshake wireless di Android Auto tramite un socket locale (/dev/socket/zj_bt_socket). L\'app lo usa da sola quando il socket accetta una connessione. Attiva questa opzione solo se la tua unità ha il socket e l\'app non lo rileva.</string>
-    <string name="external_bt_zj_socket_transport_summary">Far passare l\'handshake wireless dal socket locale del modulo ZJ.</string>
-    <string name="external_bt_blink_refused_stock_enabled">Modulo Bluetooth esterno: l\'app Car Link originale è ancora attiva. Disattivala (pm disable-user com.syu.carlink) o disattiva questo trasporto.</string>
+    <string name="external_bt_blink_transport_description">Sperimentale, per le unità FYT il cui smartphone si abbina per le chiamate a un modulo Bluetooth separato, come DUDUAUTO su DUDUOS. Il modulo gestisce l\'handshake di Android Auto wireless, a cui di solito risponde l\'app Car Link originale. Con questa opzione scelta, risponde questa app, quindi le chiamate restano sul modulo e sugli altoparlanti dell\'auto. Disattiva prima l\'app Car Link originale (pm disable-user com.syu.carlink), altrimenti entrambe leggono lo stesso canale.</string>
+    <string name="external_bt_zj_socket_transport_description">Per le unità il cui modulo Bluetooth ZJ gestisce l\'handshake di Android Auto wireless tramite un socket locale (/dev/socket/zj_bt_socket). L\'app lo usa da sola quando il socket accetta una connessione. Scegli questa opzione solo se la tua unità ha il socket e l\'app non lo vede.</string>
+    <string name="external_bt_blink_refused_stock_enabled">Modulo Bluetooth esterno: l\'app Car Link originale è ancora attiva. Disattivala (pm disable-user com.syu.carlink) o scegli un altro collegamento Bluetooth.</string>
     <string name="external_bt_blink_refused_stock_running">Modulo Bluetooth esterno: l\'app Car Link originale è disattivata ma ancora in esecuzione. Riavvia l\'unità.</string>
     <string name="external_bt_blink_refused_root">Modulo Bluetooth esterno: per aprire il canale del modulo servono i permessi di root su questa unità, ma l\'accesso root è stato negato o non è disponibile.</string>
     <string name="external_bt_blink_refused_unverified">Modulo Bluetooth esterno: non è stato possibile verificare se l\'app Car Link originale è ferma, quindi il canale del modulo resta chiuso. Esporta il log.</string>
@@ -1253,9 +1247,7 @@
     <string name="preflight_open_location">Posizione</string>
     <string name="preflight_later">Più tardi</string>
     <string name="preflight_invalid_bssid">Indirizzo WiFi non valido. Inserisci 6 coppie di cifre esadecimali (es. 02:1A:11:FF:3C:4D).</string>
-    <string name="native_aa_ignore_external_bt">Ignora il controllo di compatibilità Bluetooth</string>
-    <string name="native_aa_ignore_external_bt_description">Questa unità sembra gestire il Bluetooth su un modulo separato che Android non può raggiungere, quindi Android Auto wireless viene disattivato automaticamente. Disattivata per impostazione predefinita. Attivala solo se pensi che il rilevamento sia sbagliato: quando è corretto, la connessione fallisce senza segnalazioni e il log sembra a posto.</string>
-    <string name="native_aa_ignore_external_bt_summary">Mantiene attivo il wireless anche se questa unità sembra nascondere il suo modulo Bluetooth.</string>
+    <string name="native_aa_ignore_external_bt_description">Questa unità sembra tenere il Bluetooth su un modulo separato che Android non può raggiungere, quindi Android Auto wireless viene disattivato automaticamente. Scegli questa opzione solo se pensi che sia un errore: se il rilevamento è corretto, la connessione fallisce senza avvisi e il log sembra normale.</string>
     <string name="native_aa_setup_qr_title">Configura con codice QR</string>
     <string name="native_aa_setup_qr_description">Mostra un codice che il telefono può scansionare.</string>
     <string name="native_aa_setup_qr_help">Mostra un codice QR che configura questa unità sul telefono senza l\'handshake Bluetooth. Il codice contiene nome, password e indirizzo dell\'hotspot dell\'unità. Funziona solo con il trasporto hotspot, mentre la connessione è attiva. Android Auto 18.0 non usa ancora questo codice, quindi serve ancora l\'handshake Bluetooth.</string>
@@ -1676,8 +1668,8 @@
     <string name="home_pages_hint_got_it">Ho capito</string>
     <string name="home_pages_hint_body_anywhere">Va bene qualsiasi parte vuota della schermata iniziale. Così aggiungi una pagina per i tuoi widget, o ne rimuovi una.</string>
     <string name="audio_settings_reconnect">Impostazioni audio salvate. Riconnetti Android Auto per applicarle.</string>
-    <string name="native_aa_candidate_android_radio_description">Usa il Bluetooth di Android invece di selezionare automaticamente il modulo Bluetooth dell’autoradio. Lascia disattivato per la selezione automatica. Se è attiva un’opzione di connessione tramite modulo, disattivala prima.</string>
-    <string name="external_bt_candidate_transport_description">Forza la connessione tramite il modulo Bluetooth dell’autoradio invece della selezione automatica. Richiede un servizio del modulo compatibile. Lascia disattivato per consentire il Bluetooth di Android se il servizio non risponde; attivarlo impedisce questa alternativa.</string>
+    <string name="native_aa_candidate_android_radio_description">Usa il Bluetooth di Android invece di selezionare automaticamente il modulo Bluetooth dell\'autoradio.</string>
+    <string name="external_bt_candidate_transport_description">Forza la connessione tramite il modulo Bluetooth dell\'autoradio invece della selezione automatica. Richiede un servizio del modulo compatibile. Il rilevamento automatico consente il Bluetooth di Android quando il servizio non risponde; questa scelta impedisce il ripiego.</string>
     <string name="audio_matching_mode">Correzione temporale della musica</string>
     <string name="audio_matching_mode_help">Se la musica arriva un po\' troppo veloce o troppo lenta, l\'app la riproduce un po\' più veloce o più lenta per tenere stabile la coda audio. Qui scegli il metodo. OHU è il predefinito. Gli altri metodi aggiungono un po\' di ritardo e valgono solo per la musica PCM. Navigazione, voce, suoni di sistema e AAC usano sempre OHU. Riconnettiti per applicare.</string>
     <string name="audio_matching_ohu">OHU</string>
@@ -1787,12 +1779,22 @@
     <string name="wifi_scan_wifi_settings">Apri impostazioni Wi-Fi</string>
 
     <!-- Bluetooth relay (ESP32) -->
-    <string name="settings_bluetooth_route">Percorso Bluetooth</string>
+    <string name="settings_bluetooth">Bluetooth</string>
+    <string name="bt_link_title">Bluetooth a cui si abbina il tuo smartphone</string>
+    <string name="bt_link_summary">Android Auto si avvia tramite questo collegamento Bluetooth.</string>
+    <string name="bt_link_help">Android Auto wireless raggiunge prima questa unità via Bluetooth, poi passa al Wi-Fi. Scegli il Bluetooth a cui è abbinato il tuo smartphone. Su alcune unità si trova su un modulo separato che Android non può raggiungere. Il rilevamento automatico va bene per la maggior parte delle unità.</string>
+    <string name="bt_link_automatic">Rilevamento automatico</string>
+    <string name="bt_link_this_unit">Bluetooth proprio di questa unità</string>
+    <string name="bt_link_zlink">Modulo Bluetooth dell\'auto (ZLink)</string>
+    <string name="bt_link_zj">Modulo Bluetooth dell\'auto (ZJ)</string>
+    <string name="bt_link_blink">Modulo Bluetooth dell\'auto (FYT BLINK)</string>
+    <string name="bt_link_esp32">Scheda relay ESP32</string>
+    <string name="bt_link_esp32_unpaired">Scheda relay ESP32, non ancora abbinata</string>
     <string name="esp32_relay_settings_title">Relay Bluetooth (ESP32)</string>
     <string name="esp32_relay_settings_summary">Impostazioni del relay Bluetooth per un\'implementazione ESP32.</string>
     <string name="esp32_relay_enabled">Usa relay Bluetooth</string>
     <string name="esp32_relay_enabled_summary">Fai passare l\'handshake Bluetooth di Native AA da una scheda ESP32</string>
-    <string name="esp32_relay_enabled_help">Il relay è un ESP32 originale con Bluetooth Classic, programmato con il firmware relay creato per questa app. Lo smartphone si abbina alla scheda invece che a questa unità, e l\'unità comunica con la scheda via BLE. La parte Wi-Fi di Native AA non cambia. Disattiva l\'opzione per tornare al Bluetooth di questa unità. Il relay salvato viene conservato. Richiede la modalità Native e Android 6.0 o successivo.</string>
+    <string name="esp32_relay_enabled_help">Il relay è un ESP32 originale con Bluetooth Classic, programmato con il firmware relay creato per questa app. Lo smartphone si abbina alla scheda invece che a questa unità, e l\'unità comunica con la scheda via BLE. La parte Wi-Fi di Native AA non cambia. Disattiva l\'opzione, o scegli un altro collegamento Bluetooth, per tornare indietro. Il relay salvato viene conservato. Richiede la modalità Native e Android 6.0 o successivo.</string>
     <string name="esp32_relay_settings_disabled">Disattivato</string>
     <string name="esp32_relay_saved_device">Relay Bluetooth salvato</string>
     <string name="esp32_relay_saved_notice">Relay Bluetooth salvato: %1$s</string>

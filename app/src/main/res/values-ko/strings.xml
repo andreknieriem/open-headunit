@@ -1126,22 +1126,16 @@
     <string name="external_bt_nativeaa_desc">휴대전화는 Android가 앱에 제공하는 블루투스가 아니라 이 헤드유닛 자체의 블루투스 모듈(%1$s)과 페어링되므로, 무선 핸드셰이크가 모듈에 전달되지 않습니다.\n\n이 앱은 ZJ/ZLink 서비스를 통해서만 그 모듈에 접근할 수 있는데, 이 헤드유닛에서는 해당 서비스가 실행되고 있지 않습니다. 대신 USB나 Wi-Fi 모드를 사용하세요.</string>
     <string name="external_bt_module_nativeaa">ZJ/ZLink 모듈을 통한 Native Wireless</string>
     <string name="external_bt_module_nativeaa_desc">휴대전화는 Android가 앱에 제공하는 블루투스가 아니라 이 헤드유닛 자체의 블루투스 모듈(%1$s)과 페어링되므로, 핸드셰이크는 모듈의 ZJ/ZLink 서비스를 통해 전송됩니다.\n\n실험적 기능이며, 이 서비스가 유일한 경로입니다. 휴대전화에서 Android Auto가 시작되지 않으면 USB나 Wi-Fi 모드를 사용하세요.</string>
-    <string name="external_bt_blink_transport">FYT 외장 블루투스 모듈로 연결</string>
     <string name="external_bt_module_controls_hint">휴대전화 페어링, 연결 우선순위, 운전자 휴대전화 선택은 외장 블루투스 모듈에서 관리합니다.</string>
     <string name="external_bt_module_last_phone">모듈을 통해 마지막으로 연결된 휴대전화</string>
-    <string name="external_bt_blink_transport_description">실험적 기능입니다. 통화용으로 휴대전화를 별도의 블루투스 모듈과 페어링하는 FYT 기기용입니다(예: DUDUOS의 DUDUAUTO). 모듈이 무선 Android Auto 핸드셰이크를 담당하며, 보통은 순정 Car Link 앱이 응답합니다. 사용 설정하면 이 앱이 대신 응답하므로 통화가 모듈과 차량 스피커에 유지됩니다. 먼저 순정 Car Link 앱을 사용 중지하세요(pm disable-user com.syu.carlink). 그렇지 않으면 두 앱이 같은 채널을 읽습니다.</string>
-    <string name="external_bt_blink_transport_summary">실험적 기능입니다. FYT 기기의 블루투스 모듈에서 무선 핸드셰이크에 응답합니다.</string>
-    <string name="external_bt_zj_socket_transport">ZJ 블루투스 소켓으로 연결</string>
-    <string name="external_bt_zj_socket_transport_description">ZJ 블루투스 모듈이 무선 Android Auto 핸드셰이크를 로컬 소켓(/dev/socket/zj_bt_socket)으로 전달하는 기기용입니다. 이 소켓이 연결을 받으면 앱이 자동으로 사용합니다. 기기에 소켓이 있는데 앱이 인식하지 못할 때만 사용 설정하세요.</string>
-    <string name="external_bt_zj_socket_transport_summary">무선 핸드셰이크를 ZJ 모듈의 로컬 소켓으로 전달합니다.</string>
-    <string name="external_bt_blink_refused_stock_enabled">외장 블루투스 모듈: 기본 Car Link 앱이 아직 사용 설정되어 있습니다. 앱을 사용 중지하거나(pm disable-user com.syu.carlink) 이 연결 방식을 끄세요.</string>
+    <string name="external_bt_blink_transport_description">실험적 기능입니다. 통화용으로 휴대전화를 별도의 블루투스 모듈과 페어링하는 FYT 기기용입니다(예: DUDUOS의 DUDUAUTO). 모듈이 무선 Android Auto 핸드셰이크를 담당하며, 보통은 순정 Car Link 앱이 응답합니다. 이 항목을 선택하면 이 앱이 대신 응답하므로 통화가 모듈과 차량 스피커에 유지됩니다. 먼저 순정 Car Link 앱을 사용 중지하세요(pm disable-user com.syu.carlink). 그렇지 않으면 두 앱이 같은 채널을 읽습니다.</string>
+    <string name="external_bt_zj_socket_transport_description">ZJ 블루투스 모듈이 무선 Android Auto 핸드셰이크를 로컬 소켓(/dev/socket/zj_bt_socket)으로 전달하는 기기용입니다. 이 소켓이 연결을 받으면 앱이 자동으로 사용합니다. 기기에 소켓이 있는데 앱이 인식하지 못할 때만 선택하세요.</string>
+    <string name="external_bt_blink_refused_stock_enabled">외장 블루투스 모듈: 기본 Car Link 앱이 아직 사용 설정되어 있습니다. 앱을 사용 중지하거나(pm disable-user com.syu.carlink) 다른 블루투스 연결을 선택하세요.</string>
     <string name="external_bt_blink_refused_stock_running">외장 블루투스 모듈: 기본 Car Link 앱이 사용 중지되었지만 아직 실행 중입니다. 기기를 다시 시작하세요.</string>
     <string name="external_bt_blink_refused_root">외장 블루투스 모듈: 이 기기에서는 모듈 채널을 열려면 루트 권한이 필요한데, 루트 권한이 거부되었거나 사용할 수 없습니다.</string>
     <string name="external_bt_blink_refused_unverified">외장 블루투스 모듈: 기본 Car Link 앱이 중지되었는지 확인하지 못해 모듈 채널을 열지 않았습니다. 로그를 내보내 주세요.</string>
     <string name="external_bt_blink_refused_bridge">외장 블루투스 모듈: 모듈 채널을 열지 못했습니다. 로그를 내보내 주세요.</string>
-    <string name="external_bt_transport">헤드유닛 블루투스 모듈로 연결</string>
-    <string name="external_bt_transport_description">실험적 기능입니다. ZJ/ZLink 블루투스 서비스가 있는 기기용입니다. Android가 앱에 보여 주는 칩이 아니라 휴대전화가 페어링된 블루투스 칩을 통해 무선 Android Auto 핸드셰이크를 보냅니다. 먼저 이 설정을 사용 중지한 상태로 블루투스 모듈 테스트를 실행하세요. 수신하는 것이 없으면 이 기기에서는 이 설정이 도움이 되지 않습니다. 응답하면 사용 설정하세요. 어느 경우든 로그를 내보내세요.</string>
-    <string name="external_bt_transport_summary">실험적 기능입니다. 이 기기 자체의 블루투스를 통해 무선 핸드셰이크를 보냅니다.</string>
+    <string name="external_bt_transport_description">실험적 기능입니다. ZJ/ZLink 블루투스 서비스가 있는 기기용입니다. Android가 앱에 보여 주는 칩이 아니라 휴대전화가 페어링된 블루투스 칩을 통해 무선 Android Auto 핸드셰이크를 보냅니다. 먼저 블루투스 모듈 테스트를 실행하세요. 수신하는 것이 없으면 이 기기에서는 이 설정이 도움이 되지 않습니다. 응답하면 이 항목을 선택하세요. 어느 경우든 로그를 내보내세요.</string>
     <string name="zbt_probe_title">헤드유닛 블루투스 모듈 테스트</string>
     <string name="zbt_probe_help">이 기기 자체의 블루투스 모듈이 무선 Android Auto 핸드셰이크를 전달할 수 있는지 테스트합니다. 테스트는 약 2분 걸리며 각 단계가 이 행에 표시됩니다. 관찰만 하기는 모듈을 시작하고 감시만 합니다. 깨우기 및 관찰은 모듈이 휴대전화에 연결하도록 요청하기도 합니다. 테스트 중 모듈의 블루투스 상태가 바뀔 수 있습니다. 테스트 후 로그를 내보내세요.</string>
     <string name="zbt_probe_idle">실행하려면 탭하세요.</string>
@@ -1244,9 +1238,7 @@
     <string name="preflight_open_location">위치 설정</string>
     <string name="preflight_later">나중에</string>
     <string name="preflight_invalid_bssid">Wi-Fi 주소가 아닙니다. 02:1A:11:FF:3C:4D처럼 16진수 두 자리 6쌍을 입력하세요.</string>
-    <string name="native_aa_ignore_external_bt">블루투스 호환성 검사 무시</string>
-    <string name="native_aa_ignore_external_bt_description">이 기기는 Android에서 접근할 수 없는 별도 블루투스 모듈을 사용하는 것으로 보여 무선 Android Auto가 자동으로 꺼집니다. 이 설정은 기본적으로 꺼져 있습니다. 외장 블루투스 모듈이 잘못 감지된 것으로 보일 때만 이 설정을 켜세요. 감지 결과가 맞으면 로그가 정상으로 보여도 별다른 안내 없이 연결에 실패합니다.</string>
-    <string name="native_aa_ignore_external_bt_summary">이 기기가 블루투스 모듈을 숨기는 것처럼 보여도 무선을 켜 둡니다.</string>
+    <string name="native_aa_ignore_external_bt_description">이 기기는 Android에서 접근할 수 없는 별도 블루투스 모듈을 사용하는 것으로 보여 무선 Android Auto가 자동으로 꺼집니다. 외장 블루투스 모듈이 잘못 감지된 것으로 보일 때만 이 항목을 선택하세요. 감지 결과가 맞으면 로그가 정상으로 보여도 별다른 안내 없이 연결에 실패합니다.</string>
     <string name="native_aa_setup_qr_title">QR 코드로 설정</string>
     <string name="native_aa_setup_qr_description">휴대전화로 스캔할 수 있는 코드를 표시합니다.</string>
     <string name="native_aa_setup_qr_help">블루투스 핸드셰이크 없이 휴대전화에서 이 기기를 설정하는 QR 코드를 표시합니다. 이 코드에는 이 기기의 핫스팟 이름, 비밀번호, 주소가 들어 있습니다. 연결이 실행 중일 때 핫스팟 전송 방식에서만 동작합니다. Android Auto 18.0은 아직 이 코드를 처리하지 않으므로 블루투스 핸드셰이크가 여전히 필요합니다.</string>
@@ -1599,12 +1591,22 @@
     <string name="onb_audio_test_failed">테스트 소리를 재생할 수 없습니다: %1$s</string>
 
     <!-- Bluetooth relay (ESP32) -->
-    <string name="settings_bluetooth_route">블루투스 경로</string>
+    <string name="settings_bluetooth">블루투스</string>
+    <string name="bt_link_title">휴대전화가 페어링되는 블루투스</string>
+    <string name="bt_link_summary">Android Auto가 이 블루투스 연결로 시작됩니다.</string>
+    <string name="bt_link_help">무선 Android Auto는 먼저 블루투스로 이 기기에 연결된 다음 Wi-Fi로 전환됩니다. 휴대전화가 페어링된 블루투스를 선택하세요. 일부 기기는 Android가 접근할 수 없는 별도 모듈에 블루투스가 있습니다. 대부분의 기기에는 자동 감지가 적합합니다.</string>
+    <string name="bt_link_automatic">자동 감지</string>
+    <string name="bt_link_this_unit">이 기기 자체 블루투스</string>
+    <string name="bt_link_zlink">차량 블루투스 모듈(ZLink)</string>
+    <string name="bt_link_zj">차량 블루투스 모듈(ZJ)</string>
+    <string name="bt_link_blink">차량 블루투스 모듈(FYT BLINK)</string>
+    <string name="bt_link_esp32">ESP32 릴레이 보드</string>
+    <string name="bt_link_esp32_unpaired">ESP32 릴레이 보드, 아직 페어링 안 됨</string>
     <string name="esp32_relay_settings_title">블루투스 릴레이(ESP32)</string>
     <string name="esp32_relay_settings_summary">ESP32로 구현된 Bluetooth Relay 설정.</string>
     <string name="esp32_relay_enabled">블루투스 릴레이 사용</string>
     <string name="esp32_relay_enabled_summary">Native AA의 블루투스 핸드셰이크를 ESP32 보드로 전달</string>
-    <string name="esp32_relay_enabled_help">릴레이는 클래식 블루투스를 지원하는 정품 ESP32에 이 앱 전용 릴레이 펌웨어를 올린 장치입니다. 휴대폰은 이 장치 대신 보드와 페어링하고, 이 장치는 BLE로 보드와 통신합니다. Native AA의 Wi-Fi 부분은 바뀌지 않습니다. 끄면 이 장치의 자체 블루투스로 돌아갑니다. 저장된 릴레이는 유지됩니다. Native 모드와 Android 6.0 이상이 필요합니다.</string>
+    <string name="esp32_relay_enabled_help">릴레이는 클래식 블루투스를 지원하는 정품 ESP32에 이 앱 전용 릴레이 펌웨어를 올린 장치입니다. 휴대폰은 이 장치 대신 보드와 페어링하고, 이 장치는 BLE로 보드와 통신합니다. Native AA의 Wi-Fi 부분은 바뀌지 않습니다. 끄거나 다른 블루투스 연결을 선택하면 원래대로 돌아갑니다. 저장된 릴레이는 유지됩니다. Native 모드와 Android 6.0 이상이 필요합니다.</string>
     <string name="esp32_relay_settings_disabled">꺼짐</string>
     <string name="esp32_relay_saved_device">저장된 블루투스 릴레이</string>
     <string name="esp32_relay_saved_notice">저장된 블루투스 릴레이: %1$s</string>
@@ -1784,8 +1786,8 @@
     <string name="wifi_scan_other_help">FYT 시작을 사용할 수 없는 기기는 아래 방법으로 Shizuku를 시작하세요.</string>
     <string name="wifi_scan_fyt_restore_scans">Wi-Fi 탐색 설정을 복구하지 못해 무선 ADB를 유지했습니다. Shizuku를 실행하고 Open Headunit을 허용한 뒤 다시 시도하세요. 위쪽의 Wi-Fi 설정 복구 기능도 이용할 수 있습니다.</string>
     <string name="wifi_scan_legacy_limit">Android 8~10의 재요청\n• 연결 시 한 번, 연결 중에는 5분마다 일시 중지를 요청합니다.\n• Android가 그 사이 탐색을 다시 켤 수 있습니다. 반복 처리 부담을 줄이기 위한 간격이며, 모든 탐색을 계속 막지는 못합니다.\n\n탐색을 다시 켜지 못하면 Shizuku를 실행한 상태에서 재시도하세요. 기기를 재부팅하면 이 임시 제어는 초기화됩니다.</string>
-    <string name="native_aa_candidate_android_radio_description">헤드유닛의 Bluetooth 모듈을 자동 선택하는 대신 Android Bluetooth를 사용합니다. 자동 선택을 사용하려면 꺼 두세요. 모듈을 통한 연결 옵션이 켜져 있다면 먼저 꺼 주세요.</string>
-    <string name="external_bt_candidate_transport_description">자동 선택 대신 헤드유닛의 Bluetooth 모듈을 통해 연결하도록 강제합니다. 호환되는 모듈 서비스가 필요합니다. 서비스가 응답하지 않을 때 Android Bluetooth로 연결하려면 꺼 두세요. 이 옵션을 켜면 Android Bluetooth로 전환하지 않습니다.</string>
+    <string name="native_aa_candidate_android_radio_description">헤드유닛의 블루투스 모듈을 자동 선택하는 대신 Android 블루투스를 사용합니다.</string>
+    <string name="external_bt_candidate_transport_description">자동 선택 대신 헤드유닛의 블루투스 모듈을 통해 연결하도록 강제합니다. 호환되는 모듈 서비스가 필요합니다. 자동 감지를 선택하면 서비스가 응답하지 않을 때 Android 블루투스를 사용할 수 있지만, 이 항목을 선택하면 전환하지 않습니다.</string>
 
     <string name="audio_matching_mode">음악 시간 보정</string>
     <string name="audio_matching_mode_help">음악이 조금 빠르거나 느리게 도착하면 앱이 재생 속도를 살짝 높이거나 낮춰 오디오 대기열을 일정하게 유지합니다. 여기서 그 방식을 선택합니다. 기본값은 OHU입니다. 다른 방식은 지연이 조금 늘고 PCM 음악에만 적용됩니다. 내비게이션, 음성, 시스템 소리, AAC는 항상 OHU를 사용합니다. 적용하려면 다시 연결하세요.</string>

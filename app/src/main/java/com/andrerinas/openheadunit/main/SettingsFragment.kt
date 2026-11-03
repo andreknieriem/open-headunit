@@ -1259,11 +1259,7 @@ class SettingsFragment : Fragment() {
                     helpResId = R.string.external_bt_blink_transport_description,
                     isChecked = blinkEnabled,
                     searchKeywords = "fyt blink duduauto dudu carlink external bluetooth module transport auto_serial",
-                    onCheckedChanged = { isChecked ->
-                        pendingExternalBtBlinkTransport = isChecked
-                        checkChanges()
-                        updateSettingsList()
-                    }
+                    onCheckedChanged = { isChecked -> setRouteSwitch(ExternalBtTransportPolicy.RouteSwitch.BLINK, isChecked) }
                 ))
             }
 
@@ -1282,11 +1278,7 @@ class SettingsFragment : Fragment() {
                     helpResId = R.string.external_bt_zj_socket_transport_description,
                     isChecked = zjChecked,
                     searchKeywords = "zj zlink gocsdk socket unix external bluetooth module transport handshake",
-                    onCheckedChanged = { isChecked ->
-                        pendingExternalBtZjSocketTransport = isChecked
-                        checkChanges()
-                        updateSettingsList()
-                    }
+                    onCheckedChanged = { isChecked -> setRouteSwitch(ExternalBtTransportPolicy.RouteSwitch.ZJ_SOCKET, isChecked) }
                 ))
             }
 
@@ -1306,11 +1298,7 @@ class SettingsFragment : Fragment() {
                         R.string.external_bt_candidate_transport_description else R.string.external_bt_transport_description,
                     isChecked = pendingExternalBtZbtTransport ?: settings.externalBtZbtTransport,
                     searchKeywords = "zbt zlink external bluetooth module transport handshake vendor daemon",
-                    onCheckedChanged = { isChecked ->
-                        pendingExternalBtZbtTransport = isChecked
-                        checkChanges()
-                        updateSettingsList()
-                    }
+                    onCheckedChanged = { isChecked -> setRouteSwitch(ExternalBtTransportPolicy.RouteSwitch.ZBT, isChecked) }
                 ))
 
                 items.add(SettingItem.SettingEntry(
@@ -1353,11 +1341,7 @@ class SettingsFragment : Fragment() {
                         R.string.native_aa_candidate_android_radio_description else R.string.native_aa_ignore_external_bt_description,
                     isChecked = ignoreChecked,
                     searchKeywords = "external bluetooth module rfcomm override compatibility anyway",
-                    onCheckedChanged = { isChecked ->
-                        pendingNativeAaIgnoreExternalBt = isChecked
-                        checkChanges()
-                        updateSettingsList()
-                    }
+                    onCheckedChanged = { isChecked -> setRouteSwitch(ExternalBtTransportPolicy.RouteSwitch.ANDROID_RADIO, isChecked) }
                 ))
             }
 
@@ -4404,6 +4388,25 @@ class SettingsFragment : Fragment() {
         pendingNativeApTransport ?: NativeStrategy.DEFAULT
 
     /** The Bluetooth route represented by the unsaved controls currently on screen. */
+    /** One route switch changed; the others follow, because only one route runs. */
+    private fun setRouteSwitch(which: ExternalBtTransportPolicy.RouteSwitch, on: Boolean) {
+        val next = ExternalBtTransportPolicy.switchesAfter(
+            ExternalBtTransportPolicy.RouteSwitches(
+                blink = pendingExternalBtBlinkTransport ?: settings.externalBtBlinkTransport,
+                zjSocket = pendingExternalBtZjSocketTransport ?: settings.externalBtZjSocketTransport,
+                zbt = pendingExternalBtZbtTransport ?: settings.externalBtZbtTransport,
+                androidRadio = pendingNativeAaIgnoreExternalBt ?: settings.nativeAaIgnoreExternalBt
+            ),
+            which, on
+        )
+        pendingExternalBtBlinkTransport = next.blink
+        pendingExternalBtZjSocketTransport = next.zjSocket
+        pendingExternalBtZbtTransport = next.zbt
+        pendingNativeAaIgnoreExternalBt = next.androidRadio
+        checkChanges()
+        updateSettingsList()
+    }
+
     private fun pendingExternalBtRoute(): ExternalBtTransportPolicy.Route =
         ExternalBtTransportPolicy.route(
             ZbtDiscovery.snapshot(),

@@ -498,4 +498,44 @@ class ExternalBtTransportPolicyTest {
         assertTrue(ExternalBtTransportPolicy.showZjSocketToggle(legacy(evidence, null), "FYT", true, true))
         assertTrue(ExternalBtTransportPolicy.showZjSocketToggle(legacy(null, null), null, false, true))
     }
+
+    private val allOn = ExternalBtTransportPolicy.RouteSwitches(blink = true, zjSocket = true, zbt = true, androidRadio = true)
+    private val allOff = ExternalBtTransportPolicy.RouteSwitches(blink = false, zjSocket = false, zbt = false, androidRadio = false)
+
+    @Test
+    fun `turning a route switch on turns every other route switch off`() {
+        for (which in ExternalBtTransportPolicy.RouteSwitch.values()) {
+            val next = ExternalBtTransportPolicy.switchesAfter(allOn, which, on = true)
+            val onCount = listOf(next.blink, next.zjSocket, next.zbt, next.androidRadio).count { it }
+            assertEquals("$which", 1, onCount)
+        }
+    }
+
+    @Test
+    fun `turning a route switch off leaves the others as they were`() {
+        val next = ExternalBtTransportPolicy.switchesAfter(allOn, ExternalBtTransportPolicy.RouteSwitch.ZBT, on = false)
+        assertEquals(allOn.copy(zbt = false), next)
+    }
+
+    @Test
+    fun `the route that runs is the switch turned on last`() {
+        // A ZLink unit that also has the ZJ markers: the case that showed ZBT and ZJ both on.
+        val discovery = legacy(evidence, null)
+        val expected = mapOf(
+            ExternalBtTransportPolicy.RouteSwitch.BLINK to Route.BLINK,
+            ExternalBtTransportPolicy.RouteSwitch.ZJ_SOCKET to Route.ZJ_SOCKET,
+            ExternalBtTransportPolicy.RouteSwitch.ZBT to Route.ZBT,
+            ExternalBtTransportPolicy.RouteSwitch.ANDROID_RADIO to Route.NORMAL
+        )
+        for ((which, route) in expected) {
+            for (start in listOf(allOn, allOff)) {
+                val s = ExternalBtTransportPolicy.switchesAfter(start, which, on = true)
+                val chosen = ExternalBtTransportPolicy.route(
+                    discovery, zbtTransportEnabled = s.zbt, ignoreExternalBt = s.androidRadio,
+                    blinkTransportEnabled = s.blink, zjSocketEnabled = s.zjSocket
+                )
+                assertEquals("$which from $start", route, chosen)
+            }
+        }
+    }
 }

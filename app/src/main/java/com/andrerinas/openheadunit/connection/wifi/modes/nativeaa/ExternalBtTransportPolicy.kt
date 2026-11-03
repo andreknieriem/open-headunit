@@ -181,6 +181,27 @@ object ExternalBtTransportPolicy {
     fun rearmsWithoutAndroidRadio(route: Route): Boolean =
         route == Route.BLINK || route == Route.HCT || route == Route.ZJ_SOCKET
 
+    /** The four switches [route] reads, as the settings screen holds them. */
+    data class RouteSwitches(val blink: Boolean, val zjSocket: Boolean, val zbt: Boolean, val androidRadio: Boolean)
+
+    enum class RouteSwitch { BLINK, ZJ_SOCKET, ZBT, ANDROID_RADIO }
+
+    /** [route] runs one route, so the switches are one choice: turning one on turns the rest off. */
+    fun switchesAfter(current: RouteSwitches, which: RouteSwitch, on: Boolean): RouteSwitches =
+        if (on) {
+            RouteSwitches(
+                blink = which == RouteSwitch.BLINK,
+                zjSocket = which == RouteSwitch.ZJ_SOCKET,
+                zbt = which == RouteSwitch.ZBT,
+                androidRadio = which == RouteSwitch.ANDROID_RADIO
+            )
+        } else when (which) {
+            RouteSwitch.BLINK -> current.copy(blink = false)
+            RouteSwitch.ZJ_SOCKET -> current.copy(zjSocket = false)
+            RouteSwitch.ZBT -> current.copy(zbt = false)
+            RouteSwitch.ANDROID_RADIO -> current.copy(androidRadio = false)
+        }
+
     /**
      * Offered wherever the FYT module is detected, and kept while enabled even if detection stops
      * seeing it, so the control that turns it off is always reachable.

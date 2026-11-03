@@ -4,19 +4,24 @@ import android.annotation.SuppressLint
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.res.ColorStateList
+import android.graphics.Color
 import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
 import android.os.Build
 import android.os.Bundle
 import android.util.LruCache
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.PopupMenu
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.lifecycleScope
@@ -25,9 +30,14 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.R
+import com.andrerinas.openheadunit.main.AppDrawerTabsPolicy.Tab
+import com.andrerinas.openheadunit.main.settings.SettingsDrawables
+import com.andrerinas.openheadunit.main.settings.SettingsPalette
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.ToastUtils
 import com.google.android.material.appbar.MaterialToolbar
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.button.MaterialButtonToggleGroup
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -38,11 +48,17 @@ data class AppDrawerItem(
     val packageName: String,
     val activityName: String,
     /** Set when this item is one of the app's shortcuts instead of the app itself. */
-    val shortcutId: String? = null
+    val shortcutId: String? = null,
+    /** For a shortcut, the name of the app it belongs to. */
+    val appLabel: String? = null
 ) {
     /** Key of this item's icon in [AppDrawerCache], unique per app and per shortcut. */
     val iconKey: String
-        get() = if (shortcutId == null) "$packageName/$activityName" else "$packageName/$shortcutId"
+        get() = if (shortcutId == null) appIconKey else "$packageName/$shortcutId"
+
+    /** Key of the owning app's icon, which a shortcut wears as its badge. */
+    val appIconKey: String
+        get() = "$packageName/$activityName"
 
     /** What a favorite slot stores for this item. */
     fun favoriteTarget(): FavoriteTarget =
@@ -66,6 +82,7 @@ class AppDrawerFragment : DialogFragment() {
     companion object {
         private const val TAG = "AppDrawerFragment"
         private const val ARG_FAVORITE_SLOT = "favorite_slot"
+        private const val STATE_TAB = "drawer_tab"
 
         /** Opens the drawer to choose the app for one of the home screen's favorite slots. */
         fun pickFavoriteArgs(slot: Int) = Bundle().apply { putInt(ARG_FAVORITE_SLOT, slot) }
@@ -140,7 +157,8 @@ class AppDrawerFragment : DialogFragment() {
                             label = shortcut.label,
                             packageName = item.packageName,
                             activityName = item.activityName,
-                            shortcutId = shortcut.shortcutId
+                            shortcutId = shortcut.shortcutId,
+                            appLabel = item.label
                         )
                     )
                 }
@@ -168,9 +186,30 @@ class AppDrawerFragment : DialogFragment() {
         }
     }
 
+    /** Everything the last query returned; the grid shows the part [chosenTab] asks for. */
+    private var allItems: List<AppDrawerItem> = emptyList()
+    private var chosenTab = Tab.APPS
+    private var adapter: AppDrawerAdapter? = null
+    private var tabGroup: MaterialButtonToggleGroup? = null
+    private var emptyView: TextView? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setStyle(STYLE_NORMAL, R.style.AppTheme_Fullscreen)
+        chosenTab = savedInstanceState?.getString(STATE_TAB)
+            ?.let { name -> Tab.values().firstOrNull { it.name == name } } ?: Tab.APPS
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString(STATE_TAB, chosenTab.name)
+    }
+
+    override fun onDestroyView() {
+        adapter = null
+        tabGroup = null
+        emptyView = null
+        super.onDestroyView()
     }
 
     override fun onStart() {
@@ -205,6 +244,8 @@ class AppDrawerFragment : DialogFragment() {
         val rvApps = view.findViewById<RecyclerView>(R.id.rv_apps)
         val progressBar = view.findViewById<ProgressBar>(R.id.progress_bar)
         val tvEmpty = view.findViewById<TextView>(R.id.tv_empty)
+        emptyView = tvEmpty
+        setUpTabs(view)
 
         toolbar.setNavigationOnClickListener {
             closeDrawer()
@@ -222,13 +263,13 @@ class AppDrawerFragment : DialogFragment() {
             onItemLongClick = { anchor, app -> if (favoriteSlot < 0) showAddToFavorites(anchor, app) }
         )
         rvApps.adapter = adapter
+        this.adapter = adapter
 
         // If list is cached, display immediately without waiting for query
         val cached = AppDrawerCache.cachedApps
         if (cached != null) {
-            adapter.submitList(cached)
             progressBar.visibility = View.GONE
-            tvEmpty.visibility = if (cached.isEmpty()) View.VISIBLE else View.GONE
+            showItems(cached)
             warmupIcons(cached)
         } else {
             progressBar.visibility = View.VISIBLE
@@ -247,11 +288,63 @@ class AppDrawerFragment : DialogFragment() {
             withContext(Dispatchers.Main) {
                 if (!isAdded) return@withContext
                 progressBar.visibility = View.GONE
-                adapter.submitList(apps)
-                tvEmpty.visibility = if (apps.isEmpty()) View.VISIBLE else View.GONE
+                showItems(apps)
                 warmupIcons(apps)
             }
         }
+    }
+
+    private fun setUpTabs(view: View) {
+        val group = view.findViewById<MaterialButtonToggleGroup>(R.id.drawer_tab_group) ?: return
+        tabGroup = group
+        if (!AppDrawerTabsPolicy.tabsInToolbar(resources.configuration.screenWidthDp)) {
+            // Narrow screen: a row of their own under the toolbar, so the title is not pushed out.
+            val column = view as? ViewGroup
+            (group.parent as? ViewGroup)?.removeView(group)
+            column?.addView(
+                group,
+                1,
+                LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+                    gravity = Gravity.CENTER_HORIZONTAL
+                    bottomMargin = (8 * resources.displayMetrics.density).toInt()
+                }
+            )
+        }
+        val ctx = view.context
+        val palette = SettingsPalette.from(ctx)
+        val radius = resources.getDimensionPixelSize(R.dimen.settings_tab_height) / 2
+        for (id in listOf(R.id.drawer_tab_apps, R.id.drawer_tab_shortcuts)) {
+            group.findViewById<MaterialButton>(id)?.apply {
+                backgroundTintList = SettingsDrawables.checkedColors(palette.secondaryContainer, Color.TRANSPARENT)
+                setTextColor(SettingsDrawables.checkedColors(palette.onSecondaryContainer, palette.onSurface))
+                strokeColor = ColorStateList.valueOf(palette.outline)
+                rippleColor = ColorStateList.valueOf(palette.secondaryContainer)
+                cornerRadius = radius
+            }
+        }
+        group.check(if (chosenTab == Tab.SHORTCUTS) R.id.drawer_tab_shortcuts else R.id.drawer_tab_apps)
+        group.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (!isChecked) return@addOnButtonCheckedListener
+            val tab = if (checkedId == R.id.drawer_tab_shortcuts) Tab.SHORTCUTS else Tab.APPS
+            if (tab == chosenTab) return@addOnButtonCheckedListener
+            chosenTab = tab
+            showItems(allItems)
+        }
+    }
+
+    /** Fills the grid with what the current tab holds, and shows the tabs only when they split something. */
+    private fun showItems(items: List<AppDrawerItem>) {
+        allItems = items
+        val shown = AppDrawerTabsPolicy.tabsShown(items)
+        tabGroup?.visibility = if (shown) View.VISIBLE else View.GONE
+        val tab = AppDrawerTabsPolicy.effectiveTab(chosenTab, items)
+        if (tab != chosenTab) {
+            chosenTab = tab
+            tabGroup?.check(R.id.drawer_tab_apps)
+        }
+        val visible = AppDrawerTabsPolicy.itemsFor(tab, items)
+        adapter?.submitList(visible)
+        emptyView?.visibility = if (visible.isEmpty()) View.VISIBLE else View.GONE
     }
 
     private fun closeDrawer() {
@@ -370,7 +463,7 @@ class AppDrawerAdapter(
 
         fun bind(item: AppDrawerItem) {
             tvName.text = item.label
-            ivBadge.visibility = if (item.shortcutId == null) View.GONE else View.VISIBLE
+            bindBadge(item)
             val itemKey = item.iconKey
             ivIcon.tag = itemKey
 
@@ -400,6 +493,39 @@ class AppDrawerAdapter(
             itemView.setOnLongClickListener {
                 onItemLongClick(it, item)
                 true
+            }
+        }
+
+        /** The badge is drawn at another size than the app's own tile, so it gets its own copy. */
+        private fun ownCopy(icon: Drawable): Drawable = icon.constantState?.newDrawable()?.mutate() ?: icon
+
+        /**
+         * A shortcut wears its app's icon, the way Android's own launcher shows them: in the
+         * shortcuts tab two "Search" tiles would otherwise give no hint of which app they open.
+         */
+        private fun bindBadge(item: AppDrawerItem) {
+            if (item.shortcutId == null) {
+                ivBadge.visibility = View.GONE
+                return
+            }
+            ivBadge.visibility = View.VISIBLE
+            ivBadge.contentDescription = item.appLabel
+                ?: itemView.context.getString(R.string.home_shortcut_badge)
+            val appKey = item.appIconKey
+            ivBadge.tag = appKey
+            val cached = AppDrawerCache.iconCache.get(appKey)
+            if (cached != null) {
+                ivBadge.setImageDrawable(ownCopy(cached))
+                return
+            }
+            ivBadge.setImageDrawable(AppCompatResources.getDrawable(itemView.context, R.drawable.ic_shortcut_badge))
+            coroutineScope.launch(Dispatchers.IO) {
+                val icon = AppDrawerFragment.iconFor(itemView.context.applicationContext, item.copy(shortcutId = null))
+                    ?: return@launch
+                AppDrawerCache.iconCache.put(appKey, icon)
+                withContext(Dispatchers.Main) {
+                    if (ivBadge.tag == appKey) ivBadge.setImageDrawable(ownCopy(icon))
+                }
             }
         }
     }

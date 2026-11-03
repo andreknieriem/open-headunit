@@ -9,7 +9,6 @@ import java.io.File
 import java.io.IOException
 import java.net.InetSocketAddress
 import java.net.Socket
-import java.nio.charset.StandardCharsets
 
 object AdbManager {
 
@@ -91,7 +90,7 @@ object AdbManager {
                 try {
                     val data = activeStream.read()
                     if (data.isNotEmpty()) {
-                        outputBuilder.append(String(data, StandardCharsets.UTF_8))
+                        outputBuilder.append(String(data, AdbProtocol.UTF_8))
                     }
                 } catch (e: Exception) {
                     break

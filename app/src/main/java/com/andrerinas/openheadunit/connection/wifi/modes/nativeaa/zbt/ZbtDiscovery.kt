@@ -89,7 +89,11 @@ object ZbtDiscovery {
             keepTrying: () -> Boolean,
             nowMs: () -> Long = { SystemClock.elapsedRealtime() },
             pause: suspend (Long) -> Unit = { delay(it) },
-            probe: () -> Unit = { resolve(retryRefusals = true, keepTrying = keepTrying); Unit },
+            refusalIsFinal: (Int) -> Boolean = { false },
+            probe: () -> Unit = {
+                resolve(retryRefusals = true, keepTrying = keepTrying, refusalIsFinal = refusalIsFinal)
+                Unit
+            },
         ): Completion {
             val startedAt = nowMs()
             while (keepTrying()) {
@@ -111,12 +115,14 @@ object ZbtDiscovery {
         fun resolve(
             retryRefusals: Boolean = false,
             cacheIdentityRefusal: Boolean = true,
-            keepTrying: () -> Boolean = { true }
+            keepTrying: () -> Boolean = { true },
+            refusalIsFinal: (Int) -> Boolean = { false }
         ): Boolean = decision.available && ZbtDaemonReachability.resolve(
             requireIdentity = requireIdentity,
             retryRefusals = retryRefusals,
             cacheIdentityRefusal = cacheIdentityRefusal,
-            keepTrying = keepTrying
+            keepTrying = keepTrying,
+            refusalIsFinal = refusalIsFinal
         )
     }
 }

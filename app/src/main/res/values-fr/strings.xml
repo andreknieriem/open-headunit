@@ -239,6 +239,34 @@
     <string name="pixel_aspect_ratio">Ratio d\'aspect des pixels</string>
     <string name="mic_sample_rate">Fréquence de capture du micro</string>
     <string name="keymap">Mappage des touches</string>
+    <string name="gestures">Gestes</string>
+    <string name="gestures_description">Configurez les balayages à deux doigts et l\'appui long.</string>
+    <string name="gesture_two_finger_down">Balayage à deux doigts vers le bas</string>
+    <string name="gesture_two_finger_long_press">Appui long à deux doigts</string>
+    <string name="gesture_two_finger_left">Geste à deux doigts depuis la gauche</string>
+    <string name="gesture_two_finger_right">Geste à deux doigts depuis la droite</string>
+    <string name="gesture_action_disabled">Désactivé</string>
+    <string name="gesture_action_exit_dialog">Boîte de dialogue de sortie</string>
+    <string name="gesture_action_toggle_fullscreen">Basculer en plein écran</string>
+    <string name="gesture_action_night_overlay">Superposition nocturne</string>
+    <string name="gestures_reset">Paramètres de gestes réinitialisés</string>
+    <string name="night_overlay_dismiss">Touchez pour revenir à la projection</string>
+    <string name="night_overlay_meters">%1$d m</string>
+    <string name="night_overlay_kilometers">%1$.1f km</string>
+    <string name="night_overlay_navigation">%1$s · %2$s</string>
+    <string name="night_overlay_left">gauche</string>
+    <string name="night_overlay_right">droite</string>
+    <string name="night_overlay_direction">%1$s · %2$s</string>
+    <string name="night_overlay_exit_number">Sortie %1$d</string>
+    <string name="night_overlay_exit_angle">%1$d°</string>
+    <string name="night_overlay_eta_summary">Arrivée %1$s · %2$s · %3$s</string>
+    <string name="night_overlay_duration_minutes">%1$d min</string>
+    <string name="night_overlay_duration_hours_minutes">%1$d h %2$d min</string>
+    <string name="night_overlay_current_road">Maintenant : %1$s</string>
+    <string name="night_overlay_route">Itinéraire : %1$s</string>
+    <string name="night_overlay_lanes">Voies : %1$s</string>
+    <string name="night_overlay_traffic_delay">Retard trafic : +%1$s</string>
+    <string name="night_overlay_speed_value">%1$d km/h</string>
     <string name="night_mode">Mode sombre (Android Auto)</string>
     <string name="night_mode_threshold">Seuil du mode nuit</string>
     <string name="enter_threshold_value">Entrer la valeur du seuil</string>
@@ -251,6 +279,16 @@
     <string name="current_light_reading">Lumière actuelle : %d lux</string>
     <string name="current_brightness_reading">Luminosité actuelle : %d / 255</string>
     <string name="enable_fine_lux_control">Réglage fin (0–100 lux)</string>
+    <string name="car_signal_calibration_info_format">car_mode actuel : %1$d. Correspondance : %2$s.</string>
+    <string name="car_signal_mapping_default">0 = Jour, non nul = Nuit</string>
+    <string name="car_signal_mapping_inverted">0 = Nuit, non nul = Jour</string>
+    <string name="car_signal_unavailable">Impossible de lire car_mode sur cette unité principale pour le moment.</string>
+    <string name="car_signal_headlights_question">Les phares sont-ils allumés maintenant ?</string>
+    <string name="car_signal_calibration_title">Étalonnage ILL+</string>
+    <string name="car_signal_recalibrate">Recalibrer</string>
+    <string name="car_signal_headlights_on">Allumés</string>
+    <string name="car_signal_headlights_off">Éteints</string>
+    <string name="car_signal_calibration_saved">Étalonnage ILL+ enregistré et appliqué</string>
     <string name="night_mode_start">Heure de début du mode nuit</string>
     <string name="night_mode_end">Heure de fin du mode nuit</string>
 
@@ -909,6 +947,12 @@
 
     <string name="supported_nativeaa">Prise en charge sans fil améliorée</string>
     <string name="supported_nativeaa_desc">Bonne nouvelle ! Votre appareil prend en charge le mode « Sans fil natif », qui offre une expérience Android Auto plus fluide.\n\nPour l\'activer, il faut actualiser le cache Bluetooth. Procédez comme suit :\n1. Supprimez l\'association existante sur votre téléphone\n2. Appuyez sur OK pour redémarrer le Bluetooth\n3. Associez de nouveau votre téléphone\n\nVoulez-vous passer au mode Android Auto natif maintenant ?</string>
+    <string name="automation_connect_no_permission">Autorisez Bluetooth pour cette appli afin de vous connecter par nom.</string>
+    <string name="automation_connect_not_found">Aucun téléphone associé n\'a ce nom.</string>
+    <string name="automation_connect_ambiguous">Plusieurs téléphones associés portent ce nom.</string>
+    <string name="automation_connect_not_a_phone">Cet appareil associé n\'est pas un téléphone.</string>
+    <string name="automation_connect_not_paired">Cette adresse Bluetooth n\'est pas associée.</string>
+    <string name="automation_connect_live_session">Un autre téléphone est déjà connecté.</string>
     <string name="native_aa_poke_not_running">Le Bluetooth sans fil n\'est pas actif sur cet autoradio. Vérifiez les paramètres.</string>
     <string name="not_supported_nativeaa">Le sans fil natif ne semble pas pris en charge</string>
     <string name="not_supported_nativeaa_desc">Votre appareil pourrait ne pas prendre en charge les fonctionnalités Bluetooth ou Wi-Fi requises pour le sans fil natif. Vous pouvez essayer quand même, mais en cas d\'échec, utilisez plutôt le mode « Assistant sans fil » ou « Auto (Serveur Headunit) ».</string>
@@ -928,6 +972,8 @@
     <string name="external_bt_module_controls_hint">L\'association du téléphone, la priorité de connexion et le choix du pilote sont gérés par le module Bluetooth externe.</string>
     <string name="external_bt_module_last_phone">Dernier téléphone connecté via le module</string>
     <string name="external_bt_blink_transport_description">Expérimental. Pour les appareils FYT dont le téléphone est associé pour les appels à un module Bluetooth séparé, comme « DUDUAUTO » sous DUDUOS, la seule ROM testée à ce jour. Le module, et non le Bluetooth de cet appareil, assure la négociation Android Auto sans fil, et l\'application Car Link d\'origine y répond normalement. Si cette option est activée, c\'est cette application qui y répond, de sorte que les appels restent sur le module et les haut-parleurs du véhicule.\n\nDésactivez d\'abord l\'application Car Link d\'origine (pm disable-user com.syu.carlink), sinon les deux applications liront le même canal. Le canal est ouvert sans root si l\'appareil le permet, et avec root sinon. Choisissez Natif, associez le téléphone au module uniquement, et exportez le journal si la connexion échoue.</string>
+    <string name="external_bt_zj_socket_transport">Se connecter via le socket Bluetooth ZJ</string>
+    <string name="external_bt_zj_socket_transport_description">Pour les autoradios dont le module Bluetooth ZJ transmet la négociation sans fil d\'Android Auto par un socket local (/dev/socket/zj_bt_socket). L\'appli l\'utilise d\'elle-même quand ce socket accepte une connexion. Activez cette option seulement si votre appareil a ce socket et que l\'appli ne le détecte pas.</string>
     <string name="external_bt_blink_refused_stock_enabled">Module Bluetooth externe : l\'application Car Link d\'origine est toujours activée. Désactivez-la (pm disable-user com.syu.carlink) ou désactivez ce transport.</string>
     <string name="external_bt_blink_refused_stock_running">Module Bluetooth externe : l\'application Car Link d\'origine est désactivée mais toujours en cours d\'exécution. Redémarrez l\'appareil.</string>
     <string name="external_bt_blink_refused_root">Module Bluetooth externe : l\'ouverture du canal du module nécessite l\'accès root sur cet appareil, qui a été refusé ou n\'est pas disponible.</string>
@@ -938,8 +984,6 @@
     <string name="wait_for_wifi_description">Au démarrage, attendre la connexion au Wi-Fi avant de lancer le Wi-Fi Direct. Activez cette option si votre autoradio a besoin de quelques secondes pour se connecter au Wi-Fi après la mise sous tension.</string>
     <string name="wait_for_wifi_timeout">Délai d\'attente du Wi-Fi</string>
     <string name="wireless_24ghz_warning">Remarque : Android Auto sans fil sur des appareils 2,4 GHz peut entraîner des ralentissements, des saccades et des déconnexions. En cas de problème, faites un test par USB pour savoir s\'il s\'agit d\'une limite du réseau.</string>
-    <string name="fake_speed_title">Désactiver le verrouillage vidéo (fausse vitesse)</string>
-    <string name="fake_speed_description">Indique au téléphone une vitesse faible constante (0,5 m/s) pour que la vidéo ne soit pas bloquée pendant la conduite. À utiliser avec prudence.</string>
     <string name="wireless_mode_helper">Assistant sans fil</string>
     <string name="wireless_mode_native">Natif</string>
     <string name="wireless_mode_server">Serveur Headunit</string>
@@ -1302,6 +1346,22 @@
     <string name="enter_auto_disconnect_bt_delay">Secondes à attendre avant de mettre fin à la session</string>
     <string name="auto_disconnect_bt_delay_hint">Une connexion Bluetooth peut être brièvement interrompue pendant la reconnexion des profils. La session ne se termine que si l\'appareil est toujours absent après ce délai.</string>
     <string name="auto_disconnect_bt_kill_hint">Met fin à la session lorsque le Bluetooth d\'un appareil sélectionné disparaît, par exemple lorsque le contact du véhicule est coupé. Sélectionnez le Bluetooth de la voiture si cet autoradio y est associé. Pour fermer aussi l\'application et afficher l\'écran d\'accueil, activez « Fermer l\'application lors de la déconnexion » sous Automatisation.</string>
+    <string name="external_power_disconnect_label">Déconnecter au retrait du chargeur</string>
+    <string name="external_power_disconnect_description">Met fin à la session, comme le bouton Quitter, quand l\'alimentation externe est coupée, par exemple à l\'arrêt du véhicule. Au retour du courant, la connexion est de nouveau active.</string>
+    <string name="external_power_delay_label">Délai (secondes)</string>
+    <string name="external_power_delay_value">%1$d s</string>
+    <string name="external_power_delay_hint">La session ne se termine que si le courant n\'est toujours pas revenu après ce délai. De 5 à 3 600 secondes.</string>
+    <string name="external_power_screen_off_label">Éteindre aussi l\'écran</string>
+    <string name="external_power_screen_off_description">Éteint l\'écran quand le courant ne revient pas, à la fin de la session ou quand rien n\'est connecté, et le rallume au retour du courant.</string>
+    <string name="external_power_grant_label">Autoriser Open Headunit à éteindre l\'écran</string>
+    <string name="external_power_grant_allowed">Autorisé</string>
+    <string name="external_power_grant_missing">Non autorisé</string>
+    <string name="external_power_grant_uninstall_hint">Android bloque la désinstallation tant que cette autorisation est active. Retirez-la ici avant de désinstaller l\'application.</string>
+    <string name="external_power_grant_explanation">Open Headunit utilise cette autorisation uniquement pour éteindre l\'écran. L\'application ne peut ni déverrouiller l\'appareil ni rien lire.</string>
+    <string name="external_power_grant_remove_message">Retirer l\'autorisation d\'éteindre l\'écran ?</string>
+    <string name="external_power_grant_remove">Retirer</string>
+    <string name="screen_off_admin_label">Éteindre l\'écran</string>
+    <string name="screen_off_admin_description">Permet à Open Headunit d\'éteindre l\'écran quand l\'alimentation externe est coupée.</string>
     <string name="audio_stream_vendor_format">%1$s (%2$d)</string>
     <string name="five_ghz_channel">Canal 5 GHz</string>
     <string name="five_ghz_channel_auto">Automatique</string>
@@ -1515,6 +1575,7 @@
     <string name="home_favorites_full">Les quatre favoris sont déjà pris. Appuyez longuement sur l\'un d\'eux sur l\'écran d\'accueil pour le changer.</string>
     <string name="home_choose_favorite_app">Choisir une app ou un raccourci</string>
     <string name="home_shortcut_badge">Raccourci</string>
+    <string name="app_drawer_tab_shortcuts">Raccourcis</string>
     <string name="home_show_favorite_apps">Apps favorites sur l\'écran d\'accueil</string>
     <string name="home_show_favorite_apps_description">Vos apps favorites sous le bouton principal, quand Open Headunit est votre lanceur</string>
     <string name="home_show_widgets">Widgets sur l\'écran d\'accueil</string>

@@ -203,19 +203,6 @@ class QuickSettingsFragment : DialogFragment() {
         // --- System & Safety ---
         items.add(SettingItem.CategoryHeader("system", R.string.category_automation))
 
-        items.add(SettingItem.ToggleSettingEntry(
-            stableId = "fakeSpeed",
-            nameResId = R.string.fake_speed_title,
-            descriptionResId = R.string.fake_speed_description,
-            isChecked = settings.fakeSpeed,
-            onCheckedChanged = { isChecked ->
-                settings.fakeSpeed = isChecked
-                settings.commit()
-                notifyChange(sensorRefresh = true)
-                updateSettingsList()
-            }
-        ))
-
         if (!settings.isCarLauncherActive) {
             items.add(SettingItem.ToggleSettingEntry(
                 stableId = "killOnDisconnect",

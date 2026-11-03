@@ -66,7 +66,8 @@ class WppTcpTlsTest {
             override fun checkServerTrusted(chain: Array<out X509Certificate>?, authType: String?) {}
             override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
         })
-        return SSLContext.getInstance("TLS").apply {
+        // A Robolectric test earlier in this JVM puts Conscrypt first, and its handshake fails on JDK 17.
+        return SSLContext.getInstance("TLS", "SunJSSE").apply {
             init(arrayOf(SingleKeyKeyManager(certificate(), privateKey())), trustAll, SecureRandom())
         }
     }

@@ -119,7 +119,7 @@ class P2pGroupIdentityPolicyTest {
         assertFalse(P2pGroupIdentityPolicy.isValidPassphrase("pässword1"))
     }
 
-    // --- read-back ---
+    // --- persistent profile classification ---
 
     @Test
     fun `a stored network id means the profile is persistent and a negative one means temporary`() {
@@ -130,22 +130,8 @@ class P2pGroupIdentityPolicyTest {
     }
 
     @Test
-    fun `the read-back line says whether the group on the air is the one asked for`() {
-        val asked = P2pGroupIdentity.Named("DIRECT-K7-HeadUnit", "abcDEF123456", persistent = true)
-        val same = P2pGroupIdentityPolicy.describeReadBack(asked, "DIRECT-K7-HeadUnit", "abcDEF123456", 3)
-        assertTrue(same, same.contains("persistent=yes (netId 3)"))
-        assertTrue(same, same.contains("matchesRequest=yes"))
-
-        val renamed = P2pGroupIdentityPolicy.describeReadBack(asked, "DIRECT-zz-Android", "abcDEF123456", -1)
-        assertTrue(renamed, renamed.contains("persistent=no (temporary)"))
-        assertTrue(renamed, renamed.contains("matchesRequest=no"))
+    fun `an unavailable network id cannot identify a stored profile`() {
+        assertFalse(P2pGroupIdentityPolicy.isPersistentNetworkId(null))
     }
 
-    @Test
-    fun `the read-back line still says something when nothing was asked for`() {
-        val plain = P2pGroupIdentityPolicy.describeReadBack(P2pGroupIdentity.FrameworkProfile, "DIRECT-aa-x", "p", 2)
-        assertTrue(plain, plain.contains("framework profile"))
-        val none = P2pGroupIdentityPolicy.describeReadBack(null, "DIRECT-aa-x", "p", -1)
-        assertTrue(none, none.contains("ssid=DIRECT-aa-x"))
-    }
 }

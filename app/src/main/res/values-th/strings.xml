@@ -239,6 +239,34 @@
     <string name="pixel_aspect_ratio">อัตราส่วนพิกเซล</string>
     <string name="mic_sample_rate">อัตราสุ่มไมโครโฟน</string>
     <string name="keymap">การแมปปุ่ม</string>
+    <string name="gestures">ท่าทาง</string>
+    <string name="gestures_description">กำหนดการปัดสองนิ้วและการกดค้าง</string>
+    <string name="gesture_two_finger_down">ปัดสองนิ้วลง</string>
+    <string name="gesture_two_finger_long_press">กดค้างสองนิ้ว</string>
+    <string name="gesture_two_finger_left">ท่าทางสองนิ้วจากด้านซ้าย</string>
+    <string name="gesture_two_finger_right">ท่าทางสองนิ้วจากด้านขวา</string>
+    <string name="gesture_action_disabled">ปิดใช้งาน</string>
+    <string name="gesture_action_exit_dialog">กล่องโต้ตอบออก</string>
+    <string name="gesture_action_toggle_fullscreen">สลับเต็มหน้าจอ</string>
+    <string name="gesture_action_night_overlay">โอเวอร์เลย์กลางคืน</string>
+    <string name="gestures_reset">รีเซ็ตการตั้งค่าท่าทางแล้ว</string>
+    <string name="night_overlay_dismiss">แตะเพื่อกลับไปยังการฉาย</string>
+    <string name="night_overlay_meters">%1$d ม.</string>
+    <string name="night_overlay_kilometers">%1$.1f กม.</string>
+    <string name="night_overlay_navigation">%1$s · %2$s</string>
+    <string name="night_overlay_left">ซ้าย</string>
+    <string name="night_overlay_right">ขวา</string>
+    <string name="night_overlay_direction">%1$s · %2$s</string>
+    <string name="night_overlay_exit_number">ทางออก %1$d</string>
+    <string name="night_overlay_exit_angle">%1$d°</string>
+    <string name="night_overlay_eta_summary">ถึงเวลา %1$s · %2$s · %3$s</string>
+    <string name="night_overlay_duration_minutes">%1$d นาที</string>
+    <string name="night_overlay_duration_hours_minutes">%1$d ชม. %2$d นาที</string>
+    <string name="night_overlay_current_road">ตอนนี้: %1$s</string>
+    <string name="night_overlay_route">เส้นทาง: %1$s</string>
+    <string name="night_overlay_lanes">ช่องทาง: %1$s</string>
+    <string name="night_overlay_traffic_delay">รถติดล่าช้า: +%1$s</string>
+    <string name="night_overlay_speed_value">%1$d กม./ชม.</string>
     <string name="night_mode">โหมดมืด (Android Auto)</string>
     <string name="night_mode_threshold">เกณฑ์โหมดกลางคืน</string>
     <string name="enter_threshold_value">ป้อนค่าเกณฑ์</string>
@@ -251,6 +279,16 @@
     <string name="current_light_reading">แสงปัจจุบัน: %d Lux</string>
     <string name="current_brightness_reading">ความสว่างปัจจุบัน: %d / 255</string>
     <string name="enable_fine_lux_control">การควบคุมแบบละเอียด (0–100 Lux)</string>
+    <string name="car_signal_calibration_info_format">ค่า car_mode ปัจจุบัน: %1$d การแมป: %2$s</string>
+    <string name="car_signal_mapping_default">0 = กลางวัน, ไม่เป็นศูนย์ = กลางคืน</string>
+    <string name="car_signal_mapping_inverted">0 = กลางคืน, ไม่เป็นศูนย์ = กลางวัน</string>
+    <string name="car_signal_unavailable">ไม่สามารถอ่าน car_mode บนเฮดยูนิตนี้ได้ในขณะนี้</string>
+    <string name="car_signal_headlights_question">ตอนนี้ไฟหน้ารถเปิดอยู่หรือไม่?</string>
+    <string name="car_signal_calibration_title">การปรับเทียบ ILL+</string>
+    <string name="car_signal_recalibrate">ปรับเทียบใหม่</string>
+    <string name="car_signal_headlights_on">เปิด</string>
+    <string name="car_signal_headlights_off">ปิด</string>
+    <string name="car_signal_calibration_saved">บันทึกและนำการปรับเทียบ ILL+ ไปใช้แล้ว</string>
     <string name="night_mode_start">เวลาเริ่มต้นโหมดกลางคืน</string>
     <string name="night_mode_end">เวลาสิ้นสุดโหมดกลางคืน</string>
 
@@ -534,6 +572,22 @@
     <string name="enter_auto_disconnect_bt_delay">วินาทีที่ต้องรอก่อนสิ้นสุดเซสชัน</string>
     <string name="auto_disconnect_bt_delay_hint">ลิงก์บลูทูธอาจหลุดไปชั่วขณะขณะเชื่อมต่อโปรไฟล์ใหม่ เซสชันจะสิ้นสุดลงก็ต่อเมื่ออุปกรณ์ยังคงหายไปหลังจากช่วงเวลานี้</string>
     <string name="auto_disconnect_bt_kill_hint">จบเซสชันแบบเดียวกับปุ่มออก เมื่อบลูทูธของอุปกรณ์ที่เลือกหายไป เช่น เมื่อดับเครื่องยนต์ ให้เลือกบลูทูธของรถ หากเฮดยูนิตนี้จับคู่กับรถไว้ หากต้องการปิดแอปและกลับไปหน้าจอหลักด้วย ให้เปิด \"ปิดแอปเมื่อตัดการเชื่อมต่อ\" ใต้ระบบอัตโนมัติ</string>
+    <string name="external_power_disconnect_label">ตัดการเชื่อมต่อเมื่อถอดที่ชาร์จ</string>
+    <string name="external_power_disconnect_description">สิ้นสุดเซสชันเหมือนปุ่มออกเมื่อไฟภายนอกขาด เช่น เมื่อดับเครื่องรถ เมื่อไฟกลับมา การเชื่อมต่อจะพร้อมทำงานอีกครั้ง</string>
+    <string name="external_power_delay_label">รอ (วินาที)</string>
+    <string name="external_power_delay_value">%1$d วิ</string>
+    <string name="external_power_delay_hint">เซสชันจะสิ้นสุดก็ต่อเมื่อไฟยังไม่กลับมาหลังพ้นเวลานี้ ตั้งได้ตั้งแต่ 5 ถึง 3600 วินาที</string>
+    <string name="external_power_screen_off_label">ปิดหน้าจอด้วย</string>
+    <string name="external_power_screen_off_description">หรี่หน้าจอเมื่อไฟยังไม่กลับมา หลังเซสชันสิ้นสุดหรือเมื่อไม่มีอุปกรณ์เชื่อมต่อ และเปิดหน้าจออีกครั้งเมื่อไฟกลับมา</string>
+    <string name="external_power_grant_label">อนุญาตให้ Open Headunit ปิดหน้าจอ</string>
+    <string name="external_power_grant_allowed">อนุญาตแล้ว</string>
+    <string name="external_power_grant_missing">ไม่ได้รับอนุญาต</string>
+    <string name="external_power_grant_uninstall_hint">Android จะไม่ให้ถอนการติดตั้งขณะที่ยังอนุญาตอยู่ โปรดลบสิทธิ์ที่นี่ก่อนถอนการติดตั้งแอป</string>
+    <string name="external_power_grant_explanation">Open Headunit ใช้สิทธิ์นี้เพื่อปิดหน้าจอเท่านั้น ไม่สามารถปลดล็อกอุปกรณ์หรืออ่านข้อมูลใดๆ ได้</string>
+    <string name="external_power_grant_remove_message">ลบสิทธิ์การปิดหน้าจอไหม</string>
+    <string name="external_power_grant_remove">ลบ</string>
+    <string name="screen_off_admin_label">ปิดหน้าจอ</string>
+    <string name="screen_off_admin_description">อนุญาตให้ Open Headunit ปิดหน้าจอเมื่อไฟภายนอกขาด</string>
     <string name="auto_start_wifi_label">เริ่มอัตโนมัติเมื่อเชื่อมต่อ Wi-Fi</string>
     <string name="auto_start_wifi_description">เปิด Open Headunit อัตโนมัติเมื่อเชื่อมต่อกับ Wi-Fi SSID ที่ระบุ</string>
     <string name="auto_start_wifi_ssid_label">Wi-Fi SSID</string>
@@ -1092,6 +1146,12 @@
 
     <string name="supported_nativeaa">การสนับสนุนระบบไร้สายขั้นสูง</string>
     <string name="supported_nativeaa_desc">ข่าวดี! อุปกรณ์ของคุณรองรับโหมด \"Native Wireless\" ซึ่งช่วยให้ใช้ Android Auto ได้ราบรื่นยิ่งขึ้น\n\nหากต้องการเปิดใช้ ต้องรีเฟรชแคชบลูทูธ โปรดทำดังนี้\n1. ลบการจับคู่เดิมบนโทรศัพท์\n2. แตะ ตกลง เพื่อรีสตาร์ทบลูทูธ\n3. จับคู่โทรศัพท์ใหม่\n\nต้องการเปลี่ยนเป็นโหมด Native AA ตอนนี้ไหม</string>
+    <string name="automation_connect_no_permission">อนุญาตบลูทูธให้แอปนี้เพื่อเชื่อมต่อด้วยชื่อ</string>
+    <string name="automation_connect_not_found">ไม่มีโทรศัพท์ที่จับคู่ไว้ที่ใช้ชื่อนี้</string>
+    <string name="automation_connect_ambiguous">มีโทรศัพท์ที่จับคู่ไว้หลายเครื่องใช้ชื่อนี้</string>
+    <string name="automation_connect_not_a_phone">อุปกรณ์ที่จับคู่ไว้นี้ไม่ใช่โทรศัพท์</string>
+    <string name="automation_connect_not_paired">ที่อยู่บลูทูธนี้ยังไม่ได้จับคู่</string>
+    <string name="automation_connect_live_session">มีโทรศัพท์เครื่องอื่นเชื่อมต่ออยู่แล้ว</string>
     <string name="native_aa_poke_not_running">บลูทูธไร้สายไม่ได้ทำงานบนเฮดยูนิตนี้ ตรวจสอบการตั้งค่า</string>
     <string name="not_supported_nativeaa">Native Wireless อาจไม่รองรับ</string>
     <string name="not_supported_nativeaa_desc">อุปกรณ์ของคุณอาจไม่รองรับคุณสมบัติบลูทูธหรือ Wi-Fi ที่ Native Wireless ต้องใช้ คุณยังลองใช้ได้ แต่หากไม่สำเร็จ ให้ใช้โหมด \"Wireless Helper\" หรือ \"Auto (Headunit Server)\" แทน</string>
@@ -1104,8 +1164,6 @@
     <string name="wait_for_wifi_description">เมื่อเปิดเครื่อง ให้รอ Wi-Fi เชื่อมต่อก่อนเริ่ม Wi-Fi Direct เปิดตัวเลือกนี้หากเฮดยูนิตของคุณต้องใช้เวลาสักครู่ในการเชื่อมต่อ Wi-Fi หลังเปิดเครื่อง</string>
     <string name="wait_for_wifi_timeout">ระยะเวลารอ Wi-Fi</string>
     <string name="wireless_24ghz_warning">หมายเหตุ: Android Auto แบบไร้สายบนอุปกรณ์ 2.4GHz อาจทำให้ภาพหน่วง กระตุก และหลุดการเชื่อมต่อ หากพบปัญหา โปรดลองใช้ผ่าน USB เพื่อตรวจสอบว่าเป็นข้อจำกัดของเครือข่ายหรือไม่</string>
-    <string name="fake_speed_title">ปิดการล็อกวิดีโอ (ความเร็วจำลอง)</string>
-    <string name="fake_speed_description">รายงานความเร็วต่ำคงที่ (0.5 ม./วินาที) ไปยังโทรศัพท์เพื่อป้องกันไม่ให้เนื้อหาวิดีโอถูกบล็อกขณะขับขี่ ใช้ด้วยความระมัดระวัง</string>
     <string name="wireless_mode_helper">Wireless Helper</string>
     <string name="wireless_mode_native">เนทีฟ (Native)</string>
     <string name="wireless_mode_server">เซิร์ฟเวอร์เฮดยูนิต</string>
@@ -1256,6 +1314,8 @@
     <string name="external_bt_module_controls_hint">โมดูลบลูทูธภายนอกเป็นผู้จัดการการจับคู่โทรศัพท์ ลำดับความสำคัญของการเชื่อมต่อ และการเลือกไดรเวอร์</string>
     <string name="external_bt_module_last_phone">โทรศัพท์เครื่องล่าสุดที่เชื่อมต่อผ่านโมดูล</string>
     <string name="external_bt_blink_transport_description">เป็นการทดลอง สำหรับยูนิต FYT ที่โทรศัพท์จับคู่เพื่อโทรออกกับโมดูลบลูทูธแยก เช่น \"DUDUAUTO\" บน DUDUOS ซึ่งเป็น ROM เดียวที่ทดสอบแล้วจนถึงตอนนี้ โมดูลนี้ ไม่ใช่บลูทูธของยูนิต เป็นตัวส่งแฮนด์เชค Android Auto แบบไร้สาย และปกติแอป Car Link ดั้งเดิมจะเป็นผู้ตอบรับ เมื่อเปิดตัวเลือกนี้ แอปนี้จะตอบรับแทน การโทรจึงยังอยู่บนโมดูลและลำโพงของรถ\n\nปิดใช้งานแอป Car Link ดั้งเดิมก่อน (pm disable-user com.syu.carlink) ไม่เช่นนั้นทั้งสองแอปจะอ่านช่องเดียวกัน ระบบจะเปิดช่องโดยไม่ใช้รูทหากยูนิตอนุญาต และใช้รูทในกรณีอื่น เลือก Native จับคู่โทรศัพท์กับโมดูลเท่านั้น และส่งออกบันทึกหากเชื่อมต่อไม่ได้</string>
+    <string name="external_bt_zj_socket_transport">เชื่อมต่อผ่านซ็อกเก็ต ZJ Bluetooth</string>
+    <string name="external_bt_zj_socket_transport_description">สำหรับเครื่องที่โมดูล ZJ Bluetooth ส่งการแฮนด์เชคของ Android Auto แบบไร้สายผ่านซ็อกเก็ตในเครื่อง (/dev/socket/zj_bt_socket) แอปจะใช้ซ็อกเก็ตนี้เองเมื่อซ็อกเก็ตรับการเชื่อมต่อ เปิดตัวเลือกนี้เฉพาะเมื่อเครื่องของคุณมีซ็อกเก็ตแต่แอปตรวจไม่พบ</string>
     <string name="external_bt_blink_refused_stock_enabled">โมดูลบลูทูธภายนอก: แอป Car Link ดั้งเดิมยังเปิดใช้งานอยู่ ปิดใช้งานแอปนั้น (pm disable-user com.syu.carlink) หรือปิดการส่งผ่านนี้</string>
     <string name="external_bt_blink_refused_stock_running">โมดูลบลูทูธภายนอก: แอป Car Link ดั้งเดิมถูกปิดใช้งานแล้วแต่ยังทำงานอยู่ โปรดรีสตาร์ทยูนิต</string>
     <string name="external_bt_blink_refused_root">โมดูลบลูทูธภายนอก: การเปิดช่องของโมดูลต้องใช้สิทธิ์รูทบนยูนิตนี้ แต่ถูกปฏิเสธหรือไม่มีสิทธิ์รูท</string>
@@ -1521,6 +1581,7 @@
     <string name="home_favorites_full">รายการโปรดครบทั้งสี่แล้ว กดค้างที่แอปหนึ่งบนหน้าจอหลักเพื่อเปลี่ยน</string>
     <string name="home_choose_favorite_app">เลือกแอปหรือทางลัด</string>
     <string name="home_shortcut_badge">ทางลัด</string>
+    <string name="app_drawer_tab_shortcuts">ทางลัด</string>
     <string name="home_show_favorite_apps">แอปโปรดบนหน้าจอหลัก</string>
     <string name="home_show_favorite_apps_description">แอปโปรดของคุณใต้ปุ่มหลัก เมื่อ Open Headunit เป็นตัวเปิดแอปของคุณ</string>
     <string name="home_show_widgets">วิดเจ็ตบนหน้าจอหลัก</string>

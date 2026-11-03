@@ -137,4 +137,21 @@ class ProjectionCanvasPolicyTest {
     fun `nothing is known about the panel yet, so nothing is rejected`() {
         assertTrue(ProjectionCanvasPolicy.fitsPanel(2400, 1080, 0, 0))
     }
+
+    @Test
+    fun `window canvas changes invalidate surfaces even when settings do not change`() {
+        val immersive = Measurement(1000, 600, hash)
+        val fitted = Measurement(1000, 528, hash)
+        assertTrue(ProjectionCanvasPolicy.windowChanged(immersive, fitted))
+        assertTrue(ProjectionCanvasPolicy.windowChanged(fitted, immersive))
+        assertTrue(ProjectionCanvasPolicy.windowChanged(fitted, Measurement(958, 576, hash)))
+    }
+
+    @Test
+    fun `unchanged or first window report does not displace a valid measured surface`() {
+        val window = Measurement(1000, 528, hash)
+        assertFalse(ProjectionCanvasPolicy.windowChanged(window, window.copy()))
+        assertFalse(ProjectionCanvasPolicy.windowChanged(null, window))
+        assertEquals(Source.SURFACE, choose(surface = Measurement(960, 500, hash), window = window).source)
+    }
 }

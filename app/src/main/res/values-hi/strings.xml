@@ -239,6 +239,34 @@
     <string name="pixel_aspect_ratio">पिक्सेल आस्पेक्ट रेशियो</string>
     <string name="mic_sample_rate">माइक सैंपल रेट</string>
     <string name="keymap">कीमैप</string>
+    <string name="gestures">जेस्चर</string>
+    <string name="gestures_description">दो उंगलियों से स्वाइप और लंबा प्रेस कॉन्फ़िगर करें।</string>
+    <string name="gesture_two_finger_down">दो उंगलियों से नीचे स्वाइप</string>
+    <string name="gesture_two_finger_long_press">दो उंगलियों से लंबा प्रेस</string>
+    <string name="gesture_two_finger_left">बाईं ओर से दो-उंगली जेस्चर</string>
+    <string name="gesture_two_finger_right">दाईं ओर से दो-उंगली जेस्चर</string>
+    <string name="gesture_action_disabled">अक्षम</string>
+    <string name="gesture_action_exit_dialog">निकास संवाद</string>
+    <string name="gesture_action_toggle_fullscreen">पूर्ण स्क्रीन टॉगल करें</string>
+    <string name="gesture_action_night_overlay">नाइट ओवरले</string>
+    <string name="gestures_reset">जेस्चर सेटिंग्स रीसेट हो गईं</string>
+    <string name="night_overlay_dismiss">प्रोजेक्शन पर लौटने के लिए टैप करें</string>
+    <string name="night_overlay_meters">%1$d मी</string>
+    <string name="night_overlay_kilometers">%1$.1f किमी</string>
+    <string name="night_overlay_navigation">%1$s · %2$s</string>
+    <string name="night_overlay_left">बाएँ</string>
+    <string name="night_overlay_right">दाएँ</string>
+    <string name="night_overlay_direction">%1$s · %2$s</string>
+    <string name="night_overlay_exit_number">निकास %1$d</string>
+    <string name="night_overlay_exit_angle">%1$d°</string>
+    <string name="night_overlay_eta_summary">ETA %1$s · %2$s · %3$s</string>
+    <string name="night_overlay_duration_minutes">%1$d मि</string>
+    <string name="night_overlay_duration_hours_minutes">%1$d घं %2$d मि</string>
+    <string name="night_overlay_current_road">अब: %1$s</string>
+    <string name="night_overlay_route">मार्ग: %1$s</string>
+    <string name="night_overlay_lanes">लेन: %1$s</string>
+    <string name="night_overlay_traffic_delay">ट्रैफिक देरी: +%1$s</string>
+    <string name="night_overlay_speed_value">%1$d किमी/घं</string>
     <string name="night_mode">डार्क मोड (Android Auto)</string>
     <string name="night_mode_threshold">नाइट मोड थ्रेशोल्ड</string>
     <string name="enter_threshold_value">थ्रेशोल्ड मान दर्ज करें</string>
@@ -251,6 +279,16 @@
     <string name="current_light_reading">मौजूदा रोशनी: %d Lux</string>
     <string name="current_brightness_reading">स्क्रीन की मौजूदा रोशनी: %d / 255</string>
     <string name="enable_fine_lux_control">सटीक नियंत्रण (0–100 Lux)</string>
+    <string name="car_signal_calibration_info_format">वर्तमान car_mode: %1$d. मैपिंग: %2$s.</string>
+    <string name="car_signal_mapping_default">0 = दिन, शून्य नहीं = रात</string>
+    <string name="car_signal_mapping_inverted">0 = रात, शून्य नहीं = दिन</string>
+    <string name="car_signal_unavailable">इस हेड यूनिट पर अभी car_mode पढ़ा नहीं जा सकता।</string>
+    <string name="car_signal_headlights_question">क्या अभी हेडलाइट्स चालू हैं?</string>
+    <string name="car_signal_calibration_title">ILL+ कैलिब्रेशन</string>
+    <string name="car_signal_recalibrate">पुनः कैलिब्रेट करें</string>
+    <string name="car_signal_headlights_on">चालू</string>
+    <string name="car_signal_headlights_off">बंद</string>
+    <string name="car_signal_calibration_saved">ILL+ कैलिब्रेशन सहेजा गया और लागू किया गया</string>
     <string name="night_mode_start">नाइट मोड प्रारंभ समय</string>
     <string name="night_mode_end">नाइट मोड समाप्ति समय</string>
 
@@ -534,6 +572,22 @@
     <string name="enter_auto_disconnect_bt_delay">सेशन खत्म करने से पहले कितने सेकंड इंतज़ार करना है</string>
     <string name="auto_disconnect_bt_delay_hint">प्रोफ़ाइल दोबारा कनेक्ट होने के दौरान ब्लूटूथ लिंक कुछ पल के लिए टूट सकता है। डिवाइस इतने समय बाद भी न मिले, तभी सेशन खत्म होता है।</string>
     <string name="auto_disconnect_bt_kill_hint">चुने गए डिवाइस का ब्लूटूथ बंद होने पर, जैसे कार बंद होने पर, सेशन वैसे ही खत्म होता है जैसे \"बाहर निकलें\" बटन से होता है। अगर यह यूनिट कार के ब्लूटूथ से जुड़ी है, तो कार का ब्लूटूथ चुनें। ऐप बंद करने और होम स्क्रीन दिखाने के लिए, ऑटोमेशन में \"डिसकनेक्ट होने पर ऐप बंद करें\" चालू करें।</string>
+    <string name="external_power_disconnect_label">चार्जर हटने पर डिस्कनेक्ट करें</string>
+    <string name="external_power_disconnect_description">बाहरी पावर जाने पर, जैसे कार बंद होने पर, सेशन को निकास बटन की तरह समाप्त करता है। पावर लौटने पर कनेक्शन फिर से सक्रिय हो जाता है।</string>
+    <string name="external_power_delay_label">प्रतीक्षा (सेकंड)</string>
+    <string name="external_power_delay_value">%1$d से.</string>
+    <string name="external_power_delay_hint">सेशन तभी समाप्त होता है जब इतने समय बाद भी पावर वापस न आए। 5 से 3600 सेकंड।</string>
+    <string name="external_power_screen_off_label">स्क्रीन भी बंद करें</string>
+    <string name="external_power_screen_off_description">पावर न होने पर, सेशन समाप्त होने के बाद या कुछ भी कनेक्ट न होने पर स्क्रीन बंद कर देता है और पावर लौटने पर उसे फिर चालू करता है।</string>
+    <string name="external_power_grant_label">Open Headunit को स्क्रीन बंद करने की अनुमति दें</string>
+    <string name="external_power_grant_allowed">अनुमति दी गई</string>
+    <string name="external_power_grant_missing">अनुमति नहीं दी गई</string>
+    <string name="external_power_grant_uninstall_hint">यह अनुमति रहने तक Android ऐप अनइंस्टॉल नहीं करने देता। ऐप अनइंस्टॉल करने से पहले यहाँ से अनुमति हटाएं।</string>
+    <string name="external_power_grant_explanation">Open Headunit इसका उपयोग केवल स्क्रीन बंद करने के लिए करता है। यह डिवाइस अनलॉक नहीं कर सकता और कुछ पढ़ नहीं सकता।</string>
+    <string name="external_power_grant_remove_message">स्क्रीन बंद करने की अनुमति हटाएं?</string>
+    <string name="external_power_grant_remove">हटाएं</string>
+    <string name="screen_off_admin_label">स्क्रीन बंद करें</string>
+    <string name="screen_off_admin_description">बाहरी पावर जाने पर Open Headunit को स्क्रीन बंद करने देता है।</string>
     <string name="auto_start_wifi_label">वाई-फ़ाई पर ऑटो-स्टार्ट</string>
     <string name="auto_start_wifi_description">किसी खास वाई-फ़ाई SSID से कनेक्ट होने पर Open Headunit अपने आप खोलें।</string>
     <string name="auto_start_wifi_ssid_label">वाई-फ़ाई SSID</string>
@@ -1092,6 +1146,12 @@
 
     <string name="supported_nativeaa">बेहतर वायरलेस सपोर्ट</string>
     <string name="supported_nativeaa_desc">खुशखबरी! आपका डिवाइस \"नेटिव वायरलेस\" मोड सपोर्ट करता है, जिससे Android Auto का अनुभव ज़्यादा सहज होता है।\n\nइसे चालू करने के लिए ब्लूटूथ कैश रीफ़्रेश करना होगा। कृपया:\n1. अपने फ़ोन में मौजूदा पेयरिंग हटाएं\n2. ब्लूटूथ रीस्टार्ट करने के लिए ठीक है पर टैप करें\n3. फ़ोन को दोबारा पेयर करें\n\nक्या आप अभी नेटिव AA मोड पर जाना चाहेंगे?</string>
+    <string name="automation_connect_no_permission">नाम से कनेक्ट करने के लिए इस ऐप्लिकेशन को ब्लूटूथ की अनुमति दें.</string>
+    <string name="automation_connect_not_found">इस नाम वाला कोई पेयर किया गया फ़ोन नहीं है.</string>
+    <string name="automation_connect_ambiguous">इस नाम वाले एक से ज़्यादा पेयर किए गए फ़ोन हैं.</string>
+    <string name="automation_connect_not_a_phone">पेयर किया गया यह डिवाइस फ़ोन नहीं है.</string>
+    <string name="automation_connect_not_paired">यह ब्लूटूथ पता पेयर नहीं किया गया है.</string>
+    <string name="automation_connect_live_session">दूसरा फ़ोन पहले से कनेक्ट है.</string>
     <string name="native_aa_poke_not_running">इस हेड यूनिट पर वायरलेस ब्लूटूथ चालू नहीं है। सेटिंग जाँचें।</string>
     <string name="not_supported_nativeaa">नेटिव वायरलेस शायद सपोर्ट नहीं होता</string>
     <string name="not_supported_nativeaa_desc">हो सकता है आपका डिवाइस नेटिव वायरलेस के लिए ज़रूरी ब्लूटूथ या वाई-फ़ाई सुविधाएँ सपोर्ट न करे। आप फिर भी आज़मा सकते हैं, लेकिन न चले तो \"वायरलेस हेल्पर\" या \"ऑटो (हेडयूनिट सर्वर)\" मोड इस्तेमाल करें।</string>
@@ -1104,8 +1164,6 @@
     <string name="wait_for_wifi_description">बूट होने पर वाई-फ़ाई डायरेक्ट शुरू करने से पहले वाई-फ़ाई कनेक्ट होने का इंतज़ार करता है। अगर पावर चालू होने के बाद आपकी हेड यूनिट को वाई-फ़ाई से जुड़ने में कुछ सेकंड लगते हैं, तो इसे चालू करें।</string>
     <string name="wait_for_wifi_timeout">वाई-फ़ाई इंतज़ार की समय सीमा</string>
     <string name="wireless_24ghz_warning">नोट: 2.4GHz डिवाइस पर वायरलेस Android Auto में लैग, अटकना और डिसकनेक्ट होना हो सकता है। समस्या आए तो USB से जाँचें कि कहीं यह नेटवर्क की सीमा तो नहीं।</string>
-    <string name="fake_speed_title">वीडियो-लॉक बंद करें (नकली गति)</string>
-    <string name="fake_speed_description">फ़ोन को हमेशा कम गति (0.5 m/s) बताता है, ताकि गाड़ी चलाते समय वीडियो ब्लॉक न हो। सावधानी से इस्तेमाल करें।</string>
     <string name="wireless_mode_helper">वायरलेस हेल्पर</string>
     <string name="wireless_mode_native">नेटिव</string>
     <string name="wireless_mode_server">हेडयूनिट सर्वर</string>
@@ -1256,6 +1314,8 @@
     <string name="external_bt_module_controls_hint">फ़ोन पेयरिंग, कनेक्शन की प्राथमिकता और ड्राइवर का चुनाव बाहरी ब्लूटूथ मॉड्यूल संभालता है।</string>
     <string name="external_bt_module_last_phone">मॉड्यूल से आखिरी बार जुड़ा फ़ोन</string>
     <string name="external_bt_blink_transport_description">प्रयोगात्मक। उन FYT यूनिट के लिए जिनमें फ़ोन कॉल के लिए अलग ब्लूटूथ मॉड्यूल से पेयर होता है, जैसे DUDUOS पर \"DUDUAUTO\", जो अब तक जाँचा गया एकमात्र ROM है। वायरलेस Android Auto हैंडशेक यह मॉड्यूल ले जाता है, इस यूनिट का ब्लूटूथ नहीं, और इसका जवाब आम तौर पर स्टॉक Car Link ऐप देता है। इसे चालू करने पर जवाब यही ऐप देता है, इसलिए कॉल मॉड्यूल और कार के स्पीकर पर ही रहती हैं।\n\nपहले स्टॉक Car Link ऐप बंद करें (pm disable-user com.syu.carlink), वरना दोनों ऐप एक ही चैनल पढ़ेंगे। जहाँ यूनिट इजाज़त दे, चैनल बिना रूट के खुलता है, नहीं तो रूट से। नेटिव चुनें, फ़ोन को सिर्फ़ मॉड्यूल से पेयर करें, और कनेक्ट न हो तो लॉग एक्सपोर्ट करें।</string>
+    <string name="external_bt_zj_socket_transport">ZJ Bluetooth सॉकेट से कनेक्ट करें</string>
+    <string name="external_bt_zj_socket_transport_description">उन यूनिट के लिए, जिनमें ZJ Bluetooth मॉड्यूल वायरलेस Android Auto हैंडशेक को लोकल सॉकेट (/dev/socket/zj_bt_socket) से भेजता है। जब यह सॉकेट कनेक्शन स्वीकार करता है, तो ऐप इसे अपने आप इस्तेमाल करता है। इसे केवल तभी चालू करें, जब आपकी यूनिट में यह सॉकेट हो और ऐप उसे न पहचान पाए।</string>
     <string name="external_bt_blink_refused_stock_enabled">बाहरी ब्लूटूथ मॉड्यूल: स्टॉक Car Link ऐप अभी चालू है। उसे बंद करें (pm disable-user com.syu.carlink) या यह ट्रांसपोर्ट बंद करें।</string>
     <string name="external_bt_blink_refused_stock_running">बाहरी ब्लूटूथ मॉड्यूल: स्टॉक Car Link ऐप बंद है, पर अब भी चल रहा है। यूनिट रीस्टार्ट करें।</string>
     <string name="external_bt_blink_refused_root">बाहरी ब्लूटूथ मॉड्यूल: मॉड्यूल का चैनल खोलने के लिए इस यूनिट पर रूट चाहिए, और रूट एक्सेस नहीं मिला या उपलब्ध नहीं है।</string>
@@ -1516,6 +1576,7 @@
     <string name="home_favorites_full">चारों पसंदीदा भरे हुए हैं। बदलने के लिए होम स्क्रीन पर किसी एक को दबाकर रखें।</string>
     <string name="home_choose_favorite_app">ऐप या शॉर्टकट चुनें</string>
     <string name="home_shortcut_badge">शॉर्टकट</string>
+    <string name="app_drawer_tab_shortcuts">शॉर्टकट</string>
     <string name="home_show_favorite_apps">होम स्क्रीन पर पसंदीदा ऐप्स</string>
     <string name="home_show_favorite_apps_description">जब Open Headunit आपका लॉन्चर हो, तब मुख्य बटन के नीचे आपके पसंदीदा ऐप्स</string>
     <string name="home_show_widgets">होम स्क्रीन पर विजेट</string>

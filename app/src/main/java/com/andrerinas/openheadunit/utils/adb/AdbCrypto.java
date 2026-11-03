@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -122,7 +121,7 @@ public class AdbCrypto {
         byte[] converted = convertRsaPublicKeyToAdbFormat((RSAPublicKey) this.keyPair.getPublic());
         String base64 = Base64.encodeToString(converted, Base64.NO_WRAP);
         String keyString = base64 + " OpenHU@localhost\u0000";
-        return keyString.getBytes(StandardCharsets.UTF_8);
+        return keyString.getBytes(AdbProtocol.UTF_8);
     }
 
     public byte[] signAdbTokenPayload(byte[] token) throws Exception {

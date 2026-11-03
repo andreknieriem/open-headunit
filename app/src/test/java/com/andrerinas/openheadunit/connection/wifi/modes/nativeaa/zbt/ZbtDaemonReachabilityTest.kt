@@ -33,6 +33,41 @@ class ZbtDaemonReachabilityTest {
     private fun dial(answer: Boolean): () -> Boolean = { dials++; answer }
 
     @Test
+    fun `carrier taking admission before identity entry leaves no negative cache`() {
+        var socketsCreated = 0
+        val result = ZbtDaemonReachability.resolve(
+            nowMs = { 200_000L }, requireIdentity = true, keepTrying = { true },
+            identityDial = {
+                val owner = ZbtDaemonReachability.claimCarrier()
+                try {
+                    ZbtIdentityProbe.probe(
+                        keepTrying = { !ZbtDaemonReachability.carrierLive() && !ZbtDaemonReachability.carrierWantsClient() },
+                        socketFactory = { socketsCreated++; error("carrier owns admission") }
+                    )
+                } finally { owner.close() }
+            }
+        )
+        assertFalse(result)
+        assertEquals(0, socketsCreated)
+        assertNull(ZbtDaemonReachability.cached(nowMs = 200_000L, requireIdentity = true))
+    }
+
+    @Test
+    fun `retired observation cannot overwrite a completed carrier measurement`() {
+        assertFalse(ZbtDaemonReachability.resolve(
+            nowMs = { 1_000L },
+            dial = {
+                ZbtDaemonReachability.claimCarrier().use {
+                    ZbtDaemonReachability.record(true, nowMs = 1_000L)
+                }
+                false
+            }
+        ))
+        assertFalse(ZbtDaemonReachability.carrierWantsClient())
+        assertEquals(true, ZbtDaemonReachability.cached(nowMs = 1_000L))
+    }
+
+    @Test
     fun `nothing is known before anything is asked`() {
         assertNull(ZbtDaemonReachability.cached(nowMs = 1_000L))
     }
@@ -204,6 +239,29 @@ class ZbtDaemonReachabilityTest {
         // The silent verdict is reported as reachable by the dial, so the loop ends on it.
         assertTrue(retrying(scripted(false, true)))
         assertEquals(2, dials)
+    }
+
+    @Test
+    fun `a refusal made final by another route ends the window and is cached`() {
+        val refusalsSeen = mutableListOf<Int>()
+        val reachable = ZbtDaemonReachability.resolve(
+            nowMs = { clock }, dial = scripted(false), retryRefusals = true,
+            sleep = { clock += it }, refusalIsFinal = { refusalsSeen += it; true }
+        )
+        assertFalse(reachable)
+        assertEquals(listOf(0L), dialTimes)
+        assertEquals(listOf(1), refusalsSeen)
+        assertTrue(ZbtDaemonReachability.cached(nowMs = clock) == false)
+    }
+
+    @Test
+    fun `a refusal not made final keeps the whole window`() {
+        val reachable = ZbtDaemonReachability.resolve(
+            nowMs = { clock }, dial = scripted(false), retryRefusals = true,
+            sleep = { clock += it }, refusalIsFinal = { false }
+        )
+        assertFalse(reachable)
+        assertEquals(7, dials)
     }
 
     @Test

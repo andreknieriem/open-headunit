@@ -48,7 +48,6 @@ class SettingsPendingCopy {
     var showToastMessages: Boolean? = null
     var screenOrientation: Settings.ScreenOrientation? = null
     var appLanguage: String? = null
-    var fakeSpeed: Boolean? = null
     var autoRestartWifi: Boolean? = null
     var narrowBandProfileCap: Boolean? = null
     var debugVideoLowLatency: Boolean? = null
@@ -63,6 +62,7 @@ class SettingsPendingCopy {
     var nativeAaIgnoreExternalBt: Boolean? = null
     var externalBtZbtTransport: Boolean? = null
     var externalBtBlinkTransport: Boolean? = null
+    var externalBtZjSocketTransport: Boolean? = null
     var nativeApTransport: NativeStrategy? = null
     var nativeDriverSelectionMode: NativeDriverSelectionPolicy.Mode? = null
     var nativeDriverSelectionTimeout: Int? = null
@@ -137,7 +137,6 @@ class SettingsPendingCopy {
         showToastMessages = settings.showToastMessages
         screenOrientation = settings.screenOrientation
         appLanguage = settings.appLanguage
-        fakeSpeed = settings.fakeSpeed
         autoRestartWifi = settings.autoRestartWifiWhenP2pStuck
         narrowBandProfileCap = settings.narrowBandProfileCap
         debugVideoLowLatency = settings.debugVideoLowLatency
@@ -152,6 +151,7 @@ class SettingsPendingCopy {
         nativeAaIgnoreExternalBt = settings.nativeAaIgnoreExternalBt
         externalBtZbtTransport = settings.externalBtZbtTransport
         externalBtBlinkTransport = settings.externalBtBlinkTransport
+        externalBtZjSocketTransport = settings.externalBtZjSocketTransport
         nativeApTransport = settings.nativeApStrategy
         nativeDriverSelectionMode = settings.nativeDriverSelectionMode
         nativeDriverSelectionTimeout = settings.nativeDriverSelectionTimeoutSec
@@ -227,7 +227,6 @@ class SettingsPendingCopy {
         showToastMessages != settings.showToastMessages ||
         screenOrientation != settings.screenOrientation ||
         appLanguage != settings.appLanguage ||
-        fakeSpeed != settings.fakeSpeed ||
         autoRestartWifi != settings.autoRestartWifiWhenP2pStuck ||
         narrowBandProfileCap != settings.narrowBandProfileCap ||
         debugVideoLowLatency != settings.debugVideoLowLatency ||
@@ -242,6 +241,7 @@ class SettingsPendingCopy {
         nativeAaIgnoreExternalBt != settings.nativeAaIgnoreExternalBt ||
         externalBtZbtTransport != settings.externalBtZbtTransport ||
         externalBtBlinkTransport != settings.externalBtBlinkTransport ||
+        externalBtZjSocketTransport != settings.externalBtZjSocketTransport ||
         nativeApTransport != settings.nativeApStrategy ||
         nativeDriverSelectionMode != settings.nativeDriverSelectionMode ||
         nativeDriverSelectionTimeout != settings.nativeDriverSelectionTimeoutSec ||

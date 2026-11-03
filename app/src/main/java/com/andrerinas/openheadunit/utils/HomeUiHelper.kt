@@ -645,11 +645,16 @@ object HomeUiHelper {
     }
 
     /**
-     * The apps row exists only while Open Headunit is the launcher, and takes the height the main
+     * The apps row, and the area holding it and the widgets, exist only while Open Headunit is the
+     * launcher, and the row takes the height the main
      * button's icon would use. With the favorites switched off it keeps "All", the only way left
      * to the other apps.
      */
     fun applyFavoritesVisibility(rootView: View, isLauncherActive: Boolean, showFavorites: Boolean) {
+        // The whole area, not only its rows: an empty area that is still visible keeps the gap
+        // above it, and outside launcher mode the main button then ended short of the driver bar.
+        rootView.findViewById<View>(R.id.home_favorites_area)?.visibility =
+            if (isLauncherActive) View.VISIBLE else View.GONE
         rootView.findViewById<View>(R.id.home_favorites)?.visibility = if (isLauncherActive) View.VISIBLE else View.GONE
         rootView.findViewById<View>(R.id.home_primary_icon_tile)?.visibility =
             if (isLauncherActive) View.GONE else View.VISIBLE

@@ -28,6 +28,34 @@
     <string name="dpi">Piksel yoğunluğu (DPI)</string>
     <string name="mic_sample_rate">Mikrofon örnekleme hızı</string>
     <string name="keymap">Tuş Haritası</string>
+    <string name="gestures">Hareketler</string>
+    <string name="gestures_description">İki parmak kaydırma ve uzun basmayı yapılandırın.</string>
+    <string name="gesture_two_finger_down">İki parmakla aşağı kaydır</string>
+    <string name="gesture_two_finger_long_press">İki parmakla uzun basma</string>
+    <string name="gesture_two_finger_left">Soldan iki parmak hareketi</string>
+    <string name="gesture_two_finger_right">Sağdan iki parmak hareketi</string>
+    <string name="gesture_action_disabled">Devre dışı</string>
+    <string name="gesture_action_exit_dialog">Çıkış iletişim kutusu</string>
+    <string name="gesture_action_toggle_fullscreen">Tam ekranı değiştir</string>
+    <string name="gesture_action_night_overlay">Gece katmanı</string>
+    <string name="gestures_reset">Hareket ayarları sıfırlandı</string>
+    <string name="night_overlay_dismiss">Projeksiyona dönmek için dokunun</string>
+    <string name="night_overlay_meters">%1$d m</string>
+    <string name="night_overlay_kilometers">%1$.1f km</string>
+    <string name="night_overlay_navigation">%1$s · %2$s</string>
+    <string name="night_overlay_left">sol</string>
+    <string name="night_overlay_right">sağ</string>
+    <string name="night_overlay_direction">%1$s · %2$s</string>
+    <string name="night_overlay_exit_number">Çıkış %1$d</string>
+    <string name="night_overlay_exit_angle">%1$d°</string>
+    <string name="night_overlay_eta_summary">ETA %1$s · %2$s · %3$s</string>
+    <string name="night_overlay_duration_minutes">%1$d dk</string>
+    <string name="night_overlay_duration_hours_minutes">%1$d sa %2$d dk</string>
+    <string name="night_overlay_current_road">Şimdi: %1$s</string>
+    <string name="night_overlay_route">Rota: %1$s</string>
+    <string name="night_overlay_lanes">Şeritler: %1$s</string>
+    <string name="night_overlay_traffic_delay">Trafik gecikmesi: +%1$s</string>
+    <string name="night_overlay_speed_value">%1$d km/s</string>
     <string name="night_mode">Koyu Mod (Android Auto)</string>
     <string name="night_mode_threshold">Gece Modu Eşiği</string>
     <string name="enter_threshold_value">Eşik Değerini Girin</string>
@@ -39,6 +67,16 @@
     <string name="threshold_brightness_hint">Ekran parlaklığı bu değerin altında olduğunda koyu mod etkinleşir. Android parlaklığı 0–255 olarak bildirir ancak gerçek aralık cihaza göre değişebilir. Cihazınız için doğru eşiği denemeniz gerekebilir.</string>
     <string name="current_light_reading">Mevcut ışık: %d Lux</string>
     <string name="enable_fine_lux_control">Hassas kontrol (0–100 Lux)</string>
+    <string name="car_signal_calibration_info_format">Geçerli car_mode: %1$d. Eşleme: %2$s.</string>
+    <string name="car_signal_mapping_default">0 = Gündüz, sıfır dışı = Gece</string>
+    <string name="car_signal_mapping_inverted">0 = Gece, sıfır dışı = Gündüz</string>
+    <string name="car_signal_unavailable">Bu ana ünitede car_mode şu anda okunamıyor.</string>
+    <string name="car_signal_headlights_question">Farlar şu anda açık mı?</string>
+    <string name="car_signal_calibration_title">ILL+ Kalibrasyonu</string>
+    <string name="car_signal_recalibrate">Yeniden kalibre et</string>
+    <string name="car_signal_headlights_on">Açık</string>
+    <string name="car_signal_headlights_off">Kapalı</string>
+    <string name="car_signal_calibration_saved">ILL+ kalibrasyonu kaydedildi ve uygulandı</string>
     <string name="night_mode_start">Gece Modu Başlangıç Saati</string>
     <string name="night_mode_end">Gece Modu Bitiş Saati</string>
 
@@ -571,6 +609,12 @@
 
     <string name="supported_nativeaa">Gelişmiş Kablosuz Desteği</string>
     <string name="supported_nativeaa_desc">Harika haber! Cihazınız, Android Auto\'yu daha sorunsuz çalıştıran \"Native Wireless\" (Yerel Kablosuz) modunu destekliyor.\n\nBunu etkinleştirmek için Bluetooth önbelleğinin yenilenmesi gerekiyor. Lütfen şunları yapın:\n1. Telefonunuzda mevcut eşleşmeyi kaldırın\n2. Bluetooth\'u yeniden başlatmak için Tamam\'a dokunun\n3. Telefonunuzu yeniden eşleştirin\n\nŞimdi Native AA moduna geçmek istiyor musunuz?</string>
+    <string name="automation_connect_no_permission">Ada göre bağlanmak için bu uygulamaya Bluetooth izni verin.</string>
+    <string name="automation_connect_not_found">Bu ada sahip eşlenmiş telefon yok.</string>
+    <string name="automation_connect_ambiguous">Bu ada sahip birden fazla eşlenmiş telefon var.</string>
+    <string name="automation_connect_not_a_phone">Eşlenmiş bu cihaz bir telefon değil.</string>
+    <string name="automation_connect_not_paired">Bu Bluetooth adresi eşlenmemiş.</string>
+    <string name="automation_connect_live_session">Başka bir telefon zaten bağlı.</string>
     <string name="native_aa_poke_not_running">Bu ana ünitede kablosuz Bluetooth çalışmıyor. Ayarları kontrol edin.</string>
     <string name="not_supported_nativeaa">Yerel Kablosuz desteklenmiyor olabilir</string>
     <string name="not_supported_nativeaa_desc">Cihazınız Yerel Kablosuz için gereken Bluetooth veya Wi-Fi özelliklerini desteklemiyor olabilir. Yine de deneyebilirsiniz ancak başarısız olursa lütfen bunun yerine \"Kablosuz Yardımcı\" veya \"Otomatik (Headunit Sunucusu)\" modunu kullanın.</string>
@@ -579,8 +623,6 @@
     <string name="wait_for_wifi_description">Açılışta Wi-Fi Direct başlatılmadan önce Wi-Fi bağlantısı beklenir. Multimedya sisteminiz açıldıktan sonra Wi-Fi\'a bağlanmak için birkaç saniyeye ihtiyaç duyuyorsa bunu etkinleştirin.</string>
     <string name="wait_for_wifi_timeout">Wi-Fi bekleme zaman aşımı</string>
     <string name="wireless_24ghz_warning">Not: 2.4GHz cihazlarda kablosuz Android Auto gecikmelere, takılmalara ve bağlantı kesilmelerine neden olabilir. Sorun yaşarsanız, bunun bir ağ kısıtlaması olup olmadığını doğrulamak için lütfen USB üzerinden test edin.</string>
-    <string name="fake_speed_title">Video Kilidini Devre Dışı Bırak (Sahte Hız)</string>
-    <string name="fake_speed_description">Sürüş sırasında video içeriğinin engellenmesini önlemek için telefona sabit bir düşük hız (0.5 m/s) bildirir. Dikkatli kullanın.</string>
     <string name="wireless_mode_helper">Kablosuz Yardımcı</string>
     <string name="wireless_mode_native">Yerel (Native)</string>
     <string name="wireless_mode_server">Headunit Sunucusu</string>
@@ -1043,6 +1085,8 @@
     <string name="external_bt_module_controls_hint">Telefon eşleştirme, bağlantı önceliği ve sürücü seçimi harici Bluetooth modülü tarafından yönetilir.</string>
     <string name="external_bt_module_last_phone">Modül üzerinden bağlanan son telefon</string>
     <string name="external_bt_blink_transport_description">Deneyseldir. Telefonu aramalar için ayrı bir Bluetooth modülüyle eşleşen FYT üniteleri içindir; örneğin DUDUOS üzerindeki \"DUDUAUTO\". Şu ana kadar test edilen tek ROM budur. Kablosuz Android Auto bağlantı kurulum adımını bu ünitenin Bluetooth\'u değil modül taşır ve normalde bunu yerleşik Car Link uygulaması yanıtlar. Bu ayar açıkken yanıtı bu uygulama verir, böylece aramalar modülde ve aracın hoparlörlerinde kalır.\n\nÖnce yerleşik Car Link uygulamasını devre dışı bırakın (pm disable-user com.syu.carlink). Aksi halde iki uygulama aynı kanalı okur. Kanal, ünite izin veriyorsa root olmadan, vermiyorsa root ile açılır. Native\'i seçin, telefonu yalnızca modülle eşleştirin ve bağlanmazsa günlüğü dışa aktarın.</string>
+    <string name="external_bt_zj_socket_transport">ZJ Bluetooth soketi üzerinden bağlan</string>
+    <string name="external_bt_zj_socket_transport_description">ZJ Bluetooth modülünün kablosuz Android Auto el sıkışmasını yerel bir soket (/dev/socket/zj_bt_socket) üzerinden taşıdığı üniteler içindir. Bu soket bağlantı kabul ettiğinde uygulama onu kendiliğinden kullanır. Bunu yalnızca ünitenizde soket varsa ve uygulama onu görmüyorsa açın.</string>
     <string name="external_bt_blink_refused_stock_enabled">Harici Bluetooth modülü: yerleşik Car Link uygulaması hâlâ etkin. Uygulamayı devre dışı bırakın (pm disable-user com.syu.carlink) veya bu aktarım yöntemini kapatın.</string>
     <string name="external_bt_blink_refused_stock_running">Harici Bluetooth modülü: yerleşik Car Link uygulaması devre dışı ama hâlâ çalışıyor. Üniteyi yeniden başlatın.</string>
     <string name="external_bt_blink_refused_root">Harici Bluetooth modülü: modülün kanalını açmak için bu ünitede root gerekir ve root erişimi reddedildi veya kullanılamıyor.</string>
@@ -1243,6 +1287,22 @@
     <string name="enter_auto_disconnect_bt_delay">Oturumu sonlandırmadan önce beklenecek saniye</string>
     <string name="auto_disconnect_bt_delay_hint">Profiller yeniden bağlanırken Bluetooth bağlantısı kısa süreliğine kesilebilir. Oturum yalnızca bu süreden sonra cihaz hâlâ yoksa sonlandırılır.</string>
     <string name="auto_disconnect_bt_kill_hint">Seçilen cihazın Bluetooth bağlantısı koptuğunda (örneğin araç kapatıldığında) oturumu sonlandırır. Uygulamayı da kapatmak için Otomasyon altındaki «Bağlantı kesildiğinde uygulamayı kapat»ı açın.</string>
+    <string name="external_power_disconnect_label">Şarj cihazı çıkarılınca bağlantıyı kes</string>
+    <string name="external_power_disconnect_description">Araç kapatıldığında olduğu gibi harici güç kesilirse oturumu Çıkış düğmesiyle aynı şekilde sonlandırır. Güç geri gelince bağlantı yeniden etkinleşir.</string>
+    <string name="external_power_delay_label">Bekleme (saniye)</string>
+    <string name="external_power_delay_value">%1$d sn</string>
+    <string name="external_power_delay_hint">Oturum, bu süre sonunda güç hâlâ yoksa sonlanır. 5 ile 3600 saniye arasında.</string>
+    <string name="external_power_screen_off_label">Ekranı da kapat</string>
+    <string name="external_power_screen_off_description">Güç yokken, oturum sona erdikten sonra veya hiçbir şey bağlı değilken ekranı karartır, güç geri gelince yeniden açar.</string>
+    <string name="external_power_grant_label">Open Headunit\'in ekranı kapatmasına izin ver</string>
+    <string name="external_power_grant_allowed">İzin verildi</string>
+    <string name="external_power_grant_missing">İzin verilmedi</string>
+    <string name="external_power_grant_uninstall_hint">Bu izin açıkken Android uygulamanın kaldırılmasını engeller. Uygulamayı kaldırmadan önce izni buradan kaldırın.</string>
+    <string name="external_power_grant_explanation">Open Headunit bu izni yalnızca ekranı kapatmak için kullanır. Cihazın kilidini açamaz ve hiçbir şeyi okuyamaz.</string>
+    <string name="external_power_grant_remove_message">Ekranı kapatma izni kaldırılsın mı?</string>
+    <string name="external_power_grant_remove">Kaldır</string>
+    <string name="screen_off_admin_label">Ekranı kapat</string>
+    <string name="screen_off_admin_description">Harici güç kesildiğinde Open Headunit\'in ekranı kapatmasına izin verir.</string>
     <string name="audio_stream_vendor_format">%1$s (%2$d)</string>
     <string name="debug_video_fault_injection">Video hata enjeksiyonu</string>
     <string name="debug_video_fault_rate">Hata oranı (N\'de bir)</string>
@@ -1463,6 +1523,7 @@
     <string name="home_favorites_full">Dört favorinin hepsi dolu. Değiştirmek için ana ekranda birine basılı tut.</string>
     <string name="home_choose_favorite_app">Bir uygulama veya kısayol seç</string>
     <string name="home_shortcut_badge">Kısayol</string>
+    <string name="app_drawer_tab_shortcuts">Kısayollar</string>
     <string name="home_show_favorite_apps">Ana ekranda favori uygulamalar</string>
     <string name="home_show_favorite_apps_description">Open Headunit başlatıcınız olduğunda, ana düğmenin altında favori uygulamalarınız</string>
     <string name="home_show_widgets">Ana ekranda widget\'lar</string>

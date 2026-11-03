@@ -264,6 +264,34 @@
     <string name="pixel_aspect_ratio">Pixel aspect ratio</string>
     <string name="mic_sample_rate">Mic capture rate</string>
     <string name="keymap">Keymap</string>
+    <string name="gestures">Gestures</string>
+    <string name="gestures_description">Configure two-finger swipes and long press.</string>
+    <string name="gesture_two_finger_down">Two-finger swipe down</string>
+    <string name="gesture_two_finger_long_press">Two-finger long press</string>
+    <string name="gesture_two_finger_left">Two-finger gesture from the left</string>
+    <string name="gesture_two_finger_right">Two-finger gesture from the right</string>
+    <string name="gesture_action_disabled">Disabled</string>
+    <string name="gesture_action_exit_dialog">Exit dialog</string>
+    <string name="gesture_action_toggle_fullscreen">Toggle full screen</string>
+    <string name="gesture_action_night_overlay">Night overlay</string>
+    <string name="gestures_reset">Gesture settings reset</string>
+    <string name="night_overlay_dismiss">Tap to return to projection</string>
+    <string name="night_overlay_meters">%1$d m</string>
+    <string name="night_overlay_kilometers">%1$.1f km</string>
+    <string name="night_overlay_navigation">%1$s · %2$s</string>
+    <string name="night_overlay_left">left</string>
+    <string name="night_overlay_right">right</string>
+    <string name="night_overlay_direction">%1$s · %2$s</string>
+    <string name="night_overlay_exit_number">Exit %1$d</string>
+    <string name="night_overlay_exit_angle">%1$d°</string>
+    <string name="night_overlay_eta_summary">ETA %1$s · %2$s · %3$s</string>
+    <string name="night_overlay_duration_minutes">%1$d min</string>
+    <string name="night_overlay_duration_hours_minutes">%1$d h %2$d min</string>
+    <string name="night_overlay_current_road">Now: %1$s</string>
+    <string name="night_overlay_route">Route: %1$s</string>
+    <string name="night_overlay_lanes">Lanes: %1$s</string>
+    <string name="night_overlay_traffic_delay">Traffic delay: +%1$s</string>
+    <string name="night_overlay_speed_value">%1$d km/h</string>
     <string name="night_mode">Dark Mode (Android Auto)</string>
     <string name="night_mode_threshold">Night Mode Threshold</string>
     <string name="enter_threshold_value">Enter Threshold Value</string>
@@ -276,6 +304,16 @@
     <string name="current_light_reading">Current light: %d Lux</string>
     <string name="current_brightness_reading">Current brightness: %d / 255</string>
     <string name="enable_fine_lux_control">Fine control (0–100 Lux)</string>
+    <string name="car_signal_calibration_info_format">Current car_mode: %1$d. Mapping: %2$s.</string>
+    <string name="car_signal_mapping_default">0 = Day, non-zero = Night</string>
+    <string name="car_signal_mapping_inverted">0 = Night, non-zero = Day</string>
+    <string name="car_signal_unavailable">Cannot read car_mode on this head unit right now.</string>
+    <string name="car_signal_headlights_question">Are the headlights on now?</string>
+    <string name="car_signal_calibration_title">ILL+ Calibration</string>
+    <string name="car_signal_recalibrate">Recalibrate</string>
+    <string name="car_signal_headlights_on">On</string>
+    <string name="car_signal_headlights_off">Off</string>
+    <string name="car_signal_calibration_saved">ILL+ calibration saved and applied</string>
     <string name="night_mode_start">Night Mode Start Time</string>
     <string name="night_mode_end">Night Mode End Time</string>
 
@@ -560,6 +598,22 @@
     <string name="enter_auto_disconnect_bt_delay">Seconds to wait before ending the session</string>
     <string name="auto_disconnect_bt_delay_hint">A Bluetooth link can drop for a moment while profiles reconnect. The session only ends if the device is still gone after this long.</string>
     <string name="auto_disconnect_bt_kill_hint">Ends the session the way the Exit button does when a chosen device\'s Bluetooth goes away, for example the car being switched off. Pick the car\'s Bluetooth if this unit is paired with it. To also close the app and show the home screen, turn on \"Close app on disconnect\" under Automation.</string>
+    <string name="external_power_disconnect_label">Disconnect when the charger is removed</string>
+    <string name="external_power_disconnect_description">Ends the session the way the Exit button does when external power is lost, for example the car being switched off. Power coming back re-arms the connection.</string>
+    <string name="external_power_delay_label">Wait (seconds)</string>
+    <string name="external_power_delay_value">%1$d s</string>
+    <string name="external_power_delay_hint">The session only ends if power is still gone after this long. From 5 to 3600 seconds.</string>
+    <string name="external_power_screen_off_label">Turn the screen off too</string>
+    <string name="external_power_screen_off_description">Darkens the screen when power stays away, after the session has ended or when nothing is connected, and lights it again when power returns.</string>
+    <string name="external_power_grant_label">Allow Open Headunit to turn the screen off</string>
+    <string name="external_power_grant_allowed">Allowed</string>
+    <string name="external_power_grant_missing">Not allowed</string>
+    <string name="external_power_grant_uninstall_hint">Android blocks an uninstall while this is allowed. Remove it here before you uninstall the app.</string>
+    <string name="external_power_grant_explanation">Open Headunit uses this only to turn the screen off. It cannot unlock the device or read anything.</string>
+    <string name="external_power_grant_remove_message">Remove the permission to turn the screen off?</string>
+    <string name="external_power_grant_remove">Remove</string>
+    <string name="screen_off_admin_label">Turn the screen off</string>
+    <string name="screen_off_admin_description">Lets Open Headunit turn the screen off when external power is lost.</string>
     <string name="auto_start_wifi_label">Auto-start on WiFi</string>
     <string name="auto_start_wifi_description">Automatically open Open Headunit when connected to a specific WiFi SSID.</string>
     <string name="auto_start_wifi_ssid_label">WiFi SSID</string>
@@ -1192,6 +1246,12 @@
 
     <string name="supported_nativeaa">Enhanced Wireless Support</string>
     <string name="supported_nativeaa_desc">Great news! Your device supports \"Native Wireless\" mode, which provides a more seamless Android Auto experience. \n\nTo enable this, we need to refresh your Bluetooth cache. Please: \n1. Remove the existing pairing on your phone \n2. Click OK to restart Bluetooth \n3. Re-pair your phone \n\nWould you like to switch to Native AA mode now?</string>
+    <string name="automation_connect_no_permission">Allow Bluetooth for this app to connect by name.</string>
+    <string name="automation_connect_not_found">No paired phone has that name.</string>
+    <string name="automation_connect_ambiguous">More than one paired phone has that name.</string>
+    <string name="automation_connect_not_a_phone">That paired device is not a phone.</string>
+    <string name="automation_connect_not_paired">That Bluetooth address is not paired.</string>
+    <string name="automation_connect_live_session">Another phone is already connected.</string>
     <string name="native_aa_poke_not_running">Wireless Bluetooth is not running on this head unit. Check Settings.</string>
     <string name="not_supported_nativeaa">Native Wireless may not be supported</string>
     <string name="not_supported_nativeaa_desc">Your device might not support the required Bluetooth or Wi-Fi features for Native Wireless. You can try it anyway, but if it fails, please use the \"Wireless Helper\" or \"Auto (Headunit Server)\" mode instead.</string>
@@ -1204,8 +1264,6 @@
     <string name="wait_for_wifi_description">On boot, wait for WiFi to connect before starting WiFi Direct. Enable this if your head unit needs a few seconds to connect to WiFi after power on.</string>
     <string name="wait_for_wifi_timeout">WiFi wait timeout</string>
     <string name="wireless_24ghz_warning">Note: Wireless Android Auto on 2.4GHz devices can lead to lag, stutters, and disconnects. If you experience issues, please test via USB to confirm if it\'s a network limitation.</string>
-    <string name="fake_speed_title">Disable Video-Lock (Fake Speed)</string>
-    <string name="fake_speed_description">Reports a constant low speed (0.5 m/s) to the phone to prevent video content from being blocked while driving. Use with caution.</string>
     <string name="wireless_mode_helper">Wireless Helper</string>
     <string name="wireless_mode_native">Native</string>
     <string name="wireless_mode_server">Headunit Server</string>
@@ -1367,6 +1425,8 @@
     <string name="external_bt_module_controls_hint">Phone pairing, connection priority, and driver selection are managed by the external Bluetooth module.</string>
     <string name="external_bt_module_last_phone">Last phone connected through the module</string>
     <string name="external_bt_blink_transport_description">Experimental. For FYT units whose phone pairs for calls with a separate Bluetooth module, such as \"DUDUAUTO\" on DUDUOS, the only ROM tested so far. The module, not this unit\'s Bluetooth, carries the wireless Android Auto handshake, and the stock Car Link app normally answers it. With this on, this app answers it instead, so calls stay on the module and the car\'s speakers.\n\nDisable the stock Car Link app first (pm disable-user com.syu.carlink), or both apps will read the same channel. The channel is opened without root where the unit allows it, and through root otherwise. Choose Native, pair the phone with the module only, and export the log if it does not connect.</string>
+    <string name="external_bt_zj_socket_transport">Connect through the ZJ Bluetooth socket</string>
+    <string name="external_bt_zj_socket_transport_description">For units whose ZJ Bluetooth module carries the wireless Android Auto handshake over a local socket (/dev/socket/zj_bt_socket). The app uses it by itself when that socket accepts a connection. Turn this on only if your unit has the socket and the app does not see it.</string>
     <string name="external_bt_blink_refused_stock_enabled">External Bluetooth module: the stock Car Link app is still enabled. Disable it (pm disable-user com.syu.carlink) or turn this transport off.</string>
     <string name="external_bt_blink_refused_stock_running">External Bluetooth module: the stock Car Link app is disabled but still running. Restart the unit.</string>
     <string name="external_bt_blink_refused_root">External Bluetooth module: opening the module\'s channel needs root on this unit, and root access was denied or is not available.</string>
@@ -1540,6 +1600,36 @@
     <string name="copied_to_clipboard">Copied to clipboard</string>
     <string name="audio_settings_reconnect">Audio settings saved. Reconnect Android Auto to apply them.</string>
 
+    <!-- Bluetooth relay (ESP32) -->
+    <string name="esp32_relay_settings_title">Bluetooth relay (ESP32)</string>
+    <string name="esp32_relay_settings_summary">Bluetooth Relay settings for an ESP32 implementation.</string>
+    <string name="esp32_relay_enabled">Use Bluetooth relay</string>
+    <string name="esp32_relay_enabled_description">Choose whether to use the Bluetooth relay.</string>
+    <string name="esp32_relay_settings_disabled">Off</string>
+    <string name="esp32_relay_saved_device">Saved Bluetooth relay</string>
+    <string name="esp32_relay_saved_notice">Saved Bluetooth relay: %1$s</string>
+    <string name="esp32_relay_none">None</string>
+    <string name="esp32_relay_status">Status</string>
+    <string name="esp32_relay_status_notice">Status: %1$s</string>
+    <string name="esp32_relay_scan">Scan</string>
+    <string name="esp32_relay_scan_action">Look for OpenHU-BT-Relay-Setup</string>
+    <string name="esp32_relay_scanning">Scanning…</string>
+    <string name="esp32_relay_found_device">Found device</string>
+    <string name="esp32_relay_forget">Remove Bluetooth relay</string>
+    <string name="esp32_relay_forget_value">Clear the saved device</string>
+    <string name="esp32_relay_pairing_header">Phone pairing</string>
+    <string name="esp32_relay_pairing_steps">1. On the phone, remove the head unit itself and any old OpenHU-BT-Relay from Bluetooth.\n2. Turn the relay on → Scan → select OpenHU-BT-Relay-Setup → wait until status shows “pair OpenHU-BT-Relay” (120 s).\n3. On the phone, pair OpenHU-BT-Relay (PIN 0000).\n4. If something goes wrong, tap Pair phone.</string>
+    <string name="esp32_relay_phase_idle">Not connected</string>
+    <string name="esp32_relay_phase_connecting">Connecting…</string>
+    <string name="esp32_relay_phase_ready">Connected</string>
+    <string name="esp32_relay_phase_incomplete">Wi-Fi Direct group is not ready</string>
+    <string name="esp32_relay_phase_pairing">Phone: pair OpenHU-BT-Relay now — PIN 0000 (120 s)</string>
+    <string name="esp32_relay_pair">Pair phone</string>
+    <string name="esp32_relay_pair_value">Start phone pairing for 120 s (PIN 0000)</string>
+    <string name="esp32_relay_end_aa_on_disconnect">End Android Auto when the Bluetooth relay disconnects</string>
+    <string name="esp32_relay_end_aa_on_disconnect_description">Sends a health report to the Bluetooth relay every 2 seconds. If two reports fail in a row, the Android Auto session is closed</string>
+    <string name="esp32_relay_phase_failed">Failed: %1$s</string>
+
     <!-- Home screen -->
     <string name="home_kicker_active">Android Auto</string>
     <string name="home_kicker_last_connection">Your last connection</string>
@@ -1571,6 +1661,7 @@
     <string name="home_favorites_full">All four favorites are taken. Long-press one on the home screen to change it.</string>
     <string name="home_choose_favorite_app">Choose an app or shortcut</string>
     <string name="home_shortcut_badge">Shortcut</string>
+    <string name="app_drawer_tab_shortcuts">Shortcuts</string>
     <string name="home_show_favorite_apps">Favorite apps on the home screen</string>
     <string name="home_show_favorite_apps_description">Your favorite apps under the main button, when Open Headunit is your launcher</string>
     <string name="home_show_widgets">Widgets on the home screen</string>

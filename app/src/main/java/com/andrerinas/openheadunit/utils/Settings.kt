@@ -1,6 +1,7 @@
 package com.andrerinas.openheadunit.utils
 
 import android.annotation.SuppressLint
+import com.andrerinas.openheadunit.app.ExternalPowerDisconnectPolicy
 import android.content.ComponentName
 import android.content.Context
 import android.content.SharedPreferences
@@ -298,6 +299,21 @@ class Settings(private val context: Context) {
             prefs.edit().putInt("night-mode-threshold-brightness", value).apply()
         }
 
+    /**
+     * Inverts interpretation of Settings.System.car_mode for ILL+ mode.
+     * Default mapping: 0 = day, non-zero = night.
+     */
+    var carSignalInvert: Boolean
+        get() = prefs.getBoolean("car-signal-invert", false)
+        set(value) {
+            prefs.edit().putBoolean("car-signal-invert", value).apply()
+        }
+
+    fun resolveCarSignalNight(carMode: Int): Boolean {
+        val defaultNight = carMode != 0
+        return if (carSignalInvert) !defaultNight else defaultNight
+    }
+
     var keyCodes: MutableMap<Int, Int>
         get() {
             val set = prefs.getStringSet("key-codes", mutableSetOf())!!
@@ -442,12 +458,6 @@ class Settings(private val context: Context) {
         get() = prefs.getBoolean("wifi-restart-adb-verified", false)
         set(value) = prefs.edit().putBoolean("wifi-restart-adb-verified", value).apply()
 
-    var fakeSpeed: Boolean
-        get() = prefs.getBoolean("fake_speed", true)
-        set(value) {
-            prefs.edit().putBoolean("fake_speed", value).apply()
-        }
-
     var gestureHintShown: Boolean
         get() = prefs.getBoolean("gesture_hint_shown", false)
         set(value) {
@@ -530,6 +540,26 @@ class Settings(private val context: Context) {
             return FullscreenMode.fromInt(value) ?: FullscreenMode.IMMERSIVE
         }
         set(value) { prefs.edit().putInt("fullscreen-mode", value.value).apply() }
+
+    var leftTwoFingerGesture: GestureAction
+        get() = GestureAction.fromInt(prefs.getInt("left-two-finger-gesture", GestureAction.EXIT_DIALOG.value))
+            ?: GestureAction.EXIT_DIALOG
+        set(value) { prefs.edit().putInt("left-two-finger-gesture", value.value).apply() }
+
+    var rightTwoFingerGesture: GestureAction
+        get() = GestureAction.fromInt(prefs.getInt("right-two-finger-gesture", GestureAction.TOGGLE_FULLSCREEN.value))
+            ?: GestureAction.TOGGLE_FULLSCREEN
+        set(value) { prefs.edit().putInt("right-two-finger-gesture", value.value).apply() }
+
+    var downTwoFingerGesture: GestureAction
+        get() = GestureAction.fromInt(prefs.getInt("down-two-finger-gesture", GestureAction.DISABLED.value))
+            ?: GestureAction.DISABLED
+        set(value) { prefs.edit().putInt("down-two-finger-gesture", value.value).apply() }
+
+    var longPressTwoFingerGesture: GestureAction
+        get() = GestureAction.fromInt(prefs.getInt("long-press-two-finger-gesture", GestureAction.DISABLED.value))
+            ?: GestureAction.DISABLED
+        set(value) { prefs.edit().putInt("long-press-two-finger-gesture", value.value).apply() }
 
     @Deprecated("Use fullscreenMode instead")
     var startInFullscreenMode: Boolean
@@ -1551,6 +1581,20 @@ class Settings(private val context: Context) {
         get() = prefs.getInt("auto-disconnect-bt-delay-seconds", 5)
         set(value) { prefs.edit().putInt("auto-disconnect-bt-delay-seconds", value).apply() }
 
+    /** Ends the session when external power is lost; see ExternalPowerDisconnectPolicy. */
+    var externalPowerDisconnect: Boolean
+        get() = prefs.getBoolean("external-power-disconnect", false)
+        set(value) { prefs.edit().putBoolean("external-power-disconnect", value).apply() }
+
+    var externalPowerDisconnectDelaySeconds: Int
+        get() = prefs.getInt("external-power-disconnect-delay-seconds", ExternalPowerDisconnectPolicy.DEFAULT_DELAY_SECONDS)
+        set(value) { prefs.edit().putInt("external-power-disconnect-delay-seconds", value).apply() }
+
+    /** Also turns the screen off after the disconnect; needs the force-lock device admin grant. */
+    var externalPowerScreenOff: Boolean
+        get() = prefs.getBoolean("external-power-screen-off", false)
+        set(value) { prefs.edit().putBoolean("external-power-screen-off", value).apply() }
+
     var appLanguage: String
         get() = prefs.getString("app-language", "")!!
         set(value) { prefs.edit().putString("app-language", value).apply() }
@@ -2296,6 +2340,18 @@ class Settings(private val context: Context) {
         }
     }
 
+    enum class GestureAction(val value: Int) {
+        DISABLED(0),
+        EXIT_DIALOG(1),
+        TOGGLE_FULLSCREEN(2),
+        NIGHT_OVERLAY(3);
+
+        companion object {
+            private val map = values().associateBy(GestureAction::value)
+            fun fromInt(value: Int) = map[value]
+        }
+    }
+
     enum class AppTheme(val value: Int) {
         AUTOMATIC(0),
         CLEAR(1),
@@ -2660,5 +2716,11 @@ class Settings(private val context: Context) {
     var externalBtBlinkTransport: Boolean
         get() = prefs.getBoolean("external-bt-blink-transport", false)
         set(value) = prefs.edit().putBoolean("external-bt-blink-transport", value).apply()
+
+    // Carry the Native AA handshake over the ZJ daemon's Unix socket. Off by default: the app also
+    // takes this route unasked when the socket accepts a connect.
+    var externalBtZjSocketTransport: Boolean
+        get() = prefs.getBoolean("external-bt-zj-socket-transport", false)
+        set(value) = prefs.edit().putBoolean("external-bt-zj-socket-transport", value).apply()
 
 }

@@ -6,6 +6,7 @@ import android.content.Context
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -57,9 +58,15 @@ class GpsLocation constructor(private val context: Context): LocationListener {
                         AppLog.i("GpsLocation: no GPS fix for ${ageMs / 1000}s, stopping resend so the phone can fall back to its own location")
                     }
                 } else if (ageMs >= RESEND_INTERVAL_MS) {
+                    // Refresh only the outgoing copy. Advancing lastGpsFixAtMs here would let
+                    // repeated resends keep a dead GPS fix alive beyond the stale-fix cutoff.
                     val refreshed = Location(fix).apply {
                         time = System.currentTimeMillis()
-                        elapsedRealtimeNanos = SystemClock.elapsedRealtimeNanos()
+                        // Both the monotonic clock and Location's setter were added in API 17.
+                        // API 16 still resends with wall time; lack of nanos must not disable it.
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                            elapsedRealtimeNanos = SystemClock.elapsedRealtimeNanos()
+                        }
                     }
                     context.sendBroadcast(LocationUpdateIntent(refreshed).setPackage(context.packageName))
                 }

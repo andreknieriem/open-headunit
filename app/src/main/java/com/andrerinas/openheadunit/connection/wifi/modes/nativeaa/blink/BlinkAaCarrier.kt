@@ -78,6 +78,8 @@ class BlinkAaCarrier(
     /** The module wakes the phone itself; nothing is sent. */
     override val sendsWake: Boolean get() = false
 
+    override val rearmsWithoutAndroidRadio: Boolean get() = true
+
     suspend fun run() {
         carrierJob = currentCoroutineContext()[Job]
         while (keepRunning()) {

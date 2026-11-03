@@ -23,8 +23,8 @@ class TouchEvent(timeStamp: Long, action: Input.TouchEvent.PointerAction, action
                 MotionEvent.ACTION_MOVE -> Input.TouchEvent.PointerAction.TOUCH_ACTION_MOVE
                 MotionEvent.ACTION_UP -> Input.TouchEvent.PointerAction.TOUCH_ACTION_UP
                 MotionEvent.ACTION_POINTER_UP -> Input.TouchEvent.PointerAction.TOUCH_ACTION_POINTER_UP
-                MotionEvent.ACTION_CANCEL -> Input.TouchEvent.PointerAction.TOUCH_ACTION_CANCEL
-                MotionEvent.ACTION_OUTSIDE -> Input.TouchEvent.PointerAction.TOUCH_ACTION_OUTSIDE
+                // Android Auto accepts only DOWN/UP/MOVE/POINTER_DOWN/POINTER_UP in AAP input.
+                MotionEvent.ACTION_CANCEL, MotionEvent.ACTION_OUTSIDE -> null
                 else -> null
             }
         }

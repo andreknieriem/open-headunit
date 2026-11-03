@@ -7,6 +7,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.util.AttributeSet
+import android.view.View
 import android.view.PixelCopy
 import android.view.SurfaceHolder
 import android.view.SurfaceView
@@ -36,13 +37,56 @@ class ProjectionView @JvmOverloads constructor(
     var ownsDecoder: Boolean = true
     var appliesProjectionScale: Boolean = true
 
+    private var fixedBufferWidth = 0
+    private var fixedBufferHeight = 0
+    private var lastContentWidth = 0
+    private var lastContentHeight = 0
+    private var observedParent: View? = null
+
+    // Sizing by layout pins the view and buffer, so a container resize must re-fit from here.
+    private val parentLayoutListener = View.OnLayoutChangeListener { v, _, _, _, _, _, _, _, _ ->
+        val cw = v.width - v.paddingLeft - v.paddingRight
+        val ch = v.height - v.paddingTop - v.paddingBottom
+        if (appliesProjectionScale && SurfaceViewFitPolicy.refitsOnParentLayout(
+                fixedBufferWidth > 0, lastContentWidth, lastContentHeight, cw, ch)
+        ) {
+            AppLog.i("[UI_DEBUG] SurfaceView parent resized: ${lastContentWidth}x${lastContentHeight} -> ${cw}x${ch}, refitting")
+            post { ProjectionViewScaler.updateScale(this, videoWidth, videoHeight) }
+        }
+        lastContentWidth = cw
+        lastContentHeight = ch
+    }
+
+    val reportedSurfaceWidth: Int
+        get() = SurfaceViewFitPolicy.reportedSurfaceSize(fixedBufferWidth, fixedBufferHeight, width, height).first
+    val reportedSurfaceHeight: Int
+        get() = SurfaceViewFitPolicy.reportedSurfaceSize(fixedBufferWidth, fixedBufferHeight, width, height).second
+
     init {
         videoDecoder = App.provide(context).videoDecoder
         holder.addCallback(this)
     }
 
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        (parent as? View)?.let {
+            it.addOnLayoutChangeListener(parentLayoutListener)
+            observedParent = it
+        }
+    }
+
+    /** Pins the buffer to a fixed size, or hands it back to the layout when either side is 0. */
+    fun setBufferSize(width: Int, height: Int) {
+        if (width == fixedBufferWidth && height == fixedBufferHeight) return
+        fixedBufferWidth = width
+        fixedBufferHeight = height
+        if (width > 0 && height > 0) holder.setFixedSize(width, height) else holder.setSizeFromLayout()
+    }
+
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
+        observedParent?.removeOnLayoutChangeListener(parentLayoutListener)
+        observedParent = null
         // The decoder is a singleton and this view may be a discarded instance detaching after a
         // replacement already claimed it, so only stop the decoder if this surface still owns it.
         if (ownsDecoder) {
@@ -82,7 +126,7 @@ class ProjectionView @JvmOverloads constructor(
         callbacks.add(callback)
         if (holder.surface.isValid) {
             callback.onSurfaceCreated(holder.surface)
-            callback.onSurfaceChanged(holder.surface, width, height)
+            callback.onSurfaceChanged(holder.surface, reportedSurfaceWidth, reportedSurfaceHeight)
         }
     }
 
@@ -101,13 +145,17 @@ class ProjectionView @JvmOverloads constructor(
             if (settings.videoFitMode == Settings.VideoFitMode.FILL) {
                 AppLog.i("FORCED SCALE: Setting fixed size to ${width}x$height")
                 holder.setFixedSize(width, height)
+                fixedBufferWidth = 0
+                fixedBufferHeight = 0
             } else {
                 // CONTAIN/COVER: the LayoutParams size set by ProjectionViewScaler (getAdjustedWidth/
                 // Height or getCoverWidth/Height) IS the deliberate final pixel size - adopt it as
                 // the buffer size directly rather than stretching from native.
                 holder.setSizeFromLayout()
+                fixedBufferWidth = 0
+                fixedBufferHeight = 0
             }
-        } else {
+        } else if (fixedBufferWidth == 0) {
             holder.setSizeFromLayout()
         }
 

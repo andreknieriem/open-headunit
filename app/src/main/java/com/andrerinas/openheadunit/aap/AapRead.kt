@@ -228,7 +228,8 @@ internal interface AapRead {
             onAaMediaMetadata: ((MediaPlayback.MediaMetaData, AaPresentationSession) -> Unit)? = null,
             onAaPlaybackStatus: ((MediaPlayback.MediaPlaybackStatus, AaPresentationSession) -> Unit)? = null,
             onAaPresentationClosed: ((AaPresentationSession) -> Unit)? = null,
-            presentationSession: AaPresentationSession = AaPresentationSession()
+            presentationSession: AaPresentationSession = AaPresentationSession(),
+            nightOverlayState: NightOverlayState? = null
         ): AapRead {
             val handler = AapMessageHandlerType(
                 transport,
@@ -240,7 +241,8 @@ internal interface AapRead {
                 onAaMediaMetadata,
                 onAaPlaybackStatus,
                 onAaPresentationClosed,
-                presentationSession
+                presentationSession,
+                nightOverlayState = nightOverlayState
             )
 
             // Read framing is a transport-shape question, not a handshake-timing one:

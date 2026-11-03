@@ -14,8 +14,9 @@ internal class AapNavigation(
     private val context: Context,
     private val settings: Settings,
     private val presentation: PresentationQueue,
+    onNavigationUpdate: ((NightOverlayState.Navigation?) -> Unit)? = null,
 ) {
-    private val helper = AapNavigationHelper(context)
+    private val helper = AapNavigationHelper(context, onNavigationUpdate)
     private val snapshot = AapNavigationHelper.NavigationSnapshot()
     // Written on the reader, read by the serial presentation executor at retirement. A pending
     // update counts too: close cancels its debounce, but external displays still need a clear.
@@ -54,8 +55,13 @@ internal class AapNavigation(
                     val detail = message.parse(NavigationStatus.NextTurnDetail.newBuilder()).buildPartial()
                     snapshot.nextTurnDetail = AapNavigationHelper.TimedMessage(detail, helper.nowElapsedRealtimeMs())
                     AppLog.d(
-                        "Nav: NextTurnDetail road=${detail.road} " +
-                                "hasNextTurn=${detail.hasNextTurn()} nextTurn=${detail.nextTurn}"
+                        "Nav: NextTurnDetail " +
+                            "road='${detail.road}' " +
+                            "hasNextTurn=${detail.hasNextTurn()} nextTurn=${if (detail.hasNextTurn()) detail.nextTurn else "(none)"} " +
+                            "hasSide=${detail.hasSide()} side=${if (detail.hasSide()) detail.side else "(none)"} " +
+                            "hasTurnNumber=${detail.hasTurnNumber()} turnNumber=${if (detail.hasTurnNumber()) detail.turnNumber else "(none)"} " +
+                            "hasTurnAngle=${detail.hasTurnAngle()} turnAngle=${if (detail.hasTurnAngle()) detail.turnAngle else "(none)"} " +
+                            "hasImage=${detail.hasImage()} imageBytes=${if (detail.hasImage()) detail.image.size() else 0}"
                     )
                     scheduleDebouncedBroadcast(NAV_EVENT_TYPE_TURN)
                     if (settings.showNavigationNotifications) {
@@ -75,7 +81,9 @@ internal class AapNavigation(
                     AppLog.d(
                         "Nav: NextTurnDistanceEvent hasDistance=${event.hasDistanceMeters()} " +
                                 "distance=${event.distanceMeters} hasTime=${event.hasTimeToTurnSeconds()} " +
-                                "time=${event.timeToTurnSeconds}"
+                                "time=${event.timeToTurnSeconds} " +
+                                "hasDisplayDistance=${event.hasDisplayDistanceE3()} displayDistanceE3=${if (event.hasDisplayDistanceE3()) event.displayDistanceE3 else "(none)"} " +
+                                "hasDisplayUnit=${event.hasDisplayDistanceUnit()} displayUnit=${if (event.hasDisplayDistanceUnit()) event.displayDistanceUnit else "(none)"}"
                     )
                     scheduleDebouncedBroadcast(NAV_EVENT_TYPE_TURN)
                     if (settings.showNavigationNotifications) {
@@ -91,7 +99,18 @@ internal class AapNavigation(
                 try {
                     val state = message.parse(NavigationStatus.NavigationState.newBuilder()).build()
                     snapshot.navigationState = AapNavigationHelper.TimedMessage(state, helper.nowElapsedRealtimeMs())
-                    AppLog.d("Nav: NavigationState steps=${state.stepsCount} maneuverRoad=${NavigationRoadPolicy.maneuverRoad(state, null) ?: "(none)"}")
+                    val firstStep = state.stepsList.firstOrNull()
+                    val firstManeuver = firstStep?.takeIf { it.hasManeuver() }?.maneuver
+                    AppLog.d(
+                        "Nav: NavigationState " +
+                            "steps=${state.stepsCount} destinations=${state.destinationsCount} " +
+                            "maneuverRoad=${NavigationRoadPolicy.maneuverRoad(state, null) ?: "(none)"} " +
+                            "hasFirstManeuver=${firstManeuver != null} " +
+                            "firstManeuverType=${firstManeuver?.takeIf { it.hasType() }?.type ?: "(none)"} " +
+                            "hasRoundaboutExitNumber=${firstManeuver?.hasRoundaboutExitNumber() == true} " +
+                            "hasRoundaboutExitAngle=${firstManeuver?.hasRoundaboutExitAngle() == true} " +
+                            "lanes=${firstStep?.lanesCount ?: 0}"
+                    )
                     scheduleDebouncedBroadcast(NAV_EVENT_TYPE_STATE)
                     true
                 } catch (e: Exception) {
@@ -103,7 +122,22 @@ internal class AapNavigation(
                 try {
                     val position = message.parse(NavigationStatus.NavigationCurrentPosition.newBuilder()).build()
                     snapshot.currentPosition = AapNavigationHelper.TimedMessage(position, helper.nowElapsedRealtimeMs())
-                    AppLog.d("Nav: CurrentPosition currentRoad=${NavigationRoadPolicy.currentRoad(position) ?: "(none)"}")
+                    val stepDistance = position.takeIf { it.hasStepDistance() }?.stepDistance
+                    val dest = position.destinationDistancesList.firstOrNull()
+                    AppLog.d(
+                        "Nav: CurrentPosition " +
+                            "currentRoad=${NavigationRoadPolicy.currentRoad(position) ?: "(none)"} " +
+                            "hasStepDistance=${stepDistance != null} " +
+                            "stepDistanceMeters=${stepDistance?.takeIf { it.hasDistance() && it.distance.hasMeters() }?.distance?.meters ?: "(none)"} " +
+                            "timeToStepSeconds=${stepDistance?.takeIf { it.hasTimeToStepSeconds() }?.timeToStepSeconds ?: "(none)"} " +
+                            "destinations=${position.destinationDistancesCount} " +
+                            "hasDestinationEta=${dest?.hasEstimatedTimeAtArrival() == true} " +
+                            "destinationEta=${dest?.takeIf { it.hasEstimatedTimeAtArrival() }?.estimatedTimeAtArrival ?: "(none)"} " +
+                            "hasDestinationRemainingTime=${dest?.hasTimeToArrivalSeconds() == true} " +
+                            "destinationRemainingTime=${dest?.takeIf { it.hasTimeToArrivalSeconds() }?.timeToArrivalSeconds ?: "(none)"} " +
+                            "hasDestinationRemainingDistance=${dest?.takeIf { it.hasDistance() && it.distance.hasMeters() } != null} " +
+                            "destinationRemainingDistance=${dest?.takeIf { it.hasDistance() && it.distance.hasMeters() }?.distance?.meters ?: "(none)"}"
+                    )
                     scheduleDebouncedBroadcast(NAV_EVENT_TYPE_CURRENT_POSITION)
                     true
                 } catch (e: Exception) {

@@ -24,6 +24,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import com.andrerinas.openheadunit.aap.protocol.messages.BluetoothAnnouncePolicy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zbt.ZbtDiscovery
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zjsocket.ZjSocketProbe
 import com.andrerinas.openheadunit.utils.OemAppManager
 import com.andrerinas.openheadunit.utils.CarLauncherManager
 import com.andrerinas.openheadunit.utils.OnboardingLauncherPolicy
@@ -39,6 +40,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.aap.AapService
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.esp32.Esp32RelaySession
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.esp32.Esp32RelayStore
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.CredentialField
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeAaWakeDamagePolicy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zbt.ZbtProbe
@@ -89,6 +92,7 @@ import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeAaHandsh
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.ExternalBtTransportPolicy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeCredentialsPreflight
 import com.andrerinas.openheadunit.utils.BluetoothHelper
+import com.andrerinas.openheadunit.utils.ExternalBtPolicy
 import androidx.lifecycle.lifecycleScope
 import com.andrerinas.openheadunit.utils.WifiStackRecovery
 import androidx.lifecycle.Lifecycle
@@ -148,7 +152,7 @@ class SettingsFragment : Fragment() {
         // Dark mode
         "darkModeSettings",
         // Automation
-        "autoStartSettings", "autoConnectSettings", "enableCarLauncher",
+        "autoStartSettings", "autoConnectSettings", "Esp32Relay", "enableCarLauncher",
         // Navigation
         "gpsNavigation",
         // Graphic
@@ -200,7 +204,6 @@ class SettingsFragment : Fragment() {
     private var pendingShowToastMessages by pending::showToastMessages
     private var pendingScreenOrientation by pending::screenOrientation
     private var pendingAppLanguage by pending::appLanguage
-    private var pendingFakeSpeed by pending::fakeSpeed
     private var pendingAutoRestartWifi by pending::autoRestartWifi
     private var pendingNarrowBandProfileCap by pending::narrowBandProfileCap
     private var pendingDebugVideoLowLatency by pending::debugVideoLowLatency
@@ -216,6 +219,7 @@ class SettingsFragment : Fragment() {
     private var pendingNativeAaIgnoreExternalBt by pending::nativeAaIgnoreExternalBt
     private var pendingExternalBtZbtTransport by pending::externalBtZbtTransport
     private var pendingExternalBtBlinkTransport by pending::externalBtBlinkTransport
+    private var pendingExternalBtZjSocketTransport by pending::externalBtZjSocketTransport
 
     // The probe's verdict is not a pending setting: it changes nothing and there is nothing to
     // save. It lives in the companion object with the job that produces it. This one is
@@ -642,7 +646,6 @@ class SettingsFragment : Fragment() {
         pendingAutoKillOemApps?.let { if (it != settings.autoKillOemApps) settings.autoKillOemApps = it }
         pendingRaiseProjectionDuringCall?.let { if (it != settings.raiseProjectionDuringCall) settings.raiseProjectionDuringCall = it }
         pendingAutoEnableHotspot?.let { if (it != settings.autoEnableHotspot) settings.autoEnableHotspot = it }
-        pendingFakeSpeed?.let { if (it != settings.fakeSpeed) settings.fakeSpeed = it }
         pendingAutoRestartWifi?.let { if (it != settings.autoRestartWifiWhenP2pStuck) settings.autoRestartWifiWhenP2pStuck = it }
         pendingUseLibusb?.let { if (it != settings.useLibusb) settings.useLibusb = it }
         pendingNarrowBandProfileCap?.let { if (it != settings.narrowBandProfileCap) settings.narrowBandProfileCap = it }
@@ -659,6 +662,7 @@ class SettingsFragment : Fragment() {
         pendingNativeAaIgnoreExternalBt?.let { if (it != settings.nativeAaIgnoreExternalBt) settings.nativeAaIgnoreExternalBt = it }
         pendingExternalBtZbtTransport?.let { if (it != settings.externalBtZbtTransport) settings.externalBtZbtTransport = it }
         pendingExternalBtBlinkTransport?.let { if (it != settings.externalBtBlinkTransport) settings.externalBtBlinkTransport = it }
+        pendingExternalBtZjSocketTransport?.let { if (it != settings.externalBtZjSocketTransport) settings.externalBtZjSocketTransport = it }
         pendingNativeApTransport?.let { if (it != settings.nativeApStrategy) settings.nativeApStrategy = it }
         pendingNativeDriverSelectionMode?.let { if (it != settings.nativeDriverSelectionMode) settings.nativeDriverSelectionMode = it }
         pendingNativeDriverSelectionTimeout?.let { if (it != settings.nativeDriverSelectionTimeoutSec) settings.nativeDriverSelectionTimeoutSec = it }
@@ -989,6 +993,29 @@ class SettingsFragment : Fragment() {
         ))
 
         if (pendingWifiConnectionMode == WifiLauncherMode.NATIVE) {
+            // ESP32 relay needs API 23 (Android 6.0) for BLE. Omit the row below that —
+            // a greyed-out "unsupported" entry looks like a missing setting.
+            if (Build.VERSION.SDK_INT >= Esp32RelaySession.MIN_SDK) {
+                val esp32RelayStore = Esp32RelayStore(requireContext())
+                val esp32RelayLabel = when {
+                    !esp32RelayStore.enabled -> getString(R.string.esp32_relay_settings_disabled)
+                    else -> esp32RelayStore.deviceName
+                        ?: esp32RelayStore.deviceAddress
+                        ?: getString(R.string.esp32_relay_settings_summary)
+                }
+                items.add(SettingItem.SettingEntry(
+                    stableId = "Esp32Relay",
+                    nameResId = R.string.esp32_relay_settings_title,
+                    value = esp32RelayLabel,
+                    searchKeywords = "bluetooth relay board esp32 pair disconnect ble openhu",
+                    onClick = {
+                        try {
+                            findNavController().navigate(R.id.action_settingsFragment_to_esp32RelaySettingsFragment)
+                        } catch (_: Exception) { }
+                    }
+                ))
+            }
+
             items.add(SettingItem.SegmentedButtonSettingEntry(
                 stableId = "nativeApTransport",
                 nameResId = R.string.native_ap_transport,
@@ -1282,7 +1309,9 @@ class SettingsFragment : Fragment() {
                     ignoreChecked,
                     pendingExternalBtBlinkTransport ?: settings.externalBtBlinkTransport,
                     radioFytEvidence,
-                    hctService
+                    hctService,
+                    pendingExternalBtZjSocketTransport ?: settings.externalBtZjSocketTransport,
+                    ZjSocketProbe.answer()
                 )) {
                 items.add(SettingItem.ToggleSettingEntry(
                     stableId = "nativeAaIgnoreExternalBt",
@@ -1347,6 +1376,28 @@ class SettingsFragment : Fragment() {
                 searchKeywords = "fyt blink duduauto dudu carlink external bluetooth module transport auto_serial",
                 onCheckedChanged = { isChecked ->
                     pendingExternalBtBlinkTransport = isChecked
+                    checkChanges()
+                    updateSettingsList()
+                }
+            ))
+        }
+
+        // The ZJ socket switch; the route is also taken unasked when the socket accepts a connect.
+        val zjChecked = pendingExternalBtZjSocketTransport ?: settings.externalBtZjSocketTransport
+        if (ExternalBtTransportPolicy.showZjSocketToggle(
+                ZbtDiscovery.snapshot(),
+                BluetoothHelper.fytModuleEvidence,
+                ExternalBtPolicy.ZJ_SOCKET_PATHS.any { File(it).exists() },
+                zjChecked
+            )) {
+            items.add(SettingItem.ToggleSettingEntry(
+                stableId = "externalBtZjSocketTransport",
+                nameResId = R.string.external_bt_zj_socket_transport,
+                descriptionResId = R.string.external_bt_zj_socket_transport_description,
+                isChecked = zjChecked,
+                searchKeywords = "zj zlink gocsdk socket unix external bluetooth module transport handshake",
+                onCheckedChanged = { isChecked ->
+                    pendingExternalBtZjSocketTransport = isChecked
                     checkChanges()
                     updateSettingsList()
                 }
@@ -1873,18 +1924,6 @@ class SettingsFragment : Fragment() {
             }
         ))
 
-        items.add(SettingItem.ToggleSettingEntry(
-            stableId = "fakeSpeed",
-            nameResId = R.string.fake_speed_title,
-            descriptionResId = R.string.fake_speed_description,
-            isChecked = pendingFakeSpeed ?: settings.fakeSpeed,
-            onCheckedChanged = { isChecked ->
-                pendingFakeSpeed = isChecked
-                checkChanges()
-                updateSettingsList()
-            }
-        ))
-
         // --- Graphic Settings ---
         items.add(SettingItem.CategoryHeader("graphic", R.string.category_graphic))
 
@@ -2256,6 +2295,15 @@ class SettingsFragment : Fragment() {
                 } catch (e: Exception) {
                     // Failover
                 }
+            }
+        ))
+
+        items.add(SettingItem.SettingEntry(
+            stableId = "gestures",
+            nameResId = R.string.gestures,
+            value = getString(R.string.gestures_description),
+            onClick = { _ ->
+                findNavController().navigate(R.id.action_settingsFragment_to_gesturesFragment)
             }
         ))
 
@@ -3293,9 +3341,16 @@ class SettingsFragment : Fragment() {
                 touched = true
             }
             .setPositiveButton(android.R.string.ok) { dialog, _ ->
-                // Left alone, "All" stays "All" instead of turning into the three modes spelled out.
+                // Left alone, "All" stays "All" instead of becoming three explicit modes.
                 if (!(all && !touched)) {
+                    // This dialog saves immediately, so the toolbar's later Save snapshot
+                    // cannot detect the change. Apply wireless routing when it changes here.
+                    val before = wirelessRearmConfig()
                     settings.connectionModes = order.filterIndexed { i, _ -> checked[i] }.toSet()
+                    if (WirelessRearmPolicy.requiresRearm(before, wirelessRearmConfig())) {
+                        AapService.applyWirelessSettings(requireContext(),
+                            startWireless = settings.wifiConnectionMode != WifiLauncherMode.MANUAL && settings.showsWifi())
+                    }
                 }
                 dialog.dismiss()
                 updateSettingsList()
@@ -3314,6 +3369,7 @@ class SettingsFragment : Fragment() {
         val fiveGhzChannel: Int,
         val externalBtZbtTransport: Boolean,
         val externalBtBlinkTransport: Boolean,
+        val externalBtZjSocketTransport: Boolean,
         val nativeAaIgnoreExternalBt: Boolean,
         val autoEnableHotspot: Boolean,
         val insecureAaRfcommListener: Boolean,
@@ -3714,6 +3770,7 @@ class SettingsFragment : Fragment() {
             fiveGhzChannel = settings.fiveGhzChannel,
             externalBtZbtTransport = settings.externalBtZbtTransport,
             externalBtBlinkTransport = settings.externalBtBlinkTransport,
+            externalBtZjSocketTransport = settings.externalBtZjSocketTransport,
             nativeAaIgnoreExternalBt = settings.nativeAaIgnoreExternalBt,
             autoEnableHotspot = settings.autoEnableHotspot,
             insecureAaRfcommListener = settings.insecureAaRfcommListener,
@@ -3779,6 +3836,7 @@ class SettingsFragment : Fragment() {
         fiveGhzChannel = settings.fiveGhzChannel,
         externalBtZbtTransport = settings.externalBtZbtTransport,
         externalBtBlinkTransport = settings.externalBtBlinkTransport,
+        externalBtZjSocketTransport = settings.externalBtZjSocketTransport,
         nativeAaIgnoreExternalBt = settings.nativeAaIgnoreExternalBt,
         autoEnableHotspot = settings.autoEnableHotspot,
         insecureAaRfcommListener = settings.insecureAaRfcommListener,
@@ -3795,6 +3853,7 @@ class SettingsFragment : Fragment() {
             fiveGhzChannel = snapshot.fiveGhzChannel,
             externalBtZbtTransport = snapshot.externalBtZbtTransport,
             externalBtBlinkTransport = snapshot.externalBtBlinkTransport,
+            externalBtZjSocketTransport = snapshot.externalBtZjSocketTransport,
             nativeAaIgnoreExternalBt = snapshot.nativeAaIgnoreExternalBt,
             autoEnableHotspot = snapshot.autoEnableHotspot,
             insecureAaRfcommListener = snapshot.insecureAaRfcommListener,
@@ -4206,7 +4265,9 @@ class SettingsFragment : Fragment() {
             pendingNativeAaIgnoreExternalBt ?: settings.nativeAaIgnoreExternalBt,
             blinkTransportEnabled = pendingExternalBtBlinkTransport ?: settings.externalBtBlinkTransport,
             fytModuleEvidence = BluetoothHelper.fytModuleEvidence,
-            hctServiceAvailable = HctServiceObserver.available(requireContext())
+            hctServiceAvailable = HctServiceObserver.available(requireContext()),
+            zjSocketEnabled = pendingExternalBtZjSocketTransport ?: settings.externalBtZjSocketTransport,
+            zjSocketConnects = ZjSocketProbe.answer()
         )
 
     /** The WiFi Direct band the block is currently showing settings for. */
@@ -4796,7 +4857,8 @@ class SettingsFragment : Fragment() {
             // ZBT only counts off FYT module units, where the route can actually take it.
             val chosen = ((pendingExternalBtZbtTransport ?: settings.externalBtZbtTransport) &&
                 BluetoothHelper.fytModuleEvidence == null) ||
-                (pendingExternalBtBlinkTransport ?: settings.externalBtBlinkTransport)
+                (pendingExternalBtBlinkTransport ?: settings.externalBtBlinkTransport) ||
+                (pendingExternalBtZjSocketTransport ?: settings.externalBtZjSocketTransport)
             externalBtRouteJob?.cancel()
             externalBtRouteJob = viewLifecycleOwner.lifecycleScope.launch {
                 val viaModule = if (chosen) true else if (BluetoothHelper.fytModuleEvidence != null) false else {

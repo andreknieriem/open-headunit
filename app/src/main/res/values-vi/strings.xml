@@ -27,6 +27,34 @@
     <string name="dpi">Mật độ điểm ảnh (DPI)</string>
     <string name="mic_sample_rate">Tần số lấy mẫu micro</string>
     <string name="keymap">Bản đồ phím</string>
+    <string name="gestures">Cử chỉ</string>
+    <string name="gestures_description">Cấu hình vuốt hai ngón và nhấn giữ lâu.</string>
+    <string name="gesture_two_finger_down">Vuốt hai ngón xuống</string>
+    <string name="gesture_two_finger_long_press">Nhấn giữ hai ngón</string>
+    <string name="gesture_two_finger_left">Cử chỉ hai ngón từ bên trái</string>
+    <string name="gesture_two_finger_right">Cử chỉ hai ngón từ bên phải</string>
+    <string name="gesture_action_disabled">Đã tắt</string>
+    <string name="gesture_action_exit_dialog">Hộp thoại thoát</string>
+    <string name="gesture_action_toggle_fullscreen">Chuyển đổi toàn màn hình</string>
+    <string name="gesture_action_night_overlay">Lớp phủ ban đêm</string>
+    <string name="gestures_reset">Đã đặt lại cài đặt cử chỉ</string>
+    <string name="night_overlay_dismiss">Chạm để quay lại chế độ chiếu</string>
+    <string name="night_overlay_meters">%1$d m</string>
+    <string name="night_overlay_kilometers">%1$.1f km</string>
+    <string name="night_overlay_navigation">%1$s · %2$s</string>
+    <string name="night_overlay_left">trái</string>
+    <string name="night_overlay_right">phải</string>
+    <string name="night_overlay_direction">%1$s · %2$s</string>
+    <string name="night_overlay_exit_number">Lối ra %1$d</string>
+    <string name="night_overlay_exit_angle">%1$d°</string>
+    <string name="night_overlay_eta_summary">Đến nơi %1$s · %2$s · %3$s</string>
+    <string name="night_overlay_duration_minutes">%1$d phút</string>
+    <string name="night_overlay_duration_hours_minutes">%1$d giờ %2$d phút</string>
+    <string name="night_overlay_current_road">Hiện tại: %1$s</string>
+    <string name="night_overlay_route">Lộ trình: %1$s</string>
+    <string name="night_overlay_lanes">Làn đường: %1$s</string>
+    <string name="night_overlay_traffic_delay">Trễ do giao thông: +%1$s</string>
+    <string name="night_overlay_speed_value">%1$d km/h</string>
     <string name="night_mode">Chế độ tối (Android Auto)</string>
     <string name="night_mode_threshold">Ngưỡng chế độ tối</string>
     <string name="enter_threshold_value">Nhập giá trị ngưỡng</string>
@@ -39,6 +67,16 @@
     <string name="current_light_reading">Ánh sáng hiện tại: %d Lux</string>
     <string name="current_brightness_reading">Độ sáng hiện tại: %d / 255</string>
     <string name="enable_fine_lux_control">Điều chỉnh tinh (0–100 Lux)</string>
+    <string name="car_signal_calibration_info_format">car_mode hiện tại: %1$d. Ánh xạ: %2$s.</string>
+    <string name="car_signal_mapping_default">0 = Ban ngày, khác 0 = Ban đêm</string>
+    <string name="car_signal_mapping_inverted">0 = Ban đêm, khác 0 = Ban ngày</string>
+    <string name="car_signal_unavailable">Không thể đọc car_mode trên đầu phát này lúc này.</string>
+    <string name="car_signal_headlights_question">Đèn pha hiện đang bật chứ?</string>
+    <string name="car_signal_calibration_title">Hiệu chỉnh ILL+</string>
+    <string name="car_signal_recalibrate">Hiệu chỉnh lại</string>
+    <string name="car_signal_headlights_on">Bật</string>
+    <string name="car_signal_headlights_off">Tắt</string>
+    <string name="car_signal_calibration_saved">Hiệu chỉnh ILL+ đã được lưu và áp dụng</string>
     <string name="night_mode_start">Giờ bắt đầu chế độ tối</string>
     <string name="night_mode_end">Giờ kết thúc chế độ tối</string>
 
@@ -591,6 +629,12 @@
 
     <string name="supported_nativeaa">Hỗ trợ không dây nâng cao</string>
     <string name="supported_nativeaa_desc">Tin tốt! Máy của bạn hỗ trợ chế độ \"Native Wireless\", mang lại trải nghiệm Android Auto liền mạch hơn. \n\nĐể bật, cần làm mới bộ nhớ đệm Bluetooth. Vui lòng: \n1. Xoá ghép nối hiện có trên điện thoại \n2. Bấm OK để khởi động lại Bluetooth \n3. Ghép nối lại điện thoại \n\nBạn có muốn chuyển sang chế độ Native AA bây giờ?</string>
+    <string name="automation_connect_no_permission">Cho phép ứng dụng này dùng Bluetooth để kết nối theo tên.</string>
+    <string name="automation_connect_not_found">Không có điện thoại nào đã ghép nối có tên này.</string>
+    <string name="automation_connect_ambiguous">Có nhiều điện thoại đã ghép nối có tên này.</string>
+    <string name="automation_connect_not_a_phone">Thiết bị đã ghép nối này không phải điện thoại.</string>
+    <string name="automation_connect_not_paired">Địa chỉ Bluetooth này chưa được ghép nối.</string>
+    <string name="automation_connect_live_session">Một điện thoại khác đã được kết nối.</string>
     <string name="native_aa_poke_not_running">Bluetooth không dây không chạy trên đầu phát này. Hãy kiểm tra phần cài đặt.</string>
     <string name="not_supported_nativeaa">Có vẻ chưa hỗ trợ Native Wireless</string>
     <string name="not_supported_nativeaa_desc">Máy của bạn có thể không hỗ trợ các tính năng Bluetooth hoặc Wi-Fi cần cho Native Wireless. Bạn vẫn có thể thử, nhưng nếu thất bại hãy dùng chế độ \"Wireless Helper\" hoặc \"Auto (Headunit Server)\".</string>
@@ -599,8 +643,6 @@
     <string name="wait_for_wifi_description">Khi khởi động, chờ WiFi kết nối trước khi bắt đầu WiFi Direct. Bật nếu headunit cần vài giây để kết nối WiFi sau khi bật nguồn.</string>
     <string name="wait_for_wifi_timeout">Thời gian chờ WiFi</string>
     <string name="wireless_24ghz_warning">Lưu ý: Android Auto không dây trên thiết bị 2.4GHz có thể gây giật, lag và ngắt kết nối. Nếu gặp vấn đề, vui lòng kiểm tra qua USB để xác nhận có phải giới hạn mạng không.</string>
-    <string name="fake_speed_title">Tắt khoá video (Giả tốc độ)</string>
-    <string name="fake_speed_description">Báo cho điện thoại tốc độ thấp không đổi (0.5 m/s) để không bị chặn nội dung video khi lái. Dùng cẩn thận.</string>
     <string name="wireless_mode_helper">Wireless Helper</string>
     <string name="wireless_mode_native">Native</string>
     <string name="wireless_mode_server">Headunit Server</string>
@@ -1050,6 +1092,8 @@
     <string name="external_bt_module_controls_hint">Mô-đun Bluetooth ngoài quản lý việc ghép nối điện thoại, mức ưu tiên kết nối và lựa chọn trình điều khiển.</string>
     <string name="external_bt_module_last_phone">Điện thoại kết nối gần nhất qua mô-đun</string>
     <string name="external_bt_blink_transport_description">Thử nghiệm. Dành cho thiết bị FYT mà điện thoại ghép nối để gọi với một mô-đun Bluetooth riêng, như \"DUDUAUTO\" trên DUDUOS, ROM duy nhất đã được thử đến nay. Mô-đun này, không phải Bluetooth của thiết bị, truyền bắt tay Android Auto không dây, và ứng dụng Car Link gốc thường trả lời nó. Khi bật tùy chọn này, ứng dụng này sẽ trả lời thay, nên cuộc gọi vẫn ở trên mô-đun và loa xe.\n\nHãy tắt ứng dụng Car Link gốc trước (pm disable-user com.syu.carlink), nếu không cả hai ứng dụng sẽ đọc cùng một kênh. Kênh được mở không cần root nếu thiết bị cho phép, nếu không thì mở qua root. Chọn Native, chỉ ghép nối điện thoại với mô-đun, và xuất nhật ký nếu không kết nối được.</string>
+    <string name="external_bt_zj_socket_transport">Kết nối qua socket Bluetooth ZJ</string>
+    <string name="external_bt_zj_socket_transport_description">Dành cho các thiết bị có mô-đun Bluetooth ZJ truyền bắt tay Android Auto không dây qua một socket cục bộ (/dev/socket/zj_bt_socket). Ứng dụng tự dùng socket này khi nó chấp nhận kết nối. Chỉ bật khi thiết bị của bạn có socket mà ứng dụng không nhận ra.</string>
     <string name="external_bt_blink_refused_stock_enabled">Mô-đun Bluetooth ngoài: ứng dụng Car Link gốc vẫn đang bật. Hãy tắt nó (pm disable-user com.syu.carlink) hoặc tắt phương thức truyền này.</string>
     <string name="external_bt_blink_refused_stock_running">Mô-đun Bluetooth ngoài: ứng dụng Car Link gốc đã tắt nhưng vẫn đang chạy. Hãy khởi động lại thiết bị.</string>
     <string name="external_bt_blink_refused_root">Mô-đun Bluetooth ngoài: mở kênh của mô-đun cần quyền root trên thiết bị này, nhưng quyền root bị từ chối hoặc không có.</string>
@@ -1250,6 +1294,22 @@
     <string name="enter_auto_disconnect_bt_delay">Số giây chờ trước khi kết thúc phiên</string>
     <string name="auto_disconnect_bt_delay_hint">Kết nối Bluetooth có thể gián đoạn trong giây lát khi kết nối lại các cấu hình. Phiên chỉ kết thúc nếu thiết bị vẫn không có mặt sau khoảng thời gian này.</string>
     <string name="auto_disconnect_bt_kill_hint">Kết thúc phiên giống nút Thoát khi Bluetooth của thiết bị đã chọn bị mất, ví dụ khi tắt máy xe. Hãy chọn Bluetooth của xe nếu thiết bị này đã ghép nối với xe. Để đóng cả ứng dụng và hiện màn hình chính, hãy bật \"Đóng ứng dụng khi ngắt kết nối\" trong mục Tự động hóa.</string>
+    <string name="external_power_disconnect_label">Ngắt kết nối khi rút bộ sạc</string>
+    <string name="external_power_disconnect_description">Kết thúc phiên giống nút Thoát khi mất nguồn điện ngoài, ví dụ khi tắt xe. Khi có điện lại, kết nối sẽ được kích hoạt lại.</string>
+    <string name="external_power_delay_label">Chờ (giây)</string>
+    <string name="external_power_delay_value">%1$d giây</string>
+    <string name="external_power_delay_hint">Phiên chỉ kết thúc nếu sau khoảng thời gian này vẫn chưa có điện. Từ 5 đến 3600 giây.</string>
+    <string name="external_power_screen_off_label">Tắt cả màn hình</string>
+    <string name="external_power_screen_off_description">Làm tối màn hình khi vẫn chưa có điện, sau khi phiên kết thúc hoặc khi không có thiết bị nào được kết nối, và bật lại khi có điện.</string>
+    <string name="external_power_grant_label">Cho phép Open Headunit tắt màn hình</string>
+    <string name="external_power_grant_allowed">Đã cho phép</string>
+    <string name="external_power_grant_missing">Chưa cho phép</string>
+    <string name="external_power_grant_uninstall_hint">Android chặn việc gỡ cài đặt khi quyền này còn được cấp. Hãy xoá quyền tại đây trước khi gỡ cài đặt ứng dụng.</string>
+    <string name="external_power_grant_explanation">Open Headunit chỉ dùng quyền này để tắt màn hình. Ứng dụng không thể mở khoá thiết bị hay đọc bất kỳ dữ liệu nào.</string>
+    <string name="external_power_grant_remove_message">Xoá quyền tắt màn hình?</string>
+    <string name="external_power_grant_remove">Xoá</string>
+    <string name="screen_off_admin_label">Tắt màn hình</string>
+    <string name="screen_off_admin_description">Cho phép Open Headunit tắt màn hình khi mất nguồn điện ngoài.</string>
     <string name="audio_stream_vendor_format">%1$s (%2$d)</string>
     <string name="debug_video_fault_injection">Chèn lỗi video</string>
     <string name="debug_video_fault_rate">Tỷ lệ lỗi (1 trong N)</string>
@@ -1470,6 +1530,7 @@
     <string name="home_favorites_full">Đã đủ bốn ứng dụng yêu thích. Nhấn giữ một ứng dụng trên màn hình chính để đổi.</string>
     <string name="home_choose_favorite_app">Chọn ứng dụng hoặc lối tắt</string>
     <string name="home_shortcut_badge">Lối tắt</string>
+    <string name="app_drawer_tab_shortcuts">Lối tắt</string>
     <string name="home_show_favorite_apps">Ứng dụng yêu thích trên màn hình chính</string>
     <string name="home_show_favorite_apps_description">Ứng dụng yêu thích của bạn dưới nút chính, khi Open Headunit là trình khởi chạy của bạn</string>
     <string name="home_show_widgets">Tiện ích trên màn hình chính</string>

@@ -4,9 +4,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.charset.StandardCharsets;
+import java.nio.charset.Charset;
 
 public class AdbProtocol {
+    // StandardCharsets is unavailable before API 19; keep the ADB wire encoding shared.
+    // Never substitute the device's default charset: payload lengths and checksums must describe
+    // the same UTF-8 bytes on every supported Android version.
+    static final Charset UTF_8 = Charset.forName("UTF-8");
+
     public static final int ADB_HEADER_LENGTH = 24;
     public static final int AUTH_TYPE_TOKEN = 1;
     public static final int AUTH_TYPE_SIGNATURE = 2;
@@ -21,7 +26,7 @@ public class AdbProtocol {
 
     public static final int CONNECT_VERSION = 0x01000000;
     public static final int CONNECT_MAXDATA = 4096;
-    public static final byte[] CONNECT_PAYLOAD = "host::\u0000".getBytes(StandardCharsets.UTF_8);
+    public static final byte[] CONNECT_PAYLOAD = "host::\u0000".getBytes(UTF_8);
 
     public static final class AdbMessage {
         public int command;
@@ -90,7 +95,7 @@ public class AdbProtocol {
     }
 
     public static byte[] generateOpen(int localId, String destination) {
-        byte[] destBytes = (destination != null ? destination : "").getBytes(StandardCharsets.UTF_8);
+        byte[] destBytes = (destination != null ? destination : "").getBytes(UTF_8);
         ByteBuffer destBuf = ByteBuffer.allocate(destBytes.length + 1);
         destBuf.put(destBytes);
         destBuf.put((byte) 0);

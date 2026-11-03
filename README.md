@@ -114,6 +114,43 @@ On a detected FYT module unit with this transport off, Native Mode refuses to st
 
 Android Bluetooth driver selection, preferred-phone and wake-list controls are intentionally hidden on this route because Android cannot see or dial phones bonded to the external module. To roll back, turn this transport off and re-enable the stock client with `adb shell pm enable com.syu.carlink` (prefix with `su -c` if needed).
 
+#### Bluetooth Relay (ESP32 Classic BT relay)
+
+Native Mode can route the Android Auto Bluetooth handshake through an original ESP32 acting as a classic Bluetooth RFCOMM relay. Phone traffic uses RFCOMM; the head unit uses BLE GATT write / indicate. The ESP32 does not parse Android Auto (WPP) payloads; WifiStart / WifiInfo and the rest of the handshake remain on the head unit.
+
+Firmware, prebuilt binaries, and flashing: [aa-native-bt-broker-for-openheadunit](https://github.com/kendrickkim/aa-native-bt-broker-for-openheadunit) ([v1.0.0](https://github.com/kendrickkim/aa-native-bt-broker-for-openheadunit/releases/tag/v1.0.0)).
+
+Requirements:
+- Original ESP32 with Bluetooth Classic. ESP32-S2 / S3 / C3 / C6 lack Classic BT and are unsupported.
+- Head unit on Android 6.0 (API 23)+. Below API 23 the Bluetooth relay settings row is not shown.
+- Wireless connection mode: **Native**.
+
+Bonding topology (required):
+- Head unit bonds to the ESP32 BLE advertiser `OpenHU-BT-Relay-Setup` (address stored under Settings → Bluetooth relay). The head unit does not Classic-bond to the phone on this path.
+- Phone Classic-bonds to the ESP32 `OpenHU-BT-Relay`(PIN `0000`).
+- Cached Bluetooth names may lag after a re-configuration; delete the entry and rescan.
+
+Settings:
+- Enable **Use Bluetooth relay** under **Settings → Bluetooth relay (ESP32)**, then scan and select the relay.
+- Disabling the switch retains the saved relay address but returns Native Mode to the normal Bluetooth driver path.
+
+Setup (sequence is mandatory; BLE relay selection must precede phone Classic pairing):
+
+1. On the phone, remove the head unit from the Bluetooth bond list, then remove any existing `OpenHU-BT-Relay` entry.
+2. Power the ESP32. On the head unit open **Settings → Bluetooth relay (ESP32)**, enable the relay, **Scan**, and select `OpenHU-BT-Relay-Setup`. Selection stores the relay and opens a 120 s Classic discoverable window (status: pair `OpenHU-BT-Relay`, PIN `0000`).
+3. On the phone, pair `OpenHU-BT-Relay` (PIN `0000` if prompted). Confirm paired / connected status on the head unit.
+4. Start Android Auto under Native Mode. Wake / dial toward the phone is issued through the relay.
+
+HFP behaviour: after initial pairing the relay drops HFP. A transient phone-side “Bluetooth failed” indication at that point is expected. On each Native AA start the relay briefly re-enables HFP to deliver connection parameters, then disables it again. The window is handshake-only and is not intended to carry ongoing calls.
+
+Troubleshooting:
+
+| Symptom | Action |
+|---|---|
+| Discoverable window expired before Classic pairing | **Settings → Bluetooth relay (ESP32) → Pair phone** reopens the 120 s window. |
+| BLE scan empty | Reset the ESP32 and scan again. |
+| Android Auto does not start | Ensure the phone has no remaining bond to the head unit. |
+
 #### 3. Headunit Server (No-Root Option for Self-Mode on AA 17.4+)
 - Starts the native Android Auto developer server directly on your phone or on the same device (Self-Mode).
 - **Setup:**

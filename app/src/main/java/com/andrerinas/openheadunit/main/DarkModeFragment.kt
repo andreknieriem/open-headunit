@@ -80,11 +80,22 @@ class DarkModeFragment : Fragment(), SensorEventListener {
 
     // Live screen brightness reading (mirrors how the manager reads it)
     private var cachedBrightness: Int = -1
+    // Live ILL+ reading from Settings.System.car_mode (-1 = unavailable)
+    private var cachedCarMode: Int = -1
     private val brightnessObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
         override fun onChange(selfChange: Boolean) {
             val newBrightness = readBrightness()
             if (newBrightness != cachedBrightness) {
                 cachedBrightness = newBrightness
+                scheduleListRefresh()
+            }
+        }
+    }
+    private val carModeObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
+        override fun onChange(selfChange: Boolean) {
+            val newCarMode = readCarMode()
+            if (newCarMode != cachedCarMode) {
+                cachedCarMode = newCarMode
                 scheduleListRefresh()
             }
         }
@@ -464,6 +475,62 @@ class DarkModeFragment : Fragment(), SensorEventListener {
                 findNavController().navigate(R.id.action_darkModeFragment_to_locationsFragment)
             }
         ))
+    }
+
+    private fun addCarSignalCalibration(items: MutableList<SettingItem>) {
+        val carMode = cachedCarMode
+        val signalAvailable = carMode >= 0
+
+        val infoText = if (signalAvailable) {
+            val mapping = getString(
+                if (settings.carSignalInvert) R.string.car_signal_mapping_inverted
+                else R.string.car_signal_mapping_default
+            )
+            getString(R.string.car_signal_calibration_info_format, carMode, mapping)
+        } else {
+            getString(R.string.car_signal_unavailable)
+        }
+
+        items.add(SettingItem.InfoBanner("carSignalInfo", R.string.car_signal_unavailable, infoText))
+        if (!signalAvailable) return
+
+        items.add(SettingItem.ActionButton(
+            stableId = "carSignalRecalibrate",
+            textResId = R.string.car_signal_recalibrate,
+            isEnabled = true,
+            onClick = {
+                MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
+                    .setTitle(R.string.car_signal_headlights_question)
+                    .setPositiveButton(R.string.car_signal_headlights_on) { _, _ ->
+                        applyCarSignalCalibration(headlightsOn = true)
+                    }
+                    .setNegativeButton(R.string.car_signal_headlights_off) { _, _ ->
+                        applyCarSignalCalibration(headlightsOn = false)
+                    }
+                    .show()
+            }
+        ))
+    }
+
+    private fun applyCarSignalCalibration(headlightsOn: Boolean) {
+        val currentCarMode = readCarMode()
+        if (currentCarMode < 0) {
+            cachedCarMode = -1
+            ToastUtils.showToast(context, getString(R.string.car_signal_unavailable), Toast.LENGTH_SHORT, force = true)
+            updateSettingsList()
+            return
+        }
+
+        cachedCarMode = currentCarMode
+        settings.carSignalInvert = if (headlightsOn) currentCarMode == 0 else currentCarMode != 0
+
+        val nightModeUpdateIntent = Intent(AapService.ACTION_REQUEST_NIGHT_MODE_UPDATE)
+        nightModeUpdateIntent.setPackage(requireContext().packageName)
+        requireContext().sendBroadcast(nightModeUpdateIntent)
+        App.appThemeManager?.forceRefresh()
+
+        ToastUtils.showToast(context, getString(R.string.car_signal_calibration_saved), Toast.LENGTH_SHORT, force = true)
+        updateSettingsList()
     }
 
     /**
@@ -906,6 +973,12 @@ class DarkModeFragment : Fragment(), SensorEventListener {
             addLocationGroup(items)
         }
 
+        // --- ILL+ calibration (shown once when either selector uses Car Signal) ---
+        if (pendingAppTheme == Settings.AppTheme.CAR_SIGNAL || pendingNightMode == Settings.NightMode.CAR_SIGNAL) {
+            items.add(SettingItem.CategoryHeader("carSignalCalibration", R.string.car_signal_calibration_title))
+            addCarSignalCalibration(items)
+        }
+
         settingsAdapter.submitList(items) {
             scrollState?.let { recyclerView.layoutManager?.onRestoreInstanceState(it) }
         }
@@ -921,6 +994,7 @@ class DarkModeFragment : Fragment(), SensorEventListener {
 
         // Observe screen brightness changes so the threshold dialog/list show a live value
         cachedBrightness = readBrightness()
+        cachedCarMode = readCarMode()
         val cr = requireContext().contentResolver
         cr.registerContentObserver(
             SystemSettings.System.getUriFor(SystemSettings.System.SCREEN_BRIGHTNESS),
@@ -932,12 +1006,17 @@ class DarkModeFragment : Fragment(), SensorEventListener {
                 false, brightnessObserver
             )
         }
+        cr.registerContentObserver(
+            SystemSettings.System.getUriFor("car_mode"),
+            false, carModeObserver
+        )
     }
 
     override fun onPause() {
         super.onPause()
         sensorManager?.unregisterListener(this)
         try { context?.contentResolver?.unregisterContentObserver(brightnessObserver) } catch (_: Exception) {}
+        try { context?.contentResolver?.unregisterContentObserver(carModeObserver) } catch (_: Exception) {}
         refreshHandler.removeCallbacks(refreshRunnable)
     }
 
@@ -953,6 +1032,13 @@ class DarkModeFragment : Fragment(), SensorEventListener {
         return try {
             SystemSettings.System.getInt(cr, SystemSettings.System.SCREEN_BRIGHTNESS)
                 .coerceIn(0, 255)
+        } catch (_: Exception) { -1 }
+    }
+
+    private fun readCarMode(): Int {
+        val ctx = context ?: return -1
+        return try {
+            SystemSettings.System.getInt(ctx.contentResolver, "car_mode")
         } catch (_: Exception) { -1 }
     }
 

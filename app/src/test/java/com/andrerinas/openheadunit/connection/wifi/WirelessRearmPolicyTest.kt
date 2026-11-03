@@ -18,6 +18,7 @@ class WirelessRearmPolicyTest {
         channel: Int = 0,
         zbtTransport: Boolean = false,
         blinkTransport: Boolean = false,
+        zjSocketTransport: Boolean = false,
         ignoreExternalBt: Boolean = false,
         autoEnableHotspot: Boolean = false,
         insecureRfcomm: Boolean = false,
@@ -31,6 +32,7 @@ class WirelessRearmPolicyTest {
         fiveGhzChannel = channel,
         externalBtZbtTransport = zbtTransport,
         externalBtBlinkTransport = blinkTransport,
+        externalBtZjSocketTransport = zjSocketTransport,
         nativeAaIgnoreExternalBt = ignoreExternalBt,
         autoEnableHotspot = autoEnableHotspot,
         insecureAaRfcommListener = insecureRfcomm,
@@ -95,6 +97,11 @@ class WirelessRearmPolicyTest {
     @Test
     fun `the external Bluetooth module transport re-arms`() {
         assertTrue(WirelessRearmPolicy.requiresRearm(config(), config(zbtTransport = true)))
+    }
+
+    @Test
+    fun `the ZJ socket transport re-arms`() {
+        assertTrue(WirelessRearmPolicy.requiresRearm(config(), config(zjSocketTransport = true)))
     }
 
     @Test

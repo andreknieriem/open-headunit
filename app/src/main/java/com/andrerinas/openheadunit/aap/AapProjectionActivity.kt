@@ -45,6 +45,7 @@ import com.andrerinas.openheadunit.decoder.video.SoftwareYuvFrameSink
 import com.andrerinas.openheadunit.decoder.video.VideoDecoder
 import com.andrerinas.openheadunit.decoder.video.VideoDimensionsListener
 import com.andrerinas.openheadunit.utils.AppLog
+import com.andrerinas.openheadunit.utils.ScreenPower
 import com.andrerinas.openheadunit.utils.BluetoothHelper
 import com.andrerinas.openheadunit.utils.CarLauncherManager
 import com.andrerinas.openheadunit.connection.self.SelfModeCallRaisePolicy
@@ -1080,6 +1081,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        applyTurnScreenOn(intent)
         // [FIX] applyOrientationSettings() must be called AFTER super.onCreate() so that the
         // Activity window is fully initialized before we lock the orientation. Calling it before
         // super.onCreate() caused SCREEN_ORIENTATION_LOCKED to inherit the orientation context
@@ -1312,6 +1314,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         isForeground = false
         AppLog.i("AapProjectionActivity: onPause")
         super.onPause()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) setTurnScreenOn(false)
         RenameNotice.dismiss()
         Aa174Notice.dismiss()
         // Clear any activity-local fullscreen override when leaving the Activity so
@@ -1426,6 +1429,16 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         AppLog.i("AapProjectionActivity: onNewIntent received")
+        applyTurnScreenOn(intent)
+    }
+
+    /** Lights the panel, and asks to lift a keyguard, for a service-raised screen-on; onPause clears it so a later resume does not. */
+    private fun applyTurnScreenOn(launchIntent: Intent?) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1 &&
+            launchIntent?.getBooleanExtra(EXTRA_TURN_SCREEN_ON, false) == true) {
+            setTurnScreenOn(true)
+            ScreenPower.requestDismissKeyguard(this, "AapProjectionActivity")
+        }
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
@@ -2622,6 +2635,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
 
         /** Set by a caller that opens this screen just before it starts a session. */
         const val EXTRA_EXPECT_SESSION = "expect_session"
+        const val EXTRA_TURN_SCREEN_ON = "turn_screen_on"
         @Volatile var isForeground = false
 
         /**

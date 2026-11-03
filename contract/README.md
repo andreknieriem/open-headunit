@@ -50,7 +50,7 @@ Open to any caller, like the steering-wheel key receivers already are.
 
 | Action (prefix `com.andrerinas.openheadunit.`) | Extras | Does |
 |---|---|---|
-| `ACTION_CONNECT` | `ip` (optional), `no_ui` | With `ip`, opens a session to Android Auto's head unit server on 5277. Without, checks USB. |
+| `ACTION_CONNECT` | `ip`, `mac`, `device_name` (all optional), `no_ui` | With `ip`, opens a session to Android Auto's head unit server on 5277. Else with `mac` or `device_name`, wakes that paired phone for Native AA (a USB session in progress outranks the wake). Else checks USB. |
 | `ACTION_DISCONNECT` | | Ends the session. |
 | `ACTION_START_SELF_MODE` | `no_ui` | Projects this device onto itself. |
 | `ACTION_STOP_SERVICE` | | Ends the session and stops the service. `ACTION_EXIT` is an accepted alias. |
@@ -58,7 +58,7 @@ Open to any caller, like the steering-wheel key receivers already are.
 | `ACTION_START_WIRELESS` | | Arms the stored wireless mode. |
 | `ACTION_STOP_WIRELESS` | | Stops it. |
 | `ACTION_START_WIRELESS_SCAN` | | One discovery pass. |
-| `ACTION_NATIVE_AA_POKE` | `extra_mac` | Wakes a phone over Bluetooth. Native AA mode only. |
+| `ACTION_NATIVE_AA_POKE` | `mac` or `device_name` | Wakes a phone over Bluetooth. Native AA mode only. `extra_mac` is the older spelling of `mac`. |
 | `ACTION_NATIVE_AA_CANCEL_POKE` | | Cancels a wake in progress, as the driver selector's Cancel does. Native AA mode only, and only on a build carrying driver selection. |
 | `ACTION_NEARBY_CONNECT` | `extra_endpoint_id` | Connects a Google Nearby endpoint. |
 | `ACTION_CHECK_USB` | | Re-checks the USB port. |
@@ -137,8 +137,11 @@ Still supported and unchanged:
 
 ```bash
 adb shell am start -a android.intent.action.VIEW -d "headunit://connect?ip=192.168.1.25"
+adb shell am start -a android.intent.action.VIEW -d "headunit://connect?device_name=Pixel%207"
 adb shell am start -a android.intent.action.VIEW -d "headunit://exit"
 ```
+
+The phone target is read in this order: `ip`, `mac`, `extra_mac`, `device_name`. A blank value counts as absent.
 
 `headunit://connect`, `disconnect`, `exit`, `nightmode?state=day|night|auto`, and
 `headunit://selfmode`. The app also publishes seven launcher shortcuts, which is what Samsung

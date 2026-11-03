@@ -57,6 +57,7 @@
         android:name="com.andrerinas.openheadunit.permission.NAVIGATION_UPDATE"
         android:protectionLevel="signature" />
 
+    <uses-permission android:name="android.permission.TURN_SCREEN_ON" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
@@ -329,6 +330,22 @@
                 <action android:name="com.andrerinas.openheadunit.ACTION_STOP_LOG_CAPTURE" />
                 <action android:name="com.andrerinas.openheadunit.ACTION_EXPORT_LOG" />
                 <action android:name="com.andrerinas.openheadunit.ACTION_LOG_MARKER" />
+                <action android:name="com.andrerinas.openheadunit.ACTION_SCREEN_OFF" />
+                <action android:name="com.andrerinas.openheadunit.ACTION_SCREEN_ON" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name=".app.ScreenOffAdminReceiver"
+            android:exported="true"
+            android:label="@string/screen_off_admin_label"
+            android:description="@string/screen_off_admin_description"
+            android:permission="android.permission.BIND_DEVICE_ADMIN">
+            <meta-data
+                android:name="android.app.device_admin"
+                android:resource="@xml/screen_off_admin" />
+            <intent-filter>
+                <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
             </intent-filter>
         </receiver>
 

@@ -11,6 +11,7 @@ import com.andrerinas.openheadunit.BuildConfig
 import com.andrerinas.openheadunit.aap.AapService
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.LogExporter
+import com.andrerinas.openheadunit.utils.ScreenPower
 import com.andrerinas.openheadunit.utils.Settings
 import com.andrerinas.openheadunit.utils.SettingsBackupManager
 import kotlinx.coroutines.CoroutineScope
@@ -63,6 +64,11 @@ object AutomationEffectRunner {
                     // told apart. WARN so it survives an INFO-filtered export.
                     AppLog.w("AutomationMarker: ${effect.text}")
                 AutomationCommandPolicy.Effect.QueryState -> putState(component, reply)
+                AutomationCommandPolicy.Effect.TurnScreenOff -> {
+                    val done = ScreenPower.turnOff(context)
+                    reply.put("screenOff", done)
+                    if (!done) ok = false
+                }
             }
         }
         return ok

@@ -515,6 +515,22 @@
     <string name="enter_auto_disconnect_bt_delay">Detik untuk menunggu sebelum mengakhiri sesi</string>
     <string name="auto_disconnect_bt_delay_hint">Sambungan Bluetooth dapat terputus sejenak saat profil tersambung kembali. Sesi hanya berakhir jika perangkat masih tidak terdeteksi setelah waktu ini.</string>
     <string name="auto_disconnect_bt_kill_hint">Mengakhiri sesi seperti tombol Keluar saat Bluetooth perangkat yang dipilih terputus, misalnya saat mobil dimatikan. Pilih Bluetooth mobil jika unit ini tersanding dengannya. Untuk juga menutup aplikasi dan menampilkan layar beranda, aktifkan \"Tutup aplikasi saat terputus\" di bawah Otomatisasi.</string>
+    <string name="external_power_disconnect_label">Putuskan saat pengisi daya dilepas</string>
+    <string name="external_power_disconnect_description">Mengakhiri sesi seperti tombol Keluar saat daya eksternal hilang, misalnya saat mobil dimatikan. Saat daya kembali, koneksi diaktifkan lagi.</string>
+    <string name="external_power_delay_label">Tunggu (detik)</string>
+    <string name="external_power_delay_value">%1$d dtk</string>
+    <string name="external_power_delay_hint">Sesi hanya berakhir jika daya masih belum kembali setelah waktu ini. Antara 5 dan 3600 detik.</string>
+    <string name="external_power_screen_off_label">Matikan juga layar</string>
+    <string name="external_power_screen_off_description">Meredupkan layar saat daya belum kembali, setelah sesi berakhir atau saat tidak ada yang terhubung, dan menyalakannya lagi saat daya kembali.</string>
+    <string name="external_power_grant_label">Izinkan Open Headunit mematikan layar</string>
+    <string name="external_power_grant_allowed">Diizinkan</string>
+    <string name="external_power_grant_missing">Tidak diizinkan</string>
+    <string name="external_power_grant_uninstall_hint">Android memblokir penghapusan instalasi selama ini diizinkan. Hapus izin di sini sebelum Anda menghapus instalasi aplikasi.</string>
+    <string name="external_power_grant_explanation">Open Headunit hanya memakai izin ini untuk mematikan layar. Aplikasi tidak dapat membuka kunci perangkat atau membaca apa pun.</string>
+    <string name="external_power_grant_remove_message">Hapus izin untuk mematikan layar?</string>
+    <string name="external_power_grant_remove">Hapus</string>
+    <string name="screen_off_admin_label">Matikan layar</string>
+    <string name="screen_off_admin_description">Mengizinkan Open Headunit mematikan layar saat daya eksternal hilang.</string>
     <string name="auto_start_wifi_label">Mulai otomatis saat Wi-Fi tersambung</string>
     <string name="auto_start_wifi_description">Buka Open Headunit secara otomatis saat terhubung ke SSID Wi-Fi tertentu.</string>
     <string name="auto_start_wifi_ssid_label">SSID Wi-Fi</string>
@@ -1073,6 +1089,12 @@
 
     <string name="supported_nativeaa">Dukungan Nirkabel yang Ditingkatkan</string>
     <string name="supported_nativeaa_desc">Kabar baik! Perangkat Anda mendukung mode \"Nirkabel Asli\", yang memberikan pengalaman Android Auto yang lebih mulus.\n\nUntuk mengaktifkannya, cache Bluetooth Anda perlu disegarkan. Lakukan langkah berikut:\n1. Hapus penyandingan yang ada di ponsel Anda\n2. Pilih OK untuk memulai ulang Bluetooth\n3. Sandingkan ponsel Anda kembali\n\nBeralih ke mode Nirkabel Asli sekarang?</string>
+    <string name="automation_connect_no_permission">Izinkan Bluetooth untuk aplikasi ini agar dapat terhubung berdasarkan nama.</string>
+    <string name="automation_connect_not_found">Tidak ada ponsel yang dipasangkan dengan nama itu.</string>
+    <string name="automation_connect_ambiguous">Lebih dari satu ponsel yang dipasangkan memiliki nama itu.</string>
+    <string name="automation_connect_not_a_phone">Perangkat yang dipasangkan itu bukan ponsel.</string>
+    <string name="automation_connect_not_paired">Alamat Bluetooth itu belum dipasangkan.</string>
+    <string name="automation_connect_live_session">Ponsel lain sudah terhubung.</string>
     <string name="native_aa_poke_not_running">Bluetooth nirkabel tidak berjalan di head unit ini. Periksa Setelan.</string>
     <string name="not_supported_nativeaa">Nirkabel Asli tampaknya tidak didukung</string>
     <string name="not_supported_nativeaa_desc">Perangkat Anda mungkin tidak mendukung fitur Bluetooth atau Wi-Fi yang diperlukan untuk Nirkabel Asli. Anda tetap dapat mencobanya, tetapi jika gagal, gunakan mode \"Wireless Helper\" atau \"Otomatis (Headunit Server)\".</string>

@@ -150,8 +150,8 @@ class SettingsFragment : Fragment() {
         "wifiDirectLastNetwork", "wifiDirectGroupIdentity",
         // Which phone Native AA wakes: the first thing to set when two phones share the car.
         "nativePokeBt", "nativePokeAllPaired",
-        // The ESP32 relay that carries the Bluetooth half instead of this unit, set up once by hand.
-        "Esp32Relay",
+        // Which Bluetooth the phone pairs with, and the ESP32 relay page it leads to once chosen.
+        "bluetoothLink", "Esp32Relay",
         "hotspotInterfaceOverride",
         // Dark mode
         "darkModeSettings",

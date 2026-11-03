@@ -2679,6 +2679,12 @@ class Settings(private val context: Context) {
         get() = prefs.getBoolean("native-aa-ignore-external-bt", false)
         set(value) = prefs.edit().putBoolean("native-aa-ignore-external-bt", value).apply()
 
+    // Opt-in for dual-radio units whose Android data-service radio starts disabled. This only
+    // enables the selected Android adapter; it does not select an external-module transport.
+    var nativeAaEnableBluetooth: Boolean
+        get() = prefs.getBoolean("native-aa-enable-bluetooth", false)
+        set(value) = prefs.edit().putBoolean("native-aa-enable-bluetooth", value).apply()
+
     var autoKillOemApps: Boolean
         get() = prefs.getBoolean("auto-kill-oem-apps", false)
         set(value) = prefs.edit().putBoolean("auto-kill-oem-apps", value).apply()

@@ -44,6 +44,12 @@ class WirelessRearmPolicyTest {
     }
 
     @Test
+    fun `changing automatic Bluetooth startup re-arms the wireless launcher`() {
+        val before = config()
+        assertTrue(WirelessRearmPolicy.requiresRearm(before, before.copy(nativeAaEnableBluetooth = true)))
+    }
+
+    @Test
     fun `the wireless mode re-arms`() {
         assertTrue(
             WirelessRearmPolicy.requiresRearm(config(), config(mode = WifiLauncherMode.HELPER))

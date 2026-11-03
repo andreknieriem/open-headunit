@@ -79,7 +79,7 @@ class ZbtAaCarrier(
 }
 class Manager {
  val scope=CoroutineScope(SupervisorJob()+Dispatchers.Unconfined)
- var measuringDaemon=false;var measureGeneration=4;var wakeAwaitingModule=false
+ var measuringDaemon=false;var enablingAndroidBluetooth=false;var measureGeneration=4;var wakeAwaitingModule=false
  var moduleCarrier:ZbtAaCarrier?=null
  var reason:String?=null
  private var notStartedReason:String? get()=reason;set(value){reason=value}
@@ -112,6 +112,11 @@ class Service(val native:Native?) {
  }}
 }
 fun main() {
+ val androidStartup=Manager()
+ androidStartup.enablingAndroidBluetooth=true
+ check(androidStartup.wakeOverModule() && androidStartup.wakeAwaitingModule)
+ check(androidStartup.moduleCarrier==null && androidStartup.starts==0)
+ androidStartup.scope.cancel()
  for(immediate in listOf(false,true)) {
   val manager=Manager()
   manager.measuringDaemon=true;manager.wakeAwaitingModule=true

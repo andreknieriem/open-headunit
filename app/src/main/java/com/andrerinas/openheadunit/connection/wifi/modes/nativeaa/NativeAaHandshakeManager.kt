@@ -272,6 +272,8 @@ class NativeAaHandshakeManager(
 
     /** The route waits on the daemon's answer, and a wake asked for meanwhile is held for it. */
     @Volatile private var measuringDaemon = false
+    @Volatile private var enablingAndroidBluetooth = false
+    private var bluetoothStartupJob: Job? = null
     // Bumped by stop() so a measurement that outlives its arming cannot start the next one.
     @Volatile private var measureGeneration = 0
     @Volatile private var wakeAwaitingModule = false
@@ -838,7 +840,7 @@ class NativeAaHandshakeManager(
     // a delivered handoff is still settling. AutoStartReceiver's own poke can generate the
     // ACL_CONNECTED broadcast that re-triggers AapService's BT auto-start re-arm; callers
     // deciding whether it's safe to force-reinit should check this instead of isActive() alone.
-    fun isAttemptInFlight(): Boolean = isHandshakeInFlight() || pokeAttemptInFlight || isHandoffSettling()
+    fun isAttemptInFlight(): Boolean = enablingAndroidBluetooth || isHandshakeInFlight() || pokeAttemptInFlight || isHandoffSettling()
 
     fun isMeasuringDaemon(): Boolean = measuringDaemon
 
@@ -912,7 +914,7 @@ class NativeAaHandshakeManager(
     @SuppressLint("MissingPermission")
     private fun start(resumingMeasurement: Boolean) {
         // A measurement in flight calls start() itself when it ends; a second one would ask twice.
-        if (isRunning || measuringDaemon) return
+        if (isRunning || measuringDaemon || enablingAndroidBluetooth) return
         if (!resumingMeasurement) {
             ZbtDiscovery.beginArming()
             ZjSocketProbe.beginArming()
@@ -1034,6 +1036,11 @@ class NativeAaHandshakeManager(
 
         val adapter = BluetoothHelper.getBluetoothAdapter(context)
         if (adapter == null || !adapter.isEnabled) {
+            if (adapter != null && settings.nativeAaEnableBluetooth &&
+                BluetoothAdapterStartup.supported(Build.VERSION.SDK_INT)) {
+                startSelectedAndroidBluetooth(adapter)
+                return
+            }
             // Leave isRunning false — isActive() callers (e.g. AapService's BT auto-start
             // re-arm check) need to see this as genuinely stopped so they retry later,
             // instead of believing the listener sockets are up when nothing was ever opened.
@@ -1209,6 +1216,59 @@ class NativeAaHandshakeManager(
             btStateReceiverRegistered = true
         } catch (e: Exception) {
             AppLog.w("NativeAA: could not watch this unit's Bluetooth state: ${e.message}")
+        }
+    }
+
+    /** Only reached on the Android route, after external-module selection and permissions. */
+    @SuppressLint("MissingPermission")
+    @Suppress("DEPRECATION")
+    private fun startSelectedAndroidBluetooth(adapter: BluetoothAdapter) {
+        val generation = measureGeneration
+        enablingAndroidBluetooth = true
+        notStartedReason = "waiting for the selected Android Bluetooth adapter to turn on"
+        AppLog.i("NativeAA: enabling the selected Android Bluetooth adapter before the handshake.")
+        bluetoothStartupJob = scope.launch {
+            try {
+                val result = withContext(Dispatchers.IO) {
+                    BluetoothAdapterStartup.awaitOn(
+                        Build.VERSION.SDK_INT,
+                        readState = {
+                            when (adapter.state) {
+                                BluetoothAdapter.STATE_OFF -> BluetoothAdapterStartup.State.OFF
+                                BluetoothAdapter.STATE_TURNING_ON -> BluetoothAdapterStartup.State.TURNING_ON
+                                BluetoothAdapter.STATE_ON -> BluetoothAdapterStartup.State.ON
+                                BluetoothAdapter.STATE_TURNING_OFF -> BluetoothAdapterStartup.State.TURNING_OFF
+                                else -> BluetoothAdapterStartup.State.UNAVAILABLE
+                            }
+                        },
+                        requestEnable = { adapter.enable() },
+                    )
+                }
+                if (measureGeneration != generation || !settings.nativeAaEnableBluetooth) return@launch
+                enablingAndroidBluetooth = false
+                bluetoothStartupJob = null
+                if (result == BluetoothAdapterStartup.Result.READY) {
+                    AppLog.i("NativeAA: the selected Android Bluetooth adapter is ON; starting the handshake.")
+                    resumeAfterDaemonMeasurement(generation)
+                } else {
+                    notStartedReason = "the selected Android Bluetooth adapter did not turn on ($result); enable it in system Settings"
+                    AppLog.w("NativeAA: $notStartedReason")
+                    wakeAwaitingModule = false
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                if (measureGeneration == generation) {
+                    notStartedReason = "the selected Android Bluetooth adapter could not be enabled; enable it in system Settings"
+                    AppLog.w("NativeAA: $notStartedReason: ${e.message}")
+                    wakeAwaitingModule = false
+                }
+            } finally {
+                if (measureGeneration == generation && bluetoothStartupJob === coroutineContext[Job]) {
+                    enablingAndroidBluetooth = false
+                    bluetoothStartupJob = null
+                }
+            }
         }
     }
 
@@ -2282,7 +2342,7 @@ class NativeAaHandshakeManager(
         // isActive() is "started, and the listener not closed for this session": the accept loop
         // is launched in the same start() call, so this is as close to "accepting" as there is.
         if (!EarlyWakePolicy.mayWakeBeforeCredentials(
-                listenersOpen = isActive() || measuringDaemon,
+                listenersOpen = isActive() || measuringDaemon || enablingAndroidBluetooth,
                 credentialsPresent = credentials != null,
                 userExited = userExited,
                 sessionUp = commManager.isConnected,
@@ -2324,6 +2384,11 @@ class NativeAaHandshakeManager(
             return
         }
         // No route yet, and the one being measured is probably the module: an HFP poke is wasted.
+        if (enablingAndroidBluetooth) {
+            wakeAwaitingModule = true
+            AppLog.i("NativeAA: the selected Android Bluetooth adapter is still turning on, so the wake waits.")
+            return
+        }
         if (measuringDaemon) {
             wakeAwaitingModule = true
             AppLog.i("NativeAA: the vendor daemon is still being asked for a route, so the wake waits for it.")
@@ -2660,9 +2725,9 @@ class NativeAaHandshakeManager(
         val carrier = moduleCarrier
         if (carrier == null) {
             // The route is still being measured; hold the wake for the channel, as triggerPoke does.
-            if (!measuringDaemon) return false
+            if (!measuringDaemon && !enablingAndroidBluetooth) return false
             wakeAwaitingModule = true
-            AppLog.i("NativeAA: the vendor daemon is still being asked for a route, so the wake waits for it.")
+            AppLog.i("NativeAA: the Bluetooth route is not ready yet, so the wake waits for it.")
             return true
         }
         wakeStoodDown = false
@@ -2679,6 +2744,12 @@ class NativeAaHandshakeManager(
      * Start a manual poke (wakeup) for a specific Bluetooth device.
      */
     fun manualPoke(address: String) {
+        if (enablingAndroidBluetooth) {
+            pendingSelectionTargetMac = address
+            wakeAwaitingModule = true
+            AppLog.i("NativeAA: holding the chosen phone's wake until the selected Bluetooth adapter is ON.")
+            return
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             (moduleCarrier as? HctWppOwner.Client)?.let {
                 wakeStoodDown = false
@@ -4295,6 +4366,9 @@ class NativeAaHandshakeManager(
         notStartedReason = "the wireless mode was stopped"
         measuringDaemon = false
         measureGeneration++
+        enablingAndroidBluetooth = false
+        bluetoothStartupJob?.cancel()
+        bluetoothStartupJob = null
         wakeAwaitingModule = false
         standingInForHfp = false
         aaReopenJob?.cancel()

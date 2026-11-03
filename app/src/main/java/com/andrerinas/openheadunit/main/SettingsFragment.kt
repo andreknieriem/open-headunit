@@ -217,6 +217,7 @@ class SettingsFragment : Fragment() {
     private var pendingWaitForWifiTimeout by pending::waitForWifiTimeout
     private var pendingBluetoothManagerServiceName by pending::bluetoothManagerServiceName
     private var pendingNativeAaIgnoreExternalBt by pending::nativeAaIgnoreExternalBt
+    private var pendingNativeAaEnableBluetooth by pending::nativeAaEnableBluetooth
     private var pendingExternalBtZbtTransport by pending::externalBtZbtTransport
     private var pendingExternalBtBlinkTransport by pending::externalBtBlinkTransport
     private var pendingExternalBtZjSocketTransport by pending::externalBtZjSocketTransport
@@ -660,6 +661,7 @@ class SettingsFragment : Fragment() {
         pendingWaitForWifiTimeout?.let { if (it != settings.waitForWifiTimeout) settings.waitForWifiTimeout = it }
         pendingBluetoothManagerServiceName?.let { if (it != settings.bluetoothManagerServiceName) settings.bluetoothManagerServiceName = it }
         pendingNativeAaIgnoreExternalBt?.let { if (it != settings.nativeAaIgnoreExternalBt) settings.nativeAaIgnoreExternalBt = it }
+        pendingNativeAaEnableBluetooth?.let { if (it != settings.nativeAaEnableBluetooth) settings.nativeAaEnableBluetooth = it }
         pendingExternalBtZbtTransport?.let { if (it != settings.externalBtZbtTransport) settings.externalBtZbtTransport = it }
         pendingExternalBtBlinkTransport?.let { if (it != settings.externalBtBlinkTransport) settings.externalBtBlinkTransport = it }
         pendingExternalBtZjSocketTransport?.let { if (it != settings.externalBtZjSocketTransport) settings.externalBtZjSocketTransport = it }
@@ -1254,6 +1256,21 @@ class SettingsFragment : Fragment() {
                         .show()
                 }
             ))
+
+            if (Build.VERSION.SDK_INT <= 32) {
+                items.add(SettingItem.ToggleSettingEntry(
+                    stableId = "nativeAaEnableBluetooth",
+                    nameResId = R.string.native_aa_enable_bluetooth,
+                    descriptionResId = R.string.native_aa_enable_bluetooth_description,
+                    isChecked = pendingNativeAaEnableBluetooth ?: settings.nativeAaEnableBluetooth,
+                    searchKeywords = "topway ts9 dual bluetooth data service radio enable startup",
+                    onCheckedChanged = { isChecked ->
+                        pendingNativeAaEnableBluetooth = isChecked
+                        checkChanges()
+                        updateSettingsList()
+                    }
+                ))
+            }
 
             // An action, not a switch: the wake's cost is a property of this unit's own Bluetooth
             // stack, which is measured rather than asked. What a user can do is ask for the
@@ -3371,6 +3388,7 @@ class SettingsFragment : Fragment() {
         val externalBtBlinkTransport: Boolean,
         val externalBtZjSocketTransport: Boolean,
         val nativeAaIgnoreExternalBt: Boolean,
+        val nativeAaEnableBluetooth: Boolean,
         val autoEnableHotspot: Boolean,
         val insecureAaRfcommListener: Boolean,
         val appLanguage: String,
@@ -3772,6 +3790,7 @@ class SettingsFragment : Fragment() {
             externalBtBlinkTransport = settings.externalBtBlinkTransport,
             externalBtZjSocketTransport = settings.externalBtZjSocketTransport,
             nativeAaIgnoreExternalBt = settings.nativeAaIgnoreExternalBt,
+            nativeAaEnableBluetooth = settings.nativeAaEnableBluetooth,
             autoEnableHotspot = settings.autoEnableHotspot,
             insecureAaRfcommListener = settings.insecureAaRfcommListener,
             appLanguage = settings.appLanguage,
@@ -3838,6 +3857,7 @@ class SettingsFragment : Fragment() {
         externalBtBlinkTransport = settings.externalBtBlinkTransport,
         externalBtZjSocketTransport = settings.externalBtZjSocketTransport,
         nativeAaIgnoreExternalBt = settings.nativeAaIgnoreExternalBt,
+        nativeAaEnableBluetooth = settings.nativeAaEnableBluetooth,
         autoEnableHotspot = settings.autoEnableHotspot,
         insecureAaRfcommListener = settings.insecureAaRfcommListener,
     )
@@ -3855,6 +3875,7 @@ class SettingsFragment : Fragment() {
             externalBtBlinkTransport = snapshot.externalBtBlinkTransport,
             externalBtZjSocketTransport = snapshot.externalBtZjSocketTransport,
             nativeAaIgnoreExternalBt = snapshot.nativeAaIgnoreExternalBt,
+            nativeAaEnableBluetooth = snapshot.nativeAaEnableBluetooth,
             autoEnableHotspot = snapshot.autoEnableHotspot,
             insecureAaRfcommListener = snapshot.insecureAaRfcommListener,
         )

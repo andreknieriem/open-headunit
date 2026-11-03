@@ -96,6 +96,23 @@ accepts the enable request. On paths with readable state, if searches are re-ena
 the app leaves them enabled for that connection instead of repeatedly forcing them off. Other apps' explicit scans, Wi-Fi Direct discovery and firmware roaming are outside
 this control; this option cannot promise to eliminate every radio interruption.
 
+#### Android data-service Bluetooth on dual-radio units
+
+Some head units have both a vendor-controlled calls module and a separate Android Bluetooth
+adapter, often labelled **Bluetooth data service** (for example, **Topway** on TS9 hardware).
+If the phone uses that Android adapter for Native AA, select it under **Settings → Advanced →
+Wireless Connection → Bluetooth Adapter** and pair the phone with it. If external-module
+detection blocks this known-working route, the existing **Ignore the Bluetooth compatibility
+check** option explicitly selects the Android route.
+
+On Android 12L and earlier, **Enable the selected Bluetooth adapter for Native AA** can turn that
+adapter on when Native AA starts. It is off by default. Startup waits for the adapter to report
+ON, with bounded retries, before opening the Bluetooth handshake listeners. An unsuccessful
+request is reported in the log; the adapter can still be enabled
+in system Settings. Stopping or changing the wireless mode cancels the pending startup. The
+option does not control the vendor calls module or turn Bluetooth off on exit. It is unavailable
+on Android 13 and later, where apps cannot silently enable the radio using this API.
+
 #### FYT external Bluetooth module transport (experimental)
 On FYT units where the phone pairs for calls with a separate Bluetooth module (for example **DUDUAUTO** on DUDUOS), Native Mode can carry its Android Auto Bluetooth handshake through `/dev/auto_serial`, the relay the stock Car Link app (`com.syu.carlink`) uses, while calls remain on the module and the vehicle microphone/speakers. Tested so far only on DUDUOS with a BLINK module.
 

@@ -60,6 +60,7 @@ class SettingsPendingCopy {
     var waitForWifiTimeout: Int? = null
     var bluetoothManagerServiceName: String? = null
     var nativeAaIgnoreExternalBt: Boolean? = null
+    var nativeAaEnableBluetooth: Boolean? = null
     var externalBtZbtTransport: Boolean? = null
     var externalBtBlinkTransport: Boolean? = null
     var externalBtZjSocketTransport: Boolean? = null
@@ -149,6 +150,7 @@ class SettingsPendingCopy {
         waitForWifiTimeout = settings.waitForWifiTimeout
         bluetoothManagerServiceName = settings.bluetoothManagerServiceName
         nativeAaIgnoreExternalBt = settings.nativeAaIgnoreExternalBt
+        nativeAaEnableBluetooth = settings.nativeAaEnableBluetooth
         externalBtZbtTransport = settings.externalBtZbtTransport
         externalBtBlinkTransport = settings.externalBtBlinkTransport
         externalBtZjSocketTransport = settings.externalBtZjSocketTransport
@@ -239,6 +241,7 @@ class SettingsPendingCopy {
         waitForWifiTimeout != settings.waitForWifiTimeout ||
         bluetoothManagerServiceName != settings.bluetoothManagerServiceName ||
         nativeAaIgnoreExternalBt != settings.nativeAaIgnoreExternalBt ||
+        nativeAaEnableBluetooth != settings.nativeAaEnableBluetooth ||
         externalBtZbtTransport != settings.externalBtZbtTransport ||
         externalBtBlinkTransport != settings.externalBtBlinkTransport ||
         externalBtZjSocketTransport != settings.externalBtZjSocketTransport ||

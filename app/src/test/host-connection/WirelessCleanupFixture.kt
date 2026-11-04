@@ -59,6 +59,8 @@ object Esp32RelaySession { fun hasSavedEsp32Relay(context: Any) = false; fun not
 class Settings {
     val wifiConnectionMode=WifiLauncherMode.NATIVE; val helperConnectionStrategy=0; val nativeApStrategy=0
     val autoEnableHotspot=false; var hotspotTeardownProvenUnsafe=false
+    var lastConnectionType=""
+    companion object { const val CONNECTION_TYPE_USB="usb" }
 }
 class WifiLauncherNative {
     val handshakeManager: WifiLauncherNative? = null
@@ -100,6 +102,7 @@ class Service {
     val videoDecoder=VideoDecoder()
     var sessionEndedByHand=false; var pendingStandDown: Any?=null; var pendingStandDownLabel: String?=null; var wirelessQuiescedForWiredSession=false
     var exitTeardownDone: CompletableDeferred<Unit>?=null
+    var lastUncleanSessionEndAt=0L
     var exitTeardownState: CommManager.ConnectionState.Disconnected?=null
     val externalPowerLock=Any(); var externalPowerEndReached=false; var externalPowerBackWhileEnding=false
     var screenOffAfterStandDown=false; var externalPowerTurnedScreenOff=false; var powerEndsFinished=0

@@ -2,5 +2,6 @@
 <resources>
     <string name="keep_dummy_vpn">Offline VPN fenntartása csatlakozás közben</string>
     <string name="keep_dummy_vpn_description">Az alkalmazás offline VPN-jét aktívan tartja, amíg egy telefon csatlakozik. 2,4 GHz-es egységekhez vagy időnként akadozó hang és videó esetére szolgál, hogy a fejegység Wi-Fi-lapkája ne keressen más hálózatokat. Bekapcsolt állapotban a fejegység többi alkalmazásának nincs internete. A következő csatlakozáskor lép érvénybe.</string>
+    <string name="keep_dummy_vpn_summary">Az offline VPN bekapcsolva marad, amíg egy telefon csatlakozik. A többi alkalmazás nem fér hozzá az internethez.</string>
     <string name="keep_dummy_vpn_denied">VPN-engedély megtagadva. Az offline VPN nem indítható automatikusan.</string>
 </resources>

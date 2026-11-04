@@ -1,5 +1,7 @@
 package com.andrerinas.openheadunit.utils
 
+import com.andrerinas.openheadunit.connection.usb.UsbAutoStartPolicy
+import com.andrerinas.openheadunit.connection.usb.UsbPlugInPolicy
 import android.annotation.SuppressLint
 import com.andrerinas.openheadunit.app.ExternalPowerDisconnectPolicy
 import android.content.ComponentName
@@ -61,6 +63,11 @@ class Settings(private val context: Context) {
     var isAdvancedSettingsActive: Boolean
         get() = prefs.getBoolean("advanced-settings-active", false)
         set(value) { prefs.edit().putBoolean("advanced-settings-active", value).apply() }
+
+    /** The settings rail folded to its icons. A view choice, so it saves at once. */
+    var settingsRailCollapsed: Boolean
+        get() = prefs.getBoolean("settings-rail-collapsed", false)
+        set(value) { prefs.edit().putBoolean("settings-rail-collapsed", value).apply() }
 
     var allowedDevices: Set<String>
         @Synchronized get() = prefs.getStringSet("allow-devices", null)?.toSet() ?: emptySet()
@@ -1089,6 +1096,11 @@ class Settings(private val context: Context) {
         get() = prefs.getInt("debug-video-feed-hold-ms", 0)
         set(value) { prefs.edit().putInt("debug-video-feed-hold-ms", value.coerceIn(0, 250)).apply() }
 
+    /** One-shot: the next USB bulk read is discarded as failed. Set only by the automation receiver. */
+    var debugUsbReadFault: Boolean
+        get() = prefs.getBoolean("debug-usb-read-fault", false)
+        set(value) { prefs.edit().putBoolean("debug-usb-read-fault", value).apply() }
+
     /** One in this many of the targeted messages is faulted. See [debugVideoFaultInjection]. */
     var debugVideoFaultRate: Int
         get() = prefs.getInt("debug-video-fault-rate", VideoFaultInjector.DEFAULT_RATE)
@@ -1476,6 +1488,18 @@ class Settings(private val context: Context) {
         get() = prefs.getBoolean("listen-for-usb-devices", true)
         set(value) { prefs.edit().putBoolean("listen-for-usb-devices", value).apply() }
 
+    /** "Connect when plugged in": whether a plug-in switches the phone. Off, the plug-in opens the app. */
+    var usbConnectOnPlugIn: Boolean
+        get() = prefs.getBoolean(KEY_USB_CONNECT_ON_PLUG_IN, UsbPlugInPolicy.DEFAULT_CONNECT_ON_PLUG_IN)
+        set(value) { prefs.edit().putBoolean(KEY_USB_CONNECT_ON_PLUG_IN, value).apply() }
+
+    /** [autoStartOnUsb] as the automatic USB paths read it; the stored value and its mirror stay raw. */
+    val effectiveAutoStartOnUsb: Boolean
+        get() = UsbAutoStartPolicy.effective(autoStartOnUsb, usbConnectOnPlugIn, listenForUsbDevices)
+
+    val effectiveConnectOnPlugIn: Boolean
+        get() = UsbPlugInPolicy.connectsOnPlugIn(usbConnectOnPlugIn, listenForUsbDevices)
+
     var usbBlacklist: Set<String>
         @Synchronized get() = prefs.getStringSet(KEY_USB_BLACKLIST, null)?.toSet() ?: emptySet()
         @Synchronized set(value) { storeUsbBlacklist(UsbBlacklistPolicy.normalise(value)) }
@@ -1786,6 +1810,7 @@ class Settings(private val context: Context) {
             syncAutoStartOnBootToDeviceStorage(context, false)
             syncAutoStartOnScreenOnToDeviceStorage(context, false)
             syncAutoStartOnUsbToDeviceStorage(context, false)
+            syncUsbConnectOnPlugInToDeviceStorage(context, UsbPlugInPolicy.DEFAULT_CONNECT_ON_PLUG_IN)
             syncAutoStartOnWifiToDeviceStorage(context, false)
             syncListenForUsbDevicesToDeviceStorage(context, true)
             syncAutoStartBtMacToDeviceStorage(context, "")
@@ -2200,6 +2225,29 @@ class Settings(private val context: Context) {
                 deviceContext.getSharedPreferences(DEVICE_PREFS_NAME, Context.MODE_PRIVATE)
                     .edit()
                     .putBoolean(KEY_AUTO_START_ON_USB, enabled)
+                    .apply()
+            }
+        }
+
+        private const val KEY_USB_CONNECT_ON_PLUG_IN = "usb-connect-on-plug-in"
+
+        /** Reads usb-connect-on-plug-in like [isAutoStartOnUsbEnabled]; safe during locked boot. */
+        fun isUsbConnectOnPlugInEnabled(context: Context): Boolean {
+            val prefs = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                val deviceContext = context.createDeviceProtectedStorageContext()
+                deviceContext.getSharedPreferences(DEVICE_PREFS_NAME, Context.MODE_PRIVATE)
+            } else {
+                context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            }
+            return prefs.getBoolean(KEY_USB_CONNECT_ON_PLUG_IN, UsbPlugInPolicy.DEFAULT_CONNECT_ON_PLUG_IN)
+        }
+
+        fun syncUsbConnectOnPlugInToDeviceStorage(context: Context, enabled: Boolean) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                val deviceContext = context.createDeviceProtectedStorageContext()
+                deviceContext.getSharedPreferences(DEVICE_PREFS_NAME, Context.MODE_PRIVATE)
+                    .edit()
+                    .putBoolean(KEY_USB_CONNECT_ON_PLUG_IN, enabled)
                     .apply()
             }
         }

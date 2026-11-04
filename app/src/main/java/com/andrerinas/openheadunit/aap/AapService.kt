@@ -84,6 +84,7 @@ import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import androidx.media.session.MediaButtonReceiver
 import com.andrerinas.openheadunit.connection.usb.UsbDeviceCompat
+import com.andrerinas.openheadunit.connection.usb.UsbLinkLossRecheckPolicy
 import com.andrerinas.openheadunit.connection.usb.UsbReceiver
 import com.andrerinas.openheadunit.location.GpsLocationService
 import com.andrerinas.openheadunit.utils.LocaleHelper
@@ -104,6 +105,7 @@ import android.view.WindowManager
 import com.andrerinas.openheadunit.connection.self.SelfLauncherManager
 import com.andrerinas.openheadunit.connection.self.SelfModeDisconnectPolicy
 import com.andrerinas.openheadunit.connection.usb.UsbLauncherManager
+import com.andrerinas.openheadunit.connection.usb.UsbPlugInPolicy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.esp32.Esp32RelaySession
 import com.andrerinas.openheadunit.connection.wifi.LinkLossTeardownPolicy
 import com.andrerinas.openheadunit.connection.wifi.LinkLossTrigger
@@ -908,9 +910,9 @@ class AapService : Service() {
             launchMainActivityOnBoot()
         }
 
-        if (settings.autoStartOnUsb) {
+        if (settings.effectiveAutoStartOnUsb) {
             AppLog.i("WakeDetect: checking USB devices (trigger=$trigger)")
-            usbLauncherManager.checkAlreadyConnected(force = true)
+            usbLauncherManager.checkAlreadyConnected(force = true, trigger = UsbPlugInPolicy.Trigger.WAKE)
         }
     }
 
@@ -939,9 +941,9 @@ class AapService : Service() {
             usbLauncherManager.isSwitchingToProjection()) return
 
         val settings = App.provide(this).settings
-        if (settings.autoStartOnUsb) {
+        if (settings.effectiveAutoStartOnUsb) {
             AppLog.i("WakeDetect: possible wake, checking USB (trigger=$trigger)")
-            usbLauncherManager.checkAlreadyConnected(force = true)
+            usbLauncherManager.checkAlreadyConnected(force = true, trigger = UsbPlugInPolicy.Trigger.WAKE)
         }
     }
 
@@ -1074,9 +1076,9 @@ class AapService : Service() {
         launchMainActivityOnBoot()
 
         val settings = App.provide(this).settings
-        if (settings.autoStartOnUsb) {
+        if (settings.effectiveAutoStartOnUsb) {
             AppLog.i("WakeDetect: checking USB devices on screen on")
-            usbLauncherManager.checkAlreadyConnected(force = true)
+            usbLauncherManager.checkAlreadyConnected(force = true, trigger = UsbPlugInPolicy.Trigger.WAKE)
         }
     }
 
@@ -1829,6 +1831,12 @@ class AapService : Service() {
         // the Wi-Fi lock: a new arm alone does not take ownership of those resources.
         val endedByHand = sessionEndedByHand
         sessionEndedByHand = false
+        if (state.hadPhysicalConnection) {
+            // Only a USB end nobody asked for opens the glitch window; any other end closes it.
+            val glitch = !state.isUserExit && !endedByHand &&
+                App.provide(this).settings.lastConnectionType == Settings.CONNECTION_TYPE_USB
+            lastUncleanSessionEndAt = if (glitch) SystemClock.elapsedRealtime() else 0L
+        }
         // Capture ownership when Bluetooth requests the stop, not when its terminal is
         // eventually observed: a skipped terminal must not lend this intent to a new arm.
         val standDownOwned = pendingStandDown?.let(wifiLauncherManager::isCleanupCurrent) == true
@@ -2303,18 +2311,28 @@ class AapService : Service() {
         // Skip if the user voluntarily exited AA — the dongle is likely still connected with
         // stale data, and reconnecting immediately just causes handshake failures. The next
         // USB attach event will re-trigger the flow cleanly.
-        if (lastType == Settings.CONNECTION_TYPE_USB &&
-            (settings.autoConnectLastSession || settings.autoConnectSingleUsbDevice)) {
-            if (state.isUserExit && !(settings.autoStartOnUsb && settings.reopenOnReconnection)) {
+        val autoConnectUsb = settings.autoConnectLastSession || settings.autoConnectSingleUsbDevice
+        val lostWithPhoneAttached = lastType == Settings.CONNECTION_TYPE_USB && !autoConnectUsb &&
+            !state.isUserExit && state.endedBy == CommManager.EndCause.LINK_FAILED && state.reachedSsl
+        if (UsbLinkLossRecheckPolicy.shouldRecheck(
+                lastWasUsb = lastType == Settings.CONNECTION_TYPE_USB,
+                autoConnectSetting = autoConnectUsb,
+                isUserExit = state.isUserExit,
+                endedBy = state.endedBy,
+                reachedSsl = state.reachedSsl,
+                accessoryOnBus = lostWithPhoneAttached && UsbDeviceCompat.accessoryOnBus(this),
+            )) {
+            if (state.isUserExit && !(settings.effectiveAutoStartOnUsb && settings.reopenOnReconnection)) {
                 AppLog.i("AapService: USB disconnect after user Exit. Skipping auto-reconnect (waiting for dongle re-enumeration).")
                 userExitedAA = true
                 return
             }
-            if (state.isUserExit && settings.autoStartOnUsb && settings.reopenOnReconnection) {
+            if (state.isUserExit && settings.effectiveAutoStartOnUsb && settings.reopenOnReconnection) {
                 AppLog.i("AapService: USB disconnect after user Exit with reopenOnReconnection enabled. Will reconnect on next USB attach.")
                 return
             }
-            AppLog.i("AapService: USB disconnect. Scheduling reconnect check in ${USB_RECONNECT_DELAY_MS}ms...")
+            if (autoConnectUsb) AppLog.i("AapService: USB disconnect. Scheduling reconnect check in ${USB_RECONNECT_DELAY_MS}ms...")
+            else AppLog.i("AapService: USB link lost with the phone still attached. Reconnecting in ${USB_RECONNECT_DELAY_MS}ms.")
             // Connecting is not success: the USB launcher can defer this check through the
             // arbiter. Keep it across failed attempts/errors until a session forms or the user
             // supersedes recovery, even if wireless discovery schedules its own retry meanwhile.
@@ -2322,7 +2340,8 @@ class AapService : Service() {
             usbReconnect.schedule(state, USB_RECONNECT_DELAY_MS,
                 ownsCheck = { commManager.ownsUsbRecheck(owner) }) {
                 // Read when it fires: a Save still owed by this end must not meet the open settings screen.
-                usbLauncherManager.checkAlreadyConnected(force = true, settingsRestart = usbLauncherManager.pendingSettingsRestart())
+                usbLauncherManager.checkAlreadyConnected(force = true, settingsRestart = usbLauncherManager.pendingSettingsRestart(),
+                    trigger = UsbPlugInPolicy.Trigger.RECONNECT)
             }
         }
 
@@ -2896,13 +2915,7 @@ class AapService : Service() {
         // A plug-in that has failed for its whole budget no longer holds wireless off.
         if (ConnectionArbiter.usbEpisodeSpent()) return false
 
-        val accessoryOnBus = try {
-            UsbDeviceCompat.usbManager(this)?.deviceList?.values
-                ?.any { UsbDeviceCompat.isInAccessoryMode(it) } ?: false
-        } catch (e: Exception) {
-            AppLog.w("AapService: Could not read the USB bus before wireless bring-up: ${e.message}")
-            false
-        }
+        val accessoryOnBus = UsbDeviceCompat.accessoryOnBus(this)
 
         if (usbDeferralStartedMs == 0L) usbDeferralStartedMs = SystemClock.elapsedRealtime()
         val waitedMs = SystemClock.elapsedRealtime() - usbDeferralStartedMs
@@ -3237,12 +3250,26 @@ class AapService : Service() {
     /** A USB auto-connect arrived while the settings screen was on show; its close asks again. */
     @Volatile private var usbCheckPendingForSettings = false
 
+    /** What the held check was. A held plug-in replays as one, so Connect when plugged in still applies. */
+    @Volatile private var usbCheckTriggerForSettings = UsbPlugInPolicy.Trigger.APP_START
+
+    /** When the last session ended without the user ending it; 0 before any. */
+    @Volatile private var lastUncleanSessionEndAt = 0L
+
+    /** How long ago that was, or null before any, for [UsbPlugInPolicy.GLITCH_WINDOW_MS]. */
+    fun uncleanSessionEndAgoMs(): Long? =
+        lastUncleanSessionEndAt.takeIf { it > 0L }?.let { SystemClock.elapsedRealtime() - it }
+
     /** A Bluetooth arrival did not raise the home screen over settings; its close raises it. */
     @Volatile private var bluetoothLaunchPendingForSettings = false
 
     private var settingsReplayJob: Job? = null
 
-    fun holdUsbCheckForSettings() {
+    fun holdUsbCheckForSettings(trigger: UsbPlugInPolicy.Trigger) {
+        // Two held checks merge; the result stays a plug-in only if both were.
+        if (!usbCheckPendingForSettings || usbCheckTriggerForSettings == UsbPlugInPolicy.Trigger.PLUG_IN) {
+            usbCheckTriggerForSettings = trigger
+        }
         usbCheckPendingForSettings = true
     }
 
@@ -3273,9 +3300,10 @@ class AapService : Service() {
             }
             if (usbCheckPendingForSettings) {
                 usbCheckPendingForSettings = false
+                val trigger = usbCheckTriggerForSettings
                 AppLog.i("AapService: the settings screen closed with a USB auto-connect held " +
-                    "behind it, checking USB now.")
-                usbLauncherManager.checkAlreadyConnected(force = true)
+                    "behind it, checking USB now (trigger=$trigger).")
+                usbLauncherManager.checkAlreadyConnected(force = true, trigger = trigger)
             }
         }
     }
@@ -4133,6 +4161,8 @@ class AapService : Service() {
             }
             ACTION_CHECK_USB             -> usbLauncherManager.checkOnRequest(
                 userRequested = intent?.getBooleanExtra(EXTRA_USER_REQUESTED, false) == true,
+                trigger = if (intent?.getStringExtra(EXTRA_USB_TRIGGER) == USB_TRIGGER_PLUG_IN)
+                    UsbPlugInPolicy.Trigger.PLUG_IN else UsbPlugInPolicy.Trigger.APP_START,
             )
             else                         -> {
                 if (intent?.action == null || intent.action == Intent.ACTION_MAIN) {
@@ -4247,11 +4277,16 @@ class AapService : Service() {
      * visible. Uses the same overlay trampoline technique as boot auto-start to bypass OEM
      * background activity start restrictions.
      */
-    fun launchMainActivityIfNeeded(source: String) {
+    fun launchMainActivityIfNeeded(source: String, defersToAndroid: Boolean = false) {
         val settings = App.provide(this).settings
-        if (!settings.autoStartOnUsb || !settings.reopenOnReconnection) return
+        if (!settings.effectiveAutoStartOnUsb || !settings.reopenOnReconnection) return
         if (!AutoConnectHoldPolicy.raisesUi(SettingsActivity.isVisible, usbLauncherManager.cancelledByUser)) {
             AppLog.i("Reopen on reconnection: not raised over settings or after the status pill's X ($source)")
+            return
+        }
+        // The attach activity raises the app once the user answers Android's chooser.
+        if (defersToAndroid) {
+            AppLog.i("Reopen on reconnection: not raised, Android owns the USB ask (its chooser or another app's default) ($source)")
             return
         }
 
@@ -4599,6 +4634,9 @@ class AapService : Service() {
         const val EXTRA_SETTINGS_REARM = "settings_rearm"
         /** On [ACTION_CHECK_USB]: the user asked by hand, which lifts the status pill's X. */
         const val EXTRA_USER_REQUESTED = "user_requested"
+        /** On [ACTION_CHECK_USB]: [USB_TRIGGER_PLUG_IN] when the attach screen handed a plug-in on. */
+        const val EXTRA_USB_TRIGGER = "usb_trigger"
+        const val USB_TRIGGER_PLUG_IN = "plug_in"
         /** On [ACTION_CANCEL_WIRELESS]: the X was pressed on a USB attempt, read before it disconnected. */
         const val EXTRA_USB_ATTEMPT = "usb_attempt"
         /** On [ACTION_BT_AUTO_START]: the receiver did not raise the home screen over settings. */

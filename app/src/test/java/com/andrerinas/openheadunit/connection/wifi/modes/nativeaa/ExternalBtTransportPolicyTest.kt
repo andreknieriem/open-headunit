@@ -1,5 +1,6 @@
 package com.andrerinas.openheadunit.connection.wifi.modes.nativeaa
 
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.ExternalBtTransportPolicy.RouteChoice as Choice
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.ExternalBtTransportPolicy.Route
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.ExternalBtTransportPolicy.WifiButton
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zbt.ZbtDiscoveryPolicy
@@ -267,11 +268,9 @@ class ExternalBtTransportPolicyTest {
     }
 
     @Test
-    fun `the radio override shows beside a connecting socket only while the user has not chosen it`() {
-        val snapshot = legacy(evidence, false)
-        assertFalse(ExternalBtTransportPolicy.showsAndroidRadioOverride(snapshot, false, false, zjSocketEnabled = true))
-        assertTrue(ExternalBtTransportPolicy.showsAndroidRadioOverride(snapshot, false, true, zjSocketEnabled = true))
-        assertTrue(ExternalBtTransportPolicy.showsAndroidRadioOverride(legacy(null, null), false, false, zjSocketConnects = true))
+    fun `a connecting ZJ socket counts as a module`() {
+        assertTrue(ExternalBtTransportPolicy.externalModuleDetected(legacy(null, null), null, false, true))
+        assertFalse(ExternalBtTransportPolicy.externalModuleDetected(legacy(null, null), null, false, false))
     }
 
     @Test
@@ -497,5 +496,67 @@ class ExternalBtTransportPolicyTest {
         assertFalse(ExternalBtTransportPolicy.showZjSocketToggle(legacy(evidence, null), "FYT", true, false))
         assertTrue(ExternalBtTransportPolicy.showZjSocketToggle(legacy(evidence, null), "FYT", true, true))
         assertTrue(ExternalBtTransportPolicy.showZjSocketToggle(legacy(null, null), null, false, true))
+    }
+
+    @Test
+    fun `a choice turns on its own switch and no other`() {
+        for (choice in Choice.values()) {
+            val s = ExternalBtTransportPolicy.switchesFor(choice)
+            val on = listOf(s.blink, s.zjSocket, s.zbt, s.androidRadio, s.esp32).count { it }
+            assertEquals("$choice", if (choice == Choice.AUTOMATIC) 0 else 1, on)
+            assertEquals("$choice", choice, ExternalBtTransportPolicy.choiceOf(s))
+        }
+    }
+
+    @Test
+    fun `the row names the route that runs when old switches are all on`() {
+        val allOn = ExternalBtTransportPolicy.RouteSwitches(blink = true, zjSocket = true, zbt = true, androidRadio = true)
+        assertEquals(Choice.BLINK, ExternalBtTransportPolicy.choiceOf(allOn))
+        assertEquals(Choice.ESP32, ExternalBtTransportPolicy.choiceOf(allOn.copy(esp32 = true)))
+        assertEquals(Choice.ZBT, ExternalBtTransportPolicy.choiceOf(allOn.copy(blink = false)))
+        val discovery = legacy(evidence, null)
+        assertEquals(Route.ZBT, ExternalBtTransportPolicy.route(
+            discovery, zbtTransportEnabled = true, ignoreExternalBt = true, zjSocketEnabled = true))
+    }
+
+    @Test
+    fun `the route that runs is the one chosen`() {
+        // A ZLink unit that also has the ZJ markers: the case that showed ZBT and ZJ both on.
+        val discovery = legacy(evidence, null)
+        val expected = mapOf(
+            Choice.BLINK to Route.BLINK,
+            Choice.ZJ_SOCKET to Route.ZJ_SOCKET,
+            Choice.ZBT to Route.ZBT,
+            Choice.ANDROID_RADIO to Route.NORMAL
+        )
+        for ((choice, route) in expected) {
+            val s = ExternalBtTransportPolicy.switchesFor(choice)
+            val chosen = ExternalBtTransportPolicy.route(
+                discovery, zbtTransportEnabled = s.zbt, ignoreExternalBt = s.androidRadio,
+                blinkTransportEnabled = s.blink, zjSocketEnabled = s.zjSocket
+            )
+            assertEquals("$choice", route, chosen)
+        }
+    }
+
+    @Test
+    fun `a plain unit is offered Automatic and the relay only`() {
+        assertEquals(listOf(Choice.AUTOMATIC, Choice.ESP32), ExternalBtTransportPolicy.routeChoices(
+            Choice.AUTOMATIC, moduleDetected = false, zbtOffered = false, zjOffered = false,
+            blinkOffered = false, esp32Supported = true))
+    }
+
+    @Test
+    fun `a module unit is offered its own Bluetooth beside the module`() {
+        assertEquals(listOf(Choice.AUTOMATIC, Choice.ANDROID_RADIO, Choice.ZBT, Choice.ESP32),
+            ExternalBtTransportPolicy.routeChoices(Choice.AUTOMATIC, moduleDetected = true,
+                zbtOffered = true, zjOffered = false, blinkOffered = false, esp32Supported = true))
+    }
+
+    @Test
+    fun `the choice in force stays offered without its evidence`() {
+        assertEquals(listOf(Choice.AUTOMATIC, Choice.ZJ_SOCKET), ExternalBtTransportPolicy.routeChoices(
+            Choice.ZJ_SOCKET, moduleDetected = false, zbtOffered = false, zjOffered = false,
+            blinkOffered = false, esp32Supported = false))
     }
 }

@@ -9,6 +9,7 @@ import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
 import android.os.Build
 import android.net.Uri
+import androidx.core.content.IntentCompat
 
 
 import com.andrerinas.openheadunit.utils.AppLog
@@ -37,12 +38,7 @@ class UsbReceiver(private val mListener: Listener)          // USB Broadcast Rec
             return
         }
 
-        val device: UsbDevice = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            intent.getParcelableExtra(UsbManager.EXTRA_DEVICE, UsbDevice::class.java)
-        } else {
-            @Suppress("DEPRECATION")
-            intent.getParcelableExtra(UsbManager.EXTRA_DEVICE)
-        } ?: return
+        val device: UsbDevice = deviceOf(intent) ?: return
 
         when (action) {
             UsbManager.ACTION_USB_DEVICE_DETACHED -> // If detach...
@@ -58,7 +54,9 @@ class UsbReceiver(private val mListener: Listener)          // USB Broadcast Rec
                 if (recovery != null) {
                     // A late recovery reply must never become an ordinary connect request.
                     mListener.onUsbRecoveryPermission(recovery.schemeSpecificPart, permissionGranted, device)
-                } else mListener.onUsbPermission(permissionGranted, connect, device)
+                } else if (intent.data?.scheme == ASK_PERMISSION_SCHEME) {
+                    mListener.onUsbPermission(permissionGranted, connect, device)
+                }
             }
         }
     }
@@ -67,11 +65,13 @@ class UsbReceiver(private val mListener: Listener)          // USB Broadcast Rec
         const val ACTION_USB_DEVICE_PERMISSION = "com.andrerinas.openheadunit" + ".ACTION_USB_DEVICE_PERMISSION"
         const val EXTRA_CONNECT = "EXTRA_CONNECT"
 
-        fun createPermissionPendingIntent(context: Context): PendingIntent {
+        /** The token in the data makes each request its own PendingIntent, so no answer can carry another's. */
+        fun createPermissionPendingIntent(context: Context, token: String): PendingIntent {
             return PendingIntent.getBroadcast(
                 context, 0,
                 Intent(ACTION_USB_DEVICE_PERMISSION).apply {
                     setPackage(context.packageName)
+                    data = Uri.fromParts(ASK_PERMISSION_SCHEME, token, null)
                 },
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
@@ -79,7 +79,8 @@ class UsbReceiver(private val mListener: Listener)          // USB Broadcast Rec
             )
         }
 
-        private const val RECOVERY_PERMISSION_SCHEME = "ohu-usb-recovery"
+        internal const val ASK_PERMISSION_SCHEME = "ohu-usb-ask"
+        internal const val RECOVERY_PERMISSION_SCHEME = "ohu-usb-recovery"
 
         fun createRecoveryPermissionPendingIntent(context: Context, token: String): PendingIntent =
             PendingIntent.getBroadcast(context, 0,
@@ -88,16 +89,25 @@ class UsbReceiver(private val mListener: Listener)          // USB Broadcast Rec
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) PendingIntent.FLAG_MUTABLE
                 else 0)
 
-        fun createRecoveryPermissionFilter() = IntentFilter(ACTION_USB_DEVICE_PERMISSION).apply {
+        /** Every permission answer carries a token in its data, so only this filter matches one. */
+        fun createPermissionFilter() = IntentFilter(ACTION_USB_DEVICE_PERMISSION).apply {
+            addDataScheme(ASK_PERMISSION_SCHEME)
             addDataScheme(RECOVERY_PERMISSION_SCHEME)
         }
+
+        /** The request token of a permission answer, ordinary or recovery. */
+        fun permissionToken(intent: Intent): String? = intent.data
+            ?.takeIf { it.scheme == ASK_PERMISSION_SCHEME || it.scheme == RECOVERY_PERMISSION_SCHEME }
+            ?.schemeSpecificPart
+
+        fun deviceOf(intent: Intent): UsbDevice? =
+            IntentCompat.getParcelableExtra(intent, UsbManager.EXTRA_DEVICE, UsbDevice::class.java)
 
         fun createFilter(): IntentFilter {
             val filter = IntentFilter()
             filter.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED)
             filter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED)
             filter.addAction(UsbManager.ACTION_USB_ACCESSORY_DETACHED)
-            filter.addAction(ACTION_USB_DEVICE_PERMISSION)
             return filter
         }
 
@@ -106,7 +116,6 @@ class UsbReceiver(private val mListener: Listener)          // USB Broadcast Rec
                 UsbManager.ACTION_USB_DEVICE_DETACHED -> true
                 UsbManager.ACTION_USB_DEVICE_ATTACHED -> true
                 UsbManager.ACTION_USB_ACCESSORY_DETACHED -> true
-                ACTION_USB_DEVICE_PERMISSION -> true
                 else -> false
             }
         }

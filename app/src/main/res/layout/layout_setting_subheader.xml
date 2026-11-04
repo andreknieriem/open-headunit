@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Group title inside a section: smaller and quieter than the section title above it. -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/subHeaderTitle"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="@dimen/settings_section_spacing"
+    android:fontFamily="sans-serif-medium"
+    android:paddingStart="@dimen/settings_row_padding_start"
+    android:paddingLeft="@dimen/settings_row_padding_start"
+    android:paddingTop="@dimen/settings_section_title_padding_bottom"
+    android:paddingEnd="@dimen/settings_row_padding_start"
+    android:paddingRight="@dimen/settings_row_padding_start"
+    android:paddingBottom="@dimen/settings_section_title_padding_bottom"
+    android:textAllCaps="true"
+    android:textColor="?attr/settingsOnSurfaceVariant"
+    android:textSize="@dimen/settings_row_description_size"
+    tools:text="Bluetooth route" />

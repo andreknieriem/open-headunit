@@ -29,6 +29,7 @@ data class DeviceHackDefinition(
     val id: String,
     val titleResId: Int,
     val descriptionResId: Int,
+    val helpResId: Int? = null,
     val preferenceKey: String,
     val checkingResId: Int,
     val unavailableResId: Int,
@@ -52,7 +53,8 @@ object DeviceProfiles {
             listOf(DeviceHackDefinition(
                 id = AdayoReverseCameraHack.ID,
                 titleResId = R.string.device_specific_pause_projection_reverse,
-                descriptionResId = R.string.device_specific_pause_projection_reverse_description,
+                descriptionResId = R.string.device_specific_pause_projection_reverse_summary,
+                helpResId = R.string.device_specific_pause_projection_reverse_help,
                 // Keep the original preference key so existing installations retain their choice.
                 preferenceKey = "device-specific-pause-projection-on-reverse",
                 checkingResId = R.string.device_specific_mcu_checking,

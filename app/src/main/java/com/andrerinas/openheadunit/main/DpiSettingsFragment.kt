@@ -16,6 +16,7 @@ import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.R
+import com.andrerinas.openheadunit.main.settings.SettingHelpDialog
 import com.andrerinas.openheadunit.utils.AnnouncedDensityPolicy
 import com.andrerinas.openheadunit.utils.OnboardingDisplayPolicy
 import com.andrerinas.openheadunit.utils.Settings
@@ -134,7 +135,8 @@ class DpiSettingsFragment : Fragment() {
 
     private fun setupToolbar() {
         toolbar.setNavigationOnClickListener { handleBackPress() }
-        val saveItem = toolbar.menu.add(0, SAVE_ITEM_ID, 0, getString(R.string.save))
+        SettingHelpDialog.addToolbarHelp(toolbar, toolbar.title, R.string.dpi_screen_help, "dpi")
+        val saveItem = toolbar.menu.add(0, SAVE_ITEM_ID, 1, getString(R.string.save))
         saveItem.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
         saveItem.setActionView(R.layout.layout_save_button)
         saveButton = saveItem.actionView?.findViewById(R.id.save_button_widget)

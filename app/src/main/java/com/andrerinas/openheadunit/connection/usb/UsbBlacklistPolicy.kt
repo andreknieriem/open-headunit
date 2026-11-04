@@ -31,6 +31,21 @@ object UsbBlacklistPolicy {
         else vidPidKey(vendorId, productId)
     }
 
+    /** A VID:PID key matches one USB mode only, so a phone that switches modes is not held by it. */
+    fun bindsOneMode(key: String): Boolean = key.startsWith(VID_PID_PREFIX)
+
+    /** What the USB list tells the user after it blacklists a device. */
+    enum class Note { ONE_MODE, ANDROID_ASKS }
+
+    /**
+     * Android's own dialog follows the manifest filter, which the blacklist cannot change; only a
+     * default the user ticks there silences it. A device the filter misses gets no dialog at all.
+     */
+    fun notesOnAdd(key: String, filterMatches: Boolean): List<Note> = listOfNotNull(
+        Note.ONE_MODE.takeIf { bindsOneMode(key) },
+        Note.ANDROID_ASKS.takeIf { filterMatches },
+    )
+
     fun vidPidKey(vendorId: Int, productId: Int): String =
         String.format(Locale.US, "%s%04x:%04x", VID_PID_PREFIX, vendorId, productId)
 

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 1.3 times the base values, the same factor as the settings rows on head units. -->
+    <dimen name="auto_start_verdict_padding">26dp</dimen>
+    <dimen name="auto_start_verdict_icon_box">52dp</dimen>
+    <dimen name="auto_start_verdict_title_size">29sp</dimen>
+    <dimen name="auto_start_verdict_pane_width">340dp</dimen>
+    <dimen name="auto_start_list_gap">16dp</dimen>
+</resources>

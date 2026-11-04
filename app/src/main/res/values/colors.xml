@@ -116,4 +116,9 @@
     <color name="home_hint_body">#39414D</color>
     <color name="home_hint_button">#415F91</color>
     <color name="home_hint_button_focused">#5F7FB5</color>
+
+    <!-- Auto-start check: something that can close the app. Amber, so it differs from the blue
+         "fine" dot in lightness too, not only in hue. -->
+    <color name="settings_status_problem">#8A5100</color>
+    <color name="settings_status_problem_container">#FFDDB8</color>
 </resources>

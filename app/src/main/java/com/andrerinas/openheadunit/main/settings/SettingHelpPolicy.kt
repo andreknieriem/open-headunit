@@ -9,6 +9,7 @@ object SettingHelpPolicy {
         is SettingItem.ToggleSettingEntry -> item.helpResId
         is SettingItem.SliderSettingEntry -> item.helpResId
         is SettingItem.SegmentedButtonSettingEntry -> item.helpResId
+        is SettingItem.StatusEntry -> item.helpResId
         is SettingItem.CategoryHeader,
         is SettingItem.SubHeader,
         is SettingItem.InfoBanner,

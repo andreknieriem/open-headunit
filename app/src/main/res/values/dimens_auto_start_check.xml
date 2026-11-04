@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The auto-start check's headline panel. Head units get bigger values, like the rows. -->
+    <dimen name="auto_start_verdict_padding">20dp</dimen>
+    <dimen name="auto_start_verdict_icon_box">40dp</dimen>
+    <dimen name="auto_start_verdict_title_size">22sp</dimen>
+    <!-- Width of the panel beside the list (layout-w720dp). -->
+    <dimen name="auto_start_verdict_pane_width">340dp</dimen>
+    <dimen name="auto_start_list_gap">12dp</dimen>
+</resources>

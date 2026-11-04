@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The auto-start check's headline: what can close the app, why it matters, the access it has
+     and the button that applies the fixes. Beside the list on wide screens, above it otherwise. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/verdictPanel"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="@dimen/auto_start_verdict_padding">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <FrameLayout
+            android:id="@+id/verdictIconBox"
+            android:layout_width="@dimen/auto_start_verdict_icon_box"
+            android:layout_height="@dimen/auto_start_verdict_icon_box"
+            android:layout_marginEnd="16dp"
+            android:layout_marginRight="16dp">
+
+            <ImageView
+                android:id="@+id/verdictIcon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center"
+                android:importantForAccessibility="no" />
+
+        </FrameLayout>
+
+        <TextView
+            android:id="@+id/verdictTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:accessibilityLiveRegion="polite"
+            android:textColor="?attr/settingsOnSurface"
+            android:textSize="@dimen/auto_start_verdict_title_size"
+            tools:ignore="UnusedAttribute"
+            tools:text="Battery saving can close the app" />
+
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/verdictBody"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:lineSpacingMultiplier="1.15"
+        android:textColor="?attr/settingsOnSurfaceVariant"
+        android:textSize="@dimen/settings_row_description_size"
+        tools:text="Let it run in the background without limits and try again." />
+
+    <TextView
+        android:id="@+id/verdictAccess"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:drawablePadding="8dp"
+        android:gravity="center_vertical"
+        android:minHeight="32dp"
+        android:paddingLeft="12dp"
+        android:paddingRight="14dp"
+        android:textColor="?attr/settingsOnSurfaceVariant"
+        android:textSize="14sp"
+        tools:text="Root, through ADB on this unit" />
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:minHeight="16dp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/verdictFix"
+        style="@style/Widget.Material3.Button"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/settings_action_button_height"
+        android:layout_marginBottom="8dp"
+        android:text="@string/auto_start_check_fix_recommended"
+        android:textAllCaps="false"
+        android:textSize="@dimen/settings_control_text_size" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/verdictAgain"
+        style="@style/Widget.Material3.Button.OutlinedButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="48dp"
+        android:text="@string/auto_start_check_again"
+        android:textAllCaps="false"
+        android:textSize="@dimen/settings_control_text_size" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:orientation="horizontal">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/verdictCopy"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:minHeight="48dp"
+            android:text="@string/auto_start_check_copy"
+            android:textAllCaps="false"
+            android:textSize="@dimen/settings_control_text_size" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/verdictShare"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:minHeight="48dp"
+            android:text="@string/auto_start_check_share"
+            android:textAllCaps="false"
+            android:textSize="@dimen/settings_control_text_size" />
+
+    </LinearLayout>
+
+</LinearLayout>

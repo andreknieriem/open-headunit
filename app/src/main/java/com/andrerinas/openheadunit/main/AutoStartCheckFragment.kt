@@ -13,12 +13,14 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
+import androidx.interpolator.view.animation.FastOutSlowInInterpolator
+import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.app.AutoStartCheckPolicy
-import com.andrerinas.openheadunit.app.AutoStartCheckPolicy.Verdict
+import com.andrerinas.openheadunit.app.AutoStartCheckScreenPolicy
 import com.andrerinas.openheadunit.app.AutoStartFixPolicy
 import com.andrerinas.openheadunit.app.MakerWhitelistPolicy
 import com.andrerinas.openheadunit.main.settings.SettingItem
@@ -42,28 +44,53 @@ class AutoStartCheckFragment : Fragment() {
     private lateinit var recyclerView: RecyclerView
     private val adapter = SettingsAdapter()
     private var findings: AutoStartCheckPolicy.Findings? = null
+    /** True while a check runs to show what a fix changed: the old list stays until it is done. */
+    private var refreshing = false
+    /** The rows only cascade in once per check that started from an empty screen. */
+    private var cascadePending = false
+
+    /** Beside the list on wide screens; null there means it is the list's first item. */
+    private var sidePanel: AutoStartVerdictPanel? = null
+    private val verdictAdapter = AutoStartVerdictAdapter(
+        onFix = { applyRecommended() }, onAgain = { runCheck() },
+        onCopy = { findings?.let { copyReport(it) } }, onShare = { findings?.let { shareReport(it) } }
+    )
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        return inflater.inflate(R.layout.fragment_auto_start, container, false)
+        return inflater.inflate(R.layout.fragment_auto_start_check, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         val toolbar = view.findViewById<MaterialToolbar>(R.id.toolbar)
-        toolbar.setTitle(R.string.auto_start_check_title)
         toolbar.setNavigationOnClickListener { findNavController().navigateUp() }
 
         recyclerView = view.findViewById(R.id.recycler_view)
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
-        recyclerView.adapter = adapter
+        val side = view.findViewById<View?>(R.id.verdictPanel)
+        sidePanel = side?.let {
+            AutoStartVerdictPanel(it, onFix = { applyRecommended() }, onAgain = { runCheck() },
+                onCopy = { findings?.let { f -> copyReport(f) } }, onShare = { findings?.let { f -> shareReport(f) } })
+        }
+        recyclerView.adapter = if (sidePanel != null) adapter else ConcatAdapter(verdictAdapter, adapter)
 
         if (findings == null) runCheck() else updateList()
     }
 
-    private fun runCheck() {
-        findings = null
-        updateList()
+    override fun onDestroyView() {
+        super.onDestroyView()
+        sidePanel = null
+    }
+
+    /** [keepList] leaves the current rows up while it runs, for a check right after a fix. */
+    private fun runCheck(keepList: Boolean = false) {
+        refreshing = keepList && findings != null
+        if (!refreshing) {
+            findings = null
+            cascadePending = true
+            updateList()
+        }
         val appContext = requireContext().applicationContext
         viewLifecycleOwner.lifecycleScope.launch {
             OemAppManager.requestRoot()
@@ -73,54 +100,163 @@ class AutoStartCheckFragment : Fragment() {
                 AppLog.e("AutoStartCheckFragment: check failed: ${e.message}", e)
                 null
             }
+            refreshing = false
             updateList()
         }
     }
 
-    private fun updateList() {
-        val items = mutableListOf<SettingItem>()
-        items.add(SettingItem.InfoBanner("checkIntro", R.string.auto_start_check_intro))
+    private fun canAct(f: AutoStartCheckPolicy.Findings) = f.route != OemAppManager.ExecutionBackend.NONE.name.lowercase()
 
+    private fun screenState(f: AutoStartCheckPolicy.Findings): AutoStartCheckScreenPolicy.State {
+        val settings = App.provide(requireContext()).settings
+        val format = MakerWhitelistPolicy.detect(f.listFiles.map { it.path })
+        return AutoStartCheckScreenPolicy.State(
+            verdict = AutoStartCheckPolicy.verdict(f),
+            canAct = canAct(f),
+            exemptionsApply = AutoStartFixPolicy.exemptionsApply(Build.VERSION.SDK_INT),
+            exempt = f.batteryExempt == true && f.backgroundRestricted != true,
+            duraSpeedInstalled = f.duraSpeed == true,
+            duraSpeedOffOnBoot = settings.duraSpeedOffOnBoot,
+            makerList = format?.let { MakerWhitelistPolicy.status(it, f.listFiles.filter { l -> l.hasApp }.map { l -> l.path }) }
+        )
+    }
+
+    private fun updateList() {
         val f = findings
         if (f == null) {
-            items.add(SettingItem.InfoBanner("checkRunning", R.string.auto_start_check_running))
-            adapter.submitList(items)
+            showVerdict(AutoStartVerdict(title = null, body = getString(R.string.auto_start_check_intro),
+                problem = false, access = null, showFix = false, reportReady = false))
+            adapter.submitList(emptyList())
             return
         }
 
-        items.add(SettingItem.CategoryHeader("checkResult", R.string.auto_start_check_result))
-        items.add(SettingItem.InfoBanner("checkVerdict", verdictRes(AutoStartCheckPolicy.verdict(f))))
+        val state = screenState(f)
+        val headline = AutoStartCheckScreenPolicy.headline(state)
+        val (titleRes, bodyRes) = when (headline) {
+            AutoStartCheckScreenPolicy.Headline.FORCE_STOPPED ->
+                R.string.auto_start_check_headline_force_stopped to R.string.auto_start_check_verdict_force_stopped
+            AutoStartCheckScreenPolicy.Headline.BATTERY ->
+                R.string.auto_start_check_headline_battery to R.string.auto_start_check_verdict_battery
+            AutoStartCheckScreenPolicy.Headline.DURASPEED ->
+                R.string.auto_start_check_headline_duraspeed to R.string.auto_start_check_duraspeed_off_description
+            AutoStartCheckScreenPolicy.Headline.MAKER_LIST ->
+                R.string.auto_start_check_headline_maker_list to R.string.auto_start_check_maker_list_body
+            AutoStartCheckScreenPolicy.Headline.NOTHING_FOUND ->
+                R.string.auto_start_check_headline_nothing to R.string.auto_start_check_verdict_unknown
+        }
+        showVerdict(AutoStartVerdict(
+            title = getString(titleRes),
+            body = getString(bodyRes),
+            problem = headline != AutoStartCheckScreenPolicy.Headline.NOTHING_FOUND,
+            access = getString(when (f.route) {
+                OemAppManager.ExecutionBackend.ROOT.name.lowercase() -> R.string.auto_start_check_access_root
+                OemAppManager.ExecutionBackend.ADB.name.lowercase() -> R.string.auto_start_check_access_adb
+                AutoStartCheckPolicy.ROUTE_ADB_ROOT -> R.string.auto_start_check_access_adb_root
+                else -> R.string.auto_start_check_access_none
+            }),
+            showFix = AutoStartCheckScreenPolicy.recommendedFixes(state).isNotEmpty(),
+            reportReady = true
+        ))
 
-        items.add(SettingItem.CategoryHeader("checkDetails", R.string.auto_start_check_details))
-        items.add(row("checkAccess", R.string.auto_start_check_access, getString(when (f.route) {
-            OemAppManager.ExecutionBackend.ROOT.name.lowercase() -> R.string.auto_start_check_access_root
-            OemAppManager.ExecutionBackend.ADB.name.lowercase() -> R.string.auto_start_check_access_adb
-            AutoStartCheckPolicy.ROUTE_ADB_ROOT -> R.string.auto_start_check_access_adb_root
-            else -> R.string.auto_start_check_access_none
-        })))
-        if (f.route == OemAppManager.ExecutionBackend.NONE.name.lowercase()) {
+        val items = mutableListOf<SettingItem>()
+        items.add(SettingItem.CategoryHeader("checkCauses", R.string.auto_start_check_causes))
+        addCauses(items, f, state)
+        if (!state.canAct) {
             items.add(SettingItem.InfoBanner("checkNoAccess", R.string.auto_start_check_no_access_hint))
         }
+        addDetails(items, f, state)
+
+        val cascade = cascadePending
+        cascadePending = false
+        adapter.submitList(items) { if (cascade) cascadeRows() }
+    }
+
+    private fun showVerdict(v: AutoStartVerdict) {
+        val side = sidePanel
+        if (side != null) side.bind(v) else verdictAdapter.verdict = v
+    }
+
+    /** One row per thing that can close the app, each with its own fix when there is one. */
+    private fun addCauses(items: MutableList<SettingItem>, f: AutoStartCheckPolicy.Findings, s: AutoStartCheckScreenPolicy.State) {
+        val good = SettingItem.StatusTone.GOOD
+        val problem = SettingItem.StatusTone.PROBLEM
+
+        if (s.exemptionsApply) {
+            items.add(SettingItem.StatusEntry(
+                stableId = "checkExemptions",
+                nameResId = R.string.auto_start_check_battery,
+                state = getString(if (s.exempt) R.string.auto_start_check_battery_state_exempt
+                    else R.string.auto_start_check_battery_state_not_exempt),
+                tone = if (s.exempt) good else problem,
+                switchChecked = s.exempt,
+                isEnabled = s.canAct,
+                helpResId = R.string.auto_start_check_exemptions_description,
+                onSwitch = { grant -> runFix { AutoStartFixes.setExemptions(it, grant) } }
+            ))
+        }
+
+        // Shown while on even if DuraSpeed is no longer detected, so it can always be turned off.
+        if (s.duraSpeedInstalled || s.duraSpeedOffOnBoot) {
+            val settings = App.provide(requireContext()).settings
+            items.add(SettingItem.StatusEntry(
+                stableId = "checkDuraSpeedOff",
+                nameResId = R.string.auto_start_check_duraspeed,
+                state = getString(if (s.duraSpeedOffOnBoot) R.string.auto_start_check_duraspeed_state_off
+                    else R.string.auto_start_check_duraspeed_state_on),
+                tone = if (s.duraSpeedOffOnBoot) good else problem,
+                switchChecked = s.duraSpeedOffOnBoot,
+                isEnabled = s.canAct || s.duraSpeedOffOnBoot,
+                helpResId = R.string.auto_start_check_duraspeed_off_description,
+                onSwitch = { on ->
+                    settings.duraSpeedOffOnBoot = on
+                    AppLog.i("AutoStartCheckFragment: DuraSpeed off on boot set to $on")
+                    // Turning it off only stops doing it; DuraSpeed itself returns on the next restart.
+                    if (on) runFix { AutoStartFixes.turnDuraSpeedOff(it, "settings") } else updateList()
+                }
+            ))
+        }
+
+        // Phase three of #1122: the maker's own lists in /system, for formats that are known.
+        val format = MakerWhitelistPolicy.detect(f.listFiles.map { it.path })
+        if (format != null && s.makerList != null) {
+            val applied = s.makerList == MakerWhitelistPolicy.Status.APPLIED
+            items.add(SettingItem.StatusEntry(
+                stableId = "checkMakerWhitelist",
+                nameResId = R.string.auto_start_check_whitelist,
+                state = if (!s.canAct) getString(R.string.auto_start_check_whitelist_needs_root)
+                    else getString(when (s.makerList) {
+                        MakerWhitelistPolicy.Status.NOT_APPLIED -> R.string.auto_start_check_whitelist_not_applied
+                        MakerWhitelistPolicy.Status.PARTLY_APPLIED -> R.string.auto_start_check_whitelist_partly
+                        MakerWhitelistPolicy.Status.APPLIED -> R.string.auto_start_check_whitelist_applied
+                    }, format.name),
+                tone = if (applied) good else problem,
+                changesSystem = true,
+                actionResId = if (applied) R.string.auto_start_check_whitelist_remove else R.string.auto_start_check_whitelist_apply,
+                isEnabled = s.canAct,
+                onAction = { if (applied) confirmRemove(format) else confirmApply(format) }
+            ))
+        }
+
+        // Without root or ADB the log was not read, so an empty result proves nothing.
+        val logRead = s.canAct
+        val closers = f.stoppedBy.joinToString(", ")
+        items.add(SettingItem.StatusEntry(
+            stableId = "checkCloser",
+            nameResId = R.string.auto_start_check_closer,
+            state = closers.ifEmpty {
+                getString(if (logRead && f.forceStops.isEmpty()) R.string.auto_start_check_closer_none
+                else R.string.auto_start_check_unknown)
+            },
+            tone = if (s.verdict == AutoStartCheckPolicy.Verdict.FORCE_STOPPED) problem else SettingItem.StatusTone.NEUTRAL
+        ))
+    }
+
+    /** What the unit is, after the causes: it explains the report, it does not fix anything. */
+    private fun addDetails(items: MutableList<SettingItem>, f: AutoStartCheckPolicy.Findings, s: AutoStartCheckScreenPolicy.State) {
+        items.add(SettingItem.CategoryHeader("checkDetailsHeader", R.string.auto_start_check_unit_details))
         items.add(row("checkDevice", R.string.auto_start_check_device, "${f.device} · Android ${f.android}"))
         items.add(row("checkPlatform", R.string.auto_start_check_platform, "${f.platform} · ${f.firmware}"))
         items.add(row("checkHome", R.string.auto_start_check_home_app, yesNo(f.isHomeApp)))
-        items.add(row("checkBattery", R.string.auto_start_check_battery, when (f.batteryExempt) {
-            true -> getString(R.string.auto_start_check_battery_exempt)
-            false -> getString(R.string.auto_start_check_battery_not_exempt)
-            null -> getString(R.string.auto_start_check_unknown)
-        }))
-        items.add(row("checkDuraSpeed", R.string.auto_start_check_duraspeed, when (f.duraSpeed) {
-            true -> getString(R.string.auto_start_check_installed)
-            false -> getString(R.string.auto_start_check_not_installed)
-            null -> getString(R.string.auto_start_check_unknown)
-        }))
-        items.add(row("checkCloser", R.string.auto_start_check_closer,
-            f.stoppedBy.joinToString(", ").ifEmpty {
-                // Without root or ADB the log was not read, so an empty result proves nothing.
-                val logRead = f.route != OemAppManager.ExecutionBackend.NONE.name.lowercase()
-                getString(if (logRead && f.forceStops.isEmpty()) R.string.auto_start_check_closer_none
-                else R.string.auto_start_check_unknown)
-            }))
         items.add(SettingItem.SettingEntry(
             stableId = "checkLists",
             nameResId = R.string.auto_start_check_lists,
@@ -128,79 +264,45 @@ class AutoStartCheckFragment : Fragment() {
                 f.listFiles.size, f.listFiles.count { it.hasApp }),
             onClick = { showLists(f) }
         ))
-
-        addFixes(items, f)
-        addMakerWhitelist(items, f)
-
-        items.add(SettingItem.ActionButton("checkCopy", R.string.auto_start_check_copy) { copyReport(f) })
-        items.add(SettingItem.ActionButton("checkShare", R.string.auto_start_check_share) { shareReport(f) })
-        items.add(SettingItem.ActionButton("checkAgain", R.string.auto_start_check_again) { runCheck() })
-
-        adapter.submitList(items)
+        if (s.makerList != null) {
+            items.add(SettingItem.InfoBanner("checkNotOffered", R.string.auto_start_check_not_offered))
+        }
     }
 
-    /** Phase two of #1122: switches that need root or ADB and leave /system alone. */
-    private fun addFixes(items: MutableList<SettingItem>, f: AutoStartCheckPolicy.Findings) {
-        val showExemptions = AutoStartFixPolicy.exemptionsApply(Build.VERSION.SDK_INT)
+    /** Applies every fix the main button stands for, then checks once to show the result. */
+    private fun applyRecommended() {
+        val f = findings ?: return
+        val fixes = AutoStartCheckScreenPolicy.recommendedFixes(screenState(f))
+        if (fixes.isEmpty()) return
         val settings = App.provide(requireContext()).settings
-        // Shown while on even if DuraSpeed is no longer detected, so it can always be turned off.
-        val showDuraSpeed = f.duraSpeed == true || settings.duraSpeedOffOnBoot
-        if (!showExemptions && !showDuraSpeed) return
-
-        val canAct = f.route != OemAppManager.ExecutionBackend.NONE.name.lowercase()
-        items.add(SettingItem.CategoryHeader("checkFixes", R.string.auto_start_check_fixes))
-        if (showExemptions) {
-            items.add(SettingItem.ToggleSettingEntry(
-                stableId = "checkExemptions",
-                nameResId = R.string.auto_start_check_exemptions,
-                descriptionResId = if (canAct) R.string.auto_start_check_exemptions_summary
-                    else R.string.auto_start_check_needs_access,
-                helpResId = R.string.auto_start_check_exemptions_description,
-                isChecked = f.batteryExempt == true && f.backgroundRestricted != true,
-                isEnabled = canAct,
-                onCheckedChanged = { grant -> runFix { AutoStartFixes.setExemptions(it, grant) } }
-            ))
-        }
-        if (showDuraSpeed) {
-            items.add(SettingItem.ToggleSettingEntry(
-                stableId = "checkDuraSpeedOff",
-                nameResId = R.string.auto_start_check_duraspeed_off,
-                descriptionResId = if (canAct || settings.duraSpeedOffOnBoot) R.string.auto_start_check_duraspeed_off_summary
-                    else R.string.auto_start_check_needs_access,
-                helpResId = R.string.auto_start_check_duraspeed_off_description,
-                isChecked = settings.duraSpeedOffOnBoot,
-                isEnabled = canAct || settings.duraSpeedOffOnBoot,
-                onCheckedChanged = { on ->
-                    settings.duraSpeedOffOnBoot = on
-                    AppLog.i("AutoStartCheckFragment: DuraSpeed off on boot set to $on")
-                    // Turning it off only stops doing it; DuraSpeed itself returns on the next restart.
-                    if (on) runFix { AutoStartFixes.turnDuraSpeedOff(it, "settings") }
-                }
-            ))
+        if (AutoStartCheckScreenPolicy.Fix.DURASPEED_OFF in fixes) settings.duraSpeedOffOnBoot = true
+        runFix { context ->
+            var ok = true
+            if (AutoStartCheckScreenPolicy.Fix.EXEMPTIONS in fixes) ok = AutoStartFixes.setExemptions(context, true) && ok
+            if (AutoStartCheckScreenPolicy.Fix.DURASPEED_OFF in fixes) ok = AutoStartFixes.turnDuraSpeedOff(context, "settings") && ok
+            ok
         }
     }
 
-    /** Phase three of #1122: the maker's own lists in /system, for formats that are known. */
-    private fun addMakerWhitelist(items: MutableList<SettingItem>, f: AutoStartCheckPolicy.Findings) {
-        val format = MakerWhitelistPolicy.detect(f.listFiles.map { it.path }) ?: return
-        val status = MakerWhitelistPolicy.status(format, f.listFiles.filter { it.hasApp }.map { it.path })
-        val canAct = f.route != OemAppManager.ExecutionBackend.NONE.name.lowercase()
-        items.add(SettingItem.CategoryHeader("checkSystemChanges", R.string.auto_start_check_system_changes))
-        items.add(SettingItem.SettingEntry(
-            stableId = "checkMakerWhitelist",
-            nameResId = R.string.auto_start_check_whitelist,
-            value = if (!canAct) getString(R.string.auto_start_check_whitelist_needs_root)
-                else getString(when (status) {
-                    MakerWhitelistPolicy.Status.NOT_APPLIED -> R.string.auto_start_check_whitelist_not_applied
-                    MakerWhitelistPolicy.Status.PARTLY_APPLIED -> R.string.auto_start_check_whitelist_partly
-                    MakerWhitelistPolicy.Status.APPLIED -> R.string.auto_start_check_whitelist_applied
-                }, format.name),
-            isEnabled = canAct,
-            onClick = {
-                if (status == MakerWhitelistPolicy.Status.APPLIED) confirmRemove(format) else confirmApply(format)
+    /**
+     * The rows arrive one after the other, 40 ms apart, rising a few dp. ViewPropertyAnimator
+     * follows the system's animation scale, so with animations off they simply appear.
+     */
+    private fun cascadeRows() {
+        val list = recyclerView
+        list.post {
+            val rise = resources.displayMetrics.density * CASCADE_RISE_DP
+            for (i in 0 until list.childCount) {
+                val child = list.getChildAt(i)
+                if (list.getChildAdapterPosition(child) == RecyclerView.NO_POSITION) continue
+                if (child.id == R.id.verdictPanel) continue
+                child.alpha = 0f
+                child.translationY = rise
+                child.animate().alpha(1f).translationY(0f)
+                    .setStartDelay(i * CASCADE_STEP_MS).setDuration(CASCADE_MS)
+                    .setInterpolator(FastOutSlowInInterpolator()).start()
             }
-        ))
-        items.add(SettingItem.InfoBanner("checkNotOffered", R.string.auto_start_check_not_offered))
+        }
     }
 
     private fun confirmApply(format: MakerWhitelistPolicy.Format) {
@@ -238,7 +340,7 @@ class AutoStartCheckFragment : Fragment() {
         val appContext = requireContext().applicationContext
         viewLifecycleOwner.lifecycleScope.launch {
             val result = change(appContext)
-            runCheck()
+            runCheck(keepList = true)
             val message = when (result) {
                 MakerWhitelist.Result.DONE -> null
                 MakerWhitelist.Result.NO_ROUTE -> R.string.auto_start_check_whitelist_needs_root
@@ -275,7 +377,7 @@ class AutoStartCheckFragment : Fragment() {
             if (!fix(appContext)) {
                 ToastUtils.showToast(context, getString(R.string.auto_start_check_fix_failed), Toast.LENGTH_LONG, force = true)
             }
-            runCheck()
+            runCheck(keepList = true)
         }
     }
 
@@ -284,12 +386,6 @@ class AutoStartCheckFragment : Fragment() {
 
     private fun yesNo(value: Boolean): String =
         getString(if (value) R.string.auto_start_check_yes else R.string.auto_start_check_no)
-
-    private fun verdictRes(verdict: Verdict): Int = when (verdict) {
-        Verdict.FORCE_STOPPED -> R.string.auto_start_check_verdict_force_stopped
-        Verdict.BATTERY -> R.string.auto_start_check_verdict_battery
-        Verdict.UNKNOWN -> R.string.auto_start_check_verdict_unknown
-    }
 
     private fun showLists(f: AutoStartCheckPolicy.Findings) {
         if (f.listFiles.isEmpty()) return
@@ -318,5 +414,11 @@ class AutoStartCheckFragment : Fragment() {
             AppLog.w("AutoStartCheckFragment: no app to share with: ${e.message}")
             copyReport(f)
         }
+    }
+
+    private companion object {
+        const val CASCADE_STEP_MS = 40L
+        const val CASCADE_MS = 220L
+        const val CASCADE_RISE_DP = 6f
     }
 }

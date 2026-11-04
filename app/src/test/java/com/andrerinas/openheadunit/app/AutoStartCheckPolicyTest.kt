@@ -79,6 +79,21 @@ class AutoStartCheckPolicyTest {
     }
 
     @Test
+    fun `the package freezer's stop during pm install is not counted either`() {
+        // What `pm install -r` logs first on Android 7 and up, before "pkg removed".
+        val log = "11-04 17:11:44.902   815  1043 I ActivityManager: Force stopping $pkg appid=10119 user=-1: installPackageLI\n" +
+            "11-04 17:11:45.611   815   900 I ActivityManager: Force stopping $pkg appid=10119 user=0: pkg removed"
+        assertEquals(emptyList<String>(), AutoStartCheckPolicy.forceStopLines(log, pkg))
+    }
+
+    @Test
+    fun `a real force stop next to an update is still counted`() {
+        val log = "I ActivityManager: Force stopping $pkg appid=10119 user=-1: installPackageLI\n" +
+            "I ActivityManager: Force stopping $pkg appid=10119 user=0: from pid 1501"
+        assertEquals(1, AutoStartCheckPolicy.forceStopLines(log, pkg).size)
+    }
+
+    @Test
     fun `only the newest force stop lines are kept`() {
         val log = (1..9).joinToString("\n") { "I ActivityManager: Force stopping $pkg appid=1 user=0: from pid $it" }
         val lines = AutoStartCheckPolicy.forceStopLines(log, pkg)

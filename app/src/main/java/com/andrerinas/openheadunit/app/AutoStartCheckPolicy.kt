@@ -51,7 +51,12 @@ object AutoStartCheckPolicy {
     /** How a force stop is named in [Findings.recentExits]. */
     const val FORCE_STOP_EXIT = "force-stop"
 
-    private const val UPDATE_STOP = "pkg removed"
+    /**
+     * Reasons Android gives when it stops the app to install, replace or remove it. An update logs
+     * two: the package freezer's ("installPackageLI", from `pm install` or a store) and then
+     * "pkg removed" when the old version goes away. None of them is the unit closing the app.
+     */
+    private val PACKAGE_CHANGE_STOPS = listOf("pkg removed", "installPackageLI", "replace pkg", "update pkg", "deletePackage")
 
     private val FROM_PID = Regex("""from pid (\d+)""")
 
@@ -80,8 +85,8 @@ object AutoStartCheckPolicy {
         .filter { it.contains(packageName) }
         .filter { it.contains("force stop", ignoreCase = true) || it.contains("am_force_stop") ||
             it.contains("forceStop", ignoreCase = true) || it.contains("force_stop", ignoreCase = true) }
-        // Installing an update stops the app too ("Force stopping ... pkg removed"); that is not the unit.
-        .filterNot { it.contains(UPDATE_STOP, ignoreCase = true) }
+        // Installing an update stops the app too; that is not the unit.
+        .filterNot { line -> PACKAGE_CHANGE_STOPS.any { line.contains(it, ignoreCase = true) } }
         .map { it.trim() }
         .toList()
         .takeLast(MAX_LOG_LINES)

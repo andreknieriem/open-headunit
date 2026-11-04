@@ -15,7 +15,7 @@ object SettingsFilterPolicy {
     private const val WIRELESS_CATEGORY_ID = "wirelessConnection"
 
     /** Rows that only apply when the app connects over USB. */
-    private val USB_ONLY_IDS = setOf("useLibusb")
+    private val USB_ONLY_IDS = setOf("useLibusb", "listenForUsbDevices")
 
     /** The head unit specific screen, which only the Advanced tab lists, also while searching. */
     private const val DEVICE_SPECIFIC_ID = "deviceSpecificSettings"

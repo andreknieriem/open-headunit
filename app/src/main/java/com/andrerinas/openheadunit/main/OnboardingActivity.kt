@@ -395,10 +395,19 @@ class OnboardingActivity : BaseActivity() {
         }
         // USB-only auto-start toggles (also written to device storage, like AutoStartFragment).
         findViewById<SwitchMaterial>(R.id.onb_autostart_usb_switch).apply {
+            isChecked = settings.usbConnectOnPlugIn
+            setOnCheckedChangeListener { _, v ->
+                if (v != settings.usbConnectOnPlugIn) settings.usbConnectOnPlugIn = v
+                Settings.syncUsbConnectOnPlugInToDeviceStorage(this@OnboardingActivity, v)
+                applyAutomationVisibility()
+            }
+        }
+        findViewById<SwitchMaterial>(R.id.onb_autostart_usb_open_switch).apply {
             isChecked = settings.autoStartOnUsb
             setOnCheckedChangeListener { _, v ->
-                settings.autoStartOnUsb = v
+                if (v != settings.autoStartOnUsb) settings.autoStartOnUsb = v
                 Settings.syncAutoStartOnUsbToDeviceStorage(this@OnboardingActivity, v)
+                applyAutomationVisibility()
             }
         }
         findViewById<SwitchMaterial>(R.id.onb_reopen_switch).apply {
@@ -640,8 +649,19 @@ class OnboardingActivity : BaseActivity() {
     private fun applyAutomationVisibility() {
         val usbVis = if (settings.showsUsb()) View.VISIBLE else View.GONE
         findViewById<View>(R.id.onb_ac_single_row).visibility = usbVis
-        findViewById<View>(R.id.onb_as_usb_row).visibility = usbVis
-        findViewById<View>(R.id.onb_reopen_row).visibility = usbVis
+        // The same rows as the Auto-start screen. The launcher step carries its own Reopen note.
+        val listen = settings.listenForUsbDevices
+        val usbRows = UsbAutoStartRowsPolicy.rows(
+            showsUsb = settings.showsUsb(),
+            listen = listen,
+            connect = settings.usbConnectOnPlugIn,
+            autoStart = settings.autoStartOnUsb,
+            carLauncher = false,
+        )
+        findViewById<View>(R.id.onb_as_usb_row).visibility = if (usbRows.connect) View.VISIBLE else View.GONE
+        findViewById<SwitchMaterial>(R.id.onb_autostart_usb_switch).isEnabled = usbRows.connectEnabled
+        findViewById<View>(R.id.onb_as_usb_open_row).visibility = if (usbRows.open) View.VISIBLE else View.GONE
+        findViewById<View>(R.id.onb_reopen_row).visibility = if (usbRows.reopen) View.VISIBLE else View.GONE
         // Auto-start on WiFi is a legacy path that only applies up to Android 12L (API 32).
         findViewById<View>(R.id.onb_as_wifi_row).visibility =
             if (settings.showsWifi() && Build.VERSION.SDK_INT <= 32) View.VISIBLE else View.GONE
@@ -667,7 +687,7 @@ class OnboardingActivity : BaseActivity() {
         val showNote = OnboardingLauncherPolicy.showsReopenNote(
             launcherSwitchOn = switchOn,
             reopenOn = findViewById<SwitchMaterial>(R.id.onb_reopen_switch).isChecked,
-            reopenOffered = settings.showsUsb()
+            reopenOffered = settings.showsUsb() && settings.effectiveAutoStartOnUsb
         )
         findViewById<View>(R.id.onb_launcher_reopen_note).visibility = if (showNote) View.VISIBLE else View.GONE
     }

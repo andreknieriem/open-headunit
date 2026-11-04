@@ -60,7 +60,7 @@ class SettingsStringLimitsTest {
 
     private val screenHelp = listOf(
         "auto_connect_screen_help", "dpi_screen_help", "keymap_screen_help",
-        "customization_screen_help", "loading_screen_screen_help"
+        "customization_screen_help", "loading_screen_screen_help", "gestures_help"
     )
 
     @Test

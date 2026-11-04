@@ -355,7 +355,8 @@ class AutoStartFragment : Fragment() {
             items.add(SettingItem.ToggleSettingEntry(
                 stableId = "usbConnectOnPlugIn",
                 nameResId = R.string.auto_start_usb_connect_label,
-                descriptionResId = R.string.auto_start_usb_connect_description,
+                descriptionResId = R.string.auto_start_usb_connect_summary,
+                helpResId = R.string.auto_start_usb_connect_description,
                 isChecked = pendingUsbConnectOnPlugIn!!,
                 isEnabled = usbRows.connectEnabled,
                 descriptionOverride = if (usbRows.connectEnabled) null else getString(
@@ -372,7 +373,8 @@ class AutoStartFragment : Fragment() {
             items.add(SettingItem.ToggleSettingEntry(
                 stableId = "autoStartUsb",
                 nameResId = R.string.auto_start_usb_open_label,
-                descriptionResId = R.string.auto_start_usb_open_description,
+                descriptionResId = R.string.auto_start_usb_open_summary,
+                helpResId = R.string.auto_start_usb_open_description,
                 isChecked = pendingAutoStartOnUsb!!,
                 onCheckedChanged = { isChecked ->
                     pendingAutoStartOnUsb = isChecked

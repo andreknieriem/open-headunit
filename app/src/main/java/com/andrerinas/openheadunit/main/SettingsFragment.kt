@@ -990,6 +990,19 @@ class SettingsFragment : Fragment() {
             }
         ))
 
+        items.add(SettingItem.ToggleSettingEntry(
+            stableId = "listenForUsbDevices",
+            nameResId = R.string.listen_for_usb_attach_label,
+            descriptionResId = R.string.listen_for_usb_attach_summary,
+            helpResId = R.string.listen_for_usb_attach_description,
+            isChecked = pendingListenForUsbDevices ?: true,
+            onCheckedChanged = { isChecked ->
+                pendingListenForUsbDevices = isChecked
+                checkChanges()
+                updateSettingsList()
+            }
+        ))
+
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
             items.add(SettingItem.ToggleSettingEntry(
                 stableId = "useLibusb",
@@ -1004,18 +1017,6 @@ class SettingsFragment : Fragment() {
                 }
             ))
         }
-
-        items.add(SettingItem.ToggleSettingEntry(
-            stableId = "listenForUsbDevices",
-            nameResId = R.string.listen_for_usb_attach_label,
-            descriptionResId = R.string.listen_for_usb_attach_description,
-            isChecked = pendingListenForUsbDevices ?: true,
-            onCheckedChanged = { isChecked ->
-                pendingListenForUsbDevices = isChecked
-                checkChanges()
-                updateSettingsList()
-            }
-        ))
 
         items.add(SettingItem.ToggleSettingEntry(
             stableId = "showToastMessages",

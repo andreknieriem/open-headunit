@@ -67,8 +67,8 @@ class ZbtByteChannel(
 ) : Closeable {
 
     /**
-     * The daemon's port could not be opened. [verdict] separates failures classified
-     * as refused from other unconfirmed connection failures for the retry policy.
+     * The daemon's port could not be opened. [verdict] keeps a refusal, which is a
+     * failed opening classified for retry, apart from other unconfirmed connection failures.
      * Neither outcome establishes hardware absence or another application's ownership.
      */
     class NotConnected(
@@ -148,7 +148,11 @@ class ZbtByteChannel(
         const val REQUEST_INIT_ID = 1
 
         /**
-         * Open a session: connect, then send `RequestInit` for [enableType].
+         * Open a session and normally send `RequestInit` for [enableType].
+         * [initialize] is false only for automatic reachability observation: the inspected ZBT
+         * server sends its opening reports before reading requests, and even a silent TCP accept
+         * retains the existing legacy route. Discovery therefore needs no Bluetooth enable call.
+         * Actual carriers and the explicit diagnostic tool retain their normal initialization.
          *
          * Init is not passive observation: inspected vendor firmware forwards enable_type to a
          * Bluetooth enable callback. The caller must publish [opening] before starting, and cancel
@@ -165,7 +169,8 @@ class ZbtByteChannel(
             onRfcommData: (ByteArray) -> Unit = {},
             bufferRfcommData: Boolean = true,
             opening: ZbtChannelOpening = ZbtChannelOpening(),
-            socketFactory: () -> Socket = { Socket() }
+            socketFactory: () -> Socket = { Socket() },
+            initialize: Boolean = true
         ): ZbtByteChannel {
             val socket = socketFactory()
             // One close handle for both owners: the opening (before connect) and the channel.
@@ -195,9 +200,13 @@ class ZbtByteChannel(
                     onClose = closeSocket,
                     bufferRfcommData = bufferRfcommData
                 ).also {
-                    opening.admitInit()
-                    AppLog.i("ZbtByteChannel: [open=${opening.id}] RequestInit admitted, enable_type=$enableType; delivery unconfirmed")
-                    it.sendRequestInit(enableType)
+                    if (initialize) {
+                        opening.admitInit()
+                        AppLog.i("ZbtByteChannel: [open=${opening.id}] RequestInit admitted, enable_type=$enableType; delivery unconfirmed")
+                        it.sendRequestInit(enableType)
+                    } else if (opening.wasCancelled()) {
+                        throw ZbtChannelOpening.Cancelled()
+                    }
                 }
             } catch (e: Exception) {
                 // A socket that accepted a connection and then would not take our first message is
@@ -207,7 +216,7 @@ class ZbtByteChannel(
                 if (e is ZbtChannelOpening.Cancelled || opening.wasCancelled()) {
                     throw ZbtChannelOpening.Cancelled()
                 }
-                throw IOException("ZBT channel setup failed on $host:$port", e)
+                throw IOException("ZBT channel setup failed on $host:$port (initialize=$initialize)", e)
             }
         }
     }

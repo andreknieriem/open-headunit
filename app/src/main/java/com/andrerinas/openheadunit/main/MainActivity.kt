@@ -44,7 +44,9 @@ import com.andrerinas.openheadunit.connection.ConnectionNetworkDetailPolicy
 import com.andrerinas.openheadunit.connection.ConnectionStage
 import com.andrerinas.openheadunit.connection.ConnectionStageTracker
 import com.andrerinas.openheadunit.connection.PhoneExitQuietPolicy
+import com.andrerinas.openheadunit.utils.ActivityState
 import com.andrerinas.openheadunit.utils.AppLog
+import com.andrerinas.openheadunit.utils.ScreenPower
 import com.andrerinas.openheadunit.utils.AppPermissions
 import com.andrerinas.openheadunit.utils.CarLauncherManager
 import com.andrerinas.openheadunit.utils.OnboardingLauncherPolicy
@@ -56,7 +58,6 @@ import android.os.SystemClock
 import com.andrerinas.openheadunit.connection.wifi.WifiLauncherMode
 import com.andrerinas.openheadunit.utils.SystemUI
 import com.andrerinas.openheadunit.utils.ToastUtils
-import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
 import com.andrerinas.openheadunit.utils.WifiStackRecovery
@@ -152,6 +153,7 @@ class MainActivity : BaseActivity() {
         requestedOrientation = Settings(this).screenOrientation.androidOrientation
         super.onCreate(savedInstanceState)
 
+        applyTurnScreenOn(intent)
         logLaunchSource()
         clearBootLoopGuardIfOpenedByHand()
 
@@ -394,11 +396,11 @@ class MainActivity : BaseActivity() {
     private fun cancelAutoConnect() {
         if (!autoConnectInProgress) return
         AppLog.i("Auto-connect: cancelled by user")
-        // disconnect() handles all states including the Connecting state where
-        // ACTION_DISCONNECT in AapService used to be a no-op. Setting state to
-        // Disconnected here also feeds the observer, but we end the UI
-        // immediately rather than waiting for the round-trip.
-        App.provide(this).commManager.disconnect()
+        // Keep Exit ordering in the service: revoke any retained WPP lease before
+        // publishing Disconnected. The overlay can finish without waiting for teardown.
+        ContextCompat.startForegroundService(this, Intent(this, AapService::class.java).apply {
+            action = AapService.ACTION_DISCONNECT
+        })
         endAutoConnect(success = false)
     }
 
@@ -903,7 +905,7 @@ class MainActivity : BaseActivity() {
                     customVideo?.visibility = View.GONE
                     customImage?.visibility = View.VISIBLE
                     if (customImage != null) {
-                        Glide.with(this).load(file).into(customImage)
+                        ActivityState.glide(this).load(file).into(customImage)
                         if (keepRatio) {
                             autoConnectKenBurnsAnim?.cancel()
                             val scaleAnim = ObjectAnimator.ofPropertyValuesHolder(
@@ -923,7 +925,7 @@ class MainActivity : BaseActivity() {
                     customVideo?.visibility = View.GONE
                     customImage?.visibility = View.VISIBLE
                     if (customImage != null) {
-                        Glide.with(this).asGif().load(file).into(customImage)
+                        ActivityState.glide(this).asGif().load(file).into(customImage)
                     }
                 }
                 "video" -> {
@@ -1105,6 +1107,7 @@ class MainActivity : BaseActivity() {
             returnToHomeRoot()
             viewModel.homePressed.value = SystemClock.uptimeMillis()
         }
+        applyTurnScreenOn(intent)
         handleLaunchIntent(intent)
     }
 
@@ -1550,8 +1553,18 @@ class MainActivity : BaseActivity() {
         startActivity(aapIntent)
     }
 
+    /** Lights the panel, and asks to lift a keyguard, for a service-raised launch; onPause clears it so a later resume does not. */
+    private fun applyTurnScreenOn(launchIntent: Intent?) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1 &&
+            launchIntent?.getBooleanExtra(EXTRA_TURN_SCREEN_ON, false) == true) {
+            setTurnScreenOn(true)
+            ScreenPower.requestDismissKeyguard(this, "MainActivity")
+        }
+    }
+
     override fun onPause() {
         super.onPause()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) setTurnScreenOn(false)
         if (isOrientationReceiverRegistered) {
             unregisterReceiver(orientationReceiver)
             isOrientationReceiverRegistered = false
@@ -1599,6 +1612,7 @@ class MainActivity : BaseActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        ActivityState.release(this, findViewById(R.id.auto_connect_loading_custom_image))
         if (isFinishReceiverRegistered) {
             unregisterReceiver(finishReceiver)
             isFinishReceiverRegistered = false
@@ -1619,7 +1633,7 @@ class MainActivity : BaseActivity() {
 
     fun applyCustomHomeBackground() {
         findViewById<ImageView>(R.id.custom_home_background)?.let {
-            try { Glide.with(this).clear(it) } catch (_: Exception) {}
+            try { ActivityState.glide(this).clear(it) } catch (_: Exception) {}
             it.setImageDrawable(null)
             it.visibility = View.GONE
         }
@@ -1630,6 +1644,7 @@ class MainActivity : BaseActivity() {
         private const val permissionRequestCode = 97
         @Volatile var hasRequestedPermissionsThisSession: Boolean = false
         const val EXTRA_LAUNCH_SOURCE = "launch_source"
+        const val EXTRA_TURN_SCREEN_ON = "turn_screen_on"
         const val LAUNCH_SOURCE_BLUETOOTH = "Bluetooth auto-start"
         const val EXTRA_SHOW_DRIVER_SELECTOR = "show_driver_selector"
 

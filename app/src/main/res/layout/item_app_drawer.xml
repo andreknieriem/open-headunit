@@ -32,8 +32,8 @@
 
             <ImageView
                 android:id="@+id/iv_shortcut_badge"
-                android:layout_width="20dp"
-                android:layout_height="20dp"
+                android:layout_width="26dp"
+                android:layout_height="26dp"
                 android:layout_gravity="bottom|end"
                 android:contentDescription="@string/home_shortcut_badge"
                 android:visibility="gone"

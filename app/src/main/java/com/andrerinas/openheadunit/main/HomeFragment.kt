@@ -52,6 +52,7 @@ import com.andrerinas.openheadunit.connection.usb.UsbDeviceCompat
 import com.andrerinas.openheadunit.connection.usb.UsbDeviceDiagnostics
 import android.content.res.Configuration
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zbt.ZbtDaemonReachability
+import com.andrerinas.openheadunit.utils.ActivityState
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.AppPermissions
 import com.andrerinas.openheadunit.utils.CarLauncherManager
@@ -72,8 +73,9 @@ import com.andrerinas.openheadunit.connection.self.SelfLaunchRoutePolicy
 import com.andrerinas.openheadunit.connection.self.SelfLauncherManager
 import com.andrerinas.openheadunit.utils.BluetoothHelper
 import com.andrerinas.openheadunit.location.LocationHolder
-import com.andrerinas.openheadunit.connection.usb.UsbReceiver
 import com.andrerinas.openheadunit.connection.usb.UsbAccessoryMode
+import com.andrerinas.openheadunit.connection.usb.UsbPermissionAskPolicy
+import com.andrerinas.openheadunit.connection.usb.UsbPermissionAsks
 import com.andrerinas.openheadunit.connection.wifi.modes.helper.HelperStrategy
 import com.andrerinas.openheadunit.connection.wifi.WifiLauncherMode
 import com.andrerinas.openheadunit.connection.wifi.WirelessSelectionPolicy
@@ -819,8 +821,9 @@ class HomeFragment : Fragment() {
      * - A small or narrow screen used as the launcher has no room for the main button and the
      *   favorite apps together, so the main button keeps the first page and the favorite apps and
      *   widgets get the next one.
-     * - A very wide unit gets two columns: the card on the driver's side and the favorites and
-     *   widgets beside it, so the width is used instead of left empty under a wide card.
+     * - A very wide unit (8:3, not 16:9) gets two columns: the card on the driver's side and the
+     *   favorites and widgets beside it, so the width is used instead of left empty under a wide
+     *   card.
      * - Everything else keeps the card on top and the favorites under it.
      *
      * Any widget page the driver added follows those. The pages are rebuilt here, so this runs
@@ -834,9 +837,11 @@ class HomeFragment : Fragment() {
 
         val small = config.screenHeightDp < COMPACT_HEIGHT_DP || config.screenWidthDp < COMPACT_WIDTH_DP
         val compact = isLauncherActive && small
-        val wide = isLauncherActive &&
-            config.orientation == Configuration.ORIENTATION_LANDSCAPE &&
-            config.screenWidthDp >= WIDE_WIDTH_DP
+        val wide = isLauncherActive && HomePagesPolicy.sideBySide(
+            config.orientation == Configuration.ORIENTATION_LANDSCAPE,
+            config.screenWidthDp,
+            config.screenHeightDp
+        )
         compactHome = compact
         ultrawideHome = wide
 
@@ -1804,7 +1809,7 @@ class HomeFragment : Fragment() {
         val appSettings = App.provide(requireContext()).settings
         val keepServiceAlive = appSettings.autoStartOnBoot ||
             appSettings.autoStartOnScreenOn ||
-            (appSettings.autoStartOnUsb && appSettings.reopenOnReconnection)
+            (appSettings.effectiveAutoStartOnUsb && appSettings.reopenOnReconnection)
         if (keepServiceAlive) {
             val disconnectIntent = Intent(requireContext(), AapService::class.java).apply {
                 action = AapService.ACTION_DISCONNECT
@@ -1877,6 +1882,7 @@ class HomeFragment : Fragment() {
                 ContextCompat.startForegroundService(requireContext(),
                     Intent(requireContext(), AapService::class.java).apply {
                         action = AapService.ACTION_CHECK_USB
+                        putExtra(AapService.EXTRA_USER_REQUESTED, true)
                     })
             } else {
                 if (usbManager.hasPermission(device.wrappedDevice)) {
@@ -1897,10 +1903,7 @@ class HomeFragment : Fragment() {
                 } else {
                     ToastUtils.showToast(requireContext(), R.string.requesting_usb_permission, Toast.LENGTH_SHORT)
                     ContextCompat.startForegroundService(requireContext(), Intent(requireContext(), AapService::class.java))
-                    usbManager.requestPermission(
-                        device.wrappedDevice,
-                        UsbReceiver.createPermissionPendingIntent(requireContext())
-                    )
+                    UsbPermissionAsks.askFromUi(requireContext(), device.wrappedDevice)
                 }
             }
         } else {
@@ -2063,6 +2066,26 @@ class HomeFragment : Fragment() {
         }
     }
 
+    /** A resumed home covers no chooser, so a plug Android still owns gets one note per plug-in. */
+    private fun showUsbAccessHintIfNeeded() {
+        val ctx = context ?: return
+        if (commManager.isConnected) return
+        val usbManager = UsbDeviceCompat.usbManager(ctx) ?: return
+        val settings = App.provide(ctx).settings
+        val devices = usbManager.deviceList.values.toList()
+        val present = devices.map { it.deviceName }
+        val device = devices.firstOrNull { device ->
+            if (!UsbDeviceCompat.isConnectable(ctx, device)) return@firstOrNull false
+            val inputs = UsbDeviceCompat.permissionDecisionInputs(
+                ctx, settings, device, UsbPermissionAskPolicy.Source.AUTOMATIC, present,
+            )
+            UsbPermissionAskPolicy.hintsUserAsk(usbManager.hasPermission(device), UsbPermissionAskPolicy.decide(inputs).action)
+        } ?: return
+        if (!UsbPermissionAsks.tryHint(device.deviceName)) return
+        AppLog.i("HomeFragment: ${UsbDeviceCompat(device).uniqueName} has no USB access and Android owns its ask; showing the USB button note")
+        ToastUtils.showToast(ctx, R.string.usb_access_needed, Toast.LENGTH_LONG, force = true)
+    }
+
     override fun onResume() {
         super.onResume()
         AppLog.i("HomeFragment: onResume. isConnected=${commManager.isConnected}")
@@ -2072,6 +2095,7 @@ class HomeFragment : Fragment() {
         updateLauncherViews()
         renderHome()
         startHomeInfo()
+        showUsbAccessHintIfNeeded()
 
         val appSettings = App.provide(requireContext()).settings
         if (requestDriverSelection) {
@@ -2084,12 +2108,7 @@ class HomeFragment : Fragment() {
         }
 
         activity?.let { act ->
-            val isDestroyed = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1)
-                act.isDestroyed
-            else
-                false
-
-            if (!act.isFinishing && !isDestroyed) {
+            if (!ActivityState.isGone(act)) {
                 RenameNotice.maybeShow(act, App.provide(requireContext()).settings)
                 Aa174Notice.maybeShow(act, App.provide(requireContext()).settings)
             }
@@ -3072,8 +3091,6 @@ class HomeFragment : Fragment() {
         private const val PAGES_HINT_PREFERRED_SPOT_DP = 120
 
         private const val COMPACT_WIDTH_DP = 400
-        /** Where the unit is wide enough for the card and the favorites side by side. */
-        private const val WIDE_WIDTH_DP = 1100
         /** The idle page dots, about half as bright as the muted text. */
         private const val DOT_IDLE_ALPHA = 0x80
         fun resetAutoStart() {

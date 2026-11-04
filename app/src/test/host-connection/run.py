@@ -52,6 +52,7 @@ class QueuedDispatcher:CoroutineDispatcher(){
 }
 class CommManager {
  val context=Context();val settings=Settings();val audioDecoder=AudioDecoder();val videoDecoder=VideoDecoder()
+  val dimState=DimState()
  private val transportLifecycleLock=Any()
  private var disconnectRequested=false
  private var connectionAttempt:Any?=null
@@ -114,11 +115,13 @@ class CommManager {
 # Keep Save permission and deadline semantics from the same production state as the methods.
 old_state=manager_head[manager_head.index(' class Disconnected('):manager_head.index(' object Connecting:')]
 manager_head=manager_head.replace(old_state, extract(comm, 'class Disconnected(')+'\n')
+manager_head=manager_head.replace('\nsealed class ConnectionState', '\n'+extract(comm, 'enum class EndCause')+'\nsealed class ConnectionState', 1)
 for name in ['SettingsRestartRecovery.kt', 'SameEndpointConnectPolicy.kt', 'ConnectionAdmission.kt', 'UsbRecoveryAdmission.kt']:
     source=(base/'connection'/name).read_text().replace('package com.andrerinas.openheadunit.connection', 'package lifecycle')
     (OUT/name).write_text(source)
 (OUT/'UsbRecoveryDevice.kt').write_text((base/'connection/usb/UsbRecoveryDevice.kt').read_text().replace('package com.andrerinas.openheadunit.connection.usb', 'package lifecycle'))
 (OUT/'AaPresentationSession.kt').write_text((base/'aap/AaPresentationSession.kt').read_text().replace('package com.andrerinas.openheadunit.aap', 'package lifecycle'))
+(OUT/'EndCausePolicy.kt').write_text((base/'connection/EndCausePolicy.kt').read_text().replace('package com.andrerinas.openheadunit.connection', 'package lifecycle').replace('import com.andrerinas.openheadunit.connection.CommManager.EndCause\n', ''))
 (OUT/'FinalMessageDelivery.kt').write_text((base/'aap/FinalMessageDelivery.kt').read_text().replace('package com.andrerinas.openheadunit.aap', 'package lifecycle'))
 # These endpoint predicates must be the real ones when testing the terminal route snapshot.
 for declaration in ['val isWirelessSession:', 'val isLoopbackSession:']:
@@ -135,7 +138,8 @@ class AapTransport(
  audioDecoder:AudioDecoder,private val videoDecoder:VideoDecoder,manager:AudioManager,settings:Settings,
  notification:Any,context:Context,externalSsl:Ssl,
  onAaMediaMetadata:((Any,Any)->Unit)?,onAaPlaybackStatus:((Any,Any)->Unit)?,
- private val onAaPresentationClosed:((Any)->Unit)?
+ private val onAaPresentationClosed:((Any)->Unit)?,
+ private val nightOverlayState:Any?=null
 ){
  private val lifecycleLock=Any()
  private val presentationSession=AaPresentationSession()
@@ -217,13 +221,14 @@ transport_fixture=transport_head+'\n'.join(extract(transport,n) for n in [
 ])+'\n}\n'
 bulk=(base/'aap/AapReadMultipleMessages.kt').read_text()
 process=extract(bulk,'private fun processBulk()')
+(OUT/'AapReadRecoveryPolicy.kt').write_text((base/'aap/AapReadRecoveryPolicy.kt').read_text().replace('package com.andrerinas.openheadunit.aap', 'package lifecycle'))
 support=r'''
 object AppLog {
  @Volatile var hook:((String)->Unit)?=null
  fun i(s:String){hook?.invoke(s)};fun e(s:String){};fun e(s:String,e:Throwable){};fun w(s:String){}
 }
 class Settings{
- var useAacAudio=false;var killOnDisconnect=false;var useLibusb=false
+ var useAacAudio=false;var killOnDisconnect=false;var useLibusb=false;var debugUsbReadFault=false
  fun saveLastConnection(type:Int,ip:String="",usbDevice:String=""){}
  companion object{const val CONNECTION_TYPE_WIFI=1;const val CONNECTION_TYPE_USB=2}
 }
@@ -236,14 +241,15 @@ class AapAudio(decoder:AudioDecoder,private val settings:Settings){
  fun postProtocolFocusChange(stream:Int,request:Int,callback:AudioManager.OnAudioFocusChangeListener){}
 }
 class AudioConfig{val enabled=true;val staticFocus=false;val focusMode=0}
+class DimState{ fun resetForNewSession(){} }
 class VideoDecoder{var framesRenderedThisSession=0L;fun beginSession(){framesRenderedThisSession=0L};var onDecoderError:((String)->Unit)?=null;var onKeyframeStarved:(()->Unit)?=null;var onFrameDropped:(()->Unit)?=null;var onKeyframeObserved:(()->Unit)?=null;fun stop(s:String){}}
 class AapVideo{fun release(){}}
 object ProjectionHealthRecorder{fun reset(){}}
 open class AapRead{@Volatile protected var isStopped=false;fun stop(){isStopped=true;retirePresentation()};var onRetirePresentation:(()->Unit)?=null;fun retirePresentation(){onRetirePresentation?.invoke()};companion object{var creations=0};object Factory{
  fun create(connection:ProjectionConnection,transport:AapTransport,mic:Any,audio:AapAudio,video:AapVideo,
- settings:Settings,context:Context,metadata:((Any,Any)->Unit)?,playback:((Any,Any)->Unit)?,closed:((Any)->Unit)?,session:AaPresentationSession):AapRead{creations++;return AapRead()}
+ settings:Settings,context:Context,metadata:((Any,Any)->Unit)?,playback:((Any,Any)->Unit)?,closed:((Any)->Unit)?,session:AaPresentationSession,nightOverlayState:Any?=null):AapRead{creations++;return AapRead()}
 }}
-open class ProjectionConnection{@Volatile var closed=false;open fun connect()=true;open fun disconnect(){closed=true}}
+open class ProjectionConnection{@Volatile var closed=false;open val type=Type.WIFI;open fun connect()=true;open fun disconnect(){closed=true};enum class Type{USB,WIFI}}
 class SocketProjectionConnection(private val ip:String,port:Int,context:Context):ProjectionConnection(){
  val isLoopbackPeer get()=ip=="127.0.0.1"
  init { created.add(this);constructionHook?.invoke() }
@@ -622,9 +628,10 @@ object ConnectionArbiter{class Claim;fun runIfHeld(claim:Claim, action:()->Unit)
 object UsbBridge{ @Volatile var afterConnect:(()->Unit)?=null;var forcedOpen:(()->Boolean)?=null }
 // The production USB check has to match the fixture's USB double.
 typealias AbstractUsbProjectionConnection=StandardUsbProjectionConnection
-open class StandardUsbProjectionConnection(m:UsbManager,private val d:UsbDevice):ProjectionConnection(){
+open class StandardUsbProjectionConnection(m:UsbManager,private val d:UsbDevice,readFaultArmed:()->Boolean={false},disarmReadFault:()->Unit={}):ProjectionConnection(){
  val accessoryDevice get()=d
- private val actual=com.andrerinas.openheadunit.connection.projection.StandardUsbProjectionConnection(m,d)
+ override val type=Type.USB
+ private val actual=com.andrerinas.openheadunit.connection.projection.StandardUsbProjectionConnection(m,d,readFaultArmed=readFaultArmed,disarmReadFault=disarmReadFault)
  override fun connect():Boolean {UsbBridge.forcedOpen?.let{return it()};val r=runBlocking{actual.connect()};UsbBridge.afterConnect?.invoke();return r}
  override fun disconnect(){super.disconnect();actual.disconnect()}
 }
@@ -674,6 +681,7 @@ class SettingsActionFixture(val commManager:CommManager) {
  private val intent:android.content.Intent?=null
  private val EXTRA_USB_ATTEMPT="usb";private val EXTRA_SETTINGS_REARM="settings";private val START_STICKY=1
  var userExitedAA=false
+ private fun parkRetainedHct(){}
  private val isDestroying=false
  private fun stopWirelessForCommand(settingsRearm:Boolean){commManager.cancelPendingSettingsRestart()}
  private var wirelessRearmPendingForSettings=false
@@ -860,6 +868,15 @@ class Context{
 }
 ''')
 (OUT/'App.kt').write_text('package android.app\nobject Application{const val AUDIO_SERVICE="audio"}\nclass ActivityManager{val appTasks=emptyList<AppTask>();class AppTask{fun finishAndRemoveTask(){}}}\n')
+(OUT/'OpenHeadunitApp.kt').write_text('''package com.andrerinas.openheadunit
+import android.content.Context
+object App {
+ fun provide(context: Context): ProvidedApp = ProvidedApp
+ object ProvidedApp {
+  val nightOverlayState: Any? = null
+ }
+}
+''')
 (OUT/'Media.kt').write_text('package android.media\nclass AudioManager{fun interface OnAudioFocusChangeListener{fun onAudioFocusChange(i:Int)};companion object{const val STREAM_MUSIC=3;const val AUDIOFOCUS_GAIN=1}}\n')
 (OUT/'Service.kt').write_text('package com.andrerinas.openheadunit.aap\nclass AapService{companion object{const val ACTION_STOP_SERVICE="stop";var killProcessOnDestroy=false;var destroyIsUserStop=false}}\n')
 (OUT/'Proto.kt').write_text(r'''package com.andrerinas.openheadunit.aap.protocol.proto
@@ -871,7 +888,7 @@ object Control{
 ''')
 # Full, byte-for-byte production connection files; Android APIs only are doubled.
 meta={}
-for name in ['ProjectionConnection.kt','AbstractUsbProjectionConnection.kt','StandardUsbProjectionConnection.kt']:
+for name in ['ProjectionConnection.kt','AbstractUsbProjectionConnection.kt','StandardUsbProjectionConnection.kt','UsbReadFaultPolicy.kt']:
  p=ROOT/'app/src/main/java/com/andrerinas/openheadunit/connection/projection'/name
  shutil.copy2(p,OUT/name);meta[str(p.relative_to(ROOT))]=hashlib.sha256(p.read_bytes()).hexdigest()
 (OUT/'Usb.kt').write_text('''package android.hardware.usb
@@ -946,6 +963,9 @@ subprocess.run(["python3", str(Path(__file__).with_name("self-launch.py"))], che
 
 # Full service disconnect callback: immediate policy and deferred resource ownership.
 subprocess.run(["python3", str(Path(__file__).with_name("wireless-cleanup.py"))], check=True)
+
+# Service-owned HCT transport lifetime.
+subprocess.run(["python3", str(Path(__file__).with_name("hct-owner.py"))], check=True)
 
 # VPN startService delivery can outlive a synchronous stop on the bound instance.
 subprocess.run(["python3", str(Path(__file__).with_name("vpn-start.py"))], check=True)

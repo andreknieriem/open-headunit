@@ -11,6 +11,8 @@
     device we would accept never auto-starts. A device that matches nothing is still reachable
     through the USB button, which enumerates the bus itself.
 
+    UsbManifestFilter is a Kotlin copy of this file, and its test fails when the two differ.
+
     Android's DeviceFilter checks the device descriptor and then every interface descriptor, so an
     entry with no vendor-id is a descriptor test rather than a vendor allowlist. An unlisted phone
     does not need an app update to work.
@@ -33,7 +35,7 @@
     <usb-device class="255" subclass="66" protocol="1" />   <!-- ADB -->
     <usb-device class="6" subclass="1" protocol="1" />      <!-- PTP -->
     <usb-device class="224" subclass="1" protocol="3" />    <!-- RNDIS tethering -->
-    <usb-device class="239" subclass="4" protocol="1" />    <!-- IAD -->
+    <usb-device class="239" subclass="4" protocol="1" />    <!-- RNDIS over Ethernet -->
     <usb-device class="8" subclass="6" protocol="1" />      <!-- MTP over mass storage -->
 
 </resources>

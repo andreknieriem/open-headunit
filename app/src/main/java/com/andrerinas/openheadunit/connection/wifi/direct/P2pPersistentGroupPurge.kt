@@ -23,7 +23,7 @@ object P2pPersistentGroupPurge {
 
     /**
      * Deletes every stored profile this unit owns, then reports a short verdict for the log.
-     * [onDone] always runs exactly once, whatever the platform answered.
+     * [onDone] runs exactly once while [isCurrent] remains true; a stopped owner gets no continuation.
      */
     @SuppressLint("MissingPermission")
     fun purge(
@@ -31,22 +31,10 @@ object P2pPersistentGroupPurge {
         channel: WifiP2pManager.Channel,
         ownAddress: String?,
         handler: Handler,
+        isCurrent: () -> Boolean,
         onDone: (verdict: String) -> Unit,
     ) {
-        var finished = false
-        val timeout = Runnable {
-            if (!finished) {
-                finished = true
-                onDone("unavailable (no answer in ${ANSWER_TIMEOUT_MS / 1000}s)")
-            }
-        }
-        val finish = { verdict: String ->
-            if (!finished) {
-                finished = true
-                handler.removeCallbacks(timeout)
-                onDone(verdict)
-            }
-        }
+        val attempt = Attempt(handler, isCurrent, onDone)
 
         try {
             val listenerClass = Class.forName(LISTENER_CLASS)
@@ -61,7 +49,9 @@ object P2pPersistentGroupPurge {
             ) { proxy, method, args ->
                 when (method.name) {
                     "onPersistentGroupInfoAvailable" -> {
-                        deleteOurs(manager, channel, ownAddress, args?.getOrNull(0), finish)
+                        if (attempt.acceptInfo()) {
+                            deleteOurs(manager, channel, ownAddress, args?.getOrNull(0), attempt)
+                        }
                         null
                     }
                     "hashCode" -> System.identityHashCode(proxy)
@@ -70,11 +60,44 @@ object P2pPersistentGroupPurge {
                     else -> null
                 }
             }
-            handler.postDelayed(timeout, ANSWER_TIMEOUT_MS)
-            request.invoke(manager, channel, listener)
+            handler.postDelayed(attempt.timeout, ANSWER_TIMEOUT_MS)
+            if (attempt.isActive()) request.invoke(manager, channel, listener)
         } catch (t: Throwable) {
+            attempt.finish("unavailable (${t.javaClass.simpleName}: ${t.message})")
+        }
+    }
+
+    private class Attempt(
+        private val handler: Handler,
+        private val isCurrent: () -> Boolean,
+        private val onDone: (String) -> Unit,
+    ) {
+        val lock = Any()
+        var finished = false
+            private set
+        private var infoReceived = false
+        val timeout = Runnable { finish("unavailable (no answer in ${ANSWER_TIMEOUT_MS / 1000}s)") }
+
+        fun isActive(): Boolean = isCurrent() && synchronized(lock) { !finished }
+
+        fun acceptInfo(): Boolean {
+            if (!isCurrent()) return false
+            return synchronized(lock) {
+                if (finished || infoReceived) false else {
+                    infoReceived = true
+                    true
+                }
+            }
+        }
+
+        fun finish(verdict: String) {
+            synchronized(lock) {
+                if (finished) return
+                finished = true
+            }
+            // Platform calls and the continuation may reenter; never invoke them under our lock.
             handler.removeCallbacks(timeout)
-            finish("unavailable (${t.javaClass.simpleName}: ${t.message})")
+            if (isCurrent()) onDone(verdict)
         }
     }
 
@@ -85,17 +108,30 @@ object P2pPersistentGroupPurge {
         channel: WifiP2pManager.Channel,
         ownAddress: String?,
         groupList: Any?,
-        finish: (String) -> Unit,
+        attempt: Attempt,
     ) {
+        var unknownIds = 0
         val ours = try {
             val list = groupList?.javaClass?.getMethod("getGroupList")?.invoke(groupList) as? Collection<*>
-            list.orEmpty().filterIsInstance<WifiP2pGroup>().filter { isOurs(it, ownAddress) }
+            val ids = ArrayList<Int>()
+            for (group in list.orEmpty()) {
+                if (group !is WifiP2pGroup || !isOurs(group, ownAddress)) continue
+                // Each deletion needs this owned profile's real ID; zero is a valid profile.
+                // An unreadable entry must not suppress cleanup of other identifiable profiles.
+                val netId = WifiDirectCompat.getGroupNetworkId(group)
+                when {
+                    netId == null -> unknownIds++
+                    P2pGroupIdentityPolicy.isPersistentNetworkId(netId) -> ids.add(netId)
+                }
+            }
+            ids
         } catch (t: Throwable) {
-            finish("unavailable (${t.javaClass.simpleName}: ${t.message})")
+            attempt.finish("unavailable (${t.javaClass.simpleName}: ${t.message})")
             return
         }
         if (ours.isEmpty()) {
-            finish("no profile of ours")
+            attempt.finish(if (unknownIds > 0) "unavailable (network id missing for $unknownIds owned profiles)"
+                else "no profile of ours")
             return
         }
 
@@ -107,44 +143,48 @@ object P2pPersistentGroupPurge {
                 WifiP2pManager.ActionListener::class.java,
             )
         } catch (t: Throwable) {
-            finish("unavailable (${t.javaClass.simpleName}: ${t.message})")
+            attempt.finish("unavailable (${t.javaClass.simpleName}: ${t.message})")
             return
         }
 
         var answered = 0
         var purged = 0
         var refusal: String? = null
-        val report = {
-            answered++
-            if (answered == ours.size) {
-                finish(if (purged > 0) "purged $purged of ${ours.size}" else "refused (${refusal ?: "unknown"})")
+        for (netId in ours) {
+            // Stop/timeout retires the remaining batch, not a platform call already admitted.
+            // The call stays outside the lock: a platform may wait for a cross-thread callback.
+            if (!attempt.isActive()) return
+            var completed = false
+            val report = report@{ failure: String? ->
+                val verdict = synchronized(attempt.lock) {
+                    // A callback followed by another callback (or a throw) is still one answer.
+                    if (attempt.finished || completed) return@report
+                    completed = true
+                    answered++
+                    if (failure == null) purged++ else if (refusal == null) refusal = failure
+                    if (answered == ours.size) {
+                        val result = if (purged > 0) "purged $purged of ${ours.size}"
+                            else "refused (${refusal ?: "unknown"})"
+                        result + if (unknownIds > 0) "; network id unavailable for $unknownIds owned profiles" else ""
+                    } else null
+                }
+                if (verdict != null) attempt.finish(verdict)
             }
-        }
-        for (group in ours) {
-            val netId = group.networkId
             val listener = object : WifiP2pManager.ActionListener {
-                override fun onSuccess() {
-                    purged++
-                    report()
-                }
+                override fun onSuccess() = report(null)
 
-                override fun onFailure(reason: Int) {
-                    if (refusal == null) refusal = reasonName(reason)
-                    report()
-                }
+                override fun onFailure(reason: Int) = report(reasonName(reason))
             }
             try {
                 delete.invoke(manager, channel, netId, listener)
             } catch (t: Throwable) {
                 AppLog.d("P2pPersistentGroupPurge: deletePersistentGroup(netId=$netId) threw: ${t.message}")
-                if (refusal == null) refusal = t.javaClass.simpleName
-                report()
+                report(t.javaClass.simpleName)
             }
         }
     }
 
     private fun isOurs(group: WifiP2pGroup, ownAddress: String?): Boolean {
-        if (group.networkId < 0) return false
         if (group.isGroupOwner) return true
         val owner = group.owner?.deviceAddress ?: return false
         return ownAddress != null && owner.equals(ownAddress, ignoreCase = true)

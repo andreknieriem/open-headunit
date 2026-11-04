@@ -1,7 +1,9 @@
 package com.andrerinas.openheadunit.connection.wifi.modes.nativeaa
 
 import com.andrerinas.openheadunit.R
-import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.hct.HctAaCarrier
+import com.andrerinas.openheadunit.app.BtAutoDisconnectPolicy
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.hct.HctWppOwner
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.hct.HctProjectionStage
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.hct.HctOpening
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.hct.HctServiceObserver
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.hct.HctWakePolicy
@@ -22,12 +24,18 @@ import com.andrerinas.openheadunit.connection.wifi.direct.StoredP2pIdentity
 import com.andrerinas.openheadunit.aap.AapService
 
 import com.andrerinas.openheadunit.connection.wifi.direct.WifiBandCapability
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zjsocket.ZjSocketCarrier
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zjsocket.ZjSocketPolicy
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zjsocket.ZjSocketProbe
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zbt.ZbtDiscovery
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zbt.ZbtDiscoveryPolicy
 import com.andrerinas.openheadunit.utils.BluetoothAddressSeedPolicy
 import com.andrerinas.openheadunit.utils.BluetoothHelper
 import com.andrerinas.openheadunit.utils.bluetooth.BluetoothPeerDiscovery
 import com.andrerinas.openheadunit.aap.protocol.proto.Wireless
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.esp32.Esp32RelaySession
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.esp32.Esp32RelayStore
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.esp32.Esp32RelayCarrier
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.blink.BlinkAaCarrier
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.blink.BlinkAutoSerialChannel
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.blink.BlinkRefusal
@@ -56,6 +64,7 @@ import com.andrerinas.openheadunit.connection.ConnectionStage
 import com.andrerinas.openheadunit.connection.ConnectionStageTracker
 import com.andrerinas.openheadunit.connection.wifi.modes.WifiLauncherNative
 import com.andrerinas.openheadunit.utils.Settings
+import com.andrerinas.openheadunit.utils.ExternalBtPolicy
 import com.andrerinas.openheadunit.utils.SystemProperties
 import java.io.DataInputStream
 import java.io.OutputStream
@@ -149,7 +158,9 @@ class NativeAaHandshakeManager(
                 settings.nativeAaIgnoreExternalBt,
                 blinkTransportEnabled = settings.externalBtBlinkTransport,
                 fytModuleEvidence = BluetoothHelper.fytModuleEvidence,
-                hctServiceAvailable = HctServiceObserver.available(context)
+                hctServiceAvailable = HctServiceObserver.available(context),
+                zjSocketEnabled = settings.externalBtZjSocketTransport,
+                zjSocketConnects = ZjSocketProbe.answer()
             )
         }
 
@@ -162,7 +173,9 @@ class NativeAaHandshakeManager(
                 settings.nativeAaIgnoreExternalBt,
                 blinkTransportEnabled = settings.externalBtBlinkTransport,
                 fytModuleEvidence = BluetoothHelper.fytModuleEvidence,
-                hctServiceAvailable = HctServiceObserver.available(context)
+                hctServiceAvailable = HctServiceObserver.available(context),
+                zjSocketEnabled = settings.externalBtZjSocketTransport,
+                zjSocketConnects = ZjSocketProbe.answer()
             )
         }
 
@@ -175,13 +188,24 @@ class NativeAaHandshakeManager(
                 settings.nativeAaIgnoreExternalBt,
                 blinkTransportEnabled = settings.externalBtBlinkTransport,
                 fytModuleEvidence = BluetoothHelper.fytModuleEvidence,
-                hctServiceAvailable = HctServiceObserver.available(context)
+                hctServiceAvailable = HctServiceObserver.available(context),
+                zjSocketEnabled = settings.externalBtZjSocketTransport,
+                zjSocketConnects = ZjSocketProbe.answer()
             )
         }
 
         fun checkCompatibility(context: Context): Boolean {
+            if (Esp32RelaySession.hasSavedEsp32Relay(context)) {
+                AppLog.i("NativeAA: Bluetooth runs over the Bluetooth relay, so the RFCOMM compatibility check does not apply.")
+                return true
+            }
             val discovery = ZbtDiscovery.snapshot()
             when (transportRoute(context, discovery)) {
+                // The raw Unix domain socket (/dev/socket/zj_bt_socket) directly carries RFCOMM frames.
+                ExternalBtTransportPolicy.Route.ZJ_SOCKET -> {
+                    AppLog.i("NativeAA: Bluetooth runs over raw Unix domain socket (/dev/socket/zj_bt_socket), compatibility check SUCCESS.")
+                    return true
+                }
                 // The module has its own listener and its own compatibility, established by the
                 // daemon answering at connection time. Nothing below measures that.
                 ExternalBtTransportPolicy.Route.ZBT, ExternalBtTransportPolicy.Route.BLINK,
@@ -196,7 +220,7 @@ class NativeAaHandshakeManager(
                 // Ordinary hardware, an unconfirmed candidate, or an explicit Android-radio override.
                 ExternalBtTransportPolicy.Route.NORMAL -> externalBtDiagnostic(discovery)?.let {
                     AppLog.w(it)
-                    AppLog.w("NativeAA: continuing anyway, because the Bluetooth compatibility check is switched off in Settings.")
+                    AppLog.w("NativeAA: continuing anyway, because Settings chooses this unit's own Bluetooth for the phone.")
                 }
             }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -464,7 +488,7 @@ class NativeAaHandshakeManager(
      */
     fun selectDriver(mac: String, explicit: Boolean) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            (moduleCarrier as? HctAaCarrier)?.let { carrier ->
+            (moduleCarrier as? HctWppOwner.Client)?.let { carrier ->
                 val accepted = carrier.requestWakeFor(mac, allowReplacePending = explicit) {
                     commitDriverSelection(mac, explicit)
                     wakeStoodDown = false
@@ -749,6 +773,10 @@ class NativeAaHandshakeManager(
     fun isHandshakeInFlight(): Boolean =
         NativeHandoffPolicy.isHandshaking(handshakeStartedAt, SystemClock.elapsedRealtime())
 
+    /** The phone whose handshake or join is under way, or null when none is. */
+    fun handoffPeerAddress(): String? =
+        if (isHandshakeInFlight() || isHandoffSettling()) activeHandshakeLink?.peerAddress?.takeIf { it.isNotEmpty() } else null
+
     /**
      * True between delivering the WiFi credentials (Type 3) and the phone's TCP session actually
      * landing — the window in which it is still associating, doing WPS and getting a DHCP lease.
@@ -863,6 +891,27 @@ class NativeAaHandshakeManager(
         resumeAfterDaemonMeasurement(generation, arm)
     }
 
+    /** The socket is asked only once the ZBT daemon has refused and nothing else decided. */
+    private fun wantsZjSocketProbe(): Boolean {
+        val after = ZbtDiscovery.snapshot()
+        return after.reachable == false && ExternalBtTransportPolicy.needsDaemonMeasurement(
+            after,
+            settings.externalBtZbtTransport,
+            settings.nativeAaIgnoreExternalBt,
+            blinkTransportEnabled = settings.externalBtBlinkTransport,
+            fytModuleEvidence = BluetoothHelper.fytModuleEvidence,
+            hctServiceAvailable = HctServiceObserver.available(context),
+            zjSocketEnabled = settings.externalBtZjSocketTransport,
+            zjSocketConnects = ZjSocketProbe.answer()
+        )
+    }
+
+    /** Runs inside the ZBT window, after each refusal: the measurement's own gates already passed. */
+    private fun zjSocketEndsZbtWait(refusals: Int): Boolean {
+        if (ZjSocketPolicy.probesDuringZbtWait(refusals, ZjSocketProbe.answer())) ZjSocketProbe.measure()
+        return ZjSocketPolicy.endsZbtWait(refusals, ZjSocketProbe.answer())
+    }
+
     fun start() = start(resumingMeasurement = false)
 
     @SuppressLint("MissingPermission")
@@ -871,6 +920,7 @@ class NativeAaHandshakeManager(
         if (isRunning || measuringDaemon) return
         if (!resumingMeasurement) {
             ZbtDiscovery.beginArming()
+            ZjSocketProbe.beginArming()
             // Retain start()'s original fresh-arming reset: a cancellation from the previous
             // attempt must not reject every new phone, or leave the new session stood down.
             // Measurement completion belongs to the same arming, so preserve a phone selected
@@ -897,7 +947,9 @@ class NativeAaHandshakeManager(
                 settings.nativeAaIgnoreExternalBt,
                 blinkTransportEnabled = settings.externalBtBlinkTransport,
                 fytModuleEvidence = BluetoothHelper.fytModuleEvidence,
-                hctServiceAvailable = HctServiceObserver.available(context)
+                hctServiceAvailable = HctServiceObserver.available(context),
+                zjSocketEnabled = settings.externalBtZjSocketTransport,
+                zjSocketConnects = ZjSocketProbe.answer()
             )
         ) {
             notStartedReason = "the vendor Bluetooth daemon is still being asked whether it will carry Android Auto."
@@ -907,8 +959,17 @@ class NativeAaHandshakeManager(
             scope.launch(Dispatchers.IO + CoroutineName("NativeAa-ZbtReachability")) {
                 val measurement = ZbtDiscovery.measurement(discovery.decision)
                 val completion = measurement.awaitResolution(
-                    keepTrying = { measuringDaemon && measureGeneration == generation }
+                    keepTrying = { measuringDaemon && measureGeneration == generation },
+                    refusalIsFinal = ::zjSocketEndsZbtWait
                 )
+                // A socket refused early in the window may be up by its end, so ask it again.
+                ZjSocketProbe.forgetNegative()
+                // Only after ZBT refused, so a daemon that answers is never joined by a second dial.
+                if (completion != ZbtDiscovery.Measurement.Completion.CANCELLED &&
+                    measuringDaemon && measureGeneration == generation && wantsZjSocketProbe()
+                ) {
+                    ZjSocketProbe.measure()
+                }
                 withContext(Dispatchers.Main.immediate) {
                     completeDaemonMeasurement(generation, discovery.decision, completion)
                 }
@@ -919,7 +980,19 @@ class NativeAaHandshakeManager(
         // Leave isRunning false, like the "adapter disabled" case below: isActive() callers must
         // see this as genuinely stopped. Nothing here is retryable, but a listener that was never
         // opened must not be reported as up.
-        when (transportRoute(context, discovery)) {
+        // A saved Bluetooth relay wins like BLINK: the ESP32 owns Classic RFCOMM and BLE relays bytes.
+        if (Esp32RelaySession.hasSavedEsp32Relay(context)) {
+            startOverEsp32RelayModule()
+            return
+        }
+        val selectedRoute = transportRoute(context, discovery)
+        if (selectedRoute != ExternalBtTransportPolicy.Route.HCT) context.closeRetainedHct()
+        when (selectedRoute) {
+            // The raw Unix domain socket (/dev/socket/zj_bt_socket) carries the RFCOMM stream directly.
+            ExternalBtTransportPolicy.Route.ZJ_SOCKET -> {
+                startOverZjSocket()
+                return
+            }
             // The module carries the handshake instead, over its own channel. None of the RFCOMM
             // setup below applies to it.
             ExternalBtTransportPolicy.Route.ZBT -> {
@@ -937,20 +1010,20 @@ class NativeAaHandshakeManager(
             ExternalBtTransportPolicy.Route.BLOCKED -> {
                 val fyt = BluetoothHelper.fytModuleEvidence
                 if (fyt != null) {
-                    notStartedReason = "this FYT unit's Bluetooth is an external module ($fyt). Turn on " +
-                        "\"Connect through the FYT external Bluetooth module\", or use USB or a WiFi mode."
+                    notStartedReason = "this FYT unit's Bluetooth is an external module ($fyt). Choose " +
+                        "\"Car Bluetooth module (FYT BLINK)\" under Bluetooth your phone pairs with, or use USB or a WiFi mode."
                     AppLog.e("NativeAA: $notStartedReason")
                     return
                 }
                 externalBtDiagnostic(discovery)?.let { AppLog.e(it) }
                 notStartedReason = "this unit's Bluetooth is an external module with no route through it " +
-                    "(${discovery.decision.evidence}). Turn on \"Connect through the head unit's " +
-                    "Bluetooth module\", or use USB or a WiFi mode."
+                    "(${discovery.decision.evidence}). Choose \"Car Bluetooth " +
+                    "module (ZLink)\" under Bluetooth your phone pairs with, or use USB or a WiFi mode."
                 return
             }
             // Ordinary hardware, an unconfirmed candidate, or an explicit Android-radio override.
             ExternalBtTransportPolicy.Route.NORMAL -> externalBtDiagnostic(discovery)?.let {
-                AppLog.w("$it\nNativeAA: starting anyway, because the Bluetooth compatibility check is switched off in Settings.")
+                AppLog.w("$it\nNativeAA: starting anyway, because Settings chooses this unit's own Bluetooth for the phone.")
             }
         }
 
@@ -1242,7 +1315,7 @@ class NativeAaHandshakeManager(
     }
 
     private fun usesHctCarrier(): Boolean =
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && moduleCarrier is HctAaCarrier
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && moduleCarrier is HctWppOwner.Client
 
     /**
      * Puts the Bluetooth side back where it was before the session, without taking it down.
@@ -1278,7 +1351,9 @@ class NativeAaHandshakeManager(
         resetHandshakeBackoff()
 
         val route = transportRoute(context)
-        if (ExternalBtTransportPolicy.rearmsWithoutAndroidRadio(route)) {
+        if (moduleCarrier?.rearmsWithoutAndroidRadio == true ||
+            ExternalBtTransportPolicy.rearmsWithoutAndroidRadio(route)
+        ) {
             aaListenersClosedForSession = false
             aaListenerLost = false
             aaReopenAttempts = 0
@@ -1610,9 +1685,9 @@ class NativeAaHandshakeManager(
         try { socket.close() } catch (_: Exception) {}
     }
 
-    /** Closes a handshake link to a phone and records that the close was ours. */
-    private fun closePhoneLink(link: HandshakeLink) {
-        link.peerAddress?.takeIf { it.isNotEmpty() }?.let { ownSocketCloseAt[it.uppercase()] = SystemClock.elapsedRealtime() }
+    /** Closes a handshake link to a phone and, unless [ours] is false, records that the close was ours. */
+    private fun closePhoneLink(link: HandshakeLink, ours: Boolean = true) {
+        if (ours) link.peerAddress?.takeIf { it.isNotEmpty() }?.let { ownSocketCloseAt[it.uppercase()] = SystemClock.elapsedRealtime() }
         try { link.close() } catch (_: Exception) {}
     }
 
@@ -2610,7 +2685,7 @@ class NativeAaHandshakeManager(
      */
     fun manualPoke(address: String) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            (moduleCarrier as? HctAaCarrier)?.let {
+            (moduleCarrier as? HctWppOwner.Client)?.let {
                 wakeStoodDown = false
                 sessionEndedAt = 0L
                 resetHandshakeBackoff()
@@ -2829,23 +2904,21 @@ class NativeAaHandshakeManager(
             if (hctStageOwner === stageOwner && mayReportFailure())
                 ConnectionStageTracker.reportWirelessHandoffEnded()
         }
-        lateinit var carrier: HctAaCarrier
-        carrier = HctAaCarrier(
-            context = context,
+        // Retained-channel reuse can start a lease before the cancelled lease's Main
+        // cleanup runs. Arming identity alone cannot distinguish those two projections.
+        val stageLease = HctProjectionStage(
+            started = { ConnectionStageTracker.report(ConnectionStage.PHONE_ANSWERED) },
+            ended = ::finishStageIfIdle
+        )
+        lateinit var carrier: HctWppOwner.Client
+        carrier = context.hctWppOwner.attach(
             openingRequest = {
                 HctOpening.versionRequest(
                     WppChannelTypePolicy.forHeadUnit(WifiBandCapability.supports5Ghz(context)),
                     WifiBandCapability.sessionFrequencyMhz()
                 )
             },
-            serve = { link ->
-                ConnectionStageTracker.report(ConnectionStage.PHONE_ANSWERED)
-                try { handleHandshake(link) } finally {
-                    // handleHandshake also returns normally after a write failure or timeout.
-                    // Restore retry access after that result, not just a carrier exception.
-                    withContext(NonCancellable + Dispatchers.Main.immediate) { finishStageIfIdle() }
-                }
-            },
+            serve = { link -> stageLease.serve { handleHandshake(link) } },
             mayServe = {
                 val now = SystemClock.elapsedRealtime()
                 // Match the normal radio's bounded cancel/prompt hold. The peer gate below
@@ -2857,9 +2930,17 @@ class NativeAaHandshakeManager(
                     !isHandshakeInFlight() && !isHandoffSettling() &&
                     NativeHandoffPolicy.shouldServeHandshake(consecutiveHandshakeFailures)
             },
+            // A deliberate same-phone reuse is allowed to clear only selection holds.
+            // Busy/session conditions stay independent of those holds and are checked before
+            // committing the chosen driver, under the retained owner's admission lock.
+            maySelect = {
+                isRunning && !aaListenersClosedForSession && !commManager.isConnected &&
+                    commManager.connectionState.value !is CommManager.ConnectionState.Connecting &&
+                    !isHandshakeInFlight() && !isHandoffSettling()
+            },
             acceptPeer = ::shouldAcceptHandshake,
             onPhoneEvidence = { resetHandshakeBackoff() },
-            onUnavailable = { result, stillCurrent ->
+            onUnavailable = { result ->
                 val message = when (result) {
                     HctWakePolicy.Result.HFP_ALREADY_CONNECTED -> R.string.hct_aa_waiting_existing_bluetooth
                     HctWakePolicy.Result.HFP_BUSY -> R.string.hct_aa_bluetooth_busy
@@ -2867,13 +2948,11 @@ class NativeAaHandshakeManager(
                     HctWakePolicy.Result.LOCAL_NOT_READY -> R.string.hct_aa_wake_not_sent
                     else -> R.string.hct_aa_handoff_unavailable
                 }
-                scope.launch(Dispatchers.Main) {
-                    // A queued failure belongs to this carrier, not a replacement started by
-                    // a later Wi-Fi button press. Check again at UI delivery, after dispatch.
-                    if (moduleCarrier === carrier && isRunning && stillCurrent() && mayReportFailure()) {
-                        finishStageIfIdle()
-                        ToastUtils.showToast(context, context.getString(message), Toast.LENGTH_LONG, force = true)
-                    }
+                // Owner delivery is already on Main, fenced by carrier, client and source
+                // event. Do not redispatch and open another stale-notification window.
+                if (moduleCarrier === carrier && isRunning && mayReportFailure()) {
+                    finishStageIfIdle()
+                    ToastUtils.showToast(context, context.getString(message), Toast.LENGTH_LONG, force = true)
                 }
             }
         )
@@ -2906,6 +2985,74 @@ class NativeAaHandshakeManager(
                     }
                 }
             }
+        }
+    }
+
+    private fun startOverEsp32RelayModule() {
+        isRunning = true
+        notStartedReason = null
+        aaListenersClosedForSession = false
+        localRadioName = "Bluetooth relay"
+        AppLog.i(
+            "NativeAA: Bluetooth relay transport is on — the handshake goes over Classic RFCOMM on the " +
+                "original ESP32, relayed to this unit by BLE GATT write/indicate (BLINK-style)."
+        )
+        val carrier = Esp32RelayCarrier(
+            serve = { link ->
+                ConnectionStageTracker.report(ConnectionStage.PHONE_ANSWERED)
+                handleHandshake(link)
+            },
+            isRunning = { isRunning },
+            isFinishedForSession = { aaListenersClosedForSession },
+            mayServeHandshake = { NativeHandoffPolicy.shouldServeHandshake(consecutiveHandshakeFailures) },
+            onPhoneEvidence = { resetHandshakeBackoff() },
+            ensureLink = {
+                // Keep-alive only — must not re-arm HFP every poll tick.
+                // offerLiveGroup is throttled; armRelay alone keeps BLE without P2P thrash.
+                Esp32RelaySession.armRelay(context)
+                Esp32RelaySession.offerLiveGroup(context, force = false)
+            },
+            sendToPhone = { bytes -> Esp32RelaySession.sendRfcomm(bytes) },
+            grantCredit = { extra -> Esp32RelaySession.grantCredit(extra) },
+        )
+        Esp32RelaySession.setFrameSink { frame -> carrier.onFrame(frame) }
+        Esp32RelaySession.setTransportErrorHandler { reason -> carrier.onTransportError(reason) }
+        Esp32RelaySession.onGiveUp = { endAndroidAutoIfEsp32RelaySetting("link stayed down") }
+        moduleCarrier = carrier
+        // Always HFP_ON + AA_ENABLE for a Wi-Fi AA bring-up, even if BLE is already READY
+        // after a cancel (armRelay is a no-op then and would leave HFP off).
+        Esp32RelaySession.requestAaWake(context)
+        Esp32RelaySession.offerLiveGroup(context, force = true)
+        scope.launch(Dispatchers.IO + CoroutineName("NativeAa-Esp32RelayCarrier")) {
+            try {
+                carrier.run()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                AppLog.e("NativeAA: [ESP32] carrier stopped unexpectedly: ${e.message}", e)
+            } finally {
+                Esp32RelaySession.setFrameSink(null)
+                Esp32RelaySession.setTransportErrorHandler(null)
+                Esp32RelaySession.onGiveUp = null
+            }
+        }
+    }
+
+    /** Ends the Android Auto session when the ESP32 relay setting asks for it. */
+    private fun endAndroidAutoIfEsp32RelaySetting(reason: String) {
+        if (!Esp32RelayStore(context).endAaOnDisconnect) return
+        if (!commManager.isConnected &&
+            commManager.connectionState.value !is CommManager.ConnectionState.Connecting
+        ) {
+            return
+        }
+        AppLog.w("NativeAA: [ESP32] $reason — ending Android Auto (endAaOnDisconnect)")
+        scope.launch(Dispatchers.Main.immediate) {
+            commManager.disconnect(
+                sendByeBye = true,
+                isUserExit = false,
+                honorKillOnDisconnect = false,
+            )
         }
     }
 
@@ -2965,6 +3112,55 @@ class NativeAaHandshakeManager(
         ConnectionStageTracker.retreat(ConnectionStage.WAKING_PHONE, ConnectionStage.WAITING_FOR_PHONE)
         scope.launch(Dispatchers.Main) {
             ToastUtils.showToast(context, refusal.message, Toast.LENGTH_LONG, force = true)
+        }
+    }
+
+    private fun startOverZjSocket() {
+        isRunning = true
+        notStartedReason = null
+        aaListenersClosedForSession = false
+        localRadioName = "ZJ socket (${ZjSocketProbe.path()})"
+        // The module's own address, which the phone is bonded to. Without it no Bluetooth service
+        // is announced and calls stay on the phone.
+        val moduleAddress = SystemProperties.get(ExternalBtPolicy.ZJ_MODULE_ADDRESS_PROPERTY, "").trim()
+        if (moduleAddress.isNotEmpty()) {
+            seedBluetoothAddressFromModule(moduleAddress)
+        } else {
+            AppLog.i(
+                "NativeAA: [ZJ] ${ExternalBtPolicy.ZJ_MODULE_ADDRESS_PROPERTY} is not set, so the module's " +
+                    "Bluetooth address is unknown here. Unless the Bluetooth address setting holds it, " +
+                    "calls may stay on the phone."
+            )
+        }
+        AppLog.i(
+            "NativeAA: [ZJ] socket transport is on (${BluetoothHelper.externalBtEvidence}); " +
+                "the handshake will connect to ${ZjSocketProbe.path()} directly."
+        )
+        val carrier = ZjSocketCarrier(
+            socketPath = ZjSocketProbe.path(),
+            serve = { link ->
+                ConnectionStageTracker.report(ConnectionStage.PHONE_ANSWERED)
+                handleHandshake(link)
+            },
+            isRunning = { isRunning },
+            isSessionConnected = { commManager.isConnected },
+            isHandshakeInFlight = { isHandshakeInFlight() },
+            isSettling = { isHandoffSettling() },
+            mayServeHandshake = { NativeHandoffPolicy.shouldServeHandshake(consecutiveHandshakeFailures) },
+            onPhoneEvidence = { resetHandshakeBackoff() },
+            servedRefusals = { consecutiveJoinRefusals }
+        )
+        moduleCarrier = carrier
+        // A wake queued during the measurement needs no send and no pill claim on this route.
+        wakeAwaitingModule = false
+        scope.launch(Dispatchers.IO + CoroutineName("NativeAa-ZjSocketCarrier")) {
+            try {
+                carrier.run()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                AppLog.e("NativeAA: [ZJ] carrier stopped unexpectedly: ${e.message}", e)
+            }
         }
     }
 
@@ -3111,18 +3307,30 @@ class NativeAaHandshakeManager(
         // the phone is associating and there is nothing to gain by being busy.
         var retiredSilentRecord = false
         var abortedLocally = false
+        // Whether the phone closed the held channel itself; closing our end after that is not a
+        // close of ours. See BtAutoDisconnectPolicy.closeIsOurs.
+        var phoneClosedChannel = false
         // The launcher's, not the setting's: what we tell the phone has to be the network we are
         // actually hosting, and a saved transport does not reach the running launcher until it is
         // re-armed.
         val transport = launcher.strategy
-        val session = WppHandshakeSession(holdsChannel = true)
+        val session = WppHandshakeSession(holdsChannel = true, versionNegotiated = link.versionNegotiated)
         // Everything the phone sends, in order. Replaces the single bounded read this used to do:
         // types 6 and 7 arrive *after* the credentials go out, so a one-shot read could never see
         // them, and the phone is free to interject a ping at any point in between.
-        val inbound = Channel<ProtobufMessage>(Channel.UNLIMITED)
+        val input = DataInputStream(link.input)
+        val messages = WppInboundMessages(link.versionNegotiated) { readProtobuf(input) }
+        val inbound = messages.channel
         var readerJob: Job? = null
         var arbiterClaim: ConnectionArbiter.Claim? = null
         try {
+            if (link.versionNegotiated) {
+                // Version/Ping belong to the physical reader and are intentionally absent
+                // from this lease's message count. No Start response is not radio silence.
+                resetHandshakeBackoff()
+                ConnectionIssues.clear(context, ConnectionIssue.BLUETOOTH_SENT_NO_DATA)
+                retiredSilentRecord = true
+            }
             val peerName = link.peerName
             val peerAddress = link.peerAddress
             AppLog.i("NativeAA: Handling handshake for $peerName ($peerAddress) on local radio [${link.radioLabel ?: "?"}]")
@@ -3156,7 +3364,6 @@ class NativeAaHandshakeManager(
                 settings.nativePokeBtMacs = setOf(peerAddress)
             }
 
-            val input = DataInputStream(link.input)
             val output = link.output
 
             // [BUG_FIX] There is no BluetoothSocket.setSoTimeout(), and the old workaround —
@@ -3168,7 +3375,7 @@ class NativeAaHandshakeManager(
             // still unreclaimable on such a stack; consecutiveHandshakeFailures bounds that.
             readerJob = scope.launch(Dispatchers.IO + CoroutineName("NativeAa-Reader-$peerAddress")) {
                 try {
-                    while (isActive) inbound.send(readProtobuf(input))
+                    messages.readUntilClosed()
                 } catch (e: Exception) {
                     AppLog.d("NativeAA: Bluetooth reader ended: ${e.message}")
                 } finally {
@@ -3328,6 +3535,11 @@ class NativeAaHandshakeManager(
                         AppLog.i("NativeAA: WiFi session landed. Holding the Bluetooth channel for the session and answering the phone's pings, as a head unit does.")
                         holdingSince = SystemClock.elapsedRealtime()
                         lastHoldSummaryAt = holdingSince
+                        // apply_hfp: tell the ESP32 relay projection is up so it releases HFP and stops
+                        // re-arming wake on the next AA_ENABLE retry.
+                        if (Esp32RelaySession.shouldNotifyProjection(context)) {
+                            Esp32RelaySession.notifyProjection(true)
+                        }
                         // The attempt is over even though the channel is not: nothing may read a
                         // held channel as a handshake in flight, and the claim goes back now.
                         ConnectionArbiter.release(arbiterClaim, sessionFormed = commManager.isConnected)
@@ -3345,10 +3557,14 @@ class NativeAaHandshakeManager(
                     }
                     is WppAction.Release -> {
                         val heldS = (SystemClock.elapsedRealtime() - holdingSince) / 1000
+                        phoneClosedChannel = action.peerClosed
                         if (action.peerClosed) {
-                            AppLog.w("NativeAA: the phone closed the held Bluetooth channel after ${heldS}s and $pingsWhileHolding pings; the Android Auto listeners reopen when this session ends.")
+                            AppLog.w("NativeAA: the phone closed the held Bluetooth channel after ${heldS}s and $pingsWhileHolding lease-handled pings; the Android Auto listeners reopen when this session ends.")
                         } else {
-                            AppLog.i("NativeAA: the session ended; releasing the held Bluetooth channel after ${heldS}s and $pingsWhileHolding pings.")
+                            AppLog.i("NativeAA: the session ended; releasing the held Bluetooth channel after ${heldS}s and $pingsWhileHolding lease-handled pings.")
+                        }
+                        if (Esp32RelaySession.hasSavedEsp32Relay(context)) {
+                            Esp32RelaySession.notifyProjection(false)
                         }
                     }
                     is WppAction.Fail -> {
@@ -3435,7 +3651,8 @@ class NativeAaHandshakeManager(
                                 ConnectionIssues.clear(context, ConnectionIssue.BLUETOOTH_SENT_NO_DATA)
                             }
                         }
-                        feed(WppEvent.MessageReceived(msg.type, parseStatus(msg)), msg)
+                        val status = parseStatus(msg)
+                        feed(WppEvent.MessageReceived(msg.type, status), msg)
                         if (session.isTerminal()) return
                     }
                 }
@@ -3448,7 +3665,7 @@ class NativeAaHandshakeManager(
                         !sessionAlive -> feed(WppEvent.SessionEnded)
                         now - lastHoldSummaryAt >= HOLD_SUMMARY_INTERVAL_MS -> {
                             lastHoldSummaryAt = now
-                            AppLog.i("NativeAA: [HOLD] Bluetooth channel held ${(now - holdingSince) / 1000}s, $pingsWhileHolding pings answered.")
+                            AppLog.i("NativeAA: [HOLD] Bluetooth channel held ${(now - holdingSince) / 1000}s, $pingsWhileHolding lease-handled pings answered.")
                         }
                     }
                     return
@@ -3730,7 +3947,7 @@ class NativeAaHandshakeManager(
                 // Excludes our own pre-exchange aborts (no credentials, masked BSSID, USB already
                 // up) — those repeat for as long as location services are off, and backing off
                 // would bury the log line saying how to fix it.
-                if (spokeToPhone && !abortedLocally && session.messagesReceived == 0) {
+                if (spokeToPhone && !abortedLocally && session.messagesReceived == 0 && !link.versionNegotiated) {
                     consecutiveHandshakeFailures++
                     // The same fact, written down where the user can be told about it. Our bytes
                     // went out and the phone answered none of them, which is what a head unit
@@ -3752,7 +3969,7 @@ class NativeAaHandshakeManager(
             // point to cancel at — so its thread is stranded from here on.
             readerJob?.cancel()
             inbound.close()
-            closePhoneLink(link)
+            closePhoneLink(link, ours = BtAutoDisconnectPolicy.closeIsOurs(peerClosed = phoneClosedChannel))
             ConnectionArbiter.release(arbiterClaim, sessionFormed = commManager.isConnected)
             AppLog.i("NativeAA: BT Handshake link closed.")
         }
@@ -4103,6 +4320,13 @@ class NativeAaHandshakeManager(
         // wake requests to a dead channel.
         moduleCarrier?.close()
         moduleCarrier = null
+        // Cancel / mode stop: HFP may still be up from HFP_ON before projection ever landed.
+        if (Esp32RelaySession.hasSavedEsp32Relay(context)) {
+            Esp32RelaySession.releaseHfp("native AA stop")
+        }
+        Esp32RelaySession.setFrameSink(null)
+        Esp32RelaySession.setTransportErrorHandler(null)
+        Esp32RelaySession.onGiveUp = null
         wppTcpServer?.stop()
         wppTcpServer = null
         try { aaServerSocket?.close() } catch (e: Exception) {}

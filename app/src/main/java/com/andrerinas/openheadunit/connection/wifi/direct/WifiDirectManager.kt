@@ -1473,7 +1473,7 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
                     lastIdentityReportSsid = ssid
                     AppLog.i(
                         "WifiDirectManager: " + P2pGroupIdentityPolicy.describeReadBack(
-                            nativeRequestedIdentity, ssid, psk, group.networkId) +
+                            nativeRequestedIdentity, ssid, psk, WifiDirectCompat.getGroupNetworkId(group)) +
                             " bssid=$bssid address=${MacAddressPolicy.label(bssid)}" +
                             " stable=${GroupIdentityStabilityPolicy.label(verdict.stability)}" +
                             // Only below Q, where the count is the whole mechanism. Named here because
@@ -2261,7 +2261,13 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
                             "the band or channel setting no longer allows, so it is replaced."
                     )
                 }
-                if (group != null && sameIdentity && matchesSetting) {
+                // Below Q a rename has no requested name to compare: it must reach the purge.
+                // Keep an advertised network only while its endpoint still needs retirement.
+                val purgeRequired = P2pIdentityRotationPolicy.purgeBeforeCreate(
+                    Build.VERSION.SDK_INT, appSettings.wifiDirectStableIdentity,
+                    appSettings.wifiDirectRotationPending,
+                ) && !endpointRetirementOwed()
+                if (group != null && sameIdentity && matchesSetting && !purgeRequired) {
                     AppLog.i(
                         "WifiDirectManager: a group named ${group.networkName} is already up from " +
                             "before this bring-up; reading it instead of tearing it down."
@@ -2684,7 +2690,11 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
     private fun nativeGroupNameSuffixSource(): String? =
         AapService.wifiDirectName.value
             ?: try {
-                Settings.Global.getString(context.contentResolver, "device_name")
+                // Global and its device_name setting were introduced in API 17.
+                // A missing name uses the existing suffix fallback, not a failed group creation.
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                    Settings.Global.getString(context.contentResolver, "device_name")
+                } else null
             } catch (e: Exception) {
                 null
             }
@@ -3025,10 +3035,16 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
                 // Consumed here, not after the create: a stop() landing mid-purge must not leave
                 // the request behind to purge a group nobody asked to rename.
                 appSettings.wifiDirectRotationPending = false
-                P2pPersistentGroupPurge.purge(mgr, ch, localDeviceAddress, handler) { verdict ->
-                    lastPersistentPurgeVerdict = verdict
-                    AppLog.i("WifiDirectManager: persistent profile purge: $verdict")
-                    if (!supersededByStop(gen, "Native AA group recreate")) create()
+                // Removing our Handler callbacks does not revoke a listener held by the framework.
+                // Fence the purge itself, not only its create continuation, against a stopped owner.
+                P2pPersistentGroupPurge.purge(
+                    mgr, ch, localDeviceAddress, handler, isCurrent = { gen == generation },
+                ) { verdict ->
+                    if (!supersededByStop(gen, "Native AA group recreate")) {
+                        lastPersistentPurgeVerdict = verdict
+                        AppLog.i("WifiDirectManager: persistent profile purge: $verdict")
+                        create()
+                    }
                 }
             } else {
                 appSettings.wifiDirectRotationPending = false
@@ -3189,11 +3205,17 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
         val telephony = try {
             context.getSystemService(Context.TELEPHONY_SERVICE) as? android.telephony.TelephonyManager
         } catch (e: Exception) { null }
+        // Read-only diagnostics: use the legacy table on API 16 and label the table actually read.
+        val globalSettings = Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1
         val sources = linkedMapOf<String, String?>(
             "TelephonyManager.networkCountry" to attempt { telephony?.networkCountryIso },
             "TelephonyManager.simCountry" to attempt { telephony?.simCountryIso },
-            "Settings.Global wifi_country_code" to attempt {
-                Settings.Global.getString(context.contentResolver, "wifi_country_code")
+            "${if (globalSettings) "Settings.Global" else "Settings.System"} wifi_country_code" to attempt {
+                if (globalSettings) {
+                    Settings.Global.getString(context.contentResolver, "wifi_country_code")
+                } else {
+                    Settings.System.getString(context.contentResolver, "wifi_country_code")
+                }
             },
         )
         for (key in COUNTRY_PROPERTY_KEYS) {

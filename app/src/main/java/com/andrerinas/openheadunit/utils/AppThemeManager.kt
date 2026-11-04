@@ -208,8 +208,8 @@ class AppThemeManager(
                     SystemSettings.System.getInt(context.contentResolver, "car_mode")
                 } catch (_: Exception) { -1 }
                 if (carMode >= 0) {
-                    isNight = carMode != 0
-                    AppLog.d("AppThemeManager: CAR_SIGNAL car_mode=$carMode isNight=$isNight")
+                    isNight = settings.resolveCarSignalNight(carMode)
+                    AppLog.d("AppThemeManager: CAR_SIGNAL car_mode=$carMode invert=${settings.carSignalInvert} isNight=$isNight")
                 } else {
                     AppLog.w("AppThemeManager: CAR_SIGNAL key 'car_mode' not present; treating as day")
                     isNight = lastEmittedNight ?: false

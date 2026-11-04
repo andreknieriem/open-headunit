@@ -4,11 +4,11 @@ import android.app.Activity
 import android.content.DialogInterface
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.view.WindowManager
 import androidx.appcompat.app.AlertDialog
 import androidx.core.text.HtmlCompat
 import com.andrerinas.openheadunit.R
+import com.andrerinas.openheadunit.utils.ActivityState
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.Settings
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -27,8 +27,7 @@ object Aa174Notice {
     fun isShowing(): Boolean = dialog?.isShowing == true
 
     fun maybeShow(activity: Activity?, settings: Settings) {
-        if (activity == null || activity.isFinishing) return
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && activity.isDestroyed) return
+        if (activity == null || ActivityState.isGone(activity)) return
         if (settings.aa174NoticeShown) return
         // If rename notice is still pending or showing, let it show first
         if (!settings.renameNoticeShown) return

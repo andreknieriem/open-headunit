@@ -14,6 +14,7 @@ import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.TextureView
 import android.view.View
+import android.view.ViewConfiguration
 import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.LinearLayout
@@ -33,8 +34,12 @@ import com.andrerinas.openheadunit.app.SurfaceActivity
 import com.andrerinas.openheadunit.connection.CommManager
 import com.andrerinas.openheadunit.contract.KeyIntent
 import com.andrerinas.openheadunit.decoder.video.WarmRelaunchKeyframePolicy
+import com.andrerinas.openheadunit.input.GestureOutcomePolicy
 import com.andrerinas.openheadunit.input.ProjectionKeyPolicy
+import com.andrerinas.openheadunit.input.RemoteTouchPolicy
 import com.andrerinas.openheadunit.input.TouchCoordinateMapper
+import com.andrerinas.openheadunit.input.TwoFingerGestureTracker
+import com.andrerinas.openheadunit.utils.ActivityState
 import kotlinx.coroutines.launch
 import com.andrerinas.openheadunit.decoder.audio.MicRecorder
 import com.andrerinas.openheadunit.decoder.video.DecoderStopPolicy
@@ -42,10 +47,13 @@ import com.andrerinas.openheadunit.decoder.video.SoftwareYuvFrameSink
 import com.andrerinas.openheadunit.decoder.video.VideoDecoder
 import com.andrerinas.openheadunit.decoder.video.VideoDimensionsListener
 import com.andrerinas.openheadunit.utils.AppLog
+import com.andrerinas.openheadunit.utils.ScreenPower
 import com.andrerinas.openheadunit.utils.BluetoothHelper
 import com.andrerinas.openheadunit.utils.CarLauncherManager
 import com.andrerinas.openheadunit.connection.self.SelfModeCallRaisePolicy
 import com.andrerinas.openheadunit.connection.usb.UsbSwitchClaim
+import com.andrerinas.openheadunit.connection.usb.UsbDeviceCompat
+import com.andrerinas.openheadunit.connection.projection.ProjectionConnection
 import com.andrerinas.openheadunit.decoder.audio.CallState
 import com.andrerinas.openheadunit.utils.IntentFilters
 import com.andrerinas.openheadunit.view.IProjectionView
@@ -56,18 +64,20 @@ import com.andrerinas.openheadunit.utils.Settings
 import com.andrerinas.openheadunit.utils.ToastUtils
 import com.andrerinas.openheadunit.view.OverlayTouchView
 import com.andrerinas.openheadunit.view.PerformanceOverlay
+import com.andrerinas.openheadunit.view.NightProjectionOverlay
 import com.andrerinas.openheadunit.utils.HeadUnitScreenConfig
 import com.andrerinas.openheadunit.utils.ProjectionHealthRecorder
 import com.andrerinas.openheadunit.utils.SystemUI
 import com.andrerinas.openheadunit.aap.AapService
 import android.content.IntentFilter
+import com.andrerinas.openheadunit.view.DimmerLayerPolicy
+import com.andrerinas.openheadunit.view.ProjectionDimmerView
 import com.andrerinas.openheadunit.view.ProjectionViewScaler
 import android.animation.ObjectAnimator
 import android.animation.PropertyValuesHolder
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.VideoView
-import com.bumptech.glide.Glide
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.andrerinas.openheadunit.main.QuickSettingsFragment
 import com.andrerinas.openheadunit.main.RenameNotice
@@ -78,7 +88,6 @@ import com.andrerinas.openheadunit.main.MainActivity
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.ExternalBtTransportPolicy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeAaHandshakeManager
 import java.io.File
-import kotlin.math.abs
 
 class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, VideoDimensionsListener {
 
@@ -125,14 +134,37 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
      */
     private var kenBurnsAnimator: ObjectAnimator? = null
 
-    private var initialX = 0f
-    private var initialY = 0f
-    private var isPotentialGesture = false
+    private var twoFingerTracker: TwoFingerGestureTracker? = null
+    private var twoFingerFirstId = -1
+    private var lastTwoFingerEvent: MotionEvent? = null
+    private var consumeGestureUntilUp = false
+    private val remoteTouch = RemoteTouchPolicy()
+    // Set by dispatchTouchEvent, sent by the next sendTouchEvent, which always gets a point in the overlay's frame.
+    private var remoteGiveUpPending = false
+    // The overlay's offset in the window, so the tracker reads the same frame as mayStartAt.
+    private val overlayOrigin = IntArray(2)
+    private val gestureHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private val twoFingerLongPress = Runnable {
+        if (twoFingerTracker?.still == true &&
+            settings.longPressTwoFingerGesture != Settings.GestureAction.DISABLED) {
+            lastTwoFingerEvent?.let { finishTwoFingerGesture(settings.longPressTwoFingerGesture, it, "LONG_PRESS") }
+        }
+    }
+    // A pending tap whose last finger stays down past the window: the phone gets that finger.
+    private val twoFingerTapExpired = Runnable {
+        clearTwoFingerTracking()
+        remoteGeometry()?.let { sendRemote(remoteTouch.giveUp(emptyList()), it, SystemClock.elapsedRealtime()) }
+    }
+    private val remoteHoldExpired = Runnable {
+        remoteGeometry()?.let { sendRemote(remoteTouch.holdExpired(), it, SystemClock.elapsedRealtime()) }
+    }
 
     // Activity-local override for fullscreen mode. If non-null, setFullscreen() will use this
     // instead of persisting to Settings. This keeps toggles local to the Activity lifecycle.
     private var activityFullscreenOverride: Settings.FullscreenMode? = null
     private var touchOverlayView: OverlayTouchView? = null
+    private var nightOverlay: NightProjectionOverlay? = null
+    private var dimmerView: ProjectionDimmerView? = null
     private val performanceOverlay by lazy {
         PerformanceOverlay(settings) { videoDecoder.lastFrameRenderedMs }
     }
@@ -252,6 +284,13 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
 
     private var lastSurfaceSetMs = 0L
     private val relaunchRecovery = com.andrerinas.openheadunit.decoder.video.SurfaceRecoveryState()
+
+    /** The service revokes the retained WPP lease before publishing Disconnected. */
+    private fun requestProjectionExit() {
+        ContextCompat.startForegroundService(this, Intent(this, AapService::class.java).apply {
+            action = AapService.ACTION_DISCONNECT
+        })
+    }
 
     /**
      * A relaunch handed the decoder a fresh surface and no picture has followed it.
@@ -568,7 +607,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
              val sv = projectionView as ProjectionView
              if (sv.holder.surface.isValid) {
                  AppLog.w("Watchdog: SurfaceView IS valid. Forcing onSurfaceChanged.")
-                 onSurfaceChanged(sv.holder.surface, sv.width, sv.height)
+                 onSurfaceChanged(sv.holder.surface, sv.reportedSurfaceWidth, sv.reportedSurfaceHeight)
              } else {
                  AppLog.e("Watchdog: SurfaceView NOT valid.")
              }
@@ -635,6 +674,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             val mirror = if (settings.hudMirroring) -1.0f else 1.0f
             findViewById<View>(R.id.loading_overlay)?.scaleX = mirror
             performanceOverlay.setMirror(mirror)
+            nightOverlay?.scaleX = mirror
         }
     }
 
@@ -851,6 +891,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             container.addView(bar)
             rendererBanner = bar
             bar.bringToFront()
+            nightOverlay?.takeIf { it.visibility == View.VISIBLE }?.bringToFront()
             // One-shot: offering the escape once is enough. Clearing the flag here (not only on
             // "Yes") stops the banner from re-appearing on every future session if the user drives
             // off without tapping. A genuinely broken renderer still re-offers via the no-frame path.
@@ -963,6 +1004,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             container.addView(bar)
             autoStartOfferBanner = bar
             bar.bringToFront()
+            nightOverlay?.takeIf { it.visibility == View.VISIBLE }?.bringToFront()
 
             autoStartOfferTimer?.cancel()
             autoStartOfferTimer = object : CountDownTimer(AutoStartOfferPolicy.OFFER_TIMEOUT_MS, 1000L) {
@@ -1059,6 +1101,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        applyTurnScreenOn(intent)
         // [FIX] applyOrientationSettings() must be called AFTER super.onCreate() so that the
         // Activity window is fully initialized before we lock the orientation. Calling it before
         // super.onCreate() caused SCREEN_ORIENTATION_LOCKED to inherit the orientation context
@@ -1133,7 +1176,11 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                             dismissRendererConfirmBanner()
                             if (!state.isClean && !state.isUserExit && !state.isSettingsRestart) {
                                 AppLog.w("AapProjectionActivity: Disconnected unexpectedly.")
-                                ToastUtils.showToast(this@AapProjectionActivity, getString(R.string.wifi_disconnect_toast), Toast.LENGTH_LONG)
+                            }
+                            if (state.transport == ProjectionConnection.Type.USB) {
+                                watchdogHandler.postDelayed({ showDisconnectNotice(state) }, DisconnectNoticePolicy.USB_SETTLE_MS)
+                            } else {
+                                showDisconnectNotice(state)
                             }
                             // Only finish immediately if the user explicitly exited, it was a clean close, or killOnDisconnect is enabled.
                             if (!state.isSettingsRestart && (state.isUserExit || state.isClean || settings.killOnDisconnect)) {
@@ -1218,11 +1265,37 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                 if (event.action == MotionEvent.ACTION_DOWN) {
                     overlayView.requestFocus()
                 }
-                sendTouchEvent(event)
+                if (!RemoteTouchPolicy.sentFromDispatch(Build.VERSION.SDK_INT)) sendTouchEvent(event)
                 true
             }
 
         container.addView(overlayView)
+        nightOverlay = NightProjectionOverlay(this).also { night ->
+            container.addView(night, FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            ))
+            lifecycleScope.launch {
+                repeatOnLifecycle(Lifecycle.State.STARTED) {
+                    App.provide(this@AapProjectionActivity).nightOverlayState.content.collect(night::render)
+                }
+            }
+            night.onHidden = { commManager.dimState.resumeAfterOverlay() }
+        }
+        dimmerView = ProjectionDimmerView(this).also { dimmer ->
+            container.addView(dimmer, FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            ))
+            lifecycleScope.launch {
+                repeatOnLifecycle(Lifecycle.State.STARTED) {
+                    commManager.dimState.on.collect { on -> renderDimmer(dimmer, on) }
+                }
+            }
+        }
+        placeDimmer()
+        // The overlay is built hidden, so one lost to a recreation counts as closed.
+        commManager.dimState.resumeAfterOverlay()
         overlayView.requestFocus()
         setFullscreen() // Call setFullscreen here as well
 
@@ -1246,7 +1319,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         setupCustomLoadingScreen()
 
         findViewById<Button>(R.id.disconnect_button)?.setOnClickListener {
-            commManager.disconnect()
+            requestProjectionExit()
             finish()
         }
 
@@ -1276,9 +1349,11 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     }
 
     override fun onPause() {
+        clearTwoFingerTracking()
         isForeground = false
         AppLog.i("AapProjectionActivity: onPause")
         super.onPause()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) setTurnScreenOn(false)
         RenameNotice.dismiss()
         Aa174Notice.dismiss()
         // Clear any activity-local fullscreen override when leaving the Activity so
@@ -1393,6 +1468,16 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         AppLog.i("AapProjectionActivity: onNewIntent received")
+        applyTurnScreenOn(intent)
+    }
+
+    /** Lights the panel, and asks to lift a keyguard, for a service-raised screen-on; onPause clears it so a later resume does not. */
+    private fun applyTurnScreenOn(launchIntent: Intent?) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1 &&
+            launchIntent?.getBooleanExtra(EXTRA_TURN_SCREEN_ON, false) == true) {
+            setTurnScreenOn(true)
+            ScreenPower.requestDismissKeyguard(this, "AapProjectionActivity")
+        }
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
@@ -1401,6 +1486,23 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             setFullscreen() // Reapply fullscreen mode if window gains focus
             touchOverlayView?.requestFocus()
         }
+    }
+
+    // One notice per lost session; a recovery loop of failed attempts must not repeat it.
+    private var disconnectNoticeShown = false
+
+    private fun showDisconnectNotice(state: CommManager.ConnectionState.Disconnected) {
+        if (isFinishing || lifecycle.currentState == Lifecycle.State.DESTROYED) return
+        val notice = DisconnectNoticePolicy.notice(
+            state.endedBy, state.transport, state.reachedSsl, state.wasLoopbackSession,
+            disconnectNoticeShown, UsbDeviceCompat.accessoryOnBus(this),
+        )
+        if (notice == DisconnectNoticePolicy.Notice.NONE) return
+        disconnectNoticeShown = true
+        AppLog.i("AapProjectionActivity: showing the $notice notice for a session lost on ${state.transport}")
+        val text = if (notice == DisconnectNoticePolicy.Notice.USB_LOST) R.string.usb_disconnect_toast
+            else R.string.wifi_disconnect_toast
+        ToastUtils.showToast(this, getString(text), Toast.LENGTH_LONG)
     }
 
     private fun showReconnectingOverlay() {
@@ -1436,6 +1538,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
      */
     private fun hideReconnectingOverlay(reason: String) {
         AppLog.i("Hiding reconnecting overlay - $reason")
+        if (reason == "frames resumed") disconnectNoticeShown = false
         overlayState = OverlayState.HIDDEN
         val overlay = findViewById<View>(R.id.loading_overlay) ?: return
         val detail = findViewById<TextView>(R.id.overlay_detail)
@@ -1517,7 +1620,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             when (mediaType) {
                 "image" -> {
                     customImage?.visibility = View.VISIBLE
-                    customImage?.let { Glide.with(this).load(file).into(it) }
+                    customImage?.let { ActivityState.glide(this).load(file).into(it) }
                     if (keepRatio) {
                         customImage?.let { imageView ->
                             kenBurnsAnimator?.cancel()
@@ -1536,7 +1639,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                 }
                 "gif" -> {
                     customImage?.visibility = View.VISIBLE
-                    customImage?.let { Glide.with(this).asGif().load(file).into(it) }
+                    customImage?.let { ActivityState.glide(this).asGif().load(file).into(it) }
                 }
                 "video" -> {
                     customVideo?.visibility = View.VISIBLE
@@ -1619,8 +1722,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
 
         lifecycleScope.launch {
             kotlinx.coroutines.delay(1000)
-            val isDestroyedCompat = Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && isDestroyed
-            if (!isFinishing && !isDestroyedCompat) {
+            if (!ActivityState.isGone(this@AapProjectionActivity)) {
                 recreate()
             }
         }
@@ -1784,7 +1886,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                 val selected = options[which]
                 when (selected.titleResId) {
                     R.string.exit_dialog_stop -> {
-                        commManager.disconnect(sendByeBye = true)
+                        requestProjectionExit()
                         finish()
                     }
                     R.string.exit_dialog_end_stay_armed -> {
@@ -2076,47 +2178,228 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     private val commManager get() = App.provide(this).commManager
 
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
-        // 1. 2-finger swipe detection from the left or right edge (to open exit menu or toggle fullscreen)
-        if (ev.pointerCount == 2) {
-            when (ev.actionMasked) {
-                MotionEvent.ACTION_POINTER_DOWN -> {
-                    initialX = ev.getX(0)
-                    initialY = ev.getY(0)
-                    isPotentialGesture = initialX < 100 || initialX > HeadUnitScreenConfig.getUsableWidth() - 100
-                }
-                MotionEvent.ACTION_MOVE -> {
-                    if (isPotentialGesture) {
-                        val deltaX = ev.getX(0) - initialX
-                        val deltaY = abs(ev.getY(0) - initialY)
-                        if (deltaX > 200 && deltaY < 100) {
-                            isPotentialGesture = false
-                            showExitDialog()
-                            return true // Consume
+        if (ev.actionMasked == MotionEvent.ACTION_DOWN) {
+            consumeGestureUntilUp = false
+            clearTwoFingerTracking()
+        }
+        if (consumeGestureUntilUp) {
+            if (ev.actionMasked == MotionEvent.ACTION_UP || ev.actionMasked == MotionEvent.ACTION_CANCEL) {
+                consumeGestureUntilUp = false
+            }
+            return true
+        }
+        nightOverlay?.takeIf { it.visibility == View.VISIBLE }?.let {
+            it.dispatchTouchEvent(ev)
+            return true
+        }
+        touchOverlayView?.getLocationInWindow(overlayOrigin) ?: overlayOrigin.fill(0)
+        when (ev.actionMasked) {
+            MotionEvent.ACTION_POINTER_DOWN -> {
+                clearTwoFingerTracking()
+                // Only a first finger the phone has not seen yet can start a gesture.
+                if (ev.pointerCount == 2 && remoteTouch.mayStartGesture) {
+                    val tracker = TwoFingerGestureTracker(
+                        localX(ev, 0), localY(ev, 0), localX(ev, 1), localY(ev, 1),
+                        gestureWidth(),
+                        ViewConfiguration.get(this).scaledTouchSlop.toFloat(),
+                        resources.displayMetrics.density,
+                        settings.gestureEdgeZone.dp,
+                        ev.eventTime
+                    )
+                    twoFingerTracker = tracker
+                    twoFingerFirstId = ev.getPointerId(0)
+                    // A touch that can never become an enabled gesture, such as a pinch on the map, stays with Android Auto.
+                    if (tracker.mayBecome(enabledGestures())) {
+                        lastTwoFingerEvent = MotionEvent.obtain(ev)
+                        if (settings.longPressTwoFingerGesture != Settings.GestureAction.DISABLED) {
+                            gestureHandler.postDelayed(twoFingerLongPress, ViewConfiguration.getLongPressTimeout().toLong())
                         }
-
-                        if (deltaX < -200 && deltaY < 100) {
-                            isPotentialGesture = false
-                            val currentEffective = activityFullscreenOverride ?: settings.fullscreenMode
-                            if (currentEffective != Settings.FullscreenMode.NONE) {
-                                activityFullscreenOverride = Settings.FullscreenMode.NONE
-                                setFullscreen()
-                            } else {
-                                activityFullscreenOverride = null
-                                setFullscreen()
-                            }
-                            return true // Consume
-                        }
+                    } else {
+                        clearTwoFingerTracking()
                     }
                 }
             }
+            MotionEvent.ACTION_MOVE -> if (ev.pointerCount == 1) {
+                // One finger of a pending tap already lifted: only the tap can still fire.
+                twoFingerTracker?.let { tracker ->
+                    tracker.moveOne(ev.getPointerId(0) == twoFingerFirstId, localX(ev, 0), localY(ev, 0))
+                    if (!tracker.mayTap(enabledGestures(), ev.eventTime)) {
+                        clearTwoFingerTracking()
+                        remoteGiveUpPending = true
+                    }
+                }
+            } else if (ev.pointerCount == 2) {
+                val tracker = twoFingerTracker
+                val swipe = tracker?.move(localX(ev, 0), localY(ev, 0), localX(ev, 1), localY(ev, 1))
+                if (tracker != null) {
+                    if (!tracker.still) gestureHandler.removeCallbacks(twoFingerLongPress)
+                    lastTwoFingerEvent?.recycle()
+                    lastTwoFingerEvent = MotionEvent.obtain(ev)
+                }
+                val action = when (swipe) {
+                    TwoFingerGestureTracker.Swipe.LEFT_EDGE -> settings.leftTwoFingerGesture
+                    TwoFingerGestureTracker.Swipe.RIGHT_EDGE -> settings.rightTwoFingerGesture
+                    TwoFingerGestureTracker.Swipe.DOWN -> settings.downTwoFingerGesture
+                    null -> Settings.GestureAction.DISABLED
+                }
+                if (action != Settings.GestureAction.DISABLED) {
+                    finishTwoFingerGesture(action, ev, swipe?.name.orEmpty())
+                    return true
+                }
+                if (tracker != null && !tracker.canStillFire(enabledGestures(), ev.eventTime)) {
+                    // A pinch, a wrong direction or a slow tap: the withheld fingers join the phone's touch.
+                    clearTwoFingerTracking()
+                    remoteGiveUpPending = true
+                }
+            }
+            MotionEvent.ACTION_POINTER_UP -> {
+                val tracker = twoFingerTracker
+                when {
+                    tracker == null || ev.pointerCount != 2 -> clearTwoFingerTracking()
+                    // Keep the tracker for the last finger up; the phone gets nothing meanwhile.
+                    tracker.mayTap(enabledGestures(), ev.eventTime) -> {
+                        gestureHandler.removeCallbacks(twoFingerLongPress)
+                        gestureHandler.postDelayed(twoFingerTapExpired, tracker.tapEndsInMs(ev.eventTime) + 1)
+                    }
+                    // Still fingers that are not our tap: the phone gets both, where they landed.
+                    tracker.still -> {
+                        clearTwoFingerTracking()
+                        remoteGiveUpPending = true
+                    }
+                    else -> clearTwoFingerTracking()
+                }
+            }
+            MotionEvent.ACTION_UP -> {
+                val tracker = twoFingerTracker
+                tracker?.moveOne(ev.getPointerId(0) == twoFingerFirstId, localX(ev, 0), localY(ev, 0))
+                val tap = tracker?.tap(enabledGestures(), ev.eventTime)
+                if (tap != null) {
+                    val action = when (tap) {
+                        TwoFingerGestureTracker.Tap.LEFT_TAP -> settings.leftTapTwoFingerGesture
+                        TwoFingerGestureTracker.Tap.RIGHT_TAP -> settings.rightTapTwoFingerGesture
+                    }
+                    finishTwoFingerGesture(action, ev, tap.name)
+                    return true
+                }
+                clearTwoFingerTracking()
+            }
+            MotionEvent.ACTION_CANCEL -> clearTwoFingerTracking()
         }
 
-        // 2. Legacy Touch handling for older devices (API < 19)
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
-            sendTouchEvent(ev)
+        // 2. Legacy Touch handling for older devices (API < 19), moved into the overlay's frame for mapRemote.
+        if (RemoteTouchPolicy.sentFromDispatch(Build.VERSION.SDK_INT)) {
+            val local = MotionEvent.obtain(ev)
+            local.offsetLocation(-overlayOrigin[0].toFloat(), -overlayOrigin[1].toFloat())
+            sendTouchEvent(local)
+            local.recycle()
         }
 
-        return super.dispatchTouchEvent(ev)
+        try {
+            return super.dispatchTouchEvent(ev)
+        } finally {
+            remoteGiveUpPending = false
+        }
+    }
+
+    private fun clearTwoFingerTracking() {
+        gestureHandler.removeCallbacks(twoFingerLongPress)
+        gestureHandler.removeCallbacks(twoFingerTapExpired)
+        gestureHandler.removeCallbacks(remoteHoldExpired)
+        twoFingerTracker = null
+        twoFingerFirstId = -1
+        lastTwoFingerEvent?.recycle()
+        lastTwoFingerEvent = null
+    }
+
+    private fun finishTwoFingerGesture(action: Settings.GestureAction, event: MotionEvent, source: String) {
+        remoteTouch.recognise()
+        AppLog.i("AapProjectionActivity: two-finger gesture $source -> $action, withheld from Android Auto")
+        val cancel = MotionEvent.obtain(event)
+        cancel.action = MotionEvent.ACTION_CANCEL
+        consumeGestureUntilUp = true
+        clearTwoFingerTracking()
+        // End the stream in local views; remote forwarding deliberately does not support CANCEL.
+        super.dispatchTouchEvent(cancel)
+        cancel.recycle()
+        performTouchGesture(action)
+    }
+
+    private fun localX(ev: MotionEvent, i: Int) = ev.getX(i) - overlayOrigin[0]
+    private fun localY(ev: MotionEvent, i: Int) = ev.getY(i) - overlayOrigin[1]
+
+    private fun gestureWidth(): Float =
+        (touchOverlayView?.width?.takeIf { it > 0 } ?: HeadUnitScreenConfig.getUsableWidth()).toFloat()
+
+    private fun enabledGestures() = TwoFingerGestureTracker.Enabled(
+        left = settings.leftTwoFingerGesture != Settings.GestureAction.DISABLED,
+        right = settings.rightTwoFingerGesture != Settings.GestureAction.DISABLED,
+        longPress = settings.longPressTwoFingerGesture != Settings.GestureAction.DISABLED,
+        leftTap = settings.leftTapTwoFingerGesture != Settings.GestureAction.DISABLED,
+        rightTap = settings.rightTapTwoFingerGesture != Settings.GestureAction.DISABLED,
+        down = settings.downTwoFingerGesture != Settings.GestureAction.DISABLED
+    )
+
+    /** Runs on every start too, so a strength changed in settings while the dimmer is on takes effect. */
+    private fun renderDimmer(dimmer: ProjectionDimmerView, on: Boolean) {
+        val alpha = DimPolicy.alphaFor(settings.dimOpacityPercent)
+        if (on == (dimmer.visibility == View.VISIBLE) && (!on || dimmer.shownAlpha == alpha)) return
+        if (on) {
+            dimmer.show(alpha)
+            AppLog.i("AapProjectionActivity: dimmer on, alpha=$alpha")
+        } else {
+            dimmer.hide()
+            AppLog.i("AapProjectionActivity: dimmer off")
+        }
+    }
+
+    /** A rebuilt projection view lands at the end of the container, so the dimmer is re-seated above it. */
+    private fun placeDimmer() {
+        val container = findViewById<FrameLayout>(R.id.container)
+        val dimmer = dimmerView ?: return
+        container.removeView(dimmer)
+        val kinds = List(container.childCount) {
+            if (container.getChildAt(it) === projectionView) DimmerLayerPolicy.Kind.PROJECTION
+            else DimmerLayerPolicy.Kind.OTHER
+        }
+        container.addView(dimmer, DimmerLayerPolicy.index(kinds))
+    }
+
+    private fun performTouchGesture(action: Settings.GestureAction): Boolean = when (GestureOutcomePolicy.decide(action)) {
+        GestureOutcomePolicy.Outcome.None -> false
+        GestureOutcomePolicy.Outcome.ShowExitDialog -> {
+            showExitDialog()
+            true
+        }
+        GestureOutcomePolicy.Outcome.ToggleDimmer -> {
+            commManager.dimState.toggle()
+            true
+        }
+        GestureOutcomePolicy.Outcome.ToggleFullscreen -> {
+            val currentEffective = activityFullscreenOverride ?: settings.fullscreenMode
+            activityFullscreenOverride = if (currentEffective != Settings.FullscreenMode.NONE) {
+                Settings.FullscreenMode.NONE
+            } else {
+                null
+            }
+            setFullscreen()
+            true
+        }
+        GestureOutcomePolicy.Outcome.ShowOverlay -> {
+            commManager.dimState.suspendForOverlay()
+            nightOverlay?.apply {
+                applyOptions(NightOverlayOptions(
+                    textSize = settings.nightOverlayTextSize,
+                    background = settings.nightOverlayBackground,
+                    showClock = settings.nightOverlayShowClock,
+                    showNavigation = settings.nightOverlayShowNavigation,
+                    showTrack = settings.nightOverlayShowTrack
+                ))
+                render(App.provide(this@AapProjectionActivity).nightOverlayState.content.value)
+                scaleX = if (settings.hudMirroring) -1f else 1f
+                show()
+            }
+            true
+        }
     }
 
     override fun onSurfaceCreated(surface: android.view.Surface) {
@@ -2143,38 +2426,18 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             armWarmRelaunch()
         }
 
-        // --- Surface Mismatch Detection ---
-        // Compare actual surface dimensions with what HeadUnitScreenConfig negotiated.
-        // If they differ (e.g. system bars appeared/disappeared), update margins.
-        val prevUsableW = HeadUnitScreenConfig.getUsableWidth()
-        val prevUsableH = HeadUnitScreenConfig.getUsableHeight()
-
-        val anchorMoved = HeadUnitScreenConfig.updateSurfaceDimensions(width, height)
-
-        // What is cached is the usable area, which the screen config has already turned the right
-        // way up, so the orientation guard this used to carry could only reject a correct reading.
-        val shouldCache = !App.isPiPActive
-
-        // Cached whether or not the anchor moved: service discovery answers before any surface
-        // exists, so next session's announcement has only this to go on.
-        val canvasW = HeadUnitScreenConfig.getUsableWidth()
-        val canvasH = HeadUnitScreenConfig.getUsableHeight()
-        val canvasHash = HeadUnitScreenConfig.computeSettingsHash(settings)
-        if (shouldCache && (settings.cachedSurfaceWidth != canvasW ||
-                settings.cachedSurfaceHeight != canvasH ||
-                settings.cachedSurfaceSettingsHash != canvasHash)
-        ) {
-            settings.cachedSurfaceWidth = canvasW
-            settings.cachedSurfaceHeight = canvasH
-            settings.cachedSurfaceSettingsHash = canvasHash
-        } else if (!shouldCache) {
-            AppLog.i("[UI_DEBUG_FIX] Skipping surface dimension cache update due to transient orientation mismatch: ${width}x${height}")
-        }
-
-        if (anchorMoved) {
-            AppLog.i("[UI_DEBUG_FIX] Surface mismatch! Expected: ${prevUsableW}x${prevUsableH}, Actual: ${width}x${height}")
-            reannounceMargins()
-            // If transport not started yet, ServiceDiscoveryResponse will use the corrected values automatically.
+        val measuredView = projectionView as View
+        SystemUI.measureProjectionSurface(findViewById(R.id.container), measuredView) {
+            val dimensionsCurrent = if (measuredView is ProjectionView) {
+                val frame = measuredView.holder.surfaceFrame
+                frame.width() == width && frame.height() == height
+            } else {
+                measuredView.width == width && measuredView.height == height
+            }
+            if (projectionView === measuredView && ownedSurface === surface &&
+                videoDecoder.isCurrentSurface(surface) && dimensionsCurrent) {
+                updateSurfaceGeometry(width, height)
+            }
         }
 
         when (commManager.connectionState.value) {
@@ -2212,6 +2475,33 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                 projectionView.setVideoSize(currentVideoWidth, currentVideoHeight)
                 ProjectionViewScaler.updateScale(projectionView as View, currentVideoWidth, currentVideoHeight)
             }
+        }
+    }
+
+    /** Only a surface belonging to the completed root layout may change persistent geometry. */
+    private fun updateSurfaceGeometry(width: Int, height: Int) {
+        val prevUsableW = HeadUnitScreenConfig.getUsableWidth()
+        val prevUsableH = HeadUnitScreenConfig.getUsableHeight()
+        val anchorMoved = HeadUnitScreenConfig.updateSurfaceDimensions(width, height)
+        val shouldCache = !App.isPiPActive
+
+        // Cache the usable area, already normalised by the screen config, even when it matched.
+        val canvasW = HeadUnitScreenConfig.getUsableWidth()
+        val canvasH = HeadUnitScreenConfig.getUsableHeight()
+        val canvasHash = HeadUnitScreenConfig.computeSettingsHash(settings)
+        if (shouldCache && (settings.cachedSurfaceWidth != canvasW ||
+                settings.cachedSurfaceHeight != canvasH ||
+                settings.cachedSurfaceSettingsHash != canvasHash)
+        ) {
+            settings.cachedSurfaceWidth = canvasW
+            settings.cachedSurfaceHeight = canvasH
+            settings.cachedSurfaceSettingsHash = canvasHash
+        } else if (!shouldCache) {
+            AppLog.i("[UI_DEBUG_FIX] Skipping surface dimension cache update due to transient orientation mismatch: ${width}x${height}")
+        }
+        if (anchorMoved) {
+            AppLog.i("[UI_DEBUG_FIX] Surface mismatch! Expected: ${prevUsableW}x${prevUsableH}, Actual: ${width}x${height}")
+            reannounceMargins()
         }
     }
 
@@ -2301,16 +2591,18 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         }
     }
 
-    private fun sendTouchEvent(event: MotionEvent) {
-        val action = TouchEvent.motionEventToAction(event) ?: return
-        val ts = SystemClock.elapsedRealtime()
+    private class RemoteGeometry(
+        val videoW: Int, val videoH: Int, val viewW: Float, val viewH: Float,
+        val marginW: Float, val marginH: Float
+    )
 
+    private fun remoteGeometry(): RemoteGeometry? {
         val videoW = HeadUnitScreenConfig.getNegotiatedWidth()
         val videoH = HeadUnitScreenConfig.getNegotiatedHeight()
 
         if (videoW <= 0 || videoH <= 0 || projectionView !is View) {
             AppLog.w("sendTouchEvent: Ignoring touch, screen config or view not ready.")
-            return
+            return null
         }
 
         val view = projectionView as View
@@ -2325,41 +2617,83 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             ?: view.height.takeIf { it > 0 }?.toFloat()
             ?: HeadUnitScreenConfig.getUsableHeight().toFloat()
 
-        if (viewW <= 0 || viewH <= 0) return
+        if (viewW <= 0 || viewH <= 0) return null
 
-        val marginW = HeadUnitScreenConfig.getWidthMargin().toFloat()
-        val marginH = HeadUnitScreenConfig.getHeightMargin().toFloat()
+        return RemoteGeometry(
+            videoW, videoH, viewW, viewH,
+            HeadUnitScreenConfig.getWidthMargin().toFloat(), HeadUnitScreenConfig.getHeightMargin().toFloat()
+        )
+    }
 
-        val pointerData = mutableListOf<Triple<Int, Int, Int>>()
-        repeat(event.pointerCount) { pointerIndex ->
-            val pointerId = event.getPointerId(pointerIndex)
-            val corrected = TouchCoordinateMapper.map(
-                rawX = event.getX(pointerIndex),
-                rawY = event.getY(pointerIndex),
-                inputSurfaceWidth = viewW,
-                inputSurfaceHeight = viewH,
-                negotiatedWidth = videoW,
-                negotiatedHeight = videoH,
-                marginWidth = marginW,
-                marginHeight = marginH,
-                fitMode = settings.videoFitMode,
-                hudMirroring = settings.hudMirroring
-            )
-            pointerData.add(Triple(pointerId, corrected.x, corrected.y))
+    private fun pointersOf(event: MotionEvent): List<RemoteTouchPolicy.Pointer> =
+        List(event.pointerCount) { RemoteTouchPolicy.Pointer(event.getPointerId(it), event.getX(it), event.getY(it)) }
+
+    private fun mapRemote(g: RemoteGeometry, x: Float, y: Float) = TouchCoordinateMapper.map(
+        rawX = x,
+        rawY = y,
+        inputSurfaceWidth = g.viewW,
+        inputSurfaceHeight = g.viewH,
+        negotiatedWidth = g.videoW,
+        negotiatedHeight = g.videoH,
+        marginWidth = g.marginW,
+        marginHeight = g.marginH,
+        fitMode = settings.videoFitMode,
+        hudMirroring = settings.hudMirroring
+    )
+
+    private fun sendRemote(sends: List<RemoteTouchPolicy.Send>, g: RemoteGeometry, ts: Long) {
+        for (send in sends) {
+            val pointerData = send.pointers.map { p ->
+                val corrected = mapRemote(g, p.x, p.y)
+                Triple(p.id, corrected.x, corrected.y)
+            }
+            if (AppLog.LOG_VERBOSE) AppLog.v("[UI_DEBUG] ${RemoteTouchPolicy.describe(send)}")
+            commManager.send(TouchEvent(ts, TouchEvent.pointerAction(send.action), send.actionIndex, pointerData))
         }
+    }
+
+    private fun sendTouchEvent(event: MotionEvent) {
+        val local = when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN -> RemoteTouchPolicy.Local.DOWN
+            MotionEvent.ACTION_POINTER_DOWN -> RemoteTouchPolicy.Local.POINTER_DOWN
+            MotionEvent.ACTION_MOVE -> RemoteTouchPolicy.Local.MOVE
+            MotionEvent.ACTION_POINTER_UP -> RemoteTouchPolicy.Local.POINTER_UP
+            MotionEvent.ACTION_UP -> RemoteTouchPolicy.Local.UP
+            MotionEvent.ACTION_CANCEL -> RemoteTouchPolicy.Local.CANCEL
+            else -> return
+        }
+        val g = remoteGeometry() ?: return
+        val ts = SystemClock.elapsedRealtime()
 
         // The only instrument that says whether a tap reached the pixel it looked like it hit.
-        // Verbose because it is one line per pointer per motion event.
+        // Verbose because it is one line per motion event.
         if (AppLog.LOG_VERBOSE) {
-            val first = pointerData.firstOrNull()
+            val first = mapRemote(g, event.getX(0), event.getY(0))
             AppLog.v(
                 "[UI_DEBUG] Touch map: raw=${event.getX(0).toInt()},${event.getY(0).toInt()} " +
-                    "-> video=${first?.second},${first?.third} view=${viewW.toInt()}x${viewH.toInt()} " +
-                    "video=${videoW}x${videoH} margin=${marginW.toInt()}x${marginH.toInt()} fit=${settings.videoFitMode}"
+                    "-> video=${first.x},${first.y} view=${g.viewW.toInt()}x${g.viewH.toInt()} " +
+                    "video=${g.videoW}x${g.videoH} margin=${g.marginW.toInt()}x${g.marginH.toInt()} fit=${settings.videoFitMode}"
             )
         }
 
-        commManager.send(TouchEvent(ts, action, event.actionIndex, pointerData))
+        val mayStart = local == RemoteTouchPolicy.Local.DOWN && TwoFingerGestureTracker.mayStartAt(
+            event.getX(0), gestureWidth(), resources.displayMetrics.density, settings.gestureEdgeZone.dp, enabledGestures()
+        )
+        if (remoteGiveUpPending) {
+            remoteGiveUpPending = false
+            sendRemote(remoteTouch.giveUp(pointersOf(event)), g, ts)
+        }
+        val sends = remoteTouch.onEvent(
+            local, event.actionIndex, pointersOf(event), mayStart, twoFingerTracker != null,
+            ViewConfiguration.get(this).scaledTouchSlop.toFloat()
+        )
+        sendRemote(sends, g, ts)
+        if (!remoteTouch.mayStartGesture) {
+            gestureHandler.removeCallbacks(remoteHoldExpired)
+        } else if (local == RemoteTouchPolicy.Local.DOWN) {
+            gestureHandler.removeCallbacks(remoteHoldExpired)
+            gestureHandler.postDelayed(remoteHoldExpired, RemoteTouchPolicy.HOLD_MS)
+        }
         // ACTION_UP only: a swipe-up-home or edge-back gesture ends in ACTION_CANCEL, and neither
         // must look like the text-field tap that opens Android Auto's phone keyboard.
         if (event.actionMasked == MotionEvent.ACTION_UP) {
@@ -2431,6 +2765,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     }
 
     override fun onDestroy() {
+        clearTwoFingerTracking()
         // TextureView/GLES destruction can arrive after this activity removes its callback.
         // Stop our target now, while it is still valid, without touching a replacement owner.
         ownedSurface?.let {
@@ -2439,6 +2774,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         ownedSurface = null
         isSurfaceSet = false
         super.onDestroy()
+        ActivityState.release(this, findViewById(R.id.loading_custom_image))
         autoStartOfferTimer?.cancel()
         autoStartOfferTimer = null
         HeadUnitScreenConfig.onMarginsDiverged = null
@@ -2483,6 +2819,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
 
         /** Set by a caller that opens this screen just before it starts a session. */
         const val EXTRA_EXPECT_SESSION = "expect_session"
+        const val EXTRA_TURN_SCREEN_ON = "turn_screen_on"
         @Volatile var isForeground = false
 
         /**
@@ -2525,6 +2862,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     }
     override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
         super.onConfigurationChanged(newConfig)
+        nightOverlay?.updateTextSizes()
         AppLog.i("[AapProjectionActivity] onConfigurationChanged: orientation=${newConfig.orientation}")
         if (!HeadUnitScreenConfig.isResolutionLocked) {
             HeadUnitScreenConfig.init(this, resources.displayMetrics, settings)
@@ -2596,12 +2934,16 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         projectionView.addCallback(this)
         // Baseline for the "no frame drawn while streaming" renderer check (issue #767).
         projectionStartMs = SystemClock.elapsedRealtime()
+        placeDimmer()
         performanceOverlay.bringToFront()
+        nightOverlay?.takeIf { it.visibility == View.VISIBLE }?.bringToFront()
     }
 
     private fun attachPerformanceOverlay() {
         performanceOverlay.attachTo(findViewById(R.id.container))
         videoDecoder.onFpsChanged = performanceOverlay.fpsListener
         performanceOverlay.start()
+        placeDimmer()
+        nightOverlay?.takeIf { it.visibility == View.VISIBLE }?.bringToFront()
     }
 }

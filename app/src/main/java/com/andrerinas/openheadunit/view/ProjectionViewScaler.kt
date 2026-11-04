@@ -1,5 +1,6 @@
 package com.andrerinas.openheadunit.view
 
+import android.os.Build
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
@@ -56,7 +57,7 @@ object ProjectionViewScaler {
                 AppLog.i("[UI_DEBUG] FORCED FILL: Resized view to match screen exactly: ${usableW}x${usableH}")
             } else {
                 // CONTAIN: size down to fit within the usable area, centered, letterboxed.
-                // COVER: size up past the usable area, centered, the parent clips the overflow.
+                // COVER: size up past the usable area, centered, the overflow runs past the usable area; nothing below API 24 clips a SurfaceView layer.
                 // Both preserve aspect ratio (no distortion) - only the target size differs.
                 val targetW: Int
                 val targetH: Int
@@ -100,7 +101,37 @@ object ProjectionViewScaler {
 
             val lp = view.layoutParams
             var paramsChanged = false
-            
+
+            val parent = view.parent as? View
+            val fit = SurfaceViewFitPolicy.decide(
+                Build.VERSION.SDK_INT, view is ProjectionView, HeadUnitScreenConfig.forcedScale,
+                parent?.paddingLeft ?: 0, parent?.paddingTop ?: 0,
+                if (parent == null) 0 else parent.width - parent.paddingLeft - parent.paddingRight,
+                if (parent == null) 0 else parent.height - parent.paddingTop - parent.paddingBottom,
+                finalScaleX, finalScaleY,
+            )
+            if (fit is SurfaceViewFitPolicy.Fit.Layout && view is ProjectionView) {
+                if (lp.width != fit.width || lp.height != fit.height) {
+                    lp.width = fit.width
+                    lp.height = fit.height
+                    paramsChanged = true
+                }
+                if (lp is FrameLayout.LayoutParams && lp.gravity != Gravity.CENTER) {
+                    lp.gravity = Gravity.CENTER
+                    paramsChanged = true
+                }
+                if (paramsChanged) {
+                    view.layoutParams = lp
+                }
+                view.translationX = 0f
+                view.translationY = 0f
+                view.setVideoScale(fit.scaleXSign, 1f)
+                view.setBufferSize(fit.bufferWidth, fit.bufferHeight)
+                AppLog.i("[UI_DEBUG] SurfaceView sized by layout: ${fit.width}x${fit.height} at (${fit.left},${fit.top}), buffer ${fit.bufferWidth}x${fit.bufferHeight}, scale ${finalScaleX}x${finalScaleY}")
+                return
+            }
+            (view as? ProjectionView)?.setBufferSize(0, 0)
+
             if (lp.width != ViewGroup.LayoutParams.MATCH_PARENT || 
                 lp.height != ViewGroup.LayoutParams.MATCH_PARENT) {
                 lp.width = ViewGroup.LayoutParams.MATCH_PARENT

@@ -161,4 +161,18 @@ class HomePagesPolicyTest {
         assertEquals(0, HomePagesPolicy.clampPage(-1, 2))
         assertEquals(0, HomePagesPolicy.clampPage(2, 0))
     }
+
+    @Test
+    fun `favorites sit beside the card only on a really wide unit`() {
+        // 1920x720 at 240 dpi
+        assertTrue(HomePagesPolicy.sideBySide(landscape = true, widthDp = 1280, heightDp = 480))
+        // 1280x720 at 146 dpi, a 16:9 unit
+        assertFalse(HomePagesPolicy.sideBySide(landscape = true, widthDp = 1403, heightDp = 789))
+        // 1920x1080 at 160 dpi
+        assertFalse(HomePagesPolicy.sideBySide(landscape = true, widthDp = 1920, heightDp = 1080))
+        // 8:3 but too narrow in dp
+        assertFalse(HomePagesPolicy.sideBySide(landscape = true, widthDp = 960, heightDp = 360))
+        assertFalse(HomePagesPolicy.sideBySide(landscape = false, widthDp = 1280, heightDp = 480))
+        assertFalse(HomePagesPolicy.sideBySide(landscape = true, widthDp = 1280, heightDp = 0))
+    }
 }

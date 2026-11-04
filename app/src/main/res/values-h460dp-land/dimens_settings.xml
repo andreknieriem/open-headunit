@@ -27,6 +27,7 @@
     <dimen name="settings_icon_button_padding">16dp</dimen>
     <dimen name="settings_row_icon_size">26dp</dimen>
     <dimen name="settings_rail_icon_size">28dp</dimen>
+    <dimen name="settings_rail_collapsed_width">72dp</dimen>
     <dimen name="settings_row_value_size">18sp</dimen>
     <dimen name="settings_section_title_size">18sp</dimen>
     <dimen name="settings_control_text_size">18sp</dimen>

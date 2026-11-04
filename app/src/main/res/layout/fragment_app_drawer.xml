@@ -14,7 +14,40 @@
         app:title="@string/apps"
         app:navigationIcon="@drawable/ic_arrow_back_white"
         app:titleTextColor="?android:attr/textColorPrimary"
-        app:navigationIconTint="?android:attr/textColorPrimary" />
+        app:navigationIconTint="?android:attr/textColorPrimary">
+
+        <!-- Apps / Shortcuts, the same segmented button as Basic / Advanced in Settings. In the
+             toolbar rather than under it, so a short screen keeps its rows of icons. Only shown
+             while there are shortcuts to split from the apps (AppDrawerTabsPolicy). -->
+        <com.google.android.material.button.MaterialButtonToggleGroup
+            android:id="@+id/drawer_tab_group"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end|center_vertical"
+            android:layout_marginLeft="12dp"
+            android:layout_marginRight="12dp"
+            android:visibility="gone"
+            app:selectionRequired="true"
+            app:singleSelection="true">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/drawer_tab_apps"
+                style="@style/SettingsTab"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/settings_tab_height"
+                android:minWidth="@dimen/settings_tab_min_width"
+                android:text="@string/apps" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/drawer_tab_shortcuts"
+                style="@style/SettingsTab"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/settings_tab_height"
+                android:minWidth="@dimen/settings_tab_min_width"
+                android:text="@string/app_drawer_tab_shortcuts" />
+
+        </com.google.android.material.button.MaterialButtonToggleGroup>
+    </com.google.android.material.appbar.MaterialToolbar>
 
     <FrameLayout
         android:layout_width="match_parent"

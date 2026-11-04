@@ -24,6 +24,7 @@ import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeCredenti
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeStrategy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.SoftApCredentialsProvider
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.SoftApEndpointStabilityPolicy
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zjsocket.ZjSocketProbe
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zbt.ZbtDiscovery
 import com.andrerinas.openheadunit.main.SettingsActivity
 import com.andrerinas.openheadunit.utils.AppLog
@@ -99,7 +100,9 @@ class WifiLauncherNative : WifiLauncher {
             settings.nativeAaIgnoreExternalBt,
             blinkTransportEnabled = settings.externalBtBlinkTransport,
             fytModuleEvidence = BluetoothHelper.fytModuleEvidence,
-            hctServiceAvailable = HctServiceObserver.available(service)
+            hctServiceAvailable = HctServiceObserver.available(service),
+            zjSocketEnabled = settings.externalBtZjSocketTransport,
+            zjSocketConnects = ZjSocketProbe.answer()
         )
         refusedModuleAtStart = blockedByExternalBt
         if (blockedByExternalBt) NativeAaHandshakeManager.externalBtDiagnostic(discovery)?.let { AppLog.e(it) }

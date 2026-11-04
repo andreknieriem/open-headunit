@@ -12,7 +12,10 @@ import android.os.Build
 import android.os.IBinder
 import androidx.core.content.ContextCompat
 import com.andrerinas.openheadunit.App
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.esp32.Esp32RelayProtocol
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.esp32.Esp32RelayStore
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.DriverCandidatePolicy
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NamedPhonePolicy
 import java.lang.reflect.Constructor
 import java.lang.reflect.Method
 import com.andrerinas.openheadunit.connection.wifi.MacAddressPolicy
@@ -21,6 +24,12 @@ import com.andrerinas.openheadunit.utils.bluetooth.BluetoothPeerInventory
 
 object BluetoothHelper {
 
+    /**
+     * Reads app settings, requiring an initialized app component and an unlocked caller.
+     * A configured custom service may fall back to [getDefaultAdapter] when lookup fails.
+     * Null means no exposed manager/radio, not a generic permission-error result;
+     * settings access and default lookup exceptions can still propagate.
+     */
     fun getBluetoothAdapter(context: Context): BluetoothAdapter? {
         val settings = App.provide(context).settings
         val serviceName = settings.bluetoothManagerServiceName
@@ -49,9 +58,14 @@ object BluetoothHelper {
         return getDefaultAdapter(context)
     }
 
+    /**
+     * Uses the optional system BluetoothManager on API 18+, or the legacy lookup on older platforms.
+     * Absence returns null so callers can keep the home screen and non-Bluetooth routes usable.
+     * Lookup exceptions propagate to the caller.
+     */
     private fun getDefaultAdapter(context: Context): BluetoothAdapter? {
         return if (Build.VERSION.SDK_INT >= 18) {
-            (context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter
+            (context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager)?.adapter
         } else {
             @Suppress("DEPRECATION")
             BluetoothAdapter.getDefaultAdapter()
@@ -288,6 +302,18 @@ object BluetoothHelper {
             mac?.let { m -> all.firstOrNull { it.device.address.equals(m, ignoreCase = true) }?.device }
     }
 
+    /** The bonded devices as the name resolver reads them: the remote name and, from API 30, the alias. */
+    @SuppressLint("MissingPermission")
+    fun pairedForNaming(candidates: DriverCandidates): List<NamedPhonePolicy.Paired> =
+        candidates.all.map { c ->
+            val names = ArrayList<String>(2)
+            try { c.device.name?.let { names.add(it) } } catch (_: Exception) { }
+            if (Build.VERSION.SDK_INT >= 30) {
+                try { c.device.alias?.let { names.add(it) } } catch (_: Exception) { }
+            }
+            NamedPhonePolicy.Paired(c.device.address, names, c.verdict)
+        }
+
     @Volatile
     private var lastCandidateSummary: String? = null
 
@@ -329,7 +355,9 @@ object BluetoothHelper {
         // Manufacturer-only entries remain in the inventory for explanation, not in the Android
         // wake targets. On HCT's legacy stack ordinary connect() uses goc_spp even for an AA UUID;
         // manufacturing a BluetoothDevice from a cached MAC does not select the AA carrier.
-        val bonded = discovery.androidDevices
+        // When the Bluetooth relay is off, hide OpenHU-BT-Relay bonds from the driver list.
+        val hideEsp32RelayBonds = !Esp32RelayStore(context).enabled
+        val bonded = discovery.androidDevices.filterNot { hideEsp32RelayBonds && isEsp32RelayBond(it) }
         var presenceReadable = false
         val all = bonded.map { device ->
             val state = deviceConnectionState(device)
@@ -394,6 +422,12 @@ object BluetoothHelper {
     private fun deviceClassOf(device: BluetoothDevice): Int =
         try { device.bluetoothClass?.deviceClass ?: 0 } catch (e: Exception) { 0 }
 
+    @SuppressLint("MissingPermission")
+    private fun isEsp32RelayBond(device: BluetoothDevice): Boolean {
+        val name = try { device.name } catch (_: Exception) { null }
+        return Esp32RelayProtocol.isEsp32RelayDeviceName(name)
+    }
+
     /**
      * Whether one device may stand as a phone, meaning it was not ruled out. Lists go through
      * [driverCandidates]; this serves the pickers that ask about one device at a time.
@@ -401,9 +435,14 @@ object BluetoothHelper {
     fun isLikelyPhone(
         device: BluetoothDevice,
         preferredMac: String = "",
-        lastConnectedMac: String = ""
-    ): Boolean = classifyDevice(device, pinFor(device, preferredMac, lastConnectedMac)).verdict !=
-        DriverCandidatePolicy.Verdict.NOT_A_PHONE
+        lastConnectedMac: String = "",
+        context: Context? = null
+    ): Boolean {
+        val hideEsp32Relay = context == null || !Esp32RelayStore(context).enabled
+        if (hideEsp32Relay && isEsp32RelayBond(device)) return false
+        return classifyDevice(device, pinFor(device, preferredMac, lastConnectedMac)).verdict !=
+            DriverCandidatePolicy.Verdict.NOT_A_PHONE
+    }
 
 
     /**

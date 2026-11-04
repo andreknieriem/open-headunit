@@ -146,7 +146,8 @@ class WppHandshakeSession(
      * Android Auto re-dials a closed RFCOMM while a profile keeps this unit present. Over TCP
      * there is nothing to hold.
      */
-    private val holdsChannel: Boolean = false
+    private val holdsChannel: Boolean = false,
+    private val versionNegotiated: Boolean = false
 ) {
 
     companion object {
@@ -253,8 +254,10 @@ class WppHandshakeSession(
 
     private fun onNew(event: WppEvent): List<WppAction> = when (event) {
         is WppEvent.SocketReady -> {
-            stage = WppStage.AWAIT_VERSION
-            listOf(WppAction.SendVersionRequest)
+            if (versionNegotiated) enterAwaitCredentials() else {
+                stage = WppStage.AWAIT_VERSION
+                listOf(WppAction.SendVersionRequest)
+            }
         }
         is WppEvent.CredentialsReady -> { credentialsLatched = true; emptyList() }
         is WppEvent.CredentialsUnavailable -> fail("no WiFi credentials to hand the phone")

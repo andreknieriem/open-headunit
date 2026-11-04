@@ -8,7 +8,7 @@ import com.andrerinas.openheadunit.aap.NarrowBandProfilePolicy
 import com.andrerinas.openheadunit.aap.protocol.proto.Control
 import com.andrerinas.openheadunit.connection.wifi.direct.WifiBandCapability
 import com.andrerinas.openheadunit.decoder.video.VideoDecoder
-import kotlin.math.roundToInt
+import java.lang.ref.WeakReference
 
 object HeadUnitScreenConfig {
 
@@ -28,8 +28,9 @@ object HeadUnitScreenConfig {
     var forcedScale: Boolean = false
         private set
 
-    var negotiatedResolutionType: Control.Service.MediaSinkService.VideoConfiguration.VideoCodecResolutionType = Control.Service.MediaSinkService.VideoConfiguration.VideoCodecResolutionType._800x480
-    var isResolutionLocked: Boolean = false
+    @Volatile var negotiatedResolutionType: Control.Service.MediaSinkService.VideoConfiguration.VideoCodecResolutionType = Control.Service.MediaSinkService.VideoConfiguration.VideoCodecResolutionType._800x480
+        private set
+    @Volatile var isResolutionLocked: Boolean = false
         private set
 
     /** A second size we offered, and the margins that go with it. Swapped whole, never edited. */
@@ -47,16 +48,6 @@ object HeadUnitScreenConfig {
     var onFallbackAdopted: (() -> Unit)? = null
 
     fun hasOfferedFallback(): Boolean = offeredFallback != null
-
-    /** What service discovery offered, or nothing; either way any earlier adoption ends. */
-    fun recordAnnouncedFallback(
-        type: Control.Service.MediaSinkService.VideoConfiguration.VideoCodecResolutionType?,
-        widthMargin: Int,
-        heightMargin: Int,
-    ) = synchronized(this) {
-        adoptedFallback = null
-        offeredFallback = type?.let { Fallback(it, widthMargin, heightMargin) }
-    }
 
     /**
      * The phone chose the fallback: size and margins change together, then the view is laid out
@@ -91,6 +82,7 @@ object HeadUnitScreenConfig {
     var systemInsetBottom: Int = 0
         private set
 
+
     // Raw Screen Dimensions (Full Display)
     private var realScreenWidthPx: Int = 0
     private var realScreenHeightPx: Int = 0
@@ -106,19 +98,53 @@ object HeadUnitScreenConfig {
     private var normalisation: ScreenOrientationPolicy.Normalisation =
         ScreenOrientationPolicy.Normalisation.AS_READ
 
-    // The canvas the anchor was derived from, so the anchor can follow the insets when they move
-    // under it. A bar subtracted from a rectangle measured before it appeared shrinks it twice.
-    private var anchorCanvasW: Int = 0
-    private var anchorCanvasH: Int = 0
-    private var anchorSource: String = ""
+    private data class WindowGeometry(
+        val canvas: ProjectionCanvasPolicy.Measurement,
+        val left: Int, val top: Int, val right: Int, val bottom: Int,
+    )
 
-    // Canvases somebody actually measured, each tagged with the settings they were measured under.
+    private data class GeometrySettings(
+        val resolutionId: Int,
+        val pixelAspectRatioE4: Int,
+        val dpiPixelDensity: Int,
+        val displaySizePreset: String?,
+        val dpiFloorOverride: Boolean,
+    )
+
+    private var geometrySettings: GeometrySettings? = null
     private var surfaceCanvas: ProjectionCanvasPolicy.Measurement? = null
-    private var windowCanvas: ProjectionCanvasPolicy.Measurement? = null
+    private var windowGeometry: WindowGeometry? = null
+    private var windowOwner: Any? = null
+    private var windowMeasurementPending = false
+    private var windowMode: Settings.FullscreenMode? = null
 
-    // A window measured before the first init(), which has no hash to tag it with yet.
-    private var pendingWindowCanvasW: Int = 0
-    private var pendingWindowCanvasH: Int = 0
+    data class AnnouncedGeometry(
+        val resolution: Control.Service.MediaSinkService.VideoConfiguration.VideoCodecResolutionType,
+        val width: Int,
+        val height: Int,
+        val widthMargin: Int,
+        val heightMargin: Int,
+        val pixelAspectRatioE4: Int,
+        val densityDecision: AnnouncedDensityPolicy.Decision,
+    )
+
+    private var announcedGeometry: AnnouncedGeometry? = null
+    private var announcementOwner: WeakReference<Any>? = null
+    private var geometryRevision = 0L
+
+    // Writers commit the entire geometry before calling out. In particular a scale callback must
+    // never re-enter init between publishing the window, its padding and its settings signature.
+    private inline fun <T> updateGeometry(block: () -> T): T {
+        var changed = false
+        val result = synchronized(this) {
+            val before = geometryRevision
+            val value = block()
+            changed = geometryRevision != before
+            value
+        }
+        if (changed) notifyMarginsDiverged()
+        return result
+    }
 
     // What ServiceDiscoveryResponse actually put on the wire. init() re-reads the display metrics
     // on every scale update, so the live margins can move under a session that already announced
@@ -135,6 +161,7 @@ object HeadUnitScreenConfig {
     // The listener redraws, which re-enters init() and can land back here. One notification at a time.
     private var notifyingMarginDivergence: Boolean = false
 
+    @Synchronized
     fun recordAnnouncedMargins(widthMargin: Int, heightMargin: Int) {
         announcedWidthMargin = widthMargin
         announcedHeightMargin = heightMargin
@@ -147,14 +174,8 @@ object HeadUnitScreenConfig {
     private var loggedCanvasDrift: Boolean = false
     private var canvasDriftLines: Int = 0
 
-    fun recordAnnouncedCanvas() {
-        announcedCanvasW = screenWidthPx
-        announcedCanvasH = screenHeightPx
-        loggedCanvasDrift = false
-        canvasDriftLines = 0
-    }
-
     /** True when the live margins are already on the wire, so sending them again would only repeat it. */
+    @Synchronized
     fun marginsMatchAnnounced(): Boolean =
         announcedWidthMargin != MarginAnnouncementPolicy.NOT_ANNOUNCED &&
             announcedHeightMargin != MarginAnnouncementPolicy.NOT_ANNOUNCED &&
@@ -162,6 +183,7 @@ object HeadUnitScreenConfig {
                 announcedWidthMargin, announcedHeightMargin, getWidthMargin(), getHeightMargin()
             )
 
+    @Synchronized
     fun clearAnnouncedMargins() {
         announcedWidthMargin = MarginAnnouncementPolicy.NOT_ANNOUNCED
         announcedHeightMargin = MarginAnnouncementPolicy.NOT_ANNOUNCED
@@ -172,147 +194,164 @@ object HeadUnitScreenConfig {
     }
 
 
-    fun init(context: Context, displayMetrics: DisplayMetrics, settings: Settings) {
-        videoFitMode = settings.videoFitMode
-        forcedScale = settings.forcedScale && settings.viewMode == Settings.ViewMode.SURFACE
+    fun init(context: Context, displayMetrics: DisplayMetrics, settings: Settings) = updateGeometry {
+        initGeometry(context, displayMetrics, settings)
+    }
 
+    private fun initGeometry(context: Context, displayMetrics: DisplayMetrics, settings: Settings) {
+        val screenOrientation = settings.screenOrientation
+        val configOrientation = context.resources.configuration.orientation
+        val isConfigLandscape = configOrientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
+        val isConfigPortrait = configOrientation == android.content.res.Configuration.ORIENTATION_PORTRAIT
+        val requestedNormalisation = ScreenOrientationPolicy.normalisation(screenOrientation, isConfigLandscape, isConfigPortrait)
+        val currentHash = computeSettingsHash(settings, requestedNormalisation)
+        val measured = windowGeometry
+
+        // While a window is being refitted, the last complete frame remains the usable geometry.
+        // A service/application context must not relabel it with new settings or orientation.
+        if (windowOwner != null && measured != null &&
+            (windowMeasurementPending || measured.canvas.hash != currentHash)) return
+
+        normalisation = requestedNormalisation
+        val mode = windowMode ?: settings.fullscreenMode
+        val immersive = mode == Settings.FullscreenMode.IMMERSIVE || mode == Settings.FullscreenMode.IMMERSIVE_WITH_NOTCH
         val realW: Int
         val realH: Int
         val usableW: Int
         val usableH: Int
+        var left = settings.insetLeft
+        var top = settings.insetTop
+        var right = settings.insetRight
+        var bottom = settings.insetBottom
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) { // API 30+
-            val windowManager = context.getSystemService(android.view.WindowManager::class.java)
-            val bounds = windowManager.currentWindowMetrics.bounds
-            // On API 30+, bounds on an Activity context often return the usable area.
-            // We use the displayMetrics as a fallback for the physical area.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val metrics = context.getSystemService(android.view.WindowManager::class.java).currentWindowMetrics
             realW = displayMetrics.widthPixels
             realH = displayMetrics.heightPixels
-            usableW = bounds.width()
-            usableH = bounds.height()
-        } else { // Older APIs
+            val bounds = metrics.bounds
+            // An initial response can precede every View layout. WindowMetrics provides bounds
+            // and insets together; never combine that fallback with a previous window's padding.
+            val automatic = mode == Settings.FullscreenMode.NONE &&
+                !(Build.VERSION.SDK_INT >= 35 && context.applicationInfo.targetSdkVersion >= 35)
+            val cutout = android.view.WindowInsets.Type.displayCutout()
+            val mask = when (mode) {
+                Settings.FullscreenMode.IMMERSIVE -> 0
+                Settings.FullscreenMode.IMMERSIVE_WITH_NOTCH -> cutout
+                Settings.FullscreenMode.STATUS_ONLY -> android.view.WindowInsets.Type.navigationBars() or cutout
+                Settings.FullscreenMode.NONE -> android.view.WindowInsets.Type.systemBars() or cutout
+            }
+            val bars = if (mask == 0) android.graphics.Insets.NONE else metrics.windowInsets.getInsets(mask)
+            if (!automatic) {
+                left += bars.left
+                top += bars.top
+                right += bars.right
+                bottom += bars.bottom
+            }
+            usableW = bounds.width() - (if (automatic) bars.left + bars.right else 0) - left - right
+            usableH = bounds.height() - (if (automatic) bars.top + bars.bottom else 0) - top - bottom
+        } else {
             @Suppress("DEPRECATION")
-            val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as android.view.WindowManager
-            val display = windowManager.defaultDisplay
+            val display = (context.getSystemService(Context.WINDOW_SERVICE) as android.view.WindowManager).defaultDisplay
             val size = android.graphics.Point()
             @Suppress("DEPRECATION")
             display.getRealSize(size)
             realW = size.x
             realH = size.y
-
             @Suppress("DEPRECATION")
             display.getSize(size)
-            usableW = size.x
-            usableH = size.y
+            usableW = (if (immersive) realW else size.x) - left - right
+            usableH = (if (immersive) realH else size.y) - top - bottom
         }
-
-        val screenOrientation = settings.screenOrientation
-        val configOrientation = context.resources.configuration.orientation
-        val isConfigLandscape = configOrientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
-        val isConfigPortrait = configOrientation == android.content.res.Configuration.ORIENTATION_PORTRAIT
-
-        normalisation = ScreenOrientationPolicy.normalisation(screenOrientation, isConfigLandscape, isConfigPortrait)
-        val real = ScreenOrientationPolicy.normalise(realW, realH, normalisation)
-        val usable = ScreenOrientationPolicy.normalise(usableW, usableH, normalisation)
-        val finalRealW = real.width
-        val finalRealH = real.height
-        val finalUsableW = usable.width
-        val finalUsableH = usable.height
 
         AppLog.i("[UI_DEBUG] HeadUnitScreenConfig: Raw size: ${realW}x${realH}, usable: ${usableW}x${usableH}, orientation setting: $screenOrientation, configOrientation: $configOrientation")
-        AppLog.i("[UI_DEBUG] HeadUnitScreenConfig: Final normalized size: ${finalRealW}x${finalRealH}, usable: ${finalUsableW}x${finalUsableH}")
-
-        physicalWidthPx = finalRealW
-        physicalHeightPx = finalRealH
-
-        val currentHash = computeSettingsHash(settings)
-
-        val settingsChanged = !isInitialized || lastSettingsHash != currentHash
-
-        // A window laid out before the first init() was measured under these very settings, but in
-        // whatever orientation the view happened to report; this is the first call that knows which.
-        if (windowCanvas == null && pendingWindowCanvasW > 0 && pendingWindowCanvasH > 0) {
-            val pending = ScreenOrientationPolicy.normalise(pendingWindowCanvasW, pendingWindowCanvasH, normalisation)
-            windowCanvas = ProjectionCanvasPolicy.Measurement(pending.width, pending.height, currentHash)
-            pendingWindowCanvasW = 0
-            pendingWindowCanvasH = 0
+        val real = ScreenOrientationPolicy.normalise(realW, realH, normalisation)
+        val usable = ScreenOrientationPolicy.normalise(usableW.coerceAtLeast(1), usableH.coerceAtLeast(1), normalisation)
+        AppLog.i("[UI_DEBUG] HeadUnitScreenConfig: Final normalized size: ${real.width}x${real.height}, usable: ${usable.width}x${usable.height}")
+        physicalWidthPx = real.width
+        physicalHeightPx = real.height
+        // Padding is measured in the view's axes. Turn those axes with the drawable rectangle.
+        val axesSwapped = (usableW < usableH) != (usable.width < usable.height)
+        if (axesSwapped) {
+            val oldLeft = left
+            val oldRight = right
+            left = top
+            top = oldLeft
+            right = bottom
+            bottom = oldRight
         }
-
-        val immersive = settings.fullscreenMode == Settings.FullscreenMode.IMMERSIVE ||
-                        settings.fullscreenMode == Settings.FullscreenMode.IMMERSIVE_WITH_NOTCH
-
-        // THE ANCHOR: whatever last measured the canvas the video is drawn into, and the display
-        // only while nothing has. Outside immersive the display APIs describe neither a window a
-        // ROM sidebar narrowed nor a decoration reported on the wrong axis.
+        if (measured?.canvas?.hash == currentHash) {
+            left = measured.left
+            top = measured.top
+            right = measured.right
+            bottom = measured.bottom
+        }
         val choice = ProjectionCanvasPolicy.choose(
-            immersive = immersive,
-            realW = finalRealW,
-            realH = finalRealH,
-            usableW = finalUsableW,
-            usableH = finalUsableH,
-            surface = surfaceCanvas,
-            window = windowCanvas,
-            cached = cachedMeasurement(settings, screenOrientation, isConfigLandscape, isConfigPortrait),
-            hash = currentHash,
+            immersive = false, // The fallback above is already the drawable rectangle in every mode.
+            realW = real.width, realH = real.height, usableW = usable.width, usableH = usable.height,
+            surface = surfaceCanvas, window = measured?.canvas,
+            cached = cachedMeasurement(settings, screenOrientation, isConfigLandscape, isConfigPortrait), hash = currentHash,
         )
+        val anchor = ProjectionCanvasPolicy.anchor(choice.width, choice.height, left + right, top + bottom)
+        val capturedSettings = GeometrySettings(
+            settings.resolutionId, settings.pixelAspectRatioE4, settings.dpiPixelDensity,
+            settings.displaySizePreset, settings.dpiFloorOverride,
+        )
+        if (isInitialized && realScreenWidthPx == anchor.width && realScreenHeightPx == anchor.height &&
+            lastSettingsHash == currentHash && systemInsetLeft == left && systemInsetTop == top &&
+            systemInsetRight == right && systemInsetBottom == bottom && geometrySettings == capturedSettings) return
 
-        // A measured canvas is the area inside the insets, so the anchor carries them. Only the
-        // immersive display reading is the whole panel already; outside it the fallback is the
-        // window metrics, which are bar-reduced like any other canvas. The insets in force are the
-        // right ones unless the settings moved, in which case the manual ones are re-seeded below.
-        val insetW = if (settingsChanged) settings.insetLeft + settings.insetRight else systemInsetLeft + systemInsetRight
-        val insetH = if (settingsChanged) settings.insetTop + settings.insetBottom else systemInsetTop + systemInsetBottom
-        val panelIsTheAnchor = choice.source == ProjectionCanvasPolicy.Source.DISPLAY && immersive
-        val anchor = if (panelIsTheAnchor) {
-            ProjectionCanvasPolicy.Rect(choice.width, choice.height)
-        } else {
-            ProjectionCanvasPolicy.anchor(choice.width, choice.height, insetW, insetH)
-        }
-        val anchorW = anchor.width
-        val anchorH = anchor.height
-
-        // Nothing the anchor depends on has moved, so a repeat call must not undo a measurement
-        // taken since. This used to compare the anchor with the raw display, which outside an
-        // immersive mode can never match, so every scale update reset it.
-        if (isInitialized && realScreenWidthPx == anchorW && realScreenHeightPx == anchorH &&
-            lastSettingsHash == currentHash) {
-            return
-        }
-
-        // If settings changed (e.g. orientation swap), unlock resolution before recalculating
-        if (isInitialized && lastSettingsHash != 0 && lastSettingsHash != currentHash) {
+        if (isInitialized && lastSettingsHash != currentHash && announcedGeometry == null) {
             AppLog.i("[UI_DEBUG] HeadUnitScreenConfig: Settings changed ($lastSettingsHash -> $currentHash). Unlocking resolution.")
             unlockResolution(keepFallback = true)
         }
-
         isInitialized = true
         lastSettingsHash = currentHash
         currentSettings = settings
+        geometrySettings = capturedSettings
         appContext = context.applicationContext
-
         density = displayMetrics.density
-
-        // Manual insets only; the bars are re-read by the insets listener right after this. Left
-        // alone otherwise, or a bar already in force would be subtracted from the canvas twice.
-        if (settingsChanged) {
-            systemInsetLeft = settings.insetLeft
-            systemInsetTop = settings.insetTop
-            systemInsetRight = settings.insetRight
-            systemInsetBottom = settings.insetBottom
-        }
-
-        realScreenWidthPx = anchorW
-        realScreenHeightPx = anchorH
-
-        // The panel reading is the one rectangle that already contains the bars, so it has no
-        // canvas to re-derive from; everything else does, and the insets can still move under it.
-        anchorCanvasW = if (panelIsTheAnchor) 0 else choice.width
-        anchorCanvasH = if (panelIsTheAnchor) 0 else choice.height
-        anchorSource = sourceNoun(choice.source)
-
-        AppLog.i("[UI_DEBUG] HeadUnitScreenConfig: Honest Init | Mode: ${settings.fullscreenMode} | Anchor: ${realScreenWidthPx}x${realScreenHeightPx} (from ${choice.source}) | Seeded Insets: L$systemInsetLeft T$systemInsetTop R$systemInsetRight B$systemInsetBottom")
-
+        videoFitMode = settings.videoFitMode
+        forcedScale = settings.forcedScale && settings.viewMode == Settings.ViewMode.SURFACE
+        systemInsetLeft = left
+        systemInsetTop = top
+        systemInsetRight = right
+        systemInsetBottom = bottom
+        realScreenWidthPx = anchor.width
+        realScreenHeightPx = anchor.height
+        AppLog.i("[UI_DEBUG] HeadUnitScreenConfig: Honest Init | Mode: $mode | Anchor: ${anchor.width}x${anchor.height} (from ${choice.source}) | Insets: L$left T$top R$right B$bottom")
         recalculate()
+    }
+
+    /** All geometry fields in service discovery, including input and fallback, share this value. */
+    fun announceGeometry(owner: Any, context: Context, metrics: DisplayMetrics, settings: Settings): AnnouncedGeometry = updateGeometry {
+        if (announcementOwner?.get() === owner) announcedGeometry?.let { return@updateGeometry it }
+        // Remote EOF may reconnect without an Activity teardown. Announcement lifetime belongs
+        // to the transport, not to a process-wide unlock callback or a particular screen instance.
+        unlockResolution()
+        clearAnnouncedMargins()
+        initGeometry(context, metrics, settings)
+        // Even unchanged local geometry must select a fresh primary after a previous fallback
+        // or session lock; init's unchanged-frame fast path deliberately does not recalculate.
+        recalculate()
+        val (width, height) = primarySize()
+        val geometry = AnnouncedGeometry(
+            negotiatedResolutionType, width, height, getWidthMargin(), getHeightMargin(),
+            getPixelAspectRatioE4(), densityDecision(),
+        )
+        announcedWidthMargin = geometry.widthMargin
+        announcedHeightMargin = geometry.heightMargin
+        announcedCanvasW = screenWidthPx
+        announcedCanvasH = screenHeightPx
+        loggedCanvasDrift = false
+        canvasDriftLines = 0
+        VideoFallbackPolicy.fallbackFor(geometry.resolution)?.let { type ->
+            val margins = VideoFallbackPolicy.scaledMargins(width, height, geometry.widthMargin, geometry.heightMargin, type)
+            offeredFallback = Fallback(type, margins.width, margins.height)
+        }
+        announcedGeometry = geometry
+        announcementOwner = WeakReference(owner)
+        lockResolution()
+        geometry
     }
 
     /** The canvas an earlier session measured, normalised to the orientation now in force. */
@@ -339,92 +378,74 @@ object HeadUnitScreenConfig {
         return ProjectionCanvasPolicy.Measurement(turned.width, turned.height, settings.cachedSurfaceSettingsHash)
     }
 
-    /**
-     * A laid-out activity window's content area, which is the canvas the projection will get in
-     * this screen mode plus whatever insets are in force. Recorded so the first session in a mode
-     * announces the shape it will actually draw into, rather than learning it from a surface that
-     * only arrives after the answer went out.
-     */
-    fun noteWindowContent(contentW: Int, contentH: Int) {
-        if (contentW <= 0 || contentH <= 0 || App.isPiPActive) return
-        val content = ScreenOrientationPolicy.normalise(contentW, contentH, normalisation)
-        val canvas = ProjectionCanvasPolicy.canvas(
-            content.width, content.height,
-            systemInsetLeft + systemInsetRight, systemInsetTop + systemInsetBottom,
-        )
-
-        if (!isInitialized) {
-            pendingWindowCanvasW = canvas.width
-            pendingWindowCanvasH = canvas.height
-            return
-        }
-        val hash = liveHash()
-        val known = windowCanvas
-        if (known != null && known.width == canvas.width && known.height == canvas.height && known.hash == hash) {
-            return
-        }
-        windowCanvas = ProjectionCanvasPolicy.Measurement(canvas.width, canvas.height, hash)
-        adoptCanvas(canvas.width, canvas.height, "the activity window")
+    @Synchronized
+    internal fun beginWindowMeasurement(owner: Any, mode: Settings.FullscreenMode) {
+        windowOwner = owner
+        windowMode = mode
+        windowMeasurementPending = true
     }
 
-    /**
-     * The hash a measurement taken right now belongs to. Settings can move between an init() and
-     * the layout that answers it, and a reading tagged with the previous hash is thrown away.
-     */
-    private fun liveHash(): Int =
-        if (this::currentSettings.isInitialized) computeSettingsHash(currentSettings) else lastSettingsHash
+    @Synchronized
+    internal fun invalidateWindowMeasurement(owner: Any) {
+        if (windowOwner === owner) windowMeasurementPending = true
+    }
 
-    /** Move the anchor onto a canvas somebody measured. True when it moved. */
-    private fun adoptCanvas(canvasW: Int, canvasH: Int, source: String, note: String = ""): Boolean {
-        val anchor = ProjectionCanvasPolicy.anchor(
-            canvasW, canvasH,
-            systemInsetLeft + systemInsetRight, systemInsetTop + systemInsetBottom,
+    @Synchronized
+    internal fun releaseWindowMeasurement(owner: Any) {
+        if (windowOwner === owner) {
+            windowOwner = null
+            windowMode = null
+            windowMeasurementPending = true
+        }
+    }
+
+    @Synchronized
+    internal fun isWindowMeasurementCurrent(owner: Any): Boolean = windowOwner === owner && !windowMeasurementPending
+
+    internal fun publishWindowGeometry(
+        owner: Any, context: Context, metrics: DisplayMetrics, settings: Settings,
+        contentW: Int, contentH: Int, left: Int, top: Int, right: Int, bottom: Int,
+        configOrientation: Int, settingsHash: Int,
+    ) = updateGeometry {
+        if (windowOwner !== owner || contentW <= 0 || contentH <= 0 || App.isPiPActive) return@updateGeometry
+        val orientation = ScreenOrientationPolicy.normalisation(
+            settings.screenOrientation,
+            configOrientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE,
+            configOrientation == android.content.res.Configuration.ORIENTATION_PORTRAIT,
         )
-        // Recorded whether or not the anchor moved, so the provenance can never describe an older
-        // rectangle than the numbers beside it.
-        anchorCanvasW = canvasW
-        anchorCanvasH = canvasH
-        anchorSource = source
-        if (anchor.width == realScreenWidthPx && anchor.height == realScreenHeightPx) return false
+        if (settingsHash != computeSettingsHash(settings, orientation)) return@updateGeometry
+        // Subtract in the measured axes, then normalise the complete drawable rectangle.
+        val rawCanvas = ProjectionCanvasPolicy.canvas(contentW, contentH, left + right, top + bottom)
+        val canvas = ScreenOrientationPolicy.normalise(rawCanvas.width, rawCanvas.height, orientation)
+        val swapped = (rawCanvas.width < rawCanvas.height) != (canvas.width < canvas.height)
+        val measurement = ProjectionCanvasPolicy.Measurement(canvas.width, canvas.height, settingsHash)
+        if (ProjectionCanvasPolicy.windowChanged(windowGeometry?.canvas, measurement)) surfaceCanvas = null
+        windowGeometry = WindowGeometry(
+            measurement,
+            if (swapped) top else left, if (swapped) left else top,
+            if (swapped) bottom else right, if (swapped) right else bottom,
+        )
+        windowMeasurementPending = false
+        val previousWidth = realScreenWidthPx
+        val previousHeight = realScreenHeightPx
+        initGeometry(context, metrics, settings)
+        if (previousWidth != realScreenWidthPx || previousHeight != realScreenHeightPx) {
+            AppLog.i("[UI_DEBUG] HeadUnitScreenConfig: anchor ${previousWidth}x${previousHeight} -> ${realScreenWidthPx}x${realScreenHeightPx}, measured on the activity window")
+        }
+    }
 
-        AppLog.i("[UI_DEBUG] HeadUnitScreenConfig: anchor ${realScreenWidthPx}x${realScreenHeightPx} -> ${anchor.width}x${anchor.height}, measured on $source$note")
+    private fun liveHash(): Int = lastSettingsHash
+
+    /** Move the anchor onto a surface measured within the current committed window. */
+    private fun adoptCanvas(canvasW: Int, canvasH: Int, source: String): Boolean {
+        val anchor = ProjectionCanvasPolicy.anchor(canvasW, canvasH,
+            systemInsetLeft + systemInsetRight, systemInsetTop + systemInsetBottom)
+        if (anchor.width == realScreenWidthPx && anchor.height == realScreenHeightPx) return false
+        AppLog.i("[UI_DEBUG] HeadUnitScreenConfig: anchor ${realScreenWidthPx}x${realScreenHeightPx} -> ${anchor.width}x${anchor.height}, measured on $source")
         realScreenWidthPx = anchor.width
         realScreenHeightPx = anchor.height
         recalculate()
         return true
-    }
-
-    fun updateInsets(left: Int, top: Int, right: Int, bottom: Int) {
-        if (systemInsetLeft == left && systemInsetTop == top && systemInsetRight == right && systemInsetBottom == bottom) {
-            return
-        }
-
-        systemInsetLeft = left
-        systemInsetTop = top
-        systemInsetRight = right
-        systemInsetBottom = bottom
-
-        if (!isInitialized) return
-
-        // A bar arriving after the canvas was measured has to grow the anchor, not shrink the
-        // canvas: subtracting it from a rectangle that never contained it counts it twice.
-        if (anchorCanvasW > 0 && anchorCanvasH > 0) {
-            if (!adoptCanvas(anchorCanvasW, anchorCanvasH, anchorSource, ", against the insets now in force")) {
-                recalculate()
-            }
-        } else {
-            recalculate()
-        }
-    }
-
-    /** What the anchor's rectangle is called in a log line. */
-    private fun sourceNoun(source: ProjectionCanvasPolicy.Source): String = when (source) {
-        ProjectionCanvasPolicy.Source.SURFACE -> "the projection surface"
-        ProjectionCanvasPolicy.Source.WINDOW -> "the activity window"
-        ProjectionCanvasPolicy.Source.CACHE -> "a canvas an earlier session measured"
-        // Never "the display": outside immersive this reading is the window metrics, and calling it
-        // the display is what hid a bar-reduced rectangle being treated as the whole panel.
-        ProjectionCanvasPolicy.Source.DISPLAY -> "the window metrics"
     }
 
     // Native standard resolution for a given panel size, mirroring the AUTO selection so the
@@ -499,6 +520,7 @@ object HeadUnitScreenConfig {
     }
 
     private fun recalculate() {
+        geometryRevision++
         // Calculate USABLE area
         val canvas = ProjectionCanvasPolicy.canvas(
             realScreenWidthPx, realScreenHeightPx,
@@ -507,7 +529,7 @@ object HeadUnitScreenConfig {
         screenWidthPx = canvas.width
         screenHeightPx = canvas.height
 
-        val selectedResolution = Settings.Resolution.fromId(currentSettings.resolutionId)
+        val selectedResolution = Settings.Resolution.fromId(geometrySettings!!.resolutionId)
         val isPortraitDisplay = screenHeightPx > screenWidthPx
         val canNegotiateHevc = canNegotiateHevcHighResolution()
 
@@ -516,7 +538,7 @@ object HeadUnitScreenConfig {
             // Safety Check: If the locked resolution's orientation (Landscape/Portrait)
             // no longer matches the display orientation, the lock is stale and must be dropped.
             val isPortraitRes = getNegotiatedHeight() > getNegotiatedWidth()
-            if (isPortraitRes != isPortraitDisplay) {
+            if (isPortraitRes != isPortraitDisplay && announcedGeometry == null) {
                 AppLog.i("[UI_DEBUG] CarScreen: Orientation mismatch detected (Res: ${if(isPortraitRes) "P" else "L"}, Display: ${if(isPortraitDisplay) "P" else "L"}). DROPPING LOCK.")
                 unlockResolution(keepFallback = true)
             } else {
@@ -543,13 +565,13 @@ object HeadUnitScreenConfig {
         // and only hides rows. min(current, ceiling), so a lower choice is never raised.
         val preCapResolution = negotiatedResolutionType
         val hardCeiling = hardCeilingForPanel(realScreenWidthPx, realScreenHeightPx, isPortraitDisplay, canNegotiateHevc)
-        if (pixelsOf(negotiatedResolutionType) > pixelsOf(hardCeiling)) {
+        if (announcedGeometry == null && pixelsOf(negotiatedResolutionType) > pixelsOf(hardCeiling)) {
             negotiatedResolutionType = hardCeiling
         }
         // And to what the link can carry. Same min(current, ceiling) shape as the panel cap above,
         // so a user already asking for less is never raised to meet it.
         val linkCeiling = narrowBandCeiling(isPortraitDisplay)
-        if (linkCeiling != null && pixelsOf(negotiatedResolutionType) > pixelsOf(linkCeiling)) {
+        if (announcedGeometry == null && linkCeiling != null && pixelsOf(negotiatedResolutionType) > pixelsOf(linkCeiling)) {
             negotiatedResolutionType = linkCeiling
         }
         AppLog.i(
@@ -572,23 +594,6 @@ object HeadUnitScreenConfig {
         fit.isPortraitScaled?.let { isPortraitScaled = it }
 
         AppLog.i("[UI_DEBUG] CarScreen isSmallScreen: $isSmallScreen, scaleFactor: $scaleFactor, portraitScaled: $isPortraitScaled, shape=${marginStrategy()}, margins: w=${getWidthMargin()}, h=${getHeightMargin()}")
-
-        if (!notifyingMarginDivergence &&
-            MarginAnnouncementPolicy.shouldReannounce(
-                announcedWidthMargin, announcedHeightMargin, getWidthMargin(), getHeightMargin()
-            )
-        ) {
-            AppLog.i(
-                "[UI_DEBUG] CarScreen: margins drifted from the announced " +
-                    "${announcedWidthMargin}x${announcedHeightMargin} to ${getWidthMargin()}x${getHeightMargin()}"
-            )
-            notifyingMarginDivergence = true
-            try {
-                onMarginsDiverged?.invoke()
-            } finally {
-                notifyingMarginDivergence = false
-            }
-        }
 
         // Only service discovery carries a pixel shape, so a canvas that moves under a session
         // announced by shape cannot be corrected on the wire. Say so once.
@@ -618,15 +623,36 @@ object HeadUnitScreenConfig {
         }
     }
 
+    private fun notifyMarginsDiverged() {
+        val listener = synchronized(this) {
+            if (notifyingMarginDivergence || !MarginAnnouncementPolicy.shouldReannounce(
+                    announcedWidthMargin, announcedHeightMargin, getWidthMargin(), getHeightMargin())) return
+            AppLog.i("[UI_DEBUG] CarScreen: margins drifted from the announced " +
+                "${announcedWidthMargin}x${announcedHeightMargin} to ${getWidthMargin()}x${getHeightMargin()}")
+            val callback = onMarginsDiverged ?: return
+            notifyingMarginDivergence = true
+            callback
+        }
+        try {
+            listener()
+        } finally {
+            synchronized(this) { notifyingMarginDivergence = false }
+        }
+    }
+
+    @Synchronized
     fun getAdjustedHeight(): Int = ProjectionGeometryPolicy.adjustedHeight(getNegotiatedHeight(), scaleFactor)
 
+    @Synchronized
     fun getAdjustedWidth(): Int = ProjectionGeometryPolicy.adjustedWidth(getNegotiatedWidth(), scaleFactor)
 
     // COVER target size for the legacy forcedScale/SurfaceView path, which sizes the view through
     // LayoutParams rather than a View.scale transform.
+    @Synchronized
     fun getCoverWidth(): Int =
         ProjectionGeometryPolicy.coverWidth(screenWidthPx, screenHeightPx, getNegotiatedWidth(), getNegotiatedHeight())
 
+    @Synchronized
     fun getCoverHeight(): Int =
         ProjectionGeometryPolicy.coverHeight(screenWidthPx, screenHeightPx, getNegotiatedWidth(), getNegotiatedHeight())
 
@@ -636,6 +662,7 @@ object HeadUnitScreenConfig {
     private fun activeSize(): Pair<Int, Int> =
         VideoFallbackPolicy.sizeOf(adoptedFallback?.type ?: negotiatedResolutionType)
 
+    @Synchronized
     fun getNegotiatedHeight(): Int = activeSize().second
 
     private fun canNegotiateHevcHighResolution(): Boolean {
@@ -647,6 +674,7 @@ object HeadUnitScreenConfig {
         }
     }
 
+    @Synchronized
     fun getNegotiatedWidth(): Int = activeSize().first
 
     // A stored resolution above the panel's rows used to hide a third of the frame behind a margin
@@ -655,12 +683,14 @@ object HeadUnitScreenConfig {
         videoFitMode, screenWidthPx, screenHeightPx, getNegotiatedWidth(), getNegotiatedHeight()
     )
 
+    @Synchronized
     fun getHeightMargin(): Int {
         val fallback = adoptedFallback ?: return if (marginStrategy() == MarginStrategyPolicy.Strategy.PAR) 0
             else ProjectionGeometryPolicy.heightMargin(getNegotiatedHeight(), screenHeightPx, scaleFactor)
         return scaledFallbackMargins(fallback).height
     }
 
+    @Synchronized
     fun getWidthMargin(): Int {
         val fallback = adoptedFallback ?: return if (marginStrategy() == MarginStrategyPolicy.Strategy.PAR) 0
             else ProjectionGeometryPolicy.widthMargin(getNegotiatedWidth(), screenWidthPx, scaleFactor)
@@ -682,12 +712,14 @@ object HeadUnitScreenConfig {
         )
     }
 
+    @Synchronized
     fun getScaleX(): Float = ProjectionGeometryPolicy.scaleX(
         videoFitMode, forcedScale,
         screenWidthPx, screenHeightPx, getNegotiatedWidth(), getNegotiatedHeight(),
         getWidthMargin(), getHeightMargin()
     )
 
+    @Synchronized
     fun getScaleY(): Float = ProjectionGeometryPolicy.scaleY(
         videoFitMode, forcedScale,
         screenWidthPx, screenHeightPx, getNegotiatedWidth(), getNegotiatedHeight(),
@@ -695,24 +727,25 @@ object HeadUnitScreenConfig {
     )
 
     /** The density decision for the geometry in force, with what was asked and why it changed. */
+    @Synchronized
     fun densityDecision(): AnnouncedDensityPolicy.Decision {
-        if (!this::currentSettings.isInitialized) {
-            return AnnouncedDensityPolicy.decide(0, SystemOptimizer.DisplaySizePreset.SMALL_7_8, 0, 0)
-        }
+        val captured = geometrySettings
+            ?: return AnnouncedDensityPolicy.decide(0, SystemOptimizer.DisplaySizePreset.SMALL_7_8, 0, 0)
         val preset = OnboardingDisplayPolicy.initialPreset(
-            currentSettings.displaySizePreset, SystemOptimizer.DisplaySizePreset.SMALL_7_8
+            captured.displaySizePreset, SystemOptimizer.DisplaySizePreset.SMALL_7_8
         )
         return AnnouncedDensityPolicy.decide(
-            currentSettings.dpiPixelDensity, preset,
+            captured.dpiPixelDensity, preset,
             getNegotiatedWidth() - getWidthMargin(), getNegotiatedHeight() - getHeightMargin(),
-            getPixelAspectRatioE4(), currentSettings.dpiFloorOverride, screenWidthPx, screenHeightPx
+            getPixelAspectRatioE4(), captured.dpiFloorOverride, screenWidthPx, screenHeightPx
         )
     }
 
+    @Synchronized
     fun getPixelAspectRatioE4(): Int {
         // The settings row normalises anything <= 0 to 10000, so 10000 is also "unset" and is what
         // lets the derived value through. An explicit non-square choice always wins.
-        val manual = if (this::currentSettings.isInitialized) currentSettings.pixelAspectRatioE4 else 0
+        val manual = geometrySettings?.pixelAspectRatioE4 ?: 0
         if (manual > 0 && manual != ProjectionGeometryPolicy.SQUARE_PIXELS_E4) return manual
         return ProjectionGeometryPolicy.pixelAspectRatioE4(
             videoFitMode, screenWidthPx, screenHeightPx, getNegotiatedWidth(), getNegotiatedHeight(),
@@ -720,14 +753,20 @@ object HeadUnitScreenConfig {
         )
     }
 
+    @Synchronized
     fun getUsableWidth(): Int = screenWidthPx
+    @Synchronized
     fun getUsableHeight(): Int = screenHeightPx
 
 
     // These are half the total margin, distributed symmetrically.
+    @Synchronized
     fun getLeftMargin(): Int = getWidthMargin() / 2
+    @Synchronized
     fun getRightMargin(): Int = getWidthMargin() - getLeftMargin()
+    @Synchronized
     fun getTopMargin(): Int = getHeightMargin() / 2
+    @Synchronized
     fun getBottomMargin(): Int = getHeightMargin() - getTopMargin()
 
     /**
@@ -735,9 +774,9 @@ object HeadUnitScreenConfig {
      * Compares with the current usable area and updates the anchor if they differ.
      * @return true if the dimensions changed and margins need to be re-sent to AA.
      */
-    fun updateSurfaceDimensions(surfaceW: Int, surfaceH: Int): Boolean {
+    fun updateSurfaceDimensions(surfaceW: Int, surfaceH: Int): Boolean = updateGeometry {
         // A picture-in-picture window is a few hundred px of somebody else's screen, not the canvas.
-        if (App.isPiPActive) return false
+        if (App.isPiPActive || windowMeasurementPending || !isInitialized || surfaceW <= 0 || surfaceH <= 0) return@updateGeometry false
 
         val surface = ScreenOrientationPolicy.normalise(surfaceW, surfaceH, normalisation)
         val finalSurfaceW = surface.width
@@ -749,7 +788,7 @@ object HeadUnitScreenConfig {
         if (diffW <= SURFACE_MISMATCH_TOLERANCE && diffH <= SURFACE_MISMATCH_TOLERANCE) {
             // Already the canvas in force, but still the reading that outranks the display metrics.
             surfaceCanvas = ProjectionCanvasPolicy.Measurement(screenWidthPx, screenHeightPx, liveHash())
-            return false
+            return@updateGeometry false
         }
 
         val primary = primarySize()
@@ -757,24 +796,38 @@ object HeadUnitScreenConfig {
         if ((diffW > 0 && (active.first == finalSurfaceW || primary.first == finalSurfaceW)) ||
             (diffH > 0 && (active.second == finalSurfaceH || primary.second == finalSurfaceH))) {
             AppLog.i("[UI_DEBUG_FIX] Surface mismatch detected but matches negotiated resolution. Usable: ${screenWidthPx}x${screenHeightPx}, Actual surface: ${finalSurfaceW}x${finalSurfaceH}. Ignoring.")
-            return false
+            return@updateGeometry false
         }
 
         AppLog.i("[UI_DEBUG_FIX] Surface mismatch detected! Usable: ${screenWidthPx}x${screenHeightPx}, Actual surface: ${finalSurfaceW}x${finalSurfaceH} (diff: ${diffW}x${diffH})")
 
-        // The surface is the canvas, so it outranks every other reading until the settings change.
+        // The surface outranks other readings until the settings or owning window geometry change.
         surfaceCanvas = ProjectionCanvasPolicy.Measurement(finalSurfaceW, finalSurfaceH, liveHash())
         adoptCanvas(finalSurfaceW, finalSurfaceH, "the projection surface")
 
         AppLog.i("[UI_DEBUG_FIX] Recalculated: usable=${screenWidthPx}x${screenHeightPx}, margins: w=${getWidthMargin()}, h=${getHeightMargin()}, per-side: L=${getLeftMargin()} T=${getTopMargin()} R=${getRightMargin()} B=${getBottomMargin()}")
-        return true
+        return@updateGeometry true
     }
 
     /**
      * Computes a hash of all settings that affect screen dimensions.
      * Used to invalidate the cached surface dimensions when settings change.
      */
-    fun computeSettingsHash(settings: Settings): Int = ScreenSettingsHash.of(
+    @Synchronized
+    fun computeSettingsHash(settings: Settings): Int = computeSettingsHash(settings, normalisation)
+
+    internal fun computeSettingsHash(settings: Settings, configOrientation: Int): Int = computeSettingsHash(
+        settings, ScreenOrientationPolicy.normalisation(
+            settings.screenOrientation,
+            configOrientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE,
+            configOrientation == android.content.res.Configuration.ORIENTATION_PORTRAIT,
+        ),
+    )
+
+    private fun computeSettingsHash(
+        settings: Settings,
+        normalisation: ScreenOrientationPolicy.Normalisation,
+    ): Int = ScreenSettingsHash.of(
         resolutionId = settings.resolutionId,
         dpiPixelDensity = settings.dpiPixelDensity,
         pixelAspectRatioE4 = settings.pixelAspectRatioE4,
@@ -793,6 +846,7 @@ object HeadUnitScreenConfig {
         normalisation = normalisation,
     )
 
+    @Synchronized
     fun lockResolution() {
         if (!isResolutionLocked) {
             AppLog.i("[UI_DEBUG] HeadUnitScreenConfig: Locking resolution at $negotiatedResolutionType")
@@ -802,8 +856,11 @@ object HeadUnitScreenConfig {
 
     // The phone keeps the fallback until the session ends, so only the session-end callers clear it;
     // a mid-session settings or orientation unlock must not send touch back to the primary size.
+    @Synchronized
     fun unlockResolution(keepFallback: Boolean = false) {
-        if (!keepFallback) synchronized(this) {
+        if (!keepFallback) {
+            announcedGeometry = null
+            announcementOwner = null
             adoptedFallback = null
             offeredFallback = null
         }

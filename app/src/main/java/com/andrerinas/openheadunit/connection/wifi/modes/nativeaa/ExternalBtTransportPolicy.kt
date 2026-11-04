@@ -36,6 +36,9 @@ object ExternalBtTransportPolicy {
         /** HCT's verified Bluetooth service and its bounded local AA carrier. */
         HCT,
 
+        /** The vendor daemon's Unix socket, `/dev/socket/zj_bt_socket` on Unisoc ZJ units. */
+        ZJ_SOCKET,
+
         /** External Bluetooth, and no route through it: refuse mode 3 and say why. */
         BLOCKED,
 
@@ -58,6 +61,8 @@ object ExternalBtTransportPolicy {
      * @param blinkTransportEnabled the user's opt-in, `Settings.externalBtBlinkTransport`
      * @param fytModuleEvidence what `ExternalBtPolicy.detectFytModule` found, or null
      * @param hctServiceAvailable a verified HCT service contract, not a firmware/model hint
+     * @param zjSocketEnabled the user's opt-in, `Settings.externalBtZjSocketTransport`
+     * @param zjSocketConnects the cached connect answer for the ZJ socket; null means not measured
      */
     fun route(
         discovery: ZbtDiscoveryPolicy.Snapshot,
@@ -65,7 +70,9 @@ object ExternalBtTransportPolicy {
         ignoreExternalBt: Boolean,
         blinkTransportEnabled: Boolean = false,
         fytModuleEvidence: String? = null,
-        hctServiceAvailable: Boolean = false
+        hctServiceAvailable: Boolean = false,
+        zjSocketEnabled: Boolean = false,
+        zjSocketConnects: Boolean? = false
     ): Route = when {
         // Before the evidence checks: an enabled toggle is a recovery control too, and must win
         // even where detection cannot see the node.
@@ -76,12 +83,16 @@ object ExternalBtTransportPolicy {
         // toggle left on (or offered because a ZLink marker also matched) is refused too.
         fytModuleEvidence != null -> if (ignoreExternalBt) Route.NORMAL else Route.BLOCKED
         discovery.decision.available && zbtTransportEnabled -> Route.ZBT
+        // After the ZBT toggle, which is the older explicit choice, and before the radio override.
+        zjSocketEnabled -> Route.ZJ_SOCKET
         ignoreExternalBt -> Route.NORMAL
         discovery.decision.available && discovery.reachable == true -> Route.ZBT
         // A verified service can expose AA without any ZBT markers or listener. Preserve an
         // already measured ZBT route, but do not probe another daemon just to prefer it over a
         // service we can use. HCT still verifies each fresh AA carrier before sending credentials.
         hctServiceAvailable -> Route.HCT
+        // Only a socket that accepted a connect counts; a file that exists proves nothing.
+        discovery.decision.available && zjSocketConnects == true -> Route.ZJ_SOCKET
         !discovery.decision.available -> Route.NORMAL
         discovery.decision.allowsAndroidFallback -> Route.NORMAL
         else -> Route.BLOCKED
@@ -100,15 +111,19 @@ object ExternalBtTransportPolicy {
         ignoreExternalBt: Boolean,
         blinkTransportEnabled: Boolean = false,
         fytModuleEvidence: String? = null,
-        hctServiceAvailable: Boolean = false
+        hctServiceAvailable: Boolean = false,
+        zjSocketEnabled: Boolean = false,
+        zjSocketConnects: Boolean? = false
     ): Boolean =
         route(
             discovery, zbtTransportEnabled, ignoreExternalBt,
-            blinkTransportEnabled, fytModuleEvidence, hctServiceAvailable
+            blinkTransportEnabled, fytModuleEvidence, hctServiceAvailable,
+            zjSocketEnabled, zjSocketConnects
         ) == Route.BLOCKED &&
             !needsDaemonMeasurement(
                 discovery, zbtTransportEnabled, ignoreExternalBt,
-                blinkTransportEnabled, fytModuleEvidence, hctServiceAvailable
+                blinkTransportEnabled, fytModuleEvidence, hctServiceAvailable,
+                zjSocketEnabled, zjSocketConnects
             )
 
     /**
@@ -124,10 +139,16 @@ object ExternalBtTransportPolicy {
         ignoreExternalBt: Boolean,
         blinkTransportEnabled: Boolean = false,
         fytModuleEvidence: String? = null,
-        hctServiceAvailable: Boolean = false
+        hctServiceAvailable: Boolean = false,
+        zjSocketEnabled: Boolean = false,
+        zjSocketConnects: Boolean? = false
     ): Boolean = !blinkTransportEnabled && fytModuleEvidence == null && !hctServiceAvailable &&
+        !zjSocketEnabled &&
         discovery.decision.available &&
-        !zbtTransportEnabled && !ignoreExternalBt && discovery.reachable == null
+        !zbtTransportEnabled && !ignoreExternalBt &&
+        // ZBT is asked first; the socket is asked only once ZBT has refused.
+        ((discovery.reachable == null && zjSocketConnects != true) ||
+            (discovery.reachable == false && zjSocketConnects == null))
 
     enum class WifiButton { MODULE, REFUSED, ANDROID_RADIO }
 
@@ -143,18 +164,70 @@ object ExternalBtTransportPolicy {
         ignoreExternalBt: Boolean,
         blinkTransportEnabled: Boolean = false,
         fytModuleEvidence: String? = null,
-        hctServiceAvailable: Boolean = false
+        hctServiceAvailable: Boolean = false,
+        zjSocketEnabled: Boolean = false,
+        zjSocketConnects: Boolean? = false
     ): Boolean = discovery.decision.retriesOnPress && discovery.reachable == false && needsDaemonMeasurement(
         discovery.copy(reachable = null), zbtTransportEnabled, ignoreExternalBt,
-        blinkTransportEnabled, fytModuleEvidence, hctServiceAvailable
+        blinkTransportEnabled, fytModuleEvidence, hctServiceAvailable,
+        zjSocketEnabled, zjSocketConnects
     )
 
     /** External-module routes cannot use Android's bonded-device and driver-selection controls. */
     fun usesExternalModule(route: Route): Boolean =
-        route == Route.ZBT || route == Route.BLINK || route == Route.HCT
+        route == Route.ZBT || route == Route.BLINK || route == Route.HCT || route == Route.ZJ_SOCKET
 
-    /** BLINK and HCT rearm through their module service, never through Android RFCOMM. */
-    fun rearmsWithoutAndroidRadio(route: Route): Boolean = route == Route.BLINK || route == Route.HCT
+    /** BLINK, HCT and the ZJ socket rearm through their module, never through Android RFCOMM. */
+    fun rearmsWithoutAndroidRadio(route: Route): Boolean =
+        route == Route.BLINK || route == Route.HCT || route == Route.ZJ_SOCKET
+
+    /** The switches [route] reads, plus the ESP32 relay's, which overrides them all. */
+    data class RouteSwitches(
+        val blink: Boolean, val zjSocket: Boolean, val zbt: Boolean, val androidRadio: Boolean,
+        val esp32: Boolean = false,
+    )
+
+    /** The Bluetooth the phone pairs with. One choice, because only one route runs. */
+    enum class RouteChoice { AUTOMATIC, ANDROID_RADIO, ZBT, ZJ_SOCKET, BLINK, ESP32 }
+
+    /** What the switches run, in [route]'s order; a saved ESP32 relay comes before all of it. */
+    fun choiceOf(s: RouteSwitches): RouteChoice = when {
+        s.esp32 -> RouteChoice.ESP32
+        s.blink -> RouteChoice.BLINK
+        s.zbt -> RouteChoice.ZBT
+        s.zjSocket -> RouteChoice.ZJ_SOCKET
+        s.androidRadio -> RouteChoice.ANDROID_RADIO
+        else -> RouteChoice.AUTOMATIC
+    }
+
+    /** A choice turns its own switch on and every other one off. */
+    fun switchesFor(choice: RouteChoice) = RouteSwitches(
+        blink = choice == RouteChoice.BLINK,
+        zjSocket = choice == RouteChoice.ZJ_SOCKET,
+        zbt = choice == RouteChoice.ZBT,
+        androidRadio = choice == RouteChoice.ANDROID_RADIO,
+        esp32 = choice == RouteChoice.ESP32,
+    )
+
+    /** The choices this unit can use, Automatic first. The one in force is always offered. */
+    fun routeChoices(
+        current: RouteChoice,
+        moduleDetected: Boolean,
+        zbtOffered: Boolean,
+        zjOffered: Boolean,
+        blinkOffered: Boolean,
+        esp32Supported: Boolean,
+    ): List<RouteChoice> = RouteChoice.values().filter {
+        it == current || when (it) {
+            RouteChoice.AUTOMATIC -> true
+            // Without a module, Automatic already is this unit's own Bluetooth.
+            RouteChoice.ANDROID_RADIO -> moduleDetected
+            RouteChoice.ZBT -> zbtOffered
+            RouteChoice.ZJ_SOCKET -> zjOffered
+            RouteChoice.BLINK -> blinkOffered
+            RouteChoice.ESP32 -> esp32Supported
+        }
+    }
 
     /**
      * Offered wherever the FYT module is detected, and kept while enabled even if detection stops
@@ -163,22 +236,25 @@ object ExternalBtTransportPolicy {
     fun showBlinkToggle(fytModuleEvidence: String?, enabled: Boolean): Boolean =
         fytModuleEvidence != null || enabled
 
-    /** Keep the radio escape visible only where it can affect routing, or is already checked. */
-    fun showsAndroidRadioOverride(
+    /**
+     * Offered where the ZJ markers or the socket file are present and the unit is not an FYT one,
+     * and kept while enabled so the control that turns it off stays reachable.
+     */
+    fun showZjSocketToggle(
         discovery: ZbtDiscoveryPolicy.Snapshot,
-        zbtTransportEnabled: Boolean,
-        ignoreExternalBt: Boolean,
-        blinkTransportEnabled: Boolean = false,
-        fytModuleEvidence: String? = null,
-        hctServiceAvailable: Boolean = false
-    ): Boolean {
-        val detected = discovery.decision.available || fytModuleEvidence != null || hctServiceAvailable
-        // A stale ZBT toggle without matching evidence cannot select ZBT and must not hide
-        // the escape on an HCT-only unit. BLINK remains an explicit override even without evidence.
-        val explicitModule = blinkTransportEnabled ||
-            (fytModuleEvidence == null && discovery.decision.available && zbtTransportEnabled)
-        return detected && (ignoreExternalBt || !explicitModule)
-    }
+        fytModuleEvidence: String?,
+        socketFilePresent: Boolean,
+        enabled: Boolean
+    ): Boolean = enabled || (fytModuleEvidence == null && (discovery.decision.available || socketFilePresent))
+
+    /** Any sign of a Bluetooth module beside Android's radio. */
+    fun externalModuleDetected(
+        discovery: ZbtDiscoveryPolicy.Snapshot,
+        fytModuleEvidence: String?,
+        hctServiceAvailable: Boolean,
+        zjSocketConnects: Boolean?,
+    ): Boolean = discovery.decision.available || fytModuleEvidence != null || hctServiceAvailable ||
+        zjSocketConnects == true
 
     /**
      * What the main screen's WiFi button arms. A daemon not measured yet, or one whose refusal
@@ -190,24 +266,30 @@ object ExternalBtTransportPolicy {
         ignoreExternalBt: Boolean,
         blinkTransportEnabled: Boolean = false,
         fytModuleEvidence: String? = null,
-        hctServiceAvailable: Boolean = false
+        hctServiceAvailable: Boolean = false,
+        zjSocketEnabled: Boolean = false,
+        zjSocketConnects: Boolean? = false
     ): WifiButton = when {
         remeasuresOnPress(
             discovery, zbtTransportEnabled, ignoreExternalBt,
-            blinkTransportEnabled, fytModuleEvidence, hctServiceAvailable
+            blinkTransportEnabled, fytModuleEvidence, hctServiceAvailable,
+            zjSocketEnabled, zjSocketConnects
         ) -> WifiButton.MODULE
         refusesBringUp(
             discovery, zbtTransportEnabled, ignoreExternalBt,
-            blinkTransportEnabled, fytModuleEvidence, hctServiceAvailable
+            blinkTransportEnabled, fytModuleEvidence, hctServiceAvailable,
+            zjSocketEnabled, zjSocketConnects
         ) -> WifiButton.REFUSED
         usesExternalModule(
             route(
                 discovery, zbtTransportEnabled, ignoreExternalBt,
-                blinkTransportEnabled, fytModuleEvidence, hctServiceAvailable
+                blinkTransportEnabled, fytModuleEvidence, hctServiceAvailable,
+                zjSocketEnabled, zjSocketConnects
             )
         ) || needsDaemonMeasurement(
             discovery, zbtTransportEnabled, ignoreExternalBt,
-            blinkTransportEnabled, fytModuleEvidence, hctServiceAvailable
+            blinkTransportEnabled, fytModuleEvidence, hctServiceAvailable,
+            zjSocketEnabled, zjSocketConnects
         ) -> WifiButton.MODULE
         else -> WifiButton.ANDROID_RADIO
     }

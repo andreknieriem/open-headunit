@@ -139,7 +139,7 @@ object OemAppManager {
     }
 
     suspend fun checkAvailableBackend(): ExecutionBackend = withContext(Dispatchers.IO) {
-        if (Shell.isAppGrantedRoot() == true) {
+        if (LibsuAvailability.usable() && Shell.isAppGrantedRoot() == true) {
             return@withContext ExecutionBackend.ROOT
         }
         if (AdbManager.isAdbPortOpen()) {
@@ -149,7 +149,7 @@ object OemAppManager {
     }
 
     suspend fun executeCommand(context: Context, command: String): Pair<Int, String> = withContext(Dispatchers.IO) {
-        if (Shell.isAppGrantedRoot() == true) {
+        if (LibsuAvailability.usable() && Shell.isAppGrantedRoot() == true) {
             try {
                 val result = Shell.cmd(command).exec()
                 val out = (result.out + result.err).joinToString("\n").trim()

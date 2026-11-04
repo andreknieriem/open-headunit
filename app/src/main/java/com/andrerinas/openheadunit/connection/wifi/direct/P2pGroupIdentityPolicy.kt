@@ -144,8 +144,8 @@ object P2pGroupIdentityPolicy {
     fun isValid(stored: StoredP2pIdentity): Boolean =
         isValidName(stored.networkName) && isValidPassphrase(stored.passphrase)
 
-    /** A network id at or above zero is a stored profile; -1 is a temporary group. */
-    fun isPersistentNetworkId(networkId: Int): Boolean = networkId >= 0
+    /** A network id at or above zero is a stored profile; -1 is a temporary group, null unknown. */
+    fun isPersistentNetworkId(networkId: Int?): Boolean = networkId != null && networkId >= 0
 
     /**
      * One line saying whether the platform gave us the group we asked for.
@@ -157,9 +157,13 @@ object P2pGroupIdentityPolicy {
         requested: P2pGroupIdentity?,
         networkName: String,
         passphrase: String,
-        networkId: Int,
+        networkId: Int?,
     ): String {
-        val stored = if (isPersistentNetworkId(networkId)) "yes (netId $networkId)" else "no (temporary)"
+        val stored = when {
+            networkId == null -> "unknown (netId unavailable)"
+            isPersistentNetworkId(networkId) -> "yes (netId $networkId)"
+            else -> "no (temporary)"
+        }
         return when (requested) {
             is P2pGroupIdentity.Named -> {
                 val matches = requested.networkName == networkName && requested.passphrase == passphrase

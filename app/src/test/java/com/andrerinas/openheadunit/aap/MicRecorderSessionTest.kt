@@ -277,6 +277,17 @@ class MicRecorderSessionTest {
         verify(f.claim, never()).release()
     }
 
+    @Test fun `service owner removed while Open waits declines without native capture`() = Fixture(source = 1).use { f ->
+        f.controller.open(2)
+        // AapService.onDestroy clears this before asynchronous transport teardown retires Open.
+        MicRecorder.foregroundClaim = null
+        f.workAll(); f.sendAll()
+        assertEquals(listOf(1 to false), f.responses)
+        assertTrue(f.records.constructed().isEmpty())
+        verify(f.claim, never()).claim()
+        verify(f.claim, never()).release()
+    }
+
     @Test fun `late old callback and repeated cleanup preserve a new transport recorder`() = Fixture().use { f ->
         f.open()
         val old = f.receivers.single()

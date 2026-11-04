@@ -5,6 +5,7 @@ import android.content.Context
 import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
 import com.andrerinas.openheadunit.aap.AapSslContext
+import com.andrerinas.openheadunit.aap.DimState
 import com.andrerinas.openheadunit.aap.AaPresentationSession
 import com.andrerinas.openheadunit.aap.AapTransport
 import com.andrerinas.openheadunit.aap.NarrowBandProfilePolicy
@@ -93,6 +94,12 @@ class CommManager(
 
     enum class DisconnectReason { CONNECTION_ENDED, SETTINGS_RESTART, PROJECTION_UNRAISED }
 
+    /** Who ended a session; see [EndCausePolicy]. */
+    enum class EndCause { PHONE, USER, LINK_FAILED, DETACHED, LINK_GOING_DOWN, APP }
+
+    /** The dimmer outlives the projection activity and clears when a session ends. */
+    val dimState = DimState()
+
     /**
      * Represents the lifecycle state of the Android Auto connection.
      *
@@ -126,10 +133,15 @@ class CommManager(
             // the publication. A launcher armed while that attempt was still Connecting uses it
             // to recognise the attempt's later end as older than the arm (see rearmSnapshot).
             internal val endedAttempt: Any? = null,
+            // Whether SSL had completed, who ended the session and over which transport.
+            val reachedSsl: Boolean = false,
+            val endedBy: EndCause = EndCause.APP,
+            val transport: ProjectionConnection.Type? = null,
         ) : ConnectionState() {
             override fun toString() = "Disconnected(isClean=$isClean, isUserExit=$isUserExit, " +
                 "reason=$reason, restartEndpoint=$restartEndpoint, settingsRestartUntilMs=$settingsRestartUntilMs, " +
-                "wasLoopbackSession=$wasLoopbackSession, hadPhysicalConnection=$hadPhysicalConnection)"
+                "wasLoopbackSession=$wasLoopbackSession, hadPhysicalConnection=$hadPhysicalConnection, " +
+                "reachedSsl=$reachedSsl, endedBy=$endedBy, transport=$transport)"
 
             val isSettingsRestart get() = reason == DisconnectReason.SETTINGS_RESTART
 
@@ -590,7 +602,9 @@ class CommManager(
             conn = if (settings.useLibusb) {
                 LibusbProjectionConnection(usbManager, currentDevice)
             } else {
-                StandardUsbProjectionConnection(usbManager, currentDevice)
+                StandardUsbProjectionConnection(usbManager, currentDevice,
+                    readFaultArmed = { settings.debugUsbReadFault },
+                    disarmReadFault = { settings.debugUsbReadFault = false })
             }
             val candidate = conn
             val registered = synchronized(transportLifecycleLock) {
@@ -1033,7 +1047,8 @@ class CommManager(
                             context, externalSsl = aapSslContext,
                             onAaMediaMetadata = { meta, session -> onAaMediaMetadata?.invoke(meta, session) },
                             onAaPlaybackStatus = { status, session -> onAaPlaybackStatus?.invoke(status, session) },
-                            onAaPresentationClosed = { session -> onAaPresentationClosed?.invoke(session) }
+                            onAaPresentationClosed = { session -> onAaPresentationClosed?.invoke(session) },
+                            nightOverlayState = com.andrerinas.openheadunit.App.provide(context).nightOverlayState
                         )
                         candidate.setProjectionVideoFocusSuppressed(projectionVideoFocusSuppressed)
                         // A late quit belongs only to the transport that installed this callback.
@@ -1265,12 +1280,15 @@ class CommManager(
         }
         val save = SettingsRestartRecovery.ownerAtEnd(wasUserExit, reachedSsl(), null, usbSaveOwner)
         usbSaveOwner = null
+        val endedSsl = reachedSsl()
+        val endedType = _connection?.type
         // Keep the retiring owner published until doDisconnect captures it. Its callback
         // precedes final cleanup, so reconnect must await its actual termination as well.
         // Publish cleanup before state: a reconnect observer must be able to await this job.
         _disconnectJob = _scope.launch { doDisconnect(sendByeBye = false) }
         source.retirePresentation()
-        _connectionState.value = ConnectionState.Disconnected(isClean, isUserExit = wasUserExit, wasLoopbackSession = isLoopbackSession, hadPhysicalConnection = physicalConnectionReached, settingsRetryOwner = save, endedAttempt = connectionAttempt)
+        _connectionState.value = ConnectionState.Disconnected(isClean, isUserExit = wasUserExit, wasLoopbackSession = isLoopbackSession, hadPhysicalConnection = physicalConnectionReached, settingsRetryOwner = save, endedAttempt = connectionAttempt,
+            reachedSsl = endedSsl, endedBy = EndCausePolicy.ofTransportQuit(isClean, wasUserExit), transport = endedType)
         if (settings.killOnDisconnect) {
             context.sendBroadcast(android.content.Intent("com.andrerinas.openheadunit.ACTION_FINISH_ACTIVITIES").apply {
                 setPackage(context.packageName)
@@ -1595,6 +1613,7 @@ class CommManager(
         honorKillOnDisconnect: Boolean = true,
         reason: DisconnectReason = DisconnectReason.CONNECTION_ENDED,
         settingsRetryOwner: ConnectionState.Disconnected? = null,
+        endedBy: EndCause? = null,
     ): Unit = synchronized(transportLifecycleLock) {
         if (isUserExit || reason == DisconnectReason.SETTINGS_RESTART || reason == DisconnectReason.PROJECTION_UNRAISED) usbRecoveryOwner = Any()
         if (isUserExit && reason != DisconnectReason.SETTINGS_RESTART) {
@@ -1606,6 +1625,8 @@ class CommManager(
         val save = if (reason == DisconnectReason.SETTINGS_RESTART) null
             else SettingsRestartRecovery.ownerAtEnd(isUserExit, reachedSsl(), settingsRetryOwner, usbSaveOwner)
         usbSaveOwner = null
+        val endedSsl = reachedSsl()
+        val endedType = _connection?.type
 
         HeadUnitScreenConfig.unlockResolution()
 
@@ -1623,6 +1644,7 @@ class CommManager(
             settingsRestartUntilMs = if (reason == DisconnectReason.SETTINGS_RESTART)
                 SystemClock.elapsedRealtime() + SettingsRestartRecovery.WINDOW_MS else 0L,
             endedAttempt = connectionAttempt,
+            reachedSsl = endedSsl, endedBy = EndCausePolicy.ofDisconnect(isUserExit, endedBy), transport = endedType,
         )
         if (settings.killOnDisconnect && honorKillOnDisconnect) {
             context.sendBroadcast(android.content.Intent("com.andrerinas.openheadunit.ACTION_FINISH_ACTIVITIES").apply {
@@ -1683,7 +1705,8 @@ class CommManager(
             connectionAttempt = null
             if (_connectionState.value !is ConnectionState.Disconnected) {
                 _transport?.retirePresentation()
-                _connectionState.value = ConnectionState.Disconnected(wasLoopbackSession = isLoopbackSession, hadPhysicalConnection = physicalConnectionReached, endedAttempt = endedAttempt)
+                _connectionState.value = ConnectionState.Disconnected(wasLoopbackSession = isLoopbackSession, hadPhysicalConnection = physicalConnectionReached, endedAttempt = endedAttempt,
+                    reachedSsl = reachedSsl(), transport = _connection?.type)
             }
             val transport = _transport
             val connection = _connection
@@ -1704,6 +1727,7 @@ class CommManager(
         // here, so the second pass sees a session that never reached the handshake and counts
         // nothing.
         recordProjectionHealth()
+        dimState.resetForNewSession()
         noteSessionEnded(renderedAnyFrame = videoDecoder.framesRenderedThisSession > 0L, deliberateEnd = reason != DisconnectReason.CONNECTION_ENDED)
         // The close is in its own phase because it is the one that must happen: a throw from the
         // ByeBye send or either decoder stop used to skip it, leaving the phone's head unit server
@@ -1828,7 +1852,8 @@ class CommManager(
             val cleanup = _scope.launch { doDisconnect(sendByeBye = true) }
             _disconnectJob = cleanup
             _transport?.retirePresentation()
-            _connectionState.value = ConnectionState.Disconnected(isClean = false, isUserExit = false, wasLoopbackSession = isLoopbackSession, hadPhysicalConnection = physicalConnectionReached, endedAttempt = connectionAttempt)
+            _connectionState.value = ConnectionState.Disconnected(isClean = false, isUserExit = false, wasLoopbackSession = isLoopbackSession, hadPhysicalConnection = physicalConnectionReached, endedAttempt = connectionAttempt,
+                reachedSsl = reachedSsl(), endedBy = EndCause.LINK_GOING_DOWN, transport = _connection?.type)
             cleanup
         }
         runBlocking { withTimeoutOrNull(timeoutMs) { job.join() } }

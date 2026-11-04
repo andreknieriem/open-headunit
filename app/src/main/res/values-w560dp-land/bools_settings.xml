@@ -1,4 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <bool name="settings_show_categories">true</bool>
+    <bool name="settings_rail_foldable">true</bool>
 </resources>

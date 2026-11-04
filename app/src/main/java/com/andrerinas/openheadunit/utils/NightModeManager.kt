@@ -180,7 +180,7 @@ class NightModeManager(
             }
         }
 
-        // 3. Car Headlight Signal Observer (Settings.System.car_mode: 0 = day, 1 = night)
+        // 3. Car Headlight Signal Observer (Settings.System.car_mode; mapping may be calibrated)
         if (settings.nightMode == Settings.NightMode.CAR_SIGNAL) {
             if (!isCarSignalObserverRegistered) {
                 context.contentResolver.registerContentObserver(
@@ -256,13 +256,13 @@ class NightModeManager(
             }
             Settings.NightMode.CAR_SIGNAL -> {
                 // Many Chinese aftermarket head units (e.g. OLEDPRO) expose the car's
-                // ILL+ headlight signal as Settings.System.car_mode (0 = day, 1 = night).
+                // ILL+ headlight signal as Settings.System.car_mode.
                 val carMode = try {
                     SystemSettings.System.getInt(context.contentResolver, "car_mode")
                 } catch (_: Exception) { -1 }
                 if (carMode >= 0) {
-                    isNight = carMode != 0
-                    AppLog.d("NightModeManager: CAR_SIGNAL car_mode=$carMode isNight=$isNight")
+                    isNight = settings.resolveCarSignalNight(carMode)
+                    AppLog.d("NightModeManager: CAR_SIGNAL car_mode=$carMode invert=${settings.carSignalInvert} isNight=$isNight")
                 } else {
                     AppLog.w("NightModeManager: CAR_SIGNAL key 'car_mode' not present; keeping previous state")
                     isNight = lastEmittedValue ?: false

@@ -30,7 +30,10 @@ object WirelessRearmPolicy {
         /** The two that decide whether the Native servers start at all. */
         val externalBtZbtTransport: Boolean,
         val externalBtBlinkTransport: Boolean,
+        val externalBtZjSocketTransport: Boolean,
         val nativeAaIgnoreExternalBt: Boolean,
+        /** A saved relay overrides the switches above at the handshake's start. */
+        val esp32Relay: Boolean,
         /** Read once by the Helper launcher, and once per listener start. */
         val autoEnableHotspot: Boolean,
         val insecureAaRfcommListener: Boolean,

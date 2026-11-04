@@ -103,6 +103,21 @@ object HomePagesPolicy {
 
     fun allWidgets(pages: List<List<Int>>): List<Int> = pages.flatten()
 
+    /** The home is at least this wide, in dp, before the favorites can move beside the card. */
+    const val SIDE_BY_SIDE_MIN_WIDTH_DP = 1100
+
+    /**
+     * Width over height from which the favorites sit beside the card. A 1920x720 unit (8:3) has
+     * width to spare; a 16:9 one does not, and there the column next to the card left the
+     * favorites as a narrow strip with the card's empty space under it.
+     */
+    const val SIDE_BY_SIDE_MIN_ASPECT = 2.2f
+
+    /** Whether the launcher home puts the card and the favorites side by side. */
+    fun sideBySide(landscape: Boolean, widthDp: Int, heightDp: Int): Boolean =
+        landscape && heightDp > 0 && widthDp >= SIDE_BY_SIDE_MIN_WIDTH_DP &&
+            widthDp >= heightDp * SIDE_BY_SIDE_MIN_ASPECT
+
     /** Two columns where the page is wider than tall, one where it is not. */
     fun columns(landscape: Boolean): Int = if (landscape) 2 else 1
 

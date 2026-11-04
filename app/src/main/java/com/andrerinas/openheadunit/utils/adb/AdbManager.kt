@@ -1,5 +1,6 @@
 package com.andrerinas.openheadunit.utils.adb
 
+import com.andrerinas.openheadunit.utils.useSocket
 import android.content.Context
 import android.net.TrafficStats
 import com.andrerinas.openheadunit.utils.AppLog
@@ -9,7 +10,6 @@ import java.io.File
 import java.io.IOException
 import java.net.InetSocketAddress
 import java.net.Socket
-import java.nio.charset.StandardCharsets
 
 object AdbManager {
 
@@ -34,7 +34,7 @@ object AdbManager {
 
     suspend fun isAdbPortOpen(port: Int = 5555, timeoutMs: Int = 1000): Boolean = withContext(Dispatchers.IO) {
         try {
-            Socket().use { s ->
+            Socket().useSocket { s ->
                 s.connect(InetSocketAddress("127.0.0.1", port), timeoutMs)
                 true
             }
@@ -89,7 +89,7 @@ object AdbManager {
                 try {
                     val data = activeStream.read()
                     if (data.isNotEmpty()) {
-                        outputBuilder.append(String(data, StandardCharsets.UTF_8))
+                        outputBuilder.append(String(data, AdbProtocol.UTF_8))
                     }
                 } catch (e: Exception) {
                     break

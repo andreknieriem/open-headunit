@@ -18,6 +18,8 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
 private enum class DisconnectReason { CONNECTION_ENDED, SETTINGS_RESTART, PROJECTION_UNRAISED }
+// PRODUCTION END_CAUSE
+private class ProjectionConnection { val type: Type? = null; enum class Type { USB, WIFI } }
 private sealed class ConnectionState {
     object Connecting : ConnectionState()
     object Connected : ConnectionState()
@@ -37,7 +39,7 @@ private class QueuedCleanup : CoroutineDispatcher() {
 private class AapTransport(
     decoder: AudioDecoder, video: Any, manager: AudioManager, settings: Settings, notification: Any,
     context: Context, externalSsl: Any, onAaMediaMetadata: (Any, Any) -> Unit, onAaPlaybackStatus: (Any, Any) -> Unit,
-    onAaPresentationClosed: (Any) -> Unit
+    onAaPresentationClosed: (Any) -> Unit, nightOverlayState: Any? = null
 ) {
     fun retirePresentation() {}
     val aapAudio = AapAudio(decoder, manager, settings)
@@ -74,7 +76,7 @@ private class ConnectionFixture(val settings: Settings = Settings()) {
     private val queue = QueuedCleanup()
     private val _scope = CoroutineScope(SupervisorJob() + queue)
     private val _connectionState = MutableStateFlow<ConnectionState>(ConnectionState.Connected)
-    private var _connection: Any? = Any()
+    private var _connection: ProjectionConnection? = ProjectionConnection()
     private var _transport: AapTransport? = null
     @Volatile private var projectionVideoFocusSuppressed = false
     private var _disconnectJob: Job? = null
@@ -111,7 +113,7 @@ private class ConnectionFixture(val settings: Settings = Settings()) {
         reason: DisconnectReason = DisconnectReason.CONNECTION_ENDED) {}
     fun nextConnection() {
         _transport?.aapAudio?.releaseAllFocus(); Handler.runAll()
-        _transport = null; disconnectRequested = false; _connection = Any(); _connectionState.value = ConnectionState.Connected
+        _transport = null; disconnectRequested = false; _connection = ProjectionConnection(); _connectionState.value = ConnectionState.Connected
     }
     fun close() { _transport?.aapAudio?.releaseAllFocus(); audioDecoder.stop(); Handler.runAll(); _scope.cancel() }
 }
@@ -121,6 +123,7 @@ private object SessionStateIntent {
     const val REASON_SETTINGS_RESTART=4; const val REASON_USER_EXIT=1; const val REASON_LINK_LOST=2; const val REASON_PHONE_LEFT=3
 }
 private object StationStandDown { fun onSessionLive(context: Any, held: Long?) {} }
+private object Esp32RelaySession { fun shouldNotifyProjection(context: Any) = false; fun notifyProjection(up: Boolean) {} }
 private class ObserverFixture(
     wireless: Boolean = false,
     loopback: Boolean = false,

@@ -2,7 +2,6 @@ package com.andrerinas.openheadunit.utils.adb;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -84,7 +83,7 @@ public class AdbStream implements Closeable {
 
     public void write(String str) throws IOException, InterruptedException {
         if (str == null) return;
-        write(str.getBytes(StandardCharsets.UTF_8), true);
+        write(str.getBytes(AdbProtocol.UTF_8), true);
     }
 
     public void write(byte[] data) throws IOException, InterruptedException {

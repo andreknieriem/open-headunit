@@ -32,6 +32,39 @@ object WifiDirectCompat {
         return 0
     }
 
+    /**
+     * The id is optional metadata, not a prerequisite for using a group. The getter did not
+     * exist on API 16, was hidden on 17–29, and became public on 30.
+     *
+     * null means unreadable, not profile 0 or a framework temporary/persistent sentinel.
+     * Keep the group usable without this metadata, but never derive a deletion target from it.
+     */
+    fun getGroupNetworkId(group: WifiP2pGroup): Int? = when {
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.R -> Api30Impl.getGroupNetworkId(group)
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 -> LegacyNetworkId.read(group)
+        else -> null
+    }
+
+    private object LegacyNetworkId {
+        // Cache both success and refusal: this metadata must not repeatedly probe hidden APIs.
+        private val getter = try {
+            WifiP2pGroup::class.java.getMethod("getNetworkId")
+        } catch (e: Exception) {
+            null
+        }
+
+        fun read(group: WifiP2pGroup): Int? = try {
+            getter?.invoke(group) as? Int
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.R)
+    private object Api30Impl {
+        fun getGroupNetworkId(group: WifiP2pGroup): Int = group.networkId
+    }
+
 
     @RequiresApi(Build.VERSION_CODES.Q)
     private object Api29Impl {

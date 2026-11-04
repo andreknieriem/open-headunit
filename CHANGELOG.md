@@ -1,22 +1,45 @@
 # Changelog
-### 4.0.0-beta1
-- New Homescreen, thanks to @andrecuellar
-- AAP: send one version request over TCP, so a slow head unit server is not left deaf
-- AAP: Keep media and navigation display updates off the receive path
-- AAP: Preserve frame boundaries during handshake
-- AAP: send one version request over TCP, so a slow head unit server is not left deaf
-- WiFi Direct: detect a wedged P2P stack and offer a WiFi restart
-- WiFi: Pause automatic searches during wireless sessions with Shizuku
-- Native AA: remember a unit that refuses every banded WiFi Direct group
+### 4.0.0-beta2
+- New Homescreen, favorites under the card on 16:9 units, and drawer tabs for shortcuts, thanks to @andrecuellar
+- Home: a separate switch for the widgets, and a panel opacity slider
+- Settings: redesign the screen in Material 3 and make the accent blue, thanks to @andrecuellar
+- Settings: a help button on every setting, sections ordered by use, a rail that folds to its icons, and one Bluetooth choice for Native AA
+- Settings: remove the Fake Speed switch that did nothing, thanks to @teodortomas
+- Wizard: test the decoder before recommending settings, thanks to @andrecuellar
+- Status pill: stop saying Android Auto is starting when nothing is, thanks to @andrecuellar
+- Added: Night overlay and gesture settings, with ILL+ calibration for the car_mode signal, thanks to @Anton111111
+- Gestures: keep two-finger gestures off Android Auto, add edge taps, a two-finger swipe down, a dimmer and more overlay settings, thanks to @o-jcardenass and @Anton111111
+- Added: Device-specific settings for Adayo (Haval) head units, thanks to @Anton111111
+- Added: Scaling for the exit dialog, thanks to @Anton111111
+- Automation: end the session when the charger is removed, turn the screen off and on, and connect a phone by name or MAC
+- Overlay: show the head unit's battery, free memory and WiFi signal
 - Native AA: connect faster
-- Wizard: test the decoder before recommending settings
+- Added: Bluetooth relay (ESP32) for Native AA, thanks to @kendrickkim
+- Native AA: carry the handshake over the ZJ Bluetooth socket on Unisoc units, thanks to @justme-justus
+- Native AA: support confirmed HCT Bluetooth bridges without root, thanks to @emotionbug
+- WiFi Direct: detect a wedged P2P stack and offer a WiFi restart, and remember a unit that refuses every banded group, thanks to @mark-alexander-hub
+- WiFi: Pause automatic searches during wireless sessions with Shizuku, thanks to @emotionbug
+- Wireless: keep owned WPP channels across a projection Exit, and fix legacy Wi-Fi Direct metadata and cleanup callbacks, thanks to @emotionbug
+- Hotspot: start tethering once, so auto-enable no longer tears down its own access point, thanks to @Duzttt
+- Bluetooth auto-disconnect: end the session when the phone closes the held channel, thanks to @mohammed-just
+- Bluetooth: open the app on units without a Bluetooth manager, and check ZBT reachability without activating the module, thanks to @emotionbug
+- Bluetooth: apply XYAuto media policy automatically during wireless projection, thanks to @emotionbug
+- USB: stop the permission dialog that comes back on every connect, let a plug-in leave the phone alone, and recover a lost link
 - Fix(usb): Resolve dongle AOA switching
-- Status pill: stop saying Android Auto is starting when nothing is
-- Projection: keep the decoder through a short cover
+- AAP: send one version request over TCP, so a slow head unit server is not left deaf
+- AAP: Keep media and navigation display updates off the receive path, and preserve frame boundaries during handshake, thanks to @emotionbug
+- Video: Add H.264 support to bundled FFmpeg, reduce decoder polling and preserve recovery ownership, thanks to @emotionbug
+- Projection: keep the decoder through a short cover, thanks to @andrecuellar
+- Projection: fill the screen with a SurfaceView below Android 7
 - Display: size Automatic DPI to the panel, and keep the widescreen layout it already had
-- Video: Add H.264 support to bundled FFmpeg
-- Logs: name captures OHU_Log_ instead of HUR_Log_
-- Audio: Reduce renderer work and add independent music correction
+- UI: respect system insets and refresh forced-scale projection geometry, thanks to @emotionbug
+- Audio: Reduce renderer work, add independent music correction, and keep microphone foreground ownership across service starts, thanks to @emotionbug
+- Audio: tap a channel's percentage to type an exact value, and raise the amplification ceiling to 250%, thanks to @teodortomas
+- Android 4.x: keep GPS location resends and Self-ADB working on older versions, thanks to @emotionbug
+- Fix: crash on ROMs that lack Activity.isDestroyed, and in the WiFi restart switch and the OEM app dialog on Android 4.2
+- Updates: offer only a release whose APK is uploaded
+- Translations: rewrite every locale against Android's own translations, and add the Wi-Fi scan screen, the Bluetooth relay screen and 17 other strings that were English only
+- Logs: name captures OHU_Log_ instead of HUR_Log_, thanks to @teodortomas
 
 ### v.3.5.0
 - Native AA: reconnect to a network that is still there, wake the phone over Bluetooth or the external module, bring a lost group or hotspot back after sleep, boot or ACC wake, stop advertising an address that moves, and pick, wake or hold back only for a phone that is on

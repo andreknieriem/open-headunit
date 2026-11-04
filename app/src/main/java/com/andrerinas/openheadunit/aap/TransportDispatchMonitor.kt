@@ -57,6 +57,8 @@ class TransportDispatchMonitor {
         videoShed = (videoShedTotal - shedAtWindowStart).coerceAtLeast(0L)
         val took = if (tookMs > 0L) tookMs else 0L
         when {
+            // The main display only. An auxiliary display's dispatch time lands in otherMs, and
+            // worstChannel names it, so a slow second lane is still attributable.
             channel == Channel.ID_VID -> videoMs += took
             Channel.isAudio(channel) -> audioMs += took
             else -> otherMs += took

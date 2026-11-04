@@ -50,6 +50,15 @@ class AapMessageReassemblerTest {
         assertEquals(0, last.dataOffset)
     }
 
+    @Test fun `the auxiliary video channel streams its fragments like the main one`() {
+        val r = AapMessageReassembler()
+        r.accept(frame(Channel.ID_VID2, 9, ByteArray(15)), 16)
+        val bytes = byteArrayOf(0x7f)
+        val last = r.accept(frame(Channel.ID_VID2, 10, bytes), 0)!!
+        assertSame(bytes, last.data)
+        assertEquals(0, last.dataOffset)
+    }
+
     @Test fun `video whose timestamp spans fragments is completed before the legacy decoder sees it`() {
         val r = AapMessageReassembler()
         assertNull(r.accept(frame(Channel.ID_VID, 9, byteArrayOf(0, 0)), 15))
@@ -172,7 +181,7 @@ class AapMessageReassemblerTest {
     }
 
     @Test fun `early DATA discard retains only credit identity through LAST without duplicate ack`() {
-        for (channel in listOf(Channel.ID_AUD, Channel.ID_VID)) {
+        for (channel in listOf(Channel.ID_AUD, Channel.ID_VID, Channel.ID_VID2)) {
             val credits = mutableListOf<Int>()
             val r = AapMessageReassembler(onDroppedMediaData = { credits += it })
             // Split type is known only after the next fragment, which exceeds the total.
@@ -233,7 +242,7 @@ class AapMessageReassemblerTest {
     }
 
     @Test fun `replacement FIRST retires dropped media DATA exactly once before delivery`() {
-        for (channel in listOf(Channel.ID_AUD, Channel.ID_VID)) {
+        for (channel in listOf(Channel.ID_AUD, Channel.ID_VID, Channel.ID_VID2)) {
             val events = mutableListOf<String>()
             val r = AapMessageReassembler(
                 onDroppedMediaData = { events += "ack:$it" },
@@ -244,7 +253,7 @@ class AapMessageReassemblerTest {
             // A complete replacement CSD is delivered only after the old DATA credit is returned.
             val next = frame(channel, 11, byteArrayOf(0, 1))
             assertSame(next, r.accept(next, 0))
-            val expected = if (channel == Channel.ID_VID) listOf("video recovery", "ack:$channel")
+            val expected = if (Channel.isVideo(channel)) listOf("video recovery", "ack:$channel")
                 else listOf("ack:$channel")
             assertEquals(expected, events)
             r.accept(frame(channel, 10, byteArrayOf()), 0)

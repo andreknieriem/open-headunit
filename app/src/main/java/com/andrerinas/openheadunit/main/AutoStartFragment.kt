@@ -338,7 +338,8 @@ class AutoStartFragment : Fragment() {
                 items.add(SettingItem.ToggleSettingEntry(
                     stableId = "autoStartOnBootInBackground",
                     nameResId = R.string.auto_start_on_boot_background_label,
-                    descriptionResId = R.string.auto_start_on_boot_background_description,
+                    descriptionResId = R.string.auto_start_on_boot_background_summary,
+                    helpResId = R.string.auto_start_on_boot_background_description,
                     isChecked = pendingAutoStartOnBootInBackground == true,
                     onCheckedChanged = { isChecked ->
                         pendingAutoStartOnBootInBackground = isChecked

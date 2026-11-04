@@ -305,6 +305,7 @@
     <string name="auto_start_on_boot_description">Tự động mở ứng dụng khi thiết bị khởi động. Cần quyền \"Hiện trên các ứng dụng khác\" trên Android 10 trở lên.</string>
     <string name="auto_start_on_boot_background_label">Chờ ở chế độ nền</string>
     <string name="auto_start_on_boot_background_description">Khi mở máy, chỉ khởi động dịch vụ mà không mở ứng dụng. Ứng dụng sẽ hiện ra khi điện thoại kết nối.</string>
+    <string name="auto_start_on_boot_background_summary">Chỉ khởi động dịch vụ, không mở ứng dụng.</string>
     <string name="auto_start_on_boot_summary">Mở ứng dụng khi thiết bị khởi động.</string>
     <string name="auto_start_screen_on_label">Khởi động khi bật màn hình</string>
     <string name="auto_start_screen_on_description">Mở ứng dụng mỗi lần màn hình bật. Phù hợp với headunit không bao giờ tắt hẳn hoặc dùng khởi động nhanh khi các tuỳ chọn tự khởi động khác không hoạt động. Không khuyến nghị cho điện thoại hay máy tính bảng.</string>

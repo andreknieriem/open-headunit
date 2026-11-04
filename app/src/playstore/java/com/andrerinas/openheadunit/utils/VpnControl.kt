@@ -40,5 +40,7 @@ object VpnControl {
     @StringRes
     val toggleDescriptionRes: Int = 0
     @StringRes
+    val toggleHelpRes: Int = 0
+    @StringRes
     val consentDeniedRes: Int = 0
 }

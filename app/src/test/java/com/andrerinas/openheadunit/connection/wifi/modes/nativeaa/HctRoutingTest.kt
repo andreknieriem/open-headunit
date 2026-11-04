@@ -103,18 +103,12 @@ class HctRoutingTest {
         assertFalse(ExternalBtTransportPolicy.rearmsWithoutAndroidRadio(Route.ZBT))
     }
     @Test
-    fun `radio override visibility follows effective module controls`() {
-        fun visible(mode: ZbtDiscoveryPolicy.Mode = ZbtDiscoveryPolicy.Mode.NONE,
-                    zbt: Boolean = false, ignore: Boolean = false, blink: Boolean = false,
-                    fyt: String? = null, hct: Boolean = true) =
-            ExternalBtTransportPolicy.showsAndroidRadioOverride(snapshot(mode), zbt, ignore, blink, fyt, hct)
-        assertTrue(visible(zbt = true)) // Stale ZBT preference on an HCT-only unit.
-        assertFalse(visible(ZbtDiscoveryPolicy.Mode.IDENTITY, zbt = true))
-        assertTrue(visible(ZbtDiscoveryPolicy.Mode.IDENTITY, zbt = true, ignore = true))
-        assertFalse(visible(blink = true))
-        assertTrue(visible(blink = true, ignore = true))
-        assertFalse(visible(hct = false))
-        assertTrue(visible(zbt = true, fyt = "FYT", hct = false))
+    fun `an HCT service alone counts as a module, so this unit's own Bluetooth is offered`() {
+        fun detected(hct: Boolean, fyt: String? = null) = ExternalBtTransportPolicy.externalModuleDetected(
+            snapshot(ZbtDiscoveryPolicy.Mode.NONE), fyt, hct, false)
+        assertTrue(detected(hct = true))
+        assertTrue(detected(hct = false, fyt = "FYT"))
+        assertFalse(detected(hct = false))
     }
 
 }

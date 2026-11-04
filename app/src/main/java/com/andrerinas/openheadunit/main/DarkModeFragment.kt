@@ -337,10 +337,10 @@ class DarkModeFragment : Fragment(), SensorEventListener {
      */
     private fun addSunriseReference(items: MutableList<SettingItem>, idSuffix: String) {
         val useFixed = pendingUseFixedSunriseLocation == true
-        items.add(SettingItem.InfoBanner("sunriseHelp_$idSuffix", R.string.sunrise_reference_help))
         items.add(SettingItem.SettingEntry(
             stableId = "sunriseSource_$idSuffix",
             nameResId = R.string.sunrise_location_title,
+            helpResId = R.string.sunrise_reference_help,
             value = if (useFixed)
                 getString(R.string.sunrise_location_fixed) +
                     " (%.3f, %.3f)".format(settings.fixedSunriseLatitude, settings.fixedSunriseLongitude)
@@ -428,6 +428,7 @@ class DarkModeFragment : Fragment(), SensorEventListener {
         items.add(SettingItem.SegmentedButtonSettingEntry(
             stableId = "locationScope",
             nameResId = R.string.geofence_scope_label,
+            helpResId = R.string.geofence_scope_help,
             options = listOf(
                 getString(R.string.geofence_scope_app),
                 getString(R.string.geofence_scope_aa),
@@ -440,6 +441,7 @@ class DarkModeFragment : Fragment(), SensorEventListener {
         items.add(SettingItem.SettingEntry(
             stableId = "outsidePlaces",
             nameResId = R.string.location_outside_label,
+            helpResId = R.string.location_outside_help,
             value = getString(
                 if (pendingLocationOutsideNight == true) R.string.geofence_mode_dark
                 else R.string.geofence_mode_light
@@ -650,6 +652,7 @@ class DarkModeFragment : Fragment(), SensorEventListener {
         items.add(SettingItem.SettingEntry(
             stableId = "appTheme",
             nameResId = R.string.app_theme,
+            helpResId = R.string.app_theme_help,
             value = appThemeTitles[pendingAppTheme!!.value],
             onClick = { _ ->
                 MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
@@ -679,6 +682,7 @@ class DarkModeFragment : Fragment(), SensorEventListener {
                 stableId = "useExtremeDarkMode",
                 nameResId = R.string.use_extreme_dark,
                 descriptionResId = R.string.use_extreme_dark_description,
+                helpResId = R.string.use_extreme_dark_help,
                 isChecked = pendingUseExtremeDarkMode!!,
                 onCheckedChanged = { isChecked ->
                     pendingUseExtremeDarkMode = isChecked
@@ -710,6 +714,7 @@ class DarkModeFragment : Fragment(), SensorEventListener {
             items.add(SettingItem.SettingEntry(
                 stableId = "appThemeThreshold",
                 nameResId = if (isSensor) R.string.threshold_light_title else R.string.threshold_brightness_title,
+                helpResId = if (isSensor) R.string.threshold_light_help else R.string.threshold_brightness_help,
                 value = displayValue,
                 onClick = { _ ->
                     if (isSensor) {
@@ -753,6 +758,7 @@ class DarkModeFragment : Fragment(), SensorEventListener {
             items.add(SettingItem.SettingEntry(
                 stableId = "appThemeStart",
                 nameResId = R.string.night_mode_start,
+                helpResId = R.string.night_mode_time_help,
                 value = formatTime(pendingAppThemeManualStart!!),
                 onClick = { _ ->
                     TimePickerDialog(requireContext(), { _, hour, minute ->
@@ -766,6 +772,7 @@ class DarkModeFragment : Fragment(), SensorEventListener {
             items.add(SettingItem.SettingEntry(
                 stableId = "appThemeEnd",
                 nameResId = R.string.night_mode_end,
+                helpResId = R.string.night_mode_time_help,
                 value = formatTime(pendingAppThemeManualEnd!!),
                 onClick = { _ ->
                     TimePickerDialog(requireContext(), { _, hour, minute ->
@@ -787,6 +794,7 @@ class DarkModeFragment : Fragment(), SensorEventListener {
         items.add(SettingItem.SettingEntry(
             stableId = "nightMode",
             nameResId = R.string.night_mode,
+            helpResId = R.string.night_mode_help,
             value = run {
                 val base = resources.getStringArray(R.array.night_mode)[pendingNightMode!!.value]
                 if (pendingNightMode == Settings.NightMode.AUTO) {
@@ -834,6 +842,7 @@ class DarkModeFragment : Fragment(), SensorEventListener {
             items.add(SettingItem.SettingEntry(
                 stableId = "nightModeThreshold",
                 nameResId = if (isSensor) R.string.threshold_light_title else R.string.threshold_brightness_title,
+                helpResId = if (isSensor) R.string.threshold_light_help else R.string.threshold_brightness_help,
                 value = displayValue,
                 onClick = { _ ->
                     if (isSensor) {
@@ -877,6 +886,7 @@ class DarkModeFragment : Fragment(), SensorEventListener {
             items.add(SettingItem.SettingEntry(
                 stableId = "nightModeStart",
                 nameResId = R.string.night_mode_start,
+                helpResId = R.string.night_mode_time_help,
                 value = formatTime(pendingManualStart!!),
                 onClick = { _ ->
                     TimePickerDialog(requireContext(), { _, hour, minute ->
@@ -890,6 +900,7 @@ class DarkModeFragment : Fragment(), SensorEventListener {
             items.add(SettingItem.SettingEntry(
                 stableId = "nightModeEnd",
                 nameResId = R.string.night_mode_end,
+                helpResId = R.string.night_mode_time_help,
                 value = formatTime(pendingManualEnd!!),
                 onClick = { _ ->
                     TimePickerDialog(requireContext(), { _, hour, minute ->
@@ -911,7 +922,8 @@ class DarkModeFragment : Fragment(), SensorEventListener {
             items.add(SettingItem.ToggleSettingEntry(
                 stableId = "aaMonochrome",
                 nameResId = R.string.aa_monochrome,
-                descriptionResId = R.string.aa_monochrome_description,
+                descriptionResId = R.string.aa_monochrome_summary,
+                helpResId = R.string.aa_monochrome_description,
                 isChecked = pendingAaMonochromeEnabled!!,
                 onCheckedChanged = { isChecked ->
                     if (isChecked && pendingViewMode != Settings.ViewMode.GLES) {
@@ -953,6 +965,7 @@ class DarkModeFragment : Fragment(), SensorEventListener {
                 items.add(SettingItem.SliderSettingEntry(
                     stableId = "aaDesaturation",
                     nameResId = R.string.aa_desaturation,
+                    helpResId = R.string.aa_desaturation_description,
                     value = "${pendingAaDesaturationLevel}%",
                     sliderValue = pendingAaDesaturationLevel!!.toFloat(),
                     valueFrom = 0f,

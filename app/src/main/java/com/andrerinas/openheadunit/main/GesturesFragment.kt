@@ -11,6 +11,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.aap.DimPolicy
+import com.andrerinas.openheadunit.main.settings.SettingHelpDialog
 import com.andrerinas.openheadunit.main.settings.SettingItem
 import com.andrerinas.openheadunit.main.settings.SettingsAdapter
 import com.andrerinas.openheadunit.utils.Settings
@@ -45,7 +46,9 @@ class GesturesFragment : Fragment() {
     private fun setupToolbar() {
         toolbar.setNavigationOnClickListener { findNavController().popBackStack() }
 
-        val resetItem = toolbar.menu.add(0, resetItemId, 0, getString(R.string.reset))
+        SettingHelpDialog.addToolbarHelp(toolbar, toolbar.title, R.string.gestures_help, "gestures")
+
+        val resetItem = toolbar.menu.add(0, resetItemId, 1, getString(R.string.reset))
         resetItem.setShowAsAction(android.view.MenuItem.SHOW_AS_ACTION_ALWAYS)
         resetItem.setActionView(R.layout.layout_reset_button)
         resetItem.actionView?.findViewById<MaterialButton>(R.id.reset_button_widget)?.setOnClickListener {
@@ -61,36 +64,43 @@ class GesturesFragment : Fragment() {
                 gestureSetting(
                     id = "left",
                     titleResId = R.string.gesture_two_finger_left,
+                    helpResId = R.string.gesture_two_finger_edge_swipe_help,
                     action = settings.leftTwoFingerGesture
                 ),
                 gestureSetting(
                     id = "right",
                     titleResId = R.string.gesture_two_finger_right,
+                    helpResId = R.string.gesture_two_finger_edge_swipe_help,
                     action = settings.rightTwoFingerGesture
                 ),
                 gestureSetting(
                     id = "down",
                     titleResId = R.string.gesture_two_finger_down,
+                    helpResId = R.string.gesture_two_finger_down_help,
                     action = settings.downTwoFingerGesture
                 ),
                 gestureSetting(
                     id = "leftTap",
                     titleResId = R.string.gesture_two_finger_tap_left,
+                    helpResId = R.string.gesture_two_finger_edge_tap_help,
                     action = settings.leftTapTwoFingerGesture
                 ),
                 gestureSetting(
                     id = "rightTap",
                     titleResId = R.string.gesture_two_finger_tap_right,
+                    helpResId = R.string.gesture_two_finger_edge_tap_help,
                     action = settings.rightTapTwoFingerGesture
                 ),
                 gestureSetting(
                     id = "longPress",
                     titleResId = R.string.gesture_two_finger_long_press,
+                    helpResId = R.string.gesture_two_finger_long_press_help,
                     action = settings.longPressTwoFingerGesture
                 ),
                 SettingItem.SegmentedButtonSettingEntry(
                     stableId = "edgeZone",
                     nameResId = R.string.gesture_edge_zone,
+                    helpResId = R.string.gesture_edge_zone_help,
                     options = listOf(
                         getString(R.string.gesture_edge_zone_narrow),
                         getString(R.string.gesture_edge_zone_normal),
@@ -102,25 +112,11 @@ class GesturesFragment : Fragment() {
                         if (settings.gestureEdgeZone != zone) settings.gestureEdgeZone = zone
                     }
                 ),
-                SettingItem.InfoBanner("gesturesHelp", R.string.gestures_help),
                 SettingItem.CategoryHeader("nightDimmerGroup", R.string.gestures_night_dimmer_group),
-                SettingItem.SliderSettingEntry(
-                    stableId = "dimOpacity",
-                    nameResId = R.string.dim_opacity,
-                    value = "${settings.dimOpacityPercent}%",
-                    sliderValue = settings.dimOpacityPercent.toFloat(),
-                    valueFrom = DimPolicy.MIN_PERCENT.toFloat(),
-                    valueTo = DimPolicy.MAX_PERCENT.toFloat(),
-                    stepSize = 10f,
-                    onValueChanged = { v ->
-                        val percent = v.toInt()
-                        if (settings.dimOpacityPercent != percent) settings.dimOpacityPercent = percent
-                        updateItems()
-                    }
-                ),
                 SettingItem.SegmentedButtonSettingEntry(
                     stableId = "nightTextSize",
                     nameResId = R.string.night_overlay_text_size,
+                    helpResId = R.string.night_overlay_text_size_help,
                     options = listOf(
                         getString(R.string.night_overlay_text_small),
                         getString(R.string.night_overlay_text_normal),
@@ -135,6 +131,7 @@ class GesturesFragment : Fragment() {
                 SettingItem.SegmentedButtonSettingEntry(
                     stableId = "nightBackground",
                     nameResId = R.string.night_overlay_background,
+                    helpResId = R.string.night_overlay_background_help,
                     options = listOf(
                         getString(R.string.night_overlay_background_black),
                         getString(R.string.night_overlay_background_dark_gray)
@@ -148,23 +145,40 @@ class GesturesFragment : Fragment() {
                 SettingItem.ToggleSettingEntry(
                     stableId = "nightShowClock",
                     nameResId = R.string.night_overlay_show_clock,
-                    descriptionResId = null,
+                    descriptionResId = R.string.night_overlay_show_clock_summary,
                     isChecked = settings.nightOverlayShowClock,
                     onCheckedChanged = { if (settings.nightOverlayShowClock != it) settings.nightOverlayShowClock = it }
                 ),
                 SettingItem.ToggleSettingEntry(
                     stableId = "nightShowNavigation",
                     nameResId = R.string.night_overlay_show_navigation,
-                    descriptionResId = null,
+                    descriptionResId = R.string.night_overlay_show_navigation_summary,
+                    helpResId = R.string.night_overlay_show_navigation_help,
                     isChecked = settings.nightOverlayShowNavigation,
                     onCheckedChanged = { if (settings.nightOverlayShowNavigation != it) settings.nightOverlayShowNavigation = it }
                 ),
                 SettingItem.ToggleSettingEntry(
                     stableId = "nightShowTrack",
                     nameResId = R.string.night_overlay_show_track,
-                    descriptionResId = null,
+                    descriptionResId = R.string.night_overlay_show_track_summary,
+                    helpResId = R.string.night_overlay_show_track_help,
                     isChecked = settings.nightOverlayShowTrack,
                     onCheckedChanged = { if (settings.nightOverlayShowTrack != it) settings.nightOverlayShowTrack = it }
+                ),
+                SettingItem.SliderSettingEntry(
+                    stableId = "dimOpacity",
+                    nameResId = R.string.dim_opacity,
+                    helpResId = R.string.dim_opacity_help,
+                    value = "${settings.dimOpacityPercent}%",
+                    sliderValue = settings.dimOpacityPercent.toFloat(),
+                    valueFrom = DimPolicy.MIN_PERCENT.toFloat(),
+                    valueTo = DimPolicy.MAX_PERCENT.toFloat(),
+                    stepSize = 10f,
+                    onValueChanged = { v ->
+                        val percent = v.toInt()
+                        if (settings.dimOpacityPercent != percent) settings.dimOpacityPercent = percent
+                        updateItems()
+                    }
                 )
             )
         )
@@ -173,11 +187,13 @@ class GesturesFragment : Fragment() {
     private fun gestureSetting(
         id: String,
         titleResId: Int,
+        helpResId: Int,
         action: Settings.GestureAction
     ) = SettingItem.SettingEntry(
         stableId = id,
         nameResId = titleResId,
         value = getString(action.labelResId),
+        helpResId = helpResId,
         onClick = { showActionPicker(id, titleResId, action) }
     )
 

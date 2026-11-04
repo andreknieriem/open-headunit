@@ -20,6 +20,7 @@ class WirelessRearmPolicyTest {
         blinkTransport: Boolean = false,
         zjSocketTransport: Boolean = false,
         ignoreExternalBt: Boolean = false,
+        esp32Relay: Boolean = false,
         autoEnableHotspot: Boolean = false,
         insecureRfcomm: Boolean = false,
     ) = WirelessRearmPolicy.Config(
@@ -34,6 +35,7 @@ class WirelessRearmPolicyTest {
         externalBtBlinkTransport = blinkTransport,
         externalBtZjSocketTransport = zjSocketTransport,
         nativeAaIgnoreExternalBt = ignoreExternalBt,
+        esp32Relay = esp32Relay,
         autoEnableHotspot = autoEnableHotspot,
         insecureAaRfcommListener = insecureRfcomm,
     )
@@ -122,5 +124,10 @@ class WirelessRearmPolicyTest {
     @Test
     fun `the insecure RFCOMM listener re-arms`() {
         assertTrue(WirelessRearmPolicy.requiresRearm(config(), config(insecureRfcomm = true)))
+    }
+
+    @Test
+    fun `turning the ESP32 relay on or off re-arms`() {
+        assertTrue(WirelessRearmPolicy.requiresRearm(config(), config(esp32Relay = true)))
     }
 }

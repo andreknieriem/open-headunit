@@ -601,8 +601,10 @@
     <string name="auto_start_check_fixes">Correções que não alteram ficheiros do sistema</string>
     <string name="auto_start_check_exemptions">Isenções de bateria e segundo plano</string>
     <string name="auto_start_check_exemptions_description">Tira a aplicação da poupança de bateria e deixa-a funcionar em segundo plano. Ao desligar, a decisão volta ao sistema.</string>
+    <string name="auto_start_check_exemptions_summary">Exclui a app da poupança de bateria e dos limites em segundo plano.</string>
     <string name="auto_start_check_duraspeed_off">Desligar o DuraSpeed em cada arranque</string>
     <string name="auto_start_check_duraspeed_off_description">Autorrádios MediaTek. Em muitos, o DuraSpeed volta a ligar-se após um reinício, por isso a aplicação desliga-o sempre que o autorrádio arranca.</string>
+    <string name="auto_start_check_duraspeed_off_summary">Desliga o DuraSpeed sempre que a unidade arranca.</string>
     <string name="auto_start_check_needs_access">Precisa de root ou ADB neste autorrádio.</string>
     <string name="auto_start_check_fix_failed">Não foi possível aplicar. O registo tem os detalhes.</string>
     <string name="auto_start_check_system_changes">Altera ficheiros do sistema (reversível)</string>

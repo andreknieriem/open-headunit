@@ -340,8 +340,10 @@
     <string name="auto_start_check_fixes">Sửa lỗi không thay đổi tệp hệ thống</string>
     <string name="auto_start_check_exemptions">Miễn trừ pin và chạy nền</string>
     <string name="auto_start_check_exemptions_description">Đưa ứng dụng ra khỏi chế độ tiết kiệm pin và cho phép chạy nền. Khi tắt, quyết định trở lại với hệ thống.</string>
+    <string name="auto_start_check_exemptions_summary">Loại ứng dụng khỏi tiết kiệm pin và giới hạn chạy nền.</string>
     <string name="auto_start_check_duraspeed_off">Tắt DuraSpeed mỗi lần khởi động</string>
     <string name="auto_start_check_duraspeed_off_description">Đầu xe MediaTek. Trên nhiều máy, DuraSpeed tự bật lại sau khi khởi động lại, nên ứng dụng tắt nó mỗi khi đầu xe khởi động.</string>
+    <string name="auto_start_check_duraspeed_off_summary">Tắt DuraSpeed mỗi khi thiết bị khởi động.</string>
     <string name="auto_start_check_needs_access">Cần root hoặc ADB trên thiết bị này.</string>
     <string name="auto_start_check_fix_failed">Không thể áp dụng. Chi tiết có trong nhật ký.</string>
     <string name="auto_start_check_system_changes">Thay đổi tệp hệ thống (có thể hoàn tác)</string>

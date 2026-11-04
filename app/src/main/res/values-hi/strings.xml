@@ -600,8 +600,10 @@
     <string name="auto_start_check_fixes">सिस्टम फ़ाइलें बदले बिना सुधार</string>
     <string name="auto_start_check_exemptions">बैटरी और बैकग्राउंड छूट</string>
     <string name="auto_start_check_exemptions_description">ऐप को बैटरी सेविंग से बाहर रखता है और बैकग्राउंड में चलने देता है। बंद करने पर फ़ैसला फिर सिस्टम का होगा।</string>
+    <string name="auto_start_check_exemptions_summary">ऐप को बैटरी बचत और बैकग्राउंड सीमाओं से बाहर रखें।</string>
     <string name="auto_start_check_duraspeed_off">हर बूट पर DuraSpeed बंद करें</string>
     <string name="auto_start_check_duraspeed_off_description">MediaTek यूनिट। कई यूनिट में DuraSpeed रीस्टार्ट के बाद फिर चालू हो जाता है, इसलिए यूनिट शुरू होने पर ऐप उसे हर बार बंद करता है।</string>
+    <string name="auto_start_check_duraspeed_off_summary">हर बार यूनिट शुरू होने पर DuraSpeed बंद करें।</string>
     <string name="auto_start_check_needs_access">इस यूनिट में root या ADB चाहिए।</string>
     <string name="auto_start_check_fix_failed">लागू नहीं हो सका। विवरण लॉग में है।</string>
     <string name="auto_start_check_system_changes">सिस्टम फ़ाइलें बदलता है (वापस लिया जा सकता है)</string>

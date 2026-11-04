@@ -361,8 +361,10 @@
     <string name="auto_start_check_fixes">システムファイルを変更しない対処</string>
     <string name="auto_start_check_exemptions">バッテリーとバックグラウンドの除外</string>
     <string name="auto_start_check_exemptions_description">アプリをバッテリーセーバーの対象外にし、バックグラウンドでの動作を許可します。オフにすると判断はシステムに戻ります。</string>
+    <string name="auto_start_check_exemptions_summary">アプリを電池の最適化とバックグラウンド制限から除外します。</string>
     <string name="auto_start_check_duraspeed_off">起動のたびにDuraSpeedをオフにする</string>
     <string name="auto_start_check_duraspeed_off_description">MediaTek端末向け。多くの端末ではDuraSpeedが再起動後にオンに戻るため、カーナビの起動ごとにアプリがオフにします。</string>
+    <string name="auto_start_check_duraspeed_off_summary">機器の起動のたびにDuraSpeedをオフにします。</string>
     <string name="auto_start_check_needs_access">この端末ではrootまたはADBが必要です。</string>
     <string name="auto_start_check_fix_failed">適用できませんでした。詳細はログにあります。</string>
     <string name="auto_start_check_system_changes">システムファイルを変更（元に戻せます）</string>

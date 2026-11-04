@@ -329,8 +329,10 @@
     <string name="auto_start_check_fixes">Oplossingen die geen systeembestanden wijzigen</string>
     <string name="auto_start_check_exemptions">Uitzonderingen voor batterij en achtergrond</string>
     <string name="auto_start_check_exemptions_description">Haalt de app uit batterijbesparing en laat hem op de achtergrond draaien. Uitgeschakeld beslist het systeem weer.</string>
+    <string name="auto_start_check_exemptions_summary">De app uitsluiten van batterijbesparing en achtergrondlimieten.</string>
     <string name="auto_start_check_duraspeed_off">DuraSpeed bij elke start uitschakelen</string>
     <string name="auto_start_check_duraspeed_off_description">MediaTek-apparaten. Op veel ervan gaat DuraSpeed na een herstart weer aan, dus de app schakelt het uit telkens als de autoradio start.</string>
+    <string name="auto_start_check_duraspeed_off_summary">DuraSpeed uitzetten telkens als het apparaat start.</string>
     <string name="auto_start_check_needs_access">Vereist root of ADB op dit apparaat.</string>
     <string name="auto_start_check_fix_failed">Kon niet worden toegepast. Het logboek bevat de details.</string>
     <string name="auto_start_check_system_changes">Wijzigt systeembestanden (omkeerbaar)</string>

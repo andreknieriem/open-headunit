@@ -626,8 +626,10 @@
     <string name="auto_start_check_fixes">Fixes that do not change system files</string>
     <string name="auto_start_check_exemptions">Battery and background exemptions</string>
     <string name="auto_start_check_exemptions_description">Keeps the app out of battery saving and lets it run in the background. Turning it off gives the choice back to the system.</string>
+    <string name="auto_start_check_exemptions_summary">Keep the app out of battery saving and background limits.</string>
     <string name="auto_start_check_duraspeed_off">Turn DuraSpeed off on every boot</string>
     <string name="auto_start_check_duraspeed_off_description">MediaTek units. On many of them DuraSpeed turns itself back on after a restart, so the app turns it off each time the unit starts.</string>
+    <string name="auto_start_check_duraspeed_off_summary">Turn DuraSpeed off each time the unit starts.</string>
     <string name="auto_start_check_needs_access">Needs root or ADB on this unit.</string>
     <string name="auto_start_check_fix_failed">Could not apply it. The log has the details.</string>
     <string name="auto_start_check_system_changes">Changes system files (reversible)</string>

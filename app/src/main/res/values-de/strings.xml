@@ -399,8 +399,10 @@
     <string name="auto_start_check_fixes">Korrekturen ohne Änderung an Systemdateien</string>
     <string name="auto_start_check_exemptions">Ausnahmen für Akku und Hintergrund</string>
     <string name="auto_start_check_exemptions_description">Nimmt die App vom Energiesparen aus und lässt sie im Hintergrund laufen. Ausgeschaltet entscheidet wieder das System.</string>
+    <string name="auto_start_check_exemptions_summary">Die App von Akkusparen und Hintergrundlimits ausnehmen.</string>
     <string name="auto_start_check_duraspeed_off">DuraSpeed bei jedem Start ausschalten</string>
     <string name="auto_start_check_duraspeed_off_description">MediaTek-Geräte. Bei vielen schaltet sich DuraSpeed nach einem Neustart wieder ein, daher schaltet die App es bei jedem Start des Autoradios aus.</string>
+    <string name="auto_start_check_duraspeed_off_summary">DuraSpeed bei jedem Start des Geräts ausschalten.</string>
     <string name="auto_start_check_needs_access">Benötigt Root oder ADB auf diesem Gerät.</string>
     <string name="auto_start_check_fix_failed">Konnte nicht angewendet werden. Details stehen im Protokoll.</string>
     <string name="auto_start_check_system_changes">Ändert Systemdateien (umkehrbar)</string>

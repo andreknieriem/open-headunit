@@ -361,8 +361,10 @@
     <string name="auto_start_check_fixes">Correzioni senza modificare i file di sistema</string>
     <string name="auto_start_check_exemptions">Esenzioni batteria e background</string>
     <string name="auto_start_check_exemptions_description">Toglie l\'app dal risparmio batteria e la lascia funzionare in background. Disattivandolo, decide di nuovo il sistema.</string>
+    <string name="auto_start_check_exemptions_summary">Esclude l\'app dal risparmio batteria e dai limiti in background.</string>
     <string name="auto_start_check_duraspeed_off">Disattiva DuraSpeed a ogni avvio</string>
     <string name="auto_start_check_duraspeed_off_description">Dispositivi MediaTek. Su molti DuraSpeed si riattiva dopo un riavvio, quindi l\'app lo disattiva a ogni accensione dell\'autoradio.</string>
+    <string name="auto_start_check_duraspeed_off_summary">Disattiva DuraSpeed a ogni avvio dell\'unità.</string>
     <string name="auto_start_check_needs_access">Richiede root o ADB su questo dispositivo.</string>
     <string name="auto_start_check_fix_failed">Impossibile applicarlo. I dettagli sono nel log.</string>
     <string name="auto_start_check_system_changes">Modifica file di sistema (reversibile)</string>

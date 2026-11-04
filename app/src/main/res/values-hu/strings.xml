@@ -329,8 +329,10 @@
     <string name="auto_start_check_fixes">Javítások a rendszerfájlok módosítása nélkül</string>
     <string name="auto_start_check_exemptions">Akkumulátor- és háttérkivételek</string>
     <string name="auto_start_check_exemptions_description">Kiveszi az alkalmazást az akkumulátorkímélésből, és engedi a háttérben futni. Kikapcsolva ismét a rendszer dönt.</string>
+    <string name="auto_start_check_exemptions_summary">Kiveszi az alkalmazást az akkukímélés és a háttérkorlátok alól.</string>
     <string name="auto_start_check_duraspeed_off">DuraSpeed kikapcsolása minden indításkor</string>
     <string name="auto_start_check_duraspeed_off_description">MediaTek eszközök. Sokukon a DuraSpeed újraindítás után visszakapcsol, ezért az alkalmazás a fejegység minden indításakor kikapcsolja.</string>
+    <string name="auto_start_check_duraspeed_off_summary">Kikapcsolja a DuraSpeedet az egység minden indulásakor.</string>
     <string name="auto_start_check_needs_access">Rootot vagy ADB-t igényel ezen az eszközön.</string>
     <string name="auto_start_check_fix_failed">Nem sikerült alkalmazni. A részletek a naplóban vannak.</string>
     <string name="auto_start_check_system_changes">Rendszerfájlokat módosít (visszavonható)</string>

@@ -358,8 +358,10 @@
     <string name="auto_start_check_fixes">Sistem dosyalarını değiştirmeyen düzeltmeler</string>
     <string name="auto_start_check_exemptions">Pil ve arka plan muafiyetleri</string>
     <string name="auto_start_check_exemptions_description">Uygulamayı pil tasarrufundan çıkarır ve arka planda çalışmasına izin verir. Kapatıldığında karar yeniden sisteme geçer.</string>
+    <string name="auto_start_check_exemptions_summary">Uygulamayı pil tasarrufu ve arka plan sınırlarının dışında tutar.</string>
     <string name="auto_start_check_duraspeed_off">Her açılışta DuraSpeed\'i kapat</string>
     <string name="auto_start_check_duraspeed_off_description">MediaTek teypler. Birçoğunda DuraSpeed yeniden başlatmadan sonra tekrar açılır, bu yüzden uygulama teyp her açıldığında onu kapatır.</string>
+    <string name="auto_start_check_duraspeed_off_summary">Cihaz her açıldığında DuraSpeed\'i kapatır.</string>
     <string name="auto_start_check_needs_access">Bu cihazda root veya ADB gerekir.</string>
     <string name="auto_start_check_fix_failed">Uygulanamadı. Ayrıntılar günlükte.</string>
     <string name="auto_start_check_system_changes">Sistem dosyalarını değiştirir (geri alınabilir)</string>

@@ -600,8 +600,10 @@
     <string name="auto_start_check_fixes">Perbaikan tanpa mengubah file sistem</string>
     <string name="auto_start_check_exemptions">Pengecualian baterai dan latar belakang</string>
     <string name="auto_start_check_exemptions_description">Mengeluarkan aplikasi dari penghemat baterai dan membiarkannya berjalan di latar belakang. Jika dimatikan, keputusan kembali ke sistem.</string>
+    <string name="auto_start_check_exemptions_summary">Kecualikan aplikasi dari penghemat baterai dan batas latar belakang.</string>
     <string name="auto_start_check_duraspeed_off">Matikan DuraSpeed setiap boot</string>
     <string name="auto_start_check_duraspeed_off_description">Unit MediaTek. Di banyak unit, DuraSpeed menyala lagi setelah restart, jadi aplikasi mematikannya setiap kali head unit menyala.</string>
+    <string name="auto_start_check_duraspeed_off_summary">Matikan DuraSpeed setiap kali unit dinyalakan.</string>
     <string name="auto_start_check_needs_access">Perlu root atau ADB di unit ini.</string>
     <string name="auto_start_check_fix_failed">Tidak dapat diterapkan. Detailnya ada di log.</string>
     <string name="auto_start_check_system_changes">Mengubah file sistem (dapat dibatalkan)</string>

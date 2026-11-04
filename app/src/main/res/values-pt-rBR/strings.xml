@@ -330,8 +330,10 @@
     <string name="auto_start_check_fixes">Correções que não mudam arquivos do sistema</string>
     <string name="auto_start_check_exemptions">Isenções de bateria e segundo plano</string>
     <string name="auto_start_check_exemptions_description">Tira o app da economia de bateria e deixa ele rodar em segundo plano. Ao desligar, a decisão volta para o sistema.</string>
+    <string name="auto_start_check_exemptions_summary">Tira o app da economia de bateria e dos limites em segundo plano.</string>
     <string name="auto_start_check_duraspeed_off">Desligar o DuraSpeed a cada inicialização</string>
     <string name="auto_start_check_duraspeed_off_description">Centrais MediaTek. Em muitas, o DuraSpeed liga de novo após um reinício, então o app desliga ele toda vez que a central inicia.</string>
+    <string name="auto_start_check_duraspeed_off_summary">Desliga o DuraSpeed toda vez que o aparelho liga.</string>
     <string name="auto_start_check_needs_access">Precisa de root ou ADB nesta central multimídia.</string>
     <string name="auto_start_check_fix_failed">Não foi possível aplicar. O log tem os detalhes.</string>
     <string name="auto_start_check_system_changes">Altera arquivos do sistema (reversível)</string>

@@ -367,8 +367,10 @@
     <string name="auto_start_check_fixes">시스템 파일을 바꾸지 않는 해결책</string>
     <string name="auto_start_check_exemptions">배터리 및 백그라운드 예외</string>
     <string name="auto_start_check_exemptions_description">앱을 배터리 절약 대상에서 빼고 백그라운드에서 실행되게 합니다. 끄면 결정이 다시 시스템으로 돌아갑니다.</string>
+    <string name="auto_start_check_exemptions_summary">앱을 배터리 절약과 백그라운드 제한에서 제외합니다.</string>
     <string name="auto_start_check_duraspeed_off">부팅할 때마다 DuraSpeed 끄기</string>
     <string name="auto_start_check_duraspeed_off_description">MediaTek 기기. 많은 기기에서 DuraSpeed가 재시작 후 다시 켜지므로 헤드 유닛이 시작될 때마다 앱이 끕니다.</string>
+    <string name="auto_start_check_duraspeed_off_summary">기기가 시작될 때마다 DuraSpeed를 끕니다.</string>
     <string name="auto_start_check_needs_access">이 기기에서 root 또는 ADB가 필요합니다.</string>
     <string name="auto_start_check_fix_failed">적용하지 못했습니다. 자세한 내용은 로그에 있습니다.</string>
     <string name="auto_start_check_system_changes">시스템 파일 변경(되돌릴 수 있음)</string>

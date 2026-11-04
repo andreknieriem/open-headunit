@@ -153,8 +153,9 @@ class AutoStartCheckFragment : Fragment() {
             items.add(SettingItem.ToggleSettingEntry(
                 stableId = "checkExemptions",
                 nameResId = R.string.auto_start_check_exemptions,
-                descriptionResId = if (canAct) R.string.auto_start_check_exemptions_description
+                descriptionResId = if (canAct) R.string.auto_start_check_exemptions_summary
                     else R.string.auto_start_check_needs_access,
+                helpResId = R.string.auto_start_check_exemptions_description,
                 isChecked = f.batteryExempt == true && f.backgroundRestricted != true,
                 isEnabled = canAct,
                 onCheckedChanged = { grant -> runFix { AutoStartFixes.setExemptions(it, grant) } }
@@ -164,8 +165,9 @@ class AutoStartCheckFragment : Fragment() {
             items.add(SettingItem.ToggleSettingEntry(
                 stableId = "checkDuraSpeedOff",
                 nameResId = R.string.auto_start_check_duraspeed_off,
-                descriptionResId = if (canAct || settings.duraSpeedOffOnBoot) R.string.auto_start_check_duraspeed_off_description
+                descriptionResId = if (canAct || settings.duraSpeedOffOnBoot) R.string.auto_start_check_duraspeed_off_summary
                     else R.string.auto_start_check_needs_access,
+                helpResId = R.string.auto_start_check_duraspeed_off_description,
                 isChecked = settings.duraSpeedOffOnBoot,
                 isEnabled = canAct || settings.duraSpeedOffOnBoot,
                 onCheckedChanged = { on ->

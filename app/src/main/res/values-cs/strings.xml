@@ -330,8 +330,10 @@
     <string name="auto_start_check_fixes">Opravy bez změny systémových souborů</string>
     <string name="auto_start_check_exemptions">Výjimky pro baterii a běh na pozadí</string>
     <string name="auto_start_check_exemptions_description">Vyjme aplikaci z úspory baterie a nechá ji běžet na pozadí. Po vypnutí rozhoduje opět systém.</string>
+    <string name="auto_start_check_exemptions_summary">Vyjmout aplikaci z úspory baterie a omezení na pozadí.</string>
     <string name="auto_start_check_duraspeed_off">Vypínat DuraSpeed při každém startu</string>
     <string name="auto_start_check_duraspeed_off_description">Zařízení MediaTek. Na mnoha z nich se DuraSpeed po restartu znovu zapne, proto ho aplikace vypne při každém startu autorádia.</string>
+    <string name="auto_start_check_duraspeed_off_summary">Vypnout DuraSpeed při každém spuštění jednotky.</string>
     <string name="auto_start_check_needs_access">Vyžaduje root nebo ADB na tomto zařízení.</string>
     <string name="auto_start_check_fix_failed">Nepodařilo se použít. Podrobnosti jsou v logu.</string>
     <string name="auto_start_check_system_changes">Mění systémové soubory (vratné)</string>

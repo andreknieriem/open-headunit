@@ -105,6 +105,13 @@
             app:exitAnim="@anim/slide_out_left"
             app:popEnterAnim="@anim/slide_in_left"
             app:popExitAnim="@anim/slide_out_right" />
+        <action
+            android:id="@+id/action_settingsFragment_to_maintenanceFragment"
+            app:destination="@id/maintenanceFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
 
         <action
             android:id="@+id/action_settingsFragment_to_loadingScreenFragment"
@@ -261,6 +268,40 @@
         android:id="@+id/vehicleInfoFragment"
         android:name="com.andrerinas.openheadunit.main.VehicleInfoFragment"
         android:label="@string/vehicle_info_settings" />
+
+    <fragment
+        android:id="@+id/maintenanceFragment"
+        android:name="com.andrerinas.openheadunit.main.MaintenanceFragment"
+        android:label="@string/maintenance_settings">
+        <action
+            android:id="@+id/action_maintenanceFragment_to_maintenanceItemFragment"
+            app:destination="@id/maintenanceItemFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
+        <action
+            android:id="@+id/action_maintenanceFragment_to_maintenanceChooseFragment"
+            app:destination="@id/maintenanceChooseFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/maintenanceItemFragment"
+        android:name="com.andrerinas.openheadunit.main.MaintenanceItemFragment"
+        android:label="@string/maintenance_settings">
+        <argument
+            android:name="itemId"
+            app:argType="string" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/maintenanceChooseFragment"
+        android:name="com.andrerinas.openheadunit.main.MaintenanceChooseFragment"
+        android:label="@string/maintenance_choose_items" />
 
     <fragment
         android:id="@+id/loadingScreenFragment"

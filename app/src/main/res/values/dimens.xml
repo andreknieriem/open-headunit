@@ -79,4 +79,6 @@
     <dimen name="home_hint_button_height_small">48dp</dimen>
     <dimen name="home_hint_art">88dp</dimen>
     <dimen name="home_hint_art_small">64dp</dimen>
+    <!-- The side padding of the maintenance screens' input dialogs. -->
+    <dimen name="maintenance_dialog_padding">24dp</dimen>
 </resources>

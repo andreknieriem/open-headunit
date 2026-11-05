@@ -789,6 +789,7 @@
     <string name="export_settings">匯出設定</string>
     <string name="export_settings_description">將設定備份儲存為 JSON 檔案。</string>
     <string name="export_settings_app_folder">儲存至應用程式備份資料夾</string>
+    <string name="onb_restore_settings">從備份還原設定</string>
     <string name="export_settings_downloads">儲存至下載</string>
     <string name="export_settings_choose_location">選擇儲存位置</string>
     <string name="settings_exported">已匯出設定</string>

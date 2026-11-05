@@ -790,6 +790,7 @@
     <string name="export_settings">Експортувати налаштування</string>
     <string name="export_settings_description">Зберегти резервну копію налаштувань як файл JSON.</string>
     <string name="export_settings_app_folder">Зберегти у папку резервних копій застосунку</string>
+    <string name="onb_restore_settings">Відновити налаштування з резервної копії</string>
     <string name="export_settings_downloads">Зберегти у Завантаження</string>
     <string name="export_settings_choose_location">Виберіть місце збереження</string>
     <string name="settings_exported">Налаштування експортовано</string>

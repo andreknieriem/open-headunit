@@ -6,6 +6,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import com.andrerinas.openheadunit.BuildConfig
+import com.andrerinas.openheadunit.connection.wifi.scan.WifiScanControl
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -47,11 +48,72 @@ object SettingsBackupManager {
     internal enum class ValueType {
         BOOLEAN,
         INT,
+        LONG,
         STRING,
         STRING_SET
     }
 
     internal val backupKeys = linkedMapOf(
+        "advanced-settings-active" to ValueType.BOOLEAN,
+        "settings-rail-collapsed" to ValueType.BOOLEAN,
+        "connection-modes" to ValueType.STRING_SET,
+        "primary-connection" to ValueType.INT,
+        "ui-scale-exit-dialog-percent" to ValueType.INT,
+        Settings.KEY_AUTO_RESUME_PLAYBACK_ON_RECONNECT to ValueType.BOOLEAN,
+        "raise-projection-during-call" to ValueType.BOOLEAN,
+        "car-signal-invert" to ValueType.BOOLEAN,
+        "dpi-floor-override" to ValueType.BOOLEAN,
+        "auto-restart-wifi-p2p-stuck" to ValueType.BOOLEAN,
+        "left-two-finger-gesture" to ValueType.INT,
+        "right-two-finger-gesture" to ValueType.INT,
+        "long-press-two-finger-gesture" to ValueType.INT,
+        "left-tap-two-finger-gesture" to ValueType.INT,
+        "right-tap-two-finger-gesture" to ValueType.INT,
+        "down-two-finger-gesture" to ValueType.INT,
+        "gesture-edge-zone" to ValueType.INT,
+        "dim-opacity-percent" to ValueType.INT,
+        "night-overlay-text-size" to ValueType.INT,
+        "night-overlay-show-clock" to ValueType.BOOLEAN,
+        "night-overlay-show-navigation" to ValueType.BOOLEAN,
+        "night-overlay-show-track" to ValueType.BOOLEAN,
+        "night-overlay-background" to ValueType.INT,
+        "keep-dummy-vpn-during-session" to ValueType.BOOLEAN,
+        "stand-down-station-mode" to ValueType.INT,
+        "wifi-direct-stable-identity" to ValueType.BOOLEAN,
+        "hide-battery-level" to ValueType.BOOLEAN,
+        "hide-phone-signal" to ValueType.BOOLEAN,
+        "hide-clock" to ValueType.BOOLEAN,
+        "narrow-band-profile-cap" to ValueType.BOOLEAN,
+        "use-aaudio-output" to ValueType.BOOLEAN,
+        "custom-self-mode-button-color" to ValueType.INT,
+        "custom-usb-button-color" to ValueType.INT,
+        "custom-wifi-button-color" to ValueType.INT,
+        "home-button-scale-percent" to ValueType.INT,
+        "home-favorite-apps" to ValueType.STRING,
+        "show-home-favorite-apps" to ValueType.BOOLEAN,
+        "show-home-widgets" to ValueType.BOOLEAN,
+        "home-surface-opacity-percent" to ValueType.INT,
+        "show-home-clock" to ValueType.BOOLEAN,
+        "show-home-speed" to ValueType.BOOLEAN,
+        "use-fixed-sun-location" to ValueType.BOOLEAN,
+        // Coordinates are stored as raw Double bits, not as JSON floating-point numbers.
+        "fixed-sun-latitude" to ValueType.LONG,
+        "fixed-sun-longitude" to ValueType.LONG,
+        "hide-map-internet-notice" to ValueType.BOOLEAN,
+        "geofence-locations" to ValueType.STRING,
+        "location-outside-night" to ValueType.BOOLEAN,
+        "native-driver-selection-mode" to ValueType.INT,
+        "native-driver-selection-timeout" to ValueType.INT,
+        "native-preferred-device-mac" to ValueType.STRING,
+        "insecure-aa-rfcomm-listener" to ValueType.BOOLEAN,
+        "auto-kill-oem-apps" to ValueType.BOOLEAN,
+        "external-bt-zbt-transport" to ValueType.BOOLEAN,
+        "external-bt-blink-transport" to ValueType.BOOLEAN,
+        "external-bt-zj-socket-transport" to ValueType.BOOLEAN,
+        "device-specific-head-unit-model" to ValueType.STRING,
+        "device-specific-pause-projection-on-reverse" to ValueType.BOOLEAN,
+        "wifi-scan-enabled" to ValueType.BOOLEAN,
+        "wifi-scan-fyt-auto-start" to ValueType.BOOLEAN,
         "allow-devices" to ValueType.STRING_SET,
         "network-addresses" to ValueType.STRING_SET,
         "bt-address" to ValueType.STRING,
@@ -244,6 +306,11 @@ object SettingsBackupManager {
         "usb-blacklist" to ValueType.STRING_SET
     )
 
+    private val wifiScanBackupKeys = mapOf(
+        "wifi-scan-enabled" to "enabled",
+        "wifi-scan-fyt-auto-start" to "fyt-auto-start"
+    )
+
     private val projectionRestartKeys = setOf(
         "resolutionId",
         "video-fit-mode",
@@ -272,7 +339,17 @@ object SettingsBackupManager {
         "inset-right",
         "inset-bottom",
         "wifi-connection-mode",
-        "use-libusb"
+        "use-libusb",
+        "dpi-floor-override",
+        "hide-battery-level",
+        "hide-phone-signal",
+        "hide-clock",
+        "narrow-band-profile-cap",
+        "use-aaudio-output",
+        "device-specific-head-unit-model",
+        "device-specific-pause-projection-on-reverse",
+        "wifi-scan-enabled",
+        "wifi-scan-fyt-auto-start"
     )
 
     fun defaultFileName(): String {
@@ -281,8 +358,16 @@ object SettingsBackupManager {
     }
 
     fun exportFromContext(context: Context): String {
-        val prefs = context.getSharedPreferences(Settings.PREFS_NAME, Context.MODE_PRIVATE)
-        return exportToJson(prefs.all, BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE)
+        return exportToJson(backupPreferences(context), BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE)
+    }
+
+    private fun backupPreferences(context: Context): Map<String, *> {
+        val values = context.getSharedPreferences(Settings.PREFS_NAME, Context.MODE_PRIVATE).all.toMutableMap()
+        val scanValues = context.getSharedPreferences("wifi-scan-option", Context.MODE_PRIVATE).all
+        wifiScanBackupKeys.forEach { (backupKey, storageKey) ->
+            scanValues[storageKey]?.let { values[backupKey] = it }
+        }
+        return values
     }
 
     fun exportToJson(
@@ -343,25 +428,31 @@ object SettingsBackupManager {
         return ImportData(parsedValues, skippedKeys)
     }
 
-    fun importFromUri(context: Context, uri: Uri): ImportResult {
+    fun importFromUri(context: Context, uri: Uri, applyTheme: Boolean = true): ImportResult {
         val json = context.contentResolver.openInputStream(uri)?.bufferedReader(Charsets.UTF_8).use { reader ->
             reader?.readText()
         } ?: throw IllegalArgumentException("Unable to open settings backup")
 
-        return importFromJson(context, json)
+        return importFromJson(context, json, applyTheme)
     }
 
-    fun importFromFile(context: Context, file: File): ImportResult {
-        return importFromJson(context, file.readText(Charsets.UTF_8))
+    fun importFromFile(context: Context, file: File, applyTheme: Boolean = true): ImportResult {
+        return importFromJson(context, file.readText(Charsets.UTF_8), applyTheme)
     }
 
-    fun importFromJson(context: Context, json: String): ImportResult {
+    fun importFromJson(context: Context, json: String, applyTheme: Boolean = true): ImportResult {
         val prefs = context.getSharedPreferences(Settings.PREFS_NAME, Context.MODE_PRIVATE)
         val importData = parseImportJson(json)
-        val changedKeys = importData.values.filter { (key, value) -> prefs.all[key] != value }.keys
+        val existing = backupPreferences(context)
+        val changedKeys = importData.values.filter { (key, value) -> existing[key] != value }.keys
 
-        applyValues(prefs, importData.values)
-        syncImportedSettings(context)
+        applyValues(prefs, importData.values.filterKeys { it !in wifiScanBackupKeys })
+        val scanValues = importData.values.filterKeys { it in wifiScanBackupKeys }
+            .mapKeys { (key, _) -> wifiScanBackupKeys.getValue(key) }
+        if (scanValues.isNotEmpty()) {
+            applyValues(context.getSharedPreferences("wifi-scan-option", Context.MODE_PRIVATE), scanValues)
+        }
+        syncImportedSettings(context, applyTheme)
 
         return ImportResult(
             importedKeys = importData.values.size,
@@ -370,11 +461,18 @@ object SettingsBackupManager {
         )
     }
 
-    fun resetFromContext(context: Context): ResetResult {
+    fun resetFromContext(context: Context, applyTheme: Boolean = true): ResetResult {
         val prefs = context.getSharedPreferences(Settings.PREFS_NAME, Context.MODE_PRIVATE)
         val result = resetPreferencesToDefaults(prefs)
-        syncImportedSettings(context)
-        return result
+        val scanPrefs = context.getSharedPreferences("wifi-scan-option", Context.MODE_PRIVATE)
+        val scanKeys = wifiScanBackupKeys.filterValues { scanPrefs.contains(it) }
+        if (scanKeys.isNotEmpty()) {
+            val editor = scanPrefs.edit()
+            scanKeys.values.forEach { editor.remove(it) }
+            if (!editor.commit()) throw IllegalStateException("Unable to reset Wi-Fi scan settings")
+        }
+        syncImportedSettings(context, applyTheme)
+        return ResetResult(result.resetKeys + scanKeys.size, result.changedKeys + scanKeys.keys)
     }
 
     fun resetPreferencesToDefaults(prefs: SharedPreferences): ResetResult {
@@ -461,6 +559,7 @@ object SettingsBackupManager {
         when (type) {
             ValueType.BOOLEAN -> if (value is Boolean) settingsJson.put(key, value)
             ValueType.INT -> if (value is Int) settingsJson.put(key, value)
+            ValueType.LONG -> if (value is Long) settingsJson.put(key, value)
             ValueType.STRING -> if (value is String) settingsJson.put(key, value)
             ValueType.STRING_SET -> {
                 val set = value as? Set<*> ?: return
@@ -476,6 +575,13 @@ object SettingsBackupManager {
         return when (type) {
             ValueType.BOOLEAN -> value as? Boolean
             ValueType.INT -> parseInt(value)
+            ValueType.LONG -> when (value) {
+                is Int -> value.toLong()
+                is Long -> value
+                is BigInteger -> if (value.bitLength() <= Long.SIZE_BITS - 1) value.toLong() else null
+                is BigDecimal -> runCatching { value.longValueExact() }.getOrNull()
+                else -> null
+            }
             ValueType.STRING -> value as? String
             ValueType.STRING_SET -> parseStringSet(value)
         }
@@ -519,6 +625,7 @@ object SettingsBackupManager {
             when (value) {
                 is Boolean -> editor.putBoolean(key, value)
                 is Int -> editor.putInt(key, value)
+                is Long -> editor.putLong(key, value)
                 is String -> editor.putString(key, value)
                 is Set<*> -> editor.putStringSet(key, value.mapNotNull { it as? String }.toSet())
             }
@@ -528,7 +635,7 @@ object SettingsBackupManager {
         }
     }
 
-    private fun syncImportedSettings(context: Context) {
+    private fun syncImportedSettings(context: Context, applyTheme: Boolean = true) {
         val settings = Settings(context)
         Settings.syncAutoStartOnBootToDeviceStorage(context, settings.autoStartOnBoot)
         Settings.syncAutoStartOnScreenOnToDeviceStorage(context, settings.autoStartOnScreenOn)
@@ -540,6 +647,7 @@ object SettingsBackupManager {
         Settings.syncAutoStartBtMacsToDeviceStorage(context, settings.autoStartBluetoothDeviceMacs)
         Settings.syncUsbBlacklistToDeviceStorage(context, settings.usbBlacklist)
         Settings.setUsbAttachedActivityEnabled(context, settings.listenForUsbDevices)
-        AppThemeManager.reapply(context, settings)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) WifiScanControl.reloadSettings()
+        if (applyTheme) AppThemeManager.reapply(context, settings)
     }
 }

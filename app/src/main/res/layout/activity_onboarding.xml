@@ -1237,14 +1237,29 @@
         android:paddingTop="4dp"
         android:paddingBottom="12dp">
 
-        <!-- Secondary action on its own row so it never crowds Back/Next -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/onb_skip"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:id="@+id/onb_secondary_actions"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:text="@string/onb_do_it_later" />
+            android:orientation="horizontal"
+            android:gravity="center">
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/onb_skip"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:singleLine="false"
+                android:text="@string/onb_do_it_later" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/onb_restore"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:singleLine="false"
+                android:text="@string/onb_restore_settings" />
+        </LinearLayout>
 
         <!-- Primary navigation: compact back arrow + Next/Finish -->
         <LinearLayout

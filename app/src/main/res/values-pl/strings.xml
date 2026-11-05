@@ -790,6 +790,7 @@
     <string name="export_settings">Eksportuj ustawienia</string>
     <string name="export_settings_description">Zapisz kopię zapasową ustawień jako plik JSON.</string>
     <string name="export_settings_app_folder">Zapisz w folderze kopii zapasowych aplikacji</string>
+    <string name="onb_restore_settings">Przywróć ustawienia z kopii zapasowej</string>
     <string name="export_settings_downloads">Zapisz w folderze Pobrane</string>
     <string name="export_settings_choose_location">Wybierz miejsce zapisu</string>
     <string name="settings_exported">Wyeksportowano ustawienia</string>

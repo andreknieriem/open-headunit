@@ -790,6 +790,7 @@
     <string name="export_settings">Exportă setările</string>
     <string name="export_settings_description">Salvează o copie de rezervă a setărilor ca fișier JSON.</string>
     <string name="export_settings_app_folder">Salvează în folderul de copii al aplicației</string>
+    <string name="onb_restore_settings">Restabilește setările dintr-o copie de rezervă</string>
     <string name="export_settings_downloads">Salvează în Descărcări</string>
     <string name="export_settings_choose_location">Alege locația de salvare</string>
     <string name="settings_exported">Setări exportate</string>

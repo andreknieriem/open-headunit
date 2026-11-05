@@ -790,6 +790,7 @@
     <string name="export_settings">Exportar configurações</string>
     <string name="export_settings_description">Salvar um backup das configurações como arquivo JSON.</string>
     <string name="export_settings_app_folder">Salvar na pasta de backup do app</string>
+    <string name="onb_restore_settings">Restaurar configurações de um backup</string>
     <string name="export_settings_downloads">Salvar em Downloads</string>
     <string name="export_settings_choose_location">Escolher onde salvar</string>
     <string name="settings_exported">Configurações exportadas</string>

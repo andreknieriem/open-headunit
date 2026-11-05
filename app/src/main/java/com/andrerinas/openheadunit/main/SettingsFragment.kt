@@ -80,6 +80,7 @@ import com.andrerinas.openheadunit.utils.LocaleHelper
 import com.andrerinas.openheadunit.BuildConfig
 import com.andrerinas.openheadunit.utils.LogExporter
 import com.andrerinas.openheadunit.utils.SettingsBackupManager
+import com.andrerinas.openheadunit.utils.SettingsRestoreHandler
 import com.andrerinas.openheadunit.utils.ToastUtils
 import com.andrerinas.openheadunit.utils.VpnControl
 import com.andrerinas.openheadunit.utils.DialogUtils
@@ -3219,29 +3220,6 @@ class SettingsFragment : Fragment() {
             .show()
     }
 
-    private data class ImportSnapshot(
-        val wifiConnectionMode: WifiLauncherMode,
-        val helperConnectionStrategy: HelperStrategy,
-        val nativeApStrategy: NativeStrategy,
-        val bluetoothManagerServiceName: String,
-        val wirelessSelected: Boolean,
-        val wifiDirectBand: Int,
-        val fiveGhzChannel: Int,
-        val externalBtZbtTransport: Boolean,
-        val externalBtBlinkTransport: Boolean,
-        val externalBtZjSocketTransport: Boolean,
-        val nativeAaIgnoreExternalBt: Boolean,
-        val autoEnableHotspot: Boolean,
-        val insecureAaRfcommListener: Boolean,
-        val appLanguage: String,
-        val uiScaleSettingsPercent: Int,
-        val appTheme: Settings.AppTheme,
-        val useExtremeDarkMode: Boolean,
-        val useGradientBackground: Boolean,
-        val screenOrientation: Settings.ScreenOrientation,
-        val hudMirroring: Boolean
-    )
-
     private fun startExportSettings() {
         val options = mutableListOf<Pair<String, () -> Unit>>()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
@@ -3415,7 +3393,7 @@ class SettingsFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val result = withContext(Dispatchers.IO) {
-                    SettingsBackupManager.resetFromContext(appContext)
+                    SettingsBackupManager.resetFromContext(appContext, applyTheme = false)
                 }
                 handleResetSettings(snapshot, result)
             } catch (e: Exception) {
@@ -3425,27 +3403,10 @@ class SettingsFragment : Fragment() {
         }
     }
 
-    private fun handleResetSettings(snapshot: ImportSnapshot, result: SettingsBackupManager.ResetResult) {
+    private fun handleResetSettings(snapshot: SettingsRestoreHandler.Snapshot, result: SettingsBackupManager.ResetResult) {
         val ctx = context ?: return
         settings = App.provide(ctx).settings
-        applyWirelessSideEffects(snapshot, ctx)
-
-        // Re-evaluate app theme engine to immediately apply default theme
-        AppThemeManager.reapply(ctx, settings)
-
-        // Notify Service about Night Mode changes immediately
-        val nightModeUpdateIntent = Intent(AapService.ACTION_REQUEST_NIGHT_MODE_UPDATE).apply {
-            setPackage(ctx.packageName)
-        }
-        ctx.sendBroadcast(nightModeUpdateIntent)
-
-        if (SettingsBackupManager.requiresProjectionRestart(result.changedKeys) && App.provide(ctx).commManager.isConnected) {
-            ToastUtils.showToast(ctx, ctx.getString(R.string.stopping_service), Toast.LENGTH_SHORT, force = true)
-            val stopServiceIntent = Intent(ctx, AapService::class.java).apply {
-                action = AapService.ACTION_STOP_SERVICE
-            }
-            ContextCompat.startForegroundService(ctx, stopServiceIntent)
-        }
+        val recreate = SettingsRestoreHandler.apply(ctx, settings, snapshot, result.changedKeys)
 
         hasChanges = false
         requiresRestart = false
@@ -3456,7 +3417,7 @@ class SettingsFragment : Fragment() {
 
         ToastUtils.showToast(ctx, R.string.settings_reset, Toast.LENGTH_LONG, force = true)
 
-        if (shouldRecreateAfterImport(snapshot)) {
+        if (recreate) {
             activity?.recreate()
         }
     }
@@ -3593,7 +3554,7 @@ class SettingsFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val result = withContext(Dispatchers.IO) {
-                    SettingsBackupManager.importFromUri(appContext, uri)
+                    SettingsBackupManager.importFromUri(appContext, uri, applyTheme = false)
                 }
                 handleImportedSettings(snapshot, result)
             } catch (e: Exception) {
@@ -3609,7 +3570,7 @@ class SettingsFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val result = withContext(Dispatchers.IO) {
-                    SettingsBackupManager.importFromFile(appContext, file)
+                    SettingsBackupManager.importFromFile(appContext, file, applyTheme = false)
                 }
                 handleImportedSettings(snapshot, result)
             } catch (e: Exception) {
@@ -3619,52 +3580,12 @@ class SettingsFragment : Fragment() {
         }
     }
 
-    private fun createImportSnapshot(): ImportSnapshot {
-        return ImportSnapshot(
-            wifiConnectionMode = settings.wifiConnectionMode,
-            helperConnectionStrategy = settings.helperConnectionStrategy,
-            nativeApStrategy = settings.nativeApStrategy,
-            bluetoothManagerServiceName = settings.bluetoothManagerServiceName,
-            wirelessSelected = settings.showsWifi(),
-            wifiDirectBand = settings.wifiDirectBand,
-            fiveGhzChannel = settings.fiveGhzChannel,
-            externalBtZbtTransport = settings.externalBtZbtTransport,
-            externalBtBlinkTransport = settings.externalBtBlinkTransport,
-            externalBtZjSocketTransport = settings.externalBtZjSocketTransport,
-            nativeAaIgnoreExternalBt = settings.nativeAaIgnoreExternalBt,
-            autoEnableHotspot = settings.autoEnableHotspot,
-            insecureAaRfcommListener = settings.insecureAaRfcommListener,
-            appLanguage = settings.appLanguage,
-            uiScaleSettingsPercent = settings.uiScaleSettingsPercent,
-            appTheme = settings.appTheme,
-            useExtremeDarkMode = settings.useExtremeDarkMode,
-            useGradientBackground = settings.useGradientBackground,
-            screenOrientation = settings.screenOrientation,
-            hudMirroring = settings.hudMirroring
-        )
-    }
+    private fun createImportSnapshot() = SettingsRestoreHandler.capture(requireContext(), settings)
 
-    private fun handleImportedSettings(snapshot: ImportSnapshot, result: SettingsBackupManager.ImportResult) {
+    private fun handleImportedSettings(snapshot: SettingsRestoreHandler.Snapshot, result: SettingsBackupManager.ImportResult) {
         val ctx = context ?: return
         settings = App.provide(ctx).settings
-        applyWirelessSideEffects(snapshot, ctx)
-
-        // Re-evaluate app theme engine to immediately apply static or dynamic theme
-        AppThemeManager.reapply(ctx, settings)
-
-        // Notify Service about Night Mode changes immediately
-        val nightModeUpdateIntent = Intent(AapService.ACTION_REQUEST_NIGHT_MODE_UPDATE).apply {
-            setPackage(ctx.packageName)
-        }
-        ctx.sendBroadcast(nightModeUpdateIntent)
-
-        if (SettingsBackupManager.requiresProjectionRestart(result.changedKeys) && App.provide(ctx).commManager.isConnected) {
-            ToastUtils.showToast(ctx, getString(R.string.stopping_service), Toast.LENGTH_SHORT, force = true)
-            val stopServiceIntent = Intent(ctx, AapService::class.java).apply {
-                action = AapService.ACTION_STOP_SERVICE
-            }
-            ContextCompat.startForegroundService(ctx, stopServiceIntent)
-        }
+        val recreate = SettingsRestoreHandler.apply(ctx, settings, snapshot, result.changedKeys)
 
         hasChanges = false
         requiresRestart = false
@@ -3680,62 +3601,15 @@ class SettingsFragment : Fragment() {
             force = true
         )
 
-        if (shouldRecreateAfterImport(snapshot)) {
+        if (recreate) {
             activity?.recreate()
         }
     }
 
     /** What a launcher reads once at construction, for [WirelessRearmPolicy]. */
-    private fun wirelessRearmConfig(context: Context = requireContext()) = WirelessRearmPolicy.Config(
-        wifiConnectionMode = settings.wifiConnectionMode,
-        helperConnectionStrategy = settings.helperConnectionStrategy,
-        nativeApStrategy = settings.nativeApStrategy,
-        bluetoothManagerServiceName = settings.bluetoothManagerServiceName,
-        wirelessSelected = settings.showsWifi(),
-        wifiDirectBand = settings.wifiDirectBand,
-        fiveGhzChannel = settings.fiveGhzChannel,
-        externalBtZbtTransport = settings.externalBtZbtTransport,
-        externalBtBlinkTransport = settings.externalBtBlinkTransport,
-        externalBtZjSocketTransport = settings.externalBtZjSocketTransport,
-        nativeAaIgnoreExternalBt = settings.nativeAaIgnoreExternalBt,
-        esp32Relay = Esp32RelaySession.hasSavedEsp32Relay(context),
-        autoEnableHotspot = settings.autoEnableHotspot,
-        insecureAaRfcommListener = settings.insecureAaRfcommListener,
+    private fun wirelessRearmConfig(context: Context = requireContext()) = WirelessRearmPolicy.capture(
+        settings, Esp32RelaySession.hasSavedEsp32Relay(context)
     )
-
-    private fun applyWirelessSideEffects(snapshot: ImportSnapshot, context: Context = requireContext()) {
-        val before = WirelessRearmPolicy.Config(
-            wifiConnectionMode = snapshot.wifiConnectionMode,
-            helperConnectionStrategy = snapshot.helperConnectionStrategy,
-            nativeApStrategy = snapshot.nativeApStrategy,
-            bluetoothManagerServiceName = snapshot.bluetoothManagerServiceName,
-            wirelessSelected = snapshot.wirelessSelected,
-            wifiDirectBand = snapshot.wifiDirectBand,
-            fiveGhzChannel = snapshot.fiveGhzChannel,
-            externalBtZbtTransport = snapshot.externalBtZbtTransport,
-            externalBtBlinkTransport = snapshot.externalBtBlinkTransport,
-            externalBtZjSocketTransport = snapshot.externalBtZjSocketTransport,
-            nativeAaIgnoreExternalBt = snapshot.nativeAaIgnoreExternalBt,
-            // An import leaves the relay's own store alone.
-            esp32Relay = Esp32RelaySession.hasSavedEsp32Relay(context),
-            autoEnableHotspot = snapshot.autoEnableHotspot,
-            insecureAaRfcommListener = snapshot.insecureAaRfcommListener,
-        )
-        if (WirelessRearmPolicy.requiresRearm(before, wirelessRearmConfig(context))) {
-            AapService.applyWirelessSettings(context,
-                startWireless = settings.wifiConnectionMode != WifiLauncherMode.MANUAL && settings.showsWifi())
-        }
-    }
-
-    private fun shouldRecreateAfterImport(snapshot: ImportSnapshot): Boolean {
-        return snapshot.appLanguage != settings.appLanguage ||
-            snapshot.uiScaleSettingsPercent != settings.uiScaleSettingsPercent ||
-            snapshot.appTheme != settings.appTheme ||
-            snapshot.useExtremeDarkMode != settings.useExtremeDarkMode ||
-            snapshot.useGradientBackground != settings.useGradientBackground ||
-            snapshot.screenOrientation != settings.screenOrientation ||
-            snapshot.hudMirroring != settings.hudMirroring
-    }
 
     private fun showAudioOffsetsDialog() {
         val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_audio_offsets, null)

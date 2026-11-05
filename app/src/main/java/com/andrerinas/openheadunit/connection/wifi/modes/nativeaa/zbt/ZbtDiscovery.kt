@@ -53,6 +53,9 @@ object ZbtDiscovery {
     /** Reads metadata and the selected cache; never opens a socket on a UI path. */
     fun snapshot(): ZbtDiscoveryPolicy.Snapshot = measurement(latch.decision()).snapshot()
 
+    /** As [snapshot], for a verdict to show. Never route on it: a route needs a fresh answer. */
+    fun lastKnownSnapshot(): ZbtDiscoveryPolicy.Snapshot = measurement(latch.decision()).lastKnown()
+
     /** Capture the cache/probe choice once, including across suspension or carrier handover. */
     fun measurement(decision: ZbtDiscoveryPolicy.Decision): Measurement = Measurement(decision)
 
@@ -74,6 +77,12 @@ object ZbtDiscovery {
         fun snapshot(): ZbtDiscoveryPolicy.Snapshot = ZbtDiscoveryPolicy.Snapshot(
             decision, if (deferredIdentity == decision) false else cached()
         )
+
+        /** An identity answer never expires by age, so only the legacy cache needs this. */
+        fun lastKnown(): ZbtDiscoveryPolicy.Snapshot = snapshot().let {
+            if (it.reachable != null || !decision.available || requireIdentity) it
+            else it.copy(reachable = ZbtDaemonReachability.lastAnswer())
+        }
 
         internal enum class Completion { SETTLED, CARRIER_BUSY, CANCELLED }
 

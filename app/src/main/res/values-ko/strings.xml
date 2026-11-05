@@ -1273,6 +1273,7 @@
     <string name="connection_issue_banner_five_ghz_channel_refused">이 기기가 사용자가 지정한 5 GHz 채널을 사용하지 않고, 일부 휴대전화에서 감지할 수 없는 채널을 선택했습니다. 어디서나 작동하는 2.4 GHz로 Wi-Fi Direct를 전환하려면 탭하세요.</string>
     <string name="connection_issue_banner_headunit_server_deaf">휴대전화의 Android Auto 헤드유닛 서버가 응답하지 않습니다. 휴대전화의 Android Auto 개발자 설정에서 서버를 중지했다가 다시 시작하세요.</string>
     <string name="connection_issue_banner_hands_free_held">Android Auto에 필요한 이 기기의 핸즈프리 연결을 다른 기기가 사용하고 있습니다. 해당 기기의 연결을 끊으면 이 기기가 Android Auto 연결을 다시 시도합니다.</string>
+    <string name="connection_issue_banner_usb_bluetooth">USB 블루투스 어댑터가 연결되어 있지만, 이 기기에는 Android Auto가 무선 연결에 쓸 수 있는 블루투스 라디오가 없습니다. 케이블을 사용하거나 자체 블루투스가 있는 기기를 사용하세요.</string>
     <string name="connection_issue_banner_dismiss">닫기</string>
     <string name="auto_connect_pill_cancel">연결 중지</string>
     <string name="connection_issue_remedy_hotspot_query">핫스팟 이름 및 비밀번호</string>

@@ -166,6 +166,9 @@ object ZbtDaemonReachability {
         }
     }
 
+    /** The legacy answer whatever its age, or null if there is none. Never route on it. */
+    fun lastAnswer(): Boolean? = answer
+
     /** How old the answer is, or null if there is none. */
     fun answerAgeMs(nowMs: Long = SystemClock.elapsedRealtime()): Long? =
         answer?.let { nowMs - answeredAt }

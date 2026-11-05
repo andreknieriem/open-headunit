@@ -1277,6 +1277,7 @@ Open Headunit предоставляется «как есть» без каки
     <string name="connection_issue_banner_five_ghz_channel_refused">Это устройство отказалось использовать выбранный вами канал 5 ГГц и выбрало канал, который не видят некоторые телефоны. Нажмите, чтобы переключить WiFi Direct на 2,4 ГГц, который работает везде.</string>
     <string name="connection_issue_banner_headunit_server_deaf">Сервер головного устройства Android Auto на вашем телефоне перестал отвечать. На телефоне остановите его и запустите снова в настройках разработчика Android Auto.</string>
     <string name="connection_issue_banner_hands_free_held">Громкую связь этого устройства, которая нужна Android Auto, использует другое устройство. Отключите его, и устройство повторит попытку.</string>
+    <string name="connection_issue_banner_usb_bluetooth">USB-адаптер Bluetooth подключен, но у этого устройства нет Bluetooth-радио, которое Android Auto может использовать для беспроводного подключения. Используйте кабель или устройство со своим Bluetooth.</string>
     <string name="connection_issue_banner_dismiss">Закрыть</string>
     <string name="auto_connect_pill_cancel">Остановить подключение</string>
     <string name="connection_issue_remedy_hotspot_query">Имя и пароль точки доступа</string>

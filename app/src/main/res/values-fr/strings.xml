@@ -1332,6 +1332,7 @@
     <string name="connection_issue_banner_five_ghz_channel_refused">Cet appareil a refusé d\'utiliser le canal 5 GHz que vous avez choisi et en a pris un que certains téléphones ne voient pas. Appuyez pour passer le Wi-Fi Direct en 2,4 GHz, qui fonctionne partout.</string>
     <string name="connection_issue_banner_headunit_server_deaf">Le serveur autoradio d\'Android Auto sur votre téléphone ne répond plus. Sur le téléphone, arrêtez-le puis redémarrez-le dans les options pour les développeurs d\'Android Auto.</string>
     <string name="connection_issue_banner_hands_free_held">Un autre appareil utilise la connexion mains libres de cet autoradio, dont Android Auto a besoin. Déconnectez l\'autre appareil : cet autoradio fera une nouvelle tentative.</string>
+    <string name="connection_issue_banner_usb_bluetooth">Un adaptateur Bluetooth USB est branché, mais cet appareil n\'a pas de radio Bluetooth utilisable par Android Auto pour la connexion sans fil. Utilisez un câble, ou un appareil avec son propre Bluetooth.</string>
     <string name="connection_issue_banner_dismiss">Ignorer</string>
     <string name="auto_connect_pill_cancel">Arrêter la connexion</string>
     <string name="connection_issue_remedy_hotspot_query">Nom et mot de passe du point d\'accès</string>

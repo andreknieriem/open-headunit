@@ -116,4 +116,26 @@ class NativeAaDiscoveryResumeTest {
         assertEquals(1, arms)
     }
 
+    @Test fun routeMeasuredFiresOnceOnAFinishedMeasurementOnly() {
+        val decision = ZbtDiscoveryPolicy.Decision(ZbtDiscoveryPolicy.Mode.REACHABILITY, "external")
+        fun manager(generation: Int): NativeAaHandshakeManager {
+            val m = mock(NativeAaHandshakeManager::class.java, CALLS_REAL_METHODS)
+            set(m, "measureGeneration", generation)
+            set(m, "measuringDaemon", true)
+            return m
+        }
+        var fired = 0
+        val finished = manager(4).also { it.onRouteMeasured = { fired++ } }
+        finished.completeDaemonMeasurement(4, decision, ZbtDiscovery.Measurement.Completion.SETTLED) {}
+        assertEquals(1, fired)
+
+        manager(4).also { it.onRouteMeasured = { fired++ } }
+            .completeDaemonMeasurement(4, decision, ZbtDiscovery.Measurement.Completion.CANCELLED) {}
+        manager(5).also { it.onRouteMeasured = { fired++ } }
+            .completeDaemonMeasurement(4, decision, ZbtDiscovery.Measurement.Completion.SETTLED) {}
+        // A busy carrier with no identity ends the arming without a route answer.
+        manager(4).also { it.onRouteMeasured = { fired++ } }
+            .completeDaemonMeasurement(4, decision, ZbtDiscovery.Measurement.Completion.CARRIER_BUSY) {}
+        assertEquals(1, fired)
+    }
 }

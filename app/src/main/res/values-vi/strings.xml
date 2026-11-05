@@ -1280,6 +1280,7 @@
     <string name="connection_issue_banner_five_ghz_channel_refused">Thiết bị này không dùng kênh 5 GHz bạn đã chọn mà chọn một kênh một số điện thoại không thấy được. Nhấn để chuyển WiFi Direct sang 2,4 GHz, hoạt động ở mọi nơi.</string>
     <string name="connection_issue_banner_headunit_server_deaf">Máy chủ head unit của Android Auto trên điện thoại của bạn đã ngừng phản hồi. Trên điện thoại, hãy dừng rồi khởi động lại trong cài đặt nhà phát triển của Android Auto.</string>
     <string name="connection_issue_banner_hands_free_held">Một thiết bị khác đang dùng kết nối rảnh tay của thiết bị này, thứ mà Android Auto cần. Hãy ngắt kết nối thiết bị đó và thiết bị này sẽ thử lại.</string>
+    <string name="connection_issue_banner_usb_bluetooth">Một bộ chuyển đổi Bluetooth USB đang được cắm, nhưng thiết bị này không có sóng Bluetooth mà Android Auto dùng được cho kết nối không dây. Hãy dùng cáp, hoặc thiết bị có Bluetooth riêng.</string>
     <string name="connection_issue_banner_dismiss">Bỏ qua</string>
     <string name="auto_connect_pill_cancel">Dừng kết nối</string>
     <string name="connection_issue_remedy_hotspot_query">Tên và mật khẩu điểm phát sóng</string>

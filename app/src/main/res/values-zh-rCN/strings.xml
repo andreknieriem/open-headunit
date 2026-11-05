@@ -1276,6 +1276,7 @@
     <string name="connection_issue_banner_five_ghz_channel_refused">本机不使用您选择的 5 GHz 信道，而选了一个部分手机看不到的信道。点按可将 Wi-Fi Direct 切换为 2.4 GHz，该频段适用于所有地区。</string>
     <string name="connection_issue_banner_headunit_server_deaf">您手机上 Android Auto 的主机服务器已停止响应。请在手机上，到 Android Auto 的开发者设置中停止并重新启动它。</string>
     <string name="connection_issue_banner_hands_free_held">另一台设备正在占用本机的免提连接，而 Android Auto 需要该连接。请断开那台设备，本机会再次尝试。</string>
+    <string name="connection_issue_banner_usb_bluetooth">已插入 USB 蓝牙适配器，但此设备没有 Android Auto 可用于无线连接的蓝牙无线电。请使用数据线，或使用自带蓝牙的设备。</string>
     <string name="connection_issue_banner_dismiss">关闭</string>
     <string name="auto_connect_pill_cancel">停止连接</string>
     <string name="connection_issue_remedy_hotspot_query">热点名称与密码</string>

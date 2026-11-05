@@ -107,6 +107,7 @@ object UsbPermissionAsks {
             override fun onReceive(context: Context?, intent: Intent?) {
                 val device = intent?.let { UsbReceiver.deviceOf(it) } ?: return
                 noteDetach(device.deviceName)
+                UsbBluetoothControllerNotice.noteDetach(device.deviceName)
             }
         }
         ContextCompat.registerReceiver(

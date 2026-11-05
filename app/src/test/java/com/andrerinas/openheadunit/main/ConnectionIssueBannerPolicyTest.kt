@@ -185,6 +185,18 @@ class ConnectionIssueBannerPolicyTest {
     }
 
     @Test
+    fun `the USB Bluetooth notice is relevant in mode 3 on both transports and in no other mode`() {
+        for (transport in NativeTransport.values()) {
+            assertTrue(ConnectionIssue.USB_BLUETOOTH_NOT_USABLE in
+                ConnectionIssueBannerPolicy.relevantNow(3, transport, wirelessSelected = true))
+            for (mode in 0..2) {
+                assertFalse(ConnectionIssue.USB_BLUETOOTH_NOT_USABLE in
+                    ConnectionIssueBannerPolicy.relevantNow(mode, transport, wirelessSelected = true))
+            }
+        }
+    }
+
+    @Test
     fun `WiFi Direct can be blocked by a masked BSSID but not by the hotspot configuration`() {
         val relevant = ConnectionIssueBannerPolicy.relevantNow(3, NativeTransport.WIFI_DIRECT, true)
         assertTrue(ConnectionIssue.BSSID_UNAVAILABLE in relevant)

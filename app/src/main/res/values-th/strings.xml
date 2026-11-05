@@ -1419,6 +1419,7 @@
     <string name="connection_issue_banner_hands_free_record_refused">บลูทูธของยูนิตนี้ปฏิเสธการตั้งค่าแฮนด์ฟรีที่ Android Auto ต้องใช้ ระบบไร้สายจึงอาจไม่เริ่มทำงาน หากใช้สายเคเบิลหรือโหมดไร้สายอื่นจะไม่ต้องใช้การตั้งค่านี้</string>
     <string name="connection_issue_banner_home_wifi_rejoined">ยูนิตนี้เชื่อมต่อ Wi-Fi ที่บ้านซ้ำไปมาขณะใช้ Android Auto ซึ่งอาจทำให้ภาพกระตุก โดยเฉพาะยูนิตที่ใช้ 2.4 GHz แตะเพื่อปิดการเชื่อมต่อใหม่อัตโนมัติสำหรับเครือข่ายนั้น หรือรอจนกว่าคุณจะอยู่นอกระยะ</string>
     <string name="connection_issue_banner_stale_usb_accessory">Android Auto บนโทรศัพท์หยุดตอบสนองผ่าน USB และแอปไม่สามารถเริ่มใหม่ได้ ถอดโทรศัพท์ออก รอห้าวินาที แล้วเสียบกลับเข้าไปใหม่</string>
+    <string name="connection_issue_banner_usb_bluetooth">เชื่อมต่ออะแดปเตอร์บลูทูธ USB อยู่ แต่เครื่องนี้ไม่มีวิทยุบลูทูธที่ Android Auto ใช้เชื่อมต่อแบบไร้สายได้ ให้ใช้สายเคเบิล หรือใช้เครื่องที่มีบลูทูธในตัว</string>
     <string name="connection_issue_banner_dismiss">ปิด</string>
     <string name="auto_connect_pill_cancel">หยุดเชื่อมต่อ</string>
     <string name="connection_issue_remedy_hotspot_query">ชื่อและรหัสผ่านฮอตสปอต</string>

@@ -559,4 +559,12 @@ class ExternalBtTransportPolicyTest {
             Choice.ZJ_SOCKET, moduleDetected = false, zbtOffered = false, zjOffered = false,
             blinkOffered = false, esp32Supported = false))
     }
+
+    @Test fun moduleRefusalIsNullOnlyWhileAnAnswerIsMissing() {
+        assertEquals(null, ExternalBtTransportPolicy.moduleRefusal(legacy(evidence, null), false, false))
+        assertEquals(null, ExternalBtTransportPolicy.moduleRefusal(legacy(evidence, false), false, false, zjSocketConnects = null))
+        assertEquals(true, ExternalBtTransportPolicy.moduleRefusal(legacy(evidence, false), false, false))
+        assertEquals(false, ExternalBtTransportPolicy.moduleRefusal(legacy(evidence, true), false, false))
+        assertEquals(false, ExternalBtTransportPolicy.moduleRefusal(legacy(null, null), false, false))
+    }
 }

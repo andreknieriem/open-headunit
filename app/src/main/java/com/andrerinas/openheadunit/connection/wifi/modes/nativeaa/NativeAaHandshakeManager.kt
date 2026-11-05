@@ -164,6 +164,24 @@ class NativeAaHandshakeManager(
             )
         }
 
+        /**
+         * Whether this unit refuses mode 3 because of its external module, or null until the daemon
+         * has answered once. An expired answer still counts: nothing re-measures a refused unit.
+         */
+        fun moduleRefusal(context: Context): Boolean? {
+            val settings = App.provide(context).settings
+            return ExternalBtTransportPolicy.moduleRefusal(
+                ZbtDiscovery.lastKnownSnapshot(),
+                settings.externalBtZbtTransport,
+                settings.nativeAaIgnoreExternalBt,
+                blinkTransportEnabled = settings.externalBtBlinkTransport,
+                fytModuleEvidence = BluetoothHelper.fytModuleEvidence,
+                hctServiceAvailable = HctServiceObserver.available(context),
+                zjSocketEnabled = settings.externalBtZjSocketTransport,
+                zjSocketConnects = ZjSocketProbe.lastAnswer()
+            )
+        }
+
         /** What the main screen's WiFi button arms; read here so the screen and the service agree. */
         fun wifiButtonRoute(context: Context): ExternalBtTransportPolicy.WifiButton {
             val settings = App.provide(context).settings
@@ -364,6 +382,10 @@ class NativeAaHandshakeManager(
      */
     @Volatile
     var userConfiguringProvider: () -> Boolean = { false }
+
+    /** Told when a daemon measurement ends, so a verdict that waited on the route can settle. */
+    @Volatile
+    var onRouteMeasured: (() -> Unit)? = null
 
     // Said once per run of deferred passes, so a long stay in settings is one line rather than one
     // every fifteen seconds.
@@ -902,6 +924,7 @@ class NativeAaHandshakeManager(
             ZbtDiscovery.deferIdentityForArming(decision)
             AppLog.w("NativeAA: Bluetooth module still busy after 10s; using Android Bluetooth for this arming.")
         }
+        onRouteMeasured?.invoke()
         resumeAfterDaemonMeasurement(generation, arm)
     }
 

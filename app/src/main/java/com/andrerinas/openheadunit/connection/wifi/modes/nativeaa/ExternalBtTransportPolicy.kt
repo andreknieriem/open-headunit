@@ -127,6 +127,30 @@ object ExternalBtTransportPolicy {
             )
 
     /**
+     * [refusesBringUp] for a verdict that outlives the arming, or null while an answer is missing.
+     * A UI read passes the last known answers: an expired one must not read as a pending measurement.
+     */
+    fun moduleRefusal(
+        discovery: ZbtDiscoveryPolicy.Snapshot,
+        zbtTransportEnabled: Boolean,
+        ignoreExternalBt: Boolean,
+        blinkTransportEnabled: Boolean = false,
+        fytModuleEvidence: String? = null,
+        hctServiceAvailable: Boolean = false,
+        zjSocketEnabled: Boolean = false,
+        zjSocketConnects: Boolean? = false
+    ): Boolean? = if (needsDaemonMeasurement(
+            discovery, zbtTransportEnabled, ignoreExternalBt,
+            blinkTransportEnabled, fytModuleEvidence, hctServiceAvailable,
+            zjSocketEnabled, zjSocketConnects
+        )
+    ) null else refusesBringUp(
+        discovery, zbtTransportEnabled, ignoreExternalBt,
+        blinkTransportEnabled, fytModuleEvidence, hctServiceAvailable,
+        zjSocketEnabled, zjSocketConnects
+    )
+
+    /**
      * Whether dialling the daemon would change this unit's answer.
      *
      * The fence that keeps the dial off ordinary hardware as much as an optimisation: false

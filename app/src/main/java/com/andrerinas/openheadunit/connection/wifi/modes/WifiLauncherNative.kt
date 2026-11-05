@@ -7,6 +7,7 @@ import android.os.Looper
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.connection.CommManager
 import com.andrerinas.openheadunit.connection.ConnectionStage
+import com.andrerinas.openheadunit.connection.usb.UsbBluetoothControllerNotice
 import com.andrerinas.openheadunit.connection.ConnectionStageTracker
 import com.andrerinas.openheadunit.connection.wifi.MacAddressPolicy
 import com.andrerinas.openheadunit.connection.wifi.WifiLauncher
@@ -84,6 +85,9 @@ class WifiLauncherNative : WifiLauncher {
         // The wake poke wakes the phone, and a phone that answers takes over the screen. Doing that
         // to somebody who is in the middle of changing settings loses whatever they were reading.
         handshakeManager?.userConfiguringProvider = { SettingsActivity.isForeground }
+        handshakeManager?.onRouteMeasured = { UsbBluetoothControllerNotice.review(service) }
+        // A Save changes the route with no USB event and often no measurement, and every Save arms here.
+        UsbBluetoothControllerNotice.review(service)
         softApCredentialsProvider = SoftApCredentialsProvider(service, service.serviceScope, settings)
         // Above the strategy branch, not inside it: the provider resolves on IO the instant it is
         // started, and on a unit whose access point is already up that is tens of milliseconds.

@@ -157,7 +157,13 @@ enum class ConnectionIssue {
      * The phone stayed in accessory mode and answered no handshake after both recovery steps.
      * Only a replug recovers it now.
      */
-    STALE_USB_ACCESSORY
+    STALE_USB_ACCESSORY,
+
+    /**
+     * A USB Bluetooth controller is plugged in, but Native AA has no usable radio of its own.
+     * The app cannot use the controller yet; the lever is the hardware.
+     */
+    USB_BLUETOOTH_NOT_USABLE
 }
 
 /** An issue that is currently true, and when it was last raised. */
@@ -252,6 +258,20 @@ object ConnectionIssues {
         _changes.update { it + 1 }
     }
 
+    /**
+     * Applies a standing verdict: true raises without moving a stamp already standing, false
+     * clears, null (not decided yet) leaves the record. Returns whether the stamp changed.
+     */
+    fun settle(store: ConnectionIssueStore, issue: ConnectionIssue, standing: Boolean?, nowMs: Long): Boolean {
+        if (standing == null) return false
+        val before = store.read(issue)
+        if (standing) raiseOnce(store, issue, nowMs) else clear(store, issue)
+        return store.read(issue) != before
+    }
+
+    fun settle(context: Context, issue: ConnectionIssue, standing: Boolean?): Boolean =
+        storeFor(context)?.let { settle(it, issue, standing, System.currentTimeMillis()) } ?: false
+
     /** Everything currently true, most recently raised first. */
     fun standing(store: ConnectionIssueStore): List<StandingIssue> =
         ConnectionIssue.values()
@@ -293,6 +313,7 @@ object ConnectionIssues {
                 ConnectionIssue.PHONE_HOLDS_STALE_ENDPOINT -> settings.connectionIssueStaleEndpointAtEpochMs
                 ConnectionIssue.HOME_WIFI_REJOINED_BESIDE_GROUP -> settings.connectionIssueHomeWifiRejoinedAtEpochMs
                 ConnectionIssue.STALE_USB_ACCESSORY -> settings.connectionIssueStaleUsbAccessoryAtEpochMs
+                ConnectionIssue.USB_BLUETOOTH_NOT_USABLE -> settings.connectionIssueUsbBluetoothAtEpochMs
             }
         } catch (e: Exception) {
             0L
@@ -318,6 +339,7 @@ object ConnectionIssues {
                     ConnectionIssue.PHONE_HOLDS_STALE_ENDPOINT -> settings.connectionIssueStaleEndpointAtEpochMs = atEpochMs
                     ConnectionIssue.HOME_WIFI_REJOINED_BESIDE_GROUP -> settings.connectionIssueHomeWifiRejoinedAtEpochMs = atEpochMs
                     ConnectionIssue.STALE_USB_ACCESSORY -> settings.connectionIssueStaleUsbAccessoryAtEpochMs = atEpochMs
+                    ConnectionIssue.USB_BLUETOOTH_NOT_USABLE -> settings.connectionIssueUsbBluetoothAtEpochMs = atEpochMs
                 }
             } catch (e: Exception) {
                 AppLog.d("ConnectionIssues: could not record $issue: ${e.message}")

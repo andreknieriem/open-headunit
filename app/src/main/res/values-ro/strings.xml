@@ -1276,6 +1276,7 @@
     <string name="connection_issue_banner_five_ghz_channel_refused">Această unitate nu a vrut să folosească canalul de 5 GHz ales de dvs. și a ales unul pe care unele telefoane nu îl văd. Atingeți pentru a comuta WiFi Direct pe 2,4 GHz, care funcționează peste tot.</string>
     <string name="connection_issue_banner_headunit_server_deaf">Serverul unității centrale Android Auto de pe telefonul dvs. a încetat să răspundă. Pe telefon, opriți-l și porniți-l din nou din setările pentru dezvoltatori Android Auto.</string>
     <string name="connection_issue_banner_hands_free_held">Un alt dispozitiv folosește conexiunea hands-free a acestei unități, de care Android Auto are nevoie. Deconectați acel dispozitiv, iar această unitate va încerca din nou.</string>
+    <string name="connection_issue_banner_usb_bluetooth">Este conectat un adaptor Bluetooth USB, dar această unitate nu are un radio Bluetooth pe care Android Auto să îl poată folosi pentru conexiunea wireless. Folosește un cablu sau o unitate cu Bluetooth propriu.</string>
     <string name="connection_issue_banner_dismiss">Închide</string>
     <string name="auto_connect_pill_cancel">Oprește conectarea</string>
     <string name="connection_issue_remedy_hotspot_query">Nume și parolă hotspot</string>

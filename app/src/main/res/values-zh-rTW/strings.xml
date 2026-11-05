@@ -1276,6 +1276,7 @@
     <string name="connection_issue_banner_five_ghz_channel_refused">本機不使用您選擇的 5 GHz 頻道，改選了部分手機看不到的頻道。輕觸以將 Wi-Fi Direct 切換為所有手機都能用的 2.4 GHz。</string>
     <string name="connection_issue_banner_headunit_server_deaf">手機上的 Android Auto 主機伺服器已停止回應。請在手機的 Android Auto 開發人員設定中將其停止，然後重新啟動。</string>
     <string name="connection_issue_banner_hands_free_held">另一部裝置正在使用本機的免持連線，而 Android Auto 需要此連線。請中斷該裝置的連線，本機會再試一次。</string>
+    <string name="connection_issue_banner_usb_bluetooth">已插入 USB 藍牙轉接器，但此裝置沒有 Android Auto 可用於無線連線的藍牙無線電。請使用傳輸線，或使用內建藍牙的裝置。</string>
     <string name="connection_issue_banner_dismiss">關閉</string>
     <string name="auto_connect_pill_cancel">停止連線</string>
     <string name="connection_issue_remedy_hotspot_query">無線基地台名稱與密碼</string>

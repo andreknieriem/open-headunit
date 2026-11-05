@@ -1449,7 +1449,7 @@
     <string name="stand_down_station_auto">Auto</string>
     <string name="stand_down_station_always">Always</string>
     <string name="stand_down_station_never">Never</string>
-    <string name="stand_down_station_hint">Decides whether this unit leaves its own WiFi network while the phone connects, so the WiFi Direct group can use a 5 GHz channel. Auto leaves only when the radio has a 5 GHz band and the network is on 2.4 GHz, or when the group is forced to 2.4 GHz beside a 5 GHz network. A 2.4 GHz-only unit stays joined, because leaving only makes it scan. The network is rejoined when the session ends. Try Always or Never if the picture stutters.</string>
+    <string name="stand_down_station_hint">Decides whether this unit leaves its own WiFi network while the phone connects, so the WiFi Direct group can use the radio. Auto leaves when the group can gain a band, or when a 2.4 GHz-only radio on Android 7.1 or older must free its station connection for legacy WiFi Direct. On newer Android versions, a 2.4 GHz-only unit stays joined because leaving only makes it scan. The network is rejoined when the wireless mode stops. Try Always or Never if the picture stutters.</string>
     <string name="stand_down_station_needs_overlay">Needs the \"display over other apps\" permission on this Android version.</string>
     <string name="hotspot_interface_override">Hotspot network interface</string>
     <string name="hotspot_interface_override_help">The network interface that carries this unit\'s hotspot. Leave it blank and the app finds it. Set it only when the log says the app picked the wrong interface or found more than one. The app then sends the hotspot details even if the system reports no hotspot, so make sure the hotspot is on.</string>

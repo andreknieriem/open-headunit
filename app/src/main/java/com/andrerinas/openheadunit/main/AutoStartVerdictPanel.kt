@@ -4,6 +4,7 @@ import android.content.res.ColorStateList
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.content.res.AppCompatResources
@@ -24,7 +25,9 @@ data class AutoStartVerdict(
     val problem: Boolean,
     val access: String?,
     val showFix: Boolean,
-    val reportReady: Boolean
+    val reportReady: Boolean,
+    /** No root or ADB: offer the guide to turning ADB on instead of the fixes. */
+    val showAdbGuide: Boolean = false
 )
 
 /** Binds layout_auto_start_verdict, beside the list or as its first item. */
@@ -33,7 +36,8 @@ class AutoStartVerdictPanel(
     private val onFix: () -> Unit,
     private val onAgain: () -> Unit,
     private val onCopy: () -> Unit,
-    private val onShare: () -> Unit
+    private val onShare: () -> Unit,
+    private val onAdbGuide: () -> Unit
 ) {
     private val colors = SettingsPalette.from(root.context)
     private val iconBox: View = root.findViewById(R.id.verdictIconBox)
@@ -41,6 +45,9 @@ class AutoStartVerdictPanel(
     private val title: TextView = root.findViewById(R.id.verdictTitle)
     private val body: TextView = root.findViewById(R.id.verdictBody)
     private val access: TextView = root.findViewById(R.id.verdictAccess)
+    private val accessRow: View = root.findViewById(R.id.verdictAccessRow)
+    private val accessHelp: ImageButton = root.findViewById(R.id.verdictAccessHelp)
+    private val adbGuide: MaterialButton = root.findViewById(R.id.verdictAdbGuide)
     private val fix: MaterialButton = root.findViewById(R.id.verdictFix)
     private val again: MaterialButton = root.findViewById(R.id.verdictAgain)
     private val copy: MaterialButton = root.findViewById(R.id.verdictCopy)
@@ -54,6 +61,9 @@ class AutoStartVerdictPanel(
         val radius = context.resources.getDimension(R.dimen.settings_group_radius)
         root.background = SettingsDrawables.box(context, colors.container, radius, colors)
         styleFilledButton(fix, colors)
+        styleFilledButton(adbGuide, colors)
+        accessHelp.setImageDrawable(SettingsDrawables.tinted(context,
+            if (colors.filledIcons) R.drawable.ic_sym_help_fill else R.drawable.ic_sym_help, colors.primary))
         again.strokeColor = ColorStateList.valueOf(colors.outline)
         for (button in listOf(again, copy, share)) {
             button.setTextColor(colors.primary)
@@ -68,6 +78,8 @@ class AutoStartVerdictPanel(
         again.setOnClickListener { onAgain() }
         copy.setOnClickListener { onCopy() }
         share.setOnClickListener { onShare() }
+        adbGuide.setOnClickListener { onAdbGuide() }
+        accessHelp.setOnClickListener { onAdbGuide() }
     }
 
     fun bind(v: AutoStartVerdict) {
@@ -84,8 +96,10 @@ class AutoStartVerdictPanel(
         iconBox.background = SettingsDrawables.dot(toneContainer)
         icon.setImageDrawable(SettingsDrawables.tinted(context, if (v.problem) R.drawable.ic_warning_white else R.drawable.ic_sym_check, tone))
         access.text = v.access
-        access.visibility = if (v.access == null) View.GONE else View.VISIBLE
+        accessRow.visibility = if (v.access == null) View.GONE else View.VISIBLE
         fix.visibility = if (v.showFix) View.VISIBLE else View.GONE
+        adbGuide.visibility = if (v.showAdbGuide) View.VISIBLE else View.GONE
+        accessHelp.visibility = if (v.showAdbGuide && v.access != null) View.VISIBLE else View.GONE
         again.isEnabled = !running
         copy.isEnabled = v.reportReady
         share.isEnabled = v.reportReady
@@ -112,7 +126,8 @@ class AutoStartVerdictAdapter(
     private val onFix: () -> Unit,
     private val onAgain: () -> Unit,
     private val onCopy: () -> Unit,
-    private val onShare: () -> Unit
+    private val onShare: () -> Unit,
+    private val onAdbGuide: () -> Unit
 ) : RecyclerView.Adapter<AutoStartVerdictAdapter.Holder>() {
 
     var verdict: AutoStartVerdict? = null
@@ -125,7 +140,7 @@ class AutoStartVerdictAdapter(
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): Holder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.layout_auto_start_verdict, parent, false)
-        return Holder(view, AutoStartVerdictPanel(view, onFix, onAgain, onCopy, onShare))
+        return Holder(view, AutoStartVerdictPanel(view, onFix, onAgain, onCopy, onShare, onAdbGuide))
     }
 
     override fun onBindViewHolder(holder: Holder, position: Int) {

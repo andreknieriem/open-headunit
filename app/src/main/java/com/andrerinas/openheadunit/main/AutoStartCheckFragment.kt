@@ -53,8 +53,17 @@ class AutoStartCheckFragment : Fragment() {
     private var sidePanel: AutoStartVerdictPanel? = null
     private val verdictAdapter = AutoStartVerdictAdapter(
         onFix = { applyRecommended() }, onAgain = { runCheck() },
-        onCopy = { findings?.let { copyReport(it) } }, onShare = { findings?.let { shareReport(it) } }
+        onCopy = { findings?.let { copyReport(it) } }, onShare = { findings?.let { shareReport(it) } },
+        onAdbGuide = { openAdbGuide() }
     )
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        // "Check again" at the end of the ADB guide: ADB may be on now.
+        parentFragmentManager.setFragmentResultListener(AdbGuideFragment.RESULT_KEY, this) { _, result ->
+            if (result.getBoolean(AdbGuideFragment.RESULT_CHECK_AGAIN)) runCheck()
+        }
+    }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         return inflater.inflate(R.layout.fragment_auto_start_check, container, false)
@@ -71,7 +80,8 @@ class AutoStartCheckFragment : Fragment() {
         val side = view.findViewById<View?>(R.id.verdictPanel)
         sidePanel = side?.let {
             AutoStartVerdictPanel(it, onFix = { applyRecommended() }, onAgain = { runCheck() },
-                onCopy = { findings?.let { f -> copyReport(f) } }, onShare = { findings?.let { f -> shareReport(f) } })
+                onCopy = { findings?.let { f -> copyReport(f) } }, onShare = { findings?.let { f -> shareReport(f) } },
+                onAdbGuide = { openAdbGuide() })
         }
         recyclerView.adapter = if (sidePanel != null) adapter else ConcatAdapter(verdictAdapter, adapter)
 
@@ -141,6 +151,8 @@ class AutoStartCheckFragment : Fragment() {
                 R.string.auto_start_check_headline_duraspeed to R.string.auto_start_check_duraspeed_off_description
             AutoStartCheckScreenPolicy.Headline.MAKER_LIST ->
                 R.string.auto_start_check_headline_maker_list to R.string.auto_start_check_maker_list_body
+            AutoStartCheckScreenPolicy.Headline.NO_ACCESS ->
+                R.string.auto_start_check_headline_no_access to R.string.auto_start_check_verdict_no_access
             AutoStartCheckScreenPolicy.Headline.NOTHING_FOUND ->
                 R.string.auto_start_check_headline_nothing to R.string.auto_start_check_verdict_unknown
         }
@@ -155,7 +167,8 @@ class AutoStartCheckFragment : Fragment() {
                 else -> R.string.auto_start_check_access_none
             }),
             showFix = AutoStartCheckScreenPolicy.recommendedFixes(state).isNotEmpty(),
-            reportReady = true
+            reportReady = true,
+            showAdbGuide = !state.canAct
         ))
 
         val items = mutableListOf<SettingItem>()
@@ -169,6 +182,13 @@ class AutoStartCheckFragment : Fragment() {
         val cascade = cascadePending
         cascadePending = false
         adapter.submitList(items) { if (cascade) cascadeRows() }
+    }
+
+    private fun openAdbGuide() {
+        val f = findings ?: return
+        AppLog.i("AutoStartCheckFragment: opening the ADB guide")
+        findNavController().navigate(R.id.action_autoStartCheckFragment_to_adbGuideFragment,
+            AdbGuideFragment.args(listOf(f.device, f.platform, f.firmware)))
     }
 
     private fun showVerdict(v: AutoStartVerdict) {

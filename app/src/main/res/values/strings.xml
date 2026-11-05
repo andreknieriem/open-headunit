@@ -1977,4 +1977,28 @@
     <string name="audio_matching_phase_gradient_hint">Slow playback</string>
     <string name="audio_matching_option" translatable="false">%1$s\n(%2$s)</string>
     <string name="audio_matching_description">OHU remains the default. WSOLA aligns overlapping waveforms; Phase Vocoder adjusts spectral phases. Short uses a shorter analysis window. Phase Gradient integrates phase gradients to reconstruct phases. These independent methods add processing latency; their names do not rank sound quality.\n\nNative methods: PCM music. Navigation, voice responses, system sounds and AAC use OHU.\nReconnect to apply. Removed engine preferences reset to OHU.</string>
+    <string name="adb_guide_title">Turn on ADB on the head unit</string>
+    <string name="adb_guide_open">How to turn on ADB</string>
+    <string name="adb_guide_steps">Steps</string>
+    <string name="adb_guide_codes">Codes</string>
+    <string name="adb_guide_step_about">Open the unit\'s Settings and go to About.</string>
+    <string name="adb_guide_step_tap">Tap Build number quickly, 7 to 10 times. On some units it is MCU version. A keypad asks for a code.</string>
+    <string name="adb_guide_step_code">Type the maker\'s code. The ones we know are under Codes.</string>
+    <string name="adb_guide_step_switch">In the menu that opens, turn on Developer and then ADB over Wi-Fi. Each maker names it differently, such as \"Enable WIFI Adb\", \"ADB over network\" or \"USB debugging\".</string>
+    <string name="adb_guide_step_back">Come back here and tap Check again. ADB is only needed to apply the fixes; the unit does not need it afterwards.</string>
+    <string name="adb_guide_warning">In that menu change only ADB. The rest (CAN, screen, amplifier) changes how the unit starts and can leave it unable to turn on.</string>
+    <string name="adb_guide_for_this_unit">For this unit</string>
+    <string name="adb_guide_search">Brand, model or platform</string>
+    <string name="adb_guide_no_results">No known code for \"%1$s\". Try the others, and if one works on your unit, add it to the full list.</string>
+    <string name="adb_guide_tested">Tested</string>
+    <string name="adb_guide_reported">Reported</string>
+    <string name="adb_guide_opens_adb_menu">Hidden menu with Developer and ADB over Wi-Fi</string>
+    <string name="adb_guide_opens_developer">Developer options</string>
+    <string name="adb_guide_opens_factory">Factory settings</string>
+    <string name="adb_guide_generic_units">Several generic units</string>
+    <string name="adb_guide_full_list">Full list and how to add your code</string>
+    <string name="adb_guide_full_list_body">This list comes with the app and works without internet. Scan the code with your phone to see the up-to-date list on GitHub. Codes marked Reported come from other users and may not work on your unit.</string>
+    <string name="adb_guide_qr_description">QR code for the full list of codes on GitHub</string>
+    <string name="auto_start_check_headline_no_access">The app can\'t see what closes it</string>
+    <string name="auto_start_check_verdict_no_access">Without root or ADB only the basic data can be read. Most head units have ADB over Wi-Fi in a hidden menu: turn it on and check again.</string>
 </resources>

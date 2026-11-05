@@ -71,4 +71,13 @@ class AutoStartCheckScreenPolicyTest {
         val s = fine.copy(exemptionsApply = false, exempt = false)
         assertEquals(emptySet<Fix>(), AutoStartCheckScreenPolicy.recommendedFixes(s))
     }
+
+    @Test
+    fun `without root or adb getting access leads, after what was read without it`() {
+        val none = fine.copy(canAct = false, duraSpeedInstalled = true, makerList = MakerWhitelistPolicy.Status.NOT_APPLIED)
+        assertEquals(Headline.NO_ACCESS, AutoStartCheckScreenPolicy.headline(none))
+        assertEquals(Headline.NO_ACCESS, AutoStartCheckScreenPolicy.headline(fine.copy(canAct = false)))
+        assertEquals(Headline.BATTERY, AutoStartCheckScreenPolicy.headline(none.copy(verdict = Verdict.BATTERY)))
+        assertEquals(Headline.FORCE_STOPPED, AutoStartCheckScreenPolicy.headline(none.copy(verdict = Verdict.FORCE_STOPPED)))
+    }
 }

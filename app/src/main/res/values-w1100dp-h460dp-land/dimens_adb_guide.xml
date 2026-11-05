@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Wide head units (1280dp and up) have room for wider steps. -->
+    <dimen name="adb_guide_steps_width">480dp</dimen>
+</resources>

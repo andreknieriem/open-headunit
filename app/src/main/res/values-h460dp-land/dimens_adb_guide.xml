@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 1.3 times the base values, the same factor as the settings rows on head units. -->
+    <dimen name="adb_guide_step_text_size">18sp</dimen>
+    <dimen name="adb_guide_step_number">36dp</dimen>
+    <dimen name="adb_guide_code_size">28sp</dimen>
+    <dimen name="adb_guide_match_code_size">42sp</dimen>
+    <dimen name="adb_guide_code_width">124dp</dimen>
+    <dimen name="adb_guide_qr_size">88dp</dimen>
+    <dimen name="adb_guide_steps_width">400dp</dimen>
+</resources>

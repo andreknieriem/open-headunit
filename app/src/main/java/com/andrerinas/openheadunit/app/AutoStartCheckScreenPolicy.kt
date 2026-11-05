@@ -8,7 +8,7 @@ import com.andrerinas.openheadunit.app.AutoStartCheckPolicy.Verdict
  */
 object AutoStartCheckScreenPolicy {
 
-    enum class Headline { FORCE_STOPPED, BATTERY, DURASPEED, MAKER_LIST, NOTHING_FOUND }
+    enum class Headline { FORCE_STOPPED, BATTERY, NO_ACCESS, DURASPEED, MAKER_LIST, NOTHING_FOUND }
 
     /** Only fixes that leave /system alone. The maker's lists always ask first, on their own row. */
     enum class Fix { EXEMPTIONS, DURASPEED_OFF }
@@ -31,6 +31,8 @@ object AutoStartCheckScreenPolicy {
     fun headline(s: State): Headline = when {
         s.verdict == Verdict.FORCE_STOPPED -> Headline.FORCE_STOPPED
         s.verdict == Verdict.BATTERY -> Headline.BATTERY
+        // Without root or ADB the log was not read and nothing can be fixed, so getting ADB comes first.
+        !s.canAct -> Headline.NO_ACCESS
         s.duraSpeedInstalled && !s.duraSpeedOffOnBoot -> Headline.DURASPEED
         s.makerList != null && s.makerList != MakerWhitelistPolicy.Status.APPLIED -> Headline.MAKER_LIST
         else -> Headline.NOTHING_FOUND

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One known code for a hidden menu: the digits, where it was reported, what it opens and
+     whether it was tested on a real unit. The badge goes under the text here and at the right
+     on wide screens (layout-w960dp), where there is room. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:minHeight="@dimen/settings_row_min_height"
+    android:orientation="horizontal"
+    android:paddingStart="4dp"
+    android:paddingLeft="4dp"
+    android:paddingTop="6dp"
+    android:paddingEnd="4dp"
+    android:paddingRight="4dp"
+    android:paddingBottom="6dp">
+
+    <TextView
+        android:id="@+id/codeDigits"
+        android:layout_width="@dimen/adb_guide_code_width"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="12dp"
+        android:layout_marginRight="12dp"
+        android:textColor="?attr/settingsOnSurface"
+        android:textSize="@dimen/adb_guide_code_size"
+        android:textStyle="bold"
+        tools:text="3368" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/codeUnits"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="?attr/settingsOnSurface"
+            android:textSize="@dimen/settings_row_title_size"
+            tools:text="Pumpkin, UIS7862" />
+
+        <TextView
+            android:id="@+id/codeOpens"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textColor="?attr/settingsOnSurfaceVariant"
+            android:textSize="@dimen/settings_row_description_size"
+            tools:text="Developer options" />
+
+        <TextView
+            android:id="@+id/codeBadge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:maxLines="1"
+            android:paddingStart="10dp"
+            android:paddingLeft="10dp"
+            android:paddingTop="2dp"
+            android:paddingEnd="10dp"
+            android:paddingRight="10dp"
+            android:paddingBottom="2dp"
+            android:textSize="12sp"
+            tools:text="Reported" />
+
+    </LinearLayout>
+
+</LinearLayout>

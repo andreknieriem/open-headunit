@@ -268,7 +268,20 @@
     <fragment
         android:id="@+id/autoStartCheckFragment"
         android:name="com.andrerinas.openheadunit.main.AutoStartCheckFragment"
-        android:label="@string/auto_start_check_title" />
+        android:label="@string/auto_start_check_title">
+        <action
+            android:id="@+id/action_autoStartCheckFragment_to_adbGuideFragment"
+            app:destination="@id/adbGuideFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/adbGuideFragment"
+        android:name="com.andrerinas.openheadunit.main.AdbGuideFragment"
+        android:label="@string/adb_guide_title" />
 
     <fragment
         android:id="@+id/vehicleInfoFragment"

@@ -54,25 +54,64 @@
         android:textSize="@dimen/settings_row_description_size"
         tools:text="Let it run in the background without limits and try again." />
 
-    <TextView
-        android:id="@+id/verdictAccess"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:id="@+id/verdictAccessRow"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
-        android:drawablePadding="8dp"
         android:gravity="center_vertical"
-        android:minHeight="32dp"
-        android:paddingLeft="12dp"
-        android:paddingRight="14dp"
-        android:textColor="?attr/settingsOnSurfaceVariant"
-        android:textSize="14sp"
-        tools:text="Root, through ADB on this unit" />
+        android:orientation="horizontal">
+
+        <!-- The chip keeps its own width and wraps when long, so the (?) always stays on screen. -->
+        <FrameLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1">
+
+            <TextView
+                android:id="@+id/verdictAccess"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:drawablePadding="8dp"
+                android:gravity="center_vertical"
+                android:minHeight="32dp"
+                android:paddingLeft="12dp"
+                android:paddingRight="14dp"
+                android:textColor="?attr/settingsOnSurfaceVariant"
+                android:textSize="14sp"
+                tools:text="Root, through ADB on this unit" />
+
+        </FrameLayout>
+
+        <ImageButton
+            android:id="@+id/verdictAccessHelp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginStart="4dp"
+            android:layout_marginLeft="4dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/adb_guide_open"
+            android:scaleType="center"
+            android:visibility="gone" />
+
+    </LinearLayout>
 
     <Space
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
         android:minHeight="16dp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/verdictAdbGuide"
+        style="@style/Widget.Material3.Button"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/settings_action_button_height"
+        android:layout_marginBottom="8dp"
+        android:text="@string/adb_guide_open"
+        android:textAllCaps="false"
+        android:textSize="@dimen/settings_control_text_size"
+        android:visibility="gone" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/verdictFix"

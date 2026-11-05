@@ -1805,10 +1805,22 @@ class HomeFragment : Fragment() {
         }
     }
 
+    /**
+     * The maintenance mileage is counted inside the service. Starting it while the home is on
+     * screen keeps it running and is what lets it claim location for the background, which a
+     * start from a boot or USB broadcast cannot (see AapService.claimLocationType).
+     */
+    private fun syncMaintenanceService() {
+        ContextCompat.startForegroundService(requireContext(),
+            Intent(requireContext(), AapService::class.java).setAction(AapService.ACTION_MAINTENANCE_SYNC))
+    }
+
     private fun exitApp() {
         val appSettings = App.provide(requireContext()).settings
+        // The maintenance mileage counts inside the service, so it stays for that too.
         val keepServiceAlive = appSettings.autoStartOnBoot ||
             appSettings.autoStartOnScreenOn ||
+            appSettings.maintenanceEnabled ||
             (appSettings.effectiveAutoStartOnUsb && appSettings.reopenOnReconnection)
         if (keepServiceAlive) {
             val disconnectIntent = Intent(requireContext(), AapService::class.java).apply {
@@ -2096,6 +2108,7 @@ class HomeFragment : Fragment() {
         renderHome()
         startHomeInfo()
         showUsbAccessHintIfNeeded()
+        if (homeSettings.maintenanceEnabled) syncMaintenanceService()
 
         val appSettings = App.provide(requireContext()).settings
         if (requestDriverSelection) {

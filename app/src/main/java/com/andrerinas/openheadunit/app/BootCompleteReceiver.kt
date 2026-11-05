@@ -76,6 +76,12 @@ class BootCompleteReceiver : BroadcastReceiver() {
             AppLog.i("Boot auto-start: WiFi auto-start enabled, starting AapService to listen for WiFi (trigger=$action)")
             val serviceIntent = Intent(context, AapService::class.java)
             startService(context, serviceIntent, action)
+        } else if (settings.maintenanceEnabled) {
+            // The mileage is counted inside the service, so it has to be running from the start of
+            // the drive. Started from the boot broadcast it may hold no background location on
+            // Android 11+, until the home is shown and starts it again (see AapService).
+            AppLog.i("Boot auto-start: maintenance on, starting AapService to count the mileage (trigger=$action)")
+            startService(context, Intent(context, AapService::class.java), action)
         } else if (!floatingButtonEnabled) {
             AppLog.i("Boot auto-start: disabled, skipping")
         }

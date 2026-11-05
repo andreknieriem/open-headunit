@@ -28,6 +28,7 @@ import android.os.IBinder
 import android.os.Looper
 import android.os.PowerManager
 import androidx.core.app.NotificationCompat
+import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 import androidx.core.content.IntentCompat
 import androidx.core.content.PermissionChecker
@@ -87,6 +88,7 @@ import com.andrerinas.openheadunit.connection.usb.UsbDeviceCompat
 import com.andrerinas.openheadunit.connection.usb.UsbLinkLossRecheckPolicy
 import com.andrerinas.openheadunit.connection.usb.UsbReceiver
 import com.andrerinas.openheadunit.location.GpsLocationService
+import com.andrerinas.openheadunit.maintenance.MaintenanceTracker
 import com.andrerinas.openheadunit.utils.LocaleHelper
 import com.andrerinas.openheadunit.utils.LogExporter
 import com.andrerinas.openheadunit.utils.NightModeManager
@@ -281,6 +283,19 @@ class AapService : Service() {
             if (key == Settings.KEY_ENABLE_CAR_LAUNCHER) {
                 serviceScope.launch(Dispatchers.Main) {
                     updateNotification()
+                }
+            }
+
+            // Turned on or off in the Maintenance screen, which is on screen at that moment: the
+            // right time to claim the location type, and to drop it again when it is turned off.
+            if (key == Settings.KEY_MAINTENANCE_ENABLED) {
+                serviceScope.launch(Dispatchers.Main) {
+                    try {
+                        startForegroundWithCurrentTypes()
+                    } catch (e: Exception) {
+                        AppLog.w("AapService: could not refresh the foreground-service types: ${e.message}")
+                    }
+                    syncMaintenanceTracker()
                 }
             }
         }
@@ -1120,6 +1135,13 @@ class AapService : Service() {
     // A setting/permission snapshot is admission for a new capture, not ownership of an open one.
     private var microphoneTypeClaimed = false
 
+    // Guarded by this service's monitor like the microphone claim. Only a startForeground call that
+    // Android accepted with the location type sets it; any refused or narrower claim clears it.
+    private var locationTypeClaimed = false
+
+    /** Counts the mileage while the maintenance feature is on. See [syncMaintenanceTracker]. */
+    private var maintenanceTracker: MaintenanceTracker? = null
+
     // Serialize shutdown with in-flight promotions. Queued recorder cleanup must not recreate the
     // notification; an actual delivered start still owes Android a base-only foreground promotion.
     @Synchronized
@@ -1142,9 +1164,53 @@ class AapService : Service() {
                 ForegroundServiceTypePolicy.withMicrophone(
                     Build.VERSION.SDK_INT, microphoneTypeClaimed, microphoneTypeClaimed)
             }
+            // The setting first: with the feature off there is no permission worth asking about.
+            val countingMileage = !isDestroying && settings.maintenanceEnabled
+            val withLocation = if (!countingMileage) types else ForegroundServiceTypePolicy.withLocation(
+                types, Build.VERSION.SDK_INT, MaintenanceTracker.hasPermission(this), countingMileage)
+            if (withLocation != types && claimLocationType(withLocation)) return
+            locationTypeClaimed = false
             startForeground(1, createNotification(), types)
         } else {
             startForeground(1, createNotification())
+        }
+    }
+
+    /**
+     * Claims the location type so the mileage keeps counting with the app in the background. It is
+     * a while-in-use type: a start that comes from the background (boot, USB, Bluetooth) can be
+     * refused on Android 14, and on 11 to 13 it is accepted but grants no background location. A
+     * later start while the home is on screen (HomeFragment starts the service whenever the
+     * feature is on) claims it properly, so a refusal here only narrows the claim for now.
+     */
+    @RequiresApi(Build.VERSION_CODES.Q)
+    private fun claimLocationType(mask: Int): Boolean = try {
+        startForeground(1, createNotification(), mask)
+        if (!locationTypeClaimed) AppLog.i("AapService: claimed the location foreground-service type for the mileage")
+        locationTypeClaimed = true
+        true
+    } catch (e: Exception) {
+        AppLog.w("AapService: could not claim the location foreground-service type (${e.message}); " +
+            "the mileage counts while the app is on screen until a start from the foreground claims it")
+        false
+    }
+
+    /** The location type to keep alongside a microphone change, when it is already held. */
+    private fun heldLocationType(): Int =
+        if (locationTypeClaimed) ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION else 0
+
+    /**
+     * Starts or stops the mileage count to match the setting. Called on every start command too,
+     * so a location permission granted after the service started takes effect on the next one.
+     */
+    private fun syncMaintenanceTracker() {
+        if (settings.maintenanceEnabled) {
+            val tracker = maintenanceTracker
+                ?: MaintenanceTracker(this, App.provide(this).maintenanceStore).also { maintenanceTracker = it }
+            tracker.start()
+        } else {
+            maintenanceTracker?.stop()
+            maintenanceTracker = null
         }
     }
 
@@ -1177,7 +1243,7 @@ class AapService : Service() {
         }
 
         return try {
-            startForeground(1, createNotification(), mask)
+            startForeground(1, createNotification(), mask or heldLocationType())
             microphoneTypeClaimed = true
             AppLog.i("AapService: claimed the microphone foreground-service type for this capture")
             true
@@ -1198,7 +1264,7 @@ class AapService : Service() {
 
         try {
             startForeground(1, createNotification(),
-                ForegroundServiceTypePolicy.baseTypeMask(Build.VERSION.SDK_INT))
+                ForegroundServiceTypePolicy.baseTypeMask(Build.VERSION.SDK_INT) or heldLocationType())
         } catch (e: Exception) {
             // Nothing to do about it and nothing depends on it: the service stays foreground with
             // the wider mask, which is the state it was already in a moment ago.
@@ -1220,6 +1286,7 @@ class AapService : Service() {
             stopSelf()
             return
         }
+        syncMaintenanceTracker()
         fillBluetoothAddressIfUnset()
         // A force-stop or a crash runs no teardown, so a station stand-down can outlive the process
         // that made it. Putting the network back here is what keeps that from stranding the unit off
@@ -3550,6 +3617,8 @@ class AapService : Service() {
         commManager.destroy()
         nightModeManager?.stop()
         stopService(GpsLocationService.intent(this))
+        maintenanceTracker?.stop()
+        maintenanceTracker = null
         try {
             unregisterReceiver(nightModeUpdateReceiver)
             unregisterReceiver(sensorRefreshReceiver)
@@ -3754,6 +3823,8 @@ class AapService : Service() {
             }
             return START_NOT_STICKY
         }
+
+        syncMaintenanceTracker()
 
         // Route MEDIA_BUTTON intents to the active MediaSession.
         if (shouldActivateMediaSession()) {
@@ -4159,6 +4230,9 @@ class AapService : Service() {
                 // Caller already invoked commManager.connect(socket); the connectionState
                 // observer in observeConnectionState() handles the rest — nothing to do here.
             }
+            // The types and the tracker were already brought up to date above; nothing else to do,
+            // and in particular no USB check, since this comes on every return to the home.
+            ACTION_MAINTENANCE_SYNC      -> Unit
             ACTION_CHECK_USB             -> usbLauncherManager.checkOnRequest(
                 userRequested = intent?.getBooleanExtra(EXTRA_USER_REQUESTED, false) == true,
                 trigger = if (intent?.getStringExtra(EXTRA_USB_TRIGGER) == USB_TRIGGER_PLUG_IN)
@@ -4552,6 +4626,8 @@ class AapService : Service() {
         const val ACTION_NATIVE_AA_PROMPT_DISMISSED = "com.andrerinas.openheadunit.ACTION_NATIVE_AA_PROMPT_DISMISSED"
         const val ACTION_NEARBY_CONNECT             = "com.andrerinas.openheadunit.ACTION_NEARBY_CONNECT"
         const val ACTION_CHECK_USB                 = "com.andrerinas.openheadunit.ACTION_CHECK_USB"
+        /** Only re-claims the foreground types and syncs the mileage count; see onStartCommand. */
+        const val ACTION_MAINTENANCE_SYNC          = "com.andrerinas.openheadunit.ACTION_MAINTENANCE_SYNC"
         const val ACTION_STOP_SERVICE              = "com.andrerinas.openheadunit.aap.action.STOP_SERVICE"
         const val ACTION_DISCONNECT                = "com.andrerinas.openheadunit.ACTION_DISCONNECT"
         const val ACTION_REQUEST_NIGHT_MODE_UPDATE = "com.andrerinas.openheadunit.aap.action.REQUEST_NIGHT_MODE_UPDATE"

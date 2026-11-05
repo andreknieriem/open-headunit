@@ -1793,6 +1793,80 @@ class Settings(private val context: Context) {
         get() = prefs.getInt("home-widget-host-id", 0)
         set(value) { prefs.edit().putInt("home-widget-host-id", value).apply() }
 
+    // Maintenance. Distances are stored in meters as text: the settings backup has no
+    // long type, and an odometer outgrows an int counted in meters past ~2 million km.
+
+    /** Counting the mileage with GPS and reminding about maintenance. Off by default. */
+    var maintenanceEnabled: Boolean
+        get() = prefs.getBoolean(KEY_MAINTENANCE_ENABLED, false)
+        set(value) { prefs.edit().putBoolean(KEY_MAINTENANCE_ENABLED, value).apply() }
+
+    /** Show distances in miles instead of kilometers. */
+    var maintenanceMiles: Boolean
+        get() = prefs.getBoolean("maintenance-miles", false)
+        set(value) { prefs.edit().putBoolean("maintenance-miles", value).apply() }
+
+    var maintenanceOdometerMeters: Long
+        get() = prefs.getString("maintenance-odometer", null)?.toLongOrNull() ?: 0L
+        set(value) { prefs.edit().putString("maintenance-odometer", value.toString()).apply() }
+
+    /** Uncorrected GPS distance since the user last typed the dashboard number. */
+    var maintenanceRawSinceCorrectionMeters: Double
+        get() = prefs.getString("maintenance-raw-since-correction", null)?.toDoubleOrNull() ?: 0.0
+        set(value) { prefs.edit().putString("maintenance-raw-since-correction", value.toString()).apply() }
+
+    var maintenanceCorrectionFactor: Double
+        get() = prefs.getString("maintenance-correction-factor", null)?.toDoubleOrNull() ?: 1.0
+        set(value) { prefs.edit().putString("maintenance-correction-factor", value.toString()).apply() }
+
+    /**
+     * The dashboard number the current correction stretch started from, or empty when there is
+     * no usable stretch. See OdometerCorrectionPolicy.
+     */
+    var maintenanceCorrectionBaseMeters: Long?
+        get() = prefs.getString("maintenance-correction-base", null)?.toLongOrNull()
+        set(value) { prefs.edit().putString("maintenance-correction-base", value?.toString() ?: "").apply() }
+
+    /** The last worked out factor fell outside the allowed range and was cut to its edge. */
+    var maintenanceCorrectionClamped: Boolean
+        get() = prefs.getBoolean("maintenance-correction-clamped", false)
+        set(value) { prefs.edit().putBoolean("maintenance-correction-clamped", value).apply() }
+
+    /** When the dashboard number was last typed, or 0 for never. */
+    var maintenanceLastCorrectionMs: Long
+        get() = prefs.getString("maintenance-last-correction", null)?.toLongOrNull() ?: 0L
+        set(value) { prefs.edit().putString("maintenance-last-correction", value.toString()).apply() }
+
+    /** The maintenance items as JSON. See MaintenanceCodec. */
+    var maintenanceItemsJson: String
+        get() = prefs.getString("maintenance-items", "") ?: ""
+        set(value) { prefs.edit().putString("maintenance-items", value).apply() }
+
+    /** The gearbox chosen at setup, by enum name; empty until then. */
+    var maintenanceGearbox: String
+        get() = prefs.getString("maintenance-gearbox", "") ?: ""
+        set(value) { prefs.edit().putString("maintenance-gearbox", value).apply() }
+
+    var maintenanceSteering: String
+        get() = prefs.getString("maintenance-steering", "") ?: ""
+        set(value) { prefs.edit().putString("maintenance-steering", value).apply() }
+
+    /**
+     * Where the last counted fix was, as "latitude,longitude", to spot driving the app did not
+     * see. Left out of the backup on purpose: it belongs to this unit and this moment.
+     */
+    var maintenanceLastPosition: String
+        get() = prefs.getString("maintenance-last-position", "") ?: ""
+        set(value) { prefs.edit().putString("maintenance-last-position", value).apply() }
+
+    /**
+     * How far the car moved while the app was not counting, when that is worth a mileage check,
+     * or 0 when there is nothing to check. Left out of the backup like the position it came from.
+     */
+    var maintenanceMissedMeters: Long
+        get() = prefs.getString("maintenance-missed", null)?.toLongOrNull() ?: 0L
+        set(value) { prefs.edit().putString("maintenance-missed", value.toString()).apply() }
+
     @SuppressLint("ApplySharedPref")
     fun commit() {
         prefs.edit().commit()
@@ -2027,6 +2101,7 @@ class Settings(private val context: Context) {
         const val KEY_ASSISTANT_VOLUME_OFFSET = "assistant-volume-offset"
         const val KEY_NAVIGATION_VOLUME_OFFSET = "navigation-volume-offset"
         const val KEY_ENABLE_CAR_LAUNCHER = "enable-car-launcher"
+        const val KEY_MAINTENANCE_ENABLED = "maintenance-enabled"
         const val KEY_WIFI_DIRECT_BANDED_REFUSED_ON = "wifi-direct-banded-refused-on"
 
         const val AUTO_CONNECT_LAST_SESSION = "last-session"

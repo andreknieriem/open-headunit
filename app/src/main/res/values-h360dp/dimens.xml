@@ -47,6 +47,11 @@
     <dimen name="home_info_speed">28sp</dimen>
     <dimen name="home_info_gap_wide">16dp</dimen>
     <dimen name="home_info_min_text">120dp</dimen>
+    <dimen name="home_info_maintenance_gap">6dp</dimen>
+    <dimen name="home_info_maintenance_padding_v">4dp</dimen>
+    <dimen name="home_info_maintenance_padding_h">12dp</dimen>
+    <dimen name="home_info_maintenance_max_width">380dp</dimen>
+    <dimen name="home_info_maintenance_radius">14dp</dimen>
     <dimen name="home_widget_padding">6dp</dimen>
     <dimen name="home_widget_strip_min">64dp</dimen>
     <dimen name="home_widget_strip_max">180dp</dimen>

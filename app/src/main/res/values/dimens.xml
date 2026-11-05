@@ -58,6 +58,13 @@
     <dimen name="home_info_speed">12sp</dimen>
     <dimen name="home_info_gap_wide">6dp</dimen>
     <dimen name="home_info_min_text">60dp</dimen>
+    <dimen name="home_info_maintenance_gap">4dp</dimen>
+    <dimen name="home_info_maintenance_padding_v">3dp</dimen>
+    <dimen name="home_info_maintenance_padding_h">8dp</dimen>
+    <dimen name="home_info_maintenance_max_width">150dp</dimen>
+    <dimen name="home_info_maintenance_radius">10dp</dimen>
+    <!-- The maintenance line's touch target; the pill is drawn smaller inside it. -->
+    <dimen name="home_info_maintenance_touch">44dp</dimen>
     <dimen name="home_widget_padding">2dp</dimen>
     <dimen name="home_widget_strip_min">90dp</dimen>
     <dimen name="home_widget_strip_max">110dp</dimen>
@@ -79,4 +86,6 @@
     <dimen name="home_hint_button_height_small">48dp</dimen>
     <dimen name="home_hint_art">88dp</dimen>
     <dimen name="home_hint_art_small">64dp</dimen>
+    <!-- The side padding of the maintenance screens' input dialogs. -->
+    <dimen name="maintenance_dialog_padding">24dp</dimen>
 </resources>

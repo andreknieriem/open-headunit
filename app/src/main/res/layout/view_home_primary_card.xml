@@ -190,7 +190,7 @@
 
     </LinearLayout>
 
-    <!-- Date, time and GPS speed, when the driver asked for them. HomeUiHelper.applyInfoBlock fills
+    <!-- Date, time and GPS speed, when the driver asked for them, and the maintenance line. HomeUiHelper.applyInfoBlock fills
          it in. It floats in the empty top corner, which is why it takes no height from the card,
          and it steps aside while the countdown runs, which is the one moment that corner is used. -->
     <LinearLayout
@@ -256,6 +256,27 @@
             android:id="@+id/home_info_date"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@android:color/white"
+            android:textSize="@dimen/home_info_date"
+            android:visibility="gone" />
+
+        <!-- The maintenance status, when that feature is on. One line: HomeUiHelper gives it its
+             width, beside the title or on a row above it, and shortens only the item's name. -->
+        <TextView
+            android:id="@+id/home_info_maintenance"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minHeight="@dimen/home_info_maintenance_touch"
+            android:gravity="center_vertical"
+            android:layout_marginTop="@dimen/home_info_maintenance_gap"
+            android:paddingLeft="@dimen/home_info_maintenance_padding_h"
+            android:paddingRight="@dimen/home_info_maintenance_padding_h"
+            android:paddingTop="@dimen/home_info_maintenance_padding_v"
+            android:paddingBottom="@dimen/home_info_maintenance_padding_v"
+            android:clickable="true"
+            android:focusable="true"
             android:ellipsize="end"
             android:maxLines="1"
             android:textColor="@android:color/white"

@@ -91,6 +91,9 @@
     <!-- Declared so the microphone type can be claimed; it is only ever requested when
          RECORD_AUDIO is actually granted, because claiming it without throws on Android 14+. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <!-- The location type keeps the maintenance mileage counting in the background. It is only
+         claimed while that feature is on and precise location is granted. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
     <!--
         Only requested up to API 32. From API 33 (Android 13) a granted READ_LOGS makes the app a
@@ -267,7 +270,7 @@
         <service
             android:name=".aap.AapService"
             android:exported="false"
-            android:foregroundServiceType="connectedDevice|mediaPlayback|microphone"
+            android:foregroundServiceType="connectedDevice|mediaPlayback|microphone|location"
             android:stopWithTask="false">
             <!-- MediaButtonReceiver looks for a Service with this intent-filter -->
             <intent-filter>

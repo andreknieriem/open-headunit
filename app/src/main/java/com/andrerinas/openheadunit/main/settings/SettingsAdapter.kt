@@ -115,6 +115,7 @@ sealed class SettingItem {
         var selectedIndex: Int,
         /** The text the (?) opens. */
         @StringRes val helpResId: Int? = null,
+        val nameOverride: String? = null, // Dynamic title (used instead of nameResId when set)
         val onOptionSelected: (Int) -> Unit
     ) : SettingItem()
 
@@ -499,7 +500,8 @@ class SettingsAdapter : ListAdapter<SettingItem, RecyclerView.ViewHolder>(Settin
         }
 
         fun bind(setting: SettingItem.SegmentedButtonSettingEntry) {
-            settingName.setText(setting.nameResId)
+            if (setting.nameOverride != null) settingName.text = setting.nameOverride
+            else settingName.setText(setting.nameResId)
             bindHelp(settingHelp, setting, settingName.text, colors)
 
             val visibleButtons = buttons.filterIndexed { index, _ -> index < setting.options.size }
@@ -548,7 +550,8 @@ class SettingsAdapter : ListAdapter<SettingItem, RecyclerView.ViewHolder>(Settin
             return when {
                 oldItem is SettingItem.SettingEntry && newItem is SettingItem.SettingEntry ->
                     oldItem.nameResId == newItem.nameResId && oldItem.value == newItem.value && oldItem.isEnabled == newItem.isEnabled &&
-                        oldItem.descriptionResId == newItem.descriptionResId && oldItem.helpResId == newItem.helpResId
+                        oldItem.descriptionResId == newItem.descriptionResId && oldItem.helpResId == newItem.helpResId &&
+                        oldItem.nameOverride == newItem.nameOverride
                 oldItem is SettingItem.ToggleSettingEntry && newItem is SettingItem.ToggleSettingEntry ->
                     oldItem.nameResId == newItem.nameResId && oldItem.descriptionResId == newItem.descriptionResId && oldItem.isChecked == newItem.isChecked && oldItem.isEnabled == newItem.isEnabled && oldItem.nameOverride == newItem.nameOverride && oldItem.descriptionOverride == newItem.descriptionOverride && oldItem.helpResId == newItem.helpResId
                 oldItem is SettingItem.SliderSettingEntry && newItem is SettingItem.SliderSettingEntry ->
@@ -567,7 +570,7 @@ class SettingsAdapter : ListAdapter<SettingItem, RecyclerView.ViewHolder>(Settin
                         oldItem.descriptionResId == newItem.descriptionResId && oldItem.helpResId == newItem.helpResId
                 oldItem is SettingItem.SegmentedButtonSettingEntry && newItem is SettingItem.SegmentedButtonSettingEntry ->
                     oldItem.nameResId == newItem.nameResId && oldItem.options == newItem.options && oldItem.selectedIndex == newItem.selectedIndex &&
-                        oldItem.helpResId == newItem.helpResId
+                        oldItem.helpResId == newItem.helpResId && oldItem.nameOverride == newItem.nameOverride
                 oldItem is SettingItem.ScopeNotice && newItem is SettingItem.ScopeNotice ->
                     oldItem.text == newItem.text && oldItem.iconResId == newItem.iconResId
                 else -> false

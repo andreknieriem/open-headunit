@@ -73,6 +73,10 @@ import com.andrerinas.openheadunit.connection.self.SelfLaunchRoutePolicy
 import com.andrerinas.openheadunit.connection.self.SelfLauncherManager
 import com.andrerinas.openheadunit.utils.BluetoothHelper
 import com.andrerinas.openheadunit.location.LocationHolder
+import com.andrerinas.openheadunit.maintenance.MaintenanceHomeStatusPolicy
+import com.andrerinas.openheadunit.maintenance.MaintenanceReminderPolicy
+import com.andrerinas.openheadunit.maintenance.MaintenanceTexts
+import com.andrerinas.openheadunit.maintenance.MaintenanceTracker
 import com.andrerinas.openheadunit.connection.usb.UsbAccessoryMode
 import com.andrerinas.openheadunit.connection.usb.UsbPermissionAskPolicy
 import com.andrerinas.openheadunit.connection.usb.UsbPermissionAsks
@@ -249,6 +253,7 @@ class HomeFragment : Fragment() {
         ).forEach { id ->
             container.findViewById<View>(id)?.setOnLongClickListener { showPageMenu(widgetPage = null) }
         }
+        container.findViewById<View>(R.id.home_info_maintenance)?.setOnClickListener { openMaintenance() }
         setupListeners()
     }
 
@@ -562,8 +567,8 @@ class HomeFragment : Fragment() {
     }
 
     /**
-     * The date, the time and the speed, and nothing else: the ticker has to refresh this block
-     * once a minute, not rebuild the whole home screen.
+     * The date, the time, the speed and the maintenance line, and nothing else: the ticker has to
+     * refresh this block once a minute, not rebuild the whole home screen.
      */
     private fun renderHomeInfo() {
         val ctx = context ?: return
@@ -575,7 +580,26 @@ class HomeFragment : Fragment() {
             clock = clockText(),
             date = dateText(),
             speed = HomeUiHelper.speedText(gpsSpeedKmh),
+            maintenance = maintenanceLine(ctx),
             countdownVisible = decision?.status == HomePrimaryPolicy.Status.RECONNECTING
+        )
+    }
+
+    /** What the maintenance line says, or null while that feature is off. */
+    private fun maintenanceLine(ctx: Context): HomeUiHelper.MaintenanceLine? {
+        val store = App.provide(ctx).maintenanceStore
+        if (!store.enabled) return null
+        val summary = MaintenanceReminderPolicy.summary(store.items(), store.odometerMeters(), System.currentTimeMillis())
+        val status = MaintenanceHomeStatusPolicy.status(
+            summary, MaintenanceTracker.hasPermission(ctx), store.missedMeters > 0
+        )
+        return HomeUiHelper.MaintenanceLine(MaintenanceTexts.homeLine(ctx, status, store.miles), status.kind)
+    }
+
+    private fun openMaintenance() {
+        startActivity(
+            Intent(requireContext(), SettingsActivity::class.java)
+                .putExtra(SettingsActivity.EXTRA_DESTINATION, R.id.maintenanceFragment)
         )
     }
 
@@ -593,7 +617,10 @@ class HomeFragment : Fragment() {
         homeInfoTicker = null
         stopSpeedUpdates()
         gpsSpeedKmh = null
-        if (!appSettings.showHomeClock && !appSettings.showHomeSpeed) return
+        if (!appSettings.showHomeClock && !appSettings.showHomeSpeed && !appSettings.maintenanceEnabled) {
+            renderHomeInfo()
+            return
+        }
         if (appSettings.showHomeSpeed) {
             // Whatever the unit already knows, so the readout is not blank while the chip locks.
             gpsSpeedKmh = LocationHolder.currentGpsFix(requireContext(), SPEED_MAX_AGE_MS)
@@ -602,7 +629,8 @@ class HomeFragment : Fragment() {
             startSpeedUpdates()
         }
         renderHomeInfo()
-        if (appSettings.showHomeClock) {
+        // The maintenance line moves with the odometer and the date, so it rides the same minute.
+        if (appSettings.showHomeClock || appSettings.maintenanceEnabled) {
             homeInfoTicker = viewLifecycleOwner.lifecycleScope.launch {
                 while (isActive) {
                     val now = System.currentTimeMillis()

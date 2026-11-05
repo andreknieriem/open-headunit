@@ -46,6 +46,7 @@ import com.andrerinas.openheadunit.main.HomePrimaryPolicy.Status
 import com.andrerinas.openheadunit.main.HomePrimaryPolicy.TileState
 import com.andrerinas.openheadunit.main.HomeSurfaceOpacityPolicy
 import com.andrerinas.openheadunit.main.HomeThemePolicy.Mode
+import com.andrerinas.openheadunit.maintenance.MaintenanceHomeStatusPolicy
 import com.andrerinas.openheadunit.view.WordFitTextView
 
 /** Paints the home screen. What it shows is decided by [com.andrerinas.openheadunit.main.HomePrimaryPolicy]. */
@@ -66,6 +67,8 @@ object HomeUiHelper {
     private const val SHINE_ALPHA_ON_DAY = 0xA6
     private const val SHINE_ALPHA_AT_NIGHT = 0x8C
     private const val TILE_SHINE_ALPHA = 0x59
+    /** How much of its tone the maintenance line's fill carries; the outline carries all of it. */
+    private const val MAINTENANCE_TINT_ALPHA = 0x59
     /** The band's width as a share of the tile it crosses. */
     private const val TILE_SHINE_BAND = 0.7f
     private const val EXTREME_APP_ICON_ALPHA = 0.75f
@@ -185,6 +188,8 @@ object HomeUiHelper {
         @ColorInt val self: Int,
         @ColorInt val monochrome: Int,
         @ColorInt val countdownRing: Int,
+        @ColorInt val maintenanceAttention: Int,
+        @ColorInt val maintenanceSoon: Int,
         val surfaceOpacityPercent: Int = HomeSurfaceOpacityPolicy.DEFAULT
     ) {
         val isDark: Boolean get() = mode != Mode.DAY
@@ -229,6 +234,8 @@ object HomeUiHelper {
             self = color(R.color.home_self, R.color.home_extreme_self),
             monochrome = color(R.color.home_monochrome, R.color.home_extreme_monochrome),
             countdownRing = color(R.color.home_countdown_ring, R.color.home_extreme_countdown_ring),
+            maintenanceAttention = color(R.color.home_maintenance_attention, R.color.home_extreme_maintenance_attention),
+            maintenanceSoon = color(R.color.home_maintenance_soon, R.color.home_extreme_maintenance_soon),
             surfaceOpacityPercent = surfaceOpacityPercent
         )
     }
@@ -663,10 +670,13 @@ object HomeUiHelper {
         }
     }
 
+    /** The maintenance line under the date: its text and how loud it is. */
+    class MaintenanceLine(val text: String, val kind: MaintenanceHomeStatusPolicy.Kind)
+
     /**
      * The date, the time and the speed the driver asked for, at the far end of the main button's
-     * header. The countdown owns the header while it runs, so the block steps aside there rather
-     * than the two fighting over the same space.
+     * header, and the maintenance line when that feature is on. The countdown owns the header while
+     * it runs, so the block steps aside there rather than the two fighting over the same space.
      */
     fun applyInfoBlock(
         rootView: View,
@@ -675,12 +685,14 @@ object HomeUiHelper {
         clock: String,
         date: String,
         speed: String,
+        maintenance: MaintenanceLine?,
         countdownVisible: Boolean
     ) {
         val block = rootView.findViewById<View>(R.id.home_info) ?: return
         val showClock = settings.showHomeClock && !countdownVisible
         val showSpeed = settings.showHomeSpeed && !countdownVisible
-        val visible = showClock || showSpeed
+        val showMaintenance = maintenance != null && !countdownVisible
+        val visible = showClock || showSpeed || showMaintenance
         block.visibility = if (visible) View.VISIBLE else View.GONE
         rootView.findViewById<TextView>(R.id.home_info_clock)?.apply {
             visibility = if (showClock) View.VISIBLE else View.GONE
@@ -699,7 +711,34 @@ object HomeUiHelper {
             setTextColor(palette.text)
         }
         rootView.findViewById<TextView>(R.id.home_info_speed_unit)?.setTextColor(palette.textMuted)
+        rootView.findViewById<TextView>(R.id.home_info_maintenance)?.let { line ->
+            line.visibility = if (showMaintenance) View.VISIBLE else View.GONE
+            if (showMaintenance && maintenance != null) paintMaintenanceLine(line, maintenance, palette)
+        }
         constrainInfoTexts(rootView, block, visible)
+    }
+
+    /** A small pill: tinted when something needs doing, the plain tile color when all is well. */
+    private fun paintMaintenanceLine(line: TextView, maintenance: MaintenanceLine, palette: Palette) {
+        val tone = when (maintenance.kind) {
+            MaintenanceHomeStatusPolicy.Kind.OVERDUE,
+            MaintenanceHomeStatusPolicy.Kind.LOCATION_OFF,
+            MaintenanceHomeStatusPolicy.Kind.CHECK_MILEAGE -> palette.maintenanceAttention
+            MaintenanceHomeStatusPolicy.Kind.COMING_UP_DISTANCE,
+            MaintenanceHomeStatusPolicy.Kind.COMING_UP_TIME -> palette.maintenanceSoon
+            MaintenanceHomeStatusPolicy.Kind.ALL_GOOD -> null
+        }
+        val radius = line.resources.getDimension(R.dimen.home_info_maintenance_radius)
+        val strokePx = dp(line.context, 1)
+        val fill = if (tone == null) palette.tile else withAlpha(tone, MAINTENANCE_TINT_ALPHA)
+        line.background = pressable(
+            palette.ripple,
+            { shape(fill, radius, tone ?: palette.tileStroke, strokePx) },
+            { shape(ColorUtils.darkenColor(fill, 0.85f), radius, tone ?: palette.tileStroke, strokePx) }
+        )
+        line.text = maintenance.text
+        line.setTextColor(palette.text)
+        line.contentDescription = maintenance.text
     }
 
     /**

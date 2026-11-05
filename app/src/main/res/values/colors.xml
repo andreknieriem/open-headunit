@@ -109,6 +109,12 @@
     <color name="home_extreme_self">#5A87C2</color>
     <color name="home_extreme_monochrome">#7A7A7A</color>
     <color name="home_extreme_countdown_ring">#44B8B8B8</color>
+    <!-- The maintenance line on the home: amber for what is coming up, orange for what needs
+         doing now. Not red: on a car dashboard red reads as a fault in the car. -->
+    <color name="home_maintenance_attention">#F57C00</color>
+    <color name="home_maintenance_soon">#E0A100</color>
+    <color name="home_extreme_maintenance_attention">#A35A1E</color>
+    <color name="home_extreme_maintenance_soon">#9C7A22</color>
     <!-- The one-time hint on the launcher home that shows where pages are added. -->
     <color name="home_hint_scrim">#BD04060A</color>
     <color name="home_hint_callout">#F3F5F8</color>

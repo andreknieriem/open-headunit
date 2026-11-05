@@ -77,25 +77,51 @@ object MaintenanceTexts {
         }
     }
 
+    /**
+     * The home's line in two parts: the item's name, the one part that may be shortened, and the
+     * line built around it. The state, the distance or the days left and the "+N" are what the
+     * driver acts on, so on a narrow screen only the name gives up room.
+     */
+    class HomeLine(
+        /** The item named on the line, or null for the kinds that name none. */
+        val name: String?,
+        private val build: (String) -> String,
+    ) {
+        val text: String get() = build(name.orEmpty())
+
+        /** The line without the name: the part that always shows whole. */
+        val rest: String get() = build("")
+
+        fun withName(shownName: CharSequence): String = build(shownName.toString())
+    }
+
     /** The home's line, or the text for its kind. */
-    fun homeLine(context: Context, status: MaintenanceHomeStatusPolicy.Status, miles: Boolean): String {
+    fun homeLine(context: Context, status: MaintenanceHomeStatusPolicy.Status, miles: Boolean): HomeLine {
         val entry = status.entry
-        val line = when (status.kind) {
-            MaintenanceHomeStatusPolicy.Kind.OVERDUE ->
-                context.getString(R.string.home_maintenance_overdue, itemName(context, entry!!.item))
-            MaintenanceHomeStatusPolicy.Kind.COMING_UP_DISTANCE -> context.getString(
-                R.string.home_maintenance_in, itemName(context, entry!!.item),
-                distance(context, entry.due.remainingMeters ?: 0L, miles)
-            )
-            MaintenanceHomeStatusPolicy.Kind.COMING_UP_TIME -> context.getString(
-                R.string.home_maintenance_in, itemName(context, entry!!.item),
-                days(context, wholeDays(entry.due.remainingMs ?: 0L))
-            )
-            MaintenanceHomeStatusPolicy.Kind.LOCATION_OFF -> context.getString(R.string.home_maintenance_location_off)
-            MaintenanceHomeStatusPolicy.Kind.CHECK_MILEAGE -> context.getString(R.string.home_maintenance_check_mileage)
-            MaintenanceHomeStatusPolicy.Kind.ALL_GOOD -> context.getString(R.string.home_maintenance_all_good)
+        val line: (String) -> String = when (status.kind) {
+            MaintenanceHomeStatusPolicy.Kind.OVERDUE -> { name -> context.getString(R.string.home_maintenance_overdue, name) }
+            MaintenanceHomeStatusPolicy.Kind.COMING_UP_DISTANCE -> {
+                val left = distance(context, entry!!.due.remainingMeters ?: 0L, miles)
+                ({ name -> context.getString(R.string.home_maintenance_in, name, left) })
+            }
+            MaintenanceHomeStatusPolicy.Kind.COMING_UP_TIME -> {
+                val left = days(context, wholeDays(entry!!.due.remainingMs ?: 0L))
+                ({ name -> context.getString(R.string.home_maintenance_in, name, left) })
+            }
+            MaintenanceHomeStatusPolicy.Kind.LOCATION_OFF -> constant(context, R.string.home_maintenance_location_off)
+            MaintenanceHomeStatusPolicy.Kind.CHECK_MILEAGE -> constant(context, R.string.home_maintenance_check_mileage)
+            MaintenanceHomeStatusPolicy.Kind.ALL_GOOD -> constant(context, R.string.home_maintenance_all_good)
         }
-        return if (status.more > 0) context.getString(R.string.home_maintenance_more, line, status.more) else line
+        val name = entry?.let { itemName(context, it.item) }
+        val build = if (status.more > 0) {
+            { shown: String -> context.getString(R.string.home_maintenance_more, line(shown), status.more) }
+        } else line
+        return HomeLine(name, build)
+    }
+
+    private fun constant(context: Context, res: Int): (String) -> String {
+        val text = context.getString(res)
+        return { _ -> text }
     }
 
     /** Days left, rounded up: anything still due later today reads as one day. */

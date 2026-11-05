@@ -262,14 +262,15 @@
             android:textSize="@dimen/home_info_date"
             android:visibility="gone" />
 
-        <!-- The maintenance status, when that feature is on. One line with a width cap, so it
-             floats in the same corner without taking height from the card or width from the title. -->
+        <!-- The maintenance status, when that feature is on. One line: HomeUiHelper gives it its
+             width, beside the title or on a row above it, and shortens only the item's name. -->
         <TextView
             android:id="@+id/home_info_maintenance"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:minHeight="@dimen/home_info_maintenance_touch"
+            android:gravity="center_vertical"
             android:layout_marginTop="@dimen/home_info_maintenance_gap"
-            android:maxWidth="@dimen/home_info_maintenance_max_width"
             android:paddingLeft="@dimen/home_info_maintenance_padding_h"
             android:paddingRight="@dimen/home_info_maintenance_padding_h"
             android:paddingTop="@dimen/home_info_maintenance_padding_v"

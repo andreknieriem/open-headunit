@@ -50,7 +50,7 @@
     <dimen name="home_info_maintenance_gap">6dp</dimen>
     <dimen name="home_info_maintenance_padding_v">4dp</dimen>
     <dimen name="home_info_maintenance_padding_h">12dp</dimen>
-    <dimen name="home_info_maintenance_max_width">260dp</dimen>
+    <dimen name="home_info_maintenance_max_width">380dp</dimen>
     <dimen name="home_info_maintenance_radius">14dp</dimen>
     <dimen name="home_widget_padding">6dp</dimen>
     <dimen name="home_widget_strip_min">64dp</dimen>

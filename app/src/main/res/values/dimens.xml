@@ -63,6 +63,8 @@
     <dimen name="home_info_maintenance_padding_h">8dp</dimen>
     <dimen name="home_info_maintenance_max_width">150dp</dimen>
     <dimen name="home_info_maintenance_radius">10dp</dimen>
+    <!-- The maintenance line's touch target; the pill is drawn smaller inside it. -->
+    <dimen name="home_info_maintenance_touch">44dp</dimen>
     <dimen name="home_widget_padding">2dp</dimen>
     <dimen name="home_widget_strip_min">90dp</dimen>
     <dimen name="home_widget_strip_max">110dp</dimen>

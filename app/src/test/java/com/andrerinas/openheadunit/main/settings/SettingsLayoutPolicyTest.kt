@@ -123,6 +123,20 @@ class SettingsLayoutPolicyTest {
         )
     }
 
+    @Test
+    fun `a wrap between words or after a hyphen splits nothing`() {
+        val text = "Letzte Wartung bei"
+        assertFalse(SettingsLayoutPolicy.splitsWordAt(text, 7))
+        assertFalse(SettingsLayoutPolicy.splitsWordAt("GPS-Korrekturfaktor", 4))
+        assertFalse(SettingsLayoutPolicy.splitsWordAt(text, text.length))
+    }
+
+    @Test
+    fun `a break inside a word is a split`() {
+        assertTrue(SettingsLayoutPolicy.splitsWordAt("GPS-Korrekturfaktor", 17))
+        assertTrue(SettingsLayoutPolicy.splitsWordAt("Bremsflüssigkeit", 10))
+    }
+
     private companion object {
         const val OUTER = 16f
         const val INNER = 4f

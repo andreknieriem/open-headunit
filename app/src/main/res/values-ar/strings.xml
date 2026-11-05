@@ -1873,7 +1873,8 @@
     <string name="maintenance_gearbox">ناقل الحركة</string>
     <string name="maintenance_gearbox_manual">يدوي</string>
     <string name="maintenance_gearbox_automatic">أوتوماتيكي</string>
-    <string name="maintenance_gearbox_cvt">CVT</string>
+    <!-- The right-to-left mark keeps the Latin abbreviation on the right, with the Arabic options around it. -->
+    <string name="maintenance_gearbox_cvt">\u200FCVT</string>
     <string name="maintenance_gearbox_help">يختار زيت أو سائل ناقل الحركة الذي يُتتبع. تغييره يستبدل ذلك البند ويُبقي كل شيء آخر.</string>
     <string name="maintenance_steering">التوجيه المعزز</string>
     <string name="maintenance_steering_hydraulic">هيدروليكي</string>

@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.EditText
 import android.widget.LinearLayout
+import android.widget.ScrollView
 import android.widget.TextView
 import androidx.annotation.StringRes
 import androidx.appcompat.app.AlertDialog
@@ -157,9 +158,10 @@ abstract class MaintenanceScreenFragment : Fragment() {
             .show()
     }
 
+    /** Scrolls, so a long message on a short screen does not push the field out of the dialog. */
     private fun dialogBody(message: String?, field: EditText): View {
         val padding = resources.getDimensionPixelSize(R.dimen.maintenance_dialog_padding)
-        return LinearLayout(requireContext()).apply {
+        val body = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(padding, padding / 2, padding, 0)
             if (message != null) {
@@ -170,6 +172,7 @@ abstract class MaintenanceScreenFragment : Fragment() {
             }
             addView(field)
         }
+        return ScrollView(requireContext()).apply { addView(body) }
     }
 
     // Head unit dialogs come up without the keyboard unless these flags are cleared.

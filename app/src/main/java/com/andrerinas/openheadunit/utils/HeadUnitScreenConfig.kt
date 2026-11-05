@@ -145,7 +145,13 @@ object HeadUnitScreenConfig {
         val heightMargin: Int,
         val pixelAspectRatioE4: Int,
         val densityDecision: AnnouncedDensityPolicy.Decision,
+        val panelKey: String? = null,
     )
+
+    /** The panel the projection activity read before this connect; only [announceGeometry] uses it. */
+    @Volatile private var panelKey: String? = null
+
+    fun setPanelKey(key: String?) { panelKey = key }
 
     private var announcedGeometry: AnnouncedGeometry? = null
     private var announcementOwner: WeakReference<Any>? = null
@@ -377,9 +383,15 @@ object HeadUnitScreenConfig {
         // or session lock; init's unchanged-frame fast path deliberately does not recalculate.
         recalculate()
         val (width, height) = primarySize()
+        val key = panelKey
+        // Resolved here, not from the captured settings, so a kept window measurement stays valid.
+        val entry = PanelDensityPolicy.resolve(
+            PanelDensityPolicy.parse(settings.dpiPanelValues), key, settings.dpiPanelsActive,
+            PanelDensityPolicy.Entry(settings.dpiPixelDensity, settings.dpiFloorOverride, settings.dpiAutoLayout),
+        )
         val geometry = AnnouncedGeometry(
             negotiatedResolutionType, width, height, getWidthMargin(), getHeightMargin(),
-            getPixelAspectRatioE4(), densityDecision(),
+            getPixelAspectRatioE4(), densityDecision(entry.dpi, entry.floorOverride, entry.pane), key,
         )
         announcedWidthMargin = geometry.widthMargin
         announcedHeightMargin = geometry.heightMargin
@@ -795,17 +807,18 @@ object HeadUnitScreenConfig {
 
     /** The density decision for the geometry in force, with what was asked and why it changed. */
     @Synchronized
-    fun densityDecision(): AnnouncedDensityPolicy.Decision {
+    fun densityDecision(
+        stored: Int, floorOverride: Boolean, autoLayout: DisplayLayoutPolicy.Pane?
+    ): AnnouncedDensityPolicy.Decision {
         val captured = geometrySettings
             ?: return AnnouncedDensityPolicy.decide(0, SystemOptimizer.DisplaySizePreset.SMALL_7_8, 0, 0, autoLayout = null)
         val preset = OnboardingDisplayPolicy.initialPreset(
             captured.displaySizePreset, SystemOptimizer.DisplaySizePreset.SMALL_7_8
         )
         return AnnouncedDensityPolicy.decide(
-            captured.dpiPixelDensity, preset,
+            stored, preset,
             getNegotiatedWidth() - getWidthMargin(), getNegotiatedHeight() - getHeightMargin(),
-            getPixelAspectRatioE4(), captured.dpiFloorOverride, screenWidthPx, screenHeightPx,
-            DisplayLayoutPolicy.Pane.fromStored(captured.dpiAutoLayout)
+            getPixelAspectRatioE4(), floorOverride, screenWidthPx, screenHeightPx, autoLayout
         )
     }
 

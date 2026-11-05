@@ -20,10 +20,14 @@ object SettingsFilterPolicy {
     /** The head unit specific screen, which only the Advanced tab lists, also while searching. */
     private const val DEVICE_SPECIFIC_ID = "deviceSpecificSettings"
 
+    private val SEARCH_WHITESPACE = Regex("\\s+")
+
     /**
      * [items] is the complete list built for the screen, headers included. [text] resolves a
      * string resource, so the caller keeps the fragment's `getString` and the rules stay pure.
      * A section header, and a sub-header inside it, survives only when at least one of its rows does.
+     * Search matches all whitespace-separated terms within one field in any order,
+     * ignoring case and Russian yo/e. Latin and Cyrillic terms must start at a word boundary.
      */
     fun filter(
         items: List<SettingItem>,
@@ -34,7 +38,7 @@ object SettingsFilterPolicy {
         basicIds: Set<String>,
         text: (Int) -> String
     ): List<SettingItem> {
-        val search = query.trim()
+        val search = normalizeSearchText(query).split(SEARCH_WHITESPACE).filter { it.isNotEmpty() }
         val result = mutableListOf<SettingItem>()
         var pendingHeader: SettingItem.CategoryHeader? = null
         var categoryId: String? = null
@@ -47,7 +51,7 @@ object SettingsFilterPolicy {
                 pendingHeader = item
                 categoryId = item.stableId
                 headerMatches = search.isNotEmpty() &&
-                    text(item.titleResId).contains(search, ignoreCase = true)
+                    matchesSearch(text(item.titleResId), search)
                 pendingSubHeader = null
                 subHeaderMatches = false
                 continue
@@ -55,7 +59,7 @@ object SettingsFilterPolicy {
             if (item is SettingItem.SubHeader) {
                 pendingSubHeader = item
                 subHeaderMatches = search.isNotEmpty() &&
-                    text(item.titleResId).contains(search, ignoreCase = true)
+                    matchesSearch(text(item.titleResId), search)
                 continue
             }
             if (!shows(item, search, headerMatches || subHeaderMatches, advanced, showsUsb, showsWifi, basicIds, categoryId, text)) {
@@ -85,7 +89,7 @@ object SettingsFilterPolicy {
 
     private fun shows(
         item: SettingItem,
-        search: String,
+        search: List<String>,
         headerMatches: Boolean,
         advanced: Boolean,
         showsUsb: Boolean,
@@ -104,12 +108,52 @@ object SettingsFilterPolicy {
         if (item.stableId == DEVICE_SPECIFIC_ID && !advanced) return false
 
         if (search.isNotEmpty()) {
-            return headerMatches || searchableText(item, text).contains(search, ignoreCase = true)
+            return headerMatches || searchableFields(item, text).any { matchesSearch(it, search) }
         }
 
         if (advanced) return true
 
         return item.stableId in basicIds
+    }
+
+    /**
+     * Normalize search text:
+     * - Treats Russian yo and e as equivalent without changing other letters or their case. */
+    private fun normalizeSearchText(text: String): String =
+        text.replace('\u0451', '\u0435').replace('\u0401', '\u0415')
+
+    /** Matches all terms in one field; only Latin and Cyrillic terms require a word start. */
+    private fun matchesSearch(text: String, terms: List<String>): Boolean {
+        val normalized = normalizeSearchText(text)
+        return terms.all { term ->
+            if (!requiresWordStart(term)) {
+                normalized.contains(term, ignoreCase = true)
+            } else {
+                normalized.indices.any { index ->
+                    (index == 0 || !normalized[index - 1].isLetterOrDigit()) &&
+                        normalized.startsWith(term, startIndex = index, ignoreCase = true)
+                }
+            }
+        }
+    }
+
+    /**
+     * Uses the first letter to choose matching rules per term, including mixed-language queries.
+     * Explicit Unicode ranges keep this compatible with Android versions before UnicodeScript.
+     */
+    private fun requiresWordStart(term: String): Boolean {
+        val letter = term.firstOrNull { it.isLetter() } ?: return false
+        return letter in '\u0041'..'\u024F' ||
+            letter in '\u1D00'..'\u1DBF' ||
+            letter in '\u1E00'..'\u1EFF' ||
+            letter in '\u2C60'..'\u2C7F' ||
+            letter in '\uA720'..'\uA7FF' ||
+            letter in '\uAB30'..'\uAB6F' ||
+            letter in '\uFF21'..'\uFF3A' ||
+            letter in '\uFF41'..'\uFF5A' ||
+            letter in '\u0400'..'\u052F' ||
+            letter in '\u2DE0'..'\u2DFF' ||
+            letter in '\uA640'..'\uA69F'
     }
 
     /**
@@ -137,25 +181,25 @@ object SettingsFilterPolicy {
         return false
     }
 
-    /** The text a query is matched against: names, the value shown, the summary, the help text and the extra keywords. */
-    private fun searchableText(item: SettingItem, text: (Int) -> String): String {
+    /** Each name, value, summary, help text and keywords field is searched independently. */
+    private fun searchableFields(item: SettingItem, text: (Int) -> String): List<String> {
         val help = SettingHelpPolicy.helpResId(item)?.let(text) ?: ""
         return when (item) {
             is SettingItem.SettingEntry ->
-                "${item.nameOverride ?: text(item.nameResId)} ${item.value} ${item.descriptionResId?.let(text) ?: ""} $help ${item.searchKeywords ?: ""}"
+                listOfNotNull(item.nameOverride ?: text(item.nameResId), item.value, item.descriptionResId?.let(text), help, item.searchKeywords)
             is SettingItem.ToggleSettingEntry ->
-                "${item.nameOverride ?: text(item.nameResId)} ${item.descriptionResId?.let(text) ?: ""} $help ${item.searchKeywords ?: ""}"
+                listOfNotNull(item.nameOverride ?: text(item.nameResId), item.descriptionResId?.let(text), help, item.searchKeywords)
             is SettingItem.StreamSettingEntry ->
-                "${text(item.nameResId)} ${item.value} ${item.descriptionResId?.let(text) ?: ""} $help ${item.searchKeywords ?: ""}"
+                listOfNotNull(text(item.nameResId), item.value, item.descriptionResId?.let(text), help, item.searchKeywords)
             is SettingItem.SliderSettingEntry ->
-                "${text(item.nameResId)} ${item.value} $help"
+                listOf(text(item.nameResId), item.value.toString(), help)
             is SettingItem.SegmentedButtonSettingEntry ->
-                "${text(item.nameResId)} ${item.options.joinToString(" ")} $help"
-            is SettingItem.InfoBanner -> item.text ?: text(item.textResId)
-            is SettingItem.ActionButton -> text(item.textResId)
-            is SettingItem.CategoryHeader -> text(item.titleResId)
-            is SettingItem.SubHeader -> text(item.titleResId)
-            is SettingItem.ScopeNotice -> item.text
+                listOf(text(item.nameResId), help) + item.options
+            is SettingItem.InfoBanner -> listOf(item.text ?: text(item.textResId))
+            is SettingItem.ActionButton -> listOf(text(item.textResId))
+            is SettingItem.CategoryHeader -> listOf(text(item.titleResId))
+            is SettingItem.SubHeader -> listOf(text(item.titleResId))
+            is SettingItem.ScopeNotice -> listOf(item.text)
         }
     }
 }

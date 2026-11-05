@@ -71,7 +71,8 @@ object SettingsLayoutPolicy {
         is SettingItem.SliderSettingEntry,
         is SettingItem.InfoBanner,
         is SettingItem.SegmentedButtonSettingEntry,
-        is SettingItem.StreamSettingEntry -> true
+        is SettingItem.StreamSettingEntry,
+        is SettingItem.StatusEntry -> true
         else -> false
     }
 }

@@ -156,6 +156,7 @@ object SettingsFilterPolicy {
             is SettingItem.CategoryHeader -> text(item.titleResId)
             is SettingItem.SubHeader -> text(item.titleResId)
             is SettingItem.ScopeNotice -> item.text
+            is SettingItem.StatusEntry -> "${text(item.nameResId)} ${item.state} $help"
         }
     }
 }

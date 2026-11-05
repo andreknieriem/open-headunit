@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The guide to turning on ADB. Head units get bigger values, like the settings rows. -->
+    <dimen name="adb_guide_step_text_size">15sp</dimen>
+    <dimen name="adb_guide_step_number">28dp</dimen>
+    <dimen name="adb_guide_code_size">22sp</dimen>
+    <dimen name="adb_guide_match_code_size">32sp</dimen>
+    <dimen name="adb_guide_code_width">96dp</dimen>
+    <dimen name="adb_guide_qr_size">72dp</dimen>
+    <!-- Width of the steps beside the codes (layout-w720dp). -->
+    <dimen name="adb_guide_steps_width">360dp</dimen>
+</resources>

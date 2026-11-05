@@ -15,6 +15,7 @@ import android.widget.TextView
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.appcompat.widget.SwitchCompat
+import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -119,6 +120,28 @@ sealed class SettingItem {
     ) : SettingItem()
 
     /**
+     * One thing being checked, with a dot for how it looks ([tone]), what was found ([state]) and,
+     * when it can be fixed from here, the switch ([switchChecked] not null) or the button
+     * ([actionResId]) that does it, so the fix sits next to what it fixes.
+     */
+    data class StatusEntry(
+        override val stableId: String,
+        @StringRes val nameResId: Int,
+        val state: String,
+        val tone: StatusTone,
+        /** Shows the "changes /system" tag. */
+        val changesSystem: Boolean = false,
+        val switchChecked: Boolean? = null,
+        @StringRes val actionResId: Int? = null,
+        val isEnabled: Boolean = true,
+        @StringRes val helpResId: Int? = null,
+        val onSwitch: (Boolean) -> Unit = {},
+        val onAction: () -> Unit = {}
+    ) : SettingItem()
+
+    enum class StatusTone { GOOD, PROBLEM, NEUTRAL }
+
+    /**
      * The note above the list naming the settings the chosen connection type hides, with a
      * shortcut ([actionResId]) to change that choice.
      */
@@ -147,6 +170,7 @@ class SettingsAdapter : ListAdapter<SettingItem, RecyclerView.ViewHolder>(Settin
         private const val VIEW_TYPE_STREAM = 8
         private const val VIEW_TYPE_SCOPE_NOTICE = 9
         private const val VIEW_TYPE_SUBHEADER = 10
+        private const val VIEW_TYPE_STATUS = 11
 
         /** Rebind payload that only refreshes a row's group corners. */
         private const val PAYLOAD_GROUP_SHAPE = "groupShape"
@@ -185,6 +209,7 @@ class SettingsAdapter : ListAdapter<SettingItem, RecyclerView.ViewHolder>(Settin
             is SettingItem.SegmentedButtonSettingEntry -> VIEW_TYPE_SEGMENTED
             is SettingItem.StreamSettingEntry -> VIEW_TYPE_STREAM
             is SettingItem.ScopeNotice -> VIEW_TYPE_SCOPE_NOTICE
+            is SettingItem.StatusEntry -> VIEW_TYPE_STATUS
         }
     }
 
@@ -202,6 +227,7 @@ class SettingsAdapter : ListAdapter<SettingItem, RecyclerView.ViewHolder>(Settin
             VIEW_TYPE_SEGMENTED -> SegmentedButtonViewHolder(inflater.inflate(R.layout.layout_setting_item_segmented, parent, false), colors)
             VIEW_TYPE_STREAM -> StreamSettingViewHolder(inflater.inflate(R.layout.layout_setting_item_stream, parent, false), colors)
             VIEW_TYPE_SCOPE_NOTICE -> ScopeNoticeViewHolder(inflater.inflate(R.layout.layout_setting_scope_notice, parent, false), colors)
+            VIEW_TYPE_STATUS -> StatusViewHolder(inflater.inflate(R.layout.layout_setting_item_status, parent, false), colors)
             else -> throw IllegalArgumentException("Unknown view type: $viewType")
         }
     }
@@ -221,6 +247,7 @@ class SettingsAdapter : ListAdapter<SettingItem, RecyclerView.ViewHolder>(Settin
             is SettingItem.SegmentedButtonSettingEntry -> (holder as SegmentedButtonViewHolder).bind(item)
             is SettingItem.StreamSettingEntry -> (holder as StreamSettingViewHolder).bind(item)
             is SettingItem.ScopeNotice -> (holder as ScopeNoticeViewHolder).bind(item)
+            is SettingItem.StatusEntry -> (holder as StatusViewHolder).bind(item)
         }
     }
 
@@ -386,6 +413,71 @@ class SettingsAdapter : ListAdapter<SettingItem, RecyclerView.ViewHolder>(Settin
             itemView.setOnClickListener {
                 if (setting.isEnabled) settingSwitch.toggle()
             }
+        }
+    }
+
+    class StatusViewHolder(itemView: View, private val colors: SettingsPalette) : RecyclerView.ViewHolder(itemView) {
+        private val dot: View = itemView.findViewById(R.id.statusDot)
+        private val name: TextView = itemView.findViewById(R.id.settingName)
+        private val help: ImageButton = itemView.findViewById(R.id.settingHelp)
+        private val tag: TextView = itemView.findViewById(R.id.statusSystemTag)
+        private val state: TextView = itemView.findViewById(R.id.settingDescription)
+        private val switch: SwitchCompat = itemView.findViewById(R.id.settingSwitch)
+        private val action: MaterialButton = itemView.findViewById(R.id.statusAction)
+        private val problem = ContextCompat.getColor(itemView.context, R.color.settings_status_problem)
+
+        init {
+            val context = itemView.context
+            switch.trackDrawable = SettingsDrawables.switchTrack(context, colors)
+            switch.thumbDrawable = SettingsDrawables.switchThumb(context, colors)
+            switch.trackTintList = null
+            switch.thumbTintList = null
+            action.strokeColor = ColorStateList.valueOf(colors.outline)
+            action.setTextColor(colors.primary)
+            action.rippleColor = ColorStateList.valueOf(colors.secondaryContainer)
+            tag.setTextColor(problem)
+            tag.background = SettingsDrawables.outlinedPill(context, problem)
+        }
+
+        fun bind(item: SettingItem.StatusEntry) {
+            name.setText(item.nameResId)
+            bindHelp(help, item, name.text, colors)
+            state.text = item.state
+            val toneColor = when (item.tone) {
+                SettingItem.StatusTone.GOOD -> colors.primary
+                SettingItem.StatusTone.PROBLEM -> problem
+                SettingItem.StatusTone.NEUTRAL -> colors.outline
+            }
+            dot.background = SettingsDrawables.dot(toneColor)
+            // A problem is said in its color too, not only by the dot.
+            state.setTextColor(if (item.tone == SettingItem.StatusTone.PROBLEM) problem else colors.onSurfaceVariant)
+            tag.visibility = if (item.changesSystem) View.VISIBLE else View.GONE
+
+            // Both controls are set on every bind, because the holder is recycled.
+            switch.setOnCheckedChangeListener(null)
+            if (item.switchChecked != null) {
+                switch.visibility = View.VISIBLE
+                switch.isChecked = item.switchChecked
+                switch.isEnabled = item.isEnabled
+                switch.contentDescription = name.text
+                switch.setOnCheckedChangeListener { _, checked -> item.onSwitch(checked) }
+            } else {
+                switch.visibility = View.GONE
+            }
+            if (item.actionResId != null) {
+                action.visibility = View.VISIBLE
+                action.setText(item.actionResId)
+                action.isEnabled = item.isEnabled
+                action.setOnClickListener { item.onAction() }
+            } else {
+                action.visibility = View.GONE
+                action.setOnClickListener(null)
+            }
+            itemView.alpha = if (item.isEnabled) 1.0f else 0.5f
+            val tappable = item.isEnabled && item.switchChecked != null
+            itemView.isClickable = tappable
+            itemView.isFocusable = tappable
+            itemView.setOnClickListener(if (tappable) View.OnClickListener { switch.toggle() } else null)
         }
     }
 
@@ -570,6 +662,11 @@ class SettingsAdapter : ListAdapter<SettingItem, RecyclerView.ViewHolder>(Settin
                         oldItem.helpResId == newItem.helpResId
                 oldItem is SettingItem.ScopeNotice && newItem is SettingItem.ScopeNotice ->
                     oldItem.text == newItem.text && oldItem.iconResId == newItem.iconResId
+                oldItem is SettingItem.StatusEntry && newItem is SettingItem.StatusEntry ->
+                    oldItem.nameResId == newItem.nameResId && oldItem.state == newItem.state && oldItem.tone == newItem.tone &&
+                        oldItem.changesSystem == newItem.changesSystem && oldItem.switchChecked == newItem.switchChecked &&
+                        oldItem.actionResId == newItem.actionResId && oldItem.isEnabled == newItem.isEnabled &&
+                        oldItem.helpResId == newItem.helpResId
                 else -> false
             }
         }

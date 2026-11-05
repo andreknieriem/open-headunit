@@ -31,6 +31,9 @@ object SettingsDrawables {
 
     private const val SWITCH_TRACK_OUTLINE_DP = 2f
 
+    private const val PILL_RADIUS_DP = 10f
+    private const val PILL_STROKE_ALPHA = 0x99
+
     /** One row of a connected group: large outer corners, small inner ones, pressed feedback. */
     fun groupItem(
         context: Context,
@@ -138,6 +141,20 @@ object SettingsDrawables {
     )
 
     fun dp(context: Context, value: Float): Float = value * context.resources.displayMetrics.density
+
+    /** The status dot of a check row; the view gives it its size. */
+    fun dot(@ColorInt color: Int): Drawable = GradientDrawable().apply {
+        shape = GradientDrawable.OVAL
+        setColor(color)
+    }
+
+    /** A small outlined tag with round ends, in [color]. */
+    fun outlinedPill(context: Context, @ColorInt color: Int): Drawable = GradientDrawable().apply {
+        shape = GradientDrawable.RECTANGLE
+        cornerRadius = dp(context, PILL_RADIUS_DP)
+        setColor(android.graphics.Color.TRANSPARENT)
+        setStroke(dp(context, OUTLINE_DP).toInt(), ColorUtils.setAlphaComponent(color, PILL_STROKE_ALPHA))
+    }
 
     private fun roundedRect(context: Context, @ColorInt color: Int, radii: FloatArray, @ColorInt strokeColor: Int?): GradientDrawable =
         GradientDrawable().apply {

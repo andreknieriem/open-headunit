@@ -789,6 +789,7 @@
     <string name="export_settings">تصدير الإعدادات</string>
     <string name="export_settings_description">حفظ نسخة احتياطية من الإعدادات كملف JSON.</string>
     <string name="export_settings_app_folder">حفظ في مجلد نسخ التطبيق</string>
+    <string name="onb_restore_settings">استعادة الإعدادات من نسخة احتياطية</string>
     <string name="export_settings_downloads">حفظ في التنزيلات</string>
     <string name="export_settings_choose_location">اختر موقع الحفظ</string>
     <string name="settings_exported">تم تصدير الإعدادات</string>

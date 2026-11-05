@@ -1039,6 +1039,7 @@
     <string name="export_settings_choose_location">Choose save location</string>
     <string name="export_settings_downloads">Save to Downloads</string>
     <string name="export_settings_app_folder">Save to app backup folder</string>
+    <string name="onb_restore_settings">Restore settings from backup</string>
     <string name="import_settings">Import settings</string>
     <string name="import_settings_description">Restore settings from an Open Headunit backup.</string>
     <string name="import_settings_choose_file">Choose backup file</string>

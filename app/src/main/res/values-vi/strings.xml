@@ -762,6 +762,7 @@
     <string name="export_settings">Xuất cài đặt</string>
     <string name="export_settings_description">Lưu bản sao lưu cài đặt dưới dạng tệp JSON.</string>
     <string name="export_settings_app_folder">Lưu vào thư mục sao lưu của ứng dụng</string>
+    <string name="onb_restore_settings">Khôi phục cài đặt từ bản sao lưu</string>
     <string name="export_settings_downloads">Lưu vào Tải xuống</string>
     <string name="export_settings_choose_location">Chọn vị trí lưu</string>
     <string name="settings_exported">Đã xuất cài đặt</string>

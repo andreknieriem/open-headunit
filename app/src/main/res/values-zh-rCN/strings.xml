@@ -789,6 +789,7 @@
     <string name="export_settings">导出设置</string>
     <string name="export_settings_description">将设置备份保存为 JSON 文件。</string>
     <string name="export_settings_app_folder">保存到应用备份文件夹</string>
+    <string name="onb_restore_settings">从备份恢复设置</string>
     <string name="export_settings_downloads">保存到“下载”</string>
     <string name="export_settings_choose_location">选择保存位置</string>
     <string name="settings_exported">设置已导出</string>

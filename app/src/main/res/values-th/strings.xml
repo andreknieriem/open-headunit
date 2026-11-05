@@ -945,6 +945,7 @@
     <string name="export_settings_choose_location">เลือกตำแหน่งที่บันทึก</string>
     <string name="export_settings_downloads">บันทึกลงในดาวน์โหลด</string>
     <string name="export_settings_app_folder">บันทึกลงในโฟลเดอร์สำรองของแอป</string>
+    <string name="onb_restore_settings">คืนค่าการตั้งค่าจากข้อมูลสำรอง</string>
     <string name="import_settings">นำเข้าการตั้งค่า</string>
     <string name="import_settings_description">กู้คืนการตั้งค่าจากข้อมูลสำรอง Open Headunit</string>
     <string name="import_settings_choose_file">เลือกไฟล์สำรอง</string>

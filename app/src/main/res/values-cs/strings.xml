@@ -789,6 +789,7 @@
     <string name="export_settings">Exportovat nastavení</string>
     <string name="export_settings_description">Uložit zálohu nastavení jako soubor JSON.</string>
     <string name="export_settings_app_folder">Uložit do složky záloh aplikace</string>
+    <string name="onb_restore_settings">Obnovit nastavení ze zálohy</string>
     <string name="export_settings_downloads">Uložit do Stažených souborů</string>
     <string name="export_settings_choose_location">Vyberte umístění uložení</string>
     <string name="settings_exported">Nastavení exportováno</string>

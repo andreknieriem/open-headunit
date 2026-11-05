@@ -1144,6 +1144,7 @@
         <item>Volkswagen</item>
         <item>Volvo</item>
     </string-array>
+    <string name="dpi_for_this_screen">DPI cho màn hình này (%1$s)</string>
     <string name="dpi_value_format">%1$d DPI</string>
     <string name="pixel_aspect_ratio">Tỷ lệ khung hình điểm ảnh</string>
     <string name="pixel_aspect_ratio_help">Chỉ thay đổi nếu hình tròn trông như hình bầu dục trên màn hình này. Điều đó xảy ra khi điểm ảnh của tấm nền không vuông. 10000 nghĩa là điểm ảnh vuông.</string>

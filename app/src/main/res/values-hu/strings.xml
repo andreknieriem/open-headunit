@@ -1138,6 +1138,7 @@
         <item>Volkswagen</item>
         <item>Volvo</item>
     </string-array>
+    <string name="dpi_for_this_screen">DPI ehhez a képernyőhöz (%1$s)</string>
     <string name="dpi_value_format">%1$d DPI</string>
     <string name="pixel_aspect_ratio">Képpont-képarány</string>
     <string name="pixel_aspect_ratio_help">Csak akkor módosítsa, ha a körök ovális alakúnak látszanak ezen a kijelzőn. Ez akkor fordul elő, ha a panel pixelei nem négyzet alakúak. A 10000 négyzet alakú pixeleket jelent.</string>

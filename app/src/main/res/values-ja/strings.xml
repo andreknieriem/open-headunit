@@ -1146,6 +1146,7 @@
         <item>Volkswagen</item>
         <item>Volvo</item>
     </string-array>
+    <string name="dpi_for_this_screen">この画面の DPI(%1$s)</string>
     <string name="dpi_value_format">%1$d DPI</string>
     <string name="pixel_aspect_ratio">ピクセルのアスペクト比</string>
     <string name="pixel_aspect_ratio_help">この画面で円が楕円に見える場合のみ変更してください。パネルの画素が正方形でないと起こります。10000は正方形の画素を表します。</string>

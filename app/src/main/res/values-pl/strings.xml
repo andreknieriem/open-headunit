@@ -1143,6 +1143,7 @@
         <item>Volkswagen</item>
         <item>Volvo</item>
     </string-array>
+    <string name="dpi_for_this_screen">DPI dla tego ekranu (%1$s)</string>
     <string name="dpi_value_format">%1$d DPI</string>
     <string name="pixel_aspect_ratio">Proporcje pikseli</string>
     <string name="pixel_aspect_ratio_help">Zmień to tylko wtedy, gdy koła wyglądają na tym ekranie jak owale. Dzieje się tak, gdy piksele panelu nie są kwadratowe. 10000 oznacza kwadratowe piksele.</string>

@@ -18,8 +18,11 @@ import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.main.settings.SettingHelpDialog
 import com.andrerinas.openheadunit.utils.AnnouncedDensityPolicy
+import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.DisplayLayoutPolicy
 import com.andrerinas.openheadunit.utils.OnboardingDisplayPolicy
+import com.andrerinas.openheadunit.utils.PanelDensityPolicy
+import com.andrerinas.openheadunit.utils.PanelKeyReader
 import com.andrerinas.openheadunit.utils.Settings
 import com.andrerinas.openheadunit.utils.SystemOptimizer
 import com.andrerinas.openheadunit.utils.ToastUtils
@@ -47,6 +50,9 @@ class DpiSettingsFragment : Fragment() {
     private var initialLayout = ""
     private var initialOverride = false
     private var pendingOverride = false
+    private var panelKey: String? = null
+    private var panelMap: Map<String, PanelDensityPolicy.Entry> = emptyMap()
+    private var panelActive = false
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         return inflater.inflate(R.layout.fragment_dpi_settings, container, false)
@@ -66,15 +72,20 @@ class DpiSettingsFragment : Fragment() {
             updateClampedNote()
         }
 
+        panelKey = PanelKeyReader.read(requireActivity(), settings)
+        panelMap = PanelDensityPolicy.parse(settings.dpiPanelValues)
+        panelActive = settings.dpiPanelsActive
+        if (panelActive && panelKey != null) toolbar.title = getString(R.string.dpi_for_this_screen, panelKey)
         setupToolbar()
 
         // If the chosen resolution exceeds the panel, the DPI is computed for the capped resolution
         // the device will actually project, so flag it (issue #767).
         updateOverPanelWarning()
 
-        initialValue = settings.dpiPixelDensity
-        initialLayout = settings.dpiAutoLayout
-        initialOverride = settings.dpiFloorOverride
+        val entry = PanelDensityPolicy.resolve(panelMap, panelKey, panelActive, globalEntry())
+        initialValue = entry.dpi
+        initialLayout = entry.layout
+        initialOverride = entry.floorOverride
         pendingOverride = initialOverride
         configurePicker()
         picker.setOnPickChanged { updateSaveButtonState(); updateClampedNote() }
@@ -97,14 +108,20 @@ class DpiSettingsFragment : Fragment() {
         saveButton?.setOnClickListener { saveSettings() }
     }
 
+    private fun globalEntry() =
+        PanelDensityPolicy.Entry(settings.dpiPixelDensity, settings.dpiFloorOverride, settings.dpiAutoLayout)
+
+    /** The layout stored for the panel in use. */
+    private fun storedPane(): DisplayLayoutPolicy.Pane? = DisplayLayoutPolicy.Pane.fromStored(initialLayout)
+
     /** Opens on Auto in the stored layout; with no reachable one stored, on what the wire sends today, untouched. */
     private fun configurePicker() {
         val p = previewResolution()
         val (cw, ch) = AnnouncedDensityPolicy.phoneCanvas(p.w, p.h, p.par)
         val clamp = AnnouncedDensityPolicy.clampDpi(p.w, p.h, p.par)
         val choices = DisplayLayoutPolicy.choices(cw, ch, clamp)
-        val stored = settings.dpiAutoLayoutPane?.takeIf { pane -> choices.any { it.pane == pane } }
-        val storedDpi = settings.dpiPixelDensity
+        val stored = storedPane()?.takeIf { pane -> choices.any { it.pane == pane } }
+        val storedDpi = initialValue
         val openDpi = if (storedDpi == 0 && stored == null) preview(0, false, null).announced else storedDpi
         picker.configure(cw, ch, clamp, p.h > p.w, openDpi, stored, fresh = true)
     }
@@ -129,9 +146,19 @@ class DpiSettingsFragment : Fragment() {
         // sitting in the text field at this point.
         picker.commitPendingInput()
         val w = writes()
-        w.dpi?.let { settings.dpiPixelDensity = it; initialValue = it }
-        w.layout?.let { settings.dpiAutoLayout = it; initialLayout = it }
-        if (pendingOverride != initialOverride) settings.dpiFloorOverride = pendingOverride
+        val picked = PanelDensityPolicy.Entry(w.dpi ?: initialValue, pendingOverride, w.layout ?: initialLayout)
+        val stored = PanelDensityPolicy.save(panelMap, panelKey, panelActive, picked, globalEntry())
+        if (stored == null) {
+            w.dpi?.let { settings.dpiPixelDensity = it }
+            w.layout?.let { settings.dpiAutoLayout = it }
+            if (pendingOverride != initialOverride) settings.dpiFloorOverride = pendingOverride
+        } else if (stored != panelMap) {
+            settings.dpiPanelValues = PanelDensityPolicy.format(stored)
+            panelMap = stored
+        }
+        AppLog.i("DpiSettingsFragment: saved DPI ${picked.dpi} to=${if (stored == null) "global" else "panel"} for panel ${panelKey ?: "none"}, layout=${picked.layout.ifEmpty { "none" }}")
+        initialValue = picked.dpi
+        initialLayout = picked.layout
         settings.commit()
         initialOverride = pendingOverride
         updateSaveButtonState()
@@ -173,7 +200,7 @@ class DpiSettingsFragment : Fragment() {
     }
 
     private fun preview(
-        value: Int, override: Boolean = pendingOverride, layout: DisplayLayoutPolicy.Pane? = settings.dpiAutoLayoutPane
+        value: Int, override: Boolean = pendingOverride, layout: DisplayLayoutPolicy.Pane? = storedPane()
     ): AnnouncedDensityPolicy.Decision {
         val p = previewResolution()
         val preset = OnboardingDisplayPolicy.initialPreset(

@@ -1144,6 +1144,7 @@
         <item>Volkswagen</item>
         <item>Volvo</item>
     </string-array>
+    <string name="dpi_for_this_screen">DPI pro tuto obrazovku (%1$s)</string>
     <string name="dpi_value_format">%1$d DPI</string>
     <string name="pixel_aspect_ratio">Poměr stran pixelu</string>
     <string name="pixel_aspect_ratio_help">Změňte to, jen pokud kruhy na této obrazovce vypadají jako ovály. To nastává, když pixely panelu nejsou čtvercové. Hodnota 10000 znamená čtvercové pixely.</string>

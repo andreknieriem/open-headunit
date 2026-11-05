@@ -94,9 +94,6 @@
     <!-- The location type keeps the maintenance mileage counting in the background. It is only
          claimed while that feature is on and precise location is granted. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
-    <!-- The maintenance setup asks once to be left out of battery optimization, so the mileage
-         is not cut short by Doze. -->
-    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
     <!--
         Only requested up to API 32. From API 33 (Android 13) a granted READ_LOGS makes the app a

@@ -1,7 +1,6 @@
 package com.andrerinas.openheadunit.main
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.location.LocationManager
@@ -397,17 +396,14 @@ class MaintenanceFragment : MaintenanceScreenFragment() {
         batteryState(requireContext()) == R.string.maintenance_battery_not_excluded
 
     /**
-     * Doze arrived in Android 6, and with it the exemption. Some head unit ROMs strip the screen
-     * that asks for it, so the list of all apps and then the app's own page are the fallbacks.
+     * Doze arrived in Android 6, and with it the exemption. This opens the system list where the
+     * user excludes the app, rather than the direct request: that one needs a permission Google
+     * Play only allows for a few kinds of apps. Some head unit ROMs strip the list too, so the
+     * app's own page is the fallback.
      */
-    // BatteryLife: the request is the point here. The mileage is only as good as the time the
-    // app stays alive, and the user turned this feature on and is told why before it is asked.
-    @SuppressLint("BatteryLife")
     @RequiresApi(Build.VERSION_CODES.M)
     private fun openBatteryExemption() {
-        val opened = openSystemScreen(
-            android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, withPackage = true, quiet = true
-        ) || openSystemScreen(android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS, quiet = true) ||
+        val opened = openSystemScreen(android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS, quiet = true) ||
             openSystemScreen(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, withPackage = true)
         AppLog.i("$TAG: battery optimization exemption requested, a settings screen opened=$opened")
     }

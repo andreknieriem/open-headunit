@@ -20,6 +20,7 @@
 - WiFi Direct: detect a wedged P2P stack and offer a WiFi restart, and remember a unit that refuses every banded group, thanks to @mark-alexander-hub
 - WiFi: Pause automatic searches during wireless sessions with Shizuku, thanks to @emotionbug
 - Wireless: keep owned WPP channels across a projection Exit, and fix legacy Wi-Fi Direct metadata and cleanup callbacks, thanks to @emotionbug
+- Wi-Fi Direct: on Android 7.1 and older, leave a known 2.4 GHz station network before creating a group, and log legacy hotspot start failures
 - Hotspot: start tethering once, so auto-enable no longer tears down its own access point, thanks to @Duzttt
 - Bluetooth auto-disconnect: end the session when the phone closes the held channel, thanks to @mohammed-just
 - Bluetooth: open the app on units without a Bluetooth manager, and check ZBT reachability without activating the module, thanks to @emotionbug

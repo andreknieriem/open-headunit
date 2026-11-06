@@ -565,7 +565,7 @@ private fun focusPostingRegression() {
     val transport = Thread({
         audio.postProtocolFocusChange(3, 1, listener)
         transportFinished.countDown() // next transport dispatch can execute before Binder returns
-    }, "AapTransport:Handler::Poll")
+    }, "Aap::Poll")
     transport.start()
     check(transportFinished.await(1, TimeUnit.SECONDS))
     val main = Thread({ handler.runAll() }, "focus-main")

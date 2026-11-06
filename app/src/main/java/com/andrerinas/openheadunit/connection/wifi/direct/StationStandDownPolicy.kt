@@ -91,6 +91,7 @@ object StationStandDownPolicy {
             "the setting keeps this unit joined to its own WiFi network, so the group shares the " +
                 "radio with it."
         mode == StationStandDownMode.ALWAYS -> null
+        supports5Ghz == false && sdkInt <= LAST_API_WITH_LEGACY_P2P_STATION_CONFLICT -> null
         supports5Ghz == false && sdkInt > LAST_API_WITH_LEGACY_P2P_STATION_CONFLICT ->
             "this unit's WiFi radio has no 5 GHz band, so leaving its own network could not move " +
                 "the group to another channel; the station stays joined, because a disconnected " +

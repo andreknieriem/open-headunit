@@ -1701,50 +1701,6 @@ class VideoDecoder(
         }
     }
 
-    /**
-     * Walks the full access unit and exposes only parameter-set ranges, without copying picture data.
-     */
-    private inline fun forEachParameterSet(buffer: ByteArray, offset: Int, size: Int, type: CodecType, callback: (Int, Int, Int) -> Unit) {
-        var currentPos = offset
-        val limit = offset + size
-
-        while (currentPos < limit - 3) {
-            var nalStart = -1
-            var startCodeLen = 0
-
-            for (i in currentPos until limit - 3) {
-                if (buffer[i].toInt() == 0 && buffer[i+1].toInt() == 0) {
-                    if (buffer[i+2].toInt() == 0 && buffer[i+3].toInt() == 1) {
-                        nalStart = i; startCodeLen = 4; break
-                    } else if (buffer[i+2].toInt() == 1) {
-                        nalStart = i; startCodeLen = 3; break
-                    }
-                }
-            }
-
-            if (nalStart != -1) {
-                var nalEnd = limit
-                for (j in (nalStart + startCodeLen) until limit - 3) {
-                    if (buffer[j].toInt() == 0 && buffer[j+1].toInt() == 0 &&
-                        (buffer[j+2].toInt() == 1 || (buffer[j+2].toInt() == 0 && buffer[j+3].toInt() == 1))) {
-                        nalEnd = j; break
-                    }
-                }
-
-                val header = nalStart + startCodeLen
-                if (header < nalEnd) {
-                    val first = buffer[header].toInt() and 0xFF
-                    val kind = if (type == CodecType.H265) (first and 0x7E) shr 1 else first and 0x1F
-                    val parameterSet = if (type == CodecType.H265) kind in 32..34 else kind == 7 || kind == 8
-                    if (parameterSet) {
-                        callback(header, nalEnd - header, kind)
-                    }
-                }
-                currentPos = nalEnd
-            } else break
-        }
-    }
-
 
     /**
      * Reads this session's sequence parameter set: picture size for the codec, and the buffering
@@ -1830,7 +1786,7 @@ class VideoDecoder(
      * Extracts SPS/PPS/VPS data for the decoder configuration (CSD).
      */
     private fun scanAndApplyConfig(buffer: ByteArray, offset: Int, size: Int, type: CodecType) {
-        forEachParameterSet(buffer, offset, size, type) { header, length, kind ->
+        ParameterSetScanner.forEachParameterSet(buffer, offset, size, type == CodecType.H265) { header, length, kind ->
             val previous = parameterSets.latest(kind)
             val data = parameterSets.store(buffer, header, length, type == CodecType.H265, kind)
                 ?: return@forEachParameterSet
@@ -2120,13 +2076,13 @@ class VideoDecoder(
      *
      * Diagnostic only - see [ParameterSetTracker] for why nothing here writes to the stored CSD or
      * the configured size. Runs only on units the config scanner says carry parameter sets, which is
-     * keyframes and config messages; [forEachParameterSet] never copies their picture payload.
+     * keyframes and config messages; [ParameterSetScanner.forEachParameterSet] never copies their picture payload.
      */
     private fun trackParameterSets(data: ByteArray, offset: Int, size: Int, events: OutputEvents) {
         val hevc = currentCodecType == CodecType.H265
         var spsOffset = -1
         var spsLength = 0
-        forEachParameterSet(data, offset, size, currentCodecType) { header, length, nalKind ->
+        ParameterSetScanner.forEachParameterSet(data, offset, size, hevc) { header, length, nalKind ->
             val kind = when (nalKind) {
                 32 -> ParameterSetTracker.Kind.VPS
                 7, 33 -> ParameterSetTracker.Kind.SPS

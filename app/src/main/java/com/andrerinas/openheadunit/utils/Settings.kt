@@ -1722,38 +1722,6 @@ class Settings(private val context: Context) {
         }
 
     /**
-     * Devices the Native AA wake poke connects to, to make Android Auto start on the phone.
-     *
-     * Its own setting since the auto-start list was both this and the trigger for
-     * `AutoStartReceiver`, and the handshake wrote a completed peer back into it - so clearing
-     * auto-start undid itself on the next poke cycle. Seeded from the auto-start list once, so a
-     * unit that has been poking a phone keeps poking it. Read after unlock only, so no mirror.
-     */
-    var nativePokeBtMacs: Set<String>
-        get() {
-            var macs = prefs.getStringSet("native-poke-bt-macs", null)
-            if (macs == null) {
-                macs = autoStartBluetoothDeviceMacs
-                prefs.edit().putStringSet("native-poke-bt-macs", macs).apply()
-            }
-            return macs
-        }
-        set(value) {
-            prefs.edit().putStringSet("native-poke-bt-macs", value).apply()
-        }
-
-    /**
-     * Whether an empty [nativePokeBtMacs] pokes every paired device instead of nothing.
-     *
-     * What the empty list used to do implicitly, kept as the default because the poke is the only
-     * thing that starts Android Auto on some units and a unit with nothing chosen yet must still
-     * connect. Turning it off is how a user says "this phone only".
-     */
-    var nativePokeAllPairedDevices: Boolean
-        get() = prefs.getBoolean("native-poke-all-paired", true)
-        set(value) { prefs.edit().putBoolean("native-poke-all-paired", value).apply() }
-
-    /**
      * Devices whose Bluetooth link going away ends a session. Deliberately not the auto-start list,
      * which doubles as the wake-poke targets. Read after unlock only, so no device-protected mirror.
      */
@@ -2774,10 +2742,6 @@ class Settings(private val context: Context) {
     var nativeDriverSelectionTimeoutSec: Int
         get() = prefs.getInt("native-driver-selection-timeout", NativeDriverSelectionPolicy.DEFAULT_TIMEOUT_SEC)
         set(value) = prefs.edit().putInt("native-driver-selection-timeout", NativeDriverSelectionPolicy.sanitizeTimeout(value)).apply()
-
-    var nativePreferredDeviceMac: String
-        get() = prefs.getString("native-preferred-device-mac", "") ?: ""
-        set(value) = prefs.edit().putString("native-preferred-device-mac", value).apply()
 
     var lastConnectedNativeMac: String
         get() = prefs.getString("last-connected-native-mac", "") ?: ""

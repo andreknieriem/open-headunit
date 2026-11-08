@@ -47,7 +47,7 @@ class SettingsPendingCopyTest {
         settings.staticP2pBSSID = "11:22:33:44:55:$suffix"
         settings.nativeDriverSelectionMode = NativeDriverSelectionPolicy.Mode.values().first { it != NativeDriverSelectionPolicy.Mode.AUTO }
         settings.nativeDriverSelectionTimeoutSec = NativeDriverSelectionPolicy.DEFAULT_TIMEOUT_SEC + 5
-        settings.nativePreferredDeviceMac = "00:11:22:33:44:$suffix"
+        settings.nativePhonesList = listOf("00:11:22:33:44:$suffix", "00:11:22:33:44:ff")
     }
 
     private fun fields() = SettingsPendingCopy::class.java.declaredFields
@@ -65,7 +65,7 @@ class SettingsPendingCopyTest {
         assertEquals("11:22:33:44:55:01", copy.staticP2pBSSID)
         assertEquals(settings.nativeDriverSelectionMode, copy.nativeDriverSelectionMode)
         assertEquals(settings.nativeDriverSelectionTimeoutSec, copy.nativeDriverSelectionTimeout)
-        assertEquals("00:11:22:33:44:01", copy.nativePreferredDeviceMac)
+        assertEquals(listOf("00:11:22:33:44:01", "00:11:22:33:44:FF"), copy.nativePhonesList)
     }
 
     @Test fun `a fresh copy reads the system hotspot setting as unchanged`() {
@@ -116,6 +116,7 @@ class SettingsPendingCopyTest {
                 now is Int -> now + 1
                 now is String -> now + "x"
                 now is Set<*> -> now + "x"
+                now is List<*> -> now + "x"
                 now is Enum<*> -> now.javaClass.enumConstants!!.first { it != now }
                 f.type == StoredP2pIdentity::class.java ->
                     if (now == null) StoredP2pIdentity("a", "b") else StoredP2pIdentity("changed", "changed")
@@ -134,6 +135,27 @@ class SettingsPendingCopyTest {
         assertTrue(copy.differsFrom(settings))
         copy.loadFrom(settings)
         assertFalse(copy.differsFrom(settings))
+    }
+
+    @Test fun `a reordered Phones list is a change, and the same list is none`() {
+        val settings = newSettings()
+        settings.nativePhonesList = listOf("00:11:22:33:44:01", "00:11:22:33:44:02")
+        val copy = SettingsPendingCopy()
+        copy.loadFrom(settings)
+        assertFalse(copy.differsFrom(settings))
+        copy.nativePhonesList = listOf("00:11:22:33:44:02", "00:11:22:33:44:01")
+        assertTrue(copy.differsFrom(settings))
+        copy.nativePhonesList = listOf("00:11:22:33:44:01", "00:11:22:33:44:02")
+        assertFalse(copy.differsFrom(settings))
+    }
+
+    @Test fun `the Only these phones switch is copied and compared`() {
+        val settings = newSettings()
+        val copy = SettingsPendingCopy()
+        copy.loadFrom(settings)
+        assertEquals(false, copy.nativeOnlyListedPhones)
+        copy.nativeOnlyListedPhones = true
+        assertTrue(copy.differsFrom(settings))
     }
 
     @Test fun `the tab choice is not part of the copy`() {

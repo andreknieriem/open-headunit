@@ -224,6 +224,17 @@ class WakePlanPolicyTest {
     }
 
     @Test
+    fun `editing keeps the kept phones in order and adds new ones at the end`() {
+        assertEquals(listOf(b, a, c), WakePlanPolicy.edited(listOf(b, a), setOf(c, a, b)))
+    }
+
+    @Test
+    fun `editing removes the phones the user cleared`() {
+        assertEquals(listOf(b), WakePlanPolicy.edited(listOf(b, a), setOf(b)))
+        assertEquals(emptyList<String>(), WakePlanPolicy.edited(listOf(b, a), emptySet()))
+    }
+
+    @Test
     fun `a phone whose link closes with no TCP session is a failure`() {
         assertTrue(WakePlanPolicy.failedBeforeSession(a, a, abortedLocally = false, sessionUp = false, onOurNetwork = false))
     }

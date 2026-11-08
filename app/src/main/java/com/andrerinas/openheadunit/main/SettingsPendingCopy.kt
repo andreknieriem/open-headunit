@@ -77,9 +77,8 @@ class SettingsPendingCopy {
     var nativeApTransport: NativeStrategy? = null
     var nativeDriverSelectionMode: NativeDriverSelectionPolicy.Mode? = null
     var nativeDriverSelectionTimeout: Int? = null
-    var nativePreferredDeviceMac: String? = null
-    var nativePokeBtMacs: Set<String>? = null
-    var nativePokeAllPaired: Boolean? = null
+    var nativePhonesList: List<String>? = null
+    var nativeOnlyListedPhones: Boolean? = null
     var wifiDirectBand: Int? = null
     var wifiDirectStableIdentity: Boolean? = null
     var wifiDirectGroupIdentity: StoredP2pIdentity? = null
@@ -179,9 +178,8 @@ class SettingsPendingCopy {
         nativeApTransport = settings.nativeApStrategy
         nativeDriverSelectionMode = settings.nativeDriverSelectionMode
         nativeDriverSelectionTimeout = settings.nativeDriverSelectionTimeoutSec
-        nativePreferredDeviceMac = settings.nativePreferredDeviceMac
-        nativePokeBtMacs = settings.nativePokeBtMacs
-        nativePokeAllPaired = settings.nativePokeAllPairedDevices
+        nativePhonesList = settings.nativePhonesList
+        nativeOnlyListedPhones = settings.nativeOnlyListedPhones
         wifiDirectBand = settings.wifiDirectBand
         wifiDirectStableIdentity = settings.wifiDirectStableIdentity
         wifiDirectGroupIdentity = settings.wifiDirectGroupIdentity
@@ -282,9 +280,8 @@ class SettingsPendingCopy {
         nativeApTransport != settings.nativeApStrategy ||
         nativeDriverSelectionMode != settings.nativeDriverSelectionMode ||
         nativeDriverSelectionTimeout != settings.nativeDriverSelectionTimeoutSec ||
-        nativePreferredDeviceMac != settings.nativePreferredDeviceMac ||
-        nativePokeBtMacs != settings.nativePokeBtMacs ||
-        nativePokeAllPaired != settings.nativePokeAllPairedDevices ||
+        nativePhonesList != settings.nativePhonesList ||
+        nativeOnlyListedPhones != settings.nativeOnlyListedPhones ||
         wifiDirectBand != settings.wifiDirectBand ||
         wifiDirectStableIdentity != settings.wifiDirectStableIdentity ||
         wifiDirectGroupIdentity != settings.wifiDirectGroupIdentity ||

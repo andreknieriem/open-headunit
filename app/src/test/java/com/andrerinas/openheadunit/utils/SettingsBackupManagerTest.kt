@@ -192,6 +192,18 @@ class SettingsBackupManagerTest {
         ).values.isEmpty())
     }
 
+    @Test fun `old Preferred Phone and wake list keys are skipped and the Phones list round-trips`() {
+        val parsed = SettingsBackupManager.parseImportJson(
+            """{"format":"open-headunit-settings","version":1,"settings":{"native-preferred-device-mac":"AA:BB:CC:DD:EE:01","native-poke-bt-macs":["AA:BB:CC:DD:EE:01"],"native-poke-all-paired":true}}"""
+        )
+        assertTrue(parsed.values.isEmpty())
+        assertEquals(3, parsed.skippedKeys)
+        val phones = mapOf("native-phones" to "AA:BB:CC:DD:EE:01,AA:BB:CC:DD:EE:02", "native-phones-only" to true)
+        assertEquals(phones, SettingsBackupManager.parseImportJson(
+            SettingsBackupManager.exportToJson(phones, "test", 1)
+        ).values)
+    }
+
     @Test fun `long coordinate bits remain exact and reject lossy or overflowing input`() {
         for (value in listOf(Long.MIN_VALUE, Long.MAX_VALUE, (-0.0).toRawBits(), (89.123456789).toRawBits())) {
             val json = SettingsBackupManager.exportToJson(mapOf("fixed-sun-latitude" to value), "test", 1)

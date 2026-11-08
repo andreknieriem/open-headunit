@@ -112,4 +112,10 @@ object WakePlanPolicy {
     ): Boolean =
         awaiting != null && awaiting.equals(linkPeer, ignoreCase = true) && !abortedLocally && !sessionUp && !onOurNetwork
 
+    /** The list after the picker: kept phones keep their order, added phones go to the end. */
+    fun edited(current: List<String>, chosen: Set<String>): List<String> {
+        val kept = current.filter { mac -> chosen.any { it.equals(mac, ignoreCase = true) } }
+        val added = chosen.filter { mac -> kept.none { it.equals(mac, ignoreCase = true) } }
+        return (kept + added).distinctBy { it.uppercase() }
+    }
 }

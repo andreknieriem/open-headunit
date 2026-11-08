@@ -80,6 +80,8 @@ class AutomationOutputPolicyTest {
         assertTrue("auto-start-bt-macs" in AutomationOutputPolicy.WITHHELD_KEYS)
         assertTrue("auto-disconnect-bt-macs" in AutomationOutputPolicy.WITHHELD_KEYS)
         assertTrue("native-poke-bt-macs" in AutomationOutputPolicy.WITHHELD_KEYS)
+        assertTrue("native-phones" in AutomationOutputPolicy.WITHHELD_KEYS)
+        assertTrue("native-learned-phones" in AutomationOutputPolicy.WITHHELD_KEYS)
         assertTrue("static-bssid" in AutomationOutputPolicy.WITHHELD_KEYS)
     }
 

@@ -288,4 +288,14 @@ class BluetoothWakePolicyTest {
             BluetoothWakePolicy.foreignHandsFreeLink(BluetoothWakePolicy.WakeReason.TARGET_UNREADABLE)
         )
     }
+
+    @Test
+    fun `only a target that holds the link stands down as a held link`() {
+        assertEquals(BluetoothWakePolicy.WakeOutcome.HELD_LINK,
+            BluetoothWakePolicy.standDownOutcome(BluetoothWakePolicy.WakeReason.TARGET_CONNECTED))
+        for (reason in BluetoothWakePolicy.WakeReason.values()) {
+            if (reason == BluetoothWakePolicy.WakeReason.TARGET_CONNECTED) continue
+            assertEquals(BluetoothWakePolicy.WakeOutcome.STOOD_DOWN, BluetoothWakePolicy.standDownOutcome(reason))
+        }
+    }
 }

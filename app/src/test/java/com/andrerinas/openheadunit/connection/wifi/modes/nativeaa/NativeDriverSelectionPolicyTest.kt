@@ -14,173 +14,75 @@ class NativeDriverSelectionPolicyTest {
 
     @Test
     fun `disabled mode never shows selector`() {
-        assertFalse(NativeDriverSelectionPolicy.shouldShowSelector(Mode.DISABLED, pairedCount = 0, scopedCount = 0, connectedCount = 0))
-        assertFalse(NativeDriverSelectionPolicy.shouldShowSelector(Mode.DISABLED, pairedCount = 1, scopedCount = 1, connectedCount = 1))
-        assertFalse(NativeDriverSelectionPolicy.shouldShowSelector(Mode.DISABLED, pairedCount = 2, scopedCount = 2, connectedCount = 2))
+        assertFalse(NativeDriverSelectionPolicy.shouldShowSelector(Mode.DISABLED, pairedCount = 0, knownCount = 0, connectedCount = 0))
+        assertFalse(NativeDriverSelectionPolicy.shouldShowSelector(Mode.DISABLED, pairedCount = 1, knownCount = 1, connectedCount = 1))
+        assertFalse(NativeDriverSelectionPolicy.shouldShowSelector(Mode.DISABLED, pairedCount = 2, knownCount = 2, connectedCount = 2))
     }
 
     @Test
     fun `one phone in scope, or none paired, never shows the selector in any mode`() {
         for (mode in Mode.entries) {
-            assertFalse(NativeDriverSelectionPolicy.shouldShowSelector(mode, pairedCount = 0, scopedCount = 0, connectedCount = 0))
-            assertFalse(NativeDriverSelectionPolicy.shouldShowSelector(mode, pairedCount = 1, scopedCount = 1, connectedCount = 1))
-            assertFalse(NativeDriverSelectionPolicy.shouldShowSelector(mode, pairedCount = 1, scopedCount = 1, connectedCount = 0))
+            assertFalse(NativeDriverSelectionPolicy.shouldShowSelector(mode, pairedCount = 0, knownCount = 0, connectedCount = 0))
+            assertFalse(NativeDriverSelectionPolicy.shouldShowSelector(mode, pairedCount = 1, knownCount = 1, connectedCount = 1))
+            assertFalse(NativeDriverSelectionPolicy.shouldShowSelector(mode, pairedCount = 1, knownCount = 1, connectedCount = 0))
         }
     }
 
     @Test
-    fun `AUTO with one phone and an empty scope asks`() {
-        assertTrue(NativeDriverSelectionPolicy.shouldShowSelector(Mode.AUTO, pairedCount = 1, connectedCount = 0, scopedCount = 0))
-    }
-
-    @Test
-    fun `AUTO with one connected phone outside the scope still skips the prompt`() {
-        assertFalse(NativeDriverSelectionPolicy.shouldShowSelector(Mode.AUTO, pairedCount = 1, connectedCount = 1, scopedCount = 0))
-        assertEquals(
-            "AA:BB",
-            NativeDriverSelectionPolicy.resolveAutoConnectTarget("", "", listOf("AA:BB"), listOf("AA:BB"), emptyList())
-        )
-    }
-
-    @Test
-    fun `an empty scope names no countdown target for a single phone`() {
-        assertNull(NativeDriverSelectionPolicy.resolveAutoConnectTarget("", "AA:BB", emptyList(), listOf("AA:BB"), emptyList()))
+    fun `AUTO with one bonded phone that nothing knows connects without asking`() {
+        assertFalse(NativeDriverSelectionPolicy.shouldShowSelector(Mode.AUTO, pairedCount = 1, connectedCount = 0, knownCount = 0))
     }
 
     @Test
     fun `ALWAYS with one phone and an empty scope stays silent`() {
-        assertFalse(NativeDriverSelectionPolicy.shouldShowSelector(Mode.ALWAYS, pairedCount = 1, connectedCount = 0, scopedCount = 0))
+        assertFalse(NativeDriverSelectionPolicy.shouldShowSelector(Mode.ALWAYS, pairedCount = 1, connectedCount = 0, knownCount = 0))
     }
 
     @Test
     fun `no paired phone never asks, whatever the scope`() {
-        assertFalse(NativeDriverSelectionPolicy.shouldShowSelector(Mode.AUTO, pairedCount = 0, connectedCount = 0, scopedCount = 0))
+        assertFalse(NativeDriverSelectionPolicy.shouldShowSelector(Mode.AUTO, pairedCount = 0, connectedCount = 0, knownCount = 0))
     }
 
     @Test
     fun `always mode shows selector whenever 2 or more devices are paired`() {
-        assertTrue(NativeDriverSelectionPolicy.shouldShowSelector(Mode.ALWAYS, pairedCount = 2, scopedCount = 2, connectedCount = 0))
-        assertTrue(NativeDriverSelectionPolicy.shouldShowSelector(Mode.ALWAYS, pairedCount = 2, scopedCount = 2, connectedCount = 1))
-        assertTrue(NativeDriverSelectionPolicy.shouldShowSelector(Mode.ALWAYS, pairedCount = 2, scopedCount = 2, connectedCount = 2))
-        assertTrue(NativeDriverSelectionPolicy.shouldShowSelector(Mode.ALWAYS, pairedCount = 5, scopedCount = 5, connectedCount = 1))
+        assertTrue(NativeDriverSelectionPolicy.shouldShowSelector(Mode.ALWAYS, pairedCount = 2, knownCount = 2, connectedCount = 0))
+        assertTrue(NativeDriverSelectionPolicy.shouldShowSelector(Mode.ALWAYS, pairedCount = 2, knownCount = 2, connectedCount = 1))
+        assertTrue(NativeDriverSelectionPolicy.shouldShowSelector(Mode.ALWAYS, pairedCount = 2, knownCount = 2, connectedCount = 2))
+        assertTrue(NativeDriverSelectionPolicy.shouldShowSelector(Mode.ALWAYS, pairedCount = 5, knownCount = 5, connectedCount = 1))
     }
 
     @Test
     fun `auto mode skips selector if exactly one device is confirmed connected`() {
         // Solo driver entering car with their phone already connected to BT: zero intrusion
-        assertFalse(NativeDriverSelectionPolicy.shouldShowSelector(Mode.AUTO, pairedCount = 2, scopedCount = 2, connectedCount = 1))
-        assertFalse(NativeDriverSelectionPolicy.shouldShowSelector(Mode.AUTO, pairedCount = 4, scopedCount = 4, connectedCount = 1))
+        assertFalse(NativeDriverSelectionPolicy.shouldShowSelector(Mode.AUTO, pairedCount = 2, knownCount = 2, connectedCount = 1))
+        assertFalse(NativeDriverSelectionPolicy.shouldShowSelector(Mode.AUTO, pairedCount = 4, knownCount = 4, connectedCount = 1))
     }
 
     @Test
     fun `auto mode shows selector if 2 or more devices are connected`() {
         // Both drivers enter car together: conflict prompt
-        assertTrue(NativeDriverSelectionPolicy.shouldShowSelector(Mode.AUTO, pairedCount = 2, scopedCount = 2, connectedCount = 2))
-        assertTrue(NativeDriverSelectionPolicy.shouldShowSelector(Mode.AUTO, pairedCount = 3, scopedCount = 3, connectedCount = 2))
+        assertTrue(NativeDriverSelectionPolicy.shouldShowSelector(Mode.AUTO, pairedCount = 2, knownCount = 2, connectedCount = 2))
+        assertTrue(NativeDriverSelectionPolicy.shouldShowSelector(Mode.AUTO, pairedCount = 3, knownCount = 3, connectedCount = 2))
     }
 
     @Test
     fun `auto mode shows selector if 0 devices are confirmed connected but multiple paired`() {
         // Connection state unknown (e.g. phones not yet connected to BT stack)
-        assertTrue(NativeDriverSelectionPolicy.shouldShowSelector(Mode.AUTO, pairedCount = 2, scopedCount = 2, connectedCount = 0))
-        assertTrue(NativeDriverSelectionPolicy.shouldShowSelector(Mode.AUTO, pairedCount = 3, scopedCount = 3, connectedCount = 0))
-    }
-
-    @Test
-    fun `resolveAutoConnectTarget selects single connected device first`() {
-        val target = NativeDriverSelectionPolicy.resolveAutoConnectTarget(
-            preferredMac = "MAC_PREF",
-            lastUsedMac = "MAC_LAST",
-            connectedMacs = listOf("MAC_ALONE"),
-            pairedMacs = listOf("MAC_PREF", "MAC_LAST", "MAC_ALONE"),
-            scopeMacs = listOf("MAC_PREF", "MAC_LAST", "MAC_ALONE")
-        )
-        assertEquals("MAC_ALONE", target)
-    }
-
-    @Test
-    fun `resolveAutoConnectTarget prioritizes preferred device when multiple connected`() {
-        val target = NativeDriverSelectionPolicy.resolveAutoConnectTarget(
-            preferredMac = "MAC_PREF",
-            lastUsedMac = "MAC_LAST",
-            connectedMacs = listOf("MAC_LAST", "MAC_PREF"),
-            pairedMacs = listOf("MAC_PREF", "MAC_LAST", "MAC_OTHER"),
-            scopeMacs = listOf("MAC_PREF", "MAC_LAST", "MAC_OTHER")
-        )
-        assertEquals("MAC_PREF", target)
-    }
-
-    @Test
-    fun `resolveAutoConnectTarget prioritizes last used device when no preferred device`() {
-        val target = NativeDriverSelectionPolicy.resolveAutoConnectTarget(
-            preferredMac = "",
-            lastUsedMac = "MAC_LAST",
-            connectedMacs = listOf("MAC_OTHER", "MAC_LAST"),
-            pairedMacs = listOf("MAC_OTHER", "MAC_LAST"),
-            scopeMacs = listOf("MAC_OTHER", "MAC_LAST")
-        )
-        assertEquals("MAC_LAST", target)
-    }
-
-    @Test
-    fun `fresh install with multiple devices and none connected never auto-selects random paired device`() {
-        val target = NativeDriverSelectionPolicy.resolveAutoConnectTarget(
-            preferredMac = "",
-            lastUsedMac = "",
-            connectedMacs = emptyList(),
-            pairedMacs = listOf("MAC_OLD_PHONE", "MAC_SPEAKER"),
-            scopeMacs = listOf("MAC_OLD_PHONE", "MAC_SPEAKER")
-        )
-        assertNull(target)
-    }
-
-    @Test
-    fun `fresh install with single connected device auto-selects it without history`() {
-        val target = NativeDriverSelectionPolicy.resolveAutoConnectTarget(
-            preferredMac = "",
-            lastUsedMac = "",
-            connectedMacs = listOf("MAC_CONNECTED"),
-            pairedMacs = listOf("MAC_CONNECTED", "MAC_OTHER"),
-            scopeMacs = listOf("MAC_CONNECTED", "MAC_OTHER")
-        )
-        assertEquals("MAC_CONNECTED", target)
-    }
-
-    @Test
-    fun `fresh install with single paired device auto-selects it without history`() {
-        val target = NativeDriverSelectionPolicy.resolveAutoConnectTarget(
-            preferredMac = "",
-            lastUsedMac = "",
-            connectedMacs = emptyList(),
-            pairedMacs = listOf("MAC_SOLO"),
-            scopeMacs = listOf("MAC_SOLO")
-        )
-        assertEquals("MAC_SOLO", target)
+        assertTrue(NativeDriverSelectionPolicy.shouldShowSelector(Mode.AUTO, pairedCount = 2, knownCount = 2, connectedCount = 0))
+        assertTrue(NativeDriverSelectionPolicy.shouldShowSelector(Mode.AUTO, pairedCount = 3, knownCount = 3, connectedCount = 0))
     }
 
     @Test
     fun `first start without history and multiple devices shows selector`() {
-        assertTrue(NativeDriverSelectionPolicy.shouldShowSelector(Mode.AUTO, pairedCount = 2, scopedCount = 2, connectedCount = 0, hasHistory = false))
-        assertTrue(NativeDriverSelectionPolicy.shouldShowSelector(Mode.AUTO, pairedCount = 3, scopedCount = 3, connectedCount = 2, hasHistory = false))
+        assertTrue(NativeDriverSelectionPolicy.shouldShowSelector(Mode.AUTO, pairedCount = 2, knownCount = 2, connectedCount = 0, hasHistory = false))
+        assertTrue(NativeDriverSelectionPolicy.shouldShowSelector(Mode.AUTO, pairedCount = 3, knownCount = 3, connectedCount = 2, hasHistory = false))
     }
 
     @Test
     fun `single device never shows selector even without history`() {
-        assertFalse(NativeDriverSelectionPolicy.shouldShowSelector(Mode.AUTO, pairedCount = 1, scopedCount = 1, connectedCount = 1, hasHistory = false))
-        assertFalse(NativeDriverSelectionPolicy.shouldShowSelector(Mode.AUTO, pairedCount = 1, scopedCount = 1, connectedCount = 0, hasHistory = false))
-        assertFalse(NativeDriverSelectionPolicy.shouldShowSelector(Mode.AUTO, pairedCount = 2, scopedCount = 2, connectedCount = 1, hasHistory = false))
-    }
-
-    @Test
-    fun `resolveAutoConnectTarget returns null if candidate is empty`() {
-        val target = NativeDriverSelectionPolicy.resolveAutoConnectTarget(
-            preferredMac = "MAC_PREF",
-            lastUsedMac = "",
-            connectedMacs = emptyList(),
-            pairedMacs = emptyList(),
-            scopeMacs = emptyList()
-        )
-        assertNull(target)
+        assertFalse(NativeDriverSelectionPolicy.shouldShowSelector(Mode.AUTO, pairedCount = 1, knownCount = 1, connectedCount = 1, hasHistory = false))
+        assertFalse(NativeDriverSelectionPolicy.shouldShowSelector(Mode.AUTO, pairedCount = 1, knownCount = 1, connectedCount = 0, hasHistory = false))
+        assertFalse(NativeDriverSelectionPolicy.shouldShowSelector(Mode.AUTO, pairedCount = 2, knownCount = 2, connectedCount = 1, hasHistory = false))
     }
 
     @Test
@@ -362,28 +264,6 @@ class NativeDriverSelectionPolicyTest {
     }
 
     @Test
-    fun `the last connected phone always wins over the poke list`() {
-        assertEquals(
-            "AA:BB",
-            NativeDriverSelectionPolicy.lastUsedMac("AA:BB", setOf("CC:DD"))
-        )
-    }
-
-    @Test
-    fun `a poke list naming one phone stands in for a last used driver`() {
-        assertEquals(
-            "CC:DD",
-            NativeDriverSelectionPolicy.lastUsedMac("", setOf("CC:DD"))
-        )
-    }
-
-    @Test
-    fun `a poke list naming several phones names no driver at all`() {
-        assertEquals("", NativeDriverSelectionPolicy.lastUsedMac("", setOf("CC:DD", "EE:FF")))
-        assertEquals("", NativeDriverSelectionPolicy.lastUsedMac("", emptySet()))
-    }
-
-    @Test
     fun `a chosen driver stays exclusive while its wake is still running`() {
         assertTrue(
             NativeDriverSelectionPolicy.chosenExclusive(
@@ -463,6 +343,7 @@ class NativeDriverSelectionPolicyTest {
     @Test
     fun `a stood-down wake opened nothing, so it spends no round`() {
         assertFalse(NativeDriverSelectionPolicy.wakeRoundSpent(BluetoothWakePolicy.WakeOutcome.STOOD_DOWN))
+        assertFalse(NativeDriverSelectionPolicy.wakeRoundSpent(BluetoothWakePolicy.WakeOutcome.HELD_LINK))
         assertTrue(NativeDriverSelectionPolicy.wakeRoundSpent(BluetoothWakePolicy.WakeOutcome.ANSWERED))
         assertTrue(NativeDriverSelectionPolicy.wakeRoundSpent(BluetoothWakePolicy.WakeOutcome.DIALLED))
     }
@@ -473,7 +354,7 @@ class NativeDriverSelectionPolicyTest {
         var elapsed = 0L
         var passes = 0
         while (NativeDriverSelectionPolicy.chosenWakeContinues(
-                BluetoothWakePolicy.WakeOutcome.STOOD_DOWN, 0, elapsed)) {
+                BluetoothWakePolicy.WakeOutcome.STOOD_DOWN, 0, elapsed, explicit = true)) {
             passes++
             elapsed += 15_000L
         }
@@ -486,13 +367,13 @@ class NativeDriverSelectionPolicyTest {
     fun `dialled rounds still spend the budget, and the ceiling still ends an endless refusal`() {
         assertFalse(
             NativeDriverSelectionPolicy.chosenWakeContinues(
-                BluetoothWakePolicy.WakeOutcome.DIALLED, NativeDriverSelectionPolicy.CHOSEN_WAKE_ROUNDS, 0L
+                BluetoothWakePolicy.WakeOutcome.DIALLED, NativeDriverSelectionPolicy.CHOSEN_WAKE_ROUNDS, 0L, explicit = true
             )
         )
         assertFalse(
             NativeDriverSelectionPolicy.chosenWakeContinues(
                 BluetoothWakePolicy.WakeOutcome.STOOD_DOWN, 0,
-                NativeDriverSelectionPolicy.CHOSEN_EXCLUSIVE_MAX_MS
+                NativeDriverSelectionPolicy.CHOSEN_EXCLUSIVE_MAX_MS, explicit = true
             )
         )
     }
@@ -501,7 +382,7 @@ class NativeDriverSelectionPolicyTest {
     fun `an unpaired phone ends the loop rather than being waited out`() {
         assertFalse(
             NativeDriverSelectionPolicy.chosenWakeContinues(
-                BluetoothWakePolicy.WakeOutcome.NOT_PAIRED, 0, 0L
+                BluetoothWakePolicy.WakeOutcome.NOT_PAIRED, 0, 0L, explicit = true
             )
         )
     }
@@ -689,122 +570,26 @@ class NativeDriverSelectionPolicyTest {
 
     @Test
     fun `a connected watch scoped out keeps the one connected phone unambiguous`() {
-        assertFalse(NativeDriverSelectionPolicy.shouldShowSelector(Mode.AUTO, pairedCount = 2, scopedCount = 2, connectedCount = 1))
-        assertTrue(NativeDriverSelectionPolicy.shouldShowSelector(Mode.AUTO, pairedCount = 2, scopedCount = 2, connectedCount = 2))
-    }
-
-    @Test
-    fun `a connected device outside the phone list never wins over the phone`() {
-        val target = NativeDriverSelectionPolicy.resolveAutoConnectTarget(
-            preferredMac = "",
-            lastUsedMac = "",
-            connectedMacs = listOf("MAC_WATCH", "MAC_PHONE"),
-            pairedMacs = listOf("MAC_PHONE", "MAC_OTHER_PHONE"),
-            scopeMacs = listOf("MAC_PHONE", "MAC_OTHER_PHONE")
-        )
-        assertEquals("MAC_PHONE", target)
-    }
-
-    @Test
-    fun `only a watch connected never returns the watch`() {
-        val target = NativeDriverSelectionPolicy.resolveAutoConnectTarget(
-            preferredMac = "",
-            lastUsedMac = "",
-            connectedMacs = listOf("MAC_WATCH"),
-            pairedMacs = listOf("MAC_PHONE", "MAC_OTHER_PHONE"),
-            scopeMacs = listOf("MAC_PHONE", "MAC_OTHER_PHONE")
-        )
-        assertNull(target)
-    }
-
-    @Test
-    fun `a poke list naming only a watch is inert once the paired list is phones`() {
-        val lastUsed = NativeDriverSelectionPolicy.lastUsedMac("", setOf("MAC_WATCH"))
-        assertEquals("MAC_WATCH", lastUsed)
-        val target = NativeDriverSelectionPolicy.resolveAutoConnectTarget(
-            preferredMac = "",
-            lastUsedMac = lastUsed,
-            connectedMacs = emptyList(),
-            pairedMacs = listOf("MAC_PHONE", "MAC_OTHER_PHONE"),
-            scopeMacs = listOf("MAC_PHONE", "MAC_OTHER_PHONE")
-        )
-        assertNull(target)
+        assertFalse(NativeDriverSelectionPolicy.shouldShowSelector(Mode.AUTO, pairedCount = 2, knownCount = 2, connectedCount = 1))
+        assertTrue(NativeDriverSelectionPolicy.shouldShowSelector(Mode.AUTO, pairedCount = 2, knownCount = 2, connectedCount = 2))
     }
 
     private val poco = "MAC_POCO"
     private val moto = "MAC_MOTO"
 
-    private fun scoped(
-        preferred: String = "",
-        last: String = "",
-        connected: List<String> = emptyList(),
-        offered: List<String>,
-        scope: List<String>
-    ) = NativeDriverSelectionPolicy.resolveAutoConnectTarget(
-        preferredMac = preferred,
-        lastUsedMac = last,
-        connectedMacs = connected,
-        pairedMacs = offered,
-        scopeMacs = scope
-    )
-
-    @Test
-    fun `autoScope keeps only the offered phones a selected list names, case ignored`() {
-        val targets = PokeTargets.Selected(setOf("aa:bb"))
-        assertEquals(listOf("AA:BB"), NativeDriverSelectionPolicy.autoScope(listOf("AA:BB", "CC:DD"), targets))
-    }
-
-    @Test
-    fun `autoScope adds nothing for a selected address that is not offered`() {
-        val targets = PokeTargets.Selected(setOf("EE:FF"))
-        assertEquals(emptyList<String>(), NativeDriverSelectionPolicy.autoScope(listOf("AA:BB"), targets))
-    }
-
-    @Test
-    fun `autoScope keeps every offered phone for AllPaired and none for None`() {
-        val offered = listOf("AA:BB", "CC:DD")
-        assertEquals(offered, NativeDriverSelectionPolicy.autoScope(offered, PokeTargets.AllPaired))
-        assertEquals(emptyList<String>(), NativeDriverSelectionPolicy.autoScope(offered, PokeTargets.None))
-    }
-
-    @Test
-    fun `a last used phone outside the wake list is not the countdown pick`() {
-        assertEquals(poco, scoped(last = moto, offered = listOf(poco, moto), scope = listOf(poco)))
-    }
-
-    @Test
-    fun `a preferred phone outside the scope is ignored`() {
-        assertEquals(poco, scoped(preferred = moto, offered = listOf(poco, moto), scope = listOf(poco)))
-    }
-
-    @Test
-    fun `a connected phone outside the scope still wins`() {
-        assertEquals(moto, scoped(connected = listOf(moto), offered = listOf(poco, moto), scope = listOf(poco)))
-    }
-
-    @Test
-    fun `an empty scope names nobody`() {
-        assertNull(scoped(last = moto, offered = listOf(poco, moto), scope = emptyList()))
-    }
-
-    @Test
-    fun `a last used phone inside a scope of two still wins`() {
-        assertEquals(moto, scoped(last = moto, offered = listOf(poco, moto), scope = listOf(poco, moto)))
-    }
-
     @Test
     fun `AUTO skips the selector when one phone is in scope and none is connected`() {
-        assertFalse(NativeDriverSelectionPolicy.shouldShowSelector(Mode.AUTO, pairedCount = 2, connectedCount = 0, scopedCount = 1))
+        assertFalse(NativeDriverSelectionPolicy.shouldShowSelector(Mode.AUTO, pairedCount = 2, connectedCount = 0, knownCount = 1))
     }
 
     @Test
     fun `AUTO shows the selector with no countdown target when nothing is in scope`() {
-        assertTrue(NativeDriverSelectionPolicy.shouldShowSelector(Mode.AUTO, pairedCount = 2, connectedCount = 0, scopedCount = 0))
+        assertTrue(NativeDriverSelectionPolicy.shouldShowSelector(Mode.AUTO, pairedCount = 2, connectedCount = 0, knownCount = 0))
     }
 
     @Test
     fun `ALWAYS counts every offered phone whatever the scope`() {
-        assertTrue(NativeDriverSelectionPolicy.shouldShowSelector(Mode.ALWAYS, pairedCount = 2, connectedCount = 0, scopedCount = 1))
+        assertTrue(NativeDriverSelectionPolicy.shouldShowSelector(Mode.ALWAYS, pairedCount = 2, connectedCount = 0, knownCount = 1))
     }
 
     private fun gate(
@@ -929,5 +714,180 @@ class NativeDriverSelectionPolicyTest {
             NativeDriverSelectionPolicy.chosenExclusive(
                 60_000L, wakeActive = false, explicit = true, wakeUnanswered = true, chosenHandshaking = true)
         )
+    }
+
+    @Test
+    fun `a countdown pick gives way after one unanswered round`() {
+        assertFalse(
+            NativeDriverSelectionPolicy.chosenWakeContinues(
+                BluetoothWakePolicy.WakeOutcome.DIALLED, 1, 30_000L, explicit = false
+            )
+        )
+    }
+
+    @Test
+    fun `a countdown pick keeps waking through stand-downs up to the ceiling`() {
+        val stoodDown = BluetoothWakePolicy.WakeOutcome.STOOD_DOWN
+        assertTrue(NativeDriverSelectionPolicy.chosenWakeContinues(stoodDown, 0, 60_000L, explicit = false))
+        assertFalse(
+            NativeDriverSelectionPolicy.chosenWakeContinues(
+                stoodDown, 0, NativeDriverSelectionPolicy.CHOSEN_EXCLUSIVE_MAX_MS, explicit = false
+            )
+        )
+    }
+
+    @Test
+    fun `a countdown pick that answered keeps its rounds`() {
+        assertTrue(
+            NativeDriverSelectionPolicy.chosenWakeContinues(
+                BluetoothWakePolicy.WakeOutcome.ANSWERED, 1, 30_000L, explicit = false
+            )
+        )
+    }
+
+    @Test
+    fun `an explicit pick keeps its three rounds after an unanswered one`() {
+        assertTrue(
+            NativeDriverSelectionPolicy.chosenWakeContinues(
+                BluetoothWakePolicy.WakeOutcome.DIALLED, 1, 30_000L, explicit = true
+            )
+        )
+    }
+
+    @Test
+    fun `in AUTO one known phone with another bonded and none linked skips the prompt`() {
+        assertFalse(NativeDriverSelectionPolicy.shouldShowSelector(Mode.AUTO, pairedCount = 2, connectedCount = 0, knownCount = 1))
+    }
+
+    @Test
+    fun `in AUTO two known phones with none linked ask`() {
+        assertTrue(NativeDriverSelectionPolicy.shouldShowSelector(Mode.AUTO, pairedCount = 2, connectedCount = 0, knownCount = 2))
+    }
+
+    @Test
+    fun `in AUTO no known phone with two bonded asks`() {
+        assertTrue(NativeDriverSelectionPolicy.shouldShowSelector(Mode.AUTO, pairedCount = 2, connectedCount = 0, knownCount = 0))
+    }
+
+    @Test
+    fun `an automatic pick hands over to the wake plan after an unanswered round`() {
+        assertTrue(NativeDriverSelectionPolicy.handsOverToWakePlan(
+            BluetoothWakePolicy.WakeOutcome.DIALLED, explicit = false, fromPlan = false))
+    }
+
+    @Test
+    fun `a button press hands over to the wake plan once its budget ends unanswered`() {
+        assertTrue(NativeDriverSelectionPolicy.handsOverToWakePlan(
+            BluetoothWakePolicy.WakeOutcome.DIALLED, explicit = true, fromPlan = true))
+    }
+
+    @Test
+    fun `a phone the driver named never hands over`() {
+        assertFalse(NativeDriverSelectionPolicy.handsOverToWakePlan(
+            BluetoothWakePolicy.WakeOutcome.DIALLED, explicit = true, fromPlan = false))
+    }
+
+    @Test
+    fun `an answered or unpaired wake never hands over`() {
+        val outcomes = listOf(
+            BluetoothWakePolicy.WakeOutcome.ANSWERED,
+            BluetoothWakePolicy.WakeOutcome.NOT_PAIRED,
+        )
+        for (outcome in outcomes) {
+            assertFalse(NativeDriverSelectionPolicy.handsOverToWakePlan(outcome, explicit = false, fromPlan = false))
+            assertFalse(NativeDriverSelectionPolicy.handsOverToWakePlan(outcome, explicit = true, fromPlan = true))
+            assertFalse(NativeDriverSelectionPolicy.handsOverToWakePlan(outcome, explicit = true, fromPlan = false))
+        }
+    }
+
+    @Test
+    fun `a held link lapses a pick the selector did not name`() {
+        assertTrue(NativeDriverSelectionPolicy.pickLapsedAfterRound(
+            BluetoothWakePolicy.WakeOutcome.HELD_LINK, answeredSincePick = false, lapsed = false, fromPlan = true))
+    }
+
+    @Test
+    fun `a held link keeps the lock on a phone the driver named`() {
+        assertFalse(NativeDriverSelectionPolicy.pickLapsedAfterRound(
+            BluetoothWakePolicy.WakeOutcome.HELD_LINK, answeredSincePick = false, lapsed = false, fromPlan = false))
+    }
+
+    @Test
+    fun `a held link does not lapse a pick that answered`() {
+        assertFalse(NativeDriverSelectionPolicy.pickLapsedAfterRound(
+            BluetoothWakePolicy.WakeOutcome.HELD_LINK, answeredSincePick = true, lapsed = false, fromPlan = true))
+    }
+
+    @Test
+    fun `the button's held-link pick lets another phone in after the floor, not before`() {
+        val lapsed = NativeDriverSelectionPolicy.pickLapsedAfterRound(
+            BluetoothWakePolicy.WakeOutcome.HELD_LINK, answeredSincePick = false, lapsed = false, fromPlan = true)
+        assertEquals(SwitchGate.ACCEPT, gate(ageMs = 31_000L, explicit = true, unanswered = lapsed))
+        assertEquals(SwitchGate.WRONG_PHONE, gate(ageMs = 10_000L, explicit = true, unanswered = lapsed))
+    }
+
+    @Test
+    fun `a held link on a pick the selector did not name ends the wake at the floor`() {
+        val stoodDown = BluetoothWakePolicy.WakeOutcome.HELD_LINK
+        assertFalse(NativeDriverSelectionPolicy.chosenWakeContinues(stoodDown, 0, 30_000L, explicit = true, fromPlan = true))
+        assertTrue(NativeDriverSelectionPolicy.chosenWakeContinues(stoodDown, 0, 29_000L, explicit = true, fromPlan = true))
+    }
+
+    @Test
+    fun `a held link on a phone the driver named runs to the ceiling`() {
+        assertTrue(NativeDriverSelectionPolicy.chosenWakeContinues(
+            BluetoothWakePolicy.WakeOutcome.HELD_LINK, 0, 60_000L, explicit = true, fromPlan = false))
+    }
+
+    @Test
+    fun `a stood-down pick the selector did not name hands over to the wake plan`() {
+        assertTrue(NativeDriverSelectionPolicy.handsOverToWakePlan(
+            BluetoothWakePolicy.WakeOutcome.STOOD_DOWN, explicit = true, fromPlan = true))
+        assertTrue(NativeDriverSelectionPolicy.handsOverToWakePlan(
+            BluetoothWakePolicy.WakeOutcome.HELD_LINK, explicit = true, fromPlan = true))
+    }
+
+    @Test
+    fun `a dead-link cycle round after the floor keeps a button pick waking`() {
+        // The radio cycle returns a plain stand-down; the round after it must still run.
+        assertTrue(NativeDriverSelectionPolicy.chosenWakeContinues(
+            BluetoothWakePolicy.WakeOutcome.STOOD_DOWN, 1, 45_000L, explicit = true, fromPlan = true))
+    }
+
+    @Test
+    fun `a plain stand-down leaves the lapse of a button pick as it was`() {
+        assertFalse(NativeDriverSelectionPolicy.pickLapsedAfterRound(
+            BluetoothWakePolicy.WakeOutcome.STOOD_DOWN, answeredSincePick = false, lapsed = false, fromPlan = true))
+        assertTrue(NativeDriverSelectionPolicy.pickLapsedAfterRound(
+            BluetoothWakePolicy.WakeOutcome.STOOD_DOWN, answeredSincePick = false, lapsed = true, fromPlan = true))
+    }
+
+    @Test
+    fun `a held link after the floor still ends a button pick`() {
+        assertFalse(NativeDriverSelectionPolicy.chosenWakeContinues(
+            BluetoothWakePolicy.WakeOutcome.HELD_LINK, 1, 45_000L, explicit = true, fromPlan = true))
+    }
+
+    @Test
+    fun `a stood-down phone the driver named does not hand over`() {
+        assertFalse(NativeDriverSelectionPolicy.handsOverToWakePlan(
+            BluetoothWakePolicy.WakeOutcome.STOOD_DOWN, explicit = true, fromPlan = false))
+        assertFalse(NativeDriverSelectionPolicy.handsOverToWakePlan(
+            BluetoothWakePolicy.WakeOutcome.STOOD_DOWN, explicit = false, fromPlan = false))
+    }
+
+    @Test
+    fun `a pick the selector did not name keeps waking past the floor until a real round ends`() {
+        assertTrue(NativeDriverSelectionPolicy.chosenWakeContinues(null, 0, 30_000L, explicit = true, fromPlan = true))
+        assertTrue(NativeDriverSelectionPolicy.chosenWakeContinues(null, 0, 60_000L, explicit = true, fromPlan = true))
+        assertFalse(NativeDriverSelectionPolicy.chosenWakeContinues(
+            null, 0, NativeDriverSelectionPolicy.CHOSEN_EXCLUSIVE_MAX_MS, explicit = true, fromPlan = true))
+    }
+
+    @Test
+    fun `a wake that ended before any real round does not hand over`() {
+        assertFalse(NativeDriverSelectionPolicy.handsOverToWakePlan(null, explicit = true, fromPlan = true))
+        assertFalse(NativeDriverSelectionPolicy.handsOverToWakePlan(null, explicit = false, fromPlan = true))
+        assertFalse(NativeDriverSelectionPolicy.handsOverToWakePlan(null, explicit = false, fromPlan = false))
     }
 }

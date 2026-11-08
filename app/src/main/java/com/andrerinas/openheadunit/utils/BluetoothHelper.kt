@@ -350,7 +350,7 @@ object BluetoothHelper {
      * round and every resume, so the roll-up is INFO only when its composition changes.
      */
     @SuppressLint("MissingPermission")
-    fun driverCandidates(context: Context, preferredMac: String, lastConnectedMac: String): DriverCandidates {
+    fun driverCandidates(context: Context, userMacs: Collection<String>, provenMacs: Collection<String>): DriverCandidates {
         val discovery = BluetoothPeerDiscovery.read(context)
         // Manufacturer-only entries remain in the inventory for explanation, not in the Android
         // wake targets. On HCT's legacy stack ordinary connect() uses goc_spp even for an AA UUID;
@@ -362,7 +362,7 @@ object BluetoothHelper {
         val all = bonded.map { device ->
             val state = deviceConnectionState(device)
             if (state != null) presenceReadable = true
-            val classification = classifyDevice(device, pinFor(device, preferredMac, lastConnectedMac))
+            val classification = classifyDevice(device, pinFor(device, userMacs, provenMacs))
             AppLog.d(
                 "BluetoothHelper: driver candidate ${device.name} (${device.address}) -> " +
                     "${classification.verdict}, ${DriverCandidatePolicy.reasonText(classification, deviceClassOf(device))}"
@@ -408,13 +408,13 @@ object BluetoothHelper {
         )
     }
 
-    /** The last-connected MAC was written by a completed handshake; the preferred one was typed. */
-    fun pinFor(device: BluetoothDevice, preferredMac: String, lastConnectedMac: String): DriverCandidatePolicy.Pin {
+    /** Proven MACs formed a session; user MACs were typed into the Phones list. */
+    fun pinFor(device: BluetoothDevice, userMacs: Collection<String>, provenMacs: Collection<String>): DriverCandidatePolicy.Pin {
         val address = try { device.address } catch (_: Exception) { "" }
         return when {
             address.isEmpty() -> DriverCandidatePolicy.Pin.NONE
-            address.equals(lastConnectedMac, ignoreCase = true) -> DriverCandidatePolicy.Pin.PROVEN
-            address.equals(preferredMac, ignoreCase = true) -> DriverCandidatePolicy.Pin.USER
+            provenMacs.any { it.equals(address, ignoreCase = true) } -> DriverCandidatePolicy.Pin.PROVEN
+            userMacs.any { it.equals(address, ignoreCase = true) } -> DriverCandidatePolicy.Pin.USER
             else -> DriverCandidatePolicy.Pin.NONE
         }
     }
@@ -434,13 +434,13 @@ object BluetoothHelper {
      */
     fun isLikelyPhone(
         device: BluetoothDevice,
-        preferredMac: String = "",
-        lastConnectedMac: String = "",
+        userMacs: Collection<String> = emptyList(),
+        provenMacs: Collection<String> = emptyList(),
         context: Context? = null
     ): Boolean {
         val hideEsp32Relay = context == null || !Esp32RelayStore(context).enabled
         if (hideEsp32Relay && isEsp32RelayBond(device)) return false
-        return classifyDevice(device, pinFor(device, preferredMac, lastConnectedMac)).verdict !=
+        return classifyDevice(device, pinFor(device, userMacs, provenMacs)).verdict !=
             DriverCandidatePolicy.Verdict.NOT_A_PHONE
     }
 

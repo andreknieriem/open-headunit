@@ -19,8 +19,10 @@ object BluetoothWakePolicy {
      *
      * [STOOD_DOWN] opened nothing, so it cost the phone nothing and is not an attempt spent; the
      * budgets that count attempts need the difference ([NativeDriverSelectionPolicy.wakeRoundSpent]).
+     * [HELD_LINK] is the stand-down for [WakeReason.TARGET_CONNECTED] only: the target holds this
+     * unit's hands-free link. A dead-link cycle or an unreadable target is a plain [STOOD_DOWN].
      */
-    enum class WakeOutcome { ANSWERED, DIALLED, STOOD_DOWN, NOT_PAIRED }
+    enum class WakeOutcome { ANSWERED, DIALLED, STOOD_DOWN, HELD_LINK, NOT_PAIRED }
 
     /** Handsfree Profile — Audio Gateway. The phone's hands-free side; a call rides on this. */
     val HFP_AG_UUID: UUID = UUID.fromString("0000111f-0000-1000-8000-00805f9b34fb")
@@ -156,6 +158,10 @@ object BluetoothWakePolicy {
         targetLink == TargetLink.ABSENT -> WakeDecision(true, WakeReason.TARGET_ABSENT)
         else -> WakeDecision(false, WakeReason.TARGET_UNREADABLE)
     }
+
+    /** What a guard stand-down tells the wake loops: only a target that holds the link is [WakeOutcome.HELD_LINK]. */
+    fun standDownOutcome(reason: WakeReason): WakeOutcome =
+        if (reason == WakeReason.TARGET_CONNECTED) WakeOutcome.HELD_LINK else WakeOutcome.STOOD_DOWN
 
     /** What a stored Auto Start MAC's pairing state read as, when the poke went looking for it. */
     enum class BondReading {

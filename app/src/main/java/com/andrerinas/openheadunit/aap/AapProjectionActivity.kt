@@ -952,7 +952,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
 
         val connectedMac = settings.lastConnectedNativeMac
         val cands = BluetoothHelper.driverCandidates(
-            this, settings.nativePreferredDeviceMac, connectedMac
+            this, settings.nativePhonesList, settings.nativeProvenPhones
         )
         // The connected phone is pinned PROVEN here, so the offered tier really is the phones.
         val offers = AutoStartOfferPolicy.offers(

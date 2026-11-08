@@ -2804,6 +2804,20 @@ class Settings(private val context: Context) {
         phones
     }
 
+    /** The user's ordered list of phones to wake and pick first. Empty means every paired phone. */
+    var nativePhonesList: List<String>
+        get() = WakePlanPolicy.parseMacs(prefs.getString("native-phones", null))
+        set(value) = prefs.edit().putString("native-phones", WakePlanPolicy.formatMacs(value)).apply()
+
+    /** Whether the wake plan holds only the listed phones; no effect while the list is empty. */
+    var nativeOnlyListedPhones: Boolean
+        get() = prefs.getBoolean("native-phones-only", false)
+        set(value) { prefs.edit().putBoolean("native-phones-only", value).apply() }
+
+    /** Phones known to have worked: the learned ones, and the last connected one. */
+    val nativeProvenPhones: List<String>
+        get() = nativeLearnedPhones + WakePlanPolicy.parseMacs(lastConnectedNativeMac)
+
     /**
      * The last phone that finished a handshake through an external Bluetooth module. Kept apart
      * from [lastConnectedNativeMac]: that one feeds the Android Bluetooth pokes and driver pinning,

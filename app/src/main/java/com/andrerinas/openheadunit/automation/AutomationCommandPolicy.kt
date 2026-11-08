@@ -213,9 +213,15 @@ object AutomationCommandPolicy {
     /** Without a MAC this is the main screen's WiFi button on an external-module unit, sent as it sends it. */
     private fun nativePoke(extras: Extras): List<Effect> {
         val target = phoneTarget(extras) ?: return listOf(Effect.StartService(AapService.ACTION_NATIVE_AA_POKE))
-        // A MAC on the poke keeps its exact earlier effect; only the name form is new.
+        // A named MAC wakes as a pick for three rounds, but a task is not the driver, so it learns nothing before SSL.
         if (target.first == AapService.EXTRA_MAC) {
-            return listOf(Effect.StartService(AapService.ACTION_NATIVE_AA_POKE, stringExtras = mapOf(target)))
+            return listOf(
+                Effect.StartService(
+                    AapService.ACTION_NATIVE_AA_POKE,
+                    stringExtras = mapOf(target),
+                    flagExtras = mapOf(AapService.EXTRA_EXPLICIT_PICK to true, AapService.EXTRA_PICK_FROM_PLAN to true)
+                )
+            )
         }
         return listOf(namedWake(target, extras.flag(HeadUnitCommand.EXTRA_NO_UI)))
     }
@@ -234,6 +240,7 @@ object AutomationCommandPolicy {
         stringExtras = mapOf(target),
         flagExtras = mapOf(
             AapService.EXTRA_EXPLICIT_PICK to true,
+            AapService.EXTRA_PICK_FROM_PLAN to true,
             AapService.EXTRA_BY_COMMAND to true,
             AapService.EXTRA_NO_UI to noUi
         )

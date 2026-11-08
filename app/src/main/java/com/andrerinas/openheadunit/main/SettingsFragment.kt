@@ -545,7 +545,7 @@ class SettingsFragment : Fragment() {
         // Only a phone can be the preferred phone: a watch chosen here used to
         // count as one everywhere. A stored non-phone is cleared with None.
         val likelyPhones = bonded.filter {
-            BluetoothHelper.isLikelyPhone(it, preferredMac = currentPrefMac)
+            BluetoothHelper.isLikelyPhone(it, userMacs = listOf(currentPrefMac))
         }
 
         val options = mutableListOf<Pair<String, String>>()
@@ -589,7 +589,7 @@ class SettingsFragment : Fragment() {
         val selected = pendingNativePokeBtMacs ?: settings.nativePokeBtMacs
         BluetoothDevicePicker.show(requireContext(), R.string.select_bt_poke_device, selected, { device ->
             BluetoothHelper.isLikelyPhone(
-                device, settings.nativePreferredDeviceMac, settings.lastConnectedNativeMac, requireContext()
+                device, settings.nativePhonesList, settings.nativeProvenPhones, requireContext()
             )
         }) { chosen ->
             pendingNativePokeBtMacs = chosen

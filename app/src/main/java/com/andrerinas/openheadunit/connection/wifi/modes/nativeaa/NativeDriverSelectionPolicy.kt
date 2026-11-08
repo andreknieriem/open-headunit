@@ -51,7 +51,8 @@ object NativeDriverSelectionPolicy {
      * it burns the budget on the air time it never used.
      */
     fun wakeRoundSpent(outcome: BluetoothWakePolicy.WakeOutcome): Boolean =
-        outcome != BluetoothWakePolicy.WakeOutcome.STOOD_DOWN
+        outcome != BluetoothWakePolicy.WakeOutcome.STOOD_DOWN &&
+            outcome != BluetoothWakePolicy.WakeOutcome.HELD_LINK
 
     /**
      * Whether a chosen driver's wake loop takes another pass.
@@ -60,15 +61,33 @@ object NativeDriverSelectionPolicy {
      * stand-down needs [HandsFreeWakeEscalationPolicy.ESCALATE_AFTER_MS] to mature, so a budget
      * counted in refusals put the escalation out of reach on the single-phone default. Refusals are
      * bounded by [CHOSEN_EXCLUSIVE_MAX_MS] instead, which is the ceiling they already sit under.
+     * An automatic pick gives way after one unanswered round, so the wake plan reaches the next phone.
+     * A pick the selector did not name stops at the floor while its phone holds a hands-free link
+     * ([BluetoothWakePolicy.WakeOutcome.HELD_LINK]); any other stand-down keeps it waking.
+     * A null [outcome] means no wake round has run yet, so nothing has stood down.
      */
     fun chosenWakeContinues(
-        outcome: BluetoothWakePolicy.WakeOutcome,
+        outcome: BluetoothWakePolicy.WakeOutcome?,
         roundsDialled: Int,
         elapsedMs: Long,
+        explicit: Boolean,
+        fromPlan: Boolean = false,
     ): Boolean =
         outcome != BluetoothWakePolicy.WakeOutcome.NOT_PAIRED &&
+            !(!explicit && outcome == BluetoothWakePolicy.WakeOutcome.DIALLED) &&
+            !(fromPlan && outcome == BluetoothWakePolicy.WakeOutcome.HELD_LINK && elapsedMs >= CHOSEN_EXCLUSIVE_MS) &&
             roundsDialled < CHOSEN_WAKE_ROUNDS &&
             elapsedMs < CHOSEN_EXCLUSIVE_MAX_MS
+
+    /**
+     * Whether an unanswered chosen wake starts the wake plan: an automatic pick after one round,
+     * a pick the selector did not name after its whole budget or at the floor when its phone holds
+     * a hands-free link, and a phone the driver named never. A wake with no round run (null) never does.
+     */
+    fun handsOverToWakePlan(outcome: BluetoothWakePolicy.WakeOutcome?, explicit: Boolean, fromPlan: Boolean): Boolean =
+        (outcome == BluetoothWakePolicy.WakeOutcome.DIALLED && (!explicit || fromPlan)) ||
+            ((outcome == BluetoothWakePolicy.WakeOutcome.STOOD_DOWN ||
+                outcome == BluetoothWakePolicy.WakeOutcome.HELD_LINK) && fromPlan)
 
     /**
      * The hard ceiling on refusing every other phone while the chosen one is woken.
@@ -126,15 +145,6 @@ object NativeDriverSelectionPolicy {
         else -> PokeHold.HOLD
     }
 
-    /**
-     * The MAC to treat as the last driver, falling back to the wake poke list.
-     *
-     * The poke list is a set the user can put several phones in, so it stands in for a last-used
-     * driver only when it names exactly one. Taking the first of several picks arbitrarily.
-     */
-    fun lastUsedMac(lastConnectedMac: String, pokeMacs: Set<String>): String =
-        lastConnectedMac.ifEmpty { pokeMacs.singleOrNull().orEmpty() }
-
     /** Why a phone dialling in during a driver switch is refused, or that it is not. */
     enum class SwitchGate { ACCEPT, WRONG_PHONE, SWITCHED_AWAY }
 
@@ -186,26 +196,20 @@ object NativeDriverSelectionPolicy {
 
     /**
      * Whether an explicit pick has lapsed after this wake round. A round the phone never answered
-     * says it may be off; an answer says it is there, so the lock holds again.
+     * says it may be off; an answer says it is there, so the lock holds again. A held hands-free link
+     * lapses only a pick the selector did not name, whose phone can hold that link and never start
+     * Android Auto. Any other stand-down leaves the lapse as it was.
      */
     fun pickLapsedAfterRound(
         outcome: BluetoothWakePolicy.WakeOutcome,
         answeredSincePick: Boolean,
-        lapsed: Boolean
+        lapsed: Boolean,
+        fromPlan: Boolean = false
     ): Boolean = when (outcome) {
         BluetoothWakePolicy.WakeOutcome.ANSWERED -> false
         BluetoothWakePolicy.WakeOutcome.DIALLED -> lapsed || !answeredSincePick
+        BluetoothWakePolicy.WakeOutcome.HELD_LINK -> if (fromPlan) lapsed || !answeredSincePick else lapsed
         else -> lapsed
-    }
-
-    /**
-     * The phones an automatic pick may name: those the wake list allows.
-     * A phone outside it may be off, and waking it holds the reachable one back.
-     */
-    fun autoScope(offeredMacs: List<String>, targets: PokeTargets): List<String> = when (targets) {
-        is PokeTargets.Selected -> offeredMacs.filter { o -> targets.macs.any { it.equals(o, ignoreCase = true) } }
-        PokeTargets.AllPaired -> offeredMacs
-        PokeTargets.None -> emptyList()
     }
 
     /**
@@ -214,14 +218,14 @@ object NativeDriverSelectionPolicy {
      * @param mode User preference mode (DISABLED, AUTO, ALWAYS)
      * @param pairedCount Total number of paired phone candidates
      * @param connectedCount Number of devices currently connected via Bluetooth
-     * @param scopedCount Phones in the wake scope; in AUTO, none asks and exactly one skips the prompt
+     * @param knownCount Bonded phones the wake plan knows (listed, learned or linked); in AUTO with several bonded, none asks and exactly one skips the prompt
      * @param hasHistory Whether a preferred or previously connected device is recorded
      */
     fun shouldShowSelector(
         mode: Mode,
         pairedCount: Int,
         connectedCount: Int,
-        scopedCount: Int,
+        knownCount: Int,
         hasHistory: Boolean = true
     ): Boolean {
         if (mode == Mode.DISABLED) return false
@@ -232,70 +236,16 @@ object NativeDriverSelectionPolicy {
             Mode.AUTO -> when {
                 // One connected phone names the driver unambiguously.
                 connectedCount == 1 -> false
-                // Nothing in the wake scope and nothing connected: ask, with no countdown.
-                connectedCount == 0 && scopedCount == 0 -> true
+                // A single bonded phone is the driver even before the wake plan knows it.
                 pairedCount <= 1 -> false
-                // One phone the wake list allows and none connected: nothing to ask.
-                connectedCount == 0 && scopedCount == 1 -> false
+                // Several phones, none known and none connected: ask, with no countdown.
+                connectedCount == 0 && knownCount == 0 -> true
+                // One known phone and none connected: nothing to ask.
+                connectedCount == 0 && knownCount == 1 -> false
                 else -> true
             }
             Mode.DISABLED -> false
         }
-    }
-
-    /**
-     * Resolves the target device MAC to connect to when the selection timer expires without user interaction.
-     *
-     * Priority:
-     * 1. If exactly 1 device is currently connected via Bluetooth in the car, choose it.
-     * 2. If preferred device is specified, in scope and available, choose it (connected first).
-     * 3. If last-used device is specified, in scope and available, choose it (connected first).
-     * 4. If none is connected and exactly 1 device is in the wake scope, choose it.
-     * 5. Otherwise, return null (never blindly pick among multiple unknown devices).
-     */
-    fun resolveAutoConnectTarget(
-        preferredMac: String,
-        lastUsedMac: String,
-        connectedMacs: List<String>,
-        pairedMacs: List<String>,
-        scopeMacs: List<String>
-    ): String? {
-        if (pairedMacs.isEmpty()) return null
-
-        val validConnected = connectedMacs.filter { it in pairedMacs }
-
-        // 1. If exactly one phone is confirmed connected in the vehicle, it takes priority
-        if (validConnected.size == 1) {
-            return validConnected[0]
-        }
-
-        // 2. Preferred MAC (if multiple connected and preferred is among them, or if none connected and preferred is paired)
-        if (preferredMac.isNotEmpty()) {
-            if (preferredMac in validConnected && preferredMac in scopeMacs) {
-                return preferredMac
-            }
-            if (validConnected.isEmpty() && preferredMac in pairedMacs && preferredMac in scopeMacs) {
-                return preferredMac
-            }
-        }
-
-        // 3. Last used MAC (if multiple connected and last-used is among them, or if none connected and last-used is paired)
-        if (lastUsedMac.isNotEmpty()) {
-            if (lastUsedMac in validConnected && lastUsedMac in scopeMacs) {
-                return lastUsedMac
-            }
-            if (validConnected.isEmpty() && lastUsedMac in pairedMacs && lastUsedMac in scopeMacs) {
-                return lastUsedMac
-            }
-        }
-
-        // 4. Exactly 1 candidate phone available
-        if (validConnected.isEmpty() && scopeMacs.size == 1) {
-            return scopeMacs[0]
-        }
-
-        // Multiple candidates, none or multiple connected without history/preference
-        return null
     }
 
     /**

@@ -1422,6 +1422,7 @@ class AapService : Service() {
                         if (Esp32RelaySession.shouldNotifyProjection(this@AapService)) {
                             Esp32RelaySession.notifyProjection(true)
                         }
+                        (wifiLauncherManager.active as? WifiLauncherNative)?.onSessionSecured()
                         quiesceWirelessForWiredSession()
                         StationStandDown.onSessionLive(this@AapService, wifiLockHeldForMs())
                         projectionRaisesThisSession = 0
@@ -1441,6 +1442,7 @@ class AapService : Service() {
                             Esp32RelaySession.notifyProjection(true)
                         }
                         quiesceWirelessForWiredSession() // The flow is conflated: HandshakeComplete can be skipped.
+                        (wifiLauncherManager.active as? WifiLauncherNative)?.onSessionSecured()
                         StationStandDown.onSessionLive(this@AapService, wifiLockHeldForMs())
                         // Backstop for a skipped Connected; a no-op once onConnected released it.
                         stopDummyVpn(DummyVpnPolicy.Reason.SELF_MODE_SESSION_LIVE)

@@ -473,6 +473,9 @@ class NativeAaHandshakeManager(
     @Volatile private var manualPokeInFlight = false
     /** The phone the last connected poke was refused by, or null. Read by the chosen phone's wake loop. */
     @Volatile private var lastPokeRefusedMac: String? = null
+
+    /** The peer of the handshake in flight, learned if a wireless session forms; cleared when none can. */
+    @Volatile private var phoneAwaitingSession: String? = null
     /** When a target device is selected, only this MAC is allowed to proceed. */
     @Volatile var pendingSelectionTargetMac: String? = null
         private set
@@ -1359,6 +1362,7 @@ class NativeAaHandshakeManager(
     fun noteSessionEnded(wakePhone: Boolean) {
         wakeStoodDown = !wakePhone
         sessionEndedAt = SystemClock.elapsedRealtime()
+        phoneAwaitingSession = null
         if (!wakePhone) {
             // Automatic workers recheck wakesPhone after waits and before each poke.
             // Do not mutate the shared job slot: a concurrent manual request may now own it.
@@ -1774,6 +1778,12 @@ class NativeAaHandshakeManager(
         BluetoothHelper.classifyDevice(
             device, BluetoothHelper.pinFor(device, settings.nativePreferredDeviceMac, settings.lastConnectedNativeMac)
         ).verdict
+
+    /** "name (mac)" for a log line; the name is blank when the adapter does not know the address. */
+    private fun deviceLabel(mac: String): String {
+        val name = try { BluetoothHelper.getBluetoothAdapter(context)?.getRemoteDevice(mac)?.name } catch (_: Exception) { null }
+        return "${name ?: "unnamed"} ($mac)"
+    }
 
     /** The chosen addresses that are not phones, read the way the poke loop reads them. */
     private fun notPhonesAmong(macs: Set<String>): Set<String> {
@@ -2672,11 +2682,13 @@ class NativeAaHandshakeManager(
                 // a MAC is permanent, so it needs evidence the device is really gone rather than an
                 // adapter that happened to be off. Both are in the policy.
                 val selectedMacs = settings.nativePokeBtMacs
+                val learnedMacs = settings.nativeLearnedPhones
                 val manufacturerPairing = BluetoothPeerDiscovery.manufacturerInventory(context)
                 val chosen = LinkedHashMap<String, BluetoothDevice>()
                 val notPhones = mutableSetOf<String>()
                 val staleMacs = mutableSetOf<String>()
-                selectedMacs.forEach { mac ->
+                val staleLearned = mutableSetOf<String>()
+                (selectedMacs + learnedMacs).forEach { mac ->
                     val reading = bondReadingFor(adapter, mac)
                     if (BluetoothWakePolicy.mayPoke(reading)) {
                         try {
@@ -2689,14 +2701,22 @@ class NativeAaHandshakeManager(
                     // Keep the user's preference, but do not make it eligible for Android poke.
                     if (BluetoothWakePolicy.shouldForget(
                             reading, manufacturerPairing.manufacturerPairing(mac)
-                        )) staleMacs.add(mac)
+                        )) {
+                        if (mac in selectedMacs) staleMacs.add(mac)
+                        if (mac in learnedMacs) staleLearned.add(mac)
+                    }
                 }
                 if (staleMacs.isNotEmpty()) {
                     AppLog.w("NativeAA: Dropping wake poke MAC(s) no longer paired: $staleMacs")
                     settings.nativePokeBtMacs = selectedMacs - staleMacs
                 }
+                if (staleLearned.isNotEmpty()) {
+                    AppLog.w("NativeAA: Dropping learned phone(s) no longer paired: $staleLearned")
+                    settings.nativeLearnedPhones = learnedMacs - staleLearned
+                }
                 val devicesToPoke = when (val target = PokeTargetPolicy.targets(
-                    selectedMacs - staleMacs, settings.nativePokeAllPairedDevices, notPhones
+                    selectedMacs - staleMacs, settings.nativePokeAllPairedDevices, notPhones,
+                    learnedMacs - staleLearned
                 )) {
                     is PokeTargets.Selected -> {
                         noteDroppedPokeTargets(target.dropped, chosen)
@@ -3582,16 +3602,9 @@ class NativeAaHandshakeManager(
                 return@withContext
             }
 
-            // The wake poke target only, and only when no phone is chosen. Writing the auto-start
-            // list here turned Bluetooth auto-start on for a user who never asked, and undid a clear.
-            // Only for a phone on this unit's own radio: an address behind an external module is
-            // one nothing in android.bluetooth can dial.
-            val chosenMacs = settings.nativePokeBtMacs
-            if (link.persistPeerForAutoStart && peerAddress != null &&
-                PokeTargetPolicy.adoptsHandshakedDevice(chosenMacs, notPhonesAmong(chosenMacs))) {
-                AppLog.i("NativeAA: Saving $peerAddress ($peerName) as the wake poke device.")
-                settings.nativePokeBtMacs = setOf(peerAddress)
-            }
+            // Learned at SSL, not here: a handshake that dies earlier proves nothing. A phone behind
+            // an external module is never learned, since nothing in android.bluetooth can dial it.
+            if (link.persistPeerForAutoStart && peerAddress != null) phoneAwaitingSession = peerAddress
 
             val output = link.output
 
@@ -4204,6 +4217,11 @@ class NativeAaHandshakeManager(
                 activeHandshakeJob = null
                 handshakeStartedAt = 0L
                 handoffSettlingSince = 0L
+                // Held through Connecting: SSL comes after the link closes on the held-channel path.
+                if (!(commManager.isConnected ||
+                        commManager.connectionState.value is CommManager.ConnectionState.Connecting)) {
+                    phoneAwaitingSession = null
+                }
                 // [BUG_FIX] Every silent ending counts, not just the timeout that used to
                 // increment inline: a socket error, a swallowed write and a cancellation are one
                 // failure from the outside, and each strands an unreclaimable IO thread.
@@ -4536,6 +4554,17 @@ class NativeAaHandshakeManager(
     data class ProtobufMessage(val type: Int, val payload: ByteArray)
 
     /**
+     * SSL is done: the phone that held the handshake now has a wireless session, so it is learned.
+     * Called from both the HandshakeComplete and TransportStarted branches; the second finds nothing.
+     */
+    fun onSessionSecured() {
+        val mac = WakePlanPolicy.phoneToLearn(phoneAwaitingSession, commManager.isWirelessSession) ?: return
+        phoneAwaitingSession = null
+        settings.nativeLearnedPhones = WakePlanPolicy.movedToFront(settings.nativeLearnedPhones, mac)
+        AppLog.i("NativeAA: learned ${deviceLabel(mac)}: it formed a session.")
+    }
+
+    /**
      * A session is up, so the wake-up loop has nothing left to do.
      *
      * The loop already refuses to poke once a session exists, but it only asks at the top of each
@@ -4581,6 +4610,7 @@ class NativeAaHandshakeManager(
         unregisterBtStateReceiver()
         resetSelectionState()
         manualPokeInFlight = false
+        phoneAwaitingSession = null
         ownSocketCloseAt.clear()
         // Closing the carrier's channel is what unblocks a pump or a reader parked in a socket read;
         // cancelling the scope alone cannot, since that read has no suspension point. Nulled as well

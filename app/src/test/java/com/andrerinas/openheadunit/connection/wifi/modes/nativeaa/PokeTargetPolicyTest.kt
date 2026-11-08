@@ -1,7 +1,6 @@
 package com.andrerinas.openheadunit.connection.wifi.modes.nativeaa
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -45,17 +44,6 @@ class PokeTargetPolicyTest {
     }
 
     /**
-     * The field failure: a completed handshake wrote its peer into the list that also gated
-     * Bluetooth auto-start, so clearing auto-start undid itself. It fills the poke target only,
-     * and only when there is none.
-     */
-    @Test
-    fun `a handshaked device is adopted only when nothing is chosen`() {
-        assertTrue(PokeTargetPolicy.adoptsHandshakedDevice(emptySet()))
-        assertFalse(PokeTargetPolicy.adoptsHandshakedDevice(phone))
-    }
-
-    /**
      * The seeded case: the list is copied from the auto-start trigger list, which may name the
      * car's own Bluetooth. A list of only that is a list of nothing, so the opt-in decides.
      */
@@ -83,9 +71,58 @@ class PokeTargetPolicyTest {
         )
     }
 
+    private val other = setOf("DC:B7:2E:5E:4E:59")
+
+    /** The field failure: A's session locked the list, so a second phone was never woken. */
     @Test
-    fun `adoption treats a selection of only non-phones as empty`() {
-        assertTrue(PokeTargetPolicy.adoptsHandshakedDevice(car, notPhones = car))
-        assertFalse(PokeTargetPolicy.adoptsHandshakedDevice(phone + car, notPhones = car))
+    fun `a default unit still wakes the second phone after the first one forms a session`() {
+        val targets = PokeTargetPolicy.targets(
+            selected = emptySet(), allPairedOptIn = true, learned = listOf("A0:46:5A:97:E4:95")
+        )
+        assertEquals(PokeTargets.AllPaired, targets)
+    }
+
+    @Test
+    fun `a default unit still lets the second phone be picked after the first one forms a session`() {
+        val paired = listOf("A0:46:5A:97:E4:95", "DC:B7:2E:5E:4E:59")
+        val targets = PokeTargetPolicy.targets(
+            selected = emptySet(), allPairedOptIn = true, learned = listOf(paired[0])
+        )
+        val scope = NativeDriverSelectionPolicy.autoScope(paired, targets)
+        assertTrue(paired[1] in scope)
+    }
+
+    @Test
+    fun `a wake list the user chose is widened by the learned phones`() {
+        assertEquals(
+            PokeTargets.Selected(phone + other),
+            PokeTargetPolicy.targets(selected = phone, allPairedOptIn = false, learned = other.toList())
+        )
+    }
+
+    @Test
+    fun `an empty list with all-paired off wakes the learned phones only`() {
+        assertEquals(
+            PokeTargets.Selected(other),
+            PokeTargetPolicy.targets(selected = emptySet(), allPairedOptIn = false, learned = other.toList())
+        )
+    }
+
+    @Test
+    fun `an empty list with all-paired off and nothing learned wakes nothing`() {
+        assertEquals(
+            PokeTargets.None,
+            PokeTargetPolicy.targets(selected = emptySet(), allPairedOptIn = false, learned = emptyList())
+        )
+    }
+
+    @Test
+    fun `a non-phone in the chosen list is still dropped`() {
+        assertEquals(
+            PokeTargets.Selected(phone + other, dropped = car),
+            PokeTargetPolicy.targets(
+                selected = phone + car, allPairedOptIn = false, notPhones = car, learned = other.toList()
+            )
+        )
     }
 }

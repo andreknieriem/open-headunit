@@ -45,6 +45,7 @@ import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeDriverSe
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.NativeStrategy
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.SoftApAddressRecord
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.SoftApAdvertisedEndpoint
+import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.WakePlanPolicy
 import com.andrerinas.openheadunit.connection.wifi.WifiLauncherMode
 import com.andrerinas.openheadunit.connection.wifi.HeadunitServerNetwork
 
@@ -2115,6 +2116,9 @@ class Settings(private val context: Context) {
 
         const val KEY_BINDINGS = "key-bindings"
 
+        /** Several instances share one prefs file, so the learned phones' seed locks here. */
+        private val LEARNED_SEED_LOCK = Any()
+
         private val GESTURE_KEYS = listOf(
             "left-two-finger-gesture", "right-two-finger-gesture", "long-press-two-finger-gesture",
             "left-tap-two-finger-gesture", "right-tap-two-finger-gesture", "down-two-finger-gesture",
@@ -2777,7 +2781,28 @@ class Settings(private val context: Context) {
 
     var lastConnectedNativeMac: String
         get() = prefs.getString("last-connected-native-mac", "") ?: ""
-        set(value) = prefs.edit().putString("last-connected-native-mac", value).apply()
+        set(value) = synchronized(LEARNED_SEED_LOCK) {
+            // Fix the learned phones' seed from the old value first: this write comes at type 3, before SSL.
+            learnedPhonesSeeded()
+            prefs.edit().putString("last-connected-native-mac", value).apply()
+        }
+
+    /** Phones that formed a wireless session, most recent first. Widens the wake list, never narrows it. */
+    var nativeLearnedPhones: List<String>
+        get() = learnedPhonesSeeded()
+        set(value) = synchronized(LEARNED_SEED_LOCK) {
+            prefs.edit().putString("native-learned-phones", WakePlanPolicy.formatMacs(value)).apply()
+        }
+
+    /** Stores the seed at the first read, also when it is empty, so a later type-3 write cannot become it. */
+    private fun learnedPhonesSeeded(): List<String> = synchronized(LEARNED_SEED_LOCK) {
+        val stored = prefs.getString("native-learned-phones", null)
+        val phones = WakePlanPolicy.seedLearned(stored, prefs.getString("last-connected-native-mac", "") ?: "")
+        if (stored == null) {
+            prefs.edit().putString("native-learned-phones", WakePlanPolicy.formatMacs(phones)).apply()
+        }
+        phones
+    }
 
     /**
      * The last phone that finished a handshake through an external Bluetooth module. Kept apart

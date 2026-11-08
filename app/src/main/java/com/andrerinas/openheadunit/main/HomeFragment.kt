@@ -2635,7 +2635,9 @@ class HomeFragment : Fragment() {
         val notPhones = settings.nativePokeBtMacs.filter {
             cands.verdictOf(it) == DriverCandidatePolicy.Verdict.NOT_A_PHONE
         }.toSet()
-        val targets = PokeTargetPolicy.targets(settings.nativePokeBtMacs, settings.nativePokeAllPairedDevices, notPhones)
+        val targets = PokeTargetPolicy.targets(
+            settings.nativePokeBtMacs, settings.nativePokeAllPairedDevices, notPhones, settings.nativeLearnedPhones
+        )
         return NativeDriverSelectionPolicy.autoScope(cands.offered.map { it.address }, targets)
     }
 

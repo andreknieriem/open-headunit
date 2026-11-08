@@ -13,27 +13,24 @@ sealed class PokeTargets {
 }
 
 /**
- * Who the Native AA wake poke connects to. Widening to every paired device is opt-in, so an empty
- * list means empty. `notPhones` are chosen addresses that are not phones, which the seeding from the
- * auto-start trigger list lets in (the car's own Bluetooth, say); they count as not chosen.
+ * Who the Native AA wake poke connects to. A chosen list is widened by the learned phones, and an
+ * empty one wakes every paired device only when opted in. `notPhones` count as not chosen.
  */
 object PokeTargetPolicy {
 
-    fun targets(selected: Set<String>, allPairedOptIn: Boolean, notPhones: Set<String> = emptySet()): PokeTargets {
+    fun targets(
+        selected: Set<String>,
+        allPairedOptIn: Boolean,
+        notPhones: Set<String> = emptySet(),
+        learned: List<String> = emptyList()
+    ): PokeTargets {
         val offered = selected - notPhones
+        val learnedPhones = learned.filter { it !in notPhones }
         return when {
-            offered.isNotEmpty() -> PokeTargets.Selected(offered, selected - offered)
+            offered.isNotEmpty() -> PokeTargets.Selected(offered + learnedPhones, selected - offered)
             allPairedOptIn -> PokeTargets.AllPaired
+            learnedPhones.isNotEmpty() -> PokeTargets.Selected(learnedPhones.toSet())
             else -> PokeTargets.None
         }
     }
-
-    /**
-     * Whether a device that just completed a handshake may be remembered as the target.
-     *
-     * Only when there is no phone to overwrite. Adopting a phone over a choice the user made is
-     * what made a removal undo itself.
-     */
-    fun adoptsHandshakedDevice(selected: Set<String>, notPhones: Set<String> = emptySet()): Boolean =
-        (selected - notPhones).isEmpty()
 }

@@ -284,6 +284,17 @@
 
         <!-- Ends the permission record's entry when Android answers, even while AapService is
              down. Only our own PendingIntents reach it, so it is not exported. -->
+        <!-- The maintenance notification's buttons and its swipe; reached only by its own PendingIntents. -->
+        <receiver
+            android:name=".maintenance.MaintenanceNotifier$Receiver"
+            android:exported="false" />
+
+        <activity
+            android:name=".main.MaintenanceNoticeActivity"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:theme="@style/AppTheme" />
+
         <receiver
             android:name=".connection.usb.UsbPermissionResultReceiver"
             android:exported="false">

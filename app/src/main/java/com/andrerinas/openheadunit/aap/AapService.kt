@@ -59,6 +59,7 @@ import com.andrerinas.openheadunit.connection.wifi.WirelessBringUpDeferralPolicy
 import com.andrerinas.openheadunit.connection.wifi.WirelessSleepHold
 import com.andrerinas.openheadunit.connection.wifi.UserExitHotspotPolicy
 import com.andrerinas.openheadunit.main.MainActivity
+import com.andrerinas.openheadunit.main.MaintenanceNoticeActivity
 import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zbt.ZbtDaemonReachability
 import com.andrerinas.openheadunit.connection.wifi.modes.nativeaa.zjsocket.ZjSocketProbe
@@ -88,6 +89,8 @@ import com.andrerinas.openheadunit.connection.usb.UsbDeviceCompat
 import com.andrerinas.openheadunit.connection.usb.UsbLinkLossRecheckPolicy
 import com.andrerinas.openheadunit.connection.usb.UsbReceiver
 import com.andrerinas.openheadunit.location.GpsLocationService
+import com.andrerinas.openheadunit.maintenance.MaintenanceNoticePolicy
+import com.andrerinas.openheadunit.maintenance.MaintenanceNotifier
 import com.andrerinas.openheadunit.maintenance.MaintenanceTracker
 import com.andrerinas.openheadunit.utils.LocaleHelper
 import com.andrerinas.openheadunit.utils.LogExporter
@@ -817,6 +820,7 @@ class AapService : Service() {
                     replaySleepHold("SCREEN_ON")
                     if (offDuration > HIBERNATE_WAKE_THRESHOLD_MS) {
                         AccPowerState.noteWake()
+                        onMaintenanceMoment(MaintenanceNoticePolicy.Moment.START)
                         rearmNativeHotspotAfterWake("SCREEN_ON after ${offSec}s sleep")
                     }
                     FloatingButtonManager.update(this@AapService)
@@ -901,6 +905,7 @@ class AapService : Service() {
      */
     private fun onHibernateWake(trigger: String) {
         AccPowerState.noteWake()
+        onMaintenanceMoment(MaintenanceNoticePolicy.Moment.START)
         replaySleepHold(trigger)
         // Debounce: don't re-trigger within 10 seconds (covers BootCompleteReceiver + this)
         val now = SystemClock.elapsedRealtime()
@@ -1205,12 +1210,91 @@ class AapService : Service() {
      */
     private fun syncMaintenanceTracker() {
         if (settings.maintenanceEnabled) {
-            val tracker = maintenanceTracker
-                ?: MaintenanceTracker(this, App.provide(this).maintenanceStore).also { maintenanceTracker = it }
+            val tracker = maintenanceTracker ?: MaintenanceTracker(
+                this, App.provide(this).maintenanceStore,
+                onFix = ::onMaintenanceFix,
+                onCarStopped = { onMaintenanceMoment(MaintenanceNoticePolicy.Moment.STOP) },
+            ).also { maintenanceTracker = it }
             tracker.start()
         } else {
             maintenanceTracker?.stop()
             maintenanceTracker = null
+        }
+    }
+
+    /**
+     * The unit started or the car stopped after a drive: bring up what maintenance is due, with
+     * the full screen notice and the notification as the user chose. The home line shows it
+     * either way.
+     */
+    private fun onMaintenanceMoment(moment: MaintenanceNoticePolicy.Moment) {
+        if (!settings.maintenanceEnabled) return
+        val store = App.provide(this).maintenanceStore
+        if (moment == MaintenanceNoticePolicy.Moment.START && !store.beginRun(SystemClock.elapsedRealtime())) return
+        val pending = store.pendingReminders(System.currentTimeMillis())
+        val plan = MaintenanceNoticePolicy.plan(
+            pendingCount = pending.size,
+            screenWanted = store.remindScreen,
+            notificationWanted = store.remindNotification,
+            settingsOpen = SettingsActivity.isForeground,
+            noticeShowing = MaintenanceNoticeActivity.isShowing,
+            notificationDismissed = store.notificationDismissed,
+        )
+        AppLog.i("AapService: maintenance $moment, ${pending.size} item(s) pending, " +
+            "notice=${plan.showScreen} notification=${plan.notify}")
+        if (plan.notify) MaintenanceNotifier.show(this, pending, store.miles)
+        if (!plan.showScreen) return
+        if (moment == MaintenanceNoticePolicy.Moment.START && maintenanceTracker?.isListening == true) {
+            waitForStillBeforeNotice()
+        } else {
+            showMaintenanceNotice(moment)
+        }
+    }
+
+    /** The start notice is waiting for a fix that says the car is standing. Main thread only. */
+    private var startNoticeWaiting = false
+    private var startNoticeTimeout: Job? = null
+
+    private fun waitForStillBeforeNotice() {
+        startNoticeWaiting = true
+        startNoticeTimeout?.cancel()
+        startNoticeTimeout = serviceScope.launch {
+            delay(MaintenanceNoticePolicy.START_FIX_WAIT_MS)
+            if (!startNoticeWaiting) return@launch
+            startNoticeWaiting = false
+            AppLog.i("AapService: no GPS fix for the maintenance notice, showing it anyway")
+            showMaintenanceNotice(MaintenanceNoticePolicy.Moment.START)
+        }
+    }
+
+    private fun onMaintenanceFix(speedMps: Float?) {
+        if (!startNoticeWaiting) return
+        startNoticeWaiting = false
+        startNoticeTimeout?.cancel()
+        if (MaintenanceNoticePolicy.startNoticeOnFix(speedMps)) {
+            showMaintenanceNotice(MaintenanceNoticePolicy.Moment.START)
+        } else {
+            AppLog.i("AapService: the car is moving, the maintenance notice waits for the next stop")
+        }
+    }
+
+    private fun showMaintenanceNotice(moment: MaintenanceNoticePolicy.Moment) {
+        val intent = MaintenanceNoticeActivity.intent(this, moment)
+        val strategy = ActivityLaunchPolicy.chooseLaunchStrategy(
+            Build.VERSION.SDK_INT, AppPermissions.isOverlayGranted(this), App.hasStartedActivity
+        )
+        when (strategy) {
+            ActivityLaunchPolicy.LaunchStrategy.DIRECT ->
+                try { startActivity(intent) } catch (e: Exception) { AppLog.e("AapService: maintenance notice launch failed: ${e.message}") }
+            ActivityLaunchPolicy.LaunchStrategy.OVERLAY ->
+                if (!launchViaOverlayTrampoline(intent)) {
+                    try { startActivity(intent) } catch (e: Exception) { AppLog.e("AapService: maintenance notice launch failed: ${e.message}") }
+                }
+            // A notification that only opens a notice would be one more thing to tap while driving;
+            // the maintenance notification and the home line already say it.
+            ActivityLaunchPolicy.LaunchStrategy.NOTIFICATION ->
+                AppLog.i("AapService: not showing the maintenance notice, Android blocks it from the " +
+                    "background without the permission to draw over other apps")
         }
     }
 
@@ -1287,6 +1371,8 @@ class AapService : Service() {
             return
         }
         syncMaintenanceTracker()
+        // A new service is a new start of the unit (or of the app after it was killed).
+        onMaintenanceMoment(MaintenanceNoticePolicy.Moment.START)
         fillBluetoothAddressIfUnset()
         // A force-stop or a crash runs no teardown, so a station stand-down can outlive the process
         // that made it. Putting the network back here is what keeps that from stranding the unit off

@@ -11,6 +11,7 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.ChecksSdkIntAtLeast
 import androidx.annotation.RequiresApi
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.core.os.bundleOf
@@ -19,6 +20,7 @@ import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.aap.AapService
 import com.andrerinas.openheadunit.maintenance.Distance
 import com.andrerinas.openheadunit.maintenance.Gearbox
+import com.andrerinas.openheadunit.maintenance.MaintenanceNotifier
 import com.andrerinas.openheadunit.maintenance.MaintenanceTexts
 import com.andrerinas.openheadunit.maintenance.MaintenanceTracker
 import com.andrerinas.openheadunit.maintenance.Steering
@@ -146,6 +148,36 @@ class MaintenanceFragment : MaintenanceScreenFragment() {
                 refresh()
             }
         ))
+
+        items.add(SettingItem.CategoryHeader("maintenanceRemind", R.string.maintenance_category_remind))
+        items.add(SettingItem.ToggleSettingEntry(
+            stableId = "maintenanceRemindScreen",
+            nameResId = R.string.maintenance_remind_screen,
+            descriptionResId = R.string.maintenance_remind_screen_summary,
+            isChecked = store.remindScreen,
+            onCheckedChanged = { checked ->
+                store.remindScreen = checked
+                refresh()
+            }
+        ))
+        items.add(SettingItem.ToggleSettingEntry(
+            stableId = "maintenanceRemindNotification",
+            nameResId = R.string.maintenance_remind_notification,
+            descriptionResId = if (store.remindNotification && !notificationsAllowed(ctx)) {
+                R.string.maintenance_remind_notification_blocked
+            } else R.string.maintenance_remind_notification_summary,
+            isChecked = store.remindNotification,
+            onCheckedChanged = { checked ->
+                store.remindNotification = checked
+                if (checked) askNotifications { refresh() } else {
+                    MaintenanceNotifier.cancel(ctx)
+                    refresh()
+                }
+            }
+        ))
+        if (!store.remindScreen && !store.remindNotification) {
+            items.add(SettingItem.InfoBanner("maintenanceRemindNone", R.string.maintenance_remind_none_note))
+        }
 
         items.add(SettingItem.CategoryHeader("maintenanceRunning", R.string.maintenance_category_running))
         items.add(SettingItem.InfoBanner(
@@ -321,8 +353,38 @@ class MaintenanceFragment : MaintenanceScreenFragment() {
 
     /** The last setup step: why the app should stay alive, then the exemption when it lacks one. */
     private fun showKeepRunning() {
-        showKeepRunningHelp { if (needsBatteryExemption()) openBatteryExemption() }
+        val keepRunning = { showKeepRunningHelp { if (needsBatteryExemption()) openBatteryExemption() } }
+        if (store.remindNotification) askNotifications(keepRunning) else keepRunning()
     }
+
+    // --- the notification ---
+
+    /** Runs after the notification permission question, whatever the answer. */
+    private var afterNotificationAnswer: (() -> Unit)? = null
+
+    private val notificationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        AppLog.i("$TAG: notification permission ${if (granted) "granted" else "refused"}")
+        if (!granted) {
+            // Nothing breaks without it: the notice and the home still remind.
+            ToastUtils.showToast(requireContext(), R.string.maintenance_remind_notification_blocked, Toast.LENGTH_LONG, force = true)
+        }
+        afterNotificationAnswer?.invoke()
+        afterNotificationAnswer = null
+    }
+
+    /** Android 13 and up ask for notifications; earlier versions allow them from the start. */
+    private fun askNotifications(then: () -> Unit) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU || notificationsAllowed(requireContext())) {
+            then()
+            return
+        }
+        afterNotificationAnswer = then
+        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+    }
+
+    private fun notificationsAllowed(ctx: Context): Boolean = NotificationManagerCompat.from(ctx).areNotificationsEnabled()
 
     /**
      * The service counts the mileage. Starting it from this screen keeps it running and lets it

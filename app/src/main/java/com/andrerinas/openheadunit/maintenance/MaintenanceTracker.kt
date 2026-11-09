@@ -24,7 +24,15 @@ import com.andrerinas.openheadunit.utils.AppLog
 class MaintenanceTracker(
     private val context: Context,
     private val store: MaintenanceStore,
+    /** Every usable fix, with its speed when the chip reports one. */
+    private val onFix: (speedMps: Float?) -> Unit,
+    /** The car came to a stop after a drive: the moment for the reminder notice. */
+    private val onCarStopped: () -> Unit,
 ) : LocationListener {
+
+    /** Subscribed to GPS right now, so fixes are on their way. */
+    val isListening: Boolean get() = listening
+
 
     private val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager
 
@@ -90,6 +98,7 @@ class MaintenanceTracker(
         reference = step.reference
         if (step.kind == OdometerStepPolicy.Kind.INACCURATE) return
         store.lastFixElapsedMs = fix.atMs
+        onFix(fix.speedMps)
 
         if (!positionChecked) {
             positionChecked = true
@@ -110,6 +119,7 @@ class MaintenanceTracker(
             savePosition()
             store.flush()
             AppLog.i("$TAG: the car stopped, mileage saved")
+            onCarStopped()
         }
     }
 

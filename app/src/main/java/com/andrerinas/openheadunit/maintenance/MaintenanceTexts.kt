@@ -119,6 +119,47 @@ object MaintenanceTexts {
         return HomeLine(name, build)
     }
 
+    /** The notice's headline: "Cabin filter is overdue", "Engine oil is coming up". */
+    fun noticeTitle(context: Context, entry: MaintenanceReminderPolicy.Entry): String = context.getString(
+        if (entry.due.state == MaintenanceDuePolicy.State.OVERDUE) R.string.maintenance_notice_overdue
+        else R.string.maintenance_notice_coming_up,
+        itemName(context, entry.item)
+    )
+
+    /** How far it is or how late, by distance, by date, or both: "820 km to go · 12 days to go". */
+    fun noticeDetail(context: Context, entry: MaintenanceReminderPolicy.Entry, miles: Boolean): String {
+        val parts = mutableListOf<String>()
+        entry.due.remainingMeters?.let { left ->
+            parts.add(
+                if (left > 0) context.getString(R.string.maintenance_notice_to_go, distance(context, left, miles))
+                else context.getString(R.string.maintenance_notice_distance_over, distance(context, -left, miles))
+            )
+        }
+        entry.due.remainingMs?.let { left ->
+            parts.add(
+                if (left > 0) context.getString(R.string.maintenance_notice_to_go, days(context, wholeDays(left)))
+                else context.getString(R.string.maintenance_notice_days_late, days(context, wholeDays(-left)))
+            )
+        }
+        return parts.reduceOrNull { a, b -> context.getString(R.string.maintenance_item_value, a, b) }.orEmpty()
+    }
+
+    /** When it was last done: "Last done on 14 Jan 2026 at 75,035 km". */
+    fun noticeLast(context: Context, item: MaintenanceItem, miles: Boolean): String {
+        val at = item.lastMeters?.let { distance(context, it, miles) }
+        val on = item.lastMs?.let { date(context, it) }
+        return when {
+            at != null && on != null -> context.getString(R.string.maintenance_notice_last_both, on, at)
+            on != null -> context.getString(R.string.maintenance_notice_last_date, on)
+            at != null -> context.getString(R.string.maintenance_notice_last_distance, at)
+            else -> context.getString(R.string.maintenance_notice_last_none)
+        }
+    }
+
+    /** A "remind me later" choice: "500 km", "3 days". */
+    fun later(context: Context, later: MaintenanceNoticePolicy.Later, miles: Boolean): String =
+        later.meters?.let { distance(context, it, miles) } ?: days(context, later.days ?: 0)
+
     private fun constant(context: Context, res: Int): (String) -> String {
         val text = context.getString(res)
         return { _ -> text }

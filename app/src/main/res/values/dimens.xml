@@ -88,4 +88,6 @@
     <dimen name="home_hint_art_small">64dp</dimen>
     <!-- The side padding of the maintenance screens' input dialogs. -->
     <dimen name="maintenance_dialog_padding">24dp</dimen>
+    <!-- The column of answers in the maintenance notice, when it sits beside the item. -->
+    <dimen name="maintenance_notice_actions_width">300dp</dimen>
 </resources>

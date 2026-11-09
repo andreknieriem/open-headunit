@@ -1963,7 +1963,16 @@
     <string name="maintenance_remind_notification">Thông báo Android</string>
     <string name="maintenance_remind_notification_summary">Một thông báo cho mọi mục đến hạn. Một số đầu máy không hiện thông báo.</string>
     <string name="maintenance_remind_notification_blocked">Android không cho phép thông báo cho ứng dụng này</string>
-    <string name="maintenance_remind_none_note">Khi tắt cả hai, nhắc nhở chỉ hiện trên màn hình chính.</string>
+    <string name="maintenance_remind_banner">Biểu ngữ trên Android Auto</string>
+    <string name="maintenance_remind_banner_summary">Biểu ngữ ngắn và tiếng chuông khi lái, mỗi mục một lần mỗi chuyến đi</string>
+    <string name="maintenance_banner_position">Vị trí biểu ngữ</string>
+    <string name="maintenance_banner_position_help">Tự động đặt biểu ngữ ở trên cùng phía hành khách, hoặc ở mép bên của màn hình siêu rộng. Phía hành khách theo cài đặt \"Tay lái nghịch (bên phải)\". Biểu ngữ không nhận chạm nên Android Auto vẫn hoạt động bên dưới.</string>
+    <string name="maintenance_banner_position_auto">Tự động</string>
+    <string name="maintenance_banner_position_top">Trên cùng, phía hành khách</string>
+    <string name="maintenance_banner_position_above_bar">Phía trên thanh Android Auto</string>
+    <string name="maintenance_banner_position_side">Mép bên, phía hành khách</string>
+    <string name="maintenance_banner_hint">Tùy chọn khi xe dừng</string>
+    <string name="maintenance_remind_all_off_note">Khi tắt hết các mục này, nhắc nhở chỉ hiện trên màn hình chính.</string>
     <string name="maintenance_notification_channel">Nhắc nhở bảo dưỡng</string>
     <string name="maintenance_notification_channel_description">Dầu, lọc và các hạng mục bảo dưỡng khác đã đến hạn</string>
     <string name="maintenance_notification_open">Mở danh sách</string>

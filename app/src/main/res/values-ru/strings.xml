@@ -1966,7 +1966,16 @@ Open Headunit предоставляется «как есть» без каки
     <string name="maintenance_remind_notification">Уведомление Android</string>
     <string name="maintenance_remind_notification_summary">Одно уведомление обо всём, что пора сделать. Не все устройства их показывают.</string>
     <string name="maintenance_remind_notification_blocked">Android не разрешает уведомления для этого приложения</string>
-    <string name="maintenance_remind_none_note">Если оба варианта выключены, напоминания видны только на главном экране.</string>
+    <string name="maintenance_remind_banner">Баннер поверх Android Auto</string>
+    <string name="maintenance_remind_banner_summary">Короткий баннер и звуковой сигнал в пути, один раз за поездку на каждый пункт</string>
+    <string name="maintenance_banner_position">Положение баннера</string>
+    <string name="maintenance_banner_position_help">Автоматически: сверху со стороны пассажира или на боковом краю сверхширокого экрана. Сторона пассажира зависит от настройки «Праворульный автомобиль». Баннер не перехватывает касания, поэтому Android Auto продолжает работать под ним.</string>
+    <string name="maintenance_banner_position_auto">Автоматически</string>
+    <string name="maintenance_banner_position_top">Сверху, со стороны пассажира</string>
+    <string name="maintenance_banner_position_above_bar">Над панелью Android Auto</string>
+    <string name="maintenance_banner_position_side">Боковой край, со стороны пассажира</string>
+    <string name="maintenance_banner_hint">Варианты при остановке</string>
+    <string name="maintenance_remind_all_off_note">Если все три выключены, напоминания показываются только на главном экране.</string>
     <string name="maintenance_notification_channel">Напоминания об обслуживании</string>
     <string name="maintenance_notification_channel_description">Масло, фильтры и другие работы ТО, которые пора делать</string>
     <string name="maintenance_notification_open">Открыть список</string>

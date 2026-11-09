@@ -1972,7 +1972,16 @@
     <string name="maintenance_remind_notification">Powiadomienie Androida</string>
     <string name="maintenance_remind_notification_summary">Jedno powiadomienie o wszystkim, co trzeba zrobić. Niektóre radia go nie pokażą.</string>
     <string name="maintenance_remind_notification_blocked">Android nie zezwala na powiadomienia tej aplikacji</string>
-    <string name="maintenance_remind_none_note">Gdy oba są wyłączone, przypomnienia pojawiają się tylko na ekranie głównym.</string>
+    <string name="maintenance_remind_banner">Baner nad Android Auto</string>
+    <string name="maintenance_remind_banner_summary">Krótki baner i sygnał podczas jazdy, raz na przejazd dla każdej pozycji</string>
+    <string name="maintenance_banner_position">Położenie banera</string>
+    <string name="maintenance_banner_position_help">Automatycznie baner jest u góry po stronie pasażera albo przy bocznej krawędzi ekranu ultraszerokiego. Strona pasażera zależy od ustawienia „Kierownica po prawej stronie”. Baner nie przejmuje dotyku, więc Android Auto działa pod nim normalnie.</string>
+    <string name="maintenance_banner_position_auto">Automatycznie</string>
+    <string name="maintenance_banner_position_top">Góra, strona pasażera</string>
+    <string name="maintenance_banner_position_above_bar">Nad paskiem Android Auto</string>
+    <string name="maintenance_banner_position_side">Bok ekranu, strona pasażera</string>
+    <string name="maintenance_banner_hint">Opcje przy zatrzymaniu</string>
+    <string name="maintenance_remind_all_off_note">Gdy wszystkie trzy są wyłączone, powiadomienia pokazują się tylko na ekranie głównym.</string>
     <string name="maintenance_notification_channel">Przypomnienia o serwisie</string>
     <string name="maintenance_notification_channel_description">Olej, filtry i inne części serwisowe, które są do wymiany</string>
     <string name="maintenance_notification_open">Otwórz listę</string>

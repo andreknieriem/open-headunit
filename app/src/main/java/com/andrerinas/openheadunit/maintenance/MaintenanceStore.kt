@@ -150,6 +150,14 @@ class MaintenanceStore(private val settings: Settings) {
         get() = settings.maintenanceRemindNotification
         set(value) { settings.maintenanceRemindNotification = value }
 
+    var remindBanner: Boolean
+        get() = settings.maintenanceRemindBanner
+        set(value) { settings.maintenanceRemindBanner = value }
+
+    var bannerPosition: MaintenanceBannerPolicy.Position
+        get() = MaintenanceBannerPolicy.Position.fromName(settings.maintenanceBannerPosition)
+        set(value) { settings.maintenanceBannerPosition = value.name }
+
     /**
      * Turns the feature on for a car that has no items yet: the typed odometer starts the first
      * correction stretch and every item starts as freshly serviced.

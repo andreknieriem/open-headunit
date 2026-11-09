@@ -2010,7 +2010,16 @@
     <string name="maintenance_remind_notification">Notification Android</string>
     <string name="maintenance_remind_notification_summary">Une seule notification pour tout. Certains autoradios ne l\'affichent jamais.</string>
     <string name="maintenance_remind_notification_blocked">Android n\'autorise pas les notifications pour cette application</string>
-    <string name="maintenance_remind_none_note">Si les deux sont désactivés, les rappels n\'apparaissent que sur l\'écran d\'accueil.</string>
+    <string name="maintenance_remind_banner">Bandeau sur Android Auto</string>
+    <string name="maintenance_remind_banner_summary">Bref bandeau et carillon en conduite, une fois par trajet et par élément</string>
+    <string name="maintenance_banner_position">Position du bandeau</string>
+    <string name="maintenance_banner_position_help">Automatique le place en haut, côté passager, ou sur le bord latéral d\'un écran ultra-large. Le côté passager suit le réglage « Conduite à droite ». Le bandeau ne capte jamais le toucher : Android Auto reste utilisable en dessous.</string>
+    <string name="maintenance_banner_position_auto">Automatique</string>
+    <string name="maintenance_banner_position_top">En haut, côté passager</string>
+    <string name="maintenance_banner_position_above_bar">Au-dessus de la barre d\'Android Auto</string>
+    <string name="maintenance_banner_position_side">Bord latéral, côté passager</string>
+    <string name="maintenance_banner_hint">Options à l\'arrêt</string>
+    <string name="maintenance_remind_all_off_note">Avec tout cela désactivé, les rappels n\'apparaissent que sur l\'écran d\'accueil.</string>
     <string name="maintenance_notification_channel">Rappels d\'entretien</string>
     <string name="maintenance_notification_channel_description">Vidange, filtres et autres éléments d\'entretien à faire</string>
     <string name="maintenance_notification_open">Ouvrir la liste</string>

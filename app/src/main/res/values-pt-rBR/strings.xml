@@ -1963,7 +1963,16 @@
     <string name="maintenance_remind_notification">Notificação do Android</string>
     <string name="maintenance_remind_notification_summary">Uma notificação para tudo o que está pendente. Algumas centrais não mostram.</string>
     <string name="maintenance_remind_notification_blocked">O Android não está permitindo notificações deste app</string>
-    <string name="maintenance_remind_none_note">Com as duas opções desligadas, os lembretes aparecem só na tela inicial.</string>
+    <string name="maintenance_remind_banner">Faixa sobre o Android Auto</string>
+    <string name="maintenance_remind_banner_summary">Um aviso curto e um som ao dirigir, uma vez por viagem para cada item</string>
+    <string name="maintenance_banner_position">Posição do aviso</string>
+    <string name="maintenance_banner_position_help">Automático coloca no topo, do lado do passageiro, ou na borda lateral de uma tela ultralarga. O lado do passageiro segue a configuração Direção à direita. O aviso nunca recebe toques, então o Android Auto continua funcionando por baixo.</string>
+    <string name="maintenance_banner_position_auto">Automático</string>
+    <string name="maintenance_banner_position_top">Topo, lado do passageiro</string>
+    <string name="maintenance_banner_position_above_bar">Acima da barra do Android Auto</string>
+    <string name="maintenance_banner_position_side">Borda lateral, lado do passageiro</string>
+    <string name="maintenance_banner_hint">Opções ao parar</string>
+    <string name="maintenance_remind_all_off_note">Com todas estas desativadas, os lembretes aparecem só na tela principal.</string>
     <string name="maintenance_notification_channel">Lembretes de manutenção</string>
     <string name="maintenance_notification_channel_description">Óleo, filtros e outros itens de revisão que estão vencendo</string>
     <string name="maintenance_notification_open">Abrir lista</string>

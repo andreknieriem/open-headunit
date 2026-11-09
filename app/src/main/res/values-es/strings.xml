@@ -1972,7 +1972,16 @@
     <string name="maintenance_remind_notification">Notificación de Android</string>
     <string name="maintenance_remind_notification_summary">Una sola notificación con todo lo pendiente. Algunas unidades no las muestran.</string>
     <string name="maintenance_remind_notification_blocked">Android no permite notificaciones para esta app</string>
-    <string name="maintenance_remind_none_note">Con las dos desactivadas, los recordatorios solo se ven en la pantalla principal.</string>
+    <string name="maintenance_remind_banner">Aviso sobre Android Auto</string>
+    <string name="maintenance_remind_banner_summary">Aviso breve y un tono en marcha, una vez por viaje para cada elemento</string>
+    <string name="maintenance_banner_position">Posición del aviso</string>
+    <string name="maintenance_banner_position_help">Automático lo pone arriba, del lado del acompañante, o en el borde lateral de una pantalla ultra ancha. El lado del acompañante sigue el ajuste «Volante a la derecha». El aviso nunca recibe toques, así que Android Auto sigue funcionando debajo.</string>
+    <string name="maintenance_banner_position_auto">Automático</string>
+    <string name="maintenance_banner_position_top">Arriba, lado del acompañante</string>
+    <string name="maintenance_banner_position_above_bar">Encima de la barra de Android Auto</string>
+    <string name="maintenance_banner_position_side">Borde lateral, lado del acompañante</string>
+    <string name="maintenance_banner_hint">Opciones al detenerse el auto</string>
+    <string name="maintenance_remind_all_off_note">Con los tres desactivados, los avisos solo se muestran en la pantalla principal.</string>
     <string name="maintenance_notification_channel">Recordatorios de mantenimiento</string>
     <string name="maintenance_notification_channel_description">Aceite, filtros y otros servicios pendientes</string>
     <string name="maintenance_notification_open">Abrir lista</string>

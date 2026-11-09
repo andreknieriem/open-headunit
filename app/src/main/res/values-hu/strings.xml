@@ -1963,7 +1963,16 @@
     <string name="maintenance_remind_notification">Android-értesítés</string>
     <string name="maintenance_remind_notification_summary">Egy értesítés minden esedékes tételről. Néhány fejegység nem mutatja.</string>
     <string name="maintenance_remind_notification_blocked">Az Android nem engedélyezi az értesítéseket ehhez az alkalmazáshoz</string>
-    <string name="maintenance_remind_none_note">Ha mindkettő ki van kapcsolva, az emlékeztetők csak a kezdőképernyőn jelennek meg.</string>
+    <string name="maintenance_remind_banner">Sáv az Android Auto felett</string>
+    <string name="maintenance_remind_banner_summary">Rövid sáv és hangjelzés vezetés közben, tételenként egyszer egy úton</string>
+    <string name="maintenance_banner_position">Sáv helye</string>
+    <string name="maintenance_banner_position_help">Az Automatikus a sávot felülre teszi, az utas oldalára, vagy egy ultraszéles kijelző szélére. Az utas oldala a „Jobbkormányos vezetés” beállítást követi. A sáv soha nem fogja meg az érintést, így az Android Auto a sáv alatt is működik.</string>
+    <string name="maintenance_banner_position_auto">Automatikus</string>
+    <string name="maintenance_banner_position_top">Felül, utas oldalon</string>
+    <string name="maintenance_banner_position_above_bar">Az Android Auto sáv felett</string>
+    <string name="maintenance_banner_position_side">Szélen, utas oldalon</string>
+    <string name="maintenance_banner_hint">Megálláskor választható lehetőségek</string>
+    <string name="maintenance_remind_all_off_note">Ha mindez ki van kapcsolva, az emlékeztetők csak a kezdőképernyőn jelennek meg.</string>
     <string name="maintenance_notification_channel">Karbantartási emlékeztetők</string>
     <string name="maintenance_notification_channel_description">Olajcsere, szűrők és egyéb esedékes szervizelemek</string>
     <string name="maintenance_notification_open">Lista megnyitása</string>

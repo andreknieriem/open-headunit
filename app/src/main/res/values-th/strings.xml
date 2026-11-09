@@ -2014,7 +2014,16 @@
     <string name="maintenance_remind_notification">การแจ้งเตือนของ Android</string>
     <string name="maintenance_remind_notification_summary">แจ้งเตือนเดียวสำหรับทุกรายการที่ถึงกำหนด บางเครื่องไม่แสดงการแจ้งเตือน</string>
     <string name="maintenance_remind_notification_blocked">Android ไม่อนุญาตให้แอปนี้แจ้งเตือน</string>
-    <string name="maintenance_remind_none_note">หากปิดทั้งสองอย่าง การเตือนจะแสดงเฉพาะในหน้าจอหลัก</string>
+    <string name="maintenance_remind_banner">แบนเนอร์ทับ Android Auto</string>
+    <string name="maintenance_remind_banner_summary">แบนเนอร์สั้นและเสียงขณะขับ ครั้งเดียวต่อการขับหนึ่งครั้งสำหรับแต่ละรายการ</string>
+    <string name="maintenance_banner_position">ตำแหน่งแบนเนอร์</string>
+    <string name="maintenance_banner_position_help">อัตโนมัติจะวางไว้ด้านบนฝั่งผู้โดยสาร หรือที่ขอบด้านข้างของจอกว้างพิเศษ ฝั่งผู้โดยสารจะเป็นไปตามการตั้งค่า พวงมาลัยขวา แบนเนอร์ไม่รับการสัมผัส จึงใช้ Android Auto ได้ตามปกติข้างใต้</string>
+    <string name="maintenance_banner_position_auto">อัตโนมัติ</string>
+    <string name="maintenance_banner_position_top">ด้านบน ฝั่งผู้โดยสาร</string>
+    <string name="maintenance_banner_position_above_bar">เหนือแถบ Android Auto</string>
+    <string name="maintenance_banner_position_side">ขอบด้านข้าง ฝั่งผู้โดยสาร</string>
+    <string name="maintenance_banner_hint">ตัวเลือกเมื่อรถหยุด</string>
+    <string name="maintenance_remind_all_off_note">หากปิดทั้งสามรายการ การเตือนจะแสดงเฉพาะบนหน้าจอหลัก</string>
     <string name="maintenance_notification_channel">การเตือนการบำรุงรักษา</string>
     <string name="maintenance_notification_channel_description">น้ำมันเครื่อง ไส้กรอง และรายการบำรุงรักษาอื่นที่ถึงกำหนด</string>
     <string name="maintenance_notification_open">เปิดรายการ</string>

@@ -1955,7 +1955,16 @@
     <string name="maintenance_remind_notification">Android 알림</string>
     <string name="maintenance_remind_notification_summary">기한이 된 항목을 알림 하나로 표시합니다. 알림을 표시하지 않는 기기도 있습니다.</string>
     <string name="maintenance_remind_notification_blocked">Android에서 이 앱의 알림을 허용하지 않습니다</string>
-    <string name="maintenance_remind_none_note">두 항목을 모두 끄면 알림은 홈 화면에만 표시됩니다.</string>
+    <string name="maintenance_remind_banner">Android Auto 위의 배너</string>
+    <string name="maintenance_remind_banner_summary">주행 중 짧은 배너와 알림음으로 알려 드립니다. 항목마다 주행당 한 번입니다</string>
+    <string name="maintenance_banner_position">배너 위치</string>
+    <string name="maintenance_banner_position_help">자동이면 조수석 쪽 위나 울트라와이드 화면의 측면 가장자리에 표시합니다. 조수석 쪽은 \"우핸들\" 설정을 따릅니다. 배너는 터치를 받지 않으므로 배너 아래에서도 Android Auto를 계속 사용할 수 있습니다.</string>
+    <string name="maintenance_banner_position_auto">자동</string>
+    <string name="maintenance_banner_position_top">위쪽, 조수석 쪽</string>
+    <string name="maintenance_banner_position_above_bar">Android Auto 바 위</string>
+    <string name="maintenance_banner_position_side">측면 가장자리, 조수석 쪽</string>
+    <string name="maintenance_banner_hint">정차할 때 선택 옵션</string>
+    <string name="maintenance_remind_all_off_note">세 가지를 모두 끄면 알림은 홈 화면에만 표시됩니다.</string>
     <string name="maintenance_notification_channel">정비 알림</string>
     <string name="maintenance_notification_channel_description">기한이 된 오일, 필터 등 정비 항목</string>
     <string name="maintenance_notification_open">목록 열기</string>

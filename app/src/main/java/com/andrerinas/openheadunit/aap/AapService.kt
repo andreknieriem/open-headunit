@@ -89,6 +89,8 @@ import com.andrerinas.openheadunit.connection.usb.UsbDeviceCompat
 import com.andrerinas.openheadunit.connection.usb.UsbLinkLossRecheckPolicy
 import com.andrerinas.openheadunit.connection.usb.UsbReceiver
 import com.andrerinas.openheadunit.location.GpsLocationService
+import com.andrerinas.openheadunit.maintenance.MaintenanceBannerHost
+import com.andrerinas.openheadunit.maintenance.MaintenanceBannerPolicy
 import com.andrerinas.openheadunit.maintenance.MaintenanceNoticePolicy
 import com.andrerinas.openheadunit.maintenance.MaintenanceNotifier
 import com.andrerinas.openheadunit.maintenance.MaintenanceTracker
@@ -1231,6 +1233,8 @@ class AapService : Service() {
         if (!settings.maintenanceEnabled) return
         val store = App.provide(this).maintenanceStore
         if (moment == MaintenanceNoticePolicy.Moment.START && !store.beginRun(SystemClock.elapsedRealtime())) return
+        // A stop ends the drive and a start begins a new one: the banner may speak again.
+        bannerState = MaintenanceBannerPolicy.driveEnded()
         val pending = store.pendingReminders(System.currentTimeMillis())
         val plan = MaintenanceNoticePolicy.plan(
             pendingCount = pending.size,
@@ -1267,7 +1271,11 @@ class AapService : Service() {
         }
     }
 
+    /** What the banner over Android Auto said in this drive. Main thread only. */
+    private var bannerState = MaintenanceBannerPolicy.State()
+
     private fun onMaintenanceFix(speedMps: Float?) {
+        maybeShowMaintenanceBanner(speedMps)
         if (!startNoticeWaiting) return
         startNoticeWaiting = false
         startNoticeTimeout?.cancel()
@@ -1276,6 +1284,24 @@ class AapService : Service() {
         } else {
             AppLog.i("AapService: the car is moving, the maintenance notice waits for the next stop")
         }
+    }
+
+    /**
+     * While Android Auto is on screen and the car is moving, a short banner for the most urgent
+     * item not shown yet in this drive. See [MaintenanceBannerPolicy].
+     */
+    private fun maybeShowMaintenanceBanner(speedMps: Float?) {
+        val store = App.provide(this).maintenanceStore
+        val host = MaintenanceBannerHost.show
+        val now = SystemClock.elapsedRealtime()
+        if (!MaintenanceBannerPolicy.shouldLook(
+                bannerState, settings.maintenanceEnabled, store.remindBanner, host != null, speedMps, now)) return
+        bannerState = MaintenanceBannerPolicy.looked(bannerState, now)
+        val entry = MaintenanceBannerPolicy.pick(bannerState, store.pendingReminders(System.currentTimeMillis())) ?: return
+        if (host?.invoke(entry, store.miles) != true) return
+        bannerState = MaintenanceBannerPolicy.shown(bannerState, entry.item.id, now)
+        AppLog.i("AapService: maintenance banner for ${entry.item.templateId ?: "a custom item"} " +
+            "(${entry.due.state}) at ${speedMps ?: 0f} m/s")
     }
 
     private fun showMaintenanceNotice(moment: MaintenanceNoticePolicy.Moment) {

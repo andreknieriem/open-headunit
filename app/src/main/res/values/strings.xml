@@ -2042,7 +2042,17 @@
     <string name="maintenance_remind_notification">Android notification</string>
     <string name="maintenance_remind_notification_summary">One notification for everything due. Some units never show them.</string>
     <string name="maintenance_remind_notification_blocked">Android is not allowing notifications for this app</string>
-    <string name="maintenance_remind_none_note">With both of these off, reminders only show on the home screen.</string>
+    <string name="maintenance_remind_banner">Banner over Android Auto</string>
+    <string name="maintenance_remind_banner_summary">A short banner and a chime while driving, once per drive for each item</string>
+    <string name="maintenance_banner_position">Banner position</string>
+    <string name="maintenance_banner_position_help">Automatic puts it at the top on the passenger side, or on the side edge of an ultrawide screen. The passenger side follows the Right-hand drive setting. The banner never takes a touch, so Android Auto keeps working under it.</string>
+    <string name="maintenance_banner_position_auto">Automatic</string>
+    <string name="maintenance_banner_position_top">Top, passenger side</string>
+    <string name="maintenance_banner_position_above_bar">Above the Android Auto bar</string>
+    <string name="maintenance_banner_position_side">Side edge, passenger side</string>
+    <!-- Second line of the banner while driving: nothing to do now, the choices come at the stop. -->
+    <string name="maintenance_banner_hint">Options when you stop</string>
+    <string name="maintenance_remind_all_off_note">With all of these off, reminders only show on the home screen.</string>
     <string name="maintenance_notification_channel">Maintenance reminders</string>
     <string name="maintenance_notification_channel_description">Oil, filters and other service items that are due</string>
     <string name="maintenance_notification_open">Open list</string>

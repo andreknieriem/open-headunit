@@ -1967,7 +1967,16 @@
     <string name="maintenance_remind_notification">Android-melding</string>
     <string name="maintenance_remind_notification_summary">Eén melding voor alles wat eraan komt. Sommige headunits tonen ze nooit.</string>
     <string name="maintenance_remind_notification_blocked">Android staat meldingen voor deze app niet toe</string>
-    <string name="maintenance_remind_none_note">Staan beide uit, dan zie je herinneringen alleen op het startscherm.</string>
+    <string name="maintenance_remind_banner">Banner over Android Auto</string>
+    <string name="maintenance_remind_banner_summary">Kort banner met belletje tijdens het rijden, één keer per rit per onderdeel</string>
+    <string name="maintenance_banner_position">Positie van de banner</string>
+    <string name="maintenance_banner_position_help">Automatisch staat hij boven aan de bijrijderskant, of aan de zijkant van een ultrabreed scherm. De bijrijderskant volgt de instelling \"Rechtsgestuurd\". De banner vangt nooit een aanraking, dus Android Auto blijft onder de banner gewoon bruikbaar.</string>
+    <string name="maintenance_banner_position_auto">Automatisch</string>
+    <string name="maintenance_banner_position_top">Boven, bijrijderskant</string>
+    <string name="maintenance_banner_position_above_bar">Boven de balk van Android Auto</string>
+    <string name="maintenance_banner_position_side">Zijkant, bijrijderskant</string>
+    <string name="maintenance_banner_hint">Opties bij stoppen</string>
+    <string name="maintenance_remind_all_off_note">Staan deze drie uit, dan verschijnen herinneringen alleen op het startscherm.</string>
     <string name="maintenance_notification_channel">Onderhoudsherinneringen</string>
     <string name="maintenance_notification_channel_description">Olie, filters en andere onderdelen die aan de beurt zijn</string>
     <string name="maintenance_notification_open">Lijst openen</string>

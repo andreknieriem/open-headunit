@@ -140,6 +140,8 @@ object SettingsBackupManager {
         "maintenance-steering" to ValueType.STRING,
         "maintenance-remind-screen" to ValueType.BOOLEAN,
         "maintenance-remind-notification" to ValueType.BOOLEAN,
+        "maintenance-remind-banner" to ValueType.BOOLEAN,
+        "maintenance-banner-position" to ValueType.STRING,
         "wifi-connection-mode" to ValueType.INT,
         "video-codec" to ValueType.STRING,
         "fps-limit" to ValueType.INT,

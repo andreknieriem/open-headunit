@@ -1959,7 +1959,16 @@
     <string name="maintenance_remind_notification">Android 通知</string>
     <string name="maintenance_remind_notification_summary">所有到期項目合併為一則通知。部分車機不顯示通知。</string>
     <string name="maintenance_remind_notification_blocked">Android 不允許本應用程式發送通知</string>
-    <string name="maintenance_remind_none_note">兩項都關閉時，提醒只會顯示在主畫面上。</string>
+    <string name="maintenance_remind_banner">Android Auto 上方橫幅</string>
+    <string name="maintenance_remind_banner_summary">行駛時顯示短橫幅並響一聲，每個項目每趟行程僅一次</string>
+    <string name="maintenance_banner_position">橫幅位置</string>
+    <string name="maintenance_banner_position_help">自動會把橫幅放在副駕一側的頂部，或超寬螢幕的側邊。副駕一側跟隨「右駕」設定。橫幅不會接收觸控，因此 Android Auto 仍可在橫幅下方正常操作。</string>
+    <string name="maintenance_banner_position_auto">自動</string>
+    <string name="maintenance_banner_position_top">頂部，副駕一側</string>
+    <string name="maintenance_banner_position_above_bar">Android Auto 列上方</string>
+    <string name="maintenance_banner_position_side">側邊，副駕一側</string>
+    <string name="maintenance_banner_hint">車輛停下時的選項</string>
+    <string name="maintenance_remind_all_off_note">全部關閉後，提醒只會顯示在主畫面上。</string>
     <string name="maintenance_notification_channel">保養提醒</string>
     <string name="maintenance_notification_channel_description">機油、濾芯和其他到期的保養項目</string>
     <string name="maintenance_notification_open">開啟清單</string>

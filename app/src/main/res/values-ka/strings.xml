@@ -1948,7 +1948,16 @@
     <string name="maintenance_remind_notification">Android-ის შეტყობინება</string>
     <string name="maintenance_remind_notification_summary">ერთი შეტყობინება ყველაფერზე, რაც ვადაშია. ზოგი სისტემა მათ არ აჩვენებს.</string>
     <string name="maintenance_remind_notification_blocked">Android არ უშვებს ამ აპის შეტყობინებებს</string>
-    <string name="maintenance_remind_none_note">თუ ორივე გამორთულია, შეხსენებები მხოლოდ მთავარ ეკრანზე გამოჩნდება.</string>
+    <string name="maintenance_remind_banner">ბანერი Android Auto-ს თავზე</string>
+    <string name="maintenance_remind_banner_summary">მართვისას მოკლე ბანერი და ხმოვანი სიგნალი, თითო ერთეულზე მგზავრობაში ერთხელ</string>
+    <string name="maintenance_banner_position">ბანერის მდებარეობა</string>
+    <string name="maintenance_banner_position_help">ავტომატურ რეჟიმში ბანერი მგზავრის მხარეს, ზემოთ, ან ულტრაფართო ეკრანის გვერდით კიდეზე გამოჩნდება. მგზავრის მხარე მიჰყვება პარამეტრს მარჯვენასაჭიანი მართვა. ბანერი შეხებას არ იღებს, ამიტომ Android Auto მის ქვეშაც იმუშავებს.</string>
+    <string name="maintenance_banner_position_auto">ავტომატური</string>
+    <string name="maintenance_banner_position_top">ზემოთ, მგზავრის მხარეს</string>
+    <string name="maintenance_banner_position_above_bar">Android Auto-ს პანელის ზემოთ</string>
+    <string name="maintenance_banner_position_side">ეკრანის გვერდითი კიდე, მგზავრის მხარეს</string>
+    <string name="maintenance_banner_hint">არჩევანი გაჩერებისას</string>
+    <string name="maintenance_remind_all_off_note">თუ სამივე გამორთულია, შეხსენებები მხოლოდ მთავარ ეკრანზე გამოჩნდება.</string>
     <string name="maintenance_notification_channel">მომსახურების შეხსენებები</string>
     <string name="maintenance_notification_channel_description">ზეთი, ფილტრები და სხვა მომსახურების საჭირო ნივთები</string>
     <string name="maintenance_notification_open">სიის გახსნა</string>

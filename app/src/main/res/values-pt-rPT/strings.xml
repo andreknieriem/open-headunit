@@ -2015,7 +2015,16 @@
     <string name="maintenance_remind_notification">Notificação do Android</string>
     <string name="maintenance_remind_notification_summary">Uma notificação para tudo o que está pendente. Algumas unidades não a mostram.</string>
     <string name="maintenance_remind_notification_blocked">O Android não está a permitir notificações desta aplicação</string>
-    <string name="maintenance_remind_none_note">Com as duas opções desligadas, os lembretes só aparecem no ecrã principal.</string>
+    <string name="maintenance_remind_banner">Faixa sobre o Android Auto</string>
+    <string name="maintenance_remind_banner_summary">Um aviso breve e um sinal sonoro ao conduzir, uma vez por viagem para cada item</string>
+    <string name="maintenance_banner_position">Posição do aviso</string>
+    <string name="maintenance_banner_position_help">Automática coloca no topo, do lado do passageiro, ou na margem lateral de um ecrã ultralargo. O lado do passageiro segue a definição Volante à direita (RHD). O aviso nunca intercepta toques, por isso o Android Auto continua a funcionar por baixo.</string>
+    <string name="maintenance_banner_position_auto">Automático</string>
+    <string name="maintenance_banner_position_top">Topo, lado do passageiro</string>
+    <string name="maintenance_banner_position_above_bar">Acima da barra do Android Auto</string>
+    <string name="maintenance_banner_position_side">Margem lateral, lado do passageiro</string>
+    <string name="maintenance_banner_hint">Opções ao parar</string>
+    <string name="maintenance_remind_all_off_note">Com todos estes desativados, os lembretes só aparecem no ecrã principal.</string>
     <string name="maintenance_notification_channel">Lembretes de manutenção</string>
     <string name="maintenance_notification_channel_description">Óleo, filtros e outros itens de revisão que estão em atraso</string>
     <string name="maintenance_notification_open">Abrir lista</string>

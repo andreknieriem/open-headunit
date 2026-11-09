@@ -1877,6 +1877,16 @@ class Settings(private val context: Context) {
         get() = prefs.getBoolean("maintenance-remind-notification", true)
         set(value) { prefs.edit().putBoolean("maintenance-remind-notification", value).apply() }
 
+    /** Show a short banner with a chime over Android Auto while the car is moving. */
+    var maintenanceRemindBanner: Boolean
+        get() = prefs.getBoolean("maintenance-remind-banner", true)
+        set(value) { prefs.edit().putBoolean("maintenance-remind-banner", value).apply() }
+
+    /** Where the banner goes, by MaintenanceBannerPolicy.Position name. */
+    var maintenanceBannerPosition: String
+        get() = prefs.getString("maintenance-banner-position", "AUTO") ?: "AUTO"
+        set(value) { prefs.edit().putString("maintenance-banner-position", value).apply() }
+
     @SuppressLint("ApplySharedPref")
     fun commit() {
         prefs.edit().commit()

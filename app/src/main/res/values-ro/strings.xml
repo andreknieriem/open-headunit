@@ -1963,7 +1963,16 @@
     <string name="maintenance_remind_notification">Notificare Android</string>
     <string name="maintenance_remind_notification_summary">O singură notificare pentru tot ce e scadent. Unele unități nu o afișează.</string>
     <string name="maintenance_remind_notification_blocked">Android nu permite notificări pentru această aplicație</string>
-    <string name="maintenance_remind_none_note">Cu ambele dezactivate, reamintirile apar doar pe ecranul principal.</string>
+    <string name="maintenance_remind_banner">Banner peste Android Auto</string>
+    <string name="maintenance_remind_banner_summary">Un banner scurt și un sunet în mers, o dată pe drum pentru fiecare element</string>
+    <string name="maintenance_banner_position">Poziția bannerului</string>
+    <string name="maintenance_banner_position_help">Automat îl pune sus, pe partea pasagerului, sau pe marginea laterală a unui ecran ultrawide. Partea pasagerului urmează setarea Volan pe dreapta. Bannerul nu preia atingerile, așa că Android Auto funcționează în continuare dedesubt.</string>
+    <string name="maintenance_banner_position_auto">Automat</string>
+    <string name="maintenance_banner_position_top">Sus, partea pasagerului</string>
+    <string name="maintenance_banner_position_above_bar">Deasupra barei Android Auto</string>
+    <string name="maintenance_banner_position_side">Margine laterală, partea pasagerului</string>
+    <string name="maintenance_banner_hint">Opțiuni la oprire</string>
+    <string name="maintenance_remind_all_off_note">Dacă toate trei sunt dezactivate, reamintirile apar doar pe ecranul principal.</string>
     <string name="maintenance_notification_channel">Reamintiri de întreținere</string>
     <string name="maintenance_notification_channel_description">Ulei, filtre și alte elemente de revizie care sunt scadente</string>
     <string name="maintenance_notification_open">Deschide lista</string>

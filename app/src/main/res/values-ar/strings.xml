@@ -1973,7 +1973,16 @@
     <string name="maintenance_remind_notification">إشعار Android</string>
     <string name="maintenance_remind_notification_summary">إشعار واحد لكل ما هو مستحق. بعض الوحدات لا تعرض الإشعارات.</string>
     <string name="maintenance_remind_notification_blocked">نظام Android لا يسمح بالإشعارات لهذا التطبيق</string>
-    <string name="maintenance_remind_none_note">مع إيقاف الخيارين، تظهر التذكيرات في الشاشة الرئيسية فقط.</string>
+    <string name="maintenance_remind_banner">شريط فوق Android Auto</string>
+    <string name="maintenance_remind_banner_summary">شريط قصير ونغمة أثناء القيادة، مرة واحدة في كل رحلة لكل عنصر</string>
+    <string name="maintenance_banner_position">موضع الشريط</string>
+    <string name="maintenance_banner_position_help">يضعه الوضع التلقائي في الأعلى من جهة الراكب، أو على الحافة الجانبية لشاشة عريضة جدًا. جهة الراكب تتبع إعداد «القيادة على اليمين». الشريط لا يلتقط أي لمسة، فيبقى Android Auto يعمل تحته كما هو.</string>
+    <string name="maintenance_banner_position_auto">تلقائي</string>
+    <string name="maintenance_banner_position_top">أعلى، جهة الراكب</string>
+    <string name="maintenance_banner_position_above_bar">فوق شريط Android Auto</string>
+    <string name="maintenance_banner_position_side">الحافة الجانبية، جهة الراكب</string>
+    <string name="maintenance_banner_hint">الخيارات عند توقف السيارة</string>
+    <string name="maintenance_remind_all_off_note">عند إيقاف الثلاثة، تظهر التذكيرات في الشاشة الرئيسية فقط.</string>
     <string name="maintenance_notification_channel">تذكيرات الصيانة</string>
     <string name="maintenance_notification_channel_description">الزيت والفلاتر وبنود الصيانة الأخرى المستحقة</string>
     <string name="maintenance_notification_open">فتح القائمة</string>

@@ -20,6 +20,7 @@ import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.aap.AapService
 import com.andrerinas.openheadunit.maintenance.Distance
 import com.andrerinas.openheadunit.maintenance.Gearbox
+import com.andrerinas.openheadunit.maintenance.MaintenanceBannerPolicy
 import com.andrerinas.openheadunit.maintenance.MaintenanceNotifier
 import com.andrerinas.openheadunit.maintenance.MaintenanceTexts
 import com.andrerinas.openheadunit.maintenance.MaintenanceTracker
@@ -175,8 +176,27 @@ class MaintenanceFragment : MaintenanceScreenFragment() {
                 }
             }
         ))
-        if (!store.remindScreen && !store.remindNotification) {
-            items.add(SettingItem.InfoBanner("maintenanceRemindNone", R.string.maintenance_remind_none_note))
+        items.add(SettingItem.ToggleSettingEntry(
+            stableId = "maintenanceRemindBanner",
+            nameResId = R.string.maintenance_remind_banner,
+            descriptionResId = R.string.maintenance_remind_banner_summary,
+            isChecked = store.remindBanner,
+            onCheckedChanged = { checked ->
+                store.remindBanner = checked
+                refresh()
+            }
+        ))
+        if (store.remindBanner) {
+            items.add(SettingItem.SettingEntry(
+                stableId = "maintenanceBannerPosition",
+                nameResId = R.string.maintenance_banner_position,
+                helpResId = R.string.maintenance_banner_position_help,
+                value = getString(bannerPositionLabels.getValue(store.bannerPosition)),
+                onClick = { showBannerPositionDialog() }
+            ))
+        }
+        if (!store.remindScreen && !store.remindNotification && !store.remindBanner) {
+            items.add(SettingItem.InfoBanner("maintenanceRemindNone", R.string.maintenance_remind_all_off_note))
         }
 
         items.add(SettingItem.CategoryHeader("maintenanceRunning", R.string.maintenance_category_running))
@@ -420,6 +440,28 @@ class MaintenanceFragment : MaintenanceScreenFragment() {
             ToastUtils.showToast(ctx, text, Toast.LENGTH_LONG, force = true)
             refresh()
         }
+    }
+
+    private val bannerPositionLabels = mapOf(
+        MaintenanceBannerPolicy.Position.AUTO to R.string.maintenance_banner_position_auto,
+        MaintenanceBannerPolicy.Position.TOP to R.string.maintenance_banner_position_top,
+        MaintenanceBannerPolicy.Position.ABOVE_BAR to R.string.maintenance_banner_position_above_bar,
+        MaintenanceBannerPolicy.Position.SIDE to R.string.maintenance_banner_position_side,
+    )
+
+    private fun showBannerPositionDialog() {
+        val positions = MaintenanceBannerPolicy.Position.values()
+        MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
+            .setTitle(R.string.maintenance_banner_position)
+            .setSingleChoiceItems(
+                positions.map { getString(bannerPositionLabels.getValue(it)) }.toTypedArray(),
+                positions.indexOf(store.bannerPosition)
+            ) { dialog, which ->
+                store.bannerPosition = positions[which]
+                dialog.dismiss()
+                refresh()
+            }
+            .show()
     }
 
     private fun showUnitsDialog() {

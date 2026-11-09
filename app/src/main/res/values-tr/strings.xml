@@ -1958,7 +1958,16 @@
     <string name="maintenance_remind_notification">Android bildirimi</string>
     <string name="maintenance_remind_notification_summary">Zamanı gelen her şey için tek bildirim. Bazı üniteler bildirim göstermez.</string>
     <string name="maintenance_remind_notification_blocked">Android bu uygulama için bildirimlere izin vermiyor</string>
-    <string name="maintenance_remind_none_note">Bu ikisi kapalıyken hatırlatmalar yalnızca ana ekranda görünür.</string>
+    <string name="maintenance_remind_banner">Android Auto üzerinde uyarı şeridi</string>
+    <string name="maintenance_remind_banner_summary">Sürerken kısa bir şerit ve bir ses, her öğe için sürüş başına bir kez</string>
+    <string name="maintenance_banner_position">Şerit konumu</string>
+    <string name="maintenance_banner_position_help">Otomatik, şeridi yolcu tarafında üstte ya da çok geniş bir ekranın yan kenarında gösterir. Yolcu tarafı \"Sağ direksiyon\" ayarını izler. Şerit hiçbir dokunuşu almaz, bu yüzden Android Auto şeridin altında çalışmaya devam eder.</string>
+    <string name="maintenance_banner_position_auto">Otomatik</string>
+    <string name="maintenance_banner_position_top">Üst, yolcu tarafı</string>
+    <string name="maintenance_banner_position_above_bar">Android Auto çubuğunun üstünde</string>
+    <string name="maintenance_banner_position_side">Yan kenar, yolcu tarafı</string>
+    <string name="maintenance_banner_hint">Araç durunca seçenekler</string>
+    <string name="maintenance_remind_all_off_note">Bunların hepsi kapalıyken hatırlatmalar yalnızca ana ekranda görünür.</string>
     <string name="maintenance_notification_channel">Bakım hatırlatmaları</string>
     <string name="maintenance_notification_channel_description">Zamanı gelen yağ, filtre ve diğer bakım öğeleri</string>
     <string name="maintenance_notification_open">Listeyi aç</string>

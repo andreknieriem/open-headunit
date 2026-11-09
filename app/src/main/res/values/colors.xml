@@ -128,6 +128,13 @@
     <color name="maintenance_notice_track">#59000000</color>
     <color name="maintenance_notice_button">#24FFFFFF</color>
     <color name="maintenance_notice_primary_text">#0E1217</color>
+    <!-- The banner over Android Auto, translucent so the map still shows through it. -->
+    <color name="maintenance_banner_tint">#D9161B23</color>
+    <color name="maintenance_banner_edge">#1FFFFFFF</color>
+    <color name="maintenance_banner_highlight">#33FFFFFF</color>
+    <color name="maintenance_banner_detail">#C9D1DC</color>
+    <color name="maintenance_banner_overdue_circle">#3A2124</color>
+    <color name="maintenance_banner_soon_circle">#3A3020</color>
     <!-- The one-time hint on the launcher home that shows where pages are added. -->
     <color name="home_hint_scrim">#BD04060A</color>
     <color name="home_hint_callout">#F3F5F8</color>

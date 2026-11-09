@@ -1966,7 +1966,16 @@
     <string name="maintenance_remind_notification">Android-Benachrichtigung</string>
     <string name="maintenance_remind_notification_summary">Eine Benachrichtigung für alles Fällige. Manche Geräte zeigen sie nie.</string>
     <string name="maintenance_remind_notification_blocked">Android erlaubt für diese App keine Benachrichtigungen</string>
-    <string name="maintenance_remind_none_note">Wenn beide aus sind, erscheinen Erinnerungen nur auf dem Startbildschirm.</string>
+    <string name="maintenance_remind_banner">Hinweis über Android Auto</string>
+    <string name="maintenance_remind_banner_summary">Kurzer Hinweis mit Signalton während der Fahrt, pro Fahrt einmal je Eintrag</string>
+    <string name="maintenance_banner_position">Position des Hinweises</string>
+    <string name="maintenance_banner_position_help">Automatisch erscheint er oben auf der Beifahrerseite oder am seitlichen Rand eines Ultrawide-Bildschirms. Die Beifahrerseite richtet sich nach der Einstellung „Rechtslenker“. Der Hinweis nimmt nie Berührungen an, Android Auto funktioniert also darunter weiter.</string>
+    <string name="maintenance_banner_position_auto">Automatisch</string>
+    <string name="maintenance_banner_position_top">Oben, Beifahrerseite</string>
+    <string name="maintenance_banner_position_above_bar">Über der Android-Auto-Leiste</string>
+    <string name="maintenance_banner_position_side">Seitenrand, Beifahrerseite</string>
+    <string name="maintenance_banner_hint">Optionen beim Anhalten</string>
+    <string name="maintenance_remind_all_off_note">Wenn alle drei aus sind, erscheinen Erinnerungen nur auf dem Startbildschirm.</string>
     <string name="maintenance_notification_channel">Wartungserinnerungen</string>
     <string name="maintenance_notification_channel_description">Öl, Filter und andere fällige Wartungspunkte</string>
     <string name="maintenance_notification_open">Liste öffnen</string>

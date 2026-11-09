@@ -1967,7 +1967,16 @@
     <string name="maintenance_remind_notification">Oznámení Androidu</string>
     <string name="maintenance_remind_notification_summary">Jedno oznámení pro vše, co je na řadě. Některé jednotky je nezobrazí.</string>
     <string name="maintenance_remind_notification_blocked">Android pro tuto aplikaci oznámení nepovoluje</string>
-    <string name="maintenance_remind_none_note">Pokud jsou obě možnosti vypnuté, připomínky se zobrazí jen na domovské obrazovce.</string>
+    <string name="maintenance_remind_banner">Upozornění nad Android Auto</string>
+    <string name="maintenance_remind_banner_summary">Krátké upozornění a zvuk během jízdy, jednou na jízdu pro každou položku</string>
+    <string name="maintenance_banner_position">Pozice upozornění</string>
+    <string name="maintenance_banner_position_help">Automaticky je nahoře na straně spolujezdce, nebo na okraji širokoúhlé obrazovky. Strana spolujezdce se řídí nastavením „Pravostranné řízení“. Upozornění nikdy nezachytí dotyk, takže Android Auto pod ním funguje dál.</string>
+    <string name="maintenance_banner_position_auto">Automaticky</string>
+    <string name="maintenance_banner_position_top">Nahoře, strana spolujezdce</string>
+    <string name="maintenance_banner_position_above_bar">Nad lištou Android Auto</string>
+    <string name="maintenance_banner_position_side">Okraj obrazovky, strana spolujezdce</string>
+    <string name="maintenance_banner_hint">Možnosti při zastavení auta</string>
+    <string name="maintenance_remind_all_off_note">Když jsou všechna tři vypnutá, připomínky se zobrazují jen na domovské obrazovce.</string>
     <string name="maintenance_notification_channel">Připomínky servisu</string>
     <string name="maintenance_notification_channel_description">Olej, filtry a další servisní položky, které jsou na řadě</string>
     <string name="maintenance_notification_open">Otevřít seznam</string>

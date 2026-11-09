@@ -2008,7 +2008,16 @@
     <string name="maintenance_remind_notification">Notifikasi Android</string>
     <string name="maintenance_remind_notification_summary">Satu notifikasi untuk semua yang jatuh tempo. Ada unit yang tak menampilkannya.</string>
     <string name="maintenance_remind_notification_blocked">Android tidak mengizinkan notifikasi untuk aplikasi ini</string>
-    <string name="maintenance_remind_none_note">Jika keduanya mati, pengingat hanya muncul di layar utama.</string>
+    <string name="maintenance_remind_banner">Banner di atas Android Auto</string>
+    <string name="maintenance_remind_banner_summary">Banner singkat dan nada saat berkendara, sekali per perjalanan per item</string>
+    <string name="maintenance_banner_position">Posisi banner</string>
+    <string name="maintenance_banner_position_help">Otomatis menempatkannya di atas, di sisi penumpang, atau di tepi samping layar ultrawide. Sisi penumpang mengikuti pengaturan Kemudi kanan. Banner tidak pernah menangkap sentuhan, jadi Android Auto tetap bisa dipakai di bawahnya.</string>
+    <string name="maintenance_banner_position_auto">Otomatis</string>
+    <string name="maintenance_banner_position_top">Atas, sisi penumpang</string>
+    <string name="maintenance_banner_position_above_bar">Di atas bilah Android Auto</string>
+    <string name="maintenance_banner_position_side">Tepi samping, sisi penumpang</string>
+    <string name="maintenance_banner_hint">Pilihan saat berhenti</string>
+    <string name="maintenance_remind_all_off_note">Jika semua ini mati, pengingat hanya muncul di layar beranda.</string>
     <string name="maintenance_notification_channel">Pengingat perawatan</string>
     <string name="maintenance_notification_channel_description">Oli, filter, dan item servis lain yang sudah jatuh tempo</string>
     <string name="maintenance_notification_open">Buka daftar</string>

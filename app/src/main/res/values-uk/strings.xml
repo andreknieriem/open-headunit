@@ -1970,7 +1970,16 @@
     <string name="maintenance_remind_notification">Сповіщення Android</string>
     <string name="maintenance_remind_notification_summary">Одне сповіщення про все, що час зробити. Деякі пристрої їх не показують.</string>
     <string name="maintenance_remind_notification_blocked">Android не дозволяє сповіщення для цього додатка</string>
-    <string name="maintenance_remind_none_note">Якщо обидва вимкнені, нагадування показуються лише на головному екрані.</string>
+    <string name="maintenance_remind_banner">Банер поверх Android Auto</string>
+    <string name="maintenance_remind_banner_summary">Короткий банер і сигнал під час руху, раз за поїздку для кожного пункту</string>
+    <string name="maintenance_banner_position">Положення банера</string>
+    <string name="maintenance_banner_position_help">Автоматично ставить його вгорі з боку пасажира або на бічному краю широкого екрана. Бік пасажира залежить від налаштування \"Правостороннє керування\". Банер не перехоплює дотики, тому Android Auto працює під ним.</string>
+    <string name="maintenance_banner_position_auto">Автоматично</string>
+    <string name="maintenance_banner_position_top">Угорі, сторона пасажира</string>
+    <string name="maintenance_banner_position_above_bar">Над панеллю Android Auto</string>
+    <string name="maintenance_banner_position_side">Бічний край, сторона пасажира</string>
+    <string name="maintenance_banner_hint">Варіанти, коли авто зупиниться</string>
+    <string name="maintenance_remind_all_off_note">Коли все це вимкнено, нагадування показуються тільки на головному екрані.</string>
     <string name="maintenance_notification_channel">Нагадування про обслуговування</string>
     <string name="maintenance_notification_channel_description">Масло, фільтри та інші пункти обслуговування, які настали</string>
     <string name="maintenance_notification_open">Відкрити список</string>

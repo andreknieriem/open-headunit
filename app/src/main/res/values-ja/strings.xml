@@ -1963,7 +1963,16 @@
     <string name="maintenance_remind_notification">Android の通知</string>
     <string name="maintenance_remind_notification_summary">期限が来た項目をまとめて1件で通知。通知を表示しない機器もあります。</string>
     <string name="maintenance_remind_notification_blocked">Android で、このアプリの通知が許可されていません</string>
-    <string name="maintenance_remind_none_note">この2つをオフにすると、お知らせはホーム画面にだけ表示されます。</string>
+    <string name="maintenance_remind_banner">Android Auto 上のバナー</string>
+    <string name="maintenance_remind_banner_summary">走行中、短いバナーとチャイム音でお知らせします。項目ごとに1回の走行で1度だけ</string>
+    <string name="maintenance_banner_position">バナーの位置</string>
+    <string name="maintenance_banner_position_help">自動では、助手席側の上部、またはウルトラワイド画面の側面の端に表示します。助手席側は「右ハンドル」の設定に従います。バナーはタッチを受け取らないため、バナーの下でも Android Auto を操作できます。</string>
+    <string name="maintenance_banner_position_auto">自動</string>
+    <string name="maintenance_banner_position_top">上部、助手席側</string>
+    <string name="maintenance_banner_position_above_bar">Android Auto のバーの上</string>
+    <string name="maintenance_banner_position_side">側面の端、助手席側</string>
+    <string name="maintenance_banner_hint">停車時の選択肢</string>
+    <string name="maintenance_remind_all_off_note">3つすべてをオフにすると、お知らせはホーム画面にだけ表示されます。</string>
     <string name="maintenance_notification_channel">メンテナンスのお知らせ</string>
     <string name="maintenance_notification_channel_description">期限が来たオイル、フィルターなどの整備項目</string>
     <string name="maintenance_notification_open">一覧を開く</string>

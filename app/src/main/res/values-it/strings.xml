@@ -1967,7 +1967,16 @@
     <string name="maintenance_remind_notification">Notifica Android</string>
     <string name="maintenance_remind_notification_summary">Una notifica per tutto ciò che è in scadenza. Alcune autoradio non la mostrano.</string>
     <string name="maintenance_remind_notification_blocked">Android non consente le notifiche per questa app</string>
-    <string name="maintenance_remind_none_note">Con entrambe disattivate, i promemoria compaiono solo nella schermata Home.</string>
+    <string name="maintenance_remind_banner">Banner sopra Android Auto</string>
+    <string name="maintenance_remind_banner_summary">Un breve banner e un suono in guida, una volta per viaggio per ogni voce</string>
+    <string name="maintenance_banner_position">Posizione del banner</string>
+    <string name="maintenance_banner_position_help">Automatico lo mette in alto dal lato del passeggero, oppure sul bordo laterale di uno schermo ultrawide. Il lato del passeggero segue l\'impostazione « Guida a destra ». Il banner non intercetta mai il tocco, quindi Android Auto continua a funzionare sotto.</string>
+    <string name="maintenance_banner_position_auto">Automatico</string>
+    <string name="maintenance_banner_position_top">In alto, lato passeggero</string>
+    <string name="maintenance_banner_position_above_bar">Sopra la barra di Android Auto</string>
+    <string name="maintenance_banner_position_side">Bordo laterale, lato passeggero</string>
+    <string name="maintenance_banner_hint">Opzioni quando l\'auto si ferma</string>
+    <string name="maintenance_remind_all_off_note">Con tutti questi disattivati, i promemoria compaiono solo nella schermata Home.</string>
     <string name="maintenance_notification_channel">Promemoria manutenzione</string>
     <string name="maintenance_notification_channel_description">Olio, filtri e altri interventi in scadenza</string>
     <string name="maintenance_notification_open">Apri elenco</string>

@@ -131,6 +131,7 @@ object SettingsBackupManager {
         "maintenance-miles" to ValueType.BOOLEAN,
         "maintenance-odometer" to ValueType.STRING,
         "maintenance-raw-since-correction" to ValueType.STRING,
+        "maintenance-box-since-correction" to ValueType.STRING,
         "maintenance-correction-factor" to ValueType.STRING,
         "maintenance-correction-base" to ValueType.STRING,
         "maintenance-correction-clamped" to ValueType.BOOLEAN,

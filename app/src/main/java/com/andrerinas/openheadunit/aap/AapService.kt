@@ -89,6 +89,7 @@ import com.andrerinas.openheadunit.connection.usb.UsbDeviceCompat
 import com.andrerinas.openheadunit.connection.usb.UsbLinkLossRecheckPolicy
 import com.andrerinas.openheadunit.connection.usb.UsbReceiver
 import com.andrerinas.openheadunit.location.GpsLocationService
+import com.andrerinas.openheadunit.maintenance.CanBoxCounter
 import com.andrerinas.openheadunit.maintenance.MaintenanceBannerHost
 import com.andrerinas.openheadunit.maintenance.MaintenanceBannerPolicy
 import com.andrerinas.openheadunit.maintenance.MaintenanceNoticePolicy
@@ -1149,6 +1150,9 @@ class AapService : Service() {
     /** Counts the mileage while the maintenance feature is on. See [syncMaintenanceTracker]. */
     private var maintenanceTracker: MaintenanceTracker? = null
 
+    /** Counts it from the CAN box instead, on units where the box can be read. */
+    private var canBoxCounter: CanBoxCounter? = null
+
     // Serialize shutdown with in-flight promotions. Queued recorder cleanup must not recreate the
     // notification; an actual delivered start still owes Android a base-only foreground promotion.
     @Synchronized
@@ -1212,6 +1216,10 @@ class AapService : Service() {
      */
     private fun syncMaintenanceTracker() {
         if (settings.maintenanceEnabled) {
+            // The box first: the tracker's first fix asks it whether the closed time is counted.
+            val box = canBoxCounter ?: CanBoxCounter(this, App.provide(this).maintenanceStore)
+                .also { canBoxCounter = it }
+            box.start()
             val tracker = maintenanceTracker ?: MaintenanceTracker(
                 this, App.provide(this).maintenanceStore,
                 onFix = ::onMaintenanceFix,
@@ -1221,6 +1229,8 @@ class AapService : Service() {
         } else {
             maintenanceTracker?.stop()
             maintenanceTracker = null
+            canBoxCounter?.stop()
+            canBoxCounter = null
         }
     }
 
@@ -3731,6 +3741,8 @@ class AapService : Service() {
         stopService(GpsLocationService.intent(this))
         maintenanceTracker?.stop()
         maintenanceTracker = null
+        canBoxCounter?.stop()
+        canBoxCounter = null
         try {
             unregisterReceiver(nightModeUpdateReceiver)
             unregisterReceiver(sensorRefreshReceiver)

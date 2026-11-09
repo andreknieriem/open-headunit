@@ -15,10 +15,13 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.core.os.bundleOf
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.aap.AapService
+import com.andrerinas.openheadunit.maintenance.CanBoxCounter
 import com.andrerinas.openheadunit.maintenance.Distance
+import com.andrerinas.openheadunit.maintenance.DistanceSourcePolicy
 import com.andrerinas.openheadunit.maintenance.Gearbox
 import com.andrerinas.openheadunit.maintenance.MaintenanceBannerPolicy
 import com.andrerinas.openheadunit.maintenance.MaintenanceNotifier
@@ -28,8 +31,10 @@ import com.andrerinas.openheadunit.maintenance.Steering
 import com.andrerinas.openheadunit.main.settings.SettingItem
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.ToastUtils
+import com.andrerinas.openheadunit.utils.adb.AdbManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
+import kotlinx.coroutines.launch
 
 /**
  * Settings > Maintenance: turning the mileage on, correcting it, the car, keeping the app alive,
@@ -118,6 +123,7 @@ class MaintenanceFragment : MaintenanceScreenFragment() {
             ),
             onClick = { showCorrectDialog() }
         ))
+        items.add(sourceRow(ctx))
         items.add(gpsRow(ctx))
         items.add(SettingItem.SettingEntry(
             stableId = "maintenanceUnits",
@@ -244,6 +250,61 @@ class MaintenanceFragment : MaintenanceScreenFragment() {
         return items
     }
 
+    private fun sourceRow(ctx: Context): SettingItem.SettingEntry {
+        val shown = DistanceSourcePolicy.shown(CanBoxCounter.access(ctx), store.countingSource())
+        val value = when (shown) {
+            DistanceSourcePolicy.Shown.GPS -> R.string.maintenance_source_gps
+            DistanceSourcePolicy.Shown.BOX -> R.string.maintenance_source_box
+            DistanceSourcePolicy.Shown.BOX_SILENT -> R.string.maintenance_source_box_silent
+            DistanceSourcePolicy.Shown.BOX_NEEDS_ACCESS -> R.string.maintenance_source_box_needs_access
+            DistanceSourcePolicy.Shown.BOX_NEEDS_RESTART -> R.string.maintenance_source_box_restart
+        }
+        return SettingItem.SettingEntry(
+            stableId = "maintenanceSource",
+            nameResId = R.string.maintenance_source,
+            helpResId = R.string.maintenance_source_help,
+            value = getString(value),
+            onClick = {
+                when (shown) {
+                    DistanceSourcePolicy.Shown.BOX_NEEDS_ACCESS -> showBoxAccessDialog()
+                    DistanceSourcePolicy.Shown.BOX_NEEDS_RESTART -> ToastUtils.showToast(
+                        ctx, R.string.maintenance_box_access_granted, Toast.LENGTH_LONG, force = true)
+                    else -> Unit
+                }
+            }
+        )
+    }
+
+    /**
+     * The box is read from the system log, and READ_LOGS is only granted over ADB. When this unit's
+     * own ADB answers (many head units have it in a hidden menu), the app grants it itself;
+     * otherwise the dialog shows the command for a computer.
+     */
+    private fun showBoxAccessDialog() {
+        val ctx = requireContext()
+        val command = CanBoxCounter.grantCommand(ctx)
+        MaterialAlertDialogBuilder(ctx, R.style.DarkAlertDialog)
+            .setTitle(R.string.maintenance_box_access_title)
+            .setMessage(getString(R.string.maintenance_box_access_message, command))
+            .setPositiveButton(R.string.maintenance_box_access_grant) { _, _ -> grantBoxAccess(command) }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun grantBoxAccess(command: String) {
+        val app = requireContext().applicationContext
+        viewLifecycleOwner.lifecycleScope.launch {
+            val reachable = AdbManager.isAdbPortOpen()
+            if (reachable) AdbManager.exec(app, command)
+            val granted = CanBoxCounter.access(app) != DistanceSourcePolicy.Access.NEEDS_PERMISSION
+            AppLog.i("$TAG: log permission for the CAN box, ADB reachable=$reachable, granted=$granted")
+            ToastUtils.showToast(app,
+                if (granted) R.string.maintenance_box_access_granted else R.string.maintenance_box_access_failed,
+                Toast.LENGTH_LONG, force = true)
+            refresh()
+        }
+    }
+
     private fun gpsRow(ctx: Context): SettingItem.SettingEntry {
         val manager = ctx.getSystemService(Context.LOCATION_SERVICE) as? LocationManager
         val providerEnabled = try {
@@ -255,6 +316,7 @@ class MaintenanceFragment : MaintenanceScreenFragment() {
         val (value, onClick) = when {
             !MaintenanceTracker.hasPermission(ctx) -> R.string.maintenance_gps_no_permission to { requestLocation(enabling = false) }
             !providerEnabled -> R.string.maintenance_gps_off to { openSystemScreen(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS) }
+            store.countingSource() == DistanceSourcePolicy.Source.CAN_BOX -> R.string.maintenance_gps_standby to {}
             lastFix > 0 && SystemClock.elapsedRealtime() - lastFix < FIX_FRESH_MS -> R.string.maintenance_gps_counting to {}
             else -> R.string.maintenance_gps_waiting to {}
         }

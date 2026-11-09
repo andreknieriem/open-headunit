@@ -57,4 +57,20 @@ class OdometerCorrectionPolicyTest {
         assertEquals(0.9, OdometerCorrectionPolicy.sanitize(0.5), 0.0)
         assertEquals(1.02, OdometerCorrectionPolicy.sanitize(1.02), 0.0)
     }
+
+    @Test
+    fun `distance from the CAN box comes off the dashboard side before comparing with the GPS`() {
+        // 163 km on the dashboard, 40 of them from the box: the GPS's 60 km stand for 63 km.
+        val result = OdometerCorrectionPolicy.correct(1.0, 100_000, 60_000.0, 203_000, 40_000.0)
+        assertTrue(result.updated)
+        assertEquals(1.05, result.factor, 1e-9)
+    }
+
+    @Test
+    fun `a typed number the box alone explains leaves the factor alone and starts a new stretch`() {
+        val result = OdometerCorrectionPolicy.correct(1.03, 100_000, 60_000.0, 150_000, 60_000.0)
+        assertFalse(result.updated)
+        assertTrue(result.restartStretch)
+        assertEquals(1.03, result.factor, 0.0)
+    }
 }

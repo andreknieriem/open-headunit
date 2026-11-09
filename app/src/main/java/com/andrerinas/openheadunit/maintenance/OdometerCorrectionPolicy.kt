@@ -35,8 +35,17 @@ object OdometerCorrectionPolicy {
      *   usable stretch (never typed, or driving went uncounted since).
      * @param rawGpsMeters the uncorrected GPS distance counted since [baseMeters].
      * @param typedMeters the number the user just typed.
+     * @param uncorrectedMeters distance added since [baseMeters] by a source that counts like the
+     *   dashboard (the CAN box). It is part of the typed number but not of the GPS distance, so
+     *   it comes off the dashboard side before comparing.
      */
-    fun correct(currentFactor: Double, baseMeters: Long?, rawGpsMeters: Double, typedMeters: Long): Result {
+    fun correct(
+        currentFactor: Double,
+        baseMeters: Long?,
+        rawGpsMeters: Double,
+        typedMeters: Long,
+        uncorrectedMeters: Double = 0.0,
+    ): Result {
         val dashboardMeters = if (baseMeters == null) 0.0 else (typedMeters - baseMeters).toDouble()
         if (baseMeters == null || dashboardMeters <= 0) {
             // No stretch, or a number lower than the base: the base itself was wrong. Start over.
@@ -45,7 +54,12 @@ object OdometerCorrectionPolicy {
         if (rawGpsMeters < MIN_BASE_METERS) {
             return Result(currentFactor, clamped = false, updated = false, restartStretch = false)
         }
-        val ratio = dashboardMeters / rawGpsMeters
+        val gpsDashboardMeters = dashboardMeters - Math.max(0.0, uncorrectedMeters)
+        if (gpsDashboardMeters <= 0) {
+            // The box alone explains the typed number: nothing left to compare the GPS with.
+            return Result(currentFactor, clamped = false, updated = false, restartStretch = true)
+        }
+        val ratio = gpsDashboardMeters / rawGpsMeters
         val factor = Math.max(MIN_FACTOR, Math.min(MAX_FACTOR, ratio))
         return Result(factor, clamped = factor != ratio, updated = true, restartStretch = true)
     }

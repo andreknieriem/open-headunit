@@ -1867,6 +1867,20 @@ class Settings(private val context: Context) {
         get() = prefs.getString("maintenance-missed", null)?.toLongOrNull() ?: 0L
         set(value) { prefs.edit().putString("maintenance-missed", value.toString()).apply() }
 
+    /**
+     * The CAN box trip counters the odometer was last brought up to, so the next reading (even
+     * after the app was closed) adds only the difference. See CanBoxDistancePolicy. Left out of
+     * the backup: it belongs to this unit's box and this moment.
+     */
+    var maintenanceBoxAnchor: String
+        get() = prefs.getString("maintenance-box-anchor", "") ?: ""
+        set(value) { prefs.edit().putString("maintenance-box-anchor", value).apply() }
+
+    /** CAN box meters added since the correction base. They need no factor, so the factor leaves them out. */
+    var maintenanceBoxSinceCorrectionMeters: Double
+        get() = prefs.getString("maintenance-box-since-correction", null)?.toDoubleOrNull() ?: 0.0
+        set(value) { prefs.edit().putString("maintenance-box-since-correction", value.toString()).apply() }
+
     /** Show the full screen notice when the unit starts and when the car stops after a drive. */
     var maintenanceRemindScreen: Boolean
         get() = prefs.getBoolean("maintenance-remind-screen", true)

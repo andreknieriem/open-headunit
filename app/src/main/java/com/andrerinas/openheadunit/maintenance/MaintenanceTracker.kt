@@ -40,7 +40,12 @@ class MaintenanceTracker(
     private var reference: OdometerStepPolicy.Fix? = null
     private var trip = TripStopPolicy.State()
 
-    /** The first good fix of this run has been compared with where the last run ended. */
+    /**
+     * The first good fix of this run, kept until it is compared with where the last run ended.
+     * On a unit with a CAN box it waits for the box's first reading, which may have counted the
+     * drive already (see [DistanceSourcePolicy.gapCoverage]).
+     */
+    private var positionToCheck: OdometerStepPolicy.Fix? = null
     private var positionChecked = false
 
     /**
@@ -64,6 +69,7 @@ class MaintenanceTracker(
             listening = true
             reference = null
             trip = TripStopPolicy.State()
+            positionToCheck = null
             positionChecked = false
             AppLog.i("$TAG: counting the mileage, GPS enabled=${manager.isProviderEnabled(LocationManager.GPS_PROVIDER)}")
         } catch (e: Exception) {
@@ -100,10 +106,7 @@ class MaintenanceTracker(
         store.lastFixElapsedMs = fix.atMs
         onFix(fix.speedMps)
 
-        if (!positionChecked) {
-            positionChecked = true
-            checkMissedDriving(fix)
-        }
+        if (!positionChecked) checkMissedDriving(fix)
         when (step.kind) {
             OdometerStepPolicy.Kind.BRIDGED ->
                 AppLog.i("$TAG: signal back after a gap, bridged ${Math.round(step.addMeters)} m")
@@ -136,12 +139,27 @@ class MaintenanceTracker(
     }
 
     private fun checkMissedDriving(fix: OdometerStepPolicy.Fix) {
-        val last = store.lastPosition ?: return
-        val missed = PositionJumpPolicy.missedMeters(last.first, last.second, fix.latitude, fix.longitude) ?: return
-        store.noteMissedDriving(Math.round(missed))
+        val first = positionToCheck ?: fix.also { positionToCheck = it }
+        when (store.gapCoverage(fix.atMs)) {
+            DistanceSourcePolicy.Coverage.PENDING -> return
+            DistanceSourcePolicy.Coverage.COVERED -> {
+                AppLog.i("$TAG: the CAN box counted the time the app was closed, no mileage check needed")
+            }
+            DistanceSourcePolicy.Coverage.NOT_COVERED -> {
+                val last = store.lastPosition
+                val missed = last?.let {
+                    PositionJumpPolicy.missedMeters(it.first, it.second, first.latitude, first.longitude)
+                }
+                if (missed != null) store.noteMissedDriving(Math.round(missed))
+            }
+        }
+        positionChecked = true
+        positionToCheck = null
     }
 
     private fun savePosition() {
+        // Until the first fix is compared, the stored position is where the last run ended.
+        if (!positionChecked) return
         val at = reference ?: return
         store.lastPosition = at.latitude to at.longitude
     }

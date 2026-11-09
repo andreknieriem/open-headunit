@@ -152,4 +152,82 @@ class MaintenanceStoreTest {
         store.markDone(oil.id, 100_000_000, now)
         assertNull(store.item(oil.id)!!.snoozeUntilMeters)
     }
+
+    // --- the CAN box ---
+
+    private fun box(a: Long, b: Long? = null) = TripReading(a, b, miles = false)
+
+    @Test
+    fun `while the box delivers it counts and the GPS does not`() {
+        store.addBoxReading(box(5000), 1_000, now)
+        assertEquals(DistanceSourcePolicy.Source.CAN_BOX, store.countingSource(1_500))
+        assertFalse(store.addDistance(800.0, 1_500))
+        assertEquals(100_000_000L, store.odometerMeters())
+
+        store.addBoxReading(box(5003), 31_000, now + 30_000)
+        assertEquals(100_000_300L, store.odometerMeters())
+    }
+
+    @Test
+    fun `box distance takes no correction factor and is written with its anchor`() {
+        settings.maintenanceCorrectionFactor = 1.08
+        store.addBoxReading(box(5000), 1_000, now)
+        store.addBoxReading(box(5012), 100_000, now + 99_000)
+        assertEquals(100_001_200L, settings.maintenanceOdometerMeters)
+        assertEquals(1_200.0, settings.maintenanceBoxSinceCorrectionMeters, 1e-9)
+        assertEquals(0.0, settings.maintenanceRawSinceCorrectionMeters, 0.0)
+        assertEquals(5012L, CanBoxDistancePolicy.decode(settings.maintenanceBoxAnchor)!!.tripATenths)
+    }
+
+    @Test
+    fun `once the box is silent the GPS counts, and the box takes that part off when it is back`() {
+        store.addBoxReading(box(5000), 1_000, now)
+        store.addDistance(700.0, 20_000)
+        assertEquals(100_000_700L, store.odometerMeters())
+        // The box measured 1 km over the same time: only the 300 m the GPS missed are added.
+        store.addBoxReading(box(5010), 80_000, now + 79_000)
+        assertEquals(100_001_000L, store.odometerMeters())
+    }
+
+    @Test
+    fun `the next run counts the drive the box measured while the app was closed`() {
+        store.addBoxReading(box(5000), 1_000, now)
+        store.flush()
+
+        val next = MaintenanceStore(settings)
+        next.boxStarted(500)
+        assertEquals(DistanceSourcePolicy.Coverage.PENDING, next.gapCoverage(1_000))
+        next.addBoxReading(box(5085), 2_000, now + 3_600_000)
+        assertEquals(100_008_500L, next.odometerMeters())
+        assertEquals(DistanceSourcePolicy.Coverage.COVERED, next.gapCoverage(3_000))
+    }
+
+    @Test
+    fun `without an anchor the first reading of a run does not cover the gap`() {
+        store.boxStarted(500)
+        store.addBoxReading(box(5000), 1_000, now)
+        assertEquals(DistanceSourcePolicy.Coverage.NOT_COVERED, store.gapCoverage(2_000))
+    }
+
+    @Test
+    fun `a typed number restarts the box from its current reading`() {
+        store.addBoxReading(box(5000), 1_000, now)
+        store.addBoxReading(box(5004), 30_000, now + 29_000)
+        store.correct(100_100_000, now + 30_000, 30_500)
+        assertEquals(100_100_000L, store.odometerMeters())
+        // Too little GPS for a factor: the stretch goes on, with the box part kept apart.
+        assertEquals(400.0, settings.maintenanceBoxSinceCorrectionMeters, 1e-9)
+        assertEquals(5004L, CanBoxDistancePolicy.decode(settings.maintenanceBoxAnchor)!!.tripATenths)
+        store.addBoxReading(box(5006), 60_000, now + 59_000)
+        assertEquals(100_100_200L, store.odometerMeters())
+    }
+
+    @Test
+    fun `turning it back on forgets the box anchor`() {
+        store.addBoxReading(box(5000), 1_000, now)
+        store.flush()
+        store.turnOff()
+        store.resume()
+        assertEquals("", settings.maintenanceBoxAnchor)
+    }
 }

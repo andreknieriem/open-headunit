@@ -704,7 +704,8 @@ object HomeUiHelper {
         val block = rootView.findViewById<View>(R.id.home_info) ?: return
         val showClock = settings.showHomeClock && !countdownVisible
         val showSpeed = settings.showHomeSpeed && !countdownVisible
-        val showMaintenance = maintenance != null && !countdownVisible
+        val shownMaintenance = maintenance?.takeIf { !countdownVisible }
+        val showMaintenance = shownMaintenance != null
         val visible = showClock || showSpeed || showMaintenance
         block.visibility = if (visible) View.VISIBLE else View.GONE
         rootView.findViewById<TextView>(R.id.home_info_clock)?.apply {
@@ -726,9 +727,9 @@ object HomeUiHelper {
         rootView.findViewById<TextView>(R.id.home_info_speed_unit)?.setTextColor(palette.textMuted)
         rootView.findViewById<TextView>(R.id.home_info_maintenance)?.let { line ->
             line.visibility = if (showMaintenance) View.VISIBLE else View.GONE
-            if (showMaintenance && maintenance != null) paintMaintenanceLine(line, maintenance, palette)
+            shownMaintenance?.let { paintMaintenanceLine(line, it, palette) }
         }
-        constrainInfoTexts(rootView, block, visible, maintenance?.text?.takeIf { showMaintenance })
+        constrainInfoTexts(rootView, block, visible, shownMaintenance?.text)
     }
 
     /**

@@ -28,6 +28,8 @@ object MaintenanceCodec {
             o.put("mode", item.mode.name)
             item.lastMeters?.let { o.put("lastM", it) }
             item.lastMs?.let { o.put("lastMs", it) }
+            item.snoozeUntilMeters?.let { o.put("snoozeM", it) }
+            item.snoozeUntilMs?.let { o.put("snoozeMs", it) }
             val history = JSONArray()
             for (record in item.history) {
                 val r = JSONObject()
@@ -86,6 +88,8 @@ object MaintenanceCodec {
             lastMeters = o.optLongOrNull("lastM"),
             lastMs = o.optLongOrNull("lastMs"),
             history = history,
+            snoozeUntilMeters = o.optLongOrNull("snoozeM"),
+            snoozeUntilMs = o.optLongOrNull("snoozeMs"),
         )
     }
 

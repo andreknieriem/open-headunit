@@ -92,9 +92,63 @@ class MaintenanceStore(private val settings: Settings) {
             lastMeters = atMeters,
             lastMs = atMs,
             history = item.history + ServiceRecord(atMeters, atMs),
+            snoozeUntilMeters = null,
+            snoozeUntilMs = null,
         ))
         AppLog.i("$TAG: ${item.templateId ?: "custom item"} marked as done")
     }
+
+    // --- reminders ---
+
+    /** Items answered with "next time I start", or in a notice that was closed, in this run. */
+    private val setAside = mutableSetOf<String>()
+
+    /** The notification was swiped away in this run, so it waits for the next start. */
+    @Volatile
+    var notificationDismissed = false
+
+    /** When the last start was handled (elapsed realtime), 0 before the first one. */
+    private var lastStartElapsedMs = 0L
+
+    /**
+     * A new run of the unit: what was set aside in the last one comes back. Returns false for a
+     * start heard twice (boot and wake broadcasts often arrive together).
+     */
+    @Synchronized
+    fun beginRun(nowElapsedMs: Long): Boolean {
+        if (!MaintenanceNoticePolicy.isNewStart(lastStartElapsedMs, nowElapsedMs)) return false
+        lastStartElapsedMs = nowElapsedMs
+        setAside.clear()
+        notificationDismissed = false
+        return true
+    }
+
+    @Synchronized
+    fun setAside(ids: Collection<String>) {
+        setAside.addAll(ids)
+    }
+
+    /** What the notice and the notification bring up now, the most urgent first. */
+    @Synchronized
+    fun pendingReminders(nowMs: Long): List<MaintenanceReminderPolicy.Entry> {
+        val odometer = odometerMeters()
+        val summary = MaintenanceReminderPolicy.summary(items(), odometer, nowMs)
+        return MaintenanceNoticePolicy.pending(summary, odometer, nowMs, setAside.toSet())
+    }
+
+    fun snooze(id: String, later: MaintenanceNoticePolicy.Later, nowMs: Long) {
+        val item = item(id) ?: return
+        updateItem(MaintenanceNoticePolicy.snooze(item, later, odometerMeters(), nowMs))
+        AppLog.i("$TAG: ${item.templateId ?: "custom item"} snoozed (meters=${later.meters}, days=${later.days})")
+    }
+
+    var remindScreen: Boolean
+        get() = settings.maintenanceRemindScreen
+        set(value) { settings.maintenanceRemindScreen = value }
+
+    var remindNotification: Boolean
+        get() = settings.maintenanceRemindNotification
+        set(value) { settings.maintenanceRemindNotification = value }
 
     /**
      * Turns the feature on for a car that has no items yet: the typed odometer starts the first

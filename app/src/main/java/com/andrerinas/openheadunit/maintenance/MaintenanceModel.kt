@@ -44,6 +44,10 @@ data class MaintenanceItem(
     val lastMeters: Long?,
     val lastMs: Long?,
     val history: List<ServiceRecord> = emptyList(),
+    /** "Remind me later" by distance: quiet until the odometer reaches this. Cleared by a service. */
+    val snoozeUntilMeters: Long? = null,
+    /** "Remind me later" by date: quiet until this moment. Cleared by a service. */
+    val snoozeUntilMs: Long? = null,
 ) {
     val byDistance: Boolean get() = intervalMeters != null
     val byTime: Boolean get() = intervalMonths != null

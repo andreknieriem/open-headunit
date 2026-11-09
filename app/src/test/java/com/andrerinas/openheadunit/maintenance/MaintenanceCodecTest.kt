@@ -16,11 +16,17 @@ class MaintenanceCodecTest {
     private val now = 1_700_000_000_000L
 
     @Test
-    fun `items survive a round trip with their history and modes`() {
+    fun `items survive a round trip with their history, modes and snoozes`() {
         val items = MaintenanceCatalog.build(Gearbox.CVT, Steering.UNSURE, true, 80_000_000, now).map {
-            if (it.templateId == MaintenanceCatalog.ENGINE_OIL) {
-                it.copy(mode = MaintenanceMode.TRACK, history = listOf(ServiceRecord(70_000_000, now - 1), ServiceRecord(null, now)))
-            } else it
+            when (it.templateId) {
+                MaintenanceCatalog.ENGINE_OIL -> it.copy(
+                    mode = MaintenanceMode.TRACK,
+                    history = listOf(ServiceRecord(70_000_000, now - 1), ServiceRecord(null, now)),
+                    snoozeUntilMeters = 80_500_000,
+                )
+                MaintenanceCatalog.CABIN_FILTER -> it.copy(snoozeUntilMs = now + 3 * MaintenanceDuePolicy.DAY_MS)
+                else -> it
+            }
         } + MaintenanceCatalog.custom("custom_1", "Wipers \"front\"", true, 80_000_000, now).copy(intervalMeters = null)
 
         assertEquals(items, MaintenanceCodec.decode(MaintenanceCodec.encode(items)))

@@ -117,4 +117,39 @@ class MaintenanceStoreTest {
         store.lastPosition = null
         assertNull(store.lastPosition)
     }
+
+    /** The engine oil, made overdue: its last change long before the current odometer. */
+    private fun overdueOil(): MaintenanceItem {
+        val oil = store.items().first { it.templateId == MaintenanceCatalog.ENGINE_OIL }
+        store.updateItem(oil.copy(lastMeters = 0))
+        return store.item(oil.id)!!
+    }
+
+    @Test
+    fun `an item set aside comes back with the next start`() {
+        val oil = overdueOil()
+        assertTrue(store.beginRun(1_000))
+        store.setAside(listOf(oil.id))
+        store.notificationDismissed = true
+        assertTrue(store.pendingReminders(now).none { it.item.id == oil.id })
+
+        // The same start heard again changes nothing.
+        assertFalse(store.beginRun(20_000))
+        assertTrue(store.pendingReminders(now).none { it.item.id == oil.id })
+
+        assertTrue(store.beginRun(1_000 + MaintenanceNoticePolicy.SAME_START_MS))
+        assertTrue(store.pendingReminders(now).any { it.item.id == oil.id })
+        assertFalse(store.notificationDismissed)
+    }
+
+    @Test
+    fun `a snoozed item waits and a service clears the snooze`() {
+        val oil = overdueOil()
+        store.snooze(oil.id, MaintenanceNoticePolicy.Later(500_000, null), now)
+        assertEquals(100_500_000L, store.item(oil.id)!!.snoozeUntilMeters)
+        assertTrue(store.pendingReminders(now).none { it.item.id == oil.id })
+
+        store.markDone(oil.id, 100_000_000, now)
+        assertNull(store.item(oil.id)!!.snoozeUntilMeters)
+    }
 }

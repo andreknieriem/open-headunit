@@ -1867,6 +1867,16 @@ class Settings(private val context: Context) {
         get() = prefs.getString("maintenance-missed", null)?.toLongOrNull() ?: 0L
         set(value) { prefs.edit().putString("maintenance-missed", value.toString()).apply() }
 
+    /** Show the full screen notice when the unit starts and when the car stops after a drive. */
+    var maintenanceRemindScreen: Boolean
+        get() = prefs.getBoolean("maintenance-remind-screen", true)
+        set(value) { prefs.edit().putBoolean("maintenance-remind-screen", value).apply() }
+
+    /** Post an Android notification with what is due, next to the notice. */
+    var maintenanceRemindNotification: Boolean
+        get() = prefs.getBoolean("maintenance-remind-notification", true)
+        set(value) { prefs.edit().putBoolean("maintenance-remind-notification", value).apply() }
+
     @SuppressLint("ApplySharedPref")
     fun commit() {
         prefs.edit().commit()

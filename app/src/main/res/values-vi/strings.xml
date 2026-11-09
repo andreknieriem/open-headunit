@@ -1296,6 +1296,10 @@
     <string name="raise_projection_during_call">Ở lại Android Auto trong khi gọi điện</string>
     <string name="raise_projection_during_call_description">Chỉ áp dụng cho Chế độ độc lập. Đưa màn hình chiếu trở lại phía trên màn hình cuộc gọi của điện thoại, để trả lời và kết thúc cuộc gọi trong giao diện Android Auto.</string>
     <string name="raise_projection_during_call_summary">Chỉ dành cho Chế độ độc lập. Hiện màn hình chiếu trên màn hình cuộc gọi của điện thoại.</string>
+    <string name="show_over_lock_screen">Hiển thị trên màn hình khóa</string>
+    <string name="show_over_lock_screen_summary">Bản đồ và chỉ đường vẫn hiển thị khi khóa. Chạm và nút bấm không có tác dụng.</string>
+    <string name="show_over_lock_screen_help">Hiển thị hình ảnh Android Auto trên màn hình khóa để có thể xem bản đồ và chỉ đường mà không cần mở khóa. Khi thiết bị này đang khóa, không có gì được gửi tới điện thoại: thao tác chạm, nút bấm, núm xoay và nút giọng nói đều bị giữ lại, và bản đồ được đưa lên phía trước. Nhấn Quay lại để mở khóa bằng mã PIN, hình mở khóa hoặc mật khẩu; sau đó mọi thứ hoạt động như bình thường. Nhạc, cuộc gọi và trợ lý giọng nói trên chính điện thoại không bị ảnh hưởng.</string>
+    <string name="show_over_lock_screen_locked_toast">Đã khóa: chỉ bản đồ. Nhấn Quay lại để mở khóa.</string>
     <string name="audio_stream_settings">Luồng âm thanh</string>
     <string name="audio_stream_settings_description">Chọn luồng hệ thống mà mỗi kênh Android Auto sẽ phát trên đó.</string>
     <string name="audio_stream_settings_info">Android Auto gửi âm thanh qua ba kênh: Đa phương tiện, Chỉ dẫn và Âm thanh hệ thống. Mỗi kênh được chuyển tới đầu máy qua một luồng hệ thống. Luồng bạn chọn quyết định kênh đó theo phím âm lượng nào và, trên nhiều đầu máy, có bật tiếng bộ khuếch đại cho kênh đó hay không. Hãy dùng nút loa để nghe âm thanh thử trên luồng trước khi lưu.</string>

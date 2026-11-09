@@ -1296,6 +1296,10 @@
     <string name="raise_projection_during_call">Zůstat v Android Auto během hovorů</string>
     <string name="raise_projection_during_call_description">Pouze samostatný režim. Vrátí projekci nad obrazovku hovoru telefonu, takže se hovory přijímají a ukončují v rozhraní Android Auto.</string>
     <string name="raise_projection_during_call_summary">Jen samostatný režim. Zobrazí projekci nad obrazovkou hovoru v telefonu.</string>
+    <string name="show_over_lock_screen">Zobrazit na zamykací obrazovce</string>
+    <string name="show_over_lock_screen_summary">Mapa a navigace zůstanou viditelné i při zamčení. Dotyky a tlačítka nefungují.</string>
+    <string name="show_over_lock_screen_help">Zobrazí obraz Android Auto přes zamykací obrazovku, takže mapu a navigaci lze číst bez odemčení. Dokud je tato jednotka zamčená, do telefonu nic nedorazí: dotyky, tlačítka, otočný ovladač i hlasové tlačítko jsou blokovány a do popředí se přesune mapa. Stiskem Zpět jednotku odemknete pomocí PIN, gesta nebo hesla; poté vše funguje jako obvykle. Hudba, hovory a hlasový asistent v samotném telefonu nejsou ovlivněny.</string>
+    <string name="show_over_lock_screen_locked_toast">Zamčeno: jen mapa. Stiskem Zpět odemknete.</string>
     <string name="audio_stream_settings">Zvukové streamy</string>
     <string name="audio_stream_settings_description">Vyberte systémový stream, na kterém hraje každý kanál Android Auto.</string>
     <string name="audio_stream_settings_info">Android Auto posílá zvuk třemi kanály: Média, Navigace a Systémové zvuky. Každý se do autorádia dostane určitým systémovým streamem a zvolený stream určuje, kterým tlačítkem hlasitosti se řídí a u řady autorádií i to, zda se pro něj vůbec zapne zesilovač. Tlačítkem reproduktoru si před uložením přehrajte na streamu zkušební tón.</string>

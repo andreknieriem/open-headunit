@@ -1298,6 +1298,10 @@
     <string name="raise_projection_during_call">Resta in Android Auto durante le chiamate</string>
     <string name="raise_projection_during_call_description">Solo Modalità Self. Riporta la proiezione sopra la schermata di chiamata del telefono, così le chiamate si rispondono e si chiudono nell\'interfaccia di Android Auto.</string>
     <string name="raise_projection_during_call_summary">Solo modalità autonoma. Mostra la proiezione sopra la schermata di chiamata del telefono.</string>
+    <string name="show_over_lock_screen">Mostra sopra la schermata di blocco</string>
+    <string name="show_over_lock_screen_summary">Mappa e indicazioni restano visibili con il blocco. Tocchi e tasti non hanno effetto.</string>
+    <string name="show_over_lock_screen_help">Mostra l\'immagine di Android Auto sopra la schermata di blocco, così mappa e indicazioni si leggono senza sbloccare. Finché questa unità è bloccata, nulla arriva al telefono: tocchi, tasti, il controller rotativo e il tasto vocale vengono trattenuti e la mappa viene portata in primo piano. Premi Indietro per sbloccare con PIN, sequenza o password; dopo tutto funziona come al solito. Musica, chiamate e assistente vocale sul telefono stesso non sono interessati.</string>
+    <string name="show_over_lock_screen_locked_toast">Bloccato: solo mappa. Premi Indietro per sbloccare.</string>
     <string name="audio_stream_settings">Flussi audio</string>
     <string name="audio_stream_settings_description">Scegli il flusso di sistema su cui riprodurre ogni canale di Android Auto.</string>
     <string name="audio_stream_settings_info">Android Auto invia l\'audio su tre canali: Multimediale, Guida e Suoni di sistema. Ognuno raggiunge l\'autoradio su un flusso di sistema, e il flusso scelto determina il tasto del volume che segue e, su molte autoradio, se l\'amplificatore si attiva per esso. Usa il pulsante dell\'altoparlante per ascoltare un tono di prova sul flusso prima di salvare.</string>

@@ -1289,6 +1289,10 @@
     <string name="raise_projection_during_call">Aramalar sırasında Android Auto\'da kal</string>
     <string name="raise_projection_during_call_description">Yalnızca Dahili Mod. Yansıtmayı telefonun arama ekranının üzerine geri getirir, böylece aramalar Android Auto arayüzünden yanıtlanır ve sonlandırılır.</string>
     <string name="raise_projection_during_call_summary">Yalnızca Bağımsız Mod. Yansıtmayı telefonun arama ekranının üzerinde gösterir.</string>
+    <string name="show_over_lock_screen">Kilit ekranının üzerinde göster</string>
+    <string name="show_over_lock_screen_summary">Kilitliyken harita ve yol tarifi görünür kalır. Dokunma ve tuşlar çalışmaz.</string>
+    <string name="show_over_lock_screen_help">Android Auto görüntüsünü kilit ekranının üzerinde gösterir; böylece harita ve yol tarifi kilit açmadan okunabilir. Bu cihaz kilitliyken telefona hiçbir şey ulaşmaz: dokunmalar, tuşlar, döner kumanda ve ses tuşu bekletilir ve harita öne getirilir. PIN, desen veya şifrenizle kilidi açmak için Geri tuşuna basın; ardından her şey her zamanki gibi çalışır. Telefonun kendisindeki müzik, aramalar ve sesli asistan bundan etkilenmez.</string>
+    <string name="show_over_lock_screen_locked_toast">Kilitli: yalnızca harita. Kilidi açmak için Geri tuşuna basın.</string>
     <string name="audio_stream_settings">Ses akışları</string>
     <string name="audio_stream_settings_description">Her Android Auto kanalının hangi sistem akışında çalacağını seçin.</string>
     <string name="audio_stream_settings_info">Android Auto sesi üç kanaldan gönderir: Medya, Yönlendirme ve Sistem sesleri. Her biri ana üniteye bir sistem akışı üzerinden iletilir. Seçtiğiniz akış, hangi ses tuşunu izleyeceğini ve birçok ana ünitede amplifikatörün onun için hiç açılıp açılmayacağını belirler. Kaydetmeden önce akışta test tonu dinlemek için hoparlör düğmesini kullanın.</string>

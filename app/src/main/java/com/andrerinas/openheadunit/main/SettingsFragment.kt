@@ -269,6 +269,7 @@ class SettingsFragment : Fragment() {
     private var pendingKillOnDisconnect by pending::killOnDisconnect
     private var pendingAutoKillOemApps by pending::autoKillOemApps
     private var pendingRaiseProjectionDuringCall by pending::raiseProjectionDuringCall
+    private var pendingShowOverLockScreen by pending::showOverLockScreen
 
     // Custom Insets
     private var pendingInsetLeft by pending::insetLeft
@@ -693,6 +694,7 @@ class SettingsFragment : Fragment() {
         pendingKillOnDisconnect?.let { if (it != settings.rawKillOnDisconnect) settings.rawKillOnDisconnect = it }
         pendingAutoKillOemApps?.let { if (it != settings.autoKillOemApps) settings.autoKillOemApps = it }
         pendingRaiseProjectionDuringCall?.let { if (it != settings.raiseProjectionDuringCall) settings.raiseProjectionDuringCall = it }
+        pendingShowOverLockScreen?.let { if (it != settings.showOverLockScreen) settings.showOverLockScreen = it }
         pendingAutoEnableHotspot?.let { if (it != settings.autoEnableHotspot) settings.autoEnableHotspot = it }
         pendingAutoRestartWifi?.let { if (it != settings.autoRestartWifiWhenP2pStuck) settings.autoRestartWifiWhenP2pStuck = it }
         pendingUseLibusb?.let { if (it != settings.useLibusb) settings.useLibusb = it }
@@ -2107,6 +2109,20 @@ class SettingsFragment : Fragment() {
                 }
             ))
         }
+
+        // Map and directions over a locked unit; nothing a person at the unit does reaches the phone.
+        items.add(SettingItem.ToggleSettingEntry(
+            stableId = "showOverLockScreen",
+            nameResId = R.string.show_over_lock_screen,
+            descriptionResId = R.string.show_over_lock_screen_summary,
+            helpResId = R.string.show_over_lock_screen_help,
+            isChecked = pendingShowOverLockScreen ?: settings.showOverLockScreen,
+            onCheckedChanged = { isChecked ->
+                pendingShowOverLockScreen = isChecked
+                checkChanges()
+                updateSettingsList()
+            }
+        ))
 
         if (!isCarLauncherActive) {
             val exitActions = arrayOf(

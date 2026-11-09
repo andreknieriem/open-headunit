@@ -1300,6 +1300,10 @@
     <string name="raise_projection_during_call">In Android Auto blijven tijdens gesprekken</string>
     <string name="raise_projection_during_call_description">Alleen Self Mode. Haalt de projectie terug over het belscherm van de telefoon, zodat gesprekken in de Android Auto-interface worden aangenomen en beëindigd.</string>
     <string name="raise_projection_during_call_summary">Alleen in de zelfstandige modus. Toont de projectie over het gespreksscherm van de telefoon.</string>
+    <string name="show_over_lock_screen">Boven vergrendelscherm tonen</string>
+    <string name="show_over_lock_screen_summary">Kaart en route blijven zichtbaar als vergrendeld. Aanraken en knoppen doen niets.</string>
+    <string name="show_over_lock_screen_help">Toont het Android Auto-beeld boven het vergrendelscherm, zodat kaart en routebeschrijving zonder ontgrendelen te lezen zijn. Zolang dit apparaat vergrendeld is, bereikt niets de telefoon: aanrakingen, knoppen, de draaiknop en de spraakknop worden tegengehouden en de kaart komt naar voren. Druk op Terug om te ontgrendelen met je pincode, patroon of wachtwoord; daarna werkt alles zoals gewoonlijk. Muziek, gesprekken en de spraakassistent op de telefoon zelf worden niet beïnvloed.</string>
+    <string name="show_over_lock_screen_locked_toast">Vergrendeld: alleen kaart. Druk op Terug om te ontgrendelen.</string>
     <string name="audio_stream_settings">Audiostreams</string>
     <string name="audio_stream_settings_description">Kies via welke systeemstream elk Android Auto-kanaal wordt afgespeeld.</string>
     <string name="audio_stream_settings_info">Android Auto verstuurt audio via drie kanalen: Media, Navigatiestem en Systeemgeluiden. Elk kanaal bereikt de headunit via een systeemstream. De gekozen stream bepaalt welke volumetoets erbij hoort en, op veel headunits, of de versterker er wel voor wordt aangezet. Gebruik de luidsprekerknop om vóór het opslaan een testtoon op de stream te horen.</string>

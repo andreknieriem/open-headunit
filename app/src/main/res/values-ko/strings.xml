@@ -1289,6 +1289,10 @@
     <string name="raise_projection_during_call">통화 중에도 Android Auto 유지</string>
     <string name="raise_projection_during_call_description">단독 모드에서만 사용할 수 있습니다. 휴대전화의 통화 화면 위에 Android Auto 화면을 다시 표시하여 Android Auto에서 통화를 받고 끊을 수 있게 합니다.</string>
     <string name="raise_projection_during_call_summary">단독 모드 전용입니다. 휴대전화의 통화 화면 위에 투사 화면을 표시합니다.</string>
+    <string name="show_over_lock_screen">잠금 화면 위에 표시</string>
+    <string name="show_over_lock_screen_summary">잠겨 있어도 지도와 길 안내가 보입니다. 터치와 버튼은 작동하지 않습니다.</string>
+    <string name="show_over_lock_screen_help">Android Auto 화면을 잠금 화면 위에 표시하여 잠금을 해제하지 않고도 지도와 길 안내를 볼 수 있습니다. 이 기기가 잠겨 있는 동안에는 휴대전화로 아무것도 전달되지 않습니다. 터치, 버튼, 로터리 컨트롤러, 음성 버튼이 차단되고 지도가 앞으로 표시됩니다. 뒤로를 누르면 PIN, 패턴 또는 비밀번호로 잠금을 해제할 수 있으며, 그 후에는 평소처럼 작동합니다. 휴대전화 자체의 음악, 통화, 음성 비서에는 영향이 없습니다.</string>
+    <string name="show_over_lock_screen_locked_toast">잠김: 지도만 표시. 잠금 해제하려면 뒤로를 누르세요.</string>
     <string name="audio_stream_settings">오디오 스트림</string>
     <string name="audio_stream_settings_description">각 Android Auto 오디오 채널에 사용할 시스템 스트림을 선택하세요.</string>
     <string name="audio_stream_settings_info">Android Auto는 미디어, 안내 음성, 시스템 소리의 세 채널로 오디오를 보냅니다. 각 채널의 오디오는 시스템 스트림으로 헤드유닛에 전달됩니다. 선택한 스트림에 따라 볼륨 키로 조절하는 음량 항목이 달라집니다. 많은 헤드유닛에서는 앰프의 음소거가 해제되는지도 스트림에 따라 달라집니다. 저장하기 전에 스피커 버튼으로 해당 스트림의 테스트음을 들어 보세요.</string>

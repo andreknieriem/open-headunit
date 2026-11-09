@@ -26,6 +26,8 @@ import com.andrerinas.openheadunit.decoder.video.FocusCycleLever
 import com.andrerinas.openheadunit.decoder.video.KeyframeCycleEscalationPolicy
 import com.andrerinas.openheadunit.decoder.video.WarmRelaunchKeyframePolicy
 import com.andrerinas.openheadunit.input.KeyCode
+import com.andrerinas.openheadunit.input.LockedInputPolicy
+import com.andrerinas.openheadunit.aap.protocol.proto.Input
 import com.andrerinas.openheadunit.utils.AuditReportPolicy
 import com.andrerinas.openheadunit.utils.LegacyOptimizer
 import com.andrerinas.openheadunit.connection.projection.ProjectionConnection
@@ -1365,6 +1367,13 @@ class AapTransport(
         // Channel 0 (Control) handles handshake, discovery and channel open negotiation.
         if (message.channel != Channel.ID_CTR && aapRead == null) {
             AppLog.w("AapTransport: dropping message on channel ${message.channel} before read loop is active")
+            return
+        }
+        // Every touch, key and scroll from every source (screen, keymap, media session, automation
+        // broadcasts) passes here, so this is where a locked unit holds them back.
+        if (message.channel == Channel.ID_INP && message.type == Input.MsgType.EVENT_VALUE &&
+            !LockedInputPolicy.allows(LockedInputPolicy.engaged, (message as? KeyCodeEvent)?.keycode)) {
+            if (AppLog.LOG_VERBOSE) AppLog.v("AapTransport: unit is locked, input event not sent")
             return
         }
         if (message.channel == Channel.ID_VID && message.type == Media.MsgType.MEDIA_MESSAGE_VIDEO_FOCUS_NOTIFICATION_VALUE) {

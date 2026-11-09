@@ -1295,6 +1295,10 @@
     <string name="raise_projection_during_call">Während Anrufen in Android Auto bleiben</string>
     <string name="raise_projection_during_call_description">Nur im Self Mode. Holt die Projektion wieder über den Anrufbildschirm des Smartphones, damit Anrufe in der Android-Auto-Oberfläche angenommen und beendet werden.</string>
     <string name="raise_projection_during_call_summary">Nur im Self Mode. Die Projektion über dem Anrufbildschirm des Smartphones zeigen.</string>
+    <string name="show_over_lock_screen">Über dem Sperrbildschirm anzeigen</string>
+    <string name="show_over_lock_screen_summary">Karte und Route bleiben gesperrt sichtbar. Berührungen und Tasten wirken nicht.</string>
+    <string name="show_over_lock_screen_help">Zeigt das Android-Auto-Bild über dem Sperrbildschirm, damit Karte und Routenführung ohne Entsperren lesbar sind. Solange dieses Gerät gesperrt ist, erreicht nichts das Smartphone: Berührungen, Tasten, der Drehregler und die Sprachtaste werden zurückgehalten, und die Karte wird in den Vordergrund geholt. Mit Zurück entsperren Sie per PIN, Muster oder Passwort; danach funktioniert alles wie gewohnt. Musik, Anrufe und der Sprachassistent auf dem Smartphone selbst sind nicht betroffen.</string>
+    <string name="show_over_lock_screen_locked_toast">Gesperrt: nur Karte. Zum Entsperren Zurück drücken.</string>
     <string name="audio_stream_settings">Audio-Streams</string>
     <string name="audio_stream_settings_description">Lege fest, über welchen Systemstream jeder Android-Auto-Kanal wiedergegeben wird.</string>
     <string name="audio_stream_settings_info">Android Auto sendet Audio über drei Kanäle: Medien, Ansagen und Systemtöne. Jeder Kanal erreicht die Headunit über einen Systemstream. Der gewählte Stream bestimmt, welcher Lautstärketaste der Kanal folgt und bei vielen Headunits, ob der Verstärker dafür überhaupt eingeschaltet wird. Mit der Lautsprechertaste kannst du vor dem Speichern einen Testton auf dem Stream abspielen.</string>

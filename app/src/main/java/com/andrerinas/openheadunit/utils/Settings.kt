@@ -286,6 +286,17 @@ class Settings(private val context: Context) {
             prefs.edit().putBoolean("raise-projection-during-call", value).apply()
         }
 
+    /**
+     * Show the projection over the lock screen. While the unit is locked nothing reaches the phone:
+     * touches, keys and scroll are held back (see [com.andrerinas.openheadunit.input.LockedInputPolicy]),
+     * so the map and directions can be read but nothing can be opened. Off by default.
+     */
+    var showOverLockScreen: Boolean
+        get() = prefs.getBoolean("show-over-lock-screen", false)
+        set(value) {
+            prefs.edit().putBoolean("show-over-lock-screen", value).apply()
+        }
+
     var nightMode: NightMode
         get() {
             val value = prefs.getInt("night-mode", 0)

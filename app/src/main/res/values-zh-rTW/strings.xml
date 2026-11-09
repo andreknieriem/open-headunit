@@ -1292,6 +1292,10 @@
     <string name="raise_projection_during_call">通話期間停留在 Android Auto</string>
     <string name="raise_projection_during_call_description">僅限本機模式。將投影畫面帶回手機通話畫面上方，讓你在 Android Auto 介面中接聽及結束通話。</string>
     <string name="raise_projection_during_call_summary">僅限本機模式。在手機的通話畫面上方顯示投影。</string>
+    <string name="show_over_lock_screen">在螢幕鎖定畫面上顯示</string>
+    <string name="show_over_lock_screen_summary">鎖定時仍顯示地圖和路線指引。觸控和按鍵無效。</string>
+    <string name="show_over_lock_screen_help">在螢幕鎖定畫面上方顯示 Android Auto 畫面，不必解鎖就能查看地圖和路線指引。此裝置鎖定期間，不會有任何操作傳到手機：觸控、按鍵、旋鈕控制器和語音鍵都會被擋下，並將地圖切換到前景。按「返回」即可用 PIN 碼、圖案或密碼解鎖；之後一切照常運作。手機本身的音樂、通話和語音助理不受影響。</string>
+    <string name="show_over_lock_screen_locked_toast">已鎖定：僅顯示地圖。按「返回」解鎖。</string>
     <string name="audio_stream_settings">音訊串流</string>
     <string name="audio_stream_settings_description">選擇每個 Android Auto 頻道要在哪個系統串流上播放。</string>
     <string name="audio_stream_settings_info">Android Auto 以三個頻道傳送音訊：媒體、語音導引和系統音效。每個頻道都會以某個系統串流交給車機，您選擇的串流會決定它跟隨哪個音量鍵，在許多車機上，也決定擴大機是否會為它解除靜音。儲存前，請用喇叭按鈕在該串流上播放測試音。</string>

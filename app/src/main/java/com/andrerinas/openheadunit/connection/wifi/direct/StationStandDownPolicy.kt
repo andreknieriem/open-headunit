@@ -5,7 +5,9 @@ package com.andrerinas.openheadunit.connection.wifi.direct
  *
  * A station joined on 2.4 GHz leaves a single-radio group owner no 5 GHz channel, and a station
  * left disconnected scans on the platform's own schedule, each scan taking the radio off the group.
- * So AUTO stands down only where the group can gain a band, or where the two bands already differ.
+ * So AUTO stands down where the group can gain a band, or where the two bands already differ.
+ * On Android 7.1 and earlier, a known 2.4 GHz-only radio also leaves its station network: those
+ * legacy P2P stacks can refuse to create a group while the station association is active.
  * Pure, so every case is a unit test.
  */
 object StationStandDownPolicy {
@@ -15,6 +17,9 @@ object StationStandDownPolicy {
 
     /** Last Android where holding the overlay permission still gets past that guard. */
     private const val LAST_API_WITH_OVERLAY_BYPASS = 34
+
+    /** Legacy P2P APIs on these releases can refuse a group while a 2.4 GHz-only station is joined. */
+    private const val LAST_API_WITH_LEGACY_P2P_STATION_CONFLICT = 25
 
     /**
      * Whether the platform will honour `disableNetwork()` at all.
@@ -62,8 +67,11 @@ object StationStandDownPolicy {
             StationStandDownMode.ALWAYS -> true
             // A 2.4 GHz group beside a 5 GHz station is the split measured to cost the session:
             // the handshake completes and the phone never finishes joining.
-            StationStandDownMode.AUTO -> supports5Ghz != false &&
-                (!isFiveGhz(stationFrequencyMhz) || groupBand == P2pBandPreference.FORCE_2_4GHZ)
+            StationStandDownMode.AUTO ->
+                (sdkInt <= LAST_API_WITH_LEGACY_P2P_STATION_CONFLICT && supports5Ghz == false) ||
+                    (supports5Ghz != false &&
+                        (!isFiveGhz(stationFrequencyMhz) ||
+                            groupBand == P2pBandPreference.FORCE_2_4GHZ))
         }
 
     fun isFiveGhz(frequencyMhz: Int): Boolean = frequencyMhz > MAX_24GHZ_FREQUENCY_MHZ
@@ -74,6 +82,7 @@ object StationStandDownPolicy {
      */
     fun describeSkipped(
         mode: StationStandDownMode,
+        sdkInt: Int,
         supports5Ghz: Boolean?,
         stationFrequencyMhz: Int,
         groupBand: P2pBandPreference,
@@ -82,7 +91,8 @@ object StationStandDownPolicy {
             "the setting keeps this unit joined to its own WiFi network, so the group shares the " +
                 "radio with it."
         mode == StationStandDownMode.ALWAYS -> null
-        supports5Ghz == false ->
+        supports5Ghz == false && sdkInt <= LAST_API_WITH_LEGACY_P2P_STATION_CONFLICT -> null
+        supports5Ghz == false && sdkInt > LAST_API_WITH_LEGACY_P2P_STATION_CONFLICT ->
             "this unit's WiFi radio has no 5 GHz band, so leaving its own network could not move " +
                 "the group to another channel; the station stays joined, because a disconnected " +
                 "one scans for networks and every scan takes the radio off the group."

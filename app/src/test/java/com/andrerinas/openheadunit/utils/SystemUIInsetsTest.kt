@@ -2,6 +2,7 @@ package com.andrerinas.openheadunit.utils
 
 import android.app.Activity
 import android.app.Application
+import android.app.KeyguardManager
 import android.content.Context
 import android.content.ContextWrapper
 import android.view.View
@@ -35,6 +36,7 @@ import org.mockito.kotlin.whenever
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.android.controller.ActivityController
 import org.robolectric.annotation.Config
 
@@ -387,6 +389,27 @@ class SystemUIInsetsTest {
 
         dispatch(insets(navigation = Insets.of(0, 0, 42, 0), cutout = Insets.NONE))
         assertProjection(0, 24, 42, 0)
+    }
+
+    // A head unit that reconnects behind the keyguard lays this window out for a moment in the
+    // keyguard's portrait. That frame is not the projection and must not become its canvas.
+    @Test
+    fun `a window laid out behind the keyguard is not the projection canvas`() {
+        prepareProjection()
+        applyProjection(Settings.FullscreenMode.NONE)
+        val keyguard = shadowOf(root.context.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager)
+        keyguard.setKeyguardLocked(true)
+        try {
+            dispatch(insets(cutout = Insets.NONE))
+            completeFrame()
+            assertEquals(1000, HeadUnitScreenConfig.getUsableWidth())
+            assertEquals(600, HeadUnitScreenConfig.getUsableHeight())
+        } finally {
+            keyguard.setKeyguardLocked(false)
+        }
+        // Unlocked, the same window is the projection again and is measured as usual.
+        dispatch(insets(cutout = Insets.NONE))
+        assertProjection(0, 24, 0, 48)
     }
 
     @Test

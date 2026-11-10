@@ -203,15 +203,14 @@ class ScreenOrientationPolicyTest {
     }
 
     private fun redraws(
-        setting: Settings.ScreenOrientation = Settings.ScreenOrientation.SYSTEM,
         negotiated: ScreenOrientationPolicy.Normalisation? = ScreenOrientationPolicy.Normalisation.PORTRAIT,
         window: ScreenOrientationPolicy.Normalisation? = ScreenOrientationPolicy.Normalisation.LANDSCAPE,
         readingIsOurs: Boolean = true,
         alreadyRedrawnFor: ScreenOrientationPolicy.Normalisation? = null,
-    ) = ScreenOrientationPolicy.redrawsSession(setting, negotiated, window, readingIsOurs, alreadyRedrawnFor)
+    ) = ScreenOrientationPolicy.redrawsSession(negotiated, window, readingIsOurs, alreadyRedrawnFor)
 
     @Test
-    fun `a system session whose own window turns to the other shape is redrawn`() {
+    fun `a session whose own window turns to the other shape is redrawn`() {
         assertTrue(redraws())
         assertTrue(redraws(
             negotiated = ScreenOrientationPolicy.Normalisation.LANDSCAPE,
@@ -231,12 +230,6 @@ class ScreenOrientationPolicyTest {
         assertFalse(redraws(readingIsOurs = false))
     }
 
-    @Test
-    fun `only system redraws a session`() {
-        for (setting in Settings.ScreenOrientation.values().filter { it != Settings.ScreenOrientation.SYSTEM }) {
-            assertFalse("setting=$setting", redraws(setting = setting))
-        }
-    }
 
     // A session that came back in the old shape would otherwise be redrawn on every landing.
     @Test

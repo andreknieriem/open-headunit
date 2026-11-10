@@ -948,6 +948,7 @@
     <string name="export_settings_choose_location">Pilih lokasi penyimpanan</string>
     <string name="export_settings_downloads">Simpan ke Unduhan</string>
     <string name="export_settings_app_folder">Simpan ke folder cadangan aplikasi</string>
+    <string name="onb_restore_settings">Pulihkan pengaturan dari cadangan</string>
     <string name="import_settings">Impor setelan</string>
     <string name="import_settings_description">Pulihkan setelan dari cadangan Open Headunit.</string>
     <string name="import_settings_choose_file">Pilih file cadangan</string>

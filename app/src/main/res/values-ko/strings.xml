@@ -531,6 +531,7 @@
     <string name="export_settings_choose_location">저장 위치 선택</string>
     <string name="export_settings_downloads">다운로드 폴더에 저장</string>
     <string name="export_settings_app_folder">앱 백업 폴더에 저장</string>
+    <string name="onb_restore_settings">백업에서 설정 복원</string>
     <string name="import_settings">설정 가져오기</string>
     <string name="import_settings_description">Open Headunit 백업에서 설정을 복원합니다.</string>
     <string name="import_settings_choose_file">백업 파일 선택</string>

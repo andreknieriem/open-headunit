@@ -947,6 +947,7 @@
     <string name="export_settings_choose_location">सेव करने की जगह चुनें</string>
     <string name="export_settings_downloads">डाउनलोड में सेव करें</string>
     <string name="export_settings_app_folder">ऐप के बैकअप फ़ोल्डर में सेव करें</string>
+    <string name="onb_restore_settings">बैकअप से सेटिंग्स बहाल करें</string>
     <string name="import_settings">सेटिंग्स आयात करें</string>
     <string name="import_settings_description">Open Headunit बैकअप से सेटिंग्स पुनर्स्थापित करें।</string>
     <string name="import_settings_choose_file">बैकअप फ़ाइल चुनें</string>

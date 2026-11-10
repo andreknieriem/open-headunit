@@ -840,6 +840,7 @@
     <string name="export_settings">Einstellungen exportieren</string>
     <string name="export_settings_description">Speichere eine Sicherung der Einstellungen als JSON-Datei.</string>
     <string name="export_settings_app_folder">In App-Sicherungsordner speichern</string>
+    <string name="onb_restore_settings">Einstellungen aus Sicherung wiederherstellen</string>
     <string name="export_settings_downloads">In Downloads speichern</string>
     <string name="export_settings_choose_location">Speicherort wählen</string>
     <string name="settings_exported">Einstellungen exportiert</string>

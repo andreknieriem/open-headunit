@@ -514,6 +514,7 @@
     <string name="export_settings_choose_location">აირჩიეთ შენახვის ადგილი</string>
     <string name="export_settings_downloads">შენახვა ჩამოტვირთვებში</string>
     <string name="export_settings_app_folder">აპის სარეზერვო საქაღალდეში შენახვა</string>
+    <string name="onb_restore_settings">პარამეტრების აღდგენა სარეზერვო ასლიდან</string>
     <string name="import_settings">პარამეტრების იმპორტი</string>
     <string name="import_settings_description">პარამეტრების აღდგენა Open Headunit-ის სარეზერვო ასლიდან.</string>
     <string name="import_settings_choose_file">აირჩიეთ სარეზერვო ფაილი</string>

@@ -766,6 +766,7 @@
     <string name="export_settings">Ayarları dışa aktar</string>
     <string name="export_settings_description">Ayarların yedeğini bir JSON dosyası olarak kaydet.</string>
     <string name="export_settings_app_folder">Uygulama yedek klasörüne kaydet</string>
+    <string name="onb_restore_settings">Ayarları yedekten geri yükle</string>
     <string name="export_settings_downloads">İndirilenlere kaydet</string>
     <string name="export_settings_choose_location">Kayıt konumunu seç</string>
     <string name="settings_exported">Ayarlar dışa aktarıldı</string>

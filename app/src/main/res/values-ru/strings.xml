@@ -800,6 +800,7 @@ Open Headunit предоставляется «как есть» без каки
     <string name="settings_export_failed">Не удалось экспортировать настройки: %1$s</string>
     <string name="settings_backup_saved_to">Резервная копия настроек сохранена в:\n%1$s</string>
     <string name="share_settings_backup">Поделиться резервной копией</string>
+    <string name="onb_restore_settings">Восстановить настройки из бэкапа</string>
     <string name="import_settings">Импорт настроек</string>
     <string name="import_settings_description">Восстановить настройки из резервной копии Open Headunit.</string>
     <string name="import_settings_app_folder">Импорт из папки резервных копий приложения</string>

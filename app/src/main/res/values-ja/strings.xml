@@ -801,6 +801,7 @@
     <string name="export_settings">設定をエクスポート</string>
     <string name="export_settings_description">設定のバックアップを JSON ファイルとして保存。</string>
     <string name="export_settings_app_folder">アプリのバックアップフォルダに保存</string>
+    <string name="onb_restore_settings">バックアップから設定を復元</string>
     <string name="export_settings_downloads">ダウンロードに保存</string>
     <string name="export_settings_choose_location">保存場所を選択</string>
     <string name="settings_exported">設定をエクスポートしました</string>

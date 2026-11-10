@@ -948,6 +948,7 @@
     <string name="export_settings_choose_location">Escolher local para guardar</string>
     <string name="export_settings_downloads">Guardar em Transferências</string>
     <string name="export_settings_app_folder">Guardar na pasta de cópias da aplicação</string>
+    <string name="onb_restore_settings">Restaurar definições de uma cópia de segurança</string>
     <string name="import_settings">Importar definições</string>
     <string name="import_settings_description">Restaurar definições de uma cópia de segurança do Open Headunit.</string>
     <string name="import_settings_choose_file">Escolher ficheiro de cópia de segurança</string>

@@ -1,5 +1,5 @@
 # Changelog
-### 4.0.0-beta2
+### 4.0.0
 - New Homescreen, favorites under the card on 16:9 units, and drawer tabs for shortcuts, thanks to @andrecuellar
 - Home: a separate switch for the widgets, and a panel opacity slider
 - Settings: redesign the screen in Material 3 and make the accent blue, thanks to @andrecuellar
